@@ -6,7 +6,8 @@ from typing import TYPE_CHECKING, Optional
 
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
-from rotkehlchen.chain.evm.types import WeightedNode
+from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirerWithDSProxy
+from rotkehlchen.chain.evm.types import WeightedNode, asset_id_is_evm_token
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.inquirer import Inquirer
@@ -231,36 +232,26 @@ class EvmTokens(metaclass=ABCMeta):
         It generates a dictionary where key is an address and value is
         either a list of tokens or the timestamp of the last tokens query for that address.
         """
-        proxies_mapping = self.evm_inquirer.proxies_inquirer.get_accounts_having_proxy()
         addresses_info = {}
         with self.db.conn.read_ctx() as cursor:
             for address in addresses:
-                detected_tokens, last_queried_timestamp = self.db.get_tokens_for_address(
+                addresses_info[address] = self.db.get_tokens_for_address(
                     cursor=cursor,
                     address=address,
                     blockchain=self.evm_inquirer.blockchain,
                 )
-                if address in proxies_mapping:
-                    proxy_address = proxies_mapping[address]
-                    proxy_detected_tokens, proxy_last_queried_timestamp = self.db.get_tokens_for_address(  # noqa: E501
-                        cursor=cursor,
-                        address=proxy_address,
-                        blockchain=self.evm_inquirer.blockchain,
-                    )
-                    if proxy_detected_tokens is not None:
-                        if detected_tokens is None:
-                            detected_tokens = proxy_detected_tokens
-                        else:
-                            detected_tokens = list(set(detected_tokens + proxy_detected_tokens))
-                    if proxy_last_queried_timestamp is not None:
-                        if last_queried_timestamp is None:
-                            last_queried_timestamp = proxy_last_queried_timestamp
-                        else:
-                            last_queried_timestamp = min(last_queried_timestamp, proxy_last_queried_timestamp)  # noqa: E501
-
-                addresses_info[address] = (detected_tokens, last_queried_timestamp)
 
         return addresses_info
+
+    def _query_new_tokens(self, addresses: Sequence[ChecksumEvmAddress]) -> None:
+        all_tokens = GlobalDBHandler().get_evm_tokens(
+            chain_id=self.evm_inquirer.chain_id,
+            exceptions=self._get_token_exceptions(),
+        )
+        self._detect_tokens(
+            addresses=addresses,
+            tokens_to_check=all_tokens,
+        )
 
     def detect_tokens(
             self,
@@ -280,15 +271,7 @@ class EvmTokens(metaclass=ABCMeta):
           token has no code. That means the chain is not synced
         """
         if only_cache is False:
-            all_tokens = GlobalDBHandler().get_evm_tokens(
-                chain_id=self.evm_inquirer.chain_id,
-                exceptions=self._get_token_exceptions(),
-            )
-            self._detect_tokens(
-                addresses=addresses,
-                tokens_to_check=all_tokens,
-            )
-            self.maybe_detect_proxies_tokens(addresses)
+            self._query_new_tokens(addresses)
 
         return self._compute_detected_tokens_info(addresses)
 
@@ -371,9 +354,22 @@ class EvmTokens(metaclass=ABCMeta):
 
         return dict(addresses_to_balances), token_usd_price
 
+    def _get_token_exceptions(self) -> set[ChecksumEvmAddress]:
+        """Returns a list of token addresses for which balances will not be queried"""
+        with self.db.conn.read_ctx() as cursor:
+            ignored_asset_ids = self.db.get_ignored_asset_ids(cursor=cursor)
+
+        # TODO: Shouldn't this query be filtered in the DB?
+        exceptions = set()
+        for asset_id in ignored_asset_ids:  # don't query for the ignored tokens
+            if (evm_details := asset_id_is_evm_token(asset_id)) is not None and evm_details[0] == self.evm_inquirer.chain_id:  # noqa: E501
+                exceptions.add(evm_details[1])
+
+        return exceptions | self._per_chain_token_exceptions()
+
     # -- methods to be implemented by child classes
     @abstractmethod
-    def _get_token_exceptions(self) -> list[ChecksumEvmAddress]:
+    def _per_chain_token_exceptions(self) -> set[ChecksumEvmAddress]:
         """
         Returns a list of token addresses that will not be taken into account
         when performing token detection.
@@ -381,6 +377,65 @@ class EvmTokens(metaclass=ABCMeta):
         Each chain needs to implement any chain-specific exceptions here.
         """
 
+
+class EvmTokensWithDSProxy(EvmTokens, metaclass=ABCMeta):
+    def __init__(
+            self,
+            database: 'DBHandler',
+            evm_inquirer: 'EvmNodeInquirerWithDSProxy',
+    ):
+        super().__init__(database=database, evm_inquirer=evm_inquirer)
+        self.evm_inquirer: 'EvmNodeInquirerWithDSProxy'  # set explicit type
+
+    def _query_new_tokens(self, addresses: Sequence[ChecksumEvmAddress]) -> None:
+        super()._query_new_tokens(addresses)
+        self.maybe_detect_proxies_tokens(addresses)
+
     def maybe_detect_proxies_tokens(self, addresses: Sequence[ChecksumEvmAddress]) -> None:  # pylint: disable=unused-argument  # noqa: E501
         """Subclasses may implement this method to detect tokens for proxies"""
         return None
+
+    def _compute_detected_tokens_info(self, addresses: Sequence[ChecksumEvmAddress]) -> DetectedTokensType:  # noqa: E501
+        """
+        Generate a structure that contains information about the addresses that tokens
+        were requested for.
+        It generates a dictionary where key is an address and value is
+        either a list of tokens or the timestamp of the last tokens query for that address.
+
+        This specific function also combines ds proxies balances with the balances of the owners of
+        the proxies.
+        """
+        addresses_info_without_proxies = super()._compute_detected_tokens_info(addresses)
+        proxies_mapping = self.evm_inquirer.proxies_inquirer.get_accounts_having_proxy()
+        addresses_info = {}
+        with self.db.conn.read_ctx() as cursor:
+            for (
+                address,
+                (detected_tokens_without_proxies, last_queried_ts_without_proxies),
+            ) in addresses_info_without_proxies.items():
+                # Creating new variables because modifying loop variables is not good
+                detected_tokens = detected_tokens_without_proxies
+                last_queried_timestamp = last_queried_ts_without_proxies
+                if address in proxies_mapping:
+                    proxy_address = proxies_mapping[address]
+                    proxy_detected_tokens, proxy_last_queried_timestamp = self.db.get_tokens_for_address(  # noqa: E501
+                        cursor=cursor,
+                        address=proxy_address,
+                        blockchain=self.evm_inquirer.blockchain,
+                    )
+
+                    if proxy_detected_tokens is not None:
+                        if detected_tokens_without_proxies is None:
+                            detected_tokens = proxy_detected_tokens
+                        else:
+                            detected_tokens = list(set(detected_tokens_without_proxies + proxy_detected_tokens))  # noqa: E501
+
+                    if proxy_last_queried_timestamp is not None:
+                        if last_queried_ts_without_proxies is None:
+                            last_queried_timestamp = proxy_last_queried_timestamp
+                        else:
+                            last_queried_timestamp = min(last_queried_ts_without_proxies, proxy_last_queried_timestamp)  # noqa: E501
+
+                addresses_info[address] = (detected_tokens, last_queried_timestamp)
+
+        return addresses_info

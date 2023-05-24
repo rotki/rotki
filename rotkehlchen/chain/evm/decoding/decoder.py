@@ -21,6 +21,7 @@ from rotkehlchen.assets.utils import TokenSeenAt, get_or_create_evm_token
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.chain.evm.decoding.interfaces import ReloadableDecoderMixin
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
+from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirerWithDSProxy
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.constants import ZERO
 from rotkehlchen.db.constants import HISTORY_MAPPING_STATE_DECODED
@@ -48,7 +49,7 @@ from rotkehlchen.utils.misc import (
 )
 from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
 
-from .base import BaseDecoderTools
+from .base import BaseDecoderTools, BaseDecoderToolsWithDSProxy
 from .constants import CPT_GAS, ERC20_APPROVE, ERC20_OR_ERC721_TRANSFER, OUTGOING_EVENT_TYPES
 from .structures import (
     DEFAULT_DECODING_OUTPUT,
@@ -123,6 +124,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             value_asset: AssetWithOracles,
             event_rules: list[EventDecoderFunction],
             misc_counterparties: list[CounterpartyDetails],
+            base_tools: BaseDecoderTools,
     ):
         """
         Initialize an evm chain transaction decoder module for a particular chain.
@@ -145,12 +147,8 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
         self.chain_modules_prefix_length = len(self.chain_modules_root)
         self.dbevmtx = DBEvmTx(self.database)
         self.dbevents = DBHistoryEvents(self.database)
-        self.base = BaseDecoderTools(
-            database=database,
-            evm_inquirer=self.evm_inquirer,
-            is_non_conformant_erc721_fn=self._is_non_conformant_erc721,
-            address_is_exchange_fn=self._address_is_exchange,
-        )
+        self.base: BaseDecoderTools
+        self.base = base_tools
         self.rules = DecodingRules(
             address_mappings={},
             event_rules=[
@@ -889,3 +887,27 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
 
             assert len(unexpected_types) == 0, f'Found the following unexpected types {unexpected_types}'  # noqa: E501
             return True
+
+
+class EVMTransactionDecoderWithDSProxy(EVMTransactionDecoder, metaclass=ABCMeta):
+    def __init__(
+            self,
+            database: 'DBHandler',
+            evm_inquirer: 'EvmNodeInquirerWithDSProxy',
+            transactions: 'EvmTransactions',
+            value_asset: AssetWithOracles,
+            event_rules: list[EventDecoderFunction],
+            misc_counterparties: list[CounterpartyDetails],
+            base_tools: BaseDecoderToolsWithDSProxy,
+    ):
+        super().__init__(
+            database=database,
+            evm_inquirer=evm_inquirer,
+            transactions=transactions,
+            value_asset=value_asset,
+            event_rules=event_rules,
+            misc_counterparties=misc_counterparties,
+            base_tools=base_tools,
+        )
+        self.evm_inquirer: 'EvmNodeInquirerWithDSProxy'  # Set explicit type
+        self.base: BaseDecoderToolsWithDSProxy  # Set explicit type

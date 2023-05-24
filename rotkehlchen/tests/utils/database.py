@@ -43,6 +43,10 @@ def maybe_include_etherscan_key(db: DBHandler, include_etherscan_key: bool) -> N
         service=ExternalService.OPTIMISM_ETHERSCAN,
         api_key=ApiKey('IK3GCCMPQXTRIEGBAXQ9DUFWIUR524K3MW'),
     )])
+    db.add_external_service_credentials([ExternalServiceApiCredentials(
+        service=ExternalService.POLYGON_POS_ETHERSCAN,
+        api_key=ApiKey('1M4TM28QKJHED9QPDWXFCBEX5CK5ID3ESG'),  # Added by Alexey on 2023-05-22
+    )])
 
 
 def maybe_include_cryptocompare_key(db: DBHandler, include_cryptocompare_key: bool) -> None:

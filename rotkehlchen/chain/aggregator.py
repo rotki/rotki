@@ -39,6 +39,7 @@ from rotkehlchen.chain.ethereum.modules import (
 from rotkehlchen.chain.ethereum.modules.convex.balances import ConvexBalances
 from rotkehlchen.chain.ethereum.modules.curve.balances import CurveBalances
 from rotkehlchen.chain.ethereum.modules.eth2.structures import Eth2Validator
+from rotkehlchen.chain.polygon_pos.manager import PolygonPOSManager
 from rotkehlchen.chain.substrate.manager import wait_until_a_node_is_available
 from rotkehlchen.chain.substrate.utils import SUBSTRATE_NODE_CONNECTION_TIMEOUT
 from rotkehlchen.constants.assets import A_AVAX, A_BCH, A_BTC, A_DAI, A_DOT, A_ETH, A_ETH2, A_KSM
@@ -61,6 +62,7 @@ from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.types import (
+    CHAINS_WITH_CHAIN_MANAGER,
     SUPPORTED_CHAIN_IDS,
     SUPPORTED_EVM_CHAINS,
     SUPPORTED_SUBSTRATE_CHAINS,
@@ -164,6 +166,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             blockchain_accounts: BlockchainAccounts,
             ethereum_manager: 'EthereumManager',
             optimism_manager: 'OptimismManager',
+            polygon_pos_manager: 'PolygonPOSManager',
             kusama_manager: 'SubstrateManager',
             polkadot_manager: 'SubstrateManager',
             avalanche_manager: 'AvalancheManager',
@@ -180,6 +183,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         super().__init__()
         self.ethereum = ethereum_manager
         self.optimism = optimism_manager
+        self.polygon_pos = polygon_pos_manager
         self.kusama = kusama_manager
         self.polkadot = polkadot_manager
         self.avalanche = avalanche_manager
@@ -201,6 +205,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         self.dot_lock = Semaphore()
         self.avax_lock = Semaphore()
         self.optimism_lock = Semaphore()
+        self.polygon_pos_lock = Semaphore()
 
         # Per account balances
         self.balances = BlockchainBalances(db=database)
@@ -891,6 +896,19 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
 
     @protect_with_lock()
     @cache_response_timewise()
+    def query_polygon_pos_balances(
+            self,  # pylint: disable=unused-argument
+            # Kwargs here is so linters don't complain when the "magic" ignore_cache kwarg is given
+            **kwargs: Any,
+    ) -> None:
+        """
+        Queries all the polygon pos balances and populates the state.
+        Same potential exceptions as ethereum
+        POLYGON_TODO
+        """
+
+    @protect_with_lock()
+    @cache_response_timewise()
     def query_eth_balances(
             self,  # pylint: disable=unused-argument
             # Kwargs here is so linters don't complain when the "magic" ignore_cache kwarg is given
@@ -1252,7 +1270,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
 
     def get_chain_manager(
             self,
-            blockchain: Literal[SupportedBlockchain.ETHEREUM, SupportedBlockchain.KUSAMA, SupportedBlockchain.POLKADOT, SupportedBlockchain.AVALANCHE, SupportedBlockchain.OPTIMISM],  # noqa: E501
+            blockchain: CHAINS_WITH_CHAIN_MANAGER,
     ) -> Any:
         """Returns blockchain manager"""
         attr = blockchain.name.lower()

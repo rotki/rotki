@@ -18,6 +18,8 @@ from rotkehlchen.chain.optimism.decoding.decoder import OptimismTransactionDecod
 from rotkehlchen.chain.optimism.manager import OptimismManager
 from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
 from rotkehlchen.chain.optimism.transactions import OptimismTransactions
+from rotkehlchen.chain.polygon_pos.manager import PolygonPOSManager
+from rotkehlchen.chain.polygon_pos.node_inquirer import PolygonPOSInquirer
 from rotkehlchen.chain.substrate.manager import SubstrateChainProperties, SubstrateManager
 from rotkehlchen.chain.substrate.types import SubstrateAddress
 from rotkehlchen.constants.assets import A_DOT, A_KSM
@@ -320,6 +322,37 @@ def fixture_optimism_transaction_decoder(
         )
 
 
+@pytest.fixture(name='polygon_pos_manager_connect_at_start')
+def fixture_polygon_pos_manager_connect_at_start() -> Sequence[NodeName]:
+    return ()
+
+
+@pytest.fixture(name='polygon_pos_inquirer')
+def fixture_polygon_pos_inquirer(
+        polygon_pos_manager_connect_at_start,
+        greenlet_manager,
+        database,
+        mock_other_web3,
+):
+    with ExitStack() as stack:
+        yield _initialize_and_yield_evm_inquirer_fixture(
+            parent_stack=stack,
+            klass=PolygonPOSInquirer,
+            class_path='rotkehlchen.chain.polygon_pos.node_inquirer.PolygonPOSInquirer',
+            manager_connect_at_start=polygon_pos_manager_connect_at_start,
+            greenlet_manager=greenlet_manager,
+            database=database,
+            mock_other_web3=mock_other_web3,
+            mock_data={},  # Not used in polygon. TODO: remove it for all other chains too since we now have vcr  # noqa: E501
+            mocked_proxies=None,
+        )
+
+
+@pytest.fixture(name='polygon_pos_manager')
+def fixture_polygon_pos_manager(polygon_pos_inquirer):
+    return PolygonPOSManager(node_inquirer=polygon_pos_inquirer)
+
+
 @pytest.fixture(name='ksm_rpc_endpoint')
 def fixture_ksm_rpc_endpoint() -> Optional[str]:
     return None
@@ -483,6 +516,7 @@ def fixture_btc_derivation_gap_limit():
 def blockchain(
         ethereum_manager,
         optimism_manager,
+        polygon_pos_manager,
         kusama_manager,
         polkadot_manager,
         avalanche_manager,
@@ -506,6 +540,7 @@ def blockchain(
         blockchain_accounts=blockchain_accounts,
         ethereum_manager=ethereum_manager,
         optimism_manager=optimism_manager,
+        polygon_pos_manager=polygon_pos_manager,
         kusama_manager=kusama_manager,
         polkadot_manager=polkadot_manager,
         avalanche_manager=avalanche_manager,

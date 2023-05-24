@@ -31,6 +31,7 @@ from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
 from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 from rotkehlchen.chain.evm.types import EvmAccount
 from rotkehlchen.chain.optimism.constants import OPTIMISM_ETHERSCAN_NODE_NAME
+from rotkehlchen.chain.polygon_pos.constants import POLYGON_POS_ETHERSCAN_NODE_NAME
 from rotkehlchen.chain.substrate.types import SubstrateAddress, SubstratePublicKey
 from rotkehlchen.chain.substrate.utils import (
     get_substrate_address_from_public_key,
@@ -2714,7 +2715,11 @@ class RpcNodeEditSchema(RpcAddNodeSchema):
                     field_name='endpoint',
                     message='It is not allowed to modify the etherscan node endpoint',
                 )
-            if data['name'] not in (ETHEREUM_ETHERSCAN_NODE_NAME, OPTIMISM_ETHERSCAN_NODE_NAME):
+            if data['name'] not in (
+                ETHEREUM_ETHERSCAN_NODE_NAME,
+                OPTIMISM_ETHERSCAN_NODE_NAME,
+                POLYGON_POS_ETHERSCAN_NODE_NAME,
+            ):
                 raise ValidationError(
                     message="Can't change the etherscan node name",
                     field_name='name',

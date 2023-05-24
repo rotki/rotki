@@ -12,6 +12,7 @@ import requests
 from ens import ENS
 from eth_abi.exceptions import InsufficientDataBytes
 from eth_typing import BlockNumber
+from requests import RequestException
 from web3 import HTTPProvider, Web3
 from web3._utils.abi import get_abi_output_types
 from web3._utils.contracts import find_matching_event_abi
@@ -193,7 +194,6 @@ class EvmNodeInquirer(metaclass=ABCMeta):
             connect_at_start: Sequence[WeightedNode],
             contract_scan: 'EvmContract',
             contract_multicall: 'EvmContract',
-            dsproxy_registry: 'EvmContract',
             rpc_timeout: int = DEFAULT_EVM_RPC_TIMEOUT,
     ) -> None:
         self.greenlet_manager = greenlet_manager
@@ -203,10 +203,6 @@ class EvmNodeInquirer(metaclass=ABCMeta):
         self.etherscan_node = etherscan_node
         self.etherscan_node_name = etherscan_node_name
         self.contracts = contracts
-        self.proxies_inquirer = EvmProxiesInquirer(
-            node_inquirer=self,
-            dsproxy_registry=dsproxy_registry,
-        )
         self.web3_mapping: dict[NodeName, Web3Node] = {}
         self.rpc_timeout = rpc_timeout
         self.chain_id: SUPPORTED_CHAIN_IDS = blockchain.to_chain_id()  # type: ignore[assignment]
@@ -1258,10 +1254,71 @@ class EvmNodeInquirer(metaclass=ABCMeta):
         """
         return WEB3_LOGQUERY_BLOCK_RANGE
 
-    @abstractmethod
     def _have_archive(self, web3: Web3) -> bool:
         """Returns a boolean representing if node is an archive one."""
+        address_to_check, block_to_check, expected_balance = self._get_archive_check_data()
+        balance = self.get_historical_balance(
+            address=address_to_check,
+            block_number=block_to_check,
+            web3=web3,
+        )
+        return balance == expected_balance
 
     @abstractmethod
+    def _get_archive_check_data(self) -> tuple[ChecksumEvmAddress, int, FVal]:
+        """Returns a tuple of (address, block_number, expected_balance) that can used for
+        checking whether a node is an archive one."""
+
     def _is_pruned(self, web3: Web3) -> bool:
         """Returns a boolean representing if the node is pruned or not."""
+        try:
+            tx = web3.eth.get_transaction(self._get_pruned_check_tx_hash())  # type: ignore
+        except (
+            RequestException,
+            TransactionNotFound,
+            BlockchainQueryError,
+            KeyError,
+            ValueError,
+        ):
+            tx = None
+
+        return tx is None
+
+    @abstractmethod
+    def _get_pruned_check_tx_hash(self) -> EVMTxHash:
+        """Returns a transaction hash that can used for checking whether a node is pruned."""
+
+
+class EvmNodeInquirerWithDSProxy(EvmNodeInquirer):
+    def __init__(
+            self,
+            greenlet_manager: GreenletManager,
+            database: 'DBHandler',
+            etherscan: Etherscan,
+            blockchain: SUPPORTED_EVM_CHAINS,
+            etherscan_node: WeightedNode,
+            etherscan_node_name: str,
+            contracts: EvmContracts,
+            connect_at_start: Sequence[WeightedNode],
+            contract_scan: 'EvmContract',
+            contract_multicall: 'EvmContract',
+            dsproxy_registry: 'EvmContract',
+            rpc_timeout: int = DEFAULT_EVM_RPC_TIMEOUT,
+    ) -> None:
+        super().__init__(
+            greenlet_manager=greenlet_manager,
+            database=database,
+            etherscan=etherscan,
+            blockchain=blockchain,
+            etherscan_node=etherscan_node,
+            etherscan_node_name=etherscan_node_name,
+            contracts=contracts,
+            connect_at_start=connect_at_start,
+            contract_scan=contract_scan,
+            contract_multicall=contract_multicall,
+            rpc_timeout=rpc_timeout,
+        )
+        self.proxies_inquirer = EvmProxiesInquirer(
+            node_inquirer=self,
+            dsproxy_registry=dsproxy_registry,
+        )

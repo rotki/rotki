@@ -5,7 +5,7 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.evm_event import EvmEvent, EvmProduct
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.evm.decoding.constants import OUTGOING_EVENT_TYPES
-from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
+from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer, EvmNodeInquirerWithDSProxy
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.types import ChecksumEvmAddress, Timestamp
@@ -67,13 +67,12 @@ class BaseDecoderTools():
     def is_tracked(self, adddress: ChecksumEvmAddress) -> bool:
         return adddress in self.tracked_accounts.get(self.evm_inquirer.chain_id.to_blockchain())
 
-    def maybe_get_proxy_owner(self, address: ChecksumEvmAddress) -> Optional[ChecksumEvmAddress]:
+    def maybe_get_proxy_owner(self, address: ChecksumEvmAddress) -> Optional[ChecksumEvmAddress]:  # pylint: disable=unused-argument  # noqa: E501
         """
         Checks whether given address is a proxy owned by any of the tracked accounts.
         If it is a proxy, it returns the owner of the proxy, otherwise `None`.
         """
-        self.evm_inquirer.proxies_inquirer.get_accounts_having_proxy()  # calling to make sure that proxies are queried  # noqa: E501
-        return self.evm_inquirer.proxies_inquirer.proxy_to_address.get(address)
+        return None
 
     def decode_direction(
             self,
@@ -298,3 +297,30 @@ class BaseDecoderTools():
             address=address,
             extra_data=extra_data,
         )
+
+
+class BaseDecoderToolsWithDSProxy(BaseDecoderTools):
+    """Like BaseDecoderTools but with DSProxy evm inquirers"""
+
+    def __init__(
+            self,
+            database: 'DBHandler',
+            evm_inquirer: 'EvmNodeInquirerWithDSProxy',
+            is_non_conformant_erc721_fn: Callable[[ChecksumEvmAddress], bool],
+            address_is_exchange_fn: Callable[[ChecksumEvmAddress], Optional[str]],
+    ) -> None:
+        super().__init__(
+            database=database,
+            evm_inquirer=evm_inquirer,
+            is_non_conformant_erc721_fn=is_non_conformant_erc721_fn,
+            address_is_exchange_fn=address_is_exchange_fn,
+        )
+        self.evm_inquirer: 'EvmNodeInquirerWithDSProxy'  # to specify the type
+
+    def maybe_get_proxy_owner(self, address: ChecksumEvmAddress) -> Optional[ChecksumEvmAddress]:
+        """
+        Checks whether given address is a proxy owned by any of the tracked accounts.
+        If it is a proxy, it returns the owner of the proxy, otherwise `None`.
+        """
+        self.evm_inquirer.proxies_inquirer.get_accounts_having_proxy()  # calling to make sure that proxies are queried  # noqa: E501
+        return self.evm_inquirer.proxies_inquirer.proxy_to_address.get(address)

@@ -6,6 +6,7 @@ from rotkehlchen.chain.evm.constants import GENESIS_HASH, ZERO_ADDRESS
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import EvmAccount
 from rotkehlchen.chain.optimism.constants import OPTIMISM_GENESIS
+from rotkehlchen.chain.polygon_pos.constants import POLYGON_POS_GENESIS
 from rotkehlchen.db.constants import HISTORY_MAPPING_STATE_DECODED
 from rotkehlchen.db.filtering import EvmTransactionsFilterQuery, TransactionsNotDecodedFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -573,8 +574,10 @@ class DBEvmTx():
         else:
             if chain_id == ChainID.ETHEREUM:
                 timestamp = ETHEREUM_GENESIS
-            else:  # for now only optimism
+            elif chain_id == ChainID.OPTIMISM:
                 timestamp = OPTIMISM_GENESIS
+            else:
+                timestamp = POLYGON_POS_GENESIS
             tx = EvmTransaction(
                 chain_id=chain_id,
                 timestamp=timestamp,

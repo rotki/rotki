@@ -6,7 +6,8 @@ from rotkehlchen.accounting.structures.types import HistoryEventSubType, History
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.abi import decode_event_data_abi_str
 from rotkehlchen.chain.ethereum.constants import CPT_KRAKEN
-from rotkehlchen.chain.evm.decoding.decoder import EVMTransactionDecoder
+from rotkehlchen.chain.evm.decoding.base import BaseDecoderToolsWithDSProxy
+from rotkehlchen.chain.evm.decoding.decoder import EVMTransactionDecoderWithDSProxy
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     FAILED_ENRICHMENT_OUTPUT,
@@ -44,7 +45,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class EthereumTransactionDecoder(EVMTransactionDecoder):
+class EthereumTransactionDecoder(EVMTransactionDecoderWithDSProxy):
 
     def __init__(
             self,
@@ -73,6 +74,12 @@ class EthereumTransactionDecoder(EVMTransactionDecoder):
                     image='kraken.svg',
                 ),
             ],
+            base_tools=BaseDecoderToolsWithDSProxy(
+                database=database,
+                evm_inquirer=ethereum_inquirer,
+                is_non_conformant_erc721_fn=self._is_non_conformant_erc721,
+                address_is_exchange_fn=self._address_is_exchange,
+            ),
         )
 
     def _maybe_enrich_transfers(

@@ -738,7 +738,7 @@ def test_search_assets(rotkehlchen_api_server):
     )
     result = assert_proper_response_with_result(response)
     assert {asset['evm_chain'] for asset in result} == {
-        'matic',
+        'polygon_pos',
         'optimism',
         'ethereum',
         'arbitrum',

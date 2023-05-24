@@ -98,6 +98,8 @@ INSERT OR IGNORE INTO location(location, seq) VALUES ('e', 37);
 INSERT OR IGNORE INTO location(location, seq) VALUES ('f', 38);
 /* OPTIMISM */
 INSERT OR IGNORE INTO location(location, seq) VALUES ('g', 39);
+/* POLYGON_POS */
+INSERT OR IGNORE INTO location(location, seq) VALUES ('h', 40);
 """
 
 # Custom enum table for AssetMovement categories (deposit/withdrawal)

@@ -69,12 +69,16 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
             msg_aggregator: 'MessagesAggregator',
             chain: SUPPORTED_EVM_CHAINS,
             base_url: str,
-            service: Literal[ExternalService.ETHERSCAN, ExternalService.OPTIMISM_ETHERSCAN],
+            service: Literal[
+                ExternalService.ETHERSCAN,
+                ExternalService.OPTIMISM_ETHERSCAN,
+                ExternalService.POLYGON_POS_ETHERSCAN,
+            ],
     ) -> None:
         super().__init__(database=database, service_name=service)
         self.msg_aggregator = msg_aggregator
         self.chain = chain
-        self.prefix_url = 'api.' if chain == SupportedBlockchain.ETHEREUM else 'api-'
+        self.prefix_url = 'api.' if chain in (SupportedBlockchain.ETHEREUM, SupportedBlockchain.POLYGON_POS) else 'api-'  # noqa: E501
         self.base_url = base_url
         self.session = requests.session()
         self.warning_given = False
@@ -82,8 +86,10 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
         # set per-chain earliest timestamps that can be turned to blocks. Never returns block 0
         if service == ExternalService.ETHERSCAN:
             self.earliest_ts = 1438269989
-        else:  # Optimism
+        elif service == ExternalService.OPTIMISM_ETHERSCAN:
             self.earliest_ts = 1636665399
+        else:  # Polygon POS
+            self.earliest_ts = 1590856200
 
     @overload
     def _query(

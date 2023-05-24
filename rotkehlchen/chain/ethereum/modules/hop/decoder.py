@@ -27,7 +27,7 @@ chainid_to_name = {
     1: 'Ethereum Mainnet',
     10: 'Optimism',
     100: 'Gnosis Chain',
-    137: 'Polygon',
+    137: 'Polygon POS',
     42161: 'Arbitrum One',
 }
 

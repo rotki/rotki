@@ -3,8 +3,8 @@ from typing import TYPE_CHECKING
 
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.modules.makerdao.cache import ilk_cache_foreach
-from rotkehlchen.chain.evm.tokens import EvmTokens
-from rotkehlchen.chain.evm.types import asset_id_is_evm_token, string_to_evm_address
+from rotkehlchen.chain.evm.tokens import EvmTokensWithDSProxy
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_DAI, A_ETH, A_WETH
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.types import ChainID, ChecksumEvmAddress
@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
     from .node_inquirer import EthereumInquirer
 
-ETH_TOKEN_EXCEPTIONS = [
+ETH_TOKEN_EXCEPTIONS = {
     # Ignore the veCRV balance in token query. It's already detected by
     # defi SDK as part of locked CRV in Vote Escrowed CRV. Which is the right way
     # to approach it as there is no way to assign a price to 1 veCRV. It
@@ -34,10 +34,10 @@ ETH_TOKEN_EXCEPTIONS = [
     #
     # Old contract of Fetch.ai
     string_to_evm_address('0x1D287CC25dAD7cCaF76a26bc660c5F7C8E2a05BD'),
-]
+}
 
 
-class EthereumTokens(EvmTokens):
+class EthereumTokens(EvmTokensWithDSProxy):
 
     def __init__(
             self,
@@ -62,17 +62,8 @@ class EthereumTokens(EvmTokens):
         ))
 
     # -- methods that need to be implemented per chain
-    def _get_token_exceptions(self) -> list[ChecksumEvmAddress]:
-        exceptions = ETH_TOKEN_EXCEPTIONS.copy()
-        with self.db.conn.read_ctx() as cursor:
-            ignored_asset_ids = self.db.get_ignored_asset_ids(cursor=cursor)
-
-        # TODO: Shouldn't this query be filtered in the DB?
-        for asset_id in ignored_asset_ids:  # don't query for the ignored tokens
-            if (evm_details := asset_id_is_evm_token(asset_id)) is not None and evm_details[0] == ChainID.ETHEREUM:  # noqa: E501
-                exceptions.append(evm_details[1])
-
-        return exceptions
+    def _per_chain_token_exceptions(self) -> set[ChecksumEvmAddress]:
+        return ETH_TOKEN_EXCEPTIONS.copy()
 
     def maybe_detect_proxies_tokens(self, addresses: Sequence[ChecksumEvmAddress]) -> None:
         """Detect tokens for proxies that are owned by the given addresses"""

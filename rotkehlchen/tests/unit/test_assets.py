@@ -272,7 +272,7 @@ def test_cryptocompare_asset_support(cryptocompare):
         'KON',
         evm_address_to_identifier(address='0x20658291677a29EFddfd0E303f8b23113d837cC7', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
         evm_address_to_identifier(address='0x2dff88a56767223a5529ea5960da7a3f5f766406', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
-        evm_address_to_identifier(address='0xe238ecb42c424e877652ad82d8a939183a04c35f', chain_id=ChainID.MATIC, token_type=EvmTokenKind.ERC20),  # noqa: E501
+        evm_address_to_identifier(address='0xe238ecb42c424e877652ad82d8a939183a04c35f', chain_id=ChainID.POLYGON_POS, token_type=EvmTokenKind.ERC20),  # noqa: E501
         evm_address_to_identifier(address='0xA35923162C49cF95e6BF26623385eb431ad920D3', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
         evm_address_to_identifier(address='0x297E4e5e59Ad72B1B0A2fd446929e76117be0E0a', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
         evm_address_to_identifier(address='0x297E4e5e59Ad72B1B0A2fd446929e76117be0E0a', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # GDX but cc has gold miner
@@ -569,7 +569,7 @@ def test_coingecko_identifiers_are_reachable(socket_enabled):  # pylint: disable
         'GBPT',
         # hope eth and not huobi eth
         evm_address_to_identifier(address='0xc46F2004006d4C770346f60a7BaA3f1Cc67dFD1c', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
-        evm_address_to_identifier(address='0x1fDeAF938267ca43388eD1FdB879eaF91e920c7A', chain_id=ChainID.MATIC, token_type=EvmTokenKind.ERC20),  # noqa: E501
+        evm_address_to_identifier(address='0x1fDeAF938267ca43388eD1FdB879eaF91e920c7A', chain_id=ChainID.POLYGON_POS, token_type=EvmTokenKind.ERC20),  # noqa: E501
         evm_address_to_identifier(address='0xE38faf9040c7F09958c638bBDB977083722c5156', chain_id=ChainID.OPTIMISM, token_type=EvmTokenKind.ERC20),  # noqa: E501
         evm_address_to_identifier(address='0xDa7c0de432a9346bB6e96aC74e3B61A36d8a77eB', chain_id=ChainID.ARBITRUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
         evm_address_to_identifier(address='0xc46F2004006d4C770346f60a7BaA3f1Cc67dFD1c', chain_id=ChainID.GNOSIS, token_type=EvmTokenKind.ERC20),  # noqa: E501

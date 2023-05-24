@@ -137,7 +137,7 @@ WORLD_TO_BINANCE = COMMON_ASSETS_MAPPINGS | {
     evm_address_to_identifier('0xB0c7a3Ba49C7a6EaBa6cD4a96C55a1391070Ac9A', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'MAGIC',  # noqa: E501
     evm_address_to_identifier('0x467719aD09025FcC6cF6F8311755809d45a5E5f3', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'AXL',  # noqa: E501
     evm_address_to_identifier('0x8F0528cE5eF7B51152A59745bEfDD91D97091d2F', ChainID.BINANCE, EvmTokenKind.ERC20): 'ALPACA',  # noqa: E501
-    evm_address_to_identifier('0xE5417Af564e4bFDA1c483642db72007871397896', ChainID.MATIC, EvmTokenKind.ERC20): 'GNS',  # noqa: E501
+    evm_address_to_identifier('0xE5417Af564e4bFDA1c483642db72007871397896', ChainID.POLYGON_POS, EvmTokenKind.ERC20): 'GNS',  # noqa: E501
     evm_address_to_identifier('0x0f2D719407FdBeFF09D87557AbB7232601FD9F29', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'SYN',  # noqa: E501
     evm_address_to_identifier('0xA4Bdb11dc0a2bEC88d24A3aa1E6Bb17201112eBe', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'USDS',  # noqa: E501
     evm_address_to_identifier('0xfb5B838b6cfEEdC2873aB27866079AC55363D37E', ChainID.BINANCE, EvmTokenKind.ERC20): 'FLOKI',  # noqa: E501

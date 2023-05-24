@@ -810,7 +810,7 @@ class GlobalDBHandler():
     @staticmethod
     def get_evm_tokens(
             chain_id: ChainID,
-            exceptions: Optional[list[ChecksumEvmAddress]] = None,
+            exceptions: Optional[set[ChecksumEvmAddress]] = None,
             protocol: Optional[str] = None,
     ) -> list[EvmToken]:
         """Gets all ethereum tokens from the DB

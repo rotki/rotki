@@ -260,7 +260,11 @@ class EvmContracts(Generic[T]):
         ...
 
     @overload
-    def abi(self: 'EvmContracts[Literal[ChainID.OPTIMISM]]', name: Literal['to', 'do', 'CTOKEN']) -> list[dict[str, Any]]:  # noqa: E501
+    def abi(self: 'EvmContracts[Literal[ChainID.OPTIMISM]]', name: Literal['']) -> list[dict[str, Any]]:  # noqa: E501
+        ...
+
+    @overload
+    def abi(self: 'EvmContracts[Literal[ChainID.POLYGON_POS]]', name: Literal['']) -> list[dict[str, Any]]:  # noqa: E501
         ...
 
     def abi(self, name: str) -> list[dict[str, Any]]:

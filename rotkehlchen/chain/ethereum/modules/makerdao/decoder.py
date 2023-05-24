@@ -23,12 +23,12 @@ from rotkehlchen.constants.assets import (
     A_COMP,
     A_DAI,
     A_ETH,
+    A_ETH_MATIC,
     A_GUSD,
     A_KNC,
     A_LINK,
     A_LRC,
     A_MANA,
-    A_MATIC,
     A_PAX,
     A_RENBTC,
     A_SAI,
@@ -507,7 +507,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
             string_to_evm_address('0x3BC3A58b4FC1CbE7e98bB4aB7c99535e8bA9b8F1'): (self.decode_makerdao_vault_action, A_UNI.resolve_to_crypto_asset(), 'UNI-A'),  # noqa: E501
             string_to_evm_address('0xFD5608515A47C37afbA68960c1916b79af9491D0'): (self.decode_makerdao_vault_action, A_RENBTC.resolve_to_crypto_asset(), 'RENBTC-A'),  # noqa: E501
             string_to_evm_address('0x24e459F61cEAa7b1cE70Dbaea938940A7c5aD46e'): (self.decode_makerdao_vault_action, A_AAVE.resolve_to_crypto_asset(), 'AAVE-A'),  # noqa: E501
-            string_to_evm_address('0x885f16e177d45fC9e7C87e1DA9fd47A9cfcE8E13'): (self.decode_makerdao_vault_action, A_MATIC.resolve_to_crypto_asset(), 'MATIC-A'),  # noqa: E501
+            string_to_evm_address('0x885f16e177d45fC9e7C87e1DA9fd47A9cfcE8E13'): (self.decode_makerdao_vault_action, A_ETH_MATIC.resolve_to_crypto_asset(), 'MATIC-A'),  # noqa: E501
             string_to_evm_address('0x197E90f9FAD81970bA7976f33CbD77088E5D7cf7'): (self.decode_pot_for_dsr,),  # noqa: E501
             self.makerdao_dai_join.address: (self.decode_makerdao_debt_payback,),
             string_to_evm_address('0xA26e15C895EFc0616177B7c1e7270A4C7D51C997'): (self.decode_proxy_creation,),  # noqa: E501
