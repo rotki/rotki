@@ -32,6 +32,7 @@ from rotkehlchen.accounting.debugimporter.json import DebugHistoryImporter
 from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures.balance import Balance, BalanceType
 from rotkehlchen.accounting.structures.base import HistoryBaseEntryType, StakingEvent
+from rotkehlchen.accounting.structures.evm_event import EvmProduct
 from rotkehlchen.accounting.structures.types import (
     ActionType,
     HistoryEventSubType,
@@ -4256,6 +4257,22 @@ class RestAPI():
                     optimism_counterparties |
                     polygon_pos_counterparties,
                 ),
+            )),
+            status_code=HTTPStatus.OK,
+        )
+
+    def get_evm_products(self) -> Response:
+        """
+        Collect the mappings of counterparties to the products they list
+        """
+        ethereum_counterparties = self.rotkehlchen.chains_aggregator.ethereum.transactions_decoder.possible_products  # noqa: E501
+        optimism_counterparties = self.rotkehlchen.chains_aggregator.optimism.transactions_decoder.possible_products  # noqa: E501
+        return api_response(
+            result=process_result(_wrap_in_ok_result(
+                {
+                    'mappings': ethereum_counterparties | optimism_counterparties,
+                    'products': [product.serialize() for product in EvmProduct],
+                },
             )),
             status_code=HTTPStatus.OK,
         )

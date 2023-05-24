@@ -736,6 +736,12 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
             },
         }
 
+    @staticmethod
+    def possible_products() -> dict[str, list[EvmProduct]]:
+        return {
+            CPT_CURVE: [EvmProduct.GAUGE],
+        }
+
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         mapping: dict[ChecksumEvmAddress, tuple[Any, ...]] = {
             address: (self._decode_curve_events,)

@@ -1,6 +1,7 @@
 from abc import ABCMeta, abstractmethod
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, Callable, Optional
+from rotkehlchen.accounting.structures.evm_event import EvmProduct
 
 from rotkehlchen.types import ChecksumEvmAddress, DecoderEventMappingType
 
@@ -83,6 +84,11 @@ class DecoderInterface(metaclass=ABCMeta):
 
     def possible_events(self) -> DecoderEventMappingType:
         """Return the possible event types and subtypes used in the specific decoder"""
+        return {}
+
+    @staticmethod
+    def possible_products() -> dict[str, list[EvmProduct]]:
+        """Returns the possible evmproducts associated to a counterparty"""
         return {}
 
 

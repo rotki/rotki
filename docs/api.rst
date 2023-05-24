@@ -4683,6 +4683,7 @@ Dealing with History Events
    :reqjson list[string] tx_hashes: An optional list of transaction hashes to filter for. This will make it an EVM event query.
    :reqjson list[string] counterparties: An optional list of counterparties to filter by. List of strings. This will make it an EVM event query. We currently have a special exception for ``"eth2"`` as a counterparty. It filters for all eth staking events if given. It can't be given along with other counterparties in a filter. Or with an entry types filter.
    :reqjson list[string] products: An optional list of product type to filter by. List of strings. This will make it an EVM event query.
+   :reqjson list[string] addresses: An optional list of EVM addresses to filter by in the set of counterparty addresses. This will make it an EVM event query.
    :reqjson list[int] validator_indices: An optional list of validator indices to filter by. This makes it an EthStakingevent query
 
    **Example Response**:
@@ -12209,6 +12210,54 @@ Getting all available counterparties
   :resjson string identifier: value used by the backend to represent the counterparty.
   :resjson string label: Name displayed in the frontend.
   :resjson string image: Relative path to the counterparty image.
+
+  :statuscode 200: Information was correctly generated
+  :statuscode 500: Internal rotki error
+
+Getting EVM products
+=====================================
+
+.. http:get:: /api/(version)/history/events/products
+
+   Doing a GET on this endpoint will return information for all the counterparties and the products that they use. Also it will return a list of all the available product values.
+
+  **Example Request**
+
+  .. http:example:: curl wget httpie python-requests
+
+    GET /history/events/products HTTP/1.1
+    Host: localhost:5042
+
+
+  **Example Response**
+
+  .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "result":{
+          "mappings":{
+            "convex":[
+              "gauge",
+              "staking"
+            ],
+            "curve":[
+              "gauge"
+            ]
+          },
+          "products":[
+            "pool",
+            "staking",
+            "gauge"
+          ]
+        },
+        "message":""
+      }
+
+  :resjson object mappings: A mapping of each counterparty to a list with the products that they use
+  :resjson object products: A list of all the available products
 
   :statuscode 200: Information was correctly generated
   :statuscode 500: Internal rotki error

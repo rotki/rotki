@@ -6,7 +6,7 @@ from typing import Any, Optional
 from eth_utils.address import to_checksum_address
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.evm_event import EvmEvent
+from rotkehlchen.accounting.structures.evm_event import EvmEvent, EvmProduct
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import CryptoAsset, EvmToken
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -36,6 +36,7 @@ from rotkehlchen.types import (
 from rotkehlchen.utils.misc import ts_now
 
 DEFAULT_START_TS = Timestamp(1451606400)
+ZERO_TIMESTAMP_MS = TimestampMS(0)
 
 
 def make_random_bytes(size: int) -> bytes:
@@ -128,7 +129,9 @@ def make_ethereum_event(
         counterparty: Optional[str] = None,
         event_type: HistoryEventType = HistoryEventType.UNKNOWN,
         event_subtype: HistoryEventSubType = HistoryEventSubType.NONE,
-        timestamp: TimestampMS = 0,  # type: ignore
+        timestamp: TimestampMS = ZERO_TIMESTAMP_MS,
+        address: Optional[ChecksumEvmAddress] = None,
+        product: Optional[EvmProduct] = None,
 ) -> EvmEvent:
     if tx_hash is None:
         tx_hash = make_random_bytes(32)
@@ -144,6 +147,8 @@ def make_ethereum_event(
         asset=asset,
         balance=Balance(amount=ONE, usd_value=ONE),
         counterparty=counterparty,
+        address=address,
+        product=product,
     )
 
 

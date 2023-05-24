@@ -201,6 +201,12 @@ class ConvexDecoder(DecoderInterface):
             },
         }
 
+    @staticmethod
+    def possible_products() -> dict[str, list[EvmProduct]]:
+        return {
+            CPT_CONVEX: [EvmProduct.GAUGE, EvmProduct.STAKING],
+        }
+
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         decoder_mappings: dict[ChecksumEvmAddress, tuple[Callable, ...]] = {
             BOOSTER: (self._decode_convex_events,),
