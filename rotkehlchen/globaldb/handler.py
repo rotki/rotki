@@ -1189,8 +1189,7 @@ class GlobalDBHandler():
             querylist.append(source.serialize_for_db())
 
         with GlobalDBHandler().conn.read_ctx() as cursor:
-            query = cursor.execute(querystr, tuple(querylist))
-            result = query.fetchone()
+            result = cursor.execute(querystr, tuple(querylist)).fetchone()
             if result[0] is None:
                 return None
 
@@ -1224,8 +1223,7 @@ class GlobalDBHandler():
         prices_results = []
         with GlobalDBHandler().conn.read_ctx() as cursor:
             for entry in querylist:
-                query = cursor.execute(querystr, entry)
-                result = query.fetchone()  # below last index of the result tuple is ignored in deserialize  # noqa: E501
+                result = cursor.execute(querystr, entry).fetchone()  # below last index of the result tuple is ignored in deserialize  # noqa: E501
                 prices_results.append(None if result[0] is None else HistoricalPrice.deserialize_from_db(result))  # noqa: E501
 
         return prices_results
