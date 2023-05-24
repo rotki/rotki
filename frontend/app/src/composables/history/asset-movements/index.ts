@@ -18,7 +18,7 @@ export const useAssetMovements = () => {
   const { fetchAssociatedLocations } = locationsStore;
   const { exchangeName } = useLocations();
   const { awaitTask } = useTaskStore();
-  const { tc } = useI18n();
+  const { t } = useI18n();
   const { notify } = useNotificationsStore();
 
   const { getAssetMovements, getAssetMovementsTask } = useAssetMovementsApi();
@@ -40,8 +40,8 @@ export const useAssetMovements = () => {
     const { taskId } = await getAssetMovementsTask(defaults);
     const exchange = exchangeName(location);
     const taskMeta = {
-      title: tc('actions.asset_movements.task.title'),
-      description: tc('actions.asset_movements.task.description', undefined, {
+      title: t('actions.asset_movements.task.title'),
+      description: t('actions.asset_movements.task.description', {
         exchange
       }),
       location
@@ -54,10 +54,10 @@ export const useAssetMovements = () => {
       >(taskId, taskType, taskMeta, true);
     } catch (e: any) {
       notify({
-        title: tc('actions.asset_movements.error.title', undefined, {
+        title: t('actions.asset_movements.error.title', {
           exchange
         }),
-        message: tc('actions.asset_movements.error.description', undefined, {
+        message: t('actions.asset_movements.error.description', {
           exchange,
           error: e.message
         }),

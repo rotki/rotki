@@ -6,24 +6,24 @@ const props = defineProps<{
 
 const { status, remoteVersion } = toRefs(props);
 
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const title = computed(() => {
   const updateStatus = get(status);
 
   if (updateStatus === 'checking') {
-    return tc('asset_update_status.checking.title');
+    return t('asset_update_status.checking.title');
   }
-  return tc('asset_update_status.applying.title');
+  return t('asset_update_status.applying.title');
 });
 
 const message = computed(() => {
   const updateStatus = get(status);
 
   if (updateStatus === 'checking') {
-    return tc('asset_update_status.checking.message');
+    return t('asset_update_status.checking.message');
   }
-  return tc('asset_update_status.applying.message', 0, {
+  return t('asset_update_status.applying.message', {
     remoteVersion: get(remoteVersion)
   });
 });

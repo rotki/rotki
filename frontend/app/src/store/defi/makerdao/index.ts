@@ -44,7 +44,7 @@ export const useMakerDaoStore = defineStore('defi/makerDao', () => {
   const { notify } = useNotificationsStore();
   const { activeModules } = useModules();
   const premium = usePremium();
-  const { tc } = useI18n();
+  const { t } = useI18n();
   const {
     fetchDsrBalances: fetchDSRBalancesCaller,
     fetchDsrHistories: fetchDsrHistoriesCaller,
@@ -74,20 +74,16 @@ export const useMakerDaoStore = defineStore('defi/makerDao', () => {
         taskId,
         taskType,
         {
-          title: tc('actions.defi.dsr_balances.task.title')
+          title: t('actions.defi.dsr_balances.task.title')
         }
       );
       set(dsrBalances, DSRBalances.parse(result));
     } catch (e: any) {
       logger.error(e);
-      const message = tc(
-        'actions.defi.dsr_balances.error.description',
-        undefined,
-        {
-          error: e.message
-        }
-      );
-      const title = tc('actions.defi.dsr_balances.error.title');
+      const message = t('actions.defi.dsr_balances.error.description', {
+        error: e.message
+      });
+      const title = t('actions.defi.dsr_balances.error.title');
       notify({
         title,
         message,
@@ -118,20 +114,16 @@ export const useMakerDaoStore = defineStore('defi/makerDao', () => {
         taskId,
         taskType,
         {
-          title: tc('actions.defi.dsr_history.task.title')
+          title: t('actions.defi.dsr_history.task.title')
         }
       );
 
       set(dsrHistory, DSRHistory.parse(result));
     } catch (e: any) {
-      const message = tc(
-        'actions.defi.dsr_history.error.description',
-        undefined,
-        {
-          error: e.message
-        }
-      );
-      const title = tc('actions.defi.dsr_history.error.title');
+      const message = t('actions.defi.dsr_history.error.description', {
+        error: e.message
+      });
+      const title = t('actions.defi.dsr_history.error.title');
       notify({
         title,
         message,
@@ -161,7 +153,7 @@ export const useMakerDaoStore = defineStore('defi/makerDao', () => {
         taskId,
         taskType,
         {
-          title: tc('actions.defi.makerdao_vaults.task.title')
+          title: t('actions.defi.makerdao_vaults.task.title')
         }
       );
 
@@ -171,14 +163,10 @@ export const useMakerDaoStore = defineStore('defi/makerDao', () => {
       );
     } catch (e: any) {
       logger.error(e);
-      const message = tc(
-        'actions.defi.makerdao_vaults.error.description',
-        undefined,
-        {
-          error: e.message
-        }
-      );
-      const title = tc('actions.defi.makerdao_vaults.error.title');
+      const message = t('actions.defi.makerdao_vaults.error.description', {
+        error: e.message
+      });
+      const title = t('actions.defi.makerdao_vaults.error.title');
       const { notify } = useNotificationsStore();
       notify({
         title,
@@ -208,19 +196,18 @@ export const useMakerDaoStore = defineStore('defi/makerDao', () => {
         taskId,
         TaskType.MAKERDAO_VAULT_DETAILS,
         {
-          title: tc('actions.defi.makerdao_vault_details.task.title')
+          title: t('actions.defi.makerdao_vault_details.task.title')
         }
       );
 
       set(makerDAOVaultDetails, MakerDAOVaultDetails.parse(result));
     } catch (e: any) {
       logger.error(e);
-      const message = tc(
+      const message = t(
         'actions.defi.makerdao_vault_details.error.description',
-        undefined,
         { error: e.message }
       );
-      const title = tc('actions.defi.makerdao_vault_details.error.title');
+      const title = t('actions.defi.makerdao_vault_details.error.title');
       notify({
         title,
         message,

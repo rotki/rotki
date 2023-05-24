@@ -52,7 +52,7 @@ const notes = ref<string>('');
 
 const errorMessages = ref<Record<string, string[]>>({});
 
-const { t, tc } = useI18n();
+const { t } = useI18n();
 
 const rules = {
   amount: {
@@ -233,20 +233,20 @@ defineExpose({
       outlined
       data-cy="location"
       :error-messages="toMessages(v$.location)"
-      :label="tc('common.location')"
+      :label="t('common.location')"
       @blur="v$.location.$touch()"
     />
 
     <date-time-picker
       v-model="datetime"
       outlined
-      :label="tc('ledger_action_form.date.label')"
+      :label="t('ledger_action_form.date.label')"
       persistent-hint
       required
       seconds
       limit-now
       data-cy="datetime"
-      :hint="tc('ledger_action_form.date.hint')"
+      :hint="t('ledger_action_form.date.hint')"
       :error-messages="errorMessages['timestamp']"
     />
 
@@ -276,7 +276,7 @@ defineExpose({
           :error-messages="toMessages(v$.amount)"
           required
           data-cy="amount"
-          :label="tc('common.amount')"
+          :label="t('common.amount')"
           @blur="v$.amount.$touch()"
         />
       </v-col>
@@ -285,7 +285,7 @@ defineExpose({
         <v-select
           v-model="actionType"
           outlined
-          :label="tc('common.type')"
+          :label="t('common.type')"
           :items="ledgerActionsData"
           item-value="identifier"
           item-text="label"
@@ -310,8 +310,8 @@ defineExpose({
           outlined
           persistent-hint
           data-cy="rate"
-          :hint="tc('ledger_action_form.rate.hint')"
-          :label="tc('ledger_action_form.rate.label')"
+          :hint="t('ledger_action_form.rate.hint')"
+          :label="t('ledger_action_form.rate.label')"
           :error-messages="toMessages(v$.rate)"
           @blur="v$.rate.$touch()"
         />
@@ -320,8 +320,8 @@ defineExpose({
         <asset-select
           v-model="rateAsset"
           outlined
-          :label="tc('ledger_action_form.rate_asset.label')"
-          :hint="tc('ledger_action_form.rate_asset.hint')"
+          :label="t('ledger_action_form.rate_asset.label')"
+          :hint="t('ledger_action_form.rate_asset.hint')"
           persistent-hint
           data-cy="rate-asset"
           :error-messages="toMessages(v$.rateAsset)"
@@ -336,8 +336,8 @@ defineExpose({
       prepend-inner-icon="mdi-link"
       persistent-hint
       data-cy="link"
-      :label="tc('ledger_action_form.link.label')"
-      :hint="tc('ledger_action_form.link.hint')"
+      :label="t('ledger_action_form.link.label')"
+      :hint="t('ledger_action_form.link.hint')"
       :error-messages="errorMessages['link']"
     />
 
@@ -347,8 +347,8 @@ defineExpose({
       persistent-hint
       outlined
       data-cy="notes"
-      :label="tc('ledger_action_form.notes.label')"
-      :hint="tc('ledger_action_form.notes.hint')"
+      :label="t('ledger_action_form.notes.label')"
+      :hint="t('ledger_action_form.notes.hint')"
       :error-messages="errorMessages['notes']"
     />
   </v-form>

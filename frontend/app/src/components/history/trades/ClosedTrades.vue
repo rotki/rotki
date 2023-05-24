@@ -30,7 +30,7 @@ const { locationOverview, mainPage } = toRefs(props);
 
 const hideIgnoredTrades: Ref<boolean> = ref(false);
 
-const { tc } = useI18n();
+const { t } = useI18n();
 const router = useRouter();
 const route = useRoute();
 
@@ -45,25 +45,25 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
       cellClass: !overview ? 'pa-0' : 'pr-0'
     },
     {
-      text: tc('common.location'),
+      text: t('common.location'),
       value: 'location',
       width: '120px',
       align: 'center'
     },
     {
-      text: tc('closed_trades.headers.action'),
+      text: t('closed_trades.headers.action'),
       value: 'type',
       align: 'center',
       class: `text-no-wrap ${overview ? 'pl-0' : ''}`,
       cellClass: overview ? 'pl-0' : ''
     },
     {
-      text: tc('common.amount'),
+      text: t('common.amount'),
       value: 'amount',
       align: 'end'
     },
     {
-      text: tc('closed_trades.headers.base'),
+      text: t('closed_trades.headers.base'),
       value: 'baseAsset',
       sortable: false
     },
@@ -74,21 +74,21 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
       width: '40px'
     },
     {
-      text: tc('closed_trades.headers.quote'),
+      text: t('closed_trades.headers.quote'),
       value: 'quoteAsset',
       sortable: false
     },
     {
-      text: tc('closed_trades.headers.rate'),
+      text: t('closed_trades.headers.rate'),
       value: 'rate',
       align: 'end'
     },
     {
-      text: tc('common.datetime'),
+      text: t('common.datetime'),
       value: 'timestamp'
     },
     {
-      text: tc('closed_trades.headers.actions'),
+      text: t('closed_trades.headers.actions'),
       value: 'actions',
       align: 'center',
       sortable: false,
@@ -165,15 +165,15 @@ const { floatingPrecision } = storeToRefs(useGeneralSettingsStore());
 const promptForDelete = (trade: TradeEntry) => {
   const prep = (
     trade.tradeType === 'buy'
-      ? tc('closed_trades.description.with')
-      : tc('closed_trades.description.for')
+      ? t('closed_trades.description.with')
+      : t('closed_trades.description.for')
   ).toLocaleLowerCase();
 
   const base = get(assetSymbol(trade.baseAsset));
   const quote = get(assetSymbol(trade.quoteAsset));
   set(
     confirmationMessage,
-    tc('closed_trades.confirmation.message', 0, {
+    t('closed_trades.confirmation.message', {
       pair: `${base} ${prep} ${quote}`,
       action: trade.tradeType,
       amount: trade.amount.toFormat(get(floatingPrecision))
@@ -194,7 +194,7 @@ const massDelete = () => {
 
   set(
     confirmationMessage,
-    tc('closed_trades.confirmation.multiple_message', 0, {
+    t('closed_trades.confirmation.multiple_message', {
       length: get(tradesToDelete).length
     })
   );
@@ -241,7 +241,7 @@ const { show } = useConfirmStore();
 const showDeleteConfirmation = () => {
   show(
     {
-      title: tc('closed_trades.confirmation.title'),
+      title: t('closed_trades.confirmation.title'),
       message: get(confirmationMessage)
     },
     deleteTradeHandler
@@ -295,11 +295,11 @@ watch(loading, async (isLoading, wasLoading) => {
         <refresh-button
           v-if="!locationOverview"
           :loading="loading"
-          :tooltip="tc('closed_trades.refresh_tooltip')"
+          :tooltip="t('closed_trades.refresh_tooltip')"
           @refresh="refreshTrades(true)"
         />
         <navigator-link :to="{ path: pageRoute }" :enabled="!!locationOverview">
-          {{ tc('closed_trades.title') }}
+          {{ t('closed_trades.title') }}
         </navigator-link>
       </template>
       <template #actions>
@@ -326,11 +326,9 @@ watch(loading, async (isLoading, wasLoading) => {
                 </v-col>
               </v-row>
               <div v-if="selected.length > 0" class="mt-2 ms-1">
-                {{
-                  tc('closed_trades.selected', 0, { count: selected.length })
-                }}
+                {{ t('closed_trades.selected', { count: selected.length }) }}
                 <v-btn small text @click="selected = []">
-                  {{ tc('common.actions.clear_selection') }}
+                  {{ t('common.actions.clear_selection') }}
                 </v-btn>
               </div>
             </div>
@@ -339,7 +337,7 @@ watch(loading, async (isLoading, wasLoading) => {
                 v-model="hideIgnoredTrades"
                 class="mt-0 ml-8"
                 hide-details
-                :label="tc('closed_trades.hide_ignored_trades')"
+                :label="t('closed_trades.hide_ignored_trades')"
               />
             </div>
           </v-col>
@@ -364,7 +362,7 @@ watch(loading, async (isLoading, wasLoading) => {
             :headers="tableHeaders"
             :items="data"
             :loading="isLoading"
-            :loading-text="tc('trade_history.loading')"
+            :loading-text="t('trade_history.loading')"
             :options="options"
             :server-items-length="itemLength"
             data-cy="closed-trades"
@@ -383,7 +381,7 @@ watch(loading, async (isLoading, wasLoading) => {
                 <badge-display v-if="isMobile" color="grey">
                   <v-icon small> mdi-eye-off</v-icon>
                   <span class="ml-2">
-                    {{ tc('common.ignored_in_accounting') }}
+                    {{ t('common.ignored_in_accounting') }}
                   </span>
                 </badge-display>
                 <v-tooltip v-else bottom>
@@ -393,7 +391,7 @@ watch(loading, async (isLoading, wasLoading) => {
                     </badge-display>
                   </template>
                   <span>
-                    {{ tc('common.ignored_in_accounting') }}
+                    {{ t('common.ignored_in_accounting') }}
                   </span>
                 </v-tooltip>
               </div>
@@ -432,8 +430,8 @@ watch(loading, async (isLoading, wasLoading) => {
             <template #item.description="{ item }">
               {{
                 item.tradeType === 'buy'
-                  ? tc('closed_trades.description.with')
-                  : tc('closed_trades.description.for')
+                  ? t('closed_trades.description.with')
+                  : t('closed_trades.description.for')
               }}
             </template>
             <template #item.rate="{ item }">
@@ -455,8 +453,8 @@ watch(loading, async (isLoading, wasLoading) => {
               <row-actions
                 v-if="item.location === 'external'"
                 :disabled="loading"
-                :edit-tooltip="tc('closed_trades.edit_tooltip')"
-                :delete-tooltip="tc('closed_trades.delete_tooltip')"
+                :edit-tooltip="t('closed_trades.edit_tooltip')"
+                :delete-tooltip="t('closed_trades.delete_tooltip')"
                 @edit-click="editTradeHandler(item)"
                 @delete-click="promptForDelete(item)"
               />
@@ -469,7 +467,7 @@ watch(loading, async (isLoading, wasLoading) => {
                 :limit="limit"
                 :total="total"
                 :colspan="headers.length"
-                :label="tc('closed_trades.label')"
+                :label="t('closed_trades.label')"
               />
             </template>
           </data-table>

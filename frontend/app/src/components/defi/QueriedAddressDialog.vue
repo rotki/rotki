@@ -18,7 +18,7 @@ const { addQueriedAddress, deleteQueriedAddress } = store;
 const { queriedAddresses } = storeToRefs(useQueriedAddressesStore());
 const { accounts } = useAccountBalances();
 
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const moduleName = computed(() => {
   const currentModule = get(module);
@@ -89,9 +89,9 @@ const close = () => {
     @close="close()"
   >
     <card outlined-body>
-      <template #title>{{ tc('queried_address_dialog.title') }}</template>
+      <template #title>{{ t('queried_address_dialog.title') }}</template>
       <template #subtitle>
-        {{ tc('queried_address_dialog.subtitle', 0, { module: moduleName }) }}
+        {{ t('queried_address_dialog.subtitle', { module: moduleName }) }}
       </template>
       <template #actions>
         <v-row no-gutters align="center" class="flex-nowrap">
@@ -107,7 +107,7 @@ const close = () => {
               :usable-addresses="usableAddresses"
               class="queried-address-dialog__selector"
               :chains="[ETH]"
-              :label="tc('queried_address_dialog.add')"
+              :label="t('queried_address_dialog.add')"
             />
           </v-col>
           <v-col cols="auto">
@@ -160,7 +160,7 @@ const close = () => {
                   <v-icon>mdi-delete</v-icon>
                 </v-btn>
               </template>
-              <span>{{ tc('queried_address_dialog.remove_tooltip') }}</span>
+              <span>{{ t('queried_address_dialog.remove_tooltip') }}</span>
             </v-tooltip>
           </v-col>
         </v-row>
@@ -168,7 +168,7 @@ const close = () => {
       <div v-else class="queried-address-dialog__empty">
         <div>
           {{
-            tc('queried_address_dialog.all_address_queried', 0, {
+            t('queried_address_dialog.all_address_queried', {
               module: moduleName
             })
           }}

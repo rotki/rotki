@@ -79,7 +79,7 @@ export const useSettings = () => {
 export const useClearableMessages = () => {
   const error = ref('');
   const success = ref('');
-  const { tc } = useI18n();
+  const { t } = useI18n();
 
   const clear = () => {
     set(error, '');
@@ -97,11 +97,11 @@ export const useClearableMessages = () => {
   };
 
   const setSuccess = (message: string, useBase = true) => {
-    set(success, formatMessage(useBase ? tc('settings.saved') : '', message));
+    set(success, formatMessage(useBase ? t('settings.saved') : '', message));
   };
 
   const setError = (message: string, useBase = true) => {
-    set(error, formatMessage(useBase ? tc('settings.not_saved') : '', message));
+    set(error, formatMessage(useBase ? t('settings.not_saved') : '', message));
   };
 
   const wait = async () => await promiseTimeout(200);

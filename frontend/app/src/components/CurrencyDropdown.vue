@@ -7,7 +7,7 @@ const { currency } = storeToRefs(useGeneralSettingsStore());
 const filter = ref<string>('');
 const visible = ref<boolean>(false);
 
-const { tc } = useI18n();
+const { t } = useI18n();
 const { currencies } = useCurrencies();
 
 const filteredCurrencies = computed<Currency[]>(() => {
@@ -71,7 +71,7 @@ const calculateFontSize = (symbol: string) => {
       <template #activator="{ on }">
         <menu-tooltip-button
           :tooltip="
-            tc('currency_drop_down.profit_currency', 0, {
+            t('currency_drop_down.profit_currency', {
               currency: currency.tickerSymbol
             })
           "
@@ -117,7 +117,7 @@ const calculateFontSize = (symbol: string) => {
                 {{ item.name }}
               </v-list-item-title>
               <v-list-item-subtitle>
-                {{ tc('currency_drop_down.hint') }}
+                {{ t('currency_drop_down.hint') }}
               </v-list-item-subtitle>
             </v-list-item-content>
           </v-list-item>

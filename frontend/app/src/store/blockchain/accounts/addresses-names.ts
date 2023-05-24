@@ -32,7 +32,7 @@ export const useAddressesNamesStore = defineStore(
 
     const { awaitTask } = useTaskStore();
     const { notify } = useNotificationsStore();
-    const { t, tc } = useI18n();
+    const { t } = useI18n();
 
     const {
       getEnsNames,
@@ -89,7 +89,7 @@ export const useAddressesNamesStore = defineStore(
           taskId,
           taskType,
           {
-            title: tc('ens_names.task.title')
+            title: t('ens_names.task.title')
           }
         );
         set(ensNames, {
@@ -165,8 +165,8 @@ export const useAddressesNamesStore = defineStore(
         logger.error(e);
         const message = e?.message ?? e ?? '';
         notify({
-          title: tc('alias_names.error.title'),
-          message: tc('alias_names.error.message', 0, { message }),
+          title: t('alias_names.error.title'),
+          message: t('alias_names.error.message', { message }),
           display: true
         });
       }

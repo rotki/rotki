@@ -5,7 +5,7 @@ const store = useDefiStore();
 const { overview: currentOverview } = storeToRefs(store);
 const section = Section.DEFI_OVERVIEW;
 
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const refresh = async () => {
   await store.fetchAllDefi(true);
@@ -27,13 +27,13 @@ const refreshing = isLoading(section);
       <v-col>
         <refresh-header
           :loading="refreshing"
-          :title="tc('decentralized_overview.title')"
+          :title="t('decentralized_overview.title')"
           @refresh="refresh()"
         />
       </v-col>
     </v-row>
     <progress-screen v-if="loading">
-      <template #message>{{ tc('decentralized_overview.loading') }}</template>
+      <template #message>{{ t('decentralized_overview.loading') }}</template>
     </progress-screen>
     <no-data-screen
       v-else-if="currentOverview.length === 0"
@@ -41,10 +41,10 @@ const refreshing = isLoading(section);
       class="mt-16"
     >
       <template #title>
-        {{ tc('decentralized_overview.empty_title') }}
+        {{ t('decentralized_overview.empty_title') }}
       </template>
       <span class="text-subtitle-2 text--secondary">
-        {{ tc('decentralized_overview.empty_subtitle') }}
+        {{ t('decentralized_overview.empty_subtitle') }}
       </span>
     </no-data-screen>
     <v-row class="mt-4">

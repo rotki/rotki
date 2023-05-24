@@ -20,11 +20,11 @@ const emit = defineEmits<{
 
 const { items } = toRefs(props);
 
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const headers = computed<DataTableHeader[]>(() => [
   {
-    text: tc('price_table.headers.from_asset'),
+    text: t('price_table.headers.from_asset'),
     value: 'fromAsset'
   },
   {
@@ -33,12 +33,12 @@ const headers = computed<DataTableHeader[]>(() => [
     sortable: false
   },
   {
-    text: tc('common.price'),
+    text: t('common.price'),
     value: 'price',
     align: 'end'
   },
   {
-    text: tc('price_table.headers.to_asset'),
+    text: t('price_table.headers.to_asset'),
     value: 'toAsset'
   },
   {
@@ -47,7 +47,7 @@ const headers = computed<DataTableHeader[]>(() => [
     sortable: false
   },
   {
-    text: tc('common.datetime'),
+    text: t('common.datetime'),
     value: 'timestamp'
   },
   {
@@ -71,11 +71,11 @@ const refresh = () => emit('refresh');
     <template #title>
       <refresh-button
         :loading="loading"
-        :tooltip="tc('price_table.refresh_tooltip')"
+        :tooltip="t('price_table.refresh_tooltip')"
         @refresh="refresh()"
       />
       <div>
-        {{ tc('price_table.historic.title') }}
+        {{ t('price_table.historic.title') }}
       </div>
     </template>
     <slot />
@@ -97,13 +97,13 @@ const refresh = () => emit('refresh');
       <template #item.price="{ item }">
         <amount-display :value="item.price" />
       </template>
-      <template #item.wasWorth>{{ tc('price_table.was_worth') }}</template>
-      <template #item.on>{{ tc('price_table.on') }}</template>
+      <template #item.wasWorth>{{ t('price_table.was_worth') }}</template>
+      <template #item.on>{{ t('price_table.on') }}</template>
       <template #item.actions="{ item }">
         <row-actions
           :disabled="loading"
-          :delete-tooltip="tc('price_table.actions.delete.tooltip')"
-          :edit-tooltip="tc('price_table.actions.edit.tooltip')"
+          :delete-tooltip="t('price_table.actions.delete.tooltip')"
+          :edit-tooltip="t('price_table.actions.edit.tooltip')"
           @delete-click="deleteItem(item)"
           @edit-click="edit(item)"
         />

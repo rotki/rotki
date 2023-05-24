@@ -40,7 +40,7 @@ export const useLedgerActionsFilter = () => {
   const { dateInputFormat } = storeToRefs(useFrontendSettingsStore());
   const { assetSearch } = useAssetInfoApi();
   const { assetInfo } = useAssetInfoRetrieval();
-  const { tc } = useI18n();
+  const { t } = useI18n();
 
   const matchers: ComputedRef<Matcher[]> = computed(
     () =>
@@ -48,7 +48,7 @@ export const useLedgerActionsFilter = () => {
         {
           key: LedgerActionFilterKeys.ASSET,
           keyValue: LedgerActionFilterValueKeys.ASSET,
-          description: tc('ledger_actions.filter.asset'),
+          description: t('ledger_actions.filter.asset'),
           asset: true,
           suggestions: assetSuggestions(assetSearch),
           deserializer: assetDeserializer(assetInfo)
@@ -56,7 +56,7 @@ export const useLedgerActionsFilter = () => {
         {
           key: LedgerActionFilterKeys.TYPE,
           keyValue: LedgerActionFilterValueKeys.TYPE,
-          description: tc('ledger_actions.filter.action_type'),
+          description: t('ledger_actions.filter.action_type'),
           string: true,
           suggestions: () => [...Object.values(LedgerActionType)],
           validate: type =>
@@ -65,9 +65,9 @@ export const useLedgerActionsFilter = () => {
         {
           key: LedgerActionFilterKeys.START,
           keyValue: LedgerActionFilterValueKeys.START,
-          description: tc('ledger_actions.filter.start_date'),
+          description: t('ledger_actions.filter.start_date'),
           string: true,
-          hint: tc('ledger_actions.filter.date_hint', 0, {
+          hint: t('ledger_actions.filter.date_hint', {
             format: getDateInputISOFormat(get(dateInputFormat))
           }),
           suggestions: () => [],
@@ -78,9 +78,9 @@ export const useLedgerActionsFilter = () => {
         {
           key: LedgerActionFilterKeys.END,
           keyValue: LedgerActionFilterValueKeys.END,
-          description: tc('ledger_actions.filter.end_date'),
+          description: t('ledger_actions.filter.end_date'),
           string: true,
-          hint: tc('ledger_actions.filter.date_hint', 0, {
+          hint: t('ledger_actions.filter.date_hint', {
             format: getDateInputISOFormat(get(dateInputFormat))
           }).toString(),
           suggestions: () => [],
@@ -91,7 +91,7 @@ export const useLedgerActionsFilter = () => {
         {
           key: LedgerActionFilterKeys.LOCATION,
           keyValue: LedgerActionFilterValueKeys.LOCATION,
-          description: tc('ledger_actions.filter.location'),
+          description: t('ledger_actions.filter.location'),
           string: true,
           suggestions: () => get(associatedLocations),
           validate: location =>

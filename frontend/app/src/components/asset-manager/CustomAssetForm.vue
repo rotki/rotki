@@ -46,7 +46,7 @@ const input = (asset: Partial<CustomAsset>) => {
 const assetIconFormRef: Ref<InstanceType<typeof AssetIconForm> | null> =
   ref(null);
 
-const { t, tc } = useI18n();
+const { t } = useI18n();
 
 const search = ref<string | null>('');
 
@@ -113,8 +113,8 @@ const save = async () => {
     const obj = { message: e.message };
     setMessage({
       description: editMode
-        ? tc('asset_management.edit_error', 0, obj)
-        : tc('asset_management.add_error', 0, obj)
+        ? t('asset_management.edit_error', obj)
+        : t('asset_management.add_error', obj)
     });
   }
 

@@ -23,7 +23,7 @@ import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 export const useManualBalancesStore = defineStore('balances/manual', () => {
   const manualBalancesData: Ref<ManualBalanceWithValue[]> = ref([]);
 
-  const { t, tc } = useI18n();
+  const { t } = useI18n();
   const { notify } = useNotificationsStore();
   const { setMessage } = useMessageStore();
   const { awaitTask } = useTaskStore();
@@ -160,7 +160,7 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
         taskId,
         taskType,
         {
-          title: tc('actions.manual_balances.fetch.task.title')
+          title: t('actions.manual_balances.fetch.task.title')
         }
       );
 
@@ -170,8 +170,8 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
     } catch (e: any) {
       logger.error(e);
       notify({
-        title: tc('actions.balances.manual_balances.error.title'),
-        message: tc('actions.balances.manual_balances.error.message', 0, {
+        title: t('actions.balances.manual_balances.error.title'),
+        message: t('actions.balances.manual_balances.error.message', {
           message: e.message
         }),
         display: true
@@ -190,7 +190,7 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
         taskId,
         taskType,
         {
-          title: tc('actions.manual_balances.add.task.title')
+          title: t('actions.manual_balances.add.task.title')
         }
       );
       const { balances } = ManualBalances.parse(result);
@@ -222,7 +222,7 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
         taskId,
         taskType,
         {
-          title: tc('actions.manual_balances.edit.task.title')
+          title: t('actions.manual_balances.edit.task.title')
         }
       );
       const { balances } = ManualBalances.parse(result);

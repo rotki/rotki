@@ -23,17 +23,17 @@ defineProps({
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { premiumURL } = useInterop();
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const tableHeaders = computed<DataTableHeader[]>(() => [
   {
-    text: tc('common.asset'),
+    text: t('common.asset'),
     value: 'asset',
     cellClass: 'text-no-wrap',
     sortable: false
   },
   {
-    text: tc('common.price', 0, {
+    text: t('common.price', {
       symbol: get(currencySymbol)
     }),
     value: 'usdPrice',
@@ -42,13 +42,13 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
     sortable: false
   },
   {
-    text: tc('common.amount'),
+    text: t('common.amount'),
     value: 'amount',
     align: 'end',
     sortable: false
   },
   {
-    text: tc('common.value_in_symbol', 0, {
+    text: t('common.value_in_symbol', {
       symbol: get(currencySymbol)
     }),
     value: 'usdValue',
@@ -116,10 +116,7 @@ const transformAssets = (assets: XswapAsset[]): AssetBalanceWithPrice[] =>
       </v-avatar>
       <div class="ml-4">
         <i18n tag="div" path="uniswap.assets_non_premium">
-          <base-external-link
-            :text="tc('uniswap.premium')"
-            :href="premiumURL"
-          />
+          <base-external-link :text="t('uniswap.premium')" :href="premiumURL" />
         </i18n>
       </div>
     </div>

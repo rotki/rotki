@@ -6,7 +6,7 @@ const css = useCssModule();
 
 const store = useMainStore();
 const { version: getVersion, isPackaged, openPath } = useInterop();
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const { version, dataDirectory } = toRefs(store);
 const versionInfo = asyncComputed<SystemVersion | WebVersion>(() =>
@@ -50,8 +50,8 @@ const electronVersion = computed<SystemVersion | null>(() => {
 const frontendVersion = __APP_VERSION__;
 
 const versionText = computed(() => {
-  const appVersion = tc('about.app_version');
-  const frontendVersion = tc('about.frontend_version');
+  const appVersion = t('about.app_version');
+  const frontendVersion = t('about.frontend_version');
   let versionText = '';
   versionText += `${appVersion} ${get(version).version}\r\n`;
   versionText += `${frontendVersion} ${frontendVersion}\r\n`;
@@ -59,14 +59,14 @@ const versionText = computed(() => {
   const web = get(webVersion);
   const app = get(electronVersion);
 
-  const platform = tc('about.platform');
+  const platform = t('about.platform');
 
   if (web) {
-    const userAgent = tc('about.user_agent');
+    const userAgent = t('about.user_agent');
     versionText += `${platform} ${web.platform}\r\n`;
     versionText += `${userAgent} ${web.userAgent}\r\n`;
   } else if (app) {
-    const electron = tc('about.electron');
+    const electron = t('about.electron');
     versionText += `${platform} ${app.os} ${app.arch} ${app.osVersion}\r\n`;
     versionText += `${electron} ${app.electron}\r\n`;
   }
@@ -74,8 +74,8 @@ const versionText = computed(() => {
   if (get(premium)) {
     const cmp = get(componentsVersion);
     if (cmp) {
-      const cmpVersion = tc('about.components.version');
-      const cmpBuild = tc('about.components.build');
+      const cmpVersion = t('about.components.version');
+      const cmpBuild = t('about.components.build');
 
       versionText += `${cmpVersion} ${cmp.version}\r\n`;
       versionText += `${cmpBuild} ${cmp.build}\r\n`;
@@ -92,9 +92,9 @@ const remoteAboutLogo =
 <template>
   <v-card class="pb-6" width="500px" light :class="css.about">
     <div class="pt-6 pb-3 text-h2 font-weight-black white--text primary">
-      <span class="px-6">{{ tc('app.name') }}</span>
+      <span class="px-6">{{ t('app.name') }}</span>
       <span class="d-block mb-3 pl-6 text-caption">
-        {{ tc('app.moto') }}
+        {{ t('app.moto') }}
       </span>
     </div>
     <v-card-text>
@@ -106,7 +106,7 @@ const remoteAboutLogo =
         <div class="font-weight-regular ml-4">
           <base-external-link
             :href="`https://github.com/rotki/rotki/releases/tag/v${version.version}`"
-            :text="tc('about.release_notes')"
+            :text="t('about.release_notes')"
           />
         </div>
         <v-spacer />
@@ -119,7 +119,7 @@ const remoteAboutLogo =
             <tbody>
               <tr>
                 <td class="font-weight-medium" :class="css.label">
-                  {{ tc('about.data_directory') }}
+                  {{ t('about.data_directory') }}
                 </td>
                 <td>
                   <div class="d-flex flex-row">
@@ -151,13 +151,13 @@ const remoteAboutLogo =
                             <v-icon x-small>mdi-launch</v-icon>
                           </v-btn>
                         </template>
-                        <span>{{ tc('about.open_data_dir_tooltip') }}</span>
+                        <span>{{ t('about.open_data_dir_tooltip') }}</span>
                       </v-tooltip>
                     </div>
                     <div v-else>
                       <copy-button
                         :value="dataDirectory"
-                        :tooltip="tc('about.copy_data_directory_tooltip')"
+                        :tooltip="t('about.copy_data_directory_tooltip')"
                       />
                     </div>
                   </div>
@@ -165,7 +165,7 @@ const remoteAboutLogo =
               </tr>
               <tr>
                 <td class="font-weight-medium" :class="css.label">
-                  {{ tc('about.frontend_version') }}
+                  {{ t('about.frontend_version') }}
                 </td>
                 <td>
                   {{ frontendVersion }}
@@ -173,19 +173,19 @@ const remoteAboutLogo =
               </tr>
               <tr v-if="webVersion">
                 <td class="font-weight-medium" :class="css.label">
-                  {{ tc('about.platform') }}
+                  {{ t('about.platform') }}
                 </td>
                 <td>{{ webVersion.platform }}</td>
               </tr>
               <tr v-if="webVersion">
                 <td class="font-weight-medium" :class="css.label">
-                  {{ tc('about.user_agent') }}
+                  {{ t('about.user_agent') }}
                 </td>
                 <td>{{ webVersion.userAgent }}</td>
               </tr>
               <tr v-if="electronVersion">
                 <td class="font-weight-medium" :class="css.label">
-                  {{ tc('about.platform') }}
+                  {{ t('about.platform') }}
                 </td>
                 <td>
                   {{ electronVersion.os }} {{ electronVersion.arch }}
@@ -194,7 +194,7 @@ const remoteAboutLogo =
               </tr>
               <tr v-if="electronVersion">
                 <td class="font-weight-medium" :class="css.label">
-                  {{ tc('about.electron') }}
+                  {{ t('about.electron') }}
                 </td>
                 <td>
                   {{ electronVersion.electron }}
@@ -204,19 +204,19 @@ const remoteAboutLogo =
                 <td colspan="2">
                   <v-divider class="mt-4 mb-2" />
                   <div class="font-weight-bold mb-1">
-                    {{ tc('about.components.title') }}
+                    {{ t('about.components.title') }}
                   </div>
                 </td>
               </tr>
               <tr v-if="componentsVersion?.version">
                 <td class="font-weight-medium" :class="css.label">
-                  {{ tc('about.components.version') }}
+                  {{ t('about.components.version') }}
                 </td>
                 <td>{{ componentsVersion.version }}</td>
               </tr>
               <tr v-if="componentsVersion?.build">
                 <td class="font-weight-medium" :class="css.label">
-                  {{ tc('about.components.build') }}
+                  {{ t('about.components.build') }}
                 </td>
                 <td>
                   <date-display :timestamp="componentsVersion.build / 1000" />
@@ -228,7 +228,7 @@ const remoteAboutLogo =
         <v-col cols="auto">
           <copy-button
             :value="versionText"
-            :tooltip="tc('about.copy_information_tooltip')"
+            :tooltip="t('about.copy_information_tooltip')"
           />
         </v-col>
       </v-row>

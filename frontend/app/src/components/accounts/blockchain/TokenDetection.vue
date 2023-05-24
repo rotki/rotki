@@ -14,7 +14,7 @@ const { detectingTokens, detectedTokens, detectTokens } = useTokenDetection(
   address
 );
 
-const { tc } = useI18n();
+const { t } = useI18n();
 </script>
 
 <template>
@@ -44,7 +44,7 @@ const { tc } = useI18n();
         </template>
         <div class="text-center">
           <div>
-            {{ tc('account_balances.detect_tokens.tooltip.redetect') }}
+            {{ t('account_balances.detect_tokens.tooltip.redetect') }}
           </div>
           <div v-if="detectedTokens.timestamp">
             <i18n path="account_balances.detect_tokens.tooltip.last_detected">

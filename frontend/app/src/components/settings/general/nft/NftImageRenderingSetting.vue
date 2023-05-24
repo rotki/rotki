@@ -41,7 +41,7 @@ watch(whitelist, data => {
   set(whitelistedDomainsForNftImages, data);
 });
 
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const showUpdateWhitelistConfirmation: Ref<boolean> = ref(false);
 
@@ -70,10 +70,8 @@ const updateRenderingSetting = (
 
   show(
     {
-      title: tc('general_settings.nft_setting.allow_all_confirmation.title'),
-      message: tc(
-        'general_settings.nft_setting.allow_all_confirmation.message'
-      ),
+      title: t('general_settings.nft_setting.allow_all_confirmation.title'),
+      message: t('general_settings.nft_setting.allow_all_confirmation.message'),
       type: 'info'
     },
     () => {
@@ -96,7 +94,7 @@ const warningUrl =
     <div>
       <div class="text-h6">
         {{
-          tc(
+          t(
             'general_settings.nft_setting.subtitle.nft_images_rendering_setting'
           )
         }}
@@ -108,7 +106,7 @@ const warningUrl =
       >
         <template #link>
           <external-link :url="warningUrl">
-            {{ tc('common.here') }}
+            {{ t('common.here') }}
           </external-link>
         </template>
       </i18n>
@@ -126,13 +124,13 @@ const warningUrl =
       >
         <v-radio
           :label="
-            tc('general_settings.nft_setting.label.render_setting.allow_all')
+            t('general_settings.nft_setting.label.render_setting.allow_all')
           "
           :value="true"
         />
         <v-radio
           :label="
-            tc(
+            t(
               'general_settings.nft_setting.label.render_setting.only_allow_whitelisted'
             )
           "
@@ -150,11 +148,9 @@ const warningUrl =
           <v-combobox
             v-model="whitelistedDomainsForNftImages"
             :class="css['whitelisted-input']"
-            :label="
-              tc('general_settings.nft_setting.label.whitelisted_domains')
-            "
+            :label="t('general_settings.nft_setting.label.whitelisted_domains')"
             :hint="
-              tc('general_settings.nft_setting.label.whitelisted_domains_hint')
+              t('general_settings.nft_setting.label.whitelisted_domains_hint')
             "
             persistent-hint
             chips
@@ -177,10 +173,10 @@ const warningUrl =
     <confirm-dialog
       :display="showUpdateWhitelistConfirmation"
       :title="
-        tc('general_settings.nft_setting.update_whitelist_confirmation.title')
+        t('general_settings.nft_setting.update_whitelist_confirmation.title')
       "
       :message="
-        tc(
+        t(
           'general_settings.nft_setting.update_whitelist_confirmation.message',
           1
         )

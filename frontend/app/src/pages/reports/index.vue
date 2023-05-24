@@ -22,7 +22,7 @@ const reportDebugDataUploader = ref<any>(null);
 const router = useRouter();
 const route = useRoute();
 
-const { tc } = useI18n();
+const { t } = useI18n();
 const { appSession, openDirectory } = useInterop();
 
 onMounted(async () => {
@@ -76,7 +76,7 @@ const exportData = async ({ start, end }: ProfitLossReportPeriod) => {
     if (isLocal) {
       const directoryPath =
         (await openDirectory(
-          tc('profit_loss_reports.debug.select_directory')
+          t('profit_loss_reports.debug.select_directory')
         )) || '';
       if (!directoryPath) {
         return;
@@ -88,10 +88,10 @@ const exportData = async ({ start, end }: ProfitLossReportPeriod) => {
 
     if (isLocal) {
       message = {
-        title: tc('profit_loss_reports.debug.export_message.title'),
+        title: t('profit_loss_reports.debug.export_message.title'),
         description: result
-          ? tc('profit_loss_reports.debug.export_message.success')
-          : tc('profit_loss_reports.debug.export_message.failure'),
+          ? t('profit_loss_reports.debug.export_message.success')
+          : t('profit_loss_reports.debug.export_message.failure'),
         success: !!result
       };
     } else {
@@ -103,7 +103,7 @@ const exportData = async ({ start, end }: ProfitLossReportPeriod) => {
     }
   } catch (e: any) {
     message = {
-      title: tc('profit_loss_reports.debug.export_message.title'),
+      title: t('profit_loss_reports.debug.export_message.title'),
       description: e.message,
       success: false
     };
@@ -134,7 +134,7 @@ const importData = async () => {
       : await uploadReportData(get(reportDebugData)!);
 
     const { result } = await awaitTask<boolean, TaskMeta>(taskId, taskType, {
-      title: tc('profit_loss_reports.debug.import_message.title')
+      title: t('profit_loss_reports.debug.import_message.title')
     });
     success = result;
   } catch (e: any) {
@@ -144,15 +144,15 @@ const importData = async () => {
 
   if (!success) {
     setMessage({
-      title: tc('profit_loss_reports.debug.import_message.title'),
-      description: tc('profit_loss_reports.debug.import_message.failure', 0, {
+      title: t('profit_loss_reports.debug.import_message.title'),
+      description: t('profit_loss_reports.debug.import_message.failure', {
         message
       })
     });
   } else {
     setMessage({
-      title: tc('profit_loss_reports.debug.import_message.title'),
-      description: tc('profit_loss_reports.debug.import_message.success'),
+      title: t('profit_loss_reports.debug.import_message.title'),
+      description: t('profit_loss_reports.debug.import_message.success'),
       success: true
     });
     await fetchReports();
@@ -180,12 +180,12 @@ const progress = computed(() => reportsStore.progress);
       class="mt-12"
       :message="reportError.message"
       :error="reportError.error"
-      :title="tc('profit_loss_report.error.title')"
-      :subtitle="tc('profit_loss_report.error.subtitle')"
+      :title="t('profit_loss_report.error.title')"
+      :subtitle="t('profit_loss_report.error.subtitle')"
     >
       <template #bottom>
         <v-btn text class="mt-2" @click="clearError()">
-          {{ tc('common.actions.close') }}
+          {{ t('common.actions.close') }}
         </v-btn>
       </template>
     </error-screen>
@@ -195,14 +195,14 @@ const progress = computed(() => reportsStore.progress);
         <div v-if="processingState" class="medium text-h6 mb-4">
           {{ processingState }}
         </div>
-        {{ tc('profit_loss_report.loading_message') }}
+        {{ t('profit_loss_report.loading_message') }}
       </template>
-      {{ tc('profit_loss_report.loading_hint') }}
+      {{ t('profit_loss_report.loading_hint') }}
     </progress-screen>
     <v-dialog v-model="importDataDialog" max-width="600">
       <card>
         <template #title>
-          {{ tc('profit_loss_reports.debug.import_data_dialog.title') }}
+          {{ t('profit_loss_reports.debug.import_data_dialog.title') }}
         </template>
         <div>
           <div class="py-2">
@@ -215,7 +215,7 @@ const progress = computed(() => reportsStore.progress);
           </div>
           <div class="mt-2 d-flex justify-end">
             <v-btn class="mr-4" depressed @click="importDataDialog = false">
-              {{ tc('common.actions.cancel') }}
+              {{ t('common.actions.cancel') }}
             </v-btn>
             <v-btn
               color="primary"
@@ -223,7 +223,7 @@ const progress = computed(() => reportsStore.progress);
               :loading="importDataLoading"
               @click="importData()"
             >
-              {{ tc('common.actions.import') }}
+              {{ t('common.actions.import') }}
             </v-btn>
           </div>
         </div>

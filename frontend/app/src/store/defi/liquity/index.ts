@@ -19,7 +19,7 @@ export const useLiquityStore = defineStore('defi/liquity', () => {
 
   const isPremium = usePremium();
   const { activeModules } = useModules();
-  const { t, tc } = useI18n();
+  const { t } = useI18n();
   const {
     fetchLiquityStakingPools,
     fetchLiquityBalances,
@@ -29,13 +29,13 @@ export const useLiquityStore = defineStore('defi/liquity', () => {
 
   const fetchPools = async (refresh = false): Promise<void> => {
     const meta: TaskMeta = {
-      title: tc('actions.defi.liquity_pools.task.title')
+      title: t('actions.defi.liquity_pools.task.title')
     };
 
     const onError: OnError = {
-      title: tc('actions.defi.liquity_pools.error.title'),
+      title: t('actions.defi.liquity_pools.error.title'),
       error: message =>
-        tc('actions.defi.liquity_pools.error.description', 0, {
+        t('actions.defi.liquity_pools.error.description', {
           message
         })
     };
@@ -140,13 +140,13 @@ export const useLiquityStore = defineStore('defi/liquity', () => {
 
   const fetchStatistics = async (refresh = false): Promise<void> => {
     const meta: TaskMeta = {
-      title: tc('actions.defi.liquity_statistics.task.title')
+      title: t('actions.defi.liquity_statistics.task.title')
     };
 
     const onError: OnError = {
-      title: tc('actions.defi.liquity_statistics.error.title'),
+      title: t('actions.defi.liquity_statistics.error.title'),
       error: message =>
-        tc('actions.defi.liquity_statistics.error.description', 0, {
+        t('actions.defi.liquity_statistics.error.description', {
           message
         })
     };

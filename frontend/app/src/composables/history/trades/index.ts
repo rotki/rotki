@@ -19,7 +19,7 @@ export const useTrades = () => {
   const { connectedExchanges } = storeToRefs(useExchangesStore());
   const { exchangeName } = useLocations();
   const { awaitTask } = useTaskStore();
-  const { tc } = useI18n();
+  const { t } = useI18n();
   const { notify } = useNotificationsStore();
 
   const {
@@ -47,8 +47,8 @@ export const useTrades = () => {
     const { taskId } = await getTradesTask(defaults);
     const exchange = exchangeName(location);
     const taskMeta = {
-      title: tc('actions.trades.task.title'),
-      description: tc('actions.trades.task.description', undefined, {
+      title: t('actions.trades.task.title'),
+      description: t('actions.trades.task.description', {
         exchange
       }),
       location
@@ -64,10 +64,10 @@ export const useTrades = () => {
       return true;
     } catch (e: any) {
       notify({
-        title: tc('actions.trades.error.title', 0, {
+        title: t('actions.trades.error.title', {
           exchange
         }),
-        message: tc('actions.trades.error.description', 0, {
+        message: t('actions.trades.error.description', {
           exchange,
           error: e.message
         }),

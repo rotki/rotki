@@ -26,7 +26,7 @@ import { type ActionStatus } from '@/types/action';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 
 export const useHistoryTransactions = () => {
-  const { t, tc } = useI18n();
+  const { t } = useI18n();
   const { notify } = useNotificationsStore();
 
   const {
@@ -212,9 +212,8 @@ export const useHistoryTransactions = () => {
 
       const taskMeta = {
         title: t('actions.transactions_redecode_missing.task.title').toString(),
-        description: tc(
+        description: t(
           'actions.transactions_redecode_missing.task.description',
-          0,
           account
         ),
         ...payload
@@ -228,14 +227,10 @@ export const useHistoryTransactions = () => {
         title: t(
           'actions.transactions_redecode_missing.error.title'
         ).toString(),
-        message: tc(
-          'actions.transactions_redecode_missing.error.description',
-          0,
-          {
-            error: e,
-            ...account
-          }
-        ),
+        message: t('actions.transactions_redecode_missing.error.description', {
+          error: e,
+          ...account
+        }),
         display: true
       });
     }
@@ -343,7 +338,7 @@ export const useHistoryTransactions = () => {
       logger.error(e);
       notify({
         title: t('actions.transactions_redecode.error.title').toString(),
-        message: tc('actions.transactions_redecode.error.description', 0, {
+        message: t('actions.transactions_redecode.error.description', {
           error: e
         }),
         display: true

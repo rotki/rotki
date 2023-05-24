@@ -38,7 +38,7 @@ const defiLending = useDefiLending();
 const yearnStore = useYearnStore();
 const aaveStore = useAaveStore();
 
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const isProtocol = (protocol: DefiProtocol) =>
   computed(() => {
@@ -165,14 +165,14 @@ const transactionEventProtocols: ComputedRef<string[]> = computed(() => {
 
 <template>
   <progress-screen v-if="loading">
-    <template #message>{{ tc('lending.loading') }}</template>
+    <template #message>{{ t('lending.loading') }}</template>
   </progress-screen>
   <div v-else>
     <v-row no-gutters align="center">
       <v-col>
         <refresh-header
           :loading="refreshing"
-          :title="tc('common.deposits')"
+          :title="t('common.deposits')"
           @refresh="refresh()"
         >
           <deposit-protocol-reset
@@ -209,7 +209,7 @@ const transactionEventProtocols: ComputedRef<string[]> = computed(() => {
     </v-row>
     <v-row v-if="!isYearnVaults && !isYearnVaultsV2" class="mt-8" no-gutters>
       <v-col>
-        <stat-card :title="tc('common.assets')">
+        <stat-card :title="t('common.assets')">
           <lending-asset-table
             :loading="refreshing"
             :assets="lendingBalances"
@@ -244,12 +244,12 @@ const transactionEventProtocols: ComputedRef<string[]> = computed(() => {
       />
     </template>
     <div v-if="!premium" class="mt-8">
-      <premium-card :title="tc('lending.history')" />
+      <premium-card :title="t('lending.history')" />
     </div>
     <div v-else>
       <history-events-view
         use-external-account-filter
-        :section-title="tc('common.events')"
+        :section-title="t('common.events')"
         :protocols="transactionEventProtocols"
         :external-account-filter="selectedAccounts"
         :only-chains="chains"

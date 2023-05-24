@@ -6,7 +6,7 @@ const queryPeriod = ref<string>('5');
 const minQueryPeriod = 5;
 const maxQueryPeriod = 3600;
 
-const { t, tc } = useI18n();
+const { t } = useI18n();
 
 const rules = {
   queryPeriod: {
@@ -45,7 +45,7 @@ onMounted(() => {
 <template>
   <div class="mt-8">
     <div class="text-h6">
-      {{ tc('frontend_settings.subtitle.query') }}
+      {{ t('frontend_settings.subtitle.query') }}
     </div>
     <settings-option
       #default="{ error, success, update }"
@@ -53,7 +53,7 @@ onMounted(() => {
       setting="queryPeriod"
       frontend-setting
       :transform="transform"
-      :error-message="tc('frontend_settings.validation.periodic_query.error')"
+      :error-message="t('frontend_settings.validation.periodic_query.error')"
       @updated="restart()"
       @finished="resetQueryPeriod()"
     >
@@ -61,8 +61,8 @@ onMounted(() => {
         v-model="queryPeriod"
         outlined
         class="general-settings__fields__periodic-client-query-period"
-        :label="tc('frontend_settings.label.query_period')"
-        :hint="tc('frontend_settings.label.query_period_hint')"
+        :label="t('frontend_settings.label.query_period')"
+        :hint="t('frontend_settings.label.query_period_hint')"
         type="number"
         :min="minQueryPeriod"
         :max="maxQueryPeriod"

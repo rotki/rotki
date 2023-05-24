@@ -29,13 +29,13 @@ export const useMessageHandling = () => {
   const { data: notifications } = storeToRefs(notificationsStore);
   const { notify } = notificationsStore;
   const { addNewDetectedToken } = useNewlyDetectedTokens();
-  const { tc } = useI18n();
+  const { t } = useI18n();
   const { consumeMessages } = useSessionApi();
   let isRunning = false;
 
   const handleSnapshotError = (data: BalanceSnapshotError): Notification => ({
-    title: tc('notification_messages.snapshot_failed.title'),
-    message: tc('notification_messages.snapshot_failed.message', 0, data),
+    title: t('notification_messages.snapshot_failed.title'),
+    message: t('notification_messages.snapshot_failed.message', data),
     display: true
   });
 
@@ -51,7 +51,7 @@ export const useMessageHandling = () => {
     message: string,
     isWarning: boolean
   ): Notification => ({
-    title: tc('notification_messages.backend.title'),
+    title: t('notification_messages.backend.title'),
     message,
     display: !isWarning,
     severity: isWarning ? Severity.WARNING : Severity.ERROR,
@@ -68,19 +68,17 @@ export const useMessageHandling = () => {
     set(premium, active);
     if (active && !isPremium) {
       return {
-        title: tc('notification_messages.premium.active.title'),
-        message: tc('notification_messages.premium.active.message'),
+        title: t('notification_messages.premium.active.title'),
+        message: t('notification_messages.premium.active.message'),
         display: true,
         severity: Severity.INFO
       };
     } else if (!active && isPremium) {
       return {
-        title: tc('notification_messages.premium.inactive.title'),
+        title: t('notification_messages.premium.inactive.title'),
         message: expired
-          ? tc('notification_messages.premium.inactive.expired_message')
-          : tc(
-              'notification_messages.premium.inactive.network_problem_message'
-            ),
+          ? t('notification_messages.premium.inactive.expired_message')
+          : t('notification_messages.premium.inactive.network_problem_message'),
         display: true,
         severity: Severity.ERROR
       };
@@ -103,16 +101,20 @@ export const useMessageHandling = () => {
     const count = (notification?.groupCount || 0) + 1;
 
     return {
-      title: tc('notification_messages.new_detected_token.title', count),
-      message: tc('notification_messages.new_detected_token.message', count, {
-        identifier: data.tokenIdentifier,
+      title: t('notification_messages.new_detected_token.title', count),
+      message: t(
+        'notification_messages.new_detected_token.message',
+        {
+          identifier: data.tokenIdentifier,
+          count
+        },
         count
-      }),
+      ),
       display: true,
       severity: Severity.INFO,
       priority: Priority.ACTION,
       action: {
-        label: tc('notification_messages.new_detected_token.action'),
+        label: t('notification_messages.new_detected_token.action'),
         action: () => router.push(Routes.ASSET_MANAGER_NEWLY_DETECTED)
       },
       group: NotificationGroup.NEW_DETECTED_TOKENS,
@@ -125,7 +127,7 @@ export const useMessageHandling = () => {
     const { external, route } = getServiceRegisterUrl(service, location);
 
     return {
-      title: tc('notification_messages.missing_api_key.title', 0, {
+      title: t('notification_messages.missing_api_key.title', {
         service: toSentenceCase(service),
         location: toSentenceCase(location)
       }),
@@ -144,7 +146,7 @@ export const useMessageHandling = () => {
       action: !route
         ? undefined
         : {
-            label: tc('notification_messages.missing_api_key.action'),
+            label: t('notification_messages.missing_api_key.action'),
             action: () => router.push(route)
           }
     };
@@ -225,7 +227,7 @@ export const useMessageHandling = () => {
     }
 
     isRunning = true;
-    const title = tc('actions.notifications.consume.message_title');
+    const title = t('actions.notifications.consume.message_title');
 
     try {
       const messages = await backoff(3, () => consumeMessages(), 10000);

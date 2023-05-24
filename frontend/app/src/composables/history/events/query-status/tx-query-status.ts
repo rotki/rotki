@@ -8,7 +8,7 @@ import {
 export const useTransactionQueryStatus = (
   onlyChains: MaybeRef<Blockchain[]> = []
 ) => {
-  const { tc } = useI18n();
+  const { t } = useI18n();
   const store = useTxQueryStatusStore();
   const { isStatusFinished, resetQueryStatus } = store;
   const { queryStatus, isAllFinished } = storeToRefs(store);
@@ -35,17 +35,17 @@ export const useTransactionQueryStatus = (
     },
     [EvmTransactionsQueryStatus.QUERYING_TRANSACTIONS]: {
       index: 1,
-      label: tc('transactions.query_status.statuses.querying_transactions')
+      label: t('transactions.query_status.statuses.querying_transactions')
     },
     [EvmTransactionsQueryStatus.QUERYING_INTERNAL_TRANSACTIONS]: {
       index: 2,
-      label: tc(
+      label: t(
         'transactions.query_status.statuses.querying_internal_transactions'
       )
     },
     [EvmTransactionsQueryStatus.QUERYING_EVM_TOKENS_TRANSACTIONS]: {
       index: 3,
-      label: tc(
+      label: t(
         'transactions.query_status.statuses.querying_evm_tokens_transactions'
       )
     },

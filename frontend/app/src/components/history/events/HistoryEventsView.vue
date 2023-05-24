@@ -57,7 +57,7 @@ const props = withDefaults(
   }
 );
 
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const {
   location,
@@ -81,7 +81,7 @@ const transactionToIgnore: Ref<HistoryEventEntry | null> = ref(null);
 const accounts: Ref<GeneralAccount[]> = ref([]);
 
 const usedTitle: ComputedRef<string> = computed(
-  () => get(sectionTitle) || tc('transactions.title')
+  () => get(sectionTitle) || t('transactions.title')
 );
 
 const usedAccounts: ComputedRef<Account<BlockchainSelection>[]> = computed(
@@ -104,13 +104,13 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
     width: '0px'
   },
   {
-    text: tc('transactions.events.headers.event_identifier'),
+    text: t('transactions.events.headers.event_identifier'),
     value: 'txHash',
     sortable: false,
     width: '60%'
   },
   {
-    text: tc('common.datetime'),
+    text: t('common.datetime'),
     value: 'timestamp',
     cellClass: 'text-no-wrap',
     align: 'end'
@@ -420,14 +420,14 @@ const showDeleteConfirmation = () => {
   show(
     get(transactionToIgnore)
       ? {
-          title: tc('transactions.events.confirmation.ignore.title'),
-          message: tc('transactions.events.confirmation.ignore.message'),
-          primaryAction: tc('transactions.events.confirmation.ignore.action')
+          title: t('transactions.events.confirmation.ignore.title'),
+          message: t('transactions.events.confirmation.ignore.message'),
+          primaryAction: t('transactions.events.confirmation.ignore.action')
         }
       : {
-          title: tc('transactions.events.confirmation.delete.title'),
-          message: tc('transactions.events.confirmation.delete.message'),
-          primaryAction: tc('common.actions.confirm')
+          title: t('transactions.events.confirmation.delete.title'),
+          message: t('transactions.events.confirmation.delete.message'),
+          primaryAction: t('common.actions.confirm')
         },
     deleteEventHandler,
     resetPendingDeletion
@@ -501,7 +501,7 @@ const { locationData } = useLocations();
       <template #title>
         <refresh-button
           :disabled="refreshing"
-          :tooltip="tc('transactions.refresh_tooltip')"
+          :tooltip="t('transactions.refresh_tooltip')"
           @refresh="refresh(true)"
         />
         {{ usedTitle }}
@@ -519,7 +519,7 @@ const { locationData } = useLocations();
                   :disabled="refreshing"
                   @click="redecodeAllEvmEvents()"
                 >
-                  {{ tc('transactions.redecode_events.title') }}
+                  {{ t('transactions.redecode_events.title') }}
                 </v-btn>
               </v-col>
               <v-col v-if="!useExternalAccountFilter">
@@ -528,7 +528,7 @@ const { locationData } = useLocations();
                     :value="accounts"
                     :chains="txChains"
                     dense
-                    :label="tc('transactions.filter.account')"
+                    :label="t('transactions.filter.account')"
                     outlined
                     no-padding
                     multichain
@@ -553,7 +553,7 @@ const { locationData } = useLocations();
                     <template #link>
                       <b>
                         <external-link url="https://rotki.com/products">
-                          {{ tc('common.website') }}
+                          {{ t('common.website') }}
                         </external-link>
                       </b>
                     </template>
@@ -595,7 +595,7 @@ const { locationData } = useLocations();
                 <badge-display v-if="isMobile" color="grey">
                   <v-icon small> mdi-eye-off</v-icon>
                   <span class="ml-2">
-                    {{ tc('common.ignored_in_accounting') }}
+                    {{ t('common.ignored_in_accounting') }}
                   </span>
                 </badge-display>
                 <v-tooltip v-else bottom>
@@ -605,7 +605,7 @@ const { locationData } = useLocations();
                     </badge-display>
                   </template>
                   <span>
-                    {{ tc('common.ignored_in_accounting') }}
+                    {{ t('common.ignored_in_accounting') }}
                   </span>
                 </v-tooltip>
               </div>
@@ -668,7 +668,7 @@ const { locationData } = useLocations();
                 :limit="limit"
                 :total="total"
                 :colspan="headers.length"
-                :label="tc('common.events')"
+                :label="t('common.events')"
               />
             </template>
           </data-table>

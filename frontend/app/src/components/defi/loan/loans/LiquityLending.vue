@@ -24,7 +24,7 @@ const liquidationPrice: ComputedRef<BigNumber | null> = computed(
   () => get(loan).balance.liquidationPrice
 );
 const premium = usePremium();
-const { tc } = useI18n();
+const { t } = useI18n();
 const { scrambleIdentifier } = useScramble();
 const chain = Blockchain.ETH;
 </script>
@@ -34,7 +34,7 @@ const chain = Blockchain.ETH;
     <v-col cols="12">
       <loan-header class="mt-8 mb-6" :owner="loan.owner">
         {{
-          tc('liquity_lending.header', 0, {
+          t('liquity_lending.header', {
             troveId: scrambleIdentifier(loan.balance.troveId)
           })
         }}
@@ -67,12 +67,12 @@ const chain = Blockchain.ETH;
         </v-col>
       </v-row>
       <div v-if="!premium" class="mt-8">
-        <premium-card :title="tc('liquity_lending.trove_events')" />
+        <premium-card :title="t('liquity_lending.trove_events')" />
       </div>
       <div v-else>
         <history-events-view
           use-external-account-filter
-          :section-title="tc('liquity_lending.trove_events')"
+          :section-title="t('liquity_lending.trove_events')"
           :protocols="['liquity']"
           :external-account-filter="[{ chain, address: loan.owner }]"
           :only-chains="[chain]"

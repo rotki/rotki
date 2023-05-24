@@ -17,7 +17,7 @@ const { ssfGraphMultiplier, balanceSaveFrequency } = storeToRefs(
   useGeneralSettingsStore()
 );
 
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const updateSetting = async () => {
   await update({
@@ -54,7 +54,7 @@ watch(multiplierSetting, value => set(multiplier, value.toString()));
   >
     <template #activator="{ on }">
       <menu-tooltip-button
-        :tooltip="tc('statistics_graph_settings.tooltip')"
+        :tooltip="t('statistics_graph_settings.tooltip')"
         class-name="graph-period"
         :on-menu="on"
       >
@@ -62,20 +62,20 @@ watch(multiplierSetting, value => set(multiplier, value.toString()));
       </menu-tooltip-button>
     </template>
     <card>
-      <template #title>{{ tc('statistics_graph_settings.title') }}</template>
+      <template #title>{{ t('statistics_graph_settings.title') }}</template>
       <template #subtitle>
-        {{ tc('statistics_graph_settings.subtitle') }}
+        {{ t('statistics_graph_settings.subtitle') }}
       </template>
       <v-text-field
         v-model="multiplier"
         type="number"
         outlined
-        :label="tc('statistics_graph_settings.label')"
+        :label="t('statistics_graph_settings.label')"
       />
 
-      <span v-if="period === 0">{{ tc('statistics_graph_settings.off') }}</span>
+      <span v-if="period === 0">{{ t('statistics_graph_settings.off') }}</span>
       <span v-else>
-        {{ tc('statistics_graph_settings.on', 0, { period }) }}
+        {{ t('statistics_graph_settings.on', { period }) }}
       </span>
 
       <template #buttons>
@@ -86,7 +86,7 @@ watch(multiplierSetting, value => set(multiplier, value.toString()));
           :disabled="invalid"
           @click="updateSetting()"
         >
-          {{ tc('common.actions.save') }}
+          {{ t('common.actions.save') }}
         </v-btn>
       </template>
     </card>

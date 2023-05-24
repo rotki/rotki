@@ -11,7 +11,7 @@ withDefaults(
   }
 );
 
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const { isLoading } = useStatusStore();
 const loading = isLoading(Section.DEFI_LIQUITY_STAKING);
@@ -19,7 +19,7 @@ const loading = isLoading(Section.DEFI_LIQUITY_STAKING);
 
 <template>
   <card :loading="loading">
-    <template #title> {{ tc('loan_stake.title') }} </template>
+    <template #title> {{ t('loan_stake.title') }} </template>
     <template v-if="stake">
       <div class="d-flex align-center py-4 justify-end">
         <balance-display
@@ -31,7 +31,7 @@ const loading = isLoading(Section.DEFI_LIQUITY_STAKING);
       <v-divider />
       <div class="pt-4">
         <div class="d-flex align-center mb-1 justify-space-between">
-          <div class="grey--text">{{ tc('loan_stake.unclaimed_rewards') }}</div>
+          <div class="grey--text">{{ t('loan_stake.unclaimed_rewards') }}</div>
           <div>
             <balance-display
               :asset="stake.lusdRewards.asset"
@@ -46,7 +46,7 @@ const loading = isLoading(Section.DEFI_LIQUITY_STAKING);
       </div>
     </template>
     <div v-else class="text-center grey--text pt-4">
-      {{ tc('loan_stake.no_lqty_staked') }}
+      {{ t('loan_stake.no_lqty_staked') }}
     </div>
   </card>
 </template>

@@ -7,6 +7,8 @@ import {
   type SyncConflict
 } from '@/types/login';
 
+const { t } = useI18n();
+
 const props = withDefaults(
   defineProps<{
     loading: boolean;
@@ -49,32 +51,30 @@ const savedRememberUsername = useLocalStorage('rotki.remember_username', null);
 const savedRememberPassword = useLocalStorage('rotki.remember_password', null);
 const savedUsername = useLocalStorage('rotki.username', '');
 
-const { tc } = useI18n();
-
 const rules = {
   username: {
     required: helpers.withMessage(
-      tc('login.validation.non_empty_username'),
+      t('login.validation.non_empty_username'),
       required
     ),
     isValidUsername: helpers.withMessage(
-      tc('login.validation.valid_username'),
+      t('login.validation.valid_username'),
       (v: string): boolean => !!(v && /^[\w.-]+$/.test(v))
     )
   },
   password: {
     required: helpers.withMessage(
-      tc('login.validation.non_empty_password'),
+      t('login.validation.non_empty_password'),
       required
     )
   },
   customBackendUrl: {
     required: helpers.withMessage(
-      tc('login.custom_backend.validation.non_empty'),
+      t('login.custom_backend.validation.non_empty'),
       requiredIf(customBackendDisplay)
     ),
     isValidUrl: helpers.withMessage(
-      tc('login.custom_backend.validation.url'),
+      t('login.custom_backend.validation.url'),
       (v: string): boolean =>
         !get(customBackendDisplay) ||
         (v.length < 300 &&
@@ -260,7 +260,7 @@ const login = async (syncApproval: SyncApproval = 'unknown') => {
   <v-slide-y-transition>
     <div class="login">
       <v-card-title>
-        {{ tc('login.title') }}
+        {{ t('login.title') }}
       </v-card-title>
       <v-card-text class="pb-2">
         <v-form :value="!v$.$invalid">
@@ -271,7 +271,7 @@ const login = async (syncApproval: SyncApproval = 'unknown') => {
             color="secondary"
             outlined
             single-line
-            :label="tc('login.label_username')"
+            :label="t('login.label_username')"
             prepend-inner-icon="mdi-account"
             :error-messages="v$.username.$errors.map(e => e.$message)"
             :disabled="
@@ -293,7 +293,7 @@ const login = async (syncApproval: SyncApproval = 'unknown') => {
             required
             class="login__fields__password"
             color="secondary"
-            :label="tc('login.label_password')"
+            :label="t('login.label_password')"
             prepend-icon="mdi-lock"
             @keypress.enter="login()"
           />
@@ -306,7 +306,7 @@ const login = async (syncApproval: SyncApproval = 'unknown') => {
                 color="primary"
                 hide-details
                 class="mt-2 remember"
-                :label="tc('login.remember_username')"
+                :label="t('login.remember_username')"
               />
               <v-row v-if="isPackaged" class="pt-2" no-gutters>
                 <v-col cols="auto">
@@ -316,7 +316,7 @@ const login = async (syncApproval: SyncApproval = 'unknown') => {
                     color="primary"
                     hide-details
                     class="mt-0 pt-0 remember"
-                    :label="tc('login.remember_password')"
+                    :label="t('login.remember_password')"
                   />
                 </v-col>
                 <v-col>
@@ -325,7 +325,7 @@ const login = async (syncApproval: SyncApproval = 'unknown') => {
                       <v-icon small v-on="on"> mdi-help-circle </v-icon>
                     </template>
                     <div class="remember__tooltip">
-                      {{ tc('login.remember_password_tooltip') }}
+                      {{ t('login.remember_password_tooltip') }}
                     </div>
                   </v-tooltip>
                 </v-col>
@@ -345,7 +345,7 @@ const login = async (syncApproval: SyncApproval = 'unknown') => {
                     <v-icon>mdi-server</v-icon>
                   </v-btn>
                 </template>
-                <span v-text="tc('login.custom_backend.tooltip')" />
+                <span v-text="t('login.custom_backend.tooltip')" />
               </v-tooltip>
             </v-col>
           </v-row>
@@ -363,9 +363,9 @@ const login = async (syncApproval: SyncApproval = 'unknown') => {
                       v$.customBackendUrl.$errors.map(e => e.$message)
                     "
                     :disabled="customBackendSaved"
-                    :label="tc('login.custom_backend.label')"
-                    :placeholder="tc('login.custom_backend.placeholder')"
-                    :hint="tc('login.custom_backend.hint')"
+                    :label="t('login.custom_backend.label')"
+                    :placeholder="t('login.custom_backend.placeholder')"
+                    :hint="t('login.custom_backend.hint')"
                     @keypress.enter="saveCustomBackend()"
                   />
                 </v-col>
@@ -390,7 +390,7 @@ const login = async (syncApproval: SyncApproval = 'unknown') => {
                     class="mt-0"
                     hide-details
                     :disabled="customBackendSaved"
-                    :label="tc('login.custom_backend.session_only')"
+                    :label="t('login.custom_backend.session_only')"
                   />
                 </v-col>
               </v-row>
@@ -407,7 +407,7 @@ const login = async (syncApproval: SyncApproval = 'unknown') => {
               icon="mdi-cloud-download"
             >
               <div class="login__sync-error__header text-h6">
-                {{ tc('login.sync_error.title') }}
+                {{ t('login.sync_error.title') }}
               </div>
               <div class="login__sync-error__body mt-2">
                 <div>
@@ -429,18 +429,18 @@ const login = async (syncApproval: SyncApproval = 'unknown') => {
                     </li>
                   </ul>
                 </div>
-                <div class="mt-2">{{ tc('login.sync_error.question') }}</div>
+                <div class="mt-2">{{ t('login.sync_error.question') }}</div>
               </div>
 
               <v-row justify="end" class="mt-2">
                 <v-col cols="auto" class="shrink">
                   <v-btn color="error" depressed @click="login('no')">
-                    {{ tc('common.actions.no') }}
+                    {{ t('common.actions.no') }}
                   </v-btn>
                 </v-col>
                 <v-col cols="auto" class="shrink">
                   <v-btn color="success" depressed @click="login('yes')">
-                    {{ tc('common.actions.yes') }}
+                    {{ t('common.actions.yes') }}
                   </v-btn>
                 </v-col>
               </v-row>
@@ -467,7 +467,7 @@ const login = async (syncApproval: SyncApproval = 'unknown') => {
                     color="primary"
                     @click="logout()"
                   >
-                    {{ tc('login.logout') }}
+                    {{ t('login.logout') }}
                   </v-btn>
                 </v-col>
               </v-row>
@@ -490,7 +490,7 @@ const login = async (syncApproval: SyncApproval = 'unknown') => {
             :loading="loading"
             @click="login()"
           >
-            {{ tc('login.button_signin') }}
+            {{ t('login.button_signin') }}
           </v-btn>
         </span>
         <v-divider class="my-4" />
@@ -501,7 +501,7 @@ const login = async (syncApproval: SyncApproval = 'unknown') => {
             class="login__button__new-account font-weight-bold secondary--text"
             @click="newAccount()"
           >
-            {{ tc('login.button_new_account') }}
+            {{ t('login.button_new_account') }}
           </button>
         </span>
       </v-card-actions>

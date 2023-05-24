@@ -16,7 +16,7 @@ const AAVE = DefiProtocol.AAVE;
 const YEARN_VAULTS = DefiProtocol.YEARN_VAULTS;
 const YEARN_VAULTS_V2 = DefiProtocol.YEARN_VAULTS_V2;
 
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const reset = () => {
   emit('reset', get(resetSelection));
@@ -27,15 +27,15 @@ const reset = () => {
   <confirmable-reset
     v-if="premium"
     :loading="loading"
-    :tooltip="tc('lending.reset_tooltip')"
+    :tooltip="t('lending.reset_tooltip')"
     :disabled="resetSelection.length === 0"
     @reset="reset()"
   >
-    {{ tc('lending.reset_confirm') }}
+    {{ t('lending.reset_confirm') }}
     <div />
     <v-row>
       <v-col class="text-center font-weight-medium">
-        {{ tc('lending.reset.protocol_selection') }}
+        {{ t('lending.reset.protocol_selection') }}
       </v-col>
     </v-row>
     <v-row align="center" justify="center">

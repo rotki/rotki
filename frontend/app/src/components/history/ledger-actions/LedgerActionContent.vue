@@ -27,7 +27,7 @@ const props = withDefaults(
 
 const { locationOverview, mainPage } = toRefs(props);
 
-const { tc } = useI18n();
+const { t } = useI18n();
 const router = useRouter();
 const route = useRoute();
 
@@ -41,30 +41,30 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
       cellClass: 'pa-0'
     },
     {
-      text: tc('common.location'),
+      text: t('common.location'),
       value: 'location',
       width: '120px',
       align: 'center'
     },
     {
-      text: tc('common.type'),
+      text: t('common.type'),
       value: 'type'
     },
     {
-      text: tc('common.asset'),
+      text: t('common.asset'),
       value: 'asset',
       sortable: false
     },
     {
-      text: tc('common.amount'),
+      text: t('common.amount'),
       value: 'amount'
     },
     {
-      text: tc('common.datetime'),
+      text: t('common.datetime'),
       value: 'timestamp'
     },
     {
-      text: tc('ledger_actions.headers.actions'),
+      text: t('ledger_actions.headers.actions'),
       value: 'actions',
       align: 'center',
       sortable: false,
@@ -120,7 +120,7 @@ const editLedgerActionHandler = (ledgerAction: LedgerActionEntry) => {
 };
 
 const promptForDelete = (ledgerAction: LedgerActionEntry) => {
-  set(confirmationMessage, tc('ledger_actions.delete.message'));
+  set(confirmationMessage, t('ledger_actions.delete.message'));
   set(ledgerActionsToDelete, [ledgerAction]);
 
   showDeleteConfirmation();
@@ -137,7 +137,7 @@ const massDelete = () => {
 
   set(
     confirmationMessage,
-    tc('ledger_actions.delete.multiple_message', 0, {
+    t('ledger_actions.delete.multiple_message', {
       length: get(ledgerActionsToDelete).length
     })
   );
@@ -186,7 +186,7 @@ const { show } = useConfirmStore();
 const showDeleteConfirmation = () => {
   show(
     {
-      title: tc('ledger_actions.delete.title'),
+      title: t('ledger_actions.delete.title'),
       message: get(confirmationMessage)
     },
     deleteLedgerActionHandler
@@ -240,11 +240,11 @@ watch(loading, async (isLoading, wasLoading) => {
         <refresh-button
           v-if="!locationOverview"
           :loading="loading"
-          :tooltip="tc('ledger_actions.refresh_tooltip')"
+          :tooltip="t('ledger_actions.refresh_tooltip')"
           @refresh="refreshLedgerActions(true)"
         />
         <navigator-link :to="{ path: pageRoute }" :enabled="!!locationOverview">
-          {{ tc('ledger_actions.title') }}
+          {{ t('ledger_actions.title') }}
         </navigator-link>
       </template>
       <template #actions>
@@ -270,9 +270,9 @@ watch(loading, async (isLoading, wasLoading) => {
               </v-col>
             </v-row>
             <div v-if="selected.length > 0" class="mt-2 ms-1">
-              {{ tc('ledger_actions.selected', 0, { count: selected.length }) }}
+              {{ t('ledger_actions.selected', { count: selected.length }) }}
               <v-btn small text @click="selected = []">
-                {{ tc('common.actions.clear_selection') }}
+                {{ t('common.actions.clear_selection') }}
               </v-btn>
             </div>
           </v-col>
@@ -299,7 +299,7 @@ watch(loading, async (isLoading, wasLoading) => {
             :headers="tableHeaders"
             :items="data"
             :loading="isLoading"
-            :loading-text="tc('ledger_actions.loading')"
+            :loading-text="t('ledger_actions.loading')"
             :options="options"
             :server-items-length="itemLength"
             data-cy="ledger-actions"
@@ -318,7 +318,7 @@ watch(loading, async (isLoading, wasLoading) => {
                 <badge-display v-if="isMobile" color="grey">
                   <v-icon small> mdi-eye-off </v-icon>
                   <span class="ml-2">
-                    {{ tc('common.ignored_in_accounting') }}
+                    {{ t('common.ignored_in_accounting') }}
                   </span>
                 </badge-display>
                 <v-tooltip v-else bottom>
@@ -328,7 +328,7 @@ watch(loading, async (isLoading, wasLoading) => {
                     </badge-display>
                   </template>
                   <span>
-                    {{ tc('common.ignored_in_accounting') }}
+                    {{ t('common.ignored_in_accounting') }}
                   </span>
                 </v-tooltip>
               </div>
@@ -361,8 +361,8 @@ watch(loading, async (isLoading, wasLoading) => {
             <template #item.actions="{ item }">
               <row-actions
                 :disabled="loading"
-                :edit-tooltip="tc('ledger_actions.edit_tooltip')"
-                :delete-tooltip="tc('ledger_actions.delete_tooltip')"
+                :edit-tooltip="t('ledger_actions.edit_tooltip')"
+                :delete-tooltip="t('ledger_actions.delete_tooltip')"
                 @edit-click="editLedgerActionHandler(item)"
                 @delete-click="promptForDelete(item)"
               />
@@ -375,7 +375,7 @@ watch(loading, async (isLoading, wasLoading) => {
                 :limit="limit"
                 :total="total"
                 :colspan="headers.length"
-                :label="tc('ledger_actions.label')"
+                :label="t('ledger_actions.label')"
               />
             </template>
           </data-table>

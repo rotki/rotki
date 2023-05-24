@@ -2,7 +2,7 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type AsyncComponent, type Ref } from 'vue';
 
-const { tc } = useI18n();
+const { t } = useI18n();
 
 interface RpcSettingTab {
   chain: Blockchain;
@@ -42,7 +42,7 @@ const rpcSettingTabs: RpcSettingTab[] = [
 <template>
   <card class="mt-8">
     <template #title>
-      {{ tc('general_settings.rpc_node_setting.title') }}
+      {{ t('general_settings.rpc_node_setting.title') }}
     </template>
 
     <div>

@@ -48,7 +48,7 @@ const { hasDetails, getLoopringBalances } = useAccountDetails(blockchain);
 const { getEthDetectedTokensInfo, detectingTokens } =
   useTokenDetection(blockchain);
 
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const editClick = (account: BlockchainAccountWithBalance) => {
   emit('edit-click', account);
@@ -311,12 +311,12 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
   const currency = { symbol: get(currencySymbol) };
 
   const currencyHeader = isTokenChain(get(blockchain))
-    ? tc('account_balances.headers.usd_value_eth', 0, currency)
-    : tc('account_balances.headers.usd_value', 0, currency);
+    ? t('account_balances.headers.usd_value_eth', currency)
+    : t('account_balances.headers.usd_value', currency);
 
   const accountHeader = get(isEth2)
-    ? tc('account_balances.headers.validator')
-    : tc('common.account');
+    ? t('account_balances.headers.validator')
+    : t('common.account');
 
   const headers: DataTableHeader[] = [
     { text: '', value: 'accountSelection', width: '34px', sortable: false },
@@ -335,7 +335,7 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
 
   if (get(isEth2)) {
     headers.push({
-      text: tc('account_balances.headers.ownership'),
+      text: t('account_balances.headers.ownership'),
       value: 'ownershipPercentage',
       align: 'end',
       width: '28'
@@ -344,7 +344,7 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
 
   if (get(hasTokenDetection) && !get(loopring)) {
     headers.push({
-      text: tc('account_balances.headers.num_of_detected_tokens'),
+      text: t('account_balances.headers.num_of_detected_tokens'),
       value: 'numOfDetectedTokens',
       align: 'end'
     });
@@ -352,7 +352,7 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
 
   if (!get(loopring)) {
     headers.push({
-      text: tc('account_balances.headers.actions'),
+      text: t('account_balances.headers.actions'),
       value: 'actions',
       align: 'center',
       sortable: false,
@@ -412,7 +412,7 @@ defineExpose({
       :headers="tableHeaders"
       :items="visibleBalances"
       :loading="accountOperation || loading || detectingTokens"
-      :loading-text="tc('account_balances.data_table.loading')"
+      :loading-text="t('account_balances.data_table.loading')"
       single-expand
       item-key="index"
       :expanded.sync="expanded"
@@ -476,14 +476,14 @@ defineExpose({
         <row-actions
           class="account-balance-table__actions"
           :no-delete="true"
-          :edit-tooltip="tc('account_balances.edit_tooltip')"
+          :edit-tooltip="t('account_balances.edit_tooltip')"
           :disabled="accountOperation || loading"
           @edit-click="editClick(item)"
         />
       </template>
       <template v-if="balances.length > 0" #body.append="{ isMobile }">
         <row-append
-          :label="tc('common.total')"
+          :label="t('common.total')"
           :class-name="{ 'flex-column': isMobile }"
           :left-patch-colspan="1"
           :is-mobile="isMobile"

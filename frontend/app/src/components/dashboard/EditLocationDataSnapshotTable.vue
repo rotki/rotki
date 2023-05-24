@@ -35,18 +35,18 @@ const valid = ref<boolean>(false);
 const loading = ref<boolean>(false);
 const excludedLocations = ref<string[]>([]);
 
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const tableHeaders = computed<DataTableHeader[]>(() => [
   {
-    text: tc('common.location'),
+    text: t('common.location'),
     value: 'location',
     cellClass: 'py-2',
     width: 200,
     align: 'center'
   },
   {
-    text: tc('common.value_in_symbol', 0, {
+    text: t('common.value_in_symbol', {
       symbol: get(currencySymbol)
     }),
     value: 'usdValue',
@@ -189,8 +189,8 @@ const { show } = useConfirmStore();
 const showDeleteConfirmation = (item: IndexedLocationDataSnapshot) => {
   show(
     {
-      title: tc('dashboard.snapshot.edit.dialog.location_data.delete_title'),
-      message: tc(
+      title: t('dashboard.snapshot.edit.dialog.location_data.delete_title'),
+      message: t(
         'dashboard.snapshot.edit.dialog.location_data.delete_confirmation'
       )
     },
@@ -217,9 +217,9 @@ const showDeleteConfirmation = (item: IndexedLocationDataSnapshot) => {
 
       <template #item.action="{ item }">
         <row-actions
-          :edit-tooltip="tc('dashboard.snapshot.edit.dialog.actions.edit_item')"
+          :edit-tooltip="t('dashboard.snapshot.edit.dialog.actions.edit_item')"
           :delete-tooltip="
-            tc('dashboard.snapshot.edit.dialog.actions.delete_item')
+            t('dashboard.snapshot.edit.dialog.actions.delete_item')
           "
           @edit-click="editClick(item)"
           @delete-click="showDeleteConfirmation(item)"
@@ -228,7 +228,7 @@ const showDeleteConfirmation = (item: IndexedLocationDataSnapshot) => {
     </data-table>
     <v-sheet elevation="10" class="d-flex align-center px-4 py-2">
       <div>
-        <div class="text-caption">{{ tc('common.total') }}:</div>
+        <div class="text-caption">{{ t('common.total') }}:</div>
         <div class="font-weight-bold text-h6 mt-n1">
           <amount-display :value="total" fiat-currency="USD" />
         </div>
@@ -237,15 +237,15 @@ const showDeleteConfirmation = (item: IndexedLocationDataSnapshot) => {
       <v-btn text color="primary" class="mr-4" @click="add()">
         <v-icon class="mr-2">mdi-plus</v-icon>
         <span>
-          {{ tc('dashboard.snapshot.edit.dialog.actions.add_new_entry') }}
+          {{ t('dashboard.snapshot.edit.dialog.actions.add_new_entry') }}
         </span>
       </v-btn>
       <v-btn class="mr-4" @click="updateStep(1)">
         <v-icon>mdi-chevron-left</v-icon>
-        {{ tc('common.actions.back') }}
+        {{ t('common.actions.back') }}
       </v-btn>
       <v-btn color="primary" @click="updateStep(3)">
-        {{ tc('common.actions.next') }}
+        {{ t('common.actions.next') }}
         <v-icon>mdi-chevron-right</v-icon>
       </v-btn>
     </v-sheet>
@@ -254,10 +254,10 @@ const showDeleteConfirmation = (item: IndexedLocationDataSnapshot) => {
       :display="showForm"
       :title="
         editedIndex !== null
-          ? tc('dashboard.snapshot.edit.dialog.location_data.edit_title')
-          : tc('dashboard.snapshot.edit.dialog.location_data.add_title')
+          ? t('dashboard.snapshot.edit.dialog.location_data.edit_title')
+          : t('dashboard.snapshot.edit.dialog.location_data.add_title')
       "
-      :primary-action="tc('common.actions.save')"
+      :primary-action="t('common.actions.save')"
       :action-disabled="loading || !valid"
       @confirm="save()"
       @cancel="clearEditDialog()"

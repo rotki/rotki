@@ -3,7 +3,7 @@ import { type Blockchain } from '@rotki/common/lib/blockchain';
 
 defineProps<{ context: Blockchain }>();
 
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const { dialogText, openDialog, valid, clearDialog, save } = useAccountDialog();
 const { loading } = useAccountLoading();
@@ -14,8 +14,8 @@ const { loading } = useAccountLoading();
     :display="openDialog"
     :title="dialogText.title"
     :subtitle="dialogText.subtitle"
-    :primary-action="tc('common.actions.save')"
-    :secondary-action="tc('common.actions.cancel')"
+    :primary-action="t('common.actions.save')"
+    :secondary-action="t('common.actions.cancel')"
     :action-disabled="!valid || loading"
     :loading="loading"
     @confirm="save()"

@@ -10,20 +10,20 @@ defineProps({
   }
 });
 
-const { tc } = useI18n();
+const { t } = useI18n();
 </script>
 
 <template>
   <fragment>
     <v-row>
       <v-col class="text-subtitle-2">
-        {{ tc('notes_display.notes') }}
+        {{ t('notes_display.notes') }}
       </v-col>
     </v-row>
     <v-row>
       <v-col>
         <card outlined>
-          {{ notes ? notes : tc('notes_display.empty_notes') }}
+          {{ notes ? notes : t('notes_display.empty_notes') }}
         </card>
       </v-col>
     </v-row>

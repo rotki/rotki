@@ -27,7 +27,7 @@ const emit = defineEmits<{
   (e: 'set-dialog', value: boolean): void;
   (e: 'regenerate'): void;
 }>();
-const { t, tc } = useI18n();
+const { t } = useI18n();
 const { report, isPinned } = toRefs(props);
 const { pinned } = storeToRefs(useAreaVisibilityStore());
 
@@ -275,7 +275,7 @@ const close = () => {
                           text
                           @click="step = step - 1"
                         >
-                          {{ tc('common.actions.back') }}
+                          {{ t('common.actions.back') }}
                         </v-btn>
                         <v-btn
                           v-if="step < stepperContents.length"
@@ -285,7 +285,7 @@ const close = () => {
                           elevation="1"
                           @click="step = step + 1"
                         >
-                          {{ tc('common.actions.next') }}
+                          {{ t('common.actions.next') }}
                         </v-btn>
                         <template v-if="step === stepperContents.length">
                           <v-btn
@@ -296,7 +296,7 @@ const close = () => {
                             :small="isPinned"
                             @click="setDialog(false)"
                           >
-                            {{ tc('common.actions.close') }}
+                            {{ t('common.actions.close') }}
                           </v-btn>
                           <v-btn
                             v-else-if="content.key !== 'missingAcquisitions'"
@@ -306,7 +306,7 @@ const close = () => {
                             elevation="1"
                             @click="submitActionableItems(items)"
                           >
-                            {{ tc('common.actions.finish') }}
+                            {{ t('common.actions.finish') }}
                           </v-btn>
                         </template>
                       </div>
@@ -351,15 +351,15 @@ const close = () => {
         <div>
           <div v-if="filledMissingPrices === 0">
             {{
-              tc(
+              t(
                 'profit_loss_report.actionable.missing_prices.skipped_all_events_confirmation'
               )
             }}
           </div>
           <div v-else-if="skippedMissingPrices">
-            {{ tc('profit_loss_report.actionable.missing_prices.if_sure') }}
+            {{ t('profit_loss_report.actionable.missing_prices.if_sure') }}
             {{
-              tc(
+              t(
                 'profit_loss_report.actionable.missing_prices.regenerate_report_nudge'
               )
             }}
@@ -367,7 +367,7 @@ const close = () => {
           <div v-else>
             {{
               toSentenceCase(
-                tc(
+                t(
                   'profit_loss_report.actionable.missing_prices.regenerate_report_nudge'
                 )
               )
@@ -377,17 +377,17 @@ const close = () => {
         <template #buttons>
           <v-spacer />
           <v-btn text class="mr-2" @click="confirmationDialogOpen = false">
-            {{ tc('common.actions.cancel') }}
+            {{ t('common.actions.cancel') }}
           </v-btn>
           <v-btn
             v-if="filledMissingPrices"
             color="primary"
             @click="regenerateReport()"
           >
-            {{ tc('profit_loss_report.actionable.actions.regenerate_report') }}
+            {{ t('profit_loss_report.actionable.actions.regenerate_report') }}
           </v-btn>
           <v-btn v-else color="primary" @click="ignoreIssues()">
-            {{ tc('common.actions.yes') }}
+            {{ t('common.actions.yes') }}
           </v-btn>
         </template>
       </card>

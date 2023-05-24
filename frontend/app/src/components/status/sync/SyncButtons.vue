@@ -13,7 +13,7 @@ const emit = defineEmits<{
   (event: 'action', action: SyncAction): void;
 }>();
 
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const { premium } = storeToRefs(usePremiumStore());
 const UPLOAD: SyncAction = SYNC_UPLOAD;
@@ -39,10 +39,10 @@ const action = (action: SyncAction) => {
           @click="action(UPLOAD)"
         >
           <v-icon>mdi-cloud-upload</v-icon>
-          <span class="ml-2">{{ tc('common.actions.push') }}</span>
+          <span class="ml-2">{{ t('common.actions.push') }}</span>
         </v-btn>
       </template>
-      <span>{{ tc('sync_buttons.upload_tooltip') }}</span>
+      <span>{{ t('sync_buttons.upload_tooltip') }}</span>
     </v-tooltip>
 
     <v-tooltip top open-delay="400">
@@ -58,10 +58,10 @@ const action = (action: SyncAction) => {
           @click="action(DOWNLOAD)"
         >
           <v-icon>mdi-cloud-download</v-icon>
-          <span class="ml-2">{{ tc('common.actions.pull') }}</span>
+          <span class="ml-2">{{ t('common.actions.pull') }}</span>
         </v-btn>
       </template>
-      <span>{{ tc('sync_buttons.download_tooltip') }}</span>
+      <span>{{ t('sync_buttons.download_tooltip') }}</span>
     </v-tooltip>
   </div>
 </template>

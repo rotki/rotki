@@ -15,7 +15,7 @@ export const useAccountDialog = createSharedComposable(() => {
   const valid = ref(false);
   const saveFunc = ref<Function>();
 
-  const { tc } = useI18n();
+  const { t } = useI18n();
 
   const clearDialog = async (): Promise<void> => {
     set(openDialog, false);
@@ -27,7 +27,7 @@ export const useAccountDialog = createSharedComposable(() => {
   const createAccount = (): void => {
     set(accountToEdit, null);
     set(dialogText, {
-      title: tc('blockchain_balances.form_dialog.add_title')
+      title: t('blockchain_balances.form_dialog.add_title')
     });
     set(openDialog, true);
   };
@@ -35,8 +35,8 @@ export const useAccountDialog = createSharedComposable(() => {
   const editAccount = (account: BlockchainAccountWithBalance): void => {
     set(accountToEdit, account);
     set(dialogText, {
-      title: tc('blockchain_balances.form_dialog.edit_title'),
-      subtitle: tc('blockchain_balances.form_dialog.edit_subtitle')
+      title: t('blockchain_balances.form_dialog.edit_title'),
+      subtitle: t('blockchain_balances.form_dialog.edit_subtitle')
     });
     set(openDialog, true);
   };

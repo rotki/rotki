@@ -8,7 +8,7 @@ const defaultGraphTimeframe = ref<TimeFrameSetting>(TimeFramePeriod.ALL);
 const visibleTimeframes = ref<TimeFrameSetting[]>([]);
 const currentSessionTimeframe = ref<TimeFramePeriod>(TimeFramePeriod.ALL);
 
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const { timeframe } = useSessionSettingsStore();
 const { timeframeSetting, visibleTimeframes: visible } = storeToRefs(
@@ -24,7 +24,7 @@ const resetVisibleTimeframes = () => {
 };
 
 const successMessage = (timeframe: TimeFramePeriod) =>
-  tc('frontend_settings.validation.timeframe.success', 0, {
+  t('frontend_settings.validation.timeframe.success', {
     timeframe
   });
 
@@ -42,7 +42,7 @@ onMounted(() => {
     setting="timeframeSetting"
     frontend-setting
     :success-message="successMessage"
-    :error-message="tc('frontend_settings.validation.timeframe.error')"
+    :error-message="t('frontend_settings.validation.timeframe.error')"
     @finished="resetTimeframeSetting()"
   >
     <settings-option

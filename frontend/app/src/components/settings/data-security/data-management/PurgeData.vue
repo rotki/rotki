@@ -44,7 +44,7 @@ const purgeSource = async (source: Purgeable) => {
   await purgeCache(source);
 };
 
-const { tc } = useI18n();
+const { t } = useI18n();
 const { tradeLocations } = useLocations();
 
 const text = (source: Purgeable) => {
@@ -53,7 +53,7 @@ const text = (source: Purgeable) => {
   );
 
   if (location) {
-    return tc('purge_selector.exchange', 0, {
+    return t('purge_selector.exchange', {
       name: location.name
     });
   }
@@ -62,17 +62,17 @@ const text = (source: Purgeable) => {
     ({ identifier }) => identifier === source
   );
   if (module) {
-    return tc('purge_selector.module', 0, { name: module.name });
+    return t('purge_selector.module', { name: module.name });
   }
 
   if (source === ALL_TRANSACTIONS) {
-    return tc('purge_selector.ethereum_transactions');
+    return t('purge_selector.ethereum_transactions');
   } else if (source === ALL_CENTRALIZED_EXCHANGES) {
-    return tc('purge_selector.all_exchanges');
+    return t('purge_selector.all_exchanges');
   } else if (source === ALL_MODULES) {
-    return tc('purge_selector.all_modules');
+    return t('purge_selector.all_modules');
   } else if (source === ALL_DECENTRALIZED_EXCHANGES) {
-    return tc('purge_selector.all_decentralized_exchanges');
+    return t('purge_selector.all_decentralized_exchanges');
   }
   return source;
 };
@@ -86,16 +86,16 @@ const { status, pending, showConfirmation } = useCacheClear<Purgeable>(
   purgable,
   purgeSource,
   (source: string) => ({
-    success: tc('data_management.purge_data.success', 0, {
+    success: t('data_management.purge_data.success', {
       source
     }),
-    error: tc('data_management.purge_data.error', 0, {
+    error: t('data_management.purge_data.error', {
       source
     })
   }),
   (source: string) => ({
-    title: tc('data_management.purge_data.confirm.title'),
-    message: tc('data_management.purge_data.confirm.message', 0, {
+    title: t('data_management.purge_data.confirm.title'),
+    message: t('data_management.purge_data.confirm.message', {
       source
     })
   })
@@ -106,10 +106,10 @@ const { status, pending, showConfirmation } = useCacheClear<Purgeable>(
   <div>
     <div class="mb-6">
       <div class="text-h6">
-        {{ tc('data_management.purge_data.title') }}
+        {{ t('data_management.purge_data.title') }}
       </div>
       <div>
-        {{ tc('data_management.purge_data.subtitle') }}
+        {{ t('data_management.purge_data.subtitle') }}
       </div>
     </div>
 
@@ -118,7 +118,7 @@ const { status, pending, showConfirmation } = useCacheClear<Purgeable>(
         <v-autocomplete
           v-model="source"
           outlined
-          :label="tc('purge_selector.label')"
+          :label="t('purge_selector.label')"
           :items="purgable"
           item-text="text"
           item-value="id"
@@ -140,7 +140,7 @@ const { status, pending, showConfirmation } = useCacheClear<Purgeable>(
               <v-icon>mdi-delete</v-icon>
             </v-btn>
           </template>
-          <span> {{ tc('purge_selector.tooltip') }} </span>
+          <span> {{ t('purge_selector.tooltip') }} </span>
         </v-tooltip>
       </v-col>
     </v-row>

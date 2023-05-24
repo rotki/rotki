@@ -24,7 +24,7 @@ const { fetchNonFungibleBalances, refreshNonFungibleBalances } =
   useNonFungibleBalancesStore();
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const group = DashboardTableType.NFT;
 
@@ -55,12 +55,12 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
 
   const headers: DataTableHeader[] = [
     {
-      text: tc('common.name'),
+      text: t('common.name'),
       value: 'name',
       class: 'text-no-wrap'
     },
     {
-      text: tc('nft_balance_table.column.price_in_asset'),
+      text: t('nft_balance_table.column.price_in_asset'),
       value: 'priceInAsset',
       align: 'end',
       width: '75%',
@@ -68,7 +68,7 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
       sortable: false
     },
     {
-      text: tc('common.price_in_symbol', 0, {
+      text: t('common.price_in_symbol', {
         symbol: get(currencySymbol)
       }),
       value: 'lastPrice',
@@ -79,7 +79,7 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
 
   if (visibleColumns.includes(TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE)) {
     headers.push({
-      text: tc('nft_balance_table.column.percentage'),
+      text: t('nft_balance_table.column.percentage'),
       value: 'percentageOfTotalNetValue',
       align: 'end',
       class: 'text-no-wrap',
@@ -89,9 +89,8 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
 
   if (visibleColumns.includes(TableColumn.PERCENTAGE_OF_TOTAL_CURRENT_GROUP)) {
     headers.push({
-      text: tc(
+      text: t(
         'dashboard_asset_table.headers.percentage_of_total_current_group',
-        0,
         {
           group
         }
@@ -135,10 +134,10 @@ watch(loading, async (isLoading, wasLoading) => {
     <template #title>
       <refresh-button
         :loading="loading"
-        :tooltip="tc('nft_balance_table.refresh')"
+        :tooltip="t('nft_balance_table.refresh')"
         @refresh="refreshNonFungibleBalances(true)"
       />
-      {{ tc('nft_balance_table.title') }}
+      {{ t('nft_balance_table.title') }}
       <v-btn :to="nonFungibleRoute" icon class="ml-2">
         <v-icon>mdi-chevron-right</v-icon>
       </v-btn>
@@ -152,7 +151,7 @@ watch(loading, async (isLoading, wasLoading) => {
       >
         <template #activator="{ on }">
           <menu-tooltip-button
-            :tooltip="tc('dashboard_asset_table.select_visible_columns')"
+            :tooltip="t('dashboard_asset_table.select_visible_columns')"
             class-name="ml-4 nft_balance_table__column-filter__button"
             :on-menu="on"
           >
@@ -214,7 +213,7 @@ watch(loading, async (isLoading, wasLoading) => {
           <template #body.append="{ isMobile }">
             <row-append
               label-colspan="2"
-              :label="tc('common.total')"
+              :label="t('common.total')"
               :right-patch-colspan="tableHeaders.length - 3"
               :is-mobile="isMobile"
             >

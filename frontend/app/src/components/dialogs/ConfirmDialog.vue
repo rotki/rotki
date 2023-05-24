@@ -32,17 +32,17 @@ const emit = defineEmits<{
 
 const { confirmType, primaryAction, secondaryAction } = toRefs(props);
 
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const color = computed(() => themes[get(confirmType)].color);
 const icon = computed(() => themes[get(confirmType)].icon);
 
 const primaryText = computed(
-  () => get(primaryAction) || tc('common.actions.confirm')
+  () => get(primaryAction) || t('common.actions.confirm')
 );
 
 const secondaryText = computed(
-  () => get(secondaryAction) || tc('common.actions.cancel')
+  () => get(secondaryAction) || t('common.actions.cancel')
 );
 </script>
 

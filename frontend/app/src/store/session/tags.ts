@@ -15,7 +15,7 @@ export const useTagStore = defineStore('session/tags', () => {
 
   const { removeTag } = useBlockchainAccounts();
   const { setMessage } = useMessageStore();
-  const { tc } = useI18n();
+  const { t } = useI18n();
   const { queryAddTag, queryTags, queryEditTag, queryDeleteTag } = useTagsApi();
 
   const addTag = async (tag: Tag): Promise<ActionStatus> => {
@@ -24,7 +24,7 @@ export const useTagStore = defineStore('session/tags', () => {
       return { success: true };
     } catch (e: any) {
       setMessage({
-        title: tc('actions.session.tag_add.error.title'),
+        title: t('actions.session.tag_add.error.title'),
         description: e.message
       });
       return {
@@ -39,7 +39,7 @@ export const useTagStore = defineStore('session/tags', () => {
       set(allTags, await queryEditTag(tag));
     } catch (e: any) {
       setMessage({
-        title: tc('actions.session.tag_edit.error.title'),
+        title: t('actions.session.tag_edit.error.title'),
         description: e.message
       });
     }
@@ -51,7 +51,7 @@ export const useTagStore = defineStore('session/tags', () => {
       removeTag(name);
     } catch (e: any) {
       setMessage({
-        title: tc('actions.session.tag_delete.error.title'),
+        title: t('actions.session.tag_delete.error.title'),
         description: e.message
       });
     }

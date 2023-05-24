@@ -9,7 +9,7 @@ defineProps({
   timeEnd: { required: false, type: Number, default: 0 }
 });
 
-const { tc } = useI18n();
+const { t } = useI18n();
 const { premiumURL } = useInterop();
 const { currentBreakpoint } = useTheme();
 </script>
@@ -38,7 +38,7 @@ const { currentBreakpoint } = useTheme();
         <template #link>
           <base-external-link
             class="ml-1"
-            :text="tc('upgrade_row.rotki_premium')"
+            :text="t('upgrade_row.rotki_premium')"
             :href="premiumURL"
           />
         </template>
@@ -67,7 +67,7 @@ const { currentBreakpoint } = useTheme();
         <template #link>
           <base-external-link
             class="ml-1"
-            :text="tc('upgrade_row.rotki_premium')"
+            :text="t('upgrade_row.rotki_premium')"
             :href="premiumURL"
           />
         </template>

@@ -32,7 +32,7 @@ const props = withDefaults(
 
 const emit = defineEmits<{ (e: 'input', valid: boolean): void }>();
 
-const { t, tc } = useI18n();
+const { t } = useI18n();
 const { edit } = toRefs(props);
 const { fetchTokenDetails } = useAssetInfoRetrieval();
 
@@ -272,7 +272,7 @@ const save = async () => {
 
     if (typeof errors === 'string') {
       setMessage({
-        title: tc('asset_form.underlying_tokens'),
+        title: t('asset_form.underlying_tokens'),
         description: errors
       });
     } else {
@@ -304,7 +304,7 @@ const { coingeckoContributeUrl, cryptocompareContributeUrl } = useInterop();
         {{ edit.identifier }}
         <copy-button
           :value="edit.identifier"
-          :tooltip="tc('asset_form.identifier_copy')"
+          :tooltip="t('asset_form.identifier_copy')"
         />
       </v-col>
     </v-row>
@@ -418,7 +418,7 @@ const { coingeckoContributeUrl, cryptocompareContributeUrl } = useInterop();
               <help-link
                 small
                 :url="coingeckoContributeUrl"
-                :tooltip="tc('asset_form.help_coingecko')"
+                :tooltip="t('asset_form.help_coingecko')"
               />
             </template>
           </v-text-field>
@@ -447,7 +447,7 @@ const { coingeckoContributeUrl, cryptocompareContributeUrl } = useInterop();
               <help-link
                 small
                 :url="cryptocompareContributeUrl"
-                :tooltip="tc('asset_form.help_cryptocompare')"
+                :tooltip="t('asset_form.help_cryptocompare')"
               />
             </template>
           </v-text-field>
@@ -474,7 +474,7 @@ const { coingeckoContributeUrl, cryptocompareContributeUrl } = useInterop();
               v-model="started"
               seconds
               outlined
-              :label="tc('asset_form.labels.started')"
+              :label="t('asset_form.labels.started')"
               :error-messages="errors['started']"
               :disabled="saving"
               @focus="clearFieldError('started')"
@@ -500,7 +500,7 @@ const { coingeckoContributeUrl, cryptocompareContributeUrl } = useInterop();
                   outlined
                   persistent-hint
                   clearable
-                  :label="tc('asset_form.labels.swapped_for')"
+                  :label="t('asset_form.labels.swapped_for')"
                   :error-messages="errors['swappedFor']"
                   :disabled="saving"
                   @focus="clearFieldError('swappedFor')"
@@ -513,7 +513,7 @@ const { coingeckoContributeUrl, cryptocompareContributeUrl } = useInterop();
                   outlined
                   persistent-hint
                   clearable
-                  :label="tc('asset_form.labels.forked')"
+                  :label="t('asset_form.labels.forked')"
                   :error-messages="errors['forked']"
                   :disabled="saving"
                   @focus="clearFieldError('forked')"

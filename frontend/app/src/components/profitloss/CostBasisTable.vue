@@ -17,39 +17,39 @@ const props = defineProps({
 const { costBasis, currency } = toRefs(props);
 
 const panel = ref<number[]>([]);
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const css = useCssModule();
 
 const tableHeaders = computed<DataTableHeader[]>(() => [
   {
-    text: tc('cost_basis_table.headers.amount'),
+    text: t('cost_basis_table.headers.amount'),
     value: 'amount',
     align: 'end'
   },
   {
-    text: tc('cost_basis_table.headers.full_amount'),
+    text: t('cost_basis_table.headers.full_amount'),
     value: 'fullAmount',
     align: 'end'
   },
   {
-    text: tc('cost_basis_table.headers.remaining_amount'),
+    text: t('cost_basis_table.headers.remaining_amount'),
     value: 'remainingAmount',
     align: 'end'
   },
   {
-    text: tc('cost_basis_table.headers.rate', 0, {
+    text: t('cost_basis_table.headers.rate', {
       currency: get(currency)
     }),
     value: 'rate',
     align: 'end'
   },
   {
-    text: tc('common.datetime'),
+    text: t('common.datetime'),
     value: 'time'
   },
   {
-    text: tc('cost_basis_table.headers.taxable'),
+    text: t('cost_basis_table.headers.taxable'),
     value: 'taxable'
   }
 ]);
@@ -84,8 +84,8 @@ const matchedAcquisitions = computed(
               <div class="primary--text font-weight-bold">
                 {{
                   open
-                    ? tc('profit_loss_events.cost_basis.hide')
-                    : tc('profit_loss_events.cost_basis.show')
+                    ? t('profit_loss_events.cost_basis.hide')
+                    : t('profit_loss_events.cost_basis.show')
                 }}
               </div>
             </template>
@@ -94,12 +94,12 @@ const matchedAcquisitions = computed(
           <v-expansion-panel-content>
             <card class="mt-4">
               <template #title>
-                {{ tc('cost_basis_table.cost_basis') }}
+                {{ t('cost_basis_table.cost_basis') }}
                 <span class="text-caption ml-2">
                   {{
                     costBasis.isComplete
-                      ? tc('cost_basis_table.complete')
-                      : tc('cost_basis_table.incomplete')
+                      ? t('cost_basis_table.complete')
+                      : t('cost_basis_table.incomplete')
                   }}
                 </span>
               </template>

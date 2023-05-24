@@ -1,7 +1,7 @@
 <script setup lang="ts">
 defineProps<{ visible: boolean }>();
 
-const { t, tc } = useI18n();
+const { t } = useI18n();
 const css = useCssModule();
 
 const emit = defineEmits(['close']);
@@ -32,8 +32,8 @@ const clear = () => {
 const showConfirmation = () => {
   show(
     {
-      title: tc('notification_sidebar.confirmation.title'),
-      message: tc('notification_sidebar.confirmation.message'),
+      title: t('notification_sidebar.confirmation.title'),
+      message: t('notification_sidebar.confirmation.message'),
       type: 'info'
     },
     clear

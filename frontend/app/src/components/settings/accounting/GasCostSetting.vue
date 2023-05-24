@@ -6,19 +6,19 @@ onMounted(() => {
   set(gasCosts, get(includeGasCosts));
 });
 
-const { tc } = useI18n();
+const { t } = useI18n();
 </script>
 
 <template>
   <settings-option
     #default="{ error, success, update }"
     setting="includeGasCosts"
-    :error-message="tc('account_settings.messages.gas_costs')"
+    :error-message="t('account_settings.messages.gas_costs')"
   >
     <v-switch
       v-model="gasCosts"
       class="accounting-settings__include-gas-costs"
-      :label="tc('accounting_settings.labels.gas_costs')"
+      :label="t('accounting_settings.labels.gas_costs')"
       :success-messages="success"
       :error-messages="error"
       color="primary"

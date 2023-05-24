@@ -29,7 +29,7 @@ export const useEthAccountsStore = defineStore(
     const { activeModules } = storeToRefs(useGeneralSettingsStore());
     const { notify } = useNotificationsStore();
     const { setMessage } = useMessageStore();
-    const { t, tc } = useI18n();
+    const { t } = useI18n();
 
     const {
       getEth2Validators,
@@ -50,8 +50,8 @@ export const useEthAccountsStore = defineStore(
       } catch (e: any) {
         logger.error(e);
         notify({
-          title: tc('actions.get_accounts.error.title'),
-          message: tc('actions.get_accounts.error.description', 0, {
+          title: t('actions.get_accounts.error.title'),
+          message: t('actions.get_accounts.error.description', {
             blockchain: Blockchain.ETH2,
             message: e.message
           }).toString(),
@@ -77,8 +77,8 @@ export const useEthAccountsStore = defineStore(
           taskId,
           taskType,
           {
-            title: tc('actions.add_eth2_validator.task.title'),
-            description: tc('actions.add_eth2_validator.task.description', 0, {
+            title: t('actions.add_eth2_validator.task.title'),
+            description: t('actions.add_eth2_validator.task.description', {
               id
             })
           }

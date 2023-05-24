@@ -12,7 +12,7 @@ const selection = ref<string>();
 const protocol = ref<DefiProtocol | null>(null);
 const defiLending = useDefiLending();
 const route = useRoute();
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const { shouldShowLoadingScreen, isLoading } = useStatusStore();
 
@@ -58,13 +58,13 @@ onMounted(async () => {
 
 <template>
   <progress-screen v-if="loading">
-    <template #message>{{ tc('borrowing.loading') }}</template>
+    <template #message>{{ t('borrowing.loading') }}</template>
   </progress-screen>
   <div v-else>
     <v-row class="mt-8">
       <v-col>
         <refresh-header
-          :title="tc('borrowing.header')"
+          :title="t('borrowing.header')"
           :loading="refreshing"
           @refresh="refresh()"
         >
@@ -80,7 +80,7 @@ onMounted(async () => {
           <template #first-col>
             <stat-card-column>
               <template #title>
-                {{ tc('borrowing.total_collateral_locked') }}
+                {{ t('borrowing.total_collateral_locked') }}
               </template>
               <amount-display
                 :value="summary.totalCollateralUsd"
@@ -92,7 +92,7 @@ onMounted(async () => {
           <template #second-col>
             <stat-card-column>
               <template #title>
-                {{ tc('borrowing.total_outstanding_debt') }}
+                {{ t('borrowing.total_outstanding_debt') }}
               </template>
               <amount-display
                 :value="summary.totalDebt"
@@ -111,7 +111,7 @@ onMounted(async () => {
             <v-autocomplete
               v-model="selection"
               class="borrowing__vault-selection"
-              :label="tc('borrowing.select_loan')"
+              :label="t('borrowing.select_loan')"
               chips
               dense
               outlined
@@ -130,7 +130,7 @@ onMounted(async () => {
               </template>
             </v-autocomplete>
           </div>
-          <v-card-text>{{ tc('borrowing.select_loan_hint') }}</v-card-text>
+          <v-card-text>{{ t('borrowing.select_loan_hint') }}</v-card-text>
         </v-card>
       </v-col>
       <v-col cols="12" md="6" class="ps-md-4 pt-8 pt-md-0">
@@ -140,7 +140,7 @@ onMounted(async () => {
     <loan-info v-if="loan" :loan="loan" />
     <full-size-content v-else>
       <v-row align="center" justify="center">
-        <v-col class="text-h6">{{ tc('liabilities.no_selection') }}</v-col>
+        <v-col class="text-h6">{{ t('liabilities.no_selection') }}</v-col>
       </v-row>
     </full-size-content>
   </div>

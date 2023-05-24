@@ -36,34 +36,34 @@ const step: Ref<number> = ref(1);
 
 const form: Ref = ref(null);
 
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const rules = {
   username: {
     required: helpers.withMessage(
-      tc('create_account.select_credentials.validation.non_empty_username'),
+      t('create_account.select_credentials.validation.non_empty_username'),
       required
     ),
     isValidUsername: helpers.withMessage(
-      tc('create_account.select_credentials.validation.valid_username'),
+      t('create_account.select_credentials.validation.valid_username'),
       (v: string): boolean => !!(v && /^[\w.-]+$/.test(v))
     )
   },
   password: {
     required: helpers.withMessage(
-      tc('create_account.select_credentials.validation.non_empty_password'),
+      t('create_account.select_credentials.validation.non_empty_password'),
       required
     )
   },
   passwordConfirm: {
     required: helpers.withMessage(
-      tc(
+      t(
         'create_account.select_credentials.validation.non_empty_password_confirmation'
       ),
       required
     ),
     isMatch: helpers.withMessage(
-      tc(
+      t(
         'create_account.select_credentials.validation.password_confirmation_mismatch'
       ),
       sameAs(password)
@@ -123,25 +123,25 @@ const back = () => {
   <v-slide-y-transition>
     <div class="create-account">
       <div class="text-h6 text--primary create-account__header">
-        {{ tc('create_account.title') }}
+        {{ t('create_account.title') }}
       </div>
       <v-stepper v-model="step">
         <v-stepper-header>
           <v-stepper-step step="1" :complete="step > 1">
             <span v-if="step === 1">
-              {{ tc('create_account.premium.title') }}
+              {{ t('create_account.premium.title') }}
             </span>
           </v-stepper-step>
           <v-divider />
           <v-stepper-step step="2" :complete="step > 2">
             <span v-if="step === 2">
-              {{ tc('create_account.select_credentials.title') }}
+              {{ t('create_account.select_credentials.title') }}
             </span>
           </v-stepper-step>
           <v-divider />
           <v-stepper-step step="3">
             <span v-if="step === 3">
-              {{ tc('create_account.usage_analytics.title') }}
+              {{ t('create_account.usage_analytics.title') }}
             </span>
           </v-stepper-step>
         </v-stepper-header>
@@ -157,7 +157,7 @@ const back = () => {
                     <template #premiumLink>
                       <b>
                         <external-link url="https://rotki.com/products">
-                          {{ tc('create_account.premium.premium_link_text') }}
+                          {{ t('create_account.premium.premium_link_text') }}
                         </external-link>
                       </b>
                     </template>
@@ -176,7 +176,7 @@ const back = () => {
                     >
                       <v-icon small class="mr-2">mdi-close</v-icon>
                       <span>
-                        {{ tc('common.actions.no') }}
+                        {{ t('common.actions.no') }}
                       </span>
                     </v-btn>
                     <v-btn
@@ -190,9 +190,7 @@ const back = () => {
                     >
                       <v-icon small class="mr-2"> mdi-check</v-icon>
                       <span>
-                        {{
-                          tc('create_account.premium.button_premium_approve')
-                        }}
+                        {{ t('create_account.premium.button_premium_approve') }}
                       </span>
                     </v-btn>
                   </div>
@@ -221,7 +219,7 @@ const back = () => {
                 :disabled="loading || newUser"
                 @click="cancel()"
               >
-                {{ tc('common.actions.cancel') }}
+                {{ t('common.actions.cancel') }}
               </v-btn>
               <v-btn
                 class="create-account__premium__button__continue"
@@ -232,7 +230,7 @@ const back = () => {
                 data-cy="create-account__premium__button__continue"
                 @click="step = 2"
               >
-                {{ tc('common.actions.continue') }}
+                {{ t('common.actions.continue') }}
               </v-btn>
             </v-card-actions>
           </v-stepper-content>
@@ -245,9 +243,7 @@ const back = () => {
                   autofocus
                   single-line
                   class="create-account__fields__username"
-                  :label="
-                    tc('create_account.select_credentials.label_username')
-                  "
+                  :label="t('create_account.select_credentials.label_username')"
                   prepend-inner-icon="mdi-account"
                   :error-messages="v$.username.$errors.map(e => e.$message)"
                   :disabled="loading"
@@ -262,7 +258,7 @@ const back = () => {
                   icon="mdi-information"
                 >
                   {{
-                    tc(
+                    t(
                       'create_account.select_credentials.password_sync_requirement'
                     )
                   }}
@@ -271,9 +267,7 @@ const back = () => {
                   v-model="password"
                   outlined
                   class="create-account__fields__password"
-                  :label="
-                    tc('create_account.select_credentials.label_password')
-                  "
+                  :label="t('create_account.select_credentials.label_password')"
                   prepend-icon="mdi-lock"
                   :error-messages="v$.password.$errors.map(e => e.$message)"
                   :disabled="loading"
@@ -289,9 +283,7 @@ const back = () => {
                   "
                   :disabled="loading"
                   :label="
-                    tc(
-                      'create_account.select_credentials.label_password_repeat'
-                    )
+                    t('create_account.select_credentials.label_password_repeat')
                   "
                   required
                 />
@@ -299,7 +291,7 @@ const back = () => {
                   v-model="userPrompted"
                   class="create-account__boxes__user-prompted"
                   :label="
-                    tc(
+                    t(
                       'create_account.select_credentials.label_password_backup_reminder'
                     )
                   "
@@ -316,7 +308,7 @@ const back = () => {
                 outlined
                 @click="back()"
               >
-                {{ tc('common.actions.back') }}
+                {{ t('common.actions.back') }}
               </v-btn>
               <v-btn
                 class="create-account__credentials__button__continue"
@@ -326,7 +318,7 @@ const back = () => {
                 :loading="loading"
                 @click="step = 3"
               >
-                {{ tc('common.actions.continue') }}
+                {{ t('common.actions.continue') }}
               </v-btn>
             </v-card-actions>
           </v-stepper-content>
@@ -338,7 +330,7 @@ const back = () => {
                 color="primary"
                 class="mx-auto text-justify text-body-2 create-account__analytics__content"
               >
-                {{ tc('create_account.usage_analytics.description') }}
+                {{ t('create_account.usage_analytics.description') }}
               </v-alert>
               <v-alert v-if="error" type="error" outlined>
                 {{ error }}
@@ -348,7 +340,7 @@ const back = () => {
                   <v-checkbox
                     v-model="submitUsageAnalytics"
                     :disabled="loading"
-                    :label="tc('create_account.usage_analytics.label_confirm')"
+                    :label="t('create_account.usage_analytics.label_confirm')"
                   />
                 </v-col>
               </v-row>
@@ -363,7 +355,7 @@ const back = () => {
                 outlined
                 @click="back()"
               >
-                {{ tc('common.actions.back') }}
+                {{ t('common.actions.back') }}
               </v-btn>
               <v-btn
                 color="primary"
@@ -373,7 +365,7 @@ const back = () => {
                 class="create-account__analytics__button__confirm"
                 @click="confirm()"
               >
-                {{ tc('common.actions.create') }}
+                {{ t('common.actions.create') }}
               </v-btn>
             </v-card-actions>
           </v-stepper-content>

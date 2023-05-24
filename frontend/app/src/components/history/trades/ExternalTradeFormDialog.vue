@@ -42,16 +42,16 @@ const confirmSave = async () => {
   }
 };
 
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const title: ComputedRef<string> = computed(() =>
   get(editableItem)
-    ? tc('closed_trades.dialog.edit.title')
-    : tc('closed_trades.dialog.add.title')
+    ? t('closed_trades.dialog.edit.title')
+    : t('closed_trades.dialog.add.title')
 );
 
 const subtitle: ComputedRef<string> = computed(() =>
-  get(editableItem) ? tc('closed_trades.dialog.edit.subtitle') : ''
+  get(editableItem) ? t('closed_trades.dialog.edit.subtitle') : ''
 );
 </script>
 
@@ -60,7 +60,7 @@ const subtitle: ComputedRef<string> = computed(() =>
     :display="value"
     :title="title"
     :subtitle="subtitle"
-    :primary-action="tc('common.actions.save')"
+    :primary-action="t('common.actions.save')"
     :action-disabled="loading || !valid"
     :loading="loading"
     @confirm="confirmSave()"

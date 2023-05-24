@@ -7,7 +7,7 @@ const props = defineProps({
 const emit = defineEmits(['refresh']);
 
 const { title } = toRefs(props);
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const tooltip = computed(() => ({
   title: get(title).toLocaleLowerCase()
@@ -31,7 +31,7 @@ const refresh = () => {
         <v-col cols="auto" class="px-1">
           <refresh-button
             :loading="loading"
-            :tooltip="tc('helpers.refresh_header.tooltip', 0, tooltip)"
+            :tooltip="t('helpers.refresh_header.tooltip', tooltip)"
             @refresh="refresh()"
           />
         </v-col>

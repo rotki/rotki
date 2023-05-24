@@ -20,7 +20,7 @@ const editMode = ref(false);
 const { setMessage } = useMessageStore();
 const router = useRouter();
 const route = useRoute();
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const openForm = (cPrice: ManualPrice | null = null) => {
   set(editMode, !!cPrice);
@@ -59,11 +59,11 @@ const managePrice = async () => {
   } catch (e: any) {
     const values = { message: e.message };
     const title = isEdit
-      ? tc('price_management.edit.error.title')
-      : tc('price_management.add.error.title');
+      ? t('price_management.edit.error.title')
+      : t('price_management.add.error.title');
     const description = isEdit
-      ? tc('price_management.edit.error.description', 0, values)
-      : tc('price_management.add.error.description', 0, values);
+      ? t('price_management.edit.error.description', values)
+      : t('price_management.add.error.description', values);
 
     setMessage({
       title,
@@ -87,18 +87,18 @@ onMounted(async () => {
   <v-container>
     <v-row justify="space-between" align="center" no-gutters>
       <v-col>
-        <card-title>{{ tc('price_management.latest.title') }}</card-title>
+        <card-title>{{ t('price_management.latest.title') }}</card-title>
       </v-col>
     </v-row>
     <card class="mt-8">
-      <template #title>{{ tc('price_management.filter_title') }}</template>
+      <template #title>{{ t('price_management.filter_title') }}</template>
       <v-row>
         <v-col>
           <asset-select
             v-model="assetFilter"
             outlined
             include-nfts
-            :label="tc('price_management.from_asset')"
+            :label="t('price_management.from_asset')"
             clearable
             hide-details
           />
@@ -120,8 +120,8 @@ onMounted(async () => {
       :display="showForm"
       :title="
         editMode
-          ? tc('price_management.dialog.edit_title')
-          : tc('price_management.dialog.add_title')
+          ? t('price_management.dialog.edit_title')
+          : t('price_management.dialog.add_title')
       "
       :action-disabled="!valid"
       @confirm="managePrice()"

@@ -24,7 +24,7 @@ const { assetPrice } = useBalancePricesStore();
 const LUSD_ID = 'eip155:1/erc20:0x5f98805A4E8be255a32880FDeC7F6728C6568bA0';
 const lusdPrice = assetPrice(LUSD_ID);
 
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const { isLoading } = useStatusStore();
 const loading = isLoading(Section.DEFI_LIQUITY_STATISTICS);
@@ -199,22 +199,22 @@ const css = useCssModule();
 <template>
   <card :loading="loading">
     <template #title>
-      {{ tc('liquity_statistic.title') }}
+      {{ t('liquity_statistic.title') }}
     </template>
     <template #details>
       <v-btn-toggle v-model="current" dense mandatory>
         <v-btn :value="true">
-          {{ tc('liquity_statistic.switch.current') }}
+          {{ t('liquity_statistic.switch.current') }}
         </v-btn>
         <v-btn :value="false">
-          {{ tc('liquity_statistic.switch.historical') }}
+          {{ t('liquity_statistic.switch.historical') }}
         </v-btn>
       </v-btn-toggle>
     </template>
     <template v-if="statisticWithAdjustedPrice">
       <v-row class="ma-n6" :class="css.large">
         <v-col md="6" class="pa-6 py-8 d-flex justify-space-between">
-          <div>{{ tc('liquity_statistic.total_gains_stability_pool') }}</div>
+          <div>{{ t('liquity_statistic.total_gains_stability_pool') }}</div>
           <v-sheet>
             <amount-display
               :value="statisticWithAdjustedPrice.totalUsdGainsStabilityPool"
@@ -224,7 +224,7 @@ const css = useCssModule();
           </v-sheet>
         </v-col>
         <v-col md="6" class="pa-6 py-8 d-flex justify-space-between">
-          <div>{{ tc('liquity_statistic.total_gains_staking') }}</div>
+          <div>{{ t('liquity_statistic.total_gains_staking') }}</div>
           <v-sheet>
             <amount-display
               :value="statisticWithAdjustedPrice.totalUsdGainsStaking"
@@ -245,7 +245,7 @@ const css = useCssModule();
                   <div class="text-right py-4">
                     <div class="font-weight-medium pb-2" :class="css.label">
                       {{
-                        tc('liquity_statistic.total_deposited_stability_pool')
+                        t('liquity_statistic.total_deposited_stability_pool')
                       }}
                     </div>
                     <balance-display
@@ -260,7 +260,7 @@ const css = useCssModule();
                   <div class="text-right py-4">
                     <div class="font-weight-medium pb-2" :class="css.label">
                       {{
-                        tc('liquity_statistic.total_withdrawn_stability_pool')
+                        t('liquity_statistic.total_withdrawn_stability_pool')
                       }}
                     </div>
                     <balance-display
@@ -274,7 +274,7 @@ const css = useCssModule();
                   <v-divider />
                   <div class="text-right py-4">
                     <div class="font-weight-medium pb-2" :class="css.label">
-                      {{ tc('liquity_statistic.stability_pool_gains') }}
+                      {{ t('liquity_statistic.stability_pool_gains') }}
                     </div>
 
                     <div
@@ -293,7 +293,7 @@ const css = useCssModule();
                       </div>
                     </div>
                     <div v-else class="grey--text pb-2">
-                      {{ tc('liquity_statistic.no_stability_pool_gains') }}
+                      {{ t('liquity_statistic.no_stability_pool_gains') }}
                     </div>
                   </div>
                 </div>
@@ -309,10 +309,10 @@ const css = useCssModule();
                           </v-icon>
                         </template>
                         <span>
-                          {{ tc('liquity_statistic.estimated_pnl_warning') }}
+                          {{ t('liquity_statistic.estimated_pnl_warning') }}
                         </span>
                       </v-tooltip>
-                      {{ tc('liquity_statistic.estimated_pnl') }}
+                      {{ t('liquity_statistic.estimated_pnl') }}
                     </div>
                     <amount-display
                       :value="totalPnl"
@@ -327,7 +327,7 @@ const css = useCssModule();
                   <v-divider />
                   <div class="text-right py-4">
                     <div class="font-weight-medium pb-2" :class="css.label">
-                      {{ tc('liquity_statistic.staking_gains') }}
+                      {{ t('liquity_statistic.staking_gains') }}
                     </div>
 
                     <div
@@ -344,7 +344,7 @@ const css = useCssModule();
                       </div>
                     </div>
                     <div v-else class="grey--text pb-2">
-                      {{ tc('liquity_statistic.no_staking_gains') }}
+                      {{ t('liquity_statistic.no_staking_gains') }}
                     </div>
                   </div>
                 </div>
@@ -357,8 +357,8 @@ const css = useCssModule();
               <div class="grey--text mr-4 flex-grow-0" :class="css.large">
                 {{
                   open
-                    ? tc('liquity_statistic.view.hide')
-                    : tc('liquity_statistic.view.show')
+                    ? t('liquity_statistic.view.hide')
+                    : t('liquity_statistic.view.show')
                 }}
               </div>
             </template>
@@ -367,7 +367,7 @@ const css = useCssModule();
       </v-expansion-panels>
     </template>
     <div v-else class="text-center grey--text pt-4 pb-2">
-      {{ tc('liquity_statistic.no_statistics') }}
+      {{ t('liquity_statistic.no_statistics') }}
     </div>
   </card>
 </template>

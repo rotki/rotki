@@ -22,7 +22,7 @@ interface SearchItem {
 
 type SearchItemWithoutValue = Omit<SearchItem, 'value'>;
 
-const { t, tc } = useI18n();
+const { t } = useI18n();
 const { appRoutes } = useAppRoutes();
 const Routes = get(appRoutes);
 const open = ref<boolean>(false);
@@ -482,7 +482,7 @@ onBeforeMount(async () => {
         v-model="selected"
         no-filter
         filled
-        :no-data-text="tc('global_search.no_actions')"
+        :no-data-text="t('global_search.no_actions')"
         :search-input.sync="search"
         :background-color="dark ? 'black' : 'white'"
         hide-details
@@ -490,7 +490,7 @@ onBeforeMount(async () => {
         auto-select-first
         prepend-inner-icon="mdi-magnify"
         append-icon=""
-        :placeholder="tc('global_search.search_placeholder')"
+        :placeholder="t('global_search.search_placeholder')"
         @input="change($event)"
       >
         <template #item="{ item }">
@@ -535,7 +535,7 @@ onBeforeMount(async () => {
             </span>
             <v-spacer />
             <div v-if="item.price" class="text-right">
-              <div class="text-caption">{{ tc('common.price') }}:</div>
+              <div class="text-caption">{{ t('common.price') }}:</div>
               <amount-display
                 class="font-weight-bold"
                 :fiat-currency="currencySymbol"
@@ -543,7 +543,7 @@ onBeforeMount(async () => {
               />
             </div>
             <div v-if="item.total" class="text-right">
-              <div class="text-caption">{{ tc('common.total') }}:</div>
+              <div class="text-caption">{{ t('common.total') }}:</div>
               <amount-display
                 class="font-weight-bold"
                 :fiat-currency="currencySymbol"

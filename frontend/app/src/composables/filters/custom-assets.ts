@@ -22,25 +22,25 @@ export type Filters = MatchedKeyword<CustomAssetFilterValueKeys>;
 export const useCustomAssetFilter = (suggestions: MaybeRef<string[]>) => {
   const filters: Ref<Filters> = ref({});
 
-  const { tc } = useI18n();
+  const { t } = useI18n();
 
   const matchers: ComputedRef<Matcher[]> = computed(() => [
     {
       key: CustomAssetFilterKeys.NAME,
       keyValue: CustomAssetFilterValueKeys.NAME,
-      description: tc('assets.filter.name'),
+      description: t('assets.filter.name'),
       string: true,
       suggestions: () => [],
-      hint: tc('assets.filter.name_hint'),
+      hint: t('assets.filter.name_hint'),
       validate: () => true
     },
     {
       key: CustomAssetFilterKeys.CUSTOM_ASSET_TYPE,
       keyValue: CustomAssetFilterValueKeys.CUSTOM_ASSET_TYPE,
-      description: tc('assets.filter.type'),
+      description: t('assets.filter.type'),
       string: true,
       suggestions: () => get(suggestions),
-      hint: tc('assets.filter.type_hint'),
+      hint: t('assets.filter.type_hint'),
       validate: (value: string) => get(suggestions).includes(value)
     }
   ]);

@@ -126,7 +126,7 @@ const pageSelectorData = (props: {
   }));
 };
 
-const { tc } = useI18n();
+const { t } = useI18n();
 
 onMounted(() => {
   const optionsVal = get(options);
@@ -185,7 +185,7 @@ onMounted(() => {
 
     <template #footer.page-text="footerPageTextProps">
       <div class="d-flex align-center items-page-select">
-        <span>{{ tc('data_table.items_no') }}</span>
+        <span>{{ t('data_table.items_no') }}</span>
         <v-select
           v-if="footerPageTextProps.itemsLength > 0"
           v-model="currentPage"
@@ -198,7 +198,7 @@ onMounted(() => {
         />
         <span v-else class="mr-1">{{ footerPageTextProps.itemsLength }}</span>
         <span>
-          {{ tc('common.of') }} {{ footerPageTextProps.itemsLength }}
+          {{ t('common.of') }} {{ footerPageTextProps.itemsLength }}
         </span>
       </div>
     </template>
@@ -215,7 +215,7 @@ onMounted(() => {
       >
         <template #page-text="footerPageTextProps">
           <div class="d-flex align-center items-page-select">
-            <span>{{ tc('data_table.items_no') }}</span>
+            <span>{{ t('data_table.items_no') }}</span>
             <v-select
               v-if="footerPageTextProps.itemsLength > 0"
               v-model="currentPage"
@@ -230,7 +230,7 @@ onMounted(() => {
               {{ footerPageTextProps.itemsLength }}
             </span>
             <span>
-              {{ tc('common.of') }} {{ footerPageTextProps.itemsLength }}
+              {{ t('common.of') }} {{ footerPageTextProps.itemsLength }}
             </span>
           </div>
         </template>

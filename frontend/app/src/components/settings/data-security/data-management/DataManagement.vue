@@ -1,11 +1,11 @@
 <script setup lang="ts">
-const { tc } = useI18n();
+const { t } = useI18n();
 </script>
 
 <template>
   <setting-category>
     <template #title>
-      {{ tc('data_management.title') }}
+      {{ t('data_management.title') }}
     </template>
 
     <div>

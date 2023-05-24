@@ -60,12 +60,12 @@ const expandClicked = (_payload: XpubAccountWithBalance) =>
 const editClicked = (_payload: XpubAccountWithBalance) =>
   emit('edit-clicked', _payload);
 
-const { tc } = useI18n();
+const { t } = useI18n();
 </script>
 
 <template>
   <td v-if="!group" class="font-weight-medium" colspan="5" :class="mobileClass">
-    {{ tc('account_group_header.standalone') }}
+    {{ t('account_group_header.standalone') }}
   </td>
   <fragment v-else>
     <td
@@ -90,7 +90,7 @@ const { tc } = useI18n();
         </v-btn>
         <v-btn v-else small icon disabled />
         <span class="font-weight-medium">
-          {{ tc('account_group_header.xpub') }}
+          {{ t('account_group_header.xpub') }}
         </span>
         <span :class="{ 'blur-content': !shouldShowAmount }">
           <v-tooltip top open-delay="400">
@@ -102,14 +102,14 @@ const { tc } = useI18n();
         </span>
         <copy-button
           :value="xpub.xpub"
-          :tooltip="tc('account_group_header.copy_tooltip')"
+          :tooltip="t('account_group_header.copy_tooltip')"
         />
         <span
           v-if="xpub.derivationPath"
           :class="{ 'blur-content': !shouldShowAmount }"
         >
           <span class="font-weight-medium">
-            {{ tc('account_group_header.derivation_path') }}
+            {{ t('account_group_header.derivation_path') }}
           </span>
           {{ xpub.derivationPath }}
         </span>
@@ -150,7 +150,7 @@ const { tc } = useI18n();
               <v-icon small> mdi-pencil-outline </v-icon>
             </v-btn>
           </template>
-          <span>{{ tc('account_group_header.edit_tooltip') }}</span>
+          <span>{{ t('account_group_header.edit_tooltip') }}</span>
         </v-tooltip>
         <v-tooltip top open-delay="400">
           <template #activator="{ on }">
@@ -158,7 +158,7 @@ const { tc } = useI18n();
               <v-icon small>mdi-delete-outline</v-icon>
             </v-btn>
           </template>
-          <span> {{ tc('account_group_header.delete_tooltip') }} </span>
+          <span> {{ t('account_group_header.delete_tooltip') }} </span>
         </v-tooltip>
       </div>
     </td>

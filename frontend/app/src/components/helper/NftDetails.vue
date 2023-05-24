@@ -24,7 +24,7 @@ const { updateSetting } = frontendStore;
 
 const balanceData = assetInfo(identifier);
 
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const imageUrlSource: ComputedRef<string | null> = computed(
   () => get(balanceData)?.imageUrl || null
@@ -39,15 +39,15 @@ const { show } = useConfirmStore();
 const showAllowDomainConfirmation = () => {
   show(
     {
-      title: tc(
+      title: t(
         'general_settings.nft_setting.update_whitelist_confirmation.title'
       ),
-      message: tc(
+      message: t(
         'general_settings.nft_setting.update_whitelist_confirmation.message',
-        2,
         {
           domain: get(domain)
-        }
+        },
+        2
       )
     },
     allowDomain
@@ -156,8 +156,8 @@ const fallbackData = computed(() => {
           </template>
 
           <span>
-            {{ tc('nft_balance_table.hidden_hint') }}
-            {{ tc('nft_gallery.allow_domain') }}
+            {{ t('nft_balance_table.hidden_hint') }}
+            {{ t('nft_gallery.allow_domain') }}
             <span class="font-weight-bold warning--text">{{ domain }}</span>
           </span>
         </v-tooltip>
@@ -182,13 +182,13 @@ const fallbackData = computed(() => {
         </div>
         <div v-else>
           <div class="d-flex">
-            <div>{{ tc('nft_balance_table.contract_address') }}:</div>
+            <div>{{ t('nft_balance_table.contract_address') }}:</div>
             <div class="pl-1 font-weight-medium">
               <hash-link :text="fallbackData.address" />
             </div>
           </div>
           <div class="d-flex">
-            <div>{{ tc('nft_balance_table.token_id') }}:</div>
+            <div>{{ t('nft_balance_table.token_id') }}:</div>
             <div class="pl-1 font-weight-medium">
               {{ fallbackData.tokenId }}
             </div>

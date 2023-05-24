@@ -30,13 +30,13 @@ export const useSavedFilter = (
     );
   });
 
-  const { tc } = useI18n();
+  const { t } = useI18n();
   const addFilter = async (newFilter: Suggestion[]): Promise<ActionStatus> => {
     const currentFilters = get(allSavedFilters)[get(location)] || [];
 
     if (currentFilters.length >= LIMIT_PER_LOCATION) {
       return {
-        message: tc('table_filter.saved_filters.saving.limited', 0, {
+        message: t('table_filter.saved_filters.saving.limited', {
           limit: LIMIT_PER_LOCATION
         }).toString(),
         success: false

@@ -15,7 +15,7 @@ import {
 import { Section } from '@/types/status';
 import { TableColumn } from '@/types/table-column';
 
-const { tc } = useI18n();
+const { t } = useI18n();
 const LIQUIDITY_POSITION = DashboardTableType.LIQUIDITY_POSITION;
 
 const createTableHeaders = (
@@ -29,13 +29,13 @@ const createTableHeaders = (
 
     const headers: DataTableHeader[] = [
       {
-        text: tc('common.name'),
+        text: t('common.name'),
         value: 'name',
         cellClass: 'text-no-wrap',
         sortable: false
       },
       {
-        text: tc('common.value_in_symbol', 0, {
+        text: t('common.value_in_symbol', {
           symbol: get(currency)
         }),
         value: 'usdValue',
@@ -46,7 +46,7 @@ const createTableHeaders = (
 
     if (visibleColumns.includes(TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE)) {
       headers.push({
-        text: tc('dashboard_asset_table.headers.percentage_of_total_net_value'),
+        text: t('dashboard_asset_table.headers.percentage_of_total_net_value'),
         value: 'percentageOfTotalNetValue',
         align: 'end',
         class: 'text-no-wrap',
@@ -58,11 +58,10 @@ const createTableHeaders = (
       visibleColumns.includes(TableColumn.PERCENTAGE_OF_TOTAL_CURRENT_GROUP)
     ) {
       headers.push({
-        text: tc(
+        text: t(
           'dashboard_asset_table.headers.percentage_of_total_current_group',
-          0,
           {
-            group: tc('dashboard.liquidity_position.title')
+            group: t('dashboard.liquidity_position.title')
           }
         ),
         value: 'percentageOfTotalCurrentGroup',
@@ -163,10 +162,10 @@ const getAssets = (assets: XswapAsset[]) => assets.map(({ asset }) => asset);
     <template #title>
       <refresh-button
         :loading="loading"
-        :tooltip="tc('dashboard.liquidity_position.refresh_tooltip')"
+        :tooltip="t('dashboard.liquidity_position.refresh_tooltip')"
         @refresh="fetch(true)"
       />
-      {{ tc('dashboard.liquidity_position.title') }}
+      {{ t('dashboard.liquidity_position.title') }}
       <v-btn :to="route" icon class="ml-2">
         <v-icon>mdi-chevron-right</v-icon>
       </v-btn>
@@ -180,7 +179,7 @@ const getAssets = (assets: XswapAsset[]) => assets.map(({ asset }) => asset);
       >
         <template #activator="{ on }">
           <menu-tooltip-button
-            :tooltip="tc('dashboard_asset_table.select_visible_columns')"
+            :tooltip="t('dashboard_asset_table.select_visible_columns')"
             class-name="ml-4 nft_balance_table__column-filter__button"
             :on-menu="on"
           >
@@ -189,7 +188,7 @@ const getAssets = (assets: XswapAsset[]) => assets.map(({ asset }) => asset);
         </template>
         <visible-columns-selector
           :group="LIQUIDITY_POSITION"
-          :group-label="tc('dashboard.liquidity_position.title')"
+          :group-label="t('dashboard.liquidity_position.title')"
         />
       </v-menu>
     </template>
@@ -243,7 +242,7 @@ const getAssets = (assets: XswapAsset[]) => assets.map(({ asset }) => asset);
       <template #body.append="{ isMobile }">
         <row-append
           label-colspan="1"
-          :label="tc('common.total')"
+          :label="t('common.total')"
           :right-patch-colspan="tableHeaders.length - 2"
           :is-mobile="isMobile"
         >

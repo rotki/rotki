@@ -15,7 +15,7 @@ const props = defineProps({
 const { vault } = toRefs(props);
 const premium = usePremium();
 const { fontStyle } = useTheme();
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const valueLost = computed(() => {
   const makerVault = get(vault);
@@ -45,19 +45,19 @@ const dai: string = assetSymbolToIdentifierMap.DAI;
 </script>
 
 <template>
-  <stat-card :title="tc('loan_liquidation.title')" :class="$style.liquidation">
+  <stat-card :title="t('loan_liquidation.title')" :class="$style.liquidation">
     <div class="pb-5" :class="$style.upper">
-      <loan-row :title="tc('loan_liquidation.liquidation_price')">
+      <loan-row :title="t('loan_liquidation.liquidation_price')">
         <amount-display fiat-currency="USD" :value="vault.liquidationPrice" />
       </loan-row>
       <v-divider class="my-4" />
-      <loan-row :title="tc('loan_liquidation.minimum_ratio')" :medium="false">
+      <loan-row :title="t('loan_liquidation.minimum_ratio')" :medium="false">
         <percentage-display :value="vault.liquidationRatio" />
       </loan-row>
     </div>
     <div>
       <span :class="$style.header" :style="fontStyle">
-        {{ tc('loan_liquidation.liquidation_events') }}
+        {{ t('loan_liquidation.liquidation_events') }}
       </span>
       <v-skeleton-loader
         v-if="premium"
@@ -68,7 +68,7 @@ const dai: string = assetSymbolToIdentifierMap.DAI;
       >
         <div v-if="liquidated && liquidated.amount.gt(0)">
           <div class="mb-2">
-            <loan-row :title="tc('loan_liquidation.liquidated_collateral')">
+            <loan-row :title="t('loan_liquidation.liquidated_collateral')">
               <amount-display
                 :asset-padding="assetPadding"
                 :value="liquidated.amount"
@@ -83,7 +83,7 @@ const dai: string = assetSymbolToIdentifierMap.DAI;
               />
             </loan-row>
           </div>
-          <loan-row :title="tc('loan_liquidation.outstanding_debt')">
+          <loan-row :title="t('loan_liquidation.outstanding_debt')">
             <amount-display
               :asset-padding="assetPadding"
               :value="totalInterestOwed"
@@ -91,7 +91,7 @@ const dai: string = assetSymbolToIdentifierMap.DAI;
             />
           </loan-row>
           <v-divider class="my-4" />
-          <loan-row :title="tc('loan_liquidation.total_value_lost')">
+          <loan-row :title="t('loan_liquidation.total_value_lost')">
             <amount-display
               :asset-padding="assetPadding"
               :value="valueLost"
@@ -99,7 +99,7 @@ const dai: string = assetSymbolToIdentifierMap.DAI;
             />
           </loan-row>
         </div>
-        <div v-else v-text="tc('loan_liquidation.no_events')" />
+        <div v-else v-text="t('loan_liquidation.no_events')" />
       </v-skeleton-loader>
       <div v-else class="text-right">
         <premium-lock />

@@ -10,7 +10,7 @@ const expanded: Ref<Report[]> = ref([]);
 const reportStore = useReportsStore();
 const { fetchReports, deleteReport, isLatestReport } = reportStore;
 const { reports } = storeToRefs(reportStore);
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const items = computed(() =>
   get(reports).entries.map((value, index) => ({
@@ -26,35 +26,35 @@ const limits = computed(() => ({
 
 const tableHeaders: ComputedRef<DataTableHeader[]> = computed(() => [
   {
-    text: tc('profit_loss_reports.columns.start'),
+    text: t('profit_loss_reports.columns.start'),
     value: 'startTs'
   },
   {
-    text: tc('profit_loss_reports.columns.end'),
+    text: t('profit_loss_reports.columns.end'),
     value: 'endTs'
   },
   {
-    text: tc('profit_loss_reports.columns.taxfree_profit_loss'),
+    text: t('profit_loss_reports.columns.taxfree_profit_loss'),
     value: 'free',
     align: 'end'
   },
   {
-    text: tc('profit_loss_reports.columns.taxable_profit_loss'),
+    text: t('profit_loss_reports.columns.taxable_profit_loss'),
     value: 'taxable',
     align: 'end'
   },
   {
-    text: tc('profit_loss_reports.columns.size'),
+    text: t('profit_loss_reports.columns.size'),
     value: 'sizeOnDisk',
     align: 'end'
   },
   {
-    text: tc('profit_loss_reports.columns.created'),
+    text: t('profit_loss_reports.columns.created'),
     value: 'timestamp',
     align: 'end'
   },
   {
-    text: tc('profit_loss_reports.columns.actions'),
+    text: t('profit_loss_reports.columns.actions'),
     value: 'actions',
     align: 'end',
     width: 140,
@@ -86,7 +86,7 @@ const expand = (item: Report) => {
 <template>
   <card outlined-body>
     <template #title>
-      {{ tc('profit_loss_reports.title') }}
+      {{ t('profit_loss_reports.title') }}
     </template>
     <data-table
       :headers="tableHeaders"
@@ -100,7 +100,7 @@ const expand = (item: Report) => {
           :total="limits.total"
           :limit="limits.limit"
           :colspan="headers.length"
-          :label="tc('profit_loss_reports.title')"
+          :label="t('profit_loss_reports.title')"
         />
       </template>
       <template #item.timestamp="{ item }">
@@ -145,7 +145,7 @@ const expand = (item: Report) => {
               <v-icon small>mdi-open-in-app</v-icon>
             </v-btn>
           </template>
-          <span>{{ tc('reports_table.load.tooltip') }}</span>
+          <span>{{ t('reports_table.load.tooltip') }}</span>
         </v-tooltip>
 
         <v-tooltip top open-delay="400">
@@ -160,7 +160,7 @@ const expand = (item: Report) => {
               <v-icon small>mdi-delete</v-icon>
             </v-btn>
           </template>
-          <span>{{ tc('reports_table.delete.tooltip') }}</span>
+          <span>{{ t('reports_table.delete.tooltip') }}</span>
         </v-tooltip>
       </template>
       <template #expanded-item="{ headers, item }">

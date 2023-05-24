@@ -20,7 +20,7 @@ const props = defineProps({
 
 const premium = usePremium();
 const { totalInterestOwed } = toRefs(props);
-const { tc } = useI18n();
+const { t } = useI18n();
 const interest = computed(() => {
   if (get(totalInterestOwed).isNegative()) {
     return Zero;
@@ -35,10 +35,10 @@ const assetPadding = 4;
 <template>
   <fragment>
     <v-divider class="my-4" />
-    <loan-row :title="tc('makerdao_vault_debt.stability_fee')" class="mb-2">
+    <loan-row :title="t('makerdao_vault_debt.stability_fee')" class="mb-2">
       <percentage-display :value="stabilityFee" :asset-padding="assetPadding" />
     </loan-row>
-    <loan-row :title="tc('makerdao_vault_debt.total_lost')">
+    <loan-row :title="t('makerdao_vault_debt.total_lost')">
       <div v-if="premium">
         <amount-display
           :asset-padding="assetPadding"

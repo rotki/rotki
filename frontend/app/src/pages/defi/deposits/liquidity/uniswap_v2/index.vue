@@ -33,7 +33,7 @@ const { isModuleEnabled } = useModules();
 const { tokenAddress } = useAssetInfoRetrieval();
 const { isLoading, shouldShowLoadingScreen } = useStatusStore();
 
-const { tc } = useI18n();
+const { t } = useI18n();
 const { premiumURL } = useInterop();
 
 const enabled = isModuleEnabled(modules[0]);
@@ -82,17 +82,17 @@ const lpType = LpType.UNISWAP_V2;
   <module-not-active v-if="!enabled" :modules="modules" />
   <progress-screen v-else-if="loading">
     <template #message>
-      {{ tc('uniswap.loading') }}
+      {{ t('uniswap.loading') }}
     </template>
     <template v-if="!premium" #default>
       <i18n tag="div" path="uniswap.loading_non_premium">
-        <base-external-link :text="tc('uniswap.premium')" :href="premiumURL" />
+        <base-external-link :text="t('uniswap.premium')" :href="premiumURL" />
       </i18n>
     </template>
   </progress-screen>
   <div v-else class="uniswap">
     <refresh-header
-      :title="tc('uniswap.title', 0, { v: 2 })"
+      :title="t('uniswap.title', { v: 2 })"
       class="mt-4"
       :loading="primaryRefreshing || secondaryRefreshing"
       @refresh="refresh()"
@@ -144,7 +144,7 @@ const lpType = LpType.UNISWAP_V2;
           <div class="mt-2">
             <div>
               <div class="text--secondary text-body-2">
-                {{ tc('common.balance') }}
+                {{ t('common.balance') }}
               </div>
               <div class="d-flex text-h6">
                 <balance-display
@@ -158,7 +158,7 @@ const lpType = LpType.UNISWAP_V2;
 
             <div class="mt-6">
               <div class="text--secondary text-body-2">
-                {{ tc('common.assets') }}
+                {{ t('common.assets') }}
               </div>
               <div>
                 <v-row

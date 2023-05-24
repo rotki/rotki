@@ -1,6 +1,6 @@
 <script setup lang="ts">
 const { dockerRiskAccepted } = storeToRefs(useMainStore());
-const { tc } = useI18n();
+const { t } = useI18n();
 const { usageGuideUrl } = useInterop();
 
 const proceed = () => {
@@ -14,7 +14,7 @@ const proceed = () => {
       <div class="ml-4">
         <i18n path="docker_warning.title" tag="div">
           <base-external-link
-            :text="tc('docker_warning.documentation')"
+            :text="t('docker_warning.documentation')"
             :href="usageGuideUrl + '#docker'"
           />
         </i18n>
@@ -22,7 +22,7 @@ const proceed = () => {
     </v-alert>
 
     <v-btn class="mt-8" block depressed color="primary" @click="proceed()">
-      {{ tc('docker_warning.action') }}
+      {{ t('docker_warning.action') }}
     </v-btn>
   </div>
 </template>

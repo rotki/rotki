@@ -1,16 +1,16 @@
 <script setup lang="ts">
-const { tc } = useI18n();
+const { t } = useI18n();
 const { closeApp } = useInterop();
 </script>
 
 <template>
   <error-screen
     class="macos-unsupported"
-    :header="tc('macos_unsupported.header')"
-    :alternative="tc('macos_unsupported.message')"
+    :header="t('macos_unsupported.header')"
+    :alternative="t('macos_unsupported.message')"
   >
     <v-btn depressed color="primary" @click="closeApp()">
-      {{ tc('common.actions.terminate') }}
+      {{ t('common.actions.terminate') }}
     </v-btn>
   </error-screen>
 </template>

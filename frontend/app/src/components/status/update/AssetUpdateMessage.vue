@@ -60,12 +60,12 @@ onMounted(() => {
   set(upToVersion, get(versions).upToVersion);
 });
 
-const { tc } = useI18n();
+const { t } = useI18n();
 </script>
 
 <template>
   <card :flat="headless">
-    <template #title>{{ tc('asset_update.title') }}</template>
+    <template #title>{{ t('asset_update.title') }}</template>
     <i18n class="text-body-1" tag="div" path="asset_update.description">
       <template #remote>
         <span class="font-weight-medium">{{ versions.remote }}</span>
@@ -75,11 +75,11 @@ const { tc } = useI18n();
       </template>
     </i18n>
     <div class="text-body-1 mt-4">
-      {{ tc('asset_update.total_changes', 0, { changes: versions.changes }) }}
+      {{ t('asset_update.total_changes', { changes: versions.changes }) }}
     </div>
 
     <div v-if="multiple" class="font-weight-medium text-body-1 mt-4">
-      {{ tc('asset_update.advanced') }}
+      {{ t('asset_update.advanced') }}
     </div>
     <v-row v-if="multiple">
       <v-col>
@@ -88,7 +88,7 @@ const { tc } = useI18n();
           class="asset-update__partial"
           dense
           hide-details
-          :label="tc('asset_update.partially_update')"
+          :label="t('asset_update.partially_update')"
         />
         <v-col cols="6" class="pa-0 ml-8 mt-2 mb-2">
           <v-text-field
@@ -100,7 +100,7 @@ const { tc } = useI18n();
             hide-details
             :min="versions.local"
             :max="versions.remote"
-            :label="tc('asset_update.up_to_version')"
+            :label="t('asset_update.up_to_version')"
             @change="onChange($event)"
           />
         </v-col>
@@ -111,19 +111,19 @@ const { tc } = useI18n();
         v-if="headless"
         v-model="skipUpdate"
         dense
-        :label="tc('asset_update.skip_notification')"
+        :label="t('asset_update.skip_notification')"
       />
     </template>
     <template #buttons>
       <v-row justify="end" no-gutters>
         <v-col cols="auto" class="mr-2">
           <v-btn text @click="emit('dismiss', skipUpdate)">
-            {{ tc('common.actions.skip') }}
+            {{ t('common.actions.skip') }}
           </v-btn>
         </v-col>
         <v-col cols="auto">
           <v-btn color="primary" depressed @click="emit('confirm')">
-            {{ tc('common.actions.update') }}
+            {{ t('common.actions.update') }}
           </v-btn>
         </v-col>
       </v-row>

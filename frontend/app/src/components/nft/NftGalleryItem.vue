@@ -48,7 +48,7 @@ const imageUrl = computed(() => {
 
 const isMediaVideo = computed(() => isVideo(get(imageUrl)));
 
-const { tc } = useI18n();
+const { t } = useI18n();
 const css = useCssModule();
 
 const domain: ComputedRef<string | null> = computed(() =>
@@ -60,15 +60,15 @@ const { show } = useConfirmStore();
 const showAllowDomainConfirmation = () => {
   show(
     {
-      title: tc(
+      title: t(
         'general_settings.nft_setting.update_whitelist_confirmation.title'
       ),
-      message: tc(
+      message: t(
         'general_settings.nft_setting.update_whitelist_confirmation.message',
-        2,
         {
           domain: get(domain)
-        }
+        },
+        2
       )
     },
     allowDomain
@@ -126,7 +126,7 @@ const mediaStyle: ComputedRef<StyleValue> = computed(() => {
         </template>
 
         <span>
-          {{ tc('nft_balance_table.hidden_hint') }}
+          {{ t('nft_balance_table.hidden_hint') }}
         </span>
       </v-tooltip>
 
@@ -142,7 +142,7 @@ const mediaStyle: ComputedRef<StyleValue> = computed(() => {
           </v-btn>
         </template>
         <span>
-          {{ tc('nft_gallery.allow_domain') }}
+          {{ t('nft_gallery.allow_domain') }}
           <span class="font-weight-bold warning--text">{{ domain }}</span>
         </span>
       </v-tooltip>

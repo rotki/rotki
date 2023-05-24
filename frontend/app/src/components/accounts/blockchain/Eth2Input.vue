@@ -34,7 +34,7 @@ const updateProperties = (validator: Eth2Validator | null) => {
   ownershipPercentage.value = validator?.ownershipPercentage ?? '';
 };
 
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const rules = {
   validatorIndex: {
@@ -45,7 +45,7 @@ const rules = {
   },
   ownershipPercentage: {
     percentage: helpers.withMessage(
-      tc('eth2_input.ownership.validation'),
+      t('eth2_input.ownership.validation'),
       and(minValue(0), maxValue(100))
     )
   }
@@ -99,7 +99,7 @@ watch(
         outlined
         type="number"
         :disabled="disabled"
-        :label="tc('common.validator_index')"
+        :label="t('common.validator_index')"
         :error-messages="toMessages(v$.validatorIndex)"
         @blur="v$.validatorIndex.$touch()"
       />
@@ -109,7 +109,7 @@ watch(
         v-model="publicKey"
         outlined
         :disabled="disabled"
-        :label="tc('eth2_input.public_key')"
+        :label="t('eth2_input.public_key')"
         :error-messages="toMessages(v$.publicKey)"
         @blur="v$.publicKey.$touch()"
       />
@@ -119,9 +119,9 @@ watch(
         v-model="ownershipPercentage"
         outlined
         placeholder="100"
-        :label="tc('eth2_input.ownership_percentage')"
+        :label="t('eth2_input.ownership_percentage')"
         persistent-hint
-        :hint="tc('eth2_input.ownership.hint')"
+        :hint="t('eth2_input.ownership.hint')"
         suffix="%"
         :error-messages="toMessages(v$.ownershipPercentage)"
         @blur="v$.ownershipPercentage.$touch()"

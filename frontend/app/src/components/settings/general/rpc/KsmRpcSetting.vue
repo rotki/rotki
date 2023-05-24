@@ -1,18 +1,18 @@
 <script lang="ts" setup>
 import { Defaults } from '@/data/defaults';
 
-const { tc } = useI18n();
+const { t } = useI18n();
 const ksmRpcEndpoint = ref(Defaults.KSM_RPC_ENDPOINT);
 
 const { ksmRpcEndpoint: ksmRpc } = storeToRefs(useGeneralSettingsStore());
 
 const ksmSuccessMessage = (endpoint: string) => {
   if (endpoint) {
-    return tc('general_settings.validation.ksm_rpc.success_set', 0, {
+    return t('general_settings.validation.ksm_rpc.success_set', {
       endpoint
     });
   }
-  return tc('general_settings.validation.ksm_rpc.success_unset');
+  return t('general_settings.validation.ksm_rpc.success_unset');
 };
 
 onBeforeMount(() => {
@@ -24,14 +24,14 @@ onBeforeMount(() => {
   <settings-option
     #default="{ error, success, update }"
     setting="ksmRpcEndpoint"
-    :error-message="tc('general_settings.validation.ksm_rpc.error')"
+    :error-message="t('general_settings.validation.ksm_rpc.error')"
     :success-message="ksmSuccessMessage"
   >
     <v-text-field
       v-model="ksmRpcEndpoint"
       outlined
       class="general-settings__fields__ksm-rpc-endpoint"
-      :label="tc('general_settings.labels.ksm_rpc_endpoint')"
+      :label="t('general_settings.labels.ksm_rpc_endpoint')"
       type="text"
       :success-messages="success"
       :error-messages="error"

@@ -39,7 +39,7 @@ const route = useRoute();
 const options = ref<PaginationOptions | null>(null);
 const { report } = toRefs(props);
 
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const tableHeaders = computed<DataTableHeader[]>(() => [
   {
@@ -50,61 +50,61 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
     cellClass: 'px-0'
   },
   {
-    text: tc('common.type'),
+    text: t('common.type'),
     align: 'center',
     value: 'type',
     width: 110,
     sortable: false
   },
   {
-    text: tc('common.location'),
+    text: t('common.location'),
     value: 'location',
     width: '120px',
     align: 'center',
     sortable: false
   },
   {
-    text: tc('profit_loss_events.headers.tax_free_amount'),
+    text: t('profit_loss_events.headers.tax_free_amount'),
     align: 'end',
     value: 'free_amount',
     sortable: false
   },
   {
-    text: tc('profit_loss_events.headers.taxable_amount'),
+    text: t('profit_loss_events.headers.taxable_amount'),
     align: 'end',
     value: 'taxable_amount',
     sortable: false
   },
   {
-    text: tc('common.price'),
+    text: t('common.price'),
     align: 'end',
     value: 'price',
     sortable: false
   },
   {
-    text: tc('profit_loss_events.headers.pnl_free'),
+    text: t('profit_loss_events.headers.pnl_free'),
     align: 'end',
     value: 'pnl_free',
     sortable: false
   },
   {
-    text: tc('profit_loss_events.headers.pnl_taxable'),
+    text: t('profit_loss_events.headers.pnl_taxable'),
     align: 'end',
     value: 'pnl_taxable',
     sortable: false
   },
   {
-    text: tc('common.datetime'),
+    text: t('common.datetime'),
     value: 'time',
     sortable: false
   },
   {
-    text: tc('profit_loss_events.headers.notes'),
+    text: t('profit_loss_events.headers.notes'),
     value: 'notes',
     sortable: false
   },
   {
-    text: tc('profit_loss_events.headers.actions'),
+    text: t('profit_loss_events.headers.actions'),
     value: 'actions',
     align: 'end',
     width: 140,
@@ -170,7 +170,7 @@ const checkGroupLine = (entries: ProfitLossEvents, index: number) => {
 
 <template>
   <card outlined-body>
-    <template #title>{{ tc('common.events') }}</template>
+    <template #title>{{ t('common.events') }}</template>
     <data-table
       :headers="tableHeaders"
       :items="items"
@@ -196,7 +196,7 @@ const checkGroupLine = (entries: ProfitLossEvents, index: number) => {
               />
             </div>
           </template>
-          <span>{{ tc('profit_loss_events.same_action') }}</span>
+          <span>{{ t('profit_loss_events.same_action') }}</span>
         </v-tooltip>
       </template>
       <template #item.type="{ item }">
@@ -264,7 +264,7 @@ const checkGroupLine = (entries: ProfitLossEvents, index: number) => {
           :time-end="report.lastProcessedTimestamp"
           :time-start="report.firstProcessedTimestamp"
           :colspan="headers.length"
-          :label="tc('common.events')"
+          :label="t('common.events')"
         />
       </template>
       <template #item.notes="{ item }">

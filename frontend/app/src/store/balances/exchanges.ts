@@ -24,7 +24,7 @@ export const useExchangeBalancesStore = defineStore(
   () => {
     const exchangeBalances: Ref<ExchangeData> = ref({});
 
-    const { t, tc } = useI18n();
+    const { t } = useI18n();
 
     const { awaitTask, isTaskRunning, metadata } = useTaskStore();
     const { notify } = useNotificationsStore();
@@ -232,7 +232,7 @@ export const useExchangeBalancesStore = defineStore(
       const { taskId } = await getExchangeSavingsTask(defaults);
 
       const taskMeta = {
-        title: tc('actions.balances.exchange_savings_interest.task.title', 0, {
+        title: t('actions.balances.exchange_savings_interest.task.title', {
           location
         })
       };
@@ -247,14 +247,11 @@ export const useExchangeBalancesStore = defineStore(
         return true;
       } catch {
         notify({
-          title: tc(
-            'actions.balances.exchange_savings_interest.error.title',
-            0,
-            { location }
-          ),
-          message: tc(
+          title: t('actions.balances.exchange_savings_interest.error.title', {
+            location
+          }),
+          message: t(
             'actions.balances.exchange_savings_interest.error.message',
-            0,
             { location }
           ),
           display: true

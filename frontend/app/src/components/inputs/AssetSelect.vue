@@ -59,7 +59,7 @@ const error = ref('');
 const loading = ref(false);
 
 const { assetSearch, assetMapping } = useAssetInfoApi();
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const errors = computed(() => {
   const messages = get(errorMessages);
@@ -253,7 +253,7 @@ const listeners = useListeners();
     </template>
     <template #no-data>
       <div data-cy="no_assets" class="px-4 py-2">
-        {{ tc('asset_select.no_results') }}
+        {{ t('asset_select.no_results') }}
       </div>
     </template>
     <template #append>

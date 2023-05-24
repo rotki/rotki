@@ -7,7 +7,7 @@ const emit = defineEmits<{ (e: 'visible:update', visible: boolean): void }>();
 
 const { visible } = toRefs(props);
 const { pinned } = storeToRefs(useAreaVisibilityStore());
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const toggleVisibility = () => {
   emit('visible:update', !get(visible));
@@ -17,7 +17,7 @@ const toggleVisibility = () => {
 <template>
   <menu-tooltip-button
     v-if="pinned"
-    :tooltip="tc('pinned.tooltip')"
+    :tooltip="t('pinned.tooltip')"
     class-name="secondary--text text--lighten-4"
     @click="toggleVisibility()"
   >

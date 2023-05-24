@@ -11,7 +11,7 @@ const { fetchBalances, fetchEvents } = useSushiswapStore();
 const { isModuleEnabled } = useModules();
 const { shouldShowLoadingScreen, isLoading } = useStatusStore();
 const premium = usePremium();
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const primaryRefreshing = isLoading(section);
 const secondaryRefreshing = isLoading(secondSection);
@@ -24,11 +24,11 @@ onMounted(async () => {
 </script>
 
 <template>
-  <no-premium-placeholder v-if="!premium" :text="tc('sushiswap.premium')" />
+  <no-premium-placeholder v-if="!premium" :text="t('sushiswap.premium')" />
   <module-not-active v-else-if="!isEnabled" :modules="modules" />
   <progress-screen v-else-if="loading">
     <template #message>
-      {{ tc('sushiswap.loading') }}
+      {{ t('sushiswap.loading') }}
     </template>
   </progress-screen>
   <div v-else>

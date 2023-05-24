@@ -9,7 +9,7 @@ import {
 } from '@/types/session/sync';
 import { type AllBalancePayload } from '@/types/blockchain/accounts';
 
-const { t, tc } = useI18n();
+const { t } = useI18n();
 const { logout } = useSessionStore();
 const { lastBalanceSave, lastDataUpload } = storeToRefs(usePeriodicStore());
 const { upgradeVisible, canRequestData } = storeToRefs(useSessionAuthStore());
@@ -178,7 +178,7 @@ const importSnapshot = async () => {
     >
       <template #activator="{ on }">
         <menu-tooltip-button
-          :tooltip="tc('sync_indicator.menu_tooltip', premium ? 2 : 1)"
+          :tooltip="t('sync_indicator.menu_tooltip', premium ? 2 : 1)"
           class-name="secondary--text text--lighten-4"
           :on-menu="on"
         >
@@ -357,14 +357,14 @@ const importSnapshot = async () => {
       v-else
       confirm-type="warning"
       :display="displayConfirmation"
-      :title="tc('sync_indicator.upload_confirmation.title', textChoice)"
+      :title="t('sync_indicator.upload_confirmation.title', textChoice)"
       :message="message"
       :disabled="!confirmChecked"
       :primary-action="
-        tc('sync_indicator.upload_confirmation.action', textChoice)
+        t('sync_indicator.upload_confirmation.action', textChoice)
       "
       :loading="isSyncing"
-      :secondary-action="tc('common.actions.cancel')"
+      :secondary-action="t('common.actions.cancel')"
       @cancel="cancel()"
       @confirm="performSync()"
     >

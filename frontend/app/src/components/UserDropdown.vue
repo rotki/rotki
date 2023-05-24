@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const { t, tc } = useI18n();
+const { t } = useI18n();
 
 const KEY_REMEMBER_PASSWORD = 'rotki.remember_password';
 
@@ -18,8 +18,8 @@ const { show } = useConfirmStore();
 const showConfirmation = () =>
   show(
     {
-      title: tc('user_dropdown.confirmation.title'),
-      message: tc('user_dropdown.confirmation.message'),
+      title: t('user_dropdown.confirmation.title'),
+      message: t('user_dropdown.confirmation.message'),
       type: 'info'
     },
     async () => {

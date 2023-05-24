@@ -63,7 +63,7 @@ export const useHistoryEventFilter = (
   const { assetSearch } = useAssetInfoApi();
   const { assetInfo } = useAssetInfoRetrieval();
   const { associatedLocations } = storeToRefs(useHistoryStore());
-  const { tc } = useI18n();
+  const { t } = useI18n();
 
   const matchers: ComputedRef<Matcher[]> = computed(() => {
     const data: Matcher[] = [
@@ -73,9 +73,9 @@ export const useHistoryEventFilter = (
             {
               key: HistoryEventFilterKeys.START,
               keyValue: HistoryEventFilterValueKeys.START,
-              description: tc('transactions.filter.start_date'),
+              description: t('transactions.filter.start_date'),
               string: true,
-              hint: tc('transactions.filter.date_hint', 0, {
+              hint: t('transactions.filter.date_hint', {
                 format: getDateInputISOFormat(get(dateInputFormat))
               }),
               suggestions: () => [],
@@ -86,9 +86,9 @@ export const useHistoryEventFilter = (
             {
               key: HistoryEventFilterKeys.END,
               keyValue: HistoryEventFilterValueKeys.END,
-              description: tc('transactions.filter.end_date'),
+              description: t('transactions.filter.end_date'),
               string: true,
-              hint: tc('transactions.filter.date_hint', 0, {
+              hint: t('transactions.filter.date_hint', {
                 format: getDateInputISOFormat(get(dateInputFormat))
               }),
               suggestions: () => [],
@@ -100,7 +100,7 @@ export const useHistoryEventFilter = (
       {
         key: HistoryEventFilterKeys.ASSET,
         keyValue: HistoryEventFilterValueKeys.ASSET,
-        description: tc('transactions.filter.asset'),
+        description: t('transactions.filter.asset'),
         asset: true,
         suggestions: assetSuggestions(assetSearch),
         deserializer: assetDeserializer(assetInfo)
@@ -127,7 +127,7 @@ export const useHistoryEventFilter = (
       data.push({
         key: HistoryEventFilterKeys.PROTOCOL,
         keyValue: HistoryEventFilterValueKeys.PROTOCOL,
-        description: tc('transactions.filter.protocol'),
+        description: t('transactions.filter.protocol'),
         multiple: true,
         string: true,
         suggestions: () => get(counterparties),
@@ -139,7 +139,7 @@ export const useHistoryEventFilter = (
       data.push({
         key: HistoryEventFilterKeys.LOCATION,
         keyValue: HistoryEventFilterValueKeys.LOCATION,
-        description: tc('transactions.filter.location'),
+        description: t('transactions.filter.location'),
         string: true,
         suggestions: () => get(associatedLocations),
         validate: location => !!location
@@ -150,7 +150,7 @@ export const useHistoryEventFilter = (
       data.push({
         key: HistoryEventFilterKeys.ENTRY_TYPE,
         keyValue: HistoryEventFilterValueKeys.ENTRY_TYPE,
-        description: tc('transactions.filter.entry_type'),
+        description: t('transactions.filter.entry_type'),
         string: true,
         multiple: true,
         suggestions: () =>
@@ -165,7 +165,7 @@ export const useHistoryEventFilter = (
       data.push({
         key: HistoryEventFilterKeys.TX_HASHES,
         keyValue: HistoryEventFilterValueKeys.TX_HASHES,
-        description: tc('transactions.filter.tx_hash'),
+        description: t('transactions.filter.tx_hash'),
         string: true,
         multiple: true,
         suggestions: () => [],
@@ -177,7 +177,7 @@ export const useHistoryEventFilter = (
       data.push({
         key: HistoryEventFilterKeys.VALIDATOR_INDICES,
         keyValue: HistoryEventFilterValueKeys.VALIDATOR_INDICES,
-        description: tc('transactions.filter.validator_index'),
+        description: t('transactions.filter.validator_index'),
         string: true,
         multiple: true,
         suggestions: () => [],

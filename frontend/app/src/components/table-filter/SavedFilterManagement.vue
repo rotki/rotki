@@ -64,14 +64,14 @@ const addToSavedFilter = async () => {
     startAnimation();
   } else {
     setMessage({
-      title: tc('table_filter.saved_filters.saving.title').toString(),
+      title: t('table_filter.saved_filters.saving.title').toString(),
       description: status.message,
       success: false
     });
   }
 };
 
-const { tc } = useI18n();
+const { t } = useI18n();
 const css = useCssModule();
 </script>
 
@@ -98,9 +98,9 @@ const css = useCssModule();
             [css['add-tooltip__wrapper--added']]: added
           }"
         >
-          <div>{{ tc('table_filter.saved_filters.actions.add') }}</div>
+          <div>{{ t('table_filter.saved_filters.actions.add') }}</div>
           <div class="green--text text--lighten-2">
-            {{ tc('table_filter.saved_filters.added') }}
+            {{ t('table_filter.saved_filters.added') }}
           </div>
         </div>
       </div>
@@ -129,7 +129,7 @@ const css = useCssModule();
               <v-icon>mdi-filter-cog</v-icon>
             </v-btn>
           </template>
-          <span>{{ tc('table_filter.saved_filters.actions.list') }}</span>
+          <span>{{ t('table_filter.saved_filters.actions.list') }}</span>
         </v-tooltip>
       </template>
       <v-list v-if="savedFilters.length > 0" class="py-4">
@@ -162,7 +162,7 @@ const css = useCssModule();
                   </v-btn>
                 </template>
                 <span>
-                  {{ tc('table_filter.saved_filters.actions.apply') }}
+                  {{ t('table_filter.saved_filters.actions.apply') }}
                 </span>
               </v-tooltip>
 
@@ -181,7 +181,7 @@ const css = useCssModule();
                   </v-btn>
                 </template>
                 <span>
-                  {{ tc('table_filter.saved_filters.actions.remove') }}
+                  {{ t('table_filter.saved_filters.actions.remove') }}
                 </span>
               </v-tooltip>
             </div>

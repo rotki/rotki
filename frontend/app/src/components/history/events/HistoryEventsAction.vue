@@ -15,7 +15,7 @@ const { event } = toRefs(props);
 
 const evmEvent = isEvmEventRef(event);
 
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const emit = defineEmits<{
   (e: 'add-event', event: EvmHistoryEvent): void;
@@ -48,7 +48,7 @@ const redecode = (data: EvmChainAndTxHash) => emit('redecode', data);
             <v-icon>mdi-plus</v-icon>
           </v-list-item-icon>
           <v-list-item-content>
-            {{ tc('transactions.actions.add_event') }}
+            {{ t('transactions.actions.add_event') }}
           </v-list-item-content>
         </v-list-item>
         <v-list-item link @click="toggleIgnore(event)">
@@ -59,8 +59,8 @@ const redecode = (data: EvmChainAndTxHash) => emit('redecode', data);
           <v-list-item-content>
             {{
               event.ignoredInAccounting
-                ? tc('transactions.unignore')
-                : tc('transactions.ignore')
+                ? t('transactions.unignore')
+                : t('transactions.ignore')
             }}
           </v-list-item-content>
         </v-list-item>
@@ -73,7 +73,7 @@ const redecode = (data: EvmChainAndTxHash) => emit('redecode', data);
             <v-icon>mdi-database-refresh</v-icon>
           </v-list-item-icon>
           <v-list-item-content>
-            {{ tc('transactions.actions.redecode_events') }}
+            {{ t('transactions.actions.redecode_events') }}
           </v-list-item-content>
         </v-list-item>
       </v-list>

@@ -36,7 +36,7 @@ const actionableItemsLength = computed(() => {
   return total;
 });
 
-const { tc } = useI18n();
+const { t } = useI18n();
 </script>
 
 <template>
@@ -45,7 +45,7 @@ const { tc } = useI18n();
       <template #activator="{ on }">
         <v-btn color="error" depressed v-on="on">
           <span class="pr-2">
-            {{ tc('profit_loss_report.actionable.show_issues') }}
+            {{ t('profit_loss_report.actionable.show_issues') }}
           </span>
           <v-chip x-small class="px-2" color="error darken-2">
             {{ actionableItemsLength }}

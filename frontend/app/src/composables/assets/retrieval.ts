@@ -7,10 +7,10 @@ import { TaskType } from '@/types/task-type';
 import { type TaskMeta } from '@/types/task';
 
 export const useAssetInfoRetrieval = () => {
+  const { t } = useI18n();
   const { erc20details } = useAssetInfoApi();
   const { retrieve, isPending } = useAssetCacheStore();
   const { treatEth2AsEth } = storeToRefs(useGeneralSettingsStore());
-  const { tc } = useI18n();
   const { notify } = useNotificationsStore();
   const { awaitTask } = useTaskStore();
 
@@ -147,14 +147,14 @@ export const useAssetInfoRetrieval = () => {
         taskId,
         taskType,
         {
-          title: tc('actions.assets.erc20.task.title', 0, { address })
+          title: t('actions.assets.erc20.task.title', { address })
         }
       );
       return result;
     } catch (e: any) {
       notify({
-        title: tc('actions.assets.erc20.error.title', 0, { address }),
-        message: tc('actions.assets.erc20.error.description', 0, {
+        title: t('actions.assets.erc20.error.title', { address }),
+        message: t('actions.assets.erc20.error.description', {
           message: e.message
         }),
         display: true

@@ -23,14 +23,14 @@ export const useAssetFilter = () => {
   const filters: Ref<Filters> = ref({});
 
   const { allEvmChains } = useSupportedChains();
-  const { tc } = useI18n();
+  const { t } = useI18n();
 
   const matchers: ComputedRef<Matcher[]> = computed(() => [
     {
       key: AssetFilterKeys.SYMBOL,
       keyValue: AssetFilterValueKeys.SYMBOL,
-      description: tc('assets.filter.symbol'),
-      hint: tc('assets.filter.symbol_hint'),
+      description: t('assets.filter.symbol'),
+      hint: t('assets.filter.symbol_hint'),
       string: true,
       suggestions: () => [],
       validate: () => true
@@ -38,8 +38,8 @@ export const useAssetFilter = () => {
     {
       key: AssetFilterKeys.NAME,
       keyValue: AssetFilterValueKeys.NAME,
-      description: tc('assets.filter.name'),
-      hint: tc('assets.filter.name_hint'),
+      description: t('assets.filter.name'),
+      hint: t('assets.filter.name_hint'),
       string: true,
       suggestions: () => [],
       validate: () => true
@@ -47,7 +47,7 @@ export const useAssetFilter = () => {
     {
       key: AssetFilterKeys.EVM_CHAIN,
       keyValue: AssetFilterValueKeys.EVM_CHAIN,
-      description: tc('assets.filter.chain'),
+      description: t('assets.filter.chain'),
       string: true,
       suggestions: () => get(allEvmChains).map(x => x.name),
       validate: (chain: string) => !!chain
@@ -55,7 +55,7 @@ export const useAssetFilter = () => {
     {
       key: AssetFilterKeys.ADDRESS,
       keyValue: AssetFilterValueKeys.ADDRESS,
-      description: tc('assets.filter.address'),
+      description: t('assets.filter.address'),
       string: true,
       suggestions: () => [],
       validate: (address: string) => isValidEthAddress(address)

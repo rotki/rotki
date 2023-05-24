@@ -26,7 +26,7 @@ const chain = Blockchain.ETH;
 const accounts: Ref<GeneralAccount[]> = ref([]);
 
 const { eth2Validators } = storeToRefs(useEthAccountsStore());
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const updateValidators = (validators: Eth2ValidatorEntry[]) => {
   emit('input', { validators, accounts: [] });
@@ -48,7 +48,7 @@ watch(accounts, accounts => updateAccounts(accounts));
     dense
     outlined
     :chains="[chain]"
-    :label="tc('eth2_validator_filter.label')"
+    :label="t('eth2_validator_filter.label')"
     multiple
   />
   <validator-filter-input

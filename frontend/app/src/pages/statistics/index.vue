@@ -2,14 +2,14 @@
 import { PremiumStatistics } from '@/premium/premium';
 
 const premium = usePremium();
-const { tc } = useI18n();
+const { t } = useI18n();
 </script>
 
 <template>
   <v-container>
     <no-premium-placeholder
       v-if="!premium"
-      :text="tc('statistics.no_premium_label')"
+      :text="t('statistics.no_premium_label')"
     />
     <premium-statistics v-else />
   </v-container>

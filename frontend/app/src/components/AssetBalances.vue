@@ -21,7 +21,7 @@ const props = withDefaults(
 const { balances } = toRefs(props);
 const expanded: Ref<AssetBalanceWithPrice[]> = ref([]);
 
-const { t, tc } = useI18n();
+const { t } = useI18n();
 const total = computed(() =>
   bigNumberSum(balances.value.map(({ usdValue }) => usdValue))
 );
@@ -75,7 +75,7 @@ const sortItems = getSortItems(asset => get(assetInfo(asset)));
     :loading="loading"
     single-expand
     :expanded="expanded"
-    :loading-text="tc('asset_balances.loading')"
+    :loading-text="t('asset_balances.loading')"
     :custom-sort="sortItems"
     sort-by="usdValue"
     item-key="asset"
@@ -120,7 +120,7 @@ const sortItems = getSortItems(asset => get(assetInfo(asset)));
     >
       <row-append
         label-colspan="3"
-        :label="tc('common.total')"
+        :label="t('common.total')"
         :is-mobile="isMobile"
       >
         <amount-display

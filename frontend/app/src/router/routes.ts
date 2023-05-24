@@ -111,240 +111,240 @@ export const Routes: AppRouteMap<string> = {
 };
 
 export const useAppRoutes = createSharedComposable(() => {
-  const { tc } = useI18n();
+  const { t } = useI18n();
   const appRoutes = computed(() => ({
     DASHBOARD: {
       route: Routes.DASHBOARD,
       icon: 'mdi-monitor-dashboard',
-      text: tc('navigation_menu.dashboard')
+      text: t('navigation_menu.dashboard')
     },
     ACCOUNTS_BALANCES: {
       route: Routes.ACCOUNTS_BALANCES,
       icon: 'mdi-wallet',
-      text: tc('navigation_menu.accounts_balances')
+      text: t('navigation_menu.accounts_balances')
     },
     ACCOUNTS_BALANCES_BLOCKCHAIN: {
       route: Routes.ACCOUNTS_BALANCES_BLOCKCHAIN,
       icon: 'mdi-wallet',
-      text: tc('navigation_menu.accounts_balances_sub.blockchain_balances')
+      text: t('navigation_menu.accounts_balances_sub.blockchain_balances')
     },
     ACCOUNTS_BALANCES_EXCHANGE: {
       route: Routes.ACCOUNTS_BALANCES_EXCHANGE,
       icon: 'mdi-wallet',
-      text: tc('navigation_menu.accounts_balances_sub.exchange_balances')
+      text: t('navigation_menu.accounts_balances_sub.exchange_balances')
     },
     ACCOUNTS_BALANCES_MANUAL: {
       route: Routes.ACCOUNTS_BALANCES_MANUAL,
       icon: 'mdi-wallet',
-      text: tc('navigation_menu.accounts_balances_sub.manual_balances')
+      text: t('navigation_menu.accounts_balances_sub.manual_balances')
     },
     ACCOUNTS_BALANCES_NON_FUNGIBLE: {
       route: Routes.ACCOUNTS_BALANCES_NON_FUNGIBLE,
       icon: 'mdi-wallet',
-      text: tc('navigation_menu.accounts_balances_sub.non_fungible_balances')
+      text: t('navigation_menu.accounts_balances_sub.non_fungible_balances')
     },
     NFTS: {
       route: Routes.NFTS,
       icon: 'mdi-image-area',
-      text: tc('navigation_menu.nfts')
+      text: t('navigation_menu.nfts')
     },
     HISTORY: {
       route: Routes.HISTORY,
       icon: 'mdi-history',
-      text: tc('navigation_menu.history')
+      text: t('navigation_menu.history')
     },
     HISTORY_TRADES: {
       route: Routes.HISTORY_TRADES,
       icon: 'mdi-shuffle-variant',
-      text: tc('navigation_menu.history_sub.trades')
+      text: t('navigation_menu.history_sub.trades')
     },
     HISTORY_DEPOSITS_WITHDRAWALS: {
       route: '/history/deposits-withdrawals',
       icon: 'mdi-bank-transfer',
-      text: tc('navigation_menu.history_sub.deposits_withdrawals')
+      text: t('navigation_menu.history_sub.deposits_withdrawals')
     },
     HISTORY_EVENTS: {
       route: Routes.HISTORY_EVENTS,
       icon: 'mdi-swap-horizontal-bold',
-      text: tc('navigation_menu.history_sub.history_events')
+      text: t('navigation_menu.history_sub.history_events')
     },
     HISTORY_LEDGER_ACTIONS: {
       route: Routes.HISTORY_LEDGER_ACTIONS,
       icon: 'mdi-book-open-variant',
-      text: tc('navigation_menu.history_sub.ledger_actions')
+      text: t('navigation_menu.history_sub.ledger_actions')
     },
     DEFI: {
       route: Routes.DEFI,
       icon: 'mdi-finance',
-      text: tc('navigation_menu.defi')
+      text: t('navigation_menu.defi')
     },
     DEFI_OVERVIEW: {
       route: Routes.DEFI_OVERVIEW,
       icon: 'mdi-chart-box',
-      text: tc('navigation_menu.defi_sub.overview')
+      text: t('navigation_menu.defi_sub.overview')
     },
     DEFI_DEPOSITS: {
       route: '/defi/deposits',
       icon: 'mdi-bank-transfer-in',
-      text: tc('common.deposits')
+      text: t('common.deposits')
     },
     DEFI_LIABILITIES: {
       route: '/defi/liabilities',
       icon: 'mdi-bank-transfer-out',
-      text: tc('navigation_menu.defi_sub.liabilities')
+      text: t('navigation_menu.defi_sub.liabilities')
     },
     DEFI_DEPOSITS_PROTOCOLS: {
       route: '/defi/deposits/protocols',
       icon: 'mdi-bank-transfer-out',
-      text: tc('navigation_menu.defi_sub.deposits_sub.protocols')
+      text: t('navigation_menu.defi_sub.deposits_sub.protocols')
     },
     DEFI_DEPOSITS_LIQUIDITY: {
       route: '/defi/deposits/liquidity',
       icon: 'mdi-bank-transfer-out',
-      text: tc('navigation_menu.defi_sub.deposits_sub.liquidity')
+      text: t('navigation_menu.defi_sub.deposits_sub.liquidity')
     },
     DEFI_DEPOSITS_LIQUIDITY_UNISWAP_V2: {
       route: '/defi/deposits/liquidity/uniswap_v2',
       image: './assets/images/protocols/uniswap.svg',
-      text: tc('navigation_menu.defi_sub.deposits_sub.liquidity_sub.uniswap_v2')
+      text: t('navigation_menu.defi_sub.deposits_sub.liquidity_sub.uniswap_v2')
     },
     DEFI_DEPOSITS_LIQUIDITY_UNISWAP_V3: {
       route: '/defi/deposits/liquidity/uniswap_v3',
       image: './assets/images/protocols/uniswap.svg',
-      text: tc('navigation_menu.defi_sub.deposits_sub.liquidity_sub.uniswap_v3')
+      text: t('navigation_menu.defi_sub.deposits_sub.liquidity_sub.uniswap_v3')
     },
     DEFI_DEPOSITS_LIQUIDITY_BALANCER: {
       route: '/defi/deposits/liquidity/balancer',
       image: './assets/images/protocols/balancer.svg',
-      text: tc('navigation_menu.defi_sub.deposits_sub.liquidity_sub.balancer')
+      text: t('navigation_menu.defi_sub.deposits_sub.liquidity_sub.balancer')
     },
     DEFI_DEPOSITS_LIQUIDITY_SUSHISWAP: {
       route: '/defi/deposits/liquidity/sushiswap',
       image: './assets/images/protocols/sushiswap.svg',
-      text: tc('navigation_menu.defi_sub.deposits_sub.liquidity_sub.sushiswap')
+      text: t('navigation_menu.defi_sub.deposits_sub.liquidity_sub.sushiswap')
     },
     DEFI_AIRDROPS: {
       route: Routes.DEFI_AIRDROPS,
       icon: 'mdi-parachute',
-      text: tc('navigation_menu.defi_sub.airdrops')
+      text: t('navigation_menu.defi_sub.airdrops')
     },
     STATISTICS: {
       route: Routes.STATISTICS,
       icon: 'mdi-chart-bar',
-      text: tc('navigation_menu.statistics')
+      text: t('navigation_menu.statistics')
     },
     STAKING: {
       route: Routes.STAKING,
       icon: 'mdi-inbox-arrow-down',
-      text: tc('navigation_menu.staking')
+      text: t('navigation_menu.staking')
     },
     PROFIT_LOSS_REPORTS: {
       route: Routes.PROFIT_LOSS_REPORTS,
       icon: 'mdi-calculator',
-      text: tc('navigation_menu.profit_loss_report')
+      text: t('navigation_menu.profit_loss_report')
     },
     PROFIT_LOSS_REPORT: {
       route: Routes.PROFIT_LOSS_REPORT,
       icon: 'mdi-calculator',
-      text: tc('navigation_menu.profit_loss_report')
+      text: t('navigation_menu.profit_loss_report')
     },
     ASSET_MANAGER: {
       route: Routes.ASSET_MANAGER,
       icon: 'mdi-database-edit',
-      text: tc('navigation_menu.manage_assets')
+      text: t('navigation_menu.manage_assets')
     },
     ASSET_MANAGER_MANAGED: {
       route: Routes.ASSET_MANAGER_MANAGED,
       icon: 'mdi-database-edit',
-      text: tc('navigation_menu.manage_assets_sub.managed_assets')
+      text: t('navigation_menu.manage_assets_sub.managed_assets')
     },
     ASSET_MANAGER_CUSTOM: {
       route: Routes.ASSET_MANAGER_CUSTOM,
       icon: 'mdi-database-edit',
-      text: tc('navigation_menu.manage_assets_sub.custom_assets')
+      text: t('navigation_menu.manage_assets_sub.custom_assets')
     },
     ASSET_MANAGER_NEWLY_DETECTED: {
       route: Routes.ASSET_MANAGER_NEWLY_DETECTED,
       icon: 'mdi-database-clock',
-      text: tc('navigation_menu.manage_assets_sub.newly_detected')
+      text: t('navigation_menu.manage_assets_sub.newly_detected')
     },
     PRICE_MANAGER: {
       route: Routes.PRICE_MANAGER,
       icon: 'mdi-chart-line',
-      text: tc('navigation_menu.manage_prices')
+      text: t('navigation_menu.manage_prices')
     },
     PRICE_MANAGER_LATEST: {
       route: Routes.PRICE_MANAGER_LATEST,
       icon: 'mdi-chart-line',
-      text: tc('navigation_menu.manage_prices_sub.latest_prices')
+      text: t('navigation_menu.manage_prices_sub.latest_prices')
     },
     PRICE_MANAGER_HISTORIC: {
       route: Routes.PRICE_MANAGER_HISTORIC,
       icon: 'mdi-chart-line',
-      text: tc('navigation_menu.manage_prices_sub.historic_prices')
+      text: t('navigation_menu.manage_prices_sub.historic_prices')
     },
     ADDRESS_BOOK_MANAGER: {
       route: Routes.ADDRESS_BOOK_MANAGER,
       icon: 'mdi-book-open',
-      text: tc('navigation_menu.manage_address_book')
+      text: t('navigation_menu.manage_address_book')
     },
     API_KEYS: {
       route: Routes.API_KEYS,
       icon: 'mdi-key-chain-variant',
-      text: tc('navigation_menu.api_keys')
+      text: t('navigation_menu.api_keys')
     },
     API_KEYS_ROTKI_PREMIUM: {
       route: Routes.API_KEYS_ROTKI_PREMIUM,
       icon: 'mdi-key-chain-variant',
-      text: tc('navigation_menu.api_keys_sub.premium')
+      text: t('navigation_menu.api_keys_sub.premium')
     },
     API_KEYS_EXCHANGES: {
       route: Routes.API_KEYS_EXCHANGES,
       icon: 'mdi-key-chain-variant',
-      text: tc('navigation_menu.api_keys_sub.exchanges')
+      text: t('navigation_menu.api_keys_sub.exchanges')
     },
     API_KEYS_EXTERNAL_SERVICES: {
       route: Routes.API_KEYS_EXTERNAL_SERVICES,
       icon: 'mdi-key-chain-variant',
-      text: tc('navigation_menu.api_keys_sub.external_services')
+      text: t('navigation_menu.api_keys_sub.external_services')
     },
     IMPORT: {
       route: Routes.IMPORT,
       icon: 'mdi-database-import',
-      text: tc('navigation_menu.import_data')
+      text: t('navigation_menu.import_data')
     },
     SETTINGS: {
       route: Routes.SETTINGS,
       icon: 'mdi-cog',
-      text: tc('navigation_menu.settings')
+      text: t('navigation_menu.settings')
     },
     SETTINGS_GENERAL: {
       route: Routes.SETTINGS_GENERAL,
       icon: 'mdi-cog',
-      text: tc('navigation_menu.settings_sub.general')
+      text: t('navigation_menu.settings_sub.general')
     },
     SETTINGS_ACCOUNTING: {
       route: Routes.SETTINGS_ACCOUNTING,
       icon: 'mdi-cog',
-      text: tc('navigation_menu.settings_sub.accounting')
+      text: t('navigation_menu.settings_sub.accounting')
     },
     SETTINGS_DATA_SECURITY: {
       route: Routes.SETTINGS_DATA_SECURITY,
       icon: 'mdi-cog',
-      text: tc('navigation_menu.settings_sub.data_security')
+      text: t('navigation_menu.settings_sub.data_security')
     },
     SETTINGS_MODULES: {
       route: Routes.SETTINGS_MODULES,
       icon: 'mdi-cog',
-      text: tc('navigation_menu.settings_sub.modules')
+      text: t('navigation_menu.settings_sub.modules')
     },
     ASSETS: {
       route: Routes.ASSETS,
-      text: tc('common.assets')
+      text: t('common.assets')
     },
     LOCATIONS: {
       route: Routes.LOCATIONS,
-      text: tc('navigation_menu.locations')
+      text: t('navigation_menu.locations')
     }
   }));
 

@@ -76,7 +76,7 @@ watch(exchange, () => {
   set(exchangeDetailTabs, 0);
 });
 
-const { t, tc } = useI18n();
+const { t } = useI18n();
 
 onMounted(() => {
   refreshExchangeSavings();
@@ -99,10 +99,10 @@ const isBinance = computed(() => {
       <refresh-button
         class="exchange-balances__refresh"
         :loading="isExchangeLoading"
-        :tooltip="tc('exchange_balances.refresh_tooltip')"
+        :tooltip="t('exchange_balances.refresh_tooltip')"
         @refresh="refreshExchangeBalances()"
       />
-      {{ tc('exchange_balances.title') }}
+      {{ t('exchange_balances.title') }}
     </template>
     <v-btn
       v-blur
@@ -117,7 +117,7 @@ const isBinance = computed(() => {
     >
       <v-icon> mdi-plus </v-icon>
       <div v-if="$vuetify.breakpoint.xl" class="ml-2">
-        {{ tc('exchange_balances.add_exchange') }}
+        {{ t('exchange_balances.add_exchange') }}
       </div>
     </v-btn>
     <v-row
@@ -131,7 +131,7 @@ const isBinance = computed(() => {
           filled
           :items="usedExchanges"
           hide-details
-          :label="tc('exchange_balances.select_exchange')"
+          :label="t('exchange_balances.select_exchange')"
           class="exchange-balances__content__select"
           @change="openExchangeDetails()"
         >

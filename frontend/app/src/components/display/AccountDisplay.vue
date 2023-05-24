@@ -37,7 +37,7 @@ const aliasName = computed<string | null>(() => {
   return null;
 });
 
-const { tc } = useI18n();
+const { t } = useI18n();
 </script>
 
 <template>
@@ -56,7 +56,7 @@ const { tc } = useI18n();
               <template #activator="{ childOn }">
                 <v-icon v-on="childOn"> mdi-link-variant </v-icon>
               </template>
-              <span>{{ tc('common.multi_chain') }}</span>
+              <span>{{ t('common.multi_chain') }}</span>
             </v-tooltip>
           </v-avatar>
         </v-col>

@@ -28,7 +28,7 @@ const { fetchAddressesNames } = useAddressesNamesStore();
 const { isEvm } = useSupportedChains();
 const { valid, setSave, accountToEdit } = useAccountDialog();
 const { pending, loading } = useAccountLoading();
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const evmChain = isEvm(blockchain);
 
@@ -92,10 +92,10 @@ const save = async () => {
 
     if (typeof errors === 'string') {
       setMessage({
-        description: tc('account_form.error.description', 0, {
+        description: t('account_form.error.description', {
           error: errors
         }).toString(),
-        title: tc('account_form.error.title'),
+        title: t('account_form.error.title'),
         success: false
       });
     } else {

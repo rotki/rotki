@@ -20,7 +20,7 @@ export const useBalances = createSharedComposable(() => {
     priceStore;
   const { notify } = useNotificationsStore();
   const { isTaskRunning, awaitTask } = useTaskStore();
-  const { tc } = useI18n();
+  const { t } = useI18n();
   const { currencySymbol, currency } = storeToRefs(useGeneralSettingsStore());
 
   const adjustPrices = (prices: MaybeRef<AssetPrices>): void => {
@@ -96,12 +96,12 @@ export const useBalances = createSharedComposable(() => {
     try {
       const { taskId } = await queryBalancesAsync(payload);
       await awaitTask(taskId, taskType, {
-        title: tc('actions.balances.all_balances.task.title')
+        title: t('actions.balances.all_balances.task.title')
       });
     } catch (e: any) {
       notify({
-        title: tc('actions.balances.all_balances.error.title'),
-        message: tc('actions.balances.all_balances.error.message', 0, {
+        title: t('actions.balances.all_balances.error.title'),
+        message: t('actions.balances.all_balances.error.message', {
           message: e.message
         }),
         display: true

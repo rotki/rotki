@@ -6,7 +6,7 @@ import isEmpty from 'lodash/isEmpty';
 import { type EvmRpcNode, getPlaceholderNode } from '@/types/settings';
 import { toMessages } from '@/utils/validation-errors';
 
-const { t, tc } = useI18n();
+const { t } = useI18n();
 
 const props = withDefaults(
   defineProps<{
@@ -77,7 +77,7 @@ watch(state, state => {
       outlined
       data-cy="node-name"
       :disabled="isEtherscan"
-      :label="tc('common.name')"
+      :label="t('common.name')"
       :error-messages="toMessages(v$.name)"
       @blur="v$.name.$touch()"
     />
@@ -87,7 +87,7 @@ watch(state, state => {
       data-cy="node-endpoint"
       :disabled="isEtherscan"
       :error-messages="toMessages(v$.endpoint)"
-      :label="tc('rpc_node_form.endpoint')"
+      :label="t('rpc_node_form.endpoint')"
       @blur="v$.endpoint.$touch()"
     />
 
@@ -97,11 +97,11 @@ watch(state, state => {
           :value="state.weight"
           :disabled="state.owned"
           :error-messages="toMessages(v$.weight)"
-          :label="tc('rpc_node_form.weight')"
+          :label="t('rpc_node_form.weight')"
           min="0"
           max="100"
           persistent-hint
-          :hint="tc('rpc_node_form.weight_hint', 0, { weight: state.weight })"
+          :hint="t('rpc_node_form.weight_hint', { weight: state.weight })"
           step="1"
           thumb-label
           @change="state.weight = $event"
@@ -126,17 +126,17 @@ watch(state, state => {
 
     <v-switch
       v-model="state.owned"
-      :label="tc('rpc_node_form.owned')"
+      :label="t('rpc_node_form.owned')"
       persistent-hint
       :disabled="isEtherscan"
-      :hint="tc('rpc_node_form.owned_hint')"
+      :hint="t('rpc_node_form.owned_hint')"
     />
     <v-switch
       v-model="state.active"
-      :label="tc('rpc_node_form.active')"
+      :label="t('rpc_node_form.active')"
       persistent-hint
       :disabled="isEtherscan"
-      :hint="tc('rpc_node_form.active_hint')"
+      :hint="t('rpc_node_form.active_hint')"
     />
   </form>
 </template>

@@ -18,7 +18,7 @@ const { restoreAssetsDatabase } = useAssetsApi();
 
 const { restartBackend } = useBackendManagement();
 
-const { t, tc } = useI18n();
+const { t } = useI18n();
 
 async function restoreAssets(resetType: ResetType) {
   try {
@@ -59,11 +59,11 @@ const { show } = useConfirmStore();
 const showRestoreConfirmation = (type: ResetType) => {
   show(
     {
-      title: tc('asset_update.restore.delete_confirmation.title'),
+      title: t('asset_update.restore.delete_confirmation.title'),
       message:
         type === 'soft'
-          ? tc('asset_update.restore.delete_confirmation.soft_reset_message')
-          : tc('asset_update.restore.delete_confirmation.hard_reset_message')
+          ? t('asset_update.restore.delete_confirmation.soft_reset_message')
+          : t('asset_update.restore.delete_confirmation.hard_reset_message')
     },
     () => restoreAssets(type)
   );
@@ -72,8 +72,8 @@ const showRestoreConfirmation = (type: ResetType) => {
 const showDoubleConfirmation = (type: ResetType) => {
   show(
     {
-      title: tc('asset_update.restore.hard_restore_confirmation.title'),
-      message: tc('asset_update.restore.hard_restore_confirmation.message')
+      title: t('asset_update.restore.hard_restore_confirmation.title'),
+      message: t('asset_update.restore.hard_restore_confirmation.message')
     },
     () => restoreAssets(type)
   );
@@ -82,9 +82,9 @@ const showDoubleConfirmation = (type: ResetType) => {
 const showDoneConfirmation = () => {
   show(
     {
-      title: tc('asset_update.restore.success.title'),
-      message: tc('asset_update.restore.success.description'),
-      primaryAction: tc('asset_update.success.ok'),
+      title: t('asset_update.restore.success.title'),
+      message: t('asset_update.restore.success.description'),
+      primaryAction: t('asset_update.success.ok'),
       singleAction: true,
       type: DialogType.SUCCESS
     },

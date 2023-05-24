@@ -17,7 +17,7 @@ export const useEth2StakingStore = defineStore('staking/eth2', () => {
   const premium = usePremium();
   const { awaitTask } = useTaskStore();
   const { notify } = useNotificationsStore();
-  const { t, tc } = useI18n();
+  const { t } = useI18n();
 
   const api = useEth2Api();
 
@@ -47,7 +47,7 @@ export const useEth2StakingStore = defineStore('staking/eth2', () => {
         taskId,
         taskType,
         {
-          title: tc('actions.staking.eth2.task.title')
+          title: t('actions.staking.eth2.task.title')
         }
       );
 
@@ -55,8 +55,8 @@ export const useEth2StakingStore = defineStore('staking/eth2', () => {
     } catch (e: any) {
       logger.error(e);
       notify({
-        title: tc('actions.staking.eth2.error.title'),
-        message: tc('actions.staking.eth2.error.description', undefined, {
+        title: t('actions.staking.eth2.error.title'),
+        message: t('actions.staking.eth2.error.description', {
           error: e.message
         }),
         display: true

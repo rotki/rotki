@@ -9,16 +9,16 @@ const refreshEnabled = ref<boolean>(false);
 const minRefreshPeriod = 30;
 const maxRefreshPeriod = Constraints.MAX_MINUTES_DELAY;
 
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const rules = {
   refreshPeriod: {
     required: helpers.withMessage(
-      tc('frontend_settings.validation.refresh_period.non_empty'),
+      t('frontend_settings.validation.refresh_period.non_empty'),
       required
     ),
     between: helpers.withMessage(
-      tc('frontend_settings.validation.refresh_period.invalid_period', 0, {
+      t('frontend_settings.validation.refresh_period.invalid_period', {
         start: minRefreshPeriod,
         end: maxRefreshPeriod
       }),
@@ -51,7 +51,7 @@ onMounted(() => {
 <template>
   <div class="mt-8">
     <div class="text-h6">
-      {{ tc('frontend_settings.subtitle.refresh') }}
+      {{ t('frontend_settings.subtitle.refresh') }}
     </div>
     <v-row class="mt-1">
       <v-col class="grow">
@@ -61,7 +61,7 @@ onMounted(() => {
           frontend-setting
           :transform="transform"
           :error-message="
-            tc('frontend_settings.validation.refresh_period.error')
+            t('frontend_settings.validation.refresh_period.error')
           "
           @finished="resetRefreshPeriod()"
         >
@@ -72,9 +72,9 @@ onMounted(() => {
             type="number"
             :min="minRefreshPeriod"
             :max="maxRefreshPeriod"
-            :label="tc('frontend_settings.label.refresh')"
+            :label="t('frontend_settings.label.refresh')"
             persistent-hint
-            :hint="tc('frontend_settings.hint.refresh')"
+            :hint="t('frontend_settings.hint.refresh')"
             :success-messages="success"
             :error-messages="
               error || v$.refreshPeriod.$errors.map(e => e.$message)
@@ -90,14 +90,14 @@ onMounted(() => {
           frontend-setting
           :transform="transformSwitch"
           :error-message="
-            tc('frontend_settings.validation.refresh_period.error')
+            t('frontend_settings.validation.refresh_period.error')
           "
           @finished="resetRefreshPeriod()"
         >
           <v-switch
             v-model="refreshEnabled"
             class="mt-3"
-            :label="tc('frontend_settings.label.refresh_enabled')"
+            :label="t('frontend_settings.label.refresh_enabled')"
             @change="update($event)"
           />
         </settings-option>

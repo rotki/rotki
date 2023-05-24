@@ -24,7 +24,7 @@ export const useKrakenStakingFilter = () => {
   const { dateInputFormat } = storeToRefs(useFrontendSettingsStore());
   const { assetSearch } = useAssetInfoApi();
   const { krakenStakingEventTypeData } = useKrakenStakingEventTypes();
-  const { tc } = useI18n();
+  const { t } = useI18n();
 
   const getEventTypeIdentifier = (label: string) =>
     get(krakenStakingEventTypeData).find(data => data.label === label)
@@ -39,14 +39,14 @@ export const useKrakenStakingFilter = () => {
       {
         key: KrakenStakingKeys.ASSET,
         keyValue: KrakenStakingValueKeys.ASSET,
-        description: tc('kraken_staking_events.filter.asset'),
+        description: t('kraken_staking_events.filter.asset'),
         asset: true,
         suggestions: async (value: string) => await assetSearch(value, 5)
       },
       {
         key: KrakenStakingKeys.TYPE,
         keyValue: KrakenStakingValueKeys.TYPE,
-        description: tc('kraken_staking_events.filter.type').toString(),
+        description: t('kraken_staking_events.filter.type').toString(),
         string: true,
         suggestions: () => krakenStakingEventTypeValues,
         validate: (option: string) =>
@@ -56,8 +56,8 @@ export const useKrakenStakingFilter = () => {
       {
         key: KrakenStakingKeys.START,
         keyValue: KrakenStakingValueKeys.START,
-        description: tc('kraken_staking_events.filter.start_date'),
-        hint: tc('kraken_staking_events.filter.date_hint', 0, {
+        description: t('kraken_staking_events.filter.start_date'),
+        hint: t('kraken_staking_events.filter.date_hint', {
           format: getDateInputISOFormat(get(dateInputFormat))
         }),
         string: true,
@@ -71,8 +71,8 @@ export const useKrakenStakingFilter = () => {
       {
         key: KrakenStakingKeys.END,
         keyValue: KrakenStakingValueKeys.END,
-        description: tc('kraken_staking_events.filter.end_date'),
-        hint: tc('kraken_staking_events.filter.date_hint', 0, {
+        description: t('kraken_staking_events.filter.end_date'),
+        hint: t('kraken_staking_events.filter.date_hint', {
           format: getDateInputISOFormat(get(dateInputFormat))
         }).toString(),
         string: true,

@@ -21,7 +21,7 @@ export const useCompoundStore = defineStore('defi/compound', () => {
   const { notify } = useNotificationsStore();
   const { activeModules } = useModules();
   const premium = usePremium();
-  const { tc } = useI18n();
+  const { t } = useI18n();
   const { fetchCompoundBalances, fetchCompoundHistory } = useCompoundApi();
 
   const { resetStatus, setStatus, fetchDisabled } = useStatusUpdater(
@@ -56,14 +56,14 @@ export const useCompoundStore = defineStore('defi/compound', () => {
         taskId,
         taskType,
         {
-          title: tc('actions.defi.compound.task.title')
+          title: t('actions.defi.compound.task.title')
         }
       );
       set(balances, CompoundBalances.parse(result));
     } catch (e: any) {
       notify({
-        title: tc('actions.defi.compound.error.title'),
-        message: tc('actions.defi.compound.error.description', undefined, {
+        title: t('actions.defi.compound.error.title'),
+        message: t('actions.defi.compound.error.description', {
           error: e.message
         }),
         display: true
@@ -93,7 +93,7 @@ export const useCompoundStore = defineStore('defi/compound', () => {
         taskId,
         taskType,
         {
-          title: tc('actions.defi.compound_history.task.title')
+          title: t('actions.defi.compound_history.task.title')
         }
       );
 
@@ -101,14 +101,10 @@ export const useCompoundStore = defineStore('defi/compound', () => {
     } catch (e: any) {
       logger.error(e);
       notify({
-        title: tc('actions.defi.compound_history.error.title'),
-        message: tc(
-          'actions.defi.compound_history.error.description',
-          undefined,
-          {
-            error: e.message
-          }
-        ),
+        title: t('actions.defi.compound_history.error.title'),
+        message: t('actions.defi.compound_history.error.description', {
+          error: e.message
+        }),
         display: true
       });
     }

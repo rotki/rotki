@@ -27,7 +27,7 @@ const currentRoute = get(route);
 const reportId = Number.parseInt(currentRoute.params.id as string);
 const latest = isLatestReport(reportId);
 
-const { tc } = useI18n();
+const { t } = useI18n();
 
 onMounted(async () => {
   if (get(reports).entries.length === 0) {
@@ -91,7 +91,7 @@ const regenerateReport = async () => {
 
 <template>
   <progress-screen v-if="loading">
-    {{ tc('profit_loss_report.loading') }}
+    {{ t('profit_loss_report.loading') }}
   </progress-screen>
   <v-container v-else>
     <report-header :period="report" />
@@ -111,7 +111,7 @@ const regenerateReport = async () => {
       <i18n tag="div" path="profit_loss_report.upgrade2">
         <template #link>
           <base-external-link
-            :text="tc('upgrade_row.rotki_premium')"
+            :text="t('upgrade_row.rotki_premium')"
             :href="premiumURL"
           />
         </template>
@@ -132,7 +132,7 @@ const regenerateReport = async () => {
       </template>
       <v-btn class="ml-2" color="primary" text @click="regenerateReport()">
         <v-icon class="mr-2">mdi-refresh</v-icon>
-        {{ tc('profit_loss_report.actionable.actions.regenerate_report') }}
+        {{ t('profit_loss_report.actionable.actions.regenerate_report') }}
       </v-btn>
     </div>
     <profit-loss-overview

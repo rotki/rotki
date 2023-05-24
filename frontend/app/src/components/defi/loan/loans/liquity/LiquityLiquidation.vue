@@ -12,12 +12,12 @@ defineProps({
   }
 });
 
-const { tc } = useI18n();
+const { t } = useI18n();
 </script>
 
 <template>
-  <stat-card :title="tc('loan_liquidation.title')">
-    <loan-row medium :title="tc('loan_collateral.liquidation_price')">
+  <stat-card :title="t('loan_liquidation.title')">
+    <loan-row medium :title="t('loan_collateral.liquidation_price')">
       <amount-display
         show-currency="ticker"
         fiat-currency="USD"

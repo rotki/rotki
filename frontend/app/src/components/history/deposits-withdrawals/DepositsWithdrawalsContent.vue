@@ -26,7 +26,7 @@ const props = withDefaults(
 
 const { locationOverview, mainPage } = toRefs(props);
 
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const tableHeaders = computed<DataTableHeader[]>(() => {
   const overview = get(locationOverview);
@@ -39,35 +39,35 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
       cellClass: !overview ? 'pa-0' : 'pr-0'
     },
     {
-      text: tc('common.location'),
+      text: t('common.location'),
       value: 'location',
       width: '120px',
       align: 'center'
     },
     {
-      text: tc('deposits_withdrawals.headers.action'),
+      text: t('deposits_withdrawals.headers.action'),
       value: 'category',
       align: 'center',
       class: `text-no-wrap ${overview ? 'pl-0' : ''}`,
       cellClass: overview ? 'pl-0' : ''
     },
     {
-      text: tc('common.asset'),
+      text: t('common.asset'),
       value: 'asset',
       sortable: false
     },
     {
-      text: tc('common.amount'),
+      text: t('common.amount'),
       value: 'amount',
       align: 'end'
     },
     {
-      text: tc('deposits_withdrawals.headers.fee'),
+      text: t('deposits_withdrawals.headers.fee'),
       value: 'fee',
       align: 'end'
     },
     {
-      text: tc('common.datetime'),
+      text: t('common.datetime'),
       value: 'timestamp'
     },
     { text: '', value: 'data-table-expand', sortable: false }
@@ -140,11 +140,11 @@ watch(loading, async (isLoading, wasLoading) => {
       <refresh-button
         v-if="!locationOverview"
         :loading="loading"
-        :tooltip="tc('deposits_withdrawals.refresh_tooltip')"
+        :tooltip="t('deposits_withdrawals.refresh_tooltip')"
         @refresh="refreshAssetMovements(true)"
       />
       <navigator-link :to="{ path: pageRoute }" :enabled="!!locationOverview">
-        {{ tc('deposits_withdrawals.title') }}
+        {{ t('deposits_withdrawals.title') }}
       </navigator-link>
     </template>
     <template #actions>
@@ -155,11 +155,9 @@ watch(loading, async (isLoading, wasLoading) => {
             @ignore="ignore($event)"
           />
           <div v-if="selected.length > 0" class="mt-2 ms-1">
-            {{
-              tc('deposits_withdrawals.selected', 0, { count: selected.length })
-            }}
+            {{ t('deposits_withdrawals.selected', { count: selected.length }) }}
             <v-btn small text @click="selected = []">
-              {{ tc('common.actions.clear_selection') }}
+              {{ t('common.actions.clear_selection') }}
             </v-btn>
           </div>
         </v-col>
@@ -187,7 +185,7 @@ watch(loading, async (isLoading, wasLoading) => {
           :headers="tableHeaders"
           :items="data"
           :loading="isLoading"
-          :loading-text="tc('deposits_withdrawals.loading')"
+          :loading-text="t('deposits_withdrawals.loading')"
           :options="options"
           :server-items-length="itemLength"
           class="asset-movements"
@@ -206,7 +204,7 @@ watch(loading, async (isLoading, wasLoading) => {
               <badge-display v-if="isMobile" color="grey">
                 <v-icon small> mdi-eye-off </v-icon>
                 <span class="ml-2">
-                  {{ tc('common.ignored_in_accounting') }}
+                  {{ t('common.ignored_in_accounting') }}
                 </span>
               </badge-display>
               <v-tooltip v-else bottom>
@@ -216,7 +214,7 @@ watch(loading, async (isLoading, wasLoading) => {
                   </badge-display>
                 </template>
                 <span>
-                  {{ tc('common.ignored_in_accounting') }}
+                  {{ t('common.ignored_in_accounting') }}
                 </span>
               </v-tooltip>
             </div>
@@ -260,7 +258,7 @@ watch(loading, async (isLoading, wasLoading) => {
               :limit="limit"
               :total="total"
               :colspan="headers.length"
-              :label="tc('deposits_withdrawals.label')"
+              :label="t('deposits_withdrawals.label')"
             />
           </template>
         </data-table>

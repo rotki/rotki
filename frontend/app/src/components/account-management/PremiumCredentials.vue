@@ -2,7 +2,7 @@
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
 
-const { t, tc } = useI18n();
+const { t } = useI18n();
 
 const props = defineProps({
   loading: { required: true, type: Boolean },
@@ -90,7 +90,7 @@ watch(v$, ({ $invalid }) => {
   <div>
     <div v-if="enabled">
       <v-switch
-        :label="tc('premium_credentials.restore_synced_database')"
+        :label="t('premium_credentials.restore_synced_database')"
         :value="syncDatabase"
         @change="updateSyncDatabase($event)"
       />
@@ -101,7 +101,7 @@ watch(v$, ({ $invalid }) => {
         :disabled="loading"
         class="premium-settings__fields__api-key"
         :error-messages="v$.apiKey.$errors.map(e => e.$message)"
-        :label="tc('premium_credentials.label_api_key')"
+        :label="t('premium_credentials.label_api_key')"
         @input="updateApiKey($event)"
         @paste="onApiKeyPaste($event)"
       />
@@ -111,7 +111,7 @@ watch(v$, ({ $invalid }) => {
         :disabled="loading"
         class="premium-settings__fields__api-secret"
         prepend-icon="mdi-lock"
-        :label="tc('premium_credentials.label_api_secret')"
+        :label="t('premium_credentials.label_api_secret')"
         :error-messages="v$.apiSecret.$errors.map(e => e.$message)"
         @input="updateApiSecret($event)"
         @paste="onApiSecretPaste($event)"

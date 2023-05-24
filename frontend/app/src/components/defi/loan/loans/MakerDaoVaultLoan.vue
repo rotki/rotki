@@ -11,7 +11,7 @@ const props = defineProps<{
 
 const { vault } = toRefs(props);
 const { premium } = storeToRefs(usePremiumStore());
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const totalInterestOwed: ComputedRef<BigNumber> = computed(() => {
   const makerVault = get(vault);
@@ -38,7 +38,7 @@ const chain = Blockchain.ETH;
   <v-row>
     <v-col cols="12">
       <loan-header v-if="vault.owner" class="mt-8 mb-6" :owner="vault.owner">
-        {{ tc('maker_dao_vault_loan.header', 0, header) }}
+        {{ t('maker_dao_vault_loan.header', header) }}
       </loan-header>
       <v-row no-gutters>
         <v-col cols="12" md="6" class="pe-md-4">
@@ -61,13 +61,13 @@ const chain = Blockchain.ETH;
         <v-col cols="12">
           <premium-card
             v-if="!premium"
-            :title="tc('maker_dao_vault_loan.borrowing_history')"
+            :title="t('maker_dao_vault_loan.borrowing_history')"
           />
         </v-col>
       </v-row>
       <div v-else>
         <history-events-view
-          :section-title="tc('common.events')"
+          :section-title="t('common.events')"
           :protocols="['makerdao', 'makerdao vault']"
           :use-external-account-filter="true"
           :external-account-filter="[{ chain, address: vault.owner }]"

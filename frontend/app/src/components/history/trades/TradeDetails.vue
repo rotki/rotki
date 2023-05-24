@@ -16,7 +16,7 @@ const props = defineProps({
 
 const { item } = toRefs(props);
 const { dark } = useTheme();
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const link = computed(() => get(item).link || '');
 const { href, hasLink, onLinkClick } = useLinks(link);
@@ -25,11 +25,11 @@ const { href, hasLink, onLinkClick } = useLinks(link);
 <template>
   <table-expand-container visible :colspan="span">
     <template #title>
-      {{ tc('closed_trades.details.title') }}
+      {{ t('closed_trades.details.title') }}
     </template>
     <v-row>
       <v-col cols="auto" class="font-weight-medium">
-        {{ tc('closed_trades.details.fee') }}
+        {{ t('closed_trades.details.fee') }}
       </v-col>
       <v-col>
         <amount-display
@@ -43,11 +43,11 @@ const { href, hasLink, onLinkClick } = useLinks(link);
     </v-row>
     <v-row align="center">
       <v-col cols="auto" class="font-weight-medium">
-        {{ tc('closed_trades.details.link') }}
+        {{ t('closed_trades.details.link') }}
       </v-col>
       <v-col>
         <span v-if="!item.link">
-          {{ tc('closed_trades.details.link_data') }}
+          {{ t('closed_trades.details.link_data') }}
         </span>
         <span v-else>
           {{ item.link }}

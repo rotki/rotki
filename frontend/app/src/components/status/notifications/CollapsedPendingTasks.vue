@@ -13,7 +13,7 @@ const input = () => {
   emit('input', !get(value));
 };
 
-const { tc } = useI18n();
+const { t } = useI18n();
 </script>
 
 <template>
@@ -24,7 +24,7 @@ const { tc } = useI18n();
       </v-col>
       <v-col>
         <div :class="css.title">
-          {{ tc('collapsed_pending_tasks.title', count, { count }) }}
+          {{ t('collapsed_pending_tasks.title', { count }, count) }}
         </div>
       </v-col>
 

@@ -14,7 +14,7 @@ export const useAaveStore = defineStore('defi/aave', () => {
   const { awaitTask } = useTaskStore();
   const { activeModules } = useModules();
   const premium = usePremium();
-  const { tc } = useI18n();
+  const { t } = useI18n();
 
   const { fetchAaveBalances, fetchAaveHistory } = useAaveApi();
 
@@ -69,19 +69,15 @@ export const useAaveStore = defineStore('defi/aave', () => {
         taskId,
         taskType,
         {
-          title: tc('actions.defi.aave_balances.task.title')
+          title: t('actions.defi.aave_balances.task.title')
         }
       );
       set(balances, AaveBalances.parse(result));
     } catch (e: any) {
-      const message = tc(
-        'actions.defi.aave_balances.error.description',
-        undefined,
-        {
-          error: e.message
-        }
-      );
-      const title = tc('actions.defi.aave_balances.error.title');
+      const message = t('actions.defi.aave_balances.error.description', {
+        error: e.message
+      });
+      const title = t('actions.defi.aave_balances.error.title');
       notify({
         title,
         message,
@@ -118,19 +114,17 @@ export const useAaveStore = defineStore('defi/aave', () => {
         taskId,
         taskType,
         {
-          title: tc('actions.defi.aave_history.task.title')
+          title: t('actions.defi.aave_history.task.title')
         }
       );
 
       set(history, AaveHistory.parse(result));
     } catch (e: any) {
       logger.error(e);
-      const message = tc(
-        'actions.defi.aave_history.error.description',
-        undefined,
-        { error: e.message }
-      );
-      const title = tc('actions.defi.aave_history.error.title');
+      const message = t('actions.defi.aave_history.error.description', {
+        error: e.message
+      });
+      const title = t('actions.defi.aave_history.error.title');
 
       notify({
         title,

@@ -10,7 +10,7 @@ const props = defineProps({
 
 const { error, message } = toRefs(props);
 
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const errorText = computed(() => {
   const errorText = get(error);
@@ -37,7 +37,7 @@ const errorText = computed(() => {
         {{ title }}
         <v-spacer />
         <copy-button
-          :tooltip="tc('error_screen.copy_tooltip')"
+          :tooltip="t('error_screen.copy_tooltip')"
           :value="errorText"
         />
       </v-card-title>

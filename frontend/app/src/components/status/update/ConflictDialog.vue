@@ -26,21 +26,21 @@ const { conflicts } = toRefs(props);
 const rootAttrs = useAttrs();
 const rootListeners = useListeners();
 
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const tableHeaders = computed<DataTableHeader[]>(() => [
   {
-    text: tc('conflict_dialog.table.headers.local'),
+    text: t('conflict_dialog.table.headers.local'),
     sortable: false,
     value: 'local'
   },
   {
-    text: tc('conflict_dialog.table.headers.remote'),
+    text: t('conflict_dialog.table.headers.remote'),
     sortable: false,
     value: 'remote'
   },
   {
-    text: tc('conflict_dialog.table.headers.keep'),
+    text: t('conflict_dialog.table.headers.keep'),
     value: 'keep',
     align: 'center',
     sortable: false,
@@ -120,22 +120,22 @@ const cancel = () => {
     v-on="rootListeners"
   >
     <card outlined-body contained no-radius-bottom>
-      <template #title>{{ tc('conflict_dialog.title') }}</template>
-      <template #subtitle>{{ tc('conflict_dialog.subtitle') }}</template>
+      <template #title>{{ t('conflict_dialog.title') }}</template>
+      <template #subtitle>{{ t('conflict_dialog.subtitle') }}</template>
       <template #actions>
         <v-row no-gutters justify="end" align="center">
           <v-col cols="auto">
             <span class="pe-2">
-              {{ tc('conflict_dialog.all_buttons_description') }}
+              {{ t('conflict_dialog.all_buttons_description') }}
             </span>
           </v-col>
           <v-col cols="auto">
             <v-row no-gutters justify="end">
               <v-btn text value="local" @click="setResolution('local')">
-                {{ tc('conflict_dialog.keep_local') }}
+                {{ t('conflict_dialog.keep_local') }}
               </v-btn>
               <v-btn text value="remote" @click="setResolution('remote')">
-                {{ tc('conflict_dialog.keep_remote') }}
+                {{ t('conflict_dialog.keep_remote') }}
               </v-btn>
             </v-row>
           </v-col>
@@ -179,10 +179,10 @@ const cancel = () => {
         <template #item.keep="{ item: conflict }">
           <v-btn-toggle v-model="resolution[conflict.identifier]">
             <v-btn class="conflict-dialog__action" value="local">
-              {{ tc('conflict_dialog.action.local') }}
+              {{ t('conflict_dialog.action.local') }}
             </v-btn>
             <v-btn class="conflict-dialog__action" value="remote">
-              {{ tc('conflict_dialog.action.remote') }}
+              {{ t('conflict_dialog.action.remote') }}
             </v-btn>
           </v-btn-toggle>
         </template>
@@ -194,7 +194,7 @@ const cancel = () => {
         <v-row no-gutters justify="end">
           <v-col cols="auto">
             <v-btn text @click="cancel()">
-              {{ tc('common.actions.cancel') }}
+              {{ t('common.actions.cancel') }}
             </v-btn>
           </v-col>
           <v-col cols="auto">
@@ -204,7 +204,7 @@ const cancel = () => {
               :disabled="!valid"
               @click="resolve(resolution)"
             >
-              {{ tc('common.actions.confirm') }}
+              {{ t('common.actions.confirm') }}
             </v-btn>
           </v-col>
         </v-row>

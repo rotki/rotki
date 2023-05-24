@@ -50,7 +50,7 @@ export const useDefiStore = defineStore('defi', () => {
   const sushiswapStore = useSushiswapStore();
   const uniswapStore = useUniswapStore();
   const { loanSummary, totalLendingDeposit } = useDefiLending();
-  const { t, tc } = useI18n();
+  const { t } = useI18n();
 
   const { fetchAllDefi: fetchAllDefiCaller } = useDefiApi();
 
@@ -377,14 +377,14 @@ export const useDefiStore = defineStore('defi', () => {
         taskId,
         taskType,
         {
-          title: tc('actions.defi.balances.task.title')
+          title: t('actions.defi.balances.task.title')
         }
       );
 
       set(allProtocols, AllDefiProtocols.parse(result));
     } catch (e: any) {
-      const title = tc('actions.defi.balances.error.title');
-      const message = tc('actions.defi.balances.error.description', undefined, {
+      const title = t('actions.defi.balances.error.title');
+      const message = t('actions.defi.balances.error.description', {
         error: e.message
       });
       notify({

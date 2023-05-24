@@ -19,7 +19,7 @@ const { appSession } = useInterop();
 const { setMessage } = useMessageStore();
 const { refreshIcon: refresh, setIcon, uploadIcon } = useAssetIconApi();
 
-const { t, tc } = useI18n();
+const { t } = useI18n();
 
 const refreshIcon = async () => {
   set(refreshIconLoading, true);
@@ -28,8 +28,8 @@ const refreshIcon = async () => {
     await refresh(identifierVal);
   } catch (e: any) {
     notify({
-      title: tc('asset_form.fetch_latest_icon.title'),
-      message: tc('asset_form.fetch_latest_icon.description', 0, {
+      title: t('asset_form.fetch_latest_icon.title'),
+      message: t('asset_form.fetch_latest_icon.description', {
         identifier: identifierVal,
         message: e.message
       }),
@@ -60,8 +60,8 @@ const saveIcon = async (identifier: string) => {
 
   if (!success) {
     setMessage({
-      title: tc('asset_form.icon_upload.title'),
-      description: tc('asset_form.icon_upload.description', 0, {
+      title: t('asset_form.icon_upload.title'),
+      description: t('asset_form.icon_upload.description', {
         message
       })
     });

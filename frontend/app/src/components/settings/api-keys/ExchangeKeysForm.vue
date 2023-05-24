@@ -22,7 +22,7 @@ const editKeys = ref(false);
 const form = ref();
 
 const { getExchangeNonce } = useExchangesStore();
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const requiresApiSecret = computed(() => {
   const { location } = get(exchange);
@@ -121,31 +121,31 @@ const sensitiveFieldEditable = computed(() => !get(edit) || get(editKeys));
 const rules = {
   name: {
     required: helpers.withMessage(
-      tc('exchange_keys_form.name.non_empty'),
+      t('exchange_keys_form.name.non_empty'),
       requiredUnless(edit)
     )
   },
   newName: {
     required: helpers.withMessage(
-      tc('exchange_keys_form.name.non_empty'),
+      t('exchange_keys_form.name.non_empty'),
       requiredIf(edit)
     )
   },
   apiKey: {
     required: helpers.withMessage(
-      tc('exchange_keys_form.api_key.non_empty'),
+      t('exchange_keys_form.api_key.non_empty'),
       requiredIf(sensitiveFieldEditable)
     )
   },
   apiSecret: {
     required: helpers.withMessage(
-      tc('exchange_keys_form.api_secret.non_empty'),
+      t('exchange_keys_form.api_secret.non_empty'),
       requiredIf(logicAnd(sensitiveFieldEditable, requiresApiSecret))
     )
   },
   passphrase: {
     required: helpers.withMessage(
-      tc('exchange_keys_form.passphrase.non_empty'),
+      t('exchange_keys_form.passphrase.non_empty'),
       requiredIf(logicAnd(sensitiveFieldEditable, requiresPassphrase))
     )
   }
@@ -166,7 +166,7 @@ watch(v$, ({ $invalid }) => {
           outlined
           :value="exchange.location"
           :items="exchanges"
-          :label="tc('exchange_keys_form.exchange')"
+          :label="t('exchange_keys_form.exchange')"
           data-cy="exchange"
           :disabled="edit"
           auto-select-first
@@ -197,7 +197,7 @@ watch(v$, ({ $invalid }) => {
           :value="exchange.newName"
           :error-messages="v$.newName.$errors.map(e => e.$message)"
           data-cy="name"
-          :label="tc('common.name')"
+          :label="t('common.name')"
           @input="onUpdateExchange({ ...exchange, newName: $event })"
         />
         <v-text-field
@@ -206,7 +206,7 @@ watch(v$, ({ $invalid }) => {
           :value="exchange.name"
           :error-messages="v$.name.$errors.map(e => e.$message)"
           data-cy="name"
-          :label="tc('common.name')"
+          :label="t('common.name')"
           @input="onUpdateExchange({ ...exchange, name: $event })"
         />
       </v-col>
@@ -218,12 +218,12 @@ watch(v$, ({ $invalid }) => {
       :value="exchange.krakenAccountType"
       data-cy="account-type"
       :items="krakenAccountTypes"
-      :label="tc('exchange_settings.inputs.kraken_account')"
+      :label="t('exchange_settings.inputs.kraken_account')"
       @change="onUpdateExchange({ ...exchange, krakenAccountType: $event })"
     />
 
     <div v-if="edit" class="text-subtitle-2 mt-2 pb-4">
-      {{ tc('exchange_settings.keys') }}
+      {{ t('exchange_settings.keys') }}
       <v-tooltip top open-delay="400">
         <template #activator="{ on, attrs }">
           <v-btn
@@ -240,8 +240,8 @@ watch(v$, ({ $invalid }) => {
         <span>
           {{
             !editKeys
-              ? tc('exchange_keys_form.edit.activate_tooltip')
-              : tc('exchange_keys_form.edit.deactivate_tooltip')
+              ? t('exchange_keys_form.edit.activate_tooltip')
+              : t('exchange_keys_form.edit.deactivate_tooltip')
           }}
         </span>
       </v-tooltip>
@@ -255,7 +255,7 @@ watch(v$, ({ $invalid }) => {
         :value="exchange.apiKey"
         :error-messages="v$.apiKey.$errors.map(e => e.$message)"
         data-cy="api-key"
-        :label="tc('exchange_settings.inputs.api_key')"
+        :label="t('exchange_settings.inputs.api_key')"
         @input="onUpdateExchange({ ...exchange, apiKey: $event })"
         @paste="onApiKeyPaste($event)"
       />
@@ -269,7 +269,7 @@ watch(v$, ({ $invalid }) => {
         :error-messages="v$.apiSecret.$errors.map(e => e.$message)"
         data-cy="api-secret"
         prepend-icon="mdi-lock"
-        :label="tc('exchange_settings.inputs.api_secret')"
+        :label="t('exchange_settings.inputs.api_secret')"
         @input="onUpdateExchange({ ...exchange, apiSecret: $event })"
         @paste="onApiSecretPaste($event)"
       />
@@ -283,7 +283,7 @@ watch(v$, ({ $invalid }) => {
         :error-messages="v$.passphrase.$errors.map(e => e.$message)"
         prepend-icon="mdi-key-plus"
         data-cy="passphrase"
-        :label="tc('exchange_settings.inputs.passphrase')"
+        :label="t('exchange_settings.inputs.passphrase')"
         @input="onUpdateExchange({ ...exchange, passphrase: $event })"
       />
     </div>
@@ -294,7 +294,7 @@ watch(v$, ({ $invalid }) => {
         outlined
         :value="exchange.ftxSubaccount"
         data-cy="ftxSubaccount"
-        :label="tc('exchange_settings.inputs.ftx_subaccount')"
+        :label="t('exchange_settings.inputs.ftx_subaccount')"
         @input="onUpdateExchange({ ...exchange, ftxSubaccount: $event })"
       />
       <v-text-field
@@ -302,7 +302,7 @@ watch(v$, ({ $invalid }) => {
         outlined
         :value="exchange.ftxSubaccount"
         data-cy="ftxSubaccount"
-        :label="tc('exchange_settings.inputs.ftx_subaccount')"
+        :label="t('exchange_settings.inputs.ftx_subaccount')"
         @input="onUpdateExchange({ ...exchange, ftxSubaccount: $event })"
       />
     </div>

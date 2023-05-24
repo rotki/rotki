@@ -12,7 +12,7 @@ defineProps({
 const details = ref<boolean>(false);
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const getTotal = ({ totalAmount, usdPrice }: XswapAsset) =>
   usdPrice.multipliedBy(totalAmount ?? One);
@@ -32,11 +32,11 @@ const getTotal = ({ totalAmount, usdPrice }: XswapAsset) =>
             <v-icon small color="primary">mdi-launch</v-icon>
           </v-btn>
         </template>
-        <span>{{ tc('liquidity_pool_details.tooltip') }}</span>
+        <span>{{ t('liquidity_pool_details.tooltip') }}</span>
       </v-tooltip>
     </template>
     <card>
-      <template #title>{{ tc('liquidity_pool_details.title') }}</template>
+      <template #title>{{ t('liquidity_pool_details.title') }}</template>
       <template v-for="(token, key) in balance.assets">
         <v-divider v-if="key > 0" :key="token.asset + 'divider'" class="my-3" />
         <v-row :key="token.asset" align="center">
@@ -47,7 +47,7 @@ const getTotal = ({ totalAmount, usdPrice }: XswapAsset) =>
             <v-row>
               <v-col md="6">
                 <div class="text--secondary text-body-2">
-                  {{ tc('liquidity_pool_details.total_amount') }}
+                  {{ t('liquidity_pool_details.total_amount') }}
                 </div>
                 <div class="d-flex font-weight-bold">
                   <amount-display
@@ -59,7 +59,7 @@ const getTotal = ({ totalAmount, usdPrice }: XswapAsset) =>
               <v-col md="6">
                 <div class="text--secondary text-body-2">
                   {{
-                    tc('liquidity_pool_details.total_value_in_symbol', 0, {
+                    t('liquidity_pool_details.total_value_in_symbol', {
                       symbol: currencySymbol
                     })
                   }}
@@ -77,7 +77,7 @@ const getTotal = ({ totalAmount, usdPrice }: XswapAsset) =>
       </template>
       <div v-if="balance.totalSupply" class="d-flex pt-6">
         <div class="text--secondary text-body-2">
-          {{ tc('liquidity_pool_details.liquidity') }}:
+          {{ t('liquidity_pool_details.liquidity') }}:
         </div>
         <div class="pl-2 font-weight-bold">
           <amount-display :value="balance.totalSupply" />

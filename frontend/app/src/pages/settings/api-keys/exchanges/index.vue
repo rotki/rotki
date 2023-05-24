@@ -35,7 +35,7 @@ const pending = ref<boolean>(false);
 const { nonSyncingExchanges: current } = storeToRefs(useGeneralSettingsStore());
 const { update } = useSettingsStore();
 
-const { tc } = useI18n();
+const { t } = useI18n();
 const { usageGuideUrl } = useInterop();
 
 const findNonSyncExchangeIndex = (exchange: Exchange) =>
@@ -72,11 +72,11 @@ const toggleSync = async (exchange: Exchange) => {
   if (!status.success) {
     const { notify } = useNotificationsStore();
     notify({
-      title: tc('exchange_settings.sync.messages.title'),
-      message: tc('exchange_settings.sync.messages.description', 0, {
+      title: t('exchange_settings.sync.messages.title'),
+      message: t('exchange_settings.sync.messages.description', {
         action: enable
-          ? tc('exchange_settings.sync.messages.enable')
-          : tc('exchange_settings.sync.messages.disable'),
+          ? t('exchange_settings.sync.messages.enable')
+          : t('exchange_settings.sync.messages.disable'),
         location: exchange.location,
         name: exchange.name,
         message: status.message
@@ -158,21 +158,21 @@ onMounted(async () => {
 
 const headers: DataTableHeader[] = [
   {
-    text: tc('common.location'),
+    text: t('common.location'),
     value: 'location',
     width: '120px',
     align: 'center'
   },
   {
-    text: tc('common.name'),
+    text: t('common.name'),
     value: 'name'
   },
   {
-    text: tc('exchange_settings.header.sync_enabled'),
+    text: t('exchange_settings.header.sync_enabled'),
     value: 'syncEnabled'
   },
   {
-    text: tc('exchange_settings.header.actions'),
+    text: t('exchange_settings.header.actions'),
     value: 'actions',
     width: '105px',
     align: 'center',
@@ -185,8 +185,8 @@ const { show } = useConfirmStore();
 const showRemoveConfirmation = (item: Exchange) => {
   show(
     {
-      title: tc('exchange_settings.confirmation.title'),
-      message: tc('exchange_settings.confirmation.message', 0, {
+      title: t('exchange_settings.confirmation.title'),
+      message: t('exchange_settings.confirmation.message', {
         name: item?.name ?? '',
         location: item ? exchangeName(item.location) : ''
       })
@@ -200,12 +200,12 @@ const showRemoveConfirmation = (item: Exchange) => {
   <div class="exchange-settings" data-cy="exchanges">
     <card outlined-body>
       <template #title>
-        {{ tc('exchange_settings.title') }}
+        {{ t('exchange_settings.title') }}
       </template>
       <template #subtitle>
         <i18n path="exchange_settings.subtitle" tag="div">
           <base-external-link
-            :text="tc('exchange_settings.usage_guide')"
+            :text="t('exchange_settings.usage_guide')"
             :href="usageGuideUrl + '#adding-an-exchange'"
           />
         </i18n>
@@ -239,8 +239,8 @@ const showRemoveConfirmation = (item: Exchange) => {
         </template>
         <template #item.actions="{ item }">
           <row-actions
-            :delete-tooltip="tc('exchange_settings.delete.tooltip')"
-            :edit-tooltip="tc('exchange_settings.edit.tooltip')"
+            :delete-tooltip="t('exchange_settings.delete.tooltip')"
+            :edit-tooltip="t('exchange_settings.edit.tooltip')"
             @delete-click="showRemoveConfirmation(item)"
             @edit-click="editExchange(item)"
           />
@@ -252,11 +252,11 @@ const showRemoveConfirmation = (item: Exchange) => {
       :display="showForm"
       :title="
         edit
-          ? tc('exchange_settings.dialog.edit.title')
-          : tc('exchange_settings.dialog.add.title')
+          ? t('exchange_settings.dialog.edit.title')
+          : t('exchange_settings.dialog.add.title')
       "
-      :primary-action="tc('common.actions.save')"
-      :secondary-action="tc('common.actions.cancel')"
+      :primary-action="t('common.actions.save')"
+      :secondary-action="t('common.actions.cancel')"
       :action-disabled="!valid || pending"
       :loading="pending"
       @confirm="setup()"

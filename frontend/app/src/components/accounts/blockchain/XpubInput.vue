@@ -21,7 +21,7 @@ const emit = defineEmits<{
   (e: 'update:xpub', event: XpubPayload | null): void;
 }>();
 
-const { t, tc } = useI18n();
+const { t } = useI18n();
 
 const { xpub, disabled, blockchain, errorMessages } = toRefs(props);
 
@@ -109,7 +109,7 @@ const keyTypeListData = computed<XpubType[]>(() => {
 const rules = {
   xpub: {
     required: helpers.withMessage(
-      tc('account_form.validation.xpub_non_empty'),
+      t('account_form.validation.xpub_non_empty'),
       required
     )
   },
@@ -181,7 +181,7 @@ watch(errorMessages, errors => {
                 </div>
               </template>
               <span>
-                {{ tc('account_form.advanced_tooltip', advanced ? 0 : 1) }}
+                {{ t('account_form.advanced_tooltip', advanced ? 0 : 1) }}
               </span>
             </v-tooltip>
           </template>

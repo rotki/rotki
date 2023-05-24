@@ -8,7 +8,7 @@ onMounted(() => {
   set(abbreviate, get(abbreviateNumber));
 });
 
-const { tc } = useI18n();
+const { t } = useI18n();
 </script>
 
 <template>
@@ -20,8 +20,8 @@ const { tc } = useI18n();
     <v-switch
       v-model="abbreviate"
       data-cy="frontend-settings__fields__abbreviate_number"
-      :label="tc('frontend_settings.label.abbreviate_number')"
-      :hint="tc('frontend_settings.subtitle.abbreviate_number')"
+      :label="t('frontend_settings.label.abbreviate_number')"
+      :hint="t('frontend_settings.subtitle.abbreviate_number')"
       color="primary"
       persistent-hint
       :success-messages="success"

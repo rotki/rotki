@@ -26,8 +26,5 @@ export default createI18n({
   fallbackLocale:
     (import.meta.env.VITE_I18N_FALLBACK_LOCALE as string | undefined) || 'en',
   messages: loadLocaleMessages(),
-  silentTranslationWarn:
-    import.meta.env.VITE_SILENT_TRANSLATION_WARN === 'true' ||
-    /^backend_mappings/,
-  missing: () => ''
+  silentTranslationWarn: import.meta.env.VITE_SILENT_TRANSLATION_WARN === 'true'
 });

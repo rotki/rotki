@@ -20,7 +20,7 @@ const refreshing = computed(
   () => get(balancesRefreshing) || get(eventsRefreshing)
 );
 
-const { tc } = useI18n();
+const { t } = useI18n();
 
 onMounted(async () => {
   await Promise.allSettled([fetchBalances(false), fetchEvents(false)]);
@@ -28,11 +28,11 @@ onMounted(async () => {
 </script>
 
 <template>
-  <no-premium-placeholder v-if="!premium" :text="tc('balancer.premium')" />
+  <no-premium-placeholder v-if="!premium" :text="t('balancer.premium')" />
   <module-not-active v-else-if="!isEnabled" :modules="modules" />
   <progress-screen v-else-if="loading">
     <template #message>
-      {{ tc('balancer.loading') }}
+      {{ t('balancer.loading') }}
     </template>
   </progress-screen>
   <div v-else>

@@ -33,24 +33,24 @@ const emit = defineEmits<{
 const { eventGroupHeader, allEvents } = toRefs(props);
 
 const css = useCssModule();
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const { getChain } = useSupportedChains();
 
 const headers: DataTableHeader[] = [
   {
-    text: tc('common.type'),
+    text: t('common.type'),
     value: 'type',
     sortable: false,
     cellClass: css['row__type']
   },
   {
-    text: tc('common.asset'),
+    text: t('common.asset'),
     value: 'asset',
     sortable: false
   },
   {
-    text: tc('common.description'),
+    text: t('common.description'),
     value: 'description',
     sortable: false,
     cellClass: css['row__description']
@@ -148,8 +148,8 @@ watch(
               <div class="primary--text font-weight-bold">
                 {{
                   open
-                    ? tc('transactions.events.view.hide')
-                    : tc('transactions.events.view.show', 0, {
+                    ? t('transactions.events.view.hide')
+                    : t('transactions.events.view.show', {
                         length: events.length
                       })
                 }}
@@ -168,8 +168,8 @@ watch(
                 :headers="headers"
                 :items="events"
                 :loading="loading || evaluating"
-                :loading-text="tc('transactions.events.loading')"
-                :no-data-text="tc('transactions.events.no_data')"
+                :loading-text="t('transactions.events.loading')"
+                :no-data-text="t('transactions.events.no_data')"
                 class="transparent"
                 :options="options"
                 hide-default-footer
@@ -206,8 +206,8 @@ watch(
                   <v-lazy>
                     <row-actions
                       align="end"
-                      :delete-tooltip="tc('transactions.events.actions.delete')"
-                      :edit-tooltip="tc('transactions.events.actions.edit')"
+                      :delete-tooltip="t('transactions.events.actions.delete')"
+                      :edit-tooltip="t('transactions.events.actions.edit')"
                       :no-edit="!isEvmEvent(item)"
                       @edit-click="editEvent(item)"
                       @delete-click="deleteEvent(item)"

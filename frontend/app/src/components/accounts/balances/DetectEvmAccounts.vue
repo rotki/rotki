@@ -5,7 +5,7 @@ const { isTaskRunning } = useTaskStore();
 const isEvmAccountsDetecting = isTaskRunning(TaskType.DETECT_EVM_ACCOUNTS);
 const { detectEvmAccounts } = useBlockchains();
 
-const { tc } = useI18n();
+const { t } = useI18n();
 </script>
 
 <template>
@@ -19,11 +19,11 @@ const { tc } = useI18n();
         v-on="on"
         @click="detectEvmAccounts()"
       >
-        {{ tc('blockchain_balances.evm_detection.title') }}
+        {{ t('blockchain_balances.evm_detection.title') }}
       </v-btn>
     </template>
     <span>
-      {{ tc('blockchain_balances.evm_detection.tooltip') }}
+      {{ t('blockchain_balances.evm_detection.tooltip') }}
     </span>
   </v-tooltip>
 </template>

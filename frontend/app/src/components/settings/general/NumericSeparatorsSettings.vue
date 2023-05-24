@@ -8,38 +8,38 @@ const decimalSeparator = ref<string>('');
 const { thousandSeparator: thousands, decimalSeparator: decimals } =
   storeToRefs(useFrontendSettingsStore());
 
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const rules = {
   thousandSeparator: {
     required: helpers.withMessage(
-      tc('general_settings.thousand_separator.validation.empty'),
+      t('general_settings.thousand_separator.validation.empty'),
       required
     ),
     notANumber: helpers.withMessage(
-      tc(
+      t(
         'general_settings.thousand_separator.validation.cannot_be_numeric_character'
       ),
       not(numeric)
     ),
     notTheSame: helpers.withMessage(
-      tc('general_settings.thousand_separator.validation.cannot_be_the_same'),
+      t('general_settings.thousand_separator.validation.cannot_be_the_same'),
       not(sameAs(decimalSeparator))
     )
   },
   decimalSeparator: {
     required: helpers.withMessage(
-      tc('general_settings.decimal_separator.validation.empty'),
+      t('general_settings.decimal_separator.validation.empty'),
       required
     ),
     notANumber: helpers.withMessage(
-      tc(
+      t(
         'general_settings.decimal_separator.validation.cannot_be_numeric_character'
       ),
       not(numeric)
     ),
     notTheSame: helpers.withMessage(
-      tc('general_settings.decimal_separator.validation.cannot_be_the_same'),
+      t('general_settings.decimal_separator.validation.cannot_be_the_same'),
       not(sameAs(thousandSeparator))
     )
   }
@@ -70,12 +70,12 @@ const callIfDecimalsValid = (
 };
 
 const thousandsSuccessMessage = (thousandSeparator: string) =>
-  tc('general_settings.validation.thousand_separator.success', 0, {
+  t('general_settings.validation.thousand_separator.success', {
     thousandSeparator
   });
 
 const decimalsSuccessMessage = (decimalSeparator: string) =>
-  tc('general_settings.validation.decimal_separator.success', 0, {
+  t('general_settings.validation.decimal_separator.success', {
     decimalSeparator
   });
 
@@ -91,9 +91,7 @@ onMounted(() => {
       #default="{ error, success, update }"
       setting="thousandSeparator"
       frontend-setting
-      :error-message="
-        tc('general_settings.validation.thousand_separator.error')
-      "
+      :error-message="t('general_settings.validation.thousand_separator.error')"
       :success-message="thousandsSuccessMessage"
     >
       <v-text-field
@@ -101,7 +99,7 @@ onMounted(() => {
         outlined
         maxlength="1"
         class="general-settings__fields__thousand-separator"
-        :label="tc('general_settings.amount.label.thousand_separator')"
+        :label="t('general_settings.amount.label.thousand_separator')"
         type="text"
         :success-messages="success"
         :error-messages="
@@ -115,7 +113,7 @@ onMounted(() => {
       #default="{ error, success, update }"
       setting="decimalSeparator"
       frontend-setting
-      :error-message="tc('general_settings.validation.decimal_separator.error')"
+      :error-message="t('general_settings.validation.decimal_separator.error')"
       :success-message="decimalsSuccessMessage"
     >
       <v-text-field
@@ -123,7 +121,7 @@ onMounted(() => {
         outlined
         maxlength="1"
         class="general-settings__fields__decimal-separator"
-        :label="tc('general_settings.amount.label.decimal_separator')"
+        :label="t('general_settings.amount.label.decimal_separator')"
         type="text"
         :success-messages="success"
         :error-messages="

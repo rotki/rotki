@@ -26,7 +26,7 @@ const emit = defineEmits<{
   (e: 'input', valid: boolean): void;
 }>();
 
-const { t, tc } = useI18n();
+const { t } = useI18n();
 
 const { edit, context } = toRefs(props);
 
@@ -125,8 +125,8 @@ const save = async () => {
       const obj = { message: status.message };
       setMessage({
         description: isEdit
-          ? tc('actions.manual_balances.edit.error.description', 0, obj)
-          : tc('actions.manual_balances.add.error.description', 0, obj)
+          ? t('actions.manual_balances.edit.error.description', obj)
+          : t('actions.manual_balances.add.error.description', obj)
       });
     }
   }
@@ -194,19 +194,19 @@ const saveCustomAsset = async () => {
 const rules = {
   amount: {
     required: helpers.withMessage(
-      tc('manual_balances_form.validation.amount'),
+      t('manual_balances_form.validation.amount'),
       required
     )
   },
   label: {
     required: helpers.withMessage(
-      tc('manual_balances_form.validation.label_empty'),
+      t('manual_balances_form.validation.label_empty'),
       required
     )
   },
   asset: {
     required: helpers.withMessage(
-      tc('manual_balances_form.validation.asset'),
+      t('manual_balances_form.validation.asset'),
       required
     )
   },
@@ -252,7 +252,7 @@ defineExpose({
       v-model="label"
       class="manual-balances-form__label"
       outlined
-      :label="tc('manual_balances_form.fields.label')"
+      :label="t('manual_balances_form.fields.label')"
       :error-messages="toMessages(v$.label)"
       :disabled="pending"
       @blur="v$.label.$touch()"
@@ -261,7 +261,7 @@ defineExpose({
     <balance-type-input
       v-model="balanceType"
       :disabled="pending"
-      :label="tc('manual_balances_form.fields.balance_type')"
+      :label="t('manual_balances_form.fields.balance_type')"
       outlined
     />
 
@@ -269,7 +269,7 @@ defineExpose({
       <v-col>
         <asset-select
           v-model="asset"
-          :label="tc('common.asset')"
+          :label="t('common.asset')"
           class="manual-balances-form__asset"
           outlined
           :error-messages="toMessages(v$.asset)"
@@ -295,7 +295,7 @@ defineExpose({
             </v-btn>
           </template>
           <span>
-            {{ tc('manual_balances_form.fields.create_a_custom_asset') }}
+            {{ t('manual_balances_form.fields.create_a_custom_asset') }}
           </span>
         </v-tooltip>
       </v-col>
@@ -309,7 +309,7 @@ defineExpose({
 
     <amount-input
       v-model="amount"
-      :label="tc('common.amount')"
+      :label="t('common.amount')"
       :error-messages="toMessages(v$.amount)"
       class="manual-balances-form__amount"
       outlined
@@ -320,7 +320,7 @@ defineExpose({
 
     <tag-input
       v-model="tags"
-      :label="tc('manual_balances_form.fields.tags')"
+      :label="t('manual_balances_form.fields.tags')"
       :disabled="pending"
       outlined
       class="manual-balances-form__tags"
@@ -332,16 +332,16 @@ defineExpose({
       outlined
       :error-messages="toMessages(v$.location)"
       :disabled="pending"
-      :label="tc('common.location')"
+      :label="t('common.location')"
       attach=".manual-balances-form__location"
       @blur="v$.location.$touch()"
     />
 
     <big-dialog
       :display="showCustomAssetForm"
-      :title="tc('asset_management.add_title')"
+      :title="t('asset_management.add_title')"
       :action-disabled="!customAssetFormValid || customAssetFormSaving"
-      :primary-action="tc('common.actions.save')"
+      :primary-action="t('common.actions.save')"
       :loading="customAssetFormSaving"
       @confirm="saveCustomAsset()"
       @cancel="showCustomAssetForm = false"

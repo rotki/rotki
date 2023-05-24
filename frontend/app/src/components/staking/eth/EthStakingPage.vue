@@ -70,7 +70,7 @@ const dailyStatsPayload: ComputedRef<Eth2DailyStatsPayload> = computed(() => {
 });
 
 const premium = usePremium();
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const refreshStats = async (userInitiated: boolean): Promise<void> => {
   await fetchDailyStats(get(dailyStatsPayload));
@@ -118,10 +118,7 @@ watch(period, async period => {
 
 <template>
   <div>
-    <no-premium-placeholder
-      v-if="!premium"
-      :text="tc('eth2_page.no_premium')"
-    />
+    <no-premium-placeholder v-if="!premium" :text="t('eth2_page.no_premium')" />
     <module-not-active v-else-if="!enabled" :modules="[module]" />
 
     <eth-staking

@@ -43,7 +43,7 @@ const { setMessage } = useMessageStore();
 const { fetchLoopringBalances } = useEthBalancesStore();
 const { remove: removeNotification, prioritized } = useNotificationsStore();
 
-const { tc } = useI18n();
+const { t } = useI18n();
 const route = useRoute();
 const api = useExternalServicesApi();
 
@@ -96,8 +96,8 @@ const save = async (serviceName: ExternalServiceName, key: string) => {
     set(loading, true);
     updateKeys(await api.setExternalServices(keys));
     setMessage({
-      title: tc('external_services.set.success.title'),
-      description: tc('external_services.set.success.message', 0, {
+      title: t('external_services.set.success.title'),
+      description: t('external_services.set.success.message', {
         serviceName: toCapitalCase(serviceName.split('_').join(' '))
       }),
       success: true
@@ -111,8 +111,8 @@ const save = async (serviceName: ExternalServiceName, key: string) => {
     }
   } catch (e: any) {
     setMessage({
-      title: tc('external_services.set.error.title'),
-      description: tc('external_services.set.error.message', 0, {
+      title: t('external_services.set.error.title'),
+      description: t('external_services.set.error.message', {
         error: e.message
       }),
       success: false
@@ -126,8 +126,8 @@ const { show } = useConfirmStore();
 const showConfirmation = (service: ExternalServiceName) => {
   show(
     {
-      title: tc('external_services.confirmation.title'),
-      message: tc('external_services.confirmation.message'),
+      title: t('external_services.confirmation.title'),
+      message: t('external_services.confirmation.message'),
       type: 'info'
     },
     async () => await confirm(service)
@@ -140,8 +140,8 @@ const confirm = async (service: ExternalServiceName) => {
     updateKeys(await api.deleteExternalServices(service));
   } catch (e: any) {
     setMessage({
-      title: tc('external_services.delete_error.title'),
-      description: tc('external_services.delete_error.description', 0, {
+      title: t('external_services.delete_error.title'),
+      description: t('external_services.delete_error.description', {
         message: e.message
       }),
       success: false
@@ -173,19 +173,19 @@ onMounted(async () => {
 <template>
   <card>
     <template #title>
-      {{ tc('external_services.title') }}
+      {{ t('external_services.title') }}
     </template>
     <template #subtitle>
-      {{ tc('external_services.subtitle') }}
+      {{ t('external_services.subtitle') }}
     </template>
 
     <api-key-box>
       <v-card flat>
         <v-card-title>
-          {{ tc('external_services.etherscan.title') }}
+          {{ t('external_services.etherscan.title') }}
         </v-card-title>
         <v-card-subtitle>
-          {{ tc('external_services.etherscan.description') }}
+          {{ t('external_services.etherscan.description') }}
         </v-card-subtitle>
       </v-card>
       <v-tabs v-model="evmEtherscanTabIndex">
@@ -206,11 +206,11 @@ onMounted(async () => {
           <service-key
             v-model="tab.value"
             :class="`external-services__${chain}-etherscan-key`"
-            :label="tc('external_services.etherscan.label')"
-            :hint="tc('external_services.etherscan.hint')"
+            :label="t('external_services.etherscan.label')"
+            :hint="t('external_services.etherscan.hint')"
             :loading="loading"
             :tooltip="
-              tc('external_services.etherscan.delete_tooltip', 0, {
+              t('external_services.etherscan.delete_tooltip', {
                 chain: toSentenceCase(chain)
               })
             "
@@ -225,12 +225,12 @@ onMounted(async () => {
       <service-key
         v-model="cryptocompareKey"
         class="external-services__cryptocompare-key"
-        :title="tc('external_services.cryptocompare.title')"
-        :description="tc('external_services.cryptocompare.description')"
-        :label="tc('external_services.cryptocompare.label')"
-        :hint="tc('external_services.cryptocompare.hint')"
+        :title="t('external_services.cryptocompare.title')"
+        :description="t('external_services.cryptocompare.description')"
+        :label="t('external_services.cryptocompare.label')"
+        :hint="t('external_services.cryptocompare.hint')"
         :loading="loading"
-        :tooltip="tc('external_services.cryptocompare.delete_tooltip')"
+        :tooltip="t('external_services.cryptocompare.delete_tooltip')"
         @save="save('cryptocompare', $event)"
         @delete-key="showConfirmation('cryptocompare')"
       />
@@ -240,12 +240,12 @@ onMounted(async () => {
       <service-key
         v-model="beaconchainKey"
         class="external-services__beaconchain-key"
-        :title="tc('external_services.beaconchain.title')"
-        :description="tc('external_services.beaconchain.description')"
-        :label="tc('external_services.beaconchain.label')"
-        :hint="tc('external_services.beaconchain.hint')"
+        :title="t('external_services.beaconchain.title')"
+        :description="t('external_services.beaconchain.description')"
+        :label="t('external_services.beaconchain.label')"
+        :hint="t('external_services.beaconchain.hint')"
         :loading="loading"
-        :tooltip="tc('external_services.beaconchain.delete_tooltip')"
+        :tooltip="t('external_services.beaconchain.delete_tooltip')"
         @save="save('beaconchain', $event)"
         @delete-key="showConfirmation('beaconchain')"
       />
@@ -255,12 +255,12 @@ onMounted(async () => {
       <service-key
         v-model="covalentKey"
         class="external-services__covalent-key"
-        :title="tc('external_services.covalent.title')"
-        :description="tc('external_services.covalent.description')"
-        :label="tc('external_services.covalent.label')"
-        :hint="tc('external_services.covalent.hint')"
+        :title="t('external_services.covalent.title')"
+        :description="t('external_services.covalent.description')"
+        :label="t('external_services.covalent.label')"
+        :hint="t('external_services.covalent.hint')"
         :loading="loading"
-        :tooltip="tc('external_services.covalent.delete_tooltip')"
+        :tooltip="t('external_services.covalent.delete_tooltip')"
         @save="save('covalent', $event)"
         @delete-key="showConfirmation('covalent')"
       />
@@ -270,12 +270,12 @@ onMounted(async () => {
       <service-key
         v-model="loopringKey"
         class="external-services__loopring_key"
-        :title="tc('external_services.loopring.title')"
-        :description="tc('external_services.loopring.description')"
-        :label="tc('external_services.loopring.label')"
-        :hint="tc('external_services.loopring.hint')"
+        :title="t('external_services.loopring.title')"
+        :description="t('external_services.loopring.description')"
+        :label="t('external_services.loopring.label')"
+        :hint="t('external_services.loopring.hint')"
         :loading="loading"
-        :tooltip="tc('external_services.loopring.delete_tooltip')"
+        :tooltip="t('external_services.loopring.delete_tooltip')"
         @save="save('loopring', $event)"
         @delete-key="showConfirmation('loopring')"
       />
@@ -289,11 +289,11 @@ onMounted(async () => {
       >
         <v-row align="center">
           <v-col class="grow">
-            {{ tc('external_services.loopring.not_enabled') }}
+            {{ t('external_services.loopring.not_enabled') }}
           </v-col>
           <v-col class="shrink">
             <v-btn to="/settings/modules" color="primary">
-              {{ tc('external_services.loopring.settings') }}
+              {{ t('external_services.loopring.settings') }}
             </v-btn>
           </v-col>
         </v-row>
@@ -304,12 +304,12 @@ onMounted(async () => {
       <service-key
         v-model="openseaKey"
         class="external-services__opensea-key"
-        :title="tc('external_services.opensea.title')"
-        :description="tc('external_services.opensea.description')"
-        :label="tc('external_services.opensea.label')"
-        :hint="tc('external_services.opensea.hint')"
+        :title="t('external_services.opensea.title')"
+        :description="t('external_services.opensea.description')"
+        :label="t('external_services.opensea.label')"
+        :hint="t('external_services.opensea.hint')"
         :loading="loading"
-        :tooltip="tc('external_services.opensea.delete_tooltip')"
+        :tooltip="t('external_services.opensea.delete_tooltip')"
         @save="save('opensea', $event)"
         @delete-key="showConfirmation('opensea')"
       >
@@ -318,7 +318,7 @@ onMounted(async () => {
             <external-link
               url="https://docs.opensea.io/reference/request-an-api-key"
             >
-              {{ tc('common.here') }}
+              {{ t('common.here') }}
             </external-link>
           </template>
         </i18n>
