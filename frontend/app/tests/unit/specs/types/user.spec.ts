@@ -1,4 +1,5 @@
 import { describe } from 'vitest';
+import { Blockchain } from '@rotki/common/lib/blockchain';
 import { TimeFramePeriod } from '@rotki/common/lib/settings/graphs';
 import { BigNumber } from '@rotki/common';
 import { Theme } from '@rotki/common/lib/settings';
@@ -41,7 +42,7 @@ describe('types/user', () => {
       decimalSeparator: '-',
       refreshPeriod: 120,
       explorers: {
-        ETH: {
+        [Blockchain.ETH]: {
           transaction: 'explore/tx'
         }
       },

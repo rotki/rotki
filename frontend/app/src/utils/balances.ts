@@ -188,7 +188,7 @@ export const toSortedAssetBalanceArray = (
 export const accountsWithBalances = (
   accounts: GeneralAccountData[],
   balances: BlockchainAssetBalances,
-  blockchain: Exclude<Blockchain, 'BTC'>
+  blockchain: Exclude<Blockchain, Blockchain.BTC>
 ): AccountWithBalance[] => {
   const data: AccountWithBalance[] = [];
   const { getNativeAsset } = useSupportedChains();

@@ -4,22 +4,22 @@ import { type PendingTask } from '@/types/task';
 
 export const useLiquityApi = () => {
   const fetchLiquityBalances = async (): Promise<PendingTask> => {
-    const url = 'blockchains/ETH/modules/liquity/balances';
+    const url = 'blockchains/eth/modules/liquity/balances';
     return fetchExternalAsync(api.instance, url);
   };
 
   const fetchLiquityStaking = async (): Promise<PendingTask> => {
-    const url = 'blockchains/ETH/modules/liquity/staking';
+    const url = 'blockchains/eth/modules/liquity/staking';
     return fetchExternalAsync(api.instance, url);
   };
 
   const fetchLiquityStakingPools = async (): Promise<PendingTask> => {
-    const url = 'blockchains/ETH/modules/liquity/pool';
+    const url = 'blockchains/eth/modules/liquity/pool';
     return fetchExternalAsync(api.instance, url);
   };
 
   const fetchLiquityStatistics = async (): Promise<PendingTask> => {
-    const url = 'blockchains/ETH/modules/liquity/stats';
+    const url = 'blockchains/eth/modules/liquity/stats';
     return fetchExternalAsync(api.instance, url);
   };
 

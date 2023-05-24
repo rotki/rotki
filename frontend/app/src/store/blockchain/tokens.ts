@@ -20,8 +20,8 @@ const noTokens = (): EthDetectedTokensInfo => ({
 type Tokens = Record<TokenChains, EvmTokensRecord>;
 
 const defaultTokens = (): Tokens => ({
-  ETH: {},
-  OPTIMISM: {}
+  [Blockchain.ETH]: {},
+  [Blockchain.OPTIMISM]: {}
 });
 
 export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {

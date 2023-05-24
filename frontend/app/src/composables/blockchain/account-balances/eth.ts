@@ -86,7 +86,7 @@ export const useEthAccountBalances = () => {
   const ethAccounts: ComputedRef<AccountWithBalance[]> = computed(() => {
     const accounts = accountsWithBalances(
       get(eth),
-      get(balances).ETH,
+      get(balances).eth,
       Blockchain.ETH
     );
 
@@ -110,7 +110,7 @@ export const useEthAccountBalances = () => {
   const eth2Accounts: ComputedRef<AccountWithBalanceAndSharedOwnership[]> =
     computed(() => {
       const accounts: AccountWithBalanceAndSharedOwnership[] = [];
-      const state = get(balances).ETH2;
+      const state = get(balances).eth2;
 
       for (const { publicKey, validatorIndex, ownershipPercentage } of get(
         eth2Validators
@@ -223,7 +223,7 @@ export const useEthAccountBalances = () => {
     computed(() => {
       const ethBreakdown = getBlockchainBreakdown(
         Blockchain.ETH,
-        get(balances).ETH,
+        get(balances).eth,
         get(eth),
         asset
       );
@@ -232,7 +232,7 @@ export const useEthAccountBalances = () => {
       addEth2Breakdown(
         asset,
         get(eth2Validators),
-        get(balances).ETH2,
+        get(balances).eth2,
         ethBreakdown,
         get(treatEth2AsEth)
       );

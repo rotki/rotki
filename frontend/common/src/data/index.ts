@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { Blockchain } from '../blockchain';
 
 export interface ActionResult<T> {
   readonly result: T;
@@ -71,7 +72,8 @@ export type AssetInfo = z.infer<typeof AssetInfo>;
 export const assetSymbolToIdentifierMap: Record<string, string> = {
   DAI: 'eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F',
   ADX: 'eip155:1/erc20:0xADE00C28244d5CE17D72E40330B1c318cD12B7c3',
-  OPTIMISM: 'eip155:10/erc20:0x4200000000000000000000000000000000000042'
+  [Blockchain.OPTIMISM]:
+    'eip155:10/erc20:0x4200000000000000000000000000000000000042'
 };
 
 export const getIdentifierFromSymbolMap = (symbol: string): string => {

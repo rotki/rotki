@@ -44,7 +44,7 @@ export const useAssetInfoApi = () => {
 
   const erc20details = async (address: string): Promise<PendingTask> => {
     const response = await api.instance.get<ActionResult<PendingTask>>(
-      '/blockchains/ETH/erc20details',
+      '/blockchains/eth/erc20details',
       {
         params: snakeCaseTransformer({
           asyncQuery: true,

@@ -1,4 +1,5 @@
 import { BigNumber } from '@rotki/common';
+import { Blockchain } from '@rotki/common/lib/blockchain';
 import { Theme } from '@rotki/common/lib/settings';
 import {
   TimeFramePeriod,
@@ -125,7 +126,7 @@ describe('settings:frontend', () => {
       decimalSeparator: '-',
       refreshPeriod: 120,
       explorers: {
-        ETH: {
+        [Blockchain.ETH]: {
           transaction: 'explore/tx'
         }
       },
@@ -193,7 +194,7 @@ describe('settings:frontend', () => {
     expect(store.abbreviateNumber).toBe(false);
     expect(store.refreshPeriod).toBe(120);
     expect(store.explorers).toStrictEqual({
-      ETH: {
+      [Blockchain.ETH]: {
         transaction: 'explore/tx'
       }
     });

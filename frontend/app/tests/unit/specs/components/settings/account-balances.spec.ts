@@ -1,3 +1,4 @@
+import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type Wrapper, mount } from '@vue/test-utils';
 import { setActivePinia } from 'pinia';
 import Vuetify from 'vuetify';
@@ -17,7 +18,7 @@ describe('AccountBalances.vue', () => {
       vuetify,
       pinia,
       propsData: {
-        blockchain: 'ETH',
+        blockchain: Blockchain.ETH,
         balances: [],
         title: 'ETH balances'
       }

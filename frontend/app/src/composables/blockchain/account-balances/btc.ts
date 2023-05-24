@@ -12,11 +12,11 @@ export const useBtcAccountBalances = () => {
   const { btc, bch } = storeToRefs(useBtcAccountsStore());
 
   const btcAccounts = computed<BlockchainAccountWithBalance[]>(() =>
-    btcAccountsWithBalances(get(btc), get(balances).BTC, Blockchain.BTC)
+    btcAccountsWithBalances(get(btc), get(balances).btc, Blockchain.BTC)
   );
 
   const bchAccounts = computed<BlockchainAccountWithBalance[]>(() =>
-    btcAccountsWithBalances(get(bch), get(balances).BCH, Blockchain.BCH)
+    btcAccountsWithBalances(get(bch), get(balances).bch, Blockchain.BCH)
   );
 
   const { shouldShowLoadingScreen } = useStatusStore();
@@ -38,10 +38,10 @@ export const useBtcAccountBalances = () => {
   const getBreakdown = (asset: string): ComputedRef<AssetBreakdown[]> =>
     computed(() => [
       ...(asset === Blockchain.BTC
-        ? getBtcBreakdown(Blockchain.BTC, get(balances).BTC, get(btc))
+        ? getBtcBreakdown(Blockchain.BTC, get(balances).btc, get(btc))
         : []),
       ...(asset === Blockchain.BCH
-        ? getBtcBreakdown(Blockchain.BCH, get(balances).BCH, get(bch))
+        ? getBtcBreakdown(Blockchain.BCH, get(balances).bch, get(bch))
         : [])
     ]);
 

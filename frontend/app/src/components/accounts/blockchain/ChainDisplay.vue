@@ -22,7 +22,7 @@ const name = getChainName(chain);
 <template>
   <list-item
     :dense="dense"
-    :title="isEth2 ? name : chain"
+    :title="isEth2 ? name : chain.toUpperCase()"
     :subtitle="dense ? '' : name"
   >
     <template #icon>

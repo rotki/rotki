@@ -1,12 +1,12 @@
 export enum Blockchain {
-  ETH = 'ETH',
-  ETH2 = 'ETH2',
-  BTC = 'BTC',
-  BCH = 'BCH',
-  KSM = 'KSM',
-  DOT = 'DOT',
-  AVAX = 'AVAX',
-  OPTIMISM = 'OPTIMISM'
+  ETH = 'eth',
+  ETH2 = 'eth2',
+  BTC = 'btc',
+  BCH = 'bch',
+  KSM = 'ksm',
+  DOT = 'dot',
+  AVAX = 'avax',
+  OPTIMISM = 'optimism'
 }
 
 export type BlockchainSelection = Blockchain | 'ALL';
