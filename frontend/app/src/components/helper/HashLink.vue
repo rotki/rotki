@@ -52,7 +52,12 @@ const aliasName = computed<string | null>(() => {
     return null;
   }
 
-  return get(addressNameSelector(text, chain));
+  const name = get(addressNameSelector(text, chain));
+  if (!name) {
+    return null;
+  }
+
+  return truncateAddress(name, 10);
 });
 
 const displayText = computed<string>(() => {

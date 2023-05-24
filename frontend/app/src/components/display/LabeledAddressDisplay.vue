@@ -20,7 +20,13 @@ const aliasName = computed<string | null>(() => {
   }
 
   const { address, chain } = get(account);
-  return get(addressNameSelector(address, chain));
+  const name = get(addressNameSelector(address, chain));
+
+  if (!name) {
+    return null;
+  }
+
+  return truncateAddress(name, get(truncationLength));
 });
 
 const xsOnly = computed(() => get(currentBreakpoint).xsOnly);
