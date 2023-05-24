@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from rotkehlchen.constants.assets import A_BTC, A_USD
+from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
 from rotkehlchen.externalapis.coingecko import Coingecko
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
@@ -212,3 +213,57 @@ def test_manual_oracle_correctly_returns_price(globaldb, fake_price_historian):
             to_asset=A_USD,
             timestamp=Timestamp(1610595466),
         )
+
+
+def test_get_historical_prices(globaldb):
+    ts1 = Timestamp(1611595470)
+    price1, price2, price3, price4 = 30000, 35000, 45000, 77000
+    # Add price at timestamp
+    globaldb.add_single_historical_price(
+        HistoricalPrice(
+            from_asset=A_BTC,
+            to_asset=A_USD,
+            price=price1,
+            timestamp=ts1,
+            source=HistoricalPriceOracle.MANUAL,
+        ),
+    )
+    globaldb.add_single_historical_price(
+        HistoricalPrice(
+            from_asset=A_BTC,
+            to_asset=A_USD,
+            price=price2,
+            timestamp=ts1 + 3600 * 4,
+            source=HistoricalPriceOracle.MANUAL,
+        ),
+    )
+    globaldb.add_single_historical_price(
+        HistoricalPrice(
+            from_asset=A_BTC,
+            to_asset=A_USD,
+            price=price3,
+            timestamp=ts1 + DAY_IN_SECONDS + 3600,
+            source=HistoricalPriceOracle.MANUAL,
+        ),
+    )
+    globaldb.add_single_historical_price(
+        HistoricalPrice(
+            from_asset=A_BTC,
+            to_asset=A_USD,
+            price=price4,
+            timestamp=ts1 + 4 * DAY_IN_SECONDS + 3600,
+            source=HistoricalPriceOracle.MANUAL,
+        ),
+    )
+
+    result = globaldb.get_historical_prices(
+        query_data=[
+            (A_BTC, A_USD, ts1 - 3600),
+            (A_BTC, A_USD, ts1 + 3600 * 6),
+            (A_BTC, A_USD, ts1 + DAY_IN_SECONDS - 3600 * 2),
+            (A_BTC, A_USD, ts1 + 2 * DAY_IN_SECONDS + 3600 * 4),
+            (A_BTC, A_USD, ts1 + 4 * DAY_IN_SECONDS - 3600),
+        ],
+        max_seconds_distance=DAY_IN_SECONDS,
+    )
+    assert [price1, price2, price3, None, price4] == [x.price if x is not None else None for x in result]  # noqa: E501

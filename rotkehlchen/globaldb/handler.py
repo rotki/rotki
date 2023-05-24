@@ -1178,24 +1178,57 @@ class GlobalDBHandler():
         If no price can be found returns None
         """
         querystr = (
-            'SELECT from_asset, to_asset, source_type, timestamp, price FROM price_history '
-            'WHERE from_asset=? AND to_asset=? AND ABS(timestamp - ?) <= ? '
+            'SELECT from_asset, to_asset, source_type, timestamp, '
+            'price, MIN(ABS(timestamp - ?)) FROM price_history '
+            'WHERE from_asset=? AND to_asset=? '
+            'AND timestamp between ? AND ?'
         )
-        querylist = [from_asset.identifier, to_asset.identifier, timestamp, max_seconds_distance]
+        querylist = [timestamp, from_asset.identifier, to_asset.identifier, timestamp - max_seconds_distance, timestamp + max_seconds_distance]  # noqa: E501
         if source is not None:
-            querystr += ' AND source_type=?'
+            querystr += ' AND source_type=? '
             querylist.append(source.serialize_for_db())
-
-        querystr += 'ORDER BY ABS(timestamp - ?) ASC LIMIT 1'
-        querylist.append(timestamp)
 
         with GlobalDBHandler().conn.read_ctx() as cursor:
             query = cursor.execute(querystr, tuple(querylist))
             result = query.fetchone()
-            if result is None:
+            if result[0] is None:
                 return None
 
+        # The result tuple last entry MIN(ABS()) is disregarded in deserialize_from_db
         return HistoricalPrice.deserialize_from_db(result)
+
+    @staticmethod
+    def get_historical_prices(
+            query_data: list[tuple['Asset', 'Asset', Timestamp]],
+            max_seconds_distance: int,
+            source: Optional[HistoricalPriceOracle] = None,
+    ) -> list[Optional['HistoricalPrice']]:
+        """Given a list of from/to/timestamp data to query returns all values
+        that could be found in the DB and None for those that could not be found.
+        """
+        querystr = (
+            'SELECT from_asset, to_asset, source_type, timestamp, price, MIN(ABS(timestamp - ?)) '
+            'FROM price_history WHERE from_asset=? AND to_asset=? AND timestamp BETWEEN ? AND ?'
+        )
+        querylist: list[tuple] = []
+        if source is not None:
+            querystr += ' AND source_type=? '
+            serialized_source = source.serialize_for_db()
+            for from_asset, to_asset, timestamp in query_data:
+                querylist.append((timestamp, from_asset.identifier, to_asset.identifier, timestamp - max_seconds_distance, timestamp + max_seconds_distance, serialized_source))  # noqa: E501
+
+        else:
+            for from_asset, to_asset, timestamp in query_data:
+                querylist.append((timestamp, from_asset.identifier, to_asset.identifier, timestamp - max_seconds_distance, timestamp + max_seconds_distance))  # noqa: E501
+
+        prices_results = []
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            for entry in querylist:
+                query = cursor.execute(querystr, entry)
+                result = query.fetchone()  # below last index of the result tuple is ignored in deserialize  # noqa: E501
+                prices_results.append(None if result[0] is None else HistoricalPrice.deserialize_from_db(result))  # noqa: E501
+
+        return prices_results
 
     @staticmethod
     def add_historical_prices(entries: list['HistoricalPrice']) -> None:
