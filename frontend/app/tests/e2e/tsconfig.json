@@ -1,12 +1,16 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
+    "baseUrl": ".",
     "types": ["cypress", "node"],
     "target": "ES5",
     "sourceMap": false,
-    "inlineSourceMap": true
+    "inlineSourceMap": true,
+    "paths": {
+      "@/*": ["../../src/*"]
+    }
   },
-  "include": ["**/*.ts"],
+  "include": ["../../src/**/*.ts", "**/*.ts", "../../src/auto-imports.d.ts"],
   "exclude": ["node_modules/**", "**/.*"],
   "compileOnSave": false
 }

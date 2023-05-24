@@ -1,15 +1,25 @@
 {
   "extends": "../tsconfig.json",
   "compilerOptions": {
+    "rootDir": ".",
     "types": [
       "vuetify",
       "vue-i18n",
       "vite/client",
       "vite-plugin-vue-layouts/client",
       "unplugin-vue-define-options/macros-global"
-    ]
+    ],
+    "paths": {
+      "@/*": ["./src/*"]
+    }
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.vue", "components.d.ts"],
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.d.ts",
+    "src/**/*.tsx",
+    "src/**/*.vue",
+    "components.d.ts"
+  ],
   "exclude": ["node_modules/**", "**/.*"],
   "vueCompilerOptions": {
     "target": 2.7
