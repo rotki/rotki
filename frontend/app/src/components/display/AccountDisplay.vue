@@ -31,7 +31,10 @@ const aliasName = computed<string | null>(() => {
   if (!get(scrambleData) && get(useAliasName)) {
     const { address, chain } = get(account);
     const chainId = chain === 'ALL' ? Blockchain.ETH : chain;
-    return get(addressNameSelector(address, chainId));
+    const name = get(addressNameSelector(address, chainId));
+    if (name) {
+      return truncateAddress(name, 10);
+    }
   }
 
   return null;
