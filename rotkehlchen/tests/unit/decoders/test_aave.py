@@ -916,7 +916,7 @@ def test_aave_v2_repay(database, ethereum_inquirer, eth_transactions):
 
 @pytest.mark.vcr()
 @pytest.mark.parametrize('ethereum_accounts', [['0x1dB64086b4cdA94884E4FC296799a512dfc564CA']])
-def test_aave_liquidation(
+def test_aave_v2_liquidation(
         database: 'DBHandler',
         ethereum_inquirer: 'EthereumInquirer',
         ethereum_accounts: list['ChecksumEvmAddress'],
@@ -943,7 +943,7 @@ def test_aave_liquidation(
             asset=EvmToken('eip155:1/erc20:0xF63B34710400CAd3e044cFfDcAb00a0f32E33eCf'),
             balance=Balance(amount=FVal('0.910875161581518408')),
             location_label=user_address,
-            notes='Payback 0.910875161581518408 variableDebtWETH',
+            notes='Payback 0.910875161581518408 variableDebtWETH for an aave-v2 position',
             counterparty=CPT_AAVE_V2,
             address=string_to_evm_address('0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9'),
         ), EvmEvent(
@@ -956,9 +956,60 @@ def test_aave_liquidation(
             asset=EvmToken('eip155:1/erc20:0x030bA81f1c18d280636F32af80b9AAd02Cf0854e'),
             balance=Balance(amount=FVal('0.956418919660594328')),
             location_label=user_address,
-            notes='0.956418919660594328 aWETH got liquidated',
+            notes='An aave-v2 position got liquidated for 0.956418919660594328 aWETH',
             counterparty=CPT_AAVE_V2,
             address=string_to_evm_address('0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9'),
+        ),
+    ]
+    assert expected_events == events
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('ethereum_accounts', [['0x8ca7ED9b02ec1E8bEee868a32495Ed5b157eeE08']])
+def test_aave_v1_liquidation(
+        database: 'DBHandler',
+        ethereum_inquirer: 'EthereumInquirer',
+        ethereum_accounts: list['ChecksumEvmAddress'],
+) -> None:
+    """Data taken from
+    https://etherscan.io/tx/0x75ef28b5593efd3f0f9eff338e234f59b2bd34a7148a90ce020122900722a832
+    """
+    tx_hash = deserialize_evm_tx_hash('0x75ef28b5593efd3f0f9eff338e234f59b2bd34a7148a90ce020122900722a832')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    timestamp = TimestampMS(1659244817000)
+    user_address = ethereum_accounts[0]
+    expected_events = [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=187,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.GENERATE_DEBT,
+            asset=EvmToken('eip155:1/erc20:0xA64BD6C70Cb9051F6A9ba1F163Fdc07E0DfB5F84'),
+            balance=Balance(amount=FVal('0.00000020378277191')),
+            location_label=user_address,
+            notes='Interest payment of 0.00000020378277191 aLINK for aave-v1 position',
+            counterparty=CPT_AAVE_V1,
+            address=string_to_evm_address('0x398eC7346DcD622eDc5ae82352F02bE94C62d119'),
+        ),
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=188,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.PAYBACK_DEBT,
+            asset=EvmToken('eip155:1/erc20:0xA64BD6C70Cb9051F6A9ba1F163Fdc07E0DfB5F84'),
+            balance=Balance(amount=FVal('38.160293005291481434')),
+            location_label=user_address,
+            notes='Payback 38.160293005291481434 aLINK for an aave-v1 position',
+            counterparty=CPT_AAVE_V1,
+            address=string_to_evm_address('0x398eC7346DcD622eDc5ae82352F02bE94C62d119'),
         ),
     ]
     assert expected_events == events
