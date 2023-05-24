@@ -35,7 +35,7 @@ from rotkehlchen.chain.ethereum.modules.balancer import (
     BalancerPoolEventsBalance,
     BalancerPoolTokenBalance,
 )
-from rotkehlchen.chain.ethereum.modules.compound.compound import CompoundBalance, CompoundEvent
+from rotkehlchen.chain.ethereum.modules.compound.compound import CompoundBalance
 from rotkehlchen.chain.ethereum.modules.liquity.trove import Trove
 from rotkehlchen.chain.ethereum.modules.makerdao.dsr import DSRAccountReport, DSRCurrentBalances
 from rotkehlchen.chain.ethereum.modules.makerdao.vaults import (
@@ -167,7 +167,6 @@ def _process_entry(entry: Any) -> Union[str, list[Any], dict[str, Any], Any]:
         return process_result(entry.serialize())
     if isinstance(entry, (
             DBSettings,
-            CompoundEvent,
             VersionCheckResult,
             DBSettings,
             DSRCurrentBalances,
