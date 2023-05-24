@@ -208,7 +208,7 @@ class Aavev2Decoder(DecoderInterface):
             ) == event.balance.amount and asset.protocol == CPT_AAVE_V2:
                 # we are transfering the aTOKEN
                 event.event_subtype = HistoryEventSubType.LIQUIDATE
-                event.notes = f'{event.balance.amount} {asset.symbol} got liquidated'
+                event.notes = f'An aave-v2 position got liquidated for {event.balance.amount} {asset.symbol}'  # noqa: E501
                 event.counterparty = CPT_AAVE_V2
                 event.address = tx_log.address
             elif asset_normalized_value(
@@ -217,7 +217,7 @@ class Aavev2Decoder(DecoderInterface):
             ) == event.balance.amount:
                 # we are transfering the debt token
                 event.event_subtype = HistoryEventSubType.PAYBACK_DEBT
-                event.notes = f'Payback {event.balance.amount} {asset.symbol}'
+                event.notes = f'Payback {event.balance.amount} {asset.symbol} for an aave-v2 position'  # noqa: E501
                 event.counterparty = CPT_AAVE_V2
                 event.address = tx_log.address
 

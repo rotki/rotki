@@ -20,6 +20,7 @@ from ..constants import AAVE_LABEL, CPT_AAVE_V1
 
 DEPOSIT = b'\xc1,W\xb1\xc7:,:.\xa4a>\x94v\xab\xb3\xd8\xd1F\x85z\xabs)\xe2BC\xfbYq\x0c\x82'
 REDEEM_UNDERLYING = b'\x9cN\xd5\x99\xcd\x85U\xb9\xc1\xe8\xcdvC$\r}q\xebv\xb7\x92\x94\x8cI\xfc\xb4\xd4\x11\xf7\xb6\xb3\xc6'  # noqa: E501
+LIQUIDATION_CALL = b'V\x86GW\xfd[\x1f\xc9\xf3\x8f_:\x98\x1c\xd8\xaeQ,\xe4\x1b\x90,\xf7?\xc5\x06\xee6\x9ck\xc27'  # noqa: E501
 
 
 class Aavev1Decoder(DecoderInterface):
@@ -29,6 +30,8 @@ class Aavev1Decoder(DecoderInterface):
             return self._decode_deposit_event(context=context)
         if context.tx_log.topics[0] == REDEEM_UNDERLYING:
             return self._decode_redeem_underlying_event(context=context)
+        if context.tx_log.topics[0] == LIQUIDATION_CALL:
+            return self._decode_liquidation(context=context)
 
         return DEFAULT_DECODING_OUTPUT
 
@@ -100,6 +103,32 @@ class Aavev1Decoder(DecoderInterface):
                 event.notes = f'Gain {event.balance.amount} {atoken.symbol} from aave-v1 as interest'  # noqa: E501
 
         maybe_reshuffle_events(out_event=return_event, in_event=receive_event, events_list=context.decoded_events)  # noqa: E501
+        return DEFAULT_DECODING_OUTPUT
+
+    def _decode_liquidation(self, context: DecoderContext) -> DecodingOutput:
+        """
+        Decode AAVE v1 liquidations. When a liquidation happens the user returns the debt token.
+        """
+        if self.base.is_tracked(hex_or_bytes_to_address(context.tx_log.topics[3])) is False:
+            return DEFAULT_DECODING_OUTPUT
+
+        for event in context.decoded_events:
+            asset = event.asset.resolve_to_evm_token()
+            if event.event_type == HistoryEventType.SPEND and asset_normalized_value(
+                amount=hex_or_bytes_to_int(context.tx_log.data[32:64]),  # debt amount
+                asset=asset,
+            ) == event.balance.amount:
+                # we are transfering the debt token
+                event.event_subtype = HistoryEventSubType.PAYBACK_DEBT
+                event.notes = f'Payback {event.balance.amount} {asset.symbol} for an aave-v1 position'  # noqa: E501
+                event.counterparty = CPT_AAVE_V1
+                event.address = context.tx_log.address
+            elif event.event_type == HistoryEventType.RECEIVE:
+                event.event_subtype = HistoryEventSubType.GENERATE_DEBT
+                event.counterparty = CPT_AAVE_V1
+                event.notes = f'Interest payment of {event.balance.amount} {asset.symbol} for aave-v1 position'  # noqa: E501
+                event.address = context.tx_log.address
+
         return DEFAULT_DECODING_OUTPUT
 
     # -- DecoderInterface methods
