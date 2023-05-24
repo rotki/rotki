@@ -29,7 +29,7 @@ const emit = defineEmits<{
 const { form } = toRefs(props);
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const input = (valid: boolean) => {
   emit('input', valid);
@@ -45,13 +45,13 @@ const updateForm = (partial: Partial<LocationDataSnapshotPayload>) => {
 const rules = {
   location: {
     required: helpers.withMessage(
-      tc('dashboard.snapshot.edit.dialog.location_data.rules.location'),
+      t('dashboard.snapshot.edit.dialog.location_data.rules.location'),
       required
     )
   },
   value: {
     required: helpers.withMessage(
-      tc('dashboard.snapshot.edit.dialog.location_data.rules.value'),
+      t('dashboard.snapshot.edit.dialog.location_data.rules.value'),
       required
     )
   }
@@ -78,7 +78,7 @@ watch(v$, ({ $invalid }) => {
         :value="form.location"
         :excludes="excludedLocations"
         outlined
-        :label="tc('common.location')"
+        :label="t('common.location')"
         :error-messages="v$.location.$errors.map(e => e.$message)"
         @input="updateForm({ location: $event })"
       />
@@ -88,7 +88,7 @@ watch(v$, ({ $invalid }) => {
         :value="form.usdValue"
         outlined
         :label="
-          tc('common.value_in_symbol', 0, {
+          t('common.value_in_symbol', {
             symbol: currencySymbol
           })
         "

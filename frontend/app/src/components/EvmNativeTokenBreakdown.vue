@@ -46,26 +46,26 @@ const breakdowns = computed(() => {
   });
 });
 
-const { tc } = useI18n();
+const { t } = useI18n();
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
 const tableHeaders = computed<DataTableHeader[]>(() => {
   const headers: DataTableHeader[] = [
     {
-      text: tc('common.location'),
+      text: t('common.location'),
       value: 'location',
       align: 'center',
       width: '120px',
       class: 'text-no-wrap'
     },
     {
-      text: tc('common.amount'),
+      text: t('common.amount'),
       value: 'balance.amount',
       align: 'end',
       width: '60%'
     },
     {
-      text: tc('asset_locations.header.value', 0, {
+      text: t('asset_locations.header.value', {
         symbol: get(currencySymbol) ?? CURRENCY_USD
       }),
       value: 'balance.usdValue',
@@ -75,7 +75,7 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
 
   if (get(showPercentage)) {
     headers.push({
-      text: tc('asset_locations.header.percentage'),
+      text: t('asset_locations.header.percentage'),
       value: 'percentage',
       align: 'end',
       class: 'text-no-wrap',

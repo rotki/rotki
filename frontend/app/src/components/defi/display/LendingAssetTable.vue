@@ -9,21 +9,21 @@ defineProps({
 });
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-const { t, tc } = useI18n();
+const { t } = useI18n();
 
 const headers = computed<DataTableHeader[]>(() => [
   {
-    text: tc('common.asset'),
+    text: t('common.asset'),
     value: 'asset'
   },
   {
-    text: tc('common.amount'),
+    text: t('common.amount'),
     value: 'balance.amount',
     align: 'end'
   },
   { text: '', value: 'balance.usdValue', align: 'end' },
   {
-    text: tc('lending_asset_table.headers.effective_interest_rate'),
+    text: t('lending_asset_table.headers.effective_interest_rate'),
     value: 'effectiveInterestRate',
     align: 'end'
   }

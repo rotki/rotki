@@ -6,20 +6,20 @@ onMounted(() => {
   set(exportCSVFormulas, get(pnlCsvWithFormulas));
 });
 
-const { tc } = useI18n();
+const { t } = useI18n();
 </script>
 
 <template>
   <settings-option
     #default="{ error, success, update }"
     setting="pnlCsvWithFormulas"
-    :error-message="tc('account_settings.messages.export_csv_formulas')"
+    :error-message="t('account_settings.messages.export_csv_formulas')"
   >
     <v-switch
       v-model="exportCSVFormulas"
       class="csv_export_settings__exportCSVFormulas"
       :label="
-        tc('account_settings.csv_export_settings.labels.export_csv_formulas')
+        t('account_settings.csv_export_settings.labels.export_csv_formulas')
       "
       color="primary"
       :success-messages="success"

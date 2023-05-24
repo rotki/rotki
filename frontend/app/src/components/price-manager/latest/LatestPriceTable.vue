@@ -31,13 +31,13 @@ const latestPrices = ref<ManualPrice[]>([]);
 const loading = ref(false);
 
 const { notify } = useNotificationsStore();
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
 const headers = computed<DataTableHeader[]>(() => [
   {
-    text: tc('price_table.headers.from_asset'),
+    text: t('price_table.headers.from_asset'),
     value: 'fromAsset'
   },
   {
@@ -46,16 +46,16 @@ const headers = computed<DataTableHeader[]>(() => [
     sortable: false
   },
   {
-    text: tc('common.price'),
+    text: t('common.price'),
     value: 'price',
     align: 'end'
   },
   {
-    text: tc('price_table.headers.to_asset'),
+    text: t('price_table.headers.to_asset'),
     value: 'toAsset'
   },
   {
-    text: tc('common.price_in_symbol', 0, { symbol: get(currencySymbol) }),
+    text: t('common.price_in_symbol', { symbol: get(currencySymbol) }),
     value: 'usdPrice',
     align: 'end'
   },
@@ -76,8 +76,8 @@ const deletePrice = async (item: ManualPrice) => {
     await refresh();
   } catch (e: any) {
     const notification: NotificationPayload = {
-      title: tc('price_table.delete.failure.title'),
-      message: tc('price_table.delete.failure.message', 0, {
+      title: t('price_table.delete.failure.title'),
+      message: t('price_table.delete.failure.message', {
         message: e.message
       }),
       display: true,
@@ -94,8 +94,8 @@ const getLatestPrices = async () => {
     set(latestPrices, await fetchLatestPrices());
   } catch (e: any) {
     const notification: NotificationPayload = {
-      title: tc('price_table.fetch.failure.title'),
-      message: tc('price_table.fetch.failure.message', 0, {
+      title: t('price_table.fetch.failure.title'),
+      message: t('price_table.fetch.failure.message', {
         message: e.message
       }),
       display: true,
@@ -153,8 +153,8 @@ const { show } = useConfirmStore();
 const showDeleteConfirmation = (item: ManualPrice) => {
   show(
     {
-      title: tc('price_table.delete.dialog.title'),
-      message: tc('price_table.delete.dialog.message')
+      title: t('price_table.delete.dialog.title'),
+      message: t('price_table.delete.dialog.message')
     },
     () => deletePrice(item)
   );
@@ -172,11 +172,11 @@ const showDeleteConfirmation = (item: ManualPrice) => {
       <template #title>
         <refresh-button
           :loading="loading"
-          :tooltip="tc('price_table.refresh_tooltip')"
+          :tooltip="t('price_table.refresh_tooltip')"
           @refresh="refresh()"
         />
         <div>
-          {{ tc('price_table.latest.title') }}
+          {{ t('price_table.latest.title') }}
         </div>
       </template>
       <slot />
@@ -195,7 +195,7 @@ const showDeleteConfirmation = (item: ManualPrice) => {
           <amount-display :value="item.price" />
         </template>
         <template #item.isWorth>
-          {{ tc('price_table.is_worth') }}
+          {{ t('price_table.is_worth') }}
         </template>
         <template #item.usdPrice="{ item }">
           <amount-display
@@ -213,8 +213,8 @@ const showDeleteConfirmation = (item: ManualPrice) => {
         <template #item.actions="{ item }">
           <row-actions
             :disabled="loading"
-            :delete-tooltip="tc('price_table.actions.delete.tooltip')"
-            :edit-tooltip="tc('price_table.actions.edit.tooltip')"
+            :delete-tooltip="t('price_table.actions.delete.tooltip')"
+            :edit-tooltip="t('price_table.actions.edit.tooltip')"
             @delete-click="showDeleteConfirmation(item)"
             @edit-click="$emit('edit', item)"
           />

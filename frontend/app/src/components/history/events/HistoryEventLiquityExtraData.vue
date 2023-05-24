@@ -48,7 +48,7 @@ const stakingDetail: ComputedRef<AssetBalance | null> = computed(() => {
 });
 
 const css = useCssModule();
-const { tc } = useI18n();
+const { t } = useI18n();
 </script>
 
 <template>
@@ -62,7 +62,7 @@ const { tc } = useI18n();
     </template>
     <template v-else-if="stakingDetail">
       <div class="grey--text d-flex align-center py-2">
-        {{ tc('transactions.events.extra.total_staked_by_this_tx') }}:
+        {{ t('transactions.events.extra.total_staked_by_this_tx') }}:
       </div>
       <div class="py-2 d-flex align-center">
         <div class="mr-2">

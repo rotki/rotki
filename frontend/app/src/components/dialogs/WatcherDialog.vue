@@ -44,7 +44,7 @@ const validationMessage: Ref<string> = ref('');
 const validationStatus: Ref<'success' | 'error' | ''> = ref('');
 const existingWatchersEdit: Ref<Record<string, boolean>> = ref({});
 
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const store = useWatchersStore();
 const { watchers } = storeToRefs(store);
@@ -59,7 +59,7 @@ const loadedWatchers: ComputedRef<Watcher[]> = computed(() => {
 
 const watcherTypes = computed(() => [
   {
-    text: tc('watcher_dialog.types.make_collateralization_ratio'),
+    text: t('watcher_dialog.types.make_collateralization_ratio'),
     type: WatcherType,
     value: WatcherType
   }
@@ -70,22 +70,22 @@ const watcherOperations = computed(() => ({
     {
       op: 'gt',
       value: 'gt',
-      text: tc('watcher_dialog.ratio.gt')
+      text: t('watcher_dialog.ratio.gt')
     },
     {
       op: 'ge',
       value: 'ge',
-      text: tc('watcher_dialog.ratio.ge')
+      text: t('watcher_dialog.ratio.ge')
     },
     {
       op: 'lt',
       value: 'lt',
-      text: tc('watcher_dialog.ratio.lt')
+      text: t('watcher_dialog.ratio.lt')
     },
     {
       op: 'le',
       value: 'le',
-      text: tc('watcher_dialog.ratio.le')
+      text: t('watcher_dialog.ratio.le')
     }
   ]
 }));
@@ -149,12 +149,12 @@ const addWatcher = async () => {
 
   try {
     await addWatchers([watcherData]);
-    validateSettingChange('success', tc('watcher_dialog.add_success'));
+    validateSettingChange('success', t('watcher_dialog.add_success'));
     clear();
   } catch (e: any) {
     validateSettingChange(
       'error',
-      tc('watcher_dialog.add_error', 0, { message: e.message })
+      t('watcher_dialog.add_error', { message: e.message })
     );
   }
 };
@@ -178,12 +178,12 @@ const editWatcher = async (watcher: Watcher) => {
     ) {
       try {
         await editWatchers([watcher]);
-        validateSettingChange('success', tc('watcher_dialog.edit_success'));
+        validateSettingChange('success', t('watcher_dialog.edit_success'));
         changeEditMode(watcher.identifier);
       } catch (e: any) {
         validateSettingChange(
           'error',
-          tc('watcher_dialog.edit_error', 0, {
+          t('watcher_dialog.edit_error', {
             message: e.message
           })
         );
@@ -197,12 +197,12 @@ const editWatcher = async (watcher: Watcher) => {
 const deleteWatcher = async (identifier: string) => {
   try {
     await deleteWatchers([identifier]);
-    validateSettingChange('success', tc('watcher_dialog.delete_success'));
+    validateSettingChange('success', t('watcher_dialog.delete_success'));
     clear();
   } catch (e: any) {
     validateSettingChange(
       'error',
-      tc('watcher_dialog.delete_error', 0, {
+      t('watcher_dialog.delete_error', {
         message: e.message
       })
     );
@@ -260,7 +260,7 @@ const cancel = () => {
           <v-select
             v-model="watcherType"
             :items="watcherTypes"
-            :label="tc('watcher_dialog.labels.type')"
+            :label="t('watcher_dialog.labels.type')"
             dense
             outlined
             required
@@ -272,7 +272,7 @@ const cancel = () => {
               <v-divider />
             </v-col>
             <v-col class="pa-0 text-center" cols="2">
-              {{ tc('watcher_dialog.edit') }}
+              {{ t('watcher_dialog.edit') }}
             </v-col>
             <v-col cols="5">
               <v-divider />
@@ -287,7 +287,7 @@ const cancel = () => {
               <v-select
                 :filled="!existingWatchersEdit[watcher.identifier]"
                 :items="operations"
-                :label="tc('watcher_dialog.labels.operation')"
+                :label="t('watcher_dialog.labels.operation')"
                 :readonly="!existingWatchersEdit[watcher.identifier]"
                 :value="loadedWatchers[key].args.op"
                 dense
@@ -328,7 +328,7 @@ const cancel = () => {
               <v-divider />
             </v-col>
             <v-col class="pa-0 text-center justify-center" cols="2">
-              {{ tc('watcher_dialog.add_watcher') }}
+              {{ t('watcher_dialog.add_watcher') }}
             </v-col>
             <v-col cols="5">
               <v-divider />
@@ -340,7 +340,7 @@ const cancel = () => {
                 v-model="watcherOperation"
                 :disabled="!watcherType"
                 :items="operations"
-                :label="tc('watcher_dialog.labels.operation')"
+                :label="t('watcher_dialog.labels.operation')"
                 dense
                 hide-details
                 outlined
@@ -382,7 +382,7 @@ const cancel = () => {
             class="watcher-dialog__buttons__close"
             @click="cancel()"
           >
-            {{ tc('common.actions.close') }}
+            {{ t('common.actions.close') }}
           </v-btn>
         </div>
       </template>

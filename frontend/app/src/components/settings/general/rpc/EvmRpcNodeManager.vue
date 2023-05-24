@@ -29,7 +29,7 @@ const errors = ref<Record<string, string[] | string>>({});
 
 const { notify } = useNotificationsStore();
 const { setMessage } = useMessageStore();
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const { connectedEthNodes, connectedOptimismNodes } = storeToRefs(
   usePeriodicStore()
@@ -41,7 +41,7 @@ async function loadNodes(): Promise<void> {
     set(nodes, await api.fetchEvmNodes());
   } catch (e: any) {
     notify({
-      title: tc('evm_rpc_node_manager.loading_error.title', 0, {
+      title: t('evm_rpc_node_manager.loading_error.title', {
         chain: get(chain)
       }),
       message: e.message
@@ -68,8 +68,8 @@ const save = async () => {
   } catch (e: any) {
     const chainProp = get(chain);
     const errorTitle = editing
-      ? tc('evm_rpc_node_manager.edit_error.title', 0, { chain: chainProp })
-      : tc('evm_rpc_node_manager.add_error.title', 0, { chain: chainProp });
+      ? t('evm_rpc_node_manager.edit_error.title', { chain: chainProp })
+      : t('evm_rpc_node_manager.add_error.title', { chain: chainProp });
 
     if (e instanceof ApiValidationError) {
       const messages = e.errors;
@@ -120,7 +120,7 @@ const deleteNode = async (node: EvmRpcNode) => {
     await loadNodes();
   } catch (e: any) {
     setMessage({
-      title: tc('evm_rpc_node_manager.delete_error.title', 0, {
+      title: t('evm_rpc_node_manager.delete_error.title', {
         chain: get(chain)
       }),
       description: e.message,
@@ -141,7 +141,7 @@ const onActiveChange = async (active: boolean, node: EvmRpcNode) => {
     await loadNodes();
   } catch (e: any) {
     setMessage({
-      title: tc('evm_rpc_node_manager.activate_error.title', 0, {
+      title: t('evm_rpc_node_manager.activate_error.title', {
         node: node.name
       }),
       description: e.message,
@@ -172,8 +172,8 @@ const showDeleteConfirmation = (item: EvmRpcNode) => {
   const chainProp = get(chain);
   show(
     {
-      title: tc('evm_rpc_node_manager.confirm.title', 0, { chain: chainProp }),
-      message: tc('evm_rpc_node_manager.confirm.message', 0, {
+      title: t('evm_rpc_node_manager.confirm.title', { chain: chainProp }),
+      message: t('evm_rpc_node_manager.confirm.message', {
         node: item.name,
         endpoint: item.endpoint,
         chain: chainProp
@@ -199,7 +199,7 @@ const css = useCssModule();
                   <template #activator="{ on, attrs }">
                     <v-icon v-bind="attrs" v-on="on"> mdi-earth </v-icon>
                   </template>
-                  <span>{{ tc('evm_rpc_node_manager.public_node') }}</span>
+                  <span>{{ t('evm_rpc_node_manager.public_node') }}</span>
                 </v-tooltip>
                 <v-tooltip v-else>
                   <template #activator="{ on, attrs }">
@@ -207,7 +207,7 @@ const css = useCssModule();
                       mdi-account-network
                     </v-icon>
                   </template>
-                  <span>{{ tc('evm_rpc_node_manager.private_node') }}</span>
+                  <span>{{ t('evm_rpc_node_manager.private_node') }}</span>
                 </v-tooltip>
               </div>
 
@@ -219,7 +219,7 @@ const css = useCssModule();
                     </v-icon>
                   </template>
                   <span>
-                    {{ tc('evm_rpc_node_manager.connected.true') }}
+                    {{ t('evm_rpc_node_manager.connected.true') }}
                   </span>
                 </v-tooltip>
                 <v-tooltip v-else top open-delay="400">
@@ -229,7 +229,7 @@ const css = useCssModule();
                     </v-icon>
                   </template>
                   <span>
-                    {{ tc('evm_rpc_node_manager.connected.false') }}
+                    {{ t('evm_rpc_node_manager.connected.false') }}
                   </span>
                 </v-tooltip>
               </div>
@@ -244,18 +244,18 @@ const css = useCssModule();
                   {{ item.endpoint }}
                 </div>
                 <div v-else>
-                  {{ tc('evm_rpc_node_manager.etherscan') }}
+                  {{ t('evm_rpc_node_manager.etherscan') }}
                 </div>
                 <div class="mt-1" :class="css.weight">
                   <span v-if="!item.owned">
                     {{
-                      tc('evm_rpc_node_manager.weight', 0, {
+                      t('evm_rpc_node_manager.weight', {
                         weight: item.weight
                       })
                     }}
                   </span>
                   <span v-else>
-                    {{ tc('evm_rpc_node_manager.private_node_hint') }}
+                    {{ t('evm_rpc_node_manager.private_node_hint') }}
                   </span>
                 </div>
               </v-list-item-subtitle>
@@ -270,9 +270,9 @@ const css = useCssModule();
               <v-row align="center" justify="center">
                 <v-col>
                   <row-actions
-                    :delete-tooltip="tc('evm_rpc_node_manager.delete_tooltip')"
+                    :delete-tooltip="t('evm_rpc_node_manager.delete_tooltip')"
                     :delete-disabled="isEtherscan(item)"
-                    :edit-tooltip="tc('evm_rpc_node_manager.edit_tooltip')"
+                    :edit-tooltip="t('evm_rpc_node_manager.edit_tooltip')"
                     @edit-click="edit(item)"
                     @delete-click="showDeleteConfirmation(item)"
                   />
@@ -284,9 +284,9 @@ const css = useCssModule();
       </v-list>
       <big-dialog
         :display="showForm"
-        :title="tc('evm_rpc_node_manager.add_dialog.title', 0, { chain })"
-        :primary-action="tc('common.actions.save')"
-        :secondary-action="tc('common.actions.cancel')"
+        :title="t('evm_rpc_node_manager.add_dialog.title', { chain })"
+        :primary-action="t('common.actions.save')"
+        :secondary-action="t('common.actions.cancel')"
         :action-disabled="!valid || loading"
         :loading="loading"
         @confirm="save()"
@@ -309,7 +309,7 @@ const css = useCssModule();
         data-cy="add-node"
         @click="showForm = true"
       >
-        {{ tc('evm_rpc_node_manager.add_button') }}
+        {{ t('evm_rpc_node_manager.add_button') }}
       </v-btn>
     </div>
   </div>

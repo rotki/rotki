@@ -36,7 +36,7 @@ export const useBlockchainAccounts = () => {
     useChainsAccountsStore();
   const { awaitTask } = useTaskStore();
   const { notify } = useNotificationsStore();
-  const { tc } = useI18n();
+  const { t } = useI18n();
 
   const addAccount = async (
     blockchain: Blockchain,
@@ -55,12 +55,11 @@ export const useBlockchainAccounts = () => {
       taskId,
       taskType,
       {
-        title: tc('actions.balances.blockchain_accounts_add.task.title', 0, {
+        title: t('actions.balances.blockchain_accounts_add.task.title', {
           blockchain
         }),
-        description: tc(
+        description: t(
           'actions.balances.blockchain_accounts_add.task.description',
-          0,
           { address }
         ),
         blockchain
@@ -88,12 +87,11 @@ export const useBlockchainAccounts = () => {
       taskId,
       taskType,
       {
-        title: tc('actions.balances.blockchain_accounts_add.task.title', 0, {
+        title: t('actions.balances.blockchain_accounts_add.task.title', {
           blockchain
         }),
-        description: tc(
+        description: t(
           'actions.balances.blockchain_accounts_add.task.description',
-          0,
           { address }
         )
       },
@@ -123,16 +121,11 @@ export const useBlockchainAccounts = () => {
         taskId,
         taskType,
         {
-          title: tc(
-            'actions.balances.blockchain_account_removal.task.title',
-            0,
-            {
-              blockchain
-            }
-          ),
-          description: tc(
+          title: t('actions.balances.blockchain_account_removal.task.title', {
+            blockchain
+          }),
+          description: t(
             'actions.balances.blockchain_account_removal.task.description',
-            0,
             { count: accounts.length }
           ),
           blockchain
@@ -140,17 +133,15 @@ export const useBlockchainAccounts = () => {
       );
     } catch (e: any) {
       logger.error(e);
-      const title = tc(
+      const title = t(
         'actions.balances.blockchain_account_removal.error.title',
-        0,
         {
           count: accounts.length,
           blockchain
         }
       );
-      const description = tc(
+      const description = t(
         'actions.balances.blockchain_account_removal.error.description',
-        0,
         {
           error: e.message
         }
@@ -189,8 +180,8 @@ export const useBlockchainAccounts = () => {
     } catch (e: any) {
       logger.error(e);
       notify({
-        title: tc('actions.get_accounts.error.title'),
-        message: tc('actions.get_accounts.error.description', 0, {
+        title: t('actions.get_accounts.error.title'),
+        message: t('actions.get_accounts.error.description', {
           blockchain: Blockchain[blockchain],
           message: e.message
         }),
@@ -217,8 +208,8 @@ export const useBlockchainAccounts = () => {
     } catch (e: any) {
       logger.error(e);
       notify({
-        title: tc('actions.get_accounts.error.title'),
-        message: tc('actions.get_accounts.error.description', 0, {
+        title: t('actions.get_accounts.error.title'),
+        message: t('actions.get_accounts.error.description', {
           blockchain: Blockchain[chains],
           message: e.message
         }),

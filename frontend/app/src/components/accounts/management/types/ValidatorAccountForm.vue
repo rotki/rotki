@@ -12,21 +12,21 @@ const { refreshAccounts } = useBlockchains();
 const { setMessage } = useMessageStore();
 const { valid, setSave, accountToEdit } = useAccountDialog();
 const { pending, loading } = useAccountLoading();
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const showMessage = (message: string, id: string, edit: boolean) => {
   let description: string;
   let title: string;
 
   if (edit) {
-    title = tc('actions.edit_eth2_validator.error.title');
-    description = tc('actions.edit_eth2_validator.error.description', 0, {
+    title = t('actions.edit_eth2_validator.error.title');
+    description = t('actions.edit_eth2_validator.error.description', {
       id,
       message
     });
   } else {
-    title = tc('actions.add_eth2_validator.error.title');
-    description = tc('actions.add_eth2_validator.error.description', 0, {
+    title = t('actions.add_eth2_validator.error.title');
+    description = t('actions.add_eth2_validator.error.description', {
       id,
       message
     });

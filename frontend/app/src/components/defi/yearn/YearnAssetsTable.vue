@@ -16,26 +16,26 @@ const props = defineProps({
 const { selectedAddresses, version } = toRefs(props);
 const { yearnVaultsAssets } = useYearnStore();
 
-const { t, tc } = useI18n();
+const { t } = useI18n();
 
 const headers: DataTableHeader[] = [
-  { text: tc('yearn_asset_table.headers.vault'), value: 'vault' },
+  { text: t('yearn_asset_table.headers.vault'), value: 'vault' },
   {
     text: t('yearn_asset_table.headers.version').toString(),
     value: 'version'
   },
   {
-    text: tc('yearn_asset_table.headers.underlying_asset'),
+    text: t('yearn_asset_table.headers.underlying_asset'),
     value: 'underlyingValue.usdValue',
     align: 'end'
   },
   {
-    text: tc('yearn_asset_table.headers.vault_asset'),
+    text: t('yearn_asset_table.headers.vault_asset'),
     value: 'vaultValue.usdValue',
     align: 'end'
   },
   {
-    text: tc('yearn_asset_table.headers.roi'),
+    text: t('yearn_asset_table.headers.roi'),
     value: 'roi',
     align: 'end'
   }

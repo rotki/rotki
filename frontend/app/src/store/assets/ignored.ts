@@ -4,7 +4,7 @@ import { type ActionStatus } from '@/types/action';
 export const useIgnoredAssetsStore = defineStore('assets/ignored', () => {
   const ignoredAssets = ref<string[]>([]);
   const { notify } = useNotificationsStore();
-  const { t, tc } = useI18n();
+  const { t } = useI18n();
 
   const { getIgnoredAssets, addIgnoredAssets, removeIgnoredAssets } =
     useAssetIgnoreApi();
@@ -14,8 +14,8 @@ export const useIgnoredAssetsStore = defineStore('assets/ignored', () => {
       const ignored = await getIgnoredAssets();
       set(ignoredAssets, ignored);
     } catch (e: any) {
-      const title = tc('actions.session.ignored_assets.error.title');
-      const message = tc('actions.session.ignored_assets.error.message', 0, {
+      const title = t('actions.session.ignored_assets.error.title');
+      const message = t('actions.session.ignored_assets.error.message', {
         error: e.message
       });
       notify({

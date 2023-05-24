@@ -43,27 +43,27 @@ const emit = defineEmits<{
   (e: 'update:only-show-owned', onlyShowOwned: boolean): void;
 }>();
 
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const tableHeaders = computed<DataTableHeader[]>(() => [
   {
-    text: tc('common.asset'),
+    text: t('common.asset'),
     value: 'symbol'
   },
   {
-    text: tc('common.type'),
+    text: t('common.type'),
     value: 'type'
   },
   {
-    text: tc('common.address'),
+    text: t('common.address'),
     value: 'address'
   },
   {
-    text: tc('asset_table.headers.started'),
+    text: t('asset_table.headers.started'),
     value: 'started'
   },
   {
-    text: tc('assets.ignore'),
+    text: t('assets.ignore'),
     value: 'ignored',
     align: 'center',
     sortable: false
@@ -151,8 +151,8 @@ const massIgnore = async (ignored: boolean) => {
     const choice = ignored ? 1 : 2;
     setMessage({
       success: false,
-      title: tc('ignore.no_items.title', choice),
-      description: tc('ignore.no_items.description', choice)
+      title: t('ignore.no_items.title', choice),
+      description: t('ignore.no_items.description', choice)
     });
     return;
   }
@@ -175,10 +175,10 @@ const massIgnore = async (ignored: boolean) => {
 <template>
   <card outlined-body data-cy="managed-assets-table">
     <template #title>
-      {{ tc('common.assets') }}
+      {{ t('common.assets') }}
     </template>
     <template #subtitle>
-      {{ tc('asset_table.managed.subtitle') }}
+      {{ t('asset_table.managed.subtitle') }}
     </template>
     <template #actions>
       <v-row>
@@ -188,9 +188,9 @@ const massIgnore = async (ignored: boolean) => {
             @ignore="massIgnore($event)"
           />
           <div v-if="selected.length > 0" class="mt-2 ms-1">
-            {{ tc('asset_table.selected', 0, { count: selected.length }) }}
+            {{ t('asset_table.selected', { count: selected.length }) }}
             <v-btn small text @click="updateSelected([])">
-              {{ tc('common.actions.clear_selection') }}
+              {{ t('common.actions.clear_selection') }}
             </v-btn>
           </div>
         </v-col>
@@ -205,7 +205,7 @@ const massIgnore = async (ignored: boolean) => {
                 data-cy="asset-filter"
                 v-on="on"
               >
-                {{ tc('common.actions.filter') }}
+                {{ t('common.actions.filter') }}
                 <v-icon class="ml-2">mdi-chevron-down</v-icon>
               </v-btn>
             </template>
@@ -215,7 +215,7 @@ const massIgnore = async (ignored: boolean) => {
                   data-cy="asset-filter-only-show-owned"
                   :input-value="onlyShowOwned"
                   class="mt-0 py-2"
-                  :label="tc('asset_table.only_show_owned')"
+                  :label="t('asset_table.only_show_owned')"
                   hide-details
                 />
               </v-list-item>
@@ -223,7 +223,7 @@ const massIgnore = async (ignored: boolean) => {
                 :class="css['filter-heading']"
                 class="font-weight-bold text-uppercase py-2"
               >
-                {{ tc('asset_table.filter_by_ignored_status') }}
+                {{ t('asset_table.filter_by_ignored_status') }}
               </v-list-item>
               <v-list-item>
                 <v-radio-group
@@ -232,17 +232,21 @@ const massIgnore = async (ignored: boolean) => {
                   data-cy="asset-filter-ignored"
                   @change="updateIgnoredAssetsHandling($event)"
                 >
-                  <v-radio value="none" :label="tc('asset_table.show_all')" />
+                  <v-radio value="none" :label="t('asset_table.show_all')" />
                   <v-radio
                     value="exclude"
-                    :label="tc('asset_table.only_show_unignored')"
+                    :label="t('asset_table.only_show_unignored')"
                   />
                   <v-radio
                     value="show_only"
                     :label="
-                      tc('asset_table.only_show_ignored', 1, {
-                        length: ignoredAssets.length
-                      })
+                      t(
+                        'asset_table.only_show_ignored',
+                        {
+                          length: ignoredAssets.length
+                        },
+                        1
+                      )
                     "
                   />
                 </v-radio-group>
@@ -321,14 +325,14 @@ const massIgnore = async (ignored: boolean) => {
       <template #item.actions="{ item }">
         <row-actions
           v-if="item.type !== CUSTOM_ASSET"
-          :edit-tooltip="tc('asset_table.edit_tooltip')"
-          :delete-tooltip="tc('asset_table.delete_tooltip')"
+          :edit-tooltip="t('asset_table.edit_tooltip')"
+          :delete-tooltip="t('asset_table.delete_tooltip')"
           @edit-click="edit(item)"
           @delete-click="deleteAsset(item)"
         >
           <copy-button
             class="mx-1"
-            :tooltip="tc('asset_table.copy_identifier.tooltip')"
+            :tooltip="t('asset_table.copy_identifier.tooltip')"
             :value="item.identifier"
           />
         </row-actions>

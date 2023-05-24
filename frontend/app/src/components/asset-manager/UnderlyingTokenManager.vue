@@ -7,7 +7,7 @@ import { evmTokenKindsData } from '@/types/blockchain/chains';
 const props = defineProps<{ value: UnderlyingToken[] }>();
 
 const emit = defineEmits<{ (e: 'input', value: UnderlyingToken[]): void }>();
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const { value } = toRefs(props);
 
@@ -21,21 +21,21 @@ const form = ref<any>(null);
 const rules = {
   address: {
     required: helpers.withMessage(
-      tc('underlying_token_manager.validation.address_non_empty'),
+      t('underlying_token_manager.validation.address_non_empty'),
       required
     )
   },
   weight: {
     required: helpers.withMessage(
-      tc('underlying_token_manager.validation.non_empty'),
+      t('underlying_token_manager.validation.non_empty'),
       required
     ),
     notNaN: helpers.withMessage(
-      tc('underlying_token_manager.validation.not_valid'),
+      t('underlying_token_manager.validation.not_valid'),
       numeric
     ),
     minMax: helpers.withMessage(
-      tc('underlying_token_manager.validation.out_of_range'),
+      t('underlying_token_manager.validation.out_of_range'),
       between(1, 100)
     )
   }
@@ -92,7 +92,7 @@ const deleteToken = (address: string) => {
 <template>
   <v-form ref="form" :value="!v$.$invalid">
     <div class="text-h6">
-      {{ tc('underlying_token_manager.labels.tokens') }}
+      {{ t('underlying_token_manager.labels.tokens') }}
     </div>
     <v-row class="mt-2">
       <v-col cols="12" md="7">
@@ -100,14 +100,14 @@ const deleteToken = (address: string) => {
           v-model="underlyingAddress"
           :error-messages="v$.address.$errors.map(e => e.$message)"
           outlined
-          :label="tc('common.address')"
+          :label="t('common.address')"
         />
       </v-col>
       <v-col cols="12" md="2">
         <v-select
           v-model="tokenKind"
           outlined
-          :label="tc('asset_form.labels.token_kind')"
+          :label="t('asset_form.labels.token_kind')"
           :items="evmTokenKindsData"
           item-text="label"
           item-value="identifier"
@@ -121,9 +121,9 @@ const deleteToken = (address: string) => {
           min="1"
           :error-messages="v$.weight.$errors.map(e => e.$message)"
           persistent-hint
-          :hint="tc('underlying_token_manager.hint')"
+          :hint="t('underlying_token_manager.hint')"
           outlined
-          :label="tc('underlying_token_manager.labels.weight')"
+          :label="t('underlying_token_manager.labels.weight')"
         >
           <template #append-outer>
             <v-btn
@@ -142,9 +142,9 @@ const deleteToken = (address: string) => {
       <v-simple-table fixed-header height="200px">
         <thead>
           <tr>
-            <th>{{ tc('common.address') }}</th>
-            <th>{{ tc('underlying_token_manager.tokens.token_kind') }}</th>
-            <th>{{ tc('underlying_token_manager.tokens.weight') }}</th>
+            <th>{{ t('common.address') }}</th>
+            <th>{{ t('underlying_token_manager.tokens.token_kind') }}</th>
+            <th>{{ t('underlying_token_manager.tokens.weight') }}</th>
             <th />
           </tr>
         </thead>
@@ -154,15 +154,15 @@ const deleteToken = (address: string) => {
             <td class="shrink">{{ token.tokenKind.toUpperCase() }}</td>
             <td class="shrink text-no-wrap">
               {{
-                tc('underlying_token_manager.tokens.weight_percentage', 0, {
+                t('underlying_token_manager.tokens.weight_percentage', {
                   weight: token.weight
                 })
               }}
             </td>
             <td>
               <row-actions
-                :edit-tooltip="tc('underlying_token_manager.edit_tooltip')"
-                :delete-tooltip="tc('underlying_token_manager.delete_tooltip')"
+                :edit-tooltip="t('underlying_token_manager.edit_tooltip')"
+                :delete-tooltip="t('underlying_token_manager.delete_tooltip')"
                 @delete-click="deleteToken(token.address)"
                 @edit-click="editToken(token)"
               />

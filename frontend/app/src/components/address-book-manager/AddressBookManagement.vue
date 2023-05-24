@@ -14,7 +14,7 @@ const enableForAllChains: Ref<boolean> = ref(false);
 
 const tab = ref<number>(0);
 const locations: AddressBookLocation[] = ['global', 'private'];
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const location = computed<AddressBookLocation>(() => locations[get(tab)]);
 
@@ -103,11 +103,11 @@ const save = async () => {
   } catch (e: any) {
     const values = { message: e.message };
     const title = get(editMode)
-      ? tc('address_book.actions.edit.error.title')
-      : tc('address_book.actions.add.error.title');
+      ? t('address_book.actions.edit.error.title')
+      : t('address_book.actions.add.error.title');
     const description = get(editMode)
-      ? tc('address_book.actions.edit.error.description', 0, values)
-      : tc('address_book.actions.add.error.description', 0, values);
+      ? t('address_book.actions.edit.error.description', values)
+      : t('address_book.actions.add.error.description', values);
     setMessage({
       title,
       description,
@@ -123,15 +123,15 @@ const css = useCssModule();
   <v-container>
     <v-row justify="space-between" align="center" no-gutters>
       <v-col>
-        <card-title>{{ tc('address_book.title') }}</card-title>
+        <card-title>{{ t('address_book.title') }}</card-title>
       </v-col>
     </v-row>
     <card outlined-body class="mt-8">
       <template #title>
-        {{ tc('address_book.table.title') }}
+        {{ t('address_book.table.title') }}
       </template>
       <template #subtitle>
-        {{ tc('address_book.table.subtitle') }}
+        {{ t('address_book.table.subtitle') }}
       </template>
 
       <template #search>
@@ -153,7 +153,7 @@ const css = useCssModule();
               :class="css.filter"
               hide-details
               prepend-inner-icon="mdi-magnify"
-              :label="tc('common.actions.filter')"
+              :label="t('common.actions.filter')"
               outlined
               clearable
               @input="onSearchTermChange($event)"
@@ -215,8 +215,8 @@ const css = useCssModule();
       :display="showForm"
       :title="
         editMode
-          ? tc('address_book.dialog.edit_title')
-          : tc('address_book.dialog.add_title')
+          ? t('address_book.dialog.edit_title')
+          : t('address_book.dialog.add_title')
       "
       :action-disabled="!valid"
       @confirm="save()"

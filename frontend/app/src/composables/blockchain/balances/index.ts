@@ -19,7 +19,7 @@ export const useBlockchainBalances = () => {
   const { update: updateChains, updatePrices: updateChainPrices } =
     useChainBalancesStore();
   const { fetchEnsNames } = useAddressesNamesStore();
-  const { tc } = useI18n();
+  const { t } = useI18n();
 
   const handleFetch = async (
     blockchain: Blockchain,
@@ -42,7 +42,7 @@ export const useBlockchainBalances = () => {
         taskType,
         {
           blockchain,
-          title: tc('actions.balances.blockchain.task.title', 0, {
+          title: t('actions.balances.blockchain.task.title', {
             chain: blockchain
           })
         },
@@ -62,8 +62,8 @@ export const useBlockchainBalances = () => {
     } catch (e: any) {
       logger.error(e);
       notify({
-        title: tc('actions.balances.blockchain.error.title'),
-        message: tc('actions.balances.blockchain.error.description', 0, {
+        title: t('actions.balances.blockchain.error.title'),
+        message: t('actions.balances.blockchain.error.description', {
           error: e.message
         }),
         display: true
@@ -111,11 +111,11 @@ export const useBlockchainBalances = () => {
       );
     } catch (e: any) {
       logger.error(e);
-      const message = tc('actions.balances.blockchain.error.description', 0, {
+      const message = t('actions.balances.blockchain.error.description', {
         error: e.message
       });
       notify({
-        title: tc('actions.balances.blockchain.error.title'),
+        title: t('actions.balances.blockchain.error.title'),
         message,
         display: true
       });

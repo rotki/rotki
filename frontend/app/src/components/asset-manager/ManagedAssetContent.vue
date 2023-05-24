@@ -35,13 +35,13 @@ const extraParams = computed(() => ({
 
 const dialogTitle = computed<string>(() =>
   get(asset)
-    ? tc('asset_management.edit_title')
-    : tc('asset_management.add_title')
+    ? t('asset_management.edit_title')
+    : t('asset_management.add_title')
 );
 
 const router = useRouter();
 const route = useRoute();
-const { tc } = useI18n();
+const { t } = useI18n();
 const { queryAllAssets, deleteEthereumToken, deleteAsset } =
   useAssetManagementApi();
 const { setMessage } = useMessageStore();
@@ -92,7 +92,7 @@ const deleteToken = async (address: string, evmChain: string) => {
     }
   } catch (e: any) {
     setMessage({
-      description: tc('asset_management.delete_error', 0, {
+      description: t('asset_management.delete_error', {
         address,
         message: e.message
       })
@@ -108,7 +108,7 @@ const deleteAssetHandler = async (identifier: string) => {
     }
   } catch (e: any) {
     setMessage({
-      description: tc('asset_management.delete_error', 0, {
+      description: t('asset_management.delete_error', {
         address: identifier,
         message: e.message
       })
@@ -169,8 +169,8 @@ const {
 const showDeleteConfirmation = (item: SupportedAsset) => {
   show(
     {
-      title: tc('asset_management.confirm_delete.title'),
-      message: tc('asset_management.confirm_delete.message', 0, {
+      title: t('asset_management.confirm_delete.title'),
+      message: t('asset_management.confirm_delete.message', {
         asset: item?.symbol ?? ''
       })
     },
@@ -201,7 +201,7 @@ watch(identifier, async assetId => {
 <template>
   <v-container>
     <refresh-header
-      :title="tc('asset_management.managed.title')"
+      :title="t('asset_management.managed.title')"
       :loading="loading"
       @refresh="fetchData()"
     />
@@ -218,10 +218,10 @@ watch(identifier, async assetId => {
               @click="mergeTool = true"
             >
               <v-icon class="mr-2">mdi-merge</v-icon>
-              <span>{{ tc('asset_management.merge_assets') }}</span>
+              <span>{{ t('asset_management.merge_assets') }}</span>
             </v-btn>
           </template>
-          <span>{{ tc('asset_management.merge_assets_tooltip') }}</span>
+          <span>{{ t('asset_management.merge_assets_tooltip') }}</span>
         </v-tooltip>
       </v-col>
       <v-col cols="auto">
@@ -261,7 +261,7 @@ watch(identifier, async assetId => {
       :title="dialogTitle"
       subtitle=""
       :action-disabled="!validForm || saving"
-      :primary-action="tc('common.actions.save')"
+      :primary-action="t('common.actions.save')"
       :loading="saving"
       @confirm="save()"
       @cancel="closeDialog()"

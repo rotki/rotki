@@ -23,7 +23,7 @@ const { fetchNonFungibleBalances, refreshNonFungibleBalances } =
   useNonFungibleBalancesStore();
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
-const { tc } = useI18n();
+const { t } = useI18n();
 const { notify } = useNotificationsStore();
 const { addLatestPrice, deleteLatestPrice } = useAssetPricesApi();
 
@@ -38,18 +38,18 @@ const extraParams = computed(() => ({
 
 const tableHeaders = computed<DataTableHeader[]>(() => [
   {
-    text: tc('common.name'),
+    text: t('common.name'),
     value: 'name',
     cellClass: 'text-no-wrap'
   },
   {
-    text: tc('non_fungible_balances.ignore'),
+    text: t('non_fungible_balances.ignore'),
     value: 'ignored',
     align: 'center',
     sortable: false
   },
   {
-    text: tc('non_fungible_balances.column.price_in_asset'),
+    text: t('non_fungible_balances.column.price_in_asset'),
     value: 'priceInAsset',
     align: 'end',
     width: '75%',
@@ -57,19 +57,19 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
     sortable: false
   },
   {
-    text: tc('common.price_in_symbol', 0, { symbol: get(currencySymbol) }),
+    text: t('common.price_in_symbol', { symbol: get(currencySymbol) }),
     value: 'lastPrice',
     align: 'end',
     class: 'text-no-wrap'
   },
   {
-    text: tc('non_fungible_balances.column.custom_price'),
+    text: t('non_fungible_balances.column.custom_price'),
     value: 'manuallyInput',
     class: 'text-no-wrap',
     sortable: false
   },
   {
-    text: tc('non_fungible_balances.column.actions'),
+    text: t('non_fungible_balances.column.actions'),
     value: 'actions',
     align: 'center',
     sortable: false,
@@ -107,8 +107,8 @@ const deletePrice = async (toDeletePrice: NonFungibleBalance) => {
     await fetchData();
   } catch {
     notify({
-      title: tc('non_fungible_balances.delete.error.title'),
-      message: tc('non_fungible_balances.delete.error.message', 0, {
+      title: t('non_fungible_balances.delete.error.title'),
+      message: t('non_fungible_balances.delete.error.message', {
         asset: toDeletePrice.name ?? toDeletePrice.id
       }),
       display: true
@@ -151,8 +151,8 @@ const massIgnore = async (ignored: boolean) => {
     const choice = ignored ? 1 : 2;
     setMessage({
       success: false,
-      title: tc('ignore.no_items.title', choice),
-      description: tc('ignore.no_items.description', choice)
+      title: t('ignore.no_items.title', choice),
+      description: t('ignore.no_items.description', choice)
     });
     return;
   }
@@ -213,8 +213,8 @@ const { show } = useConfirmStore();
 const showDeleteConfirmation = (item: NonFungibleBalance) => {
   show(
     {
-      title: tc('non_fungible_balances.delete.title'),
-      message: tc('non_fungible_balances.delete.message', 0, {
+      title: t('non_fungible_balances.delete.title'),
+      message: t('non_fungible_balances.delete.message', {
         asset: !item ? '' : item.name ?? item.id
       })
     },
@@ -226,7 +226,7 @@ const showDeleteConfirmation = (item: NonFungibleBalance) => {
 <template>
   <card outlined-body>
     <template #title>
-      {{ tc('non_fungible_balances.title') }}
+      {{ t('non_fungible_balances.title') }}
       <v-icon v-if="loading" color="primary" class="ml-2">
         mdi-spin mdi-loading
       </v-icon>
@@ -246,7 +246,7 @@ const showDeleteConfirmation = (item: NonFungibleBalance) => {
         <active-modules :modules="modules" class="mx-2" />
         <refresh-button
           :loading="loading"
-          :tooltip="tc('non_fungible_balances.refresh')"
+          :tooltip="t('non_fungible_balances.refresh')"
           @refresh="refreshNonFungibleBalances(true)"
         />
       </div>
@@ -295,8 +295,8 @@ const showDeleteConfirmation = (item: NonFungibleBalance) => {
           </template>
           <template #item.actions="{ item }">
             <row-actions
-              :delete-tooltip="tc('non_fungible_balances.row.delete')"
-              :edit-tooltip="tc('non_fungible_balances.row.edit')"
+              :delete-tooltip="t('non_fungible_balances.row.delete')"
+              :edit-tooltip="t('non_fungible_balances.row.edit')"
               :delete-disabled="!item.manuallyInput"
               @delete-click="showDeleteConfirmation(item)"
               @edit-click="edit = item"
@@ -308,7 +308,7 @@ const showDeleteConfirmation = (item: NonFungibleBalance) => {
           <template #body.append="{ isMobile }">
             <row-append
               label-colspan="4"
-              :label="tc('common.total')"
+              :label="t('common.total')"
               :right-patch-colspan="1"
               :is-mobile="isMobile"
             >

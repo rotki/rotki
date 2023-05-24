@@ -18,7 +18,7 @@ export const useUniswapStore = defineStore('defi/uniswap', () => {
 
   const { activeModules } = storeToRefs(useGeneralSettingsStore());
   const isPremium = usePremium();
-  const { t, tc } = useI18n();
+  const { t } = useI18n();
 
   const { fetchUniswapV2Balances, fetchUniswapV3Balances, fetchUniswapEvents } =
     useUniswapApi();
@@ -145,13 +145,13 @@ export const useUniswapStore = defineStore('defi/uniswap', () => {
 
   const fetchEvents = async (refresh = false): Promise<void> => {
     const meta: TaskMeta = {
-      title: tc('actions.defi.uniswap_events.task.title')
+      title: t('actions.defi.uniswap_events.task.title')
     };
 
     const onError: OnError = {
-      title: tc('actions.defi.uniswap_events.error.title'),
+      title: t('actions.defi.uniswap_events.error.title'),
       error: message =>
-        tc('actions.defi.uniswap_events.error.description', undefined, {
+        t('actions.defi.uniswap_events.error.description', {
           error: message
         })
     };

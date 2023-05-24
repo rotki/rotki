@@ -11,7 +11,7 @@ const click = () => {
 
 const { hasRunningTasks } = storeToRefs(useTaskStore());
 
-const { tc } = useI18n();
+const { t } = useI18n();
 </script>
 
 <template>
@@ -26,7 +26,7 @@ const { tc } = useI18n();
       <span>{{ count }}</span>
     </template>
     <menu-tooltip-button
-      :tooltip="tc('notification_indicator.tooltip')"
+      :tooltip="t('notification_indicator.tooltip')"
       class-name="secondary--text text--lighten-4"
       @click="click()"
     >

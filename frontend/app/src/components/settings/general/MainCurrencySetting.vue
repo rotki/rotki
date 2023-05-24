@@ -4,10 +4,10 @@ import { type Currency, useCurrencies } from '@/types/currencies';
 const { currencies } = useCurrencies();
 const selectedCurrency = ref<Currency>(get(currencies)[0]);
 const { currency } = storeToRefs(useGeneralSettingsStore());
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const successMessage = (symbol: string) =>
-  tc('general_settings.validation.currency.success', 0, {
+  t('general_settings.validation.currency.success', {
     symbol
   });
 
@@ -25,14 +25,14 @@ const calculateFontSize = (symbol: string) => {
   <settings-option
     #default="{ error, success, update }"
     setting="mainCurrency"
-    :error-message="tc('general_settings.validation.currency.error')"
+    :error-message="t('general_settings.validation.currency.error')"
     :success-message="successMessage"
   >
     <v-select
       v-model="selectedCurrency"
       outlined
       class="general-settings__fields__currency-selector"
-      :label="tc('general_settings.amount.labels.main_currency')"
+      :label="t('general_settings.amount.labels.main_currency')"
       item-text="tickerSymbol"
       return-object
       :items="currencies"
@@ -57,7 +57,7 @@ const calculateFontSize = (symbol: string) => {
               {{ item.name }}
             </v-list-item-title>
             <v-list-item-subtitle>
-              {{ tc('general_settings.amount.labels.main_currency_subtitle') }}
+              {{ t('general_settings.amount.labels.main_currency_subtitle') }}
             </v-list-item-subtitle>
           </v-list-item-content>
         </v-list-item>

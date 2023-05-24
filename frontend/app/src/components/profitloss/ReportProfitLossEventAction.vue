@@ -36,7 +36,7 @@ const datetime: ComputedRef<string> = computed(() =>
   convertFromTimestamp(get(event).timestamp, true)
 );
 
-const { t, tc } = useI18n();
+const { t } = useI18n();
 
 const rules = {
   price: {
@@ -69,8 +69,8 @@ const updatePrice = async () => {
     set(showDialog, false);
   } catch (e: any) {
     const values = { message: e.message };
-    const title = tc('price_management.add.error.title');
-    const description = tc('price_management.add.error.description', 0, values);
+    const title = t('price_management.add.error.title');
+    const description = t('price_management.add.error.description', values);
     setMessage({
       title,
       description,
@@ -94,7 +94,7 @@ const updatePrice = async () => {
             <v-icon>mdi-pencil</v-icon>
           </v-list-item-icon>
           <v-list-item-content>
-            {{ tc('profit_loss_events.edit_historic_price') }}
+            {{ t('profit_loss_events.edit_historic_price') }}
           </v-list-item-content>
         </v-list-item>
       </v-list>
@@ -103,7 +103,7 @@ const updatePrice = async () => {
     <v-dialog v-model="showDialog" max-width="450px">
       <card>
         <template #title>
-          {{ tc('profit_loss_events.edit_historic_price') }}
+          {{ t('profit_loss_events.edit_historic_price') }}
         </template>
 
         <v-form class="mt-2">
@@ -111,7 +111,7 @@ const updatePrice = async () => {
             <v-col cols="12">
               <asset-select
                 :value="event.asset"
-                :label="tc('price_form.from_asset')"
+                :label="t('price_form.from_asset')"
                 hide-details
                 disabled
                 outlined
@@ -121,7 +121,7 @@ const updatePrice = async () => {
             <v-col cols="12">
               <asset-select
                 :value="currency"
-                :label="tc('price_form.to_asset')"
+                :label="t('price_form.to_asset')"
                 hide-details
                 disabled
                 outlined
@@ -134,7 +134,7 @@ const updatePrice = async () => {
                 outlined
                 disabled
                 hide-details
-                :label="tc('common.datetime')"
+                :label="t('common.datetime')"
                 seconds
               />
             </v-col>
@@ -145,22 +145,22 @@ const updatePrice = async () => {
                 outlined
                 :loading="fetchingPrice"
                 :disabled="fetchingPrice"
-                :label="tc('common.price')"
+                :label="t('common.price')"
                 :error-messages="v$.price.$errors.map(e => e.$message)"
               />
             </v-col>
           </v-row>
         </v-form>
 
-        {{ tc('profit_loss_events.edit_price_warning') }}
+        {{ t('profit_loss_events.edit_price_warning') }}
 
         <template #buttons>
           <v-spacer />
           <v-btn depressed @click="showDialog = false">
-            {{ tc('common.actions.cancel') }}
+            {{ t('common.actions.cancel') }}
           </v-btn>
           <v-btn color="primary" @click="updatePrice()">
-            {{ tc('price_form.update_price') }}
+            {{ t('price_form.update_price') }}
           </v-btn>
         </template>
       </card>

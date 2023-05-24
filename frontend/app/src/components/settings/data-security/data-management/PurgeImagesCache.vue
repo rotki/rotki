@@ -2,16 +2,16 @@
 import { type ComputedRef, type Ref } from 'vue';
 import { PurgeableImageCache } from '@/types/session/purge';
 
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const purgable = [
   {
     id: PurgeableImageCache.ASSET_ICONS,
-    text: tc('data_management.purge_images_cache.label.asset_icons')
+    text: t('data_management.purge_images_cache.label.asset_icons')
   },
   {
     id: PurgeableImageCache.ENS_AVATARS,
-    text: tc('data_management.purge_images_cache.label.ens_avatars')
+    text: t('data_management.purge_images_cache.label.ens_avatars')
   }
 ];
 
@@ -50,16 +50,16 @@ const { status, pending, showConfirmation } =
     purgable,
     purgeSource,
     (source: string) => ({
-      success: tc('data_management.purge_images_cache.success', 0, {
+      success: t('data_management.purge_images_cache.success', {
         source
       }),
-      error: tc('data_management.purge_images_cache.error', 0, {
+      error: t('data_management.purge_images_cache.error', {
         source
       })
     }),
     (source: string) => ({
-      title: tc('data_management.purge_images_cache.confirm.title'),
-      message: tc('data_management.purge_images_cache.confirm.message', 0, {
+      title: t('data_management.purge_images_cache.confirm.title'),
+      message: t('data_management.purge_images_cache.confirm.message', {
         source
       })
     })
@@ -72,10 +72,10 @@ const css = useCssModule();
   <div>
     <div class="mb-6">
       <div class="text-h6">
-        {{ tc('data_management.purge_images_cache.title') }}
+        {{ t('data_management.purge_images_cache.title') }}
       </div>
       <div>
-        {{ tc('data_management.purge_images_cache.subtitle') }}
+        {{ t('data_management.purge_images_cache.subtitle') }}
       </div>
     </div>
 
@@ -84,7 +84,7 @@ const css = useCssModule();
         <v-autocomplete
           v-model="source"
           outlined
-          :label="tc('data_management.purge_images_cache.select_image_source')"
+          :label="t('data_management.purge_images_cache.select_image_source')"
           :items="purgable"
           item-text="text"
           item-value="id"
@@ -97,8 +97,8 @@ const css = useCssModule();
           v-model="assetToClear"
           outlined
           persistent-hint
-          :label="tc('data_management.purge_images_cache.label.asset_to_clear')"
-          :hint="tc('data_management.purge_images_cache.hint')"
+          :label="t('data_management.purge_images_cache.label.asset_to_clear')"
+          :hint="t('data_management.purge_images_cache.hint')"
         />
         <v-combobox
           v-else
@@ -109,8 +109,8 @@ const css = useCssModule();
           chips
           deletable-chips
           clearable
-          :label="tc('data_management.purge_images_cache.label.ens_to_clear')"
-          :hint="tc('data_management.purge_images_cache.hint')"
+          :label="t('data_management.purge_images_cache.label.ens_to_clear')"
+          :hint="t('data_management.purge_images_cache.hint')"
           multiple
           persistent-hint
         />
@@ -131,7 +131,7 @@ const css = useCssModule();
               <v-icon>mdi-delete</v-icon>
             </v-btn>
           </template>
-          <span> {{ tc('data_management.purge_images_cache.tooltip') }} </span>
+          <span> {{ t('data_management.purge_images_cache.tooltip') }} </span>
         </v-tooltip>
       </v-col>
     </v-row>

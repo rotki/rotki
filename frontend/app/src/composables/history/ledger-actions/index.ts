@@ -19,7 +19,7 @@ export const useLedgerActions = () => {
   const { fetchAssociatedLocations } = useHistoryStore();
   const { exchangeName } = useLocations();
   const { awaitTask } = useTaskStore();
-  const { tc } = useI18n();
+  const { t } = useI18n();
   const { notify } = useNotificationsStore();
 
   const {
@@ -49,8 +49,8 @@ export const useLedgerActions = () => {
     try {
       const { taskId } = await getLedgerActionsTask(defaults);
       const taskMeta = {
-        title: tc('actions.ledger_actions.task.title'),
-        description: tc('actions.ledger_actions.task.description', 0, {
+        title: t('actions.ledger_actions.task.title'),
+        description: t('actions.ledger_actions.task.description', {
           exchange
         }),
         location
@@ -63,10 +63,10 @@ export const useLedgerActions = () => {
       return true;
     } catch (e: any) {
       notify({
-        title: tc('actions.ledger_actions.error.title', 0, {
+        title: t('actions.ledger_actions.error.title', {
           exchange
         }),
-        message: tc('actions.ledger_actions.error.description', 0, {
+        message: t('actions.ledger_actions.error.description', {
           exchange,
           error: e
         }),

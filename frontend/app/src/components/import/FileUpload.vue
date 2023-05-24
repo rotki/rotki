@@ -22,7 +22,7 @@ const active = ref(false);
 const file = ref<File | null>(null);
 const select = ref<HTMLInputElement>();
 const { count, inc, dec, reset } = useCounter(0, { min: 0 });
-const { t, tc } = useI18n();
+const { t } = useI18n();
 
 const onDrop = (event: DragEvent) => {
   event.preventDefault();
@@ -161,7 +161,7 @@ defineExpose({ removeFile });
           <v-progress-circular indeterminate color="primary" />
 
           <div class="pt-4">
-            {{ tc('file_upload.loading') }}
+            {{ t('file_upload.loading') }}
           </div>
         </div>
         <div
@@ -198,13 +198,13 @@ defineExpose({ removeFile });
                   outlined
                   @click="clickSelect()"
                 >
-                  {{ tc('file_upload.change_file') }}
+                  {{ t('file_upload.change_file') }}
                 </v-btn>
               </div>
             </div>
             <div v-else>
               <div class="text-caption text--secondary">
-                {{ tc('file_upload.drop_area') }}
+                {{ t('file_upload.drop_area') }}
               </div>
               <div>
                 <v-btn
@@ -215,7 +215,7 @@ defineExpose({ removeFile });
                   outlined
                   @click="clickSelect()"
                 >
-                  {{ tc('file_upload.select_file') }}
+                  {{ t('file_upload.select_file') }}
                 </v-btn>
               </div>
             </div>
@@ -223,7 +223,7 @@ defineExpose({ removeFile });
         </div>
         <div v-else class="d-flex flex-column align-center justify-center">
           <v-icon x-large color="primary">mdi-check-circle</v-icon>
-          <div class="mt-2" v-text="tc('file_upload.import_complete')" />
+          <div class="mt-2" v-text="t('file_upload.import_complete')" />
         </div>
       </div>
     </v-col>

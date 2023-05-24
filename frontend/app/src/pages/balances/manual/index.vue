@@ -19,7 +19,7 @@ const openDialog = ref(false);
 const dialogDisabled = ref(false);
 const dialogLoading = ref(false);
 
-const { t, tc } = useI18n();
+const { t } = useI18n();
 
 const add = () => {
   set(dialogTitle, t('manual_balances.dialog.add.title').toString());
@@ -121,7 +121,7 @@ const threshold = [1];
     >
       <v-icon> mdi-plus </v-icon>
       <div v-if="$vuetify.breakpoint.xl" class="ml-2">
-        {{ tc('manual_balances.add_manual_balance') }}
+        {{ t('manual_balances.add_manual_balance') }}
       </div>
     </v-btn>
     <manual-balance-table
@@ -132,7 +132,7 @@ const threshold = [1];
         }
       }"
       data-cy="manual-balances"
-      :title="tc('manual_balances.balances')"
+      :title="t('manual_balances.balances')"
       :balances="manualBalances"
       :loading="loading"
       @edit="edit($event)"
@@ -146,7 +146,7 @@ const threshold = [1];
         }
       }"
       data-cy="manual-liabilities"
-      :title="tc('manual_balances.liabilities')"
+      :title="t('manual_balances.liabilities')"
       class="mt-8"
       :balances="manualLiabilities"
       :loading="loading"

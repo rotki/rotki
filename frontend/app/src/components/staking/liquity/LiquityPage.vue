@@ -64,14 +64,14 @@ watch(
   }
 );
 
-const { tc } = useI18n();
+const { t } = useI18n();
 </script>
 
 <template>
   <div>
     <no-premium-placeholder
       v-if="!premium"
-      :text="tc('liquity_page.no_premium')"
+      :text="t('liquity_page.no_premium')"
     />
     <module-not-active v-else-if="!moduleEnabled" :modules="modules" />
     <liquity-staking-details v-else @refresh="fetch($event)">

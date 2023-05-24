@@ -3,17 +3,15 @@ import { type EvmTransactionQueryData } from '@/types/websocket-messages';
 
 defineProps<{ item: EvmTransactionQueryData }>();
 
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const steps = computed(() => [
+  toSentenceCase(t('transactions.query_status.statuses.querying_transactions')),
   toSentenceCase(
-    tc('transactions.query_status.statuses.querying_transactions')
+    t('transactions.query_status.statuses.querying_internal_transactions')
   ),
   toSentenceCase(
-    tc('transactions.query_status.statuses.querying_internal_transactions')
-  ),
-  toSentenceCase(
-    tc('transactions.query_status.statuses.querying_evm_tokens_transactions')
+    t('transactions.query_status.statuses.querying_evm_tokens_transactions')
   )
 ]);
 

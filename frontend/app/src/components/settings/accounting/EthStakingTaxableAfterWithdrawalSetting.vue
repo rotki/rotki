@@ -8,14 +8,14 @@ onMounted(() => {
   set(ethStakingTaxableAfterWithdrawalEnabled, get(enabled));
 });
 
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const getSuccessMessage = (enabled: boolean) =>
   enabled
-    ? tc(
+    ? t(
         'account_settings.messages.eth_staking_taxable_after_withdrawal.enabled'
       )
-    : tc(
+    : t(
         'account_settings.messages.eth_staking_taxable_after_withdrawal.disabled'
       );
 </script>
@@ -25,7 +25,7 @@ const getSuccessMessage = (enabled: boolean) =>
     #default="{ error, success, update }"
     setting="ethStakingTaxableAfterWithdrawalEnabled"
     :error-message="
-      tc('account_settings.messages.eth_staking_taxable_after_withdrawal.error')
+      t('account_settings.messages.eth_staking_taxable_after_withdrawal.error')
     "
     :success-message="getSuccessMessage"
   >
@@ -35,7 +35,7 @@ const getSuccessMessage = (enabled: boolean) =>
       :success-messages="success"
       :error-messages="error"
       :label="
-        tc('accounting_settings.labels.eth_staking_taxable_after_withdrawal')
+        t('accounting_settings.labels.eth_staking_taxable_after_withdrawal')
       "
       color="primary"
       @change="update($event)"

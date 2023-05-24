@@ -6,20 +6,20 @@ defineProps<{
   asset: SupportedAsset;
 }>();
 
-const { tc } = useI18n();
+const { t } = useI18n();
 </script>
 
 <template>
   <table-expand-container visible :colspan="cols" :padded="false">
     <template #title>
-      {{ tc('asset_table.underlying_tokens') }}
+      {{ t('asset_table.underlying_tokens') }}
     </template>
     <v-simple-table>
       <thead>
         <tr>
-          <th>{{ tc('common.address') }}</th>
-          <th>{{ tc('underlying_token_manager.tokens.token_kind') }}</th>
-          <th>{{ tc('underlying_token_manager.tokens.weight') }}</th>
+          <th>{{ t('common.address') }}</th>
+          <th>{{ t('underlying_token_manager.tokens.token_kind') }}</th>
+          <th>{{ t('underlying_token_manager.tokens.weight') }}</th>
         </tr>
       </thead>
       <tbody>
@@ -30,7 +30,7 @@ const { tc } = useI18n();
           <td class="shrink">{{ token.tokenKind.toUpperCase() }}</td>
           <td class="shrink">
             {{
-              tc('underlying_token_manager.tokens.weight_percentage', 0, {
+              t('underlying_token_manager.tokens.weight_percentage', {
                 weight: token.weight
               })
             }}

@@ -63,26 +63,26 @@ onMounted(async () => {
   await fetchData();
 });
 
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const tableHeaders = computed<DataTableHeader[]>(() => [
   {
-    text: tc('common.datetime'),
+    text: t('common.datetime'),
     value: 'timestamp'
   },
   {
-    text: tc('common.asset'),
+    text: t('common.asset'),
     value: 'asset',
     sortable: false
   },
   {
-    text: tc('common.amount'),
+    text: t('common.amount'),
     value: 'amount',
     align: 'end'
   },
   {
-    text: tc('common.value_in_symbol', 0, {
+    text: t('common.value_in_symbol', {
       symbol: get(currencySymbol)
     }),
     value: 'usdValue',
@@ -93,17 +93,17 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
 
 const receivedTableHeaders = computed<DataTableHeader[]>(() => [
   {
-    text: tc('common.asset'),
+    text: t('common.asset'),
     value: 'asset',
     sortable: false
   },
   {
-    text: tc('common.amount'),
+    text: t('common.amount'),
     value: 'amount',
     align: 'end'
   },
   {
-    text: tc('common.value_in_symbol', 0, {
+    text: t('common.value_in_symbol', {
       symbol: get(currencySymbol)
     }),
     value: 'usdValue',
@@ -118,7 +118,7 @@ const receivedTableHeaders = computed<DataTableHeader[]>(() => [
     <v-sheet outlined rounded>
       <card elevation="0">
         <template #title>
-          {{ tc('exchange_balances.received_interest') }}
+          {{ t('exchange_balances.received_interest') }}
         </template>
 
         <div class="pt-4 ma-n4">
@@ -142,7 +142,7 @@ const receivedTableHeaders = computed<DataTableHeader[]>(() => [
             >
               <row-append
                 label-colspan="2"
-                :label="tc('common.total')"
+                :label="t('common.total')"
                 :is-mobile="isMobile"
               >
                 <amount-display
@@ -159,7 +159,7 @@ const receivedTableHeaders = computed<DataTableHeader[]>(() => [
     <v-sheet outlined rounded class="mt-6" :elevation="0">
       <card elevation="0">
         <template #title>
-          {{ tc('exchange_balances.received_interest_history') }}
+          {{ t('exchange_balances.received_interest_history') }}
         </template>
 
         <div class="pt-4 ma-n4">

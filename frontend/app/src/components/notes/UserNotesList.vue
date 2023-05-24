@@ -43,7 +43,7 @@ const filter = ref<UserNotesFilter>({
   ascending: [false, false]
 });
 
-const { tc } = useI18n();
+const { t } = useI18n();
 const { premiumURL } = useInterop();
 
 const api = useUserNotesApi();
@@ -213,7 +213,7 @@ onMounted(async () => {
           dense
           class="ml-4"
           prepend-inner-icon="mdi-magnify"
-          :label="tc('notes_menu.search')"
+          :label="t('notes_menu.search')"
           clearable
           hide-details
         />
@@ -235,7 +235,7 @@ onMounted(async () => {
           <template #limit>{{ itemsPerPage }}</template>
           <template #link>
             <base-external-link
-              :text="tc('upgrade_row.rotki_premium')"
+              :text="t('upgrade_row.rotki_premium')"
               :href="premiumURL"
             />
           </template>
@@ -274,7 +274,7 @@ onMounted(async () => {
                 class="d-flex justify-space-between align-center pt-2"
               >
                 <div class="note__content font-italic">
-                  {{ tc('notes_menu.delete_confirmation') }}
+                  {{ t('notes_menu.delete_confirmation') }}
                 </div>
                 <div>
                   <v-btn icon small @click="clearDeleteDialog()">
@@ -320,15 +320,15 @@ onMounted(async () => {
         </div>
       </div>
 
-      <div v-else class="note__empty">{{ tc('notes_menu.empty_notes') }}</div>
+      <div v-else class="note__empty">{{ t('notes_menu.empty_notes') }}</div>
     </div>
 
     <big-dialog
       :display="showForm"
       :title="
         editMode
-          ? tc('notes_menu.dialog.edit_title')
-          : tc('notes_menu.dialog.add_title')
+          ? t('notes_menu.dialog.edit_title')
+          : t('notes_menu.dialog.add_title')
       "
       :action-disabled="!valid"
       @confirm="save()"

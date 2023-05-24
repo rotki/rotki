@@ -131,7 +131,7 @@ watch(asset, () => {
   searchAssetPrice();
 });
 
-const { tc } = useI18n();
+const { t } = useI18n();
 
 defineExpose({
   savePrice
@@ -148,7 +148,7 @@ defineExpose({
           :loading="fetchingPrice"
           outlined
           hide-details
-          :label="tc('common.price')"
+          :label="t('common.price')"
         />
       </v-col>
 
@@ -159,7 +159,7 @@ defineExpose({
           :loading="fetchingPrice"
           outlined
           hide-details
-          :label="tc('manual_balances_form.fields.price_asset')"
+          :label="t('manual_balances_form.fields.price_asset')"
         />
       </v-col>
     </v-row>
@@ -170,7 +170,7 @@ defineExpose({
     >
       <span
         >{{
-          tc('common.price_in_symbol', 0, {
+          t('common.price_in_symbol', {
             symbol: currencySymbol
           })
         }}:
@@ -188,7 +188,7 @@ defineExpose({
         <v-checkbox
           v-model="isCustomPrice"
           :disabled="pending"
-          :label="tc('manual_balances_form.fields.input_manual_price')"
+          :label="t('manual_balances_form.fields.input_manual_price')"
         />
       </v-col>
     </v-row>

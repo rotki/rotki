@@ -12,28 +12,28 @@ const newPasswordConfirm = ref('');
 const loading = ref(false);
 const form = ref();
 
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const rules = {
   currentPassword: {
     required: helpers.withMessage(
-      tc('change_password.validation.empty_password'),
+      t('change_password.validation.empty_password'),
       required
     )
   },
   newPassword: {
     required: helpers.withMessage(
-      tc('change_password.validation.empty_password'),
+      t('change_password.validation.empty_password'),
       required
     )
   },
   newPasswordConfirm: {
     required: helpers.withMessage(
-      tc('change_password.validation.empty_confirmation'),
+      t('change_password.validation.empty_confirmation'),
       required
     ),
     same: helpers.withMessage(
-      tc('change_password.validation.password_mismatch'),
+      t('change_password.validation.password_mismatch'),
       sameAs(newPassword)
     )
   }
@@ -70,7 +70,7 @@ const change = async () => {
 
 <template>
   <card>
-    <template #title>{{ tc('change_password.title') }}</template>
+    <template #title>{{ t('change_password.title') }}</template>
 
     <v-form ref="form">
       <v-alert
@@ -80,26 +80,26 @@ const change = async () => {
         prominent
         outlined
       >
-        {{ tc('change_password.sync_warning') }}
+        {{ t('change_password.sync_warning') }}
       </v-alert>
       <revealable-input
         v-model="currentPassword"
         class="user-security-settings__fields__current-password"
-        :label="tc('change_password.labels.password')"
+        :label="t('change_password.labels.password')"
         :error-messages="v$.currentPassword.$errors.map(e => e.$message)"
         outlined
       />
       <revealable-input
         v-model="newPassword"
         class="user-security-settings__fields__new-password"
-        :label="tc('change_password.labels.new_password')"
+        :label="t('change_password.labels.new_password')"
         :error-messages="v$.newPassword.$errors.map(e => e.$message)"
         outlined
       />
       <revealable-input
         v-model="newPasswordConfirm"
         class="user-security-settings__fields__new-password-confirm"
-        :label="tc('change_password.labels.confirm_password')"
+        :label="t('change_password.labels.confirm_password')"
         prepend-icon="mdi-repeat"
         :error-messages="v$.newPasswordConfirm.$errors.map(e => e.$message)"
         outlined
@@ -115,7 +115,7 @@ const change = async () => {
         :disabled="v$.$invalid || loading"
         @click="change()"
       >
-        {{ tc('change_password.button') }}
+        {{ t('change_password.button') }}
       </v-btn>
     </template>
   </card>

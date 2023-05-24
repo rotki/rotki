@@ -24,7 +24,7 @@ const { fetchNetValue } = useStatisticsStore();
 
 const api = useSnapshotApi();
 
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const balancesSnapshot: ComputedRef<BalanceSnapshot[]> = computed(() => {
   const data = get(snapshotData);
@@ -99,8 +99,8 @@ const save = async (): Promise<boolean> => {
 
   const notifyError = (e?: any) => {
     notify({
-      title: tc('dashboard.snapshot.edit.dialog.message.title'),
-      message: tc('dashboard.snapshot.edit.dialog.message.error', 0, {
+      title: t('dashboard.snapshot.edit.dialog.message.title'),
+      message: t('dashboard.snapshot.edit.dialog.message.error', {
         message: e
       }),
       display: true
@@ -131,8 +131,8 @@ const finish = async () => {
 
   if (success) {
     setMessage({
-      title: tc('dashboard.snapshot.edit.dialog.message.title'),
-      description: tc('dashboard.snapshot.edit.dialog.message.success'),
+      title: t('dashboard.snapshot.edit.dialog.message.title'),
+      description: t('dashboard.snapshot.edit.dialog.message.success'),
       success: true
     });
     await fetchNetValue();
@@ -171,13 +171,13 @@ const updateAndComplete = (event: LocationDataSnapshot[]) => {
         <v-stepper v-model="step" elevation="0">
           <v-stepper-header :class="$style.raise">
             <v-stepper-step :step="1">
-              {{ tc('dashboard.snapshot.edit.dialog.balances.title') }}
+              {{ t('dashboard.snapshot.edit.dialog.balances.title') }}
             </v-stepper-step>
             <v-stepper-step :step="2">
-              {{ tc('dashboard.snapshot.edit.dialog.location_data.title') }}
+              {{ t('dashboard.snapshot.edit.dialog.location_data.title') }}
             </v-stepper-step>
             <v-stepper-step :step="3">
-              {{ tc('common.total') }}
+              {{ t('common.total') }}
             </v-stepper-step>
           </v-stepper-header>
           <v-stepper-items>
@@ -218,7 +218,7 @@ const updateAndComplete = (event: LocationDataSnapshot[]) => {
           indeterminate
         />
         <div class="pt-6">
-          {{ tc('dashboard.snapshot.edit.dialog.fetch.loading') }}
+          {{ t('dashboard.snapshot.edit.dialog.fetch.loading') }}
         </div>
       </div>
     </v-card>

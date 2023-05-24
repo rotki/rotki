@@ -3,7 +3,7 @@ defineProps({
   message: { required: true, type: String }
 });
 
-const { tc } = useI18n();
+const { t } = useI18n();
 const css = useCssModule();
 const { closeApp } = useInterop();
 </script>
@@ -11,13 +11,13 @@ const { closeApp } = useInterop();
 <template>
   <error-screen
     :class="css.overlay"
-    :header="tc('error_screen.start_failure')"
-    :title="tc('error_screen.backend_error')"
-    :subtitle="tc('error_screen.message')"
+    :header="t('error_screen.start_failure')"
+    :title="t('error_screen.backend_error')"
+    :subtitle="t('error_screen.message')"
     :message="message"
   >
     <v-btn depressed color="primary" @click="closeApp()">
-      {{ tc('common.actions.terminate') }}
+      {{ t('common.actions.terminate') }}
     </v-btn>
   </error-screen>
 </template>

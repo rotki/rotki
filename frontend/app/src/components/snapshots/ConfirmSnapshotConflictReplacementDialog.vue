@@ -4,7 +4,7 @@ import { isNft } from '@/utils/nft';
 import NftDetails from '@/components/helper/NftDetails.vue';
 import { type BalanceSnapshot } from '@/types/snapshots';
 
-const { tc } = useI18n();
+const { t } = useI18n();
 const css = useCssModule();
 
 const props = defineProps<{
@@ -29,11 +29,9 @@ const asset: ComputedRef<string> = computed(
   <confirm-dialog
     max-width="700"
     :display="display"
-    :title="tc('dashboard.snapshot.convert_to_edit.dialog.title')"
-    :message="tc('dashboard.snapshot.convert_to_edit.dialog.subtitle')"
-    :primary-action="
-      tc('dashboard.snapshot.convert_to_edit.dialog.actions.yes')
-    "
+    :title="t('dashboard.snapshot.convert_to_edit.dialog.title')"
+    :message="t('dashboard.snapshot.convert_to_edit.dialog.subtitle')"
+    :primary-action="t('dashboard.snapshot.convert_to_edit.dialog.actions.yes')"
     @cancel="emit('cancel')"
     @confirm="emit('confirm')"
   >

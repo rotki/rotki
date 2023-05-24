@@ -10,7 +10,7 @@ const props = defineProps({
 
 const emit = defineEmits(['refresh', 'edit']);
 
-const { t, tc } = useI18n();
+const { t } = useI18n();
 
 const { balances } = toRefs(props);
 const onlyTags = ref<string[]>([]);
@@ -106,8 +106,8 @@ const { show } = useConfirmStore();
 const showDeleteConfirmation = (id: number) => {
   show(
     {
-      title: tc('manual_balances_table.delete_dialog.title'),
-      message: tc('manual_balances_table.delete_dialog.message')
+      title: t('manual_balances_table.delete_dialog.title'),
+      message: t('manual_balances_table.delete_dialog.message')
     },
     () => deleteManualBalance(id)
   );
@@ -119,7 +119,7 @@ const showDeleteConfirmation = (id: number) => {
     <template #title>
       <refresh-button
         :loading="loading"
-        :tooltip="tc('manual_balances_table.refresh.tooltip')"
+        :tooltip="t('manual_balances_table.refresh.tooltip')"
         @refresh="refresh()"
       />
       <span>
@@ -198,8 +198,8 @@ const showDeleteConfirmation = (id: number) => {
       </template>
       <template #item.actions="{ item }">
         <row-actions
-          :edit-tooltip="tc('manual_balances_table.edit_tooltip')"
-          :delete-tooltip="tc('manual_balances_table.delete_tooltip')"
+          :edit-tooltip="t('manual_balances_table.edit_tooltip')"
+          :delete-tooltip="t('manual_balances_table.delete_tooltip')"
           @edit-click="edit(item)"
           @delete-click="showDeleteConfirmation(item.id)"
         />
@@ -207,7 +207,7 @@ const showDeleteConfirmation = (id: number) => {
       <template v-if="visibleBalances.length > 0" #body.append="{ isMobile }">
         <row-append
           label-colspan="5"
-          :label="tc('common.total')"
+          :label="t('common.total')"
           :is-mobile="isMobile"
           :right-patch-colspan="1"
         >

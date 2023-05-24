@@ -42,7 +42,7 @@ onMounted(() => {
   set(price, get(value).price);
 });
 
-const { t, tc } = useI18n();
+const { t } = useI18n();
 
 const rules = {
   fromAsset: {
@@ -86,7 +86,7 @@ watch(v$, ({ $invalid }) => {
       <v-col cols="12" md="6">
         <asset-select
           :value="value.fromAsset"
-          :label="tc('price_form.from_asset')"
+          :label="t('price_form.from_asset')"
           outlined
           include-nfts
           :disabled="edit"
@@ -97,7 +97,7 @@ watch(v$, ({ $invalid }) => {
       <v-col cols="12" md="6">
         <asset-select
           :value="value.toAsset"
-          :label="tc('price_form.to_asset')"
+          :label="t('price_form.to_asset')"
           outlined
           :error-messages="v$.toAsset.$errors.map(e => e.$message)"
           @input="input({ toAsset: $event })"
@@ -110,7 +110,7 @@ watch(v$, ({ $invalid }) => {
           v-model="price"
           outlined
           :error-messages="v$.price.$errors.map(e => e.$message)"
-          :label="tc('common.price')"
+          :label="t('common.price')"
         />
         <div
           v-if="price && fromAsset && toAsset"

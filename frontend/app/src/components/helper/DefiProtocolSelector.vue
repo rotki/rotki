@@ -68,7 +68,7 @@ const emit = defineEmits<{
 const { liabilities } = toRefs(props);
 const search = ref<string>('');
 
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const input = (_selectedProtocol: DefiProtocol | null) => {
   emit('input', _selectedProtocol);
@@ -97,7 +97,7 @@ const protocols = computed<Protocol[]>(() => {
         dense
         outlined
         :open-on-clear="false"
-        :label="tc('defi_protocol_selector.label')"
+        :label="t('defi_protocol_selector.label')"
         item-text="name"
         item-value="identifier"
         class="defi-protocol-selector"
@@ -114,8 +114,8 @@ const protocols = computed<Protocol[]>(() => {
     <v-card-text>
       {{
         value
-          ? tc('defi_protocol_selector.filter_specific')
-          : tc('defi_protocol_selector.filter_all')
+          ? t('defi_protocol_selector.filter_specific')
+          : t('defi_protocol_selector.filter_all')
       }}
     </v-card-text>
   </v-card>

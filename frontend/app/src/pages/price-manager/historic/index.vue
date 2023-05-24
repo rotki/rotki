@@ -40,7 +40,7 @@ const {
 } = useAssetPricesApi();
 const router = useRouter();
 const route = useRoute();
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const prices: Ref<HistoricalPrice[]> = ref([]);
 const loading: Ref<boolean> = ref(false);
@@ -52,8 +52,8 @@ const fetchPrices = async (payload?: Partial<ManualPricePayload>) => {
     set(prices, await fetchHistoricalPrices(payload));
   } catch (e: any) {
     const notification: NotificationPayload = {
-      title: tc('price_table.fetch.failure.title'),
-      message: tc('price_table.fetch.failure.message', 0, {
+      title: t('price_table.fetch.failure.title'),
+      message: t('price_table.fetch.failure.message', {
         message: e.message
       }),
       display: true,
@@ -132,11 +132,11 @@ const managePrice = async (
   } catch (e: any) {
     const values = { message: e.message };
     const title = edit
-      ? tc('price_management.edit.error.title')
-      : tc('price_management.add.error.title');
+      ? t('price_management.edit.error.title')
+      : t('price_management.add.error.title');
     const description = edit
-      ? tc('price_management.edit.error.description', 0, values)
-      : tc('price_management.add.error.description', 0, values);
+      ? t('price_management.edit.error.description', values)
+      : t('price_management.add.error.description', values);
     setMessage({
       title,
       description,
@@ -150,8 +150,8 @@ const { show } = useConfirmStore();
 const showDeleteConfirmation = (item: HistoricalPrice) => {
   show(
     {
-      title: tc('price_table.delete.dialog.title'),
-      message: tc('price_table.delete.dialog.message')
+      title: t('price_table.delete.dialog.title'),
+      message: t('price_table.delete.dialog.message')
     },
     () => deletePrice(item)
   );
@@ -167,8 +167,8 @@ const deletePrice = async (item: HistoricalPrice) => {
     });
   } catch (e: any) {
     const notification: NotificationPayload = {
-      title: tc('price_table.delete.failure.title'),
-      message: tc('price_table.delete.failure.message', 0, {
+      title: t('price_table.delete.failure.title'),
+      message: t('price_table.delete.failure.message', {
         message: e.message
       }),
       display: true,
@@ -193,17 +193,17 @@ onMounted(async () => {
   <v-container>
     <v-row justify="space-between" align="center" no-gutters>
       <v-col>
-        <card-title>{{ tc('price_management.historic.title') }}</card-title>
+        <card-title>{{ t('price_management.historic.title') }}</card-title>
       </v-col>
     </v-row>
     <card class="mt-8">
-      <template #title>{{ tc('price_management.filter_title') }}</template>
+      <template #title>{{ t('price_management.filter_title') }}</template>
       <v-row>
         <v-col cols="12" md="6">
           <asset-select
             v-model="filter.fromAsset"
             outlined
-            :label="tc('price_management.from_asset')"
+            :label="t('price_management.from_asset')"
             clearable
             hide-details
           />
@@ -212,7 +212,7 @@ onMounted(async () => {
           <asset-select
             v-model="filter.toAsset"
             outlined
-            :label="tc('price_management.to_asset')"
+            :label="t('price_management.to_asset')"
             clearable
             hide-details
           />
@@ -235,8 +235,8 @@ onMounted(async () => {
       :display="showForm"
       :title="
         editMode
-          ? tc('price_management.dialog.edit_title')
-          : tc('price_management.dialog.add_title')
+          ? t('price_management.dialog.edit_title')
+          : t('price_management.dialog.add_title')
       "
       :action-disabled="!valid"
       @confirm="managePrice(formData, editMode)"

@@ -15,7 +15,7 @@ type Busy = {
   [key in Blockchain]: ComputedRef<boolean>;
 };
 
-const { t, tc } = useI18n();
+const { t } = useI18n();
 
 const router = useRouter();
 const route = useRoute();
@@ -137,14 +137,14 @@ const showDetectEvmAccountsButton: Readonly<Ref<boolean>> = computedEager(
       >
         <v-icon> mdi-plus </v-icon>
         <div v-if="$vuetify.breakpoint.xl" class="ml-2">
-          {{ tc('blockchain_balances.add_account') }}
+          {{ t('blockchain_balances.add_account') }}
         </div>
       </v-btn>
       <account-dialog :context="context" />
       <asset-balances
         data-cy="blockchain-asset-balances"
         :loading="isBlockchainLoading"
-        :title="tc('blockchain_balances.per_asset.title')"
+        :title="t('blockchain_balances.per_asset.title')"
         :balances="blockchainAssets"
       />
     </card>
@@ -163,7 +163,7 @@ const showDetectEvmAccountsButton: Readonly<Ref<boolean>> = computedEager(
         }
       }"
       class="mt-8"
-      :title="tc('blockchain_balances.balances.eth')"
+      :title="t('blockchain_balances.balances.eth')"
       :blockchain="Blockchain.ETH"
       :balances="ethAccounts"
       data-cy="blockchain-balances-ETH"
@@ -180,7 +180,7 @@ const showDetectEvmAccountsButton: Readonly<Ref<boolean>> = computedEager(
         }
       }"
       class="mt-8"
-      :title="tc('blockchain_balances.balances.eth2')"
+      :title="t('blockchain_balances.balances.eth2')"
       :blockchain="Blockchain.ETH2"
       :balances="eth2Accounts"
       data-cy="blockchain-balances-ETH2"
@@ -197,7 +197,7 @@ const showDetectEvmAccountsButton: Readonly<Ref<boolean>> = computedEager(
         }
       }"
       class="mt-8"
-      :title="tc('blockchain_balances.balances.btc')"
+      :title="t('blockchain_balances.balances.btc')"
       :blockchain="Blockchain.BTC"
       :balances="btcAccounts"
       data-cy="blockchain-balances-BTC"
@@ -214,7 +214,7 @@ const showDetectEvmAccountsButton: Readonly<Ref<boolean>> = computedEager(
         }
       }"
       class="mt-8"
-      :title="tc('blockchain_balances.balances.bch')"
+      :title="t('blockchain_balances.balances.bch')"
       :blockchain="Blockchain.BCH"
       :balances="bchAccounts"
       data-cy="blockchain-balances-BCH"
@@ -231,7 +231,7 @@ const showDetectEvmAccountsButton: Readonly<Ref<boolean>> = computedEager(
         }
       }"
       class="mt-8"
-      :title="tc('blockchain_balances.balances.ksm')"
+      :title="t('blockchain_balances.balances.ksm')"
       :blockchain="Blockchain.KSM"
       :balances="ksmAccounts"
       data-cy="blockchain-balances-KSM"
@@ -248,7 +248,7 @@ const showDetectEvmAccountsButton: Readonly<Ref<boolean>> = computedEager(
         }
       }"
       class="mt-8"
-      :title="tc('blockchain_balances.balances.dot')"
+      :title="t('blockchain_balances.balances.dot')"
       :blockchain="Blockchain.DOT"
       :balances="dotAccounts"
       data-cy="blockchain-balances-DOT"
@@ -265,7 +265,7 @@ const showDetectEvmAccountsButton: Readonly<Ref<boolean>> = computedEager(
         }
       }"
       class="mt-8"
-      :title="tc('blockchain_balances.balances.avax')"
+      :title="t('blockchain_balances.balances.avax')"
       :blockchain="Blockchain.AVAX"
       :balances="avaxAccounts"
       data-cy="blockchain-balances-AVAX"
@@ -277,7 +277,7 @@ const showDetectEvmAccountsButton: Readonly<Ref<boolean>> = computedEager(
       id="blockchain-balances-LRC"
       loopring
       class="mt-8"
-      :title="tc('blockchain_balances.balances.loopring')"
+      :title="t('blockchain_balances.balances.loopring')"
       :blockchain="Blockchain.ETH"
       :balances="loopringAccounts"
       data-cy="blockchain-balances-LRC"
@@ -293,7 +293,7 @@ const showDetectEvmAccountsButton: Readonly<Ref<boolean>> = computedEager(
         }
       }"
       class="mt-8"
-      :title="tc('blockchain_balances.balances.optimism')"
+      :title="t('blockchain_balances.balances.optimism')"
       :blockchain="Blockchain.OPTIMISM"
       :balances="optimismAccounts"
       data-cy="blockchain-balances-OPTIMISM"

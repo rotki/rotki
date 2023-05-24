@@ -11,7 +11,7 @@ export const useHistoricCachePriceStore = defineStore(
     const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
     const { queryHistoricalRates } = usePriceApi();
     const { awaitTask } = useTaskStore();
-    const { t, tc } = useI18n();
+    const { t } = useI18n();
 
     const createKey = (fromAsset: string, timestamp: number | string) =>
       `${fromAsset}#${timestamp}`;
@@ -33,13 +33,13 @@ export const useHistoricCachePriceStore = defineStore(
           title: t(
             'actions.balances.historic_fetch_price.task.title'
           ).toString(),
-          description: tc(
+          description: t(
             'actions.balances.historic_fetch_price.task.description',
-            2,
             {
               count: assetsTimestamp.length,
               toAsset: targetAsset
-            }
+            },
+            2
           )
         },
         true

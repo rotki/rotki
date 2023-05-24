@@ -30,7 +30,7 @@ const emit = defineEmits<{
   (e: 'update:asset', asset: string): void;
 }>();
 
-const { t, tc } = useI18n();
+const { t } = useI18n();
 const { form } = toRefs(props);
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
@@ -141,7 +141,7 @@ const updateAsset = (asset: string) => {
         outlined
         :disabled="edit"
         :show-ignored="true"
-        :label="tc('common.asset')"
+        :label="t('common.asset')"
         :enable-association="false"
         :error-messages="v$.assetIdentifier.$errors.map(e => e.$message)"
         @input="updateForm({ assetIdentifier: $event })"

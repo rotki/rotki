@@ -29,7 +29,7 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
   const shouldRefreshBalances: Ref<boolean> = ref(true);
 
   const { isAssetIgnored } = useIgnoredAssetsStore();
-  const { tc } = useI18n();
+  const { t } = useI18n();
   const { ethAddresses } = storeToRefs(useEthAccountsStore());
   const { optimismAddresses } = storeToRefs(useChainsAccountsStore());
   const {
@@ -69,15 +69,11 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
         const { taskId } = await fetchDetectedTokensTask(chain, [address]);
 
         const taskMeta = {
-          title: tc('actions.balances.detect_tokens.task.title'),
-          description: tc(
-            'actions.balances.detect_tokens.task.description',
-            0,
-            {
-              address,
-              chain
-            }
-          ),
+          title: t('actions.balances.detect_tokens.task.title'),
+          description: t('actions.balances.detect_tokens.task.description', {
+            address,
+            chain
+          }),
           address,
           chain
         };

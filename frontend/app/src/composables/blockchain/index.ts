@@ -26,7 +26,7 @@ export const useBlockchains = () => {
 
   const { isTaskRunning } = useTaskStore();
   const { notify } = useNotificationsStore();
-  const { tc } = useI18n();
+  const { t } = useI18n();
 
   const { resetStatus: resetNftSectionStatus } = useStatusUpdater(
     Section.NON_FUNGIBLE_BALANCES
@@ -116,14 +116,11 @@ export const useBlockchains = () => {
         const addresses = await addEvmAccount(account);
         if (isEmpty(addresses)) {
           return notify({
-            title: tc(
-              'actions.balances.blockchain_accounts_add.error.title',
-              0,
-              { blockchain: 'EVM' }
-            ),
-            message: tc(
+            title: t('actions.balances.blockchain_accounts_add.error.title', {
+              blockchain: 'EVM'
+            }),
+            message: t(
               'actions.balances.blockchain_accounts_add.error.empty_addresses_description',
-              0,
               { address: account.address }
             ),
             display: true
@@ -155,14 +152,12 @@ export const useBlockchains = () => {
     });
 
     if (failedPayload.length > 0) {
-      const titleError = tc(
+      const titleError = t(
         'actions.balances.blockchain_accounts_add.error.title',
-        0,
         { blockchain: 'EVM' }
       );
-      const description = tc(
+      const description = t(
         'actions.balances.blockchain_accounts_add.error.failed_list_description',
-        0,
         {
           list: failedPayload.map(({ address }) => `- ${address}`).join('\n'),
           address: payload.payload.length,
@@ -189,12 +184,10 @@ export const useBlockchains = () => {
     }
     const filteredPayload = getNewAccountPayload(blockchain, payload);
     if (filteredPayload.length === 0) {
-      const title = tc(
-        'actions.balances.blockchain_accounts_add.no_new.title',
-        0,
-        { blockchain }
-      );
-      const description = tc(
+      const title = t('actions.balances.blockchain_accounts_add.no_new.title', {
+        blockchain
+      });
+      const description = t(
         'actions.balances.blockchain_accounts_add.no_new.description'
       );
       notify({
@@ -233,16 +226,14 @@ export const useBlockchains = () => {
       }
     });
 
-    const titleError = tc(
+    const titleError = t(
       'actions.balances.blockchain_accounts_add.error.title',
-      0,
       { blockchain }
     );
 
     if (failedPayload.length > 0) {
-      const description = tc(
+      const description = t(
         'actions.balances.blockchain_accounts_add.error.failed_list_description',
-        0,
         {
           list: failedPayload.map(({ address }) => `- ${address}`).join('\n'),
           address: filteredPayload.length,
@@ -281,9 +272,8 @@ export const useBlockchains = () => {
         startPromise(refresh());
       } catch (e: any) {
         logger.error(e);
-        const description = tc(
+        const description = t(
           'actions.balances.blockchain_accounts_add.error.description',
-          0,
           {
             error: e.message,
             address: filteredPayload.length,
@@ -305,15 +295,15 @@ export const useBlockchains = () => {
       const taskType = TaskType.DETECT_EVM_ACCOUNTS;
       const { taskId } = await detectEvmAccountsCaller();
       const { result } = await awaitTask<any, TaskMeta>(taskId, taskType, {
-        title: tc('actions.detect_evm_accounts.task.title').toString()
+        title: t('actions.detect_evm_accounts.task.title').toString()
       });
 
       return result;
     } catch (e: any) {
       logger.error(e);
       notify({
-        title: tc('actions.detect_evm_accounts.error.title').toString(),
-        message: tc('actions.detect_evm_accounts.error.message', 0, {
+        title: t('actions.detect_evm_accounts.error.title').toString(),
+        message: t('actions.detect_evm_accounts.error.message', {
           message: e.message
         }).toString(),
         display: true

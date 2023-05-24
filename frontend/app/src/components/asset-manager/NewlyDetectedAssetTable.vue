@@ -4,7 +4,7 @@ import { type ComputedRef, type Ref } from 'vue';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type NewDetectedToken } from '@/types/websocket-messages';
 
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const { tokens, removeNewDetectedTokens } = useNewlyDetectedTokens();
 const { cache } = storeToRefs(useAssetCacheStore());
@@ -25,26 +25,26 @@ const mappedTokens: ComputedRef<NewDetectedToken[]> = computed(() =>
 
 const tableHeaders = computed<DataTableHeader[]>(() => [
   {
-    text: tc('common.asset'),
+    text: t('common.asset'),
     value: 'tokenIdentifier'
   },
   {
-    text: tc('common.address'),
+    text: t('common.address'),
     value: 'address'
   },
   {
-    text: tc('asset_table.newly_detected.seen_during'),
+    text: t('asset_table.newly_detected.seen_during'),
     value: 'description',
     sortable: false
   },
   {
-    text: tc('common.actions.accept'),
+    text: t('common.actions.accept'),
     value: 'accept',
     sortable: false,
     width: 0
   },
   {
-    text: tc('ignore_buttons.ignore'),
+    text: t('ignore_buttons.ignore'),
     value: 'ignore',
     sortable: false
   }
@@ -85,8 +85,8 @@ const ignoreTokens = async (identifiers?: string[]) => {
   if (ids.length === 0) {
     setMessage({
       success: false,
-      title: tc('ignore.no_items.title', 1),
-      description: tc('ignore.no_items.description', 1)
+      title: t('ignore.no_items.title', 1),
+      description: t('ignore.no_items.description', 1)
     });
     return;
   }
@@ -102,10 +102,10 @@ const ignoreTokens = async (identifiers?: string[]) => {
 <template>
   <card outlined-body>
     <template #title>
-      {{ tc('asset_table.newly_detected.title') }}
+      {{ t('asset_table.newly_detected.title') }}
     </template>
     <template #subtitle>
-      {{ tc('asset_table.newly_detected.subtitle') }}
+      {{ t('asset_table.newly_detected.subtitle') }}
     </template>
     <template #actions>
       <div class="d-flex align-center">
@@ -113,12 +113,12 @@ const ignoreTokens = async (identifiers?: string[]) => {
           <v-btn outlined @click="selectDeselectAllTokens()">
             <v-icon>mdi-checkbox-multiple-marked-outline</v-icon>
             <span class="ml-2">
-              {{ tc('asset_table.newly_detected.select_deselect_all_tokens') }}
+              {{ t('asset_table.newly_detected.select_deselect_all_tokens') }}
             </span>
           </v-btn>
           <div class="d-flex mt-4">
             <div class="mr-4 mt-1">
-              {{ tc('asset_table.selected', 0, { count: selected.length }) }}
+              {{ t('asset_table.selected', { count: selected.length }) }}
             </div>
             <v-btn
               small
@@ -126,7 +126,7 @@ const ignoreTokens = async (identifiers?: string[]) => {
               :disabled="selected.length === 0"
               @click="selected = []"
             >
-              {{ tc('common.actions.clear_selection') }}
+              {{ t('common.actions.clear_selection') }}
             </v-btn>
           </div>
         </div>
@@ -146,7 +146,7 @@ const ignoreTokens = async (identifiers?: string[]) => {
               <v-icon> mdi-check </v-icon>
             </v-btn>
           </template>
-          <span>{{ tc('asset_table.newly_detected.accept_selected') }}</span>
+          <span>{{ t('asset_table.newly_detected.accept_selected') }}</span>
         </v-tooltip>
 
         <v-tooltip bottom>
@@ -163,7 +163,7 @@ const ignoreTokens = async (identifiers?: string[]) => {
             </v-btn>
           </template>
           <span>
-            {{ tc('asset_table.newly_detected.ignore_selected') }}
+            {{ t('asset_table.newly_detected.ignore_selected') }}
           </span>
         </v-tooltip>
       </div>

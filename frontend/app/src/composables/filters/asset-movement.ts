@@ -41,7 +41,7 @@ export const useAssetMovementFilters = () => {
   const { dateInputFormat } = storeToRefs(useFrontendSettingsStore());
   const { assetSearch } = useAssetInfoApi();
   const { assetInfo } = useAssetInfoRetrieval();
-  const { tc } = useI18n();
+  const { t } = useI18n();
 
   const matchers: ComputedRef<Matcher[]> = computed(
     () =>
@@ -49,7 +49,7 @@ export const useAssetMovementFilters = () => {
         {
           key: AssetMovementFilterKeys.ASSET,
           keyValue: AssetMovementFilterValueKeys.ASSET,
-          description: tc('deposit_withdrawals.filter.asset'),
+          description: t('deposit_withdrawals.filter.asset'),
           asset: true,
           suggestions: assetSuggestions(assetSearch),
           deserializer: assetDeserializer(assetInfo)
@@ -57,7 +57,7 @@ export const useAssetMovementFilters = () => {
         {
           key: AssetMovementFilterKeys.ACTION,
           keyValue: AssetMovementFilterValueKeys.ACTION,
-          description: tc('deposit_withdrawals.filter.action'),
+          description: t('deposit_withdrawals.filter.action'),
           string: true,
           suggestions: () => MovementCategory.options,
           validate: type =>
@@ -66,9 +66,9 @@ export const useAssetMovementFilters = () => {
         {
           key: AssetMovementFilterKeys.START,
           keyValue: AssetMovementFilterValueKeys.START,
-          description: tc('deposit_withdrawals.filter.start_date'),
+          description: t('deposit_withdrawals.filter.start_date'),
           string: true,
-          hint: tc('deposit_withdrawals.filter.date_hint', 0, {
+          hint: t('deposit_withdrawals.filter.date_hint', {
             format: getDateInputISOFormat(get(dateInputFormat))
           }),
           suggestions: () => [],
@@ -79,8 +79,8 @@ export const useAssetMovementFilters = () => {
         {
           key: AssetMovementFilterKeys.END,
           keyValue: AssetMovementFilterValueKeys.END,
-          description: tc('deposit_withdrawals.filter.end_date'),
-          hint: tc('deposit_withdrawals.filter.date_hint', 0, {
+          description: t('deposit_withdrawals.filter.end_date'),
+          hint: t('deposit_withdrawals.filter.date_hint', {
             format: getDateInputISOFormat(get(dateInputFormat))
           }),
           string: true,
@@ -92,7 +92,7 @@ export const useAssetMovementFilters = () => {
         {
           key: AssetMovementFilterKeys.LOCATION,
           keyValue: AssetMovementFilterValueKeys.LOCATION,
-          description: tc('deposit_withdrawals.filter.location'),
+          description: t('deposit_withdrawals.filter.location'),
           string: true,
           suggestions: () => get(associatedLocations),
           validate: location =>

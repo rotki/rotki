@@ -105,7 +105,7 @@ const sources: AirdropSources = {
   }
 };
 
-const { t, tc } = useI18n();
+const { t } = useI18n();
 const css = useCssModule();
 const airdropStore = useAirdropStore();
 const { airdropAddresses } = storeToRefs(airdropStore);
@@ -126,16 +126,16 @@ const entries = computed(() => {
 
 const tableHeaders = computed<DataTableHeader[]>(() => [
   {
-    text: tc('airdrops.headers.source'),
+    text: t('airdrops.headers.source'),
     value: 'source',
     width: '200px'
   },
   {
-    text: tc('common.address'),
+    text: t('common.address'),
     value: 'address'
   },
   {
-    text: tc('common.amount'),
+    text: t('common.amount'),
     value: 'amount',
     align: 'end'
   },

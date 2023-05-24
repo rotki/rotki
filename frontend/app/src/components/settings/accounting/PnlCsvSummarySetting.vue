@@ -6,21 +6,19 @@ onMounted(() => {
   set(haveCSVSummary, get(pnlCsvHaveSummary));
 });
 
-const { tc } = useI18n();
+const { t } = useI18n();
 </script>
 
 <template>
   <settings-option
     #default="{ error, success, update }"
     setting="pnlCsvHaveSummary"
-    :error-message="tc('account_settings.messages.have_csv_summary')"
+    :error-message="t('account_settings.messages.have_csv_summary')"
   >
     <v-switch
       v-model="haveCSVSummary"
       class="csv_export_settings__haveCSVSummary"
-      :label="
-        tc('account_settings.csv_export_settings.labels.have_csv_summary')
-      "
+      :label="t('account_settings.csv_export_settings.labels.have_csv_summary')"
       color="primary"
       :success-messages="success"
       :error-messages="error"

@@ -32,16 +32,16 @@ const emit = defineEmits<{
   (e: 'update:expanded', expandedAssets: CustomAsset[]): void;
 }>();
 
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const tableHeaders = computed<DataTableHeader[]>(() => [
   {
-    text: tc('common.asset'),
+    text: t('common.asset'),
     value: 'name',
     width: '50%'
   },
   {
-    text: tc('common.type'),
+    text: t('common.type'),
     value: 'custom_asset_type',
     width: '50%'
   },
@@ -79,10 +79,10 @@ const getAsset = (item: CustomAsset) => ({
 <template>
   <card outlined-body>
     <template #title>
-      {{ tc('common.assets') }}
+      {{ t('common.assets') }}
     </template>
     <template #subtitle>
-      {{ tc('asset_table.custom.subtitle') }}
+      {{ t('asset_table.custom.subtitle') }}
     </template>
     <template #actions>
       <v-row>
@@ -136,21 +136,21 @@ const getAsset = (item: CustomAsset) => ({
       </template>
       <template #item.actions="{ item }">
         <row-actions
-          :edit-tooltip="tc('asset_table.edit_tooltip')"
-          :delete-tooltip="tc('asset_table.delete_tooltip')"
+          :edit-tooltip="t('asset_table.edit_tooltip')"
+          :delete-tooltip="t('asset_table.delete_tooltip')"
           @edit-click="edit(item)"
           @delete-click="deleteAsset(item)"
         >
           <copy-button
             class="mx-1"
-            :tooltip="tc('asset_table.copy_identifier.tooltip')"
+            :tooltip="t('asset_table.copy_identifier.tooltip')"
             :value="item.identifier"
           />
         </row-actions>
       </template>
       <template #expanded-item="{ item }">
         <table-expand-container visible :colspan="tableHeaders.length">
-          <div class="font-weight-bold">{{ tc('asset_table.notes') }}:</div>
+          <div class="font-weight-bold">{{ t('asset_table.notes') }}:</div>
           <div class="pt-2">
             {{ item.notes }}
           </div>

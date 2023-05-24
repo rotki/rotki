@@ -8,7 +8,7 @@ const { dateInputFormat: inputFormat } = storeToRefs(
   useFrontendSettingsStore()
 );
 
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const containsValidDirectives = (v: string) =>
   displayDateFormatter.containsValidDirectives(v);
@@ -16,11 +16,11 @@ const containsValidDirectives = (v: string) =>
 const rules = {
   dateInputFormat: {
     required: helpers.withMessage(
-      tc('general_settings.date_display.validation.empty'),
+      t('general_settings.date_display.validation.empty'),
       required
     ),
     containsValidDirectives: helpers.withMessage(
-      tc('general_settings.date_display.validation.invalid'),
+      t('general_settings.date_display.validation.invalid'),
       containsValidDirectives
     )
   }
@@ -34,7 +34,7 @@ const resetDateInputFormat = () => {
 };
 
 const successMessage = (dateFormat: string) =>
-  tc('general_settings.validation.date_input_format.success', 0, {
+  t('general_settings.validation.date_input_format.success', {
     dateFormat
   });
 
@@ -48,13 +48,13 @@ onMounted(() => {
     #default="{ error, success, update }"
     setting="dateInputFormat"
     frontend-setting
-    :error-message="tc('general_settings.validation.date_input_format.error')"
+    :error-message="t('general_settings.validation.date_input_format.error')"
     :success-message="successMessage"
     @finished="resetDateInputFormat()"
   >
     <date-input-format-selector
       v-model="dateInputFormat"
-      :label="tc('general_settings.labels.date_input_format')"
+      :label="t('general_settings.labels.date_input_format')"
       class="pt-4 general-settings__fields__date-input-format"
       :success-messages="success"
       :error-messages="error || v$.dateInputFormat.$errors.map(e => e.$message)"

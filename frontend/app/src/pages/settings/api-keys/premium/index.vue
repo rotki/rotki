@@ -8,7 +8,7 @@ const store = usePremiumStore();
 const { premium, premiumSync } = storeToRefs(store);
 const { setup, deletePremium } = store;
 
-const { t, tc } = useI18n();
+const { t } = useI18n();
 
 const { premiumURL, premiumUserLoggedIn } = useInterop();
 
@@ -69,7 +69,7 @@ const setupPremium = async () => {
   if (!result.success) {
     set(errorMessages, [
       ...get(errorMessages),
-      result.message ?? tc('premium_settings.error.setting_failed')
+      result.message ?? t('premium_settings.error.setting_failed')
     ]);
     return;
   }
@@ -86,7 +86,7 @@ const remove = async () => {
   if (!result.success) {
     set(errorMessages, [
       ...get(errorMessages),
-      result.message ?? tc('premium_settings.error.removing_failed')
+      result.message ?? t('premium_settings.error.removing_failed')
     ]);
     return;
   }
@@ -104,10 +104,10 @@ const { show } = useConfirmStore();
 const showDeleteConfirmation = () => {
   show(
     {
-      title: tc('premium_settings.delete_confirmation.title'),
-      message: tc('premium_settings.delete_confirmation.message'),
-      primaryAction: tc('common.actions.delete'),
-      secondaryAction: tc('common.actions.cancel')
+      title: t('premium_settings.delete_confirmation.title'),
+      message: t('premium_settings.delete_confirmation.message'),
+      primaryAction: t('common.actions.delete'),
+      secondaryAction: t('common.actions.cancel')
     },
     remove
   );
@@ -124,7 +124,7 @@ const showDeleteConfirmation = () => {
         <template #subtitle>
           <i18n tag="div" path="premium_settings.subtitle">
             <base-external-link
-              :text="tc('premium_settings.rotki_premium')"
+              :text="t('premium_settings.rotki_premium')"
               :href="premiumURL"
             />
           </i18n>
@@ -136,7 +136,7 @@ const showDeleteConfirmation = () => {
           class="premium-settings__fields__api-key"
           :disabled="premium && !edit"
           :error-messages="errorMessages"
-          :label="tc('premium_settings.fields.api_key')"
+          :label="t('premium_settings.fields.api_key')"
           @paste="onApiKeyPaste($event)"
         />
         <revealable-input
@@ -145,7 +145,7 @@ const showDeleteConfirmation = () => {
           class="premium-settings__fields__api-secret"
           prepend-icon="mdi-lock"
           :disabled="premium && !edit"
-          :label="tc('premium_settings.fields.api_secret')"
+          :label="t('premium_settings.fields.api_secret')"
           @paste="onApiSecretPaste($event)"
         />
         <div v-if="premium" class="premium-settings__premium-active">

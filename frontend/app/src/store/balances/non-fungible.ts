@@ -19,7 +19,7 @@ export const useNonFungibleBalancesStore = defineStore(
     const { activeModules } = storeToRefs(useGeneralSettingsStore());
     const { awaitTask } = useTaskStore();
     const { notify } = useNotificationsStore();
-    const { tc } = useI18n();
+    const { t } = useI18n();
     const { fetchNfBalances, fetchNfBalancesTask } = useNftBalancesApi();
 
     const fetchNonFungibleBalances = async (
@@ -58,14 +58,14 @@ export const useNonFungibleBalancesStore = defineStore(
           taskId,
           taskType,
           {
-            title: tc('actions.nft_balances.task.title')
+            title: t('actions.nft_balances.task.title')
           }
         );
         return true;
       } catch (e: any) {
         notify({
-          title: tc('actions.nft_balances.error.title'),
-          message: tc('actions.nft_balances.error.message', 0, {
+          title: t('actions.nft_balances.error.title'),
+          message: t('actions.nft_balances.error.message', {
             message: e.message
           }),
           display: true

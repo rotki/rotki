@@ -21,15 +21,15 @@ const props = withDefaults(
     confirmType: DialogType.INFO
   }
 );
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const { subtitle, primaryAction, secondaryAction } = toRefs(props);
 
 const primary = computed(
-  () => get(primaryAction) || tc('common.actions.confirm')
+  () => get(primaryAction) || t('common.actions.confirm')
 );
 const secondary = computed(
-  () => get(secondaryAction) || tc('common.actions.cancel')
+  () => get(secondaryAction) || t('common.actions.cancel')
 );
 
 const emit = defineEmits<{

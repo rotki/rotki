@@ -10,7 +10,7 @@ onMounted(() => {
   set(scrambleMultiplier, get(multiplier).toString());
 });
 
-const { t, tc } = useI18n();
+const { t } = useI18n();
 const css = useCssModule();
 </script>
 
@@ -20,7 +20,7 @@ const css = useCssModule();
       #default="{ error, success, update }"
       setting="scrambleData"
       session-setting
-      :error-message="tc('frontend_settings.validation.scramble.error')"
+      :error-message="t('frontend_settings.validation.scramble.error')"
     >
       <v-switch
         v-model="scrambleData"

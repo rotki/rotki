@@ -5,11 +5,11 @@ import {
 } from '@/types/login';
 
 export const useAccountManagement = () => {
+  const { t } = useI18n();
   const loading: Ref<boolean> = ref(false);
   const error: Ref<string> = ref('');
   const errors: Ref<string[]> = ref([]);
 
-  const { tc } = useI18n();
   const { showGetPremiumButton, showPremiumDialog } = usePremiumReminder();
   const { navigateToDashboard } = useAppNavigation();
   const { createAccount, login } = useSessionStore();
@@ -42,7 +42,7 @@ export const useAccountManagement = () => {
         await navigateToDashboard();
       }
     } else {
-      set(error, result.message ?? tc('account_management.creation.error'));
+      set(error, result.message ?? t('account_management.creation.error'));
     }
   };
 

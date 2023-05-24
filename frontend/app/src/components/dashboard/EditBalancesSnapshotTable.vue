@@ -40,7 +40,7 @@ const valid = ref<boolean>(false);
 const loading = ref<boolean>(false);
 
 const { exchangeRate } = useBalancePricesStore();
-const { tc } = useI18n();
+const { t } = useI18n();
 const fiatExchangeRate = computed<BigNumber>(
   () => get(exchangeRate(get(currencySymbol))) ?? One
 );
@@ -75,23 +75,23 @@ const total = computed<BigNumber>(() => {
 
 const tableHeaders = computed<DataTableHeader[]>(() => [
   {
-    text: tc('common.category'),
+    text: t('common.category'),
     value: 'category',
     cellClass: 'py-2',
     width: 150
   },
   {
-    text: tc('common.asset'),
+    text: t('common.asset'),
     value: 'assetIdentifier'
   },
   {
-    text: tc('common.amount'),
+    text: t('common.amount'),
     value: 'amount',
     align: 'end',
     sort: (a: BigNumber, b: BigNumber) => sortDesc(a, b)
   },
   {
-    text: tc('common.value_in_symbol', 0, {
+    text: t('common.value_in_symbol', {
       symbol: get(currencySymbol)
     }).toString(),
     value: 'usdValue',
@@ -396,7 +396,7 @@ const tableContainer = computed(() => get(tableRef)?.$el);
           outlined
           hide-details
           clearable
-          :label="tc('dashboard.snapshot.search_asset')"
+          :label="t('dashboard.snapshot.search_asset')"
         />
       </v-col>
     </v-row>
@@ -413,7 +413,7 @@ const tableContainer = computed(() => get(tableRef)?.$el);
         <div>
           <span>{{ toSentenceCase(item.category) }}</span>
           <span v-if="isNft(item.assetIdentifier)">
-            ({{ tc('dashboard.snapshot.edit.dialog.balances.nft') }})
+            ({{ t('dashboard.snapshot.edit.dialog.balances.nft') }})
           </span>
         </div>
       </template>
@@ -442,9 +442,9 @@ const tableContainer = computed(() => get(tableRef)?.$el);
 
       <template #item.action="{ item }">
         <row-actions
-          :edit-tooltip="tc('dashboard.snapshot.edit.dialog.actions.edit_item')"
+          :edit-tooltip="t('dashboard.snapshot.edit.dialog.actions.edit_item')"
           :delete-tooltip="
-            tc('dashboard.snapshot.edit.dialog.actions.delete_item')
+            t('dashboard.snapshot.edit.dialog.actions.delete_item')
           "
           @edit-click="editClick(item)"
           @delete-click="deleteClick(item)"
@@ -453,7 +453,7 @@ const tableContainer = computed(() => get(tableRef)?.$el);
     </data-table>
     <v-sheet elevation="10" class="d-flex align-center px-4 py-2">
       <div>
-        <div class="text-caption">{{ tc('common.total') }}:</div>
+        <div class="text-caption">{{ t('common.total') }}:</div>
         <div class="font-weight-bold text-h6 mt-n1">
           <amount-display :value="total" fiat-currency="USD" />
         </div>
@@ -462,11 +462,11 @@ const tableContainer = computed(() => get(tableRef)?.$el);
       <v-btn text color="primary" class="mr-4" @click="add()">
         <v-icon class="mr-2">mdi-plus</v-icon>
         <span>
-          {{ tc('dashboard.snapshot.edit.dialog.actions.add_new_entry') }}
+          {{ t('dashboard.snapshot.edit.dialog.actions.add_new_entry') }}
         </span>
       </v-btn>
       <v-btn color="primary" @click="updateStep(2)">
-        {{ tc('common.actions.next') }}
+        {{ t('common.actions.next') }}
       </v-btn>
     </v-sheet>
 
@@ -474,10 +474,10 @@ const tableContainer = computed(() => get(tableRef)?.$el);
       :display="showForm"
       :title="
         indexToEdit !== null
-          ? tc('dashboard.snapshot.edit.dialog.balances.edit_title')
-          : tc('dashboard.snapshot.edit.dialog.balances.add_title')
+          ? t('dashboard.snapshot.edit.dialog.balances.edit_title')
+          : t('dashboard.snapshot.edit.dialog.balances.add_title')
       "
-      :primary-action="tc('common.actions.save')"
+      :primary-action="t('common.actions.save')"
       :action-disabled="loading || !valid"
       @confirm="save()"
       @cancel="clearEditDialog()"
@@ -502,9 +502,9 @@ const tableContainer = computed(() => get(tableRef)?.$el);
 
     <confirm-dialog
       :display="showDeleteConfirmation"
-      :title="tc('dashboard.snapshot.edit.dialog.balances.delete_title')"
+      :title="t('dashboard.snapshot.edit.dialog.balances.delete_title')"
       :message="
-        tc('dashboard.snapshot.edit.dialog.balances.delete_confirmation')
+        t('dashboard.snapshot.edit.dialog.balances.delete_confirmation')
       "
       max-width="700"
       @cancel="clearDeleteDialog()"

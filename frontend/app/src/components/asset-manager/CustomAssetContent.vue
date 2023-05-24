@@ -30,13 +30,13 @@ const assetForm = ref<InstanceType<typeof CustomAssetForm> | null>(null);
 
 const dialogTitle = computed<string>(() =>
   get(editMode)
-    ? tc('asset_management.edit_title')
-    : tc('asset_management.add_title')
+    ? t('asset_management.edit_title')
+    : t('asset_management.add_title')
 );
 
 const router = useRouter();
 const route = useRoute();
-const { tc } = useI18n();
+const { t } = useI18n();
 const { deleteCustomAsset, queryAllCustomAssets, getCustomAssetTypes } =
   useAssetManagementApi();
 const { setMessage } = useMessageStore();
@@ -81,7 +81,7 @@ const deleteAsset = async (assetId: string) => {
     }
   } catch (e: any) {
     setMessage({
-      description: tc('asset_management.delete_error', 0, {
+      description: t('asset_management.delete_error', {
         address: assetId,
         message: e.message
       })
@@ -136,8 +136,8 @@ const refresh = async () => {
 const showDeleteConfirmation = (item: CustomAsset) => {
   show(
     {
-      title: tc('asset_management.confirm_delete.title'),
-      message: tc('asset_management.confirm_delete.message', 0, {
+      title: t('asset_management.confirm_delete.title'),
+      message: t('asset_management.confirm_delete.message', {
         asset: item?.name ?? ''
       })
     },
@@ -164,7 +164,7 @@ watch(identifier, assetId => {
 <template>
   <v-container>
     <refresh-header
-      :title="tc('asset_management.custom.title')"
+      :title="t('asset_management.custom.title')"
       :loading="loading"
       @refresh="refresh()"
     />
@@ -189,7 +189,7 @@ watch(identifier, assetId => {
       :title="dialogTitle"
       subtitle=""
       :action-disabled="!valid || saving"
-      :primary-action="tc('common.actions.save')"
+      :primary-action="t('common.actions.save')"
       :loading="saving"
       @confirm="save()"
       @cancel="closeDialog()"

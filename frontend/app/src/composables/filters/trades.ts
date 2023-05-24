@@ -39,7 +39,7 @@ export const useTradeFilters = () => {
   const { dateInputFormat } = storeToRefs(useFrontendSettingsStore());
   const { assetSearch } = useAssetInfoApi();
   const { assetInfo } = useAssetInfoRetrieval();
-  const { tc } = useI18n();
+  const { t } = useI18n();
 
   const matchers: ComputedRef<Matcher[]> = computed(
     () =>
@@ -47,7 +47,7 @@ export const useTradeFilters = () => {
         {
           key: TradeFilterKeys.BASE,
           keyValue: TradeFilterValueKeys.BASE,
-          description: tc('closed_trades.filter.base_asset'),
+          description: t('closed_trades.filter.base_asset'),
           asset: true,
           suggestions: assetSuggestions(assetSearch),
           deserializer: assetDeserializer(assetInfo)
@@ -55,7 +55,7 @@ export const useTradeFilters = () => {
         {
           key: TradeFilterKeys.QUOTE,
           keyValue: TradeFilterValueKeys.QUOTE,
-          description: tc('closed_trades.filter.quote_asset'),
+          description: t('closed_trades.filter.quote_asset'),
           asset: true,
           suggestions: assetSuggestions(assetSearch),
           deserializer: assetDeserializer(assetInfo)
@@ -63,7 +63,7 @@ export const useTradeFilters = () => {
         {
           key: TradeFilterKeys.ACTION,
           keyValue: TradeFilterValueKeys.ACTION,
-          description: tc('closed_trades.filter.trade_type'),
+          description: t('closed_trades.filter.trade_type'),
           string: true,
           suggestions: () => TradeType.options,
           validate: type => (TradeType.options as string[]).includes(type)
@@ -71,10 +71,10 @@ export const useTradeFilters = () => {
         {
           key: TradeFilterKeys.START,
           keyValue: TradeFilterValueKeys.START,
-          description: tc('closed_trades.filter.start_date'),
+          description: t('closed_trades.filter.start_date'),
           string: true,
           suggestions: () => [],
-          hint: tc('closed_trades.filter.date_hint', 0, {
+          hint: t('closed_trades.filter.date_hint', {
             format: getDateInputISOFormat(get(dateInputFormat))
           }),
           validate: dateValidator(dateInputFormat),
@@ -84,10 +84,10 @@ export const useTradeFilters = () => {
         {
           key: TradeFilterKeys.END,
           keyValue: TradeFilterValueKeys.END,
-          description: tc('closed_trades.filter.end_date'),
+          description: t('closed_trades.filter.end_date'),
           string: true,
           suggestions: () => [],
-          hint: tc('closed_trades.filter.date_hint', 0, {
+          hint: t('closed_trades.filter.date_hint', {
             format: getDateInputISOFormat(get(dateInputFormat))
           }),
           validate: dateValidator(dateInputFormat),
@@ -97,7 +97,7 @@ export const useTradeFilters = () => {
         {
           key: TradeFilterKeys.LOCATION,
           keyValue: TradeFilterValueKeys.LOCATION,
-          description: tc('closed_trades.filter.location'),
+          description: t('closed_trades.filter.location'),
           string: true,
           suggestions: () => get(associatedLocations),
           validate: location =>

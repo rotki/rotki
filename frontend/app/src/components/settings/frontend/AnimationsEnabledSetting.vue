@@ -1,6 +1,6 @@
 <script setup lang="ts">
 const animationsEnabled = ref<boolean>(true);
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const { animationsEnabled: enabled } = storeToRefs(useSessionSettingsStore());
 const transform = (value: boolean) => !value;
@@ -16,12 +16,12 @@ onMounted(() => {
     setting="animationsEnabled"
     session-setting
     :transform="transform"
-    :error-message="tc('frontend_settings.validation.animations.error')"
+    :error-message="t('frontend_settings.validation.animations.error')"
   >
     <v-switch
       :value="!animationsEnabled"
       class="general-settings__fields__animation-enabled mt-0"
-      :label="tc('frontend_settings.label.animations')"
+      :label="t('frontend_settings.label.animations')"
       :success-messages="success"
       :error-messages="error"
       @change="update($event)"

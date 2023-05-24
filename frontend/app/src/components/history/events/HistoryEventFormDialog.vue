@@ -47,12 +47,12 @@ const confirmSave = async () => {
   }
 };
 
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const title: ComputedRef<string> = computed(() =>
   get(editableItem)
-    ? tc('transactions.events.dialog.edit.title')
-    : tc('transactions.events.dialog.add.title')
+    ? t('transactions.events.dialog.edit.title')
+    : t('transactions.events.dialog.add.title')
 );
 </script>
 
@@ -60,7 +60,7 @@ const title: ComputedRef<string> = computed(() =>
   <big-dialog
     :display="value"
     :title="title"
-    :primary-action="tc('common.actions.save')"
+    :primary-action="t('common.actions.save')"
     :action-disabled="loading || !valid"
     :loading="loading"
     @confirm="confirmSave()"

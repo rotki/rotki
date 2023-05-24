@@ -29,7 +29,7 @@ const expanded: Ref<AssetBalanceWithPrice[]> = ref([]);
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
-const { t, tc } = useI18n();
+const { t } = useI18n();
 
 const { exchangeRate } = useBalancePricesStore();
 const totalInUsd = computed(() =>
@@ -173,7 +173,7 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
       >
         <template #activator="{ on }">
           <menu-tooltip-button
-            :tooltip="tc('dashboard_asset_table.select_visible_columns')"
+            :tooltip="t('dashboard_asset_table.select_visible_columns')"
             class-name="ml-4 dashboard-asset-table__column-filter__button"
             :on-menu="on"
           >
@@ -258,7 +258,7 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
       >
         <row-append
           label-colspan="3"
-          :label="tc('common.total')"
+          :label="t('common.total')"
           :right-patch-colspan="tableHeaders.length - 4"
           :is-mobile="isMobile"
         >

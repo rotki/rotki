@@ -33,7 +33,7 @@ const { value, balancesSnapshot } = toRefs(props);
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
 const total = ref<string>('');
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const { exchangeRate } = useBalancePricesStore();
 const fiatExchangeRate = computed<BigNumber>(
@@ -152,7 +152,7 @@ const save = () => {
 const rules = {
   total: {
     required: helpers.withMessage(
-      tc('dashboard.snapshot.edit.dialog.total.rules.total'),
+      t('dashboard.snapshot.edit.dialog.total.rules.total'),
       required
     )
   }
@@ -167,17 +167,13 @@ const v$ = useVuelidate(
 );
 
 const suggestionsLabel = computed(() => ({
-  total: tc('dashboard.snapshot.edit.dialog.total.use_calculated_total'),
-  asset: tc('dashboard.snapshot.edit.dialog.total.use_calculated_asset', 0, {
+  total: t('dashboard.snapshot.edit.dialog.total.use_calculated_total'),
+  asset: t('dashboard.snapshot.edit.dialog.total.use_calculated_asset', {
     length: get(balancesSnapshot).length
   }),
-  location: tc(
-    'dashboard.snapshot.edit.dialog.total.use_calculated_location',
-    0,
-    {
-      length: get(value).length
-    }
-  )
+  location: t('dashboard.snapshot.edit.dialog.total.use_calculated_location', {
+    length: get(value).length
+  })
 }));
 </script>
 
@@ -186,7 +182,7 @@ const suggestionsLabel = computed(() => ({
     <div class="py-10 d-flex flex-column align-center">
       <div :class="$style.wrapper">
         <div class="text-h6 mb-4 text-center">
-          {{ tc('common.total') }}
+          {{ t('common.total') }}
         </div>
         <div class="mb-4">
           <v-form :value="!v$.$invalid">
@@ -231,7 +227,7 @@ const suggestionsLabel = computed(() => ({
             </v-btn>
 
             <div v-if="key === 'location'" class="text--secondary text-caption">
-              {{ tc('dashboard.snapshot.edit.dialog.total.hint') }}
+              {{ t('dashboard.snapshot.edit.dialog.total.hint') }}
             </div>
           </div>
         </div>
@@ -241,10 +237,10 @@ const suggestionsLabel = computed(() => ({
       <v-spacer />
       <v-btn class="mr-4" @click="updateStep(2)">
         <v-icon>mdi-chevron-left</v-icon>
-        {{ tc('common.actions.back') }}
+        {{ t('common.actions.back') }}
       </v-btn>
       <v-btn color="primary" :disabled="v$.$invalid" @click="save()">
-        {{ tc('common.actions.finish') }}
+        {{ t('common.actions.finish') }}
         <v-icon>mdi-chevron-right</v-icon>
       </v-btn>
     </v-sheet>

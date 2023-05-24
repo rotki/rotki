@@ -12,16 +12,16 @@ const defaultDateDisplayFormat = Defaults.DEFAULT_DATE_DISPLAY_FORMAT;
 const containsValidDirectives = (v: string) =>
   displayDateFormatter.containsValidDirectives(v);
 
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const rules = {
   dateDisplayFormat: {
     required: helpers.withMessage(
-      tc('general_settings.date_display.validation.empty'),
+      t('general_settings.date_display.validation.empty'),
       required
     ),
     containsValidDirectives: helpers.withMessage(
-      tc('general_settings.date_display.validation.invalid'),
+      t('general_settings.date_display.validation.invalid'),
       containsValidDirectives
     )
   }
@@ -41,7 +41,7 @@ const resetDateDisplayFormat = () => {
 };
 
 const successMessage = (dateFormat: string) =>
-  tc('general_settings.validation.date_display_format.success', 0, {
+  t('general_settings.validation.date_display_format.success', {
     dateFormat
   });
 
@@ -57,7 +57,7 @@ onMounted(() => {
       #default="{ error, success, update }"
       setting="dateDisplayFormat"
       :error-message="
-        tc('general_settings.validation.date_display_format.error')
+        t('general_settings.validation.date_display_format.error')
       "
       :success-message="successMessage"
       @finished="resetDateDisplayFormat()"
@@ -66,14 +66,14 @@ onMounted(() => {
         v-model="dateDisplayFormat"
         outlined
         class="general-settings__fields__date-display-format"
-        :label="tc('general_settings.labels.date_display_format')"
+        :label="t('general_settings.labels.date_display_format')"
         type="text"
         :success-messages="success"
         :error-messages="
           error || v$.dateDisplayFormat.$errors.map(e => e.$message)
         "
         :hint="
-          tc('general_settings.date_display_format_hint', 0, {
+          t('general_settings.date_display_format_hint', {
             format: dateDisplayFormatExample
           })
         "
@@ -98,7 +98,7 @@ onMounted(() => {
                 <v-icon> mdi-backup-restore </v-icon>
               </v-btn>
             </template>
-            <span>{{ tc('general_settings.date_display_tooltip') }}</span>
+            <span>{{ t('general_settings.date_display_tooltip') }}</span>
           </v-tooltip>
         </template>
       </v-text-field>

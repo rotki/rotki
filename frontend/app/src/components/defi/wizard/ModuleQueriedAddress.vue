@@ -12,7 +12,7 @@ const props = defineProps<{ module: Module }>();
 const { module } = toRefs(props);
 const loading = ref(false);
 const selectedAccounts: Ref<GeneralAccount[]> = ref([]);
-const { tc } = useI18n();
+const { t } = useI18n();
 const ETH = Blockchain.ETH;
 
 const store = useQueriedAddressesStore();
@@ -72,7 +72,7 @@ watch(queriedAddresses, queried => {
     outlined
     :value="selectedAccounts"
     flat
-    :label="tc('common.select_address')"
+    :label="t('common.select_address')"
     multiple
     :chains="[ETH]"
     :loading="loading"

@@ -33,7 +33,7 @@ const filters: Ref<Filters> = ref({});
 
 const { dateInputFormat } = storeToRefs(useFrontendSettingsStore());
 
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const matchers: ComputedRef<Matcher[]> = computed(
   () =>
@@ -41,10 +41,10 @@ const matchers: ComputedRef<Matcher[]> = computed(
       {
         key: Eth2StakingFilterKeys.START,
         keyValue: Eth2StakingFilterValueKeys.START,
-        description: tc('closed_trades.filter.start_date'),
+        description: t('closed_trades.filter.start_date'),
         string: true,
         suggestions: () => [],
-        hint: tc('closed_trades.filter.date_hint', 0, {
+        hint: t('closed_trades.filter.date_hint', {
           format: getDateInputISOFormat(get(dateInputFormat))
         }),
         validate: dateValidator(dateInputFormat),
@@ -54,10 +54,10 @@ const matchers: ComputedRef<Matcher[]> = computed(
       {
         key: Eth2StakingFilterKeys.END,
         keyValue: Eth2StakingFilterValueKeys.END,
-        description: tc('closed_trades.filter.end_date'),
+        description: t('closed_trades.filter.end_date'),
         string: true,
         suggestions: () => [],
-        hint: tc('closed_trades.filter.date_hint', 0, {
+        hint: t('closed_trades.filter.date_hint', {
           format: getDateInputISOFormat(get(dateInputFormat))
         }),
         validate: dateValidator(dateInputFormat),

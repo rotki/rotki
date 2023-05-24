@@ -24,20 +24,20 @@ const perAccount: Ref<Nfts | null> = ref(null);
 const sortBy = ref<'name' | 'priceUsd' | 'collection'>('name');
 const sortDescending = ref(false);
 
-const { tc } = useI18n();
+const { t } = useI18n();
 const { premiumURL } = useInterop();
 const css = useCssModule();
 const sortProperties = [
   {
-    text: tc('common.name'),
+    text: t('common.name'),
     value: 'name'
   },
   {
-    text: tc('common.price'),
+    text: t('common.price'),
     value: 'priceUsd'
   },
   {
-    text: tc('nft_gallery.sort.collection'),
+    text: t('nft_gallery.sort.collection'),
     value: 'collection'
   }
 ];
@@ -213,16 +213,14 @@ const sortNfts = (
 
 <template>
   <progress-screen v-if="loading && visibleNfts.length === 0">
-    {{ tc('nft_gallery.loading') }}
+    {{ t('nft_gallery.loading') }}
   </progress-screen>
   <no-data-screen v-else-if="noData">
     <template #title>
-      {{
-        error ? tc('nft_gallery.error_title') : tc('nft_gallery.empty_title')
-      }}
+      {{ error ? t('nft_gallery.error_title') : t('nft_gallery.empty_title') }}
     </template>
     <span class="text-subtitle-2 text--secondary">
-      {{ error ? error : tc('nft_gallery.empty_subtitle') }}
+      {{ error ? error : t('nft_gallery.empty_subtitle') }}
     </span>
   </no-data-screen>
   <div v-else class="py-4">
@@ -232,7 +230,7 @@ const sortNfts = (
           <v-col :cols="isMobile ? '12' : '6'">
             <blockchain-account-selector
               v-model="selectedAccounts"
-              :label="tc('nft_gallery.select_account')"
+              :label="t('nft_gallery.select_account')"
               :chains="chains"
               dense
               outlined
@@ -246,7 +244,7 @@ const sortNfts = (
               <div>
                 <v-autocomplete
                   v-model="selectedCollection"
-                  :label="tc('nft_gallery.select_collection')"
+                  :label="t('nft_gallery.select_collection')"
                   single-line
                   clearable
                   hide-details
@@ -282,7 +280,7 @@ const sortNfts = (
       <v-col cols="auto">
         <refresh-button
           :loading="loading"
-          :tooltip="tc('nft_gallery.refresh_tooltip')"
+          :tooltip="t('nft_gallery.refresh_tooltip')"
           @refresh="fetchNfts(true)"
         />
       </v-col>
@@ -293,7 +291,7 @@ const sortNfts = (
           <template #limit> {{ limit }}</template>
           <template #link>
             <base-external-link
-              :text="tc('upgrade_row.rotki_premium')"
+              :text="t('upgrade_row.rotki_premium')"
               :href="premiumURL"
             />
           </template>
@@ -307,7 +305,7 @@ const sortNfts = (
       :class="css.empty"
     >
       <v-col cols="auto" class="text--secondary text-h6">
-        {{ tc('nft_gallery.empty_filter') }}
+        {{ t('nft_gallery.empty_filter') }}
       </v-col>
     </v-row>
     <v-row v-else>

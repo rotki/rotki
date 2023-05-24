@@ -11,7 +11,7 @@ defineProps({
   }
 });
 
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const { isLoading } = useStatusStore();
 const loading = isLoading(Section.DEFI_LIQUITY_STAKING_POOLS);
@@ -20,7 +20,7 @@ const loading = isLoading(Section.DEFI_LIQUITY_STAKING_POOLS);
 <template>
   <card :loading="loading">
     <template #title>
-      {{ tc('liquity_pools.title') }}
+      {{ t('liquity_pools.title') }}
     </template>
     <template v-if="pool">
       <div class="d-flex align-center py-4 justify-end">
@@ -33,7 +33,7 @@ const loading = isLoading(Section.DEFI_LIQUITY_STAKING_POOLS);
       <v-divider />
       <div class="pt-4">
         <div class="d-flex align-center mb-1 justify-space-between">
-          <div class="grey--text">{{ tc('liquity_pools.rewards') }}</div>
+          <div class="grey--text">{{ t('liquity_pools.rewards') }}</div>
           <div>
             <balance-display
               :asset="pool.rewards.asset"
@@ -43,7 +43,7 @@ const loading = isLoading(Section.DEFI_LIQUITY_STAKING_POOLS);
         </div>
         <div class="d-flex align-center mb-1 justify-space-between">
           <div class="grey--text">
-            {{ tc('liquity_pools.liquidation_gains') }}
+            {{ t('liquity_pools.liquidation_gains') }}
           </div>
           <div>
             <balance-display :asset="pool.gains.asset" :value="pool.gains" />
@@ -52,7 +52,7 @@ const loading = isLoading(Section.DEFI_LIQUITY_STAKING_POOLS);
       </div>
     </template>
     <div v-else class="text-center grey--text pt-4">
-      {{ tc('liquity_pools.no_lusd_deposited') }}
+      {{ t('liquity_pools.no_lusd_deposited') }}
     </div>
   </card>
 </template>

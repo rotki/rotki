@@ -13,7 +13,7 @@ const source = ref('');
 const pending = ref(false);
 
 const { mergeAssets } = useAssets();
-const { t, tc } = useI18n();
+const { t } = useI18n();
 
 const reset = () => {
   set(done, false);
@@ -134,7 +134,7 @@ const v$ = useVuelidate(
           v-model="target"
           outlined
           :error-messages="toMessages(v$.target)"
-          :label="tc('merge_dialog.target.label')"
+          :label="t('merge_dialog.target.label')"
           :disabled="pending"
           @focus="clearErrors()"
           @blur="v$.target.$touch()"

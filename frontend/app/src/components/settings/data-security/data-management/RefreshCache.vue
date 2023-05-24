@@ -2,12 +2,12 @@
 import { type Ref } from 'vue';
 import { RefreshableCache } from '@/types/session/purge';
 
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const refreshable = [
   {
     id: RefreshableCache.GENERAL_CACHE,
-    text: tc('data_management.refresh_cache.label.general_cache')
+    text: t('data_management.refresh_cache.label.general_cache')
   }
 ];
 
@@ -25,16 +25,16 @@ const { status, pending, showConfirmation } = useCacheClear<RefreshableCache>(
   refreshable,
   refreshSource,
   (source: string) => ({
-    success: tc('data_management.refresh_cache.success', 0, {
+    success: t('data_management.refresh_cache.success', {
       source
     }),
-    error: tc('data_management.refresh_cache.error', 0, {
+    error: t('data_management.refresh_cache.error', {
       source
     })
   }),
   (source: string) => ({
-    title: tc('data_management.refresh_cache.confirm.title'),
-    message: tc('data_management.refresh_cache.confirm.message', 0, {
+    title: t('data_management.refresh_cache.confirm.title'),
+    message: t('data_management.refresh_cache.confirm.message', {
       source
     })
   })
@@ -45,10 +45,10 @@ const { status, pending, showConfirmation } = useCacheClear<RefreshableCache>(
   <div class="mb-2">
     <div class="mb-6">
       <div class="text-h6">
-        {{ tc('data_management.refresh_cache.title') }}
+        {{ t('data_management.refresh_cache.title') }}
       </div>
       <div>
-        {{ tc('data_management.refresh_cache.subtitle') }}
+        {{ t('data_management.refresh_cache.subtitle') }}
       </div>
     </div>
 
@@ -57,7 +57,7 @@ const { status, pending, showConfirmation } = useCacheClear<RefreshableCache>(
         <v-autocomplete
           v-model="source"
           outlined
-          :label="tc('data_management.refresh_cache.select_cache')"
+          :label="t('data_management.refresh_cache.select_cache')"
           :items="refreshable"
           item-text="text"
           item-value="id"
@@ -80,7 +80,7 @@ const { status, pending, showConfirmation } = useCacheClear<RefreshableCache>(
               <v-icon>mdi-refresh</v-icon>
             </v-btn>
           </template>
-          <span> {{ tc('data_management.refresh_cache.tooltip') }} </span>
+          <span> {{ t('data_management.refresh_cache.tooltip') }} </span>
         </v-tooltip>
       </v-col>
     </v-row>

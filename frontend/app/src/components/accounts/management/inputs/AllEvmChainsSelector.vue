@@ -9,7 +9,7 @@ withDefaults(
   }
 );
 
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const emit = defineEmits<{
   (e: 'input', value: boolean): void;
@@ -22,9 +22,9 @@ const emit = defineEmits<{
       :input-value="value"
       :disabled="disabled"
       class="py-4 px-4 my-0"
-      :label="tc('address_account_form.label')"
+      :label="t('address_account_form.label')"
       persistent-hint
-      :hint="tc('address_account_form.hint')"
+      :hint="t('address_account_form.hint')"
       @change="emit('input', !value)"
     />
   </v-sheet>

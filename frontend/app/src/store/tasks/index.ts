@@ -26,10 +26,10 @@ type ErrorHandler = (
 ) => ActionResult<{}>;
 
 const useError = (): { error: ErrorHandler } => {
-  const { tc } = useI18n();
+  const { t } = useI18n();
   const error: ErrorHandler = (task, error) => ({
     result: {},
-    message: tc('task_manager.error', 0, {
+    message: t('task_manager.error', {
       taskId: task.id,
       title: task.meta.title,
       error

@@ -36,14 +36,14 @@ const confirmSave = async () => {
   }
 };
 
-const { tc } = useI18n();
+const { t } = useI18n();
 </script>
 
 <template>
   <big-dialog
     :display="value"
-    :title="tc('transactions.dialog.add_tx')"
-    :primary-action="tc('common.actions.save')"
+    :title="t('transactions.dialog.add_tx')"
+    :primary-action="t('common.actions.save')"
     :action-disabled="loading || form?.loading || !valid"
     :loading="loading || form?.loading"
     @confirm="confirmSave()"

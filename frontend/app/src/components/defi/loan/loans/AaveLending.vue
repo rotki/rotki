@@ -21,14 +21,14 @@ const { assetSymbol } = useAssetInfoRetrieval();
 const asset = useRefMap(loan, ({ asset }) => asset);
 const symbol = assetSymbol(asset);
 
-const { tc } = useI18n();
+const { t } = useI18n();
 </script>
 
 <template>
   <v-row>
     <v-col cols="12">
       <loan-header v-if="loan.owner" class="mt-8 mb-6" :owner="loan.owner">
-        {{ tc('aave_lending.header', 0, { asset: symbol }) }}
+        {{ t('aave_lending.header', { asset: symbol }) }}
       </loan-header>
       <v-row>
         <v-col cols="12" md="6">
@@ -41,7 +41,7 @@ const { tc } = useI18n();
       </v-row>
       <v-row no-gutters class="mt-8">
         <v-col cols="12">
-          <premium-card v-if="!premium" :title="tc('aave_lending.history')" />
+          <premium-card v-if="!premium" :title="t('aave_lending.history')" />
           <aave-borrowing-details
             v-else
             :loading="aaveHistoryLoading"

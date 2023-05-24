@@ -6,16 +6,24 @@ export const useLocationStore = defineStore('locations', () => {
   const tradeLocations: Ref<TradeLocationData[]> = ref([]);
 
   const { fetchAllLocations } = useHistoryApi();
-  const { tc } = useI18n();
+  const { t, te } = useI18n();
 
   const toTradeLocationData = (
     locations: Record<string, Omit<ActionDataEntry, 'identifier'>>
   ): TradeLocationData[] =>
     Object.entries(locations).map(([identifier, item]) => {
-      const name = item.label
-        ? item.label
-        : tc(`backend_mappings.trade_location.${identifier}`)?.toString() ||
-          toSentenceCase(identifier);
+      let name: string;
+
+      if (item.label) {
+        name = item.label;
+      } else {
+        const translationKey = `backend_mappings.trade_location.${identifier}`;
+        if (te(translationKey)) {
+          name = t(translationKey);
+        } else {
+          name = toSentenceCase(identifier);
+        }
+      }
 
       const mapped = {
         identifier,

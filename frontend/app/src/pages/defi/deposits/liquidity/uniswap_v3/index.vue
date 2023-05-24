@@ -27,7 +27,7 @@ const { uniswapV3Addresses: addresses, uniswapV3PoolAssets: poolAssets } =
 const { isModuleEnabled } = useModules();
 const { tokenAddress } = useAssetInfoRetrieval();
 const { isLoading, shouldShowLoadingScreen } = useStatusStore();
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const { premiumURL } = useInterop();
 
@@ -72,17 +72,17 @@ const getIdentifier = (item: XswapBalance) => item.nftId;
   <module-not-active v-if="!enabled" :modules="modules" />
   <progress-screen v-else-if="loading">
     <template #message>
-      {{ tc('uniswap.loading') }}
+      {{ t('uniswap.loading') }}
     </template>
     <template v-if="!premium" #default>
       <i18n tag="div" path="uniswap.loading_non_premium">
-        <base-external-link :text="tc('uniswap.premium')" :href="premiumURL" />
+        <base-external-link :text="t('uniswap.premium')" :href="premiumURL" />
       </i18n>
     </template>
   </progress-screen>
   <div v-else class="uniswap">
     <refresh-header
-      :title="tc('uniswap.title', 0, { v: 3 })"
+      :title="t('uniswap.title', { v: 3 })"
       class="mt-4"
       :loading="primaryRefreshing || secondaryRefreshing"
       @refresh="refresh()"
@@ -137,7 +137,7 @@ const getIdentifier = (item: XswapBalance) => item.nftId;
             <div class="d-flex flex-wrap">
               <div class="mt-6 mr-16">
                 <div class="text--secondary text-body-2">
-                  {{ tc('common.balance') }}
+                  {{ t('common.balance') }}
                 </div>
                 <div class="d-flex text-h6">
                   <amount-display
@@ -152,7 +152,7 @@ const getIdentifier = (item: XswapBalance) => item.nftId;
                 :class="$style['price-range']"
               >
                 <div class="text--secondary text-body-2">
-                  {{ tc('uniswap.price_range') }}
+                  {{ t('uniswap.price_range') }}
                 </div>
                 <div class="d-flex text-h6">
                   <amount-display
@@ -170,7 +170,7 @@ const getIdentifier = (item: XswapBalance) => item.nftId;
 
             <div class="mt-6">
               <div class="text--secondary text-body-2">
-                {{ tc('common.assets') }}
+                {{ t('common.assets') }}
               </div>
               <div v-if="premium">
                 <v-row
@@ -206,7 +206,7 @@ const getIdentifier = (item: XswapBalance) => item.nftId;
                 <div class="ml-4">
                   <i18n tag="div" path="uniswap.assets_non_premium">
                     <base-external-link
-                      :text="tc('uniswap.premium')"
+                      :text="t('uniswap.premium')"
                       :href="premiumURL"
                     />
                   </i18n>
@@ -220,7 +220,7 @@ const getIdentifier = (item: XswapBalance) => item.nftId;
 
     <history-events-view
       use-external-account-filter
-      :section-title="tc('common.events')"
+      :section-title="t('common.events')"
       :protocols="['uniswap-v3']"
       :external-account-filter="selectedAccounts"
       :only-chains="chains"

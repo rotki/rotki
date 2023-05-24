@@ -11,7 +11,7 @@ const props = defineProps({
 
 const details = ref(false);
 const { summary } = toRefs(props);
-const { tc } = useI18n();
+const { t } = useI18n();
 const icon = computed(() => {
   const { protocol } = get(summary);
   if (!protocol.icon) {
@@ -47,18 +47,18 @@ const css = useCssModule();
       <span
         class="text-subtitle-1 font-weight-bold pb-2 d-flex flex-row justify-space-between"
       >
-        {{ tc('overview.stat_card.headers.borrowing') }}
+        {{ t('overview.stat_card.headers.borrowing') }}
         <v-btn :to="summary.liabilitiesUrl" icon small color="primary">
           <v-icon small color="primary">mdi-launch</v-icon>
         </v-btn>
       </span>
       <info-row
-        :title="tc('overview.stat_card.content.labels.total_collateral')"
+        :title="t('overview.stat_card.content.labels.total_collateral')"
         fiat
         :value="summary.totalCollateralUsd"
       />
       <info-row
-        :title="tc('overview.stat_card.content.labels.total_debt')"
+        :title="t('overview.stat_card.content.labels.total_debt')"
         fiat
         :value="summary.totalDebtUsd"
       />
@@ -68,7 +68,7 @@ const css = useCssModule();
       <div
         class="pb-2 d-flex flex-row justify-space-between text-subtitle-1 font-weight-medium"
       >
-        {{ tc('common.deposits') }}
+        {{ t('common.deposits') }}
         <v-btn
           v-if="summary.depositsUrl"
           :to="summary.depositsUrl"
@@ -80,7 +80,7 @@ const css = useCssModule();
         </v-btn>
       </div>
       <info-row
-        :title="tc('overview.stat_card.content.labels.total_deposited')"
+        :title="t('overview.stat_card.content.labels.total_deposited')"
         fiat
         :value="summary.totalLendingDepositUsd"
       />
@@ -99,13 +99,13 @@ const css = useCssModule();
     >
       {{ summary.tokenInfo.tokenName }}
     </span>
-    <info-row :title="tc('common.balance')" fiat :value="summary.balanceUsd" />
+    <info-row :title="t('common.balance')" fiat :value="summary.balanceUsd" />
     <v-divider class="my-4" />
     <div class="d-flex justify-end">
       <v-dialog v-model="details" scrollable max-width="450px">
         <template #activator="{ on, attrs }">
           <v-btn small v-bind="attrs" text class="justify-end" v-on="on">
-            {{ tc('common.details') }}
+            {{ t('common.details') }}
             <v-icon color="primary" right>mdi-launch</v-icon>
           </v-btn>
         </template>
@@ -123,7 +123,7 @@ const css = useCssModule();
             </span>
           </v-card-title>
           <v-card-subtitle>
-            {{ tc('overview.details_dialog.subtitle') }}
+            {{ t('overview.details_dialog.subtitle') }}
           </v-card-subtitle>
           <v-card-text :class="css.details">
             <div v-for="(asset, index) in assets" :key="index">

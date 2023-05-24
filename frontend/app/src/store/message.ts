@@ -11,7 +11,7 @@ export const useMessageStore = defineStore('message', () => {
   const message = ref(emptyMessage());
   const showMessage = computed(() => get(message).title.length > 0);
 
-  const { tc } = useI18n();
+  const { t } = useI18n();
 
   const setMessage = (
     msg: SemiPartial<Message, 'description'> = emptyMessage()
@@ -19,8 +19,8 @@ export const useMessageStore = defineStore('message', () => {
     set(message, {
       ...{
         title: msg.success
-          ? tc('message.success.title')
-          : tc('message.error.title'),
+          ? t('message.success.title')
+          : t('message.error.title'),
         success: false
       },
       ...msg

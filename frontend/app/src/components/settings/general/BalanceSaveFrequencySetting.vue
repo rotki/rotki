@@ -9,17 +9,17 @@ const { balanceSaveFrequency: frequency } = storeToRefs(
   useGeneralSettingsStore()
 );
 
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const maxBalanceSaveFrequency = Constraints.MAX_HOURS_DELAY;
 const rules = {
   balanceSaveFrequency: {
     required: helpers.withMessage(
-      tc('general_settings.validation.balance_frequency.non_empty'),
+      t('general_settings.validation.balance_frequency.non_empty'),
       required
     ),
     between: helpers.withMessage(
-      tc('general_settings.validation.balance_frequency.invalid_frequency', 0, {
+      t('general_settings.validation.balance_frequency.invalid_frequency', {
         start: 1,
         end: maxBalanceSaveFrequency
       }),
@@ -36,7 +36,7 @@ const resetBalanceSaveFrequency = () => {
 
 const transform = (value?: string) => (value ? Number.parseInt(value) : value);
 const successMessage = (frequency: string) =>
-  tc('general_settings.validation.balance_frequency.success', 0, {
+  t('general_settings.validation.balance_frequency.success', {
     frequency
   });
 
@@ -50,7 +50,7 @@ onMounted(() => {
     #default="{ error, success, update }"
     setting="balanceSaveFrequency"
     :transform="transform"
-    :error-message="tc('general_settings.validation.balance_frequency.error')"
+    :error-message="t('general_settings.validation.balance_frequency.error')"
     :success-message="successMessage"
     @finished="resetBalanceSaveFrequency()"
   >
@@ -60,7 +60,7 @@ onMounted(() => {
       min="1"
       :max="maxBalanceSaveFrequency"
       class="mt-2 general-settings__fields__balance-save-frequency"
-      :label="tc('general_settings.labels.balance_saving_frequency')"
+      :label="t('general_settings.labels.balance_saving_frequency')"
       type="number"
       :success-messages="success"
       :error-messages="

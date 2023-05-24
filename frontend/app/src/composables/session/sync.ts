@@ -8,7 +8,7 @@ import { SYNC_DOWNLOAD, type SyncAction } from '@/types/session/sync';
 export const useSync = () => {
   const { isTaskRunning, awaitTask } = useTaskStore();
   const { notify } = useNotificationsStore();
-  const { tc } = useI18n();
+  const { t } = useI18n();
 
   const forceSync = async (
     action: MaybeRef<SyncAction>,
@@ -20,8 +20,8 @@ export const useSync = () => {
     }
 
     function notifyFailure(error: string): void {
-      const title = tc('actions.session.force_sync.error.title');
-      const message = tc('actions.session.force_sync.error.message', 0, {
+      const title = t('actions.session.force_sync.error.title');
+      const message = t('actions.session.force_sync.error.message', {
         error
       });
 
@@ -39,13 +39,13 @@ export const useSync = () => {
         taskId,
         taskType,
         {
-          title: tc('actions.session.force_sync.task.title')
+          title: t('actions.session.force_sync.task.title')
         }
       );
 
       if (result) {
-        const title = tc('actions.session.force_sync.success.title');
-        const message = tc('actions.session.force_sync.success.message');
+        const title = t('actions.session.force_sync.success.title');
+        const message = t('actions.session.force_sync.success.message');
 
         notify({
           title,

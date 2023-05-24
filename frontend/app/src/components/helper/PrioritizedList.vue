@@ -88,17 +88,16 @@ const remove = (item: PrioritizedListId) => {
 };
 
 const { t } = useI18n();
-const { tc } = useI18n();
 
 const autoCompleteHint: ComputedRef<string> = computed(() => {
   const num = get(missing).length;
   if (num) {
-    return tc('prioritized_list.disabled_items', 0, {
+    return t('prioritized_list.disabled_items', {
       num,
       namePluralized: get(itemNameTr).namePluralized
     });
   }
-  return tc('prioritized_list.all_added');
+  return t('prioritized_list.all_added');
 });
 </script>
 
@@ -116,7 +115,7 @@ const autoCompleteHint: ComputedRef<string> = computed(() => {
               v-model="selection"
               prepend-inner-icon="mdi-magnify"
               outlined
-              :no-data-text="tc('prioritized_list.all_added', 0, itemNameTr)"
+              :no-data-text="t('prioritized_list.all_added', itemNameTr)"
               :items="missing"
               :hint="autoCompleteHint"
               persistent-hint
@@ -146,7 +145,7 @@ const autoCompleteHint: ComputedRef<string> = computed(() => {
                 </v-btn>
               </template>
               <span>
-                {{ tc('prioritized_list.add_tooltip', 0, itemNameTr) }}
+                {{ t('prioritized_list.add_tooltip', itemNameTr) }}
               </span>
             </v-tooltip>
           </v-col>
@@ -168,7 +167,7 @@ const autoCompleteHint: ComputedRef<string> = computed(() => {
             <td colspan="4">
               <v-row class="pa-3 text-h6" justify="center">
                 <v-col cols="auto">
-                  {{ tc('prioritized_list.item.empty', 0, itemNameTr) }}
+                  {{ t('prioritized_list.item.empty', itemNameTr) }}
                 </v-col>
               </v-row>
             </td>
@@ -218,7 +217,7 @@ const autoCompleteHint: ComputedRef<string> = computed(() => {
                   </v-btn>
                 </template>
                 <span>
-                  {{ tc('prioritized_list.item.delete', 0, itemNameTr) }}
+                  {{ t('prioritized_list.item.delete', itemNameTr) }}
                 </span>
               </v-tooltip>
             </td>

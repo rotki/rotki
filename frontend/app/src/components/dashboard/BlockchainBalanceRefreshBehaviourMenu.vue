@@ -5,7 +5,7 @@ const { blockchainRefreshButtonBehaviour } = storeToRefs(
   useFrontendSettingsStore()
 );
 
-const { tc } = useI18n();
+const { t } = useI18n();
 const css = useCssModule();
 </script>
 
@@ -15,7 +15,7 @@ const css = useCssModule();
       :class="css['filter-heading']"
       class="font-weight-bold text-uppercase py-2"
     >
-      {{ tc('dashboard.blockchain_balances.behaviour.title') }}:
+      {{ t('dashboard.blockchain_balances.behaviour.title') }}:
     </v-list-item>
     <v-list-item class="pb-2">
       <settings-option
@@ -32,15 +32,13 @@ const css = useCssModule();
           <v-radio
             :value="BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES"
             :label="
-              tc(
-                'dashboard.blockchain_balances.behaviour.only_refresh_balances'
-              )
+              t('dashboard.blockchain_balances.behaviour.only_refresh_balances')
             "
           />
           <v-radio
             :value="BlockchainRefreshButtonBehaviour.REDETECT_TOKENS"
             :label="
-              tc('dashboard.blockchain_balances.behaviour.redetect_tokens')
+              t('dashboard.blockchain_balances.behaviour.redetect_tokens')
             "
           />
         </v-radio-group>

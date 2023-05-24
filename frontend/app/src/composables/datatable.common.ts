@@ -1,7 +1,7 @@
 export const useFooterProps = () => {
-  const { tc } = useI18n();
+  const { t } = useI18n();
   const footerProps = computed(() => ({
-    itemsPerPageText: tc('data_table.rows_per_page'),
+    itemsPerPageText: t('data_table.rows_per_page'),
     showFirstLastPage: true,
     firstIcon: 'mdi-chevron-double-left',
     lastIcon: 'mdi-chevron-double-right',

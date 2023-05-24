@@ -39,7 +39,7 @@ const { detectTokensOfAllAddresses, detectingTokens } =
   useTokenDetection(blockchain);
 const { show } = useConfirmStore();
 
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const isEth2 = computed<boolean>(() => get(blockchain) === Blockchain.ETH2);
 
@@ -109,17 +109,17 @@ const deleteAccount = async (payload: XpubPayload | string[]) => {
 const showConfirmation = (payload: XpubPayload | string[]) => {
   let message: string;
   if (Array.isArray(payload)) {
-    message = tc('account_balances.confirm_delete.description_address', 0, {
+    message = t('account_balances.confirm_delete.description_address', {
       count: payload.length
     });
   } else {
-    message = tc('account_balances.confirm_delete.description_xpub', 0, {
+    message = t('account_balances.confirm_delete.description_xpub', {
       address: payload.xpub
     });
   }
   show(
     {
-      title: tc('account_balances.confirm_delete.title'),
+      title: t('account_balances.confirm_delete.title'),
       message
     },
     async () => deleteAccount(payload)
@@ -135,7 +135,7 @@ const showConfirmation = (payload: XpubPayload | string[]) => {
           <refresh-button
             class="account-balances__refresh"
             :loading="isSectionLoading || detectingTokens"
-            :tooltip="tc('account_balances.refresh_tooltip', 0, { blockchain })"
+            :tooltip="t('account_balances.refresh_tooltip', { blockchain })"
             @refresh="handleBlockchainRefresh()"
           />
         </v-col>
@@ -170,11 +170,11 @@ const showConfirmation = (payload: XpubPayload | string[]) => {
                   @click="showConfirmation(selectedAddresses)"
                 >
                   <v-icon> mdi-delete-outline </v-icon>
-                  <span>{{ tc('common.actions.delete') }}</span>
+                  <span>{{ t('common.actions.delete') }}</span>
                 </v-btn>
               </span>
             </template>
-            <span>{{ tc('account_balances.delete_tooltip') }}</span>
+            <span>{{ t('account_balances.delete_tooltip') }}</span>
           </v-tooltip>
           <v-tooltip v-if="hasTokenDetection" top>
             <template #activator="{ on }">
@@ -188,11 +188,11 @@ const showConfirmation = (payload: XpubPayload | string[]) => {
                 @click="detectTokensOfAllAddresses()"
               >
                 <v-icon class="mr-2">mdi-refresh</v-icon>
-                {{ tc('account_balances.detect_tokens.tooltip.redetect') }}
+                {{ t('account_balances.detect_tokens.tooltip.redetect') }}
               </v-btn>
             </template>
             <span>
-              {{ tc('account_balances.detect_tokens.tooltip.redetect_all') }}
+              {{ t('account_balances.detect_tokens.tooltip.redetect_all') }}
             </span>
           </v-tooltip>
         </v-col>

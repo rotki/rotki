@@ -16,7 +16,7 @@ const label = ref('');
 const tags = ref<string[]>([]);
 
 const { notify } = useNotificationsStore();
-const { tc } = useI18n();
+const { t } = useI18n();
 const { isPackaged, metamaskImport } = useInterop();
 const { addAccounts, addEvmAccounts } = useBlockchains();
 const { valid, setSave } = useAccountDialog();
@@ -54,10 +54,9 @@ const save = async (): Promise<boolean> => {
 
     return true;
   } catch (e: any) {
-    const title = tc('blockchain_balances.metamask_import.error.title');
-    const description = tc(
+    const title = t('blockchain_balances.metamask_import.error.title');
+    const description = t(
       'blockchain_balances.metamask_import.error.description',
-      0,
       {
         error: e.message
       }

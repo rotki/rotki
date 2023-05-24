@@ -1,9 +1,9 @@
 <script setup lang="ts">
-const { tc } = useI18n();
+const { t } = useI18n();
 const sources = [
   {
     identifier: 'cointracking.info',
-    name: tc('import_data.cointracking.name'),
+    name: t('import_data.cointracking.name'),
     logo: './assets/images/protocols/cointracking.svg',
     form: defineAsyncComponent(
       () => import('@/components/import/CointrackingImport.vue')
@@ -11,7 +11,7 @@ const sources = [
   },
   {
     identifier: 'cryptocom',
-    name: tc('import_data.cryptocom.name'),
+    name: t('import_data.cryptocom.name'),
     logo: './assets/images/protocols/crypto_com.svg',
     form: defineAsyncComponent(
       () => import('@/components/import/CryptoComImport.vue')
@@ -19,7 +19,7 @@ const sources = [
   },
   {
     identifier: 'blockfi',
-    name: tc('import_data.blockfi.name'),
+    name: t('import_data.blockfi.name'),
     logo: './assets/images/protocols/blockfi.svg',
     form: defineAsyncComponent(
       () => import('@/components/import/BlockFiImport.vue')
@@ -27,7 +27,7 @@ const sources = [
   },
   {
     identifier: 'nexo',
-    name: tc('import_data.nexo.name'),
+    name: t('import_data.nexo.name'),
     logo: './assets/images/protocols/nexo.svg',
     form: defineAsyncComponent(
       () => import('@/components/import/NexoImport.vue')
@@ -35,7 +35,7 @@ const sources = [
   },
   {
     identifier: 'shapeshift-trades',
-    name: tc('import_data.shapeshift.name'),
+    name: t('import_data.shapeshift.name'),
     logo: './assets/images/protocols/shapeshift.svg',
     form: defineAsyncComponent(
       () => import('@/components/import/ShapeshiftImport.vue')
@@ -43,7 +43,7 @@ const sources = [
   },
   {
     identifier: 'uphold',
-    name: tc('import_data.uphold.name'),
+    name: t('import_data.uphold.name'),
     logo: './assets/images/protocols/uphold.svg',
     form: defineAsyncComponent(
       () => import('@/components/import/UpholdImport.vue')
@@ -51,7 +51,7 @@ const sources = [
   },
   {
     identifier: 'bisq',
-    name: tc('import_data.bisq.name'),
+    name: t('import_data.bisq.name'),
     logo: './assets/images/protocols/bisq.svg',
     form: defineAsyncComponent(
       () => import('@/components/import/BisqImport.vue')
@@ -59,7 +59,7 @@ const sources = [
   },
   {
     identifier: 'binance',
-    name: tc('import_data.binance.name'),
+    name: t('import_data.binance.name'),
     logo: './assets/images/protocols/binance.svg',
     form: defineAsyncComponent(
       () => import('@/components/import/BinanceImport.vue')
@@ -67,7 +67,7 @@ const sources = [
   },
   {
     identifier: 'custom',
-    name: tc('import_data.custom.name'),
+    name: t('import_data.custom.name'),
     icon: 'mdi-book-open',
     form: defineAsyncComponent(
       () => import('@/components/import/CustomImport.vue')
@@ -87,7 +87,7 @@ const form = computed(
     <div class="pa-1 pt-2">
       <v-select
         v-model="selectedSource"
-        :label="tc('import_data.select_source.title')"
+        :label="t('import_data.select_source.title')"
         outlined
         :items="sources"
         item-value="identifier"

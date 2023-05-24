@@ -43,7 +43,7 @@ const downloadSnapshot = async () => {
 
 const { setMessage } = useMessageStore();
 
-const { t, tc } = useI18n();
+const { t } = useI18n();
 
 const snapshotApi = useSnapshotApi();
 const interop = useInterop();
@@ -140,8 +140,8 @@ const { show } = useConfirmStore();
 const showDeleteConfirmation = () => {
   show(
     {
-      title: tc('dashboard.snapshot.delete.dialog.title'),
-      message: tc('dashboard.snapshot.delete.dialog.message')
+      title: t('dashboard.snapshot.delete.dialog.title'),
+      message: t('dashboard.snapshot.delete.dialog.message')
     },
     deleteSnapshot
   );

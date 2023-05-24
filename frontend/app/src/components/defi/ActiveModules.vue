@@ -65,7 +65,7 @@ const icon = (module: Module): string => {
   return data?.icon ?? '';
 };
 
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const getName = (module: Nullable<Module>) => ({
   name: module ? name(module) : ''
@@ -80,10 +80,9 @@ const { show } = useConfirmStore();
 const showConfirmation = () => {
   show(
     {
-      title: tc('active_modules.enable.title'),
-      message: tc(
+      title: t('active_modules.enable.title'),
+      message: t(
         'active_modules.enable.description',
-        0,
         getName(get(confirmEnable))
       ),
       type: 'info'
@@ -122,17 +121,11 @@ const showConfirmation = () => {
               </template>
               <span v-if="module.enabled">
                 {{
-                  tc(
-                    'active_modules.view_addresses',
-                    0,
-                    getName(module.identifier)
-                  )
+                  t('active_modules.view_addresses', getName(module.identifier))
                 }}
               </span>
               <span v-else>
-                {{
-                  tc('active_modules.activate', 0, getName(module.identifier))
-                }}
+                {{ t('active_modules.activate', getName(module.identifier)) }}
               </span>
             </v-tooltip>
           </v-col>

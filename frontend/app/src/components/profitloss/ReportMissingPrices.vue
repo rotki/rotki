@@ -15,7 +15,7 @@ const props = defineProps({
   isPinned: { required: true, type: Boolean, default: false }
 });
 
-const { t, tc } = useI18n();
+const { t } = useI18n();
 const { items } = toRefs(props);
 const prices = ref<HistoricalPrice[]>([]);
 const errorMessages: Ref<Record<string, string[]>> = ref({});
@@ -205,7 +205,7 @@ const refreshHistoricalPrice = async (item: EditableMissingPrice) => {
               :success-messages="
                 item.saved
                   ? [
-                      tc(
+                      t(
                         'profit_loss_report.actionable.missing_prices.price_is_saved'
                       )
                     ]

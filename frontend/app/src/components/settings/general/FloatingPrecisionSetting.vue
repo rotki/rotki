@@ -4,11 +4,11 @@ import { helpers, required } from '@vuelidate/validators';
 
 const floatingPrecision = ref<string>('0');
 const maxFloatingPrecision = 8;
-const { tc } = useI18n();
+const { t } = useI18n();
 const rules = {
   floatingPrecision: {
     required: helpers.withMessage(
-      tc('general_settings.validation.floating_precision.non_empty'),
+      t('general_settings.validation.floating_precision.non_empty'),
       required
     )
   }
@@ -24,11 +24,11 @@ const resetFloatingPrecision = () => {
 
 const transform = (value?: string) => (value ? Number.parseInt(value) : value);
 const errorMessage = (precision: string) =>
-  tc('general_settings.validation.floating_precision.error', 0, {
+  t('general_settings.validation.floating_precision.error', {
     precision
   });
 const successMessage = (precision: string) =>
-  tc('general_settings.validation.floating_precision.success', 0, {
+  t('general_settings.validation.floating_precision.success', {
     precision
   });
 
@@ -52,7 +52,7 @@ onMounted(() => {
       min="1"
       :max="maxFloatingPrecision"
       class="general-settings__fields__floating-precision"
-      :label="tc('general_settings.amount.labels.floating_precision')"
+      :label="t('general_settings.amount.labels.floating_precision')"
       type="number"
       :success-messages="success"
       :error-messages="

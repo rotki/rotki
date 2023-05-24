@@ -3,7 +3,7 @@ import { TaskType } from '@/types/task-type';
 import { Routes } from '@/router/routes';
 import { Module } from '@/types/modules';
 
-const { t, tc } = useI18n();
+const { t } = useI18n();
 const { isTaskRunning } = useTaskStore();
 
 const { balances, liabilities } = useAggregatedBalances();
@@ -90,7 +90,7 @@ const nftEnabled = isModuleEnabled(Module.NFTS);
         </v-col>
         <v-col cols="12" md="4" lg="4">
           <summary-card
-            :name="tc('dashboard.blockchain_balances.title')"
+            :name="t('dashboard.blockchain_balances.title')"
             :is-loading="isBlockchainLoading || isTokenDetecting"
             can-refresh
             :navigates-to="Routes.ACCOUNTS_BALANCES"
@@ -111,7 +111,7 @@ const nftEnabled = isModuleEnabled(Module.NFTS);
                   <div class="d-flex flex-column align-center">
                     <v-icon class="mb-2">mdi-plus-circle-outline</v-icon>
                     <span>
-                      {{ tc('dashboard.blockchain_balances.add') }}
+                      {{ t('dashboard.blockchain_balances.add') }}
                     </span>
                   </div>
                 </v-btn>
@@ -128,8 +128,8 @@ const nftEnabled = isModuleEnabled(Module.NFTS);
         </v-col>
         <v-col cols="12" md="4" lg="4">
           <summary-card
-            :name="tc('dashboard.manual_balances.title')"
-            :tooltip="tc('dashboard.manual_balances.card_tooltip')"
+            :name="t('dashboard.manual_balances.title')"
+            :tooltip="t('dashboard.manual_balances.card_tooltip')"
             :is-loading="isManualBalancesLoading"
             can-refresh
             :navigates-to="Routes.ACCOUNTS_BALANCES_MANUAL"
@@ -170,7 +170,7 @@ const nftEnabled = isModuleEnabled(Module.NFTS);
         </v-col>
       </v-row>
       <dashboard-asset-table
-        :title="tc('common.assets')"
+        :title="t('common.assets')"
         table-type="ASSETS"
         :loading="isAnyLoading"
         :balances="aggregatedBalances"
@@ -180,7 +180,7 @@ const nftEnabled = isModuleEnabled(Module.NFTS);
         v-if="aggregatedLiabilities.length > 0"
         class="mt-8"
         table-type="LIABILITIES"
-        :title="tc('dashboard.liabilities.title')"
+        :title="t('dashboard.liabilities.title')"
         :loading="isAnyLoading"
         :balances="aggregatedLiabilities"
       />

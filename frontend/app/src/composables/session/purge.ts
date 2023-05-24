@@ -64,13 +64,13 @@ export const useSessionPurge = () => {
   };
 
   const { awaitTask } = useTaskStore();
-  const { tc } = useI18n();
+  const { t } = useI18n();
 
   const refreshGeneralCache = async () => {
     const taskType = TaskType.REFRESH_GENERAL_CACHE;
     const { taskId } = await refreshGeneralCacheTask();
     await awaitTask<boolean, TaskMeta>(taskId, taskType, {
-      title: tc('actions.session.refresh_general_cache.task.title')
+      title: t('actions.session.refresh_general_cache.task.title')
     });
   };
 

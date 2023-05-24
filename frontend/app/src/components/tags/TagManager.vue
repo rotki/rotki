@@ -23,20 +23,20 @@ const tag = ref<Tag>(defaultTag());
 const editMode = ref<boolean>(false);
 const search = ref<string>('');
 
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const headers = computed<DataTableHeader[]>(() => [
   {
-    text: tc('common.name'),
+    text: t('common.name'),
     value: 'name',
     width: '200'
   },
   {
-    text: tc('common.description'),
+    text: t('common.description'),
     value: 'description'
   },
   {
-    text: tc('tag_manager.headers.actions'),
+    text: t('tag_manager.headers.actions'),
     value: 'action',
     sortable: false,
     width: '80'
@@ -74,8 +74,8 @@ const { show } = useConfirmStore();
 const showDeleteConfirmation = (selectedTag: Tag) => {
   show(
     {
-      title: tc('tag_manager.confirmation.title'),
-      message: tc('tag_manager.confirmation.message', 0, {
+      title: t('tag_manager.confirmation.title'),
+      message: t('tag_manager.confirmation.message', {
         tagToDelete: selectedTag.name
       })
     },
@@ -87,7 +87,7 @@ const showDeleteConfirmation = (selectedTag: Tag) => {
 <template>
   <card class="tag-manager">
     <template #title>
-      {{ tc('tag_manager.title') }}
+      {{ t('tag_manager.title') }}
     </template>
     <template v-if="dialog" #details>
       <v-btn class="tag-manager__close" icon text @click="close()">
@@ -95,7 +95,7 @@ const showDeleteConfirmation = (selectedTag: Tag) => {
       </v-btn>
     </template>
     <template #subtitle>
-      {{ tc('tag_manager.subtitle') }}
+      {{ t('tag_manager.subtitle') }}
     </template>
     <tag-creator
       :tag="tag"
@@ -110,7 +110,7 @@ const showDeleteConfirmation = (selectedTag: Tag) => {
     <div class="mx-n4">
       <card outlined-body flat>
         <template #title>
-          {{ tc('tag_manager.my_tags') }}
+          {{ t('tag_manager.my_tags') }}
         </template>
         <template #search>
           <v-row justify="end">
@@ -121,7 +121,7 @@ const showDeleteConfirmation = (selectedTag: Tag) => {
                 dense
                 class="mb-4"
                 prepend-inner-icon="mdi-magnify"
-                :label="tc('common.actions.search')"
+                :label="t('common.actions.search')"
                 single-line
                 hide-details
                 clearable

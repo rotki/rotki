@@ -11,20 +11,17 @@ const { versionUpdateCheckFrequency: existingFrequency } = storeToRefs(
 );
 
 const maxVersionUpdateCheckFrequency = Constraints.MAX_HOURS_DELAY;
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const rules = {
   versionUpdateCheckFrequency: {
     required: helpers.withMessage(
-      tc(
-        'general_settings.validation.version_update_check_frequency.non_empty'
-      ),
+      t('general_settings.validation.version_update_check_frequency.non_empty'),
       required
     ),
     between: helpers.withMessage(
-      tc(
+      t(
         'general_settings.validation.version_update_check_frequency.invalid_frequency',
-        0,
         {
           start: 1,
           end: maxVersionUpdateCheckFrequency
@@ -69,7 +66,7 @@ onMounted(() => {
         frontend-setting
         :transform="frequencyTransform"
         :error-message="
-          tc('general_settings.validation.version_update_check_frequency.error')
+          t('general_settings.validation.version_update_check_frequency.error')
         "
         @finished="resetVersionUpdateCheckFrequency()"
       >
@@ -80,9 +77,9 @@ onMounted(() => {
           type="number"
           min="1"
           :max="maxVersionUpdateCheckFrequency"
-          :label="tc('general_settings.labels.version_update_check')"
+          :label="t('general_settings.labels.version_update_check')"
           persistent-hint
-          :hint="tc('general_settings.version_update_check_hint')"
+          :hint="t('general_settings.version_update_check_hint')"
           :success-messages="success"
           :error-messages="
             error || v$.versionUpdateCheckFrequency.$errors.map(e => e.$message)
@@ -102,7 +99,7 @@ onMounted(() => {
         <v-switch
           v-model="versionUpdateCheckEnabled"
           class="mt-3"
-          :label="tc('general_settings.labels.version_update_check_enabled')"
+          :label="t('general_settings.labels.version_update_check_enabled')"
           @change="callIfValid($event, update)"
         />
       </settings-option>

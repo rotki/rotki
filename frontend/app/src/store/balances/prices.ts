@@ -23,7 +23,7 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
 
   const { awaitTask, isTaskRunning } = useTaskStore();
   const { notify } = useNotificationsStore();
-  const { t, tc } = useI18n();
+  const { t } = useI18n();
   const {
     getPriceCache,
     createPriceCache,
@@ -149,14 +149,14 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
           title: t(
             'actions.balances.historic_fetch_price.task.title'
           ).toString(),
-          description: tc(
+          description: t(
             'actions.balances.historic_fetch_price.task.description',
-            1,
             {
               fromAsset,
               toAsset,
               date: convertFromTimestamp(timestamp)
-            }
+            },
+            1
           ).toString()
         },
         true

@@ -5,7 +5,7 @@ import { helpers, minValue, required } from '@vuelidate/validators';
 const taxFreeAfterPeriod = ref<number | null>(null);
 const taxFreePeriod = ref(false);
 
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const { taxfreeAfterPeriod: period } = storeToRefs(
   useAccountingSettingsStore()
@@ -14,11 +14,11 @@ const { taxfreeAfterPeriod: period } = storeToRefs(
 const rules = {
   taxFreeAfterPeriod: {
     required: helpers.withMessage(
-      tc('account_settings.validation.tax_free_days'),
+      t('account_settings.validation.tax_free_days'),
       required
     ),
     minValue: helpers.withMessage(
-      tc('account_settings.validation.tax_free_days_gt_zero'),
+      t('account_settings.validation.tax_free_days_gt_zero'),
       minValue(1)
     )
   }
@@ -63,12 +63,12 @@ const callIfValid = <T = unknown>(value: T, method: (e: T) => void) => {
 };
 
 const switchSuccess = (enabled: boolean) =>
-  tc('account_settings.messages.tax_free', 0, {
+  t('account_settings.messages.tax_free', {
     enabled: enabled ? 'enabled' : 'disabled'
   });
 
 const numberSuccess = (period: number) =>
-  tc('account_settings.messages.tax_free_period', 0, {
+  t('account_settings.messages.tax_free_period', {
     period
   });
 
@@ -94,7 +94,7 @@ onMounted(() => {
         class="accounting-settings__taxfree-period"
         :success-messages="success"
         :error-messages="error"
-        :label="tc('accounting_settings.labels.tax_free')"
+        :label="t('accounting_settings.labels.tax_free')"
         color="primary"
         @change="update($event)"
       />
@@ -116,7 +116,7 @@ onMounted(() => {
           error || v$.taxFreeAfterPeriod.$errors.map(e => e.$message)
         "
         :disabled="!taxFreePeriod"
-        :label="tc('accounting_settings.labels.tax_free_period')"
+        :label="t('accounting_settings.labels.tax_free_period')"
         type="number"
         @change="callIfValid($event, update)"
       />

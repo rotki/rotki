@@ -15,7 +15,7 @@ const emit = defineEmits<{
   (e: 'update:addresses', addresses: string[]): void;
 }>();
 
-const { t, tc } = useI18n();
+const { t } = useI18n();
 const { errorMessages, addresses, disabled } = toRefs(props);
 const address = ref('');
 const userAddresses = ref('');
@@ -125,9 +125,13 @@ const rules = [
           <div
             class="text-caption"
             v-text="
-              tc('account_form.labels.addresses_entries', entries.length, {
-                count: entries.length
-              })
+              t(
+                'account_form.labels.addresses_entries',
+                {
+                  count: entries.length
+                },
+                entries.length
+              )
             "
           />
         </v-col>

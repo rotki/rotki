@@ -33,23 +33,23 @@ const props = defineProps({
 
 const { location } = toRefs(props);
 
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const staking = computed<StakingInfo[]>(() => [
   {
     id: 'eth2',
     icon: './assets/images/protocols/ethereum.svg',
-    name: tc('staking.eth2')
+    name: t('staking.eth2')
   },
   {
     id: 'liquity',
     icon: './assets/images/protocols/liquity.png',
-    name: tc('staking.liquity')
+    name: t('staking.liquity')
   },
   {
     id: 'kraken',
     icon: './assets/images/protocols/kraken.svg',
-    name: tc('staking.kraken')
+    name: t('staking.kraken')
   }
 ]);
 
@@ -85,7 +85,7 @@ onBeforeMount(async () => {
           outlined
           hide-details
           :items="staking"
-          :label="tc('staking_page.dropdown_label')"
+          :label="t('staking_page.dropdown_label')"
           item-value="id"
           @change="updateLocation($event)"
         >
@@ -120,7 +120,7 @@ onBeforeMount(async () => {
           <v-icon>mdi-arrow-up-left</v-icon>
         </div>
         <div class="text--secondary pt-3 flex-shrink-0 ms-2">
-          {{ tc('staking_page.dropdown_hint') }}
+          {{ t('staking_page.dropdown_hint') }}
         </div>
       </div>
       <full-size-content>
@@ -129,7 +129,7 @@ onBeforeMount(async () => {
             <v-row align="center" justify="center">
               <v-col cols="auto">
                 <span class="font-weight-bold text-h5">
-                  {{ tc('staking_page.page.title') }}
+                  {{ t('staking_page.page.title') }}
                 </span>
               </v-col>
             </v-row>
@@ -170,7 +170,7 @@ onBeforeMount(async () => {
                   class="font-weight-light text-h6"
                   :class="$style.description"
                 >
-                  {{ tc('staking_page.page.description') }}
+                  {{ t('staking_page.page.description') }}
                 </div>
               </v-col>
             </v-row>

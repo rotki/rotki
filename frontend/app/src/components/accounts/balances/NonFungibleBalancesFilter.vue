@@ -37,7 +37,7 @@ const massIgnore = (ignored: boolean) => {
   emit('mass-ignore', ignored);
 };
 
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const css = useCssModule();
 </script>
@@ -50,9 +50,9 @@ const css = useCssModule();
         @ignore="massIgnore($event)"
       />
       <div v-if="selected.length > 0" class="mt-2 ms-1">
-        {{ tc('asset_table.selected', 0, { count: selected.length }) }}
+        {{ t('asset_table.selected', { count: selected.length }) }}
         <v-btn small text @click="updateSelected([])">
-          {{ tc('common.actions.clear_selection') }}
+          {{ t('common.actions.clear_selection') }}
         </v-btn>
       </div>
     </v-col>
@@ -60,7 +60,7 @@ const css = useCssModule();
       <v-menu offset-y :close-on-content-click="false">
         <template #activator="{ on }">
           <v-btn outlined text height="40px" data-cy="asset-filter" v-on="on">
-            {{ tc('common.actions.filter') }}
+            {{ t('common.actions.filter') }}
             <v-icon class="ml-2">mdi-chevron-down</v-icon>
           </v-btn>
         </template>
@@ -69,7 +69,7 @@ const css = useCssModule();
             :class="css['filter-heading']"
             class="font-weight-bold text-uppercase py-2"
           >
-            {{ tc('asset_table.filter_by_ignored_status') }}
+            {{ t('asset_table.filter_by_ignored_status') }}
           </v-list-item>
           <v-list-item class="pb-2">
             <v-radio-group
@@ -79,14 +79,14 @@ const css = useCssModule();
               hide-details
               @change="updateIgnoredAssetsHandling($event)"
             >
-              <v-radio value="none" :label="tc('asset_table.show_all')" />
+              <v-radio value="none" :label="t('asset_table.show_all')" />
               <v-radio
                 value="exclude"
-                :label="tc('asset_table.only_show_unignored')"
+                :label="t('asset_table.only_show_unignored')"
               />
               <v-radio
                 value="show_only"
-                :label="tc('asset_table.only_show_ignored', 2)"
+                :label="t('asset_table.only_show_ignored', 2)"
               />
             </v-radio-group>
           </v-list-item>

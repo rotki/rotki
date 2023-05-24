@@ -38,7 +38,7 @@ export const useEthBalancesStore = defineStore('balances/eth', () => {
   const { notify } = useNotificationsStore();
   const { getAssociatedAssetIdentifier } = useAssetInfoRetrieval();
   const { queryLoopringBalances } = useBlockchainBalancesApi();
-  const { tc } = useI18n();
+  const { t } = useI18n();
 
   const getLoopringAssetBalances = (
     address: MaybeRef<string> = ref('')
@@ -89,7 +89,7 @@ export const useEthBalancesStore = defineStore('balances/eth', () => {
         taskId,
         taskType,
         {
-          title: tc('actions.balances.loopring.task.title')
+          title: t('actions.balances.loopring.task.title')
         }
       );
 
@@ -97,8 +97,8 @@ export const useEthBalancesStore = defineStore('balances/eth', () => {
       setStatus(Status.LOADED);
     } catch (e: any) {
       notify({
-        title: tc('actions.balances.loopring.error.title'),
-        message: tc('actions.balances.loopring.error.description', 0, {
+        title: t('actions.balances.loopring.error.title'),
+        message: t('actions.balances.loopring.error.description', {
           error: e.message
         }),
         display: true

@@ -18,7 +18,7 @@ const props = defineProps({
   }
 });
 
-const { tc } = useI18n();
+const { t } = useI18n();
 const { blockchain, address } = toRefs(props);
 const { liabilities, assets, loopringBalances } = useAccountDetails(
   blockchain,
@@ -29,16 +29,16 @@ const { liabilities, assets, loopringBalances } = useAccountDetails(
 <template>
   <div>
     <template v-if="!loopring">
-      <account-asset-balances :title="tc('common.assets')" :assets="assets" />
+      <account-asset-balances :title="t('common.assets')" :assets="assets" />
       <account-asset-balances
         v-if="liabilities.length > 0"
-        :title="tc('account_balance_table.liabilities')"
+        :title="t('account_balance_table.liabilities')"
         :assets="liabilities"
       />
     </template>
     <account-asset-balances
       v-if="loopringBalances.length > 0"
-      :title="loopring ? '' : tc('account_balance_table.loopring')"
+      :title="loopring ? '' : t('account_balance_table.loopring')"
       :assets="loopringBalances"
     />
   </div>

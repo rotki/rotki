@@ -25,7 +25,7 @@ export const useIgnore = <T extends EntryMeta>(
   refresh: () => any
 ) => {
   const { setMessage } = useMessageStore();
-  const { tc } = useI18n();
+  const { t } = useI18n();
   const api = useHistoryIgnoringApi();
 
   const ignoreInAccounting = async (
@@ -40,17 +40,17 @@ export const useIgnore = <T extends EntryMeta>(
       let title: string;
       let description: string;
       if (ignore) {
-        title = tc('actions.ignore.error.title');
+        title = t('actions.ignore.error.title');
       } else {
-        title = tc('actions.unignore.error.title');
+        title = t('actions.unignore.error.title');
       }
 
       if (ignore) {
-        description = tc('actions.ignore.error.description', 0, {
+        description = t('actions.ignore.error.description', {
           error: e.message
         }).toString();
       } else {
-        description = tc('actions.unignore.error.description', 0, {
+        description = t('actions.unignore.error.description', {
           error: e.message
         }).toString();
       }
@@ -98,8 +98,8 @@ export const useIgnore = <T extends EntryMeta>(
       const choice = ignored ? 1 : 2;
       setMessage({
         success: false,
-        title: tc('ignore.no_items.title', choice),
-        description: tc('ignore.no_items.description', choice)
+        title: t('ignore.no_items.title', choice),
+        description: t('ignore.no_items.description', choice)
       });
       return;
     }

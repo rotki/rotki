@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const { t, tc } = useI18n();
+const { t } = useI18n();
 
 const tickLabels: string[] = [
   t('user_dropdown.change_privacy_mode.normal_mode.label').toString(),
@@ -36,7 +36,7 @@ const { privacyModeIcon, privacyMode, togglePrivacyMode, changePrivacyMode } =
     >
       <template #activator="{ on }">
         <menu-tooltip-button
-          :tooltip="tc('user_dropdown.change_privacy_mode.label')"
+          :tooltip="t('user_dropdown.change_privacy_mode.label')"
           class-name="privacy-mode-dropdown secondary--text text--lighten-4"
           @click="togglePrivacyMode()"
         >

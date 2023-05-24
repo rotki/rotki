@@ -8,7 +8,7 @@ import { CRYPTOCOMPARE_PRIO_LIST_ITEM } from '@/types/prioritized-list-id';
 import { TaskType } from '@/types/task-type';
 import { type OracleCacheMeta } from '@/types/prices';
 
-const { t, tc } = useI18n();
+const { t } = useI18n();
 
 const headers = computed<DataTableHeader[]>(() => [
   {
@@ -155,7 +155,7 @@ const showDeleteConfirmation = (entry: OracleCacheMeta) => {
 
   show(
     {
-      title: tc('oracle_cache_management.delete_confirmation.title'),
+      title: t('oracle_cache_management.delete_confirmation.title'),
       message: t('oracle_cache_management.delete_confirmation.message', {
         selection: get(selection),
         fromAsset: deleteFromAsset,
@@ -171,10 +171,10 @@ const showDeleteConfirmation = (entry: OracleCacheMeta) => {
   <fragment>
     <v-card class="mt-8">
       <v-card-title>
-        <card-title>{{ tc('oracle_cache_management.title') }}</card-title>
+        <card-title>{{ t('oracle_cache_management.title') }}</card-title>
       </v-card-title>
       <v-card-subtitle>
-        {{ tc('oracle_cache_management.subtitle') }}
+        {{ t('oracle_cache_management.subtitle') }}
       </v-card-subtitle>
       <v-card-text>
         <v-autocomplete
@@ -201,7 +201,7 @@ const showDeleteConfirmation = (entry: OracleCacheMeta) => {
                 clearable
                 :disabled="pending"
                 outlined
-                :label="tc('oracle_cache_management.from_asset')"
+                :label="t('oracle_cache_management.from_asset')"
               />
             </v-col>
             <v-col>
@@ -210,7 +210,7 @@ const showDeleteConfirmation = (entry: OracleCacheMeta) => {
                 clearable
                 :disabled="pending"
                 outlined
-                :label="tc('oracle_cache_management.to_asset')"
+                :label="t('oracle_cache_management.to_asset')"
               />
             </v-col>
             <v-col cols="auto" class="pb-10 pr-8">

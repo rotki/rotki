@@ -34,25 +34,25 @@ const total = computed<ProfitLossOverviewItem>(() =>
   calculateTotalProfitLoss(get(report))
 );
 
-const { tc } = useI18n();
+const { t } = useI18n();
 </script>
 
 <template>
   <card outlined-body :flat="flat">
     <template #title>
-      {{ tc('profit_loss_overview.title') }}
+      {{ t('profit_loss_overview.title') }}
     </template>
     <v-simple-table>
       <thead>
         <tr>
-          <th class="text-left" v-text="tc('common.type')" />
+          <th class="text-left" v-text="t('common.type')" />
           <th
             class="text-right"
-            v-text="tc('profit_loss_overview.headers.tax_free_profit_loss')"
+            v-text="t('profit_loss_overview.headers.tax_free_profit_loss')"
           />
           <th
             class="text-right"
-            v-text="tc('profit_loss_overview.headers.taxable_profit_loss')"
+            v-text="t('profit_loss_overview.headers.taxable_profit_loss')"
           />
         </tr>
       </thead>
@@ -83,7 +83,7 @@ const { tc } = useI18n();
         </tr>
         <tr>
           <td class="font-weight-medium text-subtitle-1">
-            {{ tc('common.total') }}
+            {{ t('common.total') }}
           </td>
           <td class="text-right font-weight-medium text-subtitle-1">
             <amount-display

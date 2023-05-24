@@ -19,7 +19,7 @@ export const useAccountMigrationStore = defineStore(
     const { txEvmChains, getChain } = useSupportedChains();
     const { fetchAccounts } = useBlockchains();
 
-    const { tc } = useI18n();
+    const { t } = useI18n();
     const { notify } = useNotificationsStore();
 
     const upgradeMigratedAddresses = (data: MigratedAddresses): void => {
@@ -56,20 +56,20 @@ export const useAccountMigrationStore = defineStore(
           useTokenDetection(blockchain).detectTokens(chainAddresses)
         );
         notifications.push({
-          title: tc(
+          title: t(
             'notification_messages.address_migration.title',
-            chainAddresses.length,
             {
               chain
-            }
+            },
+            chainAddresses.length
           ),
-          message: tc(
+          message: t(
             'notification_messages.address_migration.message',
-            chainAddresses.length,
             {
               chain,
               addresses: chainAddresses.join(', ')
-            }
+            },
+            chainAddresses.length
           ),
           severity: Severity.INFO,
           display: true,

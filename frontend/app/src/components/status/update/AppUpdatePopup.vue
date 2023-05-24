@@ -12,7 +12,7 @@ const { showUpdatePopup } = storeToRefs(store);
 const { checkForUpdate } = store;
 const { downloadUpdate, isPackaged, installUpdate } = useInterop();
 
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const dismiss = () => {
   set(showUpdatePopup, false);
@@ -34,7 +34,7 @@ const update = async () => {
     set(downloadReady, true);
     set(showUpdatePopup, true);
   } else {
-    set(error, tc('update_popup.download_failed.message'));
+    set(error, t('update_popup.download_failed.message'));
   }
 };
 
@@ -46,7 +46,7 @@ const install = async () => {
   if (typeof result !== 'boolean') {
     set(
       error,
-      tc('update_popup.install_failed.message', 0, {
+      t('update_popup.install_failed.message', {
         message: result
       })
     );
@@ -94,27 +94,27 @@ onMounted(async () => {
           {{ error }}
         </span>
         <span v-else-if="downloading">
-          {{ tc('update_popup.download_progress') }}
+          {{ t('update_popup.download_progress') }}
         </span>
         <div v-else-if="!downloadReady">
           <i18n tag="div" path="update_popup.messages">
             <template #releaseNotes>
               <base-external-link
-                :text="tc('update_popup.release_notes')"
+                :text="t('update_popup.release_notes')"
                 :href="releaseNotesLink"
               />
             </template>
           </i18n>
-          <div>{{ tc('update_popup.download_nudge') }}</div>
+          <div>{{ t('update_popup.download_nudge') }}</div>
         </div>
-        <span v-else>{{ tc('update_popup.downloaded') }}</span>
+        <span v-else>{{ t('update_popup.downloaded') }}</span>
       </v-col>
     </v-row>
     <v-row v-else align="center">
       <v-col cols="auto">
         <v-icon large color="primary"> mdi-spin mdi-loading </v-icon>
       </v-col>
-      <v-col class="text-body-1">{{ tc('update_popup.restart') }}</v-col>
+      <v-col class="text-body-1">{{ t('update_popup.restart') }}</v-col>
     </v-row>
 
     <v-progress-linear
@@ -126,7 +126,7 @@ onMounted(async () => {
     >
       <template #default="{ value }">
         <strong class="white--text">
-          {{ tc('update_popup.progress', 0, { percentage: Math.ceil(value) }) }}
+          {{ t('update_popup.progress', { percentage: Math.ceil(value) }) }}
         </strong>
       </template>
     </v-progress-linear>
@@ -134,12 +134,12 @@ onMounted(async () => {
     <template #action="{ attrs }">
       <div v-if="error">
         <v-btn text v-bind="attrs" @click="dismiss()">
-          {{ tc('common.actions.dismiss') }}
+          {{ t('common.actions.dismiss') }}
         </v-btn>
       </div>
       <div v-else-if="!downloading && !restarting">
         <v-btn text v-bind="attrs" @click="dismiss()">
-          {{ tc('common.actions.cancel') }}
+          {{ t('common.actions.cancel') }}
         </v-btn>
         <v-btn
           v-if="!downloadReady"
@@ -148,10 +148,10 @@ onMounted(async () => {
           v-bind="attrs"
           @click="update()"
         >
-          {{ tc('common.actions.update') }}
+          {{ t('common.actions.update') }}
         </v-btn>
         <v-btn v-else color="primary" text v-bind="attrs" @click="install()">
-          {{ tc('common.actions.install') }}
+          {{ t('common.actions.install') }}
         </v-btn>
       </div>
     </template>

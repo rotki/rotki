@@ -8,10 +8,10 @@ import {
 } from '@/types/history/events';
 
 export const useHistoryEventMappings = createSharedComposable(() => {
+  const { t, te } = useI18n();
+
   const { getTransactionTypeMappings, getHistoryEventCounterpartiesData } =
     useHistoryEventsApi();
-
-  const { tc } = useI18n();
 
   const defaultHistoryEventTypeData = () => ({
     globalMappings: {},
@@ -40,15 +40,15 @@ export const useHistoryEventMappings = createSharedComposable(() => {
     Object.keys(get(historyEventTypeGlobalMapping))
   );
 
-  const historyEventTypesData = useArrayMap(historyEventTypes, identifier => ({
-    identifier,
-    label:
-      tc(
-        `backend_mappings.events.history_event_type.${identifier
-          .split('_')
-          .join(' ')}`
-      )?.toString() || toSentenceCase(identifier)
-  }));
+  const historyEventTypesData = useArrayMap(historyEventTypes, identifier => {
+    const translationId = identifier.split('_').join(' ');
+    const translationKey = `backend_mappings.events.history_event_type.${translationId}`;
+
+    return {
+      identifier,
+      label: te(translationKey) ? t(translationKey) : toSentenceCase(identifier)
+    };
+  });
 
   const historyEventSubTypes: ComputedRef<string[]> = computed(() =>
     Object.values(get(historyEventTypeGlobalMapping)).flatMap(item =>
@@ -58,28 +58,33 @@ export const useHistoryEventMappings = createSharedComposable(() => {
 
   const historyEventSubTypesData = useArrayMap(
     historyEventSubTypes,
-    identifier => ({
-      identifier,
-      label:
-        tc(
-          `backend_mappings.events.history_event_subtype.${toSnakeCase(
-            identifier
-          )}`
-        )?.toString() || toSentenceCase(identifier)
-    })
+    identifier => {
+      const translationId = toSnakeCase(identifier);
+      const translationKey = `backend_mappings.events.history_event_subtype.${translationId}`;
+      return {
+        identifier,
+        label: te(translationKey)
+          ? t(translationKey)
+          : toSentenceCase(identifier)
+      };
+    }
   );
 
   const transactionEventTypesData = useRefMap(
     historyEventTypeData,
     ({ eventCategoryDetails }) =>
-      Object.entries(eventCategoryDetails).map(([identifier, data]) => ({
-        ...data,
-        identifier,
-        label:
-          tc(
-            `backend_mappings.events.type.${toSnakeCase(data.label)}`
-          )?.toString() || toSentenceCase(data.label)
-      }))
+      Object.entries(eventCategoryDetails).map(([identifier, data]) => {
+        const translationId = toSnakeCase(data.label);
+        const translationKey = `backend_mappings.events.type.${translationId}`;
+
+        return {
+          ...data,
+          identifier,
+          label: te(translationKey)
+            ? t(translationKey)
+            : toSentenceCase(data.label)
+        };
+      })
   );
 
   const historyEventTypeGlobalMapping = useRefMap(
@@ -166,7 +171,7 @@ export const useHistoryEventMappings = createSharedComposable(() => {
         )!;
       }
 
-      const unknownLabel = tc('backend_mappings.events.type.unknown');
+      const unknownLabel = t('backend_mappings.events.type.unknown');
 
       const { eventType, eventSubtype } = get(event);
       const label = showFallbackLabel
@@ -243,14 +248,18 @@ export const useHistoryEventMappings = createSharedComposable(() => {
   const accountingEventsTypeData: Ref<ActionDataEntry[]> = useRefMap(
     historyEventTypeData,
     ({ accountingEventsIcons }) =>
-      Object.entries(accountingEventsIcons).map(([identifier, icon]) => ({
-        identifier,
-        icon,
-        label:
-          tc(
-            `backend_mappings.profit_loss_event_type.${toSnakeCase(identifier)}`
-          )?.toString() || toCapitalCase(identifier)
-      }))
+      Object.entries(accountingEventsIcons).map(([identifier, icon]) => {
+        const translationId = toSnakeCase(identifier);
+        const translationKey = `backend_mappings.profit_loss_event_type.${translationId}`;
+
+        return {
+          identifier,
+          icon,
+          label: te(translationKey)
+            ? t(translationKey)
+            : toCapitalCase(identifier)
+        };
+      })
   );
 
   const getAccountingEventTypeData = (

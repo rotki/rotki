@@ -45,7 +45,7 @@ const { checkForUpdate, applyUpdates } = useAssets();
 const { connect, setConnected } = useMainStore();
 const { restartBackend } = useBackendManagement();
 
-const { tc } = useI18n();
+const { t } = useI18n();
 const { setMessage } = useMessageStore();
 
 const check = async () => {
@@ -67,7 +67,7 @@ const check = async () => {
       emit('skip');
     } else {
       setMessage({
-        description: tc('asset_update.up_to_date'),
+        description: t('asset_update.up_to_date'),
         success: true
       });
     }
@@ -131,11 +131,11 @@ const showDoneConfirmation = () => {
   } else {
     show(
       {
-        title: tc('asset_update.success.title'),
-        message: tc('asset_update.success.description', 0, {
+        title: t('asset_update.success.title'),
+        message: t('asset_update.success.description', {
           remoteVersion: get(changes).upToVersion
         }),
-        primaryAction: tc('asset_update.success.ok'),
+        primaryAction: t('asset_update.success.ok'),
         singleAction: true,
         type: 'success'
       },

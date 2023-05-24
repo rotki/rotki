@@ -10,7 +10,7 @@ const props = defineProps({
 });
 
 const { vault } = toRefs(props);
-const { tc } = useI18n();
+const { t } = useI18n();
 const ratio = computed(() => {
   const { collateralizationRatio } = get(vault);
   return collateralizationRatio ? collateralizationRatio : null;
@@ -18,15 +18,15 @@ const ratio = computed(() => {
 </script>
 
 <template>
-  <stat-card :title="tc('loan_collateral.title')">
-    <loan-row :title="tc('loan_collateral.locked_collateral')">
+  <stat-card :title="t('loan_collateral.title')">
+    <loan-row :title="t('loan_collateral.locked_collateral')">
       <balance-display
         :asset="vault.collateral.asset"
         :value="vault.collateral"
       />
     </loan-row>
     <v-divider class="my-4" />
-    <loan-row :title="tc('loan_collateral.current_ratio')" class="mb-2">
+    <loan-row :title="t('loan_collateral.current_ratio')" class="mb-2">
       <percentage-display :value="ratio" />
     </loan-row>
     <manage-watchers :vault="vault" />

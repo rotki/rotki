@@ -16,7 +16,7 @@ import {
 const addressBookDeletion = (location: Ref<AddressBookLocation>) => {
   const { show } = useConfirmStore();
 
-  const { tc } = useI18n();
+  const { t } = useI18n();
   const { notify } = useNotificationsStore();
   const { deleteAddressBook: deleteAddressBookCaller } =
     useAddressesNamesStore();
@@ -29,9 +29,9 @@ const addressBookDeletion = (location: Ref<AddressBookLocation>) => {
       await deleteAddressBookCaller(get(location), [{ address, blockchain }]);
     } catch (e: any) {
       const notification: NotificationPayload = {
-        title: tc('address_book.actions.delete.error.title'),
-        message: tc('address_book.actions.delete.error.description', 0, {
-          chain: blockchain || tc('common.multi_chain'),
+        title: t('address_book.actions.delete.error.title'),
+        message: t('address_book.actions.delete.error.description', {
+          chain: blockchain || t('common.multi_chain'),
           address,
           message: e.message
         }).toString(),
@@ -46,9 +46,9 @@ const addressBookDeletion = (location: Ref<AddressBookLocation>) => {
   const showDeleteConfirmation = (item: AddressBookEntry) => {
     show(
       {
-        title: tc('address_book.actions.delete.dialog.title'),
-        message: tc('address_book.actions.delete.dialog.message', 0, {
-          chain: item.blockchain || tc('common.multi_chain'),
+        title: t('address_book.actions.delete.dialog.title'),
+        message: t('address_book.actions.delete.dialog.message', {
+          chain: item.blockchain || t('common.multi_chain'),
           address: item.address
         })
       },
@@ -82,7 +82,7 @@ const addressesNamesStore = useAddressesNamesStore();
 const { fetchAddressBook } = addressesNamesStore;
 const { addressBookEntries } = toRefs(addressesNamesStore);
 
-const { t, tc } = useI18n();
+const { t } = useI18n();
 
 const data = computed<AddressBookEntries>(
   () => get(addressBookEntries)[get(location)]
@@ -151,8 +151,8 @@ const { showDeleteConfirmation } = addressBookDeletion(location);
       <template #item.actions="{ item }">
         <row-actions
           :disabled="loading"
-          :delete-tooltip="tc('address_book.actions.delete.tooltip')"
-          :edit-tooltip="tc('address_book.actions.edit.tooltip')"
+          :delete-tooltip="t('address_book.actions.delete.tooltip')"
+          :edit-tooltip="t('address_book.actions.edit.tooltip')"
           @delete-click="showDeleteConfirmation(item)"
           @edit-click="edit(item)"
         />

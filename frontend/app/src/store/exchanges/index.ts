@@ -17,7 +17,7 @@ export const useExchangesStore = defineStore('exchanges', () => {
   const { queryRemoveExchange, querySetupExchange } = useExchangeApi();
   const { setMessage } = useMessageStore();
 
-  const { t, tc } = useI18n();
+  const { t } = useI18n();
 
   const getExchangeNonce = (exchange: SupportedExchange): ComputedRef<number> =>
     computed(
@@ -88,8 +88,8 @@ export const useExchangesStore = defineStore('exchanges', () => {
       return success;
     } catch (e: any) {
       setMessage({
-        title: tc('actions.balances.exchange_removal.title'),
-        description: tc('actions.balances.exchange_removal.description', 0, {
+        title: t('actions.balances.exchange_removal.title'),
+        description: t('actions.balances.exchange_removal.description', {
           exchange,
           error: e.message
         })

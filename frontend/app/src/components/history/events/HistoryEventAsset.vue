@@ -13,7 +13,7 @@ const props = withDefaults(
   }
 );
 
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const { event, showEventDetail } = toRefs(props);
 const { assetSymbol } = useAssetInfoRetrieval();
@@ -83,8 +83,8 @@ const showLiquityDetail = computed(() => {
             <div class="success--text font-weight-bold">
               {{
                 open
-                  ? tc('liquity_staking_details.view.hide')
-                  : tc('liquity_staking_details.view.show')
+                  ? t('liquity_staking_details.view.hide')
+                  : t('liquity_staking_details.view.show')
               }}
             </div>
           </template>

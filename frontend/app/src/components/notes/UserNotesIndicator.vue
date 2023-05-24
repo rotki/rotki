@@ -6,7 +6,7 @@ const props = defineProps({
 const emit = defineEmits<{ (e: 'visible:update', visible: boolean): void }>();
 
 const { visible } = toRefs(props);
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const toggleVisibility = () => {
   emit('visible:update', !get(visible));
@@ -15,7 +15,7 @@ const toggleVisibility = () => {
 
 <template>
   <menu-tooltip-button
-    :tooltip="tc('notes_menu.tooltip')"
+    :tooltip="t('notes_menu.tooltip')"
     class-name="secondary--text text--lighten-4"
     @click="toggleVisibility()"
   >

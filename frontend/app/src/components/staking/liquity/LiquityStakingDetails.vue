@@ -22,7 +22,7 @@ const loading = isLoading(Section.DEFI_LIQUITY_STAKING);
 
 const chains = [Blockchain.ETH];
 
-const { tc } = useI18n();
+const { t } = useI18n();
 
 const emit = defineEmits<{
   (e: 'refresh', refresh: boolean): void;
@@ -262,7 +262,7 @@ const css = useCssModule();
       <v-col sm="6" cols="10">
         <blockchain-account-selector
           v-model="selectedAccounts"
-          :label="tc('liquity_staking_details.select_account')"
+          :label="t('liquity_staking_details.select_account')"
           :chains="chains"
           dense
           outlined
@@ -290,7 +290,7 @@ const css = useCssModule();
                 </v-chip>
                 <div class="ml-2">
                   {{
-                    tc('liquity_staking_details.has_proxy_addresses', 0, {
+                    t('liquity_staking_details.has_proxy_addresses', {
                       length: proxies.length
                     })
                   }}
@@ -321,7 +321,7 @@ const css = useCssModule();
       </v-col>
       <v-col cols="auto" class="pl-2">
         <refresh-button
-          :tooltip="tc('liquity_staking_details.refresh_tooltip')"
+          :tooltip="t('liquity_staking_details.refresh_tooltip')"
           :loading="loading"
           @refresh="refresh()"
         />
@@ -347,7 +347,7 @@ const css = useCssModule();
 
     <history-events-view
       use-external-account-filter
-      :section-title="tc('liquity_staking_events.title')"
+      :section-title="t('liquity_staking_events.title')"
       :protocols="['liquity']"
       :external-account-filter="selectedAccounts"
       :only-chains="chains"

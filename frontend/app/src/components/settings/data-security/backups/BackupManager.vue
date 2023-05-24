@@ -182,7 +182,7 @@ const setupBackupActions = (
 
 const selected = ref<UserDbBackup[]>([]);
 
-const { t, tc } = useI18n();
+const { t } = useI18n();
 const { backupInfo, directory, loadInfo, loading, backups, userDb, globalDb } =
   setupBackupInfo();
 
@@ -202,8 +202,8 @@ const { show } = useConfirmStore();
 const showMassDeleteConfirmation = () => {
   show(
     {
-      title: tc('database_backups.confirm.title'),
-      message: tc('database_backups.confirm.mass_message', 0, {
+      title: t('database_backups.confirm.title'),
+      message: t('database_backups.confirm.mass_message', {
         length: get(selected).length
       })
     },
@@ -225,7 +225,7 @@ const showMassDeleteConfirmation = () => {
       <template #details>
         <refresh-button
           :loading="loading"
-          :tooltip="tc('database_manager.refresh_tooltip')"
+          :tooltip="t('database_manager.refresh_tooltip')"
           @refresh="loadInfo()"
         />
       </template>
