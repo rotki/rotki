@@ -9,7 +9,7 @@ export const useYearnApi = () => {
     reset?: boolean
   ): Promise<PendingTask> => {
     const path = protocolVersion === ProtocolVersion.V1 ? 'vaults' : 'vaultsv2';
-    const url = `/blockchains/ETH/modules/yearn/${path}/history`;
+    const url = `/blockchains/eth/modules/yearn/${path}/history`;
     const params = reset ? { resetDbData: true } : undefined;
     return fetchExternalAsync(api.instance, url, params);
   };
@@ -18,7 +18,7 @@ export const useYearnApi = () => {
     protocolVersion: ProtocolVersion = ProtocolVersion.V1
   ): Promise<PendingTask> => {
     const path = protocolVersion === ProtocolVersion.V1 ? 'vaults' : 'vaultsv2';
-    const url = `/blockchains/ETH/modules/yearn/${path}/balances`;
+    const url = `/blockchains/eth/modules/yearn/${path}/balances`;
     return fetchExternalAsync(api.instance, url);
   };
 

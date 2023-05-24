@@ -1,4 +1,4 @@
-import { type Blockchain } from '@rotki/common/lib/blockchain';
+import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type MaybeRef } from '@vueuse/core';
 import { type Ref } from 'vue';
 import { type AssetBalances } from '@/types/balances';
@@ -13,8 +13,8 @@ type Totals = Record<BtcChains, AssetBalances>;
 type Balances = Record<BtcChains, BtcBalances>;
 
 const defaultTotals = (): Totals => ({
-  BTC: {},
-  BCH: {}
+  [Blockchain.BTC]: {},
+  [Blockchain.BCH]: {}
 });
 
 const defaultBtcBalances = (): BtcBalances => ({
@@ -23,8 +23,8 @@ const defaultBtcBalances = (): BtcBalances => ({
 });
 
 const defaultBalances = (): Balances => ({
-  BTC: defaultBtcBalances(),
-  BCH: defaultBtcBalances()
+  [Blockchain.BTC]: defaultBtcBalances(),
+  [Blockchain.BCH]: defaultBtcBalances()
 });
 
 export const useBtcBalancesStore = defineStore('balances/btc', () => {

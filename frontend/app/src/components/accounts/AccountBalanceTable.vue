@@ -301,7 +301,7 @@ const asset: ComputedRef<string> = computed(() => {
     (chain === Blockchain.ETH2 && get(treatEth2AsEth)) ||
     chain === Blockchain.OPTIMISM
   ) {
-    return 'ETH';
+    return Blockchain.ETH;
   }
 
   return chain;
@@ -322,7 +322,7 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
     { text: '', value: 'accountSelection', width: '34px', sortable: false },
     { text: accountHeader, value: 'label', sortable: false },
     {
-      text: get(asset),
+      text: get(asset).toUpperCase(),
       value: 'balance.amount',
       align: 'end'
     },

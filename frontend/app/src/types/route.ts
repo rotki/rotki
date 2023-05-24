@@ -47,7 +47,7 @@ export const RouterAccountsSchema = z.object({
           const address = parsed[0];
           const chain = parsed[1];
 
-          if (chain in Blockchain || chain === 'ALL') {
+          if (chain.toUpperCase() in Blockchain || chain === 'ALL') {
             mapped.push({
               address,
               chain: chain as BlockchainSelection

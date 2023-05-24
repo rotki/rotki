@@ -17,7 +17,7 @@ import { type PendingTask } from '@/types/task';
 export const useBlockchainBalancesApi = () => {
   const queryLoopringBalances = async (): Promise<PendingTask> => {
     const response = await api.instance.get<ActionResult<PendingTask>>(
-      'blockchains/ETH/modules/loopring/balances',
+      'blockchains/eth/modules/loopring/balances',
       {
         params: snakeCaseTransformer({ asyncQuery: true }),
         validateStatus: validWithSessionAndExternalService
@@ -87,8 +87,8 @@ export const useBlockchainBalancesApi = () => {
     module: Nullable<Module> = null
   ): Promise<boolean> => {
     const url = module
-      ? `/blockchains/ETH/modules/${module}/data`
-      : `/blockchains/ETH/modules/data`;
+      ? `/blockchains/eth/modules/${module}/data`
+      : `/blockchains/eth/modules/data`;
     const response = await api.instance.delete<ActionResult<boolean>>(url, {
       validateStatus: validStatus
     });

@@ -26,10 +26,12 @@ export class BlockchainBalancesPage extends AccountBalancesPage {
     cy.get('.big-dialog').should('be.visible');
     cy.get('[data-cy="blockchain-balance-form"]').should('be.visible');
     cy.get('[data-cy="account-blockchain-field"]').parent().click();
-    cy.get('.v-menu__content').contains(balance.blockchain).click();
+    cy.get('.v-menu__content')
+      .contains(balance.blockchain.toUpperCase())
+      .click();
     cy.get('[data-cy="input-mode-manual"]').click();
 
-    if (balance.blockchain === 'ETH') {
+    if (balance.blockchain === Blockchain.ETH) {
       setCheckBox('[data-cy="account-all-evm-chains"]', false);
     }
 
@@ -43,7 +45,7 @@ export class BlockchainBalancesPage extends AccountBalancesPage {
 
     cy.get('.big-dialog__buttons__confirm').click();
 
-    if (balance.blockchain === 'ETH') {
+    if (balance.blockchain === Blockchain.ETH) {
       waitForAsyncQuery(
         {
           method: 'POST',
@@ -123,7 +125,7 @@ export class BlockchainBalancesPage extends AccountBalancesPage {
           }).should('not.be.exist');
 
           cy.get(
-            `${tableClass} tr:contains(${blockchainBalance.symbol}) td:nth-child(4) [data-cy="display-amount"]`,
+            `${tableClass} tr:contains(${blockchainBalance.symbol.toUpperCase()}) td:nth-child(4) [data-cy="display-amount"]`,
             {
               timeout: 120000
             }

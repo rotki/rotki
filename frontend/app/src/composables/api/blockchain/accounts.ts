@@ -211,7 +211,7 @@ export const useBlockchainAccountsApi = () => {
 
   const getEth2Validators = async (): Promise<Eth2Validators> => {
     const response = await api.instance.get<ActionResult<Eth2Validators>>(
-      '/blockchains/ETH2/validators',
+      '/blockchains/eth2/validators',
       {
         validateStatus: validWithSessionStatus
       }
@@ -224,7 +224,7 @@ export const useBlockchainAccountsApi = () => {
     payload: Eth2Validator
   ): Promise<PendingTask> => {
     const response = await api.instance.put<ActionResult<PendingTask>>(
-      '/blockchains/ETH2/validators',
+      '/blockchains/eth2/validators',
       snakeCaseTransformer({ ...payload, asyncQuery: true }),
       {
         validateStatus: validAuthorizedStatus
@@ -238,7 +238,7 @@ export const useBlockchainAccountsApi = () => {
     validators: Eth2ValidatorEntry[]
   ): Promise<boolean> => {
     const response = await api.instance.delete<ActionResult<boolean>>(
-      '/blockchains/ETH2/validators',
+      '/blockchains/eth2/validators',
       {
         data: snakeCaseTransformer({
           validators: validators.map(({ validatorIndex }) => validatorIndex)
@@ -254,7 +254,7 @@ export const useBlockchainAccountsApi = () => {
     validatorIndex
   }: Eth2Validator): Promise<boolean> => {
     const response = await api.instance.patch<ActionResult<boolean>>(
-      '/blockchains/ETH2/validators',
+      '/blockchains/eth2/validators',
       snakeCaseTransformer({ ownershipPercentage, validatorIndex }),
       {
         validateStatus: validWithSessionAndExternalService
