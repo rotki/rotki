@@ -104,7 +104,6 @@ from rotkehlchen.api.v1.schemas import (
     ManualPriceDeleteSchema,
     ManualPriceRegisteredSchema,
     ManualPriceSchema,
-    ModifyEvmTokenSchema,
     NameDeleteSchema,
     NamedEthereumModuleDataSchema,
     NamedOracleCacheCreateSchema,
@@ -114,7 +113,6 @@ from rotkehlchen.api.v1.schemas import (
     NFTFilterQuerySchema,
     NFTLpFilterSchema,
     OptionalAddressesWithBlockchainsListSchema,
-    OptionalEthereumAddressSchema,
     QueriedAddressesSchema,
     ReverseEnsSchema,
     RpcAddNodeSchema,
@@ -152,13 +150,7 @@ from rotkehlchen.api.v1.schemas import (
     XpubAddSchema,
     XpubPatchSchema,
 )
-from rotkehlchen.assets.asset import (
-    Asset,
-    AssetWithNameAndType,
-    AssetWithOracles,
-    CustomAsset,
-    EvmToken,
-)
+from rotkehlchen.assets.asset import Asset, AssetWithNameAndType, AssetWithOracles, CustomAsset
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.accounts import SingleBlockchainAccountData
@@ -190,7 +182,6 @@ from rotkehlchen.serialization.schemas import (
     AssetSchema,
     BaseCustomAssetSchema,
     CustomAssetWithIdentifierSchema,
-    RequiredEvmAddressSchema,
 )
 from rotkehlchen.serialization.serialize import process_result
 from rotkehlchen.types import (
@@ -201,7 +192,6 @@ from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
     AssetAmount,
-    ChainID,
     ChecksumEvmAddress,
     Eth2PubKey,
     EVMTxHash,
@@ -828,36 +818,6 @@ class AssetsReplaceResource(BaseMethodView):
             source_identifier=source_identifier,
             target_asset=target_asset,
         )
-
-
-class EthereumAssetsResource(BaseMethodView):
-
-    get_schema = OptionalEthereumAddressSchema()
-    delete_schema = RequiredEvmAddressSchema()
-
-    def make_edit_schema(self) -> ModifyEvmTokenSchema:
-        return ModifyEvmTokenSchema(
-            coingecko=self.rest_api.rotkehlchen.coingecko,
-            cryptocompare=self.rest_api.rotkehlchen.cryptocompare,
-        )
-
-    @use_kwargs(get_schema, location='json_and_query')
-    def get(self, address: Optional[ChecksumEvmAddress], evm_chain: ChainID) -> Response:
-        return self.rest_api.get_custom_evm_tokens(address=address, chain_id=evm_chain)
-
-    @require_loggedin_user()
-    @resource_parser.use_kwargs(make_edit_schema, location='json')
-    def put(self, token: EvmToken) -> Response:
-        return self.rest_api.add_custom_evm_token(token=token)
-
-    @resource_parser.use_kwargs(make_edit_schema, location='json')
-    def patch(self, token: EvmToken) -> Response:
-        return self.rest_api.edit_custom_evm_token(token=token)
-
-    @require_loggedin_user()
-    @use_kwargs(delete_schema, location='json')
-    def delete(self, address: ChecksumEvmAddress, evm_chain: ChainID) -> Response:
-        return self.rest_api.delete_custom_evm_token(address=address, chain_id=evm_chain)
 
 
 class AssetUpdatesResource(BaseMethodView):

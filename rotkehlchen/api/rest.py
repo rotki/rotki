@@ -48,7 +48,6 @@ from rotkehlchen.assets.asset import (
     AssetWithNameAndType,
     AssetWithOracles,
     CustomAsset,
-    EvmToken,
     FiatAsset,
 )
 from rotkehlchen.assets.resolver import AssetResolver
@@ -93,7 +92,7 @@ from rotkehlchen.constants.misc import (
     ONE,
     ZERO_PRICE,
 )
-from rotkehlchen.constants.resolver import ChainID, evm_address_to_identifier
+from rotkehlchen.constants.resolver import ChainID
 from rotkehlchen.constants.timing import ENS_AVATARS_REFRESH
 from rotkehlchen.data_import.manager import DataImportSource
 from rotkehlchen.db.addressbook import DBAddressbook
@@ -185,7 +184,6 @@ from rotkehlchen.types import (
     BTCAddress,
     ChecksumEvmAddress,
     Eth2PubKey,
-    EvmTokenKind,
     EVMTxHash,
     ExternalService,
     ExternalServiceApiCredentials,
@@ -1416,96 +1414,6 @@ class RestAPI():
         # Also clear the in-memory cache of the asset resolver
         AssetResolver().assets_cache.remove(source_identifier)
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
-
-    @staticmethod
-    def get_custom_evm_tokens(
-            address: Optional[ChecksumEvmAddress],
-            chain_id: ChainID,
-    ) -> Response:
-        if address is not None:
-            token = GlobalDBHandler().get_evm_token(
-                address=address,
-                chain_id=chain_id,
-            )
-            if token is None:
-                result = wrap_in_fail_result(f'Custom token with address {address} and chain {chain_id.to_name()} not found')  # noqa: E501
-                status_code = HTTPStatus.NOT_FOUND
-            else:
-                result = _wrap_in_ok_result(token.to_dict())
-                status_code = HTTPStatus.OK
-
-            return api_response(result, status_code)
-
-        # else return all custom tokens
-        tokens = GlobalDBHandler().get_evm_tokens(chain_id=chain_id)
-        return api_response(
-            _wrap_in_ok_result([x.to_dict() for x in tokens]),
-            status_code=HTTPStatus.OK,
-            log_result=False,
-        )
-
-    def add_custom_evm_token(self, token: EvmToken) -> Response:
-        try:
-            GlobalDBHandler().add_asset(token)
-        except InputError as e:
-            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
-
-        with self.rotkehlchen.data.db.user_write() as cursor:
-            # clean token detection cache.
-            cursor.execute('DELETE from evm_accounts_details;')
-            self.rotkehlchen.data.db.add_asset_identifiers(cursor, [token.identifier])
-
-        return api_response(
-            _wrap_in_ok_result({'identifier': token.identifier}),
-            status_code=HTTPStatus.OK,
-        )
-
-    def edit_custom_evm_token(self, token: EvmToken) -> Response:
-        try:
-            identifier = GlobalDBHandler().edit_evm_token(token)
-        except InputError as e:
-            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
-
-        # Also clear the in-memory cache of the asset resolver to requery DB
-        AssetResolver().assets_cache.remove(identifier)
-        # clear the icon cache in case the coingecko id was edited
-        self.rotkehlchen.icon_manager.failed_asset_ids.remove(token.identifier)
-
-        return api_response(
-            result=_wrap_in_ok_result({'identifier': identifier}),
-            status_code=HTTPStatus.OK,
-        )
-
-    def delete_custom_evm_token(
-            self,
-            address: ChecksumEvmAddress,
-            chain_id: ChainID,
-    ) -> Response:
-        try:
-            with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
-                # Before deleting, also make sure we have up to date global DB owned data
-                self.rotkehlchen.data.db.update_owned_assets_in_globaldb(cursor)
-                identifier = evm_address_to_identifier(
-                    address=address,
-                    chain_id=chain_id,
-                    token_type=EvmTokenKind.ERC20,
-                )
-
-            with self.rotkehlchen.data.db.user_write() as write_cursor:
-                self.rotkehlchen.data.db.delete_asset_identifier(write_cursor, identifier)
-                identifier = GlobalDBHandler().delete_evm_token(address=address, chain_id=chain_id)
-        except InputError as e:
-            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
-
-        # Also clear the in-memory cache of the asset resolver
-        AssetResolver().assets_cache.remove(identifier)
-        # clear the icon cache in case the asset was there
-        self.rotkehlchen.icon_manager.failed_asset_ids.remove(identifier)
-
-        return api_response(
-            result=_wrap_in_ok_result({'identifier': identifier}),
-            status_code=HTTPStatus.OK,
-        )
 
     def rebuild_assets_information(
             self,

@@ -2939,7 +2939,7 @@ Querying all supported assets
                   "name": "0xBitcoin",
                   "started": 1517875200,
                   "symbol": "0xBTC",
-                  "type": "ethereum token"
+                  "asset_type": "evm token"
                   "cryptocompare":"0xbtc",
                   "coingecko":"0xbtc",
                   "protocol":"None"
@@ -2949,7 +2949,7 @@ Querying all supported assets
                   "name": "Decred",
                   "started": 1450137600,
                   "symbol": "DCR",
-                  "type": "own chain"
+                  "asset_type": "own chain"
               },
               {
                   "identifier": "eip155:1/erc20:0xcC4eF9EEAF656aC1a2Ab886743E98e97E090ed38",
@@ -2960,7 +2960,7 @@ Querying all supported assets
                   "name": "DigitalDevelopersFund",
                   "started": 1498504259,
                   "symbol": "DDF",
-                  "type": "ethereum token"
+                  "asset_type": "evm token"
                   "cryptocompare":"DDF",
                   "coingecko":"ddf",
                   "protocol":"None"
@@ -2971,13 +2971,13 @@ Querying all supported assets
                   "name": "Ethereum classic",
                   "started": 1469020840,
                   "symbol": "ETC",
-                  "type": "own chain"
+                  "asset_type": "own chain"
               },
               {
                   "identifier": "KRW",
                   "name": "Korean won",
                   "symbol": "KRW",
-                  "type": "fiat"
+                  "asset_type": "fiat"
               },
               {
                   "identifier": "eip155:1/erc20:0xD850942eF8811f2A866692A623011bDE52a462C1",
@@ -2989,7 +2989,7 @@ Querying all supported assets
                   "started": 1503360000,
                   "swapped_for": "VET",
                   "symbol": "VEN",
-                  "type": "ethereum token",
+                  "asset_type": "evm token",
                   "coingecko": "vechain"
                   "cryptocompare":"VET",
                   "coingecko":"vet",
@@ -3000,7 +3000,7 @@ Querying all supported assets
       }
 
    :resjson list result: A list of assets that match the query with their respective asset details.
-   :resjson string type: The type of asset. Valid values are ethereum token, own chain, omni token and more. For all valid values check `here <https://github.com/rotki/rotki/blob/8387c96eb77f9904b44a1ddd0eb2acbf3f8d03f6/rotkehlchen/assets/types.py#L10>`_.
+   :resjson string asset_type: The type of asset. Valid values are ethereum token, own chain, omni token and more. For all valid values check `here <https://github.com/rotki/rotki/blob/8387c96eb77f9904b44a1ddd0eb2acbf3f8d03f6/rotkehlchen/assets/types.py#L10>`_.
    :resjson integer started: An optional unix timestamp denoting when we know the asset started to have a price.
    :resjson string name: The long name of the asset. Does not need to be the same as the unique identifier.
    :resjson string forked: An optional attribute representing another asset out of which this asset forked from. For example ``ETC`` would have ``ETH`` here.
@@ -3318,223 +3318,6 @@ Detecting owned tokens
   :statuscode 409: No user is currently logged in.
   :statuscode 500: Internal rotki error
 
-Getting custom EVM tokens
-==================================
-
-.. http:get:: /api/(version)/assets/ethereum
-
-   Doing a GET on the ethereum assets endpoint will return a list of all custom EVM tokens. You can also optionally specify an ethereum address to get its token details. If you query by address only a single object is returned. If you query without, a list of objects.
-
-   **Example Request**:
-
-   .. http:example:: curl wget httpie python-requests
-
-      GET /api/1/assets/ethereum HTTP/1.1
-      Host: localhost:5042
-      Content-Type: application/json;charset=UTF-8
-
-      {"address": "0x1169C72f36A843cD3a3713a76019FAB9503B2807", "evm_chain": "ethereum"}
-
-   :reqjson string address: An optional address to query for ethereum token info. If given only token info of this address are returned. As an object. **not a list**. If not given, a list of all known tokens is returned.
-   :reqjson string evm_chain: An optional name for the evm chain for which to filter the addresses for. Values like: "ethereum", "optimism" etc.
-
-   **Example Response**:
-
-   .. sourcecode:: http
-
-      HTTP/1.1 200 OK
-      Content-Type: application/json
-
-      {
-          "result": {
-              "identifier": "eip155:1/erc20:0x1169C72f36A843cD3a3713a76019FAB9503B2807",
-              "address": "0x1169C72f36A843cD3a3713a76019FAB9503B2807",
-              "evm_chain":"ethereum",
-              "token_kind":"erc20",
-              "decimals": 18,
-              "name": "foo",
-              "symbol": "FTK",
-              "started": 1614636432,
-              "swapped_for": "SCT",
-              "coingecko": "foo-coin",
-              "cryptocompare": "FOO",
-              "protocol": "uniswap",
-              "underlying_tokens": [
-                  {"address": "0x4a363BDcF9C139c0B77d929C8c8c5f971a38490c", "evm_chain":"ethereum", "token_kind":"erc20", "weight": "15.45"},
-                  {"address": "0xf627B24754583896AbB6376b1e231A3B26d86c99", "evm_chain":"ethereum", "token_kind":"erc20", "weight": "35.65"},
-                  {"address": "0x2B18982803EF09529406e738f344A0c1A54fA1EB", "evm_chain":"ethereum", "token_kind":"erc20", "weight": "39"}
-              ]
-          },
-          "message": ""
-      }
-
-   .. _custom_evm_token:
-
-   :resjson list result: A list of evm tokens
-   :resjsonarr string identifier: The rotki identifier of the token. This is only returned from the GET endpoint and not input from the add/edit one.
-   :resjsonarr string address: The address of the token. This is a required field.
-   :resjsonarr string evm_chain: The chain where the token is deployed. This is a required field.
-   :resjsonarr string token_kind: The kind of the token. This is a required field.
-   :resjsonarr integer decimals: Ethereum token decimals. Can be missing if not known.
-   :resjsonarr string name: Asset name. Can be missing if not known.
-   :resjsonarr string symbol: Asset symbol. Can be missing if not known.
-   :resjsonarr integer started: The timestamp of the token deployment. Can be missing if not known.
-   :resjsonarr string swapped_for: If this token was swapped for another one then here we would have the identifier of that other token. If not this is null.
-   :resjsonarr string coingecko: The coingecko identifier for the asset. can be missing if not known.
-   :resjsonarr string cryptocompare: The cryptocompare identifier for the asset. can be missing if not known.
-   :resjsonarr string protocol: A name for the protocol the token belongs to. For example uniswap for all uniswap LP tokens. Can be missing if not known or there is no protocol the token belongs to.
-   :resjsonarr list underlying_tokens: Optional. If the token is an LP token or a token set or something similar which represents a pool of multiple other tokens, then this is a list of the underlying token addresses, chain, token kind and a percentage that each token contributes to the pool.
-   :statuscode 200: Assets successfully queried.
-   :statuscode 400: Provided JSON is in some way malformed
-   :statuscode 404: Queried by address and no token was found.
-   :statuscode 500: Internal rotki error
-
-Adding custom ethereum tokens
-==================================
-
-.. http:put:: /api/(version)/assets/ethereum
-
-   Doing a PUT on the ethereum assets endpoint will allow you to add a new ethereum token in the global rotki DB. Returns the asset identifier of the new custom token. For ethereum ones it's ``eip155:1/erc20:0xADDRESS``
-
-   **Example Request**:
-
-   .. http:example:: curl wget httpie python-requests
-
-      PUT /api/1/assets/ethereum HTTP/1.1
-      Host: localhost:5042
-      Content-Type: application/json;charset=UTF-8
-
-      {"token": {
-          "address": "0x1169C72f36A843cD3a3713a76019FAB9503B2807",
-          "chain":"ethereum",
-          "token_kind":"erc20",
-          "decimals": 18,
-          "name": "foo",
-          "symbol": "FTK",
-          "started": 1614636432,
-          "swapped_for": "SCT",
-          "coingecko": "foo-coin",
-          "cryptocompare": "FOO",
-          "protocol": "uniswap",
-          "underlying_tokens": [
-              {"address": "0x4a363BDcF9C139c0B77d929C8c8c5f971a38490c", "token_kind":"erc20", "weight": "15.45"},
-              {"address": "0xf627B24754583896AbB6376b1e231A3B26d86c99", "token_kind":"erc20", "weight": "35.65"},
-              {"address": "0x2B18982803EF09529406e738f344A0c1A54fA1EB", "token_kind":"erc20", "weight": "39"}
-         ]
-       }}
-
-   :reqjson object token: A token to add. For details on the possible fields see `here <custom_evm_token_>`_.
-
-   **Example Response**:
-
-   .. sourcecode:: http
-
-      HTTP/1.1 200 OK
-      Content-Type: application/json
-
-      {
-          "result": {"identifier": "eip155:1/erc20:0x1169C72f36A843cD3a3713a76019FAB9503B2807"},
-          "message": ""
-      }
-
-
-   :resjson string identifier: The identifier of the newly added token.
-   :statuscode 200: Asset successfully added.
-   :statuscode 400: Provided JSON is in some way malformed
-   :statuscode 409: Some conflict at addition. For example token address is already in the DB.
-   :statuscode 500: Internal rotki error
-
-Editing custom ethereum tokens
-==================================
-
-.. http:patch:: /api/(version)/assets/ethereum
-
-   Doing a PATCH on the ethereum assets endpoint will allow you to edit an existing ethereum token in the global rotki DB. Returns the asset identifier of the edited token for success.
-
-   **Example Request**:
-
-   .. http:example:: curl wget httpie python-requests
-
-      PATCH /api/1/assets/ethereum HTTP/1.1
-      Host: localhost:5042
-      Content-Type: application/json;charset=UTF-8
-
-      {
-          "token": {
-              "address": "0x1169C72f36A843cD3a3713a76019FAB9503B2807",
-              "evm_chain": "ethereum",
-              "decimals": 5,
-              "name": "foo",
-              "symbol": "FTK",
-              "started": 1614636432,
-              "swapped_for": "SCP",
-              "coingecko": "foo-coin",
-              "cryptocompare": "FOO",
-              "protocol": "aave"
-         }
-      }
-
-   :reqjson object token: Token to edit. Token is edited by address. The old token is completely replaced by all new entries passed by this endpoint. For details on the possible fields see `here <custom_evm_token_>`_.
-
-   **Example Response**:
-
-   .. sourcecode:: http
-
-      HTTP/1.1 200 OK
-      Content-Type: application/json
-
-      {
-          "result": {"identifier": "eip155:1/erc20:0x1169C72f36A843cD3a3713a76019FAB9503B2807"},
-          "message": ""
-      }
-
-
-   :resjson string identifier: The identifier of the edited token.
-   :statuscode 200: Asset successfully edited.
-   :statuscode 400: Provided JSON is in some way malformed
-   :statuscode 409: Some conflict at editing. For example token address does not exist in the DB.
-   :statuscode 500: Internal rotki error
-
-Deleting custom ethereum tokens
-==================================
-
-.. http:delete:: /api/(version)/assets/ethereum
-
-   Doing a DELETE on the ethereum assets endpoint will allow you to delete an existing ethereum token from the global rotki DB by address.
-
-   **Example Request**:
-
-   .. http:example:: curl wget httpie python-requests
-
-      DELETE /api/1/assets/ethereum HTTP/1.1
-      Host: localhost:5042
-      Content-Type: application/json;charset=UTF-8
-
-      {"address": "0x1169C72f36A843cD3a3713a76019FAB9503B2807", "evm_chain": "ethereum"}
-
-   :reqjson string address: Address of the token to delete.
-   :reqjson string evm_chain: The name of the evm chain for which to delete the token. "ethereum", "optimism" etc.
-
-   **Example Response**:
-
-   .. sourcecode:: http
-
-      HTTP/1.1 200 OK
-      Content-Type: application/json
-
-      {
-          "result": {"identifier": "eip155:1/erc20:0x1169C72f36A843cD3a3713a76019FAB9503B2807"},
-          "message": ""
-      }
-
-
-   :resjson string identifier: The rotki identifier of the token that was deleted.
-   :statuscode 200: Asset successfully deleted.
-   :statuscode 400: Provided JSON is in some way malformed
-   :statuscode 409: Some conflict at deleting. For example token address does not exist in the DB.
-   :statuscode 500: Internal rotki error
-
-
 Get asset types
 =================
 
@@ -3634,7 +3417,7 @@ Editing custom assets
 
    .. http:example:: curl wget httpie python-requests
 
-      PUT /api/1/assets/ethereum HTTP/1.1
+      PATCH /api/1/assets/all HTTP/1.1
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
