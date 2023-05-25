@@ -363,7 +363,6 @@ class Rotkehlchen():
             connect_at_start=optimism_nodes,
         )
         optimism_manager = OptimismManager(optimism_inquirer)
-        # POLYGON_TODO: populate polygon nodes and update default nodes
         polygon_pos_nodes = self.data.db.get_rpc_nodes(blockchain=SupportedBlockchain.POLYGON_POS, only_active=True)  # noqa: E501
         polygon_pos_inquirer = PolygonPOSInquirer(
             greenlet_manager=self.greenlet_manager,
