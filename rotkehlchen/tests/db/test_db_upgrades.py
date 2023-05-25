@@ -18,6 +18,7 @@ from rotkehlchen.db.upgrade_manager import (
     UPGRADES_LIST,
     DBUpgradeProgressHandler,
 )
+from rotkehlchen.db.upgrades.v37_v38 import DEFAULT_POLYGON_NODES_AT_V38
 from rotkehlchen.db.utils import table_exists
 from rotkehlchen.errors.misc import DBUpgradeError
 from rotkehlchen.tests.utils.database import (
@@ -1536,6 +1537,8 @@ def test_upgrade_db_37_to_38(user_data_dir):  # pylint: disable=unused-argument
     )
     cursor = db_v37.conn.cursor()
     assert cursor.execute('SELECT MAX(seq) FROM location').fetchone()[0] == 39
+    nodes_before = cursor.execute('SELECT * FROM rpc_nodes').fetchall()
+    max_initial_node_id = cursor.execute('SELECT MAX(identifier) FROM rpc_nodes').fetchone()[0]
 
     db_v37.logout()
     # Execute upgrade
@@ -1550,6 +1553,12 @@ def test_upgrade_db_37_to_38(user_data_dir):  # pylint: disable=unused-argument
         'SELECT location FROM location WHERE seq=?',
         (Location.POLYGON_POS.value,),
     ).fetchone()[0] == Location.POLYGON_POS.serialize_for_db()
+    nodes_after = cursor.execute('SELECT * FROM rpc_nodes').fetchall()
+    default_polygon_nodes_with_ids = [
+        (id, *node)
+        for id, node in enumerate(DEFAULT_POLYGON_NODES_AT_V38, start=max_initial_node_id + 1)
+    ]
+    assert nodes_after == nodes_before + default_polygon_nodes_with_ids
 
 
 def test_latest_upgrade_adds_remove_tables(user_data_dir):
