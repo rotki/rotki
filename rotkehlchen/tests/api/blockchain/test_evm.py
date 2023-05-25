@@ -72,17 +72,17 @@ def test_add_same_evm_account_for_multiple_chains(rotkehlchen_api_server):
         ))
         result = assert_proper_response_with_result(response)
 
-    for chain, native_asset in ((SupportedBlockchain.ETHEREUM, A_ETH), (SupportedBlockchain.AVALANCHE, A_AVAX)):  # noqa: E501
+    for chain, native_token in ((SupportedBlockchain.ETHEREUM, A_ETH), (SupportedBlockchain.AVALANCHE, A_AVAX)):  # noqa: E501
         # Check per account
         account_balances = result['per_account'][chain.serialize()][AVALANCHE_ACC1_AVAX_ADDR]
         assert 'liabilities' in account_balances
-        asset_token = account_balances['assets'][native_asset.identifier]
+        asset_token = account_balances['assets'][native_token.identifier]
         assert FVal(asset_token['amount']) >= ZERO
         assert FVal(asset_token['usd_value']) >= ZERO
 
         # Check totals
         assert 'liabilities' in result['totals']
-        total_token = result['totals']['assets'][native_asset.identifier]
+        total_token = result['totals']['assets'][native_token.identifier]
         assert FVal(total_token['amount']) >= ZERO
         assert FVal(total_token['usd_value']) >= ZERO
 

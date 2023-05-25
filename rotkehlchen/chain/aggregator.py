@@ -867,16 +867,16 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         if len(accounts) == 0:
             return
 
-        # Query ETH/gas token balances
-        eth_usd_price = Inquirer().find_usd_price(A_ETH)
+        # Query native token balances
         manager = cast('EvmManager', self.get_chain_manager(chain))
+        native_token_usd_price = Inquirer().find_usd_price(manager.node_inquirer.native_token)
         chain_balances = self.balances.get(chain)
         queried_balances = manager.node_inquirer.get_multi_balance(accounts)
         for account, balance in queried_balances.items():
-            usd_value = balance * eth_usd_price
+            usd_value = balance * native_token_usd_price
             chain_balances[account] = BalanceSheet(
                 assets=defaultdict(Balance, {
-                    self.eth_asset: Balance(balance, usd_value),
+                    manager.node_inquirer.native_token: Balance(balance, usd_value),
                 }),
             )
         self.query_evm_tokens(manager=manager, balances=chain_balances)

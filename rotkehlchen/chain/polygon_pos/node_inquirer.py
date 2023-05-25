@@ -8,6 +8,7 @@ from rotkehlchen.chain.constants import DEFAULT_EVM_RPC_TIMEOUT
 from rotkehlchen.chain.evm.contracts import EvmContracts
 from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
 from rotkehlchen.chain.evm.types import WeightedNode, string_to_evm_address
+from rotkehlchen.constants.assets import A_POLYGON_POS_MATIC
 from rotkehlchen.fval import FVal
 from rotkehlchen.greenlets.manager import GreenletManager
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -62,6 +63,7 @@ class PolygonPOSInquirer(EvmNodeInquirer):
             rpc_timeout=rpc_timeout,
             contract_multicall=contracts.contract(string_to_evm_address('0x275617327c958bD06b5D6b871E7f491D76113dd8')),  # noqa: E501
             contract_scan=contracts.contract(string_to_evm_address('0x2aB513B211C801673758D1C32815605B5289ad29')),  # noqa: E501
+            native_token=A_POLYGON_POS_MATIC.resolve_to_crypto_asset(),
         )
         self.etherscan = cast(PolygonPOSEtherscan, self.etherscan)
 

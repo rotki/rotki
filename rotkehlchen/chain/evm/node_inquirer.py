@@ -26,6 +26,7 @@ from web3.exceptions import (
 )
 from web3.middleware import geth_poa_middleware
 from web3.types import BlockIdentifier, FilterParams
+from rotkehlchen.assets.asset import CryptoAsset
 
 from rotkehlchen.chain.constants import DEFAULT_EVM_RPC_TIMEOUT
 from rotkehlchen.chain.ethereum.constants import DEFAULT_TOKEN_DECIMALS
@@ -194,6 +195,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
             connect_at_start: Sequence[WeightedNode],
             contract_scan: 'EvmContract',
             contract_multicall: 'EvmContract',
+            native_token: CryptoAsset,
             rpc_timeout: int = DEFAULT_EVM_RPC_TIMEOUT,
     ) -> None:
         self.greenlet_manager = greenlet_manager
@@ -207,6 +209,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
         self.rpc_timeout = rpc_timeout
         self.chain_id: SUPPORTED_CHAIN_IDS = blockchain.to_chain_id()  # type: ignore[assignment]
         self.chain_name = self.blockchain.name.lower()
+        self.native_token = native_token
         # BalanceScanner from mycrypto: https://github.com/MyCryptoHQ/eth-scan
         self.contract_scan = contract_scan
         # Multicall from MakerDAO: https://github.com/makerdao/multicall/
@@ -283,7 +286,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
             accounts: Sequence[ChecksumEvmAddress],
             call_order: Optional[Sequence[WeightedNode]] = None,
     ) -> dict[ChecksumEvmAddress, FVal]:
-        """Returns a dict with keys being accounts and balances in ETH
+        """Returns a dict with keys being accounts and balances in the chain native token.
 
         May raise:
         - RemoteError if an external service such as Etherscan is queried and
@@ -1304,6 +1307,7 @@ class EvmNodeInquirerWithDSProxy(EvmNodeInquirer):
             contract_scan: 'EvmContract',
             contract_multicall: 'EvmContract',
             dsproxy_registry: 'EvmContract',
+            native_token: CryptoAsset,
             rpc_timeout: int = DEFAULT_EVM_RPC_TIMEOUT,
     ) -> None:
         super().__init__(
@@ -1318,6 +1322,7 @@ class EvmNodeInquirerWithDSProxy(EvmNodeInquirer):
             contract_scan=contract_scan,
             contract_multicall=contract_multicall,
             rpc_timeout=rpc_timeout,
+            native_token=native_token,
         )
         self.proxies_inquirer = EvmProxiesInquirer(
             node_inquirer=self,

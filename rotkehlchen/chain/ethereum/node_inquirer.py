@@ -31,6 +31,7 @@ from rotkehlchen.chain.evm.node_inquirer import (
     EvmNodeInquirerWithDSProxy,
 )
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.errors.misc import InputError, RemoteError, UnableToDecryptRemoteData
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
@@ -92,6 +93,7 @@ class EthereumInquirer(EvmNodeInquirerWithDSProxy, LockableQueryMixIn):
             contract_multicall=contracts.contract(string_to_evm_address('0x5BA1e12693Dc8F9c48aAD8770482f4739bEeD696')),  # noqa: E501
             contract_scan=contracts.contract(string_to_evm_address('0x86F25b64e1Fe4C5162cDEeD5245575D32eC549db')),  # noqa: E501
             dsproxy_registry=contracts.contract(string_to_evm_address('0x4678f0a6958e4D2Bc4F1BAF7Bc52E8F3564f3fE4')),  # noqa: E501
+            native_token=A_ETH.resolve_to_crypto_asset(),
         )
         self.blocks_subgraph = Graph('https://api.thegraph.com/subgraphs/name/blocklytics/ethereum-blocks')  # noqa: E501
         self.etherscan = cast(EthereumEtherscan, self.etherscan)
