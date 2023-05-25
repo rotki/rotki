@@ -5,8 +5,9 @@ import pytest
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.balances import BlockchainBalances
-from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants.assets import A_BCH, A_BTC, A_ETH, A_LQTY, A_LUSD
+from rotkehlchen.chain.evm.types import NodeName, WeightedNode, string_to_evm_address
+from rotkehlchen.constants.assets import A_BCH, A_BTC, A_ETH, A_LQTY, A_LUSD, A_POLYGON_POS_MATIC
+from rotkehlchen.constants.misc import ONE
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.factories import UNIT_BTC_ADDRESS1, make_evm_address
 from rotkehlchen.tests.utils.xpubs import setup_db_for_xpub_tests_impl
@@ -197,3 +198,61 @@ def test_protocol_balances(blockchain: 'ChainsAggregator') -> None:
         ),
     }
     assert ETH_ADDRESS2 not in blockchain.balances.eth
+
+
+LLAMA_NODE = WeightedNode(
+    node_info=NodeName(
+        name='DefiLlama',
+        endpoint='https://polygon.llamarpc.com',
+        owned=False,
+        blockchain=SupportedBlockchain.POLYGON_POS,
+    ),
+    active=True,
+    weight=ONE,
+)
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('polygon_pos_manager_connect_at_start', [[LLAMA_NODE]])
+@pytest.mark.parametrize('polygon_pos_accounts', [['0x4bBa290826C253BD854121346c370a9886d1bC26']])
+def test_native_token_balance(blockchain):
+    """
+    Test that for different blockchains different assets are used as native tokens.
+    We test it by requesting a Polygon POS balance and checking MATIC balance.
+    """
+    def mock_default_call_order(skip_etherscan: bool = False):  # pylint: disable=unused-argument
+        return [LLAMA_NODE]  # Keep only one node to remove randomness, and thus make it vcr'able
+
+    with patch.object(
+        blockchain.polygon_pos.node_inquirer,
+        'default_call_order',
+        mock_default_call_order,
+    ):
+        blockchain.polygon_pos.tokens.detect_tokens(
+            only_cache=False,
+            addresses=[string_to_evm_address('0x4bBa290826C253BD854121346c370a9886d1bC26')],
+        )
+        blockchain.query_polygon_pos_balances()
+        assert blockchain.balances.polygon_pos == {
+            '0x4bBa290826C253BD854121346c370a9886d1bC26': BalanceSheet(
+                assets={
+                    A_POLYGON_POS_MATIC: Balance(
+                        amount=FVal('18.3848'),
+                        usd_value=FVal('27.57720'),
+                    ),
+                    Asset('eip155:137/erc20:0x0B91B07bEb67333225A5bA0259D55AeE10E3A578'): Balance(  # Minerum  # noqa: E501
+                        amount=FVal('300000'),
+                        usd_value=FVal('450000.0'),
+                    ),
+                    Asset('eip155:137/erc20:0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174'): Balance(  # USDC  # noqa: E501
+                        amount=FVal('29.982'),
+                        usd_value=FVal('44.9730'),
+                    ),
+                    Asset('eip155:137/erc20:0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619'): Balance(  # WETH  # noqa: E501
+                        amount=FVal('0.009792189476215069'),
+                        usd_value=FVal('0.0146882842143226035'),
+                    ),
+                },
+                liabilities={},
+            ),
+        }

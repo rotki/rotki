@@ -410,11 +410,11 @@ def test_query_supported_chains(rotkehlchen_api_server):
                 if entry.is_evm() is True:
                     assert result_entry['evm_chain_name'] == entry.to_chain_id().to_name()
                 if entry == SupportedBlockchain.OPTIMISM:
-                    assert result_entry['native_asset'] == A_ETH.serialize()
+                    assert result_entry['native_token'] == A_ETH.serialize()
                 elif entry == SupportedBlockchain.POLYGON_POS:
-                    assert result_entry['native_asset'] == A_POLYGON_POS_MATIC.serialize()
+                    assert result_entry['native_token'] == A_POLYGON_POS_MATIC.serialize()
                 else:
-                    assert 'native_asset' not in result_entry
+                    assert 'native_token' not in result_entry
 
                 break  # found
         else:  # internal for loop found nothing

@@ -652,9 +652,9 @@ class RestAPI():
                 'type': blockchain.get_chain_type(),
             }
             if blockchain == SupportedBlockchain.OPTIMISM:
-                data['native_asset'] = A_ETH.serialize()
+                data['native_token'] = A_ETH.serialize()
             elif blockchain == SupportedBlockchain.POLYGON_POS:
-                data['native_asset'] = A_POLYGON_POS_MATIC.serialize()
+                data['native_token'] = A_POLYGON_POS_MATIC.serialize()
             if blockchain.is_evm() is True:
                 data['evm_chain_name'] = blockchain.to_chain_id().to_name()
             result.append(data)
