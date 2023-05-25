@@ -99,6 +99,11 @@ def fixture_optimism_accounts() -> list[ChecksumEvmAddress]:
     return []
 
 
+@pytest.fixture(name='polygon_pos_accounts')
+def fixture_polygon_pos_accounts() -> list[ChecksumEvmAddress]:
+    return []
+
+
 @pytest.fixture(name='btc_accounts')
 def fixture_btc_accounts() -> list[BTCAddress]:
     return []
@@ -138,6 +143,7 @@ def fixture_avax_accounts() -> list[ChecksumEvmAddress]:
 def fixture_blockchain_accounts(
         ethereum_accounts: list[ChecksumEvmAddress],
         optimism_accounts: list[ChecksumEvmAddress],
+        polygon_pos_accounts: list[ChecksumEvmAddress],
         avax_accounts: list[ChecksumEvmAddress],
         btc_accounts: list[BTCAddress],
         bch_accounts: list[BTCAddress],
@@ -147,6 +153,7 @@ def fixture_blockchain_accounts(
     return BlockchainAccounts(
         eth=tuple(ethereum_accounts),
         optimism=tuple(optimism_accounts),
+        polygon_pos=tuple(polygon_pos_accounts),
         avax=tuple(avax_accounts),
         btc=tuple(btc_accounts),
         bch=tuple(bch_accounts),
