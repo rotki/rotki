@@ -147,7 +147,6 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
         self.chain_modules_prefix_length = len(self.chain_modules_root)
         self.dbevmtx = DBEvmTx(self.database)
         self.dbevents = DBHistoryEvents(self.database)
-        self.base: BaseDecoderTools
         self.base = base_tools
         self.rules = DecodingRules(
             address_mappings={},
