@@ -125,13 +125,14 @@ export const useHistoryEventFilter = (
       );
 
     if (!disabled?.protocols && evmOrEthDepositEventsIncluded) {
+      const counterpartiesVal = get(counterparties);
       data.push({
         key: HistoryEventFilterKeys.PROTOCOL,
         keyValue: HistoryEventFilterValueKeys.PROTOCOL,
         description: tc('transactions.filter.protocol'),
         multiple: true,
         string: true,
-        suggestions: () => get(counterparties),
+        suggestions: () => counterpartiesVal,
         validate: (protocol: string) => !!protocol
       });
     }
