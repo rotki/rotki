@@ -22,7 +22,7 @@ from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.interfaces import HistoricalPriceOracleInterface
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import Price, Timestamp
+from rotkehlchen.types import ChainID, Price, Timestamp
 from rotkehlchen.utils.misc import create_timestamp, timestamp_to_date, ts_now
 from rotkehlchen.utils.mixins.penalizable_oracle import PenalizablePriceOracleMixin
 
@@ -97,7 +97,10 @@ class Defillama(HistoricalPriceOracleInterface, PenalizablePriceOracleMixin):
         """
         if asset.is_evm_token() is True:
             asset = asset.resolve_to_evm_token()
-            return f'{asset.chain_id!s}:{asset.evm_address}'
+            # The evm chain names we have so far match perfectly except for 'polygon pos'
+            # which is expected as polygon by the defillama api
+            chain_name = 'polygon' if asset.chain_id == ChainID.POLYGON_POS else str(asset.chain_id)  # noqa: E501
+            return f'{chain_name}:{asset.evm_address}'
 
         return f'coingecko:{asset.to_coingecko()}'
 
