@@ -786,7 +786,7 @@ def test_query_eth2_balances(rotkehlchen_api_server, query_all_balances):
     per_acc = outcome['per_account']['ETH2']
     assert len(per_acc) == 2
     # hope they don't get slashed ;(
-    amount_proportion = FVal('34.600348623') * ownership_proportion
+    amount_proportion = FVal('32') * ownership_proportion
     assert FVal(per_acc[validators[0].public_key]['assets']['ETH2']['amount']) >= base_amount
     assert FVal(per_acc[validators[1].public_key]['assets']['ETH2']['amount']) >= amount_proportion
     totals = outcome['totals']
@@ -814,7 +814,7 @@ def test_query_eth2_balances(rotkehlchen_api_server, query_all_balances):
     assert len(outcome['per_account']) == 1  # only ETH2
     per_acc = outcome['per_account']['ETH2']
     assert len(per_acc) == 3
-    amount_proportion = FVal('34.600348623') * ownership_proportion
+    amount_proportion = FVal('32') * ownership_proportion
     assert FVal(per_acc[v0_pubkey]['assets']['ETH2']['amount']) >= base_amount
     assert FVal(per_acc[validators[0].public_key]['assets']['ETH2']['amount']) >= base_amount
     assert FVal(per_acc[validators[1].public_key]['assets']['ETH2']['amount']) >= amount_proportion
