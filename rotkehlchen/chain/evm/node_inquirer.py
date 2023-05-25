@@ -358,7 +358,8 @@ class EvmNodeInquirer(metaclass=ABCMeta):
             web3.middleware_onion.remove('gas_estimate')
             # we do our own handling for ens names
             web3.middleware_onion.remove('name_to_address')
-        if self.chain_id == ChainID.OPTIMISM:  # for now only optimism needs this
+        if self.chain_id in (ChainID.OPTIMISM, ChainID.POLYGON_POS):
+            # TODO: Is it needed for all non-mainet EVM chains?
             # https://web3py.readthedocs.io/en/stable/middleware.html#why-is-geth-poa-middleware-necessary
             web3.middleware_onion.inject(geth_poa_middleware, layer=0)
 
