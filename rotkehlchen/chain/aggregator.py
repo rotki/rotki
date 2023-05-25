@@ -904,8 +904,8 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         """
         Queries all the polygon pos balances and populates the state.
         Same potential exceptions as ethereum
-        POLYGON_TODO
         """
+        self.query_evm_chain_balances(chain=SupportedBlockchain.POLYGON_POS)
 
     @protect_with_lock()
     @cache_response_timewise()
