@@ -25,7 +25,6 @@ from rotkehlchen.chain.ethereum.modules import (
     Aave,
     Balancer,
     Compound,
-    Eth2,
     Liquity,
     Loopring,
     MakerdaoDsr,
@@ -87,6 +86,7 @@ from .constants import LAST_EVM_ACCOUNTS_DETECT_KEY
 if TYPE_CHECKING:
     from rotkehlchen.chain.avalanche.manager import AvalancheManager
     from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.chain.ethereum.modules.eth2.eth2 import Eth2
     from rotkehlchen.chain.ethereum.modules.eth2.structures import (
         ValidatorDailyStats,
         ValidatorDetails,
@@ -338,7 +338,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         ...
 
     @overload
-    def get_module(self, module_name: Literal['eth2']) -> Optional[Eth2]:
+    def get_module(self, module_name: Literal['eth2']) -> Optional['Eth2']:
         ...
 
     @overload
