@@ -216,39 +216,51 @@ const saveAsset = async () => {
   return newIdentifier;
 };
 
-const getUnderlyingTokenErrors = (underlyingTokens: any) => {
-  const messages: string[] = [];
+const getUnderlyingTokenErrors = (
+  underlyingTokens:
+    | string
+    | Record<string, { address: string[]; weight: string[] }>
+) => {
   if (typeof underlyingTokens === 'string') {
     return [underlyingTokens];
   }
+
+  const messages: string[] = [];
   for (const underlyingToken of Object.values(underlyingTokens)) {
-    const ut = underlyingToken as any;
+    const ut = underlyingToken;
     if (ut.address) {
-      messages.push(...(ut.address as string[]));
+      messages.push(...ut.address);
     }
     if (underlyingTokens.weight) {
-      messages.push(...(ut.weight as string[]));
+      messages.push(...ut.weight);
     }
   }
   return messages;
 };
 
-const handleError = (message: any) => {
-  const underlyingTokens = message.underlyingTokens;
-  if (underlyingTokens) {
-    const messages = getUnderlyingTokenErrors(underlyingTokens);
+const handleError = (
+  message:
+    | {
+        underlyingTokens:
+          | string
+          | Record<string, { address: string[]; weight: string[] }>;
+      }
+    | {
+        _schema: string[];
+      }
+) => {
+  if ('underlyingTokens' in message) {
+    const messages = getUnderlyingTokenErrors(message.underlyingTokens);
     setMessage({
       title: t('asset_form.underlying_tokens').toString(),
       description: messages.join(',')
     });
-  } else if (message._schema) {
+  } else {
     setMessage({
       title: t('asset_form.underlying_tokens').toString(),
       description: message._schema[0]
     });
   }
-
-  set(errors, message);
 };
 
 const save = async () => {
@@ -258,20 +270,23 @@ const save = async () => {
     await get(assetIconFormRef)?.saveIcon(newIdentifier);
     return true;
   } catch (e: any) {
-    let errors = e.message;
+    let errorsMessage = e.message;
     if (e instanceof ApiValidationError) {
-      errors = e.getValidationErrors(get(asset));
+      errorsMessage = e.getValidationErrors(get(asset));
     }
 
-    if (typeof errors === 'string') {
+    if (typeof errorsMessage === 'string') {
       setMessage({
         title: get(edit)
           ? t('asset_form.edit_error')
           : t('asset_form.add_error'),
-        description: errors
+        description: errorsMessage
       });
     } else {
-      handleError(errors);
+      if (errorsMessage.underlyingTokens || errorsMessage._schema) {
+        handleError(errorsMessage);
+      }
+      set(errors, omit(errorsMessage, ['underlyingTokens', '_schema']));
     }
 
     return false;

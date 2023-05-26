@@ -1396,6 +1396,7 @@ declare module '@vue/runtime-core' {
     readonly computedEager: UnwrapRef<typeof import('@vueuse/core')['computedEager']>
     readonly computedInject: UnwrapRef<typeof import('@vueuse/core')['computedInject']>
     readonly computedWithControl: UnwrapRef<typeof import('@vueuse/core')['computedWithControl']>
+    readonly consistOfNumbers: UnwrapRef<typeof import('./utils/text')['consistOfNumbers']>
     readonly controlledComputed: UnwrapRef<typeof import('@vueuse/core')['controlledComputed']>
     readonly controlledRef: UnwrapRef<typeof import('@vueuse/core')['controlledRef']>
     readonly convertDateByTimezone: UnwrapRef<typeof import('./utils/date')['convertDateByTimezone']>
@@ -1432,6 +1433,7 @@ declare module '@vue/runtime-core' {
     readonly fetchDataAsync: UnwrapRef<typeof import('./utils/fetch-async')['fetchDataAsync']>
     readonly filterAddresses: UnwrapRef<typeof import('./utils/addresses')['filterAddresses']>
     readonly filterAddressesFromWords: UnwrapRef<typeof import('./utils/history/index')['filterAddressesFromWords']>
+    readonly generateRandomScrambleMultiplier: UnwrapRef<typeof import('./utils/session')['generateRandomScrambleMultiplier']>
     readonly get: UnwrapRef<typeof import('@vueuse/shared')['get']>
     readonly getActivePinia: UnwrapRef<typeof import('pinia')['getActivePinia']>
     readonly getAddressFromEvmIdentifier: UnwrapRef<typeof import('./utils/assets')['getAddressFromEvmIdentifier']>
