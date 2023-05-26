@@ -965,6 +965,8 @@
     "loading": "Please wait while rotki queries the blockchain..."
   },
   "asset_form": {
+    "add_error": "Couldn't save asset",
+    "edit_error": "Couldn't edit asset",
     "fetch_latest_icon": {
       "description": "Failed to fetch the latest icon for {identifier}: {message}",
       "title": "Fetch the latest icon"
@@ -4160,7 +4162,8 @@
       "address_non_empty": "Address cannot be empty",
       "non_empty": "Please set a weight value",
       "not_valid": "The specified weight does not seem like a valid value",
-      "out_of_range": "Weight can be from 1-100%"
+      "out_of_range": "Weight can be from 1-100%",
+      "valid": "Please input valid ETH address"
     }
   },
   "uniswap": {

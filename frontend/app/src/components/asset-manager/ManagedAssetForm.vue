@@ -72,13 +72,7 @@ const { allEvmChains } = useSupportedChains();
 
 const { setMessage } = useMessageStore();
 
-const {
-  getAssetTypes,
-  editEthereumToken,
-  addEthereumToken,
-  editAsset,
-  addAsset
-} = useAssetManagementApi();
+const { getAssetTypes, editAsset, addAsset } = useAssetManagementApi();
 
 const v$ = useVuelidate(
   {
@@ -128,7 +122,7 @@ watch(assetType, () => {
   set(errors, {});
 });
 
-const asset: ComputedRef<Omit<SupportedAsset, 'identifier' | 'type'>> =
+const asset: ComputedRef<Omit<SupportedAsset, 'identifier' | 'assetType'>> =
   computed(() => {
     const ut = get(underlyingTokens);
     return {
@@ -184,7 +178,7 @@ onMounted(() => {
   set(cryptocompareEnabled, token.cryptocompare !== '');
 
   set(forked, token.forked ?? '');
-  set(assetType, token.type);
+  set(assetType, token.assetType);
   set(address, token.address);
   set(decimals, token.decimals ?? null);
   set(protocol, token.protocol ?? '');
@@ -193,24 +187,26 @@ onMounted(() => {
   set(tokenKind, token.tokenKind);
 });
 
-const saveEthereumToken = async () => {
-  let newIdentifier: string;
-  const tokenVal = get(asset)!;
-  if (get(edit) && get(identifier)) {
-    ({ identifier: newIdentifier } = await editEthereumToken(tokenVal));
-  } else {
-    ({ identifier: newIdentifier } = await addEthereumToken(tokenVal));
-  }
-  return newIdentifier;
-};
-
 const saveAsset = async () => {
   let newIdentifier: string;
   const assetVal = get(asset);
+
+  const assetPayload = get(isEvmToken)
+    ? assetVal
+    : omit(assetVal, [
+        'decimals',
+        'address',
+        'evmChain',
+        'type',
+        'tokenKind',
+        'underlyingTokens'
+      ]);
+
   const payload = {
-    ...omit(assetVal, ['decimals', 'address', 'evmChain', 'type', 'tokenKind']),
+    ...assetPayload,
     assetType: get(assetType)
   };
+
   if (get(edit)) {
     newIdentifier = get(identifier);
     await editAsset({ ...payload, identifier: newIdentifier });
@@ -222,6 +218,9 @@ const saveAsset = async () => {
 
 const getUnderlyingTokenErrors = (underlyingTokens: any) => {
   const messages: string[] = [];
+  if (typeof underlyingTokens === 'string') {
+    return [underlyingTokens];
+  }
   for (const underlyingToken of Object.values(underlyingTokens)) {
     const ut = underlyingToken as any;
     if (ut.address) {
@@ -235,44 +234,40 @@ const getUnderlyingTokenErrors = (underlyingTokens: any) => {
 };
 
 const handleError = (message: any) => {
-  if (message.token) {
-    const token = message.token;
-    set(errors, token);
-    const underlyingTokens = token.underlying_tokens;
-    if (underlyingTokens) {
-      const messages = getUnderlyingTokenErrors(underlyingTokens);
-      setMessage({
-        title: t('asset_form.underlying_tokens').toString(),
-        description: messages.join(',')
-      });
-    } else if (token._schema) {
-      setMessage({
-        title: t('asset_form.underlying_tokens').toString(),
-        description: token._schema[0]
-      });
-    }
-  } else {
-    set(errors, message);
+  const underlyingTokens = message.underlyingTokens;
+  if (underlyingTokens) {
+    const messages = getUnderlyingTokenErrors(underlyingTokens);
+    setMessage({
+      title: t('asset_form.underlying_tokens').toString(),
+      description: messages.join(',')
+    });
+  } else if (message._schema) {
+    setMessage({
+      title: t('asset_form.underlying_tokens').toString(),
+      description: message._schema[0]
+    });
   }
+
+  set(errors, message);
 };
 
 const save = async () => {
   try {
-    const newIdentifier = get(isEvmToken)
-      ? await saveEthereumToken()
-      : await saveAsset();
+    const newIdentifier = await saveAsset();
     set(identifier, newIdentifier);
     await get(assetIconFormRef)?.saveIcon(newIdentifier);
     return true;
   } catch (e: any) {
     let errors = e.message;
     if (e instanceof ApiValidationError) {
-      errors = e.getValidationErrors({ token: '' });
+      errors = e.getValidationErrors(get(asset));
     }
 
     if (typeof errors === 'string') {
       setMessage({
-        title: t('asset_form.underlying_tokens'),
+        title: get(edit)
+          ? t('asset_form.edit_error')
+          : t('asset_form.add_error'),
         description: errors
       });
     } else {
@@ -377,7 +372,7 @@ const { coingeckoContributeUrl, cryptocompareContributeUrl } = useInterop();
             @focus="clearFieldError('name')"
           />
         </v-col>
-        <v-col cols="12" :md="isEvmToken ? 3 : 6">
+        <v-col cols="12" :md="isEvmToken ? 3 : 6" data-cy="symbol-input">
           <v-text-field
             v-model="symbol"
             outlined

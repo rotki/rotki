@@ -5,7 +5,6 @@ import { type Collection } from '@/types/collection';
 import { type Nullable } from '@/types';
 import {
   type AssetRequestPayload,
-  EVM_TOKEN,
   type IgnoredAssetsHandlingType
 } from '@/types/asset';
 import { type Filters, type Matcher } from '@/composables/filters/assets';
@@ -42,8 +41,7 @@ const dialogTitle = computed<string>(() =>
 const router = useRouter();
 const route = useRoute();
 const { t } = useI18n();
-const { queryAllAssets, deleteEthereumToken, deleteAsset } =
-  useAssetManagementApi();
+const { queryAllAssets, deleteAsset } = useAssetManagementApi();
 const { setMessage } = useMessageStore();
 const { show } = useConfirmStore();
 const { ignoredAssets } = storeToRefs(useIgnoredAssetsStore());
@@ -84,22 +82,6 @@ const save = async () => {
   set(saving, false);
 };
 
-const deleteToken = async (address: string, evmChain: string) => {
-  try {
-    const success = await deleteEthereumToken(address, evmChain);
-    if (success) {
-      await fetchData();
-    }
-  } catch (e: any) {
-    setMessage({
-      description: t('asset_management.delete_error', {
-        address,
-        message: e.message
-      })
-    });
-  }
-};
-
 const deleteAssetHandler = async (identifier: string) => {
   try {
     const success = await deleteAsset(identifier);
@@ -117,13 +99,7 @@ const deleteAssetHandler = async (identifier: string) => {
 };
 
 const confirmDelete = async (toDeleteAsset: SupportedAsset) => {
-  if (toDeleteAsset.type !== EVM_TOKEN) {
-    await deleteAssetHandler(toDeleteAsset.identifier);
-  } else {
-    const address = toDeleteAsset.address;
-    assert(address);
-    await deleteToken(address, toDeleteAsset.evmChain as string);
-  }
+  await deleteAssetHandler(toDeleteAsset.identifier);
 };
 
 const closeDialog = async () => {

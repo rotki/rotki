@@ -61,49 +61,6 @@ export const useAssetManagementApi = () => {
     return OwnedAssets.parse(handleResponse(ownedAssets));
   };
 
-  const addEthereumToken = async (
-    token: Omit<SupportedAsset, 'identifier'>
-  ): Promise<AssetIdResponse> => {
-    const response = await api.instance.put<ActionResult<AssetIdResponse>>(
-      '/assets/ethereum',
-      snakeCaseTransformer({ token }),
-      {
-        validateStatus: validStatus
-      }
-    );
-
-    return handleResponse(response);
-  };
-
-  const editEthereumToken = async (
-    token: Omit<SupportedAsset, 'identifier'>
-  ): Promise<AssetIdResponse> => {
-    const response = await api.instance.patch<ActionResult<AssetIdResponse>>(
-      '/assets/ethereum',
-      snakeCaseTransformer({ token }),
-      {
-        validateStatus: validStatus
-      }
-    );
-
-    return handleResponse(response);
-  };
-
-  const deleteEthereumToken = async (
-    address: string,
-    evmChain: string
-  ): Promise<boolean> => {
-    const response = await api.instance.delete<ActionResult<boolean>>(
-      '/assets/ethereum',
-      {
-        data: snakeCaseTransformer({ address, evmChain }),
-        validateStatus: validStatus
-      }
-    );
-
-    return handleResponse(response);
-  };
-
   const getAssetTypes = async (): Promise<string[]> => {
     const response = await api.instance.get<ActionResult<string[]>>(
       '/assets/types',
@@ -206,9 +163,6 @@ export const useAssetManagementApi = () => {
     queryAllAssets,
     queryAllCustomAssets,
     queryOwnedAssets,
-    addEthereumToken,
-    editEthereumToken,
-    deleteEthereumToken,
     addAsset,
     editAsset,
     deleteAsset,

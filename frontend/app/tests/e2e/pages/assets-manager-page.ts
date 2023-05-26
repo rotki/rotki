@@ -36,7 +36,7 @@ export class AssetsManagerPage {
     cy.get('.v-data-table__progress').should('not.exist');
   }
 
-  searchAsseAddress(address: string) {
+  searchAssetByAddress(address: string) {
     cy.get('[data-cy="table-filter"]').type(
       `{selectall}{backspace}address: ${address}{enter}{esc}`
     );
@@ -96,7 +96,7 @@ export class AssetsManagerPage {
   createWaitForDeleteManagedAssets() {
     cy.intercept({
       method: 'DELETE',
-      url: '/api/1/assets/ethereum**'
+      url: '/api/1/assets/all**'
     }).as('apiCall');
 
     return () => {
@@ -111,14 +111,15 @@ export class AssetsManagerPage {
     cy.get('[data-cy=confirm-dialog]')
       .find('[data-cy=dialog-title]')
       .should('contain', 'Delete asset');
-    const waitForLedgerActions = this.createWaitForDeleteManagedAssets();
+    const waitForAssetDeleted = this.createWaitForDeleteManagedAssets();
     cy.get('[data-cy=confirm-dialog]').find('[data-cy=button-confirm]').click();
-    waitForLedgerActions();
+    waitForAssetDeleted();
     cy.get('[data-cy=confirm-dialog]').should('not.be.exist');
   }
 
-  deleteAsset(address: string) {
-    this.searchAsseAddress(address);
+  deleteAsset() {
+    const ethAddress = '0x9737c028a738f0856c86bc6279b356db8f3dd440';
+    this.searchAssetByAddress(ethAddress);
     cy.get('[data-cy=managed-assets-table] [data-cy=row-delete]').click();
     this.confirmDelete();
   }
@@ -172,6 +173,10 @@ export class AssetsManagerPage {
     cy.get('[data-cy=address-input] .v-text-field__slot input[type=text]').as(
       'addressInput'
     );
+    cy.get('[data-cy=symbol-input] .v-text-field__slot input[type=text]').as(
+      'symbolInput'
+    );
+
     cy.get('[data-cy=address-input] .v-messages__message')
       .contains('Given value is not an ethereum address')
       .as('addressMessage');
@@ -210,6 +215,10 @@ export class AssetsManagerPage {
     // after loading, input should be enabled
     cy.get('@addressInput').should('be.enabled');
 
+    // enter symbol
+    cy.get('@symbolInput').clear();
+    cy.get('@symbolInput').type('SYMBOL 1');
+
     // enter decimals
     cy.get('@decimalInput').clear();
     cy.get('@decimalInput').type('2');
@@ -223,6 +232,53 @@ export class AssetsManagerPage {
 
     // dialog should not be visible
     cy.get('[data-cy=bottom-dialog]').should('not.be.visible');
-    this.deleteAsset(ethAddress);
+
+    // search the asset
+    this.searchAssetByAddress(ethAddress);
+
+    cy.get('[data-cy=managed-assets-table] [data-cy="details-symbol"]').should(
+      'contain',
+      'SYMBOL 1'
+    );
+  }
+
+  editAsset(): void {
+    const address = '0x9737c028a738f0856c86bc6279b356db8f3dd440';
+
+    // search the asset
+    this.searchAssetByAddress(address);
+
+    // click edit button
+    cy.get('[data-cy=managed-assets-table] [data-cy=row-edit]').click();
+
+    // dialog should be visible
+    cy.get('[data-cy=bottom-dialog]').should('be.visible');
+    // dialog title should match as well
+    cy.get('[data-cy=bottom-dialog] .card-title')
+      .contains('Edit an asset')
+      .should('be.visible');
+
+    cy.get('[data-cy=symbol-input] .v-text-field__slot input[type=text]').as(
+      'symbolInput'
+    );
+
+    cy.get('[data-cy=bottom-dialog] [data-cy=confirm]').as('submitButton');
+
+    // edit symbol
+    cy.get('@symbolInput').clear();
+    cy.get('@symbolInput').type('SYMBOL 2');
+
+    // at this point, no validation message, button should be enabled
+    cy.get('@submitButton').should('be.enabled');
+    // create the asset
+    cy.get('@submitButton').click();
+
+    // dialog should not be visible
+    cy.get('[data-cy=bottom-dialog]').should('not.be.visible');
+
+    cy.get('[data-cy=managed-assets-table] [data-cy="details-symbol"]').should(
+      'contain',
+      'SYMBOL 2'
+    );
   }
 }
