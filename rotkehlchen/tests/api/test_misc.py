@@ -437,7 +437,7 @@ def test_events_mappings(rotkehlchen_api_server_with_exchanges):
     Test different mappings and information that we provide for rendering events information
     - Test that the structure for types mappings is correctly generated
     - Test that the valid locations are correctly provided to the frontend
-    - Test the the products are correctly returned
+    - Test that the products are correctly returned
     """
     response = requests.get(
         api_url_for(

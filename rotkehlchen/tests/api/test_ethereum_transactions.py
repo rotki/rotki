@@ -15,7 +15,6 @@ from rotkehlchen.chain.ethereum.modules.curve.constants import CPT_CURVE
 from rotkehlchen.chain.ethereum.transactions import EthereumTransactions
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.structures import EvmTxReceipt
-from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_MKR, A_USDT, A_WETH
 from rotkehlchen.constants.limits import FREE_ETH_TX_LIMIT, FREE_HISTORY_EVENTS_LIMIT
 from rotkehlchen.constants.misc import ONE
@@ -1332,7 +1331,7 @@ def test_events_filter_params(rotkehlchen_api_server, ethereum_accounts, start_w
     tx2 = make_ethereum_transaction(tx_hash=b'2', timestamp=2)
     tx3 = make_ethereum_transaction(tx_hash=b'3', timestamp=3)
     tx4 = make_ethereum_transaction(tx_hash=b'4', timestamp=4)
-    test_contract_address = string_to_evm_address('0xc37b40ABdB939635068d3c5f13E7faF686F03B65')
+    test_contract_address = make_evm_address()
     event1 = make_ethereum_event(tx_hash=b'1', index=1, asset=A_ETH, timestamp=TimestampMS(1), location_label=ethereum_accounts[0], product=EvmProduct.STAKING)  # noqa: E501
     event2 = make_ethereum_event(tx_hash=b'1', index=2, asset=A_ETH, counterparty='EXAMPLE_PROTOCOL', timestamp=TimestampMS(1), location_label=ethereum_accounts[0])  # noqa: E501
     event3 = make_ethereum_event(tx_hash=b'1', index=3, asset=A_WETH, counterparty='EXAMPLE_PROTOCOL', timestamp=TimestampMS(1), location_label=ethereum_accounts[0])  # noqa: E501

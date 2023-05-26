@@ -7,6 +7,7 @@ import tempfile
 import traceback
 from collections import defaultdict
 from collections.abc import Sequence
+from functools import reduce
 from http import HTTPStatus
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, Union, get_args, overload
@@ -209,6 +210,7 @@ from rotkehlchen.utils.version_check import get_current_version
 if TYPE_CHECKING:
     from rotkehlchen.accounting.structures.evm_event import EvmEvent
     from rotkehlchen.chain.bitcoin.xpub import XpubData
+    from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
     from rotkehlchen.exchanges.kraken import KrakenAccountType
@@ -4233,7 +4235,7 @@ class RestAPI():
             'exchange_mappings': self.rotkehlchen.exchange_manager.get_exchange_mappings(),
             'accounting_events_icons': ACCOUNTING_EVENTS_ICONS,
             'per_protocol_mappings': {
-                chain_id.to_name(): self.rotkehlchen.chains_aggregator.get_evm_manager(chain_id).transactions_decoder.events_types_tuples  # noqa: E501
+                chain_id.to_name(): self.rotkehlchen.chains_aggregator.get_evm_manager(chain_id).transactions_decoder.get_decoders_event_types()  # noqa: E501
                 for chain_id in EVM_CHAIN_IDS_WITH_TRANSACTIONS
             },
         }
@@ -4247,17 +4249,15 @@ class RestAPI():
         Collect the counterparties from decoders in the different evm chains and combine them
         removing duplicates.
         """
-        ethereum_counterparties = self.rotkehlchen.chains_aggregator.ethereum.transactions_decoder.rules.all_counterparties  # noqa: E501
-        optimism_counterparties = self.rotkehlchen.chains_aggregator.optimism.transactions_decoder.rules.all_counterparties  # noqa: E501
-        polygon_pos_counterparties = self.rotkehlchen.chains_aggregator.polygon_pos.transactions_decoder.rules.all_counterparties  # noqa: E501
+        counterparties: set['CounterpartyDetails'] = reduce(
+            lambda x, y: x | y,
+            [
+                self.rotkehlchen.chains_aggregator.get_evm_manager(chain_id).transactions_decoder.rules.all_counterparties
+                for chain_id in EVM_CHAIN_IDS_WITH_TRANSACTIONS
+            ],
+        )
         return api_response(
-            result=process_result(_wrap_in_ok_result(
-                list(
-                    ethereum_counterparties |
-                    optimism_counterparties |
-                    polygon_pos_counterparties,
-                ),
-            )),
+            result=process_result(_wrap_in_ok_result(list(counterparties))),
             status_code=HTTPStatus.OK,
         )
 
@@ -4265,12 +4265,17 @@ class RestAPI():
         """
         Collect the mappings of counterparties to the products they list
         """
-        ethereum_counterparties = self.rotkehlchen.chains_aggregator.ethereum.transactions_decoder.possible_products  # noqa: E501
-        optimism_counterparties = self.rotkehlchen.chains_aggregator.optimism.transactions_decoder.possible_products  # noqa: E501
+        products_mappings = reduce(
+            lambda x, y: x | y,
+            [
+                self.rotkehlchen.chains_aggregator.get_evm_manager(chain_id).transactions_decoder.get_decoders_products()
+                for chain_id in EVM_CHAIN_IDS_WITH_TRANSACTIONS
+            ],
+        )
         return api_response(
             result=process_result(_wrap_in_ok_result(
                 {
-                    'mappings': ethereum_counterparties | optimism_counterparties,
+                    'mappings': products_mappings,
                     'products': [product.serialize() for product in EvmProduct],
                 },
             )),

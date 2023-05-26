@@ -1093,7 +1093,7 @@ class EvmEventFilterQuery(HistoryBaseEntryFilterQuery):
             filter_query.filters.append(DBMultiBytesFilter(
                 and_op=True,
                 column='tx_hash',
-                values=cast(list[bytes], tx_hashes),  # EVMTxHash is equal to bytes
+                values=tx_hashes,  # type: ignore[arg-type]  # EVMTxHash is equal to bytes
                 operator='IN',
             ))
 
@@ -1101,7 +1101,7 @@ class EvmEventFilterQuery(HistoryBaseEntryFilterQuery):
             filter_query.filters.append(DBMultiStringFilter(
                 and_op=True,
                 column='address',
-                values=cast(list[str], addresses),  # ChecksumEvmAddress is equal to str
+                values=addresses,  # type: ignore[arg-type]  # ChecksumEvmAddress is equal to str
                 operator='IN',
             ))
 
