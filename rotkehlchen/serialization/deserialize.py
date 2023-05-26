@@ -580,8 +580,6 @@ def deserialize_evm_transaction(
                 chain_id=chain_id,
                 # traceId is missing when querying by parent hash
                 trace_id=int(data.get('traceId', '0')),
-                timestamp=timestamp,
-                block_number=block_number,
                 from_address=from_address,
                 to_address=to_address,
                 value=value,

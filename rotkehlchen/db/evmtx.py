@@ -110,8 +110,6 @@ class DBEvmTx():
                 tx.parent_tx_hash,
                 tx.chain_id.serialize_for_db(),
                 tx.trace_id,
-                tx.timestamp,
-                tx.block_number,
                 tx.from_address,
                 tx.to_address,
                 str(tx.value),
@@ -122,12 +120,10 @@ class DBEvmTx():
               parent_tx_hash,
               chain_id,
               trace_id,
-              timestamp,
-              block_number,
               from_address,
               to_address,
               value)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?)
         """
         self.db.write_tuples(
             write_cursor=write_cursor,
@@ -146,7 +142,8 @@ class DBEvmTx():
         chain_id = blockchain.to_chain_id().serialize_for_db()
         cursor = self.db.conn.cursor()
         results = cursor.execute(
-            'SELECT * from evm_internal_transactions WHERE parent_tx_hash=? AND chain_id=?',
+            'SELECT parent_tx_hash, chain_id, trace_id, from_address, to_address, value '
+            'FROM evm_internal_transactions WHERE parent_tx_hash=? AND chain_id=?',
             (parent_tx_hash, chain_id),
         )
         transactions = []
@@ -155,11 +152,9 @@ class DBEvmTx():
                 parent_tx_hash=deserialize_evm_tx_hash(result[0]),
                 chain_id=ChainID.deserialize_from_db(result[1]),
                 trace_id=result[2],
-                timestamp=result[3],
-                block_number=result[4],
-                from_address=result[5],
-                to_address=result[6],
-                value=result[7],
+                from_address=result[3],
+                to_address=result[4],
+                value=result[5],
             )
             transactions.append(tx)
 

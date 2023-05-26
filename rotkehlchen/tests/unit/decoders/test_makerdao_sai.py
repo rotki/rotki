@@ -2089,8 +2089,6 @@ def test_makerdao_sai_proxy_interaction(ethereum_transaction_decoder):
         parent_tx_hash=evmhash,
         chain_id=ChainID.ETHEREUM,
         trace_id=27,
-        timestamp=1588030595,
-        block_number=9957537,
         from_address=string_to_evm_address('0x72Ee0f9AB3678148CC0700243CB38577Bd290869'),
         to_address=ADDY_10,
         value=30000004449579884,

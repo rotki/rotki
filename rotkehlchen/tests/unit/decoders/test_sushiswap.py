@@ -177,8 +177,6 @@ def test_sushiswap_v2_remove_liquidity(database, ethereum_inquirer, eth_transact
         parent_tx_hash=evmhash,
         chain_id=ChainID.ETHEREUM,
         trace_id=27,
-        timestamp=Timestamp(1672888271),
-        block_number=16337817,
         from_address=string_to_evm_address('0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F'),
         to_address=ADDY_2,
         value=FVal('1.122198589808876532') * EXP18,

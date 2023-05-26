@@ -367,7 +367,8 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
         chain_id = self.chain.to_chain_id()
         while True:
             result = self._query(module='account', action=action, options=options)
-            last_ts = deserialize_timestamp(result[0]['timeStamp']) if len(result) != 0 else None
+            if len(result) != 0:
+                last_ts = deserialize_timestamp(result[0]['timeStamp'])
             for entry in result:
                 try:  # Handle normal transactions. Internal dict does not contain a hash sometimes
                     if is_internal or entry['hash'].startswith('GENESIS') is False:
@@ -418,9 +419,10 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
                     self.msg_aggregator.add_warning(f'{e!s}. Skipping transaction')
                     continue
 
-                if tx.timestamp > last_ts and len(transactions) >= TRANSACTIONS_BATCH_NUM:
+                timestamp = deserialize_timestamp(entry['timeStamp'])
+                if timestamp > last_ts and len(transactions) >= TRANSACTIONS_BATCH_NUM:
                     yield transactions
-                    last_ts = tx.timestamp
+                    last_ts = timestamp
                     transactions = []  # type: ignore
                 transactions.append(tx)
 
