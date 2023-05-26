@@ -1,16 +1,30 @@
 <script setup lang="ts">
-import Cleave from 'cleave.js';
 import { useListeners } from 'vue';
+import IMask, { type InputMask } from 'imask';
 
-const props = defineProps({
-  integer: { required: false, type: Boolean, default: false },
-  value: { required: false, type: String, default: '' }
-});
+const props = withDefaults(
+  defineProps<{
+    integer?: boolean;
+    value?: string;
+  }>(),
+  {
+    integer: false,
+    value: ''
+  }
+);
 
-const emit = defineEmits<{ (e: 'input', value: string): void }>();
+const emit = defineEmits<{
+  (e: 'input', value: string): void;
+}>();
+
 const attrs = useAttrs();
 const slots = useSlots();
 const listeners = useListeners();
+
+const filteredListeners = (listeners: any) => ({
+  ...listeners,
+  input: () => {}
+});
 
 const { integer, value } = toRefs(props);
 const { thousandSeparator, decimalSeparator } = storeToRefs(
@@ -18,50 +32,41 @@ const { thousandSeparator, decimalSeparator } = storeToRefs(
 );
 
 const textInput = ref(null);
-const cleave = ref<Cleave | null>(null);
-const currentValue = ref(get(value)?.replace('.', get(decimalSeparator)));
-
-const onValueChanged = ({
-  target
-}: {
-  target: { rawValue: string; value: string };
-}) => {
-  const value = target.rawValue;
-  set(currentValue, target.value);
-  emit('input', value);
-};
-
-const filteredListeners = (listeners: any) => ({
-  ...listeners,
-  input: () => {}
-});
-
-watch(value, value => {
-  const clv = get(cleave);
-  const rawValue = clv?.getRawValue();
-  const formattedValue = value.replace('.', get(decimalSeparator));
-
-  if (rawValue !== value) {
-    set(currentValue, formattedValue);
-    clv?.setRawValue(formattedValue);
-  }
-});
+const imask: Ref<InputMask<any> | null> = ref(null);
+const currentValue: Ref<string> = ref('');
 
 onMounted(() => {
   const inputWrapper = get(textInput) as any;
   const input = inputWrapper.$el.querySelector('input') as HTMLElement;
 
-  set(
-    cleave,
-    new Cleave(input, {
-      numeral: true,
-      delimiter: get(thousandSeparator),
-      numeralDecimalMark: get(decimalSeparator),
-      numeralDecimalScale: get(integer) ? 0 : 100,
-      onValueChanged
-    })
-  );
+  const newImask = IMask(input, {
+    mask: Number,
+    thousandsSeparator: get(thousandSeparator),
+    radix: get(decimalSeparator),
+    scale: get(integer) ? 0 : 100
+  });
+
+  set(imask, newImask);
 });
+
+watch(value, value => {
+  const imaskVal = get(imask);
+  if (imaskVal) {
+    imaskVal.unmaskedValue = value;
+    set(currentValue, imaskVal.value);
+  }
+});
+
+watch(
+  imask,
+  (imask, prev) => {
+    if (!prev) {
+      return;
+    }
+    emit('input', imask?.unmaskedValue || '');
+  },
+  { deep: true }
+);
 
 const focus = () => {
   const inputWrapper = get(textInput) as any;
@@ -78,7 +83,7 @@ defineExpose({
 <template>
   <v-text-field
     ref="textInput"
-    v-model="currentValue"
+    :value="currentValue"
     v-bind="attrs"
     v-on="filteredListeners(listeners)"
   >

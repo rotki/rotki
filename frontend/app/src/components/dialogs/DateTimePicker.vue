@@ -1,61 +1,65 @@
 <script setup lang="ts">
 import dayjs from 'dayjs';
-import { type Ref } from 'vue';
+import { type ComputedRef, type Ref } from 'vue';
+import IMask, { type InputMask } from 'imask';
 import { timezones } from '@/data/timezones';
 import { DateFormat } from '@/types/date-format';
 
-const defaultDateFormat = 'YYYY-MM-DD';
+const isValidFormat = (date: string): boolean => {
+  const dateFormat = get(dateInputFormatInISO);
+  const dateTimeFormatVal = get(dateTimeFormat);
+  const completeDateTimeFormatVal = get(completeDateTimeFormat);
 
-const isValid = (
-  date: string,
-  format: DateFormat,
-  seconds = false
-): boolean => {
-  const dateFormat = getDateInputISOFormat(format);
-
-  if (seconds) {
-    return (
-      isValidDate(date, dateFormat) ||
-      isValidDate(date, `${dateFormat} HH:mm:ss`)
-    );
-  }
   return (
-    isValidDate(date, dateFormat) || isValidDate(date, `${dateFormat} HH:mm`)
+    isValidDate(date, dateFormat) ||
+    isValidDate(date, dateTimeFormatVal) ||
+    (!get(seconds) && isValidDate(date, completeDateTimeFormatVal))
   );
 };
 
-const useRules = (
-  rules: Ref<ValidationRules>,
-  dateInputFormat: Ref<DateFormat>,
-  seconds: Ref<boolean>,
-  allowEmpty: Ref<boolean>
-) => {
+const isDateOnLimit = (date: string): boolean => {
+  if (!get(limitNow)) {
+    return true;
+  }
+
+  const now = dayjs();
+  const dateStringToDate = dayjs(
+    convertToTimestamp(date, get(dateInputFormat)) * 1000
+  );
+
+  return !dateStringToDate.isAfter(now);
+};
+
+const isValid = (date: string): boolean =>
+  isValidFormat(date) && isDateOnLimit(date);
+
+const useRules = (rules: Ref<ValidationRules>) => {
   const { t } = useI18n();
   const dateFormatRule = (date: string) => {
-    const format = get(dateInputFormat);
-    const dateFormat = getDateInputISOFormat(format);
+    const dateFormat = get(dateInputFormatInISO);
 
     if (get(allowEmpty) && !date) {
       return true;
     }
 
-    if (get(seconds)) {
-      return (
-        isValid(date, format, true) ||
-        t('date_time_picker.seconds_format', {
-          dateFormat
-        }).toString()
-      );
-    }
     return (
-      isValid(date, format) ||
-      t('date_time_picker.default_format', {
-        dateFormat
-      }).toString()
+      isValidFormat(date) ||
+      (get(seconds)
+        ? t('date_time_picker.seconds_format', {
+            dateFormat
+          })
+        : t('date_time_picker.default_format', {
+            dateFormat
+          }))
     );
   };
 
-  const allRules = computed(() => get(rules).concat(dateFormatRule));
+  const dateLimitRule = (date: string) =>
+    isDateOnLimit(date) || t('date_time_picker.limit_now');
+
+  const allRules = computed(() =>
+    get(rules).concat(dateFormatRule, dateLimitRule)
+  );
   const timezoneRule = computed(() => [
     (v: string) =>
       !!v || t('date_time_picker.timezone_field.non_empty').toString()
@@ -100,12 +104,8 @@ const emit = defineEmits<{ (e: 'input', value: string): void }>();
 
 const { dateInputFormat } = storeToRefs(useFrontendSettingsStore());
 
-const { seconds, rules, limitNow, value, allowEmpty } = toRefs(props);
-const { allRules, timezoneRule } = useRules(
-  rules,
-  dateInputFormat,
-  seconds,
-  allowEmpty
+const dateInputFormatInISO: ComputedRef<string> = computed(() =>
+  getDateInputISOFormat(get(dateInputFormat))
 );
 
 const timeFormat = computed(() => {
@@ -115,64 +115,48 @@ const timeFormat = computed(() => {
   }
   return format;
 });
-const showMenu = ref(false);
-const inputtedDate = ref('');
+
+const dateTimeFormat: ComputedRef<string> = computed(
+  () => `${get(dateInputFormatInISO)} ${get(timeFormat)}`
+);
+
+const completeDateTimeFormat: ComputedRef<string> = computed(
+  () => `${get(dateInputFormatInISO)} HH:mm:ss`
+);
+
+const { seconds, rules, value, allowEmpty, limitNow } = toRefs(props);
+
+const { allRules, timezoneRule } = useRules(rules);
+
+const currentValue = ref('');
 const selectedTimezone = ref('');
-const timeModel = ref(dayjs().format(get(timeFormat)));
-const dateModel = ref('');
 const inputField = ref();
 
-const maxDate = computed(() => {
-  if (get(limitNow)) {
-    return dayjs().format(defaultDateFormat);
-  }
-  return '';
-});
-
-const maxTime = computed(() => {
-  if (get(limitNow) && dayjs(get(dateModel)).isToday()) {
-    return dayjs().format(get(timeFormat));
-  }
-  return '';
-});
-
-function onValueChange(value: string) {
+const onValueChange = (value: string) => {
   const changedDateTimezone = convertDateByTimezone(
     value,
     DateFormat.DateMonthYearHourMinuteSecond,
     dayjs.tz.guess(),
     get(selectedTimezone)
   );
-  set(
-    inputtedDate,
-    changeDateFormat(
-      changedDateTimezone,
-      DateFormat.DateMonthYearHourMinuteSecond,
-      get(dateInputFormat)
-    )
+
+  const newValue = changeDateFormat(
+    changedDateTimezone,
+    DateFormat.DateMonthYearHourMinuteSecond,
+    get(dateInputFormat)
   );
 
-  if (!value) {
-    set(dateModel, '');
-    set(timeModel, '');
-  } else if (
-    isValid(value, DateFormat.DateMonthYearHourMinuteSecond, get(seconds))
-  ) {
-    const [date, time] = changedDateTimezone.split(' ');
-    const [day, month, year] = date.split('/');
-    const formattedDate = `${year}-${month}-${day}`;
-    if (formattedDate !== get(dateModel)) {
-      set(dateModel, formattedDate);
-    }
-    if (time !== get(timeModel)) {
-      set(timeModel, time);
-    }
+  const imaskVal = get(imask);
+  if (imaskVal) {
+    imaskVal.value = newValue;
+    set(currentValue, newValue);
   }
-}
+};
 
 watch(value, onValueChange);
 watch(selectedTimezone, () => onValueChange(get(value)));
-onMounted(() => onValueChange(get(value)));
+
+const imask: Ref<InputMask<any> | null> = ref(null);
 
 const getDefaultTimezoneName = (offset: number) => {
   let hour = offset / 60;
@@ -198,32 +182,15 @@ const setCurrentTimezone = () => {
   );
 };
 
-const formatDate = (date: string) => {
-  if (!date) {
-    return '';
-  }
-
-  const [year, month, day] = date.split('-');
-  return `${day}/${month}/${year}`;
-};
-
 const input = (dateTime: string) => {
   emit('input', dateTime);
 };
 
-const emitIfValid = (
-  value: string,
-  format: DateFormat = get(dateInputFormat)
-) => {
-  if (isValid(value, format, get(seconds))) {
-    const formattedDate = changeDateFormat(
-      value,
-      format,
-      DateFormat.DateMonthYearHourMinuteSecond
-    );
+const emitIfValid = (value: string) => {
+  if (isValid(value)) {
     input(
       convertDateByTimezone(
-        formattedDate,
+        value,
         DateFormat.DateMonthYearHourMinuteSecond,
         get(selectedTimezone),
         dayjs.tz.guess()
@@ -232,31 +199,10 @@ const emitIfValid = (
   }
 };
 
-const updateActualDate = () => {
-  let value = formatDate(get(dateModel));
-  const time = get(timeModel);
-  if (time) {
-    value += ` ${time}`;
-  }
-
-  emitIfValid(value, DateFormat.DateMonthYearHourMinuteSecond);
-};
-
-const onTimeChange = (time: string) => {
-  set(timeModel, time);
-  updateActualDate();
-};
-
-const onDateChange = (date: string) => {
-  set(dateModel, date);
-  updateActualDate();
-};
-
 const setNow = () => {
   const now = dayjs();
-  set(timeModel, now.format(get(timeFormat)));
-  set(dateModel, now.format(defaultDateFormat));
-  updateActualDate();
+  const nowInString = now.format(get(dateTimeFormat));
+  emitIfValid(nowInString);
 };
 
 const reset = () => {
@@ -264,73 +210,111 @@ const reset = () => {
   field?.reset();
 };
 
-setCurrentTimezone();
-
 defineExpose({
   reset
 });
+
+const css = useCssModule();
+
+const initImask = () => {
+  const inputWrapper = get(inputField) as any;
+  const input = inputWrapper.$el.querySelector('input') as HTMLElement;
+
+  const completeDateTimeFormatVal = get(completeDateTimeFormat);
+
+  const createBlock = (from: number, to: number) => ({
+    mask: IMask.MaskedRange,
+    from,
+    to
+  });
+
+  const newImask = IMask(input, {
+    mask: Date,
+    overwrite: true,
+    pattern: completeDateTimeFormatVal,
+    format: date => dayjs(date).format(completeDateTimeFormatVal),
+    parse: (date: string) =>
+      new Date(convertToTimestamp(date, get(dateInputFormat)) * 1000),
+    blocks: {
+      YYYY: createBlock(1970, 9999),
+      MM: createBlock(1, 12),
+      DD: createBlock(1, 31),
+      HH: createBlock(0, 23),
+      mm: createBlock(0, 59),
+      ss: createBlock(0, 59)
+    }
+  });
+
+  set(imask, newImask);
+};
+
+onMounted(() => {
+  setCurrentTimezone();
+  initImask();
+});
+
+watch(
+  imask,
+  (imask, prev) => {
+    if (!prev || !imask?.value) {
+      return;
+    }
+
+    set(currentValue, imask.value);
+    emitIfValid(imask.value);
+  },
+  { deep: true }
+);
 </script>
 
 <template>
   <div>
-    <v-menu
-      v-model="showMenu"
-      :close-on-content-click="false"
-      transition="scale-transition"
-      offset-y
-      max-width="580px"
-      class="date-time-picker"
+    <v-text-field
+      ref="inputField"
+      v-model="currentValue"
+      :label="label"
+      :hint="hint"
+      :disabled="disabled"
+      :hide-details="hideDetails"
+      prepend-inner-icon="mdi-calendar"
+      :persistent-hint="persistentHint"
+      :rules="allRules"
+      :outlined="outlined"
+      :error-messages="errorMessages"
     >
-      <template #activator="{ on }">
-        <v-text-field
-          ref="inputField"
-          :value="inputtedDate"
-          :label="label"
-          :hint="hint"
-          :disabled="disabled"
-          :hide-details="hideDetails"
-          prepend-inner-icon="mdi-calendar"
-          :persistent-hint="persistentHint"
-          :rules="allRules"
-          :outlined="outlined"
-          append-icon="mdi-clock-outline"
-          :error-messages="errorMessages"
-          @change="emitIfValid($event)"
-          @click:append="setNow()"
-          v-on="on"
-        />
-      </template>
+      <template #append>
+        <v-menu
+          :close-on-content-click="false"
+          transition="scale-transition"
+          :nudge-bottom="56"
+          left
+          max-width="580px"
+          class="date-time-picker"
+        >
+          <template #activator="{ on }">
+            <v-btn icon class="mt-n2" v-on="on">
+              <v-icon>mdi-earth</v-icon>
+            </v-btn>
+          </template>
 
-      <div :class="$style.menu">
-        <div>
-          <v-date-picker
-            elevation="0"
-            class="rounded-0"
-            :value="dateModel"
-            :max="maxDate"
-            @change="onDateChange($event)"
-          />
-          <v-time-picker
-            elevation="0"
-            class="rounded-0"
-            :value="timeModel"
-            :max="maxTime"
-            format="24hr"
-            :use-seconds="seconds"
-            @change="onTimeChange($event)"
-          />
-        </div>
-        <v-autocomplete
-          v-model="selectedTimezone"
-          class="pa-4 pb-0"
-          outlined
-          persistent-hint
-          menu-pros="auto"
-          :items="timezones"
-          :rules="timezoneRule"
-        />
-      </div>
-    </v-menu>
+          <div :class="css.menu">
+            <v-autocomplete
+              v-model="selectedTimezone"
+              label="Select timezone"
+              class="pa-4 pb-0"
+              outlined
+              persistent-hint
+              menu-pros="auto"
+              :items="timezones"
+              :rules="timezoneRule"
+            />
+          </div>
+        </v-menu>
+        <v-btn icon class="mt-n2" @click="setNow()">
+          <v-icon>mdi-clock-outline</v-icon>
+        </v-btn>
+      </template>
+    </v-text-field>
   </div>
 </template>
 
