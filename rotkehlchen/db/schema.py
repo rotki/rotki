@@ -459,14 +459,12 @@ CREATE TABLE IF NOT EXISTS evm_transactions (
 
 # from/to address/value is also in the primary key of the internal transactions since
 # trace_id, which is returned by etherscan does not guarantee uniqueness. Example:
-# https://api-optimistic.etherscan.io/api?module=account&action=txlistinternal&sort=asc&startBlock=8779092&endBlock=8779092
+# https://api.etherscan.io/api?module=account&action=txlistinternal&sort=asc&startBlock=16779092&endBlock=16779092
 DB_CREATE_EVM_INTERNAL_TRANSACTIONS = """
 CREATE TABLE IF NOT EXISTS evm_internal_transactions (
     parent_tx_hash BLOB NOT NULL,
     chain_id INTEGER NOT NULL,
     trace_id INTEGER NOT NULL,
-    timestamp INTEGER NOT NULL,
-    block_number INTEGER NOT NULL,
     from_address TEXT NOT NULL,
     to_address TEXT,
     value TEXT NOT NULL,

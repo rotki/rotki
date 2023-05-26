@@ -1,4 +1,5 @@
 from typing import cast
+
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
@@ -517,8 +518,6 @@ def test_curve_remove_liquidity_with_internal(database, ethereum_transaction_dec
         parent_tx_hash=evmhash,
         chain_id=ChainID.ETHEREUM,
         trace_id=27,
-        timestamp=Timestamp(1591043988),
-        block_number=14647221,
         from_address=string_to_evm_address('0xDC24316b9AE028F1497c275EB9192a3Ea0f67022'),
         to_address=string_to_evm_address('0xa8005630caE7b7d2AFADD38FD3B3040d13cbE2BC'),
         value=FVal('1.02930131799766041') * EXP18,

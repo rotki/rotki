@@ -178,8 +178,6 @@ def test_etherscan_get_transactions_genesis_block(eth_transactions):
             parent_tx_hash=GENESIS_HASH,
             chain_id=ChainID.ETHEREUM,
             trace_id=0,
-            timestamp=ETHEREUM_GENESIS,
-            block_number=0,
             from_address=ZERO_ADDRESS,
             to_address='0xC951900c341aBbb3BAfbf7ee2029377071Dbc36A',
             value='327600000000000000000',

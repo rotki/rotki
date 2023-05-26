@@ -310,8 +310,6 @@ class EvmInternalTransaction(NamedTuple):
     parent_tx_hash: EVMTxHash
     chain_id: ChainID
     trace_id: int
-    timestamp: Timestamp
-    block_number: int
     from_address: ChecksumEvmAddress
     to_address: Optional[ChecksumEvmAddress]
     value: int

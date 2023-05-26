@@ -1539,6 +1539,15 @@ def test_upgrade_db_37_to_38(user_data_dir):  # pylint: disable=unused-argument
     assert cursor.execute('SELECT MAX(seq) FROM location').fetchone()[0] == 39
     nodes_before = cursor.execute('SELECT * FROM rpc_nodes').fetchall()
     max_initial_node_id = cursor.execute('SELECT MAX(identifier) FROM rpc_nodes').fetchone()[0]
+    expected_internal_txs = [
+        (b'\x9be\x99&\xc5\xdbx\xfa\xb8\xe1\xe5\xe6\xc1\x95Z\xe5H\xee/f{G\xfc\xe5\x14p\xdf\xcfN\xe8\xaf\x12', 10, 11, 1664740777, 27005911, '0xC36442b4a4522E871399CD717aBDD847Ab11FE88', '0xc37b40ABdB939635068d3c5f13E7faF686F03B65', '95427211708089243'),  # noqa: E501
+        (b'>\xad\xa4\x1cyJ\xa8>\x7f5\x8c\x16\xf9R`n\xf5H\xcd\xdf;$\x89\x8a\xfd\x11\xef\xc8\x81\xa8B\x1d', 10, 1, 1664740853, 27006108, '0xBBF8233867c1982D66EA920d726d24391B713550', '0xc37b40ABdB939635068d3c5f13E7faF686F03B65', '272573405755025'),  # noqa: E501
+        (b'\xd2\x0f\xd4\xc6Nx\xa6\xfb\xcbq\xae\xc9-\xc7p\xd0\x9cP\x12\xeeXqB5\x08\x96}&\xa6<\x90?', 10, 1, 1651314511, 6793555, '0x1111111254760F7ab3F16433eea9304126DCd199', '0xc37b40ABdB939635068d3c5f13E7faF686F03B65', '24788679616549824'),  # noqa: E501
+        (b'N\xa7*\xe55\xe3-^\xdcT:\x9a\xce_slp7\xccc\xe4\x08\x8d\xe3\x85\x11)|v@I\xb5', 1, 10, 1639315070, 13790549, '0x283Af0B28c62C092C9727F1Ee09c02CA627EB7F5', '0xc37b40ABdB939635068d3c5f13E7faF686F03B65', '247563100724292'),  # noqa: E501
+        (b'!wp\x1a\xb9\xc6Zw\xc7\xe9\xe6OV\x85\x12h\xcd\x015\x8e\x1c\x1d\x7f\xeb\xd8]!\x89\xbf\xf9P\x9f', 10, 1, 1667995269, 36284335, '0x1111111254760F7ab3F16433eea9304126DCd199', '0xc37b40ABdB939635068d3c5f13E7faF686F03B65', '127700838932040865'),  # noqa: E501
+        (b'O\x1e\x95Pl\x10\xf0a\xdd\xfe(\xa7C\x7f;e\x19Y\xff\x17\xf1\xe2\xa7\xa1H\xc8\x89aG\xee5~', 10, 11, 1643122781, 2806776, '0x86cA30bEF97fB651b8d866D45503684b90cb3312', '0xc37b40ABdB939635068d3c5f13E7faF686F03B65', '103926722004783110'),  # noqa: E501
+    ]
+    assert cursor.execute('SELECT * from evm_internal_transactions ORDER BY value DESC').fetchall() == expected_internal_txs  # noqa: E501
 
     db_v37.logout()
     # Execute upgrade
@@ -1559,6 +1568,8 @@ def test_upgrade_db_37_to_38(user_data_dir):  # pylint: disable=unused-argument
         for id, node in enumerate(DEFAULT_POLYGON_NODES_AT_V38, start=max_initial_node_id + 1)
     ]
     assert nodes_after == nodes_before + default_polygon_nodes_with_ids
+    expected_internal_txs = [tuple(x[:3]) + tuple(x[5:]) for x in expected_internal_txs]
+    assert cursor.execute('SELECT * from evm_internal_transactions ORDER BY value DESC').fetchall() == expected_internal_txs  # noqa: E501
 
 
 def test_latest_upgrade_adds_remove_tables(user_data_dir):

@@ -17,7 +17,6 @@ from rotkehlchen.types import (
     EvmInternalTransaction,
     EvmTransaction,
     Location,
-    Timestamp,
     deserialize_evm_tx_hash,
 )
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
@@ -77,8 +76,6 @@ def test_kyber_legacy_old_contract(database, ethereum_inquirer, eth_transactions
         parent_tx_hash=evmhash,
         chain_id=ChainID.ETHEREUM,
         trace_id=27,
-        timestamp=Timestamp(1591043988),
-        block_number=10182160,
         from_address=string_to_evm_address('0x65bF64Ff5f51272f729BDcD7AcFB00677ced86Cd'),
         to_address=string_to_evm_address('0x6d379cb5BA04c09293b21Bf314E7aba3FfEAaF5b'),
         value=187603293406027635,
