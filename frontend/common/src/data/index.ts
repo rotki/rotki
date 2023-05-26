@@ -40,7 +40,7 @@ export const SupportedAsset = BaseAsset.extend({
   active: z.boolean().optional(),
   ended: z.number().nullish(),
   decimals: z.number().nullish(),
-  type: z.string().nullish(),
+  assetType: z.string().nullish(),
   forked: z.string().nullish(),
   address: z.string().nullish(),
   underlyingTokens: z.array(UnderlyingToken).nullish(),

@@ -23,6 +23,10 @@ const rules = {
     required: helpers.withMessage(
       t('underlying_token_manager.validation.address_non_empty'),
       required
+    ),
+    isValidEthAddress: helpers.withMessage(
+      t('underlying_token_manager.validation.valid'),
+      isValidEthAddress
     )
   },
   weight: {
@@ -77,6 +81,7 @@ const editToken = (token: UnderlyingToken) => {
   set(underlyingAddress, token.address);
   set(tokenKind, token.tokenKind);
   set(underlyingWeight, token.weight);
+  deleteToken(token.address);
 };
 
 const deleteToken = (address: string) => {

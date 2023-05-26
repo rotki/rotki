@@ -62,5 +62,13 @@ describe('assets', () => {
     it('adds a single managed asset', () => {
       page.addAsset();
     });
+
+    it('edit an asset', () => {
+      page.editAsset();
+    });
+
+    it('should delete an asset', () => {
+      page.deleteAsset();
+    });
   });
 });

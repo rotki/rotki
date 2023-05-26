@@ -115,7 +115,7 @@ const getAsset = (item: SupportedAsset) => {
     name,
     symbol: item.symbol ?? '',
     identifier: item.identifier,
-    isCustomAsset: item.type === CUSTOM_ASSET,
+    isCustomAsset: item.assetType === CUSTOM_ASSET,
     customAssetType: item.customAssetType ?? ''
   };
 };
@@ -312,7 +312,7 @@ const massIgnore = async (ignored: boolean) => {
         <span v-else>-</span>
       </template>
       <template #item.type="{ item }">
-        {{ formatType(item.type) }}
+        {{ formatType(item.assetType) }}
       </template>
       <template #item.ignored="{ item }">
         <div class="d-flex justify-center">
@@ -324,7 +324,7 @@ const massIgnore = async (ignored: boolean) => {
       </template>
       <template #item.actions="{ item }">
         <row-actions
-          v-if="item.type !== CUSTOM_ASSET"
+          v-if="item.assetType !== CUSTOM_ASSET"
           :edit-tooltip="t('asset_table.edit_tooltip')"
           :delete-tooltip="t('asset_table.delete_tooltip')"
           @edit-click="edit(item)"
