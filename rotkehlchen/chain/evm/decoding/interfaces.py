@@ -88,7 +88,9 @@ class DecoderInterface(metaclass=ABCMeta):
 
     @staticmethod
     def possible_products() -> dict[str, list[EvmProduct]]:
-        """Returns the possible evmproducts associated to a counterparty"""
+        """Returns a mapping of counterparty to possible evmproducts associated with it
+        for the decoder.
+        """
         return {}
 
 

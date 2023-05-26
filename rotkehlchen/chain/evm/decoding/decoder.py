@@ -165,8 +165,6 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
         self.decoders: dict[str, 'DecoderInterface'] = {}
         # store the mapping of possible counterparties to the allowed types and subtypes in events
         self.events_types_tuples: DecoderEventMappingType = {}
-        # store the mapping of possible counterparties to their evm products
-        self.possible_products: dict[str, list[EvmProduct]] = {}
         # Recursively check all submodules to get all decoder address mappings and rules
         rules = self._recursively_initialize_decoders(self.chain_modules_root)
         self.rules += rules
@@ -227,27 +225,37 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
                     results.post_decoding_rules.update(self.decoders[class_name].post_decoding_rules())  # noqa: E501
                     results.all_counterparties.update(self.decoders[class_name].counterparties())
                     results.addresses_to_counterparties.update(self.decoders[class_name].addresses_to_counterparties())  # noqa: E501
-                    new_possible_events = self.decoders[class_name].possible_events()
-                    # Iterate over type mappings and collect them covering the case where a
-                    # counterparty can appear in multiple decoders
-                    for counterparty, new_events in new_possible_events.items():
-                        if counterparty not in self.events_types_tuples:
-                            self.events_types_tuples.update({counterparty: new_events})
-                        else:
-                            self.events_types_tuples[counterparty] = combine_dicts(
-                                a=self.events_types_tuples[counterparty],
-                                b=new_events,
-                                op=lambda a, b: a | b,
-                            )
-                    # for the products shouldn't be any conflict. If we find any we can update
-                    # this code
-                    self.possible_products.update(self.decoders[class_name].possible_products())
 
             if is_pkg:
                 recursive_results = self._recursively_initialize_decoders(full_name)
                 results += recursive_results
 
         return results
+
+    def get_decoders_products(self) -> dict[str, list[EvmProduct]]:
+        """Get the list of possible products"""
+        possible_products: dict[str, list[EvmProduct]] = {}
+        for decoder in self.decoders.values():
+            possible_products |= decoder.possible_products()
+
+        return possible_products
+
+    def get_decoders_event_types(self) -> DecoderEventMappingType:
+        """Get the mappings of counterparties to their possible even type
+        and subtype combinations
+        """
+        possible_types = {}
+        for decoder in self.decoders.values():
+            for counterparty, new_events in decoder.possible_events().items():
+                if counterparty not in possible_types:
+                    possible_types.update({counterparty: new_events})
+                else:
+                    possible_types[counterparty] = combine_dicts(
+                        a=possible_types[counterparty],
+                        b=new_events,
+                        op=lambda a, b: a | b,
+                    )
+        return possible_types
 
     def reload_data(self, cursor: 'DBCursor') -> None:
         """Reload all related settings from DB and data that any decoder may require from the chain
