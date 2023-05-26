@@ -1,12 +1,17 @@
 import { type ActionResult } from '@rotki/common/lib/data';
 import { type AxiosRequestConfig } from 'axios';
+import isEmpty from 'lodash/isEmpty';
 import {
   TaskNotFoundError,
   type TaskResultResponse,
   type TaskStatus
 } from '@/types/task';
 import { handleResponse, validTaskStatus } from '@/services/utils';
-import { SyncConflictError, SyncConflictPayload } from '@/types/login';
+import {
+  HalfUpgradeError,
+  SyncConflictError,
+  SyncConflictPayload
+} from '@/types/login';
 import { api } from '@/services/rotkehlchen-api';
 
 export const useTaskApi = () => {
@@ -39,7 +44,16 @@ export const useTaskApi = () => {
     if (outcome) {
       if (statusCode === 300) {
         const { result, message } = outcome;
-        throw new SyncConflictError(message, SyncConflictPayload.parse(result));
+
+        if (typeof result === 'object') {
+          if (isEmpty(result)) {
+            throw new HalfUpgradeError(message);
+          }
+          throw new SyncConflictError(
+            message,
+            SyncConflictPayload.parse(result)
+          );
+        }
       }
       return outcome;
     }

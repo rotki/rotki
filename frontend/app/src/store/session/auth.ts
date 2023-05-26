@@ -3,11 +3,15 @@ import {
   type DataMigrationStatusData,
   type DbUpgradeStatusData
 } from '@/types/websocket-messages';
-import { type SyncConflict } from '@/types/login';
+import { type HalfUpgradeConflict, type SyncConflict } from '@/types/login';
 
 const defaultSyncConflict = (): SyncConflict => ({
   message: '',
   payload: null
+});
+
+const defaultHalfUpgradeConflict = (): HalfUpgradeConflict => ({
+  message: ''
 });
 
 export const useSessionAuthStore = defineStore('session/auth', () => {
@@ -17,6 +21,9 @@ export const useSessionAuthStore = defineStore('session/auth', () => {
   const premiumPrompt: Ref<boolean> = ref(false);
   const username: Ref<string> = ref('');
   const syncConflict: Ref<SyncConflict> = ref(defaultSyncConflict());
+  const halfUpgradeConflict: Ref<HalfUpgradeConflict> = ref(
+    defaultHalfUpgradeConflict()
+  );
   const dbUpgradeStatus: Ref<DbUpgradeStatusData | null> = ref(null);
   const dataMigrationStatus: Ref<DataMigrationStatusData | null> = ref(null);
 
@@ -27,6 +34,10 @@ export const useSessionAuthStore = defineStore('session/auth', () => {
 
   const resetSyncConflict = (): void => {
     set(syncConflict, defaultSyncConflict());
+  };
+
+  const resetHalfUpgradeConflict = (): void => {
+    set(halfUpgradeConflict, defaultHalfUpgradeConflict());
   };
 
   const updateDbUpgradeStatus = (status: DbUpgradeStatusData): void => {
@@ -42,6 +53,10 @@ export const useSessionAuthStore = defineStore('session/auth', () => {
     set(dbUpgradeStatus, null);
   };
 
+  const conflictExist: ComputedRef<boolean> = computed(
+    () => !!(get(syncConflict).message || get(halfUpgradeConflict).message)
+  );
+
   return {
     logged,
     dbUpgradeStatus,
@@ -51,8 +66,11 @@ export const useSessionAuthStore = defineStore('session/auth', () => {
     username,
     premiumPrompt,
     syncConflict,
+    halfUpgradeConflict,
+    conflictExist,
     upgradeVisible,
     resetSyncConflict,
+    resetHalfUpgradeConflict,
     updateDbUpgradeStatus,
     updateDataMigrationStatus,
     clearUpgradeMessages

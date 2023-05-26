@@ -1,18 +1,13 @@
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
 import { helpers, required, requiredIf } from '@vuelidate/validators';
-import {
-  type LoginCredentials,
-  type SyncApproval,
-  type SyncConflict
-} from '@/types/login';
+import { type LoginCredentials, type SyncApproval } from '@/types/login';
 
 const { t } = useI18n();
 
 const props = withDefaults(
   defineProps<{
     loading: boolean;
-    syncConflict: SyncConflict;
     errors?: string[];
   }>(),
   {
@@ -27,7 +22,12 @@ const emit = defineEmits<{
   (e: 'backend-changed', url: string | null): void;
 }>();
 
-const { syncConflict, errors } = toRefs(props);
+const { errors } = toRefs(props);
+
+const authStore = useSessionAuthStore();
+const { syncConflict, halfUpgradeConflict, conflictExist } =
+  storeToRefs(authStore);
+const { resetSyncConflict, resetHalfUpgradeConflict } = authStore;
 
 const touched = () => emit('touched');
 const newAccount = () => emit('new-account');
@@ -239,11 +239,14 @@ watch(rememberPassword, async (remember: boolean, previous: boolean) => {
   checkRememberUsername();
 });
 
-const login = async (syncApproval: SyncApproval = 'unknown') => {
+const login = async (actions?: {
+  syncApproval?: SyncApproval;
+  resumeFromBackup?: boolean;
+}) => {
   const credentials: LoginCredentials = {
     username: get(username),
     password: get(password),
-    syncApproval
+    ...actions
   };
   emit('login', credentials);
   if (get(rememberUsername)) {
@@ -253,6 +256,11 @@ const login = async (syncApproval: SyncApproval = 'unknown') => {
   if (get(rememberPassword) && isPackaged) {
     await storePassword(get(username), get(password));
   }
+};
+
+const abortLogin = () => {
+  resetSyncConflict();
+  resetHalfUpgradeConflict();
 };
 </script>
 
@@ -274,9 +282,7 @@ const login = async (syncApproval: SyncApproval = 'unknown') => {
             :label="t('login.label_username')"
             prepend-inner-icon="mdi-account"
             :error-messages="v$.username.$errors.map(e => e.$message)"
-            :disabled="
-              loading || !!syncConflict.message || customBackendDisplay
-            "
+            :disabled="loading || conflictExist || customBackendDisplay"
             required
             @keypress.enter="login()"
           />
@@ -286,9 +292,7 @@ const login = async (syncApproval: SyncApproval = 'unknown') => {
             v-model="password"
             outlined
             :error-messages="v$.password.$errors.map(e => e.$message)"
-            :disabled="
-              loading || !!syncConflict.message || customBackendDisplay
-            "
+            :disabled="loading || conflictExist || customBackendDisplay"
             type="password"
             required
             class="login__fields__password"
@@ -399,11 +403,11 @@ const login = async (syncApproval: SyncApproval = 'unknown') => {
           <transition name="bounce">
             <v-alert
               v-if="!!syncConflict.message"
-              class="animate login__sync-error mt-4"
+              class="animate login__sync-error mt-8"
               text
               prominent
               outlined
-              type="info"
+              type="warning"
               icon="mdi-cloud-download"
             >
               <div class="login__sync-error__header text-h6">
@@ -434,13 +438,62 @@ const login = async (syncApproval: SyncApproval = 'unknown') => {
 
               <v-row justify="end" class="mt-2">
                 <v-col cols="auto" class="shrink">
-                  <v-btn color="error" depressed @click="login('no')">
+                  <v-btn
+                    color="error"
+                    depressed
+                    @click="login({ syncApproval: 'no' })"
+                  >
                     {{ t('common.actions.no') }}
                   </v-btn>
                 </v-col>
                 <v-col cols="auto" class="shrink">
-                  <v-btn color="success" depressed @click="login('yes')">
+                  <v-btn
+                    color="success"
+                    depressed
+                    @click="login({ syncApproval: 'yes' })"
+                  >
                     {{ t('common.actions.yes') }}
+                  </v-btn>
+                </v-col>
+              </v-row>
+            </v-alert>
+          </transition>
+
+          <transition>
+            <v-alert
+              v-if="!!halfUpgradeConflict.message"
+              class="animate half__upgrade-error mt-8"
+              text
+              prominent
+              outlined
+              type="warning"
+              icon="mdi-shield-alert-outline"
+            >
+              <div class="half__upgrade-error__header text-h6">
+                {{ t('login.half_upgrade_error.title') }}
+              </div>
+              <div class="half__upgrade-error__body mt-2">
+                <div>
+                  <div>{{ halfUpgradeConflict.message }}</div>
+                  <div class="mt-2">
+                    {{ t('login.half_upgrade_error.question') }}
+                  </div>
+                </div>
+              </div>
+
+              <v-row justify="end" class="mt-2">
+                <v-col cols="auto" class="shrink">
+                  <v-btn color="error" depressed @click="abortLogin()">
+                    {{ t('login.half_upgrade_error.abort') }}
+                  </v-btn>
+                </v-col>
+                <v-col cols="auto" class="shrink">
+                  <v-btn
+                    color="success"
+                    depressed
+                    @click="login({ resumeFromBackup: true })"
+                  >
+                    {{ t('login.half_upgrade_error.resume') }}
                   </v-btn>
                 </v-col>
               </v-row>
@@ -482,10 +535,7 @@ const login = async (syncApproval: SyncApproval = 'unknown') => {
             depressed
             color="primary"
             :disabled="
-              v$.$invalid ||
-              loading ||
-              !!syncConflict.message ||
-              customBackendDisplay
+              v$.$invalid || loading || conflictExist || customBackendDisplay
             "
             :loading="loading"
             @click="login()"

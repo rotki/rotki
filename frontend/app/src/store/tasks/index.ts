@@ -3,7 +3,6 @@ import dayjs from 'dayjs';
 import find from 'lodash/find';
 import toArray from 'lodash/toArray';
 import { type ComputedRef, type Ref } from 'vue';
-import { SyncConflictError } from '@/types/login';
 import {
   BackendCancelledTaskError,
   type Task,
@@ -48,7 +47,10 @@ interface TaskResponse<R, M extends TaskMeta> {
 export const useTaskStore = defineStore('tasks', () => {
   const locked = ref<number[]>([]);
   const tasks = ref<TaskMap<TaskMeta>>({});
-  const handlers: Record<string, (result: any, meta: any) => void> = {};
+  const handlers: Record<
+    string,
+    (result: any, meta: any, error?: Error) => void
+  > = {};
   let isRunning = false;
 
   const { error } = useError();
@@ -57,7 +59,11 @@ export const useTaskStore = defineStore('tasks', () => {
 
   const registerHandler = <R, M extends TaskMeta>(
     task: TaskType,
-    handlerImpl: (actionResult: ActionResult<R>, meta: M) => void,
+    handlerImpl: (
+      actionResult: ActionResult<R>,
+      meta: M,
+      error?: Error
+    ) => void,
     taskId?: string
   ): void => {
     const identifier = taskId ? `${task}-${taskId}` : task;
@@ -155,10 +161,13 @@ export const useTaskStore = defineStore('tasks', () => {
     return new Promise<TaskResponse<R, M>>((resolve, reject) => {
       registerHandler<R, M>(
         type,
-        (actionResult, meta) => {
+        (actionResult, meta, error) => {
           unregisterHandler(type, id.toString());
           const { result, message } = actionResult;
-          if (result === null) {
+
+          if (error) {
+            reject(error);
+          } else if (result === null) {
             let errorMessage: string;
             if (message) {
               errorMessage = message;
@@ -208,7 +217,8 @@ export const useTaskStore = defineStore('tasks', () => {
 
   const handleResult = (
     result: ActionResult<any>,
-    task: Task<TaskMeta>
+    task: Task<TaskMeta>,
+    error?: Error
   ): void => {
     if (task.meta.ignoreResult) {
       remove(task.id);
@@ -218,7 +228,7 @@ export const useTaskStore = defineStore('tasks', () => {
     const handler = handlers[task.type] ?? handlers[`${task.type}-${task.id}`];
 
     if (handler) {
-      handler(result, task.meta);
+      handler(result, task.meta, error);
       /* c8 ignore next 5 */
     } else {
       logger.warn(
@@ -241,8 +251,8 @@ export const useTaskStore = defineStore('tasks', () => {
       if (e instanceof TaskNotFoundError) {
         remove(task.id);
         handleResult(error(task, e.message), task);
-      } else if (e instanceof SyncConflictError) {
-        handleResult({ message: e.message, result: e.payload }, task);
+      } else {
+        handleResult({ message: e.message, result: null }, task, e);
       }
     }
     unlock(task.id);
