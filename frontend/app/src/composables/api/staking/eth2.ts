@@ -21,7 +21,7 @@ export const useEth2Api = () => {
     payload: EthStakingPayload
   ): Promise<PendingTask> => {
     const response = await api.instance.put<ActionResult<PendingTask>>(
-      '/blockchains/ETH2/stake/details',
+      '/blockchains/eth2/stake/details',
       snakeCaseTransformer({
         asyncQuery: true,
         ...nonEmptyProperties(payload)
@@ -37,7 +37,7 @@ export const useEth2Api = () => {
     payload: EthStakingPayload
   ): Promise<Eth2StakingRewards> => {
     const response = await api.instance.post<ActionResult<Eth2StakingRewards>>(
-      '/blockchains/ETH2/stake/details',
+      '/blockchains/eth2/stake/details',
       snakeCaseTransformer(nonEmptyProperties(payload)),
       {
         validateStatus: validWithSessionAndExternalService
@@ -51,7 +51,7 @@ export const useEth2Api = () => {
     asyncQuery: boolean
   ): Promise<T> => {
     const response = await api.instance.post<ActionResult<T>>(
-      '/blockchains/ETH2/stake/dailystats',
+      '/blockchains/eth2/stake/dailystats',
       snakeCaseTransformer({
         asyncQuery,
         ...payload,

@@ -1,4 +1,5 @@
 import { type AssetBalanceWithPrice } from '@rotki/common';
+import { Blockchain } from '@rotki/common/lib/blockchain';
 import sortBy from 'lodash/sortBy';
 import { TRADE_LOCATION_BANKS } from '@/data/defaults';
 import { type BtcBalances } from '@/types/blockchain/balances';
@@ -94,7 +95,7 @@ describe('store::balances/aggregated', () => {
     const { totals: ethTotals } = storeToRefs(useEthBalancesStore());
 
     const totalsState = {
-      ETH: {
+      [Blockchain.ETH]: {
         DAI: {
           amount: bigNumberify(100),
           usdValue: bigNumberify(100)
@@ -111,7 +112,8 @@ describe('store::balances/aggregated', () => {
           amount: bigNumberify(100),
           usdValue: bigNumberify(100)
         }
-      }
+      },
+      [Blockchain.ETH2]: {}
     };
 
     set(ethTotals, totalsState);
@@ -209,7 +211,7 @@ describe('store::balances/aggregated', () => {
     const { btcAccounts } = useBtcAccountBalances();
 
     set(btc, accounts);
-    set(balances, { BTC: btcBalances });
+    set(balances, { [Blockchain.BTC]: btcBalances, [Blockchain.BCH]: {} });
 
     expect(get(btcAccounts)).toEqual([
       {
@@ -218,14 +220,14 @@ describe('store::balances/aggregated', () => {
           amount: bigNumberify(10),
           usdValue: bigNumberify(10)
         },
-        chain: 'BTC',
+        chain: Blockchain.BTC,
         label: '',
         tags: []
       },
       {
         address: '',
         balance: zeroBalance(),
-        chain: 'BTC',
+        chain: Blockchain.BTC,
         derivationPath: 'm',
         label: '',
         tags: [],
@@ -237,7 +239,7 @@ describe('store::balances/aggregated', () => {
           amount: bigNumberify(10),
           usdValue: bigNumberify(10)
         },
-        chain: 'BTC',
+        chain: Blockchain.BTC,
         derivationPath: 'm',
         label: '',
         tags: [],
@@ -246,7 +248,7 @@ describe('store::balances/aggregated', () => {
       {
         address: '',
         balance: zeroBalance(),
-        chain: 'BTC',
+        chain: Blockchain.BTC,
         derivationPath: '',
         label: '123',
         tags: ['a'],
@@ -343,7 +345,7 @@ describe('store::balances/aggregated', () => {
     const { totals: ethTotals } = storeToRefs(useEthBalancesStore());
 
     const totalsState = {
-      ETH: {
+      [Blockchain.ETH]: {
         DAI: {
           amount: bigNumberify(100),
           usdValue: bigNumberify(100)
@@ -360,7 +362,8 @@ describe('store::balances/aggregated', () => {
           amount: bigNumberify(100),
           usdValue: bigNumberify(100)
         }
-      }
+      },
+      [Blockchain.ETH2]: {}
     };
 
     set(ethTotals, totalsState);

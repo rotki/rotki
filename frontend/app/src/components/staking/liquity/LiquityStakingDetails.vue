@@ -61,7 +61,7 @@ const aggregatedStake: ComputedRef<LiquityStakingDetailEntry | null> = computed(
       if (stakes === null) {
         stakes = { ...stake };
       } else {
-        let key: keyof typeof stakes;
+        let key: keyof LiquityStakingDetailEntry;
         for (key in stakes) {
           stakes[key] = {
             ...stakes[key],
@@ -107,7 +107,7 @@ const aggregatedStakingPool: ComputedRef<LiquityPoolDetailEntry | null> =
       if (pools === null) {
         pools = { ...pool };
       } else {
-        let key: keyof typeof pools;
+        let key: keyof LiquityPoolDetailEntry;
         for (key in pools) {
           pools[key] = {
             ...pools[key],
@@ -180,7 +180,7 @@ const aggregatedStatistic: ComputedRef<LiquityStatisticDetails | null> =
     );
 
     if (selectedAddresses.length === 0) {
-      return allStatistics.globalStats;
+      return allStatistics.globalStats ?? null;
     }
 
     if (!allStatistics.byAddress) {

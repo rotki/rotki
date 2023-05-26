@@ -42,7 +42,7 @@ class XpubData(NamedTuple):
     def serialize(self) -> dict[str, Any]:
         return {
             'xpub': self.xpub.xpub,
-            'blockchain': self.blockchain.value,
+            'blockchain': self.blockchain.serialize(),
             'derivation_path': self.derivation_path,
             'label': self.label,
             'tags': self.tags,
@@ -196,7 +196,7 @@ class XpubManager():
                 start_change_index=last_change_idx,
                 gap_limit=self.chains_aggregator.btc_derivation_gap_limit,
             )
-            known_addresses = getattr(self.db.get_blockchain_accounts(cursor), xpub_data.blockchain.value.lower())  # noqa: E501
+            known_addresses = getattr(self.db.get_blockchain_accounts(cursor), xpub_data.blockchain.get_key())  # noqa: E501
 
         new_addresses = []
         existing_address_data = []
@@ -313,7 +313,7 @@ class XpubManager():
         """Checks all xpub addresses and sees if new addresses got used.
         If they did it adds them for tracking.
         """
-        log.debug(f'Starting task for derivation of new {blockchain.value} xpub addresses')
+        log.debug(f'Starting task for derivation of new {blockchain!s} xpub addresses')
         with self.db.conn.read_ctx() as cursor:
             xpubs = self.db.get_bitcoin_xpub_data(cursor, blockchain)
         with self.lock:

@@ -8,6 +8,7 @@ import requests
 from eth_utils import to_checksum_address
 
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.constants.assets import A_AVAX, A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
@@ -71,17 +72,17 @@ def test_add_same_evm_account_for_multiple_chains(rotkehlchen_api_server):
         ))
         result = assert_proper_response_with_result(response)
 
-    for chain in ('ETH', 'AVAX'):
+    for chain, native_asset in ((SupportedBlockchain.ETHEREUM, A_ETH), (SupportedBlockchain.AVALANCHE, A_AVAX)):  # noqa: E501
         # Check per account
-        account_balances = result['per_account'][chain][AVALANCHE_ACC1_AVAX_ADDR]
+        account_balances = result['per_account'][chain.serialize()][AVALANCHE_ACC1_AVAX_ADDR]
         assert 'liabilities' in account_balances
-        asset_token = account_balances['assets'][chain]
+        asset_token = account_balances['assets'][native_asset.identifier]
         assert FVal(asset_token['amount']) >= ZERO
         assert FVal(asset_token['usd_value']) >= ZERO
 
         # Check totals
         assert 'liabilities' in result['totals']
-        total_token = result['totals']['assets'][chain]
+        total_token = result['totals']['assets'][native_asset.identifier]
         assert FVal(total_token['amount']) >= ZERO
         assert FVal(total_token['usd_value']) >= ZERO
 
@@ -254,10 +255,10 @@ def test_add_multievm_accounts(rotkehlchen_api_server):
 
     result = assert_proper_response_with_result(response)
     assert result == {
-        'ETH': [common_account, contract_account],
-        'AVAX': [common_account],
-        'OPTIMISM': [common_account],
-        'POLYGON_POS': [common_account],
+        'eth': [common_account, contract_account],
+        'avax': [common_account],
+        'optimism': [common_account],
+        'polygon_pos': [common_account],
     }
 
     # Now get accounts to make sure they are all input correctly

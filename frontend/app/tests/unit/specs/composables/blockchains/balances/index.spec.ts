@@ -40,7 +40,8 @@ vi.mock('@/store/tasks', () => ({
         }
       },
       meta: { title: '' }
-    })
+    }),
+    isTaskRunning: vi.fn()
   })
 }));
 

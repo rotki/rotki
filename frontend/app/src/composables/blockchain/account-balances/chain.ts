@@ -12,21 +12,21 @@ export const useChainAccountBalances = () => {
   const { balances } = storeToRefs(useChainBalancesStore());
 
   const ksmAccounts: ComputedRef<AccountWithBalance[]> = computed(() =>
-    accountsWithBalances(get(ksm), get(balances).KSM, Blockchain.KSM)
+    accountsWithBalances(get(ksm), get(balances).ksm, Blockchain.KSM)
   );
 
   const dotAccounts: ComputedRef<AccountWithBalance[]> = computed(() =>
-    accountsWithBalances(get(dot), get(balances).DOT, Blockchain.DOT)
+    accountsWithBalances(get(dot), get(balances).dot, Blockchain.DOT)
   );
 
   const avaxAccounts: ComputedRef<AccountWithBalance[]> = computed(() =>
-    accountsWithBalances(get(avax), get(balances).AVAX, Blockchain.AVAX)
+    accountsWithBalances(get(avax), get(balances).avax, Blockchain.AVAX)
   );
 
   const optimismAccounts: ComputedRef<AccountWithBalance[]> = computed(() =>
     accountsWithBalances(
       get(optimism),
-      get(balances).OPTIMISM,
+      get(balances).optimism,
       Blockchain.OPTIMISM
     )
   );
@@ -63,25 +63,25 @@ export const useChainAccountBalances = () => {
     computed(() => [
       ...getBlockchainBreakdown(
         Blockchain.KSM,
-        get(balances).KSM,
+        get(balances).ksm,
         get(ksmAccounts),
         asset
       ),
       ...getBlockchainBreakdown(
         Blockchain.DOT,
-        get(balances).DOT,
+        get(balances).dot,
         get(dotAccounts),
         asset
       ),
       ...getBlockchainBreakdown(
         Blockchain.AVAX,
-        get(balances).AVAX,
+        get(balances).avax,
         get(dotAccounts),
         asset
       ),
       ...getBlockchainBreakdown(
         Blockchain.OPTIMISM,
-        get(balances).OPTIMISM,
+        get(balances).optimism,
         get(optimismAccounts),
         asset
       )

@@ -402,6 +402,13 @@ class SupportedBlockchain(SerializableEnumValueMixin):
             return 'Ethereum Staking'
         return super().__str__()
 
+    def serialize(self) -> str:
+        """
+        Serialize is used expose the enum to the frontend. For consistency we expose the key that
+        that is used in the backend that is compatible with the default deserialize method.
+        """
+        return self.get_key()
+
     def get_key(self) -> str:
         """Returns the key to be used as attribute for this chain in the code"""
         return self.value.lower()
@@ -743,7 +750,7 @@ class AddressbookEntry(NamedTuple):
         )
 
     def __str__(self) -> str:
-        return f'Addressbook entry with name "{self.name}", address "{self.address}" and blockchain {self.blockchain.value if self.blockchain is not None else None}'  # noqa: E501
+        return f'Addressbook entry with name "{self.name}", address "{self.address}" and blockchain {str(self.blockchain) if self.blockchain is not None else None}'  # noqa: E501
 
 
 class OptionalChainAddress(NamedTuple):

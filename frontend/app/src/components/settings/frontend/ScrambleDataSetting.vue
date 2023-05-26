@@ -11,6 +11,10 @@ onMounted(() => {
 });
 
 const { t } = useI18n();
+const randomMultiplier = () => {
+  set(scrambleMultiplier, generateRandomScrambleMultiplier().toString());
+};
+
 const css = useCssModule();
 </script>
 
@@ -48,7 +52,18 @@ const css = useCssModule();
           :success-messages="success"
           :error-messages="error"
           @change="update($event)"
-        />
+        >
+          <template #append>
+            <v-btn
+              icon
+              class="mt-n2"
+              :disabled="!scrambleData"
+              @click="randomMultiplier()"
+            >
+              <v-icon>mdi-refresh</v-icon>
+            </v-btn>
+          </template>
+        </amount-input>
       </div>
     </settings-option>
   </div>

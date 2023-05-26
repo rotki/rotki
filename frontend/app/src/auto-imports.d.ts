@@ -50,6 +50,7 @@ declare global {
   const computedEager: typeof import('@vueuse/core')['computedEager']
   const computedInject: typeof import('@vueuse/core')['computedInject']
   const computedWithControl: typeof import('@vueuse/core')['computedWithControl']
+  const consistOfNumbers: typeof import('./utils/text')['consistOfNumbers']
   const controlledComputed: typeof import('@vueuse/core')['controlledComputed']
   const controlledRef: typeof import('@vueuse/core')['controlledRef']
   const convertDateByTimezone: typeof import('./utils/date')['convertDateByTimezone']
@@ -86,6 +87,7 @@ declare global {
   const fetchDataAsync: typeof import('./utils/fetch-async')['fetchDataAsync']
   const filterAddresses: typeof import('./utils/addresses')['filterAddresses']
   const filterAddressesFromWords: typeof import('./utils/history/index')['filterAddressesFromWords']
+  const generateRandomScrambleMultiplier: typeof import('./utils/session')['generateRandomScrambleMultiplier']
   const get: typeof import('@vueuse/shared')['get']
   const getActivePinia: typeof import('pinia')['getActivePinia']
   const getAddressFromEvmIdentifier: typeof import('./utils/assets')['getAddressFromEvmIdentifier']
@@ -724,6 +726,7 @@ declare module 'vue' {
     readonly computedEager: UnwrapRef<typeof import('@vueuse/core')['computedEager']>
     readonly computedInject: UnwrapRef<typeof import('@vueuse/core')['computedInject']>
     readonly computedWithControl: UnwrapRef<typeof import('@vueuse/core')['computedWithControl']>
+    readonly consistOfNumbers: UnwrapRef<typeof import('./utils/text')['consistOfNumbers']>
     readonly controlledComputed: UnwrapRef<typeof import('@vueuse/core')['controlledComputed']>
     readonly controlledRef: UnwrapRef<typeof import('@vueuse/core')['controlledRef']>
     readonly convertDateByTimezone: UnwrapRef<typeof import('./utils/date')['convertDateByTimezone']>
@@ -760,6 +763,7 @@ declare module 'vue' {
     readonly fetchDataAsync: UnwrapRef<typeof import('./utils/fetch-async')['fetchDataAsync']>
     readonly filterAddresses: UnwrapRef<typeof import('./utils/addresses')['filterAddresses']>
     readonly filterAddressesFromWords: UnwrapRef<typeof import('./utils/history/index')['filterAddressesFromWords']>
+    readonly generateRandomScrambleMultiplier: UnwrapRef<typeof import('./utils/session')['generateRandomScrambleMultiplier']>
     readonly get: UnwrapRef<typeof import('@vueuse/shared')['get']>
     readonly getActivePinia: UnwrapRef<typeof import('pinia')['getActivePinia']>
     readonly getAddressFromEvmIdentifier: UnwrapRef<typeof import('./utils/assets')['getAddressFromEvmIdentifier']>

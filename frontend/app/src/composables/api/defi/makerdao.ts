@@ -4,22 +4,22 @@ import { type PendingTask } from '@/types/task';
 
 export const useMakerDaoApi = () => {
   const fetchDsrBalances = async (): Promise<PendingTask> => {
-    const url = 'blockchains/ETH/modules/makerdao/dsrbalance';
+    const url = 'blockchains/eth/modules/makerdao/dsrbalance';
     return fetchExternalAsync(api.instance, url);
   };
 
   const fetchDsrHistories = async (): Promise<PendingTask> => {
-    const url = 'blockchains/ETH/modules/makerdao/dsrhistory';
+    const url = 'blockchains/eth/modules/makerdao/dsrhistory';
     return fetchExternalAsync(api.instance, url);
   };
 
   const fetchMakerDAOVaults = async (): Promise<PendingTask> => {
-    const url = 'blockchains/ETH/modules/makerdao/vaults';
+    const url = 'blockchains/eth/modules/makerdao/vaults';
     return fetchExternalAsync(api.instance, url);
   };
 
   const fetchMakerDAOVaultDetails = async (): Promise<PendingTask> => {
-    const url = '/blockchains/ETH/modules/makerdao/vaultdetails';
+    const url = '/blockchains/eth/modules/makerdao/vaultdetails';
     return fetchExternalAsync(api.instance, url);
   };
 

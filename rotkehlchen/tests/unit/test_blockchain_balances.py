@@ -10,7 +10,7 @@ from rotkehlchen.constants.assets import A_BCH, A_BTC, A_ETH, A_LQTY, A_LUSD
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.factories import UNIT_BTC_ADDRESS1, make_evm_address
 from rotkehlchen.tests.utils.xpubs import setup_db_for_xpub_tests_impl
-from rotkehlchen.types import ChainID, EvmTokenKind
+from rotkehlchen.types import ChainID, EvmTokenKind, SupportedBlockchain
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.aggregator import ChainsAggregator
@@ -105,8 +105,10 @@ def test_recalculate_totals(blockchain_balances):
 @pytest.mark.parametrize('use_db', [True])
 def test_serialize(blockchain_balances):
     a, address1, address2, _, xpub_data = blockchain_balances
+    optimism_chain_key = SupportedBlockchain.OPTIMISM.serialize()
+    ethereum_chain_key = SupportedBlockchain.ETHEREUM.serialize()
     expected_serialized_dict = {
-        'BTC': {
+        SupportedBlockchain.BITCOIN.serialize(): {
             'standalone': {
                 '12wxFzpjdymPk3xnHmdDLCTXUT9keY3XRd': {'amount': '1', 'usd_value': '1'},
                 '16zNpyv8KxChtjXnE5nYcPqcXcrSQXX2JW': {'amount': '1', 'usd_value': '1'},
@@ -124,7 +126,7 @@ def test_serialize(blockchain_balances):
                     },
                     'derivation_path': 'm/0',
                     'xpub': xpub_data.xpub.xpub}]},
-        'ETH': {
+        ethereum_chain_key: {
             address1: {
                 'assets': {
                     'ETH': {'amount': '1', 'usd_value': '1'},
@@ -132,7 +134,7 @@ def test_serialize(blockchain_balances):
                 'liabilities': {},
             },
         },
-        'OPTIMISM': {
+        optimism_chain_key: {
             address2: {
                 'assets': {
                     'ETH': {'amount': '1', 'usd_value': '1'},
@@ -146,9 +148,9 @@ def test_serialize(blockchain_balances):
 
     # change something and see it is also reflected in the serialized dict
     a.optimism[address2].assets[OPTIMISM_USDC_TOKEN] = Balance(amount=100, usd_value=100)
-    expected_serialized_dict['OPTIMISM'][address2]['assets'][OPTIMISM_USDC_TOKEN.serialize()] = {'amount': '100', 'usd_value': '100'}  # noqa: E501
-    a.eth[address1].assets.pop('ETH')
-    expected_serialized_dict['ETH'][address1] = {'assets': {}, 'liabilities': {}}
+    expected_serialized_dict[optimism_chain_key][address2]['assets'][OPTIMISM_USDC_TOKEN.serialize()] = {'amount': '100', 'usd_value': '100'}  # noqa: E501
+    a.eth[address1].assets.pop(A_ETH.identifier)
+    expected_serialized_dict[ethereum_chain_key][address1] = {'assets': {}, 'liabilities': {}}
     assert a.serialize(given_chain=None) == expected_serialized_dict
 
 

@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
 import requests
+from ens.abis import RESOLVER as ENS_RESOLVER_ABI
 from ens.utils import normal_name_to_hash
 from eth_utils import to_checksum_address
 from requests.exceptions import RequestException
@@ -90,7 +91,7 @@ def get_decimals(asset: CryptoAsset) -> int:
     May raise:
     - UnsupportedAsset if the given asset is not ETH or an ethereum token
     """
-    if asset.identifier == 'ETH':
+    if asset == A_ETH:
         return 18
     try:
         token = asset.resolve_to_evm_token()
@@ -215,8 +216,9 @@ def try_download_ens_avatar(
         log.error(f'Could not find ENS resolver address for {ens_name}')
         return
 
-    avatar_url = eth_inquirer.contracts.contract(resolver_addr).call(
-        node_inquirer=eth_inquirer,
+    avatar_url = eth_inquirer.call_contract(
+        contract_address=resolver_addr,
+        abi=ENS_RESOLVER_ABI,
         method_name='text',
         arguments=[normal_name_to_hash(ens_name), 'avatar'],
     )

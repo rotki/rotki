@@ -1,4 +1,4 @@
-import { type Blockchain } from '@rotki/common/lib/blockchain';
+import { Blockchain } from '@rotki/common/lib/blockchain';
 
 export interface ExplorerUrls {
   readonly address: string;
@@ -13,21 +13,21 @@ export type AssetExplorerUrls = {
 };
 
 export const explorerUrls: AssetExplorerUrls = {
-  ETH: {
+  [Blockchain.ETH]: {
     address: 'https://etherscan.io/address/',
     transaction: 'https://etherscan.io/tx/',
     block: 'https://etherscan.io/block/'
   },
-  ETH2: {
+  [Blockchain.ETH2]: {
     address: 'https://beaconcha.in/validator/',
     block: 'https://beaconcha.in/block/'
   },
-  BTC: {
+  [Blockchain.BTC]: {
     address: 'https://www.blockchain.com/explorer/addresses/btc/',
     transaction: 'https://www.blockchain.com/explorer/transactions/btc/',
     block: 'https://www.blockchain.com/explorer/blocks/btc/'
   },
-  BCH: {
+  [Blockchain.BCH]: {
     address: 'https://www.blockchain.com/explorer/addresses/bch/',
     transaction: 'https://www.blockchain.com/explorer/transactions/bch/',
     block: 'https://www.blockchain.com/explorer/blocks/bch/'
@@ -37,12 +37,12 @@ export const explorerUrls: AssetExplorerUrls = {
     transaction: 'https://blockscout.com/etc/mainnet/tx/',
     block: 'https://blockscout.com/etc/mainnet/block'
   },
-  KSM: {
+  [Blockchain.KSM]: {
     address: 'https://explorer.polkascan.io/kusama/account/',
     transaction: 'https://explorer.polkascan.io/kusama/transaction/',
     block: 'https://explorer.polkascan.io/kusama/block/'
   },
-  AVAX: {
+  [Blockchain.AVAX]: {
     address: 'https://snowtrace.io/address/',
     transaction: 'https://snowtrace.io/tx/',
     block: 'https://snowtrace.io/block/'
@@ -52,12 +52,12 @@ export const explorerUrls: AssetExplorerUrls = {
     transaction: 'https://zkscan.io/explorer/transactions/',
     block: 'https://zkscan.io/explorer/blocks/'
   },
-  DOT: {
+  [Blockchain.DOT]: {
     address: 'https://explorer.polkascan.io/polkadot/account/',
     transaction: 'https://explorer.polkascan.io/polkadot/transaction/',
     block: 'https://explorer.polkascan.io/polkadot/block/'
   },
-  OPTIMISM: {
+  [Blockchain.OPTIMISM]: {
     address: 'https://optimistic.etherscan.io/address/',
     transaction: 'https://optimistic.etherscan.io/tx/',
     block: 'https://optimistic.etherscan.io/block/'

@@ -110,7 +110,13 @@ const updateAssets = async (resolution?: ConflictResolution) => {
 
 const { navigateToUserLogin } = useAppNavigation();
 
+const restarting: Ref<boolean> = ref(false);
 const updateComplete = async () => {
+  if (get(restarting)) {
+    return;
+  }
+
+  set(restarting, true);
   await logout();
   if (!get(headless)) {
     await navigateToUserLogin();
@@ -121,6 +127,7 @@ const updateComplete = async () => {
   setConnected(false);
   await restartBackend();
   await connect();
+  set(restarting, false);
 };
 
 const { show } = useConfirmStore();

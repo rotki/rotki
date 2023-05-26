@@ -5,6 +5,9 @@ Changelog
 * :feature:`-` Ethereum transactions involing bribe claim payouts from StakeDAO will now be decoded properly.
 * :feature:`-` Ethereum transactions involving locking and unlocking GNO using the locked GNO contract will now be decoded properly.
 * :feature:`5250` Ethereum transactions involving AAVE v1 and v2 liquidations will now be decoded properly.
+* :bug:`-` ENS avatar fetching for each name's avatar should now work for all name resolvers. Even older or custom ones.
+* :bug:`-` Users will now be able to decode compounding transactions for Convex gauges.
+* :bug:`-` Convex staking and Curve gauge balances will no longer need a manual balances referesh to be detected.
 
 * :release:`1.28.0 <2023-05-17>`
 * :feature:`2469` History events have now been unified under a common history events section. At the moment it features all kraken exchange events, evm events, custom imported events, block productions, staking withdrawals. Missing events retain their own sections and will be merged into the unified history in subsequent releases.

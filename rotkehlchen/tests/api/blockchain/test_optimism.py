@@ -2,6 +2,7 @@ import random
 
 import pytest
 import requests
+from rotkehlchen.constants.assets import A_ETH
 
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.constants.resolver import evm_address_to_identifier
@@ -29,12 +30,13 @@ def test_add_optimism_blockchain_account(rotkehlchen_api_server):
     works as expected and that balances are returned and tokens are detected.
     """
     async_query = random.choice([False, True])
+    optimism_chain_key = SupportedBlockchain.OPTIMISM.serialize()
 
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
             'blockchainsaccountsresource',
-            blockchain=SupportedBlockchain.OPTIMISM.value,
+            blockchain=optimism_chain_key,
         ),
         json={
             'accounts': [{'address': TEST_ADDY}],
@@ -49,20 +51,20 @@ def test_add_optimism_blockchain_account(rotkehlchen_api_server):
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
         'named_blockchain_balances_resource',
-        blockchain=SupportedBlockchain.OPTIMISM.value,
+        blockchain=optimism_chain_key,
     ))
     result = assert_proper_response_with_result(response)
 
     # Check per account
-    account_balances = result['per_account']['OPTIMISM'][TEST_ADDY]
+    account_balances = result['per_account'][optimism_chain_key][TEST_ADDY]
     assert 'liabilities' in account_balances
-    asset_eth = account_balances['assets']['ETH']
+    asset_eth = account_balances['assets'][A_ETH.identifier]
     assert FVal(asset_eth['amount']) >= ZERO
     assert FVal(asset_eth['usd_value']) >= ZERO
 
     # Check totals
     assert 'liabilities' in result['totals']
-    total_eth = result['totals']['assets']['ETH']
+    total_eth = result['totals']['assets'][A_ETH.identifier]
     assert FVal(total_eth['amount']) >= ZERO
     assert FVal(total_eth['usd_value']) >= ZERO
 
@@ -72,7 +74,7 @@ def test_add_optimism_blockchain_account(rotkehlchen_api_server):
         api_url_for(
             rotkehlchen_api_server,
             'detecttokensresource',
-            blockchain=SupportedBlockchain.OPTIMISM.value,
+            blockchain=optimism_chain_key,
         ),
         json={
             'async_query': async_query,
@@ -107,7 +109,7 @@ def test_add_optimism_blockchain_account(rotkehlchen_api_server):
         api_url_for(
             rotkehlchen_api_server,
             'named_blockchain_balances_resource',
-            blockchain=SupportedBlockchain.OPTIMISM.value,
+            blockchain=optimism_chain_key,
         ),
         json={
             'ignore_cache': True,
@@ -124,10 +126,10 @@ def test_add_optimism_blockchain_account(rotkehlchen_api_server):
         result = assert_proper_response_with_result(response)
 
     # Check per account
-    account_balances = result['per_account']['OPTIMISM'][TEST_ADDY]
+    account_balances = result['per_account'][optimism_chain_key][TEST_ADDY]
     assert 'liabilities' in account_balances
     assert len(account_balances['assets']) == len(optimism_tokens) + 1
-    for asset_id in ('ETH', *optimism_tokens):
+    for asset_id in (A_ETH.identifier, *optimism_tokens):
         asset = account_balances['assets'][asset_id]
         assert FVal(asset['amount']) >= ZERO
         assert FVal(asset['usd_value']) >= ZERO

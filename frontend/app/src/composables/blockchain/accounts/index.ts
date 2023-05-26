@@ -182,7 +182,7 @@ export const useBlockchainAccounts = () => {
       notify({
         title: t('actions.get_accounts.error.title'),
         message: t('actions.get_accounts.error.description', {
-          blockchain: Blockchain[blockchain],
+          blockchain: blockchain.toUpperCase(),
           message: e.message
         }),
         display: true
@@ -210,7 +210,7 @@ export const useBlockchainAccounts = () => {
       notify({
         title: t('actions.get_accounts.error.title'),
         message: t('actions.get_accounts.error.description', {
-          blockchain: Blockchain[chains],
+          blockchain: chains.toUpperCase(),
           message: e.message
         }),
         display: true

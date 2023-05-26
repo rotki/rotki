@@ -780,7 +780,7 @@ Adding information for web3 nodes
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/blockchains/ETH/nodes HTTP/1.1
+      GET /api/1/blockchains/eth/nodes HTTP/1.1
       Host: localhost:5042
 
    **Example Response**:
@@ -801,7 +801,7 @@ Adding information for web3 nodes
                 "owned": false,
                 "weight": "40.00",
                 "active": true,
-                "blockchain": "ETH"
+                "blockchain": "eth"
             },
             {
                 "identifier": 2,
@@ -810,7 +810,7 @@ Adding information for web3 nodes
                 "owned": false,
                 "weight": "20.00",
                 "active": true,
-                "blockchain": "ETH"
+                "blockchain": "eth"
             },
             {
                 "identifier": 3,
@@ -819,7 +819,7 @@ Adding information for web3 nodes
                 "owned": false,
                 "weight": "20.00",
                 "active": true,
-                "blockchain": "ETH"
+                "blockchain": "eth"
             },
             {
                 "identifier": 4,
@@ -828,7 +828,7 @@ Adding information for web3 nodes
                 "owned": false,
                 "weight": "20.00",
                 "active": true,
-                "blockchain": "ETH"
+                "blockchain": "eth"
             }
         ],
         "message": ""
@@ -853,7 +853,7 @@ Adding information for web3 nodes
 
    .. http:example:: curl wget httpie python-requests
 
-      PUT /api/1/blockchains/ETH/nodes HTTP/1.1
+      PUT /api/1/blockchains/eth/nodes HTTP/1.1
       Host: localhost:5042
       Content-Type: application/json
 
@@ -883,7 +883,7 @@ Adding information for web3 nodes
 
    .. http:example:: curl wget httpie python-requests
 
-      PATCH /api/1/blockchains/ETH/nodes HTTP/1.1
+      PATCH /api/1/blockchains/eth/nodes HTTP/1.1
       Host: localhost:5042
       Content-Type: application/json
 
@@ -915,7 +915,7 @@ Adding information for web3 nodes
 
    .. http:example:: curl wget httpie python-requests
 
-      PUT /api/1/blockchains/ETH/nodes HTTP/1.1
+      PUT /api/1/blockchains/eth/nodes HTTP/1.1
       Host: localhost:5042
       Content-Type: application/json
 
@@ -1961,21 +1961,21 @@ Decode transactions that haven't been decoded yet
 Purging locally saved data for ethereum modules
 ====================================================
 
-.. http:delete:: /api/(version)/blockchains/ETH/modules/(name)/data
+.. http:delete:: /api/(version)/blockchains/eth/modules/(name)/data
 
-   Doing a DELETE on the data of a specific ETH module will purge all locally saved data for the module. Can also purge all module data by doing a ``DELETE`` on ``/api/(version)/blockchains/ETH/modules/data`` in which case all module data will be purged.
+   Doing a DELETE on the data of a specific ETH module will purge all locally saved data for the module. Can also purge all module data by doing a ``DELETE`` on ``/api/(version)/blockchains/eth/modules/data`` in which case all module data will be purged.
 
    **Example Request**:
 
    .. http:example:: curl wget httpie python-requests
 
-      DELETE /api/1/blockchains/ETH/modules/uniswap/data HTTP/1.1
+      DELETE /api/1/blockchains/eth/modules/uniswap/data HTTP/1.1
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
       {}
 
-   :reqjson string name: The name of the module whose data to delete. Can be one of the supported ethereum modules. The name can be omitted by doing a ``DELETE`` on ``/api/(version)/blockchains/ETH/modules/data`` in which case all module data will be purged.
+   :reqjson string name: The name of the module whose data to delete. Can be one of the supported ethereum modules. The name can be omitted by doing a ``DELETE`` on ``/api/(version)/blockchains/eth/modules/data`` in which case all module data will be purged.
 
 
    **Example Response**:
@@ -2223,7 +2223,7 @@ Get supported oracles
 Query supported ethereum modules
 =====================================
 
-.. http:get:: /api/(version)/blockchains/ETH/modules
+.. http:get:: /api/(version)/blockchains/eth/modules
 
    Doing a GET on this endpoint will return all supported ethereum modules
 
@@ -2231,7 +2231,7 @@ Query supported ethereum modules
 
    .. http:example:: curl wget httpie python-requests
 
-      DELETE /api/1/blockchains/ETH/modules HTTP/1.1
+      DELETE /api/1/blockchains/eth/modules HTTP/1.1
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
@@ -2717,7 +2717,7 @@ Querying onchain balances
       {
           "result": {
               "per_account": {
-                  "BTC": {
+                  "btc": {
                       "standalone": {
                           "3Kb9QPcTUJKspzjQFBppfXRcWew6hyDAPb": {
                               "amount": "0.5", "usd_value": "3770.075"
@@ -2746,7 +2746,7 @@ Querying onchain balances
                                   }
                           }}]
                    },
-                   "ETH": { "0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B": {
+                   "eth": { "0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B": {
                        "assets": {
                            "ETH": {"amount": "10", "usd_value": "1650.53"},
                            "eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F": {"amount": "15", "usd_value": "15.21"}
@@ -2755,7 +2755,7 @@ Querying onchain balances
                            "eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F": {"amount": "20", "usd_value": "20.35"}
                        }
                   }},
-                   "ETH2": { "0x9675faa8d15665e30d31dc10a332828fa15e2c7490f7d1894d9092901b139801ce476810f8e1e0c7658a9abdb9c4412e": {
+                   "eth2": { "0x9675faa8d15665e30d31dc10a332828fa15e2c7490f7d1894d9092901b139801ce476810f8e1e0c7658a9abdb9c4412e": {
                        "assets": {
                            "ETH2": {"amount": "33.12", "usd_value": "45243.21"},
                        },
@@ -3281,7 +3281,7 @@ Detecting owned tokens
 
   .. http:example:: curl wget httpie python-requests
 
-    GET /api/1/blockchains/ETH/tokens/detect HTTP/1.1
+    GET /api/1/blockchains/eth/tokens/detect HTTP/1.1
     Host: localhost:5042
 
     {"addresses": ["0xC88eA7a5df3A7BA59C72393C5b2dc2CE260ff04D", "0xE07Af3FBEAf8584dc885f5bAA7c72419BDDf002D"]}
@@ -5821,7 +5821,7 @@ Getting blockchain account data
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/blockchains/ETH/accounts HTTP/1.1
+      GET /api/1/blockchains/eth/accounts HTTP/1.1
       Host: localhost:5042
 
    .. _blockchain_accounts_result:
@@ -5924,7 +5924,7 @@ Getting blockchain account data
 Getting all DeFi balances
 =========================
 
-.. http:get:: /api/(version)/blockchains/ETH/defi
+.. http:get:: /api/(version)/blockchains/eth/defi
 
    Doing a GET on the DeFi balances endpoint will return a mapping of all accounts to their respective balances in DeFi protocols.
 
@@ -5938,7 +5938,7 @@ Getting all DeFi balances
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/blockchains/ETH/defi HTTP/1.1
+      GET /api/1/blockchains/eth/defi HTTP/1.1
       Host: localhost:5042
 
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
@@ -6073,7 +6073,7 @@ Getting all DeFi balances
 Getting current ethereum MakerDAO DSR balance
 =================================================
 
-.. http:get:: /api/(version)/blockchains/ETH/modules/makerdao/dsrbalance
+.. http:get:: /api/(version)/blockchains/eth/modules/makerdao/dsrbalance
 
    Doing a GET on the makerdao dsrbalance resource will return the current balance held in DSR by any of the user's accounts that ever had DAI deposited in the DSR and also the current DSR percentage.
 
@@ -6087,7 +6087,7 @@ Getting current ethereum MakerDAO DSR balance
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/blockchains/ETH/modules/makerdao/dsrbalance HTTP/1.1
+      GET /api/1/blockchains/eth/modules/makerdao/dsrbalance HTTP/1.1
       Host: localhost:5042
 
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
@@ -6126,7 +6126,7 @@ Getting current ethereum MakerDAO DSR balance
 Getting ethereum MakerDAO DSR historical report
 =================================================
 
-.. http:get:: /api/(version)/blockchains/ETH/modules/makerdao/dsrhistory
+.. http:get:: /api/(version)/blockchains/eth/modules/makerdao/dsrhistory
 
    .. note::
       This endpoint is only available for premium users
@@ -6143,7 +6143,7 @@ Getting ethereum MakerDAO DSR historical report
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/blockchains/ETH/modules/makerdao/dsrhistory HTTP/1.1
+      GET /api/1/blockchains/eth/modules/makerdao/dsrhistory HTTP/1.1
       Host: localhost:5042
 
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
@@ -6245,7 +6245,7 @@ Getting ethereum MakerDAO DSR historical report
 Getting MakerDAO vaults basic data
 ===================================
 
-.. http:get:: /api/(version)/blockchains/ETH/modules/makerdao/vaults
+.. http:get:: /api/(version)/blockchains/eth/modules/makerdao/vaults
 
    Doing a GET on the makerdao vault resource will return the basic information for each vault the user has
 
@@ -6259,7 +6259,7 @@ Getting MakerDAO vaults basic data
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/blockchains/ETH/modules/makerdao/vaults HTTP/1.1
+      GET /api/1/blockchains/eth/modules/makerdao/vaults HTTP/1.1
       Host: localhost:5042
 
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
@@ -6329,7 +6329,7 @@ Getting MakerDAO vaults basic data
 Getting MakerDAO vault details
 ===================================
 
-.. http:get:: /api/(version)/blockchains/ETH/modules/makerdao/vaultdetails
+.. http:get:: /api/(version)/blockchains/eth/modules/makerdao/vaultdetails
 
    .. note::
       This endpoint is only available for premium users
@@ -6348,7 +6348,7 @@ Getting MakerDAO vault details
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/blockchains/ETH/modules/makerdao/vaultdetails HTTP/1.1
+      GET /api/1/blockchains/eth/modules/makerdao/vaultdetails HTTP/1.1
       Host: localhost:5042
 
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
@@ -6452,7 +6452,7 @@ Getting MakerDAO vault details
 Getting Aave balances
 ========================
 
-.. http:get:: /api/(version)/blockchains/ETH/modules/aave/balances
+.. http:get:: /api/(version)/blockchains/eth/modules/aave/balances
 
    Doing a GET on the aave balances resource will return the balances that the user has locked in Aave for lending and borrowing along with their current APYs.
 
@@ -6466,7 +6466,7 @@ Getting Aave balances
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/blockchains/ETH/modules/aave/balances HTTP/1.1
+      GET /api/1/blockchains/eth/modules/aave/balances HTTP/1.1
       Host: localhost:5042
 
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
@@ -6532,11 +6532,10 @@ Getting Aave balances
    :statuscode 500: Internal rotki error.
    :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
 
-
 Getting Balancer balances
 ==============================
 
-.. http:get:: /api/(version)/blockchains/ETH/modules/balancer/balances
+.. http:get:: /api/(version)/blockchains/eth/modules/balancer/balances
 
    Doing a GET on the balancer balances resource will return the balances locked in Balancer Liquidity Pools (LPs or pools).
 
@@ -6550,7 +6549,7 @@ Getting Balancer balances
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/blockchains/ETH/modules/balancer/balances HTTP/1.1
+      GET /api/1/blockchains/eth/modules/balancer/balances HTTP/1.1
       Host: localhost:5042
 
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
@@ -6651,7 +6650,7 @@ Getting Balancer balances
 Getting Balancer events
 =========================
 
-.. http:get:: /api/(version)/blockchains/ETH/modules/balancer/history/events
+.. http:get:: /api/(version)/blockchains/eth/modules/balancer/history/events
 
    Doing a GET on the Balancer events history resource will return the history of all Balancer events (i.e. add and remove liquidity in the pools).
 
@@ -6665,7 +6664,7 @@ Getting Balancer events
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/blockchains/ETH/modules/balancer/history/events HTTP/1.1
+      GET /api/1/blockchains/eth/modules/balancer/history/events HTTP/1.1
       Host: localhost:5042
 
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
@@ -6756,7 +6755,7 @@ Getting Balancer events
 Getting Compound balances
 ==============================
 
-.. http:get:: /api/(version)/blockchains/ETH/modules/compound/balances
+.. http:get:: /api/(version)/blockchains/eth/modules/compound/balances
 
    Doing a GET on the compound balances resource will return the balances that the user has locked in Compound for lending and borrowing along with their current APYs. The APYs are return in a string percentage with 2 decimals of precision. If for some reason APY can't be queried ``null`` is returned.
 
@@ -6770,7 +6769,7 @@ Getting Compound balances
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/blockchains/ETH/modules/compound/balances HTTP/1.1
+      GET /api/1/blockchains/eth/modules/compound/balances HTTP/1.1
       Host: localhost:5042
 
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
@@ -6845,7 +6844,7 @@ Getting Compound balances
 Getting compound historical data
 ==================================
 
-.. http:get:: /api/(version)/blockchains/ETH/modules/compound/history
+.. http:get:: /api/(version)/blockchains/eth/modules/compound/history
 
    .. note::
       This endpoint is only available for premium users
@@ -6863,7 +6862,7 @@ Getting compound historical data
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/blockchains/ETH/modules/compound/history HTTP/1.1
+      GET /api/1/blockchains/eth/modules/compound/history HTTP/1.1
       Host: localhost:5042
 
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
@@ -7071,7 +7070,7 @@ Getting compound historical data
 Getting Liquity balances
 ========================
 
-.. http:get:: /api/(version)/blockchains/ETH/modules/liquity/balances
+.. http:get:: /api/(version)/blockchains/eth/modules/liquity/balances
 
    Doing a GET on the liquity balances resource will return the balances that the user has in troves.
 
@@ -7088,7 +7087,7 @@ Getting Liquity balances
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/blockchains/ETH/modules/liquity/balances HTTP/1.1
+      GET /api/1/blockchains/eth/modules/liquity/balances HTTP/1.1
       Host: localhost:5042
 
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
@@ -7133,7 +7132,7 @@ Getting Liquity balances
 Getting Liquity staked amount
 =============================
 
-.. http:get:: /api/(version)/blockchains/ETH/modules/liquity/staking
+.. http:get:: /api/(version)/blockchains/eth/modules/liquity/staking
 
    Doing a GET on the liquity balances resource will return the balances that the user has staked.
 
@@ -7150,7 +7149,7 @@ Getting Liquity staked amount
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/blockchains/ETH/modules/liquity/staking HTTP/1.1
+      GET /api/1/blockchains/eth/modules/liquity/staking HTTP/1.1
       Host: localhost:5042
 
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
@@ -7217,7 +7216,7 @@ Getting Liquity staked amount
 Getting Liquity stability pool infomration
 ==========================================
 
-.. http:get:: /api/(version)/blockchains/ETH/modules/liquity/pool
+.. http:get:: /api/(version)/blockchains/eth/modules/liquity/pool
 
    Doing a GET on the liquity stability pool resource will return the balances deposited in it and the rewards accrued.
 
@@ -7231,7 +7230,7 @@ Getting Liquity stability pool infomration
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/blockchains/ETH/modules/liquity/pool HTTP/1.1
+      GET /api/1/blockchains/eth/modules/liquity/pool HTTP/1.1
       Host: localhost:5042
 
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
@@ -7300,7 +7299,7 @@ Getting Liquity stability pool infomration
 Getting Liquity staking information
 ====================================
 
-.. http:get:: /api/(version)/blockchains/ETH/modules/liquity/stats
+.. http:get:: /api/(version)/blockchains/eth/modules/liquity/stats
 
    Doing a GET on the liquity stats resource will return the statistics for staking in the stability pool and the LQTY staking service.
 
@@ -7314,7 +7313,7 @@ Getting Liquity staking information
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/blockchains/ETH/modules/liquity/stats HTTP/1.1
+      GET /api/1/blockchains/eth/modules/liquity/stats HTTP/1.1
       Host: localhost:5042
 
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
@@ -7460,7 +7459,7 @@ Getting Liquity staking information
 Getting Uniswap balances
 ==============================
 
-.. http:get:: /api/(version)/blockchains/ETH/modules/uniswap/v2/balances
+.. http:get:: /api/(version)/blockchains/eth/modules/uniswap/v2/balances
 
    Doing a GET on the uniswap balances resource will return the balances locked in Uniswap Liquidity Pools (LPs or pools).
 
@@ -7471,7 +7470,7 @@ Getting Uniswap balances
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/blockchains/ETH/modules/uniswap/v2/balances HTTP/1.1
+      GET /api/1/blockchains/eth/modules/uniswap/v2/balances HTTP/1.1
       Host: localhost:5042
 
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
@@ -7537,7 +7536,7 @@ Getting Uniswap balances
 Getting Uniswap V3 balances
 ==============================
 
-.. http:get:: /api/(version)/blockchains/ETH/modules/uniswap/v3/balances
+.. http:get:: /api/(version)/blockchains/eth/modules/uniswap/v3/balances
 
    Doing a GET on the uniswap v3 balances resource will return the balances locked in Uniswap V3 Liquidity Pools (LPs or pools).
 
@@ -7548,7 +7547,7 @@ Getting Uniswap V3 balances
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/blockchains/ETH/modules/uniswap/v3/balances HTTP/1.1
+      GET /api/1/blockchains/eth/modules/uniswap/v3/balances HTTP/1.1
       Host: localhost:5042
 
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
@@ -7618,7 +7617,7 @@ Getting Uniswap V3 balances
 Getting Uniswap events
 =========================
 
-.. http:get:: /api/(version)/blockchains/ETH/modules/uniswap/history/events
+.. http:get:: /api/(version)/blockchains/eth/modules/uniswap/history/events
 
    Doing a GET on the uniswap events history resource will return the history of all uniswap events (i.e. add and remove liquidity in the pools).
 
@@ -7632,7 +7631,7 @@ Getting Uniswap events
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/blockchains/ETH/modules/uniswap/history/events HTTP/1.1
+      GET /api/1/blockchains/eth/modules/uniswap/history/events HTTP/1.1
       Host: localhost:5042
 
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
@@ -7714,7 +7713,7 @@ Getting Uniswap events
 Getting yearn finance vaults balances
 ==========================================
 
-.. http:get:: /api/(version)/blockchains/ETH/modules/yearn/vaults/balances
+.. http:get:: /api/(version)/blockchains/eth/modules/yearn/vaults/balances
 
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``
@@ -7729,7 +7728,7 @@ Getting yearn finance vaults balances
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/blockchains/ETH/modules/yearn/vaults/balances HTTP/1.1
+      GET /api/1/blockchains/eth/modules/yearn/vaults/balances HTTP/1.1
       Host: localhost:5042
 
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
@@ -7801,7 +7800,7 @@ Getting yearn finance vaults balances
 Getting yearn finance vaults historical data
 =============================================
 
-.. http:get:: /api/(version)/blockchains/ETH/modules/yearn/vaults/history
+.. http:get:: /api/(version)/blockchains/eth/modules/yearn/vaults/history
 
    .. note::
       This endpoint is only available for premium users
@@ -7819,7 +7818,7 @@ Getting yearn finance vaults historical data
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/blockchains/ETH/modules/yearn/vaults/history HTTP/1.1
+      GET /api/1/blockchains/eth/modules/yearn/vaults/history HTTP/1.1
       Host: localhost:5042
 
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
@@ -7950,7 +7949,7 @@ Getting yearn finance vaults historical data
 Getting yearn finance V2 vaults balances
 ==========================================
 
-.. http:get:: /api/(version)/blockchains/ETH/modules/yearn/vaultsv2/balances
+.. http:get:: /api/(version)/blockchains/eth/modules/yearn/vaultsv2/balances
 
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``
@@ -7965,7 +7964,7 @@ Getting yearn finance V2 vaults balances
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/blockchains/ETH/modules/yearn/vaultsv2/balances HTTP/1.1
+      GET /api/1/blockchains/eth/modules/yearn/vaultsv2/balances HTTP/1.1
       Host: localhost:5042
 
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
@@ -8028,7 +8027,7 @@ Getting yearn finance V2 vaults balances
 Getting yearn finance V2 vaults historical data
 ================================================
 
-.. http:get:: /api/(version)/blockchains/ETH/modules/yearn/vaultsv2/history
+.. http:get:: /api/(version)/blockchains/eth/modules/yearn/vaultsv2/history
 
    .. note::
       This endpoint is only available for premium users
@@ -8046,7 +8045,7 @@ Getting yearn finance V2 vaults historical data
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/blockchains/ETH/modules/yearn/vaultsv2/history HTTP/1.1
+      GET /api/1/blockchains/eth/modules/yearn/vaultsv2/history HTTP/1.1
       Host: localhost:5042
 
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
@@ -8171,7 +8170,7 @@ Getting yearn finance V2 vaults historical data
 Getting Loopring balances
 ==============================
 
-.. http:get:: /api/(version)/blockchains/ETH/modules/loopring/balances
+.. http:get:: /api/(version)/blockchains/eth/modules/loopring/balances
 
    Doing a GET on the loopring balances resource will return the balances in loopring L2 that the user has deposited from any of the L1 addresses that are set to track loopring.
 
@@ -8182,7 +8181,7 @@ Getting Loopring balances
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/blockchains/ETH/modules/loopring/balances HTTP/1.1
+      GET /api/1/blockchains/eth/modules/loopring/balances HTTP/1.1
       Host: localhost:5042
 
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
@@ -8221,7 +8220,7 @@ Getting Loopring balances
 Getting Eth2 Staking details
 ==============================
 
-.. http:PUT:: /api/(version)/blockchains/ETH2/stake/details
+.. http:PUT:: /api/(version)/blockchains/eth2/stake/details
 
    Doing a PUT on the ETH2 stake details endpoint will return detailed information about your ETH2 staking activity and information about the earned ETH as part of withdrawals, mev rewards and new blocks.
 
@@ -8236,7 +8235,7 @@ Getting Eth2 Staking details
 
    .. http:example:: curl wget httpie python-requests
 
-      PUT /api/1/blockchains/ETH2/stake/details HTTP/1.1
+      PUT /api/1/blockchains/eth2/stake/details HTTP/1.1
       Host: localhost:5042
 
       {'validator_indices': [1111]}
@@ -8311,7 +8310,7 @@ Getting Eth2 Staking details
    :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
 
 
-.. http:POST:: /api/(version)/blockchains/ETH2/stake/details
+.. http:POST:: /api/(version)/blockchains/eth2/stake/details
 
    Doing a POST on the ETH2 stake details endpoint will query the database for information about earned ETH as part of withdrawals, mev rewards and new blocks.
 
@@ -8323,7 +8322,7 @@ Getting Eth2 Staking details
 
    .. http:example:: curl wget httpie python-requests
 
-      POST /api/1/blockchains/ETH2/stake/details HTTP/1.1
+      POST /api/1/blockchains/eth2/stake/details HTTP/1.1
       Host: localhost:5042
 
       {'validator_indices': [1111]}
@@ -8360,7 +8359,7 @@ Getting Eth2 Staking details
 Getting Eth2 Staking daily stats
 =====================================
 
-.. http:post:: /api/(version)/blockchains/ETH2/stake/dailystats
+.. http:post:: /api/(version)/blockchains/eth2/stake/dailystats
 
    Doing a POST on the ETH2 stake daily stats endpoint will return daily stats for your ETH2 validators filtered and paginated by the given parameters
 
@@ -8374,7 +8373,7 @@ Getting Eth2 Staking daily stats
 
    .. http:example:: curl wget httpie python-requests
 
-      POST /api/1/blockchains/ETH2/stake/dailystats HTTP/1.1
+      POST /api/1/blockchains/eth2/stake/dailystats HTTP/1.1
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
@@ -8433,7 +8432,7 @@ Getting Eth2 Staking daily stats
 Adding an Eth2 validator
 ==========================
 
-.. http:put:: /api/(version)/blockchains/ETH2/validators
+.. http:put:: /api/(version)/blockchains/eth2/validators
 
    Doing a PUT on the eth2 validators endpoint will input information and track an ETH2 validator.
 
@@ -8445,7 +8444,7 @@ Adding an Eth2 validator
 
    .. http:example:: curl wget httpie python-requests
 
-      PUT /api/1/blockchains/ETH2/validators HTTP/1.1
+      PUT /api/1/blockchains/eth2/validators HTTP/1.1
       Host: localhost:5042
 
    :reqjson validator_index int: An optional integer representing the validator index of the validator to track. If this is not given then the pulic key of the validator has to be given!
@@ -8475,7 +8474,7 @@ Adding an Eth2 validator
 Deleting Eth2 validators
 ===========================
 
-.. http:delete:: /api/(version)/blockchains/ETH2/validators
+.. http:delete:: /api/(version)/blockchains/eth2/validators
 
    Doing a DELETE on the eth2 validators endpoint will delete information and stop tracking a number of ETH2 validator/s.
 
@@ -8484,7 +8483,7 @@ Deleting Eth2 validators
 
    .. http:example:: curl wget httpie python-requests
 
-      DELETE /api/1/blockchains/ETH2/validators HTTP/1.1
+      DELETE /api/1/blockchains/eth2/validators HTTP/1.1
       Host: localhost:5042
       Content-Type: application/json
 
@@ -8514,7 +8513,7 @@ Deleting Eth2 validators
 Editing an Eth2 validator
 ==========================
 
-.. http:patch:: /api/(version)/blockchains/ETH2/validators
+.. http:patch:: /api/(version)/blockchains/eth2/validators
 
    Doing a PATCH on the eth2 validators endpoint will allow to edit the ownership percentage of a validator indentified by its index.
 
@@ -8523,7 +8522,7 @@ Editing an Eth2 validator
 
    .. http:example:: curl wget httpie python-requests
 
-      PUT /api/1/blockchains/ETH2/validators HTTP/1.1
+      PUT /api/1/blockchains/eth2/validators HTTP/1.1
       Host: localhost:5042
 
    :reqjson validator_index int: An integer representing the validator index of the validator to edit.
@@ -8549,7 +8548,7 @@ Editing an Eth2 validator
 Getting tracked Eth2 validators
 ===============================
 
-.. http:get:: /api/(version)/blockchains/ETH2/validators
+.. http:get:: /api/(version)/blockchains/eth2/validators
 
    Doing a GET on the ETH2 validators endpoint will get information on the tracked ETH2 validators. If the user is not premium they will see up to a certain limit of validators.
 
@@ -8558,7 +8557,7 @@ Getting tracked Eth2 validators
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/blockchains/ETH2/validators HTTP/1.1
+      GET /api/1/blockchains/eth2/validators HTTP/1.1
       Host: localhost:5042
 
 
@@ -8607,7 +8606,7 @@ Getting tracked Eth2 validators
 Getting Pickle's DILL balances
 ==============================
 
-.. http:get:: /api/(version)/blockchains/ETH/modules/pickle/dill
+.. http:get:: /api/(version)/blockchains/eth/modules/pickle/dill
 
    Doing a GET on the pickle's DILL balances resource will return the balances that the user has locked with the rewards that can be claimed.
 
@@ -8621,7 +8620,7 @@ Getting Pickle's DILL balances
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/blockchains/ETH/modules/pickle/dill HTTP/1.1
+      GET /api/1/blockchains/eth/modules/pickle/dill HTTP/1.1
       Host: localhost:5042
 
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
@@ -8663,7 +8662,7 @@ Getting Pickle's DILL balances
 Querying ethereum airdrops
 ==============================
 
-.. http:get:: /api/(version)/blockchains/ETH/airdrops
+.. http:get:: /api/(version)/blockchains/eth/airdrops
 
    Doing a GET on the ethereum airdrops endpoint will return how much and of which token any of the tracked ethereum addresses are entitled to.
 
@@ -8672,7 +8671,7 @@ Querying ethereum airdrops
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/blockchains/ETH/airdrops HTTP/1.1
+      GET /api/1/blockchains/eth/airdrops HTTP/1.1
       Host: localhost:5042
 
 
@@ -8874,12 +8873,12 @@ Adding EVM accounts to all EVM chains
 
       {
         "result": {
-            "ETH": [
+            "eth": [
                 "0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B",
                 "0x19b0AD50E768D2376C6BA7de32F426ecE4e03e0b"
             ],
-            "AVAX": ["0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B"],
-            "OPTIMISM": ["0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B"]
+            "avax": ["0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B"],
+            "optimism": ["0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B"]
         },
         "message": ""
       }
@@ -8949,7 +8948,7 @@ Adding blockchain accounts
 
    .. http:example:: curl wget httpie python-requests
 
-      PUT /api/1/blockchains/ETH/accounts HTTP/1.1
+      PUT /api/1/blockchains/eth/accounts HTTP/1.1
       Host: localhost:5042
 
       {
@@ -9036,61 +9035,10 @@ Adding BTC/BCH xpubs
       Content-Type: application/json
 
       {
-          "result": {
-              "per_account": {
-                  "BTC": {
-                      "standalone": {
-                          "3Kb9QPcTUJKspzjQFBppfXRcWew6hyDAPb": {
-                              "amount": "0.5", "usd_value": "3770.075"
-                          }, "33hjmoU9XjEz8aLxf44FNGB8TdrLkAVBBo": {
-                              "amount": "0.5", "usd_value": "3770.075"
-                      }},
-                      "xpubs": [{
-                              "xpub": "xpub68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk",
-                              "derivation_path": "m/0/0",
-                              "addresses": {
-                                  "1LZypJUwJJRdfdndwvDmtAjrVYaHko136r": {
-                                      "amount": "0.5", "usd_value": "3770.075"
-                                  },
-                                  "1AMrsvqsJzDq25QnaJzX5BzEvdqQ8T6MkT": {
-                                      "amount": "0.5", "usd_value": "3770.075"
-                                  }
-                          }}, {
-                              "xpub": "zpub6quTRdxqWmerHdiWVKZdLMp9FY641F1F171gfT2RS4D1FyHnutwFSMiab58Nbsdu4fXBaFwpy5xyGnKZ8d6xn2j4r4yNmQ3Yp3yDDxQUo3q",
-                              "derivation_path": "m",
-                              "addresses": {
-                                  "bc1qc3qcxs025ka9l6qn0q5cyvmnpwrqw2z49qwrx5": {
-                                      "amount": "0.5", "usd_value": "3770.075"
-                                  },
-                                  "bc1qr4r8vryfzexvhjrx5fh5uj0s2ead8awpqspqra": {
-                                      "amount": "0.5", "usd_value": "3770.075"
-                                  }
-                          }}]
-                   },
-                   "ETH": { "0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B": {
-                       "assets": {
-                           "ETH": {"amount": "10", "usd_value": "1755.53"},
-                           "GNO": {"amount": "1", "usd_value": "50"},
-                           "RDN": {"amount": "1", "usd_value": "1.5"}
-                       },
-                      "liabilities": {}
-                  }}
-              },
-              "totals": {
-                  "assets": {
-                      "BTC": {"amount": "1", "usd_value": "7540.15"},
-                      "ETH": {"amount": "10", "usd_value": "1650.53"},
-                      "RDN": {"amount": "1", "usd_value": "1.5"},
-                      "GNO": {"amount": "1", "usd_value": "50"}
-                  },
-                  "liabilities": {
-                      "DAI": {"amount": "10", "usd_value": "10.2"}
-                  }
-          },
+          "result": True,
           "message": ""
       }
 
-   :resjson object result: An object containing the ``"per_account"`` and ``"totals"`` keys as also defined `here <blockchain_balances_result_>`_.
    :statuscode 200: Xpub successfully added
    :statuscode 400: Provided JSON or data is in some way malformed. The accounts to add contained invalid addresses or were an empty list.
    :statuscode 409: User is not logged in. Some error occurred when re-querying the balances after addition. Provided tags do not exist. Check message for details.
@@ -9297,7 +9245,7 @@ Editing blockchain account data
 
    .. http:example:: curl wget httpie python-requests
 
-      PATCH /api/1/blockchains/ETH/accounts HTTP/1.1
+      PATCH /api/1/blockchains/eth/accounts HTTP/1.1
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
@@ -9371,7 +9319,7 @@ Removing blockchain accounts
 
    .. http:example:: curl wget httpie python-requests
 
-      DELETE /api/1/blockchains/ETH/accounts HTTP/1.1
+      DELETE /api/1/blockchains/eth/accounts HTTP/1.1
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
@@ -10261,7 +10209,7 @@ Data imports
 ERC20 token info
 ====================
 
-.. http:get:: /api/(version)/blockchains/ETH/erc20details
+.. http:get:: /api/(version)/blockchains/eth/erc20details
 
    Doing a GET to this endpoint will return basic information about a token by calling the ``decimals/name/symbol`` methods.
 
@@ -10273,7 +10221,7 @@ ERC20 token info
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/blockchains/ETH/erc20details HTTP/1.1
+      GET /api/1/blockchains/eth/erc20details HTTP/1.1
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 

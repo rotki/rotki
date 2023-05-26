@@ -1,7 +1,7 @@
 import random
 from contextlib import ExitStack
 from http import HTTPStatus
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
 import gevent
@@ -12,7 +12,7 @@ from flaky import flaky
 from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.bitcoin import get_bitcoin_addresses_balances
-from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_EUR
+from rotkehlchen.constants.assets import A_AVAX, A_BTC, A_DAI, A_ETH, A_EUR, A_KSM
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
@@ -46,6 +46,9 @@ from rotkehlchen.tests.utils.substrate import (
 )
 from rotkehlchen.types import Location, Price, SupportedBlockchain, Timestamp
 from rotkehlchen.utils.misc import ts_now
+
+if TYPE_CHECKING:
+    from rotkehlchen.api.server import APIServer
 
 
 def assert_all_balances(
@@ -699,12 +702,13 @@ def test_balances_caching_mixup(
         response_btc = requests.get(api_url_for(
             rotkehlchen_api_server,
             'named_blockchain_balances_resource',
-            blockchain='BTC',
+            blockchain=SupportedBlockchain.BITCOIN.serialize(),
         ), json={'async_query': True})
+        eth_chain_key = SupportedBlockchain.ETHEREUM.serialize()
         response_eth = requests.get(api_url_for(
             rotkehlchen_api_server,
             'named_blockchain_balances_resource',
-            blockchain='ETH',
+            blockchain=eth_chain_key,
         ), json={'async_query': True})
         task_id_btc = assert_ok_async_response(response_btc)
         task_id_eth = assert_ok_async_response(response_eth)
@@ -717,11 +721,11 @@ def test_balances_caching_mixup(
             task_id=task_id_eth,
             timeout=ASYNC_TASK_WAIT_TIMEOUT * 2,
         )
-        assert result_eth['per_account']['ETH'][ethereum_accounts[0]]['assets']['ETH']['amount'] == '1'  # noqa: E501
-        assert result_eth['per_account']['ETH'][ethereum_accounts[0]]['assets'][A_RDN.identifier]['amount'] == '2'  # noqa: E501
-        assert result_eth['totals']['assets']['ETH']['amount'] == '1'
+        assert result_eth['per_account'][eth_chain_key][ethereum_accounts[0]]['assets'][A_ETH.identifier]['amount'] == '1'  # noqa: E501
+        assert result_eth['per_account'][eth_chain_key][ethereum_accounts[0]]['assets'][A_RDN.identifier]['amount'] == '2'  # noqa: E501
+        assert result_eth['totals']['assets'][A_ETH.identifier]['amount'] == '1'
         assert result_eth['totals']['assets'][A_RDN.identifier]['amount'] == '2'
-        assert result_eth['per_account']['ETH'][ethereum_accounts[0]]['assets'][A_RDN.identifier]['amount'] == '2'  # noqa: E501
+        assert result_eth['per_account'][eth_chain_key][ethereum_accounts[0]]['assets'][A_RDN.identifier]['amount'] == '2'  # noqa: E501
         assert result_btc['per_account'] == {}
         assert result_btc['totals']['assets'] == {}
         assert result_btc['totals']['liabilities'] == {}
@@ -731,7 +735,7 @@ def test_balances_caching_mixup(
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('kusama_manager_connect_at_start', [KUSAMA_TEST_NODES])
 @pytest.mark.parametrize('ksm_accounts', [[SUBSTRATE_ACC1_KSM_ADDR, SUBSTRATE_ACC2_KSM_ADDR]])
-def test_query_ksm_balances(rotkehlchen_api_server):
+def test_query_ksm_balances(rotkehlchen_api_server: 'APIServer') -> None:
     """Test query the KSM balances when multiple accounts are set up works as
     expected.
     """
@@ -744,13 +748,14 @@ def test_query_ksm_balances(rotkehlchen_api_server):
         token_balances=None,
         btc_balances=None,
     )
+    ksm_chain_key = SupportedBlockchain.KUSAMA.serialize()
     with ExitStack() as stack:
         setup.enter_blockchain_patches(stack)
         response = requests.get(
             api_url_for(
                 rotkehlchen_api_server,
                 'named_blockchain_balances_resource',
-                blockchain=SupportedBlockchain.KUSAMA.value,
+                blockchain=ksm_chain_key,
             ),
             json={'async_query': async_query},
         )
@@ -761,21 +766,21 @@ def test_query_ksm_balances(rotkehlchen_api_server):
             result = assert_proper_response_with_result(response)
 
     # Check per account
-    account_1_balances = result['per_account']['KSM'][SUBSTRATE_ACC1_KSM_ADDR]
+    account_1_balances = result['per_account'][ksm_chain_key][SUBSTRATE_ACC1_KSM_ADDR]
     assert 'liabilities' in account_1_balances
-    asset_ksm = account_1_balances['assets']['KSM']
+    asset_ksm = account_1_balances['assets'][A_KSM.identifier]
     assert FVal(asset_ksm['amount']) >= ZERO
     assert FVal(asset_ksm['usd_value']) >= ZERO
 
-    account_2_balances = result['per_account']['KSM'][SUBSTRATE_ACC2_KSM_ADDR]
+    account_2_balances = result['per_account'][ksm_chain_key][SUBSTRATE_ACC2_KSM_ADDR]
     assert 'liabilities' in account_2_balances
-    asset_ksm = account_2_balances['assets']['KSM']
+    asset_ksm = account_2_balances['assets'][A_KSM.identifier]
     assert FVal(asset_ksm['amount']) >= ZERO
     assert FVal(asset_ksm['usd_value']) >= ZERO
 
     # Check totals
     assert 'liabilities' in result['totals']
-    total_ksm = result['totals']['assets']['KSM']
+    total_ksm = result['totals']['assets'][A_KSM.identifier]
     assert FVal(total_ksm['amount']) >= ZERO
     assert FVal(total_ksm['usd_value']) >= ZERO
 
@@ -783,7 +788,7 @@ def test_query_ksm_balances(rotkehlchen_api_server):
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('avax_accounts', [[AVALANCHE_ACC1_AVAX_ADDR, AVALANCHE_ACC2_AVAX_ADDR]])
 @pytest.mark.parametrize('avalanche_mock_data', [{'covalent_balances': 'test_balances/covalent_query_balances.json'}])  # noqa: E501
-def test_query_avax_balances(rotkehlchen_api_server):
+def test_query_avax_balances(rotkehlchen_api_server: 'APIServer') -> None:
     """Test query the AVAX balances when multiple accounts are set up works as
     expected.
     """
@@ -796,13 +801,14 @@ def test_query_avax_balances(rotkehlchen_api_server):
         token_balances=None,
         btc_balances=None,
     )
+    avax_chain_key = SupportedBlockchain.AVALANCHE.serialize()
     with ExitStack() as stack:
         setup.enter_blockchain_patches(stack)
         response = requests.get(
             api_url_for(
                 rotkehlchen_api_server,
                 'named_blockchain_balances_resource',
-                blockchain=SupportedBlockchain.AVALANCHE.value,
+                blockchain=avax_chain_key,
             ),
             json={'async_query': async_query},
         )
@@ -813,21 +819,21 @@ def test_query_avax_balances(rotkehlchen_api_server):
             result = assert_proper_response_with_result(response)
 
     # Check per account
-    account_1_balances = result['per_account']['AVAX'][AVALANCHE_ACC1_AVAX_ADDR]
+    account_1_balances = result['per_account'][avax_chain_key][AVALANCHE_ACC1_AVAX_ADDR]
     assert 'liabilities' in account_1_balances
-    asset_avax = account_1_balances['assets']['AVAX']
+    asset_avax = account_1_balances['assets'][A_AVAX.identifier]
     assert FVal(asset_avax['amount']) >= ZERO
     assert FVal(asset_avax['usd_value']) >= ZERO
 
-    account_2_balances = result['per_account']['AVAX'][AVALANCHE_ACC2_AVAX_ADDR]
+    account_2_balances = result['per_account'][avax_chain_key][AVALANCHE_ACC2_AVAX_ADDR]
     assert 'liabilities' in account_2_balances
-    asset_avax = account_2_balances['assets']['AVAX']
+    asset_avax = account_2_balances['assets'][A_AVAX.identifier]
     assert FVal(asset_avax['amount']) >= ZERO
     assert FVal(asset_avax['usd_value']) >= ZERO
 
     # Check totals
     assert 'liabilities' in result['totals']
-    total_avax = result['totals']['assets']['AVAX']
+    total_avax = result['totals']['assets'][A_AVAX.identifier]
     assert FVal(total_avax['amount']) >= ZERO
     assert FVal(total_avax['usd_value']) >= ZERO
 
@@ -844,7 +850,7 @@ def test_ethereum_tokens_detection(
             api_url_for(
                 rotkehlchen_api_server,
                 'detecttokensresource',
-                blockchain='ETH',
+                blockchain=SupportedBlockchain.ETHEREUM.serialize(),
             ), json={
                 'async_query': False,
                 'only_cache': True,
@@ -898,7 +904,7 @@ def test_balances_behaviour_with_manual_current_prices(rotkehlchen_api_server, e
         )
         result = assert_proper_response_with_result(response)
         # (3 ETH) * (10 BTC per ETH) * (1,5 USD per BTC) = 45 USD of ETH
-        eth_result = result['assets']['ETH']
+        eth_result = result['assets'][A_ETH.identifier]
         assert eth_result['amount'] == '3'
         assert eth_result['usd_value'] == '45.0'
         # (5 RDN) * (2 ETH per RDN) * (10 BTC per RDN) * (1,5 USD per BTC) = 150 USD of RDN

@@ -96,6 +96,7 @@ function setupMetamaskImport() {
 }
 
 let firstStart = true;
+let restarting = false;
 
 function setupBackendRestart(
   getWindow: WindowProvider,
@@ -111,14 +112,21 @@ function setupBackendRestart(
           event.sender.send(IPC_BACKEND_PROCESS_DETECTED, pids);
         }
       }
+
       let success = false;
-      try {
-        const win = getWindow();
-        await pyHandler.exitPyProc(true);
-        await pyHandler.createPyProc(win, options);
-        success = true;
-      } catch (e: any) {
-        console.error(e);
+
+      if (!restarting) {
+        restarting = true;
+        try {
+          const win = getWindow();
+          await pyHandler.exitPyProc(true);
+          await pyHandler.createPyProc(win, options);
+          success = true;
+        } catch (e: any) {
+          console.error(e);
+        } finally {
+          restarting = false;
+        }
       }
 
       event.sender.send(IPC_RESTART_BACKEND, success);

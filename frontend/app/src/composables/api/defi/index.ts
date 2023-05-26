@@ -10,11 +10,11 @@ import { type PendingTask } from '@/types/task';
 
 export const useDefiApi = () => {
   const fetchAllDefi = async (): Promise<PendingTask> =>
-    fetchExternalAsync(api.instance, '/blockchains/ETH/defi');
+    fetchExternalAsync(api.instance, '/blockchains/eth/defi');
 
   const fetchAirdrops = async (): Promise<PendingTask> => {
     const response = await api.instance.get<ActionResult<PendingTask>>(
-      '/blockchains/ETH/airdrops',
+      '/blockchains/eth/airdrops',
       {
         params: snakeCaseTransformer({
           asyncQuery: true
