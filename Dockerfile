@@ -8,7 +8,7 @@ RUN if [ "$BUILDARCH" != "amd64" ]; then apt-get update && apt-get install -y bu
 RUN npm install -g pnpm@8 && pnpm install --no-optional --frozen-lockfile
 RUN pnpm run docker:build
 
-FROM python:3.9-buster as backend-build-stage
+FROM python:3.10-buster as backend-build-stage
 
 ARG TARGETARCH
 ARG ROTKI_VERSION

@@ -9,7 +9,7 @@ authors = [
 ]
 description = "Acccounting, asset management and tax report helper for cryptocurrencies"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 keywords = ["accounting tax-report", "portfolio asset-management", "cryptocurrencies"]
 classifiers = [
     "Development Status :: 1 - Planning",
