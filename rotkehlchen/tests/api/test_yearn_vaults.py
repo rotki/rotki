@@ -54,30 +54,20 @@ TEST_V2_ACC2 = '0x915C4580dFFD112db25a6cf06c76cDd9009637b7'
 @pytest.mark.parametrize('should_mock_price_queries', [True])
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
-@pytest.mark.freeze_time('2023-01-24 22:45:45 GMT')
-def test_query_yearn_vault_balances(rotkehlchen_api_server, ethereum_accounts):
+@pytest.mark.freeze_time('2023-05-27 22:45:45 GMT')
+def test_query_yearn_vault_balances(rotkehlchen_api_server):
     async_query = random.choice([True, False])
-    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    setup = setup_balances(
-        rotki,
-        ethereum_accounts=ethereum_accounts,
-        btc_accounts=None,
-        original_queries=['zerion'],
-    )
-    with ExitStack() as stack:
-        # patch ethereum/etherscan to not autodetect tokens
-        setup.enter_ethereum_patches(stack)
-        response = requests.get(api_url_for(
-            rotkehlchen_api_server,
-            'yearnvaultsbalancesresource',
-        ), json={'async_query': async_query})
-        if async_query:
-            task_id = assert_ok_async_response(response)
-            outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
-            assert outcome['message'] == ''
-            result = outcome['result']
-        else:
-            result = assert_proper_response_with_result(response)
+    response = requests.get(api_url_for(
+        rotkehlchen_api_server,
+        'yearnvaultsbalancesresource',
+    ), json={'async_query': async_query})
+    if async_query:
+        task_id = assert_ok_async_response(response)
+        outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
+        assert outcome['message'] == ''
+        result = outcome['result']
+    else:
+        result = assert_proper_response_with_result(response)
 
     for _, vault in result[TEST_ACC1].items():
         assert '%' in vault['roi']
