@@ -256,7 +256,7 @@ export default class SubprocessHandler {
         if (v < 6.1) {
           this.setFailureNotification(
             window,
-            'rotki cannot run on Windows 7 or earlier, since Python3.9 is no longer supported there',
+            'rotki cannot run on Windows 7 or earlier, since Python3.10 is no longer supported there',
             BackendCode.WIN_VERSION
           );
           return;
