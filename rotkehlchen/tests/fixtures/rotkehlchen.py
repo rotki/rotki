@@ -424,6 +424,7 @@ def fixture_rotkehlchen_api_server(
                 for evm_chain, connect_at_start, mock_data in (
                         ('ethereum', ethereum_manager_connect_at_start, ethereum_mock_data),
                         ('optimism', optimism_manager_connect_at_start, optimism_mock_data),
+                        ('polygon_pos', [], {}),
                 ):
                     maybe_mock_evm_inquirer(
                         should_mock=mock_other_web3,
