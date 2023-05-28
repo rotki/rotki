@@ -116,6 +116,108 @@ def fixture_new_db_unlock_actions():
     return ('rpc_nodes',)
 
 
+def patch_and_enter_before_unlock(
+        rotki,
+        stack,
+        network_mocking,
+        ethereum_modules,
+        ksm_rpc_endpoint,
+        ethereum_manager_connect_at_start,
+        optimism_manager_connect_at_start,
+        kusama_manager_connect_at_start,
+        have_decoders,
+        use_custom_database,
+        new_db_unlock_actions,
+        perform_upgrades_at_unlock,
+        should_mock_settings=True,
+):
+    # Do not connect to the usual nodes at start by default. Do not want to spam
+    # them during our tests. It's configurable per test, with the default being nothing
+    rpc_nodes_result = ethereum_manager_connect_at_start + optimism_manager_connect_at_start if network_mocking is False else []  # noqa: E501
+    evm_rpcconnect_patch = patch(
+        'rotkehlchen.db.dbhandler.DBHandler.get_rpc_nodes',
+        return_value=rpc_nodes_result,
+    )
+
+    ksm_rpcconnect_patch = patch(
+        'rotkehlchen.rotkehlchen.KUSAMA_NODES_TO_CONNECT_AT_START',
+        new=kusama_manager_connect_at_start,
+    )
+    # patch the constants to make sure that the periodic query for icons
+    # does not run during tests
+    size_patch = patch('rotkehlchen.rotkehlchen.ICONS_BATCH_SIZE', new=0)
+    sleep_patch = patch('rotkehlchen.rotkehlchen.ICONS_QUERY_SLEEP', new=999999)
+    # don't perform checks for updates
+    rotki_updates_patch = patch(
+        'rotkehlchen.db.updates.RotkiDataUpdater.check_for_updates',
+        autospec=True,
+    )
+
+    # And now enter all patched contexts
+    stack.enter_context(evm_rpcconnect_patch)
+    stack.enter_context(ksm_rpcconnect_patch)
+    stack.enter_context(size_patch)
+    stack.enter_context(sleep_patch)
+    stack.enter_context(rotki_updates_patch)
+
+    # Mock the initial get settings to include the specified ethereum modules
+    if should_mock_settings:
+        def mock_get_settings(_cursor) -> DBSettings:
+            settings = DBSettings(
+                active_modules=ethereum_modules,
+                ksm_rpc_endpoint=ksm_rpc_endpoint,
+            )
+            return settings
+        settings_patch = patch.object(rotki, 'get_settings', side_effect=mock_get_settings)
+        stack.enter_context(settings_patch)
+
+    if have_decoders is False:  # do not initialize the decoders at all -- saves time
+        no_decoder_patch = patch('rotkehlchen.chain.evm.decoding.decoder.EVMTransactionDecoder.__init__', side_effect=lambda **kwargs: None)  # noqa: E501
+        stack.enter_context(no_decoder_patch)
+
+    if use_custom_database is not None:
+        stack.enter_context(mock_db_schema_sanity_check())
+
+    if new_db_unlock_actions is None:
+        new_db_unlock_actions_patch = patch('rotkehlchen.rotkehlchen.Rotkehlchen._perform_new_db_actions', side_effect=lambda *args: None)  # noqa: E501
+    else:
+        def actions_after_unlock(self) -> None:
+            perform_new_db_unlock_actions(db=self.data.db, new_db_unlock_actions=new_db_unlock_actions)  # noqa: E501
+
+        new_db_unlock_actions_patch = patch('rotkehlchen.rotkehlchen.Rotkehlchen._perform_new_db_actions', side_effect=actions_after_unlock, autospec=True)  # noqa: E501
+    stack.enter_context(new_db_unlock_actions_patch)
+    # disable migrations at unlock for tests
+    stack.enter_context(patch(
+        'rotkehlchen.data_migrations.manager.DataMigrationManager.maybe_migrate_data',
+        side_effect=lambda *args: None,
+    ))
+    if perform_upgrades_at_unlock is False:
+        upgrades_patch = patch(
+            'rotkehlchen.db.upgrade_manager.DBUpgradeManager.run_upgrades',
+            side_effect=run_no_db_upgrades,
+            autospec=True,
+        )
+        stack.enter_context(upgrades_patch)
+
+
+def patch_no_op_unlock(rotki, stack, should_mock_settings=True):
+    patch_and_enter_before_unlock(
+        rotki=rotki,
+        stack=stack,
+        network_mocking=True,
+        ethereum_modules=[],
+        ksm_rpc_endpoint='',
+        ethereum_manager_connect_at_start=[],
+        optimism_manager_connect_at_start=[],
+        kusama_manager_connect_at_start=[],
+        have_decoders=False,
+        use_custom_database=False,
+        new_db_unlock_actions=None,
+        perform_upgrades_at_unlock=False,
+        should_mock_settings=should_mock_settings,
+    )
+
+
 def initialize_mock_rotkehlchen_instance(
         rotki,
         start_with_logged_in_user,
@@ -153,17 +255,6 @@ def initialize_mock_rotkehlchen_instance(
     if not start_with_logged_in_user:
         return
 
-    # Mock the initial get settings to include the specified ethereum modules
-    # Do not connect to the usual nodes at start by default. Do not want to spam
-    # them during our tests. It's configurable per test, with the default being nothing
-    def mock_get_settings(_cursor) -> DBSettings:
-        settings = DBSettings(
-            active_modules=ethereum_modules,
-            ksm_rpc_endpoint=ksm_rpc_endpoint,
-        )
-        return settings
-    settings_patch = patch.object(rotki, 'get_settings', side_effect=mock_get_settings)
-
     original_unlock = rotki.data.unlock
 
     def augmented_unlock(
@@ -191,27 +282,8 @@ def initialize_mock_rotkehlchen_instance(
         add_tags_to_test_db(rotki.data.db, tags)
         add_manually_tracked_balances_to_test_db(rotki.data.db, manually_tracked_balances)
         return return_value
+
     data_unlock_patch = patch.object(rotki.data, 'unlock', side_effect=augmented_unlock)
-
-    rpc_nodes_result = ethereum_manager_connect_at_start + optimism_manager_connect_at_start if network_mocking is False else []  # noqa: E501
-    evm_rpcconnect_patch = patch(
-        'rotkehlchen.db.dbhandler.DBHandler.get_rpc_nodes',
-        return_value=rpc_nodes_result,
-    )
-
-    ksm_rpcconnect_patch = patch(
-        'rotkehlchen.rotkehlchen.KUSAMA_NODES_TO_CONNECT_AT_START',
-        new=kusama_manager_connect_at_start,
-    )
-    # patch the constants to make sure that the periodic query for icons
-    # does not run during tests
-    size_patch = patch('rotkehlchen.rotkehlchen.ICONS_BATCH_SIZE', new=0)
-    sleep_patch = patch('rotkehlchen.rotkehlchen.ICONS_QUERY_SLEEP', new=999999)
-    # don't perform checks for updates
-    rotki_updates_patch = patch(
-        'rotkehlchen.db.updates.RotkiDataUpdater.check_for_updates',
-        autospec=True,
-    )
 
     create_new = True
     if use_custom_database is not None:
@@ -219,42 +291,21 @@ def initialize_mock_rotkehlchen_instance(
         create_new = False
 
     with ExitStack() as stack:
-        stack.enter_context(settings_patch)
         stack.enter_context(data_unlock_patch)
-        stack.enter_context(evm_rpcconnect_patch)
-        stack.enter_context(ksm_rpcconnect_patch)
-        stack.enter_context(size_patch)
-        stack.enter_context(sleep_patch)
-        stack.enter_context(rotki_updates_patch)
-
-        if have_decoders is False:  # do not initialize the decoders at all -- saves time
-            no_decoder_patch = patch('rotkehlchen.chain.evm.decoding.decoder.EVMTransactionDecoder.__init__', side_effect=lambda **kwargs: None)  # noqa: E501
-            stack.enter_context(no_decoder_patch)
-
-        if use_custom_database is not None:
-            stack.enter_context(mock_db_schema_sanity_check())
-
-        if new_db_unlock_actions is None:
-            new_db_unlock_actions_patch = patch('rotkehlchen.rotkehlchen.Rotkehlchen._perform_new_db_actions', side_effect=lambda *args: None)  # noqa: E501
-        else:
-            def actions_after_unlock(self) -> None:
-                perform_new_db_unlock_actions(db=self.data.db, new_db_unlock_actions=new_db_unlock_actions)  # noqa: E501
-
-            new_db_unlock_actions_patch = patch('rotkehlchen.rotkehlchen.Rotkehlchen._perform_new_db_actions', side_effect=actions_after_unlock, autospec=True)  # noqa: E501
-        stack.enter_context(new_db_unlock_actions_patch)
-        # disable migrations at unlock for tests
-        stack.enter_context(patch(
-            'rotkehlchen.data_migrations.manager.DataMigrationManager.maybe_migrate_data',
-            side_effect=lambda *args: None,
-        ))
-        if perform_upgrades_at_unlock is False:
-            upgrades_patch = patch(
-                'rotkehlchen.db.upgrade_manager.DBUpgradeManager.run_upgrades',
-                side_effect=run_no_db_upgrades,
-                autospec=True,
-            )
-            stack.enter_context(upgrades_patch)
-
+        patch_and_enter_before_unlock(
+            rotki=rotki,
+            stack=stack,
+            network_mocking=network_mocking,
+            ethereum_modules=ethereum_modules,
+            ksm_rpc_endpoint=ksm_rpc_endpoint,
+            ethereum_manager_connect_at_start=ethereum_manager_connect_at_start,
+            optimism_manager_connect_at_start=optimism_manager_connect_at_start,
+            kusama_manager_connect_at_start=kusama_manager_connect_at_start,
+            have_decoders=have_decoders,
+            use_custom_database=use_custom_database,
+            new_db_unlock_actions=new_db_unlock_actions,
+            perform_upgrades_at_unlock=perform_upgrades_at_unlock,
+        )
         rotki.unlock_user(
             user=username,
             password=db_password,

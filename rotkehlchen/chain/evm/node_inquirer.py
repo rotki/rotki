@@ -26,8 +26,8 @@ from web3.exceptions import (
 )
 from web3.middleware import geth_poa_middleware
 from web3.types import BlockIdentifier, FilterParams
-from rotkehlchen.assets.asset import CryptoAsset
 
+from rotkehlchen.assets.asset import CryptoAsset
 from rotkehlchen.chain.constants import DEFAULT_EVM_RPC_TIMEOUT
 from rotkehlchen.chain.ethereum.constants import DEFAULT_TOKEN_DECIMALS
 from rotkehlchen.chain.ethereum.utils import MULTICALL_CHUNKS
