@@ -8,7 +8,7 @@ from http import HTTPStatus
 from pathlib import Path
 from unittest.mock import patch
 
-import _bootlocale
+import _locale
 import pytest
 import requests
 
@@ -169,8 +169,8 @@ def test_encoding(
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     unicode_notes = 'Κοκκινολαίμης 飛到頂端'  # Use some unicode characters
     locale_patch = patch.object(
-        _bootlocale,
-        'getpreferredencoding',
+        _locale,  # ugly python-version-specific hack
+        '_get_locale_encoding',
         return_value=encoding_to_use,
     )
     history_patch = patch.object(
