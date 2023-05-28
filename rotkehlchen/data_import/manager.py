@@ -3,6 +3,7 @@ from typing import Any
 
 from rotkehlchen.data_import.importers.binance import BinanceImporter
 from rotkehlchen.data_import.importers.bisq_trades import BisqTradesImporter
+from rotkehlchen.data_import.importers.bitcoin_tax import BitcoinTaxImporter
 from rotkehlchen.data_import.importers.blockfi_trades import BlockfiTradesImporter
 from rotkehlchen.data_import.importers.blockfi_transactions import BlockfiTransactionsImporter
 from rotkehlchen.data_import.importers.cointracking import CointrackingImporter
@@ -29,6 +30,7 @@ class DataImportSource(SerializableEnumNameMixin):
     BINANCE = 9
     ROTKI_TRADES = 10
     ROTKI_EVENTS = 11
+    BITCOIN_TAX = 12
 
     def get_importer_type(self) -> type[BaseExchangeImporter]:
         if self == DataImportSource.COINTRACKING:
@@ -53,6 +55,8 @@ class DataImportSource(SerializableEnumNameMixin):
             return RotkiGenericTradesImporter
         if self == DataImportSource.ROTKI_EVENTS:
             return RotkiGenericEventsImporter
+        if self == DataImportSource.BITCOIN_TAX:
+            return BitcoinTaxImporter
         raise AssertionError(f'Unknown DataImportSource value {self}')
 
 

@@ -9,6 +9,7 @@ from rotkehlchen.assets.exchanges_mappings.bittrex import WORLD_TO_BITTREX
 from rotkehlchen.assets.exchanges_mappings.blockfi import WORLD_TO_BLOCKFI
 from rotkehlchen.assets.exchanges_mappings.coinbase import WORLD_TO_COINBASE
 from rotkehlchen.assets.exchanges_mappings.coinbase_pro import WORLD_TO_COINBASE_PRO
+from rotkehlchen.assets.exchanges_mappings.common import COMMON_ASSETS_MAPPINGS
 from rotkehlchen.assets.exchanges_mappings.cryptocom import WORLD_TO_CRYPTOCOM
 from rotkehlchen.assets.exchanges_mappings.gemeni import WORLD_TO_GEMINI
 from rotkehlchen.assets.exchanges_mappings.iconomi import WORLD_TO_ICONOMI
@@ -821,6 +822,7 @@ BITPANDA_TO_WORLD = {v: k for k, v in WORLD_TO_BITPANDA.items()}
 CRYPTOCOM_TO_WORLD = {v: k for k, v in WORLD_TO_CRYPTOCOM.items()}
 BLOCKFI_TO_WORLD = {v: k for k, v in WORLD_TO_BLOCKFI.items()}
 OKX_TO_WORLD = {v: k for k, v in WORLD_TO_OKX.items()}
+COMMON_IDENTIFIERS_TO_WORLD = {v: k for k, v in COMMON_ASSETS_MAPPINGS.items()}
 
 RENAMED_BINANCE_ASSETS = {
     # The old BCC in binance forked into BCHABC and BCHSV
@@ -1130,6 +1132,21 @@ def asset_from_okx(okx_name: str) -> AssetWithOracles:
     return symbol_to_asset_or_token(name)
 
 
+def asset_from_common_identifier(common_identifier: str) -> AssetWithOracles:
+    """May raise:
+    - DeserializationError
+    - UnsupportedAsset
+    - UnknownAsset
+    """
+    if not isinstance(common_identifier, str):
+        raise DeserializationError(
+            f'Got non-string type {type(common_identifier)} for an asset',
+        )
+
+    symbol = COMMON_IDENTIFIERS_TO_WORLD.get(common_identifier, common_identifier)
+    return symbol_to_asset_or_token(symbol)
+
+
 LOCATION_TO_ASSET_MAPPING: dict[Location, Callable[[str], AssetWithOracles]] = {
     Location.BINANCE: asset_from_binance,
     Location.CRYPTOCOM: asset_from_cryptocom,
@@ -1142,4 +1159,5 @@ LOCATION_TO_ASSET_MAPPING: dict[Location, Callable[[str], AssetWithOracles]] = {
     Location.NEXO: asset_from_nexo,
     Location.KUCOIN: asset_from_kucoin,
     Location.OKX: asset_from_okx,
+    Location.EXTERNAL: asset_from_common_identifier,
 }
