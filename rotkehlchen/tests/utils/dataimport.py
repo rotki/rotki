@@ -1,3 +1,5 @@
+from typing import Literal
+
 from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry, HistoryEvent
@@ -7,6 +9,7 @@ from rotkehlchen.assets.converters import asset_from_binance, asset_from_cryptoc
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
 from rotkehlchen.constants.assets import (
     A_BAT,
+    A_BCH,
     A_BNB,
     A_BTC,
     A_DAI,
@@ -48,6 +51,8 @@ from rotkehlchen.types import (
     TimestampMS,
     TradeType,
 )
+
+BITCOIN_TAX_TEST_CSV_FILES_TYPE = Literal['bitcoin_tax_trades.csv', 'bitcoin_tax_spending.csv']
 
 
 def get_cryptocom_note(desc: str):
@@ -1664,3 +1669,149 @@ def assert_is_equal_history_event(
     expected_dict = expected.serialize()
     expected_dict.pop('event_identifier')
     assert actual_dict == expected_dict
+
+
+def assert_bitcoin_tax_trades_import_results(
+        rotki: Rotkehlchen,
+        csv_file_name: BITCOIN_TAX_TEST_CSV_FILES_TYPE,
+):
+    if csv_file_name == 'bitcoin_tax_trades.csv':
+        expected_history_events = [
+            HistoryEvent(
+                identifier=1,
+                event_identifier='1xyz',  # just a placeholder as comparison is done without this field  # noqa: E501
+                sequence_index=0,
+                timestamp=TimestampMS(1528060575000),
+                location=Location.COINBASEPRO,
+                asset=A_EUR,
+                event_type=HistoryEventType.TRADE,
+                event_subtype=HistoryEventSubType.SPEND,
+                balance=Balance(
+                    amount=FVal('1008'),
+                    usd_value=ZERO,
+                ),
+                notes='',
+            ),
+            HistoryEvent(
+                identifier=2,
+                event_identifier='1xyz',  # just a placeholder as comparison is done without this field  # noqa: E501
+                sequence_index=1,
+                timestamp=TimestampMS(1528060575000),
+                location=Location.COINBASEPRO,
+                asset=A_BCH,
+                event_type=HistoryEventType.TRADE,
+                event_subtype=HistoryEventSubType.RECEIVE,
+                balance=Balance(
+                    amount=FVal('0.99735527'),
+                    usd_value=ZERO,
+                ),
+                notes='',
+            ),
+            HistoryEvent(
+                identifier=3,
+                event_identifier='1xyz',  # just a placeholder as comparison is done without this field  # noqa: E501
+                sequence_index=2,
+                timestamp=TimestampMS(1528060575000),
+                location=Location.COINBASEPRO,
+                asset=A_EUR,
+                event_type=HistoryEventType.TRADE,
+                event_subtype=HistoryEventSubType.FEE,
+                balance=Balance(
+                    amount=FVal('3.01495511'),
+                    usd_value=ZERO,
+                ),
+                notes='',
+            ),
+            HistoryEvent(
+                identifier=4,
+                event_identifier='1xyz',  # just a placeholder as comparison is done without this field  # noqa: E501
+                sequence_index=0,
+                timestamp=TimestampMS(1541771471000),
+                location=Location.EXTERNAL,
+                asset=A_USDT,
+                event_type=HistoryEventType.TRADE,
+                event_subtype=HistoryEventSubType.SPEND,
+                balance=Balance(
+                    amount=FVal('713.952'),
+                    usd_value=ZERO,
+                ),
+                notes='',
+            ),
+            HistoryEvent(
+                identifier=5,
+                event_identifier='1xyz',  # just a placeholder as comparison is done without this field  # noqa: E501
+                sequence_index=1,
+                timestamp=TimestampMS(1541771471000),
+                location=Location.EXTERNAL,
+                asset=A_BTC,
+                event_type=HistoryEventType.TRADE,
+                event_subtype=HistoryEventSubType.RECEIVE,
+                balance=Balance(
+                    amount=FVal('0.110778'),
+                    usd_value=ZERO,
+                ),
+                notes='',
+            ),
+            HistoryEvent(
+                identifier=6,
+                event_identifier='1xyz',  # just a placeholder as comparison is done without this field  # noqa: E501
+                sequence_index=2,
+                timestamp=TimestampMS(1541771471000),
+                location=Location.EXTERNAL,
+                asset=A_BTC,
+                event_type=HistoryEventType.TRADE,
+                event_subtype=HistoryEventSubType.FEE,
+                balance=Balance(
+                    amount=FVal('0.000222'),
+                    usd_value=ZERO,
+                ),
+                notes='',
+            ),
+        ]
+        with rotki.data.db.conn.read_ctx() as cursor:
+            history_db = DBHistoryEvents(rotki.data.db)
+            history_events = history_db.get_history_events(
+                cursor=cursor,
+                filter_query=HistoryEventFilterQuery.make(),
+                has_premium=False,
+            )
+        assert len(history_events) == 6
+        assert len(expected_history_events) == 6
+        for actual, expected in zip(history_events, expected_history_events):
+            assert_is_equal_history_event(actual=actual, expected=expected)
+
+    elif csv_file_name == 'bitcoin_tax_spending.csv':
+        # the spending csv file is imported after the trades csv file
+        expected_history_events = [
+            HistoryEvent(
+                identifier=7,  # last event identifier of trades import + 1
+                event_identifier='1xyz',  # just a placeholder as comparison is done without this field  # noqa: E501
+                sequence_index=0,
+                timestamp=TimestampMS(1543701600000),
+                location=Location.EXTERNAL,
+                asset=A_BTC,
+                event_type=HistoryEventType.SPEND,
+                event_subtype=HistoryEventSubType.NONE,
+                balance=Balance(
+                    amount=FVal('0.05'),
+                    usd_value=ZERO,
+                ),
+                notes='',
+            ),
+        ]
+        with rotki.data.db.conn.read_ctx() as cursor:
+            history_db = DBHistoryEvents(rotki.data.db)
+            history_events = history_db.get_history_events(
+                cursor=cursor,
+                filter_query=HistoryEventFilterQuery.make(),
+                has_premium=False,
+            )
+
+        assert len(history_events) == 7  # events from trades import + 1
+        assert len(expected_history_events) == 1
+        history_events = history_events[6:]  # only check the last event
+        for actual, expected in zip(history_events, expected_history_events):
+            assert_is_equal_history_event(actual=actual, expected=expected)
+
+    else:
+        raise AssertionError(f'Unexpected csv file name {csv_file_name}')

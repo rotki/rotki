@@ -22,6 +22,7 @@ from rotkehlchen.tests.utils.api import (
 from rotkehlchen.tests.utils.dataimport import (
     assert_binance_import_results,
     assert_bisq_trades_import_results,
+    assert_bitcoin_tax_trades_import_results,
     assert_blockfi_trades_import_results,
     assert_blockfi_transactions_import_results,
     assert_cointracking_import_results,
@@ -531,3 +532,45 @@ def test_docker_async_import(rotkehlchen_api_server):
     assert outcome['message'] == ''
     assert outcome['result'] is True
     assert_binance_import_results(rotki)
+
+
+def test_bitcoin_tax_import(rotkehlchen_api_server):
+    """Test that data import works for Bitcoin_Tax csv files of types trades and spending."""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    dir_path = Path(__file__).resolve().parent.parent
+
+    # First test a trades type csv import
+    filepath = dir_path / 'data' / 'bitcoin_tax_trades.csv'
+    json_data = {'source': 'bitcoin_tax', 'file': str(filepath)}
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'dataimportresource',
+        ), json=json_data,
+    )
+    assert assert_proper_response_with_result(response) is True
+    assert_bitcoin_tax_trades_import_results(rotki, filepath.name)
+
+    # Reimport the same csv file to test that no new events are created
+    filepath = dir_path / 'data' / 'bitcoin_tax_trades.csv'
+    json_data = {'source': 'bitcoin_tax', 'file': str(filepath)}
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'dataimportresource',
+        ), json=json_data,
+    )
+    assert assert_proper_response_with_result(response) is True
+    assert_bitcoin_tax_trades_import_results(rotki, filepath.name)
+
+    # After the trades have been successfully imported, test a spending/income type csv import
+    filepath = dir_path / 'data' / 'bitcoin_tax_spending.csv'
+    json_data = {'source': 'bitcoin_tax', 'file': str(filepath)}
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'dataimportresource',
+        ), json=json_data,
+    )
+    assert assert_proper_response_with_result(response) is True
+    assert_bitcoin_tax_trades_import_results(rotki, filepath.name)
