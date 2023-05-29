@@ -19,7 +19,6 @@ log = RotkehlchenLogsAdapter(logger)
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
     from rotkehlchen.db.filtering import ReportDataFilterQuery
 
 
@@ -138,26 +137,6 @@ class DBAccountingReports():
                 tuples,
             )
 
-    def _get_report_size(self, cursor: 'DBCursor', report_id: int) -> int:
-        """Returns an approximation of the DB size in bytes for the given report.
-
-        It's an approximation since length() in sqlite returns the string length
-        and not the byte length of a field. Also integers are stored depending on
-        their size and there is no easy way (apart from checking each integer) to
-        figure out the byte size. Finally there probably is various padding and
-        prefixes which are not taken into account.
-        """
-        result = cursor.execute(
-            """SELECT SUM(row_size) FROM (SELECT
-            8 + /*identifier - assume biggest int size */
-            8 + /*report_id  - assume biggest int size */
-            8 + /*timestamp  - assume biggest int size */
-            1 + /*event_type */
-            length(data) AS row_size FROM pnl_events WHERE report_id=?)""",
-            (report_id,),
-        ).fetchone()[0]
-        return 0 if result is None else result
-
     def get_reports(
             self,
             report_id: Optional[int],
@@ -179,7 +158,6 @@ class DBAccountingReports():
             for report in cursor:
                 this_report_id = report[0]
                 with self.db.conn_transient.read_ctx() as other_cursor:
-                    size_result = self._get_report_size(other_cursor, this_report_id)
                     other_cursor.execute(
                         'SELECT name, taxable_value, free_value FROM pnl_report_totals WHERE report_id=?',  # noqa: E501
                         (this_report_id,),
@@ -203,7 +181,6 @@ class DBAccountingReports():
                         'start_ts': report[2],
                         'end_ts': report[3],
                         'first_processed_timestamp': report[4],
-                        'size_on_disk': size_result,
                         'last_processed_timestamp': report[5],
                         'processed_actions': report[6],
                         'total_actions': report[7],

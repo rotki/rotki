@@ -75,11 +75,10 @@ def test_query_history(rotkehlchen_api_server_with_exchanges, start_ts, end_ts):
     assert report_result['entries_found'] == 1
     assert report_result['entries_limit'] == FREE_REPORTS_LOOKUP_LIMIT
     report = report_result['entries'][0]
-    assert len(report) == 11  # 11 entries in the report api endpoint
+    assert len(report) == 10  # 10 entries in the report api endpoint
     assert report['first_processed_timestamp'] == 1428994442
     assert report['last_processed_timestamp'] == end_ts if end_ts == 1539713238 else 1566572401
     assert report['identifier'] == report_id
-    assert report['size_on_disk'] > 0
 
     overview = report['overview']
     if start_ts == 0:
