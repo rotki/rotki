@@ -24,9 +24,11 @@ enum HistoryEventFilterKeys {
   PROTOCOL = 'protocol',
   EVENT_TYPE = 'event_type',
   LOCATION = 'location',
+  PRODUCT = 'product',
   ENTRY_TYPE = 'type',
   TX_HASHES = 'tx_hash',
-  VALIDATOR_INDICES = 'validator_index'
+  VALIDATOR_INDICES = 'validator_index',
+  ADDRESSES = 'address'
 }
 
 enum HistoryEventFilterValueKeys {
@@ -36,9 +38,11 @@ enum HistoryEventFilterValueKeys {
   PROTOCOL = 'counterparties',
   EVENT_TYPE = 'eventTypes',
   LOCATION = 'location',
+  PRODUCT = 'products',
   ENTRY_TYPE = 'entryTypes',
   TX_HASHES = 'txHashes',
-  VALIDATOR_INDICES = 'validatorIndices'
+  VALIDATOR_INDICES = 'validatorIndices',
+  ADDRESSES = 'addresses'
 }
 
 export type Matcher = SearchMatcher<
@@ -50,6 +54,7 @@ export type Filters = MatchedKeywordWithBehaviour<HistoryEventFilterValueKeys>;
 export const useHistoryEventFilter = (
   disabled: {
     protocols?: boolean;
+    products?: boolean;
     locations?: boolean;
     period?: boolean;
     validators?: boolean;
@@ -59,7 +64,7 @@ export const useHistoryEventFilter = (
   const filters: Ref<Filters> = ref({});
 
   const { dateInputFormat } = storeToRefs(useFrontendSettingsStore());
-  const { counterparties } = useHistoryEventMappings();
+  const { counterparties, historyEventProducts } = useHistoryEventMappings();
   const { assetSearch } = useAssetInfoApi();
   const { assetInfo } = useAssetInfoRetrieval();
   const { associatedLocations } = storeToRefs(useHistoryStore());
@@ -147,6 +152,18 @@ export const useHistoryEventFilter = (
       });
     }
 
+    if (!disabled?.products && evmOrEthDepositEventsIncluded) {
+      const products = get(historyEventProducts);
+      data.push({
+        key: HistoryEventFilterKeys.PRODUCT,
+        keyValue: HistoryEventFilterValueKeys.PRODUCT,
+        description: t('transactions.filter.product'),
+        string: true,
+        suggestions: () => products,
+        validate: product => !!product
+      });
+    }
+
     if (!entryTypesVal || entryTypesVal.length > 0) {
       data.push({
         key: HistoryEventFilterKeys.ENTRY_TYPE,
@@ -163,15 +180,26 @@ export const useHistoryEventFilter = (
     }
 
     if (evmOrEthDepositEventsIncluded) {
-      data.push({
-        key: HistoryEventFilterKeys.TX_HASHES,
-        keyValue: HistoryEventFilterValueKeys.TX_HASHES,
-        description: t('transactions.filter.tx_hash'),
-        string: true,
-        multiple: true,
-        suggestions: () => [],
-        validate: (txHash: string) => isValidTxHash(txHash)
-      });
+      data.push(
+        {
+          key: HistoryEventFilterKeys.TX_HASHES,
+          keyValue: HistoryEventFilterValueKeys.TX_HASHES,
+          description: t('transactions.filter.tx_hash'),
+          string: true,
+          multiple: true,
+          suggestions: () => [],
+          validate: (txHash: string) => isValidTxHash(txHash)
+        },
+        {
+          key: HistoryEventFilterKeys.ADDRESSES,
+          keyValue: HistoryEventFilterValueKeys.ADDRESSES,
+          description: t('transactions.filter.address'),
+          string: true,
+          multiple: true,
+          suggestions: () => [],
+          validate: (address: string) => isValidEthAddress(address)
+        }
+      );
     }
 
     if (eventsWithValidatorIndexIncluded && !disabled?.validators) {
@@ -207,9 +235,11 @@ export const useHistoryEventFilter = (
     [HistoryEventFilterValueKeys.END]: OptionalString,
     [HistoryEventFilterValueKeys.ASSET]: OptionalString,
     [HistoryEventFilterValueKeys.PROTOCOL]: OptionalMultipleString,
+    [HistoryEventFilterValueKeys.PRODUCT]: OptionalMultipleString,
     [HistoryEventFilterValueKeys.LOCATION]: OptionalString,
     [HistoryEventFilterValueKeys.ENTRY_TYPE]: OptionalMultipleString,
     [HistoryEventFilterValueKeys.TX_HASHES]: OptionalMultipleString,
+    [HistoryEventFilterValueKeys.ADDRESSES]: OptionalMultipleString,
     [HistoryEventFilterValueKeys.VALIDATOR_INDICES]: OptionalMultipleString
   });
 

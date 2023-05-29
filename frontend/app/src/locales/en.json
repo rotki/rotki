@@ -4063,6 +4063,12 @@
           "hint": "[Optional] Additional notes to store for the action",
           "label": "Notes"
         },
+        "product": {
+          "label": "Product",
+          "validation": {
+            "valid": "The product field is invalid, fill with available products"
+          }
+        },
         "sequence_index": {
           "label": "Sequence Index",
           "validation": {
@@ -4090,11 +4096,13 @@
     },
     "filter": {
       "account": "Filter by account",
+      "address": "filter by counterparty address",
       "asset": "filter by the asset of the events",
       "date_hint": "format {format} HH:mm:ss (time/seconds are optional)",
       "end_date": "filter by the end date of the transaction period",
       "entry_type": "filter by entry type",
       "location": "filter by event location",
+      "product": "filter by product",
       "protocol": "filter by the protocol of the events",
       "start_date": "filter by the start date of the transaction period",
       "tx_hash": "filter by tx hash(es)",

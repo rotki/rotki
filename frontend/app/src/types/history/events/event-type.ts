@@ -22,3 +22,12 @@ export const HistoryEventTypeData = z.object({
 });
 
 export type HistoryEventTypeData = z.infer<typeof HistoryEventTypeData>;
+
+export const HistoryEventProductMapping = z.array(z.string());
+
+export const HistoryEventProductData = z.object({
+  mappings: z.record(HistoryEventProductMapping),
+  products: HistoryEventProductMapping
+});
+
+export type HistoryEventProductData = z.infer<typeof HistoryEventProductData>;

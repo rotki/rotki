@@ -151,7 +151,7 @@ export interface HistoryEventRequestPayload
   readonly asset?: string;
   readonly counterparties?: string | string[];
   readonly location?: string | string[];
-  readonly product?: string | string[];
+  readonly products?: string | string[];
   readonly entryTypes?: FilterObjectWithBehaviour<string | string[]>;
   readonly txHashes?: string | string[];
   readonly validatorIndices?: string | string[];

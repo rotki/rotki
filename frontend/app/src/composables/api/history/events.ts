@@ -26,7 +26,10 @@ import {
   type TransactionRequestPayload
 } from '@/types/history/events';
 import { type PendingTask } from '@/types/task';
-import { HistoryEventTypeData } from '@/types/history/events/event-type';
+import {
+  type HistoryEventProductData,
+  HistoryEventTypeData
+} from '@/types/history/events/event-type';
 import { type ActionDataEntry } from '@/types/action';
 
 export const useHistoryEventsApi = () => {
@@ -191,6 +194,17 @@ export const useHistoryEventsApi = () => {
     return handleResponse(response);
   };
 
+  const getHistoryEventProductsData =
+    async (): Promise<HistoryEventProductData> => {
+      const response = await api.instance.get<
+        ActionResult<HistoryEventProductData>
+      >('/history/events/products', {
+        validateStatus: validStatus
+      });
+
+      return handleResponse(response);
+    };
+
   const fetchHistoryEvents = async (
     payload: HistoryEventRequestPayload
   ): Promise<CollectionResponse<HistoryEventEntryWithMeta>> => {
@@ -229,6 +243,7 @@ export const useHistoryEventsApi = () => {
     addTransactionHash,
     getTransactionTypeMappings,
     getHistoryEventCounterpartiesData,
+    getHistoryEventProductsData,
     fetchHistoryEvents,
     queryOnlineHistoryEvents
   };

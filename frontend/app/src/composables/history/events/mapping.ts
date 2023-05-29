@@ -1,6 +1,9 @@
 import { type MaybeRef } from '@vueuse/core';
 import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
-import { type HistoryEventTypeData } from '@/types/history/events/event-type';
+import {
+  type HistoryEventProductData,
+  type HistoryEventTypeData
+} from '@/types/history/events/event-type';
 import { type ActionDataEntry } from '@/types/action';
 import {
   type EthDepositEvent,
@@ -10,8 +13,11 @@ import {
 export const useHistoryEventMappings = createSharedComposable(() => {
   const { t, te } = useI18n();
 
-  const { getTransactionTypeMappings, getHistoryEventCounterpartiesData } =
-    useHistoryEventsApi();
+  const {
+    getTransactionTypeMappings,
+    getHistoryEventCounterpartiesData,
+    getHistoryEventProductsData
+  } = useHistoryEventsApi();
 
   const defaultHistoryEventTypeData = () => ({
     globalMappings: {},
@@ -278,6 +284,30 @@ export const useHistoryEventMappings = createSharedComposable(() => {
     );
   };
 
+  const defaultHistoryEventProductsData = () => ({
+    mappings: {},
+    products: []
+  });
+
+  const historyEventProductsData: Ref<HistoryEventProductData> =
+    asyncComputed<HistoryEventProductData>(
+      () => getHistoryEventProductsData(),
+      defaultHistoryEventProductsData(),
+      {
+        lazy: true
+      }
+    );
+
+  const historyEventProductsMapping = useRefMap(
+    historyEventProductsData,
+    ({ mappings }) => mappings
+  );
+
+  const historyEventProducts = useRefMap(
+    historyEventProductsData,
+    ({ products }) => products
+  );
+
   return {
     historyEventTypeData,
     historyEventTypes,
@@ -291,8 +321,11 @@ export const useHistoryEventMappings = createSharedComposable(() => {
     historyEventTypeGlobalMapping,
     historyEventTypePerProtocolMapping,
     historyEventCounterpartiesData,
+    historyEventProductsData,
     counterparties,
     accountingEventsTypeData,
-    getAccountingEventTypeData
+    getAccountingEventTypeData,
+    historyEventProductsMapping,
+    historyEventProducts
   };
 });

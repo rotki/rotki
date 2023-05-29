@@ -41,7 +41,8 @@ const {
   getEventTypeData,
   historyEventTypesData,
   historyEventSubTypesData,
-  historyEventTypeGlobalMapping
+  historyEventTypeGlobalMapping,
+  historyEventProductsMapping
 } = useHistoryEventMappings();
 
 const isCurrentCurrencyUsd: ComputedRef<boolean> = computed(
@@ -69,6 +70,7 @@ const fiatValue = ref<string>('');
 const locationLabel = ref<string>('');
 const notes = ref<string>('');
 const counterparty = ref<string>('');
+const product = ref<string>('');
 
 const errorMessages = ref<Record<string, string[]>>({});
 
@@ -129,6 +131,13 @@ const rules = {
         get(counterparties).includes(value) ||
         isValidEthAddress(value)
     )
+  },
+  product: {
+    isValid: helpers.withMessage(
+      t('transactions.events.form.product.validation.valid').toString(),
+      (value: string) =>
+        !value || get(historyEventLimitedProducts).includes(value)
+    )
   }
 };
 
@@ -142,7 +151,8 @@ const v$ = useVuelidate(
     sequenceIndex,
     eventType,
     eventSubtype,
-    counterparty
+    counterparty,
+    product
   },
   {
     $autoDirty: true,
@@ -168,6 +178,7 @@ const reset = () => {
   set(usdValue, '0');
   set(notes, '');
   set(counterparty, '');
+  set(product, '');
   set(fetchedAssetToUsdPrice, '');
   set(fetchedAssetToFiatPrice, '');
   set(errorMessages, {});
@@ -193,6 +204,7 @@ const setEditMode = async () => {
   set(locationLabel, event.locationLabel ?? '');
   set(notes, event.notes ?? '');
   set(counterparty, event.counterparty ?? '');
+  set(product, event.product ?? '');
 };
 
 const { setMessage } = useMessageStore();
@@ -202,11 +214,10 @@ const { editTransactionEvent, addTransactionEvent } = useHistoryTransactions();
 const save = async (): Promise<boolean> => {
   const timestamp = convertToTimestamp(get(datetime));
   const assetVal = get(asset);
-  const { address, product, txHash } = get(transaction);
+  const { address, txHash } = get(transaction);
 
   const transactionEventPayload: Writeable<NewEvmHistoryEventPayload> = {
     address,
-    product,
     txHash,
     sequenceIndex: get(sequenceIndex) || '0',
     timestamp,
@@ -220,7 +231,8 @@ const save = async (): Promise<boolean> => {
     location: get(location),
     locationLabel: get(locationLabel) || null,
     notes: get(notes) || null,
-    counterparty: get(counterparty) || null
+    counterparty: get(counterparty) || null,
+    product: get(product) || null
   };
 
   if (get(isCurrentCurrencyUsd)) {
@@ -460,6 +472,24 @@ const historyEventSubTypeFilteredData: ComputedRef<ActionDataEntry[]> =
     );
   });
 
+const historyEventLimitedProducts: ComputedRef<string[]> = computed(() => {
+  const counterpartyVal = get(counterparty);
+  const mapping = get(historyEventProductsMapping);
+
+  if (!counterpartyVal) {
+    return [];
+  }
+
+  return mapping[counterpartyVal] ?? [];
+});
+
+watch(historyEventLimitedProducts, products => {
+  const selected = get(product);
+  if (!products.includes(selected)) {
+    set(product, '');
+  }
+});
+
 const evmEvent = isEvmEventRef(transaction);
 </script>
 
@@ -570,7 +600,7 @@ const evmEvent = isEvmEventRef(transaction);
       </v-col>
     </v-row>
 
-    <v-divider class="mb-6 mt-2" />
+    <v-divider class="mb-6 mt-6" />
 
     <v-row>
       <v-col cols="12" md="4">
@@ -610,7 +640,21 @@ const evmEvent = isEvmEventRef(transaction);
           :label="t('transactions.events.form.transaction_event_type.label')"
         />
       </v-col>
-      <v-col cols="12" md="4">
+
+      <v-divider class="mb-6 mt-6" />
+
+      <v-col cols="12" md="6">
+        <v-text-field
+          v-model="locationLabel"
+          :disabled="!!evmEvent"
+          outlined
+          data-cy="locationLabel"
+          :label="t('transactions.events.form.location_label.label')"
+          :error-messages="errorMessages['locationLabel']"
+        />
+      </v-col>
+
+      <v-col cols="12" md="6">
         <amount-input
           v-model="sequenceIndex"
           outlined
@@ -622,17 +666,8 @@ const evmEvent = isEvmEventRef(transaction);
           @blur="v$.sequenceIndex.$touch()"
         />
       </v-col>
-      <v-col cols="12" md="4">
-        <v-text-field
-          v-model="locationLabel"
-          :disabled="!!evmEvent"
-          outlined
-          data-cy="locationLabel"
-          :label="t('transactions.events.form.location_label.label')"
-          :error-messages="errorMessages['locationLabel']"
-        />
-      </v-col>
-      <v-col cols="12" md="4">
+
+      <v-col cols="12" md="6">
         <combobox-with-custom-input
           v-model="counterparty"
           outlined
@@ -645,7 +680,25 @@ const evmEvent = isEvmEventRef(transaction);
           @blur="v$.counterparty.$touch()"
         />
       </v-col>
+
+      <v-col cols="12" md="6">
+        <v-autocomplete
+          v-model="product"
+          clearable
+          outlined
+          required
+          auto-select-first
+          :disabled="historyEventLimitedProducts.length === 0"
+          :label="t('transactions.events.form.product.label')"
+          :items="historyEventLimitedProducts"
+          data-cy="product"
+          :error-messages="toMessages(v$.product)"
+          @blur="v$.product.$touch()"
+        />
+      </v-col>
     </v-row>
+
+    <v-divider class="mb-6 mt-2" />
 
     <v-textarea
       v-model="notes"
