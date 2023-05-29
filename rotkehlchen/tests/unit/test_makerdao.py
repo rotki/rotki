@@ -167,6 +167,7 @@ def test_get_vault_balance(
     assert vault.get_balance() == expected_result
 
 
+@pytest.mark.vcr()
 @pytest.mark.parametrize('globaldb_upgrades', [[]])
 @pytest.mark.parametrize('run_globaldb_migrations', [False])
 @pytest.mark.parametrize('custom_globaldb', ['v4_global_before_migration1.db'])
@@ -178,9 +179,6 @@ def test_query_ilk_registry_and_update_cache(globaldb, ethereum_inquirer):
     - Test that all went fine and that all new data is in the DB
 
     This also tests that ilk_cache_foreach works properly and iterates everything in the DB
-
-    TODO: This should be mocked with vcr.py for the state of ilk registry at the time
-    of mocking
     """
     with ExitStack() as stack:
         patch_for_globaldb_migrations(stack, [MIGRATIONS_LIST[0]])
@@ -244,5 +242,5 @@ def test_query_ilk_registry_and_update_cache(globaldb, ethereum_inquirer):
                 got_comp = True
                 assert ilk_class == 4
 
-        assert count == 59
+        assert count == 60
         assert got_gno == got_wsteth == got_reth == got_crv == got_comp is True
