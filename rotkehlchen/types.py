@@ -396,9 +396,7 @@ class SupportedBlockchain(SerializableEnumValueMixin):
     POLYGON_POS = 'POLYGON_POS'
 
     def __str__(self) -> str:
-        if self == SupportedBlockchain.ETHEREUM_BEACONCHAIN:
-            return 'Ethereum Staking'
-        return super().__str__()
+        return SUPPORTED_BLOCKCHAIN_NAMES_MAPPING.get(self, super().__str__())
 
     def serialize(self) -> str:
         """
@@ -458,6 +456,11 @@ class SupportedBlockchain(SerializableEnumValueMixin):
         """Provide the appropriate range prefix for the DB for this chain"""
         return f'{self.value}{range_type}'
 
+
+SUPPORTED_BLOCKCHAIN_NAMES_MAPPING = {
+    SupportedBlockchain.ETHEREUM_BEACONCHAIN: 'Ethereum Staking',
+    SupportedBlockchain.POLYGON_POS: 'Polygon PoS',
+}
 
 EVM_CHAINS_WITH_TRANSACTIONS_TYPE = Literal[
     SupportedBlockchain.ETHEREUM,
