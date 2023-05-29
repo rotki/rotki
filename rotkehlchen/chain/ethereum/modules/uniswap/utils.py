@@ -11,7 +11,7 @@ from rotkehlchen.accounting.structures.types import HistoryEventSubType, History
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.defi.zerionsdk import ZERION_ADAPTER_ADDRESS
 from rotkehlchen.chain.ethereum.interfaces.ammswap.types import LiquidityPool
-from rotkehlchen.chain.ethereum.interfaces.ammswap.utils import _decode_result
+from rotkehlchen.chain.ethereum.interfaces.ammswap.utils import decode_result
 from rotkehlchen.chain.ethereum.modules.uniswap.constants import CPT_UNISWAP_V2, CPT_UNISWAP_V3
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.contracts import EvmContract
@@ -45,8 +45,6 @@ def uniswap_lp_token_balances(
         address: ChecksumEvmAddress,
         ethereum: 'EthereumInquirer',
         lp_addresses: list[ChecksumEvmAddress],
-        known_tokens: set[EvmToken],
-        unknown_tokens: set[EvmToken],
 ) -> list[LiquidityPool]:
     """Query uniswap token balances from ethereum chain
 
@@ -79,70 +77,9 @@ def uniswap_lp_token_balances(
         )
 
         for entry in result[1]:
-            balances.append(_decode_result(userdb, entry, known_tokens, unknown_tokens))
+            balances.append(decode_result(userdb, entry))
 
     return balances
-
-
-def get_latest_lp_addresses(data_directory: Path) -> list[ChecksumEvmAddress]:
-    """Gets the latest lp addresses either locally or from the remote
-
-    Checks the remote (github) and if there is a newer file there it pulls it,
-    saves it and its md5 hash locally and returns the new lp addresses.
-
-    If there is no new file (same hash) or if there is any problem contacting the remote
-    then the builtin lp assets file is used.
-
-    TODO: This is very similar to assets/resolver.py::_get_latest_assets
-    Perhaps try to abstract it away?
-    """
-    root_dir = Path(__file__).resolve().parent.parent.parent.parent.parent
-    our_downloaded_meta = data_directory / 'assets' / 'uniswapv2_lp_tokens.meta'
-    our_builtin_meta = root_dir / 'data' / 'uniswapv2_lp_tokens.meta'
-    with suppress(requests.exceptions.RequestException, KeyError, json.decoder.JSONDecodeError):
-        response = requests.get(
-            url='https://raw.githubusercontent.com/rotki/rotki/develop/rotkehlchen/data/uniswapv2_lp_tokens.meta',  # noqa: E501,
-            timeout=DEFAULT_TIMEOUT_TUPLE,
-        )
-        remote_meta = response.json()
-        if our_downloaded_meta.is_file():
-            local_meta_file = our_downloaded_meta
-        else:
-            local_meta_file = our_builtin_meta
-
-        with open(local_meta_file) as f:
-            local_meta = json.loads(f.read())
-
-        if local_meta['version'] < remote_meta['version']:
-            # we need to download and save the new assets from github
-            response = requests.get(
-                url='https://raw.githubusercontent.com/rotki/rotki/develop/rotkehlchen/data/uniswapv2_lp_tokens.json',  # noqa: E501
-                timeout=DEFAULT_TIMEOUT_TUPLE,
-            )
-            remote_data = response.text
-
-            # Make sure directory exists
-            (data_directory / 'assets').mkdir(parents=True, exist_ok=True)
-            # Write the files
-            with open(data_directory / 'assets' / 'uniswapv2_lp_tokens.meta', 'w') as f:
-                f.write(json.dumps(remote_meta))
-            with open(data_directory / 'assets' / 'uniswapv2_lp_tokens.json', 'w') as f:
-                f.write(remote_data)
-
-            log.info(
-                f'Found newer remote uniswap lp tokens file with version: {remote_meta["version"]}'
-                f' and {remote_meta["md5"]} md5 hash. Replaced local file',
-            )
-            return json.loads(remote_data)
-
-    # else, in any error case use current one
-    if our_downloaded_meta.is_file():
-        assets_file = data_directory / 'assets' / 'uniswapv2_lp_tokens.json'
-    else:
-        assets_file = root_dir / 'data' / 'uniswapv2_lp_tokens.json'
-
-    with open(assets_file) as f:
-        return json.loads(f.read())
 
 
 def find_uniswap_v2_lp_price(
