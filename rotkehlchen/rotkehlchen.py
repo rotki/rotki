@@ -121,7 +121,7 @@ class Rotkehlchen():
         This runs during backend initialization so it should be as light as possible.
 
         May Raise:
-        - SystemPermissionError if the given data directory's permissions
+        - SystemPermissionError if the given data directory's permissions.
         are not correct.
         - DBSchemaError if GlobalDB's schema is malformed
         """
