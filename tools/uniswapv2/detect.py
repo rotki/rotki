@@ -227,15 +227,11 @@ if __name__ == '__main__':
 
         if args.no_query_balances is False:
             start = ts_now()
-            known_tokens: set[EvmToken] = set()
-            unknown_tokens: set[EvmToken] = set()
             balances = uniswap_lp_token_balances(
                 userdb=database,
                 address='0x1554d34D46842778999cB4eb1381b19f651e4a9d',  # test address
                 ethereum=ethereum,
                 lp_addresses=results['ethereum'],
-                known_tokens=known_tokens,
-                unknown_tokens=unknown_tokens,
             )
             end = ts_now()
             print(f'Querying balances took {end-start} seconds')

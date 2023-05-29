@@ -6,6 +6,7 @@ from http import HTTPStatus
 import pytest
 import requests
 from flaky import flaky
+from rotkehlchen.api.server import APIServer
 
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.interfaces.ammswap.types import (
@@ -15,9 +16,11 @@ from rotkehlchen.chain.ethereum.interfaces.ammswap.types import (
     LiquidityPoolEventsBalance,
 )
 from rotkehlchen.chain.ethereum.modules.uniswap.constants import UNISWAP_EVENTS_PREFIX
+from rotkehlchen.chain.ethereum.modules.uniswap.uniswap import Uniswap
 from rotkehlchen.chain.evm.types import NodeName, string_to_evm_address
 from rotkehlchen.constants.assets import A_WETH
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
     ASYNC_TASK_WAIT_TIMEOUT,
@@ -35,9 +38,9 @@ from rotkehlchen.tests.utils.constants import (
     MYCRYPTO_NODE_NAME,
     TXHASH_HEX_TO_BYTES,
 )
-from rotkehlchen.tests.utils.ethereum import INFURA_TEST
+from rotkehlchen.tests.utils.ethereum import INFURA_TEST, get_decoded_events_of_transaction
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
-from rotkehlchen.types import AssetAmount, Price, SupportedBlockchain, Timestamp
+from rotkehlchen.types import AssetAmount, Price, SupportedBlockchain, Timestamp, deserialize_evm_tx_hash
 
 # Addresses
 # DAI/WETH pool: 0xA478c2975Ab1Ea89e8196811F51A7B7Ade33eB11
@@ -646,3 +649,45 @@ def test_get_v3_balances_no_premium(rotkehlchen_api_server):
             assert FVal(lp_asset['usd_price']) == ZERO
             assert FVal(lp_asset['user_balance']['amount']) == ZERO
             assert FVal(lp_asset['user_balance']['usd_value']) == ZERO
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('ethereum_accounts', [['0xbcce162c23480a4d44b88F57D5D2D9997402010e']])
+@pytest.mark.parametrize('ethereum_modules', [['uniswap']])
+def test_uniswap_stats(rotkehlchen_api_server: APIServer):
+    node_inquirer = rotkehlchen_api_server.rest_api.rotkehlchen.chains_aggregator.ethereum.node_inquirer
+    database = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
+    tx_hash = deserialize_evm_tx_hash('0x028344b10f956c9536034cbcca15bc53118c089434fea5703c7620be1ca7e700')  # noqa: E501
+    db = DBHistoryEvents(database)
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=rotkehlchen_api_server.rest_api.rotkehlchen.chains_aggregator.ethereum.node_inquirer,
+        database=rotkehlchen_api_server.rest_api.rotkehlchen.data.db,
+        tx_hash=tx_hash,
+    )
+    assert len(events) > 1
+    print('a-----')
+    print(events)
+    print('-----')
+    with database.conn.write_ctx() as write_cursor:
+        db.add_history_events(write_cursor, events)
+    tx_hash = deserialize_evm_tx_hash('0x00007120e5281e9bdf9a57739e3ecaf736013e4a1a31ecfe44f719c229cc2cbd')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=rotkehlchen_api_server.rest_api.rotkehlchen.chains_aggregator.ethereum.node_inquirer,
+        database=rotkehlchen_api_server.rest_api.rotkehlchen.data.db,
+        tx_hash=tx_hash,
+    )
+    assert len(events) > 1
+    print('b-----')
+    print(events)
+    print('-----')
+    with database.conn.write_ctx() as write_cursor:
+        db.add_history_events(write_cursor, events)
+
+    uniswap = Uniswap(
+        ethereum_inquirer=node_inquirer,
+        database=database,
+        premium=rotkehlchen_api_server.rest_api.rotkehlchen.premium,
+        msg_aggregator=rotkehlchen_api_server.rest_api.rotkehlchen.msg_aggregator,
+    )
+    print(uniswap.get_stats(addresses=['0xbcce162c23480a4d44b88F57D5D2D9997402010e']))
+    assert False

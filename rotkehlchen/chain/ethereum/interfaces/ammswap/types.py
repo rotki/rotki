@@ -75,8 +75,6 @@ class ProtocolBalance(NamedTuple):
     Unknown assets are those we would have to try to query through uniswap directly
     """
     address_balances: AddressToLPBalances
-    known_tokens: set[EvmToken]
-    unknown_tokens: set[EvmToken]
 
 
 class EventType(Enum):
@@ -234,7 +232,6 @@ class LiquidityPoolEvent(NamedTuple):
 
 
 class LiquidityPoolEventsBalance(NamedTuple):
-    address: ChecksumEvmAddress
     pool_address: ChecksumEvmAddress
     token0: EvmToken
     token1: EvmToken
@@ -245,7 +242,6 @@ class LiquidityPoolEventsBalance(NamedTuple):
 
     def serialize(self) -> dict[str, Any]:
         return {
-            'address': self.address,
             'pool_address': self.pool_address,
             'token0': self.token0.serialize(),
             'token1': self.token1.serialize(),

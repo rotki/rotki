@@ -51,12 +51,7 @@ def _decode_token(entry: tuple) -> TokenDetails:
     )
 
 
-def _decode_result(
-        userdb: 'DBHandler',
-        data: tuple,
-        known_assets: set[EvmToken],
-        unknown_assets: set[EvmToken],
-) -> LiquidityPool:
+def decode_result(userdb: 'DBHandler', data: tuple) -> LiquidityPool:
     pool_token = _decode_token(data[0])
     token0 = _decode_token(data[1][0])
     token1 = _decode_token(data[1][1])
@@ -71,11 +66,6 @@ def _decode_result(
             name=token.name,
             decimals=token.decimals,
         )
-        # Classify the asset either as price known or unknown
-        if asset.has_oracle():
-            known_assets.add(asset)
-        else:
-            unknown_assets.add(asset)
         assets.append(LiquidityPoolAsset(
             token=asset,
             total_amount=None,

@@ -76,6 +76,7 @@ def _edit_token_and_clean_cache(
         evm_token: EvmToken,
         name: Optional[str],
         decimals: Optional[int],
+        underlying_tokens: Optional[list[UnderlyingToken]],
         evm_inquirer: Optional['EvmNodeInquirer'],
 ) -> None:
     """
@@ -104,6 +105,10 @@ def _edit_token_and_clean_cache(
 
     if decimals is not None and evm_token.decimals != decimals:
         object.__setattr__(evm_token, 'decimals', decimals)
+        updated_fields = True
+
+    if underlying_tokens is not None and evm_token.underlying_tokens != underlying_tokens:
+        object.__setattr__(evm_token, 'underlying_tokens', underlying_tokens)
         updated_fields = True
 
     # clean the cache if we need to update the token
@@ -166,6 +171,7 @@ def get_or_create_evm_token(
                 evm_token=evm_token,
                 name=name,
                 decimals=decimals,
+                underlying_tokens=underlying_tokens,
                 evm_inquirer=evm_inquirer,
             )
 

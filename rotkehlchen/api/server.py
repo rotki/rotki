@@ -253,7 +253,7 @@ URLS_V1: URLS = [
     ('/blockchains/eth/modules/compound/balances', CompoundBalancesResource),
     ('/blockchains/eth/modules/uniswap/v2/balances', UniswapBalancesResource),
     ('/blockchains/eth/modules/uniswap/v3/balances', UniswapV3BalancesResource),
-    ('/blockchains/eth/modules/uniswap/history/events', UniswapEventsHistoryResource),
+    ('/blockchains/eth/modules/uniswap/stats', UniswapEventsHistoryResource),
     ('/blockchains/eth/modules/sushiswap/balances', SushiswapBalancesResource),
     ('/blockchains/eth/modules/sushiswap/history/events', SushiswapEventsHistoryResource),
     ('/blockchains/eth/modules/yearn/vaults/balances', YearnVaultsBalancesResource),

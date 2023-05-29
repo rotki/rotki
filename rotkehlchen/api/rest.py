@@ -2505,12 +2505,9 @@ class RestAPI:
     ) -> dict[str, Any]:
         return self._eth_module_query(
             module_name='uniswap',
-            method='get_events_history',
+            method='get_stats',
             query_specific_balances_before=None,
             addresses=self.rotkehlchen.chains_aggregator.queried_addresses_for_module('uniswap'),
-            reset_db_data=reset_db_data,
-            from_timestamp=from_timestamp,
-            to_timestamp=to_timestamp,
         )
 
     @async_api_call()

@@ -59,12 +59,11 @@ class Sushiswap(AMMSwapPlatform, EthereumModule):
             raise ModuleInitializationFailure('Sushiswap subgraph remote error') from e
 
         super().__init__(
-            location=Location.SUSHISWAP,
+            counterparties=[CPT_SUSHISWAP_V2],
             ethereum_inquirer=ethereum_inquirer,
             database=database,
             premium=premium,
             msg_aggregator=msg_aggregator,
-            graph=self.graph,
         )
 
     def _get_events_balances(
