@@ -1,8 +1,9 @@
 import logging
 from collections.abc import Iterator
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Union
 
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
+from rotkehlchen.accounting.structures.base import HistoryBaseEntry, HistoryEvent
 from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.chain.evm.accounting.structures import TxAccountingTreatment, TxEventSettings
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -25,7 +26,7 @@ def evm_events_iterator(
     Takes associated event as an argument to be able to log it in case of errors.
     """
     for event in events_iterator:
-        if not isinstance(event, EvmEvent):
+        if not isinstance(event, EvmEvent) and not isinstance(event, HistoryEvent):  # TODO: undo. Is a temporary hack  # noqa: E501
             log.error(
                 f'At accounting for tx_event {associated_event.notes} with hash '
                 f'{associated_event.tx_hash.hex()} we expected to take an additional '
@@ -33,7 +34,7 @@ def evm_events_iterator(
             )
             return
 
-        yield event
+        yield event  # type: ignore[misc]
 
 
 class TransactionsAccountant():
@@ -53,7 +54,7 @@ class TransactionsAccountant():
 
     def process(
             self,
-            event: EvmEvent,
+            event: Union[HistoryEvent, EvmEvent],
             events_iterator: Iterator[AccountingEventMixin],
     ) -> int:
         """Process a transaction event and return amount of actions consumed from the iterator"""
@@ -75,7 +76,7 @@ class TransactionsAccountant():
                 return 1
 
         # if there is any module specific accountant functionality call it
-        if event_settings.accountant_cb is not None:
+        if event_settings.accountant_cb is not None and isinstance(event, EvmEvent):
             event_settings.accountant_cb(
                 pot=self.pot,
                 event=event,
@@ -83,7 +84,7 @@ class TransactionsAccountant():
             )
 
         if event_settings.accounting_treatment == TxAccountingTreatment.SWAP:
-            in_event = next(evm_events_iterator(events_iterator, event), None)
+            in_event = next(evm_events_iterator(events_iterator, event), None)  # type: ignore[arg-type] # noqa: E501
             if in_event is None:
                 log.error(
                     f'Tried to process accounting swap but could not find the in '
@@ -108,15 +109,17 @@ class TransactionsAccountant():
             taxable=event_settings.taxable,
             count_entire_amount_spend=event_settings.count_entire_amount_spend,
             count_cost_basis_pnl=event_settings.count_cost_basis_pnl,
-            extra_data={'tx_hash': event.tx_hash.hex()},
+            extra_data={
+                'tx_hash': event.tx_hash.hex() if isinstance(event, EvmEvent) else event.event_identifier,  # TODO: undo. Is a temporary hack  # noqa: E501
+            },
         )
         return 1
 
     def _process_tx_swap(
             self,
             timestamp: Timestamp,
-            out_event: EvmEvent,
-            in_event: EvmEvent,
+            out_event: HistoryBaseEntry,
+            in_event: HistoryBaseEntry,
             event_settings: TxEventSettings,
     ) -> int:
         prices = self.pot.get_prices_for_swap(
@@ -131,7 +134,8 @@ class TransactionsAccountant():
             log.debug(f'Skipping {self} at accounting for a swap due to inability to find a price')
             return 2
 
-        group_id = out_event.tx_hash.hex() + str(out_event.sequence_index) + str(in_event.sequence_index)  # noqa: E501
+        base_group_id = out_event.tx_hash.hex() if isinstance(out_event, EvmEvent) else out_event.event_identifier  # TODO: undo. Is a temporary hack  # noqa: E501
+        group_id = base_group_id + str(out_event.sequence_index) + str(in_event.sequence_index)  # noqa: E501
         self.pot.add_spend(
             event_type=AccountingEventType.TRANSACTION_EVENT,
             notes=out_event.notes if out_event.notes else '',
@@ -143,7 +147,7 @@ class TransactionsAccountant():
             given_price=prices[0],
             count_entire_amount_spend=False,
             extra_data={
-                'tx_hash': out_event.tx_hash.hex(),
+                'tx_hash': base_group_id,  # TODO: undo. Is a temporary hack
                 'group_id': group_id,
             },
         )
@@ -157,7 +161,7 @@ class TransactionsAccountant():
             taxable=False,  # acquisitions in swaps are never taxable
             given_price=prices[1],
             extra_data={
-                'tx_hash': in_event.tx_hash.hex(),
+                'tx_hash': base_group_id,  # TODO: undo. Is a temporary hack
                 'group_id': group_id,
             },
         )

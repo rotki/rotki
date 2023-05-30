@@ -397,6 +397,12 @@ class HistoryEvent(HistoryBaseEntry):
     def should_ignore(self, ignored_ids_mapping: dict[ActionType, set[str]]) -> bool:
         return False  # TODO: How do we ignore general history events? Not possible yet, I think
 
+    def get_type_identifier(self, include_counterparty: bool = True) -> str:  # pylint: disable=unused-argument  # noqa: E501
+        """
+        Computes the identifier from event type and event subtype.
+        """
+        return str(self.event_type) + '__' + str(self.event_subtype)
+
     def process(
             self,
             accounting: 'AccountingPot',
@@ -427,7 +433,11 @@ class HistoryEvent(HistoryBaseEntry):
             )
             return 1
 
-        return 1
+        # TODO: change to a proper solution. Right now all generic history events are processed as
+        # if they were evm events. This works since default accounting rules identify events only
+        # by event type + subtype and don't pay attention to counterparty, but we should properly
+        # generalize accounting rules.
+        return accounting.transactions.process(self, events_iterator)
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
