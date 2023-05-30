@@ -258,10 +258,19 @@ def test_add_delete_xpub(rotkehlchen_api_server):
     assert len(result) == 0, 'all xpub mappings should have been deleted'
 
 
-@pytest.mark.vcr()
-@pytest.mark.freeze_time('2023-05-27 22:45:45 GMT')
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 def test_add_delete_xpub_multiple_chains(rotkehlchen_api_server):
+    """Test adding xpub for multiple bitcoin chains (BTC/BCH)
+
+    This test actually has a VCR cassete in test-caching. It's not used at
+    the moment since for some weird, arcane, fucked up, demented reason
+    it fails only in the CI when using VCR.
+
+    And it fails in a way that's ugly as it forces the entire CI run to time out
+    at the max runtime which is currently set to 90 mins.
+    TODO: Perhaps see if we can figure out why and fix, as this may hit us in
+    other tests too if we don't know what it is.
+    """
     # Disable caching of query results
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     rotki.chains_aggregator.cache_ttl_secs = 0
