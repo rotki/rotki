@@ -3,7 +3,6 @@ import { type ComputedRef, type Ref } from 'vue';
 import { type DataTableHeader } from 'vuetify';
 import { Routes } from '@/router/routes';
 import { type Report } from '@/types/reports';
-import { size } from '@/utils/data';
 import { calculateTotalProfitLoss } from '@/utils/report';
 
 const expanded: Ref<Report[]> = ref([]);
@@ -41,11 +40,6 @@ const tableHeaders: ComputedRef<DataTableHeader[]> = computed(() => [
   {
     text: tc('profit_loss_reports.columns.taxable_profit_loss'),
     value: 'taxable',
-    align: 'end'
-  },
-  {
-    text: tc('profit_loss_reports.columns.size'),
-    value: 'sizeOnDisk',
     align: 'end'
   },
   {
@@ -127,9 +121,6 @@ const expand = (item: Report) => {
           :value="calculateTotalProfitLoss(item).taxable"
           :fiat-currency="item.settings.profitCurrency"
         />
-      </template>
-      <template #item.sizeOnDisk="{ item }">
-        {{ size(item.sizeOnDisk) }}
       </template>
       <template #item.actions="{ item }">
         <export-report-csv v-if="latestReport(item.identifier)" icon />

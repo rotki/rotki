@@ -59,7 +59,6 @@ export const Report = z.object({
   totalActions: z.number(),
   startTs: z.number(),
   endTs: z.number(),
-  sizeOnDisk: z.number(),
   timestamp: z.number(),
   settings: BaseAccountingSettings,
   overview: ProfitLossOverview
