@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Any, Literal, Optional, Union
 
 import pytest
 
@@ -12,6 +12,7 @@ from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL
 from rotkehlchen.accounting.pot import AccountingPot
 from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.accounting.structures.base import HistoryEvent
 from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.processed_event import ProcessedAccountingEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
@@ -96,10 +97,20 @@ def _gain_one_ether(
         transactions: 'TransactionsAccountant',
         event_type: 'HistoryEventType' = HistoryEventType.RECEIVE,
         event_subtype: 'HistoryEventSubType' = HistoryEventSubType.NONE,
+        entry_type: Literal['history_event', 'evm_event'] = 'evm_event',
 ) -> None:
     """Helper function to gain 1 ETH, so that spending events have something to spend"""
-    eth_gain_event = EvmEvent(
-        tx_hash=EXAMPLE_EVM_HASH,
+    event_class: type[Union[HistoryEvent, EvmEvent]]
+    kwargs: dict[str, Any]
+    if entry_type == 'history_event':
+        event_class = HistoryEvent
+        kwargs = {'event_identifier': f'rotki_events_{EXAMPLE_EVM_HASH.hex()}'}  # pylint: disable=no-member  # noqa: E501
+    else:  # can only be evm event
+        event_class = EvmEvent
+        kwargs = {'tx_hash': EXAMPLE_EVM_HASH}
+
+    eth_gain_event = event_class(
+        **kwargs,
         sequence_index=0,
         timestamp=TIMESTAMP_1_MS,
         location=Location.ETHEREUM,
@@ -143,18 +154,26 @@ def test_accounting_no_settings(accounting_pot: 'AccountingPot'):
     (HistoryEventType.RECEIVE, HistoryEventSubType.REWARD, True, False),
 ])
 @pytest.mark.parametrize('mocked_price_queries', [MOCKED_PRICES])
+# Check that accounting rules are applied no matter what event class is used
+@pytest.mark.parametrize('entry_type', ['history_event', 'evm_event'])
 def test_accounting_receive_settings(
         accounting_pot: 'AccountingPot',
         event_type: 'HistoryEventType',
         event_subtype: 'HistoryEventSubType',
         is_taxable: bool,
+        entry_type: Literal['history_event', 'evm_event'],
 ):
     """Test that the default accounting settings for receiving are correct"""
     _gain_one_ether(
         transactions=accounting_pot.transactions,
         event_type=event_type,
         event_subtype=event_subtype,
+        entry_type=entry_type,
     )
+    expected_extra_data = {}
+    if entry_type == 'evm_event':
+        expected_extra_data = {'tx_hash': EXAMPLE_TX_HASH_HEX}
+
     expected_event = ProcessedAccountingEvent(
         type=AccountingEventType.TRANSACTION_EVENT,
         notes='Received 1 ETH',
@@ -170,7 +189,7 @@ def test_accounting_receive_settings(
         ),
         cost_basis=None,
         index=0,
-        extra_data={'tx_hash': EXAMPLE_TX_HASH_HEX},
+        extra_data=expected_extra_data,
     )
     expected_event.count_entire_amount_spend = False
     expected_event.count_cost_basis_pnl = is_taxable
