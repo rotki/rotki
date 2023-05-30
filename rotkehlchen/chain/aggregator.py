@@ -131,6 +131,8 @@ DEFI_PROTOCOLS_TO_SKIP_ASSETS = {
     'Compound': True,  # True means all
     # Curve balances are detected by our scan for ERC20 tokens
     'Curve': True,  # True means all
+    # Curve gauges balances are now being detected separately by us
+    'Curve • Liquidity Gauges': True,  # True means all
     # Chitoken is is in our packaged DB
     'Chi Gastoken by 1inch': True,  # True means all
     # yearn vault balances are detected by the yTokens
