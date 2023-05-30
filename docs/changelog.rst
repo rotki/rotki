@@ -4,6 +4,7 @@ Changelog
 
 * :bug:`-` ENS avatar fetching for each name's avatar should now work for all name resolvers. Even older or custom ones.
 * :bug:`-` Users will now be able to decode compounding transactions for Convex gauges.
+* :bug:`-` Users will no longer see double counting of balances in curve gauges.
 * :feature:`-` The PnL report page will load faster if there is many old reports in the DB.
 * :feature:`-` Convex staking and Curve gauge balances will no longer need a manual balances referesh to be detected.
 
