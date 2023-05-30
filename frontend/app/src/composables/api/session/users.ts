@@ -86,12 +86,11 @@ export const useUsersApi = () => {
   };
 
   const login = async (credentials: LoginCredentials): Promise<PendingTask> => {
-    const { password, syncApproval, username } = credentials;
+    const { username, ...otherFields } = credentials;
     const response = await api.instance.post<ActionResult<PendingTask>>(
       `/users/${username}`,
       snakeCaseTransformer({
-        password,
-        syncApproval,
+        ...otherFields,
         asyncQuery: true
       }),
       {

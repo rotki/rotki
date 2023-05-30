@@ -3,9 +3,9 @@ import { type Exchange } from '@/types/exchanges';
 import { type SupportedLanguage } from '@/types/frontend-settings';
 import {
   type CreateAccountPayload,
+  IncompleteUpgradeError,
   type LoginCredentials,
   SyncConflictError,
-  type SyncConflictPayload,
   type UnlockPayload
 } from '@/types/login';
 import { type TaskMeta } from '@/types/task';
@@ -19,8 +19,14 @@ export const useSessionStore = defineStore('session', () => {
   const darkModeEnabled = ref(false);
 
   const authStore = useSessionAuthStore();
-  const { logged, username, syncConflict, shouldFetchData } =
-    storeToRefs(authStore);
+  const {
+    logged,
+    username,
+    syncConflict,
+    conflictExist,
+    incompleteUpgradeConflict,
+    shouldFetchData
+  } = storeToRefs(authStore);
 
   const { initialize } = useSessionSettings();
   const usersApi = useUsersApi();
@@ -53,11 +59,7 @@ export const useSessionStore = defineStore('session', () => {
       return { success: true };
     } catch (e: any) {
       logger.error(e);
-      if (e instanceof SyncConflictError) {
-        set(syncConflict, { message: e.message, payload: e.payload });
-        return { success: false, message: '' };
-      }
-      return { success: false, message: e.message };
+      return createActionStatus(e);
     }
   };
 
@@ -89,6 +91,24 @@ export const useSessionStore = defineStore('session', () => {
     }
   };
 
+  const createActionStatus = (error: any): ActionStatus => {
+    let message = '';
+    if (error instanceof IncompleteUpgradeError) {
+      set(incompleteUpgradeConflict, {
+        message: error.message
+      });
+    } else if (error instanceof SyncConflictError) {
+      set(syncConflict, {
+        message: error.message,
+        payload: error.payload
+      });
+    } else {
+      message = error.message;
+    }
+
+    return { success: false, message };
+  };
+
   const login = async (
     credentials: LoginCredentials
   ): Promise<ActionStatus> => {
@@ -100,8 +120,9 @@ export const useSessionStore = defineStore('session', () => {
 
       let settings: UserSettingsModel;
       let exchanges: Exchange[];
-      const conflict = get(syncConflict);
-      if (isLogged && !conflict.message) {
+      const conflict = get(conflictExist);
+
+      if (isLogged && !conflict) {
         [settings, exchanges] = await Promise.all([
           settingsApi.getSettings(),
           exchangeApi.getExchanges()
@@ -111,23 +132,17 @@ export const useSessionStore = defineStore('session', () => {
           return { success: false, message: '' };
         }
         authStore.resetSyncConflict();
+        authStore.resetIncompleteUpgradeConflict();
         const taskType = TaskType.LOGIN;
         const { taskId } = await usersApi.login(credentials);
         start();
-        const { result, message } = await awaitTask<
-          UserAccount | SyncConflictPayload,
-          TaskMeta
-        >(taskId, taskType, {
-          title: 'login in'
-        });
-
-        if (message && 'remoteLastModified' in result) {
-          set(syncConflict, {
-            message,
-            payload: result
-          });
-          return { success: false, message: '' };
-        }
+        const { result } = await awaitTask<UserAccount, TaskMeta>(
+          taskId,
+          taskType,
+          {
+            title: 'login in'
+          }
+        );
 
         const account = UserAccount.parse(result);
         ({ settings, exchanges } = account);
@@ -141,11 +156,7 @@ export const useSessionStore = defineStore('session', () => {
       });
     } catch (e: any) {
       logger.error(e);
-      if (e instanceof SyncConflictError) {
-        set(syncConflict, { message: e.message, payload: e.payload });
-        return { success: false, message: '' };
-      }
-      return { success: false, message: e.message };
+      return createActionStatus(e);
     }
   };
 

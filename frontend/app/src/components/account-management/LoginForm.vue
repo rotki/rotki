@@ -1,18 +1,13 @@
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
 import { helpers, required, requiredIf } from '@vuelidate/validators';
-import {
-  type LoginCredentials,
-  type SyncApproval,
-  type SyncConflict
-} from '@/types/login';
+import { type LoginCredentials, type SyncApproval } from '@/types/login';
 
 const { t } = useI18n();
 
 const props = withDefaults(
   defineProps<{
     loading: boolean;
-    syncConflict: SyncConflict;
     errors?: string[];
   }>(),
   {
@@ -27,7 +22,11 @@ const emit = defineEmits<{
   (e: 'backend-changed', url: string | null): void;
 }>();
 
-const { syncConflict, errors } = toRefs(props);
+const { errors } = toRefs(props);
+
+const authStore = useSessionAuthStore();
+const { conflictExist } = storeToRefs(authStore);
+const { resetSyncConflict, resetIncompleteUpgradeConflict } = authStore;
 
 const touched = () => emit('touched');
 const newAccount = () => emit('new-account');
@@ -122,16 +121,6 @@ const logout = async () => {
     touched();
   }
 };
-
-const localLastModified = useRefMap(
-  syncConflict,
-  ({ payload }) => payload?.localLastModified ?? 0
-);
-
-const remoteLastModified = useRefMap(
-  syncConflict,
-  ({ payload }) => payload?.remoteLastModified ?? 0
-);
 
 const serverColor = computed<string | null>(() => {
   if (get(customBackendSessionOnly)) {
@@ -239,11 +228,14 @@ watch(rememberPassword, async (remember: boolean, previous: boolean) => {
   checkRememberUsername();
 });
 
-const login = async (syncApproval: SyncApproval = 'unknown') => {
+const login = async (actions?: {
+  syncApproval?: SyncApproval;
+  resumeFromBackup?: boolean;
+}) => {
   const credentials: LoginCredentials = {
     username: get(username),
     password: get(password),
-    syncApproval
+    ...actions
   };
   emit('login', credentials);
   if (get(rememberUsername)) {
@@ -254,6 +246,11 @@ const login = async (syncApproval: SyncApproval = 'unknown') => {
     await storePassword(get(username), get(password));
   }
 };
+
+const abortLogin = () => {
+  resetSyncConflict();
+  resetIncompleteUpgradeConflict();
+};
 </script>
 
 <template>
@@ -262,6 +259,7 @@ const login = async (syncApproval: SyncApproval = 'unknown') => {
       <v-card-title>
         {{ t('login.title') }}
       </v-card-title>
+
       <v-card-text class="pb-2">
         <v-form :value="!v$.$invalid">
           <v-text-field
@@ -274,9 +272,7 @@ const login = async (syncApproval: SyncApproval = 'unknown') => {
             :label="t('login.label_username')"
             prepend-inner-icon="mdi-account"
             :error-messages="v$.username.$errors.map(e => e.$message)"
-            :disabled="
-              loading || !!syncConflict.message || customBackendDisplay
-            "
+            :disabled="loading || conflictExist || customBackendDisplay"
             required
             @keypress.enter="login()"
           />
@@ -286,9 +282,7 @@ const login = async (syncApproval: SyncApproval = 'unknown') => {
             v-model="password"
             outlined
             :error-messages="v$.password.$errors.map(e => e.$message)"
-            :disabled="
-              loading || !!syncConflict.message || customBackendDisplay
-            "
+            :disabled="loading || conflictExist || customBackendDisplay"
             type="password"
             required
             class="login__fields__password"
@@ -396,56 +390,15 @@ const login = async (syncApproval: SyncApproval = 'unknown') => {
               </v-row>
             </div>
           </transition>
-          <transition name="bounce">
-            <v-alert
-              v-if="!!syncConflict.message"
-              class="animate login__sync-error mt-4"
-              text
-              prominent
-              outlined
-              type="info"
-              icon="mdi-cloud-download"
-            >
-              <div class="login__sync-error__header text-h6">
-                {{ t('login.sync_error.title') }}
-              </div>
-              <div class="login__sync-error__body mt-2">
-                <div>
-                  <div>{{ syncConflict.message }}</div>
-                  <ul class="mt-2">
-                    <li>
-                      <i18n path="login.sync_error.local_modified">
-                        <div class="font-weight-medium">
-                          <date-display :timestamp="localLastModified" />
-                        </div>
-                      </i18n>
-                    </li>
-                    <li class="mt-2">
-                      <i18n path="login.sync_error.remote_modified">
-                        <div class="font-weight-medium">
-                          <date-display :timestamp="remoteLastModified" />
-                        </div>
-                      </i18n>
-                    </li>
-                  </ul>
-                </div>
-                <div class="mt-2">{{ t('login.sync_error.question') }}</div>
-              </div>
 
-              <v-row justify="end" class="mt-2">
-                <v-col cols="auto" class="shrink">
-                  <v-btn color="error" depressed @click="login('no')">
-                    {{ t('common.actions.no') }}
-                  </v-btn>
-                </v-col>
-                <v-col cols="auto" class="shrink">
-                  <v-btn color="success" depressed @click="login('yes')">
-                    {{ t('common.actions.yes') }}
-                  </v-btn>
-                </v-col>
-              </v-row>
-            </v-alert>
-          </transition>
+          <premium-sync-conflict-alert
+            @proceed="login({ syncApproval: $event })"
+          />
+
+          <incomplete-upgrade-alert
+            @confirm="login({ resumeFromBackup: true })"
+            @cancel="abortLogin()"
+          />
 
           <transition name="bounce">
             <v-alert
@@ -475,6 +428,7 @@ const login = async (syncApproval: SyncApproval = 'unknown') => {
           </transition>
         </v-form>
       </v-card-text>
+
       <v-card-actions class="login__actions d-block">
         <span>
           <v-btn
@@ -482,10 +436,7 @@ const login = async (syncApproval: SyncApproval = 'unknown') => {
             depressed
             color="primary"
             :disabled="
-              v$.$invalid ||
-              loading ||
-              !!syncConflict.message ||
-              customBackendDisplay
+              v$.$invalid || loading || conflictExist || customBackendDisplay
             "
             :loading="loading"
             @click="login()"
@@ -523,13 +474,6 @@ const login = async (syncApproval: SyncApproval = 'unknown') => {
       display: block;
       width: 100%;
       text-align: center;
-    }
-  }
-
-  &__sync-error {
-    &__body {
-      margin-top: 5px;
-      margin-bottom: 8px;
     }
   }
 }

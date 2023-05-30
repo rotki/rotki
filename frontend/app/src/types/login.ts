@@ -8,6 +8,7 @@ export interface LoginCredentials {
   readonly username: string;
   readonly password: string;
   readonly syncApproval?: SyncApproval;
+  readonly resumeFromBackup?: boolean;
 }
 
 export interface PremiumSetup {
@@ -35,6 +36,10 @@ export interface SyncConflict {
   readonly payload: SyncConflictPayload | null;
 }
 
+export interface IncompleteUpgradeConflict {
+  readonly message: string;
+}
+
 export class SyncConflictError extends Error {
   readonly payload: SyncConflictPayload;
 
@@ -42,6 +47,13 @@ export class SyncConflictError extends Error {
     super(message);
     this.payload = payload;
     this.name = 'SyncConflictError';
+  }
+}
+
+export class IncompleteUpgradeError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'IncompleteUpgradeError';
   }
 }
 

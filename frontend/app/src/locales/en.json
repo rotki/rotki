@@ -2931,6 +2931,12 @@
         "url": "The entry inserted is not in a valid url format"
       }
     },
+    "incomplete_upgrade_error": {
+      "title": "User action required to continue login",
+      "resume": "Resume",
+      "abort": "Abort",
+      "question": "Do you want to resume from latest backup?"
+    },
     "label_password": "Password",
     "label_username": "Username",
     "logout": "Logout",

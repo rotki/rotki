@@ -3,12 +3,10 @@ import {
   type DataMigrationStatusData,
   type DbUpgradeStatusData
 } from '@/types/websocket-messages';
-import { type SyncConflict } from '@/types/login';
-
-const defaultSyncConflict = (): SyncConflict => ({
-  message: '',
-  payload: null
-});
+import {
+  type IncompleteUpgradeConflict,
+  type SyncConflict
+} from '@/types/login';
 
 export const useSessionAuthStore = defineStore('session/auth', () => {
   const logged: Ref<boolean> = ref(false);
@@ -16,7 +14,9 @@ export const useSessionAuthStore = defineStore('session/auth', () => {
   const shouldFetchData: Ref<boolean> = ref(false);
   const premiumPrompt: Ref<boolean> = ref(false);
   const username: Ref<string> = ref('');
-  const syncConflict: Ref<SyncConflict> = ref(defaultSyncConflict());
+  const syncConflict: Ref<SyncConflict | undefined> = ref();
+  const incompleteUpgradeConflict: Ref<IncompleteUpgradeConflict | undefined> =
+    ref();
   const dbUpgradeStatus: Ref<DbUpgradeStatusData | null> = ref(null);
   const dataMigrationStatus: Ref<DataMigrationStatusData | null> = ref(null);
 
@@ -26,7 +26,11 @@ export const useSessionAuthStore = defineStore('session/auth', () => {
   );
 
   const resetSyncConflict = (): void => {
-    set(syncConflict, defaultSyncConflict());
+    set(syncConflict, undefined);
+  };
+
+  const resetIncompleteUpgradeConflict = (): void => {
+    set(incompleteUpgradeConflict, undefined);
   };
 
   const updateDbUpgradeStatus = (status: DbUpgradeStatusData): void => {
@@ -42,6 +46,10 @@ export const useSessionAuthStore = defineStore('session/auth', () => {
     set(dbUpgradeStatus, null);
   };
 
+  const conflictExist: ComputedRef<boolean> = computed(
+    () => !!(get(syncConflict) || get(incompleteUpgradeConflict))
+  );
+
   return {
     logged,
     dbUpgradeStatus,
@@ -51,8 +59,11 @@ export const useSessionAuthStore = defineStore('session/auth', () => {
     username,
     premiumPrompt,
     syncConflict,
+    incompleteUpgradeConflict,
+    conflictExist,
     upgradeVisible,
     resetSyncConflict,
+    resetIncompleteUpgradeConflict,
     updateDbUpgradeStatus,
     updateDataMigrationStatus,
     clearUpgradeMessages

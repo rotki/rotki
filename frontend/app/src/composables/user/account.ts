@@ -49,19 +49,22 @@ export const useAccountManagement = () => {
   const userLogin = async ({
     username,
     password,
-    syncApproval
+    syncApproval,
+    resumeFromBackup
   }: LoginCredentials): Promise<boolean> => {
     set(loading, true);
     setupCache(username);
     initTokens(username);
     await connect();
+
     const result = await login({
       username,
       password,
-      syncApproval
+      syncApproval: syncApproval || 'unknown',
+      resumeFromBackup: resumeFromBackup || false
     });
 
-    if (!result.success) {
+    if (!result.success && result.message) {
       set(errors, [result.message]);
     }
     set(loading, false);

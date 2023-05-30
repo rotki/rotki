@@ -5,9 +5,7 @@ import { type LoginCredentials } from '@/types/login';
 const checkForAssetUpdate = ref(false);
 
 const { navigateToUserCreation, navigateToDashboard } = useAppNavigation();
-const { syncConflict, upgradeVisible, canRequestData } = storeToRefs(
-  useSessionAuthStore()
-);
+const { upgradeVisible, canRequestData } = storeToRefs(useSessionAuthStore());
 const { backendChanged } = useBackendManagement();
 const { userLogin, errors, loading } = useAccountManagement();
 const { isPremiumDialogVisible } = usePremiumReminder();
@@ -17,6 +15,7 @@ const showUpgradeProgress: ComputedRef<boolean> = computed(
 );
 
 const handleLogin = async (credentials: LoginCredentials) => {
+  set(errors, []);
   const skipPremiumDisplay = await userLogin(credentials);
   if (skipPremiumDisplay) {
     set(checkForAssetUpdate, true);
@@ -46,7 +45,6 @@ const navigate = async () => {
     <login-form
       v-else
       :loading="loading"
-      :sync-conflict="syncConflict"
       :errors="errors"
       @touched="errors = []"
       @login="handleLogin($event)"
