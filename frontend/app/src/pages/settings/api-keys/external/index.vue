@@ -1,16 +1,18 @@
 <script setup lang="ts">
 import { type Ref } from 'vue';
+import { type Blockchain } from '@rotki/common/lib/blockchain';
 import {
   TRADE_LOCATION_ETHEREUM,
-  TRADE_LOCATION_OPTIMISM
+  TRADE_LOCATION_OPTIMISM,
+  TRADE_LOCATION_POLYGON_POS
 } from '@/data/defaults';
 import { Module } from '@/types/modules';
-import {
-  type ExternalServiceKey,
-  type ExternalServiceKeys,
-  type ExternalServiceName
-} from '@/types/user';
 import { toSentenceCase } from '@/utils/text';
+import type {
+  ExternalServiceKey,
+  ExternalServiceKeys,
+  ExternalServiceName
+} from '@/types/user';
 
 const evmEtherscanTabIndex: Ref<number> = ref(0);
 
@@ -19,13 +21,17 @@ interface EvmEtherscanTab {
   value: string;
 }
 
-const evmEtherscanTabs: Record<string, EvmEtherscanTab> = reactive({
-  ethereum: {
+const evmEtherscanTabs = reactive<Record<string, EvmEtherscanTab>>({
+  [TRADE_LOCATION_ETHEREUM]: {
     key: 'etherscan',
     value: ''
   },
-  optimism: {
+  [TRADE_LOCATION_OPTIMISM]: {
     key: 'optimism_etherscan',
+    value: ''
+  },
+  [TRADE_LOCATION_POLYGON_POS]: {
+    key: 'polygon_pos_etherscan',
     value: ''
   }
 });
@@ -42,6 +48,7 @@ const { activeModules } = storeToRefs(useGeneralSettingsStore());
 const { setMessage } = useMessageStore();
 const { fetchLoopringBalances } = useEthBalancesStore();
 const { remove: removeNotification, prioritized } = useNotificationsStore();
+const { getChainName } = useSupportedChains();
 
 const { t } = useI18n();
 const route = useRoute();
@@ -58,10 +65,14 @@ const updateKeys = ({
   beaconchain,
   loopring,
   opensea,
-  optimismEtherscan
+  optimismEtherscan,
+  polygonPosEtherscan
 }: ExternalServiceKeys) => {
-  evmEtherscanTabs.ethereum.value = etherscan?.apiKey || '';
-  evmEtherscanTabs.optimism.value = optimismEtherscan?.apiKey || '';
+  evmEtherscanTabs[TRADE_LOCATION_ETHEREUM].value = etherscan?.apiKey || '';
+  evmEtherscanTabs[TRADE_LOCATION_OPTIMISM].value =
+    optimismEtherscan?.apiKey || '';
+  evmEtherscanTabs[TRADE_LOCATION_POLYGON_POS].value =
+    polygonPosEtherscan?.apiKey || '';
   set(cryptocompareKey, cryptocompare?.apiKey || '');
   set(covalentKey, covalent?.apiKey || '');
   set(beaconchainKey, beaconchain?.apiKey || '');
@@ -77,7 +88,7 @@ const removeEtherscanNotification = (location: string) => {
   // using prioritized list here, because the actionable notifications are always on top (index 0|1)
   // so it is faster to find
   const notification = prioritized.find(
-    data => data.i18nParam?.props?.location?.toLocaleLowerCase() === location
+    data => data.i18nParam?.props?.key === location
   );
 
   if (!notification) {
@@ -108,6 +119,8 @@ const save = async (serviceName: ExternalServiceName, key: string) => {
       removeEtherscanNotification(TRADE_LOCATION_ETHEREUM);
     } else if (serviceName === 'optimism_etherscan') {
       removeEtherscanNotification(TRADE_LOCATION_OPTIMISM);
+    } else if (serviceName === 'polygon_pos_etherscan') {
+      removeEtherscanNotification(TRADE_LOCATION_POLYGON_POS);
     }
   } catch (e: any) {
     setMessage({
@@ -151,9 +164,11 @@ const confirm = async (service: ExternalServiceName) => {
   set(loading, false);
 };
 
+const getName = (chain: string) => get(getChainName(chain as Blockchain));
+
 const setActiveTab = (hash: string) => {
   const id = hash?.slice(1);
-  if (id in evmEtherscanTabs) {
+  if (id && id in evmEtherscanTabs) {
     set(evmEtherscanTabIndex, Object.keys(evmEtherscanTabs).indexOf(id));
   }
 };
@@ -191,9 +206,9 @@ onMounted(async () => {
       <v-tabs v-model="evmEtherscanTabIndex">
         <v-tab v-for="(_, chain) in evmEtherscanTabs" :key="chain">
           <adaptive-wrapper>
-            <evm-chain-icon :chain="chain" />
+            <evm-chain-icon :chain="chain" tile />
           </adaptive-wrapper>
-          <div class="ml-2">{{ chain }}</div>
+          <div class="ml-2">{{ getName(chain) }}</div>
         </v-tab>
       </v-tabs>
       <v-divider />
@@ -207,7 +222,11 @@ onMounted(async () => {
             v-model="tab.value"
             :class="`external-services__${chain}-etherscan-key`"
             :label="t('external_services.etherscan.label')"
-            :hint="t('external_services.etherscan.hint')"
+            :hint="
+              t('external_services.etherscan.hint', {
+                chain: getName(chain)
+              })
+            "
             :loading="loading"
             :tooltip="
               t('external_services.etherscan.delete_tooltip', {

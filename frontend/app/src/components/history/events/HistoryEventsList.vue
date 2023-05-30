@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { type Ref } from 'vue';
 import { type DataTableHeader } from 'vuetify';
 import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
 import { type HistoryEventEntry } from '@/types/history/events';

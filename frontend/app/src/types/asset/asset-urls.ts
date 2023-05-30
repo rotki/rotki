@@ -61,5 +61,10 @@ export const explorerUrls: AssetExplorerUrls = {
     address: 'https://optimistic.etherscan.io/address/',
     transaction: 'https://optimistic.etherscan.io/tx/',
     block: 'https://optimistic.etherscan.io/block/'
+  },
+  [Blockchain.POLYGON_POS]: {
+    address: 'https://polygonscan.com/address/',
+    transaction: 'https://polygonscan.com/tx/',
+    block: 'https://polygonscan.com/block/'
   }
 };

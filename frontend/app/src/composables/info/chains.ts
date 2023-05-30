@@ -1,6 +1,7 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type MaybeRef } from '@vueuse/core';
 import { type ComputedRef, type Ref } from 'vue';
+import { toSnakeCase } from '@/utils/text';
 import {
   type ChainInfo,
   type EvmChainEntries,
@@ -89,14 +90,16 @@ export const useSupportedChains = createSharedComposable(() => {
   const getNativeAsset = (chain: MaybeRef<Blockchain>) => {
     const blockchain = get(chain);
     return (
-      get(evmChainsData).find(({ id }) => id === blockchain)?.nativeAsset ||
+      get(evmChainsData).find(({ id }) => id === blockchain)?.nativeToken ||
       blockchain
     );
   };
 
   const getChain = (evmChain: string): Blockchain => {
+    // note: we're using toSnakeCase here to always ensure that chains
+    // with combined names gets parsed to match their chain name
     const chainData = get(txEvmChains).find(
-      ({ evmChainName }) => evmChainName === evmChain
+      ({ evmChainName }) => evmChainName === toSnakeCase(evmChain)
     );
     if (chainData && isBlockchain(chainData.id)) {
       return chainData.id;

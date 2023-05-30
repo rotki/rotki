@@ -2,12 +2,14 @@
   {
     "blockchain": "eth",
     "inputMode": "manual_add",
+    "chainName": "Ethereum",
     "label": "ETH 1",
     "tags": ["public"]
   },
   {
     "blockchain": "btc",
     "inputMode": "manual_add",
+    "chainName": "Bitcoin",
     "label": "BTC 1",
     "tags": []
   }

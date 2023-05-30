@@ -295,16 +295,16 @@ const groupBy = (
   }));
 };
 
+const { getNativeAsset } = useSupportedChains();
+const { assetSymbol } = useAssetInfoRetrieval();
+
 const asset: ComputedRef<string> = computed(() => {
   const chain = get(blockchain);
-  if (
-    (chain === Blockchain.ETH2 && get(treatEth2AsEth)) ||
-    chain === Blockchain.OPTIMISM
-  ) {
-    return Blockchain.ETH;
+  const nativeAsset = getNativeAsset(chain);
+  if (nativeAsset === chain) {
+    return chain.toUpperCase();
   }
-
-  return chain;
+  return get(assetSymbol(nativeAsset, treatEth2AsEth));
 });
 
 const tableHeaders = computed<DataTableHeader[]>(() => {

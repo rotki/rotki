@@ -18,6 +18,7 @@ export const useAccountBalances = () => {
     dotAccounts,
     avaxAccounts,
     optimismAccounts,
+    polygonAccounts,
     chainTotals
   } = chainStore;
 
@@ -29,6 +30,7 @@ export const useAccountBalances = () => {
       .concat(get(dotAccounts))
       .concat(get(avaxAccounts))
       .concat(get(optimismAccounts))
+      .concat(get(polygonAccounts))
       .filter((account: BlockchainAccountWithBalance) => !!account.address)
       .map((account: BlockchainAccountWithBalance) => ({
         chain: account.chain,
@@ -57,7 +59,8 @@ export const useAccountBalances = () => {
       [Blockchain.KSM]: ksmAccounts,
       [Blockchain.DOT]: dotAccounts,
       [Blockchain.AVAX]: avaxAccounts,
-      [Blockchain.OPTIMISM]: optimismAccounts
+      [Blockchain.OPTIMISM]: optimismAccounts,
+      [Blockchain.POLYGON_POS]: polygonAccounts
     };
 
     const accounts = get(mapping[blockchain]);

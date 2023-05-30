@@ -1,7 +1,8 @@
 <script setup lang="ts">
+import { type ComputedRef } from 'vue';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type HistoryEventEntry } from '@/types/history/events';
-import { toSentenceCase } from '@/utils/text';
+import { toSentenceCase, toSnakeCase } from '@/utils/text';
 
 const props = defineProps<{
   event: HistoryEventEntry;

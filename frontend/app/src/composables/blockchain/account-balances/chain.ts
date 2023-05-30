@@ -8,7 +8,9 @@ import {
 } from '@/types/blockchain/accounts';
 
 export const useChainAccountBalances = () => {
-  const { ksm, dot, avax, optimism } = storeToRefs(useChainsAccountsStore());
+  const { ksm, dot, avax, optimism, polygon } = storeToRefs(
+    useChainsAccountsStore()
+  );
   const { balances } = storeToRefs(useChainBalancesStore());
 
   const ksmAccounts: ComputedRef<AccountWithBalance[]> = computed(() =>
@@ -28,6 +30,14 @@ export const useChainAccountBalances = () => {
       get(optimism),
       get(balances).optimism,
       Blockchain.OPTIMISM
+    )
+  );
+
+  const polygonAccounts: ComputedRef<AccountWithBalance[]> = computed(() =>
+    accountsWithBalances(
+      get(polygon),
+      get(balances).polygon_pos,
+      Blockchain.POLYGON_POS
     )
   );
 
@@ -56,6 +66,12 @@ export const useChainAccountBalances = () => {
       children: [],
       usdValue: sum(get(optimismAccounts)),
       loading: get(shouldShowLoadingScreen(Section.BLOCKCHAIN_OPTIMISM))
+    },
+    {
+      chain: Blockchain.POLYGON_POS,
+      children: [],
+      usdValue: sum(get(polygonAccounts)),
+      loading: get(shouldShowLoadingScreen(Section.BLOCKCHAIN_POLYGON))
     }
   ]);
 
@@ -84,6 +100,12 @@ export const useChainAccountBalances = () => {
         get(balances).optimism,
         get(optimismAccounts),
         asset
+      ),
+      ...getBlockchainBreakdown(
+        Blockchain.POLYGON_POS,
+        get(balances).polygon_pos,
+        get(polygonAccounts),
+        asset
       )
     ]);
 
@@ -92,6 +114,7 @@ export const useChainAccountBalances = () => {
     dotAccounts,
     avaxAccounts,
     optimismAccounts,
+    polygonAccounts,
     chainTotals,
     getBreakdown
   };

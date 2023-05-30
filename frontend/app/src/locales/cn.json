@@ -1277,7 +1277,8 @@
       "eth2": "ETH staking 余额",
       "ksm": "Kusama 余额",
       "loopring": "Loopring 余额",
-      "optimism": "Optimism"
+      "optimism": "Optimism",
+      "polygon_pos": "Polygon PoS 余额"
     },
     "form_dialog": {
       "add_title": "添加区块链账户",

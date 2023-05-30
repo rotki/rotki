@@ -10,6 +10,8 @@ import {
 import { Section } from '@/types/status';
 import { chainSection } from '@/types/blockchain';
 
+const { t } = useI18n();
+
 const props = withDefaults(
   defineProps<{
     balances: AccountWithBalance[];
@@ -38,8 +40,6 @@ const { handleBlockchainRefresh } = useRefresh(blockchain);
 const { detectTokensOfAllAddresses, detectingTokens } =
   useTokenDetection(blockchain);
 const { show } = useConfirmStore();
-
-const { t } = useI18n();
 
 const isEth2 = computed<boolean>(() => get(blockchain) === Blockchain.ETH2);
 

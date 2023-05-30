@@ -1244,7 +1244,8 @@
       "eth": "Ethereum balances",
       "eth2": "ETH staking balances",
       "ksm": "Kusama balances",
-      "loopring": "Loopring balances"
+      "loopring": "Loopring balances",
+      "polygon_pos": "Polygon PoS balances"
     },
     "form_dialog": {
       "add_title": "Añade una cuenta en la blockchain",

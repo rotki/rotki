@@ -36,7 +36,7 @@ const { isEvm, supportedChains } = useSupportedChains();
 const items = computed(() => {
   const isEth2Enabled = get(isModuleEnabled(Module.ETH2));
 
-  let data = get(supportedChains).map(({ id }) => id);
+  let data: string[] = get(supportedChains).map(({ id }) => id);
 
   if (!isEth2Enabled) {
     data = data.filter(symbol => symbol !== Blockchain.ETH2);

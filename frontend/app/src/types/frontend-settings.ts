@@ -39,6 +39,8 @@ const ExplorerEndpoints = z.object({
   block: z.string().optional()
 });
 
+export type ExplorerEndpoints = z.infer<typeof ExplorerEndpoints>;
+
 const ExplorersSettings = z.object({
   ETC: ExplorerEndpoints.optional(),
   [Blockchain.ETH]: ExplorerEndpoints.optional(),
@@ -48,7 +50,8 @@ const ExplorersSettings = z.object({
   [Blockchain.KSM]: ExplorerEndpoints.optional(),
   [Blockchain.DOT]: ExplorerEndpoints.optional(),
   [Blockchain.AVAX]: ExplorerEndpoints.optional(),
-  [Blockchain.OPTIMISM]: ExplorerEndpoints.optional()
+  [Blockchain.OPTIMISM]: ExplorerEndpoints.optional(),
+  [Blockchain.POLYGON_POS]: ExplorerEndpoints.optional()
 });
 
 export type ExplorersSettings = z.infer<typeof ExplorersSettings>;

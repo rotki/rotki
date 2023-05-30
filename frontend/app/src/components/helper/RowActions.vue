@@ -7,7 +7,7 @@ withDefaults(
     noEdit?: boolean;
     deleteDisabled?: boolean;
     deleteTooltip?: string;
-    noDelete?: false;
+    noDelete?: boolean;
     align?: 'start' | 'center' | 'end';
   }>(),
   {

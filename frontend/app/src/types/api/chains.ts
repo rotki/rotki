@@ -11,7 +11,7 @@ const EvmChainInfo = z.object({
   name: z.string(),
   type: z.literal('evm'),
   evmChainName: z.string(),
-  nativeAsset: z.string().nullish()
+  nativeToken: z.string().optional()
 });
 
 export type EvmChainInfo = z.infer<typeof EvmChainInfo>;

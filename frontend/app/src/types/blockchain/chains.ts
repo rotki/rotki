@@ -7,7 +7,8 @@ const RestChains = [
   Blockchain.KSM,
   Blockchain.DOT,
   Blockchain.AVAX,
-  Blockchain.OPTIMISM
+  Blockchain.OPTIMISM,
+  Blockchain.POLYGON_POS
 ] as const;
 const TokenChains = [Blockchain.ETH, Blockchain.OPTIMISM] as const;
 

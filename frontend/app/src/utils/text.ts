@@ -41,6 +41,42 @@ export const toCapitalCase = (string: string): string =>
   );
 
 /**
+ *
+ * @param {string} value - String to convert
+ * @param {'capitalize' | 'sentence' | 'uppercase' | 'lowercase'} transform
+ * @return {string} - String converted to human-readable case
+ * @example
+ * toHumanReadable('POLYGON_POS', 'sentence'); // Polygon Pos
+ * @example
+ * toHumanReadable('POLYGON_POS'); // POLYGON POS
+ * @example
+ * toHumanReadable('polygon_pos', 'uppercase'); // POLYGON POS
+ */
+export const toHumanReadable = (
+  value: string,
+  transform?: 'capitalize' | 'sentence' | 'uppercase' | 'lowercase'
+): string => {
+  if (!value) {
+    return '';
+  }
+
+  if (!transform) {
+    return value.replace(/_/g, ' ');
+  }
+
+  switch (transform) {
+    case 'uppercase':
+      return value.toUpperCase().replace(/_/g, ' ');
+    case 'lowercase':
+      return value.toLowerCase().replace(/_/g, ' ');
+    case 'sentence':
+      return toSentenceCase(value.replace(/_/g, ' '));
+    case 'capitalize':
+      return toCapitalCase(value.replace(/_/g, ' '));
+  }
+};
+
+/**
  * Returns the plural of an English word.
  *
  * @export

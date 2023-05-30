@@ -6,9 +6,9 @@ import {
 } from '@rotki/common/lib/blockchain';
 import isEqual from 'lodash/isEqual';
 import { type DataTableHeader } from 'vuetify';
+import { type ComputedRef, type Ref } from 'vue';
 import { not } from '@vueuse/math';
 import { type HistoryEventEntryType } from '@rotki/common/lib/history/events';
-import { type ComputedRef } from 'vue';
 import { type Collection } from '@/types/collection';
 import { SavedFilterLocation } from '@/types/filtering';
 import { IgnoreActionType } from '@/types/history/ignored';

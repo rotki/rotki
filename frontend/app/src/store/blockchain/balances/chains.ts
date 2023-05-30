@@ -1,6 +1,7 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type MaybeRef } from '@vueuse/core';
 import { type Ref } from 'vue';
+import camelCase from 'lodash/camelCase';
 import { type AssetBalances } from '@/types/balances';
 import {
   type BlockchainAssetBalances,
@@ -16,14 +17,16 @@ const defaultTotals = (): Totals => ({
   [Blockchain.KSM]: {},
   [Blockchain.DOT]: {},
   [Blockchain.AVAX]: {},
-  [Blockchain.OPTIMISM]: {}
+  [Blockchain.OPTIMISM]: {},
+  [Blockchain.POLYGON_POS]: {}
 });
 
 const defaultBalances = (): Balances => ({
   [Blockchain.KSM]: {},
   [Blockchain.DOT]: {},
   [Blockchain.AVAX]: {},
-  [Blockchain.OPTIMISM]: {}
+  [Blockchain.OPTIMISM]: {},
+  [Blockchain.POLYGON_POS]: {}
 });
 
 export const useChainBalancesStore = defineStore('balances/chain', () => {
@@ -41,7 +44,7 @@ export const useChainBalancesStore = defineStore('balances/chain', () => {
 
     set(balances, {
       ...get(balances),
-      [chain]: perAccount[chain] ?? {}
+      [chain]: perAccount[camelCase(chain)] ?? {}
     });
 
     set(totals, {

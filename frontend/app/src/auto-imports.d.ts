@@ -247,6 +247,7 @@ declare global {
   const throttledWatch: typeof import('@vueuse/core')['throttledWatch']
   const toCapitalCase: typeof import('./utils/text')['toCapitalCase']
   const toEvmChainAndTxHash: typeof import('./utils/history/index')['toEvmChainAndTxHash']
+  const toHumanReadable: typeof import('./utils/text')['toHumanReadable']
   const toMessages: typeof import('./utils/validation')['toMessages']
   const toProfitLossModel: typeof import('./utils/defi/index')['toProfitLossModel']
   const toRaw: typeof import('vue')['toRaw']
@@ -928,6 +929,7 @@ declare module 'vue' {
     readonly throttledWatch: UnwrapRef<typeof import('@vueuse/core')['throttledWatch']>
     readonly toCapitalCase: UnwrapRef<typeof import('./utils/text')['toCapitalCase']>
     readonly toEvmChainAndTxHash: UnwrapRef<typeof import('./utils/history/index')['toEvmChainAndTxHash']>
+    readonly toHumanReadable: UnwrapRef<typeof import('./utils/text')['toHumanReadable']>
     readonly toMessages: UnwrapRef<typeof import('./utils/validation')['toMessages']>
     readonly toProfitLossModel: UnwrapRef<typeof import('./utils/defi/index')['toProfitLossModel']>
     readonly toRaw: UnwrapRef<typeof import('vue')['toRaw']>
@@ -1603,6 +1605,7 @@ declare module '@vue/runtime-core' {
     readonly throttledWatch: UnwrapRef<typeof import('@vueuse/core')['throttledWatch']>
     readonly toCapitalCase: UnwrapRef<typeof import('./utils/text')['toCapitalCase']>
     readonly toEvmChainAndTxHash: UnwrapRef<typeof import('./utils/history/index')['toEvmChainAndTxHash']>
+    readonly toHumanReadable: UnwrapRef<typeof import('./utils/text')['toHumanReadable']>
     readonly toMessages: UnwrapRef<typeof import('./utils/validation')['toMessages']>
     readonly toProfitLossModel: UnwrapRef<typeof import('./utils/defi/index')['toProfitLossModel']>
     readonly toRaw: UnwrapRef<typeof import('vue')['toRaw']>
