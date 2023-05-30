@@ -12,7 +12,12 @@ export class RotkiApp {
   }
 
   visit() {
-    cy.visit('/?skip_update=1');
+    cy.visit({
+      url: '/',
+      qs: {
+        skip_update: '1'
+      }
+    });
   }
 
   createAccount(username: string, password = '1234') {

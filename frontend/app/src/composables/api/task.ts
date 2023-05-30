@@ -8,7 +8,7 @@ import {
 } from '@/types/task';
 import { handleResponse, validTaskStatus } from '@/services/utils';
 import {
-  HalfUpgradeError,
+  IncompleteUpgradeError,
   SyncConflictError,
   SyncConflictPayload
 } from '@/types/login';
@@ -47,7 +47,7 @@ export const useTaskApi = () => {
 
         if (typeof result === 'object') {
           if (isEmpty(result)) {
-            throw new HalfUpgradeError(message);
+            throw new IncompleteUpgradeError(message);
           }
           throw new SyncConflictError(
             message,

@@ -44,12 +44,17 @@ interface TaskResponse<R, M extends TaskMeta> {
   meta: M;
   message?: string;
 }
+
+interface TaskActionResult<T> extends ActionResult<T> {
+  error?: any;
+}
+
 export const useTaskStore = defineStore('tasks', () => {
   const locked = ref<number[]>([]);
   const tasks = ref<TaskMap<TaskMeta>>({});
   const handlers: Record<
     string,
-    (result: any, meta: any, error?: Error) => void
+    (result: ActionResult<any>, meta: any) => void
   > = {};
   let isRunning = false;
 
@@ -59,11 +64,7 @@ export const useTaskStore = defineStore('tasks', () => {
 
   const registerHandler = <R, M extends TaskMeta>(
     task: TaskType,
-    handlerImpl: (
-      actionResult: ActionResult<R>,
-      meta: M,
-      error?: Error
-    ) => void,
+    handlerImpl: (actionResult: TaskActionResult<R>, meta: M) => void,
     taskId?: string
   ): void => {
     const identifier = taskId ? `${task}-${taskId}` : task;
@@ -161,12 +162,12 @@ export const useTaskStore = defineStore('tasks', () => {
     return new Promise<TaskResponse<R, M>>((resolve, reject) => {
       registerHandler<R, M>(
         type,
-        (actionResult, meta, error) => {
+        (actionResult, meta) => {
           unregisterHandler(type, id.toString());
           const { result, message } = actionResult;
 
-          if (error) {
-            reject(error);
+          if (actionResult.error) {
+            reject(actionResult.error);
           } else if (result === null) {
             let errorMessage: string;
             if (message) {
@@ -216,9 +217,8 @@ export const useTaskStore = defineStore('tasks', () => {
   };
 
   const handleResult = (
-    result: ActionResult<any>,
-    task: Task<TaskMeta>,
-    error?: Error
+    result: TaskActionResult<any>,
+    task: Task<TaskMeta>
   ): void => {
     if (task.meta.ignoreResult) {
       remove(task.id);
@@ -228,7 +228,7 @@ export const useTaskStore = defineStore('tasks', () => {
     const handler = handlers[task.type] ?? handlers[`${task.type}-${task.id}`];
 
     if (handler) {
-      handler(result, task.meta, error);
+      handler(result, task.meta);
       /* c8 ignore next 5 */
     } else {
       logger.warn(
@@ -252,7 +252,7 @@ export const useTaskStore = defineStore('tasks', () => {
         remove(task.id);
         handleResult(error(task, e.message), task);
       } else {
-        handleResult({ message: e.message, result: null }, task, e);
+        handleResult({ message: e.message, result: null, error: e }, task);
       }
     }
     unlock(task.id);

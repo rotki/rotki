@@ -3,16 +3,10 @@ import {
   type DataMigrationStatusData,
   type DbUpgradeStatusData
 } from '@/types/websocket-messages';
-import { type HalfUpgradeConflict, type SyncConflict } from '@/types/login';
-
-const defaultSyncConflict = (): SyncConflict => ({
-  message: '',
-  payload: null
-});
-
-const defaultHalfUpgradeConflict = (): HalfUpgradeConflict => ({
-  message: ''
-});
+import {
+  type IncompleteUpgradeConflict,
+  type SyncConflict
+} from '@/types/login';
 
 export const useSessionAuthStore = defineStore('session/auth', () => {
   const logged: Ref<boolean> = ref(false);
@@ -20,10 +14,9 @@ export const useSessionAuthStore = defineStore('session/auth', () => {
   const shouldFetchData: Ref<boolean> = ref(false);
   const premiumPrompt: Ref<boolean> = ref(false);
   const username: Ref<string> = ref('');
-  const syncConflict: Ref<SyncConflict> = ref(defaultSyncConflict());
-  const halfUpgradeConflict: Ref<HalfUpgradeConflict> = ref(
-    defaultHalfUpgradeConflict()
-  );
+  const syncConflict: Ref<SyncConflict | undefined> = ref();
+  const incompleteUpgradeConflict: Ref<IncompleteUpgradeConflict | undefined> =
+    ref();
   const dbUpgradeStatus: Ref<DbUpgradeStatusData | null> = ref(null);
   const dataMigrationStatus: Ref<DataMigrationStatusData | null> = ref(null);
 
@@ -33,11 +26,11 @@ export const useSessionAuthStore = defineStore('session/auth', () => {
   );
 
   const resetSyncConflict = (): void => {
-    set(syncConflict, defaultSyncConflict());
+    set(syncConflict, undefined);
   };
 
-  const resetHalfUpgradeConflict = (): void => {
-    set(halfUpgradeConflict, defaultHalfUpgradeConflict());
+  const resetIncompleteUpgradeConflict = (): void => {
+    set(incompleteUpgradeConflict, undefined);
   };
 
   const updateDbUpgradeStatus = (status: DbUpgradeStatusData): void => {
@@ -54,7 +47,7 @@ export const useSessionAuthStore = defineStore('session/auth', () => {
   };
 
   const conflictExist: ComputedRef<boolean> = computed(
-    () => !!(get(syncConflict).message || get(halfUpgradeConflict).message)
+    () => !!(get(syncConflict) || get(incompleteUpgradeConflict))
   );
 
   return {
@@ -66,11 +59,11 @@ export const useSessionAuthStore = defineStore('session/auth', () => {
     username,
     premiumPrompt,
     syncConflict,
-    halfUpgradeConflict,
+    incompleteUpgradeConflict,
     conflictExist,
     upgradeVisible,
     resetSyncConflict,
-    resetHalfUpgradeConflict,
+    resetIncompleteUpgradeConflict,
     updateDbUpgradeStatus,
     updateDataMigrationStatus,
     clearUpgradeMessages

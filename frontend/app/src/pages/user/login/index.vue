@@ -15,6 +15,7 @@ const showUpgradeProgress: ComputedRef<boolean> = computed(
 );
 
 const handleLogin = async (credentials: LoginCredentials) => {
+  set(errors, []);
   const skipPremiumDisplay = await userLogin(credentials);
   if (skipPremiumDisplay) {
     set(checkForAssetUpdate, true);

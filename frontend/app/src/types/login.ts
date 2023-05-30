@@ -36,7 +36,7 @@ export interface SyncConflict {
   readonly payload: SyncConflictPayload | null;
 }
 
-export interface HalfUpgradeConflict {
+export interface IncompleteUpgradeConflict {
   readonly message: string;
 }
 
@@ -50,10 +50,10 @@ export class SyncConflictError extends Error {
   }
 }
 
-export class HalfUpgradeError extends Error {
+export class IncompleteUpgradeError extends Error {
   constructor(message: string) {
     super(message);
-    this.name = 'HalfUpgradeError';
+    this.name = 'IncompleteUpgradeError';
   }
 }
 

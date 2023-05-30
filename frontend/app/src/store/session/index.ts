@@ -3,7 +3,7 @@ import { type Exchange } from '@/types/exchanges';
 import { type SupportedLanguage } from '@/types/frontend-settings';
 import {
   type CreateAccountPayload,
-  HalfUpgradeError,
+  IncompleteUpgradeError,
   type LoginCredentials,
   SyncConflictError,
   type UnlockPayload
@@ -24,7 +24,7 @@ export const useSessionStore = defineStore('session', () => {
     username,
     syncConflict,
     conflictExist,
-    halfUpgradeConflict,
+    incompleteUpgradeConflict,
     shouldFetchData
   } = storeToRefs(authStore);
 
@@ -59,10 +59,7 @@ export const useSessionStore = defineStore('session', () => {
       return { success: true };
     } catch (e: any) {
       logger.error(e);
-      if (e instanceof SyncConflictError || e instanceof HalfUpgradeError) {
-        return handleLoginError(e);
-      }
-      return { success: false, message: e.message };
+      return createActionStatus(e);
     }
   };
 
@@ -94,19 +91,22 @@ export const useSessionStore = defineStore('session', () => {
     }
   };
 
-  const handleLoginError = (error: SyncConflictError | HalfUpgradeError) => {
-    if (error instanceof HalfUpgradeError) {
-      set(halfUpgradeConflict, {
+  const createActionStatus = (error: any): ActionStatus => {
+    let message = '';
+    if (error instanceof IncompleteUpgradeError) {
+      set(incompleteUpgradeConflict, {
         message: error.message
       });
-    } else {
+    } else if (error instanceof SyncConflictError) {
       set(syncConflict, {
         message: error.message,
         payload: error.payload
       });
+    } else {
+      message = error.message;
     }
 
-    return { success: false, message: '' };
+    return { success: false, message };
   };
 
   const login = async (
@@ -132,7 +132,7 @@ export const useSessionStore = defineStore('session', () => {
           return { success: false, message: '' };
         }
         authStore.resetSyncConflict();
-        authStore.resetHalfUpgradeConflict();
+        authStore.resetIncompleteUpgradeConflict();
         const taskType = TaskType.LOGIN;
         const { taskId } = await usersApi.login(credentials);
         start();
@@ -156,10 +156,7 @@ export const useSessionStore = defineStore('session', () => {
       });
     } catch (e: any) {
       logger.error(e);
-      if (e instanceof SyncConflictError || e instanceof HalfUpgradeError) {
-        return handleLoginError(e);
-      }
-      return { success: false, message: e.message };
+      return createActionStatus(e);
     }
   };
 

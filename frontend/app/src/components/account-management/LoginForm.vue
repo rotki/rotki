@@ -25,9 +25,8 @@ const emit = defineEmits<{
 const { errors } = toRefs(props);
 
 const authStore = useSessionAuthStore();
-const { syncConflict, halfUpgradeConflict, conflictExist } =
-  storeToRefs(authStore);
-const { resetSyncConflict, resetHalfUpgradeConflict } = authStore;
+const { conflictExist } = storeToRefs(authStore);
+const { resetSyncConflict, resetIncompleteUpgradeConflict } = authStore;
 
 const touched = () => emit('touched');
 const newAccount = () => emit('new-account');
@@ -122,16 +121,6 @@ const logout = async () => {
     touched();
   }
 };
-
-const localLastModified = useRefMap(
-  syncConflict,
-  ({ payload }) => payload?.localLastModified ?? 0
-);
-
-const remoteLastModified = useRefMap(
-  syncConflict,
-  ({ payload }) => payload?.remoteLastModified ?? 0
-);
 
 const serverColor = computed<string | null>(() => {
   if (get(customBackendSessionOnly)) {
@@ -260,7 +249,7 @@ const login = async (actions?: {
 
 const abortLogin = () => {
   resetSyncConflict();
-  resetHalfUpgradeConflict();
+  resetIncompleteUpgradeConflict();
 };
 </script>
 
@@ -270,6 +259,7 @@ const abortLogin = () => {
       <v-card-title>
         {{ t('login.title') }}
       </v-card-title>
+
       <v-card-text class="pb-2">
         <v-form :value="!v$.$invalid">
           <v-text-field
@@ -400,105 +390,15 @@ const abortLogin = () => {
               </v-row>
             </div>
           </transition>
-          <transition name="bounce">
-            <v-alert
-              v-if="!!syncConflict.message"
-              class="animate login__sync-error mt-8"
-              text
-              prominent
-              outlined
-              type="warning"
-              icon="mdi-cloud-download"
-            >
-              <div class="login__sync-error__header text-h6">
-                {{ t('login.sync_error.title') }}
-              </div>
-              <div class="login__sync-error__body mt-2">
-                <div>
-                  <div>{{ syncConflict.message }}</div>
-                  <ul class="mt-2">
-                    <li>
-                      <i18n path="login.sync_error.local_modified">
-                        <div class="font-weight-medium">
-                          <date-display :timestamp="localLastModified" />
-                        </div>
-                      </i18n>
-                    </li>
-                    <li class="mt-2">
-                      <i18n path="login.sync_error.remote_modified">
-                        <div class="font-weight-medium">
-                          <date-display :timestamp="remoteLastModified" />
-                        </div>
-                      </i18n>
-                    </li>
-                  </ul>
-                </div>
-                <div class="mt-2">{{ t('login.sync_error.question') }}</div>
-              </div>
 
-              <v-row justify="end" class="mt-2">
-                <v-col cols="auto" class="shrink">
-                  <v-btn
-                    color="error"
-                    depressed
-                    @click="login({ syncApproval: 'no' })"
-                  >
-                    {{ t('common.actions.no') }}
-                  </v-btn>
-                </v-col>
-                <v-col cols="auto" class="shrink">
-                  <v-btn
-                    color="success"
-                    depressed
-                    @click="login({ syncApproval: 'yes' })"
-                  >
-                    {{ t('common.actions.yes') }}
-                  </v-btn>
-                </v-col>
-              </v-row>
-            </v-alert>
-          </transition>
+          <premium-sync-conflict-alert
+            @proceed="login({ syncApproval: $event })"
+          />
 
-          <transition>
-            <v-alert
-              v-if="!!halfUpgradeConflict.message"
-              class="animate half__upgrade-error mt-8"
-              text
-              prominent
-              outlined
-              type="warning"
-              icon="mdi-shield-alert-outline"
-            >
-              <div class="half__upgrade-error__header text-h6">
-                {{ t('login.half_upgrade_error.title') }}
-              </div>
-              <div class="half__upgrade-error__body mt-2">
-                <div>
-                  <div>{{ halfUpgradeConflict.message }}</div>
-                  <div class="mt-2">
-                    {{ t('login.half_upgrade_error.question') }}
-                  </div>
-                </div>
-              </div>
-
-              <v-row justify="end" class="mt-2">
-                <v-col cols="auto" class="shrink">
-                  <v-btn color="error" depressed @click="abortLogin()">
-                    {{ t('login.half_upgrade_error.abort') }}
-                  </v-btn>
-                </v-col>
-                <v-col cols="auto" class="shrink">
-                  <v-btn
-                    color="success"
-                    depressed
-                    @click="login({ resumeFromBackup: true })"
-                  >
-                    {{ t('login.half_upgrade_error.resume') }}
-                  </v-btn>
-                </v-col>
-              </v-row>
-            </v-alert>
-          </transition>
+          <incomplete-upgrade-alert
+            @confirm="login({ resumeFromBackup: true })"
+            @cancel="abortLogin()"
+          />
 
           <transition name="bounce">
             <v-alert
@@ -528,6 +428,7 @@ const abortLogin = () => {
           </transition>
         </v-form>
       </v-card-text>
+
       <v-card-actions class="login__actions d-block">
         <span>
           <v-btn
@@ -573,13 +474,6 @@ const abortLogin = () => {
       display: block;
       width: 100%;
       text-align: center;
-    }
-  }
-
-  &__sync-error {
-    &__body {
-      margin-top: 5px;
-      margin-bottom: 8px;
     }
   }
 }
