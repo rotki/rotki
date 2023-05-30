@@ -5541,7 +5541,6 @@ Query saved PnL Reports
               "end_ts":1637928988,
               "first_processed_timestamp":null,
               "last_processed_timestamp": 1602042717,
-              "size_on_disk":14793,
               "settings": {
                   "profit_currency": "USD",
                   "taxfree_after_period": 365,
@@ -5565,7 +5564,6 @@ Query saved PnL Reports
               "end_ts":1637928988,
               "first_processed_timestamp":null,
               "last_processed_timestamp": 1602042717,
-              "size_on_disk":6793,
               "settings": {
                   "profit_currency": "USD",
                   "taxfree_after_period": 365,
@@ -5588,7 +5586,6 @@ Query saved PnL Reports
               "end_ts":1637928988,
               "first_processed_timestamp":null,
               "last_processed_timestamp": 1602042717,
-              "size_on_disk":23493,
               "settings": {
                   "profit_currency": "USD",
                   "taxfree_after_period": 365,
@@ -5615,8 +5612,6 @@ Query saved PnL Reports
    :resjson int start_ts: The end unix timestamp of the PnL report
    :resjson int end_ts: The end unix timestamp of the PnL report
    :resjson int first_processed_timestamp: The timestamp of the first even we processed in the PnL report or 0 for empty report.
-   :resjson int size_on_disk: An approximation of the size of the PnL report on disk.
-
 
    :resjson object overview: The overview contains an entry for totals per event type. Each entry contains pnl breakdown (free/taxable for now).
    :resjson int last_processed_timestamp: The timestamp of the last processed action. This helps us figure out when was the last action the backend processed and if it was before the start of the PnL period to warn the user WHY the PnL is empty.

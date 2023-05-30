@@ -3740,7 +3740,6 @@
       "actions": "Actions",
       "created": "Creation Date",
       "end": "Period End",
-      "size": "Size",
       "start": "Period Start",
       "taxable_profit_loss": "Taxable P/L",
       "taxfree_profit_loss": "Tax Free P/L"
