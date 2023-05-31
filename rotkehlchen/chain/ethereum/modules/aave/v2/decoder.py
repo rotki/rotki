@@ -220,6 +220,7 @@ class Aavev2Decoder(DecoderInterface):
                 event.notes = f'Payback {event.balance.amount} {asset.symbol} for an aave-v2 position'  # noqa: E501
                 event.counterparty = CPT_AAVE_V2
                 event.address = tx_log.address
+                event.extra_data = {'is_liquidation': True}  # adding this field to the decoded event to differenciate paybacks happening in liquidations.  # noqa: E501
 
     def _decode_repay(
             self,

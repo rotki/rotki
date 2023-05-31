@@ -6528,6 +6528,80 @@ Getting Aave balances
    :statuscode 500: Internal rotki error.
    :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
 
+Getting Aave stats
+========================
+
+.. http:get:: /api/(version)/blockchains/eth/modules/aave/stats
+
+   Doing a GET on the aave stats resource will return the interest payments of each account in Aave's lending.
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
+
+   .. note::
+      This endpoint also accepts parameters as query arguments.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/blockchains/ETH/modules/aave/stats HTTP/1.1
+      Host: localhost:5042
+
+   :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+              "0xA0B6B7fEa3a3ce3b9e6512c0c5A157a385e81056": {
+                  "total_earned": {
+                      "eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F": {
+                          "amount": "0.9482",
+                          "usd_value": "1.001"
+                      },
+                      "eip155:1/erc20:0xE41d2489571d322189246DaFA5ebDe1F4699F498": {
+                          "amount": "0.523",
+                          "usd_value": "0.0253"
+                      }
+                  },
+                  "total_lost": {
+                      "eip155:1/erc20:0xFC4B8ED459e00e5400be803A9BB3954234FD50e3": {
+                          "amount": "0.3212",
+                          "usd_value": "3560.32"
+                      }
+                  },
+                  "total_earned_liquidations": {},
+              },
+              "0x1D7D7Eb7035B42F39f200AA3af8a65BC3475A237": {
+                  "total_earned_interest": {
+                      "eip155:1/erc20:0x0D8775F648430679A709E98d2b0Cb6250d2887EF": {
+                          "amount": "0.9482",
+                          "usd_value": "0.2312"
+                      }
+                  },
+                  "total_lost": {},
+                  "total_earned_liquidations": {},
+              }
+          },
+          "message": ""
+      }
+
+   :resjson object result: A mapping of accounts to the Aave history report of each account. If an account is not in the mapping rotki does not see anything ever deposited in Aave for it.
+   :resjson object total_earned_interest: A mapping of asset identifier to total earned (amount + usd_value mapping) for each asset's interest earnings. The total earned is essentially the sum of all interest payments plus the difference between ``balanceOf`` and ``principalBalanceOf`` for each asset.
+   :resjson object total_lost: A mapping of asset identifier to total lost (amount + usd_value mapping) for each asset. The total losst for each asset is essentially the accrued interest from borrowing and the collateral lost from liquidations.
+   :resjson object total_earned_liquidations: A mapping of asset identifier to total earned (amount + usd_value mapping) for each repaid assets during liquidations.
+
+   :statuscode 200: Aave history successfully queried.
+   :statuscode 409: No user is currently logged in or currently logged in user does not have a premium subscription. Or aave module is not activated.
+   :statuscode 500: Internal rotki error
+   :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
+
 Getting Balancer balances
 ==============================
 

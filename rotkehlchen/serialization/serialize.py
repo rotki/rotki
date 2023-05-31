@@ -28,6 +28,7 @@ from rotkehlchen.chain.ethereum.modules.aave.aave import (
     AaveBorrowingBalance,
     AaveLendingBalance,
 )
+from rotkehlchen.chain.ethereum.modules.aave.common import AaveStats
 from rotkehlchen.chain.ethereum.modules.aave.structures import AaveEvent
 from rotkehlchen.chain.ethereum.modules.balancer import (
     BalancerBPTEventPoolToken,
@@ -181,6 +182,7 @@ def _process_entry(entry: Any) -> Union[str, list[Any], dict[str, Any], Any]:
             BlockchainAccountData,
             EventCategoryDetails,
             CounterpartyDetails,
+            AaveStats,
     )):
         return process_result(entry._asdict())
     if isinstance(entry, tuple):

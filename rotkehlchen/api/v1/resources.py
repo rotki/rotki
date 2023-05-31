@@ -1908,6 +1908,25 @@ class AaveBalancesResource(BaseMethodView):
         return self.rest_api.get_aave_balances(async_query=async_query)
 
 
+class AaveStatsResource(BaseMethodView):
+
+    get_schema = HistoryProcessingSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(get_schema, location='json_and_query')
+    def get(
+            self,
+            async_query: bool,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+    ) -> Response:
+        return self.rest_api.get_aave_stats(
+            async_query=async_query,
+            from_timestamp=from_timestamp,
+            to_timestamp=to_timestamp,
+        )
+
+
 class CompoundBalancesResource(BaseMethodView):
 
     get_schema = AsyncQueryArgumentSchema()
