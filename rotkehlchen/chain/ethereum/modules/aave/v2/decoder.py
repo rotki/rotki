@@ -256,6 +256,7 @@ class Aavev2Decoder(DecoderInterface):
                 else:
                     event.event_subtype = HistoryEventSubType.PAYBACK_DEBT
                     event.notes = notes
+                    event.extra_data = {'is_liquidation': True}
                 # Set protocol for both events
                 event.counterparty = CPT_AAVE_V2
 

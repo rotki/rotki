@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, NamedTuple, Optional, Union
+from typing import NamedTuple, Optional, Union
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import CryptoAsset, EvmToken
@@ -10,16 +10,8 @@ from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.premium.premium import Premium
 from rotkehlchen.tests.utils.aave import A_AKNC_V1, A_AKNC_V2
-from rotkehlchen.types import ChecksumEvmAddress, Timestamp
-from rotkehlchen.user_messages import MessagesAggregator
-
-from .structures import AaveEvent
-
-if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
-    from rotkehlchen.db.dbhandler import DBHandler
+from rotkehlchen.types import ChecksumEvmAddress
 
 
 logger = logging.getLogger(__name__)
@@ -133,43 +125,8 @@ def _get_reserve_address_decimals(asset: CryptoAsset) -> tuple[ChecksumEvmAddres
     return reserve_address, decimals
 
 
-class AaveHistory(NamedTuple):
-    """All events and total interest accrued for all Atoken of an address
-    """
-    events: list[AaveEvent]
+class AaveStats(NamedTuple):
+    """Total interest accrued for all Atoken of an address"""
     total_earned_interest: dict[CryptoAsset, Balance]
     total_lost: dict[CryptoAsset, Balance]
     total_earned_liquidations: dict[CryptoAsset, Balance]
-
-
-class AaveInquirer():
-
-    def __init__(
-            self,
-            ethereum_inquirer: 'EthereumInquirer',
-            database: 'DBHandler',
-            premium: Optional[Premium],
-            msg_aggregator: MessagesAggregator,
-    ) -> None:
-        self.ethereum = ethereum_inquirer
-        self.database = database
-        self.msg_aggregator = msg_aggregator
-        self.premium = premium
-
-    def get_history_for_addresses(
-            self,
-            addresses: list[ChecksumEvmAddress],
-            to_block: int,
-            from_timestamp: Timestamp,
-            to_timestamp: Timestamp,
-            aave_balances: dict[ChecksumEvmAddress, AaveBalances],
-    ) -> dict[ChecksumEvmAddress, AaveHistory]:
-        """
-        Queries aave history for a list of addresses.
-
-        This function should be entered while holding the history_lock
-        semaphore
-        """
-        raise NotImplementedError(
-            'get_history_for_addresses() should only be implemented by subclasses',
-        )

@@ -15,7 +15,10 @@ from rotkehlchen.chain.ethereum.defi.structures import (
     DefiProtocol,
     DefiProtocolBalances,
 )
+from rotkehlchen.chain.ethereum.modules.aave.aave import Aave
+from rotkehlchen.chain.ethereum.modules.aave.common import AaveBalances
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.constants.misc import ONE
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
     api_url_for,
@@ -24,8 +27,10 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_response_with_result,
     wait_for_async_task,
 )
+from rotkehlchen.tests.utils.decoders import patch_decoder_reload_data
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
-from rotkehlchen.types import ChecksumEvmAddress
+from rotkehlchen.types import ChecksumEvmAddress, Timestamp, deserialize_evm_tx_hash
+from rotkehlchen.utils.misc import ts_now
 
 AAVE_BALANCESV1_TEST_ACC = '0xC2cB1040220768554cf699b0d863A3cd4324ce32'
 AAVE_BALANCESV2_TEST_ACC = '0x8Fe178db26ebA2eEdb22575265bf10A63c395a3d'
@@ -221,3 +226,45 @@ def test_query_aave_defi_borrowing(
     variable_borrowing = account_data['lending']['eip155:1/erc20:0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599']  # noqa: E501
     assert variable_borrowing['apy'] == '0.12%'
     assert variable_borrowing['balance']['amount'] == '0.59425326'
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('ethereum_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
+@pytest.mark.parametrize('ethereum_modules', [['aave']])
+@pytest.mark.parametrize('have_decoders', [[True]])
+@pytest.mark.parametrize('should_mock_price_queries', [True])
+@pytest.mark.parametrize('should_mock_current_price_queries', [True])
+@pytest.mark.parametrize('default_mock_price_value', [ONE])
+def test_events(rotkehlchen_api_server: 'APIServer'):
+    node_inquirer = rotkehlchen_api_server.rest_api.rotkehlchen.chains_aggregator.ethereum.node_inquirer  # noqa: E501
+    ethereum_transaction_decoder = rotkehlchen_api_server.rest_api.rotkehlchen.chains_aggregator.ethereum.transactions_decoder  # noqa: E501
+    database = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
+    tx_hashes = [
+        deserialize_evm_tx_hash('0x8b72307967c4f7a486c1cb1b6ebca5e549de06e02930ece0399e2096f1a132c5'),  # supply    102.92 DAI and get same amount of aDAI  # noqa: E501
+        deserialize_evm_tx_hash('0x78ae48d93e0284d1f9a5e1cd4a7e5f2e3daf65ab5dafb0c4bd626aa90e783d60'),  # supply    160    DAI  # noqa: E501
+        deserialize_evm_tx_hash('0xb9999b06b706dcc973bcf381d69f12620f1bef887082bce9679cf256f7e8023c'),  # supply    390    DAI  # noqa: E501
+        deserialize_evm_tx_hash('0x28054d29620515337b8ffb2f7f2dda5b2033beae9844b42359893f4f73d855bc'),  # supply    58.985 DAI  # noqa: E501
+        deserialize_evm_tx_hash('0x07ac09cc06c7cd74c7312f3a82c9f77d69ba7a89a4a3b7ded33db07e32c3607c'),  # cast vote interest update  # noqa: E501
+        deserialize_evm_tx_hash('0x90b818ba8d3b55f332b64f3df58bf37f33addcbfc1f27bd1ec6102ae4bf2d871'),  # supply    168.84 DAI  # noqa: E501
+        deserialize_evm_tx_hash('0xc3a8978418afa1a4f139e9314ac787cacfbed79b1daa28e146bb0bf6fdf79a41'),  # supply    1939.8 DAI  # noqa: E501
+        deserialize_evm_tx_hash('0x930879d66d13c37edf25cdbb2d2e85b65c3b2a026529ff4085146bb7a5398410'),  # supply    2507.6 DAI  # noqa: E501
+        deserialize_evm_tx_hash('0x4fed67963375a3f90916f0cf7cb9e4d12644629e36233025b36060494ffba486'),  # withdraw  7968.4 DAI  # noqa: E501
+    ]
+    with patch_decoder_reload_data():
+        ethereum_transaction_decoder.decode_transaction_hashes(
+            ignore_cache=True,
+            tx_hashes=tx_hashes,
+        )
+
+    aave = Aave(
+        ethereum_inquirer=node_inquirer,
+        database=database,
+        premium=rotkehlchen_api_server.rest_api.rotkehlchen.premium,
+        msg_aggregator=rotkehlchen_api_server.rest_api.rotkehlchen.msg_aggregator,
+    )
+    aave.get_stats_for_addresses(
+        addresses=['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'],
+        from_timestamp=Timestamp(0),
+        to_timestamp=ts_now(),
+        aave_balances=AaveBalances({}, {}),
+    )
