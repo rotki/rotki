@@ -559,7 +559,9 @@ def test_scrape_validator_withdrawals():
     """Simple test for withdrawal scraping.
     Uses goerli since mainnet has few withdrawals for pagination.
 
-    TODO: Switch to mainnet later(?) and add VCR
+    Maybe switch to mainnet and also use VCR? But it's not a slow test and this
+    way we get an early warning system if they change anything as they do that
+    first in Goerli.
     """
     goerli_url = patch(
         'rotkehlchen.chain.ethereum.modules.eth2.utils.BEACONCHAIN_ROOT_URL',
@@ -570,7 +572,8 @@ def test_scrape_validator_withdrawals():
         new=1616508000,
     )
 
-    last_known_timestamp = ts_now() - 20 * DAY_IN_SECONDS  # so we have ~2-3 pages
+    # 20 days before exit withdrawal so we have ~2-3 pages
+    last_known_timestamp = 1685258639 - 20 * DAY_IN_SECONDS
     with goerli_url, goerli_start:
         withdrawal_data = scrape_validator_withdrawals(270410, last_known_timestamp)
 
