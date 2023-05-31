@@ -1,29 +1,41 @@
 import logging
-from typing import TYPE_CHECKING, NamedTuple, Optional
+from collections import defaultdict
+from typing import TYPE_CHECKING, NamedTuple, Optional, cast
 
 from gevent.lock import Semaphore
 
-from rotkehlchen.assets.asset import EvmToken
+from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.accounting.structures.evm_event import EvmEvent
+from rotkehlchen.accounting.structures.types import HistoryEventSubType
+from rotkehlchen.assets.asset import Asset, CryptoAsset, EvmToken
 from rotkehlchen.chain.ethereum.constants import RAY
-from rotkehlchen.chain.ethereum.defi.structures import GIVEN_DEFI_BALANCES
+from rotkehlchen.chain.ethereum.modules.aave.constants import CPT_AAVE_V1, CPT_AAVE_V2
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
+from rotkehlchen.db.filtering import EvmEventFilterQuery
+from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.price import query_usd_price_zero_if_error
+from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
-from rotkehlchen.types import ChecksumEvmAddress
+from rotkehlchen.types import ChecksumEvmAddress, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
+from rotkehlchen.utils.misc import ts_ms_to_sec
 
 from .common import (
     AaveBalances,
     AaveBorrowingBalance,
     AaveLendingBalance,
+    AaveStats,
     _get_reserve_address_decimals,
+    asset_to_atoken,
 )
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.ethereum.defi.structures import GIVEN_DEFI_BALANCES
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
 
@@ -61,17 +73,18 @@ class Aave(EthereumModule):
         self.premium = premium
         self.history_lock = Semaphore()
         self.balances_lock = Semaphore()
+        self.counterparties = [CPT_AAVE_V1, CPT_AAVE_V2]
 
     def get_balances(
             self,
-            given_defi_balances: GIVEN_DEFI_BALANCES,
+            given_defi_balances: 'GIVEN_DEFI_BALANCES',
     ) -> dict[ChecksumEvmAddress, AaveBalances]:
         with self.balances_lock:
             return self._get_balances(given_defi_balances)
 
     def _get_balances(
             self,
-            given_defi_balances: GIVEN_DEFI_BALANCES,
+            given_defi_balances: 'GIVEN_DEFI_BALANCES',
     ) -> dict[ChecksumEvmAddress, AaveBalances]:
         """Retrieves the aave balances
 
@@ -162,6 +175,204 @@ class Aave(EthereumModule):
             aave_balances[account] = AaveBalances(lending=lending_map, borrowing=borrowing_map)  # type: ignore  # noqa: E501
 
         return aave_balances
+
+    def _calculate_loss(
+            self,
+            user_address: ChecksumEvmAddress,
+            events: list[EvmEvent],
+            balances: AaveBalances,
+    ) -> tuple[dict[Asset, Balance], dict[Asset, Balance], dict[Asset, Balance]]:
+        """
+        Returns a tuple of mapping of losses due to liquidation/borrowing and
+        earnings due to keeping the principal repaid by the liquidation
+        """
+        historical_borrow_balances: dict[Asset, FVal] = defaultdict(FVal)
+        total_lost: dict[Asset, Balance] = defaultdict(Balance)
+        total_earned: dict[Asset, Balance] = defaultdict(Balance)
+        atokens_balances: dict[Asset, Balance] = defaultdict(Balance)
+        earned_atoken_balances: dict[Asset, Balance] = defaultdict(Balance)
+        prev_balance = Balance()
+
+        for event in events:
+            if event.asset in earned_atoken_balances:
+                prev_balance = earned_atoken_balances[event.asset]
+
+            if event.event_subtype in (HistoryEventSubType.GENERATE_DEBT, HistoryEventSubType.DEPOSIT_ASSET):  # noqa: E501
+                historical_borrow_balances[event.asset] -= event.balance.amount
+            elif event.event_subtype in (HistoryEventSubType.PAYBACK_DEBT, HistoryEventSubType.REMOVE_ASSET, HistoryEventSubType.REWARD):  # noqa: E501
+                if event.event_subtype == HistoryEventSubType.REWARD:
+                    atokens_balances[event.asset] += event.balance
+                else:
+                    if event.extra_data is not None and 'is_liquidation' in event.extra_data:
+                        total_earned[event.asset] += event.balance
+                    historical_borrow_balances[event.asset] += event.balance.amount
+            elif event.event_subtype == HistoryEventSubType.LIQUIDATE:
+                # At liquidation you lose the collateral asset
+                total_lost[event.asset] += event.balance
+            elif event.event_subtype == (HistoryEventSubType.GENERATE_DEBT, HistoryEventSubType.RECEIVE_WRAPPED):  # noqa: E501
+                atokens_balances[event.asset] += event.balance
+            elif event.event_subtype == (HistoryEventSubType.PAYBACK_DEBT, HistoryEventSubType.RETURN_WRAPPED):  # noqa: E501
+                atokens_balances[event.asset] -= event.balance
+
+            if event.asset in atokens_balances:
+                amount_diff = atokens_balances[event.asset].amount - prev_balance.amount
+                usd_price = query_usd_price_zero_if_error(
+                    asset=event.asset,
+                    time=ts_ms_to_sec(event.timestamp),
+                    location=f'aave interest event {event.event_identifier} from history',
+                    msg_aggregator=self.msg_aggregator,
+                )
+                earned_atoken_balances[event.asset] += Balance(amount=amount_diff, usd_value=amount_diff * usd_price)  # noqa: E501
+
+        for borrowed_asset, amount in historical_borrow_balances.items():
+            borrow_balance = balances.borrowing.get(cast(CryptoAsset, borrowed_asset), None)
+            this_amount = amount
+            if borrow_balance is not None:
+                this_amount += borrow_balance.balance.amount
+
+            usd_price = Inquirer().find_usd_price(borrowed_asset)
+            total_lost[borrowed_asset] = Balance(
+                # add total_lost amount in case of liquidations
+                amount=total_lost[borrowed_asset].amount + this_amount,
+                usd_value=this_amount * usd_price,
+            )
+
+        # calculate the earned interest
+        self._calculate_interest_and_profit(
+            user_address=user_address,
+            balances=balances,
+            total_earned_atokens=earned_atoken_balances,
+        )
+        return total_lost, total_earned, earned_atoken_balances
+
+    def _calculate_interest_and_profit(
+            self,
+            user_address: ChecksumEvmAddress,
+            balances: AaveBalances,
+            total_earned_atokens: dict[Asset, Balance],
+    ) -> None:
+        """
+        Calcualte total earned from aave events. `total_earned_atokens` is modified inside
+        this function
+        """
+        atoken_abi = atoken_v2_abi = None
+        # Take aave unpaid interest into account
+        for balance_asset, lending_balance in balances.lending.items():
+            atoken = asset_to_atoken(balance_asset, version=lending_balance.version)
+            if atoken is None:
+                log.error(
+                    f'Could not find corresponding v{lending_balance.version} aToken to '
+                    f'{balance_asset.identifier} during an aave graph unpaid interest '
+                    f'query. Skipping entry...',
+                )
+                continue
+
+            if lending_balance.version == 1:
+                method = 'principalBalanceOf'
+                if atoken_abi is None:
+                    atoken_abi = self.ethereum.contracts.abi('ATOKEN')
+                abi = atoken_abi
+            else:
+                method = 'scaledBalanceOf'
+                if atoken_v2_abi is None:
+                    atoken_v2_abi = self.ethereum.contracts.abi('ATOKEN_V2')
+                abi = atoken_v2_abi
+
+            principal_balance = self.ethereum.call_contract(
+                contract_address=atoken.evm_address,
+                abi=abi,
+                method_name=method,
+                arguments=[user_address],
+            )
+            unpaid_interest = lending_balance.balance.amount - (principal_balance / (FVal(10) ** FVal(atoken.decimals)))  # noqa: E501
+            usd_price = Inquirer().find_usd_price(atoken)
+            total_earned_atokens[atoken] += Balance(
+                amount=unpaid_interest,
+                usd_value=unpaid_interest * usd_price,
+            )
+
+    def _get_stats_for_address(
+            self,
+            address: ChecksumEvmAddress,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+            aave_balances: AaveBalances,
+    ) -> Optional[AaveStats]:
+        db = DBHistoryEvents(self.database)
+        query_filter = EvmEventFilterQuery.make(
+            counterparties=self.counterparties,
+            location_labels=[address],
+            event_subtypes=[
+                HistoryEventSubType.DEPOSIT_ASSET,
+                HistoryEventSubType.REMOVE_ASSET,
+                HistoryEventSubType.GENERATE_DEBT,
+                HistoryEventSubType.PAYBACK_DEBT,
+                HistoryEventSubType.LIQUIDATE,
+                HistoryEventSubType.REWARD,
+                HistoryEventSubType.RETURN_WRAPPED,
+                HistoryEventSubType.RECEIVE_WRAPPED,
+            ],
+            from_ts=from_timestamp,
+            to_ts=to_timestamp,
+        )
+        with self.database.conn.read_ctx() as cursor:
+            events = db.get_history_events(
+                cursor=cursor,
+                filter_query=query_filter,
+                has_premium=self.premium is not None,
+                group_by_event_ids=False,
+            )
+
+        if len(events) == 0:
+            return None
+
+        total_lost, total_earned, earned_interest = self._calculate_loss(
+            events=events,
+            user_address=address,
+            balances=aave_balances,
+        )
+        return AaveStats(
+            total_earned_interest=earned_interest,
+            total_lost=total_lost,
+            total_earned_liquidations=total_earned,
+        )
+
+    def get_stats_for_addresses(
+            self,
+            addresses: list[ChecksumEvmAddress],
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+            given_defi_balances: 'GIVEN_DEFI_BALANCES',
+    ) -> dict[ChecksumEvmAddress, AaveStats]:
+        """
+        Calculate the profit and losses in aave v1 and v2 for the provided addresses
+        in the time window requested.
+        We use the `given_defi_balances` that contain the aave balances to also include
+        in the calculations the current aave balances.
+        If an address has no information in aave it is not returned in the result mapping.
+        We return:
+        - total_earned_interest: The total earned is essentially the sum of all interest payments
+        plus the difference between ``balanceOf`` and ``principalBalanceOf`` for each asset.
+        - total_lost: The total losst for each asset is essentially the accrued interest from
+        borrowing and the collateral lost from liquidations.
+        - total_earned_liquidations: A mapping of asset identifier for each repaid assets during
+        liquidations.
+        """
+        aave_balances = self.get_balances(given_defi_balances)
+        result = {}
+        for address in addresses:
+            user_stats = self._get_stats_for_address(
+                address=address,
+                from_timestamp=from_timestamp,
+                to_timestamp=to_timestamp,
+                aave_balances=aave_balances.get(address, AaveBalances({}, {})),
+            )
+            if user_stats is None:
+                continue
+
+            result[address] = user_stats
+
+        return result
 
     # -- Methods following the EthereumModule interface -- #
     def on_account_addition(self, address: ChecksumEvmAddress) -> None:

@@ -946,6 +946,7 @@ def test_aave_v2_liquidation(
             notes='Payback 0.910875161581518408 variableDebtWETH for an aave-v2 position',
             counterparty=CPT_AAVE_V2,
             address=string_to_evm_address('0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9'),
+            extra_data={'is_liquidation': True},
         ), EvmEvent(
             tx_hash=tx_hash,
             sequence_index=11,
@@ -1010,6 +1011,7 @@ def test_aave_v1_liquidation(
             notes='Payback 38.160293005291481434 aLINK for an aave-v1 position',
             counterparty=CPT_AAVE_V1,
             address=string_to_evm_address('0x398eC7346DcD622eDc5ae82352F02bE94C62d119'),
+            extra_data={'is_liquidation': True},
         ),
     ]
     assert expected_events == events

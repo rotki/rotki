@@ -16,6 +16,7 @@ from rotkehlchen.chain.ethereum.defi.structures import (
     DefiProtocolBalances,
 )
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.constants.misc import ONE
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
     api_url_for,
@@ -24,8 +25,9 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_response_with_result,
     wait_for_async_task,
 )
+from rotkehlchen.tests.utils.decoders import patch_decoder_reload_data
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
-from rotkehlchen.types import ChecksumEvmAddress
+from rotkehlchen.types import ChecksumEvmAddress, deserialize_evm_tx_hash
 
 AAVE_BALANCESV1_TEST_ACC = '0xC2cB1040220768554cf699b0d863A3cd4324ce32'
 AAVE_BALANCESV2_TEST_ACC = '0x8Fe178db26ebA2eEdb22575265bf10A63c395a3d'
@@ -221,3 +223,53 @@ def test_query_aave_defi_borrowing(
     variable_borrowing = account_data['lending']['eip155:1/erc20:0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599']  # noqa: E501
     assert variable_borrowing['apy'] == '0.12%'
     assert variable_borrowing['balance']['amount'] == '0.59425326'
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0xe903fEed7c1098Ba92E4b7092ca77bBc48503d90']])
+@pytest.mark.parametrize('ethereum_modules', [['aave']])
+@pytest.mark.parametrize('have_decoders', [[True]])
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('should_mock_price_queries', [True])
+@pytest.mark.parametrize('should_mock_current_price_queries', [True])
+@pytest.mark.parametrize('default_mock_price_value', [ONE])
+def test_events_aave_v2(rotkehlchen_api_server: 'APIServer') -> None:
+    """
+    Check that the endpoing for aave stats work properly and that the results are
+    correct for a subset of aave v2 events
+    """
+    ethereum_transaction_decoder = rotkehlchen_api_server.rest_api.rotkehlchen.chains_aggregator.ethereum.transactions_decoder  # noqa: E501
+    tx_hashes = [
+        deserialize_evm_tx_hash('0xefc9040c100829a391a636f02eb96a9361bd0bc2ca5e8e5f97bbc4a1831cdec9'),
+        deserialize_evm_tx_hash('0xd2b0d22e915f51ce2bc24ed98c2b9139738801cff954e2e1d119e391f0dd3033'),
+        deserialize_evm_tx_hash('0x819ca151c78219bbb4afdc337cc160efd55205dfe5ca151caf4661a517a41807'),
+        deserialize_evm_tx_hash('0x560cfb03e9488497c8d0295b332452c42f153dafbcb3abf32441d154ddb39087'),
+    ]
+    with patch_decoder_reload_data():
+        ethereum_transaction_decoder.decode_transaction_hashes(
+            ignore_cache=True,
+            tx_hashes=tx_hashes,
+        )
+
+    response = requests.get(api_url_for(
+        rotkehlchen_api_server,
+        'aavestatsresource',
+    ))
+    result = assert_proper_response_with_result(response)
+    assert result == {
+        '0xe903fEed7c1098Ba92E4b7092ca77bBc48503d90': {
+            'total_earned_interest': {
+                'eip155:1/erc20:0x030bA81f1c18d280636F32af80b9AAd02Cf0854e': {
+                    'amount': '0.000000127608703858',
+                    'usd_value': '0.0000001914130557870',
+                },
+            },
+            'total_lost': {
+                'eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F': {
+                    'amount': '0.085033793839969583',
+                    'usd_value': '0.1275506907599543745',
+                },
+            },
+            'total_earned_liquidations': {},
+        },
+    }
