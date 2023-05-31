@@ -15,6 +15,7 @@ import {
 import { TaskType } from '@/types/task-type';
 import { toMessages } from '@/utils/validation-errors';
 import { type ActionDataEntry } from '@/types/action';
+import { type HistoricalPriceFormPayload } from '@/types/prices';
 
 const props = withDefaults(
   defineProps<{
@@ -198,6 +199,12 @@ const setEditMode = async () => {
 const { setMessage } = useMessageStore();
 
 const { editTransactionEvent, addTransactionEvent } = useHistoryTransactions();
+const { resetHistoricalPricesData } = useHistoricCachePriceStore();
+
+const savePrice = async (payload: HistoricalPriceFormPayload) => {
+  await addHistoricalPrice(payload);
+  await resetHistoricalPricesData([payload]);
+};
 
 const save = async (): Promise<boolean> => {
   const timestamp = convertToTimestamp(get(datetime));
@@ -225,7 +232,7 @@ const save = async (): Promise<boolean> => {
 
   if (get(isCurrentCurrencyUsd)) {
     if (get(assetToUsdPrice) !== get(fetchedAssetToUsdPrice)) {
-      await addHistoricalPrice({
+      await savePrice({
         fromAsset: assetVal,
         toAsset: CURRENCY_USD,
         timestamp,
@@ -233,7 +240,7 @@ const save = async (): Promise<boolean> => {
       });
     }
   } else if (get(assetToFiatPrice) !== get(fetchedAssetToFiatPrice)) {
-    await addHistoricalPrice({
+    await savePrice({
       fromAsset: assetVal,
       toAsset: get(currencySymbol),
       timestamp,

@@ -1,6 +1,6 @@
 import { type BigNumber } from '@rotki/common';
 import { type ComputedRef } from 'vue';
-import { HistoricPrices, type HistoricalPrice } from '@/types/prices';
+import { HistoricPrices } from '@/types/prices';
 import { TaskType } from '@/types/task-type';
 import { type TaskMeta } from '@/types/task';
 import { NoPrice } from '@/utils/bignumbers';
@@ -79,7 +79,9 @@ export const useHistoricCachePriceStore = defineStore(
       reset();
     });
 
-    const resetHistoricalPricesData = (items: HistoricalPrice[]) => {
+    const resetHistoricalPricesData = (
+      items: { fromAsset: string; timestamp: number }[]
+    ) => {
       items.forEach(item => {
         const key = createKey(item.fromAsset, item.timestamp);
         deleteCacheKey(key);

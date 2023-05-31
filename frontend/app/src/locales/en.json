@@ -3910,6 +3910,7 @@
       "description": "Use operator `!=` to filter out option, e.g.",
       "example": "type != evm event"
     },
+    "label": "Combined filters",
     "no_suggestions": "No suggestions found for {search}",
     "saved_filters": {
       "actions": {

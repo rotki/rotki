@@ -313,6 +313,7 @@ watch(matches, matches => {
 
 const css = useCssModule();
 const slots = useSlots();
+const { t } = useI18n();
 </script>
 
 <template>
@@ -334,6 +335,9 @@ const slots = useSlots();
             chips
             small-chips
             deletable-chips
+            :label="t('table_filter.label')"
+            solo
+            flat
             multiple
             clearable
             hide-details
