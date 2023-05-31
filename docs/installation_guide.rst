@@ -524,12 +524,23 @@ The following recipe has been tested using `Anaconda <https://conda.io>`_. `Virt
 
 Install `Homebrew <https://brew.sh/>`_ first if not installed yet.
 
-If you wish to use Conda, use the following commands::
+If you wish to use Conda, use the following commands (replace bash_profile with zshrc for Zsh)::
 
     $ brew tap homebrew/cask
     $ brew install --cask homebrew/cask/anaconda
+
+For Intel::
+
     $ echo "export PATH=$PATH:/usr/local/anaconda3/bin" >> ~/.bash_profile
     $ echo ". /usr/local/anaconda3/etc/profile.d/conda.sh" >> ~/.bash_profile
+
+For Apple Silicon::
+
+    $ echo "export PATH=/opt/homebrew/anaconda3/bin:$PATH" >> ~/.bash_profile
+    $ echo ". /opt/homebrew/anaconda3/etc/profile.d/conda.sh" >> ~/.bash_profile
+
+Source .bash_profile (or zshrc for Zsh)::
+
     $ source ~/.bash_profile
     $ conda create python=3.9 --name rotki
     $ conda activate rotki
@@ -685,7 +696,7 @@ After the download, extract the zip contents and copy the `miniupnpc.dll` to you
 
     pip show <any package name from requirements.txt file>
 
-For example, you can use:: 
+For example, you can use::
 
     pip show cryptography
 
