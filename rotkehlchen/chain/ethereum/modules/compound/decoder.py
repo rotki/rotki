@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any, Optional, cast
 from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import EvmToken
-from rotkehlchen.assets.utils import get_crypto_asset_by_symbol
+from rotkehlchen.assets.utils import get_crypto_asset_by_symbol, get_or_create_evm_token
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value, token_normalized_value
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
@@ -20,7 +20,7 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_COMP, A_ETH
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChainID, ChecksumEvmAddress, DecoderEventMappingType, EvmTransaction
+from rotkehlchen.types import ChainID, ChecksumEvmAddress, DecoderEventMappingType, EvmTokenKind, EvmTransaction
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 from .constants import COMPTROLLER_PROXY_ADDRESS, CPT_COMPOUND
@@ -39,6 +39,7 @@ MINT_COMPOUND_TOKEN = b'L \x9b_\xc8\xadPu\x8f\x13\xe2\xe1\x08\x8b\xa5jV\r\xffi\n
 REDEEM_COMPOUND_TOKEN = b'\xe5\xb7T\xfb\x1a\xbb\x7f\x01\xb4\x99y\x1d\x0b\x82\n\xe3\xb6\xaf4$\xac\x1cYv\x8e\xdbS\xf4\xec1\xa9)'  # noqa: E501
 BORROW_COMPOUND = b'\x13\xedhf\xd4\xe1\xeem\xa4o\x84\\F\xd7\xe5A \x88=u\xc5\xea\x9a-\xac\xc1\xc4\xca\x89\x84\xab\x80'  # noqa: E501
 REPAY_COMPOUND = b'\x1a*"\xcb\x03M&\xd1\x85K\xdcff\xa5\xb9\x1f\xe2^\xfb\xbb]\xca\xd3\xb05Tx\xd6\xf5\xc3b\xa1'  # noqa: E501
+LIQUIDATE_BORROW = b')\x867\xf6\x84\xdapgO&P\x9b\x10\xf0~\xc2\xfb\xc7z3Z\xb1\xe7\xd6!ZK$\x84\xd8\xbbR'
 DISTRIBUTED_SUPPLIER_COMP = b',\xae\xcd\x17\xd0/V\xfa\x89w\x05\xdc\xc7@\xda-#|7?phoN\r\x9b\xd3\xbf\x04\x00\xeaz'  # noqa: E501
 DISTRIBUTED_BORROWER_COMP = b'\x1f\xc3\xec\xc0\x87\xd8\xd2\xd1^#\xd0\x03*\xf5\xa4pY\xc3\x89-\x00=\x8e\x13\x9f\xdc\xb6\xbb2|\x99\xa6'  # noqa: E501
 
@@ -207,6 +208,60 @@ class CompoundDecoder(DecoderInterface):
 
         return DEFAULT_DECODING_OUTPUT
 
+    def _decode_liquidate(
+            self,
+            tx_log: 'EvmTxReceiptLog',
+            decoded_events: list['EvmEvent'],
+    ) -> DecodingOutput:
+        borrower = hex_or_bytes_to_address(tx_log.data[32:64])
+        if self.base.is_tracked(borrower) is False:
+            return DEFAULT_DECODING_OUTPUT
+
+        repayed_cToken_address = tx_log.address
+        liquidator_address = hex_or_bytes_to_address(tx_log.data[0:32])
+        repay_amount_raw = hex_or_bytes_to_int(tx_log.data[64:96])
+        collateral_cToken_address = hex_or_bytes_to_address(tx_log.data[96:128])
+        seize_amount_raw = hex_or_bytes_to_int(tx_log.data[128:160])
+
+        collateral_cToken = get_or_create_evm_token(
+            userdb=self.base.database,
+            evm_address=collateral_cToken_address,
+            chain_id=self.base.evm_inquirer.chain_id,
+            token_kind=EvmTokenKind.ERC20,
+            evm_inquirer=self.base.evm_inquirer,
+            protocol=CPT_COMPOUND
+        )
+        repayed_cToken = get_or_create_evm_token(
+            userdb=self.base.database,
+            evm_address=repayed_cToken_address,
+            chain_id=self.base.evm_inquirer.chain_id,
+            token_kind=EvmTokenKind.ERC20,
+            evm_inquirer=self.base.evm_inquirer,
+            protocol=CPT_COMPOUND
+        )
+        seized_collateral_amount = asset_normalized_value(
+            amount=seize_amount_raw,
+            asset=collateral_cToken,
+        )
+        repayed_amount = asset_normalized_value(
+            amount=repay_amount_raw,
+            asset=repayed_cToken,
+        )
+        for event in decoded_events:
+            if (
+                event.event_type == HistoryEventType.SPEND and
+                event.event_subtype == HistoryEventSubType.NONE and
+                event.location_label == borrower and
+                event.address == liquidator_address and
+                event.balance.amount == seized_collateral_amount and
+                event.asset == collateral_cToken
+            ):
+                event.event_subtype = HistoryEventSubType.LIQUIDATE
+                event.notes = f'Automatic liquidation spent {seized_collateral_amount} {collateral_cToken.symbol} to repay {repayed_amount} {repayed_cToken.symbol} on compound for {borrower}'  # noqa: E501
+                event.counterparty = CPT_COMPOUND
+
+        return DEFAULT_DECODING_OUTPUT
+
     def decode_compound_token_movement(
             self,
             context: DecoderContext,
@@ -221,6 +276,9 @@ class CompoundDecoder(DecoderInterface):
 
         if context.tx_log.topics[0] == REDEEM_COMPOUND_TOKEN:
             return self._decode_redeem(tx_log=context.tx_log, decoded_events=context.decoded_events, compound_token=compound_token)  # noqa: E501
+
+        if context.tx_log.topics[0] == LIQUIDATE_BORROW:
+            return self._decode_liquidate(tx_log=context.tx_log, decoded_events=context.decoded_events)  # noqa: E501
 
         return DEFAULT_DECODING_OUTPUT
 

@@ -505,3 +505,20 @@ def test_compound_repays_eth(
         ),
     ]
     assert expected_events == events
+
+
+# @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x9bf62c518ffe86bD43D57c7026aA1A4fBeA83b15']])
+def test_compound_liquidate(
+        database: 'DBHandler',
+        ethereum_inquirer: 'EthereumInquirer',
+) -> None:
+    tx_hash = deserialize_evm_tx_hash('0x0001a89e439c3673b8264f880730784ebd698502bb9dd62949d42a66a4129f23')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    print('aaaa')
+    for event in events:
+        print(event.serialize(), '\n')
