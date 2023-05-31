@@ -9,8 +9,8 @@ const { t } = useI18n();
         <strong>{{ t('import_data.shapeshift.import_trade') }}</strong>
       </i18n>
     </template>
-    <i18n tag="span" path="import_data.shapeshift.note">
-      <strong>{{ t('import_data.shapeshift.source_name') }}</strong>
+    <i18n tag="span" path="import_data.note">
+      <strong>{{ t('import_data.shapeshift.name') }}</strong>
     </i18n>
     <ul>
       <li>{{ t('import_data.shapeshift.line_one') }}</li>

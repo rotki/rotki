@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`6179` Users will now be able to import their trades, income and spending from BitcoinTaxes.
 * :feature:`-` Ethereum transactions involing bribe claim payouts from StakeDAO will now be decoded properly.
 * :feature:`-` Ethereum transactions involving locking and unlocking GNO using the locked GNO contract will now be decoded properly.
 * :feature:`5250` Ethereum transactions involving AAVE v1 and v2 liquidations will now be decoded properly.

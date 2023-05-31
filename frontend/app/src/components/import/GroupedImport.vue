@@ -66,6 +66,14 @@ const sources = [
     )
   },
   {
+    identifier: 'bitcoin_tax',
+    name: t('import_data.bitcoin_tax.name'),
+    logo: './assets/images/protocols/bitcointax.png',
+    form: defineAsyncComponent(
+      () => import('@/components/import/BitcoinImport.vue')
+    )
+  },
+  {
     identifier: 'custom',
     name: t('import_data.custom.name'),
     icon: 'mdi-book-open',

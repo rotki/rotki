@@ -2452,17 +2452,21 @@
     "binance": {
       "line_one": "导入:存款、取款、交易、ETH Staking、小资产交易所 BNB、ETH Staking 奖励、Launchpool 利息、POS 储蓄利息、POS 储蓄购买、POS 储蓄赎回。",
       "line_two": "由于 binance 的 csv 格式，有可能不会导入所有数据。如果发生这种情况，您将收到警告。",
-      "name": "币安",
-      "note": "从 {0} 的 CSV 导出中导入数据的重要注意事项。",
-      "source_name": "币安"
+      "name": "币安"
     },
     "bisq": {
-      "import": "从 bisq 导入 {0}",
+      "import": "从 Bisq 导入 {0}",
       "import_trade": "交易",
       "line_one": "[Experimental] 如果您发现导入的数据有问题，请告诉我们，以便我们相应地调整代码。",
-      "name": "Bisq",
-      "note": "Important notes for importing data from {0}'s CSV exports.",
-      "source_name": "Bisq"
+      "name": "Bisq"
+    },
+    "bitcoin_tax": {
+      "import": "从 BitcoinTaxes 导入 {0}",
+      "import_types": "交易、收入和支出",
+      "line_one": "我们支持导入交易、收入和支出 csv 文件类型。",
+      "line_two": "所有导入的事件都映射到 rotki 的历史事件。",
+      "line_three": "代表硬币重命名或分叉的交易文件类型的“交换”操作由 rotki 在别处处理，因此不需要为其创建历史事件。",
+      "name": "BitcoinTaxes"
     },
     "blockfi": {
       "import": "从 BlockFi 导入 {0}",
@@ -2470,19 +2474,15 @@
       "import_transactions": "交易",
       "line_one": "[Experimental]如果您发现导入的数据有问题，请告诉我们，以便我们相应地调整代码。",
       "line_two": "BlockFi 允许您导出两个不同的文件。交易将从仅包含交易的文件中导入。",
-      "name": "BlockFi",
-      "note": "从 {0} 的 CSV 导出中导入数据的重要注意事项。",
-      "source_name": "BlockFi"
+      "name": "BlockFi"
     },
     "cointracking": {
-      "line_one": "Cointracking 的交易/存款/取款不包括费用。",
+      "line_one": "CoinTracking 的交易/存款/取款不包括费用。",
       "line_three": "ETH/BTC 交易被视为存款/取款，因此它们不会导入到 rotki 中。要导入 ETH 交易，只需在 {0} 中输入您的账户，它们就会自动为您导入。",
-      "line_two": "由于数据的表示方式，从 Cointracking 导入的所有交易将始终被视为买入。",
+      "line_two": "由于数据的表示方式，从 CoinTracking 导入的所有交易将始终被视为买入。",
       "link": "区块链账户/余额",
-      "name": "硬币追踪",
-      "note": " 从 {0} 的 CSV 导出中导入数据的重要说明。",
-      "preferred": "出于上述原因，最好直接连接你的交易所以便从那里导入数据。如果你不这样做，就会失去很多准确性。",
-      "source_name": "cointracking"
+      "name": "CoinTracking",
+      "preferred": "出于上述原因，最好直接连接你的交易所以便从那里导入数据。如果你不这样做，就会失去很多准确性。"
     },
     "cryptocom": {
       "line_four": "此处仅导入交易（用于税务报告），如果您希望资产显示在您的 rotki 余额中，您必须手动添加它们作为手动余额：{0}",
@@ -2493,7 +2493,6 @@
       "line_two": "{0} 如果您想连接您的 Crypto.com Exchange 帐户，请等待我们支持它，然后连接到它作为交易所。",
       "line_two_warning": "它只涉及 Crypto.com 移动应用程序。",
       "name": "Crypto.com",
-      "note": "从 {0} 的 CSV 导出中导入数据的重要注意事项。",
       "source_name": "crypto.com 移动应用程序"
     },
     "custom": {
@@ -2506,10 +2505,9 @@
       "import": "从 Nexo 导入 {0}",
       "import_transactions": "交易",
       "line_one": "[Experimental] 如果您发现导入的数据有问题，请告诉我们，以便我们相应地调整代码。",
-      "name": "Nexo",
-      "note": "从 {0} 的 CSV 导出中导入数据的重要注意事项。",
-      "source_name": "Nexo"
+      "name": "Nexo"
     },
+    "note": "从 {0} 的 CSV 导出中导入数据的重要注意事项。",
     "notice": "{warning} 这些平台可能会经常以向后不兼容的方式更改其格式。 因此，此导入可能会停止工作。 如果发生这种情况{link}，我们将看看我们能做些什么。",
     "notice_link": "用 rotki 打开一个问题",
     "notice_warning": "⚠️重要通知⚠️:",
@@ -2521,19 +2519,15 @@
       "import_trade": "交易",
       "line_one": "[Experimental] 如果您发现导入的数据有问题，请告诉我们，以便我们相应地调整代码。",
       "line_two": "ShapeShift 允许您导出交易文件。交易将从仅包含交易的文件中导入。",
-      "name": "ShapeShift",
-      "note": "从 {0} 的 CSV 导出中导入数据的重要注意事项。",
-      "source_name": "ShapeShift"
+      "name": "ShapeShift"
     },
     "title": "导入数据",
     "uphold": {
-      "import": "从 uphold 导入 {0}",
+      "import": "从 Uphold 导入 {0}",
       "import_trade": "交易",
       "line_one": "[Experimental] 如果您发现导入的数据有问题，请告诉我们，以便我们相应地调整代码。",
       "line_two": "Uphold 让您导出一个交易文件。它可以在活动列表右上角的活动下找到。",
-      "name": "Uphold",
-      "note": "从 {0} 的 CSV 导出中导入数据的重要注意事项。",
-      "source_name": "uphold"
+      "name": "Uphold"
     }
   },
   "input_mode_select": {
