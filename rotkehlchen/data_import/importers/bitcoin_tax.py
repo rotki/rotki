@@ -245,18 +245,19 @@ class BitcoinTaxImporter(BaseExchangeImporter):
                 fee_asset_balance=fee_asset_balance,
                 memo=memo,
             )
-        else:
-            self._consume_income_spending_event(
-                cursor=cursor,
-                csv_row=csv_row,
-                event_identifier=event_identifier,
-                timestamp=timestamp,
-                location=location,
-                action=action,
-                asset_balance=base_asset_balance,
-                fee_asset_balance=fee_asset_balance,
-                memo=memo,
-            )
+            return
+        # else
+        self._consume_income_spending_event(
+            cursor=cursor,
+            csv_row=csv_row,
+            event_identifier=event_identifier,
+            timestamp=timestamp,
+            location=location,
+            action=action,
+            asset_balance=base_asset_balance,
+            fee_asset_balance=fee_asset_balance,
+            memo=memo,
+        )
 
     def _import_csv(self, cursor: DBCursor, filepath: Path, **kwargs: Any) -> None:
         """
