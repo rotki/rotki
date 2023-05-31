@@ -168,7 +168,7 @@ const isIgnored = (asset: string) => get(isAssetIgnored(asset));
       :must-sort="false"
     >
       <template #item.asset="{ item }">
-        <asset-details :asset="item.asset" />
+        <asset-details :asset="item.asset" link />
       </template>
       <template #item.startDate="{ item }">
         <date-display :timestamp="item.startDate" />

@@ -1,15 +1,28 @@
 <script setup lang="ts">
 import { Routes } from '@/router/routes';
+import { getAddressFromEvmIdentifier } from '@/utils/assets';
 
-const props = defineProps({
-  asset: { required: true, type: String },
-  icon: { required: false, default: false, type: Boolean },
-  text: { required: false, default: false, type: Boolean }
-});
+const props = withDefaults(
+  defineProps<{
+    asset: string;
+    icon?: boolean;
+    text?: boolean;
+    link?: boolean;
+  }>(),
+  {
+    icon: false,
+    text: false,
+    link: false
+  }
+);
 
 const { asset } = toRefs(props);
 
 const router = useRouter();
+
+const address = reactify(getAddressFromEvmIdentifier)(asset);
+const { assetInfo } = useAssetInfoRetrieval();
+const assetDetails = assetInfo(asset);
 
 const navigateToDetails = async () => {
   await router.push({
@@ -19,7 +32,16 @@ const navigateToDetails = async () => {
 </script>
 
 <template>
-  <v-btn :icon="icon" :text="text" @click="navigateToDetails()">
-    <slot />
-  </v-btn>
+  <div class="d-flex flex-row">
+    <v-btn :icon="icon" :text="text" @click="navigateToDetails()">
+      <slot />
+    </v-btn>
+    <hash-link
+      v-if="address && link"
+      link-only
+      type="address"
+      :text="address"
+      :evm-chain="assetDetails?.evmChain"
+    />
+  </div>
 </template>

@@ -183,10 +183,10 @@ const refreshHistoricalPrice = async (item: EditableMissingPrice) => {
       <template #item="{ item }">
         <tr :key="createKey(item)">
           <td :class="isPinned ? 'px-2' : ''">
-            <asset-details :asset="item.fromAsset" />
+            <asset-details link :asset="item.fromAsset" />
           </td>
           <td :class="isPinned ? 'px-2' : ''">
-            <asset-details :asset="item.toAsset" />
+            <asset-details link :asset="item.toAsset" />
           </td>
           <td :class="isPinned ? 'px-2' : ''">
             <date-display :timestamp="item.time" />

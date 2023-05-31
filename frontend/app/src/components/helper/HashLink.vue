@@ -7,6 +7,9 @@ import {
   explorerUrls
 } from '@/types/asset/asset-urls';
 
+const { t } = useI18n();
+const { copy } = useClipboard();
+
 const props = withDefaults(
   defineProps<{
     showIcon?: boolean;
@@ -16,7 +19,7 @@ const props = withDefaults(
     noLink?: boolean;
     baseUrl?: string;
     chain?: Chains;
-    tx?: boolean;
+    evmChain?: string;
     buttons?: boolean;
     small?: boolean;
     truncateLength?: number;
@@ -28,9 +31,9 @@ const props = withDefaults(
     fullAddress: false,
     linkOnly: false,
     noLink: false,
-    baseUrl: '',
+    baseUrl: undefined,
     chain: Blockchain.ETH,
-    tx: false,
+    evmChain: undefined,
     buttons: false,
     small: false,
     truncateLength: 4,
@@ -38,21 +41,30 @@ const props = withDefaults(
   }
 );
 
-const { text, baseUrl, chain, type } = toRefs(props);
+const { text, baseUrl, chain, evmChain, type } = toRefs(props);
 const { scrambleData, shouldShowAmount, scrambleHex, scrambleIdentifier } =
   useScramble();
 
 const { explorers } = storeToRefs(useFrontendSettingsStore());
 const { dark } = useTheme();
+const { getChain } = useSupportedChains();
 
 const { addressNameSelector } = useAddressesNamesStore();
+const addressName = addressNameSelector(text, chain);
+
+const blockchain = computed(() => {
+  if (isDefined(evmChain)) {
+    return getChain(get(evmChain));
+  }
+  return get(chain);
+});
 
 const aliasName = computed<string | null>(() => {
   if (get(scrambleData) || get(type) !== 'address') {
     return null;
   }
 
-  const name = get(addressNameSelector(text, chain));
+  const name = get(addressName);
   if (!name) {
     return null;
   }
@@ -61,49 +73,42 @@ const aliasName = computed<string | null>(() => {
 });
 
 const displayText = computed<string>(() => {
-  const textVal = get(text);
-  const typeVal = get(type);
+  const linkText = get(text);
+  const linkType = get(type);
 
-  if (typeVal === 'block' || consistOfNumbers(textVal)) {
-    return scrambleIdentifier(textVal);
+  if (linkType === 'block' || consistOfNumbers(linkText)) {
+    return scrambleIdentifier(linkText);
   }
 
-  return scrambleHex(textVal);
+  return scrambleHex(linkText);
 });
 
 const base = computed<string>(() => {
-  if (get(baseUrl)) {
+  if (isDefined(baseUrl)) {
     return get(baseUrl);
   }
 
-  const defaultSetting: ExplorerUrls = explorerUrls[get(chain)];
-  let formattedBaseUrl: string | undefined = undefined;
-  const typeVal = get(type);
+  const selectedChain = get(blockchain);
+  const defaultExplorer: ExplorerUrls = explorerUrls[selectedChain];
+  const linkType = get(type);
+  let base: string | undefined = undefined;
 
-  if (get(chain) === 'zksync') {
-    formattedBaseUrl = defaultSetting[typeVal];
+  if (selectedChain === 'zksync') {
+    base = defaultExplorer[linkType];
   } else {
-    const explorersSetting =
-      get(explorers)[get(chain) as Exclude<Chains, 'zksync'>];
+    const explorerSetting = get(explorers)[selectedChain];
 
-    if (explorersSetting || defaultSetting) {
-      formattedBaseUrl = explorersSetting?.[typeVal] ?? defaultSetting[typeVal];
+    if (explorerSetting || defaultExplorer) {
+      base = explorerSetting?.[linkType] ?? defaultExplorer[linkType];
     }
   }
 
-  if (!formattedBaseUrl) {
+  if (!base) {
     return '';
   }
 
-  return formattedBaseUrl.endsWith('/')
-    ? formattedBaseUrl
-    : `${formattedBaseUrl}/`;
+  return base.endsWith('/') ? base : `${base}/`;
 });
-
-const copyText = async (text: string) => {
-  const { copy } = useClipboard({ source: text });
-  await copy();
-};
 
 const url = computed<string>(() => get(base) + get(text));
 
@@ -111,14 +116,13 @@ const displayUrl = computed<string>(
   () => get(base) + truncateAddress(get(text), 10)
 );
 
-const { t } = useI18n();
 const { href, onLinkClick } = useLinks(url);
 </script>
 
 <template>
   <div class="d-flex flex-row shrink align-center">
-    <span>
-      <v-avatar v-if="showIcon && type === 'address'" size="22" class="mr-2">
+    <span v-if="showIcon && !linkOnly && type === 'address'">
+      <v-avatar size="22" class="mr-2">
         <ens-avatar :address="displayText" />
       </v-avatar>
     </span>
@@ -154,14 +158,14 @@ const { href, onLinkClick } = useLinks(url);
           class="ml-2"
           :class="dark ? null : 'grey lighten-4'"
           v-on="on"
-          @click="copyText(text)"
+          @click="copy(text)"
         >
           <v-icon :x-small="!small" :small="small"> mdi-content-copy </v-icon>
         </v-btn>
       </template>
       <span>{{ t('common.actions.copy') }}</span>
     </v-tooltip>
-    <v-tooltip v-if="!noLink || buttons" top open-delay="600">
+    <v-tooltip v-if="linkOnly || !noLink || buttons" top open-delay="600">
       <template #activator="{ on, attrs }">
         <v-btn
           v-if="!!base"

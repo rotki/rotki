@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`5255` Pnl report assets now have an etherscan link to make it easier to identify pool assets.
 * :feature:`6179` Users will now be able to import their trades, income and spending from BitcoinTaxes.
 * :feature:`-` Ethereum transactions involing bribe claim payouts from StakeDAO will now be decoded properly.
 * :feature:`-` Ethereum transactions involving locking and unlocking GNO using the locked GNO contract will now be decoded properly.

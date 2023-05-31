@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { type PropType } from 'vue';
 import { type DataTableHeader } from 'vuetify';
 import { type ProfitLossEvents, type SelectedReport } from '@/types/reports';
 import { isTransactionEvent } from '@/utils/report';
+
+const { t } = useI18n();
 
 interface PaginationOptions {
   page: number;
@@ -11,22 +12,17 @@ interface PaginationOptions {
   sortDesc: boolean[];
 }
 
-const props = defineProps({
-  loading: {
-    required: false,
-    type: Boolean,
-    default: false
-  },
-  refreshing: {
-    required: false,
-    type: Boolean,
-    default: false
-  },
-  report: {
-    required: true,
-    type: Object as PropType<SelectedReport>
+const props = withDefaults(
+  defineProps<{
+    report: SelectedReport;
+    loading?: boolean;
+    refreshing?: boolean;
+  }>(),
+  {
+    loading: false,
+    refreshing: false
   }
-});
+);
 
 const emit = defineEmits<{
   (
@@ -35,11 +31,11 @@ const emit = defineEmits<{
   ): void;
 }>();
 
-const route = useRoute();
-const options = ref<PaginationOptions | null>(null);
 const { report } = toRefs(props);
 
-const { t } = useI18n();
+const options = ref<PaginationOptions | null>(null);
+
+const route = useRoute();
 
 const tableHeaders = computed<DataTableHeader[]>(() => [
   {
@@ -211,7 +207,7 @@ const checkGroupLine = (entries: ProfitLossEvents, index: number) => {
       <template #item.free_amount="{ item }">
         <v-row no-gutters align="center" class="flex-nowrap">
           <v-col v-if="item.asset" cols="auto">
-            <asset-link icon :asset="item.asset" class="mr-2">
+            <asset-link icon :asset="item.asset" class="mr-2" link>
               <asset-icon :identifier="item.asset" size="24px" />
             </asset-link>
           </v-col>
