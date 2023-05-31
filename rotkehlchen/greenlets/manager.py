@@ -3,8 +3,8 @@ import traceback
 from typing import Any, Callable, Optional
 
 import gevent
-from rotkehlchen.errors.misc import GreenletKilledError
 
+from rotkehlchen.errors.misc import GreenletKilledError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.user_messages import MessagesAggregator
 
@@ -47,6 +47,14 @@ class GreenletManager():
             greenlet = gevent.spawn_later(after_seconds, method, **kwargs)
         self.add(task_name, greenlet, exception_is_error)
         return greenlet
+
+    def has_task(self, name: str) -> bool:
+        """Check if there is a running task with the given name"""
+        for greenlet in self.greenlets:
+            if greenlet.dead is False and greenlet.task_name.startswith(name):
+                return True
+
+        return False
 
     def _handle_killed_greenlets(self, greenlet: gevent.Greenlet) -> None:
         if not greenlet.exception:

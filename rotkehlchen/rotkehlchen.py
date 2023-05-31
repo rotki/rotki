@@ -348,26 +348,20 @@ class Rotkehlchen():
             )
             blockchain_accounts = self.data.db.get_blockchain_accounts(cursor)
 
-        ethereum_nodes = self.data.db.get_rpc_nodes(blockchain=SupportedBlockchain.ETHEREUM, only_active=True)  # noqa: E501
         # Initialize blockchain querying modules
         ethereum_inquirer = EthereumInquirer(
             greenlet_manager=self.greenlet_manager,
             database=self.data.db,
-            connect_at_start=ethereum_nodes,
         )
         ethereum_manager = EthereumManager(ethereum_inquirer)
-        optimism_nodes = self.data.db.get_rpc_nodes(blockchain=SupportedBlockchain.OPTIMISM, only_active=True)  # noqa: E501
         optimism_inquirer = OptimismInquirer(
             greenlet_manager=self.greenlet_manager,
             database=self.data.db,
-            connect_at_start=optimism_nodes,
         )
         optimism_manager = OptimismManager(optimism_inquirer)
-        polygon_pos_nodes = self.data.db.get_rpc_nodes(blockchain=SupportedBlockchain.POLYGON_POS, only_active=True)  # noqa: E501
         polygon_pos_inquirer = PolygonPOSInquirer(
             greenlet_manager=self.greenlet_manager,
             database=self.data.db,
-            connect_at_start=polygon_pos_nodes,
         )
         polygon_pos_manager = PolygonPOSManager(polygon_pos_inquirer)
         kusama_manager = SubstrateManager(

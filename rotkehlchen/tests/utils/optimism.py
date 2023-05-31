@@ -1,5 +1,5 @@
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode
-from rotkehlchen.constants import ONE
+from rotkehlchen.fval import FVal
 from rotkehlchen.types import SupportedBlockchain
 
 OPTIMISM_NODES_PARAMETERS_WITH_PRUNED_AND_NOT_ARCHIVED: tuple[str, list[tuple]] = (
@@ -12,7 +12,7 @@ OPTIMISM_NODES_PARAMETERS_WITH_PRUNED_AND_NOT_ARCHIVED: tuple[str, list[tuple]] 
             blockchain=SupportedBlockchain.OPTIMISM,
         ),
         active=True,
-        weight=ONE,
+        weight=FVal('0.3'),
     ), WeightedNode(
         node_info=NodeName(
             name='node real',
@@ -23,7 +23,7 @@ OPTIMISM_NODES_PARAMETERS_WITH_PRUNED_AND_NOT_ARCHIVED: tuple[str, list[tuple]] 
             blockchain=SupportedBlockchain.OPTIMISM,
         ),
         active=True,
-        weight=ONE,
+        weight=FVal('0.2'),
     ), WeightedNode(
         node_info=NodeName(
             name='blast api',
@@ -32,7 +32,7 @@ OPTIMISM_NODES_PARAMETERS_WITH_PRUNED_AND_NOT_ARCHIVED: tuple[str, list[tuple]] 
             blockchain=SupportedBlockchain.OPTIMISM,
         ),
         active=True,
-        weight=ONE,
+        weight=FVal('0.25'),
     ), WeightedNode(
         node_info=NodeName(
             name='ankr',
@@ -41,6 +41,6 @@ OPTIMISM_NODES_PARAMETERS_WITH_PRUNED_AND_NOT_ARCHIVED: tuple[str, list[tuple]] 
             blockchain=SupportedBlockchain.OPTIMISM,
         ),
         active=True,
-        weight=ONE,
+        weight=FVal('0.25'),
     ))],
 )
