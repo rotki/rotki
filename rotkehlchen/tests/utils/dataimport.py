@@ -52,8 +52,6 @@ from rotkehlchen.types import (
     TradeType,
 )
 
-BITCOIN_TAX_TEST_CSV_FILES_TYPE = Literal['bitcoin_tax_trades.csv', 'bitcoin_tax_spending.csv']
-
 
 def get_cryptocom_note(desc: str):
     return f'{desc}\nSource: crypto.com (CSV import)'
@@ -1673,7 +1671,7 @@ def assert_is_equal_history_event(
 
 def assert_bitcoin_tax_trades_import_results(
         rotki: Rotkehlchen,
-        csv_file_name: BITCOIN_TAX_TEST_CSV_FILES_TYPE,
+        csv_file_name: Literal['bitcoin_tax_trades.csv', 'bitcoin_tax_spending.csv'],
 ):
     if csv_file_name == 'bitcoin_tax_trades.csv':
         expected_history_events = [
