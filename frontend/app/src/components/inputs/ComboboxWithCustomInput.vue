@@ -1,10 +1,15 @@
 <script setup lang="ts">
 import { type ComputedRef, type Ref, useListeners } from 'vue';
 
-const props = defineProps<{
-  value: string;
-  items: any[];
-}>();
+const props = withDefaults(
+  defineProps<{
+    value?: string | null;
+    items: any[];
+  }>(),
+  {
+    value: ''
+  }
+);
 
 const emit = defineEmits<{
   (e: 'input', value: string): void;

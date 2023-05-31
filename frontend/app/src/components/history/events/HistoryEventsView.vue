@@ -508,19 +508,28 @@ const { locationData } = useLocations();
       </template>
       <template #actions>
         <v-row>
-          <v-col cols="12" md="7">
+          <v-col cols="12" md="5">
             <v-row>
               <v-col v-if="includeEvmEvents" cols="auto">
-                <v-btn
-                  color="primary"
-                  depressed
-                  height="40px"
-                  small
-                  :disabled="refreshing"
-                  @click="redecodeAllEvmEvents()"
-                >
-                  {{ t('transactions.redecode_events.title') }}
-                </v-btn>
+                <v-tooltip top>
+                  <template #activator="{ on }">
+                    <v-btn
+                      color="primary"
+                      depressed
+                      height="40px"
+                      small
+                      :loading="eventTaskLoading"
+                      :disabled="refreshing"
+                      v-on="on"
+                      @click="redecodeAllEvmEvents()"
+                    >
+                      <v-icon> mdi-select-compare </v-icon>
+                    </v-btn>
+                  </template>
+                  <span>
+                    {{ t('transactions.redecode_events.title') }}
+                  </span>
+                </v-tooltip>
               </v-col>
               <v-col v-if="!useExternalAccountFilter">
                 <div>
@@ -539,7 +548,7 @@ const { locationData } = useLocations();
               </v-col>
             </v-row>
           </v-col>
-          <v-col cols="12" md="5">
+          <v-col cols="12" md="7">
             <div>
               <table-filter
                 :matches="filters"
