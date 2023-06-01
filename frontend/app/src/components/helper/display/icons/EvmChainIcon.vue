@@ -2,12 +2,14 @@
 interface Props {
   size?: string;
   chain: string;
+  tile?: boolean;
   tooltip?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   size: '24px',
-  tooltip: false
+  tooltip: false,
+  tile: false
 });
 
 const { chain } = toRefs(props);
@@ -31,7 +33,7 @@ const css = useCssModule();
   <v-tooltip v-if="chainData" top :disabled="!tooltip">
     <template #activator="{ on }">
       <v-img
-        :class="css.circle"
+        :class="{ [css.circle]: !tile }"
         :src="chainData.image"
         :width="size"
         :max-width="size"

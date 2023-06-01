@@ -1321,7 +1321,8 @@
       "eth2": "ETH staking balances",
       "ksm": "Kusama balances",
       "loopring": "Loopring balances",
-      "optimism": "Optimism"
+      "optimism": "Optimism",
+      "polygon_pos": "Polygon PoS balances"
     },
     "evm_detection": {
       "title": "Detect EVM accounts",

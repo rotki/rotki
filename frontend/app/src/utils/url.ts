@@ -1,6 +1,7 @@
 import {
   TRADE_LOCATION_ETHEREUM,
-  TRADE_LOCATION_OPTIMISM
+  TRADE_LOCATION_OPTIMISM,
+  TRADE_LOCATION_POLYGON_POS
 } from '@/data/defaults';
 import { pslSuffixes } from '@/data/psl';
 import { Routes } from '@/router/routes';
@@ -50,6 +51,11 @@ export const getEtherScanRegisterUrl = (location: string) => {
     case TRADE_LOCATION_ETHEREUM:
       return {
         external: 'https://etherscan.io/register',
+        route: { path: Routes.API_KEYS_EXTERNAL_SERVICES, hash: `#${location}` }
+      };
+    case TRADE_LOCATION_POLYGON_POS:
+      return {
+        external: 'https://polygonscan.com/register',
         route: { path: Routes.API_KEYS_EXTERNAL_SERVICES, hash: `#${location}` }
       };
     default:

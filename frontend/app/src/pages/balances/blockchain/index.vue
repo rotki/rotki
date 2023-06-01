@@ -37,7 +37,8 @@ const intersections = ref<Intersections>({
   [Blockchain.KSM]: false,
   [Blockchain.DOT]: false,
   [Blockchain.AVAX]: false,
-  [Blockchain.OPTIMISM]: false
+  [Blockchain.OPTIMISM]: false,
+  [Blockchain.POLYGON_POS]: false
 });
 
 const updateWhenRatio = (
@@ -51,8 +52,13 @@ const updateWhenRatio = (
 };
 
 const { ethAccounts, eth2Accounts, loopringAccounts } = useEthAccountBalances();
-const { ksmAccounts, dotAccounts, avaxAccounts, optimismAccounts } =
-  useChainAccountBalances();
+const {
+  ksmAccounts,
+  dotAccounts,
+  avaxAccounts,
+  optimismAccounts,
+  polygonAccounts
+} = useChainAccountBalances();
 const { btcAccounts, bchAccounts } = useBtcAccountBalances();
 
 const { blockchainAssets } = useBlockchainAggregatedBalances();
@@ -84,7 +90,9 @@ const observers: Observers = {
   [Blockchain.AVAX]: (entries: IntersectionObserverEntry[]) =>
     updateWhenRatio(entries, Blockchain.AVAX),
   [Blockchain.OPTIMISM]: (entries: IntersectionObserverEntry[]) =>
-    updateWhenRatio(entries, Blockchain.OPTIMISM)
+    updateWhenRatio(entries, Blockchain.OPTIMISM),
+  [Blockchain.POLYGON_POS]: (entries: IntersectionObserverEntry[]) =>
+    updateWhenRatio(entries, Blockchain.POLYGON_POS)
 };
 
 const { isBlockchainLoading, isAccountOperationRunning } = useAccountLoading();
@@ -97,7 +105,8 @@ const busy: Busy = {
   [Blockchain.KSM]: isAccountOperationRunning(Blockchain.KSM),
   [Blockchain.DOT]: isAccountOperationRunning(Blockchain.DOT),
   [Blockchain.AVAX]: isAccountOperationRunning(Blockchain.AVAX),
-  [Blockchain.OPTIMISM]: isAccountOperationRunning(Blockchain.OPTIMISM)
+  [Blockchain.OPTIMISM]: isAccountOperationRunning(Blockchain.OPTIMISM),
+  [Blockchain.POLYGON_POS]: isAccountOperationRunning(Blockchain.POLYGON_POS)
 };
 
 const threshold = [0.5];
@@ -297,6 +306,23 @@ const showDetectEvmAccountsButton: Readonly<Ref<boolean>> = computedEager(
       :blockchain="Blockchain.OPTIMISM"
       :balances="optimismAccounts"
       :data-cy="`blockchain-balances-${Blockchain.OPTIMISM}`"
+      @edit-account="editAccount($event)"
+    />
+
+    <account-balances
+      v-if="polygonAccounts.length > 0 || busy.polygon_pos.value"
+      id="blockchain-balances-POLYGON"
+      v-intersect="{
+        handler: observers.polygon_pos,
+        options: {
+          threshold
+        }
+      }"
+      class="mt-8"
+      :title="t('blockchain_balances.balances.polygon_pos')"
+      :blockchain="Blockchain.POLYGON_POS"
+      :balances="polygonAccounts"
+      :data-cy="`blockchain-balances-${Blockchain.POLYGON_POS}`"
       @edit-account="editAccount($event)"
     />
   </div>

@@ -1,3 +1,4 @@
+import { type Blockchain } from '@rotki/common/lib/blockchain';
 import {
   type Notification,
   NotificationGroup,
@@ -88,6 +89,7 @@ export const useMessageHandling = () => {
   };
 
   const { setUpgradedAddresses } = useAccountMigrationStore();
+  const { getChainName } = useSupportedChains();
 
   const handleNewTokenDetectedMessage = (
     data: NewDetectedToken
@@ -125,19 +127,21 @@ export const useMessageHandling = () => {
   const handleMissingApiKeyMessage = (data: MissingApiKey): Notification => {
     const { service, location } = data;
     const { external, route } = getServiceRegisterUrl(service, location);
+    const locationName = get(getChainName(location as Blockchain));
 
     return {
       title: t('notification_messages.missing_api_key.title', {
-        service: toSentenceCase(service),
-        location: toSentenceCase(location)
+        service: toHumanReadable(service, 'capitalize'),
+        location: toHumanReadable(locationName, 'capitalize')
       }),
       message: '',
       i18nParam: {
         message: 'notification_messages.missing_api_key.message',
         choice: 0,
         props: {
-          service: toSentenceCase(service),
-          location: toSentenceCase(location),
+          service: toHumanReadable(service, 'capitalize'),
+          location: toHumanReadable(locationName, 'capitalize'),
+          key: location,
           url: external ?? ''
         }
       },

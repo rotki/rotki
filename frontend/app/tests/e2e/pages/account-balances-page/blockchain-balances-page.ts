@@ -6,6 +6,7 @@ import { AccountBalancesPage } from './index';
 export interface FixtureBlockchainBalance {
   readonly blockchain: Blockchain;
   readonly inputMode: string;
+  readonly chainName: string;
   readonly address: string;
   readonly label: string;
   readonly tags: string[];
@@ -26,9 +27,7 @@ export class BlockchainBalancesPage extends AccountBalancesPage {
     cy.get('.big-dialog').should('be.visible');
     cy.get('[data-cy="blockchain-balance-form"]').should('be.visible');
     cy.get('[data-cy="account-blockchain-field"]').parent().click();
-    cy.get('.v-menu__content')
-      .contains(balance.blockchain.toUpperCase())
-      .click();
+    cy.get('.v-menu__content').contains(balance.chainName).click();
     cy.get('[data-cy="input-mode-manual"]').click();
 
     if (balance.blockchain === Blockchain.ETH) {

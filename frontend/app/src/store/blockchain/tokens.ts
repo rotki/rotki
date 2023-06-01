@@ -72,9 +72,7 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
     const data: EvmTokensRecord = {};
     for (const address in chainValues) {
       const { assets } = chainValues[address];
-      const tokens = Object.keys(assets).filter(
-        addr => addr !== Blockchain.ETH
-      );
+      const tokens = Object.keys(assets).filter(asset => asset !== 'ETH');
       data[address] = { tokens, lastUpdateTimestamp };
     }
 

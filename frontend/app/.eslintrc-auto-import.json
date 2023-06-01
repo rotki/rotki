@@ -673,6 +673,7 @@
     "xpubToPayload": true,
     "zeroBalance": true,
     "toValue": true,
+    "toHumanReadable": true,
     "checkBeforeSubmission": true,
     "useCustomAssetForm": true,
     "useForm": true,

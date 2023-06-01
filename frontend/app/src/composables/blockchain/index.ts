@@ -23,6 +23,7 @@ export const useBlockchains = () => {
   const { resetDefiStatus } = useStatusStore();
   const { detectEvmAccounts: detectEvmAccountsCaller } =
     useBlockchainAccountsApi();
+  const { getChainName } = useSupportedChains();
 
   const { isTaskRunning } = useTaskStore();
   const { notify } = useNotificationsStore();
@@ -185,7 +186,7 @@ export const useBlockchains = () => {
     const filteredPayload = getNewAccountPayload(blockchain, payload);
     if (filteredPayload.length === 0) {
       const title = t('actions.balances.blockchain_accounts_add.no_new.title', {
-        blockchain
+        blockchain: get(getChainName(blockchain))
       });
       const description = t(
         'actions.balances.blockchain_accounts_add.no_new.description'
