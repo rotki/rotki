@@ -2461,12 +2461,12 @@
       "name": "Bisq"
     },
     "bitcoin_tax": {
-      "import": "从 BitcoinTaxes 导入 {0}",
+      "import": "从 bitcoin.tax 导入 {0}",
       "import_types": "交易、收入和支出",
       "line_one": "我们支持导入交易、收入和支出 csv 文件类型。",
       "line_two": "所有导入的事件都映射到 rotki 的历史事件。",
       "line_three": "代表硬币重命名或分叉的交易文件类型的“交换”操作由 rotki 在别处处理，因此不需要为其创建历史事件。",
-      "name": "BitcoinTaxes"
+      "name": "bitcoin.tax"
     },
     "blockfi": {
       "import": "从 BlockFi 导入 {0}",

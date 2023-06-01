@@ -2415,12 +2415,12 @@
       "name": "Bisq"
     },
     "bitcoin_tax": {
-      "import": "Import {0} from BitcoinTaxes",
+      "import": "Import {0} from bitcoin.tax",
       "import_types": "trades, income, and spending",
       "line_one": "We support the import of trades, income and spending csv file types.",
       "line_two": "All imported events are mapped to rotki’s history events.",
       "line_three": "The ‘swap’ action of the trade file type that represents a coin rename or a fork, is treated elsewhere by rotki so no history event needs to be created for it.",
-      "name": "BitcoinTaxes"
+      "name": "bitcoin.tax"
     },
     "blockfi": {
       "import": "Import {0} from BlockFi",
