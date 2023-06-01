@@ -17,7 +17,7 @@ jobs:
       TEST_ENVIRONMENT: ${{ inputs.test_environment }}
     runs-on: ${{ inputs.os }}
     name: 'Backend tests'
-    timeout-minutes: 90
+    timeout-minutes: 50
     strategy:
       fail-fast: false
       matrix:
