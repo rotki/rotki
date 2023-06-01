@@ -36,6 +36,7 @@ from rotkehlchen.db.settings import (
     DEFAULT_INCLUDE_CRYPTO2CRYPTO,
     DEFAULT_INCLUDE_FEES_IN_COST_BASIS,
     DEFAULT_INCLUDE_GAS_COSTS,
+    DEFAULT_INFER_ZERO_TIMED_BALANCES,
     DEFAULT_LAST_DATA_MIGRATION,
     DEFAULT_MAIN_CURRENCY,
     DEFAULT_PNL_CSV_HAVE_SUMMARY,
@@ -391,6 +392,7 @@ def test_writing_fetching_data(data_dir, username, sql_vm_instructions_cb):
         'eth_staking_taxable_after_withdrawal_enabled': DEFAULT_ETH_STAKING_TAXABLE_AFTER_WITHDRAWAL_ENABLED,  # noqa: E501
         'address_name_priority': DEFAULT_ADDRESS_NAME_PRIORITY,
         'include_fees_in_cost_basis': DEFAULT_INCLUDE_FEES_IN_COST_BASIS,
+        'infer_zero_timed_balances': DEFAULT_INFER_ZERO_TIMED_BALANCES,
     }
     assert len(expected_dict) == len(DBSettings()), 'One or more settings are missing'
 
@@ -563,6 +565,7 @@ def test_query_timed_balances(data_dir, username, sql_vm_instructions_cb):
     data.unlock(username, '123', create_new=True, resume_from_backup=False)
 
     with data.db.user_write() as cursor:
+        data.db.set_settings(cursor, settings=ModifiableDBSettings(infer_zero_timed_balances=True))
         data.db.add_multiple_balances(cursor, asset_balances)
         result = data.db.query_timed_balances(
             cursor=cursor,
@@ -571,7 +574,7 @@ def test_query_timed_balances(data_dir, username, sql_vm_instructions_cb):
             from_ts=1451606401,
             to_ts=1485907100,
         )
-        assert len(result) == 1
+        assert len(result) == 2  # 1 from db + 1 inferred
         assert result[0].time == 1465171200
         assert result[0].category == BalanceType.ASSET
         assert result[0].amount == FVal('500')
@@ -584,7 +587,7 @@ def test_query_timed_balances(data_dir, username, sql_vm_instructions_cb):
             from_ts=1451606300,
             to_ts=1485907000,
         )
-        assert len(all_data) == 2
+        assert len(all_data) == 3  # 2 from db + 1 inferred
         result = [x for x in all_data if x.amount != ZERO]
         assert len(result) == 2
         assert result[0].time == 1451606401
@@ -597,7 +600,7 @@ def test_query_timed_balances(data_dir, username, sql_vm_instructions_cb):
         assert result[1].usd_value == FVal('123')
 
         all_data = data.db.query_timed_balances(cursor, A_ETH, balance_type=BalanceType.ASSET)
-        assert len(all_data) == 3
+        assert len(all_data) == 5  # 3 from db + 2 inferred
         result = [x for x in all_data if x.amount != ZERO]
         assert len(result) == 3
         result = data.db.query_timed_balances(cursor, A_ETH, balance_type=BalanceType.LIABILITY)
@@ -607,6 +610,95 @@ def test_query_timed_balances(data_dir, username, sql_vm_instructions_cb):
     assert result[0].category == BalanceType.LIABILITY
     assert result[0].amount == FVal('1')
     assert result[0].usd_value == FVal('9.98')
+
+
+def test_timed_balances_inferred_zero_balances(data_dir, username, sql_vm_instructions_cb):
+    """
+    Test that zero balance entries are inferred properly. (So that the chart in the frontend
+    can properly show zero balance periods: https://github.com/rotki/rotki/issues/2822)
+    """
+    msg_aggregator = MessagesAggregator()
+    data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)
+    data.unlock(username, '123', create_new=True, resume_from_backup=False)
+    asset = BalanceType.ASSET.serialize_for_db()
+    liability = BalanceType.LIABILITY.serialize_for_db()
+
+    timed_balance_entries = [
+        (1514841100, 'ETH', '2', '0', asset),  #
+        (1514851200, 'ETH', '2', '0', liability),  # 0
+        (1514937600, 'BTC', '1', '0', asset),
+        (1514937700, 'BTC', '1', '0', asset),
+        (1514937800, 'BTC', '1', '0', asset),  # 0
+        (1514937900, 'ETH', '3', '0', asset),  #
+        (1514938000, 'BTC', '3', '0', asset),  # 0
+        (1514938100, 'BTC', '1', '0', asset),  # 0
+    ]
+
+    with data.db.user_write() as write_cursor:
+        data.db.set_settings(write_cursor, settings=ModifiableDBSettings(infer_zero_timed_balances=True))  # noqa: E501
+        write_cursor.executemany(
+            'INSERT INTO timed_balances(timestamp, currency, amount, usd_value, category) '
+            'VALUES (?,?,?,?,?)',
+            timed_balance_entries,
+        )
+
+        all_data = data.db.query_timed_balances(  # sorted by time in ascending order
+            cursor=write_cursor,
+            asset=A_ETH,
+            balance_type=BalanceType.ASSET,
+        )
+        assert len(all_data) == 6  # 2 from db + 4 inferred zeros
+        assert all_data[0].time == 1514841100
+        assert all_data[0].amount == FVal('2')
+        assert all_data[1].time == 1514851200
+        assert all_data[1].amount == ZERO
+        assert all_data[2].time == 1514937800
+        assert all_data[2].amount == ZERO
+        assert all_data[3].time == 1514937900
+        assert all_data[3].amount == FVal('3')
+        assert all_data[4].time == 1514938000
+        assert all_data[4].amount == ZERO
+        assert all_data[5].time == 1514938100
+        assert all_data[5].amount == ZERO
+
+        # Retest another case
+        write_cursor.execute('DELETE FROM timed_balances')
+
+        timed_balance_entries = [
+            (1514841100, 'BTC', '1', '0', asset),
+            (1514841100, 'ETC', '10', '0', asset),
+            (1514842100, 'ETH', '2', '0', asset),  #
+            (1514842100, 'BTC', '1', '0', asset),
+            (1514843100, 'ETH', '2', '0', asset),  #
+            (1514844100, 'BTC', '2', '0', asset),  # 0
+            (1514845100, 'BTC', '2', '0', asset),
+            (1514846100, 'BTC', '2', '0', asset),  # 0
+            (1514847100, 'ETH', '2', '0', asset),  #
+            (1514848100, 'BTC', '1', '0', asset),  # 0
+            (1514848100, 'LTC', '5', '0', asset),
+            (1514849100, 'BTC', '1', '0', asset),  # 0
+        ]
+
+        write_cursor.executemany(
+            'INSERT INTO timed_balances(timestamp, currency, amount, usd_value, category) '
+            'VALUES (?,?,?,?,?)',
+            timed_balance_entries,
+        )
+
+        all_data = data.db.query_timed_balances(  # sorted by time in ascending order
+            cursor=write_cursor,
+            asset=A_ETH,
+            balance_type=BalanceType.ASSET,
+        )
+        assert len(all_data) == 7  # 3 from db + 4 inferred zeros
+        assert all_data[2].amount == ZERO
+        assert all_data[2].time == 1514844100
+        assert all_data[3].amount == ZERO
+        assert all_data[3].time == 1514846100
+        assert all_data[5].amount == ZERO
+        assert all_data[5].time == 1514848100
+        assert all_data[6].amount == ZERO
+        assert all_data[6].time == 1514849100
 
 
 def test_query_owned_assets(data_dir, username, sql_vm_instructions_cb):
@@ -1209,6 +1301,7 @@ def test_timed_balances_treat_eth2_as_eth(database):
     ]
 
     with database.user_write() as cursor:
+        database.set_settings(cursor, ModifiableDBSettings(infer_zero_timed_balances=True))
         database.add_multiple_balances(cursor, balances)
         balances = database.query_timed_balances(cursor, asset=A_BTC, balance_type=BalanceType.ASSET)  # noqa: E501
     assert len(balances) == 1
@@ -1230,6 +1323,16 @@ def test_timed_balances_treat_eth2_as_eth(database):
             time=1590676728,
             amount=FVal('1.4'),
             usd_value=FVal('9000'),
+        ), SingleDBAssetBalance(  # start of zero balance period
+            category=BalanceType.ASSET,
+            time=1590676729,
+            amount=ZERO,
+            usd_value=ZERO,
+        ), SingleDBAssetBalance(  # end of zero balance period
+            category=BalanceType.ASSET,
+            time=1590677829,
+            amount=ZERO,
+            usd_value=ZERO,
         ), SingleDBAssetBalance(
             time=1590777829,
             amount=FVal('0.5'),

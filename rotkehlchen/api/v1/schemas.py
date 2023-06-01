@@ -1217,6 +1217,7 @@ class ModifiableSettingsSchema(Schema):
         validate=webargs.validate.OneOf(choices=DEFAULT_ADDRESS_NAME_PRIORITY),
     ), load_default=DEFAULT_ADDRESS_NAME_PRIORITY)
     include_fees_in_cost_basis = fields.Boolean(load_default=None)
+    infer_zero_timed_balances = fields.Boolean(load_default=None)
 
     @validates_schema
     def validate_settings_schema(
@@ -1268,6 +1269,7 @@ class ModifiableSettingsSchema(Schema):
             eth_staking_taxable_after_withdrawal_enabled=data['eth_staking_taxable_after_withdrawal_enabled'],  # noqa: 501
             address_name_priority=data['address_name_priority'],
             include_fees_in_cost_basis=data['include_fees_in_cost_basis'],
+            infer_zero_timed_balances=data['infer_zero_timed_balances'],
         )
 
 

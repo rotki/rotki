@@ -255,7 +255,8 @@
       "hardcoded_mappings",
       "ens_names"
     ],
-    "include_fees_in_cost_basis": true
+    "include_fees_in_cost_basis": true,
+    "infer_zero_timed_balances": false
   },
   "ignored_events_ids": {
     "ledger_action": ["2"],
