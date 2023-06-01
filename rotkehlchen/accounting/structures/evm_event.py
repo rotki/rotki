@@ -235,12 +235,12 @@ class EvmEvent(HistoryBaseEntry):
         except KeyError as e:
             raise DeserializationError(f'Did not find key {e!s} in Evm Event data') from e
 
-    def get_type_identifier(self, include_counterparty: bool = True) -> str:
+    def get_type_identifier(self, include_counterparty: bool = True, **kwargs: Any) -> str:
         """
         Computes the identifier from event type, event subtype and counterparty if
         `include_counterparty` is True.
         """
-        type_identifier = str(self.event_type) + '__' + str(self.event_subtype)
+        type_identifier = super().get_type_identifier()
         if include_counterparty is True and self.counterparty is not None:
             type_identifier += '__' + self.counterparty
 
@@ -281,4 +281,4 @@ class EvmEvent(HistoryBaseEntry):
             accounting: 'AccountingPot',
             events_iterator: Iterator['AccountingEventMixin'],  # pylint: disable=unused-argument
     ) -> int:
-        return accounting.transactions.process(self, events_iterator)
+        return accounting.history_base_entries.process(self, events_iterator)

@@ -7,6 +7,7 @@ from rotkehlchen.accounting.cost_basis.base import (
     CostBasisInfo,
     MatchedAcquisition,
 )
+from rotkehlchen.accounting.history_base_entries import HistoryBaseEntriesAccountant
 from rotkehlchen.accounting.ledger_actions import LedgerActionType
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL
@@ -16,7 +17,6 @@ from rotkehlchen.accounting.structures.base import HistoryEvent
 from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.processed_event import ProcessedAccountingEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.accounting.transactions import TransactionsAccountant
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_DAI, A_ETH
@@ -94,7 +94,7 @@ def fixture_accounting_pot(accountant, airdrops_taxable, gas_taxable, include_cr
 
 
 def _gain_one_ether(
-        transactions: 'TransactionsAccountant',
+        history_base_entries: 'HistoryBaseEntriesAccountant',
         event_type: 'HistoryEventType' = HistoryEventType.RECEIVE,
         event_subtype: 'HistoryEventSubType' = HistoryEventSubType.NONE,
         entry_type: Literal['history_event', 'evm_event'] = 'evm_event',
@@ -121,7 +121,7 @@ def _gain_one_ether(
         event_type=event_type,
         event_subtype=event_subtype,
     )
-    consumed_num = transactions.process(
+    consumed_num = history_base_entries.process(
         event=eth_gain_event,
         events_iterator=iter([]),
     )
@@ -140,7 +140,10 @@ def test_accounting_no_settings(accounting_pot: 'AccountingPot'):
         asset=A_ETH,
         balance=Balance(),
     )
-    consumed_num = accounting_pot.transactions.process(event=event, events_iterator=iter([]))
+    consumed_num = accounting_pot.history_base_entries.process(
+        event=event,
+        events_iterator=iter([]),
+    )
 
     assert consumed_num == 1
     assert len(accounting_pot.pnls) == 0, 'Nothing should have happened since there were no settings'  # noqa: E501
@@ -165,7 +168,7 @@ def test_accounting_receive_settings(
 ):
     """Test that the default accounting settings for receiving are correct"""
     _gain_one_ether(
-        transactions=accounting_pot.transactions,
+        history_base_entries=accounting_pot.history_base_entries,
         event_type=event_type,
         event_subtype=event_subtype,
         entry_type=entry_type,
@@ -218,7 +221,7 @@ def test_accounting_spend_settings(
         counterparty: Optional[str],
         include_crypto2crypto,
 ):
-    _gain_one_ether(transactions=accounting_pot.transactions)
+    _gain_one_ether(history_base_entries=accounting_pot.history_base_entries)
     spend_event = EvmEvent(
         tx_hash=EXAMPLE_EVM_HASH,
         sequence_index=0,
@@ -232,7 +235,10 @@ def test_accounting_spend_settings(
         event_subtype=event_subtype,
         counterparty=counterparty,
     )
-    consumed_num = accounting_pot.transactions.process(event=spend_event, events_iterator=iter([]))
+    consumed_num = accounting_pot.history_base_entries.process(
+        event=spend_event,
+        events_iterator=iter([]),
+    )
     assert consumed_num == 1
 
     acquisition_event = AssetAcquisitionEvent(
@@ -290,7 +296,7 @@ def test_accounting_swap_settings(accounting_pot: 'AccountingPot', counterparty:
     Test that the default accounting settings for swaps are correct.
     Also checks that if counterparty is not known we fallback to default swaps treatment.
     """
-    _gain_one_ether(transactions=accounting_pot.transactions)
+    _gain_one_ether(history_base_entries=accounting_pot.history_base_entries)
     swap_spend_event = EvmEvent(
         tx_hash=EXAMPLE_EVM_HASH,
         sequence_index=1,
@@ -317,7 +323,7 @@ def test_accounting_swap_settings(accounting_pot: 'AccountingPot', counterparty:
         event_subtype=HistoryEventSubType.RECEIVE,
         counterparty=counterparty,
     )
-    consumed_num = accounting_pot.transactions.process(
+    consumed_num = accounting_pot.history_base_entries.process(
         event=swap_spend_event,
         events_iterator=iter([swap_receive_event]),
     )
@@ -352,7 +358,10 @@ def test_accounting_swap_settings(accounting_pot: 'AccountingPot', counterparty:
             is_complete=True,
         ),
         index=1,
-        extra_data={'tx_hash': EXAMPLE_TX_HASH_HEX, 'group_id': EXAMPLE_TX_HASH_HEX + '12'},
+        extra_data={
+            'tx_hash': EXAMPLE_TX_HASH_HEX,
+            'group_id': f'{swap_spend_event.event_identifier}12',
+        },
     )
     expected_spend_event.count_entire_amount_spend = False
     expected_spend_event.count_cost_basis_pnl = True
@@ -369,7 +378,10 @@ def test_accounting_swap_settings(accounting_pot: 'AccountingPot', counterparty:
         pnl=PNL(free=ZERO, taxable=ZERO),
         cost_basis=None,
         index=2,
-        extra_data={'tx_hash': EXAMPLE_TX_HASH_HEX, 'group_id': EXAMPLE_TX_HASH_HEX + '12'},
+        extra_data={
+            'tx_hash': EXAMPLE_TX_HASH_HEX,
+            'group_id': f'{swap_receive_event.event_identifier}12',
+        },
     )
     expected_receive_event.count_entire_amount_spend = False
     expected_receive_event.count_cost_basis_pnl = False
