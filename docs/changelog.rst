@@ -15,7 +15,8 @@ Changelog
 * :bug:`-` Events that were imported via a csv file will now be properly accounted for in PnL reports.
 * :bug:`-` Notes in exported CSV reports will contain the correct url for transactions in different EVM chains.
 * :feature:`-` The PnL report page will load faster if there is many old reports in the DB.
-* :feature:`-` Convex staking and Curve gauge balances will no longer need a manual balances referesh to be detected.
+* :feature:`-` Convex staking and Curve gauge balances will no longer need a manual balances refresh to be detected.
+* :feature:`2822` The time chart of the amount of an asset in your balance, now shows the periods where you weren't holding the asset.
 
 * :release:`1.28.0 <2023-05-17>`
 * :feature:`2469` History events have now been unified under a common history events section. At the moment it features all kraken exchange events, evm events, custom imported events, block productions, staking withdrawals. Missing events retain their own sections and will be merged into the unified history in subsequent releases.

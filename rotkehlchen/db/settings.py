@@ -58,6 +58,7 @@ DEFAULT_COST_BASIS_METHOD = CostBasisMethod.FIFO
 DEFAULT_TREAT_ETH2_AS_ETH = True
 DEFAULT_ETH_STAKING_TAXABLE_AFTER_WITHDRAWAL_ENABLED = True
 DEFAULT_INCLUDE_FEES_IN_COST_BASIS = True
+DEFAULT_INFER_ZERO_TIMED_BALANCES = False  # If True the asset amount and value chart shows the 0 balance periods for an asset  # noqa: E501
 
 
 JSON_KEYS = (
@@ -80,6 +81,7 @@ BOOLEAN_KEYS = (
     'treat_eth2_as_eth',
     'eth_staking_taxable_after_withdrawal_enabled',
     'include_fees_in_cost_basis',
+    'infer_zero_timed_balances',
 )
 INTEGER_KEYS = (
     'version',
@@ -135,6 +137,7 @@ class DBSettings(NamedTuple):
     eth_staking_taxable_after_withdrawal_enabled: bool = DEFAULT_ETH_STAKING_TAXABLE_AFTER_WITHDRAWAL_ENABLED  # noqa: 501
     address_name_priority: list[AddressNameSource] = DEFAULT_ADDRESS_NAME_PRIORITY
     include_fees_in_cost_basis: bool = DEFAULT_INCLUDE_FEES_IN_COST_BASIS
+    infer_zero_timed_balances: bool = DEFAULT_INFER_ZERO_TIMED_BALANCES
 
     def serialize(self) -> dict[str, Any]:
         settings_dict = self._asdict()   # pylint: disable=no-member
@@ -180,6 +183,7 @@ class ModifiableDBSettings(NamedTuple):
     eth_staking_taxable_after_withdrawal_enabled: Optional[bool] = None
     address_name_priority: Optional[list[AddressNameSource]] = None
     include_fees_in_cost_basis: Optional[bool] = None
+    infer_zero_timed_balances: Optional[bool] = None
 
     def serialize(self) -> dict[str, Any]:
         settings_dict = {}
