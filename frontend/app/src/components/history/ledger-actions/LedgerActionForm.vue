@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import useVuelidate from '@vuelidate/core';
 import { helpers, required, requiredIf } from '@vuelidate/validators';
 import dayjs from 'dayjs';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
@@ -13,24 +12,14 @@ import { toMessages } from '@/utils/validation';
 
 const props = withDefaults(
   defineProps<{
-    value?: boolean;
-    edit?: boolean;
-    formData?: Partial<LedgerAction> | null;
+    editableItem?: Partial<LedgerAction> | null;
   }>(),
   {
-    value: false,
-    edit: false,
-    formData: null
+    editableItem: null
   }
 );
 
-const emit = defineEmits<{
-  (e: 'input', valid: boolean): void;
-}>();
-
-const { edit, formData } = toRefs(props);
-
-const input = (valid: boolean) => emit('input', valid);
+const { editableItem } = toRefs(props);
 
 const lastLocation = useLocalStorage(
   'rotki.ledger_action.location',
@@ -93,7 +82,9 @@ const rules = {
   }
 };
 
-const v$ = useVuelidate(
+const { valid, setValidation, setSubmitFunc } = useLedgerActionsForm();
+
+const v$ = setValidation(
   rules,
   {
     amount,
@@ -105,10 +96,6 @@ const v$ = useVuelidate(
   },
   { $autoDirty: true, $externalResults: errorMessages }
 );
-
-watch(v$, ({ $invalid }) => {
-  input(!$invalid);
-});
 
 const reset = () => {
   set(id, null);
@@ -125,13 +112,16 @@ const reset = () => {
 };
 
 const setEditMode = () => {
-  const ledgerAction = get(formData);
+  const ledgerAction = get(editableItem);
   if (!ledgerAction) {
     reset();
     return;
   }
 
-  set(location, ledgerAction.location);
+  if (ledgerAction.location) {
+    set(location, ledgerAction.location);
+  }
+
   if (ledgerAction.timestamp) {
     set(datetime, convertFromTimestamp(ledgerAction.timestamp, true));
   } else {
@@ -200,9 +190,7 @@ const save = async (): Promise<boolean> => {
   return false;
 };
 
-watch([edit, formData], () => {
-  setEditMode();
-});
+setSubmitFunc(save);
 
 watch(location, (location: string) => {
   if (location) {
@@ -210,21 +198,15 @@ watch(location, (location: string) => {
   }
 });
 
-onMounted(() => {
-  setEditMode();
-});
+watch(editableItem, setEditMode);
+onMounted(setEditMode);
 
 const { mdAndUp } = useDisplay();
-
-defineExpose({
-  reset,
-  save
-});
 </script>
 
 <template>
   <v-form
-    :value="value"
+    :value="valid"
     data-cy="ledger-action-form"
     class="ledger-action-form"
   >

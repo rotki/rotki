@@ -3,7 +3,6 @@ import { type Ref } from 'vue';
 import Fragment from '@/components/helper/Fragment';
 import { type ManualBalance } from '@/types/manual-balances';
 import { BalanceType } from '@/types/balances';
-import { useManualBalancesForm } from '@/composables/balances/manual/form';
 
 const balanceToEdit: Ref<ManualBalance | null> = ref(null);
 const loading = ref(false);

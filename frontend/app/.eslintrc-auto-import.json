@@ -678,7 +678,11 @@
     "useCustomAssetForm": true,
     "useForm": true,
     "useManualBalancesForm": true,
+    "useDisplay": true,
     "useTradesForm": true,
-    "useDisplay": true
+    "useUserNotesForm": true,
+    "useLedgerActionsForm": true,
+    "useHistoryEventsForm": true,
+    "useHistoryTransactionsForm": true
   }
 }

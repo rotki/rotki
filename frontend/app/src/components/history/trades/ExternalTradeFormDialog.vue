@@ -1,6 +1,5 @@
 <script lang="ts" setup>
 import { type Trade } from '@/types/history/trade';
-import { useTradesForm } from '@/composables/history/trades/form';
 
 const props = withDefaults(
   defineProps<{
@@ -8,7 +7,8 @@ const props = withDefaults(
     loading?: boolean;
   }>(),
   {
-    editableItem: null
+    editableItem: null,
+    loading: false
   }
 );
 
@@ -41,6 +41,6 @@ const subtitle: ComputedRef<string> = computed(() =>
     @confirm="trySubmit()"
     @cancel="closeDialog()"
   >
-    <external-trade-form :edit="editableItem" />
+    <external-trade-form :editable-item="editableItem" />
   </big-dialog>
 </template>

@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { type CustomAsset } from '@/types/asset';
 import CustomAssetForm from '@/components/asset-manager/CustomAssetForm.vue';
-import { useCustomAssetForm } from '@/composables/assets/forms/custom-asset-form';
 
 const props = withDefaults(
   defineProps<{

@@ -26,10 +26,8 @@ const notes = ref<Collection<UserNote>>(defaultCollectionState<UserNote>());
 const animateDelete = ref<boolean>(false);
 const showDeleteConfirmation = ref<boolean>(false);
 const idToDelete = ref<number | null>(null);
-const showForm = ref<boolean>(false);
 const form = ref<Partial<UserNote>>(getDefaultForm());
 const editMode = ref<boolean>(false);
-const valid = ref<boolean>(false);
 const loading = ref<boolean>(false);
 const search = ref<string>('');
 const itemsPerPage = 10;
@@ -98,21 +96,29 @@ const togglePin = async (note: UserNote) => {
 
 const resetForm = () => {
   set(editMode, false);
-  set(showForm, false);
-  set(valid, false);
   set(form, getDefaultForm());
+  closeDialog();
 };
+
+const {
+  valid,
+  openDialog,
+  submitting,
+  closeDialog,
+  trySubmit,
+  setOpenDialog,
+  setSubmitFunc
+} = useUserNotesForm();
 
 const addNote = () => {
   resetForm();
-  set(showForm, true);
+  setOpenDialog(true);
 };
 
 const editNote = (note: UserNote) => {
   set(editMode, true);
   set(form, { ...note });
-  set(valid, true);
-  set(showForm, true);
+  setOpenDialog(true);
 };
 
 const callUpdateNote = async (payload: Partial<UserNote>) => {
@@ -133,6 +139,7 @@ const save = async () => {
     logger.error(e);
   }
 };
+setSubmitFunc(save);
 
 const deleteNote = async (identifier: number) => {
   set(showDeleteConfirmation, true);
@@ -324,17 +331,17 @@ onMounted(async () => {
     </div>
 
     <big-dialog
-      :display="showForm"
+      :display="openDialog"
       :title="
         editMode
           ? t('notes_menu.dialog.edit_title')
           : t('notes_menu.dialog.add_title')
       "
-      :action-disabled="!valid"
-      @confirm="save()"
+      :action-disabled="submitting || !valid"
+      @confirm="trySubmit()"
       @cancel="resetForm()"
     >
-      <user-note-form v-model="form" @valid="valid = $event" />
+      <user-note-form v-model="form" />
     </big-dialog>
   </fragment>
 </template>

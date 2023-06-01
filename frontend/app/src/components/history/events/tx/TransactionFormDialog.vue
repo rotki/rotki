@@ -1,0 +1,29 @@
+<script lang="ts" setup>
+withDefaults(
+  defineProps<{
+    loading?: boolean;
+  }>(),
+  {
+    loading: false
+  }
+);
+
+const { valid, openDialog, submitting, closeDialog, trySubmit } =
+  useHistoryTransactionsForm();
+
+const { t } = useI18n();
+</script>
+
+<template>
+  <big-dialog
+    :display="openDialog"
+    :title="t('transactions.dialog.add_tx')"
+    :primary-action="t('common.actions.save')"
+    :action-disabled="loading || submitting || !valid"
+    :loading="loading || submitting"
+    @confirm="trySubmit()"
+    @cancel="closeDialog()"
+  >
+    <transaction-form />
+  </big-dialog>
+</template>

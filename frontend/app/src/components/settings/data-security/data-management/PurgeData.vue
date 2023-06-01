@@ -11,7 +11,6 @@ import {
 } from '@/types/session/purge';
 import { SUPPORTED_EXCHANGES, type SupportedExchange } from '@/types/exchanges';
 import { EXTERNAL_EXCHANGES } from '@/data/defaults';
-import { useCacheClear } from '@/composables/session/cache-clear';
 
 const source: Ref<Purgeable> = ref(ALL_TRANSACTIONS);
 
