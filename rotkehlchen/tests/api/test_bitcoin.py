@@ -511,7 +511,7 @@ def test_delete_nonexisting_xpub(rotkehlchen_api_server):
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
-def test_add_xpub_with_conversion_works(rotkehlchen_api_server):
+def test_add_xpub_with_conversion_works(rotkehlchen_api_server, test_session):
     """Test that an xpub is being converted to ypub/zpub if the prefix does not match"""
     # Disable caching of query results
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -523,12 +523,13 @@ def test_add_xpub_with_conversion_works(rotkehlchen_api_server):
         'xpub': xpub,
         'xpub_type': 'p2sh_p2wpkh',
     }
-    response = requests.put(api_url_for(
+    with test_session.put(api_url_for(
         rotkehlchen_api_server,
         'btcxpubresource',
         blockchain='BTC',
-    ), json=json_data)
-    assert_proper_response(response)
+    ), json=json_data) as response:
+        assert_proper_response(response)
+
     with rotki.data.db.conn.read_ctx() as cursor:
         saved_xpubs = rotki.data.db.get_bitcoin_xpub_data(cursor, SupportedBlockchain.BITCOIN)
         assert len(saved_xpubs) == 1
@@ -537,12 +538,12 @@ def test_add_xpub_with_conversion_works(rotkehlchen_api_server):
 
         # Test xpub asking conversion to zpub
         json_data['xpub_type'] = 'wpkh'
-        response = requests.put(api_url_for(
+        with test_session.put(api_url_for(
             rotkehlchen_api_server,
             'btcxpubresource',
             blockchain='BTC',
-        ), json=json_data)
-        assert_proper_response(response)
+        ), json=json_data) as response:
+            assert_proper_response(response)
         saved_xpubs = rotki.data.db.get_bitcoin_xpub_data(cursor, SupportedBlockchain.BITCOIN)
 
     assert len(saved_xpubs) == 2
@@ -551,7 +552,7 @@ def test_add_xpub_with_conversion_works(rotkehlchen_api_server):
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
-def test_xpub_addition_errors(rotkehlchen_api_server):
+def test_xpub_addition_errors(rotkehlchen_api_server, test_session):
     """Test that errors at xpub addition are handled correctly"""
     # Disable caching of query results
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -563,16 +564,16 @@ def test_xpub_addition_errors(rotkehlchen_api_server):
         'xpub': xpub,
         'xpub_type': 'whatever',
     }
-    response = requests.put(api_url_for(
+    with test_session.put(api_url_for(
         rotkehlchen_api_server,
         'btcxpubresource',
         blockchain='BTC',
-    ), json=json_data)
-    assert_error_response(
-        response=response,
-        contained_in_msg='Unknown xpub type whatever found at deserialization',
-        status_code=HTTPStatus.BAD_REQUEST,
-    )
+    ), json=json_data) as response:
+        assert_error_response(
+            response=response,
+            contained_in_msg='Unknown xpub type whatever found at deserialization',
+            status_code=HTTPStatus.BAD_REQUEST,
+        )
 
     # invalid derivation path
     xpub = 'xpub68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk'  # noqa: E501
@@ -581,30 +582,30 @@ def test_xpub_addition_errors(rotkehlchen_api_server):
         'xpub': xpub,
         'derivation_path': derivation_path,
     }
-    response = requests.put(api_url_for(
+    with test_session.put(api_url_for(
         rotkehlchen_api_server,
         'btcxpubresource',
         blockchain='BTC',
-    ), json=json_data)
-    assert_error_response(
-        response=response,
-        contained_in_msg='Derivation paths accepted by rotki should start with m',
-        status_code=HTTPStatus.BAD_REQUEST,
-    )
+    ), json=json_data) as response:
+        assert_error_response(
+            response=response,
+            contained_in_msg='Derivation paths accepted by rotki should start with m',
+            status_code=HTTPStatus.BAD_REQUEST,
+        )
 
     # not a valid xpub string
     xpub = 'foo'
     json_data = {'xpub': xpub}
-    response = requests.put(api_url_for(
+    with test_session.put(api_url_for(
         rotkehlchen_api_server,
         'btcxpubresource',
         blockchain='BTC',
-    ), json=json_data)
-    assert_error_response(
-        response=response,
-        contained_in_msg='"xpub": ["Failed to initialize an xpub due to Given XPUB foo is too small"',  # noqa: E501
-        status_code=HTTPStatus.BAD_REQUEST,
-    )
+    ), json=json_data) as response:
+        assert_error_response(
+            response=response,
+            contained_in_msg='"xpub": ["Failed to initialize an xpub due to Given XPUB foo is too small"',  # noqa: E501
+            status_code=HTTPStatus.BAD_REQUEST,
+        )
 
     # tags empty list
     xpub = 'xpub68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk'  # noqa: E501
@@ -612,13 +613,13 @@ def test_xpub_addition_errors(rotkehlchen_api_server):
         'xpub': xpub,
         'tags': [],
     }
-    response = requests.put(api_url_for(
+    with test_session.put(api_url_for(
         rotkehlchen_api_server,
         'btcxpubresource',
         blockchain='BTC',
-    ), json=json_data)
-    assert_error_response(
-        response=response,
-        contained_in_msg='Provided empty list for tags. Use null',
-        status_code=HTTPStatus.BAD_REQUEST,
-    )
+    ), json=json_data) as response:
+        assert_error_response(
+            response=response,
+            contained_in_msg='Provided empty list for tags. Use null',
+            status_code=HTTPStatus.BAD_REQUEST,
+        )
