@@ -6,10 +6,10 @@ from rotkehlchen.accounting.cost_basis.prefork import (
     handle_prefork_asset_acquisitions,
     handle_prefork_asset_spends,
 )
+from rotkehlchen.accounting.history_base_entries import HistoryBaseEntriesAccountant
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL, PnlTotals
 from rotkehlchen.accounting.structures.processed_event import ProcessedAccountingEvent
-from rotkehlchen.accounting.transactions import TransactionsAccountant
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_KFEE
 from rotkehlchen.constants.misc import ONE, ZERO, ZERO_PRICE
@@ -55,7 +55,7 @@ class AccountingPot(CustomizableDateMixin):
         )
         self.pnls = PnlTotals()
         self.processed_events: list[ProcessedAccountingEvent] = []
-        self.transactions = TransactionsAccountant(
+        self.history_base_entries = HistoryBaseEntriesAccountant(
             evm_accounting_aggregators=evm_accounting_aggregators,
             pot=self,
         )
@@ -114,7 +114,7 @@ class AccountingPot(CustomizableDateMixin):
         self.query_end_ts = end_ts
         self.pnls.reset()
         self.cost_basis.reset(settings)
-        self.transactions.reset()
+        self.history_base_entries.reset()
         self.processed_events = []
 
     def add_acquisition(

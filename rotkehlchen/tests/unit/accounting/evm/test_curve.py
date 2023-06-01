@@ -141,7 +141,7 @@ DEPOSIT_ENTRIES = [
 def test_curve_multiple_deposit(accountant: 'Accountant', ethereum_inquirer: 'EvmNodeInquirer'):
     """Test that the default accounting settings for receiving are correct"""
     pot = accountant.pots[0]
-    transactions = pot.transactions
+    transactions = pot.history_base_entries
     curve_accountant = CurveAccountant(
         node_inquirer=ethereum_inquirer,
         msg_aggregator=ethereum_inquirer.database.msg_aggregator,
@@ -150,7 +150,7 @@ def test_curve_multiple_deposit(accountant: 'Accountant', ethereum_inquirer: 'Ev
     transactions.tx_event_settings.update(curve_settings)
     events_iterator = iter(DEPOSIT_ENTRIES)
     for event in events_iterator:
-        pot.transactions.process(event=event, events_iterator=events_iterator)
+        pot.history_base_entries.process(event=event, events_iterator=events_iterator)
 
     expected_events = [
         ProcessedAccountingEvent(
