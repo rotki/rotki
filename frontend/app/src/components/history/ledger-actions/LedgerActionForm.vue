@@ -169,7 +169,7 @@ const save = async (): Promise<boolean> => {
     asset: get(asset),
     amount: numericAmount.isNaN() ? Zero : numericAmount,
     actionType: get(actionType) as LedgerActionType,
-    rate: numericRate.isNaN() || numericRate.isZero() ? undefined : numericRate,
+    rate: numericRate.isNaN() ? undefined : numericRate,
     rateAsset: get(rateAsset) ? get(rateAsset) : undefined,
     link: get(link) ? get(link) : undefined,
     notes: get(notes) ? get(notes) : undefined

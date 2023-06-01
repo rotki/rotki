@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Fix issue for ledger actions with zero rate, where the rate isn't used in the PnL report.
 * :bug:`-` ENS avatar fetching for each name's avatar should now work for all name resolvers. Even older or custom ones.
 * :bug:`-` Users will now be able to decode compounding transactions for Convex gauges.
 * :bug:`-` Users will no longer see double counting of balances in curve gauges.
