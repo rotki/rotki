@@ -42,7 +42,7 @@ jobs:
             requirements_dev.txt
             requirements_lint.txt
           frontend_paths: |
-            frontend/app
+            frontend
 
   code-analyze-frontend:
     name: 'Code analyze frontend'
