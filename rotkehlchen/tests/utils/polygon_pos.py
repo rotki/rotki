@@ -1,5 +1,5 @@
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode
-from rotkehlchen.constants import ONE
+from rotkehlchen.fval import FVal
 from rotkehlchen.types import SupportedBlockchain
 
 POLYGON_POS_NODES_PARAMETERS_WITH_PRUNED_AND_NOT_ARCHIVED: tuple[str, list[tuple]] = (
@@ -13,7 +13,7 @@ POLYGON_POS_NODES_PARAMETERS_WITH_PRUNED_AND_NOT_ARCHIVED: tuple[str, list[tuple
                 blockchain=SupportedBlockchain.POLYGON_POS,
             ),
             active=True,
-            weight=ONE,
+            weight=FVal('0.4'),
         ), WeightedNode(
             node_info=NodeName(
                 name='ankr',
@@ -22,7 +22,7 @@ POLYGON_POS_NODES_PARAMETERS_WITH_PRUNED_AND_NOT_ARCHIVED: tuple[str, list[tuple
                 blockchain=SupportedBlockchain.POLYGON_POS,
             ),
             active=True,
-            weight=ONE,
+            weight=FVal('0.3'),
         ), WeightedNode(
             node_info=NodeName(
                 name='alchemy',
@@ -31,7 +31,7 @@ POLYGON_POS_NODES_PARAMETERS_WITH_PRUNED_AND_NOT_ARCHIVED: tuple[str, list[tuple
                 blockchain=SupportedBlockchain.POLYGON_POS,
             ),
             active=True,
-            weight=ONE,
+            weight=FVal('0.3'),
         ),
     )],
 )

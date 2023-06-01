@@ -149,6 +149,7 @@ def test_get_transaction_by_hash(ethereum_inquirer, call_order, ethereum_manager
     assert result == expected_tx
 
 
+@pytest.mark.parametrize('ethereum_manager_connect_at_start', ['DEFAULT'])
 def test_use_open_nodes(ethereum_inquirer, database):
     """Test that we can connect to and use the open nodes (except from etherscan)
 

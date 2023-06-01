@@ -192,7 +192,6 @@ class EvmNodeInquirer(metaclass=ABCMeta):
             etherscan_node: WeightedNode,
             etherscan_node_name: str,
             contracts: EvmContracts,
-            connect_at_start: Sequence[WeightedNode],
             contract_scan: 'EvmContract',
             contract_multicall: 'EvmContract',
             native_token: CryptoAsset,
@@ -215,12 +214,27 @@ class EvmNodeInquirer(metaclass=ABCMeta):
         # Multicall from MakerDAO: https://github.com/makerdao/multicall/
         self.contract_multicall = contract_multicall
 
-        log.debug(f'Initializing {self.chain_name} inquirer. Nodes to connect {connect_at_start}')
-
         # A cache for erc20 and erc721 contract info to not requery the info
         self.contract_info_erc20_cache: dict[ChecksumEvmAddress, dict[str, Any]] = {}
         self.contract_info_erc721_cache: dict[ChecksumEvmAddress, dict[str, Any]] = {}
-        self.connect_to_multiple_nodes(connect_at_start)
+        self.maybe_connect_to_nodes(when_tracked_accounts=True)
+
+    def maybe_connect_to_nodes(self, when_tracked_accounts: bool) -> None:
+        """Start async connect to the saved nodes for the given evm chain if needed.
+
+        If `when_tracked_accounts` is True then it will connect when we have some
+        tracked accounts in the DB. Otherwise when we have none.
+        """
+        if self.connected_to_any_web3() or self.greenlet_manager.has_task(f'Attempt connection to {self.chain_name} node'):  # noqa: E501
+            return
+
+        with self.database.conn.read_ctx() as cursor:
+            accounts = self.database.get_blockchain_accounts(cursor)
+
+        tracked_accounts_num = len(accounts.get(self.blockchain))
+        if (tracked_accounts_num != 0 and when_tracked_accounts) or (not when_tracked_accounts and tracked_accounts_num == 0):  # noqa: E501
+            rpc_nodes = self.database.get_rpc_nodes(blockchain=self.blockchain, only_active=True)
+            self.connect_to_multiple_nodes(rpc_nodes)
 
     def connected_to_any_web3(self) -> bool:
         return len(self.web3_mapping) != 0
@@ -465,7 +479,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
             if weighted_node.node_info.name == self.etherscan_node_name:
                 continue
 
-            task_name = f'Attempt connection to {weighted_node.node_info.name!s} {self.chain_name} node'  # noqa: E501
+            task_name = f'Attempt connection to {self.chain_name} node {weighted_node.node_info.name!s}'  # noqa: E501
             self.greenlet_manager.spawn_and_track(
                 after_seconds=None,
                 task_name=task_name,
@@ -1303,7 +1317,6 @@ class EvmNodeInquirerWithDSProxy(EvmNodeInquirer):
             etherscan_node: WeightedNode,
             etherscan_node_name: str,
             contracts: EvmContracts,
-            connect_at_start: Sequence[WeightedNode],
             contract_scan: 'EvmContract',
             contract_multicall: 'EvmContract',
             dsproxy_registry: 'EvmContract',
@@ -1318,7 +1331,6 @@ class EvmNodeInquirerWithDSProxy(EvmNodeInquirer):
             etherscan_node=etherscan_node,
             etherscan_node_name=etherscan_node_name,
             contracts=contracts,
-            connect_at_start=connect_at_start,
             contract_scan=contract_scan,
             contract_multicall=contract_multicall,
             rpc_timeout=rpc_timeout,

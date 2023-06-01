@@ -62,6 +62,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.types import (
     CHAINS_WITH_CHAIN_MANAGER,
+    EVM_CHAINS_WITH_TRANSACTIONS_TYPE,
     SUPPORTED_CHAIN_IDS,
     SUPPORTED_EVM_CHAINS,
     SUPPORTED_SUBSTRATE_CHAINS,
@@ -232,6 +233,8 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         }
         self.chain_modify_append: dict[SupportedBlockchain, Callable[[SupportedBlockchain, BlockchainAddress], None]] = {  # noqa: E501
             SupportedBlockchain.ETHEREUM: self._append_eth_account_modification,  # type:ignore
+            SupportedBlockchain.OPTIMISM: self._append_evm_account_modification,  # type:ignore
+            SupportedBlockchain.POLYGON_POS: self._append_evm_account_modification,  # type:ignore
         }
         self.chain_modify_remove: dict[SupportedBlockchain, Callable[[SupportedBlockchain, BlockchainAddress], None]] = {  # noqa: E501
             SupportedBlockchain.ETHEREUM: self._remove_eth_account_modification,  # type:ignore
@@ -686,12 +689,24 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                 seconds=SUBSTRATE_NODE_CONNECTION_TIMEOUT,
             )
 
+    def _append_evm_account_modification(
+            self,
+            blockchain: EVM_CHAINS_WITH_TRANSACTIONS_TYPE,
+            address: ChecksumEvmAddress,  # pylint: disable=unused-argument
+    ) -> None:
+        """Extra code to run when a non-eth but evm account addition happens"""
+        # If this is the first account added, connect to all relevant nodes
+        chain_manager = self.get_chain_manager(blockchain)
+        chain_manager.node_inquirer.maybe_connect_to_nodes(when_tracked_accounts=False)
+
     def _append_eth_account_modification(
             self,
             blockchain: Literal[SupportedBlockchain.ETHEREUM],  # pylint: disable=unused-argument
             address: ChecksumEvmAddress,
     ) -> None:
         """Extra code to run when eth account addition happens"""
+        # If this is the first account added, connect to all relevant nodes
+        self.ethereum.node_inquirer.maybe_connect_to_nodes(when_tracked_accounts=False)
         for _, module in self.iterate_modules():
             module.on_account_addition(address)
 

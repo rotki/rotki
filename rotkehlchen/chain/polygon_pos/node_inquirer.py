@@ -1,5 +1,4 @@
 import logging
-from collections.abc import Sequence
 from typing import TYPE_CHECKING, Literal, cast
 
 from eth_typing import BlockNumber
@@ -7,7 +6,7 @@ from eth_typing import BlockNumber
 from rotkehlchen.chain.constants import DEFAULT_EVM_RPC_TIMEOUT
 from rotkehlchen.chain.evm.contracts import EvmContracts
 from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
-from rotkehlchen.chain.evm.types import WeightedNode, string_to_evm_address
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_POLYGON_POS_MATIC
 from rotkehlchen.fval import FVal
 from rotkehlchen.greenlets.manager import GreenletManager
@@ -43,7 +42,6 @@ class PolygonPOSInquirer(EvmNodeInquirer):
             self,
             greenlet_manager: GreenletManager,
             database: 'DBHandler',
-            connect_at_start: Sequence[WeightedNode],
             rpc_timeout: int = DEFAULT_EVM_RPC_TIMEOUT,
     ) -> None:
         etherscan = PolygonPOSEtherscan(
@@ -59,7 +57,6 @@ class PolygonPOSInquirer(EvmNodeInquirer):
             etherscan_node=POLYGON_POS_ETHERSCAN_NODE,
             etherscan_node_name=POLYGON_POS_ETHERSCAN_NODE_NAME,
             contracts=contracts,
-            connect_at_start=connect_at_start,
             rpc_timeout=rpc_timeout,
             contract_multicall=contracts.contract(string_to_evm_address('0x275617327c958bD06b5D6b871E7f491D76113dd8')),  # noqa: E501
             contract_scan=contracts.contract(string_to_evm_address('0x2aB513B211C801673758D1C32815605B5289ad29')),  # noqa: E501

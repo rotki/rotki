@@ -1,5 +1,4 @@
 import logging
-from collections.abc import Sequence
 from typing import TYPE_CHECKING, Literal, cast
 
 from eth_typing import BlockNumber
@@ -7,7 +6,7 @@ from eth_typing import BlockNumber
 from rotkehlchen.chain.constants import DEFAULT_EVM_RPC_TIMEOUT
 from rotkehlchen.chain.evm.contracts import EvmContracts
 from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirerWithDSProxy
-from rotkehlchen.chain.evm.types import WeightedNode, string_to_evm_address
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.fval import FVal
 from rotkehlchen.greenlets.manager import GreenletManager
@@ -43,7 +42,6 @@ class OptimismInquirer(EvmNodeInquirerWithDSProxy):
             self,
             greenlet_manager: GreenletManager,
             database: 'DBHandler',
-            connect_at_start: Sequence[WeightedNode],
             rpc_timeout: int = DEFAULT_EVM_RPC_TIMEOUT,
     ) -> None:
         etherscan = OptimismEtherscan(
@@ -59,7 +57,6 @@ class OptimismInquirer(EvmNodeInquirerWithDSProxy):
             etherscan_node=OPTIMISM_ETHERSCAN_NODE,
             etherscan_node_name=OPTIMISM_ETHERSCAN_NODE_NAME,
             contracts=contracts,
-            connect_at_start=connect_at_start,
             rpc_timeout=rpc_timeout,
             contract_multicall=contracts.contract(string_to_evm_address('0x2DC0E2aa608532Da689e89e237dF582B783E552C')),  # noqa: E501
             contract_scan=contracts.contract(string_to_evm_address('0x1e21bc42FaF802A0F115dC998e2F0d522aDb1F68')),  # noqa: E501

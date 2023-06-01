@@ -37,7 +37,6 @@ def init_ethereum(
     greenlet_manager = GreenletManager(msg_aggregator=msg_aggregator)
     eth_inquirer = EthereumInquirer(
         greenlet_manager=greenlet_manager,
-        connect_at_start=nodes_to_connect,
         database=db,
     )
     eth_inquirer.etherscan.api_key = api_key

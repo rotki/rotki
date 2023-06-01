@@ -71,7 +71,6 @@ class EthereumInquirer(EvmNodeInquirerWithDSProxy, LockableQueryMixIn):
             self,
             greenlet_manager: GreenletManager,
             database: 'DBHandler',
-            connect_at_start: Sequence[WeightedNode],
             rpc_timeout: int = DEFAULT_EVM_RPC_TIMEOUT,
     ) -> None:
         etherscan = EthereumEtherscan(
@@ -88,7 +87,6 @@ class EthereumInquirer(EvmNodeInquirerWithDSProxy, LockableQueryMixIn):
             etherscan_node=ETHEREUM_ETHERSCAN_NODE,
             etherscan_node_name=ETHEREUM_ETHERSCAN_NODE_NAME,
             contracts=contracts,
-            connect_at_start=connect_at_start,
             rpc_timeout=rpc_timeout,
             contract_multicall=contracts.contract(string_to_evm_address('0x5BA1e12693Dc8F9c48aAD8770482f4739bEeD696')),  # noqa: E501
             contract_scan=contracts.contract(string_to_evm_address('0x86F25b64e1Fe4C5162cDEeD5245575D32eC549db')),  # noqa: E501

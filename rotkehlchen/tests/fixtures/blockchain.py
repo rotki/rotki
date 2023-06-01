@@ -1,6 +1,6 @@
 from collections.abc import Sequence
 from contextlib import ExitStack
-from typing import Literal, Optional
+from typing import Literal, Optional, Union
 from unittest.mock import patch
 
 import pytest
@@ -54,6 +54,25 @@ def _initialize_and_yield_evm_inquirer_fixture(
         mock_data,
         mocked_proxies,
 ):
+    blockchain = SupportedBlockchain.ETHEREUM
+    if klass == OptimismInquirer:
+        blockchain = SupportedBlockchain.OPTIMISM
+    elif klass == PolygonPOSInquirer:
+        blockchain = SupportedBlockchain.POLYGON_POS
+
+    if isinstance(manager_connect_at_start, str):
+        assert manager_connect_at_start == 'DEFAULT'
+        nodes_to_connect_to = database.get_rpc_nodes(blockchain, only_active=True)
+    else:
+        nodes_to_connect_to = manager_connect_at_start
+        with database.user_write() as write_cursor:
+            write_cursor.execute(  # Delete all but etherscan endpoint
+                'DELETE FROM rpc_nodes WHERE blockchain=? and endpoint!=""',
+                (blockchain.value,))
+        for entry in nodes_to_connect_to:
+            if entry.node_info.endpoint != '':  # don't re-add etherscan
+                database.add_rpc_node(entry)
+
     with ExitStack() as init_stack:
         if mock_other_web3 is True:
             init_stack.enter_context(patch(  # at init of Inquirer attempt no connection if mocking
@@ -63,12 +82,11 @@ def _initialize_and_yield_evm_inquirer_fixture(
         inquirer = klass(
             greenlet_manager=greenlet_manager,
             database=database,
-            connect_at_start=manager_connect_at_start,
         )
 
     if mock_other_web3 is False:  # no mocking means we should wait till connect is done
         wait_until_all_nodes_connected(
-            connect_at_start=manager_connect_at_start,
+            connect_at_start=nodes_to_connect_to,
             evm_inquirer=inquirer,
         )
 
@@ -76,7 +94,7 @@ def _initialize_and_yield_evm_inquirer_fixture(
         should_mock=mock_other_web3,
         parent_stack=parent_stack,
         evm_inquirer=inquirer,
-        manager_connect_at_start=manager_connect_at_start,
+        manager_connect_at_start=nodes_to_connect_to,
         mock_data=mock_data,
     )
     if mocked_proxies is not None:
@@ -173,7 +191,13 @@ def fixture_covalent_avalanche(messages_aggregator, database):
 
 
 @pytest.fixture(name='ethereum_manager_connect_at_start')
-def fixture_ethereum_manager_connect_at_start() -> Sequence[NodeName]:
+def fixture_ethereum_manager_connect_at_start() -> Union[Literal['DEFAULT'], Sequence[NodeName]]:
+    """A sequence of nodes to connect to at the start of the test.
+
+    Can be either a sequence of nodes to connect to for this chain.
+    Or an empty sequence to connect to no nodes for this chain.
+    Or the DEFAULT string literal meaning to connect to the built-in default nodes.
+    """
     return ()
 
 
@@ -273,7 +297,13 @@ def fixture_eth_transactions(
 
 
 @pytest.fixture(name='optimism_manager_connect_at_start')
-def fixture_optimism_manager_connect_at_start() -> Sequence[NodeName]:
+def fixture_optimism_manager_connect_at_start() -> Union[Literal['DEFAULT'], Sequence[NodeName]]:
+    """A sequence of nodes to connect to at the start of the test.
+
+    Can be either a sequence of nodes to connect to for this chain.
+    Or an empty sequence to connect to no nodes for this chain.
+    Or the DEFAULT string literal meaning to connect to the built-in default nodes.
+    """
     return ()
 
 
@@ -330,7 +360,13 @@ def fixture_optimism_transaction_decoder(
 
 
 @pytest.fixture(name='polygon_pos_manager_connect_at_start')
-def fixture_polygon_pos_manager_connect_at_start() -> Sequence[NodeName]:
+def fixture_polygon_pos_manager_connect_at_start() -> Union[Literal['DEFAULT'], Sequence[NodeName]]:  # noqa: E501
+    """A sequence of nodes to connect to at the start of the test.
+
+    Can be either a sequence of nodes to connect to for this chain.
+    Or an empty sequence to connect to no nodes for this chain.
+    Or the DEFAULT string literal meaning to connect to the built-in default nodes.
+    """
     return ()
 
 
@@ -519,8 +555,8 @@ def fixture_btc_derivation_gap_limit():
     return DEFAULT_BTC_DERIVATION_GAP_LIMIT
 
 
-@pytest.fixture()
-def blockchain(
+@pytest.fixture(name='blockchain')
+def fixture_blockchain(
         ethereum_manager,
         optimism_manager,
         polygon_pos_manager,
