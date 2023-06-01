@@ -2019,20 +2019,20 @@ Getting all supported chains
 
         {
             "result": [
-                {"id": "ETH", "name": "ethereum", "type": "evm", "evm_chain_name": "ethereum"},
-                {"id": "OPTIMISM", "name": "optimism", "type": "evm", "evm_chain_name": "optimism", "native_asset": "ETH"},
-                {"id": "AVAX", "name": "avalanche", "type": "evm", "evm_chain_name": "avalanche"},
-                {"id": "ETH2", "name": "ethereum beaconchain", "type": "eth2"},
-                {"id": "DOT", "name": "polkadot", "type": "substrate"},
-                {"id": "KSM", "name": "kusama", "type": "substrate"},
-                {"id": "BTC", "name": "bitcoin", "type": "bitcoin"},
-                {"id": "BCH", "name": "bitcoin cash", "type": "bitcoin"},
-                {"id": "POLYGON_POS", "name": "polygon pos", type: "evm"}
+                {"id": "ETH", "name": "ethereum", "type": "evm", "evm_chain_name": "ethereum", "native_token": "ETH"},
+                {"id": "OPTIMISM", "name": "optimism", "type": "evm", "evm_chain_name": "optimism", "native_token": "ETH"},
+                {"id": "AVAX", "name": "avalanche", "type": "evm", "evm_chain_name": "avalanche", "native_token": "AVAX"},
+                {"id": "ETH2", "name": "ethereum beaconchain", "type": "eth2", "native_token": "ETH2"},
+                {"id": "DOT", "name": "polkadot", "type": "substrate", "native_token": "DOT"},
+                {"id": "KSM", "name": "kusama", "type": "substrate", "native_token": "KSM"},
+                {"id": "BTC", "name": "bitcoin", "type": "bitcoin", "native_token": "BTC"},
+                {"id": "BCH", "name": "bitcoin cash", "type": "bitcoin", "native_token": "BCH"},
+                {"id": "POLYGON_POS", "name": "polygon pos", type: "evm", "native_token": "eip155:137/erc20:0x0000000000000000000000000000000000001010"}
             ]
             "message": ""
         }
 
-    :resjson object result: Contains all supported chains' ID, name, type, EVM chain name (if applicable) and native asset identifier (if different from ID).
+    :resjson object result: Contains all supported chains' ID, name, type, EVM chain name (if applicable).
     :statuscode 200: Success
     :statuscode 500: Internal rotki error
 

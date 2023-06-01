@@ -418,6 +418,15 @@ class SupportedBlockchain(SerializableEnumValueMixin):
     def is_substrate(self) -> bool:
         return self in get_args(SUPPORTED_SUBSTRATE_CHAINS)
 
+    def get_native_token_id(self) -> str:
+        """Returns the string identifier of the native token for the chain"""
+        if self == SupportedBlockchain.OPTIMISM:
+            return 'ETH'
+        if self == SupportedBlockchain.POLYGON_POS:
+            return 'eip155:137/erc20:0x0000000000000000000000000000000000001010'
+
+        return self.value
+
     def get_chain_type(self) -> str:
         """Chain type to return to the API supported chains endpoint"""
         if self.is_evm():

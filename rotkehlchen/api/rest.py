@@ -76,7 +76,7 @@ from rotkehlchen.chain.ethereum.utils import try_download_ens_avatar
 from rotkehlchen.chain.evm.manager import EvmManager
 from rotkehlchen.chain.evm.names import find_ens_mappings, search_for_addresses_names
 from rotkehlchen.chain.evm.types import WeightedNode
-from rotkehlchen.constants.assets import A_ETH, A_POLYGON_POS_MATIC
+from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.limits import (
     FREE_ASSET_MOVEMENTS_LIMIT,
     FREE_ETH_TX_LIMIT,
@@ -653,11 +653,8 @@ class RestAPI():
                 'id': blockchain.serialize(),
                 'name': str(blockchain),
                 'type': blockchain.get_chain_type(),
+                'native_token': blockchain.get_native_token_id(),
             }
-            if blockchain == SupportedBlockchain.OPTIMISM:
-                data['native_token'] = A_ETH.serialize()
-            elif blockchain == SupportedBlockchain.POLYGON_POS:
-                data['native_token'] = A_POLYGON_POS_MATIC.serialize()
             if blockchain.is_evm() is True:
                 data['evm_chain_name'] = blockchain.to_chain_id().to_name()
             result.append(data)
