@@ -6,7 +6,7 @@ const { t } = useI18n();
 
 <template>
   <import-source source="cryptocom">
-    <i18n tag="span" path="import_data.cryptocom.note">
+    <i18n tag="span" path="import_data.note">
       <strong>{{ t('import_data.cryptocom.source_name') }}</strong>
     </i18n>
     <ul>

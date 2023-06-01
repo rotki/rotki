@@ -9,8 +9,8 @@ const { t } = useI18n();
     <template #hint>
       {{ t('import_data.cointracking.preferred') }}
     </template>
-    <i18n tag="span" path="import_data.cointracking.note">
-      <strong>{{ t('import_data.cointracking.source_name') }}</strong>
+    <i18n tag="span" path="import_data.note">
+      <strong>{{ t('import_data.cointracking.name') }}</strong>
     </i18n>
     <ul>
       <li>{{ t('import_data.cointracking.line_one') }}</li>

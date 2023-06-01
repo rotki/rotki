@@ -28,8 +28,8 @@ const { t } = useI18n();
     </v-row>
 
     <div class="pt-4">
-      <i18n tag="span" path="import_data.blockfi.note">
-        <strong>{{ t('import_data.blockfi.source_name') }}</strong>
+      <i18n tag="span" path="import_data.note">
+        <strong>{{ t('import_data.blockfi.name') }}</strong>
       </i18n>
       <ul>
         <li>{{ t('import_data.blockfi.line_one') }}</li>

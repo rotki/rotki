@@ -12,6 +12,7 @@ export const SOURCES = [
   'uphold_transactions',
   'bisq_trades',
   'binance',
+  'bitcoin_tax',
   'rotki_events',
   'rotki_trades'
 ] as const;

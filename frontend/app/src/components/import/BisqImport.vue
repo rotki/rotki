@@ -9,8 +9,8 @@ const { t } = useI18n();
         <strong>{{ t('import_data.bisq.import_trade') }}</strong>
       </i18n>
     </template>
-    <i18n tag="span" path="import_data.bisq.note">
-      <strong>{{ t('import_data.bisq.source_name') }}</strong>
+    <i18n tag="span" path="import_data.note">
+      <strong>{{ t('import_data.bisq.name') }}</strong>
     </i18n>
     <ul>
       <li>{{ t('import_data.bisq.line_one') }}</li>

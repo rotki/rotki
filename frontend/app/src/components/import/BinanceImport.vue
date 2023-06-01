@@ -4,8 +4,8 @@ const { t } = useI18n();
 
 <template>
   <import-source source="binance">
-    <i18n tag="span" path="import_data.binance.note">
-      <strong>{{ t('import_data.binance.source_name') }}</strong>
+    <i18n tag="span" path="import_data.note">
+      <strong>{{ t('import_data.binance.name') }}</strong>
     </i18n>
     <ul>
       <li>{{ t('import_data.binance.line_one') }}</li>

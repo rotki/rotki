@@ -2536,17 +2536,21 @@
     "binance": {
       "line_one": "Imports: Deposits, Withdrawals, Trades, ETH Staking, Small assets exchange BNB, ETH Staking Rewards, Launchpool Interest, POS savings interest, POS savings purchase, POS savings redemption.",
       "line_two": "Because of binance's csv format there is a chance that not all data will be imported. If this will happen, you will get warning.",
-      "name": "Binance",
-      "note": "Important notes for importing data from {0}'s CSV exports.",
-      "source_name": "Binance"
+      "name": "Binance"
     },
     "bisq": {
-      "import": "Import {0} from bisq",
+      "import": "Import {0} from Bisq",
       "import_trade": "trades",
       "line_one": "[Experimental] If you find an issue with the imported data, let us know so we can adapt the code accordingly.",
-      "name": "Bisq",
-      "note": "Important notes for importing data from {0}'s CSV exports.",
-      "source_name": "Bisq"
+      "name": "Bisq"
+    },
+    "bitcoin_tax": {
+      "import": "Import {0} from bitcoin.tax",
+      "import_types": "trades, income, and spending",
+      "line_one": "We support the import of trades, income and spending csv file types.",
+      "line_two": "All imported events are mapped to rotki’s history events.",
+      "line_three": "The ‘swap’ action of the trade file type that represents a coin rename or a fork, is treated elsewhere by rotki so no history event needs to be created for it.",
+      "name": "bitcoin.tax"
     },
     "blockfi": {
       "import": "Import {0} from BlockFi",
@@ -2554,19 +2558,15 @@
       "import_transactions": "transactions",
       "line_one": "[Experimental] If you find an issue with the imported data, let us know so we can adapt the code accordingly.",
       "line_two": "BlockFi lets you export two different files. Trades will be imported from the file that only contains trades.",
-      "name": "BlockFi",
-      "note": "Important notes for importing data from {0}'s CSV exports.",
-      "source_name": "BlockFi"
+      "name": "BlockFi"
     },
     "cointracking": {
-      "line_one": "Trades/deposits/withdrawals from Cointracking do not include fees.",
+      "line_one": "Trades/deposits/withdrawals from CoinTracking do not include fees.",
       "line_three": "ETH/BTC Transactions are treated as deposits/withdrawals so they are not imported in rotki. To import ETH transactions simply input your accounts in {0} and they will be imported automatically for you.",
-      "line_two": "All trades imported from Cointracking will always be considered as buys due to the way the data are represented.",
+      "line_two": "All trades imported from CoinTracking will always be considered as buys due to the way the data are represented.",
       "link": "Blockchain Accounts/Balances",
       "name": "CoinTracking",
-      "note": " Important notes for importing data from {0}'s CSV exports.",
-      "preferred": "For the above reasons it's preferred to directly connect your exchanges in order to import data from there. If you do not do that a lot of accuracy is lost.",
-      "source_name": "cointracking"
+      "preferred": "For the above reasons it's preferred to directly connect your exchanges in order to import data from there. If you do not do that a lot of accuracy is lost."
     },
     "cryptocom": {
       "line_four": "Only transactions are imported here (for tax report), if you want the assets be displayed in your rotki balances, you have to add them manually as manual balances: {0}",
@@ -2577,7 +2577,6 @@
       "line_two": "{0} If you want to connect your Crypto.com Exchange account, please wait until we support it and then connect to it as an exchange.",
       "line_two_warning": "It only concerns the Crypto.com mobile application.",
       "name": "Crypto.com",
-      "note": "Important notes for importing data from {0}'s CSV exports.",
       "source_name": "crypto.com mobile app"
     },
     "custom": {
@@ -2590,10 +2589,9 @@
       "import": "Import {0} from Nexo",
       "import_transactions": "transactions",
       "line_one": "[Experimental] If you find an issue with the imported data let us know so we can adapt the code accordingly.",
-      "name": "Nexo",
-      "note": "Important notes for importing data from {0}'s CSV exports.",
-      "source_name": "Nexo"
+      "name": "Nexo"
     },
+    "note": "Important notes for importing data from {0}'s CSV exports.",
     "notice": "{warning} Those platforms could change their format in a backwards incompatible way quite often. As such this import may stop working. If that happens {link} and we will see what we can do.",
     "notice_link": "open an issue with rotki",
     "notice_warning": "⚠️ Important notice ⚠️:",
@@ -2605,19 +2603,15 @@
       "import_trade": "trades",
       "line_one": "[Experimental] If you find an issue with the imported data, let us know so we can adapt the code accordingly.",
       "line_two": "ShapeShift lets you export a trades file. Trades will be imported from the file that only contains trades.",
-      "name": "ShapeShift",
-      "note": "Important notes for importing data from {0}'s CSV exports.",
-      "source_name": "ShapeShift"
+      "name": "ShapeShift"
     },
     "title": "Import Data",
     "uphold": {
-      "import": "Import {0} from uphold",
+      "import": "Import {0} from Uphold",
       "import_trade": "trades",
       "line_one": "[Experimental] If you find an issue with the imported data, let us know so we can adapt the code accordingly.",
       "line_two": "Uphold lets you export a transactions file. It can be found under activity at the top right of the activity list.",
-      "name": "Uphold",
-      "note": "Important notes for importing data from {0}'s CSV exports.",
-      "source_name": "uphold"
+      "name": "Uphold"
     }
   },
   "input_mode_select": {

@@ -9,8 +9,8 @@ const { t } = useI18n();
         <strong>{{ t('import_data.nexo.import_transactions') }}</strong>
       </i18n>
     </template>
-    <i18n tag="span" path="import_data.nexo.note">
-      <strong>{{ t('import_data.nexo.source_name') }}</strong>
+    <i18n tag="span" path="import_data.note">
+      <strong>{{ t('import_data.nexo.name') }}</strong>
     </i18n>
     <ul>
       <li>{{ t('import_data.nexo.line_one') }}</li>
