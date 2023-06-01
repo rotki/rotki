@@ -2097,7 +2097,6 @@
       "hint": "交易的基础资产",
       "label": "基础资产"
     },
-    "buy_base": "购买",
     "buy_quote": "与",
     "date": {
       "hint": "交易发生的时间",
@@ -2130,7 +2129,6 @@
       "label": "交易费率"
     },
     "rate_not_found": "我们找不到指定货币对的汇率。",
-    "sell_base": "卖出",
     "sell_quote": "对于",
     "summary": {
       "buy": "{label}: 用 {quote} 以每 {base} {rate} {quote} 的价格购买 {amount} {base}",

@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import dayjs from 'dayjs';
 import { type ComputedRef, type Ref } from 'vue';
-import IMask, { type InputMask } from 'imask';
+import IMask, {
+  type AnyMaskedOptions,
+  type InputMask,
+  MaskedRange
+} from 'imask';
 import { timezones } from '@/data/timezones';
 import { DateFormat } from '@/types/date-format';
 
@@ -223,26 +227,58 @@ const initImask = () => {
   const completeDateTimeFormatVal = get(completeDateTimeFormat);
 
   const createBlock = (from: number, to: number) => ({
-    mask: IMask.MaskedRange,
+    mask: MaskedRange,
     from,
     to
   });
 
-  const newImask = IMask(input, {
-    mask: Date,
-    overwrite: true,
-    pattern: completeDateTimeFormatVal,
-    format: date => dayjs(date).format(completeDateTimeFormatVal),
-    parse: (date: string) =>
-      new Date(convertToTimestamp(date, get(dateInputFormat)) * 1000),
-    blocks: {
-      YYYY: createBlock(1970, 9999),
-      MM: createBlock(1, 12),
-      DD: createBlock(1, 31),
-      HH: createBlock(0, 23),
-      mm: createBlock(0, 59),
-      ss: createBlock(0, 59)
+  const dateBlocks = {
+    YYYY: createBlock(1970, 9999),
+    MM: createBlock(1, 12),
+    DD: createBlock(1, 31)
+  };
+
+  const hourAndMinuteBlocks = {
+    HH: createBlock(0, 23),
+    mm: createBlock(0, 59)
+  };
+
+  const secondBlocks = {
+    ss: createBlock(0, 59)
+  };
+
+  const mask: AnyMaskedOptions[] = [
+    {
+      mask: get(dateInputFormatInISO),
+      blocks: {
+        ...dateBlocks
+      },
+      lazy: false
+    },
+    {
+      mask: get(completeDateTimeFormatVal),
+      blocks: {
+        ...dateBlocks,
+        ...hourAndMinuteBlocks,
+        ...secondBlocks
+      },
+      lazy: false
     }
+  ];
+
+  if (!get(seconds)) {
+    mask.splice(1, 0, {
+      mask: get(dateTimeFormat),
+      blocks: {
+        ...dateBlocks,
+        ...hourAndMinuteBlocks
+      },
+      lazy: false
+    });
+  }
+
+  const newImask = IMask(input, {
+    mask
   });
 
   set(imask, newImask);
