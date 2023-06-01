@@ -72,6 +72,11 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
+def _connect_task_prefix(chain_name: str) -> str:
+    """Helper function to create the connection task greenlet name"""
+    return f'Attempt connection to {chain_name} node'
+
+
 def _is_synchronized(current_block: int, latest_block: int) -> tuple[bool, str]:
     """ Validate that the evm node is synchronized
             within 20 blocks of the latest block
@@ -225,14 +230,14 @@ class EvmNodeInquirer(metaclass=ABCMeta):
         If `when_tracked_accounts` is True then it will connect when we have some
         tracked accounts in the DB. Otherwise when we have none.
         """
-        if self.connected_to_any_web3() or self.greenlet_manager.has_task(f'Attempt connection to {self.chain_name} node'):  # noqa: E501
+        if self.connected_to_any_web3() or self.greenlet_manager.has_task(_connect_task_prefix(self.chain_name)):  # noqa: E501
             return
 
         with self.database.conn.read_ctx() as cursor:
             accounts = self.database.get_blockchain_accounts(cursor)
 
         tracked_accounts_num = len(accounts.get(self.blockchain))
-        if (tracked_accounts_num != 0 and when_tracked_accounts) or (not when_tracked_accounts and tracked_accounts_num == 0):  # noqa: E501
+        if (tracked_accounts_num != 0 and when_tracked_accounts) or (when_tracked_accounts is False and tracked_accounts_num == 0):  # noqa: E501
             rpc_nodes = self.database.get_rpc_nodes(blockchain=self.blockchain, only_active=True)
             self.connect_to_multiple_nodes(rpc_nodes)
 
@@ -479,7 +484,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
             if weighted_node.node_info.name == self.etherscan_node_name:
                 continue
 
-            task_name = f'Attempt connection to {self.chain_name} node {weighted_node.node_info.name!s}'  # noqa: E501
+            task_name = f'{_connect_task_prefix(self.chain_name)} {weighted_node.node_info.name!s}'  # noqa: E501
             self.greenlet_manager.spawn_and_track(
                 after_seconds=None,
                 task_name=task_name,
