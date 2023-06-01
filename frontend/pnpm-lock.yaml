@@ -69,9 +69,6 @@ importers:
       chartjs-plugin-zoom:
         specifier: 2.0.1
         version: 2.0.1(chart.js@4.3.0)
-      cleave.js:
-        specifier: 1.6.0
-        version: 1.6.0
       dayjs:
         specifier: 1.11.7
         version: 1.11.7
@@ -90,6 +87,9 @@ importers:
       eslint-plugin-vuetify:
         specifier: 1.1.0
         version: 1.1.0(eslint@8.41.0)(vuetify@2.6.15)
+      imask:
+        specifier: 6.6.1
+        version: 6.6.1
       lodash:
         specifier: 4.17.21
         version: 4.17.21
@@ -164,9 +164,6 @@ importers:
       '@pinia/testing':
         specifier: 0.1.2
         version: 0.1.2(pinia@2.1.3)(vue@2.7.14)
-      '@types/cleave.js':
-        specifier: 1.4.7
-        version: 1.4.7
       '@types/electron-devtools-installer':
         specifier: 2.2.2
         version: 2.2.2
@@ -2403,12 +2400,6 @@ packages:
     resolution: {integrity: sha512-mEo1sAde+UCE6b2hxn332f1g1E8WfYRu6p5SvTKr2ZKC1f7gFJXk4h5PyGP9Dt6gCaG8y8XhwnXWC6Iy2cmBng==}
     dev: true
 
-  /@types/cleave.js@1.4.7:
-    resolution: {integrity: sha512-0MatQhFMEsOWOjfY06z7Ez+84dWJFXWsqGRsZn+dxcZ8FqZbHftP4g4NIdpZmPm5I7RWmjDmrF5wtg99TVCgQA==}
-    dependencies:
-      '@types/react': 18.0.26
-    dev: true
-
   /@types/connect@3.4.35:
     resolution: {integrity: sha512-cdeYyv4KWoEgpBISTxWvqYsVy444DOqehiF3fM3ne10AmJ62RSyNkUnxMJXHQWRQQX2eR94m5y1IZyDwBjV9FQ==}
     dependencies:
@@ -2552,23 +2543,11 @@ packages:
       xmlbuilder: 15.1.1
     dev: true
 
-  /@types/prop-types@15.7.5:
-    resolution: {integrity: sha512-JCB8C6SnDoQf0cNycqd/35A7MjcnK+ZTqE7judS6o7utxUCg6imJg3QK2qzHKszlTjcj2cn+NwMB2i96ubpj7w==}
-    dev: true
-
   /@types/qs@6.9.7:
     resolution: {integrity: sha512-FGa1F62FT09qcrueBA6qYTrJPVDzah9a+493+o2PCXsesWHIn27G98TsSMs3WPNbZIEj4+VJf6saSFpvD+3Zsw==}
 
   /@types/range-parser@1.2.4:
     resolution: {integrity: sha512-EEhsLsD6UsDM1yFhAvy0Cjr6VwmpMWqFBCb9w07wVugF7w9nfajxLuVmngTIpgS6svCnm6Vaw+MZhoDCKnOfsw==}
-
-  /@types/react@18.0.26:
-    resolution: {integrity: sha512-hCR3PJQsAIXyxhTNSiDFY//LhnMZWpNNr5etoCqx/iUfGc5gXWtQR2Phl908jVR6uPXacojQWTg4qRpkxTuGug==}
-    dependencies:
-      '@types/prop-types': 15.7.5
-      '@types/scheduler': 0.16.2
-      csstype: 3.1.1
-    dev: true
 
   /@types/resolve@1.17.1:
     resolution: {integrity: sha512-yy7HuzQhj0dhGpD8RLXSZWEkLsV9ibvxvi6EiJ3bkqLAO1RGo0WbkWQiwpRlSFymTJRz0d3k5LM3kkx8ArDbLw==}
@@ -2580,10 +2559,6 @@ packages:
     resolution: {integrity: sha512-85Y2BjiufFzaMIlvJDvTTB8Fxl2xfLo4HgmHzVBz08w4wDePCTjYw66PdrolO0kzli3yam/YCgRufyo1DdQVTA==}
     dependencies:
       '@types/node': 18.16.14
-    dev: true
-
-  /@types/scheduler@0.16.2:
-    resolution: {integrity: sha512-hppQEBDmlwhFAXKJX2KnWLYu5yMfi91yazPb2l+lbJiwW+wdo1gNeRA+3RgNSO39WYX2euey41KEwnqesU2Jew==}
     dev: true
 
   /@types/semver@7.3.13:
@@ -4048,10 +4023,6 @@ packages:
   /clean-stack@2.2.0:
     resolution: {integrity: sha512-4diC9HaTE+KRAMWhDhrGOECgWZxoevMc5TlkObMqNSsVU62PYzXZ/SMTjzyGAFF1YusgxGcSWTEXBhp0CPwQ1A==}
     engines: {node: '>=6'}
-
-  /cleave.js@1.6.0:
-    resolution: {integrity: sha512-ivqesy3j5hQVG3gywPfwKPbi/7ZSftY/UNp5uphnqjr25yI2CP8FS2ODQPzuLXXnNLi29e2+PgPkkiKUXLs/Nw==}
-    dev: false
 
   /cli-cursor@3.1.0:
     resolution: {integrity: sha512-I/zHAwsKf9FqGoXM4WWRACob9+SNukZTd94DWF57E4toouRulbCxcUh6RKUEOQlYTHJnzkPMySvPNaaSLNfLZw==}
@@ -6336,6 +6307,11 @@ packages:
   /ignore@5.2.4:
     resolution: {integrity: sha512-MAb38BcSbH0eHNBxn7ql2NH/kX33OkB3lZ1BNdh7ENeRChHTYsTvWrMubiIAMNS2llXEEgZ1MUOBtXChP3kaFQ==}
     engines: {node: '>= 4'}
+
+  /imask@6.6.1:
+    resolution: {integrity: sha512-3JfLZVYABpNUGZpObu92/+3ptwwNIHXWNYqCfS+OaHBmMhLKBAAnGa2oNJWLbx5r3EyWxnkFNb2bX5Dz4wLkuA==}
+    engines: {npm: '>=4.0.0'}
+    dev: false
 
   /immediate@3.0.6:
     resolution: {integrity: sha512-XXOFtyqDjNDAQxVfYxuF7g9Il/IbWmmlQg2MYKOH8ExIT1qg6xc4zyS3HaEEATgs1btfzxq15ciUiY7gjSXRGQ==}

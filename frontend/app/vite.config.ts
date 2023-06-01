@@ -41,7 +41,7 @@ export default defineConfig({
   },
   optimizeDeps: {
     include: [
-      'cleave.js',
+      'imask',
       'lodash/orderBy',
       'lodash/isEmpty',
       'lodash/dropRight',
