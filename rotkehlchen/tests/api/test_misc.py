@@ -12,7 +12,6 @@ from rotkehlchen.accounting.structures.evm_event import EvmProduct
 from rotkehlchen.chain.ethereum.constants import ETHEREUM_ETHERSCAN_NODE_NAME
 from rotkehlchen.chain.ethereum.modules.convex.constants import CPT_CONVEX
 from rotkehlchen.chain.ethereum.modules.curve.constants import CPT_CURVE
-from rotkehlchen.constants.assets import A_ETH, A_POLYGON_POS_MATIC
 from rotkehlchen.constants.misc import DEFAULT_MAX_LOG_BACKUP_FILES, DEFAULT_SQL_VM_INSTRUCTIONS_CB
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
@@ -412,12 +411,7 @@ def test_query_supported_chains(rotkehlchen_api_server):
             ):
                 if entry.is_evm() is True:
                     assert result_entry['evm_chain_name'] == entry.to_chain_id().to_name()
-                if entry == SupportedBlockchain.OPTIMISM:
-                    assert result_entry['native_token'] == A_ETH.serialize()
-                elif entry == SupportedBlockchain.POLYGON_POS:
-                    assert result_entry['native_token'] == A_POLYGON_POS_MATIC.serialize()
-                else:
-                    assert 'native_token' not in result_entry
+                assert result_entry['native_token'] == entry.get_native_token_id()
 
                 break  # found
         else:  # internal for loop found nothing
