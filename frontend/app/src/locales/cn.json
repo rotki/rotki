@@ -2590,10 +2590,6 @@
     },
     "title": "每项资产赚取"
   },
-  "labeled_address_display": {
-    "divider": "|",
-    "label": "{label}"
-  },
   "ledger_action_form": {
     "amount": {
       "validation": {

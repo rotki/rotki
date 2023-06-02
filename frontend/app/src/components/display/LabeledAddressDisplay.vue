@@ -2,8 +2,6 @@
 import { type GeneralAccount } from '@rotki/common/lib/account';
 import { truncateAddress, truncationPoints } from '@/filters';
 
-const { t } = useI18n();
-
 const props = defineProps<{
   account: GeneralAccount;
 }>();
@@ -11,61 +9,56 @@ const props = defineProps<{
 const { account } = toRefs(props);
 const { scrambleData, shouldShowAmount, scrambleHex, scrambleIdentifier } =
   useScramble();
-const { addressNameSelector } = useAddressesNamesStore();
+const { addressNameSelector, ensNameSelector } = useAddressesNamesStore();
 
-const aliasName = computed<string | null>(() => {
+const aliasName: ComputedRef<string> = computed(() => {
   if (get(scrambleData)) {
-    return null;
+    return '';
   }
 
   const { address, chain } = get(account);
   const name = get(addressNameSelector(address, chain));
 
   if (!name) {
+    return get(label);
+  }
+
+  return name;
+});
+
+const ensName: ComputedRef<string | null> = computed(() => {
+  if (get(scrambleData)) {
     return null;
   }
 
-  return truncateAddress(name, get(truncationLength));
+  const { address } = get(account);
+  return get(ensNameSelector(address));
 });
 
-const { xs, sm, md, lg, xl, smAndDown, mdAndDown, name } = useDisplay();
+const { xs, name } = useDisplay();
 
 const address = computed<string>(() => {
   const address = get(account).address;
   return scrambleHex(address);
 });
 
-const breakpoint = computed<string>(() =>
-  get(account).label.length > 0 && get(mdAndDown) ? 'sm' : get(name)
-);
-
 const truncationLength = computed<number>(() => {
-  const truncationPoint = truncationPoints[get(breakpoint)];
-  if (truncationPoint && get(account).label) {
-    return 4;
-  }
-  return truncationPoint ?? 4;
+  let truncationPoint = truncationPoints[get(name)];
+  truncationPoint = truncationPoint ?? 4;
+
+  return Math.max(4, truncationPoint);
 });
 
-const truncatedAddress = computed(() =>
+const truncatedAddress: ComputedRef<string> = computed(() =>
   truncateAddress(get(address), get(truncationLength))
 );
 
-const displayAddress = computed<string>(() => {
-  if (get(aliasName)) {
-    return get(aliasName) as string;
-  }
-  if (get(truncatedAddress).length >= get(address).length) {
-    return get(address);
-  }
-  return get(truncatedAddress);
-});
-
 const truncated = computed<boolean>(() => {
-  if (get(truncatedAddress).length >= get(address).length) {
+  const truncated = get(truncatedAddress);
+  if (truncated.length >= get(address).length) {
     return false;
   }
-  return get(truncatedAddress).includes('...');
+  return truncated.includes('...');
 });
 
 const label = computed<string>(() => {
@@ -75,23 +68,22 @@ const label = computed<string>(() => {
     return scrambleIdentifier(label);
   }
 
-  let length = -1;
-
-  if (get(xl) && label.length > 50) {
-    length = 47;
-  } else if (get(lg) && label.length > 38) {
-    length = 35;
-  } else if (get(md) && label.length > 27) {
-    length = 24;
-  } else if (get(sm) && label.length > 19) {
-    length = 16;
-  }
-
-  if (length > 0) {
-    return `${label.slice(0, Math.max(0, length))}...`;
-  }
-
   return label;
+});
+
+const truncatedAliasName: ComputedRef<string> = computed(() => {
+  const name = get(aliasName);
+  if (!name) {
+    return '';
+  }
+
+  const length = get(truncationLength) * 2;
+
+  if (length > 0 && name.length > length) {
+    return `${name.slice(0, Math.max(0, length))}...`;
+  }
+
+  return name;
 });
 </script>
 
@@ -109,32 +101,20 @@ const label = computed<string>(() => {
             <v-avatar size="24" class="mr-2">
               <ens-avatar :address="address" />
             </v-avatar>
-            <template v-if="!!label && !aliasName">
-              <span class="text-truncate">
-                {{
-                  t('labeled_address_display.label', {
-                    label
-                  })
-                }}
-              </span>
-              <span v-if="displayAddress && !smAndDown" class="px-1">
-                {{ t('labeled_address_display.divider') }}
-              </span>
-            </template>
-            <span
-              v-if="!smAndDown || !label"
-              :class="{ 'blur-content': !shouldShowAmount }"
-            >
-              {{ displayAddress }}
+            <span v-if="aliasName" class="text-truncate">
+              {{ truncatedAliasName }}
+            </span>
+            <span v-else :class="{ 'blur-content': !shouldShowAmount }">
+              {{ truncatedAddress }}
             </span>
           </v-chip>
         </span>
       </template>
       <div>
-        <span v-if="!!label"> {{ account.label }}</span>
-        <span v-if="smAndDown && aliasName"> ({{ aliasName }})</span>
+        <div v-if="aliasName">{{ aliasName }}</div>
+        <div v-if="ensName && aliasName !== ensName">({{ ensName }})</div>
+        <div>{{ address }}</div>
       </div>
-      <div>{{ address }}</div>
     </v-tooltip>
     <div class="labeled-address-display__actions">
       <hash-link
@@ -160,7 +140,7 @@ const label = computed<string>(() => {
     padding-bottom: 6px;
 
     &--mobile {
-      max-width: 120px;
+      max-width: 150px;
     }
 
     /* stylelint-disable selector-class-pattern,selector-nested-pattern */

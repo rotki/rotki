@@ -2551,10 +2551,6 @@
     },
     "title": "Earned Per Asset"
   },
-  "labeled_address_display": {
-    "divider": "|",
-    "label": "{label}"
-  },
   "ledger_action_form": {
     "amount": {
       "validation": {
