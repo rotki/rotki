@@ -677,7 +677,7 @@ def test_timestamp_deserialization():
 @pytest.mark.parametrize('db_settings', [{  # to count the kraken ETH staking events in accounting
     'eth_staking_taxable_after_withdrawal_enabled': False,
 }])
-def test_kraken_staking(rotkehlchen_api_server_with_exchanges, start_with_valid_premium):
+def test_kraken_staking(rotkehlchen_api_server_with_exchanges, start_with_valid_premium, test_session):  # noqa: E501
     """Test that kraken staking events are processed correctly"""
     server = rotkehlchen_api_server_with_exchanges
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
@@ -920,6 +920,7 @@ def test_kraken_staking(rotkehlchen_api_server_with_exchanges, start_with_valid_
         start_ts=0,
         end_ts=1640493377,
         prepare_mocks=False,
+        session=test_session,
     )
     without_eth2_staking_overview = without_eth2_staking_report_result['entries'][0]['overview']
     assert FVal('39102.819423433620').is_close(
@@ -935,6 +936,7 @@ def test_kraken_staking(rotkehlchen_api_server_with_exchanges, start_with_valid_
         start_ts=0,
         end_ts=1640493377,
         prepare_mocks=False,
+        session=test_session,
     )
     with_eth2_staking_overview = with_eth2_staking_report_result['entries'][0]['overview']
     assert FVal('0.000069900000').is_close(

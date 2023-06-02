@@ -151,6 +151,7 @@ def test_add_tag_without_description(
 def test_add_edit_tag_errors(
         rotkehlchen_api_server,
         verb,
+        test_session,
 ):
     """Test that errors in input data while adding/editing a tag are handled correctly"""
     # Name missing
@@ -159,18 +160,18 @@ def test_add_edit_tag_errors(
         'background_color': 'ffffff',
         'foreground_color': '000000',
     }
-    response = requests.request(
+    with test_session.request(
         verb,
         api_url_for(
             rotkehlchen_api_server,
             'tagsresource',
         ), json=tag,
-    )
-    assert_error_response(
-        response=response,
-        contained_in_msg='name": ["Missing data for required field',
-        status_code=HTTPStatus.BAD_REQUEST,
-    )
+    ) as response:
+        assert_error_response(
+            response=response,
+            contained_in_msg='name": ["Missing data for required field',
+            status_code=HTTPStatus.BAD_REQUEST,
+        )
 
     # Invalid type for name
     tag = {
@@ -179,18 +180,18 @@ def test_add_edit_tag_errors(
         'background_color': 'ffffff',
         'foreground_color': '000000',
     }
-    response = requests.request(
+    with test_session.request(
         verb,
         api_url_for(
             rotkehlchen_api_server,
             'tagsresource',
         ), json=tag,
-    )
-    assert_error_response(
-        response=response,
-        contained_in_msg='name": ["Not a valid string',
-        status_code=HTTPStatus.BAD_REQUEST,
-    )
+    ) as response:
+        assert_error_response(
+            response=response,
+            contained_in_msg='name": ["Not a valid string',
+            status_code=HTTPStatus.BAD_REQUEST,
+        )
     # Invalid type for description
     tag = {
         'name': 'Public',
@@ -198,18 +199,18 @@ def test_add_edit_tag_errors(
         'background_color': 'ffffff',
         'foreground_color': '000000',
     }
-    response = requests.request(
+    with test_session.request(
         verb,
         api_url_for(
             rotkehlchen_api_server,
             'tagsresource',
         ), json=tag,
-    )
-    assert_error_response(
-        response=response,
-        contained_in_msg='description": ["Not a valid string',
-        status_code=HTTPStatus.BAD_REQUEST,
-    )
+    ) as response:
+        assert_error_response(
+            response=response,
+            contained_in_msg='description": ["Not a valid string',
+            status_code=HTTPStatus.BAD_REQUEST,
+        )
 
     model_tag = {
         'name': 'Public',
@@ -223,87 +224,87 @@ def test_add_edit_tag_errors(
             # Missing color
             tag = model_tag.copy()
             tag.pop(field)
-            response = requests.request(
+            with test_session.request(
                 verb,
                 api_url_for(
                     rotkehlchen_api_server,
                     'tagsresource',
                 ), json=tag,
-            )
-            assert_error_response(
-                response=response,
-                contained_in_msg='Background and foreground color should be given for the tag',
-                status_code=HTTPStatus.BAD_REQUEST,
-            )
+            ) as response:
+                assert_error_response(
+                    response=response,
+                    contained_in_msg='Background and foreground color should be given for the tag',  # noqa: E501
+                    status_code=HTTPStatus.BAD_REQUEST,
+                )
         # Invalid color type
         tag = model_tag.copy()
         tag[field] = 55
-        response = requests.request(
+        with test_session.request(
             verb,
             api_url_for(
                 rotkehlchen_api_server,
                 'tagsresource',
             ), json=tag,
-        )
-        assert_error_response(
-            response=response,
-            contained_in_msg=f'"{field}": ["Failed to deserialize color code from int',
-            status_code=HTTPStatus.BAD_REQUEST,
-        )
+        ) as response:
+            assert_error_response(
+                response=response,
+                contained_in_msg=f'"{field}": ["Failed to deserialize color code from int',
+                status_code=HTTPStatus.BAD_REQUEST,
+            )
         # Wrong kind of string
         tag = model_tag.copy()
         tag[field] = 'went'
-        response = requests.request(
+        with test_session.request(
             verb,
             api_url_for(
                 rotkehlchen_api_server,
                 'tagsresource',
             ), json=tag,
-        )
-        assert_error_response(
-            response=response,
-            contained_in_msg=(
-                f'"{field}": ["The given color code value \\"went\\" could '
-                f'not be processed as a hex color value'
-            ),
-            status_code=HTTPStatus.BAD_REQUEST,
-        )
+        ) as response:
+            assert_error_response(
+                response=response,
+                contained_in_msg=(
+                    f'"{field}": ["The given color code value \\"went\\" could '
+                    f'not be processed as a hex color value'
+                ),
+                status_code=HTTPStatus.BAD_REQUEST,
+            )
         # Hex code but out of range
         tag = model_tag.copy()
         tag[field] = 'ffef01ff'
-        response = requests.request(
+        with test_session.request(
             verb,
             api_url_for(
                 rotkehlchen_api_server,
                 'tagsresource',
             ), json=tag,
-        )
-        assert_error_response(
-            response=response,
-            contained_in_msg=(
-                f'"{field}": ["The given color code value \\"ffef01ff\\" is out '
-                f'of range for a normal color field'
-            ),
-            status_code=HTTPStatus.BAD_REQUEST,
-        )
+        ) as response:
+            assert_error_response(
+                response=response,
+                contained_in_msg=(
+                    f'"{field}": ["The given color code value \\"ffef01ff\\" is out '
+                    f'of range for a normal color field'
+                ),
+                status_code=HTTPStatus.BAD_REQUEST,
+            )
         # Hex code but not enough digits
         tag = model_tag.copy()
         tag[field] = 'ff'
-        response = requests.request(
+        with test_session.request(
             verb,
             api_url_for(
                 rotkehlchen_api_server,
                 'tagsresource',
             ), json=tag,
-        )
-        assert_error_response(
-            response=response,
-            contained_in_msg=(
-                f'"{field}": ["The given color code value \\"ff\\" does not '
-                f'have 6 hexadecimal digits'
-            ),
-            status_code=HTTPStatus.BAD_REQUEST,
-        )
+        ) as response:
+            assert_error_response(
+                response=response,
+                contained_in_msg=(
+                    f'"{field}": ["The given color code value \\"ff\\" does not '
+                    f'have 6 hexadecimal digits'
+                ),
+                status_code=HTTPStatus.BAD_REQUEST,
+            )
 
 
 def test_edit_tags(

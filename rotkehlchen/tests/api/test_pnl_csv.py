@@ -91,6 +91,7 @@ def assert_csv_export_response(response, csv_dir, is_download=False):
 def test_history_export_download_csv(
         rotkehlchen_api_server_with_exchanges,
         tmpdir_factory,
+        test_session,
 ):
     """Test that the csv export/download REST API endpoint works correctly."""
     # Query history api to have report data to export
@@ -99,6 +100,7 @@ def test_history_export_download_csv(
         start_ts=0,
         end_ts=1601040361,
         prepare_mocks=True,
+        session=test_session,
     )
     csv_dir = str(tmpdir_factory.mktemp('test_csv_dir'))
     csv_dir2 = str(tmpdir_factory.mktemp('test_csv_dir2'))
@@ -123,6 +125,7 @@ def test_history_export_download_csv(
         start_ts=0,
         end_ts=1601040361,
         prepare_mocks=True,
+        session=test_session,
     )
     response = requests.get(api_url_for(
         rotkehlchen_api_server_with_exchanges,
@@ -146,6 +149,7 @@ def test_history_export_download_csv(
         start_ts=0,
         end_ts=1601040361,
         prepare_mocks=True,
+        session=test_session,
     )
     response = requests.get(
         api_url_for(rotkehlchen_api_server_with_exchanges, 'historydownloadingresource'))
@@ -164,6 +168,7 @@ def test_encoding(
         rotkehlchen_api_server,
         tmpdir_factory,
         encoding_to_use,
+        test_session,
 ):
     """Test that exporting csv and debug report works correctly with different encodings"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -194,6 +199,7 @@ def test_encoding(
             start_ts=0,
             end_ts=1601040361,
             prepare_mocks=False,
+            session=test_session,
         )
         export_dir = Path(tmpdir_factory.mktemp('test_csv_dir'))
         # now query the export endpoint with json body

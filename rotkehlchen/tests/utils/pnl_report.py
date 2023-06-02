@@ -1,7 +1,7 @@
 import random
 from contextlib import ExitStack
 
-import requests
+from rotkehlchen.tests.fixtures.networking import ConfigurableSession
 
 from rotkehlchen.tests.utils.api import (
     api_url_for,
@@ -18,6 +18,7 @@ def query_api_create_and_get_report(
         start_ts: Timestamp,
         end_ts: Timestamp,
         prepare_mocks: bool,
+        session: ConfigurableSession,
         events_offset: Optional[int] = None,
         events_limit: Optional[int] = None,
         events_ascending_timestamp: bool = False,
@@ -38,23 +39,23 @@ def query_api_create_and_get_report(
         if setup is not None:
             for manager in setup:
                 stack.enter_context(manager)
-        response = requests.get(
+        with session.get(
             api_url_for(server, 'historyprocessingresource'),
             json={'from_timestamp': start_ts, 'to_timestamp': end_ts, 'async_query': async_query},
-        )
-        if async_query:
-            task_id = assert_ok_async_response(response)
-            outcome = wait_for_async_task_with_result(server, task_id)
-        else:
-            outcome = assert_proper_response_with_result(response)
+        ) as response:
+            if async_query:
+                task_id = assert_ok_async_response(response)
+                outcome = wait_for_async_task_with_result(server, task_id)
+            else:
+                outcome = assert_proper_response_with_result(response)
 
     report_id = outcome
-    response = requests.get(
+    with session.get(
         api_url_for(server, 'per_report_resource', report_id=report_id),
-    )
-    report_result = assert_proper_response_with_result(response)
+    ) as response:
+        report_result = assert_proper_response_with_result(response)
 
-    response = requests.post(
+    with session.post(
         api_url_for(server, 'per_report_data_resource', report_id=report_id),
         json={
             'offset': events_offset,
@@ -62,6 +63,6 @@ def query_api_create_and_get_report(
             'order_by_attributes': ['timestamp'],
             'ascending': [events_ascending_timestamp],
         },
-    )
-    events_result = assert_proper_response_with_result(response)
-    return report_id, report_result, events_result
+    ) as response:
+        events_result = assert_proper_response_with_result(response)
+        return report_id, report_result, events_result

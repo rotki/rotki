@@ -53,7 +53,7 @@ from rotkehlchen.utils.misc import ts_now
     {'include_fees_in_cost_basis': True},
     {'include_fees_in_cost_basis': False},
 ])
-def test_query_history(rotkehlchen_api_server_with_exchanges, start_ts, end_ts):
+def test_query_history(rotkehlchen_api_server_with_exchanges, start_ts, end_ts, test_session):
     """Test that the history processing REST API endpoint works. Similar to test_history.py
 
     Both a test for full and limited time range.
@@ -68,6 +68,7 @@ def test_query_history(rotkehlchen_api_server_with_exchanges, start_ts, end_ts):
         start_ts=start_ts,
         end_ts=end_ts,
         prepare_mocks=True,
+        session=test_session,
     )
 
     # Simply check that the results got returned here. The actual correctness of
@@ -236,7 +237,7 @@ def test_query_history_errors(rotkehlchen_api_server):
 @pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize('ethereum_accounts', [[]])
 @pytest.mark.parametrize('mocked_price_queries', [prices])
-def test_query_history_external_exchanges(rotkehlchen_api_server):
+def test_query_history_external_exchanges(rotkehlchen_api_server, test_session):
     """Test that history is processed for external exchanges too"""
     start_ts = 0
     end_ts = 1631455982
@@ -258,6 +259,7 @@ def test_query_history_external_exchanges(rotkehlchen_api_server):
         start_ts=start_ts,
         end_ts=end_ts,
         prepare_mocks=False,
+        session=test_session,
     )
     assert len(events_result['entries']) == 2
     overview = report_result['entries'][0]['overview']
@@ -275,6 +277,7 @@ def test_query_history_external_exchanges(rotkehlchen_api_server):
 def test_query_pnl_report_events_pagination_filtering(
         rotkehlchen_api_server_with_exchanges,
         ascending_timestamp,
+        test_session,
 ):
     """Test that for PnL reports pagination, filtering and order work fine"""
     start_ts = 0
@@ -284,6 +287,7 @@ def test_query_pnl_report_events_pagination_filtering(
         start_ts=start_ts,
         end_ts=end_ts,
         prepare_mocks=True,
+        session=test_session,
     )
 
     response = requests.post(
@@ -409,7 +413,7 @@ def test_history_debug_import(rotkehlchen_api_server):
 @pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('should_mock_price_queries', [False])
-def test_missing_prices_in_pnl_report(rotkehlchen_api_server):
+def test_missing_prices_in_pnl_report(rotkehlchen_api_server, test_session):
     """
     Test missing prices propagated during the PNL report
     """
@@ -469,6 +473,7 @@ def test_missing_prices_in_pnl_report(rotkehlchen_api_server):
             start_ts=1665336820,
             end_ts=1665336823,
             prepare_mocks=False,
+            session=test_session,
         )
 
     # get the information about the report
