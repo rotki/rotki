@@ -137,7 +137,7 @@ def fixture_session_globaldb(
         tmpdir_factory,
         session_sql_vm_instructions_cb,
 ):
-    return _initialize_fixture_globaldb(
+    globaldb = _initialize_fixture_globaldb(
         custom_globaldb=None,
         tmpdir_factory=tmpdir_factory,
         sql_vm_instructions_cb=session_sql_vm_instructions_cb,
@@ -148,6 +148,9 @@ def fixture_session_globaldb(
         run_globaldb_migrations=True,
         empty_global_addressbook=False,
     )
+    yield globaldb
+
+    globaldb.cleanup()
 
 
 @pytest.fixture(name='globaldb')
@@ -162,7 +165,7 @@ def fixture_globaldb(
         run_globaldb_migrations,
         empty_global_addressbook,
 ):
-    return _initialize_fixture_globaldb(
+    globaldb = _initialize_fixture_globaldb(
         custom_globaldb=custom_globaldb,
         tmpdir_factory=tmpdir_factory,
         sql_vm_instructions_cb=sql_vm_instructions_cb,
@@ -173,6 +176,9 @@ def fixture_globaldb(
         run_globaldb_migrations=run_globaldb_migrations,
         empty_global_addressbook=empty_global_addressbook,
     )
+    yield globaldb
+
+    globaldb.cleanup()
 
 
 @pytest.fixture(name='custom_globaldb')

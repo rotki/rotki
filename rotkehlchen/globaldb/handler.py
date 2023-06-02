@@ -218,6 +218,11 @@ class GlobalDBHandler():
         GlobalDBHandler.__instance.packaged_db_lock = Semaphore()
         return GlobalDBHandler.__instance
 
+    def cleanup(self) -> None:
+        self.conn.close()
+        if self._packaged_db_conn is not None:
+            self._packaged_db_conn.close()
+
     @staticmethod
     def packaged_db_conn() -> DBConnection:
         """Return a DBConnection instance for the packaged global db."""
