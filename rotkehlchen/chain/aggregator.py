@@ -1458,7 +1458,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         self.msg_aggregator.add_message(
             message_type=WSMessageType.EVM_ACCOUNTS_DETECTION,
             data=[
-                {'evm_chain': str(chain), 'address': address}
+                {'evm_chain': chain.to_chain_id().to_name(), 'address': address}
                 for chain, address in added_accounts
             ],
         )
