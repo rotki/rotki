@@ -7,6 +7,7 @@ Changelog
 * :feature:`-` Ethereum transactions involing bribe claim payouts from StakeDAO will now be decoded properly.
 * :feature:`-` Ethereum transactions involving locking and unlocking GNO using the locked GNO contract will now be decoded properly.
 * :feature:`5250` Ethereum transactions involving AAVE v1 and v2 liquidations will now be decoded properly.
+* :bug:`-` Fix issue for ledger actions with zero rate, where the rate isn't used in the PnL report.
 * :bug:`-` ENS avatar fetching for each name's avatar should now work for all name resolvers. Even older or custom ones.
 * :bug:`-` Users will now be able to decode compounding transactions for Convex gauges.
 * :bug:`-` Users will no longer see double counting of balances in curve gauges.

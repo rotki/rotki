@@ -1,6 +1,7 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type MaybeRef } from '@vueuse/core';
 import { type ComputedRef, type Ref } from 'vue';
+import { type BigNumber } from '@rotki/common';
 import { AccountAssetBalances, type AssetBalances } from '@/types/balances';
 import {
   type BlockchainAssetBalances,
@@ -138,6 +139,78 @@ export const useEthBalancesStore = defineStore('balances/eth', () => {
     set(loopring, updateAssetBalances(loopring, prices));
   };
 
+  /**
+   * Adjusts the balances for an ethereum staking validator based on the percentage of ownership.
+   *
+   * @param publicKey the validator's public key is used to identify the balance
+   * @param oldOwnershipPercentage the ownership of the validator before the edit
+   * @param newOwnershipPercentage the ownership percentage of the validator after the edit
+   */
+  const updateEthStakingOwnership = (
+    publicKey: string,
+    oldOwnershipPercentage: BigNumber,
+    newOwnershipPercentage: BigNumber
+  ): void => {
+    const { eth2 } = get(balances);
+    if (!eth2[publicKey]) {
+      return;
+    }
+
+    const ETH2_ASSET = Blockchain.ETH2.toUpperCase();
+
+    const { amount, usdValue } = eth2[publicKey].assets[ETH2_ASSET];
+
+    const calc = (
+      value: BigNumber,
+      oldPercentage: BigNumber,
+      newPercentage: BigNumber
+    ): BigNumber => value.dividedBy(oldPercentage).multipliedBy(newPercentage);
+
+    const newAmount = calc(
+      amount,
+      oldOwnershipPercentage,
+      newOwnershipPercentage
+    );
+
+    const newValue = calc(
+      usdValue,
+      oldOwnershipPercentage,
+      newOwnershipPercentage
+    );
+
+    const amountDiff = amount.minus(newAmount);
+    const valueDiff = usdValue.minus(newValue);
+
+    set(balances, {
+      ...get(balances),
+      [Blockchain.ETH2]: {
+        ...eth2,
+        [publicKey]: {
+          assets: {
+            [ETH2_ASSET]: {
+              amount: newAmount,
+              usdValue: newValue
+            }
+          }
+        }
+      }
+    });
+
+    const oldTotals = get(totals);
+    const { amount: oldTotalAmount, usdValue: oldTotalUsdValue } =
+      oldTotals[Blockchain.ETH2][ETH2_ASSET];
+
+    set(totals, {
+      ...oldTotals,
+      [Blockchain.ETH2]: {
+        [ETH2_ASSET]: {
+          amount: oldTotalAmount.plus(amountDiff),
+          usdValue: oldTotalUsdValue.plus(valueDiff)
+        }
+      }
+    });
+  };
+
   return {
     balances,
     loopring,
@@ -146,7 +219,8 @@ export const useEthBalancesStore = defineStore('balances/eth', () => {
     update,
     updatePrices,
     getLoopringAssetBalances,
-    fetchLoopringBalances
+    fetchLoopringBalances,
+    updateEthStakingOwnership
   };
 });
 

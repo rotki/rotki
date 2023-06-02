@@ -120,7 +120,7 @@ export const useEthAccountBalances = () => {
         if (validatorBalances && validatorBalances.assets) {
           const assets = validatorBalances.assets;
           balance = {
-            amount: assets[Blockchain.ETH2].amount,
+            amount: assets[Blockchain.ETH2.toUpperCase()].amount,
             usdValue: assetSum(assets)
           };
         }
