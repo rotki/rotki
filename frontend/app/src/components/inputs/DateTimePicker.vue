@@ -76,7 +76,7 @@ type ValidationRules = ((v: string) => boolean | string)[];
 
 const props = withDefaults(
   defineProps<{
-    label: string;
+    label?: string;
     hint?: string;
     persistentHint?: boolean;
     value?: string;
@@ -90,6 +90,7 @@ const props = withDefaults(
     hideDetails?: boolean;
   }>(),
   {
+    label: '',
     hint: '',
     persistentHint: false,
     value: '',
@@ -175,15 +176,11 @@ const getDefaultTimezoneName = (offset: number) => {
 const setCurrentTimezone = () => {
   const guessedTimezone = dayjs.tz.guess();
   const offset = dayjs().utcOffset() / 60;
-
-  const doesTimezoneExist = timezones.filter(
+  const doesTimezoneExist = timezones.find(
     timezone => timezone === guessedTimezone
   );
 
-  set(
-    selectedTimezone,
-    doesTimezoneExist ? guessedTimezone : getDefaultTimezoneName(offset)
-  );
+  set(selectedTimezone, doesTimezoneExist ?? getDefaultTimezoneName(offset));
 };
 
 const input = (dateTime: string) => {
@@ -192,14 +189,20 @@ const input = (dateTime: string) => {
 
 const emitIfValid = (value: string) => {
   if (isValid(value)) {
-    input(
-      convertDateByTimezone(
-        value,
-        DateFormat.DateMonthYearHourMinuteSecond,
-        get(selectedTimezone),
-        dayjs.tz.guess()
-      )
+    const changedDateTimezone = convertDateByTimezone(
+      value,
+      get(dateInputFormat),
+      get(selectedTimezone),
+      dayjs.tz.guess()
     );
+
+    const formattedValue = changeDateFormat(
+      changedDateTimezone,
+      get(dateInputFormat),
+      DateFormat.DateMonthYearHourMinuteSecond
+    );
+
+    input(formattedValue);
   }
 };
 
@@ -290,24 +293,36 @@ onMounted(() => {
 });
 
 watch(
-  imask,
-  (imask, prev) => {
-    if (!prev || !imask?.value) {
-      return;
+  () => get(imask)?.value,
+  value => {
+    if (value) {
+      set(currentValue, value);
+      emitIfValid(value);
     }
-
-    set(currentValue, imask.value);
-    emitIfValid(imask.value);
-  },
-  { deep: true }
+  }
 );
+
+const inputted = (emittedValue: string) => {
+  const current = get(currentValue);
+  set(currentValue, emittedValue);
+  emitIfValid(emittedValue);
+
+  // revert back if inputted value exceed the max length allowed.
+  const sanitized = emittedValue.replace(/_/g, '');
+  if (sanitized.length > 19) {
+    nextTick(() => {
+      set(currentValue, current);
+      emitIfValid(current);
+    });
+  }
+};
 </script>
 
 <template>
   <div>
     <v-text-field
       ref="inputField"
-      v-model="currentValue"
+      :value="currentValue"
       :label="label"
       :hint="hint"
       :disabled="disabled"
@@ -317,6 +332,7 @@ watch(
       :rules="allRules"
       :outlined="outlined"
       :error-messages="errorMessages"
+      @input="inputted($event)"
     >
       <template #append>
         <v-menu
@@ -346,7 +362,12 @@ watch(
             />
           </div>
         </v-menu>
-        <v-btn icon class="mt-n2" @click="setNow()">
+        <v-btn
+          data-cy="date-time-picker__set-now-button"
+          icon
+          class="mt-n2"
+          @click="setNow()"
+        >
           <v-icon>mdi-clock-outline</v-icon>
         </v-btn>
       </template>

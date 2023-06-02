@@ -34,7 +34,7 @@ vi.mock('@/composables/api/tags', () => ({
 }));
 
 describe('TagInput.vue', () => {
-  let wrapper: Wrapper<any>;
+  let wrapper: Wrapper<TagInput>;
   let store: ReturnType<typeof useTagStore>;
 
   afterEach(() => {

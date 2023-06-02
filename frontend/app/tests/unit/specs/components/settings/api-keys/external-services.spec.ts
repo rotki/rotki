@@ -7,6 +7,7 @@ import ExternalServices from '@/pages/settings/api-keys/external/index.vue';
 import { type ExternalServiceKeys } from '@/types/user';
 import EvmChainIcon from '@/components/helper/display/icons/EvmChainIcon.vue';
 import createCustomPinia from '../../../../utils/create-pinia';
+import type ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
 
 vi.mock('vue-router/composables', () => ({
   useRoute: vi.fn().mockReturnValue(
@@ -172,10 +173,12 @@ describe('ExternalServices.vue', () => {
       const cryptoCompare = wrapper.find(
         '.external-services__cryptocompare-key'
       );
-      // @ts-ignore
-      expect(etherscanKey.vm.value).toBe('123');
-      // @ts-ignore
-      expect(cryptoCompare.vm.value).toBe('123');
+      expect((etherscanKey.vm as ReturnType<typeof ServiceKey>).value).toBe(
+        '123'
+      );
+      expect((cryptoCompare.vm as ReturnType<typeof ServiceKey>).value).toBe(
+        '123'
+      );
     });
 
     test('confirm and delete etherscan key', async () => {
