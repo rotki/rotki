@@ -34,6 +34,7 @@ from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures.balance import Balance, BalanceType
 from rotkehlchen.accounting.structures.base import HistoryBaseEntryType, StakingEvent
 from rotkehlchen.accounting.structures.evm_event import EvmProduct
+from rotkehlchen.accounting.structures.processed_event import AccountingEventExportType
 from rotkehlchen.accounting.structures.types import (
     ActionType,
     HistoryEventSubType,
@@ -3403,8 +3404,7 @@ class RestAPI():
         result = {
             'entries': [x.to_exported_dict(
                 ts_converter=self.rotkehlchen.accountant.pots[0].timestamp_to_date,
-                eth_explorer=None,
-                for_api=True,
+                export_type=AccountingEventExportType.API,
             ) for x in report_data],
             'entries_found': entries_found,
             'entries_limit': entries_limit,

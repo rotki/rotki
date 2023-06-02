@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 import pytest
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
@@ -17,7 +19,13 @@ from rotkehlchen.tests.utils.accounting import (
 from rotkehlchen.tests.utils.constants import A_CHF, A_XMR
 from rotkehlchen.tests.utils.history import prices
 from rotkehlchen.tests.utils.messages import no_message_errors
-from rotkehlchen.types import CostBasisMethod, Location, Timestamp, TradeType
+from rotkehlchen.types import (
+    EVM_CHAINS_WITH_TRANSACTIONS, CostBasisMethod, Location,
+    Timestamp, TradeType,
+)
+
+if TYPE_CHECKING:
+    from rotkehlchen.accounting.accountant import Accountant
 
 
 @pytest.mark.parametrize(('db_settings', 'expected_pnls'), [
@@ -359,3 +367,9 @@ def test_no_fiat_missing_acquisitions(accountant):
     no_message_errors(accountant.msg_aggregator)
     missing_acquisitions = accountant.pots[0].cost_basis.missing_acquisitions
     assert missing_acquisitions == []
+
+
+def test_all_chains_have_explorers(accountant: 'Accountant'):
+    """Test that all chain in the csv exporter have a valid explorer url"""
+    for chain in EVM_CHAINS_WITH_TRANSACTIONS:
+        assert chain in accountant.csvexporter.transaction_explorers

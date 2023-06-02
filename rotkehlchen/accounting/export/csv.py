@@ -7,10 +7,14 @@ from typing import TYPE_CHECKING, Any, Literal
 from zipfile import ZIP_DEFLATED, ZipFile
 
 from rotkehlchen.accounting.pnl import PnlTotals
+from rotkehlchen.accounting.structures.processed_event import AccountingEventExportType
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import CostBasisMethod, Timestamp
+from rotkehlchen.types import (
+    EVM_CHAINS_WITH_TRANSACTIONS, EVM_LOCATIONS, ChainID,
+    CostBasisMethod, SupportedBlockchain, Timestamp,
+)
 from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
 from rotkehlchen.utils.version_check import get_current_version
 
@@ -22,7 +26,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 FILENAME_ALL_CSV = 'all_events.csv'
-ETH_EXPLORER = 'https://etherscan.io/tx/'
+ETHERSCAN_EXPLORER_TX_URL = 'https://{base_url}/tx/'
 
 ACCOUNTING_SETTINGS = (
     'include_crypto2crypto',
@@ -74,20 +78,35 @@ class CSVExporter(CustomizableDateMixin):
     def reset(self, start_ts: Timestamp, end_ts: Timestamp) -> None:
         self.start_ts = start_ts
         self.end_ts = end_ts
+        self.transaction_explorers: dict[SupportedBlockchain, str] = {
+            SupportedBlockchain.ETHEREUM: ETHERSCAN_EXPLORER_TX_URL.format(base_url='etherscan.io'),  # noqa: E501
+            SupportedBlockchain.OPTIMISM: ETHERSCAN_EXPLORER_TX_URL.format(base_url='optimistic.etherscan.io'),  # noqa: E501
+            SupportedBlockchain.POLYGON_POS: ETHERSCAN_EXPLORER_TX_URL.format(base_url='polygonscan.com'),  # noqa: E501
+        }
         with self.database.conn.read_ctx() as cursor:
             self.reload_settings(cursor)
-        try:
-            frontend_settings = json.loads(self.settings.frontend_settings)
-            if (
-                'explorers' in frontend_settings and
-                'ETH' in frontend_settings['explorers'] and
-                'transaction' in frontend_settings['explorers']['ETH']
-            ):
-                self.eth_explorer = frontend_settings['explorers']['ETH']['transaction']
-            else:
-                self.eth_explorer = ETH_EXPLORER
-        except (json.decoder.JSONDecodeError, KeyError):
-            self.eth_explorer = ETH_EXPLORER
+
+        frontend_settings = None
+        if self.settings.frontend_settings is not None:
+            try:
+                frontend_settings = json.loads(self.settings.frontend_settings)
+            except json.decoder.JSONDecodeError as e:
+                log.error(
+                    'Could not read frontend settings to obtain the blockchain explorers '
+                    f'preferences: {e!s}',
+                )
+
+        if frontend_settings is not None:
+            for chain in EVM_CHAINS_WITH_TRANSACTIONS:
+                try:
+                    if (
+                        'explorers' in frontend_settings and
+                        chain.serialize() in frontend_settings['explorers'] and
+                        'transaction' in frontend_settings['explorers'][chain.serialize()]
+                    ):
+                        self.transaction_explorers[chain] = frontend_settings['explorers'][chain.serialize()]['transaction']  # noqa: E501
+                except KeyError as e:
+                    log.error(f'Could not read explorer for chain {chain} from user settings due to missing key {e!s}')  # noqa: E501
 
     def _add_sumif_formula(
             self,
@@ -266,10 +285,18 @@ class CSVExporter(CustomizableDateMixin):
         return success, filename
 
     def to_csv_entry(self, event: 'ProcessedAccountingEvent') -> dict[str, Any]:
+        """Prepare the provided event to have a common format for the accounting
+        CSV exported file.
+        """
+        evm_explorer = None
+        if event.location in EVM_LOCATIONS:
+            # provide the explorer url to be used in the notes
+            evm_explorer = self.transaction_explorers[ChainID(event.location.to_chain_id()).to_blockchain()]  # noqa: E501
+
         dict_event = event.to_exported_dict(
             ts_converter=self.timestamp_to_date,
-            eth_explorer=self.eth_explorer,
-            for_api=False,
+            export_type=AccountingEventExportType.CSV,
+            evm_explorer=evm_explorer,
         )
         # For CSV also convert timestamp to date
         dict_event['timestamp'] = self.timestamp_to_date(event.timestamp)
