@@ -1,3 +1,4 @@
+import operator
 from contextlib import ExitStack
 from http import HTTPStatus
 from unittest.mock import patch
@@ -7,10 +8,12 @@ import pytest
 import requests
 from eth_utils import to_checksum_address
 
+from rotkehlchen.api.server import APIServer
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_AVAX, A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
+from rotkehlchen.tests.fixtures.websockets import WebsocketReader
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -22,7 +25,7 @@ from rotkehlchen.tests.utils.avalanche import AVALANCHE_ACC1_AVAX_ADDR
 from rotkehlchen.tests.utils.blockchain import setup_evm_addresses_activity_mock
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
-from rotkehlchen.types import SupportedBlockchain
+from rotkehlchen.types import ChainID, ChecksumEvmAddress, SupportedBlockchain
 from rotkehlchen.utils.misc import ts_now
 
 ADDY = string_to_evm_address('0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045')
@@ -296,6 +299,40 @@ def test_add_multievm_accounts(rotkehlchen_api_server):
     assert result == [
         {'address': common_account, 'label': label, 'tags': ['metamask']},
     ]
+
+
+@pytest.mark.parametrize('network_mocking', [False])
+@pytest.mark.parametrize('ethereum_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
+@pytest.mark.parametrize('legacy_messages_via_websockets', [True])
+def test_detect_evm_accounts(
+        rotkehlchen_api_server: 'APIServer',
+        ethereum_accounts: list[ChecksumEvmAddress],
+        websocket_connection: 'WebsocketReader',
+) -> None:
+    """
+    Test that the endpoint to detect new evm addresses works properly
+    and sends the ws messages
+    """
+    response = requests.post(api_url_for(
+        rotkehlchen_api_server,
+        'evmaccountsresource',
+    ))
+    assert_proper_response(response)
+    websocket_connection.wait_until_messages_num(num=1, timeout=10)
+    assert websocket_connection.messages_num() == 1
+    msg = websocket_connection.pop_message()
+    assert msg['type'] == 'evm_accounts_detection'
+    assert sorted(msg['data'], key=operator.itemgetter('evm_chain', 'address')) == sorted([
+        {'evm_chain': ChainID.POLYGON_POS.to_name(), 'address': ethereum_accounts[0]},
+        {'evm_chain': ChainID.OPTIMISM.to_name(), 'address': ethereum_accounts[0]},
+    ], key=operator.itemgetter('evm_chain', 'address'))
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    db = rotki.data.db
+    with db.conn.read_ctx() as cursor:
+        blockchain_accounts = db.get_blockchain_accounts(cursor)
+    assert ethereum_accounts[0] in blockchain_accounts.eth
+    assert ethereum_accounts[0] in blockchain_accounts.polygon_pos
+    assert ethereum_accounts[0] in blockchain_accounts.optimism
 
 
 @pytest.mark.parametrize('have_decoders', [True])
