@@ -1,7 +1,8 @@
 import builtins
 import json
 from dataclasses import dataclass, field
-from typing import Any, Callable, Optional, TypeVar
+from enum import Enum, auto
+from typing import Any, Callable, Literal, Optional, TypeVar, overload
 
 from rotkehlchen.accounting.cost_basis import CostBasisInfo
 from rotkehlchen.accounting.mixins.event import AccountingEventType
@@ -17,6 +18,12 @@ from rotkehlchen.types import Location, Price, Timestamp
 from rotkehlchen.utils.serialization import rlk_jsondumps
 
 T = TypeVar('T', bound='ProcessedAccountingEvent')
+
+
+class AccountingEventExportType(Enum):
+    API = auto()
+    CSV = auto()
+    DB = auto()
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
@@ -53,16 +60,35 @@ class ProcessedAccountingEvent:
 
         return desc
 
+    @overload
     def to_exported_dict(
             self,
             ts_converter: Callable[[Timestamp], str],
-            eth_explorer: Optional[str],
-            for_api: bool,
+            export_type: Literal[AccountingEventExportType.CSV],
+            evm_explorer: Optional[str],
     ) -> dict[str, Any]:
-        """These are the fields that will appear in CSV and report API
+        ...
 
-        If `eth_explorer` is given then this is for exporting to CSV
-        If `for_api` is True then this is for exporting to the rest API
+    @overload
+    def to_exported_dict(
+            self,
+            ts_converter: Callable[[Timestamp], str],
+            export_type: Literal[AccountingEventExportType.API, AccountingEventExportType.DB],
+    ) -> dict[str, Any]:
+        ...
+
+    def to_exported_dict(
+            self,
+            ts_converter: Callable[[Timestamp], str],
+            export_type: AccountingEventExportType,
+            evm_explorer: Optional[str] = None,
+    ) -> dict[str, Any]:
+        """These are the fields that will appear in CSV, report API and are also exported to the
+        database.
+
+        `export_type` will affect the information that is added to the exported mapping.
+        If `export_type` is set to CSV then `evm_explorer` is used to format the notes adding
+        a link to each transaction.
         """
         exported_dict = {
             'type': self.type.serialize(),
@@ -77,22 +103,22 @@ class ProcessedAccountingEvent:
             'pnl_free': str(self.pnl.free),
         }
         tx_hash = self.extra_data.get('tx_hash', None)
-        if eth_explorer:
+        if export_type == AccountingEventExportType.CSV:
             taxable_basis = free_basis = ''
             if self.cost_basis is not None:
                 taxable_basis, free_basis = self.cost_basis.to_string(ts_converter)
             exported_dict['cost_basis_taxable'] = taxable_basis
             exported_dict['cost_basis_free'] = free_basis
             exported_dict['asset'] = str(self.asset)
-            if tx_hash:
-                exported_dict['notes'] = f'{eth_explorer}{tx_hash}  ->  {self.notes}'
-        else:
+            if tx_hash is not None:
+                exported_dict['notes'] = f'{evm_explorer}{tx_hash}  ->  {self.notes}'
+        else:  # for the other types of export we include the cost basis information
             cost_basis = None
             if self.cost_basis is not None:
                 cost_basis = self.cost_basis.serialize()
             exported_dict['cost_basis'] = cost_basis
 
-        if for_api is True:
+        if export_type == AccountingEventExportType.API:
             if tx_hash is not None:
                 exported_dict['notes'] = f'transaction {tx_hash} {self.notes}'
 
@@ -104,11 +130,7 @@ class ProcessedAccountingEvent:
 
     def serialize_to_dict(self, ts_converter: Callable[[Timestamp], str]) -> dict[str, Any]:
         """This is used to serialize to dict for saving to the DB"""
-        data = self.to_exported_dict(
-            ts_converter=ts_converter,
-            eth_explorer=None,
-            for_api=False,
-        )
+        data = self.to_exported_dict(ts_converter=ts_converter, export_type=AccountingEventExportType.DB)  # noqa: E501
         data['extra_data'] = self.extra_data
         data['notes'] = self.notes  # undo the tx_hash addition to notes before going to the DB
         data['index'] = self.index

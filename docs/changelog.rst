@@ -12,6 +12,7 @@ Changelog
 * :bug:`-` Users will now be able to decode compounding transactions for Convex gauges.
 * :bug:`-` Users will no longer see double counting of balances in curve gauges.
 * :bug:`-` Events that were imported via a csv file will now be properly accounted for in PnL reports.
+* :bug:`-` Notes in exported CSV reports will contain the correct url for transactions in different EVM chains.
 * :feature:`-` The PnL report page will load faster if there is many old reports in the DB.
 * :feature:`-` Convex staking and Curve gauge balances will no longer need a manual balances referesh to be detected.
 
