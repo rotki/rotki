@@ -1232,7 +1232,7 @@ class FrontendBuilder:
             f'Restoring dependencies using Node.js {node_version} and pnpm@{pnpm_version}',
         )
         ret_code = subprocess.call(
-            'pnpm install --no-optional',
+            'pnpm install --no-optional --frozen-lockfile',
             shell=True,
         )
         if ret_code != 0:

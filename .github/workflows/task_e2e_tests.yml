@@ -65,7 +65,7 @@ jobs:
           pip install -e .
       - name: Restore dependencies
         working-directory: ./frontend
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
       - name: Run e2e tests
         env:
           CYPRESS_ETHERSCAN_API_KEY: ${{ secrets.ETHERSCAN_API_KEY }}

@@ -36,7 +36,7 @@ You can provide this configuration in a `.env` file in the `dev-proxy` directory
 From the parent directory
 
 ```bash
-pnpm install
+pnpm install --frozen-lockfile
 pnpm run --filter @rotki/dev-proxy serve
 ```
 

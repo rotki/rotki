@@ -476,7 +476,7 @@ If you are on an older version of pnpm, you can install it by::
 Install electron and any other dependencies by::
 
     cd frontend
-    pnpm install
+    pnpm install --frozen-lockfile
 
 Create a new `virtual environment <http://docs.python-guide.org/en/latest/dev/virtualenvs/>`_ with python 3.9 to install all the python dependencies. If you don't have ``mkvirtualenv`` then check how to get it depending on your distribution. `Here <https://virtualenvwrapper.readthedocs.io/en/latest/install.html#basic-installation>`__ is a guide for Ubuntu and `here <https://wiki.archlinux.org/index.php/Python/Virtual_environment>`__ is one for ArchLinux::
 
@@ -602,7 +602,7 @@ If you are on an older version of pnpm, you can install it by::
 Almost there, we can now install all the Node.js dependencies of the frontend app:
 
     $ cd frontend
-    $ pnpm install
+    $ pnpm install --frozen-lockfile
 
 You can now start rotki, still from the ``frontend`` directory::
 
@@ -614,6 +614,13 @@ To package the application for your platform you need to run the packaging scrip
 
     pip3 install packaging requests
     ./package.py --build full
+
+
+.. note::
+
+    If you are using an Apple Silicon mac to package rotki, you might come across the following error during the SQLCipher verification step.
+    `ImportError: dlopen(/.../lib/python3.9/site-packages/pysqlcipher3/_sqlite3.cpython-39-darwin.so, 0x0002): symbol not found in flat namespace (_ERR_error_string)`
+    This is a known problem that does not affect the final binary. You can use `SKIP_SQLCIPHER_VERIFICATION ./package.py` to build while skipping the verification step.
 
 Windows
 ==========
@@ -714,7 +721,7 @@ Installing Electron and Running rotki
 1. In your terminal, navigate to your rotki development directory and enter the following commands to install electron and its dependencies::
 
     cd frontend
-    pnpm install
+    pnpm install --frozen-lockfile
 
 2. If you get any errors you might need to build the ``@rotki/common`` library::
 
