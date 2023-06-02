@@ -8,7 +8,7 @@ from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.evm.accounting.structures import (
-    BaseEventSettins,
+    BaseEventSettings,
     TxAccountingTreatment,
     TxEventSettings,
 )
@@ -24,64 +24,65 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-def make_default_accounting_settings(pot: 'AccountingPot') -> dict[str, BaseEventSettins]:
+def make_default_accounting_settings(pot: 'AccountingPot') -> dict[str, BaseEventSettings]:
     """
     Returns accounting settings for events that can come from various decoders and thus don't have
     any particular protocol. These settings also allow users to customize events in the UI.
-    Users are supposed to apply these settings in the history view.
+    Users are supposed to apply these settings in the history view once they become customizable:
+    https://github.com/rotki/rotki/issues/4341
     """
     result = {}
     gas_key = str(HistoryEventType.SPEND) + '__' + str(HistoryEventSubType.FEE) + '__' + CPT_GAS  # noqa: E501
-    result[gas_key] = BaseEventSettins(
+    result[gas_key] = BaseEventSettings(
         taxable=pot.settings.include_gas_costs,
         count_entire_amount_spend=pot.settings.include_gas_costs,
         count_cost_basis_pnl=pot.settings.include_crypto2crypto,
         method='spend',
     )
     spend_key = str(HistoryEventType.SPEND) + '__' + str(HistoryEventSubType.NONE)
-    result[spend_key] = BaseEventSettins(
+    result[spend_key] = BaseEventSettings(
         taxable=True,
         count_entire_amount_spend=True,
         count_cost_basis_pnl=True,
         method='spend',
     )
     receive_key = str(HistoryEventType.RECEIVE) + '__' + str(HistoryEventSubType.NONE)
-    result[receive_key] = BaseEventSettins(
+    result[receive_key] = BaseEventSettings(
         taxable=True,
         count_entire_amount_spend=True,
         count_cost_basis_pnl=True,
         method='acquisition',
     )
     deposit_key = str(HistoryEventType.DEPOSIT) + '__' + str(HistoryEventSubType.NONE)
-    result[deposit_key] = BaseEventSettins(
+    result[deposit_key] = BaseEventSettings(
         taxable=False,
         count_entire_amount_spend=False,
         count_cost_basis_pnl=False,
         method='spend',
     )
     withdraw_key = str(HistoryEventType.WITHDRAWAL) + '__' + str(HistoryEventSubType.NONE)
-    result[withdraw_key] = BaseEventSettins(
+    result[withdraw_key] = BaseEventSettings(
         taxable=False,
         count_entire_amount_spend=False,
         count_cost_basis_pnl=False,
         method='acquisition',
     )
     fee_key = str(HistoryEventType.SPEND) + '__' + str(HistoryEventSubType.FEE)
-    result[fee_key] = BaseEventSettins(
+    result[fee_key] = BaseEventSettings(
         taxable=True,
         count_entire_amount_spend=True,
         count_cost_basis_pnl=True,
         method='spend',
     )
     renew_key = str(HistoryEventType.RENEW) + '__' + str(HistoryEventSubType.NONE)
-    result[renew_key] = BaseEventSettins(
+    result[renew_key] = BaseEventSettings(
         taxable=True,
         count_entire_amount_spend=True,
         count_cost_basis_pnl=True,
         method='spend',
     )
     swap_key = str(HistoryEventType.TRADE) + '__' + str(HistoryEventSubType.SPEND)
-    result[swap_key] = BaseEventSettins(
+    result[swap_key] = BaseEventSettings(
         taxable=True,
         count_entire_amount_spend=False,
         count_cost_basis_pnl=True,
@@ -89,7 +90,7 @@ def make_default_accounting_settings(pot: 'AccountingPot') -> dict[str, BaseEven
         accounting_treatment=TxAccountingTreatment.SWAP,
     )
     airdrop_key = str(HistoryEventType.RECEIVE) + '__' + str(HistoryEventSubType.AIRDROP)
-    result[airdrop_key] = BaseEventSettins(
+    result[airdrop_key] = BaseEventSettings(
         taxable=LedgerActionType.AIRDROP in pot.settings.taxable_ledger_actions,
         # count_entire_amount_spend and count_cost_basis_pnl don't matter for acquisitions.
         count_entire_amount_spend=False,
@@ -97,7 +98,7 @@ def make_default_accounting_settings(pot: 'AccountingPot') -> dict[str, BaseEven
         method='acquisition',
     )
     reward_key = str(HistoryEventType.RECEIVE) + '__' + str(HistoryEventSubType.REWARD)
-    result[reward_key] = BaseEventSettins(
+    result[reward_key] = BaseEventSettings(
         taxable=True,
         # count_entire_amount_spend and count_cost_basis_pnl don't matter for acquisitions.
         count_entire_amount_spend=False,
@@ -130,7 +131,11 @@ def history_base_entries_iterator(
         yield event  # type: ignore[misc]  # event is guaranteed to be of type T
 
 
-class HistoryBaseEntriesAccountant:
+class EventsAccountant:
+    """
+    This class contains the different rules applied to history events during the accounting
+    process. It applies special rules for evm events and also the default defined rules.
+    """
 
     def __init__(
             self,
@@ -139,11 +144,11 @@ class HistoryBaseEntriesAccountant:
     ) -> None:
         self.evm_accounting_aggregators = evm_accounting_aggregators
         self.pot = pot
-        self.tx_event_settings: dict[str, BaseEventSettins] = {}
+        self.event_settings: dict[str, BaseEventSettings] = {}
 
     def reset(self) -> None:
         self.evm_accounting_aggregators.reset()
-        self.tx_event_settings = (  # Using | operator is fine since keys are unique
+        self.event_settings = (  # Using | operator is fine since keys are unique
             self.evm_accounting_aggregators.get_accounting_settings(self.pot) |
             make_default_accounting_settings(self.pot)
         )
@@ -155,13 +160,13 @@ class HistoryBaseEntriesAccountant:
     ) -> int:
         """Process a history base entry and return number of actions consumed from the iterator"""
         timestamp = event.get_timestamp_in_sec()
-        event_settings = self.tx_event_settings.get(event.get_type_identifier(), None)
+        event_settings = self.event_settings.get(event.get_type_identifier(), None)
         if event_settings is None:
             if isinstance(event, EvmEvent) is False:
                 return 1
 
             # For evm events try to find settings without counterparty
-            event_settings = self.tx_event_settings.get(
+            event_settings = self.event_settings.get(
                 event.get_type_identifier(include_counterparty=False),
             )
             if event_settings is None:
@@ -222,7 +227,7 @@ class HistoryBaseEntriesAccountant:
             timestamp: Timestamp,
             out_event: HistoryBaseEntry,
             in_event: HistoryBaseEntry,
-            event_settings: BaseEventSettins,
+            event_settings: BaseEventSettings,
             general_extra_data: dict[str, Any],
     ) -> int:
         """

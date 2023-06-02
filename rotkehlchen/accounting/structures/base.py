@@ -431,7 +431,7 @@ class HistoryEvent(HistoryBaseEntry):
             )
             return 1
 
-        return accounting.history_base_entries.process(event=self, events_iterator=events_iterator)
+        return accounting.events_accountant.process(event=self, events_iterator=events_iterator)
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
