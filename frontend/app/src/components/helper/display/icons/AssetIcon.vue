@@ -3,6 +3,7 @@ import { Blockchain } from '@rotki/common/lib/blockchain';
 import { getIdentifierFromSymbolMap } from '@rotki/common/lib/data';
 import { type ComputedRef } from 'vue';
 import { useCurrencies } from '@/types/currencies';
+import { isBlockchain } from '@/types/blockchain/chains';
 
 const props = defineProps({
   identifier: { required: true, type: String },
@@ -34,9 +35,10 @@ const css = useCssModule();
 
 const { currencies } = useCurrencies();
 
-const mappedIdentifier: ComputedRef<string> = computed(() =>
-  getIdentifierFromSymbolMap(get(identifier))
-);
+const mappedIdentifier: ComputedRef<string> = computed(() => {
+  const id = getIdentifierFromSymbolMap(get(identifier));
+  return isBlockchain(id) ? id.toUpperCase() : id;
+});
 
 const currency = computed<string | undefined>(() => {
   const id = get(mappedIdentifier);

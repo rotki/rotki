@@ -3,16 +3,19 @@ import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type Eth2Validator } from '@/types/balances';
 import { type ValidationErrors } from '@/types/api/errors';
 import { type BlockchainAccountWithBalance } from '@/types/blockchain/accounts';
+import { type ActionStatus } from '@/types/action';
+
+const { tc } = useI18n();
 
 const validator = ref<Eth2Validator | null>(null);
 const errorMessages = ref<ValidationErrors>({});
 
 const { addEth2Validator, editEth2Validator } = useEthAccountsStore();
-const { refreshAccounts } = useBlockchains();
+const { refreshAccounts, fetchAccounts } = useBlockchains();
+const { updateEthStakingOwnership } = useEthBalancesStore();
 const { setMessage } = useMessageStore();
 const { valid, setSave, accountToEdit } = useAccountDialog();
 const { pending, loading } = useAccountLoading();
-const { tc } = useI18n();
 
 const showMessage = (message: string, id: string, edit: boolean) => {
   let description: string;
@@ -40,26 +43,42 @@ const showMessage = (message: string, id: string, edit: boolean) => {
 };
 
 const save = async () => {
-  const edit = !!get(accountToEdit);
-
   set(pending, true);
   const payload = get(validator);
   assert(payload);
-  const result = await (edit
-    ? editEth2Validator(payload)
-    : addEth2Validator(payload));
+
+  let result: ActionStatus<ValidationErrors | string>;
+  const isEdit = isDefined(accountToEdit);
+  if (isEdit) {
+    result = await editEth2Validator(payload);
+  } else {
+    result = await addEth2Validator(payload);
+  }
+
   if (result.success) {
-    startPromise(refreshAccounts(Blockchain.ETH2));
-  } else if (result.message) {
-    if (typeof result.message === 'string') {
-      showMessage(
-        result.message,
-        payload.publicKey || payload.validatorIndex || '',
-        edit
+    if (isDefined(accountToEdit)) {
+      const newVar = get(accountToEdit);
+      assert('ownershipPercentage' in newVar && newVar.ownershipPercentage);
+      assert(payload.publicKey);
+      assert(payload.ownershipPercentage);
+
+      updateEthStakingOwnership(
+        payload.publicKey,
+        bigNumberify(newVar.ownershipPercentage),
+        bigNumberify(payload.ownershipPercentage)
       );
+      startPromise(fetchAccounts(Blockchain.ETH2));
     } else {
-      set(errorMessages, result.message);
+      startPromise(refreshAccounts(Blockchain.ETH2));
     }
+  } else if (typeof result.message === 'string') {
+    showMessage(
+      result.message,
+      payload.publicKey || payload.validatorIndex || '',
+      isEdit
+    );
+  } else {
+    set(errorMessages, result.message);
   }
 
   set(pending, false);

@@ -117,14 +117,6 @@ export const useEthAccountsStore = defineStore(
 
       try {
         const success = await editEth2ValidatorCaller(payload);
-
-        if (success) {
-          const { resetStatus } = useStatusUpdater(Section.STAKING_ETH2);
-          resetStatus();
-          resetStatus(Section.STAKING_ETH2_DEPOSITS);
-          resetStatus(Section.STAKING_ETH2_STATS);
-        }
-
         return { success, message: '' };
       } catch (e: any) {
         logger.error(e);
