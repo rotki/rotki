@@ -1,29 +1,22 @@
 <script setup lang="ts">
-import { type PropType } from 'vue';
-
-const props = defineProps({
-  title: {
-    required: false,
-    type: String,
-    default: ''
-  },
-  subtitle: {
-    required: false,
-    type: String as PropType<string | null>,
-    default: null
-  },
-  dense: { required: false, type: Boolean, default: false },
-  showDetails: {
-    required: false,
-    type: Boolean,
-    default: true
-  },
-  loading: {
-    required: false,
-    type: Boolean,
-    default: false
+const props = withDefaults(
+  defineProps<{
+    title?: string;
+    subtitle?: string | null;
+    dense?: boolean;
+    showDetails?: boolean;
+    loading?: boolean;
+    fullWidth?: boolean;
+  }>(),
+  {
+    title: '',
+    subtitle: null,
+    dense: false,
+    showDetails: true,
+    loading: false,
+    fullWidth: true
   }
-});
+);
 
 const emit = defineEmits(['click']);
 const { subtitle } = toRefs(props);
@@ -58,7 +51,8 @@ const click = () => emit('click');
     v-bind="rootAttrs"
     :class="{
       [css.wrapper]: true,
-      [css.dense]: dense
+      [css.dense]: dense,
+      [css['full-width']]: fullWidth
     }"
     @click="click()"
   >
@@ -93,7 +87,10 @@ const click = () => emit('click');
   display: flex;
   flex-direction: row;
   align-items: center;
-  width: 100%;
+
+  &.full-width {
+    width: 100%;
+  }
 
   &:not(.dense) {
     margin-top: 12px;
