@@ -1,5 +1,6 @@
 import os
 import sys
+from collections.abc import Generator
 from contextlib import ExitStack
 from pathlib import Path
 from typing import Any, Optional
@@ -186,29 +187,31 @@ def database(
         new_db_unlock_actions,
         sql_vm_instructions_cb,
         perform_upgrades_at_unlock,
-) -> Optional[DBHandler]:
+) -> Generator[Optional[DBHandler], None, None]:
     if not start_with_logged_in_user:
-        return None
+        yield None
+    else:
+        db_handler = _init_database(
+            data_dir=user_data_dir,
+            msg_aggregator=function_scope_messages_aggregator,
+            password=db_password,
+            db_settings=db_settings,
+            ignored_assets=ignored_assets,
+            blockchain_accounts=blockchain_accounts,
+            include_etherscan_key=include_etherscan_key,
+            include_cryptocompare_key=include_cryptocompare_key,
+            tags=tags,
+            manually_tracked_balances=manually_tracked_balances,
+            data_migration_version=data_migration_version,
+            use_custom_database=use_custom_database,
+            sql_vm_instructions_cb=sql_vm_instructions_cb,
+            perform_upgrades_at_unlock=perform_upgrades_at_unlock,
+        )
+        if new_db_unlock_actions is not None:
+            perform_new_db_unlock_actions(db=db_handler, new_db_unlock_actions=new_db_unlock_actions)  # noqa: E501
+        yield db_handler
 
-    db_handler = _init_database(
-        data_dir=user_data_dir,
-        msg_aggregator=function_scope_messages_aggregator,
-        password=db_password,
-        db_settings=db_settings,
-        ignored_assets=ignored_assets,
-        blockchain_accounts=blockchain_accounts,
-        include_etherscan_key=include_etherscan_key,
-        include_cryptocompare_key=include_cryptocompare_key,
-        tags=tags,
-        manually_tracked_balances=manually_tracked_balances,
-        data_migration_version=data_migration_version,
-        use_custom_database=use_custom_database,
-        sql_vm_instructions_cb=sql_vm_instructions_cb,
-        perform_upgrades_at_unlock=perform_upgrades_at_unlock,
-    )
-    if new_db_unlock_actions is not None:
-        perform_new_db_unlock_actions(db=db_handler, new_db_unlock_actions=new_db_unlock_actions)
-    return db_handler
+        db_handler.logout()
 
 
 @pytest.fixture(scope='session')
@@ -228,28 +231,31 @@ def session_database(
         session_use_custom_database,
         session_sql_vm_instructions_cb,
         session_perform_upgrades_at_unlock,
-) -> Optional[DBHandler]:
+) -> Generator[Optional[DBHandler], None, None]:
     if not session_start_with_logged_in_user:
-        return None
+        yield None
+    else:
+        # No sessions blockchain accounts given
+        blockchain_accounts = BlockchainAccounts()
+        db_handler = _init_database(
+            data_dir=session_user_data_dir,
+            msg_aggregator=messages_aggregator,
+            password=session_db_password,
+            db_settings=session_db_settings,
+            ignored_assets=session_ignored_assets,
+            blockchain_accounts=blockchain_accounts,
+            include_etherscan_key=session_include_etherscan_key,
+            include_cryptocompare_key=session_include_cryptocompare_key,
+            tags=session_tags,
+            manually_tracked_balances=session_manually_tracked_balances,
+            data_migration_version=data_migration_version,
+            use_custom_database=session_use_custom_database,
+            sql_vm_instructions_cb=session_sql_vm_instructions_cb,
+            perform_upgrades_at_unlock=session_perform_upgrades_at_unlock,
+        )
+        yield db_handler
 
-    # No sessions blockchain accounts given
-    blockchain_accounts = BlockchainAccounts()
-    return _init_database(
-        data_dir=session_user_data_dir,
-        msg_aggregator=messages_aggregator,
-        password=session_db_password,
-        db_settings=session_db_settings,
-        ignored_assets=session_ignored_assets,
-        blockchain_accounts=blockchain_accounts,
-        include_etherscan_key=session_include_etherscan_key,
-        include_cryptocompare_key=session_include_cryptocompare_key,
-        tags=session_tags,
-        manually_tracked_balances=session_manually_tracked_balances,
-        data_migration_version=data_migration_version,
-        use_custom_database=session_use_custom_database,
-        sql_vm_instructions_cb=session_sql_vm_instructions_cb,
-        perform_upgrades_at_unlock=session_perform_upgrades_at_unlock,
-    )
+        db_handler.logout()
 
 
 @pytest.fixture(name='db_settings')
