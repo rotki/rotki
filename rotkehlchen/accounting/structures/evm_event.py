@@ -281,4 +281,4 @@ class EvmEvent(HistoryBaseEntry):
             accounting: 'AccountingPot',
             events_iterator: Iterator['AccountingEventMixin'],  # pylint: disable=unused-argument
     ) -> int:
-        return accounting.history_base_entries.process(self, events_iterator)
+        return accounting.events_accountant.process(self, events_iterator)

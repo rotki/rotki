@@ -133,16 +133,16 @@ DEPOSIT_ENTRIES = [
 def test_balancer_multiple_deposit(accountant: 'Accountant', ethereum_inquirer: 'EvmNodeInquirer'):
     """Test that the default accounting settings for balancer are correct"""
     pot = accountant.pots[0]
-    transactions = pot.history_base_entries
+    events_accountant = pot.events_accountant
     curve_accountant = Balancerv1Accountant(
         node_inquirer=ethereum_inquirer,
         msg_aggregator=ethereum_inquirer.database.msg_aggregator,
     )
     curve_settings = curve_accountant.event_settings(pot)
-    transactions.tx_event_settings.update(curve_settings)
+    events_accountant.event_settings.update(curve_settings)
     events_iterator = iter(DEPOSIT_ENTRIES)
     for event in events_iterator:
-        pot.history_base_entries.process(event=event, events_iterator=events_iterator)
+        pot.events_accountant.process(event=event, events_iterator=events_iterator)
 
     expected_events = [
         ProcessedAccountingEvent(

@@ -30,6 +30,7 @@ from rotkehlchen.types import (
     Location,
     Price,
     Timestamp,
+    TimestampMS,
     TradeType,
 )
 
@@ -973,16 +974,16 @@ def test_accounting_average_cost_basis(accountant):
     A_3CRV: {A_EUR: {1469020840: ONE}},
 }])
 @pytest.mark.parametrize('taxable', [True, False])
-def test_swaps_taxability(accountant, taxable):
+def test_swaps_taxability(accountant: Accountant, taxable: bool) -> None:
     """Check taxable parameter works and acquisition part of swaps doesn't count as taxable."""
     pot = accountant.pots[0]
-    transactions_accountant = pot.transactions
-    transactions_accountant._process_tx_swap(
-        timestamp=1469020840,
+    event_accountant = pot.events_accountant
+    event_accountant._process_swap(
+        timestamp=Timestamp(1469020840),
         out_event=EvmEvent(
             tx_hash=make_evm_tx_hash(),
             sequence_index=1,
-            timestamp=Timestamp(1469020840),
+            timestamp=TimestampMS(146902084000),
             location=Location.ETHEREUM,
             location_label=make_evm_address(),
             asset=A_ETH,
@@ -995,7 +996,7 @@ def test_swaps_taxability(accountant, taxable):
         in_event=EvmEvent(
             tx_hash=make_evm_tx_hash(),
             sequence_index=2,
-            timestamp=Timestamp(1469020840),
+            timestamp=TimestampMS(1469020840),
             location=Location.ETHEREUM,
             location_label=make_evm_address(),
             asset=A_3CRV,
@@ -1012,6 +1013,7 @@ def test_swaps_taxability(accountant, taxable):
             method='spend',
             accounting_treatment=TxAccountingTreatment.SWAP,
         ),
+        general_extra_data={},
     )
     if taxable is True:
         expected_pnl_taxable = ONE
@@ -1037,7 +1039,7 @@ def test_swaps_taxability(accountant, taxable):
 
 
 @pytest.mark.parametrize('mocked_price_queries', [{A_ETH: {A_EUR: {1469020840: ONE}}}])
-def test_taxable_acquisition(accountant):
+def test_taxable_acquisition(accountant: Accountant) -> None:
     """Make sure that taxable acquisitions are processed properly"""
     pot = accountant.pots[0]
     pot.add_acquisition(

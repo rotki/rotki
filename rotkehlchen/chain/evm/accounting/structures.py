@@ -8,7 +8,7 @@ if TYPE_CHECKING:
     from rotkehlchen.accounting.pot import AccountingPot
 
 
-class HistoryBaseEntriesAccountantCallback(Protocol):
+class EventsAccountantCallback(Protocol):
     """Type of a Submodule's accountant callback"""
     def __call__(
             self,
@@ -28,8 +28,8 @@ class TxAccountingTreatment(Enum):
     SWAP = 0
 
 
-class BaseEventSettins:
-    """Settings for history base entry accounting"""
+class BaseEventSettings:
+    """Acounting settings for history base entry events"""
     def __init__(
             self,
             taxable: bool,
@@ -45,8 +45,8 @@ class BaseEventSettins:
         self.accounting_treatment = accounting_treatment
 
 
-class TxEventSettings(BaseEventSettins):
-    """Settings for history base entry accounting"""
+class TxEventSettings(BaseEventSettings):
+    """Accounting settings for EVM transaction events"""
     def __init__(
             self,
             taxable: bool,
@@ -54,7 +54,7 @@ class TxEventSettings(BaseEventSettins):
             count_cost_basis_pnl: bool,
             method: Literal['acquisition', 'spend'],
             accounting_treatment: Optional[TxAccountingTreatment] = None,
-            accountant_cb: Optional[HistoryBaseEntriesAccountantCallback] = None,
+            accountant_cb: Optional[EventsAccountantCallback] = None,
     ):
         super().__init__(
             taxable=taxable,
