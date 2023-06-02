@@ -669,7 +669,7 @@ class MacPackaging:
             sys.exit(1)
 
         miniupnpc_dist = miniupnpc_directory / 'dist'
-        wheel_file = miniupnpc_dist / f'{miniupnpc}-cp39-cp39-macosx_10_9_universal2.whl'
+        wheel_file = miniupnpc_dist / f'{miniupnpc}-cp310-cp310-macosx_10_9_universal2.whl'
         wheel_directory = self.__storage.wheel_directory
         wheel_directory.mkdir(exist_ok=True)
         shutil.move(wheel_file, wheel_directory)
