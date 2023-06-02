@@ -164,8 +164,9 @@ describe('table-filter/FilterDropdown.vue', () => {
     await wrapper.vm.$nextTick();
 
     expect(wrapper.emitted()['update:matches']?.[3]).toEqual([{}]);
-    // @ts-ignore
-    expect(wrapper.find('.search-input').element.value).toBe('type=type 2');
+    expect(
+      (wrapper.find('.search-input').element as HTMLInputElement).value
+    ).toBe('type=type 2');
   });
 
   it('Choose suggestions with exclusion', async () => {

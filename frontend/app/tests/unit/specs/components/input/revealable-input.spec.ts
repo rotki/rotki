@@ -6,7 +6,7 @@ import RevealableInput from '@/components/inputs/RevealableInput.vue';
 import createCustomPinia from '../../../utils/create-pinia';
 
 describe('RevealableInput.vue', () => {
-  let wrapper: Wrapper<any>;
+  let wrapper: Wrapper<RevealableInput>;
 
   beforeEach(() => {
     const vuetify = new Vuetify();

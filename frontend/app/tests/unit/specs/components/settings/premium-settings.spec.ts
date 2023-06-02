@@ -49,11 +49,9 @@ describe('PremiumSettings.vue', () => {
       '.premium-settings__fields__api-secret input'
     );
 
-    (apiKey.element as HTMLInputElement).value = '1234';
-    (apiSecret.element as HTMLInputElement).value = '1234';
+    await apiKey.setValue('1234');
+    await apiSecret.setValue('1234');
 
-    await apiKey.trigger('input');
-    await apiSecret.trigger('input');
     await wrapper.vm.$nextTick();
     await wrapper.find('.premium-settings__button__setup').trigger('click');
     await wrapper.vm.$nextTick();
