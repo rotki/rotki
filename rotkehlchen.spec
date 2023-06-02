@@ -83,9 +83,11 @@ for exchange_name in SUPPORTED_EXCHANGES:
         continue
     hiddenimports.append(f'rotkehlchen.exchanges.{exchange_name}')
 
+# TODO: Make this dynamic you dummy
 ethereum_modules = collect_submodules('rotkehlchen.chain.ethereum.modules')
 optimism_modules = collect_submodules('rotkehlchen.chain.optimism.modules')
-dynamic_modules = ethereum_modules + optimism_modules
+polygon_pos_modules = collect_submodules('rotkehlchen.chain.polygon_pos.modules')
+dynamic_modules = ethereum_modules + optimism_modules + polygon_pos_modules
 hiddenimports.extend(dynamic_modules)
 
 a = Entrypoint(
