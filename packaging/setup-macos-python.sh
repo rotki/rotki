@@ -53,7 +53,7 @@ function install_mac_cpython {
       echo "Using cached $inst_path"
     fi
     sudo installer -pkg "$inst_path" -target /
-    local py_mm=${py_version:0:3}
+    local py_mm=${py_version:0:4}
     export PYTHON_EXE=$MACPYTHON_PY_PREFIX/$py_mm/bin/python$py_mm
     export PYTHON_DIR=$MACPYTHON_PY_PREFIX/$py_mm
     # Install certificates for Python 3.6
