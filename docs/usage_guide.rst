@@ -1985,3 +1985,8 @@ Data with multiple accounts/devices is not synced
 ===================================================
 
 Please, make sure all your accounts have the "Allow data sync with rotki Server" switched on, and that on each log-in you make the appropriate choice when prompted to replace the local database. See the section :ref:`sync-data-with-rotki-server` for more information about how to sync data with multiple accounts/devices.
+
+ENS data not updating for newly registered name/address combination
+=====================================================================
+
+If you just registered your ENS name and you don't see the name and/or avatar being properly displayed in rotki then that means that the value is cached and you need to force a refresh. You can do that by going to "Blockchain&Accounts" view and pressing refresh button next to Ethereum balances.
