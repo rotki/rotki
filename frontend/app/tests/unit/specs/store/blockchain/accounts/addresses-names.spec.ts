@@ -160,6 +160,11 @@ describe('store::blockchain/accounts/addresses-names', () => {
     });
   });
 
+  const addresses = [
+    '0x4585FE77225b41b697C938B01232131231231233',
+    '0x4585FE77225b41b697C938B01232131231231231'
+  ];
+
   describe('fetchAddressesNames', () => {
     const addressesWithEthNames = [
       {
@@ -169,7 +174,6 @@ describe('store::blockchain/accounts/addresses-names', () => {
       }
     ];
 
-    const addresses = ['0x4585FE77225b41b697C938B01232131231231231'];
     const addressesWithEns = [
       {
         address: '0x4585FE77225b41b697C938B01232131231231231',
@@ -195,6 +199,8 @@ describe('store::blockchain/accounts/addresses-names', () => {
       vi.mocked(api.getAddressBook).mockResolvedValue(addressesWithEns);
       vi.mocked(api.getAddressesNames).mockResolvedValue(mockedResult);
 
+      const { addressesNames } = storeToRefs(store);
+
       await store.updateAddressBook('global', addressesWithEthNames);
       await store.updateAddressBook('private', addressesWithEthNames);
 
@@ -211,7 +217,6 @@ describe('store::blockchain/accounts/addresses-names', () => {
         }
       ]);
 
-      const { addressesNames } = storeToRefs(store);
       expect(get(addressesNames)).toMatchObject(mockedResult);
     });
   });
@@ -257,5 +262,27 @@ describe('store::blockchain/accounts/addresses-names', () => {
         )
       ).toEqual(null);
     });
+  });
+
+  test('should remove stored names when no alias name is found for the addresses', async () => {
+    vi.mocked(api.getAddressBook).mockResolvedValue([]);
+    vi.mocked(api.getAddressesNames).mockResolvedValue([]);
+
+    const { addressesNames } = storeToRefs(store);
+
+    await store.fetchEnsNames(addresses);
+
+    expect(api.getAddressesNames).toHaveBeenCalledWith([
+      {
+        address: '0x4585FE77225b41b697C938B01232131231231233',
+        blockchain: Blockchain.ETH
+      },
+      {
+        address: '0x4585FE77225b41b697C938B01232131231231231',
+        blockchain: Blockchain.ETH
+      }
+    ]);
+
+    expect(get(addressesNames)).toMatchObject([]);
   });
 });

@@ -3,7 +3,6 @@ import { type ComputedRef, type Ref } from 'vue';
 import { type MaybeRef } from '@vueuse/core';
 import {
   AddressBookEntries,
-  type AddressBookEntry,
   type AddressBookLocation,
   type AddressBookSimplePayload,
   type EthNames
@@ -117,13 +116,20 @@ export const useAddressesNamesStore = defineStore(
       set(fetchedEntries, unique);
     };
 
-    const addSavedAddressesNames = (newEntries: AddressBookEntries) => {
-      const arr = [...get(addressesNames), ...newEntries];
-      const unique = uniqueObjects(
-        arr,
-        (item: AddressBookEntry) => item.address + item.blockchain
+    const addSavedAddressesNames = (
+      payload: AddressBookSimplePayload[],
+      newEntries: AddressBookEntries
+    ) => {
+      const filtered = get(addressesNames).filter(
+        item =>
+          !payload.some(
+            entry =>
+              item.address === entry.address &&
+              item.blockchain === entry.blockchain
+          )
       );
-      set(addressesNames, unique);
+      const newAddresses = [...filtered, ...newEntries];
+      set(addressesNames, newAddresses);
     };
 
     const fetchAddressesNames = async (
@@ -160,7 +166,7 @@ export const useAddressesNamesStore = defineStore(
 
       try {
         const result = await getAddressesNames(payload);
-        addSavedAddressesNames(AddressBookEntries.parse(result));
+        addSavedAddressesNames(payload, AddressBookEntries.parse(result));
       } catch (e: any) {
         logger.error(e);
         const message = e?.message ?? e ?? '';
