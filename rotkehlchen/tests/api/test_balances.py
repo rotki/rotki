@@ -868,6 +868,7 @@ def test_ethereum_tokens_detection(
     assert query_detect_eth_tokens() == empty_tokens_result
 
     db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
+    cur_time = ts_now()
     with db.user_write() as write_cursor:
         db.save_tokens_for_address(
             write_cursor=write_cursor,
@@ -875,7 +876,6 @@ def test_ethereum_tokens_detection(
             blockchain=SupportedBlockchain.ETHEREUM,
             tokens=[A_RDN, A_DAI],
         )
-    cur_time = ts_now()
     result = query_detect_eth_tokens()
     assert set(result[account]['tokens']) == {A_DAI.identifier, A_RDN.identifier}
     assert result[account]['last_update_timestamp'] >= cur_time
