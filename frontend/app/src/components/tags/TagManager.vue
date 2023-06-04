@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type DataTableHeader } from 'vuetify';
+import { type DataTableHeader } from '@/types/vuetify';
 import { type Tag, defaultTag } from '@/types/tags';
 
 withDefaults(

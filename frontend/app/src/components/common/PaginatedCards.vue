@@ -15,7 +15,7 @@ const props = defineProps({
 });
 
 const { items } = toRefs(props);
-const { breakpoint } = useTheme();
+const { name: breakpoint } = useDisplay();
 const page = ref(1);
 const itemsPerPage = computed(() => {
   if (get(breakpoint) === 'xs') {

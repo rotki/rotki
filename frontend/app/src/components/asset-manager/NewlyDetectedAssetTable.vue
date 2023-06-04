@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { type DataTableHeader } from 'vuetify';
 import { type ComputedRef, type Ref } from 'vue';
 import { Blockchain } from '@rotki/common/lib/blockchain';
+import { type DataTableHeader } from '@/types/vuetify';
 import { type NewDetectedToken } from '@/types/websocket-messages';
 
 const { t } = useI18n();

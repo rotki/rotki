@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { type ComputedRef, type PropType } from 'vue';
-import { type DataTableHeader } from 'vuetify';
+import { type DataTableHeader } from '@/types/vuetify';
 import Fragment from '@/components/helper/Fragment';
 import { displayDateFormatter } from '@/data/date_formatter';
 import { type UserDbBackup } from '@/types/backup';

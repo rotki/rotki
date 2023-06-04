@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { type BigNumber } from '@rotki/common';
-import { type DataTableHeader } from 'vuetify';
+import { type DataTableHeader } from '@/types/vuetify';
 import { type IgnoredAssetsHandlingType } from '@/types/asset';
 import { Routes } from '@/router/routes';
 import { DashboardTableType } from '@/types/frontend-settings';

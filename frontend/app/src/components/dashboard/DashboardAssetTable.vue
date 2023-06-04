@@ -5,12 +5,14 @@ import {
   type BigNumber
 } from '@rotki/common';
 import { type PropType, type Ref } from 'vue';
-import { type DataTableHeader } from 'vuetify';
+import { type DataTableHeader } from '@/types/vuetify';
 import { type Nullable } from '@/types';
 import { CURRENCY_USD } from '@/types/currencies';
 import { type DashboardTableType } from '@/types/frontend-settings';
 import { TableColumn } from '@/types/table-column';
 import { isEvmNativeToken } from '@/types/asset';
+
+const { t } = useI18n();
 
 const props = defineProps({
   loading: { required: false, type: Boolean, default: false },
@@ -28,8 +30,6 @@ const search = ref('');
 const expanded: Ref<AssetBalanceWithPrice[]> = ref([]);
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-
-const { t } = useI18n();
 
 const { exchangeRate } = useBalancePricesStore();
 const totalInUsd = computed(() =>

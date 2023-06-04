@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type DataTableHeader } from 'vuetify';
+import { type DataTableHeader } from '@/types/vuetify';
 import { type TablePagination } from '@/types/pagination';
 import {
   type CustomAsset,
@@ -9,6 +9,8 @@ import {
   type Filters,
   type Matcher
 } from '@/composables/filters/custom-assets';
+
+const { t } = useI18n();
 
 withDefaults(
   defineProps<{
@@ -31,8 +33,6 @@ const emit = defineEmits<{
   (e: 'update:filters', filters: Filters): void;
   (e: 'update:expanded', expandedAssets: CustomAsset[]): void;
 }>();
-
-const { t } = useI18n();
 
 const tableHeaders = computed<DataTableHeader[]>(() => [
   {

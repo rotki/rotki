@@ -16,7 +16,6 @@ const { upgradeVisible, canRequestData } = storeToRefs(useSessionAuthStore());
 const { forceSync } = useSync();
 
 const { fetchBalances } = useBalances();
-const { currentBreakpoint } = useTheme();
 const premium = usePremium();
 const { appSession } = useInterop();
 
@@ -33,7 +32,7 @@ const locationDataSnapshotFile = ref<File | null>(null);
 const importSnapshotLoading = ref<boolean>(false);
 const importSnapshotDialog = ref<boolean>(false);
 
-const xsOnly = computed(() => get(currentBreakpoint).xsOnly);
+const { xs } = useDisplay();
 
 const isDownload = computed<boolean>(() => get(syncAction) === SYNC_DOWNLOAD);
 const textChoice = computed<number>(() =>
@@ -173,7 +172,7 @@ const importSnapshot = async () => {
       transition="slide-y-transition"
       offset-y
       :close-on-content-click="false"
-      :max-width="xsOnly ? '97%' : '350px'"
+      :max-width="xs ? '97%' : '350px'"
       z-index="215"
     >
       <template #activator="{ on }">

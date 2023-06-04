@@ -3,8 +3,7 @@ import Fragment from '@/components/helper/Fragment';
 
 const isDevelopment = checkIfDevelopment();
 
-const { currentBreakpoint } = useTheme();
-const smAndUp = computed(() => get(currentBreakpoint).smAndUp);
+const { smAndUp } = useDisplay();
 
 const { darkModeEnabled } = useDarkMode();
 const { showPinned, showNotesSidebar, showNotificationBar, showHelpBar } =

@@ -3,13 +3,11 @@ const FullSizeContent = defineAsyncComponent(
   () => import('@/components/common/FullSizeContent.vue')
 );
 
-defineProps({
-  full: { required: false, type: Boolean, default: true }
-});
+withDefaults(defineProps<{ full?: boolean }>(), { full: true });
 
 const slots = useSlots();
 const css = useCssModule();
-const { isMobile } = useTheme();
+const { mobile } = useDisplay();
 const remoteEmptyScreenLogo =
   'https://raw.githubusercontent.com/rotki/data/main/assets/icons/empty_screen_logo.png';
 </script>
@@ -20,7 +18,7 @@ const remoteEmptyScreenLogo =
       <v-col cols="auto" :class="css.logo">
         <slot name="logo">
           <rotki-logo
-            :width="isMobile ? '100px' : '200px'"
+            :width="mobile ? '100px' : '200px'"
             :url="remoteEmptyScreenLogo"
           />
         </slot>

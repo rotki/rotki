@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { type AssetBalanceWithPrice } from '@rotki/common';
 import { type Ref } from 'vue';
-import { type DataTableHeader } from 'vuetify';
+import { type DataTableHeader } from '@/types/vuetify';
 import { isEvmNativeToken } from '@/types/asset';
+
+const { t } = useI18n();
 
 const props = withDefaults(
   defineProps<{
@@ -21,7 +23,6 @@ const props = withDefaults(
 const { balances } = toRefs(props);
 const expanded: Ref<AssetBalanceWithPrice[]> = ref([]);
 
-const { t } = useI18n();
 const total = computed(() =>
   bigNumberSum(balances.value.map(({ usdValue }) => usdValue))
 );

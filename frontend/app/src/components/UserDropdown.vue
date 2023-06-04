@@ -7,9 +7,8 @@ const { logout } = useSessionStore();
 const { username } = storeToRefs(useSessionAuthStore());
 const { isPackaged, clearPassword } = useInterop();
 const { privacyModeIcon, togglePrivacyMode } = usePrivacyMode();
-const { currentBreakpoint } = useTheme();
+const { xs } = useDisplay();
 const { navigateToUserLogin } = useAppNavigation();
-const xsOnly = computed(() => get(currentBreakpoint).xsOnly);
 
 const savedRememberPassword = useLocalStorage(KEY_REMEMBER_PASSWORD, null);
 
@@ -74,11 +73,7 @@ const { darkModeEnabled } = useDarkMode();
           </v-list-item-title>
         </v-list-item>
 
-        <v-list-item
-          v-if="xsOnly"
-          key="privacy-mode"
-          @click="togglePrivacyMode()"
-        >
+        <v-list-item v-if="xs" key="privacy-mode" @click="togglePrivacyMode()">
           <v-list-item-avatar>
             <v-icon color="primary"> {{ privacyModeIcon }}</v-icon>
           </v-list-item-avatar>
@@ -87,7 +82,7 @@ const { darkModeEnabled } = useDarkMode();
           </v-list-item-title>
         </v-list-item>
 
-        <theme-control v-if="xsOnly" :dark-mode-enabled="darkModeEnabled" menu>
+        <theme-control v-if="xs" :dark-mode-enabled="darkModeEnabled" menu>
           {{ t('user_dropdown.switch_theme') }}
         </theme-control>
 

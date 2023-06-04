@@ -1,7 +1,8 @@
 <script setup lang="ts">
+const { t } = useI18n();
+
 defineProps<{ visible: boolean }>();
 
-const { t } = useI18n();
 const css = useCssModule();
 
 const emit = defineEmits(['close']);
@@ -40,13 +41,13 @@ const showConfirmation = () => {
   );
 };
 
-const { isMobile } = useTheme();
+const { mobile } = useDisplay();
 const { hasRunningTasks } = storeToRefs(useTaskStore());
 </script>
 
 <template>
   <v-navigation-drawer
-    :class="{ [css.mobile]: isMobile, [css.sidebar]: true }"
+    :class="{ [css.mobile]: mobile, [css.sidebar]: true }"
     width="400px"
     absolute
     clipped

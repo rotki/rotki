@@ -153,6 +153,8 @@ const close = () => {
     setDialog(false);
   }
 };
+
+const { mdAndUp } = useDisplay();
 </script>
 
 <template>
@@ -221,12 +223,7 @@ const close = () => {
                 :complete="step > index + 1"
                 :class="{ [$style['pinned__stepper-step']]: isPinned }"
               >
-                <span
-                  v-if="
-                    ($vuetify.breakpoint.mdAndUp && !isPinned) ||
-                    step === index + 1
-                  "
-                >
+                <span v-if="(mdAndUp && !isPinned) || step === index + 1">
                   {{ content.title }}
                 </span>
               </v-stepper-step>

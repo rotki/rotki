@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type DataTableHeader } from 'vuetify';
+import { type DataTableHeader } from '@/types/vuetify';
 import { type Collection } from '@/types/collection';
 import Fragment from '@/components/helper/Fragment';
 import { Routes } from '@/router/routes';
@@ -13,6 +13,8 @@ import { Section } from '@/types/status';
 import { IgnoreActionType } from '@/types/history/ignored';
 import { SavedFilterLocation } from '@/types/filtering';
 import type { Filters, Matcher } from '@/composables/filters/trades';
+
+const { t } = useI18n();
 
 const props = withDefaults(
   defineProps<{
@@ -29,7 +31,6 @@ const { locationOverview, mainPage } = toRefs(props);
 
 const hideIgnoredTrades: Ref<boolean> = ref(false);
 
-const { t } = useI18n();
 const router = useRouter();
 const route = useRoute();
 

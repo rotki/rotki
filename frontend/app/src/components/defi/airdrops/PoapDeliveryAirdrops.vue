@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { type PropType } from 'vue';
-import { type DataTableHeader } from 'vuetify';
+import { type DataTableHeader } from '@/types/vuetify';
 import { type PoapDeliveryDetails } from '@/types/airdrops';
 import { default as images } from './poap.json';
 

@@ -5,22 +5,20 @@ import {
   Severity
 } from '@rotki/common/lib/messages';
 import { type Ref } from 'vue';
-import { type DataTableHeader } from 'vuetify';
 import { type Blockchain } from '@rotki/common/lib/blockchain';
+import { type DataTableHeader } from '@/types/vuetify';
 import {
   type AddressBookEntries,
   type AddressBookEntry,
   type AddressBookLocation
 } from '@/types/eth-names';
 
+const { t } = useI18n();
 const addressBookDeletion = (location: Ref<AddressBookLocation>) => {
   const { show } = useConfirmStore();
-
-  const { t } = useI18n();
   const { notify } = useNotificationsStore();
   const { deleteAddressBook: deleteAddressBookCaller } =
     useAddressesNamesStore();
-
   const deleteAddressBook = async (
     address: string,
     blockchain: Blockchain | null
@@ -81,8 +79,6 @@ const loading = ref<boolean>(false);
 const addressesNamesStore = useAddressesNamesStore();
 const { fetchAddressBook } = addressesNamesStore;
 const { addressBookEntries } = toRefs(addressesNamesStore);
-
-const { t } = useI18n();
 
 const data = computed<AddressBookEntries>(
   () => get(addressBookEntries)[get(location)]

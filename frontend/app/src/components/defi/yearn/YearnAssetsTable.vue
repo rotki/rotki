@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { type PropType } from 'vue';
-import { type DataTableHeader } from 'vuetify';
+import { type DataTableHeader } from '@/types/vuetify';
 import { type YearnVaultAsset } from '@/types/defi/yearn';
 import { ProtocolVersion } from '@/types/defi';
 

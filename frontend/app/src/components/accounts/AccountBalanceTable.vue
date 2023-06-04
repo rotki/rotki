@@ -4,7 +4,7 @@ import { Blockchain } from '@rotki/common/lib/blockchain';
 import isEqual from 'lodash/isEqual';
 import sortBy from 'lodash/sortBy';
 import { type ComputedRef, type Ref, useListeners } from 'vue';
-import { type DataTableHeader } from 'vuetify';
+import { type DataTableHeader } from '@/types/vuetify';
 import { type Properties } from '@/types';
 import { chainSection } from '@/types/blockchain';
 import { Section } from '@/types/status';
@@ -15,6 +15,8 @@ import {
   type XpubAccountWithBalance,
   type XpubPayload
 } from '@/types/blockchain/accounts';
+
+const { t } = useI18n();
 
 const props = withDefaults(
   defineProps<{
@@ -48,8 +50,6 @@ const { hasDetails, getLoopringBalances } = useAccountDetails(blockchain);
 const { getEthDetectedTokensInfo, detectingTokens } =
   useTokenDetection(blockchain);
 
-const { t } = useI18n();
-
 const editClick = (account: BlockchainAccountWithBalance) => {
   emit('edit-click', account);
 };
@@ -67,10 +67,10 @@ const addressesSelected = (selected: string[]) => {
   emit('addresses-selected', selected);
 };
 
-const { currentBreakpoint } = useTheme();
-const xsOnly = computed(() => get(currentBreakpoint).xsOnly);
+const { xs } = useDisplay();
+
 const mobileClass = computed<string | null>(() =>
-  get(xsOnly) ? 'v-data-table__mobile-row' : null
+  get(xs) ? 'v-data-table__mobile-row' : null
 );
 
 const section = computed<Section>(() =>
@@ -493,7 +493,7 @@ defineExpose({
               <amount-display
                 :loading="loading"
                 :value="total.amount"
-                :asset="$vuetify.breakpoint.xsOnly ? blockchain : null"
+                :asset="xs ? blockchain : null"
               />
             </td>
             <td class="text-end" :class="mobileClass">

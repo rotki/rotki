@@ -22,8 +22,8 @@ const evmOrDepositEvent = computed(
 const blockEvent = isEthBlockEventRef(event);
 const withdrawEvent = isWithdrawalEventRef(event);
 
-const { currentBreakpoint } = useTheme();
 const css = useCssModule();
+const { xl } = useDisplay();
 </script>
 
 <template>
@@ -65,7 +65,7 @@ const css = useCssModule();
             type="transaction"
             :chain="getChain(evmOrDepositEvent.location)"
             :truncate-length="8"
-            :full-address="currentBreakpoint.xlOnly"
+            :full-address="xl"
           />
         </span>
       </template>

@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { type PropType } from 'vue';
-import { type DataTableHeader } from 'vuetify';
+import { type DataTableHeader } from '@/types/vuetify';
 import { type CostBasis } from '@/types/reports';
+
+const { t } = useI18n();
 
 const props = defineProps({
   costBasis: { required: true, type: Object as PropType<CostBasis> },
@@ -17,7 +19,6 @@ const props = defineProps({
 const { costBasis, currency } = toRefs(props);
 
 const panel = ref<number[]>([]);
-const { t } = useI18n();
 
 const css = useCssModule();
 

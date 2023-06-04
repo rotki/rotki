@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import { type DataTableHeader } from 'vuetify';
+import { type DataTableHeader } from '@/types/vuetify';
 import { type HistoricalPrice } from '@/types/prices';
+
+const { t } = useI18n();
 
 const props = withDefaults(
   defineProps<{
@@ -19,8 +21,6 @@ const emit = defineEmits<{
 }>();
 
 const { items } = toRefs(props);
-
-const { t } = useI18n();
 
 const headers = computed<DataTableHeader[]>(() => [
   {

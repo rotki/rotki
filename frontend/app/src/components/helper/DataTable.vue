@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { useListeners } from 'vue';
-import { type DataTableHeader } from 'vuetify';
+import { type DataTableHeader } from '@/types/vuetify';
 import { type TablePagination } from '@/types/pagination';
+
+const { t } = useI18n();
 
 const props = withDefaults(
   defineProps<{
@@ -125,8 +127,6 @@ const pageSelectorData = (props: {
     )}`
   }));
 };
-
-const { t } = useI18n();
 
 onMounted(() => {
   const optionsVal = get(options);

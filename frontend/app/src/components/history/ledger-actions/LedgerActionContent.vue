@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type DataTableHeader } from 'vuetify';
+import { type DataTableHeader } from '@/types/vuetify';
 import { type Collection } from '@/types/collection';
 import Fragment from '@/components/helper/Fragment';
 import { Routes } from '@/router/routes';

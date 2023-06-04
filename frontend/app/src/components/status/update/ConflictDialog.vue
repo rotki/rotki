@@ -1,13 +1,15 @@
 ﻿<script setup lang="ts">
 import { type SupportedAsset } from '@rotki/common/lib/data';
 import { type PropType, type Ref, useListeners } from 'vue';
-import { type DataTableHeader } from 'vuetify';
+import { type DataTableHeader } from '@/types/vuetify';
 import { type Writeable } from '@/types';
 import {
   type AssetUpdateConflictResult,
   type ConflictResolution,
   type ConflictResolutionStrategy
 } from '@/types/asset';
+
+const { t } = useI18n();
 
 const props = defineProps({
   conflicts: {
@@ -25,8 +27,6 @@ const { conflicts } = toRefs(props);
 
 const rootAttrs = useAttrs();
 const rootListeners = useListeners();
-
-const { t } = useI18n();
 
 const tableHeaders = computed<DataTableHeader[]>(() => [
   {

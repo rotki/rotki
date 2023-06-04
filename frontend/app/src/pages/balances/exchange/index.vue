@@ -5,6 +5,8 @@ import { SupportedExchange } from '@/types/exchanges';
 import { TaskType } from '@/types/task-type';
 import { type Nullable } from '@/types';
 
+const { t } = useI18n();
+
 const props = withDefaults(
   defineProps<{
     exchange?: Nullable<SupportedExchange>;
@@ -76,8 +78,6 @@ watch(exchange, () => {
   set(exchangeDetailTabs, 0);
 });
 
-const { t } = useI18n();
-
 onMounted(() => {
   refreshExchangeSavings();
 });
@@ -91,6 +91,8 @@ const isBinance = computed(() => {
     exchangeVal
   );
 });
+
+const { xl, mdAndUp } = useDisplay();
 </script>
 
 <template>
@@ -109,14 +111,14 @@ const isBinance = computed(() => {
       fixed
       bottom
       right
-      :fab="!$vuetify.breakpoint.xl"
-      :rounded="$vuetify.breakpoint.xl"
-      :x-large="$vuetify.breakpoint.xl"
+      :fab="!xl"
+      :rounded="xl"
+      :x-large="xl"
       color="primary"
       to="/settings/api-keys/exchanges?add=true"
     >
       <v-icon> mdi-plus </v-icon>
-      <div v-if="$vuetify.breakpoint.xl" class="ml-2">
+      <div v-if="xl" class="ml-2">
         {{ t('exchange_balances.add_exchange') }}
       </div>
     </v-btn>
@@ -176,11 +178,7 @@ const isBinance = computed(() => {
           </v-tab>
         </v-tabs>
       </v-col>
-      <v-col
-        :class="
-          $vuetify.breakpoint.mdAndUp ? 'exchange-balances__balances' : null
-        "
-      >
+      <v-col :class="mdAndUp ? 'exchange-balances__balances' : null">
         <div>
           <div v-if="exchange">
             <v-tabs v-model="exchangeDetailTabs">

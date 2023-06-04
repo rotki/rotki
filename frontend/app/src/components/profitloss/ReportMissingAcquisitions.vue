@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { type PropType, type Ref } from 'vue';
-import { type DataTableHeader } from 'vuetify';
+import { type DataTableHeader } from '@/types/vuetify';
 import { type MissingAcquisition, type SelectedReport } from '@/types/reports';
 import { type LedgerAction } from '@/types/history/ledger-action/ledger-actions';
 

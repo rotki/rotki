@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { type PropType } from 'vue';
-import { type DataTableHeader } from 'vuetify';
+import { type DataTableHeader } from '@/types/vuetify';
 import { type BaseDefiBalance } from '@/types/defi/lending';
 
 defineProps({

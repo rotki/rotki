@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { type BigNumber } from '@rotki/common';
 import { type ComputedRef, type PropType, type Ref } from 'vue';
-import { type DataTableHeader } from 'vuetify';
+import { type DataTableHeader } from '@/types/vuetify';
 import { CURRENCY_USD } from '@/types/currencies';
 import {
   type BalanceSnapshot,
@@ -11,6 +11,8 @@ import {
 import { isNft } from '@/utils/nft';
 import { toSentenceCase } from '@/utils/text';
 import { BalanceType } from '@/types/balances';
+
+const { t } = useI18n();
 
 type IndexedBalanceSnapshot = BalanceSnapshot & { index: number };
 
@@ -40,7 +42,6 @@ const valid = ref<boolean>(false);
 const loading = ref<boolean>(false);
 
 const { exchangeRate } = useBalancePricesStore();
-const { t } = useI18n();
 const fiatExchangeRate = computed<BigNumber>(
   () => get(exchangeRate(get(currencySymbol))) ?? One
 );

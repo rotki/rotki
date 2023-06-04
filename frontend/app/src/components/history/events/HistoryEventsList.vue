@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { type Ref } from 'vue';
-import { type DataTableHeader } from 'vuetify';
 import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
+import { type DataTableHeader } from '@/types/vuetify';
 import { type HistoryEventEntry } from '@/types/history/events';
 import { isEvmEvent } from '@/utils/history/events';
 import { type TablePagination } from '@/types/pagination';
+
+const { t } = useI18n();
 
 const props = withDefaults(
   defineProps<{
@@ -34,7 +36,6 @@ const emit = defineEmits<{
 const { eventGroupHeader, allEvents } = toRefs(props);
 
 const css = useCssModule();
-const { t } = useI18n();
 
 const { getChain } = useSupportedChains();
 
@@ -128,6 +129,8 @@ watch(
     }
   }
 );
+
+const { mdAndUp } = useDisplay();
 </script>
 
 <template>
@@ -174,7 +177,7 @@ watch(
                 class="transparent"
                 :options="options"
                 hide-default-footer
-                :hide-default-header="$vuetify.breakpoint.mdAndUp"
+                :hide-default-header="mdAndUp"
               >
                 <template #progress><span /></template>
                 <template #item.type="{ item }">

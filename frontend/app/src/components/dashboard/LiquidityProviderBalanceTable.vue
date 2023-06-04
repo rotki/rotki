@@ -6,7 +6,7 @@ import {
 } from '@rotki/common/lib/defi/xswap';
 import isEqual from 'lodash/isEqual';
 import { type Ref } from 'vue';
-import { type DataTableHeader } from 'vuetify';
+import { type DataTableHeader } from '@/types/vuetify';
 import { Routes } from '@/router/routes';
 import {
   DashboardTableType,

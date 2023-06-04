@@ -3,6 +3,8 @@ import { Blockchain } from '@rotki/common/lib/blockchain';
 import pickBy from 'lodash/pickBy';
 import { type ComputedRef, type Ref } from 'vue';
 
+const { t } = useI18n();
+
 type Intersections = {
   [key in Blockchain]: boolean;
 };
@@ -14,8 +16,6 @@ type Observers = {
 type Busy = {
   [key in Blockchain]: ComputedRef<boolean>;
 };
-
-const { t } = useI18n();
 
 const router = useRouter();
 const route = useRoute();
@@ -119,6 +119,8 @@ const showDetectEvmAccountsButton: Readonly<Ref<boolean>> = computedEager(
     get(optimismAccounts).length > 0 ||
     get(avaxAccounts).length > 0
 );
+
+const { xl } = useDisplay();
 </script>
 
 <template>
@@ -138,14 +140,14 @@ const showDetectEvmAccountsButton: Readonly<Ref<boolean>> = computedEager(
         fixed
         bottom
         right
-        :fab="!$vuetify.breakpoint.xl"
-        :rounded="$vuetify.breakpoint.xl"
-        :x-large="$vuetify.breakpoint.xl"
+        :fab="!xl"
+        :rounded="xl"
+        :x-large="xl"
         color="primary"
         @click="createAccount()"
       >
         <v-icon> mdi-plus </v-icon>
-        <div v-if="$vuetify.breakpoint.xl" class="ml-2">
+        <div v-if="xl" class="ml-2">
           {{ t('blockchain_balances.add_account') }}
         </div>
       </v-btn>

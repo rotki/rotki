@@ -214,6 +214,8 @@ onMounted(() => {
   setEditMode();
 });
 
+const { mdAndUp } = useDisplay();
+
 defineExpose({
   reset,
   save
@@ -252,11 +254,7 @@ defineExpose({
 
     <v-row
       align="center"
-      :class="
-        $vuetify.breakpoint.mdAndUp
-          ? 'ledger-action-form__amount-wrapper'
-          : null
-      "
+      :class="mdAndUp ? 'ledger-action-form__amount-wrapper' : null"
     >
       <v-col cols="12" md="4">
         <asset-select
@@ -299,11 +297,7 @@ defineExpose({
 
     <v-divider class="mb-6 mt-2" />
 
-    <v-row
-      :class="
-        $vuetify.breakpoint.mdAndUp ? 'ledger-action-form__rate-wrapper' : null
-      "
-    >
+    <v-row :class="mdAndUp ? 'ledger-action-form__rate-wrapper' : null">
       <v-col cols="12" md="8">
         <amount-input
           v-model="rate"

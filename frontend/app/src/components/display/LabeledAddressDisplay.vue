@@ -9,7 +9,6 @@ const props = defineProps<{
 }>();
 
 const { account } = toRefs(props);
-const { currentBreakpoint } = useTheme();
 const { scrambleData, shouldShowAmount, scrambleHex, scrambleIdentifier } =
   useScramble();
 const { addressNameSelector } = useAddressesNamesStore();
@@ -29,8 +28,7 @@ const aliasName = computed<string | null>(() => {
   return truncateAddress(name, get(truncationLength));
 });
 
-const xsOnly = computed(() => get(currentBreakpoint).xsOnly);
-const smAndDown = computed(() => get(currentBreakpoint).smAndDown);
+const { xs, sm, md, lg, xl, smAndDown, mdAndDown, name } = useDisplay();
 
 const address = computed<string>(() => {
   const address = get(account).address;
@@ -38,9 +36,7 @@ const address = computed<string>(() => {
 });
 
 const breakpoint = computed<string>(() =>
-  get(account).label.length > 0 && get(currentBreakpoint).mdAndDown
-    ? 'sm'
-    : get(currentBreakpoint).name
+  get(account).label.length > 0 && get(mdAndDown) ? 'sm' : get(name)
 );
 
 const truncationLength = computed<number>(() => {
@@ -73,7 +69,6 @@ const truncated = computed<boolean>(() => {
 });
 
 const label = computed<string>(() => {
-  const bp = get(currentBreakpoint);
   const label = get(account).label;
 
   if (consistOfNumbers(label)) {
@@ -82,13 +77,13 @@ const label = computed<string>(() => {
 
   let length = -1;
 
-  if (bp.xlOnly && label.length > 50) {
+  if (get(xl) && label.length > 50) {
     length = 47;
-  } else if (bp.lgOnly && label.length > 38) {
+  } else if (get(lg) && label.length > 38) {
     length = 35;
-  } else if (bp.md && label.length > 27) {
+  } else if (get(md) && label.length > 27) {
     length = 24;
-  } else if (bp.smOnly && label.length > 19) {
+  } else if (get(sm) && label.length > 19) {
     length = 16;
   }
 
@@ -107,7 +102,7 @@ const label = computed<string>(() => {
         <span
           data-cy="labeled-address-display"
           class="labeled-address-display__address"
-          :class="xsOnly ? 'labeled-address-display__address--mobile' : null"
+          :class="xs ? 'labeled-address-display__address--mobile' : null"
           v-on="on"
         >
           <v-chip label outlined class="labeled-address-display__chip">

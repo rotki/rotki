@@ -1,14 +1,10 @@
 <script setup lang="ts">
-defineProps({
-  text: {
-    type: String,
-    required: true
-  }
-});
-
 const { t } = useI18n();
+
+defineProps<{ text: string }>();
+
 const { premiumURL } = useInterop();
-const { isMobile } = useTheme();
+const { mobile } = useDisplay();
 const css = useCssModule();
 const remoteEmptyScreenLogo =
   'https://raw.githubusercontent.com/rotki/data/main/assets/icons/empty_screen_logo.png';
@@ -22,7 +18,7 @@ const remoteEmptyScreenLogo =
           <v-col cols="auto">
             <div :class="css.logo" class="d-flex justify-center align-center">
               <rotki-logo
-                :width="isMobile ? '100px' : '200px'"
+                :width="mobile ? '100px' : '200px'"
                 :url="remoteEmptyScreenLogo"
               />
             </div>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type DataTableHeader } from 'vuetify';
+import { type DataTableHeader } from '@/types/vuetify';
 import { type ProfitLossEvents, type SelectedReport } from '@/types/reports';
 import { isTransactionEvent } from '@/utils/report';
 

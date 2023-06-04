@@ -1,6 +1,6 @@
 ﻿<script setup lang="ts">
 import { Severity } from '@rotki/common/lib/messages';
-import { type DataTableHeader } from 'vuetify';
+import { type DataTableHeader } from '@/types/vuetify';
 import Fragment from '@/components/helper/Fragment';
 import { PriceOracle } from '@/types/price-oracle';
 import { type PrioritizedListItemData } from '@/types/prioritized-list-data';

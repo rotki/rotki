@@ -3,9 +3,11 @@ import { type BigNumber } from '@rotki/common';
 import { type GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type ComputedRef } from 'vue';
-import { type DataTableHeader } from 'vuetify';
+import { type DataTableHeader } from '@/types/vuetify';
 import { CURRENCY_USD } from '@/types/currencies';
 import { type AssetBreakdown } from '@/types/blockchain/accounts';
+
+const { t } = useI18n();
 
 interface AssetLocation extends AssetBreakdown {
   readonly account?: GeneralAccount;
@@ -23,7 +25,6 @@ const { getEth2Account } = useEthAccountsStore();
 const { detailsLoading } = storeToRefs(useStatusStore());
 const { assetPriceInfo } = useAggregatedBalances();
 const { assetBreakdown } = useBalancesBreakdown();
-const { t } = useI18n();
 
 const onlyTags = ref<string[]>([]);
 

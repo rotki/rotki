@@ -1,10 +1,8 @@
 <script setup lang="ts">
 const isTest = !!import.meta.env.VITE_TEST;
 const css = useCssModule();
-const { currentBreakpoint } = useTheme();
 const { animationEnabled } = useAnimation();
-
-const xsOnly = computed(() => get(currentBreakpoint).xsOnly);
+const { xs } = useDisplay();
 </script>
 
 <template>
@@ -12,7 +10,7 @@ const xsOnly = computed(() => get(currentBreakpoint).xsOnly);
     <div
       class="animate"
       :class="{
-        [css.loading]: !xsOnly && !isTest,
+        [css.loading]: !xs && !isTest,
         [css['loading--paused']]: !animationEnabled
       }"
       data-cy="account-management__loading"
