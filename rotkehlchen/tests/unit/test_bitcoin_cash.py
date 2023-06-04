@@ -57,7 +57,6 @@ def test_force_addresses_to_legacy_addresses():
         '1Mnwij9Zkk6HtmdNzyEUFgp6ojoLaZekP8',
         '17CTr5NPYx7NcLp6w8mwZamfq7Xam8QrAe',
         '38ty1qB68gHsiyZ8k3RPeCJ1wYQPrUCPPr',
-        '38ty1qB68gHsiyZ8k3RPeCJ1wYQPrUCPPr',
     }
     assert force_addresses_to_legacy_addresses(addresses) == converted_addresses
 

@@ -709,8 +709,6 @@ UNSUPPORTED_KUCOIN_ASSETS = {
     'AGIX2S',
     'GRT2L',
     'GRT2S',
-    'AGIX2L',
-    'AGIX2S',
     'HISEALS',  # no cc/coingecko data
     'HIRENGA',
     'HIGH',

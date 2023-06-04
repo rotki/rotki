@@ -284,7 +284,6 @@ DELISTED_ASSETS = {
     'BAG',
     'MCT',
     'LOL',
-    'SDT',
     strethaddress_to_identifier('0xE081b71Ed098FBe1108EA48e235b74F122272E68'),
     'eip155:56/erc20:0xDCEcf0664C33321CECA2effcE701E710A2D28A3F',
     strethaddress_to_identifier('0xDf6Ef343350780BF8C3410BF062e0C015B1DD671'),
