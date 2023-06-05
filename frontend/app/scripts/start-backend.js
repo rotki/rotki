@@ -37,7 +37,7 @@ const logDir = path.join(testDir, 'logs');
 process.stdout.write(`Using ${logDir} to output backend logs\n`);
 
 if (!fs.existsSync(logDir)) {
-  fs.mkdirSync(logDir);
+  fs.mkdirSync(logDir, { recursive: true });
 }
 
 const args = [
