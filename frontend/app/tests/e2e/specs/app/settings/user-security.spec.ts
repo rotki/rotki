@@ -31,6 +31,5 @@ describe('settings::data & security', () => {
   it('verify that new password works', () => {
     app.fasterLogout();
     app.login(username, newPassword);
-    app.closePremiumOverlay();
   });
 });

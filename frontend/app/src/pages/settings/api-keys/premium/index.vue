@@ -124,7 +124,7 @@ const showDeleteConfirmation = () => {
         <template #subtitle>
           <i18n tag="div" path="premium_settings.subtitle">
             <base-external-link
-              :text="t('premium_settings.rotki_premium')"
+              :text="t('premium_settings.title')"
               :href="premiumURL"
             />
           </i18n>

@@ -10,9 +10,11 @@ export const useAccountManagement = () => {
   const error: Ref<string> = ref('');
   const errors: Ref<string[]> = ref([]);
 
-  const { showGetPremiumButton, showPremiumDialog } = usePremiumReminder();
+  const { showGetPremiumButton } = usePremiumReminder();
   const { navigateToDashboard } = useAppNavigation();
-  const { createAccount, login } = useSessionStore();
+  const sessionStore = useSessionStore();
+  const { checkForAssetUpdate } = storeToRefs(sessionStore);
+  const { createAccount, login } = sessionStore;
   const { connect } = useWebsocketStore();
   const authStore = useSessionAuthStore();
   const { logged, canRequestData, upgradeVisible } = storeToRefs(authStore);
@@ -51,7 +53,7 @@ export const useAccountManagement = () => {
     password,
     syncApproval,
     resumeFromBackup
-  }: LoginCredentials): Promise<boolean> => {
+  }: LoginCredentials): Promise<void> => {
     set(loading, true);
     setupCache(username);
     initTokens(username);
@@ -72,9 +74,8 @@ export const useAccountManagement = () => {
       clearUpgradeMessages();
       setLastLogin(username);
       showGetPremiumButton();
-      return showPremiumDialog();
+      set(checkForAssetUpdate, true);
     }
-    return false;
   };
 
   return {
@@ -89,11 +90,13 @@ export const useAccountManagement = () => {
 export const useAutoLogin = () => {
   const autolog: Ref<boolean> = ref(false);
 
-  const { login } = useSessionStore();
+  const sessionStore = useSessionStore();
+  const { checkForAssetUpdate } = storeToRefs(sessionStore);
+  const { login } = sessionStore;
   const { connected } = storeToRefs(useMainStore());
   const { logged, canRequestData } = storeToRefs(useSessionAuthStore());
   const { resetSessionBackend } = useBackendManagement();
-  const { showGetPremiumButton, showPremiumDialog } = usePremiumReminder();
+  const { showGetPremiumButton } = usePremiumReminder();
 
   watch(connected, async connected => {
     if (!connected) {
@@ -107,8 +110,8 @@ export const useAutoLogin = () => {
     await login({ username: '', password: '' });
 
     if (get(logged)) {
-      await showPremiumDialog();
       showGetPremiumButton();
+      set(checkForAssetUpdate, true);
       set(canRequestData, true);
     }
 

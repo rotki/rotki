@@ -1402,7 +1402,6 @@
       "skip": "跳过",
       "terminate": "终止",
       "update": "更新",
-      "upgrade": "升级",
       "yes": "是"
     },
     "address": "地址",
@@ -3387,10 +3386,6 @@
   "premium_lock": {
     "tooltip": "只有高级订阅才支持该功能"
   },
-  "premium_reminder": {
-    "description": "rotki 是开源软件，需要您的支持！请考虑通过购买高级订阅升级到高级版。这样您可以帮助我们进一步开发软件，您还可以享受额外的高级功能。",
-    "title": "升级至高级版"
-  },
   "premium_settings": {
     "actions": {
       "delete": "删除 Key",
@@ -3410,9 +3405,9 @@
       "api_key": "API Key",
       "api_secret": "API Secret"
     },
-    "premium_active": "rotki Premium 已激活",
-    "rotki_premium": "rotki 高级版",
-    "subtitle": "rotki Premium 是一项可选的订阅服务，可以访问分析、图表并解锁许多其他功能。有关可用内容的更多信息，请访问 {0} 网站。",
+    "get": "Get @:premium_settings.title",
+    "premium_active": "@:premium_settings.title 已激活",
+    "subtitle": "@:premium_settings.title 是一项可选的订阅服务，可以访问分析、图表并解锁许多其他功能。有关可用内容的更多信息，请访问 {0} 网站。",
     "title": "rotki Premium"
   },
   "price_accuracy_hint": {
