@@ -1,17 +1,15 @@
 <script setup lang="ts">
-import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
-import { type PropType } from 'vue';
 import { type UserNote } from '@/types/notes';
+import { toMessages } from '@/utils/validation';
 
-const props = defineProps({
-  value: {
-    required: true,
-    type: Object as PropType<Partial<UserNote>>
-  }
-});
+const props = defineProps<{
+  value: Partial<UserNote>;
+}>();
 
-const emit = defineEmits(['input', 'valid']);
+const emit = defineEmits<{
+  (e: 'input', newInput: Partial<UserNote>): void;
+}>();
 
 const { t } = useI18n();
 const { value } = toRefs(props);
@@ -19,6 +17,8 @@ const { value } = toRefs(props);
 const input = (newInput: Partial<UserNote>) => {
   emit('input', { ...get(value), ...newInput });
 };
+
+const { valid, setValidation } = useUserNotesForm();
 
 const rules = {
   content: {
@@ -29,19 +29,15 @@ const rules = {
   }
 };
 
-const v$ = useVuelidate(
+const v$ = setValidation(
   rules,
   { content: computed(() => get(value).content) },
   { $autoDirty: true }
 );
-
-watch(v$, ({ $invalid }) => {
-  emit('valid', !$invalid);
-});
 </script>
 
 <template>
-  <v-form :value="!v$.$invalid" class="pt-2">
+  <v-form :value="valid" class="pt-2">
     <div>
       <v-text-field
         :value="value.title"
@@ -55,7 +51,7 @@ watch(v$, ({ $invalid }) => {
         :value="value.content"
         outlined
         :placeholder="t('notes_menu.labels.content')"
-        :error-messages="v$.content.$errors.map(e => e.$message)"
+        :error-messages="toMessages(v$.content)"
         @input="input({ content: $event })"
       />
     </div>

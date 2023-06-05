@@ -132,7 +132,7 @@ const childHeaders = computed<DataTableHeader[]>(() => {
   ];
 });
 
-const openLedgerActionDialog: Ref<boolean> = ref(false);
+const { setOpenDialog } = useLedgerActionsForm();
 
 const ledgerActionForm: Ref<Partial<LedgerAction> | null> = ref(null);
 const addLedgerAction = (item: MissingAcquisition) => {
@@ -143,7 +143,7 @@ const addLedgerAction = (item: MissingAcquisition) => {
   };
 
   set(ledgerActionForm, form);
-  set(openLedgerActionDialog, true);
+  setOpenDialog(true);
 };
 
 const isIgnored = (asset: string) => get(isAssetIgnored(asset));
@@ -260,10 +260,7 @@ const isIgnored = (asset: string) => get(isAssetIgnored(asset));
     </data-table>
     <slot name="actions" />
 
-    <ledger-action-form-dialog
-      v-model="openLedgerActionDialog"
-      :form-data="ledgerActionForm"
-    />
+    <ledger-action-form-dialog :editable-item="ledgerActionForm" />
   </div>
 </template>
 

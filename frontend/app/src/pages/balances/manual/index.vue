@@ -3,7 +3,6 @@ import { type Ref } from 'vue';
 import Fragment from '@/components/helper/Fragment';
 import { type ManualBalance } from '@/types/manual-balances';
 import { BalanceType } from '@/types/balances';
-import { useManualBalancesForm } from '@/composables/balances/manual/form';
 
 const balanceToEdit: Ref<ManualBalance | null> = ref(null);
 const loading = ref(false);
@@ -18,7 +17,6 @@ const dialogSubtitle = ref('');
 const { t } = useI18n();
 
 const {
-  valid,
   openDialog,
   submitting,
   setOpenDialog,
@@ -155,7 +153,7 @@ const { xl } = useDisplay();
       :display="openDialog"
       :title="dialogTitle"
       :subtitle="dialogSubtitle"
-      :action-disabled="submitting || !valid"
+      :action-disabled="submitting"
       :loading="submitting"
       :primary-action="t('common.actions.save')"
       @confirm="trySubmit()"

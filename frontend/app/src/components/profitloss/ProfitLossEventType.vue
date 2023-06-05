@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { useHistoryEventMappings } from '@/composables/history/events/mapping';
-
 const { getAccountingEventTypeData } = useHistoryEventMappings();
 
 const props = defineProps<{

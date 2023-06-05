@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
 import dayjs from 'dayjs';
 import { type BigNumber } from '@rotki/common';
@@ -21,18 +20,16 @@ const { t } = useI18n();
 
 const props = withDefaults(
   defineProps<{
-    value?: boolean;
-    edit?: EvmHistoryEvent | null;
+    editableItem?: EvmHistoryEvent | null;
     transaction: EvmHistoryEvent;
   }>(),
   {
-    value: false,
-    edit: null
+    editableItem: null
   }
 );
 
 const emit = defineEmits<{ (e: 'input', valid: boolean): void }>();
-const { edit, transaction } = toRefs(props);
+const { editableItem, transaction } = toRefs(props);
 
 const { isTaskRunning } = useTaskStore();
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
@@ -143,7 +140,9 @@ const rules = {
   }
 };
 
-const v$ = useVuelidate(
+const { valid, setValidation, setSubmitFunc } = useHistoryEventsForm();
+
+const v$ = setValidation(
   rules,
   {
     location,
@@ -187,7 +186,7 @@ const reset = () => {
 };
 
 const setEditMode = async () => {
-  const editVal = get(edit);
+  const editVal = get(editableItem);
   if (!editVal) {
     reset();
     return;
@@ -287,6 +286,8 @@ const save = async (): Promise<boolean> => {
 
   return false;
 };
+
+setSubmitFunc(save);
 
 const fiatValueFocused = ref<boolean>(false);
 
@@ -450,18 +451,8 @@ watch(v$, ({ $invalid }) => {
   emit('input', !$invalid);
 });
 
-watch(edit, async () => {
-  await setEditMode();
-});
-
-onMounted(async () => {
-  await setEditMode();
-});
-
-defineExpose({
-  save,
-  reset
-});
+watch(editableItem, setEditMode);
+onMounted(setEditMode);
 
 const historyEventSubTypeFilteredData: ComputedRef<ActionDataEntry[]> =
   computed(() => {
@@ -504,7 +495,7 @@ const { mdAndUp } = useDisplay();
 
 <template>
   <v-form
-    :value="value"
+    :value="valid"
     data-cy="transaction-event-form"
     class="transaction-event-form"
   >

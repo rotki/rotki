@@ -87,7 +87,6 @@ const { deleteLedgerAction, fetchLedgerActions, refreshLedgerActions } =
 const {
   options,
   selected,
-  openDialog,
   editableItem,
   itemsToDelete: ledgerActionsToDelete,
   confirmationMessage,
@@ -109,14 +108,18 @@ const {
   Matcher
 >(locationOverview, mainPage, useLedgerActionsFilter, fetchLedgerActions);
 
+const { setOpenDialog, setPostSubmitFunc } = useLedgerActionsForm();
+
+setPostSubmitFunc(fetchData);
+
 const newLedgerAction = () => {
   set(editableItem, null);
-  set(openDialog, true);
+  setOpenDialog(true);
 };
 
 const editLedgerActionHandler = (ledgerAction: LedgerActionEntry) => {
   set(editableItem, ledgerAction);
-  set(openDialog, true);
+  setOpenDialog(true);
 };
 
 const promptForDelete = (ledgerAction: LedgerActionEntry) => {
@@ -384,12 +387,8 @@ watch(loading, async (isLoading, wasLoading) => {
     </card>
 
     <ledger-action-form-dialog
-      v-model="openDialog"
       :loading="loading"
-      :edit="!!editableItem"
-      :form-data="editableItem"
-      @reset-edit="editableItem = null"
-      @saved="fetchData()"
+      :editable-item="editableItem"
     />
   </fragment>
 </template>

@@ -9,19 +9,18 @@ import {
 } from '@/types/history/trade';
 import { TaskType } from '@/types/task-type';
 import { toMessages } from '@/utils/validation';
-import { useTradesForm } from '@/composables/history/trades/form';
 
 const props = withDefaults(
   defineProps<{
-    edit?: Trade | null;
+    editableItem?: Trade | null;
   }>(),
   {
-    edit: null
+    editableItem: null
   }
 );
 
 const { t } = useI18n();
-const { edit } = toRefs(props);
+const { editableItem } = toRefs(props);
 
 const { isTaskRunning } = useTaskStore();
 const { getHistoricPrice } = useBalancePricesStore();
@@ -149,7 +148,7 @@ const reset = () => {
 };
 
 const setEditMode = () => {
-  const trade = get(edit);
+  const trade = get(editableItem);
   if (!trade) {
     reset();
     return;
@@ -231,7 +230,12 @@ const updateRate = (forceUpdate = false) => {
 };
 
 const fetchPrice = async () => {
-  if ((get(rate) && get(edit)) || !get(datetime) || !get(base) || !get(quote)) {
+  if (
+    (get(rate) && get(editableItem)) ||
+    !get(datetime) ||
+    !get(base) ||
+    !get(quote)
+  ) {
     return;
   }
 
@@ -282,7 +286,7 @@ watch(quoteAmount, () => {
   onQuoteAmountChange();
 });
 
-watch(edit, setEditMode);
+watch(editableItem, setEditMode);
 onMounted(setEditMode);
 </script>
 

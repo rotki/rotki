@@ -1,29 +1,20 @@
 <script lang="ts" setup>
 import { type GeneralAccount } from '@rotki/common/lib/account';
 import { helpers, required } from '@vuelidate/validators';
-import useVuelidate from '@vuelidate/core';
 import {
   type AddTransactionHashPayload,
   type EvmChainAndTxHash
 } from '@/types/history/events';
 import { type Writeable } from '@/types';
+import { toMessages } from '@/utils/validation';
 
-withDefaults(
-  defineProps<{
-    value?: boolean;
-  }>(),
-  {
-    value: false
-  }
-);
-
-const emit = defineEmits<{ (e: 'input', valid: boolean): void }>();
 const { t } = useI18n();
 
 const txHash = ref<string>('');
 const accounts = ref<GeneralAccount[]>([]);
 
 const errorMessages = ref<Record<string, string[]>>({});
+
 const reset = () => {
   set(txHash, '');
   set(accounts, []);
@@ -48,7 +39,9 @@ const rules = {
   }
 };
 
-const v$ = useVuelidate(
+const { valid, setValidation, setSubmitFunc } = useHistoryTransactionsForm();
+
+const v$ = setValidation(
   rules,
   {
     txHash,
@@ -60,10 +53,6 @@ const v$ = useVuelidate(
     $externalResults: errorMessages
   }
 );
-
-watch(v$, ({ $invalid }) => {
-  emit('input', !$invalid);
-});
 
 const { txEvmChains, getEvmChainName } = useSupportedChains();
 const txChains = useArrayMap(txEvmChains, x => x.id);
@@ -88,11 +77,10 @@ const save = async (): Promise<EvmChainAndTxHash | null> => {
     evmChain
   };
 
-  set(loading, true);
   const result = await addTransactionHash(payload);
-  set(loading, false);
 
   if (result.success) {
+    reset();
     return {
       evmChain,
       txHash: txHashVal
@@ -113,17 +101,11 @@ const save = async (): Promise<EvmChainAndTxHash | null> => {
   return null;
 };
 
-const loading: Ref<boolean> = ref(false);
-
-defineExpose({
-  loading,
-  save,
-  reset
-});
+setSubmitFunc(save);
 </script>
 
 <template>
-  <v-form :value="value">
+  <v-form :value="valid">
     <v-row class="pt-4">
       <v-col cols="12">
         <blockchain-account-selector
@@ -133,7 +115,7 @@ defineExpose({
           no-padding
           flat
           :label="t('transactions.form.account.label')"
-          :error-messages="v$.associatedAddress.$errors.map(e => e.$message)"
+          :error-messages="toMessages(v$.associatedAddress)"
         />
       </v-col>
 
@@ -142,7 +124,7 @@ defineExpose({
           v-model="txHash"
           :label="t('common.tx_hash')"
           outlined
-          :error-messages="v$.txHash.$errors.map(e => e.$message)"
+          :error-messages="toMessages(v$.txHash)"
         />
       </v-col>
     </v-row>

@@ -449,9 +449,11 @@ declare global {
   const useHistoryEventNote: typeof import('./composables/history/events/notes')['useHistoryEventNote']
   const useHistoryEvents: typeof import('./composables/history/events/index')['useHistoryEvents']
   const useHistoryEventsApi: typeof import('./composables/api/history/events')['useHistoryEventsApi']
+  const useHistoryEventsForm: typeof import('./composables/history/events/form')['useHistoryEventsForm']
   const useHistoryIgnoringApi: typeof import('./composables/api/history/ignore')['useHistoryIgnoringApi']
   const useHistoryStore: typeof import('./store/history/index')['useHistoryStore']
-  const useHistoryTransactions: typeof import('./composables/history/events/tx')['useHistoryTransactions']
+  const useHistoryTransactions: typeof import('./composables/history/events/tx/index')['useHistoryTransactions']
+  const useHistoryTransactionsForm: typeof import('./composables/history/events/tx/form')['useHistoryTransactionsForm']
   const useI18n: typeof import('./composables/usei18n')['useI18n']
   const useIdle: typeof import('@vueuse/core')['useIdle']
   const useIgnore: typeof import('./composables/history/index')['useIgnore']
@@ -476,6 +478,7 @@ declare global {
   const useLedgerActions: typeof import('./composables/history/ledger-actions/index')['useLedgerActions']
   const useLedgerActionsApi: typeof import('./composables/api/history/ledger-actions')['useLedgerActionsApi']
   const useLedgerActionsFilter: typeof import('./composables/filters/ledger-actions')['useLedgerActionsFilter']
+  const useLedgerActionsForm: typeof import('./composables/history/ledger-actions/form')['useLedgerActionsForm']
   const useLink: typeof import('vue-router/composables')['useLink']
   const useLinks: typeof import('./composables/links')['useLinks']
   const useLiquidityPosition: typeof import('./composables/defi/index')['useLiquidityPosition']
@@ -638,6 +641,7 @@ declare global {
   const useUrlSearchParams: typeof import('@vueuse/core')['useUrlSearchParams']
   const useUserMedia: typeof import('@vueuse/core')['useUserMedia']
   const useUserNotesApi: typeof import('./composables/api/session/user-notes')['useUserNotesApi']
+  const useUserNotesForm: typeof import('./composables/notes/form')['useUserNotesForm']
   const useUsersApi: typeof import('./composables/api/session/users')['useUsersApi']
   const useVModel: typeof import('@vueuse/core')['useVModel']
   const useVModels: typeof import('@vueuse/core')['useVModels']
@@ -1132,9 +1136,11 @@ declare module 'vue' {
     readonly useHistoryEventNote: UnwrapRef<typeof import('./composables/history/events/notes')['useHistoryEventNote']>
     readonly useHistoryEvents: UnwrapRef<typeof import('./composables/history/events/index')['useHistoryEvents']>
     readonly useHistoryEventsApi: UnwrapRef<typeof import('./composables/api/history/events')['useHistoryEventsApi']>
+    readonly useHistoryEventsForm: UnwrapRef<typeof import('./composables/history/events/form')['useHistoryEventsForm']>
     readonly useHistoryIgnoringApi: UnwrapRef<typeof import('./composables/api/history/ignore')['useHistoryIgnoringApi']>
     readonly useHistoryStore: UnwrapRef<typeof import('./store/history/index')['useHistoryStore']>
-    readonly useHistoryTransactions: UnwrapRef<typeof import('./composables/history/events/tx')['useHistoryTransactions']>
+    readonly useHistoryTransactions: UnwrapRef<typeof import('./composables/history/events/tx/index')['useHistoryTransactions']>
+    readonly useHistoryTransactionsForm: UnwrapRef<typeof import('./composables/history/events/tx/form')['useHistoryTransactionsForm']>
     readonly useI18n: UnwrapRef<typeof import('./composables/usei18n')['useI18n']>
     readonly useIdle: UnwrapRef<typeof import('@vueuse/core')['useIdle']>
     readonly useIgnore: UnwrapRef<typeof import('./composables/history/index')['useIgnore']>
@@ -1159,6 +1165,7 @@ declare module 'vue' {
     readonly useLedgerActions: UnwrapRef<typeof import('./composables/history/ledger-actions/index')['useLedgerActions']>
     readonly useLedgerActionsApi: UnwrapRef<typeof import('./composables/api/history/ledger-actions')['useLedgerActionsApi']>
     readonly useLedgerActionsFilter: UnwrapRef<typeof import('./composables/filters/ledger-actions')['useLedgerActionsFilter']>
+    readonly useLedgerActionsForm: UnwrapRef<typeof import('./composables/history/ledger-actions/form')['useLedgerActionsForm']>
     readonly useLink: UnwrapRef<typeof import('vue-router/composables')['useLink']>
     readonly useLinks: UnwrapRef<typeof import('./composables/links')['useLinks']>
     readonly useLiquidityPosition: UnwrapRef<typeof import('./composables/defi/index')['useLiquidityPosition']>
@@ -1321,6 +1328,7 @@ declare module 'vue' {
     readonly useUrlSearchParams: UnwrapRef<typeof import('@vueuse/core')['useUrlSearchParams']>
     readonly useUserMedia: UnwrapRef<typeof import('@vueuse/core')['useUserMedia']>
     readonly useUserNotesApi: UnwrapRef<typeof import('./composables/api/session/user-notes')['useUserNotesApi']>
+    readonly useUserNotesForm: UnwrapRef<typeof import('./composables/notes/form')['useUserNotesForm']>
     readonly useUsersApi: UnwrapRef<typeof import('./composables/api/session/users')['useUsersApi']>
     readonly useVModel: UnwrapRef<typeof import('@vueuse/core')['useVModel']>
     readonly useVModels: UnwrapRef<typeof import('@vueuse/core')['useVModels']>
@@ -1809,9 +1817,11 @@ declare module '@vue/runtime-core' {
     readonly useHistoryEventNote: UnwrapRef<typeof import('./composables/history/events/notes')['useHistoryEventNote']>
     readonly useHistoryEvents: UnwrapRef<typeof import('./composables/history/events/index')['useHistoryEvents']>
     readonly useHistoryEventsApi: UnwrapRef<typeof import('./composables/api/history/events')['useHistoryEventsApi']>
+    readonly useHistoryEventsForm: UnwrapRef<typeof import('./composables/history/events/form')['useHistoryEventsForm']>
     readonly useHistoryIgnoringApi: UnwrapRef<typeof import('./composables/api/history/ignore')['useHistoryIgnoringApi']>
     readonly useHistoryStore: UnwrapRef<typeof import('./store/history/index')['useHistoryStore']>
-    readonly useHistoryTransactions: UnwrapRef<typeof import('./composables/history/events/tx')['useHistoryTransactions']>
+    readonly useHistoryTransactions: UnwrapRef<typeof import('./composables/history/events/tx/index')['useHistoryTransactions']>
+    readonly useHistoryTransactionsForm: UnwrapRef<typeof import('./composables/history/events/tx/form')['useHistoryTransactionsForm']>
     readonly useI18n: UnwrapRef<typeof import('./composables/usei18n')['useI18n']>
     readonly useIdle: UnwrapRef<typeof import('@vueuse/core')['useIdle']>
     readonly useIgnore: UnwrapRef<typeof import('./composables/history/index')['useIgnore']>
@@ -1836,6 +1846,7 @@ declare module '@vue/runtime-core' {
     readonly useLedgerActions: UnwrapRef<typeof import('./composables/history/ledger-actions/index')['useLedgerActions']>
     readonly useLedgerActionsApi: UnwrapRef<typeof import('./composables/api/history/ledger-actions')['useLedgerActionsApi']>
     readonly useLedgerActionsFilter: UnwrapRef<typeof import('./composables/filters/ledger-actions')['useLedgerActionsFilter']>
+    readonly useLedgerActionsForm: UnwrapRef<typeof import('./composables/history/ledger-actions/form')['useLedgerActionsForm']>
     readonly useLink: UnwrapRef<typeof import('vue-router/composables')['useLink']>
     readonly useLinks: UnwrapRef<typeof import('./composables/links')['useLinks']>
     readonly useLiquidityPosition: UnwrapRef<typeof import('./composables/defi/index')['useLiquidityPosition']>
@@ -1998,6 +2009,7 @@ declare module '@vue/runtime-core' {
     readonly useUrlSearchParams: UnwrapRef<typeof import('@vueuse/core')['useUrlSearchParams']>
     readonly useUserMedia: UnwrapRef<typeof import('@vueuse/core')['useUserMedia']>
     readonly useUserNotesApi: UnwrapRef<typeof import('./composables/api/session/user-notes')['useUserNotesApi']>
+    readonly useUserNotesForm: UnwrapRef<typeof import('./composables/notes/form')['useUserNotesForm']>
     readonly useUsersApi: UnwrapRef<typeof import('./composables/api/session/users')['useUsersApi']>
     readonly useVModel: UnwrapRef<typeof import('@vueuse/core')['useVModel']>
     readonly useVModels: UnwrapRef<typeof import('@vueuse/core')['useVModels']>

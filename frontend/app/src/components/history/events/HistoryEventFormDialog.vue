@@ -1,13 +1,8 @@
 <script lang="ts" setup>
-import {
-  type EvmChainAndTxHash,
-  type EvmHistoryEvent
-} from '@/types/history/events';
-import type TransactionEventForm from '@/components/history/events/HistoryEventForm.vue';
+import { type EvmHistoryEvent } from '@/types/history/events';
 
 const props = withDefaults(
   defineProps<{
-    value: boolean;
     editableItem?: EvmHistoryEvent | null;
     loading?: boolean;
     transaction: EvmHistoryEvent;
@@ -20,32 +15,8 @@ const props = withDefaults(
 
 const { editableItem, transaction } = toRefs(props);
 
-const emit = defineEmits<{
-  (e: 'input', open: boolean): void;
-  (e: 'reset-edit'): void;
-  (e: 'saved', item: EvmChainAndTxHash): void;
-}>();
-
-const valid: Ref<boolean> = ref(false);
-const form = ref<InstanceType<typeof TransactionEventForm> | null>(null);
-
-const clearDialog = () => {
-  get(form)?.reset();
-  emit('input', false);
-  emit('reset-edit');
-};
-
-const confirmSave = async () => {
-  if (!isDefined(form)) {
-    return;
-  }
-  const success = await get(form)?.save();
-  if (success) {
-    const tx = get(transaction);
-    clearDialog();
-    emit('saved', toEvmChainAndTxHash(tx));
-  }
-};
+const { openDialog, submitting, closeDialog, trySubmit } =
+  useHistoryEventsForm();
 
 const { t } = useI18n();
 
@@ -58,19 +29,17 @@ const title: ComputedRef<string> = computed(() =>
 
 <template>
   <big-dialog
-    :display="value"
+    :display="openDialog"
     :title="title"
     :primary-action="t('common.actions.save')"
-    :action-disabled="loading || !valid"
-    :loading="loading"
-    @confirm="confirmSave()"
-    @cancel="clearDialog()"
+    :action-disabled="loading || submitting"
+    :loading="loading || submitting"
+    @confirm="trySubmit()"
+    @cancel="closeDialog()"
   >
     <history-event-form
-      ref="form"
-      v-model="valid"
       :transaction="transaction"
-      :edit="editableItem"
+      :editable-item="editableItem"
     />
   </big-dialog>
 </template>

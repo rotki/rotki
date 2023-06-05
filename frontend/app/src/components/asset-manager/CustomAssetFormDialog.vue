@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { type CustomAsset } from '@/types/asset';
 import CustomAssetForm from '@/components/asset-manager/CustomAssetForm.vue';
-import { useCustomAssetForm } from '@/composables/assets/forms/custom-asset-form';
 
 const props = withDefaults(
   defineProps<{
@@ -20,8 +19,7 @@ const props = withDefaults(
 const { editableItem } = toRefs(props);
 const { t } = useI18n();
 
-const { valid, openDialog, submitting, closeDialog, trySubmit } =
-  useCustomAssetForm();
+const { openDialog, submitting, closeDialog, trySubmit } = useCustomAssetForm();
 </script>
 
 <template>
@@ -29,7 +27,7 @@ const { valid, openDialog, submitting, closeDialog, trySubmit } =
     :display="openDialog"
     :title="title"
     :subtitle="subtitle"
-    :action-disabled="submitting || !valid"
+    :action-disabled="submitting"
     :primary-action="t('common.actions.save')"
     :loading="submitting"
     @confirm="trySubmit()"

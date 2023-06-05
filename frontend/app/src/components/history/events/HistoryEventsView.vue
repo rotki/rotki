@@ -136,7 +136,6 @@ const { refreshTransactions, fetchTransactionEvents, deleteTransactionEvent } =
 const {
   options,
   selected,
-  openDialog,
   isLoading: isEventsGroupHeaderLoading,
   userAction,
   state: eventsHeader,
@@ -283,16 +282,25 @@ const toggleIgnore = async (item: HistoryEventEntry) => {
   await ignore(!item.ignoredInAccounting);
 };
 
+const { setOpenDialog, setPostSubmitFunc } = useHistoryEventsForm();
+
+setPostSubmitFunc(() => {
+  const tx = get(selectedTransaction);
+  if (tx) {
+    fetchDataAndRefreshEvents(toEvmChainAndTxHash(tx));
+  }
+});
+
 const addEvent = (tx: EvmHistoryEvent) => {
   set(selectedTransaction, tx);
   set(editableItem, null);
-  set(openDialog, true);
+  setOpenDialog(true);
 };
 
 const editEventHandler = (event: EvmHistoryEvent, tx: EvmHistoryEvent) => {
   set(selectedTransaction, tx);
   set(editableItem, event);
-  set(openDialog, true);
+  setOpenDialog(true);
 };
 
 const promptForDelete = ({
@@ -454,9 +462,19 @@ watch(eventTaskLoading, async (isLoading, wasLoading) => {
   }
 });
 
-const openAddTxDialog: Ref<boolean> = ref(false);
+const {
+  setOpenDialog: setTxFormOpenDialog,
+  setPostSubmitFunc: setTxFormPostSubmitFunc
+} = useHistoryTransactionsForm();
+
+setTxFormPostSubmitFunc(payload => {
+  if (payload) {
+    fetchDataAndRefreshEvents(payload, true);
+  }
+});
+
 const addTransactionHash = () => {
-  set(openAddTxDialog, true);
+  setTxFormOpenDialog(true);
 };
 
 const fetchDataAndRefreshEvents = async (
@@ -686,20 +704,12 @@ const { locationData } = useLocations();
     </card>
 
     <history-event-form-dialog
-      v-model="openDialog"
       :loading="sectionLoading"
       :editable-item="editableItem"
-      :open="openDialog"
       :transaction="selectedTransaction"
-      @reset-edit="editableItem = null"
-      @saved="fetchDataAndRefreshEvents($event)"
     />
 
-    <history-form-dialog
-      v-model="openAddTxDialog"
-      :loading="sectionLoading"
-      @saved="fetchDataAndRefreshEvents($event, true)"
-    />
+    <transaction-form-dialog :loading="sectionLoading" />
   </div>
 </template>
 

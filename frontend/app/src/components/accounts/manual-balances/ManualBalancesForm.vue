@@ -6,8 +6,6 @@ import { type ManualBalance } from '@/types/manual-balances';
 import { toMessages } from '@/utils/validation';
 import { BalanceType } from '@/types/balances';
 import ManualBalancesPriceForm from '@/components/accounts/manual-balances/ManualBalancesPriceForm.vue';
-import { useCustomAssetForm } from '@/composables/assets/forms/custom-asset-form';
-import { useManualBalancesForm } from '@/composables/balances/manual/form';
 
 const props = withDefaults(
   defineProps<{

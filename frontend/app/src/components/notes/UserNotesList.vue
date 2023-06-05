@@ -2,6 +2,7 @@
 import Fragment from '@/components/helper/Fragment';
 import { type Collection } from '@/types/collection';
 import { type UserNote, type UserNotesFilter } from '@/types/notes';
+import UserNotesFormDialog from '@/components/notes/UserNotesFormDialog.vue';
 
 const getDefaultForm = () => ({
   title: '',
@@ -26,10 +27,8 @@ const notes = ref<Collection<UserNote>>(defaultCollectionState<UserNote>());
 const animateDelete = ref<boolean>(false);
 const showDeleteConfirmation = ref<boolean>(false);
 const idToDelete = ref<number | null>(null);
-const showForm = ref<boolean>(false);
 const form = ref<Partial<UserNote>>(getDefaultForm());
 const editMode = ref<boolean>(false);
-const valid = ref<boolean>(false);
 const loading = ref<boolean>(false);
 const search = ref<string>('');
 const itemsPerPage = 10;
@@ -98,21 +97,21 @@ const togglePin = async (note: UserNote) => {
 
 const resetForm = () => {
   set(editMode, false);
-  set(showForm, false);
-  set(valid, false);
   set(form, getDefaultForm());
+  closeDialog();
 };
+
+const { closeDialog, setOpenDialog, setSubmitFunc } = useUserNotesForm();
 
 const addNote = () => {
   resetForm();
-  set(showForm, true);
+  setOpenDialog(true);
 };
 
 const editNote = (note: UserNote) => {
   set(editMode, true);
   set(form, { ...note });
-  set(valid, true);
-  set(showForm, true);
+  setOpenDialog(true);
 };
 
 const callUpdateNote = async (payload: Partial<UserNote>) => {
@@ -133,6 +132,7 @@ const save = async () => {
     logger.error(e);
   }
 };
+setSubmitFunc(save);
 
 const deleteNote = async (identifier: number) => {
   set(showDeleteConfirmation, true);
@@ -323,19 +323,11 @@ onMounted(async () => {
       <div v-else class="note__empty">{{ t('notes_menu.empty_notes') }}</div>
     </div>
 
-    <big-dialog
-      :display="showForm"
-      :title="
-        editMode
-          ? t('notes_menu.dialog.edit_title')
-          : t('notes_menu.dialog.add_title')
-      "
-      :action-disabled="!valid"
-      @confirm="save()"
-      @cancel="resetForm()"
-    >
-      <user-note-form v-model="form" @valid="valid = $event" />
-    </big-dialog>
+    <user-notes-form-dialog
+      v-model="form"
+      :edit-mode="editMode"
+      @reset="resetForm()"
+    />
   </fragment>
 </template>
 

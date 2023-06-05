@@ -9,7 +9,6 @@ import {
   type CustomAsset,
   type CustomAssetRequestPayload
 } from '@/types/asset';
-import { useCustomAssetForm } from '@/composables/assets/forms/custom-asset-form';
 
 const props = withDefaults(
   defineProps<{

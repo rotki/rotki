@@ -1,60 +1,33 @@
 <script setup lang="ts">
-import { type ComputedRef, type Ref } from 'vue';
+import { type ComputedRef } from 'vue';
 import { type LedgerActionEntry } from '@/types/history/ledger-action/ledger-actions';
-import LedgerActionForm from '@/components/history/ledger-actions/LedgerActionForm.vue';
 
 const props = withDefaults(
   defineProps<{
-    value: boolean;
-    edit?: boolean;
-    formData?: Partial<LedgerActionEntry> | null;
+    editableItem?: Partial<LedgerActionEntry> | null;
     loading?: boolean;
   }>(),
   {
-    edit: false,
-    formData: null,
+    editableItem: null,
     loading: false
   }
 );
 
-const { edit } = toRefs(props);
+const { editableItem } = toRefs(props);
 
-const emit = defineEmits<{
-  (e: 'input', open: boolean): void;
-  (e: 'reset-edit'): void;
-  (e: 'saved'): void;
-}>();
-
-const valid: Ref<boolean> = ref(false);
-const form = ref<InstanceType<typeof LedgerActionForm> | null>(null);
-
-const clearDialog = () => {
-  get(form)?.reset();
-  emit('input', false);
-  emit('reset-edit');
-};
-
-const confirmSave = async () => {
-  if (!isDefined(form)) {
-    return;
-  }
-  const success = await get(form)?.save();
-  if (success) {
-    clearDialog();
-    emit('saved');
-  }
-};
+const { openDialog, submitting, closeDialog, trySubmit } =
+  useLedgerActionsForm();
 
 const { t } = useI18n();
 
 const title: ComputedRef<string> = computed(() =>
-  get(edit)
+  get(editableItem)
     ? t('ledger_actions.dialog.edit.title')
     : t('ledger_actions.dialog.add.title')
 );
 
 const subtitle: ComputedRef<string> = computed(() =>
-  get(edit)
+  get(editableItem)
     ? t('ledger_actions.dialog.edit.subtitle')
     : t('ledger_actions.dialog.add.subtitle')
 );
@@ -62,20 +35,15 @@ const subtitle: ComputedRef<string> = computed(() =>
 
 <template>
   <big-dialog
-    :display="value"
+    :display="openDialog"
     :title="title"
     :subtitle="subtitle"
     :primary-action="t('common.actions.save')"
-    :action-disabled="loading || !valid"
-    :loading="loading"
-    @confirm="confirmSave()"
-    @cancel="clearDialog()"
+    :action-disabled="loading || submitting"
+    :loading="loading || submitting"
+    @confirm="trySubmit()"
+    @cancel="closeDialog()"
   >
-    <ledger-action-form
-      ref="form"
-      v-model="valid"
-      :edit="edit"
-      :form-data="formData"
-    />
+    <ledger-action-form :editable-item="editableItem" />
   </big-dialog>
 </template>
