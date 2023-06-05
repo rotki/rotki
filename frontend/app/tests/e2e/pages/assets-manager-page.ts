@@ -139,8 +139,8 @@ export class AssetsManagerPage {
     cy.get('[data-cy=bottom-dialog] [data-cy=confirm]').as('submitButton');
     cy.get('@submitButton').should('be.enabled');
     cy.get('@submitButton').click();
-    // on empty form click, backend validation should make the button disabled
-    cy.get('@submitButton').should('be.disabled');
+    // button should be enabled regardless of the validation status
+    cy.get('@submitButton').should('be.enabled');
 
     // expect to see backend validation messages
     cy.get('[data-cy=chain-select] .v-messages__message')

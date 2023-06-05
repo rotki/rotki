@@ -4,28 +4,27 @@ import {
   type NotificationPayload,
   Severity
 } from '@rotki/common/lib/messages';
-import { type ComputedRef, type PropType } from 'vue';
+import { type ComputedRef } from 'vue';
 import { type DataTableHeader } from '@/types/vuetify';
 import { CURRENCY_USD } from '@/types/currencies';
 import { isNft } from '@/utils/nft';
 import { type ManualPrice } from '@/types/prices';
 import { Section } from '@/types/status';
 
-const props = defineProps({
-  assetFilter: {
-    type: String as PropType<string | null>,
-    required: false,
-    default: null
-  },
-  refreshing: {
-    type: Boolean,
-    required: false,
-    default: false
+const props = withDefaults(
+  defineProps<{
+    assetFilter?: string | null;
+  }>(),
+  {
+    assetFilter: null
   }
-});
+);
 
-const emit = defineEmits(['edit', 'refreshed']);
-const { assetFilter, refreshing } = toRefs(props);
+const emit = defineEmits<{
+  (e: 'edit', item: ManualPrice): void;
+}>();
+
+const { assetFilter } = toRefs(props);
 
 const latestPrices = ref<ManualPrice[]>([]);
 const loading = ref(false);
@@ -138,15 +137,9 @@ const filteredPrices = computed(() => {
   }));
 });
 
-watch(refreshing, async refreshing => {
-  if (!refreshing) {
-    return;
-  }
-  await refresh();
-  emit('refreshed');
-});
-
+const { setPostSubmitFunc } = useLatestPriceForm();
 onMounted(refresh);
+setPostSubmitFunc(refresh);
 
 const { show } = useConfirmStore();
 
@@ -216,7 +209,7 @@ const showDeleteConfirmation = (item: ManualPrice) => {
             :delete-tooltip="t('price_table.actions.delete.tooltip')"
             :edit-tooltip="t('price_table.actions.edit.tooltip')"
             @delete-click="showDeleteConfirmation(item)"
-            @edit-click="$emit('edit', item)"
+            @edit-click="emit('edit', item)"
           />
         </template>
       </data-table>

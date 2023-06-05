@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { type SupportedAsset } from '@rotki/common/lib/data';
-import ManagedAssetForm from '@/components/asset-manager/ManagedAssetForm.vue';
 import { type Collection } from '@/types/collection';
 import { type Nullable } from '@/types';
 import {
@@ -8,6 +7,7 @@ import {
   type IgnoredAssetsHandlingType
 } from '@/types/asset';
 import { type Filters, type Matcher } from '@/composables/filters/assets';
+import { useManagedAssetForm } from '@/composables/assets/forms/managed-asset-form';
 
 const props = withDefaults(
   defineProps<{
@@ -19,11 +19,7 @@ const props = withDefaults(
 
 const { identifier, mainPage } = toRefs(props);
 
-const validForm = ref<boolean>(false);
-const showForm = ref<boolean>(false);
-const saving = ref<boolean>(false);
 const mergeTool = ref<boolean>(false);
-const form = ref<InstanceType<typeof ManagedAssetForm> | null>(null);
 const ignoredAssetsHandling = ref<IgnoredAssetsHandlingType>('exclude');
 const showUserOwnedAssetsOnly = ref(false);
 
@@ -33,7 +29,7 @@ const extraParams = computed(() => ({
 }));
 
 const dialogTitle = computed<string>(() =>
-  get(asset)
+  get(editableItem)
     ? t('asset_management.edit_title')
     : t('asset_management.add_title')
 );
@@ -46,14 +42,16 @@ const { setMessage } = useMessageStore();
 const { show } = useConfirmStore();
 const { ignoredAssets } = storeToRefs(useIgnoredAssetsStore());
 
+const { setOpenDialog, setPostSubmitFunc } = useManagedAssetForm();
+
 const add = () => {
-  set(asset, null);
-  set(showForm, true);
+  set(editableItem, null);
+  setOpenDialog(true);
 };
 
 const edit = (editAsset: SupportedAsset) => {
-  set(asset, editAsset);
-  set(showForm, true);
+  set(editableItem, editAsset);
+  setOpenDialog(true);
 };
 
 const editAsset = async (assetId: Nullable<string>) => {
@@ -69,17 +67,6 @@ const editAsset = async (assetId: Nullable<string>) => {
       edit(foundAsset);
     }
   }
-};
-
-const save = async () => {
-  set(saving, true);
-  const success = await get(form)?.save();
-  if (success) {
-    set(showForm, false);
-    await fetchData();
-    set(asset, null);
-  }
-  set(saving, false);
 };
 
 const deleteAssetHandler = async (identifier: string) => {
@@ -102,10 +89,6 @@ const confirmDelete = async (toDeleteAsset: SupportedAsset) => {
   await deleteAssetHandler(toDeleteAsset.identifier);
 };
 
-const closeDialog = async () => {
-  set(showForm, false);
-};
-
 watch([ignoredAssetsHandling, showUserOwnedAssetsOnly], async () => {
   setPage(1);
 });
@@ -117,7 +100,7 @@ const {
   selected,
   state: assets,
   isLoading: loading,
-  editableItem: asset,
+  editableItem,
   options,
   fetchData,
   setOptions,
@@ -141,6 +124,8 @@ const {
     ascending: [true]
   }
 });
+
+setPostSubmitFunc(fetchData);
 
 const showDeleteConfirmation = (item: SupportedAsset) => {
   show(
@@ -232,22 +217,10 @@ watch(identifier, async assetId => {
       @update:ignored-assets-handling="ignoredAssetsHandling = $event"
       @update:only-show-owned="showUserOwnedAssetsOnly = $event"
     />
-    <big-dialog
-      :display="showForm"
+
+    <managed-asset-form-dialog
       :title="dialogTitle"
-      subtitle=""
-      :action-disabled="!validForm || saving"
-      :primary-action="t('common.actions.save')"
-      :loading="saving"
-      @confirm="save()"
-      @cancel="closeDialog()"
-    >
-      <managed-asset-form
-        ref="form"
-        :edit="asset"
-        :saving="saving"
-        @input="validForm = $event"
-      />
-    </big-dialog>
+      :editable-item="editableItem"
+    />
   </v-container>
 </template>

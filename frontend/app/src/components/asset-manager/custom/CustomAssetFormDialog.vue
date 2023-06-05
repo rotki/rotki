@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { type CustomAsset } from '@/types/asset';
-import CustomAssetForm from '@/components/asset-manager/CustomAssetForm.vue';
 
 const props = withDefaults(
   defineProps<{
@@ -33,6 +32,6 @@ const { openDialog, submitting, closeDialog, trySubmit } = useCustomAssetForm();
     @confirm="trySubmit()"
     @cancel="closeDialog()"
   >
-    <custom-asset-form :types="types" :edit="editableItem" />
+    <custom-asset-form :types="types" :editable-item="editableItem" />
   </big-dialog>
 </template>

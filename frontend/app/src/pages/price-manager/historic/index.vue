@@ -11,6 +11,7 @@ import {
   type ManualPricePayload
 } from '@/types/prices';
 import { useHistoricCachePriceStore } from '@/store/prices/historic';
+import { useHistoricPriceForm } from '@/composables/price-manager/historic/form';
 
 const emptyPrice: () => HistoricalPriceFormPayload = () => ({
   fromAsset: '',
@@ -20,7 +21,6 @@ const emptyPrice: () => HistoricalPriceFormPayload = () => ({
 });
 
 const formData = ref<HistoricalPriceFormPayload>(emptyPrice());
-const showForm = ref(false);
 const filter = reactive<{
   fromAsset: Nullable<string>;
   toAsset: Nullable<string>;
@@ -28,7 +28,6 @@ const filter = reactive<{
   fromAsset: null,
   toAsset: null
 });
-const valid = ref(false);
 const editMode = ref(false);
 
 const { setMessage } = useMessageStore();
@@ -41,6 +40,16 @@ const {
 const router = useRouter();
 const route = useRoute();
 const { t } = useI18n();
+
+const {
+  openDialog,
+  setOpenDialog,
+  submitting,
+  closeDialog,
+  setSubmitFunc,
+  trySubmit,
+  setPostSubmitFunc
+} = useHistoricPriceForm();
 
 const prices: Ref<HistoricalPrice[]> = ref([]);
 const loading: Ref<boolean> = ref(false);
@@ -108,33 +117,29 @@ const openForm = (hPrice: HistoricalPrice | null = null) => {
       toAsset: filter.toAsset ?? ''
     });
   }
-  set(showForm, true);
+  setOpenDialog(true);
 };
 
 const hideForm = function () {
-  set(showForm, false);
+  closeDialog();
   set(formData, emptyPrice());
 };
 
-const managePrice = async (
-  price: HistoricalPriceFormPayload,
-  edit: boolean
-) => {
-  try {
-    if (edit) {
-      await editHistoricalPrice(price);
-    } else {
-      await addHistoricalPrice(price);
-    }
+const save = async () => {
+  const form = get(formData);
+  const isEdit = get(editMode);
 
-    set(showForm, false);
-    await refresh({ modified: true });
+  try {
+    if (isEdit) {
+      return await editHistoricalPrice(form);
+    }
+    return await addHistoricalPrice(form);
   } catch (e: any) {
     const values = { message: e.message };
-    const title = edit
+    const title = isEdit
       ? t('price_management.edit.error.title')
       : t('price_management.add.error.title');
-    const description = edit
+    const description = isEdit
       ? t('price_management.edit.error.description', values)
       : t('price_management.add.error.description', values);
     setMessage({
@@ -142,8 +147,12 @@ const managePrice = async (
       description,
       success: false
     });
+
+    return false;
   }
 };
+
+setSubmitFunc(save);
 
 const { show } = useConfirmStore();
 
@@ -187,6 +196,8 @@ onMounted(async () => {
     await router.replace({ query: {} });
   }
 });
+
+setPostSubmitFunc(() => refresh({ modified: true }));
 </script>
 
 <template>
@@ -232,21 +243,18 @@ onMounted(async () => {
       </v-btn>
     </historic-price-table>
     <big-dialog
-      :display="showForm"
+      :display="openDialog"
       :title="
         editMode
           ? t('price_management.dialog.edit_title')
           : t('price_management.dialog.add_title')
       "
-      :action-disabled="!valid"
-      @confirm="managePrice(formData, editMode)"
+      :action-disabled="submitting"
+      :loading="submitting"
+      @confirm="trySubmit()"
       @cancel="hideForm()"
     >
-      <historic-price-form
-        v-model="formData"
-        :edit="editMode"
-        @valid="valid = $event"
-      />
+      <historic-price-form v-model="formData" :edit="editMode" />
     </big-dialog>
   </v-container>
 </template>

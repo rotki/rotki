@@ -9,18 +9,24 @@ const emptyPrice: () => ManualPriceFormPayload = () => ({
   price: '0'
 });
 
-const refreshing = ref(false);
 const formData = ref<ManualPriceFormPayload>(emptyPrice());
-const showForm = ref(false);
 
 const assetFilter = ref<Nullable<string>>(null);
-const valid = ref(false);
 const editMode = ref(false);
 
 const { setMessage } = useMessageStore();
 const router = useRouter();
 const route = useRoute();
 const { t } = useI18n();
+
+const {
+  openDialog,
+  setOpenDialog,
+  submitting,
+  closeDialog,
+  setSubmitFunc,
+  trySubmit
+} = useLatestPriceForm();
 
 const openForm = (cPrice: ManualPrice | null = null) => {
   set(editMode, !!cPrice);
@@ -36,26 +42,22 @@ const openForm = (cPrice: ManualPrice | null = null) => {
       fromAsset: get(assetFilter) ?? ''
     });
   }
-  set(showForm, true);
+  setOpenDialog(true);
 };
 
 const hideForm = function () {
-  set(showForm, false);
+  closeDialog();
   set(formData, emptyPrice());
 };
 
 const { addLatestPrice } = useAssetPricesApi();
 
-const managePrice = async () => {
+const save = async (): Promise<boolean> => {
   const form = get(formData);
   const isEdit = get(editMode);
 
   try {
-    await addLatestPrice(omit(form, 'usdPrice'));
-    set(showForm, false);
-    if (!get(refreshing)) {
-      set(refreshing, true);
-    }
+    return await addLatestPrice(omit(form, 'usdPrice'));
   } catch (e: any) {
     const values = { message: e.message };
     const title = isEdit
@@ -70,8 +72,11 @@ const managePrice = async () => {
       description,
       success: false
     });
+    return false;
   }
 };
+
+setSubmitFunc(save);
 
 onMounted(async () => {
   const query = get(route).query;
@@ -108,30 +113,25 @@ onMounted(async () => {
     <latest-price-table
       class="mt-12"
       :asset-filter="assetFilter"
-      :refreshing="refreshing"
       @edit="openForm($event)"
-      @refreshed="refreshing = false"
     >
       <v-btn absolute fab top right color="primary" @click="openForm()">
         <v-icon> mdi-plus </v-icon>
       </v-btn>
     </latest-price-table>
     <big-dialog
-      :display="showForm"
+      :display="openDialog"
       :title="
         editMode
           ? t('price_management.dialog.edit_title')
           : t('price_management.dialog.add_title')
       "
-      :action-disabled="!valid"
-      @confirm="managePrice()"
+      :action-disabled="submitting"
+      :loading="submitting"
+      @confirm="trySubmit()"
       @cancel="hideForm()"
     >
-      <latest-price-form
-        v-model="formData"
-        :edit="editMode"
-        @valid="valid = $event"
-      />
+      <latest-price-form v-model="formData" :edit="editMode" />
     </big-dialog>
   </v-container>
 </template>
