@@ -254,7 +254,7 @@ const massIgnore = async (ignored: boolean) => {
             </v-list>
           </v-menu>
         </v-col>
-        <v-col cols="12" md="4" class="pb-md-8">
+        <v-col cols="12" md="5" class="pb-md-8">
           <table-filter
             :matches="filters"
             :matchers="matchers"

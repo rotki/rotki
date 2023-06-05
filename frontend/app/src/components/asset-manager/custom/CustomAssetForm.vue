@@ -7,13 +7,13 @@ import { toMessages } from '@/utils/validation';
 
 const props = withDefaults(
   defineProps<{
-    edit?: CustomAsset | null;
+    editableItem?: CustomAsset | null;
     types?: string[];
   }>(),
-  { edit: null, types: () => [] }
+  { editableItem: null, types: () => [] }
 );
 
-const { edit } = toRefs(props);
+const { editableItem } = toRefs(props);
 
 const emptyCustomAsset: () => CustomAsset = () => ({
   identifier: '',
@@ -25,7 +25,7 @@ const emptyCustomAsset: () => CustomAsset = () => ({
 const formData = ref<CustomAsset>(emptyCustomAsset());
 
 const checkEditableItem = () => {
-  const form = get(edit);
+  const form = get(editableItem);
   if (form) {
     set(search, form.customAssetType);
     set(formData, form);
@@ -35,7 +35,7 @@ const checkEditableItem = () => {
   }
 };
 
-watch(edit, checkEditableItem);
+watch(editableItem, checkEditableItem);
 onMounted(checkEditableItem);
 
 const input = (asset: Partial<CustomAsset>) => {
@@ -93,7 +93,7 @@ const save = async (): Promise<string> => {
   const data = get(formData);
   let success = false;
   let identifier = data.identifier;
-  const editMode = get(edit);
+  const editMode = get(editableItem);
 
   try {
     if (editMode) {

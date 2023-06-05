@@ -5,7 +5,6 @@ import {
   type SupportedAsset,
   type UnderlyingToken
 } from '@rotki/common/lib/data';
-import useVuelidate from '@vuelidate/core';
 import { required } from '@vuelidate/validators';
 import omit from 'lodash/omit';
 import { type ComputedRef, type Ref } from 'vue';
@@ -15,6 +14,8 @@ import { evmTokenKindsData } from '@/types/blockchain/chains';
 import { CUSTOM_ASSET, EVM_TOKEN } from '@/types/asset';
 import { ApiValidationError } from '@/types/api/errors';
 import AssetIconForm from '@/components/asset-manager/AssetIconForm.vue';
+import { useManagedAssetForm } from '@/composables/assets/forms/managed-asset-form';
+import { toMessages } from '@/utils/validation';
 
 function time(t: string): number | undefined {
   return t ? convertToTimestamp(t) : undefined;
@@ -22,18 +23,17 @@ function time(t: string): number | undefined {
 
 const props = withDefaults(
   defineProps<{
-    edit?: SupportedAsset | null;
-    saving?: boolean;
+    editableItem?: SupportedAsset | null;
   }>(),
   {
-    edit: null
+    editableItem: null
   }
 );
 
 const emit = defineEmits<{ (e: 'input', valid: boolean): void }>();
 
 const { t } = useI18n();
-const { edit } = toRefs(props);
+const { editableItem } = toRefs(props);
 const { fetchTokenDetails } = useAssetInfoRetrieval();
 
 const input = (value: boolean) => {
@@ -74,18 +74,47 @@ const { setMessage } = useMessageStore();
 
 const { getAssetTypes, editAsset, addAsset } = useAssetManagementApi();
 
-const v$ = useVuelidate(
+const { valid, setValidation, setSubmitFunc, submitting } =
+  useManagedAssetForm();
+
+const externalServerValidation = () => true;
+
+const v$ = setValidation(
   {
-    assetType: { required }
+    assetType: { required },
+    evmChain: { externalServerValidation },
+    address: { externalServerValidation },
+    tokenKind: { externalServerValidation },
+    name: { externalServerValidation },
+    symbol: { externalServerValidation },
+    decimals: { externalServerValidation },
+    coingecko: { externalServerValidation },
+    cryptocompare: { externalServerValidation },
+    started: { externalServerValidation },
+    protocol: { externalServerValidation },
+    swappedFor: { externalServerValidation },
+    forked: { externalServerValidation }
   },
   {
-    assetType
+    assetType,
+    evmChain,
+    tokenKind,
+    address,
+    name,
+    symbol,
+    decimals,
+    coingecko,
+    cryptocompare,
+    started,
+    protocol,
+    swappedFor,
+    forked
   },
-  { $autoDirty: true }
+  { $autoDirty: true, $externalResults: errors }
 );
 
 const clearFieldError = (field: keyof SupportedAsset) => {
-  delete get(errors)[field];
+  set(errors, omit(get(errors), field));
 };
 
 const clearFieldErrors = (fields: Array<keyof SupportedAsset>) => {
@@ -160,8 +189,8 @@ onBeforeMount(async () => {
 });
 
 onMounted(() => {
-  const token = get(edit);
-  set(dontAutoFetch, !!get(edit));
+  const token = get(editableItem);
+  set(dontAutoFetch, !!token);
   if (!token) {
     return;
   }
@@ -178,7 +207,7 @@ onMounted(() => {
   set(cryptocompareEnabled, token.cryptocompare !== '');
 
   set(forked, token.forked ?? '');
-  set(assetType, token.assetType);
+  set(assetType, token.assetType ?? EVM_TOKEN);
   set(address, token.address);
   set(decimals, token.decimals ?? null);
   set(protocol, token.protocol ?? '');
@@ -207,7 +236,7 @@ const saveAsset = async () => {
     assetType: get(assetType)
   };
 
-  if (get(edit)) {
+  if (get(editableItem)) {
     newIdentifier = get(identifier);
     await editAsset({ ...payload, identifier: newIdentifier });
   } else {
@@ -277,7 +306,7 @@ const save = async () => {
 
     if (typeof errorsMessage === 'string') {
       setMessage({
-        title: get(edit)
+        title: get(editableItem)
           ? t('asset_form.edit_error')
           : t('asset_form.add_error'),
         description: errorsMessage
@@ -287,15 +316,14 @@ const save = async () => {
         handleError(errorsMessage);
       }
       set(errors, omit(errorsMessage, ['underlyingTokens', '_schema']));
+      await get(v$).$validate();
     }
 
     return false;
   }
 };
 
-defineExpose({
-  save
-});
+setSubmitFunc(save);
 
 const { coingeckoContributeUrl, cryptocompareContributeUrl } = useInterop();
 </script>
@@ -303,7 +331,7 @@ const { coingeckoContributeUrl, cryptocompareContributeUrl } = useInterop();
 <template>
   <fragment>
     <v-row
-      v-if="!!edit"
+      v-if="editableItem"
       class="text-caption text--secondary py-2"
       align="center"
     >
@@ -311,21 +339,21 @@ const { coingeckoContributeUrl, cryptocompareContributeUrl } = useInterop();
         {{ t('asset_form.identifier') }}
       </v-col>
       <v-col>
-        {{ edit.identifier }}
+        {{ editableItem.identifier }}
         <copy-button
-          :value="edit.identifier"
+          :value="editableItem.identifier"
           :tooltip="t('asset_form.identifier_copy')"
         />
       </v-col>
     </v-row>
-    <v-form :value="!v$.$invalid" class="pt-2" @input="input($event)">
+    <v-form :value="valid" class="pt-2" @input="input($event)">
       <v-row>
         <v-col cols="12">
           <v-select
             v-model="assetType"
             outlined
             :label="t('asset_form.labels.asset_type')"
-            :disabled="types.length === 1 || !!edit"
+            :disabled="types.length === 1 || !!editableItem"
             :items="types"
           >
             <template #item="{ item }">{{ toSentenceCase(item) }}</template>
@@ -339,12 +367,11 @@ const { coingeckoContributeUrl, cryptocompareContributeUrl } = useInterop();
             v-model="evmChain"
             outlined
             :label="t('asset_form.labels.chain')"
-            :disabled="!isEvmToken || !!edit"
+            :disabled="!isEvmToken || !!editableItem"
             :items="allEvmChains"
             item-value="name"
             item-text="name"
-            :error-messages="errors['evmChain']"
-            @focus="clearFieldError('evmChain')"
+            :error-messages="toMessages(v$.evmChain)"
           />
         </v-col>
         <v-col md="6" data-cy="token-select">
@@ -352,12 +379,11 @@ const { coingeckoContributeUrl, cryptocompareContributeUrl } = useInterop();
             v-model="tokenKind"
             outlined
             :label="t('asset_form.labels.token_kind')"
-            :disabled="!isEvmToken || !!edit"
+            :disabled="!isEvmToken || !!editableItem"
             :items="evmTokenKindsData"
             item-text="label"
             item-value="identifier"
-            :error-messages="errors['tokenKind']"
-            @focus="clearFieldError('tokenKind')"
+            :error-messages="toMessages(v$.tokenKind)"
           />
         </v-col>
       </v-row>
@@ -367,11 +393,10 @@ const { coingeckoContributeUrl, cryptocompareContributeUrl } = useInterop();
             v-model="address"
             outlined
             :loading="fetching"
-            :error-messages="errors['address']"
+            :error-messages="toMessages(v$.address)"
             :label="t('common.address')"
-            :disabled="saving || fetching || !!edit"
+            :disabled="submitting || fetching || !!editableItem"
             @keydown.space.prevent
-            @focus="clearFieldError('address')"
           />
         </v-col>
       </v-row>
@@ -381,20 +406,18 @@ const { coingeckoContributeUrl, cryptocompareContributeUrl } = useInterop();
           <v-text-field
             v-model="name"
             outlined
-            :error-messages="errors['name']"
+            :error-messages="toMessages(v$.name)"
             :label="t('common.name')"
-            :disabled="saving || fetching"
-            @focus="clearFieldError('name')"
+            :disabled="submitting || fetching"
           />
         </v-col>
         <v-col cols="12" :md="isEvmToken ? 3 : 6" data-cy="symbol-input">
           <v-text-field
             v-model="symbol"
             outlined
-            :error-messages="errors['symbol']"
+            :error-messages="toMessages(v$.symbol)"
             :label="t('asset_form.labels.symbol')"
-            :disabled="saving || fetching"
-            @focus="clearFieldError('symbol')"
+            :disabled="submitting || fetching"
           />
         </v-col>
         <v-col v-if="isEvmToken" cols="12" md="3" data-cy="decimal-input">
@@ -405,9 +428,8 @@ const { coingeckoContributeUrl, cryptocompareContributeUrl } = useInterop();
             min="0"
             max="18"
             :label="t('asset_form.labels.decimals')"
-            :error-messages="errors['decimals']"
-            :disabled="saving || fetching"
-            @focus="clearFieldError('decimals')"
+            :error-messages="toMessages(v$.decimals)"
+            :disabled="submitting || fetching"
           />
         </v-col>
       </v-row>
@@ -420,9 +442,8 @@ const { coingeckoContributeUrl, cryptocompareContributeUrl } = useInterop();
             persistent-hint
             :hint="t('asset_form.labels.coingecko_hint')"
             :label="t('asset_form.labels.coingecko')"
-            :error-messages="errors['coingecko']"
-            :disabled="saving || !coingeckoEnabled"
-            @focus="clearFieldError('coingecko')"
+            :error-messages="toMessages(v$.coingecko)"
+            :disabled="submitting || !coingeckoEnabled"
           >
             <template #append>
               <help-link
@@ -449,9 +470,8 @@ const { coingeckoContributeUrl, cryptocompareContributeUrl } = useInterop();
             clearable
             :label="t('asset_form.labels.cryptocompare')"
             :hint="t('asset_form.labels.cryptocompare_hint')"
-            :error-messages="errors['cryptocompare']"
-            :disabled="saving || !cryptocompareEnabled"
-            @focus="clearFieldError('cryptocompare')"
+            :error-messages="toMessages(v$.cryptocompare)"
+            :disabled="submitting || !cryptocompareEnabled"
           >
             <template #append>
               <help-link
@@ -485,9 +505,8 @@ const { coingeckoContributeUrl, cryptocompareContributeUrl } = useInterop();
               seconds
               outlined
               :label="t('asset_form.labels.started')"
-              :error-messages="errors['started']"
-              :disabled="saving"
-              @focus="clearFieldError('started')"
+              :error-messages="toMessages(v$.started)"
+              :disabled="submitting"
             />
             <v-row>
               <v-col v-if="isEvmToken" cols="12" md="6">
@@ -499,9 +518,8 @@ const { coingeckoContributeUrl, cryptocompareContributeUrl } = useInterop();
                   clear-icon="mdi-close"
                   class="asset-form__protocol"
                   :label="t('common.protocol')"
-                  :error-messages="errors['protocol']"
-                  :disabled="saving"
-                  @focus="clearFieldError('protocol')"
+                  :error-messages="toMessages(v$.protocol)"
+                  :disabled="submitting"
                 />
               </v-col>
               <v-col cols="12" md="6">
@@ -511,9 +529,8 @@ const { coingeckoContributeUrl, cryptocompareContributeUrl } = useInterop();
                   persistent-hint
                   clearable
                   :label="t('asset_form.labels.swapped_for')"
-                  :error-messages="errors['swappedFor']"
-                  :disabled="saving"
-                  @focus="clearFieldError('swappedFor')"
+                  :error-messages="toMessages(v$.swappedFor)"
+                  :disabled="submitting"
                 />
               </v-col>
               <v-col v-if="!isEvmToken" cols="12" md="6">
@@ -524,9 +541,8 @@ const { coingeckoContributeUrl, cryptocompareContributeUrl } = useInterop();
                   persistent-hint
                   clearable
                   :label="t('asset_form.labels.forked')"
-                  :error-messages="errors['forked']"
-                  :disabled="saving"
-                  @focus="clearFieldError('forked')"
+                  :error-messages="toMessages(v$.forked)"
+                  :disabled="submitting"
                 />
               </v-col>
             </v-row>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { DialogType, themes } from '@/types/dialogs';
 
+// TODO: Unify `actionLoading` and `loading` after all form validations have been refactored
 const props = withDefaults(
   defineProps<{
     title: string;
@@ -74,7 +75,6 @@ const contentStyle = computed(() => {
       </div>
       <v-sheet>
         <v-card-actions>
-          <v-progress-linear v-if="loading" indeterminate class="mx-4" />
           <v-spacer />
           <v-btn
             color="primary"
@@ -90,6 +90,7 @@ const contentStyle = computed(() => {
             data-cy="confirm"
             :color="themes[confirmType].color"
             :disabled="actionDisabled"
+            :loading="loading"
             depressed
             class="big-dialog__buttons__confirm"
             @click="confirm()"

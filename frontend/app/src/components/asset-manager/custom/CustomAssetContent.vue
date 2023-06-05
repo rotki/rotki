@@ -21,7 +21,6 @@ const props = withDefaults(
 const { identifier, mainPage } = toRefs(props);
 
 const types = ref<string[]>([]);
-const editableItem = ref<CustomAsset | null>(null);
 
 const dialogTitle = computed<string>(() =>
   get(editableItem)
@@ -41,13 +40,13 @@ const { show } = useConfirmStore();
 const { setOpenDialog, setPostSubmitFunc } = useCustomAssetForm();
 
 const add = () => {
-  setOpenDialog(true);
   set(editableItem, null);
+  setOpenDialog(true);
 };
 
 const edit = (editAsset: CustomAsset) => {
-  setOpenDialog(true);
   set(editableItem, editAsset);
+  setOpenDialog(true);
 };
 
 const deleteAsset = async (assetId: string) => {
@@ -84,7 +83,8 @@ const {
   fetchData,
   setFilter,
   setOptions,
-  isLoading: loading
+  isLoading: loading,
+  editableItem
 } = usePaginationFilters<
   CustomAsset,
   CustomAssetRequestPayload,

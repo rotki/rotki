@@ -1,22 +1,18 @@
 <script setup lang="ts">
-import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
-import { type PropType } from 'vue';
 import { convertToTimestamp } from '@/utils/date';
 import { type HistoricalPriceFormPayload } from '@/types/prices';
+import { useHistoricPriceForm } from '@/composables/price-manager/historic/form';
+import { toMessages } from '@/utils/validation';
 
-const props = defineProps({
-  value: {
-    required: true,
-    type: Object as PropType<HistoricalPriceFormPayload>
-  },
-  edit: {
-    required: true,
-    type: Boolean
-  }
-});
+const props = defineProps<{
+  value: HistoricalPriceFormPayload;
+  edit: boolean;
+}>();
 
-const emit = defineEmits(['input', 'valid']);
+const emit = defineEmits<{
+  (e: 'input', price: Partial<HistoricalPriceFormPayload>): void;
+}>();
 
 const { value } = toRefs(props);
 const { assetSymbol } = useAssetInfoRetrieval();
@@ -75,7 +71,9 @@ const rules = {
   }
 };
 
-const v$ = useVuelidate(
+const { valid, setValidation } = useHistoricPriceForm();
+
+const v$ = setValidation(
   rules,
   {
     fromAsset: computed(() => get(value).fromAsset),
@@ -85,14 +83,10 @@ const v$ = useVuelidate(
   },
   { $autoDirty: true }
 );
-
-watch(v$, ({ $invalid }) => {
-  emit('valid', !$invalid);
-});
 </script>
 
 <template>
-  <v-form :value="!v$.$invalid">
+  <v-form :value="valid">
     <v-row class="mt-2">
       <v-col cols="12" md="6">
         <asset-select
@@ -100,7 +94,7 @@ watch(v$, ({ $invalid }) => {
           :label="t('price_form.from_asset')"
           outlined
           :disabled="edit"
-          :error-messages="v$.fromAsset.$errors.map(e => e.$message)"
+          :error-messages="toMessages(v$.fromAsset)"
           @input="input({ fromAsset: $event })"
         />
       </v-col>
@@ -110,7 +104,7 @@ watch(v$, ({ $invalid }) => {
           :label="t('price_form.to_asset')"
           :disabled="edit"
           outlined
-          :error-messages="v$.toAsset.$errors.map(e => e.$message)"
+          :error-messages="toMessages(v$.toAsset)"
           @input="input({ toAsset: $event })"
         />
       </v-col>
@@ -120,7 +114,7 @@ watch(v$, ({ $invalid }) => {
         <amount-input
           v-model="price"
           outlined
-          :error-messages="v$.price.$errors.map(e => e.$message)"
+          :error-messages="toMessages(v$.price)"
           :label="t('common.price')"
         />
         <div
@@ -155,7 +149,7 @@ watch(v$, ({ $invalid }) => {
           :label="t('common.datetime')"
           seconds
           :disabled="edit"
-          :error-messages="v$.date.$errors.map(e => e.$message)"
+          :error-messages="toMessages(v$.date)"
           @input="input({ timestamp: convertToTimestamp($event) })"
         />
       </v-col>

@@ -442,6 +442,7 @@ declare global {
   const useGeolocation: typeof import('@vueuse/core')['useGeolocation']
   const useGraph: typeof import('./composables/graphs')['useGraph']
   const useHistoricCachePriceStore: typeof import('./store/prices/historic')['useHistoricCachePriceStore']
+  const useHistoricPriceForm: typeof import('./composables/price-manager/historic/form')['useHistoricPriceForm']
   const useHistoryApi: typeof import('./composables/api/history/index')['useHistoryApi']
   const useHistoryAutoRefresh: typeof import('./composables/history/auto-refresh')['useHistoryAutoRefresh']
   const useHistoryEventFilter: typeof import('./composables/filters/events')['useHistoryEventFilter']
@@ -474,6 +475,7 @@ declare global {
   const useKrakenStakingStore: typeof import('./store/staking/kraken')['useKrakenStakingStore']
   const useLastChanged: typeof import('@vueuse/core')['useLastChanged']
   const useLastLanguage: typeof import('./composables/session/language')['useLastLanguage']
+  const useLatestPriceForm: typeof import('./composables/price-manager/latest/form')['useLatestPriceForm']
   const useLedgerActionData: typeof import('./composables/history/ledger-actions/data')['useLedgerActionData']
   const useLedgerActions: typeof import('./composables/history/ledger-actions/index')['useLedgerActions']
   const useLedgerActionsApi: typeof import('./composables/api/history/ledger-actions')['useLedgerActionsApi']
@@ -491,6 +493,7 @@ declare global {
   const useMainStore: typeof import('./store/main')['useMainStore']
   const useMakerDaoApi: typeof import('./composables/api/defi/makerdao')['useMakerDaoApi']
   const useMakerDaoStore: typeof import('./store/defi/makerdao/index')['useMakerDaoStore']
+  const useManagedAssetForm: typeof import('./composables/assets/forms/managed-asset-form')['useManagedAssetForm']
   const useManualAssetBalances: typeof import('./composables/balances/manual/index')['useManualAssetBalances']
   const useManualBalancesApi: typeof import('./composables/api/balances/manual')['useManualBalancesApi']
   const useManualBalancesForm: typeof import('./composables/balances/manual/form')['useManualBalancesForm']
@@ -1129,6 +1132,7 @@ declare module 'vue' {
     readonly useGeolocation: UnwrapRef<typeof import('@vueuse/core')['useGeolocation']>
     readonly useGraph: UnwrapRef<typeof import('./composables/graphs')['useGraph']>
     readonly useHistoricCachePriceStore: UnwrapRef<typeof import('./store/prices/historic')['useHistoricCachePriceStore']>
+    readonly useHistoricPriceForm: UnwrapRef<typeof import('./composables/price-manager/historic/form')['useHistoricPriceForm']>
     readonly useHistoryApi: UnwrapRef<typeof import('./composables/api/history/index')['useHistoryApi']>
     readonly useHistoryAutoRefresh: UnwrapRef<typeof import('./composables/history/auto-refresh')['useHistoryAutoRefresh']>
     readonly useHistoryEventFilter: UnwrapRef<typeof import('./composables/filters/events')['useHistoryEventFilter']>
@@ -1161,6 +1165,7 @@ declare module 'vue' {
     readonly useKrakenStakingStore: UnwrapRef<typeof import('./store/staking/kraken')['useKrakenStakingStore']>
     readonly useLastChanged: UnwrapRef<typeof import('@vueuse/core')['useLastChanged']>
     readonly useLastLanguage: UnwrapRef<typeof import('./composables/session/language')['useLastLanguage']>
+    readonly useLatestPriceForm: UnwrapRef<typeof import('./composables/price-manager/latest/form')['useLatestPriceForm']>
     readonly useLedgerActionData: UnwrapRef<typeof import('./composables/history/ledger-actions/data')['useLedgerActionData']>
     readonly useLedgerActions: UnwrapRef<typeof import('./composables/history/ledger-actions/index')['useLedgerActions']>
     readonly useLedgerActionsApi: UnwrapRef<typeof import('./composables/api/history/ledger-actions')['useLedgerActionsApi']>
@@ -1178,6 +1183,7 @@ declare module 'vue' {
     readonly useMainStore: UnwrapRef<typeof import('./store/main')['useMainStore']>
     readonly useMakerDaoApi: UnwrapRef<typeof import('./composables/api/defi/makerdao')['useMakerDaoApi']>
     readonly useMakerDaoStore: UnwrapRef<typeof import('./store/defi/makerdao/index')['useMakerDaoStore']>
+    readonly useManagedAssetForm: UnwrapRef<typeof import('./composables/assets/forms/managed-asset-form')['useManagedAssetForm']>
     readonly useManualAssetBalances: UnwrapRef<typeof import('./composables/balances/manual/index')['useManualAssetBalances']>
     readonly useManualBalancesApi: UnwrapRef<typeof import('./composables/api/balances/manual')['useManualBalancesApi']>
     readonly useManualBalancesForm: UnwrapRef<typeof import('./composables/balances/manual/form')['useManualBalancesForm']>
@@ -1810,6 +1816,7 @@ declare module '@vue/runtime-core' {
     readonly useGeolocation: UnwrapRef<typeof import('@vueuse/core')['useGeolocation']>
     readonly useGraph: UnwrapRef<typeof import('./composables/graphs')['useGraph']>
     readonly useHistoricCachePriceStore: UnwrapRef<typeof import('./store/prices/historic')['useHistoricCachePriceStore']>
+    readonly useHistoricPriceForm: UnwrapRef<typeof import('./composables/price-manager/historic/form')['useHistoricPriceForm']>
     readonly useHistoryApi: UnwrapRef<typeof import('./composables/api/history/index')['useHistoryApi']>
     readonly useHistoryAutoRefresh: UnwrapRef<typeof import('./composables/history/auto-refresh')['useHistoryAutoRefresh']>
     readonly useHistoryEventFilter: UnwrapRef<typeof import('./composables/filters/events')['useHistoryEventFilter']>
@@ -1842,6 +1849,7 @@ declare module '@vue/runtime-core' {
     readonly useKrakenStakingStore: UnwrapRef<typeof import('./store/staking/kraken')['useKrakenStakingStore']>
     readonly useLastChanged: UnwrapRef<typeof import('@vueuse/core')['useLastChanged']>
     readonly useLastLanguage: UnwrapRef<typeof import('./composables/session/language')['useLastLanguage']>
+    readonly useLatestPriceForm: UnwrapRef<typeof import('./composables/price-manager/latest/form')['useLatestPriceForm']>
     readonly useLedgerActionData: UnwrapRef<typeof import('./composables/history/ledger-actions/data')['useLedgerActionData']>
     readonly useLedgerActions: UnwrapRef<typeof import('./composables/history/ledger-actions/index')['useLedgerActions']>
     readonly useLedgerActionsApi: UnwrapRef<typeof import('./composables/api/history/ledger-actions')['useLedgerActionsApi']>
@@ -1859,6 +1867,7 @@ declare module '@vue/runtime-core' {
     readonly useMainStore: UnwrapRef<typeof import('./store/main')['useMainStore']>
     readonly useMakerDaoApi: UnwrapRef<typeof import('./composables/api/defi/makerdao')['useMakerDaoApi']>
     readonly useMakerDaoStore: UnwrapRef<typeof import('./store/defi/makerdao/index')['useMakerDaoStore']>
+    readonly useManagedAssetForm: UnwrapRef<typeof import('./composables/assets/forms/managed-asset-form')['useManagedAssetForm']>
     readonly useManualAssetBalances: UnwrapRef<typeof import('./composables/balances/manual/index')['useManualAssetBalances']>
     readonly useManualBalancesApi: UnwrapRef<typeof import('./composables/api/balances/manual')['useManualBalancesApi']>
     readonly useManualBalancesForm: UnwrapRef<typeof import('./composables/balances/manual/form')['useManualBalancesForm']>
