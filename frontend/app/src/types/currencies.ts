@@ -4,7 +4,8 @@ export class Currency {
   constructor(
     readonly name: string,
     readonly tickerSymbol: SupportedCurrency,
-    readonly unicodeSymbol: string
+    readonly unicodeSymbol: string,
+    readonly crypto: boolean = false
   ) {}
 }
 
@@ -84,8 +85,8 @@ export const useCurrencies = createSharedComposable(() => {
     new Currency(t('currencies.inr'), CURRENCY_INR, '₹'),
     new Currency(t('currencies.dkk'), CURRENCY_DKK, 'kr'),
     new Currency(t('currencies.pln'), CURRENCY_PLN, 'zł'),
-    new Currency('Bitcoin', CURRENCY_BTC, '₿'),
-    new Currency('Ether', CURRENCY_ETH, 'Ξ')
+    new Currency('Bitcoin', CURRENCY_BTC, '₿', true),
+    new Currency('Ether', CURRENCY_ETH, 'Ξ', true)
   ]);
 
   const defaultCurrency: ComputedRef<Currency> = computed(

@@ -41,7 +41,7 @@ const usdValue = useValueOrDefault(
 );
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-const { assetPrice } = useBalancePricesStore();
+const { assetPrice, toSelectedCurrency } = useBalancePricesStore();
 
 const valueCurrency = computed(() => {
   if (!get(calculateValue)) {
@@ -60,7 +60,7 @@ const valueInCurrency = computed(() => {
   const ethPrice = assetPrice(get(asset));
 
   if (isDefined(ethPrice)) {
-    return owned.multipliedBy(get(ethPrice));
+    return owned.multipliedBy(get(toSelectedCurrency(ethPrice)));
   }
   return Zero;
 });
