@@ -2,7 +2,7 @@
 import { type GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type Ref } from 'vue';
-import { type DataTableHeader } from 'vuetify';
+import { type DataTableHeader } from '@/types/vuetify';
 import {
   AIRDROP_1INCH,
   AIRDROP_CONVEX,

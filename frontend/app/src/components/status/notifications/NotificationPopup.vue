@@ -1,4 +1,6 @@
 <script setup lang="ts">
+const { t } = useI18n();
+
 const visibleNotification = ref(createNotification());
 const notificationStore = useNotificationsStore();
 const { queue } = storeToRefs(notificationStore);
@@ -34,7 +36,7 @@ onMounted(() => {
   checkQueue();
 });
 
-const { t } = useI18n();
+const { dark } = useTheme();
 </script>
 
 <template>
@@ -44,7 +46,7 @@ const { t } = useI18n();
     :timeout="visibleNotification.duration"
     top
     right
-    :light="!$vuetify.theme.dark"
+    :light="!dark"
     app
     rounded
     width="400px"

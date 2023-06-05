@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { type BigNumber } from '@rotki/common';
 import { type PropType } from 'vue';
-import { type DataTableHeader } from 'vuetify';
+import { type DataTableHeader } from '@/types/vuetify';
 import { CURRENCY_USD } from '@/types/currencies';
 import {
   type LocationDataSnapshot,
   type LocationDataSnapshotPayload
 } from '@/types/snapshots';
+
+const { t } = useI18n();
 
 type IndexedLocationDataSnapshot = LocationDataSnapshot & { index: number };
 
@@ -34,8 +36,6 @@ const form = ref<LocationDataSnapshotPayload | null>(null);
 const valid = ref<boolean>(false);
 const loading = ref<boolean>(false);
 const excludedLocations = ref<string[]>([]);
-
-const { t } = useI18n();
 
 const tableHeaders = computed<DataTableHeader[]>(() => [
   {

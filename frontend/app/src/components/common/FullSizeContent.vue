@@ -1,18 +1,22 @@
 <script setup lang="ts">
 const top = ref(0);
 const proxy = useProxy();
+
 onMounted(() => {
   const { top: topBound } = proxy.$el.getBoundingClientRect();
   set(top, topBound);
 });
+
+const { xs } = useDisplay();
+const css = useCssModule();
 </script>
 
 <template>
   <div
     class="d-flex flex-column align-center"
     :class="{
-      [$style.empty]: true,
-      'pa-2 mt-2': $vuetify.breakpoint.xsOnly
+      [css.empty]: true,
+      'pa-2 mt-2': xs
     }"
     :style="`height: calc(100vh - ${top + 64}px);`"
   >

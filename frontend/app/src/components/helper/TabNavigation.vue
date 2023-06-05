@@ -11,14 +11,12 @@ const { tabContents } = toRefs(props);
 const selectedTab = ref('');
 
 const route = useRoute();
-const { currentBreakpoint } = useTheme();
+const { xs } = useDisplay();
 const isDev = checkIfDevelopment();
 
 const visibleTabs = computed(() =>
   get(tabContents).filter(({ hidden }) => !hidden)
 );
-
-const xsOnly = computed(() => get(currentBreakpoint).xsOnly);
 
 const isRouterVisible = (route: string, tab: TabContent) =>
   route.includes(tab.route) && tab.route === get(selectedTab);
@@ -31,7 +29,7 @@ const isRouterVisible = (route: string, tab: TabContent) =>
       fixed-tabs
       height="36px"
       hide-slider
-      :show-arrows="xsOnly"
+      :show-arrows="xs"
       active-class="tab-navigation__tabs__tab--active"
       class="tab-navigation__tabs"
     >

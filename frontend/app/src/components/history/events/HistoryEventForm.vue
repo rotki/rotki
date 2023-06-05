@@ -17,6 +17,8 @@ import { toMessages } from '@/utils/validation';
 import { type ActionDataEntry } from '@/types/action';
 import { type HistoricalPriceFormPayload } from '@/types/prices';
 
+const { t } = useI18n();
+
 const props = withDefaults(
   defineProps<{
     value?: boolean;
@@ -30,7 +32,6 @@ const props = withDefaults(
 );
 
 const emit = defineEmits<{ (e: 'input', valid: boolean): void }>();
-const { t } = useI18n();
 const { edit, transaction } = toRefs(props);
 
 const { isTaskRunning } = useTaskStore();
@@ -498,6 +499,7 @@ watch(historyEventLimitedProducts, products => {
 });
 
 const evmEvent = isEvmEventRef(transaction);
+const { mdAndUp } = useDisplay();
 </script>
 
 <template>
@@ -534,13 +536,7 @@ const evmEvent = isEvmEventRef(transaction);
         />
       </v-col>
     </v-row>
-    <v-row
-      :class="
-        $vuetify.breakpoint.mdAndUp
-          ? 'transaction-event-form__amount-wrapper'
-          : null
-      "
-    >
+    <v-row :class="mdAndUp ? 'transaction-event-form__amount-wrapper' : null">
       <v-col cols="12" md="6">
         <asset-select
           v-model="asset"

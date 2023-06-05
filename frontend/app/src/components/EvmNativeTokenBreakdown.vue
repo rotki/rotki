@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import groupBy from 'lodash/groupBy';
-import { type DataTableHeader } from 'vuetify';
 import { type BigNumber } from '@rotki/common/lib';
+import { type DataTableHeader } from '@/types/vuetify';
 import { zeroBalance } from '@/utils/bignumbers';
 import { balanceSum, calculatePercentage } from '@/utils/calculation';
 import { CURRENCY_USD } from '@/types/currencies';
+
+const { t } = useI18n();
 
 const props = withDefaults(
   defineProps<{
@@ -46,7 +48,6 @@ const breakdowns = computed(() => {
   });
 });
 
-const { t } = useI18n();
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
 const tableHeaders = computed<DataTableHeader[]>(() => {

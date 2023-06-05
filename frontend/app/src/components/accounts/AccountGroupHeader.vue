@@ -5,6 +5,8 @@ import Fragment from '@/components/helper/Fragment';
 import { truncateAddress, truncationPoints } from '@/filters';
 import { type XpubAccountWithBalance } from '@/types/blockchain/accounts';
 
+const { t } = useI18n();
+
 const props = defineProps({
   group: { required: true, type: String },
   items: {
@@ -18,12 +20,11 @@ const props = defineProps({
 const emit = defineEmits(['delete-clicked', 'expand-clicked', 'edit-clicked']);
 
 const { items } = toRefs(props);
-const { breakpoint, currentBreakpoint } = useTheme();
-const xsOnly = computed(() => get(currentBreakpoint).xsOnly);
+const { name: breakpoint, xs } = useDisplay();
 const { shouldShowAmount } = storeToRefs(useSessionSettingsStore());
 
 const mobileClass = computed<string | null>(() =>
-  get(xsOnly) ? 'v-data-table__mobile-row' : null
+  get(xs) ? 'v-data-table__mobile-row' : null
 );
 
 const xpub: ComputedRef<XpubAccountWithBalance> = computed(() => {
@@ -59,8 +60,6 @@ const expandClicked = (_payload: XpubAccountWithBalance) =>
 
 const editClicked = (_payload: XpubAccountWithBalance) =>
   emit('edit-clicked', _payload);
-
-const { t } = useI18n();
 </script>
 
 <template>
@@ -69,10 +68,10 @@ const { t } = useI18n();
   </td>
   <fragment v-else>
     <td
-      :colspan="xsOnly ? 1 : 2"
+      :colspan="xs ? 1 : 2"
       :class="{
-        'v-data-table__mobile-row': xsOnly,
-        'pa-2': !xsOnly
+        'v-data-table__mobile-row': xs,
+        'pa-2': !xs
       }"
     >
       <div class="ps-8">
@@ -124,7 +123,7 @@ const { t } = useI18n();
       <amount-display
         :value="sum"
         :loading="loading"
-        :asset="xsOnly ? 'BTC' : null"
+        :asset="xs ? 'BTC' : null"
       />
     </td>
     <td class="text-end" :class="mobileClass">

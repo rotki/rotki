@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { type ComputedRef, type Ref } from 'vue';
-import { type DataTableHeader } from 'vuetify';
+import { type DataTableHeader } from '@/types/vuetify';
 import { Routes } from '@/router/routes';
 import { type Report } from '@/types/reports';
 import { calculateTotalProfitLoss } from '@/utils/report';

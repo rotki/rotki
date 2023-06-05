@@ -44,13 +44,15 @@ watch(locationName, locationName => {
     set(tab, 0);
   }
 });
+
+const { smAndDown } = useDisplay();
 </script>
 
 <template>
   <v-navigation-drawer
     width="400px"
     class="user-notes-sidebar"
-    :class="$vuetify.breakpoint.smAndDown ? 'user-notes-sidebar--mobile' : null"
+    :class="smAndDown ? 'user-notes-sidebar--mobile' : null"
     absolute
     clipped
     :value="visible"

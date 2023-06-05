@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { type BigNumber } from '@rotki/common';
 import { type PropType, type Ref } from 'vue';
-import { type DataTableHeader } from 'vuetify';
+import { type DataTableHeader } from '@/types/vuetify';
 import { type EditableMissingPrice, type MissingPrice } from '@/types/reports';
 import {
   type HistoricalPrice,

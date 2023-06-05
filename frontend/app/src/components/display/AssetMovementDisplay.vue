@@ -1,15 +1,19 @@
 <script setup lang="ts">
-import { type PropType } from 'vue';
 import { type AssetMovement } from '@/types/defi';
 
-defineProps({
-  movement: { required: true, type: Object as PropType<AssetMovement> },
-  gainLoss: { required: false, type: Boolean, default: false }
-});
+withDefaults(
+  defineProps<{
+    movement: AssetMovement;
+    gainLoss?: boolean;
+  }>(),
+  {
+    gainLoss: false
+  }
+);
 
-const { breakpoint, isMobile } = useTheme();
+const { name: breakpoint, mobile } = useDisplay();
 const small = computed(
-  () => !(['xs', 'sm'].includes(get(breakpoint)) || get(isMobile))
+  () => !(['xs', 'sm'].includes(get(breakpoint)) || get(mobile))
 );
 </script>
 
@@ -32,7 +36,7 @@ const small = computed(
     <v-col
       v-if="!gainLoss"
       sm="12"
-      :md="isMobile ? '12' : 'auto'"
+      :md="mobile ? '12' : 'auto'"
       cols="12"
       :class="small ? 'mr-6' : null"
     >

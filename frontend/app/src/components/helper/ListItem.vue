@@ -20,17 +20,17 @@ const props = withDefaults(
 
 const emit = defineEmits(['click']);
 const { subtitle } = toRefs(props);
-const { currentBreakpoint } = useTheme();
 const css = useCssModule();
 const rootAttrs = useAttrs();
-const large = computed(() => get(currentBreakpoint).lgAndUp);
+const { lgAndUp: large, mdAndDown } = useDisplay();
+
 const visibleSubtitle = computed(() => {
   const sub = get(subtitle);
   if (!sub) {
     return '';
   }
   const truncLength = 7;
-  const small = get(currentBreakpoint).mdAndDown;
+  const small = get(mdAndDown);
   const length = sub.length;
 
   if (!small || (length <= truncLength * 2 && small)) {

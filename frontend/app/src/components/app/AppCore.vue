@@ -5,11 +5,12 @@ import zoomPlugin from 'chartjs-plugin-zoom';
 const visibilityStore = useAreaVisibilityStore();
 const { showDrawer, isMini } = storeToRefs(visibilityStore);
 
-const { isMobile, appBarColor } = useTheme();
+const { appBarColor } = useTheme();
+const { mobile } = useDisplay();
 
 const small = computed(() => get(showDrawer) && get(isMini));
 const expanded = computed(
-  () => get(showDrawer) && !get(isMini) && !get(isMobile)
+  () => get(showDrawer) && !get(isMini) && !get(mobile)
 );
 const { overall } = storeToRefs(useStatisticsStore());
 
@@ -18,7 +19,7 @@ const { updateTray } = useInterop();
 const toggleDrawer = visibilityStore.toggleDrawer;
 
 onMounted(() => {
-  set(showDrawer, !get(isMobile));
+  set(showDrawer, !get(mobile));
 });
 
 watch(overall, overall => {

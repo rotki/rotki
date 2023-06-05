@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type DataTableHeader } from 'vuetify';
+import { type DataTableHeader } from '@/types/vuetify';
 import { type Collection } from '@/types/collection';
 import { Routes } from '@/router/routes';
 import {
@@ -13,6 +13,8 @@ import { IgnoreActionType } from '@/types/history/ignored';
 import { SavedFilterLocation } from '@/types/filtering';
 import type { Filters, Matcher } from '@/composables/filters/asset-movement';
 
+const { t } = useI18n();
+
 const props = withDefaults(
   defineProps<{
     locationOverview?: TradeLocation;
@@ -25,8 +27,6 @@ const props = withDefaults(
 );
 
 const { locationOverview, mainPage } = toRefs(props);
-
-const { t } = useI18n();
 
 const tableHeaders = computed<DataTableHeader[]>(() => {
   const overview = get(locationOverview);

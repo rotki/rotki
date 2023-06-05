@@ -12,7 +12,7 @@ const colsSize = {
   4: 3
 };
 
-const { currentBreakpoint } = useTheme();
+const { smAndUp } = useDisplay();
 
 const size = computed(() => {
   const colNum = get(cols);
@@ -30,16 +30,16 @@ const size = computed(() => {
       <v-col
         class="stat-card-wide__second-col d-flex"
         :class="{
-          'stat-card-wide__second-col--horizontal': currentBreakpoint.smAndUp
+          'stat-card-wide__second-col--horizontal': smAndUp
         }"
         cols="12"
         :sm="size"
       >
-        <v-divider :vertical="currentBreakpoint.smAndUp" />
+        <v-divider :vertical="smAndUp" />
         <div class="stat-card-wide__second-col__content pa-6 flex-grow-1">
           <slot name="second-col" />
         </div>
-        <v-divider v-if="cols > 2" :vertical="currentBreakpoint.smAndUp" />
+        <v-divider v-if="cols > 2" :vertical="smAndUp" />
       </v-col>
       <v-col
         v-if="cols > 2"

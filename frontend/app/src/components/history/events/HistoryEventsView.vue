@@ -5,10 +5,10 @@ import {
   type BlockchainSelection
 } from '@rotki/common/lib/blockchain';
 import isEqual from 'lodash/isEqual';
-import { type DataTableHeader } from 'vuetify';
 import { type ComputedRef, type Ref } from 'vue';
 import { not } from '@vueuse/math';
 import { type HistoryEventEntryType } from '@rotki/common/lib/history/events';
+import { type DataTableHeader } from '@/types/vuetify';
 import { type Collection } from '@/types/collection';
 import { SavedFilterLocation } from '@/types/filtering';
 import { IgnoreActionType } from '@/types/history/ignored';
@@ -25,6 +25,8 @@ import { TaskType } from '@/types/task-type';
 import { type Writeable } from '@/types';
 import HistoryEventsAction from '@/components/history/events/HistoryEventsAction.vue';
 import type { Filters, Matcher } from '@/composables/filters/events';
+
+const { t } = useI18n();
 
 const props = withDefaults(
   defineProps<{
@@ -56,8 +58,6 @@ const props = withDefaults(
     onlyChains: () => []
   }
 );
-
-const { t } = useI18n();
 
 const {
   location,

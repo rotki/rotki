@@ -2,7 +2,7 @@
 import { type AssetBalanceWithPrice } from '@rotki/common';
 import { type XswapAsset } from '@rotki/common/lib/defi/xswap';
 import { type PropType } from 'vue';
-import { type DataTableHeader } from 'vuetify';
+import { type DataTableHeader } from '@/types/vuetify';
 
 defineProps({
   span: {

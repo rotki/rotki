@@ -94,6 +94,8 @@ const context = computed(() => {
 });
 
 const threshold = [1];
+
+const { xl } = useDisplay();
 </script>
 
 <template>
@@ -108,15 +110,15 @@ const threshold = [1];
       fixed
       bottom
       right
-      :fab="!$vuetify.breakpoint.xl"
-      :rounded="$vuetify.breakpoint.xl"
-      :x-large="$vuetify.breakpoint.xl"
+      :fab="!xl"
+      :rounded="xl"
+      :x-large="xl"
       color="primary"
       class="manual-balances__add-balance"
       @click="add()"
     >
       <v-icon> mdi-plus </v-icon>
-      <div v-if="$vuetify.breakpoint.xl" class="ml-2">
+      <div v-if="xl" class="ml-2">
         {{ t('manual_balances.add_manual_balance') }}
       </div>
     </v-btn>

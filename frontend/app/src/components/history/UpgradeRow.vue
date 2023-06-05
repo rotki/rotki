@@ -11,15 +11,12 @@ defineProps({
 
 const { t } = useI18n();
 const { premiumURL } = useInterop();
-const { currentBreakpoint } = useTheme();
+const { xs } = useDisplay();
 </script>
 
 <template>
   <tr class="tr">
-    <td
-      :colspan="currentBreakpoint.xsOnly ? 2 : colspan"
-      class="upgrade-row font-weight-medium"
-    >
+    <td :colspan="xs ? 2 : colspan" class="upgrade-row font-weight-medium">
       <i18n
         v-if="events"
         tag="span"

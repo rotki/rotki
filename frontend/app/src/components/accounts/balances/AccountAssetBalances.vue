@@ -1,14 +1,15 @@
 <script setup lang="ts">
 import { type AssetBalance } from '@rotki/common';
 import { type PropType } from 'vue';
-import { type DataTableHeader } from 'vuetify';
+import { type DataTableHeader } from '@/types/vuetify';
+
+const { t } = useI18n();
 
 defineProps({
   assets: { required: true, type: Array as PropType<AssetBalance[]> },
   title: { required: true, type: String }
 });
 
-const { t } = useI18n();
 const { assetPrice } = useBalancePricesStore();
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 

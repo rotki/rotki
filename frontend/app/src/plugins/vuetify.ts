@@ -65,7 +65,7 @@ VNavigationDrawer.options.mixins[2].options.methods.shouldScroll =
 
 const DARK_GREY = '#1e1e1e';
 
-export default new Vuetify({
+const vuetify = new Vuetify({
   icons: {
     iconfont: 'mdi',
     values: {
@@ -111,3 +111,4 @@ export default new Vuetify({
     }
   }
 });
+export { vuetify };

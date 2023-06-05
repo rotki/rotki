@@ -80,13 +80,15 @@ const downloadBrowserLog = async () => {
     );
   });
 };
+
+const { smAndDown } = useDisplay();
 </script>
 
 <template>
   <v-navigation-drawer
     width="400px"
     class="help-sidebar"
-    :class="$vuetify.breakpoint.smAndDown ? 'help-sidebar--mobile' : null"
+    :class="smAndDown ? 'help-sidebar--mobile' : null"
     absolute
     clipped
     :value="visible"

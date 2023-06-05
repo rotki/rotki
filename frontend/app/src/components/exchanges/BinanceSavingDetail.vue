@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type DataTableHeader } from 'vuetify';
+import { type DataTableHeader } from '@/types/vuetify';
 import { CURRENCY_USD } from '@/types/currencies';
 import {
   type ExchangeSavingsCollection,
@@ -8,6 +8,8 @@ import {
   type SupportedExchange
 } from '@/types/exchanges';
 import { Section } from '@/types/status';
+
+const { t } = useI18n();
 
 const props = defineProps<{
   exchange: SupportedExchange.BINANCE | SupportedExchange.BINANCEUS;
@@ -62,8 +64,6 @@ watch(loading, async (isLoading, wasLoading) => {
 onMounted(async () => {
   await fetchData();
 });
-
-const { t } = useI18n();
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const tableHeaders = computed<DataTableHeader[]>(() => [

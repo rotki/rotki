@@ -5,7 +5,7 @@ import '@/filters';
 import '@/main.scss';
 import 'roboto-fontface/css/roboto/roboto-fontface.css';
 import 'typeface-roboto-mono';
-import vuetify from '@/plugins/vuetify';
+import { vuetify } from '@/plugins/vuetify';
 import { usePremiumApi } from '@/premium/setup-interface';
 import i18n from './i18n';
 import router from './router';

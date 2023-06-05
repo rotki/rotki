@@ -6,6 +6,7 @@ defineProps({
   protocolIcon: { required: false, type: String, default: '' },
   bordered: { required: false, type: Boolean, default: false }
 });
+const { dark } = useTheme();
 </script>
 
 <template>
@@ -24,7 +25,7 @@ defineProps({
       <div
         class="stat-card__border__gradient"
         :class="
-          $vuetify.theme.dark
+          dark
             ? 'stat-card__border__gradient--dark'
             : 'stat-card__border__gradient--light'
         "

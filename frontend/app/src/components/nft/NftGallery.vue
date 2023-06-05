@@ -2,17 +2,14 @@
 import { BigNumber } from '@rotki/common';
 import { type GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { type PropType, type Ref } from 'vue';
+import { type Ref } from 'vue';
 import { type Module } from '@/types/modules';
 import { type GalleryNft, type Nft, type Nfts } from '@/types/nfts';
 import { type NftPriceArray } from '@/types/prices';
 
-defineProps({
-  modules: {
-    required: true,
-    type: Array as PropType<Module[]>
-  }
-});
+const { t } = useI18n();
+
+defineProps<{ modules: Module[] }>();
 
 const prices: Ref<NftPriceArray> = ref([]);
 const priceError = ref('');
@@ -24,7 +21,6 @@ const perAccount: Ref<Nfts | null> = ref(null);
 const sortBy = ref<'name' | 'priceUsd' | 'collection'>('name');
 const sortDescending = ref(false);
 
-const { t } = useI18n();
 const { premiumURL } = useInterop();
 const css = useCssModule();
 const sortProperties = [
@@ -44,7 +40,7 @@ const sortProperties = [
 
 const chains = [Blockchain.ETH];
 
-const { isMobile, breakpoint, width } = useTheme();
+const { mobile, name: breakpoint, width } = useDisplay();
 const page = ref(1);
 
 const itemsPerPage = computed(() => {
@@ -227,7 +223,7 @@ const sortNfts = (
     <v-row justify="space-between">
       <v-col>
         <v-row align="center">
-          <v-col :cols="isMobile ? '12' : '6'">
+          <v-col :cols="mobile ? '12' : '6'">
             <blockchain-account-selector
               v-model="selectedAccounts"
               :label="t('nft_gallery.select_account')"
@@ -239,7 +235,7 @@ const sortNfts = (
               :usable-addresses="availableAddresses"
             />
           </v-col>
-          <v-col :cols="isMobile ? '12' : '6'">
+          <v-col :cols="mobile ? '12' : '6'">
             <v-card flat>
               <div>
                 <v-autocomplete
@@ -257,7 +253,7 @@ const sortNfts = (
               </div>
             </v-card>
           </v-col>
-          <v-col :cols="isMobile ? '12' : '6'">
+          <v-col :cols="mobile ? '12' : '6'">
             <sorting-selector
               :sort-by="sortBy"
               :sort-properties="sortProperties"
@@ -266,7 +262,7 @@ const sortNfts = (
               @update:sort-desc="sortDescending = $event"
             />
           </v-col>
-          <v-col :cols="isMobile ? '12' : '6'">
+          <v-col :cols="mobile ? '12' : '6'">
             <pagination v-if="pages > 0" v-model="page" :length="pages" />
           </v-col>
         </v-row>
