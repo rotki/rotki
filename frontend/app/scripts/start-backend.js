@@ -1,6 +1,5 @@
 const { spawn } = require('node:child_process');
 const fs = require('node:fs');
-const os = require('node:os');
 const path = require('node:path');
 
 if (!(process.env.CI || process.env.VIRTUAL_ENV)) {
@@ -8,33 +7,37 @@ if (!(process.env.CI || process.env.VIRTUAL_ENV)) {
   process.exit(1);
 }
 
-const tmpDir = process.env.CI ? os.homedir() : os.tmpdir();
-const tempPath = path.join(tmpDir, 'rotki-e2e');
+const testDir = path.join(process.cwd(), '.e2e');
+const dataDir = path.join(testDir, 'data');
 
-process.stdout.write(`Using ${tempPath} to start tests\n`);
+process.stdout.write(`Using ${dataDir} to start tests\n`);
 
-if (!fs.existsSync(tempPath)) {
-  fs.mkdirSync(tempPath);
-} else {
-  const contents = fs.readdirSync(tempPath);
+const cleanupData = () => {
+  const contents = fs.readdirSync(dataDir);
   for (const name of contents) {
     if (['icons', 'price_history', 'global_data'].includes(name)) {
       continue;
     }
 
-    const currentPath = path.join(tempPath, name);
+    const currentPath = path.join(dataDir, name);
     if (fs.statSync(currentPath).isDirectory()) {
       fs.rmSync(currentPath, { recursive: true });
     }
   }
+};
+
+if (!fs.existsSync(dataDir)) {
+  fs.mkdirSync(dataDir, { recursive: true });
+} else {
+  cleanupData();
 }
 
-const logDir = path.join(os.homedir(), 'rotki-e2e-logs');
+const logDir = path.join(testDir, 'logs');
 
 process.stdout.write(`Using ${logDir} to output backend logs\n`);
 
 if (!fs.existsSync(logDir)) {
-  fs.mkdirSync(logDir);
+  fs.mkdirSync(logDir, { recursive: true });
 }
 
 const args = [
@@ -47,11 +50,22 @@ const args = [
   '--api-cors',
   'http://localhost:*',
   '--data-dir',
-  tempPath,
+  dataDir,
   '--logfile',
-  `${path.join(logDir, 'rotkehlchen-e2e.log')}`
+  `${path.join(logDir, 'e2e.log')}`
 ];
 
-spawn('python', args, {
+let backend;
+
+process.on('SIGTERM', () => {
+  if (backend) {
+    backend.kill();
+  }
+  cleanupData();
+  process.stdout.write('Cleanup: complete\n');
+  process.exit(0);
+});
+
+backend = spawn('python', args, {
   stdio: [process.stdin, process.stdout, process.stderr]
 });

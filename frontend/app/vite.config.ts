@@ -140,7 +140,10 @@ export default defineConfig({
   ],
   server: {
     port: 8080,
-    hmr: hmrEnabled
+    hmr: hmrEnabled,
+    watch: {
+      ignored: ['**/.e2e/**', '**/.nyc_output/**']
+    }
   },
   build: {
     sourcemap: isDevelopment || isTest,

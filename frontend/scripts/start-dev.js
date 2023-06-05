@@ -1,6 +1,8 @@
 const { spawn } = require('node:child_process');
 const fs = require('node:fs');
 const { platform } = require('node:os');
+const path = require('node:path');
+const { exit } = require('node:process');
 
 const PROXY = 'proxy';
 const COMMON = '@rotki/common';
@@ -53,8 +55,9 @@ const terminateSubprocesses = () => {
 };
 
 process.on('SIGINT', () => {
+  logger.info(`preparing to terminate subprocesses`);
   terminateSubprocesses();
-  process.exit();
+  exit(0);
 });
 
 if (startDevProxy) {
@@ -90,13 +93,21 @@ pids[commonProcesses.pid] = COMMON;
 
 if (noElectron) {
   logger.info('Starting python backend');
-  const backendProcess = spawn(
-    'python -m rotkehlchen --rest-api-port 4242 --api-cors http://localhost:8080,http://127.0.0.1:8080 --loglevel debug --max-size-in-mb-all-logs 120',
-    {
-      shell: true,
-      stdio: [process.stdin]
-    }
-  );
+  const args = [
+    '-m',
+    'rotkehlchen',
+    '--rest-api-port',
+    '4242',
+    '--api-cors',
+    'http://localhost:*',
+    '--logfile',
+    `${path.join('logs', 'backend.log')}`
+  ];
+
+  const backendProcess = spawn('python', args, {
+    shell: true,
+    stdio: [process.stdin]
+  });
 
   backendProcess.stdout.on('data', buffer => {
     logger.debug(colors.yellow(BACKEND), buffer.toLocaleString());
@@ -150,9 +161,8 @@ devRotkiProcess.stderr.on('data', buffer => {
 
 pids[devRotkiProcess.pid] = ROTKI;
 
-devRotkiProcess.on('exit', () => {
+devRotkiProcess.on('beforeExit', () => {
   terminateSubprocesses();
-  process.exit(0);
 });
 
 subprocesses.push(commonProcesses, devRotkiProcess);
