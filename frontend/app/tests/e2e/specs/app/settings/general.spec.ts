@@ -93,7 +93,6 @@ describe('settings::general', () => {
   it('verify settings persist after re-login', () => {
     app.fasterLogout();
     app.login(username);
-    app.closePremiumOverlay();
 
     pageGeneral.visit();
     pageGeneral.verify(settings);

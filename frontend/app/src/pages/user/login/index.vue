@@ -2,13 +2,11 @@
 import Fragment from '@/components/helper/Fragment';
 import { type LoginCredentials } from '@/types/login';
 
-const checkForAssetUpdate = ref(false);
-
 const { navigateToUserCreation, navigateToDashboard } = useAppNavigation();
 const { upgradeVisible, canRequestData } = storeToRefs(useSessionAuthStore());
 const { backendChanged } = useBackendManagement();
 const { userLogin, errors, loading } = useAccountManagement();
-const { isPremiumDialogVisible } = usePremiumReminder();
+const { checkForAssetUpdate } = storeToRefs(useSessionStore());
 
 const showUpgradeProgress: ComputedRef<boolean> = computed(
   () => get(upgradeVisible) && get(errors).length === 0
@@ -16,10 +14,7 @@ const showUpgradeProgress: ComputedRef<boolean> = computed(
 
 const handleLogin = async (credentials: LoginCredentials) => {
   set(errors, []);
-  const skipPremiumDisplay = await userLogin(credentials);
-  if (skipPremiumDisplay) {
-    set(checkForAssetUpdate, true);
-  }
+  await userLogin(credentials);
 };
 
 const navigate = async () => {
@@ -37,10 +32,6 @@ const navigate = async () => {
         @complete="checkForAssetUpdate = false"
       />
     </div>
-    <premium-reminder
-      v-else-if="isPremiumDialogVisible"
-      @dismiss="checkForAssetUpdate = true"
-    />
     <upgrade-progress-display v-else-if="showUpgradeProgress" />
     <login-form
       v-else

@@ -1368,7 +1368,6 @@
       "skip": "Saltar",
       "terminate": "Terminate",
       "update": "Update",
-      "upgrade": "Upgrade",
       "yes": "Sí"
     },
     "address": "Dirección",
@@ -3277,10 +3276,6 @@
   "premium_lock": {
     "tooltip": "Feature is only supported with a premium subscription"
   },
-  "premium_reminder": {
-    "description": "rotki is open source software and needs your support! Please consider upgrading to premium by purchasing a premium subscription. This way you can help us further develop the software and you can also enjoy additional premium-only features.",
-    "title": "Upgrade to Premium"
-  },
   "premium_settings": {
     "actions": {
       "delete": "Delete Key",
@@ -3300,9 +3295,9 @@
       "api_key": "API Key",
       "api_secret": "API Secret"
     },
-    "premium_active": "rotki Premium is active",
-    "rotki_premium": "rotki Premium",
-    "subtitle": "rotki Premium is an optional subscription service to gain access to analytics, graphs, and unlock many additional features. For more information on what is available visit the {0} website.",
+    "get": "Get @:premium_settings.title",
+    "premium_active": "@:premium_settings.title is active",
+    "subtitle": "@:premium_settings.title is an optional subscription service to gain access to analytics, graphs, and unlock many additional features. For more information on what is available visit the {0} website.",
     "title": "rotki Premium"
   },
   "price_accuracy_hint": {

@@ -12,7 +12,6 @@ export const useSessionAuthStore = defineStore('session/auth', () => {
   const logged: Ref<boolean> = ref(false);
   const canRequestData: Ref<boolean> = ref(false);
   const shouldFetchData: Ref<boolean> = ref(false);
-  const premiumPrompt: Ref<boolean> = ref(false);
   const username: Ref<string> = ref('');
   const syncConflict: Ref<SyncConflict | undefined> = ref();
   const incompleteUpgradeConflict: Ref<IncompleteUpgradeConflict | undefined> =
@@ -57,7 +56,6 @@ export const useSessionAuthStore = defineStore('session/auth', () => {
     shouldFetchData,
     canRequestData,
     username,
-    premiumPrompt,
     syncConflict,
     incompleteUpgradeConflict,
     conflictExist,

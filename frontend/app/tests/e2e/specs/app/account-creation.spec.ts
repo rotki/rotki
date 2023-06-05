@@ -32,7 +32,7 @@ describe('accounts', () => {
 
       it('login', () => {
         app.login(username);
-        app.closePremiumOverlay();
+        app.checkGetPremiumButton();
         app.logout();
       });
     });

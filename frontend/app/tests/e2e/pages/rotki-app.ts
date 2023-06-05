@@ -54,7 +54,6 @@ export class RotkiApp {
     this.loadEnv();
     this.visit();
     this.login(username, password);
-    this.closePremiumOverlay();
   }
 
   fasterLogout() {
@@ -62,13 +61,8 @@ export class RotkiApp {
     this.visit();
   }
 
-  closePremiumOverlay() {
-    cy.get('[data-cy=premium-reminder]').should('be.visible');
-    cy.get('[data-cy=premium-reminder]', {
-      timeout: 10000
-    }).should('include.text', 'Upgrade to Premium');
-    cy.get('[data-cy=premium-reminder__cancel]').click();
-    cy.get('[data-cy=premium-reminder]').should('not.exist');
+  checkGetPremiumButton() {
+    cy.get('[data-cy=get-premium-button').should('be.visible');
   }
 
   login(username: string, password = '1234') {

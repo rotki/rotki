@@ -15,8 +15,9 @@ import { type ChangePasswordPayload } from '@/types/session';
 import { type ActionStatus } from '@/types/action';
 
 export const useSessionStore = defineStore('session', () => {
-  const showUpdatePopup = ref(false);
-  const darkModeEnabled = ref(false);
+  const showUpdatePopup: Ref<boolean> = ref(false);
+  const darkModeEnabled: Ref<boolean> = ref(false);
+  const checkForAssetUpdate: Ref<boolean> = ref(false);
 
   const authStore = useSessionAuthStore();
   const {
@@ -249,7 +250,8 @@ export const useSessionStore = defineStore('session', () => {
     logoutRemoteSession,
     createAccount,
     changePassword,
-    checkForUpdate
+    checkForUpdate,
+    checkForAssetUpdate
   };
 });
 

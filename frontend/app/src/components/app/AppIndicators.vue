@@ -19,6 +19,7 @@ const { showPinned, showNotesSidebar, showNotificationBar, showHelpBar } =
     </div>
     <v-spacer />
     <div class="d-flex overflow-hidden fill-height align-center">
+      <get-premium-button />
       <v-btn v-if="isDevelopment && smAndUp" to="/playground" icon>
         <v-icon>mdi-crane</v-icon>
       </v-btn>
