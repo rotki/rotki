@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { Blockchain } from '@rotki/common/lib/blockchain';
 import { getIdentifierFromSymbolMap } from '@rotki/common/lib/data';
 import { type ComputedRef } from 'vue';
 import { useCurrencies } from '@/types/currencies';
 import { isBlockchain } from '@/types/blockchain/chains';
+
+const { t } = useI18n();
 
 const props = defineProps({
   identifier: { required: true, type: String },
@@ -17,6 +18,7 @@ const props = defineProps({
   enableAssociation: { required: false, type: Boolean, default: true },
   showChain: { required: false, type: Boolean, default: true }
 });
+
 const {
   changeable,
   identifier,
@@ -30,7 +32,6 @@ const {
 const error = ref<boolean>(false);
 const pending = ref<boolean>(true);
 
-const { t } = useI18n();
 const css = useCssModule();
 
 const { currencies } = useCurrencies();
@@ -42,11 +43,9 @@ const mappedIdentifier: ComputedRef<string> = computed(() => {
 
 const currency = computed<string | undefined>(() => {
   const id = get(mappedIdentifier);
-  if ([Blockchain.BTC, Blockchain.ETH].includes(id as Blockchain)) {
-    return undefined;
-  }
 
-  return get(currencies).find(({ tickerSymbol }) => tickerSymbol === id)
+  const fiatCurrencies = get(currencies).filter(({ crypto }) => !crypto);
+  return fiatCurrencies.find(({ tickerSymbol }) => tickerSymbol === id)
     ?.unicodeSymbol;
 });
 
