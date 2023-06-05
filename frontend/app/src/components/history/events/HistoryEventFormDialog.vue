@@ -15,7 +15,7 @@ const props = withDefaults(
 
 const { editableItem, transaction } = toRefs(props);
 
-const { valid, openDialog, submitting, closeDialog, trySubmit } =
+const { openDialog, submitting, closeDialog, trySubmit } =
   useHistoryEventsForm();
 
 const { t } = useI18n();
@@ -32,7 +32,7 @@ const title: ComputedRef<string> = computed(() =>
     :display="openDialog"
     :title="title"
     :primary-action="t('common.actions.save')"
-    :action-disabled="loading || submitting || !valid"
+    :action-disabled="loading || submitting"
     :loading="loading || submitting"
     @confirm="trySubmit()"
     @cancel="closeDialog()"

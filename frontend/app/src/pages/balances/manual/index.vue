@@ -17,7 +17,6 @@ const dialogSubtitle = ref('');
 const { t } = useI18n();
 
 const {
-  valid,
   openDialog,
   submitting,
   setOpenDialog,
@@ -154,7 +153,7 @@ const { xl } = useDisplay();
       :display="openDialog"
       :title="dialogTitle"
       :subtitle="dialogSubtitle"
-      :action-disabled="submitting || !valid"
+      :action-disabled="submitting"
       :loading="submitting"
       :primary-action="t('common.actions.save')"
       @confirm="trySubmit()"

@@ -2,6 +2,7 @@
 import Fragment from '@/components/helper/Fragment';
 import { type Collection } from '@/types/collection';
 import { type UserNote, type UserNotesFilter } from '@/types/notes';
+import UserNotesFormDialog from '@/components/notes/UserNotesFormDialog.vue';
 
 const getDefaultForm = () => ({
   title: '',
@@ -100,15 +101,7 @@ const resetForm = () => {
   closeDialog();
 };
 
-const {
-  valid,
-  openDialog,
-  submitting,
-  closeDialog,
-  trySubmit,
-  setOpenDialog,
-  setSubmitFunc
-} = useUserNotesForm();
+const { closeDialog, setOpenDialog, setSubmitFunc } = useUserNotesForm();
 
 const addNote = () => {
   resetForm();
@@ -330,19 +323,11 @@ onMounted(async () => {
       <div v-else class="note__empty">{{ t('notes_menu.empty_notes') }}</div>
     </div>
 
-    <big-dialog
-      :display="openDialog"
-      :title="
-        editMode
-          ? t('notes_menu.dialog.edit_title')
-          : t('notes_menu.dialog.add_title')
-      "
-      :action-disabled="submitting || !valid"
-      @confirm="trySubmit()"
-      @cancel="resetForm()"
-    >
-      <user-note-form v-model="form" />
-    </big-dialog>
+    <user-notes-form-dialog
+      v-model="form"
+      :edit-mode="editMode"
+      @reset="resetForm()"
+    />
   </fragment>
 </template>
 

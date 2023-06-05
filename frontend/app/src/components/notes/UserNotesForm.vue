@@ -1,17 +1,15 @@
 <script setup lang="ts">
 import { helpers, required } from '@vuelidate/validators';
-import { type PropType } from 'vue';
 import { type UserNote } from '@/types/notes';
 import { toMessages } from '@/utils/validation';
 
-const props = defineProps({
-  value: {
-    required: true,
-    type: Object as PropType<Partial<UserNote>>
-  }
-});
+const props = defineProps<{
+  value: Partial<UserNote>;
+}>();
 
-const emit = defineEmits(['input']);
+const emit = defineEmits<{
+  (e: 'input', newInput: Partial<UserNote>): void;
+}>();
 
 const { t } = useI18n();
 const { value } = toRefs(props);

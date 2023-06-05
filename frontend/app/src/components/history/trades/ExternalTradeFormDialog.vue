@@ -14,8 +14,7 @@ const props = withDefaults(
 
 const { editableItem } = toRefs(props);
 
-const { valid, openDialog, submitting, closeDialog, trySubmit } =
-  useTradesForm();
+const { openDialog, submitting, closeDialog, trySubmit } = useTradesForm();
 
 const { t } = useI18n();
 
@@ -36,7 +35,7 @@ const subtitle: ComputedRef<string> = computed(() =>
     :title="title"
     :subtitle="subtitle"
     :primary-action="t('common.actions.save')"
-    :action-disabled="loading || submitting || !valid"
+    :action-disabled="loading || submitting"
     :loading="loading || submitting"
     @confirm="trySubmit()"
     @cancel="closeDialog()"

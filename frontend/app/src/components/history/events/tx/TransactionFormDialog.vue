@@ -8,7 +8,7 @@ withDefaults(
   }
 );
 
-const { valid, openDialog, submitting, closeDialog, trySubmit } =
+const { openDialog, submitting, closeDialog, trySubmit } =
   useHistoryTransactionsForm();
 
 const { t } = useI18n();
@@ -19,7 +19,7 @@ const { t } = useI18n();
     :display="openDialog"
     :title="t('transactions.dialog.add_tx')"
     :primary-action="t('common.actions.save')"
-    :action-disabled="loading || submitting || !valid"
+    :action-disabled="loading || submitting"
     :loading="loading || submitting"
     @confirm="trySubmit()"
     @cancel="closeDialog()"
