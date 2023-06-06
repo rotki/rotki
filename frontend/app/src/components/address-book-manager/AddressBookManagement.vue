@@ -115,8 +115,6 @@ const save = async () => {
     });
   }
 };
-
-const css = useCssModule();
 </script>
 
 <template>
@@ -140,7 +138,6 @@ const css = useCssModule();
             <chain-select
               evm-only
               :model-value="selectedChain"
-              dense
               hide-details
               @update:model-value="selectedChain = $event"
             />
@@ -149,8 +146,6 @@ const css = useCssModule();
             <v-text-field
               :value="pendingSearch"
               input-class=""
-              dense
-              :class="css.filter"
               hide-details
               prepend-inner-icon="mdi-magnify"
               :label="t('common.actions.filter')"
@@ -232,16 +227,3 @@ const css = useCssModule();
     </big-dialog>
   </v-container>
 </template>
-
-<style lang="scss" module>
-.filter {
-  :global {
-    .v-input {
-      &__slot {
-        height: 46px !important;
-        padding-top: 2px !important;
-      }
-    }
-  }
-}
-</style>

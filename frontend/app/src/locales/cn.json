@@ -3405,7 +3405,7 @@
       "api_key": "API Key",
       "api_secret": "API Secret"
     },
-    "get": "Get @:premium_settings.title",
+    "get": "获得溢价",
     "premium_active": "@:premium_settings.title 已激活",
     "subtitle": "@:premium_settings.title 是一项可选的订阅服务，可以访问分析、图表并解锁许多其他功能。有关可用内容的更多信息，请访问 {0} 网站。",
     "title": "rotki Premium"

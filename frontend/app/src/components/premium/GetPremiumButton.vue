@@ -15,7 +15,8 @@ const { isPackaged, premiumURL, navigateToPremium } = useInterop();
           color="warning"
           rounded
           :fab="mobile"
-          :small="mobile"
+          small
+          class="py-4"
           depressed
           target="_blank"
           :href="isPackaged ? undefined : premiumURL"
