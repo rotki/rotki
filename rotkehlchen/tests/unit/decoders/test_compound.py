@@ -8,7 +8,16 @@ from rotkehlchen.accounting.structures.types import HistoryEventSubType, History
 from rotkehlchen.chain.ethereum.modules.compound.constants import CPT_COMPOUND
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants.assets import A_CDAI, A_CETH, A_COMP, A_DAI, A_ETH, A_USDC
+from rotkehlchen.constants.assets import (
+    A_CBAT,
+    A_CDAI,
+    A_CETH,
+    A_COMP,
+    A_DAI,
+    A_ETH,
+    A_USDC,
+    A_USDT,
+)
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
@@ -507,18 +516,84 @@ def test_compound_repays_eth(
     assert expected_events == events
 
 
-# @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x9bf62c518ffe86bD43D57c7026aA1A4fBeA83b15']])
 def test_compound_liquidate(
         database: 'DBHandler',
         ethereum_inquirer: 'EthereumInquirer',
+        ethereum_accounts,
 ) -> None:
+    """
+    Decode a liquidation happening to the position of 0x9bf62c518ffe86bD43D57c7026aA1A4fBeA83b15
+    """
     tx_hash = deserialize_evm_tx_hash('0x0001a89e439c3673b8264f880730784ebd698502bb9dd62949d42a66a4129f23')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
         database=database,
         tx_hash=tx_hash,
     )
-    print('aaaa')
-    for event in events:
-        print(event.serialize(), '\n')
+    assert events == [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=267,
+            timestamp=TimestampMS(1652292368000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.LIQUIDATE,
+            asset=A_CBAT,
+            balance=Balance(amount=FVal(258831.42924011)),
+            location_label=ethereum_accounts[0],
+            notes='Lost 258831.42924011 cBAT in a compound forced liquidation to repay 1907.307144 USDT',  # noqa: E501
+            counterparty=CPT_COMPOUND,
+            address=string_to_evm_address('0xD911560979B78821D7b045C79E36E9CbfC2F6C6F'),
+        ),
+    ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0xD911560979B78821D7b045C79E36E9CbfC2F6C6F']])
+def test_compound_liquidator_side(
+        database: 'DBHandler',
+        ethereum_inquirer: 'EthereumInquirer',
+        ethereum_accounts,
+) -> None:
+    """
+    Decode liquidation made by 0xD911560979B78821D7b045C79E36E9CbfC2F6C6F
+    """
+    tx_hash = deserialize_evm_tx_hash('0x0001a89e439c3673b8264f880730784ebd698502bb9dd62949d42a66a4129f23')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    assert events == [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=263,
+            timestamp=TimestampMS(1652292368000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.PAYBACK_DEBT,
+            asset=A_USDT,
+            balance=Balance(amount=FVal(1907.307144)),
+            location_label=ethereum_accounts[0],
+            notes='Repay 1907.307144 USDT in a compound liquidation',
+            counterparty=CPT_COMPOUND,
+            address=string_to_evm_address('0xf650C3d88D12dB855b8bf7D11Be6C55A4e07dCC9'),
+            extra_data={'in_liquidation': True},
+        ),
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=267,
+            timestamp=TimestampMS(1652292368000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.LIQUIDATE,
+            asset=A_CBAT,
+            balance=Balance(amount=FVal(258831.42924011)),
+            location_label=ethereum_accounts[0],
+            notes='Collect 258831.42924011 cBAT for performing a compound liquidation',
+            counterparty=CPT_COMPOUND,
+            address=string_to_evm_address('0x9bf62c518ffe86bD43D57c7026aA1A4fBeA83b15'),
+        ),
+    ]
