@@ -133,12 +133,13 @@ const save = async () => {
       </template>
 
       <template #search>
-        <v-row class="pt-2 pb-6">
+        <v-row class="pt-2 pb-6" justify="end">
           <v-col cols="12" sm="4" md="3">
             <chain-select
               evm-only
               :model-value="selectedChain"
               hide-details
+              dense
               @update:model-value="selectedChain = $event"
             />
           </v-col>
@@ -150,6 +151,7 @@ const save = async () => {
               prepend-inner-icon="mdi-magnify"
               :label="t('common.actions.filter')"
               outlined
+              dense
               clearable
               @input="onSearchTermChange($event)"
             >
