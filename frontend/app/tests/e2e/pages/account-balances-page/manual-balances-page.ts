@@ -89,7 +89,7 @@ export class ManualBalancesPage extends AccountBalancesPage {
       .find('.manual-balances-list__amount')
       .should('contain', this.formatAmount(balance.amount));
 
-    cy.get('[data-cy="manual-balances"] thead').scrollIntoView();
+    cy.get('[data-cy="manual-balances"] thead').first().scrollIntoView();
 
     cy.get('@row')
       .find('.manual-balances-list__location')

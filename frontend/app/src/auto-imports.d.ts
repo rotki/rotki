@@ -236,6 +236,7 @@ declare global {
   const sortDesc: typeof import('./utils/bignumbers')['sortDesc']
   const splitSearch: typeof import('./utils/search')['splitSearch']
   const startPromise: typeof import('./utils/index')['startPromise']
+  const stickyTableHeader: typeof import('./utils/sticky-table-header')['default']
   const storePiniaPlugins: typeof import('./store/debug')['storePiniaPlugins']
   const storeToRefs: typeof import('pinia')['storeToRefs']
   const sum: typeof import('./utils/balances')['sum']
@@ -933,6 +934,7 @@ declare module 'vue' {
     readonly sortDesc: UnwrapRef<typeof import('./utils/bignumbers')['sortDesc']>
     readonly splitSearch: UnwrapRef<typeof import('./utils/search')['splitSearch']>
     readonly startPromise: UnwrapRef<typeof import('./utils/index')['startPromise']>
+    readonly stickyTableHeader: UnwrapRef<typeof import('./utils/sticky-table-header')['default']>
     readonly storePiniaPlugins: UnwrapRef<typeof import('./store/debug')['storePiniaPlugins']>
     readonly storeToRefs: UnwrapRef<typeof import('pinia')['storeToRefs']>
     readonly sum: UnwrapRef<typeof import('./utils/balances')['sum']>
@@ -1624,6 +1626,7 @@ declare module '@vue/runtime-core' {
     readonly sortDesc: UnwrapRef<typeof import('./utils/bignumbers')['sortDesc']>
     readonly splitSearch: UnwrapRef<typeof import('./utils/search')['splitSearch']>
     readonly startPromise: UnwrapRef<typeof import('./utils/index')['startPromise']>
+    readonly stickyTableHeader: UnwrapRef<typeof import('./utils/sticky-table-header')['default']>
     readonly storePiniaPlugins: UnwrapRef<typeof import('./store/debug')['storePiniaPlugins']>
     readonly storeToRefs: UnwrapRef<typeof import('pinia')['storeToRefs']>
     readonly sum: UnwrapRef<typeof import('./utils/balances')['sum']>
