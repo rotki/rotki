@@ -6,6 +6,7 @@ from rotkehlchen.accounting.structures.types import HistoryEventSubType, History
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.assets.utils import get_crypto_asset_by_symbol, get_or_create_evm_token
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value, token_normalized_value
+from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
@@ -20,7 +21,14 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_COMP, A_ETH
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChainID, ChecksumEvmAddress, DecoderEventMappingType, EvmTokenKind, EvmTransaction
+from rotkehlchen.types import (
+    ChainID,
+    ChecksumEvmAddress,
+    DecoderEventMappingType,
+    EvmTokenKind,
+    EvmTransaction,
+    EVMTxHash,
+)
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 from .constants import COMPTROLLER_PROXY_ADDRESS, CPT_COMPOUND
@@ -39,7 +47,7 @@ MINT_COMPOUND_TOKEN = b'L \x9b_\xc8\xadPu\x8f\x13\xe2\xe1\x08\x8b\xa5jV\r\xffi\n
 REDEEM_COMPOUND_TOKEN = b'\xe5\xb7T\xfb\x1a\xbb\x7f\x01\xb4\x99y\x1d\x0b\x82\n\xe3\xb6\xaf4$\xac\x1cYv\x8e\xdbS\xf4\xec1\xa9)'  # noqa: E501
 BORROW_COMPOUND = b'\x13\xedhf\xd4\xe1\xeem\xa4o\x84\\F\xd7\xe5A \x88=u\xc5\xea\x9a-\xac\xc1\xc4\xca\x89\x84\xab\x80'  # noqa: E501
 REPAY_COMPOUND = b'\x1a*"\xcb\x03M&\xd1\x85K\xdcff\xa5\xb9\x1f\xe2^\xfb\xbb]\xca\xd3\xb05Tx\xd6\xf5\xc3b\xa1'  # noqa: E501
-LIQUIDATE_BORROW = b')\x867\xf6\x84\xdapgO&P\x9b\x10\xf0~\xc2\xfb\xc7z3Z\xb1\xe7\xd6!ZK$\x84\xd8\xbbR'
+LIQUIDATE_BORROW = b')\x867\xf6\x84\xdapgO&P\x9b\x10\xf0~\xc2\xfb\xc7z3Z\xb1\xe7\xd6!ZK$\x84\xd8\xbbR'  # noqa: E501
 DISTRIBUTED_SUPPLIER_COMP = b',\xae\xcd\x17\xd0/V\xfa\x89w\x05\xdc\xc7@\xda-#|7?phoN\r\x9b\xd3\xbf\x04\x00\xeaz'  # noqa: E501
 DISTRIBUTED_BORROWER_COMP = b'\x1f\xc3\xec\xc0\x87\xd8\xd2\xd1^#\xd0\x03*\xf5\xa4pY\xc3\x89-\x00=\x8e\x13\x9f\xdc\xb6\xbb2|\x99\xa6'  # noqa: E501
 
@@ -210,42 +218,56 @@ class CompoundDecoder(DecoderInterface):
 
     def _decode_liquidate(
             self,
+            transaction_hash: 'EVMTxHash',
             tx_log: 'EvmTxReceiptLog',
             decoded_events: list['EvmEvent'],
+            all_logs: list['EvmTxReceiptLog'],
     ) -> DecodingOutput:
+        """Decode a liquidation event happening over a tracked account"""
         borrower = hex_or_bytes_to_address(tx_log.data[32:64])
-        if self.base.is_tracked(borrower) is False:
-            return DEFAULT_DECODING_OUTPUT
-
-        repayed_cToken_address = tx_log.address
         liquidator_address = hex_or_bytes_to_address(tx_log.data[0:32])
         repay_amount_raw = hex_or_bytes_to_int(tx_log.data[64:96])
-        collateral_cToken_address = hex_or_bytes_to_address(tx_log.data[96:128])
+        collateral_ctoken_address = hex_or_bytes_to_address(tx_log.data[96:128])
         seize_amount_raw = hex_or_bytes_to_int(tx_log.data[128:160])
 
-        collateral_cToken = get_or_create_evm_token(
+        collateral_ctoken = get_or_create_evm_token(
             userdb=self.base.database,
-            evm_address=collateral_cToken_address,
+            evm_address=collateral_ctoken_address,
             chain_id=self.base.evm_inquirer.chain_id,
             token_kind=EvmTokenKind.ERC20,
             evm_inquirer=self.base.evm_inquirer,
-            protocol=CPT_COMPOUND
-        )
-        repayed_cToken = get_or_create_evm_token(
-            userdb=self.base.database,
-            evm_address=repayed_cToken_address,
-            chain_id=self.base.evm_inquirer.chain_id,
-            token_kind=EvmTokenKind.ERC20,
-            evm_inquirer=self.base.evm_inquirer,
-            protocol=CPT_COMPOUND
+            protocol=CPT_COMPOUND,
         )
         seized_collateral_amount = asset_normalized_value(
             amount=seize_amount_raw,
-            asset=collateral_cToken,
+            asset=collateral_ctoken,
         )
-        repayed_amount = asset_normalized_value(
+        # use the logs to know what token was getting repaid for the position. We have the ctoken
+        # from the event log but not the underlying token
+        repaying_token = None
+        for event_log in all_logs:
+            if (
+                event_log.topics[0] == ERC20_OR_ERC721_TRANSFER and
+                event_log.topics[1] == tx_log.data[0:32] and
+                hex_or_bytes_to_address(event_log.topics[2]) == tx_log.address
+            ):
+                repaying_token_address = event_log.address
+                repaying_token = get_or_create_evm_token(
+                    userdb=self.base.database,
+                    evm_address=repaying_token_address,
+                    chain_id=self.base.evm_inquirer.chain_id,
+                    token_kind=EvmTokenKind.ERC20,
+                    evm_inquirer=self.base.evm_inquirer,
+                )
+                break
+
+        if repaying_token is None:
+            log.error(f'Failed to decode compound liquidation at {transaction_hash.hex()}')
+            return DEFAULT_DECODING_OUTPUT
+
+        repaid_amount = asset_normalized_value(
             amount=repay_amount_raw,
-            asset=repayed_cToken,
+            asset=repaying_token,
         )
         for event in decoded_events:
             if (
@@ -254,10 +276,30 @@ class CompoundDecoder(DecoderInterface):
                 event.location_label == borrower and
                 event.address == liquidator_address and
                 event.balance.amount == seized_collateral_amount and
-                event.asset == collateral_cToken
+                event.asset == collateral_ctoken
             ):
                 event.event_subtype = HistoryEventSubType.LIQUIDATE
-                event.notes = f'Automatic liquidation spent {seized_collateral_amount} {collateral_cToken.symbol} to repay {repayed_amount} {repayed_cToken.symbol} on compound for {borrower}'  # noqa: E501
+                event.notes = f'Lost {seized_collateral_amount} {collateral_ctoken.symbol} in a compound forced liquidation to repay {repaid_amount} {repaying_token.symbol}'  # noqa: E501
+                event.counterparty = CPT_COMPOUND
+            elif (
+                event.event_type == HistoryEventType.SPEND and
+                event.event_subtype == HistoryEventSubType.PAYBACK_DEBT and
+                event.location_label == liquidator_address and
+                event.balance.amount == repaid_amount and
+                event.asset == repaying_token and
+                event.counterparty == CPT_COMPOUND
+            ):
+                event.notes = f'Repay {repaid_amount} {repaying_token.symbol} in a compound liquidation'  # noqa: E501
+                event.extra_data = {'in_liquidation': True}
+            elif (
+                event.event_type == HistoryEventType.RECEIVE and
+                event.event_subtype == HistoryEventSubType.NONE and
+                event.location_label == liquidator_address and
+                event.balance.amount == seized_collateral_amount and
+                event.asset == collateral_ctoken
+            ):
+                event.event_subtype = HistoryEventSubType.LIQUIDATE
+                event.notes = f'Collect {seized_collateral_amount} {collateral_ctoken.symbol} for performing a compound liquidation'  # noqa: E501
                 event.counterparty = CPT_COMPOUND
 
         return DEFAULT_DECODING_OUTPUT
@@ -278,7 +320,12 @@ class CompoundDecoder(DecoderInterface):
             return self._decode_redeem(tx_log=context.tx_log, decoded_events=context.decoded_events, compound_token=compound_token)  # noqa: E501
 
         if context.tx_log.topics[0] == LIQUIDATE_BORROW:
-            return self._decode_liquidate(tx_log=context.tx_log, decoded_events=context.decoded_events)  # noqa: E501
+            return self._decode_liquidate(
+                transaction_hash=context.transaction.tx_hash,
+                tx_log=context.tx_log,
+                decoded_events=context.decoded_events,
+                all_logs=context.all_logs,
+            )
 
         return DEFAULT_DECODING_OUTPUT
 
