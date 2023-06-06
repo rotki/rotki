@@ -4,7 +4,6 @@ import isEqual from 'lodash/isEqual';
 import { type ComputedRef, type Ref } from 'vue';
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
-import { type TokenChains, isTokenChain } from '@/types/blockchain/chains';
 import { type BlockchainAssetBalances } from '@/types/blockchain/balances';
 import {
   type EthDetectedTokensInfo,
@@ -17,7 +16,7 @@ const noTokens = (): EthDetectedTokensInfo => ({
   timestamp: null
 });
 
-type Tokens = Record<TokenChains, EvmTokensRecord>;
+type Tokens = Record<string, EvmTokensRecord>;
 
 const defaultTokens = (): Tokens => ({
   [Blockchain.ETH]: {},
@@ -40,9 +39,10 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
     fetchDetectedTokensTask,
     fetchDetectedTokens: fetchDetectedTokensCaller
   } = useBlockchainBalancesApi();
+  const { supportsTransactions } = useSupportedChains();
 
   const fetchDetected = async (
-    chain: TokenChains,
+    chain: Blockchain,
     addresses: string[]
   ): Promise<void> => {
     await Promise.allSettled(
@@ -50,7 +50,7 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
     );
   };
 
-  const setState = (chain: TokenChains, data: EvmTokensRecord) => {
+  const setState = (chain: Blockchain, data: EvmTokensRecord) => {
     const tokensVal = { ...get(tokensState) };
     set(tokensState, {
       ...tokensVal,
@@ -64,11 +64,11 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
   /**
    * Temporary function to update detected token count on balance refresh
    *
-   * @param {TokenChains} chain
+   * @param {Blockchain} chain
    * @param {BlockchainAssetBalances} chainValues
    */
   const updateDetectedTokens = (
-    chain: TokenChains,
+    chain: Blockchain,
     chainValues: BlockchainAssetBalances
   ) => {
     const lastUpdateTimestamp = Date.now() / 1000;
@@ -85,7 +85,7 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
   };
 
   const fetchDetectedTokens = async (
-    chain: TokenChains,
+    chain: Blockchain,
     address: string | null = null
   ) => {
     try {
@@ -128,7 +128,7 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
   ): ComputedRef<EthDetectedTokensInfo> =>
     computed(() => {
       const blockchain = get(chain);
-      if (!isTokenChain(blockchain)) {
+      if (!supportsTransactions(blockchain)) {
         return noTokens();
       }
       const detected = get(tokensState)[blockchain];

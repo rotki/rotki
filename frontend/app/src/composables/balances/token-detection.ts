@@ -1,7 +1,6 @@
 import { type MaybeRef } from '@vueuse/core';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { TaskType } from '@/types/task-type';
-import { isTokenChain } from '@/types/blockchain/chains';
 
 export const useTokenDetection = (
   chain: MaybeRef<Blockchain>,
@@ -17,6 +16,7 @@ export const useTokenDetection = (
   const { optimismAddresses, polygonAddresses } = storeToRefs(
     useChainsAccountsStore()
   );
+  const { supportsTransactions } = useSupportedChains();
 
   const detectingTokens = computed<boolean>(() => {
     const address = get(accountAddress);
@@ -33,7 +33,7 @@ export const useTokenDetection = (
 
   const fetchDetectedTokens = async (address: string) => {
     const blockchain = get(chain);
-    assert(isTokenChain(blockchain));
+    assert(supportsTransactions(blockchain));
     await fetchDetectedTokensCaller(blockchain, address);
   };
 

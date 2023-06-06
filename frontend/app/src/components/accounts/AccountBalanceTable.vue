@@ -9,7 +9,6 @@ import { type Properties } from '@/types';
 import { chainSection } from '@/types/blockchain';
 import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
-import { isTokenChain } from '@/types/blockchain/chains';
 import {
   type BlockchainAccountWithBalance,
   type XpubAccountWithBalance,
@@ -17,6 +16,10 @@ import {
 } from '@/types/blockchain/accounts';
 
 const { t } = useI18n();
+
+type IndexedBlockchainAccountWithBalance = BlockchainAccountWithBalance & {
+  index?: number;
+};
 
 const props = withDefaults(
   defineProps<{
@@ -49,6 +52,8 @@ const { currencySymbol, treatEth2AsEth } = storeToRefs(
 const { hasDetails, getLoopringBalances } = useAccountDetails(blockchain);
 const { getEthDetectedTokensInfo, detectingTokens } =
   useTokenDetection(blockchain);
+const { getNativeAsset, supportsTransactions } = useSupportedChains();
+const { assetSymbol } = useAssetInfoRetrieval();
 
 const editClick = (account: BlockchainAccountWithBalance) => {
   emit('edit-click', account);
@@ -90,12 +95,12 @@ const isBtcNetwork = computed<boolean>(() =>
 );
 
 const hasTokenDetection: ComputedRef<boolean> = computed(() =>
-  isTokenChain(get(blockchain))
+  supportsTransactions(get(blockchain))
 );
 
 const withL2 = (
   balances: BlockchainAccountWithBalance[]
-): BlockchainAccountWithBalance[] => {
+): IndexedBlockchainAccountWithBalance[] => {
   if (!get(isEth) || get(loopring)) {
     return balances.map((balance, index) => ({ ...balance, index }));
   }
@@ -166,7 +171,7 @@ const nonExpandedBalances = computed<BlockchainAccountWithBalance[]>(() =>
 
 const visibleBalances = computed<BlockchainAccountWithBalance[]>(() => {
   const balances = get(nonExpandedBalances).map(item => {
-    if (!isTokenChain(get(blockchain)) || get(loopring)) {
+    if (!supportsTransactions(get(blockchain)) || get(loopring)) {
       return item;
     }
     const detected = get(getEthDetectedTokensInfo(blockchain, item.address));
@@ -295,9 +300,6 @@ const groupBy = (
   }));
 };
 
-const { getNativeAsset } = useSupportedChains();
-const { assetSymbol } = useAssetInfoRetrieval();
-
 const asset: ComputedRef<string> = computed(() => {
   const chain = get(blockchain);
   const nativeAsset = getNativeAsset(chain);
@@ -310,7 +312,7 @@ const asset: ComputedRef<string> = computed(() => {
 const tableHeaders = computed<DataTableHeader[]>(() => {
   const currency = { symbol: get(currencySymbol) };
 
-  const currencyHeader = isTokenChain(get(blockchain))
+  const currencyHeader = supportsTransactions(get(blockchain))
     ? t('account_balances.headers.usd_value_eth', currency)
     : t('account_balances.headers.usd_value', currency);
 
@@ -493,7 +495,7 @@ defineExpose({
               <amount-display
                 :loading="loading"
                 :value="total.amount"
-                :asset="xs ? blockchain : null"
+                :asset="xs ? blockchain : undefined"
               />
             </td>
             <td class="text-end" :class="mobileClass">

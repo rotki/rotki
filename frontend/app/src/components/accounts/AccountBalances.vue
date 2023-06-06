@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { TaskType } from '@/types/task-type';
-import { isTokenChain } from '@/types/blockchain/chains';
 import {
   type AccountWithBalance,
   type BlockchainAccountWithBalance,
@@ -40,11 +39,12 @@ const { handleBlockchainRefresh } = useRefresh(blockchain);
 const { detectTokensOfAllAddresses, detectingTokens } =
   useTokenDetection(blockchain);
 const { show } = useConfirmStore();
+const { supportsTransactions } = useSupportedChains();
 
 const isEth2 = computed<boolean>(() => get(blockchain) === Blockchain.ETH2);
 
 const hasTokenDetection = computed<boolean>(() =>
-  isTokenChain(get(blockchain))
+  supportsTransactions(get(blockchain))
 );
 
 const isQueryingBlockchain = isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES);

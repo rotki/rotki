@@ -3,7 +3,7 @@ import { Severity } from '@rotki/common/lib/messages';
 import { type MaybeRef } from '@vueuse/core';
 import isEmpty from 'lodash/isEmpty';
 import { TaskType } from '@/types/task-type';
-import { isBlockchain, isTokenChain } from '@/types/blockchain/chains';
+import { isBlockchain } from '@/types/blockchain/chains';
 import {
   type AccountPayload,
   type AddAccountsPayload,
@@ -23,7 +23,7 @@ export const useBlockchains = () => {
   const { resetDefiStatus } = useStatusStore();
   const { detectEvmAccounts: detectEvmAccountsCaller } =
     useBlockchainAccountsApi();
-  const { getChainName } = useSupportedChains();
+  const { getChainName, supportsTransactions } = useSupportedChains();
 
   const { isTaskRunning } = useTaskStore();
   const { notify } = useNotificationsStore();
@@ -106,7 +106,7 @@ export const useBlockchains = () => {
         resetNftSectionStatus();
       }
 
-      if (isTokenChain(chain)) {
+      if (supportsTransactions(chain)) {
         await fetchDetected(chain, addresses);
       }
       await refreshAccounts(chain);
@@ -260,7 +260,7 @@ export const useBlockchains = () => {
         resetDefi();
         resetDefiStatus();
         const detectAndRefresh = async () => {
-          if (isTokenChain(blockchain)) {
+          if (supportsTransactions(blockchain)) {
             await fetchDetected(blockchain, registeredAddresses);
           }
           await refreshAccounts(blockchain);
