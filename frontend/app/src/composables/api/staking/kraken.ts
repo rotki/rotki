@@ -1,13 +1,11 @@
 import { type ActionResult } from '@rotki/common/lib/data';
-import {
-  getUpdatedKey,
-  snakeCaseTransformer
-} from '@/services/axios-tranformers';
+import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import {
   handleResponse,
   validWithSessionAndExternalService
 } from '@/services/utils';
+import { transformCase } from '@/utils/text';
 import {
   KrakenStakingEvents,
   type KrakenStakingPagination,
@@ -26,9 +24,7 @@ export const useKrakenApi = () => {
         asyncQuery,
         ...pagination,
         orderByAttributes:
-          pagination.orderByAttributes?.map(item =>
-            getUpdatedKey(item, false)
-          ) ?? []
+          pagination.orderByAttributes?.map(item => transformCase(item)) ?? []
       }),
       {
         validateStatus: validWithSessionAndExternalService

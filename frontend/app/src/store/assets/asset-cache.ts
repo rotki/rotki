@@ -1,6 +1,6 @@
 import { type AssetInfo } from '@rotki/common/lib/data';
 import { type Ref } from 'vue';
-import { getUpdatedKey } from '@/services/axios-tranformers';
+import { transformCase } from '@/utils/text';
 
 export const useAssetCacheStore = defineStore('assets/cache', () => {
   const fetchedAssetCollections: Ref<Record<string, AssetInfo>> = ref({});
@@ -18,7 +18,7 @@ export const useAssetCacheStore = defineStore('assets/cache', () => {
             ...assetCollections
           });
 
-          const item = assets[getUpdatedKey(key, true)];
+          const item = assets[transformCase(key, true)];
           yield { item, key };
         }
       };

@@ -4,7 +4,6 @@ import isEqual from 'lodash/isEqual';
 import { type ComputedRef, type Ref } from 'vue';
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
-import { type TokenChains, isTokenChain } from '@/types/blockchain/chains';
 import { type BlockchainAssetBalances } from '@/types/blockchain/balances';
 import {
   type EthDetectedTokensInfo,
@@ -17,11 +16,12 @@ const noTokens = (): EthDetectedTokensInfo => ({
   timestamp: null
 });
 
-type Tokens = Record<TokenChains, EvmTokensRecord>;
+type Tokens = Record<string, EvmTokensRecord>;
 
 const defaultTokens = (): Tokens => ({
   [Blockchain.ETH]: {},
-  [Blockchain.OPTIMISM]: {}
+  [Blockchain.OPTIMISM]: {},
+  [Blockchain.POLYGON_POS]: {}
 });
 
 export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
@@ -32,14 +32,17 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
   const { isAssetIgnored } = useIgnoredAssetsStore();
   const { t } = useI18n();
   const { ethAddresses } = storeToRefs(useEthAccountsStore());
-  const { optimismAddresses } = storeToRefs(useChainsAccountsStore());
+  const { optimismAddresses, polygonAddresses } = storeToRefs(
+    useChainsAccountsStore()
+  );
   const {
     fetchDetectedTokensTask,
     fetchDetectedTokens: fetchDetectedTokensCaller
   } = useBlockchainBalancesApi();
+  const { supportsTransactions } = useSupportedChains();
 
   const fetchDetected = async (
-    chain: TokenChains,
+    chain: Blockchain,
     addresses: string[]
   ): Promise<void> => {
     await Promise.allSettled(
@@ -47,7 +50,7 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
     );
   };
 
-  const setState = (chain: TokenChains, data: EvmTokensRecord) => {
+  const setState = (chain: Blockchain, data: EvmTokensRecord) => {
     const tokensVal = { ...get(tokensState) };
     set(tokensState, {
       ...tokensVal,
@@ -61,18 +64,20 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
   /**
    * Temporary function to update detected token count on balance refresh
    *
-   * @param {TokenChains} chain
+   * @param {Blockchain} chain
    * @param {BlockchainAssetBalances} chainValues
    */
   const updateDetectedTokens = (
-    chain: TokenChains,
+    chain: Blockchain,
     chainValues: BlockchainAssetBalances
   ) => {
     const lastUpdateTimestamp = Date.now() / 1000;
     const data: EvmTokensRecord = {};
     for (const address in chainValues) {
       const { assets } = chainValues[address];
-      const tokens = Object.keys(assets).filter(asset => asset !== 'ETH');
+      const tokens = Object.keys(assets).filter(
+        asset => asset !== Blockchain.ETH.toUpperCase()
+      );
       data[address] = { tokens, lastUpdateTimestamp };
     }
 
@@ -80,7 +85,7 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
   };
 
   const fetchDetectedTokens = async (
-    chain: TokenChains,
+    chain: Blockchain,
     address: string | null = null
   ) => {
     try {
@@ -123,7 +128,7 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
   ): ComputedRef<EthDetectedTokensInfo> =>
     computed(() => {
       const blockchain = get(chain);
-      if (!isTokenChain(blockchain)) {
+      if (!supportsTransactions(blockchain)) {
         return noTokens();
       }
       const detected = get(tokensState)[blockchain];
@@ -157,6 +162,13 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
     await fetchDetectedTokens(Blockchain.OPTIMISM);
   });
 
+  watch(polygonAddresses, async (curr, prev) => {
+    if (curr.length === 0 || isEqual(curr, prev)) {
+      return;
+    }
+    await fetchDetectedTokens(Blockchain.POLYGON_POS);
+  });
+
   const { isTaskRunning } = useTaskStore();
   const { fetchBlockchainBalances } = useBlockchainBalances();
   const { balances: ethBalances } = storeToRefs(useEthBalancesStore());
@@ -186,6 +198,18 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
     }
   });
 
+  const isPolygonDetecting = isTaskRunning(TaskType.FETCH_DETECTED_TOKENS, {
+    chain: Blockchain.POLYGON_POS
+  });
+  watch(isPolygonDetecting, async (isDetecting, wasDetecting) => {
+    if (get(shouldRefreshBalances) && wasDetecting && !isDetecting) {
+      await fetchBlockchainBalances({
+        blockchain: Blockchain.POLYGON_POS,
+        ignoreCache: true
+      });
+    }
+  });
+
   // todo: this is temporary, to update the detected tokens count
   // todo: remove when BE updates the endpoint for fetching detected tokens
   watch(ethBalances, (balances, oldBalances) => {
@@ -200,11 +224,19 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
   // todo: this is temporary, to update the detected tokens count
   // todo: remove when BE updates the endpoint for fetching detected tokens
   watch(chainBalances, (balances, oldBalances) => {
-    const chain = Blockchain.OPTIMISM;
-    const chainValues = get(balances)[chain];
+    // did this with a loop and it caused update errors
+    const optimism = Blockchain.OPTIMISM;
+    const optimismValues = get(balances)[optimism];
     // we're only interested on the optimism chain changes
-    if (!isEqual(chainValues, get(oldBalances)[chain])) {
-      updateDetectedTokens(chain, chainValues);
+    if (!isEqual(optimismValues, get(oldBalances)[optimism])) {
+      updateDetectedTokens(optimism, optimismValues);
+    }
+
+    const polygon = Blockchain.POLYGON_POS;
+    const polygonValues = get(balances)[polygon];
+    // we're only interested on the polygon chain changes
+    if (!isEqual(polygonValues, get(oldBalances)[polygon])) {
+      updateDetectedTokens(polygon, polygonValues);
     }
   });
 

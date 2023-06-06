@@ -1,8 +1,5 @@
 import { type ActionResult } from '@rotki/common/lib/data';
-import {
-  getUpdatedKey,
-  snakeCaseTransformer
-} from '@/services/axios-tranformers';
+import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import {
   handleResponse,
@@ -11,6 +8,7 @@ import {
   validTaskStatus,
   validWithParamsSessionAndExternalService
 } from '@/services/utils';
+import { transformCase } from '@/utils/text';
 import { type CollectionResponse } from '@/types/collection';
 import {
   type AddTransactionHashPayload,
@@ -44,9 +42,7 @@ export const useHistoryEventsApi = () => {
           asyncQuery,
           ...payload,
           orderByAttributes:
-            payload.orderByAttributes?.map(item =>
-              getUpdatedKey(item, false)
-            ) ?? []
+            payload.orderByAttributes?.map(item => transformCase(item)) ?? []
         })
       ),
       {

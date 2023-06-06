@@ -1,9 +1,6 @@
 import { type ActionResult } from '@rotki/common/lib/data';
 import { type AxiosResponse } from 'axios';
-import {
-  getUpdatedKey,
-  snakeCaseTransformer
-} from '@/services/axios-tranformers';
+import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import {
   handleResponse,
@@ -12,6 +9,7 @@ import {
   validWithParamsSessionAndExternalService,
   validWithSessionStatus
 } from '@/services/utils';
+import { transformCase } from '@/utils/text';
 import {
   type Exchange,
   type ExchangePayload,
@@ -152,9 +150,7 @@ export const useExchangeApi = () => {
           asyncQuery,
           ...payload,
           orderByAttributes:
-            payload.orderByAttributes?.map(item =>
-              getUpdatedKey(item, false)
-            ) ?? []
+            payload.orderByAttributes?.map(item => transformCase(item)) ?? []
         })
       ),
       {

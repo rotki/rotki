@@ -5,6 +5,7 @@ import keys from 'lodash/keys';
 import pick from 'lodash/pick';
 import { type ComputedRef, type Ref, type UnwrapRef } from 'vue';
 import { type ZodSchema } from 'zod';
+import { transformCase } from '@/utils/text';
 import { type PaginationRequestPayload } from '@/types/common';
 import { type Collection } from '@/types/collection';
 import { type TablePagination } from '@/types/pagination';
@@ -12,7 +13,6 @@ import {
   type LocationQuery,
   RouterPaginationOptionsSchema
 } from '@/types/route';
-import { getUpdatedKey } from '@/services/axios-tranformers';
 import {
   FilterBehaviour,
   type MatchedKeywordWithBehaviour,
@@ -181,7 +181,7 @@ export const usePaginationFilters = <
       limit: itemsPerPage,
       offset,
       orderByAttributes: orderByAttributes.map(item =>
-        typeof item === 'string' ? getUpdatedKey(item, false) : item
+        typeof item === 'string' ? transformCase(item) : item
       ),
       ascending:
         sortBy?.length > 0

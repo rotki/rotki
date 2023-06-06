@@ -10,7 +10,6 @@ import {
   validWithSessionAndExternalService
 } from '@/services/utils';
 import { type Module } from '@/types/modules';
-import { type TokenChains } from '@/types/blockchain/chains';
 import { EvmTokensRecord } from '@/types/balances';
 import { type PendingTask } from '@/types/task';
 
@@ -45,7 +44,7 @@ export const useBlockchainBalancesApi = () => {
   };
 
   const internalDetectedTokens = async <T>(
-    chain: TokenChains,
+    chain: Blockchain,
     addresses: string[] | null,
     asyncQuery: boolean
   ): Promise<T> => {
@@ -65,13 +64,13 @@ export const useBlockchainBalancesApi = () => {
   };
 
   const fetchDetectedTokensTask = async (
-    chain: TokenChains,
+    chain: Blockchain,
     addresses: string[]
   ): Promise<PendingTask> =>
     internalDetectedTokens<PendingTask>(chain, addresses, true);
 
   const fetchDetectedTokens = async (
-    chain: TokenChains,
+    chain: Blockchain,
     addresses: string[] | null
   ): Promise<EvmTokensRecord> => {
     const response = await internalDetectedTokens<EvmTokensRecord>(
