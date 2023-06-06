@@ -12,27 +12,30 @@ const css = useCssModule();
 const click = (matcher: SearchMatcher<any>) => {
   emit('click', matcher);
 };
+
+const { dark } = useTheme();
 </script>
 
 <template>
   <div>
     <v-btn
       text
-      color="primary"
       class="text-none text-body-1"
       block
-      :class="{
-        [css.button]: true,
-        [css.selected]: active
-      }"
+      :class="[
+        {
+          [css.button]: true,
+          [css.selected]: active
+        },
+        dark && active ? 'black--text' : 'text--secondary'
+      ]"
       @click="click(matcher)"
     >
       <span class="text-start" :class="css.wrapper">
-        <span class="font-weight-medium"> {{ matcher.key }}: </span>
-        <span
-          class="ms-2 text--secondary font-weight-regular"
-          :class="css.description"
-        >
+        <span class="font-weight-medium primary--text">
+          {{ matcher.key }}:
+        </span>
+        <span class="ms-2 font-weight-regular" :class="css.description">
           {{ matcher.description }}
         </span>
       </span>

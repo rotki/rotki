@@ -3530,7 +3530,7 @@
       "api_key": "API Key",
       "api_secret": "API Secret"
     },
-    "get": "Get @:premium_settings.title",
+    "get": "Get premium",
     "premium_active": "@:premium_settings.title is active",
     "subtitle": "@:premium_settings.title is an optional subscription service to gain access to analytics, graphs, and unlock many additional features. For more information on what is available visit the {0} website.",
     "title": "rotki Premium"
