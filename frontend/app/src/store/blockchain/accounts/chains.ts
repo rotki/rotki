@@ -38,6 +38,10 @@ export const useChainsAccountsStore = defineStore(
       get(optimism).map(({ address }) => address)
     );
 
+    const polygonAddresses: ComputedRef<string[]> = computed(() =>
+      get(polygon).map(({ address }) => address)
+    );
+
     return {
       ksm,
       dot,
@@ -45,6 +49,7 @@ export const useChainsAccountsStore = defineStore(
       optimism,
       polygon,
       optimismAddresses,
+      polygonAddresses,
       update,
       removeTag
     };

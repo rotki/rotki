@@ -1,4 +1,5 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
+import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { type BlockchainBalances } from '@/types/blockchain/balances';
 import {
   type BtcChains,
@@ -98,7 +99,7 @@ export const useBlockchainAccounts = () => {
       true
     );
 
-    return result;
+    return snakeCaseTransformer(result);
   };
 
   const editAccount = async (

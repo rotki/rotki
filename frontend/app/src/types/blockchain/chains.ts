@@ -10,7 +10,11 @@ const RestChains = [
   Blockchain.OPTIMISM,
   Blockchain.POLYGON_POS
 ] as const;
-const TokenChains = [Blockchain.ETH, Blockchain.OPTIMISM] as const;
+const TokenChains = [
+  Blockchain.ETH,
+  Blockchain.OPTIMISM,
+  Blockchain.POLYGON_POS
+] as const;
 
 export type BtcChains = (typeof BtcChains)[number];
 export type EthChains = (typeof EthChains)[number];

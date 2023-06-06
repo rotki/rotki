@@ -21,6 +21,8 @@ export const useAccountDetails = (
       return get(ethBalances)[chain];
     } else if (chain === Blockchain.OPTIMISM) {
       return get(chainBalances)[chain];
+    } else if (chain === Blockchain.POLYGON_POS) {
+      return get(chainBalances)[chain];
     }
     return {};
   });
