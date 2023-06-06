@@ -113,13 +113,13 @@ def timestamp_to_date(
         formatstr: str = '%d/%m/%Y %H:%M:%S',
         treat_as_local: bool = False,
 ) -> str:
-    """Transforms a timestamp to a datesring depending on given formatstr and UTC/local choice"""
+    """Transforms a timestamp to a datestring depending on given formatstr and UTC/local choice"""
     if treat_as_local is False:
         date = datetime.datetime.fromtimestamp(ts, tz=datetime.timezone.utc).strftime(formatstr)
     else:  # localtime
         date = datetime.datetime.fromtimestamp(
-            ts,
-            tz=datetime.datetime.now(datetime.timezone.utc).astimezone().tzinfo,
+            ts,  # ignore below is due to: https://github.com/pjknkda/flake8-datetimez/issues/11
+            tz=datetime.datetime.fromtimestamp(ts).astimezone().tzinfo,  # noqa: DTZ006
         ).strftime(formatstr)
 
     # Depending on the formatstr we could have empty strings at the end. Strip them.
