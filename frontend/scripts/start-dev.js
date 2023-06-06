@@ -93,6 +93,12 @@ pids[commonProcesses.pid] = COMMON;
 
 if (noElectron) {
   logger.info('Starting python backend');
+
+  const logDir = path.join('logs');
+  if (!fs.existsSync(logDir)) {
+    fs.mkdirSync(logDir);
+  }
+
   const args = [
     '-m',
     'rotkehlchen',
