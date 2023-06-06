@@ -261,6 +261,7 @@ declare global {
   const toUnit: typeof import('./utils/calculation')['toUnit']
   const toValue: typeof import('vue')['toValue']
   const totalCollateral: typeof import('./utils/total-collateral')['totalCollateral']
+  const transformCase: typeof import('./utils/text')['transformCase']
   const transformEntryWithMeta: typeof import('./utils/history/index')['transformEntryWithMeta']
   const triggerRef: typeof import('vue')['triggerRef']
   const trimOnPaste: typeof import('./utils/event')['trimOnPaste']
@@ -951,6 +952,7 @@ declare module 'vue' {
     readonly toUnit: UnwrapRef<typeof import('./utils/calculation')['toUnit']>
     readonly toValue: UnwrapRef<typeof import('vue')['toValue']>
     readonly totalCollateral: UnwrapRef<typeof import('./utils/total-collateral')['totalCollateral']>
+    readonly transformCase: UnwrapRef<typeof import('./utils/text')['transformCase']>
     readonly transformEntryWithMeta: UnwrapRef<typeof import('./utils/history/index')['transformEntryWithMeta']>
     readonly triggerRef: UnwrapRef<typeof import('vue')['triggerRef']>
     readonly trimOnPaste: UnwrapRef<typeof import('./utils/event')['trimOnPaste']>
@@ -1635,6 +1637,7 @@ declare module '@vue/runtime-core' {
     readonly toUnit: UnwrapRef<typeof import('./utils/calculation')['toUnit']>
     readonly toValue: UnwrapRef<typeof import('vue')['toValue']>
     readonly totalCollateral: UnwrapRef<typeof import('./utils/total-collateral')['totalCollateral']>
+    readonly transformCase: UnwrapRef<typeof import('./utils/text')['transformCase']>
     readonly transformEntryWithMeta: UnwrapRef<typeof import('./utils/history/index')['transformEntryWithMeta']>
     readonly triggerRef: UnwrapRef<typeof import('vue')['triggerRef']>
     readonly trimOnPaste: UnwrapRef<typeof import('./utils/event')['trimOnPaste']>

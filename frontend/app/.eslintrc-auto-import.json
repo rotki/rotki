@@ -686,6 +686,7 @@
     "useHistoryTransactionsForm": true,
     "useHistoricPriceForm": true,
     "useLatestPriceForm": true,
-    "useManagedAssetForm": true
+    "useManagedAssetForm": true,
+    "transformCase": true
   }
 }
