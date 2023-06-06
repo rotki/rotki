@@ -87,7 +87,7 @@ class CSVExporter(CustomizableDateMixin):
             self.reload_settings(cursor)
 
         frontend_settings = None
-        if self.settings.frontend_settings is not None:
+        if self.settings.frontend_settings != '':
             try:
                 frontend_settings = json.loads(self.settings.frontend_settings)
             except json.decoder.JSONDecodeError as e:
