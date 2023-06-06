@@ -19,18 +19,10 @@ defineProps({
         class="text-h5 mt-6"
       >
         <template #start>
-          <date-display
-            no-timezone
-            :timestamp="period.start"
-            class="font-weight-medium"
-          />
+          <date-display :timestamp="period.start" class="font-weight-medium" />
         </template>
         <template #end>
-          <date-display
-            no-timezone
-            :timestamp="period.end"
-            class="font-weight-medium"
-          />
+          <date-display :timestamp="period.end" class="font-weight-medium" />
         </template>
       </i18n>
     </v-col>
