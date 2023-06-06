@@ -2,12 +2,13 @@ import csv
 import tempfile
 from itertools import zip_longest
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import pytest
 
 from rotkehlchen.accounting.accountant import Accountant
 from rotkehlchen.accounting.cost_basis import AssetAcquisitionEvent
-from rotkehlchen.accounting.export.csv import FILENAME_ALL_CSV
+from rotkehlchen.accounting.export.csv import FILENAME_ALL_CSV, CSVExporter
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL, PnlTotals
 from rotkehlchen.accounting.structures.balance import Balance
@@ -29,10 +30,15 @@ from rotkehlchen.types import (
     Fee,
     Location,
     Price,
+    SupportedBlockchain,
     Timestamp,
     TimestampMS,
     TradeType,
 )
+
+if TYPE_CHECKING:
+    from rotkehlchen.db.dbhandler import DBHandler
+
 
 EXAMPLE_TIMESTAMP = Timestamp(1675483017)
 
@@ -1143,3 +1149,14 @@ def test_fees(accountant: 'Accountant', expected_pnls: list[FVal]):
     )
     for event, expected_pnl in zip(accountant.pots[0].processed_events, expected_pnls):
         assert event.pnl.taxable == expected_pnl
+
+
+@pytest.mark.parametrize('db_settings', [{'frontend_settings': '{"explorers":{"eth":{"transaction":"myexplorer.eth"}, "polygon_pos":{"transaction":"myexplorer.polygon"}}}'}])  # noqa: E501
+def test_csv_exporter_settings(database: 'DBHandler') -> None:
+    """
+    Test that the user configuration for the tx explorer in CSV exporter
+    is correctly picked
+    """
+    csv_exporter = CSVExporter(database)
+    assert csv_exporter.transaction_explorers[SupportedBlockchain.ETHEREUM] == 'myexplorer.eth'
+    assert csv_exporter.transaction_explorers[SupportedBlockchain.POLYGON_POS] == 'myexplorer.polygon'  # noqa: E501
