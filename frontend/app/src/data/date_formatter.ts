@@ -1,47 +1,40 @@
 export class DateFormatter {
   private regex = /%-?[A-Za-z]/gm;
-  private translations: Record<string, (date: Date, locale: string) => string> =
-    {
-      a: (date: Date, locale: string) =>
-        date.toLocaleDateString(locale, { weekday: 'short' }),
-      A: (date: Date, locale: string) =>
-        date.toLocaleDateString(locale, { weekday: 'long' }),
-      w: (date: Date) => date.getDay().toString(),
-      y: (date: Date, locale: string) =>
-        date.toLocaleDateString(locale, { year: '2-digit' }),
-      Y: (date: Date, locale: string) =>
-        date.toLocaleDateString(locale, { year: 'numeric' }),
-      b: (date: Date, locale: string) =>
-        date.toLocaleDateString(locale, { month: 'short' }),
-      B: (date: Date, locale: string) =>
-        date.toLocaleDateString(locale, { month: 'long' }),
-      m: (date: Date, locale: string) =>
-        date.toLocaleDateString(locale, { month: '2-digit' }),
-      '-m': (date: Date, locale: string) =>
-        date.toLocaleDateString(locale, { month: 'numeric' }),
-      d: (date: Date, locale: string) =>
-        date.toLocaleDateString(locale, { day: '2-digit' }),
-      '-d': (date: Date, locale: string) =>
-        date.toLocaleDateString(locale, { day: 'numeric' }),
-      H: (date: Date) => DateFormatter.leftPad(date.getHours().toString()),
-      '-H': (date: Date) => date.getHours().toString(),
-      I: (date: Date) => DateFormatter.leftPad(DateFormatter.twelveHours(date)),
-      '-I': (date: Date) => DateFormatter.twelveHours(date),
-      M: (date: Date) => DateFormatter.leftPad(date.getMinutes().toString()),
-      '-M': (date: Date) => date.getMinutes().toString(),
-      S: (date: Date) => DateFormatter.leftPad(date.getSeconds().toString()),
-      '-S': (date: Date) => date.getSeconds().toString(),
-      p: (date, locale) => DateFormatter.amPm(date, locale),
-      z: (date: Date) => DateFormatter.timezoneOffset(date),
-      Z: (date: Date, locale: string) => DateFormatter.timezone(date, locale),
-      j: (date: Date) =>
-        DateFormatter.leftPad(DateFormatter.dayOfTheYear(date).toString(), 3),
-      '-j': (date: Date) => DateFormatter.dayOfTheYear(date).toString(),
-      c: (date: Date, locale: string) => date.toLocaleString(locale),
-      x: (date: Date, locale: string) => date.toLocaleDateString(locale),
-      X: (date: Date, locale: string) => date.toLocaleTimeString(locale),
-      '%': () => '%'
-    };
+  private translations: Record<
+    string,
+    (date: Date, locale?: string) => string
+  > = {
+    a: (date, locale) => date.toLocaleDateString(locale, { weekday: 'short' }),
+    A: (date, locale) => date.toLocaleDateString(locale, { weekday: 'long' }),
+    w: date => date.getDay().toString(),
+    y: (date, locale) => date.toLocaleDateString(locale, { year: '2-digit' }),
+    Y: (date, locale) => date.toLocaleDateString(locale, { year: 'numeric' }),
+    b: (date, locale) => date.toLocaleDateString(locale, { month: 'short' }),
+    B: (date, locale) => date.toLocaleDateString(locale, { month: 'long' }),
+    m: (date, locale) => date.toLocaleDateString(locale, { month: '2-digit' }),
+    '-m': (date, locale) =>
+      date.toLocaleDateString(locale, { month: 'numeric' }),
+    d: (date, locale) => date.toLocaleDateString(locale, { day: '2-digit' }),
+    '-d': (date, locale) => date.toLocaleDateString(locale, { day: 'numeric' }),
+    H: date => DateFormatter.leftPad(date.getHours().toString()),
+    '-H': date => date.getHours().toString(),
+    I: date => DateFormatter.leftPad(DateFormatter.twelveHours(date)),
+    '-I': date => DateFormatter.twelveHours(date),
+    M: date => DateFormatter.leftPad(date.getMinutes().toString()),
+    '-M': date => date.getMinutes().toString(),
+    S: date => DateFormatter.leftPad(date.getSeconds().toString()),
+    '-S': date => date.getSeconds().toString(),
+    p: (date, locale) => DateFormatter.amPm(date, locale),
+    z: date => DateFormatter.timezoneOffset(date),
+    Z: (date, locale) => DateFormatter.timezone(date, locale),
+    j: date =>
+      DateFormatter.leftPad(DateFormatter.dayOfTheYear(date).toString(), 3),
+    '-j': date => DateFormatter.dayOfTheYear(date).toString(),
+    c: (date, locale) => date.toLocaleString(locale),
+    x: (date, locale) => date.toLocaleDateString(locale),
+    X: (date, locale) => date.toLocaleTimeString(locale),
+    '%': () => '%'
+  };
 
   private static leftPad(text: string, length = 2, padString = '0'): string {
     let paddedText = text;
@@ -69,12 +62,12 @@ export class DateFormatter {
     return Math.floor(diff / oneDay);
   }
 
-  private static amPm(date: Date, locale: string): string {
+  private static amPm(date: Date, locale?: string): string {
     const timeString = date.toLocaleTimeString(locale, { hour12: true });
     return timeString.slice(-2);
   }
 
-  private static timezone(date: Date, locale: string): string {
+  private static timezone(date: Date, locale?: string): string {
     const withTimezone = date.toLocaleString(locale, { timeZoneName: 'short' });
     const withoutTimezone = date.toLocaleString(locale);
     return withTimezone.replace(withoutTimezone, '').trim();
@@ -90,7 +83,7 @@ export class DateFormatter {
     )}`;
   }
 
-  constructor(private readonly locale: string = 'en-US') {}
+  constructor(private readonly locale?: string) {}
 
   get directives(): string[] {
     return Object.keys(this.translations)

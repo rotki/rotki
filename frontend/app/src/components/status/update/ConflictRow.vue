@@ -16,7 +16,7 @@ const isAddress = computed(() => get(field) === 'address');
     <v-col cols="auto" class="font-weight-medium"> {{ field }}: </v-col>
     <v-col class="ms-4" :class="diff ? 'red--text font-weight-bold' : null">
       <span v-if="isStarted">
-        <date-display v-if="value" :timestamp="value" no-timezone />
+        <date-display v-if="value" :timestamp="value" />
         <span v-else>-</span>
       </span>
       <span v-else-if="isAddress">

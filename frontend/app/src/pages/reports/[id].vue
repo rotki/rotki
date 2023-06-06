@@ -104,7 +104,6 @@ const regenerateReport = async () => {
           <date-display
             :timestamp="report.firstProcessedTimestamp"
             class="font-weight-medium"
-            no-timezone
           />
         </template>
       </i18n>
