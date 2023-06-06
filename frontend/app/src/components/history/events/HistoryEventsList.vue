@@ -174,9 +174,9 @@ const { mdAndUp } = useDisplay();
                 :loading="loading || evaluating"
                 :loading-text="t('transactions.events.loading')"
                 :no-data-text="t('transactions.events.no_data')"
-                class="transparent"
                 :options="options"
                 hide-default-footer
+                disable-floating-header
                 :hide-default-header="mdAndUp"
               >
                 <template #progress><span /></template>
@@ -231,6 +231,8 @@ const { mdAndUp } = useDisplay();
 .table {
   :global {
     .v-data-table {
+      background: transparent;
+
       &__wrapper {
         overflow-x: hidden;
 
