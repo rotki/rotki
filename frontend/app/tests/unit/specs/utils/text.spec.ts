@@ -13,4 +13,19 @@ describe('utils/text', () => {
     expect(toHumanReadable('POLYGON_POS', 'lowercase')).toEqual('polygon pos');
     expect(toHumanReadable('POLYGON_pos', 'lowercase')).toEqual('polygon pos');
   });
+
+  test('check return value of transform case function', () => {
+    expect(transformCase('lorem_ipsum_dolor_sit_amet', true)).toEqual(
+      'loremIpsumDolorSitAmet'
+    );
+    expect(transformCase('lorem_ipsum_dolor_sit_amet')).toEqual(
+      'lorem_ipsum_dolor_sit_amet'
+    );
+    expect(transformCase('loremIpsumDolorSitAmet')).toEqual(
+      'lorem_ipsum_dolor_sit_amet'
+    );
+    expect(transformCase('loremIpsumDolorSitAmet', true)).toEqual(
+      'loremIpsumDolorSitAmet'
+    );
+  });
 });

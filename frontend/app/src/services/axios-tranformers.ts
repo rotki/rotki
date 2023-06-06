@@ -1,5 +1,6 @@
 import { BigNumber } from '@rotki/common';
 import { type AxiosResponseTransformer } from 'axios';
+import { transformCase } from '@/utils/text';
 
 const isObject = (data: any): boolean =>
   typeof data === 'object' &&
@@ -9,31 +10,10 @@ const isObject = (data: any): boolean =>
   !(data instanceof Date) &&
   !(data instanceof BigNumber);
 
-export function getUpdatedKey(key: string, camelCase: boolean): string {
-  if (camelCase) {
-    return key.includes('_')
-      ? key.replace(/_(.)/gu, (_, p1) => p1.toUpperCase())
-      : key;
-  }
+const getUpdatedKey = (key: string, camelCase: boolean): string =>
+  transformCase(key, camelCase);
 
-  return key.replace(/([A-Z])/gu, (_, p1, offset, string) => {
-    const nextCharOffset = offset + 1;
-    if (
-      (nextCharOffset < string.length &&
-        /([A-Z])/.test(string[nextCharOffset])) ||
-      nextCharOffset === string.length
-    ) {
-      return p1;
-    }
-    return `_${p1.toLowerCase()}`;
-  });
-}
-
-export const convertKeys = (
-  data: any,
-  camelCase: boolean,
-  skipKey: boolean
-): any => {
+const convertKeys = (data: any, camelCase: boolean, skipKey: boolean): any => {
   if (Array.isArray(data)) {
     return data.map(entry => convertKeys(entry, camelCase, false));
   }

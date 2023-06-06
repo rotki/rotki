@@ -2,7 +2,7 @@
 import { type Ref, useListeners } from 'vue';
 import { type AssetInfoWithId } from '@/types/asset';
 import { getValidSelectorFromEvmAddress } from '@/utils/assets';
-import { getUpdatedKey } from '@/services/axios-tranformers';
+import { transformCase } from '@/utils/text';
 import { type NftAsset } from '@/types/nfts';
 
 const props = withDefaults(
@@ -155,7 +155,7 @@ const checkValue = async () => {
     ...get(assets),
     {
       identifier: val,
-      ...mapping.assets[getUpdatedKey(val, true)]
+      ...mapping.assets[transformCase(val, true)]
     }
   ]);
 };

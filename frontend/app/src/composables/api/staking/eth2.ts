@@ -5,15 +5,13 @@ import {
   Eth2StakingRewards,
   type EthStakingPayload
 } from '@rotki/common/lib/staking/eth2';
-import {
-  getUpdatedKey,
-  snakeCaseTransformer
-} from '@/services/axios-tranformers';
+import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import {
   handleResponse,
   validWithSessionAndExternalService
 } from '@/services/utils';
+import { transformCase } from '@/utils/text';
 import { type PendingTask } from '@/types/task';
 
 export const useEth2Api = () => {
@@ -57,7 +55,7 @@ export const useEth2Api = () => {
         ...payload,
         orderByAttributes:
           payload.orderByAttributes?.map((item: string) =>
-            getUpdatedKey(item, false)
+            transformCase(item)
           ) ?? []
       }),
       {
