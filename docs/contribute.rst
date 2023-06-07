@@ -601,6 +601,15 @@ This command will open the Cypress Test Runner window where you can select speci
 Linting
 =========
 
+If you are doing frontend development it is highly recommended to enable the available hooks.
+
+::
+
+    pnpm run setup:hooks
+
+You will see a message saying `husky - Git hooks installed`. Now you should have a pre-commit hook that runs
+whenever you commit a file and lints the staged files.
+
 Before committing and pushing your commits ensure that you fix any lint issues. You can do this by running:
 
 ::
