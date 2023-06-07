@@ -103,12 +103,14 @@ export default class SubprocessHandler {
   private onChildError?: (err: Error) => void;
   private onChildExit?: (code: number, signal: any) => void;
   private logDirectory?: string;
+  private exiting: boolean;
   private stdioListeners = {
     outOff: (): void => {},
     errOff: (): void => {}
   };
 
   constructor(private app: App) {
+    this.exiting = false;
     app.setAppLogsPath(path.join(app.getPath('appData'), 'rotki', 'logs'));
     this.defaultLogDirectory = app.getPath('logs');
     this._serverUrl = '';
@@ -159,6 +161,15 @@ export default class SubprocessHandler {
   private static packagedColibriPath() {
     const resources = process.resourcesPath ? process.resourcesPath : __dirname;
     return path.join(resources, COLIBRI_DIRECTORY);
+  }
+
+  /**
+   * Removes the error/out listeners from the backend when the app is quiting.
+   * It should be called `before-quit` to avoid having weird unhandled exceptions on SIGINT.
+   */
+  quitting(): void {
+    this.stdioListeners.errOff();
+    this.stdioListeners.outOff();
   }
 
   logToFile(msg: string | Error) {
@@ -220,7 +231,7 @@ export default class SubprocessHandler {
     }
     this.logDirectory = options.logDirectory;
     if (process.env.SKIP_PYTHON_BACKEND) {
-      this.logToFile('Skipped starting python sub-process');
+      this.logToFile('Skipped starting rotki-core');
       return;
     }
 
@@ -266,7 +277,7 @@ export default class SubprocessHandler {
     if (port !== DEFAULT_PORT && Number.parseInt(oldPort) !== port) {
       this._serverUrl = `${scheme}://${host}:${port}`;
       this.logToFile(
-        `Default port ${oldPort} was in use. Starting backend at ${port}`
+        `Default port ${oldPort} was in use. Starting rotki-core at ${port}`
       );
     }
 
@@ -298,7 +309,7 @@ export default class SubprocessHandler {
     const handler = this;
     this.onChildError = (err: Error) => {
       this.logToFile(
-        `Encountered an error while trying to start the python sub-process\n\n${err}`
+        `Encountered an error while trying to start rotki-core\n\n${err}`
       );
       // Notify the main window every 2 seconds until it acks the notification
       handler.setFailureNotification(window, err, BackendCode.TERMINATED);
@@ -308,7 +319,7 @@ export default class SubprocessHandler {
 
     this.onChildExit = (code: number, signal: any) => {
       this.logToFile(
-        `The Python sub-process exited with signal: ${signal} (Code: ${code})`
+        `rotki-core exited with signal: ${signal} (Code: ${code})`
       );
       if (code !== 0) {
         // Notify the main window every 2 seconds until it acks the notification
@@ -327,17 +338,26 @@ export default class SubprocessHandler {
 
     if (childProcess) {
       this.logToFile(
-        `The Python sub-process started on port: ${port} (PID: ${childProcess.pid})`
+        `rotki-core started on port: ${port} (PID: ${childProcess.pid})`
       );
       return;
     }
-    this.logToFile('The Python sub-process was not successfully started');
+    this.logToFile('rotki-core was not successfully started');
   }
 
   async exitPyProc(restart = false) {
     const client = this.childProcess;
+    if (!client) {
+      return;
+    }
+    if (this.exiting) {
+      return;
+    }
+    this.exiting = true;
     this.logToFile(
-      restart ? 'Restarting the backend' : 'Terminating the backend'
+      restart
+        ? 'Restarting rotki-core'
+        : `Terminating rotki-core: (PID ${client.pid})`
     );
     if (this.rpcFailureNotifier) {
       clearInterval(this.rpcFailureNotifier);
@@ -353,11 +373,12 @@ export default class SubprocessHandler {
       this.stdioListeners.errOff();
     }
     if (process.platform === 'win32') {
-      return this.terminateWindowsProcesses(restart);
+      await this.terminateWindowsProcesses(restart);
     }
     if (client) {
-      return this.terminateBackend(client);
+      await this.terminateBackend(client);
     }
+    this.exiting = false;
   }
 
   private logBackendOutput(msg: string | Error) {
@@ -435,7 +456,7 @@ export default class SubprocessHandler {
 
     const allArgs = defaultArgs.concat(args);
     this.logToFile(
-      `Starting non-packaged python subprocess: python ${allArgs.join(' ')}`
+      `Starting non-packaged rotki-core: python ${allArgs.join(' ')}`
     );
 
     this.childProcess = spawn('python', allArgs);
@@ -488,7 +509,7 @@ export default class SubprocessHandler {
     args.push('--logfile', this.backendLogFile);
     args = ['--rest-api-port', port.toString()].concat(args);
     this.logToFile(
-      `Starting packaged python subprocess: ${executable} ${args.join(' ')}`
+      `Starting packaged rotki-core: ${executable} ${args.join(' ')}`
     );
     this.childProcess = spawn(executable, args);
 
@@ -526,7 +547,7 @@ export default class SubprocessHandler {
     this.logToFile('Starting windows process termination');
     const executable = this.executable;
     if (!executable) {
-      this.logToFile('No python sub-process executable detected');
+      this.logToFile('No rotki-core executable detected');
       return;
     }
 
@@ -537,7 +558,7 @@ export default class SubprocessHandler {
       .filter(task => task.imageName === executable)
       .map(task => task.pid);
     this.logToFile(
-      `Detected the following running python sub-processes: ${pids.join(', ')}`
+      `Detected the following running rotki-core processes: ${pids.join(', ')}`
     );
 
     const args = ['/f', '/t'];
@@ -549,7 +570,7 @@ export default class SubprocessHandler {
     this.logToFile(
       `Preparing to call "taskill ${args.join(
         ' '
-      )}" on the python sub-processes`
+      )}" on the rotki-core processes`
     );
 
     const taskKill = spawn('taskkill', args);
