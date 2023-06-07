@@ -3,6 +3,7 @@ import { api } from '@/services/rotkehlchen-api';
 import { type Nullable } from '@/types';
 import { type LogLevel } from '@/utils/log-level';
 import { type Version } from '@/types/action';
+import { type DefaultBackendArguments } from '@/types/backend';
 
 let intervalId: any = null;
 export const useMainStore = defineStore('main', () => {
@@ -13,6 +14,11 @@ export const useMainStore = defineStore('main', () => {
   const dataDirectory: Ref<string> = ref('');
   const logLevel: Ref<LogLevel> = ref(getDefaultLogLevel());
   const dockerRiskAccepted: Ref<boolean> = ref(true);
+  const defaultBackendArguments: Ref<DefaultBackendArguments> = ref({
+    maxLogfilesNum: 0,
+    maxSizeInMbAllLogs: 0,
+    sqliteInstructions: 0
+  });
 
   const usersApi = useUsersApi();
   const { info, ping } = useInfoApi();
@@ -45,12 +51,15 @@ export const useMainStore = defineStore('main', () => {
     const {
       dataDirectory: appDataDirectory,
       logLevel: level,
-      acceptDockerRisk
+      acceptDockerRisk,
+      backendDefaultArguments
     } = await info(false);
+
     set(dataDirectory, appDataDirectory);
     set(logLevel, level);
     set(dockerRiskAccepted, acceptDockerRisk);
     setLevel(level);
+    set(defaultBackendArguments, backendDefaultArguments);
   };
 
   const connect = async (payload?: string | null): Promise<void> => {
@@ -121,6 +130,7 @@ export const useMainStore = defineStore('main', () => {
     dataDirectory,
     updateNeeded,
     dockerRiskAccepted,
+    defaultBackendArguments,
     connect,
     getVersion,
     getInfo,

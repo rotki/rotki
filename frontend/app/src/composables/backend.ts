@@ -34,10 +34,10 @@ export const useBackendManagement = (loaded: () => void = () => {}) => {
   const { setConnected, connect } = store;
 
   const defaultLogLevel = computed<LogLevel>(() => getDefaultLogLevel());
-  const logLevel = ref<LogLevel>(get(defaultLogLevel));
   const userOptions = ref<Partial<BackendOptions>>({});
   const fileConfig = ref<Partial<BackendOptions>>({});
   const defaultLogDirectory = ref('');
+
   const options = computed<Partial<BackendOptions>>(() => ({
     ...get(userOptions),
     ...get(fileConfig)
@@ -52,7 +52,6 @@ export const useBackendManagement = (loaded: () => void = () => {}) => {
   const restartBackendWithOptions = async (
     options: Partial<BackendOptions>
   ) => {
-    const { setConnected, connect } = useMainStore();
     await setConnected(false);
     await interop.restartBackend(options);
     await connect();
@@ -78,15 +77,17 @@ export const useBackendManagement = (loaded: () => void = () => {}) => {
       loglevel,
       ...opts
     };
-    saveUserOptions(updatedOptions);
-    set(userOptions, updatedOptions);
+    await applyUserOptions(updatedOptions);
+  };
+
+  const applyUserOptions = async (config: Partial<BackendOptions>) => {
+    saveUserOptions(config);
+    set(userOptions, config);
     await restartBackendWithOptions(get(options));
   };
 
   const resetOptions = async () => {
-    saveUserOptions({});
-    set(userOptions, {});
-    await restartBackendWithOptions(get(options));
+    await applyUserOptions({});
   };
 
   const restartBackend = async () => {
@@ -127,7 +128,6 @@ export const useBackendManagement = (loaded: () => void = () => {}) => {
   };
 
   return {
-    logLevel,
     defaultLogLevel,
     defaultLogDirectory,
     options,
