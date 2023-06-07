@@ -118,6 +118,7 @@ if (!lock) {
     await closeApp();
   });
   app.on('before-quit', (): void => {
+    pyHandler.quitting();
     forceQuit = true;
   });
 }
