@@ -116,50 +116,55 @@ const resetDefaultArguments = (field: 'files' | 'size' | 'instructions') => {
 };
 
 const newUserOptions = computed(() => {
-  const options: Writeable<Partial<BackendOptions>> = {};
+  const opts = get(options);
+  const newOptions: Writeable<Partial<BackendOptions>> = {};
+
   const level = get(logLevel);
-  const defaultLevel = get(defaultLogLevel);
-  if (level !== defaultLevel) {
-    options.loglevel = level;
+  const savedLogLevel = opts.loglevel ?? get(defaultLogLevel);
+  if (level !== savedLogLevel) {
+    newOptions.loglevel = level;
   }
 
   const userLog = get(userLogDirectory);
-  if (userLog !== get(defaultLogDirectory)) {
-    options.logDirectory = userLog;
+  const savedLogDirectory = opts.logDirectory ?? get(defaultLogDirectory);
+  if (userLog !== savedLogDirectory) {
+    newOptions.logDirectory = userLog;
   }
 
   const logFromOther = get(logFromOtherModules);
-  if (logFromOther) {
-    options.logFromOtherModules = true;
+  const savedLogFromOtherModules = opts.logFromOtherModules ?? false;
+  if (logFromOther !== savedLogFromOtherModules) {
+    newOptions.logFromOtherModules = true;
   }
 
   const userData = get(userDataDirectory);
-  if (userData !== get(dataDirectory)) {
-    options.dataDirectory = userData;
+  const savedDataDirectory = opts.dataDirectory ?? get(dataDirectory);
+  if (userData !== savedDataDirectory) {
+    newOptions.dataDirectory = userData;
   }
 
   if (isDefined(defaultArguments)) {
     const defaults = get(defaultArguments);
     if (defaults.maxLogfilesNum !== get(maxLogFiles)) {
-      options.maxLogfilesNum = get(maxLogFiles);
+      newOptions.maxLogfilesNum = get(maxLogFiles);
     } else {
-      delete options.maxLogfilesNum;
+      delete newOptions.maxLogfilesNum;
     }
 
     if (defaults.maxSizeInMbAllLogs !== get(maxLogSize)) {
-      options.maxSizeInMbAllLogs = get(maxLogSize);
+      newOptions.maxSizeInMbAllLogs = get(maxLogSize);
     } else {
-      delete options.maxSizeInMbAllLogs;
+      delete newOptions.maxSizeInMbAllLogs;
     }
 
     if (defaults.sqliteInstructions !== get(sqliteInstructions)) {
-      options.sqliteInstructions = get(sqliteInstructions);
+      newOptions.sqliteInstructions = get(sqliteInstructions);
     } else {
-      delete options.sqliteInstructions;
+      delete newOptions.sqliteInstructions;
     }
   }
 
-  return options;
+  return newOptions;
 });
 
 const valid = computed(() => {
