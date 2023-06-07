@@ -26,8 +26,6 @@ const logger = {
   debug: (prefix, msg) => console.log(prefix, msg.replace(/\n$/, ''))
 };
 
-const pids = {};
-
 if (!process.env.VIRTUAL_ENV) {
   logger.info('No python virtual environment detected');
   process.exit(1);
@@ -40,7 +38,34 @@ if (devEnvExists) {
   startDevProxy = !!process.env.VITE_BACKEND_URL;
 }
 
+const pids = {};
+const listeners = {};
 const subprocesses = [];
+
+const startProcess = (cmd, tag, name, args) => {
+  const createListeners = tag => ({
+    out: buffer => {
+      logger.debug(tag, buffer.toLocaleString());
+    },
+    err: buffer => {
+      logger.error(tag, buffer.toLocaleString());
+    }
+  });
+
+  const child = spawn(cmd, args, {
+    shell: true,
+    stdio: [process.stdin]
+  });
+
+  subprocesses.push(child);
+
+  const stdListeners = createListeners(tag);
+  child.stdout.on('data', stdListeners.out);
+  child.stderr.on('data', stdListeners.err);
+  pids[child.pid] = name;
+  listeners[child.pid] = stdListeners;
+  return child;
+};
 
 const terminateSubprocesses = () => {
   let subprocess;
@@ -50,6 +75,13 @@ const terminateSubprocesses = () => {
     }
     const name = pids[subprocess.pid] ?? '';
     logger.info(`terminating process: ${name} (${subprocess.pid})`);
+    const ls = listeners[subprocess.pid];
+    if (ls) {
+      subprocess.stdout.off('data', ls.out);
+      subprocess.stderr.off('data', ls.err);
+      delete listeners[subprocess.pid];
+    }
+
     subprocess.kill();
   }
 };
@@ -62,34 +94,20 @@ process.on('SIGINT', () => {
 
 if (startDevProxy) {
   logger.info('Starting dev-proxy');
-  const devProxyProcess = spawn('pnpm run --filter @rotki/dev-proxy serve', {
-    shell: true,
-    stdio: [process.stdin]
-  });
-  subprocesses.push(devProxyProcess);
-
-  devProxyProcess.stdout.on('data', buffer => {
-    logger.debug(colors.green(PROXY), buffer.toLocaleString());
-  });
-  devProxyProcess.stderr.on('data', buffer => {
-    logger.error(colors.green(PROXY), buffer.toLocaleString());
-  });
-  pids[devProxyProcess.pid] = PROXY;
+  startProcess(
+    'pnpm run --filter @rotki/dev-proxy serve',
+    colors.green(PROXY),
+    PROXY
+  );
 }
 
 logger.info('Starting @rotki/common watch');
-const commonProcesses = spawn('pnpm run --filter @rotki/common watch', {
-  shell: true,
-  stdio: [process.stdin]
-});
-commonProcesses.stdout.on('data', buffer => {
-  logger.debug(colors.blue(COMMON), buffer.toLocaleString());
-});
-commonProcesses.stderr.on('data', buffer => {
-  logger.error(colors.blue(COMMON), buffer.toLocaleString());
-});
 
-pids[commonProcesses.pid] = COMMON;
+startProcess(
+  'pnpm run --filter @rotki/common watch',
+  colors.blue(COMMON),
+  COMMON
+);
 
 if (noElectron) {
   logger.info('Starting python backend');
@@ -110,21 +128,7 @@ if (noElectron) {
     `${path.join('logs', 'backend.log')}`
   ];
 
-  const backendProcess = spawn('python', args, {
-    shell: true,
-    stdio: [process.stdin]
-  });
-
-  backendProcess.stdout.on('data', buffer => {
-    logger.debug(colors.yellow(BACKEND), buffer.toLocaleString());
-  });
-  backendProcess.stderr.on('data', buffer => {
-    logger.error(colors.yellow(BACKEND), buffer.toLocaleString());
-  });
-
-  pids[BACKEND.pid] = BACKEND;
-  console.log(BACKEND);
-  subprocesses.push(backendProcess);
+  startProcess('python', colors.yellow(BACKEND), BACKEND, args);
 }
 
 logger.info('Starting rotki dev mode');
@@ -153,22 +157,12 @@ const serveCmd = noElectron
   : 'pnpm run --filter rotki electron:serve';
 const cmd = platform() === 'win32' ? serveCmd : `sleep 20 && ${serveCmd}`;
 
-const devRotkiProcess = spawn(`${cmd} ${args}`, {
-  shell: true,
-  stdio: [process.stdin]
-});
+const devRotkiProcess = startProcess(
+  `${cmd} ${args}`,
+  colors.magenta(ROTKI),
+  ROTKI
+);
 
-devRotkiProcess.stdout.on('data', buffer => {
-  logger.debug(colors.magenta(ROTKI), buffer.toLocaleString());
-});
-devRotkiProcess.stderr.on('data', buffer => {
-  logger.error(colors.magenta(ROTKI), buffer.toLocaleString());
-});
-
-pids[devRotkiProcess.pid] = ROTKI;
-
-devRotkiProcess.on('beforeExit', () => {
+devRotkiProcess.on('exit', () => {
   terminateSubprocesses();
 });
-
-subprocesses.push(commonProcesses, devRotkiProcess);
