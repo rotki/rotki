@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { displayDateFormatter } from '@/data/date_formatter';
 
+const css = useCssModule();
+
 const props = withDefaults(
   defineProps<{
     timestamp: number;
@@ -54,23 +56,25 @@ const showTooltip = computed(() => {
 </script>
 
 <template>
-  <v-tooltip top open-delay="400" :disabled="!showTooltip">
-    <template #activator="{ on, attrs }">
-      <span
-        class="date-display"
-        :class="{ 'blur-content': !shouldShowAmount }"
-        v-bind="attrs"
-        v-on="on"
-      >
-        {{ formattedDate }}
-      </span>
-    </template>
-    <span> {{ formattedDateWithTimezone }} </span>
-  </v-tooltip>
+  <span>
+    <v-tooltip top open-delay="400" :disabled="!showTooltip">
+      <template #activator="{ on, attrs }">
+        <span
+          class="date-display"
+          :class="{ [css.blur]: !shouldShowAmount }"
+          v-bind="attrs"
+          v-on="on"
+        >
+          {{ formattedDate }}
+        </span>
+      </template>
+      <span> {{ formattedDateWithTimezone }} </span>
+    </v-tooltip>
+  </span>
 </template>
 
-<style scoped lang="scss">
-.blur-content {
+<style module lang="scss">
+.blur {
   filter: blur(0.75em);
 }
 </style>
