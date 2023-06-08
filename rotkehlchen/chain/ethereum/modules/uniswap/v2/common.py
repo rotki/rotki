@@ -180,6 +180,7 @@ def decode_uniswap_like_deposit_and_withdrawals(
     Examples of such transactions are:
     https://etherscan.io/tx/0x1bab8a89a6a3f8cb127cfaf7cd58809201a4e230d0a05f9e067674749605959e (deposit)
     https://etherscan.io/tx/0x0936a16e1d3655e832c60bed52040fd5ac0d99d03865d11225b3183dba318f43 (withdrawal)
+    https://etherscan.io/tx/0x00007120e5281e9bdf9a57739e3ecaf736013e4a1a31ecfe44f719c229cc2cbd (withdrawal of weth)
     """  # noqa: E501
     resolved_eth = A_ETH.resolve_to_crypto_asset()
     target_pool_address = tx_log.address
@@ -211,7 +212,9 @@ def decode_uniswap_like_deposit_and_withdrawals(
                 evm_inquirer=ethereum_inquirer,
                 seen=TokenSeenAt(tx_hash=tx_hash),
             )
-            token0 = resolved_eth if token0 == A_WETH else token0
+            # we make a distinction between token and asset since for eth uniswap moves around
+            # WETH but we could receive ETH
+            asset_0 = resolved_eth if token0 == A_WETH else token0
         elif other_log.topics[0] == ERC20_OR_ERC721_TRANSFER and hex_or_bytes_to_int(other_log.data[:32]) == amount1_raw:  # noqa: E501
             token1 = get_or_create_evm_token(
                 userdb=database,
@@ -221,7 +224,7 @@ def decode_uniswap_like_deposit_and_withdrawals(
                 evm_inquirer=ethereum_inquirer,
                 seen=TokenSeenAt(tx_hash=tx_hash),
             )
-            token1 = resolved_eth if token1 == A_WETH else token1
+            asset_1 = resolved_eth if token1 == A_WETH else token1
 
     if token0 is None or token1 is None:
         return DEFAULT_DECODING_OUTPUT
@@ -236,17 +239,19 @@ def decode_uniswap_like_deposit_and_withdrawals(
         if (
             event.event_type == from_event_type[0] and
             event.event_subtype == from_event_type[1] and
-            resolved_asset == token0 and
+            (resolved_asset in (asset_0, token0)) and
             event.balance.amount == asset_normalized_value(amount0_raw, resolved_asset)
         ):
+            asset_0 = resolved_asset  # here we know exactly if it is ETH or WETH (or any other asset) so assign the asset  # noqa: E501
             event0_idx = idx
 
         elif (
             event.event_type == from_event_type[0] and
             event.event_subtype == from_event_type[1] and
-            resolved_asset == token1 and
+            (resolved_asset in (asset_1, token1)) and
             event.balance.amount == asset_normalized_value(amount1_raw, resolved_asset)
         ):
+            asset_1 = resolved_asset
             event1_idx = idx
 
     # Finally, determine the pool address from the pair of token addresses, if it matches
@@ -260,7 +265,7 @@ def decode_uniswap_like_deposit_and_withdrawals(
 
     new_action_items = []
     if pool_address == target_pool_address:
-        for asset, decoded_event_idx, amount in [(token0, event0_idx, amount0), (token1, event1_idx, amount1)]:  # noqa: E501
+        for asset, decoded_event_idx, amount in [(asset_0, event0_idx, amount0), (asset_1, event1_idx, amount1)]:  # noqa: E501
             if decoded_event_idx is None:
                 action_item = ActionItem(
                     action='transform',
