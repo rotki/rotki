@@ -909,3 +909,81 @@ def test_aave_v2_repay(database, ethereum_inquirer, eth_transactions):
         ),
     ]
     assert events == expected_events
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('ethereum_accounts', [['0xe903fEed7c1098Ba92E4b7092ca77bBc48503d90']])
+def test_aave_v2_supply_ether(database, ethereum_inquirer, ethereum_accounts):
+    """
+    Test deposit in aave using the eth wrapper contract. Data taken from
+    https://etherscan.io/tx/0xefc9040c100829a391a636f02eb96a9361bd0bc2ca5e8e5f97bbc4a1831cdec9
+    """
+    tx_hash = deserialize_evm_tx_hash('0xefc9040c100829a391a636f02eb96a9361bd0bc2ca5e8e5f97bbc4a1831cdec9')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    expected_events = [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=0,
+            timestamp=TimestampMS(1646516157000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal('0.0104361555519052'), usd_value=ZERO),
+            location_label=ethereum_accounts[0],
+            notes='Burned 0.0104361555519052 ETH for gas',
+            counterparty=CPT_GAS,
+            identifier=None,
+            extra_data=None,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=1,
+            timestamp=TimestampMS(1646516157000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(0.1)),
+            location_label=ethereum_accounts[0],
+            notes='Deposit 0.1 WETH into AAVE v2',
+            counterparty=CPT_AAVE_V2,
+            identifier=None,
+            extra_data=None,
+            address=string_to_evm_address('0xcc9a0B7c43DC2a5F023Bb9b738E45B0Ef6B06E04'),
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=180,
+            timestamp=TimestampMS(1646516157000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+            asset=EvmToken('eip155:1/erc20:0x030bA81f1c18d280636F32af80b9AAd02Cf0854e'),  # aWETH
+            balance=Balance(amount=FVal(0.1)),
+            location_label=ethereum_accounts[0],
+            notes='Receive 0.1 aWETH from AAVE v2',
+            counterparty=CPT_AAVE_V2,
+            identifier=None,
+            extra_data=None,
+            address=ZERO_ADDRESS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=182,
+            timestamp=TimestampMS(1646516157000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=EvmToken('eip155:1/erc20:0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),
+            balance=Balance(amount=ZERO),
+            location_label=ethereum_accounts[0],
+            notes='Enable WETH as collateral on AAVE v2',
+            counterparty=CPT_AAVE_V2,
+            identifier=None,
+            extra_data=None,
+            address=string_to_evm_address('0xcc9a0B7c43DC2a5F023Bb9b738E45B0Ef6B06E04'),
+        ),
+    ]
+    assert events == expected_events
