@@ -1,4 +1,5 @@
 import base64
+import contextlib
 from contextlib import ExitStack
 from typing import Optional
 from unittest.mock import patch
@@ -117,19 +118,19 @@ def fixture_new_db_unlock_actions():
 
 
 def patch_and_enter_before_unlock(
-        rotki,
-        stack,
-        network_mocking,
-        ethereum_modules,
-        ksm_rpc_endpoint,
-        ethereum_manager_connect_at_start,
-        optimism_manager_connect_at_start,
-        kusama_manager_connect_at_start,
-        have_decoders,
-        use_custom_database,
+        rotki: Rotkehlchen,
+        stack: contextlib.ExitStack,
+        network_mocking: bool,
+        ethereum_modules: list,
+        ksm_rpc_endpoint: str,
+        ethereum_manager_connect_at_start: list,
+        optimism_manager_connect_at_start: list,
+        kusama_manager_connect_at_start: list,
+        have_decoders: bool,
+        use_custom_database: bool,
         new_db_unlock_actions,
-        perform_upgrades_at_unlock,
-        should_mock_settings=True,
+        perform_upgrades_at_unlock: bool,
+        should_mock_settings: bool = True,
 ):
     # Do not connect to the usual nodes at start by default. Do not want to spam
     # them during our tests. It's configurable per test, with the default being nothing
@@ -200,7 +201,11 @@ def patch_and_enter_before_unlock(
         stack.enter_context(upgrades_patch)
 
 
-def patch_no_op_unlock(rotki, stack, should_mock_settings=True):
+def patch_no_op_unlock(
+        rotki: Rotkehlchen,
+        stack: contextlib.ExitStack,
+        should_mock_settings: bool = True,
+):
     patch_and_enter_before_unlock(
         rotki=rotki,
         stack=stack,

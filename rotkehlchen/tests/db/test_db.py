@@ -139,6 +139,7 @@ TABLES_AT_INIT = [
 ]
 
 
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_data_init_and_password(data_dir, username, sql_vm_instructions_cb):
     """DB Creation logic and tables at start testing"""
     msg_aggregator = MessagesAggregator()
@@ -172,6 +173,7 @@ def test_data_init_and_password(data_dir, username, sql_vm_instructions_cb):
         data.unlock(username, '1234', create_new=False, resume_from_backup=False)
 
 
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_add_remove_exchange(user_data_dir, sql_vm_instructions_cb):
     """Tests that adding and removing an exchange in the DB works.
 
@@ -253,6 +255,7 @@ def test_add_remove_exchange(user_data_dir, sql_vm_instructions_cb):
     assert binance.api_secret == binance_api_secret
 
 
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_export_import_db(data_dir, username, sql_vm_instructions_cb):
     """Create a DB, write some data and then after export/import confirm it's there"""
     msg_aggregator = MessagesAggregator()
@@ -280,6 +283,7 @@ def test_export_import_db(data_dir, username, sql_vm_instructions_cb):
     assert balances == [starting_balance]
 
 
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_writing_fetching_data(data_dir, username, sql_vm_instructions_cb):
     msg_aggregator = MessagesAggregator()
     data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)
@@ -444,6 +448,7 @@ def test_settings_entry_types(database):
     assert res.frontend_settings == ''
 
 
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_balance_save_frequency_check(data_dir, username, sql_vm_instructions_cb):
     msg_aggregator = MessagesAggregator()
     data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)
@@ -557,6 +562,7 @@ asset_balances = [
 ]
 
 
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_query_timed_balances(data_dir, username, sql_vm_instructions_cb):
     msg_aggregator = MessagesAggregator()
     data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)
@@ -609,6 +615,7 @@ def test_query_timed_balances(data_dir, username, sql_vm_instructions_cb):
     assert result[0].usd_value == FVal('9.98')
 
 
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_query_owned_assets(data_dir, username, sql_vm_instructions_cb):
     """Test the get_owned_assets with also an unknown asset in the DB"""
     msg_aggregator = MessagesAggregator()
@@ -710,6 +717,7 @@ def test_query_owned_assets(data_dir, username, sql_vm_instructions_cb):
     assert len(warnings) == 0
 
 
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_get_latest_location_value_distribution(data_dir, username, sql_vm_instructions_cb):
     msg_aggregator = MessagesAggregator()
     data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)
@@ -731,6 +739,7 @@ def test_get_latest_location_value_distribution(data_dir, username, sql_vm_instr
     assert distribution[4].usd_value == '200000'
 
 
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_get_latest_asset_value_distribution(data_dir, username, sql_vm_instructions_cb):
     msg_aggregator = MessagesAggregator()
     data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)
@@ -758,6 +767,7 @@ def test_get_latest_asset_value_distribution(data_dir, username, sql_vm_instruct
     assert FVal(assets[1].usd_value) > FVal(assets[2].usd_value)
 
 
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_get_netvalue_data(data_dir, username, sql_vm_instructions_cb):
     msg_aggregator = MessagesAggregator()
     data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)
@@ -775,6 +785,7 @@ def test_get_netvalue_data(data_dir, username, sql_vm_instructions_cb):
     assert values[2] == '10700.5'
 
 
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_get_netvalue_data_from_date(data_dir, username, sql_vm_instructions_cb):
     msg_aggregator = MessagesAggregator()
     data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)
@@ -788,6 +799,7 @@ def test_get_netvalue_data_from_date(data_dir, username, sql_vm_instructions_cb)
     assert values[0] == '10700.5'
 
 
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_get_netvalue_without_nfts(data_dir, username, sql_vm_instructions_cb):
     """
     Test that the netvalue in a range of time is correctly queried with and without NFTs
@@ -816,6 +828,7 @@ def test_get_netvalue_without_nfts(data_dir, username, sql_vm_instructions_cb):
     assert values[3] == '4500'
 
 
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_add_trades(data_dir, username, caplog, sql_vm_instructions_cb):
     """Test that adding and retrieving trades from the DB works fine.
 
@@ -884,6 +897,7 @@ def test_add_trades(data_dir, username, caplog, sql_vm_instructions_cb):
     assert returned_trades == [trade1, trade2, trade3]
 
 
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_add_margin_positions(data_dir, username, caplog, sql_vm_instructions_cb):
     """Test that adding and retrieving margin positions from the DB works fine.
 
@@ -948,6 +962,7 @@ def test_add_margin_positions(data_dir, username, caplog, sql_vm_instructions_cb
         assert returned_margins == [margin1, margin2, margin3]
 
 
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_add_asset_movements(data_dir, username, caplog, sql_vm_instructions_cb):
     """Test that adding and retrieving asset movements from the DB works fine.
 
@@ -1024,6 +1039,7 @@ def test_add_asset_movements(data_dir, username, caplog, sql_vm_instructions_cb)
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[]])
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_non_checksummed_eth_account_in_db(database):
     """
     Regression test for  https://github.com/rotki/rotki/issues/519
@@ -1060,6 +1076,7 @@ def test_non_checksummed_eth_account_in_db(database):
     assert f'Invalid ETH account in DB: {invalid_address}' in warnings[1]
 
 
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_can_unlock_db_with_disabled_taxfree_after_period(data_dir, username, sql_vm_instructions_cb):  # noqa: E501
     """Test that with taxfree_after_period being empty the DB can be opened
 
@@ -1139,6 +1156,7 @@ def test_timed_balances_primary_key_works(user_data_dir, sql_vm_instructions_cb)
 
 
 @pytest.mark.parametrize('db_settings', [{'treat_eth2_as_eth': True}])
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_timed_balances_treat_eth2_as_eth(database):
     """
     Test that the setting to treat eth2 as eth calculates correctly the
@@ -1307,6 +1325,7 @@ def test_multiple_location_data_and_balances_same_timestamp(user_data_dir, sql_v
     assert len(locations) == 0
 
 
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_set_get_rotkehlchen_premium_credentials(data_dir, username, sql_vm_instructions_cb):
     """Test that setting the premium credentials and getting them back from the DB works
     """
@@ -1333,6 +1352,7 @@ def test_set_get_rotkehlchen_premium_credentials(data_dir, username, sql_vm_inst
     assert returned_credentials.serialize_secret() == secret
 
 
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_unlock_with_invalid_premium_data(data_dir, username, sql_vm_instructions_cb):
     """Test that invalid premium credentials unlock still works
     """
@@ -1365,6 +1385,7 @@ def test_unlock_with_invalid_premium_data(data_dir, username, sql_vm_instruction
 
 @pytest.mark.parametrize('include_etherscan_key', [False])
 @pytest.mark.parametrize('include_cryptocompare_key', [False])
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_get_external_service_credentials(database):
     # Test that if the service is not in DB 'None' is returned
     for service in ExternalService:
@@ -1382,6 +1403,7 @@ def test_get_external_service_credentials(database):
         assert credentials.api_key == f'{service.name.lower()}_key'
 
 
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_remove_queried_address_on_account_remove(data_dir, username, sql_vm_instructions_cb):
     msg_aggregator = MessagesAggregator()
     data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)
@@ -1495,6 +1517,7 @@ def test_all_balance_types_in_db(database):
     (BalanceType, 'balance_category'),
     (AssetMovementCategory, 'asset_movement_category'),
 ])
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_values_are_present_in_db(database, enum_class, table_name):
     """
     Check that all enum classes have the same number of possible values
@@ -1508,6 +1531,7 @@ def test_values_are_present_in_db(database, enum_class, table_name):
         assert r.fetchone() == (1,)
 
 
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_binance_pairs(user_data_dir, sql_vm_instructions_cb):
     msg_aggregator = MessagesAggregator()
     db = DBHandler(

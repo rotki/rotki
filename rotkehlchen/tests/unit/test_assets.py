@@ -736,35 +736,36 @@ def test_symbol_or_name(database):
 
 def test_load_from_packaged_db(globaldb: GlobalDBHandler):
     """Test that connecting to the packaged globaldb doesn't try to write into it."""
-    packaged_db_path = Path(__file__).resolve().parent.parent.parent / 'data' / 'global.db'
-    with TemporaryDirectory() as tmpdirname:
-        # Create a copy of the global db in a temp file
-        dest_file = Path(tmpdirname) / 'data' / 'global.db'
-        os.makedirs(dest_file.parent, exist_ok=True)
-        backup = shutil.copy(packaged_db_path, dest_file)
+    packaged_db_path = Path(
+        os.path.join(Path(__file__).resolve().parent.parent.parent / 'data' / 'global.db'))
+    tmpdirname = os.path.dirname(TemporaryDirectory().name)
+    # Create a copy of the global db in a temp file
+    dest_file = Path(os.path.join(tmpdirname, 'data', 'global.db'))
+    os.makedirs(dest_file.parent, exist_ok=True)
+    backup = shutil.copy(packaged_db_path, dest_file)
 
-        # connect to the database and edit it to verify that we are later connecting
-        # to the right one
-        conn = sqlite3.connect(dest_file, check_same_thread=False)
-        conn.cursor().execute('UPDATE assets SET name="my eth" WHERE identifier="ETH"')
-        conn.close()
+    # connect to the database and edit it to verify that we are later connecting
+    # to the right one
+    conn = sqlite3.connect(dest_file, check_same_thread=False)
+    conn.cursor().execute('UPDATE assets SET name="my eth" WHERE identifier="ETH"')
+    conn.close()
 
-        # set the permissions for the copy of the globaldb to read only. This ensures
-        # that no write happen without raising an error
-        backup.chmod(0o444)
+    # set the permissions for the copy of the globaldb to read only. This ensures
+    # that no write happen without raising an error
+    backup.chmod(0o444)
 
-        # mock Path parent attribute to return the destination file always
-        def parent():
-            return Path(tmpdirname)
+    # mock Path parent attribute to return the destination file always
+    def parent():
+        return Path(tmpdirname)
 
-        # mock the parent method from pathlib in the initialization of the globaldb
-        with patch('pathlib.Path.parent', new_callable=PropertyMock) as mock_path:
-            mock_path.side_effect = parent
-            # the execution of the function shouldn't raise any error
-            globaldb.packaged_db_conn()
+    # mock the parent method from pathlib in the initialization of the globaldb
+    with patch('pathlib.Path.parent', new_callable=PropertyMock) as mock_path:
+        mock_path.side_effect = parent
+        # the execution of the function shouldn't raise any error
+        globaldb.packaged_db_conn()
 
-        # check that we can read from the database and is the correct one
-        assert globaldb._packaged_db_conn is not None
-        with globaldb._packaged_db_conn.cursor() as cursor:
-            cursor.execute('SELECT name FROM assets WHERE identifier="ETH"')
-            assert cursor.fetchone()[0] == 'my eth'
+    # check that we can read from the database and is the correct one
+    assert globaldb._packaged_db_conn is not None
+    with globaldb._packaged_db_conn.cursor() as cursor:
+        cursor.execute('SELECT name FROM assets WHERE identifier="ETH"')
+        assert cursor.fetchone()[0] == 'my eth'

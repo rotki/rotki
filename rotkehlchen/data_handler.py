@@ -1,6 +1,7 @@
 import base64
 import hashlib
 import logging
+import os
 import shutil
 import tempfile
 import zlib
@@ -72,7 +73,7 @@ class DataHandler():
         user_data_dir = self.data_directory / username
         if create_new:
             try:
-                if (user_data_dir / 'rotkehlchen.db').exists():
+                if Path(os.path.join(user_data_dir, 'rotkehlchen.db')).exists():
                     raise AuthenticationError(
                         f'User {username} already exists. User data dir: {user_data_dir}',
                     )

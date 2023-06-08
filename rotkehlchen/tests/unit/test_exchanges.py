@@ -1,5 +1,6 @@
 from unittest.mock import patch
 
+from rotkehlchen.api.server import APIServer
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.exchanges.binance import Binance
 from rotkehlchen.tests.utils.factories import make_api_key, make_api_secret
@@ -81,7 +82,7 @@ TEST_CREDENTIALS_3 = ExchangeApiCredentials(
 )
 
 
-def test_change_credentials(rotkehlchen_api_server) -> None:
+def test_change_credentials(rotkehlchen_api_server: APIServer) -> None:
     """
     Test that chaning exchange credentials works as expected and if incorrect credentials
     were provided then the old credentials are restored.

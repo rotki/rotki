@@ -1,4 +1,5 @@
 import filecmp
+import os
 import tempfile
 from http import HTTPStatus
 from pathlib import Path
@@ -6,6 +7,7 @@ from pathlib import Path
 import pytest
 import requests
 
+from rotkehlchen.api.server import APIServer
 from rotkehlchen.db.settings import ROTKEHLCHEN_DB_VERSION
 from rotkehlchen.tests.utils.api import (
     api_url_for,
@@ -17,7 +19,12 @@ from rotkehlchen.utils.misc import ts_now
 
 
 @pytest.mark.parametrize('start_with_logged_in_user', [True, False])
-def test_query_db_info(rotkehlchen_api_server, data_dir, username, start_with_logged_in_user):
+def test_query_db_info(
+        rotkehlchen_api_server: APIServer,
+        data_dir: Path,
+        username: str,
+        start_with_logged_in_user: bool,
+):
     """Test that retrieving user and global database details works fine"""
     if start_with_logged_in_user:
         backup1 = Path(data_dir / username / '1624053928_rotkehlchen_db_v26.backup')
@@ -35,7 +42,7 @@ def test_query_db_info(rotkehlchen_api_server, data_dir, username, start_with_lo
 
     if start_with_logged_in_user:
         userdb = result['userdb']
-        assert userdb['info']['filepath'] == f'{data_dir}/{username}/rotkehlchen.db'
+        assert userdb['info']['filepath'] == os.path.join(data_dir, username, 'rotkehlchen.db')
         assert userdb['info']['size'] >= 300000  # just from comparison at tests
         assert userdb['info']['version'] == ROTKEHLCHEN_DB_VERSION
         assert len(userdb['backups']) == 3
@@ -44,7 +51,11 @@ def test_query_db_info(rotkehlchen_api_server, data_dir, username, start_with_lo
         assert {'size': len(backup1_contents), 'time': 1624053928, 'version': 26} in userdb['backups']  # noqa: E501
 
 
-def test_create_download_delete_backup(rotkehlchen_api_server, data_dir, username):
+def test_create_download_delete_backup(
+        rotkehlchen_api_server: APIServer,
+        data_dir: Path,
+        username: str,
+):
     """Test that creating, downloading and deleting a backup works fine"""
     start_ts = ts_now()
     response = requests.put(api_url_for(rotkehlchen_api_server, 'databasebackupsresource'))
@@ -88,7 +99,11 @@ def test_create_download_delete_backup(rotkehlchen_api_server, data_dir, usernam
     assert len(backups) == 0
 
 
-def test_delete_download_backup_errors(rotkehlchen_api_server, data_dir, username):
+def test_delete_download_backup_errors(
+        rotkehlchen_api_server: APIServer,
+        data_dir: Path,
+        username: str,
+):
     """Test that errors are handled properly in backup deletion and download"""
     user_data_dir = Path(data_dir, username)
     # Make sure deleting file outside  of user data dir fails
