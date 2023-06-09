@@ -32,8 +32,10 @@ if TYPE_CHECKING:
     from rotkehlchen.types import ChecksumEvmAddress
     from rotkehlchen.user_messages import MessagesAggregator
 
+YEARN_DEPOSIT_AMOUNT_4_BYTES = b'\xd0\xe3\r\xb0'
 YEARN_DEPOSIT_4_BYTES = b'\xb6\xb5_%'
-YEARN_WITHDRAW_4_BYTES = b'.\x1a}M'
+YEARN_WITHDRAW_AMOUNT_4_BYTES = b'.\x1a}M'
+YEARN_WITHDRAW_4_BYTES = b'<\xcf\xd6\x0b'
 
 
 def _get_vault_token_name(vault_address: 'ChecksumEvmAddress') -> str:
@@ -83,9 +85,15 @@ class YearnDecoder(DecoderInterface):
             return FAILED_ENRICHMENT_OUTPUT
 
         is_deposit = False
-        if context.transaction.input_data.startswith(YEARN_DEPOSIT_4_BYTES):
+        if (
+            context.transaction.input_data.startswith(YEARN_DEPOSIT_4_BYTES) or
+            context.transaction.input_data.startswith(YEARN_DEPOSIT_AMOUNT_4_BYTES)
+        ):
             is_deposit = True
-        elif not context.transaction.input_data.startswith(YEARN_WITHDRAW_4_BYTES):
+        elif not (
+            context.transaction.input_data.startswith(YEARN_WITHDRAW_4_BYTES) or
+            context.transaction.input_data.startswith(YEARN_WITHDRAW_AMOUNT_4_BYTES)
+        ):
             # a yearn contract method that we don't need to handle
             return FAILED_ENRICHMENT_OUTPUT
 

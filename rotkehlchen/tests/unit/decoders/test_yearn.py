@@ -10,10 +10,11 @@ from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants.assets import A_ETH, A_YFI
+from rotkehlchen.constants.assets import A_1INCH, A_ETH, A_YFI
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.fval import FVal
+from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import (
     ChainID,
     EvmTransaction,
@@ -477,3 +478,77 @@ def test_withdraw_yearn_v1(database, ethereum_inquirer, eth_transactions):
             address=string_to_evm_address('0x5334e150B938dd2b6bd040D9c4a03Cff0cED3765'),
         )]
     assert events == expected_events
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('ethereum_accounts', [['0xfDb7EEc5eBF4c4aC7734748474123aC25C6eDCc8']])
+def test_deposit_yearn_full_amount(database, ethereum_inquirer, ethereum_accounts):
+    """
+    In the case of deposits and withdrawals for yearn there are two different signatures for
+    the functions used. If no amount is provided all the available amount is deposited/withdrawn.
+    """
+    tx_hex = deserialize_evm_tx_hash('0x02486ccc1fe49b3c7df60c51efad78ddca5af025834e30ba1a736ff352b33592')  # noqa: E501
+    evmhash = deserialize_evm_tx_hash(tx_hex)
+    user_address = ethereum_accounts[0]
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hex,
+    )
+    assert events == [
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=0,
+            timestamp=TimestampMS(1614241909000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(
+                amount=FVal(0.0108951),
+                usd_value=ZERO,
+            ),
+            location_label=user_address,
+            notes='Burned 0.0108951 ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=222,
+            timestamp=TimestampMS(1614241909000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+            asset=Asset('eip155:1/erc20:0xB8C3B7A2A618C552C23B1E4701109a9E756Bab67'),
+            balance=Balance(amount=FVal('484.583645343659242764'), usd_value=ZERO),
+            location_label=user_address,
+            notes='Receive 484.583645343659242764 1INCH yVault after deposit in a yearn-v2 vault',
+            counterparty=CPT_YEARN_V2,
+            address=ZERO_ADDRESS,
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=223,
+            timestamp=TimestampMS(1614241909000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+            asset=A_1INCH,
+            balance=Balance(amount=FVal('485.291731449267028361'), usd_value=ZERO),
+            location_label=user_address,
+            notes='Deposit 485.291731449267028361 1INCH in yearn-v2 vault 1INCH yVault',
+            counterparty=CPT_YEARN_V2,
+            address=string_to_evm_address('0xB8C3B7A2A618C552C23B1E4701109a9E756Bab67'),
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=224,
+            timestamp=TimestampMS(1614241909000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=A_1INCH,
+            balance=Balance(amount=FVal('115792089237316195423570985000000000000000000000000000000000'), usd_value=ZERO),  # noqa: E501
+            location_label=user_address,
+            notes='Set 1INCH spending approval of 0xfDb7EEc5eBF4c4aC7734748474123aC25C6eDCc8 by 0xB8C3B7A2A618C552C23B1E4701109a9E756Bab67 to 115792089237316195423570985000000000000000000000000000000000',  # noqa: E501
+            counterparty=None,
+            address=string_to_evm_address('0xB8C3B7A2A618C552C23B1E4701109a9E756Bab67'),
+        ),
+    ]
