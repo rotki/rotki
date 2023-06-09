@@ -10,6 +10,7 @@ Changelog
 * :bug:`-` Fix issue for ledger actions with zero rate, where the rate isn't used in the PnL report.
 * :bug:`-` ENS avatar fetching for each name's avatar should now work for all name resolvers. Even older or custom ones.
 * :bug:`-` Users will now be able to decode compounding transactions for Convex gauges.
+* :bug:`-` Events depositing tokens in Yearn V2 vaults where the full owned amount is deposited should be now correctly decoded.
 * :bug:`-` Users will no longer see double counting of balances in curve gauges.
 * :bug:`-` Events that were imported via a csv file will now be properly accounted for in PnL reports.
 * :bug:`-` Notes in exported CSV reports will contain the correct url for transactions in different EVM chains.
