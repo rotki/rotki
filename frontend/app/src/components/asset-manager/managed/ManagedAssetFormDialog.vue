@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { type SupportedAsset } from '@rotki/common/lib/data';
-import { useManagedAssetForm } from '@/composables/assets/forms/managed-asset-form';
 
 const props = withDefaults(
   defineProps<{
@@ -26,7 +25,6 @@ const { openDialog, submitting, closeDialog, trySubmit } =
     :display="openDialog"
     :title="title"
     :subtitle="subtitle"
-    :action-disabled="submitting"
     :primary-action="t('common.actions.save')"
     :loading="submitting"
     @confirm="trySubmit()"

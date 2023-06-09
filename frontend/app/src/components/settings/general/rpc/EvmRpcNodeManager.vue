@@ -1,12 +1,10 @@
 <script setup lang="ts">
-import omit from 'lodash/omit';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import {
   type EvmRpcNode,
   type EvmRpcNodeList,
   getPlaceholderNode
 } from '@/types/settings';
-import { ApiValidationError } from '@/types/api/errors';
 
 const props = withDefaults(
   defineProps<{
@@ -20,16 +18,14 @@ const props = withDefaults(
 const { chain } = toRefs(props);
 
 const nodes = ref<EvmRpcNodeList>([]);
-const showForm = ref(false);
-const valid = ref(false);
-const loading = ref(false);
-const isEdit = ref(false);
+const editMode = ref(false);
 const selectedNode = ref<EvmRpcNode>(getPlaceholderNode(get(chain)));
-const errors = ref<Record<string, string[] | string>>({});
 
 const { notify } = useNotificationsStore();
 const { setMessage } = useMessageStore();
 const { t } = useI18n();
+
+const { setOpenDialog, closeDialog, setPostSubmitFunc } = useEvmRpcNodeForm();
 
 const { connectedEthNodes, connectedOptimismNodes } = storeToRefs(
   usePeriodicStore()
@@ -53,64 +49,21 @@ onMounted(async () => {
   await loadNodes();
 });
 
-const save = async () => {
-  const editing = get(isEdit);
-  try {
-    set(loading, true);
-    const node = get(selectedNode);
-    if (editing) {
-      await api.editEvmNode(node);
-    } else {
-      await api.addEvmNode(omit(node, 'identifier'));
-    }
-    await loadNodes();
-    clear();
-  } catch (e: any) {
-    const chainProp = get(chain);
-    const errorTitle = editing
-      ? t('evm_rpc_node_manager.edit_error.title', { chain: chainProp })
-      : t('evm_rpc_node_manager.add_error.title', { chain: chainProp });
-
-    if (e instanceof ApiValidationError) {
-      const messages = e.errors;
-
-      set(errors, messages);
-
-      const keys = Object.keys(messages);
-      const knownKeys = Object.keys(get(selectedNode));
-      const unknownKeys = keys.filter(key => !knownKeys.includes(key));
-
-      if (unknownKeys.length > 0) {
-        setMessage({
-          title: errorTitle,
-          description: unknownKeys
-            .map(key => `${key}: ${messages[key]}`)
-            .join(', '),
-          success: false
-        });
-      }
-    } else {
-      setMessage({
-        title: errorTitle,
-        description: e.message,
-        success: false
-      });
-    }
-  } finally {
-    set(loading, false);
-  }
-};
-
-const clear = () => {
-  set(showForm, false);
+const resetForm = () => {
+  closeDialog();
   set(selectedNode, getPlaceholderNode(get(chain)));
-  set(isEdit, false);
+  set(editMode, false);
 };
+
+setPostSubmitFunc(async () => {
+  await loadNodes();
+  resetForm();
+});
 
 const edit = (item: EvmRpcNode) => {
-  set(isEdit, true);
-  set(showForm, true);
+  setOpenDialog(true);
   set(selectedNode, item);
+  set(editMode, true);
 };
 
 const deleteNode = async (node: EvmRpcNode) => {
@@ -127,11 +80,6 @@ const deleteNode = async (node: EvmRpcNode) => {
       success: false
     });
   }
-};
-
-const updateValid = (isValid: boolean) => {
-  set(valid, isValid);
-  set(errors, {});
 };
 
 const onActiveChange = async (active: boolean, node: EvmRpcNode) => {
@@ -192,7 +140,11 @@ const css = useCssModule();
       <v-list max-height="300px" :class="css.list" three-line class="py-0">
         <template v-for="(item, index) in nodes">
           <v-divider v-if="index !== 0" :key="index" />
-          <v-list-item :key="item.name" data-cy="ethereum-node" class="px-2">
+          <v-list-item
+            :key="index + item.name"
+            data-cy="ethereum-node"
+            class="px-2"
+          >
             <div class="mr-2 pa-4 text-center d-flex flex-column align-center">
               <div>
                 <v-tooltip v-if="!item.owned" top open-delay="400">
@@ -282,24 +234,14 @@ const css = useCssModule();
           </v-list-item>
         </template>
       </v-list>
-      <big-dialog
-        :display="showForm"
-        :title="t('evm_rpc_node_manager.add_dialog.title', { chain })"
-        :primary-action="t('common.actions.save')"
-        :secondary-action="t('common.actions.cancel')"
-        :action-disabled="!valid || loading"
-        :loading="loading"
-        @confirm="save()"
-        @cancel="clear()"
-      >
-        <rpc-node-form
-          v-model="selectedNode"
-          :chain="chain"
-          :is-etherscan="isEdit && isEtherscan(selectedNode)"
-          :error-messages="errors"
-          @update:valid="updateValid($event)"
-        />
-      </big-dialog>
+
+      <evm-rpc-node-form-dialog
+        v-model="selectedNode"
+        :chain="chain"
+        :edit-mode="editMode"
+        :is-etherscan="editMode && isEtherscan(selectedNode)"
+        @reset="resetForm()"
+      />
     </v-card>
 
     <div class="pt-8">
@@ -307,7 +249,7 @@ const css = useCssModule();
         depressed
         color="primary"
         data-cy="add-node"
-        @click="showForm = true"
+        @click="setOpenDialog(true)"
       >
         {{ t('evm_rpc_node_manager.add_button') }}
       </v-btn>

@@ -32,8 +32,8 @@ const title: ComputedRef<string> = computed(() =>
     :display="openDialog"
     :title="title"
     :primary-action="t('common.actions.save')"
-    :action-disabled="loading || submitting"
-    :loading="loading || submitting"
+    :action-disabled="loading"
+    :loading="submitting"
     @confirm="trySubmit()"
     @cancel="closeDialog()"
   >

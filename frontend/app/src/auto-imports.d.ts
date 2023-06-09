@@ -18,7 +18,7 @@ declare global {
   const NoPrice: typeof import('./utils/bignumbers')['NoPrice']
   const NoteType: typeof import('./composables/history/events/notes')['NoteType']
   const One: typeof import('./utils/bignumbers')['One']
-  const SettingLocation: typeof import('./composables/settings')['SettingLocation']
+  const SettingLocation: typeof import('./composables/settings/index')['SettingLocation']
   const StoreResetPlugin: typeof import('./store/plugins')['StoreResetPlugin']
   const StoreTrackPlugin: typeof import('./store/plugins')['StoreTrackPlugin']
   const Unit: typeof import('./utils/calculation')['Unit']
@@ -291,6 +291,7 @@ declare global {
   const useAccountMigrationStore: typeof import('./store/blockchain/accounts/migrate')['useAccountMigrationStore']
   const useAccountingSettingsStore: typeof import('./store/settings/accounting')['useAccountingSettingsStore']
   const useActiveElement: typeof import('@vueuse/core')['useActiveElement']
+  const useAddressBookForm: typeof import('./composables/address-book/form')['useAddressBookForm']
   const useAddressesNamesApi: typeof import('./composables/api/blockchain/addresses-names')['useAddressesNamesApi']
   const useAddressesNamesStore: typeof import('./store/blockchain/accounts/addresses-names')['useAddressesNamesStore']
   const useAggregatedBalances: typeof import('./composables/balances/aggregated')['useAggregatedBalances']
@@ -364,7 +365,7 @@ declare global {
   const useChainBalancesStore: typeof import('./store/blockchain/balances/chains')['useChainBalancesStore']
   const useChainsAccountsStore: typeof import('./store/blockchain/accounts/chains')['useChainsAccountsStore']
   const useClamp: typeof import('@vueuse/math')['useClamp']
-  const useClearableMessages: typeof import('./composables/settings')['useClearableMessages']
+  const useClearableMessages: typeof import('./composables/settings/index')['useClearableMessages']
   const useClipboard: typeof import('@vueuse/core')['useClipboard']
   const useCloned: typeof import('@vueuse/core')['useCloned']
   const useColorMode: typeof import('@vueuse/core')['useColorMode']
@@ -421,7 +422,9 @@ declare global {
   const useEventsQueryStatus: typeof import('./composables/history/events/query-status/events-query-status')['useEventsQueryStatus']
   const useEventsQueryStatusStore: typeof import('./store/history/query-status/events-query-status')['useEventsQueryStatusStore']
   const useEvmNodesApi: typeof import('./composables/api/settings/evm-nodes-api')['useEvmNodesApi']
+  const useEvmRpcNodeForm: typeof import('./composables/settings/general/rpc/form')['useEvmRpcNodeForm']
   const useExchangeApi: typeof import('./composables/api/balances/exchanges')['useExchangeApi']
+  const useExchangeApiKeysForm: typeof import('./composables/settings/api-keys/exchanges/form')['useExchangeApiKeysForm']
   const useExchangeBalancesStore: typeof import('./store/balances/exchanges')['useExchangeBalancesStore']
   const useExchangesStore: typeof import('./store/exchanges/index')['useExchangesStore']
   const useExternalServicesApi: typeof import('./composables/api/settings/external-services-api')['useExternalServicesApi']
@@ -582,7 +585,7 @@ declare global {
   const useSessionStateCleaner: typeof import('./composables/session/logout')['useSessionStateCleaner']
   const useSessionStorage: typeof import('@vueuse/core')['useSessionStorage']
   const useSessionStore: typeof import('./store/session/index')['useSessionStore']
-  const useSettings: typeof import('./composables/settings')['useSettings']
+  const useSettings: typeof import('./composables/settings/index')['useSettings']
   const useSettingsApi: typeof import('./composables/api/settings/settings-api')['useSettingsApi']
   const useSettingsStore: typeof import('./store/settings/index')['useSettingsStore']
   const useShare: typeof import('@vueuse/core')['useShare']
@@ -709,7 +712,7 @@ declare module 'vue' {
     readonly NoPrice: UnwrapRef<typeof import('./utils/bignumbers')['NoPrice']>
     readonly NoteType: UnwrapRef<typeof import('./composables/history/events/notes')['NoteType']>
     readonly One: UnwrapRef<typeof import('./utils/bignumbers')['One']>
-    readonly SettingLocation: UnwrapRef<typeof import('./composables/settings')['SettingLocation']>
+    readonly SettingLocation: UnwrapRef<typeof import('./composables/settings/index')['SettingLocation']>
     readonly StoreResetPlugin: UnwrapRef<typeof import('./store/plugins')['StoreResetPlugin']>
     readonly StoreTrackPlugin: UnwrapRef<typeof import('./store/plugins')['StoreTrackPlugin']>
     readonly Unit: UnwrapRef<typeof import('./utils/calculation')['Unit']>
@@ -982,6 +985,7 @@ declare module 'vue' {
     readonly useAccountMigrationStore: UnwrapRef<typeof import('./store/blockchain/accounts/migrate')['useAccountMigrationStore']>
     readonly useAccountingSettingsStore: UnwrapRef<typeof import('./store/settings/accounting')['useAccountingSettingsStore']>
     readonly useActiveElement: UnwrapRef<typeof import('@vueuse/core')['useActiveElement']>
+    readonly useAddressBookForm: UnwrapRef<typeof import('./composables/address-book/form')['useAddressBookForm']>
     readonly useAddressesNamesApi: UnwrapRef<typeof import('./composables/api/blockchain/addresses-names')['useAddressesNamesApi']>
     readonly useAddressesNamesStore: UnwrapRef<typeof import('./store/blockchain/accounts/addresses-names')['useAddressesNamesStore']>
     readonly useAggregatedBalances: UnwrapRef<typeof import('./composables/balances/aggregated')['useAggregatedBalances']>
@@ -1055,7 +1059,7 @@ declare module 'vue' {
     readonly useChainBalancesStore: UnwrapRef<typeof import('./store/blockchain/balances/chains')['useChainBalancesStore']>
     readonly useChainsAccountsStore: UnwrapRef<typeof import('./store/blockchain/accounts/chains')['useChainsAccountsStore']>
     readonly useClamp: UnwrapRef<typeof import('@vueuse/math')['useClamp']>
-    readonly useClearableMessages: UnwrapRef<typeof import('./composables/settings')['useClearableMessages']>
+    readonly useClearableMessages: UnwrapRef<typeof import('./composables/settings/index')['useClearableMessages']>
     readonly useClipboard: UnwrapRef<typeof import('@vueuse/core')['useClipboard']>
     readonly useCloned: UnwrapRef<typeof import('@vueuse/core')['useCloned']>
     readonly useColorMode: UnwrapRef<typeof import('@vueuse/core')['useColorMode']>
@@ -1112,7 +1116,9 @@ declare module 'vue' {
     readonly useEventsQueryStatus: UnwrapRef<typeof import('./composables/history/events/query-status/events-query-status')['useEventsQueryStatus']>
     readonly useEventsQueryStatusStore: UnwrapRef<typeof import('./store/history/query-status/events-query-status')['useEventsQueryStatusStore']>
     readonly useEvmNodesApi: UnwrapRef<typeof import('./composables/api/settings/evm-nodes-api')['useEvmNodesApi']>
+    readonly useEvmRpcNodeForm: UnwrapRef<typeof import('./composables/settings/general/rpc/form')['useEvmRpcNodeForm']>
     readonly useExchangeApi: UnwrapRef<typeof import('./composables/api/balances/exchanges')['useExchangeApi']>
+    readonly useExchangeApiKeysForm: UnwrapRef<typeof import('./composables/settings/api-keys/exchanges/form')['useExchangeApiKeysForm']>
     readonly useExchangeBalancesStore: UnwrapRef<typeof import('./store/balances/exchanges')['useExchangeBalancesStore']>
     readonly useExchangesStore: UnwrapRef<typeof import('./store/exchanges/index')['useExchangesStore']>
     readonly useExternalServicesApi: UnwrapRef<typeof import('./composables/api/settings/external-services-api')['useExternalServicesApi']>
@@ -1273,7 +1279,7 @@ declare module 'vue' {
     readonly useSessionStateCleaner: UnwrapRef<typeof import('./composables/session/logout')['useSessionStateCleaner']>
     readonly useSessionStorage: UnwrapRef<typeof import('@vueuse/core')['useSessionStorage']>
     readonly useSessionStore: UnwrapRef<typeof import('./store/session/index')['useSessionStore']>
-    readonly useSettings: UnwrapRef<typeof import('./composables/settings')['useSettings']>
+    readonly useSettings: UnwrapRef<typeof import('./composables/settings/index')['useSettings']>
     readonly useSettingsApi: UnwrapRef<typeof import('./composables/api/settings/settings-api')['useSettingsApi']>
     readonly useSettingsStore: UnwrapRef<typeof import('./store/settings/index')['useSettingsStore']>
     readonly useShare: UnwrapRef<typeof import('@vueuse/core')['useShare']>
@@ -1394,7 +1400,7 @@ declare module '@vue/runtime-core' {
     readonly NoPrice: UnwrapRef<typeof import('./utils/bignumbers')['NoPrice']>
     readonly NoteType: UnwrapRef<typeof import('./composables/history/events/notes')['NoteType']>
     readonly One: UnwrapRef<typeof import('./utils/bignumbers')['One']>
-    readonly SettingLocation: UnwrapRef<typeof import('./composables/settings')['SettingLocation']>
+    readonly SettingLocation: UnwrapRef<typeof import('./composables/settings/index')['SettingLocation']>
     readonly StoreResetPlugin: UnwrapRef<typeof import('./store/plugins')['StoreResetPlugin']>
     readonly StoreTrackPlugin: UnwrapRef<typeof import('./store/plugins')['StoreTrackPlugin']>
     readonly Unit: UnwrapRef<typeof import('./utils/calculation')['Unit']>
@@ -1667,6 +1673,7 @@ declare module '@vue/runtime-core' {
     readonly useAccountMigrationStore: UnwrapRef<typeof import('./store/blockchain/accounts/migrate')['useAccountMigrationStore']>
     readonly useAccountingSettingsStore: UnwrapRef<typeof import('./store/settings/accounting')['useAccountingSettingsStore']>
     readonly useActiveElement: UnwrapRef<typeof import('@vueuse/core')['useActiveElement']>
+    readonly useAddressBookForm: UnwrapRef<typeof import('./composables/address-book/form')['useAddressBookForm']>
     readonly useAddressesNamesApi: UnwrapRef<typeof import('./composables/api/blockchain/addresses-names')['useAddressesNamesApi']>
     readonly useAddressesNamesStore: UnwrapRef<typeof import('./store/blockchain/accounts/addresses-names')['useAddressesNamesStore']>
     readonly useAggregatedBalances: UnwrapRef<typeof import('./composables/balances/aggregated')['useAggregatedBalances']>
@@ -1740,7 +1747,7 @@ declare module '@vue/runtime-core' {
     readonly useChainBalancesStore: UnwrapRef<typeof import('./store/blockchain/balances/chains')['useChainBalancesStore']>
     readonly useChainsAccountsStore: UnwrapRef<typeof import('./store/blockchain/accounts/chains')['useChainsAccountsStore']>
     readonly useClamp: UnwrapRef<typeof import('@vueuse/math')['useClamp']>
-    readonly useClearableMessages: UnwrapRef<typeof import('./composables/settings')['useClearableMessages']>
+    readonly useClearableMessages: UnwrapRef<typeof import('./composables/settings/index')['useClearableMessages']>
     readonly useClipboard: UnwrapRef<typeof import('@vueuse/core')['useClipboard']>
     readonly useCloned: UnwrapRef<typeof import('@vueuse/core')['useCloned']>
     readonly useColorMode: UnwrapRef<typeof import('@vueuse/core')['useColorMode']>
@@ -1797,7 +1804,9 @@ declare module '@vue/runtime-core' {
     readonly useEventsQueryStatus: UnwrapRef<typeof import('./composables/history/events/query-status/events-query-status')['useEventsQueryStatus']>
     readonly useEventsQueryStatusStore: UnwrapRef<typeof import('./store/history/query-status/events-query-status')['useEventsQueryStatusStore']>
     readonly useEvmNodesApi: UnwrapRef<typeof import('./composables/api/settings/evm-nodes-api')['useEvmNodesApi']>
+    readonly useEvmRpcNodeForm: UnwrapRef<typeof import('./composables/settings/general/rpc/form')['useEvmRpcNodeForm']>
     readonly useExchangeApi: UnwrapRef<typeof import('./composables/api/balances/exchanges')['useExchangeApi']>
+    readonly useExchangeApiKeysForm: UnwrapRef<typeof import('./composables/settings/api-keys/exchanges/form')['useExchangeApiKeysForm']>
     readonly useExchangeBalancesStore: UnwrapRef<typeof import('./store/balances/exchanges')['useExchangeBalancesStore']>
     readonly useExchangesStore: UnwrapRef<typeof import('./store/exchanges/index')['useExchangesStore']>
     readonly useExternalServicesApi: UnwrapRef<typeof import('./composables/api/settings/external-services-api')['useExternalServicesApi']>
@@ -1958,7 +1967,7 @@ declare module '@vue/runtime-core' {
     readonly useSessionStateCleaner: UnwrapRef<typeof import('./composables/session/logout')['useSessionStateCleaner']>
     readonly useSessionStorage: UnwrapRef<typeof import('@vueuse/core')['useSessionStorage']>
     readonly useSessionStore: UnwrapRef<typeof import('./store/session/index')['useSessionStore']>
-    readonly useSettings: UnwrapRef<typeof import('./composables/settings')['useSettings']>
+    readonly useSettings: UnwrapRef<typeof import('./composables/settings/index')['useSettings']>
     readonly useSettingsApi: UnwrapRef<typeof import('./composables/api/settings/settings-api')['useSettingsApi']>
     readonly useSettingsStore: UnwrapRef<typeof import('./store/settings/index')['useSettingsStore']>
     readonly useShare: UnwrapRef<typeof import('@vueuse/core')['useShare']>

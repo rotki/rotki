@@ -28,7 +28,7 @@ const { t } = useI18n();
         ? t('notes_menu.dialog.edit_title')
         : t('notes_menu.dialog.add_title')
     "
-    :action-disabled="submitting"
+    :loading="submitting"
     @confirm="trySubmit()"
     @cancel="resetForm()"
   >

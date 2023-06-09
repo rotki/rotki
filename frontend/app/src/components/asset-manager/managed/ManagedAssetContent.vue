@@ -7,7 +7,6 @@ import {
   type IgnoredAssetsHandlingType
 } from '@/types/asset';
 import { type Filters, type Matcher } from '@/composables/filters/assets';
-import { useManagedAssetForm } from '@/composables/assets/forms/managed-asset-form';
 
 const props = withDefaults(
   defineProps<{

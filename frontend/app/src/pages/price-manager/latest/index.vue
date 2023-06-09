@@ -126,7 +126,6 @@ onMounted(async () => {
           ? t('price_management.dialog.edit_title')
           : t('price_management.dialog.add_title')
       "
-      :action-disabled="submitting"
       :loading="submitting"
       @confirm="trySubmit()"
       @cancel="hideForm()"

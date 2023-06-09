@@ -27,10 +27,7 @@ const { connectedExchanges } = storeToRefs(store);
 
 const exchange = ref<ExchangePayload>(placeholder());
 
-const showForm = ref<boolean>(false);
-const edit = ref<boolean>(false);
-const valid = ref<boolean>(false);
-const pending = ref<boolean>(false);
+const editMode = ref<boolean>(false);
 
 const { nonSyncingExchanges: current } = storeToRefs(useGeneralSettingsStore());
 const { update } = useSettingsStore();
@@ -90,15 +87,18 @@ const toggleSync = async (exchange: Exchange) => {
 
 const { exchangeName } = useLocations();
 
+const { setOpenDialog, closeDialog, setSubmitFunc, setPostSubmitFunc } =
+  useExchangeApiKeysForm();
+
 const addExchange = () => {
-  set(edit, false);
-  set(showForm, true);
+  set(editMode, false);
+  setOpenDialog(true);
   set(exchange, placeholder());
 };
 
 const editExchange = (exchangePayload: Exchange) => {
-  set(edit, true);
-  set(showForm, true);
+  set(editMode, true);
+  setOpenDialog(true);
   set(exchange, {
     ...placeholder(),
     ...exchangePayload,
@@ -106,13 +106,14 @@ const editExchange = (exchangePayload: Exchange) => {
   });
 };
 
-const cancel = () => {
-  set(showForm, false);
+const resetForm = () => {
+  closeDialog();
   set(exchange, placeholder());
 };
 
-const setup = async () => {
-  set(pending, true);
+setPostSubmitFunc(resetForm);
+
+const setup = async (): Promise<boolean> => {
   const writeableExchange: Writeable<ExchangePayload> = { ...get(exchange) };
   if (writeableExchange.name === writeableExchange.newName) {
     writeableExchange.newName = null;
@@ -125,15 +126,13 @@ const setup = async () => {
     writeableExchange.ftxSubaccount = null;
   }
 
-  const success = await setupExchange({
+  return await setupExchange({
     exchange: writeableExchange,
-    edit: get(edit)
+    edit: get(editMode)
   });
-  set(pending, false);
-  if (success) {
-    cancel();
-  }
 };
+
+setSubmitFunc(setup);
 
 const remove = async (item: Exchange) => {
   const success = await removeExchange(item);
@@ -248,26 +247,10 @@ const showRemoveConfirmation = (item: Exchange) => {
       </data-table>
     </card>
 
-    <big-dialog
-      :display="showForm"
-      :title="
-        edit
-          ? t('exchange_settings.dialog.edit.title')
-          : t('exchange_settings.dialog.add.title')
-      "
-      :primary-action="t('common.actions.save')"
-      :secondary-action="t('common.actions.cancel')"
-      :action-disabled="!valid || pending"
-      :loading="pending"
-      @confirm="setup()"
-      @cancel="cancel()"
-    >
-      <exchange-keys-form
-        v-model="valid"
-        :exchange="exchange"
-        :edit="edit"
-        @update:exchange="exchange = $event"
-      />
-    </big-dialog>
+    <exchange-keys-form-dialog
+      v-model="exchange"
+      :edit-mode="editMode"
+      @reset="resetForm()"
+    />
   </div>
 </template>

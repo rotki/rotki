@@ -2,7 +2,6 @@
 import { helpers, required } from '@vuelidate/validators';
 import { convertToTimestamp } from '@/utils/date';
 import { type HistoricalPriceFormPayload } from '@/types/prices';
-import { useHistoricPriceForm } from '@/composables/price-manager/historic/form';
 import { toMessages } from '@/utils/validation';
 
 const props = defineProps<{

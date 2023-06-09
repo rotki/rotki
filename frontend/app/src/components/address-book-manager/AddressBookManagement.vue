@@ -25,6 +25,8 @@ const emptyForm: () => AddressBookPayload = () => ({
   name: ''
 });
 
+const { setSubmitFunc, setOpenDialog, closeDialog } = useAddressBookForm();
+
 const openForm = (item: AddressBookEntry | null = null) => {
   set(editMode, !!item);
   if (item) {
@@ -39,17 +41,15 @@ const openForm = (item: AddressBookEntry | null = null) => {
       ...newForm
     });
   }
-  set(showForm, true);
+  setOpenDialog(true);
 };
 
-const hideForm = function () {
-  set(showForm, false);
+const resetForm = function () {
+  closeDialog();
   set(formPayload, emptyForm());
   set(enableForAllChains, false);
 };
 
-const valid = ref<boolean>(false);
-const showForm = ref(false);
 const editMode = ref<boolean>(false);
 const formPayload = ref<AddressBookPayload>(emptyForm());
 
@@ -77,9 +77,6 @@ const { addAddressBook, updateAddressBook } = useAddressesNamesStore();
 const { setMessage } = useMessageStore();
 
 const save = async () => {
-  if (!get(valid)) {
-    return;
-  }
   try {
     const formVal = get(formPayload);
     const enableForAllChainsVal = get(enableForAllChains);
@@ -99,7 +96,9 @@ const save = async () => {
     if (!enableForAllChainsVal) {
       set(selectedChain, formVal.blockchain);
     }
-    set(showForm, false);
+
+    closeDialog();
+    return true;
   } catch (e: any) {
     const values = { message: e.message };
     const title = get(editMode)
@@ -113,8 +112,11 @@ const save = async () => {
       description,
       success: false
     });
+    return false;
   }
 };
+
+setSubmitFunc(save);
 </script>
 
 <template>
@@ -208,24 +210,12 @@ const save = async () => {
       </v-tabs-items>
     </card>
 
-    <big-dialog
-      :display="showForm"
-      :title="
-        editMode
-          ? t('address_book.dialog.edit_title')
-          : t('address_book.dialog.add_title')
-      "
-      :action-disabled="!valid"
-      @confirm="save()"
-      @cancel="hideForm()"
-    >
-      <address-book-form
-        v-model="formPayload"
-        :edit="editMode"
-        :enable-for-all-chains="enableForAllChains"
-        @valid="valid = $event"
-        @update:enable-for-all-chains="enableForAllChains = $event"
-      />
-    </big-dialog>
+    <address-book-form-dialog
+      v-model="formPayload"
+      :enable-for-all-chains="enableForAllChains"
+      :edit-mode="editMode"
+      @update:enable-for-all-chains="enableForAllChains = $event"
+      @reset="resetForm()"
+    />
   </v-container>
 </template>

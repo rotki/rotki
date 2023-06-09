@@ -10,8 +10,6 @@ import {
   type HistoricalPriceFormPayload,
   type ManualPricePayload
 } from '@/types/prices';
-import { useHistoricCachePriceStore } from '@/store/prices/historic';
-import { useHistoricPriceForm } from '@/composables/price-manager/historic/form';
 
 const emptyPrice: () => HistoricalPriceFormPayload = () => ({
   fromAsset: '',
@@ -249,7 +247,6 @@ setPostSubmitFunc(() => refresh({ modified: true }));
           ? t('price_management.dialog.edit_title')
           : t('price_management.dialog.add_title')
       "
-      :action-disabled="submitting"
       :loading="submitting"
       @confirm="trySubmit()"
       @cancel="hideForm()"

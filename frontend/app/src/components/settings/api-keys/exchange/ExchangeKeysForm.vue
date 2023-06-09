@@ -1,23 +1,23 @@
 <script setup lang="ts">
-import useVuelidate from '@vuelidate/core';
 import { helpers, requiredIf, requiredUnless } from '@vuelidate/validators';
-import { type PropType } from 'vue';
 import {
   type ExchangePayload,
   KrakenAccountType,
   SUPPORTED_EXCHANGES,
   SupportedExchange
 } from '@/types/exchanges';
+import { toMessages } from '@/utils/validation';
 
-const props = defineProps({
-  value: { required: true, type: Boolean },
-  exchange: { required: true, type: Object as PropType<ExchangePayload> },
-  edit: { required: true, type: Boolean }
-});
+const props = defineProps<{
+  exchange: ExchangePayload;
+  editMode: boolean;
+}>();
 
-const emit = defineEmits(['input', 'update:exchange']);
+const emit = defineEmits<{
+  (e: 'input', value: ExchangePayload): void;
+}>();
 
-const { edit, exchange } = toRefs(props);
+const { editMode, exchange } = toRefs(props);
 const editKeys = ref(false);
 const form = ref();
 
@@ -58,7 +58,7 @@ const toggleEdit = () => {
   set(editKeys, !get(editKeys));
 
   if (!get(editKeys)) {
-    onUpdateExchange({
+    input({
       ...get(exchange),
       apiSecret: null,
       apiKey: null
@@ -68,7 +68,8 @@ const toggleEdit = () => {
 
 const onExchangeChange = (exchange: SupportedExchange) => {
   get(form).reset();
-  onUpdateExchange({
+
+  input({
     name: suggestedName(exchange),
     newName: null,
     location: exchange,
@@ -84,30 +85,26 @@ const onExchangeChange = (exchange: SupportedExchange) => {
 const onApiKeyPaste = function (event: ClipboardEvent) {
   const paste = trimOnPaste(event);
   if (paste) {
-    onUpdateExchange({ ...get(exchange), apiKey: paste });
+    input({ ...get(exchange), apiKey: paste });
   }
 };
 
 const onApiSecretPaste = function (event: ClipboardEvent) {
   const paste = trimOnPaste(event);
   if (paste) {
-    onUpdateExchange({ ...get(exchange), apiSecret: paste });
+    input({ ...get(exchange), apiSecret: paste });
   }
 };
 
-const input = (value: boolean) => {
-  emit('input', value);
-};
-
-const onUpdateExchange = (payload: ExchangePayload) => {
-  emit('update:exchange', payload);
+const input = (payload: ExchangePayload) => {
+  emit('input', payload);
 };
 
 onMounted(() => {
-  if (get(edit)) {
+  if (get(editMode)) {
     return;
   }
-  onUpdateExchange({
+  input({
     ...get(exchange),
     name: suggestedName(get(exchange).location)
   });
@@ -116,19 +113,19 @@ onMounted(() => {
 const krakenAccountTypes = KrakenAccountType.options;
 const exchanges = SUPPORTED_EXCHANGES;
 
-const sensitiveFieldEditable = computed(() => !get(edit) || get(editKeys));
+const sensitiveFieldEditable = computed(() => !get(editMode) || get(editKeys));
 
 const rules = {
   name: {
     required: helpers.withMessage(
       t('exchange_keys_form.name.non_empty'),
-      requiredUnless(edit)
+      requiredUnless(editMode)
     )
   },
   newName: {
     required: helpers.withMessage(
       t('exchange_keys_form.name.non_empty'),
-      requiredIf(edit)
+      requiredIf(editMode)
     )
   },
   apiKey: {
@@ -151,15 +148,13 @@ const rules = {
   }
 };
 
-const v$ = useVuelidate(rules, exchange, { $autoDirty: true });
+const { valid, setValidation } = useExchangeApiKeysForm();
 
-watch(v$, ({ $invalid }) => {
-  input(!$invalid);
-});
+const v$ = setValidation(rules, exchange, { $autoDirty: true });
 </script>
 
 <template>
-  <v-form ref="form" data-cy="exchange-keys" :value="value">
+  <v-form ref="form" data-cy="exchange-keys" :value="valid">
     <v-row class="pt-2">
       <v-col cols="12" md="6">
         <v-autocomplete
@@ -168,7 +163,7 @@ watch(v$, ({ $invalid }) => {
           :items="exchanges"
           :label="t('exchange_keys_form.exchange')"
           data-cy="exchange"
-          :disabled="edit"
+          :disabled="editMode"
           auto-select-first
           @change="onExchangeChange($event)"
         >
@@ -192,22 +187,22 @@ watch(v$, ({ $invalid }) => {
       </v-col>
       <v-col cols="12" md="6">
         <v-text-field
-          v-if="edit"
+          v-if="editMode"
           outlined
           :value="exchange.newName"
-          :error-messages="v$.newName.$errors.map(e => e.$message)"
+          :error-messages="toMessages(v$.newName)"
           data-cy="name"
           :label="t('common.name')"
-          @input="onUpdateExchange({ ...exchange, newName: $event })"
+          @input="input({ ...exchange, newName: $event })"
         />
         <v-text-field
           v-else
           outlined
           :value="exchange.name"
-          :error-messages="v$.name.$errors.map(e => e.$message)"
+          :error-messages="toMessages(v$.name)"
           data-cy="name"
           :label="t('common.name')"
-          @input="onUpdateExchange({ ...exchange, name: $event })"
+          @input="input({ ...exchange, name: $event })"
         />
       </v-col>
     </v-row>
@@ -219,10 +214,10 @@ watch(v$, ({ $invalid }) => {
       data-cy="account-type"
       :items="krakenAccountTypes"
       :label="t('exchange_settings.inputs.kraken_account')"
-      @change="onUpdateExchange({ ...exchange, krakenAccountType: $event })"
+      @change="input({ ...exchange, krakenAccountType: $event })"
     />
 
-    <div v-if="edit" class="text-subtitle-2 mt-2 pb-4">
+    <div v-if="editMode" class="text-subtitle-2 mt-2 pb-4">
       {{ t('exchange_settings.keys') }}
       <v-tooltip top open-delay="400">
         <template #activator="{ on, attrs }">
@@ -251,12 +246,12 @@ watch(v$, ({ $invalid }) => {
       <revealable-input
         outlined
         sensitive-key
-        :disabled="edit && !editKeys"
+        :disabled="editMode && !editKeys"
         :value="exchange.apiKey"
-        :error-messages="v$.apiKey.$errors.map(e => e.$message)"
+        :error-messages="toMessages(v$.apiKey)"
         data-cy="api-key"
         :label="t('exchange_settings.inputs.api_key')"
-        @input="onUpdateExchange({ ...exchange, apiKey: $event })"
+        @input="input({ ...exchange, apiKey: $event })"
         @paste="onApiKeyPaste($event)"
       />
 
@@ -264,38 +259,38 @@ watch(v$, ({ $invalid }) => {
         v-if="requiresApiSecret"
         outlined
         sensitive-key
-        :disabled="edit && !editKeys"
+        :disabled="editMode && !editKeys"
         :value="exchange.apiSecret"
-        :error-messages="v$.apiSecret.$errors.map(e => e.$message)"
+        :error-messages="toMessages(v$.apiSecret)"
         data-cy="api-secret"
         prepend-icon="mdi-lock"
         :label="t('exchange_settings.inputs.api_secret')"
-        @input="onUpdateExchange({ ...exchange, apiSecret: $event })"
+        @input="input({ ...exchange, apiSecret: $event })"
         @paste="onApiSecretPaste($event)"
       />
 
       <revealable-input
         v-if="requiresPassphrase"
-        :disabled="edit && !editKeys"
+        :disabled="editMode && !editKeys"
         outlined
         sensitive-key
         :value="exchange.passphrase"
-        :error-messages="v$.passphrase.$errors.map(e => e.$message)"
+        :error-messages="toMessages(v$.passphrase)"
         prepend-icon="mdi-key-plus"
         data-cy="passphrase"
         :label="t('exchange_settings.inputs.passphrase')"
-        @input="onUpdateExchange({ ...exchange, passphrase: $event })"
+        @input="input({ ...exchange, passphrase: $event })"
       />
     </div>
 
     <div v-if="exchange.location === 'ftx' || exchange.location === 'ftxus'">
       <v-text-field
-        v-if="edit"
+        v-if="editMode"
         outlined
         :value="exchange.ftxSubaccount"
         data-cy="ftxSubaccount"
         :label="t('exchange_settings.inputs.ftx_subaccount')"
-        @input="onUpdateExchange({ ...exchange, ftxSubaccount: $event })"
+        @input="input({ ...exchange, ftxSubaccount: $event })"
       />
       <v-text-field
         v-else
@@ -303,7 +298,7 @@ watch(v$, ({ $invalid }) => {
         :value="exchange.ftxSubaccount"
         data-cy="ftxSubaccount"
         :label="t('exchange_settings.inputs.ftx_subaccount')"
-        @input="onUpdateExchange({ ...exchange, ftxSubaccount: $event })"
+        @input="input({ ...exchange, ftxSubaccount: $event })"
       />
     </div>
 
@@ -312,7 +307,7 @@ watch(v$, ({ $invalid }) => {
       outlined
       :name="exchange.name"
       :location="exchange.location"
-      @input="onUpdateExchange({ ...exchange, binanceMarkets: $event })"
+      @input="input({ ...exchange, binanceMarkets: $event })"
     />
   </v-form>
 </template>
