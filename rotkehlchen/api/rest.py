@@ -74,7 +74,6 @@ from rotkehlchen.chain.ethereum.modules.makerdao.cache import (
 from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
 from rotkehlchen.chain.ethereum.modules.yearn.utils import query_yearn_vaults
 from rotkehlchen.chain.ethereum.utils import try_download_ens_avatar
-from rotkehlchen.chain.evm.manager import EvmManager
 from rotkehlchen.chain.evm.names import find_ens_mappings, search_for_addresses_names
 from rotkehlchen.chain.evm.types import WeightedNode
 from rotkehlchen.constants.assets import A_ETH
@@ -212,6 +211,7 @@ if TYPE_CHECKING:
     from rotkehlchen.accounting.structures.evm_event import EvmEvent
     from rotkehlchen.chain.bitcoin.xpub import XpubData
     from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
+    from rotkehlchen.chain.evm.manager import EvmManager
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
     from rotkehlchen.exchanges.kraken import KrakenAccountType

@@ -3,7 +3,6 @@ from itertools import count
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.assets.converters import LOCATION_TO_ASSET_MAPPING
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
 from rotkehlchen.constants import ZERO
@@ -24,6 +23,7 @@ from rotkehlchen.serialization.deserialize import (
 from rotkehlchen.types import AssetAmount, AssetMovementCategory, Fee, Location, Price, TradeType
 
 if TYPE_CHECKING:
+    from rotkehlchen.assets.asset import AssetWithOracles
     from rotkehlchen.db.dbhandler import DBHandler
 
 

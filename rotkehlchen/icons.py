@@ -22,8 +22,11 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.utils.data_structures import LRUSetCache
 from rotkehlchen.utils.hashing import file_md5
 
-if TYPE_CHECKING is True:
+if TYPE_CHECKING:
     from rotkehlchen.greenlets.manager import GreenletManager
+
+if TYPE_CHECKING is True:
+    pass
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)

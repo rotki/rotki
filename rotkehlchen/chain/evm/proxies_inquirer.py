@@ -4,7 +4,6 @@ from collections.abc import Sequence
 from typing import TYPE_CHECKING, Optional
 
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
-from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -14,6 +13,7 @@ from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.evm.contracts import EvmContract
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
 
 DS_REQUERY_PERIOD = DAY_IN_SECONDS  # Refresh proxies every 24 hours

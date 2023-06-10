@@ -1,11 +1,11 @@
 from typing import TYPE_CHECKING
 
 from rotkehlchen.chain.evm.accounting.aggregator import EVMAccountingAggregator
-from rotkehlchen.user_messages import MessagesAggregator
 
 from .constants import CPT_POLYGON_POS
 
 if TYPE_CHECKING:
+    from rotkehlchen.user_messages import MessagesAggregator
     from .node_inquirer import PolygonPOSInquirer
 
 

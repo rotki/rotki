@@ -121,7 +121,7 @@ select = [
     "EXE",
     "INP",
     "PT",
-    # "TCH",  # Should do it at some point. Too many hits and no autofix. When enabled fully, remove from extend-select
+    "TCH",  # Should do it at some point. Too many hits and no autofix. When enabled fully, remove from extend-select
     # "PTH",  # Should do it at some point. Many hits and no autofix. When enabled fully remove from extend-select
     "INT",
     "TRY",
@@ -132,8 +132,6 @@ select = [
 extend-select = [
     "Q002",   # Single quote docstring found but double quotes preferred
     "Q003",   # Change outer quotes to avoid escaping inner quotes
-    "TCH004", # Move import out of type-checking block. Used for more than type hinting.
-    "TCH005", # Found empty type-checking block
     # Some pathlib enforcement rules follow
     "PTH108",
     "PTH109",

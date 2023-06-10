@@ -1,4 +1,4 @@
-from typing import Any, Literal, Optional
+from typing import TYPE_CHECKING, Any, Literal, Optional
 from uuid import uuid4
 
 import webargs
@@ -25,10 +25,12 @@ from rotkehlchen.assets.asset import (
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.errors.misc import RemoteError
-from rotkehlchen.externalapis.coingecko import Coingecko
-from rotkehlchen.externalapis.cryptocompare import Cryptocompare
-from rotkehlchen.interfaces import HistoricalPriceOracleInterface
 from rotkehlchen.types import EvmTokenKind
+
+if TYPE_CHECKING:
+    from rotkehlchen.externalapis.coingecko import Coingecko
+    from rotkehlchen.externalapis.cryptocompare import Cryptocompare
+    from rotkehlchen.interfaces import HistoricalPriceOracleInterface
 
 
 def _validate_single_oracle_id(

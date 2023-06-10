@@ -1,12 +1,17 @@
 from contextlib import ExitStack
+from typing import TYPE_CHECKING
 from unittest.mock import MagicMock, patch
+
 import pytest
 import requests
-from rotkehlchen.api.server import APIServer
+
 from rotkehlchen.db.ens import DBEns
 from rotkehlchen.tests.utils.api import api_url_for, assert_proper_response
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.utils.misc import ts_now
+
+if TYPE_CHECKING:
+    from rotkehlchen.api.server import APIServer
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])

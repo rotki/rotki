@@ -30,7 +30,6 @@ from rotkehlchen.api.websockets.typedefs import (
     HistoryEventsStep,
     WSMessageType,
 )
-from rotkehlchen.assets.asset import Asset, AssetWithOracles
 from rotkehlchen.assets.converters import asset_from_kraken
 from rotkehlchen.chain.evm.decoding.types import EventCategory
 from rotkehlchen.constants import KRAKEN_API_VERSION, KRAKEN_BASE_URL
@@ -78,6 +77,7 @@ from rotkehlchen.utils.mixins.lockable import protect_with_lock
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
+    from rotkehlchen.assets.asset import Asset, AssetWithOracles
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
 

@@ -2,14 +2,13 @@
 
 import random
 from http import HTTPStatus
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 import pytest
 import requests
 from flaky import flaky
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.api.server import APIServer
 from rotkehlchen.chain.ethereum.modules.makerdao.vaults import MakerdaoVault
 from rotkehlchen.constants.assets import A_DAI, A_USDC, A_WBTC
 from rotkehlchen.constants.misc import ONE, ZERO
@@ -29,6 +28,9 @@ from rotkehlchen.tests.utils.checks import (
     assert_serialized_lists_equal,
 )
 from rotkehlchen.types import SupportedBlockchain
+
+if TYPE_CHECKING:
+    from rotkehlchen.api.server import APIServer
 
 mocked_prices = {
     'ETH': {

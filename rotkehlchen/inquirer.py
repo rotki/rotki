@@ -93,7 +93,6 @@ from rotkehlchen.types import (
     ProtocolsWithPriceLogic,
     Timestamp,
 )
-from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import timestamp_to_daystart_timestamp, ts_now
 from rotkehlchen.utils.mixins.penalizable_oracle import PenalizablePriceOracleMixin
 from rotkehlchen.utils.network import request_get_dict
@@ -107,6 +106,7 @@ if TYPE_CHECKING:
     from rotkehlchen.externalapis.cryptocompare import Cryptocompare
     from rotkehlchen.externalapis.defillama import Defillama
     from rotkehlchen.globaldb.manual_price_oracles import ManualCurrentOracle
+    from rotkehlchen.user_messages import MessagesAggregator
 
 
 logger = logging.getLogger(__name__)

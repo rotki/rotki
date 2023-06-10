@@ -39,7 +39,6 @@ from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium, premium_create_and_verify
-from rotkehlchen.premium.sync import PremiumSyncManager
 from rotkehlchen.tasks.utils import should_run_periodic_task
 from rotkehlchen.types import (
     EVM_CHAINS_WITH_TRANSACTIONS,
@@ -64,6 +63,7 @@ if TYPE_CHECKING:
     from rotkehlchen.exchanges.manager import ExchangeManager
     from rotkehlchen.externalapis.cryptocompare import Cryptocompare
     from rotkehlchen.greenlets.manager import GreenletManager
+    from rotkehlchen.premium.sync import PremiumSyncManager
     from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)

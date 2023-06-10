@@ -12,7 +12,6 @@ import requests
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.assets.converters import UNSUPPORTED_ICONOMI_ASSETS, asset_from_iconomi
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_AUST
@@ -39,6 +38,7 @@ from rotkehlchen.types import ApiKey, ApiSecret, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 
 if TYPE_CHECKING:
+    from rotkehlchen.assets.asset import AssetWithOracles
     from rotkehlchen.db.dbhandler import DBHandler
 
 

@@ -10,7 +10,6 @@ import requests
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.assets.converters import asset_from_bitpanda
 from rotkehlchen.constants.assets import A_BEST
 from rotkehlchen.constants.misc import ZERO
@@ -45,6 +44,7 @@ from rotkehlchen.utils.mixins.lockable import protect_with_lock
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
+    from rotkehlchen.assets.asset import AssetWithOracles
     from rotkehlchen.db.dbhandler import DBHandler
 
 logger = logging.getLogger(__name__)

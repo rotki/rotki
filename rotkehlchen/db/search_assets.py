@@ -5,12 +5,12 @@ from polyleven import levenshtein
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.constants.assets import A_ETH, A_ETH2
 from rotkehlchen.constants.resolver import ChainID
-from rotkehlchen.db.filtering import LevenshteinFilterQuery
 from rotkehlchen.globaldb.handler import ALL_ASSETS_TABLES_QUERY, GlobalDBHandler
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.filtering import LevenshteinFilterQuery
 
 
 def _search_only_nfts_levenstein(

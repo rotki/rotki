@@ -39,12 +39,12 @@ from rotkehlchen.types import (
     Timestamp,
     deserialize_evm_tx_hash,
 )
-from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import hex_or_bytes_to_int, set_user_agent
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.user_messages import MessagesAggregator
 
 ETHERSCAN_TX_QUERY_LIMIT = 10000
 TRANSACTIONS_BATCH_NUM = 10

@@ -1,4 +1,4 @@
-from typing import Any, Literal, Optional, Union
+from typing import TYPE_CHECKING, Any, Literal, Optional, Union
 
 import pytest
 
@@ -7,11 +7,9 @@ from rotkehlchen.accounting.cost_basis.base import (
     CostBasisInfo,
     MatchedAcquisition,
 )
-from rotkehlchen.accounting.history_base_entries import EventsAccountant
 from rotkehlchen.accounting.ledger_actions import LedgerActionType
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL
-from rotkehlchen.accounting.pot import AccountingPot
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import HistoryEvent
 from rotkehlchen.accounting.structures.evm_event import EvmEvent
@@ -26,6 +24,10 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
 from rotkehlchen.types import Location, Price, Timestamp, TimestampMS
 from rotkehlchen.utils.misc import ts_sec_to_ms
+
+if TYPE_CHECKING:
+    from rotkehlchen.accounting.history_base_entries import EventsAccountant
+    from rotkehlchen.accounting.pot import AccountingPot
 
 EXAMPLE_EVM_HASH = make_evm_tx_hash()
 EXAMPLE_TX_HASH_HEX = EXAMPLE_EVM_HASH.hex()  # pylint: disable=no-member  # EvmTxHash does have hex() member  # noqa: E501

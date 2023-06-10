@@ -3,10 +3,9 @@ import csv
 import logging
 from collections import Counter, defaultdict
 from pathlib import Path
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
-from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.assets.converters import asset_from_binance
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_USD
@@ -32,6 +31,9 @@ from rotkehlchen.types import (
     TradeID,
     TradeType,
 )
+
+if TYPE_CHECKING:
+    from rotkehlchen.assets.asset import AssetWithOracles
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)

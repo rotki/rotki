@@ -1,6 +1,5 @@
 import json
 import logging
-from collections.abc import Sequence
 from typing import TYPE_CHECKING, Literal
 
 from pysqlcipher3 import dbapi2 as sqlcipher
@@ -19,6 +18,7 @@ from rotkehlchen.types import EvmTokenKind, OracleSource, SupportedBlockchain
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBConnection, DBCursor
     from rotkehlchen.db.upgrade_manager import DBUpgradeProgressHandler

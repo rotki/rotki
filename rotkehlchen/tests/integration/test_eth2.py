@@ -1,8 +1,9 @@
+from typing import TYPE_CHECKING
+
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.eth2 import EthBlockEvent, EthWithdrawalEvent
-from rotkehlchen.chain.ethereum.modules.eth2.eth2 import Eth2
 from rotkehlchen.chain.ethereum.modules.eth2.structures import Eth2Validator
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.misc import ONE
@@ -12,6 +13,9 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import Eth2PubKey, TimestampMS
 from rotkehlchen.utils.misc import ts_now
+
+if TYPE_CHECKING:
+    from rotkehlchen.chain.ethereum.modules.eth2.eth2 import Eth2
 
 
 @pytest.mark.vcr()

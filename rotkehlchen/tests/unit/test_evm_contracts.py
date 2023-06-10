@@ -1,11 +1,14 @@
 import json
+from typing import TYPE_CHECKING
 
 import pytest
 from eth_utils import is_checksum_address
 
-from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.types import ChainID
+
+if TYPE_CHECKING:
+    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 
 
 def test_evm_contracts_data(globaldb):

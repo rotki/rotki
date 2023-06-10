@@ -1,7 +1,7 @@
 import tempfile
 from collections.abc import Mapping
 from pathlib import Path
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 from unittest.mock import Mock, patch
 
 import pytest
@@ -10,7 +10,6 @@ from freezegun import freeze_time
 from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.chain.ethereum.utils import try_download_ens_avatar
 from rotkehlchen.chain.evm.names import FetcherFunc, NamePrioritizer, search_for_addresses_names
-from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.ens import DBEns
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.types import (
@@ -23,6 +22,9 @@ from rotkehlchen.types import (
 )
 from rotkehlchen.utils.hashing import file_md5
 from rotkehlchen.utils.misc import ts_now
+
+if TYPE_CHECKING:
+    from rotkehlchen.db.dbhandler import DBHandler
 
 
 @pytest.fixture(name='evm_address')
