@@ -1,7 +1,6 @@
 from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
-from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.modules.makerdao.cache import ilk_cache_foreach
 from rotkehlchen.chain.evm.tokens import EvmTokensWithDSProxy
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -10,6 +9,7 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.types import ChainID, ChecksumEvmAddress
 
 if TYPE_CHECKING:
+    from rotkehlchen.assets.asset import EvmToken
     from rotkehlchen.db.dbhandler import DBHandler
 
     from .node_inquirer import EthereumInquirer

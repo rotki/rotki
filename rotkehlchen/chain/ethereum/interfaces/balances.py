@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING, Literal, Optional
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.chain.evm.types import WeightedNode, string_to_evm_address
-from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
@@ -19,6 +18,7 @@ if TYPE_CHECKING:
     from rotkehlchen.accounting.structures.evm_event import EvmEvent, EvmProduct
     from rotkehlchen.assets.asset import EvmToken
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
+    from rotkehlchen.db.dbhandler import DBHandler
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)

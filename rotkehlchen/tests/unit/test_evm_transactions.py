@@ -1,9 +1,13 @@
+from typing import TYPE_CHECKING
 from unittest.mock import patch
-from rotkehlchen.chain.ethereum.transactions import EthereumTransactions
+
 from rotkehlchen.chain.evm.types import EvmAccount
 from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.types import ChainID
+
+if TYPE_CHECKING:
+    from rotkehlchen.chain.ethereum.transactions import EthereumTransactions
 
 ADDR_1, ADDR_2, ADDR_3 = make_evm_address(), make_evm_address(), make_evm_address()
 

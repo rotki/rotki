@@ -19,7 +19,6 @@ from rotkehlchen.accounting.structures.types import HistoryEventSubType, History
 from rotkehlchen.api.v1.schemas import EthStakingHistoryStatsProfit
 from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.chain.ethereum.modules.eth2.constants import CPT_ETH2, UNKNOWN_VALIDATOR_INDEX
-from rotkehlchen.chain.ethereum.modules.eth2.eth2 import Eth2
 from rotkehlchen.chain.ethereum.modules.eth2.structures import Eth2Validator, ValidatorDailyStats
 from rotkehlchen.chain.ethereum.modules.eth2.utils import (
     DAY_AFTER_ETH2_GENESIS,
@@ -51,6 +50,7 @@ from rotkehlchen.types import (
 from rotkehlchen.utils.misc import ts_now, ts_now_in_ms, ts_sec_to_ms
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.ethereum.modules.eth2.eth2 import Eth2
     from rotkehlchen.history.price import PriceHistorian
 
 ADDR1 = string_to_evm_address('0xfeF0E7635281eF8E3B705e9C5B86e1d3B0eAb397')

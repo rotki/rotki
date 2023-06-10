@@ -5,19 +5,19 @@ from typing import TYPE_CHECKING
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.structures.evm_event import get_tx_event_type_identifier
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.evm.accounting.interfaces import ModuleAccountantInterface
 from rotkehlchen.chain.evm.accounting.structures import TxEventSettings
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
-from rotkehlchen.types import ChecksumEvmAddress
 
 from ..constants import CPT_AAVE_V2
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.pot import AccountingPot
     from rotkehlchen.accounting.structures.evm_event import EvmEvent
+    from rotkehlchen.assets.asset import Asset
+    from rotkehlchen.types import ChecksumEvmAddress
 
 
 class Aavev2Accountant(ModuleAccountantInterface):

@@ -2,8 +2,6 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from rotkehlchen.chain.ethereum.interfaces.ammswap.types import LiquidityPool, LiquidityPoolEvent
-
 from .utils import (
     TEST_ADDRESS_1,
     const_lp_1_events,
@@ -17,6 +15,10 @@ from .utils import (
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
+    from rotkehlchen.chain.ethereum.interfaces.ammswap.types import (
+        LiquidityPool,
+        LiquidityPoolEvent,
+    )
 
 
 @pytest.mark.parametrize('ethereum_modules', [['uniswap']])

@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING, Optional
 
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
-from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirerWithDSProxy
 from rotkehlchen.chain.evm.types import WeightedNode, asset_id_is_evm_token
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -16,6 +15,7 @@ from rotkehlchen.types import ChecksumEvmAddress, Price, Timestamp
 from rotkehlchen.utils.misc import combine_dicts, get_chunks
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirerWithDSProxy
     from rotkehlchen.db.dbhandler import DBHandler
 
     from .node_inquirer import EvmNodeInquirer

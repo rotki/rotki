@@ -2,10 +2,9 @@ from collections.abc import Iterator
 from enum import Enum
 from typing import TYPE_CHECKING, Literal, Optional, Protocol
 
-from rotkehlchen.accounting.structures.evm_event import EvmEvent
-
 if TYPE_CHECKING:
     from rotkehlchen.accounting.pot import AccountingPot
+    from rotkehlchen.accounting.structures.evm_event import EvmEvent
 
 
 class EventsAccountantCallback(Protocol):

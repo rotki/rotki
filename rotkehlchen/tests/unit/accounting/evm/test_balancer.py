@@ -1,6 +1,7 @@
+from typing import TYPE_CHECKING
+
 import pytest
 
-from rotkehlchen.accounting.accountant import Accountant
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL
 from rotkehlchen.accounting.structures.balance import Balance
@@ -10,13 +11,16 @@ from rotkehlchen.accounting.structures.types import HistoryEventSubType, History
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.modules.balancer.constants import CPT_BALANCER_V1
 from rotkehlchen.chain.ethereum.modules.balancer.v1.accountant import Balancerv1Accountant
-from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
 from rotkehlchen.constants.assets import A_ETH, A_USDC
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
 from rotkehlchen.types import Location, Price, Timestamp
 from rotkehlchen.utils.misc import ts_sec_to_ms
+
+if TYPE_CHECKING:
+    from rotkehlchen.accounting.accountant import Accountant
+    from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
 
 TIMESTAMP_1_SECS = Timestamp(15931863800)
 TIMESTAMP_1_MS = ts_sec_to_ms(TIMESTAMP_1_SECS)
