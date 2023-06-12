@@ -140,7 +140,6 @@ const AaveHistoryTotal = z.record(Balance);
 export type AaveHistoryTotal = z.infer<typeof AaveHistoryTotal>;
 
 const AaveAccountingHistory = z.object({
-  events: z.array(AaveHistoryEvents),
   totalEarnedInterest: AaveHistoryTotal,
   totalEarnedLiquidations: AaveHistoryTotal,
   totalLost: AaveHistoryTotal
