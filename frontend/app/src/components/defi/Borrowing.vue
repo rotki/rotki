@@ -44,7 +44,7 @@ const refresh = async () => {
   await defiLending.fetchBorrowing(true);
 };
 
-onMounted(() => {
+onMounted(async () => {
   const currentRoute = get(route);
   const queryElement = currentRoute.query['protocol'];
   const protocols = Object.values(DefiProtocol);
@@ -52,7 +52,7 @@ onMounted(() => {
   if (protocolIndex >= 0) {
     set(protocol, protocols[protocolIndex]);
   }
-  defiLending.fetchBorrowing(false);
+  await defiLending.fetchBorrowing(false);
 });
 </script>
 
