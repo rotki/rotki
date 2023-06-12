@@ -6,7 +6,7 @@ ruff==0.0.272
 double-indent-rotki==0.1.7  # our fork of double indent
 flake8==6.0.0
 flake8-commas==2.1.0
-flake8-bugbear==23.5.9
+flake8-bugbear==23.6.5
 flake8-tuple==0.4.1
 flake8-comprehensions==3.12.0
 flake8-debugger==4.1.2
