@@ -35,27 +35,6 @@ vi.mock('@/composables/backend', async () => {
   };
 });
 
-vi.mock('@/composables/api/info/index', () => ({
-  useInfoApi: vi.fn().mockReturnValue({
-    info: vi.fn().mockReturnValue({
-      version: {
-        our_version: '1.28.0',
-        latest_version: null,
-        download_url: null
-      },
-      dataDirectory: '/Users/home/rotki/develop_data',
-      logLevel: 'DEBUG',
-      acceptDockerRisk: false,
-      backendDefaultArguments: {
-        maxLogfilesNum: 3,
-        maxSizeInMbAllLogs: 300,
-        sqliteInstructions: 5000
-      }
-    }),
-    ping: vi.fn().mockReturnValue(true)
-  })
-}));
-
 vi.mock('@/composables/api/settings/settings-api', () => ({
   useSettingsApi: vi.fn().mockReturnValue({
     backendSettings: vi.fn().mockReturnValue({
@@ -83,7 +62,19 @@ describe('OnboardingSetting.vue', () => {
     const vuetify = new Vuetify();
     return mount(OnboardingSettings, {
       pinia,
-      vuetify
+      vuetify,
+      stubs: {
+        VSelect: {
+          template: `
+            <div>
+              <input :value="value" class="input" type="text" @input="$emit('input', $event.value)">
+            </div>
+          `,
+          props: {
+            value: { type: String }
+          }
+        }
+      }
     });
   }
 
@@ -110,7 +101,7 @@ describe('OnboardingSetting.vue', () => {
       ).element as HTMLInputElement;
       expect(userLogDirectoryInput.value).toBe('/Users/home/rotki/logs');
 
-      const logLevelInput = wrapper.find('.loglevel-input input[type=hidden]')
+      const logLevelInput = wrapper.find('.loglevel-input .input')
         .element as HTMLInputElement;
       expect(logLevelInput.value).toBe('debug');
 
@@ -121,7 +112,13 @@ describe('OnboardingSetting.vue', () => {
       ).toBe('disabled');
     });
 
-    test('should save the setting', async () => {
+    test('should save the data directory setting', async () => {
+      expect(
+        wrapper
+          .find('[data-cy=onboarding-setting__submit-button]')
+          .attributes('disabled')
+      ).toBe('disabled');
+
       const newDataDirectory = '/Users/home/rotki/develop_data1';
 
       await wrapper
@@ -136,6 +133,65 @@ describe('OnboardingSetting.vue', () => {
 
       expect(saveOptions).toBeCalledWith({
         dataDirectory: newDataDirectory
+      });
+
+      expect(
+        wrapper
+          .find('[data-cy=onboarding-setting__submit-button]')
+          .attributes('disabled')
+      ).toBe('disabled');
+    });
+
+    test('should save the loglevel setting', async () => {
+      const logLevelInput = wrapper.find('.loglevel-input .input')
+        .element as HTMLInputElement;
+      expect(logLevelInput.value).toBe('debug');
+
+      expect(
+        wrapper
+          .find('[data-cy=onboarding-setting__submit-button]')
+          .attributes('disabled')
+      ).toBe('disabled');
+
+      await wrapper
+        .find('.loglevel-input .input')
+        .trigger('input', { value: 'warning' });
+
+      await wrapper.vm.$nextTick();
+
+      await wrapper
+        .find('[data-cy=onboarding-setting__submit-button]')
+        .trigger('click');
+
+      expect(saveOptions).toBeCalledWith({
+        loglevel: 'warning'
+      });
+
+      expect(
+        wrapper
+          .find('[data-cy=onboarding-setting__submit-button]')
+          .attributes('disabled')
+      ).toBe('disabled');
+
+      // should be able to change back to default loglevel (debug)
+      expect(
+        wrapper
+          .find('[data-cy=onboarding-setting__submit-button]')
+          .attributes('disabled')
+      ).toBe('disabled');
+
+      await wrapper
+        .find('.loglevel-input .input')
+        .trigger('input', { value: 'debug' });
+
+      await wrapper.vm.$nextTick();
+
+      await wrapper
+        .find('[data-cy=onboarding-setting__submit-button]')
+        .trigger('click');
+
+      expect(saveOptions).toBeCalledWith({
+        loglevel: 'debug'
       });
     });
   });

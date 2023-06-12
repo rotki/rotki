@@ -1,0 +1,18 @@
+{
+  "result": {
+    "version": {
+      "our_version": "1.28.0",
+      "latest_version": null,
+      "download_url": null
+    },
+    "data_directory": "/Users/home/rotki/develop_data",
+    "log_level": "DEBUG",
+    "accept_docker_risk": false,
+    "backend_default_arguments": {
+      "max_logfiles_num": 3,
+      "max_size_in_mb_all_logs": 300,
+      "sqlite_instructions": 5000
+    }
+  },
+  "message": ""
+}

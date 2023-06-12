@@ -5,6 +5,7 @@ import historyEventsHandlers from './handlers/history-events';
 import ledgerActionHandlers from './handlers/ledger-actions';
 import nfts from './handlers/nfts';
 import tradeHandlers from './handlers/trades';
+import infoHandlers from './handlers/info';
 
 const server = setupServer(
   ...tradeHandlers,
@@ -12,7 +13,8 @@ const server = setupServer(
   ...ledgerActionHandlers,
   ...historyEventsHandlers,
   ...nfts,
-  ...binanceSavings
+  ...binanceSavings,
+  ...infoHandlers
 );
 
 export { server };

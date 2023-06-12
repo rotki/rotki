@@ -34,10 +34,10 @@ export const useBackendManagement = (loaded: () => void = () => {}) => {
   const { setConnected, connect } = store;
 
   const defaultLogLevel = computed<LogLevel>(() => getDefaultLogLevel());
+  const logLevel = ref<LogLevel>(get(defaultLogLevel));
   const userOptions = ref<Partial<BackendOptions>>({});
   const fileConfig = ref<Partial<BackendOptions>>({});
   const defaultLogDirectory = ref('');
-
   const options = computed<Partial<BackendOptions>>(() => ({
     ...get(userOptions),
     ...get(fileConfig)
@@ -128,6 +128,7 @@ export const useBackendManagement = (loaded: () => void = () => {}) => {
   };
 
   return {
+    logLevel,
     defaultLogLevel,
     defaultLogDirectory,
     options,

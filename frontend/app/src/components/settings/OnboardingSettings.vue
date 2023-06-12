@@ -20,6 +20,12 @@ const emit = defineEmits<{
 
 const { dataDirectory, defaultBackendArguments } = storeToRefs(useMainStore());
 
+const userDataDirectory: Ref<string> = ref('');
+const userLogDirectory: Ref<string> = ref('');
+const logFromOtherModules: Ref<boolean> = ref(false);
+const maxLogSize: Ref<number> = ref(0);
+const sqliteInstructions: Ref<number> = ref(0);
+const maxLogFiles: Ref<number> = ref(0);
 const valid: Ref<boolean> = ref(false);
 
 const { backendSettings } = useSettingsApi();
@@ -30,7 +36,7 @@ const configuration: Ref<BackendConfiguration> = asyncComputed(() =>
   backendSettings()
 );
 
-const { t } = useI18n();
+const { tc } = useI18n();
 
 const initialOptions: ComputedRef<Partial<BackendOptions>> = computed(() => {
   const config = get(configuration);
@@ -72,18 +78,11 @@ const {
   resetOptions,
   saveOptions,
   fileConfig,
+  logLevel,
   defaultLogLevel,
   defaultLogDirectory,
   options
 } = useBackendManagement(loaded);
-
-const logLevel: Ref<LogLevel> = ref<LogLevel>(get(defaultLogLevel));
-const userDataDirectory: Ref<string> = ref('');
-const userLogDirectory: Ref<string> = ref('');
-const logFromOtherModules: Ref<boolean> = ref(false);
-const maxLogSize: Ref<number> = ref(0);
-const sqliteInstructions: Ref<number> = ref(0);
-const maxLogFiles: Ref<number> = ref(0);
 
 const isMaxLogFilesDefault = computed(() => {
   const defaults = get(defaultBackendArguments);
@@ -167,11 +166,11 @@ const { openDirectory } = useInterop();
 
 const nonNegativeNumberRules = {
   required: helpers.withMessage(
-    t('backend_settings.errors.non_empty').toString(),
+    tc('backend_settings.errors.non_empty'),
     required
   ),
   nonNegative: helpers.withMessage(
-    t('backend_settings.errors.min', { min: 0 }).toString(),
+    tc('backend_settings.errors.min', 0, { min: 0 }),
     and(numeric, minValue(0))
   )
 };
@@ -225,7 +224,7 @@ const selectDataDirectory = async function () {
   }
 
   try {
-    const title = t('backend_settings.data_directory.select').toString();
+    const title = tc('backend_settings.data_directory.select');
     const directory = await openDirectory(title);
     if (directory) {
       set(userDataDirectory, directory);
@@ -247,7 +246,7 @@ async function selectLogsDirectory() {
   set(selecting, true);
   try {
     const directory = await openDirectory(
-      t('backend_settings.log_directory.select').toString()
+      tc('backend_settings.log_directory.select')
     );
     if (directory) {
       set(userLogDirectory, directory);
@@ -272,8 +271,8 @@ const { show } = useConfirmStore();
 const showResetConfirmation = () => {
   show(
     {
-      title: t('backend_settings.confirm.title').toString(),
-      message: t('backend_settings.confirm.message').toString()
+      title: tc('backend_settings.confirm.title'),
+      message: tc('backend_settings.confirm.message')
     },
     reset
   );
@@ -284,7 +283,7 @@ const showResetConfirmation = () => {
   <card contained class="pt-4">
     <div class="mb-4">
       <card-title class="font-weight-medium">
-        {{ t('frontend_settings.title') }}
+        {{ tc('frontend_settings.title') }}
       </card-title>
     </div>
 
@@ -294,10 +293,10 @@ const showResetConfirmation = () => {
 
     <div class="mb-4">
       <card-title class="font-weight-medium">
-        {{ t('backend_settings.title') }}
+        {{ tc('backend_settings.title') }}
       </card-title>
       <v-card-subtitle class="pa-0">
-        {{ t('backend_settings.subtitle') }}
+        {{ tc('backend_settings.subtitle') }}
       </v-card-subtitle>
     </div>
 
@@ -311,10 +310,10 @@ const showResetConfirmation = () => {
       persistent-hint
       :hint="
         !!fileConfig.dataDirectory
-          ? t('backend_settings.config_file_disabled')
-          : t('backend_settings.settings.data_directory.hint')
+          ? tc('backend_settings.config_file_disabled')
+          : tc('backend_settings.settings.data_directory.hint')
       "
-      :label="t('backend_settings.settings.data_directory.label')"
+      :label="tc('backend_settings.settings.data_directory.label')"
       readonly
       @click="selectDataDirectory()"
     >
@@ -337,11 +336,11 @@ const showResetConfirmation = () => {
         :persistent-hint="!!fileConfig.logDirectory"
         :hint="
           !!fileConfig.logDirectory
-            ? t('backend_settings.config_file_disabled')
+            ? tc('backend_settings.config_file_disabled')
             : null
         "
         outlined
-        :label="t('backend_settings.settings.log_directory.label')"
+        :label="tc('backend_settings.settings.log_directory.label')"
         readonly
         @click="selectLogsDirectory()"
       >
@@ -357,11 +356,11 @@ const showResetConfirmation = () => {
         :items="levels"
         class="loglevel-input"
         :disabled="!!fileConfig.loglevel"
-        :label="t('backend_settings.settings.log_level.label')"
+        :label="tc('backend_settings.settings.log_level.label')"
         :persistent-hint="!!fileConfig.loglevel"
         :hint="
           !!fileConfig.loglevel
-            ? t('backend_settings.config_file_disabled')
+            ? tc('backend_settings.config_file_disabled')
             : null
         "
         outlined
@@ -389,7 +388,7 @@ const showResetConfirmation = () => {
           <v-expansion-panel-header
             data-cy="onboarding-setting__advance-toggle"
           >
-            {{ t('backend_settings.advanced') }}
+            {{ tc('backend_settings.advanced') }}
           </v-expansion-panel-header>
           <v-expansion-panel-content>
             <v-text-field
@@ -398,10 +397,10 @@ const showResetConfirmation = () => {
               outlined
               :hint="
                 !!fileConfig.maxSizeInMbAllLogs
-                  ? t('backend_settings.config_file_disabled')
-                  : t('backend_settings.max_log_size.hint')
+                  ? tc('backend_settings.config_file_disabled')
+                  : tc('backend_settings.max_log_size.hint')
               "
-              :label="t('backend_settings.max_log_size.label')"
+              :label="tc('backend_settings.max_log_size.label')"
               :disabled="fileConfig.maxSizeInMbAllLogs"
               :persistent-hint="!!fileConfig.maxSizeInMbAllLogs"
               :loading="!configuration || !defaultBackendArguments"
@@ -420,11 +419,11 @@ const showResetConfirmation = () => {
               v-model.number="maxLogFiles"
               data-cy="max-log-files-input"
               outlined
-              :hint="t('backend_settings.max_log_files.hint')"
+              :hint="tc('backend_settings.max_log_files.hint')"
               :label="
                 !!fileConfig.maxLogfilesNum
-                  ? t('backend_settings.config_file_disabled')
-                  : t('backend_settings.max_log_files.label')
+                  ? tc('backend_settings.config_file_disabled')
+                  : tc('backend_settings.max_log_files.label')
               "
               :disabled="fileConfig.maxLogfilesNum"
               :persistent-hint="!!fileConfig.maxLogfilesNum"
@@ -447,10 +446,10 @@ const showResetConfirmation = () => {
               outlined
               :hint="
                 !!fileConfig.sqliteInstructions
-                  ? t('backend_settings.config_file_disabled')
-                  : t('backend_settings.sqlite_instructions.hint')
+                  ? tc('backend_settings.config_file_disabled')
+                  : tc('backend_settings.sqlite_instructions.hint')
               "
-              :label="t('backend_settings.sqlite_instructions.label')"
+              :label="tc('backend_settings.sqlite_instructions.label')"
               :disabled="fileConfig.sqliteInstructions"
               :persistent-hint="!!fileConfig.sqliteInstructions"
               :loading="!configuration || !defaultBackendArguments"
@@ -471,13 +470,13 @@ const showResetConfirmation = () => {
             <v-checkbox
               v-model="logFromOtherModules"
               data-cy="log-from-other-modules-checkbox"
-              :label="t('backend_settings.log_from_other_modules.label')"
+              :label="tc('backend_settings.log_from_other_modules.label')"
               :disabled="fileConfig.logFromOtherModules"
               persistent-hint
               :hint="
                 fileConfig.logFromOtherModules
-                  ? t('backend_settings.config_file_disabled')
-                  : t('backend_settings.log_from_other_modules.hint')
+                  ? tc('backend_settings.config_file_disabled')
+                  : tc('backend_settings.log_from_other_modules.hint')
               "
             />
           </v-expansion-panel-content>
@@ -488,10 +487,10 @@ const showResetConfirmation = () => {
     <template #buttons>
       <v-spacer />
       <v-btn depressed @click="dismiss()">
-        {{ t('common.actions.cancel') }}
+        {{ tc('common.actions.cancel') }}
       </v-btn>
       <v-btn depressed @click="showResetConfirmation()">
-        {{ t('backend_settings.actions.reset') }}
+        {{ tc('backend_settings.actions.reset') }}
       </v-btn>
       <v-btn
         depressed
@@ -500,7 +499,7 @@ const showResetConfirmation = () => {
         :disabled="!anyValueChanged || !valid"
         @click="save()"
       >
-        {{ t('common.actions.save') }}
+        {{ tc('common.actions.save') }}
       </v-btn>
     </template>
   </card>
