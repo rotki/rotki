@@ -2027,7 +2027,7 @@ Getting all supported chains
                 {"id": "KSM", "name": "kusama", "type": "substrate", "native_token": "KSM"},
                 {"id": "BTC", "name": "bitcoin", "type": "bitcoin", "native_token": "BTC"},
                 {"id": "BCH", "name": "bitcoin cash", "type": "bitcoin", "native_token": "BCH"},
-                {"id": "POLYGON_POS", "name": "polygon pos", type: "evm", "native_token": "eip155:137/erc20:0x0000000000000000000000000000000000001010"}
+                {"id": "POLYGON_POS", "name": "polygon pos", "type": "evm", "native_token": "eip155:137/erc20:0x0000000000000000000000000000000000001010"}
             ]
             "message": ""
         }
@@ -8880,7 +8880,7 @@ Adding BTC/BCH xpubs
       Content-Type: application/json
 
       {
-          "result": True,
+          "result": true,
           "message": ""
       }
 
