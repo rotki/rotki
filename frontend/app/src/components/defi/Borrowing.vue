@@ -50,7 +50,7 @@ onMounted(() => {
   const protocols = Object.values(DefiProtocol);
   const protocolIndex = protocols.indexOf(queryElement as DefiProtocol);
   if (protocolIndex >= 0) {
-    set(protocol, protocols[protocolIndex] as DefiProtocol);
+    set(protocol, protocols[protocolIndex]);
   }
   defiLending.fetchBorrowing(false);
 });
