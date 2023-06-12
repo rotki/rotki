@@ -463,6 +463,10 @@ class EvmNodeInquirer(metaclass=ABCMeta):
 
             if node.endpoint.endswith('llamarpc.com'):  # temporary. Seems to sometimes switch
                 is_pruned, is_archive = True, False  # between pruned and non-pruned nodes
+            elif node.endpoint.endswith('blastapi.io'):  # temporary
+                # After the bedrock update blastapi.io switches from archive to non archive nodes
+                # It has never reported pruned nodes.
+                is_pruned, is_archive = False, False
             else:
                 is_pruned, is_archive = self.determine_capabilities(web3)
             log.info(f'Connected {self.chain_name} node {node} at {rpc_endpoint}')
