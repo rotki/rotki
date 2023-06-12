@@ -9,7 +9,7 @@ export const useAaveApi = () => {
   };
 
   const fetchAaveHistory = async (reset?: boolean): Promise<PendingTask> => {
-    const url = '/blockchains/eth/modules/aave/history';
+    const url = '/blockchains/eth/modules/aave/stats';
     const params = reset ? { resetDbData: true } : undefined;
     return fetchExternalAsync(api.instance, url, params);
   };
