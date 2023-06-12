@@ -402,6 +402,9 @@ declare global {
   const useDocumentVisibility: typeof import('@vueuse/core')['useDocumentVisibility']
   const useDraggable: typeof import('@vueuse/core')['useDraggable']
   const useDropZone: typeof import('@vueuse/core')['useDropZone']
+  const useEditBalancesSnapshotForm: typeof import('./composables/snapshots/edit-balance/form')['useEditBalancesSnapshotForm']
+  const useEditLocationsSnapshotForm: typeof import('./composables/snapshots/edit-location/form')['useEditLocationsSnapshotForm']
+  const useEditTotalSnapshotForm: typeof import('./composables/snapshots/edit-total/form')['useEditTotalSnapshotForm']
   const useElementBounding: typeof import('@vueuse/core')['useElementBounding']
   const useElementByPoint: typeof import('@vueuse/core')['useElementByPoint']
   const useElementHover: typeof import('@vueuse/core')['useElementHover']
@@ -1096,6 +1099,9 @@ declare module 'vue' {
     readonly useDocumentVisibility: UnwrapRef<typeof import('@vueuse/core')['useDocumentVisibility']>
     readonly useDraggable: UnwrapRef<typeof import('@vueuse/core')['useDraggable']>
     readonly useDropZone: UnwrapRef<typeof import('@vueuse/core')['useDropZone']>
+    readonly useEditBalancesSnapshotForm: UnwrapRef<typeof import('./composables/snapshots/edit-balance/form')['useEditBalancesSnapshotForm']>
+    readonly useEditLocationsSnapshotForm: UnwrapRef<typeof import('./composables/snapshots/edit-location/form')['useEditLocationsSnapshotForm']>
+    readonly useEditTotalSnapshotForm: UnwrapRef<typeof import('./composables/snapshots/edit-total/form')['useEditTotalSnapshotForm']>
     readonly useElementBounding: UnwrapRef<typeof import('@vueuse/core')['useElementBounding']>
     readonly useElementByPoint: UnwrapRef<typeof import('@vueuse/core')['useElementByPoint']>
     readonly useElementHover: UnwrapRef<typeof import('@vueuse/core')['useElementHover']>
@@ -1784,6 +1790,9 @@ declare module '@vue/runtime-core' {
     readonly useDocumentVisibility: UnwrapRef<typeof import('@vueuse/core')['useDocumentVisibility']>
     readonly useDraggable: UnwrapRef<typeof import('@vueuse/core')['useDraggable']>
     readonly useDropZone: UnwrapRef<typeof import('@vueuse/core')['useDropZone']>
+    readonly useEditBalancesSnapshotForm: UnwrapRef<typeof import('./composables/snapshots/edit-balance/form')['useEditBalancesSnapshotForm']>
+    readonly useEditLocationsSnapshotForm: UnwrapRef<typeof import('./composables/snapshots/edit-location/form')['useEditLocationsSnapshotForm']>
+    readonly useEditTotalSnapshotForm: UnwrapRef<typeof import('./composables/snapshots/edit-total/form')['useEditTotalSnapshotForm']>
     readonly useElementBounding: UnwrapRef<typeof import('@vueuse/core')['useElementBounding']>
     readonly useElementByPoint: UnwrapRef<typeof import('@vueuse/core')['useElementByPoint']>
     readonly useElementHover: UnwrapRef<typeof import('@vueuse/core')['useElementHover']>

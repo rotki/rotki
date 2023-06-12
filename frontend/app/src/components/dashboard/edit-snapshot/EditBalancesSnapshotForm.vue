@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { type BigNumber } from '@rotki/common';
-import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
 import { type BalanceSnapshotPayload } from '@/types/snapshots';
+import { toMessages } from '@/utils/validation';
 
 interface BalanceSnapshotPayloadAndLocation extends BalanceSnapshotPayload {
   location: string;
@@ -10,14 +10,12 @@ interface BalanceSnapshotPayloadAndLocation extends BalanceSnapshotPayload {
 
 const props = withDefaults(
   defineProps<{
-    value?: boolean;
     edit?: boolean;
     form: BalanceSnapshotPayloadAndLocation;
     locations?: string[];
     previewLocationBalance?: Record<string, BigNumber> | null;
   }>(),
   {
-    value: false,
     edit: false,
     locations: () => [],
     previewLocationBalance: null
@@ -25,7 +23,6 @@ const props = withDefaults(
 );
 
 const emit = defineEmits<{
-  (e: 'input', valid: boolean): void;
   (e: 'update:form', data: BalanceSnapshotPayloadAndLocation): void;
   (e: 'update:asset', asset: string): void;
 }>();
@@ -35,10 +32,6 @@ const { form } = toRefs(props);
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
 const assetType = ref<string>('token');
-
-const input = (valid: boolean) => {
-  emit('input', valid);
-};
 
 const updateForm = (partial: Partial<BalanceSnapshotPayloadAndLocation>) => {
   emit('update:form', {
@@ -95,12 +88,10 @@ const rules = {
   }
 };
 
-const v$ = useVuelidate(rules, form, {
-  $autoDirty: true
-});
+const { valid, setValidation } = useEditBalancesSnapshotForm();
 
-watch(v$, ({ $invalid }) => {
-  input(!$invalid);
+const v$ = setValidation(rules, form, {
+  $autoDirty: true
 });
 
 const updateAsset = (asset: string) => {
@@ -109,13 +100,13 @@ const updateAsset = (asset: string) => {
 </script>
 
 <template>
-  <v-form :value="value" class="pt-4">
+  <v-form :value="valid" class="pt-4">
     <div>
       <balance-type-input
         :value="form.category"
         outlined
         :label="t('common.category')"
-        :error-messages="v$.category.$errors.map(e => e.$message)"
+        :error-messages="toMessages(v$.category)"
         @input="updateForm({ category: $event })"
       />
     </div>
@@ -143,7 +134,7 @@ const updateAsset = (asset: string) => {
         :show-ignored="true"
         :label="t('common.asset')"
         :enable-association="false"
-        :error-messages="v$.assetIdentifier.$errors.map(e => e.$message)"
+        :error-messages="toMessages(v$.assetIdentifier)"
         @input="updateForm({ assetIdentifier: $event })"
         @change="updateAsset($event)"
       />
@@ -153,7 +144,7 @@ const updateAsset = (asset: string) => {
         :label="t('common.asset')"
         outlined
         :disabled="edit"
-        :error-messages="v$.assetIdentifier.$errors.map(e => e.$message)"
+        :error-messages="toMessages(v$.assetIdentifier)"
         :hint="t('dashboard.snapshot.edit.dialog.balances.nft_hint')"
         @input="updateForm({ assetIdentifier: $event })"
         @blur="updateAsset($event.target.value)"
@@ -165,7 +156,7 @@ const updateAsset = (asset: string) => {
         :value="form.amount"
         outlined
         :label="t('common.amount')"
-        :error-messages="v$.amount.$errors.map(e => e.$message)"
+        :error-messages="toMessages(v$.amount)"
         @input="updateForm({ amount: $event })"
       />
     </div>
@@ -178,7 +169,7 @@ const updateAsset = (asset: string) => {
             symbol: currencySymbol
           })
         "
-        :error-messages="v$.usdValue.$errors.map(e => e.$message)"
+        :error-messages="toMessages(v$.usdValue)"
         @input="updateForm({ usdValue: $event })"
       />
     </div>

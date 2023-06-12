@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { type BigNumber } from '@rotki/common';
-import { type ComputedRef, type PropType, type Ref } from 'vue';
+import { type ComputedRef, type Ref } from 'vue';
 import { type DataTableHeader } from '@/types/vuetify';
 import { CURRENCY_USD } from '@/types/currencies';
 import {
@@ -16,30 +16,25 @@ const { t } = useI18n();
 
 type IndexedBalanceSnapshot = BalanceSnapshot & { index: number };
 
-const props = defineProps({
-  value: {
-    required: true,
-    type: Object as PropType<Snapshot>
-  },
-  timestamp: {
-    required: true,
-    type: Number
-  }
-});
+const props = defineProps<{
+  value: Snapshot;
+  timestamp: number;
+}>();
 
-const emit = defineEmits(['update:step', 'input']);
+const emit = defineEmits<{
+  (e: 'update:step', step: number): void;
+  (e: 'input', value: Snapshot): void;
+}>();
+
 const css = useCssModule();
 
 const { value, timestamp } = toRefs(props);
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-const showForm = ref<boolean>(false);
 const showDeleteConfirmation = ref<boolean>(false);
 const indexToEdit = ref<number | null>(null);
 const indexToDelete = ref<number | null>(null);
 const locationToDelete = ref<string>('');
 const form = ref<(BalanceSnapshotPayload & { location: string }) | null>(null);
-const valid = ref<boolean>(false);
-const loading = ref<boolean>(false);
 
 const { exchangeRate } = useBalancePricesStore();
 const fiatExchangeRate = computed<BigNumber>(
@@ -164,7 +159,7 @@ const editClick = (item: IndexedBalanceSnapshot) => {
     location: ''
   });
 
-  set(showForm, true);
+  setOpenDialog(true);
 };
 
 const existingLocations = computed<string[]>(() =>
@@ -189,7 +184,7 @@ const add = () => {
     usdValue: '',
     location: ''
   });
-  set(showForm, true);
+  setOpenDialog(true);
 };
 
 const previewLocationBalance = computed<Record<string, BigNumber> | null>(
@@ -316,7 +311,16 @@ const updateData = (
   });
 };
 
-const save = () => {
+const {
+  openDialog,
+  setOpenDialog,
+  closeDialog,
+  submitting,
+  setSubmitFunc,
+  trySubmit
+} = useEditBalancesSnapshotForm();
+
+const save = async () => {
   const formVal = get(form);
 
   if (!formVal) {
@@ -351,9 +355,11 @@ const save = () => {
   clearEditDialog();
 };
 
+setSubmitFunc(save);
+
 const clearEditDialog = () => {
+  closeDialog();
   set(indexToEdit, null);
-  set(showForm, false);
   set(form, null);
 };
 
@@ -472,20 +478,19 @@ const tableContainer = computed(() => get(tableRef)?.$el);
     </v-sheet>
 
     <big-dialog
-      :display="showForm"
+      :display="openDialog"
       :title="
         indexToEdit !== null
           ? t('dashboard.snapshot.edit.dialog.balances.edit_title')
           : t('dashboard.snapshot.edit.dialog.balances.add_title')
       "
       :primary-action="t('common.actions.save')"
-      :action-disabled="loading || !valid"
-      @confirm="save()"
+      :loading="submitting"
+      @confirm="trySubmit()"
       @cancel="clearEditDialog()"
     >
       <edit-balances-snapshot-form
         v-if="form"
-        v-model="valid"
         :edit="!!indexToEdit"
         :form="form"
         :preview-location-balance="previewLocationBalance"

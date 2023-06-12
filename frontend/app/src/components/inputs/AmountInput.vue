@@ -46,6 +46,12 @@ onMounted(() => {
     scale: get(integer) ? 0 : 100
   });
 
+  const propValue = get(value);
+  if (propValue) {
+    newImask.unmaskedValue = propValue;
+    set(currentValue, newImask.value);
+  }
+
   set(imask, newImask);
 });
 
