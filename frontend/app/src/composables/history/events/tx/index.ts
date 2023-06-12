@@ -273,12 +273,13 @@ export const useHistoryTransactions = () => {
   };
 
   const deleteTransactionEvent = async (
-    eventId: number
+    eventIds: number[],
+    forceDelete = false
   ): Promise<ActionStatus> => {
     let success = false;
     let message = '';
     try {
-      success = await deleteTransactionEventCaller([eventId]);
+      success = await deleteTransactionEventCaller(eventIds, forceDelete);
     } catch (e: any) {
       message = e.message;
     }

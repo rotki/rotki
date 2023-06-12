@@ -127,12 +127,13 @@ export const useHistoryEventsApi = () => {
   };
 
   const deleteTransactionEvent = async (
-    identifiers: number[]
+    identifiers: number[],
+    forceDelete = false
   ): Promise<boolean> => {
     const response = await api.instance.delete<ActionResult<boolean>>(
       '/history/events',
       {
-        data: snakeCaseTransformer({ identifiers }),
+        data: snakeCaseTransformer({ identifiers, forceDelete }),
         validateStatus: validStatus
       }
     );

@@ -21,11 +21,13 @@ const emit = defineEmits<{
   (e: 'add-event', event: EvmHistoryEvent): void;
   (e: 'toggle-ignore', event: HistoryEventEntry): void;
   (e: 'redecode', data: EvmChainAndTxHash): void;
+  (e: 'reset', event: EvmHistoryEvent): void;
 }>();
 
 const addEvent = (event: EvmHistoryEvent) => emit('add-event', event);
 const toggleIgnore = (event: HistoryEventEntry) => emit('toggle-ignore', event);
 const redecode = (data: EvmChainAndTxHash) => emit('redecode', data);
+const resetEvent = (event: EvmHistoryEvent) => emit('reset', event);
 </script>
 
 <template>
@@ -74,6 +76,14 @@ const redecode = (data: EvmChainAndTxHash) => emit('redecode', data);
           </v-list-item-icon>
           <v-list-item-content>
             {{ t('transactions.actions.redecode_events') }}
+          </v-list-item-content>
+        </v-list-item>
+        <v-list-item link :disabled="loading" @click="resetEvent(evmEvent)">
+          <v-list-item-icon class="mr-4">
+            <v-icon>mdi-file-restore</v-icon>
+          </v-list-item-icon>
+          <v-list-item-content>
+            {{ t('transactions.actions.reset_customized_events') }}
           </v-list-item-content>
         </v-list-item>
       </v-list>
