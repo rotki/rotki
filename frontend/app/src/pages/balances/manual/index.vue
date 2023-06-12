@@ -153,7 +153,6 @@ const { xl } = useDisplay();
       :display="openDialog"
       :title="dialogTitle"
       :subtitle="dialogSubtitle"
-      :action-disabled="submitting"
       :loading="submitting"
       :primary-action="t('common.actions.save')"
       @confirm="trySubmit()"

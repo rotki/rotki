@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
 import { type ComputedRef } from 'vue';
 import {
@@ -7,6 +6,7 @@ import {
   type AddressBookPayload
 } from '@/types/eth-names';
 import { isValidEthAddress, toSentenceCase } from '@/utils/text';
+import { toMessages } from '@/utils/validation';
 
 const props = withDefaults(
   defineProps<{
@@ -60,7 +60,9 @@ const rules = {
   }
 };
 
-const v$ = useVuelidate(
+const { valid, setValidation } = useAddressBookForm();
+
+const v$ = setValidation(
   rules,
   {
     address: computed(() => get(value).address),
@@ -68,10 +70,6 @@ const v$ = useVuelidate(
   },
   { $autoDirty: true }
 );
-
-watch(v$, ({ $invalid }) => {
-  emit('valid', !$invalid);
-});
 
 const updateAllChainsState = (enable: boolean) => {
   emit('update:enable-for-all-chains', enable);
@@ -81,7 +79,7 @@ const { getBlockie } = useBlockie();
 </script>
 
 <template>
-  <v-form :value="!v$.$invalid">
+  <v-form :value="valid">
     <div class="mt-2">
       <div>
         <v-select
@@ -121,7 +119,7 @@ const { getBlockie } = useBlockie();
           :items="addressSuggestions"
           :no-data-text="t('address_book.form.no_suggestions_available')"
           :disabled="edit"
-          :error-messages="v$.address.$errors.map(e => e.$message)"
+          :error-messages="toMessages(v$.address)"
           auto-select-first
           @input="input({ address: $event })"
         >
@@ -150,7 +148,7 @@ const { getBlockie } = useBlockie();
           :value="value.name"
           outlined
           :label="t('common.name')"
-          :error-messages="v$.name.$errors.map(e => e.$message)"
+          :error-messages="toMessages(v$.name)"
           @input="input({ name: $event })"
         />
       </div>

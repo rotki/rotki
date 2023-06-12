@@ -26,7 +26,6 @@ const { openDialog, submitting, closeDialog, trySubmit } = useCustomAssetForm();
     :display="openDialog"
     :title="title"
     :subtitle="subtitle"
-    :action-disabled="submitting"
     :primary-action="t('common.actions.save')"
     :loading="submitting"
     @confirm="trySubmit()"

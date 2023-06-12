@@ -4,6 +4,7 @@ import useVuelidate, {
   type ValidationArgs
 } from '@vuelidate/core';
 import { type Ref } from 'vue';
+import { type MaybeRef } from '@vueuse/core';
 import { checkBeforeSubmission } from '@/utils/validation';
 
 /**
@@ -20,7 +21,7 @@ export const useForm = <T = void>() => {
 
   const setValidation = (
     validationsArgs: ValidationArgs,
-    states: Record<string, Ref>,
+    states: Record<string, MaybeRef<any>>,
     config?: GlobalConfig
   ): Ref<Validation> => {
     v$ = useVuelidate(validationsArgs, states, config);

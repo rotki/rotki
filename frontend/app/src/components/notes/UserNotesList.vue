@@ -320,7 +320,9 @@ onMounted(async () => {
         </div>
       </div>
 
-      <div v-else class="note__empty">{{ t('notes_menu.empty_notes') }}</div>
+      <div v-else class="note__empty">
+        {{ t('notes_menu.empty_notes') }}
+      </div>
     </div>
 
     <user-notes-form-dialog

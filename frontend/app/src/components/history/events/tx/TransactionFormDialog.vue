@@ -19,8 +19,8 @@ const { t } = useI18n();
     :display="openDialog"
     :title="t('transactions.dialog.add_tx')"
     :primary-action="t('common.actions.save')"
-    :action-disabled="loading || submitting"
-    :loading="loading || submitting"
+    :action-disabled="loading"
+    :loading="submitting"
     @confirm="trySubmit()"
     @cancel="closeDialog()"
   >

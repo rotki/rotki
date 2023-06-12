@@ -14,7 +14,6 @@ import { evmTokenKindsData } from '@/types/blockchain/chains';
 import { CUSTOM_ASSET, EVM_TOKEN } from '@/types/asset';
 import { ApiValidationError } from '@/types/api/errors';
 import AssetIconForm from '@/components/asset-manager/AssetIconForm.vue';
-import { useManagedAssetForm } from '@/composables/assets/forms/managed-asset-form';
 import { toMessages } from '@/utils/validation';
 
 function time(t: string): number | undefined {

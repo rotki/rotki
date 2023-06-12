@@ -1,39 +1,39 @@
 <script setup lang="ts">
-import useVuelidate from '@vuelidate/core';
 import { between, required, requiredIf } from '@vuelidate/validators';
 import { type Blockchain } from '@rotki/common/lib/blockchain';
 import isEmpty from 'lodash/isEmpty';
+import omit from 'lodash/omit';
 import { type EvmRpcNode, getPlaceholderNode } from '@/types/settings';
 import { toMessages } from '@/utils/validation';
+import { ApiValidationError } from '@/types/api/errors';
 
 const { t } = useI18n();
 
-const props = withDefaults(
-  defineProps<{
-    value: EvmRpcNode;
-    chain: Blockchain;
-    isEtherscan: boolean;
-    errorMessages?: Record<string, string | string[]>;
-  }>(),
-  {
-    errorMessages: () => ({})
-  }
-);
+const props = defineProps<{
+  value: EvmRpcNode;
+  chain: Blockchain;
+  isEtherscan: boolean;
+  editMode: boolean;
+}>();
 
 const emit = defineEmits<{
   (e: 'input', value: EvmRpcNode): void;
-  (e: 'update:valid', valid: boolean): void;
 }>();
 
-const { chain, value, errorMessages, isEtherscan } = toRefs(props);
+const { chain, value, isEtherscan, editMode } = toRefs(props);
 const state = reactive<EvmRpcNode>(getPlaceholderNode(get(chain)));
+
 const rules = {
   name: { required },
   endpoint: { required: requiredIf(logicNot(isEtherscan)) },
   weight: { required, between: between(0, 100) }
 };
 
-const v$ = useVuelidate(rules, state, {
+const errorMessages = ref<Record<string, string[] | string>>({});
+
+const { setValidation, setSubmitFunc } = useEvmRpcNodeForm();
+
+const v$ = setValidation(rules, state, {
   $autoDirty: true,
   $externalResults: errorMessages
 });
@@ -66,8 +66,56 @@ watch(value, node => {
 
 watch(state, state => {
   emit('input', state);
-  emit('update:valid', !get(v$).$invalid);
 });
+
+const api = useEvmNodesApi(get(chain));
+const { setMessage } = useMessageStore();
+
+const save = async () => {
+  const editing = get(editMode);
+  try {
+    const node = get(value);
+    if (editing) {
+      return await api.editEvmNode(node);
+    }
+    return await api.addEvmNode(omit(node, 'identifier'));
+  } catch (e: any) {
+    const chainProp = get(chain);
+    const errorTitle = editing
+      ? t('evm_rpc_node_manager.edit_error.title', { chain: chainProp })
+      : t('evm_rpc_node_manager.add_error.title', { chain: chainProp });
+
+    if (e instanceof ApiValidationError) {
+      const messages = e.errors;
+
+      set(errorMessages, messages);
+
+      const keys = Object.keys(messages);
+      const knownKeys = Object.keys(get(value));
+      const unknownKeys = keys.filter(key => !knownKeys.includes(key));
+
+      if (unknownKeys.length > 0) {
+        setMessage({
+          title: errorTitle,
+          description: unknownKeys
+            .map(key => `${key}: ${messages[key]}`)
+            .join(', '),
+          success: false
+        });
+      }
+    } else {
+      setMessage({
+        title: errorTitle,
+        description: e.message,
+        success: false
+      });
+    }
+
+    return false;
+  }
+};
+
+setSubmitFunc(save);
 </script>
 
 <template>
