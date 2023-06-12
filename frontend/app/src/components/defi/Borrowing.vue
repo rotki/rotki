@@ -44,15 +44,15 @@ const refresh = async () => {
   await defiLending.fetchBorrowing(true);
 };
 
-onMounted(async () => {
+onMounted(() => {
   const currentRoute = get(route);
   const queryElement = currentRoute.query['protocol'];
   const protocols = Object.values(DefiProtocol);
   const protocolIndex = protocols.indexOf(queryElement as DefiProtocol);
   if (protocolIndex >= 0) {
-    set(protocol, protocols[protocolIndex]);
+    set(protocol, protocols[protocolIndex] as DefiProtocol);
   }
-  await defiLending.fetchBorrowing(false);
+  defiLending.fetchBorrowing(false);
 });
 </script>
 
