@@ -3718,7 +3718,8 @@
   "transactions": {
     "actions": {
       "add_event": "Añadir un nuevo evento",
-      "redecode_events": "Releer eventos"
+      "redecode_events": "Releer eventos",
+      "reset_customized_events": "Restablecer eventos personalizados"
     },
     "events": {
       "actions": {
@@ -3734,6 +3735,10 @@
           "action": "Yes, Ignore the Transaction",
           "message": "A transaction requires at least 1 event. Do you want to ignore the transaction in accounting instead?",
           "title": "Cannot Delete Event"
+        },
+        "reset": {
+          "message": "Are you sure you want to reset these events. This action will delete all customized events, and re-decode them.",
+          "title": "Reset events"
         }
       },
       "customized_event": "Customized event",

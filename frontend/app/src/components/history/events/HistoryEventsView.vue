@@ -268,6 +268,32 @@ const forceRedecodeEvmEvents = async (data: EvmChainAndTxHash) => {
   await fetchTransactionEvents([data], true);
 };
 
+const resetEventsHandler = async (data: EvmHistoryEvent) => {
+  const eventIds = get(allEvents)
+    .filter(
+      event =>
+        isEvmEvent(event) && event.txHash === data.txHash && event.customized
+    )
+    .map(event => event.identifier);
+
+  if (eventIds.length > 0) {
+    await deleteTransactionEvent(eventIds, true);
+  }
+
+  await forceRedecodeEvmEvents(toEvmChainAndTxHash(data));
+  await fetchData();
+};
+
+const resetEvents = (data: EvmHistoryEvent) => {
+  show(
+    {
+      title: t('transactions.events.confirmation.reset.title'),
+      message: t('transactions.events.confirmation.reset.message')
+    },
+    () => resetEventsHandler(data)
+  );
+};
+
 const { ignore } = useIgnore<HistoryEventEntry>(
   {
     actionType: IgnoreActionType.EVM_TRANSACTIONS,
@@ -329,7 +355,7 @@ const deleteEventHandler = async () => {
   const id = eventToDeleteVal?.identifier;
 
   if (eventToDeleteVal && id) {
-    const { success } = await deleteTransactionEvent(id);
+    const { success } = await deleteTransactionEvent([id]);
     if (!success) {
       return;
     }
@@ -665,6 +691,7 @@ const { locationData } = useLocations();
                   @add-event="addEvent($event)"
                   @toggle-ignore="toggleIgnore($event)"
                   @redecode="forceRedecodeEvmEvents($event)"
+                  @reset="resetEvents($event)"
                 />
               </v-lazy>
             </template>
