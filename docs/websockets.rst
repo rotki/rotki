@@ -223,8 +223,8 @@ In addition to history from evm transactions we need to query events from exchan
 
 - ``status``: Can be either `querying_events_started`, `querying_events_finished`, `querying_events_status_update`. Each pair of events is triggered per exchange instance if the location is an exchange.
 - ``event_type``: Labels the type of events being queried. Valid values are: ``history_query``.
-- ``location``(Optional): When the same ``event_type`` can be queried in multiple locations this helps to differentiate them.
-- ``name``(Optional): If multiple appearances of the same location are possible it will differentiate each one of them.
+- ``location`` (Optional): When the same ``event_type`` can be queried in multiple locations this helps to differentiate them.
+- ``name`` (Optional): If multiple appearances of the same location are possible it will differentiate each one of them.
 
 Finally the backend provides more granular information to know what interval of time is getting queried for certain locations.
 
@@ -244,7 +244,7 @@ Finally the backend provides more granular information to know what interval of 
 
 - ``event_type``: Labels the type of events being queried. Valid values are: ``history_query``.
 - ``location``(Optional): When the same ``event_type`` can be queried in multiple locations this helps to differentiate them.
-- ``name``(Optional): If multiple appearances of the same location are possible it will differentiate each one of them.
+- ``name`` (Optional): If multiple appearances of the same location are possible it will differentiate each one of them.
 - ``period``: Time range that is being queried.
 
 
