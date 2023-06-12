@@ -36,6 +36,7 @@ const { report } = toRefs(props);
 const options = ref<PaginationOptions | null>(null);
 
 const route = useRoute();
+const { getChain } = useSupportedChains();
 
 const tableHeaders = computed<DataTableHeader[]>(() => [
   {
@@ -272,6 +273,7 @@ const checkGroupLine = (entries: ProfitLossEvents, index: number) => {
               item.taxableAmount.isZero() ? item.freeAmount : item.taxableAmount
             "
             :asset="item.asset"
+            :chain="getChain(item.location)"
           />
           <template v-else>{{ item.notes }}</template>
         </div>
