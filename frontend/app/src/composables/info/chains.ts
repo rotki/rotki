@@ -51,7 +51,7 @@ export const useSupportedChains = createSharedComposable(() => {
 
   const txEvmChains: ComputedRef<EvmChainInfo[]> = useArrayFilter(
     evmChainsData,
-    x => x.id !== 'AVAX'
+    x => x.id !== Blockchain.AVAX
   );
 
   const evmChains: ComputedRef<string[]> = useArrayMap(
