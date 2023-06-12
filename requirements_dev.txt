@@ -4,7 +4,7 @@
 pytest==7.3.2
 bump2version==1.0.1
 pytest-cov==4.1.0
-coverage==6.5.0
+coverage==7.2.7
 psutil==5.9.5
 pytest-freezer==0.4.6
 git+https://github.com/rotki/pytest-deadfixtures@87d2be8#egg=pytest-deadfixtures # temporarily due to false positive
