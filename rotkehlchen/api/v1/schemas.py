@@ -2440,6 +2440,10 @@ class IdentifiersListSchema(Schema):
     identifiers = fields.List(fields.Integer(), required=True)
 
 
+class HistoryEventsDeletionSchema(IdentifiersListSchema):
+    force_delete = fields.Boolean(load_default=False)
+
+
 class AssetsImportingSchema(Schema):
     file = FileField(allowed_extensions=['.zip', '.json'], load_default=None)
     destination = DirectoryField(load_default=None)

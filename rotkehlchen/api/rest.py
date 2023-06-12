@@ -951,9 +951,12 @@ class RestAPI():
 
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
-    def delete_history_events(self, identifiers: list[int]) -> Response:
+    def delete_history_events(self, identifiers: list[int], force_delete: bool) -> Response:
         db = DBHistoryEvents(self.rotkehlchen.data.db)
-        error_msg = db.delete_history_events_by_identifier(identifiers=identifiers)
+        error_msg = db.delete_history_events_by_identifier(
+            identifiers=identifiers,
+            force_delete=force_delete,
+        )
         if error_msg is not None:
             return api_response(wrap_in_fail_result(error_msg), status_code=HTTPStatus.CONFLICT)
 

@@ -87,11 +87,11 @@ from rotkehlchen.api.v1.schemas import (
     FileListSchema,
     HistoricalAssetsPriceSchema,
     HistoryEventSchema,
+    HistoryEventsDeletionSchema,
     HistoryExportingSchema,
     HistoryProcessingDebugImportSchema,
     HistoryProcessingExportSchema,
     HistoryProcessingSchema,
-    IdentifiersListSchema,
     IgnoredActionsModifySchema,
     IgnoredAssetsSchema,
     IntegerIdentifierListSchema,
@@ -1141,7 +1141,7 @@ class HistoryEventResource(BaseMethodView):
     put_schema = EvmEventSchema()
     post_schema = HistoryEventSchema()
     patch_schema = EditEvmEventSchema()
-    delete_schema = IdentifiersListSchema()
+    delete_schema = HistoryEventsDeletionSchema()
 
     @require_loggedin_user()
     @use_kwargs(post_schema, location='json')
@@ -1160,8 +1160,11 @@ class HistoryEventResource(BaseMethodView):
 
     @require_loggedin_user()
     @use_kwargs(delete_schema, location='json')
-    def delete(self, identifiers: list[int]) -> Response:
-        return self.rest_api.delete_history_events(identifiers=identifiers)
+    def delete(self, identifiers: list[int], force_delete: bool) -> Response:
+        return self.rest_api.delete_history_events(
+            identifiers=identifiers,
+            force_delete=force_delete,
+        )
 
 
 class UsersResource(BaseMethodView):
