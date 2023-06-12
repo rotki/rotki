@@ -4950,7 +4950,7 @@ Dealing with History Events
 
 .. http:delete:: /api/(version)/history/events
 
-   Doing a DELETE on this endpoint deletes a set of history entry events from the DB for the currently logged in user. If any of the identifiers is not found in the DB the entire call fails. If any of the identifiers are the last for their transaction hash the call fails.
+   Doing a DELETE on this endpoint deletes a set of history entry events from the DB for the currently logged in user. If any of the identifiers is not found in the DB the entire call fails. If any of the identifiers are the last for their transaction hash the call fails, unless the ``force_delete`` argument is given.
 
    **Example Request**:
 
@@ -4963,6 +4963,7 @@ Dealing with History Events
       {"identifiers" : [55, 65, 124]}
 
    :reqjson list<integer> identifiers: A list of the identifiers of the history entries to delete.
+   :reqjson bool force_delete: If true, then even if an event is the last event of a transaction it will be deleted. False by default.
 
    **Example Response**:
 
@@ -4978,7 +4979,7 @@ Dealing with History Events
 
    :statuscode 200: Event was successfully removed.
    :statuscode 400: Provided JSON is in some way malformed
-   :statuscode 409: No user is logged in or one of the identifiers to delete did not correspond to an event in the DB or one of the identifiers was for the last event in the corresponding transaction hash.
+   :statuscode 409: No user is logged in or one of the identifiers to delete did not correspond to an event in the DB or one of the identifiers was for the last event in the corresponding transaction hash and force_delete was false..
    :statuscode 500: Internal rotki error
 
 

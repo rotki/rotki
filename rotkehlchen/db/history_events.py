@@ -181,26 +181,38 @@ class DBHistoryEvents():
 
         return True, ''
 
-    def delete_history_events_by_identifier(self, identifiers: list[int]) -> Optional[str]:  # noqa: E501
+    def delete_history_events_by_identifier(
+            self,
+            identifiers: list[int],
+            force_delete: bool = False,
+    ) -> Optional[str]:
         """
         Delete the history events with the given identifiers. If deleting an event
-        makes it the last event of a transaction hash then do not allow deletion.
+        makes it the last event of a transaction hash then do not allow deletion
+        unless force_delete is True. The reason for this limitation is that if a
+        user deletes the last event of a transaction there is no way at the moment
+        to retrieve it as the caller(the frontend) no longer knows the transaction
+        hash to redecode.
+
+        With force_delete True, the frontend specifically keeps the transaction hash
+        and calls redecode right after.
 
         If any identifier is missing the entire call fails and an error message
         is returned. Otherwise None is returned.
         """
         for identifier in identifiers:
-            with self.db.conn.read_ctx() as cursor:
-                cursor.execute(
-                    'SELECT COUNT(*) == 1 FROM history_events WHERE event_identifier=(SELECT '
-                    'event_identifier FROM history_events WHERE identifier=? AND entry_type=?)',
-                    (identifier, HistoryBaseEntryType.EVM_EVENT.serialize_for_db()),
-                )
-                if bool(cursor.fetchone()[0]) is True:
-                    return (
-                        f'Tried to remove history event with id {identifier} '
-                        f'which was the last event of a transaction'
+            if force_delete is False:
+                with self.db.conn.read_ctx() as cursor:
+                    cursor.execute(
+                        'SELECT COUNT(*) == 1 FROM history_events WHERE event_identifier=(SELECT '
+                        'event_identifier FROM history_events WHERE identifier=? AND entry_type=?)',  # noqa: E501
+                        (identifier, HistoryBaseEntryType.EVM_EVENT.serialize_for_db()),
                     )
+                    if bool(cursor.fetchone()[0]) is True:
+                        return (
+                            f'Tried to remove history event with id {identifier} '
+                            f'which was the last event of a transaction'
+                        )
 
             with self.db.user_write() as write_cursor:
                 write_cursor.execute(
