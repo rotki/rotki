@@ -2,10 +2,8 @@ import { type Balance, BigNumber } from '@rotki/common';
 import { DefiProtocol } from '@rotki/common/lib/blockchain';
 import { assetSymbolToIdentifierMap } from '@rotki/common/lib/data';
 import {
-  AaveBorrowingEventType,
   type AaveHistoryTotal,
-  type AaveLending,
-  isAaveLiquidationEvent
+  type AaveLending
 } from '@rotki/common/lib/defi/aave';
 import sortBy from 'lodash/sortBy';
 import { type ComputedRef } from 'vue';
@@ -76,7 +74,6 @@ export const useDefiLending = () => {
       }
 
       if (showAll || protocols.includes(DefiProtocol.AAVE)) {
-        const knownAssets: string[] = [];
         const perAddressAaveBalances = get(aaveBalances);
         for (const address of Object.keys(perAddressAaveBalances)) {
           const { borrowing } = perAddressAaveBalances[address];
@@ -86,33 +83,6 @@ export const useDefiLending = () => {
           }
 
           for (const asset of assets) {
-            const symbol = get(assetInfo(asset))?.symbol ?? asset;
-            const formattedAddress = truncateAddress(scrambleHex(address), 6);
-
-            loans.push({
-              identifier: `${symbol} - ${address}`,
-              label: `${symbol} - ${formattedAddress}`,
-              protocol: DefiProtocol.AAVE,
-              owner: address,
-              asset
-            });
-            knownAssets.push(asset);
-          }
-        }
-
-        const perAddressAaveHistory = get(aaveHistory);
-        for (const address in perAddressAaveHistory) {
-          const { events } = perAddressAaveHistory[address];
-          const borrowEvents: string[] = Object.values(AaveBorrowingEventType);
-          const historyAssets = events
-            .filter(e => borrowEvents.includes(e.eventType))
-            .map(event =>
-              isAaveLiquidationEvent(event) ? event.principalAsset : event.asset
-            )
-            .filter(uniqueStrings)
-            .filter(asset => !knownAssets.includes(asset));
-
-          for (const asset of historyAssets) {
             const symbol = get(assetInfo(asset))?.symbol ?? asset;
             const formattedAddress = truncateAddress(scrambleHex(address), 6);
 
@@ -251,35 +221,8 @@ export const useDefiLending = () => {
         const lost: Writeable<AaveHistoryTotal> = {};
         const liquidationEarned: Writeable<AaveHistoryTotal> = {};
         if (perAddressAaveHistory[owner]) {
-          const {
-            totalLost,
-            events: allEvents,
-            totalEarnedLiquidations
-          } = perAddressAaveHistory[owner];
-
-          for (const event of allEvents) {
-            if (!isAaveLiquidationEvent(event)) {
-              continue;
-            }
-
-            if (event.principalAsset !== asset) {
-              continue;
-            }
-
-            const collateralAsset = event.collateralAsset;
-
-            if (!lost[collateralAsset] && totalLost[collateralAsset]) {
-              lost[collateralAsset] = totalLost[collateralAsset];
-            }
-
-            if (
-              !liquidationEarned[collateralAsset] &&
-              totalEarnedLiquidations[collateralAsset]
-            ) {
-              liquidationEarned[collateralAsset] =
-                totalEarnedLiquidations[collateralAsset];
-            }
-          }
+          const { totalLost, totalEarnedLiquidations } =
+            perAddressAaveHistory[owner];
 
           if (totalLost[asset]) {
             lost[asset] = totalLost[asset];
