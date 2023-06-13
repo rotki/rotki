@@ -46,6 +46,12 @@ onMounted(() => {
     scale: get(integer) ? 0 : 100
   });
 
+  const propValue = get(value);
+  if (propValue) {
+    newImask.unmaskedValue = propValue;
+    set(currentValue, newImask.value);
+  }
+
   set(imask, newImask);
 });
 
@@ -58,14 +64,16 @@ watch(value, value => {
 });
 
 watch(
-  imask,
-  (imask, prev) => {
-    if (!prev) {
-      return;
+  () => get(imask)?.unmaskedValue,
+  unmasked => {
+    if (unmasked) {
+      const value = get(imask)?.value;
+      if (value) {
+        set(currentValue, value);
+      }
+      emit('input', unmasked);
     }
-    emit('input', imask?.unmaskedValue || '');
-  },
-  { deep: true }
+  }
 );
 
 const focus = () => {

@@ -1,28 +1,18 @@
 <script setup lang="ts">
 import { type BigNumber } from '@rotki/common';
-import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
-import { type PropType } from 'vue';
 import { CURRENCY_USD } from '@/types/currencies';
 import {
   type BalanceSnapshot,
   type LocationDataSnapshot
 } from '@/types/snapshots';
+import { toMessages } from '@/utils/validation';
 
-const props = defineProps({
-  value: {
-    required: true,
-    type: Array as PropType<LocationDataSnapshot[]>
-  },
-  timestamp: {
-    required: true,
-    type: Number
-  },
-  balancesSnapshot: {
-    required: true,
-    type: Array as PropType<BalanceSnapshot[]>
-  }
-});
+const props = defineProps<{
+  value: LocationDataSnapshot[];
+  timestamp: number;
+  balancesSnapshot: BalanceSnapshot[];
+}>();
 
 const emit = defineEmits<{
   (e: 'update:step', step: number): void;
@@ -138,7 +128,10 @@ const setTotal = (number?: BigNumber) => {
   set(total, convertedFiatValue);
 };
 
-const save = () => {
+const { valid, setValidation, setSubmitFunc, trySubmit } =
+  useEditTotalSnapshotForm();
+
+const save = async () => {
   const val = get(value);
   const index = val.findIndex(item => item.location === 'total')!;
 
@@ -149,6 +142,8 @@ const save = () => {
   input(newValue);
 };
 
+setSubmitFunc(save);
+
 const rules = {
   total: {
     required: helpers.withMessage(
@@ -158,7 +153,7 @@ const rules = {
   }
 };
 
-const v$ = useVuelidate(
+const v$ = setValidation(
   rules,
   {
     total
@@ -175,21 +170,23 @@ const suggestionsLabel = computed(() => ({
     length: get(value).length
   })
 }));
+
+const css = useCssModule();
 </script>
 
 <template>
   <div>
     <div class="py-10 d-flex flex-column align-center">
-      <div :class="$style.wrapper">
+      <div :class="css.wrapper">
         <div class="text-h6 mb-4 text-center">
           {{ t('common.total') }}
         </div>
         <div class="mb-4">
-          <v-form :value="!v$.$invalid">
+          <v-form :value="valid">
             <amount-input
               v-model="total"
               outlined
-              :error-messages="v$.total.$errors.map(e => e.$message)"
+              :error-messages="toMessages(v$.total)"
             />
 
             <div class="text--secondary text-caption">
@@ -210,7 +207,7 @@ const suggestionsLabel = computed(() => ({
               block
               color="primary"
               class="mb-4"
-              :class="$style.button"
+              :class="css.button"
               large
               @click="setTotal(number)"
             >
@@ -219,7 +216,7 @@ const suggestionsLabel = computed(() => ({
                   {{ suggestionsLabel[key] }}
                 </span>
                 <amount-display
-                  :class="$style['button__amount']"
+                  :class="css['button__amount']"
                   :value="number"
                   fiat-currency="USD"
                 />
@@ -239,7 +236,7 @@ const suggestionsLabel = computed(() => ({
         <v-icon>mdi-chevron-left</v-icon>
         {{ t('common.actions.back') }}
       </v-btn>
-      <v-btn color="primary" :disabled="v$.$invalid" @click="save()">
+      <v-btn color="primary" @click="trySubmit()">
         {{ t('common.actions.finish') }}
         <v-icon>mdi-chevron-right</v-icon>
       </v-btn>

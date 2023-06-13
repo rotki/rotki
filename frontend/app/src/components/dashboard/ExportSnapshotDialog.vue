@@ -160,8 +160,8 @@ const showDeleteConfirmation = () => {
       <div class="mb-n2">
         <div>
           <div>{{ t('common.datetime') }}:</div>
-          <div>
-            <date-display class="font-weight-bold" :timestamp="timestamp" />
+          <div class="font-weight-bold">
+            <date-display :timestamp="timestamp" />
           </div>
         </div>
         <div class="pt-2">

@@ -7,14 +7,14 @@ import {
   type SnapshotPayload
 } from '@/types/snapshots';
 
-const props = defineProps({
-  timestamp: {
-    required: true,
-    type: Number
-  }
-});
+const props = defineProps<{
+  timestamp: number;
+}>();
 
-const emit = defineEmits(['close', 'finish']);
+const emit = defineEmits<{
+  (e: 'close'): void;
+  (e: 'finish'): void;
+}>();
 
 const { timestamp } = toRefs(props);
 

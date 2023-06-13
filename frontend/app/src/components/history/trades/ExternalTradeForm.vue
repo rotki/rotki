@@ -331,7 +331,7 @@ onMounted(setEditMode);
       </v-col>
       <v-col cols="12" md="8" class="d-flex flex-column">
         <v-row>
-          <v-col cols="12" md="auto" class="d-flex flex-row align-center">
+          <v-col cols="12" md="5" class="d-flex flex-row align-center">
             <asset-select
               v-model="base"
               outlined
@@ -348,7 +348,7 @@ onMounted(setEditMode);
               {{ quoteHint }}
             </div>
           </v-col>
-          <v-col cols="12" md="auto" class="d-flex flex-row align-center">
+          <v-col cols="12" md="5" class="d-flex flex-row align-center">
             <asset-select
               v-model="quote"
               required

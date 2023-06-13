@@ -1,27 +1,24 @@
 <script setup lang="ts">
 import { type BigNumber } from '@rotki/common';
-import { type PropType } from 'vue';
 
-defineProps({
-  value: {
-    required: false,
-    type: String,
-    default: ''
-  },
-  locations: {
-    required: false,
-    type: Array as PropType<string[]>,
-    default: () => []
-  },
-  previewLocationBalance: {
-    required: false,
-    type: Object as PropType<Record<string, BigNumber> | null>,
-    default: () => null
+withDefaults(
+  defineProps<{
+    value?: string;
+    locations?: string[];
+    previewLocationBalance?: Record<string, BigNumber> | null;
+  }>(),
+  {
+    value: '',
+    locations: () => [],
+    previewLocationBalance: null
   }
-});
-const emit = defineEmits(['input']);
-const input = (event: any) => {
-  emit('input', event);
+);
+
+const emit = defineEmits<{
+  (e: 'input', location: string): void;
+}>();
+const input = (location: string) => {
+  emit('input', location);
 };
 
 const { t } = useI18n();

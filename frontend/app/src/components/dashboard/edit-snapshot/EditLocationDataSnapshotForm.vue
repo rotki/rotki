@@ -1,28 +1,19 @@
 <script setup lang="ts">
-import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
-import { type PropType } from 'vue';
 import { type LocationDataSnapshotPayload } from '@/types/snapshots';
+import { toMessages } from '@/utils/validation';
 
-const props = defineProps({
-  value: {
-    required: false,
-    type: Boolean,
-    default: false
-  },
-  form: {
-    required: true,
-    type: Object as PropType<LocationDataSnapshotPayload>
-  },
-  excludedLocations: {
-    required: false,
-    type: Array as PropType<string[]>,
-    default: () => []
+const props = withDefaults(
+  defineProps<{
+    form: LocationDataSnapshotPayload;
+    excludedLocations?: string[];
+  }>(),
+  {
+    excludedLocations: () => []
   }
-});
+);
 
 const emit = defineEmits<{
-  (e: 'input', valid: boolean): void;
   (e: 'update:form', payload: LocationDataSnapshotPayload): void;
 }>();
 
@@ -30,10 +21,6 @@ const { form } = toRefs(props);
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
 const { t } = useI18n();
-
-const input = (valid: boolean) => {
-  emit('input', valid);
-};
 
 const updateForm = (partial: Partial<LocationDataSnapshotPayload>) => {
   emit('update:form', {
@@ -57,7 +44,9 @@ const rules = {
   }
 };
 
-const v$ = useVuelidate(
+const { valid, setValidation } = useEditLocationsSnapshotForm();
+
+const v$ = setValidation(
   rules,
   {
     location: computed(() => get(form).location),
@@ -65,21 +54,17 @@ const v$ = useVuelidate(
   },
   { $autoDirty: true }
 );
-
-watch(v$, ({ $invalid }) => {
-  input(!$invalid);
-});
 </script>
 
 <template>
-  <v-form :value="value" class="pt-4">
+  <v-form :value="valid" class="pt-4">
     <div class="mb-4">
       <location-selector
         :value="form.location"
         :excludes="excludedLocations"
         outlined
         :label="t('common.location')"
-        :error-messages="v$.location.$errors.map(e => e.$message)"
+        :error-messages="toMessages(v$.location)"
         @input="updateForm({ location: $event })"
       />
     </div>
@@ -92,7 +77,7 @@ watch(v$, ({ $invalid }) => {
             symbol: currencySymbol
           })
         "
-        :error-messages="v$.value.$errors.map(e => e.$message)"
+        :error-messages="toMessages(v$.value)"
         @input="updateForm({ usdValue: $event })"
       />
     </div>

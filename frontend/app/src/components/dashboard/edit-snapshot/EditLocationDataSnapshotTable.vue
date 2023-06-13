@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { type BigNumber } from '@rotki/common';
-import { type PropType } from 'vue';
 import { type DataTableHeader } from '@/types/vuetify';
 import { CURRENCY_USD } from '@/types/currencies';
 import {
@@ -12,16 +11,10 @@ const { t } = useI18n();
 
 type IndexedLocationDataSnapshot = LocationDataSnapshot & { index: number };
 
-const props = defineProps({
-  value: {
-    required: true,
-    type: Array as PropType<LocationDataSnapshot[]>
-  },
-  timestamp: {
-    required: true,
-    type: Number
-  }
-});
+const props = defineProps<{
+  value: LocationDataSnapshot[];
+  timestamp: number;
+}>();
 
 const emit = defineEmits<{
   (e: 'update:step', step: number): void;
@@ -30,11 +23,8 @@ const emit = defineEmits<{
 
 const { value, timestamp } = toRefs(props);
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-const showForm = ref<boolean>(false);
 const editedIndex = ref<number | null>(null);
 const form = ref<LocationDataSnapshotPayload | null>(null);
-const valid = ref<boolean>(false);
-const loading = ref<boolean>(false);
 const excludedLocations = ref<string[]>([]);
 
 const tableHeaders = computed<DataTableHeader[]>(() => [
@@ -101,7 +91,7 @@ const editClick = (item: IndexedLocationDataSnapshot) => {
       .filter(identifier => identifier !== item.location)
   );
 
-  set(showForm, true);
+  setOpenDialog(true);
 };
 
 const add = () => {
@@ -115,10 +105,19 @@ const add = () => {
     excludedLocations,
     get(value).map(item => item.location)
   );
-  set(showForm, true);
+  setOpenDialog(true);
 };
 
-const save = () => {
+const {
+  openDialog,
+  setOpenDialog,
+  closeDialog,
+  submitting,
+  setSubmitFunc,
+  trySubmit
+} = useEditLocationsSnapshotForm();
+
+const save = async () => {
   const formVal = get(form);
 
   if (!formVal) {
@@ -151,9 +150,11 @@ const save = () => {
   clearEditDialog();
 };
 
+setSubmitFunc(save);
+
 const clearEditDialog = () => {
+  closeDialog();
   set(editedIndex, null);
-  set(showForm, false);
   set(form, null);
   set(excludedLocations, []);
 };
@@ -251,20 +252,19 @@ const showDeleteConfirmation = (item: IndexedLocationDataSnapshot) => {
     </v-sheet>
 
     <big-dialog
-      :display="showForm"
+      :display="openDialog"
       :title="
         editedIndex !== null
           ? t('dashboard.snapshot.edit.dialog.location_data.edit_title')
           : t('dashboard.snapshot.edit.dialog.location_data.add_title')
       "
       :primary-action="t('common.actions.save')"
-      :action-disabled="loading || !valid"
-      @confirm="save()"
+      :loading="submitting"
+      @confirm="trySubmit()"
       @cancel="clearEditDialog()"
     >
       <edit-location-data-snapshot-form
         v-if="form"
-        v-model="valid"
         :form="form"
         :excluded-locations="excludedLocations"
         @update:form="updateForm($event)"

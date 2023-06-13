@@ -690,6 +690,9 @@
     "transformCase": true,
     "useAddressBookForm": true,
     "useEvmRpcNodeForm": true,
-    "useExchangeApiKeysForm": true
+    "useExchangeApiKeysForm": true,
+    "useEditBalancesSnapshotForm": true,
+    "useEditLocationsSnapshotForm": true,
+    "useEditTotalSnapshotForm": true
   }
 }
