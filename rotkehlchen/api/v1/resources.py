@@ -1940,6 +1940,28 @@ class CompoundBalancesResource(BaseMethodView):
         return self.rest_api.get_compound_balances(async_query=async_query)
 
 
+class CompoundStatsResource(BaseMethodView):
+    """
+    TODO: @yabirgb: Move this endpoint, aave stats and liquity to a common resource
+    """
+
+    get_schema = HistoryProcessingSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(get_schema, location='json_and_query')
+    def get(
+            self,
+            async_query: bool,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+    ) -> Response:
+        return self.rest_api.get_compound_stats(
+            async_query=async_query,
+            from_timestamp=from_timestamp,
+            to_timestamp=to_timestamp,
+        )
+
+
 class YearnVaultsBalancesResource(BaseMethodView):
 
     get_schema = AsyncQueryArgumentSchema()

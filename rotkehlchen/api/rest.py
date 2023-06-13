@@ -2396,6 +2396,26 @@ class RestAPI():
         )
 
     @async_api_call()
+    def get_compound_stats(
+            self,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+    ) -> dict[str, Any]:
+        return self._eth_module_query(
+            module_name='compound',
+            method='get_stats',
+            # We need to query defi balances before since defi_balances must be populated
+            query_specific_balances_before=['defi'],
+            addresses=self.rotkehlchen.chains_aggregator.queried_addresses_for_module('compound'),
+            from_timestamp=from_timestamp,
+            to_timestamp=to_timestamp,
+            # Giving the defi balances as a lambda function here so that they
+            # are retrieved only after we are sure the defi balances have been
+            # queried.
+            given_defi_balances=lambda: self.rotkehlchen.chains_aggregator.defi_balances,
+        )
+
+    @async_api_call()
     def get_yearn_vaults_balances(self) -> dict[str, Any]:
         # Once that has ran we can be sure that defi_balances mapping is populated
         return self._eth_module_query(

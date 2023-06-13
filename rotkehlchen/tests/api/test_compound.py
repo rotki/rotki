@@ -2,7 +2,7 @@ import random
 import warnings as test_warnings
 from contextlib import ExitStack
 from http import HTTPStatus
-from typing import Any, Optional
+from typing import Optional
 
 import pytest
 import requests
@@ -10,8 +10,6 @@ import requests
 from rotkehlchen.api.server import APIServer
 from rotkehlchen.chain.ethereum.modules.compound.compound import A_COMP
 from rotkehlchen.constants import ONE
-from rotkehlchen.constants.assets import A_CUSDC, A_DAI, A_USDC
-from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -20,7 +18,7 @@ from rotkehlchen.tests.utils.api import (
     wait_for_async_task,
 )
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
-from rotkehlchen.types import ChecksumEvmAddress
+from rotkehlchen.types import ChecksumEvmAddress, deserialize_evm_tx_hash
 
 TEST_ACC1 = '0x2bddEd18E2CA464355091266B7616956944ee7eE'
 
@@ -106,65 +104,48 @@ def test_query_compound_balances_module_not_activated(
     )
 
 
-mocked_historical_prices: dict[str, Any] = {
-    A_DAI.identifier: {
-        'USD': {
-            1581184577: FVal('1.008'),
-            1587601131: FVal('1.016'),
-            1587766729: FVal('1.016'),
-            1582378248: FVal('1.026'),
-            1597288823: FVal('1.018'),
-            1598038125: FVal('1.006'),
-            1597954197: FVal('1.005'),
-            1597369409: FVal('1.008'),
-            1597452580: FVal('1.011'),
-            1598138282: FVal('1.003'),
-            1597982781: FVal('1.006'),
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0xF59D4937BF1305856C3a267bB07791507a3377Ee']])
+@pytest.mark.parametrize('ethereum_modules', [['compound']])
+@pytest.mark.parametrize('have_decoders', [[True]])
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('should_mock_price_queries', [True])
+@pytest.mark.parametrize('should_mock_current_price_queries', [True])
+@pytest.mark.parametrize('default_mock_price_value', [ONE])
+def test_events_compound(rotkehlchen_api_server: 'APIServer') -> None:
+    """
+    Check that the compound endpoint correctly processes requests for stats
+    """
+    ethereum_transaction_decoder = rotkehlchen_api_server.rest_api.rotkehlchen.chains_aggregator.ethereum.transactions_decoder  # noqa: E501
+    tx_hashes = [
+        deserialize_evm_tx_hash('0x2bbb296ebf1d94ad28d54c446cb23709b3463c4a43d8b5b8438ff39b2b985e1c'),
+    ]
+    ethereum_transaction_decoder.decode_transaction_hashes(
+        ignore_cache=True,
+        tx_hashes=tx_hashes,
+    )
+    response = requests.get(api_url_for(
+        rotkehlchen_api_server,
+        'compoundstatsresource',
+    ))
+    result = assert_proper_response_with_result(response)
+    assert result == {
+        'interest_profit': {
+            '0xF59D4937BF1305856C3a267bB07791507a3377Ee': {
+                'eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F': {
+                    'amount': '1893.678208215722372195',
+                    'usd_value': '1893.678208215722372195',
+                },
+            },
         },
-    },
-    A_CUSDC.identifier: {
-        'USD': {
-            1588459991: FVal('0.02102'),
-            1586159213: FVal('0.02102'),
-            1585790265: FVal('0.02101'),
-            1585844643: FVal('0.02101'),
-            1588464109: FVal('0.02102'),
+        'liquidation_profit': {},
+        'debt_loss': {},
+        'rewards': {
+            '0xF59D4937BF1305856C3a267bB07791507a3377Ee': {
+                'eip155:1/erc20:0xc00e94Cb662C3520282E6f5717214004A7f26888': {
+                    'amount': '0.003613066320816938',
+                    'usd_value': '0.0010221689306641185',
+                },
+            },
         },
-    },
-    A_USDC.identifier: {
-        'USD': {
-            1585558039: ONE,
-        },
-    },
-    'ETH': {
-        'USD': {
-            1585735112: FVal('136.05'),
-            1585558230: FVal('132.31'),
-            1585790265: FVal('141.59'),
-            1585820470: FVal('141.59'),
-            1585844643: FVal('141.59'),
-            1585903297: FVal('141.45'),
-            1586159213: FVal('171.66'),
-            1588459991: FVal('214.15'),
-            1588464109: FVal('210.06'),
-        },
-    },
-    A_COMP.identifier: {
-        'USD': {
-            1597452580: FVal('196.9'),
-        },
-    },
-}
-mocked_current_prices: dict[str, Any] = {}
-
-
-TEST_ACCOUNTS = [
-    # For mint/redeem
-    '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
-    # For borrowing/liquidations
-    '0xC440f3C87DC4B6843CABc413916220D4f4FeD117',
-    # For mint/redeem + comp
-    '0xF59D4937BF1305856C3a267bB07791507a3377Ee',
-    # For repay
-    '0x65304d6aff5096472519ca86a6a1fea31cb47Ced',
-]
+    }
