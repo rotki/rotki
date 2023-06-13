@@ -1,11 +1,11 @@
-from collections import defaultdict
 import logging
+from collections import defaultdict
 from typing import TYPE_CHECKING, Any, NamedTuple, Optional, Union
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceType
 from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType
-from rotkehlchen.assets.asset import CryptoAsset, EvmToken
+from rotkehlchen.assets.asset import Asset, CryptoAsset, EvmToken
 from rotkehlchen.assets.utils import symbol_to_evm_token
 from rotkehlchen.chain.ethereum.constants import ETH_MANTISSA
 from rotkehlchen.chain.ethereum.defi.structures import GIVEN_DEFI_BALANCES
@@ -24,8 +24,7 @@ from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, Timestamp
 from rotkehlchen.utils.interfaces import EthereumModule
-from rotkehlchen.utils.misc import ts_now
-
+from rotkehlchen.utils.misc import ts_ms_to_sec, ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -33,7 +32,7 @@ if TYPE_CHECKING:
     from rotkehlchen.premium.premium import Premium
     from rotkehlchen.user_messages import MessagesAggregator
 
-ADDRESS_TO_ASSETS = dict[ChecksumEvmAddress, dict[CryptoAsset, Balance]]
+ADDRESS_TO_ASSETS = dict[ChecksumEvmAddress, dict[Asset, Balance]]
 BLOCKS_PER_DAY = 4 * 60 * 24
 DAYS_PER_YEAR = 365
 
@@ -195,7 +194,7 @@ class Compound(EthereumModule):
             }
 
         return compound_balances  # type: ignore
-    
+
     def _process_events(
             self,
             events: list[EvmEvent],
@@ -212,7 +211,7 @@ class Compound(EthereumModule):
 
         balances = self.get_balances(given_defi_balances)
         for event in events:
-            address = event.location_label
+            address = ChecksumEvmAddress(event.location_label)  # type: ignore[arg-type]  # location label is not none here  # noqa: E501
             if event.event_subtype == HistoryEventSubType.DEPOSIT_ASSET:
                 assets[address][event.asset] -= event.balance
             elif event.event_subtype == HistoryEventSubType.GENERATE_DEBT:
@@ -229,8 +228,8 @@ class Compound(EthereumModule):
                 if profit_amount >= 0:
                     usd_price = query_usd_price_zero_if_error(
                         asset=event.asset,
-                        time=event.timestamp,
-                        location=f'comp redeem event {event.tx_hash} processing',
+                        time=ts_ms_to_sec(event.timestamp),
+                        location=f'comp redeem event {event.tx_hash!r} processing',
                         msg_aggregator=self.msg_aggregator,
                     )
                     profit = Balance(profit_amount, profit_amount * usd_price)
@@ -245,12 +244,11 @@ class Compound(EthereumModule):
                     event.balance.amount -
                     loss_so_far[address][event.asset].amount
                 )
-                profit: Optional[Balance]
                 if loss_amount >= 0:
                     usd_price = query_usd_price_zero_if_error(
                         asset=event.asset,
-                        time=event.timestamp,
-                        location=f'comp repay event {event.tx_hash} processing',
+                        time=ts_ms_to_sec(event.timestamp),
+                        location=f'comp repay event {event.tx_hash!r} processing',
                         msg_aggregator=self.msg_aggregator,
                     )
                     loss = Balance(loss_amount, loss_amount * usd_price)
@@ -263,6 +261,9 @@ class Compound(EthereumModule):
                 loss_assets[address][event.asset] += event.balance
                 liquidation_profit[address][event.asset] += event.balance
 
+        # iterate the current balances to update the profit and loss
+        # that comes from querying the token information and also the
+        # pending compound rewards
         for address, balance_entry in balances.items():
             for asset, entry in balance_entry['lending'].items():
                 profit_amount = (
@@ -275,12 +276,13 @@ class Compound(EthereumModule):
                         f'In compound we calculated negative profit. Should not happen. '
                         f'address: {address} asset: {asset} ',
                     )
-                else:
-                    usd_price = Inquirer().find_usd_price(asset)
-                    profit_so_far[address][asset] = Balance(
-                        amount=profit_amount,
-                        usd_value=profit_amount * usd_price,
-                    )
+                    continue
+
+                usd_price = Inquirer().find_usd_price(asset)
+                profit_so_far[address][asset] = Balance(
+                    amount=profit_amount,
+                    usd_value=profit_amount * usd_price,
+                )
 
             for asset, entry in balance_entry['borrowing'].items():
                 remaining = entry.balance + loss_assets[address][asset]
@@ -298,18 +300,21 @@ class Compound(EthereumModule):
 
         return profit_so_far, loss_so_far, liquidation_profit, rewards_assets
 
-    
     def get_stats(
             self,
             given_defi_balances: GIVEN_DEFI_BALANCES,
             addresses: list[ChecksumEvmAddress],
             from_timestamp: Timestamp,
-            to_timestamp: Timestamp,    
+            to_timestamp: Timestamp,
     ) -> dict[str, Any]:
+        """
+        Query compound events for the given addresses and process them to obtain statistics
+        for profits in compound.
+        """
         db = DBHistoryEvents(self.database)
         query_filter = EvmEventFilterQuery.make(
             counterparties=[CPT_COMPOUND],
-            location_labels=addresses,
+            location_labels=addresses,  # type: ignore[arg-type]
             event_subtypes=[
                 HistoryEventSubType.DEPOSIT_ASSET,
                 HistoryEventSubType.GENERATE_DEBT,
@@ -328,7 +333,7 @@ class Compound(EthereumModule):
                 filter_query=query_filter,
                 has_premium=self.premium is not None,
                 group_by_event_ids=False,
-            )        
+            )
         profit, loss, liquidation, rewards = self._process_events(events, given_defi_balances)
         return {
             'interest_profit': profit,
@@ -336,6 +341,7 @@ class Compound(EthereumModule):
             'debt_loss': loss,
             'rewards': rewards,
         }
+
     # -- Methods following the EthereumModule interface -- #
     def on_account_addition(self, address: ChecksumEvmAddress) -> None:
         pass

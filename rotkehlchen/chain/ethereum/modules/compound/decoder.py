@@ -26,7 +26,6 @@ from rotkehlchen.types import (
     DecoderEventMappingType,
     EvmTokenKind,
     EvmTransaction,
-    EVMTxHash,
 )
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
@@ -244,15 +243,15 @@ class CompoundDecoder(DecoderInterface):
             asset=collateral_ctoken,
         )
         # use the logs to know what token was getting repaid for the position. We have the ctoken
-        # from the event log but not the underlying token. In the case of ETH we need to check if the
-        # value sent covers the repaid amount and the token is cETH.
+        # from the event log but not the underlying token. In the case of ETH we need to check if
+        # the value sent covers the repaid amount and the token is cETH.
         repaying_asset = None
         if (
             transaction.value >= repay_amount_raw and
             self.ceth.evm_address == tx_log.address
         ):
             repaying_asset = self.eth
-        else: 
+        else:
             for event_log in all_logs:
                 if (
                     event_log.topics[0] == ERC20_OR_ERC721_TRANSFER and

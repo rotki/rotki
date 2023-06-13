@@ -607,6 +607,7 @@ def test_compound_liquidation_eth(
         ethereum_inquirer: 'EthereumInquirer',
         ethereum_accounts,
 ) -> None:
+    """Test that repaying a compound loan in a liquidation using ETH is correctly decoded"""
     tx_hash = deserialize_evm_tx_hash('0x160c0e6db0df5ea0c1cc9b1b31bd90c842ef793c9b2ab496efdc62bdd80eeb52')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,

@@ -2,19 +2,12 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.ethereum.modules.compound.compound import Compound
-from rotkehlchen.chain.ethereum.utils import ethaddress_to_asset
-from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS
-from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.constants.assets import A_COMP, A_CUSDC, A_DAI, A_USDC, A_WBTC
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.fval import FVal
-from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.premium.premium import Premium, PremiumCredentials
-from rotkehlchen.tests.utils.aave import ATOKENV1_TO_ASSET, ATOKENV2_ADDRESS_TO_RESERVE_ASSET
-from rotkehlchen.types import ChainID, Timestamp, deserialize_evm_tx_hash
+from rotkehlchen.types import ChecksumEvmAddress, Timestamp, deserialize_evm_tx_hash
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
@@ -25,8 +18,20 @@ if TYPE_CHECKING:
     from rotkehlchen.inquirer import Inquirer
 
 
+TEST_ACCOUNTS = [
+    # For mint/redeem
+    '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
+    # For borrowing/liquidations
+    '0xC440f3C87DC4B6843CABc413916220D4f4FeD117',
+    # For mint/redeem + comp
+    '0xF59D4937BF1305856C3a267bB07791507a3377Ee',
+    # For repay
+    '0x65304d6aff5096472519ca86a6a1fea31cb47Ced',
+]
+
+
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
-@pytest.mark.parametrize('ethereum_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12', '0xC440f3C87DC4B6843CABc413916220D4f4FeD117', '0xF59D4937BF1305856C3a267bB07791507a3377Ee', '0x65304d6aff5096472519ca86a6a1fea31cb47Ced']])
+@pytest.mark.parametrize('ethereum_accounts', [TEST_ACCOUNTS])
 @pytest.mark.parametrize('should_mock_price_queries', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
@@ -37,11 +42,11 @@ def test_compound_events_stats(
         rotki_premium_credentials: 'PremiumCredentials',
         inquirer: 'Inquirer',  # pylint: disable=unused-argument
         price_historian: 'PriceHistorian',  # pylint: disable=unused-argument
-        ethereum_accounts,
+        ethereum_accounts: list[ChecksumEvmAddress],
 ):
     """
-    Test aave stats for v1 events. The transactions have been obtained from
-    https://github.com/rotki/rotki/blob/6b1a538ca6a1ec235933b0d3936698be9ebc72ee/rotkehlchen/tests/api/test_aave.py#L181
+    Test compound events. The transactions have been obtained from
+    https://github.com/rotki/rotki/blob/6b1a538ca6a1ec235933b0d3936698be9ebc72ee/rotkehlchen/tests/api/test_compound.py#L185
     """
     tx_hashes = [
         deserialize_evm_tx_hash('0xacc2e21f911a4e438966694e9ad16747878a15dae52de62a09f1ebabc8b26c8d'),  # Supply 2,988.4343  # noqa: E501
@@ -78,6 +83,21 @@ def test_compound_events_stats(
         to_timestamp=ts_now(),
         given_defi_balances={},
     )
-    import pprint
-    pprint.pprint(stats)
-    assert False
+
+    # Check interest profit mappings
+    profit_0 = stats['interest_profit']['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']
+    assert profit_0[A_DAI].amount > FVal(9)
+    profit_1 = stats['interest_profit']['0xC440f3C87DC4B6843CABc413916220D4f4FeD117']
+    assert profit_1[A_USDC].amount == FVal(2)
+
+    # Check debt loss mappings
+    debt_0 = stats['debt_loss']['0x65304d6aff5096472519ca86a6a1fea31cb47Ced']
+    assert debt_0[A_WBTC].amount == FVal('0.55064402')
+
+    # Check liquidation profit mappings
+    lprofit_0 = stats['liquidation_profit']['0xC440f3C87DC4B6843CABc413916220D4f4FeD117']
+    assert lprofit_0[A_CUSDC].amount == FVal('24.42720036')
+
+    # Check rewards mappings
+    rewards_0 = stats['rewards']['0x65304d6aff5096472519ca86a6a1fea31cb47Ced']
+    assert rewards_0[A_COMP].amount == FVal('0.06366460157923238')
