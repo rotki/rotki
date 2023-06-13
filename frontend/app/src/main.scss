@@ -9,9 +9,15 @@ body {
   overflow-y: auto !important;
   overflow-x: hidden;
   scroll-behavior: smooth;
+  scroll-padding-top: 64px;
   height: calc(100vh - 64px);
   margin-top: 64px;
   background: var(--v-rotki-light-grey-base);
+
+  @media only screen and (max-width: 960px) {
+    height: calc(100vh - 56px);
+    margin-top: 56px;
+  }
 }
 
 .v-application {

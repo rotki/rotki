@@ -35,6 +35,7 @@ const props = withDefaults(
     loading?: boolean;
     loadingText?: string;
     options?: TablePagination<any> | null;
+    disableFloatingHeader?: boolean;
   }>(),
   {
     sortDesc: true,
@@ -46,7 +47,8 @@ const props = withDefaults(
     container: null,
     loading: false,
     loadingText: '',
-    options: () => null
+    options: () => null,
+    disableFloatingHeader: false
   }
 );
 
@@ -56,7 +58,7 @@ const frontendSettingsStore = useFrontendSettingsStore();
 const { itemsPerPage: itemsPerPageFromFrontendSetting } = storeToRefs(
   frontendSettingsStore
 );
-const { container, options } = toRefs(props);
+const { container, options, disableFloatingHeader } = toRefs(props);
 
 if (props.multiSort && props.mustSort) {
   logger.warn(
@@ -66,6 +68,7 @@ if (props.multiSort && props.mustSort) {
 }
 
 const tableRef = ref<any>(null);
+const cloneTableRef = ref<any>(null);
 const currentPage = ref<number>(1);
 const { footerProps } = useFooterProps();
 
@@ -141,103 +144,136 @@ onMounted(() => {
     onItemsPerPageChange(optionsVal.itemsPerPage);
   }
 });
+
+onMounted(() => {
+  if (!get(container) && !get(disableFloatingHeader)) {
+    watchEffect(onCleanup => {
+      const tableInstance = get(tableRef);
+      const cloneEl = get(cloneTableRef);
+      const tableEl = tableInstance.$el.querySelector('table');
+
+      const newSticky = new stickyTableHeader(tableEl, cloneEl, {
+        mobileBreakpoint: tableInstance.mobileBreakpoint
+      });
+
+      onCleanup(() => {
+        newSticky.destroy();
+      });
+    });
+  }
+});
+
+const { dark } = useTheme();
 </script>
 
 <template>
-  <v-data-table
-    ref="tableRef"
-    v-bind="rootAttrs"
-    :must-sort="mustSort"
-    :multi-sort="multiSort"
-    :sort-desc="sortDesc"
-    :items="items"
-    :item-class="itemClass"
-    :headers="headers"
-    :expanded="expanded"
-    :footer-props="footerProps"
-    :page.sync="currentPage"
-    :items-per-page="itemsPerPageUsed"
-    :hide-default-footer="hideDefaultFooter"
-    :loading="loading"
-    :loading-text="loadingText"
-    :options="options"
-    v-on="rootListeners"
-    @update:items-per-page="onItemsPerPageChange($event)"
-    @update:page="scrollToTop()"
-  >
-    <!-- Pass on all scoped slots -->
-    <template
-      v-for="slot in Object.keys($scopedSlots)"
-      :slot="slot"
-      slot-scope="scope"
+  <div>
+    <v-data-table
+      ref="tableRef"
+      v-bind="rootAttrs"
+      :must-sort="mustSort"
+      :multi-sort="multiSort"
+      :sort-desc="sortDesc"
+      :items="items"
+      :item-class="itemClass"
+      :headers="headers"
+      :expanded="expanded"
+      :footer-props="footerProps"
+      :page.sync="currentPage"
+      :items-per-page="itemsPerPageUsed"
+      :hide-default-footer="hideDefaultFooter"
+      :loading="loading"
+      :loading-text="loadingText"
+      :options="options"
+      v-on="rootListeners"
+      @update:items-per-page="onItemsPerPageChange($event)"
+      @update:page="scrollToTop()"
     >
-      <slot
-        :name="slot"
-        v-bind="
-          // @ts-ignore
-          scope
-        "
-      />
-    </template>
-
-    <!-- Pass on all named slots -->
-    <slot v-for="slot in Object.keys($slots)" :slot="slot" :name="slot" />
-
-    <template #footer.page-text="footerPageTextProps">
-      <div class="d-flex align-center items-page-select">
-        <span>{{ t('data_table.items_no') }}</span>
-        <v-select
-          v-if="footerPageTextProps.itemsLength > 0"
-          v-model="currentPage"
-          auto
-          hide-details
-          :disabled="footerPageTextProps.itemsLength <= itemsPerPageUsed"
-          :items="pageSelectorData(footerPageTextProps)"
-          item-value="value"
-          item-text="text"
-        />
-        <span v-else class="mr-1">{{ footerPageTextProps.itemsLength }}</span>
-        <span>
-          {{ t('common.of') }} {{ footerPageTextProps.itemsLength }}
-        </span>
-      </div>
-    </template>
-
-    <template
-      v-if="!hideDefaultFooter"
-      #top="{ pagination, options: opt, updateOptions }"
-    >
-      <v-data-footer
-        v-bind="footerProps"
-        :pagination="pagination"
-        :options="opt"
-        @update:options="updateOptions($event)"
+      <!-- Pass on all scoped slots -->
+      <template
+        v-for="slot in Object.keys($scopedSlots)"
+        :slot="slot"
+        slot-scope="scope"
       >
-        <template #page-text="footerPageTextProps">
-          <div class="d-flex align-center items-page-select">
-            <span>{{ t('data_table.items_no') }}</span>
-            <v-select
-              v-if="footerPageTextProps.itemsLength > 0"
-              v-model="currentPage"
-              auto
-              hide-details
-              :disabled="footerPageTextProps.itemsLength <= itemsPerPageUsed"
-              :items="pageSelectorData(footerPageTextProps)"
-              item-value="value"
-              item-text="text"
-            />
-            <span v-else class="mr-1">
-              {{ footerPageTextProps.itemsLength }}
-            </span>
-            <span>
-              {{ t('common.of') }} {{ footerPageTextProps.itemsLength }}
-            </span>
-          </div>
-        </template>
-      </v-data-footer>
-      <v-divider />
-    </template>
-  </v-data-table>
+        <slot
+          :name="slot"
+          v-bind="
+            // @ts-ignore
+            scope
+          "
+        />
+      </template>
+
+      <!-- Pass on all named slots -->
+      <slot v-for="slot in Object.keys($slots)" :slot="slot" :name="slot" />
+
+      <template #footer.page-text="footerPageTextProps">
+        <div class="d-flex align-center items-page-select">
+          <span>{{ t('data_table.items_no') }}</span>
+          <v-select
+            v-if="footerPageTextProps.itemsLength > 0"
+            v-model="currentPage"
+            auto
+            hide-details
+            :disabled="footerPageTextProps.itemsLength <= itemsPerPageUsed"
+            :items="pageSelectorData(footerPageTextProps)"
+            item-value="value"
+            item-text="text"
+          />
+          <span v-else class="mr-1">{{ footerPageTextProps.itemsLength }}</span>
+          <span>
+            {{ t('common.of') }} {{ footerPageTextProps.itemsLength }}
+          </span>
+        </div>
+      </template>
+
+      <template
+        v-if="!hideDefaultFooter"
+        #top="{ pagination, options: opt, updateOptions }"
+      >
+        <v-data-footer
+          v-bind="footerProps"
+          :pagination="pagination"
+          :options="opt"
+          @update:options="updateOptions($event)"
+        >
+          <template #page-text="footerPageTextProps">
+            <div class="d-flex align-center items-page-select">
+              <span>{{ t('data_table.items_no') }}</span>
+              <v-select
+                v-if="footerPageTextProps.itemsLength > 0"
+                v-model="currentPage"
+                auto
+                hide-details
+                :disabled="footerPageTextProps.itemsLength <= itemsPerPageUsed"
+                :items="pageSelectorData(footerPageTextProps)"
+                item-value="value"
+                item-text="text"
+              />
+              <span v-else class="mr-1">
+                {{ footerPageTextProps.itemsLength }}
+              </span>
+              <span>
+                {{ t('common.of') }} {{ footerPageTextProps.itemsLength }}
+              </span>
+            </div>
+          </template>
+        </v-data-footer>
+        <v-divider />
+      </template>
+    </v-data-table>
+    <div
+      class="clone v-data-table"
+      :class="dark ? 'theme--dark' : 'theme--light'"
+    >
+      <div class="v-data-table__wrapper clone__wrapper">
+        <table ref="cloneTableRef" class="clone__table" />
+        <div>
+          <v-progress-linear v-if="loading" indeterminate />
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
 
 <style scoped lang="scss">
@@ -261,6 +297,37 @@ onMounted(() => {
             display: block;
           }
         }
+      }
+    }
+  }
+}
+
+.clone {
+  z-index: 2;
+  position: relative;
+
+  &__wrapper {
+    position: fixed;
+    overflow: hidden;
+  }
+
+  &__table {
+    border-spacing: 0;
+    position: relative;
+
+    :deep(.v-data-table-header) {
+      background: var(--v-rotki-light-grey-base) !important;
+
+      th {
+        .v-icon {
+          color: inherit !important;
+        }
+      }
+    }
+
+    &:empty {
+      + div {
+        display: none;
       }
     }
   }

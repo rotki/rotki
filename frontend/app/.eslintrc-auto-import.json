@@ -693,6 +693,7 @@
     "useExchangeApiKeysForm": true,
     "useEditBalancesSnapshotForm": true,
     "useEditLocationsSnapshotForm": true,
-    "useEditTotalSnapshotForm": true
+    "useEditTotalSnapshotForm": true,
+    "stickyTableHeader": true
   }
 }
