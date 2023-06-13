@@ -41,6 +41,7 @@ const {
   historyEventTypesData,
   historyEventSubTypesData,
   historyEventTypeGlobalMapping,
+  historyEventTypePerProtocolMapping,
   historyEventProductsMapping
 } = useHistoryEventMappings();
 
@@ -458,16 +459,30 @@ const historyEventSubTypeFilteredData: ComputedRef<ActionDataEntry[]> =
   computed(() => {
     const eventTypeVal = get(eventType);
     const allData = get(historyEventSubTypesData);
-    const mapping = get(historyEventTypeGlobalMapping);
+    const globalMapping = get(historyEventTypeGlobalMapping);
+    const perProtocolMapping = get(historyEventTypePerProtocolMapping);
+    const counterpartyVal = get(counterparty);
+    const locationVal = get(location);
 
     if (!eventTypeVal) {
       return allData;
     }
 
-    const subTypeMapping = Object.keys(mapping[eventTypeVal]);
+    const globalMappingKeys = Object.keys(globalMapping[eventTypeVal]);
+    let perProtocolMappingKeys: string[] = [];
 
-    return allData.filter((data: ActionDataEntry) =>
-      subTypeMapping.includes(data.identifier)
+    if (locationVal && counterpartyVal) {
+      const perProtocolMappingObj =
+        perProtocolMapping?.[locationVal]?.[counterpartyVal]?.[eventTypeVal];
+      if (perProtocolMappingObj) {
+        perProtocolMappingKeys = Object.keys(perProtocolMappingObj);
+      }
+    }
+
+    return allData.filter(
+      (data: ActionDataEntry) =>
+        globalMappingKeys.includes(data.identifier) ||
+        perProtocolMappingKeys.includes(data.identifier)
     );
   });
 

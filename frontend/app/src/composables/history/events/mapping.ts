@@ -57,9 +57,9 @@ export const useHistoryEventMappings = createSharedComposable(() => {
   });
 
   const historyEventSubTypes: ComputedRef<string[]> = computed(() =>
-    Object.values(get(historyEventTypeGlobalMapping)).flatMap(item =>
-      Object.keys(item)
-    )
+    Object.values(get(historyEventTypeGlobalMapping))
+      .flatMap(item => Object.keys(item))
+      .filter(uniqueStrings)
   );
 
   const historyEventSubTypesData = useArrayMap(
