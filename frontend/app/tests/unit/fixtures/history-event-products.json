@@ -1,0 +1,19 @@
+{
+  "result": {
+    "mappings": {
+      "convex": [
+        "gauge",
+        "staking"
+      ],
+      "curve": [
+        "gauge"
+      ]
+    },
+    "products": [
+      "pool",
+      "staking",
+      "gauge"
+    ]
+  },
+  "message": ""
+}

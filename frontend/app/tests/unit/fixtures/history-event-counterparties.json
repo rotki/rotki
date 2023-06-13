@@ -1,0 +1,40 @@
+{
+  "result": [
+    {
+      "identifier": "gitcoin",
+      "label": "Gitcoin",
+      "image": "gitcoin.svg"
+    },
+    {
+      "identifier": "1inch-v1",
+      "label": "1inch",
+      "image": "1inch.svg"
+    },
+    {
+      "identifier": "convex",
+      "label": "Convex",
+      "image": "convex.jpeg"
+    },
+    {
+      "identifier": "curve",
+      "label": "Curve.fi",
+      "image": "curve.png"
+    },
+    {
+      "identifier": "yearn-v2",
+      "label": "Yearn",
+      "image": "yearn_vaults.svg"
+    },
+    {
+      "identifier": "yearn-v1",
+      "label": "Yearn",
+      "image": "yearn_vaults.svg"
+    },
+    {
+      "identifier": "1inch",
+      "label": "1inch",
+      "image": "1inch.svg"
+    }
+  ],
+  "message": ""
+}

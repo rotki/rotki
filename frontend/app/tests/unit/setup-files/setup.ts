@@ -58,6 +58,7 @@ beforeAll(() => {
       ...mod,
       useI18n: () => ({
         t: mockT,
+        te: mockT,
         tc: mockTc
       })
     };
