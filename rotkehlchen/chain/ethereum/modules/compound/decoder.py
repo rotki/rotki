@@ -66,6 +66,7 @@ class CompoundDecoder(DecoderInterface):
             msg_aggregator=msg_aggregator,
         )
         self.eth = A_ETH.resolve_to_crypto_asset()
+        self.ceth = EvmToken('eip155:1/erc20:0x4Ddc2D193948926D02f9B1fE9e1daa0718270ED5')
 
     def _decode_mint(
             self,
@@ -218,7 +219,7 @@ class CompoundDecoder(DecoderInterface):
 
     def _decode_liquidate(
             self,
-            transaction_hash: 'EVMTxHash',
+            transaction: EvmTransaction,
             tx_log: 'EvmTxReceiptLog',
             decoded_events: list['EvmEvent'],
             all_logs: list['EvmTxReceiptLog'],
@@ -243,31 +244,38 @@ class CompoundDecoder(DecoderInterface):
             asset=collateral_ctoken,
         )
         # use the logs to know what token was getting repaid for the position. We have the ctoken
-        # from the event log but not the underlying token
-        repaying_token = None
-        for event_log in all_logs:
-            if (
-                event_log.topics[0] == ERC20_OR_ERC721_TRANSFER and
-                event_log.topics[1] == tx_log.data[0:32] and
-                hex_or_bytes_to_address(event_log.topics[2]) == tx_log.address
-            ):
-                repaying_token_address = event_log.address
-                repaying_token = get_or_create_evm_token(
-                    userdb=self.base.database,
-                    evm_address=repaying_token_address,
-                    chain_id=self.base.evm_inquirer.chain_id,
-                    token_kind=EvmTokenKind.ERC20,
-                    evm_inquirer=self.base.evm_inquirer,
-                )
-                break
+        # from the event log but not the underlying token. In the case of ETH we need to check if the
+        # value sent covers the repaid amount and the token is cETH.
+        repaying_asset = None
+        if (
+            transaction.value >= repay_amount_raw and
+            self.ceth.evm_address == tx_log.address
+        ):
+            repaying_asset = self.eth
+        else: 
+            for event_log in all_logs:
+                if (
+                    event_log.topics[0] == ERC20_OR_ERC721_TRANSFER and
+                    event_log.topics[1] == tx_log.data[0:32] and
+                    hex_or_bytes_to_address(event_log.topics[2]) == tx_log.address
+                ):
+                    repaying_token_address = event_log.address
+                    repaying_asset = get_or_create_evm_token(
+                        userdb=self.base.database,
+                        evm_address=repaying_token_address,
+                        chain_id=self.base.evm_inquirer.chain_id,
+                        token_kind=EvmTokenKind.ERC20,
+                        evm_inquirer=self.base.evm_inquirer,
+                    )
+                    break
 
-        if repaying_token is None:
-            log.error(f'Failed to decode compound liquidation at {transaction_hash.hex()}')
+        if repaying_asset is None:
+            log.error(f'Failed to decode compound liquidation at {transaction.tx_hash.hex()}')
             return DEFAULT_DECODING_OUTPUT
 
         repaid_amount = asset_normalized_value(
             amount=repay_amount_raw,
-            asset=repaying_token,
+            asset=repaying_asset,
         )
         for event in decoded_events:
             if (
@@ -279,17 +287,17 @@ class CompoundDecoder(DecoderInterface):
                 event.asset == collateral_ctoken
             ):
                 event.event_subtype = HistoryEventSubType.LIQUIDATE
-                event.notes = f'Lost {seized_collateral_amount} {collateral_ctoken.symbol} in a compound forced liquidation to repay {repaid_amount} {repaying_token.symbol}'  # noqa: E501
+                event.notes = f'Lost {seized_collateral_amount} {collateral_ctoken.symbol} in a compound forced liquidation to repay {repaid_amount} {repaying_asset.symbol}'  # noqa: E501
                 event.counterparty = CPT_COMPOUND
             elif (
                 event.event_type == HistoryEventType.SPEND and
                 event.event_subtype == HistoryEventSubType.PAYBACK_DEBT and
                 event.location_label == liquidator_address and
                 event.balance.amount == repaid_amount and
-                event.asset == repaying_token and
+                event.asset == repaying_asset and
                 event.counterparty == CPT_COMPOUND
             ):
-                event.notes = f'Repay {repaid_amount} {repaying_token.symbol} in a compound liquidation'  # noqa: E501
+                event.notes = f'Repay {repaid_amount} {repaying_asset.symbol} in a compound liquidation'  # noqa: E501
                 event.extra_data = {'in_liquidation': True}
             elif (
                 event.event_type == HistoryEventType.RECEIVE and
@@ -321,7 +329,7 @@ class CompoundDecoder(DecoderInterface):
 
         if context.tx_log.topics[0] == LIQUIDATE_BORROW:
             return self._decode_liquidate(
-                transaction_hash=context.transaction.tx_hash,
+                transaction=context.transaction,
                 tx_log=context.tx_log,
                 decoded_events=context.decoded_events,
                 all_logs=context.all_logs,

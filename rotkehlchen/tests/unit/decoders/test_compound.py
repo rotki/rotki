@@ -13,6 +13,7 @@ from rotkehlchen.constants.assets import (
     A_CDAI,
     A_CETH,
     A_COMP,
+    A_CUSDC,
     A_DAI,
     A_ETH,
     A_USDC,
@@ -595,5 +596,36 @@ def test_compound_liquidator_side(
             notes='Collect 258831.42924011 cBAT for performing a compound liquidation',
             counterparty=CPT_COMPOUND,
             address=string_to_evm_address('0x9bf62c518ffe86bD43D57c7026aA1A4fBeA83b15'),
+        ),
+    ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0xC440f3C87DC4B6843CABc413916220D4f4FeD117']])
+def test_compound_liquidation_eth(
+        database: 'DBHandler',
+        ethereum_inquirer: 'EthereumInquirer',
+        ethereum_accounts,
+) -> None:
+    tx_hash = deserialize_evm_tx_hash('0x160c0e6db0df5ea0c1cc9b1b31bd90c842ef793c9b2ab496efdc62bdd80eeb52')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    assert events == [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=34,
+            timestamp=TimestampMS(1586159213000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.LIQUIDATE,
+            asset=A_CUSDC,
+            balance=Balance(amount=FVal(13.06078395)),
+            location_label=ethereum_accounts[0],
+            notes='Lost 13.06078395 cUSDC in a compound forced liquidation to repay 0.00168867571834735 ETH',  # noqa: E501
+            counterparty=CPT_COMPOUND,
+            address=string_to_evm_address('0x89c745c97495644A44D19654C8AdCaAaCB7Ec263'),
         ),
     ]
