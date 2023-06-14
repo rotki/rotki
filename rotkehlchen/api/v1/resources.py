@@ -104,6 +104,7 @@ from rotkehlchen.api.v1.schemas import (
     ManualPriceDeleteSchema,
     ManualPriceRegisteredSchema,
     ManualPriceSchema,
+    ModuleHistoryProcessingSchema,
     NameDeleteSchema,
     NamedEthereumModuleDataSchema,
     NamedOracleCacheCreateSchema,
@@ -211,7 +212,11 @@ from rotkehlchen.types import (
     UserNote,
 )
 
-from .types import EvmPendingTransactionDecodingApiData, EvmTransactionDecodingApiData
+from .types import (
+    EvmPendingTransactionDecodingApiData,
+    EvmTransactionDecodingApiData,
+    ModuleWithStats,
+)
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.structures.evm_event import EvmEvent
@@ -1911,25 +1916,6 @@ class AaveBalancesResource(BaseMethodView):
         return self.rest_api.get_aave_balances(async_query=async_query)
 
 
-class AaveStatsResource(BaseMethodView):
-
-    get_schema = HistoryProcessingSchema()
-
-    @require_loggedin_user()
-    @use_kwargs(get_schema, location='json_and_query')
-    def get(
-            self,
-            async_query: bool,
-            from_timestamp: Timestamp,
-            to_timestamp: Timestamp,
-    ) -> Response:
-        return self.rest_api.get_aave_stats(
-            async_query=async_query,
-            from_timestamp=from_timestamp,
-            to_timestamp=to_timestamp,
-        )
-
-
 class CompoundBalancesResource(BaseMethodView):
 
     get_schema = AsyncQueryArgumentSchema()
@@ -1938,28 +1924,6 @@ class CompoundBalancesResource(BaseMethodView):
     @use_kwargs(get_schema, location='json_and_query')
     def get(self, async_query: bool) -> Response:
         return self.rest_api.get_compound_balances(async_query=async_query)
-
-
-class CompoundStatsResource(BaseMethodView):
-    """
-    TODO: @yabirgb: Move this endpoint, aave stats and liquity to a common resource
-    """
-
-    get_schema = HistoryProcessingSchema()
-
-    @require_loggedin_user()
-    @use_kwargs(get_schema, location='json_and_query')
-    def get(
-            self,
-            async_query: bool,
-            from_timestamp: Timestamp,
-            to_timestamp: Timestamp,
-    ) -> Response:
-        return self.rest_api.get_compound_stats(
-            async_query=async_query,
-            from_timestamp=from_timestamp,
-            to_timestamp=to_timestamp,
-        )
 
 
 class YearnVaultsBalancesResource(BaseMethodView):
@@ -2133,6 +2097,37 @@ class LiquityStakingStats(BaseMethodView):
     @use_kwargs(get_schema, location='json_and_query')
     def get(self, async_query: bool) -> Response:
         return self.rest_api.get_liquity_stats(async_query=async_query)
+
+
+class ModuleStatsResource(BaseMethodView):
+
+    get_schema = ModuleHistoryProcessingSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(get_schema, location='json_and_query_and_view_args')
+    def get(
+            self,
+            module: ModuleWithStats,
+            async_query: bool,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+    ) -> Response:
+        if module in (ModuleWithStats.AAVE, ModuleWithStats.COMPOUND):
+            return self.rest_api.get_module_stats_using_balances(
+                async_query=async_query,
+                module=module.serialize(),
+                from_timestamp=from_timestamp,
+                to_timestamp=to_timestamp,
+            )
+
+        if module == ModuleWithStats.LIQUITY:
+            return self.rest_api.get_liquity_stats(async_query=async_query)
+
+        # this shouldn't happen since we have validation in marshmallow
+        return api_response(wrap_in_fail_result(
+            message='unknown module provided for stats',
+            status_code=HTTPStatus.BAD_REQUEST,
+        ))
 
 
 class LiquityStabilityPoolResource(BaseMethodView):

@@ -2362,17 +2362,18 @@ class RestAPI():
         )
 
     @async_api_call()
-    def get_aave_stats(
+    def get_module_stats_using_balances(
             self,
+            module: Literal['aave', 'compound'],
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
     ) -> dict[str, Any]:
         return self._eth_module_query(
-            module_name='aave',
+            module_name=module,
             method='get_stats_for_addresses',
             # We need to query defi balances before since defi_balances must be populated
             query_specific_balances_before=['defi'],
-            addresses=self.rotkehlchen.chains_aggregator.queried_addresses_for_module('aave'),
+            addresses=self.rotkehlchen.chains_aggregator.queried_addresses_for_module(module),
             from_timestamp=from_timestamp,
             to_timestamp=to_timestamp,
             # Giving the defi balances as a lambda function here so that they
@@ -2389,26 +2390,6 @@ class RestAPI():
             method='get_balances',
             # We need to query defi balances before since defi_balances must be populated
             query_specific_balances_before=['defi'],
-            # Giving the defi balances as a lambda function here so that they
-            # are retrieved only after we are sure the defi balances have been
-            # queried.
-            given_defi_balances=lambda: self.rotkehlchen.chains_aggregator.defi_balances,
-        )
-
-    @async_api_call()
-    def get_compound_stats(
-            self,
-            from_timestamp: Timestamp,
-            to_timestamp: Timestamp,
-    ) -> dict[str, Any]:
-        return self._eth_module_query(
-            module_name='compound',
-            method='get_stats',
-            # We need to query defi balances before since defi_balances must be populated
-            query_specific_balances_before=['defi'],
-            addresses=self.rotkehlchen.chains_aggregator.queried_addresses_for_module('compound'),
-            from_timestamp=from_timestamp,
-            to_timestamp=to_timestamp,
             # Giving the defi balances as a lambda function here so that they
             # are retrieved only after we are sure the defi balances have been
             # queried.

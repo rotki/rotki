@@ -1,8 +1,10 @@
 from dataclasses import dataclass
+from enum import auto
 from typing import Literal, Optional, TypedDict
 
 from rotkehlchen.accounting.structures.base import HistoryBaseEntryType
 from rotkehlchen.types import SUPPORTED_CHAIN_IDS, ChecksumEvmAddress, EVMTxHash
+from rotkehlchen.utils.mixins.enums import SerializableEnumNameMixin
 
 
 class EvmTransactionDecodingApiData(TypedDict):
@@ -19,3 +21,10 @@ class EvmPendingTransactionDecodingApiData(TypedDict):
 class IncludeExcludeFilterData:
     values: list[HistoryBaseEntryType]
     operator: Literal['IN', 'NOT IN'] = 'IN'
+
+
+class ModuleWithStats(SerializableEnumNameMixin):
+    """Used to validate the used module to query stats at the API stats endpoint"""
+    AAVE = auto()
+    COMPOUND = auto()
+    LIQUITY = auto()

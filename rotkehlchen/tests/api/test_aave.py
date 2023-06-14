@@ -25,7 +25,6 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_response_with_result,
     wait_for_async_task,
 )
-from rotkehlchen.tests.utils.decoders import patch_decoder_reload_data
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 from rotkehlchen.types import ChecksumEvmAddress, deserialize_evm_tx_hash
 
@@ -235,7 +234,7 @@ def test_query_aave_defi_borrowing(
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
 def test_events_aave_v2(rotkehlchen_api_server: 'APIServer') -> None:
     """
-    Check that the endpoing for aave stats work properly and that the results are
+    Check that the endpoint for aave stats work properly and that the results are
     correct for a subset of aave v2 events
     """
     ethereum_transaction_decoder = rotkehlchen_api_server.rest_api.rotkehlchen.chains_aggregator.ethereum.transactions_decoder  # noqa: E501
@@ -245,15 +244,14 @@ def test_events_aave_v2(rotkehlchen_api_server: 'APIServer') -> None:
         deserialize_evm_tx_hash('0x819ca151c78219bbb4afdc337cc160efd55205dfe5ca151caf4661a517a41807'),
         deserialize_evm_tx_hash('0x560cfb03e9488497c8d0295b332452c42f153dafbcb3abf32441d154ddb39087'),
     ]
-    with patch_decoder_reload_data():
-        ethereum_transaction_decoder.decode_transaction_hashes(
-            ignore_cache=True,
-            tx_hashes=tx_hashes,
-        )
-
+    ethereum_transaction_decoder.decode_transaction_hashes(
+        ignore_cache=True,
+        tx_hashes=tx_hashes,
+    )
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
-        'aavestatsresource',
+        'modulestatsresource',
+        module='aave',
     ))
     result = assert_proper_response_with_result(response)
     assert result == {

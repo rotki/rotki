@@ -77,7 +77,7 @@ def test_compound_events_stats(
         premium=Premium(rotki_premium_credentials),
         msg_aggregator=database.msg_aggregator,
     )
-    stats = compound.get_stats(
+    stats = compound.get_stats_for_addresses(
         addresses=ethereum_accounts,
         from_timestamp=Timestamp(0),
         to_timestamp=ts_now(),

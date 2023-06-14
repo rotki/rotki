@@ -258,7 +258,8 @@ def test_staking_stats(rotkehlchen_api_server, ethereum_accounts):
     async_query = random.choice([False])
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
-        'liquitystakingstats',
+        'modulestatsresource',
+        module='liquity',
     ), json={'async_query': async_query})
     if async_query:
         task_id = assert_ok_async_response(response)
