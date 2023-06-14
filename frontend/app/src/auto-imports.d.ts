@@ -14,6 +14,7 @@ declare global {
   const EffectScope: typeof import('vue')['EffectScope']
   const KEY_BACKEND_URL: typeof import('./utils/account-management')['KEY_BACKEND_URL']
   const KEY_BACKEND_URL_SESSION_ONLY: typeof import('./utils/account-management')['KEY_BACKEND_URL_SESSION_ONLY']
+  const LimitedParallelizationQueue: typeof import('./utils/limited-parallelization-queue')['LimitedParallelizationQueue']
   const LogLevel: typeof import('./utils/log-level')['LogLevel']
   const NoPrice: typeof import('./utils/bignumbers')['NoPrice']
   const NoteType: typeof import('./composables/history/events/notes')['NoteType']
@@ -712,6 +713,7 @@ declare module 'vue' {
     readonly EffectScope: UnwrapRef<typeof import('vue')['EffectScope']>
     readonly KEY_BACKEND_URL: UnwrapRef<typeof import('./utils/account-management')['KEY_BACKEND_URL']>
     readonly KEY_BACKEND_URL_SESSION_ONLY: UnwrapRef<typeof import('./utils/account-management')['KEY_BACKEND_URL_SESSION_ONLY']>
+    readonly LimitedParallelizationQueue: UnwrapRef<typeof import('./utils/limited-parallelization-queue')['LimitedParallelizationQueue']>
     readonly LogLevel: UnwrapRef<typeof import('./utils/log-level')['LogLevel']>
     readonly NoPrice: UnwrapRef<typeof import('./utils/bignumbers')['NoPrice']>
     readonly NoteType: UnwrapRef<typeof import('./composables/history/events/notes')['NoteType']>
@@ -1404,6 +1406,7 @@ declare module '@vue/runtime-core' {
     readonly EffectScope: UnwrapRef<typeof import('vue')['EffectScope']>
     readonly KEY_BACKEND_URL: UnwrapRef<typeof import('./utils/account-management')['KEY_BACKEND_URL']>
     readonly KEY_BACKEND_URL_SESSION_ONLY: UnwrapRef<typeof import('./utils/account-management')['KEY_BACKEND_URL_SESSION_ONLY']>
+    readonly LimitedParallelizationQueue: UnwrapRef<typeof import('./utils/limited-parallelization-queue')['LimitedParallelizationQueue']>
     readonly LogLevel: UnwrapRef<typeof import('./utils/log-level')['LogLevel']>
     readonly NoPrice: UnwrapRef<typeof import('./utils/bignumbers')['NoPrice']>
     readonly NoteType: UnwrapRef<typeof import('./composables/history/events/notes')['NoteType']>
