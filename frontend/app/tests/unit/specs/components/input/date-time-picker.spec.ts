@@ -94,6 +94,9 @@ describe('DateTimePicker.vue', () => {
 
     await wrapper.find('input').setValue('12/12/2021 12:12:123');
     await wrapper.vm.$nextTick();
+    await wrapper.find('input').trigger('blur');
+    await wrapper.find('input').trigger('focus');
+    await wrapper.vm.$nextTick();
     expect((wrapper.find('input').element as HTMLInputElement).value).toBe(
       '12/12/2021 12:12:12'
     );
@@ -153,7 +156,7 @@ describe('DateTimePicker.vue', () => {
 
     await wrapper.find('input').setValue('2023/12/12 23:59:59');
     await wrapper.vm.$nextTick();
-    expect(wrapper.emitted().input?.[1]).toEqual(['12/12/2023 23:59:59']);
+    expect(wrapper.emitted().input?.[2]).toEqual(['12/12/2023 23:59:59']);
   });
 
   test('should adjust the timezone', async () => {

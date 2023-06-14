@@ -451,7 +451,7 @@ onMounted(setEditMode);
       </div>
     </div>
 
-    <v-divider class="mb-6 mt-2" />
+    <v-divider class="mb-6 mt-8" />
 
     <v-row class="mb-2">
       <v-col cols="12" md="6">
