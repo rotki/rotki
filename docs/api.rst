@@ -6596,9 +6596,10 @@ Getting Aave stats
    :resjson object result: A mapping of accounts to the Aave history report of each account. If an account is not in the mapping rotki does not see anything ever deposited in Aave for it.
    :resjson object total_earned_interest: A mapping of asset identifier to total earned (amount + usd_value mapping) for each asset's interest earnings. The total earned is essentially the sum of all interest payments plus the difference between ``balanceOf`` and ``principalBalanceOf`` for each asset.
    :resjson object total_lost: A mapping of asset identifier to total lost (amount + usd_value mapping) for each asset. The total losst for each asset is essentially the accrued interest from borrowing and the collateral lost from liquidations.
-   :resjson object total_earned_liquidations: A mapping of asset identifier to total earned (amount + usd_value mapping) for each repaid assets during liquidations.
+   :resjson object total_earned_liquidations: A mapping of asset identifier to total earned (amount + usd_value mapping) for each repaid asset during liquidations.
 
    :statuscode 200: Aave history successfully queried.
+   :statuscode 400: Requested module is not allowed to query statistics.
    :statuscode 409: No user is currently logged in or currently logged in user does not have a premium subscription. Or aave module is not activated.
    :statuscode 500: Internal rotki error
    :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
@@ -6911,6 +6912,100 @@ Getting Compound balances
    :statuscode 409: User is not logged in. Or compound module is not activated.
    :statuscode 500: Internal rotki error.
    :statuscode 502: An external service used in the query such as etherscan or the graph node could not be reached or returned unexpected response.
+
+Getting compound statistics
+=============================
+
+.. http:get:: /api/(version)/blockchains/ETH/modules/compound/stats
+
+   .. note::
+      This endpoint is only available for premium users
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
+
+   .. note::
+      This endpoint also accepts parameters as query arguments.
+
+   Doing a GET on the compound stats resource will return information related profit and loss of the events present in the database.
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/blockchains/ETH/modules/compound/stats HTTP/1.1
+      Host: localhost:5042
+
+   :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
+   :reqjson int from_timestamp: Timestamp from which to query compound historical data. If not given 0 is implied.
+   :reqjson int to_timestamp: Timestamp until which to query compound historical data. If not given current timestamp is implied.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "result":{
+          "interest_profit":{
+            "0xA0B6B7fEa3a3ce3b9e6512c0c5A157a385e81056":{
+              "eip155:1/erc20:0xc00e94Cb662C3520282E6f5717214004A7f26888":{
+                "amount":"3.5",
+                "usd_value":"892.5"
+              },
+              "eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F":{
+                "amount":"250",
+                "usd_value":"261.1"
+              }
+            },
+            "0x1D7D7Eb7035B42F39f200AA3af8a65BC3475A237":{
+              "eip155:1/erc20:0xE41d2489571d322189246DaFA5ebDe1F4699F498":{
+                "amount":"0.55",
+                "usd_value":"86.1"
+              }
+            }
+          },
+          "debt_loss":{
+            "0x1D7D7Eb7035B42F39f200AA3af8a65BC3475A237":{
+              "ETH":{
+                "amount":"0.1",
+                "usd_value":"30.5"
+              }
+            }
+          },
+          "liquidation_profit":{
+            "0x1D7D7Eb7035B42F39f200AA3af8a65BC3475A237":{
+              "ETH":{
+                "amount":"0.00005",
+                "usd_value":"0.023"
+              }
+            }
+          },
+          "rewards":{
+            "0xA0B6B7fEa3a3ce3b9e6512c0c5A157a385e81056":{
+              "eip155:1/erc20:0xc00e94Cb662C3520282E6f5717214004A7f26888":{
+                "amount":"3.5",
+                "usd_value":"892.5"
+              }
+            }
+          }
+        },
+        "message":""
+      }
+
+   :resjson object interest_profit: A mapping of addresses to mappings of totals assets earned from lending over a given period
+   :resjson object debt_loss: A mapping of addresses to mappings of totals assets lost to repayment fees and liquidation over a given period.
+   :resjson object liquidation_profit: A mapping of addresses to mappings of totals assets gained thanks to liquidation repayments over a given period.
+   :resjson object rewards: A mapping of addresses to mappings of totals assets (only COMP atm) gained as a reward for using Compound over a given period.
+
+   :statuscode 200: Compound statistics succesfully queried.
+   :statuscode 400: Requested module is not allowed to query statistics.
+   :statuscode 409: User is not logged in. Or compound module is not activated.
+   :statuscode 500: Internal rotki error.
+
 
 Getting Liquity balances
 ========================
@@ -7297,6 +7392,7 @@ Getting Liquity staking information
    :resjson list[object] stability_pool_gains: Breakdown by asset of the gains claimed by depositing in the stability pool.
 
    :statuscode 200: Liquity staking stats successfully queried.
+   :statuscode 400: Requested module is not allowed to query statistics.
    :statuscode 409: User is not logged in or Liquity module is not activated.
    :statuscode 500: Internal rotki error.
 

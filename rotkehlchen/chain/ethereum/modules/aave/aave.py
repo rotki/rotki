@@ -355,7 +355,7 @@ class Aave(EthereumModule):
         plus the difference between ``balanceOf`` and ``principalBalanceOf`` for each asset.
         - total_lost: The total losst for each asset is essentially the accrued interest from
         borrowing and the collateral lost from liquidations.
-        - total_earned_liquidations: A mapping of asset identifier for each repaid assets during
+        - total_earned_liquidations: A mapping of asset identifier for each repaid asset during
         liquidations.
         """
         aave_balances = self.get_balances(given_defi_balances)

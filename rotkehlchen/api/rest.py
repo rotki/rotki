@@ -2368,6 +2368,10 @@ class RestAPI():
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
     ) -> dict[str, Any]:
+        """
+        Query the provided module for statistics using the tracked addresses for such module.
+        This function uses the defi balances to enrich statistics.
+        """
         return self._eth_module_query(
             module_name=module,
             method='get_stats_for_addresses',
