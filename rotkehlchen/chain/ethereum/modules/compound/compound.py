@@ -261,10 +261,9 @@ class Compound(EthereumModule):
                 loss_assets[address][event.asset] += event.balance
                 liquidation_profit[address][event.asset] += event.balance
 
-        # iterate the current balances to update the profit and loss
-        # that comes from querying the token information and also the
-        # pending compound rewards
         for address, balance_entry in balances.items():
+            # iterate the lending balances to calculate profit based on the current status
+            # after the last event
             for asset, entry in balance_entry['lending'].items():
                 profit_amount = (
                     profit_so_far[address][asset].amount +
@@ -284,6 +283,8 @@ class Compound(EthereumModule):
                     usd_value=profit_amount * usd_price,
                 )
 
+            # iterate the borrowing balances to calculate loss based on the current status
+            # after the last event
             for asset, entry in balance_entry['borrowing'].items():
                 remaining = entry.balance + loss_assets[address][asset]
                 if remaining.amount < ZERO:
@@ -295,6 +296,7 @@ class Compound(EthereumModule):
                         amount=amount, usd_value=amount * Inquirer().find_usd_price(asset),
                     )
 
+            # add pending rewards not collected to the reward assets
             for asset, entry in balance_entry['rewards'].items():
                 rewards_assets[address][asset] += entry.balance
 
