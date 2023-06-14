@@ -2089,16 +2089,6 @@ class LiquityStakingResource(BaseMethodView):
         return self.rest_api.get_liquity_staked(async_query=async_query)
 
 
-class LiquityStakingStats(BaseMethodView):
-
-    get_schema = AsyncQueryArgumentSchema()
-
-    @require_premium_user(active_check=False)
-    @use_kwargs(get_schema, location='json_and_query')
-    def get(self, async_query: bool) -> Response:
-        return self.rest_api.get_liquity_stats(async_query=async_query)
-
-
 class ModuleStatsResource(BaseMethodView):
 
     get_schema = ModuleHistoryProcessingSchema()
