@@ -126,7 +126,8 @@ def test_events_compound(rotkehlchen_api_server: 'APIServer') -> None:
     )
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
-        'compoundstatsresource',
+        'modulestatsresource',
+        module='compound',
     ))
     result = assert_proper_response_with_result(response)
     assert result == {

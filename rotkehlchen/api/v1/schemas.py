@@ -127,7 +127,7 @@ from .fields import (
     TimestampUntilNowField,
     XpubField,
 )
-from .types import EvmPendingTransactionDecodingApiData, IncludeExcludeFilterData
+from .types import EvmPendingTransactionDecodingApiData, IncludeExcludeFilterData, ModuleWithStats
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.aggregator import ChainsAggregator
@@ -1415,6 +1415,10 @@ class StatisticsValueDistributionSchema(Schema):
 class HistoryProcessingSchema(AsyncQueryArgumentSchema):
     from_timestamp = TimestampField(load_default=Timestamp(0))
     to_timestamp = TimestampField(load_default=ts_now)
+
+
+class ModuleHistoryProcessingSchema(HistoryProcessingSchema):
+    module = SerializableEnumField(enum_class=ModuleWithStats, required=True)
 
 
 class HistoryProcessingExportSchema(HistoryProcessingSchema):

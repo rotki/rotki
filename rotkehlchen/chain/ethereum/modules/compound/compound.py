@@ -300,7 +300,7 @@ class Compound(EthereumModule):
 
         return profit_so_far, loss_so_far, liquidation_profit, rewards_assets
 
-    def get_stats(
+    def get_stats_for_addresses(
             self,
             given_defi_balances: GIVEN_DEFI_BALANCES,
             addresses: list[ChecksumEvmAddress],
