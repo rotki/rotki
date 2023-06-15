@@ -25,9 +25,10 @@ import { Module } from '@/types/modules';
 import { type ActionStatus } from '@/types/action';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 
-export const useHistoryTransactions = () => {
+export const useHistoryTransactions = createSharedComposable(() => {
   const { t } = useI18n();
   const { notify } = useNotificationsStore();
+  const queue = new LimitedParallelizationQueue(4);
 
   const {
     fetchEvmTransactionsTask,
@@ -79,7 +80,6 @@ export const useHistoryTransactions = () => {
         CollectionResponse<EntryWithMeta<EvmTransaction>>,
         TaskMeta
       >(taskId, taskType, taskMeta, true);
-      startPromise(reDecodeMissingTransactionEventsTask(account));
       return true;
     } catch (e: any) {
       if (e instanceof BackendCancelledTaskError) {
@@ -91,7 +91,7 @@ export const useHistoryTransactions = () => {
           message: t('actions.transactions.error.description', {
             error: e,
             address: account.address,
-            chain: account.evmChain
+            chain: toHumanReadable(account.evmChain)
           }).toString(),
           display: true
         });
@@ -102,6 +102,24 @@ export const useHistoryTransactions = () => {
       );
     }
     return false;
+  };
+
+  const syncAndRedecode = async (account: EvmChainAddress): Promise<void> => {
+    const success = await syncTransactionTask(account);
+    if (success) {
+      queue.queue(account.address + account.evmChain, () =>
+        reDecodeMissingTransactionEventsTask(account)
+      );
+    }
+  };
+
+  const syncAccountsInChunks = async (
+    accounts: EvmChainAddress[]
+  ): Promise<void> => {
+    const chunks = chunkArray(accounts, 4);
+    for (const chunk of chunks) {
+      await Promise.all(chunk.map(syncAndRedecode));
+    }
   };
 
   const refreshTransactions = async (
@@ -129,7 +147,7 @@ export const useHistoryTransactions = () => {
 
     try {
       await Promise.all([
-        ...txAccounts.map(syncTransactionTask),
+        syncAccountsInChunks(txAccounts),
         queryOnlineEvent(OnlineHistoryEventsQueryType.ETH_WITHDRAWALS),
         queryOnlineEvent(OnlineHistoryEventsQueryType.BLOCK_PRODUCTIONS),
         queryOnlineEvent(OnlineHistoryEventsQueryType.EXCHANGES)
@@ -373,4 +391,4 @@ export const useHistoryTransactions = () => {
     deleteTransactionEvent,
     addTransactionHash
   };
-};
+});

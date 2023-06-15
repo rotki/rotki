@@ -694,6 +694,7 @@
     "useEditBalancesSnapshotForm": true,
     "useEditLocationsSnapshotForm": true,
     "useEditTotalSnapshotForm": true,
-    "stickyTableHeader": true
+    "stickyTableHeader": true,
+    "LimitedParallelizationQueue": true
   }
 }
