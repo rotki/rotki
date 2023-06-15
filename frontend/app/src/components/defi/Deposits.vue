@@ -232,13 +232,19 @@ const transactionEventProtocols: ComputedRef<string[]> = computed(() => {
       />
       <yearn-vaults-profit-details
         v-if="
-          isYearnVaults || isYearnVaultsV2 || selectedProtocols.length === 0
+          (isYearnVaults ||
+            isYearnVaultsV2 ||
+            selectedProtocols.length === 0) &&
+          yearnProfit.length > 0
         "
         class="mt-8"
         :profit="yearnProfit"
       />
       <aave-earned-details
-        v-if="isAave || selectedProtocols.length === 0"
+        v-if="
+          (isAave || selectedProtocols.length === 0) &&
+          totalEarnedInAave.length > 0
+        "
         class="mt-8"
         :profit="totalEarnedInAave"
       />

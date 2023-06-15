@@ -98,12 +98,6 @@ export const useDefiLending = () => {
       }
 
       if (showAll || protocols.includes(DefiProtocol.COMPOUND)) {
-        const assetAddressPair = get(compoundHistory)
-          .events.filter(
-            ({ eventType }) => !['mint', 'redeem', 'comp'].includes(eventType)
-          )
-          .map(({ asset, address }) => ({ asset, address }));
-
         const compBalances = get(compoundBalances);
         for (const address of Object.keys(compBalances)) {
           const { borrowing } = compBalances[address];
@@ -114,18 +108,6 @@ export const useDefiLending = () => {
           }
 
           for (const asset of assets) {
-            assetAddressPair.push({ asset, address });
-          }
-        }
-        assetAddressPair
-          .filter(
-            (value, index, array) =>
-              array.findIndex(
-                ({ address, asset }) =>
-                  value.asset === asset && value.address === address
-              ) === index
-          )
-          .forEach(({ address, asset }) => {
             const symbol = get(assetInfo(asset))?.symbol ?? asset;
             const formattedAddress = truncateAddress(scrambleHex(address), 6);
 
@@ -136,7 +118,8 @@ export const useDefiLending = () => {
               owner: address,
               asset
             });
-          });
+          }
+        }
       }
 
       if (showAll || protocols.includes(DefiProtocol.LIQUITY)) {
@@ -282,18 +265,8 @@ export const useDefiLending = () => {
           identifier: loan.identifier,
           apy,
           debt,
-          collateral,
-          events: get(compoundHistory)
-            .events.filter(
-              event => event.asset === asset || event.eventType === 'comp'
-            )
-            .filter(({ address }) => address === owner)
-            .filter(({ eventType }) => !['mint', 'redeem'].includes(eventType))
-            .map(value => ({
-              ...value,
-              id: `${value.txHash}-${value.logIndex}`
-            }))
-        } as CompoundLoan;
+          collateral
+        } satisfies CompoundLoan;
       }
 
       if (loan.protocol === DefiProtocol.LIQUITY) {

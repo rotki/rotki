@@ -6,7 +6,6 @@ import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 
 const defaultCompoundHistory = (): CompoundHistory => ({
-  events: [],
   debtLoss: {},
   interestProfit: {},
   rewards: {},
@@ -119,10 +118,7 @@ export const useCompoundStore = defineStore('defi/compound', () => {
   };
 
   const addresses: ComputedRef<string[]> = computed(() =>
-    getProtocolAddresses(
-      get(balances),
-      get(history).events.map(({ address }) => address)
-    )
+    getProtocolAddresses(get(balances), get(history))
   );
 
   return {
