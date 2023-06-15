@@ -3,6 +3,7 @@ greenlet==2.0.2
 gevent-websocket==0.10.1
 wsaccel==0.6.3  # recommended for acceleration of gevent-websocket. But abandoned.
 web3==5.31.3
+content-hash==1.1.1  # to decode ens content hashes
 rotki-pysqlcipher3==2022.8.1
 requests==2.31.0
 urllib3==1.26.14
