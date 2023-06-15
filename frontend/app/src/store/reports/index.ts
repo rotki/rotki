@@ -209,9 +209,7 @@ export const useReportsStore = defineStore('reports', () => {
     });
     set(reportError, emptyError());
 
-    const interval = setInterval(async () => {
-      set(reportProgress, await getProgress());
-    }, 2000);
+    const intervalId = checkProgress();
 
     const { awaitTask } = useTaskStore();
     try {
@@ -243,13 +241,25 @@ export const useReportsStore = defineStore('reports', () => {
       });
       return -1;
     } finally {
-      clearInterval(interval);
+      clearInterval(intervalId);
 
       set(reportProgress, {
         processingState: '',
         totalProgress: '0'
       });
     }
+  };
+
+  const checkProgress = () => {
+    const interval = setInterval(async (): Promise<void> => {
+      try {
+        set(reportProgress, await getProgress());
+      } catch {
+        // if the request fails (e.g. user logged out) it stops the interval
+        clearInterval(interval);
+      }
+    }, 2000);
+    return interval;
   };
 
   const exportReportData = async (
@@ -261,9 +271,7 @@ export const useReportsStore = defineStore('reports', () => {
     });
     set(reportError, emptyError());
 
-    const interval = setInterval(async () => {
-      set(reportProgress, await getProgress());
-    }, 2000);
+    const intervalId = checkProgress();
 
     const { awaitTask } = useTaskStore();
     try {
@@ -286,7 +294,7 @@ export const useReportsStore = defineStore('reports', () => {
 
       return {};
     } finally {
-      clearInterval(interval);
+      clearInterval(intervalId);
 
       set(reportProgress, {
         processingState: '',
