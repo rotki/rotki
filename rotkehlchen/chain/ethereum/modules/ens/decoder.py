@@ -255,9 +255,6 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):
         try:
             codec = content_hash.get_codec(new_hash)
             value_hash = content_hash.decode(new_hash)
-            if codec == 'ipns-ns':
-                codec = 'ipns'
-
             value = f'{codec}://{value_hash}'
         except (TypeError, KeyError, ValueError) as e:
             msg = str(e)
