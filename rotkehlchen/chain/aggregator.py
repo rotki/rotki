@@ -1411,9 +1411,13 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
     def detect_evm_accounts(
             self,
             progress_handler: Optional['ProgressUpdater'] = None,
+            chains: Optional[list[SUPPORTED_EVM_CHAINS]] = None,
     ) -> list[tuple[SUPPORTED_EVM_CHAINS, ChecksumEvmAddress]]:
         """
         Detects user's EVM accounts on different chains and adds them to the tracked accounts.
+        If chains is given then detection only happens for those given chains.
+        Otherwise for all evm chains.
+
         1. Iterates through already added addresses
         2. For each address, assuming it's not a contract, checks which chains it's already in
         3. Get the rest of the chains, and check activity. If active in any of them it tracks the
@@ -1428,16 +1432,16 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             for account in chain_accounts:
                 current_accounts[account].append(chain)
 
-        all_evm_chains = set(typing.get_args(SUPPORTED_EVM_CHAINS))
+        all_evm_chains = set(typing.get_args(SUPPORTED_EVM_CHAINS)) if chains is None else set(chains)  # noqa: E501
         added_accounts: list[tuple[SUPPORTED_EVM_CHAINS, ChecksumEvmAddress]] = []
-        for account, chains in current_accounts.items():
+        for account, account_chains in current_accounts.items():
             if progress_handler is not None:
                 progress_handler.new_step(f'Checking {account} EVM chain activity')
 
             if self.is_contract(account, SupportedBlockchain.ETHEREUM):
                 continue  # do not check ethereum mainnet contracts
 
-            chains_to_check = list(all_evm_chains - set(chains))
+            chains_to_check = list(all_evm_chains - set(account_chains))
             if len(chains_to_check) == 0:
                 continue
 
