@@ -3,7 +3,7 @@ greenlet==2.0.2
 gevent-websocket==0.10.1
 wsaccel==0.6.3  # recommended for acceleration of gevent-websocket. But abandoned.
 web3==5.31.3
-content-hash==1.1.1  # to decode ens content hashes
+rotki-content-hash==0.0.3  # fork of content-hash due to https://github.com/filips123/ContentHashPy/issues/1
 rotki-pysqlcipher3==2022.8.1
 requests==2.31.0
 urllib3==1.26.14
@@ -37,7 +37,7 @@ polyleven==0.8
 
 bip-utils==2.7.0
 
-typing-extensions==4.6.3 # used for typing.ParamSpec and typing.Concatenate (in stdlib since python 3.10)
+typing-extensions==4.5.0 # used for typing.ParamSpec and typing.Concatenate (in stdlib since python 3.10). Also limiting temporarily to 4.5.0 due to a bug in multiformats which is used by rotki-content-hash: https://github.com/hashberg-io/multiformats/issues/10
 
 #constraints
 pycparser<=2.17 # ugly -- to avoid https://github.com/eliben/pycparser/pull/198
