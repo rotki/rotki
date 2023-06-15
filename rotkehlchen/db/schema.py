@@ -451,6 +451,7 @@ CREATE TABLE IF NOT EXISTS evm_transactions (
     gas_used TEXT NOT NULL,
     input_data BLOB NOT NULL,
     nonce INTEGER NOT NULL,
+    l1_fee TEXT,
     PRIMARY KEY(tx_hash, chain_id)
 );
 """

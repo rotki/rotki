@@ -70,6 +70,7 @@ class DBEvmTx():
                 str(tx.gas_used),
                 tx.input_data,
                 tx.nonce,
+                tx.l1_fee
             ))
 
         query = """
@@ -85,8 +86,9 @@ class DBEvmTx():
               gas_price,
               gas_used,
               input_data,
-              nonce)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+              nonce,
+              l1_fee)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """
         self.db.write_tuples(
             write_cursor=write_cursor,
@@ -179,10 +181,10 @@ class DBEvmTx():
         """
         query, bindings = filter_.prepare()
         if has_premium:
-            query = 'SELECT DISTINCT evm_transactions.tx_hash, evm_transactions.chain_id, timestamp, block_number, from_address, to_address, value, gas, gas_price, gas_used, input_data, nonce FROM evm_transactions ' + query  # noqa: E501
+            query = 'SELECT DISTINCT evm_transactions.tx_hash, evm_transactions.chain_id, timestamp, block_number, from_address, to_address, value, gas, gas_price, gas_used, input_data, nonce, l1_fee FROM evm_transactions ' + query  # noqa: E501
             results = cursor.execute(query, bindings)
         else:
-            query = 'SELECT DISTINCT evm_transactions.tx_hash, evm_transactions.chain_id, timestamp, block_number, from_address, to_address, value, gas, gas_price, gas_used, input_data, nonce FROM (SELECT * from evm_transactions ORDER BY timestamp DESC LIMIT ?) evm_transactions ' + query  # noqa: E501
+            query = 'SELECT DISTINCT evm_transactions.tx_hash, evm_transactions.chain_id, timestamp, block_number, from_address, to_address, value, gas, gas_price, gas_used, input_data, nonce, l1_fee FROM (SELECT * from evm_transactions ORDER BY timestamp DESC LIMIT ?) evm_transactions ' + query  # noqa: E501
             results = cursor.execute(query, [FREE_ETH_TX_LIMIT] + bindings)
 
         evm_transactions = []
@@ -201,6 +203,7 @@ class DBEvmTx():
                     gas_used=int(result[9]),
                     input_data=result[10],
                     nonce=result[11],
+                    l1_fee=int(result[12]) if result[12] else None,
                 )
             except DeserializationError as e:
                 self.db.msg_aggregator.add_error(
