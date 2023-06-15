@@ -26,6 +26,7 @@ if TYPE_CHECKING:
     from rotkehlchen.accounting.structures.evm_event import EvmEvent
 
 KYBER_TRADE_LEGACY = b'\xf7$\xb4\xdff\x17G6\x12\xb5=\x7f\x88\xec\xc6\xea\x980t\xb3\t`\xa0I\xfc\xd0e\x7f\xfe\x80\x80\x83'  # noqa: E501
+KYBER_TRADE = b"\xd3\x0c\xa3\x99\xcbCP~\xce\xc6\xa6)\xa3\\\xf4^\xb9\x8c\xdaU\x0c'im\xcb\r\x8cJ8s\xcel"  # noqa: E501
 KYBER_LEGACY_CONTRACT = string_to_evm_address('0x9ae49C0d7F8F9EF4B864e004FE86Ac8294E20950')
 KYBER_LEGACY_CONTRACT_MIGRATED = string_to_evm_address('0x65bF64Ff5f51272f729BDcD7AcFB00677ced86Cd')  # noqa: E501
 KYBER_LEGACY_CONTRACT_UPGRADED = string_to_evm_address('0x9AAb3f75489902f3a48495025729a0AF77d4b11e')  # noqa: E501
@@ -72,13 +73,15 @@ def _maybe_update_events_legacy_contrats(
         except (UnknownAsset, WrongAssetType):
             notify_user(event, CPT_KYBER)
             continue
-        if event.event_type == HistoryEventType.SPEND and event.location_label == sender and event.asset == source_asset and event.balance.amount == spent_amount:  # noqa: E501
+        # it can happen that a spend event get decoded first by an amm decoder. To make sure that
+        # the event matches we check both event type and subtype
+        if (event.event_type == HistoryEventType.SPEND or event.event_subtype == HistoryEventSubType.SPEND) and event.location_label == sender and event.asset == source_asset and event.balance.amount == spent_amount:  # noqa: E501
             event.event_type = HistoryEventType.TRADE
             event.event_subtype = HistoryEventSubType.SPEND
             event.counterparty = CPT_KYBER
             event.notes = f'Swap {event.balance.amount} {crypto_asset.symbol} in kyber'
             out_event = event
-        elif event.event_type == HistoryEventType.RECEIVE and event.location_label == sender and event.balance.amount == return_amount and destination_asset == event.asset:  # noqa: E501
+        elif (event.event_type == HistoryEventType.RECEIVE or event.event_subtype == HistoryEventSubType.RECEIVE) and event.location_label == sender and event.balance.amount == return_amount and destination_asset == event.asset:  # noqa: E501
             event.event_type = HistoryEventType.TRADE
             event.event_subtype = HistoryEventSubType.RECEIVE
             event.counterparty = CPT_KYBER
@@ -91,7 +94,7 @@ def _maybe_update_events_legacy_contrats(
 class KyberDecoder(DecoderInterface):
 
     def _decode_legacy_trade(self, context: DecoderContext) -> DecodingOutput:
-        if context.tx_log.topics[0] == KYBER_TRADE_LEGACY:
+        if context.tx_log.topics[0] != KYBER_TRADE:
             return DEFAULT_DECODING_OUTPUT
 
         sender, source_asset, destination_asset = _legacy_contracts_basic_info(context.tx_log)
