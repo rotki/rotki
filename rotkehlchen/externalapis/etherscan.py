@@ -31,6 +31,7 @@ from rotkehlchen.serialization.deserialize import (
 from rotkehlchen.types import (
     SUPPORTED_EVM_CHAINS,
     ChecksumEvmAddress,
+    ChainID,
     EvmInternalTransaction,
     EvmTransaction,
     EVMTxHash,
@@ -372,6 +373,23 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
                             evm_inquirer=None,
                             parent_tx_hash=parent_tx_hash,
                         )
+                        if chain_id == ChainID.OPTIMISM and type(tx) != EvmInternalTransaction:
+                            tx_receipt = self.get_transaction_receipt(tx.tx_hash)
+                            tx = EvmTransaction( #type doesn't support assignment, so create a new copy with l1Fee from receipt_data
+                                tx_hash=tx.tx_hash,
+                                chain_id=tx.chain_id,
+                                timestamp=tx.timestamp,
+                                block_number=tx.block_number,
+                                from_address=tx.from_address,
+                                to_address=tx.to_address,
+                                value=tx.value,
+                                gas=tx.gas,
+                                gas_price=tx.gas_price,
+                                gas_used=tx.gas_used,
+                                input_data=tx.input_data,
+                                nonce=tx.nonce,
+                                l1_fee=int(tx_receipt['l1Fee'], 16)
+                            )
                     else:  # Handling genesis transactions
                         assert self.db is not None, 'self.db should exists at this point'
                         dbtx = DBEvmTx(self.db)
