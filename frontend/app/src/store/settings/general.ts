@@ -54,6 +54,9 @@ export const useGeneralSettingsStore = defineStore('settings/general', () => {
   const ssfGraphMultiplier: ComputedRef<number> = computed(
     () => settings.ssfGraphMultiplier
   );
+  const inferZeroTimedBalances: ComputedRef<boolean> = computed(
+    () => settings.inferZeroTimedBalances
+  );
   const nonSyncingExchanges: ComputedRef<Exchange[]> = computed(
     () => settings.nonSyncingExchanges
   );
@@ -91,6 +94,7 @@ export const useGeneralSettingsStore = defineStore('settings/general', () => {
     currentPriceOracles,
     historicalPriceOracles,
     ssfGraphMultiplier,
+    inferZeroTimedBalances,
     nonSyncingExchanges,
     treatEth2AsEth,
     addressNamePriority,

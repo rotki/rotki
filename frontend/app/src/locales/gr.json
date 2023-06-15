@@ -3610,12 +3610,21 @@
     "no_premium_label": "Statistics are"
   },
   "statistics_graph_settings": {
-    "label": "Multiplier",
-    "off": "No missed snapshots will be considered as being zero.",
-    "on": "If there is a period of {period} hours or more between two existing balance snapshots then the graph will consider zero balances for that period.",
-    "subtitle": "Set after how many hours between two existing balance snapshots the graph will consider zero balances for that period.",
-    "title": "Missing snapshot multiplier",
-    "tooltip": "Change graph zero snapshot multiplier"
+    "infer_zero_timed_balances": {
+      "title": "Infer zero timed balances",
+      "label": "Infer zero timed balances for assets that have no balance at a specific time. This is useful for showing zero balance periods in graphs."
+    },
+    "multiplier": {
+      "label": "Multiplier",
+      "off": "No missed snapshots will be considered as being zero.",
+      "on": "If there is a period of {period} hours or more between two existing balance snapshots then the graph will consider zero balances for that period.",
+      "subtitle": "Set after how many hours between two existing balance snapshots the graph will consider zero balances for that period.",
+      "title": "Missing snapshot multiplier",
+      "validations": {
+        "positive_number": "Must be positive number"
+      }
+    },
+    "tooltip": "Asset graph setting"
   },
   "summary_card": {
     "refresh_tooltip": "Refresh {name} balances",
