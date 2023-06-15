@@ -1,6 +1,7 @@
 import base64
 import hashlib
 import hmac
+import io
 import logging
 import time
 from base64 import b64decode, b64encode
@@ -216,8 +217,7 @@ class Premium:
         - PremiumAuthenticationError if the given key is rejected by the Rotkehlchen server
         """
         signature, data = self.sign(
-            'save_data',
-            data_blob=data_blob,
+            'save_data_form',
             original_hash=our_hash,
             last_modify_ts=last_modify_ts,
             index=0,
@@ -228,10 +228,15 @@ class Premium:
             'API-SIGN': base64.b64encode(signature.digest()),
         })
 
+        tmp_file = io.BytesIO()
+        tmp_file.write(base64.b64decode(data_blob))
+        tmp_file.seek(0)
+
         try:
-            response = self.session.put(
-                self.uri + 'save_data',
+            response = self.session.post(
+                self.uri + 'save_data_form',
                 data=data,
+                files={'db_file': tmp_file},
                 timeout=ROTKEHLCHEN_SERVER_TIMEOUT * 10,
             )
         except requests.exceptions.RequestException as e:
@@ -241,7 +246,7 @@ class Premium:
 
         return _process_dict_response(response)
 
-    def pull_data(self) -> dict:
+    def pull_data(self) -> bytes:
         """Pulls data from the server and returns the response dict
 
         Returns None if there is no DB saved in the server.
@@ -251,14 +256,14 @@ class Premium:
         there is an error returned by the server
         - PremiumAuthenticationError if the given key is rejected by the Rotkehlchen server
         """
-        signature, data = self.sign('get_saved_data')
+        signature, data = self.sign('get_saved_data_by_form')
         self.session.headers.update({
             'API-SIGN': base64.b64encode(signature.digest()),
         })
 
         try:
             response = self.session.get(
-                self.uri + 'get_saved_data',
+                self.uri + 'get_saved_data_by_form',
                 data=data,
                 timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
             )
@@ -267,7 +272,12 @@ class Premium:
             log.error(msg)
             raise RemoteError(msg) from e
 
-        return _process_dict_response(response)
+        if response.status_code != HTTPStatus.OK:
+            msg = 'Could not connect to rotki server.'
+            log.error(f'{msg} due to {response.text}')
+            raise RemoteError(msg)
+
+        return response.content
 
     def query_last_data_metadata(self) -> RemoteMetadata:
         """Queries last metadata from the server and returns the response
