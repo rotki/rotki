@@ -9,7 +9,7 @@ export const useCompoundApi = () => {
   };
 
   const fetchCompoundHistory = async (): Promise<PendingTask> => {
-    const url = '/blockchains/eth/modules/compound/history';
+    const url = '/blockchains/eth/modules/compound/stats';
     return fetchExternalAsync(api.instance, url);
   };
 

@@ -13,18 +13,6 @@ const props = defineProps({
 const premium = usePremium();
 
 const { loan } = toRefs(props);
-const assets = computed(() => {
-  const { asset, events } = get(loan);
-  const assets = events
-    .map(({ toAsset }) => toAsset ?? '')
-    .filter(uniqueStrings);
-
-  if (asset) {
-    assets.push(asset);
-  }
-
-  return assets;
-});
 
 const { assetSymbol } = useAssetInfoRetrieval();
 const asset = useRefMap(loan, ({ asset }) => asset);
@@ -56,7 +44,7 @@ const { t } = useI18n();
           <compound-borrowing-details
             v-else
             :owner="loan.owner"
-            :assets="assets"
+            :assets="[asset]"
           />
         </v-col>
       </v-row>

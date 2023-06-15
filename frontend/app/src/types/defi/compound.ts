@@ -49,22 +49,6 @@ export const COMPOUND_EVENT_TYPES = [
 const CompoundEventType = z.enum(COMPOUND_EVENT_TYPES);
 export type CompoundEventType = z.infer<typeof CompoundEventType>;
 
-const CompoundEvent = z.object({
-  eventType: CompoundEventType,
-  address: z.string(),
-  blockNumber: z.number(),
-  timestamp: z.number(),
-  asset: z.string(),
-  toAsset: z.string().nullable(),
-  value: Balance,
-  toValue: Balance.nullable(),
-  realizedPnl: Balance.nullable(),
-  txHash: z.string(),
-  logIndex: z.number()
-});
-
-type CompoundEvent = z.infer<typeof CompoundEvent>;
-
 const CompoundAssetProfitAndLoss = z.record(Balance);
 
 const CompoundProfitAndLoss = z.record(CompoundAssetProfitAndLoss);
@@ -72,7 +56,6 @@ const CompoundProfitAndLoss = z.record(CompoundAssetProfitAndLoss);
 export type CompoundProfitAndLoss = z.infer<typeof CompoundProfitAndLoss>;
 
 export const CompoundHistory = z.object({
-  events: z.array(CompoundEvent),
   interestProfit: CompoundProfitAndLoss,
   debtLoss: CompoundProfitAndLoss,
   rewards: CompoundProfitAndLoss,
@@ -81,9 +64,6 @@ export const CompoundHistory = z.object({
 
 export type CompoundHistory = z.infer<typeof CompoundHistory>;
 
-type IdedCompoundEvent = CompoundEvent & { id: string };
-
 export interface CompoundLoan extends CollateralizedLoan<Collateral[]> {
   readonly apy: string;
-  readonly events: IdedCompoundEvent[];
 }
