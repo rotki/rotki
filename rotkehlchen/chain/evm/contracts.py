@@ -115,7 +115,7 @@ class EvmContract(NamedTuple):
             self,
             tx_log: 'EvmTxReceiptLog',
             event_name: str,
-            argument_names: Sequence[str],
+            argument_names: Optional[Sequence[str]],
     ) -> tuple[list, list]:
         """Decodes an event by finding the event ABI in the given contract's abi
 

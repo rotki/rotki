@@ -2,6 +2,7 @@ import logging
 from multiprocessing.managers import RemoteError
 from typing import TYPE_CHECKING, Any, Optional
 
+import content_hash
 from eth_utils import to_checksum_address
 
 from rotkehlchen.accounting.structures.balance import Balance
@@ -53,6 +54,7 @@ TEXT_CHANGED_KEY_ONLY = b'\xd8\xc93K\x1a\x9c/\x9d\xa3B\xa0\xa2\xb3&)\xc1\xa2)\xb
 TEXT_CHANGED_KEY_ONLY_ABI = '{"anonymous":false,"inputs":[{"indexed":true,"internalType":"bytes32","name":"node","type":"bytes32"},{"indexed":true,"internalType":"string","name":"indexedKey","type":"string"},{"indexed":false,"internalType":"string","name":"key","type":"string"}],"name":"TextChanged","type":"event"}'  # noqa: E501
 TEXT_CHANGED_KEY_AND_VALUE = b'D\x8b\xc0\x14\xf1Sg&\xcf\x8dT\xff=d\x81\xed<\xbch<%\x91\xca Bt\x00\x9a\xfa\t\xb1\xa1'  # noqa: E501
 TEXT_CHANGED_KEY_AND_VALUE_ABI = '{"anonymous":false,"inputs":[{"indexed":true,"internalType":"bytes32","name":"node","type":"bytes32"},{"indexed":true,"internalType":"string","name":"indexedKey","type":"string"},{"indexed":false,"internalType":"string","name":"key","type":"string"},{"indexed":false,"internalType":"string","name":"value","type":"string"}],"name":"TextChanged","type":"event"}'  # noqa: E501
+CONTENT_HASH_CHANGED = b'\xe3y\xc1bN\xd7\xe7\x14\xcc\t7R\x8a25\x9di\xd5(\x137vS\x13\xdb\xa4\xe0\x81\xb7-ux'  # noqa: E501
 
 
 class EnsDecoder(DecoderInterface, CustomizableDateMixin):
@@ -201,8 +203,96 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):
             ))
         return DEFAULT_DECODING_OUTPUT
 
+    def _get_name_to_show(self, node: bytes, resolver_address: ChecksumEvmAddress) -> Optional[str]:  # noqa: E501
+        """Try to find the name associated with the ENS node that is being modified"""
+        contract = self.ethereum.contracts.contract_by_address(address=resolver_address)
+
+        if contract is None:
+            self.msg_aggregator.add_error(
+                f'Failed to find ENS public resolver contract with address '
+                f'{resolver_address}. This should never happen. Please, '
+                f"open an issue in rotki's github repository.",
+            )
+            return None
+
+        name_to_show: Optional[str] = None
+        try:
+            address = contract.call(
+                node_inquirer=self.ethereum,
+                method_name='addr',
+                arguments=[node],
+            )
+        except RemoteError as e:
+            log.debug(f'Failed to query ENS name of node {node.hex()} due to: {e!s}')
+        else:
+            address = to_checksum_address(address)
+            ens_mapping = find_ens_mappings(
+                ethereum_inquirer=self.ethereum,
+                addresses=[address],
+                ignore_cache=False,
+            )
+            name_to_show = ens_mapping.get(address, address)
+
+        return name_to_show
+
+    def _decode_ens_public_resolver_content_hash(self, context: DecoderContext) -> DecodingOutput:
+        """Decode an event that modifies a content hash for the public ENS resolver"""
+        node = context.tx_log.topics[1]  # node is a hash of the name used by ens internals
+        contract = self.ethereum.contracts.contract_by_address(address=context.tx_log.address)
+        if contract is None:
+            self.msg_aggregator.add_error(
+                f'Failed to find ENS public resolver contract with address '
+                f'{context.tx_log.address}. This should never happen. Please, '
+                f"open an issue in rotki's github repository.",
+            )
+            return DEFAULT_DECODING_OUTPUT
+
+        result = contract.decode_event(context.tx_log, 'ContenthashChanged', argument_names=None)  # noqa: E501
+        node = result[0][0]
+        new_hash = result[1][0].hex()
+        name_to_show = self._get_name_to_show(node=node, resolver_address=context.tx_log.address)
+
+        try:
+            codec = content_hash.get_codec(new_hash)
+            value_hash = content_hash.decode(new_hash)
+            if codec == 'ipns-ns':
+                codec = 'ipns'
+
+            value = f'{codec}://{value_hash}'
+        except (TypeError, KeyError, ValueError) as e:
+            msg = str(e)
+            if isinstance(e, KeyError):
+                msg = f'Inability to find key {msg}'
+            log.error(f'Failed to decode content hash {new_hash} due to {msg}')
+            value = f'unknown type hash {new_hash}'
+
+        notes = f'Change ENS content hash to {value}'
+        if name_to_show is not None:
+            notes += f' for {name_to_show}'
+        context.decoded_events.append(self.base.make_event_from_transaction(
+            transaction=context.transaction,
+            tx_log=context.tx_log,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            balance=Balance(),
+            location_label=context.transaction.from_address,
+            notes=notes,
+            counterparty=CPT_ENS,
+            address=context.transaction.to_address,
+        ))
+        return DEFAULT_DECODING_OUTPUT
+
     def _decode_ens_public_resolver_events(self, context: DecoderContext) -> DecodingOutput:
-        """Decode event where a text property (discord, telegram, etc.) is set for an ENS name."""
+        """Decode events that modify the ENS resolver.
+
+        For example, where a text property (discord, telegram, etc.) is set for an ENS name.
+        Also forward to different functions that do non-text modifications
+        """
+        if context.tx_log.topics[0] == CONTENT_HASH_CHANGED:
+            return self._decode_ens_public_resolver_content_hash(context)
+
+        # else by now it should only be text attribute changes
         if context.tx_log.topics[0] not in (TEXT_CHANGED_KEY_ONLY, TEXT_CHANGED_KEY_AND_VALUE):
             return DEFAULT_DECODING_OUTPUT
 
@@ -218,33 +308,8 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):
         changed_key = decoded_data[0]
         new_value = decoded_data[1] if context.tx_log.topics[0] == TEXT_CHANGED_KEY_AND_VALUE else None  # noqa: E501
         node = context.tx_log.topics[1]  # node is a hash of the name used by ens internals
-        contract = self.ethereum.contracts.contract_by_address(address=context.tx_log.address)  # Is either public resolver v2 or v3  # noqa: E501
 
-        name_to_show: Optional[str] = None
-        if contract is None:
-            self.msg_aggregator.add_error(
-                f'Failed to find ENS public resolver contract with address '
-                f'{context.tx_log.address}. This should never happen. Please, '
-                f"open an issue in rotki's github repository.",
-            )
-        else:
-            try:
-                address = contract.call(
-                    node_inquirer=self.ethereum,
-                    method_name='addr',
-                    arguments=[node],
-                )
-            except RemoteError as e:
-                log.debug(f'Failed to query ENS name of node {node.hex()} due to: {e!s}')
-            else:
-                address = to_checksum_address(address)
-                ens_mapping = find_ens_mappings(
-                    ethereum_inquirer=self.ethereum,
-                    addresses=[address],
-                    ignore_cache=False,
-                )
-                name_to_show = ens_mapping.get(address, address)
-
+        name_to_show = self._get_name_to_show(node=node, resolver_address=context.tx_log.address)
         notes = f'Set ENS {changed_key} {f"to {new_value} " if new_value else ""}attribute'
         if name_to_show is not None:
             notes += f' for {name_to_show}'
