@@ -21,7 +21,9 @@ exports.default = async function notarizing(context) {
     appBundleId: 'com.rotki.app',
     appPath,
     appleId: process.env.APPLEID,
-    appleIdPassword: process.env.APPLEIDPASS
+    appleIdPassword: process.env.APPLEIDPASS,
+    teamId: process.env.IDENTITY,
+    tool: 'notarytool'
   })
     .then(() => {
       console.info(`\nNotarization of ${appPath} was complete\n`);
