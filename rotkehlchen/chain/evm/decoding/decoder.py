@@ -675,7 +675,10 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
         if direction_result is not None:
             event_type, location_label, _, _, _ = direction_result
             if event_type in OUTGOING_EVENT_TYPES:
-                eth_burned_as_gas = from_wei(FVal(tx.gas_used * tx.gas_price))
+                if self.evm_inquirer.chain_name == 'optimism':
+                    eth_burned_as_gas = from_wei(FVal((tx.gas_used * tx.gas_price) + tx.l1_fee))
+                else:
+                    eth_burned_as_gas = from_wei(FVal(tx.gas_used * tx.gas_price))
                 events.append(self.base.make_event_next_index(
                     tx_hash=tx.tx_hash,
                     timestamp=tx.timestamp,
