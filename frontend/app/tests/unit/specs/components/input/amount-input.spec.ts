@@ -48,7 +48,7 @@ describe('AmountInput.vue', () => {
       '100,000'
     );
 
-    expect(wrapper.emitted().input?.[0]).toEqual(['100000']);
+    expect(wrapper.emitted().input?.[1]).toEqual(['100000']);
   });
 
   test('should use prop value', async () => {
@@ -105,6 +105,36 @@ describe('AmountInput.vue', () => {
       '500.000,123'
     );
 
-    expect(wrapper.emitted().input?.[2]).toEqual(['500000.123']);
+    expect(wrapper.emitted().input?.[3]).toEqual(['500000.123']);
+  });
+
+  test('should emit correct value', async () => {
+    wrapper = createWrapper({});
+    await wrapper.vm.$nextTick();
+
+    await wrapper.find('input').setValue('100000');
+    await wrapper.vm.$nextTick();
+
+    expect((wrapper.find('input').element as HTMLInputElement).value).toBe(
+      '100,000'
+    );
+
+    expect(wrapper.emitted().input?.[1]).toEqual(['100000']);
+
+    await wrapper.find('input').setValue('');
+    await wrapper.vm.$nextTick();
+
+    expect((wrapper.find('input').element as HTMLInputElement).value).toBe('');
+
+    expect(wrapper.emitted().input?.[2]).toEqual(['']);
+
+    await wrapper.find('input').setValue('5555abcde');
+    await wrapper.vm.$nextTick();
+
+    expect((wrapper.find('input').element as HTMLInputElement).value).toBe(
+      '5,555'
+    );
+
+    expect(wrapper.emitted().input?.[3]).toEqual(['5555']);
   });
 });

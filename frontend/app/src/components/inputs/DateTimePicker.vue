@@ -6,73 +6,13 @@ import IMask, {
   type InputMask,
   MaskedRange
 } from 'imask';
+import useVuelidate from '@vuelidate/core';
+import { helpers, required } from '@vuelidate/validators';
 import { timezones } from '@/data/timezones';
 import { DateFormat } from '@/types/date-format';
+import { toMessages } from '@/utils/validation';
 
-const isValidFormat = (date: string): boolean => {
-  const dateFormat = get(dateInputFormatInISO);
-  const dateTimeFormatVal = get(dateTimeFormat);
-  const completeDateTimeFormatVal = get(completeDateTimeFormat);
-
-  return (
-    isValidDate(date, dateFormat) ||
-    isValidDate(date, dateTimeFormatVal) ||
-    (!get(seconds) && isValidDate(date, completeDateTimeFormatVal))
-  );
-};
-
-const isDateOnLimit = (date: string): boolean => {
-  if (!get(limitNow)) {
-    return true;
-  }
-
-  const now = dayjs();
-  const dateStringToDate = dayjs(
-    convertToTimestamp(date, get(dateInputFormat)) * 1000
-  );
-
-  return !dateStringToDate.isAfter(now);
-};
-
-const isValid = (date: string): boolean =>
-  isValidFormat(date) && isDateOnLimit(date);
-
-const useRules = (rules: Ref<ValidationRules>) => {
-  const { t } = useI18n();
-  const dateFormatRule = (date: string) => {
-    const dateFormat = get(dateInputFormatInISO);
-
-    if (get(allowEmpty) && !date) {
-      return true;
-    }
-
-    return (
-      isValidFormat(date) ||
-      (get(seconds)
-        ? t('date_time_picker.seconds_format', {
-            dateFormat
-          })
-        : t('date_time_picker.default_format', {
-            dateFormat
-          }))
-    );
-  };
-
-  const dateLimitRule = (date: string) =>
-    isDateOnLimit(date) || t('date_time_picker.limit_now');
-
-  const allRules = computed(() =>
-    get(rules).concat(dateFormatRule, dateLimitRule)
-  );
-  const timezoneRule = computed(() => [
-    (v: string) =>
-      !!v || t('date_time_picker.timezone_field.non_empty').toString()
-  ]);
-
-  return { allRules, timezoneRule };
-};
-
-type ValidationRules = ((v: string) => boolean | string)[];
+const { t } = useI18n();
 
 const props = withDefaults(
   defineProps<{
@@ -80,7 +20,6 @@ const props = withDefaults(
     hint?: string;
     persistentHint?: boolean;
     value?: string;
-    rules?: ValidationRules;
     limitNow?: boolean;
     allowEmpty?: boolean;
     seconds?: boolean;
@@ -94,7 +33,6 @@ const props = withDefaults(
     hint: '',
     persistentHint: false,
     value: '',
-    rules: () => [],
     limitNow: false,
     allowEmpty: false,
     seconds: false,
@@ -129,15 +67,94 @@ const completeDateTimeFormat: ComputedRef<string> = computed(
   () => `${get(dateInputFormatInISO)} HH:mm:ss`
 );
 
-const { seconds, rules, value, allowEmpty, limitNow } = toRefs(props);
+const { seconds, value, allowEmpty, limitNow, errorMessages } = toRefs(props);
 
-const { allRules, timezoneRule } = useRules(rules);
+const currentValue: Ref<string> = ref('');
+const selectedTimezone: Ref<string> = ref('');
+const inputField: Ref<any> = ref(null);
 
-const currentValue = ref('');
-const selectedTimezone = ref('');
-const inputField = ref();
+const isValidFormat = (date: string): boolean => {
+  const dateFormat = get(dateInputFormatInISO);
+  const dateTimeFormatVal = get(dateTimeFormat);
+  const completeDateTimeFormatVal = get(completeDateTimeFormat);
+
+  return (
+    isValidDate(date, dateFormat) ||
+    isValidDate(date, dateTimeFormatVal) ||
+    (!get(seconds) && isValidDate(date, completeDateTimeFormatVal))
+  );
+};
+
+const isDateOnLimit = (date: string): boolean => {
+  if (!get(limitNow)) {
+    return true;
+  }
+
+  const now = dayjs();
+  const dateStringToDate = dayjs(
+    convertToTimestamp(date, get(dateInputFormat)) * 1000
+  );
+
+  return !dateStringToDate.isAfter(now);
+};
+
+const isValid = (date: string): boolean =>
+  isValidFormat(date) && isDateOnLimit(date);
+
+const dateFormatErrorMessage: ComputedRef<string> = computed(() => {
+  const dateFormat = get(dateInputFormatInISO);
+  return get(seconds)
+    ? t('date_time_picker.seconds_format', {
+        dateFormat
+      })
+    : t('date_time_picker.default_format', {
+        dateFormat
+      });
+});
+
+const rules = {
+  date: {
+    isValidFormat: helpers.withMessage(
+      () => get(dateFormatErrorMessage),
+      (v: string): boolean => {
+        if (get(allowEmpty) && !v) {
+          return true;
+        }
+        return isValidFormat(v);
+      }
+    ),
+    isOnLimit: helpers.withMessage(
+      t('date_time_picker.limit_now'),
+      (v: string): boolean => isDateOnLimit(v)
+    )
+  },
+  timezone: {
+    required: helpers.withMessage(
+      t('date_time_picker.timezone_field.non_empty'),
+      required
+    )
+  }
+};
+
+const v$ = useVuelidate(
+  rules,
+  {
+    date: currentValue,
+    timezone: selectedTimezone
+  },
+  {
+    $autoDirty: true,
+    $stopPropagation: true,
+    $externalResults: computed(() => ({ date: get(errorMessages) }))
+  }
+);
 
 const onValueChange = (value: string) => {
+  const imaskVal = get(imask)!;
+
+  if (!value) {
+    imaskVal.value = '';
+  }
   const changedDateTimezone = convertDateByTimezone(
     value,
     DateFormat.DateMonthYearHourMinuteSecond,
@@ -151,7 +168,6 @@ const onValueChange = (value: string) => {
     get(dateInputFormat)
   );
 
-  const imaskVal = get(imask);
   if (imaskVal) {
     imaskVal.value = newValue;
     set(currentValue, newValue);
@@ -209,23 +225,15 @@ const emitIfValid = (value: string) => {
 const setNow = () => {
   const now = dayjs();
   const nowInString = now.format(get(dateTimeFormat));
+  set(currentValue, nowInString);
   emitIfValid(nowInString);
 };
-
-const reset = () => {
-  const field = get(inputField);
-  field?.reset();
-};
-
-defineExpose({
-  reset
-});
 
 const css = useCssModule();
 
 const initImask = () => {
-  const inputWrapper = get(inputField) as any;
-  const input = inputWrapper.$el.querySelector('input') as HTMLElement;
+  const inputWrapper = get(inputField)!;
+  const input = inputWrapper.$el.querySelector('input') as HTMLInputElement;
 
   const completeDateTimeFormatVal = get(completeDateTimeFormat);
 
@@ -281,7 +289,8 @@ const initImask = () => {
   }
 
   const newImask = IMask(input, {
-    mask
+    mask,
+    lazy: false
   });
 
   set(imask, newImask);
@@ -294,27 +303,34 @@ onMounted(() => {
 
 watch(
   () => get(imask)?.value,
-  value => {
-    if (value) {
-      set(currentValue, value);
+  (value, prev) => {
+    const unmasked = get(imask)?.unmaskedValue;
+    set(currentValue, value);
+    if (prev === undefined) {
+      // Reset validation when imask just created
+      get(v$).$reset();
+    }
+    if (value && unmasked) {
       emitIfValid(value);
     }
   }
 );
 
-const inputted = (emittedValue: string) => {
-  const current = get(currentValue);
-  set(currentValue, emittedValue);
-  emitIfValid(emittedValue);
+const inputted = (event: string) => {
+  nextTick(() => {
+    get(imask)!.value = event;
+  });
+};
 
-  // revert back if inputted value exceed the max length allowed.
-  const sanitized = emittedValue.replace(/_/g, '');
-  if (sanitized.length > 19) {
-    nextTick(() => {
-      set(currentValue, current);
-      emitIfValid(current);
-    });
-  }
+const focus = () => {
+  const inputWrapper = get(inputField)!;
+  const input = inputWrapper.$el.querySelector('input') as HTMLInputElement;
+
+  nextTick(() => {
+    const formattedValue = get(imask)!.value;
+    input.value = formattedValue;
+    set(currentValue, formattedValue);
+  });
 };
 </script>
 
@@ -329,10 +345,10 @@ const inputted = (emittedValue: string) => {
       :hide-details="hideDetails"
       prepend-inner-icon="mdi-calendar"
       :persistent-hint="persistentHint"
-      :rules="allRules"
       :outlined="outlined"
-      :error-messages="errorMessages"
+      :error-messages="toMessages(v$.date)"
       @input="inputted($event)"
+      @focus="focus()"
     >
       <template #append>
         <v-menu
@@ -357,8 +373,8 @@ const inputted = (emittedValue: string) => {
               outlined
               persistent-hint
               menu-pros="auto"
+              :error-messages="toMessages(v$.timezone)"
               :items="timezones"
-              :rules="timezoneRule"
             />
           </div>
         </v-menu>

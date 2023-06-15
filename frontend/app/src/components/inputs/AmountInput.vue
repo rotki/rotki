@@ -31,13 +31,13 @@ const { thousandSeparator, decimalSeparator } = storeToRefs(
   useFrontendSettingsStore()
 );
 
-const textInput = ref(null);
+const textInput: Ref<any> = ref(null);
 const imask: Ref<InputMask<any> | null> = ref(null);
 const currentValue: Ref<string> = ref('');
 
 onMounted(() => {
-  const inputWrapper = get(textInput) as any;
-  const input = inputWrapper.$el.querySelector('input') as HTMLElement;
+  const inputWrapper = get(textInput)!;
+  const input = inputWrapper.$el.querySelector('input') as HTMLInputElement;
 
   const newImask = IMask(input, {
     mask: Number,
@@ -66,13 +66,9 @@ watch(value, value => {
 watch(
   () => get(imask)?.unmaskedValue,
   unmasked => {
-    if (unmasked) {
-      const value = get(imask)?.value;
-      if (value) {
-        set(currentValue, value);
-      }
-      emit('input', unmasked);
-    }
+    const value = get(imask)?.value || '';
+    set(currentValue, value);
+    emit('input', unmasked || '');
   }
 );
 
@@ -86,6 +82,15 @@ const focus = () => {
 defineExpose({
   focus
 });
+
+const onFocus = () => {
+  const inputWrapper = get(textInput)!;
+  const input = inputWrapper.$el.querySelector('input') as HTMLInputElement;
+
+  nextTick(() => {
+    input.value = get(currentValue);
+  });
+};
 </script>
 
 <template>
@@ -94,6 +99,7 @@ defineExpose({
     :value="currentValue"
     v-bind="attrs"
     v-on="filteredListeners(listeners)"
+    @focus="onFocus()"
   >
     <!-- Pass on all named slots -->
     <slot v-for="slot in Object.keys(slots)" :slot="slot" :name="slot" />
