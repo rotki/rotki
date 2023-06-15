@@ -757,6 +757,18 @@ UNSUPPORTED_KUCOIN_ASSETS = {
     'WOODOWN',
     'SUIA',
     'ZILDOWN',
+    'LUNAUP',
+    'LUNADOWN',
+    'ARPAUP',
+    'ARPADOWN',
+    'ROSEUP',
+    'ROSEDOWN',
+    'FETUP',
+    'FETDOWN',
+    'OCEANUP',
+    'OCEANDOWN',
+    'ALGOUP',
+    'ALGODOWN',
 }
 
 # https://api.iconomi.com/v1/assets marks delisted assets

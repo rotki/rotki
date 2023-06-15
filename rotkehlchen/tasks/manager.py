@@ -53,6 +53,7 @@ from .events import LAST_EVENTS_PROCESSING_TASK_TS, process_events
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.aggregator import ChainsAggregator
+    from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.updates import RotkiDataUpdater
     from rotkehlchen.exchanges.manager import ExchangeManager
@@ -608,12 +609,14 @@ class TaskManager:
 
     def _maybe_update_yearn_vaults(self) -> Optional[list[gevent.Greenlet]]:
         if should_update_protocol_cache(GeneralCacheType.YEARN_VAULTS) is True:
+            ethereum_manager: 'EthereumManager' = self.chains_aggregator.get_chain_manager(SupportedBlockchain.ETHEREUM)  # noqa: E501
             return [self.greenlet_manager.spawn_and_track(
                 after_seconds=None,
                 task_name='Update yearn vaults',
                 exception_is_error=True,
                 method=self.query_yearn_vaults,
                 db=self.database,
+                ethereum_inquirer=ethereum_manager.node_inquirer,
             )]
 
         return None

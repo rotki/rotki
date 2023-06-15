@@ -143,4 +143,5 @@ WORLD_TO_BINANCE = COMMON_ASSETS_MAPPINGS | {
     evm_address_to_identifier('0xfb5B838b6cfEEdC2873aB27866079AC55363D37E', ChainID.BINANCE, EvmTokenKind.ERC20): 'FLOKI',  # noqa: E501
     evm_address_to_identifier('0x320623b8E4fF03373931769A31Fc52A4E78B5d70', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'RSR',  # noqa: E501
     evm_address_to_identifier('0xa2E3356610840701BDf5611a53974510Ae27E2e1', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'WBETH',  # noqa: E501
+    evm_address_to_identifier('0xfFffFffF2ba8F66D4e51811C5190992176930278', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'COMBO',  # noqa: E501
 }

@@ -8,7 +8,6 @@ from tempfile import TemporaryDirectory
 
 from gevent import monkey
 
-from rotkehlchen.db.dbhandler import DBHandler  # isort:skip
 monkey.patch_all()  # isort:skip
 import requests
 
@@ -101,17 +100,9 @@ def main() -> None:
     msg_aggregator = MessagesAggregator()
     # We need a user db since the spam assets get synced during user unlock and
     # they touch both the global and the user DB at the same time
-    with TemporaryDirectory() as tmp_dir:
-        db = DBHandler(
-            user_data_dir=Path(tmp_dir),
-            password='123',
-            msg_aggregator=msg_aggregator,
-            initial_settings=None,
-            sql_vm_instructions_cb=0,
-            resume_from_backup=False,
-        )
+    with TemporaryDirectory():
         GlobalDBHandler(data_dir=target_directory, sql_vm_instructions_cb=0)
-        assets_updater = AssetsUpdater(msg_aggregator=msg_aggregator, user_db=db)
+        assets_updater = AssetsUpdater(msg_aggregator=msg_aggregator)
         conflicts = assets_updater.perform_update(
             up_to_version=args.target_version,
             conflicts=None,
