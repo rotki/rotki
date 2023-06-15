@@ -1,8 +1,8 @@
 from contextlib import ExitStack
 
 import pytest
-from rotkehlchen.chain.accounts import BlockchainAccountData
 
+from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.chain.aggregator import ChainsAggregator, _module_name_to_class
 from rotkehlchen.tests.utils.blockchain import setup_evm_addresses_activity_mock
 from rotkehlchen.tests.utils.factories import make_evm_address
@@ -37,28 +37,32 @@ def test_detect_evm_accounts(blockchain: 'ChainsAggregator') -> None:
     # activity in other chains
     eth_addy_contract = make_evm_address()
 
-    # Is an EOA in optimism. Has activity in all chains. Should be added to optimism and avax
+    # Is an EOA in optimism. Has activity in all chains. Should be added to optimism, and avax
     addy_eoa_1 = make_evm_address()
 
     # Is an EOA in ethereum mainnet. Has activity only in ethereum and in optimism. Should be
     # added to optimism and should not be added to avax
     addy_eoa_2 = make_evm_address()
+    # polygon and mainnet address
+    addy_eoa_3 = make_evm_address()
 
     # Is an EOA that is initially already added everywhere. Has activity in all chains.
     # Since is already added, should not be added again.
     everywhere_addy = make_evm_address()
 
     initial_accounts_data = []
-    addies_to_add = [
+    addies_to_start_with = [
         (SupportedBlockchain.ETHEREUM, eth_addy_contract),
         (SupportedBlockchain.OPTIMISM, addy_eoa_1),
         (SupportedBlockchain.ETHEREUM, addy_eoa_2),
+        (SupportedBlockchain.ETHEREUM, addy_eoa_3),
         (SupportedBlockchain.ETHEREUM, everywhere_addy),
         (SupportedBlockchain.OPTIMISM, everywhere_addy),
         (SupportedBlockchain.AVALANCHE, everywhere_addy),
+        (SupportedBlockchain.POLYGON_POS, everywhere_addy),
     ]
 
-    for chain, addy in addies_to_add:
+    for chain, addy in addies_to_start_with:
         blockchain.modify_blockchain_accounts(
             blockchain=chain,
             accounts=[addy],
@@ -83,13 +87,15 @@ def test_detect_evm_accounts(blockchain: 'ChainsAggregator') -> None:
             ethereum_addresses=[eth_addy_contract, everywhere_addy, addy_eoa_1, addy_eoa_2],
             optimism_addresses=[eth_addy_contract, everywhere_addy, addy_eoa_1, addy_eoa_2],
             avalanche_addresses=[eth_addy_contract, everywhere_addy, addy_eoa_1],
+            polygon_pos_addresses=[everywhere_addy, addy_eoa_3],
         )
 
         blockchain.detect_evm_accounts()
 
-    assert set(blockchain.accounts.eth) == {addy_eoa_1, addy_eoa_2, eth_addy_contract, everywhere_addy}  # noqa: E501
+    assert set(blockchain.accounts.eth) == {addy_eoa_1, addy_eoa_2, addy_eoa_3, eth_addy_contract, everywhere_addy}  # noqa: E501
     assert set(blockchain.accounts.optimism) == {addy_eoa_1, addy_eoa_2, everywhere_addy}
     assert set(blockchain.accounts.avax) == {addy_eoa_1, everywhere_addy}
+    assert set(blockchain.accounts.polygon_pos) == {addy_eoa_3, everywhere_addy}
 
     # Also check the db
     expected_accounts_data = initial_accounts_data + [
@@ -104,6 +110,10 @@ def test_detect_evm_accounts(blockchain: 'ChainsAggregator') -> None:
         BlockchainAccountData(
             chain=SupportedBlockchain.OPTIMISM,
             address=addy_eoa_2,
+        ),
+        BlockchainAccountData(
+            chain=SupportedBlockchain.POLYGON_POS,
+            address=addy_eoa_3,
         ),
     ]
     accounts_in_db = []
@@ -124,5 +134,11 @@ def test_detect_evm_accounts(blockchain: 'ChainsAggregator') -> None:
                 chain=SupportedBlockchain.AVALANCHE,
                 address=account,
             ))
+        for account in raw_accounts.polygon_pos:
+            accounts_in_db.append(BlockchainAccountData(
+                chain=SupportedBlockchain.POLYGON_POS,
+                address=account,
+            ))
 
-    assert set(accounts_in_db) == set(expected_accounts_data) and len(accounts_in_db) == len(expected_accounts_data)  # noqa: E501
+    assert set(accounts_in_db) == set(expected_accounts_data)
+    assert len(accounts_in_db) == len(expected_accounts_data)

@@ -242,6 +242,7 @@ def test_add_multievm_accounts(rotkehlchen_api_server):
             ethereum_addresses=[contract_account, common_account],
             avalanche_addresses=[common_account],
             optimism_addresses=[common_account],
+            polygon_pos_addresses=[common_account],
         )
 
         # add two addresses for all evm chains, one with tag

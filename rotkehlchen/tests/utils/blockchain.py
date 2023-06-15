@@ -603,8 +603,9 @@ def setup_evm_addresses_activity_mock(
         chains_aggregator: 'ChainsAggregator',
         eth_contract_addresses: list[ChecksumEvmAddress],
         ethereum_addresses: list[ChecksumEvmAddress],
-        avalanche_addresses: list[ChecksumEvmAddress],
-        optimism_addresses: list[ChecksumEvmAddress],
+        avalanche_addresses: Optional[list[ChecksumEvmAddress]] = None,
+        optimism_addresses: Optional[list[ChecksumEvmAddress]] = None,
+        polygon_pos_addresses: Optional[list[ChecksumEvmAddress]] = None,
 ) -> 'ExitStack':
     def mock_ethereum_get_code(account):
         if account in eth_contract_addresses:
@@ -623,6 +624,11 @@ def setup_evm_addresses_activity_mock(
 
     def mock_optimism_has_activity(account):
         if account in optimism_addresses:
+            return True
+        return False
+
+    def mock_polygon_pos_has_activity(account):
+        if account in polygon_pos_addresses:
             return True
         return False
 
@@ -650,6 +656,11 @@ def setup_evm_addresses_activity_mock(
         chains_aggregator.optimism.node_inquirer.etherscan,
         'has_activity',
         side_effect=mock_optimism_has_activity,
+    ))
+    stack.enter_context(patch.object(
+        chains_aggregator.polygon_pos.node_inquirer.etherscan,
+        'has_activity',
+        side_effect=mock_polygon_pos_has_activity,
     ))
     stack.enter_context(patch.object(
         chains_aggregator.ethereum.node_inquirer.etherscan,
