@@ -122,10 +122,5 @@
     "vue-template-compiler": "2.7.14",
     "vue-tsc": "1.7.8",
     "workbox-window": "7.0.0"
-  },
-  "pnpm": {
-    "overrides": {
-      "stylelint": "15.6.0"
-    }
   }
 }
