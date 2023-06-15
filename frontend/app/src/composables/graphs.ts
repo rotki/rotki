@@ -35,14 +35,14 @@ export const useGraph = (canvasId: string) => {
     const context = getCanvasCtx();
     const areaGradient = context.createLinearGradient(0, 0, 0, 150);
     areaGradient.addColorStop(0, get(baseColor));
-    areaGradient.addColorStop(1, get(fadeColor));
+    areaGradient.addColorStop(1, `${get(fadeColor)}00`);
     return areaGradient;
   });
 
   const secondaryColor = computed(() => (get(dark) ? white : secondaryBlack));
+  const backgroundColor = computed(() => (!get(dark) ? white : secondaryBlack));
 
   const fontColor = computed(() => (get(dark) ? white : 'rgba(0,0,0,.6)'));
-
   const gridColor = computed(() => (get(dark) ? '#555' : '#ddd'));
 
   return {
@@ -50,6 +50,7 @@ export const useGraph = (canvasId: string) => {
     baseColor,
     gradient,
     secondaryColor,
+    backgroundColor,
     fontColor,
     gridColor
   };
@@ -58,6 +59,7 @@ export const useGraph = (canvasId: string) => {
 export interface TooltipContent {
   readonly time: string;
   readonly value: BigNumber;
+  readonly currentBalance?: boolean;
 }
 
 export const useTooltip = (id: string) => {

@@ -195,6 +195,7 @@ export const getTimeframeByRange = (
 
   let usedTimeframe: Timeframe = sortedByRange[0];
   let skip = false;
+
   sortedByRange.forEach(timeframe => {
     if (skip) {
       return;
@@ -206,8 +207,16 @@ export const getTimeframeByRange = (
     }
   });
 
+  if (range < dayTimestamp) {
+    return {
+      ...usedTimeframe,
+      xAxisLabelDisplayFormat: 'MMM D HH:mm',
+      tooltipTimeFormat: 'MMM D HH:mm'
+    };
+  }
+
   if (usedTimeframe.xAxisTimeUnit === TimeUnit.DAY && !current) {
-    usedTimeframe = {
+    return {
       ...usedTimeframe,
       xAxisLabelDisplayFormat: 'MMM D',
       tooltipTimeFormat: 'MMM D'

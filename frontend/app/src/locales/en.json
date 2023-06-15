@@ -3146,6 +3146,9 @@
     "staking": "Staking",
     "statistics": "Statistics"
   },
+  "net_worth_chart": {
+    "current_balance": "Current balance"
+  },
   "nft_balance_table": {
     "column": {
       "percentage": "% of net Value",
