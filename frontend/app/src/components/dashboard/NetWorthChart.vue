@@ -16,6 +16,8 @@ import dayjs from 'dayjs';
 import { type PropType } from 'vue';
 import { type ValueOverTime } from '@/types/graphs';
 
+const { t } = useI18n();
+
 const props = defineProps({
   timeframe: {
     required: true,
@@ -203,25 +205,31 @@ watch(chartData, () => {
   prepareData();
 });
 
-const { getCanvasCtx, baseColor, gradient, fontColor, gridColor } =
+const { getCanvasCtx, baseColor, gradient, fontColor, backgroundColor } =
   useGraph(chartId);
 
 const { getCanvasCtx: getRangeCanvasCtx } = useGraph(rangeId);
 
 const createDatasets = (isRange = false) => {
+  const pointWidth = !isRange ? 2 : 0;
+  const pointBackgroundColor = () => get(backgroundColor);
+  const borderColor = () => get(baseColor);
+
   const dataset = {
     data: [],
     tension: 0.1,
     fill: true,
     backgroundColor: () => (!isRange ? get(gradient) : 'transparent'),
-    borderColor: () => get(baseColor),
+    borderColor,
     borderWidth: 2,
-    pointBorderWidth: 0,
-    pointHoverBorderWidth: !isRange ? 2 : 0,
-    pointBorderColor: () => get(baseColor),
-    pointHoverBorderColor: 'white',
-    pointBackgroundColor: !isRange ? 'white' : 'transparent',
-    pointHoverBackgroundColor: () => (!isRange ? get(baseColor) : 'transparent')
+    pointRadius: pointWidth,
+    pointHoverRadius: 6,
+    pointBorderWidth: pointWidth,
+    pointHoverBorderWidth: pointWidth,
+    pointBorderColor: borderColor,
+    pointHoverBorderColor: borderColor,
+    pointBackgroundColor,
+    pointHoverBackgroundColor: pointBackgroundColor
   };
 
   return [dataset];
@@ -266,10 +274,6 @@ const createScales = (isRange = false) => {
 
   const y: any = {
     display: false,
-    grid: {
-      color: () => get(gridColor),
-      borderColor: () => get(gridColor)
-    },
     beginAtZero: () => (isRange ? false : get(graphZeroBased))
   };
 
@@ -295,28 +299,32 @@ const createTooltip = (): Partial<TooltipOptions> => {
     assert(element, 'No tooltip element found');
 
     if (tooltipModel.opacity === 0) {
-      tooltipDisplayOption.value = {
+      set(tooltipDisplayOption, {
         ...get(tooltipDisplayOption),
         visible: false
-      };
+      });
       return;
     }
 
     const item = tooltipModel.dataPoints[0];
+
     const { x, y } = item.parsed;
 
     const time = dayjs(x).format(get(activeTimeframe).tooltipTimeFormat);
 
-    tooltipContent.value = {
+    set(tooltipContent, {
       value: bigNumberify(y),
-      time: `${time}`
-    };
+      time: `${time}`,
+      currentBalance:
+        get(showVirtualCurrentData) &&
+        item.dataIndex === get(balanceData).length - 1
+    });
 
     nextTick(() => {
-      tooltipDisplayOption.value = {
+      set(tooltipDisplayOption, {
         ...get(tooltipDisplayOption),
         ...calculateTooltipPosition(element, tooltipModel)
-      };
+      });
     });
   };
 
@@ -328,7 +336,7 @@ const createTooltip = (): Partial<TooltipOptions> => {
   };
 };
 
-const oneDayTimestamp = 24 * 60 * 60 * 1000;
+const oneHourTimestamp = 24 * 60 * 1000;
 
 const createChart = (): Chart => {
   const context = getCanvasCtx();
@@ -339,18 +347,12 @@ const createChart = (): Chart => {
   const options: ChartOptions = {
     animation: (() => !get(activeRangeButton)) as any,
     maintainAspectRatio: false,
+    clip: 8,
     interaction: {
       mode: 'index',
       intersect: false
     },
     hover: { intersect: false },
-    elements: {
-      point: {
-        radius: 0,
-        hoverRadius: 6,
-        pointStyle: 'circle'
-      }
-    },
     scales: scales as any,
     plugins: {
       legend: { display: false },
@@ -360,12 +362,12 @@ const createChart = (): Chart => {
           x: {
             min: 'original',
             max: 'original',
-            minRange: oneDayTimestamp
+            minRange: oneHourTimestamp
           }
         },
         zoom: {
           drag: {
-            enabled: get(dataTimeRange).range > oneDayTimestamp
+            enabled: get(dataTimeRange).range > oneHourTimestamp
           },
           mode: 'x',
           onZoomComplete: () => {
@@ -390,7 +392,7 @@ watch(dataTimeRange, dataTimeRange => {
     return;
   }
   chart.options.plugins!.zoom!.zoom!.drag!.enabled =
-    dataTimeRange.range > oneDayTimestamp;
+    dataTimeRange.range > oneHourTimestamp;
   updateChart(false, false);
 });
 
@@ -480,7 +482,7 @@ const canvasClicked = (event: MouseEvent) => {
       if (
         data.x &&
         data.y &&
-        !(showVirtualCurrentData.value && index === balanceDataVal.length - 1)
+        !(get(showVirtualCurrentData) && index === balanceDataVal.length - 1)
       ) {
         set(selectedTimestamp, data.x / 1000);
         set(selectedBalance, data.y);
@@ -550,7 +552,7 @@ const rangeButtonMouseMove = (event: MouseEvent) => {
   const scale = x / width;
 
   const { min, max, range } = get(dataTimeRange);
-  if (range < oneDayTimestamp) {
+  if (range < oneHourTimestamp) {
     return;
   }
   const { min: displayedMin, max: displayedMax } = get(displayedXRange);
@@ -564,28 +566,28 @@ const rangeButtonMouseMove = (event: MouseEvent) => {
   // Drag the start button
   if (activeRangeButtonVal === 'start') {
     const newMin = scale * range + min;
-    const leapMax = displayedMax + oneDayTimestamp;
+    const leapMax = displayedMax + oneHourTimestamp;
 
     if (newMin >= leapMax && leapMax <= max) {
       set(activeRangeButton, 'end');
       xAxis.min = displayedMax;
       xAxis.max = leapMax;
     } else {
-      const closestMin = displayedMax - oneDayTimestamp;
+      const closestMin = displayedMax - oneHourTimestamp;
       xAxis.min = Math.min(Math.max(newMin, min), closestMin);
     }
   }
   // Drag the end button
   else if (activeRangeButtonVal === 'end') {
     const newMax = scale * range + min;
-    const leapMin = displayedMin - oneDayTimestamp;
+    const leapMin = displayedMin - oneHourTimestamp;
 
     if (newMax <= leapMin && leapMin >= min) {
       set(activeRangeButton, 'start');
       xAxis.max = displayedMin;
       xAxis.min = leapMin;
     } else {
-      const closestMax = displayedMin + oneDayTimestamp;
+      const closestMax = displayedMin + oneHourTimestamp;
       xAxis.max = Math.max(Math.min(newMax, max), closestMax);
     }
   }
@@ -604,14 +606,14 @@ const rangeButtonMouseMove = (event: MouseEvent) => {
     if (limitedMin === min) {
       limitedMax = Math.min(
         max,
-        Math.max(limitedMax, limitedMin + oneDayTimestamp)
+        Math.max(limitedMax, limitedMin + oneHourTimestamp)
       );
     }
 
     if (limitedMax === max) {
       limitedMin = Math.max(
         min,
-        Math.min(limitedMin, limitedMax - oneDayTimestamp)
+        Math.min(limitedMin, limitedMax - oneHourTimestamp)
       );
     }
 
@@ -634,11 +636,13 @@ onMounted(() => {
 onBeforeUnmount(() => {
   window.removeEventListener('mouseup', mouseup);
 });
+
+const css = useCssModule();
 </script>
 
 <template>
-  <div :class="$style.wrapper">
-    <div :class="$style.canvas">
+  <div :class="css.wrapper">
+    <div :class="css.canvas">
       <canvas
         :id="chartId"
         @mousedown="canvasMouseDown($event)"
@@ -656,7 +660,13 @@ onBeforeUnmount(() => {
                 :fiat-currency="currencySymbol"
               />
             </div>
-            <div class="rotki-grey--text text-center">
+            <div
+              v-if="tooltipContent.currentBalance"
+              class="rotki-grey--text text-center"
+            >
+              {{ t('net_worth_chart.current_balance') }}
+            </div>
+            <div v-else class="rotki-grey--text text-center">
               {{ tooltipContent.time }}
             </div>
           </div>
@@ -667,7 +677,7 @@ onBeforeUnmount(() => {
     <div
       v-if="showGraphRangeSelector"
       ref="rangeRef"
-      :class="$style.range"
+      :class="css.range"
       @mousemove="rangeButtonMouseMove($event)"
       @dblclick="resetZoom()"
     >
@@ -675,44 +685,44 @@ onBeforeUnmount(() => {
 
       <div
         :class="{
-          [$style['range__marker']]: true,
-          [$style['range__marker--dark']]: dark
+          [css['range__marker']]: true,
+          [css['range__marker--dark']]: dark
         }"
         :style="rangeMarkerStyle"
         @mousedown="rangeButtonMouseDown('both', $event)"
       >
         <div
           :class="{
-            [$style['range__marker__limit']]: true,
-            [$style['range__marker__limit--start']]: true
+            [css['range__marker__limit']]: true,
+            [css['range__marker__limit--start']]: true
           }"
         >
           <v-btn
             :color="dark ? 'black' : 'white'"
             :ripple="false"
-            :class="$style['range__marker__limit__button']"
+            :class="css['range__marker__limit__button']"
             elevation="1"
             @mousedown.stop="rangeButtonMouseDown('start', $event)"
           >
-            <v-icon :class="$style['range__marker__limit__button__icon']">
+            <v-icon :class="css['range__marker__limit__button__icon']">
               mdi-equal
             </v-icon>
           </v-btn>
         </div>
         <div
           :class="{
-            [$style['range__marker__limit']]: true,
-            [$style['range__marker__limit--end']]: true
+            [css['range__marker__limit']]: true,
+            [css['range__marker__limit--end']]: true
           }"
         >
           <v-btn
             :color="dark ? 'black' : 'white'"
             :ripple="false"
-            :class="$style['range__marker__limit__button']"
+            :class="css['range__marker__limit__button']"
             elevation="1"
             @mousedown.stop="rangeButtonMouseDown('end', $event)"
           >
-            <v-icon :class="$style['range__marker__limit__button__icon']">
+            <v-icon :class="css['range__marker__limit__button__icon']">
               mdi-equal
             </v-icon>
           </v-btn>
