@@ -226,4 +226,5 @@ WORLD_TO_KRAKEN = COMMON_ASSETS_MAPPINGS | {
     evm_address_to_identifier('0xfc5A1A6EB076a2C7aD06eD22C90d7E710E35ad0a', ChainID.ARBITRUM_ONE, EvmTokenKind.ERC20): 'GMX',  # noqa: E501
     'SUI': 'SUI',
     evm_address_to_identifier('0x628A3b2E302C7e896AcC432D2d0dD22B6cb9bc88', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'LMWR',  # noqa: E501
+    evm_address_to_identifier('0x6982508145454Ce325dDbE47a25d4ec3d2311933', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'PEPE',  # noqa: E501
 }

@@ -629,7 +629,19 @@ def test_coingecko_identifiers_are_reachable(socket_enabled):  # pylint: disable
         evm_address_to_identifier(address='0x2b95A1Dcc3D405535f9ed33c219ab38E8d7e0884', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
         # coingecko has crypto price intex that doesn't match the address
         evm_address_to_identifier(address='0x8bb08042c06FA0Fc26cd2474C5F0C03a1056Ad2F', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
-
+        evm_address_to_identifier(address='0x85089389C14Bd9c77FC2b8F0c3d1dC3363Bf06Ef', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
+        'RVR',  # revolutionVR but coingecko has reality vr
+        'BTG-2',  # bitgem but coingecko has bitcoin gold
+        # karate but coingecko has karate combat
+        evm_address_to_identifier(address='0xAcf79C09Fff518EcBe2A96A2c4dA65B68fEDF6D3', chain_id=ChainID.BINANCE, token_type=EvmTokenKind.ERC20),  # noqa: E501
+        # simp but coingecko has socol
+        evm_address_to_identifier(address='0xD0ACCF05878caFe24ff8b3F82F194C62Ed755707', chain_id=ChainID.BINANCE, token_type=EvmTokenKind.ERC20),  # noqa: E501
+        # coingecko has a turbos in sui
+        evm_address_to_identifier(address='0x0678Ca162E737C44cab2Ea31b4bbA78482E1313d', chain_id=ChainID.BINANCE, token_type=EvmTokenKind.ERC20),  # noqa: E501
+        # inx but coingecko has different address
+        evm_address_to_identifier(address='0x84fE25f3921f3426395c883707950d0c00367576', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
+        # monfter but coingecko doesn't match any
+        evm_address_to_identifier(address='0xcaCc19C5Ca77E06D6578dEcaC80408Cc036e0499', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
     )
     for asset_data in GlobalDBHandler().get_all_asset_data(mapping=False):
         identifier = asset_data.identifier

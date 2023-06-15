@@ -227,5 +227,5 @@ WORLD_TO_KUCOIN = COMMON_ASSETS_MAPPINGS | {
     evm_address_to_identifier('0x1ce270557C1f68Cfb577b856766310Bf8B47FD9C', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'MONG',  # noqa: E501
     evm_address_to_identifier('0xEec2bE5c91ae7f8a338e1e5f3b5DE49d07AfdC81', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'DPX',  # noqa: E501
     evm_address_to_identifier('0xE55d97A97ae6A17706ee281486E98A84095d8AAf', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'AIPAD',  # noqa: E501
-
+    evm_address_to_identifier('0x12970E6868f88f6557B76120662c1B3E50A646bf', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'LADYS',  # noqa: E501
 }
