@@ -105,12 +105,8 @@ class PremiumSyncManager:
             log.debug('sync from server -- pulling failed.', error=str(e))
             return False, f'Pulling failed: {e!s}'
 
-        if result['data'] is None:
-            log.debug('sync from server -- no data found.')
-            return False, 'No data found'
-
         try:
-            self.data.decompress_and_decrypt_db(result['data'])
+            self.data.decompress_and_decrypt_db(result)
         except UnableToDecryptRemoteData as e:
             raise PremiumAuthenticationError(
                 'The given password can not unlock the database that was retrieved  from '
@@ -147,6 +143,17 @@ class PremiumSyncManager:
             except (RemoteError, PremiumAuthenticationError) as e:
                 log.debug('upload to server -- fetching metadata error', error=str(e))
                 return False
+
+            with self.data.db.conn.read_ctx() as cursor:
+                our_last_write_ts = self.data.db.get_setting(cursor=cursor, name='last_write_ts')
+            if our_last_write_ts <= metadata.last_modify_ts and not force_upload:
+                # Server's DB was modified after our local DB
+                log.debug(
+                    f'upload to server stopped -- remote db({metadata.last_modify_ts}) '
+                    f'more recent than local({our_last_write_ts})',
+                )
+                return False
+
             b64_encoded_data, our_hash = self.data.compress_and_encrypt_db()
 
             log.debug(
@@ -157,16 +164,6 @@ class PremiumSyncManager:
             if our_hash == metadata.data_hash and not force_upload:
                 log.debug('upload to server stopped -- same hash')
                 # same hash -- no need to upload anything
-                return False
-
-            with self.data.db.conn.read_ctx() as cursor:
-                our_last_write_ts = self.data.db.get_setting(cursor=cursor, name='last_write_ts')
-            if our_last_write_ts <= metadata.last_modify_ts and not force_upload:
-                # Server's DB was modified after our local DB
-                log.debug(
-                    f'upload to server stopped -- remote db({metadata.last_modify_ts}) '
-                    f'more recent than local({our_last_write_ts})',
-                )
                 return False
 
             data_bytes_size = len(base64.b64decode(b64_encoded_data))

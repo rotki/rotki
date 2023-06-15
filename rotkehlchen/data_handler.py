@@ -14,7 +14,7 @@ from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.errors.api import AuthenticationError
 from rotkehlchen.errors.misc import SystemPermissionError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import B64EncodedBytes, B64EncodedString
+from rotkehlchen.types import B64EncodedBytes
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import timestamp_to_date, ts_now
 
@@ -211,7 +211,7 @@ class DataHandler:
         tempdbpath.unlink()
         return B64EncodedBytes(encrypted_data.encode()), original_data_hash
 
-    def decompress_and_decrypt_db(self, encrypted_data: B64EncodedString) -> None:
+    def decompress_and_decrypt_db(self, encrypted_data: bytes) -> None:
         """Decrypt and decompress the encrypted data we receive from the server
 
         If successful then replace our local Database
@@ -231,6 +231,6 @@ class DataHandler:
             self.data_directory / self.username / f'rotkehlchen_db_{date}.backup',
         )
 
-        decrypted_data = decrypt(self.db.password.encode(), encrypted_data)
+        decrypted_data = decrypt(self.db.password.encode(), base64.b64encode(encrypted_data).decode())  # noqa: E501
         decompressed_data = zlib.decompress(decrypted_data)
         self.db.import_unencrypted(decompressed_data)
