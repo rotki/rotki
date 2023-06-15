@@ -221,11 +221,11 @@ def test_migration_5(database, data_dir, greenlet_manager):
     assert Path(icons_path, '_ceth_0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9_small.png').exists() is False  # noqa: E501
 
 
-@pytest.mark.parametrize('data_migration_version', [7])
+@pytest.mark.parametrize('data_migration_version', [9])
 @pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
 @pytest.mark.parametrize('ethereum_accounts', [[make_evm_address(), make_evm_address(), make_evm_address(), make_evm_address()]])  # noqa: E501
 @pytest.mark.parametrize('legacy_messages_via_websockets', [True])
-def test_migration_8(
+def test_migration_10(
         rotkehlchen_api_server: 'APIServer',
         ethereum_accounts: list[ChecksumEvmAddress],
         websocket_connection: 'WebsocketReader',
@@ -240,6 +240,7 @@ def test_migration_8(
     )
     avalanche_addresses = [ethereum_accounts[1], ethereum_accounts[3]]
     optimism_addresses = [ethereum_accounts[2], ethereum_accounts[3]]
+    polygon_pos_addresses = [ethereum_accounts[3]]
 
     with ExitStack() as stack:
         setup_evm_addresses_activity_mock(
@@ -249,6 +250,7 @@ def test_migration_8(
             ethereum_addresses=[],
             avalanche_addresses=avalanche_addresses,
             optimism_addresses=optimism_addresses,
+            polygon_pos_addresses=polygon_pos_addresses,
         )
         stack.enter_context(migration_patch)
         DataMigrationManager(rotki).maybe_migrate_data()
@@ -262,13 +264,15 @@ def test_migration_8(
     assert set(rotki.chains_aggregator.accounts.avax) == set(avalanche_addresses)
     assert set(accounts.optimism) == set(optimism_addresses)
     assert set(rotki.chains_aggregator.accounts.optimism) == set(optimism_addresses)
+    assert set(accounts.polygon_pos) == set(polygon_pos_addresses)
+    assert set(rotki.chains_aggregator.accounts.polygon_pos) == set(polygon_pos_addresses)
 
     def assert_progress_message(msg, step_num, description) -> None:
         assert msg['type'] == 'data_migration_status'
-        assert msg['data']['start_version'] == 8
+        assert msg['data']['start_version'] == 10
         assert msg['data']['target_version'] == LAST_DATA_MIGRATION
         migration = msg['data']['current_migration']
-        assert migration['version'] == 8
+        assert migration['version'] == 10
         assert migration['total_steps'] == (5 if step_num != 0 else 0)
         assert migration['current_step'] == step_num
         if 1 <= step_num <= 4:
@@ -285,6 +289,7 @@ def test_migration_8(
             assert sorted(msg['data'], key=operator.itemgetter('evm_chain', 'address')) == sorted([
                 {'evm_chain': 'avalanche', 'address': ethereum_accounts[1]},
                 {'evm_chain': 'avalanche', 'address': ethereum_accounts[3]},
+                {'evm_chain': 'polygon_pos', 'address': ethereum_accounts[3]},
                 {'evm_chain': 'optimism', 'address': ethereum_accounts[2]},
                 {'evm_chain': 'optimism', 'address': ethereum_accounts[3]},
             ], key=operator.itemgetter('evm_chain', 'address'))
