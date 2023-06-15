@@ -618,6 +618,7 @@ def deserialize_evm_transaction(
             gas_used=gas_used,
             input_data=input_data,
             nonce=nonce,
+            l1_fee=None
         ), raw_receipt_data
 
 

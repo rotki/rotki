@@ -276,6 +276,7 @@ class EvmTransaction(NamedTuple):
     gas_used: int
     input_data: bytes
     nonce: int
+    l1_fee: Optional[int] = None
 
     def serialize(self) -> dict[str, Any]:
         result = self._asdict()  # pylint: disable=no-member
@@ -288,6 +289,8 @@ class EvmTransaction(NamedTuple):
         result['gas'] = str(result['gas'])
         result['gas_price'] = str(result['gas_price'])
         result['gas_used'] = str(result['gas_used'])
+        if result['l1_fee']: #optimism transaction
+            result['l1_fee'] = str(result['l1_fee'])
         return result
 
     def __hash__(self) -> int:
