@@ -681,7 +681,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
     ) -> Optional[dict[str, Any]]:
         if tx_hash == GENESIS_HASH:
             return FAKE_GENESIS_TX_RECEIPT
-        if web3 is None:
+        if web3 is None or self.chain_id == ChainID.OPTIMISM: #web3.py doesn't support optimism's l1 fees
             tx_receipt = self.etherscan.get_transaction_receipt(tx_hash)
             if tx_receipt is None:
                 return None
@@ -692,6 +692,8 @@ class EvmNodeInquirer(metaclass=ABCMeta):
                 tx_receipt['blockNumber'] = block_number
                 tx_receipt['cumulativeGasUsed'] = int(tx_receipt['cumulativeGasUsed'], 16)
                 tx_receipt['gasUsed'] = int(tx_receipt['gasUsed'], 16)
+                if self.chain_id == ChainID.OPTIMISM:
+                    tx_receipt['l1Fee'] = int(tx_receipt['l1Fee'], 16)
                 tx_receipt['status'] = int(tx_receipt.get('status', '0x1'), 16)
                 tx_index = int(tx_receipt['transactionIndex'], 16)
                 tx_receipt['transactionIndex'] = tx_index
@@ -771,7 +773,22 @@ class EvmNodeInquirer(metaclass=ABCMeta):
             raise RemoteError(
                 f'Couldnt deserialize evm transaction data from {tx_data}. Error: {e!s}',
             ) from e
-
+        if self.chain_id == ChainID.OPTIMISM:
+            transaction = EvmTransaction( #type doesn't support assignment, so create a new copy with l1Fee from receipt_data
+                tx_hash=transaction.tx_hash,
+                chain_id=transaction.chain_id,
+                timestamp=transaction.timestamp,
+                block_number=transaction.block_number,
+                from_address=transaction.from_address,
+                to_address=transaction.to_address,
+                value=transaction.value,
+                gas=transaction.gas,
+                gas_price=transaction.gas_price,
+                gas_used=transaction.gas_used,
+                input_data=transaction.input_data,
+                nonce=transaction.nonce,
+                l1_fee=receipt_data['l1Fee']
+            )
         assert receipt_data, 'receipt_data should exist here as etherscan getTransactionByHash does not contains gasUsed'  # noqa: E501
         return transaction, receipt_data
 
