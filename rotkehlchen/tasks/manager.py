@@ -124,12 +124,6 @@ class TaskManager():
         self.base_entries_ignore_set: set[str] = set()
         self.prepared_cryptocompare_query = False
         self.running_greenlets: dict[Callable, list[gevent.Greenlet]] = {}
-        self.greenlet_manager.spawn_and_track(  # Needs to run in greenlet, is slow
-            after_seconds=None,
-            task_name='Prepare cryptocompare queries',
-            exception_is_error=True,
-            method=self._prepare_cryptocompare_queries,
-        )
         self.deactivate_premium = deactivate_premium
         self.activate_premium = activate_premium
         self.query_balances = query_balances
@@ -178,25 +172,23 @@ class TaskManager():
         )]
 
     def _prepare_cryptocompare_queries(self) -> None:
-        """Prepare the queries to do to cryptocompare
-
-        This would be really slow if the entire json cache files were read but we
-        have implemented get_cached_data_metadata to only read the relevant part of the file.
-        Before doing that we had to yield with gevent.sleep() at each loop iteration.
-
-        Runs only once in the beginning and then has a number of queries prepared
-        for the task manager to schedule
         """
-        now_ts = ts_now()
-        if self.prepared_cryptocompare_query is True:
-            return
-
+        Prepare the queries to do to cryptocompare
+        Runs only once and then has a number of queries prepared for the task manager to schedule
+        """
+        log.debug('Preparing cryptocompare historical price queries')
         if len(self.cryptocompare_queries) != 0:
             return
 
         with self.database.conn.read_ctx() as cursor:
             assets = self.database.query_owned_assets(cursor)
             main_currency = self.database.get_setting(cursor=cursor, name='main_currency')
+
+        if main_currency.cryptocompare == '':  # main currency not supported
+            self.prepared_cryptocompare_query = True
+            return
+
+        now_ts = ts_now()
         for raw_asset in assets:
             try:
                 asset = raw_asset.resolve_to_asset_with_oracles()
@@ -206,7 +198,7 @@ class TaskManager():
             if asset.is_fiat() and main_currency.is_fiat():
                 continue  # ignore fiat to fiat
 
-            if asset.cryptocompare == '' or main_currency.cryptocompare == '':
+            if asset.cryptocompare == '':
                 continue  # not supported in cryptocompare
 
             if asset.cryptocompare is None and asset.symbol is None:
@@ -227,7 +219,7 @@ class TaskManager():
     def _maybe_schedule_cryptocompare_query(self) -> Optional[list[gevent.Greenlet]]:
         """Schedules a cryptocompare query for a single asset history"""
         if self.prepared_cryptocompare_query is False:
-            return None
+            self._prepare_cryptocompare_queries()
 
         if len(self.cryptocompare_queries) == 0:
             return None
