@@ -22,6 +22,7 @@ export const defaultGeneralSettings = (
   currentPriceOracles: [],
   historicalPriceOracles: [],
   ssfGraphMultiplier: 0,
+  inferZeroTimedBalances: false,
   nonSyncingExchanges: [],
   treatEth2AsEth: false,
   addressNamePriority: []

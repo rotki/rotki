@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`2822` In the asset graph, users will see another setting `Infer zero timed balances` which when activated will show the periods when users weren't holding the asset.
 * :feature:`-` Transactions changing the content hash of an ENS name will now be properly decoded.
 * :feature:`5255` Pnl report assets now have an etherscan link to make it easier to identify pool assets.
 * :feature:`6179` Users will now be able to import their trades, income and spending from BitcoinTaxes.
@@ -18,7 +19,6 @@ Changelog
 * :bug:`-` Notes in exported CSV reports will contain the correct url for transactions in different EVM chains.
 * :feature:`-` The PnL report page will load faster if there is many old reports in the DB.
 * :feature:`-` Convex staking and Curve gauge balances will no longer need a manual balances refresh to be detected.
-* :feature:`2822` The time chart of the amount of an asset in your balance, now shows the periods where you weren't holding the asset.
 
 * :release:`1.28.0 <2023-05-17>`
 * :feature:`2469` History events have now been unified under a common history events section. At the moment it features all kraken exchange events, evm events, custom imported events, block productions, staking withdrawals. Missing events retain their own sections and will be merged into the unified history in subsequent releases.

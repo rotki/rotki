@@ -3712,12 +3712,21 @@
     "no_premium_label": "统计是"
   },
   "statistics_graph_settings": {
-    "label": "乘数",
-    "off": "没有错过的快照将被视为零。",
-    "on": "如果两个现有余额快照之间有 {period} 小时或更长时间的时间段，则图表将考虑该时间段的零余额。",
-    "subtitle": "设置在两个现有余额快照之间的多少小时后图表将考虑该期间的零余额。",
-    "title": "缺少快照乘数",
-    "tooltip": "更改图形零快照乘数"
+    "infer_zero_timed_balances": {
+      "title": "推断零时间余额",
+      "label": "为在特定时间没有余额的资产推断零时间余额。这对于在图表中显示零余额期间很有用。"
+    },
+    "multiplier": {
+      "label": "乘数",
+      "off": "没有错过的快照将被视为零。",
+      "on": "如果两个现有余额快照之间有 {period} 小时或更长时间的时间段，则图表将考虑该时间段的零余额。",
+      "subtitle": "设置在两个现有余额快照之间的多少小时后图表将考虑该期间的零余额。",
+      "title": "缺少快照乘数",
+      "validations": {
+        "positive_number": "必须是正数"
+      }
+    },
+    "tooltip": "资产图表设置"
   },
   "summary_card": {
     "refresh_tooltip": "刷新 {name} 余额",
@@ -3740,7 +3749,7 @@
       "location_data_snapshot_file": "位置数据快照文件",
       "location_data_snapshot_suggested": "建议文件名:location_data_snapshot_import.csv",
       "messages": {
-        "failed_description": "导入快照失败： {message}",
+        "failed_description": "导入快照失败: {message}",
         "success_description": "快照导入成功。您现在将退出。",
         "title": "快照导入"
       },
