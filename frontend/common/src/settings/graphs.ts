@@ -210,7 +210,6 @@ export const getTimeframeByRange = (
   if (range < dayTimestamp) {
     return {
       ...usedTimeframe,
-      xAxisLabelDisplayFormat: 'MMM D HH:mm',
       tooltipTimeFormat: 'MMM D HH:mm'
     };
   }
