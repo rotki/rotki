@@ -4,6 +4,7 @@ import binanceSavings from './handlers/binance-savings';
 import historyEventsHandlers from './handlers/history-events';
 import ledgerActionHandlers from './handlers/ledger-actions';
 import nfts from './handlers/nfts';
+import supportedChains from './handlers/supported-chains';
 import tradeHandlers from './handlers/trades';
 import historyTypeMappingHandlers from './handlers/history-type-mappings';
 import historyEventCounterpartiesHandlers from './handlers/history-event-counterparties';
@@ -15,6 +16,7 @@ const server = setupServer(
   ...ledgerActionHandlers,
   ...historyEventsHandlers,
   ...nfts,
+  ...supportedChains,
   ...binanceSavings,
   ...historyTypeMappingHandlers,
   ...historyEventCounterpartiesHandlers,
