@@ -26,8 +26,7 @@ const showConfirmation = () =>
         await clearPassword();
       }
 
-      await logout();
-      await navigateToUserLogin();
+      await Promise.all([logout(), navigateToUserLogin()]);
     }
   );
 

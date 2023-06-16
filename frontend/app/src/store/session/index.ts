@@ -162,11 +162,12 @@ export const useSessionStore = defineStore('session', () => {
   };
 
   const logout = async (): Promise<void> => {
+    set(logged, false);
     resetTray();
     try {
       await usersApi.logout(get(username));
-      set(logged, false);
     } catch (e: any) {
+      logger.error(e);
       setMessage({
         title: 'Logout failed',
         description: e.message
