@@ -71,6 +71,9 @@ export const useItemCache = <T>(
 
   const fetchBatch = useDebounceFn(async () => {
     const currentBatch = get(batch);
+    if (currentBatch.length === 0) {
+      return;
+    }
     set(batch, []);
     await processBatch(currentBatch);
   }, 800);
