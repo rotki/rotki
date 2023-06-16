@@ -701,13 +701,17 @@ class EvmNodeInquirer(metaclass=ABCMeta):
             self,
             web3: Optional[Web3],
             tx_hash: EVMTxHash,
+            must_exist: bool = False,
     ) -> Optional[dict[str, Any]]:
         if tx_hash == GENESIS_HASH:
             return FAKE_GENESIS_TX_RECEIPT
         if web3 is None:
             tx_receipt = self.etherscan.get_transaction_receipt(tx_hash)
             if tx_receipt is None:
-                return None
+                if must_exist:  # fail, so other nodes can be tried
+                    raise RemoteError(f'Querying for receipt {tx_hash.hex()} returned None')
+
+                return None  # else it does not exist
 
             try:
                 # Turn hex numbers to int
@@ -737,21 +741,34 @@ class EvmNodeInquirer(metaclass=ABCMeta):
                     f'Couldnt deserialize transaction receipt data from etherscan '
                     f'due to {msg}. Check logs for details',
                 ) from e
+
+            if must_exist and tx_receipt is None:  # fail, so other nodes can be tried
+                raise RemoteError(f'Querying for receipt {tx_hash.hex()} returned None')
+
             return tx_receipt
 
         # Can raise TransactionNotFound if the user's node is pruned and transaction is old
-        tx_receipt = web3.eth.get_transaction_receipt(tx_hash)  # type: ignore
+        try:
+            tx_receipt = web3.eth.get_transaction_receipt(tx_hash)  # type: ignore
+        except TransactionNotFound as e:
+            if must_exist:  # fail, so other nodes can be tried
+                raise RemoteError(f'Querying for receipt {tx_hash.hex()} returned None') from e
+
+            raise  # else re-raise e
+
         return process_result(tx_receipt)
 
     def maybe_get_transaction_receipt(
             self,
             tx_hash: EVMTxHash,
             call_order: Optional[Sequence[WeightedNode]] = None,
+            must_exist: bool = False,
     ) -> Optional[dict[str, Any]]:
         return self._query(
             method=self._get_transaction_receipt,
             call_order=call_order if call_order is not None else self.default_call_order(),
             tx_hash=tx_hash,
+            must_exist=must_exist,
         )
 
     def get_transaction_receipt(
@@ -767,6 +784,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
         tx_receipt = self.maybe_get_transaction_receipt(
             call_order=call_order if call_order is not None else self.default_call_order(),
             tx_hash=tx_hash,
+            must_exist=True,
         )
         assert tx_receipt, f'tx receipt should exist for tx hash {tx_hash.hex()}'
         return tx_receipt
@@ -775,13 +793,17 @@ class EvmNodeInquirer(metaclass=ABCMeta):
             self,
             web3: Optional[Web3],
             tx_hash: EVMTxHash,
+            must_exist: bool = False,
     ) -> Optional[tuple[EvmTransaction, dict[str, Any]]]:
         if web3 is None:
             tx_data = self.etherscan.get_transaction_by_hash(tx_hash=tx_hash)
         else:
             tx_data = web3.eth.get_transaction(tx_hash)  # type: ignore
         if tx_data is None:
-            return None
+            if must_exist:  # fail, so other nodes can be tried
+                raise RemoteError(f'Querying for transaction {tx_hash.hex()} returned None')
+
+            return None  # else it does not exist
 
         try:
             transaction, receipt_data = deserialize_evm_transaction(
@@ -802,12 +824,14 @@ class EvmNodeInquirer(metaclass=ABCMeta):
             self,
             tx_hash: EVMTxHash,
             call_order: Optional[Sequence[WeightedNode]] = None,
+            must_exist: bool = False,
     ) -> Optional[tuple[EvmTransaction, dict[str, Any]]]:
         """Gets transaction by hash and raw receipt data"""
         return self._query(
             method=self._get_transaction_by_hash,
             call_order=call_order if call_order is not None else self.default_call_order(),
             tx_hash=tx_hash,
+            must_exist=must_exist,
         )
 
     def get_transaction_by_hash(
@@ -823,6 +847,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
         result = self.maybe_get_transaction_by_hash(
             call_order=call_order if call_order is not None else self.default_call_order(),
             tx_hash=tx_hash,
+            must_exist=True,
         )
         assert result, 'transaction is expected to exist'
         return result

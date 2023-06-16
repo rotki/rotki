@@ -372,7 +372,7 @@ def test_get_pruned_nodes_behaviour_in_txn_queries(
 
     tx_or_tx_receipt_calls = 0
 
-    def mock_get_tx_or_tx_receipt(web3, tx_hash):
+    def mock_get_tx_or_tx_receipt(web3, tx_hash, must_exist):  # pylint: disable=unused-argument
         nonlocal tx_or_tx_receipt_calls
         assert tx_hash == txn_hash
         assert not web3 or web3.manager.provider.endpoint_uri != 'https://ethereum.publicnode.com'
