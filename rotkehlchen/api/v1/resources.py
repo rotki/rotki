@@ -773,6 +773,7 @@ class AllAssetsResource(BaseMethodView):
 class AssetsMappingResource(BaseMethodView):
     post_schema = AssetsMappingSchema()
 
+    @require_loggedin_user()  # since it uses the user DB too
     @use_kwargs(post_schema, location='json')
     def post(self, identifiers: list[str]) -> Response:
         return self.rest_api.get_assets_mappings(identifiers=identifiers)
