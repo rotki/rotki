@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useAppRoutes } from '@/router/routes';
+import { NoteLocation } from '@/types/notes';
 
 const { t } = useI18n();
 
@@ -17,14 +18,15 @@ const route = useRoute();
 
 const location = computed<string>(() => {
   const meta = get(route).meta;
+
   if (meta && meta.noteLocation) {
-    return meta.noteLocation as string;
+    return meta.noteLocation;
   }
 
   let noteLocation = '';
   get(route).matched.forEach(matched => {
     if (matched.meta.noteLocation) {
-      noteLocation = matched.meta.noteLocation as string;
+      noteLocation = matched.meta.noteLocation;
     }
   });
 
@@ -33,10 +35,34 @@ const location = computed<string>(() => {
 
 const { appRoutes } = useAppRoutes();
 
+const getNoteLocationKey = (key: string): string | null => {
+  const index = Object.values<string>(NoteLocation).indexOf(key);
+  if (index > -1) {
+    return Object.keys(NoteLocation)[index];
+  }
+
+  return null;
+};
+
 const locationName = computed<string>(() => {
+  const locationVal = get(location);
+  if (!locationVal) {
+    return '';
+  }
+
+  const noteLocationKey = getNoteLocationKey(locationVal);
+  if (!noteLocationKey) {
+    return '';
+  }
+
   const Routes = get(appRoutes);
-  // @ts-ignore
-  return Routes[get(location)]?.text ?? '';
+  const keyIn = (key: string): key is keyof typeof Routes => key in Routes;
+
+  if (keyIn(noteLocationKey)) {
+    return Routes[noteLocationKey].text;
+  }
+
+  return '';
 });
 
 watch(locationName, locationName => {
