@@ -41,6 +41,10 @@ WITHDRAW = b'1\x15\xd1D\x9a{s,\x98l\xba\x18$N\x89zE\x0fa\xe1\xbb\x8dX\x9c\xd2\xe
 BORROW = b'\xc6\xa8\x980\x9e\x82>\xe5\x0b\xacd\xe4\\\xa8\xad\xbaf\x90\xe9\x9exA\xc4]uN*8\xe9\x01\x9d\x9b'  # noqa: E501
 REPAY = b'L\xdd\xe6\xe0\x9b\xb7U\xc9\xa5X\x9e\xba\xecd\x0b\xbf\xed\xff\x13b\xd4\xb2U\xeb\xf83\x97\x82\xb9\x94/\xaa'  # noqa: E501
 LIQUIDATION_CALL = b'\xe4\x13\xa3!\xe8h\x1d\x83\x1fM\xbc\xcb\xcay\r)R\xb5o\x97y\x08\xe4[\xe3s5S>\x00R\x86'  # noqa: E501
+ETH_GATEWAYS = (
+    string_to_evm_address('0xEFFC18fC3b7eb8E676dac549E0c693ad50D1Ce31'),
+    string_to_evm_address('0xcc9a0B7c43DC2a5F023Bb9b738E45B0Ef6B06E04'),
+)
 
 
 class Aavev2Decoder(DecoderInterface):
@@ -75,9 +79,11 @@ class Aavev2Decoder(DecoderInterface):
     ) -> None:
         """Decode aave v2 deposit event"""
         user = hex_or_bytes_to_address(tx_log.data[:32])
-        on_behalf_of = hex_or_bytes_to_address(tx_log.data[64:96]) if hex_or_bytes_to_str(tx_log.data[64:96]) != '' else None  # noqa: E501
+        on_behalf_of = hex_or_bytes_to_address(tx_log.topics[2]) if hex_or_bytes_to_str(tx_log.topics[2]) != '' else None  # noqa: E501
+        # in the case of needing to wrap ETH to WETH aave uses the ETH_GATEWAY contract and the
+        # user is the contract address
         if (
-            self.base.is_tracked(user) is False and
+            (user not in ETH_GATEWAYS and self.base.is_tracked(user) is False) and
             (on_behalf_of is None or self.base.is_tracked(on_behalf_of) is False)
         ):
             return
@@ -86,11 +92,12 @@ class Aavev2Decoder(DecoderInterface):
             asset=token,
         )
         notes = f'Deposit {amount} {token.symbol} into AAVE v2'
-        if on_behalf_of is not None:
+        if on_behalf_of is not None and user not in ETH_GATEWAYS and on_behalf_of != user:
             notes += f' on behalf of {on_behalf_of}'
+
         for event in decoded_events:
             if (
-                event.location_label == user and
+                (event.location_label == user or (event.location_label == on_behalf_of and user in ETH_GATEWAYS)) and  # noqa: E501
                 event.balance.amount == amount and
                 event.event_subtype == HistoryEventSubType.NONE
             ):

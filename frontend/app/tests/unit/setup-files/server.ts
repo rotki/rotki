@@ -9,6 +9,7 @@ import tradeHandlers from './handlers/trades';
 import historyTypeMappingHandlers from './handlers/history-type-mappings';
 import historyEventCounterpartiesHandlers from './handlers/history-event-counterparties';
 import historyEventProductsHandlers from './handlers/history-event-products';
+import infoHandlers from './handlers/info';
 
 const server = setupServer(
   ...tradeHandlers,
@@ -16,8 +17,9 @@ const server = setupServer(
   ...ledgerActionHandlers,
   ...historyEventsHandlers,
   ...nfts,
-  ...supportedChains,
   ...binanceSavings,
+  ...infoHandlers,
+  ...supportedChains,
   ...historyTypeMappingHandlers,
   ...historyEventCounterpartiesHandlers,
   ...historyEventProductsHandlers

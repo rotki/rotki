@@ -960,3 +960,73 @@ def test_uniswap_v2_swap_events_order(
         ),
     ]
     assert events == expected_events
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('ethereum_accounts', [['0xbcce162c23480a4d44b88F57D5D2D9997402010e']])
+def test_remove_liquidity_with_weth(database, ethereum_inquirer, ethereum_accounts):
+    """Test that removing liquidity as weth gets correctly decoded"""
+    tx_hex = deserialize_evm_tx_hash('0x00007120e5281e9bdf9a57739e3ecaf736013e4a1a31ecfe44f719c229cc2cbd')  # noqa: E501
+    evmhash = deserialize_evm_tx_hash(tx_hex)
+    user_address = ethereum_accounts[0]
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hex,
+    )
+    expected_events = [
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=0,
+            timestamp=TimestampMS(1615943669000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal('0.018446778')),
+            location_label=user_address,
+            notes='Burned 0.018446778 ETH for gas',
+            counterparty=CPT_GAS,
+            address=None,
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=238,
+            timestamp=TimestampMS(1615943669000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+            asset=Asset('eip155:1/erc20:0xFfA98A091331Df4600F87C9164cD27e8a5CD2405'),
+            balance=Balance(amount=FVal('17.988110986983157473')),
+            location_label=user_address,
+            notes='Send 17.988110986983157473 UNI-V2 to uniswap-v2 pool',
+            counterparty=CPT_UNISWAP_V2,
+            address=string_to_evm_address('0xFfA98A091331Df4600F87C9164cD27e8a5CD2405'),
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=240,
+            timestamp=TimestampMS(1615943669000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.REMOVE_ASSET,
+            asset=Asset('eip155:1/erc20:0x83e6f1E41cdd28eAcEB20Cb649155049Fac3D5Aa'),
+            balance=Balance(amount=FVal('518.338444992444885019')),
+            location_label=user_address,
+            notes='Remove 518.338444992444885019 POLS from uniswap-v2 LP 0xFfA98A091331Df4600F87C9164cD27e8a5CD2405',  # noqa: E501
+            counterparty=CPT_UNISWAP_V2,
+            address=string_to_evm_address('0xFfA98A091331Df4600F87C9164cD27e8a5CD2405'),
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=241,
+            timestamp=TimestampMS(1615943669000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.REMOVE_ASSET,
+            asset=Asset('eip155:1/erc20:0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),
+            balance=Balance(amount=FVal('1.378246251315897532')),
+            location_label=user_address,
+            notes='Remove 1.378246251315897532 WETH from uniswap-v2 LP 0xFfA98A091331Df4600F87C9164cD27e8a5CD2405',  # noqa: E501
+            counterparty=CPT_UNISWAP_V2,
+            address=string_to_evm_address('0xFfA98A091331Df4600F87C9164cD27e8a5CD2405'),
+        ),
+    ]
+    assert events == expected_events

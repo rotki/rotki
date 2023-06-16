@@ -10,11 +10,13 @@ Changelog
 * :feature:`-` Ethereum transactions involving locking and unlocking GNO using the locked GNO contract will now be decoded properly.
 * :feature:`5250` Ethereum transactions involving AAVE v1 and v2 liquidations will now be decoded properly.
 * :bug:`-` Fix issue for ledger actions with zero rate, where the rate isn't used in the PnL report.
+* :bug:`-` Events where the user withdraws WETH from a Uniswap V2 liquidity position will be now correctly decoded.
 * :bug:`-` ENS avatar fetching for each name's avatar should now work for all name resolvers. Even older or custom ones.
 * :bug:`-` Users will now see correctly decoded Kyber legacy trades.
 * :bug:`-` Users will now be able to decode compounding transactions for Convex gauges.
 * :bug:`-` Events depositing tokens in Yearn V2 vaults where the full owned amount is deposited should be now correctly decoded.
 * :bug:`-` Users will no longer see double counting of balances in curve gauges.
+* :bug:`-` Aave transactions that deposit ETH in a contract that uses WETH will now be correctly decoded.
 * :bug:`-` Events that were imported via a csv file will now be properly accounted for in PnL reports.
 * :bug:`-` Notes in exported CSV reports will contain the correct url for transactions in different EVM chains.
 * :feature:`-` The PnL report page will load faster if there is many old reports in the DB.

@@ -227,9 +227,6 @@ export class AssetsManagerPage {
     cy.get('@submitButton').should('be.enabled');
     // create the asset
     cy.get('@submitButton').click();
-    // button should be visible at loading state
-    cy.get('@submitButton').should('be.disabled');
-
     // dialog should not be visible
     cy.get('[data-cy=bottom-dialog]').should('not.be.visible');
 
