@@ -700,6 +700,39 @@ def test_timed_balances_inferred_zero_balances(data_dir, username, sql_vm_instru
         assert all_data[6].amount == ZERO
         assert all_data[6].time == 1514849100
 
+        # Retest another case
+        write_cursor.execute('DELETE FROM timed_balances')
+        data.db.set_settings(write_cursor, settings=ModifiableDBSettings(treat_eth2_as_eth=True))
+        data.db.set_settings(write_cursor, settings=ModifiableDBSettings(ssf_graph_multiplier=2))
+
+        timed_balance_entries = [
+            (1659748923, 'ETH', '2', '0', asset),  #
+            (1659748923, 'ETH2', '10', '0', asset),
+            # 312 timestamps with 0 balances will be added here due to the ssf_graph_multiplier
+            (1686821381, 'ETH', '2', '0', asset),  #
+            (1686821381, 'BTC', '1', '0', asset),
+            (1686821381, 'LTC', '5', '0', asset),
+            (1686822381, 'LTC', '5', '0', asset),  # inferred 0
+            (1686823381, 'LTC', '5', '0', asset),
+            (1686824381, 'LTC', '5', '0', asset),  # inferred 0
+            (1686825013, 'ETH', '2', '0', asset),  #
+            (1686825081, 'ETH', '2', '0', asset),  #
+            (1686827028, 'ETH', '2', '0', asset),  #
+        ]
+
+        write_cursor.executemany(
+            'INSERT INTO timed_balances(timestamp, currency, amount, usd_value, category) '
+            'VALUES (?,?,?,?,?)',
+            timed_balance_entries,
+        )
+
+        all_data = data.db.query_timed_balances(  # sorted by time in ascending order
+            cursor=write_cursor,
+            asset=A_ETH,
+            balance_type=BalanceType.ASSET,
+        )
+    assert len(all_data) == 319  # 5 from db + 312 ssf_graph_multiplier zeros + 2 inferred zeros  # noqa: E501
+
 
 def test_query_owned_assets(data_dir, username, sql_vm_instructions_cb):
     """Test the get_owned_assets with also an unknown asset in the DB"""
