@@ -223,26 +223,6 @@ CREATE TABLE IF NOT EXISTS user_credentials_mappings (
 );
 """  # noqa: E501
 
-DB_CREATE_AAVE_EVENTS = """
-CREATE TABLE IF NOT EXISTS aave_events (
-    address VARCHAR[42] NOT NULL,
-    event_type VARCHAR[10] NOT NULL,
-    block_number INTEGER NOT NULL,
-    timestamp INTEGER NOT NULL,
-    tx_hash BLOB NOT NULL,
-    log_index INTEGER NOT NULL,
-    asset1 TEXT NOT NULL,
-    asset1_amount TEXT NOT NULL,
-    asset1_usd_value TEXT NOT NULL,
-    asset2 TEXT,
-    asset2amount_borrowrate_feeamount TEXT,
-    asset2usd_value_accruedinterest_feeusdvalue TEXT,
-    borrow_rate_mode VARCHAR[10],
-    FOREIGN KEY(asset1) REFERENCES assets(identifier) ON UPDATE CASCADE,
-    FOREIGN KEY(asset2) REFERENCES assets(identifier) ON UPDATE CASCADE,
-    PRIMARY KEY (event_type, tx_hash, log_index)
-);
-"""
 
 DB_CREATE_YEARN_VAULT_EVENTS = """
 CREATE TABLE IF NOT EXISTS yearn_vaults_events (
@@ -762,7 +742,6 @@ BEGIN TRANSACTION;
 {DB_CREATE_SETTINGS}
 {DB_CREATE_TAGS_TABLE}
 {DB_CREATE_TAG_MAPPINGS}
-{DB_CREATE_AAVE_EVENTS}
 {DB_CREATE_YEARN_VAULT_EVENTS}
 {DB_CREATE_XPUBS}
 {DB_CREATE_XPUB_MAPPINGS}

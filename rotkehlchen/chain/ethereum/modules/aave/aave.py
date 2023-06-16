@@ -382,5 +382,4 @@ class Aave(EthereumModule):
         pass
 
     def deactivate(self) -> None:
-        with self.database.user_write() as write_cursor:
-            self.database.delete_aave_data(write_cursor)
+        pass
