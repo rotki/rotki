@@ -30,8 +30,6 @@ from rotkehlchen.chain.bitcoin.xpub import (
     deserialize_derivation_path_for_db,
 )
 from rotkehlchen.chain.ethereum.interfaces.ammswap.types import EventType, LiquidityPoolEvent
-from rotkehlchen.chain.ethereum.modules.aave.common import atoken_to_asset
-from rotkehlchen.chain.ethereum.modules.aave.structures import AaveEvent, aave_event_from_db
 from rotkehlchen.chain.ethereum.modules.balancer import BALANCER_EVENTS_PREFIX
 from rotkehlchen.chain.ethereum.modules.sushiswap.constants import SUSHISWAP_EVENTS_PREFIX
 from rotkehlchen.chain.ethereum.modules.uniswap.constants import UNISWAP_EVENTS_PREFIX
@@ -149,7 +147,6 @@ TRANSIENT_DB_NAME = 'rotkehlchen_transient.db'
 # Tuples that contain first the name of a table and then the columns that
 # reference assets ids. This is used to query all assets that a user owns.
 TABLES_WITH_ASSETS = (
-    ('aave_events', 'asset1', 'asset2'),
     ('yearn_vaults_events', 'from_asset', 'to_asset'),
     ('manually_tracked_balances', 'asset'),
     ('trades', 'base_asset', 'quote_asset', 'fee_currency'),
@@ -746,76 +743,6 @@ class DBHandler:
                 'or an entry for the given timestamp already exists',
             ) from e
 
-    def add_aave_events(self, write_cursor: 'DBCursor', address: ChecksumEvmAddress, events: Sequence[AaveEvent]) -> None:  # noqa: E501
-        for e in events:
-            event_tuple = e.to_db_tuple(address)
-            try:
-                write_cursor.execute(
-                    'INSERT INTO aave_events( '
-                    'address, '
-                    'event_type, '
-                    'block_number, '
-                    'timestamp, '
-                    'tx_hash, '
-                    'log_index, '
-                    'asset1, '
-                    'asset1_amount, '
-                    'asset1_usd_value, '
-                    'asset2, '
-                    'asset2amount_borrowrate_feeamount, '
-                    'asset2usd_value_accruedinterest_feeusdvalue, '
-                    'borrow_rate_mode) '
-
-                    'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ? , ? , ? , ?)',
-                    event_tuple,
-                )
-            except sqlcipher.IntegrityError:  # pylint: disable=no-member
-                self.msg_aggregator.add_warning(
-                    f'Tried to add an aave event that already exists in the DB. '
-                    f'Event data: {event_tuple}. Skipping...',
-                )
-                continue
-
-    def get_aave_events(
-            self,
-            cursor: 'DBCursor',
-            address: ChecksumEvmAddress,
-            atoken: Optional[EvmToken] = None,
-    ) -> list[AaveEvent]:
-        """Get aave for a single address and a single aToken """
-        querystr = 'SELECT * FROM aave_events '
-        values: tuple
-        if atoken is not None:  # when called by blockchain
-            underlying_token = atoken_to_asset(atoken)
-            if underlying_token is None:  # should never happen
-                self.msg_aggregator.add_error(
-                    'Tried to query aave events for atoken with no underlying token. '
-                    'Returning no events.',
-                )
-                return []
-
-            querystr += 'WHERE address = ? AND (asset1=? OR asset1=?);'
-            values = (address, atoken.identifier, underlying_token.identifier)
-        else:  # called by graph
-            querystr += 'WHERE address = ?;'
-            values = (address,)
-
-        events = []
-        cursor.execute(querystr, values)
-        for result in cursor:
-            try:
-                event = aave_event_from_db(result)
-            except DeserializationError:
-                continue  # skip entry. Above function should already log an error
-            events.append(event)
-
-        return events
-
-    def delete_aave_data(self, write_cursor: 'DBCursor') -> None:
-        """Delete all historical aave event data"""
-        write_cursor.execute('DELETE FROM aave_events;')
-        write_cursor.execute('DELETE FROM used_query_ranges WHERE name LIKE "aave_events%";')
-
     def delete_balancer_events_data(self, write_cursor: 'DBCursor') -> None:
         """Delete all historical Balancer events data"""
         write_cursor.execute('DELETE FROM balancer_events;')
@@ -906,7 +833,6 @@ class DBHandler:
                 self.delete_uniswap_events_data(cursor)
                 self.delete_sushiswap_events_data(cursor)
                 self.delete_balancer_events_data(cursor)
-                self.delete_aave_data(cursor)
                 self.delete_yearn_vaults_data(write_cursor=cursor, version=1)
                 self.delete_yearn_vaults_data(write_cursor=cursor, version=2)
                 self.delete_loopring_data(cursor)
@@ -920,8 +846,6 @@ class DBHandler:
                 self.delete_sushiswap_events_data(cursor)
             elif module_name == 'balancer':
                 self.delete_balancer_events_data(cursor)
-            elif module_name == 'aave':
-                self.delete_aave_data(cursor)
             elif module_name == 'yearn_vaults':
                 self.delete_yearn_vaults_data(write_cursor=cursor, version=1)
             elif module_name == 'yearn_vaults_v2':
@@ -984,7 +908,6 @@ class DBHandler:
         - {exchange_location_name}_ledger_actions_{exchange_name}
         - {location}_history_events_{optional_label}
         - {exchange_location_name}_lending_history_{exchange_name}
-        - aave_events_{address}
         - yearn_vaults_events_{address}
         - yearn_vaults_v2_events_{address}
         """
@@ -2002,7 +1925,6 @@ class DBHandler:
             (f'{UNISWAP_EVENTS_PREFIX}_{address}',),
         )
         write_cursor.execute('DELETE FROM evm_accounts_details WHERE account = ?', (address,))
-        write_cursor.execute('DELETE FROM aave_events WHERE address = ?', (address,))
         write_cursor.execute('DELETE FROM balancer_events WHERE address=?;', (address,))
         write_cursor.execute('DELETE FROM amm_events WHERE address=?;', (address,))
         write_cursor.execute(

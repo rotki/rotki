@@ -1537,6 +1537,9 @@ def test_upgrade_db_37_to_38(user_data_dir):  # pylint: disable=unused-argument
     )
     cursor = db_v37.conn.cursor()
     assert cursor.execute('SELECT MAX(seq) FROM location').fetchone()[0] == 39
+    assert cursor.execute('SELECT COUNT(*) FROM aave_events').fetchone()[0] == 2
+    aave_range_key = 'aave_events_0x026045B110b49183E78520460eBEcdC6B4538C85'
+    assert cursor.execute('SELECT COUNT(*) FROM used_query_ranges WHERE name=?', (aave_range_key, )).fetchone()[0] == 1  # noqa: E501
     nodes_before = cursor.execute('SELECT * FROM rpc_nodes').fetchall()
     max_initial_node_id = cursor.execute('SELECT MAX(identifier) FROM rpc_nodes').fetchone()[0]
     expected_internal_txs = [
@@ -1547,7 +1550,7 @@ def test_upgrade_db_37_to_38(user_data_dir):  # pylint: disable=unused-argument
         (b'!wp\x1a\xb9\xc6Zw\xc7\xe9\xe6OV\x85\x12h\xcd\x015\x8e\x1c\x1d\x7f\xeb\xd8]!\x89\xbf\xf9P\x9f', 10, 1, 1667995269, 36284335, '0x1111111254760F7ab3F16433eea9304126DCd199', '0xc37b40ABdB939635068d3c5f13E7faF686F03B65', '127700838932040865'),  # noqa: E501
         (b'O\x1e\x95Pl\x10\xf0a\xdd\xfe(\xa7C\x7f;e\x19Y\xff\x17\xf1\xe2\xa7\xa1H\xc8\x89aG\xee5~', 10, 11, 1643122781, 2806776, '0x86cA30bEF97fB651b8d866D45503684b90cb3312', '0xc37b40ABdB939635068d3c5f13E7faF686F03B65', '103926722004783110'),  # noqa: E501
     ]
-    assert cursor.execute('SELECT * from evm_internal_transactions ORDER BY value DESC').fetchall() == expected_internal_txs  # noqa: E501
+    assert cursor.execute('SELECT * FROM evm_internal_transactions ORDER BY value DESC').fetchall() == expected_internal_txs  # noqa: E501
 
     db_v37.logout()
     # Execute upgrade
@@ -1570,6 +1573,8 @@ def test_upgrade_db_37_to_38(user_data_dir):  # pylint: disable=unused-argument
     assert nodes_after == nodes_before + default_polygon_nodes_with_ids
     expected_internal_txs = [tuple(x[:3]) + tuple(x[5:]) for x in expected_internal_txs]
     assert cursor.execute('SELECT * from evm_internal_transactions ORDER BY value DESC').fetchall() == expected_internal_txs  # noqa: E501
+    assert cursor.execute('SELECT COUNT(*) FROM used_query_ranges WHERE name=?', (aave_range_key,)).fetchone()[0] == 0  # noqa: E501
+    assert cursor.execute('SELECT COUNT(*) FROM sqlite_master WHERE type="table" AND name="aave_events";').fetchone()[0] == 0  # noqa: E501
 
 
 def test_latest_upgrade_adds_remove_tables(user_data_dir):
@@ -1617,7 +1622,7 @@ def test_latest_upgrade_adds_remove_tables(user_data_dir):
     result = cursor.execute('SELECT name FROM sqlite_master WHERE type="view"')
     views_after_creation = {x[0] for x in result}
 
-    removed_tables = set()
+    removed_tables = {'aave_events'}
     removed_views = set()
     missing_tables = tables_before - tables_after_upgrade
     missing_views = views_before - views_after_upgrade

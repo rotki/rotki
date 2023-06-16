@@ -29,7 +29,6 @@ from rotkehlchen.chain.ethereum.modules.aave.aave import (
     AaveLendingBalance,
 )
 from rotkehlchen.chain.ethereum.modules.aave.common import AaveStats
-from rotkehlchen.chain.ethereum.modules.aave.structures import AaveEvent
 from rotkehlchen.chain.ethereum.modules.balancer import (
     BalancerBPTEventPoolToken,
     BalancerEvent,
@@ -151,7 +150,6 @@ def _process_entry(entry: Any) -> Union[str, list[Any], dict[str, Any], Any]:
             CompoundBalance,
             YearnVaultEvent,
             YearnVaultBalance,
-            AaveEvent,
             LiquidityPool,
             LiquidityPoolAsset,
             LiquidityPoolEventsBalance,
