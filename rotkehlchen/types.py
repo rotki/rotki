@@ -289,7 +289,7 @@ class EvmTransaction(NamedTuple):
         result['gas'] = str(result['gas'])
         result['gas_price'] = str(result['gas_price'])
         result['gas_used'] = str(result['gas_used'])
-        if result['l1_fee']: #optimism transaction
+        if result['l1_fee']:  # optimism transaction
             result['l1_fee'] = str(result['l1_fee'])
         return result
 

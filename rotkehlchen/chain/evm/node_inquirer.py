@@ -681,7 +681,8 @@ class EvmNodeInquirer(metaclass=ABCMeta):
     ) -> Optional[dict[str, Any]]:
         if tx_hash == GENESIS_HASH:
             return FAKE_GENESIS_TX_RECEIPT
-        if web3 is None or self.chain_id == ChainID.OPTIMISM: #web3.py doesn't support optimism's l1 fees
+        if web3 is None or self.chain_id == ChainID.OPTIMISM:
+            # web3.py doesn't support optimism's l1 fees, always use etherscan
             tx_receipt = self.etherscan.get_transaction_receipt(tx_hash)
             if tx_receipt is None:
                 return None
@@ -774,7 +775,8 @@ class EvmNodeInquirer(metaclass=ABCMeta):
                 f'Couldnt deserialize evm transaction data from {tx_data}. Error: {e!s}',
             ) from e
         if self.chain_id == ChainID.OPTIMISM:
-            transaction = EvmTransaction( #type doesn't support assignment, so create a new copy with l1Fee from receipt_data
+            # EvmTransaction doesn't support assignment, create a copy to add l1_fee
+            transaction = EvmTransaction(
                 tx_hash=transaction.tx_hash,
                 chain_id=transaction.chain_id,
                 timestamp=transaction.timestamp,
@@ -787,7 +789,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
                 gas_used=transaction.gas_used,
                 input_data=transaction.input_data,
                 nonce=transaction.nonce,
-                l1_fee=receipt_data['l1Fee']
+                l1_fee=receipt_data['l1Fee'],
             )
         assert receipt_data, 'receipt_data should exist here as etherscan getTransactionByHash does not contains gasUsed'  # noqa: E501
         return transaction, receipt_data

@@ -70,7 +70,7 @@ class DBEvmTx():
                 str(tx.gas_used),
                 tx.input_data,
                 tx.nonce,
-                tx.l1_fee
+                tx.l1_fee,
             ))
 
         query = """
