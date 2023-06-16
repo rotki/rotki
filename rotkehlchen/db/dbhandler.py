@@ -2265,15 +2265,15 @@ class DBHandler:
             to_ts = ts_now()
 
         cursor.execute(
-            'SELECT COUNT(*) FROM timed_balances WHERE timestamp BETWEEN ? AND ?',
+            'SELECT COUNT(DISTINCT timestamp) FROM timed_balances WHERE timestamp BETWEEN ? AND ?',
             (from_ts, to_ts),
         )
-        num_all_balances = cursor.fetchone()[0]
+        num_distinct_timestamps = cursor.fetchone()[0]
 
-        if len(balances) == num_all_balances:
+        asset_timestamps = [b.time for b in balances if b.amount != ZERO]  # ignore timestamps from 0 balances added by the ssf_graph_multiplier setting  # noqa: E501
+        if len(asset_timestamps) == num_distinct_timestamps:
             return []
 
-        asset_timestamps = [b.time for b in balances]
         cursor.execute(
             'SELECT timestamp, category FROM timed_balances WHERE timestamp BETWEEN ? AND ? '
             'ORDER BY timestamp ASC',
