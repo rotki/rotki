@@ -59,6 +59,7 @@ def _add_transactions_to_db(
         gas_used=171249,
         input_data=hexstring_to_bytes('0xa9059cbb000000000000000000000000106b62fdd27b748cf2da3bacab91a2cabaee6dca0000000000000000000000000000000000000000000000000000000086959530'),  # noqa: E501
         nonce=507,
+        l1_fee=55214406017020,
     )
     transaction_eth = EvmTransaction(
         tx_hash=evmhash_eth,
@@ -73,6 +74,7 @@ def _add_transactions_to_db(
         gas_used=171249,
         input_data=hexstring_to_bytes('0xa9059cbb000000000000000000000000c5d494aa0cbabd7871af0ef122fb410fa25c3379000000000000000000000000000000000000000000000000000000257a9974a0'),  # noqa: E501
         nonce=507,
+        l1_fee=None,
     )
     transaction_eth_yabir = EvmTransaction(
         tx_hash=evmhash_eth_yabir,
@@ -87,6 +89,7 @@ def _add_transactions_to_db(
         gas_used=171249,
         input_data=hexstring_to_bytes('0xa9059cbb000000000000000000000000d9e40f3e33f62029172f6f8b691cf09d476bda3c000000000000000000000000000000000000000000000001a055690d9db80000'),  # noqa: E501
         nonce=507,
+        l1_fee=None,
     )
 
     dbevmtx = DBEvmTx(db)
@@ -112,6 +115,7 @@ def test_tx_decode(ethereum_transaction_decoder, database):
     addr1 = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'
     approve_tx_hash = deserialize_evm_tx_hash('0x5cc0e6e62753551313412492296d5e57bea0a9d1ce507cc96aa4aa076c5bde7a')  # noqa: E501
     with database.conn.read_ctx() as cursor:
+        cursor.execute('ALTER TABLE evm_transactions ADD COLUMN l1_fee TEXT')
         transactions = dbevmtx.get_evm_transactions(
             cursor=cursor,
             filter_=EvmTransactionsFilterQuery.make(
