@@ -34,9 +34,9 @@ def test_vote_cast(database, optimism_inquirer, optimism_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=Asset('ETH'),
-            balance=Balance(amount=FVal('0.000000121572')),
+            balance=Balance(amount=FVal('0.000656986283649328')),
             location_label=user_address,
-            notes='Burned 0.000000121572 ETH for gas',
+            notes='Burned 0.000656986283649328 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
