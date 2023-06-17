@@ -36,9 +36,9 @@ def test_optimism_airdrop_claim(database, optimism_inquirer):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal('0.000000122548')),
+            balance=Balance(amount=FVal('0.0002038856162166')),
             location_label=ADDY,
-            notes='Burned 0.000000122548 ETH for gas',
+            notes='Burned 0.0002038856162166 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -79,9 +79,9 @@ def test_optimism_delegate_change(database, optimism_inquirer):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal('0.000000028936')),
+            balance=Balance(amount=FVal('0.00005701303160652')),
             location_label=ADDY,
-            notes='Burned 0.000000028936 ETH for gas',
+            notes='Burned 0.00005701303160652 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
