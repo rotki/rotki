@@ -25,7 +25,7 @@ class CowswapAccountant(ModuleAccountantInterface):
                 count_entire_amount_spend=False,
                 count_cost_basis_pnl=True,
                 method='spend',
-                accounting_treatment=TxAccountingTreatment.SWAP,
+                accounting_treatment=TxAccountingTreatment.SWAP_WITH_FEE,
             ),
             get_tx_event_type_identifier(HistoryEventType.DEPOSIT, HistoryEventSubType.PLACE_ORDER, CPT_COWSWAP): TxEventSettings(  # noqa: E501
                 taxable=False,

@@ -25,6 +25,7 @@ class EventsAccountantCallback(Protocol):
 
 class TxAccountingTreatment(Enum):
     SWAP = 0
+    SWAP_WITH_FEE = 1
 
 
 class BaseEventSettings:

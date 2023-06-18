@@ -57,7 +57,6 @@ MOCKED_PRICES = {
             TIMESTAMP_1_SECS: Price(ONE),
         },
     },
-
 }
 
 EVM_HASH = make_evm_tx_hash()
