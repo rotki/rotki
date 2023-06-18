@@ -28,32 +28,18 @@ def maybe_reshuffle_events(
 
     The events are optional since it's also possible they may not be found.
     """
-
     actual_events = [x for x in ordered_events if x is not None]
     if len(actual_events) <= 1:
         return  # nothing to do
 
-    events_list.sort(key=lambda event: event.sequence_index)
-    events_num = len(events_list)
-    current_event = actual_events.pop(0)
-    for idx, event in enumerate(events_list):
-        next_idx = idx + 1
+    all_other_events = []
+    max_seq_index = -1
+    for event in events_list:
+        if event not in actual_events:
+            all_other_events.append(event)
+            if event.sequence_index > max_seq_index:
+                max_seq_index = event.sequence_index
 
-        if next_idx >= events_num:  # if no more events, push events after
-            for next_event_idx, next_event in enumerate(actual_events):
-                next_event.sequence_index = current_event.sequence_index + next_event_idx + 1
-            break  # and we are done
-
-        if event == current_event:
-            if events_list[next_idx] != actual_events[0] and events_list[next_idx].sequence_index != event.sequence_index + 1:  # noqa: E501
-                # if we have more events and next sequence index is free
-                current_event = actual_events.pop(0)
-                current_event.sequence_index = event.sequence_index + 1
-                continue  # use it for the following event
-
-            if events_list[next_idx] == actual_events[0]:  # if next event follows just continue
-                current_event = actual_events.pop(0)
-                continue
-
-            # otherwise swap index of next event with the event that should be current here
-            _swap_event_indices(events_list[next_idx], current_event)
+    for idx, event in enumerate(actual_events):
+        event.sequence_index = max_seq_index + idx + 1
+    events_list = all_other_events + actual_events

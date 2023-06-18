@@ -538,15 +538,26 @@ def test_maybe_reshuffle_events():
     event_b = make_ethereum_event(23, location_label='b')
     event_c = make_ethereum_event(5, location_label='c')
     event_seq1 = make_ethereum_event(1, location_label='seq1')
+    event_seq4 = make_ethereum_event(4, location_label='seq4')
+    event_seq6 = make_ethereum_event(6, location_label='seq6')
     event_seq12 = make_ethereum_event(12, location_label='seq12')
     event_seq35 = make_ethereum_event(35, location_label='seq35')
 
+    event_8 = make_ethereum_event(8, location_label='8')
+    event_37 = make_ethereum_event(37, location_label='37')
+    event_seq9 = make_ethereum_event(9, location_label='seq9')
+    event_seq10 = make_ethereum_event(10, location_label='seq10')
+    event_seq2 = make_ethereum_event(2, location_label='seq2')
+    event_seq0 = make_ethereum_event(0, location_label='seq0')
+
     def reset_events():
-        nonlocal event_a, event_b, event_c, event_seq1, event_seq12, event_seq35
+        nonlocal event_a, event_b, event_c, event_seq1, event_seq4, event_seq6, event_seq12, event_seq35  # noqa: E501
         event_a = make_ethereum_event(99, location_label='a')
         event_b = make_ethereum_event(23, location_label='b')
         event_c = make_ethereum_event(5, location_label='c')
         event_seq1 = make_ethereum_event(1, location_label='seq1')
+        event_seq4 = make_ethereum_event(4, location_label='seq4')
+        event_seq6 = make_ethereum_event(6, location_label='seq6')
         event_seq12 = make_ethereum_event(15, location_label='seq12')
         event_seq35 = make_ethereum_event(35, location_label='seq35')
 
@@ -554,8 +565,11 @@ def test_maybe_reshuffle_events():
         reset_events()  # needed to reset all modified sequence indices
         maybe_reshuffle_events(ordered_events, events_list)
         events_list.sort(key=lambda event: event.sequence_index)
+        sequence_indices = set()
         for idx, entry in enumerate(result_list):  # use location_label to determine original event
+            assert entry.sequence_index not in sequence_indices, 'duplicated sequence index'
             assert entry.location_label == events_list[idx].location_label, msg
+            sequence_indices.add(entry.sequence_index)
 
     # simple cases where nothing happens
     test_reshuffle(
@@ -627,7 +641,7 @@ def test_maybe_reshuffle_events():
     test_reshuffle(
         ordered_events=[event_b, event_a],
         events_list=[event_seq35, event_a, event_seq1, event_b],
-        result_list=[event_seq1, event_b, event_a, event_seq35],
+        result_list=[event_seq1, event_seq35, event_b, event_a],
     )
     test_reshuffle(
         ordered_events=[event_a, event_b],
@@ -642,7 +656,7 @@ def test_maybe_reshuffle_events():
     test_reshuffle(
         ordered_events=[event_b, event_a],
         events_list=[event_seq12, event_b, event_seq35, event_a],
-        result_list=[event_seq12, event_b, event_a, event_seq35],
+        result_list=[event_seq12, event_seq35, event_b, event_a],
     )
 
     # 3 ordered events cases
@@ -681,22 +695,29 @@ def test_maybe_reshuffle_events():
     test_reshuffle(
         ordered_events=[event_b, event_a, event_c],
         events_list=[event_a, event_seq35, event_seq12, event_b, event_seq1, event_c],
-        result_list=[event_seq1, event_seq12, event_b, event_a, event_c, event_seq35],
+        result_list=[event_seq1, event_seq12, event_seq35, event_b, event_a, event_c],
     )
     test_reshuffle(
         ordered_events=[event_b, event_c, event_a],
         events_list=[event_a, event_seq35, event_seq12, event_b, event_seq1, event_c],
-        result_list=[event_seq1, event_seq12, event_b, event_c, event_a, event_seq35],
+        result_list=[event_seq1, event_seq12, event_seq35, event_b, event_c, event_a],
     )
     test_reshuffle(
         ordered_events=[event_c, event_a, event_b],
         events_list=[event_a, event_seq35, event_seq12, event_b, event_seq1, event_c],
-        result_list=[event_seq1, event_c, event_a, event_b, event_seq12, event_seq35],
+        result_list=[event_seq1, event_seq12, event_seq35, event_c, event_a, event_b],
     )
     test_reshuffle(
         ordered_events=[event_c, event_b, event_a],
         events_list=[event_a, event_seq35, event_seq12, event_b, event_seq1, event_c],
-        result_list=[event_seq1, event_c, event_b, event_a, event_seq12, event_seq35],
+        result_list=[event_seq1, event_seq12, event_seq35, event_c, event_b, event_a],
+    )
+
+    # test that a sequence index is not reused (this scenario used to re-use one and break)
+    test_reshuffle(
+        ordered_events=[event_8, event_seq1, event_37],
+        events_list=[event_seq0, event_8, event_seq9, event_seq10, event_37, event_seq1, event_seq2],  # noqa: E501
+        result_list=[event_seq0, event_seq2, event_seq9, event_seq10, event_8, event_seq1, event_37],  # noqa: E501
     )
 
 
