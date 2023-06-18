@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Fix gas fee calculation for Optimism transactions to include L1 fees.
 * :bug:`-` Fix issue for ledger actions with zero rate, where the rate isn't used in the PnL report.
 * :bug:`-` Events where the user withdraws WETH from a Uniswap V2 liquidity position will be now correctly decoded.
 * :bug:`-` ENS avatar fetching for each name's avatar should now work for all name resolvers. Even older or custom ones.
