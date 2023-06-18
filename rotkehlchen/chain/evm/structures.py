@@ -1,8 +1,9 @@
 import dataclasses
 from typing import NamedTuple, Optional
-from rotkehlchen.assets.asset import Asset
-from rotkehlchen.fval import FVal
 
+from rotkehlchen.assets.asset import Asset
+from rotkehlchen.constants import ZERO
+from rotkehlchen.fval import FVal
 from rotkehlchen.types import ChainID, ChecksumEvmAddress, EVMTxHash
 
 
@@ -31,3 +32,4 @@ class SwapData(NamedTuple):
     from_amount: FVal
     to_asset: Asset
     to_amount: FVal
+    fee_amount: FVal = ZERO
