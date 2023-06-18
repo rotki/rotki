@@ -1,8 +1,7 @@
 import logging
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Any, Callable, Optional
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.ethereum.modules.cowswap.constants import CPT_COWSWAP
@@ -18,6 +17,7 @@ from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails, EventCateg
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog, SwapData
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH, A_WETH
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -31,6 +31,7 @@ from rotkehlchen.types import (
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 if TYPE_CHECKING:
+    from rotkehlchen.accounting.structures.evm_event import EvmEvent
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
     from rotkehlchen.fval import FVal
@@ -121,6 +122,7 @@ class CowswapDecoder(DecoderInterface):
             to_token_address = hex_or_bytes_to_address(tx_log.data[32:64])
             raw_from_amount = hex_or_bytes_to_int(tx_log.data[64:96])
             raw_to_amount = hex_or_bytes_to_int(tx_log.data[96:128])
+            raw_fee_amount = hex_or_bytes_to_int(tx_log.data[128:160])
 
             if (
                 from_token_address == A_WETH.resolve_to_evm_token().evm_address and
@@ -140,14 +142,16 @@ class CowswapDecoder(DecoderInterface):
                     token_type=EvmTokenKind.ERC20,
                 ),
             )
+            fee_amount = asset_normalized_value(amount=raw_fee_amount, asset=from_asset)
             from_amount = asset_normalized_value(amount=raw_from_amount, asset=from_asset)
             to_amount = asset_normalized_value(amount=raw_to_amount, asset=to_asset)
 
             trades.append(SwapData(
                 from_asset=from_asset,
-                from_amount=from_amount,
+                from_amount=from_amount - fee_amount,  # fee is taken as part of from asset
                 to_asset=to_asset,
                 to_amount=to_amount,
+                fee_amount=fee_amount,
             ))
 
         return trades
@@ -157,7 +161,7 @@ class CowswapDecoder(DecoderInterface):
             transaction: EvmTransaction,
             all_swap_data: list[SwapData],
             decoded_events: list['EvmEvent'],
-    ) -> list[tuple['EvmEvent', EvmEvent]]:
+    ) -> list[tuple['EvmEvent', 'EvmEvent', Optional['EvmEvent'], SwapData]]:
         """
         This function does the following
         1. Detect trades that are relevant to the tracked accounts.
@@ -168,7 +172,8 @@ class CowswapDecoder(DecoderInterface):
         and in these cases there is no spend event) and a mandatory receive event, so to detect
         relevant trades we check which trades have a decoded eth/token receive event.
 
-        Returns a list of pairs (spend_event, receive_event) which represent the relevant trades.
+        Returns a list of pairs (spend_event, receive_event, swap_data)
+        which represent the relevant trades.
         """
         related_transfer_events: dict[tuple[HistoryEventType, Asset, FVal], 'EvmEvent'] = {}
         for event in decoded_events:
@@ -178,7 +183,7 @@ class CowswapDecoder(DecoderInterface):
             ):
                 related_transfer_events[(event.event_type, event.asset, event.balance.amount)] = event  # noqa: E501
 
-        trades_events: list[tuple['EvmEvent', EvmEvent]] = []
+        trades_events: list[tuple['EvmEvent', 'EvmEvent', Optional['EvmEvent'], SwapData]] = []
         for swap_data in all_swap_data:
             receive_event = related_transfer_events.get((HistoryEventType.RECEIVE, swap_data.to_asset, swap_data.to_amount))  # noqa: E501
             if receive_event is None:
@@ -186,7 +191,7 @@ class CowswapDecoder(DecoderInterface):
 
             if swap_data.from_asset != A_ETH:
                 # If a token is spent, there has to be an event for that.
-                spend_event = related_transfer_events.get((HistoryEventType.SPEND, swap_data.from_asset, swap_data.from_amount))  # noqa: E501
+                spend_event = related_transfer_events.get((HistoryEventType.SPEND, swap_data.from_asset, swap_data.from_amount + swap_data.fee_amount))  # noqa: E501
                 if spend_event is None:
                     log.error(
                         f'Could not find a spend event of {swap_data.from_amount} '
@@ -208,7 +213,23 @@ class CowswapDecoder(DecoderInterface):
                 )
                 decoded_events.append(spend_event)
 
-            trades_events.append((spend_event, receive_event))
+            fee_event = None
+            if swap_data.fee_amount != ZERO:
+                fee_event = self.base.make_event_next_index(
+                    tx_hash=transaction.tx_hash,
+                    timestamp=transaction.timestamp,
+                    event_type=HistoryEventType.SPEND,
+                    event_subtype=HistoryEventSubType.FEE,
+                    asset=swap_data.from_asset,
+                    balance=Balance(amount=swap_data.fee_amount),
+                    location_label=receive_event.location_label,
+                    notes=f'Spend {swap_data.fee_amount} {spend_event.asset.symbol_or_name()} as a cowswap fee',  # noqa: E501
+                    counterparty=CPT_COWSWAP,
+                    address=transaction.to_address,
+                )
+                decoded_events.append(fee_event)
+
+            trades_events.append((spend_event, receive_event, fee_event, swap_data))
 
         return trades_events
 
@@ -234,7 +255,8 @@ class CowswapDecoder(DecoderInterface):
             all_swap_data=all_swap_data,
             decoded_events=decoded_events,
         )
-        for spend_event, receive_event in relevant_trades:
+        for spend_event, receive_event, fee_event, swap_data in relevant_trades:
+            spend_event.balance = Balance(amount=swap_data.from_amount)
             spend_event.counterparty = CPT_COWSWAP
             receive_event.counterparty = CPT_COWSWAP
             spend_event.event_type = HistoryEventType.TRADE
@@ -243,7 +265,10 @@ class CowswapDecoder(DecoderInterface):
             receive_event.event_subtype = HistoryEventSubType.RECEIVE
             spend_event.notes = f'Swap {spend_event.balance.amount} {spend_event.asset.symbol_or_name()} in cowswap'  # noqa: E501
             receive_event.notes = f'Receive {receive_event.balance.amount} {receive_event.asset.symbol_or_name()} as the result of a swap in cowswap'  # noqa: E501
-            maybe_reshuffle_events(out_event=spend_event, in_event=receive_event, events_list=decoded_events)  # noqa: E501
+            maybe_reshuffle_events(
+                ordered_events=[spend_event, fee_event, receive_event],
+                events_list=decoded_events,
+            )
 
         return decoded_events
 

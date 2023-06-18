@@ -5,6 +5,7 @@ from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.modules.cowswap.constants import CPT_COWSWAP
+from rotkehlchen.chain.ethereum.modules.cowswap.decoder import GPV2_SETTLEMENT_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_USDC, A_USDT, A_WBTC, A_WETH
@@ -24,24 +25,42 @@ def test_swap_token_to_token(database, ethereum_inquirer, ethereum_accounts):
         database=database,
         tx_hash=tx_hex,
     )
+    timestamp = TimestampMS(1676976635000)
+    full_amount = FVal('0.15463537')
+    raw_amount = '0.15395918'
+    fee_amount = '0.00067619'
+    assert full_amount == FVal(raw_amount) + FVal(fee_amount)
     expected_events = [
         EvmEvent(
             tx_hash=evmhash,
-            sequence_index=4,
-            timestamp=TimestampMS(1676976635000),
+            sequence_index=0,
+            timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_WBTC,
-            balance=Balance(amount=FVal('0.15463537')),
+            balance=Balance(amount=FVal(raw_amount)),
             location_label=user_address,
-            notes='Swap 0.15463537 WBTC in cowswap',
+            notes=f'Swap {raw_amount} WBTC in cowswap',
             counterparty=CPT_COWSWAP,
-            address=string_to_evm_address('0x9008D19f58AAbD9eD0D60971565AA8510560ab41'),
+            address=GPV2_SETTLEMENT_ADDRESS,
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=34,
-            timestamp=TimestampMS(1676976635000),
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_WBTC,
+            balance=Balance(amount=FVal(fee_amount)),
+            location_label=user_address,
+            notes=f'Spend {fee_amount} WBTC as a cowswap fee',
+            counterparty=CPT_COWSWAP,
+            address=GPV2_SETTLEMENT_ADDRESS,
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=2,
+            timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
@@ -50,7 +69,7 @@ def test_swap_token_to_token(database, ethereum_inquirer, ethereum_accounts):
             location_label=user_address,
             notes='Receive 3800 USDC as the result of a swap in cowswap',
             counterparty=CPT_COWSWAP,
-            address=string_to_evm_address('0x9008D19f58AAbD9eD0D60971565AA8510560ab41'),
+            address=GPV2_SETTLEMENT_ADDRESS,
         ),
     ]
     assert events == expected_events
@@ -67,24 +86,42 @@ def test_swap_token_to_eth(database, ethereum_inquirer, ethereum_accounts):
         database=database,
         tx_hash=tx_hex,
     )
+    timestamp = TimestampMS(1676976635000)
+    full_amount = FVal('99.99')
+    raw_amount = '89.682951'
+    fee_amount = '10.307049'
+    assert full_amount == FVal(raw_amount) + FVal(fee_amount)
     expected_events = [
         EvmEvent(
             tx_hash=evmhash,
             sequence_index=0,
-            timestamp=TimestampMS(1676976635000),
+            timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_USDT,
-            balance=Balance(amount=FVal('99.99')),
+            balance=Balance(amount=FVal(raw_amount)),
             location_label=user_address,
-            notes='Swap 99.99 USDT in cowswap',
+            notes=f'Swap {raw_amount} USDT in cowswap',
             counterparty=CPT_COWSWAP,
-            address=string_to_evm_address('0x9008D19f58AAbD9eD0D60971565AA8510560ab41'),
+            address=GPV2_SETTLEMENT_ADDRESS,
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=10,
-            timestamp=TimestampMS(1676976635000),
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_USDT,
+            balance=Balance(amount=FVal(fee_amount)),
+            location_label=user_address,
+            notes=f'Spend {fee_amount} USDT as a cowswap fee',
+            counterparty=CPT_COWSWAP,
+            address=GPV2_SETTLEMENT_ADDRESS,
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=2,
+            timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
@@ -93,7 +130,7 @@ def test_swap_token_to_eth(database, ethereum_inquirer, ethereum_accounts):
             location_label=user_address,
             notes='Receive 0.053419767450716028 ETH as the result of a swap in cowswap',  # noqa: E501
             counterparty=CPT_COWSWAP,
-            address=string_to_evm_address('0x9008D19f58AAbD9eD0D60971565AA8510560ab41'),
+            address=GPV2_SETTLEMENT_ADDRESS,
         ),
     ]
     assert events == expected_events
@@ -110,24 +147,42 @@ def test_swap_eth_to_token(database, ethereum_inquirer, ethereum_accounts):
         database=database,
         tx_hash=tx_hex,
     )
+    timestamp = TimestampMS(1676987243000)
+    full_amount = FVal('24.311042505395616962')
+    raw_amount = '24.304521595868826446'
+    fee_amount = '0.006520909526790516'
+    assert full_amount == FVal(raw_amount) + FVal(fee_amount)
     expected_events = [
         EvmEvent(
             tx_hash=evmhash,
             sequence_index=0,
-            timestamp=TimestampMS(1676987243000),
+            timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_ETH,
-            balance=Balance(amount=FVal('24.311042505395616962')),
+            balance=Balance(amount=FVal(raw_amount)),
             location_label=user_address,
-            notes='Swap 24.311042505395616962 ETH in cowswap',
+            notes=f'Swap {raw_amount} ETH in cowswap',
             counterparty=CPT_COWSWAP,
-            address=string_to_evm_address('0x9008D19f58AAbD9eD0D60971565AA8510560ab41'),
+            address=GPV2_SETTLEMENT_ADDRESS,
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=321,
-            timestamp=TimestampMS(1676987243000),
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(fee_amount)),
+            location_label=user_address,
+            notes=f'Spend {fee_amount} ETH as a cowswap fee',
+            counterparty=CPT_COWSWAP,
+            address=GPV2_SETTLEMENT_ADDRESS,
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=2,
+            timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
@@ -136,7 +191,7 @@ def test_swap_eth_to_token(database, ethereum_inquirer, ethereum_accounts):
             location_label=user_address,
             notes='Receive 40690.637506 USDC as the result of a swap in cowswap',
             counterparty=CPT_COWSWAP,
-            address=string_to_evm_address('0x9008D19f58AAbD9eD0D60971565AA8510560ab41'),
+            address=GPV2_SETTLEMENT_ADDRESS,
         ),
     ]
     assert events == expected_events
@@ -160,50 +215,62 @@ def test_2_decoded_swaps(database, ethereum_inquirer, ethereum_accounts):
         database=database,
         tx_hash=tx_hex,
     )
+
+    timestamp = TimestampMS(1676976635000)
+    asset_fund = Asset('eip155:1/erc20:0xe9B076B476D8865cDF79D1Cf7DF420EE397a7f75')
+    full_amount1 = FVal('16000')
+    raw_amount1 = '15977.954584364'
+    fee_amount1 = '22.045415636'
+    assert full_amount1 == FVal(raw_amount1) + FVal(fee_amount1)
+    full_amount2 = FVal('99.99')
+    raw_amount2 = '89.682951'
+    fee_amount2 = '10.307049'
+    assert full_amount2 == FVal(raw_amount2) + FVal(fee_amount2)
+
     expected_events = [
-        EvmEvent(
-            tx_hash=evmhash,
-            sequence_index=0,
-            timestamp=TimestampMS(1676976635000),
-            location=Location.ETHEREUM,
-            event_type=HistoryEventType.TRADE,
-            event_subtype=HistoryEventSubType.SPEND,
-            asset=A_USDT,
-            balance=Balance(amount=FVal('99.99')),
-            location_label=user_address_2,
-            notes='Swap 99.99 USDT in cowswap',
-            counterparty=CPT_COWSWAP,
-            address=string_to_evm_address('0x9008D19f58AAbD9eD0D60971565AA8510560ab41'),
-        ), EvmEvent(
-            tx_hash=evmhash,
-            sequence_index=1,
-            timestamp=TimestampMS(1676976635000),
-            location=Location.ETHEREUM,
-            event_type=HistoryEventType.TRADE,
-            event_subtype=HistoryEventSubType.RECEIVE,
-            asset=A_ETH,
-            balance=Balance(amount=FVal('0.053419767450716028')),
-            location_label=user_address_2,
-            notes='Receive 0.053419767450716028 ETH as the result of a swap in cowswap',  # noqa: E501
-            counterparty=CPT_COWSWAP,
-            address=string_to_evm_address('0x9008D19f58AAbD9eD0D60971565AA8510560ab41'),
-        ), EvmEvent(
-            tx_hash=evmhash,
-            sequence_index=8,
-            timestamp=TimestampMS(1676976635000),
-            location=Location.ETHEREUM,
-            event_type=HistoryEventType.TRADE,
-            event_subtype=HistoryEventSubType.SPEND,
-            asset=Asset('eip155:1/erc20:0xe9B076B476D8865cDF79D1Cf7DF420EE397a7f75'),
-            balance=Balance(amount=FVal('16000')),
-            location_label=user_address_1,
-            notes='Swap 16000 FUND in cowswap',
-            counterparty=CPT_COWSWAP,
-            address=string_to_evm_address('0x9008D19f58AAbD9eD0D60971565AA8510560ab41'),
-        ), EvmEvent(
+        EvmEvent(  # approval
             tx_hash=evmhash,
             sequence_index=9,
-            timestamp=TimestampMS(1676976635000),
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=asset_fund,
+            balance=Balance(amount=FVal('115792089237316195423570985000000000000000000000000000000000000000000')),  # noqa: E501
+            location_label=user_address_1,
+            notes='Set FUND spending approval of 0x0D2f07876685bEcd81DDa1C897f2D6Cacc733fc1 by 0xC92E8bdf79f0507f65a392b0ab4667716BFE0110 to 115792089237316195423570985000000000000000000000000000000000000000000',  # noqa: E501
+            address='0xC92E8bdf79f0507f65a392b0ab4667716BFE0110',
+
+        ), EvmEvent(  # 1st swap with FUND
+            tx_hash=evmhash,
+            sequence_index=11,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=asset_fund,
+            balance=Balance(amount=FVal(raw_amount1)),
+            location_label=user_address_1,
+            notes=f'Swap {raw_amount1} FUND in cowswap',
+            counterparty=CPT_COWSWAP,
+            address=GPV2_SETTLEMENT_ADDRESS,
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=12,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=asset_fund,
+            balance=Balance(amount=FVal(fee_amount1)),
+            location_label=user_address_1,
+            notes=f'Spend {fee_amount1} FUND as a cowswap fee',
+            counterparty=CPT_COWSWAP,
+            address=GPV2_SETTLEMENT_ADDRESS,
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=13,
+            timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
@@ -212,19 +279,46 @@ def test_2_decoded_swaps(database, ethereum_inquirer, ethereum_accounts):
             location_label=user_address_1,
             notes='Receive 4.870994011222719015 WETH as the result of a swap in cowswap',  # noqa: E501
             counterparty=CPT_COWSWAP,
-            address=string_to_evm_address('0x9008D19f58AAbD9eD0D60971565AA8510560ab41'),
+            address=GPV2_SETTLEMENT_ADDRESS,
+        ), EvmEvent(  # 2nd swap with USDT
+            tx_hash=evmhash,
+            sequence_index=14,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_USDT,
+            balance=Balance(amount=FVal(raw_amount2)),
+            location_label=user_address_2,
+            notes=f'Swap {raw_amount2} USDT in cowswap',
+            counterparty=CPT_COWSWAP,
+            address=GPV2_SETTLEMENT_ADDRESS,
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=37,
-            timestamp=TimestampMS(1676976635000),
+            sequence_index=15,
+            timestamp=timestamp,
             location=Location.ETHEREUM,
-            event_type=HistoryEventType.INFORMATIONAL,
-            event_subtype=HistoryEventSubType.APPROVE,
-            asset=Asset('eip155:1/erc20:0xe9B076B476D8865cDF79D1Cf7DF420EE397a7f75'),
-            balance=Balance(amount=FVal('115792089237316195423570985000000000000000000000000000000000000000000')),  # noqa: E501
-            location_label=user_address_1,
-            notes='Set FUND spending approval of 0x0D2f07876685bEcd81DDa1C897f2D6Cacc733fc1 by 0xC92E8bdf79f0507f65a392b0ab4667716BFE0110 to 115792089237316195423570985000000000000000000000000000000000000000000',  # noqa: E501
-            address='0xC92E8bdf79f0507f65a392b0ab4667716BFE0110',
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_USDT,
+            balance=Balance(amount=FVal(fee_amount2)),
+            location_label=user_address_2,
+            notes=f'Spend {fee_amount2} USDT as a cowswap fee',
+            counterparty=CPT_COWSWAP,
+            address=GPV2_SETTLEMENT_ADDRESS,
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=16,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal('0.053419767450716028')),
+            location_label=user_address_2,
+            notes='Receive 0.053419767450716028 ETH as the result of a swap in cowswap',  # noqa: E501
+            counterparty=CPT_COWSWAP,
+            address=GPV2_SETTLEMENT_ADDRESS,
         ),
     ]
     assert events == expected_events
