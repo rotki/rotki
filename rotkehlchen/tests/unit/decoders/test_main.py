@@ -534,18 +534,170 @@ def test_maybe_reshuffle_events():
     Tests that `maybe_reshuffle_events` works correctly.
     Especially tests that there are no duplicated indices produced.
     """
-    event_a = make_ethereum_event(1)
-    event_b = make_ethereum_event(2)
-    event_c = make_ethereum_event(3)
-    events = [event_a, event_b, event_c]
+    event_a = make_ethereum_event(99, location_label='a')
+    event_b = make_ethereum_event(23, location_label='b')
+    event_c = make_ethereum_event(5, location_label='c')
+    event_seq1 = make_ethereum_event(1, location_label='seq1')
+    event_seq12 = make_ethereum_event(12, location_label='seq12')
+    event_seq35 = make_ethereum_event(35, location_label='seq35')
 
-    maybe_reshuffle_events(event_c, event_a)
-    assert events == [event_a, event_b, event_c]  # no change since we just swap indices
-    assert [event.sequence_index for event in events] == [3, 2, 1]  # indices swapped
+    def reset_events():
+        nonlocal event_a, event_b, event_c, event_seq1, event_seq12, event_seq35
+        event_a = make_ethereum_event(99, location_label='a')
+        event_b = make_ethereum_event(23, location_label='b')
+        event_c = make_ethereum_event(5, location_label='c')
+        event_seq1 = make_ethereum_event(1, location_label='seq1')
+        event_seq12 = make_ethereum_event(15, location_label='seq12')
+        event_seq35 = make_ethereum_event(35, location_label='seq35')
 
-    maybe_reshuffle_events(event_c, event_a, events)
-    assert events == [event_c, event_b, event_a]  # events were sorted before swapping indices
-    assert [event.sequence_index for event in events] == [1, 3, 2]  # indices swapped
+    def test_reshuffle(ordered_events, events_list, result_list, msg='events_should_be_swapped'):
+        reset_events()  # needed to reset all modified sequence indices
+        maybe_reshuffle_events(ordered_events, events_list)
+        events_list.sort(key=lambda event: event.sequence_index)
+        for idx, entry in enumerate(result_list):  # use location_label to determine original event
+            assert entry.location_label == events_list[idx].location_label, msg
+
+    # simple cases where nothing happens
+    test_reshuffle(
+        ordered_events=[None, event_a],
+        events_list=[event_b, event_a],
+        result_list=[event_b, event_a],
+        msg='only 1 event. Nothing should happen',
+    )
+    test_reshuffle(
+        ordered_events=[event_b, None],
+        events_list=[event_b, event_a],
+        result_list=[event_b, event_a],
+        msg='only 1 event. Nothing should happen',
+    )
+    test_reshuffle(
+        ordered_events=[None, None],
+        events_list=[event_b, event_a],
+        result_list=[event_b, event_a],
+        msg='no event. Nothing should happen',
+    )
+
+    # cases with two simple events to swap
+    test_reshuffle(
+        ordered_events=[event_a, event_b],
+        events_list=[event_b, event_a],
+        result_list=[event_a, event_b],
+    )
+    test_reshuffle(
+        ordered_events=[event_b, event_a],
+        events_list=[event_a, event_b],
+        result_list=[event_b, event_a],
+    )
+
+    # cases with 1 more event (b, a)
+    test_reshuffle(
+        ordered_events=[event_b, event_a],
+        events_list=[event_seq1, event_a, event_b],
+        result_list=[event_seq1, event_b, event_a],
+    )
+    test_reshuffle(
+        ordered_events=[event_b, event_a],
+        events_list=[event_a, event_seq1, event_b],
+        result_list=[event_seq1, event_b, event_a],
+    )
+    test_reshuffle(
+        ordered_events=[event_b, event_a],
+        events_list=[event_a, event_b, event_seq1],
+        result_list=[event_seq1, event_b, event_a],
+    )
+
+    # cases with 1 more event (a, b)
+    test_reshuffle(
+        ordered_events=[event_a, event_b],
+        events_list=[event_seq1, event_b, event_a],
+        result_list=[event_seq1, event_a, event_b],
+    )
+    test_reshuffle(
+        ordered_events=[event_a, event_b],
+        events_list=[event_b, event_seq1, event_a],
+        result_list=[event_seq1, event_a, event_b],
+    )
+    test_reshuffle(
+        ordered_events=[event_a, event_b],
+        events_list=[event_b, event_a, event_seq1],
+        result_list=[event_seq1, event_a, event_b],
+    )
+
+    # cases with 2 more events (b, a)
+    test_reshuffle(
+        ordered_events=[event_b, event_a],
+        events_list=[event_seq35, event_a, event_seq1, event_b],
+        result_list=[event_seq1, event_b, event_a, event_seq35],
+    )
+    test_reshuffle(
+        ordered_events=[event_a, event_b],
+        events_list=[event_seq1, event_b, event_seq35, event_a],
+        result_list=[event_seq1, event_seq35, event_a, event_b],
+    )
+    test_reshuffle(
+        ordered_events=[event_a, event_b],
+        events_list=[event_seq12, event_b, event_seq35, event_a],
+        result_list=[event_seq12, event_seq35, event_a, event_b],
+    )
+    test_reshuffle(
+        ordered_events=[event_b, event_a],
+        events_list=[event_seq12, event_b, event_seq35, event_a],
+        result_list=[event_seq12, event_b, event_a, event_seq35],
+    )
+
+    # 3 ordered events cases
+    test_reshuffle(
+        ordered_events=[event_b, event_c, event_a],
+        events_list=[event_a, event_b, event_c],
+        result_list=[event_b, event_c, event_a],
+    )
+    test_reshuffle(
+        ordered_events=[event_a, event_b, event_c],
+        events_list=[event_c, event_b, event_a],
+        result_list=[event_a, event_b, event_c],
+    )
+    test_reshuffle(
+        ordered_events=[event_c, event_a, event_b],
+        events_list=[event_c, event_b, event_a],
+        result_list=[event_c, event_a, event_b],
+    )
+    test_reshuffle(
+        ordered_events=[event_c, event_a, event_b],
+        events_list=[event_b, event_a, event_c],
+        result_list=[event_c, event_a, event_b],
+    )
+
+    # 3 ordered events cases, with more events
+    test_reshuffle(
+        ordered_events=[event_a, event_b, event_c],
+        events_list=[event_a, event_seq35, event_seq12, event_b, event_seq1, event_c],
+        result_list=[event_seq1, event_seq12, event_seq35, event_a, event_b, event_c],
+    )
+    test_reshuffle(
+        ordered_events=[event_a, event_c, event_b],
+        events_list=[event_a, event_seq35, event_seq12, event_b, event_seq1, event_c],
+        result_list=[event_seq1, event_seq12, event_seq35, event_a, event_c, event_b],
+    )
+    test_reshuffle(
+        ordered_events=[event_b, event_a, event_c],
+        events_list=[event_a, event_seq35, event_seq12, event_b, event_seq1, event_c],
+        result_list=[event_seq1, event_seq12, event_b, event_a, event_c, event_seq35],
+    )
+    test_reshuffle(
+        ordered_events=[event_b, event_c, event_a],
+        events_list=[event_a, event_seq35, event_seq12, event_b, event_seq1, event_c],
+        result_list=[event_seq1, event_seq12, event_b, event_c, event_a, event_seq35],
+    )
+    test_reshuffle(
+        ordered_events=[event_c, event_a, event_b],
+        events_list=[event_a, event_seq35, event_seq12, event_b, event_seq1, event_c],
+        result_list=[event_seq1, event_c, event_a, event_b, event_seq12, event_seq35],
+    )
+    test_reshuffle(
+        ordered_events=[event_c, event_b, event_a],
+        events_list=[event_a, event_seq35, event_seq12, event_b, event_seq1, event_c],
+        result_list=[event_seq1, event_c, event_b, event_a, event_seq12, event_seq35],
+    )
 
 
 @pytest.mark.vcr()

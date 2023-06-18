@@ -253,12 +253,12 @@ class Balancerv1Decoder(DecoderInterface):
             else:
                 pool_token_event.extra_data = {'withdrawal_events_num': len(token_related_events)}
 
-            previous_event = pool_token_event
             # sort the events so the send/receive of the wrapped token comes first
             # and then the related events
-            for event in token_related_events:
-                maybe_reshuffle_events(previous_event, event, decoded_events)
-                previous_event = event
+            maybe_reshuffle_events(
+                ordered_events=[pool_token_event] + token_related_events,
+                events_list=decoded_events,
+            )
 
         return decoded_events
 

@@ -462,7 +462,7 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
 
         if spend_event is not None and receive_event is not None:
             # Just to make sure that spend and receive events are consecutive
-            maybe_reshuffle_events(spend_event, receive_event, context.decoded_events)
+            maybe_reshuffle_events(ordered_events=[spend_event, receive_event], events_list=context.decoded_events)  # noqa: E501
         else:
             log.debug(
                 f'Did not find spend and receive events for a curve swap. '
@@ -704,11 +704,10 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
             return_or_receive_event.extra_data = {
                 'withdrawal_events_num': len(withdrawal_or_deposit_events),
             }
-        previous_event = return_or_receive_event
-        for event in withdrawal_or_deposit_events:
-            maybe_reshuffle_events(previous_event, event, all_events)
-            previous_event = event
-
+        maybe_reshuffle_events(
+            ordered_events=[return_or_receive_event] + withdrawal_or_deposit_events,
+            events_list=all_events,
+        )
         return all_events
 
     # -- DecoderInterface methods

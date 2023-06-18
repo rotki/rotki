@@ -126,8 +126,7 @@ class WethDecoder(DecoderInterface):
             address=context.transaction.to_address,
         )
         maybe_reshuffle_events(
-            out_event=out_event,
-            in_event=in_event,
+            ordered_events=[out_event, in_event],
             events_list=context.decoded_events + [out_event],
         )
         return DecodingOutput(event=out_event)

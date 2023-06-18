@@ -88,7 +88,7 @@ def _maybe_update_events_legacy_contrats(
             event.notes = f'Receive {event.balance.amount} {crypto_asset.symbol} from kyber swap'  # noqa: E501
             in_event = event
 
-        maybe_reshuffle_events(out_event=out_event, in_event=in_event)
+        maybe_reshuffle_events(ordered_events=[out_event, in_event], events_list=decoded_events)
 
 
 class KyberDecoder(DecoderInterface):

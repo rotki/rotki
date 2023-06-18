@@ -321,9 +321,8 @@ def decode_basic_uniswap_info(
             break
 
     # Make sure that the approval event is NOT between the spend and receive events.
-    if spend_event is not None and approval_event is not None:
-        maybe_reshuffle_events(out_event=approval_event, in_event=spend_event)
-    if spend_event is not None and receive_event is not None:
-        maybe_reshuffle_events(out_event=spend_event, in_event=receive_event)
-
+    maybe_reshuffle_events(
+        ordered_events=[approval_event, spend_event, receive_event],
+        events_list=decoded_events,
+    )
     return DEFAULT_DECODING_OUTPUT

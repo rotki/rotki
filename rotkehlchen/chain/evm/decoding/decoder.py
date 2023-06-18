@@ -821,8 +821,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
                         out_event = action_item.paired_event_data[0]
                         in_event = transfer
                     maybe_reshuffle_events(
-                        out_event=out_event,
-                        in_event=in_event,
+                        ordered_events=[out_event, in_event],
                         events_list=decoded_events + [transfer],
                     )
 
