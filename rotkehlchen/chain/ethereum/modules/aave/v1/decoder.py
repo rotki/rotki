@@ -67,7 +67,10 @@ class Aavev1Decoder(DecoderInterface):
                 event.counterparty = CPT_AAVE_V1
                 event.notes = f'Gain {event.balance.amount} {atoken.symbol} from aave-v1 as interest'  # noqa: E501
 
-        maybe_reshuffle_events(out_event=deposit_event, in_event=receive_event)
+        maybe_reshuffle_events(
+            ordered_events=[deposit_event, receive_event],
+            events_list=context.decoded_events,
+        )
         return DEFAULT_DECODING_OUTPUT
 
     def _decode_redeem_underlying_event(self, context: DecoderContext) -> DecodingOutput:
@@ -102,7 +105,10 @@ class Aavev1Decoder(DecoderInterface):
                 event.counterparty = CPT_AAVE_V1
                 event.notes = f'Gain {event.balance.amount} {atoken.symbol} from aave-v1 as interest'  # noqa: E501
 
-        maybe_reshuffle_events(out_event=return_event, in_event=receive_event, events_list=context.decoded_events)  # noqa: E501
+        maybe_reshuffle_events(
+            ordered_events=[return_event, receive_event],
+            events_list=context.decoded_events,
+        )
         return DEFAULT_DECODING_OUTPUT
 
     def _decode_liquidation(self, context: DecoderContext) -> DecodingOutput:

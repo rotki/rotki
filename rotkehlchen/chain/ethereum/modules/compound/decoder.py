@@ -157,7 +157,7 @@ class CompoundDecoder(DecoderInterface):
                 event.notes = f'Return {redeem_tokens} {compound_token.symbol} to compound'
                 out_event = event
 
-        maybe_reshuffle_events(out_event=out_event, in_event=in_event, events_list=decoded_events)
+        maybe_reshuffle_events(ordered_events=[out_event, in_event], events_list=decoded_events)
         return DEFAULT_DECODING_OUTPUT
 
     def _decode_borrow_and_repay(

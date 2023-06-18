@@ -58,8 +58,7 @@ class Oneinchv2Decoder(DecoderInterface):
                 in_event = event
 
         maybe_reshuffle_events(
-            out_event=out_event,
-            in_event=in_event,
+            ordered_events=[out_event, in_event],
             events_list=context.decoded_events,
         )
         return DEFAULT_DECODING_OUTPUT

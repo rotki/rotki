@@ -157,7 +157,7 @@ def decode_uniswap_v2_like_swap(
             event.counterparty = counterparty
             event.notes = f'Refund of {event.balance.amount} {crypto_asset.symbol} in {counterparty} due to price change'  # noqa: E501
 
-    maybe_reshuffle_events(out_event=out_event, in_event=in_event, events_list=decoded_events)
+    maybe_reshuffle_events(ordered_events=[out_event, in_event], events_list=decoded_events)
     return DEFAULT_DECODING_OUTPUT
 
 

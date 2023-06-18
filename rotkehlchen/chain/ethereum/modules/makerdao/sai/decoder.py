@@ -142,10 +142,7 @@ class MakerdaosaiDecoder(DecoderInterface):
             address=context.transaction.to_address,
         )
         # ensure that the cdp creation event comes before any deposit event
-        maybe_reshuffle_events(
-            out_event=event,
-            in_event=deposit_event,
-        )
+        maybe_reshuffle_events(ordered_events=[event, deposit_event], events_list=context.decoded_events)  # noqa: E501
         return DecodingOutput(event=event)
 
     def _decode_close_cdp(self, context: DecoderContext) -> DecodingOutput:

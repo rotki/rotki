@@ -78,7 +78,7 @@ class Uniswapv1Decoder(DecoderInterface):
                 elif event.event_type == HistoryEventType.TRADE and event.event_subtype == HistoryEventSubType.SPEND and event.counterparty == CPT_UNISWAP_V1:  # noqa: :E501
                     out_event = event
 
-        maybe_reshuffle_events(out_event=out_event, in_event=in_event)
+        maybe_reshuffle_events(ordered_events=[out_event, in_event], events_list=decoded_events)
         return DEFAULT_DECODING_OUTPUT
 
     # -- DecoderInterface methods
