@@ -1012,6 +1012,7 @@ def test_swaps_taxability(accountant: Accountant, taxable: bool) -> None:
             event_subtype=HistoryEventSubType.RECEIVE,
             counterparty=CPT_UNISWAP_V2,
         ),
+        fee_event=None,
         event_settings=TxEventSettings(
             taxable=taxable,
             count_entire_amount_spend=False,
