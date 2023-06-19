@@ -391,6 +391,7 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
                             evm_inquirer=None,
                             parent_tx_hash=parent_tx_hash,
                         )
+                        tx = self._additional_transaction_processing(tx)
                     else:  # Handling genesis transactions
                         assert self.db is not None, 'self.db should exists at this point'
                         dbtx = DBEvmTx(self.db)
@@ -692,3 +693,7 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
             return json.loads(result)
         except json.JSONDecodeError:
             return None
+
+    def _additional_transaction_processing(self, tx: Union[EvmTransaction, EvmInternalTransaction]) -> Union[EvmTransaction, EvmInternalTransaction]:  # noqa: E501
+        """Performs additional processing on chain-specific tx attributes"""
+        return tx

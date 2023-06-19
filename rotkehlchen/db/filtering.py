@@ -206,7 +206,7 @@ class DBEvmTransactionHashFilter(DBFilter):
         if self.tx_hash is None:
             return [], []
 
-        return ['tx_hash=?'], [self.tx_hash]
+        return ['evm_transactions.tx_hash=?'], [self.tx_hash]
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
@@ -468,7 +468,7 @@ class EvmTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
         if tx_hash is not None:  # tx_hash means single result so make it as single filter
             filters.append(DBEvmTransactionHashFilter(and_op=True, tx_hash=tx_hash))
             if chain_id is not None:  # keep it as last (see chain_id property of this filter)
-                filters.append(DBEvmChainIDFilter(and_op=True, chain_id=chain_id))
+                filters.append(DBEvmChainIDFilter(and_op=True, chain_id=chain_id, table_name='evm_transactions'))  # noqa: E501
 
         else:
             if accounts is not None:

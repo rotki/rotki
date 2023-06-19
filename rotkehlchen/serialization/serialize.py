@@ -58,6 +58,7 @@ from rotkehlchen.chain.evm.decoding.types import (
     EventCategoryDetails,
 )
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode
+from rotkehlchen.chain.optimism.types import OptimismTransaction
 from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.db.utils import DBAssetBalance, LocationData, SingleDBAssetBalance
 from rotkehlchen.exchanges.data_structures import Trade
@@ -143,6 +144,7 @@ def _process_entry(entry: Any) -> Union[str, list[Any], dict[str, Any], Any]:
     if isinstance(entry, (
             Trade,
             EvmTransaction,
+            OptimismTransaction,
             MakerdaoVault,
             DSRAccountReport,
             Balance,

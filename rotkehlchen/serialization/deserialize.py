@@ -6,6 +6,7 @@ from eth_utils import to_checksum_address
 from rotkehlchen.accounting.structures.types import HistoryEventType
 from rotkehlchen.assets.asset import AssetWithOracles, EvmToken
 from rotkehlchen.assets.utils import get_crypto_asset_by_symbol
+from rotkehlchen.chain.optimism.types import OptimismTransaction
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair, WrongAssetType
 from rotkehlchen.errors.serialization import ConversionError, DeserializationError
@@ -30,6 +31,7 @@ from rotkehlchen.utils.misc import convert_to_int, create_timestamp, iso8601ts_t
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
+    from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
 
 
 logger = logging.getLogger(__name__)
@@ -533,6 +535,17 @@ def deserialize_evm_transaction(
     ...
 
 
+@overload
+def deserialize_evm_transaction(  # type: ignore[misc]
+        data: dict[str, Any],
+        internal: Literal[False],
+        chain_id: Literal[ChainID.OPTIMISM],
+        evm_inquirer: 'OptimismInquirer',
+        parent_tx_hash: Optional['EVMTxHash'] = None,
+) -> tuple[OptimismTransaction, dict[str, Any]]:
+    ...
+
+
 def deserialize_evm_transaction(
         data: dict[str, Any],
         internal: bool,
@@ -595,6 +608,26 @@ def deserialize_evm_transaction(
         else:
             gas_used = read_integer(data, 'gasUsed', source)
         nonce = read_integer(data, 'nonce', source)
+
+        if chain_id == ChainID.OPTIMISM and evm_inquirer is not None:
+            if not raw_receipt_data:
+                raw_receipt_data = evm_inquirer.get_transaction_receipt(tx_hash)
+            l1_fee = read_integer(raw_receipt_data, 'l1Fee', source)
+            return OptimismTransaction(
+                timestamp=timestamp,
+                chain_id=chain_id,
+                block_number=block_number,
+                tx_hash=tx_hash,
+                from_address=from_address,
+                to_address=to_address,
+                value=value,
+                gas=read_integer(data, 'gas', source),
+                gas_price=gas_price,
+                gas_used=gas_used,
+                input_data=input_data,
+                nonce=nonce,
+                l1_fee=l1_fee,
+            ), raw_receipt_data
     except KeyError as e:
         raise DeserializationError(
             f'evm {"internal" if internal else ""}transaction from {source} missing expected key {e!s}',  # noqa: E501

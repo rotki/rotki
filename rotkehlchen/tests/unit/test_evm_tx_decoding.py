@@ -13,10 +13,12 @@ from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.chain.evm.constants import GENESIS_HASH
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.types import EvmAccount, string_to_evm_address
+from rotkehlchen.chain.optimism.types import OptimismTransaction
 from rotkehlchen.constants.assets import A_ETH, A_SAI
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmEventFilterQuery, EvmTransactionsFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.db.optimismtx import DBOptimismTx
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import (
     ChainID,
@@ -46,7 +48,7 @@ def _add_transactions_to_db(
     evmhash_opt = deserialize_evm_tx_hash('0x063d45910f29e0954a52aee39febba9be784d49af7588a590dc2fd7d156b4665')  # noqa: E501
     evmhash_eth = deserialize_evm_tx_hash('0x3f313e90ed07044fdbb1016ff7986fd26adaeb05e8e9d3252ae0a8318cb8100d')  # noqa: E501
     evmhash_eth_yabir = deserialize_evm_tx_hash('0x91016e7fb9f524449dd1a0b4faef9bc630e9c01c31b6d3383c94975269335afe')  # noqa: E501
-    transaction_opt = EvmTransaction(
+    transaction_opt = OptimismTransaction(
         tx_hash=evmhash_opt,
         chain_id=ChainID.OPTIMISM,
         timestamp=Timestamp(1646375440),
@@ -59,6 +61,7 @@ def _add_transactions_to_db(
         gas_used=171249,
         input_data=hexstring_to_bytes('0xa9059cbb000000000000000000000000106b62fdd27b748cf2da3bacab91a2cabaee6dca0000000000000000000000000000000000000000000000000000000086959530'),  # noqa: E501
         nonce=507,
+        l1_fee=455063072063200,
     )
     transaction_eth = EvmTransaction(
         tx_hash=evmhash_eth,
@@ -90,8 +93,10 @@ def _add_transactions_to_db(
     )
 
     dbevmtx = DBEvmTx(db)
+    dboptimismtx = DBOptimismTx(db)
     with db.user_write() as cursor:
-        dbevmtx.add_evm_transactions(cursor, [transaction_opt, transaction_eth], relevant_address=ethereum_accounts[0])  # noqa: E501
+        dboptimismtx.add_evm_transactions(cursor, [transaction_opt], relevant_address=ethereum_accounts[0])  # noqa: E501
+        dbevmtx.add_evm_transactions(cursor, [transaction_eth], relevant_address=ethereum_accounts[0])  # noqa: E501
         dbevmtx.add_evm_transactions(cursor, [transaction_eth_yabir], relevant_address=ethereum_accounts[1])  # noqa: E501
 
     return evmhash_eth, evmhash_eth_yabir, evmhash_opt
@@ -185,6 +190,7 @@ def test_query_and_decode_transactions_works_with_different_chains(
     """
     _, evmhash_eth_yabir, evmhash_opt = _add_transactions_to_db(database, ethereum_accounts)
     dbevmtx = DBEvmTx(database)
+    dboptimismtx = DBOptimismTx(database)
     assert len(dbevmtx.get_transaction_hashes_no_receipt(tx_filter_query=None, limit=None)) == 3
     eth_transactions.get_receipts_for_transactions_missing_them(addresses=[ethereum_accounts[0]])
     assert dbevmtx.get_transaction_hashes_no_receipt(tx_filter_query=None, limit=None) == [evmhash_opt, evmhash_eth_yabir]  # noqa: E501
@@ -192,7 +198,7 @@ def test_query_and_decode_transactions_works_with_different_chains(
     assert dbevmtx.get_transaction_hashes_no_receipt(tx_filter_query=None, limit=None) == [evmhash_eth_yabir]  # noqa: E501
 
     # check that the transactions have not been decoded
-    hashes = dbevmtx.get_transaction_hashes_not_decoded(chain_id=ChainID.OPTIMISM, limit=None, addresses=None)  # noqa: E501
+    hashes = dboptimismtx.get_transaction_hashes_not_decoded(chain_id=ChainID.OPTIMISM, limit=None, addresses=None)  # noqa: E501
     assert len(hashes) == 1
     hashes = dbevmtx.get_transaction_hashes_not_decoded(chain_id=ChainID.ETHEREUM, limit=None, addresses=None)  # noqa: E501
     assert len(hashes) == 1
@@ -202,7 +208,7 @@ def test_query_and_decode_transactions_works_with_different_chains(
 
     # verify that the optimism transactions got decoded but not the
     # ethereum one (would raise an error if tried)
-    hashes = dbevmtx.get_transaction_hashes_not_decoded(chain_id=ChainID.OPTIMISM, limit=None, addresses=None)  # noqa: E501
+    hashes = dboptimismtx.get_transaction_hashes_not_decoded(chain_id=ChainID.OPTIMISM, limit=None, addresses=None)  # noqa: E501
     assert len(hashes) == 0
     hashes = dbevmtx.get_transaction_hashes_not_decoded(chain_id=ChainID.ETHEREUM, limit=None, addresses=None)  # noqa: E501
     assert len(hashes) == 1

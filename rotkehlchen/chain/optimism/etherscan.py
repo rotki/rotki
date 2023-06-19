@@ -1,7 +1,8 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Union
 
+from rotkehlchen.chain.optimism.types import OptimismTransaction
 from rotkehlchen.externalapis.etherscan import Etherscan
-from rotkehlchen.types import ExternalService, SupportedBlockchain
+from rotkehlchen.types import EvmInternalTransaction, ExternalService, SupportedBlockchain
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -22,3 +23,28 @@ class OptimismEtherscan(Etherscan):
             base_url='optimistic.etherscan.io',
             service=ExternalService.OPTIMISM_ETHERSCAN,
         )
+
+    def _additional_transaction_processing(
+            self,
+            tx: Union[OptimismTransaction, EvmInternalTransaction],  # type: ignore[override]
+    ) -> Union[OptimismTransaction, EvmInternalTransaction]:
+        if not isinstance(tx, EvmInternalTransaction):
+            # TODO: write this tx_receipt to DB so it doesn't need to be queried again
+            # https://github.com/rotki/rotki/pull/6359#discussion_r1252850465
+            tx_receipt = self.get_transaction_receipt(tx.tx_hash)
+            tx = OptimismTransaction(
+                tx_hash=tx.tx_hash,
+                chain_id=tx.chain_id,
+                timestamp=tx.timestamp,
+                block_number=tx.block_number,
+                from_address=tx.from_address,
+                to_address=tx.to_address,
+                value=tx.value,
+                gas=tx.gas,
+                gas_price=tx.gas_price,
+                gas_used=tx.gas_used,
+                input_data=tx.input_data,
+                nonce=tx.nonce,
+                l1_fee=int(tx_receipt['l1Fee'], 16),  # type: ignore[index]
+            )
+        return tx

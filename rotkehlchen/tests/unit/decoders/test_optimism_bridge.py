@@ -184,9 +184,9 @@ def test_withdraw_erc20(database, optimism_inquirer, optimism_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal('0.0000001197')),
+            balance=Balance(amount=FVal('0.000063967090470944')),
             location_label=user_address,
-            notes='Burned 0.0000001197 ETH for gas',
+            notes='Burned 0.000063967090470944 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
@@ -227,9 +227,9 @@ def test_withdraw_eth(database, optimism_inquirer, optimism_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal('0.000000115426')),
+            balance=Balance(amount=FVal('0.000062680826296456')),
             location_label=user_address,
-            notes='Burned 0.000000115426 ETH for gas',
+            notes='Burned 0.000062680826296456 ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,

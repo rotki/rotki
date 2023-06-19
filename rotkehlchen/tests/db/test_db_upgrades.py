@@ -1661,7 +1661,7 @@ def test_latest_upgrade_adds_remove_tables(user_data_dir):
     missing_views = views_before - views_after_upgrade
     assert missing_tables == removed_tables
     assert missing_views == removed_views
-    assert tables_after_creation - tables_after_upgrade == set()
+    assert tables_after_creation - tables_after_upgrade == {'optimism_transactions'}
     assert views_after_creation - views_after_upgrade == set()
     new_tables = tables_after_upgrade - tables_before
     assert new_tables == set()

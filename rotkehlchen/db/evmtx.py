@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Any, Optional, get_args
+from typing import TYPE_CHECKING, Any, Optional, Union, get_args
 
 from rotkehlchen.chain.ethereum.constants import ETHEREUM_GENESIS
 from rotkehlchen.chain.evm.constants import GENESIS_HASH, ZERO_ADDRESS
@@ -174,30 +174,13 @@ class DBEvmTx:
         filtering arguments.
         """
         query, bindings = filter_.prepare()
-        if has_premium:
-            query = 'SELECT DISTINCT evm_transactions.tx_hash, evm_transactions.chain_id, timestamp, block_number, from_address, to_address, value, gas, gas_price, gas_used, input_data, nonce FROM evm_transactions ' + query  # noqa: E501
-            results = cursor.execute(query, bindings)
-        else:
-            query = 'SELECT DISTINCT evm_transactions.tx_hash, evm_transactions.chain_id, timestamp, block_number, from_address, to_address, value, gas, gas_price, gas_used, input_data, nonce FROM (SELECT * from evm_transactions ORDER BY timestamp DESC LIMIT ?) evm_transactions ' + query  # noqa: E501
-            results = cursor.execute(query, [FREE_ETH_TX_LIMIT] + bindings)
+        query, bindings = self._form_evm_transaction_dbquery(query, bindings, has_premium)
+        results = cursor.execute(query, bindings)
 
         evm_transactions = []
         for result in results:
             try:
-                tx = EvmTransaction(
-                    tx_hash=deserialize_evm_tx_hash(result[0]),
-                    chain_id=ChainID.deserialize_from_db(result[1]),
-                    timestamp=deserialize_timestamp(result[2]),
-                    block_number=result[3],
-                    from_address=result[4],
-                    to_address=result[5],
-                    value=int(result[6]),
-                    gas=int(result[7]),
-                    gas_price=int(result[8]),
-                    gas_used=int(result[9]),
-                    input_data=result[10],
-                    nonce=result[11],
-                )
+                tx = self._build_evm_transaction(result)
             except DeserializationError as e:
                 self.db.msg_aggregator.add_error(
                     f'Error deserializing evm transaction from the DB. '
@@ -594,3 +577,33 @@ class DBEvmTx:
                     relevant_address=account,
                 )
         return tx
+
+    def _form_evm_transaction_dbquery(self, query: str, bindings: list[Any], has_premium: bool) -> tuple[str, list[tuple]]:  # noqa: E501
+        """Return query and bindings for the evm_transaction database table"""
+        if has_premium:
+            return (
+                'SELECT DISTINCT evm_transactions.tx_hash, evm_transactions.chain_id, timestamp, block_number, from_address, to_address, value, gas, gas_price, gas_used, input_data, nonce FROM evm_transactions ' + query,  # noqa: E501
+                bindings,
+            )
+        else:
+            return (
+                'SELECT DISTINCT evm_transactions.tx_hash, evm_transactions.chain_id, timestamp, block_number, from_address, to_address, value, gas, gas_price, gas_used, input_data, nonce FROM (SELECT * from evm_transactions ORDER BY timestamp DESC LIMIT ?) AS evm_transactions ' + query,  # noqa: E501
+                [FREE_ETH_TX_LIMIT] + bindings,
+            )
+
+    def _build_evm_transaction(self, result: tuple[Union[str, int]]) -> EvmTransaction:
+        """Build a transaction object from queried data"""
+        return EvmTransaction(
+            tx_hash=deserialize_evm_tx_hash(result[0]),  # type: ignore[arg-type]
+            chain_id=ChainID.deserialize_from_db(result[1]),  # type: ignore[misc]
+            timestamp=deserialize_timestamp(result[2]),  # type: ignore[misc]
+            block_number=result[3],  # type: ignore[misc]
+            from_address=result[4],  # type: ignore[misc]
+            to_address=result[5],  # type: ignore[misc]
+            value=int(result[6]),  # type: ignore[misc]
+            gas=int(result[7]),  # type: ignore[misc]
+            gas_price=int(result[8]),  # type: ignore[misc]
+            gas_used=int(result[9]),  # type: ignore[misc]
+            input_data=result[10],  # type: ignore[misc]
+            nonce=result[11],  # type: ignore[misc]
+        )

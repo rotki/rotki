@@ -1,5 +1,6 @@
 import typing
 from collections.abc import Sequence
+from dataclasses import asdict, dataclass
 from enum import Enum, auto
 from typing import (
     TYPE_CHECKING,
@@ -282,7 +283,8 @@ class ChainID(Enum):
 SUPPORTED_CHAIN_IDS = Literal[ChainID.ETHEREUM, ChainID.OPTIMISM, ChainID.POLYGON_POS]
 
 
-class EvmTransaction(NamedTuple):
+@dataclass(frozen=True)
+class EvmTransaction:
     """Represent an EVM transaction"""
     tx_hash: EVMTxHash
     chain_id: ChainID
@@ -298,7 +300,7 @@ class EvmTransaction(NamedTuple):
     nonce: int
 
     def serialize(self) -> dict[str, Any]:
-        result = self._asdict()  # pylint: disable=no-member
+        result = asdict(self)
         result['tx_hash'] = result['tx_hash'].hex()
         result['evm_chain'] = result.pop('chain_id').to_name()
         result['input_data'] = '0x' + result['input_data'].hex()
