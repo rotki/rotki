@@ -91,7 +91,7 @@ def test_aave_deposit_v1(database, ethereum_inquirer):
             address=string_to_evm_address('0x3dfd23A6c5E8BbcFc9581d2E864a68feb6a076d3'),
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=96,
+            sequence_index=95,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
@@ -137,20 +137,7 @@ def test_aave_withdraw_v1(database, ethereum_inquirer):
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=98,
-            timestamp=timestamp,
-            location=Location.ETHEREUM,
-            event_type=HistoryEventType.RECEIVE,
-            event_subtype=HistoryEventSubType.REWARD,
-            asset=A_ADAI_V1,
-            balance=Balance(amount=FVal(interest)),
-            location_label=ADDY,
-            notes=f'Gain {interest} aDAI from aave-v1 as interest',
-            counterparty=CPT_AAVE_V1,
-            address=ZERO_ADDRESS,
-        ), EvmEvent(
-            tx_hash=tx_hash,
-            sequence_index=99,
+            sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
@@ -163,7 +150,7 @@ def test_aave_withdraw_v1(database, ethereum_inquirer):
             address=ZERO_ADDRESS,
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=102,
+            sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.WITHDRAWAL,
@@ -174,6 +161,19 @@ def test_aave_withdraw_v1(database, ethereum_inquirer):
             notes=f'Withdraw {amount} DAI from aave-v1',
             counterparty=CPT_AAVE_V1,
             address=string_to_evm_address('0x3dfd23A6c5E8BbcFc9581d2E864a68feb6a076d3'),
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=3,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.REWARD,
+            asset=A_ADAI_V1,
+            balance=Balance(amount=FVal(interest)),
+            location_label=ADDY,
+            notes=f'Gain {interest} aDAI from aave-v1 as interest',
+            counterparty=CPT_AAVE_V1,
+            address=ZERO_ADDRESS,
         ),
     ]
     assert expected_events == events
@@ -234,7 +234,7 @@ def test_aave_eth_withdraw_v1(database, ethereum_inquirer):
             address=string_to_evm_address('0x3dfd23A6c5E8BbcFc9581d2E864a68feb6a076d3'),
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=135,
+            sequence_index=3,
             timestamp=1605789951000,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.RECEIVE,

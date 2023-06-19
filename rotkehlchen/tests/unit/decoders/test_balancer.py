@@ -249,7 +249,7 @@ def test_balancer_v1_join(database, ethereum_manager, eth_transactions):
             extra_data=None,
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=328,
+            sequence_index=1,
             timestamp=TimestampMS(1646375440000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
@@ -264,7 +264,7 @@ def test_balancer_v1_join(database, ethereum_manager, eth_transactions):
             extra_data={'deposit_events_num': 1},
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=335,
+            sequence_index=2,
             timestamp=TimestampMS(1646375440000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.DEPOSIT,
@@ -392,7 +392,7 @@ def test_balancer_v1_exit(database, ethereum_manager, eth_transactions):
             extra_data=None,
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=91,
+            sequence_index=1,
             timestamp=TimestampMS(1646375440000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
@@ -407,7 +407,7 @@ def test_balancer_v1_exit(database, ethereum_manager, eth_transactions):
             extra_data={'withdrawal_events_num': 2},
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=95,
+            sequence_index=2,
             timestamp=TimestampMS(1646375440000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.WITHDRAWAL,
@@ -422,7 +422,7 @@ def test_balancer_v1_exit(database, ethereum_manager, eth_transactions):
             extra_data=None,
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=97,
+            sequence_index=3,
             timestamp=TimestampMS(1646375440000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.WITHDRAWAL,
@@ -468,7 +468,22 @@ def test_deposit_with_excess_tokens(database, ethereum_inquirer, ethereum_accoun
             extra_data=None,
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=131,
+            sequence_index=132,
+            timestamp=TimestampMS(1593186380000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=Asset('eip155:1/erc20:0xe2f2a5C287993345a840Db3B0845fbC70f5935a5'),
+            balance=Balance(amount=FVal('1.157920892373161954235709850E+59')),
+            location_label=user_address,
+            notes='Set mUSD spending approval of 0x549C0421c69Be943A2A60e76B19b4A801682cBD3 by 0x9ED47950144e51925166192Bf0aE95553939030a to 115792089237316195423570985000000000000000000000000000000000',  # noqa: E501
+            counterparty=None,
+            identifier=None,
+            extra_data=None,
+            address=string_to_evm_address('0x9ED47950144e51925166192Bf0aE95553939030a'),
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=133,
             timestamp=TimestampMS(1593186380000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
@@ -483,7 +498,7 @@ def test_deposit_with_excess_tokens(database, ethereum_inquirer, ethereum_accoun
             address=string_to_evm_address('0x9ED47950144e51925166192Bf0aE95553939030a'),
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=132,
+            sequence_index=134,
             timestamp=TimestampMS(1593186380000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.DEPOSIT,
@@ -498,7 +513,7 @@ def test_deposit_with_excess_tokens(database, ethereum_inquirer, ethereum_accoun
             address=string_to_evm_address('0x9ED47950144e51925166192Bf0aE95553939030a'),
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=134,
+            sequence_index=135,
             timestamp=TimestampMS(1593186380000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.DEPOSIT,
@@ -513,7 +528,7 @@ def test_deposit_with_excess_tokens(database, ethereum_inquirer, ethereum_accoun
             address=string_to_evm_address('0x9ED47950144e51925166192Bf0aE95553939030a'),
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=144,
+            sequence_index=136,
             timestamp=TimestampMS(1593186380000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
@@ -528,7 +543,7 @@ def test_deposit_with_excess_tokens(database, ethereum_inquirer, ethereum_accoun
             address=string_to_evm_address('0x9ED47950144e51925166192Bf0aE95553939030a'),
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=145,
+            sequence_index=137,
             timestamp=TimestampMS(1593186380000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
@@ -538,21 +553,6 @@ def test_deposit_with_excess_tokens(database, ethereum_inquirer, ethereum_accoun
             location_label=user_address,
             notes='Refunded 6571.085163 USDC after depositing in Balancer V1 pool',
             counterparty=CPT_BALANCER_V1,
-            identifier=None,
-            extra_data=None,
-            address=string_to_evm_address('0x9ED47950144e51925166192Bf0aE95553939030a'),
-        ), EvmEvent(
-            tx_hash=tx_hash,
-            sequence_index=146,
-            timestamp=TimestampMS(1593186380000),
-            location=Location.ETHEREUM,
-            event_type=HistoryEventType.INFORMATIONAL,
-            event_subtype=HistoryEventSubType.APPROVE,
-            asset=Asset('eip155:1/erc20:0xe2f2a5C287993345a840Db3B0845fbC70f5935a5'),
-            balance=Balance(amount=FVal('1.157920892373161954235709850E+59')),
-            location_label=user_address,
-            notes='Set mUSD spending approval of 0x549C0421c69Be943A2A60e76B19b4A801682cBD3 by 0x9ED47950144e51925166192Bf0aE95553939030a to 115792089237316195423570985000000000000000000000000000000000',  # noqa: E501
-            counterparty=None,
             identifier=None,
             extra_data=None,
             address=string_to_evm_address('0x9ED47950144e51925166192Bf0aE95553939030a'),

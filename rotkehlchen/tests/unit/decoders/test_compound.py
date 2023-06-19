@@ -78,7 +78,7 @@ def test_compound_ether_deposit(database, ethereum_inquirer):
             address=string_to_evm_address('0x4Ddc2D193948926D02f9B1fE9e1daa0718270ED5'),
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=33,
+            sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
@@ -134,7 +134,7 @@ def test_compound_ether_withdraw(database, ethereum_inquirer):
             address=string_to_evm_address('0x4Ddc2D193948926D02f9B1fE9e1daa0718270ED5'),
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=50,
+            sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.WITHDRAWAL,
@@ -196,7 +196,7 @@ def test_compound_deposit_with_comp_claim(
             address=string_to_evm_address('0x3d9819210A31b4961b30EF54bE2aeD79B9c9Cd3B'),
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=243,
+            sequence_index=242,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.DEPOSIT,
@@ -209,7 +209,7 @@ def test_compound_deposit_with_comp_claim(
             address=string_to_evm_address('0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643'),
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=250,
+            sequence_index=243,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.RECEIVE,

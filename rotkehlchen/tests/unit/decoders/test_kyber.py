@@ -60,7 +60,7 @@ def test_kyber_legacy_old_contract(database, ethereum_inquirer, ethereum_account
             address=string_to_evm_address('0x65bF64Ff5f51272f729BDcD7AcFB00677ced86Cd'),
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=89,
+            sequence_index=2,
             timestamp=1591043988000,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.TRADE,
@@ -111,7 +111,7 @@ def test_kyber_legacy_new_contract(database, ethereum_inquirer):
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=350,
+            sequence_index=1,
             timestamp=1644182638000,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.TRADE,
@@ -124,7 +124,8 @@ def test_kyber_legacy_new_contract(database, ethereum_inquirer):
             address=string_to_evm_address('0x7C66550C9c730B6fdd4C03bc2e73c5462c5F7ACC'),
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=370, timestamp=1644182638000,
+            sequence_index=2,
+            timestamp=1644182638000,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
