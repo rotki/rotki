@@ -130,7 +130,7 @@ def test_curve_deposit(database, ethereum_transaction_decoder):
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=371,
+            sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
@@ -144,7 +144,7 @@ def test_curve_deposit(database, ethereum_transaction_decoder):
             extra_data={'deposit_events_num': 2},
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=372,
+            sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.DEPOSIT,
@@ -157,7 +157,7 @@ def test_curve_deposit(database, ethereum_transaction_decoder):
             address=string_to_evm_address('0xDeBF20617708857ebe4F679508E7b7863a8A8EeE'),
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=384,
+            sequence_index=3,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.DEPOSIT,
@@ -273,7 +273,19 @@ def test_curve_deposit_eth(database, ethereum_transaction_decoder):
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=1,
+            sequence_index=415,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=EvmToken('eip155:1/erc20:0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84'),
+            balance=Balance(amount=FVal('1.157920892373161954235709850E+59'), usd_value=ZERO),
+            location_label=location_label,
+            notes='Set stETH spending approval of 0x767B35b9F06F6e28e5ed05eE7C27bDf992eba5d2 by 0xDC24316b9AE028F1497c275EB9192a3Ea0f67022 to 115792089237316195423570985000000000000000000000000000000000',  # noqa: E501
+            address=string_to_evm_address('0xDC24316b9AE028F1497c275EB9192a3Ea0f67022'),
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=416,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
@@ -287,7 +299,7 @@ def test_curve_deposit_eth(database, ethereum_transaction_decoder):
             extra_data={'deposit_events_num': 2},
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=2,
+            sequence_index=417,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.DEPOSIT,
@@ -300,7 +312,7 @@ def test_curve_deposit_eth(database, ethereum_transaction_decoder):
             address=string_to_evm_address('0xDC24316b9AE028F1497c275EB9192a3Ea0f67022'),
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=414,
+            sequence_index=418,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.DEPOSIT,
@@ -310,18 +322,6 @@ def test_curve_deposit_eth(database, ethereum_transaction_decoder):
             location_label=location_label,
             notes='Deposit 0.19993786 stETH in curve pool 0xDC24316b9AE028F1497c275EB9192a3Ea0f67022',  # noqa: E501
             counterparty=CPT_CURVE,
-            address=string_to_evm_address('0xDC24316b9AE028F1497c275EB9192a3Ea0f67022'),
-        ), EvmEvent(
-            tx_hash=evmhash,
-            sequence_index=415,
-            timestamp=timestamp,
-            location=Location.ETHEREUM,
-            event_type=HistoryEventType.INFORMATIONAL,
-            event_subtype=HistoryEventSubType.APPROVE,
-            asset=EvmToken('eip155:1/erc20:0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84'),
-            balance=Balance(amount=FVal('1.157920892373161954235709850E+59'), usd_value=ZERO),
-            location_label=location_label,
-            notes='Set stETH spending approval of 0x767B35b9F06F6e28e5ed05eE7C27bDf992eba5d2 by 0xDC24316b9AE028F1497c275EB9192a3Ea0f67022 to 115792089237316195423570985000000000000000000000000000000000',  # noqa: E501
             address=string_to_evm_address('0xDC24316b9AE028F1497c275EB9192a3Ea0f67022'),
         )]
     assert len(events) == 5
@@ -432,7 +432,7 @@ def test_curve_remove_liquidity(
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=507,
+            sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
@@ -446,7 +446,7 @@ def test_curve_remove_liquidity(
             extra_data={'withdrawal_events_num': 1},
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=508,
+            sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.WITHDRAWAL,
@@ -563,7 +563,7 @@ def test_curve_remove_liquidity_with_internal(database, ethereum_transaction_dec
             extra_data={'withdrawal_events_num': 1},
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=193,
+            sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.WITHDRAWAL,
@@ -718,7 +718,7 @@ def test_curve_remove_imbalanced(database, ethereum_transaction_decoder):
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=2184,
+            sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
@@ -732,7 +732,7 @@ def test_curve_remove_imbalanced(database, ethereum_transaction_decoder):
             address=string_to_evm_address('0xbBC81d23Ea2c3ec7e56D39296F0cbB648873a5d3'),
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=2190,
+            sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.WITHDRAWAL,
@@ -774,7 +774,7 @@ def test_deposit_multiple_tokens(ethereum_transaction_decoder, ethereum_accounts
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=76,
+            sequence_index=1,
             timestamp=TimestampMS(1675186487000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
@@ -788,7 +788,7 @@ def test_deposit_multiple_tokens(ethereum_transaction_decoder, ethereum_accounts
             extra_data={'deposit_events_num': 1},
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=80,
+            sequence_index=2,
             timestamp=TimestampMS(1675186487000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.DEPOSIT,
@@ -976,7 +976,7 @@ def test_curve_trade_token_to_token(ethereum_transaction_decoder, ethereum_accou
             address=None,
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=172,
+            sequence_index=1,
             timestamp=TimestampMS(1679546783000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.TRADE,
@@ -989,7 +989,7 @@ def test_curve_trade_token_to_token(ethereum_transaction_decoder, ethereum_accou
             address=string_to_evm_address('0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7'),
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=173,
+            sequence_index=2,
             timestamp=TimestampMS(1679546783000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.TRADE,
@@ -1046,7 +1046,7 @@ def test_curve_trade_eth_to_token(ethereum_transaction_decoder, ethereum_account
             address=string_to_evm_address('0xA96A65c051bF88B4095Ee1f2451C2A9d43F53Ae2'),
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=57,
+            sequence_index=2,
             timestamp=TimestampMS(1679225231000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.TRADE,
@@ -1090,7 +1090,7 @@ def test_curve_trade_exchange_underlying(ethereum_transaction_decoder, ethereum_
             address=None,
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=106,
+            sequence_index=1,
             timestamp=TimestampMS(1679482763000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.TRADE,
@@ -1103,7 +1103,7 @@ def test_curve_trade_exchange_underlying(ethereum_transaction_decoder, ethereum_
             address=string_to_evm_address('0x8038C01A0390a8c547446a0b2c18fc9aEFEcc10c'),
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=110,
+            sequence_index=2,
             timestamp=TimestampMS(1679482763000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.TRADE,
@@ -1160,7 +1160,7 @@ def test_curve_swap_router(ethereum_transaction_decoder, ethereum_accounts):
             address=string_to_evm_address('0x99a58482BD75cbab83b27EC03CA68fF489b5788f'),
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=37,
+            sequence_index=2,
             timestamp=TimestampMS(1679550275000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.TRADE,
@@ -1204,7 +1204,7 @@ def test_curve_usdn_add_liquidity(ethereum_transaction_decoder, ethereum_account
             notes='Burned 0.005672980418415474 ETH for gas',
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=78,
+            sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
@@ -1218,7 +1218,7 @@ def test_curve_usdn_add_liquidity(ethereum_transaction_decoder, ethereum_account
             extra_data={'deposit_events_num': 1},
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=85,
+            sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.DEPOSIT,
@@ -1262,7 +1262,7 @@ def test_curve_usdn_remove_liquidity(ethereum_transaction_decoder, ethereum_acco
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=224,
+            sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
@@ -1276,7 +1276,7 @@ def test_curve_usdn_remove_liquidity(ethereum_transaction_decoder, ethereum_acco
             address=string_to_evm_address('0x094d12e5b541784701FD8d65F11fc0598FBC6332'),
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=234,
+            sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.WITHDRAWAL,
@@ -1289,7 +1289,7 @@ def test_curve_usdn_remove_liquidity(ethereum_transaction_decoder, ethereum_acco
             address=string_to_evm_address('0x094d12e5b541784701FD8d65F11fc0598FBC6332'),
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=235,
+            sequence_index=3,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.WITHDRAWAL,
@@ -1302,7 +1302,7 @@ def test_curve_usdn_remove_liquidity(ethereum_transaction_decoder, ethereum_acco
             address=string_to_evm_address('0x094d12e5b541784701FD8d65F11fc0598FBC6332'),
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=236,
+            sequence_index=4,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.WITHDRAWAL,
@@ -1315,7 +1315,7 @@ def test_curve_usdn_remove_liquidity(ethereum_transaction_decoder, ethereum_acco
             address=string_to_evm_address('0x094d12e5b541784701FD8d65F11fc0598FBC6332'),
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=237,
+            sequence_index=5,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.WITHDRAWAL,
@@ -1359,7 +1359,7 @@ def test_3pool_add_liquidity(ethereum_transaction_decoder, ethereum_accounts):
             notes='Burned 0.006158572854866488 ETH for gas',
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=66,
+            sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
@@ -1373,7 +1373,7 @@ def test_3pool_add_liquidity(ethereum_transaction_decoder, ethereum_accounts):
             extra_data={'deposit_events_num': 1},
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=71,
+            sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.DEPOSIT,
@@ -1417,7 +1417,7 @@ def test_3pool_remove_liquidity(ethereum_transaction_decoder, ethereum_accounts)
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=39,
+            sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
@@ -1431,7 +1431,7 @@ def test_3pool_remove_liquidity(ethereum_transaction_decoder, ethereum_accounts)
             address=string_to_evm_address('0xA79828DF1850E8a3A3064576f380D90aECDD3359'),
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=49,
+            sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.WITHDRAWAL,
@@ -1444,7 +1444,7 @@ def test_3pool_remove_liquidity(ethereum_transaction_decoder, ethereum_accounts)
             address=string_to_evm_address('0xA79828DF1850E8a3A3064576f380D90aECDD3359'),
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=50,
+            sequence_index=3,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.WITHDRAWAL,
@@ -1457,7 +1457,7 @@ def test_3pool_remove_liquidity(ethereum_transaction_decoder, ethereum_accounts)
             address=string_to_evm_address('0xA79828DF1850E8a3A3064576f380D90aECDD3359'),
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=51,
+            sequence_index=4,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.WITHDRAWAL,
@@ -1470,7 +1470,7 @@ def test_3pool_remove_liquidity(ethereum_transaction_decoder, ethereum_accounts)
             address=string_to_evm_address('0xA79828DF1850E8a3A3064576f380D90aECDD3359'),
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=52,
+            sequence_index=5,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.WITHDRAWAL,
@@ -1517,7 +1517,7 @@ def test_remove_from_aave_pool(ethereum_transaction_decoder, ethereum_accounts):
             address=None,
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=179,
+            sequence_index=1,
             timestamp=TimestampMS(1682041175000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
@@ -1531,7 +1531,7 @@ def test_remove_from_aave_pool(ethereum_transaction_decoder, ethereum_accounts):
             extra_data={'withdrawal_events_num': 1},
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=183,
+            sequence_index=2,
             timestamp=TimestampMS(1682041175000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.WITHDRAWAL,
@@ -1578,7 +1578,7 @@ def test_deposit_via_zap_in_metapool(ethereum_transaction_decoder, ethereum_acco
             address=None,
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=263,
+            sequence_index=1,
             timestamp=TimestampMS(1683177731000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
@@ -1592,7 +1592,7 @@ def test_deposit_via_zap_in_metapool(ethereum_transaction_decoder, ethereum_acco
             extra_data={'deposit_events_num': 2},
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=264,
+            sequence_index=2,
             timestamp=TimestampMS(1683177731000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.DEPOSIT,
@@ -1605,7 +1605,7 @@ def test_deposit_via_zap_in_metapool(ethereum_transaction_decoder, ethereum_acco
             address=string_to_evm_address('0xA79828DF1850E8a3A3064576f380D90aECDD3359'),
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=270,
+            sequence_index=3,
             timestamp=TimestampMS(1683177731000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.DEPOSIT,
@@ -1652,7 +1652,7 @@ def test_no_zap_event(ethereum_transaction_decoder, ethereum_accounts):
             address=None,
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=112,
+            sequence_index=1,
             timestamp=TimestampMS(1683629339000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
@@ -1666,7 +1666,7 @@ def test_no_zap_event(ethereum_transaction_decoder, ethereum_accounts):
             extra_data={'withdrawal_events_num': 1},
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=114,
+            sequence_index=2,
             timestamp=TimestampMS(1683629339000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.WITHDRAWAL,

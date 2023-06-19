@@ -104,9 +104,10 @@ class Aavev1Decoder(DecoderInterface):
                 event.event_subtype = HistoryEventSubType.REWARD
                 event.counterparty = CPT_AAVE_V1
                 event.notes = f'Gain {event.balance.amount} {atoken.symbol} from aave-v1 as interest'  # noqa: E501
+                interest_event = event
 
         maybe_reshuffle_events(
-            ordered_events=[return_event, receive_event],
+            ordered_events=[return_event, receive_event, interest_event],
             events_list=context.decoded_events,
         )
         return DEFAULT_DECODING_OUTPUT

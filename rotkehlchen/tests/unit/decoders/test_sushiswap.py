@@ -120,7 +120,7 @@ def test_sushiswap_single_swap(database, ethereum_inquirer, eth_transactions):
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=307,
+            sequence_index=1,
             timestamp=TimestampMS(1646375440000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.TRADE,
@@ -133,7 +133,7 @@ def test_sushiswap_single_swap(database, ethereum_inquirer, eth_transactions):
             address=string_to_evm_address('0x33F6DDAEa2a8a54062E021873bCaEE006CdF4007'),
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=309,
+            sequence_index=2,
             timestamp=TimestampMS(1646375440000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.TRADE,

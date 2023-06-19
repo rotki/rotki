@@ -46,7 +46,19 @@ def test_1inchv1_swap(database, ethereum_inquirer):
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=90,
+            sequence_index=103,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=A_CHI,
+            balance=Balance(),
+            location_label=ADDY,
+            notes=f'Revoke CHI spending approval of {ADDY} by {chispender_addy}',
+            address=chispender_addy,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=104,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.TRADE,
@@ -59,7 +71,7 @@ def test_1inchv1_swap(database, ethereum_inquirer):
             address=oneinch_contract,
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=91,
+            sequence_index=105,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.TRADE,
@@ -70,18 +82,6 @@ def test_1inchv1_swap(database, ethereum_inquirer):
             notes=f'Receive 135.959878392183347402 DAI from 1inch-v1 swap in {ADDY}',
             counterparty=CPT_ONEINCH_V1,
             address=oneinch_contract,
-        ), EvmEvent(
-            tx_hash=tx_hash,
-            sequence_index=103,
-            timestamp=timestamp,
-            location=Location.ETHEREUM,
-            event_type=HistoryEventType.INFORMATIONAL,
-            event_subtype=HistoryEventSubType.APPROVE,
-            asset=A_CHI,
-            balance=Balance(),
-            location_label=ADDY,
-            notes=f'Revoke CHI spending approval of {ADDY} by {chispender_addy}',
-            address=chispender_addy,
         ),
     ]
     assert expected_events == events
@@ -119,7 +119,19 @@ def test_1inchv2_swap_for_eth(database, ethereum_inquirer):
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=217,
+            sequence_index=218,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=A_PAN,
+            balance=Balance(amount=FVal('1.157920892373161954235709850E+59')),
+            location_label=ADDY,
+            notes=f'Set PAN spending approval of {ADDY} by {oneinch_v2_addy} to 115792089237316195423570985000000000000000000000000000000000',  # noqa: E501
+            address=oneinch_v2_addy,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=219,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.TRADE,
@@ -132,7 +144,7 @@ def test_1inchv2_swap_for_eth(database, ethereum_inquirer):
             address=string_to_evm_address('0xd47140F6Ab73f6d6B6675Fb1610Bb5E9B5d96FE5'),
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=218,
+            sequence_index=220,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.TRADE,
@@ -143,18 +155,6 @@ def test_1inchv2_swap_for_eth(database, ethereum_inquirer):
             notes='Receive 0.220582251767407014 ETH from 1inch-v2 swap',
             counterparty=CPT_ONEINCH_V2,
             address=string_to_evm_address('0xF53bBFBff01c50F2D42D542b09637DcA97935fF7'),
-        ), EvmEvent(
-            tx_hash=tx_hash,
-            sequence_index=221,
-            timestamp=timestamp,
-            location=Location.ETHEREUM,
-            event_type=HistoryEventType.INFORMATIONAL,
-            event_subtype=HistoryEventSubType.APPROVE,
-            asset=A_PAN,
-            balance=Balance(amount=FVal('1.157920892373161954235709850E+59')),
-            location_label=ADDY,
-            notes=f'Set PAN spending approval of {ADDY} by {oneinch_v2_addy} to 115792089237316195423570985000000000000000000000000000000000',  # noqa: E501
-            address=oneinch_v2_addy,
         ),
     ]
     assert expected_events == events

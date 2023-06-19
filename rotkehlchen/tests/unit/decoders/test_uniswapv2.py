@@ -176,7 +176,7 @@ def test_uniswap_v2_swap(database, ethereum_inquirer, eth_transactions):
             address=string_to_evm_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=519,
+            sequence_index=2,
             timestamp=TimestampMS(1646375440000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.TRADE,
@@ -320,7 +320,7 @@ def test_uniswap_v2_swap_eth_returned(database, ethereum_inquirer, eth_transacti
             address=string_to_evm_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=310,
+            sequence_index=3,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.TRADE,
@@ -362,7 +362,7 @@ def test_uniswap_v2_swap_with_approval(database, ethereum_inquirer, ethereum_acc
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=297,
+            sequence_index=1,
             timestamp=TimestampMS(1667857559000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.INFORMATIONAL,
@@ -374,7 +374,7 @@ def test_uniswap_v2_swap_with_approval(database, ethereum_inquirer, ethereum_acc
             address=string_to_evm_address('0x617Dee16B86534a5d792A4d7A62FB491B544111E'),
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=300,
+            sequence_index=2,
             timestamp=TimestampMS(1667857559000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.TRADE,
@@ -387,7 +387,7 @@ def test_uniswap_v2_swap_with_approval(database, ethereum_inquirer, ethereum_acc
             address=string_to_evm_address('0x7b28470032DA06051f2E620531adBAeAdb285408'),
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=301,
+            sequence_index=3,
             timestamp=TimestampMS(1667857559000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.TRADE,
@@ -922,7 +922,20 @@ def test_uniswap_v2_swap_events_order(
             tx_hash=evmhash,
             timestamp=1672784687000,
             location=Location.ETHEREUM,
-            sequence_index=32,
+            sequence_index=33,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=Asset('eip155:1/erc20:0xa3BeD4E1c75D00fa6f4E5E6922DB7261B5E9AcD2'),
+            balance=Balance(FVal('1.157920892373161954235709850E+59')),
+            location_label=user_address,
+            notes=f'Set MTA spending approval of {user_address} by 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D to 115792089237316195423570985000000000000000000000000000000000',  # noqa: E501
+            counterparty=None,
+            address=string_to_evm_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
+        ), EvmEvent(
+            tx_hash=evmhash,
+            timestamp=1672784687000,
+            location=Location.ETHEREUM,
+            sequence_index=34,
             event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=Asset('eip155:1/erc20:0xa3BeD4E1c75D00fa6f4E5E6922DB7261B5E9AcD2'),
@@ -935,7 +948,7 @@ def test_uniswap_v2_swap_events_order(
             tx_hash=evmhash,
             timestamp=1672784687000,
             location=Location.ETHEREUM,
-            sequence_index=33,
+            sequence_index=35,
             event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_DAI,
@@ -944,19 +957,6 @@ def test_uniswap_v2_swap_events_order(
             notes=f'Receive 58.517806710690769903 DAI in uniswap-v2 from {user_address}',  # noqa: E501
             counterparty=CPT_UNISWAP_V2,
             address=string_to_evm_address('0xA478c2975Ab1Ea89e8196811F51A7B7Ade33eB11'),
-        ), EvmEvent(
-            tx_hash=evmhash,
-            timestamp=1672784687000,
-            location=Location.ETHEREUM,
-            sequence_index=39,
-            event_type=HistoryEventType.INFORMATIONAL,
-            event_subtype=HistoryEventSubType.APPROVE,
-            asset=Asset('eip155:1/erc20:0xa3BeD4E1c75D00fa6f4E5E6922DB7261B5E9AcD2'),
-            balance=Balance(FVal('1.157920892373161954235709850E+59')),
-            location_label=user_address,
-            notes=f'Set MTA spending approval of {user_address} by 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D to 115792089237316195423570985000000000000000000000000000000000',  # noqa: E501
-            counterparty=None,
-            address=string_to_evm_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
         ),
     ]
     assert events == expected_events
