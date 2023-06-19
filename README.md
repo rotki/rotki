@@ -28,6 +28,7 @@
   <a href="#features-at-a-glance">Features at a Glance</a> •
   <a href="#installation">Installation</a> •
   <a href="#usage">Usage</a> •
+  <a href="#application-preview">Preview</a> •
   <a href="#changelog">Changelog</a> •
   <a href="#contribute">Contributing</a>
   <br/>
@@ -77,6 +78,14 @@ Read the [documentation](https://rotki.readthedocs.io/en/latest/) for a complete
 Some quick links to useful parts of the documentation follow below for your convenience.
 
 To get started using rotki, check out the [detailed usage guide](https://rotki.readthedocs.io/en/latest/usage_guide.html).
+
+## Application Preview
+
+<div style="display: flex; justify-content: space-between">
+    <img src="https://i.imgur.com/uKK8VZm.png" alt="Description of the first image" width="400">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      
+    <img src="https://i.imgur.com/Pm5MDml.png" alt="Description of the second image" width="400">
+</div>
+
 
 ## Changelog
 
