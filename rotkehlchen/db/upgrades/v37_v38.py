@@ -2,6 +2,11 @@
 import logging
 from typing import TYPE_CHECKING
 
+from rotkehlchen.db.constants import (
+    HISTORY_MAPPING_KEY_STATE,
+    HISTORY_MAPPING_STATE_CUSTOMIZED,
+    HISTORY_MAPPING_STATE_DECODED,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 if TYPE_CHECKING:
@@ -73,18 +78,52 @@ def _drop_aave_events(write_cursor: 'DBCursor') -> None:
     """
     Delete aave events from the database since we don't need them anymore
     """
+    log.debug('Enter _drop_aave_events')
     write_cursor.execute('DROP TABLE IF EXISTS aave_events;')
     write_cursor.execute('DELETE FROM used_query_ranges WHERE name LIKE "aave_events%";')
+    log.debug('Exit _drop_aave_events')
+
+
+def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
+    """
+    Reset all decoded evm events except the customized ones.
+    """
+    log.debug('Enter _reset_decoded_events')
+    write_cursor.execute('SELECT tx_hash from evm_transactions')
+    tx_hashes = [x[0] for x in write_cursor]
+    write_cursor.execute(
+        'SELECT parent_identifier FROM history_events_mappings WHERE name=? AND value=?',
+        (HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED),
+    )
+    customized_event_ids = [x[0] for x in write_cursor]
+    length = len(customized_event_ids)
+    querystr = 'DELETE FROM history_events WHERE event_identifier=?'
+    if length != 0:
+        querystr += f' AND identifier NOT IN ({", ".join(["?"] * length)})'
+        bindings = [(x, *customized_event_ids) for x in tx_hashes]
+    else:
+        bindings = [(x,) for x in tx_hashes]
+    write_cursor.executemany(querystr, bindings)
+    write_cursor.executemany(
+        'DELETE from evm_tx_mappings WHERE tx_hash=? AND value=?',
+        [(tx_hash, HISTORY_MAPPING_STATE_DECODED) for tx_hash in tx_hashes],
+    )
+    log.debug('Enter _reset_decoded_events')
 
 
 def upgrade_v37_to_v38(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
     """Upgrades the DB from v37 to v38. This was in v1.29.0 release.
 
-        - Add Polygon POS location
+        - Reset decoded events
+        - Reduce the data stored per internal transaction
+        - Add Polygon POS location and nodes
+        - Drop the unused aave events
     """
     log.debug('Entered userdb v37->v38 upgrade')
-    progress_handler.set_total_steps(4)
+    progress_handler.set_total_steps(5)
     with db.user_write() as write_cursor:
+        _reset_decoded_events(write_cursor)
+        progress_handler.new_step()
         _reduce_internal_txs(write_cursor)
         progress_handler.new_step()
         _add_polygon_pos_location(write_cursor)
