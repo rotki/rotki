@@ -267,6 +267,10 @@ def test_events_aave_v2(rotkehlchen_api_server: 'APIServer') -> None:
                     'amount': '0.085033793839969583',
                     'usd_value': '0.1275506907599543745',
                 },
+                'ETH': {
+                    'amount': '0.2',
+                    'usd_value': '0.30',
+                },
             },
             'total_earned_liquidations': {},
         },

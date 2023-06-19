@@ -226,7 +226,7 @@ class Aave(EthereumModule):
 
         for borrowed_asset, amount in historical_borrow_balances.items():
             borrow_balance = balances.borrowing.get(cast(CryptoAsset, borrowed_asset), None)
-            this_amount = amount
+            this_amount = abs(amount)  # the amount is always <= 0 as it represents a debt position that can get repaid but we need it positive for the calculations  # noqa: E501
             if borrow_balance is not None:
                 this_amount += borrow_balance.balance.amount
 
