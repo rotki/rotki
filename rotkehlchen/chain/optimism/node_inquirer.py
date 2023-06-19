@@ -1,16 +1,21 @@
 import logging
-from typing import TYPE_CHECKING, Literal, cast
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Any, Literal, Optional, cast
 
 from eth_typing import BlockNumber
 
-from rotkehlchen.chain.constants import DEFAULT_EVM_RPC_TIMEOUT
+from rotkehlchen.chain.constants import DEFAULT_EVM_RPC_TIMEOUT, FAKE_GENESIS_TX_RECEIPT, GENESIS_HASH
 from rotkehlchen.chain.evm.contracts import EvmContracts
-from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirerWithDSProxy
-from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer, EvmNodeInquirerWithDSProxy
+from rotkehlchen.chain.evm.types import WeightedNode, string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.fval import FVal
+from rotkehlchen.errors.misc import BlockchainQueryError, RemoteError
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.greenlets.manager import GreenletManager
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.serialization.deserialize import deserialize_int_from_hex
+from rotkehlchen.serialization.serialize import process_result
 from rotkehlchen.types import (
     ChainID,
     ChecksumEvmAddress,
@@ -18,7 +23,6 @@ from rotkehlchen.types import (
     SupportedBlockchain,
     Timestamp,
 )
-
 from .constants import (
     ARCHIVE_NODE_CHECK_ADDRESS,
     ARCHIVE_NODE_CHECK_BLOCK,
@@ -93,3 +97,50 @@ class OptimismInquirer(EvmNodeInquirerWithDSProxy):
         May raise RemoteError
         """
         return self.etherscan.get_blocknumber_by_time(ts=ts, closest=closest)
+    
+    def _get_transaction_receipt(
+            self,
+            web3: Optional[Web3],
+            tx_hash: EVMTxHash,
+    ) -> Optional[dict[str, Any]]:
+        if tx_hash == GENESIS_HASH:
+            return FAKE_GENESIS_TX_RECEIPT
+        if web3 is None:
+            tx_receipt = self.etherscan.get_transaction_receipt(tx_hash)
+            if tx_receipt is None:
+                return None
+
+            try:
+                # Turn hex numbers to int
+                block_number = int(tx_receipt['blockNumber'], 16)
+                tx_receipt['blockNumber'] = block_number
+                tx_receipt['cumulativeGasUsed'] = int(tx_receipt['cumulativeGasUsed'], 16)
+                tx_receipt['gasUsed'] = int(tx_receipt['gasUsed'], 16)
+                tx_receipt['l1Fee'] = int(tx_receipt['l1Fee'], 16)
+                tx_receipt['status'] = int(tx_receipt.get('status', '0x1'), 16)
+                tx_index = int(tx_receipt['transactionIndex'], 16)
+                tx_receipt['transactionIndex'] = tx_index
+                for receipt_log in tx_receipt['logs']:
+                    receipt_log['blockNumber'] = block_number
+                    receipt_log['logIndex'] = deserialize_int_from_hex(
+                        symbol=receipt_log['logIndex'],
+                        location='etherscan tx receipt',
+                    )
+                    receipt_log['transactionIndex'] = tx_index
+            except (DeserializationError, ValueError, KeyError) as e:
+                msg = str(e)
+                if isinstance(e, KeyError):
+                    msg = f'missing key {msg}'
+                log.error(
+                    f'Couldnt deserialize transaction receipt {tx_receipt} data from '
+                    f'etherscan due to {msg}',
+                )
+                raise RemoteError(
+                    f'Couldnt deserialize transaction receipt data from etherscan '
+                    f'due to {msg}. Check logs for details',
+                ) from e
+            return tx_receipt
+
+        # Can raise TransactionNotFound if the user's node is pruned and transaction is old
+        tx_receipt = web3.eth.get_transaction_receipt(tx_hash)  # type: ignore
+        return process_result(tx_receipt)
