@@ -13,6 +13,7 @@ from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import CryptoAsset, EvmToken
 from rotkehlchen.chain.accounts import BlockchainAccountData, BlockchainAccounts
+from rotkehlchen.chain.avalanche.manager import AvalancheManager
 from rotkehlchen.chain.bitcoin import get_bitcoin_addresses_balances
 from rotkehlchen.chain.bitcoin.bch import get_bitcoin_cash_addresses_balances
 from rotkehlchen.chain.bitcoin.bch.utils import force_address_to_legacy_address
@@ -53,6 +54,7 @@ from rotkehlchen.errors.misc import (
     ModuleInitializationFailure,
     RemoteError,
 )
+from rotkehlchen.externalapis.etherscan import EtherscanHasChainActivity
 from rotkehlchen.fval import FVal
 from rotkehlchen.greenlets.manager import GreenletManager
 from rotkehlchen.inquirer import Inquirer
@@ -83,7 +85,6 @@ from .balances import BlockchainBalances, BlockchainBalancesUpdate
 from .constants import LAST_EVM_ACCOUNTS_DETECT_KEY
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.avalanche.manager import AvalancheManager
     from rotkehlchen.chain.ethereum.interfaces.balances import ProtocolWithBalance
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.chain.ethereum.modules.eth2.eth2 import Eth2
@@ -1310,18 +1311,28 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         """Checks whether address is active in the given chains. Returns a list of active chains"""
         active_chains = []
         for chain in chains:
-            chain_manager = self.get_chain_manager(chain)
+            chain_manager: EvmManager = self.get_chain_manager(chain)
             try:
                 if chain == SupportedBlockchain.AVALANCHE:
+                    avax_manager = cast(AvalancheManager, chain_manager)
                     # just check balance and nonce in avalanche
                     has_activity = (
-                        chain_manager.w3.eth.get_transaction_count(address) != 0 or
-                        chain_manager.get_avax_balance(address) != ZERO
+                        avax_manager.w3.eth.get_transaction_count(address) != 0 or
+                        avax_manager.get_avax_balance(address) != ZERO
                     )
                     if has_activity is False:
                         continue
-                elif chain_manager.node_inquirer.etherscan.has_activity(address) is False:  # noqa: E501
-                    continue
+                else:
+                    etherscan_activity = chain_manager.node_inquirer.etherscan.has_activity(address)  # noqa: E501
+                    if (
+                        (
+                            etherscan_activity == EtherscanHasChainActivity.TOKENS and
+                            chain_manager.transactions.address_has_been_spammed(address=address)
+                        ) or
+                        etherscan_activity == EtherscanHasChainActivity.NONE
+                    ):  # in the case of tokens we check if the transactions were spam tokens
+                        continue
+                    # else we add the chain
             except RemoteError as e:
                 log.error(f'{e!s} when checking if {address} is active at {chain}')
                 continue

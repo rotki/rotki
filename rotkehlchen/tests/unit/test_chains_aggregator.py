@@ -1,12 +1,33 @@
 from contextlib import ExitStack
+from typing import TYPE_CHECKING
 
 import pytest
 
+from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.chain.aggregator import ChainsAggregator, _module_name_to_class
+from rotkehlchen.chain.evm.types import NodeName, WeightedNode, string_to_evm_address
+from rotkehlchen.constants.misc import ONE
 from rotkehlchen.tests.utils.blockchain import setup_evm_addresses_activity_mock
 from rotkehlchen.tests.utils.factories import make_evm_address
-from rotkehlchen.types import AVAILABLE_MODULES_MAP, SupportedBlockchain
+from rotkehlchen.tests.utils.polygon_pos import ALCHEMY_RPC_ENDPOINT
+from rotkehlchen.types import AVAILABLE_MODULES_MAP, SPAM_PROTOCOL, ChainID, SupportedBlockchain
+
+if TYPE_CHECKING:
+    from rotkehlchen.chain.polygon_pos.manager import PolygonPOSManager
+
+
+ALCHEMY_POLYGON_NODE = WeightedNode(
+    node_info=NodeName(
+        name='alchemy',
+        endpoint=ALCHEMY_RPC_ENDPOINT,
+        owned=False,
+        blockchain=SupportedBlockchain.POLYGON_POS,
+    ),
+    active=True,
+    weight=ONE,
+)
 
 
 @pytest.mark.parametrize('ethereum_modules', [[]])
@@ -142,3 +163,62 @@ def test_detect_evm_accounts(blockchain: 'ChainsAggregator') -> None:
 
     assert set(accounts_in_db) == set(expected_accounts_data)
     assert len(accounts_in_db) == len(expected_accounts_data)
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.freeze_time('2023-06-19 05:16:10 GMT')
+@pytest.mark.parametrize('polygon_pos_manager_connect_at_start', [(ALCHEMY_POLYGON_NODE,)])
+@pytest.mark.parametrize('polygon_pos_accounts', [[make_evm_address()]])  # to connect to nodes
+def test_detect_evm_accounts_spam_tx(polygon_pos_manager: 'PolygonPOSManager') -> None:
+    """
+    Test correctly that an account with only erc20 transfers of spam tokens get correctly
+    marked as spammed.
+    The tested address has received the following spam tokens
+    eip155:137/erc20:0x91bD4023A21bc12814905f251eb348e298DBC0F0
+    eip155:137/erc20:0xD6198855979714255d711A4bB8BF1763d28A473B
+    eip155:137/erc20:0xb76c90B51338016011Eaf27C348E3D84A623C5BF
+    eip155:137/erc20:0x5522962DCE6BE2a009D29E5699a67C38b392beb9
+    eip155:137/erc20:0xd9503c336512120Aa6834Ab5d9258a32940bB2C6
+    eip155:137/erc20:0x9715A23D25399EF10D819e4999689de3d14eB7e2
+    eip155:137/erc20:0xb266edC3706fC2A48ECFef7DD8831435f12D9966
+    eip155:137/erc20:0x06732174B52743C374445E88C9b01031Bd0FB28f
+    eip155:137/erc20:0xE2Ee00F49464d6B60771dc118A1bb4eb362bd154
+    eip155:137/erc20:0x37CC5F5610d91325c8A8C0eD74d26A01F19e7B51
+
+    first we check that it is marked as NOT spammed by:
+    - ignoring the first asset
+    - adding the second as spam asset
+    - third is unknown so the address is marked as not spammed
+
+    to verify that the transaction has been spamemd all the remaining assets are ignored
+    """
+    evm_address = string_to_evm_address('0xc1C736F2Ac0e0019A188982c7c8C063976A4d8d9')
+    db = polygon_pos_manager.node_inquirer.database
+    with db.user_write() as write_cursor:
+        db.add_to_ignored_assets(
+            write_cursor=write_cursor,
+            asset=Asset('eip155:137/erc20:0x91bD4023A21bc12814905f251eb348e298DBC0F0'),
+        )
+    get_or_create_evm_token(
+        userdb=polygon_pos_manager.node_inquirer.database,
+        evm_address=string_to_evm_address('0xD6198855979714255d711A4bB8BF1763d28A473B'),
+        chain_id=ChainID.POLYGON_POS,
+        protocol=SPAM_PROTOCOL,
+    )
+    assert polygon_pos_manager.transactions.address_has_been_spammed(evm_address) is False
+
+    spam_assets = [
+        Asset('eip155:137/erc20:0xb76c90B51338016011Eaf27C348E3D84A623C5BF'),
+        Asset('eip155:137/erc20:0x5522962DCE6BE2a009D29E5699a67C38b392beb9'),
+        Asset('eip155:137/erc20:0xd9503c336512120Aa6834Ab5d9258a32940bB2C6'),
+        Asset('eip155:137/erc20:0x9715A23D25399EF10D819e4999689de3d14eB7e2'),
+        Asset('eip155:137/erc20:0xb266edC3706fC2A48ECFef7DD8831435f12D9966'),
+        Asset('eip155:137/erc20:0x06732174B52743C374445E88C9b01031Bd0FB28f'),
+        Asset('eip155:137/erc20:0xE2Ee00F49464d6B60771dc118A1bb4eb362bd154'),
+        Asset('eip155:137/erc20:0x37CC5F5610d91325c8A8C0eD74d26A01F19e7B51'),
+    ]
+    with db.user_write() as write_cursor:
+        for asset in spam_assets:
+            db.add_to_ignored_assets(write_cursor=write_cursor, asset=asset)
+
+    assert polygon_pos_manager.transactions.address_has_been_spammed(evm_address) is True

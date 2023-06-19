@@ -9,15 +9,28 @@ from gevent.lock import Semaphore
 from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.api.websockets.typedefs import TransactionStatusStep, WSMessageType
+from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.evm.constants import GENESIS_HASH
+from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.types import EvmAccount
 from rotkehlchen.chain.structures import TimestampOrBlockRange
+from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
 from rotkehlchen.db.ranges import DBQueryRanges
+from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, EVMTxHash, Timestamp, deserialize_evm_tx_hash
+from rotkehlchen.serialization.deserialize import deserialize_evm_address
+from rotkehlchen.types import (
+    SPAM_PROTOCOL,
+    ChecksumEvmAddress,
+    EvmTokenKind,
+    EVMTxHash,
+    Timestamp,
+    deserialize_evm_tx_hash,
+)
+from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
@@ -446,6 +459,72 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
                 location_string=location_string,
                 queried_ranges=[(start_ts, end_ts)],
             )
+
+    def address_has_been_spammed(self, address: ChecksumEvmAddress) -> bool:
+        """
+        Queries erc20 tranfers for the given address and if it has only spam assets or ignored
+        assets we return True.
+        If any transfer had an unknown asset
+        """
+        start_ts, end_ts = Timestamp(0), ts_now()
+        checekd_tokens = set()
+        with self.database.conn.read_ctx() as cursor:
+            ignored_assets = self.database.get_ignored_asset_ids(cursor)
+
+        log.debug(f'Address detection: querying {self.evm_inquirer.chain_name} ERC20 Transfers for {address} -> {start_ts} - {end_ts}')  # noqa: E501
+        try:
+            for erc20_tx_hashes in self.evm_inquirer.etherscan.get_token_transaction_hashes(
+                account=address,
+                from_ts=start_ts,
+                to_ts=end_ts,
+            ):
+                for tx_hash in erc20_tx_hashes:
+                    tx_hash_bytes = deserialize_evm_tx_hash(tx_hash)
+                    _, raw_receipt_data = self.evm_inquirer.get_transaction_by_hash(tx_hash_bytes)  # noqa: E501
+                    for log_entry in raw_receipt_data['logs']:
+                        if len(log_entry['topics']) == 0:
+                            continue
+
+                        topic_raw = log_entry['topics'][0]
+                        topic = hexstring_to_bytes(topic_raw)
+                        if topic != ERC20_OR_ERC721_TRANSFER:
+                            continue
+
+                        log_address = deserialize_evm_address(log_entry['address'])
+                        if log_address in checekd_tokens:
+                            continue
+
+                        identifier = evm_address_to_identifier(
+                            address=log_address,
+                            chain_id=self.evm_inquirer.chain_id,
+                            token_type=EvmTokenKind.ERC20,
+                        )
+
+                        if identifier in ignored_assets:
+                            checekd_tokens.add(log_address)
+                            continue
+
+                        try:
+                            token = EvmToken(identifier)
+                        except UnknownAsset:
+                            return False
+
+                        if token.protocol == SPAM_PROTOCOL:
+                            checekd_tokens.add(log_address)
+                            continue
+
+                        # this token is not ignored, is not spam and exists in the database
+                        return False
+
+                    log.debug(f'Address detection: queried {self.evm_inquirer.chain_name} ERC20 Transfers for {address} -> range {start_ts} - {end_ts}')  # noqa: E501
+        except RemoteError as e:
+            self.msg_aggregator.add_error(
+                f'Got error "{e!s}" while querying {self.evm_inquirer.chain_name} '
+                f'token transactions from Etherscan. Transactions not added to the DB '
+                f'address: {address} ',
+            )
+            return False
+        return True
 
     def get_or_query_transaction_receipt(self, tx_hash: EVMTxHash) -> 'EvmTxReceipt':
         """
