@@ -2,14 +2,13 @@ from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.evm.decoding.types import EventCategory, EventCategoryDetails
 
-
 FREE_PNL_EVENTS_LIMIT = 1000
 FREE_REPORTS_LOOKUP_LIMIT = 20
 
 
 DEFAULT_EVENT_CATEGORY_MAPPINGS = {
     HistoryEventType.SPEND: {
-        HistoryEventSubType.FEE: EventCategory.GAS,
+        HistoryEventSubType.FEE: EventCategory.FEE,
         HistoryEventSubType.PAYBACK_DEBT: EventCategory.REPAY,
         HistoryEventSubType.RETURN_WRAPPED: EventCategory.SEND,
         HistoryEventSubType.LIQUIDATE: EventCategory.LIQUIDATE,

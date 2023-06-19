@@ -281,6 +281,9 @@ class CowswapDecoder(DecoderInterface):
                     HistoryEventSubType.SPEND: EventCategory.SWAP_OUT,
                     HistoryEventSubType.RECEIVE: EventCategory.SWAP_IN,
                 },
+                HistoryEventType.SPEND: {
+                    HistoryEventSubType.FEE: EventCategory.FEE,
+                },
                 HistoryEventType.DEPOSIT: {
                     HistoryEventSubType.PLACE_ORDER: EventCategory.PLACE_ORDER,
                 },
