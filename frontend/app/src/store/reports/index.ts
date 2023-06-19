@@ -1,5 +1,6 @@
 import { type Message } from '@rotki/common/lib/messages';
 import { type ComputedRef, type Ref } from 'vue';
+import { Blockchain } from '@rotki/common/lib/blockchain';
 import { CURRENCY_USD } from '@/types/currencies';
 import {
   type ProfitLossReportDebugPayload,
@@ -12,6 +13,8 @@ import {
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { type AccountingSettings } from '@/types/user';
+import { type AddressBookSimplePayload } from '@/types/eth-names';
+import { isBlockchain } from '@/types/blockchain/chains';
 
 const notify = (info: {
   title: string;
@@ -84,8 +87,10 @@ export const useReportsStore = defineStore('reports', () => {
   });
 
   const { setMessage } = useMessageStore();
-  const { itemsPerPage } = storeToRefs(useFrontendSettingsStore());
   const { t } = useI18n();
+  const { itemsPerPage } = storeToRefs(useFrontendSettingsStore());
+
+  const { fetchEnsNames } = useAddressesNamesStore();
 
   const {
     exportReportCSV,
@@ -167,14 +172,27 @@ export const useReportsStore = defineStore('reports', () => {
         set(actionableItems, actionable);
       }
       set(loaded, false);
-      const notes = reportEntries.entries
+
+      const addressesNamesPayload: AddressBookSimplePayload[] = [];
+      reportEntries.entries
         .filter(event => isTransactionEvent(event))
-        .map(event => event.notes);
+        .forEach(event => {
+          const blockchain = event.location || Blockchain.ETH;
+          if (!event.notes || !isBlockchain(blockchain)) {
+            return;
+          }
+          const addresses = getEthAddressesFromText(event.notes);
+          addressesNamesPayload.push(
+            ...addresses.map(address => ({
+              address,
+              blockchain
+            }))
+          );
+        });
 
-      const addresses = getEthAddressesFromText(notes);
-
-      const { fetchEnsNames } = useAddressesNamesStore();
-      await fetchEnsNames(addresses);
+      if (addressesNamesPayload.length > 0) {
+        startPromise(fetchEnsNames(addressesNamesPayload));
+      }
     } catch (e: any) {
       notify({
         title: t('actions.reports.fetch.error.title').toString(),

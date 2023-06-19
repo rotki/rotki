@@ -27,8 +27,8 @@ export function filterAddressesFromWords(words: string[]): string[] {
   return words.filter(uniqueStrings).filter(isValidEthAddress);
 }
 
-export const getEthAddressesFromText = (notes: string[]): string[] =>
-  filterAddressesFromWords(notes.join(' ').split(/\s|\\n/));
+export const getEthAddressesFromText = (notes: string): string[] =>
+  filterAddressesFromWords(notes.split(/\s|\\n/));
 
 export const toEvmChainAndTxHash = ({
   location,

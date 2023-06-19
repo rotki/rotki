@@ -1,5 +1,6 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { FrontendSettings } from '@/types/frontend-settings';
+import { type AddressBookSimplePayload } from '@/types/eth-names';
 
 vi.mock('@/composables/api/blockchain/addresses-names', () => ({
   useAddressesNamesApi: vi.fn().mockReturnValue({
@@ -37,7 +38,12 @@ describe('store::blockchain/accounts/addresses-names', () => {
   });
 
   describe('fetchEnsNames', () => {
-    const addresses = ['0x4585FE77225b41b697C938B01232131231231233'];
+    const addresses: AddressBookSimplePayload[] = [
+      {
+        address: '0x4585FE77225b41b697C938B01232131231231233',
+        blockchain: Blockchain.ETH
+      }
+    ];
 
     test('no addresses', async () => {
       await store.fetchEnsNames([]);
@@ -47,21 +53,30 @@ describe('store::blockchain/accounts/addresses-names', () => {
     test('with addresses, forceUpdate=false', async () => {
       await store.fetchEnsNames(addresses, false);
 
-      expect(api.getEnsNames).toHaveBeenCalledWith(addresses);
+      expect(api.getEnsNames).toHaveBeenCalledWith(
+        addresses.map(({ address }) => address)
+      );
       expect(api.getAddressesNames).toHaveBeenCalledOnce();
     });
 
     test('with same addresses, forceUpdate=true', async () => {
       await store.fetchEnsNames(addresses, true);
 
-      expect(api.getEnsNamesTask).toHaveBeenCalledWith(addresses);
+      expect(api.getEnsNamesTask).toHaveBeenCalledWith(
+        addresses.map(({ address }) => address)
+      );
       expect(api.getAddressesNames).toHaveBeenCalledOnce();
     });
 
     test('filter invalid addresses, forceUpdate=true', async () => {
-      await store.fetchEnsNames([...addresses, '0xinvalid'], true);
+      await store.fetchEnsNames(
+        [...addresses, { address: '0xinvalid', blockchain: Blockchain.ETH }],
+        true
+      );
 
-      expect(api.getEnsNamesTask).toHaveBeenCalledWith(addresses);
+      expect(api.getEnsNamesTask).toHaveBeenCalledWith(
+        addresses.map(({ address }) => address)
+      );
       expect(api.getAddressesNames).toHaveBeenCalledOnce();
     });
   });
@@ -160,9 +175,15 @@ describe('store::blockchain/accounts/addresses-names', () => {
     });
   });
 
-  const addresses = [
-    '0x4585FE77225b41b697C938B01232131231231233',
-    '0x4585FE77225b41b697C938B01232131231231231'
+  const addresses: AddressBookSimplePayload[] = [
+    {
+      address: '0x4585FE77225b41b697C938B01232131231231233',
+      blockchain: Blockchain.ETH
+    },
+    {
+      address: '0x4585FE77225b41b697C938B01232131231231231',
+      blockchain: Blockchain.ETH
+    }
   ];
 
   describe('fetchAddressesNames', () => {
@@ -208,11 +229,11 @@ describe('store::blockchain/accounts/addresses-names', () => {
 
       expect(api.getAddressesNames).toHaveBeenCalledWith([
         {
-          address: '0x4585FE77225b41b697C938B01232131231231231',
+          address: '0x4585FE77225b41b697C938B01232131231231233',
           blockchain: Blockchain.ETH
         },
         {
-          address: '0x4585FE77225b41b697C938B01232131231231233',
+          address: '0x4585FE77225b41b697C938B01232131231231231',
           blockchain: Blockchain.ETH
         }
       ]);

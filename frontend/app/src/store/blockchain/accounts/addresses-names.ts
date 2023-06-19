@@ -11,6 +11,7 @@ import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { type Chains } from '@/types/asset/asset-urls';
 import { isBlockchain } from '@/types/blockchain/chains';
+import { uniqueObjects } from '@/utils/data';
 
 export const useAddressesNamesStore = defineStore(
   'blockchains/accounts/addresses-names',
@@ -44,8 +45,6 @@ export const useAddressesNamesStore = defineStore(
       updateAddressBook: updateAddressBookCaller
     } = useAddressesNamesApi();
 
-    const { isEvm } = useSupportedChains();
-
     const lastRefreshedAvatar: Ref<number> = ref(0);
 
     const setLastRefreshedAvatar = () => {
@@ -66,14 +65,15 @@ export const useAddressesNamesStore = defineStore(
       );
 
     const fetchEnsNames = async (
-      addresses: string[],
+      payload: AddressBookSimplePayload[],
       forceUpdate = false
     ): Promise<void> => {
-      if (addresses.length === 0) {
+      if (payload.length === 0) {
         return;
       }
 
-      const filteredAddresses = addresses
+      const filteredAddresses = payload
+        .map(({ address }) => address)
         .filter(uniqueStrings)
         .filter(isValidEthAddress);
 
@@ -104,7 +104,7 @@ export const useAddressesNamesStore = defineStore(
         });
       }
 
-      await fetchAddressesNames(filteredAddresses, Blockchain.ETH);
+      startPromise(fetchAddressesNames(payload));
     };
 
     const addFetchedEntries = (newEntries: AddressBookSimplePayload[]) => {
@@ -133,36 +133,25 @@ export const useAddressesNamesStore = defineStore(
     };
 
     const fetchAddressesNames = async (
-      addresses: string[] | null = null,
-      blockchain: Blockchain | undefined = undefined
+      payload: AddressBookSimplePayload[] | null = null
     ): Promise<void> => {
-      let payload: AddressBookSimplePayload[];
-
-      if (addresses !== null && blockchain !== undefined) {
-        if (!get(isEvm(blockchain))) {
-          return;
-        }
-
-        payload = addresses.map(address => ({ address, blockchain }));
+      if (payload) {
         addFetchedEntries(payload);
       } else {
-        payload = uniqueObjects(
-          [
-            ...get(addressBookGlobal).map(item => ({
-              address: item.address,
-              blockchain: item.blockchain
-            })),
-            ...get(addressBookPrivate).map(item => ({
-              address: item.address,
-              blockchain: item.blockchain
-            })),
-            ...get(fetchedEntries)
-          ],
-          item => item.address + item.blockchain
-        );
+        payload = [
+          ...get(addressBookGlobal).map(item => ({
+            address: item.address,
+            blockchain: item.blockchain
+          })),
+          ...get(addressBookPrivate).map(item => ({
+            address: item.address,
+            blockchain: item.blockchain
+          })),
+          ...get(fetchedEntries)
+        ];
       }
 
-      payload = payload.filter(item => !!item).filter(uniqueStrings);
+      payload = uniqueObjects(payload, item => item.address + item.blockchain);
 
       try {
         const result = await getAddressesNames(payload);
