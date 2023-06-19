@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Literal, cast
+from typing import TYPE_CHECKING, Any, Literal, Optional, cast
 
 from eth_typing import BlockNumber
 
@@ -18,7 +18,7 @@ from rotkehlchen.types import (
     SupportedBlockchain,
     Timestamp,
 )
-
+from rotkehlchen.utils.misc import hexstr_to_int
 from .constants import (
     ARCHIVE_NODE_CHECK_ADDRESS,
     ARCHIVE_NODE_CHECK_BLOCK,
@@ -64,6 +64,16 @@ class OptimismInquirer(EvmNodeInquirerWithDSProxy):
             native_token=A_ETH.resolve_to_crypto_asset(),
         )
         self.etherscan = cast(OptimismEtherscan, self.etherscan)
+
+    def _additional_receipt_processing(self, tx_receipt: Optional[dict[str, Any]]) -> None:
+        """Performs additional tx_receipt processing where necessary
+
+        May raise:
+            - DeserializationError if it can't convert a value to an int or if an unexpected
+            type is given.
+            - KeyError if tx_receipt has no l1Fee entry
+        """
+        tx_receipt['l1Fee'] = hexstr_to_int(tx_receipt['l1Fee'])  # type: ignore[index]
 
     # -- Implementation of EvmNodeInquirer base methods --
 

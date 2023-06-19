@@ -17,9 +17,11 @@ from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.chain.optimism.types import OptimismTransaction
 from rotkehlchen.constants.assets import A_ETH, A_USDT
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.evmtx import DBEvmTx
+from rotkehlchen.db.optimismtx import DBOptimismTx
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.constants import A_OPTIMISM_USDT
@@ -211,7 +213,7 @@ def test_simple_erc20_transfer(
     accounts = ethereum_accounts if chain == ChainID.ETHEREUM else optimism_accounts
     from_address = accounts[0]
     to_address = accounts[1]
-    transaction = EvmTransaction(
+    transaction = OptimismTransaction(
         tx_hash=evmhash,
         chain_id=chain,
         timestamp=0,
@@ -224,6 +226,7 @@ def test_simple_erc20_transfer(
         gas_used=45000,
         input_data=b'',
         nonce=0,
+        l1_fee=100000000000000,
     )
     receipt = EvmTxReceipt(
         tx_hash=evmhash,
@@ -245,7 +248,7 @@ def test_simple_erc20_transfer(
             ),
         ],
     )
-    dbevmtx = DBEvmTx(database)
+    dbevmtx = DBEvmTx(database) if chain == ChainID.ETHEREUM else DBOptimismTx(database)
     tx_decoder = ethereum_transaction_decoder if chain is ChainID.ETHEREUM else optimism_transaction_decoder  # noqa: E501
     with database.user_write() as cursor:
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
@@ -262,9 +265,9 @@ def test_simple_erc20_transfer(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal('0.00045')),
+            balance=Balance(amount=FVal('0.00045')) if chain is ChainID.ETHEREUM else Balance(amount=FVal('0.00055')),  # noqa: E501
             location_label=from_address,
-            notes='Burned 0.00045 ETH for gas',
+            notes='Burned 0.00045 ETH for gas' if chain is ChainID.ETHEREUM else 'Burned 0.00055 ETH for gas',  # noqa: E501
             counterparty=CPT_GAS,
             identifier=None,
             extra_data=None,
@@ -306,7 +309,7 @@ def test_eth_transfer(
     accounts = ethereum_accounts if chain is ChainID.ETHEREUM else optimism_accounts
     from_address = accounts[0]
     to_address = accounts[1]
-    transaction = EvmTransaction(
+    transaction = OptimismTransaction(
         tx_hash=evmhash,
         chain_id=chain,
         timestamp=0,
@@ -319,6 +322,7 @@ def test_eth_transfer(
         gas_used=1e5,
         input_data=b'',
         nonce=0,
+        l1_fee=100000000000000,
     )
     receipt = EvmTxReceipt(
         tx_hash=evmhash,
@@ -328,7 +332,7 @@ def test_eth_transfer(
         type=0,
         logs=[],
     )
-    dbevmtx = DBEvmTx(database)
+    dbevmtx = DBEvmTx(database) if chain == ChainID.ETHEREUM else DBOptimismTx(database)
     tx_decoder = ethereum_transaction_decoder if chain is ChainID.ETHEREUM else optimism_transaction_decoder  # noqa: E501
     with database.user_write() as cursor:
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
@@ -345,9 +349,9 @@ def test_eth_transfer(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal(0.001)),
+            balance=Balance(amount=FVal('0.001')) if chain is ChainID.ETHEREUM else Balance(amount=FVal('0.0011')),  # noqa: E501
             location_label=from_address,
-            notes='Burned 0.001 ETH for gas',
+            notes='Burned 0.001 ETH for gas' if chain is ChainID.ETHEREUM else 'Burned 0.0011 ETH for gas',  # noqa: E501
             counterparty=CPT_GAS,
             identifier=None,
             extra_data=None,
@@ -389,7 +393,7 @@ def test_eth_spend(
     evmhash = deserialize_evm_tx_hash('0x8caa7df2ebebfceb98207605e64691202b9e7498c3cccdbccb41c1600cf16e65')  # noqa: E501
     from_address = ethereum_accounts[0] if chain is ChainID.ETHEREUM else optimism_accounts[0]
     to_address = string_to_evm_address('0x38C3f1Ab36BdCa29133d8AF7A19811D10B6CA3FC')
-    transaction = EvmTransaction(
+    transaction = OptimismTransaction(
         tx_hash=evmhash,
         chain_id=chain,
         timestamp=0,
@@ -402,6 +406,7 @@ def test_eth_spend(
         gas_used=1e5,
         input_data=b'',
         nonce=0,
+        l1_fee=100000000000000,
     )
     receipt = EvmTxReceipt(
         tx_hash=evmhash,
@@ -411,7 +416,7 @@ def test_eth_spend(
         type=0,
         logs=[],
     )
-    dbevmtx = DBEvmTx(database)
+    dbevmtx = DBEvmTx(database) if chain == ChainID.ETHEREUM else DBOptimismTx(database)
     tx_decoder = ethereum_transaction_decoder if chain is ChainID.ETHEREUM else optimism_transaction_decoder  # noqa: E501
     with database.user_write() as cursor:
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
@@ -428,9 +433,9 @@ def test_eth_spend(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal(0.001)),
+            balance=Balance(amount=FVal('0.001')) if chain is ChainID.ETHEREUM else Balance(amount=FVal('0.0011')),  # noqa: E501
             location_label=from_address,
-            notes='Burned 0.001 ETH for gas',
+            notes='Burned 0.001 ETH for gas' if chain is ChainID.ETHEREUM else 'Burned 0.0011 ETH for gas',  # noqa: E501
             counterparty=CPT_GAS,
             identifier=None,
             extra_data=None,

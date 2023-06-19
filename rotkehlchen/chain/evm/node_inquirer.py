@@ -732,6 +732,8 @@ class EvmNodeInquirer(metaclass=ABCMeta):
                         location='etherscan tx receipt',
                     )
                     receipt_log['transactionIndex'] = tx_index
+                # This is only implemented for some evm chains
+                self._additional_receipt_processing(tx_receipt)
             except (DeserializationError, ValueError, KeyError) as e:
                 msg = str(e)
                 if isinstance(e, KeyError):
@@ -1346,6 +1348,9 @@ class EvmNodeInquirer(metaclass=ABCMeta):
     @abstractmethod
     def _get_pruned_check_tx_hash(self) -> EVMTxHash:
         """Returns a transaction hash that can used for checking whether a node is pruned."""
+
+    def _additional_receipt_processing(self, tx_receipt: Optional[dict[str, Any]]) -> None:  # noqa: B027 E501
+        """Performs additional tx_receipt processing where necessary"""
 
 
 class EvmNodeInquirerWithDSProxy(EvmNodeInquirer):

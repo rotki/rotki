@@ -437,6 +437,18 @@ CREATE TABLE IF NOT EXISTS evm_transactions (
 );
 """
 
+# TODO: Add step in DB upgrade for this table
+# https://github.com/rotki/rotki/pull/6359#discussion_r1252891305
+DB_CREATE_OPTIMISM_TRANSACTIONS = """
+CREATE TABLE IF NOT EXISTS optimism_transactions (
+    tx_hash BLOB NOT NULL,
+    chain_id INTEGER GENERATED ALWAYS AS (10) VIRTUAL,
+    l1_fee TEXT,
+    PRIMARY KEY(tx_hash),
+    FOREIGN KEY(tx_hash, chain_id) REFERENCES evm_transactions(tx_hash, chain_id) ON DELETE CASCADE ON UPDATE CASCADE
+);
+"""  # noqa: E501
+
 # from/to address/value is also in the primary key of the internal transactions since
 # trace_id, which is returned by etherscan does not guarantee uniqueness. Example:
 # https://api.etherscan.io/api?module=account&action=txlistinternal&sort=asc&startBlock=16779092&endBlock=16779092
@@ -710,6 +722,7 @@ BEGIN TRANSACTION;
 {DB_CREATE_MANUALLY_TRACKED_BALANCES}
 {DB_CREATE_TRADES}
 {DB_CREATE_EVM_TRANSACTIONS}
+{DB_CREATE_OPTIMISM_TRANSACTIONS}
 {DB_CREATE_EVM_INTERNAL_TRANSACTIONS}
 {DB_CREATE_EVMTX_RECEIPTS}
 {DB_CREATE_EVMTX_RECEIPT_LOGS}

@@ -705,7 +705,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
         if direction_result is not None:
             event_type, location_label, _, _, _ = direction_result
             if event_type in OUTGOING_EVENT_TYPES:
-                eth_burned_as_gas = from_wei(FVal(tx.gas_used * tx.gas_price))
+                eth_burned_as_gas = self._calculate_gas_burned(tx)
                 events.append(self.base.make_event_next_index(
                     tx_hash=tx.tx_hash,
                     timestamp=tx.timestamp,
@@ -868,6 +868,10 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
                     'blockchain': self.evm_inquirer.chain_id.to_blockchain().serialize(),
                 },
             )
+
+    def _calculate_gas_burned(self, tx: EvmTransaction) -> FVal:
+        """Calculates gas burn based on relevant chain's formula."""
+        return from_wei(FVal(tx.gas_used * tx.gas_price))
 
     # -- methods to be implemented by child classes --
 
