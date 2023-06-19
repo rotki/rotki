@@ -7,7 +7,6 @@ import { Status } from '@/types/status';
 import { type BlockchainMetadata } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { type BlockchainBalancePayload } from '@/types/blockchain/accounts';
-import { isBlockchain } from '@/types/blockchain/chains';
 
 export const useBlockchainBalances = () => {
   const { awaitTask } = useTaskStore();
@@ -20,7 +19,7 @@ export const useBlockchainBalances = () => {
   const { update: updateChains, updatePrices: updateChainPrices } =
     useChainBalancesStore();
   const { fetchEnsNames } = useAddressesNamesStore();
-  const { evmChains } = useSupportedChains();
+  const { isEvm } = useSupportedChains();
   const { t } = useI18n();
 
   const handleFetch = async (
@@ -56,12 +55,8 @@ export const useBlockchainBalances = () => {
       updateChains(blockchain, balances);
       setStatus(Status.LOADED);
 
-      get(evmChains).forEach(chain => {
-        if (!isBlockchain(chain)) {
-          return;
-        }
-
-        const perChainBalances = balances.perAccount[chain];
+      if (isEvm(blockchain)) {
+        const perChainBalances = balances.perAccount[blockchain];
         if (!perChainBalances) {
           return;
         }
@@ -69,11 +64,11 @@ export const useBlockchainBalances = () => {
         const addresses = [...Object.keys(perChainBalances)];
         startPromise(
           fetchEnsNames(
-            addresses.map(address => ({ address, blockchain: chain })),
+            addresses.map(address => ({ address, blockchain })),
             ignoreCache
           )
         );
-      });
+      }
     } catch (e: any) {
       logger.error(e);
       notify({

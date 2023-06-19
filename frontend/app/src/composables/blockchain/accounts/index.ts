@@ -16,6 +16,7 @@ import {
   type GeneralAccountData
 } from '@/types/blockchain/accounts';
 import { type EvmAccountsResult } from '@/types/api/accounts';
+import { type AddressBookSimplePayload } from '@/types/eth-names';
 
 export const useBlockchainAccounts = () => {
   const {
@@ -172,19 +173,17 @@ export const useBlockchainAccounts = () => {
         updateChain(blockchain, accounts);
       }
 
+      const namesPayload: AddressBookSimplePayload[] = accounts.map(
+        ({ address }) => ({
+          address,
+          blockchain
+        })
+      );
+
       if (isEvm(blockchain)) {
-        startPromise(
-          fetchEnsNames(
-            accounts.map(({ address }) => ({ address, blockchain }))
-          )
-        );
+        startPromise(fetchEnsNames(namesPayload));
       } else {
-        startPromise(
-          fetchAddressesNames(
-            accounts.map(({ address }) => address),
-            blockchain
-          )
-        );
+        startPromise(fetchAddressesNames(namesPayload));
       }
       return accounts.map(account => account.address);
     } catch (e: any) {
@@ -201,10 +200,10 @@ export const useBlockchainAccounts = () => {
     }
   };
 
-  const fetchBtcAccounts = async (chains: BtcChains): Promise<boolean> => {
+  const fetchBtcAccounts = async (chain: BtcChains): Promise<boolean> => {
     try {
-      const accounts = await queryBtcAccounts(chains);
-      updateBtc(chains, accounts);
+      const accounts = await queryBtcAccounts(chain);
+      updateBtc(chain, accounts);
 
       // TODO: enable alias name for BTC when backend support enabled
       // const addresses = [
@@ -213,14 +212,18 @@ export const useBlockchainAccounts = () => {
       //     .flatMap(({ addresses }) => addresses)
       //     .map(item => item?.address || '')
       // ];
-      // startPromise(fetchAddressesNames(addresses, chains));
+      // startPromise(
+      //   fetchAddressesNames(
+      //     addresses.map(address => ({ address, blockchain: chain }))
+      //   )
+      // );
       return true;
     } catch (e: any) {
       logger.error(e);
       notify({
         title: t('actions.get_accounts.error.title'),
         message: t('actions.get_accounts.error.description', {
-          blockchain: chains.toUpperCase(),
+          blockchain: chain.toUpperCase(),
           message: e.message
         }),
         display: true

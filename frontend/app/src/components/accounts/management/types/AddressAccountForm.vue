@@ -57,8 +57,8 @@ const save = async () => {
       };
       await editAccount(payload);
 
-      if (isEth) {
-        await fetchAddressesNames([address], chain);
+      if (get(evmChain)) {
+        await fetchAddressesNames([{ address, blockchain: chain }]);
       }
       startPromise(fetchAccounts(chain));
     } else {

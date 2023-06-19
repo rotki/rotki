@@ -229,11 +229,11 @@ describe('store::blockchain/accounts/addresses-names', () => {
 
       expect(api.getAddressesNames).toHaveBeenCalledWith([
         {
-          address: '0x4585FE77225b41b697C938B01232131231231231',
+          address: '0x4585FE77225b41b697C938B01232131231231233',
           blockchain: Blockchain.ETH
         },
         {
-          address: '0x4585FE77225b41b697C938B01232131231231233',
+          address: '0x4585FE77225b41b697C938B01232131231231231',
           blockchain: Blockchain.ETH
         }
       ]);
