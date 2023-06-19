@@ -29,7 +29,6 @@ log = RotkehlchenLogsAdapter(logger)
 
 HANDLABLE_STATUS_CODES = [
     HTTPStatus.OK,
-    HTTPStatus.NOT_FOUND,
     HTTPStatus.UNAUTHORIZED,
     HTTPStatus.BAD_REQUEST,
 ]
@@ -296,12 +295,19 @@ class Premium():
             raise RemoteError(msg) from e
 
         result = _process_dict_response(response)
-        metadata = RemoteMetadata(
-            upload_ts=Timestamp(result['upload_ts']),
-            last_modify_ts=Timestamp(result['last_modify_ts']),
-            data_hash=result['data_hash'],
-            data_size=result['data_size'],
-        )
+
+        try:
+            metadata = RemoteMetadata(
+                upload_ts=Timestamp(result['upload_ts']),
+                last_modify_ts=Timestamp(result['last_modify_ts']),
+                data_hash=result['data_hash'],
+                data_size=result['data_size'],
+            )
+        except KeyError as e:
+            msg = f'Problem connecting to rotki server. last_data_metadata response missing {e!s} key'  # noqa: E501
+            log.error(f'{msg}. Response was {result}')
+            raise RemoteError(msg) from e
+
         return metadata
 
     def query_premium_components(self) -> str:
@@ -329,6 +335,11 @@ class Premium():
             raise RemoteError(msg) from e
 
         result = _process_dict_response(response)
+        if 'data' not in result:
+            msg = 'Problem connecting to rotki server. statistics_rendererv2 response missing data key'  # noqa: E501
+            log.error(f'{msg}. Response was {result}')
+            raise RemoteError(msg)
+
         return result['data']
 
     def watcher_query(
