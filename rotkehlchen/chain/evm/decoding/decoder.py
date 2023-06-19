@@ -21,7 +21,7 @@ from rotkehlchen.assets.asset import AssetWithOracles, EvmToken
 from rotkehlchen.assets.utils import TokenSeenAt, get_or_create_evm_token
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.chain.evm.decoding.interfaces import ReloadableDecoderMixin
-from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
+from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails, EventCategory
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.constants import ZERO
 from rotkehlchen.db.constants import HISTORY_MAPPING_STATE_DECODED
@@ -254,6 +254,11 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
                         b=new_events,
                         op=lambda a, b: a | b,
                     )
+
+        # add gas burning
+        possible_types[CPT_GAS] = {
+            HistoryEventType.SPEND: {HistoryEventSubType.FEE: EventCategory.GAS},
+        }
         return possible_types
 
     def reload_data(self, cursor: 'DBCursor') -> None:
