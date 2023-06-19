@@ -46,7 +46,7 @@
     "axios": "1.4.0",
     "bignumber.js": "9.1.1",
     "chart.js": "4.3.0",
-    "chartjs-plugin-zoom": "2.0.1",
+    "chartjs-plugin-zoom": "2.0.0",
     "dayjs": "1.11.8",
     "electron-updater": "5.3.0",
     "electron-window-state": "5.0.3",

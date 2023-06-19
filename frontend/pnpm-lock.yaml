@@ -77,8 +77,8 @@ importers:
         specifier: 4.3.0
         version: 4.3.0
       chartjs-plugin-zoom:
-        specifier: 2.0.1
-        version: 2.0.1(chart.js@4.3.0)
+        specifier: 2.0.0
+        version: 2.0.0(chart.js@4.3.0)
       dayjs:
         specifier: 1.11.8
         version: 1.11.8
@@ -4118,8 +4118,8 @@ packages:
       '@kurkle/color': 0.3.2
     dev: false
 
-  /chartjs-plugin-zoom@2.0.1(chart.js@4.3.0):
-    resolution: {integrity: sha512-ogOmLu6e+Q7E1XWOCOz9YwybMslz9qNfGV2a+qjfmqJYpsw5ZMoRHZBUyW+NGhkpQ5PwwPA/+rikHpBZb7PZuA==}
+  /chartjs-plugin-zoom@2.0.0(chart.js@4.3.0):
+    resolution: {integrity: sha512-bqpi7DGy9a5hX7ThKl/xQaLzXvneSwhS0w/lNimZ8AJaoRVMKz5JfUoqwciJYV5ixKXJbgyvwC9HcJnyVsYmjg==}
     peerDependencies:
       chart.js: '>=3.2.0'
     dependencies:

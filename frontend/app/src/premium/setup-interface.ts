@@ -88,7 +88,7 @@ const settings = (): SettingsApi => {
       t,
       // TODO: deprecate on the next major components version (it's only here for backwards compat)
       tc: (key, choice, values) => {
-        if (!choice) {
+        if (!isDefined(choice)) {
           return t(key);
         }
         if (!values) {

@@ -211,8 +211,6 @@ const { getCanvasCtx, baseColor, gradient, fontColor, backgroundColor } =
 const { getCanvasCtx: getRangeCanvasCtx } = useGraph(rangeId);
 
 const createDatasets = (isRange = false) => {
-  const pointWidth = !isRange ? 2 : 0;
-  const pointBackgroundColor = () => get(backgroundColor);
   const borderColor = () => get(baseColor);
 
   const dataset = {
@@ -222,14 +220,13 @@ const createDatasets = (isRange = false) => {
     backgroundColor: () => (!isRange ? get(gradient) : 'transparent'),
     borderColor,
     borderWidth: 2,
-    pointRadius: pointWidth,
-    pointHoverRadius: 6,
-    pointBorderWidth: pointWidth,
-    pointHoverBorderWidth: pointWidth,
-    pointBorderColor: borderColor,
+    pointRadius: 1,
+    pointHoverRadius: !isRange ? 6 : 0,
+    pointHoverBorderWidth: !isRange ? 2 : 0,
+    pointBorderColor: 'transparent',
+    pointBackgroundColor: 'transparent',
     pointHoverBorderColor: borderColor,
-    pointBackgroundColor,
-    pointHoverBackgroundColor: pointBackgroundColor
+    pointHoverBackgroundColor: () => get(backgroundColor)
   };
 
   return [dataset];
