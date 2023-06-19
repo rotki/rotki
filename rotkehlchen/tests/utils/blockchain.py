@@ -14,7 +14,7 @@ from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.beaconchain import BeaconChain
-from rotkehlchen.externalapis.etherscan import Etherscan
+from rotkehlchen.externalapis.etherscan import Etherscan, EtherscanHasChainActivity
 from rotkehlchen.fval import FVal
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
@@ -624,18 +624,18 @@ def setup_evm_addresses_activity_mock(
 
     def mock_optimism_has_activity(account):
         if account in optimism_addresses:
-            return True
-        return False
+            return EtherscanHasChainActivity.TRANSACTIONS
+        return EtherscanHasChainActivity.NONE
 
     def mock_polygon_pos_has_activity(account):
         if account in polygon_pos_addresses:
-            return True
-        return False
+            return EtherscanHasChainActivity.TRANSACTIONS
+        return EtherscanHasChainActivity.NONE
 
     def mock_ethereum_has_activity(account):
         if account in ethereum_addresses:
-            return True
-        return False
+            return EtherscanHasChainActivity.TRANSACTIONS
+        return EtherscanHasChainActivity.NONE
 
     stack.enter_context(patch.object(
         chains_aggregator.ethereum.node_inquirer,

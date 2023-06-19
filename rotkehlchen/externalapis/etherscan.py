@@ -2,6 +2,7 @@ import json
 import logging
 from abc import ABCMeta
 from collections.abc import Iterator
+from enum import Enum, auto
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Literal, Optional, Union, overload
 
@@ -51,6 +52,12 @@ TRANSACTIONS_BATCH_NUM = 10
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+
+class EtherscanHasChainActivity(Enum):
+    TRANSACTIONS = auto()
+    TOKENS = auto()
+    NONE = auto()
 
 
 def _hashes_tuple_to_list(hashes: set[tuple[str, Timestamp]]) -> list[str]:
@@ -474,20 +481,20 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
 
         yield _hashes_tuple_to_list(hashes)
 
-    def has_activity(self, account: ChecksumEvmAddress) -> bool:
+    def has_activity(self, account: ChecksumEvmAddress) -> EtherscanHasChainActivity:
         """Queries transactions, internal_txs and tokentx for an address with limit=1
         just to quickly determine if the account has had any activity in the chain"""
         options = {'address': str(account), 'page': 1, 'offset': 1}
         result = self._query(module='account', action='txlist', options=options)
         if len(result) != 0:
-            return True
+            return EtherscanHasChainActivity.TRANSACTIONS
         result = self._query(module='account', action='txlistinternal', options=options)
         if len(result) != 0:
-            return True
+            return EtherscanHasChainActivity.TRANSACTIONS
         result = self._query(module='account', action='tokentx', options=options)
         if len(result) != 0:
-            return True
-        return False
+            return EtherscanHasChainActivity.TOKENS
+        return EtherscanHasChainActivity.NONE
 
     def get_latest_block_number(self) -> int:
         """Gets the latest block number
