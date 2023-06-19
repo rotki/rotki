@@ -699,7 +699,7 @@ def test_timed_balances_inferred_zero_balances(data_dir, username, sql_vm_instru
         assert all_data[6].amount == ZERO
         assert all_data[6].time == 1514849100
 
-        # Retest another case
+        # Test a case with ssf_graph_multiplier on
         write_cursor.execute('DELETE FROM timed_balances')
         data.db.set_settings(write_cursor, settings=ModifiableDBSettings(treat_eth2_as_eth=True))
         data.db.set_settings(write_cursor, settings=ModifiableDBSettings(ssf_graph_multiplier=2))
