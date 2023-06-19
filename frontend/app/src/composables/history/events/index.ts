@@ -8,6 +8,8 @@ import {
   type HistoryEventsCollectionResponse
 } from '@/types/history/events';
 import { defaultCollectionState } from '@/utils/collection';
+import { type AddressBookSimplePayload } from '@/types/eth-names';
+import { useSupportedChains } from '@/composables/info/chains';
 
 export const useHistoryEvents = () => {
   const { t } = useI18n();
@@ -17,6 +19,9 @@ export const useHistoryEvents = () => {
     useHistoryEventsApi();
 
   const { fetchEnsNames } = useAddressesNamesStore();
+
+  const { getChain } = useSupportedChains();
+
   const fetchHistoryEvents = async (
     payload: MaybeRef<HistoryEventRequestPayload>
   ): Promise<Collection<HistoryEventEntry>> => {
@@ -30,13 +35,18 @@ export const useHistoryEvents = () => {
         HistoryEventsCollectionResponse
       >(result);
 
-      const notesList: string[] = [];
-
+      const addressesNamesPayload: AddressBookSimplePayload[] = [];
       const mappedData = data.map((event: HistoryEventEntryWithMeta) => {
         const { entry, ...entriesMeta } = event;
 
-        if (entry.notes) {
-          notesList.push(entry.notes);
+        if (!get(payload).groupByEventIds && entry.notes) {
+          const addresses = getEthAddressesFromText(entry.notes);
+          addressesNamesPayload.push(
+            ...addresses.map(address => ({
+              address,
+              blockchain: getChain(entry.location)
+            }))
+          );
         }
 
         return {
@@ -45,8 +55,8 @@ export const useHistoryEvents = () => {
         };
       });
 
-      if (!get(payload).groupByEventIds) {
-        startPromise(fetchEnsNames(getEthAddressesFromText(notesList)));
+      if (addressesNamesPayload.length > 0) {
+        startPromise(fetchEnsNames(addressesNamesPayload));
       }
 
       return {

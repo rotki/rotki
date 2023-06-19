@@ -156,6 +156,7 @@ export const useBlockchainAccounts = () => {
   };
 
   const { fetchEnsNames, fetchAddressesNames } = useAddressesNamesStore();
+  const { isEvm } = useSupportedChains();
 
   const fetchBlockchainAccounts = async (
     blockchain: Exclude<
@@ -167,9 +168,17 @@ export const useBlockchainAccounts = () => {
       const accounts = await queryAccounts(blockchain);
       if (blockchain === Blockchain.ETH) {
         updateEth(accounts);
-        startPromise(fetchEnsNames(accounts.map(({ address }) => address)));
       } else if (isRestChain(blockchain)) {
         updateChain(blockchain, accounts);
+      }
+
+      if (isEvm(blockchain)) {
+        startPromise(
+          fetchEnsNames(
+            accounts.map(({ address }) => ({ address, blockchain }))
+          )
+        );
+      } else {
         startPromise(
           fetchAddressesNames(
             accounts.map(({ address }) => address),

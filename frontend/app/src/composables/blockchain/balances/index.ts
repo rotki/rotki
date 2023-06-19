@@ -7,6 +7,7 @@ import { Status } from '@/types/status';
 import { type BlockchainMetadata } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { type BlockchainBalancePayload } from '@/types/blockchain/accounts';
+import { isBlockchain } from '@/types/blockchain/chains';
 
 export const useBlockchainBalances = () => {
   const { awaitTask } = useTaskStore();
@@ -19,6 +20,7 @@ export const useBlockchainBalances = () => {
   const { update: updateChains, updatePrices: updateChainPrices } =
     useChainBalancesStore();
   const { fetchEnsNames } = useAddressesNamesStore();
+  const { evmChains } = useSupportedChains();
   const { t } = useI18n();
 
   const handleFetch = async (
@@ -49,16 +51,29 @@ export const useBlockchainBalances = () => {
         true
       );
       const balances = BlockchainBalances.parse(result);
-      const ethBalances = balances.perAccount[Blockchain.ETH];
-
-      if (ethBalances) {
-        const addresses = [...Object.keys(ethBalances)];
-        await fetchEnsNames(addresses, ignoreCache);
-      }
       updateEth(blockchain, balances);
       updateBtc(blockchain, balances);
       updateChains(blockchain, balances);
       setStatus(Status.LOADED);
+
+      get(evmChains).forEach(chain => {
+        if (!isBlockchain(chain)) {
+          return;
+        }
+
+        const perChainBalances = balances.perAccount[chain];
+        if (!perChainBalances) {
+          return;
+        }
+
+        const addresses = [...Object.keys(perChainBalances)];
+        startPromise(
+          fetchEnsNames(
+            addresses.map(address => ({ address, blockchain: chain })),
+            ignoreCache
+          )
+        );
+      });
     } catch (e: any) {
       logger.error(e);
       notify({

@@ -66,14 +66,15 @@ export const useAddressesNamesStore = defineStore(
       );
 
     const fetchEnsNames = async (
-      addresses: string[],
+      payload: AddressBookSimplePayload[],
       forceUpdate = false
     ): Promise<void> => {
-      if (addresses.length === 0) {
+      if (payload.length === 0) {
         return;
       }
 
-      const filteredAddresses = addresses
+      const filteredAddresses = payload
+        .map(({ address }) => address)
         .filter(uniqueStrings)
         .filter(isValidEthAddress);
 
@@ -104,7 +105,26 @@ export const useAddressesNamesStore = defineStore(
         });
       }
 
-      await fetchAddressesNames(filteredAddresses, Blockchain.ETH);
+      const grouped: Record<string, string[]> = {};
+
+      payload.forEach(({ address, blockchain }) => {
+        const chain = blockchain || Blockchain.ETH;
+        if (!grouped[chain]) {
+          grouped[chain] = [address];
+        } else {
+          grouped[chain].push(address);
+        }
+      });
+
+      for (const chain in grouped) {
+        if (!isBlockchain(chain)) {
+          return;
+        }
+        const addresses = grouped[chain]
+          .filter(uniqueStrings)
+          .filter(isValidEthAddress);
+        startPromise(fetchAddressesNames(addresses, chain));
+      }
     };
 
     const addFetchedEntries = (newEntries: AddressBookSimplePayload[]) => {
