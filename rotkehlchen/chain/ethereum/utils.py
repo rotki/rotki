@@ -11,11 +11,10 @@ from requests.exceptions import RequestException
 from web3 import Web3
 
 from rotkehlchen.assets.asset import CryptoAsset, EvmToken
-from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS
 from rotkehlchen.constants.assets import A_ETH
-from rotkehlchen.constants.resolver import EVM_CHAIN_DIRECTIVE, ethaddress_to_identifier
+from rotkehlchen.constants.resolver import EVM_CHAIN_DIRECTIVE
 from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE, ETH_PROTOCOLS_CACHE_REFRESH
-from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset, WrongAssetType
+from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.cache import globaldb_get_general_cache_last_queried_ts_by_key
@@ -150,23 +149,6 @@ def generate_address_via_create2(
         computed_init_code,
     )[12:].hex()
     return to_checksum_address(contract_address)
-
-
-def ethaddress_to_asset(address: ChecksumEvmAddress) -> Optional[CryptoAsset]:
-    """Takes an ethereum address and returns a token/asset for it
-
-    Checks for special cases like the special ETH address used in some protocols
-    """
-    if address == ETH_SPECIAL_ADDRESS:
-        return A_ETH.resolve_to_crypto_asset()
-
-    try:
-        asset = EvmToken(ethaddress_to_identifier(address))
-    except (UnknownAsset, WrongAssetType):
-        log.error(f'Could not find asset/token for address {address}')
-        return None
-
-    return asset
 
 
 def should_update_protocol_cache(cache_key: GeneralCacheType, *args: str) -> bool:

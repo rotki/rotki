@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.chain.ethereum.utils import asset_normalized_value, ethaddress_to_asset
+from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
@@ -69,9 +69,7 @@ class DxdaomesaDecoder(DecoderInterface):
             event_name='Deposit',
             argument_names=('user', 'token', 'amount', 'batchId'),
         )
-        deposited_asset = ethaddress_to_asset(topic_data[1])
-        if deposited_asset is None:
-            return DEFAULT_DECODING_OUTPUT
+        deposited_asset = self.base.get_or_create_evm_asset(topic_data[1])
         amount = asset_normalized_value(amount=log_data[0], asset=deposited_asset)
 
         for event in context.decoded_events:
@@ -91,9 +89,7 @@ class DxdaomesaDecoder(DecoderInterface):
             event_name='Withdraw',
             argument_names=('user', 'token', 'amount'),
         )
-        withdraw_asset = ethaddress_to_asset(topic_data[1])
-        if withdraw_asset is None:
-            return DEFAULT_DECODING_OUTPUT
+        withdraw_asset = self.base.get_or_create_evm_asset(topic_data[1])
         amount = asset_normalized_value(amount=log_data[0], asset=withdraw_asset)
 
         for event in context.decoded_events:
@@ -117,9 +113,7 @@ class DxdaomesaDecoder(DecoderInterface):
         if not self.base.is_tracked(user):
             return DEFAULT_DECODING_OUTPUT
 
-        token = ethaddress_to_asset(topic_data[1])
-        if token is None:
-            return DEFAULT_DECODING_OUTPUT
+        token = self.base.get_or_create_evm_asset(topic_data[1])
         amount = asset_normalized_value(amount=log_data[0], asset=token)
 
         event = self.base.make_event_from_transaction(
@@ -152,13 +146,8 @@ class DxdaomesaDecoder(DecoderInterface):
             method_name='tokenIdToAddressMap',
             arguments=[[topic_data[1]], [topic_data[2]]],
         )  # The resulting addresses are non checksumed but they can be found in the DB
-        buy_token = ethaddress_to_asset(result[0][0])
-        if buy_token is None:
-            return DEFAULT_DECODING_OUTPUT
-        sell_token = ethaddress_to_asset(result[1][0])
-        if sell_token is None:
-            return DEFAULT_DECODING_OUTPUT
-
+        buy_token = self.base.get_or_create_evm_asset(result[0][0])
+        sell_token = self.base.get_or_create_evm_asset(result[1][0])
         buy_amount = asset_normalized_value(amount=log_data[3], asset=buy_token)
         sell_amount = asset_normalized_value(amount=log_data[4], asset=sell_token)
         event = self.base.make_event_from_transaction(

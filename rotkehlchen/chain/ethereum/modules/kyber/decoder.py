@@ -1,9 +1,9 @@
 import logging
-from typing import TYPE_CHECKING, Any, Callable, Optional
+from typing import TYPE_CHECKING, Any, Callable
 
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import CryptoAsset
-from rotkehlchen.chain.ethereum.utils import asset_normalized_value, ethaddress_to_asset
+from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
@@ -33,24 +33,6 @@ KYBER_LEGACY_CONTRACT_UPGRADED = string_to_evm_address('0x9AAb3f75489902f3a48495
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
-
-
-def _legacy_contracts_basic_info(tx_log: EvmTxReceiptLog) -> tuple[ChecksumEvmAddress, Optional[CryptoAsset], Optional[CryptoAsset]]:  # noqa: E501
-    """
-    Returns:
-    - address of the sender
-    - source token (can be none)
-    - destination token (can be none)
-    May raise:
-    - DeserializationError when using hex_or_bytes_to_address
-    """
-    sender = hex_or_bytes_to_address(tx_log.topics[1])
-    source_token_address = hex_or_bytes_to_address(tx_log.data[:32])
-    destination_token_address = hex_or_bytes_to_address(tx_log.data[32:64])
-
-    source_token = ethaddress_to_asset(source_token_address)
-    destination_token = ethaddress_to_asset(destination_token_address)
-    return sender, source_token, destination_token
 
 
 def _maybe_update_events_legacy_contrats(
@@ -93,14 +75,28 @@ def _maybe_update_events_legacy_contrats(
 
 class KyberDecoder(DecoderInterface):
 
+    def _legacy_contracts_basic_info(self, tx_log: EvmTxReceiptLog) -> tuple[ChecksumEvmAddress, CryptoAsset, CryptoAsset]:  # noqa: E501
+        """
+        Returns:
+        - address of the sender
+        - source token (can be none)
+        - destination token (can be none)
+        May raise:
+        - DeserializationError when using hex_or_bytes_to_address
+        """
+        sender = hex_or_bytes_to_address(tx_log.topics[1])
+        source_token_address = hex_or_bytes_to_address(tx_log.data[:32])
+        destination_token_address = hex_or_bytes_to_address(tx_log.data[32:64])
+
+        source_token = self.base.get_or_create_evm_asset(source_token_address)
+        destination_token = self.base.get_or_create_evm_asset(destination_token_address)
+        return sender, source_token, destination_token
+
     def _decode_legacy_trade(self, context: DecoderContext) -> DecodingOutput:
         if context.tx_log.topics[0] != KYBER_TRADE:
             return DEFAULT_DECODING_OUTPUT
 
-        sender, source_asset, destination_asset = _legacy_contracts_basic_info(context.tx_log)
-        if source_asset is None or destination_asset is None:
-            return DEFAULT_DECODING_OUTPUT
-
+        sender, source_asset, destination_asset = self._legacy_contracts_basic_info(context.tx_log)
         spent_amount_raw = hex_or_bytes_to_int(context.tx_log.data[64:96])
         return_amount_raw = hex_or_bytes_to_int(context.tx_log.data[96:128])
         spent_amount = asset_normalized_value(amount=spent_amount_raw, asset=source_asset)
@@ -121,10 +117,7 @@ class KyberDecoder(DecoderInterface):
         if context.tx_log.topics[0] != KYBER_TRADE_LEGACY:
             return DEFAULT_DECODING_OUTPUT
 
-        sender, source_asset, destination_asset = _legacy_contracts_basic_info(context.tx_log)
-        if source_asset is None or destination_asset is None:
-            return DEFAULT_DECODING_OUTPUT
-
+        sender, source_asset, destination_asset = self._legacy_contracts_basic_info(context.tx_log)
         spent_amount_raw = hex_or_bytes_to_int(context.tx_log.data[96:128])
         return_amount_raw = hex_or_bytes_to_int(context.tx_log.data[128:160])
         spent_amount = asset_normalized_value(amount=spent_amount_raw, asset=source_asset)

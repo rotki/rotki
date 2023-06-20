@@ -2,7 +2,7 @@ import logging
 from typing import Any
 
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.chain.ethereum.utils import asset_normalized_value, ethaddress_to_asset
+from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
@@ -32,10 +32,7 @@ class VotiumDecoder(DecoderInterface):
             return DEFAULT_DECODING_OUTPUT
 
         claimed_token_address = hex_or_bytes_to_address(context.tx_log.topics[1])
-        claimed_token = ethaddress_to_asset(claimed_token_address)
-        if claimed_token is None:
-            return DEFAULT_DECODING_OUTPUT
-
+        claimed_token = self.base.get_or_create_evm_token(claimed_token_address)
         receiver = hex_or_bytes_to_address(context.tx_log.topics[2])
         claimed_amount_raw = hex_or_bytes_to_int(context.tx_log.data[32:64])
         amount = asset_normalized_value(amount=claimed_amount_raw, asset=claimed_token)

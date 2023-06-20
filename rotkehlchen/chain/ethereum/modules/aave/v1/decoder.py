@@ -2,7 +2,7 @@ from typing import Any
 
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.modules.aave.common import asset_to_atoken
-from rotkehlchen.chain.ethereum.utils import asset_normalized_value, ethaddress_to_asset
+from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
@@ -37,9 +37,7 @@ class Aavev1Decoder(DecoderInterface):
 
     def _decode_deposit_event(self, context: DecoderContext) -> DecodingOutput:
         reserve_address = hex_or_bytes_to_address(context.tx_log.topics[1])
-        reserve_asset = ethaddress_to_asset(reserve_address)
-        if reserve_asset is None:
-            return DEFAULT_DECODING_OUTPUT
+        reserve_asset = self.base.get_or_create_evm_asset(reserve_address)
         user_address = hex_or_bytes_to_address(context.tx_log.topics[2])
         raw_amount = hex_or_bytes_to_int(context.tx_log.data[0:32])
         amount = asset_normalized_value(raw_amount, reserve_asset)
@@ -75,9 +73,7 @@ class Aavev1Decoder(DecoderInterface):
 
     def _decode_redeem_underlying_event(self, context: DecoderContext) -> DecodingOutput:
         reserve_address = hex_or_bytes_to_address(context.tx_log.topics[1])
-        reserve_asset = ethaddress_to_asset(reserve_address)
-        if reserve_asset is None:
-            return DEFAULT_DECODING_OUTPUT
+        reserve_asset = self.base.get_or_create_evm_asset(reserve_address)
         user_address = hex_or_bytes_to_address(context.tx_log.topics[2])
         raw_amount = hex_or_bytes_to_int(context.tx_log.data[0:32])
         amount = asset_normalized_value(raw_amount, reserve_asset)
