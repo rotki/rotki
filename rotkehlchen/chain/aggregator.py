@@ -1324,14 +1324,13 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                         continue
                 else:
                     etherscan_activity = chain_manager.node_inquirer.etherscan.has_activity(address)  # noqa: E501
-                    if (
-                        (
-                            etherscan_activity == EtherscanHasChainActivity.TOKENS and
-                            chain_manager.transactions.address_has_been_spammed(address=address)
-                        ) or
-                        etherscan_activity == EtherscanHasChainActivity.NONE
-                    ):  # in the case of tokens we check if the transactions were spam tokens
-                        continue
+                    only_token_spam = (
+                        etherscan_activity == EtherscanHasChainActivity.TOKENS and
+                        chain_manager.transactions.address_has_been_spammed(address=address)
+                    )
+                    if only_token_spam or etherscan_activity == EtherscanHasChainActivity.NONE:
+                        continue  # do not add the address for the chain
+
                     # else we add the chain
             except RemoteError as e:
                 log.error(f'{e!s} when checking if {address} is active at {chain}')

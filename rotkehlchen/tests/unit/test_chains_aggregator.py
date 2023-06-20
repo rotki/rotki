@@ -171,8 +171,9 @@ def test_detect_evm_accounts(blockchain: 'ChainsAggregator') -> None:
 @pytest.mark.parametrize('polygon_pos_accounts', [[make_evm_address()]])  # to connect to nodes
 def test_detect_evm_accounts_spam_tx(polygon_pos_manager: 'PolygonPOSManager') -> None:
     """
-    Test correctly that an account with only erc20 transfers of spam tokens get correctly
-    marked as spammed.
+    Test that an account with only erc20 transfers of spam tokens gets marked as spam
+    and does not get detected as a tracked account in the EVM chain.
+
     The tested address has received the following spam tokens
     eip155:137/erc20:0x91bD4023A21bc12814905f251eb348e298DBC0F0
     eip155:137/erc20:0xD6198855979714255d711A4bB8BF1763d28A473B
@@ -190,7 +191,7 @@ def test_detect_evm_accounts_spam_tx(polygon_pos_manager: 'PolygonPOSManager') -
     - adding the second as spam asset
     - third is unknown so the address is marked as not spammed
 
-    to verify that the transaction has been spamemd all the remaining assets are ignored
+    to verify that the address has been spammed all the remaining assets are ignored
     """
     evm_address = string_to_evm_address('0xc1C736F2Ac0e0019A188982c7c8C063976A4d8d9')
     db = polygon_pos_manager.node_inquirer.database

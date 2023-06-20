@@ -462,12 +462,13 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
 
     def address_has_been_spammed(self, address: ChecksumEvmAddress) -> bool:
         """
-        Queries erc20 tranfers for the given address and if it has only spam assets or ignored
-        assets we return True.
-        If any transfer had an unknown asset
+        Queries erc20 tranfers for the given address and if it has only transfer of spam assets
+        or ignored assets we return True. Stop at the first valid ERC20 transfer we find to exit
+        as early as possible. If any transfer had an unknown asset mark the address as not spammed
+        since we can't do more to classify it.
         """
         start_ts, end_ts = Timestamp(0), ts_now()
-        checekd_tokens = set()
+        checked_tokens = set()
         with self.database.conn.read_ctx() as cursor:
             ignored_assets = self.database.get_ignored_asset_ids(cursor)
 
@@ -479,8 +480,7 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
                 to_ts=end_ts,
             ):
                 for tx_hash in erc20_tx_hashes:
-                    tx_hash_bytes = deserialize_evm_tx_hash(tx_hash)
-                    _, raw_receipt_data = self.evm_inquirer.get_transaction_by_hash(tx_hash_bytes)  # noqa: E501
+                    raw_receipt_data = self.evm_inquirer.get_transaction_receipt(deserialize_evm_tx_hash(tx_hash))  # noqa: E501
                     for log_entry in raw_receipt_data['logs']:
                         if len(log_entry['topics']) == 0:
                             continue
@@ -491,7 +491,7 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
                             continue
 
                         log_address = deserialize_evm_address(log_entry['address'])
-                        if log_address in checekd_tokens:
+                        if log_address in checked_tokens:
                             continue
 
                         identifier = evm_address_to_identifier(
@@ -501,7 +501,7 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
                         )
 
                         if identifier in ignored_assets:
-                            checekd_tokens.add(log_address)
+                            checked_tokens.add(log_address)
                             continue
 
                         try:
@@ -510,7 +510,7 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
                             return False
 
                         if token.protocol == SPAM_PROTOCOL:
-                            checekd_tokens.add(log_address)
+                            checked_tokens.add(log_address)
                             continue
 
                         # this token is not ignored, is not spam and exists in the database
@@ -520,8 +520,7 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
         except RemoteError as e:
             self.msg_aggregator.add_error(
                 f'Got error "{e!s}" while querying {self.evm_inquirer.chain_name} '
-                f'token transactions from Etherscan. Transactions not added to the DB '
-                f'address: {address} ',
+                f'token transactions from Etherscan. address: {address} spam detection failed',
             )
             return False
         return True
