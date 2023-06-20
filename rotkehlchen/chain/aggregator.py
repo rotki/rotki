@@ -891,6 +891,9 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         chain_balances = self.balances.get(chain)
         queried_balances = manager.node_inquirer.get_multi_balance(accounts)
         for account, balance in queried_balances.items():
+            if balance == ZERO:
+                continue
+
             usd_value = balance * native_token_usd_price
             chain_balances[account] = BalanceSheet(
                 assets=defaultdict(Balance, {
