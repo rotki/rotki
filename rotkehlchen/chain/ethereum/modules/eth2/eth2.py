@@ -531,12 +531,18 @@ class Eth2(EthereumModule):
                 entry[0],
             ))
         with self.database.user_write() as write_cursor:
-            write_cursor.executemany(
-                'UPDATE history_events '
-                'SET event_identifier=?, sequence_index=?, notes=?, type=?, subtype=?'
-                'WHERE identifier=?',
-                changes,
-            )
+            for changes_entry in changes:
+                try:
+                    write_cursor.execute(
+                        'UPDATE history_events '
+                        'SET event_identifier=?, sequence_index=?, notes=?, type=?, subtype=?'
+                        'WHERE identifier=?',
+                        changes_entry,
+                    )
+                except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
+                    log.warning(f'Could not update history events with {changes_entry} in combine_block_with_tx_events due to {e!s}')  # noqa: E501
+                    # already exists. Probably right after resetting events? Delete old one
+                    write_cursor.execute('DELETE FROM history_events WHERE identifier=?', (changes_entry[5],))  # noqa: E501
 
     def refresh_activated_validators_deposits(self) -> None:
         """It's possible that when an eth deposit gets decoded and created the validator
