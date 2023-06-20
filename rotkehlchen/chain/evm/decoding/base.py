@@ -4,8 +4,12 @@ from typing import TYPE_CHECKING, Any, Callable, Optional
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.evm_event import EvmEvent, EvmProduct
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.assets.asset import CryptoAsset, EvmToken
+from rotkehlchen.assets.utils import get_or_create_evm_token
+from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import OUTGOING_EVENT_TYPES
 from rotkehlchen.constants import ONE
+from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.types import ChecksumEvmAddress, Timestamp
 
@@ -15,7 +19,6 @@ if TYPE_CHECKING:
     from rotkehlchen.db.drivers.gevent import DBCursor
     from rotkehlchen.assets.asset import Asset
 
-from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -297,6 +300,24 @@ class BaseDecoderTools():
             address=address,
             extra_data=extra_data,
         )
+
+    def get_or_create_evm_token(self, address: ChecksumEvmAddress) -> EvmToken:
+        """A version of get_create_evm_token to be called from the decoders"""
+        return get_or_create_evm_token(
+            userdb=self.database,
+            evm_address=address,
+            chain_id=self.evm_inquirer.chain_id,
+            evm_inquirer=self.evm_inquirer,
+        )
+
+    def get_or_create_evm_asset(self, address: ChecksumEvmAddress) -> CryptoAsset:
+        """A version of get_create_evm_token to be called from the decoders
+
+        Also checks for special cases like the special ETH address used in some protocols
+        """
+        if address == ETH_SPECIAL_ADDRESS:
+            return A_ETH.resolve_to_crypto_asset()
+        return self.get_or_create_evm_token(address)
 
 
 class BaseDecoderToolsWithDSProxy(BaseDecoderTools):

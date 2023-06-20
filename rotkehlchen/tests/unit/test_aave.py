@@ -10,11 +10,11 @@ from rotkehlchen.chain.ethereum.modules.aave.common import (
     asset_to_aave_reserve_address,
     atoken_to_asset,
 )
-from rotkehlchen.chain.ethereum.utils import ethaddress_to_asset
 from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ONE
+from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.premium.premium import Premium, PremiumCredentials
@@ -38,7 +38,7 @@ def test_aave_reserve_mapping():
             assert asset_to_aave_reserve_address(underlying_asset) == ETH_SPECIAL_ADDRESS
             continue
 
-        assert ethaddress_to_asset(underlying_asset.evm_address) == underlying_asset
+        assert EvmToken(ethaddress_to_identifier(underlying_asset.evm_address)) == underlying_asset
         assert asset_to_aave_reserve_address(underlying_asset) == underlying_asset.evm_address
 
 

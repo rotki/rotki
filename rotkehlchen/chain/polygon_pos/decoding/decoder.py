@@ -1,7 +1,7 @@
 import logging
 from typing import TYPE_CHECKING, Optional
-from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
 
+from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
 from rotkehlchen.chain.evm.decoding.decoder import EVMTransactionDecoder
 from rotkehlchen.chain.evm.decoding.structures import (
     FAILED_ENRICHMENT_OUTPUT,
