@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { type GeneralAccount } from '@rotki/common/lib/account';
-import { truncateAddress, truncationPoints } from '@/filters';
 
 const props = defineProps<{
   account: GeneralAccount;

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { type Suggestion } from '@/types/filtering';
-import { truncateAddress } from '@/filters';
+import { truncateAddress } from '@/utils/truncate';
 
 const props = withDefaults(
   defineProps<{

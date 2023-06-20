@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { type PropType } from 'vue';
-import { truncateAddress } from '@/filters';
 
 const props = defineProps({
   href: {

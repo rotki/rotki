@@ -7,7 +7,6 @@ import flushPromises from 'flush-promises';
 import { useCurrencies } from '@/types/currencies';
 import { CurrencyLocation } from '@/types/currency-location';
 import { FrontendSettings } from '@/types/frontend-settings';
-import '@/filters';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import createCustomPinia from '../../../utils/create-pinia';
 import { updateGeneralSettings } from '../../../utils/general-settings';

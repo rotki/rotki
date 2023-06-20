@@ -18,7 +18,6 @@ import {
 } from '@rotki/common/lib/statistics';
 import { type MaybeRef } from '@vueuse/core';
 import { type ComputedRef } from 'vue';
-import { truncateAddress } from '@/filters';
 
 export const assetsApi = (): AssetsApi => {
   const { assetInfo, assetSymbol, assetName, tokenAddress } =

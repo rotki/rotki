@@ -267,6 +267,8 @@ declare global {
   const transformEntryWithMeta: typeof import('./utils/history/index')['transformEntryWithMeta']
   const triggerRef: typeof import('vue')['triggerRef']
   const trimOnPaste: typeof import('./utils/event')['trimOnPaste']
+  const truncateAddress: typeof import('./utils/truncate')['truncateAddress']
+  const truncationPoints: typeof import('./utils/truncate')['truncationPoints']
   const tryOnBeforeMount: typeof import('@vueuse/core')['tryOnBeforeMount']
   const tryOnBeforeUnmount: typeof import('@vueuse/core')['tryOnBeforeUnmount']
   const tryOnMounted: typeof import('@vueuse/core')['tryOnMounted']
@@ -966,6 +968,8 @@ declare module 'vue' {
     readonly transformEntryWithMeta: UnwrapRef<typeof import('./utils/history/index')['transformEntryWithMeta']>
     readonly triggerRef: UnwrapRef<typeof import('vue')['triggerRef']>
     readonly trimOnPaste: UnwrapRef<typeof import('./utils/event')['trimOnPaste']>
+    readonly truncateAddress: UnwrapRef<typeof import('./utils/truncate')['truncateAddress']>
+    readonly truncationPoints: UnwrapRef<typeof import('./utils/truncate')['truncationPoints']>
     readonly tryOnBeforeMount: UnwrapRef<typeof import('@vueuse/core')['tryOnBeforeMount']>
     readonly tryOnBeforeUnmount: UnwrapRef<typeof import('@vueuse/core')['tryOnBeforeUnmount']>
     readonly tryOnMounted: UnwrapRef<typeof import('@vueuse/core')['tryOnMounted']>
@@ -1659,6 +1663,8 @@ declare module '@vue/runtime-core' {
     readonly transformEntryWithMeta: UnwrapRef<typeof import('./utils/history/index')['transformEntryWithMeta']>
     readonly triggerRef: UnwrapRef<typeof import('vue')['triggerRef']>
     readonly trimOnPaste: UnwrapRef<typeof import('./utils/event')['trimOnPaste']>
+    readonly truncateAddress: UnwrapRef<typeof import('./utils/truncate')['truncateAddress']>
+    readonly truncationPoints: UnwrapRef<typeof import('./utils/truncate')['truncationPoints']>
     readonly tryOnBeforeMount: UnwrapRef<typeof import('@vueuse/core')['tryOnBeforeMount']>
     readonly tryOnBeforeUnmount: UnwrapRef<typeof import('@vueuse/core')['tryOnBeforeUnmount']>
     readonly tryOnMounted: UnwrapRef<typeof import('@vueuse/core')['tryOnMounted']>
