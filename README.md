@@ -81,10 +81,10 @@ To get started using rotki, check out the [detailed usage guide](https://rotki.r
 
 ## Application Preview
 
-<div style="display: flex; justify-content: space-between">
-    <img src="https://i.imgur.com/uKK8VZm.png" alt="Description of the first image" width="400">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      
-    <img src="https://i.imgur.com/Pm5MDml.png" alt="Description of the second image" width="400">
-</div>
+<p align="center">
+<img src="https://i.imgur.com/uKK8VZm.png" alt="Description of the first image">
+<img src="https://i.imgur.com/Pm5MDml.png" alt="Description of the second image">
+</p>
 
 
 ## Changelog
