@@ -81,7 +81,7 @@ class Aavev1Decoder(DecoderInterface):
         if atoken is None:
             return DEFAULT_DECODING_OUTPUT
 
-        receive_event = return_event = None
+        receive_event = return_event = interest_event = None
         for event in context.decoded_events:
             if event.event_type == HistoryEventType.RECEIVE and event.location_label == user_address and amount == event.balance.amount and reserve_asset == event.asset:  # noqa: E501
                 event.event_type = HistoryEventType.WITHDRAWAL
