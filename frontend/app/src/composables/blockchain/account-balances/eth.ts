@@ -19,6 +19,9 @@ import {
   type BlockchainAccountWithBalance
 } from '@/types/blockchain/accounts';
 
+const ETH2_ASSET = Blockchain.ETH2.toUpperCase();
+const ETH_ASSET = Blockchain.ETH.toUpperCase();
+
 function addLoopringBreakdown(
   loopring: AccountAssetBalances,
   ethBreakdown: AssetBreakdown[],
@@ -53,17 +56,14 @@ const addEth2Breakdown = (
   ethBreakdown: AssetBreakdown[],
   treatEth2AsEth: boolean
 ): void => {
-  if (
-    asset === Blockchain.ETH2 ||
-    (treatEth2AsEth && asset === Blockchain.ETH)
-  ) {
+  if (asset === ETH2_ASSET || (treatEth2AsEth && asset === ETH_ASSET)) {
     for (const { publicKey } of validators.entries) {
       const validatorBalances = balances[publicKey];
       let balance: Balance = zeroBalance();
       if (validatorBalances && validatorBalances.assets) {
         const assets = validatorBalances.assets;
         balance = {
-          amount: assets[Blockchain.ETH2].amount,
+          amount: assets[ETH2_ASSET].amount,
           usdValue: assetSum(assets)
         };
       }
@@ -120,7 +120,7 @@ export const useEthAccountBalances = () => {
         if (validatorBalances && validatorBalances.assets) {
           const assets = validatorBalances.assets;
           balance = {
-            amount: assets[Blockchain.ETH2.toUpperCase()].amount,
+            amount: assets[ETH2_ASSET].amount,
             usdValue: assetSum(assets)
           };
         }

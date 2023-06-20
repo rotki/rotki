@@ -14,13 +14,14 @@ const { t } = useI18n();
 
 // TODO: make it so that the chains are retrieved from the backend
 const chain = computed<Blockchain>(() => {
+  const assetInLowerCase = get(item).asset;
   if (
     get(isEvmIdentifier(get(item).asset)) ||
-    get(item).asset === Blockchain.ETH
+    assetInLowerCase === Blockchain.ETH
   ) {
     return Blockchain.ETH;
   }
-  return get(item).asset as Blockchain;
+  return assetInLowerCase as Blockchain;
 });
 
 const transactionId = computed<string>(() => {

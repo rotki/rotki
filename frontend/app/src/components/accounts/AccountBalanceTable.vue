@@ -113,8 +113,8 @@ const withL2 = (
     }
     const chainBalance = value.balance;
     const loopringEth =
-      assetBalances.find(({ asset }) => asset === Blockchain.ETH)?.amount ??
-      Zero;
+      assetBalances.find(({ asset }) => asset === Blockchain.ETH.toUpperCase())
+        ?.amount ?? Zero;
 
     return {
       ...value,
