@@ -37,10 +37,10 @@ export const useBtcAccountBalances = () => {
 
   const getBreakdown = (asset: string): ComputedRef<AssetBreakdown[]> =>
     computed(() => [
-      ...(asset === Blockchain.BTC
+      ...(asset === Blockchain.BTC.toUpperCase()
         ? getBtcBreakdown(Blockchain.BTC, get(balances).btc, get(btc))
         : []),
-      ...(asset === Blockchain.BCH
+      ...(asset === Blockchain.BCH.toUpperCase()
         ? getBtcBreakdown(Blockchain.BCH, get(balances).bch, get(bch))
         : [])
     ]);
