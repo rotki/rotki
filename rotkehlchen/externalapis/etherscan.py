@@ -55,6 +55,11 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 class EtherscanHasChainActivity(Enum):
+    """
+    Classify the type of transaction first found in etherscan. TRANSACTIONS means that the endpoint
+    for transactions/internal transactions had entries, TOKENS means that the tokens endpoint had
+    entries and NONE means that no entry has been found in the different endpoints.
+    """
     TRANSACTIONS = auto()
     TOKENS = auto()
     NONE = auto()
@@ -483,7 +488,11 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
 
     def has_activity(self, account: ChecksumEvmAddress) -> EtherscanHasChainActivity:
         """Queries transactions, internal_txs and tokentx for an address with limit=1
-        just to quickly determine if the account has had any activity in the chain"""
+        just to quickly determine if the account has had any activity in the chain.
+        We make a distinction between transactions and ERC20 transfers since ERC20
+        are often spammed. If there was no activity at all we return the enum value
+        NONE.
+        """
         options = {'address': str(account), 'page': 1, 'offset': 1}
         result = self._query(module='account', action='txlist', options=options)
         if len(result) != 0:
