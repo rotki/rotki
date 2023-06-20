@@ -3,8 +3,7 @@ from rotkehlchen.constants.misc import ONE
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import SupportedBlockchain, Timestamp, deserialize_evm_tx_hash
 
-
-POLYGON_POS_ETHERSCAN_NODE_NAME = 'polygon_pos etherscan'
+POLYGON_POS_ETHERSCAN_NODE_NAME = 'polygon pos etherscan'
 POLYGON_POS_GENESIS = Timestamp(1590824836)
 POLYGON_POS_ETHERSCAN_NODE = WeightedNode(
     node_info=NodeName(

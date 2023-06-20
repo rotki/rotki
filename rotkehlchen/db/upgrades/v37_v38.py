@@ -20,7 +20,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 DEFAULT_POLYGON_NODES_AT_V38 = [
-    ('polygon etherscan', '', 0, 1, '0.25', 'POLYGON_POS'),
+    ('polygon pos etherscan', '', 0, 1, '0.25', 'POLYGON_POS'),
     ('ankr', 'https://rpc.ankr.com/polygon', 0, 1, '0.15', 'POLYGON_POS'),
     ('BlockPi', 'https://polygon.blockpi.network/v1/rpc/public', 0, 1, '0.15', 'POLYGON_POS'),
     ('PublicNode', 'https://polygon-bor.publicnode.com', 0, 1, '0.15', 'POLYGON_POS'),
