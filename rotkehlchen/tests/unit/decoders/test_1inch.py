@@ -3,11 +3,15 @@ import pytest
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.modules.oneinch.constants import CPT_ONEINCH_V1, CPT_ONEINCH_V2
+from rotkehlchen.chain.ethereum.modules.oneinch.v2.constants import ONEINCH_V2_MAINNET_ROUTER
 from rotkehlchen.chain.ethereum.modules.uniswap.constants import CPT_UNISWAP_V2
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
+from rotkehlchen.chain.evm.decoding.oneinch.constants import CPT_ONEINCH
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants.assets import A_DAI, A_ETH, A_USDC
+from rotkehlchen.chain.polygon_pos.modules.oneinch.constants import ONEINCH_POLYGON_POS_ROUTER
+from rotkehlchen.constants.assets import A_DAI, A_ETH, A_POLYGON_POS_MATIC, A_USDC
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.constants import A_CHI, A_PAN
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
@@ -103,7 +107,6 @@ def test_1inchv2_swap_for_eth(database, ethereum_inquirer):
         tx_hash=tx_hash,
     )
     timestamp = TimestampMS(1608498702000)
-    oneinch_v2_addy = string_to_evm_address('0x111111125434b319222CdBf8C261674aDB56F3ae')
     expected_events = [
         EvmEvent(
             tx_hash=tx_hash,
@@ -127,8 +130,8 @@ def test_1inchv2_swap_for_eth(database, ethereum_inquirer):
             asset=A_PAN,
             balance=Balance(amount=FVal('1.157920892373161954235709850E+59')),
             location_label=ADDY,
-            notes=f'Set PAN spending approval of {ADDY} by {oneinch_v2_addy} to 115792089237316195423570985000000000000000000000000000000000',  # noqa: E501
-            address=oneinch_v2_addy,
+            notes=f'Set PAN spending approval of {ADDY} by {ONEINCH_V2_MAINNET_ROUTER} to 115792089237316195423570985000000000000000000000000000000000',  # noqa: E501
+            address=ONEINCH_V2_MAINNET_ROUTER,
         ), EvmEvent(
             tx_hash=tx_hash,
             sequence_index=219,
@@ -141,7 +144,7 @@ def test_1inchv2_swap_for_eth(database, ethereum_inquirer):
             location_label=ADDY,
             notes='Swap 2152.63 PAN in 1inch-v2',
             counterparty=CPT_ONEINCH_V2,
-            address=string_to_evm_address('0xd47140F6Ab73f6d6B6675Fb1610Bb5E9B5d96FE5'),
+            address=ONEINCH_V2_MAINNET_ROUTER,
         ), EvmEvent(
             tx_hash=tx_hash,
             sequence_index=220,
@@ -154,7 +157,79 @@ def test_1inchv2_swap_for_eth(database, ethereum_inquirer):
             location_label=ADDY,
             notes='Receive 0.220582251767407014 ETH from 1inch-v2 swap',
             counterparty=CPT_ONEINCH_V2,
-            address=string_to_evm_address('0xF53bBFBff01c50F2D42D542b09637DcA97935fF7'),
+            address=ONEINCH_V2_MAINNET_ROUTER,
+        ),
+    ]
+    assert expected_events == events
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('polygon_pos_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
+def test_1inch_swap_polygon(database, polygon_pos_inquirer, polygon_pos_accounts):
+    """Data taken from
+    https://polygonscan.com/tx/0xe13e0ebab7a6abc0c0a22fcf0766b9a585a430415c88f3f90328b310119a85af
+    """
+    tx_hash = deserialize_evm_tx_hash('0xe13e0ebab7a6abc0c0a22fcf0766b9a585a430415c88f3f90328b310119a85af')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=polygon_pos_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    user_addy = polygon_pos_accounts[0]
+    pos_usdt = Asset('eip155:137/erc20:0xc2132D05D31c914a87C6611C10748AEb04B58e8F')
+    pos_yfi = Asset('eip155:137/erc20:0xDA537104D6A5edd53c6fBba9A898708E465260b6')
+    timestamp = TimestampMS(1641040985000)
+    expected_events = [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.POLYGON_POS,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_POLYGON_POS_MATIC,
+            balance=Balance(amount=FVal('0.0579902')),
+            location_label=user_addy,
+            notes='Burned 0.0579902 MATIC for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=277,
+            timestamp=timestamp,
+            location=Location.POLYGON_POS,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=pos_usdt,
+            balance=Balance(FVal('115792089237316195423570985000000000000000000000000000000000000000000000')),
+            location_label=user_addy,
+            notes=f'Set USDT spending approval of {user_addy} by {ONEINCH_POLYGON_POS_ROUTER} to 115792089237316195423570985000000000000000000000000000000000000000000000',  # noqa: E501
+            address=ONEINCH_POLYGON_POS_ROUTER,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=278,
+            timestamp=timestamp,
+            location=Location.POLYGON_POS,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=pos_usdt,
+            balance=Balance(amount=FVal('96.795')),
+            location_label=user_addy,
+            notes='Swap 96.795 USDT in 1inch',
+            counterparty=CPT_ONEINCH,
+            address=ONEINCH_POLYGON_POS_ROUTER,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=279,
+            timestamp=timestamp,
+            location=Location.POLYGON_POS,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=pos_yfi,
+            balance=Balance(amount=FVal('0.002830144606136162')),
+            location_label=user_addy,
+            notes='Receive 0.002830144606136162 YFI from 1inch swap',
+            counterparty=CPT_ONEINCH,
+            address=ONEINCH_POLYGON_POS_ROUTER,
         ),
     ]
     assert expected_events == events

@@ -1,0 +1,115 @@
+from abc import ABCMeta, abstractmethod
+from typing import TYPE_CHECKING, Any
+
+from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.chain.ethereum.utils import asset_normalized_value
+from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.structures import (
+    DEFAULT_DECODING_OUTPUT,
+    DecoderContext,
+    DecodingOutput,
+)
+from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails, EventCategory
+from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
+from rotkehlchen.types import ChecksumEvmAddress, DecoderEventMappingType
+
+if TYPE_CHECKING:
+    from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
+    from rotkehlchen.user_messages import MessagesAggregator
+    from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
+
+from .constants import CPT_ONEINCH, ONEINCH_ICON, ONEINCH_LABEL
+
+
+class OneinchCommonDecoder(DecoderInterface, metaclass=ABCMeta):
+
+    def __init__(
+            self,
+            evm_inquirer: 'EvmNodeInquirer',
+            base_tools: 'BaseDecoderTools',
+            msg_aggregator: 'MessagesAggregator',
+            router_address: 'ChecksumEvmAddress',
+            swapped_signature: bytes,
+            counterparty: str = CPT_ONEINCH,
+    ) -> None:
+        super().__init__(evm_inquirer, base_tools, msg_aggregator)
+        self.router_address = router_address
+        self.swapped_signature = swapped_signature
+        self.counterparty = counterparty
+
+    def _create_swapped_events(
+            self,
+            context: DecoderContext,
+            sender: ChecksumEvmAddress,
+            receiver: ChecksumEvmAddress,
+            source_token_address: ChecksumEvmAddress,
+            destination_token_address: ChecksumEvmAddress,
+            spent_amount_raw: int,
+            return_amount_raw: int,
+    ) -> DecodingOutput:
+        """Function to abstract the functionality of oneinch decoding where Once
+        the data has been pulled from the log we create the decoded events"""
+        if not self.base.is_tracked(sender) and not self.base.is_tracked(receiver):
+            return DEFAULT_DECODING_OUTPUT
+        source_token = self.base.get_or_create_evm_asset(source_token_address)
+        destination_token = self.base.get_or_create_evm_asset(destination_token_address)
+        spent_amount = asset_normalized_value(amount=spent_amount_raw, asset=source_token)
+        return_amount = asset_normalized_value(amount=return_amount_raw, asset=destination_token)
+
+        out_event = in_event = None
+        for event in context.decoded_events:
+            # Now find the sending and receiving events
+            if event.event_type == HistoryEventType.SPEND and event.location_label == sender and spent_amount == event.balance.amount and source_token == event.asset:  # noqa: E501
+                event.event_type = HistoryEventType.TRADE
+                event.event_subtype = HistoryEventSubType.SPEND
+                event.counterparty = self.counterparty
+                event.notes = f'Swap {spent_amount} {source_token.symbol} in {self.counterparty}'  # noqa: E501
+                event.address = self.router_address
+                out_event = event
+            elif event.event_type == HistoryEventType.RECEIVE and event.location_label == sender and receiver == event.location_label and return_amount == event.balance.amount and destination_token == event.asset:  # noqa: E501
+                event.event_type = HistoryEventType.TRADE
+                event.event_subtype = HistoryEventSubType.RECEIVE
+                event.counterparty = self.counterparty
+                event.notes = f'Receive {return_amount} {destination_token.symbol} from {self.counterparty} swap'  # noqa: E501
+                # use this index as the event may be an ETH transfer and appear at the start
+                event.sequence_index = context.tx_log.log_index
+                event.address = self.router_address
+                in_event = event
+
+        maybe_reshuffle_events(
+            ordered_events=[out_event, in_event],
+            events_list=context.decoded_events,
+        )
+        return DEFAULT_DECODING_OUTPUT
+
+    @abstractmethod
+    def _decode_swapped(self, context: DecoderContext) -> DecodingOutput:
+        """Decode the swapped log for the particular 1inch version"""
+
+    def decode_action(self, context: DecoderContext) -> DecodingOutput:
+        if context.tx_log.topics[0] == self.swapped_signature:
+            return self._decode_swapped(context=context)
+
+        return DEFAULT_DECODING_OUTPUT
+
+    # -- DecoderInterface methods
+
+    def possible_events(self) -> DecoderEventMappingType:
+        return {self.counterparty: {
+            HistoryEventType.TRADE: {
+                HistoryEventSubType.SPEND: EventCategory.SWAP_OUT,
+                HistoryEventSubType.RECEIVE: EventCategory.SWAP_IN,
+            },
+        }}
+
+    def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
+        return {
+            self.router_address: (self.decode_action,),
+        }
+
+    def counterparties(self) -> list[CounterpartyDetails]:
+        return [CounterpartyDetails(
+            identifier=self.counterparty,
+            label=ONEINCH_LABEL,
+            image=ONEINCH_ICON,
+        )]
