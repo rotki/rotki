@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { type Eth2ValidatorEntry } from '@rotki/common/lib/staking/eth2';
 import { type PropType } from 'vue';
-import { truncateAddress } from '@/filters';
+import { truncateAddress } from '@/utils/truncate';
 
 const props = defineProps({
   validator: {

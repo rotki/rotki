@@ -695,6 +695,8 @@
     "useEditLocationsSnapshotForm": true,
     "useEditTotalSnapshotForm": true,
     "stickyTableHeader": true,
-    "LimitedParallelizationQueue": true
+    "LimitedParallelizationQueue": true,
+    "truncateAddress": true,
+    "truncationPoints": true
   }
 }

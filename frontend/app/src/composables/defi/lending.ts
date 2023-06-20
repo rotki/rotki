@@ -7,7 +7,6 @@ import {
 } from '@rotki/common/lib/defi/aave';
 import sortBy from 'lodash/sortBy';
 import { type ComputedRef } from 'vue';
-import { truncateAddress } from '@/filters';
 import {
   type AaveLoan,
   type BaseDefiBalance,

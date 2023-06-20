@@ -1,6 +1,6 @@
 ﻿<script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { truncateAddress } from '@/filters';
+import { truncateAddress } from '@/utils/truncate';
 import {
   type Chains,
   type ExplorerUrls,

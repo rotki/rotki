@@ -4,7 +4,7 @@ import {
   Blockchain,
   type BlockchainSelection
 } from '@rotki/common/lib/blockchain';
-import { truncateAddress } from '@/filters';
+import { truncateAddress } from '@/utils/truncate';
 
 const props = withDefaults(
   defineProps<{
