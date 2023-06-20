@@ -1330,8 +1330,6 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                     )
                     if only_token_spam or etherscan_activity == EtherscanHasChainActivity.NONE:
                         continue  # do not add the address for the chain
-
-                    # else we add the chain
             except RemoteError as e:
                 log.error(f'{e!s} when checking if {address} is active at {chain}')
                 continue
