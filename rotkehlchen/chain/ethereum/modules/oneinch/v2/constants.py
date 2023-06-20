@@ -1,0 +1,3 @@
+from rotkehlchen.chain.evm.types import string_to_evm_address
+
+ONEINCH_V2_MAINNET_ROUTER = string_to_evm_address('0x111111125434b319222CdBf8C261674aDB56F3ae')

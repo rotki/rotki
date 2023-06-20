@@ -1,14 +1,13 @@
 import logging
 import os
 import random
-from typing import TYPE_CHECKING, Any, Optional, cast
+from typing import TYPE_CHECKING, Any, Optional
 
 import gevent
 
 from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.chain.ethereum.constants import ETHEREUM_ETHERSCAN_NODE
 from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
-from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 from rotkehlchen.chain.ethereum.transactions import EthereumTransactions
 from rotkehlchen.chain.evm.decoding.decoder import EVMTransactionDecoder
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
@@ -16,6 +15,8 @@ from rotkehlchen.chain.evm.transactions import EvmTransactions
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode, string_to_evm_address
 from rotkehlchen.chain.optimism.decoding.decoder import OptimismTransactionDecoder
 from rotkehlchen.chain.optimism.transactions import OptimismTransactions
+from rotkehlchen.chain.polygon_pos.decoding.decoder import PolygonPOSTransactionDecoder
+from rotkehlchen.chain.polygon_pos.transactions import PolygonPOSTransactions
 from rotkehlchen.constants import ONE
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.evmtx import DBEvmTx
@@ -34,6 +35,7 @@ from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.structures.evm_event import EvmEvent
+    from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
 
 NODE_CONNECTION_TIMEOUT = 10
 
@@ -395,7 +397,7 @@ def extended_transactions_setup_test(
 
 
 def get_decoded_events_of_transaction(
-        evm_inquirer: EthereumInquirer,
+        evm_inquirer: 'EvmNodeInquirer',
         database: DBHandler,
         tx_hash: EVMTxHash,
         transactions: Optional[EvmTransactions] = None,
@@ -407,28 +409,16 @@ def get_decoded_events_of_transaction(
 
     Returns the list of decoded events and the EVMTransactionDecoder
     """
-    if evm_inquirer.chain_id == ChainID.ETHEREUM:
+    chain_mappings = {
+        ChainID.ETHEREUM: (EthereumTransactions, EthereumTransactionDecoder),
+        ChainID.OPTIMISM: (OptimismTransactions, OptimismTransactionDecoder),
+        ChainID.POLYGON_POS: (PolygonPOSTransactions, PolygonPOSTransactionDecoder),
+    }
+    mappings_result = chain_mappings.get(evm_inquirer.chain_id)
+    if mappings_result is not None:
         if transactions is None:
-            transactions = EthereumTransactions(ethereum_inquirer=evm_inquirer, database=database)
-        else:
-            transactions = cast(EthereumTransactions, transactions)
-
-        decoder = EthereumTransactionDecoder(
-            database=database,
-            ethereum_inquirer=evm_inquirer,
-            transactions=transactions,
-        )
-    elif evm_inquirer.chain_id == ChainID.OPTIMISM:
-        if transactions is None:
-            transactions = OptimismTransactions(optimism_inquirer=evm_inquirer, database=database)  # type: ignore # noqa: E501
-        else:
-            transactions = cast(OptimismTransactions, transactions)
-
-        decoder = OptimismTransactionDecoder(
-            database=database,
-            optimism_inquirer=evm_inquirer,  # type: ignore
-            transactions=transactions,
-        )
+            transactions = mappings_result[0](evm_inquirer, database)
+        decoder = mappings_result[1](database, evm_inquirer, transactions)
     else:
         raise AssertionError('Unsupported chainID at tests')
 

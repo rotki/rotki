@@ -3,8 +3,9 @@ from typing import Any
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.modules.constants import AMM_POSSIBLE_COUNTERPARTIES
-from rotkehlchen.chain.ethereum.utils import asset_normalized_value, ethaddress_to_asset
+from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.oneinch.constants import ONEINCH_ICON, ONEINCH_LABEL
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     DecoderContext,
@@ -16,7 +17,7 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.types import ChecksumEvmAddress, DecoderEventMappingType
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
-from ..constants import CPT_ONEINCH_V1, ONEINCH_ICON, ONEINCH_LABEL
+from ..constants import CPT_ONEINCH_V1
 
 HISTORY = b'\x89M\xbf\x12b\x19\x9c$\xe1u\x02\x98\xa3\x84\xc7\t\x16\x0fI\xd1cB,\xc6\xce\xe6\x94\xc77\x13\xf1\xd2'  # noqa: E501
 SWAPPED = b'\xe2\xce\xe3\xf6\x83`Y\x82\x0bg9C\x85:\xfe\xbd\x9b0&\x12]\xab\rwB\x84\xe6\xf2\x8aHU\xbe'  # noqa: E501
@@ -31,15 +32,13 @@ class Oneinchv1Decoder(DecoderInterface):
 
         from_token_address = hex_or_bytes_to_address(context.tx_log.data[0:32])
         to_token_address = hex_or_bytes_to_address(context.tx_log.data[32:64])
-        from_asset = ethaddress_to_asset(from_token_address)
-        to_asset = ethaddress_to_asset(to_token_address)
-        if None in (from_asset, to_asset):
-            return DEFAULT_DECODING_OUTPUT
+        from_asset = self.base.get_or_create_evm_asset(from_token_address)
+        to_asset = self.base.get_or_create_evm_asset(to_token_address)
 
         from_raw = hex_or_bytes_to_int(context.tx_log.data[64:96])
-        from_amount = asset_normalized_value(from_raw, from_asset)  # type: ignore
+        from_amount = asset_normalized_value(from_raw, from_asset)
         to_raw = hex_or_bytes_to_int(context.tx_log.data[96:128])
-        to_amount = asset_normalized_value(to_raw, to_asset)  # type: ignore
+        to_amount = asset_normalized_value(to_raw, to_asset)
 
         out_event = in_event = None
         for event in context.decoded_events:
@@ -78,10 +77,7 @@ class Oneinchv1Decoder(DecoderInterface):
     def _decode_swapped(self, context: DecoderContext) -> DecodingOutput:
         """We use the Swapped event to get the fee kept by 1inch"""
         to_token_address = hex_or_bytes_to_address(context.tx_log.topics[2])
-        to_asset = ethaddress_to_asset(to_token_address)
-        if to_asset is None:
-            return DEFAULT_DECODING_OUTPUT
-
+        to_asset = self.base.get_or_create_evm_asset(to_token_address)
         to_raw = hex_or_bytes_to_int(context.tx_log.data[32:64])
         fee_raw = hex_or_bytes_to_int(context.tx_log.data[96:128])
         if fee_raw == 0:
