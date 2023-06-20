@@ -65,7 +65,7 @@ class EtherscanHasChainActivity(Enum):
     NONE = auto()
 
 
-def _hashes_tuple_to_list(hashes: set[tuple[str, Timestamp]]) -> list[str]:
+def _hashes_tuple_to_list(hashes: set[tuple[EVMTxHash, Timestamp]]) -> list[EVMTxHash]:
     """Turns the set of hashes/timestamp to a timestamp ascending ordered list
 
     This function needs to exist since Set has no guranteed order of iteration.
@@ -454,7 +454,7 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
             account: ChecksumEvmAddress,
             from_ts: Optional[Timestamp] = None,
             to_ts: Optional[Timestamp] = None,
-    ) -> Iterator[list[str]]:
+    ) -> Iterator[list[EVMTxHash]]:
         options = {'address': str(account), 'sort': 'asc'}
         if from_ts is not None:
             from_block = self.get_blocknumber_by_time(ts=from_ts, closest='before')
@@ -463,17 +463,32 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
             to_block = self.get_blocknumber_by_time(ts=to_ts, closest='before')
             options['endBlock'] = str(to_block)
 
-        hashes: set[tuple[str, Timestamp]] = set()
+        hashes: set[tuple[EVMTxHash, Timestamp]] = set()
         while True:
             result = self._query(module='account', action='tokentx', options=options)
             last_ts = deserialize_timestamp(result[0]['timeStamp']) if len(result) != 0 else None
             for entry in result:
-                timestamp = deserialize_timestamp(entry['timeStamp'])
+                try:
+                    timestamp = deserialize_timestamp(entry['timeStamp'])
+                except DeserializationError as e:
+                    log.error(
+                        f"Failed to read transaction timestamp {entry['hash']} from etherscan for "
+                        f'{account} in the range {from_ts} to {to_ts}. {e!s}',
+                    )
+                    continue
+
                 if timestamp > last_ts and len(hashes) >= TRANSACTIONS_BATCH_NUM:  # type: ignore
                     yield _hashes_tuple_to_list(hashes)
                     hashes = set()
                     last_ts = timestamp
-                hashes.add((entry['hash'], timestamp))
+                try:
+                    hashes.add((deserialize_evm_tx_hash(entry['hash']), timestamp))
+                except DeserializationError as e:
+                    log.error(
+                        f"Failed to read transaction hash {entry['hash']} from etherscan for "
+                        f'{account} in the range {from_ts} to {to_ts}. {e!s}',
+                    )
+                    continue
 
             if len(result) != ETHERSCAN_TX_QUERY_LIMIT:
                 break

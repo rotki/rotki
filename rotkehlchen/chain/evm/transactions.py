@@ -20,16 +20,10 @@ from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
 from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError, RemoteError
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
-from rotkehlchen.types import (
-    SPAM_PROTOCOL,
-    ChecksumEvmAddress,
-    EvmTokenKind,
-    EVMTxHash,
-    Timestamp,
-    deserialize_evm_tx_hash,
-)
+from rotkehlchen.types import SPAM_PROTOCOL, ChecksumEvmAddress, EvmTokenKind, EVMTxHash, Timestamp
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 from rotkehlchen.utils.misc import ts_now
 
@@ -401,15 +395,14 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
                     to_ts=query_end_ts,
                 ):
                     for tx_hash in erc20_tx_hashes:
-                        tx_hash_bytes = deserialize_evm_tx_hash(tx_hash)
                         with self.database.conn.read_ctx() as cursor:
                             result = dbevmtx.get_evm_transactions(
                                 cursor,
-                                EvmTransactionsFilterQuery.make(tx_hash=tx_hash_bytes, chain_id=self.evm_inquirer.chain_id),  # noqa: E501
+                                EvmTransactionsFilterQuery.make(tx_hash=tx_hash, chain_id=self.evm_inquirer.chain_id),  # noqa: E501
                                 has_premium=True,  # ignore limiting here
                             )
                         if len(result) == 0:  # if transaction is not there add it
-                            transaction, raw_receipt_data = self.evm_inquirer.get_transaction_by_hash(tx_hash_bytes)  # noqa: E501
+                            transaction, raw_receipt_data = self.evm_inquirer.get_transaction_by_hash(tx_hash)  # noqa: E501
                             with self.database.user_write() as write_cursor:
                                 dbevmtx.add_evm_transactions(
                                     write_cursor=write_cursor,
@@ -480,13 +473,18 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
                 to_ts=end_ts,
             ):
                 for tx_hash in erc20_tx_hashes:
-                    raw_receipt_data = self.evm_inquirer.get_transaction_receipt(deserialize_evm_tx_hash(tx_hash))  # noqa: E501
+                    raw_receipt_data = self.evm_inquirer.get_transaction_receipt(tx_hash)
                     for log_entry in raw_receipt_data['logs']:
                         if len(log_entry['topics']) == 0:
                             continue
 
                         topic_raw = log_entry['topics'][0]
-                        topic = hexstring_to_bytes(topic_raw)
+                        try:
+                            topic = hexstring_to_bytes(topic_raw)
+                        except DeserializationError as e:
+                            log.error(f'Failed to read topic {topic_raw} for a transaction receipt at {ts_now!r}. {e!s}. Skipping')  # noqa: E501
+                            continue
+
                         if topic != ERC20_OR_ERC721_TRANSFER:
                             continue
 
@@ -523,6 +521,7 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
                 f'token transactions from Etherscan. address: {address} spam detection failed',
             )
             return False
+
         return True
 
     def get_or_query_transaction_receipt(self, tx_hash: EVMTxHash) -> 'EvmTxReceipt':
