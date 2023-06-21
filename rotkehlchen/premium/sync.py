@@ -32,7 +32,7 @@ class SyncCheckResult(NamedTuple):
     payload: Optional[dict[str, Any]]
 
 
-class PremiumSyncManager():
+class PremiumSyncManager:
 
     def __init__(self, migration_manager: DataMigrationManager, data: DataHandler) -> None:
         # Initialize this with the value saved in the DB

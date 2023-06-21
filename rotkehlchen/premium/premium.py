@@ -71,7 +71,7 @@ class SubscriptionStatus(Enum):
     INACTIVE = 3
 
 
-class PremiumCredentials():
+class PremiumCredentials:
     """Represents properly encoded premium credentials
 
     Constructor can raise IncorrectApiKeyFormat
@@ -130,7 +130,7 @@ def _decode_premium_json(response: requests.Response) -> Any:
     return json_data
 
 
-class Premium():
+class Premium:
 
     def __init__(self, credentials: PremiumCredentials):
         self.status = SubscriptionStatus.UNKNOWN

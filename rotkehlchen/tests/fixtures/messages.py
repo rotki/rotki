@@ -10,7 +10,7 @@ class MockedWsMessage(NamedTuple):
     data: Union[dict[str, Any], list[Any]]
 
 
-class MockRotkiNotifier():
+class MockRotkiNotifier:
     def __init__(self) -> None:
         self.messages: list[MockedWsMessage] = []
 

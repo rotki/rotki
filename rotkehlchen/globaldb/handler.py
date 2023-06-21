@@ -186,7 +186,7 @@ def _initialize_global_db_directory(
     )
 
 
-class GlobalDBHandler():
+class GlobalDBHandler:
     """A singleton class controlling the global DB"""
     __instance: Optional['GlobalDBHandler'] = None
     _data_directory: Optional[Path] = None

@@ -91,7 +91,7 @@ class CCHistoQuery(NamedTuple):
     to_asset: AssetWithOracles
 
 
-class TaskManager():
+class TaskManager:
 
     def __init__(
             self,

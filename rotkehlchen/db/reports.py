@@ -60,7 +60,7 @@ def _get_reports_or_events_maybe_limit(
     return entries[:returning_entries_length], entries_found
 
 
-class DBAccountingReports():
+class DBAccountingReports:
 
     def __init__(self, database: 'DBHandler'):
         self.db = database

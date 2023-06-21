@@ -18,7 +18,7 @@ MOCK_WEB3_LAST_BLOCK_HEX = '0xf75bb9'
 MOCK_ROOT = Path(__file__).resolve().parent.parent / 'data' / 'mocks'
 
 
-class MockResponse():
+class MockResponse:
     def __init__(
             self,
             status_code: int,
@@ -35,7 +35,7 @@ class MockResponse():
         return json.loads(self.text)
 
 
-class MockEth():
+class MockEth:
 
     syncing = False
 
@@ -55,13 +55,13 @@ class MockEth():
         return {'hash': HexBytes(genesis)}
 
 
-class MockMiddlewareOnion():
+class MockMiddlewareOnion:
 
     def inject(self, middleware, layer) -> None:
         pass
 
 
-class MockWeb3():
+class MockWeb3:
 
     def __init__(self, providers=None, middlewares=None, ens=None):  # pylint: disable=unused-argument  # noqa: E501
         self.eth = MockEth(0)

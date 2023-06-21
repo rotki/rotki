@@ -206,7 +206,7 @@ def _handle_pooltogether(normalized_balance: FVal, token_name: str) -> Optional[
 ZERION_ADAPTER_ADDRESS = string_to_evm_address('0x06FE76B2f432fdfEcAEf1a7d4f6C3d41B5861672')
 
 
-class ZerionSDK():
+class ZerionSDK:
     """Adapter for the Zerion DeFi SDK https://github.com/zeriontech/defi-sdk"""
 
     def __init__(

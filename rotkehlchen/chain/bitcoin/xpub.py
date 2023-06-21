@@ -168,7 +168,7 @@ def _derive_addresses_from_xpub_data(
     return addresses
 
 
-class XpubManager():
+class XpubManager:
 
     def __init__(self, chains_aggregator: 'ChainsAggregator'):
         self.chains_aggregator = chains_aggregator

@@ -7,7 +7,7 @@ from gevent.lock import Semaphore
 from .common import function_sig_key
 
 
-class LockableQueryMixIn():
+class LockableQueryMixIn:
     """Interface for objects who have queries that disallow concurrency
 
     Any object that adheres to this interface can have its functions

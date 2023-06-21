@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from rotkehlchen.db.drivers.gevent import DBCursor
 
 
-class QueriedAddresses():
+class QueriedAddresses:
 
     def __init__(self, database: DBHandler):
         self.db = database

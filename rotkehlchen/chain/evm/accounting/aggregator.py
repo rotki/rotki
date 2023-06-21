@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class EVMAccountingAggregator():
+class EVMAccountingAggregator:
     """This is a class meant to aggregate accountants for modules of EVM decoders
 
     It's supposed to be subclassed for each different evm network. The reason for
@@ -99,7 +99,7 @@ class EVMAccountingAggregator():
             accountant.reset()
 
 
-class EVMAccountingAggregators():
+class EVMAccountingAggregators:
     """
     This is just a convenience class to group together AccountingAggregators from multiple chains
     """

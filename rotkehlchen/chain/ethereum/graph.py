@@ -56,7 +56,7 @@ def get_common_params(
     return param_types, param_values
 
 
-class Graph():
+class Graph:
 
     def __init__(self, url: str) -> None:
         """

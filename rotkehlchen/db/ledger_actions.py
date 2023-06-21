@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     from rotkehlchen.db.drivers.gevent import DBCursor
 
 
-class DBLedgerActions():
+class DBLedgerActions:
 
     def __init__(self, database: 'DBHandler', msg_aggregator: MessagesAggregator):
         self.db = database

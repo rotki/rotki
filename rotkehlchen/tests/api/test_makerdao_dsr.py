@@ -76,7 +76,7 @@ class DSRTestSetup(NamedTuple):
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
-class DSRMockParameters():
+class DSRMockParameters:
     current_dsr: int
     current_chi: int
     account1_current_normalized_balance: int

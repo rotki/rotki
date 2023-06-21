@@ -44,7 +44,7 @@ TRANSACTIONS_MISSING_DECODING_QUERY = (
 )
 
 
-class DBEvmTx():
+class DBEvmTx:
 
     def __init__(self, database: 'DBHandler') -> None:
         self.db = database

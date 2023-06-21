@@ -24,7 +24,7 @@ log = RotkehlchenLogsAdapter(logger)
 T = TypeVar('T', 'FiatAsset', 'CryptoAsset', 'EvmToken', 'Nft', 'AssetWithNameAndType', 'AssetWithSymbol', 'AssetWithOracles')  # noqa: E501
 
 
-class AssetResolver():
+class AssetResolver:
     __instance: Optional['AssetResolver'] = None
     # A cache so that the DB is not hit every time
     # the cache maps identifier -> final representation of the asset

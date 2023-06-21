@@ -24,7 +24,7 @@ log = RotkehlchenLogsAdapter(logger)
 BUFFERSIZE = 64 * 1024
 
 
-class DataHandler():
+class DataHandler:
 
     def __init__(
             self,

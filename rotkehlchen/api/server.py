@@ -377,7 +377,7 @@ def handle_request_parsing_error(
     abort(err_response)
 
 
-class APIServer():
+class APIServer:
 
     _api_prefix = '/api/1'
 

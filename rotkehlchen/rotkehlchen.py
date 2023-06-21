@@ -114,7 +114,7 @@ ICONS_BATCH_SIZE = 3
 ICONS_QUERY_SLEEP = 60
 
 
-class Rotkehlchen():
+class Rotkehlchen:
     def __init__(self, args: argparse.Namespace) -> None:
         """Initialize the Rotkehlchen object
 
