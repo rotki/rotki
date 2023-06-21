@@ -144,6 +144,8 @@ ignore = [
     "RUF001",  # AmbiguousUnicodeCharacterString
     "RUF002",  # AmbiguousUnicodeCharacterDocstring
     "RUF005",  # Unpacking over concatenation -> https://github.com/charliermarsh/ruff/issues/2054#issuecomment-1399617413
+    "RUF012",  # until Final is also allowed instead of only ClassVar
+    "RUF013",  # until https://github.com/astral-sh/ruff/issues/5231 is fixed
     "RET501",  # Explicitly returning None
     "RET504",  # Unnecessary variable assignment before `return
     "RET505",  # https://github.com/charliermarsh/ruff/issues/1035
