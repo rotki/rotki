@@ -509,7 +509,6 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
             return DEFAULT_DECODING_OUTPUT
 
         gauge_address = hex_or_bytes_to_address(context.tx_log.data[64:96])
-        # create the vote event (fee event is already created)
         event = self.base.make_event_from_transaction(
             transaction=context.transaction,
             tx_log=context.tx_log,
