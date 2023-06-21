@@ -2245,6 +2245,7 @@ class NamedOracleCacheGetSchema(AsyncQueryArgumentSchema):
 
 class ERC20InfoSchema(AsyncQueryArgumentSchema):
     address = EvmAddressField(required=True)
+    evm_chain = EvmChainNameField(required=True, limit_to=list(EVM_CHAIN_IDS_WITH_TRANSACTIONS))
 
 
 class BinanceMarketsUserSchema(Schema):

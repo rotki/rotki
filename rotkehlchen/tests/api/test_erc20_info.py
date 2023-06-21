@@ -23,7 +23,7 @@ def assert_default_erc20_info_response(result: Any) -> None:
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 def test_query_token_with_info(rotkehlchen_api_server):
-    """Query DAI token to retrieve basic information"""
+    """Test api for querying evm token details"""
 
     response = requests.get(
         api_url_for(
@@ -31,13 +31,27 @@ def test_query_token_with_info(rotkehlchen_api_server):
             'erc20tokeninfo',
         ), json={
             'address': string_to_evm_address('0x6B175474E89094C44Da98b954EedeAC495271d0F'),
+            'evm_chain': 'ethereum',
         },
     )
-
     result = assert_proper_response_with_result(response)
     assert result['decimals'] == 18
     assert result['symbol'] == 'DAI'
     assert result['name'] == 'Dai Stablecoin'
+
+    response = requests.get(  # test non mainnet token
+        api_url_for(
+            rotkehlchen_api_server,
+            'erc20tokeninfo',
+        ), json={
+            'address': string_to_evm_address('0x94b008aA00579c1307B0EF2c499aD98a8ce58e58'),
+            'evm_chain': 'optimism',
+        },
+    )
+    result = assert_proper_response_with_result(response)
+    assert result['decimals'] == 6
+    assert result['symbol'] == 'USDT'
+    assert result['name'] == 'Tether USD'
 
     # Test a contract without decimals/name/symbol methods
     response_2 = requests.get(
@@ -46,6 +60,7 @@ def test_query_token_with_info(rotkehlchen_api_server):
             'erc20tokeninfo',
         ), json={
             'address': string_to_evm_address('0x7d655c57f71464B6f83811C55D84009Cd9f5221C'),
+            'evm_chain': 'ethereum',
         },
     )
 
@@ -59,6 +74,7 @@ def test_query_token_with_info(rotkehlchen_api_server):
             'erc20tokeninfo',
         ), json={
             'address': string_to_evm_address('0x00f195C9ed671173d618e7c03e4A987ef906C739'),
+            'evm_chain': 'ethereum',
         },
     )
 
@@ -72,6 +88,7 @@ def test_query_token_with_info(rotkehlchen_api_server):
             'erc20tokeninfo',
         ), json={
             'address': string_to_evm_address('0x4652D63f4750bCd9d5f5dAds96087485d31554b10F'),
+            'evm_chain': 'ethereum',
         },
     )
 

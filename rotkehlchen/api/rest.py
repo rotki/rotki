@@ -3029,13 +3029,13 @@ class RestAPI:
         return api_response(result_dict, status_code=HTTPStatus.OK)
 
     @async_api_call()
-    def get_token_info(self, address: ChecksumEvmAddress) -> dict[str, Any]:
-        eth_manager = self.rotkehlchen.chains_aggregator.ethereum
+    def get_token_info(self, address: ChecksumEvmAddress, chain_id: SUPPORTED_CHAIN_IDS) -> dict[str, Any]:  # noqa: E501
+        evm_manager = self.rotkehlchen.chains_aggregator.get_evm_manager(chain_id)
         try:
-            info = eth_manager.node_inquirer.get_erc20_contract_info(address=address)
+            info = evm_manager.node_inquirer.get_erc20_contract_info(address=address)
         except BadFunctionCallOutput:
             return wrap_in_fail_result(
-                f'Address {address} seems to not be a deployed contract',
+                f'{chain_id!s} address {address} seems to not be a deployed contract',
                 status_code=HTTPStatus.CONFLICT,
             )
         return _wrap_in_ok_result(info)
