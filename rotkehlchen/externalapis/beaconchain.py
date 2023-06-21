@@ -310,7 +310,9 @@ class BeaconChain(ExternalServiceWithApiKey):
         produced via a relay and is the "reported" recipient of the mev reward by
         the relay. Reported is important here and relays can lie and also make mistakes.
         - The mev_reward can be ZERO and it's what goes to the producer_fee_recipient as reported
-        by the relay. It can also be wrong due to misreporting by the relay.
+        by the relay. It can also be wrong due to misreporting by the relay. Beaconchain
+        can also tell us there is relay data but that relay data just saying recipient
+        is same as producer and same amount, meaning no extra MEV reward.
 
         May raise:
         - RemoteError due to problems querying beaconcha.in API
@@ -355,14 +357,15 @@ class BeaconChain(ExternalServiceWithApiKey):
 
                 if entry.get('relay') is not None:
                     producer_fee_recipient = deserialize_evm_address(entry['relay']['producerFeeRecipient'])  # noqa: E501
-                    mev_event = EthBlockEvent(
-                        validator_index=proposer_index,
-                        timestamp=timestamp,
-                        balance=Balance(amount=mev_reward),
-                        fee_recipient=producer_fee_recipient,
-                        block_number=blocknumber,
-                        is_mev_reward=True,
-                    )
+                    if not (producer_fee_recipient == fee_recipient and mev_reward == block_reward):  # beaconchain can report mev + relay even if just relayer is used but no extra tx is made # noqa: E501
+                        mev_event = EthBlockEvent(
+                            validator_index=proposer_index,
+                            timestamp=timestamp,
+                            balance=Balance(amount=mev_reward),
+                            fee_recipient=producer_fee_recipient,
+                            block_number=blocknumber,
+                            is_mev_reward=True,
+                        )
                 with self.db.user_write() as write_cursor:
                     dbevents.add_history_event(write_cursor=write_cursor, event=block_event)
                     if mev_event is not None:
