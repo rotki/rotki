@@ -741,7 +741,7 @@ def test_search_assets(rotkehlchen_api_server):
         'polygon_pos',
         'optimism',
         'ethereum',
-        'arbitrum',
+        'arbitrum_one',
         'binance',
     }
 
