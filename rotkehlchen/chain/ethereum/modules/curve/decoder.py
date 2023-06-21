@@ -2,6 +2,7 @@ import logging
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, Callable, Literal, Optional
 
+from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.evm_event import EvmProduct
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import Asset
@@ -103,6 +104,8 @@ CURVE_DEPOSIT_CONTRACTS = {
 
 GAUGE_DEPOSIT = b'\xe1\xff\xfc\xc4\x92=\x04\xb5Y\xf4\xd2\x9a\x8b\xfcl\xda\x04\xeb[\r<F\x07Q\xc2@,\\\\\xc9\x10\x9c'  # noqa: E501
 GAUGE_WITHDRAW = b'\x88N\xda\xd9\xceo\xa2D\r\x8aT\xcc\x124\x90\xeb\x96\xd2v\x84y\xd4\x9f\xf9\xc76a%\xa9BCd'  # noqa: E501
+GAUGE_VOTE = b'E\xca\x9aL\x8d\x01\x19\xeb2\x9eX\r(\xfeh\x9eHN\x1b\xe20\xda\x807\xad\xe9T}-%\xcc\x91'  # noqa: E501
+GAUGE_CONTROLLER = string_to_evm_address('0x2F50D538606Fa9EDD2B11E2446BEb18C9D5846bB')
 
 TOKEN_EXCHANGE = b'\x8b>\x96\xf2\xb8\x89\xfaw\x1cS\xc9\x81\xb4\r\xaf\x00_c\xf67\xf1\x86\x9fppR\xd1Z=\xd9q@'  # noqa: E501
 TOKEN_EXCHANGE_UNDERLYING = b'\xd0\x13\xca#\xe7ze\x00<,e\x9cTB\xc0\x0c\x80Sq\xb7\xfc\x1e\xbdL lA\xd1Sk\xd9\x0b'  # noqa: E501
@@ -501,6 +504,27 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
 
         return DEFAULT_DECODING_OUTPUT
 
+    def _decode_curve_gauge_votes(self, context: DecoderContext) -> DecodingOutput:
+        if context.tx_log.topics[0] != GAUGE_VOTE:
+            return DEFAULT_DECODING_OUTPUT
+
+        gauge_address = hex_or_bytes_to_address(context.tx_log.data[64:96])
+        # create the vote event (fee event is already created)
+        event = self.base.make_event_from_transaction(
+            transaction=context.transaction,
+            tx_log=context.tx_log,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.GOVERNANCE,
+            asset=A_ETH,
+            balance=Balance(),
+            location_label=context.transaction.from_address,
+            notes=f'Vote for {gauge_address} curve gauge',
+            address=gauge_address,
+            counterparty=CPT_CURVE,
+            product=EvmProduct.GAUGE,
+        )
+        return DecodingOutput(event=event, refresh_balances=False)
+
     def _decode_curve_gauge_events(self, context: DecoderContext) -> DecodingOutput:
         if context.tx_log.topics[0] not in (GAUGE_DEPOSIT, GAUGE_WITHDRAW):
             return DEFAULT_DECODING_OUTPUT
@@ -732,6 +756,9 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
                 HistoryEventType.DEPOSIT: {
                     HistoryEventSubType.DEPOSIT_ASSET: EventCategory.DEPOSIT,
                 },
+                HistoryEventType.INFORMATIONAL: {
+                    HistoryEventSubType.GOVERNANCE: EventCategory.INFORMATIONAL,
+                },
             },
         }
 
@@ -751,6 +778,7 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
             for gauge_address in self.curve_gauges
         })
         mapping[CURVE_SWAP_ROUTER] = (self._decode_curve_events,)
+        mapping[GAUGE_CONTROLLER] = (self._decode_curve_gauge_votes,)
         return mapping
 
     def post_decoding_rules(self) -> dict[str, list[tuple[int, Callable]]]:
