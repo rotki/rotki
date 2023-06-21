@@ -216,7 +216,7 @@ class Covalent(ExternalServiceWithApiKey):
             except KeyError:
                 return False
             else:
-                return from_ts <= v_timestamp <= to_ts  # type: ignore
+                return from_ts <= v_timestamp <= to_ts
 
         list_transactions = list(filter(between_date, result_master))
         transactions = []

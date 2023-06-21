@@ -528,7 +528,8 @@ class AssetsUpdater:
                         f'Skipping entry during assets collection update to v{version} due '
                         f'to a deserialization error. {e!s}',
                     )
-            elif update_file_type == UpdateFileType.ASSET_COLLECTIONS_MAPPINGS:
+            else:
+                assert update_file_type == UpdateFileType.ASSET_COLLECTIONS_MAPPINGS
                 try:
                     self._process_multiasset_mapping(
                         connection=connection,
@@ -544,12 +545,6 @@ class AssetsUpdater:
                     self.msg_aggregator.add_warning(
                         f'Tried to add unknown asset {e.identifier} to collection of assets. Skipping',  # noqa: E501
                     )
-            else:
-                log.error(f'Could not process entry {full_insert} during asset update to version {version}')  # noqa: E501
-                self.msg_aggregator.add_warning(
-                    f'Skipping entry during assets update to v{version} due '
-                    f'to a deserialization error. Check logs for more details',
-                )
 
         # at the very end update the current version in the DB
         connection.execute(
