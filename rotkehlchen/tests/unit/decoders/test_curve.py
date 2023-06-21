@@ -810,6 +810,7 @@ def test_gauge_vote(ethereum_accounts, ethereum_transaction_decoder) -> None:
     tx_hex = deserialize_evm_tx_hash('0xf67308b01613b3f75a71f2a3cea198acc063c987f17be4aaf5505a1ad70751ef')  # noqa: E501
     evmhash = deserialize_evm_tx_hash(tx_hex)
     user_address = ethereum_accounts[0]
+    timestamp = TimestampMS(1685562071000)
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=cast(EthereumInquirer, ethereum_transaction_decoder.evm_inquirer),
         database=ethereum_transaction_decoder.database,
@@ -819,7 +820,7 @@ def test_gauge_vote(ethereum_accounts, ethereum_transaction_decoder) -> None:
         EvmEvent(
             tx_hash=evmhash,
             sequence_index=0,
-            timestamp=TimestampMS(1685562071000),
+            timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -831,7 +832,7 @@ def test_gauge_vote(ethereum_accounts, ethereum_transaction_decoder) -> None:
         ), EvmEvent(
             tx_hash=evmhash,
             sequence_index=191,
-            timestamp=TimestampMS(1685562071000),
+            timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.GOVERNANCE,
@@ -839,7 +840,7 @@ def test_gauge_vote(ethereum_accounts, ethereum_transaction_decoder) -> None:
             balance=Balance(),
             location_label=user_address,
             notes='Vote for 0x740BA8aa0052E07b925908B380248cb03f3DE5cB curve gauge',
-            counterparty='curve',
+            counterparty=CPT_CURVE,
             address=string_to_evm_address('0x740BA8aa0052E07b925908B380248cb03f3DE5cB'),
             product=EvmProduct.GAUGE,
         ),
