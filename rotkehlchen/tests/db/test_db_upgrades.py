@@ -1551,6 +1551,26 @@ def test_upgrade_db_37_to_38(user_data_dir):  # pylint: disable=unused-argument
         (b'O\x1e\x95Pl\x10\xf0a\xdd\xfe(\xa7C\x7f;e\x19Y\xff\x17\xf1\xe2\xa7\xa1H\xc8\x89aG\xee5~', 10, 11, 1643122781, 2806776, '0x86cA30bEF97fB651b8d866D45503684b90cb3312', '0xc37b40ABdB939635068d3c5f13E7faF686F03B65', '103926722004783110'),  # noqa: E501
     ]
     assert cursor.execute('SELECT * FROM evm_internal_transactions ORDER BY value DESC').fetchall() == expected_internal_txs  # noqa: E501
+    expected_history_events = [
+        (1336, 4, 'evm_1_block_17322931', 0, 1687333184000, 'f', '0x1CCA4D950E1b548c0d0c6F2Bdb3e1d34B03505D7', 'ETH', '0.020341336836263802', '42.199456426776549992', 'Validator 1337 produced block 17322931 with 0.020341336836263802 ETH going to 0x1CCA4D950E1b548c0d0c6F2Bdb3e1d34B03505D7 as the block reward', 'staking', 'block production'),  # noqa: E501
+        (1337, 4, 'evm_1_block_17322931', 1, 1687333184000, 'f', '0x1CCA4D950E1b548c0d0c6F2Bdb3e1d34B03505D7', 'ETH', '0.020341336836263802', '42.199456426776549992', 'Validator 1337 produced block 17322931 with 0.020341336836263802 ETH going to 0x1CCA4D950E1b548c0d0c6F2Bdb3e1d34B03505D7 as the mev reward', 'staking', 'mev reward'),  # noqa: E501
+        (1338, 4, 'evm_1_block_17322932', 0, 1687333185000, 'f', '0x5124fcC2B3F99F571AD67D075643C743F38f1C34', 'ETH', '0.1', '50.199456426776549992', 'Validator 42 produced block 17322932 with 0.1 ETH going to 0x5124fcC2B3F99F571AD67D075643C743F38f1C34 as the block reward', 'staking', 'block production'),  # noqa: E501
+        (1339, 4, 'evm_1_block_17322935', 0, 1687333191000, 'f', '0xeE1F6F65eA24D78A23A823647a14B6C4AA7436E6', 'ETH', '0.01', '35.199456426776549992', 'Validator 69 produced block 17322935 with 0.01 ETH going to 0xeE1F6F65eA24D78A23A823647a14B6C4AA7436E6 as the block reward', 'staking', 'block production'),  # noqa: E501
+        (1340, 4, 'evm_1_block_17322935', 1, 1687333191000, 'f', '0x8D846930404CB46cFa021EaB1c1Dc7dd077FEc3b', 'ETH', '0.2', '78.199456426776549992', 'Validator 69 produced block 17322935 with 0.2 ETH going to 0x8D846930404CB46cFa021EaB1c1Dc7dd077FEc3b as the mev reward', 'staking', 'mev reward'),  # noqa: E501
+        (1341, 4, 'evm_1_block_17322936', 0, 1687333991000, 'f', '0xeE1F6F65eA24D78A23A823647a14B6C4AA7436E6', 'ETH', '0.01', '35.199456426776549992', 'Validator 69 produced block 17322936 with 0.01 ETH going to 0xeE1F6F65eA24D78A23A823647a14B6C4AA7436E6 as the block reward', 'staking', 'block production'),  # noqa: E501
+        (1342, 4, 'evm_1_block_17322936', 1, 1687333991000, 'f', '0xeE1F6F65eA24D78A23A823647a14B6C4AA7436E6', 'ETH', '0.01', '35.199456426776549992', 'Validator 69 produced block 17322936 with 0.01 ETH going to 0xeE1F6F65eA24D78A23A823647a14B6C4AA7436E6 as the mev reward', 'staking', 'mev reward'),  # noqa: E501
+    ]
+    assert cursor.execute('SELECT * from history_events WHERE entry_type=4;').fetchall() == expected_history_events  # noqa: E501
+    expected_eth_staking_events_info = [
+        (1336, 1337, 17322931),
+        (1337, 1337, 17322931),
+        (1338, 42, 17322932),
+        (1339, 69, 17322935),
+        (1340, 69, 17322935),
+        (1341, 69, 17322936),
+        (1342, 69, 17322936),
+    ]
+    assert cursor.execute('SELECT * from eth_staking_events_info').fetchall() == expected_eth_staking_events_info  # noqa: E501
 
     db_v37.logout()
     # Execute upgrade
@@ -1575,6 +1595,11 @@ def test_upgrade_db_37_to_38(user_data_dir):  # pylint: disable=unused-argument
     assert cursor.execute('SELECT * from evm_internal_transactions ORDER BY value DESC').fetchall() == expected_internal_txs  # noqa: E501
     assert cursor.execute('SELECT COUNT(*) FROM used_query_ranges WHERE name=?', (aave_range_key,)).fetchone()[0] == 0  # noqa: E501
     assert cursor.execute('SELECT COUNT(*) FROM sqlite_master WHERE type="table" AND name="aave_events";').fetchone()[0] == 0  # noqa: E501
+    # Make sure that duplicate events were removed
+    expected_history_events = [expected_history_events[0]] + expected_history_events[2:6]
+    assert cursor.execute('SELECT * from history_events WHERE entry_type=4;').fetchall() == expected_history_events  # noqa: E501
+    expected_eth_staking_events_info = [expected_eth_staking_events_info[0]] + expected_eth_staking_events_info[2:6]  # noqa: E501
+    assert cursor.execute('SELECT * from eth_staking_events_info').fetchall() == expected_eth_staking_events_info  # noqa: E501
 
 
 def test_latest_upgrade_adds_remove_tables(user_data_dir):
