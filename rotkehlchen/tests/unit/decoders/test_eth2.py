@@ -18,7 +18,7 @@ from rotkehlchen.types import Eth2PubKey, Location, TimestampMS, deserialize_evm
 @pytest.mark.vcr()
 @pytest.mark.parametrize('ethereum_accounts', [['0xc66962Ff943449C90b457856D448Aa19D60CB033']])
 def test_deposit(database, ethereum_inquirer, ethereum_accounts):
-    """Test a simple beacon chain deposit contract """
+    """Test a simple beacon chain deposit contract"""
     dbeth2 = DBEth2(database)
     validator = Eth2Validator(index=507258, public_key=Eth2PubKey('0xa685b19738ac8d7ee301f434f77fdbca50f7a2b8d287f4ab6f75cae251aa821576262b79ae9d58d9b458ba748968dfda'), ownership_proportion=ONE)  # noqa: E501
     with database.user_write() as write_cursor:
