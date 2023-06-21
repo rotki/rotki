@@ -11910,7 +11910,7 @@ Get all EVM Chains
 
 .. http:get:: /api/(version)/blockchains/evm/all
 
-    Doing a GET request on this endpoint will return a list of all EVM chain IDs and their names.
+    Doing a GET request on this endpoint will return a list of all EVM chain IDs and their names and labels.
 
     **Example Request**
 
@@ -11931,20 +11931,20 @@ Get all EVM Chains
 
         {
             "result": [
-                {"id": 1, "name": "ethereum"},
-                {"id": 10, "name": "optimism"},
-                {"id": 56, "name": "binance"},
-                {"id": 100, "name": "gnosis"},
-                {"id": 137, "name": "matic"},
-                {"id": 250, "name": "fantom"},
-                {"id": 42161, "name": "arbitrum"},
-                {"id": 43114, "name": "avalanche"},
-                {"id": 42220, "name": "celo"}
+                {"id": 1, "name": "ethereum", "label": "Ethereum"},
+                {"id": 10, "name": "optimism", "label": "Optimism"},
+                {"id": 56, "name": "binance", "label": "Binance Smart Chain"},
+                {"id": 100, "name": "gnosis", "label": "Gnosis"},
+                {"id": 137, "name": "polygon_pos", "label": "Polygon POS"},
+                {"id": 250, "name": "fantom", "label": "Fantom"},
+                {"id": 42161, "name": "arbitrum_one", "label": "Arbitrum One"},
+                {"id": 43114, "name": "avalanche", "label": "Avalanche"},
+                {"id": 42220, "name": "celo", "label": "Celo"}
             ],
             "message": ""
         }
 
-    :resjsonarr result: Returns a list of all EVM chains IDs and their names.
+    :resjsonarr result: Returns a list of all EVM chains IDs, their names and labels. ``name`` is what is used to describe the chain when dealing from/to the API. ``label`` is the label to use in the frontend to display the chain.
     :statuscode 200: Success
     :statuscode 500: Internal rotki error
 
