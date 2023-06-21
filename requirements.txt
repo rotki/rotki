@@ -35,7 +35,7 @@ filetype==1.2.0
 # for fuzzy search of assets
 polyleven==0.8
 
-bip-utils==2.7.0
+bip-utils==2.7.1  # require coincurve < 18.0.0 so can't upgrade yet
 
 typing-extensions==4.5.0 # used for typing.ParamSpec and typing.Concatenate (in stdlib since python 3.10). Also limiting temporarily to 4.5.0 due to a bug in multiformats which is used by rotki-content-hash: https://github.com/hashberg-io/multiformats/issues/10
 
