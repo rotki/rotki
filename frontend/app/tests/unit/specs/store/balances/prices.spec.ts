@@ -1,6 +1,5 @@
 import { CURRENCY_USD, useCurrencies } from '@/types/currencies';
 import { PriceOracle } from '@/types/price-oracle';
-import { bigNumberify } from '@/utils/bignumbers';
 import { updateGeneralSettings } from '../../../utils/general-settings';
 
 vi.mock('@/store/tasks', () => ({

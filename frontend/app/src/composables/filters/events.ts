@@ -10,12 +10,6 @@ import {
   dateSerializer,
   dateValidator
 } from '@/types/filtering';
-import {
-  isEthBlockEventType,
-  isEthDepositEventType,
-  isEvmEventType,
-  isWithdrawalEventType
-} from '@/utils/history/events';
 
 enum HistoryEventFilterKeys {
   START = 'start',

@@ -2,7 +2,6 @@ import {
   type XswapBalance,
   type XswapPool
 } from '@rotki/common/lib/defi/xswap';
-import { bigNumberify } from '@/utils/bignumbers';
 
 export const setUniswapV2Balances = () => {
   const { v2Balances } = storeToRefs(useUniswapStore());

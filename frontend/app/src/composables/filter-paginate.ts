@@ -5,7 +5,6 @@ import keys from 'lodash/keys';
 import pick from 'lodash/pick';
 import { type ComputedRef, type Ref, type UnwrapRef } from 'vue';
 import { type ZodSchema } from 'zod';
-import { transformCase } from '@/utils/text';
 import { type PaginationRequestPayload } from '@/types/common';
 import { type Collection } from '@/types/collection';
 import { type TablePagination } from '@/types/pagination';

@@ -1,6 +1,4 @@
 import { expect } from 'vitest';
-import { nonEmptyProperties } from '@/utils/data';
-import { bigNumberify } from '@/utils/bignumbers';
 
 describe('utils/data', () => {
   test('returns a partial object without the null properties', async () => {

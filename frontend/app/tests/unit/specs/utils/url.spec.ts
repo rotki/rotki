@@ -1,5 +1,3 @@
-import { getDomain } from '@/utils/url';
-
 describe('utils/url', () => {
   test('default', () => {
     expect(getDomain('https://www.google.com')).toEqual('google.com');

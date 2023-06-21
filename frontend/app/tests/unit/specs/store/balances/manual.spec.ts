@@ -3,7 +3,6 @@ import {
   TRADE_LOCATION_BLOCKCHAIN
 } from '@/data/defaults';
 import { type AssetPrices } from '@/types/prices';
-import { bigNumberify } from '@/utils/bignumbers';
 import { BalanceType } from '@/types/balances';
 
 vi.mock('@/store/balances/prices', () => ({

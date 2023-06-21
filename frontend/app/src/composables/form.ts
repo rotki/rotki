@@ -5,7 +5,6 @@ import useVuelidate, {
 } from '@vuelidate/core';
 import { type Ref } from 'vue';
 import { type MaybeRef } from '@vueuse/core';
-import { checkBeforeSubmission } from '@/utils/validation';
 
 /**
  * Create a common composable for form

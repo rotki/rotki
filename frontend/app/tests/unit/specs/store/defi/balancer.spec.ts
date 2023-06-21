@@ -1,6 +1,5 @@
 import { type BalancerBalance } from '@rotki/common/lib/defi/balancer';
 import { type XswapPool } from '@rotki/common/lib/defi/xswap';
-import { bigNumberify } from '@/utils/bignumbers';
 
 export const setBalancerBalances = () => {
   const { balances } = storeToRefs(useBalancerStore());

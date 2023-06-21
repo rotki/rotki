@@ -1,5 +1,4 @@
 import { BigNumber } from '@rotki/common';
-import { Zero } from '@/utils/bignumbers';
 import { Guid } from '../../common/guid';
 import { AccountBalancesPage } from '../../pages/account-balances-page';
 import {

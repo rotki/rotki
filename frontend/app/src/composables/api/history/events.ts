@@ -8,7 +8,6 @@ import {
   validTaskStatus,
   validWithParamsSessionAndExternalService
 } from '@/services/utils';
-import { transformCase } from '@/utils/text';
 import { type CollectionResponse } from '@/types/collection';
 import {
   type AddTransactionHashPayload,

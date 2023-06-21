@@ -1,6 +1,5 @@
 import { BigNumber } from '@rotki/common';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { Zero } from '@/utils/bignumbers';
 import { Guid } from '../../common/guid';
 import { AccountBalancesPage } from '../../pages/account-balances-page';
 import {

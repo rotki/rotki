@@ -6,9 +6,9 @@ import { getUserMenu } from '@/electron-main/menu';
 import { TrayManager } from '@/electron-main/tray-manager';
 import { type Nullable } from '@/types';
 import { checkIfDevelopment } from '@/utils/env-utils';
+import { assert } from '@/utils/assertions';
 import createProtocol from './create-protocol';
 import SubprocessHandler from './subprocess-handler';
-import { assert } from './utils/assertions';
 
 const isDevelopment = checkIfDevelopment();
 

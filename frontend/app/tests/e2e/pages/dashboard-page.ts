@@ -1,6 +1,5 @@
 import { type BigNumber } from '@rotki/common';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { Zero, bigNumberify } from '@/utils/bignumbers';
 import { RotkiApp } from './rotki-app';
 
 export class DashboardPage {

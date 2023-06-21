@@ -11,7 +11,6 @@ import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { type Chains } from '@/types/asset/asset-urls';
 import { isBlockchain } from '@/types/blockchain/chains';
-import { uniqueObjects } from '@/utils/data';
 
 export const useAddressesNamesStore = defineStore(
   'blockchains/accounts/addresses-names',

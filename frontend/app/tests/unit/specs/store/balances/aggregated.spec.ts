@@ -5,7 +5,6 @@ import { TRADE_LOCATION_BANKS } from '@/data/defaults';
 import { type BtcBalances } from '@/types/blockchain/balances';
 import { useCurrencies } from '@/types/currencies';
 import { SupportedExchange } from '@/types/exchanges';
-import { bigNumberify, zeroBalance } from '@/utils/bignumbers';
 import '../../../i18n';
 import { BalanceType } from '@/types/balances';
 import { type BtcAccountData } from '@/types/blockchain/accounts';

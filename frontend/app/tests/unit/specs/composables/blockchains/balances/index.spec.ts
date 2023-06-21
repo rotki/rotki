@@ -1,5 +1,4 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { bigNumberify } from '@/utils/bignumbers';
 import { chainSection } from '@/types/blockchain';
 
 vi.mock('@/store/blockchain/balances/eth', () => ({

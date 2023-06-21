@@ -1,4 +1,3 @@
-import { bigNumberify } from '@/utils/bignumbers';
 import { RotkiApp } from '../rotki-app';
 
 export class AccountBalancesPage {

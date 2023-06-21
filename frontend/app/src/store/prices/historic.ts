@@ -3,7 +3,6 @@ import { type ComputedRef } from 'vue';
 import { HistoricPrices } from '@/types/prices';
 import { TaskType } from '@/types/task-type';
 import { type TaskMeta } from '@/types/task';
-import { NoPrice } from '@/utils/bignumbers';
 
 export const useHistoricCachePriceStore = defineStore(
   'prices/historic-cache',

@@ -7,9 +7,7 @@ import {
   type HistoryEventRequestPayload,
   type HistoryEventsCollectionResponse
 } from '@/types/history/events';
-import { defaultCollectionState } from '@/utils/collection';
 import { type AddressBookSimplePayload } from '@/types/eth-names';
-import { useSupportedChains } from '@/composables/info/chains';
 
 export const useHistoryEvents = () => {
   const { t } = useI18n();
