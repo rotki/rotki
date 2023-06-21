@@ -239,7 +239,7 @@ URLS_V1: URLS = [
     ('/blockchains/eth2/stake/dailystats', Eth2DailyStatsResource),
     ('/blockchains/eth/defi', DefiBalancesResource),
     ('/blockchains/eth/airdrops', EthereumAirdropsResource),
-    ('/blockchains/eth/erc20details', ERC20TokenInfo),
+    ('/blockchains/evm/erc20details', ERC20TokenInfo),
     ('/blockchains/eth/modules/<string:module_name>/data', NamedEthereumModuleDataResource),
     ('/blockchains/eth/modules/data', EthereumModuleDataResource),
     ('/blockchains/eth/modules', EthereumModuleResource),

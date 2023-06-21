@@ -1,7 +1,7 @@
 import logging
 from typing import TYPE_CHECKING
-from rotkehlchen.db.updates import UpdateType
 
+from rotkehlchen.db.updates import UpdateType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ApiKey, ExternalService, ExternalServiceApiCredentials
 

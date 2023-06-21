@@ -10152,7 +10152,7 @@ Data imports
 ERC20 token info
 ====================
 
-.. http:get:: /api/(version)/blockchains/eth/erc20details
+.. http:get:: /api/(version)/blockchains/evm/erc20details
 
    Doing a GET to this endpoint will return basic information about a token by calling the ``decimals/name/symbol`` methods.
 
@@ -10168,9 +10168,10 @@ ERC20 token info
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
-      {"address": "0x6B175474E89094C44Da98b954EedeAC495271d0F"}
+      {"address": "0x6B175474E89094C44Da98b954EedeAC495271d0F", "evm_chain": "optimism"}
 
    :reqjson str address: The checksumed address of a contract
+   :reqjson str evm_chain: The name of the evm chain to check for token info e.g. ``"ethereum"``, ``"optimism"`` etc.
    :reqjson bool async_query: A boolean denoting whether the query should be made asynchronously or not. Missing defaults to false.
 
 
