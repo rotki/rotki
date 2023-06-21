@@ -1,5 +1,6 @@
 import logging
 from typing import TYPE_CHECKING
+from rotkehlchen.db.updates import UpdateType
 
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ApiKey, ExternalService, ExternalServiceApiCredentials
@@ -21,6 +22,9 @@ def data_migration_10(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgress
     It also supersedes migration 8 which is removed since this one is added.
     """
     log.debug('Enter data_migration_10')
+    # Check updates for spam assets. This happens before accounts detection to avoid
+    # detecting accounts that only have spam assets.
+    rotki.data_updater.check_for_updates(updates=[UpdateType.SPAM_ASSETS])
     with rotki.data.db.conn.read_ctx() as cursor:
         accounts = rotki.data.db.get_blockchain_accounts(cursor)
 

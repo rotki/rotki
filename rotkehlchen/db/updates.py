@@ -1,6 +1,7 @@
 import json
 import logging
 import sys
+from collections.abc import Sequence
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Final, Literal, Union, overload
 
@@ -283,7 +284,7 @@ class RotkiDataUpdater:
                     entries=entries_to_add,
                 )
 
-    def check_for_updates(self) -> None:
+    def check_for_updates(self, updates: Sequence[UpdateType] = tuple(UpdateType)) -> None:
         """Retrieve the information about the latest available update"""
         try:
             remote_information = self._get_remote_info_json()
@@ -291,7 +292,7 @@ class RotkiDataUpdater:
             log.error(f'Could not retrieve json update information due to {e!s}')
             # skip updates, but write last date update to not spam periodic tasks
         else:
-            for update_type in UpdateType:
+            for update_type in updates:
                 # Get latest applied version
                 with self.user_db.conn.read_ctx() as cursor:
                     local_version = self._check_for_last_version(
