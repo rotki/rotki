@@ -3,7 +3,7 @@ import csv
 import logging
 from collections import Counter, defaultdict
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any, Final, Optional
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
 from rotkehlchen.assets.converters import asset_from_binance
@@ -53,16 +53,16 @@ class BinanceSingleEntry(BinanceEntry, metaclass=abc.ABCMeta):
     It means that all required data to create an internal representation
     is contained in one csv row
 
-    Children should have a class-variable "available_operations" which describes
-    which "Operation" types can be processed by a class
+    Children should have a Final class-variable "AVAILABLE_OPERATIONS" that
+    describes which "Operation" types can be processed by a class
     """
-    available_operations: list[str]
+    AVAILABLE_OPERATIONS: tuple[str, ...]
 
     def is_entry(self, requested_operation: str) -> bool:
         """This method checks whether row with "requested_operation" could be processed
         by a class on which this method has been called
         The default implementation can also be used in a subclass"""
-        return requested_operation in self.available_operations
+        return requested_operation in self.AVAILABLE_OPERATIONS
 
     @abc.abstractmethod
     def process_entry(
@@ -281,7 +281,7 @@ class BinanceDepositWithdrawEntry(BinanceSingleEntry):
     """This class processes Deposit and Withdraw actions
         which are AssetMovements in the internal representation"""
 
-    available_operations = ['Deposit', 'Withdraw']
+    AVAILABLE_OPERATIONS: Final[tuple[str, ...]] = ('Deposit', 'Withdraw')  # type: ignore[misc]  # noqa: E501  # figure out how to mark final only in this class
 
     def process_entry(
             self,
@@ -315,7 +315,7 @@ class BinanceStakingRewardsEntry(BinanceSingleEntry):
     """Processing ETH 2.0 Staking Rewards and Launchpool Interest
         which are LedgerActions in the internal representation"""
 
-    available_operations = ['ETH 2.0 Staking Rewards', 'Launchpool Interest']
+    AVAILABLE_OPERATIONS: Final[tuple[str, ...]] = ('ETH 2.0 Staking Rewards', 'Launchpool Interest')  # type: ignore[misc]  # noqa: E501  # figure out how to mark final only in this class
 
     def process_entry(
             self,
@@ -345,11 +345,11 @@ class BinancePOSEntry(BinanceSingleEntry):
     """Processing POS related actions
         which are LedgerActions in the internal representation"""
 
-    available_operations = [
+    AVAILABLE_OPERATIONS: Final[tuple[str, ...]] = (  # type: ignore[misc]  # noqa: E501  # figure out how to mark final only in this class
         'POS savings interest',
         'POS savings purchase',
         'POS savings redemption',
-    ]
+    )
 
     def process_entry(
             self,
