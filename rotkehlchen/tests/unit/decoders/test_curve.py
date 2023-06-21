@@ -805,6 +805,49 @@ def test_deposit_multiple_tokens(ethereum_transaction_decoder, ethereum_accounts
 
 
 @pytest.mark.vcr()
+@pytest.mark.parametrize('ethereum_accounts', [['0x66215D23B8A247C80c2D1B7beF4BefC2AB384bCE']])
+def test_gauge_vote(ethereum_accounts, ethereum_transaction_decoder) -> None:
+    tx_hex = deserialize_evm_tx_hash('0xf67308b01613b3f75a71f2a3cea198acc063c987f17be4aaf5505a1ad70751ef')  # noqa: E501
+    evmhash = deserialize_evm_tx_hash(tx_hex)
+    user_address = ethereum_accounts[0]
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=cast(EthereumInquirer, ethereum_transaction_decoder.evm_inquirer),
+        database=ethereum_transaction_decoder.database,
+        tx_hash=tx_hex,
+    )
+    expected_events = [
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=0,
+            timestamp=TimestampMS(1685562071000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=Asset('ETH'),
+            balance=Balance(amount=FVal('0.01847747115186684')),
+            location_label=user_address,
+            notes='Burned 0.01847747115186684 ETH for gas',
+            counterparty='gas',
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=191,
+            timestamp=TimestampMS(1685562071000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.GOVERNANCE,
+            asset=Asset('ETH'),
+            balance=Balance(),
+            location_label=user_address,
+            notes='Vote for 0x740BA8aa0052E07b925908B380248cb03f3DE5cB curve gauge',
+            counterparty='curve',
+            address=string_to_evm_address('0x740BA8aa0052E07b925908B380248cb03f3DE5cB'),
+            product=EvmProduct.GAUGE,
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr()
 @pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
 @pytest.mark.parametrize('ethereum_accounts', [['0xd289986c25Ae3f4644949e25bC369e9d8e0caeaD']])
 def test_gauge_deposit(
