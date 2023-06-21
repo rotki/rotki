@@ -96,6 +96,7 @@ select = [
     "B",
     "G",
     # "EM",  #  our exceptions use f strings everywhere. Very little upside to this and I don't think it's cleaner code
+    # "CPY",  # If we ever wanted to enforce copyrigh notice on each file
     "ISC",
     "ICN",
     "T",
@@ -111,6 +112,11 @@ select = [
     "PGH",
     "RET",
     "SIM",
+    "SLOT",
+    # "FA",  # We do not target older python versions
+    #  "SLF",  # Private member access -- we unfortunately do that some times
+    # "TD",  # this is just to detect todos
+    # "FIX",  # this is just to detect todos
     # "TID",  # tidy-imports -- we use relative imports from parent in some cases. Maybe stop?
     # "ARG",  # flake8-unused-arguments -- pylint already does this and we got ignores where needed
     "PL",  # all pylint rules
@@ -128,7 +134,6 @@ select = [
     "FLY",
     "PERF",
     "RSE",
-    #  "SLF",  Private member access -- we unfortunately do that some times
     "RUF",
 ]
 extend-select = [
