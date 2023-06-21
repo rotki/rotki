@@ -42,7 +42,7 @@ const transactionId = computed<string>(() => {
   <span class="d-flex flex-column pt-1">
     <span v-if="item.address" class="d-flex flex-row">
       <span class="mr-1 font-weight-medium"> {{ t('common.address') }}: </span>
-      <hash-link :text="item.address" :chain="chain" full-address />
+      <hash-link :text="item.address" :chain="chain" full-address no-link />
     </span>
     <span v-if="item.transactionId" class="d-flex flex-row mt-1">
       <span class="mr-1 font-weight-medium"> {{ t('common.tx') }}: </span>
@@ -52,6 +52,7 @@ const transactionId = computed<string>(() => {
         :chain="chain"
         type="transaction"
         full-address
+        no-link
       />
       <span v-else>{{ item.transactionId ?? '' }}</span>
     </span>
