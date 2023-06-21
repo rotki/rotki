@@ -15,7 +15,7 @@ log = RotkehlchenLogsAdapter(logger)
 ERROR_MESSAGE_TYPES = {WSMessageType.LEGACY, WSMessageType.BALANCE_SNAPSHOT_ERROR}
 
 
-class MessagesAggregator():
+class MessagesAggregator:
     """
     This class is passed around where needed and aggregates messages for the user
     """

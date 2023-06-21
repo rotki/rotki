@@ -7,7 +7,7 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 
-class Github():
+class Github:
 
     def __init__(self) -> None:
         self.prefix = 'https://api.github.com/'

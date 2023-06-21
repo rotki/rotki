@@ -28,7 +28,7 @@ log = RotkehlchenLogsAdapter(logger)
 WITHDRAWALS_RECHECK_PERIOD = 4 * DAY_IN_SECONDS * 1000  # 4 days in milliseconds
 
 
-class DBEth2():
+class DBEth2:
 
     def __init__(self, database: 'DBHandler') -> None:
         self.db = database

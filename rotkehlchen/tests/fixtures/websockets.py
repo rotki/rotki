@@ -8,7 +8,7 @@ import pytest
 from websocket import create_connection
 
 
-class WebsocketReader():
+class WebsocketReader:
 
     def __init__(self, websocket) -> None:
         self.messages: deque = deque()

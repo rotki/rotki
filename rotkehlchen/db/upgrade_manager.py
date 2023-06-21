@@ -107,7 +107,7 @@ class DBUpgradeProgressHandler(ProgressUpdater):
         )
 
 
-class DBUpgradeManager():
+class DBUpgradeManager:
     """Separate class to manage DB upgrades/migrations"""
 
     def __init__(self, db: 'DBHandler'):

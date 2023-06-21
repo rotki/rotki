@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class BaseDecoderTools():
+class BaseDecoderTools:
     """A class that keeps a common state and offers some common decoding functionality"""
 
     def __init__(

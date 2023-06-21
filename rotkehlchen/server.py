@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class RotkehlchenServer():
+class RotkehlchenServer:
     def __init__(self) -> None:
         """Initializes the backend server
         May raise:

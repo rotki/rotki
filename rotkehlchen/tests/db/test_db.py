@@ -466,14 +466,14 @@ def test_balance_save_frequency_check(data_dir, username, sql_vm_instructions_cb
 
 
 def test_sqlcipher_detect_version():
-    class QueryMock():
+    class QueryMock:
         def __init__(self, version):
             self.version = version
 
         def fetchall(self):
             return [[self.version]]
 
-    class ConnectionMock():
+    class ConnectionMock:
         def __init__(self, version):
             self.version = version
 

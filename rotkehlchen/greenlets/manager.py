@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class GreenletManager():
+class GreenletManager:
     """A class to collect and manage greenlets spawned by various sources"""
 
     def __init__(self, msg_aggregator: MessagesAggregator) -> None:

@@ -89,7 +89,7 @@ class EventDecoderFunction(Protocol):
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=True)
-class DecodingRules():
+class DecodingRules:
     address_mappings: dict[ChecksumEvmAddress, tuple[Any, ...]]
     event_rules: list[EventDecoderFunction]
     token_enricher_rules: list[Callable]  # enrichers to run for token transfers

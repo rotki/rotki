@@ -24,7 +24,7 @@ log = RotkehlchenLogsAdapter(logger)
 WEB3_LOGQUERY_BLOCK_RANGE = 250000
 
 
-class AvalancheManager():
+class AvalancheManager:
     def __init__(
             self,
             avaxrpc_endpoint: str,

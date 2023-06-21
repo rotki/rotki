@@ -267,7 +267,7 @@ class CachedPriceEntry(NamedTuple):
     used_main_currency: bool
 
 
-class Inquirer():
+class Inquirer:
     __instance: Optional['Inquirer'] = None
     _cached_forex_data: dict
     _cached_current_price: dict[tuple[Asset, Asset], CachedPriceEntry]

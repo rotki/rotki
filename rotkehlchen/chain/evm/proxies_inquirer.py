@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class EvmProxiesInquirer():
+class EvmProxiesInquirer:
     """Class to retrieve information about DSProxy for defi addresses."""
 
     def __init__(self, node_inquirer: 'EvmNodeInquirer', dsproxy_registry: 'EvmContract') -> None:

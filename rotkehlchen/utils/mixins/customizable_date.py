@@ -8,7 +8,7 @@ if TYPE_CHECKING:
     from rotkehlchen.db.drivers.gevent import DBCursor
 
 
-class CustomizableDateMixin():
+class CustomizableDateMixin:
 
     def __init__(self, database: 'DBHandler') -> None:
         self.database = database

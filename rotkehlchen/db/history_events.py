@@ -64,7 +64,7 @@ ETH_STAKING_EVENT_FIELDS = 'validator_index, is_exit_or_blocknumber'
 ETH_STAKING_FIELD_LENGTH = 2
 
 
-class DBHistoryEvents():
+class DBHistoryEvents:
 
     def __init__(self, database: 'DBHandler') -> None:
         self.db = database

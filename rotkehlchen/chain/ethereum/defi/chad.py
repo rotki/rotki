@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
 
 
-class DefiChad():
+class DefiChad:
     """An aggregator for many things ethereum DeFi"""
 
     def __init__(

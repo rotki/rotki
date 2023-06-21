@@ -32,7 +32,7 @@ if TYPE_CHECKING:
     from rotkehlchen.exchanges.manager import ExchangeManager
 
 
-class MockPremiumSyncManager():
+class MockPremiumSyncManager:
 
     def __init__(self):
         pass

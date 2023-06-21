@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class Accountant():
+class Accountant:
 
     def __init__(
             self,

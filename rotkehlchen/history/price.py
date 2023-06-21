@@ -72,7 +72,7 @@ def query_usd_price_zero_if_error(
     return usd_price
 
 
-class PriceHistorian():
+class PriceHistorian:
     __instance: Optional['PriceHistorian'] = None
     _cryptocompare: 'Cryptocompare'
     _coingecko: 'Coingecko'

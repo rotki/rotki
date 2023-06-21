@@ -42,7 +42,7 @@ def _ws_send_impl(
         success_callback(**success_callback_args)
 
 
-class RotkiNotifier():
+class RotkiNotifier:
 
     def __init__(self) -> None:
         self.subscribers: list[WebSocket] = []

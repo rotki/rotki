@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 
 @dataclass(init=True, repr=False, eq=True, order=False, unsafe_hash=False, frozen=False)
-class PNL():
+class PNL:
     free: FVal = ZERO
     taxable: FVal = ZERO
 

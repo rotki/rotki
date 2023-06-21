@@ -299,7 +299,7 @@ def async_api_call() -> Callable:
     return wrapper
 
 
-class RestAPI():
+class RestAPI:
     """ The Object holding the logic that runs inside all the API calls"""
     def __init__(self, rotkehlchen: Rotkehlchen) -> None:
         self.rotkehlchen = rotkehlchen

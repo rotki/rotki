@@ -114,7 +114,7 @@ def request_available_nodes(func: Callable) -> Callable:
     return wrapper
 
 
-class SubstrateManager():
+class SubstrateManager:
     def __init__(
             self,
             chain: SUPPORTED_SUBSTRATE_CHAINS,

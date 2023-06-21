@@ -82,7 +82,7 @@ class DBFilterGroupBy(NamedTuple):
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
-class DBFilter():
+class DBFilter:
     and_op: bool
 
     def prepare(self) -> tuple[list[str], Collection[Any]]:
@@ -279,7 +279,7 @@ class DBSubStringFilter(DBFilter):
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
-class DBFilterQuery():
+class DBFilterQuery:
     and_op: bool
     filters: list[DBFilter]
     join_clause: Optional[DBFilter] = None
@@ -378,7 +378,7 @@ class DBFilterQuery():
         )
 
 
-class FilterWithTimestamp():
+class FilterWithTimestamp:
 
     timestamp_filter: DBTimestampFilter
 
@@ -405,7 +405,7 @@ class FilterWithTimestamp():
         self.timestamp_filter.to_ts = to_ts
 
 
-class FilterWithLocation():
+class FilterWithLocation:
 
     location_filter: Optional[DBLocationFilter] = None
 
@@ -1536,7 +1536,7 @@ class NFTFilterQuery(DBFilterQuery):
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
-class MultiTableFilterQuery():
+class MultiTableFilterQuery:
     """
     Filter query that allows to reuse filters for different tables structures
     (e.g. different column names).

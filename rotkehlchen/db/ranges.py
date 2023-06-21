@@ -7,7 +7,7 @@ if TYPE_CHECKING:
     from rotkehlchen.db.drivers.gevent import DBCursor
 
 
-class DBQueryRanges():
+class DBQueryRanges:
 
     def __init__(self, database: 'DBHandler') -> None:
         self.db = database
