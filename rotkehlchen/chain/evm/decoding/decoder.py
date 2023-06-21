@@ -287,6 +287,9 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
         new event or actions need to be propagated.
         """
         for rule in self.rules.event_rules:
+            if len(tx_log.topics) == 0:
+                continue  # ignore anonymous events
+
             try:
                 decoding_output = rule(token=token, tx_log=tx_log, transaction=transaction, decoded_events=decoded_events, action_items=action_items, all_logs=all_logs)  # noqa: E501
             except (DeserializationError, IndexError) as e:
