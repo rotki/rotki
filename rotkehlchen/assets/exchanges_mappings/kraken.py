@@ -2,7 +2,6 @@ from rotkehlchen.assets.exchanges_mappings.common import COMMON_ASSETS_MAPPINGS
 from rotkehlchen.constants.resolver import evm_address_to_identifier, strethaddress_to_identifier
 from rotkehlchen.types import ChainID, EvmTokenKind
 
-
 WORLD_TO_KRAKEN = COMMON_ASSETS_MAPPINGS | {
     'ATOM': 'ATOM',
     'ALGO': 'ALGO',
@@ -224,7 +223,7 @@ WORLD_TO_KRAKEN = COMMON_ASSETS_MAPPINGS | {
     evm_address_to_identifier('0x5283D291DBCF85356A21bA090E6db59121208b44', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'BLUR',  # noqa: E501
     'HDX': 'HDX',
     evm_address_to_identifier('0xC581b735A1688071A1746c968e0798D642EDE491', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'EURT',  # noqa: E501
-    evm_address_to_identifier('0xfc5A1A6EB076a2C7aD06eD22C90d7E710E35ad0a', ChainID.ARBITRUM, EvmTokenKind.ERC20): 'GMX',  # noqa: E501
+    evm_address_to_identifier('0xfc5A1A6EB076a2C7aD06eD22C90d7E710E35ad0a', ChainID.ARBITRUM_ONE, EvmTokenKind.ERC20): 'GMX',  # noqa: E501
     'SUI': 'SUI',
     evm_address_to_identifier('0x628A3b2E302C7e896AcC432D2d0dD22B6cb9bc88', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'LMWR',  # noqa: E501
 }

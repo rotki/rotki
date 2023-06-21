@@ -48,7 +48,7 @@ WORLD_TO_COINBASE = COMMON_ASSETS_MAPPINGS | {
     evm_address_to_identifier('0x0954906da0Bf32d5479e25f46056d22f08464cab', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'INDEX',  # noqa: E501
     evm_address_to_identifier('0xEd04915c23f00A313a544955524EB7DBD823143d', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'ACH',  # noqa: E501
     evm_address_to_identifier('0x467719aD09025FcC6cF6F8311755809d45a5E5f3', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'WAXL',  # noqa: E501
-    evm_address_to_identifier('0x539bdE0d7Dbd336b79148AA742883198BBF60342', ChainID.ARBITRUM, EvmTokenKind.ERC20): 'MAGIC',  # noqa: E501
+    evm_address_to_identifier('0x539bdE0d7Dbd336b79148AA742883198BBF60342', ChainID.ARBITRUM_ONE, EvmTokenKind.ERC20): 'MAGIC',  # noqa: E501
     evm_address_to_identifier('0x04abEdA201850aC0124161F037Efd70c74ddC74C', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'NEST',  # noqa: E501
     evm_address_to_identifier('0x491604c0FDF08347Dd1fa4Ee062a822A5DD06B5D', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'CTSI',  # noqa: E501
     evm_address_to_identifier('0x0f2D719407FdBeFF09D87557AbB7232601FD9F29', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'SYN',  # noqa: E501
