@@ -109,7 +109,7 @@ class Iconomi(ExchangeInterface):
         self.aust = A_AUST.resolve_to_asset_with_oracles()
 
     def _generate_signature(self, request_type: str, request_path: str, timestamp: str) -> str:
-        signed_data = ''.join([timestamp, request_type.upper(), request_path, '']).encode()
+        signed_data = f'{timestamp}{request_type.upper()}{request_path}'.encode()
         signature = hmac.new(
             self.secret,
             signed_data,
