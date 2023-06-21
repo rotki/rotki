@@ -1,5 +1,4 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { type ComputedRef, type Ref } from 'vue';
 import { type MaybeRef } from '@vueuse/core';
 import {
   AddressBookEntries,

@@ -1,4 +1,3 @@
-import { type ComputedRef, type Ref } from 'vue';
 import { CompoundBalances, CompoundHistory } from '@/types/defi/compound';
 import { Module } from '@/types/modules';
 import { Section, Status } from '@/types/status';

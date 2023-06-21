@@ -1,5 +1,4 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { type Ref } from 'vue';
 import { type BtcChains } from '@/types/blockchain/chains';
 import { type BlockchainMetadata } from '@/types/task';
 import { TaskType } from '@/types/task-type';

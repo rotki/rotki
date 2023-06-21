@@ -1,5 +1,3 @@
-import { type Ref } from 'vue';
-
 export const useCopy = (source: Ref<string>) => {
   const copied = ref<boolean>(false);
 

@@ -1,6 +1,5 @@
 import { type BigNumber } from '@rotki/common';
 import { type MaybeRef } from '@vueuse/core';
-import { type ComputedRef } from 'vue';
 import { type Balances } from '@/types/blockchain/balances';
 import { CURRENCY_USD, useCurrencies } from '@/types/currencies';
 import {

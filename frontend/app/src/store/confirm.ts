@@ -1,4 +1,3 @@
-import { type Ref } from 'vue';
 import { type DialogType } from '@/types/dialogs';
 
 interface ConfirmationMessage {

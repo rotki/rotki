@@ -1,5 +1,4 @@
 import { type AssetInfo } from '@rotki/common/lib/data';
-import { type Ref } from 'vue';
 
 export const useAssetCacheStore = defineStore('assets/cache', () => {
   const fetchedAssetCollections: Ref<Record<string, AssetInfo>> = ref({});

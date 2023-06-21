@@ -8,7 +8,6 @@ import {
 } from '@rotki/common/lib/messages';
 import { useSessionStorage } from '@vueuse/core';
 import orderBy from 'lodash/orderBy';
-import { type Ref } from 'vue';
 
 const notificationDefaults = (): NotificationPayload => ({
   title: '',

@@ -1,5 +1,4 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { type ComputedRef } from 'vue';
 import { type AssetBalance } from '@rotki/common';
 import { type MaybeRef } from '@vueuse/core';
 import isEmpty from 'lodash/isEmpty';

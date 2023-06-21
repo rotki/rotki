@@ -1,5 +1,4 @@
 import { type Balance, BigNumber } from '@rotki/common';
-import { type ComputedRef, type Ref } from 'vue';
 
 export function bigNumberify(value: string | number): BigNumber {
   return new BigNumber(value);

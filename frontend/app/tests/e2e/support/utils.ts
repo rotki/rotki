@@ -1,4 +1,5 @@
 import { type ActionResult } from '@rotki/common/lib/data';
+import { getValidSelectorFromEvmAddress } from '@/utils/assets';
 
 export const setCheckBox = (selector: string, enabled = false) => {
   const slot = `${selector} .v-input__slot`;

@@ -1,6 +1,5 @@
 import { Severity } from '@rotki/common/lib/messages';
 import * as logger from 'loglevel';
-import { type Ref } from 'vue';
 import { Section, Status } from '@/types/status';
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';

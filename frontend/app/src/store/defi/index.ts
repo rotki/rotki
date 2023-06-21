@@ -1,7 +1,6 @@
 import { type DefiAccount } from '@rotki/common/lib/account';
 import { Blockchain, DefiProtocol } from '@rotki/common/lib/blockchain';
 import sortBy from 'lodash/sortBy';
-import { type ComputedRef, type Ref } from 'vue';
 import { type Writeable } from '@/types';
 import {
   AllDefiProtocols,

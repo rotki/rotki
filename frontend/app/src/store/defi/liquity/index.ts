@@ -4,7 +4,6 @@ import {
   LiquityStakingDetails,
   LiquityStatistics
 } from '@rotki/common/lib/liquity';
-import { type Ref } from 'vue';
 import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
 import { type TaskMeta } from '@/types/task';

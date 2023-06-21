@@ -4,7 +4,6 @@ import {
   type BigNumber
 } from '@rotki/common';
 import { type MaybeRef } from '@vueuse/core';
-import { type ComputedRef } from 'vue';
 import { type AssetBalances } from '@/types/balances';
 
 export const useBlockchainAggregatedBalances = () => {

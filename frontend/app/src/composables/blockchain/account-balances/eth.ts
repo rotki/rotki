@@ -1,7 +1,6 @@
 import { type Balance, type HasBalance } from '@rotki/common';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type Eth2Validators } from '@rotki/common/lib/staking/eth2';
-import { type ComputedRef } from 'vue';
 import { type Writeable } from '@/types';
 import { type AccountAssetBalances } from '@/types/balances';
 import {

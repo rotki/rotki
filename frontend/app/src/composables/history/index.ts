@@ -1,4 +1,3 @@
-import { type Ref } from 'vue';
 import { type EntryMeta } from '@/types/history/meta';
 import {
   type CommonIgnorePayload,

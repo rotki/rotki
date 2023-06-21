@@ -1,6 +1,5 @@
 import { getIdentifierFromSymbolMap } from '@rotki/common/lib/data';
 import { type MaybeRef } from '@vueuse/core';
-import { type ComputedRef } from 'vue';
 import { Routes } from '@/router/routes';
 import { isBlockchain } from '@/types/blockchain/chains';
 import {

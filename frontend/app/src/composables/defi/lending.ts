@@ -6,7 +6,6 @@ import {
   type AaveLending
 } from '@rotki/common/lib/defi/aave';
 import sortBy from 'lodash/sortBy';
-import { type ComputedRef } from 'vue';
 import {
   type AaveLoan,
   type BaseDefiBalance,

@@ -1,4 +1,3 @@
-import { type Ref } from 'vue';
 import { type ActionDataEntry } from '@/types/action';
 import { type TradeLocationData } from '@/types/history/trade/location';
 

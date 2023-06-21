@@ -1,5 +1,3 @@
-import { type Ref } from 'vue';
-
 const PERIODIC = 'periodic';
 const TASK = 'task';
 const WATCHER = 'watcher';

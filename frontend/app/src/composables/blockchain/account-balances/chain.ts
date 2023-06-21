@@ -1,5 +1,4 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { type ComputedRef } from 'vue';
 import { type BlockchainTotal } from '@/types/blockchain';
 import { Section } from '@/types/status';
 import {

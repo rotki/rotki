@@ -1,4 +1,3 @@
-import { type ComputedRef, type Ref } from 'vue';
 import { type BigNumber } from '@rotki/common';
 
 export interface ScramblerOptions {

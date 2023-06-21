@@ -1,5 +1,4 @@
 import { TimeFramePeriod } from '@rotki/common/lib/settings/graphs';
-import { type Ref } from 'vue';
 import { PrivacyMode, type SessionSettings } from '@/types/session';
 import { type ActionStatus } from '@/types/action';
 import { type Exchange } from '@/types/exchanges';

@@ -1,6 +1,5 @@
 import { type MaybeRef } from '@vueuse/core';
 import flushPromises from 'flush-promises';
-import { type Ref } from 'vue';
 import {
   type ExchangeSavingsCollection,
   type ExchangeSavingsEvent,

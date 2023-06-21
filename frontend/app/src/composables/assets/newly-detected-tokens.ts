@@ -1,4 +1,3 @@
-import { type ComputedRef, type Ref } from 'vue';
 import { type NewDetectedToken } from '@/types/websocket-messages';
 
 const MAX_SIZE = 500;

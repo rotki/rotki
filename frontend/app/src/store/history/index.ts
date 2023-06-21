@@ -1,4 +1,3 @@
-import { type Ref } from 'vue';
 import { type TradeLocation } from '@/types/history/trade/location';
 
 export const useHistoryStore = defineStore('history', () => {

@@ -1,6 +1,5 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import flushPromises from 'flush-promises';
-import { type Ref } from 'vue';
 import { RouterAccountsSchema } from '@/types/route';
 import { useMainStore } from '@/store/main';
 import { FilterBehaviour } from '@/types/filtering';
