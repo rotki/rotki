@@ -4150,12 +4150,11 @@ class RestAPI:
 
     def get_all_evm_chains(self) -> Response:
         """Returns a list of all EVM chain ids."""
-        return api_response(
-            result=_wrap_in_ok_result(result=[
-                {'id': chain.value, 'name': chain.to_name()}
-                for chain in ChainID
-            ]),
-        )
+        result = []
+        for chain in ChainID:
+            name, label = chain.name_and_label()
+            result.append({'id': chain.value, 'name': name, 'label': label})
+        return api_response(result=_wrap_in_ok_result(result=result))
 
     def get_ens_avatar(self, ens_name: str, match_header: Optional[str]) -> Response:
         """

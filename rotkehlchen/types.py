@@ -237,7 +237,25 @@ class ChainID(Enum):
         return cls.deserialize_from_db(value)
 
     def to_name(self) -> str:
+        """The name to be used to/from the api instead of the chain id"""
         return self.name.lower()
+
+    def name_and_label(self) -> tuple[str, str]:
+        """A label to be used by the frontend.
+
+        Also returns the name since the only place where label is currently used
+        the name is also needed. To avoid 1 extra call to name"""
+        name = self.to_name()
+        if self == ChainID.POLYGON_POS:
+            label = 'Polygon POS'
+        elif self == ChainID.BINANCE:
+            label = 'Binance Smart Chain'
+        elif self == ChainID.ARBITRUM_ONE:
+            label = 'Arbitrum One'
+        else:
+            label = name.capitalize()
+
+        return name, label
 
     def __str__(self) -> str:
         return self.to_name()

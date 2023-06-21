@@ -421,7 +421,10 @@ def test_query_supported_chains(rotkehlchen_api_server):
 def test_query_all_chain_ids(rotkehlchen_api_server):
     response = requests.get(api_url_for(rotkehlchen_api_server, 'allevmchainsresource'))
     result = assert_proper_response_with_result(response)
-    assert result == [{'id': chain.value, 'name': chain.to_name()} for chain in ChainID]
+    for chain in ChainID:
+        name, label = chain.name_and_label()
+        assert {'id': chain.value, 'name': name, 'label': label} in result
+    assert len(ChainID) == len(result)
 
 
 @pytest.mark.parametrize('have_decoders', [True])
