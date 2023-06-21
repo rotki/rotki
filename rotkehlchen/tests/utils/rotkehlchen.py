@@ -186,8 +186,8 @@ def setup_balances(
         def mock_defichad_query_balances(addresses: list[ChecksumEvmAddress]):
             result: dict[ChecksumEvmAddress, list[DefiProtocolBalances]] = {}
             for addr in addresses:
-                if addr in defi_balances:  # type: ignore
-                    result[addr] = defi_balances[addr]  # type: ignore
+                if addr in defi_balances:
+                    result[addr] = defi_balances[addr]
             return result
 
         defichad_query_balances_patch = patch.object(
