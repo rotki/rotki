@@ -753,7 +753,7 @@ class YearnVaults(EthereumModule):
 
             for address in addresses:
                 history[address] = {}
-                for _, vault in self.yearn_vaults.items():
+                for vault in self.yearn_vaults.values():
                     vault_history = self.get_vault_history(
                         defi_balances=defi_balances.get(address, []),
                         vault=vault,
@@ -787,7 +787,7 @@ class YearnVaults(EthereumModule):
 
         events = []
         for address in addresses:
-            for _, vault in self.yearn_vaults.items():
+            for vault in self.yearn_vaults.values():
                 vault_history = self.get_vault_history(
                     defi_balances=[],
                     vault=vault,

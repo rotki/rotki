@@ -69,7 +69,7 @@ def test_query_yearn_vault_balances(rotkehlchen_api_server):
     else:
         result = assert_proper_response_with_result(response)
 
-    for _, vault in result[TEST_ACC1].items():
+    for vault in result[TEST_ACC1].values():
         assert '%' in vault['roi']
         assert FVal(vault['vault_value']['amount']) > ZERO
         assert FVal(vault['vault_value']['usd_value']) > ZERO
@@ -625,7 +625,7 @@ def test_query_yearn_vault_v2_balances(rotkehlchen_api_server, ethereum_accounts
         else:
             result = assert_proper_response_with_result(response)
 
-    for _, vault in result[TEST_V2_ACC2].items():
+    for vault in result[TEST_V2_ACC2].values():
         assert '%' in vault['roi']
         assert FVal(vault['vault_value']['amount']) > ZERO
         assert FVal(vault['vault_value']['usd_value']) > ZERO

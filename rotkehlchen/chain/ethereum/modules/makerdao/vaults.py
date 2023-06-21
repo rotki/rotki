@@ -586,7 +586,7 @@ class MakerdaoVaults(HasDSProxy):
         now = ts_now()
         if now - self.last_vault_mapping_query_ts < MAKERDAO_REQUERY_PERIOD:
             prequeried_vaults = []
-            for _, vaults in self.vault_mappings.items():
+            for vaults in self.vault_mappings.values():
                 prequeried_vaults.extend(vaults)
 
             prequeried_vaults.sort(key=lambda vault: vault.identifier)

@@ -62,14 +62,14 @@ def test_query_compound_balances(
         return
 
     lending = result[TEST_ACC1]['lending']
-    for _, entry in lending.items():
+    for entry in lending.values():
         assert len(entry) == 2
         assert len(entry['balance']) == 2
         assert 'amount' in entry['balance']
         assert 'usd_value' in entry['balance']
         assert '%' in entry['apy']
     borrowing = result[TEST_ACC1]['borrowing']
-    for _, entry in borrowing.items():
+    for entry in borrowing.values():
         assert len(entry) == 2
         assert len(entry['balance']) == 2
         assert 'amount' in entry['balance']

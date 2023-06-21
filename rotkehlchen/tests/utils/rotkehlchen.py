@@ -111,7 +111,7 @@ def setup_balances(
 
     if token_balances is not None:
         msg = 'token balances length does not match number of owned eth tokens'
-        for _, balances in token_balances.items():
+        for balances in token_balances.values():
             msg = (
                 'The token balances should be a list with each '
                 'element representing balance of an account'

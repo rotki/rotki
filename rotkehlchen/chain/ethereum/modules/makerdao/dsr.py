@@ -431,7 +431,7 @@ class MakerdaoDsr(HasDSProxy):
         """
         history = self.get_historical_dsr()
         events = []
-        for _, report in history.items():
+        for report in history.values():
             total_balance = Balance()
             counted_profit = Balance()
             for movement in report.movements:

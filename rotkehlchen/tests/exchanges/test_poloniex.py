@@ -237,7 +237,7 @@ def test_poloniex_assets_are_known(poloniex):
     assert not common_items, f'Poloniex assets {common_items} should not be unsupported'
     currencies = poloniex.api_query_list('/currencies')
     for asset_data in currencies:
-        for poloniex_asset, _ in asset_data.items():
+        for poloniex_asset in asset_data:
             try:
                 _ = asset_from_poloniex(poloniex_asset)
             except UnsupportedAsset:
