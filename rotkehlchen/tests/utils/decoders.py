@@ -11,7 +11,7 @@ def patch_decoder_reload_data() -> _patch:
     """Patch decoder so reload data does not reload on-chain data at each decoding"""
     def patched_reload_data(self, cursor: 'DBCursor') -> None:
         self.base.refresh_tracked_accounts(cursor)
-        for _, decoder in self.decoders.items():
+        for decoder in self.decoders.values():
             if isinstance(decoder, CustomizableDateMixin):
                 decoder.reload_settings(cursor)
 

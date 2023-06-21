@@ -81,7 +81,7 @@ def test_get_customized_event_identifiers(database):
 
 def add_history_events_to_db(db: DBHistoryEvents, history_data: dict) -> None:
     with db.db.user_write() as write_cursor:
-        for _, entry in history_data.items():
+        for entry in history_data.values():
             db.add_history_event(
                 write_cursor=write_cursor,
                 event=HistoryEvent(
@@ -99,7 +99,7 @@ def add_history_events_to_db(db: DBHistoryEvents, history_data: dict) -> None:
 
 def add_evm_events_to_db(db: DBHistoryEvents, evm_data: dict) -> None:
     with db.db.user_write() as write_cursor:
-        for _, entry in evm_data.items():
+        for entry in evm_data.values():
             db.add_history_event(
                 write_cursor=write_cursor,
                 event=EvmEvent(

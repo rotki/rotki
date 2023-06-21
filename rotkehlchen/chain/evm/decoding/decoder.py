@@ -265,7 +265,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
         """Reload all related settings from DB and data that any decoder may require from the chain
         so that decoding happens with latest data"""
         self.base.refresh_tracked_accounts(cursor)
-        for _, decoder in self.decoders.items():
+        for decoder in self.decoders.values():
             if isinstance(decoder, CustomizableDateMixin):
                 decoder.reload_settings(cursor)
             if isinstance(decoder, ReloadableDecoderMixin):

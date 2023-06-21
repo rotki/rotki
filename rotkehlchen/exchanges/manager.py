@@ -65,7 +65,7 @@ class ExchangeManager:
         """Iterate all connected and syncing exchanges"""
         with self.database.conn.read_ctx() as cursor:
             excluded = self.database.get_settings(cursor).non_syncing_exchanges
-        for _, exchanges in self.connected_exchanges.items():
+        for exchanges in self.connected_exchanges.values():
             for exchange in exchanges:
                 # We are not yielding excluded exchanges
                 if exchange.location_id() not in excluded:

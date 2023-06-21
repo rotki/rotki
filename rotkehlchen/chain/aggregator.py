@@ -1280,7 +1280,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         # Now that we have balances for the addresses we need to aggregate the
         # assets in the different addresses
         aggregated_balances: dict[CryptoAsset, Balance] = defaultdict(Balance)
-        for _, assets in balances.items():
+        for assets in balances.values():
             for asset, balance in assets.items():
                 aggregated_balances[asset] += balance
 

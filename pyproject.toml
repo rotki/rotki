@@ -125,6 +125,7 @@ select = [
     # "PTH",  # Should do it at some point. Many hits and no autofix. When enabled fully remove from extend-select
     "INT",
     "TRY",
+    "PERF",
     "RSE",
     #  "SLF",  Private member access -- we unfortunately do that some times
     "RUF",

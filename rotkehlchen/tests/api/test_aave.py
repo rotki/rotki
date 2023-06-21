@@ -74,14 +74,14 @@ def test_query_aave_balances(
 
     def _assert_valid_entries(balances: dict[str, Any]) -> None:
         lending = v1_balances['lending']
-        for _, entry in lending.items():
+        for entry in lending.values():
             assert len(entry) == 2
             assert len(entry['balance']) == 2
             assert 'amount' in entry['balance']
             assert 'usd_value' in entry['balance']
             assert '%' in entry['apy']
         borrowing = balances['borrowing']
-        for _, entry in borrowing.items():
+        for entry in borrowing.values():
             assert len(entry) == 3
             assert len(entry['balance']) == 2
             assert 'amount' in entry['balance']
