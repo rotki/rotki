@@ -23,8 +23,24 @@ class IncludeExcludeFilterData:
     operator: Literal['IN', 'NOT IN'] = 'IN'
 
 
+class ModuleWithBalances(SerializableEnumNameMixin):
+    """Used to validate the used module to query stats at the API balance endpoint"""
+    UNISWAP_V2 = auto()
+    UNISWAP_V3 = auto()
+    SUSHISWAP = auto()
+    BALANCER = auto()
+    
+    def serialize(self) -> str:
+        if self in (ModuleWithBalances.UNISWAP_V2, ModuleWithBalances.UNISWAP_V3):
+            return 'uniswap'
+        return str(self)
+
+
 class ModuleWithStats(SerializableEnumNameMixin):
     """Used to validate the used module to query stats at the API stats endpoint"""
     AAVE = auto()
     COMPOUND = auto()
     LIQUITY = auto()
+    UNISWAP = auto()
+    SUSHISWAP = auto()
+    BALANCER = auto()

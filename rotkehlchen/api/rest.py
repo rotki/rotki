@@ -45,6 +45,7 @@ from rotkehlchen.api.v1.types import (
     EvmPendingTransactionDecodingApiData,
     EvmTransactionDecodingApiData,
     IncludeExcludeFilterData,
+    ModuleWithStats,
 )
 from rotkehlchen.assets.asset import (
     Asset,
@@ -2390,6 +2391,22 @@ class RestAPI:
             # queried.
             given_defi_balances=lambda: self.rotkehlchen.chains_aggregator.defi_balances,
         )
+        
+    @async_api_call()
+    def get_module_stats(
+            self,
+            module: Literal['uniswap', 'sushiswap'],
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+    ) -> dict[str, Any]:
+        return self._eth_module_query(
+            module_name='uniswap',
+            method='get_stats_for_addresses',
+            query_specific_balances_before=None,
+            addresses=self.rotkehlchen.chains_aggregator.queried_addresses_for_module(module),
+            from_timestamp=from_timestamp,
+            to_timestamp=to_timestamp,
+        )
 
     @async_api_call()
     def get_compound_balances(self) -> dict[str, Any]:
@@ -2479,45 +2496,14 @@ class RestAPI:
         )
 
     @async_api_call()
-    def get_uniswap_balances(self) -> dict[str, Any]:
+    def get_amm_platform_balances(self, module: str, method: str = 'get_balances') -> dict[str, Any]:
         return self._eth_module_query(
-            module_name='uniswap',
-            method='get_balances',
+            module_name=module,
+            method=method,
             query_specific_balances_before=None,
-            addresses=self.rotkehlchen.chains_aggregator.queried_addresses_for_module('uniswap'),
+            addresses=self.rotkehlchen.chains_aggregator.queried_addresses_for_module(module),
         )
 
-    @async_api_call()
-    def get_uniswap_v3_balances(self) -> dict[str, Any]:
-        return self._eth_module_query(
-            module_name='uniswap',
-            method='get_v3_balances',
-            query_specific_balances_before=None,
-            addresses=self.rotkehlchen.chains_aggregator.queried_addresses_for_module('uniswap'),
-        )
-
-    @async_api_call()
-    def get_uniswap_events_history(
-            self,
-            reset_db_data: bool,
-            from_timestamp: Timestamp,
-            to_timestamp: Timestamp,
-    ) -> dict[str, Any]:
-        return self._eth_module_query(
-            module_name='uniswap',
-            method='get_stats',
-            query_specific_balances_before=None,
-            addresses=self.rotkehlchen.chains_aggregator.queried_addresses_for_module('uniswap'),
-        )
-
-    @async_api_call()
-    def get_sushiswap_balances(self) -> dict[str, Any]:
-        return self._eth_module_query(
-            module_name='sushiswap',
-            method='get_balances',
-            query_specific_balances_before=None,
-            addresses=self.rotkehlchen.chains_aggregator.queried_addresses_for_module('sushiswap'),
-        )
 
     @async_api_call()
     def get_sushiswap_events_history(
@@ -2543,15 +2529,6 @@ class RestAPI:
             method='get_balances',
             query_specific_balances_before=None,
             addresses=self.rotkehlchen.chains_aggregator.queried_addresses_for_module('loopring'),
-        )
-
-    @async_api_call()
-    def get_balancer_balances(self) -> dict[str, Any]:
-        return self._eth_module_query(
-            module_name='balancer',
-            method='get_balances',
-            query_specific_balances_before=None,
-            addresses=self.rotkehlchen.chains_aggregator.queried_addresses_for_module('balancer'),
         )
 
     @async_api_call()
