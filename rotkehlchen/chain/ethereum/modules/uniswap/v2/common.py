@@ -1,9 +1,10 @@
+from dataclasses import replace
 from typing import TYPE_CHECKING, Callable, Literal, Optional
 
 from web3 import Web3
 
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.assets.asset import CryptoAsset, UnderlyingToken
+from rotkehlchen.assets.asset import CryptoAsset, EvmToken, UnderlyingToken
 from rotkehlchen.assets.utils import TokenSeenAt, get_or_create_evm_token
 from rotkehlchen.chain.ethereum.modules.constants import AMM_ASSETS_SYMBOLS
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value, generate_address_via_create2
@@ -189,8 +190,8 @@ def decode_uniswap_like_deposit_and_withdrawals(
     amount0_raw = hex_or_bytes_to_int(tx_log.data[:32])
     amount1_raw = hex_or_bytes_to_int(tx_log.data[32:64])
 
-    token0: Optional[CryptoAsset] = None
-    token1: Optional[CryptoAsset] = None
+    token0: Optional[EvmToken] = None
+    token1: Optional[EvmToken] = None
     event0_idx = event1_idx = None
 
     if event_action_type == 'addition':
@@ -278,7 +279,7 @@ def decode_uniswap_like_deposit_and_withdrawals(
         underlying_tokens=underlaying_tokens,
     )
     if len(pool_token.underlying_tokens) == 0:
-        pool_token.underlying_tokens = underlaying_tokens
+        pool_token = replace(pool_token, underlying_tokens=underlaying_tokens)
         GlobalDBHandler().edit_evm_token(pool_token)
 
     new_action_items = []
