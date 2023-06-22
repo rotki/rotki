@@ -5,7 +5,6 @@ import sys
 from pathlib import Path
 from typing import Any, Optional
 
-from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.graph import Graph
 from rotkehlchen.chain.ethereum.modules.uniswap.utils import uniswap_lp_token_balances
 from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer

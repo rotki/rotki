@@ -265,8 +265,8 @@ def decode_uniswap_like_deposit_and_withdrawals(
         init_code_hash=init_code_hash,
     )
     underlaying_tokens = [
-        UnderlyingToken(address=token0.evm_address, token_kind=EvmTokenKind.ERC20, weight=FVal(0.5)),
-        UnderlyingToken(address=token1.evm_address, token_kind=EvmTokenKind.ERC20, weight=FVal(0.5))
+        UnderlyingToken(address=token0.evm_address, token_kind=EvmTokenKind.ERC20, weight=FVal(0.5)),  # noqa: E501
+        UnderlyingToken(address=token1.evm_address, token_kind=EvmTokenKind.ERC20, weight=FVal(0.5)),  # noqa: E501
     ]
     pool_token = get_or_create_evm_token(
         userdb=database,
@@ -302,7 +302,7 @@ def decode_uniswap_like_deposit_and_withdrawals(
                         pool_address=pool_address,
                     ),
                     to_counterparty=counterparty,
-                    extra_data=extra_data
+                    extra_data=extra_data,
                 )
                 new_action_items.append(action_item)
                 continue

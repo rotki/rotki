@@ -166,3 +166,22 @@ BURNS_QUERY = (
     }}}}
     """
 )
+TOKEN_DAY_DATAS_QUERY = (
+    """
+    tokenDayDatas
+    (
+        first: $limit,
+        skip: $offset,
+        where: {{
+            token_in: $token_ids,
+            date: $datetime,
+        }}
+    ) {{
+        date
+        token {{
+            id
+        }}
+        priceUSD
+    }}}}
+    """
+)

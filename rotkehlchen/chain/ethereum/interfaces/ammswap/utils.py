@@ -2,7 +2,6 @@ import logging
 from typing import TYPE_CHECKING, NamedTuple, Union
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.ethereum.interfaces.ammswap.types import (
     AddressToLPBalances,

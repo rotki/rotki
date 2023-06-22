@@ -29,7 +29,7 @@ class ModuleWithBalances(SerializableEnumNameMixin):
     UNISWAP_V3 = auto()
     SUSHISWAP = auto()
     BALANCER = auto()
-    
+
     def serialize(self) -> str:
         if self in (ModuleWithBalances.UNISWAP_V2, ModuleWithBalances.UNISWAP_V3):
             return 'uniswap'
