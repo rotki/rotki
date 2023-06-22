@@ -219,12 +219,8 @@ class Sushiswap(AMMSwapPlatform, EthereumModule):
 
         return protocol_balance.address_balances
 
-    def delete_events_data(self, write_cursor: 'DBCursor') -> None:
-        self.database.delete_sushiswap_events_data(write_cursor)
-
     def deactivate(self) -> None:
-        with self.database.user_write() as cursor:
-            self.database.delete_sushiswap_events_data(cursor)
+        pass
 
     def on_account_addition(self, address: ChecksumEvmAddress) -> None:
         pass

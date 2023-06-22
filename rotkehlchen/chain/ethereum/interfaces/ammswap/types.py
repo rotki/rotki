@@ -235,7 +235,6 @@ class LiquidityPoolEventsBalance(NamedTuple):
     pool_address: ChecksumEvmAddress
     token0: EvmToken
     token1: EvmToken
-    events: list[LiquidityPoolEvent]
     profit_loss0: FVal
     profit_loss1: FVal
     usd_profit_loss: FVal
@@ -245,7 +244,6 @@ class LiquidityPoolEventsBalance(NamedTuple):
             'pool_address': self.pool_address,
             'token0': self.token0.serialize(),
             'token1': self.token1.serialize(),
-            'events': [event.serialize() for event in self.events],
             'profit_loss0': str(self.profit_loss0),
             'profit_loss1': str(self.profit_loss1),
             'usd_profit_loss': str(self.usd_profit_loss),

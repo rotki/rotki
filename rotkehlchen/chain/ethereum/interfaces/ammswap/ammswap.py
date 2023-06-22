@@ -16,6 +16,7 @@ from gevent.lock import Semaphore
 from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType
 from rotkehlchen.assets.asset import Asset, EvmToken
+from rotkehlchen.chain.ethereum.defi.structures import GIVEN_DEFI_BALANCES
 from rotkehlchen.chain.ethereum.graph import Graph
 from rotkehlchen.chain.ethereum.interfaces.ammswap.types import (
     AggregatedAmount,
@@ -32,7 +33,7 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
-from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind
+from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 
 if TYPE_CHECKING:
@@ -117,8 +118,6 @@ class AMMSwapPlatform:
 
             if pool_token not in pool_aggregated_amount:
                 pool_aggregated_amount[pool_token] = AggregatedAmount()
-
-            pool_aggregated_amount[pool_token].events.append(event)
             
             underlying0 = EvmToken(evm_address_to_identifier(address=pool_token.underlying_tokens[0].address, chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20))  # noqa: E501
             if pool_token.underlying_tokens[0] != A_WETH:
@@ -166,22 +165,26 @@ class AMMSwapPlatform:
                 pool_address=pool,
                 token0=token0,
                 token1=token1,
-                events=aggregated_amount.events,
                 profit_loss0=profit_loss0,
                 profit_loss1=profit_loss1,
                 usd_profit_loss=usd_profit_loss,
             )
             events_balances.append(events_balance)
 
-        import pprint;
-        import pdb; pdb.set_trace()
-        pprint.pprint(events_balances[0].serialize())
         return events_balances
 
-    def get_stats(self, addresses: Optional[list[ChecksumEvmAddress]]):
+    def get_stats_for_addresses(
+            self,
+            addresses: Optional[list[ChecksumEvmAddress]],
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+    ):
         db = DBHistoryEvents(self.database)
         filter = EvmEventFilterQuery.make(
             counterparties=self.counterparties,
+            location_labels=addresses,
+            from_ts=from_timestamp,
+            to_ts=to_timestamp,
             event_subtypes=[
                 HistoryEventSubType.DEPOSIT_ASSET,
                 HistoryEventSubType.REMOVE_ASSET,
@@ -211,8 +214,8 @@ class AMMSwapPlatform:
         query, bindings = db_filter.prepare()
         address_to_pools = defaultdict(list)
         with self.database.conn.read_ctx() as cursor:
-            cursor.execute('select asset from history_events JOIN evm_events_info ON history_events.identifier = evm_events_info.identifier ' + query, bindings)
-            for (address, lp_token) in cursor:
+            cursor.execute('select location_label, asset from history_events JOIN evm_events_info ON history_events.identifier = evm_events_info.identifier ' + query, bindings)
+            for address, lp_token in cursor:
                 address_to_pools[string_to_evm_address(address)].append(Asset(lp_token))
 
         return address_to_pools

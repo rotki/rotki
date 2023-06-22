@@ -15,6 +15,7 @@ from rotkehlchen.chain.ethereum.interfaces.ammswap.types import (
     LiquidityPoolAsset,
     ProtocolBalance,
 )
+from rotkehlchen.chain.ethereum.interfaces.ammswap.utils import update_asset_price_in_lp_balances
 from rotkehlchen.chain.ethereum.modules.uniswap.constants import CPT_UNISWAP_V2
 from rotkehlchen.chain.ethereum.modules.uniswap.utils import uniswap_lp_token_balances
 from rotkehlchen.chain.ethereum.modules.uniswap.v3.types import (
@@ -26,6 +27,9 @@ from rotkehlchen.chain.ethereum.modules.uniswap.v3.utils import (
     uniswap_v3_lp_token_balances,
     update_asset_price_in_uniswap_v3_lp_balances,
 )
+from rotkehlchen.constants.misc import ZERO, ZERO_PRICE
+from rotkehlchen.fval import FVal
+from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.types import ChecksumEvmAddress, Timestamp
@@ -164,24 +168,35 @@ class Uniswap(AMMSwapPlatform, EthereumModule):
             address_events_balances[address] = events_balances
 
         return address_events_balances
-
-    def get_balances(
-            self,
-            addresses: list[ChecksumEvmAddress],
-    ) -> AddressToLPBalances:
-        """Get the addresses' balances in the Uniswap protocol
-
-        Premium users can request balances either via the Uniswap subgraph or
-        on-chain.
+    
+    def _update_asset_price_in_lp_balances(self, address_balances: AddressToLPBalances) -> None:
+        """Utility function to update the pools underlying assets prices in USD
+        (prices obtained via Inquirer and the subgraph) used by all AMM platforms.
         """
-        protocol_balance = self.get_balances_chain(addresses)
-        self._update_assets_prices_in_address_balances(
-            address_balances=protocol_balance.address_balances,
-            known_asset_price=known_asset_price,
-            unknown_asset_price=unknown_asset_price,
-        )
+        for lps in address_balances.values():
+            for lp in lps:
+                # Try to get price from either known or unknown asset price.
+                # Otherwise keep existing price (zero)
+                total_user_balance = ZERO
+                for asset in lp.assets:
+                    asset_usd_price = Inquirer().find_usd_price(asset.token)
+                    # Update <LiquidityPoolAsset> if asset USD price exists
+                    if asset_usd_price != ZERO_PRICE:
+                        asset.usd_price = asset_usd_price
+                        asset.user_balance.usd_value = FVal(
+                            asset.user_balance.amount * asset_usd_price,
+                        )
 
-        return protocol_balance.address_balances
+                    total_user_balance += asset.user_balance.usd_value
+
+                # Update <LiquidityPool> total balance in USD
+                lp.user_balance.usd_value = total_user_balance
+
+    def get_balances(self, addresses: list[ChecksumEvmAddress]) -> AddressToLPBalances:
+        """Get the addresses' balances in the Uniswap protocol"""
+        protocol_balance = self.get_balances_chain(addresses)
+        self._update_asset_price_in_lp_balances(protocol_balance)
+        return protocol_balance
 
     def get_v3_balances(
             self,
@@ -228,12 +243,8 @@ class Uniswap(AMMSwapPlatform, EthereumModule):
                     ]
         return address_balances
 
-    def delete_events_data(self, write_cursor: 'DBCursor') -> None:
-        self.database.delete_uniswap_events_data(write_cursor)
-
     def deactivate(self) -> None:
-        with self.database.user_write() as cursor:
-            self.database.delete_uniswap_events_data(cursor)
+        pass
 
     def on_account_addition(self, address: ChecksumEvmAddress) -> None:
         pass
