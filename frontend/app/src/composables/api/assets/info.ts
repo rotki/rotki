@@ -8,6 +8,7 @@ import {
 } from '@/services/utils';
 import { AssetMap, AssetsWithId } from '@/types/asset';
 import { type PendingTask } from '@/types/task';
+import { type EvmChainAddress } from '@/types/history/events';
 
 export const useAssetInfoApi = () => {
   const assetMapping = async (identifiers: string[]): Promise<AssetMap> => {
@@ -42,13 +43,15 @@ export const useAssetInfoApi = () => {
     return AssetsWithId.parse(handleResponse(response));
   };
 
-  const erc20details = async (address: string): Promise<PendingTask> => {
+  const erc20details = async (
+    payload: EvmChainAddress
+  ): Promise<PendingTask> => {
     const response = await api.instance.get<ActionResult<PendingTask>>(
-      '/blockchains/eth/erc20details',
+      '/blockchains/evm/erc20details',
       {
         params: snakeCaseTransformer({
           asyncQuery: true,
-          address
+          ...payload
         }),
         validateStatus: validWithoutSessionStatus
       }

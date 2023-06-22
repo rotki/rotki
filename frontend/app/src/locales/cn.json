@@ -189,10 +189,10 @@
       "erc20": {
         "error": {
           "description": "检索token详细信息时出错: {message}",
-          "title": "正在检索 {address} 的token详细信息"
+          "title": "正在检索 {address} ({evmChain}) 的token详细信息"
         },
         "task": {
-          "title": "正在检索 {address} 的token详细信息"
+          "title": "正在检索 {address} ({evmChain}) 的token详细信息"
         }
       },
       "update": {
@@ -963,7 +963,10 @@
     "types": {
       "error": "我们无法加载资产类型：{message}"
     },
-    "underlying_tokens": "底层代币"
+    "underlying_tokens": "底层代币",
+    "validation": {
+      "valid_address": "请输入有效的ETH地址"
+    }
   },
   "asset_icon": {
     "tooltip": "[{symbol}] {name}"
