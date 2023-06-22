@@ -162,7 +162,7 @@ class AMMSwapPlatform:
                 token1 = EvmToken(evm_address_to_identifier(address=pool.underlying_tokens[1].address, chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20))
 
             events_balance = LiquidityPoolEventsBalance(
-                pool_address=pool,
+                pool_address=pool.evm_address,
                 token0=token0,
                 token1=token1,
                 profit_loss0=profit_loss0,
@@ -180,27 +180,30 @@ class AMMSwapPlatform:
             to_timestamp: Timestamp,
     ):
         db = DBHistoryEvents(self.database)
-        filter = EvmEventFilterQuery.make(
-            counterparties=self.counterparties,
-            location_labels=addresses,
-            from_ts=from_timestamp,
-            to_ts=to_timestamp,
-            event_subtypes=[
-                HistoryEventSubType.DEPOSIT_ASSET,
-                HistoryEventSubType.REMOVE_ASSET,
-            ],
-        )
-        with self.database.conn.read_ctx() as cursor:
-            events = db.get_history_events(
-                cursor=cursor,
-                filter_query=filter,
-                has_premium=self.premium is not None,
-                group_by_event_ids=False,
+        stats = {}
+        for address in addresses:
+            filter = EvmEventFilterQuery.make(
+                counterparties=self.counterparties,
+                location_labels=[address],
+                from_ts=from_timestamp,
+                to_ts=to_timestamp,
+                event_subtypes=[
+                    HistoryEventSubType.DEPOSIT_ASSET,
+                    HistoryEventSubType.REMOVE_ASSET,
+                ],
             )
-        return self._calculate_events_balances(
-            events=events,
-            balances=[],
-        )
+            with self.database.conn.read_ctx() as cursor:
+                events = db.get_history_events(
+                    cursor=cursor,
+                    filter_query=filter,
+                    has_premium=self.premium is not None,
+                    group_by_event_ids=False,
+                )
+            stats[address] =  self._calculate_events_balances(
+                events=events,
+                balances=[],
+            )
+        return stats
 
     def get_lp_addresses(self, addresses: list[ChecksumEvmAddress]) -> dict[ChecksumEvmAddress, list[Asset]]:
         """Query the LP tokens where the provided users have ever deposited"""

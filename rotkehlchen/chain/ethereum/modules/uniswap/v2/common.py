@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Callable, Literal, Optional
 from web3 import Web3
 
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.assets.asset import CryptoAsset
+from rotkehlchen.assets.asset import CryptoAsset, UnderlyingToken
 from rotkehlchen.assets.utils import TokenSeenAt, get_or_create_evm_token
 from rotkehlchen.chain.ethereum.modules.constants import AMM_ASSETS_SYMBOLS
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value, generate_address_via_create2
@@ -25,6 +25,8 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.resolver import ChainID
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.types import ChecksumEvmAddress, EvmTokenKind, EvmTransaction, EVMTxHash
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
@@ -262,10 +264,27 @@ def decode_uniswap_like_deposit_and_withdrawals(
         factory_address=factory_address,
         init_code_hash=init_code_hash,
     )
+    underlaying_tokens = [
+        UnderlyingToken(address=token0.evm_address, token_kind=EvmTokenKind.ERC20, weight=FVal(0.5)),
+        UnderlyingToken(address=token1.evm_address, token_kind=EvmTokenKind.ERC20, weight=FVal(0.5))
+    ]
+    pool_token = get_or_create_evm_token(
+        userdb=database,
+        evm_address=other_log.address,
+        chain_id=ChainID.ETHEREUM,
+        token_kind=EvmTokenKind.ERC20,
+        evm_inquirer=ethereum_inquirer,
+        seen=TokenSeenAt(tx_hash=tx_hash),
+        underlying_tokens=underlaying_tokens,
+    )
+    if len(pool_token.underlying_tokens) == 0:
+        pool_token.underlying_tokens = underlaying_tokens
+        GlobalDBHandler().edit_evm_token(pool_token)
 
     new_action_items = []
     if pool_address == target_pool_address:
         for asset, decoded_event_idx, amount in [(asset_0, event0_idx, amount0), (asset_1, event1_idx, amount1)]:  # noqa: E501
+            extra_data = {'pool_address': pool_address}
             if decoded_event_idx is None:
                 action_item = ActionItem(
                     action='transform',
@@ -283,6 +302,7 @@ def decode_uniswap_like_deposit_and_withdrawals(
                         pool_address=pool_address,
                     ),
                     to_counterparty=counterparty,
+                    extra_data=extra_data
                 )
                 new_action_items.append(action_item)
                 continue
@@ -296,6 +316,7 @@ def decode_uniswap_like_deposit_and_withdrawals(
                 counterparty=counterparty,
                 pool_address=pool_address,
             )
+            decoded_events[decoded_event_idx].extra_data = extra_data
 
     return DecodingOutput(action_items=new_action_items)
 
