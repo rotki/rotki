@@ -120,14 +120,18 @@ const clearFieldErrors = (fields: Array<keyof SupportedAsset>) => {
   fields.forEach(clearFieldError);
 };
 
-watch(address, async () => {
-  const sanitizedAddress = sanitizeAddress(get(address));
-  if (get(address) !== sanitizedAddress) {
+watch([address, evmChain], async ([addressVal, evmChain]) => {
+  if (!evmChain) {
+    return;
+  }
+
+  const sanitizedAddress = sanitizeAddress(addressVal);
+  if (addressVal !== sanitizedAddress) {
     set(address, sanitizedAddress);
     return;
   }
 
-  if (get(dontAutoFetch) || !isValidEthAddress(get(address))) {
+  if (get(dontAutoFetch) || !isValidEthAddress(addressVal)) {
     set(dontAutoFetch, false);
     return;
   }
@@ -137,7 +141,7 @@ watch(address, async () => {
     decimals: newDecimals,
     name: newName,
     symbol: newSymbol
-  } = await fetchTokenDetails(get(address));
+  } = await fetchTokenDetails({ address: addressVal, evmChain });
   set(decimals, newDecimals ?? get(decimals));
   set(name, newName || get(name));
   set(symbol, newSymbol || get(symbol));
@@ -369,7 +373,7 @@ const { coingeckoContributeUrl, cryptocompareContributeUrl } = useInterop();
             :disabled="!isEvmToken || !!editableItem"
             :items="allEvmChains"
             item-value="name"
-            item-text="name"
+            item-text="label"
             :error-messages="toMessages(v$.evmChain)"
           />
         </v-col>

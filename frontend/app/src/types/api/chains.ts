@@ -29,7 +29,8 @@ export type SupportedChains = z.infer<typeof SupportedChains>;
 
 export const EvmChainEntry = z.object({
   id: z.number(),
-  name: z.string()
+  name: z.string(),
+  label: z.string()
 });
 
 export type EvmChainEntry = z.infer<typeof EvmChainEntry>;

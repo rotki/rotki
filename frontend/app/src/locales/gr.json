@@ -178,10 +178,10 @@
       "erc20": {
         "error": {
           "description": "There was an error while retrieving token details: {message}",
-          "title": "Retrieving token details for {address}"
+          "title": "Retrieving token details for {address} ({evmChain})"
         },
         "task": {
-          "title": "Retrieving token details for {address}"
+          "title": "Retrieving token details for {address} ({evmChain})"
         }
       },
       "update": {

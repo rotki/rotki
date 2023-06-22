@@ -4,6 +4,7 @@ import { CUSTOM_ASSET } from '@/types/asset';
 import { type ERC20Token } from '@/types/blockchain/accounts';
 import { TaskType } from '@/types/task-type';
 import { type TaskMeta } from '@/types/task';
+import { type EvmChainAddress } from '@/types/history/events';
 
 export const useAssetInfoRetrieval = () => {
   const { t } = useI18n();
@@ -138,21 +139,23 @@ export const useAssetInfoRetrieval = () => {
       return getAddressFromEvmIdentifier(key);
     });
 
-  const fetchTokenDetails = async (address: string): Promise<ERC20Token> => {
+  const fetchTokenDetails = async (
+    payload: EvmChainAddress
+  ): Promise<ERC20Token> => {
     try {
       const taskType = TaskType.ERC20_DETAILS;
-      const { taskId } = await erc20details(address);
+      const { taskId } = await erc20details(payload);
       const { result } = await awaitTask<ERC20Token, TaskMeta>(
         taskId,
         taskType,
         {
-          title: t('actions.assets.erc20.task.title', { address })
+          title: t('actions.assets.erc20.task.title', payload)
         }
       );
       return result;
     } catch (e: any) {
       notify({
-        title: t('actions.assets.erc20.error.title', { address }),
+        title: t('actions.assets.erc20.error.title', payload),
         message: t('actions.assets.erc20.error.description', {
           message: e.message
         }),

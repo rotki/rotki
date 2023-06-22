@@ -189,10 +189,10 @@
       "erc20": {
         "error": {
           "description": "检索token详细信息时出错: {message}",
-          "title": "正在检索 {address} 的token详细信息"
+          "title": "正在检索 {address} ({evmChain}) 的token详细信息"
         },
         "task": {
-          "title": "正在检索 {address} 的token详细信息"
+          "title": "正在检索 {address} ({evmChain}) 的token详细信息"
         }
       },
       "update": {

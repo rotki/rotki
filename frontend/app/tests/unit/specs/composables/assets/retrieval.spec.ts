@@ -61,7 +61,10 @@ describe('store::assets/retrieval', () => {
   });
 
   describe('fetchTokenDetails', () => {
-    const address = '0x12BB890508c125661E03b09EC06E404bc9289040';
+    const payload = {
+      address: '0x12BB890508c125661E03b09EC06E404bc9289040',
+      evmChain: 'ethereum'
+    };
 
     test('success', async () => {
       const tokenDetail: ERC20Token = {
@@ -75,9 +78,9 @@ describe('store::assets/retrieval', () => {
         meta: { title: '' }
       });
 
-      const result = await assetInfoRetrieval.fetchTokenDetails(address);
+      const result = await assetInfoRetrieval.fetchTokenDetails(payload);
 
-      expect(api.erc20details).toHaveBeenCalledWith(address);
+      expect(api.erc20details).toHaveBeenCalledWith(payload);
 
       expect(result).toEqual(tokenDetail);
 
@@ -89,9 +92,9 @@ describe('store::assets/retrieval', () => {
         new Error('failed')
       );
 
-      const result = await assetInfoRetrieval.fetchTokenDetails(address);
+      const result = await assetInfoRetrieval.fetchTokenDetails(payload);
 
-      expect(api.erc20details).toHaveBeenCalledWith(address);
+      expect(api.erc20details).toHaveBeenCalledWith(payload);
 
       expect(result).toEqual({});
 
