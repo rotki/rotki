@@ -2399,7 +2399,7 @@ class RestAPI:
             to_timestamp: Timestamp,
     ) -> dict[str, Any]:
         return self._eth_module_query(
-            module_name='uniswap',
+            module_name=module,
             method='get_stats_for_addresses',
             query_specific_balances_before=None,
             addresses=self.rotkehlchen.chains_aggregator.queried_addresses_for_module(module),

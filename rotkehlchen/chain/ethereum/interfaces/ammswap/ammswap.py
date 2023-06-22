@@ -9,23 +9,26 @@ This interface is used at the moment in:
 """
 import logging
 from collections import defaultdict
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, Union
 
 from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.ethereum.interfaces.ammswap.types import (
+    AddressToLPBalances,
     AggregatedAmount,
     AssetToPrice,
     LiquidityPool,
     LiquidityPoolEventsBalance,
 )
+from rotkehlchen.chain.ethereum.modules.uniswap.utils import uniswap_lp_token_balances
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_WETH
-from rotkehlchen.constants.misc import ZERO_PRICE
+from rotkehlchen.constants.misc import ZERO, ZERO_PRICE
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
@@ -117,7 +120,7 @@ class AMMSwapPlatform:
 
             underlying0 = EvmToken(evm_address_to_identifier(address=pool_token.underlying_tokens[0].address, chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20))  # noqa: E501
             if pool_token.underlying_tokens[0] != A_WETH:
-                asset_list = (underlying0,)
+                asset_list: Union[tuple[EvmToken], tuple[Asset, Asset]] = (underlying0,)
             else:
                 asset_list = (A_ETH, A_WETH)
 
@@ -146,11 +149,12 @@ class AMMSwapPlatform:
 
             # Add current pool balances by looking up the pool
             if pool in pool_balance:
-                token0 = pool_balance[pool].assets[0].token
-                token1 = pool_balance[pool].assets[1].token
-                profit_loss0 += pool_balance[pool].assets[0].user_balance.amount
-                profit_loss1 += pool_balance[pool].assets[1].user_balance.amount
-                usd_profit_loss += pool_balance[pool].user_balance.usd_value
+                pool_balance_for_token = pool_balance[pool.evm_address]
+                token0 = pool_balance_for_token.assets[0].token
+                token1 = pool_balance_for_token.assets[1].token
+                profit_loss0 += pool_balance_for_token.assets[0].user_balance.amount
+                profit_loss1 += pool_balance_for_token.assets[1].user_balance.amount
+                usd_profit_loss += pool_balance_for_token.user_balance.usd_value
             else:
                 # NB: get `token0` and `token1` from any pool event
                 token0 = EvmToken(evm_address_to_identifier(address=pool.underlying_tokens[0].address, chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20))  # noqa: E501
@@ -170,10 +174,10 @@ class AMMSwapPlatform:
 
     def get_stats_for_addresses(
             self,
-            addresses: Optional[list[ChecksumEvmAddress]],
+            addresses: list[ChecksumEvmAddress],
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
-    ):
+    ) -> dict[ChecksumEvmAddress, list[LiquidityPoolEventsBalance]]:
         db = DBHistoryEvents(self.database)
         stats = {}
         for address in addresses:
@@ -200,14 +204,14 @@ class AMMSwapPlatform:
             )
         return stats
 
-    def get_lp_addresses(
+    def _get_lp_addresses(
             self,
             addresses: list[ChecksumEvmAddress],
     ) -> dict[ChecksumEvmAddress, list[Asset]]:
         """Query the LP tokens where the provided users have ever deposited"""
         db_filter = EvmEventFilterQuery.make(
             counterparties=self.counterparties,
-            location_labels=addresses,
+            location_labels=addresses,  # type: ignore[arg-type]
             event_subtypes=[
                 HistoryEventSubType.RECEIVE_WRAPPED,
             ],
@@ -220,3 +224,48 @@ class AMMSwapPlatform:
                 address_to_pools[string_to_evm_address(address)].append(Asset(lp_token))
 
         return address_to_pools
+
+    def get_balances_chain(self, addresses: list[ChecksumEvmAddress]) -> AddressToLPBalances:
+        """Get the addresses' pools data via chain queries"""
+        addresses_to_lps = self._get_lp_addresses(addresses=addresses)
+        address_mapping = {}
+        for address, lps in addresses_to_lps.items():
+            token_addresses = [token.resolve_to_evm_token().evm_address for token in lps]
+            pool_balances = uniswap_lp_token_balances(
+                userdb=self.database,
+                address=address,
+                ethereum=self.ethereum,
+                lp_addresses=token_addresses,
+            )
+            if len(pool_balances) != 0:
+                address_mapping[address] = pool_balances
+        return address_mapping
+
+    def _update_asset_price_in_lp_balances(self, address_balances: AddressToLPBalances) -> None:
+        """Utility function to update the pools underlying assets prices in USD
+        (prices obtained via Inquirer and the subgraph) used by all AMM platforms.
+        """
+        for lps in address_balances.values():
+            for lp in lps:
+                # Try to get price from either known or unknown asset price.
+                # Otherwise keep existing price (zero)
+                total_user_balance = ZERO
+                for asset in lp.assets:
+                    asset_usd_price = Inquirer().find_usd_price(asset.token)
+                    # Update <LiquidityPoolAsset> if asset USD price exists
+                    if asset_usd_price != ZERO_PRICE:
+                        asset.usd_price = asset_usd_price
+                        asset.user_balance.usd_value = FVal(
+                            asset.user_balance.amount * asset_usd_price,
+                        )
+
+                    total_user_balance += asset.user_balance.usd_value
+
+                # Update <LiquidityPool> total balance in USD
+                lp.user_balance.usd_value = total_user_balance
+
+    def get_balances(self, addresses: list[ChecksumEvmAddress]) -> AddressToLPBalances:
+        """Get the addresses' balances in the Uniswap protocol"""
+        protocol_balance = self.get_balances_chain(addresses)
+        self._update_asset_price_in_lp_balances(protocol_balance)
+        return protocol_balance

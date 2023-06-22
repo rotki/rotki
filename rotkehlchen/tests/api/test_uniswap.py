@@ -69,7 +69,7 @@ def test_get_balances(
         inquirer: Inquirer,  # pylint: disable=unused-argument
 ):
     """Check querying the uniswap balances endpoint works. Uses real data"""
-    tx_hex = deserialize_evm_tx_hash('0x856a5b5d95623f85923938e1911dfda6ad1dd185f45ab101bac99371aeaed329')  # noqa: E501
+    tx_hex = deserialize_evm_tx_hash('0xb226ddb8cbb286a7a998a35263ad258110eed5f923488f03a8d890572cd4608e')  # noqa: E501
     ethereum_inquirer = rotkehlchen_api_server.rest_api.rotkehlchen.chains_aggregator.ethereum.node_inquirer  # noqa: E501
     database = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
     get_decoded_events_of_transaction(
@@ -136,7 +136,7 @@ def test_get_balances(
 @pytest.mark.parametrize('ethereum_modules', [['uniswap']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])
-def test_get_events_history_filtering_by_timestamp_case1(
+def test_get_events_history_filtering_by_timestamp(
         rotkehlchen_api_server: 'APIServer',
         inquirer,  # pylint: disable=unused-argument
         ethereum_accounts,
