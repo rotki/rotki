@@ -238,6 +238,7 @@ def initialize_mock_rotkehlchen_instance(
         default_mock_price_value,
         ethereum_manager_connect_at_start,
         optimism_manager_connect_at_start,
+        polygon_pos_manager_connect_at_start,
         kusama_manager_connect_at_start,
         ksm_rpc_endpoint,
         max_tasks_num,
@@ -356,6 +357,11 @@ def initialize_mock_rotkehlchen_instance(
             connect_at_start=optimism_manager_connect_at_start,
             evm_inquirer=rotki.chains_aggregator.optimism.node_inquirer,
         )
+        wait_until_all_nodes_connected(
+            connect_at_start=polygon_pos_manager_connect_at_start,
+            evm_inquirer=rotki.chains_aggregator.polygon_pos.node_inquirer,
+        )
+
     wait_until_all_substrate_nodes_connected(
         substrate_manager_connect_at_start=kusama_manager_connect_at_start,
         substrate_manager=rotki.chains_aggregator.kusama,
@@ -405,6 +411,7 @@ def fixture_rotkehlchen_api_server(
         default_mock_price_value,
         ethereum_manager_connect_at_start,
         optimism_manager_connect_at_start,
+        polygon_pos_manager_connect_at_start,
         kusama_manager_connect_at_start,
         ksm_rpc_endpoint,
         max_tasks_num,
@@ -451,6 +458,7 @@ def fixture_rotkehlchen_api_server(
         default_mock_price_value=default_mock_price_value,
         ethereum_manager_connect_at_start=ethereum_manager_connect_at_start,
         optimism_manager_connect_at_start=optimism_manager_connect_at_start,
+        polygon_pos_manager_connect_at_start=polygon_pos_manager_connect_at_start,
         kusama_manager_connect_at_start=kusama_manager_connect_at_start,
         ksm_rpc_endpoint=ksm_rpc_endpoint,
         max_tasks_num=max_tasks_num,
@@ -516,6 +524,7 @@ def rotkehlchen_instance(
         default_mock_price_value,
         ethereum_manager_connect_at_start,
         optimism_manager_connect_at_start,
+        polygon_pos_manager_connect_at_start,
         kusama_manager_connect_at_start,
         ksm_rpc_endpoint,
         max_tasks_num,
@@ -552,6 +561,7 @@ def rotkehlchen_instance(
         default_mock_price_value=default_mock_price_value,
         ethereum_manager_connect_at_start=ethereum_manager_connect_at_start,
         optimism_manager_connect_at_start=optimism_manager_connect_at_start,
+        polygon_pos_manager_connect_at_start=polygon_pos_manager_connect_at_start,
         kusama_manager_connect_at_start=kusama_manager_connect_at_start,
         ksm_rpc_endpoint=ksm_rpc_endpoint,
         max_tasks_num=max_tasks_num,
