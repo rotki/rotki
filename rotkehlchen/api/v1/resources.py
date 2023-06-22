@@ -104,6 +104,7 @@ from rotkehlchen.api.v1.schemas import (
     ManualPriceDeleteSchema,
     ManualPriceRegisteredSchema,
     ManualPriceSchema,
+    ModuleBalanceProcessingSchema,
     ModuleHistoryProcessingSchema,
     NameDeleteSchema,
     NamedEthereumModuleDataSchema,
@@ -215,6 +216,7 @@ from rotkehlchen.types import (
 from .types import (
     EvmPendingTransactionDecodingApiData,
     EvmTransactionDecodingApiData,
+    ModuleWithBalances,
     ModuleWithStats,
 )
 
@@ -1999,27 +2001,6 @@ class UniswapBalancesResource(BaseMethodView):
         return self.rest_api.get_uniswap_balances(async_query=async_query)
 
 
-class UniswapEventsHistoryResource(BaseMethodView):
-
-    get_schema = AsyncHistoricalQuerySchema()
-
-    @require_premium_user(active_check=False)
-    @use_kwargs(get_schema, location='json_and_query')
-    def get(
-            self,
-            async_query: bool,
-            reset_db_data: bool,
-            from_timestamp: Timestamp,
-            to_timestamp: Timestamp,
-    ) -> Response:
-        return self.rest_api.get_uniswap_events_history(
-            async_query=async_query,
-            reset_db_data=reset_db_data,
-            from_timestamp=from_timestamp,
-            to_timestamp=to_timestamp,
-        )
-
-
 class UniswapV3BalancesResource(BaseMethodView):
 
     get_schema = AsyncQueryArgumentSchema()
@@ -2090,6 +2071,37 @@ class LiquityStakingResource(BaseMethodView):
         return self.rest_api.get_liquity_staked(async_query=async_query)
 
 
+class ModuleBalancesResource(BaseMethodView):
+
+    get_schema = ModuleBalanceProcessingSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(get_schema, location='json_and_query_and_view_args')
+    def get(
+            self,
+            module: ModuleWithBalances,
+            async_query: bool,
+    ) -> Response:
+        if module in (ModuleWithBalances.UNISWAP_V2, ModuleWithStats.SUSHISWAP, ModuleWithStats.BALANCER):
+            return self.rest_api.get_amm_platform_balances(
+                async_query=async_query,
+                module=module.serialize(),
+            )
+            
+        if module == ModuleWithBalances.UNISWAP_V3:
+            return self.rest_api.get_amm_platform_balances(
+                async_query=async_query,
+                module=module.serialize(),
+                method='get_v3_balances'
+            )
+
+        # this shouldn't happen since we have validation in marshmallow
+        return api_response(wrap_in_fail_result(
+            message='unknown module provided for stats',
+            status_code=HTTPStatus.BAD_REQUEST,
+        ))
+
+
 class ModuleStatsResource(BaseMethodView):
 
     get_schema = ModuleHistoryProcessingSchema()
@@ -2105,6 +2117,14 @@ class ModuleStatsResource(BaseMethodView):
     ) -> Response:
         if module in (ModuleWithStats.AAVE, ModuleWithStats.COMPOUND):
             return self.rest_api.get_module_stats_using_balances(
+                async_query=async_query,
+                module=module.serialize(),
+                from_timestamp=from_timestamp,
+                to_timestamp=to_timestamp,
+            )
+            
+        if module in (ModuleWithStats.UNISWAP, ModuleWithStats.SUSHISWAP):
+            return self.rest_api.get_module_stats(
                 async_query=async_query,
                 module=module.serialize(),
                 from_timestamp=from_timestamp,
