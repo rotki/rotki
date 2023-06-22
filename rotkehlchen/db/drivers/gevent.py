@@ -87,7 +87,13 @@ class DBCursor:
     def execute(self, statement: str, *bindings: Sequence) -> 'DBCursor':
         if __debug__:
             logger.trace(f'EXECUTE {statement}')
-        self._cursor.execute(statement, *bindings)
+        try:
+            self._cursor.execute(statement, *bindings)
+        except (sqlcipher.InterfaceError, sqlite3.InterfaceError):  # pylint: disable=no-member
+            # Long story. Don't judge me. https://github.com/rotki/rotki/issues/5432
+            logger.debug(f'{statement} with {bindings} failed due to https://github.com/rotki/rotki/issues/5432. Retrying')  # noqa: E501
+            self._cursor.execute(statement, *bindings)
+
         if __debug__:
             logger.trace(f'FINISH EXECUTE {statement}')
         return self
