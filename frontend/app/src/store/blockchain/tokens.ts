@@ -3,11 +3,12 @@ import { Blockchain } from '@rotki/common/lib/blockchain';
 import isEqual from 'lodash/isEqual';
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
-import { type BlockchainAssetBalances } from '@/types/blockchain/balances';
 import {
   type EthDetectedTokensInfo,
   type EvmTokensRecord
 } from '@/types/balances';
+import { type BlockchainAssetBalances } from '@/types/blockchain/balances';
+import { isRestChain } from '@/types/blockchain/chains';
 
 const noTokens = (): EthDetectedTokensInfo => ({
   tokens: [],
@@ -40,6 +41,9 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
   } = useBlockchainBalancesApi();
   const { supportsTransactions } = useSupportedChains();
 
+  const { balances: ethBalances } = storeToRefs(useEthBalancesStore());
+  const { balances: chainBalances } = storeToRefs(useChainBalancesStore());
+
   const fetchDetected = async (
     chain: Blockchain,
     addresses: string[]
@@ -58,29 +62,6 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
         ...data
       }
     });
-  };
-
-  /**
-   * Temporary function to update detected token count on balance refresh
-   *
-   * @param {Blockchain} chain
-   * @param {BlockchainAssetBalances} chainValues
-   */
-  const updateDetectedTokens = (
-    chain: Blockchain,
-    chainValues: BlockchainAssetBalances
-  ) => {
-    const lastUpdateTimestamp = Date.now() / 1000;
-    const data: EvmTokensRecord = {};
-    for (const address in chainValues) {
-      const { assets } = chainValues[address];
-      const tokens = Object.keys(assets).filter(
-        asset => asset !== Blockchain.ETH.toUpperCase()
-      );
-      data[address] = { tokens, lastUpdateTimestamp };
-    }
-
-    setState(chain, data);
   };
 
   const fetchDetectedTokens = async (
@@ -121,6 +102,11 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
     }
   };
 
+  const getTokens = (balances: BlockchainAssetBalances, address: string) => {
+    const assets = balances[address]?.assets ?? [];
+    return Object.keys(assets).filter(id => !get(isAssetIgnored(id)));
+  };
+
   const getEthDetectedTokensInfo = (
     chain: MaybeRef<Blockchain>,
     address: MaybeRef<string | null>
@@ -130,16 +116,28 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
       if (!supportsTransactions(blockchain)) {
         return noTokens();
       }
-      const detected = get(tokensState)[blockchain];
+      const state = get(tokensState);
+      const detected: EvmTokensRecord | undefined = state[blockchain];
       const addr = get(address);
-      const info = (addr && detected?.[addr]) || null;
+
+      if (!addr) {
+        return noTokens();
+      }
+
+      const info = detected?.[addr];
       if (!info) {
         return noTokens();
       }
 
-      const tokens = info.tokens
-        ? info.tokens.filter(item => !get(isAssetIgnored(item)))
-        : [];
+      let tokens: string[];
+      if (blockchain === Blockchain.ETH) {
+        tokens = getTokens(get(ethBalances)[blockchain], addr);
+      } else if (isRestChain(blockchain)) {
+        tokens = getTokens(get(chainBalances)[blockchain], addr);
+      } else {
+        tokens = info.tokens?.filter(id => !get(isAssetIgnored(id))) ?? [];
+      }
+
       return {
         tokens,
         total: tokens.length,
@@ -170,12 +168,11 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
 
   const { isTaskRunning } = useTaskStore();
   const { fetchBlockchainBalances } = useBlockchainBalances();
-  const { balances: ethBalances } = storeToRefs(useEthBalancesStore());
-  const { balances: chainBalances } = storeToRefs(useChainBalancesStore());
 
   const isEthDetecting = isTaskRunning(TaskType.FETCH_DETECTED_TOKENS, {
     chain: Blockchain.ETH
   });
+
   watch(isEthDetecting, async (isDetecting, wasDetecting) => {
     if (get(shouldRefreshBalances) && wasDetecting && !isDetecting) {
       await fetchBlockchainBalances({
@@ -209,39 +206,8 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
     }
   });
 
-  // todo: this is temporary, to update the detected tokens count
-  // todo: remove when BE updates the endpoint for fetching detected tokens
-  watch(ethBalances, (balances, oldBalances) => {
-    const chain = Blockchain.ETH;
-    const chainValues = get(balances)[chain];
-    // we're only interested on the eth chain changes
-    if (!isEqual(chainValues, get(oldBalances)[chain])) {
-      updateDetectedTokens(chain, chainValues);
-    }
-  });
-
-  // todo: this is temporary, to update the detected tokens count
-  // todo: remove when BE updates the endpoint for fetching detected tokens
-  watch(chainBalances, (balances, oldBalances) => {
-    // did this with a loop and it caused update errors
-    const optimism = Blockchain.OPTIMISM;
-    const optimismValues = get(balances)[optimism];
-    // we're only interested on the optimism chain changes
-    if (!isEqual(optimismValues, get(oldBalances)[optimism])) {
-      updateDetectedTokens(optimism, optimismValues);
-    }
-
-    const polygon = Blockchain.POLYGON_POS;
-    const polygonValues = get(balances)[polygon];
-    // we're only interested on the polygon chain changes
-    if (!isEqual(polygonValues, get(oldBalances)[polygon])) {
-      updateDetectedTokens(polygon, polygonValues);
-    }
-  });
-
   return {
     shouldRefreshBalances,
-    updateDetectedTokens,
     fetchDetected,
     fetchDetectedTokens,
     getEthDetectedTokensInfo
