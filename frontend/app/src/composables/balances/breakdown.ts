@@ -1,5 +1,4 @@
 import { type AssetBalanceWithPrice, type BigNumber } from '@rotki/common';
-import { type ComputedRef } from 'vue';
 import { TRADE_LOCATION_BLOCKCHAIN } from '@/data/defaults';
 import { type AssetBreakdown } from '@/types/blockchain/accounts';
 

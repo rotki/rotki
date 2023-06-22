@@ -1,4 +1,3 @@
-import { type ComputedRef, type Ref } from 'vue';
 import { z } from 'zod';
 import { type MatchedKeyword, type SearchMatcher } from '@/types/filtering';
 

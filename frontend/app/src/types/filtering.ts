@@ -1,4 +1,3 @@
-import { type ComputedRef, type Ref } from 'vue';
 import { type AssetInfo } from '@rotki/common/lib/data';
 import { z } from 'zod';
 import { AssetInfoWithId, type AssetsWithId } from '@/types/asset';

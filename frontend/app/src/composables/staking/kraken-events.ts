@@ -1,4 +1,3 @@
-import { type ComputedRef } from 'vue';
 import { KrakenStakingEventType } from '@/types/staking';
 import { type ActionDataEntry } from '@/types/action';
 

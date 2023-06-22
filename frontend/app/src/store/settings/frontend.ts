@@ -4,7 +4,6 @@ import {
   type TimeFramePeriod,
   type TimeFrameSetting
 } from '@rotki/common/lib/settings/graphs';
-import { type ComputedRef } from 'vue';
 import { getBnFormat } from '@/data/amount_formatter';
 import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { type CurrencyLocation } from '@/types/currency-location';

@@ -1,5 +1,3 @@
-import { type ComputedRef } from 'vue';
-
 export class Currency {
   constructor(
     readonly name: string,

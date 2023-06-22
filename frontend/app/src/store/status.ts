@@ -1,4 +1,3 @@
-import { type ComputedRef } from 'vue';
 import { Section, Status, defiSections } from '@/types/status';
 import { type StatusPayload } from '@/types/action';
 

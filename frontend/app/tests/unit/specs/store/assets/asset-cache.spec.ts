@@ -1,6 +1,5 @@
 import { type AssetInfo } from '@rotki/common/lib/data';
 import flushPromises from 'flush-promises';
-import { type ComputedRef } from 'vue';
 import { type AssetMap } from '@/types/asset';
 
 describe('store::assets/cache', () => {

@@ -1,4 +1,3 @@
-import { type Ref } from 'vue';
 import { type BaseMessage } from '@/types/messages';
 
 export const useCacheClear = <T>(

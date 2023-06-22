@@ -11,7 +11,6 @@ import {
   handleResponse,
   validWithSessionAndExternalService
 } from '@/services/utils';
-import { transformCase } from '@/utils/text';
 import { type PendingTask } from '@/types/task';
 
 export const useEth2Api = () => {

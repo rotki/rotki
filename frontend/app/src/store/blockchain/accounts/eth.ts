@@ -3,7 +3,6 @@ import {
   type Eth2ValidatorEntry,
   type Eth2Validators
 } from '@rotki/common/lib/staking/eth2';
-import { type ComputedRef, type Ref } from 'vue';
 import { type Eth2Validator } from '@/types/balances';
 import { Module } from '@/types/modules';
 import { Section } from '@/types/status';

@@ -1,4 +1,3 @@
-import { type ComputedRef } from 'vue';
 import { type Blockchain } from '@rotki/common/lib/blockchain';
 import { TaskType } from '@/types/task-type';
 

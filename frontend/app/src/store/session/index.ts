@@ -1,4 +1,3 @@
-import { type ComputedRef } from 'vue';
 import { type Exchange } from '@/types/exchanges';
 import { type SupportedLanguage } from '@/types/frontend-settings';
 import {

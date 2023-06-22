@@ -1,5 +1,4 @@
 import { mount } from '@vue/test-utils';
-import { useBackendManagement } from '@/composables/backend';
 
 vi.mock('@/composables/electron-interop', () => ({
   useInterop: vi.fn().mockReturnValue({

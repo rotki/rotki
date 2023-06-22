@@ -3,8 +3,6 @@ import { createPinia, setActivePinia } from 'pinia';
 import Vuetify from 'vuetify';
 import flushPromises from 'flush-promises';
 import HistoryEventForm from '@/components/history/events/HistoryEventForm.vue';
-import { useHistoryEventMappings } from '@/composables/history/events/mapping';
-import { uniqueStrings } from '@/utils/data';
 
 describe('HistoryEventForm.vue', () => {
   setupDayjs();

@@ -1,5 +1,3 @@
-import { type ComputedRef } from 'vue';
-
 export const useQueryStatus = <T extends { period?: [number, number] }>(
   data: ComputedRef<T[]>,
   isStatusFinished: (item: T) => boolean

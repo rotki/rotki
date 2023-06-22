@@ -1,10 +1,5 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import {
-  type NoteFormat,
-  NoteType,
-  useHistoryEventNote
-} from '@/composables/history/events/notes';
-import { bigNumberify } from '@/utils/bignumbers';
+import { type NoteFormat, NoteType } from '@/composables/history/events/notes';
 
 vi.mock('@/composables/assets/retrieval', () => ({
   useAssetInfoRetrieval: vi.fn().mockReturnValue({

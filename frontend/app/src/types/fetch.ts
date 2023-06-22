@@ -1,4 +1,3 @@
-import { type Ref } from 'vue';
 import { type PendingTask, type TaskMeta } from '@/types/task';
 import { type TaskType } from '@/types/task-type';
 import { type Section } from '@/types/status';

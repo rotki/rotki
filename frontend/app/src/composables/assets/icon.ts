@@ -1,5 +1,3 @@
-import { type Ref } from 'vue';
-
 export const useAssetIcon = createSharedComposable(() => {
   const lastRefreshedAssetIcon: Ref<number> = ref(0);
 

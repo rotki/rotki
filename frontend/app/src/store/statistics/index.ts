@@ -3,7 +3,6 @@ import { TimeUnit } from '@rotki/common/lib/settings';
 import { timeframes } from '@rotki/common/lib/settings/graphs';
 import { type NetValue } from '@rotki/common/lib/statistics';
 import dayjs from 'dayjs';
-import { type ComputedRef } from 'vue';
 import { CURRENCY_USD } from '@/types/currencies';
 
 const defaultNetValue = (): NetValue => ({

@@ -5,7 +5,6 @@ import {
   handleResponse,
   validWithSessionAndExternalService
 } from '@/services/utils';
-import { transformCase } from '@/utils/text';
 import {
   KrakenStakingEvents,
   type KrakenStakingPagination,

@@ -1,6 +1,5 @@
 import { BigNumber } from '@rotki/common';
 import { type AxiosResponseTransformer } from 'axios';
-import { transformCase } from '@/utils/text';
 
 const isObject = (data: any): boolean =>
   typeof data === 'object' &&

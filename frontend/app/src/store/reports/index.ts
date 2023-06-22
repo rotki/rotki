@@ -1,5 +1,4 @@
 import { type Message } from '@rotki/common/lib/messages';
-import { type ComputedRef, type Ref } from 'vue';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { CURRENCY_USD } from '@/types/currencies';
 import {

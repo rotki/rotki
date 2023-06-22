@@ -1,5 +1,4 @@
 import { type MaybeRef } from '@vueuse/core';
-import { type ComputedRef, type Ref } from 'vue';
 
 const CACHE_EXPIRY = 1000 * 60 * 10;
 const CACHE_SIZE = 500;

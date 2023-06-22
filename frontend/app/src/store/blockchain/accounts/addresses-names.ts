@@ -1,5 +1,4 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { type ComputedRef, type Ref } from 'vue';
 import { type MaybeRef } from '@vueuse/core';
 import {
   AddressBookEntries,
@@ -11,7 +10,6 @@ import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { type Chains } from '@/types/asset/asset-urls';
 import { isBlockchain } from '@/types/blockchain/chains';
-import { uniqueObjects } from '@/utils/data';
 
 export const useAddressesNamesStore = defineStore(
   'blockchains/accounts/addresses-names',

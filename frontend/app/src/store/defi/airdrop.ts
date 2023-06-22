@@ -1,4 +1,3 @@
-import { type ComputedRef, type Ref } from 'vue';
 import {
   AIRDROP_POAP,
   type Airdrop,

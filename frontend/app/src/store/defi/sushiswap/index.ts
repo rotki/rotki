@@ -4,7 +4,6 @@ import {
   XswapEvents,
   type XswapPoolProfit
 } from '@rotki/common/lib/defi/xswap';
-import { type ComputedRef, type Ref } from 'vue';
 import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
 import { type TaskMeta } from '@/types/task';

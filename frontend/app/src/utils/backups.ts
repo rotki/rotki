@@ -1,4 +1,3 @@
-import { type Ref } from 'vue';
 import { type UserDbBackup } from '@/types/backup';
 
 export const getFilepath = (

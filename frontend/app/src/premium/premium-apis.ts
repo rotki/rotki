@@ -17,7 +17,6 @@ import {
   type TimedBalances
 } from '@rotki/common/lib/statistics';
 import { type MaybeRef } from '@vueuse/core';
-import { type ComputedRef } from 'vue';
 
 export const assetsApi = (): AssetsApi => {
   const { assetInfo, assetSymbol, assetName, tokenAddress } =

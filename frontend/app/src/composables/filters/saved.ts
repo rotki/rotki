@@ -1,4 +1,3 @@
-import { type ComputedRef } from 'vue';
 import { type MaybeRef } from '@vueuse/core';
 import {
   type BaseSuggestion,

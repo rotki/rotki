@@ -1,4 +1,3 @@
-import { type ComputedRef, type Ref } from 'vue';
 import {
   type KrakenStakingEvents,
   type KrakenStakingPagination,

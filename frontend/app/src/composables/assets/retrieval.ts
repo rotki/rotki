@@ -1,4 +1,3 @@
-import { type ComputedRef } from 'vue';
 import { type MaybeRef } from '@vueuse/core';
 import { type AssetInfo } from '@rotki/common/lib/data';
 import { CUSTOM_ASSET } from '@/types/asset';

@@ -1,5 +1,3 @@
-import { type ComputedRef, type Ref } from 'vue';
-
 export const useQueryStatusStore = <T>(
   isStatusFinished: (item: T) => boolean,
   createKey: (item: T) => string

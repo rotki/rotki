@@ -1,5 +1,3 @@
-import { type Ref } from 'vue';
-
 export const useLinks = (url?: Ref<string>) => {
   const { isPackaged, premiumURL, openUrl } = useInterop();
   const targetUrl = computed(() => get(url) ?? premiumURL);

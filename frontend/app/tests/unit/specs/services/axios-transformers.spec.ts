@@ -3,7 +3,6 @@ import {
   noRootCamelCaseTransformer,
   snakeCaseTransformer
 } from '@/services/axios-tranformers';
-import { bigNumberify } from '@/utils/bignumbers';
 
 describe('axios transformers', () => {
   test('transform json to camelCase', async () => {

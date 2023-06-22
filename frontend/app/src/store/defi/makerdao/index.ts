@@ -1,5 +1,4 @@
 import { DefiProtocol } from '@rotki/common/lib/blockchain';
-import { type ComputedRef, type Ref } from 'vue';
 import {
   type ApiMakerDAOVault,
   ApiMakerDAOVaults,
