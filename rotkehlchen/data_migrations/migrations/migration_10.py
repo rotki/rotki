@@ -22,11 +22,15 @@ def data_migration_10(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgress
     It also supersedes migration 8 which is removed since this one is added.
     """
     log.debug('Enter data_migration_10')
-    # Check updates for spam assets. This happens before accounts detection to avoid
-    # detecting accounts that only have spam assets.
-    rotki.data_updater.check_for_updates(updates=[UpdateType.SPAM_ASSETS])
     with rotki.data.db.conn.read_ctx() as cursor:
         accounts = rotki.data.db.get_blockchain_accounts(cursor)
+    # steps are: ethereum accounts + potentially write to db + updating spam assets
+    progress_handler.set_total_steps(len(accounts.eth) + 2)
+
+    # Check updates for spam assets. This happens before accounts detection to avoid
+    # detecting accounts that only have spam assets.
+    progress_handler.new_step('Fetching new spam assets info')
+    rotki.data_updater.check_for_updates(updates=[UpdateType.SPAM_ASSETS])
 
     # when we sync a remote database the migrations are executed but the chain_manager
     # has not been created yet
@@ -38,9 +42,6 @@ def data_migration_10(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgress
                     service=ExternalService.POLYGON_POS_ETHERSCAN,
                     api_key=ApiKey('1M4TM28QKJHED9QPDWXFCBEX5CK5ID3ESG'),  # same one in tests
                 )])
-
-        # steps are: ethereum accounts + potentially write to db
-        progress_handler.set_total_steps(len(accounts.eth) + 1)
         chains_aggregator.detect_evm_accounts(progress_handler)
 
         # remove temporary etherscan polygon key

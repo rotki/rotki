@@ -273,9 +273,9 @@ def test_migration_10(
         assert msg['data']['target_version'] == LAST_DATA_MIGRATION
         migration = msg['data']['current_migration']
         assert migration['version'] == 10
-        assert migration['total_steps'] == (5 if step_num != 0 else 0)
+        assert migration['total_steps'] == (len(ethereum_accounts) + 2 if step_num != 0 else 0)
         assert migration['current_step'] == step_num
-        if 1 <= step_num <= 4:
+        if 2 <= step_num <= 5:
             assert 'EVM chain activity' in migration['description']
         else:
             assert migration['description'] == description
@@ -284,7 +284,7 @@ def test_migration_10(
     assert websocket_connection.messages_num() == 7
     for i in range(7):
         msg = websocket_connection.pop_message()
-        if i == 6:  # message for migrated address
+        if i == 7:  # message for migrated address
             assert msg['type'] == 'evm_accounts_detection'
             assert sorted(msg['data'], key=operator.itemgetter('evm_chain', 'address')) == sorted([
                 {'evm_chain': 'avalanche', 'address': ethereum_accounts[1]},
@@ -293,10 +293,10 @@ def test_migration_10(
                 {'evm_chain': 'optimism', 'address': ethereum_accounts[2]},
                 {'evm_chain': 'optimism', 'address': ethereum_accounts[3]},
             ], key=operator.itemgetter('evm_chain', 'address'))
-        elif i >= 5:
+        elif i >= 2:
             assert_progress_message(msg, i, 'Potentially write migrated addresses to the DB')
-        elif i >= 1:
-            assert_progress_message(msg, i, None)
+        elif i == 1:
+            assert_progress_message(msg, i, 'Fetching new spam assets info')
         else:
             assert_progress_message(msg, i, None)
 
