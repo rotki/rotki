@@ -109,7 +109,9 @@ export const balancesApi = (): BalancesApi => {
   const { balances } = useAggregatedBalances();
   return {
     byLocation: balancesByLocation as ComputedRef<Record<string, BigNumber>>,
-    aggregatedBalances: balances() as ComputedRef<AssetBalanceWithPrice[]>,
+    aggregatedBalances: balances(false, false) as ComputedRef<
+      AssetBalanceWithPrice[]
+    >,
     exchangeRate: (currency: string) =>
       computed(() => get(exchangeRate(currency)) ?? One)
   };
