@@ -51,6 +51,7 @@ from rotkehlchen.assets.asset import (
     AssetWithNameAndType,
     AssetWithOracles,
     CustomAsset,
+    EvmToken,
     FiatAsset,
 )
 from rotkehlchen.assets.resolver import AssetResolver
@@ -1354,11 +1355,15 @@ class RestAPI:
         globaldb = GlobalDBHandler()
         # There is no good way to figure out if an asset already exists in the DB
         # Best approximation we can do is this.
-        identifiers = globaldb.check_asset_exists(
-            asset_type=asset.asset_type,
-            name=asset.name,
-            symbol=asset.symbol,
-        )
+        if isinstance(asset, EvmToken):
+            try:
+                asset.check_existence()  # for evm token we know the uniqueness of the identifier
+                identifiers = [asset.identifier]
+            except UnknownAsset:
+                identifiers = None
+        else:
+            identifiers = globaldb.check_asset_exists(asset)
+
         if identifiers is not None:
             return api_response(
                 result=wrap_in_fail_result(

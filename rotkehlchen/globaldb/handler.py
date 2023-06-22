@@ -754,12 +754,9 @@ class GlobalDBHandler:
         return result[0][0]
 
     @staticmethod
-    def check_asset_exists(
-            asset_type: AssetType,
-            name: str,
-            symbol: str,
-    ) -> Optional[list[str]]:
-        """Checks if an asset of a given type, symbol and name exists in the DB already
+    def check_asset_exists(asset: AssetWithOracles) -> Optional[list[str]]:
+        """
+        Checks if an asset of a given type, symbol and name exists in the DB already
 
         For non ethereum tokens with no unique identifier like an address this is the
         only way to check if something already exists in the DB.
@@ -770,7 +767,7 @@ class GlobalDBHandler:
         query = cursor.execute(
             'SELECT A.identifier from assets AS A JOIN common_asset_details as C '
             'ON A.identifier=C.identifier WHERE A.type=? AND A.name=? AND C.symbol=?;',
-            (asset_type.serialize_for_db(), name, symbol),
+            (asset.asset_type.serialize_for_db(), asset.name, asset.symbol),
         )
         result = query.fetchall()
         if len(result) == 0:
