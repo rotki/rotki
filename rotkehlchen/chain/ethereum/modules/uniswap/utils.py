@@ -1,10 +1,6 @@
-import json
 import logging
-from contextlib import suppress
-from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Optional
 
-import requests
 from web3.types import BlockIdentifier
 
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
@@ -22,7 +18,6 @@ from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
-from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal

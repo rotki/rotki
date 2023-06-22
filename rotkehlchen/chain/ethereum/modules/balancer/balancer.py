@@ -17,7 +17,6 @@ from rotkehlchen.chain.ethereum.graph import (
     Graph,
     format_query_indentation,
 )
-from rotkehlchen.chain.ethereum.interfaces.ammswap.graph import TOKEN_DAY_DATAS_QUERY
 from rotkehlchen.constants.misc import ZERO, ZERO_PRICE
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors.misc import ModuleInitializationFailure, RemoteError
@@ -48,6 +47,7 @@ from .graph import (
     MINTS_QUERY,
     POOLSHARES_QUERY,
     REMOVE_LIQUIDITIES_QUERY,
+    TOKEN_DAY_DATAS_QUERY,
     TOKENPRICES_QUERY,
 )
 from .types import (

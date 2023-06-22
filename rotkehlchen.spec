@@ -100,8 +100,6 @@ a = Entrypoint(
         # This list should be kept in sync with setup.py (package_data)
         ('rotkehlchen/data/eth_abi.json', 'rotkehlchen/data'),
         ('rotkehlchen/data/eth_contracts.json', 'rotkehlchen/data'),
-        ('rotkehlchen/data/uniswapv2_lp_tokens.json', 'rotkehlchen/data'),
-        ('rotkehlchen/data/uniswapv2_lp_tokens.meta', 'rotkehlchen/data'),
         ('rotkehlchen/data/global.db', 'rotkehlchen/data'),
         ('rotkehlchen/data/globaldb_v2_v3_assets.sql', 'rotkehlchen/data'),
         ('rotkehlchen/data/nodes.json', 'rotkehlchen/data'),

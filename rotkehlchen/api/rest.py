@@ -45,7 +45,6 @@ from rotkehlchen.api.v1.types import (
     EvmPendingTransactionDecodingApiData,
     EvmTransactionDecodingApiData,
     IncludeExcludeFilterData,
-    ModuleWithStats,
 )
 from rotkehlchen.assets.asset import (
     Asset,
@@ -2386,7 +2385,7 @@ class RestAPI:
             # queried.
             given_defi_balances=lambda: self.rotkehlchen.chains_aggregator.defi_balances,
         )
-        
+
     @async_api_call()
     def get_module_stats(
             self,
@@ -2491,14 +2490,17 @@ class RestAPI:
         )
 
     @async_api_call()
-    def get_amm_platform_balances(self, module: str, method: str = 'get_balances') -> dict[str, Any]:
+    def get_amm_platform_balances(
+            self,
+            module: Literal['uniswap', 'sushiswap', 'balancer'],
+            method: str = 'get_balances',
+    ) -> dict[str, Any]:
         return self._eth_module_query(
             module_name=module,
             method=method,
             query_specific_balances_before=None,
             addresses=self.rotkehlchen.chains_aggregator.queried_addresses_for_module(module),
         )
-
 
     @async_api_call()
     def get_sushiswap_events_history(

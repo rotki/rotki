@@ -1991,36 +1991,6 @@ class YearnVaultsV2HistoryResource(BaseMethodView):
         )
 
 
-class UniswapBalancesResource(BaseMethodView):
-
-    get_schema = AsyncQueryArgumentSchema()
-
-    @require_loggedin_user()
-    @use_kwargs(get_schema, location='json_and_query')
-    def get(self, async_query: bool) -> Response:
-        return self.rest_api.get_uniswap_balances(async_query=async_query)
-
-
-class UniswapV3BalancesResource(BaseMethodView):
-
-    get_schema = AsyncQueryArgumentSchema()
-
-    @require_loggedin_user()
-    @use_kwargs(get_schema, location='json_and_query')
-    def get(self, async_query: bool) -> Response:
-        return self.rest_api.get_uniswap_v3_balances(async_query=async_query)
-
-
-class SushiswapBalancesResource(BaseMethodView):
-
-    get_schema = AsyncQueryArgumentSchema()
-
-    @require_premium_user(active_check=False)
-    @use_kwargs(get_schema, location='json_and_query')
-    def get(self, async_query: bool) -> Response:
-        return self.rest_api.get_sushiswap_balances(async_query=async_query)
-
-
 class SushiswapEventsHistoryResource(BaseMethodView):
 
     get_schema = AsyncHistoricalQuerySchema()
@@ -2082,17 +2052,21 @@ class ModuleBalancesResource(BaseMethodView):
             module: ModuleWithBalances,
             async_query: bool,
     ) -> Response:
-        if module in (ModuleWithBalances.UNISWAP_V2, ModuleWithStats.SUSHISWAP, ModuleWithStats.BALANCER):
+        if module in (
+            ModuleWithBalances.UNISWAP_V2,
+            ModuleWithStats.SUSHISWAP,
+            ModuleWithStats.BALANCER,
+        ):
             return self.rest_api.get_amm_platform_balances(
                 async_query=async_query,
                 module=module.serialize(),
             )
-            
+
         if module == ModuleWithBalances.UNISWAP_V3:
             return self.rest_api.get_amm_platform_balances(
                 async_query=async_query,
                 module=module.serialize(),
-                method='get_v3_balances'
+                method='get_v3_balances',
             )
 
         # this shouldn't happen since we have validation in marshmallow
@@ -2122,7 +2096,7 @@ class ModuleStatsResource(BaseMethodView):
                 from_timestamp=from_timestamp,
                 to_timestamp=to_timestamp,
             )
-            
+
         if module in (ModuleWithStats.UNISWAP, ModuleWithStats.SUSHISWAP):
             return self.rest_api.get_module_stats(
                 async_query=async_query,
@@ -2158,16 +2132,6 @@ class PickleDillResource(BaseMethodView):
     @use_kwargs(get_schema, location='json_and_query')
     def get(self, async_query: bool) -> Response:
         return self.rest_api.get_dill_balance(async_query=async_query)
-
-
-class BalancerBalancesResource(BaseMethodView):
-
-    get_schema = AsyncQueryArgumentSchema()
-
-    @require_premium_user(active_check=False)
-    @use_kwargs(get_schema, location='json_and_query')
-    def get(self, async_query: bool) -> Response:
-        return self.rest_api.get_balancer_balances(async_query=async_query)
 
 
 class BalancerEventsHistoryResource(BaseMethodView):

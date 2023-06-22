@@ -127,7 +127,12 @@ from .fields import (
     TimestampUntilNowField,
     XpubField,
 )
-from .types import EvmPendingTransactionDecodingApiData, IncludeExcludeFilterData, ModuleWithBalances, ModuleWithStats
+from .types import (
+    EvmPendingTransactionDecodingApiData,
+    IncludeExcludeFilterData,
+    ModuleWithBalances,
+    ModuleWithStats,
+)
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.aggregator import ChainsAggregator

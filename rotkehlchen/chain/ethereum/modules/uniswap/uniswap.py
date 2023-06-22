@@ -3,7 +3,6 @@ from collections import defaultdict
 from typing import TYPE_CHECKING, Optional
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.interfaces.ammswap.ammswap import AMMSwapPlatform
 from rotkehlchen.chain.ethereum.interfaces.ammswap.types import (
     UNISWAP_EVENTS_TYPES,
@@ -13,9 +12,7 @@ from rotkehlchen.chain.ethereum.interfaces.ammswap.types import (
     AssetToPrice,
     DDAddressEvents,
     LiquidityPoolAsset,
-    ProtocolBalance,
 )
-from rotkehlchen.chain.ethereum.interfaces.ammswap.utils import update_asset_price_in_lp_balances
 from rotkehlchen.chain.ethereum.modules.uniswap.constants import CPT_UNISWAP_V2
 from rotkehlchen.chain.ethereum.modules.uniswap.utils import uniswap_lp_token_balances
 from rotkehlchen.chain.ethereum.modules.uniswap.v3.types import (
@@ -36,13 +33,12 @@ from rotkehlchen.types import ChecksumEvmAddress, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
 
-from .constants import CPT_UNISWAP_V1, UNISWAP_EVENTS_PREFIX
+from .constants import CPT_UNISWAP_V1
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import EvmToken
     from rotkehlchen.chain.ethereum.manager import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -88,8 +84,8 @@ class Uniswap(AMMSwapPlatform, EthereumModule):
 
     def get_v3_balances_chain(self, addresses: list[ChecksumEvmAddress]) -> UniswapV3ProtocolBalance:  # noqa: 501
         """Get the addresses' Uniswap V3 pools data via chain queries."""
-        price_known_tokens: set[EvmToken] = set()
-        price_unknown_tokens: set[EvmToken] = set()
+        price_known_tokens: set['EvmToken'] = set()
+        price_unknown_tokens: set['EvmToken'] = set()
 
         address_mapping = {}
         for address in addresses:
@@ -125,9 +121,6 @@ class Uniswap(AMMSwapPlatform, EthereumModule):
         address_events_balances: AddressEventsBalances = {}
         address_events: DDAddressEvents = defaultdict(list)
         db_address_events: AddressEvents = {}
-        new_addresses: list[ChecksumEvmAddress] = []
-        existing_addresses: list[ChecksumEvmAddress] = []
-        min_end_ts: Timestamp = to_timestamp 
 
         # Insert requested events in DB
         all_events = []
@@ -168,7 +161,7 @@ class Uniswap(AMMSwapPlatform, EthereumModule):
             address_events_balances[address] = events_balances
 
         return address_events_balances
-    
+
     def _update_asset_price_in_lp_balances(self, address_balances: AddressToLPBalances) -> None:
         """Utility function to update the pools underlying assets prices in USD
         (prices obtained via Inquirer and the subgraph) used by all AMM platforms.
