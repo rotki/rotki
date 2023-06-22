@@ -5,7 +5,7 @@ import {
   type SupportedAsset,
   type UnderlyingToken
 } from '@rotki/common/lib/data';
-import { required } from '@vuelidate/validators';
+import { helpers, required, requiredIf } from '@vuelidate/validators';
 import omit from 'lodash/omit';
 import { type ComputedRef, type Ref } from 'vue';
 import Fragment from '@/components/helper/Fragment';
@@ -82,7 +82,13 @@ const v$ = setValidation(
   {
     assetType: { required },
     evmChain: { externalServerValidation },
-    address: { externalServerValidation },
+    address: {
+      required: requiredIf(get(isEvmToken)),
+      isValid: helpers.withMessage(
+        t('asset_form.validation.valid_address'),
+        isValidEthAddress
+      )
+    },
     tokenKind: { externalServerValidation },
     name: { externalServerValidation },
     symbol: { externalServerValidation },
@@ -120,18 +126,12 @@ const clearFieldErrors = (fields: Array<keyof SupportedAsset>) => {
   fields.forEach(clearFieldError);
 };
 
-watch([address, evmChain], async ([addressVal, evmChain]) => {
+watch([address, evmChain], async ([address, evmChain]) => {
   if (!evmChain) {
     return;
   }
 
-  const sanitizedAddress = sanitizeAddress(addressVal);
-  if (addressVal !== sanitizedAddress) {
-    set(address, sanitizedAddress);
-    return;
-  }
-
-  if (get(dontAutoFetch) || !isValidEthAddress(addressVal)) {
+  if (get(dontAutoFetch) || !isValidEthAddress(address)) {
     set(dontAutoFetch, false);
     return;
   }
@@ -141,7 +141,7 @@ watch([address, evmChain], async ([addressVal, evmChain]) => {
     decimals: newDecimals,
     name: newName,
     symbol: newSymbol
-  } = await fetchTokenDetails({ address: addressVal, evmChain });
+  } = await fetchTokenDetails({ address, evmChain });
   set(decimals, newDecimals ?? get(decimals));
   set(name, newName || get(name));
   set(symbol, newSymbol || get(symbol));

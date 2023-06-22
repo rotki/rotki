@@ -141,54 +141,56 @@ export class AssetsManagerPage {
     cy.get('@submitButton').click();
     // button should be enabled regardless of the validation status
     cy.get('@submitButton').should('be.enabled');
-
-    // expect to see backend validation messages
-    cy.get('[data-cy=chain-select] .v-messages__message')
-      .contains('Field may not be null.')
-      .should('be.visible');
-    cy.get('[data-cy=token-select] .v-messages__message')
-      .contains('Field may not be null.')
-      .should('be.visible');
-    cy.get('[data-cy=address-input] .v-messages__message')
-      .contains('Given value is not an ethereum address')
-      .should('be.visible');
-    cy.get('[data-cy=decimal-input] .v-messages__message')
-      .contains('Field may not be null.')
-      .should('be.visible');
   }
 
   addAsset(): void {
     const ethAddress = '0x9737c028a738f0856c86bc6279b356db8f3dd440';
     // get the fields
     cy.get('[data-cy=chain-select] [role=button]').as('chainInput');
-    cy.get('[data-cy=chain-select] .v-messages__message')
-      .contains('Field may not be null.')
-      .as('chainMessage');
 
     cy.get('[data-cy=token-select] [role=button]').as('tokenInput');
-    cy.get('[data-cy=token-select] .v-messages__message')
-      .contains('Field may not be null.')
-      .as('tokenMessage');
 
     cy.get('[data-cy=address-input] .v-text-field__slot input[type=text]').as(
       'addressInput'
     );
+
     cy.get('[data-cy=symbol-input] .v-text-field__slot input[type=text]').as(
       'symbolInput'
     );
 
-    cy.get('[data-cy=address-input] .v-messages__message')
-      .contains('Given value is not an ethereum address')
-      .as('addressMessage');
-
     cy.get('[data-cy=decimal-input] .v-text-field__slot input[type=number]').as(
       'decimalInput'
     );
-    cy.get('[data-cy=decimal-input] .v-messages__message')
-      .contains('Field may not be null.')
-      .as('decimalMessage');
 
     cy.get('[data-cy=bottom-dialog] [data-cy=confirm]').as('submitButton');
+
+    // Frontend validation for address
+    cy.get('@submitButton').click();
+
+    cy.get('[data-cy=address-input] .v-messages__message').as('addressMessage');
+    cy.get('@addressMessage')
+      .contains('The value is required')
+      .should('be.visible');
+
+    // enter address
+    cy.get('@addressInput').type(ethAddress);
+    cy.get('@submitButton').click();
+
+    cy.get('[data-cy=chain-select] .v-messages__message').as('chainMessage');
+    cy.get('[data-cy=token-select] .v-messages__message').as('tokenMessage');
+    cy.get('[data-cy=decimal-input] .v-messages__message').as('decimalMessage');
+
+    // expect to see backend validation messages
+    cy.get('@chainMessage').scrollIntoView();
+    cy.get('@chainMessage')
+      .contains('Field may not be null.')
+      .should('be.visible');
+    cy.get('@tokenMessage')
+      .contains('Field may not be null.')
+      .should('be.visible');
+    cy.get('@decimalMessage')
+      .contains('Field may not be null.')
+      .should('be.visible');
 
     cy.get('@chainMessage').should('be.visible');
     // select a chain
@@ -208,9 +210,6 @@ export class AssetsManagerPage {
     // selecting a chain should clear the validation message
     cy.get('@tokenMessage').should('not.be.visible');
 
-    cy.get('@addressMessage').should('be.visible');
-    // enter address
-    cy.get('@addressInput').type(ethAddress);
     cy.get('@decimalMessage').should('be.visible');
     // after loading, input should be enabled
     cy.get('@addressInput').should('be.enabled');

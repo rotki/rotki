@@ -1002,7 +1002,10 @@
     "types": {
       "error": "We could not load the asset types: {message}"
     },
-    "underlying_tokens": "Underlying tokens"
+    "underlying_tokens": "Underlying tokens",
+    "validation": {
+      "valid_address": "Please input valid ETH address"
+    }
   },
   "asset_icon": {
     "tooltip": "[{symbol}] {name}"

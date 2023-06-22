@@ -963,7 +963,10 @@
     "types": {
       "error": "我们无法加载资产类型：{message}"
     },
-    "underlying_tokens": "底层代币"
+    "underlying_tokens": "底层代币",
+    "validation": {
+      "valid_address": "请输入有效的ETH地址"
+    }
   },
   "asset_icon": {
     "tooltip": "[{symbol}] {name}"
