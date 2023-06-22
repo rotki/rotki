@@ -231,10 +231,10 @@ def test_check_asset_exists(globaldb):
         symbol='LOLZ',
         started=0,
     ))
-    assert not globaldb.check_asset_exists(AssetType.TRON_TOKEN, name='foo', symbol='FOO')
-    assert not globaldb.check_asset_exists(AssetType.TRON_TOKEN, name='Lolcoin', symbol='LOLZ')
-    assert globaldb.check_asset_exists(AssetType.FIAT, name='Lolcoin', symbol='LOLZ') == ['2']
-    assert globaldb.check_asset_exists(AssetType.OMNI_TOKEN, name='Lolcoin', symbol='LOLZ') == ['3']  # noqa: E501
+    assert not globaldb.check_asset_exists(CryptoAsset.initialize(identifier='foo', asset_type=AssetType.TRON_TOKEN, name='foo', symbol='FOO'))  # noqa: E501
+    assert not globaldb.check_asset_exists(CryptoAsset.initialize(identifier='foo', asset_type=AssetType.TRON_TOKEN, name='Lolcoin', symbol='LOLZ'))  # noqa: E501
+    assert globaldb.check_asset_exists(FiatAsset.initialize(identifier='lolcoin', name='Lolcoin', symbol='LOLZ')) == ['2']  # noqa: E501
+    assert globaldb.check_asset_exists(CryptoAsset.initialize(identifier='lolz', asset_type=AssetType.OMNI_TOKEN, name='Lolcoin', symbol='LOLZ')) == ['3']  # noqa: E501
 
     # now add another asset already existing, but with different ID. See both returned
     globaldb.add_asset(FiatAsset.initialize(
@@ -242,7 +242,7 @@ def test_check_asset_exists(globaldb):
         name='Euro',
         symbol='EUR',
     ))
-    assert globaldb.check_asset_exists(AssetType.FIAT, name='Euro', symbol='EUR') == ['EUR', '4']  # noqa: E501
+    assert globaldb.check_asset_exists(FiatAsset.initialize(identifier='mieur', name='Euro', symbol='EUR')) == ['EUR', '4']  # noqa: E501
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])

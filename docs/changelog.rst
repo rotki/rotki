@@ -12,6 +12,7 @@ Changelog
 * :bug:`-` Fix issue for ledger actions with zero rate, where the rate isn't used in the PnL report.
 * :bug:`-` Events where the user withdraws WETH from a Uniswap V2 liquidity position will be now correctly decoded.
 * :bug:`-` ENS avatar fetching for each name's avatar should now work for all name resolvers. Even older or custom ones.
+* :bug:`-` Users will be now able to add multiple EVM tokens with the same name if the address is different.
 * :bug:`-` Users will now see correctly decoded Kyber legacy trades.
 * :bug:`-` Users will now be able to decode compounding transactions for Convex gauges.
 * :bug:`-` Events depositing tokens in Yearn V2 vaults where the full owned amount is deposited should be now correctly decoded.
