@@ -82,7 +82,8 @@ describe('composables::user/account', () => {
       });
 
       await createNewAccount({
-        credentials: { username: 'test', password: '1234' }
+        credentials: { username: 'test', password: '1234' },
+        initialSettings: { submitUsageAnalytics: true }
       });
 
       expect(get(error)).toStrictEqual('errors');

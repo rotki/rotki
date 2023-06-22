@@ -62,7 +62,7 @@ export const useUsersApi = () => {
   const createAccount = async (
     payload: CreateAccountPayload
   ): Promise<PendingTask> => {
-    const { credentials, premiumSetup } = payload;
+    const { credentials, premiumSetup, initialSettings } = payload;
     const { username, password } = credentials;
 
     const response = await api.instance.put<ActionResult<PendingTask>>(
@@ -73,7 +73,7 @@ export const useUsersApi = () => {
         premiumApiKey: premiumSetup?.apiKey,
         premiumApiSecret: premiumSetup?.apiSecret,
         initialSettings: {
-          submitUsageAnalytics: premiumSetup?.submitUsageAnalytics
+          submitUsageAnalytics: initialSettings.submitUsageAnalytics
         },
         syncDatabase: premiumSetup?.syncDatabase,
         asyncQuery: true
