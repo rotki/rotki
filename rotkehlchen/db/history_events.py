@@ -233,7 +233,12 @@ class DBHistoryEvents:
             chain_id: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
     ) -> None:
         """Delete all relevant (by transaction hash) history events except those that
-        are customized"""
+        are customized. Only use with limited number of transactions!!!
+
+        If you want to reset all decoded events better use the _reset_decoded_events
+        code in v37 -> v38 upgrade as that is not limited to the number of transactions
+        and won't potentially raise a too many sql variables error
+        """
         customized_event_ids = self.get_customized_event_identifiers(cursor=write_cursor, chain_id=chain_id)  # noqa: E501
         length = len(customized_event_ids)
         querystr = f'DELETE FROM history_events WHERE identifier IN (SELECT H.identifier from history_events H INNER JOIN evm_events_info E ON H.identifier=E.identifier AND E.tx_hash IN ({", ".join(["?"] * len(tx_hashes))}))'  # noqa: E501
