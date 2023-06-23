@@ -25,7 +25,7 @@ def data_migration_10(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgress
     with rotki.data.db.conn.read_ctx() as cursor:
         accounts = rotki.data.db.get_blockchain_accounts(cursor)
     # steps are: ethereum accounts + potentially write to db + updating spam assets
-    progress_handler.set_total_steps(len(accounts.eth) + 2)
+    progress_handler.set_total_steps(len(accounts.eth) + 3)
 
     # Check updates for spam assets. This happens before accounts detection to avoid
     # detecting accounts that only have spam assets.
