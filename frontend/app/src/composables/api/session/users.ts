@@ -72,9 +72,7 @@ export const useUsersApi = () => {
         password,
         premiumApiKey: premiumSetup?.apiKey,
         premiumApiSecret: premiumSetup?.apiSecret,
-        initialSettings: {
-          submitUsageAnalytics: initialSettings.submitUsageAnalytics
-        },
+        initialSettings,
         syncDatabase: premiumSetup?.syncDatabase,
         asyncQuery: true
       }),

@@ -120,7 +120,7 @@ Handling user creation, sign-in, log-out and querying
    :reqjson string[optional] premium_api_key: An optional api key if the user has a rotki premium account.
    :reqjson string[optional] premium_api_secret: An optional api secret if the user has a rotki premium account.
    :reqjson bool[optional] sync_database: If set to true rotki will try to download a remote database for premium users if there is any.
-   :reqjson object[optional] initial_settings: Optionally provide DB settings to set when creating the new user. If not provided, default settings are used.
+   :reqjson object[optional] initial_settings: Optionally provide DB settings to set when creating the new user. If not provided, default settings are used. The default value for `submit_usage_analytics` is `True`.
 
    **Example Response**:
 
