@@ -28,6 +28,7 @@ Changelog
 * :bug:`-` If the relay reports an mev reward with same recipient and amount as block reward, do not create a duplicate block mev reward.
 * :bug:`-` Transactions containing anonymous events should now be properly decoded.
 * :feature:`-` Events involving curve gauge voting should now be properly decoded.
+* :feature:`-` 1inch v4 events should now be properly decoded.
 
 * :release:`1.28.0 <2023-05-17>`
 * :feature:`2469` History events have now been unified under a common history events section. At the moment it features all kraken exchange events, evm events, custom imported events, block productions, staking withdrawals. Missing events retain their own sections and will be merged into the unified history in subsequent releases.

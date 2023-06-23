@@ -64,6 +64,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: 'EthereumTransact
         'Makerdaosai',
         'Oneinchv1',
         'Oneinchv2',
+        'Oneinchv4',
         'OptimismBridge',
         'PickleFinance',
         'Stakedao',
@@ -124,6 +125,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: 'EthereumTransact
         'optimism',
         'eth2',
         'cowswap',
+        '1inch-v4',
     }
 
 
