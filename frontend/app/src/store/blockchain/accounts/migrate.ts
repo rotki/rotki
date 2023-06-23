@@ -27,7 +27,9 @@ export const useAccountMigrationStore = defineStore(
     };
 
     const handleMigratedAccounts = (): void => {
-      const tokenChains: string[] = get(txEvmChains).map(x => x.evmChainName);
+      const txEvmChainsVal = get(txEvmChains);
+      assert(txEvmChainsVal.length > 0, 'Supported chains is empty');
+      const tokenChains: string[] = txEvmChainsVal.map(x => x.evmChainName);
       const addresses: Record<string, string[]> = {};
       const migrated: MigratedAddresses | null = get(migratedAddresses);
 

@@ -171,7 +171,7 @@ const nonExpandedBalances = computed<BlockchainAccountWithBalance[]>(() =>
 
 const visibleBalances = computed<BlockchainAccountWithBalance[]>(() => {
   const balances = get(nonExpandedBalances).map(item => {
-    if (!supportsTransactions(get(blockchain)) || get(loopring)) {
+    if (!get(hasTokenDetection) || get(loopring)) {
       return item;
     }
     const detected = get(getEthDetectedTokensInfo(blockchain, item.address));
@@ -312,7 +312,7 @@ const asset: ComputedRef<string> = computed(() => {
 const tableHeaders = computed<DataTableHeader[]>(() => {
   const currency = { symbol: get(currencySymbol) };
 
-  const currencyHeader = supportsTransactions(get(blockchain))
+  const currencyHeader = get(hasTokenDetection)
     ? t('account_balances.headers.usd_value_eth', currency)
     : t('account_balances.headers.usd_value', currency);
 
