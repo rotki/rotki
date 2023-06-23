@@ -110,6 +110,7 @@ class TaskManager:
             msg_aggregator: 'MessagesAggregator',
             data_updater: 'RotkiDataUpdater',
     ) -> None:
+        self.should_schedule = False
         self.max_tasks_num = max_tasks_num
         self.greenlet_manager = greenlet_manager
         self.api_task_greenlets = api_task_greenlets
@@ -731,8 +732,15 @@ class TaskManager:
     def schedule(self) -> None:
         """Schedules background task while holding the scheduling lock
 
+        Only if should_schedule has been set to True, which happpens after the first
+        time the user loads up the dashboard. This is to avoid any background tasks running
+        during user migrations, db upgrades and asset upgrades.
+
         Used during logout to make sure no task is being scheduled at the same time
         as logging out
         """
+        if self.should_schedule is False:
+            return
+
         with self.schedule_lock:
             self._schedule()

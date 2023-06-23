@@ -1010,6 +1010,11 @@ class Rotkehlchen:
                     save_despite_errors=save_despite_errors,
                 )
 
+        # Once the first snapshot is taken the task manager should now be able to
+        # start scheduling tasks. This means that the user has logged in and seen
+        # the dashboard. This is to avoid scheduling tasks during DB upgrade,
+        # migrations and asset updates.
+        self.task_manager.should_schedule = True  # type: ignore[union-attr]  # should exist here
         return result_dict
 
     def set_settings(self, settings: ModifiableDBSettings) -> tuple[bool, str]:
