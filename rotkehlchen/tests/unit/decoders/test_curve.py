@@ -839,7 +839,7 @@ def test_gauge_vote(ethereum_accounts, ethereum_transaction_decoder) -> None:
             asset=Asset('ETH'),
             balance=Balance(),
             location_label=user_address,
-            notes='Vote for 0x740BA8aa0052E07b925908B380248cb03f3DE5cB curve gauge',
+            notes='Reset vote for 0x740BA8aa0052E07b925908B380248cb03f3DE5cB curve gauge',
             counterparty=CPT_CURVE,
             address=string_to_evm_address('0x740BA8aa0052E07b925908B380248cb03f3DE5cB'),
             product=EvmProduct.GAUGE,
