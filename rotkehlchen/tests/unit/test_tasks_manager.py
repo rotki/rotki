@@ -78,6 +78,7 @@ def fixture_task_manager(
         msg_aggregator=messages_aggregator,
         data_updater=RotkiDataUpdater(msg_aggregator=messages_aggregator, user_db=database),
     )
+    task_manager.should_schedule = True
     return task_manager
 
 

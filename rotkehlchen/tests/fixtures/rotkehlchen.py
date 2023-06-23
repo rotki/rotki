@@ -316,6 +316,7 @@ def initialize_mock_rotkehlchen_instance(
             resume_from_backup=False,
         )
 
+    rotki.task_manager.should_schedule = True
     inquirer_inject_ethereum_set_order(
         inquirer=Inquirer(),
         add_defi_oracles=False,

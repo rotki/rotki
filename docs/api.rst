@@ -2798,6 +2798,9 @@ Querying all balances
       This endpoint can also be queried asynchronously by using ``"async_query": true``
 
    .. note::
+      This endpoint also serves as a hacky way of notifying the backend that the user has logged in the dashboard and background task scheduling or other heavy tasks can commence.
+
+   .. note::
       This endpoint also accepts parameters as query arguments.
 
    .. note::
