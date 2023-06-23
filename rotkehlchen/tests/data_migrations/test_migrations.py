@@ -273,7 +273,7 @@ def test_migration_10(
         assert msg['data']['target_version'] == LAST_DATA_MIGRATION
         migration = msg['data']['current_migration']
         assert migration['version'] == 10
-        assert migration['total_steps'] == (len(ethereum_accounts) + 2 if step_num != 0 else 0)
+        assert migration['total_steps'] == (len(ethereum_accounts) + 3 if step_num != 0 else 0)
         assert migration['current_step'] == step_num
         if 2 <= step_num <= 5:
             assert 'EVM chain activity' in migration['description']
