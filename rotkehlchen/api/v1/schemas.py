@@ -1,5 +1,4 @@
 import logging
-from enum import auto
 from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, Union, get_args
 
 import marshmallow
@@ -20,6 +19,7 @@ from rotkehlchen.accounting.structures.types import (
 from rotkehlchen.accounting.types import SchemaEventType
 from rotkehlchen.assets.asset import Asset, AssetWithNameAndType, AssetWithOracles, CryptoAsset
 from rotkehlchen.assets.types import AssetType
+from rotkehlchen.assets.utils import IgnoredAssetsHandling
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.bitcoin.bch.utils import validate_bch_address_input
 from rotkehlchen.chain.bitcoin.hdkey import HDKey, XpubType
@@ -94,7 +94,6 @@ from rotkehlchen.types import (
 )
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 from rotkehlchen.utils.misc import create_order_by_rules_list, ts_now
-from rotkehlchen.utils.mixins.enums import SerializableEnumNameMixin
 
 from .fields import (
     AmountField,
@@ -1933,12 +1932,6 @@ class IgnoredActionsModifySchema(Schema):
         return data
 
 
-class IgnoredAssetsHandling(SerializableEnumNameMixin):
-    NONE = auto()
-    EXCLUDE = auto()
-    SHOW_ONLY = auto()
-
-
 class AssetsPostSchema(DBPaginationSchema, DBOrderBySchema):
     name = fields.String(load_default=None)
     symbol = fields.String(load_default=None)
@@ -1981,13 +1974,7 @@ class AssetsPostSchema(DBPaginationSchema, DBOrderBySchema):
             data: dict[str, Any],
             **_kwargs: Any,
     ) -> dict[str, Any]:
-        with self.db.conn.read_ctx() as cursor, GlobalDBHandler().conn.read_ctx() as globaldb_read_cursor:  # noqa: E501
-            ignored_assets_filter_params: Optional[tuple[Literal['IN', 'NOT IN'], set[str]]] = None  # noqa: E501
-            if data['ignored_assets_handling'] == IgnoredAssetsHandling.EXCLUDE:
-                ignored_assets_filter_params = ('NOT IN', self.db.get_ignored_asset_ids(cursor))
-            elif data['ignored_assets_handling'] == IgnoredAssetsHandling.SHOW_ONLY:
-                ignored_assets_filter_params = ('IN', self.db.get_ignored_asset_ids(cursor))
-
+        with GlobalDBHandler().conn.read_ctx() as globaldb_read_cursor:
             identifiers: Optional[list[str]] = data['identifiers']
             if data['show_user_owned_assets_only'] is True:
                 globaldb_read_cursor.execute('SELECT asset_id FROM user_owned_assets;')
@@ -2011,7 +1998,7 @@ class AssetsPostSchema(DBPaginationSchema, DBOrderBySchema):
                 chain_id=data['evm_chain'],
                 address=data['address'],
                 identifiers=identifiers,
-                ignored_assets_filter_params=ignored_assets_filter_params,
+                ignored_assets_handling=data['ignored_assets_handling'],
             )
         return {'filter_query': filter_query}
 
@@ -2032,15 +2019,11 @@ class AssetsSearchLevenshteinSchema(Schema):
             data: dict[str, Any],
             **_kwargs: Any,
     ) -> dict[str, Any]:
-        ignored_assets_filter_params: Optional[tuple[Literal['IN', 'NOT IN'], set[str]]] = None
-        with self.db.conn.read_ctx() as cursor:
-            # do not check ignored asssets at search
-            ignored_assets_filter_params = ('NOT IN', self.db.get_ignored_asset_ids(cursor))
         filter_query = LevenshteinFilterQuery.make(
             and_op=True,
             substring_search=data['value'].strip().casefold(),
             chain_id=data['evm_chain'],
-            ignored_assets_filter_params=ignored_assets_filter_params,
+            ignored_assets_handling=IgnoredAssetsHandling.EXCLUDE,  # do not check ignored asssets at search  # noqa: E501
         )
         return {
             'filter_query': filter_query,
@@ -2068,10 +2051,6 @@ class AssetsSearchByColumnSchema(DBOrderBySchema, DBPaginationSchema):
             data: dict[str, Any],
             **_kwargs: Any,
     ) -> dict[str, Any]:
-        ignored_assets_filter_params: Optional[tuple[Literal['IN', 'NOT IN'], set[str]]] = None
-        with self.db.conn.read_ctx() as cursor:
-            # do not check ignored asssets at search
-            ignored_assets_filter_params = ('NOT IN', self.db.get_ignored_asset_ids(cursor))
         filter_query = AssetsFilterQuery.make(
             and_op=True,
             order_by_rules=create_order_by_rules_list(data=data, default_order_by_fields=['name']),
@@ -2082,7 +2061,7 @@ class AssetsSearchByColumnSchema(DBOrderBySchema, DBPaginationSchema):
             return_exact_matches=data['return_exact_matches'],
             chain_id=data['evm_chain'],
             identifier_column_name='assets.identifier',
-            ignored_assets_filter_params=ignored_assets_filter_params,
+            ignored_assets_handling=IgnoredAssetsHandling.EXCLUDE,  # do not check ignored asssets at search  # noqa: E501
         )
         return {'filter_query': filter_query}
 
@@ -2824,13 +2803,6 @@ class NFTFilterQuerySchema(
             data: dict[str, Any],
             **_kwargs: Any,
     ) -> dict[str, Any]:
-        ignored_assets_filter_params: Optional[tuple[Literal['IN', 'NOT IN'], set[str]]] = None  # noqa: E501
-        with self.db.conn.read_ctx() as cursor:
-            if data['ignored_assets_handling'] == IgnoredAssetsHandling.EXCLUDE:
-                ignored_assets_filter_params = ('NOT IN', self.db.get_ignored_asset_ids(cursor))
-            elif data['ignored_assets_handling'] == IgnoredAssetsHandling.SHOW_ONLY:
-                ignored_assets_filter_params = ('IN', self.db.get_ignored_asset_ids(cursor))
-
         owner_addresses = self.chains_aggregator.queried_addresses_for_module('nfts') if data['owner_addresses'] is None else data['owner_addresses']  # noqa: E501
         filter_query = NFTFilterQuery.make(
             order_by_rules=create_order_by_rules_list(
@@ -2842,7 +2814,7 @@ class NFTFilterQuerySchema(
             owner_addresses=owner_addresses,
             name=data['name'],
             collection_name=data['collection_name'],
-            ignored_assets_filter_params=ignored_assets_filter_params,
+            ignored_assets_handling=data['ignored_assets_handling'],
             lps_handling=data['lps_handling'],
         )
         return {
