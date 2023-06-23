@@ -16,31 +16,21 @@ export const useSupportedChains = createSharedComposable(() => {
 
   const { connected } = toRefs(useMainStore());
 
-  const supportedChains: Ref<SupportedChains> = asyncComputed<SupportedChains>(
-    () => {
+  const supportedChains: Ref<SupportedChains> =
+    asyncComputed<SupportedChains>(() => {
       if (get(connected)) {
         return fetchSupportedChains();
       }
       return [];
-    },
-    [],
-    {
-      lazy: true
-    }
-  );
+    }, []);
 
-  const allEvmChains: Ref<EvmChainEntries> = asyncComputed<EvmChainEntries>(
-    () => {
+  const allEvmChains: Ref<EvmChainEntries> =
+    asyncComputed<EvmChainEntries>(() => {
       if (get(connected)) {
         return fetchAllEvmChains();
       }
       return [];
-    },
-    [],
-    {
-      lazy: true
-    }
-  );
+    }, []);
 
   const evmChainsData: ComputedRef<EvmChainInfo[]> = computed(() =>
     // isEvmChain guard does not work the same with useArrayFilter
