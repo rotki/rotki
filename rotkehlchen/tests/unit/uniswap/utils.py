@@ -1,7 +1,7 @@
 import functools
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.ethereum.interfaces.ammswap.types import (
     EventType,
     LiquidityPool,
@@ -257,27 +257,23 @@ def const_lp_2_events() -> list[LiquidityPoolEvent]:
 
 def const_lp_1_events_balance() -> LiquidityPoolEventsBalance:
     return LiquidityPoolEventsBalance(
-        address=TEST_ADDRESS_1,
         pool_address=string_to_evm_address('0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89'),
         token0=A_DOLLAR_BASED.resolve_to_evm_token(),
         token1=A_WETH.resolve_to_evm_token(),
-        events=const_lp_1_events(),
         profit_loss0=AssetAmount(FVal('35.489683548121546956')),
         profit_loss1=AssetAmount(FVal('-0.059966416263997186')),
-        usd_profit_loss=Price(FVal('-35.19515540870021242982170811')),
+        usd_profit_loss=ZERO_PRICE,
     )
 
 
 def const_lp_2_events_balance() -> LiquidityPoolEventsBalance:
     return LiquidityPoolEventsBalance(
-        address=TEST_ADDRESS_1,
         pool_address=string_to_evm_address('0xC585Cc7b9E77AEa3371764320740C18E9aEC9c55'),
         token0=A_WETH.resolve_to_evm_token(),
-        token1=A_BTR.resolve_to_evm_token(),
-        events=const_lp_2_events(),
+        token1=EvmToken('eip155:1/erc20:0xCF67CEd76E8356366291246A9222169F4dBdBe64'),
         profit_loss0=AssetAmount(FVal('-0.610130605729210250')),
         profit_loss1=AssetAmount(FVal('1.971799615456732408')),
-        usd_profit_loss=Price(FVal('-352.3903567533354058260380955')),
+        usd_profit_loss=ZERO_PRICE,
     )
 
 
@@ -351,14 +347,12 @@ def const_lp_3_balance() -> LiquidityPool:
 
 def const_lp_3_events_balance() -> LiquidityPoolEventsBalance:
     return LiquidityPoolEventsBalance(
-        address=TEST_ADDRESS_1,
         pool_address=string_to_evm_address('0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89'),
         token0=A_DOLLAR_BASED.resolve_to_evm_token(),
         token1=A_WETH.resolve_to_evm_token(),
-        events=const_lp_3_events(),
-        profit_loss0=AssetAmount(FVal('-0.773209925184996494')),
-        profit_loss1=AssetAmount(FVal('-0.056631443395672732')),
-        usd_profit_loss=Price(FVal('-36.2389300619698095220125311')),
+        profit_loss0=AssetAmount(FVal('35.489683548121546956')),
+        profit_loss1=AssetAmount(FVal('-0.059966416263997186')),
+        usd_profit_loss=ZERO_PRICE,
     )
 
 

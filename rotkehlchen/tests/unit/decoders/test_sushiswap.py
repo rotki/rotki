@@ -316,6 +316,7 @@ def test_sushiswap_v2_remove_liquidity(database, ethereum_inquirer, eth_transact
             notes='Remove 1.122198589808876532 ETH from sushiswap-v2 LP 0x06da0fd433C1A5d7a4faa01111c044910A184553',  # noqa: E501
             counterparty=CPT_SUSHISWAP_V2,
             address=string_to_evm_address('0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F'),
+            extra_data={'pool_address': '0x06da0fd433C1A5d7a4faa01111c044910A184553'},
         ), EvmEvent(
             tx_hash=evmhash,
             sequence_index=23,
@@ -342,6 +343,7 @@ def test_sushiswap_v2_remove_liquidity(database, ethereum_inquirer, eth_transact
             notes='Remove 1408.739932 USDT from sushiswap-v2 LP 0x06da0fd433C1A5d7a4faa01111c044910A184553',  # noqa: E501
             counterparty=CPT_SUSHISWAP_V2,
             address=string_to_evm_address('0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F'),
+            extra_data={'pool_address': '0x06da0fd433C1A5d7a4faa01111c044910A184553'},
         ),
     ]
     assert events == expected_events
@@ -485,6 +487,7 @@ def test_sushiswap_v2_add_liquidity(database, ethereum_inquirer, eth_transaction
             notes='Deposit 0.000797012710918264 ETH to sushiswap-v2 LP 0x06da0fd433C1A5d7a4faa01111c044910A184553',  # noqa: E501
             counterparty=CPT_SUSHISWAP_V2,
             address=string_to_evm_address('0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F'),
+            extra_data={'pool_address': '0x06da0fd433C1A5d7a4faa01111c044910A184553'},
         ), EvmEvent(
             tx_hash=evmhash,
             sequence_index=218,
@@ -498,6 +501,7 @@ def test_sushiswap_v2_add_liquidity(database, ethereum_inquirer, eth_transaction
             notes='Deposit 0.999992 USDT to sushiswap-v2 LP 0x06da0fd433C1A5d7a4faa01111c044910A184553',  # noqa: E501
             counterparty=CPT_SUSHISWAP_V2,
             address=string_to_evm_address('0x06da0fd433C1A5d7a4faa01111c044910A184553'),
+            extra_data={'pool_address': '0x06da0fd433C1A5d7a4faa01111c044910A184553'},
         ), EvmEvent(
             tx_hash=evmhash,
             sequence_index=222,

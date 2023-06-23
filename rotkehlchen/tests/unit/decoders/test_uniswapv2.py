@@ -520,6 +520,7 @@ def test_uniswap_v2_add_liquidity(database, ethereum_inquirer, eth_transactions)
             notes='Deposit 25 USDC to uniswap-v2 LP 0xAE461cA67B15dc8dc81CE7615e0320dA1A9aB8D5',  # noqa: E501
             counterparty=CPT_UNISWAP_V2,
             address=string_to_evm_address('0xAE461cA67B15dc8dc81CE7615e0320dA1A9aB8D5'),
+            extra_data={'pool_address': '0xAE461cA67B15dc8dc81CE7615e0320dA1A9aB8D5'},
         ), EvmEvent(
             tx_hash=evmhash,
             sequence_index=119,
@@ -533,6 +534,7 @@ def test_uniswap_v2_add_liquidity(database, ethereum_inquirer, eth_transactions)
             notes='Deposit 24.994824629555601269 DAI to uniswap-v2 LP 0xAE461cA67B15dc8dc81CE7615e0320dA1A9aB8D5',  # noqa: E501
             counterparty=CPT_UNISWAP_V2,
             address=string_to_evm_address('0xAE461cA67B15dc8dc81CE7615e0320dA1A9aB8D5'),
+            extra_data={'pool_address': '0xAE461cA67B15dc8dc81CE7615e0320dA1A9aB8D5'},
         ), EvmEvent(
             tx_hash=evmhash,
             sequence_index=120,
@@ -717,6 +719,7 @@ def test_uniswap_v2_remove_liquidity(database, ethereum_inquirer, eth_transactio
             notes='Remove 0.005839327781368506 ETH from uniswap-v2 LP 0xB4e16d0168e52d35CaCD2c6185b44281Ec28C9Dc',  # noqa: E501
             counterparty=CPT_UNISWAP_V2,
             address=string_to_evm_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
+            extra_data={'pool_address': '0xB4e16d0168e52d35CaCD2c6185b44281Ec28C9Dc'},
         ), EvmEvent(
             tx_hash=evmhash,
             sequence_index=33,
@@ -755,6 +758,7 @@ def test_uniswap_v2_remove_liquidity(database, ethereum_inquirer, eth_transactio
             notes='Remove 7.073493 USDC from uniswap-v2 LP 0xB4e16d0168e52d35CaCD2c6185b44281Ec28C9Dc',  # noqa: E501
             counterparty=CPT_UNISWAP_V2,
             address=string_to_evm_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
+            extra_data={'pool_address': '0xB4e16d0168e52d35CaCD2c6185b44281Ec28C9Dc'},
         ),
     ]
     assert events == expected_events
@@ -1014,6 +1018,7 @@ def test_remove_liquidity_with_weth(database, ethereum_inquirer, ethereum_accoun
             notes='Remove 518.338444992444885019 POLS from uniswap-v2 LP 0xFfA98A091331Df4600F87C9164cD27e8a5CD2405',  # noqa: E501
             counterparty=CPT_UNISWAP_V2,
             address=string_to_evm_address('0xFfA98A091331Df4600F87C9164cD27e8a5CD2405'),
+            extra_data={'pool_address': '0xFfA98A091331Df4600F87C9164cD27e8a5CD2405'},
         ), EvmEvent(
             tx_hash=evmhash,
             sequence_index=241,
@@ -1027,6 +1032,7 @@ def test_remove_liquidity_with_weth(database, ethereum_inquirer, ethereum_accoun
             notes='Remove 1.378246251315897532 WETH from uniswap-v2 LP 0xFfA98A091331Df4600F87C9164cD27e8a5CD2405',  # noqa: E501
             counterparty=CPT_UNISWAP_V2,
             address=string_to_evm_address('0xFfA98A091331Df4600F87C9164cD27e8a5CD2405'),
+            extra_data={'pool_address': '0xFfA98A091331Df4600F87C9164cD27e8a5CD2405'},
         ),
     ]
     assert events == expected_events

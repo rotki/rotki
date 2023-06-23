@@ -1,3 +1,4 @@
+import logging
 from dataclasses import replace
 from typing import TYPE_CHECKING, Callable, Literal, Optional
 
@@ -25,9 +26,11 @@ from rotkehlchen.constants.assets import A_ETH, A_WETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.resolver import ChainID
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
+from rotkehlchen.errors.misc import NotERC20Conformant
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, EvmTokenKind, EvmTransaction, EVMTxHash
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
@@ -36,6 +39,8 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
 
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 UNISWAP_V2_ROUTER = string_to_evm_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D')
 SUSHISWAP_ROUTER = string_to_evm_address('0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F')
 
@@ -269,18 +274,24 @@ def decode_uniswap_like_deposit_and_withdrawals(
         UnderlyingToken(address=token0.evm_address, token_kind=EvmTokenKind.ERC20, weight=FVal(0.5)),  # noqa: E501
         UnderlyingToken(address=token1.evm_address, token_kind=EvmTokenKind.ERC20, weight=FVal(0.5)),  # noqa: E501
     ]
-    pool_token = get_or_create_evm_token(
-        userdb=database,
-        evm_address=other_log.address,
-        chain_id=ChainID.ETHEREUM,
-        token_kind=EvmTokenKind.ERC20,
-        evm_inquirer=ethereum_inquirer,
-        seen=TokenSeenAt(tx_hash=tx_hash),
-        underlying_tokens=underlaying_tokens,
-    )
-    if len(pool_token.underlying_tokens) == 0:
-        pool_token = replace(pool_token, underlying_tokens=underlaying_tokens)
-        GlobalDBHandler().edit_evm_token(pool_token)
+    try:
+        pool_token = get_or_create_evm_token(
+            userdb=database,
+            evm_address=pool_address,
+            chain_id=ChainID.ETHEREUM,
+            token_kind=EvmTokenKind.ERC20,
+            evm_inquirer=ethereum_inquirer,
+            seen=TokenSeenAt(tx_hash=tx_hash),
+            underlying_tokens=underlaying_tokens,
+        )
+        if len(pool_token.underlying_tokens) == 0:
+            pool_token = replace(pool_token, underlying_tokens=underlaying_tokens)
+            GlobalDBHandler().edit_evm_token(pool_token)
+    except NotERC20Conformant:
+        log.error(
+            f'Failed to create ERC20 token for the pool token since is not an erc20'
+            f'expected: {pool_address} for {token0.evm_address}-{token1.evm_address}',
+        )
 
     new_action_items = []
     if pool_address == target_pool_address:
