@@ -2903,7 +2903,14 @@
     "settings_link": "Module settings"
   },
   "module_selector": {
-    "label": "Select module(s)"
+    "filter": "Αναζήτηση Module",
+    "actions": {
+      "enable_all": "Ενεργοποίηση όλων",
+      "disable_all": "Απενεργοποίηση όλων"
+    },
+    "table": {
+      "enabled": "Ενεργό"
+    }
   },
   "module_settings": {
     "active_modules": "Active modules",

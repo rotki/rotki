@@ -2952,7 +2952,14 @@
     "settings_link": "模块设置"
   },
   "module_selector": {
-    "label": "选择模块"
+    "filter": "搜索模块",
+    "actions": {
+      "enable_all": "启用全部",
+      "disable_all": "禁用所有"
+    },
+    "table": {
+      "enabled": "已启用"
+    }
   },
   "module_settings": {
     "active_modules": "活动模块",

@@ -51,6 +51,7 @@ export const useSettingsStore = defineStore('settings', () => {
       accountingStore.update(accounting);
       success = true;
     } catch (e: any) {
+      logger.error(e);
       message = e.message;
     }
     return {

@@ -3071,7 +3071,14 @@
     "settings_link": "Module settings"
   },
   "module_selector": {
-    "label": "Select module(s)"
+    "filter": "Search module(s)",
+    "actions": {
+      "enable_all": "Enable All",
+      "disable_all": "Disable All"
+    },
+    "table": {
+      "enabled": "Enabled"
+    }
   },
   "module_settings": {
     "active_modules": "Active modules",

@@ -1,4 +1,3 @@
-import { Module } from '@/types/modules';
 import { RotkiApp } from './rotki-app';
 
 export class DefiPage {
@@ -11,21 +10,23 @@ export class DefiPage {
   }
 
   selectModules() {
-    const ignoredModules = [Module.YEARN, Module.MAKERDAO_DSR];
-    const values = Object.values(Module).filter(
-      module => !ignoredModules.includes(module)
+    cy.get('[data-cy=aave-module-switch]').should(
+      'have.attr',
+      'aria-checked',
+      'true'
     );
-
-    for (const module of values) {
-      if (module === Module.AAVE) {
-        continue;
-      }
-
-      cy.get(`#defi-module-${module}`).scrollIntoView();
-      cy.get(`#defi-module-${module}`).find('button').click();
-      cy.get(`#defi-module-${module}`).should('not.exist');
-    }
-    cy.get(`#defi-module-${Module.AAVE}`).should('be.visible');
+    cy.get('[data-cy=modules_disable_all').click();
+    cy.get('[data-cy=aave-module-switch]').should(
+      'have.attr',
+      'aria-checked',
+      'false'
+    );
+    cy.get('[data-cy=aave-module-switch]').closest('.v-input--switch').click();
+    cy.get('[data-cy=aave-module-switch]').should(
+      'have.attr',
+      'aria-checked',
+      'true'
+    );
     cy.get('.defi-wizard__select-accounts').click();
   }
 
