@@ -82,10 +82,49 @@ describe('composables::user/account', () => {
       });
 
       await createNewAccount({
-        credentials: { username: 'test', password: '1234' }
+        credentials: { username: 'test', password: '1234' },
+        initialSettings: { submitUsageAnalytics: true }
       });
 
       expect(get(error)).toStrictEqual('errors');
+    });
+
+    test('create account with submitUsageAnalytics true', async () => {
+      const { createNewAccount } = useAccountManagement();
+      vi.clearAllMocks();
+      vi.mocked(createAccount).mockResolvedValue({
+        success: false,
+        message: 'errors'
+      });
+
+      await createNewAccount({
+        credentials: { username: 'test', password: '1234' },
+        initialSettings: { submitUsageAnalytics: true }
+      });
+
+      expect(createAccount).toHaveBeenCalledWith({
+        credentials: { username: 'test', password: '1234' },
+        initialSettings: { submitUsageAnalytics: true }
+      });
+    });
+
+    test('create account with submitUsageAnalytics false', async () => {
+      const { createNewAccount } = useAccountManagement();
+      vi.clearAllMocks();
+      vi.mocked(createAccount).mockResolvedValue({
+        success: false,
+        message: 'errors'
+      });
+
+      await createNewAccount({
+        credentials: { username: 'test', password: '1234' },
+        initialSettings: { submitUsageAnalytics: false }
+      });
+
+      expect(createAccount).toHaveBeenCalledWith({
+        credentials: { username: 'test', password: '1234' },
+        initialSettings: { submitUsageAnalytics: false }
+      });
     });
   });
 });

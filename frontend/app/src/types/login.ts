@@ -14,8 +14,11 @@ export interface LoginCredentials {
 export interface PremiumSetup {
   readonly apiKey: string;
   readonly apiSecret: string;
-  readonly submitUsageAnalytics: boolean;
   readonly syncDatabase: boolean;
+}
+
+export interface InitialSettings {
+  readonly submitUsageAnalytics: boolean;
 }
 
 export const AccountSession = z.record(
@@ -59,6 +62,7 @@ export class IncompleteUpgradeError extends Error {
 
 export interface CreateAccountPayload {
   readonly credentials: LoginCredentials;
+  readonly initialSettings: InitialSettings;
   premiumSetup?: PremiumSetup;
 }
 

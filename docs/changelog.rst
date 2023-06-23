@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Fix issue create account always saving submit_usage_analytics as true.
 * :feature:`2822` In the asset graph, users will see another setting `Infer zero timed balances` which when activated will show the periods when users weren't holding the asset.
 * :feature:`-` Transactions changing the content hash of an ENS name will now be properly decoded.
 * :feature:`5255` Pnl report assets now have an etherscan link to make it easier to identify pool assets.

@@ -92,6 +92,9 @@ const confirm = () => {
     credentials: {
       username: get(username),
       password: get(password)
+    },
+    initialSettings: {
+      submitUsageAnalytics: get(submitUsageAnalytics)
     }
   };
 
@@ -99,7 +102,6 @@ const confirm = () => {
     payload.premiumSetup = {
       apiKey: get(apiKey),
       apiSecret: get(apiSecret),
-      submitUsageAnalytics: get(submitUsageAnalytics),
       syncDatabase: get(syncDatabase)
     };
   }
