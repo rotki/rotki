@@ -89,25 +89,28 @@ def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
     Reset all decoded evm events except the customized ones for ethereum mainnet and polygon.
     """
     log.debug('Enter _reset_decoded_events')
-    write_cursor.execute('SELECT tx_hash from evm_transactions')
-    tx_hashes = [x[0] for x in write_cursor]
-    write_cursor.execute(
-        'SELECT parent_identifier FROM history_events_mappings WHERE name=? AND value=?',
+    if write_cursor.execute('SELECT COUNT(*) FROM evm_transactions').fetchone()[0] == 0:
+        return
+
+    customized_events = write_cursor.execute(
+        'SELECT COUNT(*) FROM history_events_mappings WHERE name=? AND value=?',
         (HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED),
+    ).fetchone()[0]
+    querystr = (
+        'DELETE FROM history_events WHERE identifier IN ('
+        'SELECT H.identifier from history_events H INNER JOIN evm_events_info E '
+        'ON H.identifier=E.identifier AND E.tx_hash IN '
+        '(SELECT tx_hash from_evm_transactions))'
     )
-    customized_event_ids = [x[0] for x in write_cursor]
-    length = len(customized_event_ids)
-    querystr = f'DELETE FROM history_events WHERE identifier IN (SELECT H.identifier from history_events H INNER JOIN evm_events_info E ON H.identifier=E.identifier AND E.tx_hash IN ({", ".join(["?"] * len(tx_hashes))}))'  # noqa: E501
-    if length != 0:
-        querystr += f' AND identifier NOT IN ({", ".join(["?"] * length)})'
-        bindings = [*tx_hashes, *customized_event_ids]
-    else:
-        bindings = tx_hashes
+    bindings: tuple = ()
+    if customized_events != 0:
+        querystr += ' AND identifier NOT IN (SELECT parent_identifier FROM history_events_mappings WHERE name=? AND value=?)'  # noqa: E501
+        bindings = (HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED)
 
     write_cursor.execute(querystr, bindings)
-    write_cursor.executemany(
-        'DELETE from evm_tx_mappings WHERE tx_hash=? AND value=?',
-        [(tx_hash, HISTORY_MAPPING_STATE_DECODED) for tx_hash in tx_hashes],
+    write_cursor.execute(
+        'DELETE from evm_tx_mappings WHERE tx_hash IN (SELECT tx_hash from_evm_transactions) AND value=?',  # noqa: E501
+        (HISTORY_MAPPING_STATE_DECODED,),
     )
     log.debug('Exit _reset_decoded_events')
 
