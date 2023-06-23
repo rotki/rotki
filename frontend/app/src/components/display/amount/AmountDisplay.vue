@@ -228,7 +228,11 @@ const renderedValue: ComputedRef<string> = computed(() => {
 });
 
 const tooltip: ComputedRef<string | null> = computed(() => {
-  if (get(decimalPlaces) > get(floatingPrecision) || get(showExponential)) {
+  if (
+    get(decimalPlaces) > get(floatingPrecision) ||
+    get(showExponential) ||
+    get(abbreviateNumber)
+  ) {
     const value = get(displayValue);
     return value.toFormat(value.decimalPlaces() ?? 0);
   }
