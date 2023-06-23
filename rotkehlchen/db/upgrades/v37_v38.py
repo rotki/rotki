@@ -86,7 +86,7 @@ def _drop_aave_events(write_cursor: 'DBCursor') -> None:
 
 def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
     """
-    Reset all decoded evm events except the customized ones.
+    Reset all decoded evm events except the customized ones for ethereum mainnet and polygon.
     """
     log.debug('Enter _reset_decoded_events')
     write_cursor.execute('SELECT tx_hash from evm_transactions')
@@ -97,18 +97,19 @@ def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
     )
     customized_event_ids = [x[0] for x in write_cursor]
     length = len(customized_event_ids)
-    querystr = 'DELETE FROM history_events WHERE event_identifier=?'
+    querystr = f'DELETE FROM history_events WHERE identifier IN (SELECT H.identifier from history_events H INNER JOIN evm_events_info E ON H.identifier=E.identifier AND E.tx_hash IN ({", ".join(["?"] * len(tx_hashes))}))'  # noqa: E501
     if length != 0:
         querystr += f' AND identifier NOT IN ({", ".join(["?"] * length)})'
-        bindings = [(x, *customized_event_ids) for x in tx_hashes]
+        bindings = [*tx_hashes, *customized_event_ids]
     else:
-        bindings = [(x,) for x in tx_hashes]
-    write_cursor.executemany(querystr, bindings)
+        bindings = tx_hashes
+
+    write_cursor.execute(querystr, bindings)
     write_cursor.executemany(
         'DELETE from evm_tx_mappings WHERE tx_hash=? AND value=?',
         [(tx_hash, HISTORY_MAPPING_STATE_DECODED) for tx_hash in tx_hashes],
     )
-    log.debug('Enter _reset_decoded_events')
+    log.debug('Exit _reset_decoded_events')
 
 
 def _remove_duplicate_block_mev_rewards(write_cursor: 'DBCursor') -> None:
