@@ -508,7 +508,21 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
         if context.tx_log.topics[0] != GAUGE_VOTE:
             return DEFAULT_DECODING_OUTPUT
 
+        user_address = hex_or_bytes_to_address(context.tx_log.data[32:64])
+        if not self.base.is_tracked(user_address):
+            return DEFAULT_DECODING_OUTPUT
+
+        user_note = ''
+        if user_address != context.transaction.from_address:
+            user_note = f' from {user_address}'
         gauge_address = hex_or_bytes_to_address(context.tx_log.data[64:96])
+        vote_weight = hex_or_bytes_to_int(context.tx_log.data[96:128])
+        if vote_weight == 0:
+            verb = 'Reset vote'
+            weight_note = ''
+        else:
+            verb = 'Vote'
+            weight_note = f' with {vote_weight / 100}% voting power'
         event = self.base.make_event_from_transaction(
             transaction=context.transaction,
             tx_log=context.tx_log,
@@ -517,7 +531,7 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
             asset=A_ETH,
             balance=Balance(),
             location_label=context.transaction.from_address,
-            notes=f'Vote for {gauge_address} curve gauge',
+            notes=f'{verb}{user_note} for {gauge_address} curve gauge{weight_note}',
             address=gauge_address,
             counterparty=CPT_CURVE,
             product=EvmProduct.GAUGE,
