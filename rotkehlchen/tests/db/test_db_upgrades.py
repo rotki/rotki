@@ -1571,6 +1571,7 @@ def test_upgrade_db_37_to_38(user_data_dir):  # pylint: disable=unused-argument
         (1342, 69, 17322936),
     ]
     assert cursor.execute('SELECT * from eth_staking_events_info').fetchall() == expected_eth_staking_events_info  # noqa: E501
+    assert cursor.execute('SELECT identifier from history_events WHERE entry_type=2;').fetchall() == [(1,), (74,), (238,)]  # noqa: E501
 
     db_v37.logout()
     # Execute upgrade
@@ -1581,6 +1582,7 @@ def test_upgrade_db_37_to_38(user_data_dir):  # pylint: disable=unused-argument
         resume_from_backup=False,
     )
     cursor = db.conn.cursor()
+    assert cursor.execute('SELECT identifier from history_events WHERE entry_type=2;').fetchall() == [(1,), (238,)]  # noqa: E501  # 1, 238 are customized so they stay. 74 should be deleted
     assert cursor.execute(  # Check that Polygon POS location was added
         'SELECT location FROM location WHERE seq=?',
         (Location.POLYGON_POS.value,),
