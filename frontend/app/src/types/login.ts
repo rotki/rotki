@@ -17,7 +17,7 @@ export interface PremiumSetup {
   readonly syncDatabase: boolean;
 }
 
-export interface initialSettings {
+export interface InitialSettings {
   readonly submitUsageAnalytics: boolean;
 }
 
@@ -62,7 +62,7 @@ export class IncompleteUpgradeError extends Error {
 
 export interface CreateAccountPayload {
   readonly credentials: LoginCredentials;
-  readonly initialSettings: initialSettings;
+  readonly initialSettings: InitialSettings;
   premiumSetup?: PremiumSetup;
 }
 
