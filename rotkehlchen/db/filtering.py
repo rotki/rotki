@@ -1,6 +1,6 @@
 import logging
 from abc import ABCMeta, abstractmethod
-from collections.abc import Collection, Iterable
+from collections.abc import Collection
 from dataclasses import dataclass
 from typing import Any, Generic, Literal, NamedTuple, Optional, TypeVar, Union, cast
 
@@ -12,6 +12,7 @@ from rotkehlchen.accounting.types import SchemaEventType
 from rotkehlchen.api.v1.types import IncludeExcludeFilterData
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.types import AssetType
+from rotkehlchen.assets.utils import IgnoredAssetsHandling
 from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
 from rotkehlchen.chain.evm.types import EvmAccount
 from rotkehlchen.errors.serialization import DeserializationError
@@ -989,7 +990,11 @@ class HistoryBaseEntryFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWith
                 ),
             )
         if exclude_ignored_assets is True:
-            filters.append(DBIgnoredAssetsFilter(and_op=True, asset_key='asset'))
+            filters.append(DBIgnoredAssetsFilter(
+                and_op=True,
+                asset_key='asset',
+                operator='NOT IN',
+            ))
 
         filter_query.timestamp_filter = DBTimestampFilter(
             and_op=True,
@@ -1259,11 +1264,12 @@ class EthDepositEventFilterQuery(EvmEventFilterQuery, EthStakingEventFilterQuery
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class DBIgnoredAssetsFilter(DBFilter):
-    """Filter that removes rows with ignored assets"""
+    """Filter that filters rows with ignored assets"""
     asset_key: str
+    operator: Literal['IN', 'NOT IN']
 
     def prepare(self) -> tuple[list[str], list[Any]]:
-        filters = [f'{self.asset_key} IS NULL OR {self.asset_key} NOT IN (SELECT value FROM multisettings WHERE name="ignored_asset")']  # noqa: E501
+        filters = [f'{self.asset_key} IS NULL OR {self.asset_key} {self.operator} (SELECT value FROM multisettings WHERE name="ignored_asset")']  # noqa: E501
         return filters, []
 
 
@@ -1328,7 +1334,7 @@ class AssetsFilterQuery(DBFilterQuery):
             return_exact_matches: bool = False,
             chain_id: Optional[ChainID] = None,
             identifier_column_name: str = 'identifier',
-            ignored_assets_filter_params: Optional[tuple[Literal['IN', 'NOT IN'], Iterable[str]]] = None,  # noqa: E501
+            ignored_assets_handling: IgnoredAssetsHandling = IgnoredAssetsHandling.NONE,
     ) -> 'AssetsFilterQuery':
         if order_by_rules is None:
             order_by_rules = [('name', True)]
@@ -1380,12 +1386,11 @@ class AssetsFilterQuery(DBFilterQuery):
                 column=identifier_column_name,
                 values=identifiers,
             ))
-        if ignored_assets_filter_params is not None:
-            filters.append(DBMultiStringFilter(
+        if ignored_assets_handling is not None:
+            filters.append(DBIgnoredAssetsFilter(
                 and_op=True,
-                column=identifier_column_name,
-                operator=ignored_assets_filter_params[0],
-                values=list(ignored_assets_filter_params[1]),
+                asset_key=identifier_column_name,
+                operator=ignored_assets_handling.operator(),
             ))
         if chain_id is not None:
             filters.append(DBEqualsFilter(
@@ -1460,7 +1465,7 @@ class NFTFilterQuery(DBFilterQuery):
             owner_addresses: Optional[list[str]] = None,
             name: Optional[str] = None,
             collection_name: Optional[str] = None,
-            ignored_assets_filter_params: Optional[tuple[Literal['IN', 'NOT IN'], Iterable[str]]] = None,  # noqa: E501
+            ignored_assets_handling: IgnoredAssetsHandling = IgnoredAssetsHandling.NONE,
             lps_handling: NftLpHandling = NftLpHandling.ALL_NFTS,
             nft_id: Optional[str] = None,
             last_price_asset: Optional[Asset] = None,
@@ -1493,12 +1498,11 @@ class NFTFilterQuery(DBFilterQuery):
                 field='collection_name',
                 search_string=collection_name,
             ))
-        if ignored_assets_filter_params is not None:
-            filters.append(DBMultiStringFilter(
+        if ignored_assets_handling is not IgnoredAssetsHandling.NONE:
+            filters.append(DBIgnoredAssetsFilter(
                 and_op=True,
-                column='identifier',
-                operator=ignored_assets_filter_params[0],
-                values=list(ignored_assets_filter_params[1]),
+                asset_key='identifier',
+                operator=ignored_assets_handling.operator(),
             ))
         if lps_handling != NftLpHandling.ALL_NFTS:
             filters.append(DBEqualsFilter(
@@ -1584,7 +1588,7 @@ class LevenshteinFilterQuery(MultiTableFilterQuery):
             and_op: bool = True,
             substring_search: str = '',  # substring is always required for levenstein
             chain_id: Optional[ChainID] = None,
-            ignored_assets_filter_params: Optional[tuple[Literal['IN', 'NOT IN'], Iterable[str]]] = None,  # noqa: E501
+            ignored_assets_handling: IgnoredAssetsHandling = IgnoredAssetsHandling.NONE,
     ) -> 'LevenshteinFilterQuery':
         filter_query = LevenshteinFilterQuery(
             and_op=and_op,
@@ -1631,12 +1635,11 @@ class LevenshteinFilterQuery(MultiTableFilterQuery):
             )
             filters.append((new_filter, 'assets'))
 
-        if ignored_assets_filter_params is not None:
-            ignored_assets_filter = DBMultiStringFilter(
+        if ignored_assets_handling is not None:
+            ignored_assets_filter = DBIgnoredAssetsFilter(
                 and_op=True,
-                column='assets.identifier',
-                operator=ignored_assets_filter_params[0],
-                values=list(ignored_assets_filter_params[1]),
+                asset_key='assets.identifier',
+                operator=ignored_assets_handling.operator(),
             )
             filters.append((ignored_assets_filter, 'assets'))
 

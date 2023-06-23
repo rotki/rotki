@@ -1,5 +1,6 @@
 import logging
-from typing import TYPE_CHECKING, NamedTuple, Optional
+from enum import auto
+from typing import TYPE_CHECKING, Literal, NamedTuple, Optional
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset, AssetWithOracles, EvmToken, UnderlyingToken
@@ -13,6 +14,7 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind, EVMTxHash
+from rotkehlchen.utils.mixins.enums import SerializableEnumNameMixin
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
@@ -290,3 +292,15 @@ def symbol_to_evm_token(symbol: str) -> EvmToken:
         raise UnknownAsset(symbol)
 
     return maybe_asset.resolve_to_evm_token()
+
+
+class IgnoredAssetsHandling(SerializableEnumNameMixin):
+    NONE = auto()
+    EXCLUDE = auto()
+    SHOW_ONLY = auto()
+
+    def operator(self) -> Literal['IN', 'NOT IN']:
+        """Should only call this if you have narrowed it between exclude and show only"""
+        if self == IgnoredAssetsHandling.EXCLUDE:
+            return 'NOT IN'
+        return 'IN'
