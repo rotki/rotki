@@ -31,6 +31,9 @@ class OptimismDecoder(DecoderInterface):
         if not self.base.is_tracked(delegator):
             return DEFAULT_DECODING_OUTPUT
 
+        delegator_note = ''
+        if delegator != context.transaction.from_address:
+            delegator_note = f' for {delegator}'
         from_delegate = hex_or_bytes_to_address(context.tx_log.topics[2])
         to_delegate = hex_or_bytes_to_address(context.tx_log.topics[3])
         event = self.base.make_event_from_transaction(
@@ -41,7 +44,7 @@ class OptimismDecoder(DecoderInterface):
             asset=A_ETH,
             balance=Balance(),
             location_label=context.transaction.from_address,
-            notes=f'Change OP Delegate from {from_delegate} to {to_delegate}',
+            notes=f'Change OP Delegate{delegator_note} from {from_delegate} to {to_delegate}',
             counterparty=CPT_OPTIMISM,
             address=context.transaction.to_address,
         )
