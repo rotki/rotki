@@ -29,12 +29,12 @@ class OneinchCommonDecoder(DecoderInterface, metaclass=ABCMeta):
             base_tools: 'BaseDecoderTools',
             msg_aggregator: 'MessagesAggregator',
             router_address: 'ChecksumEvmAddress',
-            swapped_signature: bytes,
+            swapped_signatures: list[bytes],
             counterparty: str = CPT_ONEINCH,
     ) -> None:
         super().__init__(evm_inquirer, base_tools, msg_aggregator)
         self.router_address = router_address
-        self.swapped_signature = swapped_signature
+        self.swapped_signatures = swapped_signatures
         self.counterparty = counterparty
 
     def _create_swapped_events(
@@ -87,7 +87,7 @@ class OneinchCommonDecoder(DecoderInterface, metaclass=ABCMeta):
         """Decode the swapped log for the particular 1inch version"""
 
     def decode_action(self, context: DecoderContext) -> DecodingOutput:
-        if context.tx_log.topics[0] == self.swapped_signature:
+        if context.tx_log.topics[0] in self.swapped_signatures:
             return self._decode_swapped(context=context)
 
         return DEFAULT_DECODING_OUTPUT
