@@ -2,6 +2,7 @@ import random
 import warnings as test_warnings
 from http import HTTPStatus
 from typing import TYPE_CHECKING
+from unittest.mock import patch
 
 import pytest
 import requests
@@ -69,7 +70,7 @@ def test_get_balances(
         inquirer: Inquirer,  # pylint: disable=unused-argument
 ):
     """Check querying the uniswap balances endpoint works. Uses real data"""
-    tx_hex = deserialize_evm_tx_hash('0xb226ddb8cbb286a7a998a35263ad258110eed5f923488f03a8d890572cd4608e')  # noqa: E501
+    tx_hex = deserialize_evm_tx_hash('0x856a5b5d95623f85923938e1911dfda6ad1dd185f45ab101bac99371aeaed329')  # noqa: E501
     ethereum_inquirer = rotkehlchen_api_server.rest_api.rotkehlchen.chains_aggregator.ethereum.node_inquirer  # noqa: E501
     database = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
     get_decoded_events_of_transaction(
@@ -179,25 +180,29 @@ def test_get_events_history_filtering_by_timestamp(
     to_timestamp = 1604283808
 
     async_query = random.choice([False, True])
-    response = requests.get(
-        api_url_for(
-            rotkehlchen_api_server,
-            'modulestatsresource',
-            module='uniswap',
-        ),
-        json={
-            'async_query': async_query,
-            'from_timestamp': from_timestamp,
-            'to_timestamp': to_timestamp,
-        },
-    )
-    if async_query:
-        task_id = assert_ok_async_response(response)
-        outcome = wait_for_async_task(rotkehlchen_api_server, task_id, timeout=120)
-        assert outcome['message'] == ''
-        result = outcome['result']
-    else:
-        result = assert_proper_response_with_result(response)
+    with patch(
+        'rotkehlchen.chain.ethereum.modules.uniswap.uniswap.Uniswap.get_balances',
+        side_effect=lambda _: {},
+    ):
+        response = requests.get(
+            api_url_for(
+                rotkehlchen_api_server,
+                'modulestatsresource',
+                module='uniswap',
+            ),
+            json={
+                'async_query': async_query,
+                'from_timestamp': from_timestamp,
+                'to_timestamp': to_timestamp,
+            },
+        )
+        if async_query:
+            task_id = assert_ok_async_response(response)
+            outcome = wait_for_async_task(rotkehlchen_api_server, task_id, timeout=120)
+            assert outcome['message'] == ''
+            result = outcome['result']
+        else:
+            result = assert_proper_response_with_result(response)
 
     events_balances = result[ethereum_accounts[0]]
     assert len(events_balances) == 1

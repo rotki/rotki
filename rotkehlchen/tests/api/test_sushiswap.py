@@ -1,22 +1,12 @@
 import random
-import warnings as test_warnings
-from contextlib import ExitStack
 from http import HTTPStatus
+from unittest.mock import patch
 
 import pytest
 import requests
-from rotkehlchen.api.server import APIServer
 
-from rotkehlchen.assets.asset import EvmToken
-from rotkehlchen.chain.ethereum.interfaces.ammswap.types import (
-    SUSHISWAP_EVENTS_TYPES,
-    EventType,
-    LiquidityPoolEvent,
-    LiquidityPoolEventsBalance,
-)
-from rotkehlchen.chain.ethereum.modules.sushiswap.constants import SUSHISWAP_EVENTS_PREFIX
+from rotkehlchen.api.server import APIServer
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.tests.utils.api import (
     ASYNC_TASK_WAIT_TIMEOUT,
@@ -24,12 +14,13 @@ from rotkehlchen.tests.utils.api import (
     assert_error_response,
     assert_ok_async_response,
     assert_proper_response_with_result,
-    assert_simple_ok_response,
     wait_for_async_task,
 )
-from rotkehlchen.tests.utils.ethereum import ETHEREUM_NODES_PARAMETERS_WITH_PRUNED_AND_NOT_ARCHIVED, get_decoded_events_of_transaction
-from rotkehlchen.tests.utils.rotkehlchen import setup_balances
-from rotkehlchen.types import AssetAmount, ChecksumEvmAddress, Price, Timestamp, deserialize_evm_tx_hash
+from rotkehlchen.tests.utils.ethereum import (
+    ETHEREUM_NODES_PARAMETERS_WITH_PRUNED_AND_NOT_ARCHIVED,
+    get_decoded_events_of_transaction,
+)
+from rotkehlchen.types import ChecksumEvmAddress, deserialize_evm_tx_hash
 
 SWAP_ADDRESS = string_to_evm_address('0x63BC843b9640c4D79d6aE0105bc39F773172d121')
 
@@ -37,12 +28,9 @@ SWAP_ADDRESS = string_to_evm_address('0x63BC843b9640c4D79d6aE0105bc39F773172d121
 @pytest.mark.parametrize('ethereum_accounts', [[SWAP_ADDRESS]])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('ethereum_modules', [['compound']])
-def test_get_balances_module_not_activated(
-        rotkehlchen_api_server,
-        ethereum_accounts,  # pylint: disable=unused-argument
-):
+def test_get_balances_module_not_activated(rotkehlchen_api_server):
     response = requests.get(
-        api_url_for(rotkehlchen_api_server, 'sushiswapbalancesresource'),
+        api_url_for(rotkehlchen_api_server, 'modulebalancesresource', module='sushiswap'),
     )
     assert_error_response(
         response=response,
@@ -120,30 +108,17 @@ def test_get_balances(
             assert len(lp_asset['user_balance']) == 2
             assert lp_asset['user_balance']['amount']
             assert lp_asset['user_balance']['usd_value']
-    
+
 
 # Get events history tests
-TEST_EVENTS_ADDRESS_1 = '0xE11fc0B43ab98Eb91e9836129d1ee7c3Bc95df50'
+TEST_EVENTS_ADDRESS_1 = '0x91E6A718d9A4CB67bDA0e4bf96C6C8154b7F4120'
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_EVENTS_ADDRESS_1]])
 @pytest.mark.parametrize('ethereum_modules', [['sushiswap']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
-def test_get_events_history_filtering_by_timestamp(
-        rotkehlchen_api_server,
-        ethereum_accounts,  # pylint: disable=unused-argument
-):
+def test_get_events_history_filtering_by_timestamp(rotkehlchen_api_server: 'APIServer'):
     """Test the events balances from 1627401169 to 1627401170 (both included)."""
-    expected_events_balances_1 = [
-        LiquidityPoolEventsBalance(
-            pool_address=string_to_evm_address('0xC3f279090a47e80990Fe3a9c30d24Cb117EF91a8'),
-            token0=EvmToken('eip155:1/erc20:0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),
-            token1=EvmToken('eip155:1/erc20:0xdBdb4d16EdA451D0503b854CF79D55697F90c8DF'),
-            profit_loss0=AssetAmount(FVal('-0.192426688761441618')),
-            profit_loss1=AssetAmount(FVal('-1.498665931466140813')),
-            usd_profit_loss=Price(FVal('-874.6847879277211901255291729')),
-        ),
-    ]
     tx_hex = deserialize_evm_tx_hash('0xb226ddb8cbb286a7a998a35263ad258110eed5f923488f03a8d890572cd4608e')  # noqa: E501
     ethereum_inquirer = rotkehlchen_api_server.rest_api.rotkehlchen.chains_aggregator.ethereum.node_inquirer  # noqa: E501
     database = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
@@ -156,18 +131,22 @@ def test_get_events_history_filtering_by_timestamp(
     from_timestamp = 1627401169
     to_timestamp = 1627401170
     async_query = random.choice([False, True])
-    response = requests.get(
-        api_url_for(
-            rotkehlchen_api_server,
-            'modulestatsresource',
-            module='sushiswap',
-        ),
-        json={
-            'async_query': async_query,
-            'from_timestamp': from_timestamp,
-            'to_timestamp': to_timestamp,
-        },
-    )
+    with patch(
+        'rotkehlchen.chain.ethereum.modules.sushiswap.sushiswap.Sushiswap.get_balances',
+        side_effect=lambda _: {},
+    ):
+        response = requests.get(
+            api_url_for(
+                rotkehlchen_api_server,
+                'modulestatsresource',
+                module='sushiswap',
+            ),
+            json={
+                'async_query': async_query,
+                'from_timestamp': from_timestamp,
+                'to_timestamp': to_timestamp,
+            },
+        )
     if async_query:
         task_id = assert_ok_async_response(response)
         outcome = wait_for_async_task(rotkehlchen_api_server, task_id, timeout=120)
@@ -178,9 +157,4 @@ def test_get_events_history_filtering_by_timestamp(
 
     events_balances = result[TEST_EVENTS_ADDRESS_1]
 
-    assert len(events_balances) == 0
-    # TODO @yabirgb: Come at this test when sushiswap decoder is fixed
-    # expected_event = expected_events_balances_1[0].serialize()
-    # expected_event.pop('usd_profit_loss')
-    # events_balances[0].pop('usd_profit_loss')
-    # assert expected_event == events_balances[0]
+    assert len(events_balances) == 1

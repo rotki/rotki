@@ -80,12 +80,9 @@ BALANCER_TEST_ADDR2_POOL2 = EvmToken.initialize(
 @pytest.mark.parametrize('ethereum_accounts', [[BALANCER_TEST_ADDR1]])
 @pytest.mark.parametrize('ethereum_modules', [['uniswap']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
-def test_get_balancer_module_not_activated(
-        rotkehlchen_api_server,
-        ethereum_accounts,  # pylint: disable=unused-argument
-):
+def test_get_balancer_module_not_activated(rotkehlchen_api_server):
     response = requests.get(
-        api_url_for(rotkehlchen_api_server, 'balancerbalancesresource'),
+        api_url_for(rotkehlchen_api_server, 'modulebalancesresource', module='balancer'),
     )
     assert_error_response(
         response=response,
@@ -97,12 +94,7 @@ def test_get_balancer_module_not_activated(
 @pytest.mark.parametrize('ethereum_accounts', [[BALANCER_TEST_ADDR1]])
 @pytest.mark.parametrize('ethereum_modules', [['balancer']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
-def test_get_balances(
-        rotkehlchen_api_server,
-        ethereum_accounts,
-        rotki_premium_credentials,  # pylint: disable=unused-argument
-        start_with_valid_premium,  # pylint: disable=unused-argument
-):
+def test_get_balances(rotkehlchen_api_server, ethereum_accounts):
     """Test get the balances for premium users works as expected"""
     async_query = random.choice([False, True])
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -116,7 +108,7 @@ def test_get_balances(
         # patch ethereum/etherscan to not autodetect tokens
         setup.enter_ethereum_patches(stack)
         response = requests.get(api_url_for(
-            rotkehlchen_api_server, 'balancerbalancesresource'),
+            rotkehlchen_api_server, 'modulebalancesresource', module='balancer'),
             json={'async_query': async_query},
         )
         if async_query:

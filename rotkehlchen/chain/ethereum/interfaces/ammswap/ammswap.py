@@ -64,6 +64,7 @@ class AMMSwapPlatform:
         self.premium = premium
         self.msg_aggregator = msg_aggregator
         self.data_directory = database.user_data_dir.parent
+        self.aweth = A_WETH.resolve_to_evm_token()
 
     @staticmethod
     def _get_known_asset_price(
@@ -119,13 +120,12 @@ class AMMSwapPlatform:
                 pool_aggregated_amount[pool_token] = AggregatedAmount()
 
             underlying0 = EvmToken(evm_address_to_identifier(address=pool_token.underlying_tokens[0].address, chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20))  # noqa: E501
-            if pool_token.underlying_tokens[0] != A_WETH:
+            if underlying0 != A_WETH:
                 asset_list: Union[tuple[EvmToken], tuple[Asset, Asset]] = (underlying0,)
             else:
                 asset_list = (A_ETH, A_WETH)
 
             event_asset_is_token_0 = event.asset in asset_list
-
             if event.event_subtype == HistoryEventSubType.DEPOSIT_ASSET:
                 if event_asset_is_token_0 is True:
                     pool_aggregated_amount[pool_token].profit_loss0 -= event.balance.amount
@@ -180,8 +180,9 @@ class AMMSwapPlatform:
     ) -> dict[ChecksumEvmAddress, list[LiquidityPoolEventsBalance]]:
         db = DBHistoryEvents(self.database)
         stats = {}
+        balances = self.get_balances(addresses)
         for address in addresses:
-            filter = EvmEventFilterQuery.make(
+            dbfilter = EvmEventFilterQuery.make(
                 counterparties=self.counterparties,
                 location_labels=[address],
                 from_ts=from_timestamp,
@@ -194,13 +195,17 @@ class AMMSwapPlatform:
             with self.database.conn.read_ctx() as cursor:
                 events = db.get_history_events(
                     cursor=cursor,
-                    filter_query=filter,
+                    filter_query=dbfilter,
                     has_premium=self.premium is not None,
                     group_by_event_ids=False,
                 )
+
+            if len(events) == 0:
+                continue
+
             stats[address] = self._calculate_events_balances(
                 events=events,
-                balances=[],
+                balances=balances.get(address, []),
             )
         return stats
 
