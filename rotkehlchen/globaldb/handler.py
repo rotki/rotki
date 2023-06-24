@@ -50,25 +50,21 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 _ALL_ASSETS_TABLES_JOINS = """
-FROM assets LEFT JOIN common_asset_details on assets.identifier=common_asset_details.identifier
-LEFT JOIN evm_tokens ON evm_tokens.identifier=assets.identifier
-LEFT JOIN custom_assets ON custom_assets.identifier=assets.identifier
-"""
+FROM {dbprefix}assets LEFT JOIN {dbprefix}common_asset_details on {dbprefix}assets.identifier={dbprefix}common_asset_details.identifier
+LEFT JOIN {dbprefix}evm_tokens ON evm_tokens.identifier=assets.identifier
+LEFT JOIN {dbprefix}custom_assets ON custom_assets.identifier=assets.identifier
+"""  # noqa: E501
 
 
-ALL_ASSETS_TABLES_QUERY = f"""
-SELECT assets.identifier, name, symbol, chain, assets.type, custom_assets.type
-{_ALL_ASSETS_TABLES_JOINS}
-"""
+ALL_ASSETS_TABLES_QUERY = """
+SELECT {dbprefix}assets.identifier, name, symbol, chain, assets.type, custom_assets.type """ + _ALL_ASSETS_TABLES_JOINS  # noqa: E501
 
 
-ALL_ASSETS_TABLES_QUERY_WITH_COLLECTIONS = f"""
-SELECT assets.identifier, assets.name, common_asset_details.symbol, chain, assets.type,
-custom_assets.type, collection_id, asset_collections.name, asset_collections.symbol
-{_ALL_ASSETS_TABLES_JOINS}
-LEFT JOIN multiasset_mappings ON assets.identifier=multiasset_mappings.asset
-LEFT JOIN asset_collections ON multiasset_mappings.collection_id=asset_collections.id
-"""
+ALL_ASSETS_TABLES_QUERY_WITH_COLLECTIONS = (
+    'SELECT {dbprefix}assets.identifier, assets.name, common_asset_details.symbol, chain, assets.type,custom_assets.type, collection_id, asset_collections.name, asset_collections.symbol' +  # noqa: E501
+    _ALL_ASSETS_TABLES_JOINS +
+    'LEFT JOIN {dbprefix}multiasset_mappings ON {dbprefix}assets.identifier={dbprefix}multiasset_mappings.asset LEFT JOIN {dbprefix}asset_collections ON {dbprefix}multiasset_mappings.collection_id={dbprefix}asset_collections.id'  # noqa: E501
+)
 
 
 def _initialize_and_check_unfinished_upgrades(
@@ -218,6 +214,10 @@ class GlobalDBHandler:
         GlobalDBHandler.__instance.packaged_db_lock = Semaphore()
         return GlobalDBHandler.__instance
 
+    def filepath(self) -> Path:
+        """This should only be called after initalization of the global DB"""
+        return self._data_directory / 'global_data' / 'global.db'  # type: ignore [operator]
+
     def cleanup(self) -> None:
         self.conn.close()
         if self._packaged_db_conn is not None:
@@ -317,7 +317,7 @@ class GlobalDBHandler:
             ) from e
 
     @staticmethod
-    def retrieve_assets(filter_query: 'AssetsFilterQuery') -> tuple[list[dict[str, Any]], int]:
+    def retrieve_assets(userdb: 'DBHandler', filter_query: 'AssetsFilterQuery') -> tuple[list[dict[str, Any]], int]:  # noqa: E501
         """
         Returns a tuple that contains a list of assets details and a
         count of those assets that match the filter query.
@@ -331,10 +331,10 @@ class GlobalDBHandler:
         SELECT A.identifier AS identifier, A.type, B.address, B.decimals, A.name, C.symbol,
         C.started, C.forked, C.swapped_for, C.coingecko, C.cryptocompare, B.protocol, B.chain,
         B.token_kind, D.notes, D.type AS custom_asset_type FROM
-        assets as A
-        LEFT JOIN common_asset_details AS C ON C.identifier = A.identifier
-        LEFT JOIN evm_tokens as B ON B.identifier = A.identifier
-        LEFT JOIN custom_assets as D ON D.identifier = A.identifier
+        globaldb.assets as A
+        LEFT JOIN globaldb.common_asset_details AS C ON C.identifier = A.identifier
+        LEFT JOIN globaldb.evm_tokens as B ON B.identifier = A.identifier
+        LEFT JOIN globaldb.custom_assets as D ON D.identifier = A.identifier
         """
         query = f'SELECT * FROM ({parent_query}) {prepared_filter_query}'
         # Get the identifier of the EVM tokens in the filter and query the underlying tokens where
@@ -347,12 +347,16 @@ class GlobalDBHandler:
         # filtered from the frontend where we set a limit in the number of results that goes
         # in the range from 10 to 100 and this guarantees that the size of the subquery is small.
         underlying_tokens_query = (
-            f'SELECT parent_token_entry, address, token_kind, weight FROM underlying_tokens_list '
-            f'LEFT JOIN evm_tokens ON underlying_tokens_list.identifier=evm_tokens.identifier '
+            f'SELECT parent_token_entry, address, token_kind, weight FROM globaldb.underlying_tokens_list '  # noqa: E501
+            f'LEFT JOIN globaldb.evm_tokens ON globaldb.underlying_tokens_list.identifier=evm_tokens.identifier '  # noqa: E501
             f'WHERE parent_token_entry IN (SELECT identifier FROM ({query}))'
         )
 
-        with GlobalDBHandler().conn.read_ctx() as cursor:
+        with userdb.conn.read_ctx() as cursor:
+            globaldb = GlobalDBHandler()
+            cursor.execute(
+                f'ATTACH DATABASE "{globaldb.filepath()!s}" AS globaldb KEY "";',
+            )
             # get all underlying tokens
             for entry in cursor.execute(underlying_tokens_query, bindings):
                 underlying_tokens[entry[0]].append(UnderlyingToken.deserialize_from_db((entry[1], entry[2], entry[3])).serialize())  # noqa: E501
@@ -397,6 +401,7 @@ class GlobalDBHandler:
                         'custom_asset_type': entry[15],
                     })
                 else:
+                    cursor.executescript('DETACH globaldb;')
                     raise NotImplementedError(f'Unsupported AssetType {asset_type} found in the DB. Should never happen')  # noqa: E501
                 assets_info.append(data)
 
@@ -404,6 +409,7 @@ class GlobalDBHandler:
             query, bindings = filter_query.prepare(with_pagination=False)
             total_found_query = f'SELECT COUNT(*) FROM ({parent_query}) ' + query
             entries_found = cursor.execute(total_found_query, bindings).fetchone()[0]
+            cursor.executescript('DETACH globaldb;')
 
         return assets_info, entries_found
 
@@ -419,7 +425,8 @@ class GlobalDBHandler:
         identifiers_query = f'assets.identifier IN ({",".join("?" * len(identifiers))})'
         with GlobalDBHandler().conn.read_ctx() as cursor:
             cursor.execute(
-                ALL_ASSETS_TABLES_QUERY_WITH_COLLECTIONS + 'WHERE ' + identifiers_query,
+                ALL_ASSETS_TABLES_QUERY_WITH_COLLECTIONS.format(dbprefix='') +
+                ' WHERE ' + identifiers_query,
                 tuple(identifiers),
             )
             for entry in cursor:
@@ -448,13 +455,18 @@ class GlobalDBHandler:
     ) -> list[dict[str, Any]]:
         """Returns a list of asset details that match the search query provided."""
         search_result = []
-        query, bindings = GlobalDBHandler()._prepare_search_assets_query(filter_query)
+        globaldb = GlobalDBHandler()
+        query, bindings = filter_query.prepare()
+        query = ALL_ASSETS_TABLES_QUERY.format(dbprefix='globaldb.') + query
         resolved_eth = A_ETH.resolve_to_crypto_asset()
-        with db.conn.read_ctx() as cursor, GlobalDBHandler().conn.read_ctx() as global_db_cursor:
-            global_db_cursor.execute(query, bindings)
+        with db.conn.read_ctx() as cursor:
             treat_eth2_as_eth = db.get_settings(cursor).treat_eth2_as_eth
+            cursor.execute(
+                f'ATTACH DATABASE "{globaldb.filepath()!s}" AS globaldb KEY "";',
+            )
+            cursor.execute(query, bindings)
             found_eth = False
-            for entry in global_db_cursor:
+            for entry in cursor:
                 if treat_eth2_as_eth is True and entry[0] in (A_ETH.identifier, A_ETH2.identifier):  # noqa: E501
                     if found_eth is False:
                         search_result.append({
@@ -478,13 +490,8 @@ class GlobalDBHandler:
                     entry_info['custom_asset_type'] = entry[5]
 
                 search_result.append(entry_info)
+            cursor.execute('DETACH globaldb;')
         return search_result
-
-    @staticmethod
-    def _prepare_search_assets_query(filter_query: 'AssetsFilterQuery') -> tuple[str, list]:
-        query, bindings = filter_query.prepare()
-        query = ALL_ASSETS_TABLES_QUERY + query
-        return query, bindings
 
     @overload
     @staticmethod

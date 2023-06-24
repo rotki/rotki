@@ -300,7 +300,7 @@ class IgnoredAssetsHandling(SerializableEnumNameMixin):
     SHOW_ONLY = auto()
 
     def operator(self) -> Literal['IN', 'NOT IN']:
-        """Should only call this if you have narrowed it between exclude and show only"""
+        """Caller should make sure this is narrowed between exclude and show only"""
         if self == IgnoredAssetsHandling.EXCLUDE:
             return 'NOT IN'
         return 'IN'

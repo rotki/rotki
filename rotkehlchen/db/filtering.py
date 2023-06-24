@@ -1,7 +1,7 @@
 import logging
 from abc import ABCMeta, abstractmethod
 from collections.abc import Collection
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Generic, Literal, NamedTuple, Optional, TypeVar, Union, cast
 
 from rotkehlchen.accounting.ledger_actions import LedgerActionType
@@ -318,7 +318,7 @@ class DBFilterQuery:
 
         for fil in self.filters:
             if special_free_query and isinstance(fil, DBIgnoredAssetsFilter):
-                continue  # skip ignored assets filter as it's already applied
+                continue  # skip subtable select filter as it's already applied
 
             filters, single_bindings = fil.prepare()
             if len(filters) == 0:
@@ -1263,14 +1263,34 @@ class EthDepositEventFilterQuery(EvmEventFilterQuery, EthStakingEventFilterQuery
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
-class DBIgnoredAssetsFilter(DBFilter):
-    """Filter that filters rows with ignored assets"""
+class DBSubtableSelectFilter(DBFilter):
+    """Filter that filters rows from a select of another table"""
     asset_key: str
     operator: Literal['IN', 'NOT IN']
+    select_value: str
+    select_table: str
+    select_condition: Optional[str]
 
     def prepare(self) -> tuple[list[str], list[Any]]:
-        filters = [f'{self.asset_key} IS NULL OR {self.asset_key} {self.operator} (SELECT value FROM multisettings WHERE name="ignored_asset")']  # noqa: E501
-        return filters, []
+        null_check = ''  # for NOT IN comparison remember NULL is a special case
+        if self.operator == 'NOT IN':
+            null_check = f'{self.asset_key} IS NULL OR '
+        querystr = f'{null_check}{self.asset_key} {self.operator} (SELECT {self.select_value} FROM {self.select_table}'  # noqa: E501
+        if self.select_condition is not None:
+            querystr += f' WHERE {self.select_condition}'
+        querystr += ')'
+        return [querystr], []
+
+    def is_ignored_asset_filter(self) -> bool:
+        return self.select_condition is not None and self.select_condition == 'name="ignored_asset"'  # noqa: E501
+
+
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class DBIgnoredAssetsFilter(DBSubtableSelectFilter):
+    """Filter that filters ignored assets"""
+    select_value: str = field(default='value', init=False)
+    select_table: str = field(default='multisettings', init=False)
+    select_condition: str = field(default='name="ignored_asset"', init=False)
 
 
 class UserNotesFilterQuery(DBFilterQuery, FilterWithTimestamp):
@@ -1331,6 +1351,7 @@ class AssetsFilterQuery(DBFilterQuery):
             search_column: Optional[str] = None,
             asset_type: Optional[AssetType] = None,
             identifiers: Optional[list[str]] = None,
+            show_user_owned_assets_only: bool = False,
             return_exact_matches: bool = False,
             chain_id: Optional[ChainID] = None,
             identifier_column_name: str = 'identifier',
@@ -1386,7 +1407,16 @@ class AssetsFilterQuery(DBFilterQuery):
                 column=identifier_column_name,
                 values=identifiers,
             ))
-        if ignored_assets_handling is not None:
+        if show_user_owned_assets_only is True:
+            filters.append(DBSubtableSelectFilter(
+                and_op=True,
+                asset_key=identifier_column_name,
+                operator='IN',
+                select_value='asset_id',
+                select_table='user_owned_assets',
+                select_condition=None,
+            ))
+        if ignored_assets_handling is not IgnoredAssetsHandling.NONE:
             filters.append(DBIgnoredAssetsFilter(
                 and_op=True,
                 asset_key=identifier_column_name,
@@ -1635,7 +1665,7 @@ class LevenshteinFilterQuery(MultiTableFilterQuery):
             )
             filters.append((new_filter, 'assets'))
 
-        if ignored_assets_handling is not None:
+        if ignored_assets_handling is not IgnoredAssetsHandling.NONE:
             ignored_assets_filter = DBIgnoredAssetsFilter(
                 and_op=True,
                 asset_key='assets.identifier',
