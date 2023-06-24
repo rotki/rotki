@@ -86,6 +86,7 @@ from rotkehlchen.db.utils import (
     insert_tag_mappings,
     is_valid_db_blockchain_account,
     need_writable_cursor,
+    protect_password_sqlcipher,
     replace_tag_mappings,
     str_to_bool,
 )
@@ -160,14 +161,6 @@ TABLES_WITH_ASSETS = (
 
 
 DB_BACKUP_RE = re.compile(r'(\d+)_rotkehlchen_db_v(\d+).backup')
-
-
-def _protect_password_sqlcipher(password: str) -> str:
-    """A double quote in the password would close the string. To escape it double it
-
-    source: https://stackoverflow.com/a/603579/110395
-"""
-    return password.replace(r'"', r'""')
 
 
 # https://stackoverflow.com/questions/4814167/storing-time-series-data-relational-or-non
@@ -429,7 +422,7 @@ class DBHandler:
                 f'Could not open database file: {fullpath}. Permission errors?',
             ) from e
 
-        password_for_sqlcipher = _protect_password_sqlcipher(self.password)
+        password_for_sqlcipher = protect_password_sqlcipher(self.password)
         script = f'PRAGMA key="{password_for_sqlcipher}";'
         if self.sqlcipher_version == 3:
             script += f'PRAGMA kdf_iter={KDF_ITER};'
@@ -460,7 +453,7 @@ class DBHandler:
                 f'database but no such DB connection exists',
             )
             return False
-        new_password_for_sqlcipher = _protect_password_sqlcipher(new_password)
+        new_password_for_sqlcipher = protect_password_sqlcipher(new_password)
         script = f'PRAGMA rekey="{new_password_for_sqlcipher}";'
         if self.sqlcipher_version == 3:
             script += f'PRAGMA kdf_iter={KDF_ITER};'
@@ -527,7 +520,7 @@ class DBHandler:
                 connection_type=DBConnectionType.USER,
                 sql_vm_instructions_cb=self.sql_vm_instructions_cb,
             )
-            password_for_sqlcipher = _protect_password_sqlcipher(self.password)
+            password_for_sqlcipher = protect_password_sqlcipher(self.password)
             script = f'ATTACH DATABASE "{rdbpath}" AS encrypted KEY "{password_for_sqlcipher}";'
             if self.sqlcipher_version == 3:
                 script += f'PRAGMA encrypted.kdf_iter={KDF_ITER};'

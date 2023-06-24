@@ -62,7 +62,6 @@ from rotkehlchen.errors.misc import InputError, RemoteError, XPUBError
 from rotkehlchen.errors.serialization import DeserializationError, EncodingError
 from rotkehlchen.exchanges.constants import ALL_SUPPORTED_EXCHANGES, SUPPORTED_EXCHANGES
 from rotkehlchen.exchanges.kraken import KrakenAccountType
-from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.icons import ALLOWED_ICON_EXTENSIONS
 from rotkehlchen.inquirer import CurrentPriceOracle
@@ -1974,32 +1973,23 @@ class AssetsPostSchema(DBPaginationSchema, DBOrderBySchema):
             data: dict[str, Any],
             **_kwargs: Any,
     ) -> dict[str, Any]:
-        with GlobalDBHandler().conn.read_ctx() as globaldb_read_cursor:
-            identifiers: Optional[list[str]] = data['identifiers']
-            if data['show_user_owned_assets_only'] is True:
-                globaldb_read_cursor.execute('SELECT asset_id FROM user_owned_assets;')
-                user_owned_assets_identifiers = [entry[0] for entry in globaldb_read_cursor]
-                if identifiers is None:
-                    identifiers = user_owned_assets_identifiers
-                else:  # filter out identifiers that are not owned by the user
-                    identifiers = list(set(user_owned_assets_identifiers) & set(identifiers))
-
-            filter_query = AssetsFilterQuery.make(
-                and_op=True,
-                order_by_rules=create_order_by_rules_list(
-                    data=data,
-                    default_order_by_fields=['name'],
-                ),
-                limit=data['limit'],
-                offset=data['offset'],
-                name=data['name'],
-                symbol=data['symbol'],
-                asset_type=data['asset_type'],
-                chain_id=data['evm_chain'],
-                address=data['address'],
-                identifiers=identifiers,
-                ignored_assets_handling=data['ignored_assets_handling'],
-            )
+        filter_query = AssetsFilterQuery.make(
+            and_op=True,
+            order_by_rules=create_order_by_rules_list(
+                data=data,
+                default_order_by_fields=['name'],
+            ),
+            limit=data['limit'],
+            offset=data['offset'],
+            name=data['name'],
+            symbol=data['symbol'],
+            asset_type=data['asset_type'],
+            chain_id=data['evm_chain'],
+            address=data['address'],
+            identifiers=data['identifiers'],
+            show_user_owned_assets_only=data['show_user_owned_assets_only'],
+            ignored_assets_handling=data['ignored_assets_handling'],
+        )
         return {'filter_query': filter_query}
 
 

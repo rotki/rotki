@@ -432,3 +432,11 @@ def db_tuple_to_str(
     # else can only be evm transaction
     assert tuple_type == 'evm_transaction', 'only DBTupleType possible here is evm_transaction'
     return f'EVM transaction with hash 0x{data[0].hex()} and chain id {data[1]}'
+
+
+def protect_password_sqlcipher(password: str) -> str:
+    """A double quote in the password would close the string. To escape it double it
+
+    source: https://stackoverflow.com/a/603579/110395
+"""
+    return password.replace(r'"', r'""')

@@ -1,11 +1,13 @@
 import pytest
 
 from rotkehlchen.chain.evm.types import EvmAccount
+from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.db.filtering import (
     DBEvmTransactionJoinsFilter,
     DBFilterOrder,
     DBFilterPagination,
     DBFilterQuery,
+    DBIgnoredAssetsFilter,
     DBLocationFilter,
     DBTimestampFilter,
     EvmTransactionsFilterQuery,
@@ -76,3 +78,38 @@ def test_filter_arguments(and_op, order_by, pagination):
         time_filter.to_ts,
         location_filter.location.serialize_for_db(),
     ]
+
+
+def test_ignored_assets(database):
+    """Test that the ignored asset filter works fine in all 4 cases"""
+    # Test NOT IN with no ignored assets
+    ignored_filter = DBIgnoredAssetsFilter(and_op=True, asset_key='assets.identifier', operator='NOT IN')  # noqa: E501
+    querystr, bindings = ignored_filter.prepare()
+    with database.conn.read_ctx() as cursor:
+        assets_num = cursor.execute('SELECT COUNT(*) FROM assets').fetchone()[0]
+        result = cursor.execute('SELECT COUNT(*) FROM assets WHERE ' + querystr[0], bindings).fetchone()[0]  # noqa: E501
+        assert result == assets_num
+
+    with database.user_write() as write_cursor:
+        database.add_to_ignored_assets(write_cursor, A_ETH)
+        database.add_to_ignored_assets(write_cursor, A_BTC)
+
+    with database.conn.read_ctx() as cursor:
+        # Test NOT IN with ignored assets
+        result = cursor.execute('SELECT COUNT(*) FROM assets WHERE ' + querystr[0], bindings).fetchone()[0]  # noqa: E501
+        assert result == assets_num - 2
+
+        # Test IN with ignored assets
+        ignored_filter = DBIgnoredAssetsFilter(and_op=True, asset_key='assets.identifier', operator='IN')  # noqa: E501
+        querystr, bindings = ignored_filter.prepare()
+        result = cursor.execute('SELECT COUNT(*) FROM assets WHERE ' + querystr[0], bindings).fetchone()[0]  # noqa: E501
+        assert result == 2
+
+    with database.user_write() as write_cursor:
+        database.remove_from_ignored_assets(write_cursor, A_ETH)
+        database.remove_from_ignored_assets(write_cursor, A_BTC)
+
+    with database.conn.read_ctx() as cursor:
+        # Test IN without ignored assets
+        result = cursor.execute('SELECT COUNT(*) FROM assets WHERE ' + querystr[0], bindings).fetchone()[0]  # noqa: E501
+        assert result == 0
