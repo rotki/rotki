@@ -357,59 +357,60 @@ class GlobalDBHandler:
             cursor.execute(
                 f'ATTACH DATABASE "{globaldb.filepath()!s}" AS globaldb KEY "";',
             )
-            # get all underlying tokens
-            for entry in cursor.execute(underlying_tokens_query, bindings):
-                underlying_tokens[entry[0]].append(UnderlyingToken.deserialize_from_db((entry[1], entry[2], entry[3])).serialize())  # noqa: E501
+            try:
+                # get all underlying tokens
+                for entry in cursor.execute(underlying_tokens_query, bindings):
+                    underlying_tokens[entry[0]].append(UnderlyingToken.deserialize_from_db((entry[1], entry[2], entry[3])).serialize())  # noqa: E501
 
-            cursor.execute(query, bindings)
-            for entry in cursor:
-                asset_type = AssetType.deserialize_from_db(entry[1])
-                data = {
-                    'identifier': entry[0],
-                    'asset_type': str(asset_type),
-                    'name': entry[4],
-                }
-                # for evm tokens and crypto assets
-                common_data = {
-                    'symbol': entry[5],
-                    'started': entry[6],
-                    'swapped_for': entry[8],
-                    'forked': entry[7],
-                    'cryptocompare': entry[10],
-                    'coingecko': entry[9],
-                }
-                if asset_type == AssetType.FIAT:
-                    data.update({
+                cursor.execute(query, bindings)
+                for entry in cursor:
+                    asset_type = AssetType.deserialize_from_db(entry[1])
+                    data = {
+                        'identifier': entry[0],
+                        'asset_type': str(asset_type),
+                        'name': entry[4],
+                    }
+                    # for evm tokens and crypto assets
+                    common_data = {
                         'symbol': entry[5],
                         'started': entry[6],
-                    })
-                elif asset_type == AssetType.EVM_TOKEN:
-                    data.update({
-                        'address': entry[2],
-                        'evm_chain': ChainID.deserialize_from_db(entry[12]).to_name(),
-                        'token_kind': EvmTokenKind.deserialize_from_db(entry[13]).serialize(),
-                        'decimals': entry[3],
-                        'underlying_tokens': underlying_tokens.get(entry[0], None),
-                        'protocol': entry[11],
-                    })
-                    data.update(common_data)
-                elif AssetType.is_crypto_asset(asset_type):
-                    data.update(common_data)
-                elif asset_type == AssetType.CUSTOM_ASSET:
-                    data.update({
-                        'notes': entry[14],
-                        'custom_asset_type': entry[15],
-                    })
-                else:
-                    cursor.executescript('DETACH globaldb;')
-                    raise NotImplementedError(f'Unsupported AssetType {asset_type} found in the DB. Should never happen')  # noqa: E501
-                assets_info.append(data)
+                        'swapped_for': entry[8],
+                        'forked': entry[7],
+                        'cryptocompare': entry[10],
+                        'coingecko': entry[9],
+                    }
+                    if asset_type == AssetType.FIAT:
+                        data.update({
+                            'symbol': entry[5],
+                            'started': entry[6],
+                        })
+                    elif asset_type == AssetType.EVM_TOKEN:
+                        data.update({
+                            'address': entry[2],
+                            'evm_chain': ChainID.deserialize_from_db(entry[12]).to_name(),
+                            'token_kind': EvmTokenKind.deserialize_from_db(entry[13]).serialize(),
+                            'decimals': entry[3],
+                            'underlying_tokens': underlying_tokens.get(entry[0], None),
+                            'protocol': entry[11],
+                        })
+                        data.update(common_data)
+                    elif AssetType.is_crypto_asset(asset_type):
+                        data.update(common_data)
+                    elif asset_type == AssetType.CUSTOM_ASSET:
+                        data.update({
+                            'notes': entry[14],
+                            'custom_asset_type': entry[15],
+                        })
+                    else:
+                        raise NotImplementedError(f'Unsupported AssetType {asset_type} found in the DB. Should never happen')  # noqa: E501
+                    assets_info.append(data)
 
-            # get `entries_found`
-            query, bindings = filter_query.prepare(with_pagination=False)
-            total_found_query = f'SELECT COUNT(*) FROM ({parent_query}) ' + query
-            entries_found = cursor.execute(total_found_query, bindings).fetchone()[0]
-            cursor.executescript('DETACH globaldb;')
+                # get `entries_found`
+                query, bindings = filter_query.prepare(with_pagination=False)
+                total_found_query = f'SELECT COUNT(*) FROM ({parent_query}) ' + query
+                entries_found = cursor.execute(total_found_query, bindings).fetchone()[0]
+            finally:
+                cursor.execute('DETACH DATABASE globaldb;')
 
         return assets_info, entries_found
 
@@ -464,33 +465,35 @@ class GlobalDBHandler:
             cursor.execute(
                 f'ATTACH DATABASE "{globaldb.filepath()!s}" AS globaldb KEY "";',
             )
-            cursor.execute(query, bindings)
-            found_eth = False
-            for entry in cursor:
-                if treat_eth2_as_eth is True and entry[0] in (A_ETH.identifier, A_ETH2.identifier):  # noqa: E501
-                    if found_eth is False:
-                        search_result.append({
-                            'identifier': resolved_eth.identifier,
-                            'name': resolved_eth.name,
-                            'symbol': resolved_eth.symbol,
-                            'is_custom_asset': False,
-                        })
-                        found_eth = True
-                    continue
+            try:
+                cursor.execute(query, bindings)
+                found_eth = False
+                for entry in cursor:
+                    if treat_eth2_as_eth is True and entry[0] in (A_ETH.identifier, A_ETH2.identifier):  # noqa: E501
+                        if found_eth is False:
+                            search_result.append({
+                                'identifier': resolved_eth.identifier,
+                                'name': resolved_eth.name,
+                                'symbol': resolved_eth.symbol,
+                                'is_custom_asset': False,
+                            })
+                            found_eth = True
+                        continue
 
-                entry_info = {
-                    'identifier': entry[0],
-                    'name': entry[1],
-                    'symbol': entry[2],
-                    'is_custom_asset': AssetType.deserialize_from_db(entry[4]) == AssetType.CUSTOM_ASSET,  # noqa: E501
-                }
-                if entry[3] is not None:
-                    entry_info['evm_chain'] = ChainID.deserialize_from_db(entry[3]).to_name()
-                if entry[5] is not None:
-                    entry_info['custom_asset_type'] = entry[5]
+                    entry_info = {
+                        'identifier': entry[0],
+                        'name': entry[1],
+                        'symbol': entry[2],
+                        'is_custom_asset': AssetType.deserialize_from_db(entry[4]) == AssetType.CUSTOM_ASSET,  # noqa: E501
+                    }
+                    if entry[3] is not None:
+                        entry_info['evm_chain'] = ChainID.deserialize_from_db(entry[3]).to_name()
+                    if entry[5] is not None:
+                        entry_info['custom_asset_type'] = entry[5]
 
-                search_result.append(entry_info)
-            cursor.execute('DETACH globaldb;')
+                    search_result.append(entry_info)
+            finally:
+                cursor.execute('DETACH DATABASE globaldb;')
         return search_result
 
     @overload

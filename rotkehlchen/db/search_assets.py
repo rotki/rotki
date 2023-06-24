@@ -55,47 +55,48 @@ def _search_only_assets_levenstein(
     cursor.execute(
         f'ATTACH DATABASE "{globaldb.filepath()!s}" AS globaldb KEY "";',
     )
-    query, bindings = filter_query.prepare('assets')
-    query = ALL_ASSETS_TABLES_QUERY.format(dbprefix='globaldb.') + query
-    cursor.execute(query, bindings)
-    found_eth = False
-    for entry in cursor:
-        lev_dist_min = 100
-        if entry[1] is not None:
-            lev_dist_min = min(
-                lev_dist_min,
-                levenshtein(filter_query.substring_search, entry[1].casefold()),
-            )
-        if entry[2] is not None:
-            lev_dist_min = min(
-                lev_dist_min,
-                levenshtein(filter_query.substring_search, entry[2].casefold()),
-            )
-        if treat_eth2_as_eth is True and entry[0] in (A_ETH.identifier, A_ETH2.identifier):  # noqa: E501
-            if found_eth is False:
-                search_result.append((lev_dist_min, {
-                    'identifier': resolved_eth.identifier,
-                    'name': resolved_eth.name,
-                    'symbol': resolved_eth.symbol,
-                    'asset_type': AssetType.OWN_CHAIN.serialize(),
-                }))
-                found_eth = True
-            continue
+    try:
+        query, bindings = filter_query.prepare('assets')
+        query = ALL_ASSETS_TABLES_QUERY.format(dbprefix='globaldb.') + query
+        cursor.execute(query, bindings)
+        found_eth = False
+        for entry in cursor:
+            lev_dist_min = 100
+            if entry[1] is not None:
+                lev_dist_min = min(
+                    lev_dist_min,
+                    levenshtein(filter_query.substring_search, entry[1].casefold()),
+                )
+            if entry[2] is not None:
+                lev_dist_min = min(
+                    lev_dist_min,
+                    levenshtein(filter_query.substring_search, entry[2].casefold()),
+                )
+            if treat_eth2_as_eth is True and entry[0] in (A_ETH.identifier, A_ETH2.identifier):  # noqa: E501
+                if found_eth is False:
+                    search_result.append((lev_dist_min, {
+                        'identifier': resolved_eth.identifier,
+                        'name': resolved_eth.name,
+                        'symbol': resolved_eth.symbol,
+                        'asset_type': AssetType.OWN_CHAIN.serialize(),
+                    }))
+                    found_eth = True
+                continue
 
-        entry_info = {
-            'identifier': entry[0],
-            'name': entry[1],
-            'symbol': entry[2],
-            'asset_type': AssetType.deserialize_from_db(entry[4]).serialize(),
-        }
-        if entry[3] is not None:
-            entry_info['evm_chain'] = ChainID.deserialize_from_db(entry[3]).to_name()
-        if entry[5] is not None:
-            entry_info['custom_asset_type'] = entry[5]
+            entry_info = {
+                'identifier': entry[0],
+                'name': entry[1],
+                'symbol': entry[2],
+                'asset_type': AssetType.deserialize_from_db(entry[4]).serialize(),
+            }
+            if entry[3] is not None:
+                entry_info['evm_chain'] = ChainID.deserialize_from_db(entry[3]).to_name()
+            if entry[5] is not None:
+                entry_info['custom_asset_type'] = entry[5]
 
-        search_result.append((lev_dist_min, entry_info))
-
-    cursor.execute('DETACH globaldb;')
+            search_result.append((lev_dist_min, entry_info))
+    finally:
+        cursor.execute('DETACH globaldb;')
     return search_result
 
 
