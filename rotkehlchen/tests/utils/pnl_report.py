@@ -1,5 +1,6 @@
 import random
 from contextlib import ExitStack
+from typing import Optional
 
 import requests
 
@@ -10,7 +11,7 @@ from rotkehlchen.tests.utils.api import (
     wait_for_async_task_with_result,
 )
 from rotkehlchen.tests.utils.history import prepare_rotki_for_history_processing_test
-from rotkehlchen.types import Optional, Timestamp
+from rotkehlchen.types import Timestamp
 
 
 def query_api_create_and_get_report(

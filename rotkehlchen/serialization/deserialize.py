@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Any, Callable, Literal, TypeVar, Union, overload
+from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, TypeVar, Union, overload
 
 from eth_utils import to_checksum_address
 
@@ -22,7 +22,6 @@ from rotkehlchen.types import (
     EVMTxHash,
     Fee,
     HexColorCode,
-    Optional,
     Timestamp,
     TradePair,
     deserialize_evm_tx_hash,
