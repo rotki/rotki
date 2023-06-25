@@ -91,7 +91,7 @@ select = [
     "W",
     "C",
     # "I",  # isort -- not using since does not play well with running isort too
-    # "D",  # pydocstule -- too many docstuff we don't use
+    # "D",  # pydocstyle -- too many docstuff we don't use
     "N",
     "B",
     "G",
@@ -127,7 +127,7 @@ select = [
     "EXE",
     "INP",
     "PT",
-    "TCH",  # Should do it at some point. Too many hits and no autofix. When enabled fully, remove from extend-select
+    "TCH",
     # "PTH",  # Should do it at some point. Many hits and no autofix. When enabled fully remove from extend-select
     "INT",
     "TRY",
