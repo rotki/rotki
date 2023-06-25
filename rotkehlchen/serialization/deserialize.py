@@ -7,6 +7,7 @@ from rotkehlchen.accounting.structures.types import HistoryEventType
 from rotkehlchen.assets.asset import AssetWithOracles, EvmToken
 from rotkehlchen.assets.utils import get_crypto_asset_by_symbol
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.chain.optimism.types import OptimismTransaction
 from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair, WrongAssetType
 from rotkehlchen.errors.serialization import ConversionError, DeserializationError
 from rotkehlchen.externalapis.utils import read_hash, read_integer
@@ -30,6 +31,7 @@ from rotkehlchen.utils.misc import convert_to_int, create_timestamp, iso8601ts_t
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
+    from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
 
 
 logger = logging.getLogger(__name__)
@@ -613,6 +615,71 @@ def deserialize_evm_transaction(
             gas_used=gas_used,
             input_data=input_data,
             nonce=nonce,
+        ), raw_receipt_data
+    
+def deserialize_optimism_transaction(
+        data: dict[str, Any],
+        internal: Literal[False],
+        chain_id: ChainID,
+        evm_inquirer: 'OptimismInquirer',
+        parent_tx_hash: Optional['EVMTxHash'] = None,
+) -> tuple[OptimismTransaction, dict[str, Any]]:
+    """Reads dict data of an Optimism transaction and deserializes it.
+    If the transaction is not from etherscan then it's missing some data
+    so optimism inquirer is used to fetch it.
+
+    Can raise DeserializationError if something is wrong
+
+    Returns the deserialized transaction and raw receipt data
+    """
+    source = 'etherscan' if evm_inquirer is None else 'web3' #this can probably just be set to web3 since it'll always be input
+    raw_receipt_data = None
+    try:
+        tx_hash = parent_tx_hash if parent_tx_hash is not None else deserialize_evm_tx_hash(data['hash'])  # noqa: E501
+        block_number = read_integer(data, 'blockNumber', source)
+        if 'timeStamp' not in data:
+            if evm_inquirer is None:
+                raise DeserializationError('Got in deserialize evm transaction without timestamp and without evm inquirer')  # noqa: E501
+
+            block_data = evm_inquirer.get_block_by_number(block_number)
+            timestamp = Timestamp(read_integer(block_data, 'timestamp', source))
+        else:
+            timestamp = deserialize_timestamp(data['timeStamp'])
+
+        from_address = deserialize_evm_address(data['from'])
+        is_empty_to_address = data['to'] != '' and data['to'] is not None
+        to_address = deserialize_evm_address(data['to']) if is_empty_to_address else None
+        value = read_integer(data, 'value', source)
+
+        # else normal transaction
+        gas_price = read_integer(data=data, key='gasPrice', api=source)
+        input_data = read_hash(data, 'input', source)
+        raw_receipt_data = evm_inquirer.get_transaction_receipt(tx_hash)
+        if 'gasUsed' not in data:  # some etherscan APIs may have this
+            gas_used = read_integer(raw_receipt_data, 'gasUsed', source)
+        else:
+            gas_used = read_integer(data, 'gasUsed', source)
+        nonce = read_integer(data, 'nonce', source)
+        l1_fee = read_integer(raw_receipt_data, 'l1Fee', source)
+    except KeyError as e:
+        raise DeserializationError(
+            f'evm {"internal" if internal else ""}transaction from {source} missing expected key {e!s}',  # noqa: E501
+        ) from e
+    else:
+        return OptimismTransaction(
+            timestamp=timestamp,
+            chain_id=chain_id,
+            block_number=block_number,
+            tx_hash=tx_hash,
+            from_address=from_address,
+            to_address=to_address,
+            value=value,
+            gas=read_integer(data, 'gas', source),
+            gas_price=gas_price,
+            gas_used=gas_used,
+            input_data=input_data,
+            nonce=nonce,
+            l1_fee=l1_fee,
         ), raw_receipt_data
 
 
