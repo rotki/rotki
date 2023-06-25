@@ -164,7 +164,7 @@ class CurrentPriceOracle(OracleSource):
     DEFILLAMA = auto()
 
 
-DEFAULT_CURRENT_PRICE_ORACLES_ORDER = [
+DEFAULT_CURRENT_PRICE_ORACLES_ORDER = (
     CurrentPriceOracle.MANUALCURRENT,
     CurrentPriceOracle.COINGECKO,
     CurrentPriceOracle.DEFILLAMA,
@@ -172,7 +172,7 @@ DEFAULT_CURRENT_PRICE_ORACLES_ORDER = [
     CurrentPriceOracle.UNISWAPV2,
     CurrentPriceOracle.UNISWAPV3,
     CurrentPriceOracle.SADDLE,
-]
+)
 
 
 def get_underlying_asset_price(token: EvmToken) -> tuple[Optional[Price], CurrentPriceOracle]:  # noqa: E501
@@ -280,9 +280,9 @@ class Inquirer:
     _uniswapv3: Optional['UniswapV3Oracle'] = None
     _saddle: Optional['SaddleOracle'] = None
     _evm_managers: dict[ChainID, 'EvmManager']
-    _oracles: Optional[list[CurrentPriceOracle]] = None
+    _oracles: Optional[Sequence[CurrentPriceOracle]] = None
     _oracle_instances: Optional[list[CurrentPriceOracleInstance]] = None
-    _oracles_not_onchain: Optional[list[CurrentPriceOracle]] = None
+    _oracles_not_onchain: Optional[Sequence[CurrentPriceOracle]] = None
     _oracle_instances_not_onchain: Optional[list[CurrentPriceOracleInstance]] = None
     _msg_aggregator: 'MessagesAggregator'
     # save only the identifier of the special tokens since we only check if assets are in this set
@@ -412,7 +412,7 @@ class Inquirer:
         Inquirer()._cached_current_price.pop(cache_key, None)
 
     @staticmethod
-    def set_oracles_order(oracles: list[CurrentPriceOracle]) -> None:
+    def set_oracles_order(oracles: Sequence[CurrentPriceOracle]) -> None:
         assert len(oracles) != 0 and len(oracles) == len(set(oracles)), (
             "Oracles can't be empty or have repeated items"
         )
@@ -441,12 +441,12 @@ class Inquirer:
         instance = Inquirer()
         cache_key = (from_asset, to_asset)
         assert (
-            isinstance(instance._oracles, list) and
-            isinstance(instance._oracle_instances, list) and
-            isinstance(instance._oracles_not_onchain, list) and
-            isinstance(instance._oracle_instances_not_onchain, list)
+            instance._oracles is not None and
+            instance._oracle_instances is not None and
+            instance._oracles_not_onchain is not None and
+            instance._oracle_instances_not_onchain is not None
         ), (
-            'Inquirer should never be called before the setting the oracles'
+            'Inquirer should never be called before setting the oracles'
         )
         if from_asset.is_asset_with_oracles() is True:
             from_asset = from_asset.resolve_to_asset_with_oracles()

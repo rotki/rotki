@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Final, Literal, NamedTuple, Optional
 
 if TYPE_CHECKING:
@@ -50,7 +50,8 @@ class EnricherContext(DecoderBasicContext):
     event: 'EvmEvent'
 
 
-class DecodingOutput(NamedTuple):
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=True)
+class DecodingOutput:
     """
     Output of decoding functions
 
@@ -64,7 +65,7 @@ class DecodingOutput(NamedTuple):
     changed (for example if the user has deposited / withdrawn funds from a curve gauge).
     """
     event: Optional['EvmEvent'] = None
-    action_items: list[ActionItem] = []
+    action_items: list[ActionItem] = field(default_factory=list)
     matched_counterparty: Optional[str] = None
     refresh_balances: bool = False
 

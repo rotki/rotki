@@ -1,4 +1,6 @@
 import json
+from collections.abc import Sequence
+from dataclasses import dataclass, field, fields
 from typing import Any, NamedTuple, Optional, Union
 
 from rotkehlchen.accounting.ledger_actions import LedgerActionType
@@ -35,21 +37,21 @@ DEFAULT_BALANCE_SAVE_FREQUENCY = 24
 DEFAULT_MAIN_CURRENCY = A_USD
 DEFAULT_DATE_DISPLAY_FORMAT = '%d/%m/%Y %H:%M:%S %Z'
 DEFAULT_SUBMIT_USAGE_ANALYTICS = True
-DEFAULT_ACTIVE_MODULES = list(set(AVAILABLE_MODULES_MAP.keys()) - DEFAULT_OFF_MODULES)
+DEFAULT_ACTIVE_MODULES = tuple(set(AVAILABLE_MODULES_MAP.keys()) - DEFAULT_OFF_MODULES)
 DEFAULT_ACCOUNT_FOR_ASSETS_MOVEMENTS = True
 DEFAULT_BTC_DERIVATION_GAP_LIMIT = 20
 DEFAULT_CALCULATE_PAST_COST_BASIS = True
 DEFAULT_DISPLAY_DATE_IN_LOCALTIME = True
 DEFAULT_CURRENT_PRICE_ORACLES = DEFAULT_CURRENT_PRICE_ORACLES_ORDER
 DEFAULT_HISTORICAL_PRICE_ORACLES = DEFAULT_HISTORICAL_PRICE_ORACLES_ORDER
-DEFAULT_TAXABLE_LEDGER_ACTIONS = [
+DEFAULT_TAXABLE_LEDGER_ACTIONS = (
     LedgerActionType.INCOME,
     LedgerActionType.EXPENSE,
     LedgerActionType.LOSS,
     LedgerActionType.DIVIDENDS_INCOME,
     LedgerActionType.DONATION_RECEIVED,
     LedgerActionType.GRANT,
-]
+)
 DEFAULT_PNL_CSV_WITH_FORMULAS = True
 DEFAULT_PNL_CSV_HAVE_SUMMARY = False
 DEFAULT_SSF_GRAPH_MULTIPLIER = 0
@@ -101,13 +103,14 @@ TIMESTAMP_KEYS = ('last_write_ts', 'last_data_upload_ts', 'last_balance_save')
 IGNORED_KEYS = (LAST_EVM_ACCOUNTS_DETECT_KEY, LAST_DATA_UPDATES_KEY) + tuple(x.serialize() for x in UpdateType)  # noqa: E501
 
 
-class DBSettings(NamedTuple):
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=True)
+class DBSettings:
     have_premium: bool = False
     version: int = ROTKEHLCHEN_DB_VERSION
-    last_write_ts: Timestamp = Timestamp(0)
+    last_write_ts: Timestamp = field(default=Timestamp(0))
     premium_should_sync: bool = DEFAULT_PREMIUM_SHOULD_SYNC
     include_crypto2crypto: bool = DEFAULT_INCLUDE_CRYPTO2CRYPTO
-    last_data_upload_ts: Timestamp = Timestamp(0)
+    last_data_upload_ts: Timestamp = field(default=Timestamp(0))
     ui_floating_precision: int = DEFAULT_UI_FLOATING_PRECISION
     taxfree_after_period: Optional[int] = DEFAULT_TAXFREE_AFTER_PERIOD
     balance_save_frequency: int = DEFAULT_BALANCE_SAVE_FREQUENCY
@@ -116,40 +119,44 @@ class DBSettings(NamedTuple):
     dot_rpc_endpoint: str = ''  # same as kusama -- must be set by user
     main_currency: Asset = DEFAULT_MAIN_CURRENCY
     date_display_format: str = DEFAULT_DATE_DISPLAY_FORMAT
-    last_balance_save: Timestamp = Timestamp(0)
+    last_balance_save: Timestamp = field(default=Timestamp(0))
     submit_usage_analytics: bool = DEFAULT_SUBMIT_USAGE_ANALYTICS
-    active_modules: list[ModuleName] = DEFAULT_ACTIVE_MODULES  # type: ignore
+    active_modules: Sequence[ModuleName] = field(default=DEFAULT_ACTIVE_MODULES)  # type: ignore
     frontend_settings: str = ''
     account_for_assets_movements: bool = DEFAULT_ACCOUNT_FOR_ASSETS_MOVEMENTS
     btc_derivation_gap_limit: int = DEFAULT_BTC_DERIVATION_GAP_LIMIT
     calculate_past_cost_basis: bool = DEFAULT_CALCULATE_PAST_COST_BASIS
     display_date_in_localtime: bool = DEFAULT_DISPLAY_DATE_IN_LOCALTIME
-    current_price_oracles: list[CurrentPriceOracle] = DEFAULT_CURRENT_PRICE_ORACLES
-    historical_price_oracles: list[HistoricalPriceOracle] = DEFAULT_HISTORICAL_PRICE_ORACLES
-    taxable_ledger_actions: list[LedgerActionType] = DEFAULT_TAXABLE_LEDGER_ACTIONS
+    current_price_oracles: Sequence[CurrentPriceOracle] = field(default=DEFAULT_CURRENT_PRICE_ORACLES)  # noqa: E501
+    historical_price_oracles: Sequence[HistoricalPriceOracle] = field(default=DEFAULT_HISTORICAL_PRICE_ORACLES)  # noqa: E501
+    taxable_ledger_actions: Sequence[LedgerActionType] = field(default=DEFAULT_TAXABLE_LEDGER_ACTIONS)  # noqa: E501
     pnl_csv_with_formulas: bool = DEFAULT_PNL_CSV_WITH_FORMULAS
     pnl_csv_have_summary: bool = DEFAULT_PNL_CSV_HAVE_SUMMARY
     ssf_graph_multiplier: int = DEFAULT_SSF_GRAPH_MULTIPLIER
     last_data_migration: int = DEFAULT_LAST_DATA_MIGRATION
-    non_syncing_exchanges: list[ExchangeLocationID] = []
+    non_syncing_exchanges: Sequence[ExchangeLocationID] = field(default_factory=list)
     cost_basis_method: CostBasisMethod = DEFAULT_COST_BASIS_METHOD
     treat_eth2_as_eth: bool = DEFAULT_TREAT_ETH2_AS_ETH
     eth_staking_taxable_after_withdrawal_enabled: bool = DEFAULT_ETH_STAKING_TAXABLE_AFTER_WITHDRAWAL_ENABLED  # noqa: 501
-    address_name_priority: list[AddressNameSource] = DEFAULT_ADDRESS_NAME_PRIORITY
+    address_name_priority: Sequence[AddressNameSource] = DEFAULT_ADDRESS_NAME_PRIORITY
     include_fees_in_cost_basis: bool = DEFAULT_INCLUDE_FEES_IN_COST_BASIS
     infer_zero_timed_balances: bool = DEFAULT_INFER_ZERO_TIMED_BALANCES
 
     def serialize(self) -> dict[str, Any]:
-        settings_dict = self._asdict()   # pylint: disable=no-member
-        for key in settings_dict:
-            value = settings_dict.get(key)
+        settings_dict = {}
+        for field_entry in fields(self):
+            value = getattr(self, field_entry.name)
             if value is not None:
                 serialized_value = serialize_db_setting(
                     value=value,
-                    setting=key,
+                    setting=field_entry.name,
                     is_modifiable=False,
                 )
-                settings_dict[key] = serialized_value
+            else:
+                serialized_value = value
+
+            settings_dict[field_entry.name] = serialized_value
+
         return settings_dict
 
 
@@ -273,7 +280,11 @@ def db_settings_from_dict(
     return DBSettings(**specified_args)
 
 
-def serialize_db_setting(value: Any, setting: Any, is_modifiable: bool) -> Any:
+def serialize_db_setting(
+        value: Any,
+        setting: Any,
+        is_modifiable: bool,
+) -> Any:
     """Utility function to serialize a db setting.
     `is_modifiable` represents `ModifiableDBSettings` specific flag.
     """

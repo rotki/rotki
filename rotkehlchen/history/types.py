@@ -29,12 +29,12 @@ NOT_EXPOSED_SOURCES = (
     HistoricalPriceOracle.XRATESCOM,
 )
 
-DEFAULT_HISTORICAL_PRICE_ORACLES_ORDER = [
+DEFAULT_HISTORICAL_PRICE_ORACLES_ORDER = (
     HistoricalPriceOracle.MANUAL,
     HistoricalPriceOracle.CRYPTOCOMPARE,
     HistoricalPriceOracle.COINGECKO,
     HistoricalPriceOracle.DEFILLAMA,
-]
+)
 
 
 class HistoricalPrice(NamedTuple):
