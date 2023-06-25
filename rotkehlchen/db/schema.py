@@ -437,6 +437,15 @@ CREATE TABLE IF NOT EXISTS evm_transactions (
 );
 """
 
+DB_CREATE_OPTIMISM_TRANSACTIONS = """
+CREATE TABLE IF NOT EXISTS optimism_transactions (
+    tx_hash BLOB NOT NULL,
+    chain_id INTEGER NOT NULL,
+    l1_fee TEXT,
+    PRIMARY KEY(tx_hash)
+);
+"""
+
 # from/to address/value is also in the primary key of the internal transactions since
 # trace_id, which is returned by etherscan does not guarantee uniqueness. Example:
 # https://api.etherscan.io/api?module=account&action=txlistinternal&sort=asc&startBlock=16779092&endBlock=16779092
@@ -710,6 +719,7 @@ BEGIN TRANSACTION;
 {DB_CREATE_MANUALLY_TRACKED_BALANCES}
 {DB_CREATE_TRADES}
 {DB_CREATE_EVM_TRANSACTIONS}
+{DB_CREATE_OPTIMISM_TRANSACTIONS}
 {DB_CREATE_EVM_INTERNAL_TRANSACTIONS}
 {DB_CREATE_EVMTX_RECEIPTS}
 {DB_CREATE_EVMTX_RECEIPT_LOGS}
