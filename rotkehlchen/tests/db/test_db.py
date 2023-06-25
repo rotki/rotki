@@ -103,6 +103,7 @@ TABLES_AT_INIT = [
     'multisettings',
     'trades',
     'evm_transactions',
+    'optimism_transactions',
     'evm_internal_transactions',
     'evmtx_receipts',
     'evmtx_receipt_logs',
