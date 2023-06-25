@@ -1,5 +1,7 @@
 # Some example checkers that have complicated logic
 # https://github.com/PyCQA/pylint/tree/master/pylint/checkers
+from typing import Final
+
 import astroid
 from pylint.checkers import BaseChecker, utils
 from pylint.interfaces import IAstroidChecker
@@ -18,7 +20,7 @@ class NotBooleanChecker(BaseChecker):
 
     name = 'nonbooleannot'
     priority = -1
-    msgs = {
+    msgs: Final[dict[str, tuple[str, ...]]] = {
         'E9011': (
             NONBOOLEANNOT_MSG,
             NONBOOLEANNOT_SYMBOL,

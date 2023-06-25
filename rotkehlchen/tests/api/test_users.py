@@ -1,3 +1,4 @@
+import dataclasses
 import os
 import random
 import shutil
@@ -38,12 +39,12 @@ def check_proper_unlock_result(
 
     assert isinstance(response_data['exchanges'], list)
     assert response_data['settings']['version'] == ROTKEHLCHEN_DB_VERSION
-    for setting in DBSettings._fields:
-        assert setting in response_data['settings']
+    for setting in dataclasses.fields(DBSettings):
+        assert setting.name in response_data['settings']
 
     if settings_to_check is not None:
-        for setting, value in settings_to_check.items():
-            assert response_data['settings'][setting] == value
+        for setting_to_check, value in settings_to_check.items():
+            assert response_data['settings'][setting_to_check] == value
 
 
 def check_user_status(api_server) -> dict[str, str]:

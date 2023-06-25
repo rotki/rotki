@@ -1,3 +1,4 @@
+import dataclasses
 import logging
 import os
 import time
@@ -393,15 +394,14 @@ def test_writing_fetching_data(data_dir, username, sql_vm_instructions_cb):
         'include_fees_in_cost_basis': DEFAULT_INCLUDE_FEES_IN_COST_BASIS,
         'infer_zero_timed_balances': DEFAULT_INFER_ZERO_TIMED_BALANCES,
     }
-    assert len(expected_dict) == len(DBSettings()), 'One or more settings are missing'
+    assert len(expected_dict) == len(dataclasses.fields(DBSettings)), 'One or more settings are missing'  # noqa: E501
 
     # Make sure that results are the same. Comparing like this since we ignore last
     # write ts check
-    result_dict = result._asdict()
-    for key, value in expected_dict.items():
-        assert key in result_dict
-        if key != 'last_write_ts':
-            assert value == result_dict[key]
+    for field in dataclasses.fields(result):
+        assert field.name in expected_dict
+        if field.name != 'last_write_ts':
+            assert getattr(result, field.name) == expected_dict[field.name]
 
 
 def test_settings_entry_types(database):
@@ -439,7 +439,7 @@ def test_settings_entry_types(database):
     assert res.date_display_format == '%d/%m/%Y %H:%M:%S %z'
     assert isinstance(res.submit_usage_analytics, bool)
     assert res.submit_usage_analytics is False
-    assert isinstance(res.active_modules, list)
+    assert isinstance(res.active_modules, tuple)
     assert res.active_modules == DEFAULT_ACTIVE_MODULES
     assert isinstance(res.frontend_settings, str)
     assert res.frontend_settings == ''

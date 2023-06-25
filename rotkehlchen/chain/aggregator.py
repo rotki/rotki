@@ -1,7 +1,7 @@
 import logging
 import typing
 from collections import defaultdict
-from collections.abc import Iterator
+from collections.abc import Iterator, Sequence
 from importlib import import_module
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, TypeVar, cast, overload
@@ -181,7 +181,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             data_directory: Path,
             beaconchain: 'BeaconChain',
             btc_derivation_gap_limit: int,
-            eth_modules: list[ModuleName],
+            eth_modules: Sequence[ModuleName],
     ):
         log.debug('Initializing ChainsAggregator')
         super().__init__()

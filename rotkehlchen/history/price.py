@@ -1,4 +1,5 @@
 import logging
+from collections.abc import Sequence
 from contextlib import suppress
 from http import HTTPStatus
 from pathlib import Path
@@ -78,7 +79,7 @@ class PriceHistorian:
     _coingecko: 'Coingecko'
     _defillama: 'Defillama'
     _manual: ManualPriceOracle  # This is used when iterating through all oracles
-    _oracles: Optional[list[HistoricalPriceOracle]] = None
+    _oracles: Optional[Sequence[HistoricalPriceOracle]] = None
     _oracle_instances: Optional[list[HistoricalPriceOracleInstance]] = None
 
     def __new__(
@@ -106,7 +107,7 @@ class PriceHistorian:
         return PriceHistorian.__instance
 
     @staticmethod
-    def set_oracles_order(oracles: list[HistoricalPriceOracle]) -> None:
+    def set_oracles_order(oracles: Sequence[HistoricalPriceOracle]) -> None:
         assert len(oracles) != 0 and len(oracles) == len(set(oracles)), (
             "Oracles can't be empty or have repeated items"
         )
@@ -206,7 +207,7 @@ class PriceHistorian:
         instance = PriceHistorian()
         oracles = instance._oracles
         oracle_instances = instance._oracle_instances
-        assert isinstance(oracles, list) and isinstance(oracle_instances, list), (
+        assert oracles is not None and oracle_instances is not None, (
             'PriceHistorian should never be called before setting the oracles'
         )
         rate_limited = False

@@ -1,4 +1,5 @@
 import typing
+from collections.abc import Sequence
 from enum import Enum, auto
 from typing import (
     TYPE_CHECKING,
@@ -882,14 +883,14 @@ AddressNameSource = Literal[
     'private_addressbook',
 ]
 
-DEFAULT_ADDRESS_NAME_PRIORITY: list[AddressNameSource] = [
+DEFAULT_ADDRESS_NAME_PRIORITY: Sequence[AddressNameSource] = (
     'private_addressbook',
     'blockchain_account',
     'global_addressbook',
     'ethereum_tokens',
     'hardcoded_mappings',
     'ens_names',
-]
+)
 
 EventMappingType = dict[
     'HistoryEventType',

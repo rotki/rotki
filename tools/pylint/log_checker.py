@@ -1,4 +1,5 @@
 from contextlib import suppress
+from typing import Final
 
 from astroid.exceptions import InferenceError
 from pylint.checkers import BaseChecker
@@ -29,7 +30,7 @@ class LogNokwargsChecker(BaseChecker):
 
     name = 'lognokwargs'
     priority = -1
-    msgs = {
+    msgs: Final[dict[str, tuple[str, ...]]] = {
         'E9001': (
             LOGNOKWARGS_MSG,
             LOGNOKWARGS_SYMBOL,

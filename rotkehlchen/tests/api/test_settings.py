@@ -1,3 +1,4 @@
+import dataclasses
 from http import HTTPStatus
 from unittest.mock import patch
 
@@ -33,8 +34,8 @@ def test_querying_settings(rotkehlchen_api_server, username):
     result = json_data['result']
     assert json_data['message'] == ''
     assert result['version'] == ROTKEHLCHEN_DB_VERSION
-    for setting in DBSettings._fields:
-        assert setting in result
+    for setting in dataclasses.fields(DBSettings):
+        assert setting.name in result
 
     # Logout of the active user
     data = {'action': 'logout'}

@@ -49,14 +49,6 @@ def test_process_result():
     json.dumps(process_result(d))
 
 
-def test_tuple_in_process_result():
-    d = {'overview': [{'foo': (FVal('0.1'),)}]}
-
-    # Process result should detect the tuple and throw
-    with pytest.raises(ValueError):
-        json.dumps(process_result(d))
-
-
 def test_hexbytes_in_process_result():
     expected_str = '{"overview": "0xd4e56740f876aef8c010906a34"}'
     d = {'overview': HexBytes(b'\xd4\xe5g@\xf8v\xae\xf8\xc0\x10\x90j4')}

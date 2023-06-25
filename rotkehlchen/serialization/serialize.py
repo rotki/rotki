@@ -137,6 +137,7 @@ def _process_entry(entry: Any) -> Union[str, list[Any], dict[str, Any], Any]:
             HistoryEventSubType,
             LocationDetails,
             EvmProduct,
+            DBSettings,
     )):
         return entry.serialize()
     if isinstance(entry, (
@@ -167,9 +168,7 @@ def _process_entry(entry: Any) -> Union[str, list[Any], dict[str, Any], Any]:
     )):
         return process_result(entry.serialize())
     if isinstance(entry, (
-            DBSettings,
             VersionCheckResult,
-            DBSettings,
             DSRCurrentBalances,
             VaultEvent,
             MakerdaoVaultDetails,
@@ -184,7 +183,7 @@ def _process_entry(entry: Any) -> Union[str, list[Any], dict[str, Any], Any]:
     )):
         return process_result(entry._asdict())
     if isinstance(entry, tuple):
-        raise ValueError('Query results should not contain plain tuples')
+        return list(entry)
     if isinstance(entry, Asset):
         return entry.identifier
     if isinstance(entry, (

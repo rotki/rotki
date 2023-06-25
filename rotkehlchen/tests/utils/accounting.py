@@ -1,4 +1,5 @@
 import csv
+import dataclasses
 import tempfile
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
@@ -257,7 +258,7 @@ def assert_csv_export(
     with tempfile.TemporaryDirectory() as tmpdirname:
         tmpdir = Path(tmpdirname)
         # first make sure we export without formulas
-        csvexporter.settings = csvexporter.settings._replace(pnl_csv_with_formulas=False)
+        csvexporter.settings = dataclasses.replace(csvexporter.settings, pnl_csv_with_formulas=False)  # noqa: E501
         accountant.csvexporter.export(
             events=accountant.pots[0].processed_events,
             pnls=accountant.pots[0].pnls,
@@ -281,7 +282,7 @@ def assert_csv_export(
         assert_pnl_totals_close(expected_pnls, calculated_pnls)
 
         # export with formulas and summary
-        csvexporter.settings = csvexporter.settings._replace(pnl_csv_with_formulas=True, pnl_csv_have_summary=True)  # noqa: E501
+        csvexporter.settings = dataclasses.replace(csvexporter.settings, pnl_csv_with_formulas=True, pnl_csv_have_summary=True)  # noqa: E501
         accountant.csvexporter.export(
             events=accountant.pots[0].processed_events,
             pnls=accountant.pots[0].pnls,

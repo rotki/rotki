@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from typing import TYPE_CHECKING, Callable, Optional, cast
 
 from rotkehlchen.chain.ethereum.decoding.constants import ETHADDRESS_TO_KNOWN_NAME
@@ -112,7 +113,7 @@ class NamePrioritizer:
 
     def get_prioritized_names(
             self,
-            prioritized_name_source: list[AddressNameSource],
+            prioritized_name_source: Sequence[AddressNameSource],
             chain_addresses: list[OptionalChainAddress],
     ) -> list[AddressbookEntry]:
         """
