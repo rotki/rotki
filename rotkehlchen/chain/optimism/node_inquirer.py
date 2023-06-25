@@ -4,17 +4,22 @@ from typing import TYPE_CHECKING, Any, Literal, Optional, cast
 
 from eth_typing import BlockNumber
 
-from rotkehlchen.chain.constants import DEFAULT_EVM_RPC_TIMEOUT, FAKE_GENESIS_TX_RECEIPT, GENESIS_HASH
+from rotkehlchen.chain.constants import DEFAULT_EVM_RPC_TIMEOUT
+from rotkehlchen.chain.evm.constants import FAKE_GENESIS_TX_RECEIPT, GENESIS_HASH
 from rotkehlchen.chain.evm.contracts import EvmContracts
 from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer, EvmNodeInquirerWithDSProxy
 from rotkehlchen.chain.evm.types import WeightedNode, string_to_evm_address
+from rotkehlchen.chain.optimism.types import OptimismTransaction
 from rotkehlchen.constants.assets import A_ETH
-from rotkehlchen.fval import FVal
 from rotkehlchen.errors.misc import BlockchainQueryError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.fval import FVal
 from rotkehlchen.greenlets.manager import GreenletManager
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.serialization.deserialize import deserialize_int_from_hex
+from rotkehlchen.serialization.deserialize import(
+    deserialize_int_from_hex,
+    deserialize_optimism_transaction,
+)
 from rotkehlchen.serialization.serialize import process_result
 from rotkehlchen.types import (
     ChainID,
@@ -144,3 +149,30 @@ class OptimismInquirer(EvmNodeInquirerWithDSProxy):
         # Can raise TransactionNotFound if the user's node is pruned and transaction is old
         tx_receipt = web3.eth.get_transaction_receipt(tx_hash)  # type: ignore
         return process_result(tx_receipt)
+    
+    def _get_transaction_by_hash(
+            self,
+            web3: Optional[Web3],
+            tx_hash: EVMTxHash,
+    ) -> Optional[tuple[OptimismTransaction, dict[str, Any]]]:
+        if web3 is None:
+            tx_data = self.etherscan.get_transaction_by_hash(tx_hash=tx_hash)
+        else:
+            tx_data = web3.eth.get_transaction(tx_hash)  # type: ignore
+        if tx_data is None:
+            return None
+
+        try:
+            transaction, receipt_data = deserialize_optimism_transaction(
+                data=tx_data,
+                internal=False,
+                chain_id=self.chain_id,
+                evm_inquirer=self,
+            )
+        except (DeserializationError, ValueError) as e:
+            raise RemoteError(
+                f'Couldnt deserialize evm transaction data from {tx_data}. Error: {e!s}',
+            ) from e
+
+        assert receipt_data, 'receipt_data should exist here as etherscan getTransactionByHash does not contains gasUsed'  # noqa: E501
+        return transaction, receipt_data
