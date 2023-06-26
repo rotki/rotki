@@ -36,13 +36,6 @@ from .types import (
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
 
-UNISWAP_REMOTE_ERROR_MSG = (
-    'Could not initialize the Uniswap subgraph due to {error_msg}. '
-    "All Balancer balances and historical queries won't be able to use a "
-    'secondary price oracle for requesting the USD price of the unsupported tokens. '
-    "Probably will get fixed with time. If not report it to rotki's support channel"
-)
-
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -280,21 +273,6 @@ def deserialize_token_price(
     try:
         token_address = raw_token_price['id']
         usd_price = deserialize_price(raw_token_price['price'])
-    except KeyError as e:
-        raise DeserializationError(f'Missing key: {e!s}.') from e
-
-    token_address = deserialize_evm_address(token_address)
-
-    return token_address, usd_price
-
-
-def deserialize_token_day_data(
-        raw_token_day_data: dict[str, Any],
-) -> tuple[ChecksumEvmAddress, Price]:
-    """May raise DeserializationError"""
-    try:
-        token_address = raw_token_day_data['token']['id']
-        usd_price = deserialize_price(raw_token_day_data['priceUSD'])
     except KeyError as e:
         raise DeserializationError(f'Missing key: {e!s}.') from e
 

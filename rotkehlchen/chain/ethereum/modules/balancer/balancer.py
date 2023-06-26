@@ -1,7 +1,5 @@
-import datetime
 import logging
 from collections import defaultdict
-from contextlib import suppress
 from operator import add, sub
 from typing import TYPE_CHECKING, Literal, Optional
 
@@ -33,12 +31,10 @@ from rotkehlchen.types import (
     ChecksumEvmAddress,
     EvmTokenKind,
     Location,
-    Price,
     Timestamp,
 )
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
-from rotkehlchen.utils.misc import ts_now
 
 from .db import add_balancer_events, get_balancer_events
 from .graph import (
@@ -47,7 +43,6 @@ from .graph import (
     MINTS_QUERY,
     POOLSHARES_QUERY,
     REMOVE_LIQUIDITIES_QUERY,
-    TOKEN_DAY_DATAS_QUERY,
     TOKENPRICES_QUERY,
 )
 from .types import (
@@ -75,11 +70,9 @@ from .types import (
     TokenToPrices,
 )
 from .utils import (
-    UNISWAP_REMOTE_ERROR_MSG,
     deserialize_bpt_event,
     deserialize_invest_event,
     deserialize_pool_share,
-    deserialize_token_day_data,
     deserialize_token_price,
     deserialize_transaction_id,
 )
@@ -120,14 +113,6 @@ class Balancer(EthereumModule):
                 SUBGRAPH_REMOTE_ERROR_MSG.format(protocol='Balancer', error_msg=str(e)),
             )
             raise ModuleInitializationFailure('subgraph remote error') from e
-
-        try:
-            self.graph_uniswap: Optional[Graph] = Graph(
-                'https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v2',
-            )
-        except RemoteError as e:
-            self.graph_uniswap = None
-            self.msg_aggregator.add_error(UNISWAP_REMOTE_ERROR_MSG.format(error_msg=str(e)))
 
     @staticmethod
     def _calculate_pool_events_balances(
@@ -684,9 +669,11 @@ class Balancer(EthereumModule):
                     token_identifier = ethaddress_to_identifier(invest_event.token_address)
                     token = EvmToken(token_identifier)  # should exist at this point
                     if is_missing_token_price is False:
-                        usd_price = self._get_token_price_at_timestamp_zero_if_error(
-                            token=token,
-                            timestamp=invest_event.timestamp,
+                        usd_price = query_usd_price_or_use_default(
+                            asset=token,
+                            time=invest_event.timestamp,
+                            default_value=ZERO,
+                            location=str(Location.BALANCER),
                         )
                         lp_balance.usd_value += usd_price * invest_event.amount
                         if usd_price == ZERO:
@@ -815,33 +802,6 @@ class Balancer(EthereumModule):
         )
         return protocol_balance
 
-    def _get_token_price_at_timestamp_zero_if_error(
-            self,
-            token: EvmToken,
-            timestamp: Timestamp,
-    ) -> Price:
-        if token.has_oracle():
-            usd_price = query_usd_price_or_use_default(
-                asset=token,
-                time=timestamp,
-                default_value=ZERO,
-                location=str(Location.BALANCER),
-            )
-        else:
-            token_to_prices = {}
-            with suppress(RemoteError):
-                # This suppression is exclusive to the Balancer module. The Uniswap
-                # module also calls tokenDayDatas and processes the results in the
-                # same way, so in case of an error we should know.
-                token_to_prices = self._get_unknown_token_to_prices_uniswap_graph(
-                    unknown_token_addresses={token.evm_address},
-                    timestamp=timestamp,
-                )
-
-            usd_price = token_to_prices.get(token.evm_address, ZERO_PRICE)
-
-        return usd_price
-
     def _get_unknown_token_to_prices_balancer_graph(
             self,
             unknown_token_addresses: set[ChecksumEvmAddress],
@@ -926,106 +886,12 @@ class Balancer(EthereumModule):
         unknown_token_addresses = {token.evm_address for token in unknown_tokens}
         token_to_prices_bal = self._get_unknown_token_to_prices_balancer_graph(unknown_token_addresses)  # noqa: E501
         token_to_prices = dict(token_to_prices_bal)
-        still_unknown_token_addresses = unknown_token_addresses - set(token_to_prices_bal.keys())
-        if self.graph_uniswap is not None:
-            # Requesting the missing prices from Uniswap is
-            # a nice to have alternative to the main oracle (Balancer). Therefore
-            # in case of failing to request, it will just continue.
-            try:
-                token_to_prices_uni = self._get_unknown_token_to_prices_uniswap_graph(still_unknown_token_addresses)  # noqa: E501
-            except RemoteError:
-                # This error hiding is exclusive to the Balancer module. The Uniswap
-                # module also calls tokenDayDatas and processes the results in the
-                # same way, so in case of an error we should know.
-                token_to_prices_uni = {}
-
-            token_to_prices = {**token_to_prices, **token_to_prices_uni}
-
         for unknown_token in unknown_tokens:
             if unknown_token.evm_address not in token_to_prices:
                 self.msg_aggregator.add_error(
                     f'Failed to request the USD price of {unknown_token.identifier}. '
                     f"Balances of the balancer pools that have this token won't be accurate.",
                 )
-        return token_to_prices
-
-    def _get_unknown_token_to_prices_uniswap_graph(
-            self,
-            unknown_token_addresses: set[ChecksumEvmAddress],
-            timestamp: Optional[Timestamp] = None,
-    ) -> TokenToPrices:
-        """Get a mapping of unknown token addresses to USD price via Uniswap
-
-        May raise RemoteError
-        """
-        unknown_token_addresses_lower = [address.lower() for address in unknown_token_addresses]
-        querystr = format_query_indentation(TOKEN_DAY_DATAS_QUERY.format())
-        from_timestamp = ts_now() if timestamp is None else timestamp
-        midnight_epoch = int(
-            datetime.datetime.combine(
-                datetime.datetime.fromtimestamp(from_timestamp, tz=datetime.timezone.utc),
-                datetime.time.min,
-            ).timestamp(),
-        )
-        query_offset = 0
-        param_types = {
-            '$limit': 'Int!',
-            '$offset': 'Int!',
-            '$token_ids': '[String!]',
-            '$datetime': 'Int!',
-        }
-        param_values = {
-            'limit': GRAPH_QUERY_LIMIT,
-            'offset': query_offset,
-            'token_ids': unknown_token_addresses_lower,
-            'datetime': midnight_epoch,
-        }
-        token_to_prices: TokenToPrices = {}
-        while True:
-            try:
-                result = self.graph_uniswap.query(  # type: ignore # caller already checks
-                    querystr=querystr,
-                    param_types=param_types,
-                    param_values=param_values,
-                )
-            except RemoteError as e:
-                self.msg_aggregator.add_error(UNISWAP_REMOTE_ERROR_MSG.format(error_msg=str(e)))
-                raise
-
-            try:
-                raw_token_day_datas = result['tokenDayDatas']
-            except KeyError as e:
-                log.error(
-                    'Failed to deserialize balancer unknown token day datas',
-                    error='Missing key: tokenDayDatas',
-                    result=result,
-                    param_values=param_values,
-                )
-                raise RemoteError('Failed to deserialize balancer balances') from e
-
-            for raw_token_day_data in raw_token_day_datas:
-                try:
-                    token_address, usd_price = deserialize_token_day_data(raw_token_day_data)
-                except DeserializationError as e:
-                    log.error(
-                        'Failed to deserialize a balancer unknown token day data',
-                        error=str(e),
-                        raw_token_day_data=raw_token_day_data,
-                        param_values=param_values,
-                    )
-                    continue
-
-                token_to_prices[token_address] = usd_price
-
-            if len(raw_token_day_datas) < GRAPH_QUERY_LIMIT:
-                break
-
-            query_offset += GRAPH_QUERY_LIMIT
-            param_values = {
-                **param_values,
-                'offset': query_offset,
-            }
-
         return token_to_prices
 
     @staticmethod
