@@ -23,27 +23,8 @@ export type XswapBalance = z.infer<typeof XswapBalance>;
 export const XswapBalances = z.record(z.array(XswapBalance));
 export type XswapBalances = z.infer<typeof XswapBalances>;
 
-export enum XswapEventType {
-  MINT = 'mint',
-  BURN = 'burn'
-}
-
-const XswapEvent = z.object({
-  amount0: NumericString,
-  amount1: NumericString,
-  eventType: z.nativeEnum(XswapEventType),
-  logIndex: z.number(),
-  lpAmount: NumericString,
-  timestamp: z.number(),
-  txHash: z.string(),
-  usdPrice: NumericString
-});
-
-type XswapEvent = z.infer<typeof XswapEvent>;
-
 const XswapPoolDetails = z.object({
   address: z.string(),
-  events: z.array(XswapEvent),
   poolAddress: z.string(),
   profitLoss0: NumericString,
   profitLoss1: NumericString,
@@ -65,8 +46,4 @@ export const XswapEvents = z.record(z.array(XswapPoolDetails));
 
 export type XswapEvents = z.infer<typeof XswapEvents>;
 
-export type XswapPoolProfit = Omit<XswapPoolDetails, 'events' | 'address'>;
-
-export interface XswapEventDetails
-  extends XswapEvent,
-    Pick<XswapPoolDetails, 'address' | 'poolAddress' | 'token0' | 'token1'> {}
+export type XswapPoolProfit = Omit<XswapPoolDetails, 'address'>;
