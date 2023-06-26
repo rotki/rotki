@@ -7667,7 +7667,7 @@ Getting yearn finance vaults balances
                       "vault_value": {
                           "amount": "19", "usd_value": "150"
                       },
-                      "roi": "25.55%",
+                      "roi": "25.55%"
                   },
                   "YYFI Vault": {
                       "underlying_token": "eip155:1/erc20:0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e",
@@ -7677,8 +7677,7 @@ Getting yearn finance vaults balances
                       },
                       "vault_value": {
                           "amount": "19", "usd_value": "150"
-                      },
-                      "roi": "5.35%",
+                      }
                   }
               },
           "0xA0B6B7fEa3a3ce3b9e6512c0c5A157a385e81056": {
@@ -7691,7 +7690,7 @@ Getting yearn finance vaults balances
                       "vault_value": {
                           "amount": "19", "usd_value": "150"
                       },
-                      "roi": "35.15%",
+                      "roi": "35.15%"
               }
           }
           },
@@ -7703,7 +7702,7 @@ Getting yearn finance vaults balances
    :resjsonarr string vault_token: The symbol of the token that is minted when you deposit underlying token to the vault
    :resjsonarr object underlying_value: The value of the underlying token for the vault.
    :resjsonarr object vault_value: The value of the vault token for the vault.
-   :resjsonarr str roi: The Return of Investment for the vault since its creation
+   :resjsonarr optional[string] roi: An optional string. The Return of Investment for the vault since its creation.
 
 
    :statuscode 200: Yearn vault balances successfully queried.
@@ -7930,7 +7929,7 @@ Getting yearn finance V2 vaults balances
    :resjsonarr string vault_token: The identifier of the token that is minted when you deposit underlying token to the vault
    :resjsonarr object underlying_value: The value of the underlying token for the vault.
    :resjsonarr object vault_value: The value of the vault token for the vault.
-   :resjsonarr str roi: The Return of Investment for the vault since its creation
+   :resjsonarr optional[string] roi: An optional string. The Return of Investment for the vault since its creation.
 
 
    :statuscode 200: Yearn vault V2 balances successfully queried.

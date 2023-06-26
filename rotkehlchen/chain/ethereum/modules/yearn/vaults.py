@@ -119,11 +119,12 @@ class YearnVaultBalance(NamedTuple):
     vault_token: CryptoAsset
     underlying_value: Balance
     vault_value: Balance
-    roi: FVal
+    roi: Optional[FVal]
 
     def serialize(self) -> dict[str, Any]:
         result = self._asdict()  # pylint: disable=no-member
-        result['roi'] = self.roi.to_percentage(precision=2)
+        if self.roi is not None:
+            result['roi'] = self.roi.to_percentage(precision=2)
         return result
 
 

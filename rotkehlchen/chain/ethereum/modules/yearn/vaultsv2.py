@@ -59,7 +59,7 @@ class YearnVaultsV2(EthereumModule):
             )
             raise ModuleInitializationFailure('Yearn Vaults v2 Subgraph remote error') from e
 
-    def _calculate_vault_roi(self, vault: EvmToken) -> tuple[FVal, int]:
+    def _calculate_vault_roi_and_pps(self, vault: EvmToken) -> tuple[Optional[FVal], int]:
         """
         getPricePerFullShare A @ block X
         getPricePerFullShare B @ block Y
@@ -69,21 +69,23 @@ class YearnVaultsV2(EthereumModule):
         So the numbers you see displayed on http://yearn.finance/vaults
         are ROI since launch of contract. All vaults start with pricePerFullShare = 1e18
 
-        A value of 0 for ROI is returned if the calculation couldn't be made
+        Returns a tuple[ROI, price_per_share] with the result.
+        None is returned for first tuple entry if ROI could not be calculated.
         """
-        if vault.started is None:
-            self.msg_aggregator.add_error(
-                f'Failed to query ROI for vault {vault.evm_address}. Missing creation time.',
-            )
-            return ZERO, 0
-
-        now_block_number = self.ethereum.get_latest_block_number()
         price_per_full_share = self.ethereum.call_contract(
             contract_address=vault.evm_address,
             abi=self.ethereum.contracts.abi('YEARN_VAULT_V2'),  # Any vault ABI will do
             method_name='pricePerShare',
         )
+
+        if vault.started is None:
+            log.error(
+                f'Failed to query ROI for vault {vault.evm_address}. Missing creation time.',
+            )
+            return None, price_per_full_share
+
         nominator = price_per_full_share - EXP18
+        now_block_number = self.ethereum.get_latest_block_number()
         try:
             denonimator = now_block_number - self.ethereum.etherscan.get_blocknumber_by_time(ts=vault.started, closest='before')  # noqa: E501
         except RemoteError as e:
@@ -91,7 +93,7 @@ class YearnVaultsV2(EthereumModule):
                 f'Failed to query ROI for vault {vault.evm_address}. '
                 f'Etherscan error {e!s}.',
             )
-            return ZERO, price_per_full_share
+            return None, price_per_full_share
         return FVal(nominator) / FVal(denonimator) * BLOCKS_PER_YEAR / EXP18, price_per_full_share
 
     def _get_single_addr_balance(
@@ -119,15 +121,10 @@ class YearnVaultsV2(EthereumModule):
                     roi = roi_cache.get(vault_address, None)
                     pps = pps_cache.get(vault_address, None)
                     if roi is None:
-                        roi, pps = self._calculate_vault_roi(token)
-                        if roi == ZERO:
-                            self.msg_aggregator.add_warning(
-                                f'Ignoring vault {token} because information failed to '
-                                f'be correctly queried.',
-                            )
-                            continue
-                        roi_cache[vault_address] = roi
-                        pps_cache[vault_address] = pps
+                        roi, pps = self._calculate_vault_roi_and_pps(token)
+                        if roi is not None:
+                            roi_cache[vault_address] = roi
+                            pps_cache[vault_address] = pps
 
                     underlying_balance = Balance(
                         amount=balance.amount * FVal(pps * 10**-token.decimals),
