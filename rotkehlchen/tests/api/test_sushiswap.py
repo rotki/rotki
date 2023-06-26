@@ -51,7 +51,9 @@ def test_get_balances(
         inquirer: Inquirer,  # pylint: disable=unused-argument
         ethereum_accounts: list[ChecksumEvmAddress],
 ):
-    """Check querying the sushiswap balances endpoint works. Uses real data"""
+    """Check querying the sushiswap balances endpoint works. Uses real data. Needs the deposit
+    event in uniswap to trigger the logic based on events to query pool balances.
+    """
     tx_hex = deserialize_evm_tx_hash('0xbc99e10c1e48969f4a580229abebc97f7a358b7ba8365dca1f829f9c387bec51')  # noqa: E501
     ethereum_inquirer = rotkehlchen_api_server.rest_api.rotkehlchen.chains_aggregator.ethereum.node_inquirer  # noqa: E501
     database = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
@@ -123,7 +125,10 @@ TEST_EVENTS_ADDRESS_1 = '0x91E6A718d9A4CB67bDA0e4bf96C6C8154b7F4120'
 @pytest.mark.parametrize('should_mock_price_queries', [True])
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
 def test_get_events_history_filtering_by_timestamp(rotkehlchen_api_server: 'APIServer'):
-    """Test the events balances from 1627401169 to 1627401170 (both included)."""
+    """
+    Test the events balances from 1627401169 to 1627401170 (both included). Needs the event
+    to return a non empty response.
+    """
     tx_hex = deserialize_evm_tx_hash('0xb226ddb8cbb286a7a998a35263ad258110eed5f923488f03a8d890572cd4608e')  # noqa: E501
     ethereum_inquirer = rotkehlchen_api_server.rest_api.rotkehlchen.chains_aggregator.ethereum.node_inquirer  # noqa: E501
     database = rotkehlchen_api_server.rest_api.rotkehlchen.data.db

@@ -6,7 +6,6 @@ from unittest.mock import patch
 
 import pytest
 import requests
-from flaky import flaky
 
 from rotkehlchen.chain.ethereum.interfaces.ammswap.types import LiquidityPoolEventsBalance
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -72,7 +71,10 @@ def test_get_balances(
         start_with_valid_premium: bool,
         inquirer: Inquirer,  # pylint: disable=unused-argument
 ):
-    """Check querying the uniswap balances endpoint works. Uses real data"""
+    """
+    Check querying the uniswap balances endpoint works. Uses real data. Needs the deposit
+    event in uniswap to trigger the logic based on events to query pool balances.
+    """
     tx_hex = deserialize_evm_tx_hash('0x856a5b5d95623f85923938e1911dfda6ad1dd185f45ab101bac99371aeaed329')  # noqa: E501
     ethereum_inquirer = rotkehlchen_api_server.rest_api.rotkehlchen.chains_aggregator.ethereum.node_inquirer  # noqa: E501
     database = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
@@ -223,7 +225,7 @@ def test_get_events_history_filtering_by_timestamp(
     assert expected_event == events_balances[0]
 
 
-@flaky(max_runs=3, min_passes=1)  # etherscan may occasionally time out
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [[LP_V3_HOLDER_ADDRESS]])
 @pytest.mark.parametrize('ethereum_modules', [['uniswap']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
@@ -276,6 +278,7 @@ def test_get_v3_balances_premium(rotkehlchen_api_server):
             assert lp_asset['user_balance']['usd_value']
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [[LP_V3_HOLDER_ADDRESS]])
 @pytest.mark.parametrize('ethereum_modules', [['uniswap']])
 @pytest.mark.parametrize('start_with_valid_premium', [False])
