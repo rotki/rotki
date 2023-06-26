@@ -178,9 +178,9 @@ class BaseDecoderTools:
             name = 'ERC721 token' if token.name == '' else token.name
             extra_data = {'token_id': token_id, 'token_name': name}
             if event_type in {HistoryEventType.SPEND, HistoryEventType.TRANSFER}:
-                notes = f'{verb} {name} with id {token_id} from {location_label} to {counterparty}'  # noqa: E501
+                notes = f'{verb} {name} with id {token_id} from {location_label} to {counterparty_or_address}'  # noqa: E501
             else:
-                notes = f'{verb} {name} with id {token_id} from {counterparty} to {location_label}'  # noqa: E501
+                notes = f'{verb} {name} with id {token_id} from {counterparty_or_address} to {location_label}'  # noqa: E501
         else:
             return None  # unknown kind
 
