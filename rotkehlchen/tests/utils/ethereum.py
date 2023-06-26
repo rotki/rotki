@@ -89,21 +89,23 @@ TEST_ADDR1 = string_to_evm_address('0x443E1f9b1c866E54e914822B7d3d7165EdB6e9Ea')
 TEST_ADDR2 = string_to_evm_address('0x442068F934BE670aDAb81242C87144a851d56d16')
 TEST_ADDR3 = string_to_evm_address('0xc37b40ABdB939635068d3c5f13E7faF686F03B65')
 
+INFURA_ETH_NODE = WeightedNode(
+    node_info=NodeName(
+        name='Infura',
+        endpoint='https://mainnet.infura.io/v3/a6b269b6e5ad44ed943e9fff244dfe25',
+        owned=True,
+        blockchain=SupportedBlockchain.ETHEREUM,
+    ),
+    active=True,
+    weight=ONE,
+)
+
 ETHEREUM_NODES_PARAMETERS_WITH_PRUNED_AND_NOT_ARCHIVED = (
     'ethereum_manager_connect_at_start',
     [
         (
             PRUNED_AND_NOT_ARCHIVED_NODE,
-            WeightedNode(
-                node_info=NodeName(
-                    name='Infura',
-                    endpoint='https://mainnet.infura.io/v3/a6b269b6e5ad44ed943e9fff244dfe25',
-                    owned=True,
-                    blockchain=SupportedBlockchain.ETHEREUM,
-                ),
-                active=True,
-                weight=ONE,
-            ),
+            INFURA_ETH_NODE,
             ETHEREUM_ETHERSCAN_NODE,
             ETHERSCAN_AND_INFURA_AND_ALCHEMY[1][2][0][0],
         ),

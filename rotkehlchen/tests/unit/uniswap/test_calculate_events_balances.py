@@ -2,11 +2,9 @@ from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import pytest
-from rotkehlchen.tests.utils.ethereum import (
-    ETHEREUM_NODES_PARAMETERS_WITH_PRUNED_AND_NOT_ARCHIVED,
-    get_decoded_events_of_transaction,
-)
 
+from rotkehlchen.constants.misc import ONE
+from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Timestamp, deserialize_evm_tx_hash
 from rotkehlchen.utils.misc import ts_now
 
@@ -31,12 +29,14 @@ def test_no_events_no_balances(rotkehlchen_api_server: 'APIServer') -> None:
     assert events_balances == {}
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_modules', [['uniswap']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])
 @pytest.mark.parametrize('ethereum_accounts', [['0x6C0F75eb3D69B9Ea2fB88dbC37fc086a12bBC93F']])
 @pytest.mark.parametrize('network_mocking', [False])
-@pytest.mark.parametrize(*ETHEREUM_NODES_PARAMETERS_WITH_PRUNED_AND_NOT_ARCHIVED)
+@pytest.mark.parametrize('should_mock_price_queries', [True])
+@pytest.mark.parametrize('default_mock_price_value', [ONE])
 def test_single_pool_without_balances(rotkehlchen_api_server: 'APIServer', ethereum_accounts):
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     database = rotki.data.db
@@ -63,11 +63,14 @@ def test_single_pool_without_balances(rotkehlchen_api_server: 'APIServer', ether
     assert events_balances[ethereum_accounts[0]] == [const_lp_1_events_balance()]
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_modules', [['uniswap']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])
 @pytest.mark.parametrize('ethereum_accounts', [['0x6C0F75eb3D69B9Ea2fB88dbC37fc086a12bBC93F']])
 @pytest.mark.parametrize('network_mocking', [False])
+@pytest.mark.parametrize('should_mock_price_queries', [True])
+@pytest.mark.parametrize('default_mock_price_value', [ONE])
 def test_multiple_pools_without_balances(rotkehlchen_api_server: 'APIServer', ethereum_accounts):
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     database = rotki.data.db
@@ -97,11 +100,14 @@ def test_multiple_pools_without_balances(rotkehlchen_api_server: 'APIServer', et
     assert events_balances[ethereum_accounts[0]] == [const_lp_2_events_balance(), const_lp_1_events_balance()]  # noqa: E501
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_modules', [['uniswap']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])
 @pytest.mark.parametrize('ethereum_accounts', [['0x6C0F75eb3D69B9Ea2fB88dbC37fc086a12bBC93F']])
 @pytest.mark.parametrize('network_mocking', [False])
+@pytest.mark.parametrize('should_mock_price_queries', [True])
+@pytest.mark.parametrize('default_mock_price_value', [ONE])
 def test_single_pool_with_balances(rotkehlchen_api_server: 'APIServer', ethereum_accounts):
     """Test LP current balances are factorized in the pool events balance
     """

@@ -1,5 +1,5 @@
+import dataclasses
 import logging
-from dataclasses import replace
 from typing import TYPE_CHECKING, Callable, Literal, Optional
 
 from web3 import Web3
@@ -270,7 +270,7 @@ def decode_uniswap_like_deposit_and_withdrawals(
         factory_address=factory_address,
         init_code_hash=init_code_hash,
     )
-    underlaying_tokens = [
+    underlying_tokens = [
         UnderlyingToken(address=token0.evm_address, token_kind=EvmTokenKind.ERC20, weight=FVal(0.5)),  # noqa: E501
         UnderlyingToken(address=token1.evm_address, token_kind=EvmTokenKind.ERC20, weight=FVal(0.5)),  # noqa: E501
     ]
@@ -282,14 +282,14 @@ def decode_uniswap_like_deposit_and_withdrawals(
             token_kind=EvmTokenKind.ERC20,
             evm_inquirer=ethereum_inquirer,
             seen=TokenSeenAt(tx_hash=tx_hash),
-            underlying_tokens=underlaying_tokens,
+            underlying_tokens=underlying_tokens,
         )
         if len(pool_token.underlying_tokens) == 0:
-            pool_token = replace(pool_token, underlying_tokens=underlaying_tokens)
+            pool_token = dataclasses.replace(pool_token, underlying_tokens=underlying_tokens)
             GlobalDBHandler().edit_evm_token(pool_token)
     except NotERC20Conformant:
         log.error(
-            f'Failed to create ERC20 token for the pool token since is not an erc20'
+            f'Failed to create the pool token since is it does not conform to ERC20. '
             f'expected: {pool_address} for {token0.evm_address}-{token1.evm_address}',
         )
 

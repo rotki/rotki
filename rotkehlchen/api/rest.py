@@ -170,6 +170,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import PremiumCredentials
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.serialization.serialize import process_result, process_result_list
+from rotkehlchen.tasks.utils import query_missing_prices_of_base_entries
 from rotkehlchen.types import (
     AVAILABLE_MODULES_MAP,
     EVM_CHAIN_IDS_WITH_TRANSACTIONS,
@@ -2592,7 +2593,11 @@ class RestAPI:
             entries_missing_prices = history_events_db.get_base_entries_missing_prices(
                 query_filter=EvmEventFilterQuery.make(counterparties=[CPT_LIQUITY]),
             )
-            task_manager.query_missing_prices_of_base_entries(entries_missing_prices)
+            query_missing_prices_of_base_entries(
+                database=task_manager.database,
+                entries_missing_prices=entries_missing_prices,
+                base_entries_ignore_set=task_manager.base_entries_ignore_set,
+            )
 
         stats = get_liquity_stats(
             database=self.rotkehlchen.data.db,
@@ -2738,8 +2743,10 @@ class RestAPI:
                     )
                     history_events_db = DBHistoryEvents(task_manager.database)
                     entries = history_events_db.get_base_entries_missing_prices(events_filter)
-                    task_manager.query_missing_prices_of_base_entries(
+                    query_missing_prices_of_base_entries(
+                        database=task_manager.database,
                         entries_missing_prices=entries,
+                        base_entries_ignore_set=task_manager.base_entries_ignore_set,
                     )
             except (RemoteError, DeserializationError) as e:
                 status_code = HTTPStatus.BAD_GATEWAY

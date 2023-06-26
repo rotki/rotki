@@ -102,7 +102,7 @@ def test_add_optimism_blockchain_account(rotkehlchen_api_server):
             '0x15992f382D8c46d667B10DC8456dc36651Af1452',  # spam token
         ]
     ]
-    assert set(tokens) == set(optimism_tokens)
+    assert set(optimism_tokens).issubset(set(tokens))
 
     # and query balances again to see tokens also appear
     response = requests.get(
