@@ -2509,23 +2509,6 @@ class RestAPI:
         )
 
     @async_api_call()
-    def get_sushiswap_events_history(
-            self,
-            reset_db_data: bool,
-            from_timestamp: Timestamp,
-            to_timestamp: Timestamp,
-    ) -> dict[str, Any]:
-        return self._eth_module_query(
-            module_name='sushiswap',
-            method='get_events_history',
-            query_specific_balances_before=None,
-            addresses=self.rotkehlchen.chains_aggregator.queried_addresses_for_module('sushiswap'),
-            reset_db_data=reset_db_data,
-            from_timestamp=from_timestamp,
-            to_timestamp=to_timestamp,
-        )
-
-    @async_api_call()
     def get_loopring_balances(self) -> dict[str, Any]:
         return self._eth_module_query(
             module_name='loopring',

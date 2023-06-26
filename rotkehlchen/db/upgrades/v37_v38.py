@@ -84,6 +84,21 @@ def _drop_aave_events(write_cursor: 'DBCursor') -> None:
     log.debug('Exit _drop_aave_events')
 
 
+def _delete_uniswap_sushiswap_events(write_cursor: 'DBCursor') -> None:
+    """
+    Delete query ranges and events for uniswap/sushiswap
+    """
+    write_cursor.execute('DROP TABLE IF EXISTS amm_events;')
+    write_cursor.execute(
+        'DELETE FROM used_query_ranges WHERE name LIKE ?',
+        ('uniswap_events_%',),
+    )
+    write_cursor.execute(
+        'DELETE FROM used_query_ranges WHERE name LIKE ?',
+        ('sushiswap_events_%',),
+    )
+
+
 def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
     """
     Reset all decoded evm events except the customized ones for ethereum mainnet and polygon.
@@ -138,7 +153,7 @@ def upgrade_v37_to_v38(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         - Remove potential duplicate block mev reward events
     """
     log.debug('Entered userdb v37->v38 upgrade')
-    progress_handler.set_total_steps(6)
+    progress_handler.set_total_steps(7)
     with db.user_write() as write_cursor:
         _reset_decoded_events(write_cursor)
         progress_handler.new_step()
@@ -151,6 +166,8 @@ def upgrade_v37_to_v38(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         _add_polygon_pos_nodes(write_cursor)
         progress_handler.new_step()
         _drop_aave_events(write_cursor)
+        progress_handler.new_step()
+        _delete_uniswap_sushiswap_events(write_cursor)
         progress_handler.new_step()
 
     log.debug('Finished userdb v37->v38 upgrade')

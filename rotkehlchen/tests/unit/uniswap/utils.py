@@ -3,10 +3,8 @@ import functools
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.ethereum.interfaces.ammswap.types import (
-    EventType,
     LiquidityPool,
     LiquidityPoolAsset,
-    LiquidityPoolEvent,
     LiquidityPoolEventsBalance,
 )
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -14,7 +12,7 @@ from rotkehlchen.constants.assets import A_USDT, A_WETH
 from rotkehlchen.constants.misc import ZERO, ZERO_PRICE
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.constants import A_DOLLAR_BASED
-from rotkehlchen.types import AssetAmount, Price, Timestamp, deserialize_evm_tx_hash
+from rotkehlchen.types import AssetAmount, Price
 
 # Logic: Get balances
 
@@ -180,81 +178,6 @@ USD_PRICE_SHL = Price(FVal('0.2373897544244518146892192714786454'))
 USD_PRICE_CAR = Price(FVal('0.2635575008126147388714187358722384'))
 
 
-# Method: `_calculate_events_balances`
-def const_lp_1_events() -> list[LiquidityPoolEvent]:
-    return [
-        LiquidityPoolEvent(
-            tx_hash=deserialize_evm_tx_hash(
-                '0xa9ce328d0e2d2fa8932890bfd4bc61411abd34a4aaa48fc8b853c873a55ea824',
-            ),
-            log_index=263,
-            address=TEST_ADDRESS_1,
-            timestamp=Timestamp(1604273256),
-            event_type=EventType.MINT_UNISWAP,
-            pool_address=string_to_evm_address('0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89'),  # noqa: E501
-            token0=A_DOLLAR_BASED.resolve_to_evm_token(),
-            token1=A_WETH.resolve_to_evm_token(),
-            amount0=AssetAmount(FVal('605.773209925184996494')),
-            amount1=AssetAmount(FVal('1.106631443395672732')),
-            usd_price=Price(FVal('872.4689300619698095220125311431804')),
-            lp_amount=AssetAmount(FVal('1.220680531244355402')),
-        ),
-        LiquidityPoolEvent(
-            tx_hash=deserialize_evm_tx_hash(
-                '0x27ddad4f187e965a3ee37257b75d297ff79b2663fd0a2d8d15f7efaccf1238fa',
-            ),
-            log_index=66,
-            address=TEST_ADDRESS_1,
-            timestamp=Timestamp(1604283808),
-            event_type=EventType.BURN_UNISWAP,
-            pool_address=string_to_evm_address('0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89'),  # noqa: E501
-            token0=A_DOLLAR_BASED.resolve_to_evm_token(),
-            token1=A_WETH.resolve_to_evm_token(),
-            amount0=AssetAmount(FVal('641.26289347330654345')),
-            amount1=AssetAmount(FVal('1.046665027131675546')),
-            usd_price=Price(FVal('837.2737746532695970921908229899852')),
-            lp_amount=AssetAmount(FVal('1.220680531244355402')),
-        ),
-    ]
-
-
-def const_lp_2_events() -> list[LiquidityPoolEvent]:
-    return [
-        LiquidityPoolEvent(
-            tx_hash=deserialize_evm_tx_hash(
-                '0x1e7fd116b316af49f6c52b3ca44f3c5d24c2a6f80a5b5e674b5f94155bd2cec4',
-            ),
-            log_index=99,
-            address=TEST_ADDRESS_1,
-            timestamp=Timestamp(1598270334),
-            event_type=EventType.MINT_UNISWAP,
-            pool_address=string_to_evm_address('0xC585Cc7b9E77AEa3371764320740C18E9aEC9c55'),  # noqa: E501
-            token0=A_WETH.resolve_to_evm_token(),
-            token1=A_BTR.resolve_to_evm_token(),
-            amount0=AssetAmount(FVal('1.580431277572006656')),
-            amount1=AssetAmount(FVal('3')),
-            usd_price=Price(FVal('1281.249386421513581165086356450817')),
-            lp_amount=AssetAmount(FVal('2.074549918528068811')),
-        ),
-        LiquidityPoolEvent(
-            tx_hash=deserialize_evm_tx_hash(
-                '0x140bdba831f9494cf0ead6d57009e1eae45ed629a78ee74ccbf49018afae0ffa',
-            ),
-            log_index=208,
-            address=TEST_ADDRESS_1,
-            timestamp=Timestamp(1599000975),
-            event_type=EventType.BURN_UNISWAP,
-            pool_address=string_to_evm_address('0xC585Cc7b9E77AEa3371764320740C18E9aEC9c55'),  # noqa: E501
-            token0=A_WETH.resolve_to_evm_token(),
-            token1=A_BTR.resolve_to_evm_token(),
-            amount0=AssetAmount(FVal('0.970300671842796406')),
-            amount1=AssetAmount(FVal('4.971799615456732408')),
-            usd_price=Price(FVal('928.8590296681781753390482605315881')),
-            lp_amount=AssetAmount(FVal('2.074549918528068811')),
-        ),
-    ]
-
-
 def const_lp_1_events_balance() -> LiquidityPoolEventsBalance:
     return LiquidityPoolEventsBalance(
         pool_address=string_to_evm_address('0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89'),
@@ -275,43 +198,6 @@ def const_lp_2_events_balance() -> LiquidityPoolEventsBalance:
         profit_loss1=AssetAmount(FVal('1.971799615456732408')),
         usd_profit_loss=FVal('1.361669009727522158'),
     )
-
-
-def const_lp_3_events() -> list[LiquidityPoolEvent]:
-    return [
-        LiquidityPoolEvent(
-            tx_hash=deserialize_evm_tx_hash(
-                '0xa9ce328d0e2d2fa8932890bfd4bc61411abd34a4aaa48fc8b853c873a55ea824',
-            ),
-            log_index=263,
-            address=TEST_ADDRESS_1,
-            timestamp=Timestamp(1604273256),
-            event_type=EventType.MINT_UNISWAP,
-            pool_address=string_to_evm_address('0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89'),  # noqa: E501
-            token0=A_DOLLAR_BASED.resolve_to_evm_token(),
-            token1=A_WETH.resolve_to_evm_token(),
-            amount0=AssetAmount(FVal('605.773209925184996494')),
-            amount1=AssetAmount(FVal('1.106631443395672732')),
-            usd_price=Price(FVal('872.4689300619698095220125311431804')),
-            lp_amount=AssetAmount(FVal('1.220680531244355402')),
-        ),
-        LiquidityPoolEvent(
-            tx_hash=deserialize_evm_tx_hash(
-                '0x27ddad4f187e965a3ee37257b75d297ff79b2663fd0a2d8d15f7efaccf1238fa',
-            ),
-            log_index=66,
-            address=TEST_ADDRESS_1,
-            timestamp=Timestamp(1604283808),
-            event_type=EventType.BURN_UNISWAP,
-            pool_address=string_to_evm_address('0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89'),  # noqa: E501
-            token0=A_DOLLAR_BASED.resolve_to_evm_token(),
-            token1=A_WETH.resolve_to_evm_token(),
-            amount0=AssetAmount(FVal('600')),
-            amount1=AssetAmount(FVal('1')),
-            usd_price=Price(FVal('800')),
-            lp_amount=AssetAmount(FVal('1')),
-        ),
-    ]
 
 
 def const_lp_3_balance() -> LiquidityPool:

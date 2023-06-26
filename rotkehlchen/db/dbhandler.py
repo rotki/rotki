@@ -5,7 +5,7 @@ import re
 import shutil
 import tempfile
 from collections import defaultdict
-from collections.abc import Iterable, Iterator, Sequence
+from collections.abc import Iterator, Sequence
 from contextlib import contextmanager, suppress
 from pathlib import Path
 from typing import Any, Literal, Optional, Union, cast, overload
@@ -29,10 +29,7 @@ from rotkehlchen.chain.bitcoin.xpub import (
     XpubDerivedAddressData,
     deserialize_derivation_path_for_db,
 )
-from rotkehlchen.chain.ethereum.interfaces.ammswap.types import EventType, LiquidityPoolEvent
 from rotkehlchen.chain.ethereum.modules.balancer import BALANCER_EVENTS_PREFIX
-from rotkehlchen.chain.ethereum.modules.sushiswap.constants import SUSHISWAP_EVENTS_PREFIX
-from rotkehlchen.chain.ethereum.modules.uniswap.constants import UNISWAP_EVENTS_PREFIX
 from rotkehlchen.chain.ethereum.modules.yearn.constants import (
     YEARN_VAULTS_PREFIX,
     YEARN_VAULTS_V2_PREFIX,
@@ -154,7 +151,6 @@ TABLES_WITH_ASSETS = (
     ('margin_positions', 'pl_currency', 'fee_currency'),
     ('asset_movements', 'asset', 'fee_asset'),
     ('ledger_actions', 'asset', 'rate_asset'),
-    ('amm_events', 'token0_identifier', 'token1_identifier'),
     ('balancer_events', 'pool_address_token'),
     ('timed_balances', 'currency'),
 )
@@ -748,83 +744,9 @@ class DBHandler:
         """Delete all historical ETH2 eth2_daily_staking_details data"""
         write_cursor.execute('DELETE FROM eth2_daily_staking_details;')
 
-    def add_amm_events(self, write_cursor: 'DBCursor', events: Sequence[LiquidityPoolEvent]) -> None:  # noqa: E501
-        query = (
-            """
-            INSERT INTO amm_events (
-                tx_hash,
-                log_index,
-                address,
-                timestamp,
-                type,
-                pool_address,
-                token0_identifier,
-                token1_identifier,
-                amount0,
-                amount1,
-                usd_price,
-                lp_amount
-            )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """
-        )
-        for event in events:
-            event_tuple = event.to_db_tuple()
-            try:
-                write_cursor.execute(query, event_tuple)
-            except sqlcipher.IntegrityError:  # pylint: disable=no-member
-                self.msg_aggregator.add_warning(
-                    f'Tried to add an AMM event that already exists in the DB. '
-                    f'Event data: {event_tuple}. Skipping event.',
-                )
-                continue
-
-    def get_amm_events(
-            self,
-            cursor: 'DBCursor',
-            events: Iterable[EventType],
-            from_ts: Optional[Timestamp] = None,
-            to_ts: Optional[Timestamp] = None,
-            address: Optional[ChecksumEvmAddress] = None,
-    ) -> list[LiquidityPoolEvent]:
-        """Returns a list of amm events optionally filtered by time, location
-        and address
-        """
-        events_sql_str = ', '.join([f'"{EventType.serialize_for_db(event)}"' for event in events])
-        querystr = f'SELECT * FROM amm_events WHERE amm_events.type IN ({events_sql_str}) '
-
-        # Timestamp filters are omitted, done via `form_query_to_filter_timestamps`
-        if address is not None:
-            querystr += f'AND address="{address}" '
-
-        querystr, bindings = form_query_to_filter_timestamps(querystr, 'timestamp', from_ts, to_ts)
-
-        cursor.execute(querystr, bindings)
-        db_events = []
-        for event_tuple in cursor:
-            try:
-                event = LiquidityPoolEvent.deserialize_from_db(event_tuple)
-            except DeserializationError as e:
-                self.msg_aggregator.add_error(
-                    f'Error deserializing AMM event from the DB. Skipping event. '
-                    f'Error was: {e!s}',
-                )
-                continue
-            except UnknownAsset as e:
-                self.msg_aggregator.add_error(
-                    f'Error deserializing AMM event from the DB. Skipping event. '
-                    f'Unknown asset {e.identifier} found',
-                )
-                continue
-            db_events.append(event)
-
-        return db_events
-
     def purge_module_data(self, module_name: Optional[ModuleName]) -> None:
         with self.user_write() as cursor:
             if module_name is None:
-                self.delete_uniswap_events_data(cursor)
-                self.delete_sushiswap_events_data(cursor)
                 self.delete_balancer_events_data(cursor)
                 self.delete_yearn_vaults_data(write_cursor=cursor, version=1)
                 self.delete_yearn_vaults_data(write_cursor=cursor, version=2)
@@ -832,11 +754,6 @@ class DBHandler:
                 self.delete_eth2_daily_stats(cursor)
                 log.debug('Purged all module data from the DB')
                 return
-
-            if module_name == 'uniswap':
-                self.delete_uniswap_events_data(cursor)
-            elif module_name == 'sushiswap':
-                self.delete_sushiswap_events_data(cursor)
             elif module_name == 'balancer':
                 self.delete_balancer_events_data(cursor)
             elif module_name == 'yearn_vaults':
@@ -852,28 +769,6 @@ class DBHandler:
                 return
 
             log.debug(f'Purged {module_name} data from the DB')
-
-    def delete_uniswap_events_data(self, write_cursor: DBCursor) -> None:
-        """Delete all historical Uniswap events data"""
-        write_cursor.execute(
-            'DELETE FROM amm_events WHERE amm_events.type IN (?, ?);',
-            (EventType.serialize_for_db(EventType.MINT_UNISWAP), EventType.serialize_for_db(EventType.BURN_UNISWAP)),  # noqa: E501
-        )
-        write_cursor.execute(
-            'DELETE FROM used_query_ranges WHERE name LIKE ?',
-            (f'{UNISWAP_EVENTS_PREFIX}%',),
-        )
-
-    def delete_sushiswap_events_data(self, write_cursor: DBCursor) -> None:
-        """Delete all historical Sushiswap events data"""
-        write_cursor.execute(
-            'DELETE FROM amm_events WHERE amm_events.type IN (?, ?)',
-            (EventType.serialize_for_db(EventType.MINT_SUSHISWAP), EventType.serialize_for_db(EventType.BURN_SUSHISWAP)),  # noqa: E501
-        )
-        write_cursor.execute(
-            'DELETE FROM used_query_ranges WHERE name LIKE ?',
-            (f'{SUSHISWAP_EVENTS_PREFIX}%',),
-        )
 
     def delete_yearn_vaults_data(self, write_cursor: 'DBCursor', version: int) -> None:
         """Delete all historical yearn vault events data"""
@@ -1908,13 +1803,8 @@ class DBHandler:
             'DELETE FROM used_query_ranges WHERE name = ?',
             (f'{BALANCER_EVENTS_PREFIX}_{address}',),
         )
-        write_cursor.execute(
-            'DELETE FROM used_query_ranges WHERE name = ?',
-            (f'{UNISWAP_EVENTS_PREFIX}_{address}',),
-        )
         write_cursor.execute('DELETE FROM evm_accounts_details WHERE account = ?', (address,))
         write_cursor.execute('DELETE FROM balancer_events WHERE address=?;', (address,))
-        write_cursor.execute('DELETE FROM amm_events WHERE address=?;', (address,))
         write_cursor.execute(
             'DELETE FROM multisettings WHERE name LIKE "queried_address_%" AND value = ?',
             (address,),
@@ -3040,12 +2930,6 @@ class DBHandler:
                 'SELECT location FROM history_events',
             )
             locations = {Location.deserialize_from_db(loc[0]) for loc in cursor}
-            cursor.execute('SELECT DISTINCT type FROM amm_events')
-            for event_type in cursor:
-                if EventType.deserialize_from_db(event_type[0]) in (EventType.MINT_SUSHISWAP, EventType.BURN_SUSHISWAP):  # noqa: E501
-                    locations.add(Location.SUSHISWAP)
-                else:
-                    locations.add(Location.UNISWAP)
             cursor.execute('SELECT COUNT(*) FROM balancer_events')
             if cursor.fetchone()[0] >= 1:  # should always return number
                 locations.add(Location.BALANCER)

@@ -1572,6 +1572,8 @@ def test_upgrade_db_37_to_38(user_data_dir):  # pylint: disable=unused-argument
     ]
     assert cursor.execute('SELECT * from eth_staking_events_info').fetchall() == expected_eth_staking_events_info  # noqa: E501
     assert cursor.execute('SELECT identifier from history_events WHERE entry_type=2;').fetchall() == [(1,), (74,), (238,)]  # noqa: E501
+    assert cursor.execute('SELECT COUNT(name) FROM used_query_ranges WHERE name LIKE "uniswap_events_%"').fetchone() == (1,)  # noqa: E501
+    assert cursor.execute('SELECT COUNT(name) FROM used_query_ranges WHERE name LIKE "sushiswap_events_%"').fetchone() == (1,)  # noqa: E501
 
     db_v37.logout()
     # Execute upgrade
@@ -1597,6 +1599,9 @@ def test_upgrade_db_37_to_38(user_data_dir):  # pylint: disable=unused-argument
     assert cursor.execute('SELECT * from evm_internal_transactions ORDER BY value DESC').fetchall() == expected_internal_txs  # noqa: E501
     assert cursor.execute('SELECT COUNT(*) FROM used_query_ranges WHERE name=?', (aave_range_key,)).fetchone()[0] == 0  # noqa: E501
     assert cursor.execute('SELECT COUNT(*) FROM sqlite_master WHERE type="table" AND name="aave_events";').fetchone()[0] == 0  # noqa: E501
+    assert cursor.execute('SELECT COUNT(*) FROM sqlite_master WHERE type="table" AND name="amm_events";').fetchone()[0] == 0  # noqa: E501
+    assert cursor.execute('SELECT COUNT(name) FROM used_query_ranges WHERE name LIKE "uniswap_events_%"').fetchone() == (0,)  # noqa: E501
+    assert cursor.execute('SELECT COUNT(name) FROM used_query_ranges WHERE name LIKE "sushiswap_events_%"').fetchone() == (0,)  # noqa: E501
     # Make sure that duplicate events were removed
     expected_history_events = [expected_history_events[0]] + expected_history_events[2:6]
     assert cursor.execute('SELECT * from history_events WHERE entry_type=4;').fetchall() == expected_history_events  # noqa: E501
@@ -1649,7 +1654,7 @@ def test_latest_upgrade_adds_remove_tables(user_data_dir):
     result = cursor.execute('SELECT name FROM sqlite_master WHERE type="view"')
     views_after_creation = {x[0] for x in result}
 
-    removed_tables = {'aave_events'}
+    removed_tables = {'aave_events', 'amm_events'}
     removed_views = set()
     missing_tables = tables_before - tables_after_upgrade
     missing_views = views_before - views_after_upgrade

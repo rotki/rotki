@@ -1,6 +1,5 @@
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EvmToken
-from rotkehlchen.chain.ethereum.interfaces.ammswap.types import EventType, LiquidityPoolEvent
 from rotkehlchen.chain.ethereum.modules.balancer.db import add_balancer_events
 from rotkehlchen.chain.ethereum.modules.balancer.types import BalancerBPTEventType, BalancerEvent
 from rotkehlchen.constants.assets import A_ETH, A_EUR, A_LTC, A_USD, A_USDC
@@ -17,7 +16,6 @@ from rotkehlchen.types import (
     Price,
     Timestamp,
     TradeType,
-    deserialize_evm_tx_hash,
 )
 
 
@@ -150,25 +148,6 @@ def test_associated_locations(database):
     database.add_exchange('binance', Location.BINANCE, binance_api_key, binance_api_secret)
 
     with database.user_write() as write_cursor:
-        # Add uniswap and sushiswap events
-        database.add_amm_events(write_cursor, [
-            LiquidityPoolEvent(
-                tx_hash=deserialize_evm_tx_hash(
-                    '0x47ea26957ce09e84a51b51dfdab6a4ac1c3672a372eef77b15ef7677174ac847',
-                ),
-                log_index=23,
-                address=ChecksumEvmAddress('0x3163Bb273E8D9960Ce003fD542bF26b4C529f515'),
-                timestamp=Timestamp(1590011534),
-                event_type=EventType.MINT_SUSHISWAP,
-                pool_address=ChecksumEvmAddress('0xa2107FA5B38d9bbd2C461D6EDf11B11A50F6b974'),
-                token0=EvmToken('eip155:1/erc20:0x514910771AF9Ca656af840dff83E8264EcF986CA'),
-                token1=EvmToken('eip155:1/erc20:0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),
-                amount0=FVal('3.313676003468974932'),
-                amount1=FVal('0.064189269269768657'),
-                usd_price=FVal('26.94433946158740371839009166230438'),
-                lp_amount=FVal('0.460858304063739927'),
-            ),
-        ])
         add_balancer_events(
             write_cursor,
             [
@@ -197,7 +176,6 @@ def test_associated_locations(database):
         Location.POLONIEX,
         Location.COINBASE,
         Location.EXTERNAL,
-        Location.SUSHISWAP,
         Location.BALANCER,
     }
 
