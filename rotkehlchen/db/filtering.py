@@ -217,7 +217,7 @@ class DBOptimismTransactionHashFilter(DBFilter):
             return [], []
 
         return ['evm_transactions.tx_hash=?'], [self.tx_hash]
-    
+
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class DBEvmChainIDFilter(DBFilter):
     chain_id: Optional[SUPPORTED_CHAIN_IDS] = None

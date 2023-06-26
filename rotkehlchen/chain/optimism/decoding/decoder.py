@@ -3,22 +3,19 @@ from typing import TYPE_CHECKING, Optional
 from rotkehlchen.chain.evm.decoding.base import BaseDecoderToolsWithDSProxy
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.types import (
-    HistoryEventSubType,
-    HistoryEventType,
-)
-from rotkehlchen.chain.evm.structures import EvmTxReceipt
+from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS, OUTGOING_EVENT_TYPES
 from rotkehlchen.chain.evm.decoding.decoder import EVMTransactionDecoder
 from rotkehlchen.chain.evm.decoding.structures import (
     FAILED_ENRICHMENT_OUTPUT,
     TransferEnrichmentOutput,
 )
+from rotkehlchen.chain.evm.structures import EvmTxReceipt
 from rotkehlchen.chain.optimism.types import OptimismTransaction
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH
-from rotkehlchen.db.optimismtx import DBOptimismTx
 from rotkehlchen.db.filtering import OptimismTransactionsFilterQuery
+from rotkehlchen.db.optimismtx import DBOptimismTx
 from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -85,7 +82,6 @@ class OptimismTransactionDecoder(EVMTransactionDecoder):
         if direction_result is not None:
             event_type, location_label, _, _, _ = direction_result
             if event_type in OUTGOING_EVENT_TYPES:
-                log.debug(f"searchme type: {type(tx)}, tx: {tx}")
                 eth_burned_as_gas = from_wei(FVal(tx.gas_used * tx.gas_price + tx.l1_fee))
                 events.append(self.base.make_event_next_index(
                     tx_hash=tx.tx_hash,
@@ -136,7 +132,6 @@ class OptimismTransactionDecoder(EVMTransactionDecoder):
         if (eth_event := self._get_eth_transfer_event(tx)) is not None:
             events.append(eth_event)
         return events
-    
 
     def decode_transaction_hashes(
             self,
@@ -160,7 +155,7 @@ class OptimismTransactionDecoder(EVMTransactionDecoder):
             if tx_hashes is None:
                 tx_hashes = []
                 cursor.execute(
-                    'SELECT tx_hash FROM evm_transactions WHERE chain_id=?', #does this need to be changed for optimism_transactions?
+                    'SELECT tx_hash FROM evm_transactions WHERE chain_id=?',
                     (self.evm_inquirer.chain_id.serialize_for_db(),),
                 )
                 for entry in cursor:

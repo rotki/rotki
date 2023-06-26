@@ -6,8 +6,8 @@ from eth_utils import to_checksum_address
 from rotkehlchen.accounting.structures.types import HistoryEventType
 from rotkehlchen.assets.asset import AssetWithOracles, EvmToken
 from rotkehlchen.assets.utils import get_crypto_asset_by_symbol
-from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.chain.optimism.types import OptimismTransaction
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair, WrongAssetType
 from rotkehlchen.errors.serialization import ConversionError, DeserializationError
 from rotkehlchen.externalapis.utils import read_hash, read_integer
@@ -616,7 +616,7 @@ def deserialize_evm_transaction(
             input_data=input_data,
             nonce=nonce,
         ), raw_receipt_data
-    
+
 def deserialize_optimism_transaction(
         data: dict[str, Any],
         internal: Literal[False],
@@ -632,7 +632,7 @@ def deserialize_optimism_transaction(
 
     Returns the deserialized transaction and raw receipt data
     """
-    source = 'etherscan' if evm_inquirer is None else 'web3' #this can probably just be set to web3 since it'll always be input
+    source = 'etherscan' if evm_inquirer is None else 'web3'
     raw_receipt_data = None
     try:
         tx_hash = parent_tx_hash if parent_tx_hash is not None else deserialize_evm_tx_hash(data['hash'])  # noqa: E501

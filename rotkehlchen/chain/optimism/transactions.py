@@ -1,9 +1,12 @@
 import logging
 from typing import TYPE_CHECKING, Optional, Union
 
+from pysqlcipher3 import dbapi2 as sqlcipher
+
 from rotkehlchen.api.websockets.typedefs import TransactionStatusStep, WSMessageType
 from rotkehlchen.chain.evm.constants import GENESIS_HASH
 from rotkehlchen.chain.evm.transactions import EvmTransactions
+from rotkehlchen.chain.optimism.types import OptimismTransaction
 from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.db.filtering import OptimismTransactionsFilterQuery
 from rotkehlchen.db.optimismtx import DBOptimismTx
@@ -70,7 +73,7 @@ class OptimismTransactions(EvmTransactions):
                         'status': str(TransactionStatusStep.QUERYING_TRANSACTIONS),
                     },
                 )
-    
+
     def _query_and_save_internal_transactions_for_range_or_parent_hash(
             self,
             address: Optional[ChecksumEvmAddress],
@@ -147,7 +150,7 @@ class OptimismTransactions(EvmTransactions):
                             'status': str(TransactionStatusStep.QUERYING_INTERNAL_TRANSACTIONS),  # noqa: E501
                         },
                     )
-    
+
     def _get_erc20_transfers_for_ranges(
             self,
             address: ChecksumEvmAddress,
@@ -235,7 +238,7 @@ class OptimismTransactions(EvmTransactions):
                 location_string=location_string,
                 queried_ranges=[(start_ts, end_ts)],
             )
-    
+
     def get_or_query_transaction_receipt(self, tx_hash: EVMTxHash) -> 'EvmTxReceipt':
         """
         Gets the receipt from the DB if it exists. If not queries the chain for it,
@@ -336,7 +339,7 @@ class OptimismTransactions(EvmTransactions):
             )
 
         return tx_receipt  # type: ignore  # tx_receipt was just added in the DB so should be there  # noqa: E501
-    
+
     def add_transaction_by_hash(
             self,
             tx_hash: EVMTxHash,

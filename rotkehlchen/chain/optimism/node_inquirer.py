@@ -102,7 +102,7 @@ class OptimismInquirer(EvmNodeInquirerWithDSProxy):
         May raise RemoteError
         """
         return self.etherscan.get_blocknumber_by_time(ts=ts, closest=closest)
-    
+
     def _get_transaction_receipt(
             self,
             web3: Optional[Web3],
@@ -149,7 +149,7 @@ class OptimismInquirer(EvmNodeInquirerWithDSProxy):
         # Can raise TransactionNotFound if the user's node is pruned and transaction is old
         tx_receipt = web3.eth.get_transaction_receipt(tx_hash)  # type: ignore
         return process_result(tx_receipt)
-    
+
     def _get_transaction_by_hash(
             self,
             web3: Optional[Web3],

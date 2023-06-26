@@ -7,11 +7,7 @@ from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_timestamp
-from rotkehlchen.types import (
-    ChainID,
-    ChecksumEvmAddress,
-    deserialize_evm_tx_hash,
-)
+from rotkehlchen.types import ChainID, ChecksumEvmAddress, deserialize_evm_tx_hash
 
 if TYPE_CHECKING:
     from rotkehlchen.db.drivers.gevent import DBCursor
@@ -34,17 +30,17 @@ class DBOptimismTx(DBEvmTx):
         self.add_evm_transactions(
             write_cursor,
             optimism_transactions,
-            relevant_address
+            relevant_address,
         )
-        
+
         tx_tuples: list[tuple[Any, ...]] = []
         for tx in optimism_transactions:
             tx_tuples.append((
                 tx.tx_hash,
                 tx.chain_id.serialize_for_db(),
-                tx.l1_fee
+                tx.l1_fee,
             ))
-        
+
         query = """
             INSERT INTO optimism_transactions(
               tx_hash,
@@ -97,7 +93,7 @@ class DBOptimismTx(DBEvmTx):
                     gas_used=int(result[9]),
                     input_data=result[10],
                     nonce=result[11],
-                    l1_fee=int(result[12])
+                    l1_fee=int(result[12]),
                 )
             except DeserializationError as e:
                 self.db.msg_aggregator.add_error(
