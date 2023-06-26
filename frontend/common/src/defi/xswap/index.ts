@@ -23,8 +23,7 @@ export type XswapBalance = z.infer<typeof XswapBalance>;
 export const XswapBalances = z.record(z.array(XswapBalance));
 export type XswapBalances = z.infer<typeof XswapBalances>;
 
-const XswapPoolDetails = z.object({
-  address: z.string(),
+const ApiXswapPoolDetails = z.object({
   poolAddress: z.string(),
   profitLoss0: NumericString,
   profitLoss1: NumericString,
@@ -32,6 +31,8 @@ const XswapPoolDetails = z.object({
   token1: z.string(),
   usdProfitLoss: NumericString
 });
+
+const XswapPoolDetails = ApiXswapPoolDetails.extend({ address: z.string() });
 
 export type XswapPoolDetails = z.infer<typeof XswapPoolDetails>;
 
@@ -42,7 +43,20 @@ export const XswapPool = z.object({
 
 export type XswapPool = z.infer<typeof XswapPool>;
 
-export const XswapEvents = z.record(z.array(XswapPoolDetails));
+export const XswapEvents = z
+  .record(z.array(ApiXswapPoolDetails))
+  .transform(data => {
+    const transformed: Record<string, XswapPoolDetails[]> = {};
+    // when parsed, data will be a record of ApiXswapPoolDetails[]
+    // we transform it to a record of XswapPoolDetails[]
+    Object.keys(data).forEach((address: string) => {
+      transformed[address] = data[address].map(balance => ({
+        ...balance,
+        address
+      }));
+    });
+    return transformed;
+  });
 
 export type XswapEvents = z.infer<typeof XswapEvents>;
 
