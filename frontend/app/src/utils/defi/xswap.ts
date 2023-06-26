@@ -1,7 +1,6 @@
 import {
   type XswapBalance,
   type XswapBalances,
-  type XswapEventDetails,
   type XswapEvents,
   type XswapPool,
   type XswapPoolProfit
@@ -49,31 +48,6 @@ export function getPools(
   return pools;
 }
 
-export function getEventDetails(
-  events: XswapEvents,
-  addresses: string[]
-): XswapEventDetails[] {
-  const eventDetails: XswapEventDetails[] = [];
-  for (const address in events) {
-    if (addresses.length > 0 && !addresses.includes(address)) {
-      continue;
-    }
-    const details = events[address];
-    for (const { events, poolAddress, token0, token1 } of details) {
-      for (const event of events) {
-        eventDetails.push({
-          ...event,
-          address,
-          poolAddress,
-          token0,
-          token1
-        });
-      }
-    }
-  }
-  return eventDetails;
-}
-
 export function getPoolProfit(
   events: XswapEvents,
   addresses: string[]
@@ -96,7 +70,7 @@ export function getPoolProfit(
           usdProfitLoss: profit.usdProfitLoss.plus(detail.usdProfitLoss)
         };
       } else {
-        const { events, address, ...poolProfit } = detail;
+        const { address, ...poolProfit } = detail;
         perPoolProfit[poolAddress] = poolProfit;
       }
     }
