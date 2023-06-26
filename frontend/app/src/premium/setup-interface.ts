@@ -67,21 +67,28 @@ const data = (): DataUtilities => ({
 const settings = (): SettingsApi => {
   const { t } = useI18n();
   const frontendStore = useFrontendSettingsStore();
+
+  const visibilityStore = useAreaVisibilityStore();
+  const { small } = storeToRefs(visibilityStore);
+
   return {
     async update(settings: FrontendSettingsPayload): Promise<void> {
       await frontendStore.updateSetting(settings);
     },
-    defaultThemes(): Themes {
-      return {
-        dark: DARK_COLORS,
-        light: LIGHT_COLORS
-      };
-    },
-    themes(): Themes {
-      return {
-        light: frontendStore.lightTheme,
-        dark: frontendStore.darkTheme
-      };
+    display: {
+      defaultThemes(): Themes {
+        return {
+          dark: DARK_COLORS,
+          light: LIGHT_COLORS
+        };
+      },
+      themes(): Themes {
+        return {
+          light: frontendStore.lightTheme,
+          dark: frontendStore.darkTheme
+        };
+      },
+      small
     },
     user: userSettings(),
     i18n: {

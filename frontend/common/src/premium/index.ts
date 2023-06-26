@@ -126,8 +126,11 @@ export interface UserSettingsApi {
 
 export interface SettingsApi {
   update(settings: FrontendSettingsPayload): Promise<void>;
-  defaultThemes(): Themes;
-  themes(): Themes;
+  display: {
+    defaultThemes(): Themes;
+    themes(): Themes;
+    small: Ref<boolean>;
+  };
   user: UserSettingsApi;
   i18n: {
     t: (

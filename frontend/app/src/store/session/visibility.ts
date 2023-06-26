@@ -11,6 +11,8 @@ export const useAreaVisibilityStore = defineStore('session/visibility', () => {
   const showNotesSidebar = ref(false);
   const showPinned = ref(false);
 
+  const small = computed(() => get(showDrawer) && get(isMini));
+
   const toggleDrawer = (): void => {
     if (!get(showDrawer)) {
       set(showDrawer, !get(showDrawer));
@@ -35,6 +37,7 @@ export const useAreaVisibilityStore = defineStore('session/visibility', () => {
     showDrawer,
     pinned,
     showPinned,
+    small,
     toggleDrawer
   };
 });

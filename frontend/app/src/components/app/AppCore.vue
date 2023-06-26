@@ -3,12 +3,11 @@ import { Chart, registerables } from 'chart.js';
 import zoomPlugin from 'chartjs-plugin-zoom';
 
 const visibilityStore = useAreaVisibilityStore();
-const { showDrawer, isMini } = storeToRefs(visibilityStore);
+const { showDrawer, isMini, small } = storeToRefs(visibilityStore);
 
 const { appBarColor } = useTheme();
 const { mobile } = useDisplay();
 
-const small = computed(() => get(showDrawer) && get(isMini));
 const expanded = computed(
   () => get(showDrawer) && !get(isMini) && !get(mobile)
 );
