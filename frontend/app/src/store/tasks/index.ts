@@ -269,11 +269,12 @@ export const useTaskStore = defineStore('tasks', () => {
       return;
     }
     logger.warn(
-      `the following task ids where not known to the frontend ${ids.join(', ')}`
+      `the following task ids were not known to the frontend ${ids.join(', ')}`
     );
 
     for (const id of ids) {
       await api.queryTaskResult(id);
+      remove(id);
     }
   };
 

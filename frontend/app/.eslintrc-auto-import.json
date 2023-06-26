@@ -697,6 +697,7 @@
     "stickyTableHeader": true,
     "LimitedParallelizationQueue": true,
     "truncateAddress": true,
-    "truncationPoints": true
+    "truncationPoints": true,
+    "awaitParallelExecution": true
   }
 }
