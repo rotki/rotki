@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Callable, NamedTuple
 import gevent
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
-from rotkehlchen.assets.asset import Asset, AssetWithOracles
+from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.chain.bitcoin.xpub import XpubManager
 from rotkehlchen.chain.constants import LAST_EVM_ACCOUNTS_DETECT_KEY
 from rotkehlchen.chain.ethereum.modules.eth2.constants import (
@@ -18,7 +18,6 @@ from rotkehlchen.chain.ethereum.modules.makerdao.cache import (
 )
 from rotkehlchen.chain.ethereum.modules.yearn.utils import query_yearn_vaults
 from rotkehlchen.chain.ethereum.utils import should_update_protocol_cache
-from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.timing import (
     DATA_UPDATES_REFRESH,
     DAY_IN_SECONDS,
@@ -32,14 +31,11 @@ from rotkehlchen.db.updates import LAST_DATA_UPDATES_KEY
 from rotkehlchen.errors.api import PremiumAuthenticationError
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import RemoteError
-from rotkehlchen.errors.price import NoPriceForGivenTimestamp
-from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
-from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium, premium_create_and_verify
-from rotkehlchen.tasks.utils import should_run_periodic_task
+from rotkehlchen.tasks.utils import query_missing_prices_of_base_entries, should_run_periodic_task
 from rotkehlchen.types import (
     EVM_CHAINS_WITH_TRANSACTIONS,
     SUPPORTED_BITCOIN_CHAINS,
@@ -49,7 +45,6 @@ from rotkehlchen.types import (
     Location,
     Optional,
     SupportedBlockchain,
-    Timestamp,
     get_args,
 )
 from rotkehlchen.utils.misc import ts_now
@@ -408,41 +403,11 @@ class TaskManager:
             after_seconds=None,
             task_name=task_name,
             exception_is_error=True,
-            method=self.query_missing_prices_of_base_entries,
+            method=query_missing_prices_of_base_entries,
+            database=self.database,
             entries_missing_prices=entries,
+            base_entries_ignore_set=self.base_entries_ignore_set,
         )]
-
-    def query_missing_prices_of_base_entries(
-            self,
-            entries_missing_prices: list[tuple[str, FVal, Asset, Timestamp]],
-    ) -> None:
-        """Queries missing prices for HistoryBaseEntry in database updating
-        the price if it is found. Otherwise we add the id to the ignore list
-        for this session.
-        """
-        inquirer = PriceHistorian()
-        updates = []
-        for identifier, amount, asset, timestamp in entries_missing_prices:
-            try:
-                price = inquirer.query_historical_price(
-                    from_asset=asset,
-                    to_asset=A_USD,
-                    timestamp=timestamp,
-                )
-            except (NoPriceForGivenTimestamp, RemoteError) as e:
-                log.error(
-                    f'Failed to find price for {asset} at {timestamp} in history '
-                    f'event with {identifier=}. {e!s}.',
-                )
-                self.base_entries_ignore_set.add(identifier)
-                continue
-
-            usd_value = amount * price
-            updates.append((str(usd_value), identifier))
-
-        query = 'UPDATE history_events SET usd_value=? WHERE rowid=?'
-        with self.database.user_write() as cursor:
-            cursor.executemany(query, updates)
 
     def _maybe_decode_evm_transactions(self) -> Optional[list[gevent.Greenlet]]:
         """Schedules the evm transaction decoding task

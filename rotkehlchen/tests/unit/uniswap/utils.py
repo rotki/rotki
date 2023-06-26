@@ -262,7 +262,7 @@ def const_lp_1_events_balance() -> LiquidityPoolEventsBalance:
         token1=A_WETH.resolve_to_evm_token(),
         profit_loss0=AssetAmount(FVal('35.489683548121546956')),
         profit_loss1=AssetAmount(FVal('-0.059966416263997186')),
-        usd_profit_loss=ZERO_PRICE,
+        usd_profit_loss=FVal('35.429717131857549770'),
     )
 
 
@@ -273,7 +273,7 @@ def const_lp_2_events_balance() -> LiquidityPoolEventsBalance:
         token1=EvmToken('eip155:1/erc20:0xCF67CEd76E8356366291246A9222169F4dBdBe64'),
         profit_loss0=AssetAmount(FVal('-0.610130605729210250')),
         profit_loss1=AssetAmount(FVal('1.971799615456732408')),
-        usd_profit_loss=ZERO_PRICE,
+        usd_profit_loss=FVal('1.361669009727522158'),
     )
 
 
@@ -352,7 +352,7 @@ def const_lp_3_events_balance() -> LiquidityPoolEventsBalance:
         token1=A_WETH.resolve_to_evm_token(),
         profit_loss0=AssetAmount(FVal('35.489683548121546956')),
         profit_loss1=AssetAmount(FVal('-0.059966416263997186')),
-        usd_profit_loss=ZERO_PRICE,
+        usd_profit_loss=FVal('35.429717131857549770'),
     )
 
 

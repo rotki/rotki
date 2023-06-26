@@ -82,7 +82,7 @@ BALANCER_TEST_ADDR2_POOL2 = EvmToken.initialize(
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_get_balancer_module_not_activated(rotkehlchen_api_server):
     response = requests.get(
-        api_url_for(rotkehlchen_api_server, 'modulebalancesresource', module='balancer'),
+        api_url_for(rotkehlchen_api_server, 'evmmodulebalancesresource', module='balancer'),
     )
     assert_error_response(
         response=response,
@@ -108,7 +108,7 @@ def test_get_balances(rotkehlchen_api_server, ethereum_accounts):
         # patch ethereum/etherscan to not autodetect tokens
         setup.enter_ethereum_patches(stack)
         response = requests.get(api_url_for(
-            rotkehlchen_api_server, 'modulebalancesresource', module='balancer'),
+            rotkehlchen_api_server, 'evmmodulebalancesresource', module='balancer'),
             json={'async_query': async_query},
         )
         if async_query:

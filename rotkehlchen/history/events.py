@@ -19,6 +19,7 @@ from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES, ExchangeManager
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.tasks.manager import TaskManager
+from rotkehlchen.tasks.utils import query_missing_prices_of_base_entries
 from rotkehlchen.types import EVM_CHAINS_WITH_TRANSACTIONS, Location, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import timestamp_to_date
@@ -297,10 +298,11 @@ class EventsHistorian:
         db = DBHistoryEvents(self.db)
         if task_manager is not None:
             entries = db.get_base_entries_missing_prices(filter_query)
-            task_manager.query_missing_prices_of_base_entries(
+            query_missing_prices_of_base_entries(
+                database=task_manager.database,
                 entries_missing_prices=entries,
+                base_entries_ignore_set=task_manager.base_entries_ignore_set,
             )
-
         has_premium = self.chains_aggregator.premium is not None
         events, filter_total_found = db.get_history_events_and_limit_info(
             cursor=cursor,

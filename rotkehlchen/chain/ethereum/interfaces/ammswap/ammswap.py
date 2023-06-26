@@ -32,6 +32,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
+from rotkehlchen.tasks.utils import query_missing_prices_of_base_entries
 from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 
@@ -191,6 +192,11 @@ class AMMSwapPlatform:
                     HistoryEventSubType.DEPOSIT_ASSET,
                     HistoryEventSubType.REMOVE_ASSET,
                 ],
+            )
+            entries_missing_prices = db.get_base_entries_missing_prices(query_filter=dbfilter)
+            query_missing_prices_of_base_entries(
+                database=self.database,
+                entries_missing_prices=entries_missing_prices,
             )
             with self.database.conn.read_ctx() as cursor:
                 events = db.get_history_events(

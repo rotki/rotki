@@ -2020,7 +2020,7 @@ class LiquityStakingResource(BaseMethodView):
         return self.rest_api.get_liquity_staked(async_query=async_query)
 
 
-class ModuleBalancesResource(BaseMethodView):
+class EvmModuleBalancesResource(BaseMethodView):
 
     get_schema = ModuleBalanceProcessingSchema()
 
@@ -2050,7 +2050,7 @@ class ModuleBalancesResource(BaseMethodView):
 
         # this shouldn't happen since we have validation in marshmallow
         return api_response(wrap_in_fail_result(
-            message='unknown module provided for stats',
+            message='unknown module provided for balances',
             status_code=HTTPStatus.BAD_REQUEST,
         ))
 
@@ -2089,7 +2089,7 @@ class ModuleStatsResource(BaseMethodView):
 
         # this shouldn't happen since we have validation in marshmallow
         return api_response(wrap_in_fail_result(
-            message='unknown module provided for stats',
+            message='unknown module provided for balances',
             status_code=HTTPStatus.BAD_REQUEST,
         ))
 
