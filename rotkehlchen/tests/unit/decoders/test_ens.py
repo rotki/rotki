@@ -96,10 +96,10 @@ def test_mint_ens_name(database, ethereum_inquirer):
 
 
 @pytest.mark.parametrize('ethereum_accounts', [['0x4bBa290826C253BD854121346c370a9886d1bC26']])  # noqa: E501
-def test_text_changed(ethereum_transaction_decoder, ethereum_accounts):
+def test_text_changed_old_name(ethereum_transaction_decoder, ethereum_accounts):
     """
-    Data taken from
-    https://etherscan.io/tx/0xaa59cb2029651d2ed2c0d1ee34b9b88f0b90278fc6da5b51446d4abf24d7f598
+    Test that text changed for an address that is no longer
+    pointed to by an ENS name does not break
     """
     tx_hash = deserialize_evm_tx_hash('0xaa59cb2029651d2ed2c0d1ee34b9b88f0b90278fc6da5b51446d4abf24d7f598')  # noqa: E501
     transaction = EvmTransaction(
@@ -179,7 +179,7 @@ def test_text_changed(ethereum_transaction_decoder, ethereum_accounts):
             asset=A_ETH,
             balance=Balance(),
             location_label='0x4bBa290826C253BD854121346c370a9886d1bC26',
-            notes='Set ENS url attribute for nebolax.eth',
+            notes='Set ENS url attribute',
             counterparty=CPT_ENS,
             identifier=None,
             extra_data=None,
@@ -194,7 +194,7 @@ def test_text_changed(ethereum_transaction_decoder, ethereum_accounts):
             asset=A_ETH,
             balance=Balance(),
             location_label='0x4bBa290826C253BD854121346c370a9886d1bC26',
-            notes='Set ENS avatar attribute for nebolax.eth',
+            notes='Set ENS avatar attribute',
             counterparty=CPT_ENS,
             identifier=None,
             extra_data=None,
