@@ -442,7 +442,8 @@ CREATE TABLE IF NOT EXISTS optimism_transactions (
     tx_hash BLOB NOT NULL,
     chain_id INTEGER NOT NULL,
     l1_fee TEXT,
-    PRIMARY KEY(tx_hash)
+    PRIMARY KEY(tx_hash),
+    FOREIGN KEY(tx_hash, chain_id) REFERENCES evm_transactions(tx_hash, chain_id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 """
 
