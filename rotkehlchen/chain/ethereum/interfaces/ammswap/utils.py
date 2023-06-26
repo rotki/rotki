@@ -51,6 +51,10 @@ def _decode_token(entry: tuple) -> TokenDetails:
 
 
 def decode_result(userdb: 'DBHandler', data: tuple) -> LiquidityPool:
+    """
+    Process information obtained from the zerion adapter for uniswap/sushiswap
+    pools making sure that involved tokens exist in the globaldb
+    """
     pool_token = _decode_token(data[0])
     token0 = _decode_token(data[1][0])
     token1 = _decode_token(data[1][1])
@@ -86,7 +90,7 @@ def update_asset_price_in_lp_balances(
         unknown_asset_price: AssetToPrice,
 ) -> None:
     """Utility function to update the pools underlying assets prices in USD
-    (prices obtained via Inquirer and the subgraph) used by all AMM platforms.
+    (prices obtained via Inquirer) used by all AMM platforms.
     """
     for lps in address_balances.values():
         for lp in lps:

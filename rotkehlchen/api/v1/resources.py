@@ -105,6 +105,7 @@ from rotkehlchen.api.v1.schemas import (
     ManualPriceRegisteredSchema,
     ManualPriceSchema,
     ModuleBalanceProcessingSchema,
+    ModuleBalanceWithVersionProcessingSchema,
     ModuleHistoryProcessingSchema,
     NameDeleteSchema,
     NamedEthereumModuleDataSchema,
@@ -2032,7 +2033,6 @@ class EvmModuleBalancesResource(BaseMethodView):
             async_query: bool,
     ) -> Response:
         if module in (
-            ModuleWithBalances.UNISWAP_V2,
             ModuleWithBalances.SUSHISWAP,
             ModuleWithBalances.BALANCER,
         ):
@@ -2041,7 +2041,37 @@ class EvmModuleBalancesResource(BaseMethodView):
                 module=module.serialize(),
             )
 
-        if module == ModuleWithBalances.UNISWAP_V3:
+        # this shouldn't happen since we have validation in marshmallow
+        return api_response(wrap_in_fail_result(
+            message='unknown module provided for balances',
+            status_code=HTTPStatus.BAD_REQUEST,
+        ))
+
+
+class EvmModuleBalancesWithVersionResource(BaseMethodView):
+
+    get_schema = ModuleBalanceWithVersionProcessingSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(get_schema, location='json_and_query_and_view_args')
+    def get(
+            self,
+            module: ModuleWithBalances,
+            version: int,
+            async_query: bool,
+    ) -> Response:
+        if module != ModuleWithBalances.UNISWAP:
+            return api_response(wrap_in_fail_result(
+                message='unknown module provided for balances',
+                status_code=HTTPStatus.BAD_REQUEST,
+            ))
+
+        if version == 2:
+            return self.rest_api.get_amm_platform_balances(
+                async_query=async_query,
+                module=module.serialize(),
+            )
+        elif version == 3:
             return self.rest_api.get_amm_platform_balances(
                 async_query=async_query,
                 module=module.serialize(),

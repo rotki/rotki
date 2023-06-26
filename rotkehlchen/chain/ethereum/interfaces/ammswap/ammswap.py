@@ -50,7 +50,13 @@ SUSHISWAP_TRADES_PREFIX = 'sushiswap_trades'
 
 
 class AMMSwapPlatform:
-    """AMM Module interace"""
+    """
+    AMM Module interace
+    This class uses decoded events from protocols following the Uniswap design to query balances
+    and stats.
+    The counterparties provided are the ones used to filter the history events for querying the
+    pools with balances and the mint/burn events, for example CPT_SUSHISWAP
+    """
     def __init__(
             self,
             counterparties: list[str],
@@ -65,7 +71,6 @@ class AMMSwapPlatform:
         self.premium = premium
         self.msg_aggregator = msg_aggregator
         self.data_directory = database.user_data_dir.parent
-        self.aweth = A_WETH.resolve_to_evm_token()
 
     @staticmethod
     def _get_known_asset_price(
@@ -94,9 +99,8 @@ class AMMSwapPlatform:
             events: list[EvmEvent],
             balances: list[LiquidityPool],
     ) -> list[LiquidityPoolEventsBalance]:
-        """Given an address, its LP events and the current LPs participating in
-        (`balances`), process each event (grouped by pool) aggregating the
-        token0, token1 and USD amounts for calculating the profit/loss in the
+        """Given an address' mint/burn history events, process each event (grouping by pool)
+        aggregating the token0, token1 and USD amounts for calculating the profit/loss in the
         pool. Finally return a list of <LiquidityPoolEventsBalance>, where each
         contains the profit/loss and events per pool.
 
@@ -108,7 +112,7 @@ class AMMSwapPlatform:
         pool_balance: dict[ChecksumEvmAddress, LiquidityPool] = (
             {pool.address: pool for pool in balances}
         )
-        pool_aggregated_amount: dict[EvmToken, AggregatedAmount] = {}
+        pool_aggregated_amount: dict[EvmToken, AggregatedAmount] = defaultdict(AggregatedAmount)
         # Populate `pool_aggregated_amount` dict, being the keys the pools'
         # addresses and the values the aggregated amounts from their events
         for event in events:
@@ -116,10 +120,6 @@ class AMMSwapPlatform:
                 continue
 
             pool_token = EvmToken(evm_address_to_identifier(address=pool_address, chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20))  # noqa: E501
-
-            if pool_token not in pool_aggregated_amount:
-                pool_aggregated_amount[pool_token] = AggregatedAmount()
-
             underlying0 = EvmToken(evm_address_to_identifier(address=pool_token.underlying_tokens[0].address, chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20))  # noqa: E501
             if underlying0 != A_WETH:
                 asset_list: Union[tuple[EvmToken], tuple[Asset, Asset]] = (underlying0,)
@@ -179,6 +179,9 @@ class AMMSwapPlatform:
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
     ) -> dict[ChecksumEvmAddress, list[LiquidityPoolEventsBalance]]:
+        """Use the provided addresses and filters to query mint/burn events and calculate stats
+        from them. Prices for events missing them are queried before calculating any USD value.
+        """
         db = DBHistoryEvents(self.database)
         stats = {}
         balances = self.get_balances(addresses)
@@ -219,7 +222,7 @@ class AMMSwapPlatform:
             self,
             addresses: list[ChecksumEvmAddress],
     ) -> dict[ChecksumEvmAddress, list[Asset]]:
-        """Query the LP tokens where the provided users have ever deposited"""
+        """Query all LP tokens that the given users have ever gotten as a result of depositing"""
         db_filter = EvmEventFilterQuery.make(
             counterparties=self.counterparties,
             location_labels=addresses,  # type: ignore[arg-type]
@@ -230,7 +233,7 @@ class AMMSwapPlatform:
         query, bindings = db_filter.prepare()
         address_to_pools = defaultdict(list)
         with self.database.conn.read_ctx() as cursor:
-            cursor.execute('select location_label, asset from history_events JOIN evm_events_info ON history_events.identifier = evm_events_info.identifier ' + query, bindings)  # noqa: E501
+            cursor.execute('SELECT location_label, asset FROM history_events JOIN evm_events_info ON history_events.identifier = evm_events_info.identifier ' + query, bindings)  # noqa: E501
             for address, lp_token in cursor:
                 address_to_pools[string_to_evm_address(address)].append(Asset(lp_token))
 
@@ -254,7 +257,7 @@ class AMMSwapPlatform:
 
     def _update_asset_price_in_lp_balances(self, address_balances: AddressToLPBalances) -> None:
         """Utility function to update the pools underlying assets prices in USD
-        (prices obtained via Inquirer and the subgraph) used by all AMM platforms.
+        (prices obtained via Inquirer) used by all AMM platforms.
         """
         for lps in address_balances.values():
             for lp in lps:
@@ -276,7 +279,7 @@ class AMMSwapPlatform:
                 lp.user_balance.usd_value = total_user_balance
 
     def get_balances(self, addresses: list[ChecksumEvmAddress]) -> AddressToLPBalances:
-        """Get the addresses' balances in the Uniswap protocol"""
+        """Get the given addresses' balances in the current protocol"""
         protocol_balance = self.get_balances_chain(addresses)
         self._update_asset_price_in_lp_balances(protocol_balance)
         return protocol_balance

@@ -1426,6 +1426,10 @@ class ModuleBalanceProcessingSchema(AsyncQueryArgumentSchema):
     module = SerializableEnumField(enum_class=ModuleWithBalances, required=True)
 
 
+class ModuleBalanceWithVersionProcessingSchema(ModuleBalanceProcessingSchema):
+    version = fields.Integer(load_default=2)
+
+
 class ModuleHistoryProcessingSchema(HistoryProcessingSchema):
     module = SerializableEnumField(enum_class=ModuleWithStats, required=True)
 
