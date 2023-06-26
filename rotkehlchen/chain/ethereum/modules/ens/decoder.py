@@ -7,8 +7,11 @@ from eth_utils import to_checksum_address
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.assets.utils import TokenSeenAt, get_or_create_evm_token
 from rotkehlchen.chain.ethereum.abi import decode_event_data_abi_str
+from rotkehlchen.chain.ethereum.graph import Graph
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
+from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
@@ -22,8 +25,8 @@ from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, DecoderEventMappingType
-from rotkehlchen.utils.misc import from_wei
+from rotkehlchen.types import ChecksumEvmAddress, DecoderEventMappingType, EvmTokenKind
+from rotkehlchen.utils.misc import from_wei, hex_or_bytes_to_address
 from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
 
 from .constants import CPT_ENS
@@ -40,6 +43,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 ENS_REGISTRAR_CONTROLLER_1 = string_to_evm_address('0x283Af0B28c62C092C9727F1Ee09c02CA627EB7F5')
 ENS_REGISTRAR_CONTROLLER_2 = string_to_evm_address('0x253553366Da8546fC250F225fe3d25d0C782303b')
+ENS_BASE_REGISTRAR_IMPLEMENTATION = string_to_evm_address('0x57f1887a8BF19b14fC0dF6Fd9B2acc9Af147eA85')  # noqa: E501
 ENS_REGISTRY_WITH_FALLBACK = string_to_evm_address('0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e')
 ENS_PUBLIC_RESOLVER_2_ADDRESS = string_to_evm_address('0x4976fb03C32e5B8cfe2b6cCB31c09Ba78EBaBa41')
 ENS_PUBLIC_RESOLVER_3_ADDRESS = string_to_evm_address('0x231b0Ee14048e9dCcD1d247744d114a4EB5E8E63')
@@ -74,6 +78,7 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):
         self.ethereum = ethereum_inquirer
         CustomizableDateMixin.__init__(self, base_tools.database)
         self.eth = A_ETH.resolve_to_crypto_asset()
+        self.graph = Graph('https://api.thegraph.com/subgraphs/name/ensdomains/ens')
 
     def _decode_ens_registrar_event(self, context: DecoderContext) -> DecodingOutput:
         if context.tx_log.topics[0] in (
@@ -129,11 +134,8 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):
 
             # Find the ENS ERC721 receive event which should be before the registered event
             if event.event_type == HistoryEventType.RECEIVE and event.asset.identifier == 'eip155:1/erc721:0x57f1887a8BF19b14fC0dF6Fd9B2acc9Af147eA85':  # noqa: E501
-                assert event.extra_data is not None, 'All ERC721 events should have extra data'
                 event.event_type = HistoryEventType.TRADE
                 event.event_subtype = HistoryEventSubType.RECEIVE
-                event.counterparty = CPT_ENS
-                event.notes = f'Receive ENS name ERC721 token for {name}.eth with id {event.extra_data["token_id"]}'  # noqa: E501
 
         for index in to_remove_indices:
             del context.decoded_events[index]
@@ -168,6 +170,63 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):
         if refund_event_idx is not None:
             del context.decoded_events[refund_event_idx]
         return DEFAULT_DECODING_OUTPUT
+
+    def _decode_name_transfer(self, context: DecoderContext) -> DecodingOutput:
+        if context.tx_log.topics[0] != ERC20_OR_ERC721_TRANSFER:
+            return DEFAULT_DECODING_OUTPUT
+
+        to_address = hex_or_bytes_to_address(context.tx_log.topics[2])
+        token = get_or_create_evm_token(
+            userdb=self.database,
+            evm_address=context.tx_log.address,
+            chain_id=self.evm_inquirer.chain_id,
+            token_kind=EvmTokenKind.ERC721,
+            evm_inquirer=self.evm_inquirer,
+            seen=TokenSeenAt(tx_hash=context.transaction.tx_hash),
+        )
+        transfer_event = self.base.decode_erc20_721_transfer(
+            token=token,
+            tx_log=context.tx_log,
+            transaction=context.transaction,
+        )
+        if transfer_event is None:
+            log.error(f'Could not decode an ERC721 transfer for an ENS name transfer: {context.transaction.tx_hash.hex()}')  # noqa: E501
+            return DEFAULT_DECODING_OUTPUT
+
+        label_hash = hex(transfer_event.extra_data['token_id'])  # type: ignore[index]  # noqa: E501  # ERC721 transfer always has extra data
+        try:
+            result = self.graph.query(
+                querystr=f'query{{domains(first:1, where:{{labelhash:"{label_hash}"}}){{labelName}}}}')  # noqa: E501
+            name_to_show = result['domains'][0]['labelName'] + '.eth '
+        except (RemoteError, KeyError, IndexError) as e:
+            msg = str(e)
+            if isinstance(e, KeyError):
+                msg = f'Missing key {msg}'
+            log.error(
+                f'Failed to query graph for token ID to ENS name due to {msg} '
+                f'during decoding events. Not adding name to event',
+            )
+            name_to_show = ''
+
+        from_text = to_text = ''
+        if transfer_event.event_type == HistoryEventType.SPEND:
+            verb = 'Send'
+            if transfer_event.location_label != context.transaction.from_address:
+                from_text = f'from {transfer_event.location_label} '
+            to_text = f'to {to_address}'
+        elif transfer_event.event_type == HistoryEventType.RECEIVE:
+            verb = 'Receive'
+            from_text = f'from {transfer_event.address} '
+            to_text = f'to {transfer_event.location_label}'
+        else:  # can only be ...
+            verb = 'Transfer'
+            if transfer_event.location_label != context.transaction.from_address:
+                from_text = f'from {transfer_event.location_label} '
+            to_text = f'to {to_address}'
+
+        transfer_event.counterparty = CPT_ENS
+        transfer_event.notes = f'{verb} ENS name {name_to_show}{from_text}{to_text}'
+        return DecodingOutput(event=transfer_event, refresh_balances=False)
 
     def _decode_ens_registry_with_fallback_event(self, context: DecoderContext) -> DecodingOutput:
         """Decode event where address is set for an ENS name."""
@@ -352,6 +411,7 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):
         return {
             ENS_REGISTRAR_CONTROLLER_1: (self._decode_ens_registrar_event,),
             ENS_REGISTRAR_CONTROLLER_2: (self._decode_ens_registrar_event,),
+            ENS_BASE_REGISTRAR_IMPLEMENTATION: (self._decode_name_transfer,),
             ENS_REGISTRY_WITH_FALLBACK: (self._decode_ens_registry_with_fallback_event,),
             ENS_PUBLIC_RESOLVER_2_ADDRESS: (self._decode_ens_public_resolver_events,),
             ENS_PUBLIC_RESOLVER_3_ADDRESS: (self._decode_ens_public_resolver_events,),

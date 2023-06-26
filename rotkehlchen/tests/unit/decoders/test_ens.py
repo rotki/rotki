@@ -3,6 +3,7 @@ import pytest
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.ethereum.modules.ens.constants import CPT_ENS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
@@ -85,7 +86,7 @@ def test_mint_ens_name(database, ethereum_inquirer):
         asset=erc721_asset,
         balance=Balance(amount=ONE),
         location_label=ADDY,
-        notes='Receive ENS name ERC721 token for hania.eth with id 88045077199635585930173998576189366882372899073811035545363728149974713265418',  # noqa: E501
+        notes=f'Receive ENS name hania.eth from 0x283Af0B28c62C092C9727F1Ee09c02CA627EB7F5 to {ADDY}',  # noqa: E501
         counterparty=CPT_ENS,
         address=string_to_evm_address('0x283Af0B28c62C092C9727F1Ee09c02CA627EB7F5'),
         extra_data={
@@ -477,4 +478,83 @@ def test_content_hash_changed(database, ethereum_inquirer, ethereum_accounts):
             address=string_to_evm_address('0x4976fb03C32e5B8cfe2b6cCB31c09Ba78EBaBa41'),
         ),
     ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize(('action', 'ethereum_accounts'), [
+    ('Transfer', ['0x4bBa290826C253BD854121346c370a9886d1bC26', '0x34207C538E39F2600FE672bB84A90efF190ae4C7']),  # noqa: E501
+    ('Send', ['0x4bBa290826C253BD854121346c370a9886d1bC26']),
+    ('Receive', ['0x34207C538E39F2600FE672bB84A90efF190ae4C7']),
+])
+def test_transfer_ens_name(database, ethereum_inquirer, action, ethereum_accounts):
+    """Test that transfering an ENS name is decoded properly for all 3 cases.
+
+    Owning both addresses in the transfer, only sender or only receiver
+    """
+    tx_hex = deserialize_evm_tx_hash('0x03f148c39b347c2d9ab87d31d61a7115156220f8641b7bed838ff62542f3eebe')  # noqa: E501
+    evmhash = deserialize_evm_tx_hash(tx_hex)
+
+    sequence_index = 433
+    if action == 'Transfer':
+        from_address = ethereum_accounts[0]
+        to_address = ethereum_accounts[1]
+        event_type = HistoryEventType.TRANSFER
+        notes = f'Transfer ENS name nebolax.eth to {to_address}'
+    elif action == 'Send':
+        from_address = ethereum_accounts[0]
+        to_address = '0x34207C538E39F2600FE672bB84A90efF190ae4C7'
+        event_type = HistoryEventType.SPEND
+        notes = f'Send ENS name nebolax.eth to {to_address}'
+    else:  # Receive
+        sequence_index = 432
+        from_address = '0x4bBa290826C253BD854121346c370a9886d1bC26'
+        to_address = '0x34207C538E39F2600FE672bB84A90efF190ae4C7'
+        event_type = HistoryEventType.RECEIVE
+        notes = f'Receive ENS name nebolax.eth from {from_address} to {to_address}'
+        # For the event's location_label and address, when receiving swap them
+        from_address = '0x34207C538E39F2600FE672bB84A90efF190ae4C7'
+        to_address = '0x4bBa290826C253BD854121346c370a9886d1bC26'
+
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hex,
+    )
+    timestamp = TimestampMS(1687771811000)
+    gas_event = EvmEvent(
+        tx_hash=evmhash,
+        sequence_index=0,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        balance=Balance(amount=FVal('0.000742571017054667')),
+        location_label=from_address,
+        notes='Burned 0.000742571017054667 ETH for gas',
+        counterparty=CPT_GAS,
+        address=None,
+    )
+    expected_events = []
+    if action != 'Receive':
+        expected_events.append(gas_event)
+    expected_events.append(EvmEvent(
+        tx_hash=evmhash,
+        sequence_index=sequence_index,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=event_type,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=Asset('eip155:1/erc721:0x57f1887a8BF19b14fC0dF6Fd9B2acc9Af147eA85'),
+        balance=Balance(amount=FVal(1)),
+        location_label=from_address,
+        notes=notes,
+        counterparty=CPT_ENS,
+        address=to_address,
+        extra_data={
+            'token_id': 73552724610198397480670284492690114609730214421511097849210414928326607694469,  # noqa: E501
+            'token_name': 'ERC721 token',
+        },
+    ))
     assert events == expected_events

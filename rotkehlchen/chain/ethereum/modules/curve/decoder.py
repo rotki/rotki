@@ -469,7 +469,7 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
         else:
             log.debug(
                 f'Did not find spend and receive events for a curve swap. '
-                f'{context.transaction.tx_hash.hex}. Probably some aggregator was used and '
+                f'{context.transaction.tx_hash.hex()}. Probably some aggregator was used and '
                 f'decoding needs to happen in the aggregator-specific decoder.',
             )
 
