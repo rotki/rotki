@@ -11,7 +11,7 @@ const { t } = useI18n();
         class="text--secondary"
         v-text="t('module_settings.active_modules_description')"
       />
-      <module-selector />
+      <module-selector class="mt-6" />
       <div class="mt-6 text-h6" v-text="t('module_settings.select_accounts')" />
       <p
         class="text--secondary"

@@ -2889,7 +2889,14 @@
     "settings_link": "Module settings"
   },
   "module_selector": {
-    "label": "Seleccionar modulo(s)"
+    "filter": "Módulos de búsqueda",
+    "actions": {
+      "enable_all": "Activar todo",
+      "disable_all": "Desactivar todo"
+    },
+    "table": {
+      "enabled": "Activado"
+    }
   },
   "module_settings": {
     "active_modules": "Active modules",

@@ -1,6 +1,7 @@
 import { type Wrapper, mount } from '@vue/test-utils';
 import { type Pinia, createPinia, setActivePinia } from 'pinia';
 import Vuetify from 'vuetify';
+import flushPromises from 'flush-promises';
 import ModuleSelector from '@/components/defi/wizard/ModuleSelector.vue';
 import { Module } from '@/types/modules';
 import { setModules } from '../../../../utils/general-settings';
@@ -12,7 +13,7 @@ vi.mock('@/composables/api/settings/settings-api', () => ({
 }));
 
 describe('ModuleSelector.vue', () => {
-  let wrapper: Wrapper<ModuleSelector>;
+  let wrapper: Wrapper<any>;
   let settingsStore: ReturnType<typeof useGeneralSettingsStore>;
   let pinia: Pinia;
   let api: ReturnType<typeof useSettingsApi>;
@@ -39,15 +40,27 @@ describe('ModuleSelector.vue', () => {
   });
 
   test('displays active modules', async () => {
-    expect(wrapper.find('#defi-module-aave').exists()).toBe(true);
+    expect(
+      wrapper.find('[data-cy=aave-module-switch]').attributes()
+    ).toHaveProperty('aria-checked', 'true');
   });
 
-  test('removes active modules on click', async () => {
-    expect.assertions(2);
-    api.setSettings = vi.fn().mockResolvedValue({ active_modules: [] });
-    await wrapper.find('#defi-module-aave').find('button').trigger('click');
+  test('disables module on click', async () => {
+    expect.assertions(3);
+    api.setSettings = vi.fn().mockResolvedValue({
+      general: { activeModules: [] },
+      accounting: {},
+      other: { havePremium: false, premiumShouldSync: false }
+    });
+    expect(
+      wrapper.find('[data-cy=aave-module-switch]').attributes()
+    ).toHaveProperty('aria-checked', 'true');
+    await wrapper.find('[data-cy=aave-module-switch]').trigger('click');
     await wrapper.vm.$nextTick();
-    expect(wrapper.find('#defi-module-aave').exists()).toBe(false);
+    await flushPromises();
+    expect(
+      wrapper.find('[data-cy=aave-module-switch]').attributes()
+    ).toHaveProperty('aria-checked', 'false');
     expect(settingsStore.activeModules).toEqual([]);
   });
 });
