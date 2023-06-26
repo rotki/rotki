@@ -9,7 +9,7 @@ export const useSushiswapApi = () => {
   };
 
   const fetchSushiswapEvents = (): Promise<PendingTask> => {
-    const url = 'blockchains/eth/modules/sushiswap/history/events';
+    const url = 'blockchains/eth/modules/sushiswap/stats';
     return fetchExternalAsync(api.instance, url);
   };
 

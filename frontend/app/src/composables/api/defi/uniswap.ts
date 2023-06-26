@@ -14,7 +14,7 @@ export const useUniswapApi = () => {
   };
 
   const fetchUniswapEvents = async (): Promise<PendingTask> => {
-    const url = 'blockchains/eth/modules/uniswap/history/events';
+    const url = 'blockchains/eth/modules/uniswap/stats';
     return fetchExternalAsync(api.instance, url);
   };
 
