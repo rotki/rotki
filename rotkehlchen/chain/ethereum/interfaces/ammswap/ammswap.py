@@ -55,7 +55,7 @@ class AMMSwapPlatform:
     This class uses decoded events from protocols following the Uniswap design to query balances
     and stats.
     The counterparties provided are the ones used to filter the history events for querying the
-    pools with balances and the mint/burn events, for example CPT_SUSHISWAP
+    pools with balances and the mint/burn events. For example CPT_SUSHISWAP
     """
     def __init__(
             self,

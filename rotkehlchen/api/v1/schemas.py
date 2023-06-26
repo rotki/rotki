@@ -1427,7 +1427,7 @@ class ModuleBalanceProcessingSchema(AsyncQueryArgumentSchema):
 
 
 class ModuleBalanceWithVersionProcessingSchema(ModuleBalanceProcessingSchema):
-    version = fields.Integer(load_default=2)
+    version = fields.Integer()
 
 
 class ModuleHistoryProcessingSchema(HistoryProcessingSchema):
