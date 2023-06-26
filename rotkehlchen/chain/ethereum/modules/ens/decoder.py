@@ -8,6 +8,7 @@ from eth_utils import to_checksum_address
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.abi import decode_event_data_abi_str
+from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
@@ -204,7 +205,11 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):
         return DEFAULT_DECODING_OUTPUT
 
     def _get_name_to_show(self, node: bytes, resolver_address: ChecksumEvmAddress) -> Optional[str]:  # noqa: E501
-        """Try to find the name associated with the ENS node that is being modified"""
+        """Try to find the name associated with the ENS node that is being modified
+
+        TODO: IF the name has been changed this will return None too. We should use
+        archive nodes to check the name to show when possible.
+        """
         contract = self.ethereum.contracts.contract_by_address(address=resolver_address)
 
         if contract is None:
@@ -232,6 +237,9 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):
                 ignore_cache=False,
             )
             name_to_show = ens_mapping.get(address, address)
+
+        if name_to_show == ZERO_ADDRESS:
+            return None
 
         return name_to_show
 
