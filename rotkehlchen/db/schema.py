@@ -532,26 +532,6 @@ CREATE TABLE IF NOT EXISTS settings (
 );
 """
 
-DB_CREATE_AMM_EVENTS = """
-CREATE TABLE IF NOT EXISTS amm_events (
-    tx_hash BLOB NOT NULL,
-    log_index INTEGER NOT NULL,
-    address VARCHAR[42] NOT NULL,
-    timestamp INTEGER NOT NULL,
-    type TEXT NOT NULL,
-    pool_address VARCHAR[42] NOT NULL,
-    token0_identifier TEXT NOT NULL,
-    token1_identifier TEXT NOT NULL,
-    amount0 TEXT,
-    amount1 TEXT,
-    usd_price TEXT,
-    lp_amount TEXT,
-    FOREIGN KEY(token0_identifier) REFERENCES assets(identifier) ON UPDATE CASCADE,
-    FOREIGN KEY(token1_identifier) REFERENCES assets(identifier) ON UPDATE CASCADE,
-    PRIMARY KEY (tx_hash, log_index)
-);
-"""
-
 DB_CREATE_ETH2_VALIDATORS = """
 CREATE TABLE IF NOT EXISTS eth2_validators (
     validator_index INTEGER NOT NULL PRIMARY KEY,
@@ -745,7 +725,6 @@ BEGIN TRANSACTION;
 {DB_CREATE_YEARN_VAULT_EVENTS}
 {DB_CREATE_XPUBS}
 {DB_CREATE_XPUB_MAPPINGS}
-{DB_CREATE_AMM_EVENTS}
 {DB_CREATE_ETH2_VALIDATORS}
 {DB_CREATE_ETH2_DAILY_STAKING_DETAILS}
 {DB_CREATE_HISTORY_EVENTS}
