@@ -38,6 +38,10 @@ def test_no_events_no_balances(rotkehlchen_api_server: 'APIServer') -> None:
 @pytest.mark.parametrize('should_mock_price_queries', [True])
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
 def test_single_pool_without_balances(rotkehlchen_api_server: 'APIServer', ethereum_accounts):
+    """
+    Test stats for a single pool with no balances in such pool. The mint/burn events are required
+    to calculate the based on their info.
+    """
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     database = rotki.data.db
     ethereum_inquirer = rotki.chains_aggregator.ethereum.node_inquirer
@@ -72,6 +76,10 @@ def test_single_pool_without_balances(rotkehlchen_api_server: 'APIServer', ether
 @pytest.mark.parametrize('should_mock_price_queries', [True])
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
 def test_multiple_pools_without_balances(rotkehlchen_api_server: 'APIServer', ethereum_accounts):
+    """
+    Test stats for multiple pools with no balances in such pools. The mint/burn events are
+    required to calculate the based on their info.
+    """
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     database = rotki.data.db
     ethereum_inquirer = rotki.chains_aggregator.ethereum.node_inquirer
@@ -109,7 +117,8 @@ def test_multiple_pools_without_balances(rotkehlchen_api_server: 'APIServer', et
 @pytest.mark.parametrize('should_mock_price_queries', [True])
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
 def test_single_pool_with_balances(rotkehlchen_api_server: 'APIServer', ethereum_accounts):
-    """Test LP current balances are factorized in the pool events balance
+    """
+    Test LP current balances are factorized in the pool events balance
     """
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     database = rotki.data.db
