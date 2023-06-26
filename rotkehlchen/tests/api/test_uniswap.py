@@ -48,7 +48,12 @@ def test_get_balances_module_not_activated(
         ethereum_accounts,  # pylint: disable=unused-argument
 ):
     response = requests.get(
-        api_url_for(rotkehlchen_api_server, 'evmmodulebalancesresource', module='uniswap_v2'),
+        api_url_for(
+            api_server=rotkehlchen_api_server,
+            endpoint='evmmodulebalanceswithversionresource',
+            module='uniswap',
+            version='2',
+        ),
     )
     assert_error_response(
         response=response,
@@ -78,7 +83,12 @@ def test_get_balances(
     )
     async_query = random.choice([False, True])
     response = requests.get(
-        api_url_for(rotkehlchen_api_server, 'evmmodulebalancesresource', module='uniswap_v2'),
+        api_url_for(
+            api_server=rotkehlchen_api_server,
+            endpoint='evmmodulebalanceswithversionresource',
+            module='uniswap',
+            version='2',
+        ),
         json={'async_query': async_query},
     )
     if async_query:
@@ -220,7 +230,12 @@ def test_get_events_history_filtering_by_timestamp(
 def test_get_v3_balances_premium(rotkehlchen_api_server):
     """Check querying the uniswap balances v3 endpoint works."""
     response = requests.get(
-        api_url_for(rotkehlchen_api_server, 'evmmodulebalancesresource', module='uniswap_v3'),
+        api_url_for(
+            api_server=rotkehlchen_api_server,
+            endpoint='evmmodulebalanceswithversionresource',
+            module='uniswap',
+            version='3',
+        ),
     )
     result = assert_proper_response_with_result(response)
 
@@ -267,7 +282,12 @@ def test_get_v3_balances_premium(rotkehlchen_api_server):
 def test_get_v3_balances_no_premium(rotkehlchen_api_server):
     """Check querying the uniswap balances v3 endpoint works."""
     response = requests.get(
-        api_url_for(rotkehlchen_api_server, 'evmmodulebalancesresource', module='uniswap_v3'),
+        api_url_for(
+            api_server=rotkehlchen_api_server,
+            endpoint='evmmodulebalanceswithversionresource',
+            module='uniswap',
+            version='3',
+        ),
     )
     result = assert_proper_response_with_result(response)
 

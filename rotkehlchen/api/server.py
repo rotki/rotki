@@ -71,6 +71,7 @@ from rotkehlchen.api.v1.resources import (
     EvmAccountsResource,
     EvmCounterpartiesResource,
     EvmModuleBalancesResource,
+    EvmModuleBalancesWithVersionResource,
     EvmPendingTransactionsDecodingResource,
     EvmProductsResource,
     EvmTransactionsHashResource,
@@ -253,6 +254,7 @@ URLS_V1: URLS = [
     ('/blockchains/eth/modules/liquity/staking', LiquityStakingResource),
     ('/blockchains/eth/modules/liquity/pool', LiquityStabilityPoolResource),
     ('/blockchains/eth/modules/<string:module>/balances', EvmModuleBalancesResource),
+    ('/blockchains/eth/modules/<string:module>/v<string:version>balances', EvmModuleBalancesWithVersionResource),  # noqa: E501
     ('/blockchains/eth/modules/<string:module>/stats', ModuleStatsResource),
     ('/blockchains/eth/modules/pickle/dill', PickleDillResource),
     ('/blockchains/eth/modules/loopring/balances', LoopringBalancesResource),

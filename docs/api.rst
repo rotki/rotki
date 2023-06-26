@@ -7402,7 +7402,7 @@ Getting Liquity staking information
 Getting Uniswap balances
 ==============================
 
-.. http:get:: /api/(version)/blockchains/eth/modules/uniswap_v2/balances
+.. http:get:: /api/(version)/blockchains/eth/modules/uniswap/v2/balances
 
    Doing a GET on the uniswap balances resource will return the balances locked in Uniswap Liquidity Pools (LPs or pools).
 
@@ -7413,7 +7413,7 @@ Getting Uniswap balances
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/blockchains/eth/modules/uniswap_v2/balances HTTP/1.1
+      GET /api/1/blockchains/eth/modules/uniswap/v2/balances HTTP/1.1
       Host: localhost:5042
 
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
@@ -7479,7 +7479,7 @@ Getting Uniswap balances
 Getting Uniswap V3 balances
 ==============================
 
-.. http:get:: /api/(version)/blockchains/eth/modules/uniswap_v3/balances
+.. http:get:: /api/(version)/blockchains/eth/modules/uniswap/v3/balances
 
    Doing a GET on the uniswap v3 balances resource will return the balances locked in Uniswap V3 Liquidity Pools (LPs or pools).
 
@@ -7490,7 +7490,7 @@ Getting Uniswap V3 balances
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/blockchains/eth/modules/uniswap_v3/balances HTTP/1.1
+      GET /api/1/blockchains/eth/modules/uniswap/v3/balances HTTP/1.1
       Host: localhost:5042
 
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
@@ -7557,15 +7557,18 @@ Getting Uniswap V3 balances
    :statuscode 500: Internal rotki error.
    :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
 
-Getting Uniswap events
+Getting Uniswap/Sushiswap events
 =========================
 
-.. http:get:: /api/(version)/blockchains/eth/modules/uniswap/stats
+.. http:get:: /api/(version)/blockchains/eth/modules/{module}/stats
 
-   Doing a GET on the uniswap stats endpoint will return information about the profit and loss on uniswap events for the selected range.
+   Doing a GET on the uniswap/sushiswap stats endpoint will return information about the profit and loss on uniswap/sushiswap events for the selected range.
 
    .. note::
       This endpoint is only available for premium users
+
+   .. note::
+      module can only be one of ``uniswap`` or ``sushiswap`` for this endpoint.
 
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``
@@ -7603,7 +7606,7 @@ Getting Uniswap events
       }
 
 
-   :resjson object result: A mapping between accounts and their Uniswap events history (grouped per liquidity pool)
+   :resjson object result: A mapping between accounts and their Uniswap events stats per pool.
    :resjson string pool_address: The contract address of the pool.
    :resjson string profit_loss0: The token0 profit/loss.
    :resjson string profit_loss1: The token1 profit/loss.
