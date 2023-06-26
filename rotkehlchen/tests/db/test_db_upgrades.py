@@ -1540,6 +1540,7 @@ def test_upgrade_db_37_to_38(user_data_dir):  # pylint: disable=unused-argument
     assert cursor.execute('SELECT COUNT(*) FROM aave_events').fetchone()[0] == 2
     aave_range_key = 'aave_events_0x026045B110b49183E78520460eBEcdC6B4538C85'
     assert cursor.execute('SELECT COUNT(*) FROM used_query_ranges WHERE name=?', (aave_range_key, )).fetchone()[0] == 1  # noqa: E501
+    assert cursor.execute('SELECT COUNT(*) FROM sqlite_master WHERE type="table" AND name="amm_events";').fetchone()[0] == 1  # noqa: E501
     nodes_before = cursor.execute('SELECT * FROM rpc_nodes').fetchall()
     max_initial_node_id = cursor.execute('SELECT MAX(identifier) FROM rpc_nodes').fetchone()[0]
     expected_internal_txs = [

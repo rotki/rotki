@@ -289,7 +289,7 @@ def decode_uniswap_like_deposit_and_withdrawals(
             GlobalDBHandler().edit_evm_token(pool_token)
     except NotERC20Conformant:
         log.error(
-            f'Failed to create the pool token since is it does not conform to ERC20. '
+            f'Failed to create the pool token since it does not conform to ERC20. '
             f'expected: {pool_address} for {token0.evm_address}-{token1.evm_address}',
         )
 
