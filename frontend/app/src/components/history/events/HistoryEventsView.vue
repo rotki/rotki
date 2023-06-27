@@ -126,7 +126,7 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
 ]);
 
 const { isTaskRunning } = useTaskStore();
-const { txEvmChains, getEvmChainName } = useSupportedChains();
+const { txEvmChains } = useSupportedChains();
 const txChains = useArrayMap(txEvmChains, x => x.id);
 
 const { fetchHistoryEvents } = useHistoryEvents();
@@ -210,12 +210,6 @@ const {
       }
 
       if (accounts.length > 0) {
-        const firstAccount = accounts[0];
-
-        if (firstAccount.chain !== 'ALL' && !params.location) {
-          params.location = getEvmChainName(firstAccount.chain)!;
-        }
-
         params.locationLabels = accounts.map(({ address }) => address);
       }
 
@@ -585,6 +579,8 @@ const { locationData } = useLocations();
                     outlined
                     no-padding
                     multichain
+                    hide-chain-icon
+                    unique
                     flat
                     @input="onFilterAccountsChanged($event)"
                   />
