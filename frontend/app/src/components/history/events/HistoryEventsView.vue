@@ -182,6 +182,18 @@ const {
         account => `${account.address}#${account.chain}`
       )
     })),
+    defaultParams: computed<Partial<HistoryEventRequestPayload> | undefined>(
+      () => {
+        if (isDefined(entryTypes)) {
+          return {
+            entryTypes: {
+              values: get(entryTypes)
+            }
+          };
+        }
+        return undefined;
+      }
+    ),
     customPageParams: computed<Partial<HistoryEventRequestPayload>>(() => {
       const params: Writeable<Partial<HistoryEventRequestPayload>> = {
         counterparties: get(protocols),
@@ -194,12 +206,6 @@ const {
 
       if (isDefined(location)) {
         params.location = get(location);
-      }
-
-      if (isDefined(entryTypes)) {
-        params.entryTypes = {
-          values: get(entryTypes)
-        };
       }
 
       if (accounts.length > 0) {

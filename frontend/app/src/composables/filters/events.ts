@@ -158,7 +158,7 @@ export const useHistoryEventFilter = (
       });
     }
 
-    if (!entryTypesVal || entryTypesVal.length > 0) {
+    if (!entryTypesVal || entryTypesVal.length > 1) {
       data.push({
         key: HistoryEventFilterKeys.ENTRY_TYPE,
         keyValue: HistoryEventFilterValueKeys.ENTRY_TYPE,
