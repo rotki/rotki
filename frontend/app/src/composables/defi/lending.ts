@@ -53,6 +53,8 @@ export const useDefiLending = () => {
   const { setStatus, fetchDisabled } = useStatusUpdater(Section.DEFI_LENDING);
   const { scrambleHex, scrambleIdentifier } = useScramble();
 
+  const { yearnVaultsAssets } = yearnStore;
+
   const loans = (protocols: DefiProtocol[] = []): ComputedRef<DefiLoan[]> =>
     computed(() => {
       const loans: DefiLoan[] = [];
@@ -121,7 +123,7 @@ export const useDefiLending = () => {
       }
 
       if (showAll || protocols.includes(DefiProtocol.LIQUITY)) {
-        const { balances } = useLiquityStore();
+        const balances = get(liquityBalances);
         const balanceAddress = Object.keys(balances);
 
         loans.push(
@@ -270,12 +272,11 @@ export const useDefiLending = () => {
       if (loan.protocol === DefiProtocol.LIQUITY) {
         assert(loan.owner);
         const { owner } = loan;
-        const { balances } = useLiquityStore();
 
         return {
           owner,
           protocol: loan.protocol,
-          balance: balances[owner]
+          balance: get(liquityBalances)[owner]
         } satisfies LiquityLoan;
       }
 
@@ -550,30 +551,45 @@ export const useDefiLending = () => {
           }
         );
 
-      function yearnData(version: ProtocolVersion = ProtocolVersion.V1): {
+      const yearnData = (
+        version: ProtocolVersion
+      ): ComputedRef<{
         weight: BigNumber;
         usdValue: BigNumber;
-      } {
-        return get(yearnStore.yearnVaultsAssets([], version))
-          .filter(({ underlyingValue }) => underlyingValue.usdValue.gt(Zero))
-          .map(({ underlyingValue: { usdValue }, roi }) => ({
-            usdValue,
-            weight: usdValue.multipliedBy(Number.parseFloat(roi))
-          }))
-          .reduce(
+      }> =>
+        computed(() => {
+          const filtered: {
+            weight: BigNumber;
+            usdValue: BigNumber;
+          }[] = [];
+
+          get(yearnVaultsAssets(addresses, version)).forEach(
+            ({ underlyingValue: { usdValue }, roi }) => {
+              if (roi && usdValue.gt(Zero)) {
+                filtered.push({
+                  usdValue,
+                  weight: usdValue.multipliedBy(Number.parseFloat(roi))
+                });
+              }
+            }
+          );
+
+          return filtered.reduce(
             ({ usdValue, weight: sWeight }, current) => ({
               weight: sWeight.plus(current.weight),
               usdValue: usdValue.plus(current.usdValue)
             }),
             { weight: Zero, usdValue: Zero }
           );
-      }
+        });
 
       if (
         protocols.length === 0 ||
         protocols.includes(DefiProtocol.YEARN_VAULTS)
       ) {
-        const { usdValue: yUsdValue, weight: yWeight } = yearnData();
+        const { usdValue: yUsdValue, weight: yWeight } = get(
+          yearnData(ProtocolVersion.V1)
+        );
         usdValue = usdValue.plus(yUsdValue);
         weight = weight.plus(yWeight);
       }
@@ -582,7 +598,9 @@ export const useDefiLending = () => {
         protocols.length === 0 ||
         protocols.includes(DefiProtocol.YEARN_VAULTS_V2)
       ) {
-        const { usdValue: yUsdValue, weight: yWeight } = yearnData();
+        const { usdValue: yUsdValue, weight: yWeight } = get(
+          yearnData(ProtocolVersion.V2)
+        );
         usdValue = usdValue.plus(yUsdValue);
         weight = weight.plus(yWeight);
       }
@@ -677,18 +695,22 @@ export const useDefiLending = () => {
       let lendingDeposit = balanceUsdValueSum(lendBalances);
 
       const getYearnDeposit = (
-        version: ProtocolVersion = ProtocolVersion.V1
-      ): BigNumber =>
-        get(yearnStore.yearnVaultsAssets(addresses, version)).reduce(
-          (sum, { underlyingValue: { usdValue } }) => sum.plus(usdValue),
-          Zero
+        version: ProtocolVersion
+      ): ComputedRef<BigNumber> =>
+        computed(() =>
+          get(yearnVaultsAssets(addresses, version)).reduce(
+            (sum, { underlyingValue: { usdValue } }) => sum.plus(usdValue),
+            Zero
+          )
         );
 
       if (
         protocols.length === 0 ||
         protocols.includes(DefiProtocol.YEARN_VAULTS)
       ) {
-        lendingDeposit = lendingDeposit.plus(getYearnDeposit());
+        lendingDeposit = lendingDeposit.plus(
+          get(getYearnDeposit(ProtocolVersion.V1))
+        );
       }
 
       if (
@@ -696,7 +718,7 @@ export const useDefiLending = () => {
         protocols.includes(DefiProtocol.YEARN_VAULTS_V2)
       ) {
         lendingDeposit = lendingDeposit.plus(
-          getYearnDeposit(ProtocolVersion.V2)
+          get(getYearnDeposit(ProtocolVersion.V2))
         );
       }
 
@@ -709,6 +731,7 @@ export const useDefiLending = () => {
   ): ComputedRef<BaseDefiBalance[]> =>
     computed(() => {
       const lendBalances = get(lendingBalances(protocols, addresses));
+
       const balances = lendBalances.reduce(
         (grouped, { address, protocol, ...baseBalance }) => {
           const { asset } = baseBalance;
