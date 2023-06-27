@@ -116,4 +116,5 @@ class EvmProxiesInquirer:
         self.last_proxy_mapping_query_ts = ts_now()
         self.address_to_proxy = mapping
         self.proxy_to_address = {v: k for k, v in mapping.items()}
-        return mapping
+        # return a copy to avoid "dictionary modified during iteration errors"
+        return mapping.copy()
