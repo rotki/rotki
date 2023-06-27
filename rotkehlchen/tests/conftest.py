@@ -232,9 +232,11 @@ def fixture_vcr_base_dir() -> Path:
     """Determine the base dir for vcr cassettes
     # pytest-deadfixtures ignore
     """
+    depth_arg = ''  # In local environment we fetch all history to avoid making the local repo a shallow clone  # noqa: E501
     if 'CI' in os.environ:
         current_branch = os.environ.get('GITHUB_HEAD_REF')  # get branch from github actions
         root_dir = Path(os.environ['CASSETTES_DIR'])
+        depth_arg = '--depth=1'  # If we are in CI environment we fetch with depth 1 to reduce fetching time  # noqa: E501
         if current_branch is None or (current_branch is not None and current_branch == ''):
             # This is needed when the job doesn't happen due to a PR for example is executed
             # in a cron job inside github
@@ -254,7 +256,7 @@ def fixture_vcr_base_dir() -> Path:
         current_branch = os.popen('git rev-parse --abbrev-ref HEAD').read().rstrip('\n')
     log.debug(f'At VCR setup, {current_branch=} {root_dir=}')
 
-    checkout_proc = Popen(f'cd "{root_dir}" && git fetch --depth=1 origin && git checkout {current_branch}', shell=True, stdout=PIPE, stderr=PIPE)  # noqa: E501
+    checkout_proc = Popen(f'cd "{root_dir}" && git fetch {depth_arg} origin && git checkout {current_branch}', shell=True, stdout=PIPE, stderr=PIPE)  # noqa: E501
     _, stderr = checkout_proc.communicate(timeout=SUBPROCESS_TIMEOUT)
 
     if (
