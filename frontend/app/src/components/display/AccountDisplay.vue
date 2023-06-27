@@ -11,10 +11,12 @@ const props = withDefaults(
     account: Account<BlockchainSelection>;
     useAliasName?: boolean;
     truncate?: boolean;
+    hideChainIcon?: boolean;
   }>(),
   {
     useAliasName: true,
-    truncate: true
+    truncate: true,
+    hideChainIcon: false
   }
 );
 
@@ -47,7 +49,7 @@ const { t } = useI18n();
   <v-tooltip top open-delay="400" :disabled="!truncate">
     <template #activator="{ on }">
       <v-row align="center" no-gutters class="flex-nowrap" v-on="on">
-        <v-col cols="auto" class="pr-2">
+        <v-col v-if="!hideChainIcon" cols="auto" class="pr-2">
           <v-avatar left size="28px" class="mr-0">
             <asset-icon
               v-if="account.chain && account.chain !== 'ALL'"
@@ -65,7 +67,7 @@ const { t } = useI18n();
         </v-col>
 
         <div>
-          <v-avatar size="24" class="mr-2">
+          <v-avatar :left="hideChainIcon" size="24" class="mr-2">
             <ens-avatar :address="address" />
           </v-avatar>
         </div>
