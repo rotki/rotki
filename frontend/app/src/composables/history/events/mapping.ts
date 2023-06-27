@@ -123,6 +123,9 @@ export const useHistoryEventMappings = createSharedComposable(() => {
 
       const eventTypeNormalized = eventType || 'none';
       const eventSubtypeNormalized = eventSubtype || 'none';
+      const locationNormalized = location
+        ? transformCase(toSnakeCase(location), true)
+        : '';
 
       if (
         entryType === HistoryEventEntryType.EVM_EVENT &&
@@ -131,7 +134,7 @@ export const useHistoryEventMappings = createSharedComposable(() => {
       ) {
         const subTypesFromPerProtocolMapping = get(
           historyEventTypePerProtocolMapping
-        )[location]?.[counterparty]?.[eventTypeNormalized]?.[
+        )[locationNormalized]?.[counterparty]?.[eventTypeNormalized]?.[
           eventSubtypeNormalized
         ];
 
@@ -143,7 +146,7 @@ export const useHistoryEventMappings = createSharedComposable(() => {
       if (entryType === HistoryEventEntryType.HISTORY_EVENT && location) {
         const subTypesFromExchangesMapping = get(
           historyEventTypeExchangeMapping
-        )[location]?.[eventTypeNormalized]?.[eventSubtypeNormalized];
+        )[locationNormalized]?.[eventTypeNormalized]?.[eventSubtypeNormalized];
 
         if (subTypesFromExchangesMapping) {
           return subTypesFromExchangesMapping;
