@@ -807,7 +807,6 @@ declare module 'vue' {
     readonly getDomain: UnwrapRef<typeof import('./utils/url')['getDomain']>
     readonly getEthAddressesFromText: UnwrapRef<typeof import('./utils/history/index')['getEthAddressesFromText']>
     readonly getEtherScanRegisterUrl: UnwrapRef<typeof import('./utils/url')['getEtherScanRegisterUrl']>
-    readonly getEventDetails: UnwrapRef<typeof import('./utils/defi/xswap')['getEventDetails']>
     readonly getFilepath: UnwrapRef<typeof import('./utils/backups')['getFilepath']>
     readonly getKeyType: UnwrapRef<typeof import('./utils/xpub')['getKeyType']>
     readonly getMetamaskAddresses: UnwrapRef<typeof import('./utils/metamask')['getMetamaskAddresses']>
@@ -1502,7 +1501,6 @@ declare module '@vue/runtime-core' {
     readonly getDomain: UnwrapRef<typeof import('./utils/url')['getDomain']>
     readonly getEthAddressesFromText: UnwrapRef<typeof import('./utils/history/index')['getEthAddressesFromText']>
     readonly getEtherScanRegisterUrl: UnwrapRef<typeof import('./utils/url')['getEtherScanRegisterUrl']>
-    readonly getEventDetails: UnwrapRef<typeof import('./utils/defi/xswap')['getEventDetails']>
     readonly getFilepath: UnwrapRef<typeof import('./utils/backups')['getFilepath']>
     readonly getKeyType: UnwrapRef<typeof import('./utils/xpub')['getKeyType']>
     readonly getMetamaskAddresses: UnwrapRef<typeof import('./utils/metamask')['getMetamaskAddresses']>

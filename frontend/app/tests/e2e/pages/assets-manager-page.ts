@@ -117,9 +117,8 @@ export class AssetsManagerPage {
     cy.get('[data-cy=confirm-dialog]').should('not.be.exist');
   }
 
-  deleteAsset() {
-    const ethAddress = '0x9737c028a738f0856c86bc6279b356db8f3dd440';
-    this.searchAssetByAddress(ethAddress);
+  deleteAsset(address = '0xfDb7EEc5eBF4c4aC7734748474123aC25C6eDCc8') {
+    this.searchAssetByAddress(address);
     cy.get('[data-cy=managed-assets-table] [data-cy=row-delete]').click();
     this.confirmDelete();
   }
@@ -143,8 +142,10 @@ export class AssetsManagerPage {
     cy.get('@submitButton').should('be.enabled');
   }
 
-  addAsset(): void {
-    const ethAddress = '0x9737c028a738f0856c86bc6279b356db8f3dd440';
+  addAsset(
+    name: string,
+    address = '0xfDb7EEc5eBF4c4aC7734748474123aC25C6eDCc8'
+  ): void {
     // get the fields
     cy.get('[data-cy=chain-select] [role=button]').as('chainInput');
 
@@ -173,7 +174,7 @@ export class AssetsManagerPage {
       .should('be.visible');
 
     // enter address
-    cy.get('@addressInput').type(ethAddress);
+    cy.get('@addressInput').type(address);
     cy.get('@submitButton').click();
 
     cy.get('[data-cy=chain-select] .v-messages__message').as('chainMessage');
@@ -210,7 +211,6 @@ export class AssetsManagerPage {
     // selecting a chain should clear the validation message
     cy.get('@tokenMessage').should('not.be.visible');
 
-    cy.get('@decimalMessage').should('be.visible');
     // after loading, input should be enabled
     cy.get('@addressInput').should('be.enabled');
 
@@ -230,17 +230,15 @@ export class AssetsManagerPage {
     cy.get('[data-cy=bottom-dialog]').should('not.be.visible');
 
     // search the asset
-    this.searchAssetByAddress(ethAddress);
+    this.searchAssetByAddress(address);
 
     cy.get('[data-cy=managed-assets-table] [data-cy="details-symbol"]').should(
       'contain',
-      'SYMBOL 1'
+      name
     );
   }
 
-  editAsset(): void {
-    const address = '0x9737c028a738f0856c86bc6279b356db8f3dd440';
-
+  editAsset(address = '0xfDb7EEc5eBF4c4aC7734748474123aC25C6eDCc8'): void {
     // search the asset
     this.searchAssetByAddress(address);
 

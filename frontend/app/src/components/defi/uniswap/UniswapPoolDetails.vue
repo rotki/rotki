@@ -4,6 +4,7 @@ import {
   type XswapBalance
 } from '@rotki/common/lib/defi/xswap';
 import { type PropType } from 'vue';
+import { Zero } from '@/utils/bignumbers';
 
 defineProps({
   balance: { required: true, type: Object as PropType<XswapBalance> }
@@ -52,7 +53,7 @@ const getTotal = ({ totalAmount, usdPrice }: XswapAsset) =>
                 <div class="d-flex font-weight-bold">
                   <amount-display
                     :asset="token.asset"
-                    :value="token.totalAmount"
+                    :value="token.totalAmount ?? Zero"
                   />
                 </div>
               </v-col>

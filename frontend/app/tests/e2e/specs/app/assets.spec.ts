@@ -60,7 +60,7 @@ describe('assets', () => {
     });
 
     it('adds a single managed asset', () => {
-      page.addAsset();
+      page.addAsset('SYMBOL 1');
     });
 
     it('edit an asset', () => {
