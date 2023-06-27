@@ -95,7 +95,7 @@ def _add_transactions_to_db(
     dbevmtx = DBEvmTx(db)
     dboptimismtx = DBOptimismTx(db)
     with db.user_write() as cursor:
-        dboptimismtx.add_optimism_transactions(cursor, [transaction_opt], relevant_address=ethereum_accounts[0]) # noqa: E501
+        dboptimismtx.add_optimism_transactions(cursor, [transaction_opt], relevant_address=ethereum_accounts[0])  # noqa: E501
         dbevmtx.add_evm_transactions(cursor, [transaction_eth], relevant_address=ethereum_accounts[0])  # noqa: E501
         dbevmtx.add_evm_transactions(cursor, [transaction_eth_yabir], relevant_address=ethereum_accounts[1])  # noqa: E501
 

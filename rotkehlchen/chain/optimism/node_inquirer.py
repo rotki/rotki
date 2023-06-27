@@ -1,22 +1,23 @@
 import logging
-from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, Literal, Optional, cast
 
 from eth_typing import BlockNumber
+from web3 import Web3
+from web3.exceptions import TransactionNotFound
 
 from rotkehlchen.chain.constants import DEFAULT_EVM_RPC_TIMEOUT
 from rotkehlchen.chain.evm.constants import FAKE_GENESIS_TX_RECEIPT, GENESIS_HASH
 from rotkehlchen.chain.evm.contracts import EvmContracts
-from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer, EvmNodeInquirerWithDSProxy
-from rotkehlchen.chain.evm.types import WeightedNode, string_to_evm_address
+from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirerWithDSProxy
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.optimism.types import OptimismTransaction
 from rotkehlchen.constants.assets import A_ETH
-from rotkehlchen.errors.misc import BlockchainQueryError, RemoteError
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.greenlets.manager import GreenletManager
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.serialization.deserialize import(
+from rotkehlchen.serialization.deserialize import (
     deserialize_int_from_hex,
     deserialize_optimism_transaction,
 )
@@ -107,13 +108,17 @@ class OptimismInquirer(EvmNodeInquirerWithDSProxy):
             self,
             web3: Optional[Web3],
             tx_hash: EVMTxHash,
+            must_exist: bool = False,
     ) -> Optional[dict[str, Any]]:
         if tx_hash == GENESIS_HASH:
             return FAKE_GENESIS_TX_RECEIPT
         if web3 is None:
             tx_receipt = self.etherscan.get_transaction_receipt(tx_hash)
             if tx_receipt is None:
-                return None
+                if must_exist:  # fail, so other nodes can be tried
+                    raise RemoteError(f'Querying for {self.chain_name} receipt {tx_hash.hex()} returned None')  # noqa: E501
+
+                return None  # else it does not exist
 
             try:
                 # Turn hex numbers to int
@@ -144,23 +149,38 @@ class OptimismInquirer(EvmNodeInquirerWithDSProxy):
                     f'Couldnt deserialize transaction receipt data from etherscan '
                     f'due to {msg}. Check logs for details',
                 ) from e
+
+            if must_exist and tx_receipt is None:  # fail, so other nodes can be tried
+                raise RemoteError(f'Querying for {self.chain_name} receipt {tx_hash.hex()} returned None')  # noqa: E501
+
             return tx_receipt
 
         # Can raise TransactionNotFound if the user's node is pruned and transaction is old
-        tx_receipt = web3.eth.get_transaction_receipt(tx_hash)  # type: ignore
+        try:
+            tx_receipt = web3.eth.get_transaction_receipt(tx_hash)  # type: ignore
+        except TransactionNotFound as e:
+            if must_exist:  # fail, so other nodes can be tried
+                raise RemoteError(f'Querying for {self.chain_name} receipt {tx_hash.hex()} returned None') from e  # noqa: E501
+
+            raise  # else re-raise e
+
         return process_result(tx_receipt)
 
-    def _get_transaction_by_hash(
+    def _get_transaction_by_hash(  # type: ignore[override]
             self,
             web3: Optional[Web3],
             tx_hash: EVMTxHash,
+            must_exist: bool = False,
     ) -> Optional[tuple[OptimismTransaction, dict[str, Any]]]:
         if web3 is None:
             tx_data = self.etherscan.get_transaction_by_hash(tx_hash=tx_hash)
         else:
             tx_data = web3.eth.get_transaction(tx_hash)  # type: ignore
         if tx_data is None:
-            return None
+            if must_exist:  # fail, so other nodes can be tried
+                raise RemoteError(f'Querying for {self.chain_name} transaction {tx_hash.hex()} returned None')  # noqa: E501
+
+            return None  # else it does not exist
 
         try:
             transaction, receipt_data = deserialize_optimism_transaction(
@@ -174,5 +194,6 @@ class OptimismInquirer(EvmNodeInquirerWithDSProxy):
                 f'Couldnt deserialize evm transaction data from {tx_data}. Error: {e!s}',
             ) from e
 
-        assert receipt_data, 'receipt_data should exist here as etherscan getTransactionByHash does not contains gasUsed'  # noqa: E501
+        if receipt_data is None:
+            raise RemoteError(f'{self.chain_name} transaction {tx_hash.hex()} receipt_data is expected to exist')  # noqa: E501  # as etherscan getTransactionByHash does not contains gasUsed'
         return transaction, receipt_data

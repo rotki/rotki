@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Any, Optional
 
 from rotkehlchen.chain.optimism.types import OptimismTransaction
 from rotkehlchen.db.evmtx import DBEvmTx
-from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
+from rotkehlchen.db.filtering import OptimismTransactionsFilterQuery
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_timestamp
@@ -29,7 +29,7 @@ class DBOptimismTx(DBEvmTx):
         """Adds optimism transactions to the database"""
         self.add_evm_transactions(
             write_cursor,
-            optimism_transactions,
+            optimism_transactions,  # type: ignore[arg-type]
             relevant_address,
         )
 
@@ -57,10 +57,10 @@ class DBOptimismTx(DBEvmTx):
         )
 
     def get_optimism_transactions(
-        self,
-        cursor: 'DBCursor',
-        filter_: EvmTransactionsFilterQuery,
-        has_premium: bool,
+            self,
+            cursor: 'DBCursor',
+            filter_: OptimismTransactionsFilterQuery,
+            has_premium: bool,
     ) -> list[OptimismTransaction]:
         """Returns a list of optimism transactions optionally filtered by
         the given filter query

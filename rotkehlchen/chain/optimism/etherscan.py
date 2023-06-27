@@ -16,7 +16,6 @@ from rotkehlchen.serialization.deserialize import (
 from rotkehlchen.types import (
     ChecksumEvmAddress,
     EvmInternalTransaction,
-    EvmTransaction,
     EVMTxHash,
     ExternalService,
     SupportedBlockchain,
@@ -28,6 +27,7 @@ if TYPE_CHECKING:
 
 ETHERSCAN_TX_QUERY_LIMIT = 10000
 TRANSACTIONS_BATCH_NUM = 10
+
 
 class OptimismEtherscan(Etherscan):
 
@@ -44,7 +44,7 @@ class OptimismEtherscan(Etherscan):
             service=ExternalService.OPTIMISM_ETHERSCAN,
         )
 
-    def get_transactions(
+    def get_transactions(  # type: ignore[override]
             self,
             account: Optional[ChecksumEvmAddress],
             action: Literal['txlist', 'txlistinternal'],
@@ -87,12 +87,13 @@ class OptimismEtherscan(Etherscan):
                 options['txHash'] = period_or_hash.hex()
                 parent_tx_hash = period_or_hash
 
-        transactions: Union[list[EvmTransaction], list[EvmInternalTransaction]] = []  # type: ignore  # noqa: E501
+        transactions: Union[list[OptimismTransaction], list[EvmInternalTransaction]] = []  # type: ignore  # noqa: E501
         is_internal = action == 'txlistinternal'
         chain_id = self.chain.to_chain_id()
         while True:
             result = self._query(module='account', action=action, options=options)
-            last_ts = deserialize_timestamp(result[0]['timeStamp']) if len(result) != 0 else None
+            if len(result) != 0:
+                last_ts = deserialize_timestamp(result[0]['timeStamp'])
             for entry in result:
                 try:  # Handle normal transactions. Internal dict does not contain a hash sometimes
                     if is_internal or entry['hash'].startswith('GENESIS') is False:
@@ -103,7 +104,7 @@ class OptimismEtherscan(Etherscan):
                             evm_inquirer=None,
                             parent_tx_hash=parent_tx_hash,
                         )
-                        if type(tx) != EvmInternalTransaction:
+                        if not isinstance(tx, EvmInternalTransaction):
                             tx_receipt = self.get_transaction_receipt(tx.tx_hash)
                             tx = OptimismTransaction(
                                 tx_hash=tx.tx_hash,
@@ -118,7 +119,7 @@ class OptimismEtherscan(Etherscan):
                                 gas_used=tx.gas_used,
                                 input_data=tx.input_data,
                                 nonce=tx.nonce,
-                                l1_fee=int(tx_receipt['l1Fee'], 16),
+                                l1_fee=int(tx_receipt['l1Fee'], 16),  # type: ignore[index]
                             )
                     else:  # Handling genesis transactions
                         assert self.db is not None, 'self.db should exists at this point'
@@ -160,7 +161,8 @@ class OptimismEtherscan(Etherscan):
                     self.msg_aggregator.add_warning(f'{e!s}. Skipping transaction')
                     continue
 
-                if tx.timestamp > last_ts and len(transactions) >= TRANSACTIONS_BATCH_NUM:
+                timestamp = deserialize_timestamp(entry['timeStamp'])
+                if timestamp > last_ts and len(transactions) >= TRANSACTIONS_BATCH_NUM:
                     yield transactions
                     last_ts = tx.timestamp
                     transactions = []  # type: ignore

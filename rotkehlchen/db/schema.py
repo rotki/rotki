@@ -445,7 +445,7 @@ CREATE TABLE IF NOT EXISTS optimism_transactions (
     PRIMARY KEY(tx_hash),
     FOREIGN KEY(tx_hash, chain_id) REFERENCES evm_transactions(tx_hash, chain_id) ON DELETE CASCADE ON UPDATE CASCADE
 );
-"""
+"""  # noqa: E501
 
 # from/to address/value is also in the primary key of the internal transactions since
 # trace_id, which is returned by etherscan does not guarantee uniqueness. Example:

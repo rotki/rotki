@@ -2,6 +2,7 @@ from typing import Any, NamedTuple, Optional
 
 from rotkehlchen.types import ChainID, ChecksumEvmAddress, EVMTxHash, Timestamp
 
+
 class OptimismTransaction(NamedTuple):
     """Represent an Optimism transaction"""
     tx_hash: EVMTxHash
@@ -16,7 +17,7 @@ class OptimismTransaction(NamedTuple):
     gas_used: int
     input_data: bytes
     nonce: int
-    l1_fee: Optional[int]
+    l1_fee: int
 
     def serialize(self) -> dict[str, Any]:
         result = self._asdict()  # pylint: disable=no-member

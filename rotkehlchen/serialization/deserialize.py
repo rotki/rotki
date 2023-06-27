@@ -617,6 +617,7 @@ def deserialize_evm_transaction(
             nonce=nonce,
         ), raw_receipt_data
 
+
 def deserialize_optimism_transaction(
         data: dict[str, Any],
         internal: Literal[False],

@@ -208,6 +208,7 @@ class DBEvmTransactionHashFilter(DBFilter):
 
         return ['tx_hash=?'], [self.tx_hash]
 
+
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class DBOptimismTransactionHashFilter(DBFilter):
     tx_hash: Optional[EVMTxHash] = None
@@ -217,6 +218,7 @@ class DBOptimismTransactionHashFilter(DBFilter):
             return [], []
 
         return ['evm_transactions.tx_hash=?'], [self.tx_hash]
+
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class DBEvmChainIDFilter(DBFilter):
@@ -497,6 +499,7 @@ class EvmTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
         filter_query.filters = filters
         return filter_query
 
+
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class OptimismTransactionsFilterQuery(EvmTransactionsFilterQuery):
 
@@ -522,7 +525,7 @@ class OptimismTransactionsFilterQuery(EvmTransactionsFilterQuery):
             offset=offset,
             order_by_rules=order_by_rules,
         )
-        filter_query = cast('EvmTransactionsFilterQuery', filter_query)
+        filter_query = cast('OptimismTransactionsFilterQuery', filter_query)
         # Create the timestamp filter so that from/to ts works. But add it only if needed
         filter_query.timestamp_filter = DBTimestampFilter(
             and_op=True,
@@ -533,8 +536,13 @@ class OptimismTransactionsFilterQuery(EvmTransactionsFilterQuery):
         if tx_hash is not None:  # tx_hash means single result so make it as single filter
             filters.append(DBOptimismTransactionHashFilter(and_op=True, tx_hash=tx_hash))
             if chain_id is not None:  # keep it as last (see chain_id property of this filter)
-                filters.append(DBEvmChainIDFilter(and_op=True, chain_id=chain_id, table_name='evm_transactions'))
-
+                filters.append(
+                    DBEvmChainIDFilter(
+                        and_op=True,
+                        chain_id=chain_id,
+                        table_name='evm_transactions',
+                    ),
+                )
         else:
             if accounts is not None:
                 filter_query.join_clause = DBEvmTransactionJoinsFilter(
@@ -544,14 +552,16 @@ class OptimismTransactionsFilterQuery(EvmTransactionsFilterQuery):
 
             filters.append(filter_query.timestamp_filter)
             if chain_id is not None:  # keep it as last (see chain_id property of this filter)
-                filters.append(DBEvmChainIDFilter(
-                    and_op=True,
-                    table_name='evm_transactions',
-                    chain_id=chain_id,
-                ))
-
+                filters.append(
+                    DBEvmChainIDFilter(
+                        and_op=True,
+                        table_name='evm_transactions',
+                        chain_id=chain_id,
+                    ),
+                )
         filter_query.filters = filters
         return filter_query
+
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class DBAssetFilter(DBFilter):

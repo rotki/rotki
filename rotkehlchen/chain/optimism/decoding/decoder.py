@@ -1,9 +1,9 @@
 import logging
 from typing import TYPE_CHECKING, Optional
-from rotkehlchen.chain.evm.decoding.base import BaseDecoderToolsWithDSProxy
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.chain.evm.decoding.base import BaseDecoderToolsWithDSProxy
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS, OUTGOING_EVENT_TYPES
 from rotkehlchen.chain.evm.decoding.decoder import EVMTransactionDecoder
 from rotkehlchen.chain.evm.decoding.structures import (
@@ -72,7 +72,7 @@ class OptimismTransactionDecoder(EVMTransactionDecoder):
 
     def _maybe_decode_simple_transactions(
             self,
-            tx: OptimismTransaction,
+            tx: OptimismTransaction,  # type: ignore[override]
             tx_receipt: EvmTxReceipt,
     ) -> list['EvmEvent']:
         """Decodes normal ETH transfers, internal transactions and gas cost payments"""
@@ -97,7 +97,7 @@ class OptimismTransactionDecoder(EVMTransactionDecoder):
 
         # Decode internal transactions after gas so gas is always 0 indexed
         self._maybe_decode_internal_transactions(
-            tx=tx,
+            tx=tx,  # type: ignore[arg-type]
             tx_receipt=tx_receipt,
             events=events,
         )
@@ -129,7 +129,7 @@ class OptimismTransactionDecoder(EVMTransactionDecoder):
         if amount == ZERO:
             return events
 
-        if (eth_event := self._get_eth_transfer_event(tx)) is not None:
+        if (eth_event := self._get_eth_transfer_event(tx)) is not None:  # type: ignore[arg-type]
             events.append(eth_event)
         return events
 
@@ -169,7 +169,7 @@ class OptimismTransactionDecoder(EVMTransactionDecoder):
 
             # TODO: Change this if transaction filter query can accept multiple hashes
             with self.database.conn.read_ctx() as cursor:
-                txs = self.dbevmtx.get_optimism_transactions(
+                txs = self.dbevmtx.get_optimism_transactions(  # type: ignore
                     cursor=cursor,
                     filter_=OptimismTransactionsFilterQuery.make(tx_hash=tx_hash, chain_id=self.evm_inquirer.chain_id),  # noqa: E501
                     has_premium=True,  # ignore limiting here

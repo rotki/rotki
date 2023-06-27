@@ -6,7 +6,6 @@ from pysqlcipher3 import dbapi2 as sqlcipher
 from rotkehlchen.api.websockets.typedefs import TransactionStatusStep, WSMessageType
 from rotkehlchen.chain.evm.constants import GENESIS_HASH
 from rotkehlchen.chain.evm.transactions import EvmTransactions
-from rotkehlchen.chain.optimism.types import OptimismTransaction
 from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.db.filtering import OptimismTransactionsFilterQuery
 from rotkehlchen.db.optimismtx import DBOptimismTx
@@ -16,11 +15,13 @@ from rotkehlchen.types import ChecksumEvmAddress, EVMTxHash, Timestamp, deserial
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.structures import EvmTxReceipt
+    from rotkehlchen.chain.optimism.types import OptimismTransaction
     from rotkehlchen.db.dbhandler import DBHandler
     from .node_inquirer import OptimismInquirer
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
 
 class OptimismTransactions(EvmTransactions):
 
@@ -51,7 +52,7 @@ class OptimismTransactions(EvmTransactions):
             with self.database.user_write() as write_cursor:
                 dbevmtx.add_optimism_transactions(
                     write_cursor=write_cursor,
-                    optimism_transactions=new_transactions,
+                    optimism_transactions=new_transactions,  # type: ignore[arg-type]
                     relevant_address=address,
                 )
             if period.range_type == 'timestamps':
@@ -112,7 +113,7 @@ class OptimismTransactions(EvmTransactions):
                     with self.database.conn.write_ctx() as write_cursor:
                         dbevmtx.add_optimism_transactions(
                             write_cursor=write_cursor,
-                            optimism_transactions=[transaction],
+                            optimism_transactions=[transaction],  # type: ignore[list-item]
                             relevant_address=address,
                         )
                         dbevmtx.add_receipt_data(
@@ -192,7 +193,7 @@ class OptimismTransactions(EvmTransactions):
                             with self.database.user_write() as write_cursor:
                                 dbevmtx.add_optimism_transactions(
                                     write_cursor=write_cursor,
-                                    optimism_transactions=[transaction],
+                                    optimism_transactions=[transaction],  # type: ignore[list-item]
                                     relevant_address=address,
                                 )
                                 dbevmtx.add_receipt_data(
@@ -298,7 +299,7 @@ class OptimismTransactions(EvmTransactions):
                 )
             transaction, raw_receipt_data = tx_result
             with self.database.user_write() as write_cursor:
-                dbevmtx.add_optimism_transactions(write_cursor, [transaction], relevant_address=None)  # noqa: E501
+                dbevmtx.add_optimism_transactions(write_cursor, [transaction], relevant_address=None)  # type: ignore[list-item] # noqa: E501
                 dbevmtx.add_receipt_data(
                     write_cursor=write_cursor,
                     chain_id=self.evm_inquirer.chain_id,
@@ -340,7 +341,7 @@ class OptimismTransactions(EvmTransactions):
 
         return tx_receipt  # type: ignore  # tx_receipt was just added in the DB so should be there  # noqa: E501
 
-    def add_transaction_by_hash(
+    def add_transaction_by_hash(  # type: ignore[override]
             self,
             tx_hash: EVMTxHash,
             associated_address: ChecksumEvmAddress,
@@ -362,7 +363,7 @@ class OptimismTransactions(EvmTransactions):
         with self.database.user_write() as write_cursor:
             dbevmtx.add_optimism_transactions(
                 write_cursor=write_cursor,
-                optimism_transactions=[transaction],
+                optimism_transactions=[transaction],  # type: ignore[list-item]
                 relevant_address=associated_address,
             )
             dbevmtx.add_receipt_data(
@@ -377,5 +378,4 @@ class OptimismTransactions(EvmTransactions):
                 chain_id=self.evm_inquirer.chain_id,
             )
         assert tx_receipt is not None, 'transaction receipt was added just above, so should exist'  # noqa: E501
-        return transaction, tx_receipt
-
+        return transaction, tx_receipt  # type: ignore[return-value]
