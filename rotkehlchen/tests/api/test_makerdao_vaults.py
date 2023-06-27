@@ -189,14 +189,14 @@ def _check_vaults_values(vaults, owner):
     expected_vault = VAULT_8015.copy()
     expected_vault['owner'] = owner
     expected_vaults = [expected_vault]
-    assert_serialized_lists_equal(expected_vaults, vaults, ignore_keys=VAULT_IGNORE_KEYS)
+    assert_serialized_lists_equal(expected_vaults, vaults[:1], ignore_keys=VAULT_IGNORE_KEYS)  # Check only the first vault so that if the user adds more vaults, the test still runs normally  # noqa: E501
 
 
 def _check_vault_details_values(details, total_interest_owed_list: list[Optional[FVal]]):
     expected_details = [VAULT_8015_DETAILS]
     assert_serialized_lists_equal(
         expected_details,
-        details,
+        details[:1],  # Checking only the first vault's details
         # Checking only the first 7 events
         length_list_keymap={'events': 7},
         ignore_keys=['total_interest_owed', 'stability_fee'],
@@ -208,7 +208,7 @@ def _check_vault_details_values(details, total_interest_owed_list: list[Optional
             assert FVal(details[idx]['total_interest_owed']) >= entry
 
 
-@requires_env([TestEnvironment.NIGHTLY])
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDRESS_1]])
 @pytest.mark.parametrize('ethereum_modules', [['makerdao_vaults']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
@@ -255,7 +255,7 @@ def test_query_vaults(rotkehlchen_api_server, ethereum_accounts):
     )
 
 
-@requires_env([TestEnvironment.NIGHTLY])
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @flaky(max_runs=3, min_passes=1)  # some makerdao vault tests take long time and may time out
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDRESS_1]])
 @pytest.mark.parametrize('ethereum_modules', [['makerdao_vaults']])
@@ -301,7 +301,7 @@ def test_query_vaults_details_non_premium(rotkehlchen_api_server):
     )
 
 
-@requires_env([TestEnvironment.NIGHTLY])
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [
     [TEST_ADDRESS_1, TEST_ADDRESS_2, TEST_ADDRESS_3],
 ])
@@ -350,7 +350,7 @@ def test_query_vaults_details_liquidation(rotkehlchen_api_server, ethereum_accou
         vaults[1],
         ignore_keys=VAULT_IGNORE_KEYS,
     )
-    assert len(vaults) == 2
+    assert len(vaults) >= 2  # The tested accounts might add more vaults in the future. We only use the first 2 for testing.  # noqa: E501
 
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
@@ -424,7 +424,7 @@ def test_query_vaults_details_liquidation(rotkehlchen_api_server, ethereum_accou
         }],
     }
     details = assert_proper_response_with_result(response)
-    assert len(details) == 2
+    assert len(details) >= 2
     assert_serialized_dicts_equal(vault_6021_details, details[0], ignore_keys=['stability_fee'])
     assert_serialized_dicts_equal(
         VAULT_8015_DETAILS,
@@ -437,7 +437,7 @@ def test_query_vaults_details_liquidation(rotkehlchen_api_server, ethereum_accou
     )
 
 
-@requires_env([TestEnvironment.NIGHTLY])
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDRESS_1]])
 @pytest.mark.parametrize('ethereum_modules', [['makerdao_vaults']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
@@ -531,7 +531,7 @@ def test_query_vaults_wbtc(rotkehlchen_api_server, ethereum_accounts):
     )
 
 
-@requires_env([TestEnvironment.NIGHTLY])
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @flaky(max_runs=3, min_passes=1)  # some makerdao vault tests take long time and may time out
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDRESS_1]])
 @pytest.mark.parametrize('ethereum_modules', [['makerdao_vaults']])
@@ -626,7 +626,7 @@ def test_query_vaults_usdc(rotkehlchen_api_server, ethereum_accounts):
     assert_serialized_lists_equal(expected_details, details, ignore_keys=['liquidation_ratio'])
 
 
-@requires_env([TestEnvironment.NIGHTLY])
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @flaky(max_runs=3, min_passes=1)  # some makerdao vault tests take long time and may time out
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDRESS_1]])
 @pytest.mark.parametrize('ethereum_modules', [['makerdao_vaults']])
