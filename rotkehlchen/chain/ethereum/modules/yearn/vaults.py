@@ -125,6 +125,9 @@ class YearnVaultBalance(NamedTuple):
         result = self._asdict()  # pylint: disable=no-member
         if self.roi is not None:
             result['roi'] = self.roi.to_percentage(precision=2)
+        else:
+            del result['roi']
+
         return result
 
 
