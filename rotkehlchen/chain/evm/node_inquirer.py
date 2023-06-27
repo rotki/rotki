@@ -531,7 +531,10 @@ class EvmNodeInquirer(metaclass=ABCMeta):
                 log.warning(f'Failed to query {node_info} for {method!s} due to {e!s}')
                 # Catch all possible errors here and just try next node call
                 continue
-            except TransactionNotFound:
+            except TransactionNotFound as e:
+                if kwargs.get('must_exist', False) is True:
+                    tx_hash = kwargs.get('tx_hash', GENESIS_HASH)
+                    raise RemoteError(f'{self.chain_name} transaction call should exist for {tx_hash.hex()}') from e  # noqa: E501
                 return None
 
             return result
@@ -709,7 +712,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
             tx_receipt = self.etherscan.get_transaction_receipt(tx_hash)
             if tx_receipt is None:
                 if must_exist:  # fail, so other nodes can be tried
-                    raise RemoteError(f'Querying for receipt {tx_hash.hex()} returned None')
+                    raise RemoteError(f'Querying for {self.chain_name} receipt {tx_hash.hex()} returned None')  # noqa: E501
 
                 return None  # else it does not exist
 
@@ -743,7 +746,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
                 ) from e
 
             if must_exist and tx_receipt is None:  # fail, so other nodes can be tried
-                raise RemoteError(f'Querying for receipt {tx_hash.hex()} returned None')
+                raise RemoteError(f'Querying for {self.chain_name} receipt {tx_hash.hex()} returned None')  # noqa: E501
 
             return tx_receipt
 
@@ -752,7 +755,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
             tx_receipt = web3.eth.get_transaction_receipt(tx_hash)  # type: ignore
         except TransactionNotFound as e:
             if must_exist:  # fail, so other nodes can be tried
-                raise RemoteError(f'Querying for receipt {tx_hash.hex()} returned None') from e
+                raise RemoteError(f'Querying for {self.chain_name} receipt {tx_hash.hex()} returned None') from e  # noqa: E501
 
             raise  # else re-raise e
 
@@ -786,7 +789,8 @@ class EvmNodeInquirer(metaclass=ABCMeta):
             tx_hash=tx_hash,
             must_exist=True,
         )
-        assert tx_receipt, f'tx receipt should exist for tx hash {tx_hash.hex()}'
+        if tx_receipt is None:
+            raise RemoteError(f'{self.chain_name} tx_receipt should exist for {tx_hash.hex()}')
         return tx_receipt
 
     def _get_transaction_by_hash(
@@ -801,7 +805,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
             tx_data = web3.eth.get_transaction(tx_hash)  # type: ignore
         if tx_data is None:
             if must_exist:  # fail, so other nodes can be tried
-                raise RemoteError(f'Querying for transaction {tx_hash.hex()} returned None')
+                raise RemoteError(f'Querying for {self.chain_name} transaction {tx_hash.hex()} returned None')  # noqa: E501
 
             return None  # else it does not exist
 
@@ -817,7 +821,8 @@ class EvmNodeInquirer(metaclass=ABCMeta):
                 f'Couldnt deserialize evm transaction data from {tx_data}. Error: {e!s}',
             ) from e
 
-        assert receipt_data, 'receipt_data should exist here as etherscan getTransactionByHash does not contains gasUsed'  # noqa: E501
+        if receipt_data is None:
+            raise RemoteError(f'{self.chain_name} transaction {tx_hash.hex()} receipt_data is expected to exist')  # noqa: E501  # as etherscan getTransactionByHash does not contains gasUsed'
         return transaction, receipt_data
 
     def maybe_get_transaction_by_hash(
@@ -849,7 +854,9 @@ class EvmNodeInquirer(metaclass=ABCMeta):
             tx_hash=tx_hash,
             must_exist=True,
         )
-        assert result, 'transaction is expected to exist'
+        if result is None:
+            raise RemoteError(f'{self.chain_name} transaction {tx_hash.hex()} is expected to exist')  # noqa: E501
+
         return result
 
     def get_logs(
