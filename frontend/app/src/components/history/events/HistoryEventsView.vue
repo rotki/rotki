@@ -79,6 +79,7 @@ const selectedTransaction: Ref<EvmHistoryEvent | null> = ref(null);
 const eventToDelete: Ref<HistoryEventEntry | null> = ref(null);
 const transactionToIgnore: Ref<HistoryEventEntry | null> = ref(null);
 const accounts: Ref<GeneralAccount[]> = ref([]);
+const locationOverview = ref(get(location));
 
 const usedTitle: ComputedRef<string> = computed(
   () => get(sectionTitle) || t('transactions.title')
@@ -204,14 +205,14 @@ const {
 
       const accounts = get(usedAccounts);
 
-      if (isDefined(location)) {
-        params.location = get(location);
+      if (isDefined(get(locationOverview))) {
+        params.location = toSnakeCase(get(locationOverview));
       }
 
       if (accounts.length > 0) {
         const firstAccount = accounts[0];
 
-        if (firstAccount.chain !== 'ALL') {
+        if (firstAccount.chain !== 'ALL' && !params.location) {
           params.location = getEvmChainName(firstAccount.chain)!;
         }
 
@@ -385,20 +386,13 @@ watch(
       return;
     }
 
-    // Because the evmChain filter and the account filter can't be active
-    // at the same time we clear the account filter when the evmChain filter
-    // is set.
-    if (filterChanged && filters.location) {
-      set(accounts, []);
-    }
-
     if (accountsChanged && usedAccounts.length > 0) {
       const updatedFilter = { ...get(filters) };
-      delete updatedFilter.location;
       updateFilter(updatedFilter);
     }
 
     if (filterChanged || accountsChanged) {
+      set(locationOverview, filters.location);
       set(options, { ...get(options), page: 1 });
     }
   }
@@ -720,7 +714,7 @@ const { locationData } = useLocations();
               />
               <history-events-query-status
                 v-if="includeOnlineEvents"
-                :locations="location ? [location] : []"
+                :locations="filters.location ? [filters.location] : []"
                 :colspan="headers.length"
               />
               <upgrade-row
