@@ -3,6 +3,7 @@ import {
   NotificationCategory,
   Severity
 } from '@rotki/common/lib/messages';
+import { type Blockchain } from '@rotki/common/lib/blockchain';
 import { type MaybeRef, useSessionStorage } from '@vueuse/core';
 import { type MigratedAddresses } from '@/types/websocket-messages';
 
@@ -15,7 +16,7 @@ export const useAccountMigrationStore = defineStore(
     let migratedAddresses: Ref<MigratedAddresses> = ref([]);
 
     const { canRequestData } = storeToRefs(useSessionAuthStore());
-    const { txEvmChains, getChain } = useSupportedChains();
+    const { txEvmChains, getChain, getChainName } = useSupportedChains();
     const { fetchAccounts } = useBlockchains();
 
     const { t } = useI18n();
@@ -52,6 +53,7 @@ export const useAccountMigrationStore = defineStore(
       for (const chain in addresses) {
         const chainAddresses = addresses[chain];
         const blockchain = getChain(chain);
+        const chainName = get(getChainName(chain as Blockchain));
         promises.push(
           fetchAccounts(blockchain),
           useTokenDetection(blockchain).detectTokens(chainAddresses)
@@ -59,15 +61,13 @@ export const useAccountMigrationStore = defineStore(
         notifications.push({
           title: t(
             'notification_messages.address_migration.title',
-            {
-              chain
-            },
+            { chain: chainName },
             chainAddresses.length
           ),
           message: t(
             'notification_messages.address_migration.message',
             {
-              chain,
+              chain: chainName,
               addresses: chainAddresses.join(', ')
             },
             chainAddresses.length
