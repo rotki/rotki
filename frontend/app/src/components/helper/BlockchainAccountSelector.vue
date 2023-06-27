@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import uniqBy from 'lodash/uniqBy';
 import { type GeneralAccount } from '@rotki/common/lib/account';
 import {
   Blockchain,
@@ -22,6 +23,8 @@ const props = withDefaults(
     noPadding?: boolean;
     hideOnEmptyUsable?: boolean;
     multichain?: boolean;
+    unique?: boolean;
+    hideChainIcon?: boolean;
   }>(),
   {
     label: '',
@@ -34,7 +37,9 @@ const props = withDefaults(
     dense: false,
     noPadding: false,
     hideOnEmptyUsable: false,
-    multichain: false
+    multichain: false,
+    unique: false,
+    hideChainIcon: false
   }
 );
 
@@ -48,7 +53,8 @@ const {
   usableAddresses,
   hideOnEmptyUsable,
   multiple,
-  multichain
+  multichain,
+  unique
 } = toRefs(props);
 
 const search = ref('');
@@ -72,7 +78,9 @@ const internalValue = computed(() => {
 
 const selectableAccounts: ComputedRef<AccountWithChain[]> = computed(() => {
   const filteredChains = get(chains);
-  const blockchainAccounts: AccountWithChain[] = get(accounts);
+  const blockchainAccounts: AccountWithChain[] = get(unique)
+    ? uniqBy(get(accounts), 'address')
+    : get(accounts);
 
   const filteredAccounts =
     filteredChains.length === 0
@@ -227,10 +235,17 @@ const getItemKey = (item: AccountWithChain) => item.address + item.chain;
             close-label="overflow-x-hidden"
             @click:close="data.parent.selectItem(data.item)"
           >
-            <account-display :account="data.item" />
+            <account-display
+              :account="data.item"
+              :hide-chain-icon="hideChainIcon"
+            />
           </v-chip>
           <div v-else class="overflow-x-hidden">
-            <account-display :account="data.item" class="pr-2" />
+            <account-display
+              :account="data.item"
+              :hide-chain-icon="hideChainIcon"
+              class="pr-2"
+            />
           </div>
         </template>
         <template #item="data">
@@ -243,7 +258,10 @@ const getItemKey = (item: AccountWithChain) => item.address + item.chain;
                 filter
                 class="text-truncate"
               >
-                <account-display :account="data.item" />
+                <account-display
+                  :account="data.item"
+                  :hide-chain-icon="hideChainIcon"
+                />
               </v-chip>
             </div>
             <tag-display class="mb-1" :tags="data.item.tags" :small="true" />

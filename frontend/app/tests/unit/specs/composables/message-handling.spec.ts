@@ -26,6 +26,7 @@ vi.mock('@/composables/info/chains', () => ({
       } satisfies EvmChainInfo
     ]),
     getChain: () => Blockchain.OPTIMISM,
+    getChainName: () => Blockchain.OPTIMISM,
     getNativeAsset: (chain: Blockchain) => chain
   })
 }));

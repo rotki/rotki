@@ -159,13 +159,13 @@ export const usePaginationFilters = <
     const offset = (page - 1) * itemsPerPage;
 
     const selectedFilters = get(filters);
-    const overview = get(locationOverview);
+    const location = get(locationOverview);
     if (
-      overview &&
+      location &&
       typeof selectedFilters === 'object' &&
       'location' in selectedFilters
     ) {
-      selectedFilters.location = overview;
+      selectedFilters.location = location;
     }
 
     const transformedFilters = {
@@ -251,13 +251,13 @@ export const usePaginationFilters = <
 
     const selectedFilters = get(filters);
 
-    const overview = get(locationOverview);
+    const location = get(locationOverview);
     if (
-      overview &&
+      location &&
       typeof selectedFilters === 'object' &&
       'location' in selectedFilters
     ) {
-      selectedFilters.location = overview;
+      selectedFilters.location = location;
     }
 
     return {
