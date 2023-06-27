@@ -11,6 +11,7 @@ from rotkehlchen.constants.misc import ONE
 from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.externalapis.utils import read_integer
 from rotkehlchen.globaldb.cache import (
     globaldb_delete_general_cache,
     globaldb_get_general_cache_values,
@@ -24,9 +25,11 @@ from rotkehlchen.types import (
     ChainID,
     EvmTokenKind,
     GeneralCacheType,
+    Timestamp,
 )
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
 
 YEARN_OLD_API = 'https://api.yearn.finance/v1/chains/1/vaults/all'
@@ -36,7 +39,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-def query_yearn_vaults(db: 'DBHandler') -> None:
+def query_yearn_vaults(db: 'DBHandler', ethereum_inquirer: 'EthereumInquirer') -> None:
     """Query yearn API and ensure that all the tokens exist locally. If they exist but the protocol
     is not the correct one, then the asset will be edited.
 
@@ -91,6 +94,16 @@ def query_yearn_vaults(db: 'DBHandler') -> None:
             continue
 
         try:
+            block_data = ethereum_inquirer.get_block_by_number(vault['inception'])
+            block_timestamp = Timestamp(read_integer(block_data, 'timestamp', 'yearn vault query'))
+        except (KeyError, DeserializationError) as e:
+            log.error(
+                f'Failed to store token information for yearn {vault_type} vault due to '
+                f'missing key {e!s}. Vault: {vault}. Skipping...',
+            )
+            continue
+
+        try:
             underlying_token = get_or_create_evm_token(
                 userdb=db,
                 evm_address=string_to_evm_address(vault['token']['address']),
@@ -113,6 +126,7 @@ def query_yearn_vaults(db: 'DBHandler') -> None:
                     token_kind=EvmTokenKind.ERC20,
                     weight=ONE,
                 )],
+                started=block_timestamp,
                 seen=TokenSeenAt(description=f'Querying {vault_type} balances'),
             )
         except KeyError as e:

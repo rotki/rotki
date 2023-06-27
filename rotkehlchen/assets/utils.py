@@ -13,7 +13,7 @@ from rotkehlchen.errors.misc import NotERC20Conformant
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind, EVMTxHash
+from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind, EVMTxHash, Timestamp
 from rotkehlchen.utils.mixins.enums import SerializableEnumNameMixin
 
 if TYPE_CHECKING:
@@ -76,6 +76,7 @@ def _edit_token_and_clean_cache(
         evm_token: EvmToken,
         name: Optional[str],
         decimals: Optional[int],
+        started: Optional[Timestamp],
         underlying_tokens: Optional[list[UnderlyingToken]],
         evm_inquirer: Optional['EvmNodeInquirer'],
 ) -> None:
@@ -107,6 +108,10 @@ def _edit_token_and_clean_cache(
         object.__setattr__(evm_token, 'decimals', decimals)
         updated_fields = True
 
+    if started is not None and evm_token.started != started:
+        object.__setattr__(evm_token, 'started', started)
+        updated_fields = True
+
     if underlying_tokens is not None and evm_token.underlying_tokens != underlying_tokens:
         object.__setattr__(evm_token, 'underlying_tokens', underlying_tokens)
         updated_fields = True
@@ -131,6 +136,7 @@ def get_or_create_evm_token(
         name: Optional[str] = None,
         decimals: Optional[int] = None,
         protocol: Optional[str] = None,
+        started: Optional[Timestamp] = None,
         underlying_tokens: Optional[list[UnderlyingToken]] = None,
         evm_inquirer: Optional['EvmNodeInquirer'] = None,
         seen: Optional[TokenSeenAt] = None,
@@ -171,6 +177,7 @@ def get_or_create_evm_token(
                 evm_token=evm_token,
                 name=name,
                 decimals=decimals,
+                started=started,
                 underlying_tokens=underlying_tokens,
                 evm_inquirer=evm_inquirer,
             )
@@ -208,6 +215,7 @@ def get_or_create_evm_token(
                 symbol=symbol,
                 protocol=protocol,
                 underlying_tokens=underlying_tokens,
+                started=started,
             )
             if asset_exists is True:
                 # This means that we need to update the information in the database with the
