@@ -1,4 +1,12 @@
-import { afterAll, beforeAll, beforeEach, expect, test, vitest } from 'vitest';
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  expect,
+  test,
+  vi,
+  vitest
+} from 'vitest';
 import flushPromises from 'flush-promises';
 import { LimitedParallelizationQueue } from '@/utils/limited-parallelization-queue';
 
@@ -18,6 +26,8 @@ describe('LimitedParallelizationQueue', () => {
   });
 
   test('runs up to 5 task in parallel', async () => {
+    const listener = vi.fn().mockImplementation(() => {});
+    queue.setOnCompletion(listener);
     queue.queue('1', () => wait(1500));
     queue.queue('2', () => wait(3000));
     queue.queue('3', () => wait(9800));
@@ -31,6 +41,8 @@ describe('LimitedParallelizationQueue', () => {
     vitest.advanceTimersByTime(3000);
     await flushPromises();
 
+    expect(listener).toHaveBeenCalledTimes(0);
+
     expect(queue.pending).toBe(0);
     expect(queue.running).toBe(4);
 
@@ -40,12 +52,16 @@ describe('LimitedParallelizationQueue', () => {
     expect(queue.pending).toBe(0);
     expect(queue.running).toBe(0);
 
+    expect(listener).toHaveBeenCalledTimes(1);
+
     queue.queue('1', () => wait(1500));
     expect(queue.pending).toBe(0);
     expect(queue.running).toBe(1);
 
     vitest.advanceTimersByTime(1500);
     await flushPromises();
+
+    expect(listener).toHaveBeenCalledTimes(2);
   });
 
   test('new task with the same id becomes pending', async () => {

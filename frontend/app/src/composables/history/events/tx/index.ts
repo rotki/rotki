@@ -113,15 +113,6 @@ export const useHistoryTransactions = createSharedComposable(() => {
     }
   };
 
-  const syncAccountsInChunks = async (
-    accounts: EvmChainAddress[]
-  ): Promise<void> => {
-    const chunks = chunkArray(accounts, 4);
-    for (const chunk of chunks) {
-      await Promise.all(chunk.map(syncAndRedecode));
-    }
-  };
-
   const refreshTransactions = async (
     chains: Blockchain[],
     userInitiated = false
@@ -147,7 +138,11 @@ export const useHistoryTransactions = createSharedComposable(() => {
 
     try {
       await Promise.all([
-        syncAccountsInChunks(txAccounts),
+        awaitParallelExecution(
+          txAccounts,
+          item => item.address + item.evmChain,
+          syncAndRedecode
+        ),
         queryOnlineEvent(OnlineHistoryEventsQueryType.ETH_WITHDRAWALS),
         queryOnlineEvent(OnlineHistoryEventsQueryType.BLOCK_PRODUCTIONS),
         queryOnlineEvent(OnlineHistoryEventsQueryType.EXCHANGES)

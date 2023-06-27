@@ -33,6 +33,7 @@ declare global {
   const assetSum: typeof import('./utils/calculation')['assetSum']
   const asyncComputed: typeof import('@vueuse/core')['asyncComputed']
   const autoResetRef: typeof import('@vueuse/core')['autoResetRef']
+  const awaitParallelExecution: typeof import('./utils/await-parallel-execution')['awaitParallelExecution']
   const backoff: typeof import('./utils/backoff')['backoff']
   const balanceSum: typeof import('./utils/calculation')['balanceSum']
   const balanceUsdValueSum: typeof import('./utils/balances')['balanceUsdValueSum']
@@ -734,6 +735,7 @@ declare module 'vue' {
     readonly assetSum: UnwrapRef<typeof import('./utils/calculation')['assetSum']>
     readonly asyncComputed: UnwrapRef<typeof import('@vueuse/core')['asyncComputed']>
     readonly autoResetRef: UnwrapRef<typeof import('@vueuse/core')['autoResetRef']>
+    readonly awaitParallelExecution: UnwrapRef<typeof import('./utils/await-parallel-execution')['awaitParallelExecution']>
     readonly backoff: UnwrapRef<typeof import('./utils/backoff')['backoff']>
     readonly balanceSum: UnwrapRef<typeof import('./utils/calculation')['balanceSum']>
     readonly balanceUsdValueSum: UnwrapRef<typeof import('./utils/balances')['balanceUsdValueSum']>
@@ -1428,6 +1430,7 @@ declare module '@vue/runtime-core' {
     readonly assetSum: UnwrapRef<typeof import('./utils/calculation')['assetSum']>
     readonly asyncComputed: UnwrapRef<typeof import('@vueuse/core')['asyncComputed']>
     readonly autoResetRef: UnwrapRef<typeof import('@vueuse/core')['autoResetRef']>
+    readonly awaitParallelExecution: UnwrapRef<typeof import('./utils/await-parallel-execution')['awaitParallelExecution']>
     readonly backoff: UnwrapRef<typeof import('./utils/backoff')['backoff']>
     readonly balanceSum: UnwrapRef<typeof import('./utils/calculation')['balanceSum']>
     readonly balanceUsdValueSum: UnwrapRef<typeof import('./utils/balances')['balanceUsdValueSum']>

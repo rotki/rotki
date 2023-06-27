@@ -1,5 +1,7 @@
 type Fn = () => Promise<void>;
 
+type OnCompletion = (() => void) | undefined;
+
 /**
  * An execution queue where you can queue tasks for work and
  * ensure that only a specific number of them will run in parallel.
@@ -7,6 +9,7 @@ type Fn = () => Promise<void>;
 export class LimitedParallelizationQueue {
   private runningTasks: Map<string, Fn> = new Map();
   private pendingTasks: Map<string, Fn> = new Map();
+  private onCompletion: OnCompletion = undefined;
 
   /**
    * Creates a new SemiParallelExecutionQueue. If not specified
@@ -43,7 +46,13 @@ export class LimitedParallelizationQueue {
         this.pendingTasks.delete(identifier);
         startPromise(this.run(identifier, promise));
       }
+    } else if (this.running === 0) {
+      this.onCompletion?.();
     }
+  }
+
+  setOnCompletion(onCompletion: OnCompletion) {
+    this.onCompletion = onCompletion;
   }
 
   /**
