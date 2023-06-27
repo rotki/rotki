@@ -52,6 +52,7 @@ export const usePaginationFilters = <
     onUpdateFilters?: (query: LocationQuery) => void;
     extraParams?: ComputedRef<LocationQuery>;
     customPageParams?: ComputedRef<Partial<U>>;
+    defaultParams?: ComputedRef<Partial<U> | undefined>;
     defaultCollection?: () => S;
     defaultSortBy?: {
       key?: keyof V;
@@ -77,6 +78,7 @@ export const usePaginationFilters = <
     defaultCollection,
     extraParams,
     customPageParams,
+    defaultParams,
     defaultSortBy
   } = options;
 
@@ -167,6 +169,7 @@ export const usePaginationFilters = <
     }
 
     const transformedFilters = {
+      ...(get(defaultParams) ?? {}),
       ...selectedFilters,
       ...get(extraParams),
       ...nonEmptyProperties(get(customPageParams) ?? {})
