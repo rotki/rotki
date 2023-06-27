@@ -46,7 +46,7 @@ const { t } = useI18n();
               {{ t('lending.effective_interest_rate') }}
               <v-tooltip bottom max-width="300px">
                 <template #activator="{ on }">
-                  <v-icon small class="mb-3 ml-1" v-on="on">
+                  <v-icon small class="mb-1 ml-2" v-on="on">
                     mdi-information
                   </v-icon>
                 </template>

@@ -143,7 +143,6 @@ export const useYearnStore = defineStore('defi/yearn', () => {
           roi
         });
       }
-
       return vaultAssets;
     });
 

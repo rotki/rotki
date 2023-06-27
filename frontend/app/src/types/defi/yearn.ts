@@ -45,7 +45,7 @@ const YearnVaultBalance = z.object({
   vaultToken: z.string(),
   underlyingValue: Balance,
   vaultValue: Balance,
-  roi: z.string()
+  roi: z.string().optional()
 });
 
 export type YearnVaultBalance = z.infer<typeof YearnVaultBalance>;
