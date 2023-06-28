@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :release:`1.29.0 <2023-06-28>`
 * :feature:`-` ENS name transfers will now be shown properly and not just as generic ERC721 transfers.
 * :bug:`-` Fix issue create account always saving submit_usage_analytics as true.
 * :feature:`2822` In the asset graph, users will see another setting `Infer zero timed balances` which when activated will show the periods when users weren't holding the asset.
