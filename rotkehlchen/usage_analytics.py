@@ -1,7 +1,6 @@
 import logging
 import platform
 import shutil
-import sys
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
 from pathlib import Path
@@ -15,7 +14,7 @@ from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_timestamp_from_date
-from rotkehlchen.utils.misc import get_system_spec
+from rotkehlchen.utils.misc import get_system_spec, is_production
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -132,9 +131,8 @@ def create_usage_analytics(data_dir: Path) -> dict[str, Any]:
 
 
 def maybe_submit_usage_analytics(data_dir: Path, should_submit: bool) -> None:
-    if not getattr(sys, 'frozen', False):
-        # not packaged -- must be in develop mode. Don't submit analytics
-        return None
+    if not is_production():
+        return None  # only submit analytics for production
 
     if should_submit is False:
         return None

@@ -3,7 +3,6 @@ import datetime
 import functools
 import logging
 import operator
-import platform
 import re
 import sys
 import time
@@ -12,13 +11,13 @@ from collections.abc import Iterable, Iterator
 from itertools import zip_longest
 from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, TypeVar, Union, overload
 
-import pkg_resources
 from eth_utils import is_hexstr
 from eth_utils.address import to_checksum_address
 
 from rotkehlchen.errors.serialization import ConversionError, DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import ChecksumEvmAddress, Timestamp, TimestampMS
+from rotkehlchen.utils.version_check import get_current_version, get_system_spec
 
 if TYPE_CHECKING:
     from requests import Session
@@ -219,32 +218,6 @@ def convert_to_int(
     raise ConversionError(f'Can not convert {val} which is of type {type(val)} to int.')
 
 
-def get_system_spec() -> dict[str, str]:
-    """Collect information about the system and installation."""
-    if sys.platform == 'darwin':
-        system_info = 'macOS {} {}'.format(
-            platform.mac_ver()[0],
-            platform.architecture()[0],
-        )
-    else:
-        system_info = '{} {} {} {}'.format(
-            platform.system(),
-            '_'.join(platform.architecture()),
-            platform.release(),
-            platform.machine(),
-        )
-
-    system_spec = {
-        # used to be require 'rotkehlchen.__name__' but as long as setup.py
-        # target differs from package we need this
-        'rotkehlchen': pkg_resources.require('rotkehlchen')[0].version,
-        'python_implementation': platform.python_implementation(),
-        'python_version': platform.python_version(),
-        'system': system_info,
-    }
-    return system_spec
-
-
 def set_user_agent(session: 'Session') -> None:
     """update the given session headers by adding our user agent string"""
     session.headers.update({'User-Agent': f'rotki/{get_system_spec()["rotkehlchen"]}'})
@@ -402,3 +375,15 @@ def create_order_by_rules_list(
     if ascending is None:
         ascending = []
     return list(zip_longest(order_by_attributes, ascending, fillvalue=is_ascending_by_default))  # type: ignore[arg-type]  # noqa: E501
+
+
+def is_production() -> bool:
+    """Determine if we are in production by checking if we are packaged and non-dev version"""
+    if getattr(sys, 'frozen', False) is False:
+        return False
+
+    version = get_current_version(check_for_updates=False).our_version
+    if 'dev' in version:
+        return False
+
+    return True

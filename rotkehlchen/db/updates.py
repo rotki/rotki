@@ -1,6 +1,5 @@
 import json
 import logging
-import sys
 from collections.abc import Sequence
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Final, Literal, Union, overload
@@ -22,7 +21,7 @@ from rotkehlchen.types import (
     OptionalChainAddress,
     SupportedBlockchain,
 )
-from rotkehlchen.utils.misc import ts_now
+from rotkehlchen.utils.misc import is_production, ts_now
 from rotkehlchen.utils.network import query_file
 
 if TYPE_CHECKING:
@@ -73,10 +72,9 @@ class RotkiDataUpdater:
     def __init__(self, msg_aggregator: 'MessagesAggregator', user_db: 'DBHandler') -> None:
         self.msg_aggregator = msg_aggregator
         self.user_db = user_db
-        self.branch = 'main'
-        if not getattr(sys, 'frozen', False):
-            # not packaged -- must be in develop mode
-            self.branch = 'develop'
+        self.branch = 'develop'
+        if is_production():
+            self.branch = 'main'
 
     def _get_remote_info_json(self) -> dict[str, Any]:
         """Retrieve remote file with information for different updates
