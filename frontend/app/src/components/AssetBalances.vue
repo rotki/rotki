@@ -142,7 +142,7 @@ const sortItems = getSortItems(asset => get(assetInfo(asset)));
           v-else
           v-bind="props"
           hide-total
-          :balances="item.breakdown"
+          :balances="item.breakdown ?? []"
         />
       </table-expand-container>
     </template>

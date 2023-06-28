@@ -4,7 +4,7 @@ import {
   type AssetBalanceWithPrice,
   type BigNumber
 } from '@rotki/common';
-import { type PropType, type Ref } from 'vue';
+import { type Ref } from 'vue';
 import { type DataTableHeader } from '@/types/vuetify';
 import { type Nullable } from '@/types';
 import { CURRENCY_USD } from '@/types/currencies';
@@ -14,15 +14,15 @@ import { isEvmNativeToken } from '@/types/asset';
 
 const { t } = useI18n();
 
-const props = defineProps({
-  loading: { required: false, type: Boolean, default: false },
-  title: { required: true, type: String },
-  balances: {
-    required: true,
-    type: Array as PropType<AssetBalanceWithPrice[]>
-  },
-  tableType: { required: true, type: String as PropType<DashboardTableType> }
-});
+const props = withDefaults(
+  defineProps<{
+    title: string;
+    balances: AssetBalanceWithPrice[];
+    tableType: DashboardTableType;
+    loading?: boolean;
+  }>(),
+  { loading: false }
+);
 
 const { balances, title, tableType } = toRefs(props);
 const search = ref('');
@@ -281,7 +281,7 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
             v-else
             hide-total
             v-bind="props"
-            :balances="item.breakdown"
+            :balances="item.breakdown ?? []"
           />
         </table-expand-container>
       </template>
