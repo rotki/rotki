@@ -97,13 +97,8 @@ const onActiveChange = async (active: boolean, node: EvmRpcNode) => {
   }
 };
 
-const isEtherscan = (item: EvmRpcNode) => {
-  const chainProp = get(chain);
-  return (
-    (chainProp === Blockchain.ETH && item.name === 'etherscan') ||
-    (chainProp === Blockchain.OPTIMISM && item.name === 'optimism etherscan')
-  );
-};
+const isEtherscan = (item: EvmRpcNode) =>
+  !item.endpoint && item.name.includes('etherscan');
 
 const isNodeConnected = (item: EvmRpcNode): boolean => {
   let nodes: string[] = [];
