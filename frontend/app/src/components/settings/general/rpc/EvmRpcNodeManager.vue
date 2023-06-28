@@ -27,9 +27,8 @@ const { t } = useI18n();
 
 const { setOpenDialog, closeDialog, setPostSubmitFunc } = useEvmRpcNodeForm();
 
-const { connectedEthNodes, connectedOptimismNodes } = storeToRefs(
-  usePeriodicStore()
-);
+const { connectedEthNodes, connectedOptimismNodes, connectedPolygonNodes } =
+  storeToRefs(usePeriodicStore());
 const api = useEvmNodesApi(get(chain));
 
 async function loadNodes(): Promise<void> {
@@ -107,10 +106,15 @@ const isEtherscan = (item: EvmRpcNode) => {
 };
 
 const isNodeConnected = (item: EvmRpcNode): boolean => {
-  const nodes =
-    get(chain) === Blockchain.ETH
-      ? get(connectedEthNodes)
-      : get(connectedOptimismNodes);
+  let nodes: string[] = [];
+  const blockchain = get(chain);
+  if (blockchain === Blockchain.ETH) {
+    nodes = get(connectedEthNodes);
+  } else if (blockchain === Blockchain.OPTIMISM) {
+    nodes = get(connectedOptimismNodes);
+  } else if (blockchain === Blockchain.POLYGON_POS) {
+    nodes = get(connectedPolygonNodes);
+  }
   return nodes.includes(item.name) || isEtherscan(item);
 };
 
