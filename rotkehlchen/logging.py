@@ -1,7 +1,6 @@
 import argparse
 import logging.config
 import re
-import sys
 from collections.abc import MutableMapping
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
@@ -9,7 +8,7 @@ from typing import TYPE_CHECKING, Any, Optional
 import gevent
 
 from rotkehlchen.greenlets.utils import get_greenlet_name
-from rotkehlchen.utils.misc import timestamp_to_date, ts_now
+from rotkehlchen.utils.misc import is_production, timestamp_to_date, ts_now
 
 PYWSGI_RE = re.compile(r'\[(.*)\] ')
 
@@ -150,8 +149,7 @@ def configure_logging(args: argparse.Namespace) -> None:
     if args.logtarget == 'file':
         given_filepath = Path(args.logfile)
         filepath = given_filepath
-        if not getattr(sys, 'frozen', False):
-            # not packaged -- must be in develop mode. Append date to each file
+        if not is_production():  # in develop mode. Append date to each file
             date = timestamp_to_date(
                 ts=ts_now(),
                 formatstr='%Y%m%d_%H%M%S',

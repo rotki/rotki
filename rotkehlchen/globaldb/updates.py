@@ -2,7 +2,6 @@ import json
 import logging
 import re
 import sqlite3
-import sys
 from contextlib import suppress
 from enum import Enum, auto
 from pathlib import Path
@@ -22,6 +21,7 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind, Timestamp
+from rotkehlchen.utils.misc import is_production
 from rotkehlchen.utils.network import query_file
 
 from .handler import GlobalDBHandler, initialize_globaldb
@@ -125,10 +125,9 @@ class AssetsUpdater:
         self.assets_collection_re = re.compile(r'.*INSERT +INTO +asset_collections\( *id *, *name *, *symbol *\) +VALUES +\(([^\)]*?),([^\)]*?),([^\)]*?)\).*?')  # noqa: E501
         self.multiasset_mappings_re = re.compile(r'.*INSERT +INTO +multiasset_mappings\( *collection_id *, *asset *\) +VALUES +\(([^\)]*?), *"([^\)]+?)"\).*?')  # noqa: E501
         self.string_re = re.compile(r'.*"(.*?)".*')
-        self.branch = 'master'
-        if not getattr(sys, 'frozen', False):
-            # not packaged -- must be in develop mode
-            self.branch = 'develop'
+        self.branch = 'develop'
+        if is_production():
+            self.branch = 'master'
 
     def _get_remote_info_json(self) -> dict[str, Any]:
         url = f'https://raw.githubusercontent.com/rotki/assets/{self.branch}/updates/info.json'
