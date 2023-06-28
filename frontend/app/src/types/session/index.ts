@@ -6,7 +6,8 @@ export const PeriodicClientQueryResult = z.object({
   lastBalanceSave: z.number(),
   lastDataUploadTs: z.number(),
   connectedEthNodes: z.array(z.string()),
-  connectedOptimismNodes: z.array(z.string())
+  connectedOptimismNodes: z.array(z.string()),
+  connectedPolygonPosNodes: z.array(z.string())
 });
 
 export type PeriodicClientQueryResult = z.infer<

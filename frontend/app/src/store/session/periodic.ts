@@ -3,6 +3,7 @@ export const usePeriodicStore = defineStore('session/periodic', () => {
   const lastDataUpload = ref(0);
   const connectedEthNodes = ref<string[]>([]);
   const connectedOptimismNodes = ref<string[]>([]);
+  const connectedPolygonNodes = ref<string[]>([]);
   const periodicRunning = ref(false);
 
   const { notify } = useNotificationsStore();
@@ -25,7 +26,8 @@ export const usePeriodicStore = defineStore('session/periodic', () => {
         lastBalanceSave: balance,
         lastDataUploadTs: upload,
         connectedEthNodes: ethNodes,
-        connectedOptimismNodes: optimismNodes
+        connectedOptimismNodes: optimismNodes,
+        connectedPolygonPosNodes: polygonNodes
       } = result;
 
       if (get(lastBalanceSave) !== balance) {
@@ -38,6 +40,7 @@ export const usePeriodicStore = defineStore('session/periodic', () => {
 
       set(connectedEthNodes, ethNodes);
       set(connectedOptimismNodes, optimismNodes);
+      set(connectedPolygonNodes, polygonNodes);
     } catch (e: any) {
       notify({
         title: t('actions.session.periodic_query.error.title').toString(),
@@ -56,6 +59,7 @@ export const usePeriodicStore = defineStore('session/periodic', () => {
     lastDataUpload,
     connectedEthNodes,
     connectedOptimismNodes,
+    connectedPolygonNodes,
     check
   };
 });

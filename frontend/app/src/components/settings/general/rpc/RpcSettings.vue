@@ -15,13 +15,13 @@ const rpcSettingTabs: RpcSettingTab[] = [
   {
     chain: Blockchain.ETH,
     component: defineAsyncComponent(
-      () => import('@/components/settings/general/rpc/EthRpcSetting.vue')
+      () => import('@/components/settings/general/rpc/EvmRpcNodeManager.vue')
     )
   },
   {
     chain: Blockchain.OPTIMISM,
     component: defineAsyncComponent(
-      () => import('@/components/settings/general/rpc/OptimismRpcSetting.vue')
+      () => import('@/components/settings/general/rpc/EvmRpcNodeManager.vue')
     )
   },
   {
@@ -34,6 +34,12 @@ const rpcSettingTabs: RpcSettingTab[] = [
     chain: Blockchain.DOT,
     component: defineAsyncComponent(
       () => import('@/components/settings/general/rpc/DotRpcSetting.vue')
+    )
+  },
+  {
+    chain: Blockchain.POLYGON_POS,
+    component: defineAsyncComponent(
+      () => import('@/components/settings/general/rpc/EvmRpcNodeManager.vue')
     )
   }
 ];
@@ -54,7 +60,7 @@ const rpcSettingTabs: RpcSettingTab[] = [
       <v-divider />
       <v-tabs-items v-model="rpcSettingTab">
         <v-tab-item v-for="tab in rpcSettingTabs" :key="tab.chain" class="pt-8">
-          <component :is="tab.component" />
+          <component :is="tab.component" :chain="tab.chain" />
         </v-tab-item>
       </v-tabs-items>
     </div>
