@@ -16,6 +16,7 @@ from rotkehlchen.data_migrations.manager import (
 )
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.icons import IconManager
 from rotkehlchen.tests.utils.blockchain import setup_evm_addresses_activity_mock
 from rotkehlchen.tests.utils.exchanges import check_saved_events_for_exchange
@@ -242,6 +243,26 @@ def test_migration_10(
     optimism_addresses = [ethereum_accounts[2], ethereum_accounts[3]]
     polygon_pos_addresses = [ethereum_accounts[3]]
 
+    # insert a bad polygon etherscan name in the database. By mistake we published an error
+    # in this name and could affect users
+    with GlobalDBHandler().conn.write_ctx() as write_cursor:
+        # replace the packaged db polygon pos etherscan node for the bad one
+        # propagated in the data repo
+        write_cursor.execute('DELETE from default_rpc_nodes WHERE name="polygon pos etherscan"')
+        write_cursor.execute(
+            'INSERT OR IGNORE INTO default_rpc_nodes(name, endpoint, owned, active, weight, blockchain) '  # noqa: E501
+            'VALUES (?, ?, ?, ?, ?, ?)',
+            ('polygon etherscan', '', 0, 1, '0.25', 'POLYGON_POS'),
+        )
+        assert write_cursor.execute('SELECT COUNT(*) FROM default_rpc_nodes WHERE name="polygon etherscan"').fetchone()[0] == 1  # noqa: E501
+    with rotki.data.db.user_write() as write_cursor:  # Also add it to the user db
+        write_cursor.execute(
+            'INSERT OR IGNORE INTO rpc_nodes(name, endpoint, owned, active, weight, blockchain) '  # noqa: E501
+            'VALUES (?, ?, ?, ?, ?, ?)',
+            ('polygon etherscan', '', 0, 1, '0.25', 'POLYGON_POS'),
+        )
+        assert write_cursor.execute('SELECT COUNT(*) FROM rpc_nodes WHERE name="polygon etherscan"').fetchone()[0] == 1  # noqa: E501
+
     with ExitStack() as stack:
         setup_evm_addresses_activity_mock(
             stack=stack,
@@ -273,18 +294,18 @@ def test_migration_10(
         assert msg['data']['target_version'] == LAST_DATA_MIGRATION
         migration = msg['data']['current_migration']
         assert migration['version'] == 10
-        assert migration['total_steps'] == (len(ethereum_accounts) + 3 if step_num != 0 else 0)
+        assert migration['total_steps'] == (len(ethereum_accounts) + 4 if step_num != 0 else 0)
         assert migration['current_step'] == step_num
-        if 2 <= step_num <= 5:
+        if 3 <= step_num <= 6:
             assert 'EVM chain activity' in migration['description']
         else:
             assert migration['description'] == description
 
-    websocket_connection.wait_until_messages_num(num=7, timeout=10)
-    assert websocket_connection.messages_num() == 7
-    for i in range(7):
+    websocket_connection.wait_until_messages_num(num=8, timeout=10)
+    assert websocket_connection.messages_num() == 8
+    for i in range(8):
         msg = websocket_connection.pop_message()
-        if i == 7:  # message for migrated address
+        if i == 8:  # message for migrated address
             assert msg['type'] == 'evm_accounts_detection'
             assert sorted(msg['data'], key=operator.itemgetter('evm_chain', 'address')) == sorted([
                 {'evm_chain': 'avalanche', 'address': ethereum_accounts[1]},
@@ -293,12 +314,21 @@ def test_migration_10(
                 {'evm_chain': 'optimism', 'address': ethereum_accounts[2]},
                 {'evm_chain': 'optimism', 'address': ethereum_accounts[3]},
             ], key=operator.itemgetter('evm_chain', 'address'))
-        elif i >= 2:
+        elif i >= 3:
             assert_progress_message(msg, i, 'Potentially write migrated addresses to the DB')
+        elif i == 2:
+            assert_progress_message(msg, i, 'Ensuring polygon node consistency')
         elif i == 1:
             assert_progress_message(msg, i, 'Fetching new spam assets info')
         else:
             assert_progress_message(msg, i, None)
+
+    with GlobalDBHandler().conn.write_ctx() as write_cursor:  # check the global db for the polygon etherscan node  # noqa: E501
+        assert write_cursor.execute('SELECT COUNT(*) FROM default_rpc_nodes WHERE name="polygon etherscan"').fetchone()[0] == 0  # noqa: E501
+        assert write_cursor.execute('SELECT COUNT(*) FROM default_rpc_nodes WHERE name="polygon pos etherscan"').fetchone()[0] == 1  # noqa: E501
+    with rotki.data.db.user_write() as write_cursor:  # check the user db for the polygon etherscan node  # noqa: E501
+        assert write_cursor.execute('SELECT COUNT(*) FROM rpc_nodes WHERE name="polygon etherscan"').fetchone()[0] == 0  # noqa: E501
+        assert write_cursor.execute('SELECT COUNT(*) FROM rpc_nodes WHERE name="polygon pos etherscan"').fetchone()[0] == 1  # noqa: E501
 
 
 @pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
