@@ -2834,11 +2834,7 @@
   "liquity_staking_details": {
     "has_proxy_addresses": "has {length} proxy address(es):",
     "refresh_tooltip": "Refresh the staked amounts and prices",
-    "select_account": "Select account",
-    "view": {
-      "hide": "Hide details",
-      "show": "Show details"
-    }
+    "select_account": "Select account"
   },
   "liquity_staking_events": {
     "title": "Stake Events"
@@ -4020,9 +4016,6 @@
           "title": "Edit Event"
         }
       },
-      "extra": {
-        "total_staked_by_this_tx": "Total staked by this tx"
-      },
       "form": {
         "amount": {
           "validation": {
@@ -4166,7 +4159,8 @@
       "title": "History Events Query Status"
     },
     "redecode_events": {
-      "title": "Redecode EVM Events"
+      "title": "Redecode EVM Events",
+      "confirmation": "This action will redecode all events except the customized ones, and may take a long time depending on the amount of events to process. Are you sure you want to continue?"
     },
     "refresh_tooltip": "Fetch latest events",
     "title": "History Events",

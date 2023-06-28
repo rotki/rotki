@@ -2743,11 +2743,7 @@
   },
   "liquity_staking_details": {
     "refresh_tooltip": "刷新质押金额和价格",
-    "select_account": "选择账户",
-    "view": {
-      "hide": "隐藏细节",
-      "show": "显示细节"
-    }
+    "select_account": "选择账户"
   },
   "liquity_staking_events": {
     "title": "股权活动"
@@ -3883,9 +3879,6 @@
         "edit": {
           "title": "编辑活动"
         }
-      },
-      "extra": {
-        "total_staked_by_this_tx": "此 tx 的总质押"
       },
       "form": {
         "amount": {
