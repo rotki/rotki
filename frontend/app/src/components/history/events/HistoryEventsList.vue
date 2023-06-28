@@ -13,11 +13,9 @@ const props = withDefaults(
     eventGroupHeader: HistoryEventEntry;
     allEvents: HistoryEventEntry[];
     colspan: number;
-    showEventDetail?: boolean;
     loading?: boolean;
   }>(),
   {
-    showEventDetail: false,
     loading: false
   }
 );
@@ -190,10 +188,7 @@ const { mdAndUp } = useDisplay();
                 </template>
                 <template #item.asset="{ item }">
                   <v-lazy>
-                    <history-event-asset
-                      :event="item"
-                      :show-event-detail="showEventDetail"
-                    />
+                    <history-event-asset :event="item" />
                   </v-lazy>
                 </template>
                 <template #item.description="{ item }">

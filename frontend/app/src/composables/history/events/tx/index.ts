@@ -24,6 +24,7 @@ import {
 import { Module } from '@/types/modules';
 import { type ActionStatus } from '@/types/action';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
+import { type Writeable } from '@/types';
 
 export const useHistoryTransactions = createSharedComposable(() => {
   const { t } = useI18n();
@@ -301,7 +302,7 @@ export const useHistoryTransactions = createSharedComposable(() => {
   };
 
   const fetchTransactionEvents = async (
-    transactions: EvmChainAndTxHash[] | null,
+    transactions: EvmChainAndTxHash[] | { evmChain: string }[] | null,
     ignoreCache = false
   ): Promise<void> => {
     const isFetchAll = transactions === null;
@@ -318,10 +319,24 @@ export const useHistoryTransactions = createSharedComposable(() => {
       }
 
       payloads = Object.entries(groupBy(transactions, 'evmChain')).map(
-        ([evmChain, item]) => ({
-          evmChain,
-          txHashes: item.map(({ txHash }) => txHash)
-        })
+        ([evmChain, item]: [
+          evmChain: string,
+          item: EvmChainAndTxHash[] | { evmChain: string }[]
+        ]) => {
+          const payload: Writeable<TransactionHashAndEvmChainPayload> = {
+            evmChain
+          };
+
+          const txHashes = item
+            .map(data => ('txHash' in data ? data.txHash : ''))
+            .filter(item => !!item);
+
+          if (txHashes.length > 0) {
+            payload.txHashes = txHashes;
+          }
+
+          return payload;
+        }
       );
     }
 

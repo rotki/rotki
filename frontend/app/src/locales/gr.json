@@ -2704,11 +2704,7 @@
   },
   "liquity_staking_details": {
     "refresh_tooltip": "Refresh the staked amounts and prices",
-    "select_account": "Select account",
-    "view": {
-      "hide": "Hide details",
-      "show": "Show details"
-    }
+    "select_account": "Select account"
   },
   "liquity_staking_events": {
     "title": "Stake Events"
@@ -3786,9 +3782,6 @@
         "edit": {
           "title": "Edit Event"
         }
-      },
-      "extra": {
-        "total_staked_by_this_tx": "Total staked by this tx"
       },
       "form": {
         "amount": {

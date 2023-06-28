@@ -126,7 +126,7 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
 ]);
 
 const { isTaskRunning } = useTaskStore();
-const { txEvmChains } = useSupportedChains();
+const { txEvmChains, getEvmChainName } = useSupportedChains();
 const txChains = useArrayMap(txEvmChains, x => x.id);
 
 const { fetchHistoryEvents } = useHistoryEvents();
@@ -261,8 +261,30 @@ const onFilterAccountsChanged = (acc: Account<BlockchainSelection>[]) => {
   set(accounts, acc.length > 0 ? [acc[0]] : []);
 };
 
-const redecodeAllEvmEvents = async () => {
-  await fetchTransactionEvents(null, true);
+const redecodeAllEvmEvents = () => {
+  show(
+    {
+      title: t('transactions.redecode_events.title'),
+      message: t('transactions.redecode_events.confirmation')
+    },
+    () => redecodeAllEvmEventsHandler()
+  );
+};
+
+const redecodeAllEvmEventsHandler = async () => {
+  const chains = get(onlyChains);
+  const evmChains: { evmChain: string }[] = [];
+
+  if (chains.length > 0) {
+    chains.forEach(item => {
+      const evmChain = getEvmChainName(item);
+      if (evmChain) {
+        evmChains.push({ evmChain });
+      }
+    });
+  }
+
+  await fetchTransactionEvents(chains.length === 0 ? null : evmChains, true);
 };
 
 const forceRedecodeEvmEvents = async (data: EvmChainAndTxHash) => {
@@ -696,7 +718,6 @@ const { locationData } = useLocations();
                 :all-events="allEvents"
                 :event-group-header="item"
                 :colspan="headers.length"
-                :show-event-detail="protocols.length > 0"
                 :loading="sectionLoading || eventTaskLoading"
                 @edit:event="editEventHandler($event, item)"
                 @delete:event="promptForDelete($event)"
