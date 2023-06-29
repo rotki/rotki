@@ -5794,17 +5794,18 @@ Querying periodic data
       {
           "result": {
               "last_balance_save": 1572345881,
-              "connected_eth_nodes": ["nodeX", "nodeY"],
-              "connected_optimism_nodes": ["nodeW", "nodeZ"],
-              "connected_polygon_pos_nodes": ["nodeA", "nodeB"],
+              "connected_nodes": {
+                  "eth": ["nodeX", "nodeY"],
+                  "optimism": ["nodeW", "nodeZ"],
+                  "polygon_pos": ["nodeA", "nodeB"],
+              },
               "last_data_upload_ts": 0
           }
           "message": ""
       }
 
    :resjson int last_balance_save: The last time (unix timestamp) at which balances were saved in the database.
-   :resjson list connected_eth_nodes: A list of ethereum nodes that we are connected to.
-   :resjson list connected_optimism_nodes: A list of optimism nodes that we are connected to.
+   :resjson object connected_nodes: A dictionary containing the evm chain name and a list of connected nodes.
    :statuscode 200: Data were queried successfully.
    :statuscode 409: No user is currently logged in.
    :statuscode 500: Internal rotki error.

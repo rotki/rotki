@@ -1085,16 +1085,17 @@ class Rotkehlchen:
             )
         return is_success, msg
 
-    def query_periodic_data(self) -> dict[str, Union[bool, list[str], Timestamp]]:
+    def query_periodic_data(self) -> dict[str, Union[bool, dict[str, list[str]], Timestamp]]:
         """Query for frequently changing data"""
-        result: dict[str, Union[bool, list[str], Timestamp]] = {}
+        result: dict[str, Union[bool, dict[str, list[str]], Timestamp]] = {}
 
         if self.user_is_logged_in:
             with self.data.db.conn.read_ctx() as cursor:
                 result['last_balance_save'] = self.data.db.get_last_balance_save_time(cursor)
-                result['connected_eth_nodes'] = [node.name for node in self.chains_aggregator.ethereum.node_inquirer.get_connected_nodes()]  # noqa: E501
-                result['connected_optimism_nodes'] = [node.name for node in self.chains_aggregator.optimism.node_inquirer.get_connected_nodes()]  # noqa: E501
-                result['connected_polygon_pos_nodes'] = [node.name for node in self.chains_aggregator.polygon_pos.node_inquirer.get_connected_nodes()]  # noqa: E501
+                connected_nodes = {}
+                for evm_manager in self.chains_aggregator.iterate_evm_chain_managers():
+                    connected_nodes[evm_manager.node_inquirer.chain_name] = [node.name for node in evm_manager.node_inquirer.get_connected_nodes()]  # noqa: E501
+                result['connected_nodes'] = connected_nodes
                 result['last_data_upload_ts'] = Timestamp(self.premium_sync_manager.last_data_upload_ts)  # noqa: E501
         return result
 
