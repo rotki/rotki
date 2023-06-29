@@ -4,7 +4,17 @@ from collections import defaultdict
 from collections.abc import Iterator, Sequence
 from importlib import import_module
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, TypeVar, cast, overload
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Literal,
+    Optional,
+    TypeVar,
+    cast,
+    get_args,
+    overload,
+)
 
 from gevent.lock import Semaphore
 from web3.exceptions import BadFunctionCallOutput
@@ -1485,6 +1495,11 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             )
 
         return added_accounts
+
+    def iterate_evm_chain_managers(self) -> Iterator['EvmManager']:
+        """Iterate the supported evm chain managers"""
+        for chain_id in get_args(SUPPORTED_CHAIN_IDS):
+            yield self.get_evm_manager(chain_id)
 
     def flush_eth2_cache(self) -> None:
         self.flush_cache('get_eth2_staking_details')

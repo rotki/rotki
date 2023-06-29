@@ -33,10 +33,11 @@ def test_query_periodic(rotkehlchen_api_server_with_exchanges):
         api_url_for(rotkehlchen_api_server_with_exchanges, 'periodicdataresource'),
     )
     result = assert_proper_response_with_result(response)
-    assert len(result) == 5
+    assert len(result) == 3
     assert result['last_balance_save'] >= start_ts
-    assert result['connected_eth_nodes'] == []
-    assert result['connected_optimism_nodes'] == []
-    assert result['connected_polygon_pos_nodes'] == []
+    connected_nodes = result['connected_nodes']
+    assert len(connected_nodes) == len(list(rotki.chains_aggregator.iterate_evm_chain_managers()))
+    for evm_manager in rotki.chains_aggregator.iterate_evm_chain_managers():
+        assert connected_nodes[evm_manager.node_inquirer.chain_name] == []
     # Non -1 value tests for these exist in test_history.py::test_query_history_timerange
     assert result['last_data_upload_ts'] == 0
