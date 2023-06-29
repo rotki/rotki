@@ -1,8 +1,13 @@
 #!/usr/bin/env node
 
 const path = require('node:path');
+const { execSync } = require('node:child_process');
 const { startAndTest } = require('start-server-and-test');
 const { ArgumentParser } = require('argparse');
+
+const info = msg => {
+  console.info(`\n\u001B[32m${msg}\u001B[0m\n`);
+};
 
 const parser = new ArgumentParser({
   description: 'e2e tests'
@@ -29,13 +34,14 @@ process.env.CYPRESS_BACKEND_URL = backendUrl;
 // pnpm will cause the commands to exit with
 // ELIFECYCLE Command failed.
 // If we find away around this we should change to pnpm.
+const frontendCmd = ci ? 'vite preview' : 'node scripts/serve.js --web';
 const services = [
   {
     start: 'node scripts/start-backend.js',
     url: `${backendUrl}/api/1/ping`
   },
   {
-    start: `node scripts/serve.js --web --port ${frontendPort}`,
+    start: `${frontendCmd} --port ${frontendPort}`,
     url: `http://localhost:${frontendPort}`
   }
 ];
@@ -51,13 +57,20 @@ if (browser) {
   test += ` --browser ${browser}`;
 }
 
+if (ci) {
+  info('Building frontend');
+  const start = Date.now();
+  execSync('pnpm run build --mode e2e');
+  info(`Build complete (${Date.now() - start} ms)`);
+}
+
 startAndTest({
   services,
   test,
   namedArguments: { expect: 200 }
 })
   .then(() => {
-    console.info('Execution completed successfully');
+    info('Execution completed successfully');
     process.exit(0);
   })
   .catch(() => {
