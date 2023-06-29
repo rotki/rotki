@@ -68,9 +68,14 @@ class Oneinchv4Decoder(OneinchCommonDecoder):
         addresses_to_decoders mapping because the 1inch v4 router is not in the addresses of the
         logs of the transaction, and consequently it can't be extracted and mapped.
         """
-        tx_has_swap = False
-        for counter, tx_log in enumerate(all_logs):
-            if tx_log.topics[0] in self.swapped_signatures:
+        tx_has_weth_transfer = False
+        weth_transfer_tx_log = None
+        for tx_log in all_logs:
+            if tx_log.topics[0] in [WETH_DEPOSIT_TOPIC, WETH_WITHDRAW_TOPIC]:
+                tx_has_weth_transfer = True
+                weth_transfer_tx_log = tx_log
+
+            elif tx_log.topics[0] in self.swapped_signatures:
                 context = DecoderContext(
                     tx_log=tx_log,
                     transaction=transaction,
@@ -79,18 +84,20 @@ class Oneinchv4Decoder(OneinchCommonDecoder):
                     action_items=[],
                 )
                 self._decode_swapped(context)
-                tx_has_swap = True
-            elif counter == len(all_logs) - 1 and tx_has_swap is False and tx_log.topics[0] in [WETH_DEPOSIT_TOPIC, WETH_WITHDRAW_TOPIC]:  # noqa: E501
-                # If the last log is a WETH deposit or withdraw and no swap event was found,
-                # then this is WETH to ETH or ETH to WETH swap. Decode it as such.
-                context = DecoderContext(
-                    tx_log=tx_log,
-                    transaction=transaction,
-                    decoded_events=decoded_events,
-                    all_logs=all_logs,
-                    action_items=[],
-                )
-                self._decode_swapped(context)
+                return decoded_events
+
+        if tx_has_weth_transfer is True:
+            # If the transaction has a WETH contract deposit or withdraw and no swap event was
+            # found, then it is WETH to ETH or ETH to WETH conversion. Decode it as a swap.
+            context = DecoderContext(
+                tx_log=weth_transfer_tx_log,  # type: ignore
+                transaction=transaction,
+                decoded_events=decoded_events,
+                all_logs=all_logs,
+                action_items=[],
+            )
+            self._decode_swapped(context)
+
         return decoded_events
 
     def post_decoding_rules(self) -> dict[str, list[tuple[int, Callable]]]:

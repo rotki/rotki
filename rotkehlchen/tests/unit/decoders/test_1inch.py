@@ -422,6 +422,66 @@ def test_1inchv4_weth_eth_swap(database, ethereum_inquirer):
 
 
 @pytest.mark.vcr()
+@pytest.mark.parametrize('ethereum_accounts', [['0xdCB02829F91533Ab757b1B0e8B595D7c950AfBb8']])
+def test_1inchv4_eth_weth_swap(database, ethereum_inquirer):
+    """
+    Test an 1inch v4 ETH to WETH swap via the WETH contract.
+
+    Data taken from
+    https://etherscan.io/tx/0x6446f928148dc9f7e1ad719730d661d6d3409a9c62293ca8e8c259d06c6bd004
+    """
+    tx_hash = deserialize_evm_tx_hash('0x6446f928148dc9f7e1ad719730d661d6d3409a9c62293ca8e8c259d06c6bd004')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    timestamp = TimestampMS(1688039855000)
+    user_address = '0xdCB02829F91533Ab757b1B0e8B595D7c950AfBb8'
+    expected_events = [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal('0.002694727747581802')),
+            location_label=user_address,
+            notes='Burned 0.002694727747581802 ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_ETH,
+            balance=Balance(amount=FVal('0.014763948338176106')),
+            location_label=user_address,
+            notes=f'Swap 0.014763948338176106 ETH in {CPT_ONEINCH_V4}',
+            counterparty=CPT_ONEINCH_V4,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=2,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=A_WETH,
+            balance=Balance(amount=FVal('0.014763948338176106')),
+            location_label=user_address,
+            notes=f'Receive 0.014763948338176106 WETH as a result of a {CPT_ONEINCH_V4} swap',
+            address=ONEINCH_V4_MAINNET_ROUTER,
+            counterparty=CPT_ONEINCH_V4,
+        ),
+    ]
+    assert expected_events == events
+
+
+@pytest.mark.vcr()
 @pytest.mark.parametrize('polygon_pos_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
 def test_1inch_swap_polygon(database, polygon_pos_inquirer, polygon_pos_accounts):
     """Data taken from
