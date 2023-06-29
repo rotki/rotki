@@ -440,6 +440,8 @@ class EvmNodeInquirer(metaclass=ABCMeta):
 
                     try:
                         current_block = web3.eth.block_number  # pylint: disable=no-member
+                        if isinstance(current_block, int) is False:  # Check for https://github.com/rotki/rotki/issues/6350  # TODO: Check if web3.py v6 has a check for this # noqa: E501
+                            raise RemoteError(f'Found non-int current block:{current_block}')
                         latest_block = self.query_highest_block()
                     except (requests.exceptions.RequestException, RemoteError) as e:
                         msg = f'Could not query latest block due to {e!s}'

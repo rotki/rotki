@@ -1,6 +1,7 @@
 =========
 Changelog
 =========
+* :bug:`6350` Graceful handling of EVM rpc node returning non-int block number
 
 * :release:`1.29.0 <2023-06-28>`
 * :feature:`-` ENS name transfers will now be shown properly and not just as generic ERC721 transfers.
