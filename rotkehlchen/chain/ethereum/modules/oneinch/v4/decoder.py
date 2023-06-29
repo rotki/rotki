@@ -26,6 +26,7 @@ from rotkehlchen.chain.ethereum.modules.uniswap.v2.decoder import (
 from rotkehlchen.chain.ethereum.modules.uniswap.v3.decoder import (
     SWAP_SIGNATURE as UNISWAP_V3_SWAP_SIGNATURE,
 )
+from rotkehlchen.chain.ethereum.modules.weth.decoder import WETH_DEPOSIT_TOPIC, WETH_WITHDRAW_TOPIC
 
 from ..constants import CPT_ONEINCH_V4
 from .constants import ONEINCH_V4_MAINNET_ROUTER
@@ -67,8 +68,21 @@ class Oneinchv4Decoder(OneinchCommonDecoder):
         addresses_to_decoders mapping because the 1inch v4 router is not in the addresses of the
         logs of the transaction, and consequently it can't be extracted and mapped.
         """
-        for tx_log in all_logs:
+        tx_has_swap = False
+        for counter, tx_log in enumerate(all_logs):
             if tx_log.topics[0] in self.swapped_signatures:
+                context = DecoderContext(
+                    tx_log=tx_log,
+                    transaction=transaction,
+                    decoded_events=decoded_events,
+                    all_logs=all_logs,
+                    action_items=[],
+                )
+                self._decode_swapped(context)
+                tx_has_swap = True
+            elif counter == len(all_logs) - 1 and tx_has_swap is False and tx_log.topics[0] in [WETH_DEPOSIT_TOPIC, WETH_WITHDRAW_TOPIC]:  # noqa: E501
+                # If the last log is a WETH deposit or withdraw and no swap event was found,
+                # then this is WETH to ETH or ETH to WETH swap. Decode it as such.
                 context = DecoderContext(
                     tx_log=tx_log,
                     transaction=transaction,
