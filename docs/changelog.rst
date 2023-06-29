@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :bug:`6351` Fix issue where users may see an assets update conflicts dialog that does not appear to have any size.
+
 * :release:`1.29.0 <2023-06-28>`
 * :feature:`-` ENS name transfers will now be shown properly and not just as generic ERC721 transfers.
 * :bug:`-` Fix issue create account always saving submit_usage_analytics as true.

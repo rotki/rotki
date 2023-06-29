@@ -24,7 +24,7 @@ const showMenu: Ref<boolean> = ref(false);
         class-name="graph-period"
         :on-menu="on"
       >
-        <v-icon>mdi-dots-vertical</v-icon>
+        <v-icon>mdi-cog</v-icon>
       </menu-tooltip-button>
     </template>
 
