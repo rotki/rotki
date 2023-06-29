@@ -26,26 +26,24 @@ const props = withDefaults(
 );
 
 const { contained } = toRefs(props);
-const titleRef = ref<HTMLDivElement | null>(null);
-const subTitleRef = ref<HTMLDivElement | null>(null);
-const actionsRef = ref<HTMLDivElement | null>(null);
+const cardRef = ref<HTMLDivElement>();
+const bodyRef = ref<HTMLDivElement>();
+const actionsRef = ref<HTMLDivElement>();
 
-const { height: titleHeight } = useElementBounding(titleRef);
-const { height: subTitleHeight } = useElementBounding(subTitleRef);
-const { height: actionsHeight } = useElementBounding(actionsRef);
+const { top: cardTop } = useElementBounding(cardRef);
+const { top: bodyTop } = useElementBounding(bodyRef);
+const { height: bottomHeight } = useElementBounding(actionsRef);
 
 const otherHeights = computed(() => {
-  const subTitleHeightVal = get(subTitleHeight) ?? 0;
-  const totalHeight =
-    (get(titleHeight) ?? 0) +
-    (subTitleHeightVal > 0 ? subTitleHeightVal - 16 : subTitleHeightVal) +
-    (get(actionsHeight) ?? 0);
+  const topHeight = get(bodyTop) - get(cardTop);
+  const totalHeight = topHeight + get(bottomHeight);
   return `${totalHeight}px`;
 });
 </script>
 
 <template>
   <v-card
+    ref="cardRef"
     v-bind="rootAttrs"
     :flat="flat"
     :class="{
@@ -54,11 +52,7 @@ const otherHeights = computed(() => {
     }"
     v-on="rootListeners"
   >
-    <v-card-title
-      v-if="slots.title"
-      ref="titleRef"
-      :class="{ 'pt-6': slots.icon }"
-    >
+    <v-card-title v-if="slots.title" :class="{ 'pt-6': slots.icon }">
       <slot v-if="slots.icon" name="icon" />
       <card-title
         :class="{
@@ -71,11 +65,7 @@ const otherHeights = computed(() => {
       <v-spacer v-if="slots.details" />
       <slot name="details" />
     </v-card-title>
-    <v-card-subtitle
-      v-if="slots.subtitle"
-      ref="subTitleRef"
-      :class="{ 'ms-14': slots.icon }"
-    >
+    <v-card-subtitle v-if="slots.subtitle" :class="{ 'ms-14': slots.icon }">
       <div
         :class="{
           'pt-2': slots.icon,
@@ -86,6 +76,7 @@ const otherHeights = computed(() => {
       </div>
     </v-card-subtitle>
     <v-card-text
+      ref="bodyRef"
       :class="{
         [css.contained]: contained,
         [css['no-padding']]: noPadding
