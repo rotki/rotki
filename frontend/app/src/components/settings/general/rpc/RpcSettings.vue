@@ -5,25 +5,26 @@ import { type AsyncComponent, type Ref } from 'vue';
 const { t } = useI18n();
 
 interface RpcSettingTab {
-  chain: Blockchain;
+  chain: string;
   component: AsyncComponent;
 }
 
 const rpcSettingTab: Ref<number> = ref(0);
 
-const rpcSettingTabs: RpcSettingTab[] = [
-  {
-    chain: Blockchain.ETH,
-    component: defineAsyncComponent(
-      () => import('@/components/settings/general/rpc/EvmRpcNodeManager.vue')
-    )
-  },
-  {
-    chain: Blockchain.OPTIMISM,
-    component: defineAsyncComponent(
-      () => import('@/components/settings/general/rpc/EvmRpcNodeManager.vue')
-    )
-  },
+const { txEvmChains } = useSupportedChains();
+const evmChainTabs = useArrayMap(
+  txEvmChains,
+  chain =>
+    ({
+      chain: chain.id,
+      component: defineAsyncComponent(
+        () => import('@/components/settings/general/rpc/EvmRpcNodeManager.vue')
+      )
+    } satisfies RpcSettingTab)
+);
+
+const rpcSettingTabs = computed<RpcSettingTab[]>(() => [
+  ...get(evmChainTabs),
   {
     chain: Blockchain.KSM,
     component: defineAsyncComponent(
@@ -35,14 +36,8 @@ const rpcSettingTabs: RpcSettingTab[] = [
     component: defineAsyncComponent(
       () => import('@/components/settings/general/rpc/DotRpcSetting.vue')
     )
-  },
-  {
-    chain: Blockchain.POLYGON_POS,
-    component: defineAsyncComponent(
-      () => import('@/components/settings/general/rpc/EvmRpcNodeManager.vue')
-    )
   }
-];
+]);
 </script>
 
 <template>

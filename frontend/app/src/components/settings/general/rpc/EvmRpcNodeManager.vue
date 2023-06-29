@@ -1,19 +1,16 @@
 <script setup lang="ts">
-import { Blockchain } from '@rotki/common/lib/blockchain';
+import { type Blockchain } from '@rotki/common/lib/blockchain';
 import {
   type EvmRpcNode,
   type EvmRpcNodeList,
   getPlaceholderNode
 } from '@/types/settings';
 
-const props = withDefaults(
-  defineProps<{
-    chain?: Blockchain;
-  }>(),
-  {
-    chain: Blockchain.ETH
-  }
-);
+const { t } = useI18n();
+
+const props = defineProps<{
+  chain: Blockchain;
+}>();
 
 const { chain } = toRefs(props);
 
@@ -23,13 +20,12 @@ const selectedNode = ref<EvmRpcNode>(getPlaceholderNode(get(chain)));
 
 const { notify } = useNotificationsStore();
 const { setMessage } = useMessageStore();
-const { t } = useI18n();
 
 const { setOpenDialog, closeDialog, setPostSubmitFunc } = useEvmRpcNodeForm();
 
-const { connectedEthNodes, connectedOptimismNodes, connectedPolygonNodes } =
-  storeToRefs(usePeriodicStore());
+const { connectedNodes } = storeToRefs(usePeriodicStore());
 const api = useEvmNodesApi(get(chain));
+const { getEvmChainName } = useSupportedChains();
 
 async function loadNodes(): Promise<void> {
   try {
@@ -101,15 +97,11 @@ const isEtherscan = (item: EvmRpcNode) =>
   !item.endpoint && item.name.includes('etherscan');
 
 const isNodeConnected = (item: EvmRpcNode): boolean => {
-  let nodes: string[] = [];
   const blockchain = get(chain);
-  if (blockchain === Blockchain.ETH) {
-    nodes = get(connectedEthNodes);
-  } else if (blockchain === Blockchain.OPTIMISM) {
-    nodes = get(connectedOptimismNodes);
-  } else if (blockchain === Blockchain.POLYGON_POS) {
-    nodes = get(connectedPolygonNodes);
-  }
+  const connected = get(connectedNodes);
+  const evmChain = getEvmChainName(blockchain);
+  const nodes = evmChain && connected[evmChain] ? connected[evmChain] : [];
+
   return nodes.includes(item.name) || isEtherscan(item);
 };
 
