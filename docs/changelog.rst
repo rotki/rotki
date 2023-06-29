@@ -1,6 +1,7 @@
 =========
 Changelog
 =========
+* :bug:`6350` Graceful handling of EVM rpc node returning non-int block number
 
 * :bug:`6351` Fix issue where users may see an assets update conflicts dialog that does not appear to have any size.
 
