@@ -6,6 +6,7 @@ from importlib import import_module
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, TypeVar, cast, overload
 
+import requests
 from gevent.lock import Semaphore
 from web3.exceptions import BadFunctionCallOutput
 
@@ -1318,11 +1319,16 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             try:
                 if chain == SupportedBlockchain.AVALANCHE:
                     avax_manager = cast(AvalancheManager, chain_manager)
-                    # just check balance and nonce in avalanche
-                    has_activity = (
-                        avax_manager.w3.eth.get_transaction_count(address) != 0 or
-                        avax_manager.get_avax_balance(address) != ZERO
-                    )
+                    try:
+                        # just check balance and nonce in avalanche
+                        has_activity = (
+                            avax_manager.w3.eth.get_transaction_count(address) != 0 or
+                            avax_manager.get_avax_balance(address) != ZERO
+                        )
+                    except (requests.exceptions.RequestException, RemoteError) as e:
+                        log.error(f'Failed to check {address} activity in avalanche due to {e!s}')
+                        has_activity = False
+
                     if has_activity is False:
                         continue
                 else:
