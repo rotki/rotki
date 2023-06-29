@@ -26,27 +26,21 @@ const props = withDefaults(
 );
 
 const { contained } = toRefs(props);
-const body = ref<HTMLDivElement | null>(null);
-const actions = ref<HTMLDivElement | null>(null);
-const top = ref(206);
+const titleRef = ref<HTMLDivElement | null>(null);
+const subTitleRef = ref<HTMLDivElement | null>(null);
+const actionsRef = ref<HTMLDivElement | null>(null);
 
-onMounted(() => {
-  setTimeout(() => {
-    set(top, get(body)?.getBoundingClientRect().top ?? 0);
-  }, 1000);
-});
+const { height: titleHeight } = useElementBounding(titleRef);
+const { height: subTitleHeight } = useElementBounding(subTitleRef);
+const { height: actionsHeight } = useElementBounding(actionsRef);
 
-const bodyStyle = computed(() => {
-  if (!get(contained)) {
-    return null;
-  }
-  const bodyTop = get(top);
-  const actionsHeight = get(actions)?.getBoundingClientRect().height ?? 0;
-  const diff = bodyTop + actionsHeight;
-
-  return {
-    height: `calc(100vh - ${diff}px)`
-  };
+const otherHeights = computed(() => {
+  const subTitleHeightVal = get(subTitleHeight) ?? 0;
+  const totalHeight =
+    (get(titleHeight) ?? 0) +
+    (subTitleHeightVal > 0 ? subTitleHeightVal - 16 : subTitleHeightVal) +
+    (get(actionsHeight) ?? 0);
+  return `${totalHeight}px`;
 });
 </script>
 
@@ -60,7 +54,11 @@ const bodyStyle = computed(() => {
     }"
     v-on="rootListeners"
   >
-    <v-card-title v-if="slots.title" :class="{ 'pt-6': slots.icon }">
+    <v-card-title
+      v-if="slots.title"
+      ref="titleRef"
+      :class="{ 'pt-6': slots.icon }"
+    >
       <slot v-if="slots.icon" name="icon" />
       <card-title
         :class="{
@@ -73,7 +71,11 @@ const bodyStyle = computed(() => {
       <v-spacer v-if="slots.details" />
       <slot name="details" />
     </v-card-title>
-    <v-card-subtitle v-if="slots.subtitle" :class="{ 'ms-14': slots.icon }">
+    <v-card-subtitle
+      v-if="slots.subtitle"
+      ref="subTitleRef"
+      :class="{ 'ms-14': slots.icon }"
+    >
       <div
         :class="{
           'pt-2': slots.icon,
@@ -84,8 +86,6 @@ const bodyStyle = computed(() => {
       </div>
     </v-card-subtitle>
     <v-card-text
-      ref="body"
-      :style="bodyStyle"
       :class="{
         [css.contained]: contained,
         [css['no-padding']]: noPadding
@@ -106,7 +106,7 @@ const bodyStyle = computed(() => {
         <slot name="options" />
       </div>
     </v-card-text>
-    <v-card-actions v-if="slots.buttons" ref="actions" :class="css.actions">
+    <v-card-actions v-if="slots.buttons" ref="actionsRef" :class="css.actions">
       <slot name="buttons" />
     </v-card-actions>
   </v-card>
@@ -127,7 +127,7 @@ const bodyStyle = computed(() => {
 }
 
 .contained {
-  max-height: calc(100vh - 206px);
+  height: calc(90vh - v-bind(otherHeights));
   overflow-y: scroll;
 }
 
