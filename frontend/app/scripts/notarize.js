@@ -1,7 +1,7 @@
 require('dotenv').config();
 const { notarize } = require('@electron/notarize');
 
-exports.default = async function notarizing(context) {
+exports.default = async context => {
   const { electronPlatformName, appOutDir } = context;
   if (electronPlatformName !== 'darwin') {
     return;
@@ -17,19 +17,18 @@ exports.default = async function notarizing(context) {
 
   console.info(`\nPreparing to notarize the application: ${appPath}\n`);
 
-  return await notarize({
-    appBundleId: 'com.rotki.app',
-    appPath,
-    appleId: process.env.APPLEID,
-    appleIdPassword: process.env.APPLEIDPASS,
-    teamId: process.env.IDENTITY,
-    tool: 'notarytool'
-  })
-    .then(() => {
-      console.info(`\nNotarization of ${appPath} was complete\n`);
-    })
-    .catch(reason => {
-      console.error(reason);
-      return reason;
+  try {
+    await notarize({
+      appBundleId: 'com.rotki.app',
+      appPath,
+      appleId: process.env.APPLEID,
+      appleIdPassword: process.env.APPLEIDPASS,
+      teamId: process.env.IDENTITY,
+      tool: 'notarytool'
     });
+    console.info(`\nNotarization of ${appPath} was complete\n`);
+  } catch (e) {
+    console.error(e);
+    process.exit(1);
+  }
 };
