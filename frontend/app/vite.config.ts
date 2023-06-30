@@ -5,9 +5,9 @@ import AutoImport from 'unplugin-auto-import/vite';
 import DefineOptions from 'unplugin-vue-define-options/vite';
 import { VuetifyResolver } from 'unplugin-vue-components/resolvers';
 import Components from 'unplugin-vue-components/vite';
-import { defineConfig, splitVendorChunkPlugin } from 'vite';
+import { defineConfig } from 'vitest/config';
+import { splitVendorChunkPlugin } from 'vite';
 import { checker } from 'vite-plugin-checker';
-// @ts-ignore
 import istanbul from 'vite-plugin-istanbul';
 import { VitePWA } from 'vite-plugin-pwa';
 import Layouts from 'vite-plugin-vue-layouts';
@@ -52,7 +52,6 @@ export default defineConfig({
       '@vueuse/math'
     ]
   },
-  // @ts-ignore
   test: {
     globals: true,
     environment: 'jsdom',
@@ -61,6 +60,7 @@ export default defineConfig({
     },
     setupFiles: ['tests/unit/setup-files/setup.ts'],
     coverage: {
+      provider: 'v8',
       reportsDirectory: 'tests/unit/coverage',
       reporter: ['json'],
       include: ['src/*'],
