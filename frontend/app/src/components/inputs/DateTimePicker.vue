@@ -71,7 +71,7 @@ const { seconds, value, allowEmpty, limitNow, errorMessages } = toRefs(props);
 
 const currentValue: Ref<string> = ref('');
 const selectedTimezone: Ref<string> = ref('');
-const inputField: Ref<any> = ref(null);
+const inputField = ref();
 
 const isValidFormat = (date: string): boolean => {
   const dateFormat = get(dateInputFormatInISO);

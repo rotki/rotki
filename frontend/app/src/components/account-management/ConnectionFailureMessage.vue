@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { api } from '@/services/rotkehlchen-api';
 
+const { t } = useI18n();
+
 const { connect } = useMainStore();
 const interop = useInterop();
 
@@ -8,8 +10,6 @@ const defaultBackend = api.defaultBackend;
 const retry = () => connect(api.serverUrl);
 const toDefault = () => connect();
 const terminate = () => interop.closeApp();
-
-const { t } = useI18n();
 </script>
 
 <template>

@@ -88,8 +88,6 @@ const AccountingSettings = z
 
 export type AccountingSettings = z.infer<typeof AccountingSettings>;
 
-export type AccountingSettingsUpdate = Partial<AccountingSettings>;
-
 const Settings = GeneralSettings.merge(AccountingSettings).merge(OtherSettings);
 
 const SettingsUpdate = Settings.merge(

@@ -18,11 +18,6 @@ export const PURGABLE = [
 
 export type Purgeable = (typeof PURGABLE)[number];
 
-export interface PurgeParams {
-  readonly source: Purgeable;
-  readonly text: string;
-}
-
 export enum PurgeableImageCache {
   ASSET_ICONS = 'asset_icons',
   ENS_AVATARS = 'ens_avatars'

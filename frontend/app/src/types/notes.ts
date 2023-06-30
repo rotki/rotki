@@ -12,10 +12,6 @@ export const UserNote = z.object({
 
 export type UserNote = z.infer<typeof UserNote>;
 
-export const UserNotes = z.array(UserNote);
-
-export type UserNotes = z.infer<typeof UserNotes>;
-
 export const UserNoteCollectionResponse = CollectionCommonFields.extend({
   entries: z.array(UserNote)
 });

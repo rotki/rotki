@@ -25,6 +25,7 @@ export const uniqueObjects = <T>(
  * Takes an object and returns the same object without any null values
  * or empty array properties.
  * @param object any object
+ * @param removeEmptyString if set it will also remove empty string properties
  */
 export const nonEmptyProperties = <T extends object>(
   object: T,

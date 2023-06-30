@@ -1,10 +1,5 @@
 <script setup lang="ts">
-import { type PropType } from 'vue';
-import { type EventType } from '@/types/defi/event-type';
-
-const props = defineProps({
-  eventType: { required: true, type: String as PropType<EventType> }
-});
+const props = defineProps<{ eventType: string }>();
 const { eventType } = toRefs(props);
 
 const event = computed<string>(() =>

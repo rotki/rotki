@@ -1,6 +1,21 @@
 import isEmpty from 'lodash/isEmpty';
-import { deserializeApiErrorMessage } from '@/services/converters';
 import { camelCaseTransformer } from '@/services/axios-tranformers';
+
+/**
+ * Converts a stringified JSON returned from the API to JSON.
+ *
+ * Use {@link ApiValidationError} in the catch clause instead.
+ * @param message a stringified json message
+ */
+const deserializeApiErrorMessage = (
+  message: string
+): Record<string, string[]> | undefined => {
+  try {
+    return JSON.parse(message);
+  } catch {
+    return undefined;
+  }
+};
 
 export type ValidationErrors = Record<string, string[] | string>;
 

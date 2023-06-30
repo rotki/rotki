@@ -1,5 +1,4 @@
 import {
-  DEPOSIT,
   type YearnVaultAsset,
   type YearnVaultBalance,
   type YearnVaultProfitLoss,
@@ -52,7 +51,7 @@ export const useYearnStore = defineStore('defi/yearn', () => {
           }
 
           const events = data.events.filter(
-            event => event.eventType === DEPOSIT
+            event => event.eventType === 'deposit'
           );
           const asset = events && events.length > 0 ? events[0].fromAsset : '';
 

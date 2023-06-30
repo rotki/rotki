@@ -9,10 +9,4 @@ export class Constraints {
   static MAX_HOURS_DELAY = Math.floor(
     Constraints.MAX_MILISECONDS_DELAY / (1000 * 60 * 60)
   );
-  static MAX_DAYS_DELAY = Math.floor(
-    Constraints.MAX_MILISECONDS_DELAY / (1000 * 60 * 60 * 24)
-  );
-  static MAX_WEEKS_DELAY = Math.floor(
-    Constraints.MAX_MILISECONDS_DELAY / (1000 * 60 * 60 * 24 * 7)
-  );
 }

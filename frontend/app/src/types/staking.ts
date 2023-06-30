@@ -58,10 +58,3 @@ export const emptyPagination = (): KrakenStakingPagination => ({
   ascending: [false],
   orderByAttributes: ['timestamp']
 });
-
-export interface KrakenStakingPaginationOptions {
-  page: number;
-  itemsPerPage: number;
-  sortBy: (keyof KrakenStakingEvent)[];
-  sortDesc: boolean[];
-}

@@ -3,7 +3,6 @@ import isEmpty from 'lodash/isEmpty';
 import isEqual from 'lodash/isEqual';
 import keys from 'lodash/keys';
 import pick from 'lodash/pick';
-import { type UnwrapRef } from 'vue';
 import { type ZodSchema } from 'zod';
 import { type PaginationRequestPayload } from '@/types/common';
 import { type Collection } from '@/types/collection';
@@ -300,9 +299,9 @@ export const usePaginationFilters = <
   /**
    * Updates the filters
    * @template W
-   * @param {UnwrapRef<Ref<W>>} newFilter
+   * @param {W} newFilter
    */
-  const setFilter = (newFilter: UnwrapRef<Ref<W>>) => {
+  const setFilter = (newFilter: W) => {
     set(userAction, true);
     updateFilter(newFilter);
   };
