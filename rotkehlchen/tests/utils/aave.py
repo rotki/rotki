@@ -1,5 +1,4 @@
 from rotkehlchen.assets.asset import Asset
-
 from rotkehlchen.constants.assets import (
     A_AAVE,
     A_AETH_V1,
@@ -34,7 +33,6 @@ from rotkehlchen.constants.assets import (
     A_YFI,
     A_ZRX,
 )
-from rotkehlchen.fval import FVal
 
 A_AENJ_V1 = Asset('eip155:1/erc20:0x712DB54daA836B53Ef1EcBb9c6ba3b9Efb073F40')
 A_ADAI_V1 = Asset('eip155:1/erc20:0xfC1E690f61EFd961294b3e1Ce3313fBD8aa4f85d')
@@ -56,7 +54,6 @@ A_AZRX_V1 = Asset('eip155:1/erc20:0x6Fb0855c404E09c47C3fBCA25f08d4E41f9F062f')
 A_AAAVE_V1 = Asset('eip155:1/erc20:0xba3D9687Cf50fE253cd2e1cFeEdE1d6787344Ed5')
 A_AUNI_V1 = Asset('eip155:1/erc20:0xB124541127A0A657f056D9Dd06188c4F1b0e5aab')
 
-A_ALINK_V2 = Asset('eip155:1/erc20:0xa06bC25B5805d5F8d82847D191Cb4Af5A3e873E0')
 
 ATOKENV1_TO_ASSET = {
     A_AETH_V1: A_ETH,
@@ -115,31 +112,3 @@ ATOKENV2_ADDRESS_TO_RESERVE_ASSET = {
 
 
 AAVE_TEST_ACC_1 = '0x21d05071cA08593e13cd3aFD0b4869537e015C92'
-AAVE_TEST_ACC_2 = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'
-AAVE_TEST_ACC_3 = '0xbA215F7BE6c620dA3F8240B82741eaF3C5f5D786'
-
-aave_mocked_historical_prices = {
-    A_ADAI_V1: {  # aDAI
-        'USD': {
-            1589155650: FVal('1.007'),
-            1590753905: FVal('1.003'),
-            1588114293: FVal('1.014'),
-            1588463542: FVal('1.009'),
-            1588430911: FVal('1.009'),
-            1592175763: FVal('1.013'),
-            1594502373: FVal('1.019'),
-        },
-    },
-    A_DAI: {  # DAI
-        'USD': {
-            1589155650: FVal('1.007'),
-            1590753905: FVal('1.003'),
-            1588114293: FVal('1.014'),
-            1588463542: FVal('1.009'),
-            1588430911: FVal('1.009'),
-            1592175763: FVal('1.013'),
-            1594502373: FVal('1.019'),
-        },
-    },
-}
-aave_mocked_current_prices = {A_ADAI_V1: FVal('1.017')}

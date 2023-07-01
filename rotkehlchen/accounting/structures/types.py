@@ -1,5 +1,5 @@
 from enum import auto
-from typing import Optional, get_args
+from typing import Optional
 
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.utils.mixins.enums import DBCharEnumMixIn, SerializableEnumNameMixin
@@ -11,15 +11,6 @@ EVM_EVENT_FIELDS = tuple[
     Optional[str],  # address
     Optional[str],  # extra_data
 ]
-
-EVM_EVENT_FIELDS_NO_EXTRA_DATA = tuple[
-    bytes,          # tx_hash
-    Optional[str],  # counterparty
-    Optional[str],  # product
-    Optional[str],  # address
-]
-
-EVM_EVENT_FIELDS_COUNT = len(get_args(EVM_EVENT_FIELDS))
 
 
 EVM_EVENT_DB_TUPLE_READ = tuple[

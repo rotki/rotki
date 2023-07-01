@@ -1,5 +1,4 @@
 import logging
-from collections import defaultdict
 from dataclasses import dataclass
 from typing import Any, NamedTuple, Optional
 
@@ -48,7 +47,6 @@ class LiquidityPool:
 
 
 AddressToLPBalances = dict[ChecksumEvmAddress, list[LiquidityPool]]
-DDAddressToLPBalances = defaultdict[ChecksumEvmAddress, list[LiquidityPool]]
 AssetToPrice = dict[ChecksumEvmAddress, Price]
 
 
@@ -85,6 +83,3 @@ class AggregatedAmount:
     profit_loss0: FVal = ZERO
     profit_loss1: FVal = ZERO
     usd_profit_loss: FVal = ZERO
-
-
-AddressEventsBalances = dict[ChecksumEvmAddress, list[LiquidityPoolEventsBalance]]

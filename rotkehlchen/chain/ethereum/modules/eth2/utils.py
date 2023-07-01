@@ -2,7 +2,7 @@ import json
 import logging
 import re
 from http import HTTPStatus
-from typing import Literal, NamedTuple, Optional
+from typing import Literal, Optional
 
 import gevent
 import requests
@@ -41,29 +41,11 @@ def epoch_to_timestamp(epoch: int) -> Timestamp:
     return Timestamp(ETH2_GENESIS_TIMESTAMP + epoch * EPOCH_DURATION_SECS)
 
 
-class ValidatorBalance(NamedTuple):
-    epoch: int
-    balance: int  # in gwei
-    effective_balance: int  # in wei
-
-
 def _parse_fval(line: str, entry: str) -> FVal:
     try:
         result = FVal(line.replace('ETH', ''))
     except ValueError as e:
         raise RemoteError(f'Could not parse {line} as a number for {entry}') from e
-
-    return result
-
-
-def _parse_int(line: str, entry: str) -> int:
-    try:
-        if line == '-':
-            result = 0
-        else:
-            result = int(line)
-    except ValueError as e:
-        raise RemoteError(f'Could not parse {line} as an integer for {entry}') from e
 
     return result
 

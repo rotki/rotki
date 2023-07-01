@@ -8,7 +8,7 @@ import requests
 from polyleven import levenshtein
 
 from rotkehlchen.accounting.structures.balance import BalanceType
-from rotkehlchen.assets.asset import Asset, CryptoAsset, CustomAsset
+from rotkehlchen.assets.asset import CryptoAsset, CustomAsset
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_EUR, A_SAI, A_USD
@@ -27,8 +27,6 @@ from rotkehlchen.tests.utils.constants import A_GNO, A_RDN
 from rotkehlchen.tests.utils.factories import UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 from rotkehlchen.types import ChainID, Location
-
-KICK_TOKEN = Asset('eip155:1/erc20:0x824a50dF33AC1B41Afc52f4194E2e8356C17C3aC')
 
 
 def assert_substring_in_search_result(

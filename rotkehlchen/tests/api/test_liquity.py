@@ -28,30 +28,6 @@ ADDR_WITHOUT_TROVE = string_to_evm_address('0xA0446D8804611944F1B527eCD37d7dcbE4
 JUSTIN = string_to_evm_address('0x3DdfA8eC3052539b6C9549F12cEA2C295cfF5296')
 LIQUITY_POOL_DEPOSITOR = string_to_evm_address('0xFBcAFB005695afa660836BaC42567cf6917911ac')
 
-liquity_mocked_historical_prices = {
-    A_ETH: {
-        'USD': {
-            1627818194: FVal('3000'),
-            1627818617: FVal('3000'),
-            1627827057: FVal('3500'),
-            1641529258: FVal('3395'),
-        },
-    },
-    A_LQTY: {
-        'USD': {
-            1627827057.: FVal('3.7'),
-        },
-    },
-    A_LUSD: {
-        'USD': {
-            1627818194: FVal('1.02'),
-            1627818617: FVal('1.019'),
-            1627827057: FVal('1.02'),
-            1641529258: FVal('1.0010'),
-        },
-    },
-}
-
 
 @flaky(max_runs=3, min_passes=1)  # etherscan may occasionally time out
 @pytest.mark.parametrize('ethereum_accounts', [[LQTY_ADDR]])

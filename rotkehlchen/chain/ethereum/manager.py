@@ -1,11 +1,10 @@
 import logging
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from rotkehlchen.chain.ethereum.transactions import EthereumTransactions
 from rotkehlchen.chain.evm.manager import EvmManager
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress
 
 from .decoding.decoder import EthereumTransactionDecoder
 from .tokens import EthereumTokens
@@ -16,16 +15,6 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
-
-
-CURVE_POOLS_MAPPING_TYPE = dict[
-    ChecksumEvmAddress,  # lp token address
-    tuple[
-        ChecksumEvmAddress,  # pool address
-        list[ChecksumEvmAddress],  # list of coins addresses
-        Optional[list[ChecksumEvmAddress]],  # optional list of underlying coins addresses
-    ],
-]
 
 
 class EthereumManager(EvmManager):
