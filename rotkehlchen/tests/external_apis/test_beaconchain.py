@@ -38,13 +38,6 @@ def test_get_performance_more_than_100(session_beaconchain):
         _assert_valid_performance_entry(performance_map[index])
 
 
-def _assert_valid_balance_entry(entry):
-    """Can't really test for an actual balance so just test it's a valid int"""
-    assert entry.balance >= 0
-    assert entry.effective_balance >= 0
-    assert entry.epoch >= 0
-
-
 def test_get_eth1_validator_indices_single(session_beaconchain):
     address = '0xfeF0E7635281eF8E3B705e9C5B86e1d3B0eAb397'
     validators = session_beaconchain.get_eth1_address_validators(address=address)

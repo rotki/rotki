@@ -30,7 +30,6 @@ from rotkehlchen.types import ChecksumEvmAddress, deserialize_evm_tx_hash
 
 AAVE_BALANCESV1_TEST_ACC = '0xC2cB1040220768554cf699b0d863A3cd4324ce32'
 AAVE_BALANCESV2_TEST_ACC = '0x8Fe178db26ebA2eEdb22575265bf10A63c395a3d'
-AAVE_V2_TEST_ACC = '0x008C00c45D461d7E08acBC4755a4A0a3a94115ee'
 
 
 @flaky(max_runs=3, min_passes=1)  # open nodes some times time out

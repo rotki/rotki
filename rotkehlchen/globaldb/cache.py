@@ -1,9 +1,9 @@
 """Functions dealing with the general_cache table of the Global DB"""
 from collections.abc import Iterable
 from typing import Optional, Union
+
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.types import string_to_evm_address
-
 from rotkehlchen.db.drivers.gevent import DBCursor
 from rotkehlchen.types import ChecksumEvmAddress, GeneralCacheType, Timestamp
 from rotkehlchen.utils.misc import ts_now
@@ -152,19 +152,6 @@ def globaldb_delete_general_cache(
         write_cursor.execute('DELETE FROM general_cache WHERE key=?', (cache_key,))
     else:
         write_cursor.execute('DELETE FROM general_cache WHERE key=? AND value=?', (cache_key, value))  # noqa: E501
-
-
-def globaldb_delete_general_cache_like(
-        write_cursor: DBCursor,
-        key_parts: Iterable[Union[str, GeneralCacheType]],
-) -> None:
-    """
-    Function to delete globaldb cache. Deletes all the values that start with key.
-
-    key_parts should contain neither the "%" nor the "." symbol.
-    """
-    cache_key = compute_cache_key(key_parts)
-    write_cursor.execute('DELETE FROM general_cache WHERE key LIKE ?', (f'{cache_key}%',))
 
 
 def read_curve_pool_tokens(

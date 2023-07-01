@@ -1,7 +1,7 @@
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.chain.evm.types import NodeName, string_to_evm_address
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_EUR
-from rotkehlchen.types import SupportedBlockchain, deserialize_evm_tx_hash
+from rotkehlchen.types import deserialize_evm_tx_hash
 
 A_RDN = Asset('eip155:1/erc20:0x255Aa6DF07540Cb5d3d297f0D0D4D84cb52bc8e6')
 A_GNO = Asset('eip155:1/erc20:0x6810e776880C02933D47DB1b9fc05908e5386b96')
@@ -64,24 +64,6 @@ MOCK_INPUT_DATA_HEX = '0x313233'
 
 DEFAULT_TESTS_MAIN_CURRENCY = A_EUR
 
-MYCRYPTO_NODE_NAME = NodeName(
-    name='mycrypto',
-    endpoint='https://api.mycryptoapi.com/eth',
-    owned=False,
-    blockchain=SupportedBlockchain.ETHEREUM,
-)
-BLOCKSOUT_NODE_NAME = NodeName(
-    name='blockscout',
-    endpoint='https://mainnet-nethermind.blockscout.com/',
-    owned=False,
-    blockchain=SupportedBlockchain.ETHEREUM,
-)
-AVADO_POOL_NODE_NAME = NodeName(
-    name='avado pool',
-    endpoint='https://mainnet.eth.cloud.ava.do/',
-    owned=False,
-    blockchain=SupportedBlockchain.ETHEREUM,
-)
 
 TXHASH_HEX_TO_BYTES = {
     '0x13684203a4bf07aaed0112983cb380db6004acac772af2a5d46cb2a28245fbad': deserialize_evm_tx_hash('0x13684203a4bf07aaed0112983cb380db6004acac772af2a5d46cb2a28245fbad'),  # noqa: 501

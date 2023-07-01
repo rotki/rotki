@@ -5,12 +5,6 @@ if TYPE_CHECKING:
     from rotkehlchen.accounting.structures.evm_event import EvmEvent
 
 
-def _swap_event_indices(event1: 'EvmEvent', event2: 'EvmEvent') -> None:
-    old_event1_index = event1.sequence_index
-    event1.sequence_index = event2.sequence_index
-    event2.sequence_index = old_event1_index
-
-
 def maybe_reshuffle_events(
         ordered_events: Sequence[Optional['EvmEvent']],
         events_list: list['EvmEvent'],

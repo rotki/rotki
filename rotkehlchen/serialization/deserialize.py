@@ -4,10 +4,10 @@ from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, TypeVar, Uni
 from eth_utils import to_checksum_address
 
 from rotkehlchen.accounting.structures.types import HistoryEventType
-from rotkehlchen.assets.asset import AssetWithOracles, EvmToken
+from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.assets.utils import get_crypto_asset_by_symbol
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair, WrongAssetType
+from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair
 from rotkehlchen.errors.serialization import ConversionError, DeserializationError
 from rotkehlchen.externalapis.utils import read_hash, read_integer
 from rotkehlchen.fval import AcceptableFValInitInput, FVal
@@ -476,16 +476,6 @@ def deserialize_int_from_hex_or_int(symbol: Union[str, int], location: str) -> i
         )
 
     return result
-
-
-def deserialize_evm_token_from_db(identifier: str) -> EvmToken:
-    """Takes an identifier and returns the <EvmToken>"""
-    try:
-        return EvmToken(identifier)
-    except (UnknownAsset, WrongAssetType) as e:
-        raise DeserializationError(
-            f'Could not initialize an evm token with identifier {identifier}',
-        ) from e
 
 
 X = TypeVar('X')

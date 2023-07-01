@@ -11,7 +11,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
 )
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails, EventCategory
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants.assets import A_ETH, A_HETH_OPT, A_WETH_OPT
+from rotkehlchen.constants.assets import A_ETH, A_WETH_OPT
 from rotkehlchen.types import ChecksumEvmAddress, DecoderEventMappingType
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
@@ -40,7 +40,6 @@ class HopDecoder(DecoderInterface):
             msg_aggregator=msg_aggregator,
         )
         self.weth = A_WETH_OPT.resolve_to_evm_token()
-        self.heth = A_HETH_OPT.resolve_to_evm_token()
 
     def _decode_receive_eth(self, context: DecoderContext) -> DecodingOutput:
         if context.tx_log.topics[0] == TRANSFER_FROM_L1_COMPLETED:

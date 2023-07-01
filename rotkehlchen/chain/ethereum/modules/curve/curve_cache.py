@@ -43,14 +43,6 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
-CURVE_POOLS_MAPPING_TYPE = dict[
-    ChecksumEvmAddress,  # lp token address
-    tuple[
-        ChecksumEvmAddress,  # pool address
-        list[ChecksumEvmAddress],  # list of coins addresses
-        Optional[list[ChecksumEvmAddress]],  # optional list of underlying coins addresses
-    ],
-]
 
 READ_CURVE_DATA_TYPE = tuple[
     dict[ChecksumEvmAddress, list[ChecksumEvmAddress]],

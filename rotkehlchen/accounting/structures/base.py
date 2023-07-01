@@ -35,21 +35,6 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-HISTORY_EVENT_DB_TUPLE_READ = tuple[
-    int,            # identifier
-    str,            # event_identifier
-    int,            # sequence_index
-    int,            # timestamp
-    str,            # location
-    Optional[str],  # location label
-    str,            # asset
-    str,            # amount
-    str,            # usd value
-    Optional[str],  # notes
-    str,            # type
-    str,            # subtype
-]
-
 HISTORY_EVENT_DB_TUPLE_WRITE = tuple[
     int,            # entry type
     str,            # event_identifier

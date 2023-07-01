@@ -713,7 +713,6 @@ EXTERNAL_EXCHANGES = (
     Location.UPHOLD,
     Location.BISQ,
 )
-EXTERNAL_LOCATION = (Location.EXTERNAL,) + EXTERNAL_EXCHANGES
 
 
 class ExchangeLocationID(NamedTuple):

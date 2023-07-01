@@ -1,7 +1,7 @@
 import json
 import logging
 import re
-from typing import Any, Literal, Optional
+from typing import Any, Optional
 
 import gevent
 import requests
@@ -11,7 +11,6 @@ from gql.transport.requests import RequestsHTTPTransport
 from rotkehlchen.constants.timing import QUERY_RETRY_TIMES
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, Timestamp
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -35,25 +34,6 @@ def format_query_indentation(querystr: str) -> str:
     - Removing leading and trailing whitespaces
     """
     return RE_MULTIPLE_WHITESPACE.sub(' ', querystr).strip()
-
-
-def get_common_params(
-        from_ts: Timestamp,
-        to_ts: Timestamp,
-        address: ChecksumEvmAddress,
-        address_type: Literal['Bytes!', 'String!'] = 'Bytes!',
-) -> tuple[dict[str, Any], dict[str, Any]]:
-    param_types = {
-        '$start_ts': 'Int!',
-        '$end_ts': 'Int!',
-        '$address': address_type,
-    }
-    param_values = {
-        'start_ts': from_ts,
-        'end_ts': to_ts,
-        'address': address.lower(),
-    }
-    return param_types, param_values
 
 
 class Graph:
