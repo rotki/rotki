@@ -518,34 +518,13 @@ OSX
 The tl;dr version is:
 - Use a virtual env with Python 3.10.x
 - Confirm ``pip``(pip3) install correctly and up to date
-- Get your node under control with ``nvm``. It has been tested with v16
+- Get your node under control with ``nvm``. It has been tested with v18
 
-The following recipe has been tested using `Anaconda <https://conda.io>`_. `VirtualEnv <https://virtualenv.pypa.io>`_ works as well, refer to the documentations of those projects to install and use them.
+The you will also need `VirtualEnv <https://virtualenv.pypa.io>`_.
 
 Install `Homebrew <https://brew.sh/>`_ first if not installed yet.
 
-If you wish to use Conda, use the following commands (replace bash_profile with zshrc for Zsh)::
-
-    $ brew tap homebrew/cask
-    $ brew install --cask homebrew/cask/anaconda
-
-For Intel::
-
-    $ echo "export PATH=$PATH:/usr/local/anaconda3/bin" >> ~/.bash_profile
-    $ echo ". /usr/local/anaconda3/etc/profile.d/conda.sh" >> ~/.bash_profile
-
-For Apple Silicon::
-
-    $ echo "export PATH=/opt/homebrew/anaconda3/bin:$PATH" >> ~/.bash_profile
-    $ echo ". /opt/homebrew/anaconda3/etc/profile.d/conda.sh" >> ~/.bash_profile
-
-Source .bash_profile (or zshrc for Zsh)::
-
-    $ source ~/.bash_profile
-    $ conda create python=3.10 --name rotki
-    $ conda activate rotki
-
-If you wish to use Virtualenvwrapper use the following::
+To use Virtualenvwrapper use the following::
 
     $ pip3 install virtualenv
     $ pip3 install virtualenvwrapper
@@ -588,7 +567,7 @@ rotki uses `Electron <https://electronjs.org>`, we need to install it. To do so 
 
     $ brew install node
 
-rotki uses pnpm v7. To check if you have version 7 of pnpm you can run::
+rotki uses pnpm v8. To check if you have version * of pnpm you can run::
 
     pnpm --version
 
