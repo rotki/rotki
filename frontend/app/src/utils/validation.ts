@@ -25,7 +25,7 @@ export const checkBeforeSubmission = async <T>(
   }
 
   if (!invalid) {
-    return await submit();
+    return submit();
   }
 
   if (validState) {

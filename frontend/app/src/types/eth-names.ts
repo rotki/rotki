@@ -14,11 +14,6 @@ export const AddressBookSimplePayload = z.object({
 
 export type AddressBookSimplePayload = z.infer<typeof AddressBookSimplePayload>;
 
-export const AddressBookSimplePayloadArray = z.array(AddressBookSimplePayload);
-export type AddressBookSimplePayloadArray = z.infer<
-  typeof AddressBookSimplePayloadArray
->;
-
 export const AddressBookEntry = AddressBookSimplePayload.extend({
   name: z.string()
 });

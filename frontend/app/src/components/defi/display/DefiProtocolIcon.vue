@@ -1,42 +1,42 @@
 <script setup lang="ts">
 import { DefiProtocol } from '@rotki/common/lib/blockchain';
-import { type PropType } from 'vue';
 import { toSentenceCase } from '@/utils/text';
 
-defineProps({
-  protocol: {
-    required: true,
-    type: String as PropType<DefiProtocol>
-  },
-  mode: {
-    required: false,
-    default: 'both',
-    type: String as PropType<'icon' | 'label' | 'both'>
-  }
-});
+const props = withDefaults(
+  defineProps<{
+    protocol: DefiProtocol;
+    mode?: 'icon' | 'label' | 'both';
+  }>(),
+  { mode: 'both' }
+);
+const protocol = toRef(props, 'protocol');
 
-const icon = computed(({ protocol }) => {
-  if (protocol.endsWith('_v2')) {
-    return protocol.replace('_v2', '');
+const icon = computed(() => {
+  const defiProtocol = get(protocol);
+  if (defiProtocol.endsWith('_v2')) {
+    return defiProtocol.replace('_v2', '');
   }
-  if (protocol.startsWith('makerdao')) {
+  if (defiProtocol.startsWith('makerdao')) {
     return 'makerdao';
   }
-  return protocol;
+  return defiProtocol;
 });
 
-const name = computed(({ protocol }) => {
-  if (protocol === DefiProtocol.MAKERDAO_DSR) {
+const name = computed(() => {
+  const defiProtocol = get(protocol);
+  if (defiProtocol === DefiProtocol.MAKERDAO_DSR) {
     return 'MakerDAO DSR';
-  } else if (protocol === DefiProtocol.MAKERDAO_VAULTS) {
+  } else if (defiProtocol === DefiProtocol.MAKERDAO_VAULTS) {
     return 'MakerDAO Vaults';
-  } else if (protocol === DefiProtocol.YEARN_VAULTS) {
+  } else if (defiProtocol === DefiProtocol.YEARN_VAULTS) {
     return 'yearn.finance Vaults';
-  } else if (protocol === DefiProtocol.YEARN_VAULTS_V2) {
+  } else if (defiProtocol === DefiProtocol.YEARN_VAULTS_V2) {
     return 'yearn.finance Vaults v2';
   }
-  return protocol;
+  return defiProtocol;
 });
+
+const css = useCssModule();
 </script>
 
 <template>
@@ -54,7 +54,7 @@ const name = computed(({ protocol }) => {
           max-height="32px"
           :class="{
             'mr-2': mode !== 'icon',
-            [$style.icon]: true
+            [css.icon]: true
           }"
           :src="`./assets/images/protocols/${icon}.svg`"
           v-on="on"
@@ -62,7 +62,7 @@ const name = computed(({ protocol }) => {
         <span
           v-if="mode === 'label' || mode === 'both'"
           class="text--secondary"
-          :class="$style.label"
+          :class="css.label"
         >
           {{ toSentenceCase(name) }}
         </span>

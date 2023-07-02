@@ -469,7 +469,7 @@ export const useDefiLending = () => {
     await Promise.all([
       makerDaoStore.fetchDSRHistory(refresh),
       aaveStore.fetchHistory({ refresh }),
-      compoundStore.fetchHistory(refresh),
+      compoundStore.fetchStats(refresh),
       yearnStore.fetchHistory({
         refresh: refresh ?? false,
         version: ProtocolVersion.V1
@@ -518,7 +518,7 @@ export const useDefiLending = () => {
 
     await Promise.all([
       makerDaoStore.fetchMakerDAOVaultDetails(refresh),
-      compoundStore.fetchHistory(refresh),
+      compoundStore.fetchStats(refresh),
       aaveStore.fetchHistory({ refresh })
     ]);
 

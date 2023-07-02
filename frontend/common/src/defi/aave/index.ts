@@ -31,21 +31,6 @@ const AaveBalance = z.object({
 export const AaveBalances = z.record(AaveBalance);
 
 export type AaveBalances = z.infer<typeof AaveBalances>;
-
-export enum AaveBorrowingEventType {
-  REPAY = 'repay',
-  LIQUIDATION = 'liquidation',
-  BORROW = 'borrow'
-}
-
-export enum AaveLendingEventType {
-  DEPOSIT = 'deposit',
-  INTEREST = 'interest',
-  WITHDRAWAL = 'withdrawal'
-}
-
-export type AaveEventType = AaveLendingEventType | AaveBorrowingEventType;
-
 const AaveHistoryTotal = z.record(Balance);
 
 export type AaveHistoryTotal = z.infer<typeof AaveHistoryTotal>;

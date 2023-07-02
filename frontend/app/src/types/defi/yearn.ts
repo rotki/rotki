@@ -2,16 +2,8 @@ import { Balance } from '@rotki/common';
 import { z } from 'zod';
 import { ProtocolVersion } from '@/types/defi/index';
 
-export const WITHDRAW = 'withdraw';
-export const DEPOSIT = 'deposit';
-export const YEARN_EVENTS = [WITHDRAW, DEPOSIT] as const;
-
-const YearnEventType = z.enum(YEARN_EVENTS);
-
-export type YearnEventType = z.infer<typeof YearnEventType>;
-
 const YearnVaultEvent = z.object({
-  eventType: YearnEventType,
+  eventType: z.string(),
   blockNumber: z.number(),
   timestamp: z.number(),
   fromAsset: z.string(),

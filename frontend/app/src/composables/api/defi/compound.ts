@@ -8,13 +8,13 @@ export const useCompoundApi = () => {
     return fetchExternalAsync(api.instance, url);
   };
 
-  const fetchCompoundHistory = async (): Promise<PendingTask> => {
+  const fetchCompoundStats = async (): Promise<PendingTask> => {
     const url = '/blockchains/eth/modules/compound/stats';
     return fetchExternalAsync(api.instance, url);
   };
 
   return {
     fetchCompoundBalances,
-    fetchCompoundHistory
+    fetchCompoundStats
   };
 };

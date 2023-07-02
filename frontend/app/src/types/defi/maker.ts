@@ -4,8 +4,6 @@ import { type Collateral, type CollateralizedLoan } from '@/types/defi/index';
 
 const DSRMovementType = z.enum(['withdrawal', 'deposit'] as const);
 
-export type DSRMovementType = z.infer<typeof DSRMovementType>;
-
 const MakerDAOVaultEventType = z.enum([
   'deposit',
   'withdraw',
@@ -83,12 +81,9 @@ const MakerDAOVaultDetail = z.object({
 export type MakerDAOVaultDetail = z.infer<typeof MakerDAOVaultDetail>;
 
 export const MakerDAOVaultDetails = z.array(MakerDAOVaultDetail);
+
 export type MakerDAOVaultDetails = z.infer<typeof MakerDAOVaultDetails>;
 
 export type MakerDAOVaultModel =
   | MakerDAOVault
   | (MakerDAOVault & MakerDAOVaultDetail);
-
-export interface MakerDAOLendingHistoryExtras {
-  gainSoFar: Balance;
-}

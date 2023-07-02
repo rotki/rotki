@@ -5,7 +5,6 @@ import {
 } from '@rotki/common/lib/data';
 import { z } from 'zod';
 import { type PaginationRequestPayload } from '@/types/common';
-import { type TablePagination } from '@/types/pagination';
 import { CollectionCommonFields } from '@/types/collection';
 
 export interface AssetDBVersion {
@@ -71,25 +70,6 @@ export interface AssetRequestPayload
   identifiers?: string[];
 }
 
-export interface AssetPaginationOptions
-  extends TablePagination<SupportedAsset> {
-  name?: string;
-  symbol?: string;
-  evmChain?: string;
-  address?: string;
-  showUserOwnedAssetsOnly?: boolean;
-  ignoredAssetsHandling?: string;
-}
-
-export const defaultAssetPagination = (
-  itemsPerPage: number
-): AssetPaginationOptions => ({
-  page: 1,
-  itemsPerPage,
-  sortBy: ['symbol' as keyof SupportedAsset],
-  sortDesc: [false]
-});
-
 export const CustomAsset = z.object({
   identifier: z.string(),
   name: z.string(),
@@ -110,23 +90,6 @@ export interface CustomAssetRequestPayload
   identifier?: string;
   customAssetType?: string;
 }
-
-export interface CustomAssetPaginationOptions
-  extends TablePagination<CustomAsset> {
-  name?: string;
-  identifier?: string;
-  customAssetType?: string;
-}
-
-export const defaultCustomAssetPagination = (
-  itemsPerPage: number
-): CustomAssetPaginationOptions => ({
-  page: 0,
-  itemsPerPage,
-  sortBy: ['name' as keyof CustomAsset],
-  sortDesc: [false]
-});
-
 export type IgnoredAssetsHandlingType = 'none' | 'exclude' | 'show_only';
 
 export const EvmNativeToken = ['ETH'];

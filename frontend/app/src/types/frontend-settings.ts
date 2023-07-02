@@ -39,8 +39,6 @@ const ExplorerEndpoints = z.object({
   block: z.string().optional()
 });
 
-export type ExplorerEndpoints = z.infer<typeof ExplorerEndpoints>;
-
 const ExplorersSettings = z.object({
   ETC: ExplorerEndpoints.optional(),
   [Blockchain.ETH]: ExplorerEndpoints.optional(),
@@ -110,10 +108,6 @@ const VersionUpdateCheckFrequency = z
   .min(-1)
   .max(Constraints.MAX_HOURS_DELAY)
   .int();
-
-export type VersionUpdateCheckFrequency = z.infer<
-  typeof VersionUpdateCheckFrequency
->;
 
 export enum SupportedLanguage {
   EN = 'en',

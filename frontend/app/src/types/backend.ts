@@ -24,7 +24,6 @@ const NumericBackendArgument = z.object({
   value: z.number().nonnegative(),
   isDefault: z.boolean()
 });
-export type NumericBackendArgument = z.infer<typeof NumericBackendArgument>;
 export const BackendConfiguration = z.object({
   maxSizeInMbAllLogs: NumericBackendArgument,
   maxLogfilesNum: NumericBackendArgument,
