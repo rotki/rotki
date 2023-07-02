@@ -1,6 +1,6 @@
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.assets.asset import Asset, EvmToken
+from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.interfaces.ammswap.types import (
     LiquidityPool,
     LiquidityPoolAsset,
@@ -12,17 +12,10 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.constants import A_DOLLAR_BASED
 from rotkehlchen.types import AssetAmount, Price
 
-# Logic: Get balances
-
 # Addresses
 TEST_ADDRESS_1 = string_to_evm_address('0xfeF0E7635281eF8E3B705e9C5B86e1d3B0eAb397')
 TEST_ADDRESS_2 = string_to_evm_address('0xcf2B8EeC2A9cE682822b252a1e9B78EedebEFB02')
 TEST_ADDRESS_3 = string_to_evm_address('0x7777777777777777777777777777777777777777')
-
-
-# Tokens without oracle data (unknown tokens)
-A_SHL = Asset('eip155:1/erc20:0x8542325B72C6D9fC0aD2Ca965A78435413a915A0')
-A_CAR = Asset('eip155:1/erc20:0x4D9e23a3842fE7Eb7682B9725cF6c507C424A41B')
 
 
 def const_lp_1_events_balance() -> LiquidityPoolEventsBalance:

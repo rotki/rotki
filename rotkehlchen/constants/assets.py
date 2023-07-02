@@ -267,6 +267,5 @@ A_STETH = Asset('eip155:1/erc20:0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84')
 A_SAND = Asset('eip155:1/erc20:0x3845badAde8e6dFF049820680d1F14bD3903a5d0')
 
 A_WETH_OPT = Asset('eip155:10/erc20:0x4200000000000000000000000000000000000006')
-A_HETH_OPT = Asset('eip155:10/erc20:0xE38faf9040c7F09958c638bBDB977083722c5156')
 
 CONSTANT_ASSETS = {var_data for var_name, var_data in locals().items() if var_name.startswith('A_')}  # noqa: E501

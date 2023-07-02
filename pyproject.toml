@@ -256,3 +256,8 @@ known_first_party = ["rotkehlchen"]
 include_trailing_comma = "1"
 default_section = "THIRDPARTY"
 combine_as_imports = "1"
+
+[tool.vulture]
+
+ignore_names = ["fixture_*", "*Accountant", "*Decoder"]
+sort_by_size = true
