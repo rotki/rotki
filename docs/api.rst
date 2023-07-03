@@ -4753,7 +4753,7 @@ Dealing with History Events
 		      "entry_type": "eth_withdrawal_event",
                       "asset": "ETH",
                       "balance": {"amount": "0.00163351371344", "usd_value": "0"},
-                      "event_identifier": "eth2_withdrawal_1454_1652802807",
+                      "event_identifier": "EW_1454_20453",
                       "event_subtype": "remove_asset",
                       "event_type": "staking",
                       "location": "ethereum",
