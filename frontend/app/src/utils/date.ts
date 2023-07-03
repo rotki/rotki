@@ -52,7 +52,7 @@ export function convertFromTimestamp(
 ): string {
   const time = dayjs(timestamp * 1000);
   let format: string = getDateInputISOFormat(dateFormat);
-  if (time.hour() !== 0 || time.minute() !== 0) {
+  if (time.hour() !== 0 || time.minute() !== 0 || time.second() !== 0) {
     format += ' HH:mm';
     if (seconds) {
       format += ':ss';
