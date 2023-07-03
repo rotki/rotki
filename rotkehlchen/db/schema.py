@@ -639,7 +639,7 @@ CREATE TABLE IF NOT EXISTS nfts (
     last_price_asset TEXT,
     manual_price INTEGER NOT NULL CHECK (manual_price IN (0, 1)),
     owner_address TEXT,
-    blockchain TEXT GENERATED ALWAYS AS ("ETH") VIRTUAL,
+    blockchain TEXT GENERATED ALWAYS AS ('ETH') VIRTUAL,
     is_lp INTEGER NOT NULL CHECK (is_lp IN (0, 1)),
     image_url TEXT,
     collection_name TEXT,
