@@ -119,7 +119,7 @@ class EthWithdrawalEvent(EthStakingEvent):
         days = int(timestamp / 1000 / 86400)
         super().__init__(
             identifier=identifier,
-            event_identifier=f'EW{validator_index}_{days}',
+            event_identifier=f'EW_{validator_index}_{days}',
             sequence_index=0,
             timestamp=timestamp,
             event_type=HistoryEventType.STAKING,

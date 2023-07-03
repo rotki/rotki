@@ -43,7 +43,9 @@ def _update_nfts_table(write_cursor: 'DBCursor') -> None:
         FOREIGN KEY (last_price_asset) REFERENCES assets(identifier) ON UPDATE CASCADE
     );""")  # noqa: E501
     if table_exists is True:
-        write_cursor.execute('INSERT INTO nfts_new SELECT * FROM nfts')
+        write_cursor.execute(
+            'INSERT INTO nfts_new SELECT identifier, name, last_price, last_price_asset, '
+            'manual_price, owner_address, is_lp, image_url, collection_name FROM nfts')
         write_cursor.execute('DROP TABLE nfts')
         write_cursor.execute('ALTER TABLE nfts_new RENAME TO nfts')
 
@@ -54,7 +56,7 @@ def _reduce_eventid_size(write_cursor: 'DBCursor') -> None:
     """Reduce the size of history event ids"""
     log.debug('Enter _reduce_eventid_size')
     staking_events = write_cursor.execute(
-        'SELECT H.identifier, H.subtype, S.validator_index, S.is_exit_or_blocknumber '
+        'SELECT H.identifier, H.subtype, S.validator_index, S.is_exit_or_blocknumber, '
         'H.timestamp FROM history_events H INNER JOIN eth_staking_events_info S '
         'ON S.identifier=H.identifier',
     ).fetchall()
@@ -62,8 +64,8 @@ def _reduce_eventid_size(write_cursor: 'DBCursor') -> None:
     for identifier, subtype, validator_index, blocknumber, timestamp in staking_events:
         if subtype == 'remove asset':
             days = int(timestamp / 1000 / 86400)
-            updates.append((f'EW{validator_index}_{days}', identifier))
-        elif subtype in ('mev reward', 'block_production'):
+            updates.append((f'EW_{validator_index}_{days}', identifier))
+        elif subtype in ('mev reward', 'block production'):
             updates.append((f'BP1_{blocknumber}', identifier))
     write_cursor.executemany(
         'UPDATE history_events SET event_identifier=? WHERE identifier=?', updates,

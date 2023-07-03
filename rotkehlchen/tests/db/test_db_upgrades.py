@@ -1610,6 +1610,49 @@ def test_upgrade_db_37_to_38(user_data_dir):  # pylint: disable=unused-argument
     assert cursor.execute('SELECT * from eth_staking_events_info').fetchall() == expected_eth_staking_events_info  # noqa: E501
 
 
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_upgrade_db_38_to_39(user_data_dir):  # pylint: disable=unused-argument
+    """Test upgrading the DB from version 38 to version 39"""
+    msg_aggregator = MessagesAggregator()
+    _use_prepared_db(user_data_dir, 'v38_rotkehlchen.db')
+    db_v38 = _init_db_with_target_version(
+        target_version=38,
+        user_data_dir=user_data_dir,
+        msg_aggregator=msg_aggregator,
+        resume_from_backup=False,
+    )
+    cursor = db_v38.conn.cursor()
+    events_num_before = cursor.execute('SELECT COUNT(*) FROM history_events').fetchone()[0]
+    withdrawal_events_before = {x[0] for x in cursor.execute(
+        "SELECT identifier FROM history_events WHERE event_identifier LIKE 'eth2_withdrawal_%'",  # noqa: E501
+    ).fetchall()}
+    block_events_before = {x[0] for x in cursor.execute(
+        "SELECT identifier FROM history_events WHERE event_identifier LIKE 'evm_1_block_%'",  # noqa: E501
+    ).fetchall()}
+    nft_data = cursor.execute('SELECT * FROM nfts').fetchall()
+
+    db_v38.logout()
+    # Execute upgrade
+    db = _init_db_with_target_version(
+        target_version=39,
+        user_data_dir=user_data_dir,
+        msg_aggregator=msg_aggregator,
+        resume_from_backup=False,
+    )
+    cursor = db.conn.cursor()
+
+    assert cursor.execute('SELECT COUNT(*) FROM history_events').fetchone()[0] == events_num_before
+    withdrawal_events_after = {x[0] for x in cursor.execute(
+        "SELECT identifier FROM history_events WHERE event_identifier LIKE 'EW_%'",
+    ).fetchall()}
+    assert withdrawal_events_after == withdrawal_events_before
+    block_events_after = {x[0] for x in cursor.execute(
+        "SELECT identifier FROM history_events WHERE event_identifier LIKE 'BP1_%'",
+    ).fetchall()}
+    assert block_events_after == block_events_before
+    assert cursor.execute('SELECT * FROM nfts').fetchall() == nft_data
+
+
 def test_latest_upgrade_adds_remove_tables(user_data_dir):
     """
     This is a test that we can only do for the last upgrade.
