@@ -50,15 +50,38 @@ def _update_nfts_table(write_cursor: 'DBCursor') -> None:
     log.debug('Exit _update_nfts_table')
 
 
+def _reduce_eventid_size(write_cursor: 'DBCursor') -> None:
+    """Reduce the size of history event ids"""
+    log.debug('Enter _reduce_eventid_size')
+    staking_events = write_cursor.execute(
+        'SELECT H.identifier, H.subtype, S.validator_index, S.is_exit_or_blocknumber '
+        'H.timestamp FROM history_events H INNER JOIN eth_staking_events_info S '
+        'ON S.identifier=H.identifier',
+    ).fetchall()
+    updates = []
+    for identifier, subtype, validator_index, blocknumber, timestamp in staking_events:
+        if subtype == 'remove asset':
+            days = int(timestamp / 1000 / 86400)
+            updates.append((f'EW{validator_index}_{days}', identifier))
+        elif subtype in ('mev reward', 'block_production'):
+            updates.append((f'BP1_{blocknumber}', identifier))
+    write_cursor.executemany(
+        'UPDATE history_events SET event_identifier=? WHERE identifier=?', updates,
+    )
+    log.debug('Exit _reduce_eventid_size')
+
+
 def upgrade_v38_to_v39(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
     """Upgrades the DB from v38 to v39. This was in v1.30.0 release.
         - Update NFT table to not use double quotes
         - Reduce size of some event identifiers
     """
     log.debug('Entered userdb v38->v39 upgrade')
-    progress_handler.set_total_steps(1)
+    progress_handler.set_total_steps(2)
     with db.user_write() as write_cursor:
         _update_nfts_table(write_cursor)
+        progress_handler.new_step()
+        _reduce_eventid_size(write_cursor)
         progress_handler.new_step()
 
     log.debug('Finished userdb v38->v39 upgrade')
