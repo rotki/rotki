@@ -612,6 +612,9 @@ def test_get_validators_to_query_for_withdrawals(database):
     # now check that all need to be queried since we have no withdrawals
     assert db.get_validators_to_query_for_withdrawals(now_ms) == [(1, 0), (2, 0), (3, 0), (42, 0), (69, 0)]  # noqa: E501
 
+    last_ts_1 = 86400000 * 2 + 55000
+    last_ts_2 = 86400000 + 69000
+    last_ts_3 = 86400000 + 30000
     with database.user_write() as write_cursor:  # now add some withdrawals in the DB
         dbevents.add_history_events(write_cursor, [
             EthWithdrawalEvent(
@@ -622,13 +625,13 @@ def test_get_validators_to_query_for_withdrawals(database):
                 is_exit=False,
             ), EthWithdrawalEvent(
                 validator_index=1,
-                timestamp=TimestampMS(25000),
+                timestamp=TimestampMS(86400000 + 25000),
                 balance=Balance(1, 1),
                 withdrawal_address=address1,
                 is_exit=False,
             ), EthWithdrawalEvent(
                 validator_index=1,
-                timestamp=TimestampMS(55000),
+                timestamp=TimestampMS(last_ts_1),
                 balance=Balance(1, 1),
                 withdrawal_address=address1,
                 is_exit=False,
@@ -652,7 +655,7 @@ def test_get_validators_to_query_for_withdrawals(database):
                 is_exit=False,
             ), EthWithdrawalEvent(
                 validator_index=2,
-                timestamp=TimestampMS(69000),
+                timestamp=TimestampMS(last_ts_2),
                 balance=Balance(2, 1),
                 withdrawal_address=address1,
                 is_exit=False,
@@ -664,7 +667,7 @@ def test_get_validators_to_query_for_withdrawals(database):
                 is_exit=False,
             ), EthWithdrawalEvent(
                 validator_index=3,
-                timestamp=TimestampMS(30000),
+                timestamp=TimestampMS(last_ts_3),
                 balance=Balance(FVal('32.0023'), 1),
                 withdrawal_address=address1,
                 is_exit=True,
@@ -700,7 +703,7 @@ def test_get_validators_to_query_for_withdrawals(database):
         ))
 
     result = db.get_validators_to_query_for_withdrawals(now_ms)
-    assert result == [(1, 55000), (2, 69000), (3, 30000), (69, 0)]
+    assert result == [(1, last_ts_1), (2, last_ts_2), (3, last_ts_3), (69, 0)]
 
 
 @pytest.mark.parametrize('ethereum_accounts', [['0x0fdAe061cAE1Ad4Af83b27A96ba5496ca992139b', '0xF4fEae08C1Fa864B64024238E33Bfb4A3Ea7741d']])  # noqa: E501

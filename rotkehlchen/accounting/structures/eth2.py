@@ -112,9 +112,14 @@ class EthWithdrawalEvent(EthStakingEvent):
             notes = f'Exited validator {validator_index} with {balance.amount} ETH'
         else:
             notes = f'Withdrew {balance.amount} ETH from validator {validator_index}'
+
+        # withdrawals happen at least every couple of days. For them to happen in the same
+        # day for same validator we would need to drop to less than 115200 validators
+        # https://ethereum.org/en/staking/withdrawals/#how-soon
+        days = int(timestamp / 1000 / 86400)
         super().__init__(
             identifier=identifier,
-            event_identifier=f'eth2_withdrawal_{validator_index}_{timestamp}',
+            event_identifier=f'EW{validator_index}_{days}',
             sequence_index=0,
             timestamp=timestamp,
             event_type=HistoryEventType.STAKING,
@@ -250,7 +255,7 @@ class EthBlockEvent(EthStakingEvent):
 
     @staticmethod
     def form_event_identifier(block_number: int) -> str:
-        return f'evm_1_block_{block_number}'
+        return f'BP1_{block_number}'
 
     @property
     def entry_type(self) -> HistoryBaseEntryType:
