@@ -87,11 +87,14 @@ def upgrade_v38_to_v39(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         - Reduce size of some event identifiers
     """
     log.debug('Entered userdb v38->v39 upgrade')
-    progress_handler.set_total_steps(2)
+    progress_handler.set_total_steps(3)
     with db.user_write() as write_cursor:
         _update_nfts_table(write_cursor)
         progress_handler.new_step()
         _reduce_eventid_size(write_cursor)
         progress_handler.new_step()
+
+    db.conn.execute('VACUUM;')
+    progress_handler.new_step()
 
     log.debug('Finished userdb v38->v39 upgrade')
