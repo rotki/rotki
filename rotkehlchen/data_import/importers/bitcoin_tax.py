@@ -22,6 +22,8 @@ from rotkehlchen.serialization.deserialize import (
 from rotkehlchen.types import Fee, Location, TimestampMS
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
+from .constants import EVENT_ID_PREFIX
+
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
@@ -199,7 +201,7 @@ class BitcoinTaxImporter(BaseExchangeImporter):
             return  # skip empty rows
 
         # use a deterministic event_identifier to avoid duplicate events in case of reimport
-        event_identifier = f'rotki_events_bitcoin_tax_{hash_csv_row(csv_row)}'
+        event_identifier = f'{EVENT_ID_PREFIX}BTX_{hash_csv_row(csv_row)}'
         timestamp = ts_sec_to_ms(deserialize_timestamp_from_date(
             date=csv_row['Date'],
             formatstr=timestamp_format,

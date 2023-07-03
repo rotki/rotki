@@ -1629,6 +1629,9 @@ def test_upgrade_db_38_to_39(user_data_dir):  # pylint: disable=unused-argument
     block_events_before = {x[0] for x in cursor.execute(
         "SELECT identifier FROM history_events WHERE event_identifier LIKE 'evm_1_block_%'",  # noqa: E501
     ).fetchall()}
+    assert cursor.execute("SELECT event_identifier FROM history_events WHERE event_identifier LIKE 'rotki_events_%'").fetchall() == [  # noqa: E501
+        ('rotki_events_0x2123',), ('rotki_events_bitcoin_tax_0x4123',),
+    ]
     nft_data = cursor.execute('SELECT * FROM nfts').fetchall()
 
     db_v38.logout()
@@ -1650,6 +1653,10 @@ def test_upgrade_db_38_to_39(user_data_dir):  # pylint: disable=unused-argument
         "SELECT identifier FROM history_events WHERE event_identifier LIKE 'BP1_%'",
     ).fetchall()}
     assert block_events_after == block_events_before
+    assert cursor.execute("SELECT event_identifier FROM history_events WHERE event_identifier LIKE 'rotki_events_%'").fetchall() == []  # noqa: E501
+    assert set(cursor.execute("SELECT event_identifier FROM history_events WHERE event_identifier LIKE 'RE%'").fetchall()) == {  # noqa: E501
+        ('RE_0x2123',), ('REBTX_0x4123',),
+    }
     assert cursor.execute('SELECT * FROM nfts').fetchall() == nft_data
 
 

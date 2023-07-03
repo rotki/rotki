@@ -67,6 +67,14 @@ def _reduce_eventid_size(write_cursor: 'DBCursor') -> None:
             updates.append((f'EW_{validator_index}_{days}', identifier))
         elif subtype in ('mev reward', 'block production'):
             updates.append((f'BP1_{blocknumber}', identifier))
+
+    imported_events = write_cursor.execute(
+        "SELECT identifier, event_identifier FROM history_events WHERE event_identifier LIKE 'rotki_events_%'",  # noqa: E501
+    ).fetchall()
+    for identifier, event_identifier in imported_events:
+        new_event_identifer = event_identifier.replace('rotki_events_bitcoin_tax_', 'REBTX_').replace('rotki_events_', 'RE_')  # noqa: E501
+        updates.append((new_event_identifer, identifier))
+
     write_cursor.executemany(
         'UPDATE history_events SET event_identifier=? WHERE identifier=?', updates,
     )

@@ -16,6 +16,8 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.serialization.deserialize import deserialize_asset_amount, deserialize_timestamp
 from rotkehlchen.types import Fee, Location, TimestampMS
 
+from .constants import EVENT_ID_PREFIX
+
 GENERIC_TYPE_TO_HISTORY_EVENT_TYPE_MAPPINGS = {
     'Deposit': (HistoryEventType.DEPOSIT, HistoryEventSubType.SPEND),
     'Withdrawal': (HistoryEventType.WITHDRAWAL, HistoryEventSubType.RECEIVE),
@@ -39,7 +41,7 @@ class RotkiGenericEventsImporter(BaseExchangeImporter):
         - UnknownAsset
         - KeyError
         """
-        identifier = f'rotki_events_{uuid4().hex}'
+        identifier = f'{EVENT_ID_PREFIX}_{uuid4().hex}'
         try:
             event_type, event_subtype = GENERIC_TYPE_TO_HISTORY_EVENT_TYPE_MAPPINGS[csv_row['Type']]  # noqa: E501
         except KeyError as e:
