@@ -4,7 +4,7 @@ gevent-websocket==0.10.1
 wsaccel==0.6.3  # recommended for acceleration of gevent-websocket. But abandoned.
 web3==5.31.3
 rotki-content-hash==0.0.3  # fork of content-hash due to https://github.com/filips123/ContentHashPy/issues/1
-rotki-pysqlcipher3==2023.5.1
+rotki-pysqlcipher3==2023.7.1
 requests==2.31.0
 urllib3==1.26.14
 coincurve==17.0.0
