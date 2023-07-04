@@ -3,7 +3,6 @@
 but heavily modified"""
 
 import random
-import re
 import sqlite3
 from collections.abc import Generator, Sequence
 from contextlib import contextmanager
@@ -16,8 +15,8 @@ from uuid import uuid4
 import gevent
 from pysqlcipher3 import dbapi2 as sqlcipher
 
+from rotkehlchen.db.checks import sanity_check_impl
 from rotkehlchen.db.minimized_schema import MINIMIZED_USER_DB_SCHEMA
-from rotkehlchen.errors.misc import DBSchemaError
 from rotkehlchen.globaldb.minimized_schema import MINIMIZED_GLOBAL_DB_SCHEMA
 from rotkehlchen.greenlets.utils import get_greenlet_name
 from rotkehlchen.utils.misc import ts_now
@@ -27,11 +26,6 @@ if TYPE_CHECKING:
 
 UnderlyingCursor = Union[sqlite3.Cursor, sqlcipher.Cursor]  # pylint: disable=no-member
 UnderlyingConnection = Union[sqlite3.Connection, sqlcipher.Connection]  # pylint: disable=no-member
-
-DEFAULT_SANITY_CHECK_MESSAGE = (
-    'If you have manually edited the db please undo it. Otherwise open an issue in our '
-    'github or contact us in our discord server.'
-)
 
 CONTEXT_SWITCH_WAIT = 1  # seconds to wait for a status change in a DB context switch
 import logging
@@ -513,68 +507,10 @@ class DBConnection:
         """
         if self.minimized_schema is None:
             return  # Should happen only for transient db
-        # Create same mapping for tables that are currently in the database
-        db_name = self.connection_type.name.lower()
+
         with self.read_ctx() as cursor:
-            cursor.execute('SELECT name, sql FROM sqlite_master WHERE type="table"')
-            tables_data_from_db: dict[str, tuple[str, str]] = {}
-            for (name, raw_script) in cursor:
-                minimized_script = raw_script.replace(' ', '').replace('\n', '').replace("'", '"').lower()  # noqa: E501
-                table_properties = re.findall(
-                    pattern=r'createtable.*?\((.+)\)',
-                    string=minimized_script,
-                )[0]
-                # Store table properties for comparison with expected table structure and
-                # raw_script for the ease of debugging
-                tables_data_from_db[name] = (table_properties, raw_script)
-
-            # Check that there are no extra structures such as views
-            extra_db_sctructures = cursor.execute(
-                'SELECT type, name, sql FROM sqlite_master WHERE type NOT IN ("table", "index")',
-            ).fetchall()
-            if len(extra_db_sctructures) > 0:
-                logger.critical(
-                    f'Unexpected structures in {db_name} database: {extra_db_sctructures}',
-                )
-                raise DBSchemaError(
-                    f'There are unexpected structures in your {db_name} database. '
-                    f'Check the logs for more details. ' + DEFAULT_SANITY_CHECK_MESSAGE,
-                )
-
-            # Check what tables are missing from the db
-            missing_tables = self.minimized_schema.keys() - tables_data_from_db.keys()
-            if len(missing_tables) > 0:
-                raise DBSchemaError(
-                    f'Tables {missing_tables} are missing from your {db_name} '
-                    f'database. ' + DEFAULT_SANITY_CHECK_MESSAGE,
-                )
-
-            # Check what extra tables are in the db
-            extra_tables = tables_data_from_db.keys() - self.minimized_schema.keys()
-            if len(extra_tables) > 0:
-                logger.info(
-                    f'Your {db_name} database has the following unexpected tables: '
-                    f'{extra_tables}. Feel free to delete them.',
-                )
-                for extra_table in extra_tables:
-                    tables_data_from_db.pop(extra_table)
-
-            # Check structure of which tables in the database differ from the expected.
-            differing_tables_properties: dict[str, tuple[tuple[str, str], str]] = {}
-            # At this point keys of two dictionaries match
-            for table_name, table_data in tables_data_from_db.items():
-                if table_data[0] != self.minimized_schema[table_name].lower():
-                    differing_tables_properties[table_name] = (
-                        table_data,
-                        self.minimized_schema[table_name],
-                    )
-
-            if len(differing_tables_properties) > 0:
-                log_msg = f'Differing tables in the {db_name} database are:'
-                for table_name, ((raw_script, minimized_script), structure_expected) in differing_tables_properties.items():  # noqa: E501
-                    log_msg += (f'\n- For table {table_name} expected {structure_expected} but found {minimized_script}. Table raw script is: {raw_script}')  # noqa: E501
-                logger.critical(log_msg)
-                raise DBSchemaError(
-                    f'Structure of some tables in your {db_name} database differ from the '
-                    f'expected. Check the logs for more details. ' + DEFAULT_SANITY_CHECK_MESSAGE,
-                )
+            sanity_check_impl(
+                cursor=cursor,
+                db_name=self.connection_type.name.lower(),
+                minimized_schema=self.minimized_schema,
+            )

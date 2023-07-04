@@ -10,6 +10,7 @@ import datetime
 import re
 from typing import Literal
 
+from rotkehlchen.db.checks import db_script_normalizer
 from rotkehlchen.db.schema import DB_SCRIPT_CREATE_TABLES as USER_DB_CREATE_TABLES
 from rotkehlchen.globaldb.schema import DB_SCRIPT_CREATE_TABLES as GLOBAL_DB_CREATE_TABLES
 from rotkehlchen.utils.misc import get_system_spec
@@ -35,10 +36,10 @@ db_name: Literal['user', 'global'] = args.db_name
 # this {"ens_mappings": "CREATETABLEIFNOTEXISTSens_mappings(addressTEXTNOTNULLPRIMARYKEY,ens_nameTEXTUNIQUE,last_updateINTEGERNOTNULL);"}  # noqa: E501
 db_script = USER_DB_CREATE_TABLES if db_name == 'user' else GLOBAL_DB_CREATE_TABLES
 regexp_result = re.findall(
-    pattern=r'CREATETABLEIFNOTEXISTS(.+?)\((.+?)\);',
+    pattern=r'createtableifnotexists(.+?)\((.+?)\);',
     # Replacing new lines and white spaces since they may vary if by an accident code of a
     # db upgrade was a bit different from the one that creates new tables
-    string=db_script.replace(' ', '').replace('\n', '').replace("'", '"'),
+    string=db_script_normalizer(db_script),
 )
 
 lines = [
@@ -52,7 +53,7 @@ lines.append(f'# Created at {created_at} UTC with rotki version {rotki_version} 
 
 lines.append(f'MINIMIZED_{db_name.upper()}_DB_SCHEMA = {{')
 for name, properties in regexp_result:
-    lines.append(f"    '{name}': '{properties}',")
+    lines.append(f'    "{name}": "{properties}",')
 lines.append('}')
 
 # Save to the file
