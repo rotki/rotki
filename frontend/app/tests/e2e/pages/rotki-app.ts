@@ -62,7 +62,7 @@ export class RotkiApp {
   }
 
   checkGetPremiumButton() {
-    cy.get('[data-cy=get-premium-button').should('be.visible');
+    cy.get('[data-cy=get-premium-button]').should('be.visible');
   }
 
   login(username: string, password = '1234') {

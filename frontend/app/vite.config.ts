@@ -39,19 +39,6 @@ export default defineConfig({
     },
     dedupe: ['vue']
   },
-  optimizeDeps: {
-    include: [
-      'imask',
-      'lodash/orderBy',
-      'lodash/isEmpty',
-      'lodash/dropRight',
-      'lodash/omitBy',
-      'lodash/pickBy',
-      'lodash/pick',
-      'lodash/keys',
-      '@vueuse/math'
-    ]
-  },
   test: {
     globals: true,
     environment: 'jsdom',

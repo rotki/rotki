@@ -1,4 +1,4 @@
-lockfileVersion: '6.1'
+lockfileVersion: '6.0'
 
 settings:
   autoInstallPeers: true
@@ -151,7 +151,7 @@ importers:
         version: 7.22.4(@babel/core@7.22.1)
       '@cypress/code-coverage':
         specifier: 3.10.7
-        version: 3.10.7(@babel/core@7.22.1)(@babel/preset-env@7.22.4)(babel-loader@8.3.0)(cypress@12.13.0)(webpack@5.85.0)
+        version: 3.10.7(@babel/core@7.22.1)(@babel/preset-env@7.22.4)(babel-loader@8.3.0)(cypress@12.11.0)(webpack@5.85.0)
       babel-loader:
         specifier: 8.3.0
         version: 8.3.0(@babel/core@7.22.1)(webpack@5.85.0)
@@ -199,8 +199,8 @@ importers:
         specifier: 6.3.1
         version: 6.3.1
       cypress:
-        specifier: 12.13.0
-        version: 12.13.0
+        specifier: 12.11.0
+        version: 12.11.0
       dmg-license:
         specifier: 1.0.11
         version: 1.0.11
@@ -1644,7 +1644,7 @@ packages:
       postcss-selector-parser: 6.0.13
     dev: true
 
-  /@cypress/code-coverage@3.10.7(@babel/core@7.22.1)(@babel/preset-env@7.22.4)(babel-loader@8.3.0)(cypress@12.13.0)(webpack@5.85.0):
+  /@cypress/code-coverage@3.10.7(@babel/core@7.22.1)(@babel/preset-env@7.22.4)(babel-loader@8.3.0)(cypress@12.11.0)(webpack@5.85.0):
     resolution: {integrity: sha512-kQFB8GemDAAk6JBINsR9MLEgCw2AKb3FcdHQjIJ3KV4ZER6ZF0NGdO8SRj5oTVp28oqfOab4cgoBdecRiOE3qA==}
     requiresBuild: true
     peerDependencies:
@@ -1652,7 +1652,7 @@ packages:
     dependencies:
       '@cypress/webpack-preprocessor': 5.15.6(@babel/core@7.22.1)(@babel/preset-env@7.22.4)(babel-loader@8.3.0)(webpack@5.85.0)
       chalk: 4.1.2
-      cypress: 12.13.0
+      cypress: 12.11.0
       dayjs: 1.10.7
       debug: 4.3.4(supports-color@8.1.1)
       execa: 4.1.0
@@ -4555,8 +4555,8 @@ packages:
       stream-transform: 3.2.6
     dev: true
 
-  /cypress@12.13.0:
-    resolution: {integrity: sha512-QJlSmdPk+53Zhy69woJMySZQJoWfEWun3X5OOenGsXjRPVfByVTHorxNehbzhZrEzH9RDUDqVcck0ahtlS+N/Q==}
+  /cypress@12.11.0:
+    resolution: {integrity: sha512-TJE+CCWI26Hwr5Msb9GpQhFLubdYooW0fmlPwTsfiyxmngqc7+SZGLPeIkj2dTSSZSEtpQVzOzvcnzH0o8G7Vw==}
     engines: {node: ^14.0.0 || ^16.0.0 || >=18.0.0}
     hasBin: true
     requiresBuild: true

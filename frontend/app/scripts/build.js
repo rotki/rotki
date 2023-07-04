@@ -60,6 +60,9 @@ const setupRendererBuilder = () =>
     if (mode === 'docker') {
       injectEnv('.env.docker');
     } else {
+      if (mode && mode !== 'production') {
+        injectEnv(`.env.${mode}`);
+      }
       await setupPreloadBuilder();
       await setupMainBuilder();
     }
