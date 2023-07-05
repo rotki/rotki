@@ -77,7 +77,7 @@ export const useCurrencies = createSharedComposable(() => {
     new Currency(t('currencies.rub'), CURRENCY_RUB, '₽'),
     new Currency(t('currencies.zar'), CURRENCY_ZAR, 'R'),
     new Currency(t('currencies.try'), CURRENCY_TRY, '₺'),
-    new Currency(t('currencies.chf'), CURRENCY_CHF, 'Fr.'),
+    new Currency(t('currencies.chf'), CURRENCY_CHF, 'CHF'),
     new Currency(t('currencies.sgd'), CURRENCY_SGD, 'S$'),
     new Currency(t('currencies.sek'), CURRENCY_SEK, 'kr'),
     new Currency(t('currencies.twd'), CURRENCY_TWD, 'NT$'),
