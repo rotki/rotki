@@ -1647,6 +1647,7 @@ def test_upgrade_db_38_to_39(user_data_dir):  # pylint: disable=unused-argument
     receipts_num = cursor.execute('SELECT COUNT(*) FROM evmtx_receipts').fetchone()[0]
     logs_num = cursor.execute('SELECT COUNT(*) FROM evmtx_receipt_logs').fetchone()[0]
     topics_num = cursor.execute('SELECT COUNT(*) FROM evmtx_receipt_log_topics').fetchone()[0]
+    tx_mappings_num = cursor.execute('SELECT COUNT(*) FROM evm_tx_mappings').fetchone()[0]
 
     # Get the previous table data and map old keys to data, for later comparison
     hashchain_to_txs = {}
@@ -1670,6 +1671,10 @@ def test_upgrade_db_38_to_39(user_data_dir):  # pylint: disable=unused-argument
     for entry in cursor:
         hashchainlogindex = get_hashchainlog(entry) + entry[4].to_bytes(4, byteorder='big')
         hashchainlogindex_to_topics[hashchainlogindex] = entry[3:]
+    hashchain_to_tx_mappings = {}
+    cursor.execute('SELECT * FROM evm_tx_mappings')
+    for entry in cursor:
+        hashchain_to_tx_mappings[get_hashchain(entry)] = entry[2:]
 
     db_v38.logout()
     # Execute upgrade
@@ -1703,6 +1708,7 @@ def test_upgrade_db_38_to_39(user_data_dir):  # pylint: disable=unused-argument
     assert cursor.execute('SELECT COUNT(*) FROM evmtx_receipts').fetchone()[0] == receipts_num
     assert cursor.execute('SELECT COUNT(*) FROM evmtx_receipt_logs').fetchone()[0] == logs_num
     assert cursor.execute('SELECT COUNT(*) FROM evmtx_receipt_log_topics').fetchone()[0] == topics_num  # noqa: E501
+    assert cursor.execute('SELECT COUNT(*) FROM evm_tx_mappings').fetchone()[0] == tx_mappings_num  # noqa: E501
 
     # Now make sure mappings are correct and point to the same data after upgrade
     hashchain_to_id = {}
@@ -1738,6 +1744,11 @@ def test_upgrade_db_38_to_39(user_data_dir):  # pylint: disable=unused-argument
     for entry in cursor:
         hashchainlogindex = id_to_hashchainlog[entry[0]] + entry[2].to_bytes(4, byteorder='big')
         assert hashchainlogindex_to_topics[hashchainlogindex] == entry[1:]
+
+    cursor.execute('SELECT * FROM evm_tx_mappings')
+    for entry in cursor:
+        hashchain = id_to_hashchain[entry[0]]
+        assert hashchain_to_tx_mappings[hashchain] == entry[1:]
 
 
 def test_latest_upgrade_adds_remove_tables(user_data_dir):

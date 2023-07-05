@@ -523,11 +523,10 @@ CREATE TABLE IF NOT EXISTS used_query_ranges (
 # Currently this table is used only to store a flag that shows whether a transaction is decoded.
 DB_CREATE_EVM_TX_MAPPINGS = """
 CREATE TABLE IF NOT EXISTS evm_tx_mappings (
-    tx_hash BLOB NOT NULL,
-    chain_id INTEGER NOT NULL,
+    tx_id INTEGET NOT NULL,
     value INTEGER NOT NULL,
-    FOREIGN KEY(tx_hash, chain_id) references evm_transactions(tx_hash, chain_id) ON UPDATE CASCADE ON DELETE CASCADE,
-    PRIMARY KEY (tx_hash, chain_id, value)
+    FOREIGN KEY(tx_id) references evm_transactions(identifier) ON UPDATE CASCADE ON DELETE CASCADE,
+    PRIMARY KEY (tx_id, value)
 );
 """  # noqa: E501
 
