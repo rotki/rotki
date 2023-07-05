@@ -1613,6 +1613,12 @@ def test_upgrade_db_37_to_38(user_data_dir):  # pylint: disable=unused-argument
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_upgrade_db_38_to_39(user_data_dir):  # pylint: disable=unused-argument
     """Test upgrading the DB from version 38 to version 39"""
+    def get_hashchain(entry):
+        return entry[0] + entry[1].to_bytes(4, byteorder='big')
+
+    def get_hashchainlog(entry):
+        return get_hashchain(entry) + entry[2].to_bytes(4, byteorder='big')
+
     msg_aggregator = MessagesAggregator()
     _use_prepared_db(user_data_dir, 'v38_rotkehlchen.db')
     db_v38 = _init_db_with_target_version(
@@ -1634,6 +1640,36 @@ def test_upgrade_db_38_to_39(user_data_dir):  # pylint: disable=unused-argument
         ('rotki_events_0x2123',), ('rotki_events_bitcoin_tax_0x4123',),
     ]
     nft_data = cursor.execute('SELECT * FROM nfts').fetchall()
+
+    # Get previous data count to later compare
+    txs_num = cursor.execute('SELECT COUNT(*) FROM evm_transactions').fetchone()[0]
+    internaltxs_num = cursor.execute('SELECT COUNT(*) FROM evm_internal_transactions').fetchone()[0]  # noqa: E501
+    receipts_num = cursor.execute('SELECT COUNT(*) FROM evmtx_receipts').fetchone()[0]
+    logs_num = cursor.execute('SELECT COUNT(*) FROM evmtx_receipt_logs').fetchone()[0]
+    topics_num = cursor.execute('SELECT COUNT(*) FROM evmtx_receipt_log_topics').fetchone()[0]
+
+    # Get the previous table data and map old keys to data, for later comparison
+    hashchain_to_txs = {}
+    cursor.execute('SELECT * FROM evm_transactions')
+    for entry in cursor:
+        hashchain_to_txs[get_hashchain(entry)] = entry[2:]
+    hashchain_to_internaltxs = {}
+    cursor.execute('SELECT * FROM evm_internal_transactions')
+    for entry in cursor:
+        hashchain_to_internaltxs[get_hashchain(entry)] = entry[2:]
+    hashchain_to_receipts = {}
+    cursor.execute('SELECT * FROM evmtx_receipts')
+    for entry in cursor:
+        hashchain_to_receipts[get_hashchain(entry)] = entry[2:]
+    hashchainlog_to_logs = {}
+    cursor.execute('SELECT * FROM evmtx_receipt_logs')
+    for entry in cursor:
+        hashchainlog_to_logs[get_hashchainlog(entry)] = entry[3:]
+    hashchainlogindex_to_topics = {}
+    cursor.execute('SELECT * FROM evmtx_receipt_log_topics')
+    for entry in cursor:
+        hashchainlogindex = get_hashchainlog(entry) + entry[4].to_bytes(4, byteorder='big')
+        hashchainlogindex_to_topics[hashchainlogindex] = entry[3:]
 
     db_v38.logout()
     # Execute upgrade
@@ -1660,6 +1696,48 @@ def test_upgrade_db_38_to_39(user_data_dir):  # pylint: disable=unused-argument
         ('RE_0x2123',), ('REBTX_0x4123',),
     }
     assert cursor.execute('SELECT * FROM nfts').fetchall() == nft_data
+
+    # Make sure number of evm table entries is the same
+    assert cursor.execute('SELECT COUNT(*) FROM evm_transactions').fetchone()[0] == txs_num
+    assert cursor.execute('SELECT COUNT(*) FROM evm_internal_transactions').fetchone()[0] == internaltxs_num  # noqa: E501
+    assert cursor.execute('SELECT COUNT(*) FROM evmtx_receipts').fetchone()[0] == receipts_num
+    assert cursor.execute('SELECT COUNT(*) FROM evmtx_receipt_logs').fetchone()[0] == logs_num
+    assert cursor.execute('SELECT COUNT(*) FROM evmtx_receipt_log_topics').fetchone()[0] == topics_num  # noqa: E501
+
+    # Now make sure mappings are correct and point to the same data after upgrade
+    hashchain_to_id = {}
+    id_to_hashchain = {}
+    cursor.execute('SELECT * FROM evm_transactions')
+    for entry in cursor:
+        hashchain = get_hashchain(entry[1:])
+        hashchain_to_id[hashchain] = entry[0]
+        id_to_hashchain[entry[0]] = hashchain
+        assert hashchain_to_txs[hashchain] == entry[3:]
+
+    cursor.execute('SELECT * FROM evm_internal_transactions')
+    for entry in cursor:
+        hashchain = id_to_hashchain[entry[0]]
+        assert hashchain_to_internaltxs[hashchain] == entry[1:]
+
+    cursor.execute('SELECT * FROM evmtx_receipts')
+    for entry in cursor:
+        hashchain = id_to_hashchain[entry[0]]
+        assert hashchain_to_receipts[hashchain] == entry[1:]
+
+    hashchainlog_to_id = {}
+    id_to_hashchainlog = {}
+    cursor.execute('SELECT * FROM evmtx_receipt_logs')
+    for entry in cursor:
+        hashchain = id_to_hashchain[entry[1]]
+        hashchainlog = hashchain + entry[2].to_bytes(4, byteorder='big')
+        hashchainlog_to_id[hashchainlog] = entry[0]
+        id_to_hashchainlog[entry[0]] = hashchainlog
+        assert hashchainlog_to_logs[hashchainlog] == entry[3:]
+
+    cursor.execute('SELECT * FROM evmtx_receipt_log_topics')
+    for entry in cursor:
+        hashchainlogindex = id_to_hashchainlog[entry[0]] + entry[2].to_bytes(4, byteorder='big')
+        assert hashchainlogindex_to_topics[hashchainlogindex] == entry[1:]
 
 
 def test_latest_upgrade_adds_remove_tables(user_data_dir):
