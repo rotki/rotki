@@ -105,12 +105,14 @@ def _update_evm_transaction_data(write_cursor: 'DBCursor') -> None:
     receipts = write_cursor.execute('SELECT * from evmtx_receipts').fetchall()
     logs = write_cursor.execute('SELECT * from evmtx_receipt_logs').fetchall()
     topics = write_cursor.execute('SELECT * from evmtx_receipt_log_topics').fetchall()
+    tx_mappings = write_cursor.execute('SELECT * from evm_tx_mappings').fetchall()
 
     write_cursor.execute('DROP TABLE IF EXISTS evm_transactions')
     write_cursor.execute('DROP TABLE IF EXISTS evm_internal_transactions')
     write_cursor.execute('DROP TABLE IF EXISTS evmtx_receipts')
     write_cursor.execute('DROP TABLE IF EXISTS evmtx_receipt_logs')
     write_cursor.execute('DROP TABLE IF EXISTS evmtx_receipt_log_topics')
+    write_cursor.execute('DROP TABLE IF EXISTS evm_tx_mappings')
 
     write_cursor.execute("""
     CREATE TABLE IF NOT EXISTS evm_transactions (
@@ -139,6 +141,18 @@ def _update_evm_transaction_data(write_cursor: 'DBCursor') -> None:
         'from_address, to_address, value, gas, gas_price, gas_used, input_data, nonce) '
         'VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
         tx_data,
+    )
+
+    write_cursor.execute("""
+    CREATE TABLE IF NOT EXISTS evm_tx_mappings (
+        tx_id INTEGET NOT NULL,
+        value INTEGER NOT NULL,
+        FOREIGN KEY(tx_id) references evm_transactions(identifier) ON UPDATE CASCADE ON DELETE CASCADE,
+        PRIMARY KEY (tx_id, value)
+    );""")
+    write_cursor.executemany(
+        'INSERT INTO evm_tx_mappings(tx_id, value) VALUES(?, ?)',
+        [(hashchain_to_id[x[0] + x[1].to_bytes(4, byteorder='big')], *x[2:]) for x in tx_mappings],
     )
 
     write_cursor.execute("""
