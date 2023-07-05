@@ -421,6 +421,7 @@ CREATE TABLE IF NOT EXISTS ledger_actions (
 
 DB_CREATE_EVM_TRANSACTIONS = """
 CREATE TABLE IF NOT EXISTS evm_transactions (
+    identifier INTEGER NOT NULL PRIMARY KEY,
     tx_hash BLOB NOT NULL,
     chain_id INTEGER NOT NULL,
     timestamp INTEGER NOT NULL,
@@ -433,7 +434,7 @@ CREATE TABLE IF NOT EXISTS evm_transactions (
     gas_used TEXT NOT NULL,
     input_data BLOB NOT NULL,
     nonce INTEGER NOT NULL,
-    PRIMARY KEY(tx_hash, chain_id)
+    UNIQUE(tx_hash, chain_id)
 );
 """
 
@@ -452,53 +453,48 @@ CREATE TABLE IF NOT EXISTS optimism_transactions (
 # https://api.etherscan.io/api?module=account&action=txlistinternal&sort=asc&startBlock=16779092&endBlock=16779092
 DB_CREATE_EVM_INTERNAL_TRANSACTIONS = """
 CREATE TABLE IF NOT EXISTS evm_internal_transactions (
-    parent_tx_hash BLOB NOT NULL,
-    chain_id INTEGER NOT NULL,
+    parent_tx INTEGER NOT NULL,
     trace_id INTEGER NOT NULL,
     from_address TEXT NOT NULL,
     to_address TEXT,
     value TEXT NOT NULL,
-    FOREIGN KEY(parent_tx_hash, chain_id) REFERENCES evm_transactions(tx_hash, chain_id) ON DELETE CASCADE ON UPDATE CASCADE,
-    PRIMARY KEY(parent_tx_hash, chain_id, trace_id, from_address, to_address, value)
+    FOREIGN KEY(parent_tx) REFERENCES evm_transactions(identifier) ON DELETE CASCADE ON UPDATE CASCADE,
+    PRIMARY KEY(parent_tx, trace_id, from_address, to_address, value)
 );
 """  # noqa: E501
 
 DB_CREATE_EVMTX_RECEIPTS = """
 CREATE TABLE IF NOT EXISTS evmtx_receipts (
-    tx_hash BLOB NOT NULL,
-    chain_id INTEGER NOT NULL,
+    tx_id INTEGER NOT NULL PRIMARY KEY,
     contract_address TEXT, /* can be null */
     status INTEGER NOT NULL CHECK (status IN (0, 1)),
     type INTEGER NOT NULL,
-    FOREIGN KEY(tx_hash, chain_id) REFERENCES evm_transactions(tx_hash, chain_id) ON DELETE CASCADE ON UPDATE CASCADE,
-    PRIMARY KEY(tx_hash, chain_id)
+    FOREIGN KEY(tx_id) REFERENCES evm_transactions(identifier) ON DELETE CASCADE ON UPDATE CASCADE
 );
-"""  # noqa: E501
+"""
 
 DB_CREATE_EVMTX_RECEIPT_LOGS = """
 CREATE TABLE IF NOT EXISTS evmtx_receipt_logs (
-    tx_hash BLOB NOT NULL,
-    chain_id INTEGER NOT NULL,
+    identifier INTEGER NOT NULL PRIMARY KEY,  /* adding identifier here instead of composite key in order to not duplicate in topics which are A LOT */
+    tx_id INTEGER NOT NULL,
     log_index INTEGER NOT NULL,
     data BLOB NOT NULL,
     address TEXT NOT NULL,
     removed INTEGER NOT NULL CHECK (removed IN (0, 1)),
-    FOREIGN KEY(tx_hash, chain_id) REFERENCES evmtx_receipts(tx_hash, chain_id) ON DELETE CASCADE ON UPDATE CASCADE,
-    PRIMARY KEY(tx_hash, chain_id, log_index)
+    FOREIGN KEY(tx_id) REFERENCES evmtx_receipts(tx_id) ON DELETE CASCADE ON UPDATE CASCADE,
+    UNIQUE(tx_id, log_index)
 );
 """  # noqa: E501
 
 DB_CREATE_EVMTX_RECEIPT_LOG_TOPICS = """
 CREATE TABLE IF NOT EXISTS evmtx_receipt_log_topics (
-    tx_hash BLOB NOT NULL,
-    chain_id INTEGER NOT NULL,
-    log_index INTEGER NOT NULL,
+    log INTEGER NOT NULL,
     topic BLOB NOT NULL,
     topic_index INTEGER NOT NULL,
-    FOREIGN KEY(tx_hash, chain_id, log_index) REFERENCES evmtx_receipt_logs(tx_hash, chain_id, log_index) ON DELETE CASCADE ON UPDATE CASCADE,
-    PRIMARY KEY(tx_hash, chain_id, log_index, topic_index)
+    FOREIGN KEY(log) REFERENCES evmtx_receipt_logs(identifier) ON DELETE CASCADE ON UPDATE CASCADE,
+    PRIMARY KEY(log, topic_index)
 );
-"""  # noqa: E501
+"""
 
 # TODO: This here shows a weakness of using both chain_id and blockchain to identify
 # the chain. May need to change the schema somehow to either use the string identifier

@@ -217,8 +217,14 @@ target-version = "py39"
 "rotkehlchen/__main__.py" = ["T201"]  # got prints in main
 "rotkehlchen/api/server.py" = ["T201"]  # got prints in server.py
 "rotkehlchen/args.py" = ["T201"]  # got prints in args.py
-"rotkehlchen/db/minimized_schema.py" = ["E501"]  # huge lines there
-"rotkehlchen/globaldb/minimized_schema.py" = ["E501"]  # huge lines there
+"rotkehlchen/db/minimized_schema.py" = [
+    "E501",  # huge lines there
+    "Q000",  # double quoted strings needed here
+]
+"rotkehlchen/globaldb/minimized_schema.py" = [
+    "E501",  # huge lines there
+    "Q000",  # double quoted strings needed here
+]
 "rotkehlchen/tests/*" = ["S113"]  # tests have no timeout in requests
 "rotkehlchen/tests/conftest.py" = [
     "S602",  # test setup. No problem with shell=True
