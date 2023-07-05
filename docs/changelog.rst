@@ -2,7 +2,7 @@
 Changelog
 =========
 
-* :bug:`` Fix bug on the `<date-time-picker />` component, where the validation for the future date was broken, when selecting different timezone. This also fix the issue with the cursor, while the user is editing the number in the middle.
+* :bug:`-` Fix bug on the `<date-time-picker />` component, where the validation for future dates was broken when selecting a different timezone. This also fixes the issue with the cursor, while the user is editing the number in the middle.
 * :bug:`6350` Graceful handling of EVM rpc node returning non-int block number.
 * :bug:`6349` Fix issue where users may see an assets update conflicts dialog that does not appear to have any size.
 * :bug:`6358` Handle avalanche error at checking address activity gracefully.

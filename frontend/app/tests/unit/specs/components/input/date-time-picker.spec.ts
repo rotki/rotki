@@ -177,7 +177,7 @@ describe('DateTimePicker.vue', () => {
     );
 
     await wrapper.find('input').setValue('2023/06/06 12:12:12');
-    await wrapper.vm.imask.updateValue();
+    await get(wrapper.vm._setupState.imask).updateValue();
     await wrapper.vm.$nextTick();
 
     expect(wrapper.emitted().input?.[1]).toEqual(['06/06/2023 12:12:12']);
@@ -205,7 +205,8 @@ describe('DateTimePicker.vue', () => {
       );
 
       await wrapper.find('input').setValue('12/12/2021 23:59:59');
-      await wrapper.vm.imask.updateValue();
+
+      await get(wrapper.vm._setupState.imask).updateValue();
       await wrapper.vm.$nextTick();
 
       expect(wrapper.emitted().input?.[2]).toEqual(['12/12/2021 16:59:59']);
@@ -228,17 +229,20 @@ describe('DateTimePicker.vue', () => {
       await wrapper.vm.$nextTick();
 
       await wrapper.find('input').setValue('01/01/2023 00:00:00');
-      await wrapper.vm.imask.updateValue();
+
+      await get(wrapper.vm._setupState.imask).updateValue();
       await wrapper.vm.$nextTick();
       expect(wrapper.find('.v-input.error--text').exists()).toBeFalsy();
 
       await wrapper.find('input').setValue('01/01/2023 00:59:59');
-      await wrapper.vm.imask.updateValue();
+
+      await get(wrapper.vm._setupState.imask).updateValue();
       await wrapper.vm.$nextTick();
       expect(wrapper.find('.v-input.error--text').exists()).toBeFalsy();
 
       await wrapper.find('input').setValue('01/01/2023 01:00:01');
-      await wrapper.vm.imask.updateValue();
+
+      await get(wrapper.vm._setupState.imask).updateValue();
       await wrapper.vm.$nextTick();
       expect(wrapper.find('.v-input.error--text').exists()).toBeTruthy();
     });
