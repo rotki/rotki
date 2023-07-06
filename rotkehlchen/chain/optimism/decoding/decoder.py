@@ -46,8 +46,8 @@ class OptimismTransactionDecoder(EVMTransactionDecoder):
                 is_non_conformant_erc721_fn=self._is_non_conformant_erc721,
                 address_is_exchange_fn=self._address_is_exchange,
             ),
+            dbevmtx_class=DBOptimismTx,
         )
-        self.dbevmtx = DBOptimismTx(database)
 
     def _calculate_gas_burned(self, tx: OptimismTransaction) -> FVal:  # type: ignore[override]
         return from_wei(FVal(tx.gas_used * tx.gas_price + tx.l1_fee))

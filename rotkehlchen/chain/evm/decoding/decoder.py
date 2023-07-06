@@ -125,6 +125,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             event_rules: list[EventDecoderFunction],
             misc_counterparties: list[CounterpartyDetails],
             base_tools: BaseDecoderTools,
+            dbevmtx_class: type[DBEvmTx] = DBEvmTx,
     ):
         """
         Initialize an evm chain transaction decoder module for a particular chain.
@@ -145,7 +146,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
         self.msg_aggregator = database.msg_aggregator
         self.chain_modules_root = f'rotkehlchen.chain.{self.evm_inquirer.chain_name}.modules'
         self.chain_modules_prefix_length = len(self.chain_modules_root)
-        self.dbevmtx = DBEvmTx(self.database)
+        self.dbevmtx = dbevmtx_class(self.database)
         self.dbevents = DBHistoryEvents(self.database)
         self.base = base_tools
         self.rules = DecodingRules(
