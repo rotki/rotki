@@ -1622,6 +1622,7 @@ def test_upgrade_db_38_to_39(user_data_dir):  # pylint: disable=unused-argument
         resume_from_backup=False,
     )
     cursor = db_v38.conn.cursor()
+    assert cursor.execute("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='optimism_transactions';").fetchone()[0] == 0  # noqa: E501
     events_num_before = cursor.execute('SELECT COUNT(*) FROM history_events').fetchone()[0]
     withdrawal_events_before = {x[0] for x in cursor.execute(
         "SELECT identifier FROM history_events WHERE event_identifier LIKE 'eth2_withdrawal_%'",  # noqa: E501
@@ -1644,6 +1645,7 @@ def test_upgrade_db_38_to_39(user_data_dir):  # pylint: disable=unused-argument
     )
     cursor = db.conn.cursor()
 
+    assert cursor.execute("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='optimism_transactions';").fetchone()[0] == 1  # noqa: E501
     assert cursor.execute('SELECT COUNT(*) FROM history_events').fetchone()[0] == events_num_before
     withdrawal_events_after = {x[0] for x in cursor.execute(
         "SELECT identifier FROM history_events WHERE event_identifier LIKE 'EW_%'",

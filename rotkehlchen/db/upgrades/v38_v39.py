@@ -52,6 +52,19 @@ def _update_nfts_table(write_cursor: 'DBCursor') -> None:
     log.debug('Exit _update_nfts_table')
 
 
+def _create_new_tables(write_cursor: 'DBCursor') -> None:
+    log.debug('Enter _create_new_tables')
+    write_cursor.execute("""
+    CREATE TABLE IF NOT EXISTS optimism_transactions (
+        tx_hash BLOB NOT NULL,
+        chain_id INTEGER GENERATED ALWAYS AS (10) VIRTUAL,
+        l1_fee TEXT,
+        PRIMARY KEY(tx_hash),
+        FOREIGN KEY(tx_hash, chain_id) REFERENCES evm_transactions(tx_hash, chain_id) ON DELETE CASCADE ON UPDATE CASCADE
+    );""")  # noqa: E501
+    log.debug('Exit _create_new_tables')
+
+
 def _reduce_eventid_size(write_cursor: 'DBCursor') -> None:
     """Reduce the size of history event ids"""
     log.debug('Enter _reduce_eventid_size')
@@ -87,11 +100,13 @@ def upgrade_v38_to_v39(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         - Reduce size of some event identifiers
     """
     log.debug('Entered userdb v38->v39 upgrade')
-    progress_handler.set_total_steps(3)
+    progress_handler.set_total_steps(4)
     with db.user_write() as write_cursor:
         _update_nfts_table(write_cursor)
         progress_handler.new_step()
         _reduce_eventid_size(write_cursor)
+        progress_handler.new_step()
+        _create_new_tables(write_cursor)
         progress_handler.new_step()
 
     db.conn.execute('VACUUM;')

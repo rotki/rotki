@@ -437,8 +437,6 @@ CREATE TABLE IF NOT EXISTS evm_transactions (
 );
 """
 
-# TODO: Add step in DB upgrade for this table
-# https://github.com/rotki/rotki/pull/6359#discussion_r1252891305
 DB_CREATE_OPTIMISM_TRANSACTIONS = """
 CREATE TABLE IF NOT EXISTS optimism_transactions (
     tx_hash BLOB NOT NULL,
