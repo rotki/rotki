@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` Transactions for adding, removing and changing owners threshold for a gnosis safe multisig will now be decoded properly.
 * :feature:`6033` Fix gas fee calculation for Optimism transactions to include L1 fees.
 * :release:`1.29.0 <2023-06-28>`
 * :feature:`-` ENS name transfers will now be shown properly and not just as generic ERC721 transfers.
