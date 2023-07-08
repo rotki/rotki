@@ -69,6 +69,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: 'EthereumTransact
         'Oneinchv4',
         'OptimismBridge',
         'PickleFinance',
+        'Safemultisig',
         'Stakedao',
         'Sushiswap',
         'Uniswapv1',
@@ -128,6 +129,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: 'EthereumTransact
         'eth2',
         'cowswap',
         '1inch-v4',
+        'safe-multisig',
     }
 
 

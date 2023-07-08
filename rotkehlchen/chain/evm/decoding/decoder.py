@@ -21,6 +21,7 @@ from rotkehlchen.assets.asset import AssetWithOracles, EvmToken
 from rotkehlchen.assets.utils import TokenSeenAt, get_or_create_evm_token
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.chain.evm.decoding.interfaces import ReloadableDecoderMixin
+from rotkehlchen.chain.evm.decoding.safe.decoder import SafemultisigDecoder
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails, EventCategory
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.constants import ZERO
@@ -92,6 +93,7 @@ class EventDecoderFunction(Protocol):
 class DecodingRules:
     address_mappings: dict[ChecksumEvmAddress, tuple[Any, ...]]
     event_rules: list[EventDecoderFunction]
+    input_data_rules: dict[bytes, dict[bytes, Callable]]
     token_enricher_rules: list[Callable]  # enrichers to run for token transfers
     # rules to run after the main decoding loop. post_decoding_rules is a mapping of
     # counterparties to tuples of the rules that need to be executed.
@@ -104,9 +106,15 @@ class DecodingRules:
             raise TypeError(
                 f'Can only add DecodingRules to DecodingRules. Got {type(other)}',
             )
+
+        intersection = set(other.input_data_rules).intersection(set(self.input_data_rules))
+        if len(intersection) != 0:
+            raise ValueError(f'Input data duplicates found in decoding rules for {intersection}')
+
         return DecodingRules(
             address_mappings=self.address_mappings | other.address_mappings,
             event_rules=self.event_rules + other.event_rules,
+            input_data_rules=self.input_data_rules | other.input_data_rules,
             token_enricher_rules=self.token_enricher_rules + other.token_enricher_rules,
             post_decoding_rules=self.post_decoding_rules | other.post_decoding_rules,
             all_counterparties=self.all_counterparties | other.all_counterparties,
@@ -155,6 +163,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
                 self._maybe_decode_erc20_approve,
                 self._maybe_decode_erc20_721_transfer,
             ],
+            input_data_rules={},
             token_enricher_rules=[],
             post_decoding_rules={},
             all_counterparties=set(self.misc_counterparties),
@@ -165,10 +174,58 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
         self.decoders: dict[str, 'DecoderInterface'] = {}
         # store the mapping of possible counterparties to the allowed types and subtypes in events
         self.events_types_tuples: DecoderEventMappingType = {}
+
+        # Add the built-in decoders
+        self._add_builtin_decoders(self.rules)
         # Recursively check all submodules to get all decoder address mappings and rules
-        rules = self._recursively_initialize_decoders(self.chain_modules_root)
-        self.rules += rules
+        self.rules += self._recursively_initialize_decoders(self.chain_modules_root)
         self.undecoded_tx_query_lock = Semaphore()
+
+    def _add_builtin_decoders(self, rules: DecodingRules) -> None:
+        """Adds decoders that should be built-in for every EVM decoding run
+
+        Think: Perhaps we can move them under a specific directory and use the
+        normal loading?
+        """
+        return self._add_single_decoder(class_name='Safemultisig', decoder_class=SafemultisigDecoder, rules=rules)  # noqa: E501
+
+    def _add_single_decoder(
+            self,
+            class_name: str,
+            decoder_class: type['DecoderInterface'],
+            rules: DecodingRules,
+    ) -> None:
+        """Initialize a single decoder, add it to the set of decoders to use
+        and append its rules to the pased rules
+        """
+        if class_name in self.decoders:
+            raise ModuleLoadingError(f'{self.evm_inquirer.chain_name} decoder with name {class_name} already loaded')  # noqa: E501
+
+        try:  # not giving kwargs since, kwargs name can differ
+            self.decoders[class_name] = decoder_class(
+                self.evm_inquirer,  # evm_inquirer
+                self.base,  # base_tools
+                self.msg_aggregator,  # msg_aggregator
+            )
+        except (UnknownAsset, WrongAssetType) as e:
+            self.msg_aggregator.add_error(
+                f'Failed at initialization of {self.evm_inquirer.chain_name} '
+                f'{class_name} decoder due to asset mismatch: {e!s}',
+            )
+            return
+
+        new_input_data_rules = self.decoders[class_name].decoding_by_input_data()
+        intersection = set(new_input_data_rules).intersection(set(rules.input_data_rules))
+        if len(intersection) != 0:
+            raise ValueError(f'Input data duplicates found in decoding rules for {intersection}')
+
+        rules.address_mappings.update(self.decoders[class_name].addresses_to_decoders())  # noqa: E501
+        rules.event_rules.extend(self.decoders[class_name].decoding_rules())
+        rules.input_data_rules.update(new_input_data_rules)
+        rules.token_enricher_rules.extend(self.decoders[class_name].enricher_rules())
+        rules.post_decoding_rules.update(self.decoders[class_name].post_decoding_rules())  # noqa: E501
+        rules.all_counterparties.update(self.decoders[class_name].counterparties())
+        rules.addresses_to_counterparties.update(self.decoders[class_name].addresses_to_counterparties())  # noqa: E501
 
     def _recursively_initialize_decoders(
             self,
@@ -177,9 +234,10 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
         if isinstance(package, str):
             package = importlib.import_module(package)
 
-        results = DecodingRules(
+        rules = DecodingRules(
             address_mappings={},
             event_rules=[],
+            input_data_rules={},
             token_enricher_rules=[],
             post_decoding_rules={},
             all_counterparties=set(),
@@ -203,34 +261,13 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
                 submodule_decoder = getattr(submodule, f'{class_name}Decoder', None)
 
                 if submodule_decoder:
-                    if class_name in self.decoders:
-                        raise ModuleLoadingError(f'{self.evm_inquirer.chain_name} decoder with name {class_name} already loaded')  # noqa: E501
-
-                    try:  # not giving kwargs since, kwargs name can differ
-                        self.decoders[class_name] = submodule_decoder(
-                            self.evm_inquirer,  # evm_inquirer
-                            self.base,  # base_tools
-                            self.msg_aggregator,  # msg_aggregator
-                        )
-                    except (UnknownAsset, WrongAssetType) as e:
-                        self.msg_aggregator.add_error(
-                            f'Failed at initialization of {self.evm_inquirer.chain_name} '
-                            f'{class_name} decoder due to asset mismatch: {e!s}',
-                        )
-                        continue
-
-                    results.address_mappings.update(self.decoders[class_name].addresses_to_decoders())  # noqa: E501
-                    results.event_rules.extend(self.decoders[class_name].decoding_rules())
-                    results.token_enricher_rules.extend(self.decoders[class_name].enricher_rules())
-                    results.post_decoding_rules.update(self.decoders[class_name].post_decoding_rules())  # noqa: E501
-                    results.all_counterparties.update(self.decoders[class_name].counterparties())
-                    results.addresses_to_counterparties.update(self.decoders[class_name].addresses_to_counterparties())  # noqa: E501
+                    self._add_single_decoder(class_name=class_name, decoder_class=submodule_decoder, rules=rules)  # noqa: E501
 
             if is_pkg:
                 recursive_results = self._recursively_initialize_decoders(full_name)
-                results += recursive_results
+                rules += recursive_results
 
-        return results
+        return rules
 
     def get_decoders_products(self) -> dict[str, list[EvmProduct]]:
         """Get the list of possible products"""
@@ -302,14 +339,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
 
         return None
 
-    def decode_by_address_rules(
-            self,
-            tx_log: EvmTxReceiptLog,
-            transaction: EvmTransaction,
-            decoded_events: list['EvmEvent'],
-            all_logs: list[EvmTxReceiptLog],
-            action_items: list[ActionItem],
-    ) -> DecodingOutput:
+    def decode_by_address_rules(self, context: DecoderContext) -> DecodingOutput:
         """
         Sees if the log is on an address for which we have specific decoders and calls it
 
@@ -318,18 +348,11 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
         - ConversionError
         - UnknownAsset
         """
-        mapping_result = self.rules.address_mappings.get(tx_log.address)
+        mapping_result = self.rules.address_mappings.get(context.tx_log.address)
         if mapping_result is None:
             return DEFAULT_DECODING_OUTPUT
         method = mapping_result[0]
 
-        context = DecoderContext(
-            tx_log=tx_log,
-            transaction=transaction,
-            decoded_events=decoded_events,
-            all_logs=all_logs,
-            action_items=action_items,
-        )
         try:
             if len(mapping_result) == 1:
                 result = method(context)
@@ -337,8 +360,8 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
                 result = method(context, *mapping_result[1:])
         except (DeserializationError, ConversionError, UnknownAsset) as e:
             self.msg_aggregator.add_error(
-                f'Decoding tx log with index {tx_log.log_index} of transaction '
-                f'{transaction.tx_hash.hex()} through {method.__name__} failed due to {e!s}')
+                f'Decoding tx log with index {context.tx_log.log_index} of transaction '
+                f'{context.transaction.tx_hash.hex()} through {method.__name__} failed due to {e!s}')  # noqa: E501
             return DEFAULT_DECODING_OUTPUT
 
         return result
@@ -397,9 +420,31 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
         counterparties = set()
         refresh_balances = False
 
+        # Check if any rules should run due to the 4bytes signature of the input data
+        fourbytes = transaction.input_data[:4]
+        input_data_rules = self.rules.input_data_rules.get(fourbytes)
+
         # decode transaction logs from the receipt
         for tx_log in tx_receipt.logs:
-            decoding_output = self.decode_by_address_rules(tx_log, transaction, events, tx_receipt.logs, action_items)  # noqa: E501
+            context = DecoderContext(
+                tx_log=tx_log,
+                transaction=transaction,
+                decoded_events=events,
+                all_logs=tx_receipt.logs,
+                action_items=action_items,
+            )
+            if input_data_rules and len(tx_log.topics) != 0 and (input_rule := input_data_rules.get(tx_log.topics[0])) is not None:  # noqa: E501
+                try:  # run specific decoder if the 4bytes signature + topic match
+                    result = input_rule(context)
+                except (DeserializationError, ConversionError, UnknownAsset) as e:
+                    log.error(f'Decoding log {tx_log} of {transaction} via input data rules failed due to {e!s}')  # noqa: E501
+                    result = DEFAULT_DECODING_OUTPUT
+
+                if result.event:
+                    events.append(result.event)
+                    continue  # since the input data rule found an event for this log
+
+            decoding_output = self.decode_by_address_rules(context)
             if decoding_output.refresh_balances is True:
                 refresh_balances = True
             action_items.extend(decoding_output.action_items)

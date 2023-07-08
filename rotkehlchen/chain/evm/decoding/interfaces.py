@@ -1,8 +1,8 @@
 from abc import ABCMeta, abstractmethod
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, Callable, Optional
-from rotkehlchen.accounting.structures.evm_event import EvmProduct
 
+from rotkehlchen.accounting.structures.evm_event import EvmProduct
 from rotkehlchen.types import ChecksumEvmAddress, DecoderEventMappingType
 
 if TYPE_CHECKING:
@@ -43,6 +43,19 @@ class DecoderInterface(metaclass=ABCMeta):
         by the decoding process
         """
         return []
+
+    def decoding_by_input_data(self) -> dict[bytes, dict[bytes, Callable]]:
+        """
+        Subclasses may implement this to add decoding rules that are only triggered
+        if input data match a specific pattern/value.
+
+        For now only check against function signature and match it to specific event
+        topics that need to be searched for if the given four bytes signature was in
+        the input data.
+
+        This is in essence a way to have a more constrained version of the general decoding_rules
+        """
+        return {}
 
     def enricher_rules(self) -> list[Callable]:
         """
