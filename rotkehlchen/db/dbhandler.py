@@ -115,7 +115,6 @@ from rotkehlchen.types import (
     ApiSecret,
     BTCAddress,
     ChainAddress,
-    ChainID,
     ChecksumEvmAddress,
     ExchangeApiCredentials,
     ExternalService,
@@ -1530,60 +1529,49 @@ class DBHandler:
             tuples: Sequence[tuple[Any, ...]],
             **kwargs: Optional[ChecksumEvmAddress],
     ) -> None:
-        """When used for inputting transactions make sure that for one write it's
-        all for the same chain id"""
+        """
+        Helper function to help write multiple tuples of some kind of entry and
+        log the error if anything is raised.
+
+        For transactions the query is INSERT OR IGNORE as the uniqueness constraints
+        are known in advance. Also when used for inputting transactions make sure that
+        for one write it's all for the same chain id.
+
+        For the other tables simple `INSERT` is used but the primary key is a unique
+        identifier each time so they can't be considered duplicates.
+        """
         relevant_address = kwargs.get('relevant_address')
         try:
             write_cursor.executemany(query, tuples)
             if relevant_address is not None:
-                # chain_id should always be the same so perform lookup out of the loop
-                blockchain = ChainID(tuples[0][1]).to_blockchain().value
-                mapping_tuples = [(relevant_address, x[0], x[1], blockchain) for x in tuples]  # noqa: E501
+                if tuple_type == 'evm_transaction':
+                    tx_hash_idx, chain_id_idx = 0, 1
+                else:  # relevant address can only be left for internal tx
+                    tx_hash_idx, chain_id_idx = 4, 5
                 write_cursor.executemany(
-                    'INSERT OR IGNORE INTO evmtx_address_mappings(address, tx_hash, chain_id, blockchain) '  # noqa: E501
-                    'VALUES(?, ?, ?, ?)',
-                    mapping_tuples,
+                    'INSERT OR IGNORE INTO evmtx_address_mappings(tx_id, address) '
+                    'SELECT TX.identifier, ? FROM evm_transactions TX WHERE '
+                    'TX.tx_hash=? AND TX.chain_id=?',
+                    [(relevant_address, x[tx_hash_idx], x[chain_id_idx]) for x in tuples],
                 )
         except sqlcipher.IntegrityError:  # pylint: disable=no-member
-            # That means that one of the tuples hit a constraint, most probably
-            # already existing in the DB, in which case we resort to writing them
-            # one by one to only reject the duplicates
+            # That means that one of the tuples hit a constraint, probably some
+            # foreign key connection is broken. Try to put them 1 by one.
             for entry in tuples:
                 try:
+                    last_row_id = write_cursor.lastrowid
                     write_cursor.execute(query, entry)
-                    if relevant_address is not None:
-                        blockchain = ChainID(entry[1]).to_blockchain().value
-                        write_cursor.execute(
+                    if relevant_address is not None and (new_id := write_cursor.lastrowid) != last_row_id:  # noqa: E501
+                        write_cursor.execute(  # new addition happened
                             'INSERT OR IGNORE INTO evmtx_address_mappings '
-                            '(address, tx_hash, chain_id, blockchain) VALUES(?, ?, ?, ?)',
-                            (relevant_address, entry[0], entry[1], blockchain),
+                            '(tx_id, address) VALUES(?, ?)',
+                            (new_id, relevant_address),
                         )
                 except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
-                    if tuple_type == 'evm_transaction':
-                        # if we reach here it means the transaction is already in the DB
-                        # But this can't be avoided with the way we query etherscan
-                        # right now since we don't query transactions in a specific
-                        # time range, so duplicate addition attempts can happen.
-                        # Also if we have transactions of one account sending to the
-                        # other and both accounts are being tracked.
-                        if relevant_address is not None:
-                            blockchain = ChainID(entry[1]).to_blockchain().value
-                            write_cursor.execute(
-                                'INSERT OR IGNORE INTO evmtx_address_mappings '
-                                '(address, tx_hash, chain_id, blockchain) VALUES(?, ?, ?, ?)',
-                                (relevant_address, entry[0], entry[1], blockchain),
-                            )
-                        string_repr = db_tuple_to_str(entry, tuple_type)
-                        log.debug(
-                            f'Did not add "{string_repr}" to the DB due to "{e!s}". '
-                            f'Either it already exists or some constraint was hit.',
-                        )
-                        continue
-
                     string_repr = db_tuple_to_str(entry, tuple_type)
                     log.warning(
                         f'Did not add "{string_repr}" to the DB due to "{e!s}".'
-                        f'It either already exists or some other constraint was hit.',
+                        f'Some other constraint was hit.',
                     )
                 except sqlcipher.InterfaceError:  # pylint: disable=no-member
                     log.critical(f'Interface error with tuple: {entry}')

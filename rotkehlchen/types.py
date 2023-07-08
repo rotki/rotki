@@ -33,6 +33,7 @@ from rotkehlchen.chain.substrate.types import SubstrateAddress  # isort:skip
 if TYPE_CHECKING:
     from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
     from rotkehlchen.chain.evm.decoding.types import EventCategory
+    from rotkehlchen.db.drivers.gevent import DBCursor
 
 ModuleName = Literal[
     'makerdao_dsr',
@@ -298,9 +299,11 @@ class EvmTransaction:
     gas_used: int
     input_data: bytes
     nonce: int
+    db_id: int = -1
 
     def serialize(self) -> dict[str, Any]:
         result = asdict(self)
+        result.pop('db_id')
         result['tx_hash'] = result['tx_hash'].hex()
         result['evm_chain'] = result.pop('chain_id').to_name()
         result['input_data'] = '0x' + result['input_data'].hex()
@@ -320,6 +323,17 @@ class EvmTransaction:
             return False
 
         return hash(self) == hash(other)
+
+    def get_or_query_db_id(self, cursor: 'DBCursor') -> int:
+        """Returns the DB identifier for the transaction. Assumes it exists in the DB"""
+        if self.db_id == -1:
+            db_id = cursor.execute(
+                'SELECT identifier FROM evm_transactions WHERE tx_hash=? AND chain_id=?',
+                (self.tx_hash, self.chain_id.serialize_for_db()),
+            ).fetchone()[0]
+            object.__setattr__(self, 'db_id', db_id)  # TODO: This will go away at rebase
+
+        return self.db_id
 
     @property
     def identifier(self) -> str:

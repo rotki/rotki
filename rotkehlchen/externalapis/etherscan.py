@@ -425,7 +425,8 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
                                 chain_id=self.chain.to_chain_id(),  # type: ignore[arg-type]
                             )
                             write_cursor.execute(
-                                'DELETE from evm_tx_mappings WHERE tx_hash=? AND chain_id=? AND value=?',  # noqa: E501
+                                'DELETE from evm_tx_mappings WHERE tx_id=(SELECT identifier FROM '
+                                'evm_transactions WHERE tx_hash=? AND chain_id=?) AND value=?',
                                 (GENESIS_HASH, self.chain.to_chain_id().serialize_for_db(), HISTORY_MAPPING_STATE_DECODED),  # noqa: E501
                             )
                 except DeserializationError as e:

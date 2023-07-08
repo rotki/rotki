@@ -1709,6 +1709,7 @@ def test_db_schema_sanity_check(database: 'DBHandler', caplog) -> None:
         with pytest.raises(DBSchemaError) as exception_info:
             connection.schema_sanity_check()
         raise ValueError('Do not persist any of the changes')
+
     assert 'in your user database differ' in str(exception_info.value)
     # Make sure that having an extra table does not break the sanity check
     with database.user_write() as cursor:

@@ -500,9 +500,10 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
                         action_type=ActionType.EVM_TRANSACTION,
                         identifiers=[transaction.identifier],
                     )
+            tx_id = transaction.get_or_query_db_id(write_cursor)
             write_cursor.execute(
-                'INSERT OR IGNORE INTO evm_tx_mappings(tx_hash, chain_id, value) VALUES(?, ?, ?)',
-                (transaction.tx_hash, self.evm_inquirer.chain_id.serialize_for_db(), HISTORY_MAPPING_STATE_DECODED),  # noqa: E501
+                'INSERT OR IGNORE INTO evm_tx_mappings(tx_id, value) VALUES(?, ?)',
+                (tx_id, HISTORY_MAPPING_STATE_DECODED),
             )
 
         events = sorted(events, key=lambda x: x.sequence_index, reverse=False)
@@ -589,7 +590,8 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
         Get a transaction's events if existing in the DB or decode them.
         Returns the list of decoded events and a flag which is True if balances refresh is needed.
         """
-        serialized_chain_id = self.evm_inquirer.chain_id.serialize_for_db()
+        with self.database.conn.read_ctx() as cursor:
+            tx_id = transaction.get_or_query_db_id(cursor)
         if ignore_cache is True:  # delete all decoded events
             with self.database.user_write() as write_cursor:
                 self.dbevents.delete_events_by_tx_hash(
@@ -598,14 +600,14 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
                     chain_id=self.evm_inquirer.chain_id,
                 )
                 write_cursor.execute(
-                    'DELETE from evm_tx_mappings WHERE tx_hash=? AND chain_id=? AND value=?',
-                    (transaction.tx_hash, serialized_chain_id, HISTORY_MAPPING_STATE_DECODED),
+                    'DELETE from evm_tx_mappings WHERE tx_id=? AND value=?',
+                    (tx_id, HISTORY_MAPPING_STATE_DECODED),
                 )
         else:  # see if events are already decoded and return them
             with self.database.conn.read_ctx() as cursor:
                 cursor.execute(
-                    'SELECT COUNT(*) from evm_tx_mappings WHERE tx_hash=? AND chain_id=? AND value=?',  # noqa: E501
-                    (transaction.tx_hash, serialized_chain_id, HISTORY_MAPPING_STATE_DECODED),
+                    'SELECT COUNT(*) from evm_tx_mappings WHERE tx_id=? AND value=?',
+                    (tx_id, HISTORY_MAPPING_STATE_DECODED),
                 )
                 if cursor.fetchone()[0] != 0:  # already decoded and in the DB
                     events = self.dbevents.get_history_events(

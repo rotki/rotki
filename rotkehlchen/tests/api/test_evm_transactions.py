@@ -58,16 +58,18 @@ def _assert_evm_transaction_status(
     If `transaction_should_exist` is False, the assertion is negated.
     """
     # check that the transaction was added
-    count = cursor.execute(
-        'SELECT COUNT(*) FROM evm_transactions WHERE tx_hash=? AND chain_id=?',
+    tx_id_query = cursor.execute(
+        'SELECT identifier FROM evm_transactions WHERE tx_hash=? AND chain_id=?',
         (hexstring_to_bytes(tx_hash), chain_id.value),
     ).fetchone()
-    assert count[0] == 1 if transaction_should_exist else count[0] == 0
+    assert tx_id_query is not None if transaction_should_exist else tx_id_query is None
+
+    tx_id = -1 if tx_id_query is None else tx_id_query[0]
 
     # and the address was associated with the transaction
     count = cursor.execute(
-        'SELECT COUNT(*) FROM evmtx_address_mappings WHERE tx_hash=? AND chain_id=? AND address=?',  # noqa: E501
-        (hexstring_to_bytes(tx_hash), chain_id.value, address),
+        'SELECT COUNT(*) FROM evmtx_address_mappings WHERE tx_id=? AND address=?',
+        (tx_id, address),
     ).fetchone()
     assert count[0] == 1 if transaction_should_exist else count[0] == 0
 

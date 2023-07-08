@@ -106,6 +106,7 @@ def _update_evm_transaction_data(write_cursor: 'DBCursor') -> None:
     logs = write_cursor.execute('SELECT * from evmtx_receipt_logs').fetchall()
     topics = write_cursor.execute('SELECT * from evmtx_receipt_log_topics').fetchall()
     tx_mappings = write_cursor.execute('SELECT * from evm_tx_mappings').fetchall()
+    address_mappings = write_cursor.execute('SELECT tx_hash, chain_id, address from evmtx_address_mappings').fetchall()  # noqa: E501
 
     write_cursor.execute('DROP TABLE IF EXISTS evm_transactions')
     write_cursor.execute('DROP TABLE IF EXISTS evm_internal_transactions')
@@ -113,6 +114,7 @@ def _update_evm_transaction_data(write_cursor: 'DBCursor') -> None:
     write_cursor.execute('DROP TABLE IF EXISTS evmtx_receipt_logs')
     write_cursor.execute('DROP TABLE IF EXISTS evmtx_receipt_log_topics')
     write_cursor.execute('DROP TABLE IF EXISTS evm_tx_mappings')
+    write_cursor.execute('DROP TABLE IF EXISTS evmtx_address_mappings')
 
     write_cursor.execute("""
     CREATE TABLE IF NOT EXISTS evm_transactions (
@@ -145,14 +147,26 @@ def _update_evm_transaction_data(write_cursor: 'DBCursor') -> None:
 
     write_cursor.execute("""
     CREATE TABLE IF NOT EXISTS evm_tx_mappings (
-        tx_id INTEGET NOT NULL,
+        tx_id INTEGER NOT NULL,
         value INTEGER NOT NULL,
         FOREIGN KEY(tx_id) references evm_transactions(identifier) ON UPDATE CASCADE ON DELETE CASCADE,
         PRIMARY KEY (tx_id, value)
-    );""")
+    );""")  # noqa: E501
     write_cursor.executemany(
         'INSERT INTO evm_tx_mappings(tx_id, value) VALUES(?, ?)',
         [(hashchain_to_id[x[0] + x[1].to_bytes(4, byteorder='big')], *x[2:]) for x in tx_mappings],
+    )
+
+    write_cursor.execute("""
+    CREATE TABLE IF NOT EXISTS evmtx_address_mappings (
+        tx_id INTEGER NOT NULL,
+        address TEXT NOT NULL,
+        FOREIGN KEY(tx_id) references evm_transactions(identifier) ON UPDATE CASCADE ON DELETE CASCADE,
+        PRIMARY KEY (tx_id, address)
+    );""")  # noqa: E501
+    write_cursor.executemany(
+        'INSERT INTO evmtx_address_mappings(tx_id, address) VALUES(?, ?)',
+        [(hashchain_to_id[x[0] + x[1].to_bytes(4, byteorder='big')], *x[2:]) for x in address_mappings],  # noqa: E501
     )
 
     write_cursor.execute("""
