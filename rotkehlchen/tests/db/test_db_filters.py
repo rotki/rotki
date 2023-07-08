@@ -26,7 +26,7 @@ def test_ethereum_transaction_filter():
         to_ts=Timestamp(999),
     )
     query, bindings = filter_query.prepare()
-    assert query == ' INNER JOIN evmtx_address_mappings WHERE evm_transactions.tx_hash=evmtx_address_mappings.tx_hash AND ((evmtx_address_mappings.address = ?))  AND ((timestamp >= ? AND timestamp <= ?)) ORDER BY timestamp ASC LIMIT 10 OFFSET 10'  # noqa: E501
+    assert query == ' INNER JOIN evmtx_address_mappings WHERE evm_transactions.identifier=evmtx_address_mappings.tx_id AND ((evmtx_address_mappings.address = ?))  AND ((timestamp >= ? AND timestamp <= ?)) ORDER BY timestamp ASC LIMIT 10 OFFSET 10'  # noqa: E501
     assert bindings == [
         address,
         filter_query.from_ts,
@@ -60,9 +60,9 @@ def test_filter_arguments(and_op, order_by, pagination):
     query, bindings = filter_query.prepare()
 
     if and_op:
-        expected_query = ' INNER JOIN evmtx_address_mappings WHERE evm_transactions.tx_hash=evmtx_address_mappings.tx_hash AND ((evmtx_address_mappings.address = ?) OR (evmtx_address_mappings.address = ?))  AND ((timestamp >= ? AND timestamp <= ?) AND (location=?))'  # noqa: E501
+        expected_query = ' INNER JOIN evmtx_address_mappings WHERE evm_transactions.identifier=evmtx_address_mappings.tx_id AND ((evmtx_address_mappings.address = ?) OR (evmtx_address_mappings.address = ?))  AND ((timestamp >= ? AND timestamp <= ?) AND (location=?))'  # noqa: E501
     else:
-        expected_query = ' INNER JOIN evmtx_address_mappings WHERE evm_transactions.tx_hash=evmtx_address_mappings.tx_hash AND ((evmtx_address_mappings.address = ?) OR (evmtx_address_mappings.address = ?))  AND ((timestamp >= ? AND timestamp <= ?) OR (location=?))'  # noqa: E501
+        expected_query = ' INNER JOIN evmtx_address_mappings WHERE evm_transactions.identifier=evmtx_address_mappings.tx_id AND ((evmtx_address_mappings.address = ?) OR (evmtx_address_mappings.address = ?))  AND ((timestamp >= ? AND timestamp <= ?) OR (location=?))'  # noqa: E501
 
     if order_by:
         expected_query += ' ORDER BY timestamp ASC'

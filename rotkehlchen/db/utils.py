@@ -400,6 +400,7 @@ DBTupleType = Literal[
     'asset_movement',
     'margin_position',
     'evm_transaction',
+    'evm_internal_transaction',
 ]
 
 

@@ -142,7 +142,7 @@ class DBTimestampFilter(DBFilter):
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class DBEvmTransactionJoinsFilter(DBFilter):
-    """ This join finds transactions involving any of the address/chain combos.
+    """This join finds transactions involving any of the address/chain combos.
     Including internal ones. This uses the mappings we create in the DB at transaction
     addition to signify relevant addresses for a transaction.
     """
@@ -153,15 +153,12 @@ class DBEvmTransactionJoinsFilter(DBFilter):
         bindings: list[Union[ChecksumEvmAddress, int]] = []
         query_filter_str = (
             'INNER JOIN evmtx_address_mappings WHERE '
-            'evm_transactions.tx_hash=evmtx_address_mappings.tx_hash AND ('
+            'evm_transactions.identifier=evmtx_address_mappings.tx_id AND ('
         )
         individual_queries = []
-        for address, paired_chain_id in self.accounts:
+        for address, _ in self.accounts:  # TODO: Chain part of accounts not needed here. Perhaps we can remove it all up the call chain?  # noqa: E501
             individual_query = '(evmtx_address_mappings.address = ?'
             bindings.append(address)
-            if paired_chain_id is not None:
-                individual_query += ' AND evmtx_address_mappings.chain_id=?'
-                bindings.append(paired_chain_id.serialize_for_db())
             individual_query += ')'
 
             individual_queries.append(individual_query)
@@ -184,7 +181,7 @@ class DBTransactionsPendingDecodingFilter(DBFilter):
     chain_id: Optional[ChainID]
 
     def prepare(self) -> tuple[list[str], list[Any]]:
-        query_filters = ['B.tx_hash is NULL']
+        query_filters = ['B.tx_id is NULL']
         bindings: list[Union[int, ChecksumEvmAddress]] = []
         if self.addresses is not None:
             bindings = [*self.addresses, *self.addresses]
@@ -192,7 +189,7 @@ class DBTransactionsPendingDecodingFilter(DBFilter):
             query_filters.append(f'(C.from_address IN ({questionmarks}) OR C.to_address IN ({questionmarks}))')  # noqa: E501
         if self.chain_id is not None:
             bindings.append(self.chain_id.serialize_for_db())
-            query_filters.append('A.chain_id=?')
+            query_filters.append('C.chain_id=?')
 
         query = ' AND '.join(query_filters)
         return [query], bindings

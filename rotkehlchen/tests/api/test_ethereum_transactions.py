@@ -8,8 +8,8 @@ from unittest.mock import patch
 import gevent
 import pytest
 import requests
-from rotkehlchen.accounting.structures.evm_event import EvmProduct
 
+from rotkehlchen.accounting.structures.evm_event import EvmProduct
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.modules.curve.constants import CPT_CURVE
 from rotkehlchen.chain.ethereum.transactions import EthereumTransactions

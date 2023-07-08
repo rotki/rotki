@@ -38,9 +38,8 @@ if TYPE_CHECKING:
 from rotkehlchen.constants.limits import FREE_ETH_TX_LIMIT
 
 TRANSACTIONS_MISSING_DECODING_QUERY = (
-    'evmtx_receipts AS A LEFT OUTER JOIN evm_tx_mappings AS B ON A.tx_hash=B.tx_hash '
-    'AND A.chain_id=B.chain_ID LEFT JOIN evm_transactions AS C on '
-    'A.tx_hash=C.tx_hash '
+    'evmtx_receipts AS A LEFT OUTER JOIN evm_tx_mappings AS B ON A.tx_id=B.tx_id '
+    'LEFT JOIN evm_transactions AS C on A.tx_id=C.identifier '
 )
 
 
@@ -74,7 +73,7 @@ class DBEvmTx:
             ))
 
         query = """
-            INSERT INTO evm_transactions(
+            INSERT OR IGNORE INTO evm_transactions(
               tx_hash,
               chain_id,
               timestamp,
@@ -107,27 +106,26 @@ class DBEvmTx:
         tx_tuples: list[tuple[Any, ...]] = []
         for tx in transactions:
             tx_tuples.append((
-                tx.parent_tx_hash,
-                tx.chain_id.serialize_for_db(),
                 tx.trace_id,
                 tx.from_address,
                 tx.to_address,
                 str(tx.value),
+                tx.parent_tx_hash,
+                tx.chain_id.serialize_for_db(),
             ))
 
         query = """
-            INSERT INTO evm_internal_transactions(
-              parent_tx_hash,
-              chain_id,
+            INSERT OR IGNORE INTO evm_internal_transactions(
+              parent_tx,
               trace_id,
               from_address,
               to_address,
-              value)
-            VALUES (?, ?, ?, ?, ?, ?)
+              value) SELECT evm_transactions.identifier, ?, ?, ?, ? FROM evm_transactions
+            WHERE tx_hash=? AND chain_id=?
         """
         self.db.write_tuples(
             write_cursor=write_cursor,
-            tuple_type='evm_transaction',
+            tuple_type='evm_internal_transaction',
             query=query,
             tuples=tx_tuples,
             relevant_address=relevant_address,
@@ -139,22 +137,23 @@ class DBEvmTx:
             blockchain: SupportedBlockchain,
     ) -> list[EvmInternalTransaction]:
         """Get all internal transactions under a parent tx_hash for a given chain"""
-        chain_id = blockchain.to_chain_id().serialize_for_db()
+        chain_id = blockchain.to_chain_id()
         cursor = self.db.conn.cursor()
         results = cursor.execute(
-            'SELECT parent_tx_hash, chain_id, trace_id, from_address, to_address, value '
-            'FROM evm_internal_transactions WHERE parent_tx_hash=? AND chain_id=?',
-            (parent_tx_hash, chain_id),
+            'SELECT ITX.trace_id, ITX.from_address, ITX.to_address, ITX.value '
+            'FROM evm_internal_transactions ITX INNER JOIN evm_transactions TX '
+            'ON ITX.parent_tx=TX.identifier WHERE TX.tx_hash=? AND TX.chain_id=?',
+            (parent_tx_hash, chain_id.serialize_for_db()),
         )
         transactions = []
         for result in results:
             tx = EvmInternalTransaction(
-                parent_tx_hash=deserialize_evm_tx_hash(result[0]),
-                chain_id=ChainID.deserialize_from_db(result[1]),
-                trace_id=result[2],
-                from_address=result[3],
-                to_address=result[4],
-                value=result[5],
+                parent_tx_hash=parent_tx_hash,
+                chain_id=chain_id,
+                trace_id=result[0],
+                from_address=result[1],
+                to_address=result[2],
+                value=result[3],
             )
             transactions.append(tx)
 
@@ -247,7 +246,7 @@ class DBEvmTx:
         else:
             querystr += ' WHERE '
 
-        querystr += 'evm_transactions.tx_hash NOT IN (SELECT tx_hash from evmtx_receipts)'
+        querystr += 'evm_transactions.identifier NOT IN (SELECT tx_id from evmtx_receipts)'
         if limit is not None:
             querystr += 'LIMIT ?'
             bindings = (*bindings, limit)  # type: ignore
@@ -280,7 +279,7 @@ class DBEvmTx:
             addresses=addresses,
             chain_id=chain_id,
         ).prepare()
-        querystr = 'SELECT A.tx_hash from ' + TRANSACTIONS_MISSING_DECODING_QUERY + query
+        querystr = 'SELECT C.tx_hash from ' + TRANSACTIONS_MISSING_DECODING_QUERY + query
 
         with self.db.conn.read_ctx() as cursor:
             cursor.execute(querystr, bindings)
@@ -333,46 +332,42 @@ class DBEvmTx:
         serialized_chain_id = chain_id.serialize_for_db()
         if status is None:
             status = 1
+
         contract_address = deserialize_evm_address(data['contractAddress']) if data['contractAddress'] else None  # noqa: E501
+        tx_id = write_cursor.execute(
+            'SELECT identifier from evm_transactions WHERE tx_hash=? AND chain_id=?',
+            (tx_hash_b, serialized_chain_id),
+        ).fetchone()[0]
         write_cursor.execute(
-            'INSERT INTO evmtx_receipts (tx_hash, chain_id, contract_address, status, type) '
-            'VALUES(?, ?, ?, ?, ?) ',
-            (tx_hash_b, serialized_chain_id, contract_address, status, tx_type),
+            'INSERT INTO evmtx_receipts (tx_id, contract_address, status, type) '
+            'VALUES(?, ?, ?, ?) ',
+            (tx_id, contract_address, status, tx_type),
         )
 
-        log_tuples = []
-        topic_tuples = []
         for log_entry in data['logs']:
-            log_index = log_entry['logIndex']
-            log_tuples.append((
-                tx_hash_b,
-                serialized_chain_id,
-                log_index,
-                hexstring_to_bytes(log_entry['data']),
-                deserialize_evm_address(log_entry['address']),
-                int(log_entry['removed']),
-            ))
-
+            write_cursor.execute(
+                'INSERT INTO evmtx_receipt_logs (tx_id, log_index, data, address, removed) '  # noqa: E501
+                'VALUES(? ,? ,? ,? ,?)',
+                (
+                    tx_id,
+                    log_entry['logIndex'],
+                    hexstring_to_bytes(log_entry['data']),
+                    deserialize_evm_address(log_entry['address']),
+                    int(log_entry['removed']),
+                ),
+            )
+            log_id = write_cursor.lastrowid
+            topic_tuples = []
             for idx, topic in enumerate(log_entry['topics']):
                 topic_tuples.append((
-                    tx_hash_b,
-                    serialized_chain_id,
-                    log_index,
+                    log_id,
                     hexstring_to_bytes(topic),
                     idx,
                 ))
-
-        if len(log_tuples) != 0:
-            write_cursor.executemany(
-                'INSERT INTO evmtx_receipt_logs (tx_hash, chain_id, log_index, data, address, removed) '  # noqa: E501
-                'VALUES(? ,? ,? ,? ,?, ?)',
-                log_tuples,
-            )
-
             if len(topic_tuples) != 0:
                 write_cursor.executemany(
-                    'INSERT INTO evmtx_receipt_log_topics (tx_hash, chain_id, log_index, topic, topic_index) '  # noqa: E501
-                    'VALUES(? ,? ,?, ?, ?)',
+                    'INSERT INTO evmtx_receipt_log_topics (log, topic, topic_index) '
+                    'VALUES(? ,? ,?)',
                     topic_tuples,
                 )
 
@@ -384,10 +379,17 @@ class DBEvmTx:
     ) -> Optional[EvmTxReceipt]:
         """Get the evm receipt for the given tx_hash and chain id"""
         chain_id_serialized = chain_id.serialize_for_db()
-        cursor.execute(
-            'SELECT contract_address, status, type from evmtx_receipts WHERE tx_hash=? AND chain_id=?',  # noqa: E501
-            (tx_hash, chain_id_serialized))
-        result = cursor.fetchone()
+        result = cursor.execute(
+            'SELECT identifier from evm_transactions WHERE tx_hash=? AND chain_id=?',
+            (tx_hash, chain_id_serialized),
+        ).fetchone()
+        if result is None:
+            return None
+        tx_id = result[0]
+        result = cursor.execute(
+            'SELECT contract_address, status, type from evmtx_receipts WHERE tx_id=?',
+            (tx_id,),
+        ).fetchone()
         if result is None:
             return None
 
@@ -400,22 +402,20 @@ class DBEvmTx:
         )
 
         cursor.execute(
-            'SELECT log_index, data, address, removed from evmtx_receipt_logs WHERE tx_hash=? AND chain_id=?',  # noqa: E501
-            (tx_hash, chain_id_serialized))
+            'SELECT identifier, log_index, data, address, removed from evmtx_receipt_logs WHERE tx_id=?',  # noqa: E501
+            (tx_id,))
         with self.db.conn.read_ctx() as other_cursor:
             for result in cursor:
-                log_index = result[0]
                 tx_receipt_log = EvmTxReceiptLog(
-                    log_index=log_index,
-                    data=result[1],
-                    address=result[2],
-                    removed=bool(result[3]),  # works since value is either 0 or 1
+                    log_index=result[1],
+                    data=result[2],
+                    address=result[3],
+                    removed=bool(result[4]),  # works since value is either 0 or 1
                 )
                 other_cursor.execute(
                     'SELECT topic from evmtx_receipt_log_topics '
-                    'WHERE tx_hash=? AND log_index=? AND chain_id=?'
-                    'ORDER BY topic_index ASC',
-                    (tx_hash, log_index, chain_id_serialized),
+                    'WHERE log=? ORDER BY topic_index ASC',
+                    (result[0],),
                 )
                 for topic_result in other_cursor:
                     tx_receipt_log.topics.append(topic_result[0])
@@ -449,21 +449,30 @@ class DBEvmTx:
         )
         # Get all tx_hashes that are touched by this address and no other address for the chain
         result = write_cursor.execute(
-            'SELECT tx_hash from evmtx_address_mappings WHERE address=? AND chain_id=? AND tx_hash NOT IN ( '  # noqa: E501
-            'SELECT tx_hash from evmtx_address_mappings WHERE address!=? AND chain_id=?'
+            'SELECT A.tx_hash, A.identifier from evmtx_address_mappings AS B INNER JOIN '
+            'evm_transactions AS A ON A.identifier=B.tx_id WHERE B.address=? AND B.tx_id NOT IN ( '
+            'SELECT tx_id from evmtx_address_mappings WHERE address!=? AND chain_id=?'
             ')',
-            (address, chain_id_serialized, address, chain_id_serialized),
+            (address, address, chain_id_serialized),
         )
-        tx_hashes = [deserialize_evm_tx_hash(x[0]) for x in result]
+        tx_hashes = []
+        tx_ids = []
+        for tx_hash, tx_id in result:
+            tx_hashes.append(deserialize_evm_tx_hash(tx_hash))
+            tx_ids.append(tx_id)
+
+        genesis_tx_id = None
         if len(tx_hashes) == 0:
             # Need to handle the genesis tx separately since our single genesis tx contains
             # multiple genesis transactions from multiple addresses.
-            genesis_tx_exists = write_cursor.execute(
-                'SELECT COUNT(tx_hash) FROM evmtx_address_mappings WHERE tx_hash = ?',
-                (GENESIS_HASH,),
-            ).fetchone()[0] != 0
-            if genesis_tx_exists is False:
+            genesis_tx_id = write_cursor.execute(
+                'SELECT tx_id FROM evmtx_address_mappings AS M LEFT JOIN evm_transactions AS T '
+                'ON T.identifier=M.tx_id WHERE T.tx_hash=? AND T.chain_id=?',
+                (GENESIS_HASH, chain_id_serialized),
+            ).fetchone()
+            if genesis_tx_id is None:
                 return
+            genesis_tx_id = genesis_tx_id[0]
 
         dbevents.delete_events_by_tx_hash(
             write_cursor=write_cursor,
@@ -484,6 +493,8 @@ class DBEvmTx:
         if genesis_events_count == 0:
             # If there are no more events in the genesis tx, delete it
             tx_hashes.append(GENESIS_HASH)
+            if genesis_tx_id is not None:
+                tx_ids.append(genesis_tx_id)
 
         # Now delete all relevant transactions. By deleting all relevant transactions all tables
         # are cleared thanks to cascading (except for history_events which was cleared above)
@@ -493,8 +504,8 @@ class DBEvmTx:
         )
         # Delete all remaining evm_tx_mappings so decoding can happen again for customized events
         write_cursor.executemany(
-            'DELETE FROM evm_tx_mappings WHERE tx_hash=? AND chain_id=? AND value=?',
-            [(x, chain_id_serialized, HISTORY_MAPPING_STATE_DECODED) for x in tx_hashes],
+            'DELETE FROM evm_tx_mappings WHERE tx_id=? AND value=?',
+            [(x, HISTORY_MAPPING_STATE_DECODED) for x in tx_ids],
         )
 
     def get_queried_range(
@@ -526,8 +537,9 @@ class DBEvmTx:
         If no internal transactions were found, returns 0 (zero)."""
         cursor = self.db.conn.cursor()
         trace_id, = cursor.execute(
-            'SELECT MAX(trace_id) from evm_internal_transactions '
-            'WHERE parent_tx_hash=? and chain_id=?',
+            'SELECT MAX(trace_id) from evm_internal_transactions AS ITX '
+            'INNER JOIN evm_transactions AS TX ON ITX.parent_tx=TX.identifier '
+            'WHERE TX.tx_hash=? and chain_id=?',
             (GENESIS_HASH, chain_id.serialize_for_db()),
         ).fetchone()
         return trace_id if trace_id is not None else 0
@@ -582,12 +594,12 @@ class DBEvmTx:
         """Return query and bindings for the evm_transaction database table"""
         if has_premium:
             return (
-                'SELECT DISTINCT evm_transactions.tx_hash, evm_transactions.chain_id, timestamp, block_number, from_address, to_address, value, gas, gas_price, gas_used, input_data, nonce FROM evm_transactions ' + query,  # noqa: E501
+                'SELECT DISTINCT evm_transactions.tx_hash, evm_transactions.chain_id, timestamp, block_number, from_address, to_address, value, gas, gas_price, gas_used, input_data, nonce, identifier FROM evm_transactions ' + query,  # noqa: E501
                 bindings,
             )
         # else
         return (
-            'SELECT DISTINCT evm_transactions.tx_hash, evm_transactions.chain_id, timestamp, block_number, from_address, to_address, value, gas, gas_price, gas_used, input_data, nonce FROM (SELECT * from evm_transactions ORDER BY timestamp DESC LIMIT ?) AS evm_transactions ' + query,  # noqa: E501
+            'SELECT DISTINCT evm_transactions.tx_hash, evm_transactions.chain_id, timestamp, block_number, from_address, to_address, value, gas, gas_price, gas_used, input_data, nonce, identifier FROM (SELECT * from evm_transactions ORDER BY timestamp DESC LIMIT ?) AS evm_transactions ' + query,  # noqa: E501
             [FREE_ETH_TX_LIMIT] + bindings,
         )
 
@@ -606,4 +618,5 @@ class DBEvmTx:
             gas_used=int(result[9]),
             input_data=result[10],
             nonce=result[11],
+            db_id=result[12],
         )

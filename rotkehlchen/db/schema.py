@@ -496,21 +496,14 @@ CREATE TABLE IF NOT EXISTS evmtx_receipt_log_topics (
 );
 """
 
-# TODO: This here shows a weakness of using both chain_id and blockchain to identify
-# the chain. May need to change the schema somehow to either use the string identifier
-# everywhere as the common denominator. Or perhaps it's also good like this if this is
-# the only "bridge" table where both chain_id and blockchain exist for mapping.
 DB_CREATE_EVMTX_ADDRESS_MAPPINGS = """
 CREATE TABLE IF NOT EXISTS evmtx_address_mappings (
+    tx_id INTEGER NOT NULL,
     address TEXT NOT NULL,
-    tx_hash BLOB NOT NULL,
-    chain_id INTEGER NOT NULL,
-    blockchain TEXT NOT NULL,
-    FOREIGN KEY(blockchain, address) REFERENCES blockchain_accounts(blockchain, account) ON DELETE CASCADE,
-    FOREIGN KEY(tx_hash, chain_id) references evm_transactions(tx_hash, chain_id) ON UPDATE CASCADE ON DELETE CASCADE,
-    PRIMARY KEY (address, tx_hash, chain_id)
+    FOREIGN KEY(tx_id) references evm_transactions(identifier) ON UPDATE CASCADE ON DELETE CASCADE,
+    PRIMARY KEY (tx_id, address)
 );
-"""  # noqa: E501
+"""
 
 DB_CREATE_USED_QUERY_RANGES = """
 CREATE TABLE IF NOT EXISTS used_query_ranges (
@@ -523,12 +516,12 @@ CREATE TABLE IF NOT EXISTS used_query_ranges (
 # Currently this table is used only to store a flag that shows whether a transaction is decoded.
 DB_CREATE_EVM_TX_MAPPINGS = """
 CREATE TABLE IF NOT EXISTS evm_tx_mappings (
-    tx_id INTEGET NOT NULL,
+    tx_id INTEGER NOT NULL,
     value INTEGER NOT NULL,
     FOREIGN KEY(tx_id) references evm_transactions(identifier) ON UPDATE CASCADE ON DELETE CASCADE,
     PRIMARY KEY (tx_id, value)
 );
-"""  # noqa: E501
+"""
 
 DB_CREATE_SETTINGS = """
 CREATE TABLE IF NOT EXISTS settings (

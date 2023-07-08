@@ -671,7 +671,7 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
                             data=tx_receipt_data,
                         )
                 except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
-                    if 'UNIQUE constraint failed: evmtx_receipts.tx_hash' not in str(e):
+                    if 'UNIQUE constraint failed: evmtx_receipts.tx_id' not in str(e):
                         log.error(f'Failed to store transaction {entry.hex()} receipt due to {e!s}')  # noqa: E501
                         raise  # if receipt is already added by other greenlet it's fine
 
