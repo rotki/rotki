@@ -29,7 +29,7 @@ def db_script_normalizer(text: str) -> str:
         return s
 
     pattern = re.compile(
-        r'//.*?$|/\*.*?\*/|\'(?:\\.|[^\\\'])*\'|"(?:\\.|[^\\"])*"',
+        r'//.*?\n|/\*.*?\*/',
         re.DOTALL | re.MULTILINE,
     )
     return re.sub(pattern, replacer, text).replace(' ', '').replace('\n', '').replace('"', "'").lower()  # noqa: E501
