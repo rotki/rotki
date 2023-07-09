@@ -186,9 +186,7 @@ def txreceipt_to_data(receipt: EvmTxReceipt) -> dict[str, Any]:
             'data': '0x' + log_entry.data.hex(),
             'topics': [],
         }
-        for topic in log_entry.topics:
-            log_data['topics'].append('0x' + topic.hex())  # type: ignore
-
+        log_data['topics'] = ['0x' + topic.hex() for topic in log_entry.topics]
         data['logs'].append(log_data)
 
     return data

@@ -512,9 +512,7 @@ class CostBasisInfo(NamedTuple):
         """
         try:
             is_complete = data['is_complete']
-            matched_acquisitions = []
-            for entry in data['matched_acquisitions']:
-                matched_acquisitions.append(MatchedAcquisition.deserialize(entry))
+            matched_acquisitions = [MatchedAcquisition.deserialize(x) for x in data['matched_acquisitions']]  # noqa: E501
         except KeyError as e:
             raise DeserializationError(f'Could not decode CostBasisInfo json from the DB due to missing key {e!s}') from e  # noqa: E501
 

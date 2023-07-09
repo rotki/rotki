@@ -282,15 +282,12 @@ def test_update_contracts(data_updater: RotkiDataUpdater) -> None:
             assert local_id is not None
             remote_id_to_local_id[entry['id']] = local_id[0]
 
-    expected_new_contracts = []
-    for contract_data in CONTRACT_DATA:
-        expected_new_contracts.append((
-            contract_data['address'],
-            contract_data['chain_id'],
-            remote_id_to_local_id[contract_data['abi']],
-            contract_data['deployed_block'],
-        ))
-
+    expected_new_contracts = [(
+        contract_data['address'],
+        contract_data['chain_id'],
+        remote_id_to_local_id[contract_data['abi']],
+        contract_data['deployed_block'],
+    ) for contract_data in CONTRACT_DATA]
     with GlobalDBHandler().conn.read_ctx() as cursor:
         # Check that the new abis and contracts were added and the old ones were not modified
         contracts_after_update = cursor.execute('SELECT * FROM contract_data')

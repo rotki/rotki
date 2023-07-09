@@ -843,13 +843,10 @@ class RestAPI:
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
             mapping = self.rotkehlchen.data.db.get_ignored_action_ids(cursor, ActionType.ASSET_MOVEMENT)  # noqa: E501
             ignored_ids = mapping.get(ActionType.ASSET_MOVEMENT, set())
-            entries_result = []
-            for entry in serialized_movements:
-                entries_result.append({
-                    'entry': entry,
-                    'ignored_in_accounting': entry['identifier'] in ignored_ids,
-                })
-
+            entries_result = [{
+                'entry': x,
+                'ignored_in_accounting': x['identifier'] in ignored_ids,
+            } for x in serialized_movements]
             result = {
                 'entries': entries_result,
                 'entries_total': self.rotkehlchen.data.db.get_entries_count(cursor, 'asset_movements'),  # noqa: E501
@@ -873,12 +870,10 @@ class RestAPI:
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
             mapping = self.rotkehlchen.data.db.get_ignored_action_ids(cursor, ActionType.LEDGER_ACTION)  # noqa: E501
             ignored_ids = mapping.get(ActionType.LEDGER_ACTION, set())
-            entries_result = []
-            for action in actions:
-                entries_result.append({
-                    'entry': action.serialize(),
-                    'ignored_in_accounting': str(action.identifier) in ignored_ids,
-                })
+            entries_result = [{
+                'entry': x.serialize(),
+                'ignored_in_accounting': str(x.identifier) in ignored_ids,
+            } for x in actions]
 
             result = {
                 'entries': entries_result,
@@ -3161,10 +3156,7 @@ class RestAPI:
         if response is None:
             return wrap_in_fail_result(message='Not found.', status_code=HTTPStatus.NOT_FOUND)
 
-        entries_result = []
-        for transaction in response:
-            entries_result.append(transaction.serialize())
-
+        entries_result = [transaction.serialize() for transaction in response]
         result = {
             'entries': entries_result,
             'entries_found': len(entries_result),
@@ -3218,14 +3210,11 @@ class RestAPI:
             from_asset=from_asset,
             to_asset=to_asset,
         )
-        prices_information = []
-        for price_entry in prices:
-            prices_information.append({
-                'from_asset': price_entry[0],
-                'to_asset': price_entry[1],
-                'price': price_entry[2],
-            })
-
+        prices_information = [{
+            'from_asset': x[0],
+            'to_asset': x[1],
+            'price': x[2],
+        } for x in prices]
         if (nft_module := self.rotkehlchen.chains_aggregator.get_module('nfts')) is not None:
             # query also nfts manual prices
             nft_price_data = nft_module.get_nfts_with_price(
@@ -3233,13 +3222,11 @@ class RestAPI:
                 to_asset=to_asset,
                 only_with_manual_prices=True,
             )
-
-            for nft_data in nft_price_data:
-                prices_information.append({
-                    'from_asset': nft_data['asset'],
-                    'to_asset': nft_data['price_asset'],
-                    'price': nft_data['price_in_asset'],
-                })
+            prices_information.extend([{
+                'from_asset': nft_data['asset'],
+                'to_asset': nft_data['price_asset'],
+                'price': nft_data['price_in_asset'],
+            } for nft_data in nft_price_data])
 
         return api_response(_wrap_in_ok_result(prices_information), status_code=HTTPStatus.OK)
 
@@ -3313,10 +3300,7 @@ class RestAPI:
         if self.rotkehlchen.user_is_logged_in:
             with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
                 result_dict['userdb']['info'] = self.rotkehlchen.data.db.get_db_info(cursor)  # type: ignore  # noqa: E501
-            result_dict['userdb']['backups'] = []  # type: ignore
-            backups = self.rotkehlchen.data.db.get_backups()
-            for entry in backups:
-                result_dict['userdb']['backups'].append(entry)  # type: ignore
+            result_dict['userdb']['backups'] = self.rotkehlchen.data.db.get_backups()  # type: ignore  # noqa: E501
 
         return api_response(_wrap_in_ok_result(result_dict), status_code=HTTPStatus.OK)
 

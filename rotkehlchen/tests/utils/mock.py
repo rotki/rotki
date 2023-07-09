@@ -223,15 +223,11 @@ def patch_eth2_requests(eth2, mock_data):
             validator_data = eth1_data.get(eth1_address)
             if validator_data is None:
                 raise AssertionError(f'No eth1 address in mock data for address: {eth1_address}')
-
-            response_validators = []
-            for entry in validator_data:
-                response_validators.append({
-                    'publickey': entry[0],
-                    'valid_signature': entry[1],
-                    'validatorindex': entry[2],
-                })
-            response_data['data'] = response_validators
+            response_data['data'] = [{
+                'publickey': entry[0],
+                'valid_signature': entry[1],
+                'validatorindex': entry[2],
+            } for entry in validator_data]
 
         elif (other_match := BEACONCHAIN_OTHER_CALL_RE.search(url)) is not None:
             endpoint = other_match.group(2)

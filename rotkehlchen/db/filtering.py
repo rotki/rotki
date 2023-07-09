@@ -870,10 +870,7 @@ class DBNullFilter(DBFilter):
     verb: Literal['IS', 'IS NOT'] = 'IS'
 
     def prepare(self) -> tuple[list[str], list[Any]]:
-        null_columns = []
-        for column in self.columns:
-            null_columns.append(f'{column} {self.verb} NULL')
-        return null_columns, []
+        return [f'{column} {self.verb} NULL' for column in self.columns], []
 
 
 T_HistoryFilterQuery = TypeVar('T_HistoryFilterQuery', bound='HistoryBaseEntryFilterQuery')

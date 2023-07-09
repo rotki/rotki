@@ -306,14 +306,10 @@ def query_curve_data_from_api(existing_pools: list[ChecksumEvmAddress]) -> list[
             if pool_address in IGNORED_CURVE_POOLS or pool_address in existing_pools:
                 continue
 
-            coins = []
-            for coin_data in api_pool_data['coins']:
-                coins.append(deserialize_evm_address(coin_data['address']))
+            coins = [deserialize_evm_address(x['address']) for x in api_pool_data['coins']]
             underlying_coins = None
             if 'underlyingCoins' in api_pool_data:
-                underlying_coins = []
-                for underlying_coin_data in api_pool_data['underlyingCoins']:
-                    underlying_coins.append(deserialize_evm_address(underlying_coin_data['address']))  # noqa: E501
+                underlying_coins = [deserialize_evm_address(x['address']) for x in api_pool_data['underlyingCoins']]  # noqa: E501
 
             processed_new_pools.append(CurvePoolData(
                 pool_address=pool_address,

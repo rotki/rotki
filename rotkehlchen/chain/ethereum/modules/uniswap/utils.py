@@ -70,9 +70,7 @@ def uniswap_lp_token_balances(
             arguments=[address, '0x4EdBac5c8cb92878DD3fd165e43bBb8472f34c3f', chunk],
             call_order=call_order,
         )
-
-        for entry in result[1]:
-            balances.append(decode_result(userdb, entry))
+        balances = [decode_result(userdb, entry) for entry in result[1]]
 
     return balances
 

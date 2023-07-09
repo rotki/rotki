@@ -638,11 +638,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             self.database.get_blockchain_accounts(cursor),
             blockchain.get_key(),
         )
-        accounts_to_remove = []
-        for account in getattr(self.accounts, blockchain.get_key()):
-            if account not in db_btc_accounts:
-                accounts_to_remove.append(account)
-
+        accounts_to_remove = [x for x in getattr(self.accounts, blockchain.get_key()) if x not in db_btc_accounts]  # noqa: E501
         self.modify_blockchain_accounts(
             blockchain=blockchain,
             accounts=accounts_to_remove,
@@ -1417,11 +1413,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                 if len(added_chains) == 1:  # Is always either 1 or 0 since is only for ethereum
                     added_accounts.append((SupportedBlockchain.ETHEREUM, account))
             else:
-                chains_to_check = []
-                for chain in typing.get_args(SUPPORTED_EVM_CHAINS):
-                    if account not in self.accounts.get(chain):
-                        chains_to_check.append(chain)
-
+                chains_to_check = [x for x in typing.get_args(SUPPORTED_EVM_CHAINS) if account not in self.accounts.get(x)]  # noqa: E501
                 added_accounts += self.check_chains_and_add_accounts(
                     account=account,
                     chains=chains_to_check,

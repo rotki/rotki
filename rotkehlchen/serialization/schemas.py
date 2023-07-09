@@ -237,13 +237,12 @@ class EvmTokenSchema(CryptoAssetFieldsSchema):
         given_underlying_tokens = data.pop('underlying_tokens', None)
         underlying_tokens = None
         if given_underlying_tokens is not None:
-            underlying_tokens = []
-            for entry in given_underlying_tokens:
-                underlying_tokens.append(UnderlyingToken(
-                    address=entry['address'],
-                    token_kind=entry['token_kind'],
-                    weight=entry['weight'],
-                ))
+            underlying_tokens = [UnderlyingToken(
+                address=entry['address'],
+                token_kind=entry['token_kind'],
+                weight=entry['weight'],
+            ) for entry in given_underlying_tokens]
+
         return EvmToken.initialize(
             address=data['address'],
             chain_id=data['evm_chain'],
