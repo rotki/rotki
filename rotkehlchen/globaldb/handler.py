@@ -1319,7 +1319,6 @@ class GlobalDBHandler:
         May raise:
         - InputError if some db constraint was hit. Probably means manual price duplication.
         """
-        pairs_to_invalidate = []
         with GlobalDBHandler().conn.write_ctx() as write_cursor:
             try:
                 write_cursor.execute(
@@ -1366,8 +1365,7 @@ class GlobalDBHandler:
                 'SELECT from_asset, to_asset FROM price_history WHERE from_asset=? OR to_asset=?',
                 (from_asset.identifier, from_asset.identifier),
             )
-            for entry in write_cursor:
-                pairs_to_invalidate.append((Asset(entry[0]), Asset(entry[1])))
+            pairs_to_invalidate = [(Asset(entry[0]), Asset(entry[1])) for entry in write_cursor]
 
         return pairs_to_invalidate
 

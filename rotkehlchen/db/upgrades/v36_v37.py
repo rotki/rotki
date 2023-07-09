@@ -234,23 +234,19 @@ def _fix_kraken_events(write_cursor: 'DBCursor') -> None:
     Needs to be executed after _update_history_events_schema
     """
     log.debug('Enter _fix_kraken_events. Fixing kraken eth2 related tuples')
-    update_tuples: list[Any] = []
     write_cursor.execute(
         'SELECT identifier, amount, usd_value FROM history_events WHERE location="B" AND '
         'asset=? AND type="staking" AND subtype="reward" AND CAST(amount AS REAL) < 0',
         (A_ETH2.identifier,),
     )
-    for event_row in write_cursor:
-        update_tuples.append(
-            (
-                HistoryEventType.INFORMATIONAL.serialize(),
-                HistoryEventSubType.NONE.serialize(),
-                str(-FVal(event_row[1])),
-                str(-FVal(event_row[2])),
-                'Automatic virtual conversion of staked ETH rewards to ETH',
-                event_row[0],
-            ),
-        )
+    update_tuples: list[Any] = [(
+        HistoryEventType.INFORMATIONAL.serialize(),
+        HistoryEventSubType.NONE.serialize(),
+        str(-FVal(event_row[1])),
+        str(-FVal(event_row[2])),
+        'Automatic virtual conversion of staked ETH rewards to ETH',
+        event_row[0],
+    ) for event_row in write_cursor]
     if len(update_tuples) != 0:
         write_cursor.executemany(
             'UPDATE history_events SET type=?, subtype=?, amount=?, usd_value=?, notes=? WHERE identifier=?',  # noqa: E501
@@ -258,13 +254,13 @@ def _fix_kraken_events(write_cursor: 'DBCursor') -> None:
         )
 
     log.debug('Fixing kraken trades')
-    update_tuples = []
     write_cursor.execute(
         'SELECT identifier, amount, usd_value FROM history_events WHERE location="B" AND '
         'type="trade" AND subtype="none"',
     )
 
     trade_db_type = HistoryEventType.TRADE.serialize()
+    update_tuples = []
     for event_row in write_cursor:
         asset_amount = FVal(event_row[1])
         usd_value = FVal(event_row[2])
@@ -292,19 +288,15 @@ def _fix_kraken_events(write_cursor: 'DBCursor') -> None:
         )
 
     log.debug('Fixing kraken withdrawals')  # deposits are all positive amount already
-    update_tuples = []
     write_cursor.execute(
         'SELECT identifier, amount, usd_value FROM history_events WHERE location="B" AND '
         'type="withdrawal"',
     )
-    for event_row in write_cursor:
-        update_tuples.append(
-            (
-                str(-FVal(event_row[1])),
-                str(-FVal(event_row[2])),
-                event_row[0],
-            ),
-        )
+    update_tuples = [(
+        str(-FVal(event_row[1])),
+        str(-FVal(event_row[2])),
+        event_row[0],
+    ) for event_row in write_cursor]
     if len(update_tuples) != 0:
         write_cursor.executemany(
             'UPDATE history_events SET amount=?, usd_value=? WHERE identifier=?',
@@ -410,11 +402,7 @@ def _remove_ftx_data(write_cursor: 'DBCursor') -> None:
     ).fetchone()
     if non_syncing_exchanges_in_db is not None:
         non_syncing_exchanges = json.loads(non_syncing_exchanges_in_db[0])
-        new_values = []
-        for entry in non_syncing_exchanges:
-            if entry['location'] not in (Location.FTX.serialize(), Location.FTXUS.serialize()):
-                new_values.append(entry)
-
+        new_values = [x for x in non_syncing_exchanges if x['location'] not in (Location.FTX.serialize(), Location.FTXUS.serialize())]  # noqa: E501
         write_cursor.execute(
             'UPDATE settings SET value=? WHERE name="non_syncing_exchanges"',
             (json.dumps(new_values),),

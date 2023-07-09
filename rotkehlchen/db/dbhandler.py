@@ -1657,22 +1657,19 @@ class DBHandler:
         return margin_positions
 
     def add_asset_movements(self, write_cursor: 'DBCursor', asset_movements: list[AssetMovement]) -> None:  # noqa: E501
-        movement_tuples: list[tuple[Any, ...]] = []
-        for movement in asset_movements:
-            movement_tuples.append((
-                movement.identifier,
-                movement.location.serialize_for_db(),
-                movement.category.serialize_for_db(),
-                movement.timestamp,
-                movement.asset.identifier,
-                str(movement.amount),
-                movement.fee_asset.identifier,
-                str(movement.fee),
-                movement.link,
-                movement.address,
-                movement.transaction_id,
-            ))
-
+        movement_tuples = [(
+            movement.identifier,
+            movement.location.serialize_for_db(),
+            movement.category.serialize_for_db(),
+            movement.timestamp,
+            movement.asset.identifier,
+            str(movement.amount),
+            movement.fee_asset.identifier,
+            str(movement.fee),
+            movement.link,
+            movement.address,
+            movement.transaction_id,
+        ) for movement in asset_movements]
         query = """
             INSERT INTO asset_movements(
               id,
@@ -1804,23 +1801,20 @@ class DBHandler:
         dbtx.delete_transactions(write_cursor=write_cursor, address=address, chain=blockchain)  # noqa: E501
 
     def add_trades(self, write_cursor: 'DBCursor', trades: list[Trade]) -> None:
-        trade_tuples: list[tuple[Any, ...]] = []
-        for trade in trades:
-            trade_tuples.append((
-                trade.identifier,
-                trade.timestamp,
-                trade.location.serialize_for_db(),
-                trade.base_asset.identifier,
-                trade.quote_asset.identifier,
-                trade.trade_type.serialize_for_db(),
-                str(trade.amount),
-                str(trade.rate),
-                str(trade.fee) if trade.fee else None,
-                trade.fee_currency.identifier if trade.fee_currency else None,
-                trade.link,
-                trade.notes,
-            ))
-
+        trade_tuples = [(
+            trade.identifier,
+            trade.timestamp,
+            trade.location.serialize_for_db(),
+            trade.base_asset.identifier,
+            trade.quote_asset.identifier,
+            trade.trade_type.serialize_for_db(),
+            str(trade.amount),
+            str(trade.rate),
+            str(trade.fee) if trade.fee else None,
+            trade.fee_currency.identifier if trade.fee_currency else None,
+            trade.link,
+            trade.notes,
+        ) for trade in trades]
         query = """
             INSERT INTO trades(
               id,
@@ -2337,15 +2331,11 @@ class DBHandler:
                 'SELECT timestamp, location, usd_value FROM timed_location_data WHERE '
                 'timestamp=(SELECT MAX(timestamp) FROM timed_location_data) AND usd_value!=0;',
             )
-            locations = []
-            for result in cursor:
-                locations.append(
-                    LocationData(
-                        time=result[0],
-                        location=result[1],
-                        usd_value=result[2],
-                    ),
-                )
+            locations = [LocationData(
+                time=x[0],
+                location=x[1],
+                usd_value=x[2],
+            ) for x in cursor]
 
         return locations
 

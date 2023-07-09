@@ -67,10 +67,7 @@ def is_valid_bitcoin_cash_address(address: str) -> bool:
 
 
 def _b32decode(inputs: str) -> list:
-    out = []
-    for letter in inputs:
-        out.append(_CHARSET.find(letter))
-    return out
+    return [_CHARSET.find(letter) for letter in inputs]
 
 
 def _b32encode(inputs: list) -> str:
@@ -89,10 +86,7 @@ def _address_type(address_type: str, version: Union[str, int]) -> tuple[str, int
 
 def _calculate_checksum(prefix: str, payload: list[int]) -> list:
     poly = _polymod(_prefix_expand(prefix) + payload + [0, 0, 0, 0, 0, 0, 0, 0])
-    out = []
-    for i in range(8):
-        out.append((poly >> 5 * (7 - i)) & 0x1f)
-    return out
+    return [(poly >> 5 * (7 - x)) & 0x1f for x in range(8)]
 
 
 def _code_list_to_string(code_list: list[int]) -> bytes:
@@ -113,9 +107,7 @@ def legacy_to_cash_address(address: str) -> Optional[BTCAddress]:
     try:
         decoded = bytearray(b58decode_check(address))
         version = _address_type('legacy', decoded[0])[0]
-        payload = []
-        for letter in decoded[1:]:
-            payload.append(letter)
+        payload = list(decoded[1:])
         version_int = _address_type('cash', version)[1]
         new_payload = [version_int] + payload
         converted_bits = bech32.convertbits(new_payload, 8, 5)

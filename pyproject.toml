@@ -181,6 +181,7 @@ ignore = [
     "TRY004",  # Prefer TypeError for wrong type. May be okay but would need to invetigate all usages of suggested changes
     "TRY301",  # Abstract raise to an inner function -- not sure what this? Use exception for control flow?
     "TRY400",  # loggin.exception instead of logging.error. Not sure I understood this one
+    "PERF203",  # we do use try/except in loops and when python 3.11 comes this is not gonna be needed due to zero cost exception handling
 ]
 # Exclude a variety of commonly ignored directories.
 exclude = [

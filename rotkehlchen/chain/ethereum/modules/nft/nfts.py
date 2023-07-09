@@ -167,7 +167,6 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):
 
     def get_db_nft_balances(self, filter_query: 'NFTFilterQuery') -> dict[str, Any]:
         """Filters (with `filter_query`) and returns cached nft balances in the nfts table"""
-        entries: list[dict[str, Any]] = []
         query, bindings = filter_query.prepare()
         total_usd_value = ZERO
         with self.db.conn.read_ctx() as cursor:
@@ -176,9 +175,7 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):
                 'image_url, collection_name FROM nfts ' + query,
                 bindings,
             )
-            for db_entry in cursor:
-                entries.append(_deserialize_nft_from_db(entry=db_entry))
-
+            entries = [_deserialize_nft_from_db(x) for x in cursor]
             query, bindings = filter_query.prepare(with_pagination=False)
             cursor.execute(
                 'SELECT last_price, last_price_asset FROM nfts ' + query,

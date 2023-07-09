@@ -126,60 +126,52 @@ def _rename_eth_to_evm_add_chainid(write_cursor: 'DBCursor') -> None:
     transactions = []
     if table_exists(write_cursor, 'ethereum_transactions'):
         write_cursor.execute('SELECT * from ethereum_transactions')
-        for entry in write_cursor:
-            transactions.append((
-                entry[0],    # tx_hash
-                1,           # chain_id
-                *entry[1:],  # all the rest are the same
-            ))
+        transactions.extend([(
+            entry[0],    # tx_hash
+            1,           # chain_id
+            *entry[1:],  # all the rest are the same
+        ) for entry in write_cursor])
     internal_transactions = []
     if table_exists(write_cursor, 'ethereum_internal_transactions'):
         write_cursor.execute('SELECT * from ethereum_internal_transactions')
-        for entry in write_cursor:
-            internal_transactions.append((
-                entry[0],    # parent_ tx_hash
-                1,           # chain_id
-                *entry[1:],  # all the rest are the same
-            ))
-
+        internal_transactions.extend([(
+            entry[0],    # parent_ tx_hash
+            1,           # chain_id
+            *entry[1:],  # all the rest are the same
+        ) for entry in write_cursor])
     tx_receipts = []
     if table_exists(write_cursor, 'ethtx_receipts'):
         write_cursor.execute('SELECT * from ethtx_receipts')
-        for entry in write_cursor:
-            tx_receipts.append((
-                entry[0],    # tx_hash
-                1,           # chain_id
-                *entry[1:],  # all the rest are the same
-            ))
+        tx_receipts.extend([(
+            entry[0],    # tx_hash
+            1,           # chain_id
+            *entry[1:],  # all the rest are the same
+        ) for entry in write_cursor])
     tx_receipt_logs = []
     if table_exists(write_cursor, 'ethtx_receipt_logs'):
         write_cursor.execute('SELECT * from ethtx_receipt_logs')
-        for entry in write_cursor:
-            tx_receipt_logs.append((
-                entry[0],    # tx_hash
-                1,           # chain_id
-                *entry[1:],  # all the rest are the same
-            ))
+        tx_receipt_logs.extend([(
+            entry[0],    # tx_hash
+            1,           # chain_id
+            *entry[1:],  # all the rest are the same
+        ) for entry in write_cursor])
     tx_receipt_log_topics = []
     if table_exists(write_cursor, 'ethtx_receipt_log_topics'):
         write_cursor.execute('SELECT * from ethtx_receipt_log_topics')
-        for entry in write_cursor:
-            tx_receipt_log_topics.append((
-                entry[0],    # tx_hash
-                1,           # chain_id
-                *entry[1:],  # all the rest are the same
-            ))
-
+        tx_receipt_log_topics.extend([(
+            entry[0],    # tx_hash
+            1,           # chain_id
+            *entry[1:],  # all the rest are the same
+        ) for entry in write_cursor])
     tx_address_mappings = []
     if table_exists(write_cursor, 'ethtx_address_mappings'):
         write_cursor.execute('SELECT * from ethtx_address_mappings')
-        for entry in write_cursor:
-            tx_address_mappings.append((
-                entry[0],    # address
-                entry[1],    # tx_hash
-                1,           # chain_id
-                *entry[2:],  # all the rest are the same
-            ))
+        tx_address_mappings.extend([(
+            entry[0],    # address
+            entry[1],    # tx_hash
+            1,           # chain_id
+            *entry[2:],  # all the rest are the same
+        ) for entry in write_cursor])
     tx_mappings = []
     if table_exists(write_cursor, 'evm_tx_mappings'):
         write_cursor.execute('SELECT * from evm_tx_mappings')

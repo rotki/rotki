@@ -44,14 +44,10 @@ def test_convex_pools(ethereum_inquirer):
         node_inquirer=ethereum_inquirer,
         method_name='poolLength',
     )
-    calls_to_booster = []
-    for i in range(pools_count):
-        calls_to_booster.append(
-            (
-                booster_contract.address,
-                booster_contract.encode('poolInfo', [i]),
-            ),
-        )
+    calls_to_booster = [(
+        booster_contract.address,
+        booster_contract.encode('poolInfo', [x]),
+    ) for x in range(pools_count)]
     booster_result = ethereum_inquirer.multicall(
         calls=calls_to_booster,
     )
@@ -71,10 +67,7 @@ def test_convex_pools(ethereum_inquirer):
     # We query this info from chain instead of using data from our assets database since
     # if convex adds a new pool with new lp token we won't know its properties (because it won't
     # be in our DB)
-    calls_to_lp_tokens = []
-    for lp_token_addr in convex_lp_tokens_addrs:
-        calls_to_lp_tokens.append((lp_token_addr, lp_tokens_contract.encode('symbol')))
-
+    calls_to_lp_tokens = [(lp_token_addr, lp_tokens_contract.encode('symbol')) for lp_token_addr in convex_lp_tokens_addrs]  # noqa: E501
     lp_tokens_result = ethereum_inquirer.multicall(
         calls=calls_to_lp_tokens,
     )

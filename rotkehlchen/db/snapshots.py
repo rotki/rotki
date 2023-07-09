@@ -68,21 +68,16 @@ class DBSnapshot:
             timestamp: Timestamp,
     ) -> list[LocationData]:
         """Retrieves the timed_location_data from the db for a given timestamp."""
-        location_data = []
         cursor.execute(
             'SELECT timestamp, location, usd_value FROM timed_location_data '
             'WHERE timestamp=?',
             (timestamp,),
         )
-        for data in cursor:
-            location_data.append(
-                LocationData(
-                    time=data[0],
-                    location=data[1],
-                    usd_value=str(FVal(data[2])),
-                ),
-            )
-        return location_data
+        return [LocationData(
+            time=data[0],
+            location=data[1],
+            usd_value=str(FVal(data[2])),
+        ) for data in cursor]
 
     def create_zip(
             self,
@@ -275,8 +270,5 @@ class DBSnapshot:
 
     def add_nft_asset_ids(self, write_cursor: 'DBCursor', entries: list[str]) -> None:
         """Add NFT identifiers to the DB to prevent unknown asset error."""
-        nft_ids = []
-        for entry in entries:
-            if entry.startswith(NFT_DIRECTIVE):
-                nft_ids.append(entry)
+        nft_ids = [x for x in entries if x.startswith(NFT_DIRECTIVE)]
         self.db.add_asset_identifiers(write_cursor, nft_ids)

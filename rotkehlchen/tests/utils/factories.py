@@ -155,12 +155,7 @@ def make_ethereum_event(
 def generate_events_response(
         data: list['EvmEvent'],
 ) -> list:
-    result = []
-    for event in data:
-        result.append({
-            'entry': event.serialize(),
-        })
-    return result
+    return [{'entry': x.serialize()} for x in data]
 
 
 def make_addressbook_entries() -> list[AddressbookEntry]:
@@ -213,17 +208,12 @@ def make_user_notes_entries() -> list[dict[str, Any]]:
 
 def make_random_user_notes(num_notes: int) -> list[dict[str, Any]]:
     """Make random user notes to be used in tests"""
-    notes = []
-    for note_number in range(num_notes):
-        notes.append(
-            {
-                'title': f'Note #{note_number + 1}',
-                'content': 'I am a random note',
-                'location': 'manual balances',
-                'is_pinned': random.choice([True, False]),
-            },
-        )
-    return notes
+    return [{
+        'title': f'Note #{note_number + 1}',
+        'content': 'I am a random note',
+        'location': 'manual balances',
+        'is_pinned': random.choice([True, False]),
+    } for note_number in range(num_notes)]
 
 
 def make_random_trades(num_trades: int) -> list[Trade]:

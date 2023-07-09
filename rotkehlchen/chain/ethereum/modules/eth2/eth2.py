@@ -246,15 +246,13 @@ class Eth2(EthereumModule):
 
         # Performance call does not return validators that are not active and are still depositing
         depositing_indices = set(index_to_address.keys()) - set(performance_result.keys())
-        for index in depositing_indices:
-            result.append(ValidatorDetails(  # depositor can be None for manually input validator
-                validator_index=index,
-                public_key=index_to_pubkey[index],
-                eth1_depositor=index_to_address.get(index),
-                has_exited=False,  # if in deposit queue, it has not exited
-                performance=DEPOSITING_VALIDATOR_PERFORMANCE,
-            ))
-
+        result.extend([ValidatorDetails(  # depositor can be None for manually input validator
+            validator_index=index,
+            public_key=index_to_pubkey[index],
+            eth1_depositor=index_to_address.get(index),
+            has_exited=False,  # if in deposit queue, it has not exited
+            performance=DEPOSITING_VALIDATOR_PERFORMANCE,
+        ) for index in depositing_indices])
         return result
 
     def _get_saved_pubkey_to_deposit_address(self) -> dict[Eth2PubKey, ChecksumEvmAddress]:
@@ -520,16 +518,14 @@ class Eth2(EthereumModule):
             )
             result = cursor.fetchall()
 
-        changes = []
-        for entry in result:
-            changes.append((
-                EthBlockEvent.form_event_identifier(entry[1]),
-                2,
-                f'{entry[2]} as mev reward for block {entry[1]}',
-                HistoryEventType.STAKING.serialize(),
-                HistoryEventSubType.MEV_REWARD.serialize(),
-                entry[0],
-            ))
+        changes = [(
+            EthBlockEvent.form_event_identifier(entry[1]),
+            2,
+            f'{entry[2]} as mev reward for block {entry[1]}',
+            HistoryEventType.STAKING.serialize(),
+            HistoryEventSubType.MEV_REWARD.serialize(),
+            entry[0],
+        ) for entry in result]
         with self.database.user_write() as write_cursor:
             for changes_entry in changes:
                 try:

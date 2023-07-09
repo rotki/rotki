@@ -138,27 +138,26 @@ class GoogleService:
             },
         })
         # now set the formatting to have enough precision in the columns
-        for column in range(5, 12):
-            requests.append({
-                'repeatCell': {
-                    'range': {
-                        'sheetId': 0,  # all our tests use the first sheet
-                        'startRowIndex': 1,
-                        'endRowIndex': data_length + 1,
-                        'startColumnIndex': column,
-                        'endColumnIndex': column + 1,
-                    },
-                    'cell': {
-                        'userEnteredFormat': {
-                            'numberFormat': {
-                                'type': 'NUMBER',
-                                'pattern': '###0.0000000000',
-                            },
+        requests.extend([{
+            'repeatCell': {
+                'range': {
+                    'sheetId': 0,  # all our tests use the first sheet
+                    'startRowIndex': 1,
+                    'endRowIndex': data_length + 1,
+                    'startColumnIndex': column,
+                    'endColumnIndex': column + 1,
+                },
+                'cell': {
+                    'userEnteredFormat': {
+                        'numberFormat': {
+                            'type': 'NUMBER',
+                            'pattern': '###0.0000000000',
                         },
                     },
-                    'fields': 'userEnteredFormat.numberFormat',
                 },
-            })
+                'fields': 'userEnteredFormat.numberFormat',
+            },
+        } for column in range(5, 12)])
         self.sheets_service.spreadsheets().batchUpdate(  # pylint: disable=no-member
             spreadsheetId=sheet_id,
             body={'requests': requests},

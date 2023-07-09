@@ -184,13 +184,10 @@ class Liquity(HasDSProxy):
         addresses += proxied_addresses.values()
 
         # Build the calls that need to be made in order to get the status in the SP
-        calls = []
-        for address in addresses:
-            for method in methods:
-                calls.append(
-                    (contract.address, contract.encode(method_name=method, arguments=[address])),
-                )
-
+        calls = [
+            (contract.address, contract.encode(method_name=method, arguments=[address]))
+            for address in addresses for method in methods
+        ]
         try:
             outputs = self.ethereum.multicall_2(
                 require_success=False,

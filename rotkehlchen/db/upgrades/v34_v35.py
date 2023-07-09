@@ -19,6 +19,7 @@ from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
+
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBConnection, DBCursor
     from rotkehlchen.db.upgrade_manager import DBUpgradeProgressHandler
@@ -400,11 +401,9 @@ def _add_defillama_to_all_oracles(write_cursor: 'DBCursor') -> None:
 def _reset_decoded_events(db: 'DBHandler', write_cursor: 'DBCursor') -> None:
     """Reset all non-user customized decoded events"""
     log.debug('Enter _reset_decoded_events')
-    tx_hashes = []
     with db.conn.read_ctx() as cursor:
         cursor.execute('SELECT tx_hash from evm_tx_mappings')
-        for entry in cursor:
-            tx_hashes.append(entry[0])
+        tx_hashes = [x[0] for x in cursor]
 
     #  delete_events_by_tx_hash -- took code out of method at v34 DB version
     write_cursor.execute(

@@ -55,23 +55,20 @@ class DBEvmTx:
             relevant_address: Optional[ChecksumEvmAddress],
     ) -> None:
         """Adds evm transactions to the database"""
-        tx_tuples: list[tuple[Any, ...]] = []
-        for tx in evm_transactions:
-            tx_tuples.append((
-                tx.tx_hash,
-                tx.chain_id.serialize_for_db(),
-                tx.timestamp,
-                tx.block_number,
-                tx.from_address,
-                tx.to_address,
-                str(tx.value),
-                str(tx.gas),
-                str(tx.gas_price),
-                str(tx.gas_used),
-                tx.input_data,
-                tx.nonce,
-            ))
-
+        tx_tuples = [(
+            tx.tx_hash,
+            tx.chain_id.serialize_for_db(),
+            tx.timestamp,
+            tx.block_number,
+            tx.from_address,
+            tx.to_address,
+            str(tx.value),
+            str(tx.gas),
+            str(tx.gas_price),
+            str(tx.gas_used),
+            tx.input_data,
+            tx.nonce,
+        ) for tx in evm_transactions]
         query = """
             INSERT OR IGNORE INTO evm_transactions(
               tx_hash,
@@ -103,17 +100,14 @@ class DBEvmTx:
             relevant_address: Optional[ChecksumEvmAddress],
     ) -> None:
         """Adds evm internal transactions to the database"""
-        tx_tuples: list[tuple[Any, ...]] = []
-        for tx in transactions:
-            tx_tuples.append((
-                tx.trace_id,
-                tx.from_address,
-                tx.to_address,
-                str(tx.value),
-                tx.parent_tx_hash,
-                tx.chain_id.serialize_for_db(),
-            ))
-
+        tx_tuples = [(
+            tx.trace_id,
+            tx.from_address,
+            tx.to_address,
+            str(tx.value),
+            tx.parent_tx_hash,
+            tx.chain_id.serialize_for_db(),
+        ) for tx in transactions]
         query = """
             INSERT OR IGNORE INTO evm_internal_transactions(
               parent_tx,
@@ -417,9 +411,7 @@ class DBEvmTx:
                     'WHERE log=? ORDER BY topic_index ASC',
                     (result[0],),
                 )
-                for topic_result in other_cursor:
-                    tx_receipt_log.topics.append(topic_result[0])
-
+                tx_receipt_log.topics = [x[0] for x in other_cursor]
                 tx_receipt.logs.append(tx_receipt_log)
 
         return tx_receipt

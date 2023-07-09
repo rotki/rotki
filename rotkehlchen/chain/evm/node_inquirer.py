@@ -156,9 +156,7 @@ def _query_web3_get_logs(
         # Turn all HexBytes into hex strings
         for e_idx, event in enumerate(new_events_web3):
             new_events_web3[e_idx]['blockHash'] = event['blockHash'].hex()
-            new_topics = []
-            for topic in event['topics']:
-                new_topics.append(topic.hex())
+            new_topics = [topic.hex() for topic in event['topics']]
             new_events_web3[e_idx]['topics'] = new_topics
             new_events_web3[e_idx]['transactionHash'] = event['transactionHash'].hex()
 
@@ -285,9 +283,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
 
         ordered_list = []
         while len(selection) != 0:
-            weights = []
-            for entry in selection:
-                weights.append(float(entry.weight))
+            weights = [float(entry.weight) for entry in selection]
             node = random.choices(selection, weights, k=1)
             ordered_list.append(node[0])
             selection.remove(node[0])

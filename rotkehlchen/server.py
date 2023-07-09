@@ -31,13 +31,11 @@ class RotkehlchenServer:
         configure_logging(self.args)
         self.rotkehlchen = Rotkehlchen(self.args)
         self.stop_event = gevent.event.Event()
-        domain_list = []
         if self.args.api_cors:
             if ',' in self.args.api_cors:
-                for domain in self.args.api_cors.split(','):
-                    domain_list.append(str(domain))
+                domain_list = [str(domain) for domain in self.args.api_cors.split(',')]
             else:
-                domain_list.append(str(self.args.api_cors))
+                domain_list = [str(self.args.api_cors)]
         self.api_server = APIServer(
             rest_api=RestAPI(rotkehlchen=self.rotkehlchen),
             ws_notifier=self.rotkehlchen.rotki_notifier,

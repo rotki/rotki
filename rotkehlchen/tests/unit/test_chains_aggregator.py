@@ -140,26 +140,22 @@ def test_detect_evm_accounts(blockchain: 'ChainsAggregator') -> None:
     accounts_in_db = []
     with blockchain.database.conn.read_ctx() as cursor:
         raw_accounts = blockchain.database.get_blockchain_accounts(cursor)
-        for account in raw_accounts.eth:
-            accounts_in_db.append(BlockchainAccountData(
-                chain=SupportedBlockchain.ETHEREUM,
-                address=account,
-            ))
-        for account in raw_accounts.optimism:
-            accounts_in_db.append(BlockchainAccountData(
-                chain=SupportedBlockchain.OPTIMISM,
-                address=account,
-            ))
-        for account in raw_accounts.avax:
-            accounts_in_db.append(BlockchainAccountData(
-                chain=SupportedBlockchain.AVALANCHE,
-                address=account,
-            ))
-        for account in raw_accounts.polygon_pos:
-            accounts_in_db.append(BlockchainAccountData(
-                chain=SupportedBlockchain.POLYGON_POS,
-                address=account,
-            ))
+        accounts_in_db.extend([BlockchainAccountData(
+            chain=SupportedBlockchain.ETHEREUM,
+            address=account,
+        ) for account in raw_accounts.eth])
+        accounts_in_db.extend([BlockchainAccountData(
+            chain=SupportedBlockchain.OPTIMISM,
+            address=account,
+        ) for account in raw_accounts.optimism])
+        accounts_in_db.extend([BlockchainAccountData(
+            chain=SupportedBlockchain.AVALANCHE,
+            address=account,
+        ) for account in raw_accounts.avax])
+        accounts_in_db.extend([BlockchainAccountData(
+            chain=SupportedBlockchain.POLYGON_POS,
+            address=account,
+        ) for account in raw_accounts.polygon_pos])
 
     assert set(accounts_in_db) == set(expected_accounts_data)
     assert len(accounts_in_db) == len(expected_accounts_data)

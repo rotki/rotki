@@ -272,16 +272,14 @@ def test_upgrade_db_28_to_29(user_data_dir):  # pylint: disable=unused-argument
         ('0x53d2205f3f4e4d4f083878253c1b6c1cf9476fb70a53f97255425837cf472b9f', 12096043, '0x85b931A32a0725Be14285B66f1a22178c672d69B', '0xbd96cDCc6Ae1ffB73ace84E16601E1CF909D5749', 650479),  # noqa: E501
         ('0x04fb485b37b0a6107613ac6a9df403037ef41c523e562559bbfaa773f23c0ff8', 12096288, '0xbd96cDCc6Ae1ffB73ace84E16601E1CF909D5749', '0x3E66B66Fd1d0b02fDa6C811Da9E0547970DB2f21', 0),  # noqa: E501
     ]
-    transactions_before = []
     transactions_before_query = cursor.execute('SELECT tx_hash, block_number, from_address, to_address, nonce from ethereum_transactions;')  # noqa: E501
-    for entry in transactions_before_query:
-        transactions_before.append((
-            '0x' + entry[0].hex(),
-            entry[1],
-            entry[2],
-            entry[3],
-            entry[4],
-        ))
+    transactions_before = [(
+        '0x' + entry[0].hex(),
+        entry[1],
+        entry[2],
+        entry[3],
+        entry[4],
+    ) for entry in transactions_before_query]
     assert transactions_before == expected_transactions_before
 
     db_v28.logout()
@@ -319,16 +317,14 @@ def test_upgrade_db_28_to_29(user_data_dir):  # pylint: disable=unused-argument
         ('0x53d2205f3f4e4d4f083878253c1b6c1cf9476fb70a53f97255425837cf472b9f', 12096043, '0x85b931A32a0725Be14285B66f1a22178c672d69B', '0xbd96cDCc6Ae1ffB73ace84E16601E1CF909D5749', 650479),  # noqa: E501
         ('0x04fb485b37b0a6107613ac6a9df403037ef41c523e562559bbfaa773f23c0ff8', 12096288, '0xbd96cDCc6Ae1ffB73ace84E16601E1CF909D5749', '0x3E66B66Fd1d0b02fDa6C811Da9E0547970DB2f21', 0),    # noqa: E501
     ]
-    transactions_after = []
     transactions_after_query = cursor.execute('SELECT tx_hash, block_number, from_address, to_address, nonce from ethereum_transactions;')  # noqa: E501
-    for entry in transactions_after_query:
-        transactions_after.append((
-            '0x' + entry[0].hex(),
-            entry[1],
-            entry[2],
-            entry[3],
-            entry[4],
-        ))
+    transactions_after = [(
+        '0x' + entry[0].hex(),
+        entry[1],
+        entry[2],
+        entry[3],
+        entry[4],
+    ) for entry in transactions_after_query]
     assert transactions_after == expected_transactions_after
 
     # check that uniswap_events table was renamed

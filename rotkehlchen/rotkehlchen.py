@@ -611,10 +611,7 @@ class Rotkehlchen:
             data_entry['addresses'] = addresses if addresses and len(addresses) != 0 else None
             data['xpubs'].append(data_entry)
         # Add standalone addresses
-        for account in account_data:
-            if account.address not in address_to_xpub_mappings:
-                data['standalone'].append(account)
-
+        data['standalone'] = [x for x in account_data if x.address not in address_to_xpub_mappings]
         return data
 
     def add_evm_accounts(

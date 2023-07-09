@@ -75,27 +75,22 @@ def parse_import_snapshot_data(
     if is_valid is False:
         return message, [], []
 
-    processed_balances_list: list[DBAssetBalance] = []
-    processed_location_data_list: list[LocationData] = []
     try:
-        for entry in balances_list:
-            processed_balances_list.append(
-                DBAssetBalance(
-                    category=BalanceType.deserialize(entry['category']),
-                    time=Timestamp(int(entry['timestamp'])),
-                    asset=Asset(identifier=entry['asset_identifier']).check_existence(),
-                    amount=deserialize_fval(
-                        value=entry['amount'],
-                        name='amount',
-                        location='snapshot import',
-                    ),
-                    usd_value=deserialize_fval(
-                        value=entry['usd_value'],
-                        name='usd_value',
-                        location='snapshot import',
-                    ),
-                ),
-            )
+        processed_balances_list: list[DBAssetBalance] = [DBAssetBalance(
+            category=BalanceType.deserialize(entry['category']),
+            time=Timestamp(int(entry['timestamp'])),
+            asset=Asset(identifier=entry['asset_identifier']).check_existence(),
+            amount=deserialize_fval(
+                value=entry['amount'],
+                name='amount',
+                location='snapshot import',
+            ),
+            usd_value=deserialize_fval(
+                value=entry['usd_value'],
+                name='usd_value',
+                location='snapshot import',
+            ),
+        ) for entry in balances_list]
     except UnknownAsset as err:
         error_msg = f'snapshot contains an unknown asset ({err.identifier}). Try adding this asset manually.'  # noqa: 501
         return error_msg, [], []
@@ -104,18 +99,15 @@ def parse_import_snapshot_data(
         return error_msg, [], []
 
     try:
-        for entry in location_data_list:
-            processed_location_data_list.append(
-                LocationData(
-                    time=Timestamp(int(entry['timestamp'])),
-                    location=Location.deserialize(entry['location']).serialize_for_db(),
-                    usd_value=str(deserialize_fval(
-                        value=entry['usd_value'],
-                        name='usd_value',
-                        location='snapshot import',
-                    )),
-                ),
-            )
+        processed_location_data_list: list[LocationData] = [LocationData(
+            time=Timestamp(int(entry['timestamp'])),
+            location=Location.deserialize(entry['location']).serialize_for_db(),
+            usd_value=str(deserialize_fval(
+                value=entry['usd_value'],
+                name='usd_value',
+                location='snapshot import',
+            )),
+        ) for entry in location_data_list]
     except DeserializationError as err:
         error_msg = f'Error occured while importing snapshot due to: {err!s}'
         return error_msg, [], []

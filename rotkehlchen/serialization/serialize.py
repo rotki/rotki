@@ -86,10 +86,8 @@ def _process_entry(entry: Any) -> Union[str, list[Any], dict[str, Any], Any]:
     if isinstance(entry, FVal):
         return str(entry)
     if isinstance(entry, list):
-        new_list = []
-        for new_entry in entry:
-            new_list.append(_process_entry(new_entry))
-        return new_list
+        return [_process_entry(x) for x in entry]
+
     if isinstance(entry, (dict, AttributeDict)):
         new_dict = {}
         for k, v in entry.items():

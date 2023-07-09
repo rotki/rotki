@@ -31,13 +31,7 @@ class DBOptimismTx(DBEvmTx):
             relevant_address,
         )
 
-        tx_tuples: list[tuple[Any, ...]] = []
-        for tx in evm_transactions:
-            tx_tuples.append((
-                tx.tx_hash,
-                tx.l1_fee,
-            ))
-
+        tx_tuples = [(tx.tx_hash, tx.l1_fee) for tx in evm_transactions]
         query = """
             INSERT INTO optimism_transactions(
               tx_hash,
