@@ -55,12 +55,10 @@ def _create_new_tables(write_cursor: 'DBCursor') -> None:
     log.debug('Enter _create_new_tables')
     write_cursor.execute("""
     CREATE TABLE IF NOT EXISTS optimism_transactions (
-        tx_hash BLOB NOT NULL,
-        chain_id INTEGER GENERATED ALWAYS AS (10) VIRTUAL,
+        tx_id INTEGER NOT NULL PRIMARY KEY,
         l1_fee TEXT,
-        PRIMARY KEY(tx_hash),
-        FOREIGN KEY(tx_hash, chain_id) REFERENCES evm_transactions(tx_hash, chain_id) ON DELETE CASCADE ON UPDATE CASCADE
-    );""")  # noqa: E501
+    FOREIGN KEY(tx_id) REFERENCES evm_transactions(identifier) ON DELETE CASCADE ON UPDATE CASCADE
+    );""")
     log.debug('Exit _create_new_tables')
 
 

@@ -31,12 +31,11 @@ class DBOptimismTx(DBEvmTx):
             relevant_address,
         )
 
-        tx_tuples = [(tx.tx_hash, tx.l1_fee) for tx in evm_transactions]
+        tx_tuples = [(tx.l1_fee, tx.tx_hash) for tx in evm_transactions]
         query = """
-            INSERT INTO optimism_transactions(
-              tx_hash,
-              l1_fee)
-            VALUES (?, ?)
+            INSERT INTO optimism_transactions(tx_id, l1_fee)
+            SELECT evm_transactions.identifier, ? FROM
+            evm_transactions WHERE tx_hash=? and chain_id=10
         """
         self.db.write_tuples(
             write_cursor=write_cursor,
@@ -48,12 +47,12 @@ class DBOptimismTx(DBEvmTx):
     def _form_evm_transaction_dbquery(self, query: str, bindings: list[Any], has_premium: bool) -> tuple[str, list[tuple]]:  # noqa: E501
         if has_premium:
             return (
-                'SELECT DISTINCT evm_transactions.tx_hash, evm_transactions.chain_id, evm_transactions.timestamp, evm_transactions.block_number, evm_transactions.from_address, evm_transactions.to_address, evm_transactions.value, evm_transactions.gas, evm_transactions.gas_price, evm_transactions.gas_used, evm_transactions.input_data, evm_transactions.nonce, OP.l1_fee FROM evm_transactions LEFT JOIN optimism_transactions AS OP ON evm_transactions.tx_hash=OP.tx_hash ' + query,  # noqa: E501
+                'SELECT DISTINCT evm_transactions.tx_hash, evm_transactions.chain_id, evm_transactions.timestamp, evm_transactions.block_number, evm_transactions.from_address, evm_transactions.to_address, evm_transactions.value, evm_transactions.gas, evm_transactions.gas_price, evm_transactions.gas_used, evm_transactions.input_data, evm_transactions.nonce, OP.l1_fee FROM evm_transactions LEFT JOIN optimism_transactions AS OP ON evm_transactions.identifier=OP.tx_id ' + query,  # noqa: E501
                 bindings,
             )
         # else
         return (
-            'SELECT DISTINCT evm_transactions.tx_hash, evm_transactions.chain_id, evm_transactions.timestamp, evm_transactions.block_number, evm_transactions.from_address, evm_transactions.to_address, evm_transactions.value, evm_transactions.gas, evm_transactions.gas_price, evm_transactions.gas_used, evm_transactions.input_data, evm_transactions.nonce, OP.l1_fee FROM (SELECT * FROM evm_transactions ORDER BY timestamp DESC LIMIT ?) AS evm_transactions LEFT JOIN optimism_transactions AS OP ON evm_transactions.tx_hash=OP.tx_hash ' + query,  # noqa: E501
+            'SELECT DISTINCT evm_transactions.tx_hash, evm_transactions.chain_id, evm_transactions.timestamp, evm_transactions.block_number, evm_transactions.from_address, evm_transactions.to_address, evm_transactions.value, evm_transactions.gas, evm_transactions.gas_price, evm_transactions.gas_used, evm_transactions.input_data, evm_transactions.nonce, OP.l1_fee FROM (SELECT * FROM evm_transactions ORDER BY timestamp DESC LIMIT ?) AS evm_transactions LEFT JOIN optimism_transactions AS OP ON evm_transactions.identifier=OP.tx_id ' + query,  # noqa: E501
             [FREE_ETH_TX_LIMIT] + bindings,
         )
 
