@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Fix issue where users cannot add non EVM asset.
 * :bug:`-` Fix bug on the `<date-time-picker />` component, where the validation for future dates was broken when selecting a different timezone. This also fixes the issue with the cursor, while the user is editing the number in the middle.
 * :bug:`6350` Graceful handling of EVM rpc node returning non-int block number.
 * :bug:`6349` Fix issue where users may see an assets update conflicts dialog that does not appear to have any size.

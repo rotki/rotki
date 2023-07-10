@@ -466,7 +466,7 @@ router.beforeEach((to, from, next) => {
     if (
       [Routes.USER, Routes.USER_CREATE, Routes.USER_LOGIN].includes(to.path)
     ) {
-      return;
+      return next(Routes.DASHBOARD);
     }
     next();
   } else if (to.path.startsWith(Routes.USER)) {
