@@ -50,7 +50,7 @@
     "chart.js": "4.3.0",
     "chartjs-plugin-zoom": "2.0.0",
     "dayjs": "1.11.8",
-    "electron-updater": "5.3.0",
+    "electron-updater": "6.1.1",
     "electron-window-state": "5.0.3",
     "eslint": "8.41.0",
     "eslint-plugin-vue": "9.14.1",
@@ -72,7 +72,7 @@
     "zod": "3.21.4"
   },
   "devDependencies": {
-    "@electron/notarize": "1.2.3",
+    "@electron/notarize": "2.1.0",
     "@intlify/eslint-plugin-vue-i18n": "2.0.0",
     "@mdi/font": "7.2.96",
     "@namics/stylelint-bem": "8.1.0",
@@ -89,8 +89,8 @@
     "dmg-license": "1.0.11",
     "dotenv": "14.3.2",
     "dotenv-cli": "5.1.0",
-    "electron": "24.4.1",
-    "electron-builder": "23.6.0",
+    "electron": "25.2.0",
+    "electron-builder": "24.4.0",
     "electron-devtools-installer": "3.2.0",
     "electron-store": "8.1.0",
     "eslint": "8.41.0",
