@@ -25,7 +25,7 @@ from rotkehlchen.constants.assets import (
     A_UNI,
     A_VCOW,
 )
-from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError, UnableToDecryptRemoteData
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
@@ -228,7 +228,7 @@ def get_airdrop_data(name: str, data_dir: Path) -> Iterator[list[str]]:
     if not filename.is_file():
         # if not cached, get it from the gist
         try:
-            response = requests.get(url=AIRDROPS[name][0], timeout=DEFAULT_TIMEOUT_TUPLE)
+            response = requests.get(url=AIRDROPS[name][0], timeout=CachedSettings().get_timeout_tuple())  # noqa: E501
         except requests.exceptions.RequestException as e:
             raise RemoteError(f'Airdrops Gist request failed due to {e!s}') from e
         try:
@@ -259,7 +259,7 @@ def get_poap_airdrop_data(name: str, data_dir: Path) -> dict[str, Any]:
     if not filename.is_file():
         # if not cached, get it from the gist
         try:
-            request = requests.get(url=POAP_AIRDROPS[name][0], timeout=DEFAULT_TIMEOUT_TUPLE)
+            request = requests.get(url=POAP_AIRDROPS[name][0], timeout=CachedSettings().get_timeout_tuple())  # noqa: E501
         except requests.exceptions.RequestException as e:
             raise RemoteError(f'POAP airdrops Gist request failed due to {e!s}') from e
 

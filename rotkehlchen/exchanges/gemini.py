@@ -16,7 +16,8 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.assets.converters import asset_from_gemini
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.constants.timing import GLOBAL_REQUESTS_TIMEOUT, QUERY_RETRY_TIMES
+from rotkehlchen.constants.timing import GLOBAL_REQUESTS_TIMEOUT
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -178,7 +179,7 @@ class Gemini(ExchangeInterface):
         """
         v_endpoint = f'/v1/{endpoint}'
         url = f'{self.base_uri}{v_endpoint}'
-        retries_left = QUERY_RETRY_TIMES
+        retries_left = CachedSettings().get_query_retry_limit()
         while retries_left > 0:
             if endpoint in ('mytrades', 'balances', 'transfers', 'roles', 'balances/earn'):
                 # private endpoints
@@ -208,7 +209,7 @@ class Gemini(ExchangeInterface):
 
             if response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
                 # Backoff a bit by sleeping. Sleep more, the more retries have been made
-                gevent.sleep(QUERY_RETRY_TIMES / retries_left)
+                gevent.sleep(CachedSettings().get_query_retry_limit() / retries_left)
                 retries_left -= 1
             else:
                 # get out of the retry loop, we did not get 429 complaint

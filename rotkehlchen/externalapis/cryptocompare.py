@@ -38,7 +38,7 @@ from rotkehlchen.constants.assets import (
 )
 from rotkehlchen.constants.misc import ZERO, ZERO_PRICE
 from rotkehlchen.constants.resolver import strethaddress_to_identifier
-from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset, WrongAssetType
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
@@ -275,7 +275,7 @@ class Cryptocompare(ExternalServiceWithApiKey, HistoricalPriceOracleInterface, P
         tries = CRYPTOCOMPARE_QUERY_RETRY_TIMES
         while tries >= 0:
             try:
-                response = self.session.get(querystr, timeout=DEFAULT_TIMEOUT_TUPLE)
+                response = self.session.get(querystr, timeout=CachedSettings().get_timeout_tuple())
             except requests.exceptions.RequestException as e:
                 self.penalty_info.note_failure_or_penalize()
                 raise RemoteError(f'Cryptocompare API request failed due to {e!s}') from e

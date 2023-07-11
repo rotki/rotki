@@ -50,7 +50,7 @@ from rotkehlchen.constants.assets import (
     A_ZRX,
 )
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE, QUERY_RETRY_TIMES
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -267,7 +267,7 @@ class Independentreserve(ExchangeInterface):
         """
         url = f'{self.uri}/{method_type}/{path}'
 
-        tries = QUERY_RETRY_TIMES
+        tries = CachedSettings().get_query_retry_limit()
         while True:
             data = None
             log.debug(
@@ -304,7 +304,7 @@ class Independentreserve(ExchangeInterface):
                     method=verb,
                     url=url,
                     data=data,
-                    timeout=DEFAULT_TIMEOUT_TUPLE,
+                    timeout=CachedSettings().get_timeout_tuple(),
                 )
             except requests.exceptions.RequestException as e:
                 raise RemoteError(f'IndependentReserve API request failed due to {e!s}') from e

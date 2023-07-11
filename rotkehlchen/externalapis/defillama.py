@@ -9,7 +9,8 @@ import requests
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.misc import ZERO, ZERO_PRICE
-from rotkehlchen.constants.timing import DAY_IN_SECONDS, DEFAULT_TIMEOUT_TUPLE
+from rotkehlchen.constants.timing import DAY_IN_SECONDS
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
@@ -62,7 +63,7 @@ class Defillama(HistoricalPriceOracleInterface, PenalizablePriceOracleMixin):
         try:
             response = self.session.get(
                 f'{url}?{urlencode(options)}',
-                timeout=DEFAULT_TIMEOUT_TUPLE,
+                timeout=CachedSettings().get_timeout_tuple(),
             )
         except requests.exceptions.RequestException as e:
             self.penalty_info.note_failure_or_penalize()

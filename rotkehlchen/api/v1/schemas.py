@@ -1221,6 +1221,27 @@ class ModifiableSettingsSchema(Schema):
     ), load_default=DEFAULT_ADDRESS_NAME_PRIORITY)
     include_fees_in_cost_basis = fields.Boolean(load_default=None)
     infer_zero_timed_balances = fields.Boolean(load_default=None)
+    query_retry_limit = fields.Integer(
+        validate=webargs.validate.Range(
+            min=1,
+            error='The query retry limit should be > 0 retries',
+        ),
+        load_default=None,
+    )
+    connect_timeout = fields.Integer(
+        validate=webargs.validate.Range(
+            min=1,
+            error='The connect timeout should be > 0 seconds',
+        ),
+        load_default=None,
+    )
+    read_timeout = fields.Integer(
+        validate=webargs.validate.Range(
+            min=1,
+            error='The read timeout should be > 0 seconds',
+        ),
+        load_default=None,
+    )
 
     @validates_schema
     def validate_settings_schema(
@@ -1273,6 +1294,9 @@ class ModifiableSettingsSchema(Schema):
             address_name_priority=data['address_name_priority'],
             include_fees_in_cost_basis=data['include_fees_in_cost_basis'],
             infer_zero_timed_balances=data['infer_zero_timed_balances'],
+            query_retry_limit=data['query_retry_limit'],
+            connect_timeout=data['connect_timeout'],
+            read_timeout=data['read_timeout'],
         )
 
 

@@ -15,7 +15,7 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.converters import asset_from_poloniex
 from rotkehlchen.constants.assets import A_LEND
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE, QUERY_RETRY_TIMES
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -213,7 +213,7 @@ class Poloniex(ExchangeInterface):
         """
         if path in PUBLIC_API_ENDPOINTS:
             log.debug(f'Querying poloniex for {path}')
-            response = self.session.get(self.uri + path, timeout=DEFAULT_TIMEOUT_TUPLE)
+            response = self.session.get(self.uri + path, timeout=CachedSettings().get_timeout_tuple())  # noqa: E501
         else:
             timestamp = ts_now_in_ms()
             sign = self._create_sign(timestamp=timestamp, params=req, method='GET', path=path)
@@ -226,7 +226,7 @@ class Poloniex(ExchangeInterface):
                 url = f'{self.uri}{path}'
             else:
                 url = f'{self.uri}{path}?{params}'
-            response = self.session.get(url, params={}, timeout=DEFAULT_TIMEOUT_TUPLE)
+            response = self.session.get(url, params={}, timeout=CachedSettings().get_timeout_tuple())  # noqa: E501
 
         if response.status_code == 504:
             # backoff and repeat
@@ -254,7 +254,7 @@ class Poloniex(ExchangeInterface):
             post_data=req,
         )
 
-        tries = QUERY_RETRY_TIMES
+        tries = CachedSettings().get_query_retry_limit()
         while tries >= 0:
             try:
                 response = self._single_query(command, req)
@@ -275,7 +275,7 @@ class Poloniex(ExchangeInterface):
         if response is None:
             raise RemoteError(
                 f'Got a recoverable poloniex error and did not manage to get a '
-                f'request through even after {QUERY_RETRY_TIMES} '
+                f'request through even after {CachedSettings().get_query_retry_limit()} '
                 f'incremental backoff retries',
             )
 

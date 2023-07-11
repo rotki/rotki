@@ -35,11 +35,11 @@ from rotkehlchen.chain.evm.decoding.types import EventCategory
 from rotkehlchen.constants import KRAKEN_API_VERSION, KRAKEN_BASE_URL
 from rotkehlchen.constants.assets import A_ETH2, A_KFEE, A_USD
 from rotkehlchen.constants.misc import ZERO, ZERO_PRICE
-from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.db.constants import KRAKEN_ACCOUNT_TYPE_KEY
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.ranges import DBQueryRanges
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -446,7 +446,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
             req = {}
         urlpath = f'{KRAKEN_BASE_URL}/{KRAKEN_API_VERSION}/public/{method}'
         try:
-            response = self.session.post(urlpath, data=req, timeout=DEFAULT_TIMEOUT_TUPLE)
+            response = self.session.post(urlpath, data=req, timeout=CachedSettings().get_timeout_tuple())  # noqa: E501
         except requests.exceptions.RequestException as e:
             raise RemoteError(f'Kraken API request failed due to {e!s}') from e
 
@@ -533,7 +533,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
             response = self.session.post(
                 KRAKEN_BASE_URL + urlpath,
                 data=post_data.encode(),
-                timeout=DEFAULT_TIMEOUT_TUPLE,
+                timeout=CachedSettings().get_timeout_tuple(),
             )
         except requests.exceptions.RequestException as e:
             raise RemoteError(f'Kraken API request failed due to {e!s}') from e

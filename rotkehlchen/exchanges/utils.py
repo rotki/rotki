@@ -8,7 +8,8 @@ from eth_utils.address import to_checksum_address
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_binance
 from rotkehlchen.constants.assets import A_ETH
-from rotkehlchen.constants.timing import DAY_IN_SECONDS, DEFAULT_TIMEOUT_TUPLE
+from rotkehlchen.constants.timing import DAY_IN_SECONDS
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchanges.data_structures import BinancePair
 from rotkehlchen.fval import FVal
@@ -99,7 +100,7 @@ def query_binance_exchange_pairs(location: Location) -> dict[str, BinancePair]:
 
     if ts_now() - last_pair_check_ts > DAY_IN_SECONDS:
         try:
-            response = requests.get(url, timeout=DEFAULT_TIMEOUT_TUPLE)
+            response = requests.get(url, timeout=CachedSettings().get_timeout_tuple())
             pairs = create_binance_symbols_to_pair(
                 exchange_data=response.json(),
                 location=location,

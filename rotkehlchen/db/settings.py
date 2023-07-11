@@ -1,7 +1,7 @@
 import json
 from collections.abc import Sequence
 from dataclasses import dataclass, field, fields
-from typing import Any, NamedTuple, Optional, Union
+from typing import Any, Literal, NamedTuple, Optional, Union
 
 from rotkehlchen.accounting.ledger_actions import LedgerActionType
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
@@ -61,7 +61,9 @@ DEFAULT_TREAT_ETH2_AS_ETH = True
 DEFAULT_ETH_STAKING_TAXABLE_AFTER_WITHDRAWAL_ENABLED = True
 DEFAULT_INCLUDE_FEES_IN_COST_BASIS = True
 DEFAULT_INFER_ZERO_TIMED_BALANCES = False  # If True the asset amount and value chart shows the 0 balance periods for an asset  # noqa: E501
-
+DEFAULT_QUERY_RETRY_LIMIT = 5
+DEFAULT_CONNECT_TIMEOUT = 30
+DEFAULT_READ_TIMEOUT = 30
 
 JSON_KEYS = (
     'current_price_oracles',
@@ -92,6 +94,9 @@ INTEGER_KEYS = (
     'btc_derivation_gap_limit',
     'ssf_graph_multiplier',
     'last_data_migration',
+    'query_retry_limit',
+    'connect_timeout',
+    'read_timeout',
 )
 STRING_KEYS = (
     'ksm_rpc_endpoint',
@@ -103,7 +108,65 @@ TIMESTAMP_KEYS = ('last_write_ts', 'last_data_upload_ts', 'last_balance_save')
 IGNORED_KEYS = (LAST_EVM_ACCOUNTS_DETECT_KEY, LAST_DATA_UPDATES_KEY) + tuple(x.serialize() for x in UpdateType)  # noqa: E501
 
 
-@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=True)
+DBSettingsFieldNames = Literal[
+    'have_premium',
+    'version',
+    'last_write_ts',
+    'premium_should_sync',
+    'include_crypto2crypto',
+    'last_data_upload_ts',
+    'ui_floating_precision',
+    'taxfree_after_period',
+    'balance_save_frequency',
+    'include_gas_costs',
+    'ksm_rpc_endpoint',
+    'dot_rpc_endpoint',
+    'main_currency',
+    'date_display_format',
+    'last_balance_save',
+    'submit_usage_analytics',
+    'active_modules',
+    'frontend_settings',
+    'account_for_assets_movements',
+    'btc_derivation_gap_limit',
+    'calculate_past_cost_basis',
+    'display_date_in_localtime',
+    'current_price_oracles',
+    'historical_price_oracles',
+    'taxable_ledger_actions',
+    'pnl_csv_with_formulas',
+    'pnl_csv_have_summary',
+    'ssf_graph_multiplier',
+    'last_data_migration',
+    'non_syncing_exchanges',
+    'cost_basis_method',
+    'treat_eth2_as_eth',
+    'eth_staking_taxable_after_withdrawal_enabled',
+    'address_name_priority',
+    'include_fees_in_cost_basis',
+    'infer_zero_timed_balances',
+    'query_retry_limit',
+    'connect_timeout',
+    'read_timeout',
+]
+
+DBSettingsFieldTypes = Union[
+    bool,
+    int,
+    Timestamp,
+    str,
+    Asset,
+    Sequence[ModuleName],
+    Sequence[CurrentPriceOracle],
+    Sequence[HistoricalPriceOracle],
+    Sequence[LedgerActionType],
+    Sequence[ExchangeLocationID],
+    CostBasisMethod,
+    Sequence[AddressNameSource],
+]
+
+
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class DBSettings:
     have_premium: bool = False
     version: int = ROTKEHLCHEN_DB_VERSION
@@ -141,6 +204,9 @@ class DBSettings:
     address_name_priority: Sequence[AddressNameSource] = DEFAULT_ADDRESS_NAME_PRIORITY
     include_fees_in_cost_basis: bool = DEFAULT_INCLUDE_FEES_IN_COST_BASIS
     infer_zero_timed_balances: bool = DEFAULT_INFER_ZERO_TIMED_BALANCES
+    query_retry_limit: int = DEFAULT_QUERY_RETRY_LIMIT
+    connect_timeout: int = DEFAULT_CONNECT_TIMEOUT
+    read_timeout: int = DEFAULT_READ_TIMEOUT
 
     def serialize(self) -> dict[str, Any]:
         settings_dict = {}
@@ -191,6 +257,9 @@ class ModifiableDBSettings(NamedTuple):
     address_name_priority: Optional[list[AddressNameSource]] = None
     include_fees_in_cost_basis: Optional[bool] = None
     infer_zero_timed_balances: Optional[bool] = None
+    query_retry_limit: Optional[int] = None
+    connect_timeout: Optional[int] = None
+    read_timeout: Optional[int] = None
 
     def serialize(self) -> dict[str, Any]:
         settings_dict = {}
@@ -306,3 +375,56 @@ def serialize_db_setting(
         else:
             value = [x.serialize() for x in value]
     return value
+
+
+class CachedSettings:
+    """
+    Singleton class that manages the cached settings. It is initialized with default values on
+    user login and is reset on user logout. This way the cached settings are bound to the user's
+    session and not shared between users. It is updated when a setting is updated.
+
+    Keep in mind:
+    - last_write_ts is not cached for performance reasons
+    (see comment on write_ctx method of DBConnection class)
+    - settings that are not attributes of the DBSettings dataclass and are
+    not set with the set_setting method are not being cached. Settings not in the DBSettings
+    but set with the set_setting method are cached.
+    """
+    __instance: Optional['CachedSettings'] = None
+    _settings: DBSettings = DBSettings()  # the default settings values
+
+    def __new__(cls) -> 'CachedSettings':
+        if CachedSettings.__instance is not None:
+            return CachedSettings.__instance
+
+        CachedSettings.__instance = super().__new__(cls)
+        return CachedSettings.__instance
+
+    def reset(self) -> None:
+        self._settings = DBSettings()
+
+    def update_entry(self, attr: str, value: DBSettingsFieldTypes) -> None:
+        setattr(self._settings, attr, value)
+
+    def update_entries(self, settings: ModifiableDBSettings) -> None:
+        for attr in settings._fields:
+            if getattr(settings, attr) is None:  # ModifiableDBSettings contain the values to modify and None for the others. Ignore None  # noqa: E501
+                continue
+            self.update_entry(attr, getattr(settings, attr))
+
+    def get_entry(self, attr: DBSettingsFieldNames) -> DBSettingsFieldTypes:
+        if attr == 'last_write_ts':
+            raise AttributeError(f'{attr} is knowingly not cached. Read it directly from the DB.')
+        return getattr(self._settings, attr)
+
+    def get_settings(self) -> Optional[DBSettings]:
+        return self._settings
+
+    # commonly used settings with their own get function
+    def get_timeout_tuple(self) -> tuple[int, int]:
+        conn_timeout = self.get_entry('connect_timeout')
+        read_timout = self.get_entry('read_timeout')
+        return conn_timeout, read_timout  # type: ignore
+
+    def get_query_retry_limit(self) -> int:
+        return self.get_entry('query_retry_limit')  # type: ignore

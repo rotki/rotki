@@ -10,7 +10,7 @@ import maxminddb
 import miniupnpc
 import requests
 
-from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_timestamp_from_date
@@ -40,7 +40,7 @@ def retrieve_location_data(data_dir: Path) -> Optional[GeolocationData]:
     try:
         response = requests.get(
             url='https://api.github.com/repos/geoacumen/geoacumen-country/branches/master',
-            timeout=DEFAULT_TIMEOUT_TUPLE,
+            timeout=CachedSettings().get_timeout_tuple(),
         )
         data = response.json()
         date = deserialize_timestamp_from_date(
@@ -75,7 +75,7 @@ def retrieve_location_data(data_dir: Path) -> Optional[GeolocationData]:
         try:
             response = requests.get(
                 url='https://github.com/geoacumen/geoacumen-country/raw/master/Geoacumen-Country.mmdb',  # noqa: E501
-                timeout=DEFAULT_TIMEOUT_TUPLE,
+                timeout=CachedSettings().get_timeout_tuple(),
                 stream=True,
             )
         except requests.exceptions.RequestException as e:
@@ -142,7 +142,7 @@ def maybe_submit_usage_analytics(data_dir: Path, should_submit: bool) -> None:
         response = requests.put(
             url='https://rotki.com/api/1/usage_analytics',
             json=analytics,
-            timeout=DEFAULT_TIMEOUT_TUPLE,
+            timeout=CachedSettings().get_timeout_tuple(),
         )
     except requests.exceptions.RequestException:
         return None

@@ -7,7 +7,7 @@ from base64 import b64encode
 
 import requests
 
-from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
+from rotkehlchen.db.settings import CachedSettings
 
 ANON_UPLOAD_ID = 'ce8c41d2c1a72d1'
 
@@ -33,7 +33,7 @@ def upload(path: str, headers: dict):
         url='https://api.imgur.com/3/upload',
         data=data,
         headers=headers,
-        timeout=DEFAULT_TIMEOUT_TUPLE,
+        timeout=CachedSettings().get_timeout_tuple(),
     )
     print(response.status_code)
 

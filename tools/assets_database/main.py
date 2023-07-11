@@ -8,10 +8,11 @@ from tempfile import TemporaryDirectory
 
 from gevent import monkey
 
+from rotkehlchen.db.settings import CachedSettings
+
 monkey.patch_all()  # isort:skip
 import requests
 
-from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.globaldb.updates import AssetsUpdater
 from rotkehlchen.logging import TRACE, add_logging_level
@@ -57,7 +58,7 @@ def parse_args() -> argparse.Namespace:
 def get_remote_global_db(directory: Path, version: int, branch: str) -> Path:
     try:
         url = f'https://github.com/rotki/assets/raw/{branch}/databases/v{version}_global.db'  # noqa: E501
-        response = requests.get(url=url, timeout=DEFAULT_TIMEOUT_TUPLE)
+        response = requests.get(url=url, timeout=CachedSettings().get_timeout_tuple())
     except requests.exceptions.RequestException:
         print(f'Couldnt download v{version} global.db from github')
         sys.exit(1)

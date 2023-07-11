@@ -256,7 +256,10 @@
       "ens_names"
     ],
     "include_fees_in_cost_basis": true,
-    "infer_zero_timed_balances": false
+    "infer_zero_timed_balances": false,
+    "query_retry_limit": 5,
+    "connect_timeout": 30,
+    "read_timeout": 30
   },
   "ignored_events_ids": {
     "ledger_action": ["2"],
