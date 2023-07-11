@@ -7,6 +7,7 @@ from rotkehlchen.data_migrations.migrations.migration_2 import data_migration_2
 from rotkehlchen.data_migrations.migrations.migration_3 import data_migration_3
 from rotkehlchen.data_migrations.migrations.migration_5 import data_migration_5
 from rotkehlchen.data_migrations.migrations.migration_10 import data_migration_10
+from rotkehlchen.data_migrations.migrations.migration_11 import data_migration_11
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 from .progress import MigrationProgressHandler
@@ -29,8 +30,9 @@ MIGRATION_LIST = [
     MigrationRecord(version=3, function=data_migration_3),
     MigrationRecord(version=5, function=data_migration_5),
     MigrationRecord(version=10, function=data_migration_10),
+    MigrationRecord(version=11, function=data_migration_11),
 ]
-LAST_DATA_MIGRATION = 10  # not taking length since, we have removed migrations
+LAST_DATA_MIGRATION = 11  # not taking length since, we have removed migrations
 
 
 class DataMigrationManager:
