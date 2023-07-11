@@ -14,7 +14,7 @@ from websocket import WebSocketException
 
 from rotkehlchen.assets.asset import CryptoAsset
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -463,7 +463,7 @@ class SubstrateManager:
         url = f'https://{self.chain.get_key()}.api.subscan.io/api/scan/metadata'
         log.debug(f'{self.chain} subscan API request', request_url=url)
         try:
-            response = requests.post(url=url, timeout=DEFAULT_TIMEOUT_TUPLE)
+            response = requests.post(url=url, timeout=CachedSettings().get_timeout_tuple())
         except requests.exceptions.RequestException as e:
             message = f'{self.chain} failed to post request at {url}. Connection error: {e!s}.'
             log.error(message)

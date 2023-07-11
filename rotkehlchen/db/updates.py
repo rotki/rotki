@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any, Final, Literal, Union, overload
 import requests
 
 from rotkehlchen.assets.spam_assets import update_spam_assets
-from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
+from rotkehlchen.db import settings
 from rotkehlchen.db.addressbook import DBAddressbook
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -83,7 +83,7 @@ class RotkiDataUpdater:
         """
         url = f'https://raw.githubusercontent.com/rotki/data/{self.branch}/updates/info.json'
         try:
-            response = requests.get(url=url, timeout=DEFAULT_TIMEOUT_TUPLE)
+            response = requests.get(url=url, timeout=settings.CachedSettings().get_timeout_tuple())
         except requests.exceptions.RequestException as e:
             raise RemoteError(f'Failed to query {url} during assets update: {e!s}') from e
 

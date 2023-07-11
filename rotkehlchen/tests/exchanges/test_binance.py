@@ -15,8 +15,8 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import UNSUPPORTED_BINANCE_ASSETS, asset_from_binance
 from rotkehlchen.assets.exchanges_mappings.binance import WORLD_TO_BINANCE
 from rotkehlchen.constants.assets import A_ADA, A_BNB, A_BTC, A_DOT, A_ETH, A_EUR, A_USDT, A_WBTC
-from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.db.constants import BINANCE_MARKETS_KEY
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.exchanges.binance import (
@@ -824,12 +824,13 @@ def test_api_query_retry_on_status_code_429(function_scope_binance):
     call_options['signature'] = signature
     base_url = 'https://api.binance.com/api/v3/myTrades?'
     exp_request_url = base_url + urlencode(call_options)
+    timeout_tuple = CachedSettings().get_timeout_tuple()
 
     # NB: all calls must have the same signature (time frozen)
     expected_calls = [
-        call(exp_request_url, timeout=DEFAULT_TIMEOUT_TUPLE),
-        call(exp_request_url, timeout=DEFAULT_TIMEOUT_TUPLE),
-        call(exp_request_url, timeout=DEFAULT_TIMEOUT_TUPLE),
+        call(exp_request_url, timeout=timeout_tuple),
+        call(exp_request_url, timeout=timeout_tuple),
+        call(exp_request_url, timeout=timeout_tuple),
     ]
 
     def get_mocked_response():

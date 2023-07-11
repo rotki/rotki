@@ -23,7 +23,7 @@ from rotkehlchen.assets.converters import asset_from_coinbasepro
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE, QUERY_RETRY_TIMES
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -221,7 +221,7 @@ class Coinbasepro(ExchangeInterface):
                 'CB-ACCESS-TIMESTAMP': timestamp,
             })
 
-        retries_left = QUERY_RETRY_TIMES
+        retries_left = CachedSettings().get_query_retry_limit()
         while retries_left > 0:
             log.debug(
                 'Coinbase Pro API query',
@@ -235,7 +235,7 @@ class Coinbasepro(ExchangeInterface):
                     request_method.lower(),
                     full_url,
                     data=stringified_options,
-                    timeout=DEFAULT_TIMEOUT_TUPLE,
+                    timeout=CachedSettings().get_timeout_tuple(),
                 )
             except requests.exceptions.RequestException as e:
                 raise RemoteError(
@@ -245,7 +245,7 @@ class Coinbasepro(ExchangeInterface):
 
             if response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
                 # Backoff a bit by sleeping. Sleep more, the more retries have been made
-                backoff_secs = QUERY_RETRY_TIMES / retries_left
+                backoff_secs = CachedSettings().get_query_retry_limit() / retries_left
                 log.debug(f'Backing off coinbase pro api query for {backoff_secs} secs')
                 gevent.sleep(backoff_secs)
                 retries_left -= 1

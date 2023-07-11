@@ -19,7 +19,8 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.assets.converters import asset_from_kucoin
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE, MONTH_IN_SECONDS, WEEK_IN_SECONDS
+from rotkehlchen.constants.timing import MONTH_IN_SECONDS, WEEK_IN_SECONDS
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -242,7 +243,7 @@ class Kucoin(ExchangeInterface):
             })
             log.debug('Kucoin API request', request_url=request_url)
             try:
-                response = self.session.get(url=request_url, timeout=DEFAULT_TIMEOUT_TUPLE)
+                response = self.session.get(url=request_url, timeout=CachedSettings().get_timeout_tuple())  # noqa: E501
             except requests.exceptions.RequestException as e:
                 raise RemoteError(
                     f'Kucoin {method} request at {request_url} connection error: {e!s}.',

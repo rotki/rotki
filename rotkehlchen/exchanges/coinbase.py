@@ -13,7 +13,7 @@ from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.converters import asset_from_coinbase
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -370,7 +370,7 @@ class Coinbase(ExchangeInterface):
 
             full_url = self.base_uri + next_uri
             try:
-                response = self.session.get(full_url, timeout=DEFAULT_TIMEOUT_TUPLE)
+                response = self.session.get(full_url, timeout=CachedSettings().get_timeout_tuple())
             except requests.exceptions.RequestException as e:
                 raise RemoteError(f'Coinbase API request failed due to {e!s}') from e
 

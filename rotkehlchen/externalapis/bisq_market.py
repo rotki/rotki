@@ -3,7 +3,7 @@ import json
 import requests
 
 from rotkehlchen.assets.asset import CryptoAsset
-from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
+from rotkehlchen.db import settings
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.deserialization import deserialize_price
@@ -21,7 +21,7 @@ def get_bisq_market_price(asset: CryptoAsset) -> Price:
     """
     url = PRICE_API_URL.format(symbol=asset.symbol)
     try:
-        response = requests.get(url, timeout=DEFAULT_TIMEOUT_TUPLE)
+        response = requests.get(url, timeout=settings.CachedSettings().get_timeout_tuple())
     except requests.exceptions.RequestException as e:
         raise RemoteError(f'bisq.markets request {url} failed due to {e!s}') from e
     try:

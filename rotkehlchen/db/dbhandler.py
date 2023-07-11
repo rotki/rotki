@@ -65,6 +65,7 @@ from rotkehlchen.db.settings import (
     DEFAULT_PREMIUM_SHOULD_SYNC,
     ROTKEHLCHEN_DB_VERSION,
     ROTKEHLCHEN_TRANSIENT_DB_VERSION,
+    CachedSettings,
     DBSettings,
     ModifiableDBSettings,
     db_settings_from_dict,
@@ -391,6 +392,7 @@ class DBHandler:
             'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
             (name, str(value)),
         )
+        CachedSettings().update_entry(name, value)
 
     def _connect(self, conn_attribute: Literal['conn', 'conn_transient'] = 'conn') -> None:
         """Connect to the DB using password
@@ -567,6 +569,7 @@ class DBHandler:
             'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
             list(settings_dict.items()),
         )
+        CachedSettings().update_entries(settings)
 
     @need_writable_cursor('user_write')
     def add_external_service_credentials(

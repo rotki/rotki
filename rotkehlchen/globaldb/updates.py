@@ -13,8 +13,8 @@ import requests
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.types import AssetData, AssetType
-from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.db.drivers.gevent import DBCursor
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -132,7 +132,7 @@ class AssetsUpdater:
     def _get_remote_info_json(self) -> dict[str, Any]:
         url = f'https://raw.githubusercontent.com/rotki/assets/{self.branch}/updates/info.json'
         try:
-            response = requests.get(url=url, timeout=DEFAULT_TIMEOUT_TUPLE)
+            response = requests.get(url=url, timeout=CachedSettings().get_timeout_tuple())
         except requests.exceptions.RequestException as e:
             raise RemoteError(f'Failed to query Github {url} during assets update: {e!s}') from e  # noqa: E501
 

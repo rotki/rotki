@@ -14,7 +14,7 @@ from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import NFT_DIRECTIVE, ZERO
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
-from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -108,7 +108,7 @@ class Opensea(ExternalServiceWithApiKey):
             response = requests.get(
                 url='https://rotki.com/api/1/credentials',
                 json={'name': 'opensea'},
-                timeout=DEFAULT_TIMEOUT_TUPLE,
+                timeout=CachedSettings().get_timeout_tuple(),
             )
         except requests.exceptions.RequestException as e:
             log.error(f'Could not connect to rotki server for fetching backup opensea key due to {e!s}')  # noqa: E501
@@ -185,7 +185,7 @@ class Opensea(ExternalServiceWithApiKey):
                 response = self.session.get(
                     query_str,
                     params=options,
-                    timeout=timeout if timeout else DEFAULT_TIMEOUT_TUPLE,
+                    timeout=timeout if timeout else CachedSettings().get_timeout_tuple(),
                 )
             except requests.exceptions.RequestException as e:
                 raise RemoteError(

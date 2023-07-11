@@ -12,8 +12,8 @@ from rotkehlchen.accounting.structures.eth2 import EthBlockEvent
 from rotkehlchen.chain.ethereum.modules.eth2.constants import LAST_PRODUCED_BLOCKS_QUERY_TS
 from rotkehlchen.chain.ethereum.modules.eth2.structures import ValidatorID, ValidatorPerformance
 from rotkehlchen.constants.misc import ONE
-from rotkehlchen.constants.timing import DEFAULT_CONNECT_TIMEOUT, QUERY_RETRY_TIMES
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -29,7 +29,6 @@ if TYPE_CHECKING:
 
 MAX_WAIT_SECS = 60
 BEACONCHAIN_READ_TIMEOUT = 75
-BEACONCHAIN_TIMEOUT_TUPLE = (DEFAULT_CONNECT_TIMEOUT, BEACONCHAIN_READ_TIMEOUT)
 BEACONCHAIN_ROOT_URL = 'https://beaconcha.in'
 
 logger = logging.getLogger(__name__)
@@ -98,12 +97,12 @@ class BeaconChain(ExternalServiceWithApiKey):
         if extra_args is not None:
             query_str += f'?{urlencode(extra_args)}'
 
-        times = QUERY_RETRY_TIMES
+        times = CachedSettings().get_query_retry_limit()
         backoff_in_seconds = 10
         log.debug(f'Querying beaconcha.in API for {query_str}')
         while True:
             try:
-                response = self.session.get(query_str, timeout=BEACONCHAIN_TIMEOUT_TUPLE)
+                response = self.session.get(query_str, timeout=(CachedSettings().get_timeout_tuple()[0], BEACONCHAIN_READ_TIMEOUT))  # noqa: E501
             except requests.exceptions.RequestException as e:
                 raise RemoteError(f'Querying {query_str} failed due to {e!s}') from e
 
@@ -146,7 +145,7 @@ class BeaconChain(ExternalServiceWithApiKey):
                     sleep_seconds = retry_after_secs
                 else:
                     # Rate limited. Try incremental backoff since retry-after header is missing
-                    sleep_seconds = backoff_in_seconds * (QUERY_RETRY_TIMES - times + 1)
+                    sleep_seconds = backoff_in_seconds * (CachedSettings().get_query_retry_limit() - times + 1)  # noqa: E501
                 times -= 1
                 log.debug(
                     f'Beaconchain API request {response.url} got rate limited. Sleeping '

@@ -5,8 +5,8 @@ from typing import Any, Optional
 
 import requests
 
-from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.db.dbhandler import DBHandler
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
@@ -125,7 +125,7 @@ class Covalent(ExternalServiceWithApiKey):
         while retry <= CONST_RETRY:
             log.debug(f'Querying covalent: {query_str}')
             try:
-                response = self.session.get(query_str, timeout=timeout if timeout else DEFAULT_TIMEOUT_TUPLE)  # noqa: E501
+                response = self.session.get(query_str, timeout=timeout if timeout else CachedSettings().get_timeout_tuple())  # noqa: E501
             except requests.exceptions.RequestException as e:
                 # In timeout retry
                 if isinstance(e, requests.exceptions.Timeout):

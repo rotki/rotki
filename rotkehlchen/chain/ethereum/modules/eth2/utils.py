@@ -9,7 +9,7 @@ import requests
 from bs4 import BeautifulSoup, SoupStrainer
 
 from rotkehlchen.constants.misc import ONE, ZERO
-from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.beaconchain import BEACONCHAIN_ROOT_URL
 from rotkehlchen.fval import FVal
@@ -62,7 +62,7 @@ def _query_page(url: str, event: Literal['stats', 'withdrawals']) -> requests.Re
     while True:
         log.debug(f'Querying beaconcha.in {event}: {url}')
         try:
-            response = requests.get(url, timeout=DEFAULT_TIMEOUT_TUPLE)
+            response = requests.get(url, timeout=CachedSettings().get_timeout_tuple())
         except requests.exceptions.RequestException as e:
             raise RemoteError(f'Beaconcha.in api request {url} failed due to {e!s}') from e
 

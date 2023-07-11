@@ -7,7 +7,7 @@ import gevent
 import requests
 
 from rotkehlchen.constants import GLOBAL_REQUESTS_TIMEOUT
-from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE, QUERY_RETRY_TIMES
+from rotkehlchen.db import settings
 from rotkehlchen.errors.misc import RemoteError, UnableToDecryptRemoteData
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
@@ -30,7 +30,7 @@ def request_get(
     # TODO make this a bit more smart. Perhaps conditional on the type of request.
     # Not all requests would need repeated attempts
     response = retry_calls(
-        times=QUERY_RETRY_TIMES,
+        times=settings.CachedSettings().get_query_retry_limit(),
         location='',
         handle_429=handle_429,
         backoff_in_seconds=backoff_in_seconds,
@@ -142,7 +142,7 @@ def query_file(url: str, is_json: bool = False) -> Union[str, dict[str, Any]]:
     and is_json is set to true.
     """
     try:
-        response = requests.get(url=url, timeout=DEFAULT_TIMEOUT_TUPLE)
+        response = requests.get(url=url, timeout=settings.CachedSettings().get_timeout_tuple())  # noqa: E501
     except requests.exceptions.RequestException as e:
         raise RemoteError(f'Failed to query file {url} due to: {e!s}') from e
 

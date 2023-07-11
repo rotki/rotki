@@ -47,7 +47,7 @@ from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.data_import.manager import CSVDataImporter
 from rotkehlchen.data_migrations.manager import DataMigrationManager
 from rotkehlchen.db.filtering import NFTFilterQuery
-from rotkehlchen.db.settings import DBSettings, ModifiableDBSettings
+from rotkehlchen.db.settings import CachedSettings, DBSettings, ModifiableDBSettings
 from rotkehlchen.db.updates import RotkiDataUpdater
 from rotkehlchen.errors.api import PremiumAuthenticationError
 from rotkehlchen.errors.asset import UnknownAsset
@@ -224,6 +224,7 @@ class Rotkehlchen:
         self.cryptocompare.db = None
         self.exchange_manager.delete_all_exchanges()
         self.data.logout()
+        CachedSettings().reset()
 
     def _perform_new_db_actions(self) -> None:
         """Actions to perform at creation of a new DB"""
@@ -298,6 +299,9 @@ class Rotkehlchen:
         # set the DB in the external services instances that need it
         self.cryptocompare.set_database(self.data.db)
         Inquirer()._manualcurrent.set_database(database=self.data.db)
+
+        # Initialize the cached settings singleton
+        CachedSettings()
 
         # Anything that was set above here has to be cleaned in case of failure in the next step
         # by reset_after_failed_account_creation_or_login()
@@ -501,6 +505,7 @@ class Rotkehlchen:
 
         self.data.logout()
         self.cryptocompare.unset_database()
+        CachedSettings().reset()
 
         # Make sure no messages leak to other user sessions
         self.msg_aggregator.consume_errors()

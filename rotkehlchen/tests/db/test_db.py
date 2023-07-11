@@ -29,6 +29,7 @@ from rotkehlchen.db.settings import (
     DEFAULT_BALANCE_SAVE_FREQUENCY,
     DEFAULT_BTC_DERIVATION_GAP_LIMIT,
     DEFAULT_CALCULATE_PAST_COST_BASIS,
+    DEFAULT_CONNECT_TIMEOUT,
     DEFAULT_CURRENT_PRICE_ORACLES,
     DEFAULT_DATE_DISPLAY_FORMAT,
     DEFAULT_DISPLAY_DATE_IN_LOCALTIME,
@@ -42,6 +43,8 @@ from rotkehlchen.db.settings import (
     DEFAULT_MAIN_CURRENCY,
     DEFAULT_PNL_CSV_HAVE_SUMMARY,
     DEFAULT_PNL_CSV_WITH_FORMULAS,
+    DEFAULT_QUERY_RETRY_LIMIT,
+    DEFAULT_READ_TIMEOUT,
     DEFAULT_SSF_GRAPH_MULTIPLIER,
     DEFAULT_TAXABLE_LEDGER_ACTIONS,
     DEFAULT_TREAT_ETH2_AS_ETH,
@@ -393,6 +396,9 @@ def test_writing_fetching_data(data_dir, username, sql_vm_instructions_cb):
         'address_name_priority': DEFAULT_ADDRESS_NAME_PRIORITY,
         'include_fees_in_cost_basis': DEFAULT_INCLUDE_FEES_IN_COST_BASIS,
         'infer_zero_timed_balances': DEFAULT_INFER_ZERO_TIMED_BALANCES,
+        'query_retry_limit': DEFAULT_QUERY_RETRY_LIMIT,
+        'connect_timeout': DEFAULT_CONNECT_TIMEOUT,
+        'read_timeout': DEFAULT_READ_TIMEOUT,
     }
     assert len(expected_dict) == len(dataclasses.fields(DBSettings)), 'One or more settings are missing'  # noqa: E501
 

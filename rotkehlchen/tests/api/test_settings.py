@@ -1,11 +1,19 @@
 import dataclasses
+from dataclasses import fields
 from http import HTTPStatus
 from unittest.mock import patch
 
 import pytest
 import requests
 
-from rotkehlchen.db.settings import ROTKEHLCHEN_DB_VERSION, DBSettings
+from rotkehlchen.db.settings import (
+    DEFAULT_CONNECT_TIMEOUT,
+    DEFAULT_QUERY_RETRY_LIMIT,
+    DEFAULT_READ_TIMEOUT,
+    ROTKEHLCHEN_DB_VERSION,
+    CachedSettings,
+    DBSettings,
+)
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -23,6 +31,61 @@ from rotkehlchen.types import (
     Location,
     ModuleName,
 )
+
+
+def test_cached_settings(rotkehlchen_api_server, username):
+    """Make sure that querying cached settings works"""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+
+    # Make sure that the initialized cached settings match the database settings
+    with rotki.data.db.conn.read_ctx() as cursor:
+        db_settings = rotki.data.db.get_settings(cursor)
+
+    cached_settings = CachedSettings().get_settings()
+    for field in fields(cached_settings):
+        if field.name == 'last_write_ts':  # last_write_ts is not cached
+            continue
+        assert getattr(cached_settings, field.name) == getattr(db_settings, field.name)
+
+    # Make sure that the cached settings are initialized with the default values
+    assert CachedSettings().get_query_retry_limit() == DEFAULT_QUERY_RETRY_LIMIT
+    assert CachedSettings().get_timeout_tuple() == (DEFAULT_CONNECT_TIMEOUT, DEFAULT_READ_TIMEOUT)
+
+    # update a few settings
+    data = {
+        'settings': {
+            'query_retry_limit': 3,
+            'connect_timeout': 45,
+            'read_timeout': 45,
+            'submit_usage_analytics': True,
+        },
+    }
+    response = requests.put(api_url_for(rotkehlchen_api_server, 'settingsresource'), json=data)
+    assert_proper_response(response)
+    json_data = response.json()
+
+    # Make sure the settings in the database were updated
+    assert json_data['result']['query_retry_limit'] == 3
+    assert json_data['result']['connect_timeout'] == 45
+    assert json_data['result']['read_timeout'] == 45
+    assert json_data['result']['submit_usage_analytics'] is True
+
+    # Now make sure that the cached settings are also updated
+    assert CachedSettings().get_query_retry_limit() == 3
+    assert CachedSettings().get_timeout_tuple() == (45, 45)
+    assert CachedSettings().get_entry('submit_usage_analytics') is True
+
+    # log the user out and make sure cached settings are reset to default values
+    data = {'action': 'logout'}
+    response = requests.patch(
+        api_url_for(rotkehlchen_api_server, 'usersbynameresource', name=username),
+        json=data,
+    )
+    assert_simple_ok_response(response)
+    assert rotki.user_is_logged_in is False
+
+    # Make sure that the cached settings are reset after logout
+    assert CachedSettings().get_settings() == DBSettings()
 
 
 def test_querying_settings(rotkehlchen_api_server, username):

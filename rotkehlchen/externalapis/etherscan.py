@@ -12,14 +12,10 @@ import requests
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.chain.evm.constants import GENESIS_HASH, ZERO_ADDRESS
 from rotkehlchen.chain.structures import TimestampOrBlockRange
-from rotkehlchen.constants.timing import (
-    DEFAULT_CONNECT_TIMEOUT,
-    DEFAULT_READ_TIMEOUT,
-    DEFAULT_TIMEOUT_TUPLE,
-)
 from rotkehlchen.db.constants import HISTORY_MAPPING_STATE_DECODED
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
@@ -222,7 +218,7 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
         while backoff < backoff_limit:
             log.debug(f'Querying {self.chain} etherscan: {query_str}')
             try:
-                response = self.session.get(query_str, timeout=timeout if timeout else DEFAULT_TIMEOUT_TUPLE)  # noqa: E501
+                response = self.session.get(query_str, timeout=timeout if timeout else CachedSettings().get_timeout_tuple())  # noqa: E501
             except requests.exceptions.RequestException as e:
                 if 'Max retries exceeded with url' in str(e):
                     log.debug(
@@ -623,11 +619,12 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
                 options[f'topic{idx}'] = topic
                 options[f'topic{idx}_{idx + 1}opr'] = 'and'
 
+        timeout_tuple = CachedSettings().get_timeout_tuple()
         result = self._query(
             module='logs',
             action='getLogs',
             options=options,
-            timeout=(DEFAULT_CONNECT_TIMEOUT, DEFAULT_READ_TIMEOUT * 2),
+            timeout=(timeout_tuple[0], timeout_tuple[1] * 2),
         )
         return result
 

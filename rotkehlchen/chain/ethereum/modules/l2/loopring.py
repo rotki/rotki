@@ -118,8 +118,8 @@ from rotkehlchen.constants.assets import (
     A_ZRX,
 )
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.db.loopring import DBLoopring
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
@@ -336,7 +336,7 @@ class Loopring(ExternalServiceWithApiKey, EthereumModule, LockableQueryMixIn):
 
         log.debug(f'Querying loopring {querystr}')
         try:
-            response = self.session.get(querystr, timeout=DEFAULT_TIMEOUT_TUPLE)
+            response = self.session.get(querystr, timeout=CachedSettings().get_timeout_tuple())
         except requests.exceptions.RequestException as e:
             raise RemoteError(f'Loopring api query {querystr} failed due to {e!s}') from e
         if response.status_code == HTTPStatus.BAD_REQUEST:

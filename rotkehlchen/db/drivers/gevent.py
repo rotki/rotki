@@ -370,6 +370,9 @@ class DBConnection:
                         'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
                         ('last_write_ts', str(ts_now())),
                     )
+                    # last_write_ts in not cached to cached settings. This is a critical section
+                    # and adding even one more function call can have very ugly and
+                    # detrimental effects in the entire codebase as everything calls this.
                 self._conn.commit()
             finally:
                 cursor.close()

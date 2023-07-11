@@ -13,7 +13,7 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.converters import asset_from_bitpanda
 from rotkehlchen.constants.assets import A_BEST
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE, QUERY_RETRY_TIMES
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -348,7 +348,7 @@ class Bitpanda(ExchangeInterface):
         Raises RemoteError if something went wrong with connecting or reading from the exchange
         """
         request_url = f'{self.uri}/{endpoint}'
-        retries_left = QUERY_RETRY_TIMES
+        retries_left = CachedSettings().get_query_retry_limit()
         if options is not None:
             request_url += '?' + urlencode(options)
         while retries_left > 0:
@@ -358,7 +358,7 @@ class Bitpanda(ExchangeInterface):
                 options=options,
             )
             try:
-                response = self.session.get(request_url, timeout=DEFAULT_TIMEOUT_TUPLE)
+                response = self.session.get(request_url, timeout=CachedSettings().get_timeout_tuple())  # noqa: E501
             except requests.exceptions.RequestException as e:
                 raise RemoteError(f'Bitpanda API request failed due to {e!s}') from e
 

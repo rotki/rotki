@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from rotkehlchen.chain.ethereum.graph import Graph, format_query_indentation
-from rotkehlchen.constants.timing import QUERY_RETRY_TIMES
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
 
 TEST_URL_1 = 'https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v2'
@@ -51,7 +51,7 @@ def test_exception_retries():
                 param_values=param_values,
             )
 
-    assert client.execute.call_count == QUERY_RETRY_TIMES
+    assert client.execute.call_count == CachedSettings().get_query_retry_limit()
     assert 'No retries left' in str(e.value)
 
 

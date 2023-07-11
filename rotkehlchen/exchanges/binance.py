@@ -20,10 +20,10 @@ from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.assets.converters import asset_from_binance
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.db.constants import BINANCE_MARKETS_KEY
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.ranges import DBQueryRanges
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp
@@ -343,7 +343,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
             request_url += urlencode(call_options)
             log.debug(f'{self.name} API request', request_url=request_url)
             try:
-                response = self.session.get(request_url, timeout=DEFAULT_TIMEOUT_TUPLE)
+                response = self.session.get(request_url, timeout=CachedSettings().get_timeout_tuple())  # noqa: E501
             except requests.exceptions.RequestException as e:
                 raise RemoteError(
                     f'{self.name} API request failed due to {e!s}',

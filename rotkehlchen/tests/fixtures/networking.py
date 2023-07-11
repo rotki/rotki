@@ -1,7 +1,7 @@
 import pytest
 import requests
 
-from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
+from rotkehlchen.db.settings import CachedSettings
 
 
 class ConfigurableSession(requests.Session):
@@ -55,7 +55,7 @@ class ConfigurableSession(requests.Session):
 
 @pytest.fixture(name='test_timeout')
 def fixture_test_timeout():
-    return DEFAULT_TIMEOUT_TUPLE
+    return CachedSettings().get_timeout_tuple()
 
 
 @pytest.fixture(name='test_session_pool_maxsize')

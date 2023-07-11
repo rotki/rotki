@@ -639,6 +639,9 @@ Getting or modifying settings
    :resjson string cost_basis_method: Defines which method to use during the cost basis calculation. Currently supported: fifo, lifo.
    :resjson string address_name_priority: Defines the priority to search for address names. From first to last location in this array, the first name found will be displayed.
    :resjson bool infer_zero_timed_balances: A boolean denoting whether to infer zero timed balances for assets that have no balance at a specific time. This is useful for showing zero balance periods in graphs.
+   :resjson int query_retry_limit: The number of times to retry a query to external services before giving up. Default is 5.
+   :resjson int connect_timeout: The number of seconds to wait before giving up on establishing a connection to an external service. Default is 30.
+   :resjson int read_timeout: The number of seconds to wait for the first byte after a connection to an external service has been established. Default is 30.
 
    :statuscode 200: Querying of settings was successful
    :statuscode 409: There is no logged in user
@@ -680,6 +683,9 @@ Getting or modifying settings
    :reqjson list taxable_ledger_actions: A list of strings denoting the ledger action types that will be taken into account in the profit/loss calculation during accounting. All others will only be taken into account in the cost basis and will not be taxed.
    :resjson int ssf_graph_multiplier: A multiplier to the snapshot saving frequency for zero amount graphs. Originally 0 by default. If set it denotes the multiplier of the snapshot saving frequency at which to insert 0 save balances for a graph between two saved values.
    :resjson bool infer_zero_timed_balances: A boolean denoting whether to infer zero timed balances for assets that have no balance at a specific time. This is useful for showing zero balance periods in graphs.
+   :resjson int query_retry_limit: The number of times to retry a query to external services before giving up. Default is 5.
+   :resjson int connect_timeout: The number of seconds to wait before giving up on establishing a connection to an external service. Default is 30.
+   :resjson int read_timeout: The number of seconds to wait for the first byte after a connection to an external service has been established. Default is 30.
 
    **Example Response**:
 
