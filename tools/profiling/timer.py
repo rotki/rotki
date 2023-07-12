@@ -1,11 +1,13 @@
+import os
 import signal
 from types import FrameType
 from typing import Callable
 
 from .constants import INTERVAL_SECONDS
 
-TIMER = signal.ITIMER_PROF
-TIMER_SIGNAL = signal.SIGPROF
+if os.name != 'nt':  # signal on windows doesn't have these attributes
+    TIMER = signal.ITIMER_PROF  # type: ignore[attr-defined,unused-ignore]  # pylint: disable=no-member  # noqa: E501  # linters don't understand the os.name check
+    TIMER_SIGNAL = signal.SIGPROF  # type: ignore[attr-defined,unused-ignore]  # pylint: disable=no-member  # noqa: E501  # linters don't understand the os.name check
 
 SignalHandler = Callable[[int, FrameType], None]
 
@@ -22,7 +24,8 @@ class Timer:
         assert callable(callback), 'callback must be callable'
 
         signal.signal(timer_signal, self.callback)  # type: ignore
-        signal.setitimer(timer, interval, interval)
+        if os.name != 'nt':
+            signal.setitimer(timer, interval, interval)  # type: ignore[attr-defined,unused-ignore]  # pylint: disable=no-member  # noqa: E501  # linters don't understand the os.name check
 
         self._callback = callback
 

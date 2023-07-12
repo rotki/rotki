@@ -57,7 +57,7 @@ class RotkehlchenServer:
         hub.threadpool_size = 2
         hub.threadpool.maxsize = 2
         if os.name != 'nt':
-            gevent.hub.signal(signal.SIGQUIT, self.shutdown)
+            gevent.hub.signal(signal.SIGQUIT, self.shutdown)  # type: ignore[attr-defined,unused-ignore]  # pylint: disable=no-member  # noqa: E501  # linters don't understand the os.name check
         gevent.hub.signal(signal.SIGINT, self.shutdown)
         gevent.hub.signal(signal.SIGTERM, self.shutdown)
         # The api server's RestAPI starts rotki main loop
