@@ -1,3 +1,4 @@
+import base64
 import dataclasses
 import logging
 import os
@@ -281,9 +282,7 @@ def test_export_import_db(data_dir, username, sql_vm_instructions_cb):
 
     encoded_data, _ = data.compress_and_encrypt_db()
     # The server would return them decoded
-    encoded_data = encoded_data.decode()  # pylint: disable=no-member
-    data.decompress_and_decrypt_db(encoded_data)
-
+    data.decompress_and_decrypt_db(base64.b64decode(encoded_data))
     with data.db.user_write() as cursor:
         balances = data.db.get_manually_tracked_balances(cursor)
     assert balances == [starting_balance]

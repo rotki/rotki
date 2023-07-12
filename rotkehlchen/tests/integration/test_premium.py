@@ -1,4 +1,5 @@
-from base64 import b64decode
+import base64
+from base64 import b64decode, b64encode
 from pathlib import Path
 from unittest.mock import patch
 
@@ -30,7 +31,7 @@ from rotkehlchen.utils.misc import ts_now
 def fixture_load_remote_premium_data() -> bytes:
     remote_db_path = Path(__file__).resolve().parent.parent / 'data' / 'remote_encrypted_db.txt'  # noqa: E501
     with open(remote_db_path, 'rb') as f:
-        return f.read()
+        return base64.b64decode(f.read())
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
@@ -57,15 +58,15 @@ def test_upload_data_to_server(rotkehlchen_instance, username, db_password, db_s
     def mock_succesfull_upload_data_to_server(
             url,  # pylint: disable=unused-argument
             data,
+            files,
             timeout,  # pylint: disable=unused-argument
     ):
         # Can't compare data blobs as they are encrypted and as such can be
         # different each time
-        assert 'data_blob' in data
         assert data['original_hash'] == our_hash
         assert data['last_modify_ts'] == last_write_ts
         assert 'index' in data
-        assert len(data['data_blob']) == data['length']
+        assert len(b64encode(files['db_file'].read())) == data['length']
         assert 'nonce' in data
         assert data['compression'] == 'zlib'
 
@@ -73,7 +74,7 @@ def test_upload_data_to_server(rotkehlchen_instance, username, db_password, db_s
 
     patched_put = patch.object(
         rotkehlchen_instance.premium.session,
-        'put',
+        'post',
         side_effect=mock_succesfull_upload_data_to_server,
     )
     patched_get = create_patched_requests_get_for_premium(
@@ -245,7 +246,7 @@ def test_try_premium_at_start_new_account_pull_old_data(
     For a new account
     """
     with open(Path(__file__).resolve().parent.parent / 'data' / 'remote_old_encrypted_db.txt', 'rb') as f:  # noqa: E501
-        remote_data = f.read()
+        remote_data = base64.b64decode(f.read())
 
     setup_starting_environment(
         rotkehlchen_instance=rotkehlchen_instance,
@@ -292,7 +293,7 @@ def test_try_premium_at_start_old_account_can_pull_old_data(
     For an old account
     """
     with open(Path(__file__).resolve().parent.parent / 'data' / 'remote_encrypted_db.txt', 'rb') as f:  # noqa: E501
-        remote_data = f.read()
+        remote_data = base64.b64decode(f.read())
 
     setup_starting_environment(
         rotkehlchen_instance=rotkehlchen_instance,

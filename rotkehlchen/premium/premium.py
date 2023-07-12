@@ -137,7 +137,9 @@ class Premium:
         self.status = SubscriptionStatus.UNKNOWN
         self.session = requests.session()
         self.apiversion = '1'
-        self.uri = f'https://rotki.com/api/{self.apiversion}/'
+        self.rotki_base_url = 'https://staging.rotki.com'
+        self.rotki_api = f'{self.rotki_base_url}/api/{self.apiversion}/'
+        self.rotki_nest = f'{self.rotki_base_url}/nest/'
         self.reset_credentials(credentials)
 
     def reset_credentials(self, credentials: PremiumCredentials) -> None:
@@ -194,7 +196,11 @@ class Premium:
             req['nonce'] = int(1000 * time.time())
         post_data = urlencode(req)
         hashable = post_data.encode()
-        message = urlpath.encode() + hashlib.sha256(hashable).digest()
+        if method == 'backup':
+            # nest uses hex for the backup
+            message = urlpath.encode() + hashlib.sha256(hashable).digest().hex().encode()
+        else:
+            message = urlpath.encode() + hashlib.sha256(hashable).digest()
         signature = hmac.new(
             self.credentials.api_secret,
             message,
@@ -217,7 +223,7 @@ class Premium:
         - PremiumAuthenticationError if the given key is rejected by the Rotkehlchen server
         """
         signature, data = self.sign(
-            'save_data_form',
+            'backup',
             original_hash=our_hash,
             last_modify_ts=last_modify_ts,
             index=0,
@@ -231,10 +237,9 @@ class Premium:
         tmp_file = io.BytesIO()
         tmp_file.write(base64.b64decode(data_blob))
         tmp_file.seek(0)
-
         try:
             response = self.session.post(
-                self.uri + 'save_data_form',
+                self.rotki_nest + 'backup',
                 data=data,
                 files={'db_file': tmp_file},
                 timeout=ROTKEHLCHEN_SERVER_TIMEOUT * 10,
@@ -246,7 +251,7 @@ class Premium:
 
         return _process_dict_response(response)
 
-    def pull_data(self) -> bytes:
+    def pull_data(self) -> Optional[bytes]:
         """Pulls data from the server and returns the response dict
 
         Returns None if there is no DB saved in the server.
@@ -256,15 +261,15 @@ class Premium:
         there is an error returned by the server
         - PremiumAuthenticationError if the given key is rejected by the Rotkehlchen server
         """
-        signature, data = self.sign('get_saved_data_by_form')
+        signature, data = self.sign('backup')
         self.session.headers.update({
             'API-SIGN': base64.b64encode(signature.digest()),
         })
 
         try:
             response = self.session.get(
-                self.uri + 'get_saved_data_by_form',
-                data=data,
+                self.rotki_nest + 'backup',
+                params=data,
                 timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
             )
         except requests.exceptions.RequestException as e:
@@ -272,10 +277,12 @@ class Premium:
             log.error(msg)
             raise RemoteError(msg) from e
 
-        if response.status_code != HTTPStatus.OK:
+        if response.status_code not in (HTTPStatus.OK, HTTPStatus.NOT_FOUND):
             msg = 'Could not connect to rotki server.'
             log.error(f'{msg} due to {response.text}')
             raise RemoteError(msg)
+        if response.status_code == HTTPStatus.NOT_FOUND:
+            return None
 
         return response.content
 
@@ -295,7 +302,7 @@ class Premium:
 
         try:
             response = self.session.get(
-                self.uri + 'last_data_metadata',
+                self.rotki_api + 'last_data_metadata',
                 data=data,
                 timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
             )
@@ -335,7 +342,7 @@ class Premium:
 
         try:
             response = self.session.get(
-                self.uri + 'statistics_rendererv2',
+                self.rotki_api + 'statistics_rendererv2',
                 data=data,
                 timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
             )
@@ -368,7 +375,7 @@ class Premium:
         try:
             response = self.session.request(
                 method=method,
-                url=self.uri + 'watchers',
+                url=self.rotki_api + 'watchers',
                 json=data,
                 timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
             )
