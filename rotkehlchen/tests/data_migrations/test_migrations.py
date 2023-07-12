@@ -331,6 +331,57 @@ def test_migration_10(
         assert write_cursor.execute('SELECT COUNT(*) FROM rpc_nodes WHERE name="polygon pos etherscan"').fetchone()[0] == 1  # noqa: E501
 
 
+@pytest.mark.vcr()
+@pytest.mark.parametrize('use_custom_database', ['data_migration_v11.db'])
+@pytest.mark.parametrize('data_migration_version', [10])
+@pytest.mark.parametrize('perform_upgrades_at_unlock', [True])
+@pytest.mark.parametrize('legacy_messages_via_websockets', [True])
+def test_migration_11(rotkehlchen_api_server: 'APIServer') -> None:
+    """
+    Test migration 11.
+    - Test that populating of optimism l1 fees is handled properly.
+    """
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+
+    with rotki.data.db.conn.read_ctx() as cursor:
+        optimism_tx_num = cursor.execute('SELECT COUNT(*) FROM evm_transactions WHERE chain_id=10').fetchone()[0]  # noqa: E501
+        assert cursor.execute('SELECT COUNT(*) FROM optimism_transactions').fetchone()[0] == 0
+
+    migration_patch = patch(
+        'rotkehlchen.data_migrations.manager.MIGRATION_LIST',
+        new=[MIGRATION_LIST[5]],
+    )
+    with migration_patch:
+        DataMigrationManager(rotki).maybe_migrate_data()
+
+    with rotki.data.db.conn.read_ctx() as cursor:
+        assert cursor.execute('SELECT COUNT(*) FROM evm_transactions WHERE chain_id=10').fetchone()[0] == optimism_tx_num  # noqa: E501
+        assert cursor.execute('SELECT COUNT(*) FROM optimism_transactions').fetchone()[0] == optimism_tx_num  # noqa: E501
+        assert cursor.execute('SELECT l1_fee FROM optimism_transactions').fetchall() == [
+            ('72767211275792',),
+            ('96175760891800',),
+            ('104498749069540',),
+            ('135220746330912',),
+            ('120875422751400',),
+            ('172753628429060',),
+            ('188199782564880',),
+            ('214230414893312',),
+            ('195901371940664',),
+            ('195901371940664',),
+            ('192802500589000',),
+            ('233189720562564',),
+            ('232455650088600',),
+            ('155662866535260',),
+            ('237281657515072',),
+            ('20020423416568',),
+            ('33330314276055',),
+            ('102994029088720',),
+            ('168582991048360',),
+            ('220590426061740',),
+            ('21411605448365',),
+        ]
+
+
 @pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
 # make sure fixtures does not modify DB last_data_migration
 @pytest.mark.parametrize('data_migration_version', [None])

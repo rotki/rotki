@@ -2932,7 +2932,10 @@ class RestAPI:
     @async_api_call()
     def sync_data(self, action: Literal['upload', 'download']) -> dict[str, Any]:
         try:
-            success, msg = self.rotkehlchen.premium_sync_manager.sync_data(action)
+            success, msg = self.rotkehlchen.premium_sync_manager.sync_data(
+                action=action,
+                perform_migrations=True,  # we can do it now since all is initialized
+            )
         except RemoteError as e:
             return wrap_in_fail_result(str(e), status_code=HTTPStatus.BAD_GATEWAY)
         except PremiumApiError as e:

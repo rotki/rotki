@@ -46,19 +46,16 @@ def data_migration_10(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgress
         #  upgrade. We only need to delete the bad node if exists
         write_cursor.execute('DELETE FROM rpc_nodes WHERE name="polygon etherscan"')
 
-    # when we sync a remote database the migrations are executed but the chain_manager
-    # has not been created yet
-    if (chains_aggregator := getattr(rotki, 'chains_aggregator', None)) is not None:
-        with rotki.data.db.conn.write_ctx() as write_cursor:
-            rotki.data.db.add_external_service_credentials(
-                write_cursor=write_cursor,  # add temporary etherscan polygon key
-                credentials=[ExternalServiceApiCredentials(
-                    service=ExternalService.POLYGON_POS_ETHERSCAN,
-                    api_key=ApiKey('1M4TM28QKJHED9QPDWXFCBEX5CK5ID3ESG'),  # same one in tests
-                )])
-        chains_aggregator.detect_evm_accounts(progress_handler)
+    with rotki.data.db.conn.write_ctx() as write_cursor:
+        rotki.data.db.add_external_service_credentials(
+            write_cursor=write_cursor,  # add temporary etherscan polygon key
+            credentials=[ExternalServiceApiCredentials(
+                service=ExternalService.POLYGON_POS_ETHERSCAN,
+                api_key=ApiKey('1M4TM28QKJHED9QPDWXFCBEX5CK5ID3ESG'),  # same one in tests
+            )])
+    rotki.chains_aggregator.detect_evm_accounts(progress_handler)
 
-        # remove temporary etherscan polygon key
-        rotki.data.db.delete_external_service_credentials([ExternalService.POLYGON_POS_ETHERSCAN])
+    # remove temporary etherscan polygon key
+    rotki.data.db.delete_external_service_credentials([ExternalService.POLYGON_POS_ETHERSCAN])
 
     log.debug('Exit data_migration_10')
