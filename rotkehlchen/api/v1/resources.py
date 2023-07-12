@@ -1275,7 +1275,11 @@ class UserPremiumSyncResource(BaseMethodView):
 
     @use_kwargs(put_schema, location='json_and_view_args')
     def put(self, async_query: bool, action: Literal['upload', 'download']) -> Response:
-        return self.rest_api.sync_data(async_query=async_query, action=action)
+        return self.rest_api.sync_data(
+            async_query=async_query,
+            action=action,
+            perform_migrations=True,  # we can do migrations since all is initialized by now
+        )
 
 
 class StatisticsNetvalueResource(BaseMethodView):

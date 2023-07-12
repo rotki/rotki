@@ -85,9 +85,12 @@ class PremiumSyncManager:
             },
         )
 
-    def _sync_data_from_server_and_replace_local(self) -> tuple[bool, str]:
+    def _sync_data_from_server_and_replace_local(self, perform_migrations: bool) -> tuple[bool, str]:  # noqa: E501
         """
-        Performs syncing of data from server and replaces local db
+        Performs syncing of data from server and replaces local db. If perform_migrations
+        is True then once pulled any needed migrations will be performed. Otherwise,
+        they are not and are expected to be done later down the line where all related
+        modules are initialized.
 
         Returns true for success and False for error/failure
 
@@ -117,8 +120,12 @@ class PremiumSyncManager:
                 'the server. Make sure to use the same password as when the account was created.',
             ) from e
 
-        # Need to run migrations in case the app was updated
-        self.migration_manager.maybe_migrate_data()
+        # Need to run migrations in case the app was updated since last sync and in
+        # case this is a request to sync from the API, where all modules are initialized
+        # and can be used during the migration. Otherwise if this is happening at login
+        # migrations are run later down the line of the unlock process
+        if perform_migrations:
+            self.migration_manager.maybe_migrate_data()
 
         return True, ''
 
@@ -198,7 +205,11 @@ class PremiumSyncManager:
             log.debug('upload to server -- success')
         return True
 
-    def sync_data(self, action: Literal['upload', 'download']) -> tuple[bool, str]:
+    def sync_data(
+            self,
+            action: Literal['upload', 'download'],
+            perform_migrations: bool,
+    ) -> tuple[bool, str]:
         msg = ''
         if action == 'upload':
             if self.check_if_should_sync(force_upload=True) is False:
@@ -210,12 +221,13 @@ class PremiumSyncManager:
                 msg = 'Upload failed'
             return success, msg
 
-        return self._sync_data_from_server_and_replace_local()
+        return self._sync_data_from_server_and_replace_local(perform_migrations)
 
     def _sync_if_allowed(
             self,
             sync_approval: Literal['yes', 'no', 'unknown'],
             result: SyncCheckResult,
+            perform_migrations: bool,
     ) -> None:
         if result.can_sync == CanSync.ASK_USER:
             if sync_approval == 'unknown':
@@ -225,13 +237,13 @@ class PremiumSyncManager:
             if sync_approval == 'yes':
                 log.info('User approved data sync from server')
                 # this may raise due to password
-                self._sync_data_from_server_and_replace_local()
+                self._sync_data_from_server_and_replace_local(perform_migrations)
 
             else:
                 log.debug('Could sync data from server but user refused')
         elif result.can_sync == CanSync.YES:
             log.info('User approved data sync from server')
-            self._sync_data_from_server_and_replace_local()  # this may raise due to password
+            self._sync_data_from_server_and_replace_local(perform_migrations)  # may raise due to password  # noqa: E501
 
     def _abort_new_syncing_premium_user(
             self,
@@ -300,13 +312,21 @@ class PremiumSyncManager:
             # in the DB
             if sync_database:
                 try:
-                    self._sync_if_allowed(sync_approval, result)
+                    self._sync_if_allowed(
+                        sync_approval=sync_approval,
+                        result=result,
+                        perform_migrations=False,  # will be done later during unlock
+                    )
                 except PremiumAuthenticationError as e:
                     self._abort_new_syncing_premium_user(username=username, original_exception=e)
 
             self.data.db.set_rotkehlchen_premium(self.premium.credentials)
         else:
-            self._sync_if_allowed(sync_approval, result)
+            self._sync_if_allowed(
+                sync_approval=sync_approval,
+                result=result,
+                perform_migrations=False,  # will be done later during unlock
+            )
 
         # Success, return premium
         return self.premium

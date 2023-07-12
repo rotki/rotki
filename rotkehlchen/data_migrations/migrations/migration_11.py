@@ -16,9 +16,6 @@ log = RotkehlchenLogsAdapter(logger)
 def _get_optimism_transaction_fees(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgressHandler') -> None:  # noqa: E501
     """Since we now need 1 extra column per optimism transaction we need to repull all
     optimism transactions to store the l1 gas fee"""
-    if (chains_aggregator := getattr(rotki, 'chains_aggregator', None)) is None:
-        return  # if sync a DB from the server and migration is needed, aggregator is not yet initialized  # noqa: E501
-
     with rotki.data.db.conn.read_ctx() as cursor:
         cursor.execute('SELECT tx_hash, identifier FROM evm_transactions WHERE chain_id=10')
         txhash_to_id = dict(cursor)
@@ -26,7 +23,7 @@ def _get_optimism_transaction_fees(rotki: 'Rotkehlchen', progress_handler: 'Migr
     progress_handler.set_total_steps(len(txhash_to_id))
 
     db_tuples = []
-    optimism_manager = chains_aggregator.get_evm_manager(ChainID.OPTIMISM)
+    optimism_manager = rotki.chains_aggregator.get_evm_manager(ChainID.OPTIMISM)
     assert optimism_manager, 'should exist at this point'
     for txhash, txid in txhash_to_id.items():
         progress_handler.new_step(f'Fetching optimism transaction {txhash.hex()}')
@@ -36,7 +33,7 @@ def _get_optimism_transaction_fees(rotki: 'Rotkehlchen', progress_handler: 'Migr
             log.error(f'Could not pull data from optimism for transaction {txhash.hex()}')
             continue
 
-        db_tuples.append((txid, str(transaction.l1_fee)))
+        db_tuples.append((txid, str(transaction.l1_fee)))  # type: ignore  # is optimism tx here
 
     with rotki.data.db.user_write() as write_cursor:
         write_cursor.executemany(
