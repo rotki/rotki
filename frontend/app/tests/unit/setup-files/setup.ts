@@ -1,7 +1,7 @@
 import { PiniaVuePlugin } from 'pinia';
 import Vue from 'vue';
 import Vuetify from 'vuetify';
-import { mockT, mockTc } from '../i18n';
+import { mockT } from '../i18n';
 import { server } from './server';
 
 beforeAll(() => {
@@ -49,20 +49,13 @@ beforeAll(() => {
     };
   });
 
-  vi.mock('vue-i18n-composable', async () => {
-    const mod = await vi.importActual<typeof import('vue-i18n-composable')>(
-      'vue-i18n-composable'
-    );
-
-    return {
-      ...mod,
-      useI18n: () => ({
-        t: mockT,
-        te: mockT,
-        tc: mockTc
-      })
-    };
-  });
+  vi.mock('@/composables/usei18n', async () => ({
+    useI18n: () => ({
+      t: mockT,
+      te: mockT,
+      locale: ref('')
+    })
+  }));
 
   vi.mock('@/store/websocket', () => ({
     useWebsocketStore: () => ({

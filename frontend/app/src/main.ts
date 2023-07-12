@@ -1,4 +1,5 @@
-/* istanbul ignore file */ import { PiniaVuePlugin, createPinia } from 'pinia';
+/* istanbul ignore file */
+import { PiniaVuePlugin, createPinia } from 'pinia';
 import Vue, { provide } from 'vue';
 import App from '@/App.vue';
 import '@/main.scss';
@@ -14,6 +15,7 @@ Vue.config.productionTip = false;
 Vue.config.devtools = isDevelopment;
 
 Vue.use(PiniaVuePlugin);
+Vue.use(i18n);
 
 // This should disable vite page reloads on CI.
 // Monitor e2e tests for this and if this doesn't work remove it.

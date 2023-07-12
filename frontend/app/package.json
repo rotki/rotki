@@ -66,7 +66,7 @@
     "typeface-roboto-mono": "1.1.13",
     "vue": "2.7.14",
     "vue-i18n": "8.28.2",
-    "vue-i18n-composable": "2.0.0",
+    "vue-i18n-bridge": "9.2.2",
     "vue-router": "3.6.5",
     "vuetify": "2.6.15",
     "zod": "3.21.4"
