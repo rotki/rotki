@@ -22,6 +22,7 @@ class OptimismTransaction(EvmTransaction):
             input_data: bytes,
             nonce: int,
             l1_fee: int,
+            db_id: int = -1,
     ):
         self.l1_fee = l1_fee
         super().__init__(
@@ -37,6 +38,7 @@ class OptimismTransaction(EvmTransaction):
             gas_used=gas_used,
             input_data=input_data,
             nonce=nonce,
+            db_id=db_id,
         )
 
     def serialize(self) -> dict[str, Any]:

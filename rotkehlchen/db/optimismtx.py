@@ -47,12 +47,12 @@ class DBOptimismTx(DBEvmTx):
     def _form_evm_transaction_dbquery(self, query: str, bindings: list[Any], has_premium: bool) -> tuple[str, list[tuple]]:  # noqa: E501
         if has_premium:
             return (
-                'SELECT DISTINCT evm_transactions.tx_hash, evm_transactions.chain_id, evm_transactions.timestamp, evm_transactions.block_number, evm_transactions.from_address, evm_transactions.to_address, evm_transactions.value, evm_transactions.gas, evm_transactions.gas_price, evm_transactions.gas_used, evm_transactions.input_data, evm_transactions.nonce, OP.l1_fee FROM evm_transactions LEFT JOIN optimism_transactions AS OP ON evm_transactions.identifier=OP.tx_id ' + query,  # noqa: E501
+                'SELECT DISTINCT evm_transactions.tx_hash, evm_transactions.chain_id, evm_transactions.timestamp, evm_transactions.block_number, evm_transactions.from_address, evm_transactions.to_address, evm_transactions.value, evm_transactions.gas, evm_transactions.gas_price, evm_transactions.gas_used, evm_transactions.input_data, evm_transactions.nonce, OP.l1_fee, evm_transactions.identifier FROM evm_transactions LEFT JOIN optimism_transactions AS OP ON evm_transactions.identifier=OP.tx_id ' + query,  # noqa: E501
                 bindings,
             )
         # else
         return (
-            'SELECT DISTINCT evm_transactions.tx_hash, evm_transactions.chain_id, evm_transactions.timestamp, evm_transactions.block_number, evm_transactions.from_address, evm_transactions.to_address, evm_transactions.value, evm_transactions.gas, evm_transactions.gas_price, evm_transactions.gas_used, evm_transactions.input_data, evm_transactions.nonce, OP.l1_fee FROM (SELECT * FROM evm_transactions ORDER BY timestamp DESC LIMIT ?) AS evm_transactions LEFT JOIN optimism_transactions AS OP ON evm_transactions.identifier=OP.tx_id ' + query,  # noqa: E501
+            'SELECT DISTINCT evm_transactions.tx_hash, evm_transactions.chain_id, evm_transactions.timestamp, evm_transactions.block_number, evm_transactions.from_address, evm_transactions.to_address, evm_transactions.value, evm_transactions.gas, evm_transactions.gas_price, evm_transactions.gas_used, evm_transactions.input_data, evm_transactions.nonce, OP.l1_fee, evm_transactions.identifier FROM (SELECT * FROM evm_transactions ORDER BY timestamp DESC LIMIT ?) AS evm_transactions LEFT JOIN optimism_transactions AS OP ON evm_transactions.identifier=OP.tx_id ' + query,  # noqa: E501
             [FREE_ETH_TX_LIMIT] + bindings,
         )
 
@@ -70,5 +70,6 @@ class DBOptimismTx(DBEvmTx):
             gas_used=int(result[9]),
             input_data=result[10],
             nonce=result[11],
-            l1_fee=int(result[12]),
+            l1_fee=0 if result[12] is None else int(result[12]),
+            db_id=result[13],
         )

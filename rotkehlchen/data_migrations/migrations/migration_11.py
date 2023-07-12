@@ -32,11 +32,11 @@ def _get_optimism_transaction_fees(rotki: 'Rotkehlchen', progress_handler: 'Migr
         progress_handler.new_step(f'Fetching optimism transaction {txhash.hex()}')
         try:
             transaction, _ = optimism_manager.node_inquirer.get_transaction_by_hash(tx_hash=txhash)
-        except RemoteError as e:
+        except RemoteError:
             log.error(f'Could not pull data from optimism for transaction {txhash.hex()}')
             continue
 
-        db_tuples.append((txid, str(transaction.l1_fee)))  # type: ignore[attr-defined]  # returns optimism transaction # noqa: E501
+        db_tuples.append((txid, str(transaction.l1_fee)))
 
     with rotki.data.db.user_write() as write_cursor:
         write_cursor.executemany(
