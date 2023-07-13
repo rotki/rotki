@@ -21,7 +21,7 @@ from rotkehlchen.errors.api import (
 )
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import B64EncodedBytes, Timestamp
+from rotkehlchen.types import Timestamp
 from rotkehlchen.utils.misc import set_user_agent
 from rotkehlchen.utils.serialization import jsonloads_dict
 
@@ -52,7 +52,7 @@ def _process_dict_response(response: requests.Response) -> dict:
     if response.status_code not in HANDLABLE_STATUS_CODES:
         raise RemoteError(
             f'Unexpected status response({response.status_code}) from '
-            'rotki server',
+            f'rotki server. {response.text=}',
         )
 
     result_dict = jsonloads_dict(response.text)
@@ -210,7 +210,7 @@ class Premium:
 
     def upload_data(
             self,
-            data_blob: B64EncodedBytes,
+            data_blob: bytes,
             our_hash: str,
             last_modify_ts: Timestamp,
             compression_type: Literal['zlib'],
@@ -235,7 +235,7 @@ class Premium:
         })
 
         tmp_file = io.BytesIO()
-        tmp_file.write(base64.b64decode(data_blob))
+        tmp_file.write(data_blob)
         tmp_file.seek(0)
         try:
             response = self.session.post(

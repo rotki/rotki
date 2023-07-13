@@ -14,7 +14,6 @@ from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.errors.api import AuthenticationError
 from rotkehlchen.errors.misc import SystemPermissionError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import B64EncodedBytes
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import timestamp_to_date, ts_now
 
@@ -181,7 +180,7 @@ class DataHandler:
 
         return users
 
-    def compress_and_encrypt_db(self) -> tuple[B64EncodedBytes, str]:
+    def compress_and_encrypt_db(self) -> tuple[bytes, str]:
         """Decrypt the DB, dump in temporary plaintextdb, compress it,
         and then re-encrypt it
 
@@ -209,7 +208,7 @@ class DataHandler:
         encrypted_data = encrypt(self.db.password.encode(), bytes(compressed_data))
         # cleanup temp file to avoid windows problem (https://github.com/rotki/rotki/issues/5051)
         tempdbpath.unlink()
-        return B64EncodedBytes(encrypted_data.encode()), original_data_hash
+        return encrypted_data, original_data_hash
 
     def decompress_and_decrypt_db(self, encrypted_data: bytes) -> None:
         """Decrypt and decompress the encrypted data we receive from the server
@@ -231,6 +230,6 @@ class DataHandler:
             self.data_directory / self.username / f'rotkehlchen_db_{date}.backup',
         )
 
-        decrypted_data = decrypt(self.db.password.encode(), base64.b64encode(encrypted_data).decode())  # noqa: E501
+        decrypted_data = decrypt(self.db.password.encode(), encrypted_data)
         decompressed_data = zlib.decompress(decrypted_data)
         self.db.import_unencrypted(decompressed_data)

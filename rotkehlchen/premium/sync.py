@@ -1,4 +1,3 @@
-import base64
 import logging
 import shutil
 from enum import Enum
@@ -157,7 +156,7 @@ class PremiumSyncManager:
                 )
                 return False
 
-            b64_encoded_data, our_hash = self.data.compress_and_encrypt_db()
+            data, our_hash = self.data.compress_and_encrypt_db()
 
             log.debug(
                 'CAN_PUSH',
@@ -169,7 +168,7 @@ class PremiumSyncManager:
                 # same hash -- no need to upload anything
                 return False
 
-            data_bytes_size = len(base64.b64decode(b64_encoded_data))
+            data_bytes_size = len(data)
             if data_bytes_size < metadata.data_size and not force_upload:
                 # Let's be conservative.
                 # TODO: Here perhaps prompt user in the future
@@ -181,7 +180,7 @@ class PremiumSyncManager:
 
             try:
                 self.premium.upload_data(
-                    data_blob=b64_encoded_data,
+                    data_blob=data,
                     our_hash=our_hash,
                     last_modify_ts=our_last_write_ts,
                     compression_type='zlib',
