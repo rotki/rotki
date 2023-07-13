@@ -239,7 +239,7 @@ class Premium:
         tmp_file.seek(0)
         try:
             response = self.session.post(
-                self.rotki_nest + 'backup',
+                self.rotki_nest + '1/backup',
                 data=data,
                 files={'db_file': tmp_file},
                 timeout=ROTKEHLCHEN_SERVER_TIMEOUT * 10,
@@ -268,7 +268,7 @@ class Premium:
 
         try:
             response = self.session.get(
-                self.rotki_nest + 'backup',
+                self.rotki_nest + '1/backup',
                 params=data,
                 timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
             )
