@@ -152,6 +152,7 @@ DEFI_PROTOCOLS_TO_SKIP_ASSETS = {
     'Multi-Collateral Dai': True,  # True means all
     # We already got some pie dao tokens in the packaged DB
     'PieDAO': ['BCP', 'BTC++', 'DEFI++', 'DEFI+S', 'DEFI+L', 'YPIE'],
+    'Dai Savings Rate': True,
 }
 DEFI_PROTOCOLS_TO_SKIP_LIABILITIES = {
     'Multi-Collateral Dai': True,  # True means all
