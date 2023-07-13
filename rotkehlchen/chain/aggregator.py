@@ -981,7 +981,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
 
                 eth_balances[dsr_account].assets[A_DAI] += balance_entry
 
-        # Also count the vault balance and defi saver wallets and add it to the totals
+        # Also count the vault balances
         vaults_module = self.get_module('makerdao_vaults')
         if vaults_module is not None:
             vault_balances = vaults_module.get_balances()
@@ -994,6 +994,8 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                 else:
                     eth_balances[address] += entry
 
+        # If either DSR or vaults is open, count DSproxy balances
+        if vaults_module is not None or dsr_module is not None:
             proxy_mappings = self.ethereum.node_inquirer.proxies_inquirer.get_accounts_having_proxy()  # noqa: E501
             proxy_to_address = {}
             proxy_addresses = []
@@ -1024,7 +1026,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                 balances=eth_balances,
             )
 
-            # also query defi balances to get liabilities
+            # also query defi balances of proxies
             defi_balances_map = self.defichad.query_defi_balances(proxy_addresses)
             for proxy_address, defi_balances in defi_balances_map.items():
                 self._add_account_defi_balances_to_token(
