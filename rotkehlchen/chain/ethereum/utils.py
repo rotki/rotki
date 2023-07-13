@@ -14,7 +14,7 @@ from rotkehlchen.assets.asset import CryptoAsset, EvmToken
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.resolver import EVM_CHAIN_DIRECTIVE
 from rotkehlchen.constants.timing import ETH_PROTOCOLS_CACHE_REFRESH
-from rotkehlchen.db import settings
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
@@ -216,7 +216,7 @@ def try_download_ens_avatar(
     avatar = None
     if avatar_url.startswith(EVM_CHAIN_DIRECTIVE):  # an NFT is set
         try:  # Let's try first ENS app's own metadata
-            response = requests.get(f'{ENS_METADATA_URL}/avatar/{ens_name}', timeout=settings.CachedSettings().get_timeout_tuple())  # noqa: E501
+            response = requests.get(f'{ENS_METADATA_URL}/avatar/{ens_name}', timeout=CachedSettings().get_timeout_tuple())  # noqa: E501
             avatar = _get_response_image(response)
         except (RequestException, RemoteError) as e:  # Try opensea -- if we got it
             log.error(f'Got error {e!s} during querying ENS app for NFT avatar for {ens_name}. May fall back to opensea')  # noqa: E501
@@ -229,7 +229,7 @@ def try_download_ens_avatar(
 
     if avatar is None:  # we have not populated it via an NFT query above yet
         try:
-            response = requests.get(avatar_url, timeout=settings.CachedSettings().get_timeout_tuple())  # noqa: E501
+            response = requests.get(avatar_url, timeout=CachedSettings().get_timeout_tuple())  # noqa: E501
             avatar = _get_response_image(response)
         except (RequestException, RemoteError) as e:
             log.error(f'Got error {e!s} while querying ens avatar {avatar_url} for {ens_name}.')  # noqa: E501

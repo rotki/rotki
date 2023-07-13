@@ -1,11 +1,13 @@
 import platform
 import sys
-from typing import NamedTuple, Optional
+from typing import TYPE_CHECKING, NamedTuple, Optional
 
 import pkg_resources
 
 from rotkehlchen.errors.misc import RemoteError
-from rotkehlchen.externalapis.github import Github  # to avoid circulat import
+
+if TYPE_CHECKING:
+    from rotkehlchen.externalapis.github import Github
 
 
 def get_system_spec() -> dict[str, str]:
@@ -40,19 +42,18 @@ class VersionCheckResult(NamedTuple):
     download_url: Optional[str] = None
 
 
-def get_current_version(check_for_updates: bool) -> VersionCheckResult:
-    """Get current version of rotki. If check_for_updates is set to true it also checks
-    if a new version is available.
+def get_current_version(github: Optional['Github'] = None) -> VersionCheckResult:
+    """Get current version of rotki. If a github is passed then it is contacted to ask
+    if there is any updates.
 
     If there is a remote query error return only our version.
     If there is no newer version for download returns only our current version and latest version.
-    If yes returns (our_version_str, latest_version_str, download_url)
+    If there is an update returns (our_version_str, latest_version_str, download_url)
     """
     our_version_str = get_system_spec()['rotkehlchen']
 
-    if check_for_updates:
+    if github is not None:
         our_version = pkg_resources.parse_version(our_version_str)
-        github = Github()
         try:
             latest_version_str, url = github.get_latest_release()
         except RemoteError:

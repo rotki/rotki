@@ -1,14 +1,13 @@
 import json
 import logging
 from collections.abc import Sequence
-from enum import Enum
-from typing import TYPE_CHECKING, Any, Final, Literal, Union, overload
+from typing import TYPE_CHECKING, Any, Literal, Union, overload
 
 import requests
 
 from rotkehlchen.assets.spam_assets import update_spam_assets
-from rotkehlchen.db import settings
 from rotkehlchen.db.addressbook import DBAddressbook
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
@@ -28,36 +27,16 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBCursor, DBHandler
     from rotkehlchen.user_messages import MessagesAggregator
 
+from .constants import LAST_DATA_UPDATES_KEY, UpdateType
+
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
-LAST_DATA_UPDATES_KEY: Final = 'last_data_updates_ts'
+
 SPAM_ASSETS_URL = 'https://raw.githubusercontent.com/rotki/data/{branch}/updates/spam_assets/v{version}.json'  # noqa: E501
 RPC_NODES_URL = 'https://raw.githubusercontent.com/rotki/data/{branch}/updates/rpc_nodes/v{version}.json'  # noqa: E501
 CONTRACTS_URL = 'https://raw.githubusercontent.com/rotki/data/{branch}/updates/contracts/v{version}.json'  # noqa: E501
 GLOBAL_ADDRESSBOOK_URL = 'https://raw.githubusercontent.com/rotki/data/{branch}/updates/global_addressbook/v{version}.json'  # noqa: E501
-
-
-class UpdateType(Enum):
-    SPAM_ASSETS = 'spam_assets'
-    RPC_NODES = 'rpc_nodes'
-    CONTRACTS = 'contracts'
-    GLOBAL_ADDRESSBOOK = 'global_addressbook'
-
-    def serialize(self) -> str:
-        """Serializes the update type for the DB and API"""
-        return f'{self.value}_version'
-
-    @classmethod
-    def deserialize(cls: type['UpdateType'], value: str) -> 'UpdateType':
-        """Deserialize string from api/DB to UpdateType
-        May raise:
-        - Deserialization error if value is not a valid UpdateType
-        """
-        try:
-            return cls(value[:-8])  # length of the _version suffix
-        except ValueError as e:
-            raise DeserializationError(f'Failed to deserialize UpdateTypevalue {value}') from e
 
 
 class RotkiDataUpdater:
@@ -83,7 +62,7 @@ class RotkiDataUpdater:
         """
         url = f'https://raw.githubusercontent.com/rotki/data/{self.branch}/updates/info.json'
         try:
-            response = requests.get(url=url, timeout=settings.CachedSettings().get_timeout_tuple())
+            response = requests.get(url=url, timeout=CachedSettings().get_timeout_tuple())
         except requests.exceptions.RequestException as e:
             raise RemoteError(f'Failed to query {url} during assets update: {e!s}') from e
 

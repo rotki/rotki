@@ -12,8 +12,12 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
-    EVM_CHAINS_WITH_TRANSACTIONS, EVM_LOCATIONS, ChainID,
-    CostBasisMethod, SupportedBlockchain, Timestamp,
+    EVM_CHAINS_WITH_TRANSACTIONS,
+    EVM_LOCATIONS,
+    ChainID,
+    CostBasisMethod,
+    SupportedBlockchain,
+    Timestamp,
 )
 from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
 from rotkehlchen.utils.version_check import get_current_version
@@ -242,7 +246,7 @@ class CSVExporter(CustomizableDateMixin):
         events.append(template)  # separate with 2 new lines
         events.append(template)
 
-        version_result = get_current_version(check_for_updates=False)
+        version_result = get_current_version()
         entry = template.copy()
         entry['free_amount'] = 'rotki version'
         entry['taxable_amount'] = version_result.our_version

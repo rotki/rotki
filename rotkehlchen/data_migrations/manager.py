@@ -10,6 +10,7 @@ from rotkehlchen.data_migrations.migrations.migration_10 import data_migration_1
 from rotkehlchen.data_migrations.migrations.migration_11 import data_migration_11
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
+from .constants import LAST_DATA_MIGRATION
 from .progress import MigrationProgressHandler
 
 if TYPE_CHECKING:
@@ -32,7 +33,6 @@ MIGRATION_LIST = [
     MigrationRecord(version=10, function=data_migration_10),
     MigrationRecord(version=11, function=data_migration_11),
 ]
-LAST_DATA_MIGRATION = 11  # not taking length since, we have removed migrations
 
 
 class DataMigrationManager:

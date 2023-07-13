@@ -7,7 +7,7 @@ import pytest
 
 import rotkehlchen.tests.utils.exchanges as exchange_tests
 from rotkehlchen.constants.misc import DEFAULT_MAX_LOG_SIZE_IN_MB
-from rotkehlchen.data_migrations.manager import LAST_DATA_MIGRATION
+from rotkehlchen.data_migrations.constants import LAST_DATA_MIGRATION
 from rotkehlchen.db.settings import DBSettings, ModifiableDBSettings
 from rotkehlchen.exchanges.constants import EXCHANGES_WITH_PASSPHRASE
 from rotkehlchen.history.price import PriceHistorian

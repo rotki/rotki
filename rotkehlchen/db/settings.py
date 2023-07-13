@@ -8,12 +8,12 @@ from rotkehlchen.assets.asset import Asset, AssetWithOracles
 from rotkehlchen.chain.constants import LAST_EVM_ACCOUNTS_DETECT_KEY
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.timing import YEAR_IN_SECONDS
-from rotkehlchen.data_migrations.manager import LAST_DATA_MIGRATION
-from rotkehlchen.db.updates import LAST_DATA_UPDATES_KEY, UpdateType
+from rotkehlchen.data_migrations.constants import LAST_DATA_MIGRATION
+from rotkehlchen.db.constants import LAST_DATA_UPDATES_KEY, UpdateType
 from rotkehlchen.db.utils import str_to_bool
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.types import DEFAULT_HISTORICAL_PRICE_ORACLES_ORDER, HistoricalPriceOracle
-from rotkehlchen.inquirer import DEFAULT_CURRENT_PRICE_ORACLES_ORDER, CurrentPriceOracle
+from rotkehlchen.oracles.structures import DEFAULT_CURRENT_PRICE_ORACLES_ORDER, CurrentPriceOracle
 from rotkehlchen.types import (
     AVAILABLE_MODULES_MAP,
     DEFAULT_ADDRESS_NAME_PRIORITY,

@@ -13,7 +13,7 @@ from flask import Response, make_response
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.types import AssetType
-from rotkehlchen.db import settings
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset, WrongAssetType
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.coingecko import DELISTED_ASSETS, Coingecko
@@ -163,7 +163,7 @@ class IconManager:
             return False
 
         try:
-            response = self.coingecko.session.get(data.image_url, timeout=settings.CachedSettings().get_timeout_tuple())  # noqa: E501
+            response = self.coingecko.session.get(data.image_url, timeout=CachedSettings().get_timeout_tuple())  # noqa: E501
         except requests.exceptions.RequestException:
             # Any problem getting the image skip it: https://github.com/rotki/rotki/issues/1370
             return False

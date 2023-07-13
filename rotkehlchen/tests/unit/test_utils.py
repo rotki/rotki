@@ -10,6 +10,7 @@ from hexbytes import HexBytes
 
 from rotkehlchen.chain.ethereum.utils import generate_address_via_create2
 from rotkehlchen.errors.serialization import ConversionError
+from rotkehlchen.externalapis.github import Github
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.deserialize import deserialize_timestamp_from_date
 from rotkehlchen.serialization.serialize import process_result
@@ -120,8 +121,9 @@ def test_check_if_version_up_to_date():
         side_effect=mock_system_spec,
     )
 
+    github = Github()
     with patch_our_version, patch_github:
-        result = get_current_version(check_for_updates=True)
+        result = get_current_version(github=github)
         assert result.download_url is None, 'Same version should return None as url'
 
     def mock_github_return(url, **kwargs):  # pylint: disable=unused-argument
@@ -129,7 +131,7 @@ def test_check_if_version_up_to_date():
         return MockResponse(200, contents)
 
     with patch('requests.get', side_effect=mock_github_return):
-        result = get_current_version(check_for_updates=True)
+        result = get_current_version(github=github)
     assert result
     assert result[0]
     assert result.latest_version == 'v99.99.99'
@@ -141,7 +143,7 @@ def test_check_if_version_up_to_date():
         return MockResponse(501, contents)
 
     with patch('requests.get', side_effect=mock_non_200_github_return):
-        result = get_current_version(check_for_updates=True)
+        result = get_current_version(github=github)
         assert result.our_version
         assert not result.latest_version
         assert not result.latest_version
@@ -151,7 +153,7 @@ def test_check_if_version_up_to_date():
         return MockResponse(200, contents)
 
     with patch('requests.get', side_effect=mock_missing_fields_github_return):
-        result = get_current_version(check_for_updates=True)
+        result = get_current_version(github=github)
         assert result.our_version
         assert not result.latest_version
         assert not result.latest_version
@@ -161,7 +163,7 @@ def test_check_if_version_up_to_date():
         return MockResponse(200, contents)
 
     with patch('requests.get', side_effect=mock_invalid_json_github_return):
-        result = get_current_version(check_for_updates=True)
+        result = get_current_version(github=github)
         assert result.our_version
         assert not result.latest_version
         assert not result.latest_version

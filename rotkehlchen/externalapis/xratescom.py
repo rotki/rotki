@@ -4,7 +4,7 @@ import requests
 from bs4 import BeautifulSoup, SoupStrainer
 
 from rotkehlchen.assets.asset import FiatAsset
-from rotkehlchen.db import settings
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -27,7 +27,7 @@ def _scrape_xratescom_exchange_rates(url: str) -> dict[FiatAsset, Price]:
     log.debug(f'Querying x-rates.com stats: {url}')
     prices = {}
     try:
-        response = requests.get(url=url, timeout=settings.CachedSettings().get_timeout_tuple())
+        response = requests.get(url=url, timeout=CachedSettings().get_timeout_tuple())
     except requests.exceptions.RequestException as e:
         raise RemoteError(f'x-rates.com request {url} failed due to {e!s}') from e
 

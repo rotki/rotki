@@ -7,9 +7,10 @@ import pytest
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
 from rotkehlchen.chain.bitcoin.xpub import XpubData
 from rotkehlchen.constants.timing import DATA_UPDATES_REFRESH
+from rotkehlchen.db.constants import LAST_DATA_UPDATES_KEY
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.settings import ModifiableDBSettings
-from rotkehlchen.db.updates import LAST_DATA_UPDATES_KEY, RotkiDataUpdater
+from rotkehlchen.db.updates import RotkiDataUpdater
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.premium.premium import Premium, PremiumCredentials, SubscriptionStatus
 from rotkehlchen.tasks.manager import PREMIUM_STATUS_CHECK, TaskManager
