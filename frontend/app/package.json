@@ -68,7 +68,7 @@
     "vue-i18n": "8.28.2",
     "vue-i18n-composable": "2.0.0",
     "vue-router": "3.6.5",
-    "vuetify": "2.6.15",
+    "vuetify": "2.7.0",
     "zod": "3.21.4"
   },
   "devDependencies": {
