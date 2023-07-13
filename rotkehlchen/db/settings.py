@@ -108,10 +108,9 @@ TIMESTAMP_KEYS = ('last_write_ts', 'last_data_upload_ts', 'last_balance_save')
 IGNORED_KEYS = (LAST_EVM_ACCOUNTS_DETECT_KEY, LAST_DATA_UPDATES_KEY) + tuple(x.serialize() for x in UpdateType)  # noqa: E501
 
 
-DBSettingsFieldNames = Literal[
+CachedDBSettingsFieldNames = Literal[
     'have_premium',
     'version',
-    'last_write_ts',
     'premium_should_sync',
     'include_crypto2crypto',
     'last_data_upload_ts',
@@ -412,9 +411,7 @@ class CachedSettings:
                 continue
             self.update_entry(attr, getattr(settings, attr))
 
-    def get_entry(self, attr: DBSettingsFieldNames) -> DBSettingsFieldTypes:
-        if attr == 'last_write_ts':
-            raise AttributeError(f'{attr} is knowingly not cached. Read it directly from the DB.')
+    def get_entry(self, attr: CachedDBSettingsFieldNames) -> DBSettingsFieldTypes:
         return getattr(self._settings, attr)
 
     def get_settings(self) -> Optional[DBSettings]:
