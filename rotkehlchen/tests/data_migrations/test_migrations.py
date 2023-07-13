@@ -8,8 +8,8 @@ import pytest
 
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_BTC, A_ETH
+from rotkehlchen.data_migrations.constants import LAST_DATA_MIGRATION
 from rotkehlchen.data_migrations.manager import (
-    LAST_DATA_MIGRATION,
     MIGRATION_LIST,
     DataMigrationManager,
     MigrationRecord,

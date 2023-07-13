@@ -1,9 +1,10 @@
-import json
 from json.decoder import JSONDecodeError
 
 import requests
 
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.utils.serialization import jsonloads_dict
 
 
 class Github:
@@ -17,7 +18,6 @@ class Github:
         - RemoteError if there is a problem querying Github
         """
         try:
-            from rotkehlchen.db.settings import CachedSettings  # avoid circular import  # pylint: disable=import-outside-toplevel  # isort:skip  # noqa: E501
             response = requests.get(url=f'{self.prefix}{path}', timeout=CachedSettings().get_timeout_tuple())  # noqa: E501
         except requests.exceptions.RequestException as e:
             raise RemoteError(f'Failed to query Github: {e!s}') from e
@@ -29,10 +29,8 @@ class Github:
                 f'{response.text}',
             )
 
-        try:  # TODO: Fix this avoiding circular import in a more elegant way
-            json_ret = json.loads(response.text)  # not using jsonloads_dict due to circular import
-            if not isinstance(json_ret, dict):
-                raise JSONDecodeError(msg='Returned json is not a dict', doc='{}', pos=0)
+        try:
+            json_ret = jsonloads_dict(response.text)
         except JSONDecodeError as e:
             raise RemoteError(f'Github returned invalid JSON response: {response.text}') from e
         return json_ret

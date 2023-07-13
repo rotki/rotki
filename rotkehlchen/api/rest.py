@@ -155,6 +155,7 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.constants import ALL_SUPPORTED_EXCHANGES
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.exchanges.utils import query_binance_exchange_pairs
+from rotkehlchen.externalapis.github import Github
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.assets_management import export_assets_from_file, import_assets_from_file
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -1992,7 +1993,10 @@ class RestAPI:
         return self.get_queried_addresses_per_module()
 
     def get_info(self, check_for_updates: bool) -> Response:
-        version = get_current_version(check_for_updates=check_for_updates)
+        github = None
+        if check_for_updates is True:
+            github = Github()
+        version = get_current_version(github)
         result = {
             'version': process_result(version),
             'data_directory': str(self.rotkehlchen.data_dir),

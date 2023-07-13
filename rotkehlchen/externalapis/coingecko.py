@@ -10,7 +10,7 @@ from rotkehlchen.assets.asset import Asset, AssetWithOracles
 from rotkehlchen.constants.misc import ZERO_PRICE
 from rotkehlchen.constants.resolver import evm_address_to_identifier, strethaddress_to_identifier
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
-from rotkehlchen.db import settings
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
@@ -547,7 +547,7 @@ class Coingecko(HistoricalPriceOracleInterface, PenalizablePriceOracleMixin):
         try:
             response = self.session.get(
                 f'{url}?{urlencode(options)}',
-                timeout=settings.CachedSettings().get_timeout_tuple(),
+                timeout=CachedSettings().get_timeout_tuple(),
             )
         except requests.exceptions.RequestException as e:
             self.penalty_info.note_failure_or_penalize()

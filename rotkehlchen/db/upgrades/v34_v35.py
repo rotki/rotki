@@ -12,8 +12,8 @@ from rotkehlchen.constants.resolver import (
 )
 from rotkehlchen.globaldb.upgrades.v2_v3 import OTHER_EVM_CHAINS_ASSETS
 from rotkehlchen.history.types import DEFAULT_HISTORICAL_PRICE_ORACLES_ORDER, HistoricalPriceOracle
-from rotkehlchen.inquirer import DEFAULT_CURRENT_PRICE_ORACLES_ORDER, CurrentPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.oracles.structures import DEFAULT_CURRENT_PRICE_ORACLES_ORDER, CurrentPriceOracle
 from rotkehlchen.types import EvmTokenKind, OracleSource, SupportedBlockchain
 from rotkehlchen.utils.misc import ts_now
 

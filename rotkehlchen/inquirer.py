@@ -2,7 +2,6 @@ import logging
 import operator
 from collections.abc import Iterable, Sequence
 from contextlib import suppress
-from enum import auto
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, NamedTuple, Optional, Union
 
@@ -80,6 +79,7 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.interfaces import CurrentPriceOracleInterface
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.oracles.structures import CurrentPriceOracle
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import (
     CURVE_POOL_PROTOCOL,
@@ -88,7 +88,6 @@ from rotkehlchen.types import (
     ChainID,
     EvmTokenKind,
     GeneralCacheType,
-    OracleSource,
     Price,
     ProtocolsWithPriceLogic,
     Timestamp,
@@ -149,30 +148,6 @@ def _check_curve_contract_call(decoded: tuple[Any, ...]) -> bool:
         len(decoded) == 1 and
         isinstance(decoded[0], int)
     )
-
-
-class CurrentPriceOracle(OracleSource):
-    """Supported oracles for querying current prices"""
-    COINGECKO = auto()
-    CRYPTOCOMPARE = auto()
-    UNISWAPV2 = auto()
-    UNISWAPV3 = auto()
-    SADDLE = auto()
-    MANUALCURRENT = auto()
-    BLOCKCHAIN = auto()
-    FIAT = auto()
-    DEFILLAMA = auto()
-
-
-DEFAULT_CURRENT_PRICE_ORACLES_ORDER = (
-    CurrentPriceOracle.MANUALCURRENT,
-    CurrentPriceOracle.COINGECKO,
-    CurrentPriceOracle.DEFILLAMA,
-    CurrentPriceOracle.CRYPTOCOMPARE,
-    CurrentPriceOracle.UNISWAPV2,
-    CurrentPriceOracle.UNISWAPV3,
-    CurrentPriceOracle.SADDLE,
-)
 
 
 def get_underlying_asset_price(token: EvmToken) -> tuple[Optional[Price], CurrentPriceOracle]:  # noqa: E501

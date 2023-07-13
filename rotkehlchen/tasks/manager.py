@@ -24,10 +24,10 @@ from rotkehlchen.constants.timing import (
     EVM_ACCOUNTS_DETECTION_REFRESH,
     HOUR_IN_SECONDS,
 )
+from rotkehlchen.db.constants import LAST_DATA_UPDATES_KEY
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmTransactionsFilterQuery, HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
-from rotkehlchen.db.updates import LAST_DATA_UPDATES_KEY
 from rotkehlchen.errors.api import PremiumAuthenticationError
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import RemoteError

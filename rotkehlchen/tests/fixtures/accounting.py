@@ -17,7 +17,8 @@ from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.externalapis.defillama import Defillama
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.manual_price_oracles import ManualCurrentOracle
-from rotkehlchen.inquirer import DEFAULT_CURRENT_PRICE_ORACLES_ORDER, CurrentPriceOracle, Inquirer
+from rotkehlchen.inquirer import Inquirer
+from rotkehlchen.oracles.structures import DEFAULT_CURRENT_PRICE_ORACLES_ORDER, CurrentPriceOracle
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.tests.utils.inquirer import inquirer_inject_ethereum_set_order
 from rotkehlchen.types import Timestamp
