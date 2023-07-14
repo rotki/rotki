@@ -87,6 +87,7 @@ const isRouterVisible = (route: string, tab: TabContent) =>
     }
 
     &__tab {
+      text-transform: uppercase;
       background-color: white;
       border: var(--v-rotki-light-grey-darken1) solid thin;
 
