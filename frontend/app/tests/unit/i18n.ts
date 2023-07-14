@@ -6,6 +6,3 @@ function stringify(value: Record<string, any>): string {
 
 export const mockT = (key: any, args?: any) =>
   args ? `${key}::${stringify(args)}` : key;
-
-export const mockTc = (key: string, choice?: number, args?: object) =>
-  args ? `${key}::${choice}::${stringify(args)}` : key;

@@ -1,4 +1,5 @@
-import { useI18n as i18n } from 'vue-i18n-composable';
+import Vue, { type WritableComputedRef } from 'vue';
+import { type VueI18n } from 'vue-i18n-bridge';
 
 type NamedValues = Record<string, unknown>;
 
@@ -8,34 +9,30 @@ interface MigrationTranslator {
   <Key extends string>(key: Key, values: NamedValues): string;
   <Key extends string>(key: Key, values: NamedValues, plural: number): string;
 }
-interface MigrationI18n {
-  locale: Ref<string>;
+
+interface ModifiedI18n extends Omit<VueI18n, 't' | 'locale'> {
+  locale: WritableComputedRef<string>;
   t: MigrationTranslator;
-  te: <Key extends string>(key: Key) => boolean;
 }
 
-export const useI18n = (): MigrationI18n => {
-  const { t: originalT, tc: originalTc, locale, te } = i18n();
+export const useI18n = (): ModifiedI18n => {
+  const instance = getCurrentInstance();
+  const vm = instance?.proxy || new Vue();
 
-  const t = <Key extends string>(
-    key: Key,
-    valuesOrPlural?: NamedValues | number,
-    plural?: number
-  ): string => {
-    if (typeof valuesOrPlural === 'number') {
-      return originalTc(key, valuesOrPlural);
+  // @ts-ignore
+  const i18n = vm._i18nBridgeRoot.global as VueI18n;
+
+  const locale = computed({
+    get() {
+      return i18n.locale;
+    },
+    set(v) {
+      i18n.locale = v;
     }
-
-    if (plural) {
-      return originalTc(key, plural, valuesOrPlural);
-    }
-
-    return originalT(key, valuesOrPlural).toString();
-  };
+  });
 
   return {
-    t,
-    te,
+    ...i18n,
     locale
   };
 };

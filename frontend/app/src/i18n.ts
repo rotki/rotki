@@ -1,8 +1,8 @@
-import Vue from 'vue';
 import VueI18n, { type LocaleMessages } from 'vue-i18n';
-import { createI18n } from 'vue-i18n-composable';
+import { castToVueI18n, createI18n } from 'vue-i18n-bridge';
+import Vue from 'vue';
 
-Vue.use(VueI18n);
+Vue.use(VueI18n, { bridge: true });
 
 function loadLocaleMessages(): LocaleMessages {
   const messages: LocaleMessages = {};
@@ -21,10 +21,18 @@ function loadLocaleMessages(): LocaleMessages {
   return messages;
 }
 
-export default createI18n({
-  locale: (import.meta.env.VITE_I18N_LOCALE as string | undefined) || 'en',
-  fallbackLocale:
-    (import.meta.env.VITE_I18N_FALLBACK_LOCALE as string | undefined) || 'en',
-  messages: loadLocaleMessages(),
-  silentTranslationWarn: import.meta.env.VITE_SILENT_TRANSLATION_WARN === 'true'
-});
+export default castToVueI18n(
+  createI18n(
+    {
+      legacy: false,
+      locale: (import.meta.env.VITE_I18N_LOCALE as string | undefined) || 'en',
+      fallbackLocale:
+        (import.meta.env.VITE_I18N_FALLBACK_LOCALE as string | undefined) ||
+        'en',
+      messages: loadLocaleMessages(),
+      silentTranslationWarn:
+        import.meta.env.VITE_SILENT_TRANSLATION_WARN === 'true'
+    },
+    VueI18n
+  )
+);
