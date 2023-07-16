@@ -27,7 +27,7 @@ const { privacyModeIcon, privacyMode, togglePrivacyMode, changePrivacyMode } =
 
 <template>
   <div class="privacy-mode-dropdown">
-    <v-menu
+    <VMenu
       offset-y
       :max-width="280"
       :min-width="280"
@@ -35,14 +35,14 @@ const { privacyModeIcon, privacyMode, togglePrivacyMode, changePrivacyMode } =
       content-class="privacy-mode-dropdown__menu"
     >
       <template #activator="{ on }">
-        <menu-tooltip-button
+        <MenuTooltipButton
           :tooltip="t('user_dropdown.change_privacy_mode.label')"
           class-name="privacy-mode-dropdown secondary--text text--lighten-4"
           @click="togglePrivacyMode()"
         >
-          <v-icon>{{ privacyModeIcon }}</v-icon>
-        </menu-tooltip-button>
-        <v-btn
+          <VIcon>{{ privacyModeIcon }}</VIcon>
+        </MenuTooltipButton>
+        <VBtn
           data-cy="privacy-menu"
           class="privacy-mode-dropdown__expander pa-0"
           depressed
@@ -50,12 +50,12 @@ const { privacyModeIcon, privacyMode, togglePrivacyMode, changePrivacyMode } =
           x-small
           v-on="on"
         >
-          <v-icon>mdi-chevron-down</v-icon>
-        </v-btn>
+          <VIcon>mdi-chevron-down</VIcon>
+        </VBtn>
       </template>
-      <v-card>
+      <VCard>
         <div class="slider-wrapper pa-8" :style="sliderWrapperStyle">
-          <v-slider
+          <VSlider
             :value="privacyMode"
             data-cy="privacy-mode-dropdown__input"
             :class="`selected-${privacyMode}`"
@@ -69,8 +69,8 @@ const { privacyModeIcon, privacyMode, togglePrivacyMode, changePrivacyMode } =
             @change="changePrivacyMode($event)"
           />
         </div>
-      </v-card>
-    </v-menu>
+      </VCard>
+    </VMenu>
   </div>
 </template>
 

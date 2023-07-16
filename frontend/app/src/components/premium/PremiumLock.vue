@@ -4,9 +4,9 @@ const { isPackaged, premiumURL, navigateToPremium } = useInterop();
 </script>
 
 <template>
-  <v-tooltip top>
+  <VTooltip top>
     <template #activator="{ on }">
-      <v-btn
+      <VBtn
         text
         icon
         target="_blank"
@@ -15,9 +15,9 @@ const { isPackaged, premiumURL, navigateToPremium } = useInterop();
         v-on="on"
         @click="isPackaged ? navigateToPremium() : undefined"
       >
-        <v-icon>mdi-lock</v-icon>
-      </v-btn>
+        <VIcon>mdi-lock</VIcon>
+      </VBtn>
     </template>
     <span v-text="t('premium_lock.tooltip')" />
-  </v-tooltip>
+  </VTooltip>
 </template>

@@ -29,18 +29,18 @@ const showInputModeSelector = logicOr(
 </script>
 
 <template>
-  <fragment>
-    <chain-select
+  <Fragment>
+    <ChainSelect
       :disabled="loading || !!accountToEdit"
       :model-value="blockchain"
       @update:model-value="emit('update:blockchain', $event)"
     />
 
-    <input-mode-select
+    <InputModeSelect
       v-if="!accountToEdit && showInputModeSelector"
       :input-mode="inputMode"
       :blockchain="blockchain"
       @update:input-mode="emit('update:input-mode', $event)"
     />
-  </fragment>
+  </Fragment>
 </template>

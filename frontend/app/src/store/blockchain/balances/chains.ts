@@ -10,6 +10,7 @@ import { type RestChains, isRestChain } from '@/types/blockchain/chains';
 import { type AssetPrices } from '@/types/prices';
 
 type Totals = Record<RestChains, AssetBalances>;
+
 type Balances = Record<RestChains, BlockchainAssetBalances>;
 
 const defaultTotals = (): Totals => ({

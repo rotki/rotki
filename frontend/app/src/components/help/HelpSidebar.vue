@@ -1,7 +1,12 @@
 <script setup lang="ts">
 import IndexedDb from '@/utils/indexed-db';
 
+defineProps({
+  visible: { required: true, type: Boolean }
+});
+const emit = defineEmits(['visible:update', 'about']);
 const { t } = useI18n();
+
 interface Entry {
   readonly icon: string;
   readonly title: string;
@@ -42,13 +47,7 @@ const entries: Entry[] = [
   }
 ];
 
-defineProps({
-  visible: { required: true, type: Boolean }
-});
-
 const interop = useInterop();
-
-const emit = defineEmits(['visible:update', 'about']);
 
 const visibleUpdate = (_visible: boolean) => {
   emit('visible:update', _visible);
@@ -85,7 +84,7 @@ const { smAndDown } = useDisplay();
 </script>
 
 <template>
-  <v-navigation-drawer
+  <VNavigationDrawer
     width="400px"
     class="help-sidebar"
     :class="smAndDown ? 'help-sidebar--mobile' : null"
@@ -97,73 +96,73 @@ const { smAndDown } = useDisplay();
     hide-overlay
     @input="visibleUpdate($event)"
   >
-    <v-row justify="space-between" class="mt-0 pa-4">
-      <v-col class="text-h5">{{ t('help_sidebar.title') }}</v-col>
-      <v-col cols="auto">
-        <v-btn icon @click="visibleUpdate(false)">
-          <v-icon>mdi-close</v-icon>
-        </v-btn>
-      </v-col>
-    </v-row>
-    <v-list class="mt-2">
-      <v-list-item
+    <VRow justify="space-between" class="mt-0 pa-4">
+      <VCol class="text-h5">{{ t('help_sidebar.title') }}</VCol>
+      <VCol cols="auto">
+        <VBtn icon @click="visibleUpdate(false)">
+          <VIcon>mdi-close</VIcon>
+        </VBtn>
+      </VCol>
+    </VRow>
+    <VList class="mt-2">
+      <VListItem
         v-for="(item, index) in entries"
         :key="index"
         :href="interop.isPackaged ? null : item.link"
         target="_blank"
         @click="interop.isPackaged ? interop.openUrl(item.link) : null"
       >
-        <v-list-item-avatar>
-          <v-icon>{{ item.icon }}</v-icon>
-        </v-list-item-avatar>
-        <v-list-item-content>
-          <v-list-item-title>
+        <VListItemAvatar>
+          <VIcon>{{ item.icon }}</VIcon>
+        </VListItemAvatar>
+        <VListItemContent>
+          <VListItemTitle>
             {{ item.title }}
-          </v-list-item-title>
-          <v-list-item-subtitle>
+          </VListItemTitle>
+          <VListItemSubtitle>
             {{ item.subtitle }}
-          </v-list-item-subtitle>
-        </v-list-item-content>
-        <v-list-item-action>
-          <v-icon>mdi-chevron-right</v-icon>
-        </v-list-item-action>
-      </v-list-item>
+          </VListItemSubtitle>
+        </VListItemContent>
+        <VListItemAction>
+          <VIcon>mdi-chevron-right</VIcon>
+        </VListItemAction>
+      </VListItem>
       <template v-if="!interop.isPackaged">
-        <v-list-item selectable @click="openAbout()">
-          <v-list-item-avatar>
-            <v-icon>mdi-information</v-icon>
-          </v-list-item-avatar>
-          <v-list-item-content>
-            <v-list-item-title>
+        <VListItem selectable @click="openAbout()">
+          <VListItemAvatar>
+            <VIcon>mdi-information</VIcon>
+          </VListItemAvatar>
+          <VListItemContent>
+            <VListItemTitle>
               {{ t('help_sidebar.about.title') }}
-            </v-list-item-title>
-            <v-list-item-subtitle>
+            </VListItemTitle>
+            <VListItemSubtitle>
               {{ t('help_sidebar.about.subtitle') }}
-            </v-list-item-subtitle>
-          </v-list-item-content>
-          <v-list-item-action>
-            <v-icon>mdi-chevron-right</v-icon>
-          </v-list-item-action>
-        </v-list-item>
-        <v-list-item selectable @click="downloadBrowserLog()">
-          <v-list-item-avatar>
-            <v-icon>mdi-note-text</v-icon>
-          </v-list-item-avatar>
-          <v-list-item-content>
-            <v-list-item-title>
+            </VListItemSubtitle>
+          </VListItemContent>
+          <VListItemAction>
+            <VIcon>mdi-chevron-right</VIcon>
+          </VListItemAction>
+        </VListItem>
+        <VListItem selectable @click="downloadBrowserLog()">
+          <VListItemAvatar>
+            <VIcon>mdi-note-text</VIcon>
+          </VListItemAvatar>
+          <VListItemContent>
+            <VListItemTitle>
               {{ t('help_sidebar.browser_log.title') }}
-            </v-list-item-title>
-            <v-list-item-subtitle>
+            </VListItemTitle>
+            <VListItemSubtitle>
               {{ t('help_sidebar.browser_log.subtitle') }}
-            </v-list-item-subtitle>
-          </v-list-item-content>
-          <v-list-item-action>
-            <v-icon>mdi-chevron-right</v-icon>
-          </v-list-item-action>
-        </v-list-item>
+            </VListItemSubtitle>
+          </VListItemContent>
+          <VListItemAction>
+            <VIcon>mdi-chevron-right</VIcon>
+          </VListItemAction>
+        </VListItem>
       </template>
-    </v-list>
-  </v-navigation-drawer>
+    </VList>
+  </VNavigationDrawer>
 </template>
 
 <style scoped lang="scss">

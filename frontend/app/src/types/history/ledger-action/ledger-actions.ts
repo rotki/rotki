@@ -19,7 +19,9 @@ export const LedgerAction = z.object({
   link: z.string().nullish(),
   notes: z.string().nullish()
 });
+
 export type LedgerAction = z.infer<typeof LedgerAction>;
+
 export const LedgerActionCollectionResponse = CollectionCommonFields.extend({
   entries: z.array(
     z
@@ -29,6 +31,7 @@ export const LedgerActionCollectionResponse = CollectionCommonFields.extend({
       .merge(EntryMeta)
   )
 });
+
 export interface LedgerActionRequestPayload
   extends PaginationRequestPayload<LedgerAction> {
   readonly fromTimestamp?: string | number;

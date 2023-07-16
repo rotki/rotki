@@ -38,9 +38,9 @@ watch(items, () => set(page, 1));
 
 <template>
   <div>
-    <v-pagination v-if="pages > 1" v-model="page" :length="pages" />
-    <v-row class="mt-2">
-      <v-col
+    <VPagination v-if="pages > 1" v-model="page" :length="pages" />
+    <VRow class="mt-2">
+      <VCol
         v-for="item in visible"
         :key="identifier(item)"
         cols="12"
@@ -49,7 +49,7 @@ watch(items, () => set(page, 1));
         xl="4"
       >
         <slot name="item" :item="item" />
-      </v-col>
-    </v-row>
+      </VCol>
+    </VRow>
   </div>
 </template>

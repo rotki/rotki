@@ -67,7 +67,7 @@ watch(queriedAddresses, queried => {
 </script>
 
 <template>
-  <blockchain-account-selector
+  <BlockchainAccountSelector
     no-padding
     outlined
     :value="selectedAccounts"

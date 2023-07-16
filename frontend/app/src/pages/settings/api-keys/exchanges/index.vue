@@ -197,19 +197,19 @@ const showRemoveConfirmation = (item: Exchange) => {
 
 <template>
   <div class="exchange-settings" data-cy="exchanges">
-    <card outlined-body>
+    <Card outlined-body>
       <template #title>
         {{ t('exchange_settings.title') }}
       </template>
       <template #subtitle>
-        <i18n path="exchange_settings.subtitle" tag="div">
-          <base-external-link
+        <I18n path="exchange_settings.subtitle" tag="div">
+          <BaseExternalLink
             :text="t('exchange_settings.usage_guide')"
             :href="usageGuideUrl + '#adding-an-exchange'"
           />
-        </i18n>
+        </I18n>
       </template>
-      <v-btn
+      <VBtn
         absolute
         fab
         top
@@ -218,9 +218,9 @@ const showRemoveConfirmation = (item: Exchange) => {
         data-cy="add-exchange"
         @click="addExchange()"
       >
-        <v-icon> mdi-plus </v-icon>
-      </v-btn>
-      <data-table
+        <VIcon> mdi-plus </VIcon>
+      </VBtn>
+      <DataTable
         key="index"
         data-cy="exchange-table"
         :items="connectedExchanges"
@@ -228,26 +228,26 @@ const showRemoveConfirmation = (item: Exchange) => {
         sort-by="name"
       >
         <template #item.location="{ item }">
-          <location-display :identifier="item.location" />
+          <LocationDisplay :identifier="item.location" />
         </template>
         <template #item.syncEnabled="{ item }">
-          <v-switch
+          <VSwitch
             :input-value="!isNonSyncExchange(item)"
             @change="toggleSync(item)"
           />
         </template>
         <template #item.actions="{ item }">
-          <row-actions
+          <RowActions
             :delete-tooltip="t('exchange_settings.delete.tooltip')"
             :edit-tooltip="t('exchange_settings.edit.tooltip')"
             @delete-click="showRemoveConfirmation(item)"
             @edit-click="editExchange(item)"
           />
         </template>
-      </data-table>
-    </card>
+      </DataTable>
+    </Card>
 
-    <exchange-keys-form-dialog
+    <ExchangeKeysFormDialog
       v-model="exchange"
       :edit-mode="editMode"
       @reset="resetForm()"

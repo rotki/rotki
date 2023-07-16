@@ -93,31 +93,31 @@ const showConfirmation = () => {
 </script>
 
 <template>
-  <v-row justify="end">
-    <v-col cols="auto">
-      <v-sheet outlined :style="style">
-        <v-row align="center" justify="center" no-gutters>
-          <v-col
+  <VRow justify="end">
+    <VCol cols="auto">
+      <VSheet outlined :style="style">
+        <VRow align="center" justify="center" no-gutters>
+          <VCol
             v-for="module in moduleStatus"
             :key="module.identifier"
             cols="auto"
           >
-            <v-tooltip open-delay="400" top>
+            <VTooltip open-delay="400" top>
               <template #activator="{ on, attrs }">
-                <v-btn
+                <VBtn
                   v-bind="attrs"
                   icon
                   :class="module.enabled ? null : 'active-modules__disabled'"
                   v-on="on"
                   @click="onModulePress(module)"
                 >
-                  <v-img
+                  <VImg
                     width="24px"
                     height="24px"
                     contain
                     :src="icon(module.identifier)"
                   />
-                </v-btn>
+                </VBtn>
               </template>
               <span v-if="module.enabled">
                 {{
@@ -127,17 +127,17 @@ const showConfirmation = () => {
               <span v-else>
                 {{ t('active_modules.activate', getName(module.identifier)) }}
               </span>
-            </v-tooltip>
-          </v-col>
-        </v-row>
-      </v-sheet>
-      <queried-address-dialog
+            </VTooltip>
+          </VCol>
+        </VRow>
+      </VSheet>
+      <QueriedAddressDialog
         v-if="manageModule"
         :module="manageModule"
         @close="manageModule = null"
       />
-    </v-col>
-  </v-row>
+    </VCol>
+  </VRow>
 </template>
 
 <style scoped lang="scss">

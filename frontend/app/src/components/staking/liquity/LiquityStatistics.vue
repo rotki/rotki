@@ -197,58 +197,58 @@ const css = useCssModule();
 </script>
 
 <template>
-  <card :loading="loading">
+  <Card :loading="loading">
     <template #title>
       {{ t('liquity_statistic.title') }}
     </template>
     <template #details>
-      <v-btn-toggle v-model="current" dense mandatory>
-        <v-btn :value="true">
+      <VBtnToggle v-model="current" dense mandatory>
+        <VBtn :value="true">
           {{ t('liquity_statistic.switch.current') }}
-        </v-btn>
-        <v-btn :value="false">
+        </VBtn>
+        <VBtn :value="false">
           {{ t('liquity_statistic.switch.historical') }}
-        </v-btn>
-      </v-btn-toggle>
+        </VBtn>
+      </VBtnToggle>
     </template>
     <template v-if="statisticWithAdjustedPrice">
-      <v-row class="ma-n6" :class="css.large">
-        <v-col md="6" class="pa-6 py-8 d-flex justify-space-between">
+      <VRow class="ma-n6" :class="css.large">
+        <VCol md="6" class="pa-6 py-8 d-flex justify-space-between">
           <div>{{ t('liquity_statistic.total_gains_stability_pool') }}</div>
-          <v-sheet>
-            <amount-display
+          <VSheet>
+            <AmountDisplay
               :value="statisticWithAdjustedPrice.totalUsdGainsStabilityPool"
               :fiat-currency="CURRENCY_USD"
               class="font-weight-bold"
             />
-          </v-sheet>
-        </v-col>
-        <v-col md="6" class="pa-6 py-8 d-flex justify-space-between">
+          </VSheet>
+        </VCol>
+        <VCol md="6" class="pa-6 py-8 d-flex justify-space-between">
           <div>{{ t('liquity_statistic.total_gains_staking') }}</div>
-          <v-sheet>
-            <amount-display
+          <VSheet>
+            <AmountDisplay
               :value="statisticWithAdjustedPrice.totalUsdGainsStaking"
               :fiat-currency="CURRENCY_USD"
               class="font-weight-bold"
             />
-          </v-sheet>
-        </v-col>
-      </v-row>
+          </VSheet>
+        </VCol>
+      </VRow>
 
-      <v-expansion-panels multiple class="pt-4">
-        <v-expansion-panel elevation="0">
-          <v-expansion-panel-content>
-            <v-row class="ma-n6">
-              <v-col md="6" class="pa-6">
+      <VExpansionPanels multiple class="pt-4">
+        <VExpansionPanel elevation="0">
+          <VExpansionPanelContent>
+            <VRow class="ma-n6">
+              <VCol md="6" class="pa-6">
                 <div>
-                  <v-divider />
+                  <VDivider />
                   <div class="text-right py-4">
                     <div class="font-weight-medium pb-2" :class="css.label">
                       {{
                         t('liquity_statistic.total_deposited_stability_pool')
                       }}
                     </div>
-                    <balance-display
+                    <BalanceDisplay
                       :asset="LUSD_ID"
                       :value="totalDepositedStabilityPoolBalance"
                     />
@@ -256,14 +256,14 @@ const css = useCssModule();
                 </div>
 
                 <div>
-                  <v-divider />
+                  <VDivider />
                   <div class="text-right py-4">
                     <div class="font-weight-medium pb-2" :class="css.label">
                       {{
                         t('liquity_statistic.total_withdrawn_stability_pool')
                       }}
                     </div>
-                    <balance-display
+                    <BalanceDisplay
                       :asset="LUSD_ID"
                       :value="totalWithdrawnStabilityPoolBalance"
                     />
@@ -271,7 +271,7 @@ const css = useCssModule();
                 </div>
 
                 <div>
-                  <v-divider />
+                  <VDivider />
                   <div class="text-right py-4">
                     <div class="font-weight-medium pb-2" :class="css.label">
                       {{ t('liquity_statistic.stability_pool_gains') }}
@@ -286,7 +286,7 @@ const css = useCssModule();
                         v-for="assetBalance in statisticWithAdjustedPrice.stabilityPoolGains"
                         :key="assetBalance.asset"
                       >
-                        <balance-display
+                        <BalanceDisplay
                           :asset="assetBalance.asset"
                           :value="assetBalance"
                         />
@@ -299,32 +299,32 @@ const css = useCssModule();
                 </div>
 
                 <div v-if="totalPnl">
-                  <v-divider />
+                  <VDivider />
                   <div class="text-right py-4">
                     <div class="font-weight-medium pb-2" :class="css.label">
-                      <v-tooltip open-delay="400" top>
+                      <VTooltip open-delay="400" top>
                         <template #activator="{ on, attrs }">
-                          <v-icon v-bind="attrs" small class="mx-2" v-on="on">
+                          <VIcon v-bind="attrs" small class="mx-2" v-on="on">
                             mdi-information
-                          </v-icon>
+                          </VIcon>
                         </template>
                         <span>
                           {{ t('liquity_statistic.estimated_pnl_warning') }}
                         </span>
-                      </v-tooltip>
+                      </VTooltip>
                       {{ t('liquity_statistic.estimated_pnl') }}
                     </div>
-                    <amount-display
+                    <AmountDisplay
                       :value="totalPnl"
                       :fiat-currency="CURRENCY_USD"
                       pnl
                     />
                   </div>
                 </div>
-              </v-col>
-              <v-col md="6" class="pa-6">
+              </VCol>
+              <VCol md="6" class="pa-6">
                 <div>
-                  <v-divider />
+                  <VDivider />
                   <div class="text-right py-4">
                     <div class="font-weight-medium pb-2" :class="css.label">
                       {{ t('liquity_statistic.staking_gains') }}
@@ -337,7 +337,7 @@ const css = useCssModule();
                         v-for="assetBalance in statisticWithAdjustedPrice.stakingGains"
                         :key="assetBalance.asset"
                       >
-                        <balance-display
+                        <BalanceDisplay
                           :asset="assetBalance.asset"
                           :value="assetBalance"
                         />
@@ -348,11 +348,11 @@ const css = useCssModule();
                     </div>
                   </div>
                 </div>
-              </v-col>
-            </v-row>
-          </v-expansion-panel-content>
-          <v-divider />
-          <v-expansion-panel-header class="d-flex justify-center fill-width">
+              </VCol>
+            </VRow>
+          </VExpansionPanelContent>
+          <VDivider />
+          <VExpansionPanelHeader class="d-flex justify-center fill-width">
             <template #default="{ open }">
               <div class="grey--text mr-4 flex-grow-0" :class="css.large">
                 {{
@@ -362,14 +362,14 @@ const css = useCssModule();
                 }}
               </div>
             </template>
-          </v-expansion-panel-header>
-        </v-expansion-panel>
-      </v-expansion-panels>
+          </VExpansionPanelHeader>
+        </VExpansionPanel>
+      </VExpansionPanels>
     </template>
     <div v-else class="text-center grey--text pt-4 pb-2">
       {{ t('liquity_statistic.no_statistics') }}
     </div>
-  </card>
+  </Card>
 </template>
 
 <style lang="scss" module>

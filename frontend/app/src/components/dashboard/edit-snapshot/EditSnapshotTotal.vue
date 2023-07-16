@@ -182,28 +182,28 @@ const css = useCssModule();
           {{ t('common.total') }}
         </div>
         <div class="mb-4">
-          <v-form :value="valid">
-            <amount-input
+          <VForm :value="valid">
+            <AmountInput
               v-model="total"
               outlined
               :error-messages="toMessages(v$.total)"
             />
 
             <div class="text--secondary text-caption">
-              <i18n path="dashboard.snapshot.edit.dialog.total.warning">
+              <I18n path="dashboard.snapshot.edit.dialog.total.warning">
                 <template #amount>
-                  <amount-display
+                  <AmountDisplay
                     :value="nftsExcludedTotal"
                     fiat-currency="USD"
                   />
                 </template>
-              </i18n>
+              </I18n>
             </div>
-          </v-form>
+          </VForm>
         </div>
         <div>
           <div v-for="(number, key) in suggestions" :key="key">
-            <v-btn
+            <VBtn
               block
               color="primary"
               class="mb-4"
@@ -215,13 +215,13 @@ const css = useCssModule();
                 <span>
                   {{ suggestionsLabel[key] }}
                 </span>
-                <amount-display
+                <AmountDisplay
                   :class="css['button__amount']"
                   :value="number"
                   fiat-currency="USD"
                 />
               </div>
-            </v-btn>
+            </VBtn>
 
             <div v-if="key === 'location'" class="text--secondary text-caption">
               {{ t('dashboard.snapshot.edit.dialog.total.hint') }}
@@ -230,17 +230,17 @@ const css = useCssModule();
         </div>
       </div>
     </div>
-    <v-sheet elevation="10" class="d-flex justify-end pa-4">
-      <v-spacer />
-      <v-btn class="mr-4" @click="updateStep(2)">
-        <v-icon>mdi-chevron-left</v-icon>
+    <VSheet elevation="10" class="d-flex justify-end pa-4">
+      <VSpacer />
+      <VBtn class="mr-4" @click="updateStep(2)">
+        <VIcon>mdi-chevron-left</VIcon>
         {{ t('common.actions.back') }}
-      </v-btn>
-      <v-btn color="primary" @click="trySubmit()">
+      </VBtn>
+      <VBtn color="primary" @click="trySubmit()">
         {{ t('common.actions.finish') }}
-        <v-icon>mdi-chevron-right</v-icon>
-      </v-btn>
-    </v-sheet>
+        <VIcon>mdi-chevron-right</VIcon>
+      </VBtn>
+    </VSheet>
   </div>
 </template>
 

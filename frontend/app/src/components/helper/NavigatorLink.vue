@@ -26,12 +26,12 @@ const attrs = useAttrs();
 </script>
 
 <template>
-  <component
+  <Component
     :is="tag"
     :class="{ 'cursor-pointer': enabled }"
     v-bind="attrs"
     @click="navigate()"
   >
     <slot />
-  </component>
+  </Component>
 </template>

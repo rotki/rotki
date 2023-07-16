@@ -1,20 +1,18 @@
 <script setup lang="ts">
-const { t } = useI18n();
-const css = useCssModule();
-const slots = useSlots();
-
 defineProps<{
   icon: string;
 }>();
-
 const emit = defineEmits<{
   (e: 'confirm'): void;
   (e: 'cancel'): void;
 }>();
+const { t } = useI18n();
+const css = useCssModule();
+const slots = useSlots();
 </script>
 
 <template>
-  <v-alert
+  <VAlert
     class="animate mt-8"
     text
     prominent
@@ -31,21 +29,21 @@ const emit = defineEmits<{
       </div>
     </div>
 
-    <v-row justify="end" class="mt-2">
-      <v-col cols="auto" class="shrink">
-        <v-btn color="error" depressed @click="emit('cancel')">
+    <VRow justify="end" class="mt-2">
+      <VCol cols="auto" class="shrink">
+        <VBtn color="error" depressed @click="emit('cancel')">
           <slot v-if="slots.cancel" name="cancel" />
           <span v-else> {{ t('common.actions.no') }} </span>
-        </v-btn>
-      </v-col>
-      <v-col cols="auto" class="shrink">
-        <v-btn color="success" depressed @click="emit('confirm')">
+        </VBtn>
+      </VCol>
+      <VCol cols="auto" class="shrink">
+        <VBtn color="success" depressed @click="emit('confirm')">
           <slot v-if="slots.confirm" name="confirm" />
           <span v-else> {{ t('common.actions.yes') }} </span>
-        </v-btn>
-      </v-col>
-    </v-row>
-  </v-alert>
+        </VBtn>
+      </VCol>
+    </VRow>
+  </VAlert>
 </template>
 
 <style module lang="scss">

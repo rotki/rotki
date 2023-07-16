@@ -1,9 +1,9 @@
 <template>
-  <v-row no-gutters class="mt-8">
-    <v-col cols="12">
-      <v-sheet outlined rounded>
+  <VRow no-gutters class="mt-8">
+    <VCol cols="12">
+      <VSheet outlined rounded>
         <slot />
-      </v-sheet>
-    </v-col>
-  </v-row>
+      </VSheet>
+    </VCol>
+  </VRow>
 </template>

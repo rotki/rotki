@@ -78,11 +78,11 @@ onMounted(() => {
 </script>
 
 <template>
-  <v-form v-model="valid">
-    <module-activator @update:selection="selectedModules = $event" />
+  <VForm v-model="valid">
+    <ModuleActivator @update:selection="selectedModules = $event" />
     <slot name="selector" :loading="loading" />
     <div class="mt-4">
-      <account-data-input
+      <AccountDataInput
         :tags="tags"
         :label="label"
         :disabled="loading"
@@ -90,5 +90,5 @@ onMounted(() => {
         @update:tags="tags = $event"
       />
     </div>
-  </v-form>
+  </VForm>
 </template>

@@ -43,6 +43,7 @@ export type Matcher = SearchMatcher<
   HistoryEventFilterKeys,
   HistoryEventFilterValueKeys
 >;
+
 export type Filters = MatchedKeywordWithBehaviour<HistoryEventFilterValueKeys>;
 
 export const useHistoryEventFilter = (

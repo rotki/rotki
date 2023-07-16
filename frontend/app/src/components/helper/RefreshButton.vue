@@ -21,9 +21,9 @@ const refresh = () => {
 </script>
 
 <template>
-  <v-tooltip top>
+  <VTooltip top>
     <template #activator="{ on, attrs }">
-      <v-btn
+      <VBtn
         fab
         text
         small
@@ -33,7 +33,7 @@ const refresh = () => {
         @click="refresh()"
         v-on="on"
       >
-        <v-progress-circular
+        <VProgressCircular
           v-if="loading"
           rounded
           indeterminate
@@ -41,9 +41,9 @@ const refresh = () => {
           width="2"
           color="primary"
         />
-        <v-icon v-else color="primary">mdi-refresh</v-icon>
-      </v-btn>
+        <VIcon v-else color="primary">mdi-refresh</VIcon>
+      </VBtn>
     </template>
     <span>{{ tooltip }}</span>
-  </v-tooltip>
+  </VTooltip>
 </template>

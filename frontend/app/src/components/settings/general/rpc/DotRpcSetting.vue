@@ -21,13 +21,13 @@ onBeforeMount(() => {
 </script>
 
 <template>
-  <settings-option
+  <SettingsOption
     #default="{ error, success, update }"
     setting="dotRpcEndpoint"
     :error-message="t('general_settings.validation.dot_rpc.error')"
     :success-message="dotSuccessMessage"
   >
-    <v-text-field
+    <VTextField
       v-model="dotRpcEndpoint"
       outlined
       class="general-settings__fields__dot-rpc-endpoint"
@@ -40,5 +40,5 @@ onBeforeMount(() => {
       @click:clear="update('')"
       @change="update($event)"
     />
-  </settings-option>
+  </SettingsOption>
 </template>

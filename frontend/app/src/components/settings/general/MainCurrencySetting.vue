@@ -22,13 +22,13 @@ const calculateFontSize = (symbol: string) => {
 </script>
 
 <template>
-  <settings-option
+  <SettingsOption
     #default="{ error, success, update }"
     setting="mainCurrency"
     :error-message="t('general_settings.validation.currency.error')"
     :success-message="successMessage"
   >
-    <v-select
+    <VSelect
       v-model="selectedCurrency"
       outlined
       class="general-settings__fields__currency-selector"
@@ -41,27 +41,27 @@ const calculateFontSize = (symbol: string) => {
       @change="update($event ? $event.tickerSymbol : $event)"
     >
       <template #item="{ item, attrs, on }">
-        <v-list-item
+        <VListItem
           :id="`currency__${item.tickerSymbol.toLocaleLowerCase()}`"
           v-bind="attrs"
           v-on="on"
         >
-          <v-list-item-avatar
+          <VListItemAvatar
             class="general-settings__currency-list primary--text font-weight-bold"
             :style="{ fontSize: calculateFontSize(item.unicodeSymbol) }"
           >
             {{ item.unicodeSymbol }}
-          </v-list-item-avatar>
-          <v-list-item-content>
-            <v-list-item-title>
+          </VListItemAvatar>
+          <VListItemContent>
+            <VListItemTitle>
               {{ item.name }}
-            </v-list-item-title>
-            <v-list-item-subtitle>
+            </VListItemTitle>
+            <VListItemSubtitle>
               {{ t('general_settings.amount.labels.main_currency_subtitle') }}
-            </v-list-item-subtitle>
-          </v-list-item-content>
-        </v-list-item>
+            </VListItemSubtitle>
+          </VListItemContent>
+        </VListItem>
       </template>
-    </v-select>
-  </settings-option>
+    </VSelect>
+  </SettingsOption>
 </template>

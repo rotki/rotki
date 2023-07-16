@@ -35,13 +35,13 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <v-card v-bind="$attrs">
+  <VCard v-bind="$attrs">
     <div
       :class="{
         'mx-4 pt-2': !noPadding
       }"
     >
-      <v-autocomplete
+      <VAutocomplete
         :value="value"
         :label="t('liquidity_pool_selector.label')"
         :items="pools"
@@ -60,7 +60,7 @@ const { t } = useI18n();
         @input="input($event)"
       >
         <template #selection="data">
-          <v-chip
+          <VChip
             outlined
             class="pa-2"
             v-bind="data.attrs"
@@ -72,19 +72,19 @@ const { t } = useI18n();
             <span class="font-weight-medium">
               {{ getPoolName(type, data.item.assets) }}
             </span>
-          </v-chip>
+          </VChip>
         </template>
         <template #item="{ item }">
-          <v-list-item-content
+          <VListItemContent
             :id="`ua-${item.address.toLocaleLowerCase()}`"
             class="font-weight-medium"
           >
-            <v-list-item-title>
+            <VListItemTitle>
               {{ getPoolName(type, item.assets) }}
-            </v-list-item-title>
-          </v-list-item-content>
+            </VListItemTitle>
+          </VListItemContent>
         </template>
-      </v-autocomplete>
+      </VAutocomplete>
     </div>
-  </v-card>
+  </VCard>
 </template>

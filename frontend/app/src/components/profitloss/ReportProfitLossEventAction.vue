@@ -82,54 +82,54 @@ const updatePrice = async () => {
 
 <template>
   <div>
-    <v-menu transition="slide-y-transaction" max-width="250px" offset-y>
+    <VMenu transition="slide-y-transaction" max-width="250px" offset-y>
       <template #activator="{ on }">
-        <v-btn class="ml-1" icon v-on="on">
-          <v-icon>mdi-dots-vertical</v-icon>
-        </v-btn>
+        <VBtn class="ml-1" icon v-on="on">
+          <VIcon>mdi-dots-vertical</VIcon>
+        </VBtn>
       </template>
-      <v-list>
-        <v-list-item link @click="openEditHistoricPriceDialog()">
-          <v-list-item-icon class="mr-4">
-            <v-icon>mdi-pencil</v-icon>
-          </v-list-item-icon>
-          <v-list-item-content>
+      <VList>
+        <VListItem link @click="openEditHistoricPriceDialog()">
+          <VListItemIcon class="mr-4">
+            <VIcon>mdi-pencil</VIcon>
+          </VListItemIcon>
+          <VListItemContent>
             {{ t('profit_loss_events.edit_historic_price') }}
-          </v-list-item-content>
-        </v-list-item>
-      </v-list>
-    </v-menu>
+          </VListItemContent>
+        </VListItem>
+      </VList>
+    </VMenu>
 
-    <v-dialog v-model="showDialog" max-width="450px">
-      <card>
+    <VDialog v-model="showDialog" max-width="450px">
+      <Card>
         <template #title>
           {{ t('profit_loss_events.edit_historic_price') }}
         </template>
 
-        <v-form class="mt-2">
-          <v-row>
-            <v-col cols="12">
-              <asset-select
+        <VForm class="mt-2">
+          <VRow>
+            <VCol cols="12">
+              <AssetSelect
                 :value="event.asset"
                 :label="t('price_form.from_asset')"
                 hide-details
                 disabled
                 outlined
               />
-            </v-col>
+            </VCol>
 
-            <v-col cols="12">
-              <asset-select
+            <VCol cols="12">
+              <AssetSelect
                 :value="currency"
                 :label="t('price_form.to_asset')"
                 hide-details
                 disabled
                 outlined
               />
-            </v-col>
+            </VCol>
 
-            <v-col cols="12">
-              <date-time-picker
+            <VCol cols="12">
+              <DateTimePicker
                 :value="datetime"
                 outlined
                 disabled
@@ -137,10 +137,10 @@ const updatePrice = async () => {
                 :label="t('common.datetime')"
                 seconds
               />
-            </v-col>
+            </VCol>
 
-            <v-col cols="12">
-              <amount-input
+            <VCol cols="12">
+              <AmountInput
                 v-model="price"
                 outlined
                 :loading="fetchingPrice"
@@ -148,22 +148,22 @@ const updatePrice = async () => {
                 :label="t('common.price')"
                 :error-messages="v$.price.$errors.map(e => e.$message)"
               />
-            </v-col>
-          </v-row>
-        </v-form>
+            </VCol>
+          </VRow>
+        </VForm>
 
         {{ t('profit_loss_events.edit_price_warning') }}
 
         <template #buttons>
-          <v-spacer />
-          <v-btn depressed @click="showDialog = false">
+          <VSpacer />
+          <VBtn depressed @click="showDialog = false">
             {{ t('common.actions.cancel') }}
-          </v-btn>
-          <v-btn color="primary" @click="updatePrice()">
+          </VBtn>
+          <VBtn color="primary" @click="updatePrice()">
             {{ t('price_form.update_price') }}
-          </v-btn>
+          </VBtn>
         </template>
-      </card>
-    </v-dialog>
+      </Card>
+    </VDialog>
   </div>
 </template>

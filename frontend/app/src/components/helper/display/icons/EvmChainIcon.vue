@@ -30,9 +30,9 @@ const css = useCssModule();
 </script>
 
 <template>
-  <v-tooltip v-if="chainData" top :disabled="!tooltip">
+  <VTooltip v-if="chainData" top :disabled="!tooltip">
     <template #activator="{ on }">
-      <v-img
+      <VImg
         :class="{ [css.circle]: !tile }"
         :src="chainData.image"
         :width="size"
@@ -44,7 +44,7 @@ const css = useCssModule();
       />
     </template>
     <span>{{ chainData.label }}</span>
-  </v-tooltip>
+  </VTooltip>
 </template>
 
 <style lang="scss" module>

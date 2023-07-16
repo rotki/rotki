@@ -30,6 +30,7 @@ export type Matcher = SearchMatcher<
   LedgerActionFilterKeys,
   LedgerActionFilterValueKeys
 >;
+
 export type Filters = MatchedKeyword<LedgerActionFilterValueKeys>;
 
 export const useLedgerActionsFilter = () => {

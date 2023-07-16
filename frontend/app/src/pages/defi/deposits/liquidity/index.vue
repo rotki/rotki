@@ -24,8 +24,8 @@ onMounted(() => {
     <div
       class="d-flex flex-row align-center justify-center liquidity__navigation"
     >
-      <v-btn-toggle v-model="path">
-        <v-btn
+      <VBtnToggle v-model="path">
+        <VBtn
           v-for="provider in providers"
           :key="provider.route"
           :to="provider.route"
@@ -33,15 +33,15 @@ onMounted(() => {
           text
           :value="provider.route"
         >
-          <adaptive-wrapper class="me-2">
-            <v-img contain width="24" height="24" :src="provider.image" />
-          </adaptive-wrapper>
+          <AdaptiveWrapper class="me-2">
+            <VImg contain width="24" height="24" :src="provider.image" />
+          </AdaptiveWrapper>
           {{ provider.text }}
-        </v-btn>
-      </v-btn-toggle>
+        </VBtn>
+      </VBtnToggle>
     </div>
     <div>
-      <router-view />
+      <RouterView />
     </div>
   </div>
 </template>

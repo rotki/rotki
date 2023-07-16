@@ -30,6 +30,7 @@ export type Matcher = SearchMatcher<
   AssetMovementFilterKeys,
   AssetMovementFilterValueKeys
 >;
+
 export type Filters = MatchedKeyword<AssetMovementFilterValueKeys>;
 
 export const useAssetMovementFilters = () => {

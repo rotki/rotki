@@ -89,17 +89,17 @@ onMounted(async () => {
 </script>
 
 <template>
-  <v-container>
-    <v-row justify="space-between" align="center" no-gutters>
-      <v-col>
-        <card-title>{{ t('price_management.latest.title') }}</card-title>
-      </v-col>
-    </v-row>
-    <card class="mt-8">
+  <VContainer>
+    <VRow justify="space-between" align="center" no-gutters>
+      <VCol>
+        <CardTitle>{{ t('price_management.latest.title') }}</CardTitle>
+      </VCol>
+    </VRow>
+    <Card class="mt-8">
       <template #title>{{ t('price_management.filter_title') }}</template>
-      <v-row>
-        <v-col>
-          <asset-select
+      <VRow>
+        <VCol>
+          <AssetSelect
             v-model="assetFilter"
             outlined
             include-nfts
@@ -107,19 +107,19 @@ onMounted(async () => {
             clearable
             hide-details
           />
-        </v-col>
-      </v-row>
-    </card>
-    <latest-price-table
+        </VCol>
+      </VRow>
+    </Card>
+    <LatestPriceTable
       class="mt-12"
       :asset-filter="assetFilter"
       @edit="openForm($event)"
     >
-      <v-btn absolute fab top right color="primary" @click="openForm()">
-        <v-icon> mdi-plus </v-icon>
-      </v-btn>
-    </latest-price-table>
-    <big-dialog
+      <VBtn absolute fab top right color="primary" @click="openForm()">
+        <VIcon> mdi-plus </VIcon>
+      </VBtn>
+    </LatestPriceTable>
+    <BigDialog
       :display="openDialog"
       :title="
         editMode
@@ -130,7 +130,7 @@ onMounted(async () => {
       @confirm="trySubmit()"
       @cancel="hideForm()"
     >
-      <latest-price-form v-model="formData" :edit="editMode" />
-    </big-dialog>
-  </v-container>
+      <LatestPriceForm v-model="formData" :edit="editMode" />
+    </BigDialog>
+  </VContainer>
 </template>

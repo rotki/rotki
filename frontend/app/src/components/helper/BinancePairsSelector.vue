@@ -94,7 +94,7 @@ watch(search, search => {
 </script>
 
 <template>
-  <v-autocomplete
+  <VAutocomplete
     v-bind="$attrs"
     :items="allMarkets"
     :filter="filter"
@@ -120,7 +120,7 @@ watch(search, search => {
     @change="search = ''"
   >
     <template #selection="data">
-      <v-chip
+      <VChip
         v-bind="data.attrs"
         :input-value="data.selected"
         :click="data.select"
@@ -129,20 +129,20 @@ watch(search, search => {
         @click:close="data.parent.selectItem(data.item)"
       >
         {{ data.item }}
-      </v-chip>
+      </VChip>
     </template>
     <template #item="data">
       <div
         class="binance-market-selector__list__item d-flex justify-space-between flex-grow-1"
       >
         <div class="binance-market-selector__list__item__address-label">
-          <v-chip :color="dark ? null : 'grey lighten-3'" filter>
+          <VChip :color="dark ? null : 'grey lighten-3'" filter>
             {{ data.item }}
-          </v-chip>
+          </VChip>
         </div>
       </div>
     </template>
-  </v-autocomplete>
+  </VAutocomplete>
 </template>
 
 <style scoped lang="scss">

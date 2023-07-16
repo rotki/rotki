@@ -12,9 +12,9 @@ const { href, onLinkClick } = useLinks(url);
 </script>
 
 <template>
-  <v-tooltip open-delay="400" top>
+  <VTooltip open-delay="400" top>
     <template #activator="{ attrs, on }">
-      <v-btn
+      <VBtn
         icon
         :small="small"
         v-bind="attrs"
@@ -23,9 +23,9 @@ const { href, onLinkClick } = useLinks(url);
         v-on="on"
         @click="onLinkClick()"
       >
-        <v-icon :small="small">mdi-help-circle</v-icon>
-      </v-btn>
+        <VIcon :small="small">mdi-help-circle</VIcon>
+      </VBtn>
     </template>
     <span>{{ tooltip }}</span>
-  </v-tooltip>
+  </VTooltip>
 </template>

@@ -44,15 +44,15 @@ const route = computed<{ path: string }>(() => {
 </script>
 
 <template>
-  <navigator-link :enabled="openDetails" :to="route" component="div">
-    <list-item
+  <NavigatorLink :enabled="openDetails" :to="route" component="div">
+    <ListItem
       v-bind="$attrs"
       class="my-0 text-center"
       :show-details="false"
       :title="name"
     >
       <template #icon>
-        <location-icon
+        <LocationIcon
           v-if="location"
           class="location-display"
           :item="location"
@@ -60,8 +60,8 @@ const route = computed<{ path: string }>(() => {
           :size="size"
         />
       </template>
-    </list-item>
-  </navigator-link>
+    </ListItem>
+  </NavigatorLink>
 </template>
 
 <style scoped lang="scss">

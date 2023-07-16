@@ -16,8 +16,8 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <fragment>
-    <v-text-field
+  <Fragment>
+    <VTextField
       :value="label"
       data-cy="account-label-field"
       outlined
@@ -27,12 +27,12 @@ const { t } = useI18n();
       @input="emit('update:label', $event || '')"
     />
 
-    <tag-input
+    <TagInput
       :value="tags"
       data-cy="account-tag-field"
       outlined
       :disabled="disabled"
       @input="emit('update:tags', $event)"
     />
-  </fragment>
+  </Fragment>
 </template>

@@ -34,15 +34,15 @@ const isDevelopment = checkIfDevelopment();
 </script>
 
 <template>
-  <v-form :value="valid">
-    <card>
+  <VForm :value="valid">
+    <Card>
       <template #title>
         {{ t('common.actions.generate') }}
       </template>
       <template #details>
-        <v-tooltip top>
+        <VTooltip top>
           <template #activator="{ on, attrs }">
-            <v-btn
+            <VBtn
               text
               fab
               depressed
@@ -50,17 +50,17 @@ const isDevelopment = checkIfDevelopment();
               to="/settings/accounting"
               v-on="on"
             >
-              <v-icon color="primary">mdi-cog</v-icon>
-            </v-btn>
+              <VIcon color="primary">mdi-cog</VIcon>
+            </VBtn>
           </template>
           <span>{{ t('profit_loss_report.settings_tooltip') }}</span>
-        </v-tooltip>
+        </VTooltip>
       </template>
-      <range-selector v-model="range" @update:valid="valid = $event" />
+      <RangeSelector v-model="range" @update:valid="valid = $event" />
       <template #buttons>
-        <v-row no-gutters>
-          <v-col>
-            <v-btn
+        <VRow no-gutters>
+          <VCol>
+            <VBtn
               color="primary"
               class="px-8"
               large
@@ -69,48 +69,48 @@ const isDevelopment = checkIfDevelopment();
               :disabled="!valid"
               @click="generate()"
             >
-              <v-icon class="mr-2">mdi-file-chart</v-icon>
+              <VIcon class="mr-2">mdi-file-chart</VIcon>
               {{ t('common.actions.generate') }}
-            </v-btn>
-          </v-col>
-          <v-col cols="auto">
-            <v-menu v-if="isDevelopment" offset-y left>
+            </VBtn>
+          </VCol>
+          <VCol cols="auto">
+            <VMenu v-if="isDevelopment" offset-y left>
               <template #activator="{ on }">
-                <v-btn
+                <VBtn
                   color="warning"
                   depressed
                   large
                   class="px-4 ml-4"
                   v-on="on"
                 >
-                  <v-icon class="mr-2">mdi-wrench</v-icon>
+                  <VIcon class="mr-2">mdi-wrench</VIcon>
                   {{ t('profit_loss_reports.debug.title') }}
-                </v-btn>
+                </VBtn>
               </template>
-              <v-list>
-                <v-list-item link @click="exportReportData()">
-                  <v-list-item-title>
+              <VList>
+                <VListItem link @click="exportReportData()">
+                  <VListItemTitle>
                     <div class="d-flex align-center">
-                      <v-icon class="mr-2">mdi-export</v-icon>
+                      <VIcon class="mr-2">mdi-export</VIcon>
                       <span>
                         {{ t('profit_loss_reports.debug.export_data') }}
                       </span>
                     </div>
-                  </v-list-item-title>
-                </v-list-item>
-                <v-list-item link @click="importReportData()">
-                  <v-list-item-title>
+                  </VListItemTitle>
+                </VListItem>
+                <VListItem link @click="importReportData()">
+                  <VListItemTitle>
                     <div class="d-flex align-center">
-                      <v-icon class="mr-2">mdi-import</v-icon>
+                      <VIcon class="mr-2">mdi-import</VIcon>
                       <span>
                         {{ t('profit_loss_reports.debug.import_data') }}
                       </span>
                     </div>
-                  </v-list-item-title>
-                </v-list-item>
-              </v-list>
-            </v-menu>
-            <v-btn
+                  </VListItemTitle>
+                </VListItem>
+              </VList>
+            </VMenu>
+            <VBtn
               v-else
               color="warning"
               depressed
@@ -118,12 +118,12 @@ const isDevelopment = checkIfDevelopment();
               class="px-4 ml-4"
               @click="exportReportData()"
             >
-              <v-icon class="mr-2">mdi-export</v-icon>
+              <VIcon class="mr-2">mdi-export</VIcon>
               {{ t('profit_loss_reports.debug.export_data') }}
-            </v-btn>
-          </v-col>
-        </v-row>
+            </VBtn>
+          </VCol>
+        </VRow>
       </template>
-    </card>
-  </v-form>
+    </Card>
+  </VForm>
 </template>

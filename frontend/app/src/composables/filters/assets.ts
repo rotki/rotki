@@ -16,6 +16,7 @@ enum AssetFilterValueKeys {
 }
 
 export type Matcher = SearchMatcher<AssetFilterKeys, AssetFilterValueKeys>;
+
 export type Filters = MatchedKeyword<AssetFilterValueKeys>;
 
 export const useAssetFilter = () => {

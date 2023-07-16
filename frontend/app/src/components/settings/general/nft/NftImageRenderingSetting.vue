@@ -99,36 +99,36 @@ const warningUrl =
           )
         }}
       </div>
-      <i18n
+      <I18n
         tag="div"
         class="mt-1"
         path="general_settings.nft_setting.subtitle.nft_images_rendering_setting_hint"
       >
         <template #link>
-          <external-link :url="warningUrl">
+          <ExternalLink :url="warningUrl">
             {{ t('common.here') }}
-          </external-link>
+          </ExternalLink>
         </template>
-      </i18n>
+      </I18n>
     </div>
-    <settings-option
+    <SettingsOption
       #default="{ error, success, update }"
       setting="renderAllNftImages"
       frontend-setting
     >
-      <v-radio-group
+      <VRadioGroup
         v-model="renderAllNftImages"
         :success-messages="success"
         :error-messages="error"
         @change="updateRenderingSetting($event, update)"
       >
-        <v-radio
+        <VRadio
           :label="
             t('general_settings.nft_setting.label.render_setting.allow_all')
           "
           :value="true"
         />
-        <v-radio
+        <VRadio
           :label="
             t(
               'general_settings.nft_setting.label.render_setting.only_allow_whitelisted'
@@ -136,16 +136,16 @@ const warningUrl =
           "
           :value="false"
         />
-      </v-radio-group>
-    </settings-option>
+      </VRadioGroup>
+    </SettingsOption>
 
-    <v-row class="mt-4">
-      <v-col>
-        <settings-option
+    <VRow class="mt-4">
+      <VCol>
+        <SettingsOption
           setting="whitelistedDomainsForNftImages"
           frontend-setting
         >
-          <v-combobox
+          <VCombobox
             v-model="whitelistedDomainsForNftImages"
             :class="css['whitelisted-input']"
             :label="t('general_settings.nft_setting.label.whitelisted_domains')"
@@ -161,16 +161,16 @@ const warningUrl =
             :disabled="renderAllNftImages"
             @change="onChange($event)"
           />
-        </settings-option>
-      </v-col>
-      <v-col cols="auto">
-        <v-btn class="mt-2" icon :disabled="!changed" @click="confirmUpdated()">
-          <v-icon>mdi-content-save</v-icon>
-        </v-btn>
-      </v-col>
-    </v-row>
+        </SettingsOption>
+      </VCol>
+      <VCol cols="auto">
+        <VBtn class="mt-2" icon :disabled="!changed" @click="confirmUpdated()">
+          <VIcon>mdi-content-save</VIcon>
+        </VBtn>
+      </VCol>
+    </VRow>
 
-    <confirm-dialog
+    <ConfirmDialog
       :display="showUpdateWhitelistConfirmation"
       :title="
         t('general_settings.nft_setting.update_whitelist_confirmation.title')
@@ -185,7 +185,7 @@ const warningUrl =
       @cancel="reset()"
       @confirm="updateWhitelist()"
     >
-      <v-sheet outlined class="pa-4 mt-4" rounded>
+      <VSheet outlined class="pa-4 mt-4" rounded>
         <ul>
           <li
             v-for="domain in whitelistedDomainsForNftImages"
@@ -195,8 +195,8 @@ const warningUrl =
             {{ domain }}
           </li>
         </ul>
-      </v-sheet>
-    </confirm-dialog>
+      </VSheet>
+    </ConfirmDialog>
   </div>
 </template>
 

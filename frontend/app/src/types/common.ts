@@ -15,6 +15,6 @@ export type ToSnakeCase<T> = T extends `${infer A}${infer B}${infer C}`
   ? Lowercase<T>
   : T extends (infer A)[]
   ? ToSnakeCase<A>[]
-  : T extends {}
+  : T extends NonNullable<unknown>
   ? { [K in keyof T as ToSnakeCase<K>]: ToSnakeCase<T[K]> }
   : T;

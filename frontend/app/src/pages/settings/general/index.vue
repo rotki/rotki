@@ -5,47 +5,47 @@ const { t } = useI18n();
 
 <template>
   <div class="general-settings mt-n8">
-    <setting-category>
+    <SettingCategory>
       <template #title>
         {{ t('general_settings.title') }}
       </template>
 
-      <usage-analytics-setting />
-      <language-setting class="mb-6" />
-      <version-update-frequency-setting />
-      <balance-save-frequency-setting />
-      <date-display-format-setting />
-      <date-input-format-setting />
-      <display-date-in-localtime-setting />
-      <btc-derivation-gap-limit-setting />
-      <treat-eth-as-eth2-setting />
-    </setting-category>
+      <UsageAnalyticsSetting />
+      <LanguageSetting class="mb-6" />
+      <VersionUpdateFrequencySetting />
+      <BalanceSaveFrequencySetting />
+      <DateDisplayFormatSetting />
+      <DateInputFormatSetting />
+      <DisplayDateInLocaltimeSetting />
+      <BtcDerivationGapLimitSetting />
+      <TreatEthAsEth2Setting />
+    </SettingCategory>
 
-    <setting-category>
+    <SettingCategory>
       <template #title>
         {{ t('general_settings.amount.title') }}
       </template>
 
-      <floating-precision-setting />
-      <main-currency-setting />
-      <numeric-separators-settings />
-      <abbreviate-number-setting />
-      <currency-location-setting />
+      <FloatingPrecisionSetting />
+      <MainCurrencySetting />
+      <NumericSeparatorsSettings />
+      <AbbreviateNumberSetting />
+      <CurrencyLocationSetting />
 
       <div>
         <strong>
           {{ t('general_settings.amount.label.resulting_format') }}
         </strong>
-        <amount-display :value="amountExample" show-currency="symbol" />
+        <AmountDisplay :value="amountExample" show-currency="symbol" />
       </div>
 
-      <rounding-settings />
-    </setting-category>
+      <RoundingSettings />
+    </SettingCategory>
 
-    <rpc-settings />
-    <price-oracle-settings />
-    <nft-settings />
-    <frontend-settings />
+    <RpcSettings />
+    <PriceOracleSettings />
+    <NftSettings />
+    <FrontendSettings />
   </div>
 </template>
 

@@ -43,8 +43,8 @@ const { dark } = useTheme();
 </script>
 
 <template>
-  <fragment>
-    <v-btn
+  <Fragment>
+    <VBtn
       small
       rounded
       block
@@ -53,7 +53,7 @@ const { dark } = useTheme();
       class="text-decoration-none"
       @click="openWatcherDialog()"
     >
-      <v-icon x-small left>mdi-bell-outline</v-icon>
+      <VIcon x-small left>mdi-bell-outline</VIcon>
       <span v-if="watchers.length > 0" class="text-caption">
         {{
           t(
@@ -68,9 +68,9 @@ const { dark } = useTheme();
       <span v-else class="text-caption">
         {{ t('loan_collateral.watchers.add') }}
       </span>
-      <premium-lock v-if="!premium" x-small />
-    </v-btn>
-    <watcher-dialog
+      <PremiumLock v-if="!premium" x-small />
+    </VBtn>
+    <WatcherDialog
       :display="showWatcherDialog"
       :title="t('loan_collateral.watchers.dialog.title')"
       :message="watcherMessage"
@@ -80,5 +80,5 @@ const { dark } = useTheme();
       :watcher-value-label="t('loan_collateral.watchers.dialog.label')"
       @cancel="showWatcherDialog = false"
     />
-  </fragment>
+  </Fragment>
 </template>

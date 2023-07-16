@@ -78,11 +78,11 @@ const expand = (item: Report) => {
 </script>
 
 <template>
-  <card outlined-body>
+  <Card outlined-body>
     <template #title>
       {{ t('profit_loss_reports.title') }}
     </template>
-    <data-table
+    <DataTable
       :headers="tableHeaders"
       :items="items"
       sort-by="timestamp"
@@ -90,7 +90,7 @@ const expand = (item: Report) => {
       :expanded.sync="expanded"
     >
       <template v-if="showUpgradeMessage" #body.prepend="{ headers }">
-        <upgrade-row
+        <UpgradeRow
           :total="limits.total"
           :limit="limits.limit"
           :colspan="headers.length"
@@ -98,16 +98,16 @@ const expand = (item: Report) => {
         />
       </template>
       <template #item.timestamp="{ item }">
-        <date-display :timestamp="item.timestamp" />
+        <DateDisplay :timestamp="item.timestamp" />
       </template>
       <template #item.startTs="{ item }">
-        <date-display no-time :timestamp="item.startTs" />
+        <DateDisplay no-time :timestamp="item.startTs" />
       </template>
       <template #item.endTs="{ item }">
-        <date-display no-time :timestamp="item.endTs" />
+        <DateDisplay no-time :timestamp="item.endTs" />
       </template>
       <template #item.free="{ item }">
-        <amount-display
+        <AmountDisplay
           force-currency
           pnl
           :value="calculateTotalProfitLoss(item).free"
@@ -115,7 +115,7 @@ const expand = (item: Report) => {
         />
       </template>
       <template #item.taxable="{ item }">
-        <amount-display
+        <AmountDisplay
           force-currency
           pnl
           :value="calculateTotalProfitLoss(item).taxable"
@@ -123,52 +123,52 @@ const expand = (item: Report) => {
         />
       </template>
       <template #item.actions="{ item }">
-        <export-report-csv v-if="latestReport(item.identifier)" icon />
-        <v-tooltip top open-delay="400">
+        <ExportReportCsv v-if="latestReport(item.identifier)" icon />
+        <VTooltip top open-delay="400">
           <template #activator="{ on, attrs }">
-            <v-btn
+            <VBtn
               icon
               color="primary"
               v-bind="attrs"
               :to="getReportUrl(item.identifier)"
               v-on="on"
             >
-              <v-icon small>mdi-open-in-app</v-icon>
-            </v-btn>
+              <VIcon small>mdi-open-in-app</VIcon>
+            </VBtn>
           </template>
           <span>{{ t('reports_table.load.tooltip') }}</span>
-        </v-tooltip>
+        </VTooltip>
 
-        <v-tooltip top open-delay="400">
+        <VTooltip top open-delay="400">
           <template #activator="{ on, attrs }">
-            <v-btn
+            <VBtn
               icon
               color="primary"
               v-bind="attrs"
               @click="deleteReport(item.identifier)"
               v-on="on"
             >
-              <v-icon small>mdi-delete</v-icon>
-            </v-btn>
+              <VIcon small>mdi-delete</VIcon>
+            </VBtn>
           </template>
           <span>{{ t('reports_table.delete.tooltip') }}</span>
-        </v-tooltip>
+        </VTooltip>
       </template>
       <template #expanded-item="{ headers, item }">
-        <table-expand-container visible :colspan="headers.length">
-          <profit-loss-overview
+        <TableExpandContainer visible :colspan="headers.length">
+          <ProfitLossOverview
             flat
             :report="item"
             :symbol="item.settings.profitCurrency"
           />
-        </table-expand-container>
+        </TableExpandContainer>
       </template>
       <template #item.expand="{ item }">
-        <row-expander
+        <RowExpander
           :expanded="expanded.includes(item)"
           @click="expand(item)"
         />
       </template>
-    </data-table>
-  </card>
+    </DataTable>
+  </Card>
 </template>

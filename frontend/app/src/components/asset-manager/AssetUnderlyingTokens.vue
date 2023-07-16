@@ -10,11 +10,11 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <table-expand-container visible :colspan="cols" :padded="false">
+  <TableExpandContainer visible :colspan="cols" :padded="false">
     <template #title>
       {{ t('asset_table.underlying_tokens') }}
     </template>
-    <v-simple-table>
+    <VSimpleTable>
       <thead>
         <tr>
           <th>{{ t('common.address') }}</th>
@@ -25,7 +25,7 @@ const { t } = useI18n();
       <tbody>
         <tr v-for="token in asset.underlyingTokens" :key="token.address">
           <td class="grow">
-            <hash-link :text="token.address" full-address />
+            <HashLink :text="token.address" full-address />
           </td>
           <td class="shrink">{{ token.tokenKind.toUpperCase() }}</td>
           <td class="shrink">
@@ -37,6 +37,6 @@ const { t } = useI18n();
           </td>
         </tr>
       </tbody>
-    </v-simple-table>
-  </table-expand-container>
+    </VSimpleTable>
+  </TableExpandContainer>
 </template>

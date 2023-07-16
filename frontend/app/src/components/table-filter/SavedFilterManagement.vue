@@ -77,9 +77,9 @@ const css = useCssModule();
 
 <template>
   <div class="d-flex">
-    <v-tooltip top>
+    <VTooltip top>
       <template #activator="{ on }">
-        <v-btn
+        <VBtn
           icon
           fab
           x-small
@@ -88,8 +88,8 @@ const css = useCssModule();
           v-on="on"
           @click="addToSavedFilter()"
         >
-          <v-icon>mdi-content-save-plus</v-icon>
-        </v-btn>
+          <VIcon>mdi-content-save-plus</VIcon>
+        </VBtn>
       </template>
       <div class="text-center" :class="css['add-tooltip']">
         <div
@@ -104,9 +104,9 @@ const css = useCssModule();
           </div>
         </div>
       </div>
-    </v-tooltip>
+    </VTooltip>
 
-    <v-menu
+    <VMenu
       v-model="open"
       offset-y
       max-width="400"
@@ -114,9 +114,9 @@ const css = useCssModule();
       :close-on-content-click="false"
     >
       <template #activator="{ on }">
-        <v-tooltip top>
+        <VTooltip top>
           <template #activator="{ on: tooltipOn }">
-            <v-btn
+            <VBtn
               color="primary"
               x-small
               fab
@@ -126,31 +126,31 @@ const css = useCssModule();
                 ...tooltipOn
               }"
             >
-              <v-icon>mdi-filter-cog</v-icon>
-            </v-btn>
+              <VIcon>mdi-filter-cog</VIcon>
+            </VBtn>
           </template>
           <span>{{ t('table_filter.saved_filters.actions.list') }}</span>
-        </v-tooltip>
+        </VTooltip>
       </template>
-      <v-list v-if="savedFilters.length > 0" class="py-4">
+      <VList v-if="savedFilters.length > 0" class="py-4">
         <div v-for="(filters, index) in savedFilters" :key="index">
-          <v-divider v-if="index > 0" class="my-3" />
+          <VDivider v-if="index > 0" class="my-3" />
           <div class="d-flex px-4">
             <div class="d-flex flex-grow-1 flex-wrap pr-4">
-              <v-chip
+              <VChip
                 v-for="(filter, filterIndex) in filters"
                 :key="filterIndex"
                 label
                 small
                 class="ma-1"
               >
-                <suggested-item chip :suggestion="filter" />
-              </v-chip>
+                <SuggestedItem chip :suggestion="filter" />
+              </VChip>
             </div>
             <div class="d-flex">
-              <v-tooltip top>
+              <VTooltip top>
                 <template #activator="{ on }">
-                  <v-btn
+                  <VBtn
                     color="green"
                     fab
                     x-small
@@ -158,17 +158,17 @@ const css = useCssModule();
                     v-on="on"
                     @click="applyFilter(filters)"
                   >
-                    <v-icon color="white">mdi-filter-check</v-icon>
-                  </v-btn>
+                    <VIcon color="white">mdi-filter-check</VIcon>
+                  </VBtn>
                 </template>
                 <span>
                   {{ t('table_filter.saved_filters.actions.apply') }}
                 </span>
-              </v-tooltip>
+              </VTooltip>
 
-              <v-tooltip top>
+              <VTooltip top>
                 <template #activator="{ on }">
-                  <v-btn
+                  <VBtn
                     icon
                     class="ml-2"
                     color="red"
@@ -177,27 +177,27 @@ const css = useCssModule();
                     v-on="on"
                     @click="deleteFilter(index)"
                   >
-                    <v-icon>mdi-delete-outline</v-icon>
-                  </v-btn>
+                    <VIcon>mdi-delete-outline</VIcon>
+                  </VBtn>
                 </template>
                 <span>
                   {{ t('table_filter.saved_filters.actions.remove') }}
                 </span>
-              </v-tooltip>
+              </VTooltip>
             </div>
           </div>
         </div>
-      </v-list>
+      </VList>
       <div v-else class="pa-4">
-        <i18n path="table_filter.saved_filters.empty">
+        <I18n path="table_filter.saved_filters.empty">
           <template #button>
-            <v-btn icon fab disabled small>
-              <v-icon>mdi-content-save-plus</v-icon>
-            </v-btn>
+            <VBtn icon fab disabled small>
+              <VIcon>mdi-content-save-plus</VIcon>
+            </VBtn>
           </template>
-        </i18n>
+        </I18n>
       </div>
-    </v-menu>
+    </VMenu>
   </div>
 </template>
 

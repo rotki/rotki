@@ -18,15 +18,15 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <stat-card :title="t('loan_collateral.title')">
-    <loan-row medium :title="t('loan_collateral.locked_collateral')">
-      <balance-display :asset="collateral.asset" :value="collateral" />
-    </loan-row>
+  <StatCard :title="t('loan_collateral.title')">
+    <LoanRow medium :title="t('loan_collateral.locked_collateral')">
+      <BalanceDisplay :asset="collateral.asset" :value="collateral" />
+    </LoanRow>
 
-    <v-divider v-if="ratio" class="my-4" />
+    <VDivider v-if="ratio" class="my-4" />
 
-    <loan-row v-if="ratio" :title="t('loan_collateral.ratio')">
-      <percentage-display v-if="ratio" :value="ratio.toFormat(2)" />
-    </loan-row>
-  </stat-card>
+    <LoanRow v-if="ratio" :title="t('loan_collateral.ratio')">
+      <PercentageDisplay v-if="ratio" :value="ratio.toFormat(2)" />
+    </LoanRow>
+  </StatCard>
 </template>

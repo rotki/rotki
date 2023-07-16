@@ -7,8 +7,8 @@ const enabled = isModuleEnabled(modules[0]);
 </script>
 
 <template>
-  <v-container>
-    <module-not-active v-if="!enabled" :modules="modules" />
-    <nft-gallery v-else :modules="modules" />
-  </v-container>
+  <VContainer>
+    <ModuleNotActive v-if="!enabled" :modules="modules" />
+    <NftGallery v-else :modules="modules" />
+  </VContainer>
 </template>

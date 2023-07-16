@@ -18,27 +18,27 @@ const { sortedQueryStatus, getKey } = useTransactionQueryStatus(onlyChains);
 </script>
 
 <template>
-  <query-status-dialog :items="sortedQueryStatus" :get-key="getKey">
+  <QueryStatusDialog :items="sortedQueryStatus" :get-key="getKey">
     <template #title>
       {{ t('transactions.query_status.title') }}
     </template>
 
     <template #current>
-      <transaction-query-status-current
+      <TransactionQueryStatusCurrent
         :only-chains="onlyChains"
         class="px-6 pb-4 text-caption"
       />
     </template>
 
     <template #item="{ item }">
-      <adaptive-wrapper>
-        <evm-chain-icon :chain="item.evmChain" size="20px" />
-      </adaptive-wrapper>
-      <transaction-query-status-line :item="item" class="ms-2" />
+      <AdaptiveWrapper>
+        <EvmChainIcon :chain="item.evmChain" size="20px" />
+      </AdaptiveWrapper>
+      <TransactionQueryStatusLine :item="item" class="ms-2" />
     </template>
 
     <template #tooltip="{ item }">
-      <i18n
+      <I18n
         :path="
           item.period[0] === 0
             ? 'transactions.query_status.latest_period_end_date'
@@ -46,16 +46,16 @@ const { sortedQueryStatus, getKey } = useTransactionQueryStatus(onlyChains);
         "
       >
         <template #start>
-          <date-display :timestamp="item.period[0]" />
+          <DateDisplay :timestamp="item.period[0]" />
         </template>
         <template #end>
-          <date-display :timestamp="item.period[1]" />
+          <DateDisplay :timestamp="item.period[1]" />
         </template>
-      </i18n>
+      </I18n>
     </template>
 
     <template #steps="{ item }">
-      <transaction-query-status-steps :item="item" />
+      <TransactionQueryStatusSteps :item="item" />
     </template>
-  </query-status-dialog>
+  </QueryStatusDialog>
 </template>

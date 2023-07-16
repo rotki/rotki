@@ -25,7 +25,7 @@ const attrs = useAttrs();
 </script>
 
 <template>
-  <component
+  <Component
     :is="tag"
     class="wrapper"
     :class="{ 'wrapper--inverted': dark }"
@@ -33,7 +33,7 @@ const attrs = useAttrs();
     :style="{ width, height }"
   >
     <slot />
-  </component>
+  </Component>
 </template>
 
 <style scoped lang="scss">

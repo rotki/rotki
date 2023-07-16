@@ -61,7 +61,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <v-snackbar
+  <VSnackbar
     v-if="isPackaged"
     :value="showUpdatePopup"
     class="update-popup"
@@ -75,21 +75,17 @@ onMounted(async () => {
     rounded
     width="380px"
   >
-    <v-row v-if="!restarting" align="center">
-      <v-col cols="auto">
-        <v-icon v-if="error" large color="error">
+    <VRow v-if="!restarting" align="center">
+      <VCol cols="auto">
+        <VIcon v-if="error" large color="error">
           mdi-alert-circle-outline
-        </v-icon>
-        <v-icon
-          v-else-if="!downloadReady && !downloading"
-          large
-          color="primary"
-        >
+        </VIcon>
+        <VIcon v-else-if="!downloadReady && !downloading" large color="primary">
           mdi-arrow-up-bold-circle
-        </v-icon>
-        <v-icon v-else large color="primary">mdi-arrow-down-bold-circle</v-icon>
-      </v-col>
-      <v-col class="text-body-1">
+        </VIcon>
+        <VIcon v-else large color="primary">mdi-arrow-down-bold-circle</VIcon>
+      </VCol>
+      <VCol class="text-body-1">
         <span v-if="error" class="error--text">
           {{ error }}
         </span>
@@ -97,27 +93,27 @@ onMounted(async () => {
           {{ t('update_popup.download_progress') }}
         </span>
         <div v-else-if="!downloadReady">
-          <i18n tag="div" path="update_popup.messages">
+          <I18n tag="div" path="update_popup.messages">
             <template #releaseNotes>
-              <base-external-link
+              <BaseExternalLink
                 :text="t('update_popup.release_notes')"
                 :href="releaseNotesLink"
               />
             </template>
-          </i18n>
+          </I18n>
           <div>{{ t('update_popup.download_nudge') }}</div>
         </div>
         <span v-else>{{ t('update_popup.downloaded') }}</span>
-      </v-col>
-    </v-row>
-    <v-row v-else align="center">
-      <v-col cols="auto">
-        <v-icon large color="primary"> mdi-spin mdi-loading </v-icon>
-      </v-col>
-      <v-col class="text-body-1">{{ t('update_popup.restart') }}</v-col>
-    </v-row>
+      </VCol>
+    </VRow>
+    <VRow v-else align="center">
+      <VCol cols="auto">
+        <VIcon large color="primary"> mdi-spin mdi-loading </VIcon>
+      </VCol>
+      <VCol class="text-body-1">{{ t('update_popup.restart') }}</VCol>
+    </VRow>
 
-    <v-progress-linear
+    <VProgressLinear
       v-if="downloading"
       :value="percentage"
       class="mt-2"
@@ -129,19 +125,19 @@ onMounted(async () => {
           {{ t('update_popup.progress', { percentage: Math.ceil(value) }) }}
         </strong>
       </template>
-    </v-progress-linear>
+    </VProgressLinear>
 
     <template #action="{ attrs }">
       <div v-if="error">
-        <v-btn text v-bind="attrs" @click="dismiss()">
+        <VBtn text v-bind="attrs" @click="dismiss()">
           {{ t('common.actions.dismiss') }}
-        </v-btn>
+        </VBtn>
       </div>
       <div v-else-if="!downloading && !restarting">
-        <v-btn text v-bind="attrs" @click="dismiss()">
+        <VBtn text v-bind="attrs" @click="dismiss()">
           {{ t('common.actions.cancel') }}
-        </v-btn>
-        <v-btn
+        </VBtn>
+        <VBtn
           v-if="!downloadReady"
           color="primary"
           text
@@ -149,13 +145,13 @@ onMounted(async () => {
           @click="update()"
         >
           {{ t('common.actions.update') }}
-        </v-btn>
-        <v-btn v-else color="primary" text v-bind="attrs" @click="install()">
+        </VBtn>
+        <VBtn v-else color="primary" text v-bind="attrs" @click="install()">
           {{ t('common.actions.install') }}
-        </v-btn>
+        </VBtn>
       </div>
     </template>
-  </v-snackbar>
+  </VSnackbar>
 </template>
 
 <style scoped lang="scss">

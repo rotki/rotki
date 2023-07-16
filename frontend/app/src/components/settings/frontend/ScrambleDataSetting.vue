@@ -20,13 +20,13 @@ const css = useCssModule();
 
 <template>
   <div>
-    <settings-option
+    <SettingsOption
       #default="{ error, success, update }"
       setting="scrambleData"
       session-setting
       :error-message="t('frontend_settings.validation.scramble.error')"
     >
-      <v-switch
+      <VSwitch
         v-model="scrambleData"
         class="general-settings__fields__scramble-data"
         :label="t('frontend_settings.label.scramble')"
@@ -34,15 +34,15 @@ const css = useCssModule();
         :error-messages="error"
         @change="update($event)"
       />
-    </settings-option>
-    <settings-option
+    </SettingsOption>
+    <SettingsOption
       #default="{ error, success, update }"
       class="pt-4"
       setting="scrambleMultiplier"
       session-setting
     >
       <div :class="css.multiplier">
-        <amount-input
+        <AmountInput
           v-model="scrambleMultiplier"
           class="general-settings__fields__scramble-multiplier"
           :label="t('frontend_settings.label.scramble_multiplier')"
@@ -54,18 +54,18 @@ const css = useCssModule();
           @change="update($event)"
         >
           <template #append>
-            <v-btn
+            <VBtn
               icon
               class="mt-n2"
               :disabled="!scrambleData"
               @click="randomMultiplier()"
             >
-              <v-icon>mdi-refresh</v-icon>
-            </v-btn>
+              <VIcon>mdi-refresh</VIcon>
+            </VBtn>
           </template>
-        </amount-input>
+        </AmountInput>
       </div>
-    </settings-option>
+    </SettingsOption>
   </div>
 </template>
 

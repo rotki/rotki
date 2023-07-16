@@ -1,12 +1,12 @@
 <template>
-  <v-menu offset-x left min-width="500" :close-on-content-click="false">
+  <VMenu offset-x left min-width="500" :close-on-content-click="false">
     <template #activator="{ on }">
-      <v-btn icon v-on="on">
-        <v-icon>mdi-cog</v-icon>
-      </v-btn>
+      <VBtn icon v-on="on">
+        <VIcon>mdi-cog</VIcon>
+      </VBtn>
     </template>
     <div class="pa-4">
-      <nft-image-rendering-setting />
+      <NftImageRenderingSetting />
     </div>
-  </v-menu>
+  </VMenu>
 </template>

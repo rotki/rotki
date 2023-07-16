@@ -15,12 +15,6 @@ import {
   type XpubPayload
 } from '@/types/blockchain/accounts';
 
-const { t } = useI18n();
-
-type IndexedBlockchainAccountWithBalance = BlockchainAccountWithBalance & {
-  index?: number;
-};
-
 const props = withDefaults(
   defineProps<{
     balances: BlockchainAccountWithBalance[];
@@ -39,6 +33,12 @@ const emit = defineEmits<{
   (e: 'delete-xpub', payload: XpubPayload): void;
   (e: 'addresses-selected', selected: string[]): void;
 }>();
+
+const { t } = useI18n();
+
+type IndexedBlockchainAccountWithBalance = BlockchainAccountWithBalance & {
+  index?: number;
+};
 
 const { balances, blockchain, visibleTags, selected, loopring } = toRefs(props);
 
@@ -408,8 +408,8 @@ defineExpose({
 </script>
 
 <template>
-  <v-sheet rounded outlined>
-    <data-table
+  <VSheet rounded outlined>
+    <DataTable
       v-bind="rootAttrs"
       :headers="tableHeaders"
       :items="visibleBalances"
@@ -425,7 +425,7 @@ defineExpose({
       v-on="rootListeners"
     >
       <template #header.accountSelection>
-        <v-simple-checkbox
+        <VSimpleCheckbox
           :disabled="nonExpandedBalances.length === 0"
           :ripple="false"
           :value="allSelected"
@@ -434,7 +434,7 @@ defineExpose({
         />
       </template>
       <template #item.accountSelection="{ item }">
-        <v-simple-checkbox
+        <VSimpleCheckbox
           :ripple="false"
           data-cy="account-balances-item-checkbox"
           color="primary"
@@ -443,18 +443,18 @@ defineExpose({
         />
       </template>
       <template #item.label="{ item }">
-        <v-row class="pt-3 pb-2">
-          <v-col cols="12" class="account-balance-table__account">
-            <labeled-address-display :account="item" />
-            <tag-display :tags="item.tags" />
-          </v-col>
-        </v-row>
+        <VRow class="pt-3 pb-2">
+          <VCol cols="12" class="account-balance-table__account">
+            <LabeledAddressDisplay :account="item" />
+            <TagDisplay :tags="item.tags" />
+          </VCol>
+        </VRow>
       </template>
       <template #item.balance.amount="{ item }">
-        <amount-display :value="item.balance.amount" :loading="loading" />
+        <AmountDisplay :value="item.balance.amount" :loading="loading" />
       </template>
       <template #item.balance.usdValue="{ item }">
-        <amount-display
+        <AmountDisplay
           fiat-currency="USD"
           :value="item.balance.usdValue"
           show-currency="symbol"
@@ -462,20 +462,20 @@ defineExpose({
         />
       </template>
       <template v-if="isEth2" #item.ownershipPercentage="{ item }">
-        <percentage-display :value="item.ownershipPercentage" />
+        <PercentageDisplay :value="item.ownershipPercentage" />
       </template>
       <template
         v-if="hasTokenDetection && !loopring"
         #item.numOfDetectedTokens="{ item }"
       >
-        <token-detection
+        <TokenDetection
           :address="item.address"
           :loading="loading"
           :blockchain="blockchain"
         />
       </template>
       <template v-if="!loopring" #item.actions="{ item }">
-        <row-actions
+        <RowActions
           class="account-balance-table__actions"
           :no-delete="true"
           :edit-tooltip="t('account_balances.edit_tooltip')"
@@ -484,7 +484,7 @@ defineExpose({
         />
       </template>
       <template v-if="balances.length > 0" #body.append="{ isMobile }">
-        <row-append
+        <RowAppend
           :label="t('common.total')"
           :class-name="{ 'flex-column': isMobile }"
           :left-patch-colspan="1"
@@ -492,14 +492,14 @@ defineExpose({
         >
           <template #custom-columns>
             <td class="text-end" :class="mobileClass">
-              <amount-display
+              <AmountDisplay
                 :loading="loading"
                 :value="total.amount"
                 :asset="xs ? blockchain : undefined"
               />
             </td>
             <td class="text-end" :class="mobileClass">
-              <amount-display
+              <AmountDisplay
                 :loading="loading"
                 fiat-currency="USD"
                 show-currency="symbol"
@@ -507,26 +507,26 @@ defineExpose({
               />
             </td>
           </template>
-        </row-append>
+        </RowAppend>
       </template>
       <template #expanded-item="{ headers, item }">
-        <table-expand-container visible :colspan="headers.length">
-          <account-balance-details
+        <TableExpandContainer visible :colspan="headers.length">
+          <AccountBalanceDetails
             :blockchain="blockchain"
             :loopring="loopring"
             :address="item.address"
           />
-        </table-expand-container>
+        </TableExpandContainer>
       </template>
       <template #item.expand="{ item }">
-        <row-expander
+        <RowExpander
           v-if="hasTokenDetection && (hasDetails(item.address) || loopring)"
           :expanded="expanded.includes(item)"
           @click="expanded = expanded.includes(item) ? [] : [item]"
         />
       </template>
       <template #group.header="{ group, isOpen, toggle }">
-        <account-group-header
+        <AccountGroupHeader
           :group="group ? group : ''"
           :items="getItems(group.split(':')[0], group.split(':')[1])"
           :expanded="isOpen"
@@ -537,10 +537,10 @@ defineExpose({
         />
       </template>
       <template v-if="isEth2" #body.prepend="{ headers }">
-        <eth2-validator-limit-row :colspan="headers.length" />
+        <Eth2ValidatorLimitRow :colspan="headers.length" />
       </template>
-    </data-table>
-  </v-sheet>
+    </DataTable>
+  </VSheet>
 </template>
 
 <style scoped lang="scss">

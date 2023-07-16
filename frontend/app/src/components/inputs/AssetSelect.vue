@@ -172,7 +172,7 @@ const listeners = useListeners();
 </script>
 
 <template>
-  <v-autocomplete
+  <VAutocomplete
     ref="autoCompleteInput"
     :value="value"
     :disabled="disabled"
@@ -203,9 +203,9 @@ const listeners = useListeners();
     <template #selection="{ item }">
       <template v-if="item && item.identifier">
         <div v-if="item.assetType === 'nft'" class="overflow-hidden">
-          <nft-details :identifier="item.identifier" size="40px" />
+          <NftDetails :identifier="item.identifier" size="40px" />
         </div>
-        <asset-details-base
+        <AssetDetailsBase
           v-else
           class="asset-select__details ml-2"
           :asset="item"
@@ -213,42 +213,42 @@ const listeners = useListeners();
       </template>
     </template>
     <template #item="{ item }">
-      <nft-details
+      <NftDetails
         v-if="item.assetType === 'nft'"
         :identifier="item.identifier"
         size="40px"
       />
       <template v-else>
         <div class="pr-4">
-          <v-img
+          <VImg
             v-if="item.imageUrl"
             width="40px"
             height="40px"
             contain
             :src="item.imageUrl"
           />
-          <asset-icon v-else size="40px" :identifier="item.identifier" />
+          <AssetIcon v-else size="40px" :identifier="item.identifier" />
         </div>
-        <v-list-item-content
+        <VListItemContent
           :id="`asset-${getValidSelectorFromEvmAddress(
             item.identifier.toLocaleLowerCase()
           )}`"
         >
           <template v-if="!item.isCustomAsset">
-            <v-list-item-title class="font-weight-medium">
+            <VListItemTitle class="font-weight-medium">
               {{ item.symbol }}
-            </v-list-item-title>
-            <v-list-item-subtitle>{{ item.name }}</v-list-item-subtitle>
+            </VListItemTitle>
+            <VListItemSubtitle>{{ item.name }}</VListItemSubtitle>
           </template>
           <template v-else>
-            <v-list-item-title class="font-weight-medium">
+            <VListItemTitle class="font-weight-medium">
               {{ item.name }}
-            </v-list-item-title>
-            <v-list-item-subtitle>
+            </VListItemTitle>
+            <VListItemSubtitle>
               {{ item.customAssetType }}
-            </v-list-item-subtitle>
+            </VListItemSubtitle>
           </template>
-        </v-list-item-content>
+        </VListItemContent>
       </template>
     </template>
     <template #no-data>
@@ -258,7 +258,7 @@ const listeners = useListeners();
     </template>
     <template #append>
       <div v-if="loading" class="fill-height d-flex items-center">
-        <v-progress-circular
+        <VProgressCircular
           class="asset-select__loading"
           color="primary"
           indeterminate
@@ -267,7 +267,7 @@ const listeners = useListeners();
         />
       </div>
     </template>
-  </v-autocomplete>
+  </VAutocomplete>
 </template>
 
 <style scoped lang="scss">

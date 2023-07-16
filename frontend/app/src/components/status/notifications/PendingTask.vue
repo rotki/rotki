@@ -16,40 +16,40 @@ const time = computed(() => dayjs(task.value.time).format('LLL'));
 </script>
 
 <template>
-  <card outlined :class="css.task">
-    <v-row align="center" no-gutters class="flex-nowrap">
-      <v-col>
-        <v-row no-gutters>
-          <v-col>
+  <Card outlined :class="css.task">
+    <VRow align="center" no-gutters class="flex-nowrap">
+      <VCol>
+        <VRow no-gutters>
+          <VCol>
             <div :class="css.title" class="text--primary">
               {{ task.meta.title }}
             </div>
-          </v-col>
-        </v-row>
-        <v-row
+          </VCol>
+        </VRow>
+        <VRow
           v-if="task.meta.description"
           no-gutters
           :class="css.description"
           class="text--secondary"
         >
           {{ task.meta.description }}
-        </v-row>
-        <v-row class="text-caption px-3" :class="css.date">
+        </VRow>
+        <VRow class="text-caption px-3" :class="css.date">
           {{ time }}
-        </v-row>
-      </v-col>
-      <v-col cols="auto">
-        <v-progress-circular
+        </VRow>
+      </VCol>
+      <VCol cols="auto">
+        <VProgressCircular
           v-if="isHistory"
           size="20"
           width="2"
           :value="progress"
           color="primary"
         />
-        <v-icon v-else color="primary">mdi-spin mdi-loading</v-icon>
-      </v-col>
-    </v-row>
-  </card>
+        <VIcon v-else color="primary">mdi-spin mdi-loading</VIcon>
+      </VCol>
+    </VRow>
+  </Card>
 </template>
 
 <style module lang="scss">

@@ -52,8 +52,8 @@ onMounted(() => {
 
 <template>
   <div>
-    <date-format-help v-model="formatHelp" />
-    <settings-option
+    <DateFormatHelp v-model="formatHelp" />
+    <SettingsOption
       #default="{ error, success, update }"
       setting="dateDisplayFormat"
       :error-message="
@@ -62,7 +62,7 @@ onMounted(() => {
       :success-message="successMessage"
       @finished="resetDateDisplayFormat()"
     >
-      <v-text-field
+      <VTextField
         v-model="dateDisplayFormat"
         outlined
         class="general-settings__fields__date-display-format"
@@ -81,27 +81,27 @@ onMounted(() => {
         @change="callIfValid($event, update)"
       >
         <template #append>
-          <v-btn small icon @click="formatHelp = true">
-            <v-icon small> mdi-information </v-icon>
-          </v-btn>
+          <VBtn small icon @click="formatHelp = true">
+            <VIcon small> mdi-information </VIcon>
+          </VBtn>
         </template>
         <template #append-outer>
-          <v-tooltip top open-delay="400">
+          <VTooltip top open-delay="400">
             <template #activator="{ on, attrs }">
-              <v-btn
+              <VBtn
                 class="general-settings__date-restore mt-n2"
                 icon
                 v-bind="attrs"
                 @click="update(defaultDateDisplayFormat)"
                 v-on="on"
               >
-                <v-icon> mdi-backup-restore </v-icon>
-              </v-btn>
+                <VIcon> mdi-backup-restore </VIcon>
+              </VBtn>
             </template>
             <span>{{ t('general_settings.date_display_tooltip') }}</span>
-          </v-tooltip>
+          </VTooltip>
         </template>
-      </v-text-field>
-    </settings-option>
+      </VTextField>
+    </SettingsOption>
   </div>
 </template>

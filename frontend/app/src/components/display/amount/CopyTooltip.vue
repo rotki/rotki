@@ -9,7 +9,7 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <v-tooltip top open-delay="200ms">
+  <VTooltip top open-delay="200ms">
     <template #activator="{ on, attrs }">
       <span
         data-cy="display-amount"
@@ -41,7 +41,7 @@ const { t } = useI18n();
         </div>
       </div>
     </div>
-  </v-tooltip>
+  </VTooltip>
 </template>
 
 <style module lang="scss">

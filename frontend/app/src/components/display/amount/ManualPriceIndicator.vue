@@ -17,13 +17,13 @@ const isManualPrice = isManualAssetPrice(priceAsset);
 
 <template>
   <div v-if="isManualPrice" class="mr-2 d-inline-block">
-    <v-tooltip bottom>
+    <VTooltip bottom>
       <template #activator="{ on }">
-        <v-icon class="mr-1" small color="warning" v-on="on">
+        <VIcon class="mr-1" small color="warning" v-on="on">
           mdi-auto-fix
-        </v-icon>
+        </VIcon>
       </template>
       <span>{{ t('amount_display.manual_tooltip') }}</span>
-    </v-tooltip>
+    </VTooltip>
   </div>
 </template>

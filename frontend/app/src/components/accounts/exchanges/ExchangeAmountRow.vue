@@ -22,7 +22,7 @@ const name = computed<string>(() => {
 <template>
   <div class="d-flex flex-row">
     <div class="ml-2 mr-6">
-      <location-display
+      <LocationDisplay
         v-if="exchange"
         :identifier="exchange"
         size="48px"
@@ -34,7 +34,7 @@ const name = computed<string>(() => {
         {{ name }}
       </span>
       <span class="secondary--text text--lighten-5">
-        <amount-display
+        <AmountDisplay
           show-currency="symbol"
           fiat-currency="USD"
           :value="balance"

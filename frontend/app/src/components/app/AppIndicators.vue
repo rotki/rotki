@@ -11,43 +11,43 @@ const { showPinned, showNotesSidebar, showNotificationBar, showHelpBar } =
 </script>
 
 <template>
-  <fragment>
+  <Fragment>
     <div class="d-flex overflow-hidden">
-      <sync-indicator />
-      <global-search v-if="smAndUp" />
-      <back-button />
+      <SyncIndicator />
+      <GlobalSearch v-if="smAndUp" />
+      <BackButton />
     </div>
-    <v-spacer />
+    <VSpacer />
     <div class="d-flex overflow-hidden fill-height align-center">
-      <get-premium-button />
-      <v-btn v-if="isDevelopment && smAndUp" to="/playground" icon>
-        <v-icon>mdi-crane</v-icon>
-      </v-btn>
-      <app-update-indicator />
-      <user-notes-indicator
+      <GetPremiumButton />
+      <VBtn v-if="isDevelopment && smAndUp" to="/playground" icon>
+        <VIcon>mdi-crane</VIcon>
+      </VBtn>
+      <AppUpdateIndicator />
+      <UserNotesIndicator
         :visible="showNotesSidebar"
         @visible:update="showNotesSidebar = $event"
       />
-      <pinned-indicator
+      <PinnedIndicator
         :visible="showPinned"
         @visible:update="showPinned = $event"
       />
-      <theme-control v-if="smAndUp" :dark-mode-enabled="darkModeEnabled" />
-      <notification-indicator
+      <ThemeControl v-if="smAndUp" :dark-mode-enabled="darkModeEnabled" />
+      <NotificationIndicator
         :visible="showNotificationBar"
         class="app__app-bar__button"
         @click="showNotificationBar = !showNotificationBar"
       />
-      <currency-dropdown class="app__app-bar__button" />
-      <privacy-mode-dropdown v-if="smAndUp" class="app__app-bar__button" />
-      <user-dropdown class="app__app-bar__button" />
-      <help-indicator
+      <CurrencyDropdown class="app__app-bar__button" />
+      <PrivacyModeDropdown v-if="smAndUp" class="app__app-bar__button" />
+      <UserDropdown class="app__app-bar__button" />
+      <HelpIndicator
         v-if="smAndUp"
         :visible="showHelpBar"
         @visible:update="showHelpBar = $event"
       />
     </div>
-  </fragment>
+  </Fragment>
 </template>
 
 <style module lang="scss">

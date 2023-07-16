@@ -9,13 +9,13 @@ const { hasRunningTasks, tasks } = storeToRefs(store);
 
 <template>
   <div v-if="hasRunningTasks">
-    <collapsed-pending-tasks v-model="expanded" :count="tasks.length" />
+    <CollapsedPendingTasks v-model="expanded" :count="tasks.length" />
     <div v-if="expanded" class="pl-2" :class="css.tasks">
-      <pending-task v-for="task in tasks" :key="task.id" :task="task" />
+      <PendingTask v-for="task in tasks" :key="task.id" :task="task" />
     </div>
   </div>
   <div v-else>
-    <no-tasks-running />
+    <NoTasksRunning />
   </div>
 </template>
 

@@ -12,10 +12,6 @@ import { isNft } from '@/utils/nft';
 import { toSentenceCase } from '@/utils/text';
 import { BalanceType } from '@/types/balances';
 
-const { t } = useI18n();
-
-type IndexedBalanceSnapshot = BalanceSnapshot & { index: number };
-
 const props = defineProps<{
   value: Snapshot;
   timestamp: number;
@@ -25,6 +21,10 @@ const emit = defineEmits<{
   (e: 'update:step', step: number): void;
   (e: 'input', value: Snapshot): void;
 }>();
+
+const { t } = useI18n();
+
+type IndexedBalanceSnapshot = BalanceSnapshot & { index: number };
 
 const css = useCssModule();
 
@@ -396,18 +396,18 @@ const tableContainer = computed(() => get(tableRef)?.$el);
 
 <template>
   <div>
-    <v-row class="pa-4">
-      <v-col md="6">
-        <asset-select
+    <VRow class="pa-4">
+      <VCol md="6">
+        <AssetSelect
           v-model="assetSearch"
           outlined
           hide-details
           clearable
           :label="t('dashboard.snapshot.search_asset')"
         />
-      </v-col>
-    </v-row>
-    <data-table
+      </VCol>
+    </VRow>
+    <DataTable
       ref="tableRef"
       class="table-inside-dialog"
       :class="css['table-inside-dialog']"
@@ -426,7 +426,7 @@ const tableContainer = computed(() => get(tableRef)?.$el);
       </template>
 
       <template #item.assetIdentifier="{ item }">
-        <asset-details
+        <AssetDetails
           v-if="!isNft(item.assetIdentifier)"
           :class="css.asset"
           :asset-styled="{ padding: '2px 0.75rem' }"
@@ -435,20 +435,20 @@ const tableContainer = computed(() => get(tableRef)?.$el);
           :enable-association="false"
         />
         <div v-else>
-          <nft-details :identifier="item.assetIdentifier" :class="css.asset" />
+          <NftDetails :identifier="item.assetIdentifier" :class="css.asset" />
         </div>
       </template>
 
       <template #item.amount="{ item }">
-        <amount-display :value="item.amount" />
+        <AmountDisplay :value="item.amount" />
       </template>
 
       <template #item.usdValue="{ item }">
-        <amount-display :value="item.usdValue" fiat-currency="USD" />
+        <AmountDisplay :value="item.usdValue" fiat-currency="USD" />
       </template>
 
       <template #item.action="{ item }">
-        <row-actions
+        <RowActions
           :edit-tooltip="t('dashboard.snapshot.edit.dialog.actions.edit_item')"
           :delete-tooltip="
             t('dashboard.snapshot.edit.dialog.actions.delete_item')
@@ -457,27 +457,27 @@ const tableContainer = computed(() => get(tableRef)?.$el);
           @delete-click="deleteClick(item)"
         />
       </template>
-    </data-table>
-    <v-sheet elevation="10" class="d-flex align-center px-4 py-2">
+    </DataTable>
+    <VSheet elevation="10" class="d-flex align-center px-4 py-2">
       <div>
         <div class="text-caption">{{ t('common.total') }}:</div>
         <div class="font-weight-bold text-h6 mt-n1">
-          <amount-display :value="total" fiat-currency="USD" />
+          <AmountDisplay :value="total" fiat-currency="USD" />
         </div>
       </div>
-      <v-spacer />
-      <v-btn text color="primary" class="mr-4" @click="add()">
-        <v-icon class="mr-2">mdi-plus</v-icon>
+      <VSpacer />
+      <VBtn text color="primary" class="mr-4" @click="add()">
+        <VIcon class="mr-2">mdi-plus</VIcon>
         <span>
           {{ t('dashboard.snapshot.edit.dialog.actions.add_new_entry') }}
         </span>
-      </v-btn>
-      <v-btn color="primary" @click="updateStep(2)">
+      </VBtn>
+      <VBtn color="primary" @click="updateStep(2)">
         {{ t('common.actions.next') }}
-      </v-btn>
-    </v-sheet>
+      </VBtn>
+    </VSheet>
 
-    <big-dialog
+    <BigDialog
       :display="openDialog"
       :title="
         indexToEdit !== null
@@ -489,7 +489,7 @@ const tableContainer = computed(() => get(tableRef)?.$el);
       @confirm="trySubmit()"
       @cancel="clearEditDialog()"
     >
-      <edit-balances-snapshot-form
+      <EditBalancesSnapshotForm
         v-if="form"
         :edit="!!indexToEdit"
         :form="form"
@@ -499,14 +499,14 @@ const tableContainer = computed(() => get(tableRef)?.$el);
         @update:asset="checkAssetExist($event)"
       />
 
-      <confirm-snapshot-conflict-replacement-dialog
+      <ConfirmSnapshotConflictReplacementDialog
         :snapshot="conflictedBalanceSnapshot"
         @cancel="cancelConvertToEdit()"
         @confirm="convertToEdit()"
       />
-    </big-dialog>
+    </BigDialog>
 
-    <confirm-dialog
+    <ConfirmDialog
       :display="showDeleteConfirmation"
       :title="t('dashboard.snapshot.edit.dialog.balances.delete_title')"
       :message="
@@ -517,13 +517,13 @@ const tableContainer = computed(() => get(tableRef)?.$el);
       @confirm="confirmDelete()"
     >
       <div class="mt-4">
-        <edit-balances-snapshot-location-selector
+        <EditBalancesSnapshotLocationSelector
           v-model="locationToDelete"
           :locations="existingLocations"
           :preview-location-balance="previewDeleteLocationBalance"
         />
       </div>
-    </confirm-dialog>
+    </ConfirmDialog>
   </div>
 </template>
 

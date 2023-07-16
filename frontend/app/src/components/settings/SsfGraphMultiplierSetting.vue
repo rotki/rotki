@@ -3,11 +3,11 @@ import useVuelidate from '@vuelidate/core';
 import { helpers, minValue } from '@vuelidate/validators';
 import { toMessages } from '@/utils/validation';
 
-const { t } = useI18n();
-
 const emit = defineEmits<{
   (e: 'updated'): void;
 }>();
+
+const { t } = useI18n();
 
 const updated = () => emit('updated');
 
@@ -58,19 +58,19 @@ onMounted(() => {
 
 <template>
   <div>
-    <card-title class="font-weight-medium mb-2">
+    <CardTitle class="font-weight-medium mb-2">
       {{ t('statistics_graph_settings.multiplier.title') }}
-    </card-title>
-    <v-card-subtitle class="pa-0 mb-4">
+    </CardTitle>
+    <VCardSubtitle class="pa-0 mb-4">
       {{ t('statistics_graph_settings.multiplier.subtitle') }}
-    </v-card-subtitle>
-    <settings-option
+    </VCardSubtitle>
+    <SettingsOption
       #default="{ error, success, update }"
       setting="ssfGraphMultiplier"
       :transform="transform"
       @finished="finished()"
     >
-      <v-text-field
+      <VTextField
         v-model="multiplier"
         outlined
         min="0"
@@ -80,15 +80,15 @@ onMounted(() => {
         :error-messages="error || toMessages(v$.multiplier)"
         @change="callIfValid($event, update)"
       />
-    </settings-option>
+    </SettingsOption>
 
-    <v-card-subtitle class="pa-0 mt-2">
+    <VCardSubtitle class="pa-0 mt-2">
       <span v-if="period === 0">
         {{ t('statistics_graph_settings.multiplier.off') }}
       </span>
       <span v-else>
         {{ t('statistics_graph_settings.multiplier.on', { period }) }}
       </span>
-    </v-card-subtitle>
+    </VCardSubtitle>
   </div>
 </template>

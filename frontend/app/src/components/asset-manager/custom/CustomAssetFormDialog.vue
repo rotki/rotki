@@ -22,7 +22,7 @@ const { openDialog, submitting, closeDialog, trySubmit } = useCustomAssetForm();
 </script>
 
 <template>
-  <big-dialog
+  <BigDialog
     :display="openDialog"
     :title="title"
     :subtitle="subtitle"
@@ -31,6 +31,6 @@ const { openDialog, submitting, closeDialog, trySubmit } = useCustomAssetForm();
     @confirm="trySubmit()"
     @cancel="closeDialog()"
   >
-    <custom-asset-form :types="types" :editable-item="editableItem" />
-  </big-dialog>
+    <CustomAssetForm :types="types" :editable-item="editableItem" />
+  </BigDialog>
 </template>

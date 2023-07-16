@@ -169,7 +169,7 @@ const refreshHistoricalPrice = async (item: EditableMissingPrice) => {
 
 <template>
   <div>
-    <data-table
+    <DataTable
       ref="tableRef"
       class="table-inside-dialog"
       :class="{
@@ -183,16 +183,16 @@ const refreshHistoricalPrice = async (item: EditableMissingPrice) => {
       <template #item="{ item }">
         <tr :key="createKey(item)">
           <td :class="isPinned ? 'px-2' : ''">
-            <asset-details link :asset="item.fromAsset" />
+            <AssetDetails link :asset="item.fromAsset" />
           </td>
           <td :class="isPinned ? 'px-2' : ''">
-            <asset-details link :asset="item.toAsset" />
+            <AssetDetails link :asset="item.toAsset" />
           </td>
           <td :class="isPinned ? 'px-2' : ''">
-            <date-display :timestamp="item.time" />
+            <DateDisplay :timestamp="item.time" />
           </td>
           <td :class="isPinned ? 'px-2 py-1' : 'py-3'">
-            <amount-input
+            <AmountInput
               v-model="item.price"
               :class="$style.input"
               class="mb-n2"
@@ -217,14 +217,14 @@ const refreshHistoricalPrice = async (item: EditableMissingPrice) => {
               @blur="updatePrice(item)"
             >
               <template #append>
-                <v-tooltip
+                <VTooltip
                   v-if="item.rateLimited"
                   bottom
                   max-width="300"
                   :disabled="refreshing"
                 >
                   <template #activator="{ on }">
-                    <v-btn
+                    <VBtn
                       :disabled="!!item.price || refreshing"
                       :loading="refreshing"
                       class="mr-n3"
@@ -234,8 +234,8 @@ const refreshHistoricalPrice = async (item: EditableMissingPrice) => {
                       v-on="on"
                       @click="refreshHistoricalPrice(item)"
                     >
-                      <v-icon>mdi-refresh</v-icon>
-                    </v-btn>
+                      <VIcon>mdi-refresh</VIcon>
+                    </VBtn>
                   </template>
                   <span>
                     {{
@@ -244,13 +244,13 @@ const refreshHistoricalPrice = async (item: EditableMissingPrice) => {
                       )
                     }}
                   </span>
-                </v-tooltip>
+                </VTooltip>
               </template>
-            </amount-input>
+            </AmountInput>
           </td>
         </tr>
       </template>
-    </data-table>
+    </DataTable>
     <slot name="actions" :items="formattedItems" />
   </div>
 </template>

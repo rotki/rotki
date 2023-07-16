@@ -9,6 +9,14 @@ interface StakingInfo {
   img?: boolean;
 }
 
+const props = defineProps({
+  location: {
+    required: false,
+    type: String as PropType<'eth2' | 'liquity' | 'kraken' | null>,
+    default: null
+  }
+});
+
 const iconSize = '64px';
 
 const pages = {
@@ -22,14 +30,6 @@ const pages = {
     () => import('@/components/staking/kraken/KrakenPage.vue')
   )
 };
-
-const props = defineProps({
-  location: {
-    required: false,
-    type: String as PropType<'eth2' | 'liquity' | 'kraken' | null>,
-    default: null
-  }
-});
 
 const { location } = toRefs(props);
 
@@ -77,10 +77,10 @@ onBeforeMount(async () => {
 </script>
 
 <template>
-  <v-container>
-    <card>
+  <VContainer>
+    <Card>
       <div class="pa-2">
-        <v-select
+        <VSelect
           :value="location"
           outlined
           hide-details
@@ -90,95 +90,95 @@ onBeforeMount(async () => {
           @change="updateLocation($event)"
         >
           <template v-for="slot in ['item', 'selection']" #[slot]="data">
-            <v-row v-if="data.item" :key="slot" align="center">
-              <v-col cols="auto">
-                <adaptive-wrapper width="24" height="24">
-                  <v-img
+            <VRow v-if="data.item" :key="slot" align="center">
+              <VCol cols="auto">
+                <AdaptiveWrapper width="24" height="24">
+                  <VImg
                     width="24px"
                     contain
                     max-height="24px"
                     :src="data.item.icon"
                   />
-                </adaptive-wrapper>
-              </v-col>
-              <v-col class="pl-0">
+                </AdaptiveWrapper>
+              </VCol>
+              <VCol class="pl-0">
                 {{ data.item.name }}
-              </v-col>
-            </v-row>
+              </VCol>
+            </VRow>
           </template>
-        </v-select>
+        </VSelect>
       </div>
-    </card>
+    </Card>
     <div v-if="page" class="pt-4">
-      <component :is="page" />
+      <Component :is="page" />
     </div>
     <div v-else>
       <div
         class="d-flex flex-row align-center justify-md-end justify-center mt-2 mr-md-6"
       >
         <div class="flex-shrink-0">
-          <v-icon>mdi-arrow-up-left</v-icon>
+          <VIcon>mdi-arrow-up-left</VIcon>
         </div>
         <div class="text--secondary pt-3 flex-shrink-0 ms-2">
           {{ t('staking_page.dropdown_hint') }}
         </div>
       </div>
-      <full-size-content>
-        <v-row align="center" justify="center">
-          <v-col>
-            <v-row align="center" justify="center">
-              <v-col cols="auto">
+      <FullSizeContent>
+        <VRow align="center" justify="center">
+          <VCol>
+            <VRow align="center" justify="center">
+              <VCol cols="auto">
                 <span class="font-weight-bold text-h5">
                   {{ t('staking_page.page.title') }}
                 </span>
-              </v-col>
-            </v-row>
-            <v-row justify="center" class="mt-md-12 mt-4">
-              <v-col cols="auto" class="mx-4">
-                <internal-link to="/staking/eth2">
-                  <v-img
+              </VCol>
+            </VRow>
+            <VRow justify="center" class="mt-md-12 mt-4">
+              <VCol cols="auto" class="mx-4">
+                <InternalLink to="/staking/eth2">
+                  <VImg
                     :width="iconSize"
                     :height="iconSize"
                     contain
                     src="/assets/images/protocols/ethereum.svg"
                   />
-                </internal-link>
-              </v-col>
-              <v-col cols="auto" class="mx-4">
-                <internal-link to="/staking/liquity">
-                  <v-img
+                </InternalLink>
+              </VCol>
+              <VCol cols="auto" class="mx-4">
+                <InternalLink to="/staking/liquity">
+                  <VImg
                     :width="iconSize"
                     contain
                     src="/assets/images/protocols/liquity.png"
                   />
-                </internal-link>
-              </v-col>
-              <v-col cols="auto" class="mx-4">
-                <internal-link to="/staking/kraken">
-                  <v-img
+                </InternalLink>
+              </VCol>
+              <VCol cols="auto" class="mx-4">
+                <InternalLink to="/staking/kraken">
+                  <VImg
                     :width="iconSize"
                     contain
                     src="/assets/images/protocols/kraken.svg"
                   />
-                </internal-link>
-              </v-col>
-            </v-row>
+                </InternalLink>
+              </VCol>
+            </VRow>
 
-            <v-row class="mt-md-10 mt-2" justify="center">
-              <v-col cols="auto">
+            <VRow class="mt-md-10 mt-2" justify="center">
+              <VCol cols="auto">
                 <div
                   class="font-weight-light text-h6"
                   :class="$style.description"
                 >
                   {{ t('staking_page.page.description') }}
                 </div>
-              </v-col>
-            </v-row>
-          </v-col>
-        </v-row>
-      </full-size-content>
+              </VCol>
+            </VRow>
+          </VCol>
+        </VRow>
+      </FullSizeContent>
     </div>
-  </v-container>
+  </VContainer>
 </template>
 
 <style lang="scss" module>

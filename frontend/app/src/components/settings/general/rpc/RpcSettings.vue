@@ -20,7 +20,7 @@ const evmChainTabs = useArrayMap(
       component: defineAsyncComponent(
         () => import('@/components/settings/general/rpc/EvmRpcNodeManager.vue')
       )
-    } satisfies RpcSettingTab)
+    }) satisfies RpcSettingTab
 );
 
 const rpcSettingTabs = computed<RpcSettingTab[]>(() => [
@@ -41,23 +41,23 @@ const rpcSettingTabs = computed<RpcSettingTab[]>(() => [
 </script>
 
 <template>
-  <card class="mt-8">
+  <Card class="mt-8">
     <template #title>
       {{ t('general_settings.rpc_node_setting.title') }}
     </template>
 
     <div>
-      <v-tabs v-model="rpcSettingTab">
-        <v-tab v-for="tab in rpcSettingTabs" :key="tab.chain">
-          <chain-display :chain="tab.chain" dense />
-        </v-tab>
-      </v-tabs>
-      <v-divider />
-      <v-tabs-items v-model="rpcSettingTab">
-        <v-tab-item v-for="tab in rpcSettingTabs" :key="tab.chain" class="pt-8">
-          <component :is="tab.component" :chain="tab.chain" />
-        </v-tab-item>
-      </v-tabs-items>
+      <VTabs v-model="rpcSettingTab">
+        <VTab v-for="tab in rpcSettingTabs" :key="tab.chain">
+          <ChainDisplay :chain="tab.chain" dense />
+        </VTab>
+      </VTabs>
+      <VDivider />
+      <VTabsItems v-model="rpcSettingTab">
+        <VTabItem v-for="tab in rpcSettingTabs" :key="tab.chain" class="pt-8">
+          <Component :is="tab.component" :chain="tab.chain" />
+        </VTabItem>
+      </VTabsItems>
     </div>
-  </card>
+  </Card>
 </template>

@@ -45,7 +45,7 @@ const slots = useSlots();
 </script>
 
 <template>
-  <v-combobox
+  <VCombobox
     :value="value"
     v-bind="rootAttrs"
     :search-input.sync="search"
@@ -60,5 +60,5 @@ const slots = useSlots();
     <template v-for="slot in Object.keys($scopedSlots)" #[slot]="scope">
       <slot v-bind="scope" :name="slot" />
     </template>
-  </v-combobox>
+  </VCombobox>
 </template>

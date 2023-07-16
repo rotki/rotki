@@ -28,7 +28,7 @@ const title: ComputedRef<string> = computed(() =>
 </script>
 
 <template>
-  <big-dialog
+  <BigDialog
     :display="openDialog"
     :title="title"
     :primary-action="t('common.actions.save')"
@@ -37,9 +37,9 @@ const title: ComputedRef<string> = computed(() =>
     @confirm="trySubmit()"
     @cancel="closeDialog()"
   >
-    <history-event-form
+    <HistoryEventForm
       :transaction="transaction"
       :editable-item="editableItem"
     />
-  </big-dialog>
+  </BigDialog>
 </template>

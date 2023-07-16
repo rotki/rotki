@@ -46,7 +46,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <settings-option
+  <SettingsOption
     #default="{ error, success, update }"
     setting="balanceSaveFrequency"
     :transform="transform"
@@ -54,7 +54,7 @@ onMounted(() => {
     :success-message="successMessage"
     @finished="resetBalanceSaveFrequency()"
   >
-    <v-text-field
+    <VTextField
       v-model="balanceSaveFrequency"
       outlined
       min="1"
@@ -68,5 +68,5 @@ onMounted(() => {
       "
       @change="callIfValid($event, update)"
     />
-  </settings-option>
+  </SettingsOption>
 </template>

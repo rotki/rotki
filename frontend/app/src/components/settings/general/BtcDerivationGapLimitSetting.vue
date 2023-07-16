@@ -15,13 +15,13 @@ onMounted(() => {
 </script>
 
 <template>
-  <settings-option
+  <SettingsOption
     #default="{ error, success, update }"
     setting="btcDerivationGapLimit"
     :error-message="t('general_settings.validation.btc_derivation_gap.error')"
     :success-message="successMessage"
   >
-    <v-text-field
+    <VTextField
       v-model.number="btcDerivationGapLimit"
       outlined
       class="general-settings__fields__btc-derivation-gap"
@@ -31,5 +31,5 @@ onMounted(() => {
       :error-messages="error"
       @change="update($event ? parseInt($event) : $event)"
     />
-  </settings-option>
+  </SettingsOption>
 </template>

@@ -164,36 +164,33 @@ const transactionEventProtocols: ComputedRef<string[]> = computed(() => {
 </script>
 
 <template>
-  <progress-screen v-if="loading">
+  <ProgressScreen v-if="loading">
     <template #message>{{ t('lending.loading') }}</template>
-  </progress-screen>
+  </ProgressScreen>
   <div v-else>
-    <v-row no-gutters align="center">
-      <v-col>
-        <refresh-header
+    <VRow no-gutters align="center">
+      <VCol>
+        <RefreshHeader
           :loading="refreshing"
           :title="t('common.deposits')"
           @refresh="refresh()"
         >
-          <deposit-protocol-reset
-            :loading="refreshing"
-            @reset="reset($event)"
-          />
+          <DepositProtocolReset :loading="refreshing" @reset="reset($event)" />
           <template #actions>
-            <active-modules :modules="modules" />
+            <ActiveModules :modules="modules" />
           </template>
-        </refresh-header>
-      </v-col>
-    </v-row>
-    <deposit-totals
+        </RefreshHeader>
+      </VCol>
+    </VRow>
+    <DepositTotals
       :loading="historyLoading"
       :effective-interest-rate="effectiveInterestRate"
       :total-lending-deposit="totalLendingDeposit"
       :total-usd-earned="totalUsdEarned"
     />
-    <v-row class="mt-8" no-gutters>
-      <v-col cols="12" sm="6" class="pe-sm-4">
-        <blockchain-account-selector
+    <VRow class="mt-8" no-gutters>
+      <VCol cols="12" sm="6" class="pe-sm-4">
+        <BlockchainAccountSelector
           v-model="selectedAccounts"
           class="pt-2"
           hint
@@ -202,22 +199,19 @@ const transactionEventProtocols: ComputedRef<string[]> = computed(() => {
           :chains="chains"
           :usable-addresses="defiAddresses"
         />
-      </v-col>
-      <v-col cols="12" sm="6" class="ps-sm-4 pt-4 pt-sm-0">
-        <defi-protocol-selector v-model="protocol" />
-      </v-col>
-    </v-row>
-    <v-row v-if="!isYearnVaults && !isYearnVaultsV2" class="mt-8" no-gutters>
-      <v-col>
-        <stat-card :title="t('common.assets')">
-          <lending-asset-table
-            :loading="refreshing"
-            :assets="lendingBalances"
-          />
-        </stat-card>
-      </v-col>
-    </v-row>
-    <yearn-assets-table
+      </VCol>
+      <VCol cols="12" sm="6" class="ps-sm-4 pt-4 pt-sm-0">
+        <DefiProtocolSelector v-model="protocol" />
+      </VCol>
+    </VRow>
+    <VRow v-if="!isYearnVaults && !isYearnVaultsV2" class="mt-8" no-gutters>
+      <VCol>
+        <StatCard :title="t('common.assets')">
+          <LendingAssetTable :loading="refreshing" :assets="lendingBalances" />
+        </StatCard>
+      </VCol>
+    </VRow>
+    <YearnAssetsTable
       v-if="isYearnVaults || isYearnVaultsV2 || selectedProtocols.length === 0"
       class="mt-8"
       :version="yearnVersion"
@@ -225,12 +219,12 @@ const transactionEventProtocols: ComputedRef<string[]> = computed(() => {
       :selected-addresses="selectedAddresses"
     />
     <template v-if="premium">
-      <compound-lending-details
+      <CompoundLendingDetails
         v-if="isCompound"
         class="mt-8"
         :addresses="selectedAddresses"
       />
-      <yearn-vaults-profit-details
+      <YearnVaultsProfitDetails
         v-if="
           (isYearnVaults ||
             isYearnVaultsV2 ||
@@ -240,7 +234,7 @@ const transactionEventProtocols: ComputedRef<string[]> = computed(() => {
         class="mt-8"
         :profit="yearnProfit"
       />
-      <aave-earned-details
+      <AaveEarnedDetails
         v-if="
           (isAave || selectedProtocols.length === 0) &&
           totalEarnedInAave.length > 0
@@ -250,10 +244,10 @@ const transactionEventProtocols: ComputedRef<string[]> = computed(() => {
       />
     </template>
     <div v-if="!premium" class="mt-8">
-      <premium-card :title="t('lending.history')" />
+      <PremiumCard :title="t('lending.history')" />
     </div>
     <div v-else>
-      <history-events-view
+      <HistoryEventsView
         use-external-account-filter
         :section-title="t('common.events')"
         :protocols="transactionEventProtocols"

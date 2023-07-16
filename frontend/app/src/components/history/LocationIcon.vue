@@ -38,11 +38,11 @@ const location: ComputedRef<TradeLocationData | null> = computed(() => {
       'py-4': !noPadding
     }"
   >
-    <adaptive-wrapper v-if="!location" tag="span">
-      <v-skeleton-loader type="image" :width="size" :height="size" />
-    </adaptive-wrapper>
-    <adaptive-wrapper v-else tag="span">
-      <v-img
+    <AdaptiveWrapper v-if="!location" tag="span">
+      <VSkeletonLoader type="image" :width="size" :height="size" />
+    </AdaptiveWrapper>
+    <AdaptiveWrapper v-else tag="span">
+      <VImg
         v-if="location.image"
         :width="size"
         contain
@@ -50,10 +50,10 @@ const location: ComputedRef<TradeLocationData | null> = computed(() => {
         :max-height="size"
         :src="location.image"
       />
-      <v-icon v-else color="accent" :style="iconStyle">
+      <VIcon v-else color="accent" :style="iconStyle">
         {{ location.icon }}
-      </v-icon>
-    </adaptive-wrapper>
+      </VIcon>
+    </AdaptiveWrapper>
     <span
       v-if="!icon"
       class="text-capitalize"

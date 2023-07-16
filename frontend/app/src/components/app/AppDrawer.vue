@@ -10,7 +10,7 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <v-navigation-drawer
+  <VNavigationDrawer
     v-model="showDrawer"
     width="300"
     class="app__navigation-drawer"
@@ -21,23 +21,23 @@ const { t } = useI18n();
     app
   >
     <div v-if="!isMini" class="app__logo">
-      <rotki-logo height="150px" :url="remoteDrawerImage" />
+      <RotkiLogo height="150px" :url="remoteDrawerImage" />
     </div>
     <div v-else class="app__logo-mini">
       {{ t('app.name') }}
     </div>
-    <navigation-menu :is-mini="isMini" />
-    <v-spacer />
+    <NavigationMenu :is-mini="isMini" />
+    <VSpacer />
     <div
       v-if="!isMini"
       class="my-2 text-center px-2 app__navigation-drawer__version"
     >
       <span class="text-overline">
-        <v-divider class="mx-3 my-1" />
+        <VDivider class="mx-3 my-1" />
         {{ appVersion }}
       </span>
     </div>
-  </v-navigation-drawer>
+  </VNavigationDrawer>
 </template>
 
 <style scoped lang="scss">

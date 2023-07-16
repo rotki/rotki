@@ -34,20 +34,20 @@ const { t } = useI18n();
 
 <template>
   <div class="timeframe-selector text-center">
-    <v-tooltip v-if="!premium" top>
+    <VTooltip v-if="!premium" top>
       <template #activator="{ on, attrs }">
-        <v-icon
+        <VIcon
           class="timeframe-selector__premium"
           small
           v-bind="attrs"
           v-on="on"
         >
           mdi-lock
-        </v-icon>
+        </VIcon>
       </template>
       <span v-text="t('overall_balances.premium_hint')" />
-    </v-tooltip>
-    <v-chip
+    </VTooltip>
+    <VChip
       v-for="(timeframe, i) in visibleTimeframes"
       :key="i"
       :class="activeClass(timeframe)"
@@ -57,7 +57,7 @@ const { t } = useI18n();
       @click="input(timeframe)"
     >
       {{ timeframe }}
-    </v-chip>
+    </VChip>
   </div>
 </template>
 

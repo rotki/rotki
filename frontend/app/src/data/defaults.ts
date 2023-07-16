@@ -33,25 +33,39 @@ export class Defaults {
 }
 
 export const EXCHANGE_BISQ = 'bisq';
+
 export const EXCHANGE_CRYPTOCOM = 'cryptocom';
+
 export const EXCHANGE_BLOCKFI = 'blockfi';
+
 export const EXCHANGE_NEXO = 'nexo';
+
 export const EXCHANGE_SHAPESHIFT = 'shapeshift';
+
 export const EXCHANGE_UPHOLD = 'uphold';
 
 export const EXCHANGE_UNISWAP = 'uniswap';
+
 export const EXCHANGE_BALANCER = 'balancer';
+
 export const EXCHANGE_SUSHISWAP = 'sushiswap';
 
 export const TRADE_LOCATION_EXTERNAL = 'external';
+
 export const TRADE_LOCATION_BANKS = 'banks';
+
 export const TRADE_LOCATION_EQUITIES = 'equities';
+
 export const TRADE_LOCATION_REALESTATE = 'realestate';
+
 export const TRADE_LOCATION_COMMODITIES = 'commodities';
+
 export const TRADE_LOCATION_BLOCKCHAIN = 'blockchain';
 
 export const TRADE_LOCATION_ETHEREUM = 'ethereum';
+
 export const TRADE_LOCATION_OPTIMISM = 'optimism';
+
 export const TRADE_LOCATION_POLYGON_POS = 'polygon_pos';
 
 export const SUPPORTED_TRADE_LOCATIONS = [

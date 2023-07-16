@@ -54,7 +54,7 @@ const css = useCssModule();
 </script>
 
 <template>
-  <v-tooltip
+  <VTooltip
     v-if="asset && symbol"
     top
     :disabled="loading || symbol.length <= assetPadding"
@@ -72,12 +72,12 @@ const css = useCssModule();
       >
         {{ symbol }}
       </span>
-      <v-skeleton-loader v-else width="30" type="text" height="12" />
+      <VSkeletonLoader v-else width="30" type="text" height="12" />
     </template>
     <span data-cy="display-currency" :class="{ [css.xl]: xl }">
       {{ symbol }}
     </span>
-  </v-tooltip>
+  </VTooltip>
 
   <span
     v-else

@@ -24,7 +24,7 @@ const reset = () => {
 </script>
 
 <template>
-  <confirmable-reset
+  <ConfirmableReset
     v-if="premium"
     :loading="loading"
     :tooltip="t('lending.reset_tooltip')"
@@ -33,25 +33,25 @@ const reset = () => {
   >
     {{ t('lending.reset_confirm') }}
     <div />
-    <v-row>
-      <v-col class="text-center font-weight-medium">
+    <VRow>
+      <VCol class="text-center font-weight-medium">
         {{ t('lending.reset.protocol_selection') }}
-      </v-col>
-    </v-row>
-    <v-row align="center" justify="center">
-      <v-col cols="auto">
-        <v-btn-toggle v-model="resetSelection" multiple>
-          <v-btn icon :value="AAVE">
-            <defi-protocol-icon mode="icon" :protocol="AAVE" />
-          </v-btn>
-          <v-btn icon :value="YEARN_VAULTS">
-            <defi-protocol-icon mode="icon" :protocol="YEARN_VAULTS" />
-          </v-btn>
-          <v-btn icon :value="YEARN_VAULTS_V2">
-            <defi-protocol-icon mode="icon" :protocol="YEARN_VAULTS_V2" />
-          </v-btn>
-        </v-btn-toggle>
-      </v-col>
-    </v-row>
-  </confirmable-reset>
+      </VCol>
+    </VRow>
+    <VRow align="center" justify="center">
+      <VCol cols="auto">
+        <VBtnToggle v-model="resetSelection" multiple>
+          <VBtn icon :value="AAVE">
+            <DefiProtocolIcon mode="icon" :protocol="AAVE" />
+          </VBtn>
+          <VBtn icon :value="YEARN_VAULTS">
+            <DefiProtocolIcon mode="icon" :protocol="YEARN_VAULTS" />
+          </VBtn>
+          <VBtn icon :value="YEARN_VAULTS_V2">
+            <DefiProtocolIcon mode="icon" :protocol="YEARN_VAULTS_V2" />
+          </VBtn>
+        </VBtnToggle>
+      </VCol>
+    </VRow>
+  </ConfirmableReset>
 </template>

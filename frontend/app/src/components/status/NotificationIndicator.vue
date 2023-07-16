@@ -15,7 +15,7 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <v-badge
+  <VBadge
     :value="count"
     color="primary"
     right
@@ -25,22 +25,22 @@ const { t } = useI18n();
     <template #badge>
       <span>{{ count }}</span>
     </template>
-    <menu-tooltip-button
+    <MenuTooltipButton
       :tooltip="t('notification_indicator.tooltip')"
       class-name="secondary--text text--lighten-4"
       @click="click()"
     >
-      <v-icon
+      <VIcon
         v-if="!hasRunningTasks"
         :class="{
           [$style.visible]: visible
         }"
       >
         mdi-bell
-      </v-icon>
-      <v-icon v-else> mdi-spin mdi-loading </v-icon>
-    </menu-tooltip-button>
-  </v-badge>
+      </VIcon>
+      <VIcon v-else> mdi-spin mdi-loading </VIcon>
+    </MenuTooltipButton>
+  </VBadge>
 </template>
 
 <style module lang="scss">

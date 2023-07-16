@@ -6,8 +6,6 @@ import { displayDateFormatter } from '@/data/date_formatter';
 import { type UserDbBackup } from '@/types/backup';
 import { size } from '@/utils/data';
 
-const { t } = useI18n();
-
 const props = defineProps({
   items: { required: true, type: Array as PropType<UserDbBackup[]> },
   selected: { required: true, type: Array as PropType<UserDbBackup[]> },
@@ -19,6 +17,8 @@ const emit = defineEmits<{
   (e: 'change', backup: UserDbBackup[]): void;
   (e: 'remove', backup: UserDbBackup): void;
 }>();
+
+const { t } = useI18n();
 
 const tableHeaders = computed<DataTableHeader[]>(() => [
   {
@@ -95,8 +95,8 @@ const showDeleteConfirmation = (item: UserDbBackup & { index: number }) => {
 </script>
 
 <template>
-  <fragment>
-    <data-table
+  <Fragment>
+    <DataTable
       :value="selected"
       :items="itemsWithIndex"
       sort-by="time"
@@ -108,29 +108,29 @@ const showDeleteConfirmation = (item: UserDbBackup & { index: number }) => {
       @input="onSelectedChange($event)"
     >
       <template #item.time="{ item }">
-        <date-display :timestamp="item.time" />
+        <DateDisplay :timestamp="item.time" />
       </template>
       <template #item.size="{ item }">
         {{ size(item.size) }}
       </template>
       <template #item.actions="{ item }">
-        <v-tooltip top>
+        <VTooltip top>
           <template #activator="{ on, attrs }">
-            <v-btn
+            <VBtn
               v-bind="attrs"
               icon
               class="mx-1"
               v-on="on"
               @click="showDeleteConfirmation(item)"
             >
-              <v-icon small> mdi-delete-outline </v-icon>
-            </v-btn>
+              <VIcon small> mdi-delete-outline </VIcon>
+            </VBtn>
           </template>
           <span>{{ t('database_backups.action.delete') }}</span>
-        </v-tooltip>
-        <v-tooltip top>
+        </VTooltip>
+        <VTooltip top>
           <template #activator="{ on, attrs }">
-            <v-btn
+            <VBtn
               icon
               :href="getLink(item)"
               v-bind="attrs"
@@ -138,22 +138,22 @@ const showDeleteConfirmation = (item: UserDbBackup & { index: number }) => {
               download
               v-on="on"
             >
-              <v-icon small> mdi-download </v-icon>
-            </v-btn>
+              <VIcon small> mdi-download </VIcon>
+            </VBtn>
           </template>
           <span>{{ t('database_backups.action.download') }}</span>
-        </v-tooltip>
+        </VTooltip>
       </template>
       <template #body.append="{ isMobile }">
-        <row-append
+        <RowAppend
           label-colspan="3"
           :label="t('common.total')"
           :right-patch-colspan="1"
           :is-mobile="isMobile"
         >
           {{ totalSize }}
-        </row-append>
+        </RowAppend>
       </template>
-    </data-table>
-  </fragment>
+    </DataTable>
+  </Fragment>
 </template>

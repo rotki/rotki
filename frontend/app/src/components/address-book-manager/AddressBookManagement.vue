@@ -120,13 +120,13 @@ setSubmitFunc(save);
 </script>
 
 <template>
-  <v-container>
-    <v-row justify="space-between" align="center" no-gutters>
-      <v-col>
-        <card-title>{{ t('address_book.title') }}</card-title>
-      </v-col>
-    </v-row>
-    <card outlined-body class="mt-8">
+  <VContainer>
+    <VRow justify="space-between" align="center" no-gutters>
+      <VCol>
+        <CardTitle>{{ t('address_book.title') }}</CardTitle>
+      </VCol>
+    </VRow>
+    <Card outlined-body class="mt-8">
       <template #title>
         {{ t('address_book.table.title') }}
       </template>
@@ -135,18 +135,18 @@ setSubmitFunc(save);
       </template>
 
       <template #search>
-        <v-row class="pt-2 pb-6" justify="end">
-          <v-col cols="12" sm="4" md="3">
-            <chain-select
+        <VRow class="pt-2 pb-6" justify="end">
+          <VCol cols="12" sm="4" md="3">
+            <ChainSelect
               evm-only
               :model-value="selectedChain"
               hide-details
               dense
               @update:model-value="selectedChain = $event"
             />
-          </v-col>
-          <v-col cols="12" sm="8" md="6" lg="4">
-            <v-text-field
+          </VCol>
+          <VCol cols="12" sm="8" md="6" lg="4">
+            <VTextField
               :value="pendingSearch"
               input-class=""
               hide-details
@@ -158,32 +158,32 @@ setSubmitFunc(save);
               @input="onSearchTermChange($event)"
             >
               <template v-if="isTimeoutPending" #append>
-                <v-progress-circular
+                <VProgressCircular
                   indeterminate
                   color="primary"
                   width="2"
                   size="24"
                 />
               </template>
-            </v-text-field>
-          </v-col>
-        </v-row>
+            </VTextField>
+          </VCol>
+        </VRow>
       </template>
 
-      <v-row align="center">
-        <v-col cols="auto">
-          <v-tabs v-model="tab">
-            <v-tab v-for="loc in locations" :key="loc">
+      <VRow align="center">
+        <VCol cols="auto">
+          <VTabs v-model="tab">
+            <VTab v-for="loc in locations" :key="loc">
               {{ loc }}
-            </v-tab>
-          </v-tabs>
-        </v-col>
-        <v-col class="pl-0">
-          <eth-names-hint with-header />
-        </v-col>
-        <v-col />
-        <v-col cols="auto">
-          <v-btn
+            </VTab>
+          </VTabs>
+        </VCol>
+        <VCol class="pl-0">
+          <EthNamesHint with-header />
+        </VCol>
+        <VCol />
+        <VCol cols="auto">
+          <VBtn
             class="mr-2"
             small
             depressed
@@ -191,31 +191,31 @@ setSubmitFunc(save);
             color="primary"
             @click="openForm()"
           >
-            <v-icon>mdi-plus</v-icon>
-          </v-btn>
-        </v-col>
-      </v-row>
+            <VIcon>mdi-plus</VIcon>
+          </VBtn>
+        </VCol>
+      </VRow>
 
-      <v-tabs-items v-model="tab">
-        <v-tab-item v-for="loc in locations" :key="loc">
-          <address-book-table
+      <VTabsItems v-model="tab">
+        <VTabItem v-for="loc in locations" :key="loc">
+          <AddressBookTable
             :location="loc"
             :blockchain="selectedChain"
             :search="search"
             @edit="openForm($event)"
           >
             {{ loc }}
-          </address-book-table>
-        </v-tab-item>
-      </v-tabs-items>
-    </card>
+          </AddressBookTable>
+        </VTabItem>
+      </VTabsItems>
+    </Card>
 
-    <address-book-form-dialog
+    <AddressBookFormDialog
       v-model="formPayload"
       :enable-for-all-chains="enableForAllChains"
       :edit-mode="editMode"
       @update:enable-for-all-chains="enableForAllChains = $event"
       @reset="resetForm()"
     />
-  </v-container>
+  </VContainer>
 </template>

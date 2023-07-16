@@ -1,3 +1,3 @@
 <template>
-  <newly-detected-asset-table />
+  <NewlyDetectedAssetTable />
 </template>

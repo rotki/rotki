@@ -57,9 +57,9 @@ const v$ = setValidation(
 </script>
 
 <template>
-  <v-form :value="valid" class="pt-4">
+  <VForm :value="valid" class="pt-4">
     <div class="mb-4">
-      <location-selector
+      <LocationSelector
         :value="form.location"
         :excludes="excludedLocations"
         outlined
@@ -69,7 +69,7 @@ const v$ = setValidation(
       />
     </div>
     <div class="mb-4">
-      <amount-input
+      <AmountInput
         :value="form.usdValue"
         outlined
         :label="
@@ -81,5 +81,5 @@ const v$ = setValidation(
         @input="updateForm({ usdValue: $event })"
       />
     </div>
-  </v-form>
+  </VForm>
 </template>

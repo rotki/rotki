@@ -10,12 +10,12 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <settings-option
+  <SettingsOption
     #default="{ error, success, update }"
     setting="graphZeroBased"
     frontend-setting
   >
-    <v-switch
+    <VSwitch
       v-model="zeroBased"
       class="general-settings__fields__zero-base mb-4 mt-2"
       :label="t('frontend_settings.label.zero_based')"
@@ -25,5 +25,5 @@ const { t } = useI18n();
       :error-messages="error"
       @change="update($event)"
     />
-  </settings-option>
+  </SettingsOption>
 </template>

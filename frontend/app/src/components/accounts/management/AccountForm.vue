@@ -34,34 +34,34 @@ watch(context, ctx => {
 
 <template>
   <div class="pt-2">
-    <account-selector
+    <AccountSelector
       :input-mode="inputMode"
       :blockchain="blockchain"
       @update:blockchain="blockchain = $event"
       @update:input-mode="inputMode = $event"
     />
-    <metamask-account-form
+    <MetamaskAccountForm
       v-if="inputMode === InputMode.METAMASK_IMPORT"
       :blockchain="blockchain"
       :all-evm-chains="allEvmChains"
     >
       <template #selector="{ loading }">
-        <all-evm-chains-selector v-model="allEvmChains" :disabled="loading" />
+        <AllEvmChainsSelector v-model="allEvmChains" :disabled="loading" />
       </template>
-    </metamask-account-form>
-    <validator-account-form v-else-if="blockchain === Blockchain.ETH2" />
-    <xpub-account-form
+    </MetamaskAccountForm>
+    <ValidatorAccountForm v-else-if="blockchain === Blockchain.ETH2" />
+    <XpubAccountForm
       v-else-if="isBtcChain(blockchain) && inputMode === InputMode.XPUB_ADD"
       :blockchain="blockchain"
     />
-    <address-account-form
+    <AddressAccountForm
       v-else
       :blockchain="blockchain"
       :all-evm-chains="allEvmChains"
     >
       <template #selector="{ loading }">
-        <all-evm-chains-selector v-model="allEvmChains" :disabled="loading" />
+        <AllEvmChainsSelector v-model="allEvmChains" :disabled="loading" />
       </template>
-    </address-account-form>
+    </AddressAccountForm>
   </div>
 </template>

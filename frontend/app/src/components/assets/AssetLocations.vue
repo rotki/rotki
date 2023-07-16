@@ -7,15 +7,16 @@ import { type DataTableHeader } from '@/types/vuetify';
 import { CURRENCY_USD } from '@/types/currencies';
 import { type AssetBreakdown } from '@/types/blockchain/accounts';
 
+const props = defineProps<{ identifier: string }>();
+
 const { t } = useI18n();
 
 interface AssetLocation extends AssetBreakdown {
   readonly account?: GeneralAccount;
   readonly label: string;
 }
-type AssetLocations = AssetLocation[];
 
-const props = defineProps<{ identifier: string }>();
+type AssetLocations = AssetLocation[];
 
 const { identifier } = toRefs(props);
 
@@ -124,43 +125,40 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
 </script>
 
 <template>
-  <card outlined-body>
+  <Card outlined-body>
     <template #title>
       {{ t('asset_locations.title') }}
     </template>
     <template #actions>
-      <v-row no-gutters justify="end">
-        <v-col cols="12" md="6" lg="4">
-          <tag-filter v-model="onlyTags" />
-        </v-col>
-      </v-row>
+      <VRow no-gutters justify="end">
+        <VCol cols="12" md="6" lg="4">
+          <TagFilter v-model="onlyTags" />
+        </VCol>
+      </VRow>
     </template>
-    <data-table
+    <DataTable
       :headers="tableHeaders"
       :items="visibleAssetLocations"
       sort-by="balance.amount"
       :loading="detailsLoading"
     >
       <template #item.location="{ item }">
-        <location-display
+        <LocationDisplay
           :identifier="item.location"
           :detail-path="item.detailPath"
         />
       </template>
       <template #item.label="{ item }">
         <div class="py-4">
-          <labeled-address-display
-            v-if="item.account"
-            :account="item.account"
-          />
-          <tag-display :tags="item.tags" />
+          <LabeledAddressDisplay v-if="item.account" :account="item.account" />
+          <TagDisplay :tags="item.tags" />
         </div>
       </template>
       <template #item.balance.amount="{ item }">
-        <amount-display :value="item.balance.amount" />
+        <AmountDisplay :value="item.balance.amount" />
       </template>
       <template #item.balance.usdValue="{ item }">
-        <amount-display
+        <AmountDisplay
           show-currency="symbol"
           :amount="item.balance.amount"
           :price-asset="identifier"
@@ -169,10 +167,10 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
         />
       </template>
       <template #item.percentage="{ item }">
-        <percentage-display :value="getPercentage(item.balance.usdValue)" />
+        <PercentageDisplay :value="getPercentage(item.balance.usdValue)" />
       </template>
-    </data-table>
-  </card>
+    </DataTable>
+  </Card>
 </template>
 
 <style scoped lang="scss">

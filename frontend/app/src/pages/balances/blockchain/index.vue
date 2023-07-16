@@ -125,16 +125,16 @@ const { xl } = useDisplay();
 
 <template>
   <div>
-    <v-row justify="end">
-      <v-col cols="auto">
-        <price-refresh />
-      </v-col>
-    </v-row>
-    <card class="blockchain-balances mt-8" outlined-body>
+    <VRow justify="end">
+      <VCol cols="auto">
+        <PriceRefresh />
+      </VCol>
+    </VRow>
+    <Card class="blockchain-balances mt-8" outlined-body>
       <template #title>
         {{ t('blockchain_balances.title') }}
       </template>
-      <v-btn
+      <VBtn
         v-blur
         data-cy="add-blockchain-balance"
         fixed
@@ -146,25 +146,25 @@ const { xl } = useDisplay();
         color="primary"
         @click="createAccount()"
       >
-        <v-icon> mdi-plus </v-icon>
+        <VIcon> mdi-plus </VIcon>
         <div v-if="xl" class="ml-2">
           {{ t('blockchain_balances.add_account') }}
         </div>
-      </v-btn>
-      <account-dialog :context="context" />
-      <asset-balances
+      </VBtn>
+      <AccountDialog :context="context" />
+      <AssetBalances
         data-cy="blockchain-asset-balances"
         :loading="isBlockchainLoading"
         :title="t('blockchain_balances.per_asset.title')"
         :balances="blockchainAssets"
       />
-    </card>
+    </Card>
 
     <div class="mt-8">
-      <detect-evm-accounts v-if="showDetectEvmAccountsButton" />
+      <DetectEvmAccounts v-if="showDetectEvmAccountsButton" />
     </div>
 
-    <account-balances
+    <AccountBalances
       v-if="ethAccounts.length > 0 || busy.eth.value"
       id="blockchain-balances-ETH"
       v-intersect="{
@@ -181,7 +181,7 @@ const { xl } = useDisplay();
       @edit-account="editAccount($event)"
     />
 
-    <account-balances
+    <AccountBalances
       v-if="eth2Accounts.length > 0 || busy.eth2.value"
       id="blockchain-balances-ETH2"
       v-intersect="{
@@ -198,7 +198,7 @@ const { xl } = useDisplay();
       @edit-account="editAccount($event)"
     />
 
-    <account-balances
+    <AccountBalances
       v-if="btcAccounts.length > 0 || busy.btc.value"
       id="blockchain-balances-BTC"
       v-intersect="{
@@ -215,7 +215,7 @@ const { xl } = useDisplay();
       @edit-account="editAccount($event)"
     />
 
-    <account-balances
+    <AccountBalances
       v-if="bchAccounts.length > 0 || busy.bch.value"
       id="blockchain-balances-BCH"
       v-intersect="{
@@ -232,7 +232,7 @@ const { xl } = useDisplay();
       @edit-account="editAccount($event)"
     />
 
-    <account-balances
+    <AccountBalances
       v-if="ksmAccounts.length > 0 || busy.ksm.value"
       id="blockchain-balances-KSM"
       v-intersect="{
@@ -249,7 +249,7 @@ const { xl } = useDisplay();
       @edit-account="editAccount($event)"
     />
 
-    <account-balances
+    <AccountBalances
       v-if="dotAccounts.length > 0 || busy.dot.value"
       id="blockchain-balances-DOT"
       v-intersect="{
@@ -266,7 +266,7 @@ const { xl } = useDisplay();
       @edit-account="editAccount($event)"
     />
 
-    <account-balances
+    <AccountBalances
       v-if="avaxAccounts.length > 0 || busy.avax.value"
       id="blockchain-balances-AVAX"
       v-intersect="{
@@ -283,7 +283,7 @@ const { xl } = useDisplay();
       @edit-account="editAccount($event)"
     />
 
-    <account-balances
+    <AccountBalances
       v-if="loopringAccounts.length > 0"
       id="blockchain-balances-LRC"
       loopring
@@ -294,7 +294,7 @@ const { xl } = useDisplay();
       data-cy="blockchain-balances-LRC"
     />
 
-    <account-balances
+    <AccountBalances
       v-if="optimismAccounts.length > 0 || busy.optimism.value"
       id="blockchain-balances-OPTIMISM"
       v-intersect="{
@@ -311,7 +311,7 @@ const { xl } = useDisplay();
       @edit-account="editAccount($event)"
     />
 
-    <account-balances
+    <AccountBalances
       v-if="polygonAccounts.length > 0 || busy.polygon_pos.value"
       id="blockchain-balances-POLYGON"
       v-intersect="{

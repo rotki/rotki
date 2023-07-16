@@ -3,8 +3,6 @@ import { useListeners } from 'vue';
 import { type DataTableHeader } from '@/types/vuetify';
 import { type TablePagination } from '@/types/pagination';
 
-const { t } = useI18n();
-
 const props = withDefaults(
   defineProps<{
     sortDesc?: boolean;
@@ -29,7 +27,7 @@ const props = withDefaults(
     items: any[];
     headers: DataTableHeader[];
     expanded?: any[];
-    itemClass?: string | Function;
+    itemClass?: string | (() => string);
     hideDefaultFooter?: boolean;
     container?: HTMLDivElement | null;
     loading?: boolean;
@@ -51,6 +49,8 @@ const props = withDefaults(
     disableFloatingHeader: false
   }
 );
+
+const { t } = useI18n();
 
 const rootAttrs = useAttrs();
 const rootListeners = useListeners();
@@ -168,7 +168,7 @@ const { dark } = useTheme();
 
 <template>
   <div>
-    <v-data-table
+    <VDataTable
       ref="tableRef"
       v-bind="rootAttrs"
       :must-sort="mustSort"
@@ -210,7 +210,7 @@ const { dark } = useTheme();
       <template #footer.page-text="footerPageTextProps">
         <div class="d-flex align-center items-page-select">
           <span>{{ t('data_table.items_no') }}</span>
-          <v-select
+          <VSelect
             v-if="footerPageTextProps.itemsLength > 0"
             v-model="currentPage"
             auto
@@ -231,7 +231,7 @@ const { dark } = useTheme();
         v-if="!hideDefaultFooter"
         #top="{ pagination, options: opt, updateOptions }"
       >
-        <v-data-footer
+        <VDataFooter
           v-bind="footerProps"
           :pagination="pagination"
           :options="opt"
@@ -240,7 +240,7 @@ const { dark } = useTheme();
           <template #page-text="footerPageTextProps">
             <div class="d-flex align-center items-page-select">
               <span>{{ t('data_table.items_no') }}</span>
-              <v-select
+              <VSelect
                 v-if="footerPageTextProps.itemsLength > 0"
                 v-model="currentPage"
                 auto
@@ -258,10 +258,10 @@ const { dark } = useTheme();
               </span>
             </div>
           </template>
-        </v-data-footer>
-        <v-divider />
+        </VDataFooter>
+        <VDivider />
       </template>
-    </v-data-table>
+    </VDataTable>
     <div
       class="clone v-data-table"
       :class="dark ? 'theme--dark' : 'theme--light'"
@@ -269,7 +269,7 @@ const { dark } = useTheme();
       <div class="v-data-table__wrapper clone__wrapper">
         <table ref="cloneTableRef" class="clone__table" />
         <div>
-          <v-progress-linear v-if="loading" indeterminate />
+          <VProgressLinear v-if="loading" indeterminate />
         </div>
       </div>
     </div>

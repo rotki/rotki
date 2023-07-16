@@ -19,7 +19,7 @@ const getIcon = ({ protocol }: DefiProtocolInfo): string =>
 
 <template>
   <div class="d-flex flex-row align-center">
-    <v-img
+    <VImg
       aspect-ratio="1"
       contain
       position="left"

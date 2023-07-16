@@ -3,8 +3,6 @@ import { type PropType } from 'vue';
 import { type DataTableHeader } from '@/types/vuetify';
 import { type CostBasis } from '@/types/reports';
 
-const { t } = useI18n();
-
 const props = defineProps({
   costBasis: { required: true, type: Object as PropType<CostBasis> },
   colspan: { required: true, type: Number },
@@ -15,6 +13,8 @@ const props = defineProps({
   },
   showGroupLine: { required: false, type: Boolean, default: false }
 });
+
+const { t } = useI18n();
 
 const { costBasis, currency } = toRefs(props);
 
@@ -61,7 +61,7 @@ const matchedAcquisitions = computed(
 </script>
 
 <template>
-  <table-expand-container
+  <TableExpandContainer
     visible
     :colspan="colspan"
     :padded="false"
@@ -74,13 +74,13 @@ const matchedAcquisitions = computed(
       </div>
     </template>
     <template #append>
-      <v-expansion-panels
+      <VExpansionPanels
         v-model="panel"
         :class="css['expansions-panels']"
         multiple
       >
-        <v-expansion-panel>
-          <v-expansion-panel-header>
+        <VExpansionPanel>
+          <VExpansionPanelHeader>
             <template #default="{ open }">
               <div class="primary--text font-weight-bold">
                 {{
@@ -90,10 +90,10 @@ const matchedAcquisitions = computed(
                 }}
               </div>
             </template>
-          </v-expansion-panel-header>
+          </VExpansionPanelHeader>
 
-          <v-expansion-panel-content>
-            <card class="mt-4">
+          <VExpansionPanelContent>
+            <Card class="mt-4">
               <template #title>
                 {{ t('cost_basis_table.cost_basis') }}
                 <span class="text-caption ml-2">
@@ -104,7 +104,7 @@ const matchedAcquisitions = computed(
                   }}
                 </span>
               </template>
-              <data-table
+              <DataTable
                 :class="css.table"
                 :items="matchedAcquisitions"
                 :headers="tableHeaders"
@@ -112,40 +112,40 @@ const matchedAcquisitions = computed(
                 sort-by="time"
               >
                 <template #item.amount="{ item }">
-                  <amount-display force-currency :value="item.amount" />
+                  <AmountDisplay force-currency :value="item.amount" />
                 </template>
                 <template #item.fullAmount="{ item }">
-                  <amount-display
+                  <AmountDisplay
                     force-currency
                     :value="item.event.fullAmount"
                   />
                 </template>
                 <template #item.remainingAmount="{ item }">
-                  <amount-display
+                  <AmountDisplay
                     force-currency
                     :value="item.event.fullAmount.minus(item.amount)"
                   />
                 </template>
                 <template #item.rate="{ item }">
-                  <amount-display
+                  <AmountDisplay
                     force-currency
                     :value="item.event.rate"
                     :fiat-currency="currency"
                   />
                 </template>
                 <template #item.time="{ item }">
-                  <date-display :timestamp="item.event.timestamp" />
+                  <DateDisplay :timestamp="item.event.timestamp" />
                 </template>
                 <template #item.taxable="{ item }">
-                  <v-icon v-if="item.taxable" color="success">mdi-check</v-icon>
+                  <VIcon v-if="item.taxable" color="success">mdi-check</VIcon>
                 </template>
-              </data-table>
-            </card>
-          </v-expansion-panel-content>
-        </v-expansion-panel>
-      </v-expansion-panels>
+              </DataTable>
+            </Card>
+          </VExpansionPanelContent>
+        </VExpansionPanel>
+      </VExpansionPanels>
     </template>
-  </table-expand-container>
+  </TableExpandContainer>
 </template>
 
 <style module lang="scss">

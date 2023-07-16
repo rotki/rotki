@@ -1,5 +1,6 @@
 <script setup lang="ts">
 type Style = Record<string, string>;
+
 interface Dimension {
   value: number;
   unit: string;
@@ -63,9 +64,9 @@ const textColor = computed<string>(
 </script>
 
 <template>
-  <v-icon v-if="customAsset" :size="size" color="grey">
+  <VIcon v-if="customAsset" :size="size" color="grey">
     mdi-pencil-circle-outline
-  </v-icon>
+  </VIcon>
   <span
     v-else
     :style="wrapperStyle"

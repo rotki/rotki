@@ -38,20 +38,20 @@ const loading = isAccountOperationRunning();
 </script>
 
 <template>
-  <v-row v-if="visibleModules.length > 0">
-    <v-col>
+  <VRow v-if="visibleModules.length > 0">
+    <VCol>
       <div class="font-weight-medium">{{ t('module_activator.title') }}</div>
       <div class="text-caption text--secondary">
         {{ t('module_activator.subtitle') }}
       </div>
-      <v-btn-toggle
+      <VBtnToggle
         v-model="enabledModules"
         multiple
         :disabled="loading"
         class="mt-2"
         @change="updateSelection($event)"
       >
-        <v-btn
+        <VBtn
           v-for="module in visibleModules"
           :key="module.identifier"
           icon
@@ -61,9 +61,9 @@ const loading = isAccountOperationRunning();
           depressed
           cols="auto"
         >
-          <v-tooltip top open-delay="400">
+          <VTooltip top open-delay="400">
             <template #activator="{ on, attrs }">
-              <v-img
+              <VImg
                 height="24px"
                 width="24px"
                 contain
@@ -73,12 +73,12 @@ const loading = isAccountOperationRunning();
               />
             </template>
             <span>{{ module.name }}</span>
-          </v-tooltip>
-        </v-btn>
-      </v-btn-toggle>
+          </VTooltip>
+        </VBtn>
+      </VBtnToggle>
       <div class="text-caption text--secondary mt-1 mb-2">
         {{ t('module_activator.hint') }}
       </div>
-    </v-col>
-  </v-row>
+    </VCol>
+  </VRow>
 </template>

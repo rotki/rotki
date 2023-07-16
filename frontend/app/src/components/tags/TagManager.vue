@@ -85,19 +85,19 @@ const showDeleteConfirmation = (selectedTag: Tag) => {
 </script>
 
 <template>
-  <card class="tag-manager">
+  <Card class="tag-manager">
     <template #title>
       {{ t('tag_manager.title') }}
     </template>
     <template v-if="dialog" #details>
-      <v-btn class="tag-manager__close" icon text @click="close()">
-        <v-icon>mdi-close</v-icon>
-      </v-btn>
+      <VBtn class="tag-manager__close" icon text @click="close()">
+        <VIcon>mdi-close</VIcon>
+      </VBtn>
     </template>
     <template #subtitle>
       {{ t('tag_manager.subtitle') }}
     </template>
-    <tag-creator
+    <TagCreator
       :tag="tag"
       :edit-mode="editMode"
       @changed="onChange($event)"
@@ -105,17 +105,17 @@ const showDeleteConfirmation = (selectedTag: Tag) => {
       @save="save($event)"
     />
 
-    <v-divider />
+    <VDivider />
 
     <div class="mx-n4">
-      <card outlined-body flat>
+      <Card outlined-body flat>
         <template #title>
           {{ t('tag_manager.my_tags') }}
         </template>
         <template #search>
-          <v-row justify="end">
-            <v-col cols="12" sm="5">
-              <v-text-field
+          <VRow justify="end">
+            <VCol cols="12" sm="5">
+              <VTextField
                 v-model="search"
                 outlined
                 dense
@@ -126,40 +126,36 @@ const showDeleteConfirmation = (selectedTag: Tag) => {
                 hide-details
                 clearable
               />
-            </v-col>
-          </v-row>
+            </VCol>
+          </VRow>
         </template>
-        <data-table
+        <DataTable
           :items="tags"
           item-key="name"
           :headers="headers"
           :search="search"
         >
           <template #item.name="{ item }">
-            <tag-icon :tag="item" />
+            <TagIcon :tag="item" />
           </template>
           <template #item.action="{ item }">
-            <v-row v-if="!item.readOnly" no-gutters>
-              <v-col>
-                <v-icon small class="mr-2" @click="editItem(item)">
+            <VRow v-if="!item.readOnly" no-gutters>
+              <VCol>
+                <VIcon small class="mr-2" @click="editItem(item)">
                   mdi-pencil
-                </v-icon>
-              </v-col>
-              <v-col>
-                <v-icon
-                  small
-                  class="mr-2"
-                  @click="showDeleteConfirmation(item)"
-                >
+                </VIcon>
+              </VCol>
+              <VCol>
+                <VIcon small class="mr-2" @click="showDeleteConfirmation(item)">
                   mdi-delete
-                </v-icon>
-              </v-col>
-            </v-row>
+                </VIcon>
+              </VCol>
+            </VRow>
           </template>
-        </data-table>
-      </card>
+        </DataTable>
+      </Card>
     </div>
-  </card>
+  </Card>
 </template>
 
 <style scoped lang="scss">

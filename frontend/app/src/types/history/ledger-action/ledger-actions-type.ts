@@ -12,4 +12,5 @@ export enum LedgerActionType {
 }
 
 export const LedgerActionEnum = z.nativeEnum(LedgerActionType);
+
 export type LedgerActionEnum = z.infer<typeof LedgerActionEnum>;

@@ -43,6 +43,7 @@ const loadComponents = async (): Promise<string[]> =>
     script.addEventListener('error', reject);
     resolve(components);
   });
+
 export const loadLibrary = async () => {
   const [component] = await loadComponents();
   // @ts-ignore

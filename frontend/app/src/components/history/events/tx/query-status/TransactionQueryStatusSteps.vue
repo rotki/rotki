@@ -27,10 +27,10 @@ const css = useCssModule();
 </script>
 
 <template>
-  <v-stepper vertical flat :value="-1" :class="css.stepper">
-    <v-stepper-header :class="css['stepper__header']">
+  <VStepper vertical flat :value="-1" :class="css.stepper">
+    <VStepperHeader :class="css['stepper__header']">
       <template v-for="(step, index) in steps">
-        <v-stepper-step
+        <VStepperStep
           :key="step"
           :class="css['stepper__item']"
           :step="index + 1"
@@ -40,7 +40,7 @@ const css = useCssModule();
           <div :class="isStepCompleted(item, index) ? 'green--text' : ''">
             {{ step }}
           </div>
-          <v-progress-circular
+          <VProgressCircular
             v-if="isStepInProgress(item, index)"
             :class="css['stepper__progress']"
             size="32"
@@ -48,10 +48,10 @@ const css = useCssModule();
             width="2"
             color="primary"
           />
-        </v-stepper-step>
+        </VStepperStep>
       </template>
-    </v-stepper-header>
-  </v-stepper>
+    </VStepperHeader>
+  </VStepper>
 </template>
 
 <style module lang="scss">

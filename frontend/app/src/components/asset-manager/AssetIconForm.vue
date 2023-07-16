@@ -75,12 +75,12 @@ defineExpose({
 
 <template>
   <div>
-    <v-row>
-      <v-col cols="auto">
-        <v-sheet outlined rounded class="asset-form__icon">
-          <v-tooltip v-if="preview && refreshable" right>
+    <VRow>
+      <VCol cols="auto">
+        <VSheet outlined rounded class="asset-form__icon">
+          <VTooltip v-if="preview && refreshable" right>
             <template #activator="{ on }">
-              <v-btn
+              <VBtn
                 fab
                 x-small
                 depressed
@@ -90,34 +90,34 @@ defineExpose({
                 v-on="on"
                 @click="refreshIcon()"
               >
-                <v-icon>mdi-refresh</v-icon>
-              </v-btn>
+                <VIcon>mdi-refresh</VIcon>
+              </VBtn>
             </template>
             {{ t('asset_form.fetch_latest_icon.title') }}
-          </v-tooltip>
+          </VTooltip>
 
-          <asset-icon
+          <AssetIcon
             v-if="preview"
             :identifier="preview"
             size="72px"
             changeable
             :timestamp="timestamp"
           />
-        </v-sheet>
-      </v-col>
-      <v-col>
-        <file-upload
+        </VSheet>
+      </VCol>
+      <VCol>
+        <FileUpload
           source="icon"
           file-filter="image/*"
           @selected="icon = $event"
         />
-      </v-col>
-    </v-row>
-    <v-row v-if="icon">
-      <v-col class="text-caption">
+      </VCol>
+    </VRow>
+    <VRow v-if="icon">
+      <VCol class="text-caption">
         {{ t('asset_form.replaced', { name: icon.name }) }}
-      </v-col>
-    </v-row>
+      </VCol>
+    </VRow>
   </div>
 </template>
 

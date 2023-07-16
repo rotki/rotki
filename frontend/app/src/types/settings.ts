@@ -17,6 +17,7 @@ const EvmRpcNode = z.object({
 export type EvmRpcNode = z.infer<typeof EvmRpcNode>;
 
 export const EvmRpcNodeList = z.array(EvmRpcNode);
+
 export type EvmRpcNodeList = z.infer<typeof EvmRpcNodeList>;
 
 export const getPlaceholderNode = (chain: Blockchain): EvmRpcNode => ({

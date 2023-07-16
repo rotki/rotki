@@ -172,7 +172,9 @@ export const timeframes: (
 });
 
 export const TIMEFRAME_CUSTOM = 'CUSTOM' as const;
+
 export type CustomizableTimeframe = TimeFramePeriod | typeof TIMEFRAME_CUSTOM;
+
 export const customTimeframe: Timeframe = {
   text: TIMEFRAME_CUSTOM,
   startingDate: () => -1,

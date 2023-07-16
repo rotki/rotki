@@ -22,7 +22,7 @@ describe('table-filter/FilterDropdown.vue', () => {
     return mount(FilterDropdown, {
       pinia,
       vuetify,
-      stubs: ['filter-entry', 'suggested-item', 'i18n'],
+      stubs: ['filter-entry', 'suggested-item', 'I18n'],
       ...options
     });
   };
@@ -149,7 +149,7 @@ describe('table-filter/FilterDropdown.vue', () => {
 
     await wrapper.vm.$nextTick();
 
-    expect(wrapper.find('i18n-stub').attributes().path).toBe(
+    expect(wrapper.find('I18n-stub').attributes().path).toBe(
       'table_filter.no_suggestions'
     );
   });

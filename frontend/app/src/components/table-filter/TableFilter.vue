@@ -317,7 +317,7 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <v-tooltip
+  <VTooltip
     :disabled="!disabled || !slots.tooltip"
     open-delay="400"
     close-delay="2500"
@@ -325,8 +325,8 @@ const { t } = useI18n();
   >
     <template #activator="{ on }">
       <div v-on="on">
-        <v-card flat class="d-flex" data-cy="table-filter" :disabled="disabled">
-          <v-combobox
+        <VCard flat class="d-flex" data-cy="table-filter" :disabled="disabled">
+          <VCombobox
             ref="input"
             :class="css.filter"
             :value="selection"
@@ -352,7 +352,7 @@ const { t } = useI18n();
             @keydown.down="moveSuggestion(false)"
           >
             <template #selection="{ item, selected }">
-              <v-chip
+              <VChip
                 label
                 small
                 class="font-weight-medium px-2"
@@ -364,11 +364,11 @@ const { t } = useI18n();
                   selectItem(item);
                 "
               >
-                <suggested-item chip :suggestion="item" />
-              </v-chip>
+                <SuggestedItem chip :suggestion="item" />
+              </VChip>
             </template>
             <template #no-data>
-              <filter-dropdown
+              <FilterDropdown
                 :matchers="filteredMatchers"
                 :used="usedKeys"
                 :keyword="search"
@@ -381,23 +381,23 @@ const { t } = useI18n();
                 @click="setSearchToMatcherKey($event)"
               />
             </template>
-          </v-combobox>
+          </VCombobox>
 
           <div v-if="location" class="ml-2 mt-1">
-            <saved-filter-management
+            <SavedFilterManagement
               :selection="selection"
               :location="location"
               :matchers="matchers"
               @update:matches="updateMatches($event)"
             />
           </div>
-        </v-card>
+        </VCard>
       </div>
     </template>
     <span :class="css.tooltip">
       <slot name="tooltip" />
     </span>
-  </v-tooltip>
+  </VTooltip>
 </template>
 
 <style module lang="css">

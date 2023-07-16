@@ -12,14 +12,14 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <settings-option
+  <SettingsOption
     #default="{ error, success, update }"
     setting="displayDateInLocaltime"
     :error-message="
       t('general_settings.validation.display_date_in_localtime.error')
     "
   >
-    <v-switch
+    <VSwitch
       v-model="displayDateInLocaltime"
       class="general-settings__fields__display-date-in-localtime mb-4 mt-0"
       color="primary"
@@ -28,5 +28,5 @@ const { t } = useI18n();
       :error-messages="error"
       @change="update($event)"
     />
-  </settings-option>
+  </SettingsOption>
 </template>

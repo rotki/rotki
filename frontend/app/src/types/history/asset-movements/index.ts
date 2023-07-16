@@ -7,6 +7,7 @@ import { TradeLocation } from '@/types/history/trade/location';
 import { CollectionCommonFields } from '@/types/collection';
 
 export const MovementCategory = z.enum(['deposit', 'withdrawal']);
+
 export type MovementCategory = z.infer<typeof MovementCategory>;
 
 export const AssetMovement = z.object({
@@ -22,7 +23,9 @@ export const AssetMovement = z.object({
   fee: NumericString,
   link: z.string()
 });
+
 export type AssetMovement = z.infer<typeof AssetMovement>;
+
 export const AssetMovementCollectionResponse = CollectionCommonFields.extend({
   entries: z.array(
     z
@@ -32,6 +35,7 @@ export const AssetMovementCollectionResponse = CollectionCommonFields.extend({
       .merge(EntryMeta)
   )
 });
+
 export interface AssetMovementRequestPayload
   extends PaginationRequestPayload<AssetMovement> {
   readonly fromTimestamp?: string | number;

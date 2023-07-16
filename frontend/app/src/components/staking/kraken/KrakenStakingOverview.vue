@@ -34,72 +34,72 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <card full-height>
+  <Card full-height>
     <template #title>{{ t('kraken_staking_overview.title') }}</template>
-    <v-row class="pt-1 pb-4">
-      <v-col>
-        <v-row no-gutters>
-          <v-col>
+    <VRow class="pt-1 pb-4">
+      <VCol>
+        <VRow no-gutters>
+          <VCol>
             <div class="font-weight-medium">
               {{ t('kraken_staking_overview.earned') }}
             </div>
-          </v-col>
-        </v-row>
-        <v-row justify="space-between" align="center" no-gutters class="mt-2">
-          <v-col cols="auto">
+          </VCol>
+        </VRow>
+        <VRow justify="space-between" align="center" no-gutters class="mt-2">
+          <VCol cols="auto">
             <div
               class="d-flex align-center text--secondary font-weight-light ms-2"
             >
               {{ t('kraken_staking_overview.historical') }}
-              <v-tooltip open-delay="400" top>
+              <VTooltip open-delay="400" top>
                 <template #activator="{ attrs, on }">
-                  <v-icon class="ms-1" small v-bind="attrs" v-on="on">
+                  <VIcon class="ms-1" small v-bind="attrs" v-on="on">
                     mdi-information
-                  </v-icon>
+                  </VIcon>
                 </template>
                 <span>{{ t('kraken_staking_overview.hint.historical') }}</span>
-              </v-tooltip>
+              </VTooltip>
             </div>
-          </v-col>
-          <v-col cols="auto">
+          </VCol>
+          <VCol cols="auto">
             <div class="d-flex align-center">
-              <value-accuracy-hint />
-              <amount-display
+              <ValueAccuracyHint />
+              <AmountDisplay
                 show-currency="ticker"
                 fiat-currency="USD"
                 :value="totalUsd"
                 class="grey--text"
               />
             </div>
-          </v-col>
-        </v-row>
-        <v-row justify="space-between" align="center" no-gutters class="mt-2">
-          <v-col cols="auto">
+          </VCol>
+        </VRow>
+        <VRow justify="space-between" align="center" no-gutters class="mt-2">
+          <VCol cols="auto">
             <div
               class="d-flex align-center text--secondary font-weight-light ms-2"
             >
               {{ t('kraken_staking_overview.current') }}
-              <v-tooltip open-delay="400" top>
+              <VTooltip open-delay="400" top>
                 <template #activator="{ attrs, on }">
-                  <v-icon class="ms-1" small v-bind="attrs" v-on="on">
+                  <VIcon class="ms-1" small v-bind="attrs" v-on="on">
                     mdi-information
-                  </v-icon>
+                  </VIcon>
                 </template>
                 <span>{{ t('kraken_staking_overview.hint.current') }}</span>
-              </v-tooltip>
+              </VTooltip>
             </div>
-          </v-col>
-          <v-col cols="auto">
-            <amount-display
+          </VCol>
+          <VCol cols="auto">
+            <AmountDisplay
               show-currency="ticker"
               fiat-currency="USD"
               :loading="pricesAreLoading"
               :value="totalUsdCurrent"
               class="grey--text"
             />
-          </v-col>
-        </v-row>
-      </v-col>
-    </v-row>
-  </card>
+          </VCol>
+        </VRow>
+      </VCol>
+    </VRow>
+  </Card>
 </template>

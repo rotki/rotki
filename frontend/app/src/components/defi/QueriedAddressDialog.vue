@@ -82,21 +82,21 @@ const close = () => {
 </script>
 
 <template>
-  <v-dialog
+  <VDialog
     :value="true"
     max-width="450px"
     @click:outside="close()"
     @close="close()"
   >
-    <card outlined-body>
+    <Card outlined-body>
       <template #title>{{ t('queried_address_dialog.title') }}</template>
       <template #subtitle>
         {{ t('queried_address_dialog.subtitle', { module: moduleName }) }}
       </template>
       <template #actions>
-        <v-row no-gutters align="center" class="flex-nowrap">
-          <v-col>
-            <blockchain-account-selector
+        <VRow no-gutters align="center" class="flex-nowrap">
+          <VCol>
+            <BlockchainAccountSelector
               v-model="selectedAccounts"
               outlined
               flat
@@ -109,42 +109,42 @@ const close = () => {
               :chains="[ETH]"
               :label="t('queried_address_dialog.add')"
             />
-          </v-col>
-          <v-col cols="auto">
-            <v-btn
+          </VCol>
+          <VCol cols="auto">
+            <VBtn
               icon
               color="primary"
               :disabled="selectedAccounts.length === 0"
               @click="addAddress()"
             >
-              <v-icon>mdi-plus</v-icon>
-            </v-btn>
-          </v-col>
-        </v-row>
+              <VIcon>mdi-plus</VIcon>
+            </VBtn>
+          </VCol>
+        </VRow>
       </template>
       <template #details>
-        <v-btn icon @click="close()">
-          <v-icon>mdi-close</v-icon>
-        </v-btn>
+        <VBtn icon @click="close()">
+          <VIcon>mdi-close</VIcon>
+        </VBtn>
       </template>
       <div v-if="addresses.length > 0" class="queried-address-dialog__list">
-        <v-row
+        <VRow
           v-for="address in addresses"
           :key="address"
           no-gutters
           class="py-1"
         >
-          <v-col>
-            <labeled-address-display
+          <VCol>
+            <LabeledAddressDisplay
               :account="getAccount(address)"
               class="queried-address-dialog__account"
             />
-            <tag-display :tags="getAccount(address).tags" :small="true" />
-          </v-col>
-          <v-col cols="auto">
-            <v-tooltip open-delay="400" top>
+            <TagDisplay :tags="getAccount(address).tags" :small="true" />
+          </VCol>
+          <VCol cols="auto">
+            <VTooltip open-delay="400" top>
               <template #activator="{ on, attrs }">
-                <v-btn
+                <VBtn
                   small
                   icon
                   color="primary"
@@ -157,13 +157,13 @@ const close = () => {
                     })
                   "
                 >
-                  <v-icon>mdi-delete</v-icon>
-                </v-btn>
+                  <VIcon>mdi-delete</VIcon>
+                </VBtn>
               </template>
               <span>{{ t('queried_address_dialog.remove_tooltip') }}</span>
-            </v-tooltip>
-          </v-col>
-        </v-row>
+            </VTooltip>
+          </VCol>
+        </VRow>
       </div>
       <div v-else class="queried-address-dialog__empty">
         <div>
@@ -174,8 +174,8 @@ const close = () => {
           }}
         </div>
       </div>
-    </card>
-  </v-dialog>
+    </Card>
+  </VDialog>
 </template>
 
 <style scoped lang="scss">

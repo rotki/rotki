@@ -10,23 +10,23 @@ const css = useCssModule();
 </script>
 
 <template>
-  <v-dialog width="1200">
+  <VDialog width="1200">
     <template #activator="{ on }">
-      <v-btn text class="ml-4" v-on="on">
+      <VBtn text class="ml-4" v-on="on">
         {{ t('common.details') }}
-        <v-icon small>mdi-chevron-right</v-icon>
-      </v-btn>
+        <VIcon small>mdi-chevron-right</VIcon>
+      </VBtn>
     </template>
     <template #default="dialog">
-      <v-card :class="css.card">
-        <v-card-title class="d-flex justify-space-between pb-0">
+      <VCard :class="css.card">
+        <VCardTitle class="d-flex justify-space-between pb-0">
           <div>
             <slot name="title" />
           </div>
-          <v-btn icon @click="dialog.value = false">
-            <v-icon>mdi-close</v-icon>
-          </v-btn>
-        </v-card-title>
+          <VBtn icon @click="dialog.value = false">
+            <VIcon>mdi-close</VIcon>
+          </VBtn>
+        </VCardTitle>
 
         <slot name="current" />
 
@@ -35,20 +35,20 @@ const css = useCssModule();
             <div class="d-flex align-center">
               <slot name="item" :item="item" />
 
-              <v-tooltip v-if="showTooltip ? showTooltip(item) : true" bottom>
+              <VTooltip v-if="showTooltip ? showTooltip(item) : true" bottom>
                 <template #activator="{ on }">
-                  <v-icon class="ml-2" v-on="on"> mdi-help-circle </v-icon>
+                  <VIcon class="ml-2" v-on="on"> mdi-help-circle </VIcon>
                 </template>
 
                 <slot name="tooltip" :item="item" />
-              </v-tooltip>
+              </VTooltip>
             </div>
             <slot name="steps" :item="item" />
           </div>
         </div>
-      </v-card>
+      </VCard>
     </template>
-  </v-dialog>
+  </VDialog>
 </template>
 
 <style module lang="scss">

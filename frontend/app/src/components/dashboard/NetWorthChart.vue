@@ -16,8 +16,6 @@ import dayjs from 'dayjs';
 import { type PropType } from 'vue';
 import { type ValueOverTime } from '@/types/graphs';
 
-const { t } = useI18n();
-
 const props = defineProps({
   timeframe: {
     required: true,
@@ -28,6 +26,8 @@ const props = defineProps({
   timeframes: { required: true, type: Object as PropType<Timeframes> },
   chartData: { required: true, type: Object as PropType<NetValue> }
 });
+
+const { t } = useI18n();
 
 const { chartData } = toRefs(props);
 const { graphZeroBased, showGraphRangeSelector } = storeToRefs(
@@ -646,11 +646,11 @@ const css = useCssModule();
         @mouseup="canvasMouseUp($event)"
         @dblclick.stop="resetZoom()"
       />
-      <graph-tooltip-wrapper :tooltip-option="tooltipDisplayOption">
+      <GraphTooltipWrapper :tooltip-option="tooltipDisplayOption">
         <template #content>
           <div>
             <div class="font-weight-bold text-center">
-              <amount-display
+              <AmountDisplay
                 force-currency
                 show-currency="symbol"
                 :value="tooltipContent.value"
@@ -668,7 +668,7 @@ const css = useCssModule();
             </div>
           </div>
         </template>
-      </graph-tooltip-wrapper>
+      </GraphTooltipWrapper>
     </div>
 
     <div
@@ -694,17 +694,17 @@ const css = useCssModule();
             [css['range__marker__limit--start']]: true
           }"
         >
-          <v-btn
+          <VBtn
             :color="dark ? 'black' : 'white'"
             :ripple="false"
             :class="css['range__marker__limit__button']"
             elevation="1"
             @mousedown.stop="rangeButtonMouseDown('start', $event)"
           >
-            <v-icon :class="css['range__marker__limit__button__icon']">
+            <VIcon :class="css['range__marker__limit__button__icon']">
               mdi-equal
-            </v-icon>
-          </v-btn>
+            </VIcon>
+          </VBtn>
         </div>
         <div
           :class="{
@@ -712,22 +712,22 @@ const css = useCssModule();
             [css['range__marker__limit--end']]: true
           }"
         >
-          <v-btn
+          <VBtn
             :color="dark ? 'black' : 'white'"
             :ripple="false"
             :class="css['range__marker__limit__button']"
             elevation="1"
             @mousedown.stop="rangeButtonMouseDown('end', $event)"
           >
-            <v-icon :class="css['range__marker__limit__button__icon']">
+            <VIcon :class="css['range__marker__limit__button__icon']">
               mdi-equal
-            </v-icon>
-          </v-btn>
+            </VIcon>
+          </VBtn>
         </div>
       </div>
     </div>
 
-    <export-snapshot-dialog
+    <ExportSnapshotDialog
       v-model="showExportSnapshotDialog"
       :timestamp="selectedTimestamp"
       :balance="selectedBalance"

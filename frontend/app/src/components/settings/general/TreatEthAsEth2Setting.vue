@@ -10,12 +10,12 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <settings-option
+  <SettingsOption
     #default="{ error, success, update }"
     setting="treatEth2AsEth"
     :error-message="t('general_settings.validation.treat_eth2_as_eth.error')"
   >
-    <v-switch
+    <VSwitch
       v-model="treatEth2asEth"
       class="general-settings__fields__treat-eth2-as-eth mb-2 mt-0"
       color="primary"
@@ -24,5 +24,5 @@ const { t } = useI18n();
       :error-messages="error"
       @change="update($event)"
     />
-  </settings-option>
+  </SettingsOption>
 </template>

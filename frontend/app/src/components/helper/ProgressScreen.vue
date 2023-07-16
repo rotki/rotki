@@ -18,10 +18,10 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <full-size-content>
+  <FullSizeContent>
     <div :class="$style.content">
-      <v-col cols="12">
-        <v-row
+      <VCol cols="12">
+        <VRow
           v-if="progress"
           align="center"
           justify="center"
@@ -29,10 +29,10 @@ const { t } = useI18n();
           :class="$style.percentage"
         >
           {{ t('progress_screen.progress', { progress: percentage }) }}
-        </v-row>
-        <v-row align="center" justify="center" :class="$style.loader">
-          <v-col cols="10">
-            <v-progress-linear
+        </VRow>
+        <VRow align="center" justify="center" :class="$style.loader">
+          <VCol cols="10">
+            <VProgressLinear
               v-if="progress"
               class="text-center"
               rounded
@@ -41,33 +41,33 @@ const { t } = useI18n();
               :value="progress"
             />
             <div v-else :class="$style.indeterminate">
-              <v-progress-circular
+              <VProgressCircular
                 rounded
                 indeterminate
                 :size="70"
                 color="primary"
               />
             </div>
-          </v-col>
-        </v-row>
-        <v-row align="center" justify="center">
+          </VCol>
+        </VRow>
+        <VRow align="center" justify="center">
           <p class="text-center font-weight-light" :class="$style.description">
             <slot name="message" />
           </p>
-        </v-row>
-        <v-row align="center" justify="center">
-          <v-col cols="4">
-            <v-divider />
-          </v-col>
-        </v-row>
-        <v-row align="center" justify="center" :class="$style.warning">
+        </VRow>
+        <VRow align="center" justify="center">
+          <VCol cols="4">
+            <VDivider />
+          </VCol>
+        </VRow>
+        <VRow align="center" justify="center" :class="$style.warning">
           <div class="font-weight-light text-subtitle-2 text-center">
             <slot />
           </div>
-        </v-row>
-      </v-col>
+        </VRow>
+      </VCol>
     </div>
-  </full-size-content>
+  </FullSizeContent>
 </template>
 
 <style module lang="scss">

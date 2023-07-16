@@ -33,7 +33,9 @@ export enum TimeUnit {
 }
 
 export const SELECTED_THEME = 'selectedTheme' as const;
+
 export const LIGHT_THEME = 'lightTheme' as const;
+
 export const DARK_THEME = 'darkTheme' as const;
 
 interface FrontendSettings {

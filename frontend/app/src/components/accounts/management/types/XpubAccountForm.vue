@@ -117,20 +117,20 @@ onMounted(() => {
 </script>
 
 <template>
-  <v-form v-model="valid">
-    <xpub-input
+  <VForm v-model="valid">
+    <XpubInput
       :disabled="loading"
       :error-messages="errorMessages"
       :xpub="xpub"
       :blockchain="blockchain"
       @update:xpub="xpub = $event"
     />
-    <account-data-input
+    <AccountDataInput
       :tags="tags"
       :label="label"
       :disabled="loading"
       @update:label="label = $event"
       @update:tags="tags = $event"
     />
-  </v-form>
+  </VForm>
 </template>

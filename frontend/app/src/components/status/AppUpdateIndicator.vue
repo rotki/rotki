@@ -50,12 +50,12 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <v-tooltip v-if="updateNeeded" bottom>
+  <VTooltip v-if="updateNeeded" bottom>
     <template #activator="{ on }">
-      <v-btn text icon @click="update()">
-        <v-icon color="error" dark v-on="on"> mdi-arrow-up-bold-circle </v-icon>
-      </v-btn>
+      <VBtn text icon @click="update()">
+        <VIcon color="error" dark v-on="on"> mdi-arrow-up-bold-circle </VIcon>
+      </VBtn>
     </template>
     <span v-text="t('update_indicator.version', { appVersion })" />
-  </v-tooltip>
+  </VTooltip>
 </template>

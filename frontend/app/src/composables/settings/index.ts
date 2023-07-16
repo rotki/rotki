@@ -14,9 +14,11 @@ export enum SettingLocation {
 interface SuccessfulUpdate {
   success: string;
 }
+
 interface UnsuccessfulUpdate {
   error: string;
 }
+
 type UpdateResult = SuccessfulUpdate | UnsuccessfulUpdate;
 
 const getActionStatus = async (

@@ -1,11 +1,6 @@
 <script setup lang="ts">
 import { useListeners } from 'vue';
 
-const css = useCssModule();
-const slots = useSlots();
-const rootAttrs = useAttrs();
-const rootListeners = useListeners();
-
 const props = withDefaults(
   defineProps<{
     outlinedBody?: boolean;
@@ -24,6 +19,10 @@ const props = withDefaults(
     flat: false
   }
 );
+const css = useCssModule();
+const slots = useSlots();
+const rootAttrs = useAttrs();
+const rootListeners = useListeners();
 
 const { contained } = toRefs(props);
 const body = ref<HTMLDivElement | null>(null);
@@ -51,7 +50,7 @@ const bodyStyle = computed(() => {
 </script>
 
 <template>
-  <v-card
+  <VCard
     v-bind="rootAttrs"
     :flat="flat"
     :class="{
@@ -60,20 +59,20 @@ const bodyStyle = computed(() => {
     }"
     v-on="rootListeners"
   >
-    <v-card-title v-if="slots.title" :class="{ 'pt-6': slots.icon }">
+    <VCardTitle v-if="slots.title" :class="{ 'pt-6': slots.icon }">
       <slot v-if="slots.icon" name="icon" />
-      <card-title
+      <CardTitle
         :class="{
           'ps-3': slots.icon,
           [css.title]: slots.icon
         }"
       >
         <slot name="title" />
-      </card-title>
-      <v-spacer v-if="slots.details" />
+      </CardTitle>
+      <VSpacer v-if="slots.details" />
       <slot name="details" />
-    </v-card-title>
-    <v-card-subtitle v-if="slots.subtitle" :class="{ 'ms-14': slots.icon }">
+    </VCardTitle>
+    <VCardSubtitle v-if="slots.subtitle" :class="{ 'ms-14': slots.icon }">
       <div
         :class="{
           'pt-2': slots.icon,
@@ -82,8 +81,8 @@ const bodyStyle = computed(() => {
       >
         <slot name="subtitle" />
       </div>
-    </v-card-subtitle>
-    <v-card-text
+    </VCardSubtitle>
+    <VCardText
       ref="body"
       :style="bodyStyle"
       :class="{
@@ -92,24 +91,24 @@ const bodyStyle = computed(() => {
       }"
     >
       <slot name="search" />
-      <v-sheet v-if="slots.actions" outlined rounded class="pa-3 mb-4">
+      <VSheet v-if="slots.actions" outlined rounded class="pa-3 mb-4">
         <slot name="actions" />
-      </v-sheet>
+      </VSheet>
       <div v-if="slots.hint" class="pb-4">
         <slot name="hint" />
       </div>
-      <v-sheet v-if="outlinedBody" outlined rounded>
+      <VSheet v-if="outlinedBody" outlined rounded>
         <slot />
-      </v-sheet>
+      </VSheet>
       <slot v-else />
       <div v-if="slots.options" :class="css.options">
         <slot name="options" />
       </div>
-    </v-card-text>
-    <v-card-actions v-if="slots.buttons" ref="actions" :class="css.actions">
+    </VCardText>
+    <VCardActions v-if="slots.buttons" ref="actions" :class="css.actions">
       <slot name="buttons" />
-    </v-card-actions>
-  </v-card>
+    </VCardActions>
+  </VCard>
 </template>
 
 <style module lang="scss">

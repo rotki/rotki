@@ -10,5 +10,5 @@ const { identifier } = toRefs(props);
 </script>
 
 <template>
-  <managed-asset-content main-page :identifier="identifier" />
+  <ManagedAssetContent main-page :identifier="identifier" />
 </template>

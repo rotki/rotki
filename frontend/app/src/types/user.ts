@@ -192,6 +192,7 @@ export const ExternalServiceKeys = z.object({
 });
 
 export type ExternalServiceKeys = z.infer<typeof ExternalServiceKeys>;
+
 export type ExternalServiceName = ToSnakeCase<keyof ExternalServiceKeys>;
 
 export interface ExternalServiceKey {

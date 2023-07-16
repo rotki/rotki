@@ -25,41 +25,41 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <card full-height>
+  <Card full-height>
     <template #title>{{ t('kraken_staking_received.title') }}</template>
     <template #details>
-      <v-btn-toggle v-model="current" dense mandatory>
-        <v-btn :value="true">
+      <VBtnToggle v-model="current" dense mandatory>
+        <VBtn :value="true">
           {{ t('kraken_staking_received.switch.current') }}
-        </v-btn>
-        <v-btn :value="false">
+        </VBtn>
+        <VBtn :value="false">
           {{ t('kraken_staking_received.switch.historical') }}
-        </v-btn>
-      </v-btn-toggle>
+        </VBtn>
+      </VBtnToggle>
     </template>
     <div :class="$style.received">
-      <v-row
+      <VRow
         v-for="item in received"
         :key="item.asset"
         justify="space-between"
         no-gutters
         align="center"
       >
-        <v-col cols="auto">
-          <asset-details :asset="item.asset" dense />
-        </v-col>
-        <v-col cols="auto" :class="$style.amount">
-          <value-accuracy-hint v-if="!current" />
-          <balance-display
+        <VCol cols="auto">
+          <AssetDetails :asset="item.asset" dense />
+        </VCol>
+        <VCol cols="auto" :class="$style.amount">
+          <ValueAccuracyHint v-if="!current" />
+          <BalanceDisplay
             no-icon
             :asset="item.asset"
             :value="getBalance(item)"
             :loading="pricesAreLoading && current"
           />
-        </v-col>
-      </v-row>
+        </VCol>
+      </VRow>
     </div>
-  </card>
+  </Card>
 </template>
 
 <style lang="scss" module>

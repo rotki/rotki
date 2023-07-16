@@ -11,18 +11,18 @@ const props = defineProps<{
   loading: boolean;
 }>();
 
-const { event } = toRefs(props);
-
-const evmEvent = isEvmEventRef(event);
-
-const { t } = useI18n();
-
 const emit = defineEmits<{
   (e: 'add-event', event: EvmHistoryEvent): void;
   (e: 'toggle-ignore', event: HistoryEventEntry): void;
   (e: 'redecode', data: EvmChainAndTxHash): void;
   (e: 'reset', event: EvmHistoryEvent): void;
 }>();
+
+const { event } = toRefs(props);
+
+const evmEvent = isEvmEventRef(event);
+
+const { t } = useI18n();
 
 const addEvent = (event: EvmHistoryEvent) => emit('add-event', event);
 const toggleIgnore = (event: HistoryEventEntry) => emit('toggle-ignore', event);
@@ -32,7 +32,7 @@ const resetEvent = (event: EvmHistoryEvent) => emit('reset', event);
 
 <template>
   <div class="d-flex align-center">
-    <v-menu
+    <VMenu
       v-if="evmEvent"
       transition="slide-y-transition"
       max-width="250px"
@@ -40,53 +40,53 @@ const resetEvent = (event: EvmHistoryEvent) => emit('reset', event);
       offset-y
     >
       <template #activator="{ on }">
-        <v-btn class="ml-1" icon v-on="on">
-          <v-icon>mdi-dots-vertical</v-icon>
-        </v-btn>
+        <VBtn class="ml-1" icon v-on="on">
+          <VIcon>mdi-dots-vertical</VIcon>
+        </VBtn>
       </template>
-      <v-list>
-        <v-list-item link @click="addEvent(evmEvent)">
-          <v-list-item-icon class="mr-4">
-            <v-icon>mdi-plus</v-icon>
-          </v-list-item-icon>
-          <v-list-item-content>
+      <VList>
+        <VListItem link @click="addEvent(evmEvent)">
+          <VListItemIcon class="mr-4">
+            <VIcon>mdi-plus</VIcon>
+          </VListItemIcon>
+          <VListItemContent>
             {{ t('transactions.actions.add_event') }}
-          </v-list-item-content>
-        </v-list-item>
-        <v-list-item link @click="toggleIgnore(event)">
-          <v-list-item-icon class="mr-4">
-            <v-icon v-if="event.ignoredInAccounting"> mdi-eye </v-icon>
-            <v-icon v-else> mdi-eye-off</v-icon>
-          </v-list-item-icon>
-          <v-list-item-content>
+          </VListItemContent>
+        </VListItem>
+        <VListItem link @click="toggleIgnore(event)">
+          <VListItemIcon class="mr-4">
+            <VIcon v-if="event.ignoredInAccounting"> mdi-eye </VIcon>
+            <VIcon v-else> mdi-eye-off</VIcon>
+          </VListItemIcon>
+          <VListItemContent>
             {{
               event.ignoredInAccounting
                 ? t('transactions.unignore')
                 : t('transactions.ignore')
             }}
-          </v-list-item-content>
-        </v-list-item>
-        <v-list-item
+          </VListItemContent>
+        </VListItem>
+        <VListItem
           link
           :disabled="loading"
           @click="redecode(toEvmChainAndTxHash(evmEvent))"
         >
-          <v-list-item-icon class="mr-4">
-            <v-icon>mdi-database-refresh</v-icon>
-          </v-list-item-icon>
-          <v-list-item-content>
+          <VListItemIcon class="mr-4">
+            <VIcon>mdi-database-refresh</VIcon>
+          </VListItemIcon>
+          <VListItemContent>
             {{ t('transactions.actions.redecode_events') }}
-          </v-list-item-content>
-        </v-list-item>
-        <v-list-item link :disabled="loading" @click="resetEvent(evmEvent)">
-          <v-list-item-icon class="mr-4">
-            <v-icon>mdi-file-restore</v-icon>
-          </v-list-item-icon>
-          <v-list-item-content>
+          </VListItemContent>
+        </VListItem>
+        <VListItem link :disabled="loading" @click="resetEvent(evmEvent)">
+          <VListItemIcon class="mr-4">
+            <VIcon>mdi-file-restore</VIcon>
+          </VListItemIcon>
+          <VListItemContent>
             {{ t('transactions.actions.reset_customized_events') }}
-          </v-list-item-content>
-        </v-list-item>
-      </v-list>
-    </v-menu>
+          </VListItemContent>
+        </VListItem>
+      </VList>
+    </VMenu>
   </div>
 </template>

@@ -32,20 +32,20 @@ const failed: Ref<boolean> = ref(false);
 </script>
 
 <template>
-  <v-lazy :class="css.wrapper">
+  <VLazy :class="css.wrapper">
     <div>
-      <v-img
+      <VImg
         v-if="!avatarUrl || failed"
         :src="getBlockie(address)"
         :class="css.avatar"
       />
-      <v-skeleton-loader
+      <VSkeletonLoader
         v-else-if="avatarUrl && !success"
         type="image"
         width="24px"
         height="24px"
       />
-      <v-img
+      <VImg
         v-if="avatarUrl"
         :class="css.avatar"
         :src="avatarUrl"
@@ -53,7 +53,7 @@ const failed: Ref<boolean> = ref(false);
         @error="failed = true"
       />
     </div>
-  </v-lazy>
+  </VLazy>
 </template>
 
 <style lang="scss" module>

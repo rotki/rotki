@@ -9,6 +9,10 @@ import {
   dateValidator
 } from '@/types/filtering';
 
+const emit = defineEmits<{
+  (e: 'update:period', value: EthStakingPeriod): void;
+}>();
+
 enum Eth2StakingFilterKeys {
   START = 'start',
   END = 'end'
@@ -23,11 +27,8 @@ export type Matcher = SearchMatcher<
   Eth2StakingFilterKeys,
   Eth2StakingFilterValueKeys
 >;
-export type Filters = MatchedKeyword<Eth2StakingFilterValueKeys>;
 
-const emit = defineEmits<{
-  (e: 'update:period', value: EthStakingPeriod): void;
-}>();
+export type Filters = MatchedKeyword<Eth2StakingFilterValueKeys>;
 
 const filters: Ref<Filters> = ref({});
 
@@ -78,7 +79,7 @@ const updateFilters = (updatedFilters: Filters) => {
 </script>
 
 <template>
-  <table-filter
+  <TableFilter
     :matchers="matchers"
     :matches="filters"
     @update:matches="updateFilters($event)"

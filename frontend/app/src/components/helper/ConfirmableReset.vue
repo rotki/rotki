@@ -17,16 +17,16 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <v-menu
+  <VMenu
     v-model="menu"
     :nudge-width="150"
     offset-x
     :close-on-content-click="false"
   >
     <template #activator="{ on: menuListeners, attrs }">
-      <v-tooltip top>
+      <VTooltip top>
         <template #activator="{ on: tooltipListeners }">
-          <v-btn
+          <VBtn
             v-bind="attrs"
             icon
             fab
@@ -35,28 +35,28 @@ const { t } = useI18n();
             :disabled="loading"
             v-on="{ ...menuListeners, ...tooltipListeners }"
           >
-            <v-icon color="primary">mdi-database-refresh</v-icon>
-          </v-btn>
+            <VIcon color="primary">mdi-database-refresh</VIcon>
+          </VBtn>
         </template>
         <span>
           {{ tooltip }}
         </span>
-      </v-tooltip>
+      </VTooltip>
     </template>
-    <v-card max-width="280px">
-      <v-card-title>{{ t('common.actions.confirm') }}</v-card-title>
-      <v-card-text>
+    <VCard max-width="280px">
+      <VCardTitle>{{ t('common.actions.confirm') }}</VCardTitle>
+      <VCardText>
         <slot>{{ t('confirmable_reset.confirm.message') }}</slot>
-      </v-card-text>
-      <v-card-actions>
-        <v-spacer />
-        <v-btn text @click="menu = false">
+      </VCardText>
+      <VCardActions>
+        <VSpacer />
+        <VBtn text @click="menu = false">
           {{ t('common.actions.cancel') }}
-        </v-btn>
-        <v-btn color="primary" text :disabled="disabled" @click="reset()">
+        </VBtn>
+        <VBtn color="primary" text :disabled="disabled" @click="reset()">
           {{ t('common.actions.confirm') }}
-        </v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-menu>
+        </VBtn>
+      </VCardActions>
+    </VCard>
+  </VMenu>
 </template>

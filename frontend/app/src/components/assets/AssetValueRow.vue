@@ -17,14 +17,14 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <v-row>
-    <v-col>
-      <v-card>
-        <v-card-title>
-          <card-title>{{ t('common.price') }}</card-title>
-        </v-card-title>
-        <v-card-text class="text-end text-h5 font-weight-medium pt-4">
-          <amount-display
+  <VRow>
+    <VCol>
+      <VCard>
+        <VCardTitle>
+          <CardTitle>{{ t('common.price') }}</CardTitle>
+        </VCardTitle>
+        <VCardText class="text-end text-h5 font-weight-medium pt-4">
+          <AmountDisplay
             v-if="info.usdPrice && info.usdPrice.gte(0)"
             show-currency="symbol"
             :price-asset="identifier"
@@ -33,28 +33,28 @@ const { t } = useI18n();
             :value="info.usdPrice"
           />
           <div v-else class="pt-3 d-flex justify-end">
-            <v-skeleton-loader height="20" width="70" type="text" />
+            <VSkeletonLoader height="20" width="70" type="text" />
           </div>
-        </v-card-text>
-      </v-card>
-    </v-col>
-    <v-col>
-      <v-card>
-        <v-card-title>
-          <card-title>{{ t('assets.amount') }}</card-title>
-        </v-card-title>
-        <v-card-text class="text-end text-h5 font-weight-medium pt-4">
-          <amount-display :value="info.amount" :asset="identifier" />
-        </v-card-text>
-      </v-card>
-    </v-col>
-    <v-col>
-      <v-card>
-        <v-card-title>
-          <card-title>{{ t('assets.value') }}</card-title>
-        </v-card-title>
-        <v-card-text class="text-end text-h5 font-weight-medium pt-4">
-          <amount-display
+        </VCardText>
+      </VCard>
+    </VCol>
+    <VCol>
+      <VCard>
+        <VCardTitle>
+          <CardTitle>{{ t('assets.amount') }}</CardTitle>
+        </VCardTitle>
+        <VCardText class="text-end text-h5 font-weight-medium pt-4">
+          <AmountDisplay :value="info.amount" :asset="identifier" />
+        </VCardText>
+      </VCard>
+    </VCol>
+    <VCol>
+      <VCard>
+        <VCardTitle>
+          <CardTitle>{{ t('assets.value') }}</CardTitle>
+        </VCardTitle>
+        <VCardText class="text-end text-h5 font-weight-medium pt-4">
+          <AmountDisplay
             show-currency="symbol"
             :amount="info.amount"
             :price-asset="identifier"
@@ -62,8 +62,8 @@ const { t } = useI18n();
             fiat-currency="USD"
             :value="info.usdValue"
           />
-        </v-card-text>
-      </v-card>
-    </v-col>
-  </v-row>
+        </VCardText>
+      </VCard>
+    </VCol>
+  </VRow>
 </template>

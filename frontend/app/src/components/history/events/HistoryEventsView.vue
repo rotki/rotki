@@ -26,8 +26,6 @@ import { type Writeable } from '@/types';
 import HistoryEventsAction from '@/components/history/events/HistoryEventsAction.vue';
 import type { Filters, Matcher } from '@/composables/filters/events';
 
-const { t } = useI18n();
-
 const props = withDefaults(
   defineProps<{
     location?: string;
@@ -58,6 +56,8 @@ const props = withDefaults(
     onlyChains: () => []
   }
 );
+
+const { t } = useI18n();
 
 const {
   location,
@@ -544,8 +544,8 @@ const { locationData } = useLocations();
 
 <template>
   <div>
-    <card class="mt-8" outlined-body>
-      <v-btn
+    <Card class="mt-8" outlined-body>
+      <VBtn
         v-if="mainPage"
         absolute
         fab
@@ -556,10 +556,10 @@ const { locationData } = useLocations();
         data-cy="ledger-actions__add"
         @click="addTransactionHash()"
       >
-        <v-icon>mdi-plus</v-icon>
-      </v-btn>
+        <VIcon>mdi-plus</VIcon>
+      </VBtn>
       <template #title>
-        <refresh-button
+        <RefreshButton
           :disabled="refreshing"
           :tooltip="t('transactions.refresh_tooltip')"
           @refresh="refresh(true)"
@@ -567,13 +567,13 @@ const { locationData } = useLocations();
         {{ usedTitle }}
       </template>
       <template #actions>
-        <v-row>
-          <v-col cols="12" md="5">
-            <v-row>
-              <v-col v-if="includeEvmEvents" cols="auto">
-                <v-tooltip top>
+        <VRow>
+          <VCol cols="12" md="5">
+            <VRow>
+              <VCol v-if="includeEvmEvents" cols="auto">
+                <VTooltip top>
                   <template #activator="{ on }">
-                    <v-btn
+                    <VBtn
                       color="primary"
                       depressed
                       height="40px"
@@ -583,17 +583,17 @@ const { locationData } = useLocations();
                       v-on="on"
                       @click="redecodeAllEvmEvents()"
                     >
-                      <v-icon> mdi-select-compare </v-icon>
-                    </v-btn>
+                      <VIcon> mdi-select-compare </VIcon>
+                    </VBtn>
                   </template>
                   <span>
                     {{ t('transactions.redecode_events.title') }}
                   </span>
-                </v-tooltip>
-              </v-col>
-              <v-col v-if="!useExternalAccountFilter">
+                </VTooltip>
+              </VCol>
+              <VCol v-if="!useExternalAccountFilter">
                 <div>
-                  <blockchain-account-selector
+                  <BlockchainAccountSelector
                     :value="accounts"
                     :chains="txChains"
                     dense
@@ -607,12 +607,12 @@ const { locationData } = useLocations();
                     @input="onFilterAccountsChanged($event)"
                   />
                 </div>
-              </v-col>
-            </v-row>
-          </v-col>
-          <v-col cols="12" md="7">
+              </VCol>
+            </VRow>
+          </VCol>
+          <VCol cols="12" md="7">
             <div>
-              <table-filter
+              <TableFilter
                 :matches="filters"
                 :matchers="matchers"
                 :location="SavedFilterLocation.HISTORY_EVENTS"
@@ -620,26 +620,23 @@ const { locationData } = useLocations();
                 @update:matches="setFilter($event)"
               >
                 <template #tooltip>
-                  <i18n tag="span" path="transactions.filtering_premium_hint">
+                  <I18n tag="span" path="transactions.filtering_premium_hint">
                     <template #link>
                       <b>
-                        <external-link url="https://rotki.com/products">
+                        <ExternalLink url="https://rotki.com/products">
                           {{ t('common.website') }}
-                        </external-link>
+                        </ExternalLink>
                       </b>
                     </template>
-                  </i18n>
+                  </I18n>
                 </template>
-              </table-filter>
+              </TableFilter>
             </div>
-          </v-col>
-        </v-row>
+          </VCol>
+        </VRow>
       </template>
 
-      <collection-handler
-        :collection="eventsHeader"
-        @set-page="setPage($event)"
-      >
+      <CollectionHandler :collection="eventsHeader" @set-page="setPage($event)">
         <template
           #default="{
             data: eventsData,
@@ -649,7 +646,7 @@ const { locationData } = useLocations();
             total
           }"
         >
-          <data-table
+          <DataTable
             :expanded="eventsData"
             :headers="tableHeaders"
             :items="eventsData"
@@ -663,47 +660,47 @@ const { locationData } = useLocations();
           >
             <template #item.ignoredInAccounting="{ item, isMobile }">
               <div v-if="item.ignoredInAccounting" class="pl-4">
-                <badge-display v-if="isMobile" color="grey">
-                  <v-icon small> mdi-eye-off</v-icon>
+                <BadgeDisplay v-if="isMobile" color="grey">
+                  <VIcon small> mdi-eye-off</VIcon>
                   <span class="ml-2">
                     {{ t('common.ignored_in_accounting') }}
                   </span>
-                </badge-display>
-                <v-tooltip v-else bottom>
+                </BadgeDisplay>
+                <VTooltip v-else bottom>
                   <template #activator="{ on }">
-                    <badge-display color="grey" v-on="on">
-                      <v-icon small> mdi-eye-off</v-icon>
-                    </badge-display>
+                    <BadgeDisplay color="grey" v-on="on">
+                      <VIcon small> mdi-eye-off</VIcon>
+                    </BadgeDisplay>
                   </template>
                   <span>
                     {{ t('common.ignored_in_accounting') }}
                   </span>
-                </v-tooltip>
+                </VTooltip>
               </div>
             </template>
             <template #item.txHash="{ item }">
-              <v-lazy>
+              <VLazy>
                 <div class="d-flex align-center">
                   <div class="mr-2">
-                    <location-icon
+                    <LocationIcon
                       icon
                       no-padding
                       :item="locationData(item.location)"
                       size="20px"
                     />
                   </div>
-                  <history-events-identifier :event="item" />
+                  <HistoryEventsIdentifier :event="item" />
                 </div>
-              </v-lazy>
+              </VLazy>
             </template>
             <template #item.timestamp="{ item }">
-              <v-lazy>
-                <date-display :timestamp="item.timestamp" />
-              </v-lazy>
+              <VLazy>
+                <DateDisplay :timestamp="item.timestamp" />
+              </VLazy>
             </template>
             <template #item.action="{ item }">
-              <v-lazy>
-                <history-events-action
+              <VLazy>
+                <HistoryEventsAction
                   :event="item"
                   :loading="eventTaskLoading"
                   @add-event="addEvent($event)"
@@ -711,10 +708,10 @@ const { locationData } = useLocations();
                   @redecode="forceRedecodeEvmEvents($event)"
                   @reset="resetEvents($event)"
                 />
-              </v-lazy>
+              </VLazy>
             </template>
             <template #expanded-item="{ headers, item }">
-              <history-events-list
+              <HistoryEventsList
                 :all-events="allEvents"
                 :event-group-header="item"
                 :colspan="headers.length"
@@ -724,17 +721,17 @@ const { locationData } = useLocations();
               />
             </template>
             <template #body.prepend="{ headers }">
-              <transaction-query-status
+              <TransactionQueryStatus
                 v-if="includeEvmEvents"
                 :only-chains="onlyChains"
                 :colspan="headers.length"
               />
-              <history-events-query-status
+              <HistoryEventsQueryStatus
                 v-if="includeOnlineEvents"
                 :locations="filters.location ? [filters.location] : []"
                 :colspan="headers.length"
               />
-              <upgrade-row
+              <UpgradeRow
                 v-if="showUpgradeRow"
                 :limit="limit"
                 :total="total"
@@ -742,18 +739,18 @@ const { locationData } = useLocations();
                 :label="t('common.events')"
               />
             </template>
-          </data-table>
+          </DataTable>
         </template>
-      </collection-handler>
-    </card>
+      </CollectionHandler>
+    </Card>
 
-    <history-event-form-dialog
+    <HistoryEventFormDialog
       :loading="sectionLoading"
       :editable-item="editableItem"
       :transaction="selectedTransaction"
     />
 
-    <transaction-form-dialog :loading="sectionLoading" />
+    <TransactionFormDialog :loading="sectionLoading" />
   </div>
 </template>
 

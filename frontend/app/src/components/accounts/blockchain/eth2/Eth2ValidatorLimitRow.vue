@@ -14,7 +14,7 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <upgrade-row
+  <UpgradeRow
     v-if="visible"
     :limit="limit"
     :total="total"

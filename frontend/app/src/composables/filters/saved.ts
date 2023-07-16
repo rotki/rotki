@@ -7,6 +7,7 @@ import {
 import { type ActionStatus } from '@/types/action';
 
 const LIMIT_PER_LOCATION = 10;
+
 export const useSavedFilter = (
   location: MaybeRef<SavedFilterLocation>,
   isAsset: (key: string) => boolean

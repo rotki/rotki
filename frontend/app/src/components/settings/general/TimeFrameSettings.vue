@@ -123,9 +123,9 @@ const removeVisibleTimeframe = async (timeframe: TimeFrameSetting) => {
 </script>
 
 <template>
-  <fragment>
-    <v-row>
-      <v-col>
+  <Fragment>
+    <VRow>
+      <VCol>
         <div
           class="text-h6"
           v-text="t('timeframe_settings.default_timeframe')"
@@ -134,25 +134,25 @@ const removeVisibleTimeframe = async (timeframe: TimeFrameSetting) => {
           class="text-subtitle-1"
           v-text="t('timeframe_settings.default_timeframe_description')"
         />
-      </v-col>
-    </v-row>
-    <v-row align="center" justify="center">
-      <v-col>
-        <v-card class="pa-4" outlined>
+      </VCol>
+    </VRow>
+    <VRow align="center" justify="center">
+      <VCol>
+        <VCard class="pa-4" outlined>
           <div>
             <div class="text-subtitle-1">
               {{ t('timeframe_settings.visible_timeframes') }}
             </div>
 
             <div class="timeframe-settings">
-              <v-tooltip v-if="!premium" top>
+              <VTooltip v-if="!premium" top>
                 <template #activator="{ on, attrs }">
-                  <v-icon small v-bind="attrs" v-on="on"> mdi-lock </v-icon>
+                  <VIcon small v-bind="attrs" v-on="on"> mdi-lock </VIcon>
                 </template>
                 <span v-text="t('overall_balances.premium_hint')" />
-              </v-tooltip>
+              </VTooltip>
 
-              <v-chip
+              <VChip
                 v-for="(timeframe, i) in appendedVisibleTimeframes"
                 :key="i"
                 :class="chipClass(timeframe)"
@@ -168,19 +168,19 @@ const removeVisibleTimeframe = async (timeframe: TimeFrameSetting) => {
                 @click="timeframeChange(timeframe)"
               >
                 {{ timeframe }}
-              </v-chip>
+              </VChip>
             </div>
           </div>
 
           <template v-if="invisibleTimeframes.length > 0">
-            <v-divider class="my-4" />
+            <VDivider class="my-4" />
 
             <div>
               <div class="text-subtitle-1">
                 {{ t('timeframe_settings.inactive_timeframes') }}
               </div>
               <div class="timeframe-settings">
-                <v-chip
+                <VChip
                   v-for="(timeframe, i) in invisibleTimeframes"
                   :key="i"
                   class="ma-2"
@@ -192,15 +192,15 @@ const removeVisibleTimeframe = async (timeframe: TimeFrameSetting) => {
                   @click="addVisibleTimeframe(timeframe)"
                 >
                   {{ timeframe }}
-                </v-chip>
+                </VChip>
               </div>
             </div>
           </template>
-        </v-card>
-      </v-col>
-    </v-row>
-    <v-row no-gutters>
-      <v-col
+        </VCard>
+      </VCol>
+    </VRow>
+    <VRow no-gutters>
+      <VCol
         :class="{
           'success--text': !!message.success,
           'error--text': !!message.error
@@ -208,9 +208,9 @@ const removeVisibleTimeframe = async (timeframe: TimeFrameSetting) => {
         class="text-subtitle-2 message"
       >
         <div v-if="text" v-text="text" />
-      </v-col>
-    </v-row>
-  </fragment>
+      </VCol>
+    </VRow>
+  </Fragment>
 </template>
 
 <style scoped lang="scss">

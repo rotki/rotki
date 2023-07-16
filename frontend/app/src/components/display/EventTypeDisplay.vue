@@ -8,7 +8,7 @@ const event = computed<string>(() =>
 </script>
 
 <template>
-  <badge-display>
+  <BadgeDisplay>
     {{ event }}
-  </badge-display>
+  </BadgeDisplay>
 </template>

@@ -78,6 +78,7 @@ const MakerDAOVaultDetail = z.object({
   totalLiquidated: Balance,
   events: z.array(MakerDAOVaultEvent)
 });
+
 export type MakerDAOVaultDetail = z.infer<typeof MakerDAOVaultDetail>;
 
 export const MakerDAOVaultDetails = z.array(MakerDAOVaultDetail);

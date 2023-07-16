@@ -29,7 +29,7 @@ const input = (value: BalanceType) => {
 </script>
 
 <template>
-  <v-select
+  <VSelect
     :value="value"
     :items="balanceTypes"
     v-bind="$attrs"

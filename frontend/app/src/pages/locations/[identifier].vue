@@ -13,27 +13,27 @@ const location = locationData(identifier);
 </script>
 
 <template>
-  <v-container class="pb-12">
-    <v-row align="center" class="mt-12">
-      <v-col cols="auto">
-        <location-icon
+  <VContainer class="pb-12">
+    <VRow align="center" class="mt-12">
+      <VCol cols="auto">
+        <LocationIcon
           v-if="location"
           :item="location"
           icon
           size="48px"
           no-padding
         />
-      </v-col>
-      <v-col class="d-flex flex-column" cols="auto">
+      </VCol>
+      <VCol class="d-flex flex-column" cols="auto">
         <span v-if="location" class="text-h5 font-weight-medium">
           {{ location.name }}
         </span>
-      </v-col>
-    </v-row>
-    <location-value-row class="mt-8" :identifier="identifier" />
-    <location-assets class="mt-8" :identifier="identifier" />
-    <closed-trades :location-overview="identifier" />
-    <deposits-withdrawals-content :location-overview="identifier" />
-    <ledger-action-content :location-overview="identifier" />
-  </v-container>
+      </VCol>
+    </VRow>
+    <LocationValueRow class="mt-8" :identifier="identifier" />
+    <LocationAssets class="mt-8" :identifier="identifier" />
+    <ClosedTrades :location-overview="identifier" />
+    <DepositsWithdrawalsContent :location-overview="identifier" />
+    <LedgerActionContent :location-overview="identifier" />
+  </VContainer>
 </template>

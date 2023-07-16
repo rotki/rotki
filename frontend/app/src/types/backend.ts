@@ -11,7 +11,9 @@ const DefaultBackendArguments = z.object({
   maxSizeInMbAllLogs: z.number(),
   sqliteInstructions: z.number()
 });
+
 export type DefaultBackendArguments = z.infer<typeof DefaultBackendArguments>;
+
 export const BackendInfo = z.object({
   acceptDockerRisk: z.boolean(),
   logLevel: ActiveLogLevel,
@@ -19,14 +21,17 @@ export const BackendInfo = z.object({
   dataDirectory: z.string(),
   backendDefaultArguments: DefaultBackendArguments
 });
+
 export type BackendInfo = z.infer<typeof BackendInfo>;
 const NumericBackendArgument = z.object({
   value: z.number().nonnegative(),
   isDefault: z.boolean()
 });
+
 export const BackendConfiguration = z.object({
   maxSizeInMbAllLogs: NumericBackendArgument,
   maxLogfilesNum: NumericBackendArgument,
   sqliteInstructions: NumericBackendArgument
 });
+
 export type BackendConfiguration = z.infer<typeof BackendConfiguration>;

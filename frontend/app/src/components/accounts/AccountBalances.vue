@@ -9,8 +9,6 @@ import {
 import { Section } from '@/types/status';
 import { chainSection } from '@/types/blockchain';
 
-const { t } = useI18n();
-
 const props = withDefaults(
   defineProps<{
     balances: AccountWithBalance[];
@@ -26,6 +24,8 @@ const props = withDefaults(
 const emit = defineEmits<{
   (e: 'edit-account', account: BlockchainAccountWithBalance): void;
 }>();
+
+const { t } = useI18n();
 
 const { blockchain, loopring } = toRefs(props);
 
@@ -128,36 +128,36 @@ const showConfirmation = (payload: XpubPayload | string[]) => {
 </script>
 
 <template>
-  <v-card :class="`${blockchain.toLocaleLowerCase()}-account-balances`">
-    <v-card-title>
-      <v-row align="center" no-gutters>
-        <v-col cols="auto">
-          <refresh-button
+  <VCard :class="`${blockchain.toLocaleLowerCase()}-account-balances`">
+    <VCardTitle>
+      <VRow align="center" no-gutters>
+        <VCol cols="auto">
+          <RefreshButton
             class="account-balances__refresh"
             :loading="isSectionLoading || detectingTokens"
             :tooltip="t('account_balances.refresh_tooltip', { blockchain })"
             @refresh="handleBlockchainRefresh()"
           />
-        </v-col>
-        <v-col cols="auto">
-          <summary-card-refresh-menu v-if="hasTokenDetection">
+        </VCol>
+        <VCol cols="auto">
+          <SummaryCardRefreshMenu v-if="hasTokenDetection">
             <template #refreshMenu>
-              <blockchain-balance-refresh-behaviour-menu />
+              <BlockchainBalanceRefreshBehaviourMenu />
             </template>
-          </summary-card-refresh-menu>
-        </v-col>
-        <v-col class="ps-2">
-          <card-title>{{ title }}</card-title>
-        </v-col>
-      </v-row>
-    </v-card-title>
-    <v-card-text>
-      <v-row class="mb-2">
-        <v-col cols="12" sm="6">
-          <v-tooltip top>
+          </SummaryCardRefreshMenu>
+        </VCol>
+        <VCol class="ps-2">
+          <CardTitle>{{ title }}</CardTitle>
+        </VCol>
+      </VRow>
+    </VCardTitle>
+    <VCardText>
+      <VRow class="mb-2">
+        <VCol cols="12" sm="6">
+          <VTooltip top>
             <template #activator="{ on, attrs }">
               <span v-bind="attrs" v-on="on">
-                <v-btn
+                <VBtn
                   data-cy="account-balances__delete-button"
                   color="red"
                   text
@@ -169,16 +169,16 @@ const showConfirmation = (payload: XpubPayload | string[]) => {
                   "
                   @click="showConfirmation(selectedAddresses)"
                 >
-                  <v-icon> mdi-delete-outline </v-icon>
+                  <VIcon> mdi-delete-outline </VIcon>
                   <span>{{ t('common.actions.delete') }}</span>
-                </v-btn>
+                </VBtn>
               </span>
             </template>
             <span>{{ t('account_balances.delete_tooltip') }}</span>
-          </v-tooltip>
-          <v-tooltip v-if="hasTokenDetection" top>
+          </VTooltip>
+          <VTooltip v-if="hasTokenDetection" top>
             <template #activator="{ on }">
-              <v-btn
+              <VBtn
                 class="ml-2"
                 text
                 outlined
@@ -187,21 +187,21 @@ const showConfirmation = (payload: XpubPayload | string[]) => {
                 v-on="on"
                 @click="detectTokensOfAllAddresses()"
               >
-                <v-icon class="mr-2">mdi-refresh</v-icon>
+                <VIcon class="mr-2">mdi-refresh</VIcon>
                 {{ t('account_balances.detect_tokens.tooltip.redetect') }}
-              </v-btn>
+              </VBtn>
             </template>
             <span>
               {{ t('account_balances.detect_tokens.tooltip.redetect_all') }}
             </span>
-          </v-tooltip>
-        </v-col>
-        <v-col v-if="!isEth2" cols="12" sm="6">
-          <tag-filter v-model="visibleTags" hide-details />
-        </v-col>
-      </v-row>
+          </VTooltip>
+        </VCol>
+        <VCol v-if="!isEth2" cols="12" sm="6">
+          <TagFilter v-model="visibleTags" hide-details />
+        </VCol>
+      </VRow>
 
-      <account-balance-table
+      <AccountBalanceTable
         ref="balanceTable"
         data-cy="blockchain-balances"
         :loopring="loopring"
@@ -213,6 +213,6 @@ const showConfirmation = (payload: XpubPayload | string[]) => {
         @delete-xpub="showConfirmation($event)"
         @addresses-selected="selectedAddresses = $event"
       />
-    </v-card-text>
-  </v-card>
+    </VCardText>
+  </VCard>
 </template>

@@ -35,38 +35,38 @@ const chain = Blockchain.ETH;
 </script>
 
 <template>
-  <v-row>
-    <v-col cols="12">
-      <loan-header v-if="vault.owner" class="mt-8 mb-6" :owner="vault.owner">
+  <VRow>
+    <VCol cols="12">
+      <LoanHeader v-if="vault.owner" class="mt-8 mb-6" :owner="vault.owner">
         {{ t('maker_dao_vault_loan.header', header) }}
-      </loan-header>
-      <v-row no-gutters>
-        <v-col cols="12" md="6" class="pe-md-4">
-          <maker-dao-vault-collateral :vault="vault" />
-        </v-col>
-        <v-col cols="12" md="6" class="ps-md-4 pt-8 pt-md-0">
-          <maker-dao-vault-liquidation :vault="vault" />
-        </v-col>
-        <v-col cols="12" class="pt-8 pt-md-8">
-          <loan-debt :debt="vault.debt" :asset="vault.collateral.asset">
-            <maker-dao-vault-debt-details
+      </LoanHeader>
+      <VRow no-gutters>
+        <VCol cols="12" md="6" class="pe-md-4">
+          <MakerDaoVaultCollateral :vault="vault" />
+        </VCol>
+        <VCol cols="12" md="6" class="ps-md-4 pt-8 pt-md-0">
+          <MakerDaoVaultLiquidation :vault="vault" />
+        </VCol>
+        <VCol cols="12" class="pt-8 pt-md-8">
+          <LoanDebt :debt="vault.debt" :asset="vault.collateral.asset">
+            <MakerDaoVaultDebtDetails
               :total-interest-owed="totalInterestOwed"
               :loading="!totalInterestOwed"
               :stability-fee="vault.stabilityFee"
             />
-          </loan-debt>
-        </v-col>
-      </v-row>
-      <v-row v-if="!premium" class="mt-8" no-gutters>
-        <v-col cols="12">
-          <premium-card
+          </LoanDebt>
+        </VCol>
+      </VRow>
+      <VRow v-if="!premium" class="mt-8" no-gutters>
+        <VCol cols="12">
+          <PremiumCard
             v-if="!premium"
             :title="t('maker_dao_vault_loan.borrowing_history')"
           />
-        </v-col>
-      </v-row>
+        </VCol>
+      </VRow>
       <div v-else>
-        <history-events-view
+        <HistoryEventsView
           :section-title="t('common.events')"
           :protocols="['makerdao', 'makerdao vault']"
           :use-external-account-filter="true"
@@ -75,6 +75,6 @@ const chain = Blockchain.ETH;
           :entry-types="[HistoryEventEntryType.EVM_EVENT]"
         />
       </div>
-    </v-col>
-  </v-row>
+    </VCol>
+  </VRow>
 </template>

@@ -3,7 +3,7 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <setting-category>
+  <SettingCategory>
     <template #title>
       {{ t('general_settings.nft_setting.title') }}
     </template>
@@ -12,11 +12,11 @@ const { t } = useI18n();
       <div class="text-h6">
         {{ t('general_settings.nft_setting.subtitle.include_nfts') }}
       </div>
-      <nfts-in-net-value-setting />
+      <NftsInNetValueSetting />
     </div>
 
     <div class="mt-8">
-      <nft-image-rendering-setting />
+      <NftImageRenderingSetting />
     </div>
-  </setting-category>
+  </SettingCategory>
 </template>

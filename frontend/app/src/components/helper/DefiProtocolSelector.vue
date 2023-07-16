@@ -8,6 +8,19 @@ interface Protocol {
   identifier: DefiProtocol;
 }
 
+const props = defineProps({
+  value: {
+    required: false,
+    type: String as PropType<DefiProtocol | null>,
+    default: null
+  },
+  liabilities: { required: false, type: Boolean, default: false }
+});
+
+const emit = defineEmits<{
+  (e: 'input', protocol: DefiProtocol | null): void;
+}>();
+
 const dual: Protocol[] = [
   {
     identifier: DefiProtocol.AAVE,
@@ -52,19 +65,6 @@ const lending: Protocol[] = [
   }
 ];
 
-const props = defineProps({
-  value: {
-    required: false,
-    type: String as PropType<DefiProtocol | null>,
-    default: null
-  },
-  liabilities: { required: false, type: Boolean, default: false }
-});
-
-const emit = defineEmits<{
-  (e: 'input', protocol: DefiProtocol | null): void;
-}>();
-
 const { liabilities } = toRefs(props);
 const search = ref<string>('');
 
@@ -83,9 +83,9 @@ const protocols = computed<Protocol[]>(() => {
 </script>
 
 <template>
-  <v-card>
+  <VCard>
     <div class="mx-4 pt-4">
-      <v-autocomplete
+      <VAutocomplete
         :value="value"
         :search-input.sync="search"
         :items="protocols"
@@ -104,19 +104,19 @@ const protocols = computed<Protocol[]>(() => {
         @input="input($event)"
       >
         <template #selection="{ attrs, item }">
-          <defi-protocol-details v-bind="attrs" :item="item" />
+          <DefiProtocolDetails v-bind="attrs" :item="item" />
         </template>
         <template #item="{ attrs, item }">
-          <defi-protocol-details v-bind="attrs" :item="item" />
+          <DefiProtocolDetails v-bind="attrs" :item="item" />
         </template>
-      </v-autocomplete>
+      </VAutocomplete>
     </div>
-    <v-card-text>
+    <VCardText>
       {{
         value
           ? t('defi_protocol_selector.filter_specific')
           : t('defi_protocol_selector.filter_all')
       }}
-    </v-card-text>
-  </v-card>
+    </VCardText>
+  </VCard>
 </template>

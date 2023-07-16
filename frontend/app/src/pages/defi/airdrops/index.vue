@@ -169,20 +169,20 @@ onMounted(async () => {
 
 <template>
   <div>
-    <v-row class="mt-8">
-      <v-col>
-        <refresh-header
+    <VRow class="mt-8">
+      <VCol>
+        <RefreshHeader
           :loading="refreshing"
           :title="t('airdrops.title')"
           @refresh="refresh()"
         />
-      </v-col>
-    </v-row>
-    <progress-screen v-if="loading">
+      </VCol>
+    </VRow>
+    <ProgressScreen v-if="loading">
       <template #message>{{ t('airdrops.loading') }}</template>
-    </progress-screen>
+    </ProgressScreen>
     <div v-else>
-      <blockchain-account-selector
+      <BlockchainAccountSelector
         v-model="selectedAccounts"
         multiple
         class="pt-2 mt-4"
@@ -193,11 +193,11 @@ onMounted(async () => {
         :usable-addresses="airdropAddresses"
       >
         <div class="text-caption mt-4" v-text="t('airdrops.description')" />
-      </blockchain-account-selector>
-      <v-card class="mt-8">
-        <v-card-text>
-          <v-sheet outlined rounded>
-            <data-table
+      </BlockchainAccountSelector>
+      <VCard class="mt-8">
+        <VCardText>
+          <VSheet outlined rounded>
+            <DataTable
               :class="css.table"
               :items="entries"
               :headers="tableHeaders"
@@ -206,10 +206,10 @@ onMounted(async () => {
               item-key="index"
             >
               <template #item.address="{ item }">
-                <hash-link :text="item.address" />
+                <HashLink :text="item.address" />
               </template>
               <template #item.amount="{ item }">
-                <amount-display
+                <AmountDisplay
                   v-if="!hasDetails(item.source)"
                   :value="item.amount"
                   :asset="item.asset"
@@ -218,8 +218,8 @@ onMounted(async () => {
               </template>
               <template #item.source="{ item }">
                 <div class="d-flex flex-row align-center">
-                  <adaptive-wrapper>
-                    <v-img
+                  <AdaptiveWrapper>
+                    <VImg
                       width="24px"
                       height="24px"
                       contain
@@ -228,12 +228,12 @@ onMounted(async () => {
                       max-width="32px"
                       :src="getIcon(item.source)"
                     />
-                  </adaptive-wrapper>
+                  </AdaptiveWrapper>
                   <span class="ml-4" v-text="getLabel(item.source)" />
                 </div>
               </template>
               <template #item.link="{ item }">
-                <v-btn
+                <VBtn
                   v-if="!hasDetails(item.source)"
                   icon
                   color="primary"
@@ -241,25 +241,25 @@ onMounted(async () => {
                   :href="isPackaged ? undefined : item.link"
                   @click="isPackaged ? navigate(item.link) : undefined"
                 >
-                  <v-icon>mdi-link</v-icon>
-                </v-btn>
-                <row-expander
+                  <VIcon>mdi-link</VIcon>
+                </VBtn>
+                <RowExpander
                   v-else
                   :expanded="expanded.includes(item)"
                   @click="expand(item)"
                 />
               </template>
               <template #expanded-item="{ headers, item }">
-                <poap-delivery-airdrops
+                <PoapDeliveryAirdrops
                   :items="item.details"
                   :colspan="headers.length"
                   :visible="hasDetails(item.source)"
                 />
               </template>
-            </data-table>
-          </v-sheet>
-        </v-card-text>
-      </v-card>
+            </DataTable>
+          </VSheet>
+        </VCardText>
+      </VCard>
     </div>
   </div>
 </template>

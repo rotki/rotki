@@ -60,10 +60,10 @@ onMounted(() => {
 </script>
 
 <template>
-  <db-activity-progress
+  <DbActivityProgress
     v-if="dataMigrationStatusData"
     data-migration
     :progress="dataMigrationStatusData"
   />
-  <db-activity-progress v-else :progress="dbUpgradeProgressData" />
+  <DbActivityProgress v-else :progress="dbUpgradeProgressData" />
 </template>

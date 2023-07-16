@@ -25,7 +25,7 @@ const { dark } = useTheme();
       [$style['history--dark']]: dark
     }"
   >
-    <tab-navigation :tab-contents="tabs" data-cy="history-tab" />
+    <TabNavigation :tab-contents="tabs" data-cy="history-tab" />
   </div>
 </template>
 

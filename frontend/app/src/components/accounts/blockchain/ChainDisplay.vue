@@ -20,9 +20,9 @@ const name = getChainName(chain);
 </script>
 
 <template>
-  <list-item :dense="dense" :title="name" :full-width="fullWidth">
+  <ListItem :dense="dense" :title="name" :full-width="fullWidth">
     <template #icon>
-      <asset-icon size="26px" :identifier="chain" :show-chain="false" />
+      <AssetIcon size="26px" :identifier="chain" :show-chain="false" />
     </template>
-  </list-item>
+  </ListItem>
 </template>

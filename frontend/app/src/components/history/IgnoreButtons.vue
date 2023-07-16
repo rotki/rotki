@@ -11,11 +11,11 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <v-row no-gutters>
-    <v-col cols="auto">
-      <v-tooltip top open-delay="400">
+  <VRow no-gutters>
+    <VCol cols="auto">
+      <VTooltip top open-delay="400">
         <template #activator="{ on, attrs }">
-          <v-btn
+          <VBtn
             text
             v-bind="attrs"
             :disabled="disabled"
@@ -24,15 +24,15 @@ const { t } = useI18n();
             @click="ignore(true)"
           >
             {{ t('ignore_buttons.ignore') }}
-          </v-btn>
+          </VBtn>
         </template>
         <span>{{ t('ignore_buttons.ignore_tooltip') }}</span>
-      </v-tooltip>
-    </v-col>
-    <v-col cols="auto">
-      <v-tooltip top open-delay="400">
+      </VTooltip>
+    </VCol>
+    <VCol cols="auto">
+      <VTooltip top open-delay="400">
         <template #activator="{ on, attrs }">
-          <v-btn
+          <VBtn
             v-bind="attrs"
             text
             :disabled="disabled"
@@ -42,10 +42,10 @@ const { t } = useI18n();
             @click="ignore(false)"
           >
             {{ t('ignore_buttons.unignore') }}
-          </v-btn>
+          </VBtn>
         </template>
         <span>{{ t('ignore_buttons.unignore_tooltip') }}</span>
-      </v-tooltip>
-    </v-col>
-  </v-row>
+      </VTooltip>
+    </VCol>
+  </VRow>
 </template>

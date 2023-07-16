@@ -12,8 +12,6 @@ import { timezones } from '@/data/timezones';
 import { DateFormat } from '@/types/date-format';
 import { toMessages } from '@/utils/validation';
 
-const { t } = useI18n();
-
 const props = withDefaults(
   defineProps<{
     label?: string;
@@ -44,6 +42,8 @@ const props = withDefaults(
 );
 
 const emit = defineEmits<{ (e: 'input', value: string): void }>();
+
+const { t } = useI18n();
 
 const { dateInputFormat } = storeToRefs(useFrontendSettingsStore());
 
@@ -336,7 +336,7 @@ const focus = () => {
 
 <template>
   <div>
-    <v-text-field
+    <VTextField
       ref="inputField"
       :value="currentValue"
       :label="label"
@@ -351,7 +351,7 @@ const focus = () => {
       @focus="focus()"
     >
       <template #append>
-        <v-menu
+        <VMenu
           :close-on-content-click="false"
           transition="scale-transition"
           :nudge-bottom="56"
@@ -360,13 +360,13 @@ const focus = () => {
           class="date-time-picker"
         >
           <template #activator="{ on }">
-            <v-btn icon class="mt-n2" v-on="on">
-              <v-icon>mdi-earth</v-icon>
-            </v-btn>
+            <VBtn icon class="mt-n2" v-on="on">
+              <VIcon>mdi-earth</VIcon>
+            </VBtn>
           </template>
 
           <div :class="css.menu">
-            <v-autocomplete
+            <VAutocomplete
               v-model="selectedTimezone"
               label="Select timezone"
               class="pa-4 pb-0"
@@ -377,17 +377,17 @@ const focus = () => {
               :items="timezones"
             />
           </div>
-        </v-menu>
-        <v-btn
+        </VMenu>
+        <VBtn
           data-cy="date-time-picker__set-now-button"
           icon
           class="mt-n2"
           @click="setNow()"
         >
-          <v-icon>mdi-clock-outline</v-icon>
-        </v-btn>
+          <VIcon>mdi-clock-outline</VIcon>
+        </VBtn>
       </template>
-    </v-text-field>
+    </VTextField>
   </div>
 </template>
 

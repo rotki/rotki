@@ -45,40 +45,40 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <card>
+  <Card>
     <template #title>{{ t('manage_user_assets.title') }}</template>
 
-    <v-alert type="info" outlined dense>
+    <VAlert type="info" outlined dense>
       {{ t('manage_user_assets.warning') }}
-    </v-alert>
+    </VAlert>
 
-    <v-sheet outlined class="pa-4" rounded>
+    <VSheet outlined class="pa-4" rounded>
       <div class="text-h6">{{ t('manage_user_assets.export.title') }}</div>
       <div class="text-subtitle-1">
         {{ t('manage_user_assets.export.subtitle') }}
       </div>
-      <v-alert v-if="exportError" type="error" outlined dense>
+      <VAlert v-if="exportError" type="error" outlined dense>
         {{ exportError }}
-      </v-alert>
+      </VAlert>
       <div class="d-flex flex-row align-center mt-4">
-        <v-btn color="primary" :loading="downloading" @click="exportZip()">
+        <VBtn color="primary" :loading="downloading" @click="exportZip()">
           {{ t('manage_user_assets.export.button') }}
-        </v-btn>
-        <v-icon v-if="downloaded" class="ms-4" color="success">
+        </VBtn>
+        <VIcon v-if="downloaded" class="ms-4" color="success">
           mdi-check-circle
-        </v-icon>
+        </VIcon>
         <span v-if="downloaded" class="ms-2">
           {{ t('manage_user_assets.export.success') }}
         </span>
       </div>
-    </v-sheet>
+    </VSheet>
 
-    <v-sheet outlined class="pa-4 mt-4" rounded>
+    <VSheet outlined class="pa-4 mt-4" rounded>
       <div class="text-h6">{{ t('common.actions.import') }}</div>
       <div class="text-subtitle-1">
         {{ t('manage_user_assets.import.subtitle') }}
       </div>
-      <file-upload
+      <FileUpload
         class="mt-4"
         source="zip"
         file-filter=".zip"
@@ -87,7 +87,7 @@ const { t } = useI18n();
         @selected="zip = $event"
         @update:uploaded="uploaded = $event"
       />
-      <v-btn
+      <VBtn
         color="primary"
         class="mt-4"
         :disabled="importDisabled"
@@ -95,7 +95,7 @@ const { t } = useI18n();
         @click="importZip()"
       >
         {{ t('common.actions.import') }}
-      </v-btn>
-    </v-sheet>
-  </card>
+      </VBtn>
+    </VSheet>
+  </Card>
 </template>

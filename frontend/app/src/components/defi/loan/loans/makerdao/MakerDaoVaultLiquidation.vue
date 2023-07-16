@@ -3,14 +3,14 @@ import { assetSymbolToIdentifierMap } from '@rotki/common/lib/data';
 import { type PropType } from 'vue';
 import { type MakerDAOVaultModel } from '@/types/defi/maker';
 
-const assetPadding = 3;
-
 const props = defineProps({
   vault: {
     required: true,
     type: Object as PropType<MakerDAOVaultModel>
   }
 });
+
+const assetPadding = 3;
 
 const { vault } = toRefs(props);
 const premium = usePremium();
@@ -45,21 +45,21 @@ const dai: string = assetSymbolToIdentifierMap.DAI;
 </script>
 
 <template>
-  <stat-card :title="t('loan_liquidation.title')" :class="$style.liquidation">
+  <StatCard :title="t('loan_liquidation.title')" :class="$style.liquidation">
     <div class="pb-5" :class="$style.upper">
-      <loan-row :title="t('loan_liquidation.liquidation_price')">
-        <amount-display fiat-currency="USD" :value="vault.liquidationPrice" />
-      </loan-row>
-      <v-divider class="my-4" />
-      <loan-row :title="t('loan_liquidation.minimum_ratio')" :medium="false">
-        <percentage-display :value="vault.liquidationRatio" />
-      </loan-row>
+      <LoanRow :title="t('loan_liquidation.liquidation_price')">
+        <AmountDisplay fiat-currency="USD" :value="vault.liquidationPrice" />
+      </LoanRow>
+      <VDivider class="my-4" />
+      <LoanRow :title="t('loan_liquidation.minimum_ratio')" :medium="false">
+        <PercentageDisplay :value="vault.liquidationRatio" />
+      </LoanRow>
     </div>
     <div>
       <span :class="$style.header" :style="fontStyle">
         {{ t('loan_liquidation.liquidation_events') }}
       </span>
-      <v-skeleton-loader
+      <VSkeletonLoader
         v-if="premium"
         :loading="!liquidated"
         class="mx-auto pt-3"
@@ -68,44 +68,44 @@ const dai: string = assetSymbolToIdentifierMap.DAI;
       >
         <div v-if="liquidated && liquidated.amount.gt(0)">
           <div class="mb-2">
-            <loan-row :title="t('loan_liquidation.liquidated_collateral')">
-              <amount-display
+            <LoanRow :title="t('loan_liquidation.liquidated_collateral')">
+              <AmountDisplay
                 :asset-padding="assetPadding"
                 :value="liquidated.amount"
                 :asset="vault.collateral.asset"
               />
-            </loan-row>
-            <loan-row :medium="false">
-              <amount-display
+            </LoanRow>
+            <LoanRow :medium="false">
+              <AmountDisplay
                 :asset-padding="assetPadding"
                 :value="liquidated.usdValue"
                 fiat-currency="USD"
               />
-            </loan-row>
+            </LoanRow>
           </div>
-          <loan-row :title="t('loan_liquidation.outstanding_debt')">
-            <amount-display
+          <LoanRow :title="t('loan_liquidation.outstanding_debt')">
+            <AmountDisplay
               :asset-padding="assetPadding"
               :value="totalInterestOwed"
               :asset="dai"
             />
-          </loan-row>
-          <v-divider class="my-4" />
-          <loan-row :title="t('loan_liquidation.total_value_lost')">
-            <amount-display
+          </LoanRow>
+          <VDivider class="my-4" />
+          <LoanRow :title="t('loan_liquidation.total_value_lost')">
+            <AmountDisplay
               :asset-padding="assetPadding"
               :value="valueLost"
               fiat-currency="USD"
             />
-          </loan-row>
+          </LoanRow>
         </div>
         <div v-else v-text="t('loan_liquidation.no_events')" />
-      </v-skeleton-loader>
+      </VSkeletonLoader>
       <div v-else class="text-right">
-        <premium-lock />
+        <PremiumLock />
       </div>
     </div>
-  </stat-card>
+  </StatCard>
 </template>
 
 <style lang="scss" module>

@@ -29,6 +29,7 @@ const Nft = z.object({
   priceEth: NumericString,
   priceUsd: NumericString
 });
+
 export type Nft = z.infer<typeof Nft>;
 
 export interface GalleryNft extends Omit<Nft, 'priceEth'> {
@@ -38,10 +39,13 @@ export interface GalleryNft extends Omit<Nft, 'priceEth'> {
 }
 
 const Nfts = z.record(z.array(Nft));
+
 export type Nfts = z.infer<typeof Nfts>;
+
 export const NftResponse = z.object({
   addresses: Nfts,
   entriesFound: z.number(),
   entriesLimit: z.number()
 });
+
 export type NftResponse = z.infer<typeof NftResponse>;

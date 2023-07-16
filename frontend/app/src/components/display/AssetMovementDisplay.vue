@@ -18,7 +18,7 @@ const small = computed(
 </script>
 
 <template>
-  <v-row
+  <VRow
     align="center"
     justify="end"
     no-gutters
@@ -26,31 +26,31 @@ const small = computed(
       [$style.row]: small
     }"
   >
-    <v-col cols="auto">
-      <balance-display
+    <VCol cols="auto">
+      <BalanceDisplay
         :asset="movement.asset"
         :value="movement.value"
         :mode="gainLoss ? 'gain' : ''"
       />
-    </v-col>
-    <v-col
+    </VCol>
+    <VCol
       v-if="!gainLoss"
       sm="12"
       :md="mobile ? '12' : 'auto'"
       cols="12"
       :class="small ? 'mr-6' : null"
     >
-      <v-icon v-if="small" color="grey"> mdi-chevron-right </v-icon>
-      <v-icon v-else>mdi-chevron-down</v-icon>
-    </v-col>
-    <v-col cols="auto">
-      <balance-display
+      <VIcon v-if="small" color="grey"> mdi-chevron-right </VIcon>
+      <VIcon v-else>mdi-chevron-down</VIcon>
+    </VCol>
+    <VCol cols="auto">
+      <BalanceDisplay
         :asset="movement.toAsset"
         :value="movement.toValue"
         :mode="gainLoss ? 'loss' : ''"
       />
-    </v-col>
-  </v-row>
+    </VCol>
+  </VRow>
 </template>
 
 <style module lang="scss">

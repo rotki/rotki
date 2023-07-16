@@ -11,18 +11,18 @@ onMounted(async () => await load());
 </script>
 
 <template>
-  <app-host>
-    <app-messages>
-      <theme-checker
+  <AppHost>
+    <AppMessages>
+      <ThemeChecker
         v-if="showComponents"
         @update:dark-mode="updateDarkMode($event)"
       />
-      <app-update-popup />
-      <app-core />
-    </app-messages>
-    <v-dialog v-if="showAbout" v-model="showAbout" max-width="500">
-      <about />
-    </v-dialog>
-    <frontend-update-notifier v-if="!isPackaged" />
-  </app-host>
+      <AppUpdatePopup />
+      <AppCore />
+    </AppMessages>
+    <VDialog v-if="showAbout" v-model="showAbout" max-width="500">
+      <About />
+    </VDialog>
+    <FrontendUpdateNotifier v-if="!isPackaged" />
+  </AppHost>
 </template>

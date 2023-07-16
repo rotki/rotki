@@ -18,13 +18,13 @@ const { showComponents } = storeToRefs(usePremiumStore());
 
 <template>
   <div>
-    <theme-switch
+    <ThemeSwitch
       v-if="showComponents"
       :dark-mode-enabled="darkModeEnabled"
       :in-menu="menu"
     >
       <slot />
-    </theme-switch>
-    <theme-switch-lock v-else />
+    </ThemeSwitch>
+    <ThemeSwitchLock v-else />
   </div>
 </template>

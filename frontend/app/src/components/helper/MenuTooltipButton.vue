@@ -11,9 +11,9 @@ const click = () => emit('click');
 </script>
 
 <template>
-  <v-tooltip bottom z-index="215" class="tooltip-menu-button" open-delay="250">
+  <VTooltip bottom z-index="215" class="tooltip-menu-button" open-delay="250">
     <template #activator="{ on: menu }">
-      <v-btn
+      <VBtn
         icon
         :class="className"
         :retain-focus-on-click="retainFocusOnClick"
@@ -21,10 +21,10 @@ const click = () => emit('click');
         v-on="{ ...menu, ...onMenu }"
       >
         <slot />
-      </v-btn>
+      </VBtn>
     </template>
     <span>{{ tooltip }}</span>
-  </v-tooltip>
+  </VTooltip>
 </template>
 
 <style scoped lang="scss">

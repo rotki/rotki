@@ -11,7 +11,7 @@ defineProps({
 </script>
 
 <template>
-  <fragment>
+  <Fragment>
     <td
       v-if="offset > 0"
       class="table-expand-container table-expand-container__offset"
@@ -25,20 +25,20 @@ defineProps({
         <div v-if="$scopedSlots.title" class="text-h6 mb-4">
           <slot name="title" />
         </div>
-        <v-sheet
+        <VSheet
           v-if="$scopedSlots.default"
           outlined
           rounded
           :class="padded ? 'pa-4' : null"
         >
           <slot />
-        </v-sheet>
+        </VSheet>
         <div>
           <slot name="append" />
         </div>
       </div>
     </td>
-  </fragment>
+  </Fragment>
 </template>
 
 <style scoped lang="scss">

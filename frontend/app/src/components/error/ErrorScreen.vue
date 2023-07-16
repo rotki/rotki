@@ -22,7 +22,7 @@ const errorText = computed(() => {
 <template>
   <div class="error-screen">
     <div>
-      <v-icon size="120" color="error">mdi-alert-circle</v-icon>
+      <VIcon size="120" color="error">mdi-alert-circle</VIcon>
     </div>
     <div v-if="header" class="error-screen__title">
       <div class="text-h1">
@@ -32,29 +32,29 @@ const errorText = computed(() => {
 
     <slot />
 
-    <v-card v-if="!alternative" outlined class="error-screen__message mt-3">
-      <v-card-title>
+    <VCard v-if="!alternative" outlined class="error-screen__message mt-3">
+      <VCardTitle>
         {{ title }}
-        <v-spacer />
-        <copy-button
+        <VSpacer />
+        <CopyButton
           :tooltip="t('error_screen.copy_tooltip')"
           :value="errorText"
         />
-      </v-card-title>
-      <v-card-subtitle>
+      </VCardTitle>
+      <VCardSubtitle>
         {{ subtitle }}
-      </v-card-subtitle>
-      <v-card-text class="font-weight-light error-screen__description">
+      </VCardSubtitle>
+      <VCardText class="font-weight-light error-screen__description">
         <pre
           class="font-weight-regular text-caption text-wrap error-screen__description__message"
         >
           {{ message }}
-          <v-divider v-if="error" class="mt-4 mb-2"/>
+          <VDivider v-if="error" class="mt-4 mb-2"/>
           {{ error }}
         </pre>
         <textarea v-model="errorText" class="error-screen__copy-area" />
-      </v-card-text>
-    </v-card>
+      </VCardText>
+    </VCard>
     <div v-else class="text-h5 mt-12">{{ alternative }}</div>
     <slot name="bottom" />
   </div>

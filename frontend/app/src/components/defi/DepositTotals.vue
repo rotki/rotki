@@ -25,56 +25,53 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <v-row class="mt-8" no-gutters>
-    <v-col cols="12">
-      <stat-card-wide :cols="3">
+  <VRow class="mt-8" no-gutters>
+    <VCol cols="12">
+      <StatCardWide :cols="3">
         <template #first-col>
-          <stat-card-column>
+          <StatCardColumn>
             <template #title>
               {{ t('lending.currently_deposited') }}
             </template>
-            <amount-display
+            <AmountDisplay
               :value="totalLendingDeposit"
               fiat-currency="USD"
               show-currency="symbol"
             />
-          </stat-card-column>
+          </StatCardColumn>
         </template>
         <template #second-col>
-          <stat-card-column>
+          <StatCardColumn>
             <template #title>
               {{ t('lending.effective_interest_rate') }}
-              <v-tooltip bottom max-width="300px">
+              <VTooltip bottom max-width="300px">
                 <template #activator="{ on }">
-                  <v-icon small class="mb-1 ml-2" v-on="on">
+                  <VIcon small class="mb-1 ml-2" v-on="on">
                     mdi-information
-                  </v-icon>
+                  </VIcon>
                 </template>
                 <div>{{ t('lending.effective_interest_rate_tooltip') }}</div>
-              </v-tooltip>
+              </VTooltip>
             </template>
-            <percentage-display
-              justify="start"
-              :value="effectiveInterestRate"
-            />
-          </stat-card-column>
+            <PercentageDisplay justify="start" :value="effectiveInterestRate" />
+          </StatCardColumn>
         </template>
         <template #third-col>
-          <stat-card-column lock>
+          <StatCardColumn lock>
             <template #title>
               {{ t('lending.profit_earned') }}
-              <premium-lock v-if="!premium" class="d-inline" />
+              <PremiumLock v-if="!premium" class="d-inline" />
             </template>
-            <amount-display
+            <AmountDisplay
               v-if="premium"
               :loading="loading"
               :value="totalUsdEarned"
               show-currency="symbol"
               fiat-currency="USD"
             />
-          </stat-card-column>
+          </StatCardColumn>
         </template>
-      </stat-card-wide>
-    </v-col>
-  </v-row>
+      </StatCardWide>
+    </VCol>
+  </VRow>
 </template>

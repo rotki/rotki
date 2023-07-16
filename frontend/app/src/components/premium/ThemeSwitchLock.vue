@@ -4,10 +4,10 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <v-tooltip bottom>
+  <VTooltip bottom>
     <template #activator="{ on }">
-      <v-badge color="transparent" offset-y="20" offset-x="20">
-        <v-btn
+      <VBadge color="transparent" offset-y="20" offset-x="20">
+        <VBtn
           text
           icon
           target="_blank"
@@ -16,15 +16,15 @@ const { t } = useI18n();
           v-on="on"
           @click="onLinkClick()"
         >
-          <v-icon>mdi-white-balance-sunny</v-icon>
-        </v-btn>
+          <VIcon>mdi-white-balance-sunny</VIcon>
+        </VBtn>
         <template #badge>
-          <v-icon color="primary" small>mdi-lock</v-icon>
+          <VIcon color="primary" small>mdi-lock</VIcon>
         </template>
-      </v-badge>
+      </VBadge>
     </template>
     <span>
       {{ t('theme_switch_lock.tooltip') }}
     </span>
-  </v-tooltip>
+  </VTooltip>
 </template>

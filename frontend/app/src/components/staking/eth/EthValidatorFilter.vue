@@ -22,37 +22,37 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <v-row>
-    <v-col cols="auto">
-      <v-tooltip open-delay="400" top>
+  <VRow>
+    <VCol cols="auto">
+      <VTooltip open-delay="400" top>
         <template #activator="{ on, attrs }">
           <div v-bind="attrs" v-on="on">
-            <v-btn-toggle v-model="filterType" dense mandatory>
-              <v-btn value="validator">{{ t('eth2_page.toggle.key') }}</v-btn>
-              <v-btn value="address">
+            <VBtnToggle v-model="filterType" dense mandatory>
+              <VBtn value="validator">{{ t('eth2_page.toggle.key') }}</VBtn>
+              <VBtn value="address">
                 {{ t('eth2_page.toggle.depositor') }}
-              </v-btn>
-            </v-btn-toggle>
+              </VBtn>
+            </VBtnToggle>
           </div>
         </template>
         <span>{{ t('eth2_page.toggle.hint') }}</span>
-      </v-tooltip>
-    </v-col>
-    <v-col>
-      <v-row class="ml-8">
-        <v-col>
-          <eth2-validator-filter
+      </VTooltip>
+    </VCol>
+    <VCol>
+      <VRow class="ml-8">
+        <VCol>
+          <Eth2ValidatorFilter
             :value="value"
             :filter-type="filterType"
             @input="emit('input', $event)"
           />
-        </v-col>
-        <v-col>
-          <eth-validator-range-filter
+        </VCol>
+        <VCol>
+          <EthValidatorRangeFilter
             @update:period="emit('update:period', $event)"
           />
-        </v-col>
-      </v-row>
-    </v-col>
-  </v-row>
+        </VCol>
+      </VRow>
+    </VCol>
+  </VRow>
 </template>

@@ -17,14 +17,14 @@ onMounted(() => {
 </script>
 
 <template>
-  <settings-option
+  <SettingsOption
     #default="{ error, success, update }"
     setting="currencyLocation"
     frontend-setting
     :error-message="t('general_settings.validation.currency_location.error')"
     :success-message="successMessage"
   >
-    <v-radio-group
+    <VRadioGroup
       v-model="currencyLocation"
       class="general-settings__fields__currency-location"
       :label="t('general_settings.amount.label.currency_location')"
@@ -33,14 +33,14 @@ onMounted(() => {
       :error-messages="error"
       @change="update($event)"
     >
-      <v-radio
+      <VRadio
         :label="t('general_settings.amount.label.location_before')"
         value="before"
       />
-      <v-radio
+      <VRadio
         :label="t('general_settings.amount.label.location_after')"
         value="after"
       />
-    </v-radio-group>
-  </settings-option>
+    </VRadioGroup>
+  </SettingsOption>
 </template>

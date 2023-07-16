@@ -6,8 +6,6 @@ import { zeroBalance } from '@/utils/bignumbers';
 import { balanceSum, calculatePercentage } from '@/utils/calculation';
 import { CURRENCY_USD } from '@/types/currencies';
 
-const { t } = useI18n();
-
 const props = withDefaults(
   defineProps<{
     identifier: string;
@@ -21,6 +19,8 @@ const props = withDefaults(
     total: null
   }
 );
+
+const { t } = useI18n();
 
 const { identifier, blockchainOnly, showPercentage, total } = toRefs(props);
 
@@ -97,23 +97,23 @@ const percentage = (value: BigNumber) => {
 </script>
 
 <template>
-  <v-sheet outlined>
-    <data-table
+  <VSheet outlined>
+    <DataTable
       :headers="tableHeaders"
       :items="breakdowns"
       sort-by="balance.amount"
     >
       <template #item.location="{ item }">
-        <location-display
+        <LocationDisplay
           :identifier="item.location"
           :detail-path="item.detailPath"
         />
       </template>
       <template #item.balance.amount="{ item }">
-        <amount-display :value="item.balance.amount" />
+        <AmountDisplay :value="item.balance.amount" />
       </template>
       <template #item.balance.usdValue="{ item }">
-        <amount-display
+        <AmountDisplay
           show-currency="symbol"
           :amount="item.balance.amount"
           :price-asset="identifier"
@@ -122,8 +122,8 @@ const percentage = (value: BigNumber) => {
         />
       </template>
       <template #item.percentage="{ item }">
-        <percentage-display :value="percentage(item.balance.usdValue)" />
+        <PercentageDisplay :value="percentage(item.balance.usdValue)" />
       </template>
-    </data-table>
-  </v-sheet>
+    </DataTable>
+  </VSheet>
 </template>

@@ -10,12 +10,12 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <settings-option
+  <SettingsOption
     #default="{ error, success, update }"
     setting="pnlCsvWithFormulas"
     :error-message="t('account_settings.messages.export_csv_formulas')"
   >
-    <v-switch
+    <VSwitch
       v-model="exportCSVFormulas"
       class="csv_export_settings__exportCSVFormulas"
       :label="
@@ -26,5 +26,5 @@ const { t } = useI18n();
       :error-messages="error"
       @change="update($event)"
     />
-  </settings-option>
+  </SettingsOption>
 </template>

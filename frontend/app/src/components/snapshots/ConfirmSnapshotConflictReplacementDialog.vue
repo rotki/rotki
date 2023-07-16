@@ -4,17 +4,15 @@ import { isNft } from '@/utils/nft';
 import NftDetails from '@/components/helper/NftDetails.vue';
 import { type BalanceSnapshot } from '@/types/snapshots';
 
-const { t } = useI18n();
-const css = useCssModule();
-
 const props = defineProps<{
   snapshot: BalanceSnapshot | null;
 }>();
-
 const emit = defineEmits<{
   (e: 'cancel'): void;
   (e: 'confirm'): void;
 }>();
+const { t } = useI18n();
+const css = useCssModule();
 
 const { snapshot } = toRefs(props);
 
@@ -26,7 +24,7 @@ const asset: ComputedRef<string> = computed(
 </script>
 
 <template>
-  <confirm-dialog
+  <ConfirmDialog
     max-width="700"
     :display="display"
     :title="t('dashboard.snapshot.convert_to_edit.dialog.title')"
@@ -35,14 +33,14 @@ const asset: ComputedRef<string> = computed(
     @cancel="emit('cancel')"
     @confirm="emit('confirm')"
   >
-    <v-sheet
+    <VSheet
       v-if="snapshot"
       outlined
       class="pa-4 mt-4 d-flex justify-center"
       rounded
     >
-      <balance-display :asset="asset" :value="snapshot" class="mr-4" no-icon />
-      <asset-details
+      <BalanceDisplay :asset="asset" :value="snapshot" class="mr-4" no-icon />
+      <AssetDetails
         v-if="!isNft(asset)"
         :class="css.asset"
         :asset="asset"
@@ -50,10 +48,10 @@ const asset: ComputedRef<string> = computed(
         :enable-association="false"
       />
       <div v-else>
-        <nft-details :identifier="asset" :class="css.asset" />
+        <NftDetails :identifier="asset" :class="css.asset" />
       </div>
-    </v-sheet>
-  </confirm-dialog>
+    </VSheet>
+  </ConfirmDialog>
 </template>
 
 <style module lang="scss">

@@ -10,13 +10,13 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <settings-option
+  <SettingsOption
     #default="{ error, success, update }"
     setting="enableAliasNames"
     frontend-setting
     :error-message="t('frontend_settings.validation.enable_alias_names.error')"
   >
-    <v-switch
+    <VSwitch
       v-model="enableAliasNames"
       class="general-settings__fields__enable_alias_names mb-4 mt-2"
       :label="t('frontend_settings.label.enable_alias_names')"
@@ -24,5 +24,5 @@ const { t } = useI18n();
       :error-messages="error"
       @change="update($event)"
     />
-  </settings-option>
+  </SettingsOption>
 </template>

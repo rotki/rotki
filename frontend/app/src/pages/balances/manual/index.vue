@@ -97,13 +97,13 @@ const { xl } = useDisplay();
 </script>
 
 <template>
-  <fragment>
-    <v-row justify="end" class="mb-5">
-      <v-col cols="auto">
-        <price-refresh />
-      </v-col>
-    </v-row>
-    <v-btn
+  <Fragment>
+    <VRow justify="end" class="mb-5">
+      <VCol cols="auto">
+        <PriceRefresh />
+      </VCol>
+    </VRow>
+    <VBtn
       v-blur
       fixed
       bottom
@@ -115,12 +115,12 @@ const { xl } = useDisplay();
       class="manual-balances__add-balance"
       @click="add()"
     >
-      <v-icon> mdi-plus </v-icon>
+      <VIcon> mdi-plus </VIcon>
       <div v-if="xl" class="ml-2">
         {{ t('manual_balances.add_manual_balance') }}
       </div>
-    </v-btn>
-    <manual-balance-table
+    </VBtn>
+    <ManualBalanceTable
       v-intersect="{
         handler: observers.asset,
         options: {
@@ -134,7 +134,7 @@ const { xl } = useDisplay();
       @edit="edit($event)"
       @refresh="refresh()"
     />
-    <manual-balance-table
+    <ManualBalanceTable
       v-intersect="{
         handler: observers.liability,
         options: {
@@ -149,7 +149,7 @@ const { xl } = useDisplay();
       @edit="edit($event)"
       @refresh="refresh()"
     />
-    <big-dialog
+    <BigDialog
       :display="openDialog"
       :title="dialogTitle"
       :subtitle="dialogSubtitle"
@@ -158,7 +158,7 @@ const { xl } = useDisplay();
       @confirm="trySubmit()"
       @cancel="cancelForm()"
     >
-      <manual-balances-form :edit="balanceToEdit" :context="context" />
-    </big-dialog>
-  </fragment>
+      <ManualBalancesForm :edit="balanceToEdit" :context="context" />
+    </BigDialog>
+  </Fragment>
 </template>

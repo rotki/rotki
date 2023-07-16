@@ -12,7 +12,7 @@ export const useValidation = <V extends ValidationArgs>(
   const callIfValid = <T = unknown>(
     value: T,
     method: (e: T) => void,
-    invalid: () => Boolean = hasError
+    invalid: () => boolean = hasError
   ) => {
     if (!invalid()) {
       method(value);

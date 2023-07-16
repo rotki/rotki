@@ -3,21 +3,21 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <setting-category>
+  <SettingCategory>
     <template #title>
       {{ t('data_management.title') }}
     </template>
 
     <div>
-      <purge-data />
+      <PurgeData />
     </div>
 
     <div class="mt-4">
-      <purge-images-cache />
+      <PurgeImagesCache />
     </div>
 
     <div class="mt-4">
-      <refresh-cache />
+      <RefreshCache />
     </div>
-  </setting-category>
+  </SettingCategory>
 </template>

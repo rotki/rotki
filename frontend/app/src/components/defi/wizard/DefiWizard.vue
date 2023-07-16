@@ -12,14 +12,14 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <v-container>
-    <v-card>
-      <v-stepper v-model="step" vertical>
-        <v-stepper-step :complete="step > 1" step="1">
+  <VContainer>
+    <VCard>
+      <VStepper v-model="step" vertical>
+        <VStepperStep :complete="step > 1" step="1">
           {{ t('defi_wizard.steps.setup.title') }}
-        </v-stepper-step>
-        <v-stepper-content step="1">
-          <card class="mb-8" outlined>
+        </VStepperStep>
+        <VStepperContent step="1">
+          <Card class="mb-8" outlined>
             <template #title>
               {{ t('defi_wizard.steps.setup.subtitle') }}
             </template>
@@ -32,79 +32,79 @@ const { t } = useI18n();
             <p>
               {{ t('defi_wizard.steps.setup.description_line_three') }}
             </p>
-          </card>
+          </Card>
           <div class="pb-4">
-            <v-btn text class="defi-wizard__use-default" @click="done()">
+            <VBtn text class="defi-wizard__use-default" @click="done()">
               {{ t('defi_wizard.steps.setup.used_default') }}
-            </v-btn>
-            <v-btn
+            </VBtn>
+            <VBtn
               color="primary"
               class="defi-wizard__select-modules ml-4"
               @click="step = 2"
             >
               {{ t('common.actions.continue') }}
-            </v-btn>
+            </VBtn>
           </div>
-        </v-stepper-content>
-        <v-stepper-step :complete="step > 2" step="2">
+        </VStepperContent>
+        <VStepperStep :complete="step > 2" step="2">
           {{ t('defi_wizard.steps.select_modules.title') }}
-        </v-stepper-step>
-        <v-stepper-content step="2">
-          <card outlined class="mb-8">
+        </VStepperStep>
+        <VStepperContent step="2">
+          <Card outlined class="mb-8">
             <template #title>
               {{ t('defi_wizard.steps.select_modules.subtitle') }}
             </template>
             <template #subtitle>
               {{ t('defi_wizard.steps.select_modules.hint') }}
             </template>
-            <v-row>
-              <v-col>
-                <module-selector />
-              </v-col>
-            </v-row>
-          </card>
+            <VRow>
+              <VCol>
+                <ModuleSelector />
+              </VCol>
+            </VRow>
+          </Card>
           <div class="pb-4">
-            <v-btn text @click="step = 1">
+            <VBtn text @click="step = 1">
               {{ t('common.actions.back') }}
-            </v-btn>
-            <v-btn
+            </VBtn>
+            <VBtn
               color="primary"
               class="defi-wizard__select-accounts ml-4"
               @click="step = 3"
             >
               {{ t('common.actions.continue') }}
-            </v-btn>
+            </VBtn>
           </div>
-        </v-stepper-content>
-        <v-stepper-step :complete="step > 3" step="3">
+        </VStepperContent>
+        <VStepperStep :complete="step > 3" step="3">
           {{ t('defi_wizard.steps.select_accounts.title') }}
-        </v-stepper-step>
-        <v-stepper-content step="3">
-          <card outlined class="mb-8">
+        </VStepperStep>
+        <VStepperContent step="3">
+          <Card outlined class="mb-8">
             <template #title>
               {{ t('defi_wizard.steps.select_accounts.subtitle') }}
             </template>
             <template #subtitle>
               {{ t('defi_wizard.steps.select_accounts.hint') }}
             </template>
-            <module-address-selector class="defi-wizard__address-selector" />
-          </card>
+            <ModuleAddressSelector class="defi-wizard__address-selector" />
+          </Card>
           <div class="pb-4">
-            <v-btn text @click="step = 2">
+            <VBtn text @click="step = 2">
               {{ t('common.actions.back') }}
-            </v-btn>
-            <v-btn
+            </VBtn>
+            <VBtn
               color="primary"
               class="defi-wizard__done ml-4"
               @click="done()"
             >
               {{ t('common.actions.continue') }}
-            </v-btn>
+            </VBtn>
           </div>
-        </v-stepper-content>
-      </v-stepper>
-    </v-card>
-  </v-container>
+        </VStepperContent>
+      </VStepper>
+    </VCard>
+  </VContainer>
 </template>
 
 <style scoped lang="scss">

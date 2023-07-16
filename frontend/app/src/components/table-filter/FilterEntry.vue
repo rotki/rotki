@@ -18,7 +18,7 @@ const { dark } = useTheme();
 
 <template>
   <div>
-    <v-btn
+    <VBtn
       text
       class="text-none text-body-1"
       block
@@ -39,7 +39,7 @@ const { dark } = useTheme();
           {{ matcher.description }}
         </span>
       </span>
-    </v-btn>
+    </VBtn>
   </div>
 </template>
 

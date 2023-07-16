@@ -10,4 +10,5 @@ export enum AddressNamePriority {
 }
 
 export const AddressNamePriorityEnum = z.nativeEnum(AddressNamePriority);
+
 export type AddressNamePriorityEnum = z.infer<typeof AddressNamePriorityEnum>;

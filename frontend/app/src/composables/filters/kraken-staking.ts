@@ -15,6 +15,7 @@ enum KrakenStakingValueKeys {
 }
 
 type Matcher = SearchMatcher<KrakenStakingKeys, KrakenStakingValueKeys>;
+
 type Filters = MatchedKeyword<KrakenStakingValueKeys>;
 
 export const useKrakenStakingFilter = () => {

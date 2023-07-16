@@ -18,46 +18,46 @@ const displayRouter = logicAnd(connected, loginIfConnected);
 </script>
 
 <template>
-  <login-overlay>
+  <LoginOverlay>
     <div :class="css.wrapper">
       <div :class="css.container">
-        <v-card
+        <VCard
           class="pb-4"
           :class="css.card"
           light
           data-cy="account-management"
         >
-          <login-header />
-          <docker-warning v-if="!dockerRiskAccepted && isDocker" />
-          <connection-loading
+          <LoginHeader />
+          <DockerWarning v-if="!dockerRiskAccepted && isDocker" />
+          <ConnectionLoading
             v-else-if="!connectionFailure"
             :connected="connected && !autolog"
           />
-          <connection-failure-message v-else />
+          <ConnectionFailureMessage v-else />
           <div
             v-if="displayRouter"
             data-cy="account-management-forms"
             :class="css.router"
           >
-            <router-view />
+            <RouterView />
           </div>
-        </v-card>
+        </VCard>
       </div>
 
-      <login-icon left>
-        <animations-button />
-      </login-icon>
-      <privacy-notice />
-      <login-icon>
+      <LoginIcon left>
+        <AnimationsButton />
+      </LoginIcon>
+      <PrivacyNotice />
+      <LoginIcon>
         <template v-if="isPackaged">
-          <onboarding-settings-button />
+          <OnboardingSettingsButton />
         </template>
         <template v-else>
-          <about-button />
+          <AboutButton />
         </template>
-      </login-icon>
+      </LoginIcon>
     </div>
-  </login-overlay>
+  </LoginOverlay>
 </template>
 
 <style module lang="scss">

@@ -60,7 +60,7 @@ const calculateFontSize = (symbol: string) => {
 
 <template>
   <div>
-    <v-menu
+    <VMenu
       v-model="visible"
       transition="slide-y-transition"
       max-width="350px"
@@ -69,7 +69,7 @@ const calculateFontSize = (symbol: string) => {
       :close-on-content-click="false"
     >
       <template #activator="{ on }">
-        <menu-tooltip-button
+        <MenuTooltipButton
           :tooltip="
             t('currency_drop_down.profit_currency', {
               currency: currency.tickerSymbol
@@ -81,12 +81,12 @@ const calculateFontSize = (symbol: string) => {
           <span class="currency-dropdown">
             {{ currency.unicodeSymbol }}
           </span>
-        </menu-tooltip-button>
+        </MenuTooltipButton>
       </template>
       <div>
-        <v-row class="px-4 py-3">
-          <v-col>
-            <v-text-field
+        <VRow class="px-4 py-3">
+          <VCol>
+            <VTextField
               v-model="filter"
               outlined
               dense
@@ -96,34 +96,34 @@ const calculateFontSize = (symbol: string) => {
               prepend-inner-icon="mdi-magnify"
               @keypress.enter="selectFirst()"
             />
-          </v-col>
-        </v-row>
-        <v-divider />
-        <v-list class="currency-dropdown__list">
-          <v-list-item
+          </VCol>
+        </VRow>
+        <VDivider />
+        <VList class="currency-dropdown__list">
+          <VListItem
             v-for="item in filteredCurrencies"
             :id="`change-to-${item.tickerSymbol.toLocaleLowerCase()}`"
             :key="item.tickerSymbol"
             @click="onSelected(item)"
           >
-            <v-list-item-avatar
+            <VListItemAvatar
               class="currency-list primary--text"
               :style="{ fontSize: calculateFontSize(item.unicodeSymbol) }"
             >
               {{ item.unicodeSymbol }}
-            </v-list-item-avatar>
-            <v-list-item-content>
-              <v-list-item-title>
+            </VListItemAvatar>
+            <VListItemContent>
+              <VListItemTitle>
                 {{ item.name }}
-              </v-list-item-title>
-              <v-list-item-subtitle>
+              </VListItemTitle>
+              <VListItemSubtitle>
                 {{ t('currency_drop_down.hint') }}
-              </v-list-item-subtitle>
-            </v-list-item-content>
-          </v-list-item>
-        </v-list>
+              </VListItemSubtitle>
+            </VListItemContent>
+          </VListItem>
+        </VList>
       </div>
-    </v-menu>
+    </VMenu>
   </div>
 </template>
 

@@ -1,11 +1,12 @@
 <script setup lang="ts">
-const { t } = useI18n();
-
 defineProps<{ visible: boolean }>();
+
+const emit = defineEmits(['close']);
+
+const { t } = useI18n();
 
 const css = useCssModule();
 
-const emit = defineEmits(['close']);
 const confirmStore = useConfirmStore();
 const { visible: dialogVisible } = storeToRefs(confirmStore);
 const { show } = confirmStore;
@@ -46,7 +47,7 @@ const { hasRunningTasks } = storeToRefs(useTaskStore());
 </script>
 
 <template>
-  <v-navigation-drawer
+  <VNavigationDrawer
     :class="{ [css.mobile]: mobile, [css.sidebar]: true }"
     width="400px"
     absolute
@@ -59,26 +60,26 @@ const { hasRunningTasks } = storeToRefs(useTaskStore());
     @input="input($event)"
   >
     <div v-if="visible" :class="css.container">
-      <v-row align="center" no-gutters class="pl-2 pr-2 pt-1 pb-2">
-        <v-col cols="auto">
-          <v-tooltip bottom>
+      <VRow align="center" no-gutters class="pl-2 pr-2 pt-1 pb-2">
+        <VCol cols="auto">
+          <VTooltip bottom>
             <template #activator="{ on }">
-              <v-btn text icon v-on="on" @click="close()">
-                <v-icon>mdi-chevron-right</v-icon>
-              </v-btn>
+              <VBtn text icon v-on="on" @click="close()">
+                <VIcon>mdi-chevron-right</VIcon>
+              </VBtn>
             </template>
             <span>{{ t('notification_sidebar.close_tooltip') }}</span>
-          </v-tooltip>
-        </v-col>
-        <v-col>
+          </VTooltip>
+        </VCol>
+        <VCol>
           <span
             class="text-uppercase text--secondary text-caption font-weight-medium pl-1"
           >
             {{ t('notification_sidebar.title') }}
           </span>
-        </v-col>
-        <v-col cols="auto">
-          <v-btn
+        </VCol>
+        <VCol cols="auto">
+          <VBtn
             text
             class="text-caption text-lowercase"
             color="accent"
@@ -86,30 +87,30 @@ const { hasRunningTasks } = storeToRefs(useTaskStore());
             @click="showConfirmation()"
           >
             {{ t('notification_sidebar.clear_tooltip') }}
-          </v-btn>
-        </v-col>
-      </v-row>
+          </VBtn>
+        </VCol>
+      </VRow>
       <div
         v-if="!hasRunningTasks && notifications.length === 0"
         :class="$style['no-messages']"
       >
-        <v-icon size="64px" color="primary">mdi-information</v-icon>
+        <VIcon size="64px" color="primary">mdi-information</VIcon>
         <div :class="css.label">
           {{ t('notification_sidebar.no_messages') }}
         </div>
       </div>
       <div v-else :class="css.messages">
-        <pending-tasks />
+        <PendingTasks />
         <div v-if="notifications.length > 0" class="pl-2" :class="css.content">
-          <v-virtual-scroll :items="notifications" item-height="172px">
+          <VVirtualScroll :items="notifications" item-height="172px">
             <template #default="{ item }">
-              <notification :notification="item" @dismiss="remove($event)" />
+              <Notification :notification="item" @dismiss="remove($event)" />
             </template>
-          </v-virtual-scroll>
+          </VVirtualScroll>
         </div>
       </div>
     </div>
-  </v-navigation-drawer>
+  </VNavigationDrawer>
 </template>
 
 <style module lang="scss">

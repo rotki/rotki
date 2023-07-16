@@ -32,17 +32,17 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <v-dialog
+  <VDialog
     :value="true"
     max-width="550px"
     @close="close()"
     @click:outside="close()"
   >
-    <card>
+    <Card>
       <template #title>{{ t('non_fungible_balances.edit.title') }}</template>
       <template #subtitle> {{ value.name }}</template>
-      <asset-select v-model="asset" outlined />
-      <amount-input
+      <AssetSelect v-model="asset" outlined />
+      <AmountInput
         v-model="price"
         :label="t('common.price')"
         outlined
@@ -50,14 +50,14 @@ const { t } = useI18n();
         @keypress.enter="save()"
       />
       <template #buttons>
-        <v-spacer />
-        <v-btn depressed @click="close()">
+        <VSpacer />
+        <VBtn depressed @click="close()">
           {{ t('common.actions.cancel') }}
-        </v-btn>
-        <v-btn depressed color="primary" :disabled="!valid" @click="save()">
+        </VBtn>
+        <VBtn depressed color="primary" :disabled="!valid" @click="save()">
           {{ t('common.actions.save') }}
-        </v-btn>
+        </VBtn>
       </template>
-    </card>
-  </v-dialog>
+    </Card>
+  </VDialog>
 </template>

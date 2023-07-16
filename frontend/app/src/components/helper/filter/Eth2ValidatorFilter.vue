@@ -40,7 +40,7 @@ watch(accounts, accounts => updateAccounts(accounts));
 </script>
 
 <template>
-  <blockchain-account-selector
+  <BlockchainAccountSelector
     v-if="filterType === 'address'"
     v-model="accounts"
     no-padding
@@ -51,7 +51,7 @@ watch(accounts, accounts => updateAccounts(accounts));
     :label="t('eth2_validator_filter.label')"
     multiple
   />
-  <validator-filter-input
+  <ValidatorFilterInput
     v-else
     :value="value.validators"
     :items="eth2Validators.entries"

@@ -21,7 +21,7 @@ const unlockTask = (lockedTasks: Ref<number[]>, taskId: number): number[] => {
 type ErrorHandler = (
   task: Task<TaskMeta>,
   message?: string
-) => ActionResult<{}>;
+) => ActionResult<unknown>;
 
 const useError = (): { error: ErrorHandler } => {
   const { t } = useI18n();

@@ -36,9 +36,9 @@ interface FilterSchema<F, M> {
  * @param {{onUpdateFilters?: (query: LocationQuery) => void, extraParams?: ComputedRef<LocationQuery>, customPageParams?: ComputedRef<Partial<U>>, defaultSortBy?: {pagination?: keyof T, pageParams?: (keyof T)[], pageParamsAsc?: boolean[]}}} options
  */
 export const usePaginationFilters = <
-  T extends Object,
+  T extends NonNullable<unknown>,
   U = PaginationRequestPayload<T>,
-  V extends Object = T,
+  V extends NonNullable<unknown> = T,
   S extends Collection<V> = Collection<V>,
   W extends MatchedKeywordWithBehaviour<string> | void = undefined,
   X extends SearchMatcher<string, string> | void = undefined

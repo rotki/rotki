@@ -14,8 +14,6 @@ import { IgnoreActionType } from '@/types/history/ignored';
 import { SavedFilterLocation } from '@/types/filtering';
 import type { Filters, Matcher } from '@/composables/filters/trades';
 
-const { t } = useI18n();
-
 const props = withDefaults(
   defineProps<{
     locationOverview?: TradeLocation;
@@ -26,6 +24,8 @@ const props = withDefaults(
     mainPage: false
   }
 );
+
+const { t } = useI18n();
 
 const { locationOverview, mainPage } = toRefs(props);
 
@@ -279,9 +279,9 @@ watch(loading, async (isLoading, wasLoading) => {
 </script>
 
 <template>
-  <fragment>
-    <card outlined-body class="mt-8">
-      <v-btn
+  <Fragment>
+    <Card outlined-body class="mt-8">
+      <VBtn
         v-if="!locationOverview"
         absolute
         fab
@@ -292,74 +292,74 @@ watch(loading, async (isLoading, wasLoading) => {
         data-cy="closed-trades__add-trade"
         @click="newExternalTrade()"
       >
-        <v-icon> mdi-plus </v-icon>
-      </v-btn>
+        <VIcon> mdi-plus </VIcon>
+      </VBtn>
       <template #title>
-        <refresh-button
+        <RefreshButton
           v-if="!locationOverview"
           :loading="loading"
           :tooltip="t('closed_trades.refresh_tooltip')"
           @refresh="refreshTrades(true)"
         />
-        <navigator-link :to="{ path: pageRoute }" :enabled="!!locationOverview">
+        <NavigatorLink :to="{ path: pageRoute }" :enabled="!!locationOverview">
           {{ t('closed_trades.title') }}
-        </navigator-link>
+        </NavigatorLink>
       </template>
       <template #actions>
-        <v-row v-if="!locationOverview">
-          <v-col cols="12" md="6" class="d-flex">
+        <VRow v-if="!locationOverview">
+          <VCol cols="12" md="6" class="d-flex">
             <div>
-              <v-row>
-                <v-col cols="auto">
-                  <ignore-buttons
+              <VRow>
+                <VCol cols="auto">
+                  <IgnoreButtons
                     :disabled="selected.length === 0 || loading"
                     @ignore="ignore($event)"
                   />
-                </v-col>
-                <v-col>
-                  <v-btn
+                </VCol>
+                <VCol>
+                  <VBtn
                     text
                     outlined
                     color="red"
                     :disabled="selected.length === 0"
                     @click="massDelete()"
                   >
-                    <v-icon> mdi-delete-outline </v-icon>
-                  </v-btn>
-                </v-col>
-              </v-row>
+                    <VIcon> mdi-delete-outline </VIcon>
+                  </VBtn>
+                </VCol>
+              </VRow>
               <div v-if="selected.length > 0" class="mt-2 ms-1">
                 {{ t('closed_trades.selected', { count: selected.length }) }}
-                <v-btn small text @click="selected = []">
+                <VBtn small text @click="selected = []">
                   {{ t('common.actions.clear_selection') }}
-                </v-btn>
+                </VBtn>
               </div>
             </div>
             <div>
-              <v-switch
+              <VSwitch
                 v-model="hideIgnoredTrades"
                 class="mt-0 ml-8"
                 hide-details
                 :label="t('closed_trades.hide_ignored_trades')"
               />
             </div>
-          </v-col>
-          <v-col cols="12" md="6">
+          </VCol>
+          <VCol cols="12" md="6">
             <div class="pb-md-8">
-              <table-filter
+              <TableFilter
                 :matches="filters"
                 :matchers="matchers"
                 :location="SavedFilterLocation.HISTORY_TRADES"
                 @update:matches="setFilter($event)"
               />
             </div>
-          </v-col>
-        </v-row>
+          </VCol>
+        </VRow>
       </template>
 
-      <collection-handler :collection="trades" @set-page="setPage($event)">
+      <CollectionHandler :collection="trades" @set-page="setPage($event)">
         <template #default="{ data, limit, total, showUpgradeRow, itemLength }">
-          <data-table
+          <DataTable
             v-model="selected"
             :expanded.sync="expanded"
             :headers="tableHeaders"
@@ -381,41 +381,41 @@ watch(loading, async (isLoading, wasLoading) => {
           >
             <template #item.ignoredInAccounting="{ item, isMobile }">
               <div v-if="item.ignoredInAccounting">
-                <badge-display v-if="isMobile" color="grey">
-                  <v-icon small> mdi-eye-off</v-icon>
+                <BadgeDisplay v-if="isMobile" color="grey">
+                  <VIcon small> mdi-eye-off</VIcon>
                   <span class="ml-2">
                     {{ t('common.ignored_in_accounting') }}
                   </span>
-                </badge-display>
-                <v-tooltip v-else bottom>
+                </BadgeDisplay>
+                <VTooltip v-else bottom>
                   <template #activator="{ on }">
-                    <badge-display color="grey" v-on="on">
-                      <v-icon small> mdi-eye-off</v-icon>
-                    </badge-display>
+                    <BadgeDisplay color="grey" v-on="on">
+                      <VIcon small> mdi-eye-off</VIcon>
+                    </BadgeDisplay>
                   </template>
                   <span>
                     {{ t('common.ignored_in_accounting') }}
                   </span>
-                </v-tooltip>
+                </VTooltip>
               </div>
             </template>
             <template #item.location="{ item }">
-              <location-display
+              <LocationDisplay
                 data-cy="trade-location"
                 :identifier="item.location"
               />
             </template>
             <template #item.type="{ item }">
-              <badge-display
+              <BadgeDisplay
                 :color="
                   item.tradeType.toLowerCase() === 'sell' ? 'red' : 'green'
                 "
               >
                 {{ item.tradeType }}
-              </badge-display>
+              </BadgeDisplay>
             </template>
             <template #item.baseAsset="{ item }">
-              <asset-details
+              <AssetDetails
                 data-cy="trade-base"
                 opens-details
                 hide-name
@@ -423,7 +423,7 @@ watch(loading, async (isLoading, wasLoading) => {
               />
             </template>
             <template #item.quoteAsset="{ item }">
-              <asset-details
+              <AssetDetails
                 hide-name
                 opens-details
                 :asset="item.quoteAsset"
@@ -438,22 +438,22 @@ watch(loading, async (isLoading, wasLoading) => {
               }}
             </template>
             <template #item.rate="{ item }">
-              <amount-display
+              <AmountDisplay
                 class="closed-trades__trade__rate"
                 :value="item.rate"
               />
             </template>
             <template #item.amount="{ item }">
-              <amount-display
+              <AmountDisplay
                 class="closed-trades__trade__amount"
                 :value="item.amount"
               />
             </template>
             <template #item.timestamp="{ item }">
-              <date-display :timestamp="item.timestamp" />
+              <DateDisplay :timestamp="item.timestamp" />
             </template>
             <template #item.actions="{ item }">
-              <row-actions
+              <RowActions
                 v-if="item.location === 'external'"
                 :disabled="loading"
                 :edit-tooltip="t('closed_trades.edit_tooltip')"
@@ -463,23 +463,20 @@ watch(loading, async (isLoading, wasLoading) => {
               />
             </template>
             <template #expanded-item="{ headers, item }">
-              <trade-details :span="headers.length" :item="item" />
+              <TradeDetails :span="headers.length" :item="item" />
             </template>
             <template v-if="showUpgradeRow" #body.prepend="{ headers }">
-              <upgrade-row
+              <UpgradeRow
                 :limit="limit"
                 :total="total"
                 :colspan="headers.length"
                 :label="t('closed_trades.label')"
               />
             </template>
-          </data-table>
+          </DataTable>
         </template>
-      </collection-handler>
-    </card>
-    <external-trade-form-dialog
-      :loading="loading"
-      :editable-item="editableItem"
-    />
-  </fragment>
+      </CollectionHandler>
+    </Card>
+    <ExternalTradeFormDialog :loading="loading" :editable-item="editableItem" />
+  </Fragment>
 </template>

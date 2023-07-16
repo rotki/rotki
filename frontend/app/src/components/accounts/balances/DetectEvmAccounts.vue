@@ -9,9 +9,9 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <v-tooltip right max-width="300">
+  <VTooltip right max-width="300">
     <template #activator="{ on }">
-      <v-btn
+      <VBtn
         color="primary"
         depressed
         :loading="isEvmAccountsDetecting"
@@ -20,10 +20,10 @@ const { t } = useI18n();
         @click="detectEvmAccounts()"
       >
         {{ t('blockchain_balances.evm_detection.title') }}
-      </v-btn>
+      </VBtn>
     </template>
     <span>
       {{ t('blockchain_balances.evm_detection.tooltip') }}
     </span>
-  </v-tooltip>
+  </VTooltip>
 </template>

@@ -11,20 +11,20 @@ defineProps({
 </script>
 
 <template>
-  <v-row>
-    <v-col>
-      <i18n
+  <VRow>
+    <VCol>
+      <I18n
         tag="div"
         path="profit_loss_report.report_period"
         class="text-h5 mt-6"
       >
         <template #start>
-          <date-display :timestamp="period.start" class="font-weight-medium" />
+          <DateDisplay :timestamp="period.start" class="font-weight-medium" />
         </template>
         <template #end>
-          <date-display :timestamp="period.end" class="font-weight-medium" />
+          <DateDisplay :timestamp="period.end" class="font-weight-medium" />
         </template>
-      </i18n>
-    </v-col>
-  </v-row>
+      </I18n>
+    </VCol>
+  </VRow>
 </template>

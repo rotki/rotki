@@ -18,27 +18,24 @@ const loading = isLoading(Section.DEFI_LIQUITY_STAKING_POOLS);
 </script>
 
 <template>
-  <card :loading="loading">
+  <Card :loading="loading">
     <template #title>
       {{ t('liquity_pools.title') }}
     </template>
     <template v-if="pool">
       <div class="d-flex align-center py-4 justify-end">
-        <balance-display
+        <BalanceDisplay
           :asset="pool.deposited.asset"
           :value="pool.deposited"
           icon-size="32px"
         />
       </div>
-      <v-divider />
+      <VDivider />
       <div class="pt-4">
         <div class="d-flex align-center mb-1 justify-space-between">
           <div class="grey--text">{{ t('liquity_pools.rewards') }}</div>
           <div>
-            <balance-display
-              :asset="pool.rewards.asset"
-              :value="pool.rewards"
-            />
+            <BalanceDisplay :asset="pool.rewards.asset" :value="pool.rewards" />
           </div>
         </div>
         <div class="d-flex align-center mb-1 justify-space-between">
@@ -46,7 +43,7 @@ const loading = isLoading(Section.DEFI_LIQUITY_STAKING_POOLS);
             {{ t('liquity_pools.liquidation_gains') }}
           </div>
           <div>
-            <balance-display :asset="pool.gains.asset" :value="pool.gains" />
+            <BalanceDisplay :asset="pool.gains.asset" :value="pool.gains" />
           </div>
         </div>
       </div>
@@ -54,5 +51,5 @@ const loading = isLoading(Section.DEFI_LIQUITY_STAKING_POOLS);
     <div v-else class="text-center grey--text pt-4">
       {{ t('liquity_pools.no_lusd_deposited') }}
     </div>
-  </card>
+  </Card>
 </template>

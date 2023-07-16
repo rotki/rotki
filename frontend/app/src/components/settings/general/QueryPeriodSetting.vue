@@ -47,7 +47,7 @@ onMounted(() => {
     <div class="text-h6">
       {{ t('frontend_settings.subtitle.query') }}
     </div>
-    <settings-option
+    <SettingsOption
       #default="{ error, success, update }"
       class="mt-1"
       setting="queryPeriod"
@@ -57,7 +57,7 @@ onMounted(() => {
       @updated="restart()"
       @finished="resetQueryPeriod()"
     >
-      <v-text-field
+      <VTextField
         v-model="queryPeriod"
         outlined
         class="general-settings__fields__periodic-client-query-period"
@@ -70,6 +70,6 @@ onMounted(() => {
         :error-messages="error || v$.queryPeriod.$errors.map(e => e.$message)"
         @change="callIfValid($event, update)"
       />
-    </settings-option>
+    </SettingsOption>
   </div>
 </template>

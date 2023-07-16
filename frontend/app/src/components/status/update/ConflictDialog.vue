@@ -9,8 +9,6 @@ import {
   type ConflictResolutionStrategy
 } from '@/types/asset';
 
-const { t } = useI18n();
-
 const props = defineProps({
   conflicts: {
     required: true,
@@ -22,6 +20,8 @@ const emit = defineEmits<{
   (e: 'cancel'): void;
   (e: 'resolve', resolution: ConflictResolution): void;
 }>();
+
+const { t } = useI18n();
 
 const { conflicts } = toRefs(props);
 
@@ -113,45 +113,40 @@ const cancel = () => {
 </script>
 
 <template>
-  <v-bottom-sheet
-    v-bind="rootAttrs"
-    persistent
-    width="98%"
-    v-on="rootListeners"
-  >
-    <card outlined-body contained no-radius-bottom>
+  <VBottomSheet v-bind="rootAttrs" persistent width="98%" v-on="rootListeners">
+    <Card outlined-body contained no-radius-bottom>
       <template #title>{{ t('conflict_dialog.title') }}</template>
       <template #subtitle>{{ t('conflict_dialog.subtitle') }}</template>
       <template #actions>
-        <v-row no-gutters justify="end" align="center">
-          <v-col cols="auto">
+        <VRow no-gutters justify="end" align="center">
+          <VCol cols="auto">
             <span class="pe-2">
               {{ t('conflict_dialog.all_buttons_description') }}
             </span>
-          </v-col>
-          <v-col cols="auto">
-            <v-row no-gutters justify="end">
-              <v-btn text value="local" @click="setResolution('local')">
+          </VCol>
+          <VCol cols="auto">
+            <VRow no-gutters justify="end">
+              <VBtn text value="local" @click="setResolution('local')">
                 {{ t('conflict_dialog.keep_local') }}
-              </v-btn>
-              <v-btn text value="remote" @click="setResolution('remote')">
+              </VBtn>
+              <VBtn text value="remote" @click="setResolution('remote')">
                 {{ t('conflict_dialog.keep_remote') }}
-              </v-btn>
-            </v-row>
-          </v-col>
-        </v-row>
+              </VBtn>
+            </VRow>
+          </VCol>
+        </VRow>
       </template>
       <template #hint>
-        <i18n path="conflict_dialog.hint" tag="span">
+        <I18n path="conflict_dialog.hint" tag="span">
           <template #conflicts>
             <span class="font-weight-medium"> {{ conflicts.length }} </span>
           </template>
           <template #remaining>
             <span class="font-weight-medium"> {{ remaining }} </span>
           </template>
-        </i18n>
+        </I18n>
       </template>
-      <data-table
+      <DataTable
         :class="{
           [$style.mobile]: true
         }"
@@ -159,7 +154,7 @@ const cancel = () => {
         :headers="tableHeaders"
       >
         <template #item.local="{ item: conflict }">
-          <conflict-row
+          <ConflictRow
             v-for="field in getConflictFields(conflict)"
             :key="`local-${field}`"
             :field="field"
@@ -168,7 +163,7 @@ const cancel = () => {
           />
         </template>
         <template #item.remote="{ item: conflict }">
-          <conflict-row
+          <ConflictRow
             v-for="field in getConflictFields(conflict)"
             :key="`remote-${field}`"
             :field="field"
@@ -177,40 +172,40 @@ const cancel = () => {
           />
         </template>
         <template #item.keep="{ item: conflict }">
-          <v-btn-toggle v-model="resolution[conflict.identifier]">
-            <v-btn class="conflict-dialog__action" value="local">
+          <VBtnToggle v-model="resolution[conflict.identifier]">
+            <VBtn class="conflict-dialog__action" value="local">
               {{ t('conflict_dialog.action.local') }}
-            </v-btn>
-            <v-btn class="conflict-dialog__action" value="remote">
+            </VBtn>
+            <VBtn class="conflict-dialog__action" value="remote">
               {{ t('conflict_dialog.action.remote') }}
-            </v-btn>
-          </v-btn-toggle>
+            </VBtn>
+          </VBtnToggle>
         </template>
-      </data-table>
+      </DataTable>
       <template #options>
         <div class="conflict-dialog__pagination" />
       </template>
       <template #buttons>
-        <v-row no-gutters justify="end">
-          <v-col cols="auto">
-            <v-btn text @click="cancel()">
+        <VRow no-gutters justify="end">
+          <VCol cols="auto">
+            <VBtn text @click="cancel()">
               {{ t('common.actions.cancel') }}
-            </v-btn>
-          </v-col>
-          <v-col cols="auto">
-            <v-btn
+            </VBtn>
+          </VCol>
+          <VCol cols="auto">
+            <VBtn
               text
               color="primary"
               :disabled="!valid"
               @click="resolve(resolution)"
             >
               {{ t('common.actions.confirm') }}
-            </v-btn>
-          </v-col>
-        </v-row>
+            </VBtn>
+          </VCol>
+        </VRow>
       </template>
-    </card>
-  </v-bottom-sheet>
+    </Card>
+  </VBottomSheet>
 </template>
 
 <style module lang="scss">

@@ -10,5 +10,5 @@ const { identifier } = toRefs(props);
 </script>
 
 <template>
-  <custom-asset-content main-page :identifier="identifier" />
+  <CustomAssetContent main-page :identifier="identifier" />
 </template>

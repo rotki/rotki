@@ -7,7 +7,7 @@ const { costBasisMethodData } = useCostBasisMethod();
 </script>
 
 <template>
-  <v-select
+  <VSelect
     v-bind="rootAttrs"
     outlined
     persistent-hint
@@ -17,21 +17,21 @@ const { costBasisMethodData } = useCostBasisMethod();
     v-on="rootListeners"
   >
     <template #item="{ item, attrs, on }">
-      <v-list-item v-bind="attrs" v-on="on">
-        <v-list-item-content>
-          <v-list-item-title :class="$style.title">
+      <VListItem v-bind="attrs" v-on="on">
+        <VListItemContent>
+          <VListItemTitle :class="$style.title">
             {{ item.identifier }}
-          </v-list-item-title>
-          <v-list-item-subtitle>
+          </VListItemTitle>
+          <VListItemSubtitle>
             {{ item.label }}
-          </v-list-item-subtitle>
-        </v-list-item-content>
-      </v-list-item>
+          </VListItemSubtitle>
+        </VListItemContent>
+      </VListItem>
     </template>
     <template #selection="{ item }">
       <span :class="$style.title">{{ item.identifier }}</span>
     </template>
-  </v-select>
+  </VSelect>
 </template>
 
 <style module lang="scss">

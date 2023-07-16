@@ -23,37 +23,37 @@ const { href, hasLink, onLinkClick } = useLinks(link);
 </script>
 
 <template>
-  <table-expand-container visible :colspan="span">
+  <TableExpandContainer visible :colspan="span">
     <template #title>
       {{ t('closed_trades.details.title') }}
     </template>
-    <v-row>
-      <v-col cols="auto" class="font-weight-medium">
+    <VRow>
+      <VCol cols="auto" class="font-weight-medium">
         {{ t('closed_trades.details.fee') }}
-      </v-col>
-      <v-col>
-        <amount-display
+      </VCol>
+      <VCol>
+        <AmountDisplay
           v-if="!!item.fee"
           class="closed-trades__trade__fee"
           :asset="item.feeCurrency"
           :value="item.fee"
         />
         <span v-else>-</span>
-      </v-col>
-    </v-row>
-    <v-row align="center">
-      <v-col cols="auto" class="font-weight-medium">
+      </VCol>
+    </VRow>
+    <VRow align="center">
+      <VCol cols="auto" class="font-weight-medium">
         {{ t('closed_trades.details.link') }}
-      </v-col>
-      <v-col>
+      </VCol>
+      <VCol>
         <span v-if="!item.link">
           {{ t('closed_trades.details.link_data') }}
         </span>
         <span v-else>
           {{ item.link }}
-          <v-tooltip v-if="hasLink" top open-delay="600">
+          <VTooltip v-if="hasLink" top open-delay="600">
             <template #activator="{ on, attrs }">
-              <v-btn
+              <VBtn
                 small
                 icon
                 v-bind="attrs"
@@ -65,14 +65,14 @@ const { href, hasLink, onLinkClick } = useLinks(link);
                 v-on="on"
                 @click="onLinkClick()"
               >
-                <v-icon :small="true"> mdi-launch </v-icon>
-              </v-btn>
+                <VIcon :small="true"> mdi-launch </VIcon>
+              </VBtn>
             </template>
             <span>{{ item.link }}</span>
-          </v-tooltip>
+          </VTooltip>
         </span>
-      </v-col>
-    </v-row>
-    <notes-display :notes="item.notes" />
-  </table-expand-container>
+      </VCol>
+    </VRow>
+    <NotesDisplay :notes="item.notes" />
+  </TableExpandContainer>
 </template>

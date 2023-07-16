@@ -23,7 +23,7 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <big-dialog
+  <BigDialog
     :display="openDialog"
     :title="
       editMode
@@ -34,7 +34,7 @@ const { t } = useI18n();
     @confirm="trySubmit()"
     @cancel="resetForm()"
   >
-    <address-book-form
+    <AddressBookForm
       :value="value"
       :edit="editMode"
       :enable-for-all-chains="enableForAllChains"
@@ -43,5 +43,5 @@ const { t } = useI18n();
         emit('update:enable-for-all-chains', $event)
       "
     />
-  </big-dialog>
+  </BigDialog>
 </template>

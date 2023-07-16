@@ -33,10 +33,10 @@ const navigateToDetails = async () => {
 
 <template>
   <div class="d-flex flex-row">
-    <v-btn :icon="icon" :text="text" @click="navigateToDetails()">
+    <VBtn :icon="icon" :text="text" @click="navigateToDetails()">
       <slot />
-    </v-btn>
-    <hash-link
+    </VBtn>
+    <HashLink
       v-if="address && link"
       link-only
       type="address"

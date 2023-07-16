@@ -46,7 +46,7 @@ const locations = computed<TradeLocationData[]>(() => {
 </script>
 
 <template>
-  <v-autocomplete
+  <VAutocomplete
     v-bind="rootAttrs"
     data-cy="location-input"
     :value="value"
@@ -59,7 +59,7 @@ const locations = computed<TradeLocationData[]>(() => {
     v-on="listeners"
   >
     <template #item="{ item, attrs, on }">
-      <location-icon
+      <LocationIcon
         :id="`balance-location__${item.identifier}`"
         v-bind="attrs"
         horizontal
@@ -69,7 +69,7 @@ const locations = computed<TradeLocationData[]>(() => {
       />
     </template>
     <template #selection="{ item, attrs, on }">
-      <location-icon
+      <LocationIcon
         v-bind="attrs"
         horizontal
         :item="item"
@@ -77,5 +77,5 @@ const locations = computed<TradeLocationData[]>(() => {
         v-on="on"
       />
     </template>
-  </v-autocomplete>
+  </VAutocomplete>
 </template>

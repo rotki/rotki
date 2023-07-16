@@ -88,7 +88,7 @@ const truncatedAliasName: ComputedRef<string> = computed(() => {
 
 <template>
   <div class="d-flex flex-row labeled-address-display align-center">
-    <v-tooltip top open-delay="400" :disabled="!truncated && !aliasName">
+    <VTooltip top open-delay="400" :disabled="!truncated && !aliasName">
       <template #activator="{ on }">
         <span
           data-cy="labeled-address-display"
@@ -96,17 +96,17 @@ const truncatedAliasName: ComputedRef<string> = computed(() => {
           :class="xs ? 'labeled-address-display__address--mobile' : null"
           v-on="on"
         >
-          <v-chip label outlined class="labeled-address-display__chip">
-            <v-avatar size="24" class="mr-2">
-              <ens-avatar :address="address" />
-            </v-avatar>
+          <VChip label outlined class="labeled-address-display__chip">
+            <VAvatar size="24" class="mr-2">
+              <EnsAvatar :address="address" />
+            </VAvatar>
             <span v-if="aliasName" class="text-truncate">
               {{ truncatedAliasName }}
             </span>
             <span v-else :class="{ 'blur-content': !shouldShowAmount }">
               {{ truncatedAddress }}
             </span>
-          </v-chip>
+          </VChip>
         </span>
       </template>
       <div>
@@ -114,9 +114,9 @@ const truncatedAliasName: ComputedRef<string> = computed(() => {
         <div v-if="ensName && aliasName !== ensName">({{ ensName }})</div>
         <div>{{ address }}</div>
       </div>
-    </v-tooltip>
+    </VTooltip>
     <div class="labeled-address-display__actions">
-      <hash-link
+      <HashLink
         :text="account.address"
         buttons
         small

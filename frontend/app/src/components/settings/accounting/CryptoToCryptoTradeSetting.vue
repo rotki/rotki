@@ -10,12 +10,12 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <settings-option
+  <SettingsOption
     #default="{ error, success, update }"
     setting="includeCrypto2crypto"
     :error-message="t('account_settings.messages.crypto_to_crypto')"
   >
-    <v-switch
+    <VSwitch
       v-model="crypto2CryptoTrades"
       class="accounting-settings__crypto2crypto"
       :label="t('accounting_settings.labels.crypto_to_crypto')"
@@ -24,5 +24,5 @@ const { t } = useI18n();
       :error-messages="error"
       @change="update($event)"
     />
-  </settings-option>
+  </SettingsOption>
 </template>

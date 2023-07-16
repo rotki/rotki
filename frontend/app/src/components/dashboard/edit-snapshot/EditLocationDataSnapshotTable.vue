@@ -7,10 +7,6 @@ import {
   type LocationDataSnapshotPayload
 } from '@/types/snapshots';
 
-const { t } = useI18n();
-
-type IndexedLocationDataSnapshot = LocationDataSnapshot & { index: number };
-
 const props = defineProps<{
   value: LocationDataSnapshot[];
   timestamp: number;
@@ -20,6 +16,10 @@ const emit = defineEmits<{
   (e: 'update:step', step: number): void;
   (e: 'input', value: LocationDataSnapshot[]): void;
 }>();
+
+const { t } = useI18n();
+
+type IndexedLocationDataSnapshot = LocationDataSnapshot & { index: number };
 
 const { value, timestamp } = toRefs(props);
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
@@ -202,22 +202,22 @@ const showDeleteConfirmation = (item: IndexedLocationDataSnapshot) => {
 
 <template>
   <div>
-    <data-table
+    <DataTable
       class="table-inside-dialog"
       :headers="tableHeaders"
       :items="data"
       :mobile-breakpoint="0"
     >
       <template #item.location="{ item }">
-        <location-display :opens-details="false" :identifier="item.location" />
+        <LocationDisplay :opens-details="false" :identifier="item.location" />
       </template>
 
       <template #item.usdValue="{ item }">
-        <amount-display :value="item.usdValue" fiat-currency="USD" />
+        <AmountDisplay :value="item.usdValue" fiat-currency="USD" />
       </template>
 
       <template #item.action="{ item }">
-        <row-actions
+        <RowActions
           :edit-tooltip="t('dashboard.snapshot.edit.dialog.actions.edit_item')"
           :delete-tooltip="
             t('dashboard.snapshot.edit.dialog.actions.delete_item')
@@ -226,32 +226,32 @@ const showDeleteConfirmation = (item: IndexedLocationDataSnapshot) => {
           @delete-click="showDeleteConfirmation(item)"
         />
       </template>
-    </data-table>
-    <v-sheet elevation="10" class="d-flex align-center px-4 py-2">
+    </DataTable>
+    <VSheet elevation="10" class="d-flex align-center px-4 py-2">
       <div>
         <div class="text-caption">{{ t('common.total') }}:</div>
         <div class="font-weight-bold text-h6 mt-n1">
-          <amount-display :value="total" fiat-currency="USD" />
+          <AmountDisplay :value="total" fiat-currency="USD" />
         </div>
       </div>
-      <v-spacer />
-      <v-btn text color="primary" class="mr-4" @click="add()">
-        <v-icon class="mr-2">mdi-plus</v-icon>
+      <VSpacer />
+      <VBtn text color="primary" class="mr-4" @click="add()">
+        <VIcon class="mr-2">mdi-plus</VIcon>
         <span>
           {{ t('dashboard.snapshot.edit.dialog.actions.add_new_entry') }}
         </span>
-      </v-btn>
-      <v-btn class="mr-4" @click="updateStep(1)">
-        <v-icon>mdi-chevron-left</v-icon>
+      </VBtn>
+      <VBtn class="mr-4" @click="updateStep(1)">
+        <VIcon>mdi-chevron-left</VIcon>
         {{ t('common.actions.back') }}
-      </v-btn>
-      <v-btn color="primary" @click="updateStep(3)">
+      </VBtn>
+      <VBtn color="primary" @click="updateStep(3)">
         {{ t('common.actions.next') }}
-        <v-icon>mdi-chevron-right</v-icon>
-      </v-btn>
-    </v-sheet>
+        <VIcon>mdi-chevron-right</VIcon>
+      </VBtn>
+    </VSheet>
 
-    <big-dialog
+    <BigDialog
       :display="openDialog"
       :title="
         editedIndex !== null
@@ -263,13 +263,13 @@ const showDeleteConfirmation = (item: IndexedLocationDataSnapshot) => {
       @confirm="trySubmit()"
       @cancel="clearEditDialog()"
     >
-      <edit-location-data-snapshot-form
+      <EditLocationDataSnapshotForm
         v-if="form"
         :form="form"
         :excluded-locations="excludedLocations"
         @update:form="updateForm($event)"
       />
-    </big-dialog>
+    </BigDialog>
   </div>
 </template>
 

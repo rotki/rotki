@@ -4,9 +4,9 @@ const { animationEnabled, toggleAnimation } = useAnimation();
 </script>
 
 <template>
-  <v-tooltip open-delay="400" top>
+  <VTooltip open-delay="400" top>
     <template #activator="{ on, attrs }">
-      <v-btn
+      <VBtn
         text
         fab
         depressed
@@ -15,9 +15,9 @@ const { animationEnabled, toggleAnimation } = useAnimation();
         v-on="on"
         @click="toggleAnimation()"
       >
-        <v-icon v-if="animationEnabled">mdi-pause</v-icon>
-        <v-icon v-else>mdi-play</v-icon>
-      </v-btn>
+        <VIcon v-if="animationEnabled">mdi-pause</VIcon>
+        <VIcon v-else>mdi-play</VIcon>
+      </VBtn>
     </template>
     <span v-if="animationEnabled">
       {{ t('frontend_settings.animations.disable') }} ({{
@@ -25,5 +25,5 @@ const { animationEnabled, toggleAnimation } = useAnimation();
       }})
     </span>
     <span v-else>{{ t('frontend_settings.animations.enable') }}</span>
-  </v-tooltip>
+  </VTooltip>
 </template>

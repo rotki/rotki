@@ -18,6 +18,7 @@ export enum Module {
 }
 
 export const ModuleEnum = z.nativeEnum(Module);
+
 export type ModuleEnum = z.infer<typeof ModuleEnum>;
 
 export interface SupportedModule {

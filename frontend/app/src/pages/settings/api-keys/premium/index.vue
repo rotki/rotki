@@ -115,22 +115,22 @@ const showDeleteConfirmation = () => {
 </script>
 
 <template>
-  <v-row class="premium-settings">
-    <v-col>
-      <card>
+  <VRow class="premium-settings">
+    <VCol>
+      <Card>
         <template #title>
           {{ t('premium_settings.title') }}
         </template>
         <template #subtitle>
-          <i18n tag="div" path="premium_settings.subtitle">
-            <base-external-link
+          <I18n tag="div" path="premium_settings.subtitle">
+            <BaseExternalLink
               :text="t('premium_settings.title')"
               :href="premiumURL"
             />
-          </i18n>
+          </I18n>
         </template>
 
-        <revealable-input
+        <RevealableInput
           v-model="apiKey"
           outlined
           class="premium-settings__fields__api-key"
@@ -139,7 +139,7 @@ const showDeleteConfirmation = () => {
           :label="t('premium_settings.fields.api_key')"
           @paste="onApiKeyPaste($event)"
         />
-        <revealable-input
+        <RevealableInput
           v-model="apiSecret"
           outlined
           class="premium-settings__fields__api-secret"
@@ -149,14 +149,14 @@ const showDeleteConfirmation = () => {
           @paste="onApiSecretPaste($event)"
         />
         <div v-if="premium" class="premium-settings__premium-active">
-          <v-icon color="success">mdi-check-circle</v-icon>
+          <VIcon color="success">mdi-check-circle</VIcon>
           <div>{{ t('premium_settings.premium_active') }}</div>
         </div>
 
         <template #buttons>
-          <v-row align="center">
-            <v-col cols="auto">
-              <v-btn
+          <VRow align="center">
+            <VCol cols="auto">
+              <VBtn
                 class="premium-settings__button__setup"
                 depressed
                 color="primary"
@@ -168,10 +168,10 @@ const showDeleteConfirmation = () => {
                     ? t('premium_settings.actions.replace')
                     : t('premium_settings.actions.setup')
                 }}
-              </v-btn>
-            </v-col>
-            <v-col v-if="premium && !edit" cols="auto">
-              <v-btn
+              </VBtn>
+            </VCol>
+            <VCol v-if="premium && !edit" cols="auto">
+              <VBtn
                 class="premium-settings__button__delete"
                 depressed
                 outlined
@@ -180,32 +180,32 @@ const showDeleteConfirmation = () => {
                 @click="showDeleteConfirmation()"
               >
                 {{ t('premium_settings.actions.delete') }}
-              </v-btn>
-            </v-col>
-            <v-col v-if="edit && premium" cols="auto">
-              <v-btn
+              </VBtn>
+            </VCol>
+            <VCol v-if="edit && premium" cols="auto">
+              <VBtn
                 id="premium-edit-cancel-button"
                 depressed
                 color="primary"
                 @click="cancelEdit()"
               >
                 {{ t('common.actions.cancel') }}
-              </v-btn>
-            </v-col>
-            <v-col v-if="premium && !edit" cols="auto">
-              <v-switch
+              </VBtn>
+            </VCol>
+            <VCol v-if="premium && !edit" cols="auto">
+              <VSwitch
                 v-model="sync"
                 class="premium-settings__sync"
                 hide-details
                 :label="t('premium_settings.actions.sync')"
                 @change="onSyncChange()"
               />
-            </v-col>
-          </v-row>
+            </VCol>
+          </VRow>
         </template>
-      </card>
-    </v-col>
-  </v-row>
+      </Card>
+    </VCol>
+  </VRow>
 </template>
 
 <style scoped lang="scss">

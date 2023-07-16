@@ -168,14 +168,14 @@ const progress = computed(() => reportsStore.progress);
 </script>
 
 <template>
-  <v-container>
-    <report-generator
+  <VContainer>
+    <ReportGenerator
       v-show="!isRunning && !reportError.message"
       @generate="generate($event)"
       @export-data="exportData($event)"
       @import-data="importDataDialog = true"
     />
-    <error-screen
+    <ErrorScreen
       v-if="!isRunning && reportError.message"
       class="mt-12"
       :message="reportError.message"
@@ -184,13 +184,13 @@ const progress = computed(() => reportsStore.progress);
       :subtitle="t('profit_loss_report.error.subtitle')"
     >
       <template #bottom>
-        <v-btn text class="mt-2" @click="clearError()">
+        <VBtn text class="mt-2" @click="clearError()">
           {{ t('common.actions.close') }}
-        </v-btn>
+        </VBtn>
       </template>
-    </error-screen>
-    <reports-table v-show="!isRunning && !reportError.message" class="mt-8" />
-    <progress-screen v-if="isRunning" :progress="progress">
+    </ErrorScreen>
+    <ReportsTable v-show="!isRunning && !reportError.message" class="mt-8" />
+    <ProgressScreen v-if="isRunning" :progress="progress">
       <template #message>
         <div v-if="processingState" class="medium text-h6 mb-4">
           {{ processingState }}
@@ -198,15 +198,15 @@ const progress = computed(() => reportsStore.progress);
         {{ t('profit_loss_report.loading_message') }}
       </template>
       {{ t('profit_loss_report.loading_hint') }}
-    </progress-screen>
-    <v-dialog v-model="importDataDialog" max-width="600">
-      <card>
+    </ProgressScreen>
+    <VDialog v-model="importDataDialog" max-width="600">
+      <Card>
         <template #title>
           {{ t('profit_loss_reports.debug.import_data_dialog.title') }}
         </template>
         <div>
           <div class="py-2">
-            <file-upload
+            <FileUpload
               ref="reportDebugDataUploader"
               source="json"
               file-filter=".json"
@@ -214,20 +214,20 @@ const progress = computed(() => reportsStore.progress);
             />
           </div>
           <div class="mt-2 d-flex justify-end">
-            <v-btn class="mr-4" depressed @click="importDataDialog = false">
+            <VBtn class="mr-4" depressed @click="importDataDialog = false">
               {{ t('common.actions.cancel') }}
-            </v-btn>
-            <v-btn
+            </VBtn>
+            <VBtn
               color="primary"
               :disabled="!reportDebugData"
               :loading="importDataLoading"
               @click="importData()"
             >
               {{ t('common.actions.import') }}
-            </v-btn>
+            </VBtn>
           </div>
         </div>
-      </card>
-    </v-dialog>
-  </v-container>
+      </Card>
+    </VDialog>
+  </VContainer>
 </template>

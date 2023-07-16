@@ -17,25 +17,25 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <card outlined :class="css.collapsed">
-    <v-row no-gutters align="center">
-      <v-col cols="auto">
-        <v-icon color="primary">mdi-spin mdi-loading</v-icon>
-      </v-col>
-      <v-col>
+  <Card outlined :class="css.collapsed">
+    <VRow no-gutters align="center">
+      <VCol cols="auto">
+        <VIcon color="primary">mdi-spin mdi-loading</VIcon>
+      </VCol>
+      <VCol>
         <div :class="css.title">
           {{ t('collapsed_pending_tasks.title', { count }, count) }}
         </div>
-      </v-col>
+      </VCol>
 
-      <v-col cols="auto">
-        <v-btn icon small @click="input()">
-          <v-icon v-if="value">mdi-chevron-up</v-icon>
-          <v-icon v-else>mdi-chevron-down</v-icon>
-        </v-btn>
-      </v-col>
-    </v-row>
-  </card>
+      <VCol cols="auto">
+        <VBtn icon small @click="input()">
+          <VIcon v-if="value">mdi-chevron-up</VIcon>
+          <VIcon v-else>mdi-chevron-down</VIcon>
+        </VBtn>
+      </VCol>
+    </VRow>
+  </Card>
 </template>
 
 <style module lang="scss">

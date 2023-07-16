@@ -25,14 +25,14 @@ const success: Ref<boolean> = ref(false);
 
 <template>
   <div>
-    <v-img
+    <VImg
       v-if="error || !success"
       :width="width"
       :height="height"
       contain
       src="./assets/images/rotkehlchen_no_text.png"
     />
-    <v-img
+    <VImg
       :width="width"
       :height="success ? height : 0"
       contain

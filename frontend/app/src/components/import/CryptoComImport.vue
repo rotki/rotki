@@ -5,31 +5,31 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <import-source source="cryptocom">
-    <i18n tag="span" path="import_data.note">
+  <ImportSource source="cryptocom">
+    <I18n tag="span" path="import_data.note">
       <strong>{{ t('import_data.cryptocom.source_name') }}</strong>
-    </i18n>
+    </I18n>
     <ul>
       <li>
-        <i18n tag="span" path="import_data.cryptocom.line_one">
-          <external-link url="https://github.com/rotki/rotki/issues/new/choose">
+        <I18n tag="span" path="import_data.cryptocom.line_one">
+          <ExternalLink url="https://github.com/rotki/rotki/issues/new/choose">
             {{ t('import_data.cryptocom.line_one_link') }}
-          </external-link>
-        </i18n>
+          </ExternalLink>
+        </I18n>
       </li>
       <li>
-        <i18n tag="span" path="import_data.cryptocom.line_two">
+        <I18n tag="span" path="import_data.cryptocom.line_two">
           <strong>{{ t('import_data.cryptocom.line_two_warning') }}</strong>
-        </i18n>
+        </I18n>
       </li>
       <li>{{ t('import_data.cryptocom.line_three') }}</li>
       <li>
-        <i18n path="import_data.cryptocom.line_four" tag="span">
-          <internal-link :to="Routes.ACCOUNTS_BALANCES_MANUAL">
+        <I18n path="import_data.cryptocom.line_four" tag="span">
+          <InternalLink :to="Routes.ACCOUNTS_BALANCES_MANUAL">
             {{ t('import_data.cryptocom.line_four_link') }}
-          </internal-link>
-        </i18n>
+          </InternalLink>
+        </I18n>
       </li>
     </ul>
-  </import-source>
+  </ImportSource>
 </template>

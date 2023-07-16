@@ -41,7 +41,7 @@ export const useAccountDetails = (
             asset,
             amount,
             usdValue
-          } as AssetBalance)
+          }) as AssetBalance
       );
   });
 
@@ -60,7 +60,7 @@ export const useAccountDetails = (
             asset,
             amount,
             usdValue
-          } as AssetBalance)
+          }) as AssetBalance
       );
   });
 

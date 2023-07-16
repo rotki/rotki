@@ -168,16 +168,16 @@ const showDeleteConfirmation = (entry: OracleCacheMeta) => {
 </script>
 
 <template>
-  <fragment>
-    <v-card class="mt-8">
-      <v-card-title>
-        <card-title>{{ t('oracle_cache_management.title') }}</card-title>
-      </v-card-title>
-      <v-card-subtitle>
+  <Fragment>
+    <VCard class="mt-8">
+      <VCardTitle>
+        <CardTitle>{{ t('oracle_cache_management.title') }}</CardTitle>
+      </VCardTitle>
+      <VCardSubtitle>
         {{ t('oracle_cache_management.subtitle') }}
-      </v-card-subtitle>
-      <v-card-text>
-        <v-autocomplete
+      </VCardSubtitle>
+      <VCardText>
+        <VAutocomplete
           v-model="selection"
           :label="t('oracle_cache_management.select_oracle')"
           prepend-inner-icon="mdi-magnify"
@@ -187,41 +187,41 @@ const showDeleteConfirmation = (entry: OracleCacheMeta) => {
           item-text="identifier"
         >
           <template #selection="{ item }">
-            <prioritized-list-entry :data="item" />
+            <PrioritizedListEntry :data="item" />
           </template>
           <template #item="{ item }">
-            <prioritized-list-entry :data="item" />
+            <PrioritizedListEntry :data="item" />
           </template>
-        </v-autocomplete>
+        </VAutocomplete>
         <div class="pb-8">
-          <v-row align="center">
-            <v-col>
-              <asset-select
+          <VRow align="center">
+            <VCol>
+              <AssetSelect
                 v-model="fromAsset"
                 clearable
                 :disabled="pending"
                 outlined
                 :label="t('oracle_cache_management.from_asset')"
               />
-            </v-col>
-            <v-col>
-              <asset-select
+            </VCol>
+            <VCol>
+              <AssetSelect
                 v-model="toAsset"
                 clearable
                 :disabled="pending"
                 outlined
                 :label="t('oracle_cache_management.to_asset')"
               />
-            </v-col>
-            <v-col cols="auto" class="pb-10 pr-8">
-              <v-btn icon large @click="clearFilter()">
-                <v-icon>mdi-close</v-icon>
-              </v-btn>
-            </v-col>
-          </v-row>
-          <v-tooltip open-delay="400" top>
+            </VCol>
+            <VCol cols="auto" class="pb-10 pr-8">
+              <VBtn icon large @click="clearFilter()">
+                <VIcon>mdi-close</VIcon>
+              </VBtn>
+            </VCol>
+          </VRow>
+          <VTooltip open-delay="400" top>
             <template #activator="{ on, attrs }">
-              <v-btn
+              <VBtn
                 v-bind="attrs"
                 :loading="pending"
                 large
@@ -230,50 +230,50 @@ const showDeleteConfirmation = (entry: OracleCacheMeta) => {
                 v-on="on"
                 @click="fetchPrices()"
               >
-                <v-icon class="mr-2">mdi-plus-circle</v-icon>
+                <VIcon class="mr-2">mdi-plus-circle</VIcon>
                 {{ t('oracle_cache_management.create_cache') }}
-              </v-btn>
+              </VBtn>
             </template>
             <span>{{ t('oracle_cache_management.create_tooltip') }}</span>
-          </v-tooltip>
+          </VTooltip>
         </div>
-        <v-sheet outlined rounded>
-          <data-table
+        <VSheet outlined rounded>
+          <DataTable
             :headers="headers"
             :loading="loading"
             :items="filteredData"
           >
             <template #item.fromAsset="{ item }">
-              <asset-details opens-details :asset="item.fromAsset" />
+              <AssetDetails opens-details :asset="item.fromAsset" />
             </template>
             <template #item.toAsset="{ item }">
-              <asset-details opens-details :asset="item.toAsset" />
+              <AssetDetails opens-details :asset="item.toAsset" />
             </template>
             <template #item.toTimestamp="{ item }">
-              <date-display :timestamp="item.toTimestamp" />
+              <DateDisplay :timestamp="item.toTimestamp" />
             </template>
             <template #item.fromTimestamp="{ item }">
-              <date-display :timestamp="item.fromTimestamp" />
+              <DateDisplay :timestamp="item.fromTimestamp" />
             </template>
             <template #item.actions="{ item }">
-              <v-tooltip open-delay="400" top>
+              <VTooltip open-delay="400" top>
                 <template #activator="{ on, attrs }">
-                  <v-btn
+                  <VBtn
                     color="primary"
                     v-bind="attrs"
                     icon
                     v-on="on"
                     @click="showDeleteConfirmation(item)"
                   >
-                    <v-icon>mdi-delete</v-icon>
-                  </v-btn>
+                    <VIcon>mdi-delete</VIcon>
+                  </VBtn>
                 </template>
                 <span>{{ t('oracle_cache_management.delete_tooltip') }}</span>
-              </v-tooltip>
+              </VTooltip>
             </template>
-          </data-table>
-        </v-sheet>
-      </v-card-text>
-    </v-card>
-  </fragment>
+          </DataTable>
+        </VSheet>
+      </VCardText>
+    </VCard>
+  </Fragment>
 </template>

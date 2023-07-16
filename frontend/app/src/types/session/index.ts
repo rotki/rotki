@@ -52,6 +52,7 @@ export interface SessionSettings {
 export const WatcherType = 'makervault_collateralization_ratio';
 
 export const WatcherOpTypes = z.enum(['lt', 'le', 'gt', 'ge']);
+
 export type WatcherOpTypes = z.infer<typeof WatcherOpTypes>;
 
 export const BaseWatcher = z.object({
@@ -70,9 +71,11 @@ export const MakerVaultCollateralizationRatioWatcher = BaseWatcher.extend({
 });
 
 export const Watcher = MakerVaultCollateralizationRatioWatcher;
+
 export type Watcher = z.infer<typeof Watcher>;
 
 export const Watchers = z.array(Watcher);
+
 export type Watchers = z.infer<typeof Watchers>;
 
 export type QueriedAddresses = {

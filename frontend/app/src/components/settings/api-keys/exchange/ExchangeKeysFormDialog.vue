@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { type ExchangePayload } from '@/types/exchanges';
 
-const { t } = useI18n();
-
 defineProps<{
   editMode: boolean;
   value: ExchangePayload;
@@ -13,6 +11,8 @@ const emit = defineEmits<{
   (e: 'reset'): void;
 }>();
 
+const { t } = useI18n();
+
 const { openDialog, submitting, trySubmit } = useExchangeApiKeysForm();
 
 const resetForm = () => {
@@ -21,7 +21,7 @@ const resetForm = () => {
 </script>
 
 <template>
-  <big-dialog
+  <BigDialog
     :display="openDialog"
     :title="
       editMode
@@ -34,10 +34,10 @@ const resetForm = () => {
     @confirm="trySubmit()"
     @cancel="resetForm()"
   >
-    <exchange-keys-form
+    <ExchangeKeysForm
       :exchange="value"
       :edit-mode="editMode"
       @input="emit('input', $event)"
     />
-  </big-dialog>
+  </BigDialog>
 </template>

@@ -3,12 +3,12 @@ import { type AssetBalance } from '@rotki/common';
 import { type PropType } from 'vue';
 import { type DataTableHeader } from '@/types/vuetify';
 
-const { t } = useI18n();
-
 defineProps({
   assets: { required: true, type: Array as PropType<AssetBalance[]> },
   title: { required: true, type: String }
 });
+
+const { t } = useI18n();
 
 const { assetPrice } = useBalancePricesStore();
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
@@ -50,18 +50,18 @@ const getPrice = (asset: string) => get(assetPrice(asset)) ?? Zero;
 <template>
   <div class="py-4">
     <div class="text-h6 mb-4">{{ title }}</div>
-    <v-sheet outlined rounded>
-      <data-table
+    <VSheet outlined rounded>
+      <DataTable
         :items="assets"
         :headers="headers"
         class="account-asset-balances__table"
         sort-by="usdValue"
       >
         <template #item.asset="{ item }">
-          <asset-details opens-details :asset="item.asset" />
+          <AssetDetails opens-details :asset="item.asset" />
         </template>
         <template #item.price="{ item }">
-          <amount-display
+          <AmountDisplay
             v-if="assetPrice(item.asset).value"
             tooltip
             show-currency="symbol"
@@ -72,17 +72,17 @@ const getPrice = (asset: string) => get(assetPrice(asset)) ?? Zero;
           <div v-else>-</div>
         </template>
         <template #item.amount="{ item }">
-          <amount-display :value="item.amount" />
+          <AmountDisplay :value="item.amount" />
         </template>
         <template #item.usdValue="{ item }">
-          <amount-display
+          <AmountDisplay
             fiat-currency="USD"
             :value="item.usdValue"
             show-currency="symbol"
           />
         </template>
-      </data-table>
-    </v-sheet>
+      </DataTable>
+    </VSheet>
   </div>
 </template>
 

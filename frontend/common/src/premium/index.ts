@@ -46,6 +46,7 @@ export interface StatisticsApi {
   fetchNetValue(): Promise<void>;
   netValue: (startingData: number) => Ref<NetValue>;
 }
+
 export interface DateUtilities {
   epoch(): number;
   format(date: string, oldFormat: string, newFormat: string): string;

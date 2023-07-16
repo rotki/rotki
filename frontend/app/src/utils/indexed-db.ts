@@ -43,7 +43,7 @@ export default class IndexedDb {
     });
   }
 
-  async add(data: any, callback: Function = (): void => {}): Promise<void> {
+  async add(data: any, callback?: (e: any) => void): Promise<void> {
     try {
       const db = await this.db;
       const objectStore = db
@@ -72,13 +72,13 @@ export default class IndexedDb {
         };
       };
 
-      request.onerror = (e: any): void => callback(e.target.error);
+      request.onerror = (e: any): void => callback?.(e.target.error);
     } catch (e: any) {
       logger.getLogger('console-only').log(e);
     }
   }
 
-  async getAll(callback: Function): Promise<void> {
+  async getAll(callback: (result: any[]) => void): Promise<void> {
     try {
       const db = await this.db;
       const request = db

@@ -10,12 +10,12 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <settings-option
+  <SettingsOption
     #default="{ error, success, update }"
     setting="submitUsageAnalytics"
     :error-message="t('general_settings.validation.analytics.error')"
   >
-    <v-switch
+    <VSwitch
       v-model="anonymousUsageAnalytics"
       class="general-settings__fields__anonymous-usage-statistics mb-4 mt-0"
       color="primary"
@@ -24,5 +24,5 @@ const { t } = useI18n();
       :error-messages="error"
       @change="update($event)"
     />
-  </settings-option>
+  </SettingsOption>
 </template>

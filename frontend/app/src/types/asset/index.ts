@@ -82,6 +82,7 @@ export type CustomAsset = z.infer<typeof CustomAsset>;
 export const CustomAssets = CollectionCommonFields.extend({
   entries: z.array(CustomAsset)
 });
+
 export type CustomAssets = z.infer<typeof CustomAssets>;
 
 export interface CustomAssetRequestPayload
@@ -90,9 +91,11 @@ export interface CustomAssetRequestPayload
   identifier?: string;
   customAssetType?: string;
 }
+
 export type IgnoredAssetsHandlingType = 'none' | 'exclude' | 'show_only';
 
 export const EvmNativeToken = ['ETH'];
+
 export const isEvmNativeToken = (asset: string) =>
   EvmNativeToken.includes(asset);
 
@@ -108,9 +111,13 @@ export interface AssetIdResponse {
 }
 
 export const RESOLVE_REMOTE = 'remote';
+
 export const RESOLVE_LOCAL = 'local';
+
 export const CONFLICT_RESOLUTION = [RESOLVE_REMOTE, RESOLVE_LOCAL] as const;
+
 export const EVM_TOKEN = 'evm token';
+
 export const CUSTOM_ASSET = 'custom asset';
 
 export type ConflictResolutionStrategy = (typeof CONFLICT_RESOLUTION)[number];
@@ -123,7 +130,9 @@ export interface AssetUpdatePayload {
 export type ConflictResolution = Readonly<
   Record<string, ConflictResolutionStrategy>
 >;
+
 export const SupportedAssets = CollectionCommonFields.extend({
   entries: z.array(SupportedAsset)
 });
+
 export type SupportedAssets = z.infer<typeof SupportedAssets>;

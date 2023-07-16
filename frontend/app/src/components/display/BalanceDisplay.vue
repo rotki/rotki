@@ -78,14 +78,14 @@ const css = useCssModule();
     }"
   >
     <div :class="`d-flex flex-column align-${align}`">
-      <amount-display
+      <AmountDisplay
         :loading="loading"
         :asset="asset"
         :asset-padding="assetPadding"
         :value="amount"
         class="d-block font-weight-medium"
       />
-      <amount-display
+      <AmountDisplay
         :fiat-currency="valueCurrency"
         :asset-padding="assetPadding"
         :value="valueInCurrency"
@@ -94,9 +94,9 @@ const css = useCssModule();
         class="d-block grey--text"
       />
     </div>
-    <asset-link v-if="!noIcon" class="ml-4" icon :asset="asset">
-      <asset-icon :identifier="asset" :size="iconSize" />
-    </asset-link>
+    <AssetLink v-if="!noIcon" class="ml-4" icon :asset="asset">
+      <AssetIcon :identifier="asset" :size="iconSize" />
+    </AssetLink>
   </div>
 </template>
 

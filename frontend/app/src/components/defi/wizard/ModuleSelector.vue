@@ -98,11 +98,11 @@ const disableAll = async () => {
 </script>
 
 <template>
-  <card outlined-body flat no-padding>
+  <Card outlined-body flat no-padding>
     <template #search>
       <div class="d-flex flex-row">
         <div>
-          <v-btn
+          <VBtn
             color="primary"
             :loading="loading"
             depressed
@@ -110,8 +110,8 @@ const disableAll = async () => {
             @click="enableAll()"
           >
             {{ t('module_selector.actions.enable_all') }}
-          </v-btn>
-          <v-btn
+          </VBtn>
+          <VBtn
             color="primary"
             depressed
             outlined
@@ -121,10 +121,10 @@ const disableAll = async () => {
             @click="disableAll()"
           >
             {{ t('module_selector.actions.disable_all') }}
-          </v-btn>
+          </VBtn>
         </div>
-        <v-spacer />
-        <v-text-field
+        <VSpacer />
+        <VTextField
           v-model="search"
           :label="t('module_selector.filter')"
           clearable
@@ -134,29 +134,29 @@ const disableAll = async () => {
         />
       </div>
     </template>
-    <data-table :headers="headers" :items="modules" :loading="loading">
+    <DataTable :headers="headers" :items="modules" :loading="loading">
       <template #item.name="{ item }">
         <div class="d-flex flex-row align-center">
-          <v-avatar left class="d-flex">
-            <adaptive-wrapper
+          <VAvatar left class="d-flex">
+            <AdaptiveWrapper
               class="d-flex align-center"
               width="26px"
               height="26px"
             >
-              <v-img width="26px" contain max-height="24px" :src="item.icon" />
-            </adaptive-wrapper>
-          </v-avatar>
+              <VImg width="26px" contain max-height="24px" :src="item.icon" />
+            </AdaptiveWrapper>
+          </VAvatar>
           <span> {{ item.name }}</span>
         </div>
       </template>
       <template #item.enabled="{ item }">
-        <v-switch
+        <VSwitch
           :data-cy="`${item.identifier}-module-switch`"
           :disabled="loading"
           :input-value="item.enabled"
           @change="switchModule(item.identifier, $event)"
         />
       </template>
-    </data-table>
-  </card>
+    </DataTable>
+  </Card>
 </template>

@@ -122,50 +122,50 @@ const back = () => {
 </script>
 
 <template>
-  <v-slide-y-transition>
+  <VSlideYTransition>
     <div class="create-account">
       <div class="text-h6 text--primary create-account__header">
         {{ t('create_account.title') }}
       </div>
-      <v-stepper v-model="step">
-        <v-stepper-header>
-          <v-stepper-step step="1" :complete="step > 1">
+      <VStepper v-model="step">
+        <VStepperHeader>
+          <VStepperStep step="1" :complete="step > 1">
             <span v-if="step === 1">
               {{ t('create_account.premium.title') }}
             </span>
-          </v-stepper-step>
-          <v-divider />
-          <v-stepper-step step="2" :complete="step > 2">
+          </VStepperStep>
+          <VDivider />
+          <VStepperStep step="2" :complete="step > 2">
             <span v-if="step === 2">
               {{ t('create_account.select_credentials.title') }}
             </span>
-          </v-stepper-step>
-          <v-divider />
-          <v-stepper-step step="3">
+          </VStepperStep>
+          <VDivider />
+          <VStepperStep step="3">
             <span v-if="step === 3">
               {{ t('create_account.usage_analytics.title') }}
             </span>
-          </v-stepper-step>
-        </v-stepper-header>
-        <v-stepper-items>
-          <v-stepper-content step="1">
-            <v-card-text>
-              <v-form :value="premiumFormValid">
-                <v-alert text color="primary">
-                  <i18n
+          </VStepperStep>
+        </VStepperHeader>
+        <VStepperItems>
+          <VStepperContent step="1">
+            <VCardText>
+              <VForm :value="premiumFormValid">
+                <VAlert text color="primary">
+                  <I18n
                     tag="div"
                     path="create_account.premium.premium_question"
                   >
                     <template #premiumLink>
                       <b>
-                        <external-link url="https://rotki.com/products">
+                        <ExternalLink url="https://rotki.com/products">
                           {{ t('create_account.premium.premium_link_text') }}
-                        </external-link>
+                        </ExternalLink>
                       </b>
                     </template>
-                  </i18n>
+                  </I18n>
                   <div class="d-flex mt-4 justify-center">
-                    <v-btn
+                    <VBtn
                       depressed
                       rounded
                       small
@@ -176,12 +176,12 @@ const back = () => {
                         syncDatabase = false;
                       "
                     >
-                      <v-icon small class="mr-2">mdi-close</v-icon>
+                      <VIcon small class="mr-2">mdi-close</VIcon>
                       <span>
                         {{ t('common.actions.no') }}
                       </span>
-                    </v-btn>
-                    <v-btn
+                    </VBtn>
+                    <VBtn
                       depressed
                       rounded
                       small
@@ -190,15 +190,15 @@ const back = () => {
                       class="ml-2"
                       @click="premiumEnabled = true"
                     >
-                      <v-icon small class="mr-2"> mdi-check</v-icon>
+                      <VIcon small class="mr-2"> mdi-check</VIcon>
                       <span>
                         {{ t('create_account.premium.button_premium_approve') }}
                       </span>
-                    </v-btn>
+                    </VBtn>
                   </div>
-                </v-alert>
+                </VAlert>
 
-                <premium-credentials
+                <PremiumCredentials
                   :enabled="premiumEnabled"
                   :api-secret="apiSecret"
                   :api-key="apiKey"
@@ -209,11 +209,11 @@ const back = () => {
                   @update:sync-database="syncDatabase = $event"
                   @update:valid="premiumFormValid = $event"
                 />
-              </v-form>
-            </v-card-text>
-            <v-card-actions>
-              <v-spacer />
-              <v-btn
+              </VForm>
+            </VCardText>
+            <VCardActions>
+              <VSpacer />
+              <VBtn
                 class="create-account__button__cancel"
                 depressed
                 outlined
@@ -222,8 +222,8 @@ const back = () => {
                 @click="cancel()"
               >
                 {{ t('common.actions.cancel') }}
-              </v-btn>
-              <v-btn
+              </VBtn>
+              <VBtn
                 class="create-account__premium__button__continue"
                 depressed
                 color="primary"
@@ -233,13 +233,13 @@ const back = () => {
                 @click="step = 2"
               >
                 {{ t('common.actions.continue') }}
-              </v-btn>
-            </v-card-actions>
-          </v-stepper-content>
-          <v-stepper-content step="2">
-            <v-card-text>
-              <v-form ref="form" :value="credentialsFormValid">
-                <v-text-field
+              </VBtn>
+            </VCardActions>
+          </VStepperContent>
+          <VStepperContent step="2">
+            <VCardText>
+              <VForm ref="form" :value="credentialsFormValid">
+                <VTextField
                   v-model="username"
                   outlined
                   autofocus
@@ -251,7 +251,7 @@ const back = () => {
                   :disabled="loading"
                   required
                 />
-                <v-alert
+                <VAlert
                   v-if="syncDatabase"
                   text
                   class="mt-2 create-account__password-sync-requirement"
@@ -264,8 +264,8 @@ const back = () => {
                       'create_account.select_credentials.password_sync_requirement'
                     )
                   }}
-                </v-alert>
-                <revealable-input
+                </VAlert>
+                <RevealableInput
                   v-model="password"
                   outlined
                   class="create-account__fields__password"
@@ -275,7 +275,7 @@ const back = () => {
                   :disabled="loading"
                   required
                 />
-                <revealable-input
+                <RevealableInput
                   v-model="passwordConfirm"
                   outlined
                   class="create-account__fields__password-repeat"
@@ -289,7 +289,7 @@ const back = () => {
                   "
                   required
                 />
-                <v-checkbox
+                <VCheckbox
                   v-model="userPrompted"
                   class="create-account__boxes__user-prompted"
                   :label="
@@ -298,11 +298,11 @@ const back = () => {
                     )
                   "
                 />
-              </v-form>
-            </v-card-text>
-            <v-card-actions>
-              <v-spacer />
-              <v-btn
+              </VForm>
+            </VCardText>
+            <VCardActions>
+              <VSpacer />
+              <VBtn
                 color="primary"
                 class="create-account__credentials__button__back"
                 depressed
@@ -311,8 +311,8 @@ const back = () => {
                 @click="back()"
               >
                 {{ t('common.actions.back') }}
-              </v-btn>
-              <v-btn
+              </VBtn>
+              <VBtn
                 class="create-account__credentials__button__continue"
                 depressed
                 color="primary"
@@ -321,35 +321,35 @@ const back = () => {
                 @click="step = 3"
               >
                 {{ t('common.actions.continue') }}
-              </v-btn>
-            </v-card-actions>
-          </v-stepper-content>
-          <v-stepper-content step="3">
-            <v-card-text>
-              <v-alert
+              </VBtn>
+            </VCardActions>
+          </VStepperContent>
+          <VStepperContent step="3">
+            <VCardText>
+              <VAlert
                 outlined
                 prominent
                 color="primary"
                 class="mx-auto text-justify text-body-2 create-account__analytics__content"
               >
                 {{ t('create_account.usage_analytics.description') }}
-              </v-alert>
-              <v-alert v-if="error" type="error" outlined>
+              </VAlert>
+              <VAlert v-if="error" type="error" outlined>
                 {{ error }}
-              </v-alert>
-              <v-row no-gutters>
-                <v-col>
-                  <v-checkbox
+              </VAlert>
+              <VRow no-gutters>
+                <VCol>
+                  <VCheckbox
                     v-model="submitUsageAnalytics"
                     :disabled="loading"
                     :label="t('create_account.usage_analytics.label_confirm')"
                   />
-                </v-col>
-              </v-row>
-            </v-card-text>
-            <v-card-actions>
-              <v-spacer />
-              <v-btn
+                </VCol>
+              </VRow>
+            </VCardText>
+            <VCardActions>
+              <VSpacer />
+              <VBtn
                 color="primary"
                 class="create-account__analytics__button__back"
                 depressed
@@ -358,8 +358,8 @@ const back = () => {
                 @click="back()"
               >
                 {{ t('common.actions.back') }}
-              </v-btn>
-              <v-btn
+              </VBtn>
+              <VBtn
                 color="primary"
                 depressed
                 :disabled="loading"
@@ -368,13 +368,13 @@ const back = () => {
                 @click="confirm()"
               >
                 {{ t('common.actions.create') }}
-              </v-btn>
-            </v-card-actions>
-          </v-stepper-content>
-        </v-stepper-items>
-      </v-stepper>
+              </VBtn>
+            </VCardActions>
+          </VStepperContent>
+        </VStepperItems>
+      </VStepper>
     </div>
-  </v-slide-y-transition>
+  </VSlideYTransition>
 </template>
 
 <style scoped lang="scss">

@@ -16,10 +16,6 @@ import { ApiValidationError } from '@/types/api/errors';
 import AssetIconForm from '@/components/asset-manager/AssetIconForm.vue';
 import { toMessages } from '@/utils/validation';
 
-function time(t: string): number | undefined {
-  return t ? convertToTimestamp(t) : undefined;
-}
-
 const props = withDefaults(
   defineProps<{
     editableItem?: SupportedAsset | null;
@@ -30,6 +26,10 @@ const props = withDefaults(
 );
 
 const emit = defineEmits<{ (e: 'input', valid: boolean): void }>();
+
+function time(t: string): number | undefined {
+  return t ? convertToTimestamp(t) : undefined;
+}
 
 const { t } = useI18n();
 const { editableItem } = toRefs(props);
@@ -332,27 +332,27 @@ const { coingeckoContributeUrl, cryptocompareContributeUrl } = useInterop();
 </script>
 
 <template>
-  <fragment>
-    <v-row
+  <Fragment>
+    <VRow
       v-if="editableItem"
       class="text-caption text--secondary py-2"
       align="center"
     >
-      <v-col cols="auto" class="font-weight-medium">
+      <VCol cols="auto" class="font-weight-medium">
         {{ t('asset_form.identifier') }}
-      </v-col>
-      <v-col>
+      </VCol>
+      <VCol>
         {{ editableItem.identifier }}
-        <copy-button
+        <CopyButton
           :value="editableItem.identifier"
           :tooltip="t('asset_form.identifier_copy')"
         />
-      </v-col>
-    </v-row>
-    <v-form :value="valid" class="pt-2" @input="input($event)">
-      <v-row>
-        <v-col cols="12">
-          <v-select
+      </VCol>
+    </VRow>
+    <VForm :value="valid" class="pt-2" @input="input($event)">
+      <VRow>
+        <VCol cols="12">
+          <VSelect
             v-model="assetType"
             outlined
             :label="t('asset_form.labels.asset_type')"
@@ -363,10 +363,10 @@ const { coingeckoContributeUrl, cryptocompareContributeUrl } = useInterop();
             <template #selection="{ item }">
               {{ toSentenceCase(item) }}
             </template>
-          </v-select>
-        </v-col>
-        <v-col md="6" data-cy="chain-select">
-          <v-select
+          </VSelect>
+        </VCol>
+        <VCol md="6" data-cy="chain-select">
+          <VSelect
             v-model="evmChain"
             outlined
             :label="t('asset_form.labels.chain')"
@@ -376,9 +376,9 @@ const { coingeckoContributeUrl, cryptocompareContributeUrl } = useInterop();
             item-text="label"
             :error-messages="toMessages(v$.evmChain)"
           />
-        </v-col>
-        <v-col md="6" data-cy="token-select">
-          <v-select
+        </VCol>
+        <VCol md="6" data-cy="token-select">
+          <VSelect
             v-model="tokenKind"
             outlined
             :label="t('asset_form.labels.token_kind')"
@@ -388,11 +388,11 @@ const { coingeckoContributeUrl, cryptocompareContributeUrl } = useInterop();
             item-value="identifier"
             :error-messages="toMessages(v$.tokenKind)"
           />
-        </v-col>
-      </v-row>
-      <v-row v-if="isEvmToken">
-        <v-col data-cy="address-input">
-          <v-text-field
+        </VCol>
+      </VRow>
+      <VRow v-if="isEvmToken">
+        <VCol data-cy="address-input">
+          <VTextField
             v-model="address"
             outlined
             :loading="fetching"
@@ -401,30 +401,30 @@ const { coingeckoContributeUrl, cryptocompareContributeUrl } = useInterop();
             :disabled="submitting || fetching || !!editableItem"
             @keydown.space.prevent
           />
-        </v-col>
-      </v-row>
+        </VCol>
+      </VRow>
 
-      <v-row>
-        <v-col cols="12" md="6">
-          <v-text-field
+      <VRow>
+        <VCol cols="12" md="6">
+          <VTextField
             v-model="name"
             outlined
             :error-messages="toMessages(v$.name)"
             :label="t('common.name')"
             :disabled="submitting || fetching"
           />
-        </v-col>
-        <v-col cols="12" :md="isEvmToken ? 3 : 6" data-cy="symbol-input">
-          <v-text-field
+        </VCol>
+        <VCol cols="12" :md="isEvmToken ? 3 : 6" data-cy="symbol-input">
+          <VTextField
             v-model="symbol"
             outlined
             :error-messages="toMessages(v$.symbol)"
             :label="t('asset_form.labels.symbol')"
             :disabled="submitting || fetching"
           />
-        </v-col>
-        <v-col v-if="isEvmToken" cols="12" md="3" data-cy="decimal-input">
-          <v-text-field
+        </VCol>
+        <VCol v-if="isEvmToken" cols="12" md="3" data-cy="decimal-input">
+          <VTextField
             v-model.number="decimals"
             type="number"
             outlined
@@ -434,11 +434,11 @@ const { coingeckoContributeUrl, cryptocompareContributeUrl } = useInterop();
             :error-messages="toMessages(v$.decimals)"
             :disabled="submitting || fetching"
           />
-        </v-col>
-      </v-row>
-      <v-row>
-        <v-col cols="12" md="6" class="d-flex flex-row">
-          <v-text-field
+        </VCol>
+      </VRow>
+      <VRow>
+        <VCol cols="12" md="6" class="d-flex flex-row">
+          <VTextField
             v-model="coingecko"
             outlined
             clearable
@@ -449,24 +449,24 @@ const { coingeckoContributeUrl, cryptocompareContributeUrl } = useInterop();
             :disabled="submitting || !coingeckoEnabled"
           >
             <template #append>
-              <help-link
+              <HelpLink
                 small
                 :url="coingeckoContributeUrl"
                 :tooltip="t('asset_form.help_coingecko')"
               />
             </template>
-          </v-text-field>
-          <v-tooltip open-delay="400" top max-width="320">
+          </VTextField>
+          <VTooltip open-delay="400" top max-width="320">
             <template #activator="{ attrs, on }">
               <span v-bind="attrs" v-on="on">
-                <v-checkbox v-model="coingeckoEnabled" class="ms-4 me-2" />
+                <VCheckbox v-model="coingeckoEnabled" class="ms-4 me-2" />
               </span>
             </template>
             <span> {{ t('asset_form.oracle_disable') }}</span>
-          </v-tooltip>
-        </v-col>
-        <v-col cols="12" md="6" class="d-flex flex-row">
-          <v-text-field
+          </VTooltip>
+        </VCol>
+        <VCol cols="12" md="6" class="d-flex flex-row">
+          <VTextField
             v-model="cryptocompare"
             outlined
             persistent-hint
@@ -477,33 +477,33 @@ const { coingeckoContributeUrl, cryptocompareContributeUrl } = useInterop();
             :disabled="submitting || !cryptocompareEnabled"
           >
             <template #append>
-              <help-link
+              <HelpLink
                 small
                 :url="cryptocompareContributeUrl"
                 :tooltip="t('asset_form.help_cryptocompare')"
               />
             </template>
-          </v-text-field>
-          <v-tooltip open-delay="400" top max-width="320">
+          </VTextField>
+          <VTooltip open-delay="400" top max-width="320">
             <template #activator="{ attrs, on }">
               <span v-bind="attrs" v-on="on">
-                <v-checkbox v-model="cryptocompareEnabled" class="ms-4 me-2" />
+                <VCheckbox v-model="cryptocompareEnabled" class="ms-4 me-2" />
               </span>
             </template>
             <span> {{ t('asset_form.oracle_disable') }}</span>
-          </v-tooltip>
-        </v-col>
-      </v-row>
-    </v-form>
+          </VTooltip>
+        </VCol>
+      </VRow>
+    </VForm>
 
-    <v-sheet outlined rounded class="mt-2">
-      <v-expansion-panels flat tile>
-        <v-expansion-panel>
-          <v-expansion-panel-header>
+    <VSheet outlined rounded class="mt-2">
+      <VExpansionPanels flat tile>
+        <VExpansionPanel>
+          <VExpansionPanelHeader>
             {{ t('asset_form.optional') }}
-          </v-expansion-panel-header>
-          <v-expansion-panel-content>
-            <date-time-picker
+          </VExpansionPanelHeader>
+          <VExpansionPanelContent>
+            <DateTimePicker
               v-model="started"
               seconds
               outlined
@@ -511,9 +511,9 @@ const { coingeckoContributeUrl, cryptocompareContributeUrl } = useInterop();
               :error-messages="toMessages(v$.started)"
               :disabled="submitting"
             />
-            <v-row>
-              <v-col v-if="isEvmToken" cols="12" md="6">
-                <v-text-field
+            <VRow>
+              <VCol v-if="isEvmToken" cols="12" md="6">
+                <VTextField
                   v-model="protocol"
                   outlined
                   persistent-hint
@@ -524,9 +524,9 @@ const { coingeckoContributeUrl, cryptocompareContributeUrl } = useInterop();
                   :error-messages="toMessages(v$.protocol)"
                   :disabled="submitting"
                 />
-              </v-col>
-              <v-col cols="12" md="6">
-                <asset-select
+              </VCol>
+              <VCol cols="12" md="6">
+                <AssetSelect
                   v-model="swappedFor"
                   outlined
                   persistent-hint
@@ -535,9 +535,9 @@ const { coingeckoContributeUrl, cryptocompareContributeUrl } = useInterop();
                   :error-messages="toMessages(v$.swappedFor)"
                   :disabled="submitting"
                 />
-              </v-col>
-              <v-col v-if="!isEvmToken" cols="12" md="6">
-                <asset-select
+              </VCol>
+              <VCol v-if="!isEvmToken" cols="12" md="6">
+                <AssetSelect
                   v-if="assetType"
                   v-model="forked"
                   outlined
@@ -547,23 +547,23 @@ const { coingeckoContributeUrl, cryptocompareContributeUrl } = useInterop();
                   :error-messages="toMessages(v$.forked)"
                   :disabled="submitting"
                 />
-              </v-col>
-            </v-row>
-            <underlying-token-manager
+              </VCol>
+            </VRow>
+            <UnderlyingTokenManager
               v-if="isEvmToken"
               v-model="underlyingTokens"
             />
-          </v-expansion-panel-content>
-        </v-expansion-panel>
-      </v-expansion-panels>
-    </v-sheet>
+          </VExpansionPanelContent>
+        </VExpansionPanel>
+      </VExpansionPanels>
+    </VSheet>
 
     <div class="my-4">
-      <asset-icon-form
+      <AssetIconForm
         ref="assetIconFormRef"
         :identifier="identifier"
         refreshable
       />
     </div>
-  </fragment>
+  </Fragment>
 </template>

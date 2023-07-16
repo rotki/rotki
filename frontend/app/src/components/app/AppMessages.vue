@@ -17,15 +17,15 @@ const { confirmation, visible } = storeToRefs(confirmStore);
 </script>
 
 <template>
-  <fragment>
+  <Fragment>
     <slot />
-    <message-dialog
+    <MessageDialog
       :title="message.title"
       :message="message.description"
       :success="message.success"
       @dismiss="dismissMessage()"
     />
-    <confirm-dialog
+    <ConfirmDialog
       :display="visible"
       :title="confirmation.title"
       :message="confirmation.message"
@@ -34,12 +34,12 @@ const { confirmation, visible } = storeToRefs(confirmStore);
       @confirm="confirm()"
       @cancel="dismiss()"
     />
-    <startup-error-screen
+    <StartupErrorScreen
       v-if="startupErrorMessage.length > 0"
       :message="startupErrorMessage"
       fatal
     />
-    <mac-os-version-unsupported v-if="isMacOsVersionUnsupported" />
-    <win-version-unsupported v-if="isWinVersionUnsupported" />
-  </fragment>
+    <MacOsVersionUnsupported v-if="isMacOsVersionUnsupported" />
+    <WinVersionUnsupported v-if="isWinVersionUnsupported" />
+  </Fragment>
 </template>

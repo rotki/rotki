@@ -7,9 +7,9 @@ const { createNewAccount, error, loading } = useAccountManagement();
 </script>
 
 <template>
-  <fragment>
-    <upgrade-progress-display v-if="upgradeVisible" />
-    <create-account-form
+  <Fragment>
+    <UpgradeProgressDisplay v-if="upgradeVisible" />
+    <CreateAccountForm
       v-else
       :loading="loading"
       :error="error"
@@ -17,5 +17,5 @@ const { createNewAccount, error, loading } = useAccountManagement();
       @cancel="navigateToUserLogin()"
       @confirm="createNewAccount($event)"
     />
-  </fragment>
+  </Fragment>
 </template>

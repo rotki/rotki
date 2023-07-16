@@ -57,14 +57,14 @@ const { languageContributeUrl } = useInterop();
 <template>
   <div>
     <div class="d-flex align-center">
-      <settings-option
+      <SettingsOption
         #default="{ error, success, update }"
         class="fill-width"
         setting="language"
         frontend-setting
         :error-message="t('general_settings.validation.language.error')"
       >
-        <v-select
+        <VSelect
           v-model="language"
           :items="supportedLanguages"
           item-text="label"
@@ -79,38 +79,38 @@ const { languageContributeUrl } = useInterop();
           @change="updateSetting($event, update)"
         >
           <template #item="{ item }">
-            <language-selector-item
+            <LanguageSelectorItem
               :countries="item.countries ?? [item.identifier]"
               :label="item.label"
             />
           </template>
           <template #selection="{ item }">
-            <language-selector-item
+            <LanguageSelectorItem
               :countries="item.countries ?? [item.identifier]"
               :label="item.label"
             />
           </template>
-        </v-select>
-      </settings-option>
+        </VSelect>
+      </SettingsOption>
       <div class="ml-2">
-        <v-tooltip open-delay="400" bottom max-width="400">
+        <VTooltip open-delay="400" bottom max-width="400">
           <template #activator="{ on }">
-            <base-external-link :href="languageContributeUrl">
-              <v-btn icon v-on="on">
-                <v-icon>mdi-account-edit</v-icon>
-              </v-btn>
-            </base-external-link>
+            <BaseExternalLink :href="languageContributeUrl">
+              <VBtn icon v-on="on">
+                <VIcon>mdi-account-edit</VIcon>
+              </VBtn>
+            </BaseExternalLink>
           </template>
           <span>
             {{ t('general_settings.language_contribution_tooltip') }}
           </span>
-        </v-tooltip>
+        </VTooltip>
       </div>
     </div>
     <div v-if="!useLocalSetting" class="mb-n10">
-      <v-row>
-        <v-col cols="auto">
-          <v-checkbox
+      <VRow>
+        <VCol cols="auto">
+          <VCheckbox
             :input-value="forceUpdateMachineLanguage === 'true'"
             :label="
               t(
@@ -119,8 +119,8 @@ const { languageContributeUrl } = useInterop();
             "
             @change="updateForceUpdateMachineLanguage($event)"
           />
-        </v-col>
-      </v-row>
+        </VCol>
+      </VRow>
     </div>
   </div>
 </template>

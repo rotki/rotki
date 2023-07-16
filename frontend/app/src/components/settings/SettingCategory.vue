@@ -1,5 +1,5 @@
 <template>
-  <card class="mt-8">
+  <Card class="mt-8">
     <template #title><slot name="title" /></template>
     <template v-if="$slots.subtitle" #subtitle>
       <slot name="subtitle" />
@@ -7,5 +7,5 @@
     <template #default>
       <slot />
     </template>
-  </card>
+  </Card>
 </template>

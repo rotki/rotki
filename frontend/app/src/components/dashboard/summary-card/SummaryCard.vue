@@ -25,24 +25,24 @@ const slots = useSlots();
 </script>
 
 <template>
-  <v-card
+  <VCard
     :loading="isLoading"
     :class="`dashboard__summary-card__${name}`"
     class="pb-1"
   >
-    <v-card-title
+    <VCardTitle
       class="font-weight-medium text-capitalize px-4 pt-3 pb-0 secondary--text summary-card__header"
     >
-      <card-title>
-        <navigator-link :enabled="!!navigatesTo" :to="{ path: navigatesTo }">
+      <CardTitle>
+        <NavigatorLink :enabled="!!navigatesTo" :to="{ path: navigatesTo }">
           {{ t('summary_card.title', { name }) }}
-        </navigator-link>
-      </card-title>
-      <v-spacer />
+        </NavigatorLink>
+      </CardTitle>
+      <VSpacer />
       <div class="d-flex align-center">
-        <v-tooltip v-if="canRefresh" bottom max-width="300px">
+        <VTooltip v-if="canRefresh" bottom max-width="300px">
           <template #activator="{ on: tooltipOn }">
-            <v-btn
+            <VBtn
               icon
               small
               :disabled="isLoading"
@@ -50,22 +50,22 @@ const slots = useSlots();
               @click="refresh(name)"
               v-on="tooltipOn"
             >
-              <v-icon small color="primary">mdi-refresh</v-icon>
-            </v-btn>
+              <VIcon small color="primary">mdi-refresh</VIcon>
+            </VBtn>
           </template>
           <span>
             {{ t('summary_card.refresh_tooltip', { name }) }}
           </span>
-        </v-tooltip>
-        <summary-card-refresh-menu>
+        </VTooltip>
+        <SummaryCardRefreshMenu>
           <template v-if="slots.refreshMenu" #refreshMenu>
             <slot name="refreshMenu" />
           </template>
-        </summary-card-refresh-menu>
+        </SummaryCardRefreshMenu>
       </div>
-    </v-card-title>
-    <v-list>
+    </VCardTitle>
+    <VList>
       <slot />
-    </v-list>
-  </v-card>
+    </VList>
+  </VCard>
 </template>

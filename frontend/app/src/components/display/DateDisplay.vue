@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { displayDateFormatter } from '@/data/date_formatter';
 
-const css = useCssModule();
-
 const props = withDefaults(
   defineProps<{
     timestamp: number;
@@ -14,6 +12,8 @@ const props = withDefaults(
     noTime: false
   }
 );
+
+const css = useCssModule();
 
 const { timestamp, showTimezone, noTime } = toRefs(props);
 const { dateDisplayFormat } = storeToRefs(useGeneralSettingsStore());
@@ -57,7 +57,7 @@ const showTooltip = computed(() => {
 
 <template>
   <span>
-    <v-tooltip top open-delay="400" :disabled="!showTooltip">
+    <VTooltip top open-delay="400" :disabled="!showTooltip">
       <template #activator="{ on, attrs }">
         <span
           class="date-display"
@@ -69,7 +69,7 @@ const showTooltip = computed(() => {
         </span>
       </template>
       <span> {{ formattedDateWithTimezone }} </span>
-    </v-tooltip>
+    </VTooltip>
   </span>
 </template>
 

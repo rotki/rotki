@@ -50,15 +50,15 @@ const description = (directive: string): string => {
 </script>
 
 <template>
-  <v-dialog v-if="value" :value="value" max-width="500" @input="input($event)">
-    <card>
+  <VDialog v-if="value" :value="value" max-width="500" @input="input($event)">
+    <Card>
       <template #title>{{ t('date_format_help.title') }}</template>
       <template #subtitle>{{ t('date_format_help.subtitle') }}</template>
       <template #buttons>
-        <v-spacer />
-        <v-btn depressed color="primary" @click="input(false)">
+        <VSpacer />
+        <VBtn depressed color="primary" @click="input(false)">
           {{ t('common.actions.close') }}
-        </v-btn>
+        </VBtn>
       </template>
       <div class="date-format-help__content">
         <div v-for="directive in directives" :key="directive" class="mt-2">
@@ -81,8 +81,8 @@ const description = (directive: string): string => {
           </div>
         </div>
       </div>
-    </card>
-  </v-dialog>
+    </Card>
+  </VDialog>
 </template>
 
 <style scoped lang="scss">

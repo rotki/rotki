@@ -12,12 +12,12 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <settings-option
+  <SettingsOption
     #default="{ error, success, update }"
     setting="showGraphRangeSelector"
     frontend-setting
   >
-    <v-switch
+    <VSwitch
       v-model="showGraphRangeSelector"
       class="general-settings__fields__zero-base mb-4 mt-2"
       :label="t('frontend_settings.label.show_graph_range_selector')"
@@ -25,5 +25,5 @@ const { t } = useI18n();
       :error-messages="error"
       @change="update($event)"
     />
-  </settings-option>
+  </SettingsOption>
 </template>

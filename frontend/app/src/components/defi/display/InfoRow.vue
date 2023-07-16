@@ -19,7 +19,7 @@ defineProps({
       {{ title }}
     </div>
     <slot>
-      <amount-display
+      <AmountDisplay
         :fiat-currency="fiat ? 'USD' : undefined"
         :value="value"
         :loading="loading"

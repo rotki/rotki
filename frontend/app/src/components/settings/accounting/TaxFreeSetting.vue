@@ -55,7 +55,7 @@ const resetTaxFreePeriod = () => {
   }
 };
 
-const callIfValid = <T = unknown>(value: T, method: (e: T) => void) => {
+const callIfValid = <T = unknown,>(value: T, method: (e: T) => void) => {
   const validator = get(v$);
   if (!validator.$error) {
     method(value);
@@ -82,14 +82,14 @@ onMounted(() => {
 
 <template>
   <div>
-    <settings-option
+    <SettingsOption
       #default="{ error, success, update }"
       setting="taxfreeAfterPeriod"
       :transform="getTaxFreePeriod"
       :success-message="switchSuccess"
       @finished="resetTaxFreePeriod()"
     >
-      <v-switch
+      <VSwitch
         v-model="taxFreePeriod"
         class="accounting-settings__taxfree-period"
         :success-messages="success"
@@ -98,16 +98,16 @@ onMounted(() => {
         color="primary"
         @change="update($event)"
       />
-    </settings-option>
+    </SettingsOption>
 
-    <settings-option
+    <SettingsOption
       #default="{ error, success, update }"
       setting="taxfreeAfterPeriod"
       :transform="getPeriod"
       :success-message="numberSuccess"
       @finished="resetTaxFreePeriod()"
     >
-      <v-text-field
+      <VTextField
         v-model="taxFreeAfterPeriod"
         outlined
         class="accounting-settings__taxfree-period-days pt-4"
@@ -120,6 +120,6 @@ onMounted(() => {
         type="number"
         @change="callIfValid($event, update)"
       />
-    </settings-option>
+    </SettingsOption>
   </div>
 </template>

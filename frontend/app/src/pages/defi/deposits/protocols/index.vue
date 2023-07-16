@@ -14,6 +14,6 @@ const enabled = isAnyModuleEnabled(modules);
 </script>
 
 <template>
-  <module-not-active v-if="!enabled" :modules="modules" />
-  <deposits v-else />
+  <ModuleNotActive v-if="!enabled" :modules="modules" />
+  <Deposits v-else />
 </template>

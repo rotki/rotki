@@ -47,13 +47,13 @@ const nftEnabled = isModuleEnabled(Module.NFTS);
 
 <template>
   <div class="pb-6">
-    <v-container>
-      <v-row>
-        <v-col cols="12">
-          <overall-balances />
-        </v-col>
-        <v-col cols="12" md="4" lg="4">
-          <summary-card
+    <VContainer>
+      <VRow>
+        <VCol cols="12">
+          <OverallBalances />
+        </VCol>
+        <VCol cols="12" md="4" lg="4">
+          <SummaryCard
             :name="t('dashboard.exchange_balances.title')"
             can-refresh
             :is-loading="isExchangeLoading"
@@ -61,8 +61,8 @@ const nftEnabled = isModuleEnabled(Module.NFTS);
             @refresh="refreshBalance($event)"
           >
             <div v-if="exchanges.length === 0">
-              <v-card-actions class="px-4">
-                <v-btn
+              <VCardActions class="px-4">
+                <VBtn
                   text
                   block
                   color="primary"
@@ -70,26 +70,26 @@ const nftEnabled = isModuleEnabled(Module.NFTS);
                   class="py-8"
                 >
                   <div class="d-flex flex-column align-center">
-                    <v-icon class="mb-2">mdi-plus-circle-outline</v-icon>
+                    <VIcon class="mb-2">mdi-plus-circle-outline</VIcon>
                     <span>
                       {{ t('dashboard.exchange_balances.add') }}
                     </span>
                   </div>
-                </v-btn>
-              </v-card-actions>
+                </VBtn>
+              </VCardActions>
             </div>
             <div v-else>
-              <exchange-box
+              <ExchangeBox
                 v-for="exchange in exchanges"
                 :key="exchange.location"
                 :location="exchange.location"
                 :amount="exchange.total"
               />
             </div>
-          </summary-card>
-        </v-col>
-        <v-col cols="12" md="4" lg="4">
-          <summary-card
+          </SummaryCard>
+        </VCol>
+        <VCol cols="12" md="4" lg="4">
+          <SummaryCard
             :name="t('dashboard.blockchain_balances.title')"
             :is-loading="isBlockchainLoading || isTokenDetecting"
             can-refresh
@@ -97,11 +97,11 @@ const nftEnabled = isModuleEnabled(Module.NFTS);
             @refresh="refreshBalance($event)"
           >
             <template #refreshMenu>
-              <blockchain-balance-refresh-behaviour-menu />
+              <BlockchainBalanceRefreshBehaviourMenu />
             </template>
             <div v-if="blockchainTotals.length === 0">
-              <v-card-actions class="px-4">
-                <v-btn
+              <VCardActions class="px-4">
+                <VBtn
                   text
                   block
                   color="primary"
@@ -109,25 +109,25 @@ const nftEnabled = isModuleEnabled(Module.NFTS);
                   class="py-8"
                 >
                   <div class="d-flex flex-column align-center">
-                    <v-icon class="mb-2">mdi-plus-circle-outline</v-icon>
+                    <VIcon class="mb-2">mdi-plus-circle-outline</VIcon>
                     <span>
                       {{ t('dashboard.blockchain_balances.add') }}
                     </span>
                   </div>
-                </v-btn>
-              </v-card-actions>
+                </VBtn>
+              </VCardActions>
             </div>
             <div v-else data-cy="blockchain-balances">
-              <blockchain-balance-card-list
+              <BlockchainBalanceCardList
                 v-for="total in blockchainTotals"
                 :key="total.chain"
                 :total="total"
               />
             </div>
-          </summary-card>
-        </v-col>
-        <v-col cols="12" md="4" lg="4">
-          <summary-card
+          </SummaryCard>
+        </VCol>
+        <VCol cols="12" md="4" lg="4">
+          <SummaryCard
             :name="t('dashboard.manual_balances.title')"
             :tooltip="t('dashboard.manual_balances.card_tooltip')"
             :is-loading="isManualBalancesLoading"
@@ -136,8 +136,8 @@ const nftEnabled = isModuleEnabled(Module.NFTS);
             @refresh="fetchManualBalances()"
           >
             <div v-if="manualBalanceByLocation.length === 0">
-              <v-card-actions class="px-4">
-                <v-btn
+              <VCardActions class="px-4">
+                <VBtn
                   text
                   block
                   color="primary"
@@ -145,38 +145,38 @@ const nftEnabled = isModuleEnabled(Module.NFTS);
                   class="py-8"
                 >
                   <div class="d-flex flex-column align-center">
-                    <v-icon class="mb-2">mdi-plus-circle-outline</v-icon>
+                    <VIcon class="mb-2">mdi-plus-circle-outline</VIcon>
                     <span>
                       {{ t('dashboard.manual_balances.add') }}
                     </span>
                   </div>
-                </v-btn>
-              </v-card-actions>
+                </VBtn>
+              </VCardActions>
             </div>
             <div v-else data-cy="manual-balances">
-              <manual-balance-card-list
+              <ManualBalanceCardList
                 v-for="manualBalance in manualBalanceByLocation"
                 :key="manualBalance.location"
                 :name="manualBalance.location"
                 :amount="manualBalance.usdValue"
               />
             </div>
-          </summary-card>
-        </v-col>
-      </v-row>
-      <v-row justify="end" class="my-4">
-        <v-col cols="auto">
-          <price-refresh />
-        </v-col>
-      </v-row>
-      <dashboard-asset-table
+          </SummaryCard>
+        </VCol>
+      </VRow>
+      <VRow justify="end" class="my-4">
+        <VCol cols="auto">
+          <PriceRefresh />
+        </VCol>
+      </VRow>
+      <DashboardAssetTable
         :title="t('common.assets')"
         table-type="ASSETS"
         :loading="isAnyLoading"
         :balances="aggregatedBalances"
       />
-      <liquidity-provider-balance-table class="mt-8" />
-      <dashboard-asset-table
+      <LiquidityProviderBalanceTable class="mt-8" />
+      <DashboardAssetTable
         v-if="aggregatedLiabilities.length > 0"
         class="mt-8"
         table-type="LIABILITIES"
@@ -184,12 +184,12 @@ const nftEnabled = isModuleEnabled(Module.NFTS);
         :loading="isAnyLoading"
         :balances="aggregatedLiabilities"
       />
-      <nft-balance-table
+      <NftBalanceTable
         v-if="nftEnabled"
         id="nft-balance-table-section"
         data-cy="nft-balance-table"
         class="mt-8"
       />
-    </v-container>
+    </VContainer>
   </div>
 </template>

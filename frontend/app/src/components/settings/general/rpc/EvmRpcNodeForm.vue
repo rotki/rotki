@@ -7,8 +7,6 @@ import { type EvmRpcNode, getPlaceholderNode } from '@/types/settings';
 import { toMessages } from '@/utils/validation';
 import { ApiValidationError } from '@/types/api/errors';
 
-const { t } = useI18n();
-
 const props = defineProps<{
   value: EvmRpcNode;
   chain: Blockchain;
@@ -19,6 +17,8 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'input', value: EvmRpcNode): void;
 }>();
+
+const { t } = useI18n();
 
 const { chain, value, isEtherscan, editMode } = toRefs(props);
 const state = reactive<EvmRpcNode>(getPlaceholderNode(get(chain)));
@@ -120,7 +120,7 @@ setSubmitFunc(save);
 
 <template>
   <form class="pt-2">
-    <v-text-field
+    <VTextField
       v-model="state.name"
       outlined
       data-cy="node-name"
@@ -129,7 +129,7 @@ setSubmitFunc(save);
       :error-messages="toMessages(v$.name)"
       @blur="v$.name.$touch()"
     />
-    <v-text-field
+    <VTextField
       v-model="state.endpoint"
       outlined
       data-cy="node-endpoint"
@@ -139,9 +139,9 @@ setSubmitFunc(save);
       @blur="v$.endpoint.$touch()"
     />
 
-    <v-row align="center">
-      <v-col>
-        <v-slider
+    <VRow align="center">
+      <VCol>
+        <VSlider
           :value="state.weight"
           :disabled="state.owned"
           :error-messages="toMessages(v$.weight)"
@@ -155,9 +155,9 @@ setSubmitFunc(save);
           @change="state.weight = $event"
           @blur="v$.weight.$touch()"
         />
-      </v-col>
-      <v-col cols="auto">
-        <amount-input
+      </VCol>
+      <VCol cols="auto">
+        <AmountInput
           :disabled="state.owned"
           :value="state.weight.toString()"
           :error-messages="toMessages(v$.weight).length > 0 ? [''] : []"
@@ -166,20 +166,20 @@ setSubmitFunc(save);
           :class="$style.input"
           @input="state.weight = $event"
         />
-      </v-col>
-      <v-col cols="auto" class="pl-0">
+      </VCol>
+      <VCol cols="auto" class="pl-0">
         {{ t('rpc_node_form.weight_per_hundred') }}
-      </v-col>
-    </v-row>
+      </VCol>
+    </VRow>
 
-    <v-switch
+    <VSwitch
       v-model="state.owned"
       :label="t('rpc_node_form.owned')"
       persistent-hint
       :disabled="isEtherscan"
       :hint="t('rpc_node_form.owned_hint')"
     />
-    <v-switch
+    <VSwitch
       v-model="state.active"
       :label="t('rpc_node_form.active')"
       persistent-hint

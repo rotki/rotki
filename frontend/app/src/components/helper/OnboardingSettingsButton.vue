@@ -6,11 +6,11 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <v-bottom-sheet v-model="visible" width="98%" class="backend-settings-button">
+  <VBottomSheet v-model="visible" width="98%" class="backend-settings-button">
     <template #activator="{ on: menu, attrs }">
-      <v-tooltip left max-width="280">
+      <VTooltip left max-width="280">
         <template #activator="{ on: tooltip }">
-          <v-btn
+          <VBtn
             v-bind="attrs"
             text
             fab
@@ -19,14 +19,14 @@ const { t } = useI18n();
             color="primary"
             v-on="{ ...menu, ...tooltip }"
           >
-            <v-icon>mdi-cog</v-icon>
-          </v-btn>
+            <VIcon>mdi-cog</VIcon>
+          </VBtn>
         </template>
         <span>{{ t('backend_settings_button.tooltip') }}</span>
-      </v-tooltip>
+      </VTooltip>
     </template>
-    <onboarding-settings v-if="visible" @dismiss="visible = false" />
-  </v-bottom-sheet>
+    <OnboardingSettings v-if="visible" @dismiss="visible = false" />
+  </VBottomSheet>
 </template>
 
 <style scoped lang="scss">

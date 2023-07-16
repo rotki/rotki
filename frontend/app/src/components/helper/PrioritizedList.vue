@@ -103,15 +103,15 @@ const autoCompleteHint: ComputedRef<string> = computed(() => {
 
 <template>
   <div>
-    <v-sheet outlined rounded>
+    <VSheet outlined rounded>
       <div class="pb-0" :class="slots.title ? 'pa-4' : 'pa-0'">
         <div v-if="slots.title" class="text-h6 pb-4">
           <slot name="title" />
         </div>
 
-        <v-row v-if="!disableAdd" no-gutters>
-          <v-col class="pr-4">
-            <v-autocomplete
+        <VRow v-if="!disableAdd" no-gutters>
+          <VCol class="pr-4">
+            <VAutocomplete
               v-model="selection"
               prepend-inner-icon="mdi-magnify"
               outlined
@@ -121,17 +121,17 @@ const autoCompleteHint: ComputedRef<string> = computed(() => {
               persistent-hint
             >
               <template #selection="{ item }">
-                <prioritized-list-entry :data="itemData(item)" />
+                <PrioritizedListEntry :data="itemData(item)" />
               </template>
               <template #item="{ item }">
-                <prioritized-list-entry :data="itemData(item)" />
+                <PrioritizedListEntry :data="itemData(item)" />
               </template>
-            </v-autocomplete>
-          </v-col>
-          <v-col cols="auto">
-            <v-tooltip open-delay="400" top>
+            </VAutocomplete>
+          </VCol>
+          <VCol cols="auto">
+            <VTooltip open-delay="400" top>
               <template #activator="{ on, attrs }">
-                <v-btn
+                <VBtn
                   id="add-item-btn"
                   color="primary"
                   v-bind="attrs"
@@ -141,17 +141,17 @@ const autoCompleteHint: ComputedRef<string> = computed(() => {
                   v-on="on"
                   @click="addItem()"
                 >
-                  <v-icon>mdi-plus</v-icon>
-                </v-btn>
+                  <VIcon>mdi-plus</VIcon>
+                </VBtn>
               </template>
               <span>
                 {{ t('prioritized_list.add_tooltip', itemNameTr) }}
               </span>
-            </v-tooltip>
-          </v-col>
-        </v-row>
+            </VTooltip>
+          </VCol>
+        </VRow>
       </div>
-      <v-simple-table>
+      <VSimpleTable>
         <thead>
           <tr>
             <th class="prioritized-list-selection__move" />
@@ -165,67 +165,67 @@ const autoCompleteHint: ComputedRef<string> = computed(() => {
         <tbody>
           <tr v-if="noResults">
             <td colspan="4">
-              <v-row class="pa-3 text-h6" justify="center">
-                <v-col cols="auto">
+              <VRow class="pa-3 text-h6" justify="center">
+                <VCol cols="auto">
                   {{ t('prioritized_list.item.empty', itemNameTr) }}
-                </v-col>
-              </v-row>
+                </VCol>
+              </VRow>
             </td>
           </tr>
           <tr v-for="(identifier, index) in value" :key="identifier">
             <td>
               <div class="flex flex-column py-2">
                 <div>
-                  <v-btn
+                  <VBtn
                     :id="'move-up-' + identifier"
                     icon
                     small
                     :disabled="isFirst(identifier)"
                     @click="move(identifier, false)"
                   >
-                    <v-icon>mdi-chevron-up</v-icon>
-                  </v-btn>
+                    <VIcon>mdi-chevron-up</VIcon>
+                  </VBtn>
                 </div>
                 <div>
-                  <v-btn
+                  <VBtn
                     :id="'move-down-' + identifier"
                     icon
                     small
                     :disabled="isLast(identifier)"
                     @click="move(identifier, true)"
                   >
-                    <v-icon>mdi-chevron-down</v-icon>
-                  </v-btn>
+                    <VIcon>mdi-chevron-down</VIcon>
+                  </VBtn>
                 </div>
               </div>
             </td>
             <td class="text-center">{{ index + 1 }}</td>
             <td>
-              <prioritized-list-entry :data="itemData(identifier)" />
+              <PrioritizedListEntry :data="itemData(identifier)" />
             </td>
             <td class="text-end">
-              <v-tooltip v-if="!disableDelete" open-delay="400" top>
+              <VTooltip v-if="!disableDelete" open-delay="400" top>
                 <template #activator="{ on, attrs }">
-                  <v-btn
+                  <VBtn
                     :id="'delete-' + identifier"
                     icon
                     v-bind="attrs"
                     v-on="on"
                     @click="remove(identifier)"
                   >
-                    <v-icon>mdi-close</v-icon>
-                  </v-btn>
+                    <VIcon>mdi-close</VIcon>
+                  </VBtn>
                 </template>
                 <span>
                   {{ t('prioritized_list.item.delete', itemNameTr) }}
                 </span>
-              </v-tooltip>
+              </VTooltip>
             </td>
           </tr>
         </tbody>
-      </v-simple-table>
-    </v-sheet>
-    <action-status-indicator class="mt-4" :status="status" />
+      </VSimpleTable>
+    </VSheet>
+    <ActionStatusIndicator class="mt-4" :status="status" />
   </div>
 </template>
 

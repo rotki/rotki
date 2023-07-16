@@ -51,7 +51,7 @@ const css = useCssModule();
         :class="css.address"
         class="d-inline-flex"
       >
-        <hash-link
+        <HashLink
           :class="{
             [css['address__content']]: true,
             'pl-2': !note.showIcon
@@ -63,10 +63,10 @@ const css = useCssModule();
         />
       </span>
       <span v-else-if="note.type === NoteType.AMOUNT" :key="index">
-        <amount-display :asset="note.asset" :value="note.amount" />
+        <AmountDisplay :asset="note.asset" :value="note.amount" />
       </span>
       <span v-else-if="note.type === NoteType.URL && note.url" :key="index">
-        <external-link :url="note.url">{{ note.word }}</external-link>
+        <ExternalLink :url="note.url">{{ note.word }}</ExternalLink>
       </span>
       <span v-else :key="index">
         {{ note.word }}

@@ -64,7 +64,7 @@ const updateSecondaryValue = (value: string) => {
       'flex-column-reverse': reversed
     }"
   >
-    <amount-input
+    <AmountInput
       ref="primaryInput"
       :value="primaryValue"
       :disabled="reversed || rootAttrs.disabled"
@@ -80,7 +80,7 @@ const updateSecondaryValue = (value: string) => {
       @input="updatePrimaryValue($event)"
     />
 
-    <amount-input
+    <AmountInput
       ref="secondaryInput"
       :value="secondaryValue"
       :disabled="!reversed || rootAttrs.disabled"
@@ -96,7 +96,7 @@ const updateSecondaryValue = (value: string) => {
       @input="updateSecondaryValue($event)"
     />
 
-    <v-btn
+    <VBtn
       class="swap-button"
       fab
       small
@@ -105,8 +105,8 @@ const updateSecondaryValue = (value: string) => {
       data-cy="grouped-amount-input__swap-button"
       @click="reverse()"
     >
-      <v-icon>mdi-swap-vertical</v-icon>
-    </v-btn>
+      <VIcon>mdi-swap-vertical</VIcon>
+    </VBtn>
   </div>
 </template>
 

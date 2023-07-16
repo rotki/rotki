@@ -64,16 +64,16 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <card :flat="headless">
+  <Card :flat="headless">
     <template #title>{{ t('asset_update.title') }}</template>
-    <i18n class="text-body-1" tag="div" path="asset_update.description">
+    <I18n class="text-body-1" tag="div" path="asset_update.description">
       <template #remote>
         <span class="font-weight-medium">{{ versions.remote }}</span>
       </template>
       <template #local>
         <span class="font-weight-medium">{{ versions.local }}</span>
       </template>
-    </i18n>
+    </I18n>
     <div class="text-body-1 mt-4">
       {{ t('asset_update.total_changes', { changes: versions.changes }) }}
     </div>
@@ -81,17 +81,17 @@ const { t } = useI18n();
     <div v-if="multiple" class="font-weight-medium text-body-1 mt-4">
       {{ t('asset_update.advanced') }}
     </div>
-    <v-row v-if="multiple">
-      <v-col>
-        <v-checkbox
+    <VRow v-if="multiple">
+      <VCol>
+        <VCheckbox
           v-model="partial"
           class="asset-update__partial"
           dense
           hide-details
           :label="t('asset_update.partially_update')"
         />
-        <v-col cols="6" class="pa-0 ml-8 mt-2 mb-2">
-          <v-text-field
+        <VCol cols="6" class="pa-0 ml-8 mt-2 mb-2">
+          <VTextField
             :disabled="!partial"
             :value="upToVersion"
             outlined
@@ -103,11 +103,11 @@ const { t } = useI18n();
             :label="t('asset_update.up_to_version')"
             @change="onChange($event)"
           />
-        </v-col>
-      </v-col>
-    </v-row>
+        </VCol>
+      </VCol>
+    </VRow>
     <template #options>
-      <v-checkbox
+      <VCheckbox
         v-if="headless"
         v-model="skipUpdate"
         dense
@@ -115,18 +115,18 @@ const { t } = useI18n();
       />
     </template>
     <template #buttons>
-      <v-row justify="end" no-gutters>
-        <v-col cols="auto" class="mr-2">
-          <v-btn text @click="emit('dismiss', skipUpdate)">
+      <VRow justify="end" no-gutters>
+        <VCol cols="auto" class="mr-2">
+          <VBtn text @click="emit('dismiss', skipUpdate)">
             {{ t('common.actions.skip') }}
-          </v-btn>
-        </v-col>
-        <v-col cols="auto">
-          <v-btn color="primary" depressed @click="emit('confirm')">
+          </VBtn>
+        </VCol>
+        <VCol cols="auto">
+          <VBtn color="primary" depressed @click="emit('confirm')">
             {{ t('common.actions.update') }}
-          </v-btn>
-        </v-col>
-      </v-row>
+          </VBtn>
+        </VCol>
+      </VRow>
     </template>
-  </card>
+  </Card>
 </template>

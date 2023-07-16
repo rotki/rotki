@@ -16,8 +16,6 @@ import { toMessages } from '@/utils/validation';
 import { type ActionDataEntry } from '@/types/action';
 import { type HistoricalPriceFormPayload } from '@/types/prices';
 
-const { t } = useI18n();
-
 const props = withDefaults(
   defineProps<{
     editableItem?: EvmHistoryEvent | null;
@@ -29,6 +27,9 @@ const props = withDefaults(
 );
 
 const emit = defineEmits<{ (e: 'input', valid: boolean): void }>();
+
+const { t } = useI18n();
+
 const { editableItem, transaction } = toRefs(props);
 
 const { isTaskRunning } = useTaskStore();
@@ -509,14 +510,14 @@ const { mdAndUp } = useDisplay();
 </script>
 
 <template>
-  <v-form
+  <VForm
     :value="valid"
     data-cy="transaction-event-form"
     class="transaction-event-form"
   >
-    <v-row class="pt-1" align="center">
-      <v-col cols="12" md="6">
-        <location-selector
+    <VRow class="pt-1" align="center">
+      <VCol cols="12" md="6">
+        <LocationSelector
           v-model="location"
           required
           outlined
@@ -526,9 +527,9 @@ const { mdAndUp } = useDisplay();
           :error-messages="toMessages(v$.location)"
           @blur="v$.location.$touch()"
         />
-      </v-col>
-      <v-col cols="12" md="6">
-        <date-time-picker
+      </VCol>
+      <VCol cols="12" md="6">
+        <DateTimePicker
           v-model="datetime"
           outlined
           :label="t('transactions.events.form.datetime.label')"
@@ -540,11 +541,11 @@ const { mdAndUp } = useDisplay();
           :hint="t('transactions.events.form.datetime.hint')"
           :error-messages="errorMessages['datetime']"
         />
-      </v-col>
-    </v-row>
-    <v-row :class="mdAndUp ? 'transaction-event-form__amount-wrapper' : null">
-      <v-col cols="12" md="6">
-        <asset-select
+      </VCol>
+    </VRow>
+    <VRow :class="mdAndUp ? 'transaction-event-form__amount-wrapper' : null">
+      <VCol cols="12" md="6">
+        <AssetSelect
           v-model="asset"
           outlined
           required
@@ -552,10 +553,10 @@ const { mdAndUp } = useDisplay();
           :error-messages="toMessages(v$.asset)"
           @blur="v$.asset.$touch()"
         />
-      </v-col>
+      </VCol>
 
-      <v-col cols="12" md="6">
-        <amount-input
+      <VCol cols="12" md="6">
+        <AmountInput
           v-model="amount"
           outlined
           required
@@ -564,10 +565,10 @@ const { mdAndUp } = useDisplay();
           :error-messages="toMessages(v$.amount)"
           @blur="v$.amount.$touch()"
         />
-      </v-col>
+      </VCol>
 
-      <v-col cols="12">
-        <two-fields-amount-input
+      <VCol cols="12">
+        <TwoFieldsAmountInput
           v-if="isCurrentCurrencyUsd"
           class="mb-5"
           :primary-value.sync="assetToUsdPrice"
@@ -589,7 +590,7 @@ const { mdAndUp } = useDisplay();
           @update:reversed="fiatValueFocused = $event"
         />
 
-        <two-fields-amount-input
+        <TwoFieldsAmountInput
           v-else
           class="mb-5"
           :primary-value.sync="assetToFiatPrice"
@@ -606,14 +607,14 @@ const { mdAndUp } = useDisplay();
           }"
           @update:reversed="fiatValueFocused = $event"
         />
-      </v-col>
-    </v-row>
+      </VCol>
+    </VRow>
 
-    <v-divider class="mb-6 mt-6" />
+    <VDivider class="mb-6 mt-6" />
 
-    <v-row>
-      <v-col cols="12" md="4">
-        <v-autocomplete
+    <VRow>
+      <VCol cols="12" md="4">
+        <VAutocomplete
           v-model="eventType"
           outlined
           required
@@ -625,9 +626,9 @@ const { mdAndUp } = useDisplay();
           :error-messages="toMessages(v$.eventType)"
           @blur="v$.eventType.$touch()"
         />
-      </v-col>
-      <v-col cols="12" md="4">
-        <v-autocomplete
+      </VCol>
+      <VCol cols="12" md="4">
+        <VAutocomplete
           v-model="eventSubtype"
           outlined
           required
@@ -639,21 +640,21 @@ const { mdAndUp } = useDisplay();
           :error-messages="toMessages(v$.eventSubtype)"
           @blur="v$.eventSubtype.$touch()"
         />
-      </v-col>
-      <v-col cols="12" md="4">
-        <v-text-field
+      </VCol>
+      <VCol cols="12" md="4">
+        <VTextField
           v-model="transactionEventType"
           outlined
           required
           disabled
           :label="t('transactions.events.form.transaction_event_type.label')"
         />
-      </v-col>
+      </VCol>
 
-      <v-divider class="mb-6 mt-6" />
+      <VDivider class="mb-6 mt-6" />
 
-      <v-col cols="12" md="6">
-        <v-text-field
+      <VCol cols="12" md="6">
+        <VTextField
           v-model="locationLabel"
           :disabled="!!evmEvent"
           outlined
@@ -661,10 +662,10 @@ const { mdAndUp } = useDisplay();
           :label="t('transactions.events.form.location_label.label')"
           :error-messages="errorMessages['locationLabel']"
         />
-      </v-col>
+      </VCol>
 
-      <v-col cols="12" md="6">
-        <amount-input
+      <VCol cols="12" md="6">
+        <AmountInput
           v-model="sequenceIndex"
           outlined
           required
@@ -674,10 +675,10 @@ const { mdAndUp } = useDisplay();
           :error-messages="toMessages(v$.sequenceIndex)"
           @blur="v$.sequenceIndex.$touch()"
         />
-      </v-col>
+      </VCol>
 
-      <v-col cols="12" md="6">
-        <combobox-with-custom-input
+      <VCol cols="12" md="6">
+        <ComboboxWithCustomInput
           v-model="counterparty"
           outlined
           required
@@ -688,10 +689,10 @@ const { mdAndUp } = useDisplay();
           :error-messages="toMessages(v$.counterparty)"
           @blur="v$.counterparty.$touch()"
         />
-      </v-col>
+      </VCol>
 
-      <v-col cols="12" md="6">
-        <v-autocomplete
+      <VCol cols="12" md="6">
+        <VAutocomplete
           v-model="product"
           clearable
           outlined
@@ -704,12 +705,12 @@ const { mdAndUp } = useDisplay();
           :error-messages="toMessages(v$.product)"
           @blur="v$.product.$touch()"
         />
-      </v-col>
-    </v-row>
+      </VCol>
+    </VRow>
 
-    <v-divider class="mb-6 mt-2" />
+    <VDivider class="mb-6 mt-2" />
 
-    <v-textarea
+    <VTextarea
       v-model="notes"
       prepend-inner-icon="mdi-text-box-outline"
       persistent-hint
@@ -719,5 +720,5 @@ const { mdAndUp } = useDisplay();
       :hint="t('transactions.events.form.notes.hint')"
       :error-messages="errorMessages['notes']"
     />
-  </v-form>
+  </VForm>
 </template>

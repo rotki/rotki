@@ -134,8 +134,8 @@ defineExpose({ removeFile });
 </script>
 
 <template>
-  <v-row>
-    <v-col>
+  <VRow>
+    <VCol>
       <div
         class="file-upload__drop"
         :class="active ? 'file-upload__drop--active' : null"
@@ -148,17 +148,17 @@ defineExpose({ removeFile });
           v-if="error"
           class="d-flex flex-column align-center justify-center"
         >
-          <v-btn icon small class="align-self-end" @click="error = ''">
-            <v-icon>mdi-close</v-icon>
-          </v-btn>
-          <v-icon x-large color="error">mdi-alert-circle</v-icon>
+          <VBtn icon small class="align-self-end" @click="error = ''">
+            <VIcon>mdi-close</VIcon>
+          </VBtn>
+          <VIcon x-large color="error">mdi-alert-circle</VIcon>
           <span class="error--text mt-2">{{ error }}</span>
         </div>
         <div
           v-else-if="loading"
           class="d-flex flex-column align-center justify-center py-2"
         >
-          <v-progress-circular indeterminate color="primary" />
+          <VProgressCircular indeterminate color="primary" />
 
           <div class="pt-4">
             {{ t('file_upload.loading') }}
@@ -168,7 +168,7 @@ defineExpose({ removeFile });
           v-else-if="!uploaded"
           class="d-flex flex-column align-center justify-center"
         >
-          <v-icon x-large color="primary">mdi-upload</v-icon>
+          <VIcon x-large color="primary">mdi-upload</VIcon>
           <input
             ref="select"
             type="file"
@@ -178,7 +178,7 @@ defineExpose({ removeFile });
           />
           <div class="mt-2 text-center">
             <div v-if="file">
-              <i18n
+              <I18n
                 path="file_upload.selected_file"
                 class="text-caption text--secondary"
                 tag="div"
@@ -188,9 +188,9 @@ defineExpose({ removeFile });
                     {{ file.name }}
                   </div>
                 </template>
-              </i18n>
+              </I18n>
               <div>
-                <v-btn
+                <VBtn
                   class="mt-2"
                   color="primary"
                   small
@@ -199,7 +199,7 @@ defineExpose({ removeFile });
                   @click="clickSelect()"
                 >
                   {{ t('file_upload.change_file') }}
-                </v-btn>
+                </VBtn>
               </div>
             </div>
             <div v-else>
@@ -207,7 +207,7 @@ defineExpose({ removeFile });
                 {{ t('file_upload.drop_area') }}
               </div>
               <div>
-                <v-btn
+                <VBtn
                   class="mt-2"
                   color="primary"
                   small
@@ -216,18 +216,18 @@ defineExpose({ removeFile });
                   @click="clickSelect()"
                 >
                   {{ t('file_upload.select_file') }}
-                </v-btn>
+                </VBtn>
               </div>
             </div>
           </div>
         </div>
         <div v-else class="d-flex flex-column align-center justify-center">
-          <v-icon x-large color="primary">mdi-check-circle</v-icon>
+          <VIcon x-large color="primary">mdi-check-circle</VIcon>
           <div class="mt-2" v-text="t('file_upload.import_complete')" />
         </div>
       </div>
-    </v-col>
-  </v-row>
+    </VCol>
+  </VRow>
 </template>
 
 <style scoped lang="scss">

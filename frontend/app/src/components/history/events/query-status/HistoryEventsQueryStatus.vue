@@ -21,7 +21,7 @@ const {
 </script>
 
 <template>
-  <query-status-bar
+  <QueryStatusBar
     :colspan="colspan"
     :items="sortedQueryStatus"
     :finished="isAllFinished"
@@ -30,16 +30,16 @@ const {
     @reset="resetQueryStatus()"
   >
     <template #current>
-      <history-events-query-status-current :locations="locations" />
+      <HistoryEventsQueryStatusCurrent :locations="locations" />
     </template>
 
     <template #item="{ item }">
-      <location-icon icon no-padding :item="item.location" size="20px" />
-      <history-events-query-status-line :item="item" class="ms-2" />
+      <LocationIcon icon no-padding :item="item.location" size="20px" />
+      <HistoryEventsQueryStatusLine :item="item" class="ms-2" />
     </template>
 
     <template #dialog>
-      <history-events-query-status-dialog :locations="locations" />
+      <HistoryEventsQueryStatusDialog :locations="locations" />
     </template>
-  </query-status-bar>
+  </QueryStatusBar>
 </template>

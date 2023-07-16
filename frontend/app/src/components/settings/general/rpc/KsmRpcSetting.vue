@@ -21,13 +21,13 @@ onBeforeMount(() => {
 </script>
 
 <template>
-  <settings-option
+  <SettingsOption
     #default="{ error, success, update }"
     setting="ksmRpcEndpoint"
     :error-message="t('general_settings.validation.ksm_rpc.error')"
     :success-message="ksmSuccessMessage"
   >
-    <v-text-field
+    <VTextField
       v-model="ksmRpcEndpoint"
       outlined
       class="general-settings__fields__ksm-rpc-endpoint"
@@ -40,5 +40,5 @@ onBeforeMount(() => {
       @click:clear="update('')"
       @change="update($event)"
     />
-  </settings-option>
+  </SettingsOption>
 </template>

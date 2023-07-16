@@ -9,17 +9,17 @@ const { closeApp } = useInterop();
 </script>
 
 <template>
-  <error-screen
+  <ErrorScreen
     :class="css.overlay"
     :header="t('error_screen.start_failure')"
     :title="t('error_screen.backend_error')"
     :subtitle="t('error_screen.message')"
     :message="message"
   >
-    <v-btn depressed color="primary" @click="closeApp()">
+    <VBtn depressed color="primary" @click="closeApp()">
       {{ t('common.actions.terminate') }}
-    </v-btn>
-  </error-screen>
+    </VBtn>
+  </ErrorScreen>
 </template>
 
 <style module lang="scss">

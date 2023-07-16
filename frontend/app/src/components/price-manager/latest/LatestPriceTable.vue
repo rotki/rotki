@@ -156,14 +156,14 @@ const showDeleteConfirmation = (item: ManualPrice) => {
 
 <template>
   <div>
-    <v-row justify="end" class="mb-10">
-      <v-col cols="auto">
-        <price-refresh :additional-assets="latestAssets" />
-      </v-col>
-    </v-row>
-    <card outlined-body>
+    <VRow justify="end" class="mb-10">
+      <VCol cols="auto">
+        <PriceRefresh :additional-assets="latestAssets" />
+      </VCol>
+    </VRow>
+    <Card outlined-body>
       <template #title>
-        <refresh-button
+        <RefreshButton
           :loading="loading"
           :tooltip="t('price_table.refresh_tooltip')"
           @refresh="refresh()"
@@ -173,25 +173,25 @@ const showDeleteConfirmation = (item: ManualPrice) => {
         </div>
       </template>
       <slot />
-      <data-table :items="filteredPrices" :headers="headers" :loading="loading">
+      <DataTable :items="filteredPrices" :headers="headers" :loading="loading">
         <template #item.fromAsset="{ item }">
-          <nft-details
+          <NftDetails
             v-if="isNft(item.fromAsset)"
             :identifier="item.fromAsset"
           />
-          <asset-details v-else :asset="item.fromAsset" />
+          <AssetDetails v-else :asset="item.fromAsset" />
         </template>
         <template #item.toAsset="{ item }">
-          <asset-details :asset="item.toAsset" />
+          <AssetDetails :asset="item.toAsset" />
         </template>
         <template #item.price="{ item }">
-          <amount-display :value="item.price" />
+          <AmountDisplay :value="item.price" />
         </template>
         <template #item.isWorth>
           {{ t('price_table.is_worth') }}
         </template>
         <template #item.usdPrice="{ item }">
-          <amount-display
+          <AmountDisplay
             v-if="item.usdPrice && item.usdPrice.gte(0)"
             show-currency="symbol"
             :price-asset="item.fromAsset"
@@ -200,11 +200,11 @@ const showDeleteConfirmation = (item: ManualPrice) => {
             :value="item.usdPrice"
           />
           <div v-else class="d-flex justify-end">
-            <v-skeleton-loader width="70" type="text" />
+            <VSkeletonLoader width="70" type="text" />
           </div>
         </template>
         <template #item.actions="{ item }">
-          <row-actions
+          <RowActions
             :disabled="loading"
             :delete-tooltip="t('price_table.actions.delete.tooltip')"
             :edit-tooltip="t('price_table.actions.edit.tooltip')"
@@ -212,7 +212,7 @@ const showDeleteConfirmation = (item: ManualPrice) => {
             @edit-click="emit('edit', item)"
           />
         </template>
-      </data-table>
-    </card>
+      </DataTable>
+    </Card>
   </div>
 </template>

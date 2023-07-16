@@ -10,41 +10,41 @@ const css = useCssModule();
 </script>
 
 <template>
-  <v-list>
-    <v-list-item
+  <VList>
+    <VListItem
       :class="css['filter-heading']"
       class="font-weight-bold text-uppercase py-2"
     >
       {{ t('dashboard.blockchain_balances.behaviour.title') }}:
-    </v-list-item>
-    <v-list-item class="pb-2">
-      <settings-option
+    </VListItem>
+    <VListItem class="pb-2">
+      <SettingsOption
         #default="{ update }"
         setting="blockchainRefreshButtonBehaviour"
         frontend-setting
       >
-        <v-radio-group
+        <VRadioGroup
           :value="blockchainRefreshButtonBehaviour"
           class="mt-0"
           hide-details
           @change="update($event)"
         >
-          <v-radio
+          <VRadio
             :value="BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES"
             :label="
               t('dashboard.blockchain_balances.behaviour.only_refresh_balances')
             "
           />
-          <v-radio
+          <VRadio
             :value="BlockchainRefreshButtonBehaviour.REDETECT_TOKENS"
             :label="
               t('dashboard.blockchain_balances.behaviour.redetect_tokens')
             "
           />
-        </v-radio-group>
-      </settings-option>
-    </v-list-item>
-  </v-list>
+        </VRadioGroup>
+      </SettingsOption>
+    </VListItem>
+  </VList>
 </template>
 
 <style module lang="scss">

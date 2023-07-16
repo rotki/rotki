@@ -9,16 +9,16 @@ withDefaults(
   }
 );
 
-const { t } = useI18n();
-
 const emit = defineEmits<{
   (e: 'input', value: boolean): void;
 }>();
+
+const { t } = useI18n();
 </script>
 
 <template>
-  <v-sheet outlined rounded data-cy="account-all-evm-chains">
-    <v-checkbox
+  <VSheet outlined rounded data-cy="account-all-evm-chains">
+    <VCheckbox
       :input-value="value"
       :disabled="disabled"
       class="py-4 px-4 my-0"
@@ -27,5 +27,5 @@ const emit = defineEmits<{
       :hint="t('address_account_form.hint')"
       @change="emit('input', !value)"
     />
-  </v-sheet>
+  </VSheet>
 </template>

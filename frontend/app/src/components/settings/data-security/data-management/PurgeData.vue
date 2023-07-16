@@ -112,9 +112,9 @@ const { status, pending, showConfirmation } = useCacheClear<Purgeable>(
       </div>
     </div>
 
-    <v-row class="mb-0" align="center">
-      <v-col>
-        <v-autocomplete
+    <VRow class="mb-0" align="center">
+      <VCol>
+        <VAutocomplete
           v-model="source"
           outlined
           :label="t('purge_selector.label')"
@@ -124,11 +124,11 @@ const { status, pending, showConfirmation } = useCacheClear<Purgeable>(
           :disabled="pending"
           hide-details
         />
-      </v-col>
-      <v-col cols="auto">
-        <v-tooltip open-delay="400" top>
+      </VCol>
+      <VCol cols="auto">
+        <VTooltip open-delay="400" top>
           <template #activator="{ on, attrs }">
-            <v-btn
+            <VBtn
               v-bind="attrs"
               icon
               :disabled="!source || pending"
@@ -136,14 +136,14 @@ const { status, pending, showConfirmation } = useCacheClear<Purgeable>(
               v-on="on"
               @click="showConfirmation(source)"
             >
-              <v-icon>mdi-delete</v-icon>
-            </v-btn>
+              <VIcon>mdi-delete</VIcon>
+            </VBtn>
           </template>
           <span> {{ t('purge_selector.tooltip') }} </span>
-        </v-tooltip>
-      </v-col>
-    </v-row>
+        </VTooltip>
+      </VCol>
+    </VRow>
 
-    <action-status-indicator v-if="status" :status="status" />
+    <ActionStatusIndicator v-if="status" :status="status" />
   </div>
 </template>
