@@ -277,7 +277,7 @@ def test_add_delete_xpub_multiple_chains(rotkehlchen_api_server):
     async_query = random.choice([False, True])
 
     # Test that adding a BCH xpub works
-    xpub = 'xpub6By8JDaPr5L6oHfgQDc47quD69qH1hTwnFYbuia8paiYxSE9u84KZfYqn6xLMUqxKK3wNpsgP4Kwu1gzXHD5xBxj5HrLposEYL6PwZzpAMZ'  # noqa: 501
+    xpub = 'xpub6By8JDaPr5L6oHfgQDc47quD69qH1hTwnFYbuia8paiYxSE9u84KZfYqn6xLMUqxKK3wNpsgP4Kwu1gzXHD5xBxj5HrLposEYL6PwZzpAMZ'  # noqa: E501
     json_data = {
         'async_query': async_query,
         'xpub': xpub,
@@ -488,7 +488,7 @@ def test_delete_nonexisting_xpub(rotkehlchen_api_server):
     ), json=json_data)
     assert_error_response(
         response=response,
-        contained_in_msg=f'Tried to remove non existing xpub {xpub} for {SupportedBlockchain.BITCOIN!s} with no derivation path',  # noqa: 501
+        contained_in_msg=f'Tried to remove non existing xpub {xpub} for {SupportedBlockchain.BITCOIN!s} with no derivation path',  # noqa: E501
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
@@ -505,7 +505,7 @@ def test_delete_nonexisting_xpub(rotkehlchen_api_server):
     ), json=json_data)
     assert_error_response(
         response=response,
-        contained_in_msg=f'Tried to remove non existing xpub {xpub} for {SupportedBlockchain.BITCOIN!s} with derivation path {path}',  # noqa: 501
+        contained_in_msg=f'Tried to remove non existing xpub {xpub} for {SupportedBlockchain.BITCOIN!s} with derivation path {path}',  # noqa: E501
         status_code=HTTPStatus.BAD_REQUEST,
     )
 

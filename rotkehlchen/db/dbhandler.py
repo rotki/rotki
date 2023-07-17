@@ -2529,7 +2529,7 @@ class DBHandler:
                 list[XpubData],
             ],
             action: Literal['adding', 'editing'],
-            data_type: Literal['blockchain accounts', 'manually tracked balances', 'bitcoin xpub', 'bitcoin cash xpub'],  # noqa: 501
+            data_type: Literal['blockchain accounts', 'manually tracked balances', 'bitcoin xpub', 'bitcoin cash xpub'],  # noqa: E501
     ) -> None:
         """Make sure that tags included in the data exist in the DB
 

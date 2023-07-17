@@ -53,7 +53,7 @@ class Uniswap(AMMSwapPlatform, EthereumModule):
             msg_aggregator=msg_aggregator,
         )
 
-    def get_v3_balances_chain(self, addresses: list[ChecksumEvmAddress]) -> UniswapV3ProtocolBalance:  # noqa: 501
+    def get_v3_balances_chain(self, addresses: list[ChecksumEvmAddress]) -> UniswapV3ProtocolBalance:  # noqa: E501
         """Get the addresses' Uniswap V3 pools data via chain queries."""
         price_known_tokens: set['EvmToken'] = set()
         price_unknown_tokens: set['EvmToken'] = set()

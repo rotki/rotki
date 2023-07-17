@@ -161,7 +161,7 @@ class ValidatorDailyStats(AccountingEventMixin):
         if amount == ZERO:
             return 1
 
-        # This omits every acquisition event of `ETH2` if `eth_staking_taxable_after_withdrawal_enabled`  # noqa: 501
+        # This omits every acquisition event of `ETH2` if `eth_staking_taxable_after_withdrawal_enabled`  # noqa: E501
         if accounting.settings.eth_staking_taxable_after_withdrawal_enabled is True:
             return 1
 

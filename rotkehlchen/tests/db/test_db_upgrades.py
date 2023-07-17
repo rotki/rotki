@@ -67,7 +67,7 @@ def assert_tx_hash_is_bytes(
                 raw_event_identifier=_new[1],
             )
         else:
-            _new[tx_hash_index] = deserialize_evm_tx_hash(_new[tx_hash_index]).hex()  # noqa: 501 pylint: disable=no-member
+            _new[tx_hash_index] = deserialize_evm_tx_hash(_new[tx_hash_index]).hex()  # noqa: E501 pylint: disable=no-member
         assert _old == _new
 
 
@@ -639,13 +639,13 @@ def test_upgrade_db_32_to_33(user_data_dir):  # pylint: disable=unused-argument
     # check that you cannot add blockchain column in xpub_mappings
     with pytest.raises(sqlcipher.OperationalError) as exc_info:  # pylint: disable=no-member
         cursor.execute(
-            'INSERT INTO xpub_mappings(address, xpub, derivation_path, account_index, derived_index, blockchain) '  # noqa: 501
+            'INSERT INTO xpub_mappings(address, xpub, derivation_path, account_index, derived_index, blockchain) '  # noqa: E501
             'VALUES ("1234", "abcd", "d", 3, 6, "BCH");',
         )
     assert 'cannot INSERT into generated column "blockchain"' in str(exc_info)
     xpub_mapping_data = (
         '1LZypJUwJJRdfdndwvDmtAjrVYaHko136r',
-        'xpub68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk',  # noqa: 501
+        'xpub68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk',  # noqa: E501
         'm',
         0,
         0,
@@ -694,7 +694,7 @@ def test_upgrade_db_32_to_33(user_data_dir):  # pylint: disable=unused-argument
     # check that you can now add blockchain column in xpub_mappings
     address = '1MKSdDCtBSXiE49vik8xUG2pTgTGGh5pqe'
     cursor.execute(
-        'INSERT INTO xpub_mappings(address, xpub, derivation_path, account_index, derived_index, blockchain) '  # noqa: 501
+        'INSERT INTO xpub_mappings(address, xpub, derivation_path, account_index, derived_index, blockchain) '  # noqa: E501
         'VALUES (?, ?, ?, ?, ?, ?);',
         (address, xpub_mapping_data[1], 'm', 0, 1, 'BTC'),
     )

@@ -246,7 +246,7 @@ class HistoryBaseEntry(AccountingEventMixin, metaclass=ABCMeta):
                 timestamp=ts_sec_to_ms(deserialize_timestamp(data['timestamp'])),
                 location=Location.deserialize(data['location']),
                 event_type=HistoryEventType.deserialize(data['event_type']),
-                event_subtype=HistoryEventSubType.deserialize(data['event_subtype']) if data['event_subtype'] is not None else HistoryEventSubType.NONE,  # noqa: 501
+                event_subtype=HistoryEventSubType.deserialize(data['event_subtype']) if data['event_subtype'] is not None else HistoryEventSubType.NONE,  # noqa: E501
                 location_label=deserialize_optional(data['location_label'], str),
                 notes=deserialize_optional(data['notes'], str),
                 identifier=deserialize_optional(data['identifier'], int),
@@ -399,9 +399,9 @@ class HistoryEvent(HistoryBaseEntry):
                 return 1
 
             timestamp = self.get_timestamp_in_sec()
-            # This omits every acquisition event of `ETH2` if `eth_staking_taxable_after_withdrawal_enabled`  # noqa: 501
+            # This omits every acquisition event of `ETH2` if `eth_staking_taxable_after_withdrawal_enabled`  # noqa: E501
             # setting is set to `True` until ETH2 withdrawals were enabled
-            if self.asset == A_ETH2 and accounting.settings.eth_staking_taxable_after_withdrawal_enabled is True and timestamp < SHAPPELA_TIMESTAMP:  # noqa: 501
+            if self.asset == A_ETH2 and accounting.settings.eth_staking_taxable_after_withdrawal_enabled is True and timestamp < SHAPPELA_TIMESTAMP:  # noqa: E501
                 return 1
 
             # otherwise it's kraken staking

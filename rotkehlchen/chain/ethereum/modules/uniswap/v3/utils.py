@@ -42,7 +42,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 UNISWAP_V3_POSITIONS_PER_CHUNK = 45
 POOL_INIT_CODE_HASH = '0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54'
-UNISWAP_V3_ERROR_MSG = 'Remote error calling multicall contract for uniswap v3 {} for address properties: {}'  # noqa: 501
+UNISWAP_V3_ERROR_MSG = 'Remote error calling multicall contract for uniswap v3 {} for address properties: {}'  # noqa: E501
 POW_96 = 2**96
 LOG_PRICE = FVal('1.0001')
 

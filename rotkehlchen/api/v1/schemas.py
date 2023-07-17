@@ -1290,7 +1290,7 @@ class ModifiableSettingsSchema(Schema):
             non_syncing_exchanges=data['non_syncing_exchanges'],
             cost_basis_method=data['cost_basis_method'],
             treat_eth2_as_eth=data['treat_eth2_as_eth'],
-            eth_staking_taxable_after_withdrawal_enabled=data['eth_staking_taxable_after_withdrawal_enabled'],  # noqa: 501
+            eth_staking_taxable_after_withdrawal_enabled=data['eth_staking_taxable_after_withdrawal_enabled'],  # noqa: E501
             address_name_priority=data['address_name_priority'],
             include_fees_in_cost_basis=data['include_fees_in_cost_basis'],
             infer_zero_timed_balances=data['infer_zero_timed_balances'],
@@ -1324,7 +1324,7 @@ class UserActionSchema(Schema):
             data: dict[str, Any],
             **_kwargs: Any,
     ) -> None:
-        if data['action'] is None and (data['premium_api_key'] == '' or data['premium_api_secret'] == ''):  # noqa: 501
+        if data['action'] is None and (data['premium_api_key'] == '' or data['premium_api_secret'] == ''):  # noqa: E501
             raise ValidationError(
                 'Without an action premium api key and secret must be provided',
             )
@@ -2636,7 +2636,7 @@ class SnapshotEditingSchema(Schema):
             data: dict[str, Any],
             **_kwargs: Any,
     ) -> None:
-        if not data['timestamp'] == data['balances_snapshot'][0].time == data['location_data_snapshot'][0].time:  # noqa: 501
+        if not data['timestamp'] == data['balances_snapshot'][0].time == data['location_data_snapshot'][0].time:  # noqa: E501
             raise ValidationError(
                 f'timestamp provided {data["timestamp"]} is not the same as the '
                 f'one for the entries provided.',

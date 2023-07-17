@@ -208,7 +208,7 @@ class LocationData(NamedTuple):
                     treat_as_local=display_date_in_localtime,
                 ),
                 'location': Location.deserialize_from_db(self.location).serialize(),
-                f'{currency_and_price[0].symbol.lower()}_value': str(FVal(self.usd_value) * currency_and_price[1]),   # noqa: 501
+                f'{currency_and_price[0].symbol.lower()}_value': str(FVal(self.usd_value) * currency_and_price[1]),   # noqa: E501
             }
         return {
             'timestamp': int(self.time),
