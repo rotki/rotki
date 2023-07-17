@@ -191,9 +191,7 @@ class Poloniex(ExchangeInterface):
             del params['signTimestamp']
         else:
             request_body = json.dumps(params)  # type: ignore
-            encode_params = 'requestBody={}&signTimestamp={}'.format(
-                request_body, timestamp,
-            )
+            encode_params = f'requestBody={request_body}&signTimestamp={timestamp}'
         sign_params_first = [method, path, encode_params]
         sign_params_second = '\n'.join(sign_params_first)
         sign_params = sign_params_second.encode(encoding='UTF8')

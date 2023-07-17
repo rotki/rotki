@@ -118,7 +118,7 @@ def timestamp_to_date(
     else:  # localtime
         date = datetime.datetime.fromtimestamp(
             ts,  # ignore below is due to: https://github.com/pjknkda/flake8-datetimez/issues/11
-            tz=datetime.datetime.fromtimestamp(ts).astimezone().tzinfo,  # noqa: DTZ006
+            tz=datetime.datetime.fromtimestamp(ts).astimezone().tzinfo,
         ).strftime(formatstr)
 
     # Depending on the formatstr we could have empty strings at the end. Strip them.
