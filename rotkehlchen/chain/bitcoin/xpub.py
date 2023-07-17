@@ -345,5 +345,5 @@ class XpubManager:
                 write_cursor,
                 given_data=[xpub_data],
                 action='editing',
-                data_type='bitcoin xpub' if xpub_data.blockchain == SupportedBlockchain.BITCOIN else 'bitcoin cash xpub',  # noqa: 501
+                data_type='bitcoin xpub' if xpub_data.blockchain == SupportedBlockchain.BITCOIN else 'bitcoin cash xpub',  # noqa: E501
             )

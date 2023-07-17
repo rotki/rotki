@@ -396,7 +396,7 @@ class Balancer(EthereumModule):
                 raise RemoteError('Failed to deserialize balancer events') from e
 
             # first do a run to gather all transaction hashes. We need it to get all pool data
-            mint_or_burn_transactions = {deserialize_transaction_id(x['id'])[0].hex() for x in raw_events}  # noqa: 501 pylint: disable=no-member
+            mint_or_burn_transactions = {deserialize_transaction_id(x['id'])[0].hex() for x in raw_events}  # noqa: E501 pylint: disable=no-member
             address_to_mint_events = self._get_address_to_bpt_events_graph(
                 addresses=addresses,
                 transactions=list(mint_or_burn_transactions),

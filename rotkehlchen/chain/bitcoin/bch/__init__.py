@@ -25,7 +25,7 @@ def get_bitcoin_cash_addresses_balances(accounts: Sequence[BTCAddress]) -> dict[
         accounts_chunks = [accounts[x:x + 80] for x in range(0, len(accounts), 80)]
         for accounts_chunk in accounts_chunks:
             params = ','.join(accounts_chunk)
-            bch_resp = request_get(url=f'{HASKOIN_BASE_URL}/bch/address/balances?addresses={params}')  # noqa: 501
+            bch_resp = request_get(url=f'{HASKOIN_BASE_URL}/bch/address/balances?addresses={params}')  # noqa: E501
             for entry in bch_resp:
                 # Try and get the initial address passed to the request.
                 # This is because the API only returns CashAddr format as response.

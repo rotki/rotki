@@ -2611,10 +2611,10 @@ class DBSnapshotsResource(BaseMethodView):
             location_data_snapshot_file: FileStorage,
     ) -> Response:
         with TemporaryDirectory() as temp_directory:
-            balance_snapshot_filename = balances_snapshot_file.filename if balances_snapshot_file.filename else 'balances_snapshot_import.csv'  # noqa: 501
-            location_data_snapshot_filename = location_data_snapshot_file.filename if location_data_snapshot_file.filename else 'location_data_snapshot.csv'  # noqa: 501
+            balance_snapshot_filename = balances_snapshot_file.filename if balances_snapshot_file.filename else 'balances_snapshot_import.csv'  # noqa: E501
+            location_data_snapshot_filename = location_data_snapshot_file.filename if location_data_snapshot_file.filename else 'location_data_snapshot.csv'  # noqa: E501
             balance_snapshot_filepath = Path(temp_directory) / balance_snapshot_filename
-            location_data_snapshot_filepath = Path(temp_directory) / location_data_snapshot_filename  # noqa: 501
+            location_data_snapshot_filepath = Path(temp_directory) / location_data_snapshot_filename  # noqa: E501
             balances_snapshot_file.save(balance_snapshot_filepath)
             location_data_snapshot_file.save(location_data_snapshot_filepath)
             response = self.rest_api.import_user_snapshot(

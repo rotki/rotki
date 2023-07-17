@@ -184,7 +184,7 @@ def validate_bch_address_input(address: str, given_addresses: set[ChecksumAddres
             field_name='address',
         )
     # Check if they're not duplicates of same address but in different formats
-    if force_address_to_legacy_address(address) in force_addresses_to_legacy_addresses(given_addresses):  # noqa: 501
+    if force_address_to_legacy_address(address) in force_addresses_to_legacy_addresses(given_addresses):  # noqa: E501
         raise ValidationError(
             f'Address {address} appears multiple times in the request data',
             field_name='address',

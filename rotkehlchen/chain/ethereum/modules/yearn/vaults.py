@@ -497,7 +497,7 @@ class YearnVaults(EthereumModule):
 
             if mint_amount is None:
                 self.msg_aggregator.add_error(
-                    f'Ignoring yearn deposit event with tx_hash {tx_hash.hex()} and log index '  # noqa: 501 pylint: disable=no-member
+                    f'Ignoring yearn deposit event with tx_hash {tx_hash.hex()} and log index '  # noqa: E501 pylint: disable=no-member
                     f'{deposit_index} due to inability to find corresponding mint event',
                 )
                 continue
@@ -505,13 +505,13 @@ class YearnVaults(EthereumModule):
             deposit_usd_price = get_usd_price_zero_if_error(
                 asset=vault.underlying_token,
                 time=timestamp,
-                location=f'yearn vault deposit {tx_hash.hex()}',  # noqa: 501 pylint: disable=no-member
+                location=f'yearn vault deposit {tx_hash.hex()}',  # noqa: E501 pylint: disable=no-member
                 msg_aggregator=self.msg_aggregator,
             )
             mint_usd_price = get_usd_price_zero_if_error(
                 asset=vault.token,
                 time=timestamp,
-                location=f'yearn vault mint {tx_hash.hex()}',  # noqa: 501 pylint: disable=no-member
+                location=f'yearn vault mint {tx_hash.hex()}',  # noqa: E501 pylint: disable=no-member
                 msg_aggregator=self.msg_aggregator,
             )
             events.append(YearnVaultEvent(
@@ -583,7 +583,7 @@ class YearnVaults(EthereumModule):
 
             if burn_amount is None:
                 self.msg_aggregator.add_error(
-                    f'Ignoring yearn withdraw event with tx_hash {tx_hash.hex()} and log index '  # noqa: 501 pylint: disable=no-member
+                    f'Ignoring yearn withdraw event with tx_hash {tx_hash.hex()} and log index '  # noqa: E501 pylint: disable=no-member
                     f'{withdraw_index} due to inability to find corresponding burn event',
                 )
                 continue
@@ -591,13 +591,13 @@ class YearnVaults(EthereumModule):
             withdraw_usd_price = get_usd_price_zero_if_error(
                 asset=vault.underlying_token,
                 time=timestamp,
-                location=f'yearn vault withdraw {tx_hash.hex()}',  # noqa: 501 pylint: disable=no-member
+                location=f'yearn vault withdraw {tx_hash.hex()}',  # noqa: E501 pylint: disable=no-member
                 msg_aggregator=self.msg_aggregator,
             )
             burn_usd_price = get_usd_price_zero_if_error(
                 asset=vault.token,
                 time=timestamp,
-                location=f'yearn vault withdraw {tx_hash.hex()}',  # noqa: 501 pylint: disable=no-member
+                location=f'yearn vault withdraw {tx_hash.hex()}',  # noqa: E501 pylint: disable=no-member
                 msg_aggregator=self.msg_aggregator,
             )
             events.append(YearnVaultEvent(
