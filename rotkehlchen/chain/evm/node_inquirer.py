@@ -538,9 +538,12 @@ class EvmNodeInquirer(metaclass=ABCMeta):
             return result
 
         # no node in the call order list was succesfully queried
-        raise RemoteError(
+        log.error(
             f'Failed to query {method!s} after trying the following '
-            f'nodes: {[str(x) for x in call_order]}. Check logs for details.',
+            f'nodes: {[x.node_info.name for x in call_order]}',
+        )
+        raise RemoteError(
+            f'Please check your network and confirm sufficient nodes are connected for {self.blockchain!s}.',  # noqa: E501
         )
 
     def _get_latest_block_number(self, web3: Optional[Web3]) -> int:
