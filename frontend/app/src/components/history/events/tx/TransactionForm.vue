@@ -105,10 +105,10 @@ setSubmitFunc(save);
 </script>
 
 <template>
-  <v-form :value="valid">
-    <v-row class="pt-4">
-      <v-col cols="12">
-        <blockchain-account-selector
+  <VForm :value="valid">
+    <VRow class="pt-4">
+      <VCol cols="12">
+        <BlockchainAccountSelector
           v-model="accounts"
           :chains="txChains"
           outlined
@@ -117,16 +117,16 @@ setSubmitFunc(save);
           :label="t('transactions.form.account.label')"
           :error-messages="toMessages(v$.associatedAddress)"
         />
-      </v-col>
+      </VCol>
 
-      <v-col cols="12">
-        <v-text-field
+      <VCol cols="12">
+        <VTextField
           v-model="txHash"
           :label="t('common.tx_hash')"
           outlined
           :error-messages="toMessages(v$.txHash)"
         />
-      </v-col>
-    </v-row>
-  </v-form>
+      </VCol>
+    </VRow>
+  </VForm>
 </template>

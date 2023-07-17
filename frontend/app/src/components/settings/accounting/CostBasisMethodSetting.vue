@@ -22,13 +22,13 @@ const getErrorMessage = (method: string) =>
 </script>
 
 <template>
-  <settings-option
+  <SettingsOption
     #default="{ error, success, update }"
     setting="costBasisMethod"
     :success-message="getSuccessMessage"
     :error-message="getErrorMessage"
   >
-    <cost-basis-method-settings
+    <CostBasisMethodSettings
       v-model="costBasisMethod"
       class="accounting-settings__cost-basis-method pt-4"
       :success-messages="success"
@@ -37,5 +37,5 @@ const getErrorMessage = (method: string) =>
       color="primary"
       @change="update($event)"
     />
-  </settings-option>
+  </SettingsOption>
 </template>

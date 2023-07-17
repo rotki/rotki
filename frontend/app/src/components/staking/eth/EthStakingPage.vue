@@ -118,10 +118,10 @@ watch(period, async period => {
 
 <template>
   <div>
-    <no-premium-placeholder v-if="!premium" :text="t('eth2_page.no_premium')" />
-    <module-not-active v-else-if="!enabled" :modules="[module]" />
+    <NoPremiumPlaceholder v-if="!premium" :text="t('eth2_page.no_premium')" />
+    <ModuleNotActive v-else-if="!enabled" :modules="[module]" />
 
-    <eth-staking
+    <EthStaking
       v-else
       :refreshing="primaryRefreshing"
       :secondary-refreshing="false"
@@ -139,14 +139,14 @@ watch(period, async period => {
       @update:stats-pagination="pagination = $event"
     >
       <template #selection>
-        <eth-validator-filter
+        <EthValidatorFilter
           v-model="selection"
           @update:period="period = $event"
         />
       </template>
       <template #modules>
-        <active-modules :modules="[module]" />
+        <ActiveModules :modules="[module]" />
       </template>
-    </eth-staking>
+    </EthStaking>
   </div>
 </template>

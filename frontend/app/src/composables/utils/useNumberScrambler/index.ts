@@ -5,6 +5,7 @@ export interface ScramblerOptions {
   enabled: Ref<boolean>;
   multiplier: Ref<number>;
 }
+
 export const useNumberScrambler = (
   options: ScramblerOptions
 ): ComputedRef<BigNumber> =>

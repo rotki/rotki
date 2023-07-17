@@ -14,18 +14,18 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <fragment>
-    <v-row>
-      <v-col class="text-subtitle-2">
+  <Fragment>
+    <VRow>
+      <VCol class="text-subtitle-2">
         {{ t('notes_display.notes') }}
-      </v-col>
-    </v-row>
-    <v-row>
-      <v-col>
-        <card outlined>
+      </VCol>
+    </VRow>
+    <VRow>
+      <VCol>
+        <Card outlined>
           {{ notes ? notes : t('notes_display.empty_notes') }}
-        </card>
-      </v-col>
-    </v-row>
-  </fragment>
+        </Card>
+      </VCol>
+    </VRow>
+  </Fragment>
 </template>

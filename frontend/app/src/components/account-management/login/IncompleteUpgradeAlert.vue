@@ -1,14 +1,14 @@
 <script setup lang="ts">
-const { t } = useI18n();
-
 const emit = defineEmits<{ (e: 'confirm'): void; (e: 'cancel'): void }>();
+
+const { t } = useI18n();
 
 const { incompleteUpgradeConflict } = storeToRefs(useSessionAuthStore());
 </script>
 
 <template>
-  <transition>
-    <login-action-alert
+  <Transition>
+    <LoginActionAlert
       v-if="incompleteUpgradeConflict"
       icon="mdi-shield-alert-outline"
       @confirm="emit('confirm')"
@@ -28,6 +28,6 @@ const { incompleteUpgradeConflict } = storeToRefs(useSessionAuthStore());
       <div class="mt-2">
         {{ t('login.incomplete_upgrade_error.question') }}
       </div>
-    </login-action-alert>
-  </transition>
+    </LoginActionAlert>
+  </Transition>
 </template>

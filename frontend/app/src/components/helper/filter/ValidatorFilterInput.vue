@@ -47,8 +47,8 @@ const css = useCssModule();
 </script>
 
 <template>
-  <v-card flat>
-    <v-autocomplete
+  <VCard flat>
+    <VAutocomplete
       :class="css.filter"
       :filter="filter"
       :value="value"
@@ -72,10 +72,10 @@ const css = useCssModule();
       @input="input($event)"
     >
       <template #item="{ item }">
-        <validator-display :validator="item" />
+        <ValidatorDisplay :validator="item" />
       </template>
       <template #selection="{ item }">
-        <v-chip
+        <VChip
           small
           :color="dark ? null : 'grey lighten-3'"
           filter
@@ -84,11 +84,11 @@ const css = useCssModule();
           close
           @click:close="removeValidator(item)"
         >
-          <validator-display :validator="item" horizontal />
-        </v-chip>
+          <ValidatorDisplay :validator="item" horizontal />
+        </VChip>
       </template>
-    </v-autocomplete>
-  </v-card>
+    </VAutocomplete>
+  </VCard>
 </template>
 
 <style module lang="scss">

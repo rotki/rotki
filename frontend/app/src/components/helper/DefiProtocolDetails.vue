@@ -13,7 +13,7 @@ defineProps({
 
 <template>
   <span v-bind="$attrs" class="d-flex flex-row align-center">
-    <v-img
+    <VImg
       width="26px"
       contain
       position="left"

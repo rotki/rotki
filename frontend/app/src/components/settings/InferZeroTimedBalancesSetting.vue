@@ -1,9 +1,9 @@
 <script setup lang="ts">
-const { t } = useI18n();
-
 const emit = defineEmits<{
   (e: 'updated'): void;
 }>();
+
+const { t } = useI18n();
 
 const updated = () => emit('updated');
 
@@ -28,15 +28,15 @@ onMounted(() => {
 
 <template>
   <div>
-    <card-title class="font-weight-medium mb-2">
+    <CardTitle class="font-weight-medium mb-2">
       {{ t('statistics_graph_settings.infer_zero_timed_balances.title') }}
-    </card-title>
-    <settings-option
+    </CardTitle>
+    <SettingsOption
       #default="{ error, success, update }"
       setting="inferZeroTimedBalances"
       @finished="finished()"
     >
-      <v-switch
+      <VSwitch
         v-model="inferZeroTimedBalances"
         :label="t('statistics_graph_settings.infer_zero_timed_balances.label')"
         persistent-hint
@@ -44,6 +44,6 @@ onMounted(() => {
         :error-messages="error"
         @change="update($event)"
       />
-    </settings-option>
+    </SettingsOption>
   </div>
 </template>

@@ -9,14 +9,14 @@ defineProps({
 </script>
 
 <template>
-  <v-chip
+  <VChip
     class="tag font-weight-medium"
     label
     :small="small"
     :color="`#${tag.backgroundColor}`"
     :text-color="`#${tag.foregroundColor}`"
   >
-    <v-img
+    <VImg
       v-if="tag.icon"
       class="mr-2"
       :width="20"
@@ -24,5 +24,5 @@ defineProps({
       :src="tag.icon"
     />
     <span>{{ tag.name }}</span>
-  </v-chip>
+  </VChip>
 </template>

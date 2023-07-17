@@ -4,8 +4,6 @@ import { type Ref } from 'vue';
 import { type DataTableHeader } from '@/types/vuetify';
 import { isEvmNativeToken } from '@/types/asset';
 
-const { t } = useI18n();
-
 const props = withDefaults(
   defineProps<{
     balances: AssetBalanceWithPrice[];
@@ -19,6 +17,8 @@ const props = withDefaults(
     hideBreakdown: false
   }
 );
+
+const { t } = useI18n();
 
 const { balances } = toRefs(props);
 const expanded: Ref<AssetBalanceWithPrice[]> = ref([]);
@@ -70,7 +70,7 @@ const sortItems = getSortItems(asset => get(assetInfo(asset)));
 </script>
 
 <template>
-  <data-table
+  <DataTable
     :headers="tableHeaders"
     :items="balances"
     :loading="loading"
@@ -82,14 +82,14 @@ const sortItems = getSortItems(asset => get(assetInfo(asset)));
     item-key="asset"
   >
     <template #item.asset="{ item }">
-      <asset-details
+      <AssetDetails
         opens-details
         :asset="item.asset"
         :is-collection-parent="!!item.breakdown"
       />
     </template>
     <template #item.usdPrice="{ item }">
-      <amount-display
+      <AmountDisplay
         v-if="item.usdPrice && item.usdPrice.gte(0)"
         no-scramble
         show-currency="symbol"
@@ -99,14 +99,14 @@ const sortItems = getSortItems(asset => get(assetInfo(asset)));
         :value="item.usdPrice"
       />
       <div v-else class="d-flex justify-end">
-        <v-skeleton-loader width="70" type="text" />
+        <VSkeletonLoader width="70" type="text" />
       </div>
     </template>
     <template #item.amount="{ item }">
-      <amount-display :value="item.amount" />
+      <AmountDisplay :value="item.amount" />
     </template>
     <template #item.usdValue="{ item }">
-      <amount-display
+      <AmountDisplay
         show-currency="symbol"
         :amount="item.amount"
         :price-asset="item.asset"
@@ -119,35 +119,35 @@ const sortItems = getSortItems(asset => get(assetInfo(asset)));
       v-if="balances.length > 0 && !hideTotal"
       #body.append="{ isMobile }"
     >
-      <row-append
+      <RowAppend
         label-colspan="3"
         :label="t('common.total')"
         :is-mobile="isMobile"
       >
-        <amount-display
+        <AmountDisplay
           fiat-currency="USD"
           show-currency="symbol"
           :value="total"
         />
-      </row-append>
+      </RowAppend>
     </template>
     <template #expanded-item="{ item }">
-      <table-expand-container visible :colspan="tableHeaders.length">
-        <evm-native-token-breakdown
+      <TableExpandContainer visible :colspan="tableHeaders.length">
+        <EvmNativeTokenBreakdown
           v-if="isEvmNativeToken(item.asset)"
           blockchain-only
           :identifier="item.asset"
         />
-        <asset-balances
+        <AssetBalances
           v-else
           v-bind="props"
           hide-total
           :balances="item.breakdown ?? []"
         />
-      </table-expand-container>
+      </TableExpandContainer>
     </template>
     <template #item.expand="{ item }">
-      <row-expander
+      <RowExpander
         v-if="
           !hideBreakdown && (item.breakdown || isEvmNativeToken(item.asset))
         "
@@ -155,5 +155,5 @@ const sortItems = getSortItems(asset => get(assetInfo(asset)));
         @click="expanded = expanded.includes(item) ? [] : [item]"
       />
     </template>
-  </data-table>
+  </DataTable>
 </template>

@@ -35,9 +35,9 @@ const css = useCssModule();
 
 <template>
   <div :class="css.actions">
-    <v-tooltip v-if="!noEdit" top>
+    <VTooltip v-if="!noEdit" top>
       <template #activator="{ on, attrs }">
-        <v-btn
+        <VBtn
           v-bind="attrs"
           icon
           :disabled="disabled || editDisabled"
@@ -46,14 +46,14 @@ const css = useCssModule();
           v-on="on"
           @click="editClick()"
         >
-          <v-icon small> mdi-pencil-outline </v-icon>
-        </v-btn>
+          <VIcon small> mdi-pencil-outline </VIcon>
+        </VBtn>
       </template>
       <span>{{ editTooltip }}</span>
-    </v-tooltip>
-    <v-tooltip v-if="!noDelete" top>
+    </VTooltip>
+    <VTooltip v-if="!noDelete" top>
       <template #activator="{ on, attrs }">
-        <v-btn
+        <VBtn
           v-bind="attrs"
           icon
           :disabled="disabled || deleteDisabled"
@@ -62,11 +62,11 @@ const css = useCssModule();
           v-on="on"
           @click="deleteClick()"
         >
-          <v-icon small> mdi-delete-outline </v-icon>
-        </v-btn>
+          <VIcon small> mdi-delete-outline </VIcon>
+        </VBtn>
       </template>
       <span>{{ deleteTooltip }}</span>
-    </v-tooltip>
+    </VTooltip>
     <slot />
   </div>
 </template>

@@ -11,13 +11,13 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <settings-option
+  <SettingsOption
     #default="{ error, success, update }"
     setting="nftsInNetValue"
     frontend-setting
     @finished="fetchNetValue()"
   >
-    <v-switch
+    <VSwitch
       v-model="includeNfts"
       class="general-settings__fields__zero-base mb-4 mt-2"
       :label="t('general_settings.nft_setting.label.include_nfts')"
@@ -27,5 +27,5 @@ const { t } = useI18n();
       :error-messages="error"
       @change="update($event)"
     />
-  </settings-option>
+  </SettingsOption>
 </template>

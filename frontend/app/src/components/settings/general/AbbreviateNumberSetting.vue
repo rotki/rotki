@@ -12,12 +12,12 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <settings-option
+  <SettingsOption
     #default="{ error, success, update }"
     setting="abbreviateNumber"
     frontend-setting
   >
-    <v-switch
+    <VSwitch
       v-model="abbreviate"
       data-cy="frontend-settings__fields__abbreviate_number"
       :label="t('frontend_settings.label.abbreviate_number')"
@@ -28,5 +28,5 @@ const { t } = useI18n();
       :error-messages="error"
       @change="update($event)"
     />
-  </settings-option>
+  </SettingsOption>
 </template>

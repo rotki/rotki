@@ -3,18 +3,18 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <import-source source="shapeshift_trades">
+  <ImportSource source="shapeshift_trades">
     <template #upload-title>
-      <i18n tag="span" path="import_data.shapeshift.import">
+      <I18n tag="span" path="import_data.shapeshift.import">
         <strong>{{ t('import_data.shapeshift.import_trade') }}</strong>
-      </i18n>
+      </I18n>
     </template>
-    <i18n tag="span" path="import_data.note">
+    <I18n tag="span" path="import_data.note">
       <strong>{{ t('import_data.shapeshift.name') }}</strong>
-    </i18n>
+    </I18n>
     <ul>
       <li>{{ t('import_data.shapeshift.line_one') }}</li>
       <li>{{ t('import_data.shapeshift.line_two') }}</li>
     </ul>
-  </import-source>
+  </ImportSource>
 </template>

@@ -22,13 +22,10 @@ const css = useCssModule();
 
 <template>
   <div class="d-flex flex-grow-1">
-    <v-tooltip v-if="showTooltips" right>
+    <VTooltip v-if="showTooltips" right>
       <template #activator="{ on }">
-        <v-list-item-icon
-          :class="subMenu ? 'my-2 mr-2' : 'my-3 mr-3'"
-          v-on="on"
-        >
-          <v-img
+        <VListItemIcon :class="subMenu ? 'my-2 mr-2' : 'my-3 mr-3'" v-on="on">
+          <VImg
             v-if="image"
             contain
             width="24px"
@@ -39,18 +36,18 @@ const css = useCssModule();
               [css['image--inverted']]: dark
             }"
           />
-          <component
+          <Component
             :is="iconComponent"
             v-else-if="iconComponent"
             :active="active"
           />
-          <v-icon v-else>{{ icon }}</v-icon>
-        </v-list-item-icon>
+          <VIcon v-else>{{ icon }}</VIcon>
+        </VListItemIcon>
       </template>
       <span>{{ text }}</span>
-    </v-tooltip>
-    <v-list-item-icon v-else :class="subMenu ? 'my-2 mr-2' : 'my-3 mr-3'">
-      <v-img
+    </VTooltip>
+    <VListItemIcon v-else :class="subMenu ? 'my-2 mr-2' : 'my-3 mr-3'">
+      <VImg
         v-if="image"
         contain
         width="24px"
@@ -61,18 +58,18 @@ const css = useCssModule();
           [css['image--inverted']]: dark
         }"
       />
-      <component
+      <Component
         :is="iconComponent"
         v-else-if="iconComponent"
         :active="active"
       />
-      <v-icon v-else>{{ icon }}</v-icon>
-    </v-list-item-icon>
-    <v-list-item-content class="d-flex flex-grow-1 py-0">
-      <v-list-item-title :class="{ [css.small]: subMenu }">
+      <VIcon v-else>{{ icon }}</VIcon>
+    </VListItemIcon>
+    <VListItemContent class="d-flex flex-grow-1 py-0">
+      <VListItemTitle :class="{ [css.small]: subMenu }">
         {{ text }}
-      </v-list-item-title>
-    </v-list-item-content>
+      </VListItemTitle>
+    </VListItemContent>
   </div>
 </template>
 

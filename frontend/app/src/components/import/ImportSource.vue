@@ -150,8 +150,8 @@ const isRotkiCustomImport = computed(() => get(source).startsWith('rotki_'));
       <div class="mb-2">
         <slot name="upload-title" />
       </div>
-      <v-form :value="!v$.$invalid">
-        <file-upload
+      <VForm :value="!v$.$invalid">
+        <FileUpload
           :loading="loading"
           :uploaded="uploaded"
           :source="source"
@@ -159,7 +159,7 @@ const isRotkiCustomImport = computed(() => get(source).startsWith('rotki_'));
           @selected="upload($event)"
           @update:uploaded="uploaded = $event"
         />
-        <v-switch
+        <VSwitch
           v-if="!isRotkiCustomImport"
           :value="dateInputFormat !== null"
           @change="changeShouldCustomDateFormat()"
@@ -167,8 +167,8 @@ const isRotkiCustomImport = computed(() => get(source).startsWith('rotki_'));
           <template #label>
             {{ t('file_upload.date_input_format.switch_label') }}
           </template>
-        </v-switch>
-        <v-text-field
+        </VSwitch>
+        <VTextField
           v-if="dateInputFormat !== null"
           v-model="dateInputFormat"
           class="mt-2"
@@ -183,26 +183,26 @@ const isRotkiCustomImport = computed(() => get(source).startsWith('rotki_'));
           persistent-hint
         >
           <template #append>
-            <v-btn small icon @click="formatHelp = true">
-              <v-icon small> mdi-information </v-icon>
-            </v-btn>
+            <VBtn small icon @click="formatHelp = true">
+              <VIcon small> mdi-information </VIcon>
+            </VBtn>
           </template>
-        </v-text-field>
+        </VTextField>
 
         <div class="mt-4">
-          <v-row>
-            <v-col cols="12">
+          <VRow>
+            <VCol cols="12">
               <slot />
-            </v-col>
-          </v-row>
-          <v-row v-if="$slots.hint">
-            <v-col cols="12">
+            </VCol>
+          </VRow>
+          <VRow v-if="$slots.hint">
+            <VCol cols="12">
               <slot name="hint" />
-            </v-col>
-          </v-row>
+            </VCol>
+          </VRow>
         </div>
         <div class="mt-6">
-          <v-btn
+          <VBtn
             color="primary"
             depressed
             block
@@ -211,11 +211,11 @@ const isRotkiCustomImport = computed(() => get(source).startsWith('rotki_'));
             @click="uploadFile()"
           >
             {{ t('common.actions.import') }}
-          </v-btn>
+          </VBtn>
         </div>
-      </v-form>
+      </VForm>
     </div>
-    <date-format-help v-model="formatHelp" />
+    <DateFormatHelp v-model="formatHelp" />
   </div>
 </template>
 

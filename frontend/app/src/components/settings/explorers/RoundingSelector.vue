@@ -26,7 +26,7 @@ const selections = [
 </script>
 
 <template>
-  <v-select
+  <VSelect
     v-bind="rootAttrs"
     item-text="text"
     item-value="value"
@@ -36,19 +36,19 @@ const selections = [
     v-on="rootListeners"
   >
     <template #item="{ item, attrs, on }">
-      <v-list-item v-bind="attrs" v-on="on">
-        <v-list-item-content>
-          <v-list-item-title>
+      <VListItem v-bind="attrs" v-on="on">
+        <VListItemContent>
+          <VListItemTitle>
             {{ item.text }}
-          </v-list-item-title>
-          <v-list-item-subtitle>
+          </VListItemTitle>
+          <VListItemSubtitle>
             {{ item.description }}
-          </v-list-item-subtitle>
-        </v-list-item-content>
-      </v-list-item>
+          </VListItemSubtitle>
+        </VListItemContent>
+      </VListItem>
     </template>
     <template #append-outer>
       <slot />
     </template>
-  </v-select>
+  </VSelect>
 </template>

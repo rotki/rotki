@@ -91,9 +91,9 @@ const form = computed(
 </script>
 
 <template>
-  <card>
+  <Card>
     <div class="pa-1 pt-2">
-      <v-select
+      <VSelect
         v-model="selectedSource"
         :label="t('import_data.select_source.title')"
         outlined
@@ -104,8 +104,8 @@ const form = computed(
       >
         <template v-for="slotName in ['item', 'selection']" #[slotName]="data">
           <div v-if="data.item" :key="slotName" class="d-flex align-center">
-            <adaptive-wrapper>
-              <v-img
+            <AdaptiveWrapper>
+              <VImg
                 v-if="data.item.logo"
                 :src="data.item.logo"
                 :width="30"
@@ -115,22 +115,18 @@ const form = computed(
                 position="center left"
                 contain
               />
-              <v-icon
-                v-else-if="data.item.icon"
-                color="grey darken-2"
-                size="30"
-              >
+              <VIcon v-else-if="data.item.icon" color="grey darken-2" size="30">
                 {{ data.item.icon }}
-              </v-icon>
-            </adaptive-wrapper>
+              </VIcon>
+            </AdaptiveWrapper>
             <div class="pl-3">{{ data.item.name }}</div>
           </div>
         </template>
-      </v-select>
+      </VSelect>
 
       <div v-if="form" class="mt-8">
-        <component :is="form" />
+        <Component :is="form" />
       </div>
     </div>
-  </card>
+  </Card>
 </template>

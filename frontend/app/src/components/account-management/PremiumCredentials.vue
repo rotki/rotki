@@ -2,8 +2,6 @@
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
 
-const { t } = useI18n();
-
 const props = defineProps({
   loading: { required: true, type: Boolean },
   enabled: { required: true, type: Boolean },
@@ -18,6 +16,9 @@ const emit = defineEmits<{
   (e: 'update:sync-database', enabled: boolean): void;
   (e: 'update:valid', valid: boolean): void;
 }>();
+
+const { t } = useI18n();
+
 const { enabled, apiKey, apiSecret } = toRefs(props);
 
 const updateApiKey = (apiKey: string | null) => {
@@ -89,13 +90,13 @@ watch(v$, ({ $invalid }) => {
 <template>
   <div>
     <div v-if="enabled">
-      <v-switch
+      <VSwitch
         :label="t('premium_credentials.restore_synced_database')"
         :value="syncDatabase"
         @change="updateSyncDatabase($event)"
       />
 
-      <revealable-input
+      <RevealableInput
         outlined
         :value="apiKey"
         :disabled="loading"
@@ -105,7 +106,7 @@ watch(v$, ({ $invalid }) => {
         @input="updateApiKey($event)"
         @paste="onApiKeyPaste($event)"
       />
-      <revealable-input
+      <RevealableInput
         outlined
         :value="apiSecret"
         :disabled="loading"

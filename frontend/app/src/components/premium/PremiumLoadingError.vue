@@ -3,8 +3,8 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <v-card>
-    <v-alert color="error" icon="mdi-alert" outlined prominent>
+  <VCard>
+    <VAlert color="error" icon="mdi-alert" outlined prominent>
       <span class="font-weight-medium">
         {{ t('premium_loading_failed.title') }}
       </span>
@@ -13,6 +13,6 @@ const { t } = useI18n();
       </p>
       <p>{{ t('premium_loading_failed.try_again') }}</p>
       <p>{{ t('premium_loading_failed.open_issue') }}</p>
-    </v-alert>
-  </v-card>
+    </VAlert>
+  </VCard>
 </template>

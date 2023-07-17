@@ -17,7 +17,9 @@ export function bigNumberifyFromRef(
 }
 
 export const Zero = bigNumberify(0);
+
 export const One = bigNumberify(1);
+
 export const NoPrice = bigNumberify(-1);
 
 export const zeroBalance = (): Balance => ({

@@ -6,5 +6,5 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <router-view />
+  <RouterView />
 </template>

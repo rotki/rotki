@@ -39,17 +39,17 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <setting-category>
+  <SettingCategory>
     <template #title>{{ t('ledger_action_settings.title') }}</template>
     <template #subtitle>
       {{ t('ledger_action_settings.subtitle') }}
     </template>
-    <settings-option
+    <SettingsOption
       #default="{ error, success, update }"
       setting="taxableLedgerActions"
     >
-      <v-sheet outlined rounded>
-        <v-simple-table dense>
+      <VSheet outlined rounded>
+        <VSimpleTable dense>
           <thead>
             <tr>
               <th>{{ t('ledger_action_settings.header.ledger_action') }}</th>
@@ -60,7 +60,7 @@ const { t } = useI18n();
             <tr v-for="entry in ledgerActionsData" :key="entry.identifier">
               <td>{{ entry.label }}</td>
               <td>
-                <v-checkbox
+                <VCheckbox
                   v-model="taxable[entry.identifier]"
                   hide-details
                   class="my-2 pt-0"
@@ -69,9 +69,9 @@ const { t } = useI18n();
               </td>
             </tr>
           </tbody>
-        </v-simple-table>
-      </v-sheet>
-      <action-status-indicator class="mt-4" :status="{ error, success }" />
-    </settings-option>
-  </setting-category>
+        </VSimpleTable>
+      </VSheet>
+      <ActionStatusIndicator class="mt-4" :status="{ error, success }" />
+    </SettingsOption>
+  </SettingCategory>
 </template>

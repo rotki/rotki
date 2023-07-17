@@ -13,6 +13,7 @@ export const NonFungibleBalance = PriceInformation.merge(
     collectionName: z.string().nullable()
   })
 );
+
 export type NonFungibleBalance = z.infer<typeof NonFungibleBalance>;
 
 export interface NonFungibleBalanceWithLastPrice extends NonFungibleBalance {
@@ -22,6 +23,7 @@ export interface NonFungibleBalanceWithLastPrice extends NonFungibleBalance {
 const NonFungibleBalanceArray = z.array(NonFungibleBalance);
 
 export const NonFungibleBalances = z.record(NonFungibleBalanceArray);
+
 export type NonFungibleBalances = z.infer<typeof NonFungibleBalances>;
 
 export const NonFungibleBalancesCollectionResponse =

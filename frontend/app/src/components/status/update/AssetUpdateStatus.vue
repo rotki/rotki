@@ -30,17 +30,17 @@ const message = computed(() => {
 </script>
 
 <template>
-  <card flat>
+  <Card flat>
     <template #title>{{ title }}</template>
     <div class="my-6 text-body-1">
-      <v-row align="center">
-        <v-col cols="auto" class="mx-2">
-          <v-progress-circular color="primary" indeterminate class="mx-auto" />
-        </v-col>
-        <v-col>
+      <VRow align="center">
+        <VCol cols="auto" class="mx-2">
+          <VProgressCircular color="primary" indeterminate class="mx-auto" />
+        </VCol>
+        <VCol>
           {{ message }}
-        </v-col>
-      </v-row>
+        </VCol>
+      </VRow>
     </div>
-  </card>
+  </Card>
 </template>

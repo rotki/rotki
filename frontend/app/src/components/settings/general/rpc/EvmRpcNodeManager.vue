@@ -6,11 +6,11 @@ import {
   getPlaceholderNode
 } from '@/types/settings';
 
-const { t } = useI18n();
-
 const props = defineProps<{
   chain: Blockchain;
 }>();
+
+const { t } = useI18n();
 
 const { chain } = toRefs(props);
 
@@ -127,62 +127,62 @@ const css = useCssModule();
 
 <template>
   <div>
-    <v-card outlined>
-      <v-list max-height="300px" :class="css.list" three-line class="py-0">
+    <VCard outlined>
+      <VList max-height="300px" :class="css.list" three-line class="py-0">
         <template v-for="(item, index) in nodes">
-          <v-divider v-if="index !== 0" :key="index" />
-          <v-list-item
+          <VDivider v-if="index !== 0" :key="index" />
+          <VListItem
             :key="index + item.name"
             data-cy="ethereum-node"
             class="px-2"
           >
             <div class="mr-2 pa-4 text-center d-flex flex-column align-center">
               <div>
-                <v-tooltip v-if="!item.owned" top open-delay="400">
+                <VTooltip v-if="!item.owned" top open-delay="400">
                   <template #activator="{ on, attrs }">
-                    <v-icon v-bind="attrs" v-on="on"> mdi-earth </v-icon>
+                    <VIcon v-bind="attrs" v-on="on"> mdi-earth </VIcon>
                   </template>
                   <span>{{ t('evm_rpc_node_manager.public_node') }}</span>
-                </v-tooltip>
-                <v-tooltip v-else>
+                </VTooltip>
+                <VTooltip v-else>
                   <template #activator="{ on, attrs }">
-                    <v-icon v-bind="attrs" v-on="on">
+                    <VIcon v-bind="attrs" v-on="on">
                       mdi-account-network
-                    </v-icon>
+                    </VIcon>
                   </template>
                   <span>{{ t('evm_rpc_node_manager.private_node') }}</span>
-                </v-tooltip>
+                </VTooltip>
               </div>
 
               <div class="mt-2">
-                <v-tooltip v-if="isNodeConnected(item)" top open-delay="400">
+                <VTooltip v-if="isNodeConnected(item)" top open-delay="400">
                   <template #activator="{ on, attrs }">
-                    <v-icon v-bind="attrs" small color="green" v-on="on">
+                    <VIcon v-bind="attrs" small color="green" v-on="on">
                       mdi-wifi
-                    </v-icon>
+                    </VIcon>
                   </template>
                   <span>
                     {{ t('evm_rpc_node_manager.connected.true') }}
                   </span>
-                </v-tooltip>
-                <v-tooltip v-else top open-delay="400">
+                </VTooltip>
+                <VTooltip v-else top open-delay="400">
                   <template #activator="{ on, attrs }">
-                    <v-icon v-bind="attrs" small color="red" v-on="on">
+                    <VIcon v-bind="attrs" small color="red" v-on="on">
                       mdi-wifi-off
-                    </v-icon>
+                    </VIcon>
                   </template>
                   <span>
                     {{ t('evm_rpc_node_manager.connected.false') }}
                   </span>
-                </v-tooltip>
+                </VTooltip>
               </div>
             </div>
 
-            <v-list-item-content>
-              <v-list-item-title class="font-weight-medium">
+            <VListItemContent>
+              <VListItemTitle class="font-weight-medium">
                 {{ item.name }}
-              </v-list-item-title>
-              <v-list-item-subtitle>
+              </VListItemTitle>
+              <VListItemSubtitle>
                 <div v-if="!isEtherscan(item)">
                   {{ item.endpoint }}
                 </div>
@@ -201,49 +201,49 @@ const css = useCssModule();
                     {{ t('evm_rpc_node_manager.private_node_hint') }}
                   </span>
                 </div>
-              </v-list-item-subtitle>
-            </v-list-item-content>
-            <v-switch
+              </VListItemSubtitle>
+            </VListItemContent>
+            <VSwitch
               value=""
               :input-value="item.active"
               :disabled="isEtherscan(item)"
               @change="onActiveChange($event, item)"
             />
-            <v-list-item-action :class="css.centered">
-              <v-row align="center" justify="center">
-                <v-col>
-                  <row-actions
+            <VListItemAction :class="css.centered">
+              <VRow align="center" justify="center">
+                <VCol>
+                  <RowActions
                     :delete-tooltip="t('evm_rpc_node_manager.delete_tooltip')"
                     :delete-disabled="isEtherscan(item)"
                     :edit-tooltip="t('evm_rpc_node_manager.edit_tooltip')"
                     @edit-click="edit(item)"
                     @delete-click="showDeleteConfirmation(item)"
                   />
-                </v-col>
-              </v-row>
-            </v-list-item-action>
-          </v-list-item>
+                </VCol>
+              </VRow>
+            </VListItemAction>
+          </VListItem>
         </template>
-      </v-list>
+      </VList>
 
-      <evm-rpc-node-form-dialog
+      <EvmRpcNodeFormDialog
         v-model="selectedNode"
         :chain="chain"
         :edit-mode="editMode"
         :is-etherscan="editMode && isEtherscan(selectedNode)"
         @reset="resetForm()"
       />
-    </v-card>
+    </VCard>
 
     <div class="pt-8">
-      <v-btn
+      <VBtn
         depressed
         color="primary"
         data-cy="add-node"
         @click="setOpenDialog(true)"
       >
         {{ t('evm_rpc_node_manager.add_button') }}
-      </v-btn>
+      </VBtn>
     </div>
   </div>
 </template>

@@ -7,13 +7,13 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <setting-category>
+  <SettingCategory>
     <template #title>
       {{ t('frontend_settings.title') }}
     </template>
 
-    <animations-enabled-setting />
-    <scramble-data-setting />
+    <AnimationsEnabledSetting />
+    <ScrambleDataSetting />
 
     <div class="mt-8">
       <div class="d-flex align-center">
@@ -21,30 +21,30 @@ const { t } = useI18n();
           {{ t('frontend_settings.subtitle.alias_names') }}
         </div>
       </div>
-      <enable-ens-names-setting />
-      <address-name-priority-setting />
+      <EnableEnsNamesSetting />
+      <AddressNamePrioritySetting />
     </div>
 
-    <time-frame-setting />
+    <TimeFrameSetting />
 
     <div class="mt-8">
       <div class="text-h6">
         {{ t('frontend_settings.subtitle.graph_basis') }}
       </div>
-      <zero-based-graph-setting />
+      <ZeroBasedGraphSetting />
     </div>
 
     <div class="mt-8">
       <div class="text-h6">
         {{ t('frontend_settings.subtitle.show_graph_range_selector') }}
       </div>
-      <show-graph-range-selector-setting />
+      <ShowGraphRangeSelectorSetting />
     </div>
 
-    <refresh-setting />
-    <query-period-setting />
-    <explorers />
-    <theme-manager v-if="premium" class="mt-12" />
-    <theme-manager-lock v-else class="mt-12" />
-  </setting-category>
+    <RefreshSetting />
+    <QueryPeriodSetting />
+    <Explorers />
+    <ThemeManager v-if="premium" class="mt-12" />
+    <ThemeManagerLock v-else class="mt-12" />
+  </SettingCategory>
 </template>

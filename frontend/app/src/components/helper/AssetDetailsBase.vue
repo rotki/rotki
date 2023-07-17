@@ -49,7 +49,7 @@ const loading: ComputedRef<boolean> = computed(() =>
 </script>
 
 <template>
-  <list-item
+  <ListItem
     v-bind="rootAttrs"
     :class="opensDetails ? 'cursor-pointer' : null"
     :dense="dense"
@@ -59,7 +59,7 @@ const loading: ComputedRef<boolean> = computed(() =>
     @click="navigate()"
   >
     <template #icon>
-      <v-img
+      <VImg
         v-if="asset.imageUrl"
         contain
         height="26px"
@@ -67,7 +67,7 @@ const loading: ComputedRef<boolean> = computed(() =>
         max-width="26px"
         :src="asset.imageUrl"
       />
-      <asset-icon
+      <AssetIcon
         v-else
         :changeable="changeable"
         size="26px"
@@ -77,5 +77,5 @@ const loading: ComputedRef<boolean> = computed(() =>
         :show-chain="showChain"
       />
     </template>
-  </list-item>
+  </ListItem>
 </template>

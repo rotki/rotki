@@ -138,13 +138,13 @@ watch(identifier, assetId => {
 </script>
 
 <template>
-  <v-container>
-    <refresh-header
+  <VContainer>
+    <RefreshHeader
       :title="t('asset_management.custom.title')"
       :loading="loading"
       @refresh="refresh()"
     />
-    <custom-asset-table
+    <CustomAssetTable
       class="mt-12"
       :assets="state.data"
       :loading="loading"
@@ -160,10 +160,10 @@ watch(identifier, assetId => {
       @update:filters="setFilter($event)"
       @update:expanded="expanded = $event"
     />
-    <custom-asset-form-dialog
+    <CustomAssetFormDialog
       :title="dialogTitle"
       :types="types"
       :editable-item="editableItem"
     />
-  </v-container>
+  </VContainer>
 </template>

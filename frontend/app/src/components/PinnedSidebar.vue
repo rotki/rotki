@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { type ComputedRef } from 'vue';
-const ReportActionableCard = defineAsyncComponent(
-  () => import('@/components/profitloss/ReportActionableCard.vue')
-);
-
 defineProps({
   visible: { required: true, type: Boolean }
 });
 
 const emit = defineEmits<{ (e: 'visible:update', visible: boolean): void }>();
+
+const ReportActionableCard = defineAsyncComponent(
+  () => import('@/components/profitloss/ReportActionableCard.vue')
+);
 
 const visibleUpdate = (visible: boolean) => {
   emit('visible:update', visible);
@@ -26,7 +26,7 @@ const component: ComputedRef = computed(() => {
 </script>
 
 <template>
-  <v-navigation-drawer
+  <VNavigationDrawer
     class="pinned-sidebar"
     clipped
     width="520px"
@@ -37,13 +37,13 @@ const component: ComputedRef = computed(() => {
     @input="visibleUpdate($event)"
   >
     <div>
-      <component
+      <Component
         :is="component"
         v-if="pinned && component"
         v-bind="pinned.props"
       />
     </div>
-  </v-navigation-drawer>
+  </VNavigationDrawer>
 </template>
 
 <style scoped lang="scss">

@@ -5,6 +5,7 @@ import { type MissingAcquisition, type SelectedReport } from '@/types/reports';
 import { type LedgerAction } from '@/types/history/ledger-action/ledger-actions';
 
 type GroupedItems = Record<string, MissingAcquisition[]>;
+
 interface MappedGroupedItems {
   asset: string;
   startDate: number;
@@ -151,7 +152,7 @@ const isIgnored = (asset: string) => get(isAssetIgnored(asset));
 
 <template>
   <div>
-    <data-table
+    <DataTable
       ref="tableRef"
       class="table-inside-dialog"
       :class="{
@@ -168,40 +169,40 @@ const isIgnored = (asset: string) => get(isAssetIgnored(asset));
       :must-sort="false"
     >
       <template #item.asset="{ item }">
-        <asset-details :asset="item.asset" link />
+        <AssetDetails :asset="item.asset" link />
       </template>
       <template #item.startDate="{ item }">
-        <date-display :timestamp="item.startDate" />
+        <DateDisplay :timestamp="item.startDate" />
         <template v-if="item.startDate !== item.endDate">
           <span>
             {{ t('profit_loss_report.actionable.missing_acquisitions.to') }}
             <br />
           </span>
-          <date-display :timestamp="item.endDate" />
+          <DateDisplay :timestamp="item.endDate" />
         </template>
       </template>
       <template #item.total_missing_acquisition="{ item }">
         {{ item.acquisitions.length }}
       </template>
       <template #item.action="{ item }">
-        <v-menu offset-y>
+        <VMenu offset-y>
           <template #activator="{ on }">
-            <v-btn icon v-on="on">
-              <v-icon>mdi-dots-vertical</v-icon>
-            </v-btn>
+            <VBtn icon v-on="on">
+              <VIcon>mdi-dots-vertical</VIcon>
+            </VBtn>
           </template>
-          <v-list>
-            <v-list-item link @click="ignoreAsset(item.asset)">
-              <v-list-item-title>{{ t('assets.ignore') }}</v-list-item-title>
-            </v-list-item>
-          </v-list>
-        </v-menu>
+          <VList>
+            <VListItem link @click="ignoreAsset(item.asset)">
+              <VListItemTitle>{{ t('assets.ignore') }}</VListItemTitle>
+            </VListItem>
+          </VList>
+        </VMenu>
 
-        <v-tooltip v-if="isIgnored(item.asset)" bottom>
+        <VTooltip v-if="isIgnored(item.asset)" bottom>
           <template #activator="{ on }">
-            <badge-display class="ml-2" color="grey" v-on="on">
-              <v-icon small> mdi-eye-off </v-icon>
-            </badge-display>
+            <BadgeDisplay class="ml-2" color="grey" v-on="on">
+              <VIcon small> mdi-eye-off </VIcon>
+            </BadgeDisplay>
           </template>
           <span>
             {{
@@ -210,57 +211,57 @@ const isIgnored = (asset: string) => get(isAssetIgnored(asset));
               )
             }}
           </span>
-        </v-tooltip>
+        </VTooltip>
       </template>
       <template #item.expand="{ item }">
-        <row-expander
+        <RowExpander
           :expanded="expanded.includes(item)"
           @click="expanded = expanded.includes(item) ? [] : [item]"
         />
       </template>
       <template #expanded-item="{ item }">
-        <table-expand-container visible :colspan="headers.length">
-          <data-table
+        <TableExpandContainer visible :colspan="headers.length">
+          <DataTable
             :headers="childHeaders"
             :items="item.acquisitions"
             :container="tableContainer"
           >
             <template #item.time="{ item: childItem }">
-              <date-display :timestamp="childItem.time" />
+              <DateDisplay :timestamp="childItem.time" />
             </template>
             <template #item.foundAmount="{ item: childItem }">
-              <amount-display pnl :value="childItem.foundAmount" />
+              <AmountDisplay pnl :value="childItem.foundAmount" />
             </template>
             <template #item.missingAmount="{ item: childItem }">
-              <amount-display pnl :value="childItem.missingAmount" />
+              <AmountDisplay pnl :value="childItem.missingAmount" />
             </template>
             <template #item.action="{ item: childItem }">
-              <v-menu offset-y>
+              <VMenu offset-y>
                 <template #activator="{ on }">
-                  <v-btn icon v-on="on">
-                    <v-icon>mdi-dots-vertical</v-icon>
-                  </v-btn>
+                  <VBtn icon v-on="on">
+                    <VIcon>mdi-dots-vertical</VIcon>
+                  </VBtn>
                 </template>
-                <v-list>
-                  <v-list-item link @click="addLedgerAction(childItem)">
-                    <v-list-item-title>
+                <VList>
+                  <VListItem link @click="addLedgerAction(childItem)">
+                    <VListItemTitle>
                       {{
                         t(
                           'profit_loss_report.actionable.missing_acquisitions.add_ledger_action'
                         )
                       }}
-                    </v-list-item-title>
-                  </v-list-item>
-                </v-list>
-              </v-menu>
+                    </VListItemTitle>
+                  </VListItem>
+                </VList>
+              </VMenu>
             </template>
-          </data-table>
-        </table-expand-container>
+          </DataTable>
+        </TableExpandContainer>
       </template>
-    </data-table>
+    </DataTable>
     <slot name="actions" />
 
-    <ledger-action-form-dialog :editable-item="ledgerActionForm" />
+    <LedgerActionFormDialog :editable-item="ledgerActionForm" />
   </div>
 </template>
 

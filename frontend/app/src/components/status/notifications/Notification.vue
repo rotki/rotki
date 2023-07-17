@@ -70,7 +70,7 @@ const action = async (notification: NotificationData) => {
 </script>
 
 <template>
-  <v-card
+  <VCard
     :class="[
       css.notification,
       {
@@ -81,36 +81,36 @@ const action = async (notification: NotificationData) => {
     :outlined="!popup"
     :elevation="0"
   >
-    <v-list-item :class="css.body" class="flex-column align-stretch">
+    <VListItem :class="css.body" class="flex-column align-stretch">
       <div class="d-flex pa-1">
-        <v-list-item-avatar class="mr-3 ml-1 my-0" :color="color">
-          <v-icon size="24px" color="white">
+        <VListItemAvatar class="mr-3 ml-1 my-0" :color="color">
+          <VIcon size="24px" color="white">
             {{ icon }}
-          </v-icon>
-        </v-list-item-avatar>
-        <v-list-item-content class="py-0">
-          <v-list-item-title>
+          </VIcon>
+        </VListItemAvatar>
+        <VListItemContent class="py-0">
+          <VListItemTitle>
             {{ notification.title }}
-          </v-list-item-title>
-          <v-list-item-subtitle>
+          </VListItemTitle>
+          <VListItemSubtitle>
             {{ date }}
-          </v-list-item-subtitle>
-        </v-list-item-content>
-        <v-tooltip bottom open-delay="400" z-index="9999">
+          </VListItemSubtitle>
+        </VListItemContent>
+        <VTooltip bottom open-delay="400" z-index="9999">
           <template #activator="{ on }">
-            <v-btn text icon v-on="on" @click="dismiss(notification.id)">
-              <v-icon>mdi-close</v-icon>
-            </v-btn>
+            <VBtn text icon v-on="on" @click="dismiss(notification.id)">
+              <VIcon>mdi-close</VIcon>
+            </VBtn>
           </template>
           <span>{{ t('notification.dismiss_tooltip') }}</span>
-        </v-tooltip>
+        </VTooltip>
       </div>
       <div
         class="mt-1 px-2"
         :style="fontStyle"
         :class="[css.message, { [css.inline]: !popup }]"
       >
-        <missing-key-notification
+        <MissingKeyNotification
           v-if="notification.i18nParam"
           :params="notification.i18nParam"
         />
@@ -121,7 +121,7 @@ const action = async (notification: NotificationData) => {
       <slot />
       <div class="d-flex mt-auto align-center ml-n1">
         <div v-if="notification.action" class="d-flex align-start mr-2">
-          <v-btn
+          <VBtn
             color="primary"
             depressed
             small
@@ -130,21 +130,21 @@ const action = async (notification: NotificationData) => {
             @click="action(notification)"
           >
             {{ notification.action.label }}
-            <v-icon class="ml-1" small>mdi-arrow-right</v-icon>
-          </v-btn>
+            <VIcon class="ml-1" small>mdi-arrow-right</VIcon>
+          </VBtn>
         </div>
-        <v-tooltip bottom open-delay="400" z-index="9999">
+        <VTooltip bottom open-delay="400" z-index="9999">
           <template #activator="{ on }">
-            <v-btn color="primary" small plain text v-on="on" @click="copy()">
+            <VBtn color="primary" small plain text v-on="on" @click="copy()">
               {{ t('notification.copy') }}
-              <v-icon class="ml-1" x-small>mdi-content-copy</v-icon>
-            </v-btn>
+              <VIcon class="ml-1" x-small>mdi-content-copy</VIcon>
+            </VBtn>
           </template>
           <span> {{ t('notification.copy_tooltip') }}</span>
-        </v-tooltip>
+        </VTooltip>
       </div>
-    </v-list-item>
-  </v-card>
+    </VListItem>
+  </VCard>
 </template>
 
 <style module lang="scss">

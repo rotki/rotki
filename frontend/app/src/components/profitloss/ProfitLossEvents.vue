@@ -3,15 +3,6 @@ import { type DataTableHeader } from '@/types/vuetify';
 import { type ProfitLossEvents, type SelectedReport } from '@/types/reports';
 import { isTransactionEvent } from '@/utils/report';
 
-const { t } = useI18n();
-
-interface PaginationOptions {
-  page: number;
-  itemsPerPage: number;
-  sortBy: any[];
-  sortDesc: boolean[];
-}
-
 const props = withDefaults(
   defineProps<{
     report: SelectedReport;
@@ -30,6 +21,15 @@ const emit = defineEmits<{
     page: { reportId: number; offset: number; limit: number }
   ): void;
 }>();
+
+const { t } = useI18n();
+
+interface PaginationOptions {
+  page: number;
+  itemsPerPage: number;
+  sortBy: any[];
+  sortDesc: boolean[];
+}
 
 const { report } = toRefs(props);
 
@@ -166,9 +166,9 @@ const checkGroupLine = (entries: ProfitLossEvents, index: number) => {
 </script>
 
 <template>
-  <card outlined-body>
+  <Card outlined-body>
     <template #title>{{ t('common.events') }}</template>
-    <data-table
+    <DataTable
       :headers="tableHeaders"
       :items="items"
       single-expand
@@ -179,7 +179,7 @@ const checkGroupLine = (entries: ProfitLossEvents, index: number) => {
       sort-by="time"
     >
       <template #item.group="{ item }">
-        <v-tooltip v-if="item.groupId" right>
+        <VTooltip v-if="item.groupId" right>
           <template #activator="{ on, attrs }">
             <div v-bind="attrs" :class="$style['group']" v-on="on">
               <div
@@ -194,51 +194,51 @@ const checkGroupLine = (entries: ProfitLossEvents, index: number) => {
             </div>
           </template>
           <span>{{ t('profit_loss_events.same_action') }}</span>
-        </v-tooltip>
+        </VTooltip>
       </template>
       <template #item.type="{ item }">
-        <profit-loss-event-type :type="item.type" />
+        <ProfitLossEventType :type="item.type" />
       </template>
       <template #item.location="{ item }">
-        <location-display :identifier="item.location" />
+        <LocationDisplay :identifier="item.location" />
       </template>
       <template #item.time="{ item }">
-        <date-display :timestamp="item.timestamp" />
+        <DateDisplay :timestamp="item.timestamp" />
       </template>
       <template #item.free_amount="{ item }">
-        <v-row no-gutters align="center" class="flex-nowrap">
-          <v-col v-if="item.asset" cols="auto">
-            <asset-link icon :asset="item.asset" class="mr-2" link>
-              <asset-icon :identifier="item.asset" size="24px" />
-            </asset-link>
-          </v-col>
-          <v-col>
+        <VRow no-gutters align="center" class="flex-nowrap">
+          <VCol v-if="item.asset" cols="auto">
+            <AssetLink icon :asset="item.asset" class="mr-2" link>
+              <AssetIcon :identifier="item.asset" size="24px" />
+            </AssetLink>
+          </VCol>
+          <VCol>
             <div>
-              <amount-display
+              <AmountDisplay
                 force-currency
                 :value="item.freeAmount"
                 :asset="item.asset ? item.asset : ''"
               />
             </div>
-          </v-col>
-        </v-row>
+          </VCol>
+        </VRow>
       </template>
       <template #item.taxable_amount="{ item }">
-        <amount-display
+        <AmountDisplay
           force-currency
           :value="item.taxableAmount"
           :asset="item.asset ? item.asset : ''"
         />
       </template>
       <template #item.price="{ item }">
-        <amount-display
+        <AmountDisplay
           force-currency
           :value="item.price"
           :fiat-currency="report.settings.profitCurrency"
         />
       </template>
       <template #item.pnl_taxable="{ item }">
-        <amount-display
+        <AmountDisplay
           pnl
           force-currency
           :value="item.pnlTaxable"
@@ -246,7 +246,7 @@ const checkGroupLine = (entries: ProfitLossEvents, index: number) => {
         />
       </template>
       <template #item.pnl_free="{ item }">
-        <amount-display
+        <AmountDisplay
           pnl
           force-currency
           :value="item.pnlFree"
@@ -254,7 +254,7 @@ const checkGroupLine = (entries: ProfitLossEvents, index: number) => {
         />
       </template>
       <template v-if="showUpgradeMessage" #body.prepend="{ headers }">
-        <upgrade-row
+        <UpgradeRow
           events
           :total="report.totalActions"
           :limit="report.processedActions"
@@ -266,7 +266,7 @@ const checkGroupLine = (entries: ProfitLossEvents, index: number) => {
       </template>
       <template #item.notes="{ item }">
         <div class="py-4">
-          <history-event-note
+          <HistoryEventNote
             v-if="isTransactionEvent(item)"
             :notes="item.notes"
             :amount="
@@ -279,13 +279,13 @@ const checkGroupLine = (entries: ProfitLossEvents, index: number) => {
         </div>
       </template>
       <template #item.actions="{ item }">
-        <report-profit-loss-event-action
+        <ReportProfitLossEventAction
           :event="item"
           :currency="report.settings.profitCurrency"
         />
       </template>
       <template #expanded-item="{ headers, item }">
-        <cost-basis-table
+        <CostBasisTable
           v-if="item.costBasis"
           :show-group-line="item.groupLine.bottom"
           :currency="report.settings.profitCurrency"
@@ -293,8 +293,8 @@ const checkGroupLine = (entries: ProfitLossEvents, index: number) => {
           :cost-basis="item.costBasis"
         />
       </template>
-    </data-table>
-  </card>
+    </DataTable>
+  </Card>
 </template>
 
 <style module lang="scss">

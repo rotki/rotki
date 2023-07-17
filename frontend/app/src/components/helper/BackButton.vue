@@ -38,20 +38,20 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <v-tooltip v-if="canNavigateBack || page" open-delay="400" top>
+  <VTooltip v-if="canNavigateBack || page" open-delay="400" top>
     <template #activator="{ on, attrs }">
-      <v-btn
+      <VBtn
         icon
         class="back-button__button"
         v-bind="attrs"
         v-on="on"
         @click="goBack()"
       >
-        <v-icon>mdi-arrow-left</v-icon>
-      </v-btn>
+        <VIcon>mdi-arrow-left</VIcon>
+      </VBtn>
     </template>
     <span>{{ t('back_button.tooltip') }}</span>
-  </v-tooltip>
+  </VTooltip>
   <div v-else class="back-button__placeholder" />
 </template>
 

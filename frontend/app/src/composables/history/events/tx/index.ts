@@ -43,13 +43,10 @@ export const useHistoryTransactions = createSharedComposable(() => {
   } = useHistoryEventsApi();
 
   const { awaitTask, isTaskRunning } = useTaskStore();
-
   const { removeQueryStatus, resetQueryStatus } = useTxQueryStatusStore();
-
   const { txEvmChains, getEvmChainName, supportsTransactions } =
     useSupportedChains();
   const { accounts } = useAccountBalances();
-
   const { setStatus, resetStatus, fetchDisabled } = useStatusUpdater(
     Section.TX
   );
@@ -69,11 +66,11 @@ export const useHistoryTransactions = createSharedComposable(() => {
 
     const { taskId } = await fetchEvmTransactionsTask(defaults);
     const taskMeta = {
-      title: t('actions.transactions.task.title').toString(),
+      title: t('actions.transactions.task.title'),
       description: t('actions.transactions.task.description', {
         address: account.address,
         chain: account.evmChain
-      }).toString()
+      })
     };
 
     try {
@@ -88,12 +85,12 @@ export const useHistoryTransactions = createSharedComposable(() => {
         removeQueryStatus(account);
       } else {
         notify({
-          title: t('actions.transactions.error.title').toString(),
+          title: t('actions.transactions.error.title'),
           message: t('actions.transactions.error.description', {
             error: e,
             address: account.address,
             chain: toHumanReadable(account.evmChain)
-          }).toString(),
+          }),
           display: true
         });
       }
@@ -177,10 +174,10 @@ export const useHistoryTransactions = createSharedComposable(() => {
     });
 
     const taskMeta = {
-      title: t('actions.online_events.task.title').toString(),
+      title: t('actions.online_events.task.title'),
       description: t('actions.online_events.task.description', {
         queryType
-      }).toString(),
+      }),
       queryType
     };
 
@@ -189,11 +186,11 @@ export const useHistoryTransactions = createSharedComposable(() => {
     } catch (e: any) {
       logger.error(e);
       notify({
-        title: t('actions.online_events.error.title').toString(),
+        title: t('actions.online_events.error.title'),
         message: t('actions.online_events.error.description', {
           error: e,
           queryType
-        }).toString(),
+        }),
         display: true
       });
     }
@@ -209,7 +206,6 @@ export const useHistoryTransactions = createSharedComposable(() => {
     account: EvmChainAddress
   ) => {
     const taskType = TaskType.TX_EVENTS;
-
     const payload: AddressesAndEvmChainPayload = {
       evmChain: account.evmChain,
       addresses: [account.address]
@@ -225,7 +221,7 @@ export const useHistoryTransactions = createSharedComposable(() => {
       ]);
 
       const taskMeta = {
-        title: t('actions.transactions_redecode_missing.task.title').toString(),
+        title: t('actions.transactions_redecode_missing.task.title'),
         description: t(
           'actions.transactions_redecode_missing.task.description',
           account
@@ -238,9 +234,7 @@ export const useHistoryTransactions = createSharedComposable(() => {
     } catch (e) {
       logger.error(e);
       notify({
-        title: t(
-          'actions.transactions_redecode_missing.error.title'
-        ).toString(),
+        title: t('actions.transactions_redecode_missing.error.title'),
         message: t('actions.transactions_redecode_missing.error.description', {
           error: e,
           ...account
@@ -306,7 +300,6 @@ export const useHistoryTransactions = createSharedComposable(() => {
     ignoreCache = false
   ): Promise<void> => {
     const isFetchAll = transactions === null;
-
     let payloads: TransactionHashAndEvmChainPayload[] = [];
 
     if (isFetchAll) {
@@ -347,10 +340,8 @@ export const useHistoryTransactions = createSharedComposable(() => {
         ignoreCache
       });
       const taskMeta = {
-        title: t('actions.transactions_redecode.task.title').toString(),
-        description: t(
-          'actions.transactions_redecode.task.description'
-        ).toString()
+        title: t('actions.transactions_redecode.task.title'),
+        description: t('actions.transactions_redecode.task.description')
       };
 
       const { result } = await awaitTask<boolean, TaskMeta>(
@@ -366,7 +357,7 @@ export const useHistoryTransactions = createSharedComposable(() => {
     } catch (e: any) {
       logger.error(e);
       notify({
-        title: t('actions.transactions_redecode.error.title').toString(),
+        title: t('actions.transactions_redecode.error.title'),
         message: t('actions.transactions_redecode.error.description', {
           error: e
         }),

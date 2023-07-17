@@ -8,9 +8,9 @@ const show = () => {
 </script>
 
 <template>
-  <v-tooltip open-delay="400" top>
+  <VTooltip open-delay="400" top>
     <template #activator="{ on, attrs }">
-      <v-btn
+      <VBtn
         text
         fab
         depressed
@@ -19,9 +19,9 @@ const show = () => {
         @click="show()"
         v-on="on"
       >
-        <v-icon>mdi-information</v-icon>
-      </v-btn>
+        <VIcon>mdi-information</VIcon>
+      </VBtn>
     </template>
     <span>{{ t('account_management.about_tooltip') }}</span>
-  </v-tooltip>
+  </VTooltip>
 </template>

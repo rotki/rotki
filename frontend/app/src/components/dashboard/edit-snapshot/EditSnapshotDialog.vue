@@ -152,53 +152,53 @@ const updateAndComplete = (event: LocationDataSnapshot[]) => {
 </script>
 
 <template>
-  <v-dialog persistent :value="true" :max-width="1400">
-    <v-card elevation="0">
-      <v-toolbar dark color="primary">
-        <v-btn icon dark @click="close()">
-          <v-icon>mdi-close</v-icon>
-        </v-btn>
+  <VDialog persistent :value="true" :max-width="1400">
+    <VCard elevation="0">
+      <VToolbar dark color="primary">
+        <VBtn icon dark @click="close()">
+          <VIcon>mdi-close</VIcon>
+        </VBtn>
 
-        <v-toolbar-title class="pl-2">
-          <i18n path="dashboard.snapshot.edit.dialog.title">
+        <VToolbarTitle class="pl-2">
+          <I18n path="dashboard.snapshot.edit.dialog.title">
             <template #date>
-              <date-display :timestamp="timestamp" />
+              <DateDisplay :timestamp="timestamp" />
             </template>
-          </i18n>
-        </v-toolbar-title>
-      </v-toolbar>
+          </I18n>
+        </VToolbarTitle>
+      </VToolbar>
       <div v-if="snapshotData">
-        <v-stepper v-model="step" elevation="0">
-          <v-stepper-header :class="$style.raise">
-            <v-stepper-step :step="1">
+        <VStepper v-model="step" elevation="0">
+          <VStepperHeader :class="$style.raise">
+            <VStepperStep :step="1">
               {{ t('dashboard.snapshot.edit.dialog.balances.title') }}
-            </v-stepper-step>
-            <v-stepper-step :step="2">
+            </VStepperStep>
+            <VStepperStep :step="2">
               {{ t('dashboard.snapshot.edit.dialog.location_data.title') }}
-            </v-stepper-step>
-            <v-stepper-step :step="3">
+            </VStepperStep>
+            <VStepperStep :step="3">
               {{ t('common.total') }}
-            </v-stepper-step>
-          </v-stepper-header>
-          <v-stepper-items>
-            <v-stepper-content :step="1" class="pa-0">
-              <edit-balances-snapshot-table
+            </VStepperStep>
+          </VStepperHeader>
+          <VStepperItems>
+            <VStepperContent :step="1" class="pa-0">
+              <EditBalancesSnapshotTable
                 v-model="snapshotData"
                 :timestamp="timestamp"
                 @update:step="step = $event"
                 @input="save()"
               />
-            </v-stepper-content>
-            <v-stepper-content :step="2" class="pa-0">
-              <edit-location-data-snapshot-table
+            </VStepperContent>
+            <VStepperContent :step="2" class="pa-0">
+              <EditLocationDataSnapshotTable
                 :value="locationDataSnapshot"
                 :timestamp="timestamp"
                 @update:step="step = $event"
                 @input="updateAndSave($event)"
               />
-            </v-stepper-content>
-            <v-stepper-content :step="3" class="pa-0">
-              <edit-snapshot-total
+            </VStepperContent>
+            <VStepperContent :step="3" class="pa-0">
+              <EditSnapshotTotal
                 v-if="step === 3"
                 :value="locationDataSnapshot"
                 :balances-snapshot="balancesSnapshot"
@@ -206,23 +206,18 @@ const updateAndComplete = (event: LocationDataSnapshot[]) => {
                 @update:step="step = $event"
                 @input="updateAndComplete($event)"
               />
-            </v-stepper-content>
-          </v-stepper-items>
-        </v-stepper>
+            </VStepperContent>
+          </VStepperItems>
+        </VStepper>
       </div>
       <div v-else class="d-flex flex-column justify-center align-center py-6">
-        <v-progress-circular
-          size="50"
-          color="primary"
-          width="2"
-          indeterminate
-        />
+        <VProgressCircular size="50" color="primary" width="2" indeterminate />
         <div class="pt-6">
           {{ t('dashboard.snapshot.edit.dialog.fetch.loading') }}
         </div>
       </div>
-    </v-card>
-  </v-dialog>
+    </VCard>
+  </VDialog>
 </template>
 
 <style module lang="scss">

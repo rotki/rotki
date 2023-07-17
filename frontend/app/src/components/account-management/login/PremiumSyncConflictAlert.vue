@@ -1,7 +1,7 @@
 <script setup lang="ts">
-const { t } = useI18n();
-
 const emit = defineEmits<{ (e: 'proceed', approval: 'yes' | 'no'): void }>();
+
+const { t } = useI18n();
 
 const { syncConflict } = storeToRefs(useSessionAuthStore());
 
@@ -18,8 +18,8 @@ const lastModified = useRefMap(syncConflict, conflict => {
 </script>
 
 <template>
-  <transition name="bounce">
-    <login-action-alert
+  <Transition name="bounce">
+    <LoginActionAlert
       v-if="syncConflict"
       icon="mdi-cloud-download"
       @cancel="emit('proceed', 'no')"
@@ -30,21 +30,21 @@ const lastModified = useRefMap(syncConflict, conflict => {
       <div>{{ syncConflict.message }}</div>
       <ul v-if="lastModified" class="mt-2">
         <li>
-          <i18n path="login.sync_error.local_modified">
+          <I18n path="login.sync_error.local_modified">
             <div class="font-weight-medium">
-              <date-display :timestamp="lastModified.local" />
+              <DateDisplay :timestamp="lastModified.local" />
             </div>
-          </i18n>
+          </I18n>
         </li>
         <li class="mt-2">
-          <i18n path="login.sync_error.remote_modified">
+          <I18n path="login.sync_error.remote_modified">
             <div class="font-weight-medium">
-              <date-display :timestamp="lastModified.remote" />
+              <DateDisplay :timestamp="lastModified.remote" />
             </div>
-          </i18n>
+          </I18n>
         </li>
       </ul>
       <div class="mt-2">{{ t('login.sync_error.question') }}</div>
-    </login-action-alert>
-  </transition>
+    </LoginActionAlert>
+  </Transition>
 </template>

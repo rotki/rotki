@@ -20,7 +20,7 @@ const showTooltip = (item: HistoryEventsQueryData) => !!item.period;
 </script>
 
 <template>
-  <query-status-dialog
+  <QueryStatusDialog
     :get-key="getKey"
     :items="sortedQueryStatus"
     :show-tooltip="showTooltip"
@@ -30,19 +30,19 @@ const showTooltip = (item: HistoryEventsQueryData) => !!item.period;
     </template>
 
     <template #current>
-      <history-events-query-status-current
+      <HistoryEventsQueryStatusCurrent
         :locations="locations"
         class="px-6 pb-4 text-caption"
       />
     </template>
 
     <template #item="{ item }">
-      <location-icon icon no-padding :item="item.location" size="20px" />
-      <history-events-query-status-line :item="item" class="ms-2" />
+      <LocationIcon icon no-padding :item="item.location" size="20px" />
+      <HistoryEventsQueryStatusLine :item="item" class="ms-2" />
     </template>
 
     <template #tooltip="{ item }">
-      <i18n
+      <I18n
         :path="
           item.period[0] === 0
             ? 'transactions.query_status_events.latest_period_end_date'
@@ -50,12 +50,12 @@ const showTooltip = (item: HistoryEventsQueryData) => !!item.period;
         "
       >
         <template #start>
-          <date-display :timestamp="item.period[0]" />
+          <DateDisplay :timestamp="item.period[0]" />
         </template>
         <template #end>
-          <date-display :timestamp="item.period[1]" />
+          <DateDisplay :timestamp="item.period[1]" />
         </template>
-      </i18n>
+      </I18n>
     </template>
-  </query-status-dialog>
+  </QueryStatusDialog>
 </template>

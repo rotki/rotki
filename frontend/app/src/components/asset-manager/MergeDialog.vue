@@ -84,20 +84,20 @@ const v$ = useVuelidate(
 </script>
 
 <template>
-  <v-dialog :value="value" max-width="500" persistent @input="input($event)">
-    <card>
+  <VDialog :value="value" max-width="500" persistent @input="input($event)">
+    <Card>
       <template #title>{{ t('merge_dialog.title') }}</template>
       <template #subtitle>{{ t('merge_dialog.subtitle') }}</template>
       <template v-if="!done" #hint>{{ t('merge_dialog.hint') }}</template>
       <template #buttons>
-        <v-spacer />
-        <v-btn depressed @click="input(false)">
+        <VSpacer />
+        <VBtn depressed @click="input(false)">
           <span v-if="done">{{ t('common.actions.close') }}</span>
           <span v-else>
             {{ t('common.actions.cancel') }}
           </span>
-        </v-btn>
-        <v-btn
+        </VBtn>
+        <VBtn
           v-if="!done"
           depressed
           color="primary"
@@ -106,15 +106,15 @@ const v$ = useVuelidate(
           @click="merge()"
         >
           {{ t('merge_dialog.merge') }}
-        </v-btn>
+        </VBtn>
       </template>
 
       <div v-if="done">{{ t('merge_dialog.done') }}</div>
 
-      <v-form v-else :value="!v$.$invalid">
+      <VForm v-else :value="!v$.$invalid">
         <!-- We use `v-text-field` here instead `asset-select` -->
         <!-- because the source can be filled with unknown identifier -->
-        <v-text-field
+        <VTextField
           v-model="source"
           :label="t('merge_dialog.source.label')"
           :error-messages="toMessages(v$.source)"
@@ -125,12 +125,12 @@ const v$ = useVuelidate(
           @focus="clearErrors()"
           @blur="v$.source.$touch()"
         />
-        <v-row align="center" justify="center" class="my-4">
-          <v-col cols="auto">
-            <v-icon>mdi-arrow-down</v-icon>
-          </v-col>
-        </v-row>
-        <asset-select
+        <VRow align="center" justify="center" class="my-4">
+          <VCol cols="auto">
+            <VIcon>mdi-arrow-down</VIcon>
+          </VCol>
+        </VRow>
+        <AssetSelect
           v-model="target"
           outlined
           :error-messages="toMessages(v$.target)"
@@ -139,7 +139,7 @@ const v$ = useVuelidate(
           @focus="clearErrors()"
           @blur="v$.target.$touch()"
         />
-      </v-form>
-    </card>
-  </v-dialog>
+      </VForm>
+    </Card>
+  </VDialog>
 </template>

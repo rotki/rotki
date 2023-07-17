@@ -26,8 +26,8 @@ const loadingData = computed<boolean>(
 </script>
 
 <template>
-  <card v-if="loadingData || locationBreakdown.length > 0" outlined-body>
+  <Card v-if="loadingData || locationBreakdown.length > 0" outlined-body>
     <template #title> {{ t('common.assets') }} </template>
-    <asset-balances :loading="loadingData" :balances="locationBreakdown" />
-  </card>
+    <AssetBalances :loading="loadingData" :balances="locationBreakdown" />
+  </Card>
 </template>

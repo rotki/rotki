@@ -9,11 +9,11 @@ const click = () => emit('click');
 
 <template>
   <span>
-    <v-btn icon @click="click()">
-      <v-icon :class="{ icon: true, 'icon--expanded': expanded }">
+    <VBtn icon @click="click()">
+      <VIcon :class="{ icon: true, 'icon--expanded': expanded }">
         mdi-chevron-down
-      </v-icon>
-    </v-btn>
+      </VIcon>
+    </VBtn>
   </span>
 </template>
 

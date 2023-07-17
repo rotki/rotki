@@ -159,39 +159,39 @@ watch(identifier, async assetId => {
 </script>
 
 <template>
-  <v-container>
-    <refresh-header
+  <VContainer>
+    <RefreshHeader
       :title="t('asset_management.managed.title')"
       :loading="loading"
       @refresh="fetchData()"
     />
 
-    <v-row class="mt-2" justify="space-between">
-      <v-col cols="auto">
-        <v-tooltip open-delay="400" top>
+    <VRow class="mt-2" justify="space-between">
+      <VCol cols="auto">
+        <VTooltip open-delay="400" top>
           <template #activator="{ on, attrs }">
-            <v-btn
+            <VBtn
               outlined
               color="primary"
               v-bind="attrs"
               v-on="on"
               @click="mergeTool = true"
             >
-              <v-icon class="mr-2">mdi-merge</v-icon>
+              <VIcon class="mr-2">mdi-merge</VIcon>
               <span>{{ t('asset_management.merge_assets') }}</span>
-            </v-btn>
+            </VBtn>
           </template>
           <span>{{ t('asset_management.merge_assets_tooltip') }}</span>
-        </v-tooltip>
-      </v-col>
-      <v-col cols="auto">
-        <restore-asset-db-button dropdown />
-      </v-col>
-    </v-row>
+        </VTooltip>
+      </VCol>
+      <VCol cols="auto">
+        <RestoreAssetDbButton dropdown />
+      </VCol>
+    </VRow>
 
-    <merge-dialog v-model="mergeTool" />
+    <MergeDialog v-model="mergeTool" />
 
-    <managed-asset-table
+    <ManagedAssetTable
       class="mt-12"
       :tokens="assets.data"
       :loading="loading"
@@ -217,9 +217,9 @@ watch(identifier, async assetId => {
       @update:only-show-owned="showUserOwnedAssetsOnly = $event"
     />
 
-    <managed-asset-form-dialog
+    <ManagedAssetFormDialog
       :title="dialogTitle"
       :editable-item="editableItem"
     />
-  </v-container>
+  </VContainer>
 </template>

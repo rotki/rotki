@@ -73,8 +73,8 @@ const transformAssets = (assets: XswapAsset[]): AssetBalanceWithPrice[] =>
 </script>
 
 <template>
-  <table-expand-container visible :colspan="span" :padded="false">
-    <data-table
+  <TableExpandContainer visible :colspan="span" :padded="false">
+    <DataTable
       v-if="premium || !premiumOnly"
       hide-default-footer
       :headers="tableHeaders"
@@ -82,10 +82,10 @@ const transformAssets = (assets: XswapAsset[]): AssetBalanceWithPrice[] =>
       sort-by="usdValue"
     >
       <template #item.asset="{ item }">
-        <asset-details opens-details :asset="item.asset" />
+        <AssetDetails opens-details :asset="item.asset" />
       </template>
       <template #item.usdPrice="{ item }">
-        <amount-display
+        <AmountDisplay
           v-if="item.usdPrice && item.usdPrice.gte(0)"
           no-scramble
           show-currency="symbol"
@@ -97,10 +97,10 @@ const transformAssets = (assets: XswapAsset[]): AssetBalanceWithPrice[] =>
         <span v-else>-</span>
       </template>
       <template #item.amount="{ item }">
-        <amount-display :value="item.amount" />
+        <AmountDisplay :value="item.amount" />
       </template>
       <template #item.usdValue="{ item }">
-        <amount-display
+        <AmountDisplay
           show-currency="symbol"
           :amount="item.amount"
           :price-asset="item.asset"
@@ -109,16 +109,16 @@ const transformAssets = (assets: XswapAsset[]): AssetBalanceWithPrice[] =>
           :value="item.usdValue"
         />
       </template>
-    </data-table>
+    </DataTable>
     <div v-else class="d-flex align-center">
-      <v-avatar rounded :color="dark ? 'white' : 'grey lighten-3'">
-        <v-icon>mdi-lock</v-icon>
-      </v-avatar>
+      <VAvatar rounded :color="dark ? 'white' : 'grey lighten-3'">
+        <VIcon>mdi-lock</VIcon>
+      </VAvatar>
       <div class="ml-4">
-        <i18n tag="div" path="uniswap.assets_non_premium">
-          <base-external-link :text="t('uniswap.premium')" :href="premiumURL" />
-        </i18n>
+        <I18n tag="div" path="uniswap.assets_non_premium">
+          <BaseExternalLink :text="t('uniswap.premium')" :href="premiumURL" />
+        </I18n>
       </div>
     </div>
-  </table-expand-container>
+  </TableExpandContainer>
 </template>

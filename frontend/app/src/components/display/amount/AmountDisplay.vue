@@ -6,9 +6,6 @@ import { displayAmountFormatter } from '@/data/amount_formatter';
 import { CURRENCY_USD, type Currency, useCurrencies } from '@/types/currencies';
 import { type RoundingMode } from '@/types/frontend-settings';
 
-const CurrencyType = ['none', 'ticker', 'symbol', 'name'] as const;
-type ShownCurrency = (typeof CurrencyType)[number];
-
 const props = withDefaults(
   defineProps<{
     value: BigNumber;
@@ -51,6 +48,9 @@ const props = withDefaults(
     xl: false
   }
 );
+const CurrencyType = ['none', 'ticker', 'symbol', 'name'] as const;
+
+type ShownCurrency = (typeof CurrencyType)[number];
 
 const {
   amount,
@@ -310,7 +310,7 @@ const css = useCssModule();
 <template>
   <div class="d-inline-block">
     <div class="d-flex flex-row align-baseline">
-      <manual-price-indicator v-if="timestamp < 0" :price-asset="priceAsset" />
+      <ManualPriceIndicator v-if="timestamp < 0" :price-asset="priceAsset" />
       <span
         :class="{
           [css.blur]: !shouldShowAmount,
@@ -322,7 +322,7 @@ const css = useCssModule();
         data-cy="display-wrapper"
         @click="copy()"
       >
-        <v-skeleton-loader
+        <VSkeletonLoader
           :loading="loading || evaluating"
           min-width="60"
           max-width="70"
@@ -340,7 +340,7 @@ const css = useCssModule();
             v-if="shouldShowCurrency && currencyLocation === 'before'"
             class="mr-1"
           >
-            <amount-currency
+            <AmountCurrency
               :show-currency="shownCurrency"
               :currency="displayCurrency"
               :asset="asset"
@@ -348,7 +348,7 @@ const css = useCssModule();
             />
           </div>
           <div>
-            <copy-tooltip
+            <CopyTooltip
               :copied="copied"
               :value="renderedValue"
               :tooltip="tooltip"
@@ -358,7 +358,7 @@ const css = useCssModule();
             v-if="shouldShowCurrency && currencyLocation === 'after'"
             class="ml-1"
           >
-            <amount-currency
+            <AmountCurrency
               :asset-padding="assetPadding"
               :show-currency="shownCurrency"
               :currency="displayCurrency"
@@ -366,7 +366,7 @@ const css = useCssModule();
               :xl="xl"
             />
           </div>
-        </v-skeleton-loader>
+        </VSkeletonLoader>
       </span>
     </div>
   </div>

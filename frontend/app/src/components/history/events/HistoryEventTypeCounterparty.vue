@@ -18,35 +18,35 @@ const imagePath = '/assets/images/protocols/';
 
 <template>
   <div>
-    <v-badge v-if="counterparty || event.address" avatar overlap color="white">
+    <VBadge v-if="counterparty || event.address" avatar overlap color="white">
       <template #badge>
-        <v-tooltip top>
+        <VTooltip top>
           <template #activator="{ on }">
             <div v-on="on">
-              <v-avatar v-if="counterparty">
-                <v-icon v-if="counterparty.icon" :color="counterparty.color">
+              <VAvatar v-if="counterparty">
+                <VIcon v-if="counterparty.icon" :color="counterparty.color">
                   {{ counterparty.icon }}
-                </v-icon>
+                </VIcon>
 
-                <v-img
+                <VImg
                   v-else-if="counterparty.image"
                   :src="`${imagePath}${counterparty.image}`"
                   contain
                 />
 
-                <ens-avatar v-else :address="counterparty.label" />
-              </v-avatar>
-              <v-avatar v-else>
-                <ens-avatar :address="event?.address" />
-              </v-avatar>
+                <EnsAvatar v-else :address="counterparty.label" />
+              </VAvatar>
+              <VAvatar v-else>
+                <EnsAvatar :address="event?.address" />
+              </VAvatar>
             </div>
           </template>
           <div>{{ counterparty?.label || event?.address }}</div>
-        </v-tooltip>
+        </VTooltip>
       </template>
 
       <slot />
-    </v-badge>
+    </VBadge>
     <slot v-else />
   </div>
 </template>

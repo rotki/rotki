@@ -52,9 +52,9 @@ const { status, pending, showConfirmation } = useCacheClear<RefreshableCache>(
       </div>
     </div>
 
-    <v-row class="mb-0" align="center">
-      <v-col>
-        <v-autocomplete
+    <VRow class="mb-0" align="center">
+      <VCol>
+        <VAutocomplete
           v-model="source"
           outlined
           :label="t('data_management.refresh_cache.select_cache')"
@@ -64,12 +64,12 @@ const { status, pending, showConfirmation } = useCacheClear<RefreshableCache>(
           hide-details
           :disabled="pending"
         />
-      </v-col>
+      </VCol>
 
-      <v-col cols="auto">
-        <v-tooltip open-delay="400" top>
+      <VCol cols="auto">
+        <VTooltip open-delay="400" top>
           <template #activator="{ on, attrs }">
-            <v-btn
+            <VBtn
               v-bind="attrs"
               icon
               :disabled="!source || pending"
@@ -77,14 +77,14 @@ const { status, pending, showConfirmation } = useCacheClear<RefreshableCache>(
               v-on="on"
               @click="showConfirmation(source)"
             >
-              <v-icon>mdi-refresh</v-icon>
-            </v-btn>
+              <VIcon>mdi-refresh</VIcon>
+            </VBtn>
           </template>
           <span> {{ t('data_management.refresh_cache.tooltip') }} </span>
-        </v-tooltip>
-      </v-col>
-    </v-row>
+        </VTooltip>
+      </VCol>
+    </VRow>
 
-    <action-status-indicator v-if="status" :status="status" />
+    <ActionStatusIndicator v-if="status" :status="status" />
   </div>
 </template>

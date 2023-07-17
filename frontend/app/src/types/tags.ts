@@ -15,6 +15,7 @@ export const Tag = z.object({
   readOnly: z.boolean().default(false).optional(),
   icon: z.string().default('').optional()
 });
+
 export type Tag = z.infer<typeof Tag>;
 
 export enum ReadOnlyTag {
@@ -31,8 +32,11 @@ export const READ_ONLY_TAGS: Record<ReadOnlyTag, Tag> = {
     icon: './assets/images/protocols/loopring.svg'
   }
 };
+
 export const Tags = z.record(Tag);
+
 export type Tags = z.infer<typeof Tags>;
+
 export const defaultTag = (): Tag => ({
   name: '',
   description: '',

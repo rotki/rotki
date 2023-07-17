@@ -160,7 +160,7 @@ const highlightedTextClasses = 'text-subtitle-2 text--secondary';
           :key="item.index"
           :tabindex="index"
         >
-          <v-btn
+          <VBtn
             text
             color="primary"
             :class="{
@@ -170,20 +170,20 @@ const highlightedTextClasses = 'text-subtitle-2 text--secondary';
             @click="applyFilter(item)"
           >
             <span class="text-start fill-width">
-              <suggested-item :suggestion="item" />
+              <SuggestedItem :suggestion="item" />
             </span>
-          </v-btn>
+          </VBtn>
         </div>
       </div>
       <div v-else class="pb-0">
         <div class="text--secondary">
-          <i18n path="table_filter.no_suggestions">
+          <I18n path="table_filter.no_suggestions">
             <template #search>
               <span class="font-weight-medium">
                 {{ keywordSplited.key }}
               </span>
             </template>
-          </i18n>
+          </I18n>
         </div>
       </div>
 
@@ -217,9 +217,9 @@ const highlightedTextClasses = 'text-subtitle-2 text--secondary';
       >
         {{ t('table_filter.title') }}
       </div>
-      <v-divider class="my-2" />
+      <VDivider class="my-2" />
       <div :class="css.suggestions">
-        <filter-entry
+        <FilterEntry
           v-for="(matcher, index) in matchers"
           :key="matcher.key"
           :active="index === selectedSuggestion"
@@ -230,7 +230,7 @@ const highlightedTextClasses = 'text-subtitle-2 text--secondary';
       </div>
     </div>
     <div :class="highlightedTextClasses" class="font-weight-regular mt-2">
-      <v-divider class="my-2" />
+      <VDivider class="my-2" />
       <span>{{ t('table_filter.hint.description') }}</span>
       <span class="font-weight-medium">
         {{ t('table_filter.hint.example') }}

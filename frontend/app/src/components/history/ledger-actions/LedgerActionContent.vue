@@ -224,9 +224,9 @@ watch(loading, async (isLoading, wasLoading) => {
 </script>
 
 <template>
-  <fragment>
-    <card class="mt-8" outlined-body>
-      <v-btn
+  <Fragment>
+    <Card class="mt-8" outlined-body>
+      <VBtn
         v-if="!locationOverview"
         absolute
         fab
@@ -237,66 +237,66 @@ watch(loading, async (isLoading, wasLoading) => {
         data-cy="ledger-actions__add"
         @click="newLedgerAction()"
       >
-        <v-icon> mdi-plus </v-icon>
-      </v-btn>
+        <VIcon> mdi-plus </VIcon>
+      </VBtn>
       <template #title>
-        <refresh-button
+        <RefreshButton
           v-if="!locationOverview"
           :loading="loading"
           :tooltip="t('ledger_actions.refresh_tooltip')"
           @refresh="refreshLedgerActions(true)"
         />
-        <navigator-link :to="{ path: pageRoute }" :enabled="!!locationOverview">
+        <NavigatorLink :to="{ path: pageRoute }" :enabled="!!locationOverview">
           {{ t('ledger_actions.title') }}
-        </navigator-link>
+        </NavigatorLink>
       </template>
       <template #actions>
-        <v-row v-if="!locationOverview">
-          <v-col cols="12" md="6">
-            <v-row>
-              <v-col cols="auto">
-                <ignore-buttons
+        <VRow v-if="!locationOverview">
+          <VCol cols="12" md="6">
+            <VRow>
+              <VCol cols="auto">
+                <IgnoreButtons
                   :disabled="selected.length === 0 || loading"
                   @ignore="ignore($event)"
                 />
-              </v-col>
-              <v-col>
-                <v-btn
+              </VCol>
+              <VCol>
+                <VBtn
                   text
                   outlined
                   color="red"
                   :disabled="selected.length === 0"
                   @click="massDelete()"
                 >
-                  <v-icon> mdi-delete-outline </v-icon>
-                </v-btn>
-              </v-col>
-            </v-row>
+                  <VIcon> mdi-delete-outline </VIcon>
+                </VBtn>
+              </VCol>
+            </VRow>
             <div v-if="selected.length > 0" class="mt-2 ms-1">
               {{ t('ledger_actions.selected', { count: selected.length }) }}
-              <v-btn small text @click="selected = []">
+              <VBtn small text @click="selected = []">
                 {{ t('common.actions.clear_selection') }}
-              </v-btn>
+              </VBtn>
             </div>
-          </v-col>
-          <v-col cols="12" md="6">
+          </VCol>
+          <VCol cols="12" md="6">
             <div class="pb-md-8">
-              <table-filter
+              <TableFilter
                 :matches="filters"
                 :matchers="matchers"
                 :location="SavedFilterLocation.HISTORY_LEDGER_ACTIONS"
                 @update:matches="setFilter($event)"
               />
             </div>
-          </v-col>
-        </v-row>
+          </VCol>
+        </VRow>
       </template>
-      <collection-handler
+      <CollectionHandler
         :collection="ledgerActions"
         @set-page="setPage($event)"
       >
         <template #default="{ data, limit, total, showUpgradeRow, itemLength }">
-          <data-table
+          <DataTable
             v-model="selected"
             :expanded.sync="expanded"
             :headers="tableHeaders"
@@ -318,51 +318,51 @@ watch(loading, async (isLoading, wasLoading) => {
           >
             <template #item.ignoredInAccounting="{ item, isMobile }">
               <div v-if="item.ignoredInAccounting">
-                <badge-display v-if="isMobile" color="grey">
-                  <v-icon small> mdi-eye-off </v-icon>
+                <BadgeDisplay v-if="isMobile" color="grey">
+                  <VIcon small> mdi-eye-off </VIcon>
                   <span class="ml-2">
                     {{ t('common.ignored_in_accounting') }}
                   </span>
-                </badge-display>
-                <v-tooltip v-else bottom>
+                </BadgeDisplay>
+                <VTooltip v-else bottom>
                   <template #activator="{ on }">
-                    <badge-display color="grey" v-on="on">
-                      <v-icon small> mdi-eye-off </v-icon>
-                    </badge-display>
+                    <BadgeDisplay color="grey" v-on="on">
+                      <VIcon small> mdi-eye-off </VIcon>
+                    </BadgeDisplay>
                   </template>
                   <span>
                     {{ t('common.ignored_in_accounting') }}
                   </span>
-                </v-tooltip>
+                </VTooltip>
               </div>
             </template>
             <template #item.type="{ item }">
-              <event-type-display
+              <EventTypeDisplay
                 data-cy="ledger-action-type"
                 :event-type="item.actionType"
               />
             </template>
             <template #item.location="{ item }">
-              <location-display
+              <LocationDisplay
                 data-cy="ledger-action-location"
                 :identifier="item.location"
               />
             </template>
             <template #item.asset="{ item }">
-              <asset-details
+              <AssetDetails
                 data-cy="ledger-action-asset"
                 opens-details
                 :asset="item.asset"
               />
             </template>
             <template #item.amount="{ item }">
-              <amount-display :value="item.amount" />
+              <AmountDisplay :value="item.amount" />
             </template>
             <template #item.timestamp="{ item }">
-              <date-display :timestamp="item.timestamp" />
+              <DateDisplay :timestamp="item.timestamp" />
             </template>
             <template #item.actions="{ item }">
-              <row-actions
+              <RowActions
                 :disabled="loading"
                 :edit-tooltip="t('ledger_actions.edit_tooltip')"
                 :delete-tooltip="t('ledger_actions.delete_tooltip')"
@@ -371,24 +371,21 @@ watch(loading, async (isLoading, wasLoading) => {
               />
             </template>
             <template #expanded-item="{ headers, item }">
-              <ledger-action-details :span="headers.length" :item="item" />
+              <LedgerActionDetails :span="headers.length" :item="item" />
             </template>
             <template v-if="showUpgradeRow" #body.prepend="{ headers }">
-              <upgrade-row
+              <UpgradeRow
                 :limit="limit"
                 :total="total"
                 :colspan="headers.length"
                 :label="t('ledger_actions.label')"
               />
             </template>
-          </data-table>
+          </DataTable>
         </template>
-      </collection-handler>
-    </card>
+      </CollectionHandler>
+    </Card>
 
-    <ledger-action-form-dialog
-      :loading="loading"
-      :editable-item="editableItem"
-    />
-  </fragment>
+    <LedgerActionFormDialog :loading="loading" :editable-item="editableItem" />
+  </Fragment>
 </template>

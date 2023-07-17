@@ -11,14 +11,14 @@ onMounted(() => {
 </script>
 
 <template>
-  <settings-option
+  <SettingsOption
     #default="{ error, success, update }"
     setting="animationsEnabled"
     session-setting
     :transform="transform"
     :error-message="t('frontend_settings.validation.animations.error')"
   >
-    <v-switch
+    <VSwitch
       :value="!animationsEnabled"
       class="general-settings__fields__animation-enabled mt-0"
       :label="t('frontend_settings.label.animations')"
@@ -26,5 +26,5 @@ onMounted(() => {
       :error-messages="error"
       @change="update($event)"
     />
-  </settings-option>
+  </SettingsOption>
 </template>

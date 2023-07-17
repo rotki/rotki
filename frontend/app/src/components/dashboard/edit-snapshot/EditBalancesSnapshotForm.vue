@@ -100,9 +100,9 @@ const updateAsset = (asset: string) => {
 </script>
 
 <template>
-  <v-form :value="valid" class="pt-4">
+  <VForm :value="valid" class="pt-4">
     <div>
-      <balance-type-input
+      <BalanceTypeInput
         :value="form.category"
         outlined
         :label="t('common.category')"
@@ -115,18 +115,18 @@ const updateAsset = (asset: string) => {
         {{ t('common.asset') }}
       </div>
       <div>
-        <v-radio-group v-model="assetType" row class="mt-2" :disabled="edit">
-          <v-radio
+        <VRadioGroup v-model="assetType" row class="mt-2" :disabled="edit">
+          <VRadio
             :label="t('dashboard.snapshot.edit.dialog.balances.token')"
             value="token"
           />
-          <v-radio
+          <VRadio
             :label="t('dashboard.snapshot.edit.dialog.balances.nft')"
             value="nft"
           />
-        </v-radio-group>
+        </VRadioGroup>
       </div>
-      <asset-select
+      <AssetSelect
         v-if="assetType === 'token'"
         :value="form.assetIdentifier"
         outlined
@@ -138,7 +138,7 @@ const updateAsset = (asset: string) => {
         @input="updateForm({ assetIdentifier: $event })"
         @change="updateAsset($event)"
       />
-      <v-text-field
+      <VTextField
         v-if="assetType === 'nft'"
         :value="form.assetIdentifier"
         :label="t('common.asset')"
@@ -151,7 +151,7 @@ const updateAsset = (asset: string) => {
       />
     </div>
     <div class="mb-4">
-      <amount-input
+      <AmountInput
         :disabled="assetType === 'nft'"
         :value="form.amount"
         outlined
@@ -161,7 +161,7 @@ const updateAsset = (asset: string) => {
       />
     </div>
     <div class="mb-4">
-      <amount-input
+      <AmountInput
         :value="form.usdValue"
         outlined
         :label="
@@ -175,12 +175,12 @@ const updateAsset = (asset: string) => {
     </div>
 
     <div>
-      <edit-balances-snapshot-location-selector
+      <EditBalancesSnapshotLocationSelector
         :value="form.location"
         :locations="locations"
         :preview-location-balance="previewLocationBalance"
         @input="updateForm({ location: $event })"
       />
     </div>
-  </v-form>
+  </VForm>
 </template>

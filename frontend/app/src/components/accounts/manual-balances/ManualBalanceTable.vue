@@ -115,9 +115,9 @@ const showDeleteConfirmation = (id: number) => {
 </script>
 
 <template>
-  <card class="manual-balances" outlined-body :class="$style.table">
+  <Card class="manual-balances" outlined-body :class="$style.table">
     <template #title>
-      <refresh-button
+      <RefreshButton
         :loading="loading"
         :tooltip="t('manual_balances_table.refresh.tooltip')"
         @refresh="refresh()"
@@ -127,13 +127,13 @@ const showDeleteConfirmation = (id: number) => {
       </span>
     </template>
     <template #actions>
-      <v-row no-gutters justify="end">
-        <v-col cols="12" md="6" lg="4">
-          <tag-filter v-model="onlyTags" />
-        </v-col>
-      </v-row>
+      <VRow no-gutters justify="end">
+        <VCol cols="12" md="6" lg="4">
+          <TagFilter v-model="onlyTags" />
+        </VCol>
+      </VRow>
     </template>
-    <data-table
+    <DataTable
       :loading="loading"
       :headers="headers"
       :items="visibleBalances"
@@ -153,14 +153,14 @@ const showDeleteConfirmation = (id: number) => {
           {{ item.label }}
         </div>
         <div>
-          <tag-display :tags="item.tags" :small="true" />
+          <TagDisplay :tags="item.tags" :small="true" />
         </div>
       </template>
       <template #item.asset="{ item }">
-        <asset-details opens-details :asset="item.asset" />
+        <AssetDetails opens-details :asset="item.asset" />
       </template>
       <template #item.usdPrice="{ item }">
-        <amount-display
+        <AmountDisplay
           v-if="item.usdPrice && item.usdPrice.gte(0)"
           no-scramble
           show-currency="symbol"
@@ -170,17 +170,17 @@ const showDeleteConfirmation = (id: number) => {
           :value="item.usdPrice"
         />
         <div v-else class="d-flex justify-end">
-          <v-skeleton-loader width="70" type="text" />
+          <VSkeletonLoader width="70" type="text" />
         </div>
       </template>
       <template #item.amount="{ item }">
-        <amount-display
+        <AmountDisplay
           class="manual-balances-list__amount"
           :value="item.amount"
         />
       </template>
       <template #item.usdValue="{ item }">
-        <amount-display
+        <AmountDisplay
           show-currency="symbol"
           :amount="item.amount"
           :price-asset="item.asset"
@@ -190,14 +190,14 @@ const showDeleteConfirmation = (id: number) => {
         />
       </template>
       <template #item.location="{ item }">
-        <location-display
+        <LocationDisplay
           class="manual-balances-list__location"
           :identifier="item.location"
           :data-cy="`manual-balances__location__${item.location}`"
         />
       </template>
       <template #item.actions="{ item }">
-        <row-actions
+        <RowActions
           :edit-tooltip="t('manual_balances_table.edit_tooltip')"
           :delete-tooltip="t('manual_balances_table.delete_tooltip')"
           @edit-click="edit(item)"
@@ -205,22 +205,22 @@ const showDeleteConfirmation = (id: number) => {
         />
       </template>
       <template v-if="visibleBalances.length > 0" #body.append="{ isMobile }">
-        <row-append
+        <RowAppend
           label-colspan="5"
           :label="t('common.total')"
           :is-mobile="isMobile"
           :right-patch-colspan="1"
         >
-          <amount-display
+          <AmountDisplay
             show-currency="symbol"
             class="manual-balances-list__amount"
             :fiat-currency="currencySymbol"
             :value="total"
           />
-        </row-append>
+        </RowAppend>
       </template>
-    </data-table>
-  </card>
+    </DataTable>
+  </Card>
 </template>
 
 <style module lang="scss">

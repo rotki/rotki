@@ -40,63 +40,63 @@ const refresh = () => load(true);
 
 <template>
   <div>
-    <full-size-content v-if="!isKrakenConnected">
-      <v-row align="center" justify="center">
-        <v-col>
-          <v-row align="center" justify="center">
-            <v-col cols="auto">
+    <FullSizeContent v-if="!isKrakenConnected">
+      <VRow align="center" justify="center">
+        <VCol>
+          <VRow align="center" justify="center">
+            <VCol cols="auto">
               <span class="font-weight-bold text-h5">
                 {{ t('kraken_page.page.title') }}
               </span>
-            </v-col>
-          </v-row>
-          <v-row justify="center" class="mt-md-12 mt-4">
-            <v-col cols="auto" class="mx-4">
-              <internal-link :to="Routes.API_KEYS_EXCHANGES">
-                <v-img
+            </VCol>
+          </VRow>
+          <VRow justify="center" class="mt-md-12 mt-4">
+            <VCol cols="auto" class="mx-4">
+              <InternalLink :to="Routes.API_KEYS_EXCHANGES">
+                <VImg
                   width="64px"
                   contain
                   src="/assets/images/protocols/kraken.svg"
                 />
-              </internal-link>
-            </v-col>
-          </v-row>
+              </InternalLink>
+            </VCol>
+          </VRow>
 
-          <v-row class="mt-md-10 mt-2" justify="center">
-            <v-col cols="auto">
+          <VRow class="mt-md-10 mt-2" justify="center">
+            <VCol cols="auto">
               <div
                 class="font-weight-light text-h6"
                 :class="$style.description"
               >
-                <i18n path="kraken_page.page.description">
+                <I18n path="kraken_page.page.description">
                   <template #link>
-                    <internal-link :to="Routes.API_KEYS_EXCHANGES">
+                    <InternalLink :to="Routes.API_KEYS_EXCHANGES">
                       {{ t('kraken_page.page.api_key') }}
-                    </internal-link>
+                    </InternalLink>
                   </template>
-                </i18n>
+                </I18n>
               </div>
-            </v-col>
-          </v-row>
-        </v-col>
-      </v-row>
-    </full-size-content>
-    <progress-screen v-else-if="loading">
+            </VCol>
+          </VRow>
+        </VCol>
+      </VRow>
+    </FullSizeContent>
+    <ProgressScreen v-else-if="loading">
       <template #message>
         {{ t('kraken_page.loading') }}
       </template>
-    </progress-screen>
+    </ProgressScreen>
     <div v-else>
-      <v-row justify="end">
-        <v-col cols="auto">
-          <refresh-button
+      <VRow justify="end">
+        <VCol cols="auto">
+          <RefreshButton
             :tooltip="t('kraken_staking_events.refresh_tooltip')"
             :loading="refreshing"
             @refresh="refresh()"
           />
-        </v-col>
-      </v-row>
-      <kraken-staking />
+        </VCol>
+      </VRow>
+      <KrakenStaking />
     </div>
   </div>
 </template>

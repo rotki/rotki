@@ -32,31 +32,31 @@ const { t } = useI18n();
     <div class="text-subtitle-1">
       {{ t('rounding_settings.subtitle') }}
     </div>
-    <v-row class="mt-4" align="center">
-      <v-col cols="12" md="6">
-        <rounding-selector
+    <VRow class="mt-4" align="center">
+      <VCol cols="12" md="6">
+        <RoundingSelector
           :value="amountRoundingMode"
           :label="t('rounding_settings.amount_rounding')"
           :hint="t('rounding_settings.amount_rounding_hint')"
           @change="setAmountRoundingMode($event)"
         >
-          <amount-display class="ms-2" :value="numberExample" />
-        </rounding-selector>
-      </v-col>
-      <v-col cols="12" md="6">
-        <rounding-selector
+          <AmountDisplay class="ms-2" :value="numberExample" />
+        </RoundingSelector>
+      </VCol>
+      <VCol cols="12" md="6">
+        <RoundingSelector
           :value="valueRoundingMode"
           :label="t('rounding_settings.value_rounding')"
           :hint="t('rounding_settings.value_rounding_hint')"
           @change="setValueRoundingMode($event)"
         >
-          <amount-display
+          <AmountDisplay
             class="ms-2"
             :value="numberExample"
             fiat-currency="USD"
           />
-        </rounding-selector>
-      </v-col>
-    </v-row>
+        </RoundingSelector>
+      </VCol>
+    </VRow>
   </div>
 </template>

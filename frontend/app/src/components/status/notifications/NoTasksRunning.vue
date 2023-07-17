@@ -4,18 +4,18 @@ const css = useCssModule();
 </script>
 
 <template>
-  <card outlined :class="css.card">
-    <v-row no-gutters align="center">
-      <v-col cols="auto">
-        <v-icon color="success">mdi-check-circle</v-icon>
-      </v-col>
-      <v-col>
+  <Card outlined :class="css.card">
+    <VRow no-gutters align="center">
+      <VCol cols="auto">
+        <VIcon color="success">mdi-check-circle</VIcon>
+      </VCol>
+      <VCol>
         <div :class="css.title" class="text--primary">
           {{ t('no_task_running.description') }}
         </div>
-      </v-col>
-    </v-row>
-  </card>
+      </VCol>
+    </VRow>
+  </Card>
 </template>
 
 <style module lang="scss">

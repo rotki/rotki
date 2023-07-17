@@ -8,5 +8,5 @@ startPromise(setupBackend());
 </script>
 
 <template>
-  <router-view />
+  <RouterView />
 </template>

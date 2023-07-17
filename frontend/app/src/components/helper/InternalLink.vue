@@ -25,7 +25,7 @@ const rootAttrs = useAttrs();
 </script>
 
 <template>
-  <router-link
+  <RouterLink
     #default="{ href, navigate, isActive, isExactActive }"
     custom
     v-bind="props"
@@ -44,5 +44,5 @@ const rootAttrs = useAttrs();
     >
       <slot />
     </a>
-  </router-link>
+  </RouterLink>
 </template>

@@ -12,6 +12,7 @@ export enum EvmTokenKind {
 }
 
 export const EvmTokenKindEnum = z.nativeEnum(EvmTokenKind);
+
 export type EvmTokenKindEnum = z.infer<typeof EvmTokenKindEnum>;
 
 export const UnderlyingToken = z.object({

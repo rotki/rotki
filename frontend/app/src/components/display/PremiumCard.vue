@@ -8,11 +8,11 @@ defineProps({
 </script>
 
 <template>
-  <v-card>
-    <v-card-title>
+  <VCard>
+    <VCardTitle>
       {{ title }}
-      <v-spacer />
-      <premium-lock />
-    </v-card-title>
-  </v-card>
+      <VSpacer />
+      <PremiumLock />
+    </VCardTitle>
+  </VCard>
 </template>

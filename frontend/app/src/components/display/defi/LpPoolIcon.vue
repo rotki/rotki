@@ -53,14 +53,14 @@ const css = useCssModule();
 <template>
   <div class="d-flex">
     <div class="d-flex align-center">
-      <asset-icon
+      <AssetIcon
         circle
         :identifier="assets[0]"
         size="32px"
         padding="0"
         :show-chain="false"
       />
-      <asset-icon
+      <AssetIcon
         v-if="!multiple"
         circle
         :class="css['second-icon']"
@@ -74,13 +74,13 @@ const css = useCssModule();
       </div>
     </div>
     <div :class="css['lp-type-icon']">
-      <v-avatar
+      <VAvatar
         :size="20"
         color="grey lighten-4"
         :class="css['lp-type-icon-avatar']"
       >
-        <v-img :width="16" :height="16" :src="icon" />
-      </v-avatar>
+        <VImg :width="16" :height="16" :src="icon" />
+      </VAvatar>
     </div>
   </div>
 </template>

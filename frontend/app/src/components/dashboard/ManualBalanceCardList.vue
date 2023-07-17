@@ -17,31 +17,31 @@ const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 </script>
 
 <template>
-  <v-list-item
+  <VListItem
     :id="`${name}_box`"
     :ripple="false"
     :data-cy="`manual-balance-box__item__${name}`"
     class="manual-balance-box__item"
     to="/accounts-balances/manual-balances"
   >
-    <v-list-item-avatar tile class="manual-balance-box__icon">
-      <location-display :identifier="name" icon />
-    </v-list-item-avatar>
-    <v-list-item-content>
-      <v-list-item-title class="d-flex justify-space-between">
+    <VListItemAvatar tile class="manual-balance-box__icon">
+      <LocationDisplay :identifier="name" icon />
+    </VListItemAvatar>
+    <VListItemContent>
+      <VListItemTitle class="d-flex justify-space-between">
         <span>
           {{ toSentenceCase(name) }}
         </span>
         <span class="text-end">
-          <amount-display
+          <AmountDisplay
             show-currency="symbol"
             :fiat-currency="currencySymbol"
             :value="amount"
           />
         </span>
-      </v-list-item-title>
-    </v-list-item-content>
-  </v-list-item>
+      </VListItemTitle>
+    </VListItemContent>
+  </VListItem>
 </template>
 
 <style scoped lang="scss">

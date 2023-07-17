@@ -38,6 +38,7 @@ export const LiquityStakingDetail = z.object({
   balances: LiquityStakingDetailEntry.nullable(),
   proxies: LiquityStakingDetailProxyEntries.nullable()
 });
+
 export const LiquityStakingDetails = z.record(LiquityStakingDetail);
 
 export type LiquityStakingDetails = z.infer<typeof LiquityStakingDetails>;
@@ -60,6 +61,7 @@ export const LiquityPoolDetail = z.object({
   balances: LiquityPoolDetailEntry.nullable(),
   proxies: LiquityPoolDetailProxyEntries.nullable()
 });
+
 export const LiquityPoolDetails = z.record(LiquityPoolDetail);
 
 export type LiquityPoolDetails = z.infer<typeof LiquityPoolDetails>;

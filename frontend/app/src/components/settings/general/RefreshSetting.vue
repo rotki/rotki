@@ -53,9 +53,9 @@ onMounted(() => {
     <div class="text-h6">
       {{ t('frontend_settings.subtitle.refresh') }}
     </div>
-    <v-row class="mt-1">
-      <v-col class="grow">
-        <settings-option
+    <VRow class="mt-1">
+      <VCol class="grow">
+        <SettingsOption
           #default="{ error, success, update }"
           setting="refreshPeriod"
           frontend-setting
@@ -65,7 +65,7 @@ onMounted(() => {
           "
           @finished="resetRefreshPeriod()"
         >
-          <v-text-field
+          <VTextField
             v-model="refreshPeriod"
             outlined
             :disabled="!refreshEnabled"
@@ -81,10 +81,10 @@ onMounted(() => {
             "
             @change="callIfValid($event, update)"
           />
-        </settings-option>
-      </v-col>
-      <v-col class="shrink">
-        <settings-option
+        </SettingsOption>
+      </VCol>
+      <VCol class="shrink">
+        <SettingsOption
           #default="{ update }"
           setting="refreshPeriod"
           frontend-setting
@@ -94,14 +94,14 @@ onMounted(() => {
           "
           @finished="resetRefreshPeriod()"
         >
-          <v-switch
+          <VSwitch
             v-model="refreshEnabled"
             class="mt-3"
             :label="t('frontend_settings.label.refresh_enabled')"
             @change="update($event)"
           />
-        </settings-option>
-      </v-col>
-    </v-row>
+        </SettingsOption>
+      </VCol>
+    </VRow>
   </div>
 </template>

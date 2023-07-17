@@ -63,31 +63,31 @@ const randomize = () => {
 </script>
 
 <template>
-  <v-form ref="form" :value="!v$.$invalid">
-    <v-row>
-      <tag-icon class="tag-creator__preview" :tag="tag" />
-      <v-tooltip bottom>
+  <VForm ref="form" :value="!v$.$invalid">
+    <VRow>
+      <TagIcon class="tag-creator__preview" :tag="tag" />
+      <VTooltip bottom>
         <template #activator="{ on }">
-          <v-btn
+          <VBtn
             icon
             text
             class="tag-creator__random"
             v-on="on"
             @click="randomize()"
           >
-            <v-icon color="primary">mdi-refresh</v-icon>
-          </v-btn>
+            <VIcon color="primary">mdi-refresh</VIcon>
+          </VBtn>
         </template>
         <span>
           {{ t('tag_creator.refresh_tooltip') }}
         </span>
-      </v-tooltip>
-    </v-row>
-    <v-row no-gutters align="center" class="mt-4">
-      <v-col cols="12">
-        <v-row no-gutters>
-          <v-col cols="12">
-            <v-text-field
+      </VTooltip>
+    </VRow>
+    <VRow no-gutters align="center" class="mt-4">
+      <VCol cols="12">
+        <VRow no-gutters>
+          <VCol cols="12">
+            <VTextField
               outlined
               class="tag_creator__name"
               :label="t('common.name')"
@@ -96,29 +96,29 @@ const randomize = () => {
               :disabled="editMode"
               @input="changed({ name: $event })"
             />
-          </v-col>
-        </v-row>
-        <v-row no-gutters>
-          <v-col cols="12">
-            <v-text-field
+          </VCol>
+        </VRow>
+        <VRow no-gutters>
+          <VCol cols="12">
+            <VTextField
               outlined
               class="tag_creator__description"
               :value="tag.description"
               :label="t('common.description')"
               @input="changed({ description: $event })"
             />
-          </v-col>
-        </v-row>
-      </v-col>
-    </v-row>
-    <v-row align="center" justify="center" no-gutters>
-      <v-col md="6">
+          </VCol>
+        </VRow>
+      </VCol>
+    </VRow>
+    <VRow align="center" justify="center" no-gutters>
+      <VCol md="6">
         <div class="mb-3 text-h6 text-center">
           {{ t('tag_creator.labels.foreground') }}
         </div>
-        <v-row no-gutters>
-          <v-col cols="12" class="tag-creator__color-picker">
-            <v-color-picker
+        <VRow no-gutters>
+          <VCol cols="12" class="tag-creator__color-picker">
+            <VColorPicker
               flat
               class="tag-creator__color-picker__foreground"
               mode="hexa"
@@ -128,16 +128,16 @@ const randomize = () => {
                 changed({ foregroundColor: $event.hex.replace('#', '') })
               "
             />
-          </v-col>
-        </v-row>
-      </v-col>
-      <v-col md="6">
+          </VCol>
+        </VRow>
+      </VCol>
+      <VCol md="6">
         <div class="mb-3 text-h6 text-center">
           {{ t('tag_creator.labels.background') }}
         </div>
-        <v-row no-gutters>
-          <v-col cols="12" class="tag-creator__color-picker">
-            <v-color-picker
+        <VRow no-gutters>
+          <VCol cols="12" class="tag-creator__color-picker">
+            <VColorPicker
               class="tag-creator__color-picker__background"
               flat
               hide-mode-switch
@@ -147,13 +147,13 @@ const randomize = () => {
                 changed({ backgroundColor: $event.hex.replace('#', '') })
               "
             />
-          </v-col>
-        </v-row>
-      </v-col>
-    </v-row>
-    <v-row class="mb-2">
-      <v-col cols="12" class="d-flex justify-end">
-        <v-btn
+          </VCol>
+        </VRow>
+      </VCol>
+    </VRow>
+    <VRow class="mb-2">
+      <VCol cols="12" class="d-flex justify-end">
+        <VBtn
           v-if="editMode"
           class="mr-4"
           width="100"
@@ -161,8 +161,8 @@ const randomize = () => {
           @click="cancel()"
         >
           {{ t('common.actions.cancel') }}
-        </v-btn>
-        <v-btn
+        </VBtn>
+        <VBtn
           class="tag-creator__buttons__save"
           width="100"
           depressed
@@ -171,10 +171,10 @@ const randomize = () => {
           @click="save()"
         >
           {{ t('common.actions.save') }}
-        </v-btn>
-      </v-col>
-    </v-row>
-  </v-form>
+        </VBtn>
+      </VCol>
+    </VRow>
+  </VForm>
 </template>
 
 <style scoped lang="scss">

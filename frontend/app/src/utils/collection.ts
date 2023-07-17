@@ -85,7 +85,7 @@ export const setupEntryLimit = (
   };
 };
 
-export const defaultOptions = <T extends Object>(defaultSortBy?: {
+export const defaultOptions = <T extends NonNullable<unknown>>(defaultSortBy?: {
   key?: keyof T;
   ascending?: boolean[];
 }): TablePagination<T> => {

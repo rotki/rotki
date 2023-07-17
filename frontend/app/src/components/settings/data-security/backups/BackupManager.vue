@@ -213,23 +213,23 @@ const showMassDeleteConfirmation = () => {
 </script>
 
 <template>
-  <fragment>
-    <database-info-display
+  <Fragment>
+    <DatabaseInfoDisplay
       class="mt-8"
       :directory="directory"
       :global-db="globalDb"
       :user-db="userDb"
     />
-    <card outlined-body class="mt-8">
+    <Card outlined-body class="mt-8">
       <template #title>{{ t('backup_manager.title') }}</template>
       <template #details>
-        <refresh-button
+        <RefreshButton
           :loading="loading"
           :tooltip="t('database_manager.refresh_tooltip')"
           @refresh="loadInfo()"
         />
       </template>
-      <database-backups
+      <DatabaseBackups
         :loading="loading"
         :items="backups"
         :directory="directory"
@@ -238,7 +238,7 @@ const showMassDeleteConfirmation = () => {
         @remove="remove($event)"
       />
       <template #buttons>
-        <v-btn
+        <VBtn
           depressed
           color="primary"
           :disabled="saving"
@@ -246,16 +246,16 @@ const showMassDeleteConfirmation = () => {
           @click="backup()"
         >
           {{ t('backup_manager.backup_button') }}
-        </v-btn>
-        <v-btn
+        </VBtn>
+        <VBtn
           v-if="selected.length > 0"
           depressed
           color="error"
           @click="showMassDeleteConfirmation()"
         >
           {{ t('backup_manager.delete_selected') }}
-        </v-btn>
+        </VBtn>
       </template>
-    </card>
-  </fragment>
+    </Card>
+  </Fragment>
 </template>

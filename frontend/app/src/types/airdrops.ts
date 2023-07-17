@@ -2,20 +2,35 @@ import { NumericString } from '@rotki/common';
 import { z } from 'zod';
 
 export const AIRDROP_UNISWAP = 'uniswap';
+
 export const AIRDROP_1INCH = '1inch';
+
 export const AIRDROP_TORNADO = 'tornado';
+
 export const AIRDROP_CORNICHON = 'cornichon';
+
 export const AIRDROP_GRAIN = 'grain';
+
 export const AIRDROP_LIDO = 'lido';
+
 export const AIRDROP_FURUCOMBO = 'furucombo';
+
 export const AIRDROP_CURVE = 'curve';
+
 export const AIRDROP_POAP = 'poap';
+
 export const AIRDROP_CONVEX = 'convex';
+
 export const AIRDROP_FOX = 'fox';
+
 export const AIRDROP_ENS = 'ens';
+
 export const AIRDROP_PARASWAP = 'psp';
+
 export const AIRDROP_SADDLE = 'sdl';
+
 export const AIRDROP_COW_GNOSIS = 'cowGnosis';
+
 export const AIRDROP_COW_MAINNET = 'cowMainnet';
 
 const AIRDROPS = [

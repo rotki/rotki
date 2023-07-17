@@ -243,21 +243,21 @@ const cancel = () => {
 </script>
 
 <template>
-  <v-dialog
+  <VDialog
     :value="display"
     persistent
     max-width="650"
     class="watcher-dialog"
     @keydown.esc.stop="cancel()"
   >
-    <card>
+    <Card>
       <template #title> {{ title }} </template>
-      <v-row align="center" class="watcher-dialog__body">
-        <v-col cols="12">
+      <VRow align="center" class="watcher-dialog__body">
+        <VCol cols="12">
           {{ message }}
-        </v-col>
-        <v-col v-if="!preselectWatcherType" cols="12">
-          <v-select
+        </VCol>
+        <VCol v-if="!preselectWatcherType" cols="12">
+          <VSelect
             v-model="watcherType"
             :items="watcherTypes"
             :label="t('watcher_dialog.labels.type')"
@@ -265,26 +265,26 @@ const cancel = () => {
             outlined
             required
           />
-        </v-col>
-        <v-col v-if="loadedWatchers.length > 0" cols="12">
-          <v-row>
-            <v-col cols="5">
-              <v-divider />
-            </v-col>
-            <v-col class="pa-0 text-center" cols="2">
+        </VCol>
+        <VCol v-if="loadedWatchers.length > 0" cols="12">
+          <VRow>
+            <VCol cols="5">
+              <VDivider />
+            </VCol>
+            <VCol class="pa-0 text-center" cols="2">
               {{ t('watcher_dialog.edit') }}
-            </v-col>
-            <v-col cols="5">
-              <v-divider />
-            </v-col>
-          </v-row>
-          <v-row
+            </VCol>
+            <VCol cols="5">
+              <VDivider />
+            </VCol>
+          </VRow>
+          <VRow
             v-for="(watcher, key) in loadedWatchers"
             :key="key"
             align="center"
           >
-            <v-col cols="6">
-              <v-select
+            <VCol cols="6">
+              <VSelect
                 :filled="!existingWatchersEdit[watcher.identifier]"
                 :items="operations"
                 :label="t('watcher_dialog.labels.operation')"
@@ -296,9 +296,9 @@ const cancel = () => {
                 required
                 @input="loadedWatchers[key].args.op = $event"
               />
-            </v-col>
-            <v-col cols="4">
-              <v-text-field
+            </VCol>
+            <VCol cols="4">
+              <VTextField
                 :filled="!existingWatchersEdit[watcher.identifier]"
                 :label="watcherValueLabel"
                 :readonly="!existingWatchersEdit[watcher.identifier]"
@@ -309,34 +309,34 @@ const cancel = () => {
                 suffix="%"
                 @input="loadedWatchers[key].args.ratio = $event"
               />
-            </v-col>
-            <v-col class="d-flex align-center justify-space-between" cols="2">
-              <v-btn icon @click="editWatcher(loadedWatchers[key])">
-                <v-icon small>
+            </VCol>
+            <VCol class="d-flex align-center justify-space-between" cols="2">
+              <VBtn icon @click="editWatcher(loadedWatchers[key])">
+                <VIcon small>
                   {{ existingWatchersIcon(watcher.identifier) }}
-                </v-icon>
-              </v-btn>
-              <v-btn icon @click="deleteWatcher(watcher.identifier)">
-                <v-icon small> mdi-delete </v-icon>
-              </v-btn>
-            </v-col>
-          </v-row>
-        </v-col>
-        <v-col cols="12">
-          <v-row>
-            <v-col cols="5">
-              <v-divider />
-            </v-col>
-            <v-col class="pa-0 text-center justify-center" cols="2">
+                </VIcon>
+              </VBtn>
+              <VBtn icon @click="deleteWatcher(watcher.identifier)">
+                <VIcon small> mdi-delete </VIcon>
+              </VBtn>
+            </VCol>
+          </VRow>
+        </VCol>
+        <VCol cols="12">
+          <VRow>
+            <VCol cols="5">
+              <VDivider />
+            </VCol>
+            <VCol class="pa-0 text-center justify-center" cols="2">
               {{ t('watcher_dialog.add_watcher') }}
-            </v-col>
-            <v-col cols="5">
-              <v-divider />
-            </v-col>
-          </v-row>
-          <v-row align="center">
-            <v-col cols="6">
-              <v-select
+            </VCol>
+            <VCol cols="5">
+              <VDivider />
+            </VCol>
+          </VRow>
+          <VRow align="center">
+            <VCol cols="6">
+              <VSelect
                 v-model="watcherOperation"
                 :disabled="!watcherType"
                 :items="operations"
@@ -346,9 +346,9 @@ const cancel = () => {
                 outlined
                 required
               />
-            </v-col>
-            <v-col cols="5">
-              <v-text-field
+            </VCol>
+            <VCol cols="5">
+              <VTextField
                 v-model="watcherValue"
                 :label="watcherValueLabel"
                 dense
@@ -356,19 +356,19 @@ const cancel = () => {
                 outlined
                 suffix="%"
               />
-            </v-col>
-            <v-col class="d-flex align-center justify-center" cols="1">
-              <v-btn
+            </VCol>
+            <VCol class="d-flex align-center justify-center" cols="1">
+              <VBtn
                 :disabled="watcherOperation === null || watcherValue === null"
                 icon
                 @click="addWatcher()"
               >
-                <v-icon> mdi-plus </v-icon>
-              </v-btn>
-            </v-col>
-          </v-row>
-        </v-col>
-      </v-row>
+                <VIcon> mdi-plus </VIcon>
+              </VBtn>
+            </VCol>
+          </VRow>
+        </VCol>
+      </VRow>
       <template #buttons>
         <div class="watcher-dialog__actions">
           <div
@@ -376,18 +376,18 @@ const cancel = () => {
           >
             {{ validationMessage }}
           </div>
-          <v-btn
+          <VBtn
             depressed
             color="primary"
             class="watcher-dialog__buttons__close"
             @click="cancel()"
           >
             {{ t('common.actions.close') }}
-          </v-btn>
+          </VBtn>
         </div>
       </template>
-    </card>
-  </v-dialog>
+    </Card>
+  </VDialog>
 </template>
 
 <style lang="scss" scoped>

@@ -26,6 +26,7 @@ export const EvmTransaction = z.object({
   inputData: z.string(),
   nonce: z.number()
 });
+
 export type EvmTransaction = z.infer<typeof EvmTransaction>;
 
 export interface TransactionRequestPayload
@@ -96,11 +97,13 @@ export const EvmHistoryEvent = CommonHistoryEvent.extend({
   product: z.string().nullable(),
   txHash: z.string()
 });
+
 export type EvmHistoryEvent = z.infer<typeof EvmHistoryEvent>;
 
 export const OnlineHistoryEvent = CommonHistoryEvent.extend({
   entryType: z.literal(HistoryEventEntryType.HISTORY_EVENT)
 });
+
 export type OnlineHistoryEvent = z.infer<typeof OnlineHistoryEvent>;
 
 export const EthWithdrawalEvent = CommonHistoryEvent.extend({
@@ -108,6 +111,7 @@ export const EthWithdrawalEvent = CommonHistoryEvent.extend({
   isExit: z.boolean(),
   validatorIndex: z.number()
 });
+
 export type EthWithdrawalEvent = z.infer<typeof EthWithdrawalEvent>;
 
 export const EthBlockEvent = CommonHistoryEvent.extend({
@@ -115,6 +119,7 @@ export const EthBlockEvent = CommonHistoryEvent.extend({
   blockNumber: z.number(),
   validatorIndex: z.number()
 });
+
 export type EthBlockEvent = z.infer<typeof EthBlockEvent>;
 
 export const EthDepositEvent = CommonHistoryEvent.extend({
@@ -125,6 +130,7 @@ export const EthDepositEvent = CommonHistoryEvent.extend({
   txHash: z.string(),
   validatorIndex: z.number()
 });
+
 export type EthDepositEvent = z.infer<typeof EthDepositEvent>;
 
 export const HistoryEvent = EvmHistoryEvent.or(OnlineHistoryEvent)

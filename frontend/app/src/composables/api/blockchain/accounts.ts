@@ -4,7 +4,7 @@ import {
   type Eth2ValidatorEntry,
   Eth2Validators
 } from '@rotki/common/lib/staking/eth2';
-import { onlyIfTruthy } from '@rotki/common';
+import { type Nullable, onlyIfTruthy } from '@rotki/common';
 import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import {
@@ -119,7 +119,14 @@ export const useBlockchainAccountsApi = () => {
       : `/blockchains/${payload.blockchain}/accounts`;
     const { label, tags } = payload;
 
-    let data: {};
+    let data:
+      | { accounts: GeneralAccountData[] }
+      | {
+          xpub: string;
+          derivationPath?: string;
+          label: Nullable<string>;
+          tags: Nullable<string[]>;
+        };
     if (payload.xpub) {
       const { derivationPath, xpub } = payload.xpub;
       data = {

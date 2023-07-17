@@ -121,7 +121,7 @@ const fallbackData = computed(() => {
   <div>
     <div class="d-flex align-center overflow-hidden">
       <div class="cursor-pointer">
-        <v-tooltip
+        <VTooltip
           top
           :disabled="renderImage"
           max-width="200"
@@ -143,7 +143,7 @@ const fallbackData = computed(() => {
                   height="100%"
                   :src="imageUrl"
                 />
-                <v-img
+                <VImg
                   v-else
                   :src="imageUrl"
                   width="100%"
@@ -160,13 +160,13 @@ const fallbackData = computed(() => {
             {{ t('nft_gallery.allow_domain') }}
             <span class="font-weight-bold warning--text">{{ domain }}</span>
           </span>
-        </v-tooltip>
+        </VTooltip>
       </div>
 
       <div class="ml-5 overflow-hidden flex-fill">
         <template v-if="isNftDetailLoading">
-          <v-skeleton-loader class="mt-1" width="120" type="text" />
-          <v-skeleton-loader class="mt-1" width="80" type="text" />
+          <VSkeletonLoader class="mt-1" width="120" type="text" />
+          <VSkeletonLoader class="mt-1" width="80" type="text" />
         </template>
         <div v-else-if="name" :class="css['nft-details']">
           <div class="font-weight-medium" :class="css['nft-details__entry']">
@@ -184,7 +184,7 @@ const fallbackData = computed(() => {
           <div class="d-flex">
             <div>{{ t('nft_balance_table.contract_address') }}:</div>
             <div class="pl-1 font-weight-medium">
-              <hash-link :text="fallbackData.address" />
+              <HashLink :text="fallbackData.address" />
             </div>
           </div>
           <div class="d-flex">

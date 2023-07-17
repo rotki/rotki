@@ -28,14 +28,14 @@ const { xl } = useDisplay();
 
 <template>
   <div>
-    <i18n :path="translationKey" tag="span" class="d-flex align-center">
+    <I18n :path="translationKey" tag="span" class="d-flex align-center">
       <template #location>
         {{ toSentenceCase(event.location) }}
       </template>
 
       <template #blockNumber>
         <span v-if="blockEvent" :class="css.address" class="d-inline-flex">
-          <hash-link
+          <HashLink
             :class="css['address__content']"
             :text="blockEvent.blockNumber.toString()"
             :show-icon="false"
@@ -46,7 +46,7 @@ const { xl } = useDisplay();
 
       <template #validatorIndex>
         <span v-if="withdrawEvent" :class="css.address">
-          <hash-link
+          <HashLink
             :class="css['address__content']"
             :text="withdrawEvent.validatorIndex.toString()"
             :show-icon="false"
@@ -58,7 +58,7 @@ const { xl } = useDisplay();
 
       <template #txHash>
         <span v-if="evmOrDepositEvent" :class="css.address">
-          <hash-link
+          <HashLink
             :class="css['address__content']"
             :text="evmOrDepositEvent.txHash"
             :show-icon="false"
@@ -69,7 +69,7 @@ const { xl } = useDisplay();
           />
         </span>
       </template>
-    </i18n>
+    </I18n>
   </div>
 </template>
 

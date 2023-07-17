@@ -34,7 +34,7 @@ module.exports = {
     '@intlify/vue-i18n/no-raw-text': [
       process.env.NODE_ENV === 'development' ? 'warn' : 'error',
       {
-        ignoreNodes: ['md-icon', 'v-icon'],
+        ignoreNodes: ['md-icon', 'v-icon', 'vicon'],
         ignorePattern: '^[-#:()&/+=!]+$',
         ignoreText: ['EUR', 'HKD', 'USD']
       }

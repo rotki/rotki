@@ -13,6 +13,12 @@ import {
   type AddressBookLocation
 } from '@/types/eth-names';
 
+const props = withDefaults(defineProps<Props>(), {
+  search: ''
+});
+const emit = defineEmits<{
+  (e: 'edit', item: AddressBookEntry): void;
+}>();
 const { t } = useI18n();
 const addressBookDeletion = (location: Ref<AddressBookLocation>) => {
   const { show } = useConfirmStore();
@@ -64,14 +70,6 @@ interface Props {
   blockchain: Blockchain;
   search?: string;
 }
-
-const props = withDefaults(defineProps<Props>(), {
-  search: ''
-});
-
-const emit = defineEmits<{
-  (e: 'edit', item: AddressBookEntry): void;
-}>();
 
 const { location, search, blockchain } = toRefs(props);
 const loading = ref<boolean>(false);
@@ -129,13 +127,9 @@ const { showDeleteConfirmation } = addressBookDeletion(location);
 
 <template>
   <div>
-    <data-table
-      :items="filteredData"
-      :headers="tableHeaders"
-      :loading="loading"
-    >
+    <DataTable :items="filteredData" :headers="tableHeaders" :loading="loading">
       <template #item.address="{ item }">
-        <account-display
+        <AccountDisplay
           :account="{
             address: item.address,
             chain: item.blockchain
@@ -145,7 +139,7 @@ const { showDeleteConfirmation } = addressBookDeletion(location);
         />
       </template>
       <template #item.actions="{ item }">
-        <row-actions
+        <RowActions
           :disabled="loading"
           :delete-tooltip="t('address_book.actions.delete.tooltip')"
           :edit-tooltip="t('address_book.actions.edit.tooltip')"
@@ -153,6 +147,6 @@ const { showDeleteConfirmation } = addressBookDeletion(location);
           @edit-click="edit(item)"
         />
       </template>
-    </data-table>
+    </DataTable>
   </div>
 </template>

@@ -90,61 +90,61 @@ const regenerateReport = async () => {
 </script>
 
 <template>
-  <progress-screen v-if="loading">
+  <ProgressScreen v-if="loading">
     {{ t('profit_loss_report.loading') }}
-  </progress-screen>
-  <v-container v-else>
-    <report-header :period="report" />
-    <card v-if="showUpgradeMessage" class="mt-4 mb-8">
-      <i18n tag="div" path="profit_loss_report.upgrade" class="text-subtitle-1">
+  </ProgressScreen>
+  <VContainer v-else>
+    <ReportHeader :period="report" />
+    <Card v-if="showUpgradeMessage" class="mt-4 mb-8">
+      <I18n tag="div" path="profit_loss_report.upgrade" class="text-subtitle-1">
         <template #processed>
           <span class="font-weight-medium">{{ report.entriesFound }}</span>
         </template>
         <template #start>
-          <date-display
+          <DateDisplay
             :timestamp="report.firstProcessedTimestamp"
             class="font-weight-medium"
           />
         </template>
-      </i18n>
-      <i18n tag="div" path="profit_loss_report.upgrade2">
+      </I18n>
+      <I18n tag="div" path="profit_loss_report.upgrade2">
         <template #link>
-          <base-external-link
+          <BaseExternalLink
             :text="t('upgrade_row.rotki_premium')"
             :href="premiumURL"
           />
         </template>
-      </i18n>
-    </card>
-    <accounting-settings-display
+      </I18n>
+    </Card>
+    <AccountingSettingsDisplay
       :accounting-settings="settings"
       class="mt-4 mb-8"
     />
     <div class="d-flex">
       <template v-if="latest">
-        <export-report-csv class="mr-2" />
-        <report-actionable
+        <ExportReportCsv class="mr-2" />
+        <ReportActionable
           :report="selectedReport"
           :initial-open="initialOpenReportActionable"
           @regenerate="regenerateReport()"
         />
       </template>
-      <v-btn class="ml-2" color="primary" text @click="regenerateReport()">
-        <v-icon class="mr-2">mdi-refresh</v-icon>
+      <VBtn class="ml-2" color="primary" text @click="regenerateReport()">
+        <VIcon class="mr-2">mdi-refresh</VIcon>
         {{ t('profit_loss_report.actionable.actions.regenerate_report') }}
-      </v-btn>
+      </VBtn>
     </div>
-    <profit-loss-overview
+    <ProfitLossOverview
       class="mt-8"
       :report="selectedReport"
       :symbol="settings.profitCurrency"
       :loading="loading"
     />
-    <profit-loss-events
+    <ProfitLossEvents
       class="mt-8"
       :report="selectedReport"
       :refreshing="refreshing"
       @update:page="onPage($event)"
     />
-  </v-container>
+  </VContainer>
 </template>

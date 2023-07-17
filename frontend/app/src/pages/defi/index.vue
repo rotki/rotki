@@ -39,12 +39,12 @@ onUnmounted(() => {
 
 <template>
   <div>
-    <tab-navigation
+    <TabNavigation
       v-if="defiSetupDone"
       :tab-contents="tabs"
       no-content-margin
     />
-    <defi-wizard v-else class="mt-8" />
+    <DefiWizard v-else class="mt-8" />
   </div>
 </template>
 

@@ -69,15 +69,15 @@ const { t } = useI18n();
 
 <template>
   <div>
-    <no-premium-placeholder
+    <NoPremiumPlaceholder
       v-if="!premium"
       :text="t('liquity_page.no_premium')"
     />
-    <module-not-active v-else-if="!moduleEnabled" :modules="modules" />
-    <liquity-staking-details v-else @refresh="fetch($event)">
+    <ModuleNotActive v-else-if="!moduleEnabled" :modules="modules" />
+    <LiquityStakingDetails v-else @refresh="fetch($event)">
       <template #modules>
-        <active-modules :modules="modules" />
+        <ActiveModules :modules="modules" />
       </template>
-    </liquity-staking-details>
+    </LiquityStakingDetails>
   </div>
 </template>

@@ -281,7 +281,7 @@ export const useReportsStore = defineStore('reports', () => {
 
   const exportReportData = async (
     payload: ProfitLossReportDebugPayload
-  ): Promise<Object> => {
+  ): Promise<number | unknown> => {
     set(reportProgress, {
       processingState: '',
       totalProgress: '0'

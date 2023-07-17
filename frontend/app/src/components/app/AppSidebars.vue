@@ -10,20 +10,20 @@ const {
 
 <template>
   <div>
-    <notification-sidebar
+    <NotificationSidebar
       :visible="showNotificationBar"
       @close="showNotificationBar = false"
     />
-    <help-sidebar
+    <HelpSidebar
       :visible="showHelpBar"
       @visible:update="showHelpBar = $event"
       @about="showAbout = true"
     />
-    <pinned-sidebar
+    <PinnedSidebar
       :visible="showPinned"
       @visible:update="showPinned = $event"
     />
-    <user-notes-sidebar
+    <UserNotesSidebar
       :visible="showNotesSidebar"
       @visible:update="showNotesSidebar = $event"
     />

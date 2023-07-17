@@ -41,14 +41,14 @@ const disabled: ComputedRef<boolean> = computed(
 </script>
 
 <template>
-  <v-btn
+  <VBtn
     outlined
     color="primary"
     :loading="refreshing"
     :disabled="disabled"
     @click="refresh()"
   >
-    <v-icon left>mdi-refresh</v-icon>
+    <VIcon left>mdi-refresh</VIcon>
     {{ t('price_refresh.button') }}
-  </v-btn>
+  </VBtn>
 </template>

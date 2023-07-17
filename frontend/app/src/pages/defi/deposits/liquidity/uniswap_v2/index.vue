@@ -79,31 +79,31 @@ const lpType = LpType.UNISWAP_V2;
 </script>
 
 <template>
-  <module-not-active v-if="!enabled" :modules="modules" />
-  <progress-screen v-else-if="loading">
+  <ModuleNotActive v-if="!enabled" :modules="modules" />
+  <ProgressScreen v-else-if="loading">
     <template #message>
       {{ t('uniswap.loading') }}
     </template>
     <template v-if="!premium" #default>
-      <i18n tag="div" path="uniswap.loading_non_premium">
-        <base-external-link :text="t('uniswap.premium')" :href="premiumURL" />
-      </i18n>
+      <I18n tag="div" path="uniswap.loading_non_premium">
+        <BaseExternalLink :text="t('uniswap.premium')" :href="premiumURL" />
+      </I18n>
     </template>
-  </progress-screen>
+  </ProgressScreen>
   <div v-else class="uniswap">
-    <refresh-header
+    <RefreshHeader
       :title="t('uniswap.title', { v: 2 })"
       class="mt-4"
       :loading="primaryRefreshing || secondaryRefreshing"
       @refresh="refresh()"
     >
       <template #actions>
-        <active-modules :modules="modules" />
+        <ActiveModules :modules="modules" />
       </template>
-    </refresh-header>
-    <v-row class="mt-4">
-      <v-col>
-        <blockchain-account-selector
+    </RefreshHeader>
+    <VRow class="mt-4">
+      <VCol>
+        <BlockchainAccountSelector
           v-model="selectedAccounts"
           :chains="chains"
           :usable-addresses="addresses"
@@ -112,9 +112,9 @@ const lpType = LpType.UNISWAP_V2;
           outlined
           no-padding
         />
-      </v-col>
-      <v-col>
-        <liquidity-pool-selector
+      </VCol>
+      <VCol>
+        <LiquidityPoolSelector
           v-model="selectedPools"
           :pools="poolAssets"
           :type="lpType"
@@ -123,22 +123,22 @@ const lpType = LpType.UNISWAP_V2;
           outlined
           no-padding
         />
-      </v-col>
-    </v-row>
-    <paginated-cards :identifier="getIdentifier" :items="balances" class="mt-4">
+      </VCol>
+    </VRow>
+    <PaginatedCards :identifier="getIdentifier" :items="balances" class="mt-4">
       <template #item="{ item }">
-        <card>
+        <Card>
           <template v-if="item.assets.length > 0" #title>
             {{ getPoolName(lpType, getAssets(item.assets)) }}
           </template>
           <template #details>
-            <uniswap-pool-details :balance="item" />
+            <UniswapPoolDetails :balance="item" />
           </template>
           <template #subtitle>
-            <hash-link :text="item.address" />
+            <HashLink :text="item.address" />
           </template>
           <template #icon>
-            <lp-pool-icon :assets="getAssets(item.assets)" :type="lpType" />
+            <LpPoolIcon :assets="getAssets(item.assets)" :type="lpType" />
           </template>
 
           <div class="mt-2">
@@ -147,7 +147,7 @@ const lpType = LpType.UNISWAP_V2;
                 {{ t('common.balance') }}
               </div>
               <div class="d-flex text-h6">
-                <balance-display
+                <BalanceDisplay
                   :value="item.userBalance"
                   align="start"
                   no-icon
@@ -161,39 +161,39 @@ const lpType = LpType.UNISWAP_V2;
                 {{ t('common.assets') }}
               </div>
               <div>
-                <v-row
+                <VRow
                   v-for="asset in item.assets"
                   :key="`${asset.asset}-${item.address}-balances`"
                   align="center"
                   no-gutters
                   class="mt-2"
                 >
-                  <v-col cols="auto">
-                    <asset-icon :identifier="asset.asset" size="32px" />
-                  </v-col>
-                  <v-col class="d-flex ml-4" cols="auto">
+                  <VCol cols="auto">
+                    <AssetIcon :identifier="asset.asset" size="32px" />
+                  </VCol>
+                  <VCol class="d-flex ml-4" cols="auto">
                     <div class="mr-4">
-                      <balance-display
+                      <BalanceDisplay
                         no-icon
                         align="start"
                         :asset="asset.asset"
                         :value="asset.userBalance"
                       />
                     </div>
-                    <hash-link
+                    <HashLink
                       link-only
                       :text="tokenAddress(asset.asset).value"
                     />
-                  </v-col>
-                </v-row>
+                  </VCol>
+                </VRow>
               </div>
             </div>
           </div>
-        </card>
+        </Card>
       </template>
-    </paginated-cards>
+    </PaginatedCards>
 
-    <uniswap-details
+    <UniswapDetails
       v-if="premium"
       :loading="secondaryRefreshing"
       :profit="poolProfit"

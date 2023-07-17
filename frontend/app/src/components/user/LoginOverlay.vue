@@ -6,7 +6,7 @@ const { xs } = useDisplay();
 </script>
 
 <template>
-  <v-overlay :dark="false" opacity="1" color="grey lighten-4">
+  <VOverlay :dark="false" opacity="1" color="grey lighten-4">
     <div
       class="animate"
       :class="{
@@ -16,7 +16,7 @@ const { xs } = useDisplay();
       data-cy="account-management__loading"
     />
     <slot />
-  </v-overlay>
+  </VOverlay>
 </template>
 
 <style module lang="scss">

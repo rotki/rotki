@@ -3,9 +3,9 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <v-menu offset-x nudge-right="8" max-width="400">
+  <VMenu offset-x nudge-right="8" max-width="400">
     <template #activator="{ on, attrs }">
-      <v-icon v-bind="attrs" v-on="on"> mdi-help-circle</v-icon>
+      <VIcon v-bind="attrs" v-on="on"> mdi-help-circle</VIcon>
     </template>
     <div class="pa-4">
       <div class="pb-4">
@@ -19,5 +19,5 @@ const { t } = useI18n();
         </div>
       </div>
     </div>
-  </v-menu>
+  </VMenu>
 </template>

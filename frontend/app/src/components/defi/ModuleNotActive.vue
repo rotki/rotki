@@ -41,25 +41,25 @@ const { t } = useI18n();
     class="d-flex flex-column align-center justify-center"
   >
     <div class="module-not-active__container">
-      <v-row align="center" justify="center">
-        <v-col v-for="module in modules" :key="module" cols="auto">
-          <v-img width="82px" contain :src="icon(module)" />
-        </v-col>
-      </v-row>
-      <v-row align="center" justify="center" class="mt-16">
-        <v-col cols="auto" class="text--secondary">
-          <i18n
+      <VRow align="center" justify="center">
+        <VCol v-for="module in modules" :key="module" cols="auto">
+          <VImg width="82px" contain :src="icon(module)" />
+        </VCol>
+      </VRow>
+      <VRow align="center" justify="center" class="mt-16">
+        <VCol cols="auto" class="text--secondary">
+          <I18n
             tag="span"
             path="module_not_active.not_active"
             class="text-center"
           >
             <template #link>
-              <internal-link
+              <InternalLink
                 class="module-not-active__link font-weight-regular text-body-1 text-decoration-none"
                 :to="Routes.SETTINGS_MODULES"
               >
                 {{ t('module_not_active.settings_link') }}
-              </internal-link>
+              </InternalLink>
             </template>
             <template #text>
               <div v-if="modules.length > 1">
@@ -75,9 +75,9 @@ const { t } = useI18n();
                 {{ name(module) }}
               </span>
             </template>
-          </i18n>
-        </v-col>
-      </v-row>
+          </I18n>
+        </VCol>
+      </VRow>
     </div>
   </div>
 </template>

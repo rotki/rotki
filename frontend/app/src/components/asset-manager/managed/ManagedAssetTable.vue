@@ -173,7 +173,7 @@ const massIgnore = async (ignored: boolean) => {
 </script>
 
 <template>
-  <card outlined-body data-cy="managed-assets-table">
+  <Card outlined-body data-cy="managed-assets-table">
     <template #title>
       {{ t('common.assets') }}
     </template>
@@ -181,24 +181,24 @@ const massIgnore = async (ignored: boolean) => {
       {{ t('asset_table.managed.subtitle') }}
     </template>
     <template #actions>
-      <v-row>
-        <v-col cols="12" md="4">
-          <ignore-buttons
+      <VRow>
+        <VCol cols="12" md="4">
+          <IgnoreButtons
             :disabled="selected.length === 0"
             @ignore="massIgnore($event)"
           />
           <div v-if="selected.length > 0" class="mt-2 ms-1">
             {{ t('asset_table.selected', { count: selected.length }) }}
-            <v-btn small text @click="updateSelected([])">
+            <VBtn small text @click="updateSelected([])">
               {{ t('common.actions.clear_selection') }}
-            </v-btn>
+            </VBtn>
           </div>
-        </v-col>
-        <v-col />
-        <v-col cols="12" md="auto">
-          <v-menu offset-y :close-on-content-click="false">
+        </VCol>
+        <VCol />
+        <VCol cols="12" md="auto">
+          <VMenu offset-y :close-on-content-click="false">
             <template #activator="{ on }">
-              <v-btn
+              <VBtn
                 outlined
                 text
                 height="40px"
@@ -206,38 +206,38 @@ const massIgnore = async (ignored: boolean) => {
                 v-on="on"
               >
                 {{ t('common.actions.filter') }}
-                <v-icon class="ml-2">mdi-chevron-down</v-icon>
-              </v-btn>
+                <VIcon class="ml-2">mdi-chevron-down</VIcon>
+              </VBtn>
             </template>
-            <v-list data-cy="asset-filter-menu">
-              <v-list-item link @click="updateShowOwned(!onlyShowOwned)">
-                <v-checkbox
+            <VList data-cy="asset-filter-menu">
+              <VListItem link @click="updateShowOwned(!onlyShowOwned)">
+                <VCheckbox
                   data-cy="asset-filter-only-show-owned"
                   :input-value="onlyShowOwned"
                   class="mt-0 py-2"
                   :label="t('asset_table.only_show_owned')"
                   hide-details
                 />
-              </v-list-item>
-              <v-list-item
+              </VListItem>
+              <VListItem
                 :class="css['filter-heading']"
                 class="font-weight-bold text-uppercase py-2"
               >
                 {{ t('asset_table.filter_by_ignored_status') }}
-              </v-list-item>
-              <v-list-item>
-                <v-radio-group
+              </VListItem>
+              <VListItem>
+                <VRadioGroup
                   :value="ignoredAssetsHandling"
                   class="mt-0"
                   data-cy="asset-filter-ignored"
                   @change="updateIgnoredAssetsHandling($event)"
                 >
-                  <v-radio value="none" :label="t('asset_table.show_all')" />
-                  <v-radio
+                  <VRadio value="none" :label="t('asset_table.show_all')" />
+                  <VRadio
                     value="exclude"
                     :label="t('asset_table.only_show_unignored')"
                   />
-                  <v-radio
+                  <VRadio
                     value="show_only"
                     :label="
                       t(
@@ -249,21 +249,21 @@ const massIgnore = async (ignored: boolean) => {
                       )
                     "
                   />
-                </v-radio-group>
-              </v-list-item>
-            </v-list>
-          </v-menu>
-        </v-col>
-        <v-col cols="12" md="5" class="pb-md-8">
-          <table-filter
+                </VRadioGroup>
+              </VListItem>
+            </VList>
+          </VMenu>
+        </VCol>
+        <VCol cols="12" md="5" class="pb-md-8">
+          <TableFilter
             :matches="filters"
             :matchers="matchers"
             @update:matches="updateFilter($event)"
           />
-        </v-col>
-      </v-row>
+        </VCol>
+      </VRow>
     </template>
-    <v-btn
+    <VBtn
       data-cy="managed-asset-add-btn"
       absolute
       fab
@@ -273,9 +273,9 @@ const massIgnore = async (ignored: boolean) => {
       color="primary"
       @click="add()"
     >
-      <v-icon> mdi-plus </v-icon>
-    </v-btn>
-    <data-table
+      <VIcon> mdi-plus </VIcon>
+    </VBtn>
+    <DataTable
       :value="selected"
       :items="tokens"
       :loading="loading"
@@ -294,21 +294,21 @@ const massIgnore = async (ignored: boolean) => {
       @input="updateSelected($event)"
     >
       <template #item.symbol="{ item }">
-        <asset-details-base
+        <AssetDetailsBase
           :changeable="!loading"
           opens-details
           :asset="getAsset(item)"
         />
       </template>
       <template #item.address="{ item }">
-        <hash-link
+        <HashLink
           v-if="item.address"
           :text="item.address"
           :chain="getChain(item.evmChain)"
         />
       </template>
       <template #item.started="{ item }">
-        <date-display v-if="item.started" :timestamp="item.started" />
+        <DateDisplay v-if="item.started" :timestamp="item.started" />
         <span v-else>-</span>
       </template>
       <template #item.type="{ item }">
@@ -316,39 +316,39 @@ const massIgnore = async (ignored: boolean) => {
       </template>
       <template #item.ignored="{ item }">
         <div class="d-flex justify-center">
-          <v-switch
+          <VSwitch
             :input-value="isAssetIgnored(item.identifier)"
             @change="toggleIgnoreAsset(item.identifier)"
           />
         </div>
       </template>
       <template #item.actions="{ item }">
-        <row-actions
+        <RowActions
           v-if="item.assetType !== CUSTOM_ASSET"
           :edit-tooltip="t('asset_table.edit_tooltip')"
           :delete-tooltip="t('asset_table.delete_tooltip')"
           @edit-click="edit(item)"
           @delete-click="deleteAsset(item)"
         >
-          <copy-button
+          <CopyButton
             class="mx-1"
             :tooltip="t('asset_table.copy_identifier.tooltip')"
             :value="item.identifier"
           />
-        </row-actions>
+        </RowActions>
       </template>
       <template #expanded-item="{ item, headers }">
-        <asset-underlying-tokens :cols="headers.length" :asset="item" />
+        <AssetUnderlyingTokens :cols="headers.length" :asset="item" />
       </template>
       <template #item.expand="{ item }">
-        <row-expander
+        <RowExpander
           v-if="item.underlyingTokens && item.underlyingTokens.length > 0"
           :expanded="expanded.includes(item)"
           @click="updateExpanded(expanded.includes(item) ? [] : [item])"
         />
       </template>
-    </data-table>
-  </card>
+    </DataTable>
+  </Card>
 </template>
 
 <style module lang="scss">

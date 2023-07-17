@@ -47,8 +47,8 @@ const secondaryText = computed(
 </script>
 
 <template>
-  <v-dialog-transition>
-    <v-dialog
+  <VDialogTransition>
+    <VDialog
       v-if="display"
       :value="true"
       persistent
@@ -56,30 +56,30 @@ const secondaryText = computed(
       class="confirm-dialog"
       @keydown.esc.stop="emit('cancel')"
     >
-      <v-card data-cy="confirm-dialog">
-        <v-card-title
+      <VCard data-cy="confirm-dialog">
+        <VCardTitle
           class="confirm-dialog__title text-h5"
           data-cy="dialog-title"
         >
           {{ title }}
-        </v-card-title>
-        <v-card-text class="confirm-dialog__text">
-          <v-row align="center">
-            <v-col cols="auto" class="text-center">
-              <v-icon :color="color" x-large>
+        </VCardTitle>
+        <VCardText class="confirm-dialog__text">
+          <VRow align="center">
+            <VCol cols="auto" class="text-center">
+              <VIcon :color="color" x-large>
                 {{ icon }}
-              </v-icon>
-            </v-col>
-            <v-col class="text-body-1">
+              </VIcon>
+            </VCol>
+            <VCol class="text-body-1">
               {{ message }}
               <slot />
-            </v-col>
-          </v-row>
-        </v-card-text>
+            </VCol>
+          </VRow>
+        </VCardText>
 
-        <v-card-actions class="confirm-dialog__actions">
-          <v-spacer />
-          <v-btn
+        <VCardActions class="confirm-dialog__actions">
+          <VSpacer />
+          <VBtn
             v-if="!singleAction"
             depressed
             outlined
@@ -88,8 +88,8 @@ const secondaryText = computed(
             @click="emit('cancel')"
           >
             {{ secondaryText }}
-          </v-btn>
-          <v-btn
+          </VBtn>
+          <VBtn
             :color="color"
             depressed
             :disabled="disabled"
@@ -98,11 +98,11 @@ const secondaryText = computed(
             @click="emit('confirm')"
           >
             {{ primaryText }}
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-  </v-dialog-transition>
+          </VBtn>
+        </VCardActions>
+      </VCard>
+    </VDialog>
+  </VDialogTransition>
 </template>
 
 <style scoped lang="scss">

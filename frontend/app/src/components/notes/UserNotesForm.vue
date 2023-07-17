@@ -37,9 +37,9 @@ const v$ = setValidation(
 </script>
 
 <template>
-  <v-form :value="valid" class="pt-2">
+  <VForm :value="valid" class="pt-2">
     <div>
-      <v-text-field
+      <VTextField
         :value="value.title"
         outlined
         :placeholder="t('notes_menu.labels.title')"
@@ -47,7 +47,7 @@ const v$ = setValidation(
       />
     </div>
     <div>
-      <v-textarea
+      <VTextarea
         :value="value.content"
         outlined
         :placeholder="t('notes_menu.labels.content')"
@@ -55,5 +55,5 @@ const v$ = setValidation(
         @input="input({ content: $event })"
       />
     </div>
-  </v-form>
+  </VForm>
 </template>

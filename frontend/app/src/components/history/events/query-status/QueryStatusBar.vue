@@ -7,9 +7,9 @@ defineProps<{
   isItemFinished: (item: any) => boolean;
 }>();
 
-const openStatusDropdown = ref<boolean>(false);
-
 const emit = defineEmits<{ (e: 'reset'): void }>();
+
+const openStatusDropdown = ref<boolean>(false);
 
 const css = useCssModule();
 </script>
@@ -19,19 +19,19 @@ const css = useCssModule();
     <td :colspan="colspan" class="py-2">
       <div class="d-flex">
         <div v-if="finished" class="pr-2">
-          <v-btn icon @click="emit('reset')">
-            <v-icon>mdi-close</v-icon>
-          </v-btn>
+          <VBtn icon @click="emit('reset')">
+            <VIcon>mdi-close</VIcon>
+          </VBtn>
         </div>
         <div class="pr-2">
-          <v-btn
+          <VBtn
             v-if="items.length > 1 && !finished"
             icon
             @click="openStatusDropdown = !openStatusDropdown"
           >
-            <v-icon v-if="openStatusDropdown"> mdi-chevron-up </v-icon>
-            <v-icon v-else> mdi-chevron-down </v-icon>
-          </v-btn>
+            <VIcon v-if="openStatusDropdown"> mdi-chevron-up </VIcon>
+            <VIcon v-else> mdi-chevron-down </VIcon>
+          </VBtn>
         </div>
         <div>
           <div
@@ -39,16 +39,16 @@ const css = useCssModule();
             class="py-2 d-flex align-center"
           >
             <div class="mr-4">
-              <v-progress-circular
+              <VProgressCircular
                 v-if="!finished"
                 size="20"
                 color="primary"
                 width="2"
                 indeterminate
               />
-              <v-icon v-else color="green" :class="css['check-icon']">
+              <VIcon v-else color="green" :class="css['check-icon']">
                 mdi-check-circle
-              </v-icon>
+              </VIcon>
             </div>
 
             <slot name="current" />
@@ -60,22 +60,22 @@ const css = useCssModule();
             class="d-flex align-center"
           >
             <div class="mr-4">
-              <v-progress-circular
+              <VProgressCircular
                 v-if="!isItemFinished(item)"
                 size="20"
                 color="primary"
                 width="2"
                 indeterminate
               />
-              <v-icon v-else color="green" :class="css['check-icon']">
+              <VIcon v-else color="green" :class="css['check-icon']">
                 mdi-check-circle
-              </v-icon>
+              </VIcon>
             </div>
 
             <slot name="item" :item="item" />
           </div>
         </div>
-        <v-spacer />
+        <VSpacer />
         <slot name="dialog" />
       </div>
     </td>

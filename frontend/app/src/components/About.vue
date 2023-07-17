@@ -90,31 +90,31 @@ const remoteAboutLogo =
 </script>
 
 <template>
-  <v-card class="pb-6" width="500px" light :class="css.about">
+  <VCard class="pb-6" width="500px" light :class="css.about">
     <div class="pt-6 pb-3 text-h2 font-weight-black white--text primary">
       <span class="px-6">{{ t('app.name') }}</span>
       <span class="d-block mb-3 pl-6 text-caption">
         {{ t('app.moto') }}
       </span>
     </div>
-    <v-card-text>
+    <VCardText>
       <div class="mt-4 mb-2">
-        <rotki-logo width="72px" :url="remoteAboutLogo" />
+        <RotkiLogo width="72px" :url="remoteAboutLogo" />
       </div>
       <div class="d-flex flex-row align-center mt-4" :class="css.version">
         <div class="font-weight-bold">{{ version.version }}</div>
         <div class="font-weight-regular ml-4">
-          <base-external-link
+          <BaseExternalLink
             :href="`https://github.com/rotki/rotki/releases/tag/v${version.version}`"
             :text="t('about.release_notes')"
           />
         </div>
-        <v-spacer />
-        <app-update-indicator />
+        <VSpacer />
+        <AppUpdateIndicator />
       </div>
-      <v-divider class="mt-4 mb-2" />
-      <v-row align="center">
-        <v-col>
+      <VDivider class="mt-4 mb-2" />
+      <VRow align="center">
+        <VCol>
           <table class="fill-width">
             <tbody>
               <tr>
@@ -123,7 +123,7 @@ const remoteAboutLogo =
                 </td>
                 <td>
                   <div class="d-flex flex-row">
-                    <v-tooltip top open-delay="400">
+                    <VTooltip top open-delay="400">
                       <template #activator="{ on }">
                         <div
                           class="text-truncate"
@@ -136,26 +136,26 @@ const remoteAboutLogo =
                       <span :class="css.directory">
                         {{ dataDirectory }}
                       </span>
-                    </v-tooltip>
-                    <v-spacer />
+                    </VTooltip>
+                    <VSpacer />
                     <div v-if="isPackaged" class="ml-2">
-                      <v-tooltip top open-delay="400">
+                      <VTooltip top open-delay="400">
                         <template #activator="{ on, attrs }">
-                          <v-btn
+                          <VBtn
                             v-bind="attrs"
                             icon
                             x-small
                             v-on="on"
                             @click="openPath(dataDirectory)"
                           >
-                            <v-icon x-small>mdi-launch</v-icon>
-                          </v-btn>
+                            <VIcon x-small>mdi-launch</VIcon>
+                          </VBtn>
                         </template>
                         <span>{{ t('about.open_data_dir_tooltip') }}</span>
-                      </v-tooltip>
+                      </VTooltip>
                     </div>
                     <div v-else>
-                      <copy-button
+                      <CopyButton
                         :value="dataDirectory"
                         :tooltip="t('about.copy_data_directory_tooltip')"
                       />
@@ -202,7 +202,7 @@ const remoteAboutLogo =
               </tr>
               <tr v-if="componentsVersion">
                 <td colspan="2">
-                  <v-divider class="mt-4 mb-2" />
+                  <VDivider class="mt-4 mb-2" />
                   <div class="font-weight-bold mb-1">
                     {{ t('about.components.title') }}
                   </div>
@@ -219,21 +219,21 @@ const remoteAboutLogo =
                   {{ t('about.components.build') }}
                 </td>
                 <td>
-                  <date-display :timestamp="componentsVersion.build / 1000" />
+                  <DateDisplay :timestamp="componentsVersion.build / 1000" />
                 </td>
               </tr>
             </tbody>
           </table>
-        </v-col>
-        <v-col cols="auto">
-          <copy-button
+        </VCol>
+        <VCol cols="auto">
+          <CopyButton
             :value="versionText"
             :tooltip="t('about.copy_information_tooltip')"
           />
-        </v-col>
-      </v-row>
-    </v-card-text>
-  </v-card>
+        </VCol>
+      </VRow>
+    </VCardText>
+  </VCard>
 </template>
 
 <style module lang="scss">

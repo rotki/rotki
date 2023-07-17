@@ -26,73 +26,73 @@ onMounted(async () => {
 
 <template>
   <div>
-    <v-stepper v-model="step" class="module-address-selector">
-      <v-sheet rounded outlined>
-        <v-stepper-header>
+    <VStepper v-model="step" class="module-address-selector">
+      <VSheet rounded outlined>
+        <VStepperHeader>
           <template v-for="n in steps">
-            <v-stepper-step
+            <VStepperStep
               :key="`${n}-step`"
               :complete="step > n"
               :step="n"
               editable
             >
               <span class="d-flex flex-column align-center justify-start">
-                <adaptive-wrapper>
-                  <v-img
+                <AdaptiveWrapper>
+                  <VImg
                     width="24px"
                     contain
                     max-height="24px"
                     :src="modules[n - 1].icon"
                   />
-                </adaptive-wrapper>
+                </AdaptiveWrapper>
                 <span v-if="modules[n - 1].name" class="mt-3 text-center">
                   {{ modules[n - 1].name }}
                 </span>
               </span>
-            </v-stepper-step>
+            </VStepperStep>
 
-            <v-divider v-if="n !== steps" :key="n" />
+            <VDivider v-if="n !== steps" :key="n" />
           </template>
-        </v-stepper-header>
-      </v-sheet>
+        </VStepperHeader>
+      </VSheet>
 
-      <v-stepper-items>
-        <v-stepper-content v-for="n in steps" :key="`${n}-content`" :step="n">
-          <v-row align="center">
-            <v-col cols="auto">
-              <adaptive-wrapper>
-                <v-img
+      <VStepperItems>
+        <VStepperContent v-for="n in steps" :key="`${n}-content`" :step="n">
+          <VRow align="center">
+            <VCol cols="auto">
+              <AdaptiveWrapper>
+                <VImg
                   width="30px"
                   contain
                   max-height="24px"
                   :src="modules[n - 1].icon"
                 />
-              </adaptive-wrapper>
-            </v-col>
-            <v-col>
+              </AdaptiveWrapper>
+            </VCol>
+            <VCol>
               <div class="text-h6">{{ modules[n - 1].name }}</div>
-            </v-col>
-          </v-row>
+            </VCol>
+          </VRow>
 
-          <v-card class="mb-12 mt-4" flat height="110px">
-            <module-queried-address :module="modules[n - 1].identifier" />
-          </v-card>
+          <VCard class="mb-12 mt-4" flat height="110px">
+            <ModuleQueriedAddress :module="modules[n - 1].identifier" />
+          </VCard>
 
           <div>
-            <v-btn v-if="step > 1" class="mr-4" text @click="previousStep()">
+            <VBtn v-if="step > 1" class="mr-4" text @click="previousStep()">
               {{ t('common.actions.back') }}
-            </v-btn>
-            <v-btn
+            </VBtn>
+            <VBtn
               v-if="step < modules.length"
               color="primary"
               @click="nextStep()"
             >
               {{ t('common.actions.next') }}
-            </v-btn>
+            </VBtn>
           </div>
-        </v-stepper-content>
-      </v-stepper-items>
-    </v-stepper>
+        </VStepperContent>
+      </VStepperItems>
+    </VStepper>
   </div>
 </template>
 

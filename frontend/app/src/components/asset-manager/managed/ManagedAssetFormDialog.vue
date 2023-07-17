@@ -21,7 +21,7 @@ const { openDialog, submitting, closeDialog, trySubmit } =
 </script>
 
 <template>
-  <big-dialog
+  <BigDialog
     :display="openDialog"
     :title="title"
     :subtitle="subtitle"
@@ -30,6 +30,6 @@ const { openDialog, submitting, closeDialog, trySubmit } =
     @confirm="trySubmit()"
     @cancel="closeDialog()"
   >
-    <managed-asset-form :editable-item="editableItem" />
-  </big-dialog>
+    <ManagedAssetForm :editable-item="editableItem" />
+  </BigDialog>
 </template>

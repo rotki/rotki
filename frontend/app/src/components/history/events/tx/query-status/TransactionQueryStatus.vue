@@ -23,7 +23,7 @@ const {
 </script>
 
 <template>
-  <query-status-bar
+  <QueryStatusBar
     :colspan="colspan"
     :items="sortedQueryStatus"
     :get-key="getKey"
@@ -32,19 +32,19 @@ const {
     @reset="resetQueryStatus()"
   >
     <template #current>
-      <transaction-query-status-current :only-chains="onlyChains" />
+      <TransactionQueryStatusCurrent :only-chains="onlyChains" />
     </template>
 
     <template #item="{ item }">
-      <adaptive-wrapper>
-        <evm-chain-icon :chain="item.evmChain" size="20px" />
-      </adaptive-wrapper>
+      <AdaptiveWrapper>
+        <EvmChainIcon :chain="item.evmChain" size="20px" />
+      </AdaptiveWrapper>
 
-      <transaction-query-status-line :item="item" class="ms-2" />
+      <TransactionQueryStatusLine :item="item" class="ms-2" />
     </template>
 
     <template #dialog>
-      <transaction-query-status-dialog :only-chains="onlyChains" />
+      <TransactionQueryStatusDialog :only-chains="onlyChains" />
     </template>
-  </query-status-bar>
+  </QueryStatusBar>
 </template>

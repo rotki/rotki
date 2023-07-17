@@ -21,7 +21,7 @@ const { availableTags } = storeToRefs(useTagStore());
     :class="wrapperClass"
   >
     <span v-if="tags.length > 0">
-      <tag-icon
+      <TagIcon
         v-for="tag in tags"
         :key="tag"
         :small="small"

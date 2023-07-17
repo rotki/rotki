@@ -38,11 +38,11 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <card outlined-body :flat="flat">
+  <Card outlined-body :flat="flat">
     <template #title>
       {{ t('profit_loss_overview.title') }}
     </template>
-    <v-simple-table>
+    <VSimpleTable>
       <thead>
         <tr>
           <th class="text-left" v-text="t('common.type')" />
@@ -60,7 +60,7 @@ const { t } = useI18n();
         <tr v-for="(item, key) in report.overview" :key="key">
           <td>{{ pluralizeLastWord(toCapitalCase(key)) }}</td>
           <td class="text-right">
-            <amount-display
+            <AmountDisplay
               pnl
               force-currency
               :value="item.free"
@@ -69,7 +69,7 @@ const { t } = useI18n();
             />
           </td>
           <td class="text-right">
-            <amount-display
+            <AmountDisplay
               pnl
               force-currency
               :value="item.taxable"
@@ -86,7 +86,7 @@ const { t } = useI18n();
             {{ t('common.total') }}
           </td>
           <td class="text-right font-weight-medium text-subtitle-1">
-            <amount-display
+            <AmountDisplay
               pnl
               force-currency
               :value="total.free"
@@ -95,7 +95,7 @@ const { t } = useI18n();
             />
           </td>
           <td class="text-right font-weight-medium text-subtitle-1">
-            <amount-display
+            <AmountDisplay
               pnl
               force-currency
               :value="total.taxable"
@@ -105,6 +105,6 @@ const { t } = useI18n();
           </td>
         </tr>
       </tbody>
-    </v-simple-table>
-  </card>
+    </VSimpleTable>
+  </Card>
 </template>

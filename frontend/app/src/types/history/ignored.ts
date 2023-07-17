@@ -2,6 +2,7 @@ export interface EvmTransaction {
   evmChain: string;
   txHash: string;
 }
+
 export enum IgnoreActionType {
   TRADES = 'trade',
   MOVEMENTS = 'asset_movement',

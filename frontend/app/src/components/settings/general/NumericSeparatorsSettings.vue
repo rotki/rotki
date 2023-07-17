@@ -87,14 +87,14 @@ onMounted(() => {
 
 <template>
   <div>
-    <settings-option
+    <SettingsOption
       #default="{ error, success, update }"
       setting="thousandSeparator"
       frontend-setting
       :error-message="t('general_settings.validation.thousand_separator.error')"
       :success-message="thousandsSuccessMessage"
     >
-      <v-text-field
+      <VTextField
         v-model="thousandSeparator"
         outlined
         maxlength="1"
@@ -107,16 +107,16 @@ onMounted(() => {
         "
         @change="callIfThousandsValid($event, update)"
       />
-    </settings-option>
+    </SettingsOption>
 
-    <settings-option
+    <SettingsOption
       #default="{ error, success, update }"
       setting="decimalSeparator"
       frontend-setting
       :error-message="t('general_settings.validation.decimal_separator.error')"
       :success-message="decimalsSuccessMessage"
     >
-      <v-text-field
+      <VTextField
         v-model="decimalSeparator"
         outlined
         maxlength="1"
@@ -129,6 +129,6 @@ onMounted(() => {
         "
         @change="callIfDecimalsValid($event, update)"
       />
-    </settings-option>
+    </SettingsOption>
   </div>
 </template>

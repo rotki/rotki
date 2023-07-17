@@ -25,16 +25,16 @@ const symbol = assetSymbol(eventAsset);
   <div>
     <div class="py-2 d-flex align-center">
       <div class="mr-2">
-        <asset-link :asset="event.asset" icon>
-          <asset-icon size="32px" :identifier="event.asset" />
-        </asset-link>
+        <AssetLink :asset="event.asset" icon>
+          <AssetIcon size="32px" :identifier="event.asset" />
+        </AssetLink>
       </div>
       <div v-if="showBalance">
         <div>
-          <amount-display :value="event.balance.amount" :asset="event.asset" />
+          <AmountDisplay :value="event.balance.amount" :asset="event.asset" />
         </div>
         <div>
-          <amount-display
+          <AmountDisplay
             :key="event.timestamp"
             :amount="event.balance.amount"
             :value="event.balance.usdValue"

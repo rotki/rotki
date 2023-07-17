@@ -79,9 +79,9 @@ const css = useCssModule();
       </div>
     </div>
 
-    <v-row class="mb-0" align="center">
-      <v-col cols="12" :md="true" class="mb-n7 mb-md-0">
-        <v-autocomplete
+    <VRow class="mb-0" align="center">
+      <VCol cols="12" :md="true" class="mb-n7 mb-md-0">
+        <VAutocomplete
           v-model="source"
           outlined
           :label="t('data_management.purge_images_cache.select_image_source')"
@@ -90,9 +90,9 @@ const css = useCssModule();
           item-value="id"
           :disabled="pending"
         />
-      </v-col>
-      <v-col md="6">
-        <asset-select
+      </VCol>
+      <VCol md="6">
+        <AssetSelect
           v-if="source === PurgeableImageCache.ASSET_ICONS"
           v-model="assetToClear"
           outlined
@@ -100,7 +100,7 @@ const css = useCssModule();
           :label="t('data_management.purge_images_cache.label.asset_to_clear')"
           :hint="t('data_management.purge_images_cache.hint')"
         />
-        <v-combobox
+        <VCombobox
           v-else
           v-model="ensToClear"
           :items="ensNamesList"
@@ -114,12 +114,12 @@ const css = useCssModule();
           multiple
           persistent-hint
         />
-      </v-col>
+      </VCol>
 
-      <v-col cols="auto">
-        <v-tooltip open-delay="400" top>
+      <VCol cols="auto">
+        <VTooltip open-delay="400" top>
           <template #activator="{ on, attrs }">
-            <v-btn
+            <VBtn
               class="mt-n8"
               v-bind="attrs"
               icon
@@ -128,15 +128,15 @@ const css = useCssModule();
               v-on="on"
               @click="showConfirmation(source)"
             >
-              <v-icon>mdi-delete</v-icon>
-            </v-btn>
+              <VIcon>mdi-delete</VIcon>
+            </VBtn>
           </template>
           <span> {{ t('data_management.purge_images_cache.tooltip') }} </span>
-        </v-tooltip>
-      </v-col>
-    </v-row>
+        </VTooltip>
+      </VCol>
+    </VRow>
 
-    <action-status-indicator v-if="status" :status="status" />
+    <ActionStatusIndicator v-if="status" :status="status" />
   </div>
 </template>
 

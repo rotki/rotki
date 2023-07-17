@@ -18,12 +18,12 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <stat-card :title="t('loan_debt.title')" :class="$style.debt">
-    <loan-row :title="t('loan_debt.outstanding_debt')">
-      <balance-display :asset="asset" :value="debt" />
-    </loan-row>
+  <StatCard :title="t('loan_debt.title')" :class="$style.debt">
+    <LoanRow :title="t('loan_debt.outstanding_debt')">
+      <BalanceDisplay :asset="asset" :value="debt" />
+    </LoanRow>
     <slot />
-  </stat-card>
+  </StatCard>
 </template>
 
 <style module lang="scss">

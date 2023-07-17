@@ -5,11 +5,11 @@ const panel = computed<number>(() => (get(expanded) ? 0 : -1));
 </script>
 
 <template>
-  <card :class="{ 'pb-4': expanded }">
+  <Card :class="{ 'pb-4': expanded }">
     <template #title>
       <div class="d-flex align-center">
         <div class="mr-2">
-          <v-btn
+          <VBtn
             text
             icon
             color="grey"
@@ -17,9 +17,9 @@ const panel = computed<number>(() => (get(expanded) ? 0 : -1));
             rounded
             @click="expanded = !expanded"
           >
-            <v-icon v-if="expanded">mdi-minus-box-outline</v-icon>
-            <v-icon v-else>mdi-plus-box-outline</v-icon>
-          </v-btn>
+            <VIcon v-if="expanded">mdi-minus-box-outline</VIcon>
+            <VIcon v-else>mdi-plus-box-outline</VIcon>
+          </VBtn>
         </div>
         <div>
           <slot name="title" />
@@ -31,17 +31,17 @@ const panel = computed<number>(() => (get(expanded) ? 0 : -1));
       <slot v-else name="shortDetails" />
     </template>
     <template #default>
-      <v-expansion-panels :value="panel">
-        <v-expansion-panel>
-          <v-expansion-panel-content>
-            <v-sheet outlined>
+      <VExpansionPanels :value="panel">
+        <VExpansionPanel>
+          <VExpansionPanelContent>
+            <VSheet outlined>
               <slot />
-            </v-sheet>
-          </v-expansion-panel-content>
-        </v-expansion-panel>
-      </v-expansion-panels>
+            </VSheet>
+          </VExpansionPanelContent>
+        </VExpansionPanel>
+      </VExpansionPanels>
     </template>
-  </card>
+  </Card>
 </template>
 
 <style scoped lang="scss">

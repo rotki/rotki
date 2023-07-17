@@ -38,10 +38,10 @@ onBeforeMount(() => {
 
 <template>
   <div class="app__content rotki-light-grey">
-    <notification-popup />
-    <app-drawer />
+    <NotificationPopup />
+    <AppDrawer />
 
-    <v-app-bar
+    <VAppBar
       app
       fixed
       clipped-left
@@ -49,13 +49,13 @@ onBeforeMount(() => {
       :color="appBarColor"
       class="app__app-bar"
     >
-      <v-app-bar-nav-icon
+      <VAppBarNavIcon
         class="secondary--text text--lighten-4"
         @click="toggleDrawer()"
       />
-      <app-indicators />
-    </v-app-bar>
-    <app-sidebars />
+      <AppIndicators />
+    </VAppBar>
+    <AppSidebars />
     <div
       class="app-main"
       :class="{
@@ -63,9 +63,9 @@ onBeforeMount(() => {
         expanded
       }"
     >
-      <v-main>
-        <router-view />
-      </v-main>
+      <VMain>
+        <RouterView />
+      </VMain>
     </div>
   </div>
 </template>

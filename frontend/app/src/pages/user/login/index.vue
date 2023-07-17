@@ -24,16 +24,16 @@ const navigate = async () => {
 </script>
 
 <template>
-  <fragment>
+  <Fragment>
     <div v-if="checkForAssetUpdate">
-      <asset-update
+      <AssetUpdate
         headless
         @skip="navigate()"
         @complete="checkForAssetUpdate = false"
       />
     </div>
-    <upgrade-progress-display v-else-if="showUpgradeProgress" />
-    <login-form
+    <UpgradeProgressDisplay v-else-if="showUpgradeProgress" />
+    <LoginForm
       v-else
       :loading="loading"
       :errors="errors"
@@ -42,5 +42,5 @@ const navigate = async () => {
       @backend-changed="backendChanged($event)"
       @new-account="navigateToUserCreation()"
     />
-  </fragment>
+  </Fragment>
 </template>

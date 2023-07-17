@@ -224,15 +224,15 @@ const showDeleteConfirmation = (item: NonFungibleBalance) => {
 </script>
 
 <template>
-  <card outlined-body>
+  <Card outlined-body>
     <template #title>
       {{ t('non_fungible_balances.title') }}
-      <v-icon v-if="loading" color="primary" class="ml-2">
+      <VIcon v-if="loading" color="primary" class="ml-2">
         mdi-spin mdi-loading
-      </v-icon>
+      </VIcon>
     </template>
     <template #actions>
-      <non-fungible-balances-filter
+      <NonFungibleBalancesFilter
         :selected="selected"
         :ignored-assets-handling="ignoredAssetsHandling"
         @update:selected="selected = $event"
@@ -242,9 +242,9 @@ const showDeleteConfirmation = (item: NonFungibleBalance) => {
     </template>
     <template #details>
       <div class="d-flex">
-        <nft-image-rendering-setting-menu />
-        <active-modules :modules="modules" class="mx-2" />
-        <refresh-button
+        <NftImageRenderingSettingMenu />
+        <ActiveModules :modules="modules" class="mx-2" />
+        <RefreshButton
           :loading="loading"
           :tooltip="t('non_fungible_balances.refresh')"
           @refresh="refreshNonFungibleBalances(true)"
@@ -252,9 +252,9 @@ const showDeleteConfirmation = (item: NonFungibleBalance) => {
       </div>
     </template>
 
-    <collection-handler :collection="balances" @set-page="setPage($event)">
+    <CollectionHandler :collection="balances" @set-page="setPage($event)">
       <template #default="{ data, itemLength, totalUsdValue }">
-        <data-table
+        <DataTable
           v-model="selected"
           :headers="tableHeaders"
           :items="data"
@@ -265,18 +265,18 @@ const showDeleteConfirmation = (item: NonFungibleBalance) => {
           @update:options="setOptions($event)"
         >
           <template #item.name="{ item }">
-            <nft-details :identifier="item.id" />
+            <NftDetails :identifier="item.id" />
           </template>
           <template #item.ignored="{ item }">
             <div class="d-flex justify-center">
-              <v-switch
+              <VSwitch
                 :input-value="isIgnored(item.id)"
                 @change="toggleIgnoreAsset(item.id)"
               />
             </div>
           </template>
           <template #item.priceInAsset="{ item }">
-            <amount-display
+            <AmountDisplay
               v-if="item.priceAsset !== currencySymbol"
               :value="item.priceInAsset"
               :asset="item.priceAsset"
@@ -284,7 +284,7 @@ const showDeleteConfirmation = (item: NonFungibleBalance) => {
             <span v-else>-</span>
           </template>
           <template #item.lastPrice="{ item }">
-            <amount-display
+            <AmountDisplay
               :price-asset="item.priceAsset"
               :amount="item.priceInAsset"
               :value="item.usdPrice"
@@ -294,7 +294,7 @@ const showDeleteConfirmation = (item: NonFungibleBalance) => {
             />
           </template>
           <template #item.actions="{ item }">
-            <row-actions
+            <RowActions
               :delete-tooltip="t('non_fungible_balances.row.delete')"
               :edit-tooltip="t('non_fungible_balances.row.edit')"
               :delete-disabled="!item.manuallyInput"
@@ -303,33 +303,33 @@ const showDeleteConfirmation = (item: NonFungibleBalance) => {
             />
           </template>
           <template #item.manuallyInput="{ item }">
-            <v-icon v-if="item.manuallyInput" color="green">mdi-check</v-icon>
+            <VIcon v-if="item.manuallyInput" color="green">mdi-check</VIcon>
           </template>
           <template #body.append="{ isMobile }">
-            <row-append
+            <RowAppend
               label-colspan="4"
               :label="t('common.total')"
               :right-patch-colspan="1"
               :is-mobile="isMobile"
             >
-              <amount-display
+              <AmountDisplay
                 :value="totalUsdValue"
                 show-currency="symbol"
                 fiat-currency="USD"
               />
-            </row-append>
+            </RowAppend>
           </template>
-        </data-table>
+        </DataTable>
       </template>
-    </collection-handler>
+    </CollectionHandler>
 
-    <non-fungible-balance-edit
+    <NonFungibleBalanceEdit
       v-if="!!edit"
       :value="edit"
       @close="edit = null"
       @save="setPrice($event.price, $event.asset)"
     />
-  </card>
+  </Card>
 </template>
 
 <style scoped lang="scss">

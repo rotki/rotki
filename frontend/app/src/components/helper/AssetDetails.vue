@@ -39,7 +39,7 @@ const currentAsset: ComputedRef<AssetInfoWithId> = computed(() => ({
 
 <template>
   <div class="flex-row d-flex">
-    <asset-details-base
+    <AssetDetailsBase
       :hide-name="hideName"
       :asset="currentAsset"
       :opens-details="opensDetails"
@@ -49,7 +49,7 @@ const currentAsset: ComputedRef<AssetInfoWithId> = computed(() => ({
       :show-chain="!isCollectionParent"
       :is-collection-parent="isCollectionParent"
     />
-    <hash-link
+    <HashLink
       v-if="link && address"
       type="address"
       :evm-chain="assetDetails?.evmChain"

@@ -68,7 +68,7 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <setting-category>
+  <SettingCategory>
     <template #title>
       {{ t('price_oracle_settings.title') }}
     </template>
@@ -76,14 +76,14 @@ const { t } = useI18n();
       {{ t('price_oracle_settings.subtitle') }}
     </template>
 
-    <v-row>
-      <v-col cols="12" md="6">
-        <settings-option
+    <VRow>
+      <VCol cols="12" md="6">
+        <SettingsOption
           #default="{ error, success, update }"
           setting="currentPriceOracles"
           @finished="resetCurrentPriceOracles()"
         >
-          <prioritized-list
+          <PrioritizedList
             :value="currentOracles"
             :all-items="availableCurrentOracles()"
             :status="{ error, success }"
@@ -93,17 +93,17 @@ const { t } = useI18n();
             <template #title>
               {{ t('price_oracle_settings.latest_prices') }}
             </template>
-          </prioritized-list>
-        </settings-option>
-      </v-col>
+          </PrioritizedList>
+        </SettingsOption>
+      </VCol>
 
-      <v-col cols="12" md="6">
-        <settings-option
+      <VCol cols="12" md="6">
+        <SettingsOption
           #default="{ error, success, update }"
           setting="historicalPriceOracles"
           @finished="resetHistoricalPriceOracles()"
         >
-          <prioritized-list
+          <PrioritizedList
             :value="historicOracles"
             :all-items="availableHistoricOracles()"
             :status="{ error, success }"
@@ -113,14 +113,14 @@ const { t } = useI18n();
             <template #title>
               {{ t('price_oracle_settings.historic_prices') }}
             </template>
-          </prioritized-list>
-        </settings-option>
-      </v-col>
-    </v-row>
-    <v-row>
-      <v-col class="text-caption">
+          </PrioritizedList>
+        </SettingsOption>
+      </VCol>
+    </VRow>
+    <VRow>
+      <VCol class="text-caption">
         {{ t('price_oracle_selection.hint') }}
-      </v-col>
-    </v-row>
-  </setting-category>
+      </VCol>
+    </VRow>
+  </SettingCategory>
 </template>

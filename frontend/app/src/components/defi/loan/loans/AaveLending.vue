@@ -25,32 +25,32 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <v-row>
-    <v-col cols="12">
-      <loan-header v-if="loan.owner" class="mt-8 mb-6" :owner="loan.owner">
+  <VRow>
+    <VCol cols="12">
+      <LoanHeader v-if="loan.owner" class="mt-8 mb-6" :owner="loan.owner">
         {{ t('aave_lending.header', { asset: symbol }) }}
-      </loan-header>
-      <v-row>
-        <v-col cols="12" md="6">
-          <aave-collateral :loan="loan" />
-        </v-col>
+      </LoanHeader>
+      <VRow>
+        <VCol cols="12" md="6">
+          <AaveCollateral :loan="loan" />
+        </VCol>
 
-        <v-col cols="12" md="6">
-          <loan-debt :debt="loan.debt" :asset="loan.asset" />
-        </v-col>
-      </v-row>
-      <v-row no-gutters class="mt-8">
-        <v-col cols="12">
-          <premium-card v-if="!premium" :title="t('aave_lending.history')" />
-          <aave-borrowing-details
+        <VCol cols="12" md="6">
+          <LoanDebt :debt="loan.debt" :asset="loan.asset" />
+        </VCol>
+      </VRow>
+      <VRow no-gutters class="mt-8">
+        <VCol cols="12">
+          <PremiumCard v-if="!premium" :title="t('aave_lending.history')" />
+          <AaveBorrowingDetails
             v-else
             :loading="aaveHistoryLoading"
             :owner="loan.owner"
             :total-lost="loan.totalLost"
             :liquidation-earned="loan.liquidationEarned"
           />
-        </v-col>
-      </v-row>
-    </v-col>
-  </v-row>
+        </VCol>
+      </VRow>
+    </VCol>
+  </VRow>
 </template>

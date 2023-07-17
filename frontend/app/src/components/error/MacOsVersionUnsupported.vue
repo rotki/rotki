@@ -4,15 +4,15 @@ const { closeApp } = useInterop();
 </script>
 
 <template>
-  <error-screen
+  <ErrorScreen
     class="macos-unsupported"
     :header="t('macos_unsupported.header')"
     :alternative="t('macos_unsupported.message')"
   >
-    <v-btn depressed color="primary" @click="closeApp()">
+    <VBtn depressed color="primary" @click="closeApp()">
       {{ t('common.actions.terminate') }}
-    </v-btn>
-  </error-screen>
+    </VBtn>
+  </ErrorScreen>
 </template>
 
 <style scoped lang="scss">

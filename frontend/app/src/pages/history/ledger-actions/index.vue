@@ -1,3 +1,3 @@
 <template>
-  <ledger-action-content main-page />
+  <LedgerActionContent main-page />
 </template>

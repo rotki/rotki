@@ -111,4 +111,5 @@ const vuetify = new Vuetify({
     }
   }
 });
+
 export { vuetify };

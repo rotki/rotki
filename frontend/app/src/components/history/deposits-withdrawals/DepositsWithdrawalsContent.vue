@@ -13,8 +13,6 @@ import { IgnoreActionType } from '@/types/history/ignored';
 import { SavedFilterLocation } from '@/types/filtering';
 import type { Filters, Matcher } from '@/composables/filters/asset-movement';
 
-const { t } = useI18n();
-
 const props = withDefaults(
   defineProps<{
     locationOverview?: TradeLocation;
@@ -25,6 +23,8 @@ const props = withDefaults(
     mainPage: false
   }
 );
+
+const { t } = useI18n();
 
 const { locationOverview, mainPage } = toRefs(props);
 
@@ -135,51 +135,48 @@ watch(loading, async (isLoading, wasLoading) => {
 </script>
 
 <template>
-  <card outlined-body class="mt-8">
+  <Card outlined-body class="mt-8">
     <template #title>
-      <refresh-button
+      <RefreshButton
         v-if="!locationOverview"
         :loading="loading"
         :tooltip="t('deposits_withdrawals.refresh_tooltip')"
         @refresh="refreshAssetMovements(true)"
       />
-      <navigator-link :to="{ path: pageRoute }" :enabled="!!locationOverview">
+      <NavigatorLink :to="{ path: pageRoute }" :enabled="!!locationOverview">
         {{ t('deposits_withdrawals.title') }}
-      </navigator-link>
+      </NavigatorLink>
     </template>
     <template #actions>
-      <v-row v-if="!locationOverview">
-        <v-col cols="12" sm="6">
-          <ignore-buttons
+      <VRow v-if="!locationOverview">
+        <VCol cols="12" sm="6">
+          <IgnoreButtons
             :disabled="selected.length === 0 || loading"
             @ignore="ignore($event)"
           />
           <div v-if="selected.length > 0" class="mt-2 ms-1">
             {{ t('deposits_withdrawals.selected', { count: selected.length }) }}
-            <v-btn small text @click="selected = []">
+            <VBtn small text @click="selected = []">
               {{ t('common.actions.clear_selection') }}
-            </v-btn>
+            </VBtn>
           </div>
-        </v-col>
-        <v-col cols="12" sm="6">
+        </VCol>
+        <VCol cols="12" sm="6">
           <div class="pb-sm-8">
-            <table-filter
+            <TableFilter
               :matches="filters"
               :matchers="matchers"
               :location="SavedFilterLocation.HISTORY_DEPOSITS_WITHDRAWALS"
               @update:matches="setFilter($event)"
             />
           </div>
-        </v-col>
-      </v-row>
+        </VCol>
+      </VRow>
     </template>
 
-    <collection-handler
-      :collection="assetMovements"
-      @set-page="setPage($event)"
-    >
+    <CollectionHandler :collection="assetMovements" @set-page="setPage($event)">
       <template #default="{ data, limit, total, showUpgradeRow, itemLength }">
-        <data-table
+        <DataTable
           v-model="selected"
           :expanded.sync="expanded"
           :headers="tableHeaders"
@@ -201,68 +198,68 @@ watch(loading, async (isLoading, wasLoading) => {
         >
           <template #item.ignoredInAccounting="{ item, isMobile }">
             <div v-if="item.ignoredInAccounting">
-              <badge-display v-if="isMobile" color="grey">
-                <v-icon small> mdi-eye-off </v-icon>
+              <BadgeDisplay v-if="isMobile" color="grey">
+                <VIcon small> mdi-eye-off </VIcon>
                 <span class="ml-2">
                   {{ t('common.ignored_in_accounting') }}
                 </span>
-              </badge-display>
-              <v-tooltip v-else bottom>
+              </BadgeDisplay>
+              <VTooltip v-else bottom>
                 <template #activator="{ on }">
-                  <badge-display color="grey" v-on="on">
-                    <v-icon small> mdi-eye-off </v-icon>
-                  </badge-display>
+                  <BadgeDisplay color="grey" v-on="on">
+                    <VIcon small> mdi-eye-off </VIcon>
+                  </BadgeDisplay>
                 </template>
                 <span>
                   {{ t('common.ignored_in_accounting') }}
                 </span>
-              </v-tooltip>
+              </VTooltip>
             </div>
           </template>
           <template #item.location="{ item }">
-            <location-display :identifier="item.location" />
+            <LocationDisplay :identifier="item.location" />
           </template>
           <template #item.category="{ item }">
-            <badge-display
+            <BadgeDisplay
               :color="
                 item.category.toLowerCase() === 'withdrawal' ? 'grey' : 'green'
               "
             >
               {{ item.category }}
-            </badge-display>
+            </BadgeDisplay>
           </template>
           <template #item.asset="{ item }">
-            <asset-details opens-details :asset="item.asset" />
+            <AssetDetails opens-details :asset="item.asset" />
           </template>
           <template #item.amount="{ item }">
-            <amount-display
+            <AmountDisplay
               class="deposits-withdrawals__movement__amount"
               :value="item.amount"
             />
           </template>
           <template #item.fee="{ item }">
-            <amount-display
+            <AmountDisplay
               class="deposits-withdrawals__trade__fee"
               :asset="item.feeAsset"
               :value="item.fee"
             />
           </template>
           <template #item.timestamp="{ item }">
-            <date-display :timestamp="item.timestamp" />
+            <DateDisplay :timestamp="item.timestamp" />
           </template>
           <template #expanded-item="{ headers, item }">
-            <deposit-withdrawal-details :span="headers.length" :item="item" />
+            <DepositWithdrawalDetails :span="headers.length" :item="item" />
           </template>
           <template v-if="showUpgradeRow" #body.prepend="{ headers }">
-            <upgrade-row
+            <UpgradeRow
               :limit="limit"
               :total="total"
               :colspan="headers.length"
               :label="t('deposits_withdrawals.label')"
             />
           </template>
-        </data-table>
+        </DataTable>
       </template>
-    </collection-handler>
-  </card>
+    </CollectionHandler>
+  </Card>
 </template>

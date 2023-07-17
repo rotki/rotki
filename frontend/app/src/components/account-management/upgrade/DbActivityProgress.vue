@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { type CurrentDbUpgradeProgress } from '@/types/login';
 
-const { t } = useI18n();
-
 const props = withDefaults(
   defineProps<{
     progress: CurrentDbUpgradeProgress | null;
@@ -12,6 +10,8 @@ const props = withDefaults(
     dataMigration: false
   }
 );
+
+const { t } = useI18n();
 
 const { progress } = toRefs(props);
 
@@ -25,15 +25,15 @@ const multipleUpgrades = computed(() => {
 </script>
 
 <template>
-  <card v-if="progress" flat>
+  <Card v-if="progress" flat>
     <template #title>
       <span v-if="dataMigration">{{ t('login.migrating_data.title') }} </span>
       <span v-else> {{ t('login.upgrading_db.title') }}</span>
     </template>
-    <v-row class="my-2">
-      <v-col cols="auto">
+    <VRow class="my-2">
+      <VCol cols="auto">
         <div class="mr-2">
-          <v-progress-circular
+          <VProgressCircular
             rounded
             :value="progress.percentage"
             size="45"
@@ -41,20 +41,20 @@ const multipleUpgrades = computed(() => {
             color="primary"
           >
             <div v-if="multipleUpgrades">
-              <v-progress-circular
+              <VProgressCircular
                 :value="progress.totalPercentage"
                 color="primary"
               />
             </div>
-          </v-progress-circular>
+          </VProgressCircular>
         </div>
-      </v-col>
-      <v-col class="text-body-1">
+      </VCol>
+      <VCol class="text-body-1">
         <div v-if="!dataMigration">
           <div>
             {{ t('login.upgrading_db.warning', { ...progress }) }}
           </div>
-          <v-divider class="my-2" />
+          <VDivider class="my-2" />
           <div>
             {{ t('login.upgrading_db.current', { ...progress }) }}
           </div>
@@ -63,7 +63,7 @@ const multipleUpgrades = computed(() => {
           <div>
             {{ t('login.migrating_data.warning', { ...progress }) }}
           </div>
-          <v-divider class="my-2" />
+          <VDivider class="my-2" />
           <div>
             {{ t('login.migrating_data.current', { ...progress }) }}
           </div>
@@ -71,7 +71,7 @@ const multipleUpgrades = computed(() => {
             <li>{{ progress.description }}</li>
           </ul>
         </div>
-      </v-col>
-    </v-row>
-  </card>
+      </VCol>
+    </VRow>
+  </Card>
 </template>

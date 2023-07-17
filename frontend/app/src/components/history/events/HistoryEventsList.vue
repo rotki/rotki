@@ -6,8 +6,6 @@ import { type HistoryEventEntry } from '@/types/history/events';
 import { isEvmEvent } from '@/utils/history/events';
 import { type TablePagination } from '@/types/pagination';
 
-const { t } = useI18n();
-
 const props = withDefaults(
   defineProps<{
     eventGroupHeader: HistoryEventEntry;
@@ -30,6 +28,8 @@ const emit = defineEmits<{
     }
   ): void;
 }>();
+
+const { t } = useI18n();
 
 const { eventGroupHeader, allEvents } = toRefs(props);
 
@@ -132,20 +132,20 @@ const { mdAndUp } = useDisplay();
 </script>
 
 <template>
-  <table-expand-container
+  <TableExpandContainer
     :colspan="colspan - 1"
     :offset="1"
     :padded="false"
     visible
   >
     <template #append>
-      <v-expansion-panels
+      <VExpansionPanels
         v-model="panel"
         :class="css['expansions-panels']"
         multiple
       >
-        <v-expansion-panel>
-          <v-expansion-panel-header v-if="showDropdown">
+        <VExpansionPanel>
+          <VExpansionPanelHeader v-if="showDropdown">
             <template #default="{ open }">
               <div class="primary--text font-weight-bold">
                 {{
@@ -157,15 +157,15 @@ const { mdAndUp } = useDisplay();
                 }}
               </div>
             </template>
-          </v-expansion-panel-header>
-          <v-expansion-panel-content>
+          </VExpansionPanelHeader>
+          <VExpansionPanelContent>
             <div
               class="my-n4"
               :class="{
                 'pt-4': showDropdown
               }"
             >
-              <data-table
+              <DataTable
                 :class="css.table"
                 :headers="headers"
                 :items="events"
@@ -179,31 +179,31 @@ const { mdAndUp } = useDisplay();
               >
                 <template #progress><span /></template>
                 <template #item.type="{ item }">
-                  <v-lazy>
-                    <history-event-type
+                  <VLazy>
+                    <HistoryEventType
                       :event="item"
                       :chain="getChain(item.location)"
                     />
-                  </v-lazy>
+                  </VLazy>
                 </template>
                 <template #item.asset="{ item }">
-                  <v-lazy>
-                    <history-event-asset :event="item" />
-                  </v-lazy>
+                  <VLazy>
+                    <HistoryEventAsset :event="item" />
+                  </VLazy>
                 </template>
                 <template #item.description="{ item }">
-                  <v-lazy>
-                    <history-event-note
+                  <VLazy>
+                    <HistoryEventNote
                       v-bind="item"
                       :amount="item.balance.amount"
                       :chain="getChain(item.location)"
                       :no-tx-hash="isNoTxHash(item)"
                     />
-                  </v-lazy>
+                  </VLazy>
                 </template>
                 <template #item.actions="{ item }">
-                  <v-lazy>
-                    <row-actions
+                  <VLazy>
+                    <RowActions
                       align="end"
                       :delete-tooltip="t('transactions.events.actions.delete')"
                       :edit-tooltip="t('transactions.events.actions.edit')"
@@ -211,15 +211,15 @@ const { mdAndUp } = useDisplay();
                       @edit-click="editEvent(item)"
                       @delete-click="deleteEvent(item)"
                     />
-                  </v-lazy>
+                  </VLazy>
                 </template>
-              </data-table>
+              </DataTable>
             </div>
-          </v-expansion-panel-content>
-        </v-expansion-panel>
-      </v-expansion-panels>
+          </VExpansionPanelContent>
+        </VExpansionPanel>
+      </VExpansionPanels>
     </template>
-  </table-expand-container>
+  </TableExpandContainer>
 </template>
 
 <style lang="scss" module>

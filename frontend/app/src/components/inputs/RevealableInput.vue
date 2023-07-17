@@ -1,9 +1,6 @@
 <script setup lang="ts">
 import { useListeners } from 'vue';
 
-const rootAttrs = useAttrs();
-const rootListeners = useListeners();
-
 withDefaults(
   defineProps<{
     value?: string | null;
@@ -20,8 +17,9 @@ withDefaults(
     sensitiveKey: false
   }
 );
-
 const emit = defineEmits<{ (e: 'input', value: string | null): void }>();
+const rootAttrs = useAttrs();
+const rootListeners = useListeners();
 
 const revealed = ref(false);
 const input = (value: string | null) => {
@@ -30,7 +28,7 @@ const input = (value: string | null) => {
 </script>
 
 <template>
-  <v-text-field
+  <VTextField
     v-bind="rootAttrs"
     :value="value"
     :prepend-icon="outlined ? null : prependIcon"
@@ -47,14 +45,14 @@ const input = (value: string | null) => {
     @input="input($event)"
   >
     <template #append>
-      <v-icon v-if="revealed" tabindex="-1" @click="revealed = !revealed">
+      <VIcon v-if="revealed" tabindex="-1" @click="revealed = !revealed">
         mdi-eye
-      </v-icon>
-      <v-icon v-else tabindex="-1" @click="revealed = !revealed">
+      </VIcon>
+      <VIcon v-else tabindex="-1" @click="revealed = !revealed">
         mdi-eye-off
-      </v-icon>
+      </VIcon>
     </template>
-  </v-text-field>
+  </VTextField>
 </template>
 
 <style scoped lang="scss">

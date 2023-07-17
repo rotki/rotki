@@ -157,31 +157,31 @@ const navItems: MenuItem[] = [
 
 <template>
   <div>
-    <v-list
+    <VList
       nav
       class="navigation-menu"
       :class="{ 'navigation-menu--mini': isMini }"
     >
-      <v-list-item-group>
+      <VListItemGroup>
         <template v-for="(navItem, i) in navItems">
-          <v-list-item
+          <VListItem
             v-if="navItem.type === 'item'"
             :key="i"
             :class="`navigation__${navItem.class}`"
             active-class="navigation-menu__item--active"
             :to="navItem.route"
           >
-            <navigation-menu-item
+            <NavigationMenuItem
               :show-tooltips="isMini"
               :text="navItem.text"
               :icon="navItem.icon"
               :image="navItem.image"
               :icon-component="navItem.component"
             />
-          </v-list-item>
-          <v-list-group v-else-if="navItem.type === 'group'" :key="i">
+          </VListItem>
+          <VListGroup v-else-if="navItem.type === 'group'" :key="i">
             <template #activator>
-              <navigation-menu-item
+              <NavigationMenuItem
                 :show-tooltips="isMini"
                 :text="navItem.text"
                 :icon="navItem.icon"
@@ -194,7 +194,7 @@ const navItems: MenuItem[] = [
               class="navigation-submenu"
               :class="{ 'navigation-submenu--mini': isMini }"
             >
-              <v-list-item
+              <VListItem
                 v-for="(subNavItem, si) in navItem.items"
                 :key="si"
                 :class="`navigation__${subNavItem.class}`"
@@ -202,7 +202,7 @@ const navItems: MenuItem[] = [
                 :to="subNavItem.route"
               >
                 <template #default="{ active }">
-                  <navigation-menu-item
+                  <NavigationMenuItem
                     :show-tooltips="isMini"
                     :text="subNavItem.text"
                     :icon="subNavItem.icon"
@@ -212,17 +212,17 @@ const navItems: MenuItem[] = [
                     sub-menu
                   />
                 </template>
-              </v-list-item>
+              </VListItem>
             </div>
-          </v-list-group>
-          <v-divider
+          </VListGroup>
+          <VDivider
             v-else-if="navItem.type === 'divider'"
             :key="i"
             class="my-2"
           />
         </template>
-      </v-list-item-group>
-    </v-list>
+      </VListItemGroup>
+    </VList>
   </div>
 </template>
 

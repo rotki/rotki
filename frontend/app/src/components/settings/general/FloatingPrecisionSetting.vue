@@ -38,7 +38,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <settings-option
+  <SettingsOption
     #default="{ error, success, update }"
     setting="uiFloatingPrecision"
     :transform="transform"
@@ -46,7 +46,7 @@ onMounted(() => {
     :success-message="successMessage"
     @finished="resetFloatingPrecision()"
   >
-    <v-text-field
+    <VTextField
       v-model="floatingPrecision"
       outlined
       min="1"
@@ -60,5 +60,5 @@ onMounted(() => {
       "
       @change="callIfValid($event, update)"
     />
-  </settings-option>
+  </SettingsOption>
 </template>

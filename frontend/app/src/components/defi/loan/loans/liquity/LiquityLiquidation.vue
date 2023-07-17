@@ -16,14 +16,14 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <stat-card :title="t('loan_liquidation.title')">
-    <loan-row medium :title="t('loan_collateral.liquidation_price')">
-      <amount-display
+  <StatCard :title="t('loan_liquidation.title')">
+    <LoanRow medium :title="t('loan_collateral.liquidation_price')">
+      <AmountDisplay
         show-currency="ticker"
         fiat-currency="USD"
         :value="price"
         :min-width="18"
       />
-    </loan-row>
-  </stat-card>
+    </LoanRow>
+  </StatCard>
 </template>

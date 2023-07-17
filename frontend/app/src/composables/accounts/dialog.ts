@@ -12,7 +12,7 @@ export const useAccountDialog = createSharedComposable(() => {
   const dialogText: Ref<Title> = ref(defaultTitle());
   const openDialog: Ref<boolean> = ref(false);
   const valid: Ref<boolean> = ref(false);
-  const saveFunc: Ref<Function> = ref(() => {});
+  const saveFunc = ref<() => Promise<boolean>>();
 
   const { t } = useI18n();
 

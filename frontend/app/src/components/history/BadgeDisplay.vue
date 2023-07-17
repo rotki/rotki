@@ -1,16 +1,15 @@
 <script setup lang="ts">
 import { useListeners } from 'vue';
 
-const rootAttrs = useAttrs();
-const rootListeners = useListeners();
-
 defineProps({
   color: { required: false, type: String, default: 'grey-darken' }
 });
+const rootAttrs = useAttrs();
+const rootListeners = useListeners();
 </script>
 
 <template>
-  <v-chip
+  <VChip
     small
     :color="`${color} lighten-5`"
     :text-color="color"
@@ -19,5 +18,5 @@ defineProps({
     v-on="rootListeners"
   >
     <slot />
-  </v-chip>
+  </VChip>
 </template>

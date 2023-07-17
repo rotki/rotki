@@ -12,8 +12,6 @@ import { type DashboardTableType } from '@/types/frontend-settings';
 import { TableColumn } from '@/types/table-column';
 import { isEvmNativeToken } from '@/types/asset';
 
-const { t } = useI18n();
-
 const props = withDefaults(
   defineProps<{
     title: string;
@@ -23,6 +21,8 @@ const props = withDefaults(
   }>(),
   { loading: false }
 );
+
+const { t } = useI18n();
 
 const { balances, title, tableType } = toRefs(props);
 const search = ref('');
@@ -149,10 +149,10 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
 </script>
 
 <template>
-  <dashboard-expandable-table>
+  <DashboardExpandableTable>
     <template #title>{{ title }}</template>
     <template #details>
-      <v-text-field
+      <VTextField
         v-model="search"
         outlined
         dense
@@ -164,7 +164,7 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
         clearable
         @click:clear="search = ''"
       />
-      <v-menu
+      <VMenu
         id="dashboard-asset-table__column-filter"
         transition="slide-y-transition"
         max-width="250px"
@@ -172,25 +172,25 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
         offset-y
       >
         <template #activator="{ on }">
-          <menu-tooltip-button
+          <MenuTooltipButton
             :tooltip="t('dashboard_asset_table.select_visible_columns')"
             class-name="ml-4 dashboard-asset-table__column-filter__button"
             :on-menu="on"
           >
-            <v-icon>mdi-dots-vertical</v-icon>
-          </menu-tooltip-button>
+            <VIcon>mdi-dots-vertical</VIcon>
+          </MenuTooltipButton>
         </template>
-        <visible-columns-selector :group="tableType" :group-label="title" />
-      </v-menu>
+        <VisibleColumnsSelector :group="tableType" :group-label="title" />
+      </VMenu>
     </template>
     <template #shortDetails>
-      <amount-display
+      <AmountDisplay
         :fiat-currency="currencySymbol"
         :value="total"
         show-currency="symbol"
       />
     </template>
-    <data-table
+    <DataTable
       class="dashboard-asset-table__balances"
       :headers="tableHeaders"
       :items="balances"
@@ -204,14 +204,14 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
       :custom-filter="assetFilter"
     >
       <template #item.asset="{ item }">
-        <asset-details
+        <AssetDetails
           opens-details
           :asset="item.asset"
           :is-collection-parent="!!item.breakdown"
         />
       </template>
       <template #item.usdPrice="{ item }">
-        <amount-display
+        <AmountDisplay
           v-if="item.usdPrice && item.usdPrice.gte(0)"
           no-scramble
           show-currency="symbol"
@@ -221,14 +221,14 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
           :value="item.usdPrice"
         />
         <div v-else class="d-flex justify-end">
-          <v-skeleton-loader width="70" type="text" />
+          <VSkeletonLoader width="70" type="text" />
         </div>
       </template>
       <template #item.amount="{ item }">
-        <amount-display :value="item.amount" />
+        <AmountDisplay :value="item.amount" />
       </template>
       <template #item.usdValue="{ item }">
-        <amount-display
+        <AmountDisplay
           show-currency="symbol"
           :amount="item.amount"
           :price-asset="item.asset"
@@ -238,10 +238,10 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
         />
       </template>
       <template #item.percentageOfTotalNetValue="{ item }">
-        <percentage-display :value="percentageOfTotalNetValue(item.usdValue)" />
+        <PercentageDisplay :value="percentageOfTotalNetValue(item.usdValue)" />
       </template>
       <template #item.percentageOfTotalCurrentGroup="{ item }">
-        <percentage-display :value="percentageOfCurrentGroup(item.usdValue)" />
+        <PercentageDisplay :value="percentageOfCurrentGroup(item.usdValue)" />
       </template>
       <template #no-results>
         <span class="grey--text text--darken-2">
@@ -256,44 +256,44 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
         v-if="balances.length > 0 && (!search || search.length === 0)"
         #body.append="{ isMobile }"
       >
-        <row-append
+        <RowAppend
           label-colspan="3"
           :label="t('common.total')"
           :right-patch-colspan="tableHeaders.length - 4"
           :is-mobile="isMobile"
         >
-          <amount-display
+          <AmountDisplay
             :fiat-currency="currencySymbol"
             :value="total"
             show-currency="symbol"
           />
-        </row-append>
+        </RowAppend>
       </template>
       <template #expanded-item="{ item }">
-        <table-expand-container visible :colspan="tableHeaders.length">
-          <evm-native-token-breakdown
+        <TableExpandContainer visible :colspan="tableHeaders.length">
+          <EvmNativeTokenBreakdown
             v-if="isEvmNativeToken(item.asset)"
             show-percentage
             :total="item.usdValue"
             :identifier="item.asset"
           />
-          <asset-balances
+          <AssetBalances
             v-else
             hide-total
             v-bind="props"
             :balances="item.breakdown ?? []"
           />
-        </table-expand-container>
+        </TableExpandContainer>
       </template>
       <template #item.expand="{ item }">
-        <row-expander
+        <RowExpander
           v-if="item.breakdown || isEvmNativeToken(item.asset)"
           :expanded="expanded.includes(item)"
           @click="expanded = expanded.includes(item) ? [] : [item]"
         />
       </template>
-    </data-table>
-  </dashboard-expandable-table>
+    </DataTable>
+  </DashboardExpandableTable>
 </template>
 
 <style scoped lang="scss">

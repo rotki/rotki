@@ -10,12 +10,12 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <settings-option
+  <SettingsOption
     #default="{ error, success, update }"
     setting="includeGasCosts"
     :error-message="t('account_settings.messages.gas_costs')"
   >
-    <v-switch
+    <VSwitch
       v-model="gasCosts"
       class="accounting-settings__include-gas-costs"
       :label="t('accounting_settings.labels.gas_costs')"
@@ -24,5 +24,5 @@ const { t } = useI18n();
       color="primary"
       @change="update($event)"
     />
-  </settings-option>
+  </SettingsOption>
 </template>

@@ -1,3 +1,5 @@
+//TODO: Split class
+/* eslint-disable max-lines */
 import { type DefiAccount } from '@rotki/common/lib/account';
 import { Blockchain, DefiProtocol } from '@rotki/common/lib/blockchain';
 import sortBy from 'lodash/sortBy';
@@ -464,7 +466,7 @@ export const useDefiStore = defineStore('defi', () => {
     setStatus(Status.LOADED, premiumSection);
   }
 
-  const modules: Record<string, Function> = {
+  const modules: Record<string, () => void> = {
     [Module.MAKERDAO_DSR]: () => makerDaoStore.reset(Module.MAKERDAO_DSR),
     [Module.MAKERDAO_VAULTS]: () => makerDaoStore.reset(Module.MAKERDAO_VAULTS),
     [Module.AAVE]: () => aaveStore.reset(),

@@ -6,12 +6,12 @@ import {
 } from '@/types/frontend-settings';
 import { TableColumn } from '@/types/table-column';
 
-const { t } = useI18n();
-
 const props = defineProps({
   group: { required: true, type: String as PropType<DashboardTableType> },
   groupLabel: { required: false, type: String, default: '' }
 });
+
+const { t } = useI18n();
 
 const { group, groupLabel } = toRefs(props);
 
@@ -50,27 +50,27 @@ const onVisibleColumnsChange = async (visibleColumns: TableColumn[]) => {
 </script>
 
 <template>
-  <v-list>
-    <v-list-item-group
+  <VList>
+    <VListItemGroup
       :value="currentVisibleColumns"
       multiple
       @change="onVisibleColumnsChange($event)"
     >
       <template v-for="(item, i) in availableColumns">
-        <v-list-item :key="i" :value="item.value">
+        <VListItem :key="i" :value="item.value">
           <template #default="{ active }">
-            <v-list-item-content>
-              <v-list-item-title>
+            <VListItemContent>
+              <VListItemTitle>
                 {{ item.text }}
-              </v-list-item-title>
-            </v-list-item-content>
+              </VListItemTitle>
+            </VListItemContent>
 
-            <v-list-item-action>
-              <v-checkbox :input-value="active" />
-            </v-list-item-action>
+            <VListItemAction>
+              <VCheckbox :input-value="active" />
+            </VListItemAction>
           </template>
-        </v-list-item>
+        </VListItem>
       </template>
-    </v-list-item-group>
-  </v-list>
+    </VListItemGroup>
+  </VList>
 </template>

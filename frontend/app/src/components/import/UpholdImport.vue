@@ -3,18 +3,18 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <import-source source="uphold_transactions">
+  <ImportSource source="uphold_transactions">
     <template #upload-title>
-      <i18n tag="span" path="import_data.uphold.import">
+      <I18n tag="span" path="import_data.uphold.import">
         <strong>{{ t('import_data.uphold.import_trade') }}</strong>
-      </i18n>
+      </I18n>
     </template>
-    <i18n tag="span" path="import_data.note">
+    <I18n tag="span" path="import_data.note">
       <strong>{{ t('import_data.uphold.name') }}</strong>
-    </i18n>
+    </I18n>
     <ul>
       <li>{{ t('import_data.uphold.line_one') }}</li>
       <li>{{ t('import_data.uphold.line_two') }}</li>
     </ul>
-  </import-source>
+  </ImportSource>
 </template>

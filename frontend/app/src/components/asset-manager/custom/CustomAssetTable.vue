@@ -10,8 +10,6 @@ import {
   type Matcher
 } from '@/composables/filters/custom-assets';
 
-const { t } = useI18n();
-
 withDefaults(
   defineProps<{
     assets: CustomAsset[];
@@ -33,6 +31,8 @@ const emit = defineEmits<{
   (e: 'update:filters', filters: Filters): void;
   (e: 'update:expanded', expandedAssets: CustomAsset[]): void;
 }>();
+
+const { t } = useI18n();
 
 const tableHeaders = computed<DataTableHeader[]>(() => [
   {
@@ -77,7 +77,7 @@ const getAsset = (item: CustomAsset) => ({
 </script>
 
 <template>
-  <card outlined-body>
+  <Card outlined-body>
     <template #title>
       {{ t('common.assets') }}
     </template>
@@ -85,18 +85,18 @@ const getAsset = (item: CustomAsset) => ({
       {{ t('asset_table.custom.subtitle') }}
     </template>
     <template #actions>
-      <v-row>
-        <v-col class="d-none d-md-block" />
-        <v-col cols="12" md="6" class="pb-md-8">
-          <table-filter
+      <VRow>
+        <VCol class="d-none d-md-block" />
+        <VCol cols="12" md="6" class="pb-md-8">
+          <TableFilter
             :matches="filters"
             :matchers="matchers"
             @update:matches="updateFilter($event)"
           />
-        </v-col>
-      </v-row>
+        </VCol>
+      </VRow>
     </template>
-    <v-btn
+    <VBtn
       absolute
       fab
       top
@@ -106,9 +106,9 @@ const getAsset = (item: CustomAsset) => ({
       data-cy="add-manual-asset"
       @click="add()"
     >
-      <v-icon> mdi-plus </v-icon>
-    </v-btn>
-    <data-table
+      <VIcon> mdi-plus </VIcon>
+    </VBtn>
+    <DataTable
       :items="assets"
       :loading="loading"
       :headers="tableHeaders"
@@ -123,46 +123,46 @@ const getAsset = (item: CustomAsset) => ({
       @update:options="updatePagination($event)"
     >
       <template #item.name="{ item }">
-        <asset-details-base
+        <AssetDetailsBase
           :changeable="!loading"
           opens-details
           :asset="getAsset(item)"
         />
       </template>
       <template #item.custom_asset_type="{ item }">
-        <badge-display>
+        <BadgeDisplay>
           {{ item.customAssetType }}
-        </badge-display>
+        </BadgeDisplay>
       </template>
       <template #item.actions="{ item }">
-        <row-actions
+        <RowActions
           :edit-tooltip="t('asset_table.edit_tooltip')"
           :delete-tooltip="t('asset_table.delete_tooltip')"
           @edit-click="edit(item)"
           @delete-click="deleteAsset(item)"
         >
-          <copy-button
+          <CopyButton
             class="mx-1"
             :tooltip="t('asset_table.copy_identifier.tooltip')"
             :value="item.identifier"
           />
-        </row-actions>
+        </RowActions>
       </template>
       <template #expanded-item="{ item }">
-        <table-expand-container visible :colspan="tableHeaders.length">
+        <TableExpandContainer visible :colspan="tableHeaders.length">
           <div class="font-weight-bold">{{ t('asset_table.notes') }}:</div>
           <div class="pt-2">
             {{ item.notes }}
           </div>
-        </table-expand-container>
+        </TableExpandContainer>
       </template>
       <template #item.expand="{ item }">
-        <row-expander
+        <RowExpander
           v-if="item.notes"
           :expanded="expanded.includes(item)"
           @click="updateExpanded(expanded.includes(item) ? [] : [item])"
         />
       </template>
-    </data-table>
-  </card>
+    </DataTable>
+  </Card>
 </template>

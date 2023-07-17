@@ -92,9 +92,9 @@ watch(
 </script>
 
 <template>
-  <v-row>
-    <v-col cols="12" md="4" lg="2">
-      <v-text-field
+  <VRow>
+    <VCol cols="12" md="4" lg="2">
+      <VTextField
         v-model="validatorIndex"
         outlined
         type="number"
@@ -103,9 +103,9 @@ watch(
         :error-messages="toMessages(v$.validatorIndex)"
         @blur="v$.validatorIndex.$touch()"
       />
-    </v-col>
-    <v-col cols="12" md="6" lg="8">
-      <v-text-field
+    </VCol>
+    <VCol cols="12" md="6" lg="8">
+      <VTextField
         v-model="publicKey"
         outlined
         :disabled="disabled"
@@ -113,9 +113,9 @@ watch(
         :error-messages="toMessages(v$.publicKey)"
         @blur="v$.publicKey.$touch()"
       />
-    </v-col>
-    <v-col cols="12" md="2" lg="2">
-      <v-text-field
+    </VCol>
+    <VCol cols="12" md="2" lg="2">
+      <VTextField
         v-model="ownershipPercentage"
         outlined
         placeholder="100"
@@ -126,6 +126,6 @@ watch(
         :error-messages="toMessages(v$.ownershipPercentage)"
         @blur="v$.ownershipPercentage.$touch()"
       />
-    </v-col>
-  </v-row>
+    </VCol>
+  </VRow>
 </template>

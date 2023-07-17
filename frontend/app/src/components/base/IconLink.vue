@@ -20,9 +20,9 @@ const { href, onLinkClick } = useLinks(url);
 </script>
 
 <template>
-  <v-tooltip top open-delay="600">
+  <VTooltip top open-delay="600">
     <template #activator="{ on, attrs }">
-      <v-btn
+      <VBtn
         small
         :icon="!text"
         :text="!!text"
@@ -36,9 +36,9 @@ const { href, onLinkClick } = useLinks(url);
         @click="onLinkClick()"
       >
         <span v-if="text" class="mr-2"> {{ text }}</span>
-        <v-icon :small="true"> mdi-launch </v-icon>
-      </v-btn>
+        <VIcon :small="true"> mdi-launch </VIcon>
+      </VBtn>
     </template>
     <span>{{ url }}</span>
-  </v-tooltip>
+  </VTooltip>
 </template>

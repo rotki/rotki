@@ -9,11 +9,11 @@ import {
 } from '@/types/exchanges';
 import { Section } from '@/types/status';
 
-const { t } = useI18n();
-
 const props = defineProps<{
   exchange: SupportedExchange.BINANCE | SupportedExchange.BINANCEUS;
 }>();
+
+const { t } = useI18n();
 
 const { exchange } = toRefs(props);
 
@@ -115,57 +115,57 @@ const receivedTableHeaders = computed<DataTableHeader[]>(() => [
 
 <template>
   <div>
-    <v-sheet outlined rounded>
-      <card elevation="0">
+    <VSheet outlined rounded>
+      <Card elevation="0">
         <template #title>
           {{ t('exchange_balances.received_interest') }}
         </template>
 
         <div class="pt-4 ma-n4">
-          <data-table
+          <DataTable
             :headers="receivedTableHeaders"
             :items="collection.received"
             :loading="isLoading"
           >
             <template #item.asset="{ item }">
-              <asset-details opens-details hide-name :asset="item.asset" />
+              <AssetDetails opens-details hide-name :asset="item.asset" />
             </template>
             <template #item.amount="{ item }">
-              <amount-display :value="item.amount" />
+              <AmountDisplay :value="item.amount" />
             </template>
             <template #item.usdValue="{ item }">
-              <amount-display :value="item.usdValue" />
+              <AmountDisplay :value="item.usdValue" />
             </template>
             <template
               v-if="collection.received.length > 0"
               #body.append="{ isMobile }"
             >
-              <row-append
+              <RowAppend
                 label-colspan="2"
                 :label="t('common.total')"
                 :is-mobile="isMobile"
               >
-                <amount-display
+                <AmountDisplay
                   :fiat-currency="CURRENCY_USD"
                   :value="collection.totalUsdValue"
                   show-currency="symbol"
                 />
-              </row-append>
+              </RowAppend>
             </template>
-          </data-table>
+          </DataTable>
         </div>
-      </card>
-    </v-sheet>
-    <v-sheet outlined rounded class="mt-6" :elevation="0">
-      <card elevation="0">
+      </Card>
+    </VSheet>
+    <VSheet outlined rounded class="mt-6" :elevation="0">
+      <Card elevation="0">
         <template #title>
           {{ t('exchange_balances.received_interest_history') }}
         </template>
 
         <div class="pt-4 ma-n4">
-          <collection-handler :collection="collection">
+          <CollectionHandler :collection="collection">
             <template #default="{ data, itemLength }">
-              <data-table
+              <DataTable
                 :headers="tableHeaders"
                 :items="data"
                 :loading="isLoading"
@@ -176,22 +176,22 @@ const receivedTableHeaders = computed<DataTableHeader[]>(() => [
                 @update:options="setOptions($event)"
               >
                 <template #item.asset="{ item }">
-                  <asset-details opens-details hide-name :asset="item.asset" />
+                  <AssetDetails opens-details hide-name :asset="item.asset" />
                 </template>
                 <template #item.amount="{ item }">
-                  <amount-display :value="item.amount" />
+                  <AmountDisplay :value="item.amount" />
                 </template>
                 <template #item.usdValue="{ item }">
-                  <amount-display :value="item.usdValue" />
+                  <AmountDisplay :value="item.usdValue" />
                 </template>
                 <template #item.timestamp="{ item }">
-                  <date-display :timestamp="item.timestamp" />
+                  <DateDisplay :timestamp="item.timestamp" />
                 </template>
-              </data-table>
+              </DataTable>
             </template>
-          </collection-handler>
+          </CollectionHandler>
         </div>
-      </card>
-    </v-sheet>
+      </Card>
+    </VSheet>
   </div>
 </template>

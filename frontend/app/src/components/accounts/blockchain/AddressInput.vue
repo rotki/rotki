@@ -86,18 +86,18 @@ const rules = [
 </script>
 
 <template>
-  <v-row no-gutters>
-    <v-col>
-      <v-row v-if="multi" no-gutters align="center">
-        <v-col cols="auto">
-          <v-checkbox
+  <VRow no-gutters>
+    <VCol>
+      <VRow v-if="multi" no-gutters align="center">
+        <VCol cols="auto">
+          <VCheckbox
             v-model="multiple"
             :disabled="disabled"
             :label="t('account_form.labels.multiple')"
           />
-        </v-col>
-      </v-row>
-      <v-text-field
+        </VCol>
+      </VRow>
+      <VTextField
         v-if="!multiple"
         v-model="address"
         data-cy="account-address-field"
@@ -110,7 +110,7 @@ const rules = [
         :disabled="disabled"
         @paste="onPasteAddress($event)"
       />
-      <v-textarea
+      <VTextarea
         v-else
         v-model="userAddresses"
         outlined
@@ -120,8 +120,8 @@ const rules = [
         :label="t('account_form.labels.addresses')"
         @paste="onPasteMulti($event)"
       />
-      <v-row v-if="multiple" no-gutters>
-        <v-col>
+      <VRow v-if="multiple" no-gutters>
+        <VCol>
           <div
             class="text-caption"
             v-text="
@@ -134,8 +134,8 @@ const rules = [
               )
             "
           />
-        </v-col>
-      </v-row>
-    </v-col>
-  </v-row>
+        </VCol>
+      </VRow>
+    </VCol>
+  </VRow>
 </template>

@@ -165,8 +165,8 @@ const importSnapshot = async () => {
 </script>
 
 <template>
-  <fragment>
-    <v-menu
+  <Fragment>
+    <VMenu
       id="balances-saved-dropdown"
       v-model="visible"
       transition="slide-y-transition"
@@ -176,13 +176,13 @@ const importSnapshot = async () => {
       z-index="215"
     >
       <template #activator="{ on }">
-        <menu-tooltip-button
+        <MenuTooltipButton
           :tooltip="t('sync_indicator.menu_tooltip', premium ? 2 : 1)"
           class-name="secondary--text text--lighten-4"
           :on-menu="on"
         >
-          <v-icon> mdi-content-save </v-icon>
-        </menu-tooltip-button>
+          <VIcon> mdi-content-save </VIcon>
+        </MenuTooltipButton>
       </template>
       <div>
         <div class="balance-saved-indicator__content">
@@ -191,25 +191,25 @@ const importSnapshot = async () => {
               {{ t('sync_indicator.last_data_upload') }}
             </div>
             <div class="py-2 text--secondary">
-              <date-display v-if="lastDataUpload" :timestamp="lastDataUpload" />
+              <DateDisplay v-if="lastDataUpload" :timestamp="lastDataUpload" />
               <span v-else>
                 {{ t('sync_indicator.never_saved') }}
               </span>
             </div>
             <div>
-              <sync-buttons
+              <SyncButtons
                 :pending="pending"
                 @action="showConfirmation($event)"
               />
             </div>
-            <v-divider class="my-4" />
+            <VDivider class="my-4" />
           </template>
           <div>
             <div class="font-weight-medium">
               {{ t('sync_indicator.snapshot_title') }}
             </div>
             <div class="pt-2 text--secondary">
-              <date-display
+              <DateDisplay
                 v-if="lastBalanceSave"
                 :timestamp="lastBalanceSave"
               />
@@ -217,17 +217,17 @@ const importSnapshot = async () => {
                 {{ t('sync_indicator.never_saved') }}
               </span>
             </div>
-            <v-divider class="my-4" />
-            <v-row>
-              <v-col>
-                <v-btn color="primary" outlined @click="refreshAllAndSave()">
-                  <v-icon left>mdi-content-save</v-icon>
+            <VDivider class="my-4" />
+            <VRow>
+              <VCol>
+                <VBtn color="primary" outlined @click="refreshAllAndSave()">
+                  <VIcon left>mdi-content-save</VIcon>
                   {{ t('sync_indicator.force_save') }}
-                </v-btn>
-                <v-tooltip right max-width="300px">
+                </VBtn>
+                <VTooltip right max-width="300px">
                   <template #activator="{ on, attrs }">
                     <div v-bind="attrs" v-on="on">
-                      <v-checkbox
+                      <VCheckbox
                         v-model="ignoreErrors"
                         hide-details
                         label="Ignore Errors"
@@ -235,26 +235,26 @@ const importSnapshot = async () => {
                     </div>
                   </template>
                   <span>{{ t('sync_indicator.ignore_errors') }}</span>
-                </v-tooltip>
-              </v-col>
-              <v-col cols="auto" class="px-2 py-4">
-                <v-tooltip bottom max-width="300px">
+                </VTooltip>
+              </VCol>
+              <VCol cols="auto" class="px-2 py-4">
+                <VTooltip bottom max-width="300px">
                   <template #activator="{ on }">
-                    <v-icon v-on="on">mdi-information</v-icon>
+                    <VIcon v-on="on">mdi-information</VIcon>
                   </template>
                   <div>
                     {{ t('sync_indicator.snapshot_tooltip') }}
                   </div>
-                </v-tooltip>
-              </v-col>
-            </v-row>
-            <v-divider class="my-4" />
+                </VTooltip>
+              </VCol>
+            </VRow>
+            <VDivider class="my-4" />
             <div>
               <div class="font-weight-medium">
                 {{ t('sync_indicator.import_snapshot.title') }}
               </div>
               <div class="pt-4">
-                <v-dialog
+                <VDialog
                   v-model="importSnapshotDialog"
                   max-width="600"
                   :persistent="
@@ -262,18 +262,18 @@ const importSnapshot = async () => {
                   "
                 >
                   <template #activator="{ on }">
-                    <v-btn color="primary" outlined v-on="on">
-                      <v-icon left>mdi-import</v-icon>
+                    <VBtn color="primary" outlined v-on="on">
+                      <VIcon left>mdi-import</VIcon>
                       {{ t('common.actions.import') }}
-                    </v-btn>
+                    </VBtn>
                   </template>
-                  <card>
+                  <Card>
                     <template #title>
                       {{ t('sync_indicator.import_snapshot.title') }}
                     </template>
                     <div class="pt-2">
-                      <v-row>
-                        <v-col>
+                      <VRow>
+                        <VCol>
                           <div class="font-weight-bold">
                             {{
                               t(
@@ -282,7 +282,7 @@ const importSnapshot = async () => {
                             }}
                           </div>
                           <div class="py-2">
-                            <file-upload
+                            <FileUpload
                               ref="balanceSnapshotUploader"
                               source="csv"
                               @selected="balanceSnapshotFile = $event"
@@ -295,8 +295,8 @@ const importSnapshot = async () => {
                               )
                             }}
                           </div>
-                        </v-col>
-                        <v-col>
+                        </VCol>
+                        <VCol>
                           <div class="font-weight-bold">
                             {{
                               t(
@@ -305,7 +305,7 @@ const importSnapshot = async () => {
                             }}
                           </div>
                           <div class="py-2">
-                            <file-upload
+                            <FileUpload
                               ref="locationDataSnapshotUploader"
                               source="csv"
                               @selected="locationDataSnapshotFile = $event"
@@ -318,41 +318,41 @@ const importSnapshot = async () => {
                               )
                             }}
                           </div>
-                        </v-col>
-                      </v-row>
+                        </VCol>
+                      </VRow>
                     </div>
                     <template #buttons>
-                      <v-spacer />
-                      <v-btn
+                      <VSpacer />
+                      <VBtn
                         color="primary"
                         text
                         @click="importSnapshotDialog = false"
                       >
                         {{ t('common.actions.cancel') }}
-                      </v-btn>
-                      <v-btn
+                      </VBtn>
+                      <VBtn
                         color="primary"
                         :disabled="!importFilesCompleted"
                         :loading="importSnapshotLoading"
                         @click="importSnapshot()"
                       >
                         {{ t('common.actions.import') }}
-                      </v-btn>
+                      </VBtn>
                     </template>
-                  </card>
-                </v-dialog>
+                  </Card>
+                </VDialog>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </v-menu>
+    </VMenu>
 
-    <v-dialog v-if="upgradeVisible" width="500" :value="true" persistent>
-      <upgrade-progress-display />
-    </v-dialog>
+    <VDialog v-if="upgradeVisible" width="500" :value="true" persistent>
+      <UpgradeProgressDisplay />
+    </VDialog>
 
-    <confirm-dialog
+    <ConfirmDialog
       v-else
       confirm-type="warning"
       :display="displayConfirmation"
@@ -374,12 +374,12 @@ const importSnapshot = async () => {
           t('sync_indicator.upload_confirmation.message_download_relogin')
         "
       />
-      <v-checkbox
+      <VCheckbox
         v-model="confirmChecked"
         :label="t('sync_indicator.upload_confirmation.confirm_check')"
       />
-    </confirm-dialog>
-  </fragment>
+    </ConfirmDialog>
+  </Fragment>
 </template>
 
 <style lang="scss" scoped>

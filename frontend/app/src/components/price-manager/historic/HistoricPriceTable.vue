@@ -2,8 +2,6 @@
 import { type DataTableHeader } from '@/types/vuetify';
 import { type HistoricalPrice } from '@/types/prices';
 
-const { t } = useI18n();
-
 const props = withDefaults(
   defineProps<{
     items: HistoricalPrice[];
@@ -19,6 +17,8 @@ const emit = defineEmits<{
   (e: 'delete', item: HistoricalPrice): void;
   (e: 'refresh'): void;
 }>();
+
+const { t } = useI18n();
 
 const { items } = toRefs(props);
 
@@ -67,9 +67,9 @@ const refresh = () => emit('refresh');
 </script>
 
 <template>
-  <card outlined-body>
+  <Card outlined-body>
     <template #title>
-      <refresh-button
+      <RefreshButton
         :loading="loading"
         :tooltip="t('price_table.refresh_tooltip')"
         @refresh="refresh()"
@@ -79,28 +79,28 @@ const refresh = () => emit('refresh');
       </div>
     </template>
     <slot />
-    <data-table
+    <DataTable
       :items="items"
       :headers="headers"
       :loading="loading"
       sort-by="timestamp"
     >
       <template #item.fromAsset="{ item }">
-        <asset-details :asset="item.fromAsset" />
+        <AssetDetails :asset="item.fromAsset" />
       </template>
       <template #item.toAsset="{ item }">
-        <asset-details :asset="item.toAsset" />
+        <AssetDetails :asset="item.toAsset" />
       </template>
       <template #item.timestamp="{ item }">
-        <date-display :timestamp="item.timestamp" />
+        <DateDisplay :timestamp="item.timestamp" />
       </template>
       <template #item.price="{ item }">
-        <amount-display :value="item.price" />
+        <AmountDisplay :value="item.price" />
       </template>
       <template #item.wasWorth>{{ t('price_table.was_worth') }}</template>
       <template #item.on>{{ t('price_table.on') }}</template>
       <template #item.actions="{ item }">
-        <row-actions
+        <RowActions
           :disabled="loading"
           :delete-tooltip="t('price_table.actions.delete.tooltip')"
           :edit-tooltip="t('price_table.actions.edit.tooltip')"
@@ -108,6 +108,6 @@ const refresh = () => emit('refresh');
           @edit-click="edit(item)"
         />
       </template>
-    </data-table>
-  </card>
+    </DataTable>
+  </Card>
 </template>

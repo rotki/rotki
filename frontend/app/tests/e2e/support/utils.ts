@@ -28,6 +28,7 @@ export function selectLocation(element: string, value: string) {
 let counter = 0;
 
 type QueryTarget = { method: 'POST' | 'GET'; url: string };
+
 /**
  * Used to wait for an async query to complete.
  * The method will intercept the original query, get the task id

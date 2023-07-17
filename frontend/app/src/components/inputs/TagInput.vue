@@ -123,7 +123,7 @@ watch(tags, () => {
 
 <template>
   <div>
-    <v-combobox
+    <VCombobox
       :value="filteredValue"
       :disabled="disabled"
       :items="tags"
@@ -141,9 +141,9 @@ watch(tags, () => {
       @input="input($event)"
     >
       <template #no-data>
-        <v-list-item>
+        <VListItem>
           <span class="subheading">{{ t('common.actions.create') }}</span>
-          <v-chip
+          <VChip
             class="ml-2"
             :color="newTagBackground"
             :text-color="newTagForeground"
@@ -151,11 +151,11 @@ watch(tags, () => {
             small
           >
             {{ search }}
-          </v-chip>
-        </v-list-item>
+          </VChip>
+        </VListItem>
       </template>
       <template #selection="{ item, selected, select }">
-        <v-chip
+        <VChip
           label
           class="font-weight-medium"
           :input-value="selected"
@@ -166,17 +166,17 @@ watch(tags, () => {
           @click="select($event)"
         >
           {{ item.name }}
-        </v-chip>
+        </VChip>
       </template>
       <template #item="{ item }">
         <template v-if="typeof item !== 'object'">
-          <v-list-item-content>
+          <VListItemContent>
             {{ item }}
-          </v-list-item-content>
+          </VListItemContent>
         </template>
         <template v-else>
           <div>
-            <tag-icon :tag="item" />
+            <TagIcon :tag="item" />
             <span class="tag-input__tag__description">
               {{ item.description }}
             </span>
@@ -184,7 +184,7 @@ watch(tags, () => {
         </template>
       </template>
       <template #append-outer>
-        <v-btn
+        <VBtn
           class="tag-input__manage-tags mt-n2"
           icon
           text
@@ -192,19 +192,19 @@ watch(tags, () => {
           :disabled="disabled"
           @click="manageTags = true"
         >
-          <v-icon>mdi-pencil</v-icon>
-        </v-btn>
+          <VIcon>mdi-pencil</VIcon>
+        </VBtn>
       </template>
-    </v-combobox>
-    <v-dialog
+    </VCombobox>
+    <VDialog
       :value="manageTags"
       max-width="800"
       class="tag-input__tag-manager"
       content-class="fill-height"
       @input="manageTags = false"
     >
-      <tag-manager v-if="manageTags" dialog @close="manageTags = false" />
-    </v-dialog>
+      <TagManager v-if="manageTags" dialog @close="manageTags = false" />
+    </VDialog>
   </div>
 </template>
 

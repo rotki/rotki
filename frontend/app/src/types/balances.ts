@@ -31,7 +31,9 @@ export const EvmTokens = z.object({
   tokens: z.array(z.string()).nullish(),
   lastUpdateTimestamp: z.number().nullish()
 });
+
 export const EvmTokensRecord = z.record(EvmTokens);
+
 export type EvmTokensRecord = z.infer<typeof EvmTokensRecord>;
 
 export interface EthDetectedTokensInfo {

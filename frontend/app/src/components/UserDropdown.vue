@@ -35,7 +35,7 @@ const { darkModeEnabled } = useDarkMode();
 
 <template>
   <div>
-    <v-menu
+    <VMenu
       id="user-dropdown"
       content-class="user-dropdown__menu"
       transition="slide-y-transition"
@@ -44,61 +44,61 @@ const { darkModeEnabled } = useDarkMode();
       offset-y
     >
       <template #activator="{ on }">
-        <menu-tooltip-button
+        <MenuTooltipButton
           tooltip="Account"
           class-name="user-dropdown secondary--text text--lighten-4"
           :on-menu="on"
         >
-          <v-icon>mdi-account-circle</v-icon>
-        </menu-tooltip-button>
+          <VIcon>mdi-account-circle</VIcon>
+        </MenuTooltipButton>
       </template>
-      <v-list data-cy="user-dropdown">
-        <v-list-item key="username" class="user-username">
-          <v-list-item-title class="font-weight-bold text-center">
+      <VList data-cy="user-dropdown">
+        <VListItem key="username" class="user-username">
+          <VListItemTitle class="font-weight-bold text-center">
             {{ username }}
-          </v-list-item-title>
-        </v-list-item>
-        <v-divider class="mx-4" />
-        <v-list-item
+          </VListItemTitle>
+        </VListItem>
+        <VDivider class="mx-4" />
+        <VListItem
           key="settings"
           class="user-dropdown__settings"
           to="/settings/general"
         >
-          <v-list-item-avatar>
-            <v-icon color="primary">mdi-cog</v-icon>
-          </v-list-item-avatar>
-          <v-list-item-title>
+          <VListItemAvatar>
+            <VIcon color="primary">mdi-cog</VIcon>
+          </VListItemAvatar>
+          <VListItemTitle>
             {{ t('user_dropdown.settings') }}
-          </v-list-item-title>
-        </v-list-item>
+          </VListItemTitle>
+        </VListItem>
 
-        <v-list-item v-if="xs" key="privacy-mode" @click="togglePrivacyMode()">
-          <v-list-item-avatar>
-            <v-icon color="primary"> {{ privacyModeIcon }}</v-icon>
-          </v-list-item-avatar>
-          <v-list-item-title>
+        <VListItem v-if="xs" key="privacy-mode" @click="togglePrivacyMode()">
+          <VListItemAvatar>
+            <VIcon color="primary"> {{ privacyModeIcon }}</VIcon>
+          </VListItemAvatar>
+          <VListItemTitle>
             {{ t('user_dropdown.change_privacy_mode.label') }}
-          </v-list-item-title>
-        </v-list-item>
+          </VListItemTitle>
+        </VListItem>
 
-        <theme-control v-if="xs" :dark-mode-enabled="darkModeEnabled" menu>
+        <ThemeControl v-if="xs" :dark-mode-enabled="darkModeEnabled" menu>
           {{ t('user_dropdown.switch_theme') }}
-        </theme-control>
+        </ThemeControl>
 
-        <v-divider class="mx-4" />
-        <v-list-item
+        <VDivider class="mx-4" />
+        <VListItem
           key="logout"
           class="user-dropdown__logout"
           @click="showConfirmation()"
         >
-          <v-list-item-avatar>
-            <v-icon color="primary">mdi-logout-variant</v-icon>
-          </v-list-item-avatar>
-          <v-list-item-title>
+          <VListItemAvatar>
+            <VIcon color="primary">mdi-logout-variant</VIcon>
+          </VListItemAvatar>
+          <VListItemTitle>
             {{ t('user_dropdown.logout') }}
-          </v-list-item-title>
-        </v-list-item>
-      </v-list>
-    </v-menu>
+          </VListItemTitle>
+        </VListItem>
+      </VList>
+    </VMenu>
   </div>
 </template>

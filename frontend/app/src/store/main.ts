@@ -5,6 +5,7 @@ import { type Version } from '@/types/action';
 import { type DefaultBackendArguments } from '@/types/backend';
 
 let intervalId: any = null;
+
 export const useMainStore = defineStore('main', () => {
   const newUser: Ref<boolean> = ref(false);
   const version: Ref<Version> = ref(defaultVersion());

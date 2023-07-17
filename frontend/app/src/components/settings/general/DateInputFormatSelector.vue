@@ -25,7 +25,7 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <v-select
+  <VSelect
     v-bind="rootAttrs"
     item-text="value"
     item-value="value"
@@ -35,20 +35,20 @@ const { t } = useI18n();
     v-on="rootListeners"
   >
     <template #item="{ item, attrs, on }">
-      <v-list-item v-bind="attrs" v-on="on">
-        <v-list-item-content>
-          <v-list-item-title>
+      <VListItem v-bind="attrs" v-on="on">
+        <VListItemContent>
+          <VListItemTitle>
             {{ item.value }}
-          </v-list-item-title>
-          <v-list-item-subtitle>
+          </VListItemTitle>
+          <VListItemSubtitle>
             {{
               t('general_settings.date_input_format_hint', {
                 format: dateInputFormatExample(item.value)
               })
             }}
-          </v-list-item-subtitle>
-        </v-list-item-content>
-      </v-list-item>
+          </VListItemSubtitle>
+        </VListItemContent>
+      </VListItem>
     </template>
-  </v-select>
+  </VSelect>
 </template>

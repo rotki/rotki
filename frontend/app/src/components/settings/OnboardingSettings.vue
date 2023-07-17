@@ -14,11 +14,11 @@ import { type Writeable } from '@/types';
 import { LogLevel } from '@/utils/log-level';
 import { type BackendConfiguration } from '@/types/backend';
 
-const { t } = useI18n();
-
 const emit = defineEmits<{
   (e: 'dismiss'): void;
 }>();
+
+const { t } = useI18n();
 
 const { dataDirectory, defaultBackendArguments } = storeToRefs(useMainStore());
 
@@ -280,27 +280,27 @@ const showResetConfirmation = () => {
 </script>
 
 <template>
-  <card contained class="pt-4">
+  <Card contained class="pt-4">
     <div class="mb-4">
-      <card-title class="font-weight-medium">
+      <CardTitle class="font-weight-medium">
         {{ t('frontend_settings.title') }}
-      </card-title>
+      </CardTitle>
     </div>
 
     <div class="mb-8">
-      <language-setting use-local-setting class="mb-10" />
+      <LanguageSetting use-local-setting class="mb-10" />
     </div>
 
     <div class="mb-4">
-      <card-title class="font-weight-medium">
+      <CardTitle class="font-weight-medium">
         {{ t('backend_settings.title') }}
-      </card-title>
-      <v-card-subtitle class="pa-0">
+      </CardTitle>
+      <VCardSubtitle class="pa-0">
         {{ t('backend_settings.subtitle') }}
-      </v-card-subtitle>
+      </VCardSubtitle>
     </div>
 
-    <v-text-field
+    <VTextField
       v-model="userDataDirectory"
       data-cy="user-data-directory-input"
       :loading="!userDataDirectory"
@@ -318,18 +318,18 @@ const showResetConfirmation = () => {
       @click="selectDataDirectory()"
     >
       <template #append>
-        <v-btn
+        <VBtn
           icon
           :disabled="!userDataDirectory"
           @click="selectDataDirectory()"
         >
-          <v-icon>mdi-folder</v-icon>
-        </v-btn>
+          <VIcon>mdi-folder</VIcon>
+        </VBtn>
       </template>
-    </v-text-field>
+    </VTextField>
 
-    <v-form :value="valid">
-      <v-text-field
+    <VForm :value="valid">
+      <VTextField
         v-model="userLogDirectory"
         data-cy="user-log-directory-input"
         :disabled="!!fileConfig.logDirectory"
@@ -345,13 +345,13 @@ const showResetConfirmation = () => {
         @click="selectLogsDirectory()"
       >
         <template #append>
-          <v-btn icon @click="selectLogsDirectory()">
-            <v-icon>mdi-folder</v-icon>
-          </v-btn>
+          <VBtn icon @click="selectLogsDirectory()">
+            <VIcon>mdi-folder</VIcon>
+          </VBtn>
         </template>
-      </v-text-field>
+      </VTextField>
 
-      <v-select
+      <VSelect
         v-model="logLevel"
         :items="levels"
         class="loglevel-input"
@@ -366,32 +366,30 @@ const showResetConfirmation = () => {
         outlined
       >
         <template #item="{ item }">
-          <v-row align="center">
-            <v-col cols="auto">
-              <v-icon>{{ icon(item) }}</v-icon>
-            </v-col>
-            <v-col>{{ item.toLocaleLowerCase() }}</v-col>
-          </v-row>
+          <VRow align="center">
+            <VCol cols="auto">
+              <VIcon>{{ icon(item) }}</VIcon>
+            </VCol>
+            <VCol>{{ item.toLocaleLowerCase() }}</VCol>
+          </VRow>
         </template>
         <template #selection="{ item }">
-          <v-row align="center">
-            <v-col cols="auto">
-              <v-icon>{{ icon(item) }}</v-icon>
-            </v-col>
-            <v-col>{{ item.toLocaleLowerCase() }}</v-col>
-          </v-row>
+          <VRow align="center">
+            <VCol cols="auto">
+              <VIcon>{{ icon(item) }}</VIcon>
+            </VCol>
+            <VCol>{{ item.toLocaleLowerCase() }}</VCol>
+          </VRow>
         </template>
-      </v-select>
+      </VSelect>
 
-      <v-expansion-panels flat>
-        <v-expansion-panel>
-          <v-expansion-panel-header
-            data-cy="onboarding-setting__advance-toggle"
-          >
+      <VExpansionPanels flat>
+        <VExpansionPanel>
+          <VExpansionPanelHeader data-cy="onboarding-setting__advance-toggle">
             {{ t('backend_settings.advanced') }}
-          </v-expansion-panel-header>
-          <v-expansion-panel-content>
-            <v-text-field
+          </VExpansionPanelHeader>
+          <VExpansionPanelContent>
+            <VTextField
               v-model.number="maxLogSize"
               data-cy="max-log-size-input"
               outlined
@@ -408,14 +406,14 @@ const showResetConfirmation = () => {
               type="number"
             >
               <template #append>
-                <setting-reset-button
+                <SettingResetButton
                   v-if="!isMaxSizeDefault"
                   data-cy="reset-max-log-size"
                   @click="resetDefaultArguments('size')"
                 />
               </template>
-            </v-text-field>
-            <v-text-field
+            </VTextField>
+            <VTextField
               v-model.number="maxLogFiles"
               data-cy="max-log-files-input"
               outlined
@@ -432,15 +430,15 @@ const showResetConfirmation = () => {
               type="number"
             >
               <template #append>
-                <setting-reset-button
+                <SettingResetButton
                   v-if="!isMaxLogFilesDefault"
                   data-cy="reset-max-log-files"
                   @click="resetDefaultArguments('files')"
                 />
               </template>
-            </v-text-field>
+            </VTextField>
 
-            <v-text-field
+            <VTextField
               v-model.number="sqliteInstructions"
               data-cy="sqlite-instructions-input"
               outlined
@@ -459,15 +457,15 @@ const showResetConfirmation = () => {
               type="number"
             >
               <template #append>
-                <setting-reset-button
+                <SettingResetButton
                   v-if="!isSqliteInstructionsDefaults"
                   data-cy="reset-sqlite-instructions"
                   @click="resetDefaultArguments('instructions')"
                 />
               </template>
-            </v-text-field>
+            </VTextField>
 
-            <v-checkbox
+            <VCheckbox
               v-model="logFromOtherModules"
               data-cy="log-from-other-modules-checkbox"
               :label="t('backend_settings.log_from_other_modules.label')"
@@ -479,20 +477,20 @@ const showResetConfirmation = () => {
                   : t('backend_settings.log_from_other_modules.hint')
               "
             />
-          </v-expansion-panel-content>
-        </v-expansion-panel>
-      </v-expansion-panels>
-    </v-form>
+          </VExpansionPanelContent>
+        </VExpansionPanel>
+      </VExpansionPanels>
+    </VForm>
 
     <template #buttons>
-      <v-spacer />
-      <v-btn depressed @click="dismiss()">
+      <VSpacer />
+      <VBtn depressed @click="dismiss()">
         {{ t('common.actions.cancel') }}
-      </v-btn>
-      <v-btn depressed @click="showResetConfirmation()">
+      </VBtn>
+      <VBtn depressed @click="showResetConfirmation()">
         {{ t('backend_settings.actions.reset') }}
-      </v-btn>
-      <v-btn
+      </VBtn>
+      <VBtn
         depressed
         data-cy="onboarding-setting__submit-button"
         color="primary"
@@ -500,9 +498,9 @@ const showResetConfirmation = () => {
         @click="save()"
       >
         {{ t('common.actions.save') }}
-      </v-btn>
+      </VBtn>
     </template>
-  </card>
+  </Card>
 </template>
 
 <style scoped lang="scss">

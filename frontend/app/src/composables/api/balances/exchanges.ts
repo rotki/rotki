@@ -58,7 +58,7 @@ export const useExchangeApi = () => {
 
   const querySetupExchange = async (
     payload: ExchangePayload,
-    edit: Boolean
+    edit: boolean
   ): Promise<boolean> => {
     let response: AxiosResponse<ActionResult<boolean>>;
 

@@ -7,19 +7,14 @@ import {
   type SelectionChangedEvent
 } from '@/types/reports';
 
-const props = defineProps({
-  value: {
-    type: Object,
-    required: true
-  }
-});
-
-const { value } = toRefs(props);
+const props = defineProps<{ value: { start: string; end: string } }>();
 
 const emit = defineEmits<{
-  (e: 'input', value: Object): void;
+  (e: 'input', value: { start: string; end: string }): void;
   (e: 'update:valid', valid: boolean): void;
 }>();
+
+const { value } = toRefs(props);
 
 const store = useFrontendSettingsStore();
 const { profitLossReportPeriod } = storeToRefs(store);
@@ -100,15 +95,15 @@ watch(v$, ({ $invalid }) => {
 
 <template>
   <div class="range-selector">
-    <report-period-selector
+    <ReportPeriodSelector
       :year="year"
       :quarter="quarter"
       @update:period="onPeriodChange($event)"
       @update:selection="onChanged($event)"
     />
-    <v-row v-if="custom">
-      <v-col cols="12" md="6">
-        <date-time-picker
+    <VRow v-if="custom">
+      <VCol cols="12" md="6">
+        <DateTimePicker
           :value="value.start"
           outlined
           label="Start Date"
@@ -117,9 +112,9 @@ watch(v$, ({ $invalid }) => {
           :error-messages="v$.start.$errors.map(e => e.$message)"
           @input="$emit('input', { start: $event, end: value.end })"
         />
-      </v-col>
-      <v-col cols="12" md="6">
-        <date-time-picker
+      </VCol>
+      <VCol cols="12" md="6">
+        <DateTimePicker
           :value="value.end"
           outlined
           label="End Date"
@@ -127,10 +122,10 @@ watch(v$, ({ $invalid }) => {
           :error-messages="v$.end.$errors.map(e => e.$message)"
           @input="$emit('input', { start: value.start, end: $event })"
         />
-      </v-col>
-    </v-row>
-    <v-alert v-model="invalidRange" type="error" dense>
+      </VCol>
+    </VRow>
+    <VAlert v-model="invalidRange" type="error" dense>
       {{ t('generate.validation.end_after_start') }}
-    </v-alert>
+    </VAlert>
   </div>
 </template>

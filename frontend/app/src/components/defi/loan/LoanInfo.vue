@@ -33,8 +33,8 @@ const liquityLoan = create<LiquityLoan>(DefiProtocol.LIQUITY);
 </script>
 
 <template>
-  <maker-dao-vault-loan v-if="vault" :vault="vault" />
-  <aave-lending v-else-if="aaveLoan" :loan="aaveLoan" />
-  <compound-lending v-else-if="compoundLoan" :loan="compoundLoan" />
-  <liquity-lending v-else-if="liquityLoan" :loan="liquityLoan" />
+  <MakerDaoVaultLoan v-if="vault" :vault="vault" />
+  <AaveLending v-else-if="aaveLoan" :loan="aaveLoan" />
+  <CompoundLending v-else-if="compoundLoan" :loan="compoundLoan" />
+  <LiquityLending v-else-if="liquityLoan" :loan="liquityLoan" />
 </template>

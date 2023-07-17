@@ -24,22 +24,22 @@ onMounted(async () => {
 </script>
 
 <template>
-  <no-premium-placeholder v-if="!premium" :text="t('sushiswap.premium')" />
-  <module-not-active v-else-if="!isEnabled" :modules="modules" />
-  <progress-screen v-else-if="loading">
+  <NoPremiumPlaceholder v-if="!premium" :text="t('sushiswap.premium')" />
+  <ModuleNotActive v-else-if="!isEnabled" :modules="modules" />
+  <ProgressScreen v-else-if="loading">
     <template #message>
       {{ t('sushiswap.loading') }}
     </template>
-  </progress-screen>
+  </ProgressScreen>
   <div v-else>
-    <sushi
+    <Sushi
       class="mt-4"
       :refreshing="primaryRefreshing || secondaryRefreshing"
       :secondary-loading="secondaryRefreshing"
     >
       <template #modules>
-        <active-modules :modules="modules" />
+        <ActiveModules :modules="modules" />
       </template>
-    </sushi>
+    </Sushi>
   </div>
 </template>

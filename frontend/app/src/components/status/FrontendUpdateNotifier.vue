@@ -58,11 +58,11 @@ const { t } = useI18n();
 
 <template>
   <div v-if="needRefresh">
-    <v-dialog :value="true" persistent max-width="500">
-      <card>
+    <VDialog :value="true" persistent max-width="500">
+      <Card>
         <div class="pt-5 text-center">
           {{ t('update_notifier.update_available') }}
-          <v-btn
+          <VBtn
             depressed
             class="ml-6"
             color="primary"
@@ -70,9 +70,9 @@ const { t } = useI18n();
             @click="update()"
           >
             {{ t('common.actions.update') }}
-          </v-btn>
+          </VBtn>
         </div>
-      </card>
-    </v-dialog>
+      </Card>
+    </VDialog>
   </div>
 </template>

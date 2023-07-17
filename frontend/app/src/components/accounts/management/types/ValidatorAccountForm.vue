@@ -115,12 +115,12 @@ onMounted(() => {
 </script>
 
 <template>
-  <v-form v-model="valid">
-    <eth2-input
+  <VForm v-model="valid">
+    <Eth2Input
       :validator="validator"
       :disabled="loading || !!accountToEdit"
       :error-messages="errorMessages"
       @update:validator="validator = $event"
     />
-  </v-form>
+  </VForm>
 </template>

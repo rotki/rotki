@@ -32,30 +32,30 @@ const { locationData } = useLocations();
 
 <template>
   <div class="d-flex align-center text-left">
-    <define-avatar #default="{ type }">
-      <v-avatar
+    <DefineAvatar #default="{ type }">
+      <VAvatar
         class="text--darken-4"
         :color="dark ? 'white' : 'grey lighten-3'"
         :size="36"
       >
-        <v-icon :size="20" :color="type.color || 'grey darken-2'">
+        <VIcon :size="20" :color="type.color || 'grey darken-2'">
           {{ type.icon }}
-        </v-icon>
-      </v-avatar>
-    </define-avatar>
+        </VIcon>
+      </VAvatar>
+    </DefineAvatar>
 
-    <history-event-type-counterparty
+    <HistoryEventTypeCounterparty
       v-if="evmOrEthDepositEvent"
       :event="evmOrEthDepositEvent"
     >
-      <reuse-avatar :type="attrs" />
-    </history-event-type-counterparty>
-    <reuse-avatar v-else :type="attrs" />
+      <ReuseAvatar :type="attrs" />
+    </HistoryEventTypeCounterparty>
+    <ReuseAvatar v-else :type="attrs" />
 
     <div class="ml-4">
       <div class="font-weight-bold text-uppercase">{{ attrs.label }}</div>
       <div v-if="event.locationLabel" class="grey--text d-flex align-center">
-        <location-icon
+        <LocationIcon
           v-if="onlineEvent"
           icon
           no-padding
@@ -63,7 +63,7 @@ const { locationData } = useLocations();
           size="16px"
           class="mr-1"
         />
-        <hash-link
+        <HashLink
           :show-icon="!onlineEvent"
           :no-link="!!onlineEvent"
           :text="event.locationLabel"
@@ -71,12 +71,12 @@ const { locationData } = useLocations();
         />
       </div>
       <div v-if="event.customized" class="pt-1">
-        <v-chip small label color="primary accent-1">
-          <v-icon x-small> mdi-file-document-edit </v-icon>
+        <VChip small label color="primary accent-1">
+          <VIcon x-small> mdi-file-document-edit </VIcon>
           <div class="pl-2 text-caption font-weight-bold">
             {{ t('transactions.events.customized_event') }}
           </div>
-        </v-chip>
+        </VChip>
       </div>
     </div>
   </div>

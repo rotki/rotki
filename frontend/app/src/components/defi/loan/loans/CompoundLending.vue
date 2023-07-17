@@ -22,32 +22,29 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <v-row>
-    <v-col cols="12">
-      <loan-header v-if="loan.owner" class="mt-8 mb-6" :owner="loan.owner">
+  <VRow>
+    <VCol cols="12">
+      <LoanHeader v-if="loan.owner" class="mt-8 mb-6" :owner="loan.owner">
         {{ t('compound_lending.header', { asset: symbol }) }}
-      </loan-header>
-      <v-row no-gutters>
-        <v-col cols="12" md="6" class="pe-md-4">
-          <compound-collateral :loan="loan" />
-        </v-col>
-        <v-col cols="12" md="6" class="pt-8 pt-md-0 ps-md-4">
-          <loan-debt :debt="loan.debt" :asset="loan.asset" />
-        </v-col>
-      </v-row>
-      <v-row no-gutters class="mt-8">
-        <v-col cols="12">
-          <premium-card
-            v-if="!premium"
-            :title="t('compound_lending.history')"
-          />
-          <compound-borrowing-details
+      </LoanHeader>
+      <VRow no-gutters>
+        <VCol cols="12" md="6" class="pe-md-4">
+          <CompoundCollateral :loan="loan" />
+        </VCol>
+        <VCol cols="12" md="6" class="pt-8 pt-md-0 ps-md-4">
+          <LoanDebt :debt="loan.debt" :asset="loan.asset" />
+        </VCol>
+      </VRow>
+      <VRow no-gutters class="mt-8">
+        <VCol cols="12">
+          <PremiumCard v-if="!premium" :title="t('compound_lending.history')" />
+          <CompoundBorrowingDetails
             v-else
             :owner="loan.owner"
             :assets="[asset]"
           />
-        </v-col>
-      </v-row>
-    </v-col>
-  </v-row>
+        </VCol>
+      </VRow>
+    </VCol>
+  </VRow>
 </template>

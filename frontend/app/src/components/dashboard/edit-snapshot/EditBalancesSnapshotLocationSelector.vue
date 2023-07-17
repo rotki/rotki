@@ -25,12 +25,12 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <v-sheet outlined class="pa-4" rounded>
+  <VSheet outlined class="pa-4" rounded>
     <div class="text-subtitle-2 mb-3">
       {{ t('dashboard.snapshot.edit.dialog.balances.optional') }}
     </div>
     <div>
-      <location-selector
+      <LocationSelector
         :value="value"
         :items="locations"
         outlined
@@ -51,24 +51,24 @@ const { t } = useI18n();
           <div class="text-overline text--secondary mb-n2">
             {{ t('dashboard.snapshot.edit.dialog.balances.preview.from') }}
           </div>
-          <amount-display
+          <AmountDisplay
             :value="previewLocationBalance.before"
             fiat-currency="USD"
           />
         </div>
         <div class="px-8">
-          <v-icon>mdi-arrow-right</v-icon>
+          <VIcon>mdi-arrow-right</VIcon>
         </div>
         <div>
           <div class="text-overline text--secondary mb-n2">
             {{ t('dashboard.snapshot.edit.dialog.balances.preview.to') }}
           </div>
-          <amount-display
+          <AmountDisplay
             :value="previewLocationBalance.after"
             fiat-currency="USD"
           />
         </div>
       </div>
     </div>
-  </v-sheet>
+  </VSheet>
 </template>

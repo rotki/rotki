@@ -10,10 +10,10 @@ const { dark } = useTheme();
 </script>
 
 <template>
-  <v-card class="stat-card d-flex flex-columns pa-0 fill-height">
+  <VCard class="stat-card d-flex flex-columns pa-0 fill-height">
     <div v-if="bordered" class="stat-card__border">
       <div class="stat-card__image ma-2">
-        <v-img
+        <VImg
           v-if="protocolIcon"
           contain
           alt="Protocol Logo"
@@ -32,21 +32,21 @@ const { dark } = useTheme();
       />
     </div>
     <div class="stat-card__content flex-grow-1">
-      <v-card-title>
+      <VCardTitle>
         <span v-if="title">
-          <card-title>{{ title }}</card-title>
+          <CardTitle>{{ title }}</CardTitle>
         </span>
-        <v-spacer v-if="locked" />
-        <premium-lock v-if="locked" />
-      </v-card-title>
-      <v-card-text>
+        <VSpacer v-if="locked" />
+        <PremiumLock v-if="locked" />
+      </VCardTitle>
+      <VCardText>
         <span v-if="!locked && loading">
-          <v-progress-linear indeterminate color="primary" />
+          <VProgressLinear indeterminate color="primary" />
         </span>
         <slot v-else-if="!locked" />
-      </v-card-text>
+      </VCardText>
     </div>
-  </v-card>
+  </VCard>
 </template>
 
 <style scoped lang="scss">

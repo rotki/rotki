@@ -23,8 +23,8 @@ const isRouterVisible = (route: string, tab: TabContent) =>
 </script>
 
 <template>
-  <v-container>
-    <v-tabs
+  <VContainer>
+    <VTabs
       v-model="selectedTab"
       fixed-tabs
       height="36px"
@@ -33,7 +33,7 @@ const isRouterVisible = (route: string, tab: TabContent) =>
       active-class="tab-navigation__tabs__tab--active"
       class="tab-navigation__tabs"
     >
-      <v-tab
+      <VTab
         v-for="tab in visibleTabs"
         v-show="visibleTabs.length > 1 && !tab.hideHeader"
         :key="tab.text"
@@ -42,8 +42,8 @@ const isRouterVisible = (route: string, tab: TabContent) =>
         :class="getClass(tab.route)"
       >
         <div>{{ tab.text }}</div>
-      </v-tab>
-      <v-tab-item
+      </VTab>
+      <VTabItem
         v-for="tab of tabContents"
         :key="tab.route"
         :value="tab.route"
@@ -55,16 +55,16 @@ const isRouterVisible = (route: string, tab: TabContent) =>
         class="tab-navigation__tabs__tab-item"
       >
         <div v-if="isDev">
-          <router-view v-if="isRouterVisible(route.path, tab)" />
+          <RouterView v-if="isRouterVisible(route.path, tab)" />
         </div>
-        <keep-alive v-else>
+        <KeepAlive v-else>
           <div>
-            <router-view v-if="isRouterVisible(route.path, tab)" />
+            <RouterView v-if="isRouterVisible(route.path, tab)" />
           </div>
-        </keep-alive>
-      </v-tab-item>
-    </v-tabs>
-  </v-container>
+        </KeepAlive>
+      </VTabItem>
+    </VTabs>
+  </VContainer>
 </template>
 
 <style scoped lang="scss">

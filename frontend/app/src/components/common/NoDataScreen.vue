@@ -1,9 +1,9 @@
 <script setup lang="ts">
+withDefaults(defineProps<{ full?: boolean }>(), { full: true });
+
 const FullSizeContent = defineAsyncComponent(
   () => import('@/components/common/FullSizeContent.vue')
 );
-
-withDefaults(defineProps<{ full?: boolean }>(), { full: true });
 
 const slots = useSlots();
 const css = useCssModule();
@@ -13,26 +13,26 @@ const remoteEmptyScreenLogo =
 </script>
 
 <template>
-  <component :is="full ? FullSizeContent : 'div'">
-    <v-row align="center" justify="center" :class="{ 'mb-10': !full }">
-      <v-col cols="auto" :class="css.logo">
+  <Component :is="full ? FullSizeContent : 'div'">
+    <VRow align="center" justify="center" :class="{ 'mb-10': !full }">
+      <VCol cols="auto" :class="css.logo">
         <slot name="logo">
-          <rotki-logo
+          <RotkiLogo
             :width="mobile ? '100px' : '200px'"
             :url="remoteEmptyScreenLogo"
           />
         </slot>
-      </v-col>
-    </v-row>
-    <v-row class="text-center">
-      <v-col>
+      </VCol>
+    </VRow>
+    <VRow class="text-center">
+      <VCol>
         <div v-if="slots.title" class="text-h5">
           <slot name="title" />
         </div>
         <slot />
-      </v-col>
-    </v-row>
-  </component>
+      </VCol>
+    </VRow>
+  </Component>
 </template>
 
 <style module lang="scss">

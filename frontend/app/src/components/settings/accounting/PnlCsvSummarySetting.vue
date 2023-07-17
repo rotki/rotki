@@ -10,12 +10,12 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <settings-option
+  <SettingsOption
     #default="{ error, success, update }"
     setting="pnlCsvHaveSummary"
     :error-message="t('account_settings.messages.have_csv_summary')"
   >
-    <v-switch
+    <VSwitch
       v-model="haveCSVSummary"
       class="csv_export_settings__haveCSVSummary"
       :label="t('account_settings.csv_export_settings.labels.have_csv_summary')"
@@ -24,5 +24,5 @@ const { t } = useI18n();
       :error-messages="error"
       @change="update($event)"
     />
-  </settings-option>
+  </SettingsOption>
 </template>

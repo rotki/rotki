@@ -46,33 +46,33 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <v-tooltip top open-delay="400" :disabled="!truncate">
+  <VTooltip top open-delay="400" :disabled="!truncate">
     <template #activator="{ on }">
-      <v-row align="center" no-gutters class="flex-nowrap" v-on="on">
-        <v-col v-if="!hideChainIcon" cols="auto" class="pr-2">
-          <v-avatar left size="28px" class="mr-0">
-            <asset-icon
+      <VRow align="center" no-gutters class="flex-nowrap" v-on="on">
+        <VCol v-if="!hideChainIcon" cols="auto" class="pr-2">
+          <VAvatar left size="28px" class="mr-0">
+            <AssetIcon
               v-if="account.chain && account.chain !== 'ALL'"
               size="24px"
               :identifier="account.chain"
               :show-chain="false"
             />
-            <v-tooltip v-else top>
+            <VTooltip v-else top>
               <template #activator="{ childOn }">
-                <v-icon v-on="childOn"> mdi-link-variant </v-icon>
+                <VIcon v-on="childOn"> mdi-link-variant </VIcon>
               </template>
               <span>{{ t('common.multi_chain') }}</span>
-            </v-tooltip>
-          </v-avatar>
-        </v-col>
+            </VTooltip>
+          </VAvatar>
+        </VCol>
 
         <div>
-          <v-avatar :left="hideChainIcon" size="24" class="mr-2">
-            <ens-avatar :address="address" />
-          </v-avatar>
+          <VAvatar :left="hideChainIcon" size="24" class="mr-2">
+            <EnsAvatar :address="address" />
+          </VAvatar>
         </div>
 
-        <v-col
+        <VCol
           cols="auto"
           :class="{ 'blur-content': !shouldShowAmount }"
           class="text-no-wrap"
@@ -81,13 +81,13 @@ const { t } = useI18n();
           <div v-else>
             {{ truncate ? truncateAddress(address, 6) : address }}
           </div>
-        </v-col>
-      </v-row>
+        </VCol>
+      </VRow>
     </template>
     <div>
       {{ account.address }}
     </div>
-  </v-tooltip>
+  </VTooltip>
 </template>
 
 <style scoped lang="scss">

@@ -12,30 +12,30 @@ const { exchangeName } = useLocations();
 </script>
 
 <template>
-  <v-list-item
+  <VListItem
     :id="`${location}_box`"
     :to="`/accounts-balances/exchange-balances/${location}`"
     :ripple="false"
     class="exchange-box__item"
   >
-    <v-list-item-avatar tile class="exchange-box__icon">
-      <location-display :identifier="location" icon />
-    </v-list-item-avatar>
-    <v-list-item-content>
-      <v-list-item-title class="d-flex justify-space-between">
+    <VListItemAvatar tile class="exchange-box__icon">
+      <LocationDisplay :identifier="location" icon />
+    </VListItemAvatar>
+    <VListItemContent>
+      <VListItemTitle class="d-flex justify-space-between">
         <span>
           {{ exchangeName(location) }}
         </span>
         <span class="text-end">
-          <amount-display
+          <AmountDisplay
             show-currency="symbol"
             fiat-currency="USD"
             :value="amount"
           />
         </span>
-      </v-list-item-title>
-    </v-list-item-content>
-  </v-list-item>
+      </VListItemTitle>
+    </VListItemContent>
+  </VListItem>
 </template>
 
 <style scoped lang="scss">

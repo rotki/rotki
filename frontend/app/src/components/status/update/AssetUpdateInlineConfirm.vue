@@ -7,25 +7,25 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <card flat>
+  <Card flat>
     <template #title>
       {{ t('asset_update.success.title') }}
     </template>
 
-    <v-row class="mt-2 text-body-1">
-      <v-col cols="auto" class="mx-2">
-        <v-icon x-large color="success">mdi-check-circle</v-icon>
-      </v-col>
-      <v-col>
+    <VRow class="mt-2 text-body-1">
+      <VCol cols="auto" class="mx-2">
+        <VIcon x-large color="success">mdi-check-circle</VIcon>
+      </VCol>
+      <VCol>
         {{ t('asset_update.success.description', { remoteVersion }) }}
-      </v-col>
-    </v-row>
+      </VCol>
+    </VRow>
 
     <template #buttons>
-      <v-spacer />
-      <v-btn color="primary" depressed @click="emit('confirm')">
+      <VSpacer />
+      <VBtn color="primary" depressed @click="emit('confirm')">
         {{ t('asset_update.success.ok') }}
-      </v-btn>
+      </VBtn>
     </template>
-  </card>
+  </Card>
 </template>

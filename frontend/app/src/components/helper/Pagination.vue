@@ -54,13 +54,13 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <v-row align="center">
-    <v-col cols="auto">
-      <v-btn icon :disabled="value === 1" @click="previousPage()">
-        <v-icon>mdi-chevron-left</v-icon>
-      </v-btn>
-    </v-col>
-    <v-col cols="auto">
+  <VRow align="center">
+    <VCol cols="auto">
+      <VBtn icon :disabled="value === 1" @click="previousPage()">
+        <VIcon>mdi-chevron-left</VIcon>
+      </VBtn>
+    </VCol>
+    <VCol cols="auto">
       <div
         :class="{
           [$style.pages]: true,
@@ -68,7 +68,7 @@ const { t } = useI18n();
           [$style.dark]: dark
         }"
       >
-        <v-autocomplete
+        <VAutocomplete
           :items="items"
           :value="value"
           single-line
@@ -79,14 +79,14 @@ const { t } = useI18n();
           @change="newPage($event)"
         />
       </div>
-    </v-col>
-    <v-col cols="auto">{{ t('pagination.of', { length }) }}</v-col>
-    <v-col cols="auto">
-      <v-btn icon :disabled="value === length" @click="nextPage()">
-        <v-icon>mdi-chevron-right</v-icon>
-      </v-btn>
-    </v-col>
-  </v-row>
+    </VCol>
+    <VCol cols="auto">{{ t('pagination.of', { length }) }}</VCol>
+    <VCol cols="auto">
+      <VBtn icon :disabled="value === length" @click="nextPage()">
+        <VIcon>mdi-chevron-right</VIcon>
+      </VBtn>
+    </VCol>
+  </VRow>
 </template>
 
 <style module lang="scss">

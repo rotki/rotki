@@ -122,9 +122,9 @@ const chartSectionHeight = computed<string>(() => {
 </script>
 
 <template>
-  <v-card class="overall-balances">
-    <v-row no-gutters class="pa-5">
-      <v-col
+  <VCard class="overall-balances">
+    <VRow no-gutters class="pa-5">
+      <VCol
         cols="12"
         md="6"
         lg="5"
@@ -134,7 +134,7 @@ const chartSectionHeight = computed<string>(() => {
           class="overall-balances__net-worth text-center font-weight-medium mb-2"
         >
           <div :style="`font-size: ${adjustedTotalNetWorthFontSize}em`">
-            <amount-display
+            <AmountDisplay
               class="ps-4"
               xl
               show-currency="symbol"
@@ -148,21 +148,21 @@ const chartSectionHeight = computed<string>(() => {
             :class="balanceClass"
             class="pa-1 px-2 overall-balances__net-worth-change__pill"
           >
-            <loading
+            <Loading
               v-if="isLoading"
               class="overall-balances__net-worth__loading d-flex justify-center mt-n2"
             />
             <span v-else class="d-flex flex-row">
               <span class="me-2">
-                <v-icon>{{ indicator }}</v-icon>
+                <VIcon>{{ indicator }}</VIcon>
               </span>
-              <amount-display
+              <AmountDisplay
                 v-if="!isLoading"
                 show-currency="symbol"
                 :fiat-currency="currencySymbol"
                 :value="balanceDelta"
               />
-              <percentage-display
+              <PercentageDisplay
                 v-if="!isLoading"
                 class="ms-2 px-1 text--secondary pe-2"
                 :value="percentage"
@@ -170,24 +170,24 @@ const chartSectionHeight = computed<string>(() => {
             </span>
           </span>
         </div>
-        <timeframe-selector
+        <TimeframeSelector
           :value="timeframe"
           :visible-timeframes="visibleTimeframes"
           @input="setTimeframe($event)"
         />
-      </v-col>
-      <v-col cols="12" md="6" lg="7" class="d-flex">
+      </VCol>
+      <VCol cols="12" md="6" lg="7" class="d-flex">
         <div
           class="d-flex justify-center align-center flex-grow-1 overall-balances__net-worth-chart"
         >
-          <net-worth-chart
+          <NetWorthChart
             v-if="!isLoading"
             :chart-data="timeframeData"
             :timeframe="timeframe"
             :timeframes="allTimeframes"
           />
           <div v-else class="overall-balances__net-worth-chart__loader">
-            <v-progress-circular
+            <VProgressCircular
               indeterminate
               class="align-self-center"
               color="primary"
@@ -197,9 +197,9 @@ const chartSectionHeight = computed<string>(() => {
             </div>
           </div>
         </div>
-      </v-col>
-    </v-row>
-  </v-card>
+      </VCol>
+    </VRow>
+  </VCard>
 </template>
 
 <style scoped lang="scss">

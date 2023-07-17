@@ -199,36 +199,36 @@ setPostSubmitFunc(() => refresh({ modified: true }));
 </script>
 
 <template>
-  <v-container>
-    <v-row justify="space-between" align="center" no-gutters>
-      <v-col>
-        <card-title>{{ t('price_management.historic.title') }}</card-title>
-      </v-col>
-    </v-row>
-    <card class="mt-8">
+  <VContainer>
+    <VRow justify="space-between" align="center" no-gutters>
+      <VCol>
+        <CardTitle>{{ t('price_management.historic.title') }}</CardTitle>
+      </VCol>
+    </VRow>
+    <Card class="mt-8">
       <template #title>{{ t('price_management.filter_title') }}</template>
-      <v-row>
-        <v-col cols="12" md="6">
-          <asset-select
+      <VRow>
+        <VCol cols="12" md="6">
+          <AssetSelect
             v-model="filter.fromAsset"
             outlined
             :label="t('price_management.from_asset')"
             clearable
             hide-details
           />
-        </v-col>
-        <v-col cols="12" md="6">
-          <asset-select
+        </VCol>
+        <VCol cols="12" md="6">
+          <AssetSelect
             v-model="filter.toAsset"
             outlined
             :label="t('price_management.to_asset')"
             clearable
             hide-details
           />
-        </v-col>
-      </v-row>
-    </card>
-    <historic-price-table
+        </VCol>
+      </VRow>
+    </Card>
+    <HistoricPriceTable
       class="mt-12"
       :items="prices"
       :loading="loading"
@@ -236,11 +236,11 @@ setPostSubmitFunc(() => refresh({ modified: true }));
       @edit="openForm($event)"
       @delete="showDeleteConfirmation($event)"
     >
-      <v-btn absolute fab top right color="primary" @click="openForm()">
-        <v-icon> mdi-plus </v-icon>
-      </v-btn>
-    </historic-price-table>
-    <big-dialog
+      <VBtn absolute fab top right color="primary" @click="openForm()">
+        <VIcon> mdi-plus </VIcon>
+      </VBtn>
+    </HistoricPriceTable>
+    <BigDialog
       :display="openDialog"
       :title="
         editMode
@@ -251,7 +251,7 @@ setPostSubmitFunc(() => refresh({ modified: true }));
       @confirm="trySubmit()"
       @cancel="hideForm()"
     >
-      <historic-price-form v-model="formData" :edit="editMode" />
-    </big-dialog>
-  </v-container>
+      <HistoricPriceForm v-model="formData" :edit="editMode" />
+    </BigDialog>
+  </VContainer>
 </template>

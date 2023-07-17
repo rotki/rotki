@@ -96,7 +96,7 @@ const { t } = useI18n();
       {{ t('explorers.subtitle') }}
     </div>
 
-    <v-select
+    <VSelect
       v-model="selection"
       class="mt-4"
       outlined
@@ -105,16 +105,16 @@ const { t } = useI18n();
       @change="onChange()"
     >
       <template #item="{ item }">
-        <chain-display v-if="!additional.includes(item)" :chain="item" />
-        <asset-details v-else :asset="item" />
+        <ChainDisplay v-if="!additional.includes(item)" :chain="item" />
+        <AssetDetails v-else :asset="item" />
       </template>
       <template #selection="{ item }">
-        <chain-display v-if="!additional.includes(item)" :chain="item" />
-        <asset-details v-else :asset="item" />
+        <ChainDisplay v-if="!additional.includes(item)" :chain="item" />
+        <AssetDetails v-else :asset="item" />
       </template>
-    </v-select>
+    </VSelect>
 
-    <v-text-field
+    <VTextField
       v-model="address"
       outlined
       clearable
@@ -125,17 +125,17 @@ const { t } = useI18n();
       @click:clear="saveAddress()"
     >
       <template #append-outer>
-        <v-btn
+        <VBtn
           icon
           :disabled="!isValid(address)"
           class="mt-n2"
           @click="saveAddress(address)"
         >
-          <v-icon>mdi-content-save</v-icon>
-        </v-btn>
+          <VIcon>mdi-content-save</VIcon>
+        </VBtn>
       </template>
-    </v-text-field>
-    <v-text-field
+    </VTextField>
+    <VTextField
       v-if="txUrl"
       v-model="tx"
       outlined
@@ -147,17 +147,17 @@ const { t } = useI18n();
       @click:clear="saveTransaction()"
     >
       <template #append-outer>
-        <v-btn
+        <VBtn
           icon
           :disabled="!isValid(tx)"
           class="mt-n2"
           @click="saveTransaction(tx)"
         >
-          <v-icon>mdi-content-save</v-icon>
-        </v-btn>
+          <VIcon>mdi-content-save</VIcon>
+        </VBtn>
       </template>
-    </v-text-field>
-    <v-text-field
+    </VTextField>
+    <VTextField
       v-if="blockUrl"
       v-model="block"
       outlined
@@ -169,16 +169,16 @@ const { t } = useI18n();
       @click:clear="saveBlock()"
     >
       <template #append-outer>
-        <v-btn
+        <VBtn
           icon
           :disabled="!isValid(block)"
           class="mt-n2"
           @click="saveBlock(block)"
         >
-          <v-icon>mdi-content-save</v-icon>
-        </v-btn>
+          <VIcon>mdi-content-save</VIcon>
+        </VBtn>
       </template>
-    </v-text-field>
+    </VTextField>
   </div>
 </template>
 

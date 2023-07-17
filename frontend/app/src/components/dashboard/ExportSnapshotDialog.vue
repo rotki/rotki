@@ -149,8 +149,8 @@ const showDeleteConfirmation = () => {
 </script>
 
 <template>
-  <v-dialog :value="value" max-width="600" @input="updateVisibility($event)">
-    <card>
+  <VDialog :value="value" max-width="600" @input="updateVisibility($event)">
+    <Card>
       <template #title>
         {{ t('dashboard.snapshot.export_database_snapshot') }}
       </template>
@@ -161,13 +161,13 @@ const showDeleteConfirmation = () => {
         <div>
           <div>{{ t('common.datetime') }}:</div>
           <div class="font-weight-bold">
-            <date-display :timestamp="timestamp" />
+            <DateDisplay :timestamp="timestamp" />
           </div>
         </div>
         <div class="pt-2">
           <div>{{ t('common.balance') }}:</div>
           <div>
-            <amount-display
+            <AmountDisplay
               :value="formattedSelectedBalance"
               :fiat-currency="currencySymbol"
               class="font-weight-bold"
@@ -176,26 +176,26 @@ const showDeleteConfirmation = () => {
         </div>
       </div>
       <template #buttons>
-        <v-btn color="primary" @click="editMode = true">
-          <v-icon class="mr-2">mdi-pencil-outline</v-icon>
+        <VBtn color="primary" @click="editMode = true">
+          <VIcon class="mr-2">mdi-pencil-outline</VIcon>
           {{ t('common.actions.edit') }}
-        </v-btn>
-        <v-btn color="error" @click="showDeleteConfirmation()">
-          <v-icon class="mr-2">mdi-delete-outline</v-icon>
+        </VBtn>
+        <VBtn color="error" @click="showDeleteConfirmation()">
+          <VIcon class="mr-2">mdi-delete-outline</VIcon>
           {{ t('common.actions.delete') }}
-        </v-btn>
-        <v-spacer />
-        <v-btn color="primary" @click="exportSnapshot()">
-          <v-icon class="mr-2">mdi-download</v-icon>
+        </VBtn>
+        <VSpacer />
+        <VBtn color="primary" @click="exportSnapshot()">
+          <VIcon class="mr-2">mdi-download</VIcon>
           {{ t('common.actions.download') }}
-        </v-btn>
+        </VBtn>
       </template>
-    </card>
-    <edit-snapshot-dialog
+    </Card>
+    <EditSnapshotDialog
       v-if="editMode"
       :timestamp="timestamp"
       @close="editMode = false"
       @finish="finish()"
     />
-  </v-dialog>
+  </VDialog>
 </template>

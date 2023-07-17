@@ -79,10 +79,10 @@ const { getBlockie } = useBlockie();
 </script>
 
 <template>
-  <v-form :value="valid">
+  <VForm :value="valid">
     <div class="mt-2">
       <div>
-        <v-select
+        <VSelect
           :value="value.location"
           outlined
           :label="t('common.location')"
@@ -94,16 +94,16 @@ const { getBlockie } = useBlockie();
           <template #selection="{ item }">
             {{ toSentenceCase(item) }}
           </template>
-        </v-select>
+        </VSelect>
       </div>
       <div>
-        <chain-select
+        <ChainSelect
           evm-only
           :model-value="value.blockchain"
           :disabled="edit || enableForAllChains"
           @update:model-value="input({ blockchain: $event })"
         />
-        <v-checkbox
+        <VCheckbox
           :disabled="edit"
           class="mt-0"
           :input-value="enableForAllChains"
@@ -112,7 +112,7 @@ const { getBlockie } = useBlockie();
         />
       </div>
       <div>
-        <combobox-with-custom-input
+        <ComboboxWithCustomInput
           :value="value.address || ''"
           outlined
           :label="t('address_book.form.labels.address')"
@@ -125,26 +125,26 @@ const { getBlockie } = useBlockie();
         >
           <template #prepend-inner>
             <span>
-              <v-avatar size="24" class="mr-2" color="grey">
-                <v-img
+              <VAvatar size="24" class="mr-2" color="grey">
+                <VImg
                   v-if="value.address && isValidEthAddress(value.address)"
                   :src="getBlockie(value.address)"
                 />
-              </v-avatar>
+              </VAvatar>
             </span>
           </template>
           <template #item="{ item }">
             <span v-if="item">
-              <v-avatar size="24" class="mr-2">
-                <v-img :src="getBlockie(item)" />
-              </v-avatar>
+              <VAvatar size="24" class="mr-2">
+                <VImg :src="getBlockie(item)" />
+              </VAvatar>
             </span>
             {{ item }}
           </template>
-        </combobox-with-custom-input>
+        </ComboboxWithCustomInput>
       </div>
       <div>
-        <v-text-field
+        <VTextField
           :value="value.name"
           outlined
           :label="t('common.name')"
@@ -153,5 +153,5 @@ const { getBlockie } = useBlockie();
         />
       </div>
     </div>
-  </v-form>
+  </VForm>
 </template>

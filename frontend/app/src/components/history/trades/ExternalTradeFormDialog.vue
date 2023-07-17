@@ -30,7 +30,7 @@ const subtitle: ComputedRef<string> = computed(() =>
 </script>
 
 <template>
-  <big-dialog
+  <BigDialog
     :display="openDialog"
     :title="title"
     :subtitle="subtitle"
@@ -40,6 +40,6 @@ const subtitle: ComputedRef<string> = computed(() =>
     @confirm="trySubmit()"
     @cancel="closeDialog()"
   >
-    <external-trade-form :editable-item="editableItem" />
-  </big-dialog>
+    <ExternalTradeForm :editable-item="editableItem" />
+  </BigDialog>
 </template>

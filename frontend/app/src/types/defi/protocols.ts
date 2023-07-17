@@ -22,10 +22,12 @@ const NEXUS_MUTUAL = 'Nexus Mutual';
 const MOONISWAP = 'Mooniswap';
 const MATIC = 'Matic';
 const ARAGON = 'Aragon';
+
 export const AAVE = 'Aave';
 const AAVE_STAKING = 'Aave • Staking';
 const AAVE_UNISWAPMARKET = 'Aave • Uniswap Market';
 const BALANCER = 'Balancer';
+
 export const COMPOUND = 'Compound';
 const COMPOUND_GOVERNANCE = 'Compound Governance';
 const CURVE = 'Curve';
@@ -35,7 +37,9 @@ const CURVE_VECRV = 'Curve • Vote Escrowed CRV';
 const DYDX = 'dYdX';
 const MELON = 'Melon';
 const ENZYME = 'Enzyme';
+
 export const YEARN_FINANCE_VAULTS = 'yearn.finance • Vaults';
+
 export const YEARN_FINANCE_VAULTS_V2 = 'yearn.finance • Vaults (v2)';
 const YEARN_TOKEN_VAULTS = 'Yearn Token Vaults';
 const KEEPERDAO = 'KeeperDAO';
@@ -75,7 +79,9 @@ const CHIGASTOKEN = 'Chi Gastoken by 1inch';
 const ONEINCH_LIQUIDITY = '1inch Liquidity Protocol';
 const ONEINCH_LP_STAKING = '1inch LP • Staking';
 const ZLOTFINANCE = 'zlot.finance';
+
 export const MAKERDAO_DSR = 'MakerDAO DSR';
+
 export const MAKERDAO_VAULTS = 'MakerDAO Vaults';
 const AAVE_V2 = 'Aave V2';
 const AAVE_V2_VARIABLE_DEBT = 'Aave V2 • Variable Debt';
@@ -87,6 +93,7 @@ const MUSHROOMS_FINANCE = 'Mushrooms Finance';
 const MUSHROOMS_FINANCE_STAKING = 'Mushrooms Finance • Staking';
 const AKROPOLIS_AKRO_STAKING = 'Akropolis • AKRO Staking';
 const AKROPOLIS_ADEL_STAKING = 'Akropolis • ADEL Staking';
+
 export const LIQUITY = 'Liquity';
 const ALPHA_HOMORA = 'Alpha Homora';
 const ALPHA_HOMORA_V2 = 'Alpha Homora V2';

@@ -201,4 +201,5 @@ export const FrontendSettings = z.object({
 });
 
 export type FrontendSettings = z.infer<typeof FrontendSettings>;
+
 export type FrontendSettingsPayload = Partial<FrontendSettings>;

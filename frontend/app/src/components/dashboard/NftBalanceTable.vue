@@ -130,48 +130,48 @@ watch(loading, async (isLoading, wasLoading) => {
 </script>
 
 <template>
-  <dashboard-expandable-table>
+  <DashboardExpandableTable>
     <template #title>
-      <refresh-button
+      <RefreshButton
         :loading="loading"
         :tooltip="t('nft_balance_table.refresh')"
         @refresh="refreshNonFungibleBalances(true)"
       />
       {{ t('nft_balance_table.title') }}
-      <v-btn :to="nonFungibleRoute" icon class="ml-2">
-        <v-icon>mdi-chevron-right</v-icon>
-      </v-btn>
+      <VBtn :to="nonFungibleRoute" icon class="ml-2">
+        <VIcon>mdi-chevron-right</VIcon>
+      </VBtn>
     </template>
     <template #details>
-      <v-menu
+      <VMenu
         id="nft_balance_table__column-filter"
         transition="slide-y-transition"
         max-width="250px"
         offset-y
       >
         <template #activator="{ on }">
-          <menu-tooltip-button
+          <MenuTooltipButton
             :tooltip="t('dashboard_asset_table.select_visible_columns')"
             class-name="ml-4 nft_balance_table__column-filter__button"
             :on-menu="on"
           >
-            <v-icon>mdi-dots-vertical</v-icon>
-          </menu-tooltip-button>
+            <VIcon>mdi-dots-vertical</VIcon>
+          </MenuTooltipButton>
         </template>
-        <visible-columns-selector :group="group" />
-      </v-menu>
+        <VisibleColumnsSelector :group="group" />
+      </VMenu>
     </template>
     <template #shortDetails>
-      <amount-display
+      <AmountDisplay
         :value="totalUsdValue"
         show-currency="symbol"
         fiat-currency="USD"
       />
     </template>
 
-    <collection-handler :collection="balances" @set-page="setPage($event)">
+    <CollectionHandler :collection="balances" @set-page="setPage($event)">
       <template #default="{ data, itemLength }">
-        <data-table
+        <DataTable
           :headers="tableHeaders"
           :items="data"
           :loading="isLoading"
@@ -180,10 +180,10 @@ watch(loading, async (isLoading, wasLoading) => {
           @update:options="setOptions($event)"
         >
           <template #item.name="{ item }">
-            <nft-details :identifier="item.id" />
+            <NftDetails :identifier="item.id" />
           </template>
           <template #item.priceInAsset="{ item }">
-            <amount-display
+            <AmountDisplay
               v-if="item.priceAsset !== currencySymbol"
               :value="item.priceInAsset"
               :asset="item.priceAsset"
@@ -191,7 +191,7 @@ watch(loading, async (isLoading, wasLoading) => {
             <span v-else>-</span>
           </template>
           <template #item.lastPrice="{ item }">
-            <amount-display
+            <AmountDisplay
               no-scramble
               :price-asset="item.priceAsset"
               :amount="item.priceInAsset"
@@ -201,31 +201,31 @@ watch(loading, async (isLoading, wasLoading) => {
             />
           </template>
           <template #item.percentageOfTotalNetValue="{ item }">
-            <percentage-display
+            <PercentageDisplay
               :value="percentageOfTotalNetValue(item.usdPrice)"
             />
           </template>
           <template #item.percentageOfTotalCurrentGroup="{ item }">
-            <percentage-display
+            <PercentageDisplay
               :value="percentageOfCurrentGroup(item.usdPrice)"
             />
           </template>
           <template #body.append="{ isMobile }">
-            <row-append
+            <RowAppend
               label-colspan="2"
               :label="t('common.total')"
               :right-patch-colspan="tableHeaders.length - 3"
               :is-mobile="isMobile"
             >
-              <amount-display
+              <AmountDisplay
                 :value="totalUsdValue"
                 show-currency="symbol"
                 fiat-currency="USD"
               />
-            </row-append>
+            </RowAppend>
           </template>
-        </data-table>
+        </DataTable>
       </template>
-    </collection-handler>
-  </dashboard-expandable-table>
+    </CollectionHandler>
+  </DashboardExpandableTable>
 </template>

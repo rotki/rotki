@@ -44,7 +44,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <settings-option
+  <SettingsOption
     #default="{ error, success, update }"
     setting="dateInputFormat"
     frontend-setting
@@ -52,7 +52,7 @@ onMounted(() => {
     :success-message="successMessage"
     @finished="resetDateInputFormat()"
   >
-    <date-input-format-selector
+    <DateInputFormatSelector
       v-model="dateInputFormat"
       :label="t('general_settings.labels.date_input_format')"
       class="pt-4 general-settings__fields__date-input-format"
@@ -60,5 +60,5 @@ onMounted(() => {
       :error-messages="error || v$.dateInputFormat.$errors.map(e => e.$message)"
       @change="callIfValid($event, update)"
     />
-  </settings-option>
+  </SettingsOption>
 </template>

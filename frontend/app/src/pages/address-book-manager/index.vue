@@ -1,3 +1,3 @@
 <template>
-  <address-book-management />
+  <AddressBookManagement />
 </template>

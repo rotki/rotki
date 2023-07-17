@@ -29,7 +29,7 @@ watch(adaptiveLanguage, language => {
 </script>
 
 <template>
-  <v-app
+  <VApp
     v-if="!isPlayground"
     id="rotki"
     :key="adaptiveLanguage"
@@ -37,9 +37,9 @@ watch(adaptiveLanguage, language => {
     :class="{ ['app--animations-disabled']: !animationsEnabled }"
   >
     <slot />
-    <app-premium-manager />
-  </v-app>
-  <dev-app v-else />
+    <AppPremiumManager />
+  </VApp>
+  <DevApp v-else />
 </template>
 
 <style scoped lang="scss">

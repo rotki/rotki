@@ -191,9 +191,9 @@ const getItemKey = (item: AccountWithChain) => item.address + item.chain;
 </script>
 
 <template>
-  <v-card v-bind="$attrs">
+  <VCard v-bind="$attrs">
     <div :class="noPadding ? null : 'mx-4 pt-2'">
-      <v-autocomplete
+      <VAutocomplete
         :value="internalValue"
         :items="displayedAccounts"
         :filter="filter"
@@ -224,7 +224,7 @@ const getItemKey = (item: AccountWithChain) => item.address + item.chain;
           </span>
         </template>
         <template #selection="data">
-          <v-chip
+          <VChip
             v-if="multiple"
             :key="data.item.chain + data.item.address"
             v-bind="data.attrs"
@@ -235,13 +235,13 @@ const getItemKey = (item: AccountWithChain) => item.address + item.chain;
             close-label="overflow-x-hidden"
             @click:close="data.parent.selectItem(data.item)"
           >
-            <account-display
+            <AccountDisplay
               :account="data.item"
               :hide-chain-icon="hideChainIcon"
             />
-          </v-chip>
+          </VChip>
           <div v-else class="overflow-x-hidden">
-            <account-display
+            <AccountDisplay
               :account="data.item"
               :hide-chain-icon="hideChainIcon"
               class="pr-2"
@@ -253,27 +253,27 @@ const getItemKey = (item: AccountWithChain) => item.address + item.chain;
             class="blockchain-account-selector__list__item d-flex align-center justify-space-between flex-grow-1"
           >
             <div class="blockchain-account-selector__list__item__address-label">
-              <v-chip
+              <VChip
                 :color="dark ? null : 'grey lighten-3'"
                 filter
                 class="text-truncate"
               >
-                <account-display
+                <AccountDisplay
                   :account="data.item"
                   :hide-chain-icon="hideChainIcon"
                 />
-              </v-chip>
+              </VChip>
             </div>
-            <tag-display class="mb-1" :tags="data.item.tags" :small="true" />
+            <TagDisplay class="mb-1" :tags="data.item.tags" :small="true" />
           </div>
         </template>
-      </v-autocomplete>
+      </VAutocomplete>
     </div>
-    <v-card-text v-if="hint">
+    <VCardText v-if="hint">
       {{ t('blockchain_account_selector.hint', { hintText }) }}
       <slot />
-    </v-card-text>
-  </v-card>
+    </VCardText>
+  </VCard>
 </template>
 
 <style scoped lang="scss">

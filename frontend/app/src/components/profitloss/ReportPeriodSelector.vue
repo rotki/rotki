@@ -7,22 +7,6 @@ import {
   type SelectionChangedEvent
 } from '@/types/reports';
 
-const QUARTER_STARTS: { [quarter in Quarter]: string } = {
-  [Quarter.ALL]: '01/01',
-  [Quarter.Q1]: '01/01',
-  [Quarter.Q2]: '01/04',
-  [Quarter.Q3]: '01/07',
-  [Quarter.Q4]: '01/10'
-};
-
-const QUARTER_ENDS: { [quarter in Quarter]: string } = {
-  [Quarter.Q1]: '31/03',
-  [Quarter.Q2]: '30/06',
-  [Quarter.Q3]: '30/09',
-  [Quarter.Q4]: '31/12',
-  [Quarter.ALL]: '31/12'
-};
-
 const props = defineProps({
   year: {
     type: String as PropType<string | 'custom'>,
@@ -40,6 +24,22 @@ const emit = defineEmits<{
   (e: 'update:period', period: PeriodChangedEvent | null): void;
   (e: 'update:selection', selection: SelectionChangedEvent): void;
 }>();
+
+const QUARTER_STARTS: { [quarter in Quarter]: string } = {
+  [Quarter.ALL]: '01/01',
+  [Quarter.Q1]: '01/01',
+  [Quarter.Q2]: '01/04',
+  [Quarter.Q3]: '01/07',
+  [Quarter.Q4]: '01/10'
+};
+
+const QUARTER_ENDS: { [quarter in Quarter]: string } = {
+  [Quarter.Q1]: '31/03',
+  [Quarter.Q2]: '30/06',
+  [Quarter.Q3]: '30/09',
+  [Quarter.Q4]: '31/12',
+  [Quarter.ALL]: '31/12'
+};
 
 const { quarter, year } = toRefs(props);
 
@@ -125,17 +125,17 @@ const subPeriods = [
 </script>
 
 <template>
-  <v-row>
-    <v-col cols="12">
+  <VRow>
+    <VCol cols="12">
       <span class="text-h6">{{ t('generate.period') }}</span>
-      <v-chip-group
+      <VChipGroup
         :value="year"
         mandatory
         column
         class="mx-n2"
         @change="onChange({ year: $event })"
       >
-        <v-chip
+        <VChip
           v-for="period in periods"
           :key="period"
           :color="year === period ? 'primary' : null"
@@ -144,26 +144,26 @@ const subPeriods = [
           label
         >
           {{ period }}
-        </v-chip>
-        <v-chip
+        </VChip>
+        <VChip
           value="custom"
           class="ma-2 px-4"
           label
           :color="isCustom ? 'primary' : null"
         >
           {{ t('generate.custom_selection') }}
-        </v-chip>
-      </v-chip-group>
-    </v-col>
-    <v-col v-if="year !== 'custom'" cols="12">
+        </VChip>
+      </VChipGroup>
+    </VCol>
+    <VCol v-if="year !== 'custom'" cols="12">
       <span class="text-h6">{{ t('generate.sub_period_label') }}</span>
-      <v-chip-group
+      <VChipGroup
         :value="quarter"
         mandatory
         class="mx-n2"
         @change="onChange({ quarter: $event })"
       >
-        <v-chip
+        <VChip
           v-for="subPeriod in subPeriods"
           :key="subPeriod.id"
           :color="quarter === subPeriod.id ? 'primary' : null"
@@ -173,8 +173,8 @@ const subPeriods = [
           class="ma-2 px-4"
         >
           {{ subPeriod.name }}
-        </v-chip>
-      </v-chip-group>
-    </v-col>
-  </v-row>
+        </VChip>
+      </VChipGroup>
+    </VCol>
+  </VRow>
 </template>

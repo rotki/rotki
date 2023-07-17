@@ -95,21 +95,21 @@ const deleteToken = (address: string) => {
 </script>
 
 <template>
-  <v-form ref="form" :value="!v$.$invalid">
+  <VForm ref="form" :value="!v$.$invalid">
     <div class="text-h6">
       {{ t('underlying_token_manager.labels.tokens') }}
     </div>
-    <v-row class="mt-2">
-      <v-col cols="12" md="7">
-        <v-text-field
+    <VRow class="mt-2">
+      <VCol cols="12" md="7">
+        <VTextField
           v-model="underlyingAddress"
           :error-messages="v$.address.$errors.map(e => e.$message)"
           outlined
           :label="t('common.address')"
         />
-      </v-col>
-      <v-col cols="12" md="2">
-        <v-select
+      </VCol>
+      <VCol cols="12" md="2">
+        <VSelect
           v-model="tokenKind"
           outlined
           :label="t('asset_form.labels.token_kind')"
@@ -117,9 +117,9 @@ const deleteToken = (address: string) => {
           item-text="label"
           item-value="identifier"
         />
-      </v-col>
-      <v-col cols="12" md="3">
-        <v-text-field
+      </VCol>
+      <VCol cols="12" md="3">
+        <VTextField
           v-model="underlyingWeight"
           type="number"
           max="100"
@@ -131,20 +131,20 @@ const deleteToken = (address: string) => {
           :label="t('underlying_token_manager.labels.weight')"
         >
           <template #append-outer>
-            <v-btn
+            <VBtn
               icon
               :disabled="v$.$invalid"
               class="mt-n2"
               @click="addToken()"
             >
-              <v-icon>mdi-plus</v-icon>
-            </v-btn>
+              <VIcon>mdi-plus</VIcon>
+            </VBtn>
           </template>
-        </v-text-field>
-      </v-col>
-    </v-row>
-    <v-sheet outlined rounded class="underlying-tokens">
-      <v-simple-table fixed-header height="200px">
+        </VTextField>
+      </VCol>
+    </VRow>
+    <VSheet outlined rounded class="underlying-tokens">
+      <VSimpleTable fixed-header height="200px">
         <thead>
           <tr>
             <th>{{ t('common.address') }}</th>
@@ -165,7 +165,7 @@ const deleteToken = (address: string) => {
               }}
             </td>
             <td>
-              <row-actions
+              <RowActions
                 :edit-tooltip="t('underlying_token_manager.edit_tooltip')"
                 :delete-tooltip="t('underlying_token_manager.delete_tooltip')"
                 @delete-click="deleteToken(token.address)"
@@ -174,7 +174,7 @@ const deleteToken = (address: string) => {
             </td>
           </tr>
         </tbody>
-      </v-simple-table>
-    </v-sheet>
-  </v-form>
+      </VSimpleTable>
+    </VSheet>
+  </VForm>
 </template>

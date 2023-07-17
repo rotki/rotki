@@ -15,13 +15,13 @@ onMounted(() => {
 </script>
 
 <template>
-  <settings-option
+  <SettingsOption
     #default="{ error, success, update }"
     setting="calculatePastCostBasis"
     :error-message="t('account_settings.messages.cost_basis.error')"
     :success-message="switchSuccessMessage"
   >
-    <v-switch
+    <VSwitch
       v-model="calculatePastCostBasis"
       class="accounting-settings__past-cost-basis"
       :success-messages="success"
@@ -30,5 +30,5 @@ onMounted(() => {
       color="primary"
       @change="update($event)"
     />
-  </settings-option>
+  </SettingsOption>
 </template>

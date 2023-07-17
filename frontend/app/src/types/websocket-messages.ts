@@ -52,15 +52,18 @@ export const HistoryEventsQueryData = z.object({
   name: z.string(),
   eventType: z.string()
 });
+
 export type HistoryEventsQueryData = z.infer<typeof HistoryEventsQueryData>;
 
 export type BalanceSnapshotError = z.infer<typeof BalanceSnapshotError>;
+
 export type EvmTransactionQueryData = z.infer<typeof EvmTransactionQueryData>;
 
 export const PremiumStatusUpdateData = z.object({
   expired: z.boolean(),
   isPremiumActive: z.boolean()
 });
+
 export type PremiumStatusUpdateData = z.infer<typeof PremiumStatusUpdateData>;
 
 export const DbUpgradeStatusData = z.object({

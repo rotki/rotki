@@ -2,13 +2,14 @@
 import { useAppRoutes } from '@/router/routes';
 import { NoteLocation } from '@/types/notes';
 
-const { t } = useI18n();
-
 defineProps({
   visible: { required: true, type: Boolean }
 });
 
 const emit = defineEmits(['visible:update', 'about']);
+
+const { t } = useI18n();
+
 const tab = ref<number>(0);
 const visibleUpdate = (_visible: boolean) => {
   emit('visible:update', _visible);
@@ -75,7 +76,7 @@ const { smAndDown } = useDisplay();
 </script>
 
 <template>
-  <v-navigation-drawer
+  <VNavigationDrawer
     width="400px"
     class="user-notes-sidebar"
     :class="smAndDown ? 'user-notes-sidebar--mobile' : null"
@@ -87,26 +88,26 @@ const { smAndDown } = useDisplay();
     hide-overlay
     @input="visibleUpdate($event)"
   >
-    <v-sheet elevation="2">
-      <v-row no-gutters justify="space-between" align="center">
-        <v-col>
-          <v-tabs
+    <VSheet elevation="2">
+      <VRow no-gutters justify="space-between" align="center">
+        <VCol>
+          <VTabs
             v-model="tab"
             class="tabs"
             fixed-tabs
             height="42"
             mobile-breakpoint="0"
           >
-            <v-tab>
+            <VTab>
               {{ t('notes_menu.tabs.general') }}
-            </v-tab>
-            <v-tooltip bottom>
+            </VTab>
+            <VTooltip bottom>
               <template #activator="{ on }">
-                <v-tab v-if="locationName" class="ml-2" v-on="on">
+                <VTab v-if="locationName" class="ml-2" v-on="on">
                   {{
                     t('notes_menu.tabs.in_this_page', { page: locationName })
                   }}
-                </v-tab>
+                </VTab>
               </template>
               <div>
                 {{
@@ -115,22 +116,22 @@ const { smAndDown } = useDisplay();
                   })
                 }}
               </div>
-            </v-tooltip>
-          </v-tabs>
-        </v-col>
-        <v-col cols="auto" class="pr-2">
-          <v-btn icon @click="visibleUpdate(false)">
-            <v-icon>mdi-close</v-icon>
-          </v-btn>
-        </v-col>
-      </v-row>
-    </v-sheet>
+            </VTooltip>
+          </VTabs>
+        </VCol>
+        <VCol cols="auto" class="pr-2">
+          <VBtn icon @click="visibleUpdate(false)">
+            <VIcon>mdi-close</VIcon>
+          </VBtn>
+        </VCol>
+      </VRow>
+    </VSheet>
 
-    <user-notes-list
+    <UserNotesList
       :key="location + tab"
       :location="tab === 0 ? '' : location"
     />
-  </v-navigation-drawer>
+  </VNavigationDrawer>
 </template>
 
 <style lang="scss" scoped>

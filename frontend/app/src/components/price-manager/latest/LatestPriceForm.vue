@@ -74,10 +74,10 @@ const v$ = setValidation(
 </script>
 
 <template>
-  <v-form :value="valid">
-    <v-row class="mt-2">
-      <v-col cols="12" md="6">
-        <asset-select
+  <VForm :value="valid">
+    <VRow class="mt-2">
+      <VCol cols="12" md="6">
+        <AssetSelect
           :value="value.fromAsset"
           :label="t('price_form.from_asset')"
           outlined
@@ -86,20 +86,20 @@ const v$ = setValidation(
           :error-messages="toMessages(v$.fromAsset)"
           @input="input({ fromAsset: $event })"
         />
-      </v-col>
-      <v-col cols="12" md="6">
-        <asset-select
+      </VCol>
+      <VCol cols="12" md="6">
+        <AssetSelect
           :value="value.toAsset"
           :label="t('price_form.to_asset')"
           outlined
           :error-messages="toMessages(v$.toAsset)"
           @input="input({ toAsset: $event })"
         />
-      </v-col>
-    </v-row>
-    <v-row>
-      <v-col>
-        <amount-input
+      </VCol>
+    </VRow>
+    <VRow>
+      <VCol>
+        <AmountInput
           v-model="price"
           outlined
           :error-messages="toMessages(v$.price)"
@@ -109,7 +109,7 @@ const v$ = setValidation(
           v-if="price && fromAsset && toAsset"
           class="text-caption green--text mt-n6 pb-1 pl-3"
         >
-          <i18n tag="div" path="price_form.latest.hint">
+          <I18n tag="div" path="price_form.latest.hint">
             <template #fromAsset>
               <strong>
                 {{ fromAsset }}
@@ -122,12 +122,12 @@ const v$ = setValidation(
             </template>
             <template #price>
               <strong>
-                <amount-display :value="numericPrice" :tooltip="false" />
+                <AmountDisplay :value="numericPrice" :tooltip="false" />
               </strong>
             </template>
-          </i18n>
+          </I18n>
         </div>
-      </v-col>
-    </v-row>
-  </v-form>
+      </VCol>
+    </VRow>
+  </VForm>
 </template>

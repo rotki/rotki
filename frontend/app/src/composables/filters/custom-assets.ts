@@ -16,6 +16,7 @@ export type Matcher = SearchMatcher<
   CustomAssetFilterKeys,
   CustomAssetFilterValueKeys
 >;
+
 export type Filters = MatchedKeyword<CustomAssetFilterValueKeys>;
 
 export const useCustomAssetFilter = (suggestions: MaybeRef<string[]>) => {

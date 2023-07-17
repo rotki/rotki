@@ -19,16 +19,16 @@ const terminate = () => interop.closeApp();
       {{ t('connection_failure.message') }}
     </div>
     <div class="fill-width d-flex mt-4">
-      <v-btn v-if="!defaultBackend" text @click="toDefault()">
+      <VBtn v-if="!defaultBackend" text @click="toDefault()">
         {{ t('connection_failure.default') }}
-      </v-btn>
-      <v-spacer />
-      <v-btn depressed @click="terminate()">
+      </VBtn>
+      <VSpacer />
+      <VBtn depressed @click="terminate()">
         {{ t('common.actions.terminate') }}
-      </v-btn>
-      <v-btn class="ml-4" depressed color="primary" @click="retry()">
+      </VBtn>
+      <VBtn class="ml-4" depressed color="primary" @click="retry()">
         {{ t('connection_failure.retry') }}
-      </v-btn>
+      </VBtn>
     </div>
   </div>
 </template>

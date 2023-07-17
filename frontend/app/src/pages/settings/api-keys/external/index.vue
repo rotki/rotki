@@ -186,7 +186,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <card>
+  <Card>
     <template #title>
       {{ t('external_services.title') }}
     </template>
@@ -194,31 +194,31 @@ onMounted(async () => {
       {{ t('external_services.subtitle') }}
     </template>
 
-    <api-key-box>
-      <v-card flat>
-        <v-card-title>
+    <ApiKeyBox>
+      <VCard flat>
+        <VCardTitle>
           {{ t('external_services.etherscan.title') }}
-        </v-card-title>
-        <v-card-subtitle>
+        </VCardTitle>
+        <VCardSubtitle>
           {{ t('external_services.etherscan.description') }}
-        </v-card-subtitle>
-      </v-card>
-      <v-tabs v-model="evmEtherscanTabIndex">
-        <v-tab v-for="(_, chain) in evmEtherscanTabs" :key="chain">
-          <adaptive-wrapper>
-            <evm-chain-icon :chain="chain" tile />
-          </adaptive-wrapper>
+        </VCardSubtitle>
+      </VCard>
+      <VTabs v-model="evmEtherscanTabIndex">
+        <VTab v-for="(_, chain) in evmEtherscanTabs" :key="chain">
+          <AdaptiveWrapper>
+            <EvmChainIcon :chain="chain" tile />
+          </AdaptiveWrapper>
           <div class="ml-2">{{ getName(chain) }}</div>
-        </v-tab>
-      </v-tabs>
-      <v-divider />
-      <v-tabs-items v-model="evmEtherscanTabIndex">
-        <v-tab-item
+        </VTab>
+      </VTabs>
+      <VDivider />
+      <VTabsItems v-model="evmEtherscanTabIndex">
+        <VTabItem
           v-for="(tab, chain) in evmEtherscanTabs"
           :key="chain"
           class="pt-4"
         >
-          <service-key
+          <ServiceKey
             v-model="tab.value"
             :class="`external-services__${chain}-etherscan-key`"
             :label="t('external_services.etherscan.label')"
@@ -236,12 +236,12 @@ onMounted(async () => {
             @save="save(tab.key, $event)"
             @delete-key="showConfirmation(tab.key)"
           />
-        </v-tab-item>
-      </v-tabs-items>
-    </api-key-box>
+        </VTabItem>
+      </VTabsItems>
+    </ApiKeyBox>
 
-    <api-key-box id="ext-service-key-cryptocompare">
-      <service-key
+    <ApiKeyBox id="ext-service-key-cryptocompare">
+      <ServiceKey
         v-model="cryptocompareKey"
         class="external-services__cryptocompare-key"
         :title="t('external_services.cryptocompare.title')"
@@ -253,10 +253,10 @@ onMounted(async () => {
         @save="save('cryptocompare', $event)"
         @delete-key="showConfirmation('cryptocompare')"
       />
-    </api-key-box>
+    </ApiKeyBox>
 
-    <api-key-box id="ext-service-key-beaconchain">
-      <service-key
+    <ApiKeyBox id="ext-service-key-beaconchain">
+      <ServiceKey
         v-model="beaconchainKey"
         class="external-services__beaconchain-key"
         :title="t('external_services.beaconchain.title')"
@@ -268,10 +268,10 @@ onMounted(async () => {
         @save="save('beaconchain', $event)"
         @delete-key="showConfirmation('beaconchain')"
       />
-    </api-key-box>
+    </ApiKeyBox>
 
-    <api-key-box id="ext-service-key-covalent">
-      <service-key
+    <ApiKeyBox id="ext-service-key-covalent">
+      <ServiceKey
         v-model="covalentKey"
         class="external-services__covalent-key"
         :title="t('external_services.covalent.title')"
@@ -283,10 +283,10 @@ onMounted(async () => {
         @save="save('covalent', $event)"
         @delete-key="showConfirmation('covalent')"
       />
-    </api-key-box>
+    </ApiKeyBox>
 
-    <api-key-box id="ext-service-key-loopring">
-      <service-key
+    <ApiKeyBox id="ext-service-key-loopring">
+      <ServiceKey
         v-model="loopringKey"
         class="external-services__loopring_key"
         :title="t('external_services.loopring.title')"
@@ -299,28 +299,28 @@ onMounted(async () => {
         @delete-key="showConfirmation('loopring')"
       />
 
-      <v-alert
+      <VAlert
         v-if="loopringKey && !isLoopringActive"
         prominent
         type="warning"
         class="ma-2"
         outlined
       >
-        <v-row align="center">
-          <v-col class="grow">
+        <VRow align="center">
+          <VCol class="grow">
             {{ t('external_services.loopring.not_enabled') }}
-          </v-col>
-          <v-col class="shrink">
-            <v-btn to="/settings/modules" color="primary">
+          </VCol>
+          <VCol class="shrink">
+            <VBtn to="/settings/modules" color="primary">
               {{ t('external_services.loopring.settings') }}
-            </v-btn>
-          </v-col>
-        </v-row>
-      </v-alert>
-    </api-key-box>
+            </VBtn>
+          </VCol>
+        </VRow>
+      </VAlert>
+    </ApiKeyBox>
 
-    <api-key-box id="ext-service-key-opensea">
-      <service-key
+    <ApiKeyBox id="ext-service-key-opensea">
+      <ServiceKey
         v-model="openseaKey"
         class="external-services__opensea-key"
         :title="t('external_services.opensea.title')"
@@ -332,16 +332,16 @@ onMounted(async () => {
         @save="save('opensea', $event)"
         @delete-key="showConfirmation('opensea')"
       >
-        <i18n tag="div" path="external_services.opensea.link">
+        <I18n tag="div" path="external_services.opensea.link">
           <template #link>
-            <external-link
+            <ExternalLink
               url="https://docs.opensea.io/reference/request-an-api-key"
             >
               {{ t('common.here') }}
-            </external-link>
+            </ExternalLink>
           </template>
-        </i18n>
-      </service-key>
-    </api-key-box>
-  </card>
+        </I18n>
+      </ServiceKey>
+    </ApiKeyBox>
+  </Card>
 </template>

@@ -22,6 +22,7 @@ const BalancerBalance = z.object({
 export type BalancerBalance = z.infer<typeof BalancerBalance>;
 
 export const BalancerBalances = z.record(z.array(BalancerBalance));
+
 export type BalancerBalances = z.infer<typeof BalancerBalances>;
 
 const PoolToken = z.object({
@@ -54,6 +55,7 @@ const BalancerPoolDetails = z.object({
 });
 
 export const BalancerEvents = z.record(z.array(BalancerPoolDetails));
+
 export type BalancerEvents = z.infer<typeof BalancerEvents>;
 
 export interface BalancerProfitLoss {

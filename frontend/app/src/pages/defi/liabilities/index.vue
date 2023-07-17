@@ -13,6 +13,6 @@ const anyModuleEnabled = isAnyModuleEnabled(modules);
 </script>
 
 <template>
-  <module-not-active v-if="!anyModuleEnabled" :modules="modules" />
-  <borrowing v-else :modules="modules" />
+  <ModuleNotActive v-if="!anyModuleEnabled" :modules="modules" />
+  <Borrowing v-else :modules="modules" />
 </template>

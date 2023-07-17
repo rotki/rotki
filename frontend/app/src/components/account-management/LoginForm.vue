@@ -3,8 +3,6 @@ import useVuelidate from '@vuelidate/core';
 import { helpers, required, requiredIf } from '@vuelidate/validators';
 import { type LoginCredentials, type SyncApproval } from '@/types/login';
 
-const { t } = useI18n();
-
 const props = withDefaults(
   defineProps<{
     loading: boolean;
@@ -21,6 +19,8 @@ const emit = defineEmits<{
   (e: 'login', credentials: LoginCredentials): void;
   (e: 'backend-changed', url: string | null): void;
 }>();
+
+const { t } = useI18n();
 
 const { errors } = toRefs(props);
 
@@ -254,15 +254,15 @@ const abortLogin = () => {
 </script>
 
 <template>
-  <v-slide-y-transition>
+  <VSlideYTransition>
     <div class="login">
-      <v-card-title>
+      <VCardTitle>
         {{ t('login.title') }}
-      </v-card-title>
+      </VCardTitle>
 
-      <v-card-text class="pb-2">
-        <v-form :value="!v$.$invalid">
-          <v-text-field
+      <VCardText class="pb-2">
+        <VForm :value="!v$.$invalid">
+          <VTextField
             ref="usernameRef"
             v-model="username"
             class="login__fields__username"
@@ -277,7 +277,7 @@ const abortLogin = () => {
             @keypress.enter="login()"
           />
 
-          <revealable-input
+          <RevealableInput
             ref="passwordRef"
             v-model="password"
             outlined
@@ -292,9 +292,9 @@ const abortLogin = () => {
             @keypress.enter="login()"
           />
 
-          <v-row no-gutters align="end">
-            <v-col>
-              <v-checkbox
+          <VRow no-gutters align="end">
+            <VCol>
+              <VCheckbox
                 v-model="rememberUsername"
                 :disabled="customBackendDisplay || rememberPassword || loading"
                 color="primary"
@@ -302,9 +302,9 @@ const abortLogin = () => {
                 class="mt-2 remember"
                 :label="t('login.remember_username')"
               />
-              <v-row v-if="isPackaged" class="pt-2" no-gutters>
-                <v-col cols="auto">
-                  <v-checkbox
+              <VRow v-if="isPackaged" class="pt-2" no-gutters>
+                <VCol cols="auto">
+                  <VCheckbox
                     v-model="rememberPassword"
                     :disabled="customBackendDisplay || loading"
                     color="primary"
@@ -312,23 +312,23 @@ const abortLogin = () => {
                     class="mt-0 pt-0 remember"
                     :label="t('login.remember_password')"
                   />
-                </v-col>
-                <v-col>
-                  <v-tooltip right max-width="200">
+                </VCol>
+                <VCol>
+                  <VTooltip right max-width="200">
                     <template #activator="{ on }">
-                      <v-icon small v-on="on"> mdi-help-circle </v-icon>
+                      <VIcon small v-on="on"> mdi-help-circle </VIcon>
                     </template>
                     <div class="remember__tooltip">
                       {{ t('login.remember_password_tooltip') }}
                     </div>
-                  </v-tooltip>
-                </v-col>
-              </v-row>
-            </v-col>
-            <v-col cols="auto">
-              <v-tooltip open-delay="400" top>
+                  </VTooltip>
+                </VCol>
+              </VRow>
+            </VCol>
+            <VCol cols="auto">
+              <VTooltip open-delay="400" top>
                 <template #activator="{ on, attrs }">
-                  <v-btn
+                  <VBtn
                     icon
                     :color="serverColor"
                     v-bind="attrs"
@@ -336,20 +336,20 @@ const abortLogin = () => {
                     v-on="on"
                     @click="customBackendDisplay = !customBackendDisplay"
                   >
-                    <v-icon>mdi-server</v-icon>
-                  </v-btn>
+                    <VIcon>mdi-server</VIcon>
+                  </VBtn>
                 </template>
                 <span v-text="t('login.custom_backend.tooltip')" />
-              </v-tooltip>
-            </v-col>
-          </v-row>
+              </VTooltip>
+            </VCol>
+          </VRow>
 
-          <transition v-if="customBackendDisplay" name="bounce">
+          <Transition v-if="customBackendDisplay" name="bounce">
             <div class="animate mt-4">
-              <v-divider />
-              <v-row no-gutters class="mt-4" align="center">
-                <v-col>
-                  <v-text-field
+              <VDivider />
+              <VRow no-gutters class="mt-4" align="center">
+                <VCol>
+                  <VTextField
                     v-model="customBackendUrl"
                     outlined
                     prepend-inner-icon="mdi-server"
@@ -362,46 +362,46 @@ const abortLogin = () => {
                     :hint="t('login.custom_backend.hint')"
                     @keypress.enter="saveCustomBackend()"
                   />
-                </v-col>
-                <v-col cols="auto" class="pb-7">
-                  <v-btn
+                </VCol>
+                <VCol cols="auto" class="pb-7">
+                  <VBtn
                     v-if="!customBackendSaved"
                     class="ml-4"
                     icon
                     @click="saveCustomBackend()"
                   >
-                    <v-icon>mdi-content-save</v-icon>
-                  </v-btn>
-                  <v-btn v-else icon @click="clearCustomBackend()">
-                    <v-icon>mdi-delete</v-icon>
-                  </v-btn>
-                </v-col>
-              </v-row>
-              <v-row no-gutters>
-                <v-col>
-                  <v-checkbox
+                    <VIcon>mdi-content-save</VIcon>
+                  </VBtn>
+                  <VBtn v-else icon @click="clearCustomBackend()">
+                    <VIcon>mdi-delete</VIcon>
+                  </VBtn>
+                </VCol>
+              </VRow>
+              <VRow no-gutters>
+                <VCol>
+                  <VCheckbox
                     v-model="customBackendSessionOnly"
                     class="mt-0"
                     hide-details
                     :disabled="customBackendSaved"
                     :label="t('login.custom_backend.session_only')"
                   />
-                </v-col>
-              </v-row>
+                </VCol>
+              </VRow>
             </div>
-          </transition>
+          </Transition>
 
-          <premium-sync-conflict-alert
+          <PremiumSyncConflictAlert
             @proceed="login({ syncApproval: $event })"
           />
 
-          <incomplete-upgrade-alert
+          <IncompleteUpgradeAlert
             @confirm="login({ resumeFromBackup: true })"
             @cancel="abortLogin()"
           />
 
-          <transition name="bounce">
-            <v-alert
+          <Transition name="bounce">
+            <VAlert
               v-if="errors.length > 0"
               class="animate mt-4 mb-0"
               text
@@ -409,29 +409,29 @@ const abortLogin = () => {
               type="error"
               icon="mdi-alert-circle-outline"
             >
-              <v-row>
-                <v-col class="grow">
+              <VRow>
+                <VCol class="grow">
                   <span v-for="(error, i) in errors" :key="i" v-text="error" />
-                </v-col>
-                <v-col class="shrink">
-                  <v-btn
+                </VCol>
+                <VCol class="shrink">
+                  <VBtn
                     v-if="isLoggedInError"
                     depressed
                     color="primary"
                     @click="logout()"
                   >
                     {{ t('login.logout') }}
-                  </v-btn>
-                </v-col>
-              </v-row>
-            </v-alert>
-          </transition>
-        </v-form>
-      </v-card-text>
+                  </VBtn>
+                </VCol>
+              </VRow>
+            </VAlert>
+          </Transition>
+        </VForm>
+      </VCardText>
 
-      <v-card-actions class="login__actions d-block">
+      <VCardActions class="login__actions d-block">
         <span>
-          <v-btn
+          <VBtn
             class="login__button__sign-in"
             depressed
             color="primary"
@@ -442,9 +442,9 @@ const abortLogin = () => {
             @click="login()"
           >
             {{ t('login.button_signin') }}
-          </v-btn>
+          </VBtn>
         </span>
-        <v-divider class="my-4" />
+        <VDivider class="my-4" />
         <span class="login__actions__footer">
           <button
             :disabled="loading"
@@ -455,9 +455,9 @@ const abortLogin = () => {
             {{ t('login.button_new_account') }}
           </button>
         </span>
-      </v-card-actions>
+      </VCardActions>
     </div>
-  </v-slide-y-transition>
+  </VSlideYTransition>
 </template>
 
 <style scoped lang="scss">

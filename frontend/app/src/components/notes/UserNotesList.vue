@@ -4,19 +4,19 @@ import { type Collection } from '@/types/collection';
 import { type UserNote, type UserNotesFilter } from '@/types/notes';
 import UserNotesFormDialog from '@/components/notes/UserNotesFormDialog.vue';
 
-const getDefaultForm = () => ({
-  title: '',
-  content: '',
-  isPinned: false,
-  location: ''
-});
-
 const props = defineProps({
   location: {
     required: false,
     type: String,
     default: ''
   }
+});
+
+const getDefaultForm = () => ({
+  title: '',
+  content: '',
+  isPinned: false,
+  location: ''
 });
 
 const { location } = toRefs(props);
@@ -192,10 +192,10 @@ onMounted(async () => {
 </script>
 
 <template>
-  <fragment>
+  <Fragment>
     <div class="pa-4 pb-0">
       <div class="mb-4 d-flex items-center">
-        <v-btn
+        <VBtn
           rounded
           color="primary"
           fab
@@ -204,10 +204,10 @@ onMounted(async () => {
           :disabled="showUpgradeRow"
           @click="addNote()"
         >
-          <v-icon>mdi-plus</v-icon>
-        </v-btn>
+          <VIcon>mdi-plus</VIcon>
+        </VBtn>
 
-        <v-text-field
+        <VTextField
           v-model="search"
           outlined
           dense
@@ -221,31 +221,31 @@ onMounted(async () => {
     </div>
 
     <div v-if="loading" class="d-flex justify-center pt-2">
-      <v-progress-circular color="primary" indeterminate width="2" size="50" />
+      <VProgressCircular color="primary" indeterminate width="2" size="50" />
     </div>
 
     <div v-else ref="wrapper" class="px-4 note__wrapper">
-      <v-alert
+      <VAlert
         v-if="showUpgradeRow"
         type="warning"
         text
         class="pa-2 text-subtitle-2"
       >
-        <i18n path="notes_menu.limit_warning">
+        <I18n path="notes_menu.limit_warning">
           <template #limit>{{ itemsPerPage }}</template>
           <template #link>
-            <base-external-link
+            <BaseExternalLink
               :text="t('upgrade_row.rotki_premium')"
               :href="premiumURL"
             />
           </template>
-        </i18n>
-      </v-alert>
+        </I18n>
+      </VAlert>
 
       <div v-if="notes.data.length > 0">
         <div>
           <template v-for="note in notes.data">
-            <v-sheet
+            <VSheet
               :key="note.identifier"
               outlined
               rounded
@@ -259,10 +259,10 @@ onMounted(async () => {
                 <div class="font-weight-bold note__title">
                   {{ note.title }}
                 </div>
-                <v-btn icon @click="togglePin(note)">
-                  <v-icon v-if="note.isPinned" color="primary">mdi-pin</v-icon>
-                  <v-icon v-else color="gray">mdi-pin-outline</v-icon>
-                </v-btn>
+                <VBtn icon @click="togglePin(note)">
+                  <VIcon v-if="note.isPinned" color="primary">mdi-pin</VIcon>
+                  <VIcon v-else color="gray">mdi-pin-outline</VIcon>
+                </VBtn>
               </div>
 
               <div class="text--secondary note__content">
@@ -277,13 +277,13 @@ onMounted(async () => {
                   {{ t('notes_menu.delete_confirmation') }}
                 </div>
                 <div>
-                  <v-btn icon small @click="clearDeleteDialog()">
-                    <v-icon small color="red">mdi-close</v-icon>
-                  </v-btn>
+                  <VBtn icon small @click="clearDeleteDialog()">
+                    <VIcon small color="red">mdi-close</VIcon>
+                  </VBtn>
 
-                  <v-btn icon small @click="confirmDelete()">
-                    <v-icon small color="green">mdi-check</v-icon>
-                  </v-btn>
+                  <VBtn icon small @click="confirmDelete()">
+                    <VIcon small color="green">mdi-check</VIcon>
+                  </VBtn>
                 </div>
               </div>
               <div
@@ -291,27 +291,27 @@ onMounted(async () => {
                 class="d-flex justify-space-between align-center pt-2"
               >
                 <div class="note__datetime text--secondary font-italic">
-                  <i18n path="notes_menu.last_updated">
+                  <I18n path="notes_menu.last_updated">
                     <template #datetime>
-                      <date-display :timestamp="note.lastUpdateTimestamp" />
+                      <DateDisplay :timestamp="note.lastUpdateTimestamp" />
                     </template>
-                  </i18n>
+                  </I18n>
                 </div>
                 <div>
-                  <v-btn icon small @click="editNote(note)">
-                    <v-icon small>mdi-pencil-outline</v-icon>
-                  </v-btn>
+                  <VBtn icon small @click="editNote(note)">
+                    <VIcon small>mdi-pencil-outline</VIcon>
+                  </VBtn>
 
-                  <v-btn icon small @click="deleteNote(note.identifier)">
-                    <v-icon small>mdi-delete-outline</v-icon>
-                  </v-btn>
+                  <VBtn icon small @click="deleteNote(note.identifier)">
+                    <VIcon small>mdi-delete-outline</VIcon>
+                  </VBtn>
                 </div>
               </div>
-            </v-sheet>
+            </VSheet>
           </template>
 
           <div v-if="totalPage > 1" class="mb-4">
-            <v-pagination
+            <VPagination
               :value="page"
               :length="totalPage"
               @input="changePage($event)"
@@ -325,12 +325,12 @@ onMounted(async () => {
       </div>
     </div>
 
-    <user-notes-form-dialog
+    <UserNotesFormDialog
       v-model="form"
       :edit-mode="editMode"
       @reset="resetForm()"
     />
-  </fragment>
+  </Fragment>
 </template>
 
 <style lang="scss" scoped>

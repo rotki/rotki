@@ -55,23 +55,23 @@ const labels: { [keys in PrioritizedListId]: string } = {
 </script>
 
 <template>
-  <v-row align="center">
-    <v-col v-if="data.icon" cols="auto">
-      <adaptive-wrapper>
-        <v-img
+  <VRow align="center">
+    <VCol v-if="data.icon" cols="auto">
+      <AdaptiveWrapper>
+        <VImg
           :width="size"
           contain
           position="left"
           :max-height="size"
           :src="data.icon"
         />
-      </adaptive-wrapper>
-    </v-col>
-    <v-col v-if="labels[data.identifier]" cols="auto">
+      </AdaptiveWrapper>
+    </VCol>
+    <VCol v-if="labels[data.identifier]" cols="auto">
       {{ labels[data.identifier] }}
-    </v-col>
-    <v-col v-else cols="auto">
+    </VCol>
+    <VCol v-else cols="auto">
       {{ toSentenceCase(data.identifier) }}
-    </v-col>
-  </v-row>
+    </VCol>
+  </VRow>
 </template>

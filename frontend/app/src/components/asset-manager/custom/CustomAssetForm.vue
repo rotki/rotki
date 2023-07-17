@@ -122,10 +122,10 @@ setSubmitFunc(save);
 </script>
 
 <template>
-  <v-form :value="valid">
-    <v-row class="mt-2">
-      <v-col cols="12" md="6">
-        <v-text-field
+  <VForm :value="valid">
+    <VRow class="mt-2">
+      <VCol cols="12" md="6">
+        <VTextField
           data-cy="name"
           :value="formData.name"
           outlined
@@ -135,9 +135,9 @@ setSubmitFunc(save);
           :error-messages="toMessages(v$.name)"
           @input="input({ name: $event })"
         />
-      </v-col>
-      <v-col cols="12" md="6">
-        <v-combobox
+      </VCol>
+      <VCol cols="12" md="6">
+        <VCombobox
           data-cy="type"
           :items="types"
           :value="formData.customAssetType"
@@ -149,9 +149,9 @@ setSubmitFunc(save);
           :search-input.sync="search"
           @input="input({ customAssetType: $event })"
         />
-      </v-col>
-      <v-col cols="12">
-        <v-textarea
+      </VCol>
+      <VCol cols="12">
+        <VTextarea
           data-cy="notes"
           :value="formData.notes"
           outlined
@@ -160,14 +160,11 @@ setSubmitFunc(save);
           :label="t('asset_form.labels.notes')"
           @input="input({ notes: $event })"
         />
-      </v-col>
-    </v-row>
+      </VCol>
+    </VRow>
 
     <div class="my-4">
-      <asset-icon-form
-        ref="assetIconFormRef"
-        :identifier="formData.identifier"
-      />
+      <AssetIconForm ref="assetIconFormRef" :identifier="formData.identifier" />
     </div>
-  </v-form>
+  </VForm>
 </template>

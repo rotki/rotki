@@ -19,14 +19,14 @@ const totalValue = computed<BigNumber>(() => {
 </script>
 
 <template>
-  <v-row>
-    <v-col cols="4">
-      <v-card>
-        <v-card-title>
-          <card-title>{{ t('locations.total_asset_price') }}</card-title>
-        </v-card-title>
-        <v-card-text class="text-end text-h5 font-weight-medium">
-          <amount-display
+  <VRow>
+    <VCol cols="4">
+      <VCard>
+        <VCardTitle>
+          <CardTitle>{{ t('locations.total_asset_price') }}</CardTitle>
+        </VCardTitle>
+        <VCardText class="text-end text-h5 font-weight-medium">
+          <AmountDisplay
             class="pt-4"
             tooltip
             show-currency="symbol"
@@ -34,8 +34,8 @@ const totalValue = computed<BigNumber>(() => {
             :amount="totalValue"
             :value="totalValue"
           />
-        </v-card-text>
-      </v-card>
-    </v-col>
-  </v-row>
+        </VCardText>
+      </VCard>
+    </VCol>
+  </VRow>
 </template>

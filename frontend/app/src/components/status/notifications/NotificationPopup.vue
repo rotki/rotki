@@ -40,7 +40,7 @@ const { dark } = useTheme();
 </script>
 
 <template>
-  <v-snackbar
+  <VSnackbar
     v-model="visibleNotification.display"
     :class="css.popup"
     :timeout="visibleNotification.duration"
@@ -52,28 +52,28 @@ const { dark } = useTheme();
     width="400px"
     @input="displayed([visibleNotification.id])"
   >
-    <notification
+    <Notification
       popup
       :notification="visibleNotification"
       @dismiss="dismiss(visibleNotification.id)"
     />
-    <v-divider />
-    <v-row v-if="queue.length > 0" justify="end">
-      <v-col cols="auto">
-        <v-tooltip open-delay="400" top>
+    <VDivider />
+    <VRow v-if="queue.length > 0" justify="end">
+      <VCol cols="auto">
+        <VTooltip open-delay="400" top>
           <template #activator="{ on, attrs }">
-            <v-btn icon v-bind="attrs" v-on="on" @click="dismissAll()">
-              <v-icon>mdi-notification-clear-all</v-icon>
-            </v-btn>
+            <VBtn icon v-bind="attrs" v-on="on" @click="dismissAll()">
+              <VIcon>mdi-notification-clear-all</VIcon>
+            </VBtn>
           </template>
           <span>{{ t('notification_popup.dismiss_all') }}</span>
-        </v-tooltip>
-      </v-col>
-    </v-row>
-    <v-tooltip v-if="queue.length > 0" bottom>
+        </VTooltip>
+      </VCol>
+    </VRow>
+    <VTooltip v-if="queue.length > 0" bottom>
       <template #activator="{ on }">
         <div :class="css.wrapper" v-on="on">
-          <v-badge
+          <VBadge
             inline
             :content="queue.length"
             color="info"
@@ -82,8 +82,8 @@ const { dark } = useTheme();
         </div>
       </template>
       <span v-text="t('notification_popup.tooltip')" />
-    </v-tooltip>
-  </v-snackbar>
+    </VTooltip>
+  </VSnackbar>
 </template>
 
 <style module lang="scss">

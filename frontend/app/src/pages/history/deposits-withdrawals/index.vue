@@ -1,3 +1,3 @@
 <template>
-  <deposits-withdrawals-content main-page />
+  <DepositsWithdrawalsContent main-page />
 </template>

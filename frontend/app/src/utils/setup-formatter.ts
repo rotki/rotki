@@ -7,7 +7,7 @@ export function setupFormatter(): void {
   // @ts-ignore
   window.devtoolsFormatters = [
     {
-      header: (obj: any): {}[] | null => {
+      header: (obj: any): unknown[] | null => {
         if (!(obj instanceof BigNumber)) {
           return null;
         }

@@ -36,7 +36,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <settings-option
+  <SettingsOption
     #default="{ error, success, update: updateTimeframeSetting }"
     class="mt-4"
     setting="timeframeSetting"
@@ -45,13 +45,13 @@ onMounted(() => {
     :error-message="t('frontend_settings.validation.timeframe.error')"
     @finished="resetTimeframeSetting()"
   >
-    <settings-option
+    <SettingsOption
       #default="{ update: updateVisibleTimeframes }"
       setting="visibleTimeframes"
       frontend-setting
       @finished="resetVisibleTimeframes()"
     >
-      <time-frame-settings
+      <TimeFrameSettings
         :message="{ error, success }"
         :value="defaultGraphTimeframe"
         :visible-timeframes="visibleTimeframes"
@@ -59,6 +59,6 @@ onMounted(() => {
         @timeframe-change="updateTimeframeSetting($event)"
         @visible-timeframes-change="updateVisibleTimeframes($event)"
       />
-    </settings-option>
-  </settings-option>
+    </SettingsOption>
+  </SettingsOption>
 </template>

@@ -217,13 +217,13 @@ const css = useCssModule();
 </script>
 
 <template>
-  <v-form
+  <VForm
     ref="form"
     :value="valid"
     :class="css.form"
     data-cy="manual-balance-form"
   >
-    <v-text-field
+    <VTextField
       v-model="label"
       class="manual-balances-form__label"
       outlined
@@ -233,16 +233,16 @@ const css = useCssModule();
       @blur="v$.label.$touch()"
     />
 
-    <balance-type-input
+    <BalanceTypeInput
       v-model="balanceType"
       :disabled="submitting"
       :label="t('manual_balances_form.fields.balance_type')"
       outlined
     />
 
-    <v-row>
-      <v-col>
-        <asset-select
+    <VRow>
+      <VCol>
+        <AssetSelect
           v-model="asset"
           :label="t('common.asset')"
           class="manual-balances-form__asset"
@@ -251,11 +251,11 @@ const css = useCssModule();
           :disabled="submitting"
           @blur="v$.asset.$touch()"
         />
-      </v-col>
-      <v-col cols="auto">
-        <v-tooltip top>
+      </VCol>
+      <VCol cols="auto">
+        <VTooltip top>
           <template #activator="{ on }">
-            <v-btn
+            <VBtn
               text
               color="primary"
               class="mt-1 py-6"
@@ -264,25 +264,25 @@ const css = useCssModule();
               @click="openCustomAssetForm()"
             >
               <div class="d-flex">
-                <v-icon large>mdi-pencil-circle-outline</v-icon>
-                <v-icon small class="mt-n4">mdi-plus</v-icon>
+                <VIcon large>mdi-pencil-circle-outline</VIcon>
+                <VIcon small class="mt-n4">mdi-plus</VIcon>
               </div>
-            </v-btn>
+            </VBtn>
           </template>
           <span>
             {{ t('manual_balances_form.fields.create_a_custom_asset') }}
           </span>
-        </v-tooltip>
-      </v-col>
-    </v-row>
+        </VTooltip>
+      </VCol>
+    </VRow>
 
-    <manual-balances-price-form
+    <ManualBalancesPriceForm
       ref="priceForm"
       :pending="submitting"
       :asset="asset"
     />
 
-    <amount-input
+    <AmountInput
       v-model="amount"
       :label="t('common.amount')"
       :error-messages="toMessages(v$.amount)"
@@ -293,7 +293,7 @@ const css = useCssModule();
       @blur="v$.amount.$touch()"
     />
 
-    <tag-input
+    <TagInput
       v-model="tags"
       :label="t('manual_balances_form.fields.tags')"
       :disabled="submitting"
@@ -301,7 +301,7 @@ const css = useCssModule();
       class="manual-balances-form__tags"
     />
 
-    <location-selector
+    <LocationSelector
       v-model="location"
       class="manual-balances-form__location"
       outlined
@@ -311,11 +311,11 @@ const css = useCssModule();
       attach=".manual-balances-form__location"
       @blur="v$.location.$touch()"
     />
-    <custom-asset-form-dialog
+    <CustomAssetFormDialog
       :title="t('asset_management.add_title')"
       :types="customAssetTypes"
     />
-  </v-form>
+  </VForm>
 </template>
 
 <style module lang="scss">

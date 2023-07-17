@@ -3,17 +3,17 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <import-source source="bisq_trades">
+  <ImportSource source="bisq_trades">
     <template #upload-title>
-      <i18n tag="span" path="import_data.bisq.import">
+      <I18n tag="span" path="import_data.bisq.import">
         <strong>{{ t('import_data.bisq.import_trade') }}</strong>
-      </i18n>
+      </I18n>
     </template>
-    <i18n tag="span" path="import_data.note">
+    <I18n tag="span" path="import_data.note">
       <strong>{{ t('import_data.bisq.name') }}</strong>
-    </i18n>
+    </I18n>
     <ul>
       <li>{{ t('import_data.bisq.line_one') }}</li>
     </ul>
-  </import-source>
+  </ImportSource>
 </template>

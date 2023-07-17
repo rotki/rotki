@@ -4,8 +4,6 @@ import { type ComputedRef, type PropType } from 'vue';
 import Fragment from '@/components/helper/Fragment';
 import { type XpubAccountWithBalance } from '@/types/blockchain/accounts';
 
-const { t } = useI18n();
-
 const props = defineProps({
   group: { required: true, type: String },
   items: {
@@ -17,6 +15,8 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['delete-clicked', 'expand-clicked', 'edit-clicked']);
+
+const { t } = useI18n();
 
 const { items } = toRefs(props);
 const { name: breakpoint, xs } = useDisplay();
@@ -65,7 +65,7 @@ const editClicked = (_payload: XpubAccountWithBalance) =>
   <td v-if="!group" class="font-weight-medium" colspan="5" :class="mobileClass">
     {{ t('account_group_header.standalone') }}
   </td>
-  <fragment v-else>
+  <Fragment v-else>
     <td
       :colspan="xs ? 1 : 2"
       :class="{
@@ -77,28 +77,28 @@ const editClicked = (_payload: XpubAccountWithBalance) =>
         <span class="text-subtitle-2">{{ label }}</span>
       </div>
       <div>
-        <v-btn
+        <VBtn
           v-if="items.length > 0"
           small
           icon
           @click="expandClicked({ ...xpub, balance })"
         >
-          <v-icon v-if="expanded" small>mdi-chevron-up</v-icon>
-          <v-icon v-else small>mdi-chevron-down</v-icon>
-        </v-btn>
-        <v-btn v-else small icon disabled />
+          <VIcon v-if="expanded" small>mdi-chevron-up</VIcon>
+          <VIcon v-else small>mdi-chevron-down</VIcon>
+        </VBtn>
+        <VBtn v-else small icon disabled />
         <span class="font-weight-medium">
           {{ t('account_group_header.xpub') }}
         </span>
         <span :class="{ 'blur-content': !shouldShowAmount }">
-          <v-tooltip top open-delay="400">
+          <VTooltip top open-delay="400">
             <template #activator="{ on }">
               <span v-on="on">{{ displayXpub }}</span>
             </template>
             <span> {{ xpub.xpub }} </span>
-          </v-tooltip>
+          </VTooltip>
         </span>
-        <copy-button
+        <CopyButton
           :value="xpub.xpub"
           :tooltip="t('account_group_header.copy_tooltip')"
         />
@@ -112,21 +112,21 @@ const editClicked = (_payload: XpubAccountWithBalance) =>
           {{ xpub.derivationPath }}
         </span>
       </div>
-      <tag-display
+      <TagDisplay
         v-if="xpubTags && xpubTags.length > 0"
         wrapper-class="mt-1 ms-8"
         :tags="xpubTags"
       />
     </td>
     <td class="text-end" :class="mobileClass">
-      <amount-display
+      <AmountDisplay
         :value="sum"
         :loading="loading"
         :asset="xs ? 'BTC' : null"
       />
     </td>
     <td class="text-end" :class="mobileClass">
-      <amount-display
+      <AmountDisplay
         fiat-currency="USD"
         show-currency="symbol"
         :value="usdSum"
@@ -135,9 +135,9 @@ const editClicked = (_payload: XpubAccountWithBalance) =>
     </td>
     <td class="text-end" :class="mobileClass">
       <div class="d-flex">
-        <v-tooltip top>
+        <VTooltip top>
           <template #activator="{ on, attrs }">
-            <v-btn
+            <VBtn
               v-bind="attrs"
               icon
               :disabled="false"
@@ -145,22 +145,22 @@ const editClicked = (_payload: XpubAccountWithBalance) =>
               v-on="on"
               @click="editClicked(xpub)"
             >
-              <v-icon small> mdi-pencil-outline </v-icon>
-            </v-btn>
+              <VIcon small> mdi-pencil-outline </VIcon>
+            </VBtn>
           </template>
           <span>{{ t('account_group_header.edit_tooltip') }}</span>
-        </v-tooltip>
-        <v-tooltip top open-delay="400">
+        </VTooltip>
+        <VTooltip top open-delay="400">
           <template #activator="{ on }">
-            <v-btn icon class="mr-1" v-on="on" @click="deleteClicked(xpub)">
-              <v-icon small>mdi-delete-outline</v-icon>
-            </v-btn>
+            <VBtn icon class="mr-1" v-on="on" @click="deleteClicked(xpub)">
+              <VIcon small>mdi-delete-outline</VIcon>
+            </VBtn>
           </template>
           <span> {{ t('account_group_header.delete_tooltip') }} </span>
-        </v-tooltip>
+        </VTooltip>
       </div>
     </td>
-  </fragment>
+  </Fragment>
 </template>
 
 <style scoped lang="scss">

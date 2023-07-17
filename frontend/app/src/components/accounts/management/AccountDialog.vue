@@ -10,7 +10,7 @@ const { loading } = useAccountLoading();
 </script>
 
 <template>
-  <big-dialog
+  <BigDialog
     :display="openDialog"
     :title="dialogText.title"
     :subtitle="dialogText.subtitle"
@@ -21,6 +21,6 @@ const { loading } = useAccountLoading();
     @confirm="save()"
     @cancel="clearDialog()"
   >
-    <account-form :context="context" data-cy="blockchain-balance-form" />
-  </big-dialog>
+    <AccountForm :context="context" data-cy="blockchain-balance-form" />
+  </BigDialog>
 </template>

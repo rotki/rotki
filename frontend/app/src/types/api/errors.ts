@@ -28,7 +28,7 @@ export class ApiValidationError extends Error {
       camelCaseTransformer(deserializeApiErrorMessage(message)) ?? {};
   }
 
-  getValidationErrors(payload: Object): ValidationErrors | string {
+  getValidationErrors(payload: Record<string, any>): ValidationErrors | string {
     const errors = this.errors;
     const errorKeys = Object.keys(errors);
     const payloadKeys = Object.keys(payload);

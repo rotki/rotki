@@ -38,28 +38,28 @@ const loading = isAccountOperationRunning();
 
 <template>
   <div class="mb-5">
-    <v-btn-toggle
+    <VBtnToggle
       :value="inputMode"
       class="input-mode-select"
       mandatory
       @change="update($event)"
     >
-      <v-btn
+      <VBtn
         :value="InputMode.MANUAL_ADD"
         data-cy="input-mode-manual"
         :disabled="loading"
       >
-        <v-icon>mdi-pencil-plus</v-icon>
+        <VIcon>mdi-pencil-plus</VIcon>
         <span class="hidden-sm-and-down ml-1">
           {{ t('input_mode_select.manual_add.label') }}
         </span>
-      </v-btn>
-      <v-btn
+      </VBtn>
+      <VBtn
         v-if="isSupportedEvmChain"
         :value="InputMode.METAMASK_IMPORT"
         :disabled="!isMetaMaskSupported() || loading"
       >
-        <v-img
+        <VImg
           contain
           max-width="24px"
           :src="`./assets/images/metamask-fox.svg`"
@@ -67,14 +67,14 @@ const loading = isAccountOperationRunning();
         <span class="hidden-sm-and-down ml-1">
           {{ t('input_mode_select.metamask_import.label') }}
         </span>
-      </v-btn>
-      <v-btn v-if="isBitcoin" :value="InputMode.XPUB_ADD">
-        <v-icon>mdi-key-plus</v-icon>
+      </VBtn>
+      <VBtn v-if="isBitcoin" :value="InputMode.XPUB_ADD">
+        <VIcon>mdi-key-plus</VIcon>
         <span class="hidden-sm-and-down ml-1">
           {{ t('input_mode_select.xpub_add.label') }}
         </span>
-      </v-btn>
-    </v-btn-toggle>
+      </VBtn>
+    </VBtnToggle>
     <p
       v-if="isSupportedEvmChain && isMetaMask"
       class="mt-3 info--text text-caption"
@@ -86,9 +86,9 @@ const loading = isAccountOperationRunning();
     >
       {{ t('input_mode_select.metamask_import.missing') }}
 
-      <v-menu open-on-hover right offset-x close-delay="400" max-width="300">
+      <VMenu open-on-hover right offset-x close-delay="400" max-width="300">
         <template #activator="{ on }">
-          <v-icon class="px-1" small v-on="on">mdi-help-circle</v-icon>
+          <VIcon class="px-1" small v-on="on">mdi-help-circle</VIcon>
         </template>
         <div class="pa-4 text-caption">
           <div>
@@ -96,15 +96,15 @@ const loading = isAccountOperationRunning();
           </div>
           <ol>
             <li>
-              <i18n
+              <I18n
                 path="input_mode_select.metamask_import.missing_tooltip.metamask_is_not_installed"
               >
                 <template #link>
-                  <external-link :url="metamaskDownloadLink">
+                  <ExternalLink :url="metamaskDownloadLink">
                     {{ t('common.here') }}
-                  </external-link>
+                  </ExternalLink>
                 </template>
-              </i18n>
+              </I18n>
             </li>
             <li>
               {{
@@ -114,13 +114,13 @@ const loading = isAccountOperationRunning();
               }}
             </li>
             <li>
-              <i18n
+              <I18n
                 path="input_mode_select.metamask_import.missing_tooltip.metamask_is_not_supported_by_browser"
               >
                 <template #link>
-                  <external-link :url="metamaskDownloadLink">
+                  <ExternalLink :url="metamaskDownloadLink">
                     {{ t('common.here') }}
-                  </external-link>
+                  </ExternalLink>
                 </template>
 
                 <template #copy>
@@ -132,11 +132,11 @@ const loading = isAccountOperationRunning();
                     }}
                   </a>
                 </template>
-              </i18n>
+              </I18n>
             </li>
           </ol>
         </div>
-      </v-menu>
+      </VMenu>
     </div>
   </div>
 </template>

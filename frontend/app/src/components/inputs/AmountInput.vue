@@ -94,7 +94,7 @@ const onFocus = () => {
 </script>
 
 <template>
-  <v-text-field
+  <VTextField
     ref="textInput"
     :value="currentValue"
     v-bind="attrs"
@@ -108,5 +108,5 @@ const onFocus = () => {
     <template v-for="slot in Object.keys($scopedSlots)" #[slot]="scope">
       <slot v-bind="scope" :name="slot" />
     </template>
-  </v-text-field>
+  </VTextField>
 </template>

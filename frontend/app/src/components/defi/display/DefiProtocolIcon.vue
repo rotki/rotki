@@ -44,9 +44,9 @@ const css = useCssModule();
     class="d-flex flex-row align-center"
     :class="mode === 'icon' ? 'justify-center' : null"
   >
-    <v-tooltip top :disabled="mode !== 'icon'" open-delay="300ms">
+    <VTooltip top :disabled="mode !== 'icon'" open-delay="300ms">
       <template #activator="{ on, attrs }">
-        <v-img
+        <VImg
           v-if="mode === 'icon' || mode === 'both'"
           contain
           v-bind="attrs"
@@ -70,7 +70,7 @@ const css = useCssModule();
       <span>
         {{ toSentenceCase(name) }}
       </span>
-    </v-tooltip>
+    </VTooltip>
   </div>
 </template>
 

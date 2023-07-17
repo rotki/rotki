@@ -23,19 +23,19 @@ const refreshing = isLoading(section);
 
 <template>
   <div>
-    <v-row class="mt-6">
-      <v-col>
-        <refresh-header
+    <VRow class="mt-6">
+      <VCol>
+        <RefreshHeader
           :loading="refreshing"
           :title="t('decentralized_overview.title')"
           @refresh="refresh()"
         />
-      </v-col>
-    </v-row>
-    <progress-screen v-if="loading">
+      </VCol>
+    </VRow>
+    <ProgressScreen v-if="loading">
       <template #message>{{ t('decentralized_overview.loading') }}</template>
-    </progress-screen>
-    <no-data-screen
+    </ProgressScreen>
+    <NoDataScreen
       v-else-if="currentOverview.length === 0"
       :full="false"
       class="mt-16"
@@ -46,16 +46,16 @@ const refreshing = isLoading(section);
       <span class="text-subtitle-2 text--secondary">
         {{ t('decentralized_overview.empty_subtitle') }}
       </span>
-    </no-data-screen>
-    <v-row class="mt-4">
-      <v-col
+    </NoDataScreen>
+    <VRow class="mt-4">
+      <VCol
         v-for="summary in currentOverview"
         :key="summary.protocol.name"
         lg="6"
         xl="3"
       >
-        <overview :summary="summary" />
-      </v-col>
-    </v-row>
+        <Overview :summary="summary" />
+      </VCol>
+    </VRow>
   </div>
 </template>

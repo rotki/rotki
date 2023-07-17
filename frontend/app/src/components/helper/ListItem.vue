@@ -59,8 +59,8 @@ const click = () => emit('click');
     <slot name="icon" :class="css.icon" />
     <span v-if="showDetails" :class="css.details">
       <template v-if="loading">
-        <v-skeleton-loader width="30" height="21" type="text" class="pt-1" />
-        <v-skeleton-loader width="70" type="text" height="18" />
+        <VSkeletonLoader width="30" height="21" type="text" class="pt-1" />
+        <VSkeletonLoader width="70" type="text" height="18" />
       </template>
 
       <template v-else>
@@ -68,14 +68,14 @@ const click = () => emit('click');
           {{ title }}
         </span>
         <span v-if="subtitle" class="grey--text" :class="css.subtitle">
-          <v-tooltip open-delay="400" top :disabled="large">
+          <VTooltip open-delay="400" top :disabled="large">
             <template #activator="{ on, attrs }">
               <span v-bind="attrs" class="text-truncate" v-on="on">
                 {{ visibleSubtitle }}
               </span>
             </template>
             <span> {{ subtitle }}</span>
-          </v-tooltip>
+          </VTooltip>
         </span>
       </template>
     </span>

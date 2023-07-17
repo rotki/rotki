@@ -32,7 +32,7 @@ const remove = (tag: string) => {
 </script>
 
 <template>
-  <v-autocomplete
+  <VAutocomplete
     :value="value"
     :disabled="disabled"
     :items="availableTagsList"
@@ -52,7 +52,7 @@ const remove = (tag: string) => {
     @click:clear="input([])"
   >
     <template #selection="{ item, selected, select }">
-      <v-chip
+      <VChip
         label
         small
         class="font-weight-medium"
@@ -64,15 +64,15 @@ const remove = (tag: string) => {
         @click="select($event)"
       >
         {{ item.name }}
-      </v-chip>
+      </VChip>
     </template>
     <template #item="{ item }">
-      <tag-icon :tag="item" />
+      <TagIcon :tag="item" />
       <span class="tag-input__tag__description ml-4">
         {{ item.description }}
       </span>
     </template>
-  </v-autocomplete>
+  </VAutocomplete>
 </template>
 
 <style scoped lang="scss">

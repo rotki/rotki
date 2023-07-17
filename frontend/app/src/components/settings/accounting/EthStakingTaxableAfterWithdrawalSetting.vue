@@ -21,7 +21,7 @@ const getSuccessMessage = (enabled: boolean) =>
 </script>
 
 <template>
-  <settings-option
+  <SettingsOption
     #default="{ error, success, update }"
     setting="ethStakingTaxableAfterWithdrawalEnabled"
     :error-message="
@@ -29,7 +29,7 @@ const getSuccessMessage = (enabled: boolean) =>
     "
     :success-message="getSuccessMessage"
   >
-    <v-switch
+    <VSwitch
       v-model="ethStakingTaxableAfterWithdrawalEnabled"
       class="accounting-settings__eth-staking-taxable-after-withdrawal"
       :success-messages="success"
@@ -40,5 +40,5 @@ const getSuccessMessage = (enabled: boolean) =>
       color="primary"
       @change="update($event)"
     />
-  </settings-option>
+  </SettingsOption>
 </template>

@@ -69,11 +69,11 @@ const change = async () => {
 </script>
 
 <template>
-  <card>
+  <Card>
     <template #title>{{ t('change_password.title') }}</template>
 
-    <v-form ref="form">
-      <v-alert
+    <VForm ref="form">
+      <VAlert
         v-if="premiumSync"
         data-cy="premium-warning"
         type="warning"
@@ -81,22 +81,22 @@ const change = async () => {
         outlined
       >
         {{ t('change_password.sync_warning') }}
-      </v-alert>
-      <revealable-input
+      </VAlert>
+      <RevealableInput
         v-model="currentPassword"
         class="user-security-settings__fields__current-password"
         :label="t('change_password.labels.password')"
         :error-messages="v$.currentPassword.$errors.map(e => e.$message)"
         outlined
       />
-      <revealable-input
+      <RevealableInput
         v-model="newPassword"
         class="user-security-settings__fields__new-password"
         :label="t('change_password.labels.new_password')"
         :error-messages="v$.newPassword.$errors.map(e => e.$message)"
         outlined
       />
-      <revealable-input
+      <RevealableInput
         v-model="newPasswordConfirm"
         class="user-security-settings__fields__new-password-confirm"
         :label="t('change_password.labels.confirm_password')"
@@ -104,10 +104,10 @@ const change = async () => {
         :error-messages="v$.newPasswordConfirm.$errors.map(e => e.$message)"
         outlined
       />
-    </v-form>
+    </VForm>
 
     <template #buttons>
-      <v-btn
+      <VBtn
         depressed
         class="user-security-settings__buttons__change-password"
         color="primary"
@@ -116,7 +116,7 @@ const change = async () => {
         @click="change()"
       >
         {{ t('change_password.button') }}
-      </v-btn>
+      </VBtn>
     </template>
-  </card>
+  </Card>
 </template>

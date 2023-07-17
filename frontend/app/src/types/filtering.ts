@@ -14,6 +14,7 @@ export type FilterObjectWithBehaviour<T> = {
 };
 
 export type StringSuggestion = () => string[];
+
 export type AssetSuggestion = (value: string) => Promise<AssetsWithId>;
 
 interface BaseMatcher<K, KV = void> {

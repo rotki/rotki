@@ -58,9 +58,9 @@ onMounted(() => {
 </script>
 
 <template>
-  <v-row>
-    <v-col class="grow">
-      <settings-option
+  <VRow>
+    <VCol class="grow">
+      <SettingsOption
         #default="{ error, success, update }"
         setting="versionUpdateCheckFrequency"
         frontend-setting
@@ -70,7 +70,7 @@ onMounted(() => {
         "
         @finished="resetVersionUpdateCheckFrequency()"
       >
-        <v-text-field
+        <VTextField
           v-model="versionUpdateCheckFrequency"
           outlined
           :disabled="!versionUpdateCheckEnabled"
@@ -86,23 +86,23 @@ onMounted(() => {
           "
           @change="update($event)"
         />
-      </settings-option>
-    </v-col>
-    <v-col class="shrink">
-      <settings-option
+      </SettingsOption>
+    </VCol>
+    <VCol class="shrink">
+      <SettingsOption
         #default="{ update }"
         setting="versionUpdateCheckFrequency"
         frontend-setting
         :transform="switchTransform"
         @finished="resetVersionUpdateCheckFrequency()"
       >
-        <v-switch
+        <VSwitch
           v-model="versionUpdateCheckEnabled"
           class="mt-3"
           :label="t('general_settings.labels.version_update_check_enabled')"
           @change="callIfValid($event, update)"
         />
-      </settings-option>
-    </v-col>
-  </v-row>
+      </SettingsOption>
+    </VCol>
+  </VRow>
 </template>

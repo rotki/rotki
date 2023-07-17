@@ -9,12 +9,12 @@ const { copy } = useClipboard({ source: value });
 </script>
 
 <template>
-  <v-tooltip top open-delay="400">
+  <VTooltip top open-delay="400">
     <template #activator="{ on, attrs }">
-      <v-btn small v-bind="attrs" icon @click="copy()" v-on="on">
-        <v-icon small>mdi-content-copy</v-icon>
-      </v-btn>
+      <VBtn small v-bind="attrs" icon @click="copy()" v-on="on">
+        <VIcon small>mdi-content-copy</VIcon>
+      </VBtn>
     </template>
     <span>{{ tooltip }}</span>
-  </v-tooltip>
+  </VTooltip>
 </template>

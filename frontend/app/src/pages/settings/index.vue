@@ -17,5 +17,5 @@ const tabs: ComputedRef<TabContent[]> = computed(() => {
 </script>
 
 <template>
-  <tab-navigation :tab-contents="tabs" class="settings" />
+  <TabNavigation :tab-contents="tabs" class="settings" />
 </template>

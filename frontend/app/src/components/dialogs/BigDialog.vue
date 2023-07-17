@@ -21,6 +21,11 @@ const props = withDefaults(
     confirmType: DialogType.INFO
   }
 );
+const emit = defineEmits<{
+  (event: 'confirm'): void;
+  (event: 'cancel'): void;
+}>();
+
 const { t } = useI18n();
 
 const { subtitle, primaryAction, secondaryAction } = toRefs(props);
@@ -32,11 +37,6 @@ const secondary = computed(
   () => get(secondaryAction) || t('common.actions.cancel')
 );
 
-const emit = defineEmits<{
-  (event: 'confirm'): void;
-  (event: 'cancel'): void;
-}>();
-
 const confirm = () => emit('confirm');
 const cancel = () => emit('cancel');
 
@@ -47,7 +47,7 @@ const contentStyle = computed(() => {
 </script>
 
 <template>
-  <v-bottom-sheet
+  <VBottomSheet
     :value="display"
     v-bind="$attrs"
     over
@@ -58,24 +58,24 @@ const contentStyle = computed(() => {
     @keydown.esc.stop="cancel()"
     @input="cancel()"
   >
-    <v-card class="big-dialog" data-cy="bottom-dialog">
-      <v-card-title>
-        <card-title>
+    <VCard class="big-dialog" data-cy="bottom-dialog">
+      <VCardTitle>
+        <CardTitle>
           {{ title }}
-        </card-title>
-      </v-card-title>
-      <v-card-subtitle v-if="subtitle">
+        </CardTitle>
+      </VCardTitle>
+      <VCardSubtitle v-if="subtitle">
         {{ subtitle }}
-      </v-card-subtitle>
+      </VCardSubtitle>
       <div class="big-dialog__content" :style="contentStyle">
         <div class="big-dialog__body">
           <slot v-if="display" />
         </div>
       </div>
-      <v-sheet>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn
+      <VSheet>
+        <VCardActions>
+          <VSpacer />
+          <VBtn
             color="primary"
             depressed
             outlined
@@ -84,8 +84,8 @@ const contentStyle = computed(() => {
             @click="cancel()"
           >
             {{ secondary }}
-          </v-btn>
-          <v-btn
+          </VBtn>
+          <VBtn
             data-cy="confirm"
             :color="themes[confirmType].color"
             :disabled="actionDisabled || loading"
@@ -95,11 +95,11 @@ const contentStyle = computed(() => {
             @click="confirm()"
           >
             {{ primary }}
-          </v-btn>
-        </v-card-actions>
-      </v-sheet>
-    </v-card>
-  </v-bottom-sheet>
+          </VBtn>
+        </VCardActions>
+      </VSheet>
+    </VCard>
+  </VBottomSheet>
 </template>
 
 <style scoped lang="scss">

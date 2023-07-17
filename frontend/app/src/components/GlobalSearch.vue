@@ -16,7 +16,7 @@ interface SearchItem {
   icon?: string;
   image?: string;
   route?: string;
-  action?: Function;
+  action?: () => void;
   matchedPoints?: number;
 }
 
@@ -454,7 +454,7 @@ onBeforeMount(async () => {
 </script>
 
 <template>
-  <v-dialog
+  <VDialog
     v-model="open"
     max-width="800"
     open-delay="100"
@@ -463,7 +463,7 @@ onBeforeMount(async () => {
     transition="slide-y-transition"
   >
     <template #activator="{ on }">
-      <menu-tooltip-button
+      <MenuTooltipButton
         class-name="secondary--text text--lighten-4"
         :tooltip="
           t('global_search.menu_tooltip', {
@@ -473,11 +473,11 @@ onBeforeMount(async () => {
         "
         :on-menu="on"
       >
-        <v-icon>mdi-magnify</v-icon>
-      </menu-tooltip-button>
+        <VIcon>mdi-magnify</VIcon>
+      </MenuTooltipButton>
     </template>
     <div :class="$style.wrapper">
-      <v-autocomplete
+      <VAutocomplete
         ref="input"
         v-model="selected"
         no-filter
@@ -495,20 +495,16 @@ onBeforeMount(async () => {
       >
         <template #item="{ item }">
           <div class="d-flex align-center text-body-2 fill-width">
-            <asset-icon
-              v-if="item.asset"
-              size="30px"
-              :identifier="item.asset"
-            />
-            <adaptive-wrapper v-else tag="span">
-              <location-icon
+            <AssetIcon v-if="item.asset" size="30px" :identifier="item.asset" />
+            <AdaptiveWrapper v-else tag="span">
+              <LocationIcon
                 v-if="item.location"
                 icon
                 no-padding
                 size="26px"
                 :item="item.location"
               />
-              <v-img
+              <VImg
                 v-else-if="item.image"
                 width="30"
                 max-height="30"
@@ -516,16 +512,16 @@ onBeforeMount(async () => {
                 position="left"
                 :src="item.image"
               />
-              <v-icon v-else size="30" color="grey">
+              <VIcon v-else size="30" color="grey">
                 {{ item.icon }}
-              </v-icon>
-            </adaptive-wrapper>
+              </VIcon>
+            </AdaptiveWrapper>
             <span class="ml-3">
               <template v-if="item.texts">
                 <span v-for="(text, index) in item.texts" :key="text + index">
                   <span v-if="index === item.texts.length - 1">{{ text }}</span>
                   <span v-else class="grey--text">
-                    {{ text }}<v-icon small> mdi-chevron-right </v-icon>
+                    {{ text }}<VIcon small> mdi-chevron-right </VIcon>
                   </span>
                 </span>
               </template>
@@ -533,10 +529,10 @@ onBeforeMount(async () => {
                 {{ item.text }}
               </template>
             </span>
-            <v-spacer />
+            <VSpacer />
             <div v-if="item.price" class="text-right">
               <div class="text-caption">{{ t('common.price') }}:</div>
-              <amount-display
+              <AmountDisplay
                 class="font-weight-bold"
                 :fiat-currency="currencySymbol"
                 :value="item.price"
@@ -544,7 +540,7 @@ onBeforeMount(async () => {
             </div>
             <div v-if="item.total" class="text-right">
               <div class="text-caption">{{ t('common.total') }}:</div>
-              <amount-display
+              <AmountDisplay
                 class="font-weight-bold"
                 :fiat-currency="currencySymbol"
                 :value="item.total"
@@ -554,7 +550,7 @@ onBeforeMount(async () => {
         </template>
         <template #append>
           <div v-if="loading" class="mt-n1 fill-height d-flex items-center">
-            <v-progress-circular
+            <VProgressCircular
               class="asset-select__loading"
               color="primary"
               indeterminate
@@ -563,9 +559,9 @@ onBeforeMount(async () => {
             />
           </div>
         </template>
-      </v-autocomplete>
+      </VAutocomplete>
     </div>
-  </v-dialog>
+  </VDialog>
 </template>
 
 <style module lang="scss">

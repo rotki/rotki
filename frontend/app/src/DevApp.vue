@@ -10,21 +10,21 @@ const resetState = 'Reset State ->';
 </script>
 
 <template>
-  <v-app id="rotki">
-    <v-app-bar app fixed>
-      <v-btn icon :to="Routes.DASHBOARD">
-        <v-icon>mdi-home</v-icon>
-      </v-btn>
-      <v-spacer />
+  <VApp id="rotki">
+    <VAppBar app fixed>
+      <VBtn icon :to="Routes.DASHBOARD">
+        <VIcon>mdi-home</VIcon>
+      </VBtn>
+      <VSpacer />
       <span> {{ resetState }}</span>
-      <v-btn icon class="ml-2" @click="reset()">
-        <v-icon>mdi-delete</v-icon>
-      </v-btn>
-    </v-app-bar>
-    <v-main>
-      <v-container>
-        <router-view />
-      </v-container>
-    </v-main>
-  </v-app>
+      <VBtn icon class="ml-2" @click="reset()">
+        <VIcon>mdi-delete</VIcon>
+      </VBtn>
+    </VAppBar>
+    <VMain>
+      <VContainer>
+        <RouterView />
+      </VContainer>
+    </VMain>
+  </VApp>
 </template>

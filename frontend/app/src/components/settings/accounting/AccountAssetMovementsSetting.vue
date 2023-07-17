@@ -12,12 +12,12 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <settings-option
+  <SettingsOption
     #default="{ error, success, update }"
     setting="accountForAssetsMovements"
     :error-message="t('account_settings.messages.account_for_assets_movements')"
   >
-    <v-switch
+    <VSwitch
       v-model="accountForAssetsMovements"
       class="accounting-settings__account-for-assets-movements"
       :success-messages="success"
@@ -26,5 +26,5 @@ const { t } = useI18n();
       color="primary"
       @change="update($event)"
     />
-  </settings-option>
+  </SettingsOption>
 </template>

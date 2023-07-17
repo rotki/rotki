@@ -24,7 +24,7 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <big-dialog
+  <BigDialog
     :display="openDialog"
     :title="t('evm_rpc_node_manager.add_dialog.title', { chain })"
     :primary-action="t('common.actions.save')"
@@ -33,12 +33,12 @@ const { t } = useI18n();
     @confirm="trySubmit()"
     @cancel="resetForm()"
   >
-    <evm-rpc-node-form
+    <EvmRpcNodeForm
       :value="value"
       :chain="chain"
       :edit-mode="editMode"
       :is-etherscan="isEtherscan"
       @input="emit('input', $event)"
     />
-  </big-dialog>
+  </BigDialog>
 </template>

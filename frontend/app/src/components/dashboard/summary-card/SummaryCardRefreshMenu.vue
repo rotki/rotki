@@ -5,13 +5,13 @@ const css = useCssModule();
 
 <template>
   <div>
-    <v-menu
+    <VMenu
       :disabled="!slots.refreshMenu"
       offset-y
       :close-on-content-click="false"
     >
       <template #activator="{ on }">
-        <v-btn
+        <VBtn
           v-if="slots.refreshMenu"
           icon
           depressed
@@ -21,11 +21,11 @@ const css = useCssModule();
           :class="css['refresh-menu-activator']"
           v-on="on"
         >
-          <v-icon>mdi-chevron-down</v-icon>
-        </v-btn>
+          <VIcon>mdi-chevron-down</VIcon>
+        </VBtn>
       </template>
       <slot name="refreshMenu" />
-    </v-menu>
+    </VMenu>
   </div>
 </template>
 

@@ -52,12 +52,12 @@ const { t } = useI18n();
       class="text-subtitle-1"
       v-text="t('address_book.hint.priority.title')"
     />
-    <settings-option
+    <SettingsOption
       #default="{ error, success, update }"
       setting="addressNamePriority"
       @finished="finishEditing()"
     >
-      <prioritized-list
+      <PrioritizedList
         :value="currentAddressNamePriorities"
         :all-items="availableCurrentAddressNamePriorities()"
         :item-data-name="
@@ -68,6 +68,6 @@ const { t } = useI18n();
         :status="{ error, success }"
         @input="update($event)"
       />
-    </settings-option>
+    </SettingsOption>
   </div>
 </template>

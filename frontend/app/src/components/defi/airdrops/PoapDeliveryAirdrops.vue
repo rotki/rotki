@@ -4,6 +4,12 @@ import { type DataTableHeader } from '@/types/vuetify';
 import { type PoapDeliveryDetails } from '@/types/airdrops';
 import { default as images } from './poap.json';
 
+defineProps({
+  visible: { required: true, type: Boolean },
+  colspan: { required: true, type: Number },
+  items: { required: true, type: Array as PropType<PoapDeliveryDetails[]> }
+});
+
 const events = [
   'aave_v2_pioneers',
   'beacon_chain_first_1024',
@@ -40,12 +46,6 @@ const headers = computed<DataTableHeader[]>(() => [
   }
 ]);
 
-defineProps({
-  visible: { required: true, type: Boolean },
-  colspan: { required: true, type: Number },
-  items: { required: true, type: Array as PropType<PoapDeliveryDetails[]> }
-});
-
 const getImage = (event: EventType): string => {
   const image = images[event];
   return image ?? '';
@@ -55,38 +55,38 @@ const { navigate, isPackaged } = useInterop();
 </script>
 
 <template>
-  <table-expand-container :visible="visible" :colspan="colspan" :padded="false">
+  <TableExpandContainer :visible="visible" :colspan="colspan" :padded="false">
     <template #title>
       {{ t('poap_delivery_airdrops.title') }}
     </template>
-    <data-table :items="items" :headers="headers">
+    <DataTable :items="items" :headers="headers">
       <template #item.name="{ item }">
-        <v-row align="center">
-          <v-col cols="auto">
-            <v-img
+        <VRow align="center">
+          <VCol cols="auto">
+            <VImg
               class="poap-delivery-airdrops__image"
               width="36px"
               height="36px"
               contain
               :src="getImage(item.event)"
             />
-          </v-col>
-          <v-col> {{ item.name }}</v-col>
-        </v-row>
+          </VCol>
+          <VCol> {{ item.name }}</VCol>
+        </VRow>
       </template>
       <template #item.link="{ item }">
-        <v-btn
+        <VBtn
           icon
           color="primary"
           :target="isPackaged ? undefined : '_blank'"
           :href="isPackaged ? undefined : item.link"
           @click="isPackaged ? navigate(item.link) : undefined"
         >
-          <v-icon>mdi-link</v-icon>
-        </v-btn>
+          <VIcon>mdi-link</VIcon>
+        </VBtn>
       </template>
-    </data-table>
-  </table-expand-container>
+    </DataTable>
+  </TableExpandContainer>
 </template>
 
 <style scoped lang="scss">

@@ -59,11 +59,11 @@ const vaults = computed(() => {
 </script>
 
 <template>
-  <card v-if="vaults.length > 0" outlined-body>
+  <Card v-if="vaults.length > 0" outlined-body>
     <template #title>
       {{ t('yearn_asset_table.title') }}
     </template>
-    <data-table
+    <DataTable
       :headers="headers"
       :items="vaults"
       sort-by="roi"
@@ -73,17 +73,17 @@ const vaults = computed(() => {
         {{ item.version }}
       </template>
       <template #item.underlyingValue.usdValue="{ item }">
-        <balance-display
+        <BalanceDisplay
           :asset="item.underlyingToken"
           :value="item.underlyingValue"
         />
       </template>
       <template #item.vaultValue.usdValue="{ item }">
-        <balance-display :asset="item.vaultToken" :value="item.vaultValue" />
+        <BalanceDisplay :asset="item.vaultToken" :value="item.vaultValue" />
       </template>
       <template #item.roi="{ item }">
-        <percentage-display :value="item.roi" />
+        <PercentageDisplay :value="item.roi" />
       </template>
-    </data-table>
-  </card>
+    </DataTable>
+  </Card>
 </template>

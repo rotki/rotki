@@ -1,3 +1,3 @@
 <template>
-  <history-events-view main-page />
+  <HistoryEventsView main-page />
 </template>

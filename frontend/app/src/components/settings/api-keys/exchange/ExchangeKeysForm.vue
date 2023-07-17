@@ -154,10 +154,10 @@ const v$ = setValidation(rules, exchange, { $autoDirty: true });
 </script>
 
 <template>
-  <v-form ref="form" data-cy="exchange-keys" :value="valid">
-    <v-row class="pt-2">
-      <v-col cols="12" md="6">
-        <v-autocomplete
+  <VForm ref="form" data-cy="exchange-keys" :value="valid">
+    <VRow class="pt-2">
+      <VCol cols="12" md="6">
+        <VAutocomplete
           outlined
           :value="exchange.location"
           :items="exchanges"
@@ -168,7 +168,7 @@ const v$ = setValidation(rules, exchange, { $autoDirty: true });
           @change="onExchangeChange($event)"
         >
           <template #selection="{ item, attrs, on }">
-            <exchange-display
+            <ExchangeDisplay
               :exchange="item"
               :class="`exchange__${item}`"
               v-bind="attrs"
@@ -176,17 +176,17 @@ const v$ = setValidation(rules, exchange, { $autoDirty: true });
             />
           </template>
           <template #item="{ item, attrs, on }">
-            <exchange-display
+            <ExchangeDisplay
               :exchange="item"
               :class="`exchange__${item}`"
               v-bind="attrs"
               v-on="on"
             />
           </template>
-        </v-autocomplete>
-      </v-col>
-      <v-col cols="12" md="6">
-        <v-text-field
+        </VAutocomplete>
+      </VCol>
+      <VCol cols="12" md="6">
+        <VTextField
           v-if="editMode"
           outlined
           :value="exchange.newName"
@@ -195,7 +195,7 @@ const v$ = setValidation(rules, exchange, { $autoDirty: true });
           :label="t('common.name')"
           @input="input({ ...exchange, newName: $event })"
         />
-        <v-text-field
+        <VTextField
           v-else
           outlined
           :value="exchange.name"
@@ -204,10 +204,10 @@ const v$ = setValidation(rules, exchange, { $autoDirty: true });
           :label="t('common.name')"
           @input="input({ ...exchange, name: $event })"
         />
-      </v-col>
-    </v-row>
+      </VCol>
+    </VRow>
 
-    <v-select
+    <VSelect
       v-if="exchange.location === 'kraken'"
       outlined
       :value="exchange.krakenAccountType"
@@ -219,18 +219,18 @@ const v$ = setValidation(rules, exchange, { $autoDirty: true });
 
     <div v-if="editMode" class="text-subtitle-2 mt-2 pb-4">
       {{ t('exchange_settings.keys') }}
-      <v-tooltip top open-delay="400">
+      <VTooltip top open-delay="400">
         <template #activator="{ on, attrs }">
-          <v-btn
+          <VBtn
             icon
             v-bind="attrs"
             class="ml-4"
             v-on="on"
             @click="toggleEdit()"
           >
-            <v-icon v-if="!editKeys">mdi-pencil-outline</v-icon>
-            <v-icon v-else>mdi-close</v-icon>
-          </v-btn>
+            <VIcon v-if="!editKeys">mdi-pencil-outline</VIcon>
+            <VIcon v-else>mdi-close</VIcon>
+          </VBtn>
         </template>
         <span>
           {{
@@ -239,11 +239,11 @@ const v$ = setValidation(rules, exchange, { $autoDirty: true });
               : t('exchange_keys_form.edit.deactivate_tooltip')
           }}
         </span>
-      </v-tooltip>
+      </VTooltip>
     </div>
 
     <div>
-      <revealable-input
+      <RevealableInput
         outlined
         sensitive-key
         :disabled="editMode && !editKeys"
@@ -255,7 +255,7 @@ const v$ = setValidation(rules, exchange, { $autoDirty: true });
         @paste="onApiKeyPaste($event)"
       />
 
-      <revealable-input
+      <RevealableInput
         v-if="requiresApiSecret"
         outlined
         sensitive-key
@@ -269,7 +269,7 @@ const v$ = setValidation(rules, exchange, { $autoDirty: true });
         @paste="onApiSecretPaste($event)"
       />
 
-      <revealable-input
+      <RevealableInput
         v-if="requiresPassphrase"
         :disabled="editMode && !editKeys"
         outlined
@@ -284,7 +284,7 @@ const v$ = setValidation(rules, exchange, { $autoDirty: true });
     </div>
 
     <div v-if="exchange.location === 'ftx' || exchange.location === 'ftxus'">
-      <v-text-field
+      <VTextField
         v-if="editMode"
         outlined
         :value="exchange.ftxSubaccount"
@@ -292,7 +292,7 @@ const v$ = setValidation(rules, exchange, { $autoDirty: true });
         :label="t('exchange_settings.inputs.ftx_subaccount')"
         @input="input({ ...exchange, ftxSubaccount: $event })"
       />
-      <v-text-field
+      <VTextField
         v-else
         outlined
         :value="exchange.ftxSubaccount"
@@ -302,12 +302,12 @@ const v$ = setValidation(rules, exchange, { $autoDirty: true });
       />
     </div>
 
-    <binance-pairs-selector
+    <BinancePairsSelector
       v-if="isBinance"
       outlined
       :name="exchange.name"
       :location="exchange.location"
       @input="input({ ...exchange, binanceMarkets: $event })"
     />
-  </v-form>
+  </VForm>
 </template>

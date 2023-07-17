@@ -101,12 +101,12 @@ const mediaStyle: ComputedRef<StyleValue> = computed(() => {
 </script>
 
 <template>
-  <v-card class="mx-auto overflow-hidden">
+  <VCard class="mx-auto overflow-hidden">
     <div :class="css.wrapper">
-      <v-tooltip top :disabled="renderImage" max-width="200" open-delay="200">
+      <VTooltip top :disabled="renderImage" max-width="200" open-delay="200">
         <template #activator="{ on }">
           <div v-on="on">
-            <base-external-link :href="item.externalLink">
+            <BaseExternalLink :href="item.externalLink">
               <video
                 v-if="isMediaVideo"
                 controls
@@ -114,85 +114,85 @@ const mediaStyle: ComputedRef<StyleValue> = computed(() => {
                 :src="imageUrl"
                 :style="mediaStyle"
               />
-              <v-img
+              <VImg
                 v-else
                 :src="imageUrl"
                 contain
                 aspect-ratio="1"
                 :style="mediaStyle"
               />
-            </base-external-link>
+            </BaseExternalLink>
           </div>
         </template>
 
         <span>
           {{ t('nft_balance_table.hidden_hint') }}
         </span>
-      </v-tooltip>
+      </VTooltip>
 
-      <v-tooltip v-if="!renderImage" top max-width="200">
+      <VTooltip v-if="!renderImage" top max-width="200">
         <template #activator="{ on }">
-          <v-btn
+          <VBtn
             icon
             :class="css['unlock-button']"
             @click="showAllowDomainConfirmation()"
             v-on="on"
           >
-            <v-icon>mdi-camera-lock-open</v-icon>
-          </v-btn>
+            <VIcon>mdi-camera-lock-open</VIcon>
+          </VBtn>
         </template>
         <span>
           {{ t('nft_gallery.allow_domain') }}
           <span class="font-weight-bold warning--text">{{ domain }}</span>
         </span>
-      </v-tooltip>
+      </VTooltip>
     </div>
-    <v-card-title>
+    <VCardTitle>
       <div :class="css.title">
-        <v-row align="center" justify="space-between" class="flex-nowrap">
-          <v-col
+        <VRow align="center" justify="space-between" class="flex-nowrap">
+          <VCol
             class="text-truncate text-subtitle-1 font-weight-medium shrink"
             cols="auto"
           >
-            <v-tooltip top open-delay="400" max-width="450">
+            <VTooltip top open-delay="400" max-width="450">
               <template #activator="{ on, attrs }">
                 <span v-bind="attrs" v-on="on">
                   {{ name }}
                 </span>
               </template>
               <span> {{ name }}</span>
-            </v-tooltip>
-          </v-col>
-          <v-col cols="auto" class="text-subtitle-2">
-            <amount-display
+            </VTooltip>
+          </VCol>
+          <VCol cols="auto" class="text-subtitle-2">
+            <AmountDisplay
               class="text--secondary"
               :value="item.priceInAsset"
               :asset="item.priceAsset"
             />
-          </v-col>
-        </v-row>
+          </VCol>
+        </VRow>
       </div>
-    </v-card-title>
-    <v-card-subtitle>
+    </VCardTitle>
+    <VCardSubtitle>
       <div :class="$style.title">
-        <v-row
+        <VRow
           align="center"
           no-gutters
           justify="space-between"
           class="flex-nowrap"
         >
-          <v-col cols="auto" class="text-truncate shrink pr-1">
-            <v-tooltip top open-delay="400" max-width="450">
+          <VCol cols="auto" class="text-truncate shrink pr-1">
+            <VTooltip top open-delay="400" max-width="450">
               <template #activator="{ on, attrs }">
                 <span v-bind="attrs" v-on="on">
                   {{ item.collection.name }}
                 </span>
               </template>
               <span> {{ item.collection.description }}</span>
-            </v-tooltip>
-          </v-col>
-          <v-col cols="auto" class="text-subtitle-2">
-            <amount-display
+            </VTooltip>
+          </VCol>
+          <VCol cols="auto" class="text-subtitle-2">
+            <AmountDisplay
               class="text--secondary"
               :price-asset="item.priceAsset"
               :amount="item.priceInAsset"
@@ -200,15 +200,15 @@ const mediaStyle: ComputedRef<StyleValue> = computed(() => {
               show-currency="ticker"
               fiat-currency="USD"
             />
-          </v-col>
-        </v-row>
+          </VCol>
+        </VRow>
       </div>
-    </v-card-subtitle>
-    <v-card-actions>
-      <v-spacer />
-      <icon-link v-if="item.permalink" :url="item.permalink" text="OpenSea" />
-    </v-card-actions>
-  </v-card>
+    </VCardSubtitle>
+    <VCardActions>
+      <VSpacer />
+      <IconLink v-if="item.permalink" :url="item.permalink" text="OpenSea" />
+    </VCardActions>
+  </VCard>
 </template>
 
 <style lang="scss" module>

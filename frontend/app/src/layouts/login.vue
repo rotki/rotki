@@ -4,13 +4,13 @@ const { isPackaged } = useInterop();
 </script>
 
 <template>
-  <app-host>
-    <frontend-update-notifier v-if="!isPackaged" />
-    <app-messages>
-      <login-host />
-    </app-messages>
-    <v-dialog v-if="showAbout" v-model="showAbout" max-width="500">
-      <about />
-    </v-dialog>
-  </app-host>
+  <AppHost>
+    <FrontendUpdateNotifier v-if="!isPackaged" />
+    <AppMessages>
+      <LoginHost />
+    </AppMessages>
+    <VDialog v-if="showAbout" v-model="showAbout" max-width="500">
+      <About />
+    </VDialog>
+  </AppHost>
 </template>

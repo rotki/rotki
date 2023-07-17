@@ -32,24 +32,24 @@ const { t } = useI18n();
 <template>
   <div :class="$style.container">
     <div>
-      <v-tooltip open-delay="400" top>
+      <VTooltip open-delay="400" top>
         <template #activator="{ on, attrs }">
-          <v-btn
+          <VBtn
             icon
             v-bind="attrs"
             color="primary"
             @click="updateSortDesc()"
             v-on="on"
           >
-            <v-icon v-if="sortDescending">mdi-sort-descending</v-icon>
-            <v-icon v-else>mdi-sort-ascending</v-icon>
-          </v-btn>
+            <VIcon v-if="sortDescending">mdi-sort-descending</VIcon>
+            <VIcon v-else>mdi-sort-ascending</VIcon>
+          </VBtn>
         </template>
         <span v-if="sortDescending">
           {{ t('sorting_selector.desc.sort_asc_tooltip') }}
         </span>
         <span v-else>{{ t('sorting_selector.desc.sort_desc_tooltip') }}</span>
-      </v-tooltip>
+      </VTooltip>
     </div>
     <div
       :class="{
@@ -58,7 +58,7 @@ const { t } = useI18n();
         [$style.dark]: dark
       }"
     >
-      <v-select
+      <VSelect
         :value="sortBy"
         hide-details
         single-line

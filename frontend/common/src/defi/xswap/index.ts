@@ -7,6 +7,7 @@ export const XswapAsset = z.object({
   usdPrice: NumericString,
   userBalance: Balance
 });
+
 export type XswapAsset = z.infer<typeof XswapAsset>;
 
 export const XswapBalance = z.object({
@@ -18,9 +19,11 @@ export const XswapBalance = z.object({
   priceRange: z.array(NumericString).nullish(),
   userBalance: Balance
 });
+
 export type XswapBalance = z.infer<typeof XswapBalance>;
 
 export const XswapBalances = z.record(z.array(XswapBalance));
+
 export type XswapBalances = z.infer<typeof XswapBalances>;
 
 const ApiXswapPoolDetails = z.object({

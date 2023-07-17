@@ -14,13 +14,13 @@ const toggleVisibility = () => {
 </script>
 
 <template>
-  <menu-tooltip-button
+  <MenuTooltipButton
     :tooltip="t('help_sidebar.tooltip')"
     class-name="secondary--text text--lighten-4"
     @click="toggleVisibility()"
   >
-    <v-icon :class="visible ? 'help--visible' : null"> mdi-help-circle </v-icon>
-  </menu-tooltip-button>
+    <VIcon :class="visible ? 'help--visible' : null"> mdi-help-circle </VIcon>
+  </MenuTooltipButton>
 </template>
 
 <style scoped lang="scss">

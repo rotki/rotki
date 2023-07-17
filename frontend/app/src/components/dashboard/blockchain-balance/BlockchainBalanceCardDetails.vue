@@ -17,25 +17,25 @@ defineProps({
 </script>
 
 <template>
-  <v-list-item
+  <VListItem
     v-if="details"
     :id="`${child.protocol}_box`"
     :key="child.protocol"
     class="d-flex flex-row blockchain-balance-box__item sub-item"
     :to="details.detailPath"
   >
-    <v-list-item-avatar tile class="blockchain-balance-box__icon shrink pl-12">
-      <adaptive-wrapper class="d-flex">
-        <v-img :src="details.icon" width="24px" height="24px" />
-      </adaptive-wrapper>
-    </v-list-item-avatar>
-    <v-list-item-content>
+    <VListItemAvatar tile class="blockchain-balance-box__icon shrink pl-12">
+      <AdaptiveWrapper class="d-flex">
+        <VImg :src="details.icon" width="24px" height="24px" />
+      </AdaptiveWrapper>
+    </VListItemAvatar>
+    <VListItemContent>
       <div class="d-flex flex-row ps-2">
         <span class="flex-grow-1 flex-shrink-1">
           {{ details.label }}
         </span>
         <span class="ml-2 text-end shrink">
-          <amount-display
+          <AmountDisplay
             show-currency="symbol"
             fiat-currency="USD"
             :value="child.usdValue"
@@ -43,8 +43,8 @@ defineProps({
           />
         </span>
       </div>
-    </v-list-item-content>
-  </v-list-item>
+    </VListItemContent>
+  </VListItem>
 </template>
 
 <style scoped lang="scss">

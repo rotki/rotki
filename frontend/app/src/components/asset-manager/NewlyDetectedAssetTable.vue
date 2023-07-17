@@ -100,7 +100,7 @@ const ignoreTokens = async (identifiers?: string[]) => {
 </script>
 
 <template>
-  <card outlined-body>
+  <Card outlined-body>
     <template #title>
       {{ t('asset_table.newly_detected.title') }}
     </template>
@@ -110,31 +110,31 @@ const ignoreTokens = async (identifiers?: string[]) => {
     <template #actions>
       <div class="d-flex align-center">
         <div class="mr-8">
-          <v-btn outlined @click="selectDeselectAllTokens()">
-            <v-icon>mdi-checkbox-multiple-marked-outline</v-icon>
+          <VBtn outlined @click="selectDeselectAllTokens()">
+            <VIcon>mdi-checkbox-multiple-marked-outline</VIcon>
             <span class="ml-2">
               {{ t('asset_table.newly_detected.select_deselect_all_tokens') }}
             </span>
-          </v-btn>
+          </VBtn>
           <div class="d-flex mt-4">
             <div class="mr-4 mt-1">
               {{ t('asset_table.selected', { count: selected.length }) }}
             </div>
-            <v-btn
+            <VBtn
               small
               text
               :disabled="selected.length === 0"
               @click="selected = []"
             >
               {{ t('common.actions.clear_selection') }}
-            </v-btn>
+            </VBtn>
           </div>
         </div>
-        <v-divider vertical class="mr-8" />
+        <VDivider vertical class="mr-8" />
 
-        <v-tooltip bottom>
+        <VTooltip bottom>
           <template #activator="{ on }">
-            <v-btn
+            <VBtn
               fab
               outlined
               color="green"
@@ -143,15 +143,15 @@ const ignoreTokens = async (identifiers?: string[]) => {
               @click="removeTokens()"
               v-on="on"
             >
-              <v-icon> mdi-check </v-icon>
-            </v-btn>
+              <VIcon> mdi-check </VIcon>
+            </VBtn>
           </template>
           <span>{{ t('asset_table.newly_detected.accept_selected') }}</span>
-        </v-tooltip>
+        </VTooltip>
 
-        <v-tooltip bottom>
+        <VTooltip bottom>
           <template #activator="{ on }">
-            <v-btn
+            <VBtn
               color="red"
               fab
               outlined
@@ -159,16 +159,16 @@ const ignoreTokens = async (identifiers?: string[]) => {
               @click="ignoreTokens()"
               v-on="on"
             >
-              <v-icon>mdi-eye-off</v-icon>
-            </v-btn>
+              <VIcon>mdi-eye-off</VIcon>
+            </VBtn>
           </template>
           <span>
             {{ t('asset_table.newly_detected.ignore_selected') }}
           </span>
-        </v-tooltip>
+        </VTooltip>
       </div>
     </template>
-    <data-table
+    <DataTable
       v-model="selected"
       :items="mappedTokens"
       :headers="tableHeaders"
@@ -177,11 +177,11 @@ const ignoreTokens = async (identifiers?: string[]) => {
       show-select
     >
       <template #item.tokenIdentifier="{ item }">
-        <asset-details opens-details :asset="item.tokenIdentifier" />
+        <AssetDetails opens-details :asset="item.tokenIdentifier" />
       </template>
 
       <template #item.address="{ item }">
-        <hash-link :text="item.address" :chain="item.evmChain" />
+        <HashLink :text="item.address" :chain="item.evmChain" />
       </template>
 
       <template #item.description="{ item }">
@@ -190,7 +190,7 @@ const ignoreTokens = async (identifiers?: string[]) => {
         </div>
 
         <div v-if="item.seenTxHash">
-          <hash-link
+          <HashLink
             type="transaction"
             :text="item.seenTxHash"
             :chain="item.evmChain"
@@ -199,16 +199,16 @@ const ignoreTokens = async (identifiers?: string[]) => {
       </template>
 
       <template #item.accept="{ item }">
-        <v-btn icon color="green" @click="removeTokens([item.tokenIdentifier])">
-          <v-icon> mdi-check </v-icon>
-        </v-btn>
+        <VBtn icon color="green" @click="removeTokens([item.tokenIdentifier])">
+          <VIcon> mdi-check </VIcon>
+        </VBtn>
       </template>
 
       <template #item.ignore="{ item }">
-        <v-btn icon color="red" @click="ignoreTokens([item.tokenIdentifier])">
-          <v-icon> mdi-eye-off </v-icon>
-        </v-btn>
+        <VBtn icon color="red" @click="ignoreTokens([item.tokenIdentifier])">
+          <VIcon> mdi-eye-off </VIcon>
+        </VBtn>
       </template>
-    </data-table>
-  </card>
+    </DataTable>
+  </Card>
 </template>

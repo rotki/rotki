@@ -140,9 +140,9 @@ defineExpose({
 
 <template>
   <div>
-    <v-row class="pb-8">
-      <v-col class="col" md="6">
-        <amount-input
+    <VRow class="pb-8">
+      <VCol class="col" md="6">
+        <AmountInput
           v-model="price"
           :disabled="fetchingPrice || !isCustomPrice || pending"
           :loading="fetchingPrice"
@@ -150,10 +150,10 @@ defineExpose({
           hide-details
           :label="t('common.price')"
         />
-      </v-col>
+      </VCol>
 
-      <v-col class="col" md="6">
-        <asset-select
+      <VCol class="col" md="6">
+        <AssetSelect
           v-model="priceAsset"
           :disabled="fetchingPrice || !isCustomPrice || pending"
           :loading="fetchingPrice"
@@ -161,8 +161,8 @@ defineExpose({
           hide-details
           :label="t('manual_balances_form.fields.price_asset')"
         />
-      </v-col>
-    </v-row>
+      </VCol>
+    </VRow>
 
     <div
       v-if="fiatPriceHint"
@@ -176,21 +176,18 @@ defineExpose({
         }}:
       </span>
       <span>
-        <amount-display
-          :value="fiatPriceHint"
-          :fiat-currency="currencySymbol"
-        />
+        <AmountDisplay :value="fiatPriceHint" :fiat-currency="currencySymbol" />
       </span>
     </div>
 
-    <v-row v-if="fetchedPrice" class="mt-n10 mb-0">
-      <v-col cols="auto">
-        <v-checkbox
+    <VRow v-if="fetchedPrice" class="mt-n10 mb-0">
+      <VCol cols="auto">
+        <VCheckbox
           v-model="isCustomPrice"
           :disabled="pending"
           :label="t('manual_balances_form.fields.input_manual_price')"
         />
-      </v-col>
-    </v-row>
+      </VCol>
+    </VRow>
   </div>
 </template>

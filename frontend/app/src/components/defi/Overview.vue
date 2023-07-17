@@ -36,7 +36,7 @@ const css = useCssModule();
 </script>
 
 <template>
-  <stat-card
+  <StatCard
     v-if="!summary.balanceUsd"
     :title="summary.protocol.name"
     :protocol-icon="icon"
@@ -48,45 +48,45 @@ const css = useCssModule();
         class="text-subtitle-1 font-weight-bold pb-2 d-flex flex-row justify-space-between"
       >
         {{ t('overview.stat_card.headers.borrowing') }}
-        <v-btn :to="summary.liabilitiesUrl" icon small color="primary">
-          <v-icon small color="primary">mdi-launch</v-icon>
-        </v-btn>
+        <VBtn :to="summary.liabilitiesUrl" icon small color="primary">
+          <VIcon small color="primary">mdi-launch</VIcon>
+        </VBtn>
       </span>
-      <info-row
+      <InfoRow
         :title="t('overview.stat_card.content.labels.total_collateral')"
         fiat
         :value="summary.totalCollateralUsd"
       />
-      <info-row
+      <InfoRow
         :title="t('overview.stat_card.content.labels.total_debt')"
         fiat
         :value="summary.totalDebtUsd"
       />
-      <v-divider class="my-4" />
+      <VDivider class="my-4" />
     </div>
     <div v-if="summary.deposits">
       <div
         class="pb-2 d-flex flex-row justify-space-between text-subtitle-1 font-weight-medium"
       >
         {{ t('common.deposits') }}
-        <v-btn
+        <VBtn
           v-if="summary.depositsUrl"
           :to="summary.depositsUrl"
           icon
           small
           color="primary"
         >
-          <v-icon small color="primary">mdi-launch</v-icon>
-        </v-btn>
+          <VIcon small color="primary">mdi-launch</VIcon>
+        </VBtn>
       </div>
-      <info-row
+      <InfoRow
         :title="t('overview.stat_card.content.labels.total_deposited')"
         fiat
         :value="summary.totalLendingDepositUsd"
       />
     </div>
-  </stat-card>
-  <stat-card
+  </StatCard>
+  <StatCard
     v-else
     bordered
     :title="summary.protocol.name"
@@ -99,19 +99,19 @@ const css = useCssModule();
     >
       {{ summary.tokenInfo.tokenName }}
     </span>
-    <info-row :title="t('common.balance')" fiat :value="summary.balanceUsd" />
-    <v-divider class="my-4" />
+    <InfoRow :title="t('common.balance')" fiat :value="summary.balanceUsd" />
+    <VDivider class="my-4" />
     <div class="d-flex justify-end">
-      <v-dialog v-model="details" scrollable max-width="450px">
+      <VDialog v-model="details" scrollable max-width="450px">
         <template #activator="{ on, attrs }">
-          <v-btn small v-bind="attrs" text class="justify-end" v-on="on">
+          <VBtn small v-bind="attrs" text class="justify-end" v-on="on">
             {{ t('common.details') }}
-            <v-icon color="primary" right>mdi-launch</v-icon>
-          </v-btn>
+            <VIcon color="primary" right>mdi-launch</VIcon>
+          </VBtn>
         </template>
-        <v-card>
-          <v-card-title class="mb-2">
-            <v-img
+        <VCard>
+          <VCardTitle class="mb-2">
+            <VImg
               aspect-ratio="1"
               :src="icon"
               max-width="32px"
@@ -121,20 +121,20 @@ const css = useCssModule();
             <span class="ml-2">
               {{ summary.protocol.name }}
             </span>
-          </v-card-title>
-          <v-card-subtitle>
+          </VCardTitle>
+          <VCardSubtitle>
             {{ t('overview.details_dialog.subtitle') }}
-          </v-card-subtitle>
-          <v-card-text :class="css.details">
+          </VCardSubtitle>
+          <VCardText :class="css.details">
             <div v-for="(asset, index) in assets" :key="index">
-              <defi-asset :asset="asset" />
-              <v-divider />
+              <DefiAsset :asset="asset" />
+              <VDivider />
             </div>
-          </v-card-text>
-        </v-card>
-      </v-dialog>
+          </VCardText>
+        </VCard>
+      </VDialog>
     </div>
-  </stat-card>
+  </StatCard>
 </template>
 
 <style module lang="scss">

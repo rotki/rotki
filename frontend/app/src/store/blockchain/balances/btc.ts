@@ -9,6 +9,7 @@ import { type BtcChains, isBtcChain } from '@/types/blockchain/chains';
 import { type AssetPrices } from '@/types/prices';
 
 type Totals = Record<BtcChains, AssetBalances>;
+
 type Balances = Record<BtcChains, BtcBalances>;
 
 const defaultTotals = (): Totals => ({

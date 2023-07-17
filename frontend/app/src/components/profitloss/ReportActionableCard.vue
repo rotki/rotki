@@ -8,13 +8,6 @@ import {
 import { toSentenceCase } from '@/utils/text';
 import { type Pinned } from '@/types/session';
 
-const ReportMissingAcquisitions = defineAsyncComponent(
-  () => import('@/components/profitloss/ReportMissingAcquisitions.vue')
-);
-const ReportMissingPrices = defineAsyncComponent(
-  () => import('@/components/profitloss/ReportMissingPrices.vue')
-);
-
 const props = defineProps({
   report: {
     required: true,
@@ -22,11 +15,17 @@ const props = defineProps({
   },
   isPinned: { required: false, type: Boolean, default: false }
 });
-
 const emit = defineEmits<{
   (e: 'set-dialog', value: boolean): void;
   (e: 'regenerate'): void;
 }>();
+const ReportMissingAcquisitions = defineAsyncComponent(
+  () => import('@/components/profitloss/ReportMissingAcquisitions.vue')
+);
+const ReportMissingPrices = defineAsyncComponent(
+  () => import('@/components/profitloss/ReportMissingPrices.vue')
+);
+
 const { t } = useI18n();
 const { report, isPinned } = toRefs(props);
 const { pinned } = storeToRefs(useAreaVisibilityStore());
@@ -159,18 +158,18 @@ const { mdAndUp } = useDisplay();
 
 <template>
   <div>
-    <v-card elevation="0">
-      <v-toolbar
+    <VCard elevation="0">
+      <VToolbar
         dark
         color="primary"
         :height="isPinned ? 40 : 'auto'"
         :class="{ [$style['pinned__toolbar']]: isPinned }"
       >
-        <v-btn v-if="!isPinned" icon dark @click="close()">
-          <v-icon>mdi-close</v-icon>
-        </v-btn>
+        <VBtn v-if="!isPinned" icon dark @click="close()">
+          <VIcon>mdi-close</VIcon>
+        </VBtn>
 
-        <v-toolbar-title
+        <VToolbarTitle
           :class="{
             [$style['pinned__toolbar-title']]: isPinned,
             'pl-2': !isPinned
@@ -181,24 +180,24 @@ const { mdAndUp } = useDisplay();
               total: actionableItemsLength.total
             })
           }}
-        </v-toolbar-title>
+        </VToolbarTitle>
 
-        <v-spacer />
+        <VSpacer />
 
-        <v-tooltip bottom>
+        <VTooltip bottom>
           <template #activator="{ on }">
-            <v-btn
+            <VBtn
               icon
               dark
               :small="isPinned"
               v-on="on"
               @click="isPinned ? setPinned(null) : pinSection()"
             >
-              <v-icon v-if="isPinned" :class="$style.pin" small>
+              <VIcon v-if="isPinned" :class="$style.pin" small>
                 mdi-pin-off
-              </v-icon>
-              <v-icon v-else :class="$style.pin">mdi-pin</v-icon>
-            </v-btn>
+              </VIcon>
+              <VIcon v-else :class="$style.pin">mdi-pin</VIcon>
+            </VBtn>
           </template>
           <span v-if="isPinned">
             {{ t('profit_loss_report.actionable.actions.unpin_section') }}
@@ -206,18 +205,18 @@ const { mdAndUp } = useDisplay();
           <span v-else>
             {{ t('profit_loss_report.actionable.actions.pin_section') }}
           </span>
-        </v-tooltip>
-      </v-toolbar>
+        </VTooltip>
+      </VToolbar>
       <div>
-        <v-stepper v-model="step" elevation="0">
-          <v-stepper-header
+        <VStepper v-model="step" elevation="0">
+          <VStepperHeader
             :class="{
               [$style.raise]: true,
               [$style['pinned__stepper-header']]: isPinned
             }"
           >
             <template v-for="(content, index) of stepperContents">
-              <v-stepper-step
+              <VStepperStep
                 :key="content.key"
                 :step="index + 1"
                 :complete="step > index + 1"
@@ -226,28 +225,28 @@ const { mdAndUp } = useDisplay();
                 <span v-if="(mdAndUp && !isPinned) || step === index + 1">
                   {{ content.title }}
                 </span>
-              </v-stepper-step>
-              <v-divider
+              </VStepperStep>
+              <VDivider
                 v-if="index < stepperContents.length - 1"
                 :key="'divider-' + content.key"
               />
             </template>
-          </v-stepper-header>
-          <v-stepper-items>
+          </VStepperHeader>
+          <VStepperItems>
             <template v-for="(content, index) of stepperContents">
-              <v-stepper-content
+              <VStepperContent
                 :key="content.key"
                 :step="index + 1"
                 class="pa-0"
               >
-                <component
+                <Component
                   :is="content.selector"
                   :items="content.items"
                   :report="report"
                   :is-pinned="isPinned"
                 >
                   <template v-if="step === index + 1" #actions="{ items }">
-                    <v-sheet
+                    <VSheet
                       elevation="10"
                       class="d-flex align-center"
                       :class="{
@@ -260,21 +259,21 @@ const { mdAndUp } = useDisplay();
                         {{ content.hint }}
                       </small>
 
-                      <v-spacer />
+                      <VSpacer />
 
                       <div
                         class="d-flex"
                         :class="isPinned ? 'flex-column' : ''"
                       >
-                        <v-btn
+                        <VBtn
                           v-if="step > 1"
                           :small="isPinned"
                           text
                           @click="step = step - 1"
                         >
                           {{ t('common.actions.back') }}
-                        </v-btn>
-                        <v-btn
+                        </VBtn>
+                        <VBtn
                           v-if="step < stepperContents.length"
                           class="ml-4"
                           color="primary"
@@ -283,9 +282,9 @@ const { mdAndUp } = useDisplay();
                           @click="step = step + 1"
                         >
                           {{ t('common.actions.next') }}
-                        </v-btn>
+                        </VBtn>
                         <template v-if="step === stepperContents.length">
-                          <v-btn
+                          <VBtn
                             v-if="
                               !isPinned && content.key === 'missingAcquisitions'
                             "
@@ -294,8 +293,8 @@ const { mdAndUp } = useDisplay();
                             @click="setDialog(false)"
                           >
                             {{ t('common.actions.close') }}
-                          </v-btn>
-                          <v-btn
+                          </VBtn>
+                          <VBtn
                             v-else-if="content.key !== 'missingAcquisitions'"
                             :class="!isPinned ? 'ml-4' : ''"
                             color="primary"
@@ -304,29 +303,29 @@ const { mdAndUp } = useDisplay();
                             @click="submitActionableItems(items)"
                           >
                             {{ t('common.actions.finish') }}
-                          </v-btn>
+                          </VBtn>
                         </template>
                       </div>
-                    </v-sheet>
+                    </VSheet>
                   </template>
-                </component>
-              </v-stepper-content>
+                </Component>
+              </VStepperContent>
             </template>
-          </v-stepper-items>
-        </v-stepper>
+          </VStepperItems>
+        </VStepper>
       </div>
-    </v-card>
-    <v-dialog v-model="confirmationDialogOpen" :max-width="500">
-      <card>
+    </VCard>
+    <VDialog v-model="confirmationDialogOpen" :max-width="500">
+      <Card>
         <template #title>
           <div v-if="filledMissingPrices === 0">
-            <v-icon class="mr-2" color="red">mdi-alert</v-icon>
+            <VIcon class="mr-2" color="red">mdi-alert</VIcon>
             {{
               t('profit_loss_report.actionable.missing_prices.no_filled_prices')
             }}
           </div>
           <div v-else-if="skippedMissingPrices">
-            <v-icon class="mr-2" color="red">mdi-alert</v-icon>
+            <VIcon class="mr-2" color="red">mdi-alert</VIcon>
             {{
               t(
                 'profit_loss_report.actionable.missing_prices.total_skipped_prices',
@@ -337,7 +336,7 @@ const { mdAndUp } = useDisplay();
             }}
           </div>
           <div v-else>
-            <v-icon class="mr-2" color="green">mdi-check</v-icon>
+            <VIcon class="mr-2" color="green">mdi-check</VIcon>
             {{
               t(
                 'profit_loss_report.actionable.missing_prices.all_prices_filled'
@@ -372,23 +371,23 @@ const { mdAndUp } = useDisplay();
           </div>
         </div>
         <template #buttons>
-          <v-spacer />
-          <v-btn text class="mr-2" @click="confirmationDialogOpen = false">
+          <VSpacer />
+          <VBtn text class="mr-2" @click="confirmationDialogOpen = false">
             {{ t('common.actions.cancel') }}
-          </v-btn>
-          <v-btn
+          </VBtn>
+          <VBtn
             v-if="filledMissingPrices"
             color="primary"
             @click="regenerateReport()"
           >
             {{ t('profit_loss_report.actionable.actions.regenerate_report') }}
-          </v-btn>
-          <v-btn v-else color="primary" @click="ignoreIssues()">
+          </VBtn>
+          <VBtn v-else color="primary" @click="ignoreIssues()">
             {{ t('common.actions.yes') }}
-          </v-btn>
+          </VBtn>
         </template>
-      </card>
-    </v-dialog>
+      </Card>
+    </VDialog>
   </div>
 </template>
 

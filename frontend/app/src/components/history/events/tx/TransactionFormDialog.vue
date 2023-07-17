@@ -15,7 +15,7 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <big-dialog
+  <BigDialog
     :display="openDialog"
     :title="t('transactions.dialog.add_tx')"
     :primary-action="t('common.actions.save')"
@@ -24,6 +24,6 @@ const { t } = useI18n();
     @confirm="trySubmit()"
     @cancel="closeDialog()"
   >
-    <transaction-form />
-  </big-dialog>
+    <TransactionForm />
+  </BigDialog>
 </template>

@@ -10,19 +10,19 @@ const proceed = () => {
 
 <template>
   <div class="pa-6 pb-2">
-    <v-alert type="warning" text prominent class="pl-8">
+    <VAlert type="warning" text prominent class="pl-8">
       <div class="ml-4">
-        <i18n path="docker_warning.title" tag="div">
-          <base-external-link
+        <I18n path="docker_warning.title" tag="div">
+          <BaseExternalLink
             :text="t('docker_warning.documentation')"
             :href="usageGuideUrl + '#docker'"
           />
-        </i18n>
+        </I18n>
       </div>
-    </v-alert>
+    </VAlert>
 
-    <v-btn class="mt-8" block depressed color="primary" @click="proceed()">
+    <VBtn class="mt-8" block depressed color="primary" @click="proceed()">
       {{ t('docker_warning.action') }}
-    </v-btn>
+    </VBtn>
   </div>
 </template>

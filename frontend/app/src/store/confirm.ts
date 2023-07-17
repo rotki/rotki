@@ -10,7 +10,9 @@ interface ConfirmationMessage {
 }
 
 type AwaitableFunc = () => Promise<void>;
+
 type VoidFunc = () => void;
+
 type Func = VoidFunc | AwaitableFunc;
 
 const defaultFunc: Func = () => {};

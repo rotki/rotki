@@ -165,41 +165,41 @@ onMounted(async () => {
 </script>
 
 <template>
-  <fragment>
-    <asset-update-setting
+  <Fragment>
+    <AssetUpdateSetting
       v-if="!headless"
       :loading="checking || applying"
       :skipped="skipped"
       @check="check()"
     />
     <div v-else-if="headless">
-      <asset-update-status
+      <AssetUpdateStatus
         v-if="status"
         :status="status"
         :remote-version="changes.upToVersion"
       />
-      <asset-update-inline-confirm
+      <AssetUpdateInlineConfirm
         v-if="inlineConfirm"
         :remote-version="changes.upToVersion"
         @confirm="updateComplete()"
       />
     </div>
     <div v-if="showUpdateDialog">
-      <v-dialog
+      <VDialog
         v-if="!headless"
         :value="showUpdateDialog"
         max-width="500"
         persistent
       >
-        <asset-update-message
+        <AssetUpdateMessage
           :headless="headless"
           :versions="changes"
           @update:versions="changes = $event"
           @confirm="updateAssets()"
           @dismiss="skip($event)"
         />
-      </v-dialog>
-      <asset-update-message
+      </VDialog>
+      <AssetUpdateMessage
         v-else
         :headless="headless"
         :versions="changes"
@@ -209,14 +209,14 @@ onMounted(async () => {
       />
     </div>
 
-    <conflict-dialog
+    <ConflictDialog
       v-if="showConflictDialog"
       v-model="showConflictDialog"
       :conflicts="conflicts"
       @cancel="skip(false)"
       @resolve="updateAssets($event)"
     />
-  </fragment>
+  </Fragment>
 </template>
 
 <style scoped lang="scss">

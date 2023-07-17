@@ -4,8 +4,6 @@ import { type ComputedRef } from 'vue';
 import { useCurrencies } from '@/types/currencies';
 import { isBlockchain } from '@/types/blockchain/chains';
 
-const { t } = useI18n();
-
 const props = defineProps({
   identifier: { required: true, type: String },
   size: { required: true, type: String },
@@ -18,6 +16,8 @@ const props = defineProps({
   enableAssociation: { required: false, type: Boolean, default: true },
   showChain: { required: false, type: Boolean, default: true }
 });
+
+const { t } = useI18n();
 
 const {
   changeable,
@@ -122,8 +122,8 @@ watch([symbol, changeable, identifier], (curr, prev) => {
 
 <template>
   <div :class="css.placeholder" :style="placeholderStyle">
-    <adaptive-wrapper :circle="circle" :padding="padding">
-      <v-tooltip top open-delay="400" :disabled="noTooltip">
+    <AdaptiveWrapper :circle="circle" :padding="padding">
+      <VTooltip top open-delay="400" :disabled="noTooltip">
         <template #activator="{ on, attrs }">
           <div>
             <div
@@ -133,7 +133,7 @@ watch([symbol, changeable, identifier], (curr, prev) => {
                 [css.chain]: true
               }"
             >
-              <evm-chain-icon :chain="chain" :size="chainIconSize" />
+              <EvmChainIcon :chain="chain" :size="chainIconSize" />
             </div>
 
             <div
@@ -145,16 +145,16 @@ watch([symbol, changeable, identifier], (curr, prev) => {
             >
               <div :class="css.wrapper">
                 <div v-if="!currency && pending" class="black--text">
-                  <token-placeholder :size="size" />
+                  <TokenPlaceholder :size="size" />
                 </div>
-                <generated-icon
+                <GeneratedIcon
                   v-if="currency || error"
                   :custom-asset="isCustomAsset"
                   :asset="displayAsset"
                   :currency="!!currency"
                   :size="size"
                 />
-                <v-img
+                <VImg
                   v-else
                   :src="url"
                   :max-height="size"
@@ -176,8 +176,8 @@ watch([symbol, changeable, identifier], (curr, prev) => {
         <span>
           {{ t('asset_icon.tooltip', tooltip) }}
         </span>
-      </v-tooltip>
-    </adaptive-wrapper>
+      </VTooltip>
+    </AdaptiveWrapper>
   </div>
 </template>
 

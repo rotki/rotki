@@ -13,6 +13,9 @@ import { type AssetBalance, type Balance } from '@rotki/common';
 import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
 import { Section } from '@/types/status';
 
+const emit = defineEmits<{
+  (e: 'refresh', refresh: boolean): void;
+}>();
 const selectedAccounts: Ref<GeneralAccount[]> = ref([]);
 const liquityStore = useLiquityStore();
 const { staking, stakingPools, statistics } = toRefs(liquityStore);
@@ -23,10 +26,6 @@ const loading = isLoading(Section.DEFI_LIQUITY_STAKING);
 const chains = [Blockchain.ETH];
 
 const { t } = useI18n();
-
-const emit = defineEmits<{
-  (e: 'refresh', refresh: boolean): void;
-}>();
 
 const aggregatedStake: ComputedRef<LiquityStakingDetailEntry | null> = computed(
   () => {
@@ -258,9 +257,9 @@ const css = useCssModule();
 
 <template>
   <div>
-    <v-row align="center" class="pt-2">
-      <v-col sm="6" cols="10">
-        <blockchain-account-selector
+    <VRow align="center" class="pt-2">
+      <VCol sm="6" cols="10">
+        <BlockchainAccountSelector
           v-model="selectedAccounts"
           :label="t('liquity_staking_details.select_account')"
           :chains="chains"
@@ -271,23 +270,18 @@ const css = useCssModule();
           flat
           :usable-addresses="availableAddresses"
         />
-      </v-col>
-      <v-col>
-        <v-menu
-          v-if="proxyInformation"
-          offset-x
-          nudge-right="8"
-          min-width="410"
-        >
+      </VCol>
+      <VCol>
+        <VMenu v-if="proxyInformation" offset-x nudge-right="8" min-width="410">
           <template #activator="{ on, attrs }">
-            <v-icon v-bind="attrs" v-on="on"> mdi-information</v-icon>
+            <VIcon v-bind="attrs" v-on="on"> mdi-information</VIcon>
           </template>
           <div class="pa-4">
             <div v-for="(proxies, key, index) in proxyInformation" :key="key">
               <div class="d-flex align-center">
-                <v-chip class="pl-1 pr-2">
-                  <hash-link :text="key" />
-                </v-chip>
+                <VChip class="pl-1 pr-2">
+                  <HashLink :text="key" />
+                </VChip>
                 <div class="ml-2">
                   {{
                     t('liquity_staking_details.has_proxy_addresses', {
@@ -303,49 +297,49 @@ const css = useCssModule();
                   class="mb-1"
                   :class="css['proxies-item']"
                 >
-                  <v-chip class="pl-1 pr-2">
-                    <hash-link :text="proxy" />
-                  </v-chip>
+                  <VChip class="pl-1 pr-2">
+                    <HashLink :text="proxy" />
+                  </VChip>
                 </div>
               </div>
-              <v-divider
+              <VDivider
                 v-if="index < Object.keys(proxyInformation).length - 1"
                 class="my-4"
               />
             </div>
           </div>
-        </v-menu>
-      </v-col>
-      <v-col v-if="$slots.modules" cols="auto">
+        </VMenu>
+      </VCol>
+      <VCol v-if="$slots.modules" cols="auto">
         <slot name="modules" />
-      </v-col>
-      <v-col cols="auto" class="pl-2">
-        <refresh-button
+      </VCol>
+      <VCol cols="auto" class="pl-2">
+        <RefreshButton
           :tooltip="t('liquity_staking_details.refresh_tooltip')"
           :loading="loading"
           @refresh="refresh()"
         />
-      </v-col>
-    </v-row>
+      </VCol>
+    </VRow>
 
-    <v-row>
-      <v-col md="6" cols="12">
-        <liquity-pools :pool="aggregatedStakingPool" />
-      </v-col>
+    <VRow>
+      <VCol md="6" cols="12">
+        <LiquityPools :pool="aggregatedStakingPool" />
+      </VCol>
 
-      <v-col md="6" cols="12">
-        <liquity-stake :stake="aggregatedStake" />
-      </v-col>
+      <VCol md="6" cols="12">
+        <LiquityStake :stake="aggregatedStake" />
+      </VCol>
 
-      <v-col>
-        <liquity-statistics
+      <VCol>
+        <LiquityStatistics
           :statistic="aggregatedStatistic"
           :pool="aggregatedStakingPool"
         />
-      </v-col>
-    </v-row>
+      </VCol>
+    </VRow>
 
-    <history-events-view
+    <HistoryEventsView
       use-external-account-filter
       :section-title="t('liquity_staking_events.title')"
       :protocols="['liquity']"

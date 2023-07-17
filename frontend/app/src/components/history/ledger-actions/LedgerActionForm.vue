@@ -205,12 +205,8 @@ const { mdAndUp } = useDisplay();
 </script>
 
 <template>
-  <v-form
-    :value="valid"
-    data-cy="ledger-action-form"
-    class="ledger-action-form"
-  >
-    <location-selector
+  <VForm :value="valid" data-cy="ledger-action-form" class="ledger-action-form">
+    <LocationSelector
       v-model="location"
       class="pt-1"
       required
@@ -221,7 +217,7 @@ const { mdAndUp } = useDisplay();
       @blur="v$.location.$touch()"
     />
 
-    <date-time-picker
+    <DateTimePicker
       v-model="datetime"
       outlined
       :label="t('ledger_action_form.date.label')"
@@ -234,12 +230,12 @@ const { mdAndUp } = useDisplay();
       :error-messages="errorMessages['timestamp']"
     />
 
-    <v-row
+    <VRow
       align="center"
       :class="mdAndUp ? 'ledger-action-form__amount-wrapper' : null"
     >
-      <v-col cols="12" md="4">
-        <asset-select
+      <VCol cols="12" md="4">
+        <AssetSelect
           v-model="asset"
           outlined
           required
@@ -247,10 +243,10 @@ const { mdAndUp } = useDisplay();
           :error-messages="toMessages(v$.asset)"
           @blur="v$.asset.$touch()"
         />
-      </v-col>
+      </VCol>
 
-      <v-col cols="12" md="4">
-        <amount-input
+      <VCol cols="12" md="4">
+        <AmountInput
           v-model="amount"
           outlined
           :error-messages="toMessages(v$.amount)"
@@ -259,10 +255,10 @@ const { mdAndUp } = useDisplay();
           :label="t('common.amount')"
           @blur="v$.amount.$touch()"
         />
-      </v-col>
+      </VCol>
 
-      <v-col cols="12" md="4">
-        <v-select
+      <VCol cols="12" md="4">
+        <VSelect
           v-model="actionType"
           outlined
           :label="t('common.type')"
@@ -274,14 +270,14 @@ const { mdAndUp } = useDisplay();
           :error-messages="toMessages(v$.actionType)"
           @blur="v$.actionType.$touch()"
         />
-      </v-col>
-    </v-row>
+      </VCol>
+    </VRow>
 
-    <v-divider class="mb-6 mt-2" />
+    <VDivider class="mb-6 mt-2" />
 
-    <v-row :class="mdAndUp ? 'ledger-action-form__rate-wrapper' : null">
-      <v-col cols="12" md="8">
-        <amount-input
+    <VRow :class="mdAndUp ? 'ledger-action-form__rate-wrapper' : null">
+      <VCol cols="12" md="8">
+        <AmountInput
           v-model="rate"
           outlined
           persistent-hint
@@ -291,9 +287,9 @@ const { mdAndUp } = useDisplay();
           :error-messages="toMessages(v$.rate)"
           @blur="v$.rate.$touch()"
         />
-      </v-col>
-      <v-col cols="12" md="4">
-        <asset-select
+      </VCol>
+      <VCol cols="12" md="4">
+        <AssetSelect
           v-model="rateAsset"
           outlined
           :label="t('ledger_action_form.rate_asset.label')"
@@ -303,10 +299,10 @@ const { mdAndUp } = useDisplay();
           :error-messages="toMessages(v$.rateAsset)"
           @blur="v$.rateAsset.$touch()"
         />
-      </v-col>
-    </v-row>
+      </VCol>
+    </VRow>
 
-    <v-text-field
+    <VTextField
       v-model="link"
       outlined
       prepend-inner-icon="mdi-link"
@@ -317,7 +313,7 @@ const { mdAndUp } = useDisplay();
       :error-messages="errorMessages['link']"
     />
 
-    <v-textarea
+    <VTextarea
       v-model="notes"
       prepend-inner-icon="mdi-text-box-outline"
       persistent-hint
@@ -327,5 +323,5 @@ const { mdAndUp } = useDisplay();
       :hint="t('ledger_action_form.notes.hint')"
       :error-messages="errorMessages['notes']"
     />
-  </v-form>
+  </VForm>
 </template>

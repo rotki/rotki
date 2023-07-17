@@ -96,40 +96,40 @@ const showDoneConfirmation = () => {
 <template>
   <div>
     <template v-if="dropdown">
-      <v-menu offset-y>
+      <VMenu offset-y>
         <template #activator="{ on }">
-          <v-btn color="primary" depressed v-on="on">
+          <VBtn color="primary" depressed v-on="on">
             {{ t('asset_update.restore.title') }}
-          </v-btn>
+          </VBtn>
         </template>
-        <v-list>
-          <v-list-item two-line link @click="showRestoreConfirmation('soft')">
-            <v-list-item-content>
-              <v-list-item-title>
+        <VList>
+          <VListItem two-line link @click="showRestoreConfirmation('soft')">
+            <VListItemContent>
+              <VListItemTitle>
                 {{ t('asset_update.restore.soft_reset') }}
-              </v-list-item-title>
-              <v-list-item-subtitle>
+              </VListItemTitle>
+              <VListItemSubtitle>
                 {{ t('asset_update.restore.soft_reset_hint') }}
-              </v-list-item-subtitle>
-            </v-list-item-content>
-          </v-list-item>
-          <v-list-item two-line link @click="showRestoreConfirmation('hard')">
-            <v-list-item-content>
-              <v-list-item-title>
+              </VListItemSubtitle>
+            </VListItemContent>
+          </VListItem>
+          <VListItem two-line link @click="showRestoreConfirmation('hard')">
+            <VListItemContent>
+              <VListItemTitle>
                 {{ t('asset_update.restore.hard_reset') }}
-              </v-list-item-title>
-              <v-list-item-subtitle>
+              </VListItemTitle>
+              <VListItemSubtitle>
                 {{ t('asset_update.restore.hard_reset_hint') }}
-              </v-list-item-subtitle>
-            </v-list-item-content>
-          </v-list-item>
-        </v-list>
-      </v-menu>
+              </VListItemSubtitle>
+            </VListItemContent>
+          </VListItem>
+        </VList>
+      </VMenu>
     </template>
     <template v-else>
-      <v-tooltip top max-width="200">
+      <VTooltip top max-width="200">
         <template #activator="{ on }">
-          <v-btn
+          <VBtn
             outlined
             depressed
             color="primary"
@@ -137,13 +137,13 @@ const showDoneConfirmation = () => {
             @click="showRestoreConfirmation('soft')"
           >
             {{ t('asset_update.restore.soft_reset') }}
-          </v-btn>
+          </VBtn>
         </template>
         <span>{{ t('asset_update.restore.soft_reset_hint') }}</span>
-      </v-tooltip>
-      <v-tooltip top max-width="200">
+      </VTooltip>
+      <VTooltip top max-width="200">
         <template #activator="{ on }">
-          <v-btn
+          <VBtn
             class="ml-4"
             depressed
             color="primary"
@@ -151,10 +151,10 @@ const showDoneConfirmation = () => {
             @click="showRestoreConfirmation('hard')"
           >
             {{ t('asset_update.restore.hard_reset') }}
-          </v-btn>
+          </VBtn>
         </template>
         <span>{{ t('asset_update.restore.hard_reset_hint') }}</span>
-      </v-tooltip>
+      </VTooltip>
     </template>
   </div>
 </template>

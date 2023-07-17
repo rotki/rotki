@@ -17,11 +17,11 @@ const props = withDefaults(
   }
 );
 
-const rootAttrs = useAttrs();
-
 const emit = defineEmits<{
   (e: 'update:model-value', blockchain: Blockchain | null): void;
 }>();
+
+const rootAttrs = useAttrs();
 
 const { evmOnly, modelValue } = toRefs(props);
 
@@ -77,7 +77,7 @@ const filter = (chain: Blockchain, queryText: string) => {
 </script>
 
 <template>
-  <v-autocomplete
+  <VAutocomplete
     :dense="dense"
     :disabled="disabled"
     :filter="filter"
@@ -95,7 +95,7 @@ const filter = (chain: Blockchain, queryText: string) => {
     @blur="clearSearch()"
   >
     <template #selection="{ item }">
-      <chain-display
+      <ChainDisplay
         v-if="!search"
         :chain="item"
         :dense="dense"
@@ -103,7 +103,7 @@ const filter = (chain: Blockchain, queryText: string) => {
       />
     </template>
     <template #item="{ item }">
-      <chain-display :chain="item" />
+      <ChainDisplay :chain="item" />
     </template>
-  </v-autocomplete>
+  </VAutocomplete>
 </template>

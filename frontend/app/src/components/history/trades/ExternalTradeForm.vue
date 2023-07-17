@@ -291,8 +291,8 @@ onMounted(setEditMode);
 </script>
 
 <template>
-  <v-form :value="valid" data-cy="trade-form" class="external-trade-form pt-1">
-    <date-time-picker
+  <VForm :value="valid" data-cy="trade-form" class="external-trade-form pt-1">
+    <DateTimePicker
       v-model="datetime"
       required
       outlined
@@ -305,10 +305,10 @@ onMounted(setEditMode);
       :error-messages="errorMessages['timestamp']"
     />
 
-    <v-row class="pt-1">
-      <v-col cols="12" md="4">
+    <VRow class="pt-1">
+      <VCol cols="12" md="4">
         <div data-cy="type">
-          <v-radio-group
+          <VRadioGroup
             v-model="type"
             class="mt-2 mt-md-3"
             hide-details
@@ -316,23 +316,23 @@ onMounted(setEditMode);
             required
             :label="t('external_trade_form.trade_type.label')"
           >
-            <v-radio
+            <VRadio
               class="ml-4"
               :label="t('external_trade_form.trade_type.buy')"
               value="buy"
             />
-            <v-radio
+            <VRadio
               class="ml-4"
               :label="t('external_trade_form.trade_type.sell')"
               value="sell"
             />
-          </v-radio-group>
+          </VRadioGroup>
         </div>
-      </v-col>
-      <v-col cols="12" md="8" class="d-flex flex-column">
-        <v-row>
-          <v-col cols="12" md="5" class="d-flex flex-row align-center">
-            <asset-select
+      </VCol>
+      <VCol cols="12" md="8" class="d-flex flex-column">
+        <VRow>
+          <VCol cols="12" md="5" class="d-flex flex-row align-center">
+            <AssetSelect
               v-model="base"
               outlined
               required
@@ -342,14 +342,14 @@ onMounted(setEditMode);
               :label="t('external_trade_form.base_asset.label')"
               @blur="v$.baseAsset.$touch()"
             />
-          </v-col>
-          <v-col class="d-flex flex-row align-center">
+          </VCol>
+          <VCol class="d-flex flex-row align-center">
             <div class="text--secondary external-trade-form__action-hint">
               {{ quoteHint }}
             </div>
-          </v-col>
-          <v-col cols="12" md="5" class="d-flex flex-row align-center">
-            <asset-select
+          </VCol>
+          <VCol cols="12" md="5" class="d-flex flex-row align-center">
+            <AssetSelect
               v-model="quote"
               required
               outlined
@@ -359,13 +359,13 @@ onMounted(setEditMode);
               :label="t('external_trade_form.quote_asset.label')"
               @blur="v$.quoteAsset.$touch()"
             />
-          </v-col>
-        </v-row>
-      </v-col>
-    </v-row>
+          </VCol>
+        </VRow>
+      </VCol>
+    </VRow>
 
     <div class="mt-2">
-      <amount-input
+      <AmountInput
         v-model="amount"
         required
         outlined
@@ -376,7 +376,7 @@ onMounted(setEditMode);
         :hint="t('external_trade_form.amount.hint')"
         @blur="v$.amount.$touch()"
       />
-      <two-fields-amount-input
+      <TwoFieldsAmountInput
         class="mb-5"
         :primary-value.sync="rate"
         :secondary-value.sync="quoteAmount"
@@ -397,8 +397,8 @@ onMounted(setEditMode);
         v-if="shouldRenderSummary"
         class="text-caption green--text mt-n4 mb-n1"
       >
-        <v-icon small class="mr-2 green--text"> mdi-comment-quote </v-icon>
-        <i18n v-if="type === 'buy'" path="external_trade_form.summary.buy">
+        <VIcon small class="mr-2 green--text"> mdi-comment-quote </VIcon>
+        <I18n v-if="type === 'buy'" path="external_trade_form.summary.buy">
           <template #label>
             <strong>
               {{ t('external_trade_form.summary.label') }}
@@ -406,7 +406,7 @@ onMounted(setEditMode);
           </template>
           <template #amount>
             <strong>
-              <amount-display :value="numericAmount" :tooltip="false" />
+              <AmountDisplay :value="numericAmount" :tooltip="false" />
             </strong>
           </template>
           <template #base>
@@ -417,11 +417,11 @@ onMounted(setEditMode);
           </template>
           <template #rate>
             <strong>
-              <amount-display :value="numericRate" :tooltip="false" />
+              <AmountDisplay :value="numericRate" :tooltip="false" />
             </strong>
           </template>
-        </i18n>
-        <i18n
+        </I18n>
+        <I18n
           v-if="type === 'sell'"
           tag="span"
           path="external_trade_form.summary.sell"
@@ -433,7 +433,7 @@ onMounted(setEditMode);
           </template>
           <template #amount>
             <strong>
-              <amount-display :value="numericAmount" :tooltip="false" />
+              <AmountDisplay :value="numericAmount" :tooltip="false" />
             </strong>
           </template>
           <template #base>
@@ -444,18 +444,18 @@ onMounted(setEditMode);
           </template>
           <template #rate>
             <strong>
-              <amount-display :value="numericRate" :tooltip="false" />
+              <AmountDisplay :value="numericRate" :tooltip="false" />
             </strong>
           </template>
-        </i18n>
+        </I18n>
       </div>
     </div>
 
-    <v-divider class="mb-6 mt-8" />
+    <VDivider class="mb-6 mt-8" />
 
-    <v-row class="mb-2">
-      <v-col cols="12" md="6">
-        <amount-input
+    <VRow class="mb-2">
+      <VCol cols="12" md="6">
+        <AmountInput
           ref="feeInput"
           v-model="fee"
           class="external-trade-form__fee"
@@ -468,9 +468,9 @@ onMounted(setEditMode);
           :error-messages="toMessages(v$.fee)"
           @input="triggerFeeValidator()"
         />
-      </v-col>
-      <v-col cols="12" md="6">
-        <asset-select
+      </VCol>
+      <VCol cols="12" md="6">
+        <AssetSelect
           ref="feeCurrencyInput"
           v-model="feeCurrency"
           data-cy="fee-currency"
@@ -482,10 +482,10 @@ onMounted(setEditMode);
           :error-messages="toMessages(v$.feeCurrency)"
           @input="triggerFeeValidator()"
         />
-      </v-col>
-    </v-row>
+      </VCol>
+    </VRow>
 
-    <v-text-field
+    <VTextField
       v-model="link"
       data-cy="link"
       outlined
@@ -496,7 +496,7 @@ onMounted(setEditMode);
       :error-messages="errorMessages['link']"
     />
 
-    <v-textarea
+    <VTextarea
       v-model="notes"
       prepend-inner-icon="mdi-text-box-outline"
       outlined
@@ -507,7 +507,7 @@ onMounted(setEditMode);
       :hint="t('external_trade_form.notes.hint')"
       :error-messages="errorMessages['notes']"
     />
-  </v-form>
+  </VForm>
 </template>
 
 <style scoped lang="scss">

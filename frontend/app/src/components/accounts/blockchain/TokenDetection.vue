@@ -23,38 +23,38 @@ const { t } = useI18n();
       {{ detectedTokens.total }}
     </div>
     <div>
-      <v-tooltip top>
+      <VTooltip top>
         <template #activator="{ on }">
-          <v-btn
+          <VBtn
             text
             icon
             :disabled="detectingTokens || loading"
             v-on="on"
             @click="detectTokens()"
           >
-            <v-progress-circular
+            <VProgressCircular
               v-if="detectingTokens"
               indeterminate
               color="primary"
               width="2"
               size="20"
             />
-            <v-icon v-else small>mdi-refresh</v-icon>
-          </v-btn>
+            <VIcon v-else small>mdi-refresh</VIcon>
+          </VBtn>
         </template>
         <div class="text-center">
           <div>
             {{ t('account_balances.detect_tokens.tooltip.redetect') }}
           </div>
           <div v-if="detectedTokens.timestamp">
-            <i18n path="account_balances.detect_tokens.tooltip.last_detected">
+            <I18n path="account_balances.detect_tokens.tooltip.last_detected">
               <template #time>
-                <date-display :timestamp="detectedTokens.timestamp" />
+                <DateDisplay :timestamp="detectedTokens.timestamp" />
               </template>
-            </i18n>
+            </I18n>
           </div>
         </div>
-      </v-tooltip>
+      </VTooltip>
     </div>
   </div>
 </template>

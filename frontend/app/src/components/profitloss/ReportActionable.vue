@@ -41,23 +41,23 @@ const { t } = useI18n();
 
 <template>
   <div v-if="actionableItemsLength" class="d-flex">
-    <v-dialog v-model="mainDialogOpen" max-width="1000">
+    <VDialog v-model="mainDialogOpen" max-width="1000">
       <template #activator="{ on }">
-        <v-btn color="error" depressed v-on="on">
+        <VBtn color="error" depressed v-on="on">
           <span class="pr-2">
             {{ t('profit_loss_report.actionable.show_issues') }}
           </span>
-          <v-chip x-small class="px-2" color="error darken-2">
+          <VChip x-small class="px-2" color="error darken-2">
             {{ actionableItemsLength }}
-          </v-chip>
-        </v-btn>
+          </VChip>
+        </VBtn>
       </template>
-      <report-actionable-card
+      <ReportActionableCard
         v-if="mainDialogOpen"
         :report="report"
         @set-dialog="mainDialogOpen = $event"
         @regenerate="regenerateReport()"
       />
-    </v-dialog>
+    </VDialog>
   </div>
 </template>

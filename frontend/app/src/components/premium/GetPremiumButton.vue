@@ -8,9 +8,9 @@ const { isPackaged, premiumURL, navigateToPremium } = useInterop();
 
 <template>
   <div v-if="!premium" class="mr-2">
-    <v-tooltip bottom :disabled="!mobile">
+    <VTooltip bottom :disabled="!mobile">
       <template #activator="{ on }">
-        <v-btn
+        <VBtn
           data-cy="get-premium-button"
           color="warning"
           rounded
@@ -26,10 +26,10 @@ const { isPackaged, premiumURL, navigateToPremium } = useInterop();
           <span v-if="!mobile" class="mr-2">
             {{ t('premium_settings.get') }}
           </span>
-          <v-icon>mdi-crown-outline</v-icon>
-        </v-btn>
+          <VIcon>mdi-crown-outline</VIcon>
+        </VBtn>
       </template>
       <span>{{ t('premium_settings.get') }}</span>
-    </v-tooltip>
+    </VTooltip>
   </div>
 </template>

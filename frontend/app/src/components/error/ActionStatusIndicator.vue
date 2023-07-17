@@ -16,7 +16,7 @@ defineProps({
     v-if="status && (status.success || status.error)"
     class="action-status-indicator"
   >
-    <v-alert
+    <VAlert
       class="mb-0"
       dense
       :color="status.success ? 'success' : 'error'"
@@ -25,7 +25,7 @@ defineProps({
       :icon="status.success ? 'mdi-check' : 'mdi-alert-circle-outline'"
     >
       {{ status.success || status.error }}
-    </v-alert>
+    </VAlert>
   </div>
 </template>
 

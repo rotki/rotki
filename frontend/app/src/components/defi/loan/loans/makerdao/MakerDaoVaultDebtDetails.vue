@@ -33,14 +33,14 @@ const assetPadding = 4;
 </script>
 
 <template>
-  <fragment>
-    <v-divider class="my-4" />
-    <loan-row :title="t('makerdao_vault_debt.stability_fee')" class="mb-2">
-      <percentage-display :value="stabilityFee" :asset-padding="assetPadding" />
-    </loan-row>
-    <loan-row :title="t('makerdao_vault_debt.total_lost')">
+  <Fragment>
+    <VDivider class="my-4" />
+    <LoanRow :title="t('makerdao_vault_debt.stability_fee')" class="mb-2">
+      <PercentageDisplay :value="stabilityFee" :asset-padding="assetPadding" />
+    </LoanRow>
+    <LoanRow :title="t('makerdao_vault_debt.total_lost')">
       <div v-if="premium">
-        <amount-display
+        <AmountDisplay
           :asset-padding="assetPadding"
           :value="interest"
           :loading="loading"
@@ -48,8 +48,8 @@ const assetPadding = 4;
         />
       </div>
       <div v-else>
-        <premium-lock />
+        <PremiumLock />
       </div>
-    </loan-row>
-  </fragment>
+    </LoanRow>
+  </Fragment>
 </template>

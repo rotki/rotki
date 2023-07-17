@@ -15,9 +15,9 @@ const image = useRefMap(location, location => location?.image);
 
 <template>
   <div class="d-flex flex-row align-center shrink">
-    <adaptive-wrapper>
-      <v-img width="24px" height="24px" contain :src="image" />
-    </adaptive-wrapper>
+    <AdaptiveWrapper>
+      <VImg width="24px" height="24px" contain :src="image" />
+    </AdaptiveWrapper>
     <div class="ml-2" v-text="name" />
   </div>
 </template>

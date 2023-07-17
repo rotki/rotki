@@ -21,7 +21,7 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <big-dialog
+  <BigDialog
     :display="openDialog"
     :title="
       editMode
@@ -32,6 +32,6 @@ const { t } = useI18n();
     @confirm="trySubmit()"
     @cancel="resetForm()"
   >
-    <user-notes-form :value="value" @input="emit('input', $event)" />
-  </big-dialog>
+    <UserNotesForm :value="value" @input="emit('input', $event)" />
+  </BigDialog>
 </template>

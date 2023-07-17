@@ -33,7 +33,7 @@
     "lint-staged": "lint-staged"
   },
   "devDependencies": {
-    "@rotki/eslint-config": "1.0.6",
+    "@rotki/eslint-config": "1.1.0",
     "argparse": "2.0.1",
     "dotenv": "14.3.2",
     "eslint": "8.41.0",

@@ -14,6 +14,7 @@ import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 
 type Totals = Record<EthChains, AssetBalances>;
+
 type Balances = Record<EthChains, BlockchainAssetBalances>;
 
 const defaultTotals = (): Totals => ({

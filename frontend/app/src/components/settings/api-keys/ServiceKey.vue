@@ -77,17 +77,17 @@ watch(value, () => {
 </script>
 
 <template>
-  <v-card flat>
-    <v-card-title v-if="title">
+  <VCard flat>
+    <VCardTitle v-if="title">
       {{ title }}
-    </v-card-title>
-    <v-card-subtitle v-if="description">
+    </VCardTitle>
+    <VCardSubtitle v-if="description">
       {{ description }}
-    </v-card-subtitle>
-    <v-card-text class="service-key__content">
-      <v-row justify="center">
-        <v-col>
-          <revealable-input
+    </VCardSubtitle>
+    <VCardText class="service-key__content">
+      <VRow justify="center">
+        <VCol>
+          <RevealableInput
             outlined
             sensitive-key
             :value="editMode ? currentValue : ''"
@@ -98,11 +98,11 @@ watch(value, () => {
             @input="currentValue = $event"
             @paste="onPaste($event)"
           />
-        </v-col>
-        <v-col cols="auto">
-          <v-tooltip top>
+        </VCol>
+        <VCol cols="auto">
+          <VTooltip top>
             <template #activator="{ on }">
-              <v-btn
+              <VBtn
                 icon
                 text
                 class="service-key__content__delete"
@@ -111,23 +111,23 @@ watch(value, () => {
                 v-on="on"
                 @click="deleteKey()"
               >
-                <v-icon>mdi-delete</v-icon>
-              </v-btn>
+                <VIcon>mdi-delete</VIcon>
+              </VBtn>
             </template>
             <span>
               {{ tooltip }}
             </span>
-          </v-tooltip>
-        </v-col>
-      </v-row>
-      <v-row v-if="$slots.default">
-        <v-col>
+          </VTooltip>
+        </VCol>
+      </VRow>
+      <VRow v-if="$slots.default">
+        <VCol>
           <slot />
-        </v-col>
-      </v-row>
-    </v-card-text>
-    <v-card-actions class="service-key__buttons">
-      <v-btn
+        </VCol>
+      </VRow>
+    </VCardText>
+    <VCardActions class="service-key__buttons">
+      <VBtn
         class="service-key__buttons__save"
         depressed
         color="primary"
@@ -135,8 +135,8 @@ watch(value, () => {
         @click="saveHandler()"
       >
         {{ editMode ? t('common.actions.save') : t('common.actions.edit') }}
-      </v-btn>
-      <v-btn
+      </VBtn>
+      <VBtn
         v-if="editMode && cancellable"
         class="service-key__buttons__cancel"
         depressed
@@ -144,9 +144,9 @@ watch(value, () => {
         @click="cancel()"
       >
         {{ t('common.actions.cancel') }}
-      </v-btn>
-    </v-card-actions>
-  </v-card>
+      </VBtn>
+    </VCardActions>
+  </VCard>
 </template>
 
 <style scoped lang="scss">

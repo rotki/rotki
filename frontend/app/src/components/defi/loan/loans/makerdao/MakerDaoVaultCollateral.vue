@@ -18,17 +18,17 @@ const ratio = computed(() => {
 </script>
 
 <template>
-  <stat-card :title="t('loan_collateral.title')">
-    <loan-row :title="t('loan_collateral.locked_collateral')">
-      <balance-display
+  <StatCard :title="t('loan_collateral.title')">
+    <LoanRow :title="t('loan_collateral.locked_collateral')">
+      <BalanceDisplay
         :asset="vault.collateral.asset"
         :value="vault.collateral"
       />
-    </loan-row>
-    <v-divider class="my-4" />
-    <loan-row :title="t('loan_collateral.current_ratio')" class="mb-2">
-      <percentage-display :value="ratio" />
-    </loan-row>
-    <manage-watchers :vault="vault" />
-  </stat-card>
+    </LoanRow>
+    <VDivider class="my-4" />
+    <LoanRow :title="t('loan_collateral.current_ratio')" class="mb-2">
+      <PercentageDisplay :value="ratio" />
+    </LoanRow>
+    <ManageWatchers :vault="vault" />
+  </StatCard>
 </template>

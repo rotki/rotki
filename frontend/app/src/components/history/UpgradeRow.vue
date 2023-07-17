@@ -17,7 +17,7 @@ const { xs } = useDisplay();
 <template>
   <tr class="tr">
     <td :colspan="xs ? 2 : colspan" class="upgrade-row font-weight-medium">
-      <i18n
+      <I18n
         v-if="events"
         tag="span"
         path="upgrade_row.events"
@@ -33,20 +33,20 @@ const { xs } = useDisplay();
           {{ label }}
         </template>
         <template #link>
-          <base-external-link
+          <BaseExternalLink
             class="ml-1"
             :text="t('upgrade_row.rotki_premium')"
             :href="premiumURL"
           />
         </template>
         <template #from>
-          <date-display class="mx-1" :timestamp="timeStart" />
+          <DateDisplay class="mx-1" :timestamp="timeStart" />
         </template>
         <template #to>
-          <date-display class="ms-1" :timestamp="timeEnd" />
+          <DateDisplay class="ms-1" :timestamp="timeEnd" />
         </template>
-      </i18n>
-      <i18n
+      </I18n>
+      <I18n
         v-else
         tag="span"
         path="upgrade_row.upgrade"
@@ -62,13 +62,13 @@ const { xs } = useDisplay();
           {{ label }}
         </template>
         <template #link>
-          <base-external-link
+          <BaseExternalLink
             class="ml-1"
             :text="t('upgrade_row.rotki_premium')"
             :href="premiumURL"
           />
         </template>
-      </i18n>
+      </I18n>
     </td>
   </tr>
 </template>

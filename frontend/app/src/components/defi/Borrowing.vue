@@ -57,58 +57,58 @@ onMounted(async () => {
 </script>
 
 <template>
-  <progress-screen v-if="loading">
+  <ProgressScreen v-if="loading">
     <template #message>{{ t('borrowing.loading') }}</template>
-  </progress-screen>
+  </ProgressScreen>
   <div v-else>
-    <v-row class="mt-8">
-      <v-col>
-        <refresh-header
+    <VRow class="mt-8">
+      <VCol>
+        <RefreshHeader
           :title="t('borrowing.header')"
           :loading="refreshing"
           @refresh="refresh()"
         >
           <template #actions>
-            <active-modules :modules="modules" />
+            <ActiveModules :modules="modules" />
           </template>
-        </refresh-header>
-      </v-col>
-    </v-row>
-    <v-row no-gutters class="mt-6">
-      <v-col cols="12">
-        <stat-card-wide :cols="2">
+        </RefreshHeader>
+      </VCol>
+    </VRow>
+    <VRow no-gutters class="mt-6">
+      <VCol cols="12">
+        <StatCardWide :cols="2">
           <template #first-col>
-            <stat-card-column>
+            <StatCardColumn>
               <template #title>
                 {{ t('borrowing.total_collateral_locked') }}
               </template>
-              <amount-display
+              <AmountDisplay
                 :value="summary.totalCollateralUsd"
                 show-currency="symbol"
                 fiat-currency="USD"
               />
-            </stat-card-column>
+            </StatCardColumn>
           </template>
           <template #second-col>
-            <stat-card-column>
+            <StatCardColumn>
               <template #title>
                 {{ t('borrowing.total_outstanding_debt') }}
               </template>
-              <amount-display
+              <AmountDisplay
                 :value="summary.totalDebt"
                 show-currency="symbol"
                 fiat-currency="USD"
               />
-            </stat-card-column>
+            </StatCardColumn>
           </template>
-        </stat-card-wide>
-      </v-col>
-    </v-row>
-    <v-row no-gutters class="mt-8">
-      <v-col cols="12" md="6" class="pe-md-4">
-        <v-card>
+        </StatCardWide>
+      </VCol>
+    </VRow>
+    <VRow no-gutters class="mt-8">
+      <VCol cols="12" md="6" class="pe-md-4">
+        <VCard>
           <div class="mx-4 pt-4">
-            <v-autocomplete
+            <VAutocomplete
               v-model="selection"
               class="borrowing__vault-selection"
               :label="t('borrowing.select_loan')"
@@ -123,25 +123,25 @@ onMounted(async () => {
               :open-on-clear="false"
             >
               <template #selection="{ item }">
-                <defi-selector-item :item="item" />
+                <DefiSelectorItem :item="item" />
               </template>
               <template #item="{ item }">
-                <defi-selector-item :item="item" />
+                <DefiSelectorItem :item="item" />
               </template>
-            </v-autocomplete>
+            </VAutocomplete>
           </div>
-          <v-card-text>{{ t('borrowing.select_loan_hint') }}</v-card-text>
-        </v-card>
-      </v-col>
-      <v-col cols="12" md="6" class="ps-md-4 pt-8 pt-md-0">
-        <defi-protocol-selector v-model="protocol" liabilities />
-      </v-col>
-    </v-row>
-    <loan-info v-if="loan" :loan="loan" />
-    <full-size-content v-else>
-      <v-row align="center" justify="center">
-        <v-col class="text-h6">{{ t('liabilities.no_selection') }}</v-col>
-      </v-row>
-    </full-size-content>
+          <VCardText>{{ t('borrowing.select_loan_hint') }}</VCardText>
+        </VCard>
+      </VCol>
+      <VCol cols="12" md="6" class="ps-md-4 pt-8 pt-md-0">
+        <DefiProtocolSelector v-model="protocol" liabilities />
+      </VCol>
+    </VRow>
+    <LoanInfo v-if="loan" :loan="loan" />
+    <FullSizeContent v-else>
+      <VRow align="center" justify="center">
+        <VCol class="text-h6">{{ t('liabilities.no_selection') }}</VCol>
+      </VRow>
+    </FullSizeContent>
   </div>
 </template>

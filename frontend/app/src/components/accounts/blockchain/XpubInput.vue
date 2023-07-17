@@ -140,9 +140,9 @@ watch(errorMessages, errors => {
 
 <template>
   <div>
-    <v-row align="center" no-gutters class="mt-2">
-      <v-col cols="auto">
-        <v-select
+    <VRow align="center" no-gutters class="mt-2">
+      <VCol cols="auto">
+        <VSelect
           v-model="xpubKeyPrefix"
           outlined
           class="account-form__xpub-key-type"
@@ -151,9 +151,9 @@ watch(errorMessages, errors => {
           :disabled="disabled"
           :items="keyTypeListData"
         />
-      </v-col>
-      <v-col>
-        <v-text-field
+      </VCol>
+      <VCol>
+        <VTextField
           v-model="xpubKey"
           outlined
           class="account-form__xpub ml-2"
@@ -165,32 +165,32 @@ watch(errorMessages, errors => {
           @paste="onPasteXpub($event)"
         >
           <template #append-outer>
-            <v-tooltip open-delay="400" top>
+            <VTooltip open-delay="400" top>
               <template #activator="{ on, attrs }">
                 <div class="account-form__advanced">
-                  <v-btn
+                  <VBtn
                     icon
                     class="mt-n2"
                     v-bind="attrs"
                     v-on="on"
                     @click="advanced = !advanced"
                   >
-                    <v-icon v-if="advanced">mdi-chevron-up</v-icon>
-                    <v-icon v-else>mdi-chevron-down</v-icon>
-                  </v-btn>
+                    <VIcon v-if="advanced">mdi-chevron-up</VIcon>
+                    <VIcon v-else>mdi-chevron-down</VIcon>
+                  </VBtn>
                 </div>
               </template>
               <span>
                 {{ t('account_form.advanced_tooltip', advanced ? 0 : 1) }}
               </span>
-            </v-tooltip>
+            </VTooltip>
           </template>
-        </v-text-field>
-      </v-col>
-    </v-row>
-    <v-row v-if="advanced" no-gutters>
-      <v-col>
-        <v-text-field
+        </VTextField>
+      </VCol>
+    </VRow>
+    <VRow v-if="advanced" no-gutters>
+      <VCol>
+        <VTextField
           v-model="derivationPath"
           outlined
           class="account-form__derivation-path"
@@ -202,7 +202,7 @@ watch(errorMessages, errors => {
           :hint="t('account_form.labels.btc.derivation_path_hint')"
           @blur="v$.derivationPath.$touch()"
         />
-      </v-col>
-    </v-row>
+      </VCol>
+    </VRow>
   </div>
 </template>

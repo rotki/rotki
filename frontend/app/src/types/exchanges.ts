@@ -7,6 +7,7 @@ import { type PaginationRequestPayload } from '@/types/common';
 import { type Collection, CollectionCommonFields } from '@/types/collection';
 
 export const KrakenAccountType = z.enum(['starter', 'intermediate', 'pro']);
+
 export type KrakenAccountType = z.infer<typeof KrakenAccountType>;
 
 export enum SupportedExchange {
@@ -64,7 +65,7 @@ export interface EditExchange {
 }
 
 export interface ExchangeSetupPayload {
-  readonly edit: Boolean;
+  readonly edit: boolean;
   readonly exchange: ExchangePayload;
 }
 

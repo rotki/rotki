@@ -12,13 +12,17 @@ const RestChains = [
 ] as const;
 
 export type BtcChains = (typeof BtcChains)[number];
+
 export type EthChains = (typeof EthChains)[number];
+
 export type RestChains = (typeof RestChains)[number];
 
 export const isBtcChain = (chain: Blockchain): chain is BtcChains =>
   BtcChains.includes(chain as any);
+
 export const isEthChain = (chain: Blockchain): chain is EthChains =>
   EthChains.includes(chain as any);
+
 export const isRestChain = (chain: Blockchain): chain is RestChains =>
   RestChains.includes(chain as any);
 
