@@ -40,21 +40,21 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
 
 P = ParamSpec('P')
-T = TypeVar('T', covariant=True)
+T_co = TypeVar('T_co', covariant=True)
 
 
-class MaybeInjectWriteCursor(Protocol[P, T]):
+class MaybeInjectWriteCursor(Protocol[P, T_co]):
     @overload
-    def __call__(self, write_cursor: 'DBCursor', *args: P.args, **kwargs: P.kwargs) -> T:
+    def __call__(self, write_cursor: 'DBCursor', *args: P.args, **kwargs: P.kwargs) -> T_co:
         ...
 
     @overload
-    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> T:
+    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> T_co:
         ...
 
 
-def need_writable_cursor(path_to_context_manager: str) -> Callable[[Callable[Concatenate['DBHandler', 'DBCursor', P], T]], MaybeInjectWriteCursor[P, T]]:  # noqa: E501
-    def _need_writable_cursor(method: Callable[Concatenate['DBHandler', 'DBCursor', P], T]) -> MaybeInjectWriteCursor[P, T]:  # noqa: E501
+def need_writable_cursor(path_to_context_manager: str) -> Callable[[Callable[Concatenate['DBHandler', 'DBCursor', P], T_co]], MaybeInjectWriteCursor[P, T_co]]:  # noqa: E501
+    def _need_writable_cursor(method: Callable[Concatenate['DBHandler', 'DBCursor', P], T_co]) -> MaybeInjectWriteCursor[P, T_co]:  # noqa: E501
         """Wraps the method of a class in a write cursor or uses one if passed.
 
         The method should:
@@ -69,7 +69,7 @@ def need_writable_cursor(path_to_context_manager: str) -> Callable[[Callable[Con
         it much as I did not wanna add extra if checks in heavy calls
         """
         @wraps(method)
-        def _impl(self: 'DBHandler', *args: Any, **kwargs: Any) -> T:
+        def _impl(self: 'DBHandler', *args: Any, **kwargs: Any) -> T_co:
             if kwargs.get('write_cursor') or len(args) != 0 and isinstance(args[0], DBCursor):
                 return method(self, *args, **kwargs)
 
@@ -83,18 +83,18 @@ def need_writable_cursor(path_to_context_manager: str) -> Callable[[Callable[Con
     return _need_writable_cursor
 
 
-class MaybeInjectCursor(Protocol[P, T]):
+class MaybeInjectCursor(Protocol[P, T_co]):
     @overload
-    def __call__(self, cursor: 'DBCursor', *args: P.args, **kwargs: P.kwargs) -> T:
+    def __call__(self, cursor: 'DBCursor', *args: P.args, **kwargs: P.kwargs) -> T_co:
         ...
 
     @overload
-    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> T:
+    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> T_co:
         ...
 
 
-def need_cursor(path_to_context_manager: str) -> Callable[[Callable[Concatenate['DBHandler', 'DBCursor', P], T]], MaybeInjectCursor[P, T]]:  # noqa: E501
-    def _need_cursor(method: Callable[Concatenate['DBHandler', 'DBCursor', P], T]) -> MaybeInjectCursor[P, T]:  # noqa: E501
+def need_cursor(path_to_context_manager: str) -> Callable[[Callable[Concatenate['DBHandler', 'DBCursor', P], T_co]], MaybeInjectCursor[P, T_co]]:  # noqa: E501
+    def _need_cursor(method: Callable[Concatenate['DBHandler', 'DBCursor', P], T_co]) -> MaybeInjectCursor[P, T_co]:  # noqa: E501
         """Wraps the method of DBHandler in a read cursor or uses one if passed.
 
         The method should:
@@ -104,7 +104,7 @@ def need_cursor(path_to_context_manager: str) -> Callable[[Callable[Concatenate[
         Typing guide: https://sobolevn.me/2021/12/paramspec-guide
         """
         @wraps(method)
-        def _impl(self: 'DBHandler', *args: Any, **kwargs: Any) -> T:
+        def _impl(self: 'DBHandler', *args: Any, **kwargs: Any) -> T_co:
             if kwargs.get('cursor') or len(args) != 0 and isinstance(args[0], DBCursor):
                 return method(self, *args, **kwargs)
 
