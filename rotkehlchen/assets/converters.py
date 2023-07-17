@@ -11,7 +11,7 @@ from rotkehlchen.assets.exchanges_mappings.coinbase import WORLD_TO_COINBASE
 from rotkehlchen.assets.exchanges_mappings.coinbase_pro import WORLD_TO_COINBASE_PRO
 from rotkehlchen.assets.exchanges_mappings.common import COMMON_ASSETS_MAPPINGS
 from rotkehlchen.assets.exchanges_mappings.cryptocom import WORLD_TO_CRYPTOCOM
-from rotkehlchen.assets.exchanges_mappings.gemeni import WORLD_TO_GEMINI
+from rotkehlchen.assets.exchanges_mappings.gemini import WORLD_TO_GEMINI
 from rotkehlchen.assets.exchanges_mappings.iconomi import WORLD_TO_ICONOMI
 from rotkehlchen.assets.exchanges_mappings.kraken import WORLD_TO_KRAKEN
 from rotkehlchen.assets.exchanges_mappings.kucoin import WORLD_TO_KUCOIN
