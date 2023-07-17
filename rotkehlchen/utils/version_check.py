@@ -13,10 +13,7 @@ if TYPE_CHECKING:
 def get_system_spec() -> dict[str, str]:
     """Collect information about the system and installation."""
     if sys.platform == 'darwin':
-        system_info = 'macOS {} {}'.format(
-            platform.mac_ver()[0],
-            platform.architecture()[0],
-        )
+        system_info = f'macOS {platform.mac_ver()[0]} {platform.architecture()[0]}'
     else:
         system_info = '{} {} {} {}'.format(
             platform.system(),

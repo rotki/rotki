@@ -116,12 +116,7 @@ def retry_calls(
             )
             if tries == 0:
                 raise RemoteError(
-                    '{} query for {} failed after {} tries. Reason: {}'.format(
-                        location,
-                        method_name,
-                        times,
-                        e,
-                    )) from e
+                    f'{location} query for {method_name} failed after {times} tries. Reason: {e}') from e  # noqa: E501
 
 
 @overload
