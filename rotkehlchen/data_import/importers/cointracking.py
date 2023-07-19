@@ -3,6 +3,8 @@ from itertools import count
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from rotkehlchen.accounting.structures.base import HistoryEvent
+from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.converters import LOCATION_TO_ASSET_MAPPING
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
 from rotkehlchen.constants import ZERO
@@ -168,6 +170,19 @@ class CointrackingImporter(BaseExchangeImporter):
                 link='',
             )
             self.add_asset_movement(cursor, asset_movement)
+        elif row_type == 'Staking':
+            staking_event = HistoryEvent(
+                event_identifier=b'STAKING',
+                sequence_index=0,
+                timestamp=timestamp,
+                location=location,
+                asset=asset,
+                balance=None,
+                notes=notes,
+                event_type=HistoryEventType.TRADE,
+                event_subtype=HistoryEventSubType.REWARD,
+            )
+            self.add_history_events(cursor, [staking_event])
         else:
             raise UnsupportedCSVEntry(
                 f'Unknown entrype type "{row_type}" encountered during cointracking '
