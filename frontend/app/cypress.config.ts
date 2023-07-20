@@ -14,8 +14,6 @@ export default defineConfig({
     screenshotsFolder: 'tests/e2e/screenshots',
     videosFolder: 'tests/e2e/videos',
     supportFile: 'tests/e2e/support/index.ts',
-    testIsolation: false,
-    experimentalMemoryManagement: true,
     numTestsKeptInMemory: 5,
     setupNodeEvents(on, config) {
       on(
