@@ -96,6 +96,7 @@ from .balances import BlockchainBalances, BlockchainBalancesUpdate
 from .constants import LAST_EVM_ACCOUNTS_DETECT_KEY
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.arbitrum_one.manager import ArbitrumOneManager
     from rotkehlchen.chain.ethereum.interfaces.balances import ProtocolWithBalance
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.chain.ethereum.modules.eth2.eth2 import Eth2
@@ -183,6 +184,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             ethereum_manager: 'EthereumManager',
             optimism_manager: 'OptimismManager',
             polygon_pos_manager: 'PolygonPOSManager',
+            arbitrum_one_manager: 'ArbitrumOneManager',
             kusama_manager: 'SubstrateManager',
             polkadot_manager: 'SubstrateManager',
             avalanche_manager: 'AvalancheManager',
@@ -200,6 +202,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         self.ethereum = ethereum_manager
         self.optimism = optimism_manager
         self.polygon_pos = polygon_pos_manager
+        self.arbitrum_one = arbitrum_one_manager
         self.kusama = kusama_manager
         self.polkadot = polkadot_manager
         self.avalanche = avalanche_manager
@@ -222,6 +225,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         self.avax_lock = Semaphore()
         self.optimism_lock = Semaphore()
         self.polygon_pos_lock = Semaphore()
+        self.arbitrum_one_lock = Semaphore()
 
         # Per account balances
         self.balances = BlockchainBalances(db=database)
@@ -248,6 +252,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             SupportedBlockchain.ETHEREUM: self._append_eth_account_modification,  # type:ignore
             SupportedBlockchain.OPTIMISM: self._append_evm_account_modification,  # type:ignore
             SupportedBlockchain.POLYGON_POS: self._append_evm_account_modification,  # type:ignore
+            SupportedBlockchain.ARBITRUM_ONE: self._append_evm_account_modification,  # type:ignore
         }
         self.chain_modify_remove: dict[SupportedBlockchain, Callable[[SupportedBlockchain, BlockchainAddress], None]] = {  # noqa: E501
             SupportedBlockchain.ETHEREUM: self._remove_eth_account_modification,  # type:ignore
@@ -935,6 +940,19 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         Same potential exceptions as ethereum
         """
         self.query_evm_chain_balances(chain=SupportedBlockchain.POLYGON_POS)
+
+    @protect_with_lock()
+    @cache_response_timewise()
+    def query_arbitrum_one_balances(
+            self,  # pylint: disable=unused-argument
+            # Kwargs here is so linters don't complain when the "magic" ignore_cache kwarg is given
+            **kwargs: Any,
+    ) -> None:
+        """
+        Queries all the arbitrum one balances and populates the state.
+        Same potential exceptions as ethereum
+        """
+        self.query_evm_chain_balances(chain=SupportedBlockchain.ARBITRUM_ONE)
 
     @protect_with_lock()
     @cache_response_timewise()

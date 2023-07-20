@@ -19,6 +19,7 @@ from rotkehlchen.db.upgrade_manager import (
     DBUpgradeProgressHandler,
 )
 from rotkehlchen.db.upgrades.v37_v38 import DEFAULT_POLYGON_NODES_AT_V38
+from rotkehlchen.db.upgrades.v38_v39 import DEFAULT_ARBITRUM_ONE_NODES_AT_V39
 from rotkehlchen.db.utils import table_exists
 from rotkehlchen.errors.misc import DBUpgradeError
 from rotkehlchen.tests.utils.database import (
@@ -27,7 +28,7 @@ from rotkehlchen.tests.utils.database import (
     mock_dbhandler_add_globaldb_assetids,
     mock_dbhandler_update_owned_assets,
 )
-from rotkehlchen.types import Location, deserialize_evm_tx_hash
+from rotkehlchen.types import Location, SupportedBlockchain, deserialize_evm_tx_hash
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.hexbytes import HexBytes
 from rotkehlchen.utils.misc import ts_now
@@ -1677,6 +1678,8 @@ def test_upgrade_db_38_to_39(user_data_dir):  # pylint: disable=unused-argument
     for entry in cursor:
         hashchain_to_address_mappings[get_hashchain(entry)] = entry[2:]
 
+    assert cursor.execute('SELECT MAX(seq) FROM location').fetchone()[0] == 40
+
     db_v38.logout()
     # Execute upgrade
     db = _init_db_with_target_version(
@@ -1756,6 +1759,17 @@ def test_upgrade_db_38_to_39(user_data_dir):  # pylint: disable=unused-argument
     for entry in cursor:
         hashchain = id_to_hashchain[entry[0]]
         assert hashchain_to_address_mappings[hashchain] == entry[1:]
+
+    # Check Arbitrum One related data
+    assert cursor.execute(  # Check that Arbitrum One location was added
+        'SELECT location FROM location WHERE location=?',
+        (Location.ARBITRUM_ONE.serialize_for_db(),),
+    ).fetchone()[0] == Location.ARBITRUM_ONE.serialize_for_db()
+
+    assert len(cursor.execute(  # check that Arbitrum One nodes were added
+        'SELECT * FROM rpc_nodes WHERE blockchain=?',
+        (SupportedBlockchain.ARBITRUM_ONE.value,),
+    ).fetchall()) == len(DEFAULT_ARBITRUM_ONE_NODES_AT_V39)
 
 
 def test_latest_upgrade_adds_remove_tables(user_data_dir):

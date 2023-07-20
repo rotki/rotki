@@ -242,6 +242,7 @@ def test_migration_10(
     avalanche_addresses = [ethereum_accounts[1], ethereum_accounts[3]]
     optimism_addresses = [ethereum_accounts[2], ethereum_accounts[3]]
     polygon_pos_addresses = [ethereum_accounts[3]]
+    arbitrum_one_addresses = [ethereum_accounts[3]]
 
     # insert a bad polygon etherscan name in the database. By mistake we published an error
     # in this name and could affect users
@@ -272,6 +273,7 @@ def test_migration_10(
             avalanche_addresses=avalanche_addresses,
             optimism_addresses=optimism_addresses,
             polygon_pos_addresses=polygon_pos_addresses,
+            arbitrum_one_addresses=arbitrum_one_addresses,
         )
         stack.enter_context(migration_patch)
         DataMigrationManager(rotki).maybe_migrate_data()
@@ -287,6 +289,8 @@ def test_migration_10(
     assert set(rotki.chains_aggregator.accounts.optimism) == set(optimism_addresses)
     assert set(accounts.polygon_pos) == set(polygon_pos_addresses)
     assert set(rotki.chains_aggregator.accounts.polygon_pos) == set(polygon_pos_addresses)
+    assert set(accounts.arbitrum_one) == set(arbitrum_one_addresses)
+    assert set(rotki.chains_aggregator.accounts.arbitrum_one) == set(arbitrum_one_addresses)
 
     def assert_progress_message(msg, step_num, description) -> None:
         assert msg['type'] == 'data_migration_status'

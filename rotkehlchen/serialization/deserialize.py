@@ -562,6 +562,7 @@ def deserialize_evm_transaction(
     try:
         tx_hash = parent_tx_hash if parent_tx_hash is not None else deserialize_evm_tx_hash(data['hash'])  # noqa: E501
         block_number = read_integer(data, 'blockNumber', source)
+        block_data = None
         if 'timeStamp' not in data:
             if evm_inquirer is None:
                 raise DeserializationError('Got in deserialize evm transaction without timestamp and without evm inquirer')  # noqa: E501
@@ -595,6 +596,11 @@ def deserialize_evm_transaction(
                 raise DeserializationError('Got in deserialize evm transaction without gasUsed and without evm inquirer')  # noqa: E501
             raw_receipt_data = evm_inquirer.get_transaction_receipt(tx_hash)
             gas_used = read_integer(raw_receipt_data, 'gasUsed', source)
+            if chain_id == ChainID.ARBITRUM_ONE:
+                # In Arbitrum One the gas price included in the data is the "Gas Price Bid" and not
+                # the "Gas Price Paid". The latter is the actual gas price paid for the transaction
+                # and is included in the transaction receipt as the effectiveGasPrice.
+                gas_price = read_integer(raw_receipt_data, 'effectiveGasPrice', source)
         else:
             gas_used = read_integer(data, 'gasUsed', source)
         nonce = read_integer(data, 'nonce', source)

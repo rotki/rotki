@@ -47,6 +47,10 @@ def maybe_include_etherscan_key(db: DBHandler, include_etherscan_key: bool) -> N
         service=ExternalService.POLYGON_POS_ETHERSCAN,
         api_key=ApiKey('1M4TM28QKJHED9QPDWXFCBEX5CK5ID3ESG'),  # Added by Alexey on 2023-05-22
     )])
+    db.add_external_service_credentials([ExternalServiceApiCredentials(
+        service=ExternalService.ARBITRUM_ONE_ETHERSCAN,
+        api_key=ApiKey('VQUFYKKJR4RK8HFHYIJ9I93FIUVP44TN99'),  # Added by dimyG on 2023-07-21
+    )])
 
 
 def maybe_include_cryptocompare_key(db: DBHandler, include_cryptocompare_key: bool) -> None:

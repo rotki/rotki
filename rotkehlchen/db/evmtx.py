@@ -1,6 +1,7 @@
 import logging
 from typing import TYPE_CHECKING, Any, Optional, get_args
 
+from rotkehlchen.chain.arbitrum_one.constants import ARBITRUM_ONE_GENESIS
 from rotkehlchen.chain.ethereum.constants import ETHEREUM_GENESIS
 from rotkehlchen.chain.evm.constants import GENESIS_HASH, ZERO_ADDRESS
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
@@ -558,6 +559,8 @@ class DBEvmTx:
                 timestamp = ETHEREUM_GENESIS
             elif chain_id == ChainID.OPTIMISM:
                 timestamp = OPTIMISM_GENESIS
+            elif chain_id == ChainID.ARBITRUM_ONE:
+                timestamp = ARBITRUM_ONE_GENESIS
             else:
                 timestamp = POLYGON_POS_GENESIS
             tx = EvmTransaction(

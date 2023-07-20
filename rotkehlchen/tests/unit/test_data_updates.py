@@ -222,13 +222,13 @@ def test_update_rpc_nodes(data_updater: RotkiDataUpdater) -> None:
     # check db state of the default rpc nodes before updating
     with GlobalDBHandler().conn.read_ctx() as cursor:
         cursor.execute('SELECT COUNT(*) FROM default_rpc_nodes')
-        assert cursor.fetchone()[0] == 16
+        assert cursor.fetchone()[0] == 21
 
     # check the db state of the user's rpc_nodes
     custom_node_tuple = ('custom node', 'https://node.rotki.com/', 1, 1, '0.50', 'ETH')
     with data_updater.user_db.user_write() as write_cursor:
         write_cursor.execute('SELECT COUNT(*) FROM rpc_nodes')
-        assert write_cursor.fetchone()[0] == 16
+        assert write_cursor.fetchone()[0] == 21
         # add a custom node.
         write_cursor.execute(
             'INSERT INTO rpc_nodes(name, endpoint, owned, active, weight, blockchain) '
@@ -236,7 +236,7 @@ def test_update_rpc_nodes(data_updater: RotkiDataUpdater) -> None:
             custom_node_tuple,
         )
         write_cursor.execute('SELECT COUNT(*) FROM rpc_nodes')
-        assert write_cursor.fetchone()[0] == 17
+        assert write_cursor.fetchone()[0] == 22
 
     with patch('requests.get', wraps=make_mock_github_data_response(UpdateType.RPC_NODES)):
         data_updater.check_for_updates()
@@ -247,14 +247,14 @@ def test_update_rpc_nodes(data_updater: RotkiDataUpdater) -> None:
         assert cursor.fetchone()[0] == 2
 
     # check that 3 nodes are present in the user db including the custom node added.
-    # 9 nodes were deleted since the updated rpc nodes data did not contain them.
+    # 19 nodes were deleted since the updated rpc nodes data did not contain them.
     with data_updater.user_db.conn.read_ctx() as cursor:
         nodes = cursor.execute('SELECT * FROM rpc_nodes').fetchall()
 
     assert nodes == [
         (7, 'optimism official', 'https://mainnet.optimism.io', 0, 1, '0.20', 'OPTIMISM'),
-        (17, *custom_node_tuple),
-        (18, 'pocket network', 'https://eth-mainnet.gateway.pokt.network/v1/5f3453978e354ab992c4da79', 0, 1, '0.5', 'ETH'),  # noqa: E501
+        (22, *custom_node_tuple),
+        (23, 'pocket network', 'https://eth-mainnet.gateway.pokt.network/v1/5f3453978e354ab992c4da79', 0, 1, '0.5', 'ETH'),  # noqa: E501
     ]
 
 
