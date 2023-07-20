@@ -13,11 +13,11 @@ const { t } = useI18n();
     <template #title>{{ t('asset_update.manual.title') }}</template>
     <template #subtitle>{{ t('asset_update.manual.subtitle') }}</template>
     <div v-if="skipped" class="text-body-1">
-      <I18n path="asset_update.manual.skipped">
+      <i18n path="asset_update.manual.skipped">
         <template #skipped>
           <BadgeDisplay class="ml-2">{{ skipped }}</BadgeDisplay>
         </template>
-      </I18n>
+      </i18n>
     </div>
     <template #buttons>
       <VBtn depressed color="primary" :loading="loading" @click="emit('check')">

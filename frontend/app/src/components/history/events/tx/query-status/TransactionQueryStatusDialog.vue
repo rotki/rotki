@@ -38,7 +38,7 @@ const { sortedQueryStatus, getKey } = useTransactionQueryStatus(onlyChains);
     </template>
 
     <template #tooltip="{ item }">
-      <I18n
+      <i18n
         :path="
           item.period[0] === 0
             ? 'transactions.query_status.latest_period_end_date'
@@ -51,7 +51,7 @@ const { sortedQueryStatus, getKey } = useTransactionQueryStatus(onlyChains);
         <template #end>
           <DateDisplay :timestamp="item.period[1]" />
         </template>
-      </I18n>
+      </i18n>
     </template>
 
     <template #steps="{ item }">

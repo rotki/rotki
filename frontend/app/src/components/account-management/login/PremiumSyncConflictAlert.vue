@@ -30,18 +30,18 @@ const lastModified = useRefMap(syncConflict, conflict => {
       <div>{{ syncConflict.message }}</div>
       <ul v-if="lastModified" class="mt-2">
         <li>
-          <I18n path="login.sync_error.local_modified">
+          <i18n path="login.sync_error.local_modified">
             <div class="font-weight-medium">
               <DateDisplay :timestamp="lastModified.local" />
             </div>
-          </I18n>
+          </i18n>
         </li>
         <li class="mt-2">
-          <I18n path="login.sync_error.remote_modified">
+          <i18n path="login.sync_error.remote_modified">
             <div class="font-weight-medium">
               <DateDisplay :timestamp="lastModified.remote" />
             </div>
-          </I18n>
+          </i18n>
         </li>
       </ul>
       <div class="mt-2">{{ t('login.sync_error.question') }}</div>

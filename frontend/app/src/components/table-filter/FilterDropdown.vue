@@ -177,13 +177,13 @@ const highlightedTextClasses = 'text-subtitle-2 text--secondary';
       </div>
       <div v-else class="pb-0">
         <div class="text--secondary">
-          <I18n path="table_filter.no_suggestions">
+          <i18n path="table_filter.no_suggestions">
             <template #search>
               <span class="font-weight-medium">
                 {{ keywordSplited.key }}
               </span>
             </template>
-          </I18n>
+          </i18n>
         </div>
       </div>
 

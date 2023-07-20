@@ -283,7 +283,7 @@ const sortNfts = (
     </VRow>
     <VRow v-if="!premium && visibleNfts.length > 0" justify="center">
       <VCol cols="auto">
-        <I18n path="nft_gallery.upgrade">
+        <i18n path="nft_gallery.upgrade">
           <template #limit> {{ limit }}</template>
           <template #link>
             <BaseExternalLink
@@ -291,7 +291,7 @@ const sortNfts = (
               :href="premiumURL"
             />
           </template>
-        </I18n>
+        </i18n>
       </VCol>
     </VRow>
     <VRow

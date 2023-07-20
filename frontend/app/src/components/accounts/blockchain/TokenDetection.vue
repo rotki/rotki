@@ -47,11 +47,11 @@ const { t } = useI18n();
             {{ t('account_balances.detect_tokens.tooltip.redetect') }}
           </div>
           <div v-if="detectedTokens.timestamp">
-            <I18n path="account_balances.detect_tokens.tooltip.last_detected">
+            <i18n path="account_balances.detect_tokens.tooltip.last_detected">
               <template #time>
                 <DateDisplay :timestamp="detectedTokens.timestamp" />
               </template>
-            </I18n>
+            </i18n>
           </div>
         </div>
       </VTooltip>

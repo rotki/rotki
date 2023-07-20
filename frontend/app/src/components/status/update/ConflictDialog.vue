@@ -137,14 +137,14 @@ const cancel = () => {
         </VRow>
       </template>
       <template #hint>
-        <I18n path="conflict_dialog.hint" tag="span">
+        <i18n path="conflict_dialog.hint" tag="span">
           <template #conflicts>
             <span class="font-weight-medium"> {{ conflicts.length }} </span>
           </template>
           <template #remaining>
             <span class="font-weight-medium"> {{ remaining }} </span>
           </template>
-        </I18n>
+        </i18n>
       </template>
       <DataTable
         :class="{

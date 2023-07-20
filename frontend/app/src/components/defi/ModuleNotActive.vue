@@ -48,7 +48,7 @@ const { t } = useI18n();
       </VRow>
       <VRow align="center" justify="center" class="mt-16">
         <VCol cols="auto" class="text--secondary">
-          <I18n
+          <i18n
             tag="span"
             path="module_not_active.not_active"
             class="text-center"
@@ -75,7 +75,7 @@ const { t } = useI18n();
                 {{ name(module) }}
               </span>
             </template>
-          </I18n>
+          </i18n>
         </VCol>
       </VRow>
     </div>

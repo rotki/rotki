@@ -14,8 +14,8 @@ importers:
   .:
     devDependencies:
       '@rotki/eslint-config':
-        specifier: 1.1.0
-        version: 1.1.0(eslint@8.41.0)
+        specifier: 1.1.1
+        version: 1.1.1(eslint@8.41.0)
       argparse:
         specifier: 2.0.1
         version: 2.0.1
@@ -50,8 +50,8 @@ importers:
         specifier: workspace:*
         version: link:../common
       '@rotki/eslint-config-ts':
-        specifier: 1.1.0
-        version: 1.1.0(eslint@8.41.0)
+        specifier: 1.1.1
+        version: 1.1.1(eslint@8.41.0)
       '@vuelidate/core':
         specifier: 2.0.2
         version: 2.0.2(vue@2.7.14)
@@ -2432,8 +2432,8 @@ packages:
       rollup: 2.79.1
     dev: true
 
-  /@rotki/eslint-config-basic@1.1.0(@typescript-eslint/eslint-plugin@6.0.0)(@typescript-eslint/parser@6.0.0)(eslint@8.41.0):
-    resolution: {integrity: sha512-bv0Lefe5OEpmaFbAYtawBxl3ucn5vLCypQQ4lIbcHEWIp7M1FtDqpFtX4vFXrmNVTGzsBPovwJxROmEfKqREGQ==}
+  /@rotki/eslint-config-basic@1.1.1(@typescript-eslint/eslint-plugin@6.0.0)(@typescript-eslint/parser@6.0.0)(eslint@8.41.0):
+    resolution: {integrity: sha512-H+fLhWYa2ZY2TfSf19cKpWvXcscx+Sl9Tph6cpD3GE/fAMwlajrRx0eMqVn7qSa+n0+NX7MhlRcd8MWXqOJkSw==}
     peerDependencies:
       eslint: '>=8.10.0'
     dependencies:
@@ -2454,8 +2454,8 @@ packages:
       - eslint-import-resolver-webpack
       - supports-color
 
-  /@rotki/eslint-config-prettier@1.1.0(eslint@8.41.0):
-    resolution: {integrity: sha512-y4CG+yJy8MFxiqSlbZL/W72fh71mO563khLlgOTZhrSfCcdwskLE7rpTLX2Ethbhq+FxzQgopmwqjNQxONf1VA==}
+  /@rotki/eslint-config-prettier@1.1.1(eslint@8.41.0):
+    resolution: {integrity: sha512-Um6SpUNreK8+oaNf6jj74V2st2rEj6bvLmZWcBSkrnwCOA5A2RmvGHemnfRusKtYZB8Vl72oi7djpQZ3+oJoCQ==}
     peerDependencies:
       eslint: '>=8.1.0'
     dependencies:
@@ -2470,12 +2470,12 @@ packages:
       - supports-color
     dev: true
 
-  /@rotki/eslint-config-ts@1.1.0(eslint@8.41.0):
-    resolution: {integrity: sha512-bA7wCQWuhaYhp8U4F0rt+JPYywC4xt5svaQ3VLuxSa9bYiXp8ToXwxznAtlbkRcFEiC1PQlTJJSDyqd5ixt/8Q==}
+  /@rotki/eslint-config-ts@1.1.1(eslint@8.41.0):
+    resolution: {integrity: sha512-HHJ6emv++g1ulgDaAV/FXIsYW0lihjYs2iTRtYvw7WBxFw76MNUwH5NhrdiH4J4zvcevFV+2frF2+EUwz4WqlA==}
     peerDependencies:
       eslint: '>=8.10.0'
     dependencies:
-      '@rotki/eslint-config-basic': 1.1.0(@typescript-eslint/eslint-plugin@6.0.0)(@typescript-eslint/parser@6.0.0)(eslint@8.41.0)
+      '@rotki/eslint-config-basic': 1.1.1(@typescript-eslint/eslint-plugin@6.0.0)(@typescript-eslint/parser@6.0.0)(eslint@8.41.0)
       '@typescript-eslint/eslint-plugin': 6.0.0(@typescript-eslint/parser@6.0.0)(eslint@8.41.0)(typescript@5.1.6)
       '@typescript-eslint/parser': 6.0.0(eslint@8.41.0)(typescript@5.0.4)
       eslint: 8.41.0
@@ -2486,8 +2486,8 @@ packages:
       - eslint-import-resolver-webpack
       - supports-color
 
-  /@rotki/eslint-config-vue@1.1.0(eslint@8.41.0):
-    resolution: {integrity: sha512-mo4zK/NWB5fqaRh9eCXNeU5us1EiNERg1YI+HCgFuNAW356lT3oN6Txx3Ih3vmjPtgXW+Zubcxvp/9Qc2TlxqA==}
+  /@rotki/eslint-config-vue@1.1.1(eslint@8.41.0):
+    resolution: {integrity: sha512-dm3I8tvJwi4HIO/nEOl+CZi8VhriBnCyU3fnBeAMgQbCxXV23oHzlY/8jtDKZVPQM3bNccWivXqlaQHvNVwjCw==}
     peerDependencies:
       eslint: '>=8.10.0'
       vue: '>=2.7.0 || ^3.0.0'
@@ -2495,7 +2495,7 @@ packages:
       vue:
         optional: true
     dependencies:
-      '@rotki/eslint-config-ts': 1.1.0(eslint@8.41.0)
+      '@rotki/eslint-config-ts': 1.1.1(eslint@8.41.0)
       eslint: 8.41.0
       eslint-define-config: 1.21.0
       eslint-plugin-vue: 9.15.1(eslint@8.41.0)
@@ -2506,13 +2506,13 @@ packages:
       - supports-color
     dev: true
 
-  /@rotki/eslint-config@1.1.0(eslint@8.41.0):
-    resolution: {integrity: sha512-4yINnK2tqdcPd7412ppZiMWGMnycpWiDD+MUdUTRT2kBzchensV1NlMm2yeMtO2myyGWodnB7M+QHxrN/V5uew==}
+  /@rotki/eslint-config@1.1.1(eslint@8.41.0):
+    resolution: {integrity: sha512-zEZdC699x5fDBWb1wq8G1NnoJCPMDwoV2Q1gKuj4Fm8xASJe7SiN51H2AbJre17VwNDIMaoH7NNdLCl6T5V5OA==}
     peerDependencies:
       eslint: '>=8.1.0'
     dependencies:
-      '@rotki/eslint-config-prettier': 1.1.0(eslint@8.41.0)
-      '@rotki/eslint-config-vue': 1.1.0(eslint@8.41.0)
+      '@rotki/eslint-config-prettier': 1.1.1(eslint@8.41.0)
+      '@rotki/eslint-config-vue': 1.1.1(eslint@8.41.0)
       eslint: 8.41.0
     transitivePeerDependencies:
       - '@types/eslint'
@@ -2918,7 +2918,7 @@ packages:
     peerDependencies:
       eslint: ^7.0.0 || ^8.0.0
     dependencies:
-      '@eslint-community/eslint-utils': 4.3.0(eslint@8.41.0)
+      '@eslint-community/eslint-utils': 4.4.0(eslint@8.41.0)
       '@types/json-schema': 7.0.11
       '@types/semver': 7.3.13
       '@typescript-eslint/scope-manager': 6.0.0
@@ -5502,7 +5502,7 @@ packages:
     peerDependencies:
       eslint: '>=6.0.0'
     dependencies:
-      '@eslint-community/eslint-utils': 4.3.0(eslint@8.41.0)
+      '@eslint-community/eslint-utils': 4.4.0(eslint@8.41.0)
       eslint: 8.41.0
       jsonc-eslint-parser: 2.1.0
       natural-compare: 1.4.0
@@ -5616,7 +5616,7 @@ packages:
     peerDependencies:
       eslint: ^6.2.0 || ^7.0.0 || ^8.0.0
     dependencies:
-      '@eslint-community/eslint-utils': 4.3.0(eslint@8.41.0)
+      '@eslint-community/eslint-utils': 4.4.0(eslint@8.41.0)
       eslint: 8.41.0
       natural-compare: 1.4.0
       nth-check: 2.1.1

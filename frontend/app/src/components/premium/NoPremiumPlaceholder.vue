@@ -32,7 +32,7 @@ const remoteEmptyScreenLogo =
             <div class="text--secondary text-no-wrap">
               {{ t('no_premium_placeholder.premium_only', { text }) }}
             </div>
-            <I18n
+            <i18n
               path="no_premium_placeholder.get_premium"
               tag="p"
               class="text--secondary"
@@ -42,7 +42,7 @@ const remoteEmptyScreenLogo =
                 :href="premiumURL"
                 class="font-weight-medium"
               />
-            </I18n>
+            </i18n>
           </VCol>
         </VRow>
       </VCol>

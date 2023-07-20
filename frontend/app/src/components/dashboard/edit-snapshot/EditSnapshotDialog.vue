@@ -160,11 +160,11 @@ const updateAndComplete = (event: LocationDataSnapshot[]) => {
         </VBtn>
 
         <VToolbarTitle class="pl-2">
-          <I18n path="dashboard.snapshot.edit.dialog.title">
+          <i18n path="dashboard.snapshot.edit.dialog.title">
             <template #date>
               <DateDisplay :timestamp="timestamp" />
             </template>
-          </I18n>
+          </i18n>
         </VToolbarTitle>
       </VToolbar>
       <div v-if="snapshotData">

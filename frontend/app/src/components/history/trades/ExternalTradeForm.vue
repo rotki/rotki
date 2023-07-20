@@ -398,7 +398,7 @@ onMounted(setEditMode);
         class="text-caption green--text mt-n4 mb-n1"
       >
         <VIcon small class="mr-2 green--text"> mdi-comment-quote </VIcon>
-        <I18n v-if="type === 'buy'" path="external_trade_form.summary.buy">
+        <i18n v-if="type === 'buy'" path="external_trade_form.summary.buy">
           <template #label>
             <strong>
               {{ t('external_trade_form.summary.label') }}
@@ -420,8 +420,8 @@ onMounted(setEditMode);
               <AmountDisplay :value="numericRate" :tooltip="false" />
             </strong>
           </template>
-        </I18n>
-        <I18n
+        </i18n>
+        <i18n
           v-if="type === 'sell'"
           tag="span"
           path="external_trade_form.summary.sell"
@@ -447,7 +447,7 @@ onMounted(setEditMode);
               <AmountDisplay :value="numericRate" :tooltip="false" />
             </strong>
           </template>
-        </I18n>
+        </i18n>
       </div>
     </div>
 

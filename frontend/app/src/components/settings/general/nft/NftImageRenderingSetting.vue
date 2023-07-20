@@ -99,7 +99,7 @@ const warningUrl =
           )
         }}
       </div>
-      <I18n
+      <i18n
         tag="div"
         class="mt-1"
         path="general_settings.nft_setting.subtitle.nft_images_rendering_setting_hint"
@@ -109,7 +109,7 @@ const warningUrl =
             {{ t('common.here') }}
           </ExternalLink>
         </template>
-      </I18n>
+      </i18n>
     </div>
     <SettingsOption
       #default="{ error, success, update }"

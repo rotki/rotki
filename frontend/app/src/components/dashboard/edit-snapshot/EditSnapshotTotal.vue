@@ -190,14 +190,14 @@ const css = useCssModule();
             />
 
             <div class="text--secondary text-caption">
-              <I18n path="dashboard.snapshot.edit.dialog.total.warning">
+              <i18n path="dashboard.snapshot.edit.dialog.total.warning">
                 <template #amount>
                   <AmountDisplay
                     :value="nftsExcludedTotal"
                     fiat-currency="USD"
                   />
                 </template>
-              </I18n>
+              </i18n>
             </div>
           </VForm>
         </div>

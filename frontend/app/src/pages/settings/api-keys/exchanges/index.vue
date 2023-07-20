@@ -202,12 +202,12 @@ const showRemoveConfirmation = (item: Exchange) => {
         {{ t('exchange_settings.title') }}
       </template>
       <template #subtitle>
-        <I18n path="exchange_settings.subtitle" tag="div">
+        <i18n path="exchange_settings.subtitle" tag="div">
           <BaseExternalLink
             :text="t('exchange_settings.usage_guide')"
             :href="usageGuideUrl + '#adding-an-exchange'"
           />
-        </I18n>
+        </i18n>
       </template>
       <VBtn
         absolute

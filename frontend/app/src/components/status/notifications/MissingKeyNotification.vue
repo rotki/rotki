@@ -7,7 +7,7 @@ defineProps<{
 </script>
 
 <template>
-  <I18n :path="params.message" :plural="params.choice" tag="div">
+  <i18n :path="params.message" :plural="params.choice" tag="div">
     <template #service>
       {{ params.props.service }}
     </template>
@@ -17,5 +17,5 @@ defineProps<{
     <template #url>
       <BaseExternalLink :href="params.props.url" :text="params.props.url" />
     </template>
-  </I18n>
+  </i18n>
 </template>

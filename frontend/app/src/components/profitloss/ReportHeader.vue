@@ -13,7 +13,7 @@ defineProps({
 <template>
   <VRow>
     <VCol>
-      <I18n
+      <i18n
         tag="div"
         path="profit_loss_report.report_period"
         class="text-h5 mt-6"
@@ -24,7 +24,7 @@ defineProps({
         <template #end>
           <DateDisplay :timestamp="period.end" class="font-weight-medium" />
         </template>
-      </I18n>
+      </i18n>
     </VCol>
   </VRow>
 </template>

@@ -68,13 +68,13 @@ const refresh = () => load(true);
                 class="font-weight-light text-h6"
                 :class="$style.description"
               >
-                <I18n path="kraken_page.page.description">
+                <i18n path="kraken_page.page.description">
                   <template #link>
                     <InternalLink :to="Routes.API_KEYS_EXCHANGES">
                       {{ t('kraken_page.page.api_key') }}
                     </InternalLink>
                   </template>
-                </I18n>
+                </i18n>
               </div>
             </VCol>
           </VRow>

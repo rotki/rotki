@@ -178,7 +178,7 @@ defineExpose({ removeFile });
           />
           <div class="mt-2 text-center">
             <div v-if="file">
-              <I18n
+              <i18n
                 path="file_upload.selected_file"
                 class="text-caption text--secondary"
                 tag="div"
@@ -188,7 +188,7 @@ defineExpose({ removeFile });
                     {{ file.name }}
                   </div>
                 </template>
-              </I18n>
+              </i18n>
               <div>
                 <VBtn
                   class="mt-2"

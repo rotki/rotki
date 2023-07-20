@@ -17,7 +17,7 @@ const { xs } = useDisplay();
 <template>
   <tr class="tr">
     <td :colspan="xs ? 2 : colspan" class="upgrade-row font-weight-medium">
-      <I18n
+      <i18n
         v-if="events"
         tag="span"
         path="upgrade_row.events"
@@ -45,8 +45,8 @@ const { xs } = useDisplay();
         <template #to>
           <DateDisplay class="ms-1" :timestamp="timeEnd" />
         </template>
-      </I18n>
-      <I18n
+      </i18n>
+      <i18n
         v-else
         tag="span"
         path="upgrade_row.upgrade"
@@ -68,7 +68,7 @@ const { xs } = useDisplay();
             :href="premiumURL"
           />
         </template>
-      </I18n>
+      </i18n>
     </td>
   </tr>
 </template>

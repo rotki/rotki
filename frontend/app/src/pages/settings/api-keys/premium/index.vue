@@ -122,12 +122,12 @@ const showDeleteConfirmation = () => {
           {{ t('premium_settings.title') }}
         </template>
         <template #subtitle>
-          <I18n tag="div" path="premium_settings.subtitle">
+          <i18n tag="div" path="premium_settings.subtitle">
             <BaseExternalLink
               :text="t('premium_settings.title')"
               :href="premiumURL"
             />
-          </I18n>
+          </i18n>
         </template>
 
         <RevealableInput

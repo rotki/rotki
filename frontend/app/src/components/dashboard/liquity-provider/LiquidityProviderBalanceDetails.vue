@@ -115,9 +115,9 @@ const transformAssets = (assets: XswapAsset[]): AssetBalanceWithPrice[] =>
         <VIcon>mdi-lock</VIcon>
       </VAvatar>
       <div class="ml-4">
-        <I18n tag="div" path="uniswap.assets_non_premium">
+        <i18n tag="div" path="uniswap.assets_non_premium">
           <BaseExternalLink :text="t('uniswap.premium')" :href="premiumURL" />
-        </I18n>
+        </i18n>
       </div>
     </div>
   </TableExpandContainer>

@@ -96,7 +96,7 @@ const loading = isAccountOperationRunning();
           </div>
           <ol>
             <li>
-              <I18n
+              <i18n
                 path="input_mode_select.metamask_import.missing_tooltip.metamask_is_not_installed"
               >
                 <template #link>
@@ -104,7 +104,7 @@ const loading = isAccountOperationRunning();
                     {{ t('common.here') }}
                   </ExternalLink>
                 </template>
-              </I18n>
+              </i18n>
             </li>
             <li>
               {{
@@ -114,7 +114,7 @@ const loading = isAccountOperationRunning();
               }}
             </li>
             <li>
-              <I18n
+              <i18n
                 path="input_mode_select.metamask_import.missing_tooltip.metamask_is_not_supported_by_browser"
               >
                 <template #link>
@@ -132,7 +132,7 @@ const loading = isAccountOperationRunning();
                     }}
                   </a>
                 </template>
-              </I18n>
+              </i18n>
             </li>
           </ol>
         </div>

@@ -28,7 +28,7 @@ const { xl } = useDisplay();
 
 <template>
   <div>
-    <I18n :path="translationKey" tag="span" class="d-flex align-center">
+    <i18n :path="translationKey" tag="span" class="d-flex align-center">
       <template #location>
         {{ toSentenceCase(event.location) }}
       </template>
@@ -69,7 +69,7 @@ const { xl } = useDisplay();
           />
         </span>
       </template>
-    </I18n>
+    </i18n>
   </div>
 </template>
 

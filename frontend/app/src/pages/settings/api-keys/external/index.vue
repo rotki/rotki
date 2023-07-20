@@ -332,7 +332,7 @@ onMounted(async () => {
         @save="save('opensea', $event)"
         @delete-key="showConfirmation('opensea')"
       >
-        <I18n tag="div" path="external_services.opensea.link">
+        <i18n tag="div" path="external_services.opensea.link">
           <template #link>
             <ExternalLink
               url="https://docs.opensea.io/reference/request-an-api-key"
@@ -340,7 +340,7 @@ onMounted(async () => {
               {{ t('common.here') }}
             </ExternalLink>
           </template>
-        </I18n>
+        </i18n>
       </ServiceKey>
     </ApiKeyBox>
   </Card>

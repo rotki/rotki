@@ -12,12 +12,12 @@ const proceed = () => {
   <div class="pa-6 pb-2">
     <VAlert type="warning" text prominent class="pl-8">
       <div class="ml-4">
-        <I18n path="docker_warning.title" tag="div">
+        <i18n path="docker_warning.title" tag="div">
           <BaseExternalLink
             :text="t('docker_warning.documentation')"
             :href="usageGuideUrl + '#docker'"
           />
-        </I18n>
+        </i18n>
       </div>
     </VAlert>
 

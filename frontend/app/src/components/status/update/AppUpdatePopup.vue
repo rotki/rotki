@@ -93,14 +93,14 @@ onMounted(async () => {
           {{ t('update_popup.download_progress') }}
         </span>
         <div v-else-if="!downloadReady">
-          <I18n tag="div" path="update_popup.messages">
+          <i18n tag="div" path="update_popup.messages">
             <template #releaseNotes>
               <BaseExternalLink
                 :text="t('update_popup.release_notes')"
                 :href="releaseNotesLink"
               />
             </template>
-          </I18n>
+          </i18n>
           <div>{{ t('update_popup.download_nudge') }}</div>
         </div>
         <span v-else>{{ t('update_popup.downloaded') }}</span>

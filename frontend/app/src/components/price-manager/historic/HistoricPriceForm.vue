@@ -120,7 +120,7 @@ const v$ = setValidation(
           v-if="price && fromAsset && toAsset"
           class="text-caption green--text mt-n6 pb-1 pl-3"
         >
-          <I18n tag="div" path="price_form.historic.hint">
+          <i18n tag="div" path="price_form.historic.hint">
             <template #fromAsset>
               <strong>
                 {{ fromAsset }}
@@ -136,7 +136,7 @@ const v$ = setValidation(
                 <AmountDisplay :value="numericPrice" :tooltip="false" />
               </strong>
             </template>
-          </I18n>
+          </i18n>
         </div>
       </VCol>
     </VRow>

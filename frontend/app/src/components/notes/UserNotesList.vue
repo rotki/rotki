@@ -231,7 +231,7 @@ onMounted(async () => {
         text
         class="pa-2 text-subtitle-2"
       >
-        <I18n path="notes_menu.limit_warning">
+        <i18n path="notes_menu.limit_warning">
           <template #limit>{{ itemsPerPage }}</template>
           <template #link>
             <BaseExternalLink
@@ -239,7 +239,7 @@ onMounted(async () => {
               :href="premiumURL"
             />
           </template>
-        </I18n>
+        </i18n>
       </VAlert>
 
       <div v-if="notes.data.length > 0">
@@ -291,11 +291,11 @@ onMounted(async () => {
                 class="d-flex justify-space-between align-center pt-2"
               >
                 <div class="note__datetime text--secondary font-italic">
-                  <I18n path="notes_menu.last_updated">
+                  <i18n path="notes_menu.last_updated">
                     <template #datetime>
                       <DateDisplay :timestamp="note.lastUpdateTimestamp" />
                     </template>
-                  </I18n>
+                  </i18n>
                 </div>
                 <div>
                   <VBtn icon small @click="editNote(note)">

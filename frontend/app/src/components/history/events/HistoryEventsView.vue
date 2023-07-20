@@ -620,7 +620,7 @@ const { locationData } = useLocations();
                 @update:matches="setFilter($event)"
               >
                 <template #tooltip>
-                  <I18n tag="span" path="transactions.filtering_premium_hint">
+                  <i18n tag="span" path="transactions.filtering_premium_hint">
                     <template #link>
                       <b>
                         <ExternalLink url="https://rotki.com/products">
@@ -628,7 +628,7 @@ const { locationData } = useLocations();
                         </ExternalLink>
                       </b>
                     </template>
-                  </I18n>
+                  </i18n>
                 </template>
               </TableFilter>
             </div>

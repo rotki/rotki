@@ -11,7 +11,7 @@ const { t } = useI18n();
       </VCol>
       <VCol cols="12">
         <VAlert outlined class="mt-2">
-          <I18n tag="span" path="import_data.notice">
+          <i18n tag="span" path="import_data.notice">
             <template #warning>
               <strong> {{ t('import_data.notice_warning') }}</strong>
             </template>
@@ -22,7 +22,7 @@ const { t } = useI18n();
                 {{ t('import_data.notice_link') }}
               </ExternalLink>
             </template>
-          </I18n>
+          </i18n>
         </VAlert>
       </VCol>
     </VRow>

@@ -66,14 +66,14 @@ const { t } = useI18n();
 <template>
   <Card :flat="headless">
     <template #title>{{ t('asset_update.title') }}</template>
-    <I18n class="text-body-1" tag="div" path="asset_update.description">
+    <i18n class="text-body-1" tag="div" path="asset_update.description">
       <template #remote>
         <span class="font-weight-medium">{{ versions.remote }}</span>
       </template>
       <template #local>
         <span class="font-weight-medium">{{ versions.local }}</span>
       </template>
-    </I18n>
+    </i18n>
     <div class="text-body-1 mt-4">
       {{ t('asset_update.total_changes', { changes: versions.changes }) }}
     </div>

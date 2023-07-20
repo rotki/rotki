@@ -8,7 +8,7 @@ const { getChain } = useSupportedChains();
 </script>
 
 <template>
-  <I18n
+  <i18n
     :path="getItemTranslationKey(item)"
     tag="div"
     class="d-flex py-2 text-no-wrap flex-wrap"
@@ -31,5 +31,5 @@ const { getChain } = useSupportedChains();
         <DateDisplay :timestamp="item.period[1]" />
       </div>
     </template>
-  </I18n>
+  </i18n>
 </template>

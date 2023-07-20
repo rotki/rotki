@@ -152,7 +152,7 @@ const back = () => {
             <VCardText>
               <VForm :value="premiumFormValid">
                 <VAlert text color="primary">
-                  <I18n
+                  <i18n
                     tag="div"
                     path="create_account.premium.premium_question"
                   >
@@ -163,7 +163,7 @@ const back = () => {
                         </ExternalLink>
                       </b>
                     </template>
-                  </I18n>
+                  </i18n>
                   <div class="d-flex mt-4 justify-center">
                     <VBtn
                       depressed

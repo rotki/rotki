@@ -42,7 +42,7 @@ const showTooltip = (item: HistoryEventsQueryData) => !!item.period;
     </template>
 
     <template #tooltip="{ item }">
-      <I18n
+      <i18n
         :path="
           item.period[0] === 0
             ? 'transactions.query_status_events.latest_period_end_date'
@@ -55,7 +55,7 @@ const showTooltip = (item: HistoryEventsQueryData) => !!item.period;
         <template #end>
           <DateDisplay :timestamp="item.period[1]" />
         </template>
-      </I18n>
+      </i18n>
     </template>
   </QueryStatusDialog>
 </template>

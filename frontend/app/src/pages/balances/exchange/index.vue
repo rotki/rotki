@@ -214,14 +214,14 @@ const { xl, mdAndUp } = useDisplay();
     </VRow>
     <VRow v-else class="px-4 py-8">
       <VCol>
-        <I18n path="exchange_balances.no_connected_exchanges">
+        <i18n path="exchange_balances.no_connected_exchanges">
           <InternalLink
             :to="Routes.API_KEYS_EXCHANGES"
             class="module-not-active__link font-weight-regular text-body-1 text-decoration-none"
           >
             {{ t('exchange_balances.click_here') }}
           </InternalLink>
-        </I18n>
+        </i18n>
       </VCol>
     </VRow>
   </Card>

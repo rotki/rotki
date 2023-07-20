@@ -96,7 +96,7 @@ const regenerateReport = async () => {
   <VContainer v-else>
     <ReportHeader :period="report" />
     <Card v-if="showUpgradeMessage" class="mt-4 mb-8">
-      <I18n tag="div" path="profit_loss_report.upgrade" class="text-subtitle-1">
+      <i18n tag="div" path="profit_loss_report.upgrade" class="text-subtitle-1">
         <template #processed>
           <span class="font-weight-medium">{{ report.entriesFound }}</span>
         </template>
@@ -106,15 +106,15 @@ const regenerateReport = async () => {
             class="font-weight-medium"
           />
         </template>
-      </I18n>
-      <I18n tag="div" path="profit_loss_report.upgrade2">
+      </i18n>
+      <i18n tag="div" path="profit_loss_report.upgrade2">
         <template #link>
           <BaseExternalLink
             :text="t('upgrade_row.rotki_premium')"
             :href="premiumURL"
           />
         </template>
-      </I18n>
+      </i18n>
     </Card>
     <AccountingSettingsDisplay
       :accounting-settings="settings"

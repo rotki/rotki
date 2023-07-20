@@ -189,13 +189,13 @@ const css = useCssModule();
         </div>
       </VList>
       <div v-else class="pa-4">
-        <I18n path="table_filter.saved_filters.empty">
+        <i18n path="table_filter.saved_filters.empty">
           <template #button>
             <VBtn icon fab disabled small>
               <VIcon>mdi-content-save-plus</VIcon>
             </VBtn>
           </template>
-        </I18n>
+        </i18n>
       </div>
     </VMenu>
   </div>
