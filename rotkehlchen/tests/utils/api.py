@@ -40,7 +40,7 @@ def create_api_server(
 ) -> APIServer:
     api_server = APIServer(RestAPI(rotkehlchen=rotki), rotki.rotki_notifier)
 
-    api_server.flask_app.config['SERVER_NAME'] = f'localhost:{rest_port_number}'
+    api_server.flask_app.config['SERVER_NAME'] = f'127.0.0.1:{rest_port_number}'
     api_server.start(
         host='127.0.0.1',
         rest_port=rest_port_number,

@@ -24,6 +24,14 @@ jobs:
       test_environment: nightly
     secrets: inherit
 
+  windows:
+    uses: ./.github/workflows/task_backend_tests.yml
+    if: ${{ always() }}
+    with:
+      os: windows-latest
+      test_environment: nightly
+    secrets: inherit
+
   e2e:
     uses: ./.github/workflows/task_e2e_tests.yml
     if: ${{ always() }}
