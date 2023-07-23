@@ -1,4 +1,4 @@
-import os
+from unittest import mock
 
 import pytest
 
@@ -51,15 +51,14 @@ def test_initializing_exchanges(uninitialized_rotkehlchen):
     assert all(location in rotki.exchange_manager.connected_exchanges for location in SUPPORTED_EXCHANGES)  # noqa: E501
 
 
-def test_initializing_rotki_with_datadir_with_wrong_permissions(cli_args, data_dir):
-    os.chmod(data_dir, 0o200)
+@mock.patch('os.access')
+def test_initializing_rotki_with_datadir_with_wrong_permissions(mock_os_access, cli_args):
+    mock_os_access.return_value = False
     success = True
     try:
         with pytest.raises(SystemPermissionError):
             Rotkehlchen(args=cli_args)
     except Exception:  # pylint: disable=broad-except
         success = False
-    finally:
-        os.chmod(data_dir, 0o777)
 
     assert success is True

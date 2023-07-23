@@ -1,15 +1,17 @@
 import dataclasses
-import os
 import random
 import shutil
 from contextlib import ExitStack
 from http import HTTPStatus
 from pathlib import Path
 from typing import Any, Optional
+from unittest import mock
 
 import pytest
 import requests
 
+from pysqlcipher3 import dbapi2 as sqlcipher
+from rotkehlchen.api.server import APIServer
 from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType
 from rotkehlchen.db.settings import ROTKEHLCHEN_DB_VERSION, DBSettings
 from rotkehlchen.premium.premium import PremiumCredentials
@@ -47,7 +49,7 @@ def check_proper_unlock_result(
             assert response_data['settings'][setting_to_check] == value
 
 
-def check_user_status(api_server) -> dict[str, str]:
+def check_user_status(api_server: APIServer) -> dict[str, str]:
     # Check users status
     response = requests.get(
         api_url_for(api_server, 'usersresource'),
@@ -56,7 +58,7 @@ def check_user_status(api_server) -> dict[str, str]:
     return result
 
 
-def test_loggedin_user_querying(rotkehlchen_api_server, username, data_dir):
+def test_loggedin_user_querying(rotkehlchen_api_server: APIServer, username: str, data_dir: Path):
     """Start with a logged in user and make sure we can query all users"""
     Path(data_dir / 'another_user').mkdir()
     Path(data_dir / 'another_user' / 'rotkehlchen.db').touch()
@@ -68,7 +70,11 @@ def test_loggedin_user_querying(rotkehlchen_api_server, username, data_dir):
 
 
 @pytest.mark.parametrize('start_with_logged_in_user', [False])
-def test_not_loggedin_user_querying(rotkehlchen_api_server, username, data_dir):
+def test_not_loggedin_user_querying(
+        rotkehlchen_api_server: APIServer,
+        username: str,
+        data_dir: Path,
+):
     """Start without logged in user and make sure we can query all users"""
     Path(data_dir / 'another_user').mkdir()
     Path(data_dir / 'another_user' / 'rotkehlchen.db').touch()
@@ -144,9 +150,16 @@ def test_user_creation_with_no_analytics(rotkehlchen_api_server, data_dir):
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('start_with_logged_in_user', [False])
-def test_user_creation_permission_error(rotkehlchen_api_server, data_dir):
+@mock.patch.object(
+    Path, 'mkdir',
+    side_effect=PermissionError(
+        'Failed to create directory for user: [Errno 13] Permission denied',
+    ),
+)
+def test_user_creation_permission_error(
+        mock_path_mkdir, rotkehlchen_api_server,  # pylint:disable=unused-argument
+):
     """Test that creating a user when data directory permissions are wrong is handled"""
-    os.chmod(data_dir, 0o200)
     username = 'hania'
     data = {
         'name': username,
@@ -162,7 +175,6 @@ def test_user_creation_permission_error(rotkehlchen_api_server, data_dir):
             contained_in_msg='Failed to create directory for user: [Errno 13] Permission denied',
             status_code=HTTPStatus.CONFLICT,
         )
-    os.chmod(data_dir, 0o777)
 
 
 @pytest.mark.parametrize('start_with_logged_in_user', [False])
@@ -406,7 +418,10 @@ def test_user_creation_errors(rotkehlchen_api_server, data_dir):
         )
 
 
-def test_user_creation_with_already_loggedin_user(rotkehlchen_api_server, username):
+def test_user_creation_with_already_loggedin_user(
+        rotkehlchen_api_server: APIServer,
+        username: str,
+):
     """Test that creating a user while another one is logged in fails"""
     # Missing username
     data = {
@@ -761,7 +776,7 @@ def test_user_login(rotkehlchen_api_server, username, db_password, data_dir):
         )
 
 
-def test_user_set_premium_credentials(rotkehlchen_api_server, username):
+def test_user_set_premium_credentials(rotkehlchen_api_server: APIServer, username: str):
     """Test that setting the premium credentials endpoint works.
 
     We mock the server accepting the premium credentials
@@ -824,14 +839,16 @@ def test_user_del_premium_credentials(rotkehlchen_api_server, username):
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('start_with_logged_in_user', [False])
-def test_user_login_user_dir_permission_error(rotkehlchen_api_server, data_dir):
+@mock.patch.object(Path, 'exists', side_effect=PermissionError)
+def test_user_login_user_dir_permission_error(
+        mock_path_exists, rotkehlchen_api_server, data_dir,  # pylint: disable=unused-argument
+):
     """Test that user login with userdir path permission errors is handled properly"""
     username = 'a_user'
     user_dir = Path(data_dir / username)
     user_dir.mkdir()
     db_path = Path(data_dir / username / 'rotkehlchen.db')
     db_path.touch()
-    os.chmod(user_dir, 0o200)
     data = {'password': '123', 'sync_approval': 'unknown', 'async_query': True}
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
 
@@ -853,14 +870,18 @@ def test_user_login_user_dir_permission_error(rotkehlchen_api_server, data_dir):
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('start_with_logged_in_user', [False])
-def test_user_login_db_permission_error(rotkehlchen_api_server, data_dir):
+@mock.patch.object(
+    DBConnection, '__init__', side_effect=sqlcipher.OperationalError,  # pylint: disable=no-member
+)
+def test_user_login_db_permission_error(
+        mock_db_conn, rotkehlchen_api_server, data_dir,  # pylint: disable=unused-argument
+):
     """Test that user login with db path permission errors is handled properly"""
     username = 'a_user'
     user_dir = Path(data_dir / username)
     user_dir.mkdir()
     db_path = Path(data_dir / username / 'rotkehlchen.db')
     db_path.touch()
-    os.chmod(db_path, 0o200)
     data = {'password': '123', 'sync_approval': 'unknown', 'async_query': True}
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
 
@@ -878,10 +899,9 @@ def test_user_login_db_permission_error(rotkehlchen_api_server, data_dir):
         contained_in_msg='Could not open database file',
         status_code=HTTPStatus.CONFLICT,
     )
-    os.chmod(db_path, 0o777)
 
 
-def test_user_set_premium_credentials_errors(rotkehlchen_api_server, username):
+def test_user_set_premium_credentials_errors(rotkehlchen_api_server: APIServer, username: str):
     """Test that setting the premium credentials endpoint reacts properly to bad input"""
     # Set premium credentials for non-logged in user
     data = {'premium_api_key': 'dadssad', 'premium_api_secret': 'jhjhkh'}

@@ -9,6 +9,7 @@ import pytest
 import requests
 
 from rotkehlchen.accounting.structures.balance import BalanceType
+from rotkehlchen.api.server import APIServer
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
@@ -21,7 +22,7 @@ from rotkehlchen.constants.resolver import (
     strethaddress_to_identifier,
 )
 from rotkehlchen.fval import FVal
-from rotkehlchen.globaldb.handler import GLOBAL_DB_VERSION
+from rotkehlchen.globaldb.handler import GLOBAL_DB_VERSION, GlobalDBHandler
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -875,7 +876,11 @@ def test_replace_asset_edge_cases(rotkehlchen_api_server, globaldb):
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('start_with_logged_in_user', [True])
 @pytest.mark.parametrize('with_custom_path', [False, True])
-def test_exporting_user_assets_list(rotkehlchen_api_server, globaldb, with_custom_path):
+def test_exporting_user_assets_list(
+        rotkehlchen_api_server: APIServer,
+        globaldb: GlobalDBHandler,
+        with_custom_path: bool,
+):
     """Test that the endpoint for exporting user assets works correctly"""
     eth_address = make_evm_address()
     identifier = ethaddress_to_identifier(eth_address)
@@ -889,7 +894,9 @@ def test_exporting_user_assets_list(rotkehlchen_api_server, globaldb, with_custo
         coingecko='YAB',
         cryptocompare='YAB',
     ))
-    with tempfile.TemporaryDirectory() as path:
+    with tempfile.TemporaryDirectory(
+            ignore_cleanup_errors=True,  # needed on windows, see https://tinyurl.com/tmp-win-err
+    ) as path:
         if with_custom_path:
             response = requests.put(
                 api_url_for(
@@ -952,7 +959,11 @@ def test_exporting_user_assets_list(rotkehlchen_api_server, globaldb, with_custo
 @pytest.mark.parametrize('start_with_logged_in_user', [True])
 @pytest.mark.parametrize('method', ['post', 'put'])
 @pytest.mark.parametrize('file_type', ['zip', 'json'])
-def test_importing_user_assets_list(rotkehlchen_api_server, method, file_type):
+def test_importing_user_assets_list(
+        rotkehlchen_api_server: APIServer,
+        method: str,
+        file_type: str,
+):
     """Test that the endpoint for importing user assets works correctly"""
     dir_path = Path(__file__).resolve().parent.parent
     if file_type == 'zip':

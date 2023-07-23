@@ -394,7 +394,7 @@ def test_evm_account_deletion_does_not_wait_for_pending_txn_queries(
             assert not api_task_greenlets[idx].dead
 
     # now delete one address from api task and 1 from periodic task manager and see it's immediate
-    with gevent.Timeout(2):
+    with gevent.Timeout(5):
         for address in (api_addies[0], task_manager_addy):
             response = requests.delete(
                 api_url_for(

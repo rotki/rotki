@@ -749,7 +749,9 @@ def test_symbol_or_name(database):
 def test_load_from_packaged_db(globaldb: GlobalDBHandler):
     """Test that connecting to the packaged globaldb doesn't try to write into it."""
     packaged_db_path = Path(__file__).resolve().parent.parent.parent / 'data' / 'global.db'
-    with TemporaryDirectory() as tmpdirname:
+    with TemporaryDirectory(
+            ignore_cleanup_errors=True,  # needed on windows, see https://tinyurl.com/tmp-win-err
+    ) as tmpdirname:
         # Create a copy of the global db in a temp file
         dest_file = Path(tmpdirname) / 'data' / 'global.db'
         os.makedirs(dest_file.parent, exist_ok=True)
