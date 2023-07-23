@@ -33,7 +33,7 @@ def test_query_async_tasks(rotkehlchen_api_server_with_exchanges):
 
     binance_patch = patch.object(binance.session, 'get', side_effect=mock_binance_balance_response)
 
-    # Check querying the async taks resource when no async task is scheduled
+    # Check querying the async task resource when no async task is scheduled
     response = requests.get(api_url_for(server, 'asynctasksresource'))
     result = assert_proper_response_with_result(response)
     assert result == {'completed': [], 'pending': []}

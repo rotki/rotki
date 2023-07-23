@@ -297,7 +297,7 @@ def test_query_eth2_deposits_details_and_stats(rotkehlchen_api_server, ethereum_
 def test_eth2_add_eth1_account(rotkehlchen_api_server):
     """This test uses real data and tests that adding an ETH1 address with
     ETH2 deposits properly detects validators"""
-    new_account = '0xa966B0eabCD717fa28Bd165F1cE160E7057FA369'
+    new_account = '0xa966B0eabCD717fa28Bd165F1cE160E7057FA369'  # exited
     async_query = random.choice([False, True])
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     setup = setup_balances(
