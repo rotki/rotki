@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Doing multiple simultaneous filter asset searches no longer results in Global DB locked error.
 * :bug:`-` Removing an evm address will no longer affect metadata such as detected tokens of the address if it is also tracked for another evm chain.
 * :bug:`-` DSR balances that are held via a proxy contract will no longer appear duplicated under some specific circumstances.
 * :bug:`-` Fix issue where users cannot add non EVM asset.
