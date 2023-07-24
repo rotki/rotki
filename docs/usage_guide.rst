@@ -421,6 +421,17 @@ The method that should be used during the profit and loss execution to calculate
 
 .. _ledger_action_settings:
 
+Include fees in cost basis
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+A setting to determine whether trade fees should be included into the cost basis of the asset sold/bought or not. By default it's ``True``.
+
+
+- ``True``:  The fee event just reduces the amount of the fee asset paid and nothing else. The actual fee is used to determine the cost basis of the asset sold/bought instead. So if say you bought 1 ETH for 10 EUR and paid 1 EUR fee, then the cost basis of that ETH is 11 EUR. This is where the fee is taken into account.
+
+- ``False``: The above does not happen. So if say you bought 1 ETH for 10 EUR and paid 1 EUR fee, then the cost basis of that ETH is 10 EUR. But at the time of  the trade you also have a spend event of 1 EUR as fee.
+
+
 Ledger action settings
 -----------------------
 
