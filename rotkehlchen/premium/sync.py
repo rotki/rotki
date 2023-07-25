@@ -242,8 +242,10 @@ class PremiumSyncManager:
         premium API keys and we failed. But a directory was created. Remove it.
         But create a backup of it in case something went really wrong
         and the directory contained data we did not want to lose"""
+        user_data_dir = self.data.user_data_dir
+        self.data.logout()  # wipes self.data.user_data_dir, so store it
         shutil.move(
-            self.data.user_data_dir,  # type: ignore
+            user_data_dir,  # type: ignore
             self.data.data_directory / f'auto_backup_{username}_{ts_now()}',
         )
         raise PremiumAuthenticationError(
