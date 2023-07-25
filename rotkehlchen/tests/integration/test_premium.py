@@ -1,4 +1,3 @@
-import base64
 from base64 import b64decode
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -33,9 +32,9 @@ if TYPE_CHECKING:
 
 @pytest.fixture(name='premium_remote_data')
 def fixture_load_remote_premium_data() -> bytes:
-    remote_db_path = Path(__file__).resolve().parent.parent / 'data' / 'remote_encrypted_db.txt'  # noqa: E501
+    remote_db_path = Path(__file__).resolve().parent.parent / 'data' / 'remote_encrypted_db.bin'  # noqa: E501
     with open(remote_db_path, 'rb') as f:
-        return base64.b64decode(f.read())
+        return f.read()
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
@@ -75,7 +74,7 @@ def test_upload_data_to_server(
         assert data['original_hash'] == our_hash
         assert data['last_modify_ts'] == last_write_ts
         assert 'index' in data
-        assert len(files['db_file'].read()) == data['length']
+        assert len(files['db_file']) == data['length']
         assert 'nonce' in data
         assert data['compression'] == 'zlib'
 
@@ -99,10 +98,9 @@ def test_upload_data_to_server(
     with rotkehlchen_instance.data.db.conn.read_ctx() as cursor:
         assert rotkehlchen_instance.data.db.get_setting(cursor, name='last_data_upload_ts') == 0
 
-    assert rotkehlchen_instance.task_manager is not None
     now = ts_now()
     with patched_get, patched_put:
-        tasks = rotkehlchen_instance.task_manager._maybe_schedule_db_upload()
+        tasks = rotkehlchen_instance.task_manager._maybe_schedule_db_upload()  # type: ignore[union-attr]  # task_manager can't be none here  # noqa: E501
         if tasks is not None:
             gevent.wait(tasks)
 
@@ -256,8 +254,8 @@ def test_try_premium_at_start_new_account_pull_old_data(
 
     For a new account
     """
-    with open(Path(__file__).resolve().parent.parent / 'data' / 'remote_old_encrypted_db.txt', 'rb') as f:  # noqa: E501
-        remote_data = base64.b64decode(f.read())
+    with open(Path(__file__).resolve().parent.parent / 'data' / 'remote_old_encrypted_db.bin', 'rb') as f:  # noqa: E501
+        remote_data = f.read()
 
     setup_starting_environment(
         rotkehlchen_instance=rotkehlchen_instance,
@@ -303,8 +301,8 @@ def test_try_premium_at_start_old_account_can_pull_old_data(
 
     For an old account
     """
-    with open(Path(__file__).resolve().parent.parent / 'data' / 'remote_encrypted_db.txt', 'rb') as f:  # noqa: E501
-        remote_data = base64.b64decode(f.read())
+    with open(Path(__file__).resolve().parent.parent / 'data' / 'remote_encrypted_db.bin', 'rb') as f:  # noqa: E501
+        remote_data = f.read()
 
     setup_starting_environment(
         rotkehlchen_instance=rotkehlchen_instance,

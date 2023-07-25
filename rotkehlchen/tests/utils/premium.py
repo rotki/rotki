@@ -37,8 +37,8 @@ def mock_query_last_metadata(last_modify_ts, data_hash, data_size):
     return do_mock_query_last_metadata
 
 
-def mock_get_saved_data(saved_data: Optional[bytes]):
-    def do_mock_get_saved_data(url, timeout, params, data=None):  # pylint: disable=unused-argument
+def mock_get_backup(saved_data: Optional[bytes]):
+    def do_mock_get_backup(url, timeout, params, data=None):  # pylint: disable=unused-argument
         if data is not None:
             assert len(data) == 1
             assert 'nonce' in data
@@ -47,7 +47,7 @@ def mock_get_saved_data(saved_data: Optional[bytes]):
         status_code = HTTPStatus.OK if decoded_data is not None else HTTPStatus.NOT_FOUND
         return MockResponse(status_code, text='', content=decoded_data)
 
-    return do_mock_get_saved_data
+    return do_mock_get_backup
 
 
 def create_patched_requests_get_for_premium(
@@ -76,7 +76,7 @@ def create_patched_requests_get_for_premium(
                 data_size=metadata_data_size,
             )
         elif 'backup' in url:
-            implementation = mock_get_saved_data(saved_data=saved_data)
+            implementation = mock_get_backup(saved_data=saved_data)
         else:
             raise ValueError('Unmocked url in session get for premium')
 
