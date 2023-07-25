@@ -106,9 +106,8 @@ const { t } = useI18n();
         </VCol>
       </VCol>
     </VRow>
-    <template #options>
+    <template v-if="headless" #options>
       <VCheckbox
-        v-if="headless"
         v-model="skipUpdate"
         dense
         :label="t('asset_update.skip_notification')"

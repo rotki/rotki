@@ -25,32 +25,24 @@ const rootAttrs = useAttrs();
 const rootListeners = useListeners();
 
 const { contained } = toRefs(props);
-const body = ref<HTMLDivElement | null>(null);
-const actions = ref<HTMLDivElement | null>(null);
-const top = ref(206);
+const cardRef = ref<HTMLDivElement>();
+const bodyRef = ref<HTMLDivElement>();
+const actionsRef = ref<HTMLDivElement>();
 
-onMounted(() => {
-  setTimeout(() => {
-    set(top, get(body)?.getBoundingClientRect().top ?? 0);
-  }, 1000);
-});
+const { top: cardTop } = useElementBounding(cardRef);
+const { top: bodyTop } = useElementBounding(bodyRef);
+const { height: bottomHeight } = useElementBounding(actionsRef);
 
-const bodyStyle = computed(() => {
-  if (!get(contained)) {
-    return null;
-  }
-  const bodyTop = get(top);
-  const actionsHeight = get(actions)?.getBoundingClientRect().height ?? 0;
-  const diff = bodyTop + actionsHeight;
-
-  return {
-    height: `calc(100vh - ${diff}px)`
-  };
+const otherHeights = computed(() => {
+  const topHeight = get(bodyTop) - get(cardTop);
+  const totalHeight = topHeight + get(bottomHeight);
+  return `${totalHeight}px`;
 });
 </script>
 
 <template>
   <VCard
+    ref="cardRef"
     v-bind="rootAttrs"
     :flat="flat"
     :class="{
@@ -83,8 +75,7 @@ const bodyStyle = computed(() => {
       </div>
     </VCardSubtitle>
     <VCardText
-      ref="body"
-      :style="bodyStyle"
+      ref="bodyRef"
       :class="{
         [css.contained]: contained,
         [css['no-padding']]: noPadding
@@ -105,7 +96,7 @@ const bodyStyle = computed(() => {
         <slot name="options" />
       </div>
     </VCardText>
-    <VCardActions v-if="slots.buttons" ref="actions" :class="css.actions">
+    <VCardActions v-if="slots.buttons" ref="actionsRef" :class="css.actions">
       <slot name="buttons" />
     </VCardActions>
   </VCard>
@@ -126,7 +117,7 @@ const bodyStyle = computed(() => {
 }
 
 .contained {
-  max-height: calc(100vh - 206px);
+  height: calc(90vh - v-bind(otherHeights));
   overflow-y: scroll;
 }
 

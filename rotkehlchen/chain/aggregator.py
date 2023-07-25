@@ -16,6 +16,7 @@ from typing import (
     overload,
 )
 
+import requests
 from gevent.lock import Semaphore
 from web3.exceptions import BadFunctionCallOutput
 
@@ -161,6 +162,7 @@ DEFI_PROTOCOLS_TO_SKIP_ASSETS = {
     'Multi-Collateral Dai': True,  # True means all
     # We already got some pie dao tokens in the packaged DB
     'PieDAO': ['BCP', 'BTC++', 'DEFI++', 'DEFI+S', 'DEFI+L', 'YPIE'],
+    'Dai Savings Rate': True,
 }
 DEFI_PROTOCOLS_TO_SKIP_LIABILITIES = {
     'Multi-Collateral Dai': True,  # True means all
@@ -985,7 +987,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
 
                 eth_balances[dsr_account].assets[A_DAI] += balance_entry
 
-        # Also count the vault balance and defi saver wallets and add it to the totals
+        # Also count the vault balances
         vaults_module = self.get_module('makerdao_vaults')
         if vaults_module is not None:
             vault_balances = vaults_module.get_balances()
@@ -998,6 +1000,8 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                 else:
                     eth_balances[address] += entry
 
+        # If either DSR or vaults is open, count DSproxy balances
+        if vaults_module is not None or dsr_module is not None:
             proxy_mappings = self.ethereum.node_inquirer.proxies_inquirer.get_accounts_having_proxy()  # noqa: E501
             proxy_to_address = {}
             proxy_addresses = []
@@ -1028,7 +1032,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                 balances=eth_balances,
             )
 
-            # also query defi balances to get liabilities
+            # also query defi balances of proxies
             defi_balances_map = self.defichad.query_defi_balances(proxy_addresses)
             for proxy_address, defi_balances in defi_balances_map.items():
                 self._add_account_defi_balances_to_token(
@@ -1324,11 +1328,16 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             try:
                 if chain == SupportedBlockchain.AVALANCHE:
                     avax_manager = cast(AvalancheManager, chain_manager)
-                    # just check balance and nonce in avalanche
-                    has_activity = (
-                        avax_manager.w3.eth.get_transaction_count(address) != 0 or
-                        avax_manager.get_avax_balance(address) != ZERO
-                    )
+                    try:
+                        # just check balance and nonce in avalanche
+                        has_activity = (
+                            avax_manager.w3.eth.get_transaction_count(address) != 0 or
+                            avax_manager.get_avax_balance(address) != ZERO
+                        )
+                    except (requests.exceptions.RequestException, RemoteError) as e:
+                        log.error(f'Failed to check {address} activity in avalanche due to {e!s}')
+                        has_activity = False
+
                     if has_activity is False:
                         continue
                 else:

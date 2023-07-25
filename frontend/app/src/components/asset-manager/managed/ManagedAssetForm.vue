@@ -83,10 +83,10 @@ const v$ = setValidation(
     assetType: { required },
     evmChain: { externalServerValidation },
     address: {
-      required: requiredIf(get(isEvmToken)),
+      required: requiredIf(isEvmToken),
       isValid: helpers.withMessage(
         t('asset_form.validation.valid_address'),
-        isValidEthAddress
+        (v: string) => !get(isEvmToken) || isValidEthAddress(v)
       )
     },
     tokenKind: { externalServerValidation },
@@ -351,7 +351,7 @@ const { coingeckoContributeUrl, cryptocompareContributeUrl } = useInterop();
     </VRow>
     <VForm :value="valid" class="pt-2" @input="input($event)">
       <VRow>
-        <VCol cols="12">
+        <VCol cols="12" data-cy="type-select">
           <VSelect
             v-model="assetType"
             outlined
@@ -405,7 +405,7 @@ const { coingeckoContributeUrl, cryptocompareContributeUrl } = useInterop();
       </VRow>
 
       <VRow>
-        <VCol cols="12" md="6">
+        <VCol cols="12" md="6" data-cy="name-input">
           <VTextField
             v-model="name"
             outlined

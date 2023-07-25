@@ -91,9 +91,19 @@ const isDateOnLimit = (date: string): boolean => {
   }
 
   const now = dayjs();
-  const dateStringToDate = dayjs(
-    convertToTimestamp(date, get(dateInputFormat)) * 1000
-  );
+  let format: string = get(dateInputFormatInISO);
+  if (date.includes(' ')) {
+    format += ' HH:mm';
+    if (date.charAt(date.length - 6) === ':') {
+      format += ':ss';
+    }
+  }
+
+  const timezone = get(selectedTimezone);
+
+  const dateStringToDate = dayjs
+    .tz(date, format, timezone)
+    .tz(dayjs.tz.guess());
 
   return !dateStringToDate.isAfter(now);
 };
@@ -223,7 +233,7 @@ const emitIfValid = (value: string) => {
 };
 
 const setNow = () => {
-  const now = dayjs();
+  const now = dayjs().tz(get(selectedTimezone));
   const nowInString = now.format(get(dateTimeFormat));
   set(currentValue, nowInString);
   emitIfValid(nowInString);
@@ -258,39 +268,46 @@ const initImask = () => {
     ss: createBlock(0, 59)
   };
 
+  // Find every character '/', ':', ' ', and adds '`' character after it.
+  // It is used to prevent the character to shift back.
+  const convertPattern = (pattern: string) =>
+    pattern.replace(new RegExp(/[\s/:]/, 'g'), match => `${match}\``);
+
   const mask: AnyMaskedOptions[] = [
     {
-      mask: get(dateInputFormatInISO),
+      mask: convertPattern(get(dateInputFormatInISO)),
       blocks: {
         ...dateBlocks
       },
-      lazy: false
+      lazy: false,
+      overwrite: true
     },
     {
-      mask: get(completeDateTimeFormatVal),
+      mask: convertPattern(get(completeDateTimeFormatVal)),
       blocks: {
         ...dateBlocks,
         ...hourAndMinuteBlocks,
         ...secondBlocks
       },
-      lazy: false
+      lazy: false,
+      overwrite: true
     }
   ];
 
   if (!get(seconds)) {
     mask.splice(1, 0, {
-      mask: get(dateTimeFormat),
+      mask: convertPattern(get(dateTimeFormat)),
       blocks: {
         ...dateBlocks,
         ...hourAndMinuteBlocks
       },
-      lazy: false
+      lazy: false,
+      overwrite: true
     });
   }
 
   const newImask = IMask(input, {
-    mask,
-    lazy: false
+    mask
   });
 
   set(imask, newImask);
@@ -315,12 +332,6 @@ watch(
     }
   }
 );
-
-const inputted = (event: string) => {
-  nextTick(() => {
-    get(imask)!.value = event;
-  });
-};
 
 const focus = () => {
   const inputWrapper = get(inputField)!;
@@ -347,7 +358,6 @@ const focus = () => {
       :persistent-hint="persistentHint"
       :outlined="outlined"
       :error-messages="toMessages(v$.date)"
-      @input="inputted($event)"
       @focus="focus()"
     >
       <template #append>

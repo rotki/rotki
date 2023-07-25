@@ -35,6 +35,21 @@ describe('DateTimePicker.vue', () => {
     return mount(DateTimePicker, {
       pinia,
       vuetify,
+      stubs: {
+        VMenu: {
+          template: '<span><slot name="activator"/><slot /></span>'
+        },
+        VAutocomplete: {
+          template: `
+            <div>
+              <input :value="value" class="search-input" type="text" @input="$emit('input', $event.value)">
+            </div>
+          `,
+          props: {
+            value: { type: String }
+          }
+        }
+      },
       ...options
     });
   };
@@ -117,6 +132,10 @@ describe('DateTimePicker.vue', () => {
     await wrapper.find('input').setValue('12/12/2023');
     await wrapper.vm.$nextTick();
     expect(wrapper.find('.v-input.error--text').exists()).toBeTruthy();
+
+    await wrapper.find('input').setValue('12/12/2022');
+    await wrapper.vm.$nextTick();
+    expect(wrapper.find('.v-input.error--text').exists()).toBeFalsy();
   });
 
   test('should set now', async () => {
@@ -135,6 +154,10 @@ describe('DateTimePicker.vue', () => {
       .trigger('click');
 
     await wrapper.vm.$nextTick();
+
+    expect((wrapper.find('input').element as HTMLInputElement).value).toBe(
+      '01/01/2023 01:01:01'
+    );
     expect(wrapper.emitted().input?.[0]).toEqual(['01/01/2023 01:01:01']);
   });
 
@@ -149,53 +172,107 @@ describe('DateTimePicker.vue', () => {
     });
 
     await wrapper.vm.$nextTick();
-
     expect((wrapper.find('input').element as HTMLInputElement).value).toBe(
       '2021/12/12 12:12:12'
     );
 
-    await wrapper.find('input').setValue('2023/12/12 23:59:59');
+    await wrapper.find('input').setValue('2023/06/06 12:12:12');
+    await get(wrapper.vm._setupState.imask).updateValue();
     await wrapper.vm.$nextTick();
-    expect(wrapper.emitted().input?.[2]).toEqual(['12/12/2023 23:59:59']);
+
+    expect(wrapper.emitted().input?.[1]).toEqual(['06/06/2023 12:12:12']);
   });
 
-  test('should adjust the timezone', async () => {
-    wrapper = createWrapper({
-      stubs: {
-        VMenu: {
-          template: '<span><slot name="activator"/><slot /></span>'
-        },
-        VAutocomplete: {
-          template: `
-            <div>
-              <input :value="value" class="search-input" type="text" @input="$emit('input', $event.value)">
-            </div>
-          `,
-          props: {
-            value: { type: String }
-          }
+  describe('should adjust the timezone', () => {
+    it('should render and emit the value correctly', async () => {
+      wrapper = createWrapper({
+        propsData: {
+          value: '12/12/2021 12:12:12'
         }
-      },
-      propsData: {
-        value: '12/12/2021 12:12:12'
-      }
+      });
+
+      await wrapper.vm.$nextTick();
+      expect((wrapper.find('input').element as HTMLInputElement).value).toBe(
+        '12/12/2021 12:12:12'
+      );
+
+      await wrapper
+        .find('.search-input')
+        .trigger('input', { value: 'Etc/GMT-7' });
+      await wrapper.vm.$nextTick();
+      expect((wrapper.find('input').element as HTMLInputElement).value).toBe(
+        '12/12/2021 19:12:12'
+      );
+
+      await wrapper.find('input').setValue('12/12/2021 23:59:59');
+
+      await get(wrapper.vm._setupState.imask).updateValue();
+      await wrapper.vm.$nextTick();
+
+      expect(wrapper.emitted().input?.[2]).toEqual(['12/12/2021 16:59:59']);
     });
 
-    await wrapper.vm.$nextTick();
-    expect((wrapper.find('input').element as HTMLInputElement).value).toBe(
-      '12/12/2021 12:12:12'
-    );
+    it('should not allow future datetime', async () => {
+      const date = new Date(2023, 0, 1, 0, 0, 0);
 
-    await wrapper
-      .find('.search-input')
-      .trigger('input', { value: 'Asia/Jakarta' });
-    await wrapper.vm.$nextTick();
-    expect((wrapper.find('input').element as HTMLInputElement).value).toBe(
-      '12/12/2021 19:12:12'
-    );
+      vi.useFakeTimers();
+      vi.setSystemTime(date);
 
-    await wrapper.find('input').setValue('12/12/2021 23:59:59');
-    await wrapper.vm.$nextTick();
-    expect(wrapper.emitted().input?.[2]).toEqual(['12/12/2021 16:59:59']);
+      wrapper = createWrapper({
+        propsData: { limitNow: true }
+      });
+      await wrapper.vm.$nextTick();
+
+      await wrapper
+        .find('.search-input')
+        .trigger('input', { value: 'Etc/GMT-1' });
+      await wrapper.vm.$nextTick();
+
+      await wrapper.find('input').setValue('01/01/2023 00:00:00');
+
+      await get(wrapper.vm._setupState.imask).updateValue();
+      await wrapper.vm.$nextTick();
+      expect(wrapper.find('.v-input.error--text').exists()).toBeFalsy();
+
+      await wrapper.find('input').setValue('01/01/2023 00:59:59');
+
+      await get(wrapper.vm._setupState.imask).updateValue();
+      await wrapper.vm.$nextTick();
+      expect(wrapper.find('.v-input.error--text').exists()).toBeFalsy();
+
+      await wrapper.find('input').setValue('01/01/2023 01:00:01');
+
+      await get(wrapper.vm._setupState.imask).updateValue();
+      await wrapper.vm.$nextTick();
+      expect(wrapper.find('.v-input.error--text').exists()).toBeTruthy();
+    });
+
+    it('should not allow future datetime', async () => {
+      const date = new Date(2023, 0, 1, 5, 5, 5);
+
+      vi.useFakeTimers();
+      vi.setSystemTime(date);
+
+      wrapper = createWrapper({
+        propsData: { limitNow: true, seconds: true }
+      });
+      await wrapper.vm.$nextTick();
+
+      await wrapper
+        .find('.search-input')
+        .trigger('input', { value: 'Etc/GMT-1' });
+      await wrapper.vm.$nextTick();
+
+      await wrapper
+        .find('[data-cy=date-time-picker__set-now-button]')
+        .trigger('click');
+
+      await wrapper.vm.$nextTick();
+
+      expect((wrapper.find('input').element as HTMLInputElement).value).toBe(
+        '01/01/2023 06:05:05'
+      );
+      expect(wrapper.emitted().input?.[0]).toEqual(['01/01/2023 05:05:05']);
+    });
   });
 });

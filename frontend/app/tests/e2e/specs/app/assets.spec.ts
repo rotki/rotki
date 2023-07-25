@@ -45,7 +45,6 @@ describe('assets', () => {
 
     it('remove an ignored asset, and confirm count decreased by one', () => {
       page.removeIgnoredAsset('1SG');
-      // @ts-ignore
       page.ignoredAssetCount(ignoredAssets + 2);
     });
   });
@@ -59,16 +58,22 @@ describe('assets', () => {
       page.showAddAssetModal();
     });
 
-    it('adds a single managed asset', () => {
-      page.addAsset('SYMBOL 1');
+    it('adds an EVM asset', () => {
+      page.addAnEvmAsset();
+    });
+
+    it('adds an non EVM asset', () => {
+      page.showAddAssetModal();
+      page.addOtherAsset();
     });
 
     it('edit an asset', () => {
-      page.editAsset();
+      page.editEvmAsset();
     });
 
-    it('should delete an asset', () => {
-      page.deleteAsset();
+    it('should delete the assets', () => {
+      page.deleteAnEvmAsset();
+      page.deleteOtherAsset();
     });
   });
 });
