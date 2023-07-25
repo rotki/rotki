@@ -137,7 +137,7 @@ class Premium:
         self.status = SubscriptionStatus.UNKNOWN
         self.session = requests.session()
         self.apiversion = '1'
-        self.rotki_base_url = 'https://staging.rotki.com'
+        self.rotki_base_url = 'https://rotki.com'
         self.rotki_api = f'{self.rotki_base_url}/api/{self.apiversion}/'
         self.rotki_nest = f'{self.rotki_base_url}/nest/'
         self.reset_credentials(credentials)
@@ -242,7 +242,7 @@ class Premium:
                 self.rotki_nest + '1/backup',
                 data=data,
                 files={'db_file': tmp_file},
-                timeout=ROTKEHLCHEN_SERVER_TIMEOUT * 10,
+                timeout=ROTKEHLCHEN_SERVER_TIMEOUT * 30,
             )
         except requests.exceptions.RequestException as e:
             msg = f'Could not connect to rotki server due to {e!s}'
@@ -270,7 +270,7 @@ class Premium:
             response = self.session.get(
                 self.rotki_nest + '1/backup',
                 params=data,
-                timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
+                timeout=ROTKEHLCHEN_SERVER_TIMEOUT * 30,
             )
         except requests.exceptions.RequestException as e:
             msg = f'Could not connect to rotki server due to {e!s}'
