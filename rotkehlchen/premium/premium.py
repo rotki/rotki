@@ -1,7 +1,6 @@
 import base64
 import hashlib
 import hmac
-import io
 import logging
 import time
 from base64 import b64decode, b64encode
@@ -14,6 +13,7 @@ from urllib.parse import urlencode
 import requests
 
 from rotkehlchen.constants import ROTKEHLCHEN_SERVER_TIMEOUT
+from rotkehlchen.constants.timing import ROTKEHLCHEN_SERVER_BACKUP_TIMEOUT
 from rotkehlchen.errors.api import (
     IncorrectApiKeyFormat,
     PremiumApiError,
@@ -137,9 +137,8 @@ class Premium:
         self.status = SubscriptionStatus.UNKNOWN
         self.session = requests.session()
         self.apiversion = '1'
-        self.rotki_base_url = 'https://rotki.com'
-        self.rotki_api = f'{self.rotki_base_url}/api/{self.apiversion}/'
-        self.rotki_nest = f'{self.rotki_base_url}/nest/'
+        self.rotki_api = f'https://rotki.com/api/{self.apiversion}/'
+        self.rotki_nest = f'https://rotki.com/nest/{self.apiversion}/'
         self.reset_credentials(credentials)
 
     def reset_credentials(self, credentials: PremiumCredentials) -> None:
@@ -197,7 +196,8 @@ class Premium:
         post_data = urlencode(req)
         hashable = post_data.encode()
         if method == 'backup':
-            # nest uses hex for the backup
+            # nest uses hex for generating the signature since digest returns a string with the \x
+            # format in python.
             message = urlpath.encode() + hashlib.sha256(hashable).digest().hex().encode()
         else:
             message = urlpath.encode() + hashlib.sha256(hashable).digest()
@@ -215,7 +215,8 @@ class Premium:
             last_modify_ts: Timestamp,
             compression_type: Literal['zlib'],
     ) -> dict:
-        """Uploads data to the server and returns the response dict
+        """Uploads data to the server and returns the response dict. We upload the encrypted
+        database as a file in an http form.
 
         May raise:
         - RemoteError if there are problems reaching the server or if
@@ -234,15 +235,12 @@ class Premium:
             'API-SIGN': base64.b64encode(signature.digest()),
         })
 
-        tmp_file = io.BytesIO()
-        tmp_file.write(data_blob)
-        tmp_file.seek(0)
         try:
             response = self.session.post(
-                self.rotki_nest + '1/backup',
+                self.rotki_nest + 'backup',
                 data=data,
-                files={'db_file': tmp_file},
-                timeout=ROTKEHLCHEN_SERVER_TIMEOUT * 30,
+                files={'db_file': data_blob},
+                timeout=ROTKEHLCHEN_SERVER_BACKUP_TIMEOUT,
             )
         except requests.exceptions.RequestException as e:
             msg = f'Could not connect to rotki server due to {e!s}'
@@ -252,7 +250,7 @@ class Premium:
         return _process_dict_response(response)
 
     def pull_data(self) -> Optional[bytes]:
-        """Pulls data from the server and returns the response dict
+        """Pulls data from the server and returns the binary file with the database encrypted
 
         Returns None if there is no DB saved in the server.
 
@@ -268,9 +266,9 @@ class Premium:
 
         try:
             response = self.session.get(
-                self.rotki_nest + '1/backup',
+                self.rotki_nest + 'backup',
                 params=data,
-                timeout=ROTKEHLCHEN_SERVER_TIMEOUT * 30,
+                timeout=ROTKEHLCHEN_SERVER_BACKUP_TIMEOUT,
             )
         except requests.exceptions.RequestException as e:
             msg = f'Could not connect to rotki server due to {e!s}'
@@ -281,6 +279,7 @@ class Premium:
             msg = 'Could not connect to rotki server.'
             log.error(f'{msg} due to {response.text}')
             raise RemoteError(msg)
+
         if response.status_code == HTTPStatus.NOT_FOUND:
             return None
 
