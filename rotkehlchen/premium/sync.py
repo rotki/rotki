@@ -115,6 +115,8 @@ class PremiumSyncManager:
         try:
             self.data.decompress_and_decrypt_db(result['data'])
         except UnableToDecryptRemoteData as e:
+            self.data.db.disconnect()
+            self.data.db.disconnect(conn_attribute='conn_transient')
             raise PremiumAuthenticationError(
                 'The given password can not unlock the database that was retrieved  from '
                 'the server. Make sure to use the same password as when the account was created.',
@@ -254,8 +256,10 @@ class PremiumSyncManager:
         premium API keys and we failed. But a directory was created. Remove it.
         But create a backup of it in case something went really wrong
         and the directory contained data we did not want to lose"""
+        user_data_dir = self.data.user_data_dir
+        self.data.db.logout()  # wipes self.data.user_data_dir
         shutil.move(
-            self.data.user_data_dir,  # type: ignore
+            user_data_dir,  # type: ignore
             self.data.data_directory / f'auto_backup_{username}_{ts_now()}',
         )
         raise PremiumAuthenticationError(
