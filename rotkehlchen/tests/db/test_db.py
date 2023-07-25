@@ -1,10 +1,10 @@
-import base64
 import dataclasses
 import logging
 import os
 import time
 from contextlib import suppress
 from copy import deepcopy
+from pathlib import Path
 from unittest.mock import patch
 
 import pytest
@@ -263,7 +263,7 @@ def test_add_remove_exchange(user_data_dir, sql_vm_instructions_cb):
     assert binance.api_secret == binance_api_secret
 
 
-def test_export_import_db(data_dir, username, sql_vm_instructions_cb):
+def test_export_import_db(data_dir: Path, username: str, sql_vm_instructions_cb: int) -> None:
     """Create a DB, write some data and then after export/import confirm it's there"""
     msg_aggregator = MessagesAggregator()
     data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)
@@ -282,7 +282,7 @@ def test_export_import_db(data_dir, username, sql_vm_instructions_cb):
 
     encoded_data, _ = data.compress_and_encrypt_db()
     # The server would return them decoded
-    data.decompress_and_decrypt_db(base64.b64decode(encoded_data))
+    data.decompress_and_decrypt_db(encoded_data)
     with data.db.user_write() as cursor:
         balances = data.db.get_manually_tracked_balances(cursor)
     assert balances == [starting_balance]
