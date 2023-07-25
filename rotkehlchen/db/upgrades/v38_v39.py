@@ -12,6 +12,14 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
+DEFAULT_ARBITRUM_ONE_NODES_AT_V39 = [
+    ('arbitrum one etherscan', '', 0, 1, '0.28', 'ARBITRUM_ONE'),
+    ('arbitrum one ankr', 'https://rpc.ankr.com/arbitrum', 0, 1, '0.18', 'ARBITRUM_ONE'),
+    ('arbitrum one BlockPi', 'https://arbitrum.blockpi.network/v1/rpc/public', 0, 1, '0.18', 'ARBITRUM_ONE'),  # noqa: E501
+    ('arbitrum one PublicNode', 'https://arbitrum-one.publicnode.com', 0, 1, '0.18', 'ARBITRUM_ONE'),  # noqa: E501
+    ('arbitrum one 1rpc', 'https://1rpc.io/arb', 0, 1, '0.18', 'ARBITRUM_ONE'),
+]
+
 
 def _update_nfts_table(write_cursor: 'DBCursor') -> None:
     """
@@ -237,14 +245,26 @@ def _update_evm_transaction_data(write_cursor: 'DBCursor') -> None:
     log.debug('Exit _update_evm_transaction_data')
 
 
+def _add_arbitrum_one_location_and_nodes(write_cursor: 'DBCursor') -> None:
+    log.debug('Enter _add_arbitrum_one_location_and_nodes')
+    write_cursor.execute('INSERT OR IGNORE INTO location(location, seq) VALUES ("i", 41);')
+    write_cursor.executemany(
+        'INSERT INTO rpc_nodes(name, endpoint, owned, active, weight, blockchain) '
+        'VALUES (?, ?, ?, ?, ?, ?)',
+        DEFAULT_ARBITRUM_ONE_NODES_AT_V39,
+    )
+    log.debug('Exit _add_arbitrum_one_location_and_nodes')
+
+
 def upgrade_v38_to_v39(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
     """Upgrades the DB from v38 to v39. This was in v1.30.0 release.
         - Update NFT table to not use double quotes
         - Reduce size of some event identifiers
         - Primary key of evm tx tables becomes unique integer
+        - Add Arbitrum One location and nodes
     """
     log.debug('Entered userdb v38->v39 upgrade')
-    progress_handler.set_total_steps(5)
+    progress_handler.set_total_steps(6)
     with db.user_write() as write_cursor:
         _update_nfts_table(write_cursor)
         progress_handler.new_step()
@@ -253,6 +273,8 @@ def upgrade_v38_to_v39(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         _create_new_tables(write_cursor)
         progress_handler.new_step()
         _update_evm_transaction_data(write_cursor)
+        progress_handler.new_step()
+        _add_arbitrum_one_location_and_nodes(write_cursor)
         progress_handler.new_step()
 
     db.conn.execute('VACUUM;')

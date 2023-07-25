@@ -7,6 +7,8 @@ import pytest
 
 from rotkehlchen.chain.accounts import BlockchainAccounts
 from rotkehlchen.chain.aggregator import ChainsAggregator
+from rotkehlchen.chain.arbitrum_one.manager import ArbitrumOneManager
+from rotkehlchen.chain.arbitrum_one.node_inquirer import ArbitrumOneInquirer
 from rotkehlchen.chain.avalanche.manager import AvalancheManager
 from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
 from rotkehlchen.chain.ethereum.manager import EthereumManager
@@ -59,6 +61,8 @@ def _initialize_and_yield_evm_inquirer_fixture(
         blockchain = SupportedBlockchain.OPTIMISM
     elif klass == PolygonPOSInquirer:
         blockchain = SupportedBlockchain.POLYGON_POS
+    elif klass == ArbitrumOneInquirer:
+        blockchain = SupportedBlockchain.ARBITRUM_ONE
 
     if isinstance(manager_connect_at_start, str):
         assert manager_connect_at_start == 'DEFAULT'
@@ -122,6 +126,11 @@ def fixture_polygon_pos_accounts() -> list[ChecksumEvmAddress]:
     return []
 
 
+@pytest.fixture(name='arbitrum_one_accounts')
+def fixture_arbitrum_one_accounts() -> list[ChecksumEvmAddress]:
+    return []
+
+
 @pytest.fixture(name='btc_accounts')
 def fixture_btc_accounts() -> list[BTCAddress]:
     return []
@@ -162,6 +171,7 @@ def fixture_blockchain_accounts(
         ethereum_accounts: list[ChecksumEvmAddress],
         optimism_accounts: list[ChecksumEvmAddress],
         polygon_pos_accounts: list[ChecksumEvmAddress],
+        arbitrum_one_accounts: list[ChecksumEvmAddress],
         avax_accounts: list[ChecksumEvmAddress],
         btc_accounts: list[BTCAddress],
         bch_accounts: list[BTCAddress],
@@ -172,6 +182,7 @@ def fixture_blockchain_accounts(
         eth=tuple(ethereum_accounts),
         optimism=tuple(optimism_accounts),
         polygon_pos=tuple(polygon_pos_accounts),
+        arbitrum_one=tuple(arbitrum_one_accounts),
         avax=tuple(avax_accounts),
         btc=tuple(btc_accounts),
         bch=tuple(bch_accounts),
@@ -396,6 +407,43 @@ def fixture_polygon_pos_manager(polygon_pos_inquirer):
     return PolygonPOSManager(node_inquirer=polygon_pos_inquirer)
 
 
+@pytest.fixture(name='arbitrum_one_manager_connect_at_start')
+def fixture_arbitrum_one_manager_connect_at_start() -> Union[Literal['DEFAULT'], Sequence[NodeName]]:  # noqa: E501
+    """A sequence of nodes to connect to at the start of the test.
+
+    Can be either a sequence of nodes to connect to for this chain.
+    Or an empty sequence to connect to no nodes for this chain.
+    Or the DEFAULT string literal meaning to connect to the built-in default nodes.
+    """
+    return ()
+
+
+@pytest.fixture(name='arbitrum_one_inquirer')
+def fixture_arbitrum_one_inquirer(
+        arbitrum_one_manager_connect_at_start,
+        greenlet_manager,
+        database,
+        mock_other_web3,
+):
+    with ExitStack() as stack:
+        yield _initialize_and_yield_evm_inquirer_fixture(
+            parent_stack=stack,
+            klass=ArbitrumOneInquirer,
+            class_path='rotkehlchen.chain.arbitrum_one.node_inquirer.ArbitrumOneInquirer',
+            manager_connect_at_start=arbitrum_one_manager_connect_at_start,
+            greenlet_manager=greenlet_manager,
+            database=database,
+            mock_other_web3=mock_other_web3,
+            mock_data={},  # Not used in arbitrum. TODO: remove it for all other chains too since we now have vcr  # noqa: E501
+            mocked_proxies=None,
+        )
+
+
+@pytest.fixture(name='arbitrum_one_manager')
+def fixture_arbitrum_one_manager(arbitrum_one_inquirer):
+    return ArbitrumOneManager(node_inquirer=arbitrum_one_inquirer)
+
+
 @pytest.fixture(name='ksm_rpc_endpoint')
 def fixture_ksm_rpc_endpoint() -> Optional[str]:
     return None
@@ -560,6 +608,7 @@ def fixture_blockchain(
         ethereum_manager,
         optimism_manager,
         polygon_pos_manager,
+        arbitrum_one_manager,
         kusama_manager,
         polkadot_manager,
         avalanche_manager,
@@ -584,6 +633,7 @@ def fixture_blockchain(
         ethereum_manager=ethereum_manager,
         optimism_manager=optimism_manager,
         polygon_pos_manager=polygon_pos_manager,
+        arbitrum_one_manager=arbitrum_one_manager,
         kusama_manager=kusama_manager,
         polkadot_manager=polkadot_manager,
         avalanche_manager=avalanche_manager,

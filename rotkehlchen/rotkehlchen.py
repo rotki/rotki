@@ -23,6 +23,8 @@ from rotkehlchen.balances.manual import (
 )
 from rotkehlchen.chain.accounts import SingleBlockchainAccountData
 from rotkehlchen.chain.aggregator import ChainsAggregator
+from rotkehlchen.chain.arbitrum_one.manager import ArbitrumOneManager
+from rotkehlchen.chain.arbitrum_one.node_inquirer import ArbitrumOneInquirer
 from rotkehlchen.chain.avalanche.manager import AvalancheManager
 from rotkehlchen.chain.ethereum.accountant import EthereumAccountingAggregator
 from rotkehlchen.chain.ethereum.manager import EthereumManager
@@ -368,6 +370,11 @@ class Rotkehlchen:
             database=self.data.db,
         )
         polygon_pos_manager = PolygonPOSManager(polygon_pos_inquirer)
+        arbitrum_one_inquirer = ArbitrumOneInquirer(
+            greenlet_manager=self.greenlet_manager,
+            database=self.data.db,
+        )
+        arbitrum_one_manager = ArbitrumOneManager(arbitrum_one_inquirer)
         kusama_manager = SubstrateManager(
             chain=SupportedBlockchain.KUSAMA,
             msg_aggregator=self.msg_aggregator,
@@ -411,6 +418,7 @@ class Rotkehlchen:
             ethereum_manager=ethereum_manager,
             optimism_manager=optimism_manager,
             polygon_pos_manager=polygon_pos_manager,
+            arbitrum_one_manager=arbitrum_one_manager,
             kusama_manager=kusama_manager,
             polkadot_manager=polkadot_manager,
             avalanche_manager=avalanche_manager,

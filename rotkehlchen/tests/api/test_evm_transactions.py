@@ -84,7 +84,7 @@ def _assert_evm_transaction_status(
 @pytest.mark.parametrize('default_mock_price_value', [FVal(1.5)])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.freeze_time('2022-12-29 10:10:00 GMT')
-@pytest.mark.vcr()
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 def test_query_transactions(rotkehlchen_api_server: 'APIServer'):
     """Test that querying the evm transactions endpoint for an address with
     transactions in multiple chains works fine.
@@ -225,12 +225,12 @@ def test_evm_transaction_hash_addition(rotkehlchen_api_server: 'APIServer') -> N
             'evmtransactionshashresource',
         ), json={
             'async_query': is_async_query,
-            'evm_chain': ChainID.ARBITRUM_ONE.to_name(),
+            'evm_chain': ChainID.GNOSIS.to_name(),
             'tx_hash': tx_hash,
             'associated_address': ADDY,
         },
     )
-    assert_error_response(response, 'Given chain_id arbitrum_one is not one of ethereum,optimism,polygon_pos as needed by the endpoint')  # noqa: E501
+    assert_error_response(response, 'Given chain_id gnosis is not one of ethereum,optimism,polygon_pos,arbitrum_one as needed by the endpoint')  # noqa: E501
 
     # add an already existing transaction
     response = requests.put(

@@ -37,6 +37,7 @@ class BlockchainBalances:
     eth: defaultdict[ChecksumEvmAddress, BalanceSheet] = field(init=False)
     optimism: defaultdict[ChecksumEvmAddress, BalanceSheet] = field(init=False)
     polygon_pos: defaultdict[ChecksumEvmAddress, BalanceSheet] = field(init=False)
+    arbitrum_one: defaultdict[ChecksumEvmAddress, BalanceSheet] = field(init=False)
     eth2: defaultdict[Eth2PubKey, BalanceSheet] = field(init=False)
     btc: dict[BTCAddress, Balance] = field(init=False)
     bch: dict[BTCAddress, Balance] = field(init=False)

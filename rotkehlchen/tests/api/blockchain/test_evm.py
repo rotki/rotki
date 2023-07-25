@@ -243,6 +243,7 @@ def test_add_multievm_accounts(rotkehlchen_api_server):
             avalanche_addresses=[common_account],
             optimism_addresses=[common_account],
             polygon_pos_addresses=[common_account],
+            arbitrum_one_addresses=[common_account],
         )
 
         # add two addresses for all evm chains, one with tag
@@ -266,6 +267,7 @@ def test_add_multievm_accounts(rotkehlchen_api_server):
         'avax': [common_account],
         'optimism': [common_account],
         'polygon_pos': [common_account],
+        'arbitrum_one': [common_account],
     }
 
     # Now get accounts to make sure they are all input correctly
@@ -329,6 +331,7 @@ def test_detect_evm_accounts(
     assert sorted(msg['data'], key=operator.itemgetter('evm_chain', 'address')) == sorted([
         {'evm_chain': ChainID.POLYGON_POS.to_name(), 'address': ethereum_accounts[0]},
         {'evm_chain': ChainID.OPTIMISM.to_name(), 'address': ethereum_accounts[0]},
+        {'evm_chain': ChainID.ARBITRUM_ONE.to_name(), 'address': ethereum_accounts[0]},
     ], key=operator.itemgetter('evm_chain', 'address'))
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     db = rotki.data.db

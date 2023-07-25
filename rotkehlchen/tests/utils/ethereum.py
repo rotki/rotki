@@ -6,6 +6,8 @@ from typing import TYPE_CHECKING, Any, Optional
 import gevent
 
 from rotkehlchen.chain.accounts import BlockchainAccountData
+from rotkehlchen.chain.arbitrum_one.decoding.decoder import ArbitrumOneTransactionDecoder
+from rotkehlchen.chain.arbitrum_one.transactions import ArbitrumOneTransactions
 from rotkehlchen.chain.ethereum.constants import ETHEREUM_ETHERSCAN_NODE
 from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
 from rotkehlchen.chain.ethereum.transactions import EthereumTransactions
@@ -413,6 +415,7 @@ def get_decoded_events_of_transaction(
         ChainID.ETHEREUM: (EthereumTransactions, EthereumTransactionDecoder),
         ChainID.OPTIMISM: (OptimismTransactions, OptimismTransactionDecoder),
         ChainID.POLYGON_POS: (PolygonPOSTransactions, PolygonPOSTransactionDecoder),
+        ChainID.ARBITRUM_ONE: (ArbitrumOneTransactions, ArbitrumOneTransactionDecoder),
     }
     mappings_result = chain_mappings.get(evm_inquirer.chain_id)
     if mappings_result is not None:

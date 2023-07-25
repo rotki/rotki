@@ -2029,6 +2029,7 @@ Getting all supported chains
             "result": [
                 {"id": "ETH", "name": "ethereum", "type": "evm", "evm_chain_name": "ethereum", "native_token": "ETH"},
                 {"id": "OPTIMISM", "name": "optimism", "type": "evm", "evm_chain_name": "optimism", "native_token": "ETH"},
+                {"id": "arbitrum_one", "name": "Arbitrum One", "type": "evm", "evm_chain_name": "arbitrum_one", "native_token": "ETH"},
                 {"id": "AVAX", "name": "avalanche", "type": "evm", "evm_chain_name": "avalanche", "native_token": "AVAX"},
                 {"id": "ETH2", "name": "ethereum beaconchain", "type": "eth2", "native_token": "ETH2"},
                 {"id": "DOT", "name": "polkadot", "type": "substrate", "native_token": "DOT"},
@@ -12058,7 +12059,7 @@ Event Mappings
                   "liquidate":"liquidate"
                 }
               }
-            }
+            },
           },
           "event_category_details":{
             "gas":{

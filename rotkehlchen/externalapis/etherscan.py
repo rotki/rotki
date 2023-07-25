@@ -81,12 +81,17 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
                 ExternalService.ETHERSCAN,
                 ExternalService.OPTIMISM_ETHERSCAN,
                 ExternalService.POLYGON_POS_ETHERSCAN,
+                ExternalService.ARBITRUM_ONE_ETHERSCAN,
             ],
     ) -> None:
         super().__init__(database=database, service_name=service)
         self.msg_aggregator = msg_aggregator
         self.chain = chain
-        self.prefix_url = 'api.' if chain in (SupportedBlockchain.ETHEREUM, SupportedBlockchain.POLYGON_POS) else 'api-'  # noqa: E501
+        self.prefix_url = 'api.' if chain in (
+            SupportedBlockchain.ETHEREUM,
+            SupportedBlockchain.POLYGON_POS,
+            SupportedBlockchain.ARBITRUM_ONE,
+        ) else 'api-'
         self.base_url = base_url
         self.session = requests.session()
         self.warning_given = False
@@ -96,6 +101,8 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
             self.earliest_ts = 1438269989
         elif service == ExternalService.OPTIMISM_ETHERSCAN:
             self.earliest_ts = 1636665399
+        elif service == ExternalService.ARBITRUM_ONE_ETHERSCAN:
+            self.earliest_ts = 1622243344
         else:  # Polygon POS
             self.earliest_ts = 1590856200
 
