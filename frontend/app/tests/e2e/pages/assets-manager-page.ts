@@ -44,6 +44,14 @@ export class AssetsManagerPage {
     cy.get('.v-data-table__progress').should('not.exist');
   }
 
+  searchAssetBySymbol(symbol: string) {
+    cy.get('[data-cy="table-filter"]').type(
+      `{selectall}{backspace}symbol: ${symbol}{enter}{esc}`
+    );
+    cy.get('.v-data-table__empty-wrapper').should('not.exist');
+    cy.get('.v-data-table__progress').should('not.exist');
+  }
+
   addIgnoredAsset(asset: string) {
     this.searchAsset(asset);
 
@@ -117,8 +125,14 @@ export class AssetsManagerPage {
     cy.get('[data-cy=confirm-dialog]').should('not.be.exist');
   }
 
-  deleteAsset(address = '0xfDb7EEc5eBF4c4aC7734748474123aC25C6eDCc8') {
+  deleteAnEvmAsset(address = '0xfDb7EEc5eBF4c4aC7734748474123aC25C6eDCc8') {
     this.searchAssetByAddress(address);
+    cy.get('[data-cy=managed-assets-table] [data-cy=row-delete]').click();
+    this.confirmDelete();
+  }
+
+  deleteOtherAsset(symbol = 'SYMBOL 2') {
+    this.searchAssetBySymbol(symbol);
     cy.get('[data-cy=managed-assets-table] [data-cy=row-delete]').click();
     this.confirmDelete();
   }
@@ -142,10 +156,7 @@ export class AssetsManagerPage {
     cy.get('@submitButton').should('be.enabled');
   }
 
-  addAsset(
-    name: string,
-    address = '0xfDb7EEc5eBF4c4aC7734748474123aC25C6eDCc8'
-  ): void {
+  addAnEvmAsset(address = '0xfDb7EEc5eBF4c4aC7734748474123aC25C6eDCc8'): void {
     // get the fields
     cy.get('[data-cy=chain-select] [role=button]').as('chainInput');
 
@@ -214,9 +225,10 @@ export class AssetsManagerPage {
     // after loading, input should be enabled
     cy.get('@addressInput').should('be.enabled');
 
+    const symbol = 'SYMBOL 1';
     // enter symbol
     cy.get('@symbolInput').clear();
-    cy.get('@symbolInput').type('SYMBOL 1');
+    cy.get('@symbolInput').type(symbol);
 
     // enter decimals
     cy.get('@decimalInput').clear();
@@ -234,11 +246,49 @@ export class AssetsManagerPage {
 
     cy.get('[data-cy=managed-assets-table] [data-cy="details-symbol"]').should(
       'contain',
-      name
+      symbol
     );
   }
 
-  editAsset(address = '0xfDb7EEc5eBF4c4aC7734748474123aC25C6eDCc8'): void {
+  addOtherAsset() {
+    // get the fields
+    cy.get('[data-cy=type-select] [role=button]').as('typeInput');
+    cy.get('[data-cy=name-input] .v-text-field__slot input[type=text]').as(
+      'nameInput'
+    );
+    cy.get('[data-cy=symbol-input] .v-text-field__slot input[type=text]').as(
+      'symbolInput'
+    );
+
+    cy.get('@typeInput').click();
+    cy.get('.v-menu__content.menuable__content__active .v-list-item')
+      .contains('Own chain')
+      .click();
+
+    cy.get('@nameInput').clear();
+    cy.get('@nameInput').type('NAME 2');
+
+    const symbol = 'SYMBOL 2';
+    cy.get('@symbolInput').clear();
+    cy.get('@symbolInput').type('SYMBOL 2');
+
+    // at this point, no validation message, button should be enabled
+    cy.get('@submitButton').should('be.enabled');
+    // create the asset
+    cy.get('@submitButton').click();
+    // dialog should not be visible
+    cy.get('[data-cy=bottom-dialog]').should('not.be.visible');
+
+    // search the asset
+    this.searchAssetBySymbol(symbol);
+
+    cy.get('[data-cy=managed-assets-table] [data-cy="details-symbol"]').should(
+      'contain',
+      symbol
+    );
+  }
+
+  editEvmAsset(address = '0xfDb7EEc5eBF4c4aC7734748474123aC25C6eDCc8'): void {
     // search the asset
     this.searchAssetByAddress(address);
 
@@ -258,9 +308,10 @@ export class AssetsManagerPage {
 
     cy.get('[data-cy=bottom-dialog] [data-cy=confirm]').as('submitButton');
 
+    const symbol = 'SYMBOL 3';
     // edit symbol
     cy.get('@symbolInput').clear();
-    cy.get('@symbolInput').type('SYMBOL 2');
+    cy.get('@symbolInput').type(symbol);
 
     // at this point, no validation message, button should be enabled
     cy.get('@submitButton').should('be.enabled');
@@ -272,7 +323,7 @@ export class AssetsManagerPage {
 
     cy.get('[data-cy=managed-assets-table] [data-cy="details-symbol"]').should(
       'contain',
-      'SYMBOL 2'
+      symbol
     );
   }
 }

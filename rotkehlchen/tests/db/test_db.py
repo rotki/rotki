@@ -15,7 +15,16 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.accounts import BlockchainAccountData, BlockchainAccounts
 from rotkehlchen.constants import ONE, YEAR_IN_SECONDS
-from rotkehlchen.constants.assets import A_1INCH, A_BTC, A_DAI, A_ETH, A_ETH2, A_USD
+from rotkehlchen.constants.assets import (
+    A_1INCH,
+    A_BTC,
+    A_DAI,
+    A_ETH,
+    A_ETH2,
+    A_POLYGON_POS_MATIC,
+    A_USD,
+    A_USDC,
+)
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.dbhandler import DBHandler
@@ -299,7 +308,30 @@ def test_writing_fetching_data(data_dir, username, sql_vm_instructions_cb):
             [
                 BlockchainAccountData(chain=SupportedBlockchain.ETHEREUM, address='0xd36029d76af6fE4A356528e4Dc66B2C18123597D'),  # noqa: E501
                 BlockchainAccountData(chain=SupportedBlockchain.ETHEREUM, address='0x80B369799104a47e98A553f3329812a44A7FaCDc'),  # noqa: E501
+                # Add this to 2 evm chains
+                BlockchainAccountData(chain=SupportedBlockchain.ETHEREUM, address='0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'),  # noqa: E501
+                BlockchainAccountData(chain=SupportedBlockchain.POLYGON_POS, address='0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'),  # noqa: E501
             ],
+        )
+
+    # add some metadata for only the eth mainnet address
+    queried_addresses = QueriedAddresses(data.db)
+    queried_addresses.add_queried_address_for_module(
+        'makerdao_vaults',
+        '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
+    )  # now some for both
+    with data.db.user_write() as write_cursor:
+        data.db.save_tokens_for_address(
+            write_cursor=write_cursor,
+            address='0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
+            blockchain=SupportedBlockchain.ETHEREUM,
+            tokens=[A_DAI, A_USDC],
+        )
+        data.db.save_tokens_for_address(
+            write_cursor=write_cursor,
+            address='0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
+            blockchain=SupportedBlockchain.POLYGON_POS,
+            tokens=[A_POLYGON_POS_MATIC],
         )
 
     with data.db.conn.read_ctx() as cursor:
@@ -310,7 +342,9 @@ def test_writing_fetching_data(data_dir, username, sql_vm_instructions_cb):
         assert set(accounts.eth) == {
             '0xd36029d76af6fE4A356528e4Dc66B2C18123597D',
             '0x80B369799104a47e98A553f3329812a44A7FaCDc',
+            '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
         }
+        assert set(accounts.polygon_pos) == {'0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'}
 
     with data.db.user_write() as write_cursor:
         # Add existing account should fail
@@ -333,7 +367,35 @@ def test_writing_fetching_data(data_dir, username, sql_vm_instructions_cb):
             ['0xd36029d76af6fE4A356528e4Dc66B2C18123597D'],
         )
         accounts = data.db.get_blockchain_accounts(write_cursor)
-        assert accounts.eth == ('0x80B369799104a47e98A553f3329812a44A7FaCDc',)
+        assert set(accounts.eth) == {
+            '0x80B369799104a47e98A553f3329812a44A7FaCDc',
+            '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
+        }
+        # Remove only the polygon account
+        data.db.remove_single_blockchain_accounts(
+            write_cursor,
+            SupportedBlockchain.POLYGON_POS,
+            ['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'],
+        )
+        accounts = data.db.get_blockchain_accounts(write_cursor)
+        assert set(accounts.eth) == {
+            '0x80B369799104a47e98A553f3329812a44A7FaCDc',
+            '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
+        }
+        assert accounts.polygon_pos == ()
+        # and also make sure that the relevant meta data of the mainnet account are still there
+        assert queried_addresses.get_queried_addresses_for_module(write_cursor, 'makerdao_vaults') == ('0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',)  # noqa: E501
+        assert data.db.get_tokens_for_address(
+            cursor=write_cursor,
+            address='0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
+            blockchain=SupportedBlockchain.POLYGON_POS,
+        ) == (None, None)
+        eth_tokens, _ = data.db.get_tokens_for_address(
+            cursor=write_cursor,
+            address='0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
+            blockchain=SupportedBlockchain.ETHEREUM,
+        )
+        assert set(eth_tokens) == {A_DAI, A_USDC}
 
     result, _ = data.add_ignored_assets([A_DAO])
     assert result

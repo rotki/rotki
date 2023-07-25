@@ -1786,19 +1786,24 @@ class DBHandler:
             blockchain: SUPPORTED_EVM_CHAINS,
     ) -> None:
         """Deletes all evm related data from the DB for a single evm address"""
-        write_cursor.execute('DELETE FROM used_query_ranges WHERE name = ?', (f'aave_events_{address}',))  # noqa: E501
+        if blockchain == SupportedBlockchain.ETHEREUM:  # mainnet only behaviour
+            write_cursor.execute('DELETE FROM used_query_ranges WHERE name = ?', (f'aave_events_{address}',))  # noqa: E501
+            write_cursor.execute(
+                'DELETE FROM used_query_ranges WHERE name = ?',
+                (f'{BALANCER_EVENTS_PREFIX}_{address}',),
+            )
+            write_cursor.execute('DELETE FROM balancer_events WHERE address=?;', (address,))
+            write_cursor.execute(  # queried addresses per module
+                'DELETE FROM multisettings WHERE name LIKE "queried_address_%" AND value = ?',
+                (address,),
+            )
+            loopring = DBLoopring(self)
+            loopring.remove_accountid_mapping(write_cursor, address)
+
         write_cursor.execute(
-            'DELETE FROM used_query_ranges WHERE name = ?',
-            (f'{BALANCER_EVENTS_PREFIX}_{address}',),
+            'DELETE FROM evm_accounts_details WHERE account=? AND chain_id=?',
+            (address, blockchain.to_chain_id().serialize_for_db()),
         )
-        write_cursor.execute('DELETE FROM evm_accounts_details WHERE account = ?', (address,))
-        write_cursor.execute('DELETE FROM balancer_events WHERE address=?;', (address,))
-        write_cursor.execute(
-            'DELETE FROM multisettings WHERE name LIKE "queried_address_%" AND value = ?',
-            (address,),
-        )
-        loopring = DBLoopring(self)
-        loopring.remove_accountid_mapping(write_cursor, address)
 
         dbtx = DBEvmTx(self)
         dbtx.delete_transactions(write_cursor=write_cursor, address=address, chain=blockchain)  # noqa: E501
