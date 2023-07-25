@@ -1,6 +1,7 @@
 import base64
-from base64 import b64decode, b64encode
+from base64 import b64decode
 from pathlib import Path
+from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import gevent
@@ -26,6 +27,9 @@ from rotkehlchen.tests.utils.premium import (
 )
 from rotkehlchen.utils.misc import ts_now
 
+if TYPE_CHECKING:
+    from rotkehlchen.rotkehlchen import Rotkehlchen
+
 
 @pytest.fixture(name='premium_remote_data')
 def fixture_load_remote_premium_data() -> bytes:
@@ -39,7 +43,12 @@ def fixture_load_remote_premium_data() -> bytes:
     {'premium_should_sync': True},
     {'premium_should_sync': False},
 ])
-def test_upload_data_to_server(rotkehlchen_instance, username, db_password, db_settings):
+def test_upload_data_to_server(
+        rotkehlchen_instance: 'Rotkehlchen',
+        username: str,
+        db_password: str,
+        db_settings: dict[str, bool],
+) -> None:
     """Test our side of uploading data to the server"""
     with rotkehlchen_instance.data.db.conn.read_ctx() as cursor:
         last_ts = rotkehlchen_instance.data.db.get_setting(cursor, name='last_data_upload_ts')
@@ -47,7 +56,7 @@ def test_upload_data_to_server(rotkehlchen_instance, username, db_password, db_s
 
     with rotkehlchen_instance.data.db.user_write() as write_cursor:
         # Write anything in the DB to set a non-zero last_write_ts
-        rotkehlchen_instance.data.db.set_settings(write_cursor, ModifiableDBSettings(main_currency=A_GBP))  # noqa: E501
+        rotkehlchen_instance.data.db.set_settings(write_cursor, ModifiableDBSettings(main_currency=A_GBP.resolve_to_fiat_asset()))  # noqa: E501
 
     with rotkehlchen_instance.data.db.conn.read_ctx() as cursor:
         last_write_ts = rotkehlchen_instance.data.db.get_setting(cursor, name='last_write_ts')
@@ -66,12 +75,13 @@ def test_upload_data_to_server(rotkehlchen_instance, username, db_password, db_s
         assert data['original_hash'] == our_hash
         assert data['last_modify_ts'] == last_write_ts
         assert 'index' in data
-        assert len(b64encode(files['db_file'].read())) == data['length']
+        assert len(files['db_file'].read()) == data['length']
         assert 'nonce' in data
         assert data['compression'] == 'zlib'
 
         return MockResponse(200, '{"success": true}')
 
+    assert rotkehlchen_instance.premium is not None
     patched_put = patch.object(
         rotkehlchen_instance.premium.session,
         'post',
@@ -83,12 +93,13 @@ def test_upload_data_to_server(rotkehlchen_instance, username, db_password, db_s
         metadata_data_hash=remote_hash,
         # Smaller Remote DB size
         metadata_data_size=2,
-        saved_data='foo',
+        saved_data=b'foo',
     )
 
     with rotkehlchen_instance.data.db.conn.read_ctx() as cursor:
         assert rotkehlchen_instance.data.db.get_setting(cursor, name='last_data_upload_ts') == 0
 
+    assert rotkehlchen_instance.task_manager is not None
     now = ts_now()
     with patched_get, patched_put:
         tasks = rotkehlchen_instance.task_manager._maybe_schedule_db_upload()

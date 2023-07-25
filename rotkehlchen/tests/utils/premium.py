@@ -1,4 +1,3 @@
-import base64
 import os
 from http import HTTPStatus
 from typing import Literal, Optional
@@ -39,10 +38,11 @@ def mock_query_last_metadata(last_modify_ts, data_hash, data_size):
 
 
 def mock_get_saved_data(saved_data: Optional[bytes]):
-    def do_mock_get_saved_data(url, data, timeout):  # pylint: disable=unused-argument
-        assert len(data) == 1
-        assert 'nonce' in data
-        assert timeout == ROTKEHLCHEN_SERVER_TIMEOUT
+    def do_mock_get_saved_data(url, timeout, params, data=None):  # pylint: disable=unused-argument
+        if data is not None:
+            assert len(data) == 1
+            assert 'nonce' in data
+        assert timeout % ROTKEHLCHEN_SERVER_TIMEOUT == 0
         decoded_data = None if saved_data is None else saved_data
         status_code = HTTPStatus.OK if decoded_data is not None else HTTPStatus.NOT_FOUND
         return MockResponse(status_code, text='', content=decoded_data)
@@ -170,7 +170,7 @@ def setup_starting_environment(
         patch_get=True,
         metadata_last_modify_ts=Timestamp(metadata_last_modify_ts),
         metadata_data_hash=remote_hash,
-        metadata_data_size=len(base64.b64decode(remote_data)) if remote_data else 0,
+        metadata_data_size=len(remote_data) if remote_data else 0,
         saved_data=remote_data,
     )
 
