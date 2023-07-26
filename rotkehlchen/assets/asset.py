@@ -83,7 +83,10 @@ class Asset:
         return AssetResolver().get_asset_type(self.identifier)
 
     def exists(self, query_packaged_db: bool = True) -> bool:
-        """Returns True if this asset exists. False otherwise"""
+        """Returns True if this asset exists. False otherwise
+
+        If True, the asset's identifier also gets normalized if needed.
+        """
         try:
             self.check_existence(query_packaged_db=query_packaged_db)
         except UnknownAsset:
@@ -93,15 +96,16 @@ class Asset:
 
     def check_existence(self, query_packaged_db: bool = True) -> 'Asset':
         """
-        If this asset exists, returns the instance. If it doesn't, throws an error.
+        If this asset exists, returns the instance with normalized identifier set.
+        If it doesn't, throws an UnknownAsset error.
         When the `query_packaged_db` is set to True and the checked asset is in the list
-        of constant asset we try to copy it from the packaged global db.
+        of constant assets we try to copy it from the packaged global db.
+
         May raise:
         - UnknownAsset
         """
-        # We don't need asset type, but using `get_asset_type` since it has all the functionality
-        # that we need here
-        AssetResolver().get_asset_type(self.identifier, query_packaged_db=query_packaged_db)
+        normalized_id = AssetResolver().check_existence(self.identifier, query_packaged_db=query_packaged_db)  # noqa: E501
+        object.__setattr__(self, 'identifier', normalized_id)
         return self
 
     def is_nft(self) -> bool:
@@ -119,7 +123,7 @@ class Asset:
     def is_crypto(self) -> bool:
         return self.get_asset_type() not in NON_CRYPTO_ASSETS
 
-    def resolve(self) -> 'Asset':
+    def resolve(self) -> 'ResolvedAsset':
         """
         Returns the final representation for the current asset identifier. For example if we do
         dai = Asset('eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F').resolve()
@@ -216,8 +220,15 @@ class Asset:
         return self.identifier
 
 
+class ResolvedAsset(Asset):
+    """
+    An asset that has been resolved, is known to exist in the DB and should use the
+    normalized identifier. Used for typing
+    """
+
+
 @dataclass(init=True, repr=False, eq=False, order=False, unsafe_hash=False, frozen=True)
-class AssetWithNameAndType(Asset, metaclass=abc.ABCMeta):
+class AssetWithNameAndType(ResolvedAsset, metaclass=abc.ABCMeta):
     asset_type: AssetType = field(init=False)
     name: str = field(init=False)
 

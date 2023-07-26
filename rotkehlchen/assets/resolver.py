@@ -8,7 +8,6 @@ from rotkehlchen.utils.data_structures import LRUCacheWithRemove
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import (
-        Asset,
         AssetWithNameAndType,
         AssetWithOracles,
         AssetWithSymbol,
@@ -16,6 +15,7 @@ if TYPE_CHECKING:
         EvmToken,
         FiatAsset,
         Nft,
+        ResolvedAsset,
     )
 
 
@@ -28,7 +28,7 @@ class AssetResolver:
     __instance: Optional['AssetResolver'] = None
     # A cache so that the DB is not hit every time
     # the cache maps identifier -> final representation of the asset
-    assets_cache: LRUCacheWithRemove['Asset'] = LRUCacheWithRemove(maxsize=512)
+    assets_cache: LRUCacheWithRemove['ResolvedAsset'] = LRUCacheWithRemove(maxsize=512)
     types_cache: LRUCacheWithRemove[AssetType] = LRUCacheWithRemove(maxsize=512)
 
     def __new__(cls) -> 'AssetResolver':
@@ -54,10 +54,13 @@ class AssetResolver:
             AssetResolver.__instance.types_cache.clear()
 
     @staticmethod
-    def resolve_asset(identifier: str) -> 'Asset':
+    def resolve_asset(identifier: str) -> 'ResolvedAsset':
         """
         Get all asset data for a valid asset identifier. May return any valid subclass of the
         Asset class.
+
+        Thanks to querying the DB the resolved asset will have the normalized
+        asset identifier. So say if you pass 'eTh' the returned asset id will be 'ETH'
 
         May raise:
         - UnknownAsset
@@ -110,6 +113,36 @@ class AssetResolver:
             asset_type = asset.asset_type
         instance.types_cache.add(identifier, asset_type)
         return asset_type
+
+    @staticmethod
+    def check_existence(identifier: str, query_packaged_db: bool = True) -> str:
+        """Check that an asset with the given identifier exists and return normalized identifier
+
+        For example if 'eTh' is given here then 'ETH' should be returned.
+
+        May raise:
+        - UnknownAsset: If asset identifier does not exist.
+        """
+        # TODO: This is ugly here but is here to avoid a cyclic import in the Assets file
+        # Couldn't find a reorg that solves this cyclic import
+        from rotkehlchen.constants.assets import CONSTANT_ASSETS  # pylint: disable=import-outside-toplevel  # isort:skip  # noqa: E501
+        from rotkehlchen.globaldb.handler import GlobalDBHandler   # pylint: disable=import-outside-toplevel  # isort:skip  # noqa: E501
+
+        instance = AssetResolver()
+        cached_data = instance.assets_cache.get(identifier)
+        if cached_data is not None:
+            return cached_data.identifier
+
+        try:
+            normalized_id = GlobalDBHandler().asset_id_exists(identifier)
+        except UnknownAsset:
+            if identifier not in CONSTANT_ASSETS or query_packaged_db is False:
+                raise
+
+            log.debug(f'Attempt to find normalized asset ID for {identifier} using the packaged database')  # noqa: E501
+            normalized_id = GlobalDBHandler().asset_id_exists(identifier=identifier, use_packaged_db=True)  # noqa: E501
+
+        return normalized_id
 
     @staticmethod
     def resolve_asset_to_class(identifier: str, expected_type: type[T]) -> T:

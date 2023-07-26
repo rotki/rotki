@@ -11,7 +11,7 @@ import gevent
 import requests
 from flask import Response, make_response
 
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import Asset, ResolvedAsset
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset, WrongAssetType
@@ -113,12 +113,12 @@ class IconManager:
         self.failed_asset_ids: LRUSetCache[str] = LRUSetCache(maxsize=256)
         self.greenlet_manager = greenlet_manager
 
-    def iconfile_path(self, asset: Asset) -> Path:
+    def iconfile_path(self, asset: ResolvedAsset) -> Path:
         return self.icons_dir / f'{urllib.parse.quote_plus(asset.identifier)}_small.png'
 
     def custom_iconfile_path(self, asset: Asset) -> Optional[Path]:
+        asset_id_quoted = urllib.parse.quote_plus(asset.identifier)
         for suffix in ALLOWED_ICON_EXTENSIONS:
-            asset_id_quoted = urllib.parse.quote_plus(asset.identifier)
             icon_path = self.custom_icons_dir / f'{asset_id_quoted}{suffix}'
             if icon_path.is_file():
                 return icon_path
@@ -127,7 +127,7 @@ class IconManager:
 
     def asset_icon_path(
             self,
-            asset: Asset,
+            asset: ResolvedAsset,
     ) -> Optional[Path]:
         # First try with the custom icon path
         custom_icon_path = self.custom_iconfile_path(asset)
@@ -140,7 +140,7 @@ class IconManager:
 
         return path
 
-    def query_coingecko_for_icon(self, asset: Asset, coingecko_id: str) -> bool:
+    def query_coingecko_for_icon(self, asset: ResolvedAsset, coingecko_id: str) -> bool:
         """Queries coingecko for icons of an asset
 
         If query was okay it returns True, else False
@@ -178,7 +178,7 @@ class IconManager:
 
     def get_icon(
             self,
-            asset: Asset,
+            asset: ResolvedAsset,
     ) -> tuple[Optional[Path], bool]:
         """
         Returns the file path of the requested icon and whether it has been scheduled to be
@@ -200,7 +200,7 @@ class IconManager:
 
         if collection_main_asset_id is not None:
             # get the asset with the lowest lex order
-            asset_to_query_icon = Asset(collection_main_asset_id)
+            asset_to_query_icon = ResolvedAsset(collection_main_asset_id)
 
         needed_path = self.iconfile_path(asset_to_query_icon)
         if needed_path.is_file() is True:
@@ -257,7 +257,7 @@ class IconManager:
         )
         assets_to_query = [(asset_id, coingecko_id) for asset_id, coingecko_id in coingecko_integrated_asset.items() if asset_id in uncached_asset_ids]  # noqa: E501
         for asset_id, coingecko_id in itertools.islice(assets_to_query, batch_size):
-            self.query_coingecko_for_icon(asset=Asset(asset_id), coingecko_id=coingecko_id)
+            self.query_coingecko_for_icon(asset=ResolvedAsset(asset_id), coingecko_id=coingecko_id)
 
         return len(uncached_asset_ids) > batch_size
 
@@ -288,7 +288,7 @@ class IconManager:
             self.custom_icons_dir / f'{quoted_identifier}{icon_path.suffix}',
         )
 
-    def delete_icon(self, asset: Asset) -> None:
+    def delete_icon(self, asset: ResolvedAsset) -> None:
         """
         Tries to find and delete the cache of an icon in both the custom icons
         and default icons directory.
