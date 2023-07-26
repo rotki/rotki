@@ -23,10 +23,8 @@ def data_migration_10(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgress
     It also supersedes migration 8 which is removed since this one is added.
     """
     log.debug('Enter data_migration_10')
-    with rotki.data.db.conn.read_ctx() as cursor:
-        accounts = rotki.data.db.get_blockchain_accounts(cursor)
-    # steps are: ethereum accounts + potentially write to db + updating spam assets + polygon rpc
-    progress_handler.set_total_steps(len(accounts.eth) + 4)
+    # steps are: ethereum accounts + 4 (potentially write to db + updating spam assets + polygon rpc + new round msg)  # noqa: E501
+    progress_handler.set_total_steps(len(rotki.chains_aggregator.accounts.eth) + 4)
 
     # Check updates for spam assets. This happens before accounts detection to avoid
     # detecting accounts that only have spam assets.

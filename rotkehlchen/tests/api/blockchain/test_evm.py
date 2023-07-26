@@ -340,6 +340,7 @@ def test_detect_evm_accounts(
     assert ethereum_accounts[0] in blockchain_accounts.eth
     assert ethereum_accounts[0] in blockchain_accounts.polygon_pos
     assert ethereum_accounts[0] in blockchain_accounts.optimism
+    assert ethereum_accounts[0] in blockchain_accounts.arbitrum_one
 
 
 @pytest.mark.parametrize('have_decoders', [True])
