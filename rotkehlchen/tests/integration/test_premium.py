@@ -1,4 +1,5 @@
 from base64 import b64decode
+from http import HTTPStatus
 from pathlib import Path
 from typing import TYPE_CHECKING
 from unittest.mock import patch
@@ -517,3 +518,38 @@ def test_upload_data_to_server_big_db(rotkehlchen_instance):
             assert g.exception is None, f'One of the greenlets had an exception: {g.exception}'
         # The upload mock should not have been called since the hash is the same
         assert not put_mock.called
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('db_settings', [{'premium_should_sync': True}])
+def test_error_db_too_big(rotkehlchen_instance: 'Rotkehlchen') -> None:
+    """Test that we correctly handle the 413 error from nest server"""
+    def mock_error_upload_data_to_server(
+            url,
+            data,
+            files,
+            timeout,
+    ):  # pylint: disable=unused-argument
+        return MockResponse(HTTPStatus.REQUEST_ENTITY_TOO_LARGE, 'Payload size is too big')
+
+    assert rotkehlchen_instance.premium is not None
+    _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db()
+    remote_hash = get_different_hash(our_hash)
+    patched_put = patch.object(
+        rotkehlchen_instance.premium.session,
+        'post',
+        side_effect=mock_error_upload_data_to_server,
+    )
+    patched_get = create_patched_requests_get_for_premium(
+        session=rotkehlchen_instance.premium.session,
+        metadata_last_modify_ts=0,
+        metadata_data_hash=remote_hash,
+        # Smaller Remote DB size
+        metadata_data_size=2,
+        saved_data=b'foo',
+    )
+    with patched_get, patched_put:
+        status, error = rotkehlchen_instance.premium_sync_manager.maybe_upload_data_to_server()
+
+    assert status is False
+    assert error == 'Size limit reached'

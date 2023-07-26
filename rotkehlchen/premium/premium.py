@@ -247,6 +247,12 @@ class Premium:
             log.error(msg)
             raise RemoteError(msg) from e
 
+        if response.status_code != 200:
+            msg = f'Could not upload database backup due to: {response.text}'
+            log.error(msg)
+            user_msg = 'Size limit reached' if response.status_code == HTTPStatus.REQUEST_ENTITY_TOO_LARGE else msg  # noqa: E501
+            raise RemoteError(user_msg)
+
         return _process_dict_response(response)
 
     def pull_data(self) -> Optional[bytes]:
