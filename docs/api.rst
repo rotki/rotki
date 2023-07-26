@@ -3722,7 +3722,7 @@ Replacing an asset
 Querying asset icons
 ======================
 
-.. http:post:: /api/(version)/assets/icon
+.. http:get:: /api/(version)/assets/icon
 
    Doing a GET on the asset icon endpoint will return the icon of the given asset. If we have no icon for an asset a 404 is returned
 

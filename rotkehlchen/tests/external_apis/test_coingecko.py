@@ -1,8 +1,8 @@
 from http import HTTPStatus
 from pathlib import Path
 from unittest.mock import patch
-import gevent
 
+import gevent
 import pytest
 
 from rotkehlchen.assets.asset import Asset, EvmToken
@@ -75,11 +75,13 @@ def test_asset_icons_for_collections(icon_manager: IconManager) -> None:
     Test that for assets in the same collection only one file is saved and
     is later used by all the assets in the same collection
     """
-    dai_op = Asset('eip155:10/erc20:0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1')
+    dai_op = Asset('eip155:10/erc20:0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1').resolve()
+    dai_main = A_DAI.resolve()
+    eth = A_ETH.resolve()
     times_api_was_queried = 0
 
-    # make sure that the icon asset doesn't exists
-    icon_path = icon_manager.iconfile_path(A_DAI)
+    # make sure that the icon asset doesn't exist
+    icon_path = icon_manager.iconfile_path(dai_main)
     assert icon_path.exists() is False
 
     # mock coingecko response
@@ -121,7 +123,7 @@ def test_asset_icons_for_collections(icon_manager: IconManager) -> None:
 
     # Try to get the icon for an asset in the same collection
     with patch.object(icon_manager.coingecko.session, 'get', wraps=mock_coingecko):
-        icon_dai_eth, processed = icon_manager.get_icon(A_DAI)
+        icon_dai_eth, processed = icon_manager.get_icon(dai_main)
         gevent.joinall(icon_manager.greenlet_manager.greenlets)
 
     # check that the api was not queried again and the fail returned is the same
@@ -131,8 +133,8 @@ def test_asset_icons_for_collections(icon_manager: IconManager) -> None:
 
     # try to get an asset without collection
     with patch.object(icon_manager.coingecko.session, 'get', wraps=mock_coingecko):
-        icon_manager.get_icon(A_ETH)
+        icon_manager.get_icon(eth)
         gevent.joinall(icon_manager.greenlet_manager.greenlets)
 
-    assert icon_manager.iconfile_path(A_ETH).exists()
+    assert icon_manager.iconfile_path(eth).exists()
     assert times_api_was_queried == 4
