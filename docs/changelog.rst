@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :release:`1.29.1 <2023-07-27>`
 * :bug:`-` Fix a bug where some images indicating the location of the assets are not loaded.
 * :bug:`-` Errors creating a premium account with an invalid premium key in Windows are now handled gracefully
 * :bug:`-` Doing multiple simultaneous filter asset searches no longer results in Global DB locked error.
