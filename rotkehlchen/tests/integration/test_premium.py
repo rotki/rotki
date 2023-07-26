@@ -544,7 +544,7 @@ def test_error_db_too_big(rotkehlchen_instance: 'Rotkehlchen') -> None:
         session=rotkehlchen_instance.premium.session,
         metadata_last_modify_ts=0,
         metadata_data_hash=remote_hash,
-        # Smaller Remote DB size
+        # small size otherwise upload will fail with a different error
         metadata_data_size=2,
         saved_data=b'foo',
     )
