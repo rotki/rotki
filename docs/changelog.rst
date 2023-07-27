@@ -3,6 +3,7 @@ Changelog
 =========
 
 
+* :feature:`6033` Optimism gas calculation is now correctly taking into account L1 gas fees.
 * :feature:`-` Optimism governance votes that include parameters should now be decoded properly.
 * :feature:`-` Transactions for adding, removing and changing owners threshold for a gnosis safe multisig will now be decoded properly.
 * :feature:`6033` Fix gas fee calculation for Optimism transactions to include L1 fees.
