@@ -9,8 +9,8 @@ from unittest import mock
 
 import pytest
 import requests
-
 from pysqlcipher3 import dbapi2 as sqlcipher
+
 from rotkehlchen.api.server import APIServer
 from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType
 from rotkehlchen.db.settings import ROTKEHLCHEN_DB_VERSION, DBSettings
@@ -31,6 +31,7 @@ from rotkehlchen.tests.utils.premium import (
     VALID_PREMIUM_SECRET,
     create_patched_premium,
 )
+from rotkehlchen.types import Timestamp
 from rotkehlchen.utils.misc import ts_now
 
 
@@ -785,8 +786,8 @@ def test_user_set_premium_credentials(rotkehlchen_api_server: APIServer, usernam
     _, patched_premium_at_set, patched_get = create_patched_premium(
         PremiumCredentials(VALID_PREMIUM_KEY, VALID_PREMIUM_SECRET),
         patch_get=True,
-        metadata_last_modify_ts=0,
-        metadata_data_hash=b'',
+        metadata_last_modify_ts=Timestamp(0),
+        metadata_data_hash='',
         metadata_data_size=0,
     )
 
@@ -814,8 +815,8 @@ def test_user_del_premium_credentials(rotkehlchen_api_server, username):
     _, patched_premium_at_set, patched_get = create_patched_premium(
         PremiumCredentials(VALID_PREMIUM_KEY, VALID_PREMIUM_SECRET),
         patch_get=True,
-        metadata_last_modify_ts=0,
-        metadata_data_hash=b'',
+        metadata_last_modify_ts=Timestamp(0),
+        metadata_data_hash='',
         metadata_data_size=0,
     )
 
