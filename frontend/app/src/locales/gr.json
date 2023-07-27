@@ -1254,7 +1254,8 @@
       "eth2": "ETH balances",
       "ksm": "Kusama balances",
       "loopring": "Loopring balances",
-      "polygon_pos": "Polygon PoS balances"
+      "polygon_pos": "Polygon PoS balances",
+      "arbitrum_one": "Arbitrum One balances"
     },
     "form_dialog": {
       "add_title": "Add blockchain account",

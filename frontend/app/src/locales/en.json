@@ -1325,7 +1325,8 @@
       "ksm": "Kusama balances",
       "loopring": "Loopring balances",
       "optimism": "Optimism",
-      "polygon_pos": "Polygon PoS balances"
+      "polygon_pos": "Polygon PoS balances",
+      "arbitrum_one": "Arbitrum One balances"
     },
     "evm_detection": {
       "title": "Detect EVM accounts",

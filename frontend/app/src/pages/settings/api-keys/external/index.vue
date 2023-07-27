@@ -2,6 +2,7 @@
 import { type Ref } from 'vue';
 import { type Blockchain } from '@rotki/common/lib/blockchain';
 import {
+  TRADE_LOCATION_ARBITRUM_ONE,
   TRADE_LOCATION_ETHEREUM,
   TRADE_LOCATION_OPTIMISM,
   TRADE_LOCATION_POLYGON_POS
@@ -32,6 +33,10 @@ const evmEtherscanTabs = reactive<Record<string, EvmEtherscanTab>>({
   },
   [TRADE_LOCATION_POLYGON_POS]: {
     key: 'polygon_pos_etherscan',
+    value: ''
+  },
+  [TRADE_LOCATION_ARBITRUM_ONE]: {
+    key: 'arbitrum_one_etherscan',
     value: ''
   }
 });
@@ -66,13 +71,16 @@ const updateKeys = ({
   loopring,
   opensea,
   optimismEtherscan,
-  polygonPosEtherscan
+  polygonPosEtherscan,
+  arbitrumOneEtherscan
 }: ExternalServiceKeys) => {
   evmEtherscanTabs[TRADE_LOCATION_ETHEREUM].value = etherscan?.apiKey || '';
   evmEtherscanTabs[TRADE_LOCATION_OPTIMISM].value =
     optimismEtherscan?.apiKey || '';
   evmEtherscanTabs[TRADE_LOCATION_POLYGON_POS].value =
     polygonPosEtherscan?.apiKey || '';
+  evmEtherscanTabs[TRADE_LOCATION_ARBITRUM_ONE].value =
+    arbitrumOneEtherscan?.apiKey || '';
   set(cryptocompareKey, cryptocompare?.apiKey || '');
   set(covalentKey, covalent?.apiKey || '');
   set(beaconchainKey, beaconchain?.apiKey || '');
@@ -121,6 +129,8 @@ const save = async (serviceName: ExternalServiceName, key: string) => {
       removeEtherscanNotification(TRADE_LOCATION_OPTIMISM);
     } else if (serviceName === 'polygon_pos_etherscan') {
       removeEtherscanNotification(TRADE_LOCATION_POLYGON_POS);
+    } else if (serviceName === 'arbitrum_one_etherscan') {
+      removeEtherscanNotification(TRADE_LOCATION_ARBITRUM_ONE);
     }
   } catch (e: any) {
     setMessage({
