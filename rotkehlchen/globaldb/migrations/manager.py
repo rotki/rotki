@@ -7,6 +7,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 from ..utils import globaldb_get_setting_value
 from .migration1 import globaldb_data_migration_1
+from .migration2 import globaldb_data_migration_2
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -22,6 +23,7 @@ class MigrationRecord(NamedTuple):
 
 MIGRATIONS_LIST = [
     MigrationRecord(version=1, function=globaldb_data_migration_1),
+    MigrationRecord(version=2, function=globaldb_data_migration_2),
 ]
 LAST_DATA_MIGRATION = len(MIGRATIONS_LIST)
 
