@@ -21,6 +21,7 @@ from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 GOVERNOR_ADDRESS = string_to_evm_address('0xcDF27F107725988f2261Ce2256bDfCdE8B382B10')
 
 VOTE_CAST = b'\xb8\xe18\x88}\n\xa1;\xabD~\x82\xde\x9d\\\x17w\x04\x1e\xcd!\xca6\xba\x82O\xf1\xe6\xc0}\xdd\xa4'  # noqa: E501
+VOTE_CAST_WITH_PARAMS = b'\xe2\xba\xbf\xba\xc5\x88\x9ap\x9bc\xbb\x7fY\x8b2N\x08\xbcZO\xb9\xecd\x7f\xb3\xcb\xc9\xec\x07\xeb\x87\x12'  # noqa: E501
 
 
 logger = logging.getLogger(__name__)
@@ -30,8 +31,8 @@ log = RotkehlchenLogsAdapter(logger)
 class OptimismGovernorDecoder(DecoderInterface):
     def _decode_vote_cast(self, context: DecoderContext) -> DecodingOutput:
         """Decodes a vote cast event"""
-        if context.tx_log.topics[0] != VOTE_CAST:
-            return DEFAULT_DECODING_OUTPUT
+        if context.tx_log.topics[0] not in (VOTE_CAST, VOTE_CAST_WITH_PARAMS):
+            return DEFAULT_DECODING_OUTPUT  # for params event is same + params argument. Ignore it
 
         voter_address = hex_or_bytes_to_address(context.tx_log.topics[1])
         if not self.base.is_tracked(voter_address):
