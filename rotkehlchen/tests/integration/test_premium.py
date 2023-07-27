@@ -1,5 +1,7 @@
 from base64 import b64decode
+from http import HTTPStatus
 from pathlib import Path
+from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import gevent
@@ -25,10 +27,13 @@ from rotkehlchen.tests.utils.premium import (
 )
 from rotkehlchen.utils.misc import ts_now
 
+if TYPE_CHECKING:
+    from rotkehlchen.rotkehlchen import Rotkehlchen
+
 
 @pytest.fixture(name='premium_remote_data')
 def fixture_load_remote_premium_data() -> bytes:
-    remote_db_path = Path(__file__).resolve().parent.parent / 'data' / 'remote_encrypted_db.txt'  # noqa: E501
+    remote_db_path = Path(__file__).resolve().parent.parent / 'data' / 'remote_encrypted_db.bin'  # noqa: E501
     with open(remote_db_path, 'rb') as f:
         return f.read()
 
@@ -38,7 +43,12 @@ def fixture_load_remote_premium_data() -> bytes:
     {'premium_should_sync': True},
     {'premium_should_sync': False},
 ])
-def test_upload_data_to_server(rotkehlchen_instance, username, db_password, db_settings):
+def test_upload_data_to_server(
+        rotkehlchen_instance: 'Rotkehlchen',
+        username: str,
+        db_password: str,
+        db_settings: dict[str, bool],
+) -> None:
     """Test our side of uploading data to the server"""
     with rotkehlchen_instance.data.db.conn.read_ctx() as cursor:
         last_ts = rotkehlchen_instance.data.db.get_setting(cursor, name='last_data_upload_ts')
@@ -46,7 +56,7 @@ def test_upload_data_to_server(rotkehlchen_instance, username, db_password, db_s
 
     with rotkehlchen_instance.data.db.user_write() as write_cursor:
         # Write anything in the DB to set a non-zero last_write_ts
-        rotkehlchen_instance.data.db.set_settings(write_cursor, ModifiableDBSettings(main_currency=A_GBP))  # noqa: E501
+        rotkehlchen_instance.data.db.set_settings(write_cursor, ModifiableDBSettings(main_currency=A_GBP.resolve_to_fiat_asset()))  # noqa: E501
 
     with rotkehlchen_instance.data.db.conn.read_ctx() as cursor:
         last_write_ts = rotkehlchen_instance.data.db.get_setting(cursor, name='last_write_ts')
@@ -57,23 +67,24 @@ def test_upload_data_to_server(rotkehlchen_instance, username, db_password, db_s
     def mock_succesfull_upload_data_to_server(
             url,  # pylint: disable=unused-argument
             data,
+            files,
             timeout,  # pylint: disable=unused-argument
     ):
         # Can't compare data blobs as they are encrypted and as such can be
         # different each time
-        assert 'data_blob' in data
         assert data['original_hash'] == our_hash
         assert data['last_modify_ts'] == last_write_ts
         assert 'index' in data
-        assert len(data['data_blob']) == data['length']
+        assert len(files['db_file']) == data['length']
         assert 'nonce' in data
         assert data['compression'] == 'zlib'
 
         return MockResponse(200, '{"success": true}')
 
+    assert rotkehlchen_instance.premium is not None
     patched_put = patch.object(
         rotkehlchen_instance.premium.session,
-        'put',
+        'post',
         side_effect=mock_succesfull_upload_data_to_server,
     )
     patched_get = create_patched_requests_get_for_premium(
@@ -82,7 +93,7 @@ def test_upload_data_to_server(rotkehlchen_instance, username, db_password, db_s
         metadata_data_hash=remote_hash,
         # Smaller Remote DB size
         metadata_data_size=2,
-        saved_data='foo',
+        saved_data=b'foo',
     )
 
     with rotkehlchen_instance.data.db.conn.read_ctx() as cursor:
@@ -90,7 +101,7 @@ def test_upload_data_to_server(rotkehlchen_instance, username, db_password, db_s
 
     now = ts_now()
     with patched_get, patched_put:
-        tasks = rotkehlchen_instance.task_manager._maybe_schedule_db_upload()
+        tasks = rotkehlchen_instance.task_manager._maybe_schedule_db_upload()  # type: ignore[union-attr]  # task_manager can't be none here  # noqa: E501
         if tasks is not None:
             gevent.wait(tasks)
 
@@ -244,7 +255,7 @@ def test_try_premium_at_start_new_account_pull_old_data(
 
     For a new account
     """
-    with open(Path(__file__).resolve().parent.parent / 'data' / 'remote_old_encrypted_db.txt', 'rb') as f:  # noqa: E501
+    with open(Path(__file__).resolve().parent.parent / 'data' / 'remote_old_encrypted_db.bin', 'rb') as f:  # noqa: E501
         remote_data = f.read()
 
     setup_starting_environment(
@@ -291,7 +302,7 @@ def test_try_premium_at_start_old_account_can_pull_old_data(
 
     For an old account
     """
-    with open(Path(__file__).resolve().parent.parent / 'data' / 'remote_encrypted_db.txt', 'rb') as f:  # noqa: E501
+    with open(Path(__file__).resolve().parent.parent / 'data' / 'remote_encrypted_db.bin', 'rb') as f:  # noqa: E501
         remote_data = f.read()
 
     setup_starting_environment(
@@ -507,3 +518,38 @@ def test_upload_data_to_server_big_db(rotkehlchen_instance):
             assert g.exception is None, f'One of the greenlets had an exception: {g.exception}'
         # The upload mock should not have been called since the hash is the same
         assert not put_mock.called
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('db_settings', [{'premium_should_sync': True}])
+def test_error_db_too_big(rotkehlchen_instance: 'Rotkehlchen') -> None:
+    """Test that we correctly handle the 413 error from nest server"""
+    def mock_error_upload_data_to_server(
+            url,
+            data,
+            files,
+            timeout,
+    ):  # pylint: disable=unused-argument
+        return MockResponse(HTTPStatus.REQUEST_ENTITY_TOO_LARGE, 'Payload size is too big')
+
+    assert rotkehlchen_instance.premium is not None
+    _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db()
+    remote_hash = get_different_hash(our_hash)
+    patched_put = patch.object(
+        rotkehlchen_instance.premium.session,
+        'post',
+        side_effect=mock_error_upload_data_to_server,
+    )
+    patched_get = create_patched_requests_get_for_premium(
+        session=rotkehlchen_instance.premium.session,
+        metadata_last_modify_ts=0,
+        metadata_data_hash=remote_hash,
+        # small size otherwise upload will fail with a different error
+        metadata_data_size=2,
+        saved_data=b'foo',
+    )
+    with patched_get, patched_put:
+        status, error = rotkehlchen_instance.premium_sync_manager.maybe_upload_data_to_server()
+
+    assert status is False
+    assert error == 'Size limit reached'

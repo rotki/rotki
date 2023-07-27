@@ -131,3 +131,24 @@ def test_refresh_icon(rotkehlchen_api_server):
     )
     assert_simple_ok_response(response)
     assert icon_filepath.stat().st_ctime > now
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_case_insensitive_icon(rotkehlchen_api_server):
+    """
+    Test that providing asset identifier in a case insensitive way still maps to the correct asset
+    """
+    icon_manager = rotkehlchen_api_server.rest_api.rotkehlchen.icon_manager
+    with open(icon_manager.icons_dir / 'ETH_small.png', 'wb') as f:
+        f.write(b'123')
+
+    for identifier in ('ETH', 'eth', 'eTh'):
+        response = requests.get(
+            api_url_for(
+                rotkehlchen_api_server,
+                'asseticonfileresource',
+                asset=identifier,
+            ),
+        )
+        assert response.status_code == HTTPStatus.OK
+        assert response.text == '123'

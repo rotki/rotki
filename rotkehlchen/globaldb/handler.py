@@ -1857,6 +1857,30 @@ class GlobalDBHandler:
         return AssetType.deserialize_from_db(type_in_db[0])
 
     @staticmethod
+    def asset_id_exists(identifier: str, use_packaged_db: bool = False) -> str:
+        """
+        For a given identifier return the normalized identifier if it exists.
+        If `use_packaged_db` is True, it checks the packaged global db.
+
+        May raise:
+        - UnknownAsset: if the asset is not present in the database
+        """
+        if identifier.startswith(NFT_DIRECTIVE):
+            return identifier
+
+        connection = GlobalDBHandler().packaged_db_conn() if use_packaged_db is True else GlobalDBHandler().conn  # noqa: E501
+        with connection.read_ctx() as cursor:
+            normalized_id = cursor.execute(
+                'SELECT identifier FROM assets WHERE identifier=?',
+                (identifier,),
+            ).fetchone()
+
+        if normalized_id is None:  # should not happen
+            raise UnknownAsset(identifier)
+
+        return normalized_id[0]
+
+    @staticmethod
     def get_collection_main_asset(identifier: str) -> Optional[str]:
         """
         Given an asset identifier return id of the asset in the collection with the lowest

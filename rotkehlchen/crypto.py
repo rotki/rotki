@@ -1,4 +1,3 @@
-import base64
 import os
 
 from cryptography.hazmat.primitives import hashes
@@ -15,7 +14,7 @@ AES_BLOCK_SIZE = 16
 # cryptography library seem to suggest it's the safest options. Problem is the
 # already encrypted and saved database files and how to handle the previous encryption
 # We need to keep a versioning of encryption used for each file.
-def encrypt(key: bytes, source: bytes) -> str:
+def encrypt(key: bytes, source: bytes) -> bytes:
     assert isinstance(key, bytes), 'key should be given in bytes'
     assert isinstance(source, bytes), 'source should be given in bytes'
     digest = hashes.Hash(hashes.SHA256())
@@ -28,10 +27,10 @@ def encrypt(key: bytes, source: bytes) -> str:
     source += bytes([padding]) * padding  # Python 2.x: source += chr(padding) * padding
     # store the iv at the beginning and encrypt
     data = iv + (encryptor.update(source) + encryptor.finalize())
-    return base64.b64encode(data).decode('latin-1')
+    return data
 
 
-def decrypt(key: bytes, given_source: str) -> bytes:
+def decrypt(key: bytes, source: bytes) -> bytes:
     """
     Decrypts the given source data we with the given key.
 
@@ -39,8 +38,7 @@ def decrypt(key: bytes, given_source: str) -> bytes:
     If data can't be decrypted then raises UnableToDecryptRemoteData
     """
     assert isinstance(key, bytes), 'key should be given in bytes'
-    assert isinstance(given_source, str), 'source should be given in string'
-    source = base64.b64decode(given_source.encode('latin-1'))
+    assert isinstance(source, bytes), 'source should be given in bytes'
     digest = hashes.Hash(hashes.SHA256())
     digest.update(key)
     key = digest.finalize()  # use SHA-256 over our key to get a proper-sized AES key

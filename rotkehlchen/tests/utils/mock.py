@@ -23,11 +23,12 @@ class MockResponse:
             self,
             status_code: int,
             text: str,
+            content: Any = None,
             headers: Optional[dict['str', Any]] = None,
     ) -> None:
         self.status_code = status_code
         self.text = text
-        self.content = text.encode()
+        self.content = text.encode() if content is None else content
         self.url = 'http://someurl.com'
         self.headers = headers or {}
 

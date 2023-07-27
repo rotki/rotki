@@ -130,7 +130,7 @@ def patch_and_enter_before_unlock(
         new_db_unlock_actions,
         perform_upgrades_at_unlock,
         should_mock_settings=True,
-):
+) -> None:
     # Do not connect to the usual nodes at start by default. Do not want to spam
     # them during our tests. It's configurable per test, with the default being nothing
     rpc_nodes_result = ethereum_manager_connect_at_start + optimism_manager_connect_at_start if network_mocking is False else []  # noqa: E501
@@ -252,7 +252,7 @@ def initialize_mock_rotkehlchen_instance(
         network_mocking,
         have_decoders,
         add_accounts_to_db,
-):
+) -> None:
     if not start_with_logged_in_user:
         return
 
@@ -370,7 +370,7 @@ def initialize_mock_rotkehlchen_instance(
 
 
 @pytest.fixture(name='uninitialized_rotkehlchen')
-def fixture_uninitialized_rotkehlchen(cli_args, inquirer, asset_resolver, globaldb):  # pylint: disable=unused-argument  # noqa: E501
+def fixture_uninitialized_rotkehlchen(cli_args, inquirer, asset_resolver, globaldb) -> Rotkehlchen:  # pylint: disable=unused-argument  # noqa: E501
     """A rotkehlchen instance that has only had __init__ run but is not unlocked
 
     Adding the inquirer fixture as a requirement to make sure that any mocking that
@@ -539,7 +539,7 @@ def rotkehlchen_instance(
         network_mocking,
         have_decoders,
         add_accounts_to_db,
-):
+) -> Rotkehlchen:
     """A partially mocked rotkehlchen instance"""
 
     initialize_mock_rotkehlchen_instance(

@@ -1,5 +1,3 @@
-import base64
-import json
 import os
 from http import HTTPStatus
 from typing import Literal, Optional
@@ -11,6 +9,7 @@ from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.tests.utils.constants import A_GBP, DEFAULT_TESTS_MAIN_CURRENCY
 from rotkehlchen.tests.utils.database import mock_db_schema_sanity_check
 from rotkehlchen.tests.utils.mock import MockResponse
+from rotkehlchen.types import Timestamp
 
 # Valid format but not "real" premium api key and secret
 VALID_PREMIUM_KEY = (
@@ -38,16 +37,17 @@ def mock_query_last_metadata(last_modify_ts, data_hash, data_size):
     return do_mock_query_last_metadata
 
 
-def mock_get_saved_data(saved_data):
-    def do_mock_get_saved_data(url, data, timeout):  # pylint: disable=unused-argument
-        assert len(data) == 1
-        assert 'nonce' in data
-        assert timeout == ROTKEHLCHEN_SERVER_TIMEOUT
-        decoded_data = None if saved_data is None else saved_data.decode()
-        payload = f'{{"data": {json.dumps(decoded_data)}}}'
-        return MockResponse(200, payload)
+def mock_get_backup(saved_data: Optional[bytes]):
+    def do_mock_get_backup(url, timeout, params, data=None):  # pylint: disable=unused-argument
+        if data is not None:
+            assert len(data) == 1
+            assert 'nonce' in data
+        assert timeout % ROTKEHLCHEN_SERVER_TIMEOUT == 0
+        decoded_data = None if saved_data is None else saved_data
+        status_code = HTTPStatus.OK if decoded_data is not None else HTTPStatus.NOT_FOUND
+        return MockResponse(status_code, text='', content=decoded_data)
 
-    return do_mock_get_saved_data
+    return do_mock_get_backup
 
 
 def create_patched_requests_get_for_premium(
@@ -55,7 +55,7 @@ def create_patched_requests_get_for_premium(
         metadata_last_modify_ts=None,
         metadata_data_hash=None,
         metadata_data_size=None,
-        saved_data=None,
+        saved_data: Optional[bytes] = None,
         consider_authentication_invalid: bool = False,
 ):
     def mocked_get(url, *args, **kwargs):
@@ -75,8 +75,8 @@ def create_patched_requests_get_for_premium(
                 data_hash=metadata_data_hash,
                 data_size=metadata_data_size,
             )
-        elif 'get_saved_data' in url:
-            implementation = mock_get_saved_data(saved_data=saved_data)
+        elif 'backup' in url:
+            implementation = mock_get_backup(saved_data=saved_data)
         else:
             raise ValueError('Unmocked url in session get for premium')
 
@@ -88,10 +88,10 @@ def create_patched_requests_get_for_premium(
 def create_patched_premium(
         premium_credentials: PremiumCredentials,
         patch_get: bool,
-        metadata_last_modify_ts=None,
-        metadata_data_hash=None,
-        metadata_data_size=None,
-        saved_data=None,
+        metadata_last_modify_ts: Optional[Timestamp] = None,
+        metadata_data_hash: Optional[str] = None,
+        metadata_data_size: Optional[int] = None,
+        saved_data: Optional[bytes] = None,
         consider_authentication_invalid: bool = False,
 ):
     premium = Premium(premium_credentials)
@@ -168,9 +168,9 @@ def setup_starting_environment(
     patched_premium_at_start, _, patched_get = create_patched_premium(
         premium_credentials=premium_credentials,
         patch_get=True,
-        metadata_last_modify_ts=metadata_last_modify_ts,
+        metadata_last_modify_ts=Timestamp(metadata_last_modify_ts),
         metadata_data_hash=remote_hash,
-        metadata_data_size=len(base64.b64decode(remote_data)) if remote_data else 0,
+        metadata_data_size=len(remote_data) if remote_data else 0,
         saved_data=remote_data,
     )
 

@@ -11,8 +11,10 @@ from typing import Any, Literal, NamedTuple, Optional
 from urllib.parse import urlencode
 
 import requests
+from urllib3.util.retry import Retry
 
 from rotkehlchen.constants import ROTKEHLCHEN_SERVER_TIMEOUT
+from rotkehlchen.constants.timing import ROTKEHLCHEN_SERVER_BACKUP_TIMEOUT
 from rotkehlchen.errors.api import (
     IncorrectApiKeyFormat,
     PremiumApiError,
@@ -20,7 +22,7 @@ from rotkehlchen.errors.api import (
 )
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import B64EncodedBytes, Timestamp
+from rotkehlchen.types import Timestamp
 from rotkehlchen.utils.misc import set_user_agent
 from rotkehlchen.utils.serialization import jsonloads_dict
 
@@ -51,7 +53,7 @@ def _process_dict_response(response: requests.Response) -> dict:
     if response.status_code not in HANDLABLE_STATUS_CODES:
         raise RemoteError(
             f'Unexpected status response({response.status_code}) from '
-            'rotki server',
+            f'rotki server. {response.text=}',
         )
 
     result_dict = jsonloads_dict(response.text)
@@ -135,8 +137,25 @@ class Premium:
     def __init__(self, credentials: PremiumCredentials):
         self.status = SubscriptionStatus.UNKNOWN
         self.session = requests.session()
+        # Make sure to have 3 retries on read/connect/other errors for all requests
+        # The reason for this is that we have noticed that in unstable/slow connections
+        # rotki.com server will close/cause the connection to result to a read timeout
+        # At the moment this only happens for the backup upload endpoint. More info:
+        # https://github.com/rotki/rotki/pull/6423
+        adapter = requests.adapters.HTTPAdapter()
+        # Have to set retries like this, since this granularity is not given by HTTPAdapter ctor
+        adapter.max_retries = Retry(
+            total=3,  # have to set each one individually as the code checks them all
+            read=3,
+            connect=3,
+            other=3,
+            allowed_methods=False,  # retry on all method verbs
+        )
+        self.session.mount('https://', adapter)
+        self.session.mount('https://', adapter)
         self.apiversion = '1'
-        self.uri = f'https://rotki.com/api/{self.apiversion}/'
+        self.rotki_api = f'https://rotki.com/api/{self.apiversion}/'
+        self.rotki_nest = f'https://rotki.com/nest/{self.apiversion}/'
         self.reset_credentials(credentials)
 
     def reset_credentials(self, credentials: PremiumCredentials) -> None:
@@ -193,7 +212,12 @@ class Premium:
             req['nonce'] = int(1000 * time.time())
         post_data = urlencode(req)
         hashable = post_data.encode()
-        message = urlpath.encode() + hashlib.sha256(hashable).digest()
+        if method == 'backup':
+            # nest uses hex for generating the signature since digest returns a string with the \x
+            # format in python.
+            message = urlpath.encode() + hashlib.sha256(hashable).digest().hex().encode()
+        else:
+            message = urlpath.encode() + hashlib.sha256(hashable).digest()
         signature = hmac.new(
             self.credentials.api_secret,
             message,
@@ -203,12 +227,13 @@ class Premium:
 
     def upload_data(
             self,
-            data_blob: B64EncodedBytes,
+            data_blob: bytes,
             our_hash: str,
             last_modify_ts: Timestamp,
             compression_type: Literal['zlib'],
     ) -> dict:
-        """Uploads data to the server and returns the response dict
+        """Uploads data to the server and returns the response dict. We upload the encrypted
+        database as a file in an http form.
 
         May raise:
         - RemoteError if there are problems reaching the server or if
@@ -216,8 +241,7 @@ class Premium:
         - PremiumAuthenticationError if the given key is rejected by the Rotkehlchen server
         """
         signature, data = self.sign(
-            'save_data',
-            data_blob=data_blob,
+            'backup',
             original_hash=our_hash,
             last_modify_ts=last_modify_ts,
             index=0,
@@ -229,20 +253,27 @@ class Premium:
         })
 
         try:
-            response = self.session.put(
-                self.uri + 'save_data',
+            response = self.session.post(
+                self.rotki_nest + 'backup',
                 data=data,
-                timeout=ROTKEHLCHEN_SERVER_TIMEOUT * 10,
+                files={'db_file': data_blob},
+                timeout=ROTKEHLCHEN_SERVER_BACKUP_TIMEOUT,
             )
         except requests.exceptions.RequestException as e:
             msg = f'Could not connect to rotki server due to {e!s}'
             log.error(msg)
             raise RemoteError(msg) from e
 
+        if response.status_code != 200:
+            msg = f'Could not upload database backup due to: {response.text}'
+            log.error(msg)
+            user_msg = 'Size limit reached' if response.status_code == HTTPStatus.REQUEST_ENTITY_TOO_LARGE else msg  # noqa: E501
+            raise RemoteError(user_msg)
+
         return _process_dict_response(response)
 
-    def pull_data(self) -> dict:
-        """Pulls data from the server and returns the response dict
+    def pull_data(self) -> Optional[bytes]:
+        """Pulls data from the server and returns the binary file with the database encrypted
 
         Returns None if there is no DB saved in the server.
 
@@ -251,23 +282,31 @@ class Premium:
         there is an error returned by the server
         - PremiumAuthenticationError if the given key is rejected by the Rotkehlchen server
         """
-        signature, data = self.sign('get_saved_data')
+        signature, data = self.sign('backup')
         self.session.headers.update({
             'API-SIGN': base64.b64encode(signature.digest()),
         })
 
         try:
             response = self.session.get(
-                self.uri + 'get_saved_data',
-                data=data,
-                timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
+                self.rotki_nest + 'backup',
+                params=data,
+                timeout=ROTKEHLCHEN_SERVER_BACKUP_TIMEOUT,
             )
         except requests.exceptions.RequestException as e:
             msg = f'Could not connect to rotki server due to {e!s}'
             log.error(msg)
             raise RemoteError(msg) from e
 
-        return _process_dict_response(response)
+        if response.status_code not in (HTTPStatus.OK, HTTPStatus.NOT_FOUND):
+            msg = 'Could not connect to rotki server.'
+            log.error(f'{msg} due to {response.text}')
+            raise RemoteError(msg)
+
+        if response.status_code == HTTPStatus.NOT_FOUND:
+            return None
+
+        return response.content
 
     def query_last_data_metadata(self) -> RemoteMetadata:
         """Queries last metadata from the server and returns the response
@@ -285,7 +324,7 @@ class Premium:
 
         try:
             response = self.session.get(
-                self.uri + 'last_data_metadata',
+                self.rotki_api + 'last_data_metadata',
                 data=data,
                 timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
             )
@@ -325,7 +364,7 @@ class Premium:
 
         try:
             response = self.session.get(
-                self.uri + 'statistics_rendererv2',
+                self.rotki_api + 'statistics_rendererv2',
                 data=data,
                 timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
             )
@@ -358,7 +397,7 @@ class Premium:
         try:
             response = self.session.request(
                 method=method,
-                url=self.uri + 'watchers',
+                url=self.rotki_api + 'watchers',
                 json=data,
                 timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
             )

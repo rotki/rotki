@@ -1,4 +1,3 @@
-import base64
 import logging
 import shutil
 from enum import Enum
@@ -108,12 +107,11 @@ class PremiumSyncManager:
             log.debug('sync from server -- pulling failed.', error=str(e))
             return False, f'Pulling failed: {e!s}'
 
-        if result['data'] is None:
-            log.debug('sync from server -- no data found.')
+        if result is None:
             return False, 'No data found'
 
         try:
-            self.data.decompress_and_decrypt_db(result['data'])
+            self.data.decompress_and_decrypt_db(result)
         except UnableToDecryptRemoteData as e:
             raise PremiumAuthenticationError(
                 'The given password can not unlock the database that was retrieved  from '
@@ -145,7 +143,14 @@ class PremiumSyncManager:
 
         return True
 
-    def maybe_upload_data_to_server(self, force_upload: bool = False) -> bool:
+    def maybe_upload_data_to_server(
+            self,
+            force_upload: bool = False,
+    ) -> tuple[bool, Optional[str]]:
+        """
+        Returns a boolean value denoting whether we can upload the DB to the server.
+        In case of error we also return a message to provide information to the user.
+        """
         with self.upload_lock:
             assert self.premium is not None, 'caller should make sure premium exists'
             log.debug('Starting maybe_upload_data_to_server')
@@ -153,18 +158,7 @@ class PremiumSyncManager:
                 metadata = self.premium.query_last_data_metadata()
             except (RemoteError, PremiumAuthenticationError) as e:
                 log.debug('upload to server -- fetching metadata error', error=str(e))
-                return False
-            b64_encoded_data, our_hash = self.data.compress_and_encrypt_db()
-
-            log.debug(
-                'CAN_PUSH',
-                ours=our_hash,
-                theirs=metadata.data_hash,
-            )
-            if our_hash == metadata.data_hash and not force_upload:
-                log.debug('upload to server stopped -- same hash')
-                # same hash -- no need to upload anything
-                return False
+                return False, str(e)
 
             with self.data.db.conn.read_ctx() as cursor:
                 our_last_write_ts = self.data.db.get_setting(cursor=cursor, name='last_write_ts')
@@ -174,9 +168,21 @@ class PremiumSyncManager:
                     f'upload to server stopped -- remote db({metadata.last_modify_ts}) '
                     f'more recent than local({our_last_write_ts})',
                 )
-                return False
+                return False, 'Remote database is more recent than local'
 
-            data_bytes_size = len(base64.b64decode(b64_encoded_data))
+            data, our_hash = self.data.compress_and_encrypt_db()
+
+            log.debug(
+                'CAN_PUSH',
+                ours=our_hash,
+                theirs=metadata.data_hash,
+            )
+            if our_hash == metadata.data_hash and not force_upload:
+                log.debug('upload to server stopped -- same hash')
+                # same hash -- no need to upload anything
+                return False, 'Remote database is up to date'
+
+            data_bytes_size = len(data)
             if data_bytes_size < metadata.data_size and not force_upload:
                 # Let's be conservative.
                 # TODO: Here perhaps prompt user in the future
@@ -184,18 +190,18 @@ class PremiumSyncManager:
                     f'upload to server stopped -- remote db({metadata.data_size}) '
                     f'bigger than local({data_bytes_size})',
                 )
-                return False
+                return False, 'Remote database contains more data than the local one'
 
             try:
                 self.premium.upload_data(
-                    data_blob=b64_encoded_data,
+                    data_blob=data,
                     our_hash=our_hash,
                     last_modify_ts=our_last_write_ts,
                     compression_type='zlib',
                 )
             except (RemoteError, PremiumAuthenticationError) as e:
                 log.debug('upload to server -- upload error', error=str(e))
-                return False
+                return False, str(e)
 
             # update the last data upload value
             self.last_data_upload_ts = ts_now()
@@ -203,7 +209,7 @@ class PremiumSyncManager:
                 self.data.db.set_setting(cursor, name='last_data_upload_ts', value=self.last_data_upload_ts)  # noqa: E501
 
             log.debug('upload to server -- success')
-        return True
+        return True, None
 
     def sync_data(
             self,
@@ -213,12 +219,14 @@ class PremiumSyncManager:
         msg = ''
         if action == 'upload':
             if self.check_if_should_sync(force_upload=True) is False:
-                success = False
+                success, error_msg = False, None
             else:
-                success = self.maybe_upload_data_to_server(force_upload=True)
+                success, error_msg = self.maybe_upload_data_to_server(force_upload=True)
 
             if not success:
-                msg = 'Upload failed'
+                msg = 'Upload failed.'
+                if error_msg is not None:
+                    msg += f' {error_msg}'
             return success, msg
 
         return self._sync_data_from_server_and_replace_local(perform_migrations)
@@ -254,8 +262,10 @@ class PremiumSyncManager:
         premium API keys and we failed. But a directory was created. Remove it.
         But create a backup of it in case something went really wrong
         and the directory contained data we did not want to lose"""
+        user_data_dir = self.data.user_data_dir
+        self.data.logout()  # wipes self.data.user_data_dir, so store it
         shutil.move(
-            self.data.user_data_dir,  # type: ignore
+            user_data_dir,  # type: ignore
             self.data.data_directory / f'auto_backup_{username}_{ts_now()}',
         )
         raise PremiumAuthenticationError(
