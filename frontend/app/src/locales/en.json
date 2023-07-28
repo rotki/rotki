@@ -2333,6 +2333,31 @@
         "empty": "The decimal separator cannot be empty"
       }
     },
+    "external_service_setting": {
+      "label": {
+        "query_retry_limit": "Query retry limit",
+        "query_retry_limit_hint": "The number of times to retry a query to external services before giving up.",
+        "connect_timeout": "Connect timeout",
+        "connect_timeout_hint": "The number of seconds to wait before giving up on establishing a connection to an external service.",
+        "read_timeout": "Read timeout",
+        "read_timeout_hint": "The number of seconds to wait for the first byte after a connection to an external service has been established."
+      },
+      "title": "External service settings",
+      "validation": {
+        "query_retry_limit": {
+          "non_empty": "Please input the query retry limit",
+          "invalid_range": "Query retry limit must be larger than {min}"
+        },
+        "connect_timeout": {
+          "non_empty": "Please input the connect timeout",
+          "invalid_range": "Connect timeout must be larger than {min}"
+        },
+        "read_timeout": {
+          "non_empty": "Please input the read timeout",
+          "invalid_range": "Read timeout must be larger than {min}"
+        }
+      }
+    },
     "labels": {
       "anonymous_analytics": "Should anonymous usage analytics be submitted?",
       "balance_saving_frequency": "Balance data saving frequency in hours",

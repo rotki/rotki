@@ -25,7 +25,10 @@ export const defaultGeneralSettings = (
   inferZeroTimedBalances: false,
   nonSyncingExchanges: [],
   treatEth2AsEth: false,
-  addressNamePriority: []
+  addressNamePriority: [],
+  queryRetryLimit: Defaults.DEFAULT_QUERY_RETRY_LIMIT,
+  connectTimeout: Defaults.DEFAULT_CONNECT_TIMEOUT,
+  readTimeout: Defaults.DEFAULT_READ_TIMEOUT
 });
 
 export const defaultAccountingSettings = (): AccountingSettings => ({
