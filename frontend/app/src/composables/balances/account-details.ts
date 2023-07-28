@@ -22,6 +22,8 @@ export const useAccountDetails = (
       return get(chainBalances)[chain];
     } else if (chain === Blockchain.POLYGON_POS) {
       return get(chainBalances)[chain];
+    } else if (chain === Blockchain.ARBITRUM_ONE) {
+      return get(chainBalances)[chain];
     }
     return {};
   });

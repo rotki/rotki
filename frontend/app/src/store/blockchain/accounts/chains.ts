@@ -45,6 +45,10 @@ export const useChainsAccountsStore = defineStore(
       get(polygon).map(({ address }) => address)
     );
 
+    const arbitrumAddresses: ComputedRef<string[]> = computed(() =>
+      get(arbitrum).map(({ address }) => address)
+    );
+
     return {
       ksm,
       dot,
@@ -54,6 +58,7 @@ export const useChainsAccountsStore = defineStore(
       arbitrum,
       optimismAddresses,
       polygonAddresses,
+      arbitrumAddresses,
       update,
       removeTag
     };
