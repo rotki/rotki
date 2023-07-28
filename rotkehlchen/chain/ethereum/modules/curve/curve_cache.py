@@ -323,8 +323,8 @@ def query_curve_data_from_api(existing_pools: list[ChecksumEvmAddress]) -> list[
             raise RemoteError(f'Curve pool data {api_pool_data} are missing key {e!s}') from e
         except DeserializationError as e:
             log.error(
-                f'Could not deserialize evm address while decoding curve pool {pool_address} '
-                f'information from curve api: {e!s}',
+                f'Could not deserialize evm address while decoding curve pool '
+                f'{api_pool_data["address"]} information from curve api: {e!s}',
             )
 
     return processed_new_pools
@@ -359,14 +359,15 @@ def query_curve_data_from_chain(
     pool_count = metaregistry.call(node_inquirer=ethereum, method_name='pool_count')
     new_pools = []
     for pool_index in range(pool_count):
+        raw_address = metaregistry.call(
+            node_inquirer=ethereum,
+            method_name='pool_list',
+            arguments=[pool_index],
+        )
         try:
-            pool_address = deserialize_evm_address(metaregistry.call(
-                node_inquirer=ethereum,
-                method_name='pool_list',
-                arguments=[pool_index],
-            ))
+            pool_address = deserialize_evm_address(raw_address)
         except DeserializationError as e:
-            log.error(f'Could not deserialize curve pool address {pool_address}. {e!s}')
+            log.error(f'Could not deserialize curve pool address {raw_address}. {e!s}')
             continue
 
         if pool_address in IGNORED_CURVE_POOLS or pool_address in existing_pools:
