@@ -1626,7 +1626,6 @@ def test_upgrade_db_38_to_39(user_data_dir):  # pylint: disable=unused-argument
     )
     cursor = db_v38.conn.cursor()
     assert cursor.execute("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='optimism_transactions';").fetchone()[0] == 0  # noqa: E501
-    events_num_before = cursor.execute('SELECT COUNT(*) FROM history_events').fetchone()[0]
     withdrawal_events_before = {x[0] for x in cursor.execute(
         "SELECT identifier FROM history_events WHERE event_identifier LIKE 'eth2_withdrawal_%'",  # noqa: E501
     ).fetchall()}
@@ -1637,6 +1636,8 @@ def test_upgrade_db_38_to_39(user_data_dir):  # pylint: disable=unused-argument
         ('rotki_events_0x2123',), ('rotki_events_bitcoin_tax_0x4123',),
     ]
     nft_data = cursor.execute('SELECT * FROM nfts').fetchall()
+    assert cursor.execute('SELECT COUNT(*) FROM history_events').fetchone()[0] == 547
+    before_non_evm_events = cursor.execute('SELECT COUNT(*) FROM history_events WHERE entry_type!=2 AND entry_type!=5').fetchone()[0]  # noqa: E501
 
     # Get previous data count to later compare
     txs_num = cursor.execute('SELECT COUNT(*) FROM evm_transactions').fetchone()[0]
@@ -1644,7 +1645,7 @@ def test_upgrade_db_38_to_39(user_data_dir):  # pylint: disable=unused-argument
     receipts_num = cursor.execute('SELECT COUNT(*) FROM evmtx_receipts').fetchone()[0]
     logs_num = cursor.execute('SELECT COUNT(*) FROM evmtx_receipt_logs').fetchone()[0]
     topics_num = cursor.execute('SELECT COUNT(*) FROM evmtx_receipt_log_topics').fetchone()[0]
-    tx_mappings_num = cursor.execute('SELECT COUNT(*) FROM evm_tx_mappings').fetchone()[0]
+    assert cursor.execute('SELECT COUNT(*) FROM evm_tx_mappings').fetchone()[0] == 316
     address_mappings_num = cursor.execute('SELECT COUNT(*) FROM evmtx_address_mappings').fetchone()[0]  # noqa: E501
 
     # Get the previous table data and map old keys to data, for later comparison
@@ -1691,7 +1692,7 @@ def test_upgrade_db_38_to_39(user_data_dir):  # pylint: disable=unused-argument
     cursor = db.conn.cursor()
 
     assert cursor.execute("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='optimism_transactions';").fetchone()[0] == 1  # noqa: E501
-    assert cursor.execute('SELECT COUNT(*) FROM history_events').fetchone()[0] == events_num_before
+    assert cursor.execute('SELECT COUNT(*) FROM history_events').fetchone()[0] == before_non_evm_events + 1  # noqa: E501  # all but 1 customized evm events should have been deleted
     withdrawal_events_after = {x[0] for x in cursor.execute(
         "SELECT identifier FROM history_events WHERE event_identifier LIKE 'EW_%'",
     ).fetchall()}
@@ -1712,7 +1713,7 @@ def test_upgrade_db_38_to_39(user_data_dir):  # pylint: disable=unused-argument
     assert cursor.execute('SELECT COUNT(*) FROM evmtx_receipts').fetchone()[0] == receipts_num
     assert cursor.execute('SELECT COUNT(*) FROM evmtx_receipt_logs').fetchone()[0] == logs_num
     assert cursor.execute('SELECT COUNT(*) FROM evmtx_receipt_log_topics').fetchone()[0] == topics_num  # noqa: E501
-    assert cursor.execute('SELECT COUNT(*) FROM evm_tx_mappings').fetchone()[0] == tx_mappings_num  # noqa: E501
+    assert cursor.execute('SELECT COUNT(*) FROM evm_tx_mappings').fetchone()[0] == 0  # noqa: E501  # events have been reset so no transactions are now decoded
     assert cursor.execute('SELECT COUNT(*) FROM evmtx_address_mappings').fetchone()[0] == address_mappings_num  # noqa: E501
 
     # Now make sure mappings are correct and point to the same data after upgrade
@@ -1759,6 +1760,10 @@ def test_upgrade_db_38_to_39(user_data_dir):  # pylint: disable=unused-argument
     for entry in cursor:
         hashchain = id_to_hashchain[entry[0]]
         assert hashchain_to_address_mappings[hashchain] == entry[1:]
+
+    assert cursor.execute('SELECT identifier, notes FROM history_events WHERE entry_type==2 OR entry_type==5').fetchall() == [  # noqa: E501
+        (539, 'Receive 95 ETH from 0xeB2629a2734e272Bcc07BDA959863f316F4bD4Cf'),
+    ]  # make sure only 1 event remains, the one that was customized
 
     # Check Arbitrum One related data
     assert cursor.execute(  # Check that Arbitrum One location was added
