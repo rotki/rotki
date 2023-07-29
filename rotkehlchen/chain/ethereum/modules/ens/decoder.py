@@ -150,22 +150,27 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):
             return DEFAULT_DECODING_OUTPUT
 
         name = decoded_data[0]
-        name_cost = from_wei(decoded_data[1])
+        logged_cost = from_wei(decoded_data[1])  # logs msg.value for new controller and actual cost for old  # noqa: E501
         expires = decoded_data[2]
 
-        refund_event_idx, refund_amount = None, ZERO
+        refund_event_idx, refund_amount, checked_cost = None, ZERO, logged_cost
         for idx, event in enumerate(context.decoded_events):
             if event.event_type == HistoryEventType.RECEIVE and event.event_subtype == HistoryEventSubType.NONE and event.asset == A_ETH and event.address == context.tx_log.address:  # noqa: E501
                 refund_event_idx = idx
                 refund_amount = event.balance.amount
 
+                if context.tx_log.address == ENS_REGISTRAR_CONTROLLER_1:  # old controller
+                    # old controller logs actual cost after refund
+                    checked_cost = logged_cost + refund_amount
+                # else new controller logs the msg.value, which is the brutto value
+
             # Find the transfer event which should be before the name renewed event
-            if event.event_type == HistoryEventType.SPEND and event.asset == A_ETH and event.balance.amount - refund_amount == name_cost and event.address == context.tx_log.address:  # noqa: E501
-                event.balance.amount -= refund_amount  # is now equal to name_cost
+            if event.event_type == HistoryEventType.SPEND and event.asset == A_ETH and event.balance.amount == checked_cost and event.address == context.tx_log.address:  # noqa: E501
+                event.balance.amount -= refund_amount  # get correct amount spent
                 event.event_type = HistoryEventType.RENEW
                 event.event_subtype = HistoryEventSubType.NFT
                 event.counterparty = CPT_ENS
-                event.notes = f'Renew ENS name {name} for {name_cost} ETH until {self.timestamp_to_date(expires)}'  # noqa: E501
+                event.notes = f'Renew ENS name {name} for {event.balance.amount} ETH until {self.timestamp_to_date(expires)}'  # noqa: E501
 
         if refund_event_idx is not None:
             del context.decoded_events[refund_event_idx]
