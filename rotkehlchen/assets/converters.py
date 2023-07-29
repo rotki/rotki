@@ -11,6 +11,7 @@ from rotkehlchen.assets.exchanges_mappings.coinbase import WORLD_TO_COINBASE
 from rotkehlchen.assets.exchanges_mappings.coinbase_pro import WORLD_TO_COINBASE_PRO
 from rotkehlchen.assets.exchanges_mappings.common import COMMON_ASSETS_MAPPINGS
 from rotkehlchen.assets.exchanges_mappings.cryptocom import WORLD_TO_CRYPTOCOM
+from rotkehlchen.assets.exchanges_mappings.ftx import UNSUPPORTED_FTX_ASSETS, WORLD_TO_FTX
 from rotkehlchen.assets.exchanges_mappings.gemini import WORLD_TO_GEMINI
 from rotkehlchen.assets.exchanges_mappings.iconomi import WORLD_TO_ICONOMI
 from rotkehlchen.assets.exchanges_mappings.kraken import WORLD_TO_KRAKEN
@@ -21,6 +22,7 @@ from rotkehlchen.assets.exchanges_mappings.poloniex import WORLD_TO_POLONIEX
 from rotkehlchen.assets.exchanges_mappings.uphold import WORLD_TO_UPHOLD
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
 from rotkehlchen.constants.assets import A_DAI, A_SAI
+from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.errors.asset import UnsupportedAsset
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.types import Location, Timestamp
@@ -819,6 +821,7 @@ POLONIEX_TO_WORLD = {v: k for k, v in WORLD_TO_POLONIEX.items()}
 BITTREX_TO_WORLD = {v: k for k, v in WORLD_TO_BITTREX.items()}
 BINANCE_TO_WORLD = {v: k for k, v in WORLD_TO_BINANCE.items()}
 BITFINEX_TO_WORLD = {v: k for k, v in WORLD_TO_BITFINEX.items()}
+FTX_TO_WORLD = {v: k for k, v in WORLD_TO_FTX.items()}
 KRAKEN_TO_WORLD = {v: k for k, v in WORLD_TO_KRAKEN.items()}
 KUCOIN_TO_WORLD = {v: k for k, v, in WORLD_TO_KUCOIN.items()}
 ICONOMI_TO_WORLD = {v: k for k, v in WORLD_TO_ICONOMI.items()}
@@ -1142,6 +1145,25 @@ def asset_from_okx(okx_name: str) -> AssetWithOracles:
     return symbol_to_asset_or_token(name)
 
 
+def asset_from_ftx(ftx_name: str) -> AssetWithOracles:
+    """May raise:
+    - DeserializationError
+    - UnsupportedAsset
+    - UnknownAsset
+    """
+    if not isinstance(ftx_name, str):
+        raise DeserializationError(f'Got non-string type {type(ftx_name)} for ftx asset')
+
+    if ftx_name in UNSUPPORTED_FTX_ASSETS:
+        raise UnsupportedAsset(ftx_name)
+
+    if ftx_name == 'SRM_LOCKED':
+        name = strethaddress_to_identifier('0x476c5E26a75bd202a9683ffD34359C0CC15be0fF')  # SRM
+    else:
+        name = FTX_TO_WORLD.get(ftx_name, ftx_name)
+    return symbol_to_asset_or_token(name)
+
+
 def asset_from_common_identifier(common_identifier: str) -> AssetWithOracles:
     """May raise:
     - DeserializationError
@@ -1161,7 +1183,9 @@ LOCATION_TO_ASSET_MAPPING: dict[Location, Callable[[str], AssetWithOracles]] = {
     Location.BINANCE: asset_from_binance,
     Location.CRYPTOCOM: asset_from_cryptocom,
     Location.BITPANDA: asset_from_bitpanda,
+    Location.BITTREX: asset_from_bittrex,
     Location.COINBASEPRO: asset_from_coinbasepro,
+    Location.FTX: asset_from_ftx,
     Location.KRAKEN: asset_from_kraken,
     Location.BITSTAMP: asset_from_bitstamp,
     Location.GEMINI: asset_from_gemini,
