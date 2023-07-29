@@ -3,6 +3,8 @@ Changelog
 =========
 
 
+* :feature:`-`  Gnosis safe transaction execution or failure is now properly shown in the decoded history events.
+* :feature:`-`  The database size for users who have EVM transactions of any chain is now greatly reduced. Some databases had a reduction of up to 40%.
 * :feature:`6033` Optimism gas calculation is now correctly taking into account L1 gas fees.
 * :feature:`-` Optimism governance votes that include parameters should now be decoded properly.
 * :feature:`-` Transactions for adding, removing and changing owners threshold for a gnosis safe multisig will now be decoded properly.
