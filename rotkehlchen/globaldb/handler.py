@@ -1177,6 +1177,9 @@ class GlobalDBHandler:
                     log.error(f'Asset with identifier {entry[0]} has wrong asset type. {e!s}')
                     continue
 
+                if hasattr(asset, 'protocol') and asset.protocol == 'spam':
+                    continue
+
                 assets.append(asset)
 
         return assets

@@ -1,15 +1,19 @@
 from abc import ABCMeta, abstractmethod
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
+from rotkehlchen.assets.asset import Asset, AssetWithOracles
+from rotkehlchen.assets.converters import LOCATION_TO_ASSET_MAPPING, asset_from_common_identifier
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.drivers.gevent import DBCursor
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
+from rotkehlchen.serialization.deserialize import deserialize_asset_amount, deserialize_timestamp
+from rotkehlchen.types import Fee, Location, TimestampMS
 
 ITEMS_PER_DB_WRITE = 400
 
@@ -74,3 +78,22 @@ class BaseExchangeImporter(metaclass=ABCMeta):
 
 class UnsupportedCSVEntry(Exception):
     """Thrown for external exchange exported entries we can't import"""
+
+
+def process_rotki_generic_import_csv_fields(
+        csv_row: dict[str, Any],
+        currency_colname: str,
+) -> tuple[AssetWithOracles, Optional[Fee], Optional[Asset], Location, TimestampMS]:
+    """
+    Process the imported csv for generic rotki trades and events
+    """
+    location = Location.deserialize(csv_row['Location'])
+    timestamp = TimestampMS(deserialize_timestamp(csv_row['Timestamp']))
+    fee = Fee(deserialize_asset_amount(csv_row['Fee'])) if csv_row['Fee'] else None
+    asset_mapping = LOCATION_TO_ASSET_MAPPING.get(location, asset_from_common_identifier)
+    asset = asset_mapping(csv_row[currency_colname])
+    fee_currency = (
+        asset_mapping(csv_row['Fee Currency'])
+        if csv_row['Fee Currency'] and fee is not None else None
+    )
+    return asset, fee, fee_currency, location, timestamp
