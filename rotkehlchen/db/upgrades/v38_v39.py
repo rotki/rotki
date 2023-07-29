@@ -1,6 +1,11 @@
 import logging
 from typing import TYPE_CHECKING
 
+from rotkehlchen.db.constants import (
+    HISTORY_MAPPING_KEY_STATE,
+    HISTORY_MAPPING_STATE_CUSTOMIZED,
+    HISTORY_MAPPING_STATE_DECODED,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 if TYPE_CHECKING:
@@ -256,15 +261,48 @@ def _add_arbitrum_one_location_and_nodes(write_cursor: 'DBCursor') -> None:
     log.debug('Exit _add_arbitrum_one_location_and_nodes')
 
 
+def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
+    """
+    Reset all decoded evm events except the customized ones for ethereum mainnet,
+    optimism and polygon.
+    """
+    log.debug('Enter _reset_decoded_events')
+    if write_cursor.execute('SELECT COUNT(*) FROM evm_transactions').fetchone()[0] == 0:
+        return
+
+    customized_events = write_cursor.execute(
+        'SELECT COUNT(*) FROM history_events_mappings WHERE name=? AND value=?',
+        (HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED),
+    ).fetchone()[0]
+    querystr = (
+        'DELETE FROM history_events WHERE identifier IN ('
+        'SELECT H.identifier from history_events H INNER JOIN evm_events_info E '
+        'ON H.identifier=E.identifier AND E.tx_hash IN '
+        '(SELECT tx_hash from_evm_transactions))'
+    )
+    bindings: tuple = ()
+    if customized_events != 0:
+        querystr += ' AND identifier NOT IN (SELECT parent_identifier FROM history_events_mappings WHERE name=? AND value=?)'  # noqa: E501
+        bindings = (HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED)
+
+    write_cursor.execute(querystr, bindings)
+    write_cursor.execute(
+        'DELETE from evm_tx_mappings WHERE tx_id IN (SELECT identifier FROM evm_transactions) AND value=?',  # noqa: E501
+        (HISTORY_MAPPING_STATE_DECODED,),
+    )
+    log.debug('Exit _reset_decoded_events')
+
+
 def upgrade_v38_to_v39(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
     """Upgrades the DB from v38 to v39. This was in v1.30.0 release.
         - Update NFT table to not use double quotes
         - Reduce size of some event identifiers
         - Primary key of evm tx tables becomes unique integer
+        - Reset all decoded events, except the customized ones
         - Add Arbitrum One location and nodes
     """
     log.debug('Entered userdb v38->v39 upgrade')
-    progress_handler.set_total_steps(6)
+    progress_handler.set_total_steps(7)
     with db.user_write() as write_cursor:
         _update_nfts_table(write_cursor)
         progress_handler.new_step()
@@ -273,6 +311,8 @@ def upgrade_v38_to_v39(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         _create_new_tables(write_cursor)
         progress_handler.new_step()
         _update_evm_transaction_data(write_cursor)
+        progress_handler.new_step()
+        _reset_decoded_events(write_cursor)
         progress_handler.new_step()
         _add_arbitrum_one_location_and_nodes(write_cursor)
         progress_handler.new_step()

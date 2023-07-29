@@ -101,7 +101,7 @@ def _delete_uniswap_sushiswap_events(write_cursor: 'DBCursor') -> None:
 
 def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
     """
-    Reset all decoded evm events except the customized ones for ethereum mainnet and polygon.
+    Reset all decoded evm events except the customized ones for ethereum mainnet and optimism.
     """
     log.debug('Enter _reset_decoded_events')
     if write_cursor.execute('SELECT COUNT(*) FROM evm_transactions').fetchone()[0] == 0:
@@ -115,7 +115,7 @@ def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
         'DELETE FROM history_events WHERE identifier IN ('
         'SELECT H.identifier from history_events H INNER JOIN evm_events_info E '
         'ON H.identifier=E.identifier AND E.tx_hash IN '
-        '(SELECT tx_hash from_evm_transactions))'
+        '(SELECT tx_hash FROM evm_transactions))'
     )
     bindings: tuple = ()
     if customized_events != 0:
@@ -124,7 +124,7 @@ def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
 
     write_cursor.execute(querystr, bindings)
     write_cursor.execute(
-        'DELETE from evm_tx_mappings WHERE tx_hash IN (SELECT tx_hash from_evm_transactions) AND value=?',  # noqa: E501
+        'DELETE from evm_tx_mappings WHERE tx_hash IN (SELECT tx_hash FROM evm_transactions) AND value=?',  # noqa: E501
         (HISTORY_MAPPING_STATE_DECODED,),
     )
     log.debug('Exit _reset_decoded_events')
