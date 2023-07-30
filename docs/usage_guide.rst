@@ -716,6 +716,13 @@ Rotki can import a CSV data file exported from Binance. But due to Binance's csv
 
 By importing a csv file you are able to import more than with the API. Particularly: Trades, Deposits and Withdrawals, Small assets exchange BNB, ETH 2.0 Staking and ETH 2.0 Staking Rewards, Launchpool Interests, POS savings interest, POS savings purchase, POS savings redemption.
 
+BitMEX.com
+=============
+
+You can import data from `bitmex.com <https://bitmex.com/>`_ into rotki by clicking on "Import Data" on the left sidebar and then following the instructions.
+
+Rotki can import a CSV data file exported from BitMEX. You may see warnings if data can't be imported. If this happens please reach out to us on discord or open an issue on github.
+
 ShapeShift.com
 ====================
 

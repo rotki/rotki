@@ -2541,6 +2541,13 @@
       "line_two": "Because of binance's csv format there is a chance that not all data will be imported. If this will happen, you will get warning.",
       "name": "Binance"
     },
+    "bitmex": {
+      "import": "Import {0} from bitmex",
+      "import_types": "wallet history",
+      "line_one": "[Experimental] If you find an issue with the imported data, let us know so we can adapt the code accordingly.",
+      "line_two": "Amounts in the wallet history file are assumed to be Bitcoin. If you would like this feature supported for other currencies, please reach out.",
+      "name": "BitMEX"
+    },
     "bisq": {
       "import": "Import {0} from Bisq",
       "import_trade": "trades",
