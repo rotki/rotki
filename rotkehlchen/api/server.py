@@ -359,7 +359,7 @@ def handle_request_parsing_error(
     msg = str(err)
     if isinstance(err.messages, dict):
         # first key is just the location. Ignore
-        key = list(err.messages.keys())[0]
+        key = next(iter(err.messages.keys()))
         msg = json.dumps(err.messages[key])
     elif isinstance(err.messages, list):
         msg = ','.join(err.messages)
