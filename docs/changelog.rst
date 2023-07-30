@@ -2,7 +2,7 @@
 Changelog
 =========
 
-
+* :feature:`6426` Users will now be able to import their BitMEX wallet history files.
 * :feature:`-`  Gnosis safe transaction execution or failure is now properly shown in the decoded history events.
 * :feature:`-`  The database size for users who have EVM transactions of any chain is now greatly reduced. Some databases had a reduction of up to 40%.
 * :feature:`6033` Optimism gas calculation is now correctly taking into account L1 gas fees.

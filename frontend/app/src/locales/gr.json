@@ -2428,6 +2428,13 @@
       "line_one": "[Experimental] If you find an issue with the imported data, let us know so we can adapt the code accordingly.",
       "name": "Bisq"
     },
+    "bitmex": {
+      "import": "Import {0} from bitmex",
+      "import_types": "wallet history",
+      "line_one": "[Experimental] If you find an issue with the imported data, let us know so we can adapt the code accordingly.",
+      "line_two": "Amounts in the wallet history file are assumed to be Bitcoin. If you would like this feature supported for other currencies, please reach out.",
+      "name": "BitMEX"
+    },
     "bitcoin_tax": {
       "import": "Import {0} from bitcoin.tax",
       "import_types": "trades, income, and spending",

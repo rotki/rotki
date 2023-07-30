@@ -742,6 +742,7 @@ EXTERNAL_EXCHANGES = (
     Location.SHAPESHIFT,
     Location.UPHOLD,
     Location.BISQ,
+    Location.BITMEX,
 )
 
 

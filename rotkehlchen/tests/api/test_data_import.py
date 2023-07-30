@@ -13,6 +13,7 @@ from rotkehlchen.db.filtering import (
     TradesFilterQuery,
 )
 from rotkehlchen.db.ledger_actions import DBLedgerActions
+from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -23,6 +24,7 @@ from rotkehlchen.tests.utils.dataimport import (
     assert_binance_import_results,
     assert_bisq_trades_import_results,
     assert_bitcoin_tax_trades_import_results,
+    assert_bitmex_import_wallet_history,
     assert_blockfi_trades_import_results,
     assert_blockfi_transactions_import_results,
     assert_cointracking_import_results,
@@ -35,6 +37,20 @@ from rotkehlchen.tests.utils.dataimport import (
     assert_shapeshift_trades_import_results,
     assert_uphold_transactions_import_results,
 )
+
+mocked_prices = {
+    'BTC': {
+        'USD': {
+            1576738800: FVal('7159.26'),
+            1576825200: FVal('7203.41'),
+            1576911600: FVal('7159.47'),
+            1576998000: FVal('7517.58'),
+            1577084400: FVal('7326.6'),
+            1577170800: FVal('7260.91'),
+            1577257200: FVal('7202.72'),
+        },
+    },
+}
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
@@ -72,7 +88,7 @@ def test_data_import_cointracking(rotkehlchen_api_server, file_upload):
 
     result = assert_proper_response_with_result(response)
     assert result is True
-    # And also assert data was imported succesfully
+    # And also assert data was imported successfully
     assert_cointracking_import_results(rotki)
 
 
@@ -92,7 +108,7 @@ def test_data_import_cryptocom(rotkehlchen_api_server):
     )
     result = assert_proper_response_with_result(response)
     assert result is True
-    # And also assert data was imported succesfully
+    # And also assert data was imported successfully
     assert_cryptocom_import_results(rotki)
 
 
@@ -112,8 +128,29 @@ def test_data_import_cryptocom_special_types(rotkehlchen_api_server):
     )
     result = assert_proper_response_with_result(response)
     assert result is True
-    # And also assert data was imported succesfully
+    # And also assert data was imported successfully
     assert_cryptocom_special_events_import_results(rotki)
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+@pytest.mark.parametrize('mocked_price_queries', [mocked_prices])
+def test_data_import_bitmex_wallet_history(rotkehlchen_api_server):
+    """Test that the data import endpoint works successfully for BitMEX wallet history"""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    dir_path = Path(__file__).resolve().parent.parent
+    filepath = dir_path / 'data' / 'bitmex_wallet_history.csv'
+
+    json_data = {'source': 'bitmex_wallet_history', 'file': str(filepath)}
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'dataimportresource',
+        ), json=json_data,
+    )
+    result = assert_proper_response_with_result(response)
+    assert result is True
+    # And also assert data was imported successfully
+    assert_bitmex_import_wallet_history(rotki)
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
@@ -132,7 +169,7 @@ def test_data_import_blockfi_transactions(rotkehlchen_api_server):
     )
     result = assert_proper_response_with_result(response)
     assert result is True
-    # And also assert data was imported succesfully
+    # And also assert data was imported successfully
     assert_blockfi_transactions_import_results(rotki)
 
 
@@ -152,7 +189,7 @@ def test_data_import_blockfi_trades(rotkehlchen_api_server):
     )
     result = assert_proper_response_with_result(response)
     assert result is True
-    # And also assert data was imported succesfully
+    # And also assert data was imported successfully
     assert_blockfi_trades_import_results(rotki)
 
 
@@ -172,7 +209,7 @@ def test_data_import_nexo(rotkehlchen_api_server):
     )
     result = assert_proper_response_with_result(response)
     assert result is True
-    # And also assert data was imported succesfully
+    # And also assert data was imported successfully
     assert_nexo_results(rotki)
 
 

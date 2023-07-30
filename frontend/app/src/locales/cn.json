@@ -2460,6 +2460,13 @@
       "line_two": "由于 binance 的 csv 格式，有可能不会导入所有数据。如果发生这种情况，您将收到警告。",
       "name": "币安"
     },
+    "bitmex": {
+      "import": "从 BitMEX 导入 {0}",
+      "import_types": "钱包历史",
+      "line_one": "[Experimental]如果您发现导入的数据有问题，请告诉我们，以便我们相应地调整代码。",
+      "line_two": "钱包历史文件中的金额假定为比特币。如果您希望其他货币支持此功能，请联系。",
+      "name": "BitMEX"
+    },
     "bisq": {
       "import": "从 Bisq 导入 {0}",
       "import_trade": "交易",
