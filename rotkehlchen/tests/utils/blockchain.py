@@ -355,7 +355,7 @@ def mock_etherscan_query(
                     # Get the ethscan multibalance subcalls
                     ethscan_contract = web3.eth.contract(address=contract.address, abi=contract.abi)  # noqa: E501
                     # not really the given args, but we just want the fn abi
-                    args = [list(eth_map.keys())[0], list(eth_map.keys())]
+                    args = [next(iter(eth_map.keys())), list(eth_map.keys())]
                     scan_fn_abi = ethscan_contract._find_matching_fn_abi(
                         fn_identifier='tokensBalance',
                         args=args,
