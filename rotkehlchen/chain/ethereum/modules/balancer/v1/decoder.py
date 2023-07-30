@@ -49,7 +49,7 @@ class Balancerv1Decoder(DecoderInterface):
         needed to decode the transfers made in the transaction to/from the ds proxy
         """
         # The transfer event appears after the debt generation event, so we need to transform it
-        target_logs = [x for x in all_logs if x.topics[0] == JOIN_V1 or x.topics[0] == EXIT_V1]
+        target_logs = [x for x in all_logs if x.topics[0] in (JOIN_V1, EXIT_V1)]
         if len(target_logs) == 0:
             return None
 

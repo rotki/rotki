@@ -340,7 +340,7 @@ def test_get_all_assets(rotkehlchen_api_server):
     assert 'entries_limit' in result
     for entry in result['entries']:
         assert entry['asset_type'] == 'fiat'
-        assert entry['symbol'] != A_USD.resolve_to_asset_with_symbol().symbol and entry['symbol'] != A_EUR.resolve_to_asset_with_symbol().symbol  # noqa: E501
+        assert entry['symbol'] not in (A_USD.resolve_to_asset_with_symbol().symbol, A_EUR.resolve_to_asset_with_symbol().symbol)  # noqa: E501
     assert_asset_result_order(data=result['entries'], is_ascending=True, order_field='name')
 
     # test that user owned assets filter works
