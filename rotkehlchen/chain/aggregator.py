@@ -694,7 +694,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         if append_or_remove != 'append':
             return  # we only care about appending
 
-        substrate_manager: 'SubstrateManager' = getattr(self, blockchain.name.lower())
+        substrate_manager: SubstrateManager = getattr(self, blockchain.name.lower())
         # When adding account for the first time we should connect to the nodes
         if len(substrate_manager.available_nodes_call_order) == 0:
             substrate_manager.attempt_connections()

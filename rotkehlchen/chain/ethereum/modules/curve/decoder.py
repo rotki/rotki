@@ -168,8 +168,8 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
             user_or_contract_address: ChecksumEvmAddress,
     ) -> DecodingOutput:
         """Decode information related to withdrawing assets from curve pools"""
-        withdrawal_events: list['EvmEvent'] = []
-        return_event: Optional['EvmEvent'] = None
+        withdrawal_events: list[EvmEvent] = []
+        return_event: Optional[EvmEvent] = None
         for event in decoded_events:
             try:
                 crypto_asset = event.asset.resolve_to_crypto_asset()
@@ -284,8 +284,8 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
             user_or_contract_address: ChecksumEvmAddress,
     ) -> DecodingOutput:
         """Decode information related to depositing assets in curve pools"""
-        deposit_events: list['EvmEvent'] = []
-        receive_event: Optional['EvmEvent'] = None
+        deposit_events: list[EvmEvent] = []
+        receive_event: Optional[EvmEvent] = None
         for event in decoded_events:
             try:
                 crypto_asset = event.asset.resolve_to_crypto_asset()
@@ -433,8 +433,8 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
 
         sold_asset = _read_curve_asset(sold_token_address, self.evm_inquirer.chain_id)
         bought_asset = _read_curve_asset(bought_token_address, self.evm_inquirer.chain_id)
-        spend_event: Optional['EvmEvent'] = None
-        receive_event: Optional['EvmEvent'] = None
+        spend_event: Optional[EvmEvent] = None
+        receive_event: Optional[EvmEvent] = None
         for event in context.decoded_events:
             if event.address != swapping_contract:
                 continue

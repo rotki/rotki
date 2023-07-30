@@ -175,7 +175,7 @@ class CowswapDecoder(DecoderInterface):
         Returns a list of pairs (spend_event, receive_event, swap_data)
         which represent the relevant trades.
         """
-        related_transfer_events: dict[tuple[HistoryEventType, Asset, FVal], 'EvmEvent'] = {}
+        related_transfer_events: dict[tuple[HistoryEventType, Asset, FVal], EvmEvent] = {}
         for event in decoded_events:
             if (
                 event.event_type in (HistoryEventType.SPEND, HistoryEventType.RECEIVE) and
@@ -183,7 +183,7 @@ class CowswapDecoder(DecoderInterface):
             ):
                 related_transfer_events[(event.event_type, event.asset, event.balance.amount)] = event  # noqa: E501
 
-        trades_events: list[tuple['EvmEvent', 'EvmEvent', Optional['EvmEvent'], SwapData]] = []
+        trades_events: list[tuple[EvmEvent, EvmEvent, Optional[EvmEvent], SwapData]] = []
         for swap_data in all_swap_data:
             receive_event = related_transfer_events.get((HistoryEventType.RECEIVE, swap_data.to_asset, swap_data.to_amount))  # noqa: E501
             if receive_event is None:

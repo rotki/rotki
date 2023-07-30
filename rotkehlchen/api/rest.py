@@ -4237,7 +4237,7 @@ class RestAPI:
         Collect the counterparties from decoders in the different evm chains and combine them
         removing duplicates.
         """
-        counterparties: set['CounterpartyDetails'] = reduce(
+        counterparties: set[CounterpartyDetails] = reduce(
             lambda x, y: x | y,
             [
                 self.rotkehlchen.chains_aggregator.get_evm_manager(chain_id).transactions_decoder.rules.all_counterparties

@@ -415,8 +415,8 @@ class TradesQuerySchema(
             data: dict[str, Any],
             **_kwargs: Any,
     ) -> dict[str, Any]:
-        base_assets: Optional[tuple['Asset', ...]] = None
-        quote_assets: Optional[tuple['Asset', ...]] = None
+        base_assets: Optional[tuple[Asset, ...]] = None
+        quote_assets: Optional[tuple[Asset, ...]] = None
         trades_idx_to_ignore = None
         with self.db.conn.read_ctx() as cursor:
             treat_eth2_as_eth = self.db.get_settings(cursor).treat_eth2_as_eth
@@ -809,7 +809,7 @@ class AssetMovementsQuerySchema(
             data: dict[str, Any],
             **_kwargs: Any,
     ) -> dict[str, Any]:
-        asset_list: Optional[tuple['Asset', ...]] = None
+        asset_list: Optional[tuple[Asset, ...]] = None
         if data['asset'] is not None:
             asset_list = (data['asset'],)
         if self.treat_eth2_as_eth is True and data['asset'] == A_ETH:
@@ -888,7 +888,7 @@ class LedgerActionsQuerySchema(
             data: dict[str, Any],
             **_kwargs: Any,
     ) -> dict[str, Any]:
-        asset_list: Optional[tuple['Asset', ...]] = None
+        asset_list: Optional[tuple[Asset, ...]] = None
         if data['asset'] is not None:
             asset_list = (data['asset'],)
         if self.treat_eth2_as_eth is True and data['asset'] == A_ETH:

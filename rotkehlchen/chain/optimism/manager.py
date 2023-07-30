@@ -34,4 +34,4 @@ class OptimismManager(EvmManager):
                 transactions=transactions,
             ),
         )
-        self.node_inquirer: 'OptimismInquirer'  # just to make the type specific
+        self.node_inquirer: OptimismInquirer  # just to make the type specific

@@ -41,7 +41,7 @@ class EthereumManager(EvmManager):
                 transactions=transactions,
             ),
         )
-        self.node_inquirer: 'EthereumInquirer'  # just to make the type specific
+        self.node_inquirer: EthereumInquirer  # just to make the type specific
 
     def assure_curve_cache_is_queried_and_decoder_updated(self) -> None:
         """

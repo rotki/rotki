@@ -333,7 +333,7 @@ class EventsHistorian:
             end_ts=end_ts,
         )
         # start creating the all trades history list
-        history: list['AccountingEventMixin'] = []
+        history: list[AccountingEventMixin] = []
         empty_or_error = ''
 
         def fail_history_cb(error_msg: str) -> None:

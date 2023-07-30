@@ -34,4 +34,4 @@ class ArbitrumOneManager(EvmManager):
                 transactions=transactions,
             ),
         )
-        self.node_inquirer: 'ArbitrumOneInquirer'  # just to make the type specific
+        self.node_inquirer: ArbitrumOneInquirer  # just to make the type specific

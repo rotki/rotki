@@ -171,7 +171,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
         )
         self.rules.event_rules.extend(event_rules)
         self.value_asset = value_asset
-        self.decoders: dict[str, 'DecoderInterface'] = {}
+        self.decoders: dict[str, DecoderInterface] = {}
         # store the mapping of possible counterparties to the allowed types and subtypes in events
         self.events_types_tuples: DecoderEventMappingType = {}
 
@@ -541,7 +541,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
         - RemoteError if there is a problem with contacting a remote to get receipts
         - InputError if the transaction hash is not found in the DB
         """
-        events: list['EvmEvent'] = []
+        events: list[EvmEvent] = []
         refresh_balances = False
         with self.database.conn.read_ctx() as cursor:
             self.reload_data(cursor)
@@ -745,7 +745,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             tx_receipt: EvmTxReceipt,
     ) -> list['EvmEvent']:
         """Decodes normal ETH transfers, internal transactions and gas cost payments"""
-        events: list['EvmEvent'] = []
+        events: list[EvmEvent] = []
         # check for gas spent
         direction_result = self.base.decode_direction(tx.from_address, tx.to_address)
         if direction_result is not None:
@@ -986,5 +986,5 @@ class EVMTransactionDecoderWithDSProxy(EVMTransactionDecoder, metaclass=ABCMeta)
             misc_counterparties=misc_counterparties,
             base_tools=base_tools,
         )
-        self.evm_inquirer: 'EvmNodeInquirerWithDSProxy'  # Set explicit type
+        self.evm_inquirer: EvmNodeInquirerWithDSProxy  # Set explicit type
         self.base: BaseDecoderToolsWithDSProxy  # Set explicit type

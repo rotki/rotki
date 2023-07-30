@@ -62,7 +62,7 @@ class BeaconChain(ExternalServiceWithApiKey):
 
     def __init__(self, database: 'DBHandler', msg_aggregator: MessagesAggregator) -> None:
         super().__init__(database=database, service_name=ExternalService.BEACONCHAIN)
-        self.db: 'DBHandler'  # specifying DB is not optional
+        self.db: DBHandler  # specifying DB is not optional
         self.msg_aggregator = msg_aggregator
         self.session = requests.session()
         self.warning_given = False
