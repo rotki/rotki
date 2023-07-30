@@ -127,7 +127,7 @@ class PickleFinance(EthereumModule):
     ) -> dict[ChecksumEvmAddress, list['AssetBalance']]:
         """Queries all the pickles deposited and available to claim in the protocol"""
         dill_balances = self.get_dill_balances(addresses)
-        balances_per_address: dict[ChecksumEvmAddress, list['AssetBalance']] = defaultdict(list)
+        balances_per_address: dict[ChecksumEvmAddress, list[AssetBalance]] = defaultdict(list)
         for address, dill_balance in dill_balances.items():
             pickles = dill_balance.dill_amount + dill_balance.pending_rewards
             if pickles.balance.amount != 0:

@@ -39,7 +39,7 @@ class EVMAccountingAggregator:
     ) -> None:
         self.node_inquirer = node_inquirer
         self.msg_aggregator = msg_aggregator
-        self.accountants: dict[str, 'ModuleAccountantInterface'] = {}
+        self.accountants: dict[str, ModuleAccountantInterface] = {}
         self.airdrops_list = airdrops_list
         self.initialize_all_accountants()
 

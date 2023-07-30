@@ -205,7 +205,7 @@ def test_main_currency_is_respected(
         accountant.db.set_setting(cursor, name='main_currency', value=A_GBP)
 
     trade_rate = Price(FVal('2403.20'))
-    history: list['AccountingEventMixin'] = [
+    history: list[AccountingEventMixin] = [
         Trade(
             timestamp=Timestamp(1609537953),
             location=Location.EXTERNAL,

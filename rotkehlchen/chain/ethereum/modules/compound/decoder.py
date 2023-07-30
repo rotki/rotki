@@ -170,7 +170,7 @@ class CompoundDecoder(DecoderInterface):
         Decode borrow and repayments for compound tokens
         """
         underlying_token_symbol = compound_token.symbol[1:]
-        underlying_asset: Optional['CryptoAsset']
+        underlying_asset: Optional[CryptoAsset]
 
         if underlying_token_symbol == self.eth.symbol:
             underlying_asset = self.eth

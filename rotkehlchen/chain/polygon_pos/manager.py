@@ -34,4 +34,4 @@ class PolygonPOSManager(EvmManager):
                 transactions=transactions,
             ),
         )
-        self.node_inquirer: 'PolygonPOSInquirer'  # just to make the type specific
+        self.node_inquirer: PolygonPOSInquirer  # just to make the type specific

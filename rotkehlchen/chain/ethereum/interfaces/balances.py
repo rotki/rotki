@@ -111,7 +111,7 @@ class ProtocolWithBalance(metaclass=abc.ABCMeta):
             arguments=[address, staking_addresses],
             call_order=call_order,
         )
-        balances: dict['EvmToken', 'FVal'] = defaultdict(FVal)
+        balances: dict[EvmToken, FVal] = defaultdict(FVal)
         for token_balance, token in zip(result, tokens):
             if token_balance == 0:
                 continue

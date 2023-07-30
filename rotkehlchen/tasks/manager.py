@@ -609,7 +609,7 @@ class TaskManager:
 
     def _maybe_update_yearn_vaults(self) -> Optional[list[gevent.Greenlet]]:
         if should_update_protocol_cache(GeneralCacheType.YEARN_VAULTS) is True:
-            ethereum_manager: 'EthereumManager' = self.chains_aggregator.get_chain_manager(SupportedBlockchain.ETHEREUM)  # noqa: E501
+            ethereum_manager: EthereumManager = self.chains_aggregator.get_chain_manager(SupportedBlockchain.ETHEREUM)  # noqa: E501
             return [self.greenlet_manager.spawn_and_track(
                 after_seconds=None,
                 task_name='Update yearn vaults',

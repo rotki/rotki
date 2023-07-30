@@ -411,7 +411,7 @@ class Uniswapv3Decoder(DecoderInterface):
         resolved_assets_and_amounts: list[CryptoAssetAmount] = []
         # index 2 -> first token in pair; index 3 -> second token in pair
         for token, amount in zip(liquidity_pool_position_info[2:4], (amount0_raw, amount1_raw)):
-            token_with_data: 'CryptoAsset' = get_or_create_evm_token(
+            token_with_data: CryptoAsset = get_or_create_evm_token(
                 userdb=self.evm_inquirer.database,
                 evm_address=token,
                 chain_id=ChainID.ETHEREUM,

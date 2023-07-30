@@ -385,7 +385,7 @@ class EvmTokensWithDSProxy(EvmTokens, metaclass=ABCMeta):
             evm_inquirer: 'EvmNodeInquirerWithDSProxy',
     ):
         super().__init__(database=database, evm_inquirer=evm_inquirer)
-        self.evm_inquirer: 'EvmNodeInquirerWithDSProxy'  # set explicit type
+        self.evm_inquirer: EvmNodeInquirerWithDSProxy  # set explicit type
 
     def _query_new_tokens(self, addresses: Sequence[ChecksumEvmAddress]) -> None:
         super()._query_new_tokens(addresses)

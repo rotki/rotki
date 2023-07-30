@@ -177,8 +177,8 @@ class Balancerv1Decoder(DecoderInterface):
         Check for accounting in v1 that the deposits/withdrawals events have the needed information
         to process them during accounting.
         """
-        related_events: list['EvmEvent'] = []
-        related_events_map: dict['EvmEvent', list['EvmEvent']] = {}
+        related_events: list[EvmEvent] = []
+        related_events_map: dict[EvmEvent, list[EvmEvent]] = {}
         # last event is only tracked in the case of exiting a pool and contains the event
         # sending the BPT token
         last_event = None

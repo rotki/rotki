@@ -59,7 +59,7 @@ class ManualCurrentOracle(CurrentPriceOracleInterface):
 
     def __init__(self) -> None:
         super().__init__(oracle_name='manual current price oracle')
-        self.database: Optional['DBHandler'] = None
+        self.database: Optional[DBHandler] = None
 
     def set_database(self, database: 'DBHandler') -> None:
         self.database = database

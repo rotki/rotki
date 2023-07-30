@@ -610,7 +610,7 @@ class Rotkehlchen:
             addresses=list(addresses_to_account_data.keys()),
         )
 
-        xpub_mappings: dict['XpubData', list[SingleBlockchainAccountData]] = {}
+        xpub_mappings: dict[XpubData, list[SingleBlockchainAccountData]] = {}
         for address, xpub_entry in address_to_xpub_mappings.items():
             if xpub_entry not in xpub_mappings:
                 xpub_mappings[xpub_entry] = []

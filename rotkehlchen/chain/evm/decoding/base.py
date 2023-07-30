@@ -336,7 +336,7 @@ class BaseDecoderToolsWithDSProxy(BaseDecoderTools):
             is_non_conformant_erc721_fn=is_non_conformant_erc721_fn,
             address_is_exchange_fn=address_is_exchange_fn,
         )
-        self.evm_inquirer: 'EvmNodeInquirerWithDSProxy'  # to specify the type
+        self.evm_inquirer: EvmNodeInquirerWithDSProxy  # to specify the type
 
     def maybe_get_proxy_owner(self, address: ChecksumEvmAddress) -> Optional[ChecksumEvmAddress]:
         """
