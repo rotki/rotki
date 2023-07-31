@@ -12,7 +12,6 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import (
     A_1INCH,
     A_AAVE,
-    A_ALETH,
     A_BTC,
     A_CRV,
     A_DAI,
@@ -396,17 +395,6 @@ def test_find_asset_with_no_api_oracles(inquirer_defi):
     assert price != price_uni_v2
     assert price.is_close(price_uni_v2, max_diff='0.05')
     assert price.is_close(price_uni_v3, max_diff='0.05')
-
-
-@pytest.mark.parametrize('use_clean_caching_directory', [True])
-@pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_saddle_oracle(inquirer_defi):
-    """
-    Test that uniswap oracles correctly query USD price of assets
-    """
-    price = inquirer_defi.find_usd_price(A_ALETH, ignore_cache=True)
-    price_eth = inquirer_defi.find_usd_price(A_ETH, ignore_cache=True)
-    assert price.is_close(price_eth, max_diff='100')
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])

@@ -10,7 +10,6 @@ import {
   MANUALCURRENT_PRIO_LIST_ITEM,
   MANUAL_PRIO_LIST_ITEM,
   type PrioritizedListId,
-  SADDLE_PRIO_LIST_ITEM,
   UNISWAP2_PRIO_LIST_ITEM,
   UNISWAP3_PRIO_LIST_ITEM
 } from '@/types/prioritized-list-id';
@@ -39,7 +38,6 @@ const availableCurrentOracles = (): PrioritizedListData<PrioritizedListId> => {
     ...baseAvailableOraclesTyped,
     UNISWAP2_PRIO_LIST_ITEM,
     UNISWAP3_PRIO_LIST_ITEM,
-    SADDLE_PRIO_LIST_ITEM,
     MANUALCURRENT_PRIO_LIST_ITEM
   ];
 

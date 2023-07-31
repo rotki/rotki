@@ -158,7 +158,7 @@ def test_set_settings(rotkehlchen_api_server):
         elif setting == 'dot_rpc_endpoint':
             value = 'http://polkadot.node.com:9934'
         elif setting == 'current_price_oracles':
-            value = ['coingecko', 'cryptocompare', 'uniswapv2', 'uniswapv3', 'saddle']
+            value = ['coingecko', 'cryptocompare', 'uniswapv2', 'uniswapv3']
         elif setting == 'historical_price_oracles':
             value = ['coingecko', 'cryptocompare']
         elif setting == 'taxable_ledger_actions':

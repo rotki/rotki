@@ -1107,10 +1107,9 @@ Query the latest price of assets
                 "cryptocompare": 2,
                 "uniswapv2": 3,
                 "uniswapv3": 4,
-                "saddle": 5,
-                "manualcurrent": 6,
-                "blockchain": 7,
-                "fiat": 8
+                "manualcurrent": 5,
+                "blockchain": 6,
+                "fiat": 7
               }
           },
           "message": ""
@@ -5245,7 +5244,6 @@ Export PnL report debug data
                     "cryptocompare",
                     "uniswapv2",
                     "uniswapv3",
-                    "saddle"
                 ],
                 "historical_price_oracles": ["manual", "cryptocompare", "coingecko"],
                 "taxable_ledger_actions": [

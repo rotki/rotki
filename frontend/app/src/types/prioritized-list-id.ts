@@ -69,12 +69,6 @@ export const UNISWAP3_PRIO_LIST_ITEM: PrioritizedListItemData<PrioritizedListId>
     icon: './assets/images/protocols/uniswap.svg'
   };
 
-export const SADDLE_PRIO_LIST_ITEM: PrioritizedListItemData<PrioritizedListId> =
-  {
-    identifier: PriceOracle.SADDLE,
-    icon: './assets/images/protocols/saddle-finance.svg'
-  };
-
 export const MANUALCURRENT_PRIO_LIST_ITEM: PrioritizedListItemData<PrioritizedListId> =
   {
     identifier: PriceOracle.MANUALCURRENT,
