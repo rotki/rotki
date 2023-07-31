@@ -2,6 +2,7 @@ import itertools
 import sqlite3
 from pathlib import Path
 from shutil import copyfile
+from typing import TYPE_CHECKING
 from uuid import uuid4
 
 import pytest
@@ -16,11 +17,15 @@ from rotkehlchen.assets.asset import (
 )
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.types import AssetData, AssetType
-from rotkehlchen.assets.utils import get_or_create_evm_token, symbol_to_asset_or_token
+from rotkehlchen.assets.utils import (
+    check_if_spam_token,
+    get_or_create_evm_token,
+    symbol_to_asset_or_token,
+)
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_BAT, A_CRV, A_DAI, A_ETH, A_LUSD, A_PICKLE, A_USD
 from rotkehlchen.constants.misc import NFT_DIRECTIVE, ONE
-from rotkehlchen.constants.resolver import ethaddress_to_identifier
+from rotkehlchen.constants.resolver import ethaddress_to_identifier, evm_address_to_identifier
 from rotkehlchen.db.custom_assets import DBCustomAssets
 from rotkehlchen.db.filtering import CustomAssetsFilterQuery
 from rotkehlchen.errors.asset import UnknownAsset
@@ -39,6 +44,7 @@ from rotkehlchen.tests.fixtures.globaldb import create_globaldb
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.tests.utils.globaldb import create_initial_globaldb_test_tokens
 from rotkehlchen.types import (
+    SPAM_PROTOCOL,
     ChainID,
     EvmTokenKind,
     GeneralCacheType,
@@ -48,6 +54,10 @@ from rotkehlchen.types import (
     TradeType,
 )
 from rotkehlchen.utils.misc import ts_now
+
+if TYPE_CHECKING:
+    from rotkehlchen.db.dbhandler import DBHandler
+
 
 selfkey_address = string_to_evm_address('0x4CC19356f2D37338b9802aa8E8fc58B0373296E7')
 selfkey_id = ethaddress_to_identifier(selfkey_address)
@@ -1149,3 +1159,24 @@ def test_get_assets_missing_information_by_symbol(globaldb):
     assets = globaldb.get_assets_with_symbol('BPTTT')
     assert len(assets) == 1
     assert assets[0].name == 'Test token'
+
+
+def test_for_spam_tokens(database: 'DBHandler', ethereum_inquirer) -> None:
+    """Test different cases of spam assets that we already know"""
+    # $ aavereward.com
+    assert check_if_spam_token(EvmToken(ethaddress_to_identifier(string_to_evm_address('0x39cf57b4dECb8aE3deC0dFcA1E2eA2C320416288'))).symbol) is True  # noqa: E501
+    # Visit https://op-reward.xyz and claim rewards
+    assert check_if_spam_token(EvmToken(evm_address_to_identifier(address='0x168fbA6072EE467931484a418EDeb5FcC1B9fb79', chain_id=ChainID.OPTIMISM, token_type=EvmTokenKind.ERC20)).symbol) is True  # noqa: E501
+    # $ USDCGift.com <- Visit to claim bonus
+    assert check_if_spam_token(EvmToken(ethaddress_to_identifier(string_to_evm_address('0x68Ca006dB91312Cd60a2238Ce775bE5F9f738bBa'))).symbol) is True  # noqa: E501
+    # test adding now $RPL Claim at RPoolBonus.com
+    token = get_or_create_evm_token(
+        userdb=database,
+        chain_id=ChainID.ETHEREUM,
+        token_kind=EvmTokenKind.ERC20,
+        evm_address=string_to_evm_address('0x245151454C790EB870498e9E5B590145fAC1463F'),
+        evm_inquirer=ethereum_inquirer,
+    )
+    assert token.protocol == SPAM_PROTOCOL
+    with database.conn.read_ctx() as cursor:
+        assert token.identifier in database.get_ignored_asset_ids(cursor)
