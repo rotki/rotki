@@ -627,8 +627,11 @@ class DBHandler:
 
     @need_writable_cursor('user_write')
     def add_to_ignored_assets(self, write_cursor: 'DBCursor', asset: Asset) -> None:
+        """Add a new asset to the set of ignored assets. If the asset was already marked as
+        ignored then we don't do anything.
+        """
         write_cursor.execute(
-            'INSERT INTO multisettings(name, value) VALUES(?, ?)',
+            'INSERT OR IGNORE INTO multisettings(name, value) VALUES(?, ?)',
             ('ignored_asset', asset.identifier),
         )
 
