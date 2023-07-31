@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { type Blockchain } from '@rotki/common/lib/blockchain';
+import camelCase from 'lodash/camelCase';
 import {
   type EvmRpcNode,
   type EvmRpcNodeList,
@@ -99,7 +100,7 @@ const isEtherscan = (item: EvmRpcNode) =>
 const isNodeConnected = (item: EvmRpcNode): boolean => {
   const blockchain = get(chain);
   const connected = get(connectedNodes);
-  const evmChain = getEvmChainName(blockchain);
+  const evmChain = camelCase(getEvmChainName(blockchain) ?? '');
   const nodes = evmChain && connected[evmChain] ? connected[evmChain] : [];
 
   return nodes.includes(item.name) || isEtherscan(item);
