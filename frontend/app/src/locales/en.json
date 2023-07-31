@@ -159,7 +159,6 @@
     },
     "title": "Trade Settings"
   },
-
   "address_account_form": {
     "label": "Add to all supported EVM chains",
     "hint": "When checked this address will be tracked for all supported evm chains (Ethereum, Optimism etc)"
@@ -1992,6 +1991,9 @@
       "title": "Deleting {chain} RPC Node"
     },
     "delete_tooltip": "Delete the selected RPC Node",
+    "edit_dialog": {
+      "title": "Edit {chain} RPC Node"
+    },
     "edit_error": {
       "title": "Editing {chain} RPC Node"
     },

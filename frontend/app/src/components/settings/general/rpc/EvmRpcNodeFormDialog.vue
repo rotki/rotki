@@ -2,9 +2,10 @@
 import { type Blockchain } from '@rotki/common/lib/blockchain';
 import { type EvmRpcNode } from '@/types/settings';
 
-defineProps<{
+const props = defineProps<{
   value: EvmRpcNode;
   chain: Blockchain;
+  chainName: string;
   isEtherscan: boolean;
   editMode: boolean;
 }>();
@@ -14,6 +15,8 @@ const emit = defineEmits<{
   (e: 'reset'): void;
 }>();
 
+const { editMode, chainName } = toRefs(props);
+
 const resetForm = () => {
   emit('reset');
 };
@@ -21,12 +24,19 @@ const resetForm = () => {
 const { openDialog, submitting, trySubmit } = useEvmRpcNodeForm();
 
 const { t } = useI18n();
+
+const dialogTitle = computed(() => {
+  if (get(editMode)) {
+    return t('evm_rpc_node_manager.edit_dialog.title', { chain: chainName });
+  }
+  return t('evm_rpc_node_manager.add_dialog.title', { chain: chainName });
+});
 </script>
 
 <template>
   <BigDialog
     :display="openDialog"
-    :title="t('evm_rpc_node_manager.add_dialog.title', { chain })"
+    :title="dialogTitle"
     :primary-action="t('common.actions.save')"
     :secondary-action="t('common.actions.cancel')"
     :loading="submitting"
@@ -36,6 +46,7 @@ const { t } = useI18n();
     <EvmRpcNodeForm
       :value="value"
       :chain="chain"
+      :chain-name="chainName"
       :edit-mode="editMode"
       :is-etherscan="isEtherscan"
       @input="emit('input', $event)"

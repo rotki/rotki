@@ -10,6 +10,7 @@ import { ApiValidationError } from '@/types/api/errors';
 const props = defineProps<{
   value: EvmRpcNode;
   chain: Blockchain;
+  chainName: string;
   isEtherscan: boolean;
   editMode: boolean;
 }>();
@@ -20,7 +21,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 
-const { chain, value, isEtherscan, editMode } = toRefs(props);
+const { chain, chainName, value, isEtherscan, editMode } = toRefs(props);
 const state = reactive<EvmRpcNode>(getPlaceholderNode(get(chain)));
 
 const rules = {
@@ -80,7 +81,7 @@ const save = async () => {
     }
     return await api.addEvmNode(omit(node, 'identifier'));
   } catch (e: any) {
-    const chainProp = get(chain);
+    const chainProp = get(chainName);
     const errorTitle = editing
       ? t('evm_rpc_node_manager.edit_error.title', { chain: chainProp })
       : t('evm_rpc_node_manager.add_error.title', { chain: chainProp });

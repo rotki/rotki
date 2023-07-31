@@ -26,7 +26,9 @@ const { setOpenDialog, closeDialog, setPostSubmitFunc } = useEvmRpcNodeForm();
 
 const { connectedNodes } = storeToRefs(usePeriodicStore());
 const api = useEvmNodesApi(get(chain));
-const { getEvmChainName } = useSupportedChains();
+const { getEvmChainName, getChainName } = useSupportedChains();
+
+const chainName = computed(() => get(getChainName(chain)));
 
 async function loadNodes(): Promise<void> {
   try {
@@ -109,7 +111,7 @@ const isNodeConnected = (item: EvmRpcNode): boolean => {
 const { show } = useConfirmStore();
 
 const showDeleteConfirmation = (item: EvmRpcNode) => {
-  const chainProp = get(chain);
+  const chainProp = get(chainName);
   show(
     {
       title: t('evm_rpc_node_manager.confirm.title', { chain: chainProp }),
@@ -230,6 +232,7 @@ const css = useCssModule();
       <EvmRpcNodeFormDialog
         v-model="selectedNode"
         :chain="chain"
+        :chain-name="chainName"
         :edit-mode="editMode"
         :is-etherscan="editMode && isEtherscan(selectedNode)"
         @reset="resetForm()"
