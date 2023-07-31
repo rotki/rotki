@@ -98,7 +98,6 @@ from rotkehlchen.utils.network import request_get_dict
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
-    from rotkehlchen.chain.ethereum.oracles.saddle import SaddleOracle
     from rotkehlchen.chain.ethereum.oracles.uniswap import UniswapV2Oracle, UniswapV3Oracle
     from rotkehlchen.chain.evm.manager import EvmManager
     from rotkehlchen.externalapis.coingecko import Coingecko
@@ -130,7 +129,6 @@ CurrentPriceOracleInstance = Union[
     'Cryptocompare',
     'UniswapV3Oracle',
     'UniswapV2Oracle',
-    'SaddleOracle',
     'ManualCurrentOracle',
 ]
 
@@ -253,7 +251,6 @@ class Inquirer:
     _manualcurrent: 'ManualCurrentOracle'
     _uniswapv2: Optional['UniswapV2Oracle'] = None
     _uniswapv3: Optional['UniswapV3Oracle'] = None
-    _saddle: Optional['SaddleOracle'] = None
     _evm_managers: dict[ChainID, 'EvmManager']
     _oracles: Optional[Sequence[CurrentPriceOracle]] = None
     _oracle_instances: Optional[list[CurrentPriceOracleInstance]] = None
@@ -353,11 +350,9 @@ class Inquirer:
     def add_defi_oracles(
             uniswap_v2: Optional['UniswapV2Oracle'],
             uniswap_v3: Optional['UniswapV3Oracle'],
-            saddle: Optional['SaddleOracle'],
     ) -> None:
         Inquirer()._uniswapv2 = uniswap_v2
         Inquirer()._uniswapv3 = uniswap_v3
-        Inquirer()._saddle = saddle
 
     @staticmethod
     def get_cached_current_price_entry(
@@ -397,7 +392,7 @@ class Inquirer:
         instance._oracles_not_onchain = []
         instance._oracle_instances_not_onchain = []
         for oracle, oracle_instance in zip(instance._oracles, instance._oracle_instances):
-            if oracle not in (CurrentPriceOracle.UNISWAPV2, CurrentPriceOracle.UNISWAPV3, CurrentPriceOracle.SADDLE):  # noqa: E501
+            if oracle not in (CurrentPriceOracle.UNISWAPV2, CurrentPriceOracle.UNISWAPV3):  # noqa: E501
                 instance._oracles_not_onchain.append(oracle)
                 instance._oracle_instances_not_onchain.append(oracle_instance)
 

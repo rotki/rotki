@@ -9,7 +9,6 @@ class CurrentPriceOracle(OracleSource):
     CRYPTOCOMPARE = auto()
     UNISWAPV2 = auto()
     UNISWAPV3 = auto()
-    SADDLE = auto()
     MANUALCURRENT = auto()
     BLOCKCHAIN = auto()
     FIAT = auto()
@@ -23,5 +22,4 @@ DEFAULT_CURRENT_PRICE_ORACLES_ORDER = (
     CurrentPriceOracle.CRYPTOCOMPARE,
     CurrentPriceOracle.UNISWAPV2,
     CurrentPriceOracle.UNISWAPV3,
-    CurrentPriceOracle.SADDLE,
 )

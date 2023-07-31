@@ -22,6 +22,7 @@ from rotkehlchen.db.upgrades.v37_v38 import DEFAULT_POLYGON_NODES_AT_V38
 from rotkehlchen.db.upgrades.v38_v39 import DEFAULT_ARBITRUM_ONE_NODES_AT_V39
 from rotkehlchen.db.utils import table_exists
 from rotkehlchen.errors.misc import DBUpgradeError
+from rotkehlchen.oracles.structures import CurrentPriceOracle
 from rotkehlchen.tests.utils.database import (
     _use_prepared_db,
     mock_db_schema_sanity_check,
@@ -1681,6 +1682,12 @@ def test_upgrade_db_38_to_39(user_data_dir):  # pylint: disable=unused-argument
 
     assert cursor.execute('SELECT MAX(seq) FROM location').fetchone()[0] == 40
 
+    # get settings and confirm saddle is present before the upgrade
+    cursor.execute('SELECT value FROM settings WHERE name="current_price_oracles"')
+    oracles = json.loads(cursor.fetchone()[0])
+    assert 'saddle' in oracles
+
+    cursor.close()
     db_v38.logout()
     # Execute upgrade
     db = _init_db_with_target_version(
@@ -1775,6 +1782,11 @@ def test_upgrade_db_38_to_39(user_data_dir):  # pylint: disable=unused-argument
         'SELECT * FROM rpc_nodes WHERE blockchain=?',
         (SupportedBlockchain.ARBITRUM_ONE.value,),
     ).fetchall()) == len(DEFAULT_ARBITRUM_ONE_NODES_AT_V39)
+
+    # get current oracles and check that saddle was removed and all others remain as they were.
+    settings = db.get_settings(cursor=cursor)
+    expected_oracles = [CurrentPriceOracle.deserialize(oracle) for oracle in oracles if oracle != 'saddle']  # noqa: E501
+    assert settings.current_price_oracles == expected_oracles
 
 
 def test_latest_upgrade_adds_remove_tables(user_data_dir):

@@ -1,3 +1,4 @@
+import json
 import logging
 from typing import TYPE_CHECKING
 
@@ -261,6 +262,25 @@ def _add_arbitrum_one_location_and_nodes(write_cursor: 'DBCursor') -> None:
     log.debug('Exit _add_arbitrum_one_location_and_nodes')
 
 
+def _remove_saddle_oracle(write_cursor: 'DBCursor') -> None:
+    log.debug('Enter _remove_saddle_oracle')
+    write_cursor.execute('SELECT value FROM settings WHERE name="current_price_oracles"')
+    if (data := write_cursor.fetchone()) is None:
+        return  # oracles not configured
+    try:
+        oracles: list[str] = json.loads(data[0])
+    except json.JSONDecodeError as e:
+        log.debug(f'Failed to read oracles from user db. {e!s}')
+        return
+
+    new_oracles = [oracle for oracle in oracles if oracle != 'saddle']
+    write_cursor.execute(
+        'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
+        ('current_price_oracles', json.dumps(new_oracles)),
+    )
+    log.debug('Exit _remove_saddle_oracle')
+
+
 def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
     """
     Reset all decoded evm events except the customized ones for ethereum mainnet,
@@ -302,7 +322,7 @@ def upgrade_v38_to_v39(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         - Add Arbitrum One location and nodes
     """
     log.debug('Entered userdb v38->v39 upgrade')
-    progress_handler.set_total_steps(7)
+    progress_handler.set_total_steps(8)
     with db.user_write() as write_cursor:
         _update_nfts_table(write_cursor)
         progress_handler.new_step()
@@ -315,6 +335,8 @@ def upgrade_v38_to_v39(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         _reset_decoded_events(write_cursor)
         progress_handler.new_step()
         _add_arbitrum_one_location_and_nodes(write_cursor)
+        progress_handler.new_step()
+        _remove_saddle_oracle(write_cursor)
         progress_handler.new_step()
 
     db.conn.execute('VACUUM;')

@@ -227,8 +227,7 @@
       "coingecko",
       "cryptocompare",
       "uniswapv2",
-      "uniswapv3",
-      "saddle"
+      "uniswapv3"
     ],
     "historical_price_oracles": ["manual", "cryptocompare", "coingecko"],
     "taxable_ledger_actions": [
