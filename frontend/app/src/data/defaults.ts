@@ -68,6 +68,8 @@ export const TRADE_LOCATION_OPTIMISM = 'optimism';
 
 export const TRADE_LOCATION_POLYGON_POS = 'polygon_pos';
 
+export const TRADE_LOCATION_ARBITRUM_ONE = 'arbitrum_one';
+
 export const SUPPORTED_TRADE_LOCATIONS = [
   EXCHANGE_UNISWAP,
   EXCHANGE_BALANCER,

@@ -76,7 +76,9 @@ export const assetSymbolToIdentifierMap: Record<string, string> = {
   [Blockchain.OPTIMISM]:
     'eip155:10/erc20:0x4200000000000000000000000000000000000042',
   [Blockchain.POLYGON_POS]:
-    'eip155:137/erc20:0x0000000000000000000000000000000000001010'
+    'eip155:137/erc20:0x0000000000000000000000000000000000001010',
+  [Blockchain.ARBITRUM_ONE]:
+    'eip155:42161/erc20:0x912ce59144191c1204e64559fe8253a0e49e6548'
 };
 
 export const getIdentifierFromSymbolMap = (symbol: string): string => {

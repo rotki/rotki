@@ -21,7 +21,8 @@ type Tokens = Record<string, EvmTokensRecord>;
 const defaultTokens = (): Tokens => ({
   [Blockchain.ETH]: {},
   [Blockchain.OPTIMISM]: {},
-  [Blockchain.POLYGON_POS]: {}
+  [Blockchain.POLYGON_POS]: {},
+  [Blockchain.ARBITRUM_ONE]: {}
 });
 
 export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
@@ -32,9 +33,8 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
   const { isAssetIgnored } = useIgnoredAssetsStore();
   const { t } = useI18n();
   const { ethAddresses } = storeToRefs(useEthAccountsStore());
-  const { optimismAddresses, polygonAddresses } = storeToRefs(
-    useChainsAccountsStore()
-  );
+  const { optimismAddresses, polygonAddresses, arbitrumAddresses } =
+    storeToRefs(useChainsAccountsStore());
   const {
     fetchDetectedTokensTask,
     fetchDetectedTokens: fetchDetectedTokensCaller
@@ -166,6 +166,13 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
     await fetchDetectedTokens(Blockchain.POLYGON_POS);
   });
 
+  watch(arbitrumAddresses, async (curr, prev) => {
+    if (curr.length === 0 || isEqual(curr, prev)) {
+      return;
+    }
+    await fetchDetectedTokens(Blockchain.ARBITRUM_ONE);
+  });
+
   const { isTaskRunning } = useTaskStore();
   const { fetchBlockchainBalances } = useBlockchainBalances();
 
@@ -201,6 +208,18 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
     if (get(shouldRefreshBalances) && wasDetecting && !isDetecting) {
       await fetchBlockchainBalances({
         blockchain: Blockchain.POLYGON_POS,
+        ignoreCache: true
+      });
+    }
+  });
+
+  const isArbitrumDetecting = isTaskRunning(TaskType.FETCH_DETECTED_TOKENS, {
+    chain: Blockchain.ARBITRUM_ONE
+  });
+  watch(isArbitrumDetecting, async (isDetecting, wasDetecting) => {
+    if (get(shouldRefreshBalances) && wasDetecting && !isDetecting) {
+      await fetchBlockchainBalances({
+        blockchain: Blockchain.ARBITRUM_ONE,
         ignoreCache: true
       });
     }

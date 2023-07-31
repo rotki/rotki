@@ -57,6 +57,13 @@
       "type": "evm",
       "native_token": "eip155:137/erc20:0x0000000000000000000000000000000000001010",
       "evm_chain_name": "polygon_pos"
+    },
+    {
+      "id": "arbitrum_one",
+      "name": "Arbitrum One",
+      "type": "evm",
+      "native_token": "ETH",
+      "evm_chain_name": "arbitrum_one"
     }
   ],
   "message": ""

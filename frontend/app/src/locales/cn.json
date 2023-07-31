@@ -159,7 +159,6 @@
     },
     "title": "交易设置"
   },
-
   "address_account_form": {
     "label": "添加到所有支持的 EVM 链",
     "hint": "当检查时,将跟踪此地址的所有支持的EVM链(Ethereum, Optimism 等)"
@@ -1281,7 +1280,8 @@
       "ksm": "Kusama 余额",
       "loopring": "Loopring 余额",
       "optimism": "Optimism",
-      "polygon_pos": "Polygon PoS 余额"
+      "polygon_pos": "Polygon PoS 余额",
+      "arbitrum_one": "Arbitrum One 余额"
     },
     "form_dialog": {
       "add_title": "添加区块链账户",
@@ -1932,6 +1932,9 @@
       "title": "删除 {chain} RPC 节点"
     },
     "delete_tooltip": "删除选中的 RPC 节点",
+    "edit_dialog": {
+      "title": "编辑 {chain} RPC 节点"
+    },
     "edit_error": {
       "title": "编辑 {chain} RPC 节点"
     },
