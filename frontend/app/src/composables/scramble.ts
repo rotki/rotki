@@ -16,7 +16,10 @@ export const useScramble = () => {
     }
 
     const isEth = hex.startsWith('0x');
-    const multiplier = get(scrambleMultiplier);
+    let multiplier = +get(scrambleMultiplier);
+    if (multiplier < 1) {
+      multiplier += 1;
+    }
 
     const trimmedHex = isEth ? hex.slice(2).toUpperCase() : hex;
 
@@ -61,11 +64,27 @@ export const useScramble = () => {
     return scrambleInteger(parsed, min, max).toString();
   };
 
+  const scrambleTimestamp = (timestamp: number) => {
+    if (!get(scrambleData)) {
+      return timestamp;
+    }
+
+    const currentTimestamp = Date.now() / 1000;
+    const diff = timestamp - currentTimestamp;
+    let multiplier = +get(scrambleMultiplier);
+    if (multiplier < 1) {
+      multiplier += 1;
+    }
+
+    return Math.round(timestamp + diff * multiplier * multiplier);
+  };
+
   return {
     scrambleData,
     shouldShowAmount,
     scrambleInteger,
     scrambleIdentifier,
-    scrambleHex
+    scrambleHex,
+    scrambleTimestamp
   };
 };

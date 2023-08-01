@@ -17,9 +17,7 @@ const props = withDefaults(
 
 const { timestamp, showTimezone, noTime } = toRefs(props);
 const { dateDisplayFormat } = storeToRefs(useGeneralSettingsStore());
-const { scrambleData, shouldShowAmount } = storeToRefs(
-  useSessionSettingsStore()
-);
+const { shouldShowAmount } = storeToRefs(useSessionSettingsStore());
 
 const dateFormat = computed<string>(() => {
   const display = get(showTimezone)
@@ -32,14 +30,11 @@ const dateFormat = computed<string>(() => {
   return display;
 });
 
-const displayTimestamp = computed<number>(() => {
-  if (!get(scrambleData)) {
-    return get(timestamp);
-  }
-  const start = new Date(2016, 0, 1).getTime();
-  const now = Date.now();
-  return new Date(start + Math.random() * (now - start)).getTime() / 1000;
-});
+const { scrambleTimestamp } = useScramble();
+
+const displayTimestamp = computed<number>(() =>
+  scrambleTimestamp(get(timestamp))
+);
 
 const date = computed(() => new Date(get(displayTimestamp) * 1000));
 const format = (date: Ref<Date>, format: Ref<string>) =>
