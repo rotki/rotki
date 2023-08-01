@@ -45,7 +45,7 @@ jobs:
   notify:
     name: 'Success check'
     if: ${{ always() }}
-    needs: [ 'linux', 'macos' ]
+    needs: [ 'linux', 'macos', 'windows' ]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
