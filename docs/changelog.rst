@@ -2,7 +2,7 @@
 Changelog
 =========
 
-* :bug:`-` Fix the bug where the dates aren't scrambled correctly with given multiplier.
+* :bug:`-` Improve date and hexadecimal address scrambling.
 
 * :release:`1.29.1 <2023-07-27>`
 * :bug:`-` Fix a bug where some images indicating the location of the assets are not loaded.

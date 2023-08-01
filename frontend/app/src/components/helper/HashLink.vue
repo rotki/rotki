@@ -24,6 +24,7 @@ const props = withDefaults(
     small?: boolean;
     truncateLength?: number;
     type?: keyof ExplorerUrls;
+    disableScramble?: boolean;
   }>(),
   {
     showIcon: true,
@@ -37,11 +38,12 @@ const props = withDefaults(
     buttons: false,
     small: false,
     truncateLength: 4,
-    type: 'address'
+    type: 'address',
+    disableScramble: false
   }
 );
 
-const { text, baseUrl, chain, evmChain, type } = toRefs(props);
+const { text, baseUrl, chain, evmChain, type, disableScramble } = toRefs(props);
 const { scrambleData, shouldShowAmount, scrambleHex, scrambleIdentifier } =
   useScramble();
 
@@ -75,6 +77,10 @@ const aliasName = computed<string | null>(() => {
 const displayText = computed<string>(() => {
   const linkText = get(text);
   const linkType = get(type);
+
+  if (get(disableScramble)) {
+    return linkText;
+  }
 
   if (linkType === 'block' || consistOfNumbers(linkText)) {
     return scrambleIdentifier(linkText);
