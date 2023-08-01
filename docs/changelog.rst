@@ -2,6 +2,7 @@
 Changelog
 =========
 
+
 * :feature:`6426` Users will now be able to import their BitMEX wallet history files.
 * :feature:`-`  Gnosis safe transaction execution or failure is now properly shown in the decoded history events.
 * :feature:`-`  The database size for users who have EVM transactions of any chain is now greatly reduced. Some databases had a reduction of up to 40%.
@@ -10,6 +11,7 @@ Changelog
 * :feature:`-` Transactions for adding, removing and changing owners threshold for a gnosis safe multisig will now be decoded properly.
 * :feature:`6033` Fix gas fee calculation for Optimism transactions to include L1 fees.
 * :bug:`-` ENS names that use the new RegistrarController and are renewed will have their events properly detected.
+* :bug:`-` Improve date and hexadecimal address scrambling.
 
 * :release:`1.29.1 <2023-07-27>`
 * :bug:`-` Fix a bug where some images indicating the location of the assets are not loaded.

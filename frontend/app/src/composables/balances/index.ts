@@ -22,6 +22,7 @@ export const useBalances = createSharedComposable(() => {
   const { isTaskRunning, awaitTask } = useTaskStore();
   const { t } = useI18n();
   const { currencySymbol, currency } = storeToRefs(useGeneralSettingsStore());
+  const { fetchNetValue } = useStatisticsStore();
 
   const adjustPrices = (prices: MaybeRef<AssetPrices>): void => {
     const pricesConvertedToUsd = { ...get(prices) };
@@ -123,7 +124,8 @@ export const useBalances = createSharedComposable(() => {
     await Promise.allSettled([
       fetchManualBalances(),
       refreshAccounts(undefined, true),
-      fetchConnectedExchangeBalances()
+      fetchConnectedExchangeBalances(),
+      fetchNetValue()
     ]);
 
     await refreshPrices(true);

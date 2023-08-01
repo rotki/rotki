@@ -68,6 +68,7 @@ const { locationData } = useLocations();
           :no-link="!!onlineEvent"
           :text="event.locationLabel"
           :chain="chain"
+          :disable-scramble="!!onlineEvent"
         />
       </div>
       <div v-if="event.customized" class="pt-1">
