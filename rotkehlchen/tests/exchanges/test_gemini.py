@@ -22,7 +22,7 @@ from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import AssetMovementCategory, Location, Timestamp
 from rotkehlchen.utils.misc import ts_now
 
-UNSUPPORTED_GEMINI_PAIRS = {'btcgusdperp'}
+UNSUPPORTED_GEMINI_PAIRS = {'btcgusdperp', 'ethgusdperp', 'pepegusdperp'}
 
 
 @pytest.mark.skipif('CI' in os.environ, reason='temporarily skip gemini in CI')

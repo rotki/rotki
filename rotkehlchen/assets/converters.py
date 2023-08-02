@@ -362,6 +362,23 @@ UNSUPPORTED_POLONIEX_ASSETS = {
     'GEKE',
     'BAM',
     'LZM',
+    'TITTY',
+    'TEST',
+    'X',
+    'XTOKEN',
+    'SPACE',
+    'wstUSDT',  # not listed in any page yet
+    'PEPE2',
+    'JESUS',
+    'PC',
+    'AMC',
+    'BOTS',
+    'FUR',  # furball but not in cc/coingecko
+    'HARRY',
+    'RBE',
+    'BAD',
+    'BIG',
+    'L',
 }
 
 UNSUPPORTED_BITTREX_ASSETS = {
@@ -535,6 +552,8 @@ UNSUPPORTED_BITTREX_ASSETS = {
     'PRMX',
     'TCR',
     'USDS',
+    'CRMC',
+    'GIF',
 }
 
 
@@ -771,6 +790,20 @@ UNSUPPORTED_KUCOIN_ASSETS = {
     'OCEANDOWN',
     'ALGOUP',
     'ALGODOWN',
+    'WLDUP',
+    'WLDDOWN',
+    'MKRDOWN',
+    'MKRUP',
+    'COMPDOWN',
+    'COMPUP',
+    'AIEPK',
+    'TSUGT',
+    'SEI',
+    'LAI',
+    'COMBO',
+    'CANDY',
+    'EGO',
+    'PEPE2',
 }
 
 # https://api.iconomi.com/v1/assets marks delisted assets

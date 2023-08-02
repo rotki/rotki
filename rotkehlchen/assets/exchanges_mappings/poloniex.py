@@ -151,4 +151,18 @@ WORLD_TO_POLONIEX = COMMON_ASSETS_MAPPINGS | {
     evm_address_to_identifier('0x993864E43Caa7F7F12953AD6fEb1d1Ca635B875F', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'SDAO',  # noqa: E501
     evm_address_to_identifier('0x12970E6868f88f6557B76120662c1B3E50A646bf', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'LADYS',  # noqa: E501
     'CORE': 'COREUM',
+    evm_address_to_identifier('0x2be5e8c109e2197D077D13A82dAead6a9b3433C5', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'TOKAMAK',  # noqa: E501
+    evm_address_to_identifier('0x72aDadb447784dd7AB1F472467750fC485e4cb2d', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'WLD',  # noqa: E501
+    evm_address_to_identifier('0x582d872A1B094FC48F5DE31D3B73F2D9bE47def1', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'TON',  # noqa: E501
+    evm_address_to_identifier('0xfb66321D7C674995dFcC2cb67A30bC978dc862AD', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'PEPE20',  # noqa: E501
+    evm_address_to_identifier('0xb478c6245e3D85D6EC3486B62ea872128d562541', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'LOOT',  # noqa: E501
+    evm_address_to_identifier('0x34ba042827996821CFFEB06477D48a2Ff9474483', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'SHIB2',  # noqa: E501
+    evm_address_to_identifier('0x3FEB4fEA5132695542F8Ede5076Ac43296d17c6d', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'BTC2',  # noqa: E501
+    evm_address_to_identifier('0xF2ec4a773ef90c58d98ea734c0eBDB538519b988', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'DOGE2',  # noqa: E501
+    evm_address_to_identifier('0xcD58D56906318cE6Ad9EF4AE5FB21F61E05c417D', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'PMAN',  # noqa: E501
+    evm_address_to_identifier('0xC3387E4285e9F80A7cFDf02B4ac6cdF2476A528A', ChainID.BINANCE, EvmTokenKind.ERC20): 'ROCK',  # noqa: E501
+    evm_address_to_identifier('0x4F62D4402fD57F9D073634244EE279eD36207341', ChainID.BINANCE, EvmTokenKind.ERC20): 'FRENNATION',  # noqa: E501
+    evm_address_to_identifier('0x48c87cDacb6Bb6BF6E5Cd85D8ee5C847084c7410', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'HAM',  # noqa: E501
+    evm_address_to_identifier('0xC9D21E5A24110b67af31aF464edfDC2dAe5Ec7D5', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'BTM2',  # noqa: E501
+    evm_address_to_identifier('0xeca82185adCE47f39c684352B0439f030f860318', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'PERL',  # noqa: E501
 }
