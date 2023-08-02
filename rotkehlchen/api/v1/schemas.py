@@ -150,12 +150,15 @@ class AsyncIgnoreCacheQueryArgumentSchema(AsyncQueryArgumentSchema):
     ignore_cache = fields.Boolean(load_default=False)
 
 
-class AsyncHistoricalQuerySchema(AsyncQueryArgumentSchema):
+class TimestampRangeSchema(Schema):
+    from_timestamp = TimestampField(load_default=Timestamp(0))
+    to_timestamp = TimestampField(load_default=ts_now)
+
+
+class AsyncHistoricalQuerySchema(AsyncQueryArgumentSchema, TimestampRangeSchema):
     """A schema for getters that have 2 arguments.
     One to enable async querying and another to force reset DB data by querying everytying again"""
     reset_db_data = fields.Boolean(load_default=False)
-    from_timestamp = TimestampField(load_default=Timestamp(0))
-    to_timestamp = TimestampField(load_default=ts_now)
 
 
 class BalanceSchema(Schema):
@@ -233,6 +236,7 @@ class EvmTransactionPurgingSchema(Schema):
 
 class EvmTransactionQuerySchema(
         AsyncQueryArgumentSchema,
+        TimestampRangeSchema,
         OnlyCacheQuerySchema,
         DBPaginationSchema,
         DBOrderBySchema,
@@ -242,8 +246,6 @@ class EvmTransactionQuerySchema(
         load_default=None,
         validate=lambda data: len(data) != 0,
     )
-    from_timestamp = TimestampField(load_default=Timestamp(0))
-    to_timestamp = TimestampField(load_default=ts_now)
     evm_chain = EvmChainNameField(required=False, load_default=None)
 
     @validates_schema
@@ -365,14 +367,13 @@ class EvmPendingTransactionDecodingSchema(AsyncQueryArgumentSchema):
 
 class TradesQuerySchema(
         AsyncQueryArgumentSchema,
+        TimestampRangeSchema,
         OnlyCacheQuerySchema,
         DBPaginationSchema,
         DBOrderBySchema,
 ):
     base_asset = AssetField(expected_type=Asset, load_default=None)
     quote_asset = AssetField(expected_type=Asset, load_default=None)
-    from_timestamp = TimestampField(load_default=Timestamp(0))
-    to_timestamp = TimestampField(load_default=ts_now)
     trade_type = SerializableEnumField(enum_class=TradeType, load_default=None)
     location = LocationField(load_default=None)
     include_ignored_trades = fields.Boolean(load_default=True)
@@ -460,13 +461,12 @@ class TradesQuerySchema(
 
 
 class BaseStakingQuerySchema(
-    AsyncQueryArgumentSchema,
-    OnlyCacheQuerySchema,
-    DBPaginationSchema,
-    DBOrderBySchema,
+        AsyncQueryArgumentSchema,
+        TimestampRangeSchema,
+        OnlyCacheQuerySchema,
+        DBPaginationSchema,
+        DBOrderBySchema,
 ):
-    from_timestamp = TimestampField(load_default=Timestamp(0))
-    to_timestamp = TimestampField(load_default=ts_now)
     asset = AssetField(expected_type=AssetWithOracles, load_default=None)
 
     def _get_assets_list(
@@ -577,12 +577,10 @@ class StakingQuerySchema(BaseStakingQuerySchema):
         )
 
 
-class HistoryEventSchema(DBPaginationSchema, DBOrderBySchema):
+class HistoryEventSchema(TimestampRangeSchema, DBPaginationSchema, DBOrderBySchema):
     """Schema for quering history events"""
     exclude_ignored_assets = fields.Boolean(load_default=True)
     group_by_event_ids = fields.Boolean(load_default=False)
-    from_timestamp = TimestampField(load_default=Timestamp(0))
-    to_timestamp = TimestampField(load_default=ts_now)
     event_identifiers = DelimitedOrNormalList(fields.String(), load_default=None)
     event_types = DelimitedOrNormalList(
         SerializableEnumField(enum_class=HistoryEventType),
@@ -759,13 +757,12 @@ class EditEvmEventSchema(EvmEventSchema):
 
 class AssetMovementsQuerySchema(
         AsyncQueryArgumentSchema,
+        TimestampRangeSchema,
         OnlyCacheQuerySchema,
         DBPaginationSchema,
         DBOrderBySchema,
 ):
     asset = AssetField(expected_type=Asset, load_default=None)
-    from_timestamp = TimestampField(load_default=Timestamp(0))
-    to_timestamp = TimestampField(load_default=ts_now)
     action = SerializableEnumField(enum_class=AssetMovementCategory, load_default=None)
     location = LocationField(load_default=None)
 
@@ -838,13 +835,12 @@ class AssetMovementsQuerySchema(
 
 class LedgerActionsQuerySchema(
         AsyncQueryArgumentSchema,
+        TimestampRangeSchema,
         OnlyCacheQuerySchema,
         DBPaginationSchema,
         DBOrderBySchema,
 ):
     asset = AssetField(expected_type=Asset, load_default=None)
-    from_timestamp = TimestampField(load_default=Timestamp(0))
-    to_timestamp = TimestampField(load_default=ts_now)
     type = SerializableEnumField(enum_class=LedgerActionType, load_default=None)
     location = LocationField(load_default=None)
 
@@ -1429,10 +1425,8 @@ class BlockchainBalanceQuerySchema(AsyncQueryArgumentSchema):
     ignore_cache = fields.Boolean(load_default=False)
 
 
-class StatisticsAssetBalanceSchema(Schema):
+class StatisticsAssetBalanceSchema(TimestampRangeSchema):
     asset = AssetField(expected_type=Asset, required=True)
-    from_timestamp = TimestampField(load_default=Timestamp(0))
-    to_timestamp = TimestampField(load_default=ts_now)
 
 
 class StatisticsValueDistributionSchema(Schema):
@@ -1442,9 +1436,8 @@ class StatisticsValueDistributionSchema(Schema):
     )
 
 
-class HistoryProcessingSchema(AsyncQueryArgumentSchema):
-    from_timestamp = TimestampField(load_default=Timestamp(0))
-    to_timestamp = TimestampField(load_default=ts_now)
+class HistoryProcessingSchema(AsyncQueryArgumentSchema, TimestampRangeSchema):
+    """Schema for history processing"""
 
 
 class ModuleBalanceProcessingSchema(AsyncQueryArgumentSchema):
@@ -1484,11 +1477,9 @@ class AccountingReportsSchema(Schema):
             raise ValidationError('A report id should be given')
 
 
-class AccountingReportDataSchema(DBPaginationSchema, DBOrderBySchema):
+class AccountingReportDataSchema(TimestampRangeSchema, DBPaginationSchema, DBOrderBySchema):
     report_id = fields.Integer(load_default=None)
     event_type = SerializableEnumField(enum_class=SchemaEventType, load_default=None)
-    from_timestamp = TimestampField(load_default=Timestamp(0))
-    to_timestamp = TimestampField(load_default=ts_now)
 
     @validates_schema
     def validate_report_schema(
@@ -2285,10 +2276,8 @@ class ManualPriceDeleteSchema(Schema):
     timestamp = TimestampField(required=True)
 
 
-class AvalancheTransactionQuerySchema(AsyncQueryArgumentSchema):
+class AvalancheTransactionQuerySchema(TimestampRangeSchema, AsyncQueryArgumentSchema):
     address = EvmAddressField(required=True)
-    from_timestamp = TimestampField(load_default=Timestamp(0))
-    to_timestamp = TimestampField(load_default=ts_now)
 
 
 class SingleFileSchema(Schema):
@@ -2377,12 +2366,11 @@ class Eth2ValidatorPatchSchema(Schema):
 
 class Eth2DailyStatsSchema(
         AsyncQueryArgumentSchema,
+        TimestampRangeSchema,
         OnlyCacheQuerySchema,
         DBPaginationSchema,
         DBOrderBySchema,
 ):
-    from_timestamp = TimestampField(load_default=Timestamp(0))
-    to_timestamp = TimestampField(load_default=ts_now)
     validators = fields.List(fields.Integer(), load_default=None)
 
     @validates_schema
@@ -2747,9 +2735,7 @@ class UserNotesPatchSchema(UserNotesPutSchema, IntegerIdentifierSchema):
         return {'user_note': UserNote.deserialize(data)}
 
 
-class UserNotesGetSchema(DBPaginationSchema, DBOrderBySchema):
-    from_timestamp = TimestampField(load_default=Timestamp(0))
-    to_timestamp = TimestampField(load_default=ts_now)
+class UserNotesGetSchema(TimestampRangeSchema, DBPaginationSchema, DBOrderBySchema):
     title_substring = fields.String(load_default=None)
     location = fields.String(load_default=None)
 
@@ -2962,10 +2948,8 @@ class EthStakingHistoryStats(Schema):
     validator_indices = DelimitedOrNormalList(fields.Integer(), load_default=None)
 
 
-class EthStakingHistoryStatsProfit(EthStakingHistoryStats):
+class EthStakingHistoryStatsProfit(EthStakingHistoryStats, TimestampRangeSchema):
     """Schema for querying ethereum staking history stats"""
-    from_timestamp = TimestampField(load_default=Timestamp(0))
-    to_timestamp = TimestampField(load_default=ts_now)
 
     def __init__(self, chains_aggregator: 'ChainsAggregator') -> None:
         super().__init__()
