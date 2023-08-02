@@ -286,6 +286,11 @@ def test_cryptocompare_asset_support(cryptocompare):
         'NXRA',
         'NOM',
         evm_address_to_identifier(address='0x9559Aaa82d9649C7A7b220E7c461d2E74c9a3593', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # reth2 in cc
+        evm_address_to_identifier(address='0xAB846Fb6C81370327e784Ae7CbB6d6a6af6Ff4BF', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # paladin but cc has policypal
+        evm_address_to_identifier(address='0x01597E397605Bf280674Bf292623460b4204C375', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # bent token but bent finance in cc
+        evm_address_to_identifier(address='0xb3Ad645dB386D7F6D753B2b9C3F4B853DA6890B8', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # contractor but cc has creator platform
+        evm_address_to_identifier(address='0x8bb08042c06FA0Fc26cd2474C5F0C03a1056Ad2F', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # consumer price index but cc has crypto price
+        'IRON',  # iron fish but cc has iron
     )
     for asset_data in GlobalDBHandler().get_all_asset_data(mapping=False):
         potential_support = (
@@ -296,7 +301,8 @@ def test_cryptocompare_asset_support(cryptocompare):
         )
         if potential_support:
             msg = (
-                f'We have {asset_data.identifier} with symbol {asset_data.symbol} as not supported'
+                f'We have {asset_data.identifier} with symbol {asset_data.symbol} and name '
+                f'{asset_data.name} as not supported'
                 f' by cryptocompare but the symbol appears in its supported assets'
             )
             test_warnings.warn(UserWarning(msg))
