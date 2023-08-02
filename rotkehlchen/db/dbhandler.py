@@ -2196,6 +2196,32 @@ class DBHandler:
 
         return balances
 
+    def query_collection_timed_balances(
+            self,
+            cursor: 'DBCursor',
+            collection_id: int,
+            from_ts: Optional[Timestamp] = None,
+            to_ts: Optional[Timestamp] = None,
+    ) -> list[SingleDBAssetBalance]:
+        """Query all balance entries for all assets of a collection within a range of timestamps
+        """
+        with GlobalDBHandler().conn.read_ctx() as global_cursor:
+            global_cursor.execute(
+                'SELECT asset FROM multiasset_mappings WHERE collection_id=?',
+                (collection_id,),
+            )
+            asset_balances: list[SingleDBAssetBalance] = []
+            for x in global_cursor:
+                asset_balances.extend(self.query_timed_balances(
+                    cursor=cursor,
+                    asset=Asset(x[0]),
+                    balance_type=BalanceType.ASSET,
+                    from_ts=from_ts,
+                    to_ts=to_ts,
+                ))
+
+        return combine_asset_balances(asset_balances)
+
     def query_owned_assets(self, cursor: 'DBCursor') -> list[Asset]:
         """Query the DB for a list of all assets ever owned
 
