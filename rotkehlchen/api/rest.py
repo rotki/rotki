@@ -1460,19 +1460,29 @@ class RestAPI:
 
     def query_timed_balances_data(
             self,
-            asset: Asset,
+            asset: Optional[Asset],
+            collection_id: Optional[int],
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
     ) -> Response:
-        # TODO: Think about this, but for now this is only balances, not liabilities
+
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
-            data = self.rotkehlchen.data.db.query_timed_balances(
-                cursor=cursor,
-                from_ts=from_timestamp,
-                to_ts=to_timestamp,
-                asset=asset,
-                balance_type=BalanceType.ASSET,
-            )
+            if asset is not None:
+                # TODO: Think about this, but for now this is only balances, not liabilities
+                data = self.rotkehlchen.data.db.query_timed_balances(
+                    cursor=cursor,
+                    from_ts=from_timestamp,
+                    to_ts=to_timestamp,
+                    asset=asset,
+                    balance_type=BalanceType.ASSET,
+                )
+            else:  # marshmallow check guarantees collection_id exists
+                data = self.rotkehlchen.data.db.query_collection_timed_balances(
+                    cursor=cursor,
+                    collection_id=collection_id,  # type: ignore  # collection_id exists here
+                    from_ts=from_timestamp,
+                    to_ts=to_timestamp,
+                )
 
         result = process_result_list(data)
         return api_response(

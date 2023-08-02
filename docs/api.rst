@@ -3870,8 +3870,8 @@ Statistics for netvalue over time
    :statuscode 409: No user is currently logged in or currently logged in user does not have a premium subscription.
    :statuscode 500: Internal rotki error.
 
-Statistics for asset balance over time
-======================================
+Statistics for asset or collection balance over time
+=====================================================
 
 .. http:post:: /api/(version)/statistics/balance
 
@@ -3879,7 +3879,7 @@ Statistics for asset balance over time
       This endpoint is only available for premium users
 
 
-   Doing a POST on the statistics asset balance over time endpoint will return all saved balance entries for an asset. Optionally you can filter for a specific time range by providing appropriate arguments.
+   Doing a POST on the statistics asset/collection balance over time endpoint will return all saved balance entries for an asset. Optionally you can filter for a specific time range by providing appropriate arguments. Depending on the given argument this will either query a single asset or a collection of assets.
 
 
    **Example Request**:
@@ -3894,10 +3894,8 @@ Statistics for asset balance over time
 
    :reqjson int from_timestamp: The timestamp after which to return saved balances for the asset. If not given zero is considered as the start.
    :reqjson int to_timestamp: The timestamp until which to return saved balances for the asset. If not given all balances until now are returned.
-   :reqjson string asset: Identifier of the asset.
-   :param int from_timestamp: The timestamp after which to return saved balances for the asset. If not given zero is considered as the start.
-   :param int to_timestamp: The timestamp until which to return saved balances for the asset. If not given all balances until now are returned.
-   :param string asset: Identifier of the asset.
+   :reqjson string asset: Identifier of the asset. This is mutually exclusive with the collection id. If this is given then only a single asset's balances will be queried. If not given a collection_id MUST be given.
+   :reqjson integer collection_id: Collection id to query. This is mutually exclusive with the asset. If this is given then combined balances of all assets of the collection are returned. If not given an asset MUST be given.
 
    **Example Response**:
 

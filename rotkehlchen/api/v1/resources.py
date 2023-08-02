@@ -1306,12 +1306,14 @@ class StatisticsAssetBalanceResource(BaseMethodView):
     @use_kwargs(post_schema, location='json')
     def post(
             self,
-            asset: Asset,
+            asset: Optional[Asset],
+            collection_id: Optional[int],
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
     ) -> Response:
         return self.rest_api.query_timed_balances_data(
-            asset=asset,
+            asset=asset,  # note that from marshmallow asset and collection_id are guaranteed to exist and be mutually exclusive  # noqa: E501
+            collection_id=collection_id,
             from_timestamp=from_timestamp,
             to_timestamp=to_timestamp,
         )

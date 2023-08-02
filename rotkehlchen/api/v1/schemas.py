@@ -1426,7 +1426,29 @@ class BlockchainBalanceQuerySchema(AsyncQueryArgumentSchema):
 
 
 class StatisticsAssetBalanceSchema(TimestampRangeSchema):
-    asset = AssetField(expected_type=Asset, required=True)
+    asset = AssetField(expected_type=Asset, load_default=None)
+    collection_id = fields.Integer(load_default=None)
+
+    @validates_schema
+    def validate_schema(
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
+    ) -> None:
+        asset = data.get('asset')
+        collection_id = data.get('collection_id')
+
+        if asset is None and collection_id is None:
+            raise ValidationError(
+                message='Need to either provide an asset or a collection_id',
+                field_name='asset',
+            )
+
+        if asset is not None and collection_id is not None:
+            raise ValidationError(
+                message="Can't provide both an asset and a collection_id",
+                field_name='collection_id',
+            )
 
 
 class StatisticsValueDistributionSchema(Schema):
