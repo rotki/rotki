@@ -250,8 +250,8 @@ watch(loading, async (isLoading, wasLoading) => {
           {{ t('ledger_actions.title') }}
         </navigator-link>
       </template>
-      <template #actions>
-        <v-row v-if="!locationOverview">
+      <template v-if="!locationOverview" #actions>
+        <v-row>
           <v-col cols="12" md="6">
             <v-row>
               <v-col cols="auto">

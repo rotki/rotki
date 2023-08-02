@@ -1,9 +1,6 @@
 <script setup lang="ts">
-import groupBy from 'lodash/groupBy';
 import { type BigNumber } from '@rotki/common/lib';
 import { type DataTableHeader } from '@/types/vuetify';
-import { zeroBalance } from '@/utils/bignumbers';
-import { balanceSum, calculatePercentage } from '@/utils/calculation';
 import { CURRENCY_USD } from '@/types/currencies';
 
 const { t } = useI18n();
@@ -29,23 +26,9 @@ const { assetBreakdown } = useBalancesBreakdown();
 
 const breakdowns = computed(() => {
   const asset = get(identifier);
-  const data = get(blockchainOnly)
+  return get(blockchainOnly)
     ? get(getBlockchainBreakdown(asset))
     : get(assetBreakdown(asset));
-
-  const grouped = groupBy(data, 'location');
-
-  return Object.entries(grouped).map(([location, breakdown]) => {
-    const balance = zeroBalance();
-    return {
-      location,
-      balance: breakdown.reduce(
-        (previousValue, currentValue) =>
-          balanceSum(previousValue, currentValue.balance),
-        balance
-      )
-    };
-  });
 });
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());

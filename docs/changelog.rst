@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Fix a bug where the ETH asset is not shown correctly in the location breakdown when the 'Treat ETH as ETH2' setting is activated.
 * :bug:`-` Improve date and hexadecimal address scrambling.
 
 * :release:`1.29.1 <2023-07-27>`
