@@ -89,6 +89,10 @@ aside {
   }
 }
 
+.v-tab {
+  text-transform: uppercase;
+}
+
 .table-inside-dialog {
   scroll-behavior: smooth;
   max-height: calc(100vh - 340px);

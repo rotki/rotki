@@ -2265,6 +2265,31 @@
         "empty": "小数分隔符不能为空"
       }
     },
+    "external_service_setting": {
+      "label": {
+        "query_retry_limit": "查询重试限制",
+        "query_retry_limit_hint": "在放弃之前重试对外部服务的查询次数。",
+        "connect_timeout": "连接超时",
+        "connect_timeout_hint": "在放弃建立与外部服务的连接之前等待的秒数。",
+        "read_timeout": "读取超时",
+        "read_timeout_hint": "在与外部服务的连接建立后，等待第一个字节的秒数。"
+      },
+      "title": "外部服务设置",
+      "validation": {
+        "query_retry_limit": {
+          "non_empty": "请输入查询重试限制",
+          "invalid_range": "查询重试限制必须大于{min}"
+        },
+        "connect_timeout": {
+          "non_empty": "请输入连接超时",
+          "invalid_range": "连接超时必须大于{min}"
+        },
+        "read_timeout": {
+          "non_empty": "请输入读取超时",
+          "invalid_range": "读取超时必须大于{min}"
+        }
+      }
+    },
     "labels": {
       "anonymous_analytics": "是否应该提交匿名使用分析？",
       "balance_saving_frequency": "以小时为单位的余额数据保存频率",

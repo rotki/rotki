@@ -30,6 +30,9 @@ export class Defaults {
     TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE
   ];
   static DEFAULT_VERSION_UPDATE_CHECK_FREQUENCY = 24;
+  static DEFAULT_QUERY_RETRY_LIMIT = 5;
+  static DEFAULT_CONNECT_TIMEOUT = 30;
+  static DEFAULT_READ_TIMEOUT = 30;
 }
 
 export const EXCHANGE_BISQ = 'bisq';

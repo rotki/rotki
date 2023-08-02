@@ -2222,6 +2222,31 @@
         "empty": "The decimal separator cannot be empty"
       }
     },
+    "external_service_setting": {
+      "label": {
+        "query_retry_limit": "Límite de reintento de consulta",
+        "query_retry_limit_hint": "El número de veces que se intentará nuevamente una consulta a servicios externos antes de renunciar.",
+        "connect_timeout": "Tiempo de conexión agotado",
+        "connect_timeout_hint": "El número de segundos que se esperarán antes de renunciar a establecer una conexión con un servicio externo.",
+        "read_timeout": "Tiempo de lectura agotado",
+        "read_timeout_hint": "El número de segundos que se esperarán para el primer byte después de haber establecido una conexión con un servicio externo."
+      },
+      "title": "Configuración de servicio externo",
+      "validation": {
+        "query_retry_limit": {
+          "non_empty": "Por favor, ingrese el límite de reintento de consulta",
+          "invalid_range": "El límite de reintento de consulta debe ser mayor que {min}"
+        },
+        "connect_timeout": {
+          "non_empty": "Por favor, ingrese el tiempo de conexión agotado",
+          "invalid_range": "El tiempo de conexión agotado debe ser mayor que {min}"
+        },
+        "read_timeout": {
+          "non_empty": "Por favor, ingrese el tiempo de lectura agotado",
+          "invalid_range": "El tiempo de lectura agotado debe ser mayor que {min}"
+        }
+      }
+    },
     "labels": {
       "anonymous_analytics": "Should anonymous usage analytics be submitted?",
       "balance_saving_frequency": "Balance data saving frequency in hours",
