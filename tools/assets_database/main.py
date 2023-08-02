@@ -1,4 +1,6 @@
 """Tool to pull an assets database from Github, and apply updates to it"""
+from gevent import monkey
+monkey.patch_all()  # isort:skip
 
 import argparse
 import shutil
@@ -6,13 +8,9 @@ import sys
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from gevent import monkey
-
-from rotkehlchen.db.settings import CachedSettings
-
-monkey.patch_all()  # isort:skip
 import requests
 
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.globaldb.updates import AssetsUpdater
 from rotkehlchen.logging import TRACE, add_logging_level
