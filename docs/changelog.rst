@@ -10,6 +10,8 @@ Changelog
 * :feature:`-` Optimism governance votes that include parameters should now be decoded properly.
 * :feature:`-` Transactions for adding, removing and changing owners threshold for a gnosis safe multisig will now be decoded properly.
 * :feature:`6033` Fix gas fee calculation for Optimism transactions to include L1 fees.
+* :bug:`-` ENS names that use the new RegistrarController and are renewed will have their events properly detected.
+* :bug:`-` Improve date and hexadecimal address scrambling.
 
 * :release:`1.29.1 <2023-07-27>`
 * :bug:`-` Fix a bug where some images indicating the location of the assets are not loaded.
