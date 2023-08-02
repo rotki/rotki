@@ -20,7 +20,7 @@ beautifulsoup4==4.12.2
 maxminddb==2.2.0
 miniupnpc==2.0.2; sys_platform != 'win32'
 miniupnpc==2.2.3; sys_platform == 'win32'
-cryptography==41.0.2
+cryptography==41.0.3
 jsonschema==4.17.3  # jsonchema 4.18 introduces a dependency that is missing wheels for macos in our CI. We have reported it but we will pin the version until is fixed https://github.com/crate-py/rpds/issues/11
 
 # For the rest api
