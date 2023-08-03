@@ -152,7 +152,7 @@ WORLD_TO_POLONIEX = COMMON_ASSETS_MAPPINGS | {
     evm_address_to_identifier('0x12970E6868f88f6557B76120662c1B3E50A646bf', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'LADYS',  # noqa: E501
     'CORE': 'COREUM',
     evm_address_to_identifier('0x2be5e8c109e2197D077D13A82dAead6a9b3433C5', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'TOKAMAK',  # noqa: E501
-    evm_address_to_identifier('0x72aDadb447784dd7AB1F472467750fC485e4cb2d', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'WLD',  # noqa: E501
+    evm_address_to_identifier('0x163f8C2467924be0ae7B5347228CABF260318753', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'WLD',  # noqa: E501
     evm_address_to_identifier('0x582d872A1B094FC48F5DE31D3B73F2D9bE47def1', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'TON',  # noqa: E501
     evm_address_to_identifier('0xfb66321D7C674995dFcC2cb67A30bC978dc862AD', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'PEPE20',  # noqa: E501
     evm_address_to_identifier('0xb478c6245e3D85D6EC3486B62ea872128d562541', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'LOOT',  # noqa: E501

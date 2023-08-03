@@ -229,7 +229,7 @@ WORLD_TO_KUCOIN = COMMON_ASSETS_MAPPINGS | {
     evm_address_to_identifier('0xE55d97A97ae6A17706ee281486E98A84095d8AAf', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'AIPAD',  # noqa: E501
     evm_address_to_identifier('0x12970E6868f88f6557B76120662c1B3E50A646bf', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'LADYS',  # noqa: E501
     evm_address_to_identifier('0x628A3b2E302C7e896AcC432D2d0dD22B6cb9bc88', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'LMWR',  # noqa: E501
-    evm_address_to_identifier('0x72aDadb447784dd7AB1F472467750fC485e4cb2d', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'WLD',  # noqa: E501
+    evm_address_to_identifier('0x163f8C2467924be0ae7B5347228CABF260318753', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'WLD',  # noqa: E501
     evm_address_to_identifier('0x808507121B80c02388fAd14726482e061B8da827', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'PENDLE',  # noqa: E501
     'LUKSO': 'LYX',
     evm_address_to_identifier('0x582d872A1B094FC48F5DE31D3B73F2D9bE47def1', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'TON',  # noqa: E501
