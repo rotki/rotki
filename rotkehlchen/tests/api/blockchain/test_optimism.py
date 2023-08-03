@@ -1,7 +1,10 @@
 import random
+from unittest.mock import patch
 
 import pytest
 import requests
+from rotkehlchen.assets.asset import EvmToken
+from rotkehlchen.chain.evm.types import NodeName, WeightedNode
 from rotkehlchen.constants.assets import A_ETH
 
 from rotkehlchen.constants.misc import ONE, ZERO
@@ -20,29 +23,55 @@ from rotkehlchen.utils.misc import ts_now
 TEST_ADDY = '0x9531C059098e3d194fF87FebB587aB07B30B1306'
 
 
+optimism_nodes = [
+    (WeightedNode(
+        node_info=NodeName(
+            name='own',
+            endpoint='https://mainnet.optimism.io',
+            owned=False,
+            blockchain=SupportedBlockchain.OPTIMISM,
+        ),
+        active=True,
+        weight=ONE,
+    )),
+]
+
+
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('should_mock_price_queries', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
+@pytest.mark.parametrize('optimism_manager_connect_at_start', optimism_nodes)
 def test_add_optimism_blockchain_account(rotkehlchen_api_server):
     """Test adding an optimism account when there is none in the db
     works as expected and that balances are returned and tokens are detected.
     """
+    def mock_db_tokens(chain_id, exceptions=None, protocol=None):  # pylint: disable=unused-argument  # noqa: E501
+        """Make get_evm_tokens return only 3 tokens to not query more during balance
+        detection for addresses.
+        """
+        return [
+            EvmToken('eip155:10/erc20:0x4200000000000000000000000000000000000042'),
+            EvmToken('eip155:10/erc20:0x026B623Eb4AaDa7de37EF25256854f9235207178'),
+            EvmToken('eip155:10/erc20:0x15992f382D8c46d667B10DC8456dc36651Af1452'),
+        ]
+    patch_globaldb_tokens = patch('rotkehlchen.globaldb.handler.GlobalDBHandler.get_evm_tokens', side_effect=mock_db_tokens)  # noqa: E501
+
     async_query = random.choice([False, True])
     optimism_chain_key = SupportedBlockchain.OPTIMISM.serialize()
-
-    response = requests.put(
-        api_url_for(
-            rotkehlchen_api_server,
-            'blockchainsaccountsresource',
-            blockchain=optimism_chain_key,
-        ),
-        json={
-            'accounts': [{'address': TEST_ADDY}],
-            'async_query': async_query,
-        },
-    )
+    with patch_globaldb_tokens:
+        response = requests.put(
+            api_url_for(
+                rotkehlchen_api_server,
+                'blockchainsaccountsresource',
+                blockchain=optimism_chain_key,
+            ),
+            json={
+                'accounts': [{'address': TEST_ADDY}],
+                'async_query': async_query,
+            },
+        )
     if async_query:
         task_id = assert_ok_async_response(response)
         wait_for_async_task(rotkehlchen_api_server, task_id)
@@ -70,16 +99,17 @@ def test_add_optimism_blockchain_account(rotkehlchen_api_server):
 
     now = ts_now()
     # now check that detecting tokens works
-    response = requests.post(
-        api_url_for(
-            rotkehlchen_api_server,
-            'detecttokensresource',
-            blockchain=optimism_chain_key,
-        ),
-        json={
-            'async_query': async_query,
-        },
-    )
+    with patch_globaldb_tokens:
+        response = requests.post(
+            api_url_for(
+                rotkehlchen_api_server,
+                'detecttokensresource',
+                blockchain=optimism_chain_key,
+            ),
+            json={
+                'async_query': async_query,
+            },
+        )
     result = assert_proper_response_with_result(response)
     if async_query:
         task_id = assert_ok_async_response(response)
@@ -105,17 +135,18 @@ def test_add_optimism_blockchain_account(rotkehlchen_api_server):
     assert set(optimism_tokens).issubset(set(tokens))
 
     # and query balances again to see tokens also appear
-    response = requests.get(
-        api_url_for(
-            rotkehlchen_api_server,
-            'named_blockchain_balances_resource',
-            blockchain=optimism_chain_key,
-        ),
-        json={
-            'ignore_cache': True,
-            'async_query': async_query,
-        },
-    )
+    with patch_globaldb_tokens:
+        response = requests.get(
+            api_url_for(
+                rotkehlchen_api_server,
+                'named_blockchain_balances_resource',
+                blockchain=optimism_chain_key,
+            ),
+            json={
+                'ignore_cache': True,
+                'async_query': async_query,
+            },
+        )
     result = assert_proper_response_with_result(response)
     if async_query:
         task_id = assert_ok_async_response(response)
