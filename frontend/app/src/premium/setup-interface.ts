@@ -102,7 +102,7 @@ const settings = (): SettingsApi => {
 
 export const usePremiumApi = (): PremiumInterface => ({
   useHostComponents: true,
-  version: 22,
+  version: 23,
   api: () => ({
     date,
     data: data(),
