@@ -134,7 +134,7 @@ const sortItems = getSortItems(asset => get(assetInfo(asset)));
     <template #expanded-item="{ item }">
       <table-expand-container visible :colspan="tableHeaders.length">
         <evm-native-token-breakdown
-          v-if="isEvmNativeToken(item.asset)"
+          v-if="!hideBreakdown && isEvmNativeToken(item.asset)"
           blockchain-only
           :identifier="item.asset"
         />
@@ -149,7 +149,7 @@ const sortItems = getSortItems(asset => get(assetInfo(asset)));
     <template #item.expand="{ item }">
       <row-expander
         v-if="
-          !hideBreakdown && (item.breakdown || isEvmNativeToken(item.asset))
+          item.breakdown || (!hideBreakdown && isEvmNativeToken(item.asset))
         "
         :expanded="expanded.includes(item)"
         @click="expanded = expanded.includes(item) ? [] : [item]"

@@ -119,6 +119,7 @@ declare global {
   const getSortItems: typeof import('./utils/assets')['getSortItems']
   const getTags: typeof import('./utils/tags')['getTags']
   const getValidSelectorFromEvmAddress: typeof import('./utils/assets')['getValidSelectorFromEvmAddress']
+  const groupAssetBreakdown: typeof import('./utils/balances')['groupAssetBreakdown']
   const h: typeof import('vue')['h']
   const ignorableWatch: typeof import('@vueuse/core')['ignorableWatch']
   const indexedDb: typeof import('./utils/indexed-db')['default']
@@ -820,6 +821,7 @@ declare module 'vue' {
     readonly getSortItems: UnwrapRef<typeof import('./utils/assets')['getSortItems']>
     readonly getTags: UnwrapRef<typeof import('./utils/tags')['getTags']>
     readonly getValidSelectorFromEvmAddress: UnwrapRef<typeof import('./utils/assets')['getValidSelectorFromEvmAddress']>
+    readonly groupAssetBreakdown: UnwrapRef<typeof import('./utils/balances')['groupAssetBreakdown']>
     readonly h: UnwrapRef<typeof import('vue')['h']>
     readonly ignorableWatch: UnwrapRef<typeof import('@vueuse/core')['ignorableWatch']>
     readonly indexedDb: UnwrapRef<typeof import('./utils/indexed-db')['default']>
@@ -1515,6 +1517,7 @@ declare module '@vue/runtime-core' {
     readonly getSortItems: UnwrapRef<typeof import('./utils/assets')['getSortItems']>
     readonly getTags: UnwrapRef<typeof import('./utils/tags')['getTags']>
     readonly getValidSelectorFromEvmAddress: UnwrapRef<typeof import('./utils/assets')['getValidSelectorFromEvmAddress']>
+    readonly groupAssetBreakdown: UnwrapRef<typeof import('./utils/balances')['groupAssetBreakdown']>
     readonly h: UnwrapRef<typeof import('vue')['h']>
     readonly ignorableWatch: UnwrapRef<typeof import('@vueuse/core')['ignorableWatch']>
     readonly indexedDb: UnwrapRef<typeof import('./utils/indexed-db')['default']>

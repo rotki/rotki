@@ -53,7 +53,7 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
     {
       text: t('closed_trades.headers.action'),
       value: 'type',
-      align: 'center',
+      align: overview ? 'start' : 'center',
       class: `text-no-wrap ${overview ? 'pl-0' : ''}`,
       cellClass: overview ? 'pl-0' : ''
     },
@@ -305,8 +305,8 @@ watch(loading, async (isLoading, wasLoading) => {
           {{ t('closed_trades.title') }}
         </navigator-link>
       </template>
-      <template #actions>
-        <v-row v-if="!locationOverview">
+      <template v-if="!locationOverview" #actions>
+        <v-row>
           <v-col cols="12" md="6" class="d-flex">
             <div>
               <v-row>

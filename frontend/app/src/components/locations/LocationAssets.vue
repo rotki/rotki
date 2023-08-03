@@ -13,9 +13,8 @@ const { isTaskRunning } = useTaskStore();
 const { t } = useI18n();
 
 const { locationBreakdown: breakdown } = useBalancesBreakdown();
-const locationBreakdown: ComputedRef<AssetBalanceWithPrice[]> = computed(() =>
-  get(breakdown(get(identifier)))
-);
+const locationBreakdown: ComputedRef<AssetBalanceWithPrice[]> =
+  breakdown(identifier);
 
 const loadingData = computed<boolean>(
   () =>
@@ -28,6 +27,10 @@ const loadingData = computed<boolean>(
 <template>
   <card v-if="loadingData || locationBreakdown.length > 0" outlined-body>
     <template #title> {{ t('common.assets') }} </template>
-    <asset-balances :loading="loadingData" :balances="locationBreakdown" />
+    <asset-balances
+      :loading="loadingData"
+      :balances="locationBreakdown"
+      hide-breakdown
+    />
   </card>
 </template>

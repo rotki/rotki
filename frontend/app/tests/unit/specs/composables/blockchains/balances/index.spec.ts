@@ -44,7 +44,7 @@ vi.mock('@/store/tasks', () => ({
   })
 }));
 
-describe('store::blockchain/balances/index', () => {
+describe('composables::blockchain/balances/index', () => {
   setActivePinia(createPinia());
   let api: ReturnType<typeof useBlockchainBalancesApi> =
     useBlockchainBalancesApi();

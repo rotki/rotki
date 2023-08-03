@@ -47,7 +47,7 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
     {
       text: t('deposits_withdrawals.headers.action'),
       value: 'category',
-      align: 'center',
+      align: overview ? 'start' : 'center',
       class: `text-no-wrap ${overview ? 'pl-0' : ''}`,
       cellClass: overview ? 'pl-0' : ''
     },
@@ -147,8 +147,8 @@ watch(loading, async (isLoading, wasLoading) => {
         {{ t('deposits_withdrawals.title') }}
       </navigator-link>
     </template>
-    <template #actions>
-      <v-row v-if="!locationOverview">
+    <template v-if="!locationOverview" #actions>
+      <v-row>
         <v-col cols="12" sm="6">
           <ignore-buttons
             :disabled="selected.length === 0 || loading"

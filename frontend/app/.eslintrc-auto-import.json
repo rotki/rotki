@@ -698,6 +698,7 @@
     "LimitedParallelizationQueue": true,
     "truncateAddress": true,
     "truncationPoints": true,
-    "awaitParallelExecution": true
+    "awaitParallelExecution": true,
+    "groupAssetBreakdown": true
   }
 }
