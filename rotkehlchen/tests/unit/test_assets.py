@@ -302,8 +302,8 @@ def test_cryptocompare_asset_support(cryptocompare):
         if potential_support:
             msg = (
                 f'We have {asset_data.identifier} with symbol {asset_data.symbol} and name '
-                f'{asset_data.name} as not supported'
-                f' by cryptocompare but the symbol appears in its supported assets'
+                f'{asset_data.name} as not supported '
+                f'by cryptocompare but the symbol appears in its supported assets'
             )
             test_warnings.warn(UserWarning(msg))
 

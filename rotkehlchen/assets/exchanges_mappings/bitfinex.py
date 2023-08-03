@@ -74,7 +74,6 @@ WORLD_TO_BITFINEX = COMMON_ASSETS_MAPPINGS | {
     'ONE-2': 'ONE',
     evm_address_to_identifier('0x4922a015c4407F87432B179bb209e125432E4a2A', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'XAUT',  # noqa: E501
     evm_address_to_identifier('0x5A98FcBEA516Cf06857215779Fd812CA3beF1B32', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'LDO',  # noqa: E501
-    evm_address_to_identifier('0x2be5e8c109e2197D077D13A82dAead6a9b3433C5', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'TOKAMAK',  # noqa: E501
     evm_address_to_identifier('0x582d872A1B094FC48F5DE31D3B73F2D9bE47def1', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'TON',  # noqa: E501
     evm_address_to_identifier('0xD04E772BC0d591fBD288f2E2a86aFA3D3CB647F8', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'LAI',  # noqa: E501
     evm_address_to_identifier('0x4B85a666deC7C959e88b97814E46113601B07e57', ChainID.BINANCE, EvmTokenKind.ERC20): 'GOC',  # noqa: E501
