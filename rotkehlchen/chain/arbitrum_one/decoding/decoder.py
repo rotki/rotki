@@ -8,6 +8,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
     TransferEnrichmentOutput,
 )
 from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.db.arbitrum_one_tx import DBArbitrumOneTx
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
 
@@ -42,6 +43,7 @@ class ArbitrumOneTransactionDecoder(EVMTransactionDecoder):
                 is_non_conformant_erc721_fn=self._is_non_conformant_erc721,
                 address_is_exchange_fn=self._address_is_exchange,
             ),
+            dbevmtx_class=DBArbitrumOneTx,
         )
 
     # -- methods that need to be implemented by child classes --

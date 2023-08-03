@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING
 
 from rotkehlchen.chain.evm.transactions import EvmTransactions
+from rotkehlchen.db.arbitrum_one_tx import DBArbitrumOneTx
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -16,3 +17,4 @@ class ArbitrumOneTransactions(EvmTransactions):
             database: 'DBHandler',
     ) -> None:
         super().__init__(evm_inquirer=arbitrum_one_inquirer, database=database)
+        self.dbevmtx = DBArbitrumOneTx(database)

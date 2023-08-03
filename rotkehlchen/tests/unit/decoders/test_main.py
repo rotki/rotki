@@ -82,6 +82,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: 'EthereumTransact
         'Convex',
         'Weth',
         'Yearn',
+        'ArbitrumOneBridge',
     }
 
     counterparty_ids = {counterparty.identifier for counterparty in ethereum_transaction_decoder.rules.all_counterparties}  # noqa: E501
@@ -132,6 +133,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: 'EthereumTransact
         '1inch-v4',
         'safe-multisig',
         'diva',
+        'arbitrum_one',
     }
 
 
