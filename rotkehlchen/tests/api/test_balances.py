@@ -1,3 +1,4 @@
+import logging
 import random
 from contextlib import ExitStack
 from http import HTTPStatus
@@ -16,6 +17,7 @@ from rotkehlchen.constants.assets import A_AVAX, A_BTC, A_DAI, A_ETH, A_EUR, A_K
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.tests.utils.api import (
     ASYNC_TASK_WAIT_TIMEOUT,
     api_url_for,
@@ -50,6 +52,8 @@ from rotkehlchen.utils.misc import ts_now
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
 
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 def assert_all_balances(
         result,
@@ -911,3 +915,42 @@ def test_balances_behaviour_with_manual_current_prices(rotkehlchen_api_server, e
         rdn_result = result['assets']['eip155:1/erc20:0x255Aa6DF07540Cb5d3d297f0D0D4D84cb52bc8e6']
         assert rdn_result['amount'] == '5'
         assert rdn_result['usd_value'] == '150.0'
+
+
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+@pytest.mark.parametrize('number_of_eth_accounts', [2])
+def test_bug(
+        rotkehlchen_api_server_with_exchanges,
+        ethereum_accounts,
+        caplog
+):
+    async_query = True
+    caplog.set_level(logging.DEBUG)
+    rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
+    try:
+        with gevent.Timeout(60):
+            while True:
+                log.debug(f'At start of while loop')
+                requests.get(
+                    api_url_for(
+                        rotkehlchen_api_server_with_exchanges,
+                        'allbalancesresource',
+                    ), json={'async_query': async_query},
+                )
+                requests.post(
+                    api_url_for(
+                        rotkehlchen_api_server_with_exchanges,
+                        'detecttokensresource',
+                        blockchain=SupportedBlockchain.ETHEREUM.serialize(),
+                    ), json={
+                        'async_query': False,
+                        'only_cache': True,
+                        'addresses': ethereum_accounts,
+                    },
+                )
+                log.debug(f'End of while loop')
+    except gevent.Timeout as e:
+        lines = caplog.text.split('\n')
+        # When deadlock it looks like this, repeating in the last lines until killed by timeout:
+        # DEBUG    rotkehlchen.tasks.manager:manager.py:716 Greenlet-0: At task scheduling. Current greenlets: 6248 Max greenlets: -1. Will not schedule.
+        assert lines[-2] != lines[-3] != lines[-4], 'Unfortunately deadlock occured'
