@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`6444` Users will now be able to see the asset graph in asset collection view.
 * :feature:`6041` Add external service timeout settings.
 * :feature:`6426` Users will now be able to import their BitMEX wallet history files.
 * :feature:`-`  Gnosis safe transaction execution or failure is now properly shown in the decoded history events.
