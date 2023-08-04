@@ -41,7 +41,8 @@ export interface StatisticsApi {
   timedBalances(
     asset: string,
     start: number,
-    end: number
+    end: number,
+    collectionId?: number
   ): Promise<TimedBalances>;
   fetchNetValue(): Promise<void>;
   netValue: (startingData: number) => Ref<NetValue>;
@@ -87,6 +88,7 @@ export interface SushiApi {
 export interface BalancesApi {
   byLocation: Ref<Record<string, BigNumber>>;
   aggregatedBalances: Ref<AssetBalanceWithPrice[]>;
+  balances: (groupMultiChain?: boolean) => ComputedRef<AssetBalanceWithPrice[]>;
   exchangeRate: (currency: string) => Ref<BigNumber>;
 }
 

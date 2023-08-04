@@ -59,9 +59,10 @@ export const statisticsApi = (): StatisticsApi => {
     async timedBalances(
       asset: string,
       start: number,
-      end: number
+      end: number,
+      collectionId?: number
     ): Promise<TimedBalances> {
-      return queryTimedBalancesData(asset, start, end);
+      return queryTimedBalancesData(asset, start, end, collectionId);
     },
     async fetchNetValue(): Promise<void> {
       await fetchNetValue();
@@ -109,9 +110,11 @@ export const balancesApi = (): BalancesApi => {
   const { balances } = useAggregatedBalances();
   return {
     byLocation: balancesByLocation as ComputedRef<Record<string, BigNumber>>,
+    // TODO: deprecate on the next major components version (it's only here for backwards compat)
     aggregatedBalances: balances(false, false) as ComputedRef<
       AssetBalanceWithPrice[]
     >,
+    balances: (groupMultiChain = false) => balances(false, groupMultiChain),
     exchangeRate: (currency: string) =>
       computed(() => get(exchangeRate(currency)) ?? One)
   };

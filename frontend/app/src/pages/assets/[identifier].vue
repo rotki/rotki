@@ -56,6 +56,15 @@ const isCollectionParent: ComputedRef<boolean> = computed(() => {
   return !!collectionParent;
 });
 
+const collectionId: ComputedRef<number | undefined> = computed(() => {
+  if (!get(isCollectionParent)) {
+    return undefined;
+  }
+
+  const collectionId = get(asset)?.collectionId;
+  return (collectionId && parseInt(collectionId)) || undefined;
+});
+
 const editRoute = computed<RawLocation>(() => ({
   path: get(isCustomAsset)
     ? Routes.ASSET_MANAGER_CUSTOM
@@ -135,9 +144,10 @@ const collectionBalance: ComputedRef<AssetBalanceWithPrice[]> = computed(() => {
       :identifier="identifier"
     />
     <AssetAmountAndValueOverTime
-      v-if="premium && !isCollectionParent"
+      v-if="premium"
       class="mt-8"
       :asset="identifier"
+      :collection-id="collectionId"
     />
     <AssetLocations
       v-if="!isCollectionParent"

@@ -27,15 +27,17 @@ export const useStatisticsApi = () => {
   const queryTimedBalancesData = async (
     asset: string,
     fromTimestamp: number,
-    toTimestamp: number
+    toTimestamp: number,
+    collectionId?: number
   ): Promise<TimedBalances> => {
+    const payload = {
+      fromTimestamp,
+      toTimestamp,
+      ...(isDefined(collectionId) ? { collectionId } : { asset })
+    };
     const balances = await api.instance.post<ActionResult<TimedBalances>>(
       `/statistics/balance`,
-      snakeCaseTransformer({
-        fromTimestamp,
-        toTimestamp,
-        asset
-      }),
+      snakeCaseTransformer(payload),
       {
         validateStatus: validStatus
       }
