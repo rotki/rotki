@@ -55,6 +55,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: 'EthereumTransact
         'Compound',
         'Cowswap',
         'Curve',
+        'Diva',
         'Dxdaomesa',
         'Ens',
         'Eth2',
@@ -130,6 +131,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: 'EthereumTransact
         'cowswap',
         '1inch-v4',
         'safe-multisig',
+        'diva',
     }
 
 

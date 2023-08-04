@@ -9,7 +9,7 @@ Changelog
 * :feature:`-`  The database size for users who have EVM transactions of any chain is now greatly reduced. Some databases had a reduction of up to 40%.
 * :feature:`6033` Optimism gas calculation is now correctly taking into account L1 gas fees.
 * :feature:`-` Optimism governance votes that include parameters should now be decoded properly.
-* :feature:`-` Delegations of the DIVA token are now properly shown in the decoded history events.
+* :feature:`-` DIVA token airdrop claim and delegations are now properly shown in the decoded history events.
 * :feature:`-` Transactions for adding, removing and changing owners threshold for a gnosis safe multisig will now be decoded properly.
 * :feature:`6033` Fix gas fee calculation for Optimism transactions to include L1 fees.
 * :bug:`-` ENS names that use the new RegistrarController and are renewed will have their events properly detected.
