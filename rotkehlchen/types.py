@@ -239,7 +239,7 @@ class ChainID(Enum):
         return self.name.lower()
 
     def name_and_label(self) -> tuple[str, str]:
-        """A label to be used by the frontend.
+        """Name and label to be used by the frontend
 
         Also returns the name since the only place where label is currently used
         the name is also needed. To avoid 1 extra call to name"""
@@ -254,6 +254,11 @@ class ChainID(Enum):
             label = name.capitalize()
 
         return name, label
+
+    def label(self) -> str:
+        """A label to be used by the frontend"""
+        _, label = self.name_and_label()
+        return label
 
     def __str__(self) -> str:
         return self.to_name()
