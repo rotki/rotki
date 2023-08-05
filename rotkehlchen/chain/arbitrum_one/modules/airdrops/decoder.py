@@ -2,8 +2,8 @@ from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.arbitrum_one.constants import ARBITRUM_ONE_CPT_DETAILS, CPT_ARBITRUM_ONE
+from rotkehlchen.chain.arbitrum_one.decoding.interfaces import ArbitrumDecoderInterface
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     DecoderContext,
@@ -25,7 +25,7 @@ ARBITRUM_ONE_AIRDROP = string_to_evm_address('0x67a24CE4321aB3aF51c2D0a4801c3E11
 ARB_CLAIMED = b'\x86)\xb2\x00\xeb\xe4=\xb5\x8a\xd6\x88\xb8Q1\xd52Q\xf3\xf3\xbeL\x14\x93;FA\xae\xeb\xac\xf1\xc0\x8c'  # noqa: E501
 
 
-class AirdropsDecoder(DecoderInterface):
+class AirdropsDecoder(ArbitrumDecoderInterface):
 
     def __init__(
             self,
