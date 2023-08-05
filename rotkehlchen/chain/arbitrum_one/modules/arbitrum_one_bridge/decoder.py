@@ -3,10 +3,10 @@ from typing import TYPE_CHECKING, Any, Callable
 
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.arbitrum_one.constants import ARBITRUM_ONE_CPT_DETAILS, CPT_ARBITRUM_ONE
+from rotkehlchen.chain.arbitrum_one.decoding.interfaces import ArbitrumDecoderInterface
 from rotkehlchen.chain.arbitrum_one.types import ArbitrumOneTransaction
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     DecoderContext,
@@ -38,7 +38,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class ArbitrumOneBridgeDecoder(DecoderInterface):
+class ArbitrumOneBridgeDecoder(ArbitrumDecoderInterface):
     def __init__(
             self,
             evm_inquirer: 'ArbitrumOneInquirer',
@@ -147,13 +147,6 @@ class ArbitrumOneBridgeDecoder(DecoderInterface):
             L2_ERC20_GATEWAY: (self._decode_erc20_deposit_event,),
         }
 
-    def post_decoding_rules(self) -> dict[str, list[tuple[int, Callable]]]:
-        return {
-            CPT_ARBITRUM_ONE: [
-                (0, self._decode_eth_deposit_event),  # We need this rule because these transactions contain no logs and consequently we can only run a decoder as a post decoding rule  # noqa: E501
-            ],
-        }
-
     def possible_events(self) -> DecoderEventMappingType:
         return {CPT_ARBITRUM_ONE: {
             HistoryEventType.DEPOSIT: {
@@ -166,3 +159,11 @@ class ArbitrumOneBridgeDecoder(DecoderInterface):
 
     def counterparties(self) -> list[CounterpartyDetails]:
         return [ARBITRUM_ONE_CPT_DETAILS]
+
+    # -- ArbitrumDecoderInterface methods
+    def decoding_by_tx_type(self) -> dict[int, list[tuple[int, Callable]]]:
+        return {
+            DEPOSIT_TX_TYPE: [
+                (0, self._decode_eth_deposit_event),  # We need this rule because these transactions contain no logs and consequently we can only run a decoder as a post decoding rule  # noqa: E501
+            ],
+        }

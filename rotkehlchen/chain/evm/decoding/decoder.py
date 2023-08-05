@@ -227,6 +227,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
         rules.post_decoding_rules.update(self.decoders[class_name].post_decoding_rules())  # noqa: E501
         rules.all_counterparties.update(self.decoders[class_name].counterparties())
         rules.addresses_to_counterparties.update(self.decoders[class_name].addresses_to_counterparties())  # noqa: E501
+        self._chain_specific_decoder_initialization(self.decoders[class_name])
 
     def _recursively_initialize_decoders(
             self,
@@ -279,7 +280,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
         return possible_products
 
     def get_decoders_event_types(self) -> DecoderEventMappingType:
-        """Get the mappings of counterparties to their possible even type
+        """Get the mappings of counterparties to their possible event type
         and subtype combinations
         """
         possible_types = {}
@@ -393,7 +394,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
                 # to a transaction irrespective of the to_address on specific cases.
                 counterparties = {cpt_details.identifier for cpt_details in self.rules.all_counterparties}  # noqa: E501
 
-        rules = []
+        rules = self._chain_specific_post_decoding_rules(transaction)
         # get the rules that need to be applied by counterparty
         for counterparty in counterparties:
             new_rules = self.rules.post_decoding_rules.get(counterparty)
@@ -406,7 +407,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             try:
                 decoded_events = rule(transaction=transaction, decoded_events=decoded_events, all_logs=all_logs)  # noqa: E501
             except (DeserializationError, IndexError) as e:
-                self.msg_aggregator.add_error(f'Applying post-decoding rule {rule} for {transaction.tx_hash.hex()} failed due to {e!s}. Skipping rule.')  # noqa: E501
+                log.error(f'Applying post-decoding rule {rule} for {transaction.tx_hash.hex()} failed due to {e!s}. Skipping rule.')  # noqa: E501
 
         assert self._check_correct_types(decoded_events)
         return decoded_events
@@ -921,6 +922,23 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
                     'blockchain': self.evm_inquirer.chain_id.to_blockchain().serialize(),
                 },
             )
+
+    def _chain_specific_decoder_initialization(
+            self,
+            decoder: 'DecoderInterface',  # pylint: disable=unused-argument
+    ) -> None:
+        """Custom initialization for each decoder, based on the type of EVM chain.
+
+        This is a no-op by default
+        """
+        return None
+
+    def _chain_specific_post_decoding_rules(
+            self,
+            transaction: EvmTransaction,  # pylint: disable=unused-argument
+    ) -> list[tuple[int, Callable]]:
+        """Custom post-decoding rules for specific chains. This is a no-op by default."""
+        return []
 
     def _calculate_gas_burned(self, tx: EvmTransaction) -> FVal:
         """Calculates gas burn based on relevant chain's formula."""
