@@ -55,7 +55,7 @@ def test_deposit_eth_from_ethereum_to_arbitrum_one(database, ethereum_inquirer, 
             asset=A_ETH,
             balance=Balance(amount=FVal('0.008374552015335015')),
             location_label=user_address,
-            notes=f'Bridge 0.008374552015335015 ETH from ethereum address {user_address} to arbitrum_one address {user_address} via arbitrum_one bridge',  # noqa: E501
+            notes='Bridge 0.008374552015335015 ETH from Ethereum to Arbitrum One via Arbitrum One bridge',  # noqa: E501
             counterparty=CPT_ARBITRUM_ONE,
             address=string_to_evm_address('0x4Dbd4fc535Ac27206064B68FfCf827b0A60BAB3f'),  # DELAYED_INBOX_ADDRESS  # noqa: E501
         ),
@@ -172,7 +172,7 @@ def test_receive_eth_on_ethereum(database, ethereum_inquirer, ethereum_accounts)
             asset=A_ETH,
             balance=Balance(amount=FVal('98.34759123048141')),
             location_label=user_address,
-            notes=f'Bridge 98.34759123048141 ETH from arbitrum_one address {user_address} to ethereum address {user_address} via arbitrum_one bridge',  # noqa: E501
+            notes='Bridge 98.34759123048141 ETH from Arbitrum One to Ethereum via Arbitrum One bridge',  # noqa: E501
             counterparty=CPT_ARBITRUM_ONE,
             address=string_to_evm_address(BRIDGE_ADDRESS_MAINNET),
         ),
@@ -215,7 +215,7 @@ def test_deposit_erc20_from_ethereum_to_arbitrum_one(database, ethereum_inquirer
             asset=Asset('ETH'),
             balance=Balance(amount=FVal('0.000225651577545344')),
             location_label=user_address,
-            notes=f'Send 0.000225651577545344 ETH to {L1_GATEWAY_ROUTER} for bridging erc20 tokens to arbitrum_one',  # noqa: E501
+            notes='Spend 0.000225651577545344 ETH to bridge ERC20 tokens to Arbitrum One',  # noqa: E501
             counterparty=CPT_ARBITRUM_ONE,
             address=string_to_evm_address(L1_GATEWAY_ROUTER),
         ),
@@ -229,7 +229,7 @@ def test_deposit_erc20_from_ethereum_to_arbitrum_one(database, ethereum_inquirer
             asset=Asset('eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F'),
             balance=Balance(amount=FVal('25000')),
             location_label=user_address,
-            notes=f'Bridge 25000 DAI from ethereum address {user_address} to arbitrum_one address {user_address} via arbitrum_one bridge',  # noqa: E501
+            notes='Bridge 25000 DAI from Ethereum to Arbitrum One via Arbitrum One bridge',  # noqa: E501
             counterparty=CPT_ARBITRUM_ONE,
             address=string_to_evm_address('0xA10c7CE4b876998858b1a9E12b10092229539400'),
         ),
@@ -346,7 +346,7 @@ def test_receive_erc20_on_ethereum(database, ethereum_inquirer, ethereum_account
             asset=Asset('eip155:1/erc20:0x58b6A8A3302369DAEc383334672404Ee733aB239'),
             balance=Balance(amount=FVal('6000')),
             location_label=user_address,
-            notes=f'Bridge 6000 LPT from arbitrum_one address {user_address} to ethereum address {user_address} via arbitrum_one bridge',  # noqa: E501
+            notes='Bridge 6000 LPT from Arbitrum One to Ethereum via Arbitrum One bridge',  # noqa: E501
             counterparty=CPT_ARBITRUM_ONE,
             address=string_to_evm_address('0x6A23F4940BD5BA117Da261f98aae51A8BFfa210A'),
         ),
