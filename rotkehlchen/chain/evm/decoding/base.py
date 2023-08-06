@@ -190,7 +190,7 @@ class BaseDecoderTools:
         return self.make_event(
             tx_hash=transaction.tx_hash,
             sequence_index=self.get_sequence_index(tx_log),
-            timestamp=(transaction.timestamp),
+            timestamp=transaction.timestamp,
             event_type=event_type,
             event_subtype=HistoryEventSubType.NONE,
             asset=token,

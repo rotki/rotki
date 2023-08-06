@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 class ActionItem(NamedTuple):
     """Action items to propagate to other decoders during decoding"""
     action: Literal['transform', 'skip', 'skip & keep']
-    sequence_index: int
+    sequence_index: int  # TODO: Remove this? Doesn't match on or change this
     from_event_type: 'HistoryEventType'
     from_event_subtype: 'HistoryEventSubType'
     asset: 'Asset'
