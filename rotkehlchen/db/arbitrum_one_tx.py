@@ -6,23 +6,27 @@ from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_timestamp
-from rotkehlchen.types import ChainID, EVMTxHash, deserialize_evm_tx_hash
+from rotkehlchen.types import ChainID, deserialize_evm_tx_hash
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
 class DBArbitrumOneTx(DBEvmTx):
-    def _get_tx_type(self, tx_hash: EVMTxHash, chain_id: ChainID) -> int:
+
+    def _build_evm_transaction(self, result: tuple[Any, ...]) -> ArbitrumOneTransaction:
+        """Builds an arbitrum transaction
+
+        May raise:
+        - DeserializationError
+        """
+        tx_hash = deserialize_evm_tx_hash(result[0])
+        chain_id = ChainID.deserialize_from_db(result[1])
         with self.db.conn.read_ctx() as cursor:
             tx_receipt = self.get_receipt(cursor, tx_hash, chain_id)
         if tx_receipt is None:
             raise DeserializationError(f'tx receipt for arbitrum one tx {tx_hash!s} does not exist in the database')  # noqa: E501
-        return tx_receipt.type
 
-    def _build_evm_transaction(self, result: tuple[Any, ...]) -> ArbitrumOneTransaction:
-        tx_hash = deserialize_evm_tx_hash(result[0])
-        chain_id = ChainID.deserialize_from_db(result[1])
         return ArbitrumOneTransaction(
             tx_hash=tx_hash,
             chain_id=chain_id,
@@ -36,6 +40,6 @@ class DBArbitrumOneTx(DBEvmTx):
             gas_used=int(result[9]),
             input_data=result[10],
             nonce=result[11],
-            tx_type=self._get_tx_type(tx_hash, chain_id),
+            tx_type=tx_receipt.type,
             db_id=result[12],
         )
