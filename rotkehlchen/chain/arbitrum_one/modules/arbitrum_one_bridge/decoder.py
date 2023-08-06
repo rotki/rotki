@@ -199,7 +199,6 @@ class ArbitrumOneBridgeDecoder(ArbitrumDecoderInterface):
 
         We just judge by the transaction type this is a deposit and don't know who it came from.
         """
-        # Check that the event is a deposit bridging event
         if transaction.tx_type != DEPOSIT_TX_TYPE:
             return decoded_events
 
