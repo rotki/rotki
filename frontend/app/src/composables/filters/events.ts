@@ -12,6 +12,7 @@ import {
 } from '@/types/filtering';
 
 enum HistoryEventFilterKeys {
+  CUSTOMIZED = 'customized',
   START = 'start',
   END = 'end',
   ASSET = 'asset',
@@ -26,6 +27,7 @@ enum HistoryEventFilterKeys {
 }
 
 enum HistoryEventFilterValueKeys {
+  CUSTOMIZED = 'only_customized_events',
   START = 'fromTimestamp',
   END = 'toTimestamp',
   ASSET = 'asset',
@@ -209,6 +211,16 @@ export const useHistoryEventFilter = (
       });
     }
 
+    data.push({
+      key: HistoryEventFilterKeys.CUSTOMIZED,
+      keyValue: HistoryEventFilterValueKeys.CUSTOMIZED,
+      description: 'Filter customized events',
+      string: true,
+      multiple: false,
+      suggestions: () => ['true'],
+      validate: (customized: string) => !!customized
+    });
+
     return data;
   });
 
@@ -224,6 +236,7 @@ export const useHistoryEventFilter = (
     .or(z.string())
     .transform(val => (Array.isArray(val) ? val : [val]))
     .optional();
+  const OptionalBoolean = z.boolean().optional();
 
   const RouteFilterSchema = z.object({
     [HistoryEventFilterValueKeys.START]: OptionalString,
@@ -235,7 +248,8 @@ export const useHistoryEventFilter = (
     [HistoryEventFilterValueKeys.ENTRY_TYPE]: OptionalMultipleString,
     [HistoryEventFilterValueKeys.TX_HASHES]: OptionalMultipleString,
     [HistoryEventFilterValueKeys.ADDRESSES]: OptionalMultipleString,
-    [HistoryEventFilterValueKeys.VALIDATOR_INDICES]: OptionalMultipleString
+    [HistoryEventFilterValueKeys.VALIDATOR_INDICES]: OptionalMultipleString,
+    [HistoryEventFilterValueKeys.CUSTOMIZED]: OptionalBoolean
   });
 
   return {
