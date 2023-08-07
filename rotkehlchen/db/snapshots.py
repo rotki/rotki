@@ -174,13 +174,15 @@ class DBSnapshot:
         with self.db.conn.read_ctx() as cursor:
             display_date_in_localtime = self.db.get_settings(cursor).display_date_in_localtime
 
-        serialized_timed_balances = [
-            balance.serialize(
+        serialized_timed_balances = []
+        for balance in timed_balances:
+            serialized_timed_balance = balance.serialize(
                 currency_and_price=(main_currency, main_currency_price),
                 display_date_in_localtime=display_date_in_localtime,
             )
-            for balance in timed_balances
-        ]
+            serialized_timed_balance['asset_symbol'] = balance.asset.symbol_or_name()
+            serialized_timed_balances.append(serialized_timed_balance)
+
         serialized_timed_balances_for_import = [balance.serialize() for balance in timed_balances]
         serialized_timed_location_data = [
             loc_data.serialize(

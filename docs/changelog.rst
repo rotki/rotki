@@ -15,6 +15,7 @@ Changelog
 * :bug:`-` ENS names that use the new RegistrarController and are renewed will have their events properly detected.
 * :bug:`-` Improve date and hexadecimal address scrambling.
 * :feature:`-` Arbitrum One support has been added. Balances will be shown, transactions pulled and decoded and taken into account in the PnL report.
+* :feature:`-` The balances snapshot csv file exported from rotki now contains an asset symbol column.
 
 
 * :release:`1.29.1 <2023-07-27>`
