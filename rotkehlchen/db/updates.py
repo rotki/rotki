@@ -54,6 +54,12 @@ class RotkiDataUpdater:
         self.branch = 'develop'
         if is_production():
             self.branch = 'main'
+        self.update_type_mappings = {  # better than dynamic getattr. More explicit, negligible memory overhead if any  # noqa: E501
+            UpdateType.SPAM_ASSETS: self.update_spam_assets,
+            UpdateType.RPC_NODES: self.update_rpc_nodes,
+            UpdateType.CONTRACTS: self.update_contracts,
+            UpdateType.GLOBAL_ADDRESSBOOK: self.update_global_addressbook,
+        }
 
     def _get_remote_info_json(self) -> dict[str, Any]:
         """Retrieve remote file with information for different updates
@@ -267,7 +273,7 @@ class RotkiDataUpdater:
             remote_information = self._get_remote_info_json()
         except RemoteError as e:
             log.error(f'Could not retrieve json update information due to {e!s}')
-            # skip updates, but write last date update to not spam periodic tasks
+            # skip updates, but write last data update to not spam periodic tasks
         else:
             for update_type in updates:
                 # Get latest applied version
@@ -280,8 +286,7 @@ class RotkiDataUpdater:
                 # Update all remote data
                 latest_version = remote_information[update_type.value]['latest']
                 if local_version < latest_version:
-                    update_function = getattr(self, f'update_{update_type.value}')
-                    update_function(from_version=local_version, to_version=latest_version)
+                    self.update_type_mappings[update_type](from_version=local_version, to_version=latest_version)  # noqa: E501
 
         with self.user_db.user_write() as cursor:
             cursor.execute(  # remember last time data updates were detected
