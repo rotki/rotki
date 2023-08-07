@@ -329,13 +329,17 @@ def assert_csv_export_response(
         reader = csv.DictReader(csvfile)
         count = 0
         for row in reader:
-            assert len(row) == 5
+            assert len(row) == 6
             assert row['category'] in (
                 'asset',
                 'liability',
             )
             assert row['amount'] is not None
             assert row['asset'] is not None
+            assert row['asset_symbol'] in (
+                'BTC',
+                'AVAX',
+            )
             if timestamp_validation_data is None:
                 assert row['timestamp'] is not None
             else:
