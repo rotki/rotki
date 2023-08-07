@@ -439,6 +439,8 @@ class EventsHistorian:
                 self.msg_aggregator.add_error(
                     f'Eth2 events are not included in the PnL report due to {e!s}',
                 )
+            # make sure that eth2 events and history events are combined
+            eth2.combine_block_with_tx_events()
 
         step = self._increase_progress(step, total_steps)
         self.processing_state_name = 'Querying base history events'
