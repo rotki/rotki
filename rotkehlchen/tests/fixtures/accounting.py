@@ -8,9 +8,6 @@ from typing import Optional
 import pytest
 
 from rotkehlchen.accounting.accountant import Accountant
-from rotkehlchen.chain.ethereum.accountant import EthereumAccountingAggregator
-from rotkehlchen.chain.evm.accounting.aggregator import EVMAccountingAggregators
-from rotkehlchen.chain.optimism.accountant import OptimismAccountingAggregator
 from rotkehlchen.config import default_data_directory
 from rotkehlchen.constants import ONE
 from rotkehlchen.externalapis.coingecko import Coingecko
@@ -98,38 +95,6 @@ def fixture_accounting_initialize_parameters():
     return False
 
 
-@pytest.fixture(name='ethereum_accounting_aggregator')
-def fixture_ethereum_accounting_aggregator(
-        ethereum_inquirer,
-        function_scope_messages_aggregator,
-) -> EthereumAccountingAggregator:
-    return EthereumAccountingAggregator(
-        node_inquirer=ethereum_inquirer,
-        msg_aggregator=function_scope_messages_aggregator,
-    )
-
-
-@pytest.fixture(name='optimism_accounting_aggregator')
-def fixture_optimism_accounting_aggregator(
-        optimism_inquirer,
-        function_scope_messages_aggregator,
-) -> OptimismAccountingAggregator:
-    return OptimismAccountingAggregator(
-        node_inquirer=optimism_inquirer,
-        msg_aggregator=function_scope_messages_aggregator,
-    )
-
-
-@pytest.fixture(name='evm_accounting_aggregators')
-def fixture_evm_accounting_aggregators(
-        ethereum_accounting_aggregator,
-        optimism_accounting_aggregator,
-) -> EVMAccountingAggregators:
-    return EVMAccountingAggregators(
-        aggregators=[ethereum_accounting_aggregator, optimism_accounting_aggregator],
-    )
-
-
 @pytest.fixture(name='accountant')
 def fixture_accountant(
         price_historian,  # pylint: disable=unused-argument
@@ -137,7 +102,7 @@ def fixture_accountant(
         function_scope_messages_aggregator,
         start_with_logged_in_user,
         accounting_initialize_parameters,
-        evm_accounting_aggregators,
+        blockchain,
         start_with_valid_premium,
         rotki_premium_credentials,
 ) -> Optional[Accountant]:
@@ -150,7 +115,7 @@ def fixture_accountant(
 
     accountant = Accountant(
         db=database,
-        evm_accounting_aggregators=evm_accounting_aggregators,
+        chains_aggregator=blockchain,
         msg_aggregator=function_scope_messages_aggregator,
         premium=premium,
     )

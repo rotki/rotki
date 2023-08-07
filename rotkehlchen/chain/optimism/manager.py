@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING
 
 from rotkehlchen.chain.evm.manager import EvmManager
 
+from .accountant import OptimismAccountingAggregator
 from .decoding.decoder import OptimismTransactionDecoder
 from .tokens import OptimismTokens
 from .transactions import OptimismTransactions
@@ -32,6 +33,10 @@ class OptimismManager(EvmManager):
                 database=node_inquirer.database,
                 optimism_inquirer=node_inquirer,
                 transactions=transactions,
+            ),
+            accounting_aggregator=OptimismAccountingAggregator(
+                node_inquirer=node_inquirer,
+                msg_aggregator=transactions.msg_aggregator,
             ),
         )
         self.node_inquirer: OptimismInquirer  # just to make the type specific

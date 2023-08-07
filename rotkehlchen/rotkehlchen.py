@@ -26,13 +26,10 @@ from rotkehlchen.chain.aggregator import ChainsAggregator
 from rotkehlchen.chain.arbitrum_one.manager import ArbitrumOneManager
 from rotkehlchen.chain.arbitrum_one.node_inquirer import ArbitrumOneInquirer
 from rotkehlchen.chain.avalanche.manager import AvalancheManager
-from rotkehlchen.chain.ethereum.accountant import EthereumAccountingAggregator
 from rotkehlchen.chain.ethereum.manager import EthereumManager
 from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 from rotkehlchen.chain.ethereum.oracles.uniswap import UniswapV2Oracle, UniswapV3Oracle
-from rotkehlchen.chain.evm.accounting.aggregator import EVMAccountingAggregators
 from rotkehlchen.chain.evm.nodes import populate_rpc_nodes_in_database
-from rotkehlchen.chain.optimism.accountant import OptimismAccountingAggregator
 from rotkehlchen.chain.optimism.manager import OptimismManager
 from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
 from rotkehlchen.chain.polygon_pos.manager import PolygonPOSManager
@@ -429,16 +426,10 @@ class Rotkehlchen:
             btc_derivation_gap_limit=settings.btc_derivation_gap_limit,
         )
 
-        ethereum_accountant = EthereumAccountingAggregator(node_inquirer=ethereum_inquirer, msg_aggregator=self.msg_aggregator)  # noqa: E501
-        optimism_accountant = OptimismAccountingAggregator(node_inquirer=optimism_inquirer, msg_aggregator=self.msg_aggregator)  # noqa: E501
-        evm_accounting_aggregators = EVMAccountingAggregators(aggregators=[
-            ethereum_accountant,
-            optimism_accountant,
-        ])
         self.accountant = Accountant(
             db=self.data.db,
             msg_aggregator=self.msg_aggregator,
-            evm_accounting_aggregators=evm_accounting_aggregators,
+            chains_aggregator=self.chains_aggregator,
             premium=self.premium,
         )
         self.events_historian = EventsHistorian(
