@@ -609,6 +609,8 @@ class HistoryEventSchema(DBPaginationSchema, DBOrderBySchema):
     # EthStakingEvent only
     validator_indices = DelimitedOrNormalList(fields.Integer(), load_default=None)
 
+    only_customized_events = fields.Boolean(load_default=False)
+
     @validates_schema
     def validate_history_event_schema(
             self,
@@ -688,6 +690,7 @@ class HistoryEventSchema(DBPaginationSchema, DBOrderBySchema):
             'event_types': data['event_types'],
             'event_subtypes': data['event_subtypes'],
             'location': data['location'],
+            'only_customized_events': data['only_customized_events']
         }
         filter_query: Union[HistoryEventFilterQuery, EvmEventFilterQuery, EthStakingEventFilterQuery]  # noqa: E501
         if should_query_evm_event:

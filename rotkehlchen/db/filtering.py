@@ -15,6 +15,7 @@ from rotkehlchen.assets.types import AssetType
 from rotkehlchen.assets.utils import IgnoredAssetsHandling
 from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
 from rotkehlchen.chain.evm.types import EvmAccount
+from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -898,6 +899,7 @@ class HistoryBaseEntryFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWith
             event_identifiers: Optional[list[str]] = None,
             entry_types: Optional[IncludeExcludeFilterData] = None,
             exclude_ignored_assets: bool = False,
+            only_customized_events: bool = None,
     ) -> T_HistoryFilterQuery:
         if order_by_rules is None:
             order_by_rules = [('timestamp', True), ('sequence_index', True)]
@@ -988,6 +990,12 @@ class HistoryBaseEntryFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWith
                 and_op=True,
                 asset_key='asset',
                 operator='NOT IN',
+            ))
+        if only_customized_events is True:
+            filters.append(DBCustomizedHistoryEventsFilter(
+                and_op=True,
+                asset_key='history_events.identifier',
+                operator='IN'
             ))
 
         filter_query.timestamp_filter = DBTimestampFilter(
@@ -1277,6 +1285,14 @@ class DBSubtableSelectFilter(DBFilter):
 
     def is_ignored_asset_filter(self) -> bool:
         return self.select_condition is not None and self.select_condition == 'name="ignored_asset"'  # noqa: E501
+
+
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class DBCustomizedHistoryEventsFilter(DBSubtableSelectFilter):
+    """Filter customized history events"""
+    select_table: str = field(default='history_events_mappings', init=False)
+    select_value: str = field(default='parent_identifier', init=False)
+    select_condition: str = field(default=f'name="{HISTORY_MAPPING_KEY_STATE}" AND value="{HISTORY_MAPPING_STATE_CUSTOMIZED}"', init=False)
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
