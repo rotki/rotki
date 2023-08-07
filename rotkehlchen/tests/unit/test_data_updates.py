@@ -157,6 +157,12 @@ def fixture_data_updater(messages_aggregator, database):
     )
 
 
+def test_update_type_mappings_is_complete(data_updater: RotkiDataUpdater) -> None:
+    """Test that all UpdateType values have a mapping in RotkiDataUpdater"""
+    for update_type in tuple(UpdateType):
+        assert update_type in data_updater.update_type_mappings, f'{update_type} is not in the mapping'  # noqa: E501
+
+
 def test_update_spam_assets(data_updater: RotkiDataUpdater) -> None:
     """
     Test that spam assets for different chains have been correctly populated
