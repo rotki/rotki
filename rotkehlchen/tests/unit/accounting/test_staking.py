@@ -1,20 +1,24 @@
 import pytest
+from rotkehlchen.accounting.accountant import Accountant
 
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL, PnlTotals
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import HistoryEvent
+from rotkehlchen.accounting.structures.eth2 import EthBlockEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.constants import SHAPPELA_TIMESTAMP
 from rotkehlchen.chain.ethereum.modules.eth2.structures import ValidatorDailyStats
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH2
+from rotkehlchen.constants.misc import ONE
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.accounting import accounting_history_process, check_pnls_and_csv
 from rotkehlchen.tests.utils.history import prices
 from rotkehlchen.tests.utils.messages import no_message_errors
-from rotkehlchen.types import Location, Timestamp
-from rotkehlchen.utils.misc import ts_ms_to_sec, ts_sec_to_ms
+from rotkehlchen.types import ChecksumEvmAddress, Location, Timestamp, TimestampMS
+from rotkehlchen.utils.misc import ts_ms_to_sec, ts_now, ts_sec_to_ms
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -122,3 +126,98 @@ def test_eth_staking_daily_stats(accountant, google_service):
         AccountingEventType.STAKING: PNL(taxable=FVal('61.59405'), free=ZERO),
     })
     check_pnls_and_csv(accountant, expected_pnls, google_service)
+
+
+@pytest.mark.parametrize('ethereum_accounts', [['0xb8Cbbf78c7Ad1cDF4cA0e111B35491f3bFE027AC']])
+@pytest.mark.parametrize('should_mock_price_queries', [True])
+@pytest.mark.parametrize('default_mock_price_value', [ONE])
+def test_mev_events(accountant: Accountant, ethereum_accounts: list[ChecksumEvmAddress]) -> None:
+    """Check that mev rewards and block rewards are correctly processed for accounting when
+    they come as events.
+    """
+    fee_receipient = ethereum_accounts[0]
+    events = [
+        EthBlockEvent(
+            identifier=13674,
+            validator_index=610696,
+            timestamp=TimestampMS(1687117319000),
+            balance=Balance(FVal('0.126419309459217215')),
+            fee_recipient=fee_receipient,
+            block_number=17508810,
+            is_mev_reward=False,
+        ), HistoryEvent(
+            event_identifier='XXX',
+            sequence_index=0,
+            timestamp=TimestampMS(1687117319001),
+            location=Location.KRAKEN,
+            location_label='Kraken 1',
+            asset=A_ETH2,
+            balance=Balance(
+                amount=FVal(0.0000541090),
+                usd_value=FVal(0.212353475950),
+            ),
+            notes=None,
+            event_type=HistoryEventType.STAKING,
+            event_subtype=HistoryEventSubType.REWARD,
+        ),
+    ]
+    # Check accounting for a normal block produced without mev
+    accountant.process_history(
+        start_ts=Timestamp(0),
+        end_ts=ts_now(),
+        events=events,  # type: ignore[arg-type]
+    )
+    processed_events = accountant.pots[0].processed_events
+    assert processed_events[0].notes == 'Block reward of 0.126419309459217215 for block 17508810'
+    assert processed_events[1].notes == 'Kraken ETH staking'
+
+    accountant.pots[0].reset(
+        settings=accountant.pots[0].settings,
+        start_ts=accountant.pots[0].query_start_ts,
+        end_ts=accountant.pots[0].query_end_ts,
+        report_id=1,
+    )
+    # now check when a relayer is used
+    events = [
+        EthBlockEvent(
+            identifier=13674,
+            validator_index=610696,
+            timestamp=TimestampMS(1687117319000),
+            balance=Balance(FVal('0.126419309459217215')),
+            fee_recipient=string_to_evm_address('0x4A137FD5e7a256eF08A7De531A17D0BE0cc7B6b6'),
+            block_number=17508810,
+            is_mev_reward=False,
+        ),
+        EthBlockEvent(
+            identifier=13675,
+            validator_index=610696,
+            timestamp=TimestampMS(1687117319000),
+            balance=Balance(FVal('0.126458404824519798')),
+            fee_recipient=fee_receipient,
+            block_number=17508810,
+            is_mev_reward=True,
+        ), HistoryEvent(
+            event_identifier='XXX',
+            sequence_index=0,
+            timestamp=TimestampMS(1687117319001),
+            location=Location.KRAKEN,
+            location_label='Kraken 1',
+            asset=A_ETH2,
+            balance=Balance(
+                amount=FVal(0.0000541090),
+                usd_value=FVal(0.212353475950),
+            ),
+            notes=None,
+            event_type=HistoryEventType.STAKING,
+            event_subtype=HistoryEventSubType.REWARD,
+        ),
+    ]
+
+    accountant.process_history(
+        start_ts=Timestamp(0),
+        end_ts=ts_now(),
+        events=events,  # type: ignore[arg-type]
+    )
+    processed_events = accountant.pots[0].processed_events
+    assert processed_events[0].notes == 'Mev reward of 0.126458404824519798 for block 17508810'
+    assert processed_events[1].notes == 'Kraken ETH staking'

@@ -348,7 +348,7 @@ def test_query_pnl_report_events_pagination_filtering(
 @pytest.mark.parametrize('have_decoders', [[True]])
 def test_history_debug_export(rotkehlchen_api_server: 'APIServer') -> None:
     """Check that the format of the data exported matches the expected type."""
-    tx_id = '10' + str(make_evm_tx_hash())
+    tx_id = '10' + str(make_evm_tx_hash())  # add a random tx id to the ignore list to ensure that at least one kind of event is ignored and is not empty  # noqa: E501
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     with rotki.data.db.user_write() as write_cursor:
         rotki.data.db.add_to_ignored_action_ids(
