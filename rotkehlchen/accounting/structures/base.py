@@ -120,7 +120,7 @@ class HistoryBaseEntry(AccountingEventMixin, metaclass=ABCMeta):
         self.identifier = identifier
 
     def __eq__(self, other: Any) -> bool:
-        if type(self) != type(other):  # pylint: disable=unidiomatic-typecheck
+        if type(self) is not type(other):  # pylint: disable=unidiomatic-typecheck
             return False
 
         return (
