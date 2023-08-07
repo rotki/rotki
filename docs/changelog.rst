@@ -13,6 +13,7 @@ Changelog
 * :feature:`-` Transactions for adding, removing and changing owners threshold for a gnosis safe multisig will now be decoded properly.
 * :feature:`6033` Fix gas fee calculation for Optimism transactions to include L1 fees.
 * :bug:`-` ENS names that use the new RegistrarController and are renewed will have their events properly detected.
+* :bug:`-` Fixed an error that prevented from exporting the PnL report with debug information.
 * :bug:`-` Improve date and hexadecimal address scrambling.
 * :feature:`-` Arbitrum One support has been added. Balances will be shown, transactions pulled and decoded and taken into account in the PnL report.
 
