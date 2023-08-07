@@ -128,18 +128,8 @@ watch(
   }
 );
 
-const headerItems = computed(() => {
-  const items: Record<string, any> = {};
-  const blockEvent = get(isEthBlockEventRef(eventGroupHeader));
-
-  if (blockEvent) {
-    items.blockNumber = blockEvent.blockNumber.toString();
-  }
-
-  return items;
-});
-
 const { mdAndUp } = useDisplay();
+const blockEvent = isEthBlockEventRef(eventGroupHeader);
 </script>
 
 <template>
@@ -205,13 +195,13 @@ const { mdAndUp } = useDisplay();
                 <template #item.description="{ item }">
                   <VLazy>
                     <HistoryEventNote
-                      v-bind="{
-                        ...headerItems,
-                        ...item
-                      }"
+                      v-bind="item"
                       :amount="item.balance.amount"
                       :chain="getChain(item.location)"
                       :no-tx-hash="isNoTxHash(item)"
+                      :block-number="
+                        item.blockNumber ?? blockEvent?.blockNumber.toString()
+                      "
                     />
                   </VLazy>
                 </template>
