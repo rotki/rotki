@@ -50,7 +50,6 @@ from rotkehlchen.utils.misc import (
 )
 from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
 
-from ...arbitrum_one.modules.arbitrum_one_bridge.decoder import DEPOSIT_TX_TYPE
 from .base import BaseDecoderTools, BaseDecoderToolsWithDSProxy
 from .constants import CPT_GAS, ERC20_APPROVE, ERC20_OR_ERC721_TRANSFER, OUTGOING_EVENT_TYPES
 from .structures import (
@@ -387,12 +386,6 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             address_counterparty = self.rules.addresses_to_counterparties.get(transaction.to_address)  # noqa: E501
             if address_counterparty is not None:
                 counterparties.add(address_counterparty)
-            elif hasattr(transaction, 'tx_type') and transaction.tx_type == DEPOSIT_TX_TYPE:
-                # If this is a transaction for receiving eth in arbitrum one from arbitrum one
-                # bridge, then there is no address specific counterparty. Check if there are
-                # any rules for all counterparties. This way we can apply post decoding rules
-                # to a transaction irrespective of the to_address on specific cases.
-                counterparties = {cpt_details.identifier for cpt_details in self.rules.all_counterparties}  # noqa: E501
 
         rules = self._chain_specific_post_decoding_rules(transaction)
         # get the rules that need to be applied by counterparty

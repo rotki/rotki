@@ -11,7 +11,7 @@ import pytest
 import requests
 from freezegun import freeze_time
 
-from rotkehlchen.assets.asset import AssetWithOracles
+from rotkehlchen.assets.asset import Asset, AssetWithOracles
 from rotkehlchen.constants.assets import A_AVAX, A_BTC, A_ETH, A_EUR, A_USD
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.settings import ModifiableDBSettings
@@ -336,10 +336,7 @@ def assert_csv_export_response(
             )
             assert row['amount'] is not None
             assert row['asset'] is not None
-            assert row['asset_symbol'] in (
-                'BTC',
-                'AVAX',
-            )
+            assert row['asset_symbol'] == Asset(row['asset']).symbol_or_name()
             if timestamp_validation_data is None:
                 assert row['timestamp'] is not None
             else:
