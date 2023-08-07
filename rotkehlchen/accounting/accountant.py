@@ -11,6 +11,7 @@ from rotkehlchen.accounting.mixins.event import AccountingEventMixin
 from rotkehlchen.accounting.pot import AccountingPot
 from rotkehlchen.accounting.structures.types import ActionType
 from rotkehlchen.accounting.types import MissingPrice
+from rotkehlchen.chain.evm.accounting.aggregator import EVMAccountingAggregators
 from rotkehlchen.db.reports import DBAccountingReports
 from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair, UnsupportedAsset
@@ -18,11 +19,11 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
-from rotkehlchen.types import Timestamp
+from rotkehlchen.types import EVM_CHAIN_IDS_WITH_TRANSACTIONS, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.evm.accounting.aggregator import EVMAccountingAggregators
+    from rotkehlchen.chain.aggregator import ChainsAggregator
     from rotkehlchen.db.dbhandler import DBHandler
 
 
@@ -36,12 +37,14 @@ class Accountant:
             self,
             db: 'DBHandler',
             msg_aggregator: MessagesAggregator,
-            evm_accounting_aggregators: 'EVMAccountingAggregators',
+            chains_aggregator: 'ChainsAggregator',
             premium: Optional[Premium],
     ) -> None:
         self.db = db
         self.msg_aggregator = msg_aggregator
         self.csvexporter = CSVExporter(database=db)
+        evm_accounting_aggregators = EVMAccountingAggregators([chains_aggregator.get_evm_manager(x).accounting_aggregator for x in EVM_CHAIN_IDS_WITH_TRANSACTIONS])  # noqa: E501
+
         # TODO: Allow for setting of multiple accounting pots
         self.pots = [
             AccountingPot(
