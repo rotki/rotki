@@ -572,7 +572,7 @@ def test_sqlcipher_detect_version():
             detect_sqlcipher_version()
 
 
-asset_balances = [
+ASSET_BALANCES = [
     DBAssetBalance(
         category=BalanceType.ASSET,
         time=Timestamp(1451606400),
@@ -632,7 +632,7 @@ def test_query_timed_balances(data_dir, username, sql_vm_instructions_cb):
 
     with data.db.user_write() as cursor:
         data.db.set_settings(cursor, settings=ModifiableDBSettings(infer_zero_timed_balances=True))
-        data.db.add_multiple_balances(cursor, asset_balances)
+        data.db.add_multiple_balances(cursor, ASSET_BALANCES)
         result = data.db.query_timed_balances(
             cursor=cursor,
             asset=A_USD,
@@ -676,6 +676,61 @@ def test_query_timed_balances(data_dir, username, sql_vm_instructions_cb):
     assert result[0].category == BalanceType.LIABILITY
     assert result[0].amount == FVal('1')
     assert result[0].usd_value == FVal('9.98')
+
+
+def test_query_collection_timed_balances(data_dir, username, sql_vm_instructions_cb):
+    """Make sure that the collection timed balances get combined and sorted properly"""
+    msg_aggregator = MessagesAggregator()
+    a_ousdc = Asset('eip155:10/erc20:0x7F5c764cBc14f9669B88837ca1490cCa17c31607')
+    asset_balances = [
+        DBAssetBalance(
+            category=BalanceType.ASSET,
+            time=Timestamp(1451606400),
+            asset=A_USDC,
+            amount=FVal('10'),
+            usd_value=FVal('10'),
+        ), DBAssetBalance(
+            category=BalanceType.ASSET,
+            time=Timestamp(1451606400),
+            asset=a_ousdc,
+            amount=FVal('10'),
+            usd_value=FVal('10'),
+        ), DBAssetBalance(
+            category=BalanceType.ASSET,
+            time=Timestamp(1461606400),
+            asset=A_USDC,
+            amount=FVal('20'),
+            usd_value=FVal('20'),
+        ), DBAssetBalance(
+            category=BalanceType.ASSET,
+            time=Timestamp(1461606400),
+            asset=a_ousdc,
+            amount=FVal('20'),
+            usd_value=FVal('20'),
+        ),
+    ]
+    data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)
+    data.unlock(username, '123', create_new=True, resume_from_backup=False)
+
+    with data.db.user_write() as cursor:
+        data.db.set_settings(cursor, settings=ModifiableDBSettings(infer_zero_timed_balances=True))
+        data.db.add_multiple_balances(cursor, asset_balances)
+        result = data.db.query_collection_timed_balances(
+            cursor=cursor,
+            collection_id=36,  # USDC collection
+        )
+
+    assert result == [SingleDBAssetBalance(
+        time=Timestamp(1451606400),
+        category=BalanceType.ASSET,
+        usd_value=FVal(20),
+        amount=FVal(20),
+    ), SingleDBAssetBalance(
+        category=BalanceType.ASSET,
+        time=Timestamp(1461606400),
+        amount=FVal(40),
+        usd_value=FVal(40),
+    )]
 
 
 def test_timed_balances_inferred_zero_balances(data_dir, username, sql_vm_instructions_cb):
@@ -807,7 +862,7 @@ def test_query_owned_assets(data_dir, username, sql_vm_instructions_cb):
     data.unlock(username, '123', create_new=True, resume_from_backup=False)
 
     with data.db.user_write() as cursor:
-        balances = deepcopy(asset_balances)
+        balances = deepcopy(ASSET_BALANCES)
         balances.extend([
             DBAssetBalance(
                 category=BalanceType.ASSET,
