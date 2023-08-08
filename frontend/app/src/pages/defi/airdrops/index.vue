@@ -10,14 +10,15 @@ import {
   AIRDROP_COW_GNOSIS,
   AIRDROP_COW_MAINNET,
   AIRDROP_CURVE,
+  AIRDROP_DIVA,
   AIRDROP_ENS,
-  AIRDROP_FOX,
   AIRDROP_FURUCOMBO,
   AIRDROP_GRAIN,
   AIRDROP_LIDO,
   AIRDROP_PARASWAP,
   AIRDROP_POAP,
   AIRDROP_SADDLE,
+  AIRDROP_SHAPESHIFT,
   AIRDROP_TORNADO,
   AIRDROP_UNISWAP,
   type Airdrop,
@@ -79,7 +80,7 @@ const sources: AirdropSources = {
     icon: './assets/images/protocols/convex.jpeg',
     name: 'Convex'
   },
-  [AIRDROP_FOX]: {
+  [AIRDROP_SHAPESHIFT]: {
     icon: './assets/images/protocols/shapeshift.svg',
     name: 'ShapeShift'
   },
@@ -102,6 +103,10 @@ const sources: AirdropSources = {
   [AIRDROP_COW_GNOSIS]: {
     icon: './assets/images/protocols/cow.svg',
     name: 'COW (gnosis chain)'
+  },
+  [AIRDROP_DIVA]: {
+    icon: './assets/images/protocols/diva.svg',
+    name: 'DIVA'
   }
 };
 

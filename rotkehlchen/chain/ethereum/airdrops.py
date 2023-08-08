@@ -15,6 +15,7 @@ from rotkehlchen.constants.assets import (
     A_CORN,
     A_CRV,
     A_CVX,
+    A_DIVA,
     A_ENS,
     A_FOX,
     A_GRAIN,
@@ -89,7 +90,7 @@ AIRDROPS = {
         A_CVX,
         'https://www.convexfinance.com/',
     ),
-    'fox': (
+    'shapeshift': (
         'https://raw.githubusercontent.com/rotki/data/main/airdrops/shapeshift.csv',
         A_FOX,
         'https://shapeshift.com/shapeshift-decentralize-airdrop',
@@ -118,6 +119,11 @@ AIRDROPS = {
         'https://raw.githubusercontent.com/rotki/data/main/airdrops/cow_gnosis.csv',
         A_VCOW,
         'https://cowswap.exchange/#/claim',
+    ),
+    'diva': (
+        'https://raw.githubusercontent.com/rotki/data/develop/airdrops/diva.csv',
+        A_DIVA,
+        'https://claim.diva.community/',
     ),
 }
 
