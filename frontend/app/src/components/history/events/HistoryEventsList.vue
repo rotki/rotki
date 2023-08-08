@@ -200,7 +200,7 @@ const blockEvent = isEthBlockEventRef(eventGroupHeader);
                       :chain="getChain(item.location)"
                       :no-tx-hash="isNoTxHash(item)"
                       :block-number="
-                        item.blockNumber ?? blockEvent?.blockNumber.toString()
+                        item.blockNumber ?? blockEvent?.blockNumber
                       "
                     />
                   </VLazy>
