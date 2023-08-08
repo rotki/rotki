@@ -122,7 +122,9 @@ const showDetectEvmAccountsButton: Readonly<Ref<boolean>> = computedEager(
   () =>
     get(ethAccounts).length > 0 ||
     get(optimismAccounts).length > 0 ||
-    get(avaxAccounts).length > 0
+    get(avaxAccounts).length > 0 ||
+    get(polygonAccounts).length > 0 ||
+    get(arbitrumAccounts).length > 0
 );
 
 const { xl } = useDisplay();
