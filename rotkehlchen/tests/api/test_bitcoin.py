@@ -511,6 +511,7 @@ def test_delete_nonexisting_xpub(rotkehlchen_api_server):
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
+@pytest.mark.parametrize('test_timeout', [60])  # needs longer timeout
 def test_add_xpub_with_conversion_works(rotkehlchen_api_server, test_session):
     """Test that an xpub is being converted to ypub/zpub if the prefix does not match"""
     # Disable caching of query results
