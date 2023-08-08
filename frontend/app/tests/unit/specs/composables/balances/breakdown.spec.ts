@@ -99,10 +99,19 @@ vi.mock('@/composables/blockchain/account-balances/index', () => ({
       computed(() => [
         {
           location: 'ethereum',
-          address: '0xaddres',
+          address: '0xaddress1',
           balance: {
             amount: bigNumberify(1000),
             usdValue: bigNumberify(1000)
+          },
+          tags: null
+        },
+        {
+          location: 'ethereum',
+          address: '0xaddress2',
+          balance: {
+            amount: bigNumberify(2000),
+            usdValue: bigNumberify(2000)
           },
           tags: null
         }
@@ -124,6 +133,12 @@ describe('composables::balances/breakdown', () => {
     const assetBreakdown = balancesBreakdown.assetBreakdown('ETH');
     const expectedResult = [
       {
+        location: 'ethereum',
+        address: '0xaddress2',
+        balance: { amount: bigNumberify(2000), usdValue: bigNumberify(2000) },
+        tags: null
+      },
+      {
         location: 'kraken',
         balance: { amount: bigNumberify(2000), usdValue: bigNumberify(2000) },
         address: '',
@@ -131,7 +146,7 @@ describe('composables::balances/breakdown', () => {
       },
       {
         location: 'ethereum',
-        address: '0xaddres',
+        address: '0xaddress1',
         balance: { amount: bigNumberify(1000), usdValue: bigNumberify(1000) },
         tags: null
       },
