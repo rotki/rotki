@@ -21,7 +21,7 @@ export const AIRDROP_POAP = 'poap';
 
 export const AIRDROP_CONVEX = 'convex';
 
-export const AIRDROP_FOX = 'fox';
+export const AIRDROP_SHAPESHIFT = 'shapeshift';
 
 export const AIRDROP_ENS = 'ens';
 
@@ -33,6 +33,8 @@ export const AIRDROP_COW_GNOSIS = 'cowGnosis';
 
 export const AIRDROP_COW_MAINNET = 'cowMainnet';
 
+export const AIRDROP_DIVA = 'diva';
+
 const AIRDROPS = [
   AIRDROP_1INCH,
   AIRDROP_TORNADO,
@@ -40,13 +42,14 @@ const AIRDROPS = [
   AIRDROP_CORNICHON,
   AIRDROP_COW_GNOSIS,
   AIRDROP_COW_MAINNET,
+  AIRDROP_DIVA,
   AIRDROP_GRAIN,
   AIRDROP_LIDO,
   AIRDROP_FURUCOMBO,
   AIRDROP_CURVE,
   AIRDROP_POAP,
   AIRDROP_CONVEX,
-  AIRDROP_FOX,
+  AIRDROP_SHAPESHIFT,
   AIRDROP_ENS,
   AIRDROP_PARASWAP,
   AIRDROP_SADDLE
