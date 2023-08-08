@@ -129,6 +129,7 @@ watch(
 );
 
 const { mdAndUp } = useDisplay();
+const blockEvent = isEthBlockEventRef(eventGroupHeader);
 </script>
 
 <template>
@@ -198,6 +199,9 @@ const { mdAndUp } = useDisplay();
                       :amount="item.balance.amount"
                       :chain="getChain(item.location)"
                       :no-tx-hash="isNoTxHash(item)"
+                      :block-number="
+                        item.blockNumber ?? blockEvent?.blockNumber.toString()
+                      "
                     />
                   </VLazy>
                 </template>
