@@ -2220,6 +2220,7 @@ class DBHandler:
                     to_ts=to_ts,
                 ))
 
+        asset_balances.sort(key=lambda x: x.time)
         return combine_asset_balances(asset_balances)
 
     def query_owned_assets(self, cursor: 'DBCursor') -> list[Asset]:
