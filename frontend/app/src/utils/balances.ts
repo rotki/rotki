@@ -66,6 +66,30 @@ export const mergeAssetBalances = (
   return merged;
 };
 
+export const groupAssetBreakdown = (
+  breakdowns: AssetBreakdown[]
+): AssetBreakdown[] => {
+  const grouped = groupBy(breakdowns, 'location');
+
+  return Object.entries(grouped).map(
+    ([location, breakdown]: [
+      location: string,
+      breakdown: AssetBreakdown[]
+    ]) => {
+      const balance = zeroBalance();
+      return {
+        ...breakdown[0],
+        location,
+        balance: breakdown.reduce(
+          (previousValue, currentValue) =>
+            balanceSum(previousValue, currentValue.balance),
+          balance
+        )
+      };
+    }
+  );
+};
+
 export const appendAssetBalance = (
   value: AssetBalance,
   assets: AssetBalances,
