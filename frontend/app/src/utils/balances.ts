@@ -68,11 +68,13 @@ export const mergeAssetBalances = (
 };
 
 export const groupAssetBreakdown = (
-  breakdowns: AssetBreakdown[]
+  breakdowns: AssetBreakdown[],
+  groupBy: (item: AssetBreakdown) => string = (item: AssetBreakdown) =>
+    item.location + item.address
 ): AssetBreakdown[] => {
   const initial: Record<string, Writeable<AssetBreakdown>> = {};
   const grouped = breakdowns.reduce((acc, breakdown) => {
-    const key = breakdown.location + breakdown.address;
+    const key = groupBy(breakdown);
     if (!acc[key]) {
       acc[key] = { ...breakdown, balance: zeroBalance() };
     }
@@ -80,7 +82,9 @@ export const groupAssetBreakdown = (
     return acc;
   }, initial);
 
-  return Object.values(grouped);
+  return Object.values(grouped).sort((a, b) =>
+    sortDesc(a.balance.usdValue, b.balance.usdValue)
+  );
 };
 
 export const appendAssetBalance = (

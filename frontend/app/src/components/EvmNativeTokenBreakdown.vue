@@ -26,9 +26,11 @@ const { assetBreakdown } = useBalancesBreakdown();
 
 const breakdowns = computed(() => {
   const asset = get(identifier);
-  return get(blockchainOnly)
+  const breakdown = get(blockchainOnly)
     ? get(getBlockchainBreakdown(asset))
     : get(assetBreakdown(asset));
+
+  return groupAssetBreakdown(breakdown, item => item.location);
 });
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());

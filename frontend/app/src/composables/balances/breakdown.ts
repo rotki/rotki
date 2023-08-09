@@ -27,7 +27,7 @@ export const useBalancesBreakdown = () => {
         get(getBlockchainBreakdown(asset))
           .concat(get(getManualBreakdown(asset)))
           .concat(get(getExchangeBreakdown(asset)))
-      ).sort((a, b) => sortDesc(a.balance.usdValue, b.balance.usdValue))
+      )
     );
 
   const locationBreakdown = (
