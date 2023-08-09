@@ -82,7 +82,9 @@ export const groupAssetBreakdown = (
     return acc;
   }, initial);
 
-  return Object.values(grouped);
+  return Object.values(grouped).sort((a, b) =>
+    sortDesc(a.balance.usdValue, b.balance.usdValue)
+  );
 };
 
 export const appendAssetBalance = (

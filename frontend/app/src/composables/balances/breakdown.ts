@@ -21,17 +21,13 @@ export const useBalancesBreakdown = () => {
   const { toSelectedCurrency, assetPrice } = useBalancePricesStore();
   const { isAssetIgnored } = useIgnoredAssetsStore();
 
-  const assetBreakdown = (
-    asset: string,
-    groupBy?: (item: AssetBreakdown) => string
-  ): ComputedRef<AssetBreakdown[]> =>
+  const assetBreakdown = (asset: string): ComputedRef<AssetBreakdown[]> =>
     computed(() =>
       groupAssetBreakdown(
         get(getBlockchainBreakdown(asset))
           .concat(get(getManualBreakdown(asset)))
-          .concat(get(getExchangeBreakdown(asset))),
-        groupBy
-      ).sort((a, b) => sortDesc(a.balance.usdValue, b.balance.usdValue))
+          .concat(get(getExchangeBreakdown(asset)))
+      )
     );
 
   const locationBreakdown = (
