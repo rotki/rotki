@@ -1,1 +1,1 @@
-export const useEvmRpcNodeForm = createSharedComposable(useForm<boolean>);
+export const useEvmRpcNodeForm = useForm<boolean>;

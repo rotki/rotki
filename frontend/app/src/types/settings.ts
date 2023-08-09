@@ -1,5 +1,7 @@
 import { z } from 'zod';
 import { type Blockchain } from '@rotki/common/lib/blockchain';
+import { type GlobalConfig, type ValidationArgs } from '@vuelidate/core';
+import { type MaybeRef } from '@vueuse/shared';
 
 const EvmRpcNode = z.object({
   identifier: z.number(),
@@ -29,3 +31,9 @@ export const getPlaceholderNode = (chain: Blockchain): EvmRpcNode => ({
   owned: true,
   blockchain: chain
 });
+
+export type EvmRpcValidation = {
+  rules: ValidationArgs;
+  state: Record<string, MaybeRef<any>>;
+  config?: GlobalConfig;
+};

@@ -12,7 +12,7 @@ import { type MaybeRef } from '@vueuse/core';
 export const useForm = <T = void>() => {
   const openDialog: Ref<boolean> = ref(false);
   const valid: Ref<boolean> = ref(true);
-  let v$: Ref<Validation> | undefined = undefined;
+  const v$: Ref<Validation> = ref(get(useVuelidate({}, {})));
   const submitFunc: Ref<() => Promise<T> | void> = ref(() => {});
   const postSubmitFunc: Ref<(result: T | void) => void> = ref(() => {});
   const submitting: Ref<boolean> = ref(false);
@@ -22,7 +22,7 @@ export const useForm = <T = void>() => {
     states: Record<string, MaybeRef<any>>,
     config?: GlobalConfig
   ): Ref<Validation> => {
-    v$ = useVuelidate(validationsArgs, states, config);
+    set(v$, get(useVuelidate(validationsArgs, states, config)));
 
     watch(v$, ({ $invalid, $dirty }) => {
       if ($dirty) {
