@@ -3,7 +3,12 @@ import { between, required, requiredIf } from '@vuelidate/validators';
 import { type Blockchain } from '@rotki/common/lib/blockchain';
 import isEmpty from 'lodash/isEmpty';
 import omit from 'lodash/omit';
-import { type EvmRpcNode, getPlaceholderNode } from '@/types/settings';
+import { type Validation } from '@vuelidate/core';
+import {
+  type EvmRpcNode,
+  type EvmRpcValidation,
+  getPlaceholderNode
+} from '@/types/settings';
 import { toMessages } from '@/utils/validation';
 import { ApiValidationError } from '@/types/api/errors';
 
@@ -13,15 +18,25 @@ const props = defineProps<{
   chainName: string;
   isEtherscan: boolean;
   editMode: boolean;
+  validation: Validation;
 }>();
 
 const emit = defineEmits<{
   (e: 'input', value: EvmRpcNode): void;
+  (e: 'update:submitfn', value: () => Promise<boolean>): void;
+  (e: 'update:validation', value: EvmRpcValidation): void;
 }>();
 
 const { t } = useI18n();
 
-const { chain, chainName, value, isEtherscan, editMode } = toRefs(props);
+const {
+  chain,
+  chainName,
+  value,
+  isEtherscan,
+  editMode,
+  validation: v$
+} = toRefs(props);
 const state = reactive<EvmRpcNode>(getPlaceholderNode(get(chain)));
 
 const rules = {
@@ -31,13 +46,6 @@ const rules = {
 };
 
 const errorMessages = ref<Record<string, string[] | string>>({});
-
-const { setValidation, setSubmitFunc } = useEvmRpcNodeForm();
-
-const v$ = setValidation(rules, state, {
-  $autoDirty: true,
-  $externalResults: errorMessages
-});
 
 watch(errorMessages, errors => {
   if (!isEmpty(errors)) {
@@ -116,7 +124,17 @@ const save = async () => {
   }
 };
 
-setSubmitFunc(save);
+onBeforeMount(() => {
+  emit('update:submitfn', save);
+  emit('update:validation', {
+    rules,
+    state,
+    config: {
+      $autoDirty: true,
+      $externalResults: errorMessages
+    }
+  });
+});
 </script>
 
 <template>

@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { type Blockchain } from '@rotki/common/lib/blockchain';
 import camelCase from 'lodash/camelCase';
+import { required } from '@vuelidate/validators';
 import {
   type EvmRpcNode,
   type EvmRpcNodeList,
+  type EvmRpcValidation,
   getPlaceholderNode
 } from '@/types/settings';
 
@@ -22,7 +24,17 @@ const selectedNode = ref<EvmRpcNode>(getPlaceholderNode(get(chain)));
 const { notify } = useNotificationsStore();
 const { setMessage } = useMessageStore();
 
-const { setOpenDialog, closeDialog, setPostSubmitFunc } = useEvmRpcNodeForm();
+const {
+  setOpenDialog,
+  closeDialog,
+  setPostSubmitFunc,
+  setSubmitFunc,
+  setValidation,
+  openDialog,
+  trySubmit,
+  submitting,
+  v$
+} = useEvmRpcNodeForm();
 
 const { connectedNodes } = storeToRefs(usePeriodicStore());
 const api = useEvmNodesApi(get(chain));
@@ -42,6 +54,15 @@ async function loadNodes(): Promise<void> {
     });
   }
 }
+
+setValidation(
+  { name: { required }, endpoint: { required }, weight: { required } },
+  getPlaceholderNode(get(chain))
+);
+
+const setFormValidation = ({ rules, state, config }: EvmRpcValidation) => {
+  setValidation(rules, state, config);
+};
 
 onMounted(async () => {
   await loadNodes();
@@ -233,9 +254,15 @@ const css = useCssModule();
         v-model="selectedNode"
         :chain="chain"
         :chain-name="chainName"
+        :open-dialog="openDialog"
         :edit-mode="editMode"
+        :submitting="submitting"
+        :validation="v$"
         :is-etherscan="editMode && isEtherscan(selectedNode)"
         @reset="resetForm()"
+        @submit="trySubmit()"
+        @update:submitfn="setSubmitFunc($event)"
+        @update:validation="setFormValidation($event)"
       />
     </VCard>
 

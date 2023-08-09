@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { type Blockchain } from '@rotki/common/lib/blockchain';
-import { type EvmRpcNode } from '@/types/settings';
+import { type Validation } from '@vuelidate/core';
+import { type EvmRpcNode, type EvmRpcValidation } from '@/types/settings';
 
 const props = defineProps<{
   value: EvmRpcNode;
@@ -8,11 +9,17 @@ const props = defineProps<{
   chainName: string;
   isEtherscan: boolean;
   editMode: boolean;
+  openDialog: boolean;
+  submitting: boolean;
+  validation: Validation;
 }>();
 
 const emit = defineEmits<{
   (e: 'input', newInput: Partial<EvmRpcNode>): void;
   (e: 'reset'): void;
+  (e: 'submit'): void;
+  (e: 'update:submitfn', value: () => Promise<boolean>): void;
+  (e: 'update:validation', value: EvmRpcValidation): void;
 }>();
 
 const { editMode, chainName } = toRefs(props);
@@ -21,15 +28,18 @@ const resetForm = () => {
   emit('reset');
 };
 
-const { openDialog, submitting, trySubmit } = useEvmRpcNodeForm();
+const submitForm = () => {
+  emit('submit');
+};
 
 const { t } = useI18n();
 
 const dialogTitle = computed(() => {
+  const chainTitle = get(chainName);
   if (get(editMode)) {
-    return t('evm_rpc_node_manager.edit_dialog.title', { chain: chainName });
+    return t('evm_rpc_node_manager.edit_dialog.title', { chain: chainTitle });
   }
-  return t('evm_rpc_node_manager.add_dialog.title', { chain: chainName });
+  return t('evm_rpc_node_manager.add_dialog.title', { chain: chainTitle });
 });
 </script>
 
@@ -40,7 +50,8 @@ const dialogTitle = computed(() => {
     :primary-action="t('common.actions.save')"
     :secondary-action="t('common.actions.cancel')"
     :loading="submitting"
-    @confirm="trySubmit()"
+    :retain-focus="false"
+    @confirm="submitForm()"
     @cancel="resetForm()"
   >
     <EvmRpcNodeForm
@@ -49,7 +60,10 @@ const dialogTitle = computed(() => {
       :chain-name="chainName"
       :edit-mode="editMode"
       :is-etherscan="isEtherscan"
+      :validation="validation"
       @input="emit('input', $event)"
+      @update:validation="emit('update:validation', $event)"
+      @update:submitfn="emit('update:submitfn', $event)"
     />
   </BigDialog>
 </template>
