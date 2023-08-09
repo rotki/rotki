@@ -146,7 +146,7 @@ jobs:
         run: |
           echo "::group::packaging dependencies"
           pip3 install --upgrade pip==${{ env.PIP_VERSION }}
-          pip3 install packaging wheel setuptools-scm
+          pip3 install -r requirements_packaging.txt
           echo "::endgroup::"
           ./package.py --build full
       - name: Upload to release
@@ -261,7 +261,7 @@ jobs:
           pip3 install virtualenv
           python3 -m virtualenv ~/venv
           source ~/venv/bin/activate
-          pip3 install packaging wheel setuptools-scm
+          pip3 install -r requirements_packaging.txt
           echo "::endgroup::"
           ./package.py --build full
         env:
@@ -341,7 +341,7 @@ jobs:
         run: |
           echo ::group::"packaging dependencies"
           pip3 install --upgrade pip==${{ env.PIP_VERSION }}
-          pip3 install packaging wheel setuptools-scm
+          pip3 install -r requirements_packaging.txt
           echo ::endgroup::
           python .\package.py --build full
         shell: powershell
