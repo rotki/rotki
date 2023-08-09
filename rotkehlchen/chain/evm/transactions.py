@@ -265,30 +265,13 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
                     continue  # Only reason we need internal is for ether transfer. Ignore 0
                 # make sure internal transaction parent transactions are in the DB
                 with self.database.conn.read_ctx() as cursor:
-                    result = self.dbevmtx.get_evm_transactions(
-                        cursor,
-                        EvmTransactionsFilterQuery.make(
-                            tx_hash=internal_tx.parent_tx_hash,
-                            chain_id=self.evm_inquirer.chain_id,
-                        ),
-                        has_premium=True,  # ignore limiting here
+                    tx, _ = self.dbevmtx.get_or_create_transaction(
+                        cursor=cursor,
+                        evm_inquirer=self.evm_inquirer,
+                        tx_hash=internal_tx.parent_tx_hash,
+                        relevant_address=address,
                     )
-                if len(result) == 0:  # parent transaction is not in the DB. Get it
-                    transaction, raw_receipt_data = self.evm_inquirer.get_transaction_by_hash(internal_tx.parent_tx_hash)  # noqa: E501
-                    with self.database.conn.write_ctx() as write_cursor:
-                        self.dbevmtx.add_evm_transactions(
-                            write_cursor=write_cursor,
-                            evm_transactions=[transaction],
-                            relevant_address=address,
-                        )
-                        self.dbevmtx.add_receipt_data(
-                            write_cursor=write_cursor,
-                            chain_id=self.evm_inquirer.chain_id,
-                            data=raw_receipt_data,
-                        )
-                    timestamp = transaction.timestamp
-                else:
-                    timestamp = result[0].timestamp
+                    timestamp = tx.timestamp
 
                 with self.database.conn.write_ctx() as write_cursor:
                     self.dbevmtx.add_evm_internal_transactions(
@@ -394,28 +377,13 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
                 ):
                     for tx_hash in erc20_tx_hashes:
                         with self.database.conn.read_ctx() as cursor:
-                            result = self.dbevmtx.get_evm_transactions(
-                                cursor,
-                                EvmTransactionsFilterQuery.make(tx_hash=tx_hash, chain_id=self.evm_inquirer.chain_id),  # noqa: E501
-                                has_premium=True,  # ignore limiting here
+                            tx, _ = self.dbevmtx.get_or_create_transaction(
+                                cursor=cursor,
+                                evm_inquirer=self.evm_inquirer,
+                                tx_hash=tx_hash,
+                                relevant_address=address,
                             )
-                        if len(result) == 0:  # if transaction is not there add it
-                            transaction, raw_receipt_data = self.evm_inquirer.get_transaction_by_hash(tx_hash)  # noqa: E501
-                            with self.database.user_write() as write_cursor:
-                                self.dbevmtx.add_evm_transactions(
-                                    write_cursor=write_cursor,
-                                    evm_transactions=[transaction],
-                                    relevant_address=address,
-                                )
-                                self.dbevmtx.add_receipt_data(
-                                    write_cursor=write_cursor,
-                                    chain_id=self.evm_inquirer.chain_id,
-                                    data=raw_receipt_data,
-                                )
-                            timestamp = transaction.timestamp
-                        else:
-                            timestamp = result[0].timestamp
-
+                        timestamp = tx.timestamp
                         log.debug(f'{self.evm_inquirer.chain_name} ERC20 Transfers for {address} -> update range {query_start_ts} - {timestamp}')  # noqa: E501
                         with self.database.user_write() as write_cursor:
                             # update last queried time for the address
@@ -534,14 +502,6 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
         - DeserializationError
         - RemoteError if the transaction hash can't be found in any of the connected nodes
         """
-        with self.database.conn.read_ctx() as cursor:
-            # If the transaction is not in the DB then query it and add it
-            result = self.dbevmtx.get_evm_transactions(
-                cursor=cursor,
-                filter_=EvmTransactionsFilterQuery.make(tx_hash=tx_hash, chain_id=self.evm_inquirer.chain_id),  # noqa: E501
-                has_premium=True,  # we don't need any limiting here
-            )
-
         if tx_hash == GENESIS_HASH:
             # For each tracked account, query to see if it had any transactions in the
             # genesis block. We check this even if there already is a 0x0..0 transaction in the db
@@ -571,55 +531,34 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
                     f'There is no tracked {self.evm_inquirer.chain_id!s} address that '
                     f'would have a genesis transaction',
                 )
-        elif len(result) == 0:  # normal functionality
-            tx_result = self.evm_inquirer.maybe_get_transaction_by_hash(tx_hash)
-            if tx_result is None:
-                raise RemoteError(
-                    f'Transaction with hash {tx_hash.hex()} for '
-                    f'{self.evm_inquirer.chain_name} not found',
-                )
-            transaction, raw_receipt_data = tx_result
-            with self.database.user_write() as write_cursor:
-                self.dbevmtx.add_evm_transactions(write_cursor, [transaction], relevant_address=None)  # noqa: E501
-                self.dbevmtx.add_receipt_data(
-                    write_cursor=write_cursor,
+
+            tx_receipt_raw_data = self.evm_inquirer.get_transaction_receipt(tx_hash=tx_hash)
+            try:
+                with self.database.user_write() as write_cursor:
+                    self.dbevmtx.add_receipt_data(
+                        write_cursor=write_cursor,
+                        chain_id=self.evm_inquirer.chain_id,
+                        data=tx_receipt_raw_data,
+                    )
+            except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
+                if 'UNIQUE constraint failed: evmtx_receipts.tx_hash' not in str(e):
+                    raise  # otherwise something else added the receipt before so we just continue
+            with self.database.conn.read_ctx() as cursor:
+                tx_receipt = self.dbevmtx.get_receipt(
+                    cursor=cursor,
+                    tx_hash=tx_hash,
                     chain_id=self.evm_inquirer.chain_id,
-                    data=raw_receipt_data,
                 )
+        else:
+            with self.database.conn.read_ctx() as cursor:
+                # If the transaction is not in the DB then query it and add it
+                transaction, tx_receipt = self.dbevmtx.get_or_create_transaction(cursor, self.evm_inquirer, tx_hash, relevant_address=None)  # noqa: E501
+
             if transaction.to_address is not None:  # internal transactions only through contracts  # noqa: E501
                 self._query_and_save_internal_transactions_for_range_or_parent_hash(
                     address=None,  # get all internal transactions for the parent hash
                     period_or_hash=tx_hash,
                 )
-
-        with self.database.conn.read_ctx() as cursor:
-            tx_receipt = self.dbevmtx.get_receipt(
-                cursor=cursor,
-                tx_hash=tx_hash,
-                chain_id=self.evm_inquirer.chain_id,
-            )
-        if tx_receipt is not None:
-            return tx_receipt
-
-        # not in the DB, so we need to query the chain for it
-        tx_receipt_raw_data = self.evm_inquirer.get_transaction_receipt(tx_hash=tx_hash)
-        try:
-            with self.database.user_write() as write_cursor:
-                self.dbevmtx.add_receipt_data(
-                    write_cursor=write_cursor,
-                    chain_id=self.evm_inquirer.chain_id,
-                    data=tx_receipt_raw_data,
-                )
-        except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
-            if 'UNIQUE constraint failed: evmtx_receipts.tx_hash' not in str(e):
-                raise  # otherwise something else added the receipt before so we just continue
-        with self.database.conn.read_ctx() as cursor:
-            tx_receipt = self.dbevmtx.get_receipt(
-                cursor=cursor,
-                tx_hash=tx_hash,
-                chain_id=self.evm_inquirer.chain_id,
-            )
-
         return tx_receipt  # type: ignore  # tx_receipt was just added in the DB so should be there  # noqa: E501
 
     def get_receipts_for_transactions_missing_them(

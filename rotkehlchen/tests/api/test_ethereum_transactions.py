@@ -214,20 +214,18 @@ def assert_force_redecode_txns_works(api_server: 'APIServer', hashes: Optional[l
     rotki = api_server.rest_api.rotkehlchen
     get_eth_txns_patch = patch.object(
         rotki.chains_aggregator.ethereum.transactions_decoder.dbevmtx,
-        'get_evm_transactions',
-        wraps=rotki.chains_aggregator.ethereum.transactions_decoder.dbevmtx.get_evm_transactions,  # noqa: E501
+        'get_or_create_transaction',
+        wraps=rotki.chains_aggregator.ethereum.transactions_decoder.dbevmtx.get_or_create_transaction,  # noqa: E501
     )
     get_or_decode_txn_events_patch = patch.object(
         rotki.chains_aggregator.ethereum.transactions_decoder,
         '_get_or_decode_transaction_events',
         wraps=rotki.chains_aggregator.ethereum.transactions_decoder._get_or_decode_transaction_events,  # noqa: E501
     )
-    get_or_query_txn_receipt_patch = patch('rotkehlchen.chain.ethereum.transactions.EthereumTransactions.get_or_query_transaction_receipt')  # noqa: E501
     with ExitStack() as stack:
         function_call_counters = []
         function_call_counters.append(stack.enter_context(get_or_decode_txn_events_patch))
         function_call_counters.append(stack.enter_context(get_eth_txns_patch))
-        function_call_counters.append(stack.enter_context(get_or_query_txn_receipt_patch))
 
         response = requests.put(
             api_url_for(

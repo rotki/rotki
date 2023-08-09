@@ -2,12 +2,9 @@ import logging
 from typing import TYPE_CHECKING
 
 from rotkehlchen.db.constants import UpdateType
-from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
     ApiKey,
-    ChainID,
-    EVMTxHash,
     ExternalService,
     ExternalServiceApiCredentials,
     SupportedBlockchain,
@@ -19,33 +16,6 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
-
-
-def _get_optimism_transaction_fees(
-        rotki: 'Rotkehlchen',
-        progress_handler: 'MigrationProgressHandler',
-        txhash_to_id: dict[EVMTxHash, int],
-) -> None:
-    """Since we now need 1 extra column per optimism transaction we need to repull all
-    optimism transactions to store the l1 gas fee"""
-    db_tuples = []
-    optimism_manager = rotki.chains_aggregator.get_evm_manager(ChainID.OPTIMISM)
-    assert optimism_manager, 'should exist at this point'
-    for txhash, txid in txhash_to_id.items():
-        progress_handler.new_step(f'Fetching optimism transaction {txhash.hex()}')
-        try:
-            transaction, _ = optimism_manager.node_inquirer.get_transaction_by_hash(tx_hash=txhash)
-        except RemoteError:
-            log.error(f'Could not pull data from optimism for transaction {txhash.hex()}')
-            continue
-
-        db_tuples.append((txid, str(transaction.l1_fee)))  # type: ignore  # is optimism tx here
-
-    with rotki.data.db.user_write() as write_cursor:
-        write_cursor.executemany(
-            'INSERT OR IGNORE INTO optimism_transactions(tx_id, l1_fee) VALUES(?, ?)',
-            db_tuples,
-        )
 
 
 def _detect_arbitrum_one_accounts(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgressHandler') -> None:  # noqa: E501
@@ -79,14 +49,8 @@ def data_migration_11(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgress
     Introduced at v1.30.0
     """
     log.debug('Enter data_migration_11')
-    with rotki.data.db.conn.read_ctx() as cursor:
-        # We need to get the optimism transactions here in order to calculate the number of
-        # steps for the migration.
-        cursor.execute('SELECT tx_hash, identifier FROM evm_transactions WHERE chain_id=10')
-        txhash_to_id = dict(cursor)
 
-    # steps are: optimism txs + ethereum accounts + 3 (potentially write to db + updating spam assets and rpc nodes + new round msg)  # noqa: E501
-    progress_handler.set_total_steps(len(txhash_to_id) + len(rotki.chains_aggregator.accounts.eth) + 3)  # noqa: E501
-    _get_optimism_transaction_fees(rotki, progress_handler, txhash_to_id)
+    # steps are: ethereum accounts + 3 (potentially write to db + updating spam assets and rpc nodes + new round msg)  # noqa: E501
+    progress_handler.set_total_steps(len(rotki.chains_aggregator.accounts.eth) + 3)
     _detect_arbitrum_one_accounts(rotki, progress_handler)
     log.debug('Exit data_migration_11')
