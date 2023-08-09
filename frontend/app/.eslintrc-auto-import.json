@@ -699,6 +699,7 @@
     "truncateAddress": true,
     "truncationPoints": true,
     "awaitParallelExecution": true,
-    "groupAssetBreakdown": true
+    "groupAssetBreakdown": true,
+    "disposeEvmRpcNodeComposables": true
   }
 }
