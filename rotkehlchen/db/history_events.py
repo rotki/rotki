@@ -482,7 +482,8 @@ class DBHistoryEvents:
             filter_query: HistoryBaseEntryFilterQuery,
             has_premium: bool,
             group_by_event_ids: Literal[True],
-    ) -> tuple[list[tuple[int, HistoryBaseEntry]], int]:
+            entries_limit: Optional[int] = None,
+    ) -> tuple[list[tuple[int, HistoryBaseEntry]], int, int]:
         ...
 
     @overload
@@ -492,7 +493,8 @@ class DBHistoryEvents:
             filter_query: HistoryBaseEntryFilterQuery,
             has_premium: bool,
             group_by_event_ids: Literal[False] = ...,
-    ) -> tuple[list[HistoryBaseEntry], int]:
+            entries_limit: Optional[int] = None,
+    ) -> tuple[list[HistoryBaseEntry], int, int]:
         ...
 
     @overload
@@ -502,7 +504,8 @@ class DBHistoryEvents:
             filter_query: HistoryBaseEntryFilterQuery,
             has_premium: bool,
             group_by_event_ids: bool = False,
-    ) -> tuple[Union[list[tuple[int, HistoryBaseEntry]], list[HistoryBaseEntry]], int]:
+            entries_limit: Optional[int] = None,
+    ) -> tuple[Union[list[tuple[int, HistoryBaseEntry]], list[HistoryBaseEntry]], int, int]:
         """
         This fallback is needed due to
         https://github.com/python/mypy/issues/6113#issuecomment-869828434
@@ -514,10 +517,12 @@ class DBHistoryEvents:
             filter_query: 'HistoryBaseEntryFilterQuery',
             has_premium: bool,
             group_by_event_ids: bool = False,
-    ) -> tuple[Union[list[tuple[int, HistoryBaseEntry]], list[HistoryBaseEntry]], int]:
+            entries_limit: Optional[int] = None,
+    ) -> tuple[Union[list[tuple[int, HistoryBaseEntry]], list[HistoryBaseEntry]], int, int]:
         """Gets all history events for all types, based on the filter query.
 
-        Also returns how many are the total found for the filter
+        Also returns how many are the total found for the filter and the total found applying
+        the limit if provided. Otherwise count_with_limit and count_without_limit are equal.
         """
         events = self.get_history_events(  # type: ignore  # is due to HistoryBaseEntryFilterQuery not possible to be overloaded in get_history_events  # noqa: E501
             cursor=cursor,
@@ -525,12 +530,13 @@ class DBHistoryEvents:
             has_premium=has_premium,
             group_by_event_ids=group_by_event_ids,
         )
-        count = self.get_history_events_count(
+        count_without_limit, count_with_limit = self.get_history_events_count(
             cursor=cursor,
             query_filter=filter_query,
             group_by_event_ids=group_by_event_ids,
+            entries_limit=entries_limit,
         )
-        return events, count
+        return events, count_without_limit, count_with_limit
 
     def get_base_entries_missing_prices(
             self,
@@ -620,18 +626,34 @@ class DBHistoryEvents:
             cursor: 'DBCursor',
             query_filter: HistoryBaseEntryFilterQuery,
             group_by_event_ids: bool = False,
-    ) -> int:
-        """Returns how many events matching the filter but ignoring pagination are in the DB"""
-        prepared_query, bindings = query_filter.prepare(
-            with_pagination=False,
-            with_group_by=group_by_event_ids,
-        )
-        query = query_filter.get_count_query() + prepared_query
-        cursor.execute(query, bindings)
-        if group_by_event_ids:  # due to GROUP BY we get a list of all grouped by counts
-            return len(cursor.fetchall())
-        # else
-        return cursor.fetchone()[0]  # count(*) always returns
+            entries_limit: Optional[int] = None,
+    ) -> tuple[int, int]:
+        """
+        Returns how many events matching the filter but ignoring pagination are in the DB.
+        We return two integers. The first one being the number of events returned and the second
+        the number of events if any limit is applied, otherwise the second value matches
+        the first.
+        """
+        prepared_query, bindings = query_filter.prepare(with_pagination=False)
+        # we need to select everything because any column could be used in the filter
+        query = 'SELECT * ' + query_filter.get_join_query() + prepared_query
+        if group_by_event_ids:
+            query = f'SELECT event_identifier FROM ({query}) GROUP BY event_identifier'
+        query = f'SELECT COUNT(*) FROM ({query})'
+        count_without_limit = cursor.execute(query, bindings).fetchone()[0]
+
+        if entries_limit is not None:
+            query = 'SELECT * ' + query_filter.get_join_query()
+            if group_by_event_ids:  # we take the groups before the limit has been applied
+                query += ' GROUP BY event_identifier '
+            query += ' ORDER BY timestamp DESC LIMIT ?'
+            bindings.insert(0, entries_limit)
+            query = f'SELECT COUNT(*) FROM ({query}) ' + prepared_query
+
+            count_with_limit = cursor.execute(query, bindings).fetchone()[0]
+            return count_without_limit, count_with_limit
+
+        return count_without_limit, count_without_limit
 
     def get_value_stats(
             self,

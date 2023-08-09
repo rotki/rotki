@@ -546,7 +546,7 @@ def test_query_new_events(rotkehlchen_api_server_with_exchanges: 'APIServer'):
     async_query = random.choice([True, False])
 
     with rotki.data.db.conn.read_ctx() as cursor:
-        kraken_events_count = db.get_history_events_count(
+        kraken_events_count, _ = db.get_history_events_count(
             cursor=cursor,
             query_filter=query_filter,
         )
@@ -569,7 +569,7 @@ def test_query_new_events(rotkehlchen_api_server_with_exchanges: 'APIServer'):
         assert_proper_response(response)
 
     with rotki.data.db.conn.read_ctx() as cursor:
-        kraken_events_count = db.get_history_events_count(
+        kraken_events_count, _ = db.get_history_events_count(
             cursor=cursor,
             query_filter=query_filter,
         )

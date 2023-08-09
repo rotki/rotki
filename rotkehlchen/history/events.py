@@ -304,7 +304,7 @@ class EventsHistorian:
                 base_entries_ignore_set=task_manager.base_entries_ignore_set,
             )
         has_premium = self.chains_aggregator.premium is not None
-        events, filter_total_found = db.get_history_events_and_limit_info(
+        events, filter_total_found, _ = db.get_history_events_and_limit_info(
             cursor=cursor,
             filter_query=filter_query,
             has_premium=has_premium,
