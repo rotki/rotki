@@ -3468,11 +3468,12 @@ class RestAPI:
             entries_limit = - 1
 
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
-            events_result, entries_found = dbevents.get_history_events_and_limit_info(
+            events_result, entries_found, entries_with_limit = dbevents.get_history_events_and_limit_info(  # noqa: E501
                 cursor=cursor,
                 filter_query=filter_query,
                 has_premium=has_premium,
                 group_by_event_ids=group_by_event_ids,
+                entries_limit=entries_limit if entries_limit != -1 else None,
             )
             entries_total = self.rotkehlchen.data.db.get_entries_count(
                 cursor=cursor,
@@ -3511,10 +3512,13 @@ class RestAPI:
             ]
         result = {
             'entries': entries,
-            'entries_found': entries_found,
+            'entries_found': entries_with_limit,
             'entries_limit': entries_limit,
             'entries_total': entries_total,
         }
+        if has_premium is False:
+            result['entries_found_total'] = entries_found
+
         return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
 
     @async_api_call()
@@ -4073,7 +4077,7 @@ class RestAPI:
                     continue
                 events.append(staking_event)
 
-            entries_total = history_events_db.get_history_events_count(
+            entries_total, _ = history_events_db.get_history_events_count(
                 cursor=cursor,
                 query_filter=table_filter,
             )
