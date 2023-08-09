@@ -28,7 +28,7 @@ const breakdowns = computed(() => {
   const asset = get(identifier);
   return get(blockchainOnly)
     ? get(getBlockchainBreakdown(asset))
-    : get(assetBreakdown(asset));
+    : get(assetBreakdown(asset, item => item.location));
 });
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
