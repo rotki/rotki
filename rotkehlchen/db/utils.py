@@ -432,6 +432,8 @@ def db_tuple_to_str(
 
     # else can only be evm transaction
     assert tuple_type == 'evm_transaction', 'only DBTupleType possible here is evm_transaction'
+    if isinstance(data[0], int):
+        return f'Optimism transaction with hash 0x{data[1].hex()} and l1_fee {data[0]}'
     return f'EVM transaction with hash 0x{data[0].hex()} and chain id {data[1]}'
 
 

@@ -3,12 +3,15 @@ from typing import TYPE_CHECKING, Any, Optional
 
 from rotkehlchen.chain.optimism.types import OptimismTransaction
 from rotkehlchen.db.evmtx import DBEvmTx
+from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_timestamp
-from rotkehlchen.types import ChainID, ChecksumEvmAddress, deserialize_evm_tx_hash
+from rotkehlchen.types import ChainID, ChecksumEvmAddress, EVMTxHash, deserialize_evm_tx_hash
 
 if TYPE_CHECKING:
     from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
+    from rotkehlchen.chain.evm.structures import EvmTxReceipt
 
 from rotkehlchen.constants.limits import FREE_ETH_TX_LIMIT
 
@@ -56,6 +59,51 @@ class DBOptimismTx(DBEvmTx):
             [FREE_ETH_TX_LIMIT] + bindings,
         )
 
+    def assert_tx_data_is_pulled(
+            self,
+            cursor: 'DBCursor',
+            evm_inquirer: 'OptimismInquirer',  # type: ignore[override]
+            tx_hash: 'EVMTxHash',
+            relevant_address: Optional['ChecksumEvmAddress'],
+    ) -> tuple[tuple[Any, ...], 'EvmTxReceipt']:
+        """In addition to the base class check, also checks that the optimism transaction has
+        a corresponding l1_fee value in the database. If not, pulls it.
+
+        May raise:
+        - RemoteError if there is a problem querying the data sources or transaction hash does
+        not exist.
+        """
+        tx_data, tx_receipt = super().assert_tx_data_is_pulled(
+            cursor=cursor,
+            evm_inquirer=evm_inquirer,
+            tx_hash=tx_hash,
+            relevant_address=relevant_address,
+        )
+        l1_fee = cursor.execute(
+            'SELECT op_txs.l1_fee FROM evm_transactions AS txs '
+            'INNER JOIN optimism_transactions AS op_txs ON txs.identifier = op_txs.tx_id '
+            'WHERE txs.tx_hash = ?',
+            (tx_hash,),
+        ).fetchone()
+
+        if l1_fee is not None:
+            return tx_data, tx_receipt  # all good, l1_fee is in the database
+
+        transaction, _ = evm_inquirer.get_transaction_by_hash(tx_hash=tx_hash)
+        tx_id = cursor.execute(
+            'SELECT identifier FROM evm_transactions WHERE tx_hash = ?',
+            (tx_hash,),
+        ).fetchone()[0]
+        with self.db.user_write() as write_cursor:
+            write_cursor.execute(
+                'INSERT OR IGNORE INTO optimism_transactions(tx_id, l1_fee) VALUES(?, ?)',
+                (tx_id, str(transaction.l1_fee)),  # type: ignore
+            )
+        query, bindings = EvmTransactionsFilterQuery.make(tx_hash=tx_hash, chain_id=evm_inquirer.chain_id).prepare()  # noqa: E501
+        query, bindings = self._form_evm_transaction_dbquery(query=query, bindings=bindings, has_premium=True)  # noqa: E501
+        tx_data = cursor.execute(query, bindings).fetchone()
+        return tx_data, tx_receipt
+
     def _build_evm_transaction(self, result: tuple[Any, ...]) -> OptimismTransaction:
         return OptimismTransaction(
             tx_hash=deserialize_evm_tx_hash(result[0]),
@@ -70,6 +118,6 @@ class DBOptimismTx(DBEvmTx):
             gas_used=int(result[9]),
             input_data=result[10],
             nonce=result[11],
-            l1_fee=0 if result[12] is None else int(result[12]),
+            l1_fee=0 if result[12] is None else int(result[12]),  # this check is only needed when _build_evm_transaction is called from a code path that does not call assert_tx_data_is_pulled().  # noqa: E501
             db_id=result[13],
         )

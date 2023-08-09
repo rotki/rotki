@@ -41,6 +41,7 @@ from rotkehlchen.types import (
     EvmTokenKind,
     EvmTransaction,
     EVMTxHash,
+    Timestamp,
 )
 from rotkehlchen.utils.misc import (
     combine_dicts,
@@ -50,6 +51,7 @@ from rotkehlchen.utils.misc import (
 )
 from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
 
+from ..constants import GENESIS_HASH
 from .base import BaseDecoderTools, BaseDecoderToolsWithDSProxy
 from .constants import CPT_GAS, ERC20_APPROVE, ERC20_OR_ERC721_TRANSFER, OUTGOING_EVENT_TYPES
 from .structures import (
@@ -538,7 +540,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
         The transaction hashes must exist in the DB at the time of the call
 
         May raise:
-        - DeserializationError if there is a problem with conacting a remote to get receipts
+        - DeserializationError if there is a problem with contacting a remote to get receipts
         - RemoteError if there is a problem with contacting a remote to get receipts
         - InputError if the transaction hash is not found in the DB
         """
@@ -555,20 +557,58 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
                 tx_hashes = [EVMTxHash(x[0]) for x in cursor]
 
         for tx_hash in tx_hashes:
-            try:
-                receipt = self.transactions.get_or_query_transaction_receipt(tx_hash)
-            except RemoteError as e:
-                raise InputError(f'{self.evm_inquirer.chain_name} hash {tx_hash.hex()} does not correspond to a transaction') from e  # noqa: E501
+            if tx_hash == GENESIS_HASH:
+                # For each tracked account, query to see if it had any transactions in the genesis
+                # block. We check this even if there already is a 0x0..0 transaction in the db
+                # in order to be sure that genesis transactions are queried for all accounts.
+                with self.database.conn.read_ctx() as cursor:
+                    accounts_data = self.database.get_blockchain_account_data(
+                        cursor=cursor,
+                        blockchain=self.evm_inquirer.chain_id.to_blockchain(),
+                    )
+                    for data in accounts_data:
+                        self.transactions._get_transactions_for_range(
+                            address=data.address,
+                            start_ts=Timestamp(0),
+                            end_ts=Timestamp(0),
+                        )
 
-            # TODO: Change this if transaction filter query can accept multiple hashes
-            with self.database.conn.read_ctx() as cursor:
-                txs = self.dbevmtx.get_evm_transactions(
-                    cursor=cursor,
-                    filter_=EvmTransactionsFilterQuery.make(tx_hash=tx_hash, chain_id=self.evm_inquirer.chain_id),  # noqa: E501
-                    has_premium=True,  # ignore limiting here
+                # Check whether the genesis tx was added
+                with self.database.conn.read_ctx() as cursor:
+                    added_tx = self.dbevmtx.get_evm_transactions(
+                        cursor=cursor,
+                        filter_=EvmTransactionsFilterQuery.make(tx_hash=GENESIS_HASH, chain_id=self.evm_inquirer.chain_id),  # noqa: E501
+                        has_premium=True,  # we don't need any limiting here
+                    )
+                if len(added_tx) == 0:
+                    raise InputError(
+                        f'There is no tracked {self.evm_inquirer.chain_id!s} address that '
+                        f'would have a genesis transaction',
+                    )
+                receipt = EvmTxReceipt(
+                    tx_hash=GENESIS_HASH,
+                    chain_id=self.evm_inquirer.chain_id,
+                    contract_address=None,
+                    status=True,
+                    type=0,
+                    logs=[],
                 )
+                tx = added_tx[0]
+            else:
+                # TODO: Change this if transaction filter query can accept multiple hashes
+                with self.database.conn.read_ctx() as cursor:
+                    try:
+                        tx, receipt = self.dbevmtx.get_or_create_transaction(
+                            cursor=cursor,
+                            evm_inquirer=self.evm_inquirer,
+                            tx_hash=tx_hash,
+                            relevant_address=None,
+                        )
+                    except RemoteError as e:
+                        raise InputError(f'{self.evm_inquirer.chain_name} hash {tx_hash.hex()} does not correspond to a transaction. {e}') from e  # noqa: E501
+
             new_events, new_refresh_balances = self._get_or_decode_transaction_events(
-                transaction=txs[0],
+                transaction=tx,
                 tx_receipt=receipt,
                 ignore_cache=ignore_cache,
             )

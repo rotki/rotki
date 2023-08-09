@@ -1,17 +1,19 @@
 import pytest
 
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
 from rotkehlchen.types import ChainID, deserialize_evm_tx_hash
 
 
 @pytest.mark.parametrize('optimism_accounts', [['0xd6Ade875eEC93a7aAb7EfB7DBF13d1457443f95B']])
-def test_query_transactions_no_fee(optimism_transactions, optimism_accounts):
+def test_query_transactions_no_fee(optimism_transactions, optimism_accounts, optimism_inquirer):
     """Test to query an optimism transaction with and without l1_fee existing in the DB.
     Make sure that if l1_fee is missing in the DB nothing breaks, but it's just seen as 0.
     """
     address = optimism_accounts[0]
     dbevmtx = optimism_transactions.dbevmtx
     tx_hash = deserialize_evm_tx_hash('0x6eb136db4d36cf695f4026da16f602ed4a2583b2420dbbcbd4f436943190b665')  # noqa: E501
+    to_address = '0xDEF1ABE32c034e558Cdd535791643C58a13aCC10'
 
     def assert_tx_okay(transactions, should_have_l1):
         assert len(transactions) == 1
@@ -23,7 +25,7 @@ def test_query_transactions_no_fee(optimism_transactions, optimism_accounts):
         assert transactions[0].gas_used == 322803
         assert transactions[0].timestamp == 1689113567
         assert transactions[0].from_address == address
-        assert transactions[0].to_address == '0xDEF1ABE32c034e558Cdd535791643C58a13aCC10'
+        assert transactions[0].to_address == to_address
 
     optimism_transactions.single_address_query_transactions(
         address=address,
@@ -49,3 +51,9 @@ def test_query_transactions_no_fee(optimism_transactions, optimism_accounts):
             has_premium=True,
         )
         assert_tx_okay(transactions, should_have_l1=False)
+
+    # check that the get_or_create_transaction method makes sure that the requirements for an
+    # optimism transaction (l1_fee existing in the database) are met before returning it.
+    with optimism_transactions.database.conn.read_ctx() as cursor:
+        tx, _ = dbevmtx.get_or_create_transaction(cursor, optimism_inquirer, tx_hash, string_to_evm_address(to_address))  # noqa: E501
+        assert_tx_okay([tx], should_have_l1=True)

@@ -7,6 +7,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
+
     from .node_inquirer import OptimismInquirer
 
 logger = logging.getLogger(__name__)
