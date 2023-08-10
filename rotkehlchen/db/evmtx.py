@@ -35,7 +35,6 @@ log = RotkehlchenLogsAdapter(logger)
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
-    from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
 
 from rotkehlchen.constants.limits import FREE_ETH_TX_LIMIT
 
@@ -154,72 +153,6 @@ class DBEvmTx:
             transactions.append(tx)
 
         return transactions
-
-    def assert_tx_data_is_pulled(
-            self,
-            cursor: 'DBCursor',
-            evm_inquirer: 'EvmNodeInquirer',
-            tx_hash: 'EVMTxHash',
-            relevant_address: Optional['ChecksumEvmAddress'],
-    ) -> tuple[tuple[Any, ...], 'EvmTxReceipt']:
-        """Makes sure that the required data for the transaction are in the database.
-        If not, pulls them and stores them. For most chains this is the transaction and the
-        receipt. Can be extended by subclasses for chain-specific information.
-
-        May raise:
-        - RemoteError if there is a problem querying the data sources or transaction hash does
-        not exist.
-        """
-        query, bindings = EvmTransactionsFilterQuery.make(tx_hash=tx_hash, chain_id=evm_inquirer.chain_id).prepare()  # noqa: E501
-        query, bindings = self._form_evm_transaction_dbquery(query=query, bindings=bindings, has_premium=True)  # noqa: E501
-        tx_data = cursor.execute(query, bindings).fetchone()
-        tx_receipt = self.get_receipt(cursor, tx_hash, evm_inquirer.chain_id)
-        if tx_receipt is not None:
-            return tx_data, tx_receipt  # all good, tx receipt is in the database
-
-        transaction, raw_receipt_data = evm_inquirer.get_transaction_by_hash(tx_hash)
-        with self.db.conn.write_ctx() as write_cursor:
-            self.add_evm_transactions(
-                write_cursor=write_cursor,
-                evm_transactions=[transaction],
-                relevant_address=relevant_address,
-            )
-            self.add_receipt_data(
-                write_cursor=write_cursor,
-                chain_id=evm_inquirer.chain_id,
-                data=raw_receipt_data,
-            )
-
-        tx_data = cursor.execute(query, bindings).fetchone()
-        tx_receipt = self.get_receipt(cursor, tx_hash, evm_inquirer.chain_id)
-        return tx_data, tx_receipt  # type: ignore  # tx_data can't be None here
-
-    def get_or_create_transaction(
-            self,
-            cursor: 'DBCursor',
-            evm_inquirer: 'EvmNodeInquirer',
-            tx_hash: EVMTxHash,
-            relevant_address: Optional['ChecksumEvmAddress'],
-    ) -> tuple[EvmTransaction, EvmTxReceipt]:
-        """Gets an evm transaction from the database or if it doesn't exist, it pulls it from
-        the data source and stores it in the database. It ensures that the requirements of
-        the corresponding chain transaction are met before returning it. For example an
-        evm transaction must have a corresponding receipt entry in the database.
-
-        This function can raise:
-        - pysqlcipher3.dbapi2.OperationalError if the SQL query fails due to invalid
-        filtering arguments.
-        - RemoteError if there is a problem querying the data source.
-        - DeserializationError if the transaction cannot be deserialized from the DB.
-        """
-        tx_data, evm_tx_receipt = self.assert_tx_data_is_pulled(
-            cursor=cursor,
-            evm_inquirer=evm_inquirer,
-            tx_hash=tx_hash,
-            relevant_address=relevant_address,
-        )
-        evm_tx = self._build_evm_transaction(tx_data)
-        return evm_tx, evm_tx_receipt
 
     def get_evm_transactions(
             self,

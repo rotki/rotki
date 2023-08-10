@@ -25,7 +25,7 @@ from rotkehlchen.db.optimismtx import DBOptimismTx
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.constants import A_OPTIMISM_USDT
-from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
+from rotkehlchen.tests.utils.ethereum import INFURA_ETH_NODE, get_decoded_events_of_transaction
 from rotkehlchen.tests.utils.factories import make_ethereum_event
 from rotkehlchen.types import (
     ChainID,
@@ -739,7 +739,7 @@ def test_maybe_reshuffle_events():
     '0xA1E4380A3B1f749673E270229993eE55F35663b4',
     '0x756F45E3FA69347A9A973A725E3C98bC4db0b5a0',
 ]])
-@pytest.mark.parametrize('ethereum_manager_connect_at_start', ['DEFAULT'])
+@pytest.mark.parametrize('ethereum_manager_connect_at_start', [(INFURA_ETH_NODE,)])
 def test_genesis_transaction(database, ethereum_inquirer, ethereum_accounts):
     """Test that decoding a genesis transaction is handled correctly"""
     transactions = EthereumTransactions(ethereum_inquirer=ethereum_inquirer, database=database)
@@ -797,7 +797,7 @@ def test_genesis_transaction(database, ethereum_inquirer, ethereum_accounts):
 
 
 @pytest.mark.vcr()
-@pytest.mark.parametrize('ethereum_manager_connect_at_start', ['DEFAULT'])
+@pytest.mark.parametrize('ethereum_manager_connect_at_start', [(INFURA_ETH_NODE,)])
 @pytest.mark.parametrize('ethereum_accounts', [[ADDRESS_WITHOUT_GENESIS_TX]])
 def test_genesis_transaction_no_address(database, ethereum_inquirer):
     """
