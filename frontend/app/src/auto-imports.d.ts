@@ -84,6 +84,7 @@ declare global {
   const defineComponent: typeof import('vue')['defineComponent']
   const defineStore: typeof import('pinia')['defineStore']
   const deleteBackendUrl: typeof import('./utils/account-management')['deleteBackendUrl']
+  const disposeEvmRpcNodeComposables: typeof import('./composables/settings/general/rpc/form')['disposeEvmRpcNodeComposables']
   const downloadFileByUrl: typeof import('./utils/download')['downloadFileByUrl']
   const eagerComputed: typeof import('@vueuse/core')['eagerComputed']
   const effectScope: typeof import('vue')['effectScope']
@@ -787,6 +788,7 @@ declare module 'vue' {
     readonly defineComponent: UnwrapRef<typeof import('vue')['defineComponent']>
     readonly defineStore: UnwrapRef<typeof import('pinia')['defineStore']>
     readonly deleteBackendUrl: UnwrapRef<typeof import('./utils/account-management')['deleteBackendUrl']>
+    readonly disposeEvmRpcNodeComposables: UnwrapRef<typeof import('./composables/settings/general/rpc/form')['disposeEvmRpcNodeComposables']>
     readonly downloadFileByUrl: UnwrapRef<typeof import('./utils/download')['downloadFileByUrl']>
     readonly eagerComputed: UnwrapRef<typeof import('@vueuse/core')['eagerComputed']>
     readonly effectScope: UnwrapRef<typeof import('vue')['effectScope']>
@@ -1483,6 +1485,7 @@ declare module '@vue/runtime-core' {
     readonly defineComponent: UnwrapRef<typeof import('vue')['defineComponent']>
     readonly defineStore: UnwrapRef<typeof import('pinia')['defineStore']>
     readonly deleteBackendUrl: UnwrapRef<typeof import('./utils/account-management')['deleteBackendUrl']>
+    readonly disposeEvmRpcNodeComposables: UnwrapRef<typeof import('./composables/settings/general/rpc/form')['disposeEvmRpcNodeComposables']>
     readonly downloadFileByUrl: UnwrapRef<typeof import('./utils/download')['downloadFileByUrl']>
     readonly eagerComputed: UnwrapRef<typeof import('@vueuse/core')['eagerComputed']>
     readonly effectScope: UnwrapRef<typeof import('vue')['effectScope']>

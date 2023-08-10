@@ -32,7 +32,7 @@ const rules = {
 
 const errorMessages = ref<Record<string, string[] | string>>({});
 
-const { setValidation, setSubmitFunc } = useEvmRpcNodeForm();
+const { setValidation, setSubmitFunc } = useEvmRpcNodeForm(chain);
 
 const v$ = setValidation(rules, state, {
   $autoDirty: true,

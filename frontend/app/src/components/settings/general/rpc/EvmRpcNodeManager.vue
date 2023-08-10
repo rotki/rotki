@@ -22,7 +22,8 @@ const selectedNode = ref<EvmRpcNode>(getPlaceholderNode(get(chain)));
 const { notify } = useNotificationsStore();
 const { setMessage } = useMessageStore();
 
-const { setOpenDialog, closeDialog, setPostSubmitFunc } = useEvmRpcNodeForm();
+const { setOpenDialog, closeDialog, setPostSubmitFunc } =
+  useEvmRpcNodeForm(chain);
 
 const { connectedNodes } = storeToRefs(usePeriodicStore());
 const api = useEvmNodesApi(get(chain));
@@ -124,6 +125,10 @@ const showDeleteConfirmation = (item: EvmRpcNode) => {
     () => deleteNode(item)
   );
 };
+
+onUnmounted(() => {
+  disposeEvmRpcNodeComposables();
+});
 
 const css = useCssModule();
 </script>
