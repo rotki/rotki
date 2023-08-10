@@ -1,9 +1,10 @@
 import logging
-from typing import TYPE_CHECKING, Any, Optional, cast
+from typing import TYPE_CHECKING, Any, Optional
 
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import EvmToken
-from rotkehlchen.assets.utils import get_crypto_asset_by_symbol, get_or_create_evm_token
+from rotkehlchen.assets.utils import get_or_create_evm_token
+from rotkehlchen.chain.ethereum.modules.compound.utils import get_compound_underlying_token
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value, token_normalized_value
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
@@ -80,13 +81,9 @@ class CompoundDecoder(DecoderInterface):
 
         mint_amount_raw = hex_or_bytes_to_int(tx_log.data[32:64])
         minted_amount_raw = hex_or_bytes_to_int(tx_log.data[64:96])
-        underlying_asset = get_crypto_asset_by_symbol(
-            symbol=compound_token.symbol[1:],
-            chain_id=compound_token.chain_id,
-        )
+        underlying_asset = get_compound_underlying_token(compound_token)
         if underlying_asset is None:
             return DEFAULT_DECODING_OUTPUT
-        underlying_asset = underlying_asset.resolve_to_crypto_asset()
 
         mint_amount = asset_normalized_value(mint_amount_raw, underlying_asset)
         minted_amount = token_normalized_value(minted_amount_raw, compound_token)
@@ -132,24 +129,20 @@ class CompoundDecoder(DecoderInterface):
 
         redeem_amount_raw = hex_or_bytes_to_int(tx_log.data[32:64])
         redeem_tokens_raw = hex_or_bytes_to_int(tx_log.data[64:96])
-        underlying_token = get_crypto_asset_by_symbol(
-            symbol=compound_token.symbol[1:],
-            chain_id=compound_token.chain_id,
-        )
-        if underlying_token is None:
+        underlying_asset = get_compound_underlying_token(compound_token)
+        if underlying_asset is None:
             return DEFAULT_DECODING_OUTPUT
 
-        underlying_token = underlying_token.resolve_to_crypto_asset()
-        redeem_amount = asset_normalized_value(redeem_amount_raw, underlying_token)
+        redeem_amount = asset_normalized_value(redeem_amount_raw, underlying_asset)
         redeem_tokens = token_normalized_value(redeem_tokens_raw, compound_token)
         out_event = in_event = None
         for event in decoded_events:
             # Find the transfer event which should have come before the redeeming
-            if event.event_type == HistoryEventType.RECEIVE and event.asset == underlying_token and event.balance.amount == redeem_amount:  # noqa: E501
+            if event.event_type == HistoryEventType.RECEIVE and event.asset == underlying_asset and event.balance.amount == redeem_amount:  # noqa: E501
                 event.event_type = HistoryEventType.WITHDRAWAL
                 event.event_subtype = HistoryEventSubType.REMOVE_ASSET
                 event.counterparty = CPT_COMPOUND
-                event.notes = f'Withdraw {redeem_amount} {underlying_token.symbol} from compound'
+                event.notes = f'Withdraw {redeem_amount} {underlying_asset.symbol} from compound'
                 in_event = event
             if event.event_type == HistoryEventType.SPEND and event.asset == compound_token and event.balance.amount == redeem_tokens:  # noqa: E501
                 event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
@@ -175,13 +168,8 @@ class CompoundDecoder(DecoderInterface):
         if underlying_token_symbol == self.eth.symbol:
             underlying_asset = self.eth
         else:
-            underlying_asset = get_crypto_asset_by_symbol(
-                symbol=compound_token.symbol[1:],
-                chain_id=compound_token.chain_id,
-            )  # type: ignore[assignment]  # it fails to detect that it will be a cryptoasset
-            if underlying_asset is not None:
-                underlying_asset = cast(EvmToken, underlying_asset)
-            else:
+            underlying_asset = get_compound_underlying_token(compound_token)
+            if underlying_asset is None:
                 return DEFAULT_DECODING_OUTPUT
 
         if tx_log.topics[0] == BORROW_COMPOUND:
@@ -317,7 +305,6 @@ class CompoundDecoder(DecoderInterface):
             compound_token: EvmToken,
     ) -> DecodingOutput:
         if context.tx_log.topics[0] == MINT_COMPOUND_TOKEN:
-            log.debug(f'Hash: {context.transaction.tx_hash.hex()}')
             return self._decode_mint(transaction=context.transaction, tx_log=context.tx_log, decoded_events=context.decoded_events, compound_token=compound_token)  # noqa: E501
 
         if context.tx_log.topics[0] in (BORROW_COMPOUND, REPAY_COMPOUND):

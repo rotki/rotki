@@ -15,6 +15,7 @@ Changelog
 * :bug:`-` Fix and issue where MEV rewards could not be correctly accounted and exported in the CSV summary.
 * :bug:`-` ENS names that use the new RegistrarController and are renewed will have their events properly detected.
 * :bug:`-` Fixed an error that prevented from exporting the PnL report with debug information.
+* :bug:`-` Fixed an error affecting compound decoders where having more than one asset with the same symbol made the decoding fail.
 * :bug:`-` Fix a bug where the ETH asset is not shown correctly in the location breakdown when the 'Treat ETH as ETH2' setting is activated.
 * :bug:`-` Improve date and hexadecimal address scrambling.
 * :feature:`-` Arbitrum One support has been added. Balances will be shown, transactions pulled and decoded and taken into account in the PnL report.
