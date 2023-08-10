@@ -6,7 +6,6 @@ import {
   type EvmRpcNodeList,
   getPlaceholderNode
 } from '@/types/settings';
-import { disposeEvmRpcNodeComposables } from '@/composables/settings/general/rpc/form';
 
 const props = defineProps<{
   chain: Blockchain;
