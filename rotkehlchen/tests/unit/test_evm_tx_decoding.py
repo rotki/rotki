@@ -20,6 +20,7 @@ from rotkehlchen.db.filtering import EvmEventFilterQuery, EvmTransactionsFilterQ
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.optimismtx import DBOptimismTx
 from rotkehlchen.fval import FVal
+from rotkehlchen.tests.utils.ethereum import INFURA_ETH_NODE
 from rotkehlchen.types import (
     ChainID,
     ChecksumEvmAddress,
@@ -214,20 +215,20 @@ def test_query_and_decode_transactions_works_with_different_chains(
     assert len(hashes) == 1
 
 
-# @pytest.mark.vcr()
+@pytest.mark.vcr()
 @pytest.mark.parametrize('ethereum_accounts', [[
     '0x756F45E3FA69347A9A973A725E3C98bC4db0b5a0',
     '0x9328D55ccb3FCe531f199382339f0E576ee840A3',
     '0x4bba290826c253bd854121346c370a9886d1bc26',
 ]])
-@pytest.mark.parametrize('ethereum_manager_connect_at_start', ['DEFAULT'])
+@pytest.mark.parametrize('ethereum_manager_connect_at_start', [(INFURA_ETH_NODE,)])
 def test_genesis_remove_address(
         database: 'DBHandler',
         ethereum_accounts: list[ChecksumEvmAddress],
         ethereum_transaction_decoder: 'EthereumTransactionDecoder',
 ):
     """
-    Checks that if an address had a genesis transacion:
+    Checks that if an address had a genesis transaction:
     1. The decoded event gets deleted when the address is removed
     2. Genesis tx gets removed if it was the last tracked address with a genesis tx
     """

@@ -6,7 +6,7 @@ from rotkehlchen.types import ChainID, deserialize_evm_tx_hash
 
 
 @pytest.mark.parametrize('optimism_accounts', [['0xd6Ade875eEC93a7aAb7EfB7DBF13d1457443f95B']])
-def test_query_transactions_no_fee(optimism_transactions, optimism_accounts, optimism_inquirer):
+def test_query_transactions_no_fee(optimism_transactions, optimism_accounts):
     """Test to query an optimism transaction with and without l1_fee existing in the DB.
     Make sure that if l1_fee is missing in the DB nothing breaks, but it's just seen as 0.
     """
@@ -55,5 +55,5 @@ def test_query_transactions_no_fee(optimism_transactions, optimism_accounts, opt
     # check that the get_or_create_transaction method makes sure that the requirements for an
     # optimism transaction (l1_fee existing in the database) are met before returning it.
     with optimism_transactions.database.conn.read_ctx() as cursor:
-        tx, _ = dbevmtx.get_or_create_transaction(cursor, optimism_inquirer, tx_hash, string_to_evm_address(to_address))  # noqa: E501
+        tx, _ = optimism_transactions.get_or_create_transaction(cursor, tx_hash, string_to_evm_address(to_address))  # noqa: E501
         assert_tx_okay([tx], should_have_l1=True)
