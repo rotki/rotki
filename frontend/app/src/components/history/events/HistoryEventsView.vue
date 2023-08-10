@@ -643,7 +643,9 @@ const { locationData } = useLocations();
             itemLength,
             showUpgradeRow,
             limit,
-            total
+            total,
+            found,
+            entriesFoundTotal
           }"
         >
           <DataTable
@@ -735,6 +737,8 @@ const { locationData } = useLocations();
                 v-if="showUpgradeRow"
                 :limit="limit"
                 :total="total"
+                :found="found"
+                :entries-found-total="entriesFoundTotal"
                 :colspan="headers.length"
                 :label="t('common.events')"
               />

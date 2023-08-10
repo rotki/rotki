@@ -35,12 +35,16 @@ export const getCollectionData = <T>(
   limit: ComputedRef<number>;
   found: ComputedRef<number>;
   total: ComputedRef<number>;
+  entriesFoundTotal: ComputedRef<number | undefined>;
   totalUsdValue: ComputedRef<TotalValue>;
 } => {
   const data: ComputedRef<T[]> = computed(() => get(collection).data);
   const limit: ComputedRef<number> = computed(() => get(collection).limit);
   const found: ComputedRef<number> = computed(() => get(collection).found);
   const total: ComputedRef<number> = computed(() => get(collection).total);
+  const entriesFoundTotal: ComputedRef<number | undefined> = computed(
+    () => get(collection).entriesFoundTotal
+  );
   const totalUsdValue: ComputedRef<TotalValue> = computed(
     () => get(collection).totalUsdValue
   );
@@ -50,6 +54,7 @@ export const getCollectionData = <T>(
     limit,
     found,
     total,
+    entriesFoundTotal,
     totalUsdValue
   };
 };
@@ -57,7 +62,8 @@ export const getCollectionData = <T>(
 export const setupEntryLimit = (
   limit: Ref<number>,
   found: Ref<number>,
-  total: Ref<number>
+  total: Ref<number>,
+  entryFoundTotal?: Ref<number | undefined>
 ): {
   itemLength: ComputedRef<number>;
   showUpgradeRow: ComputedRef<boolean>;
@@ -75,9 +81,13 @@ export const setupEntryLimit = (
     return Math.min(totalFound, entryLimit);
   });
 
-  const showUpgradeRow: ComputedRef<boolean> = computed(
-    () => get(limit) <= get(total) && get(limit) > 0
-  );
+  const showUpgradeRow: ComputedRef<boolean> = computed(() => {
+    if (isDefined(entryFoundTotal)) {
+      return get(found) < get(entryFoundTotal)!;
+    }
+
+    return get(limit) <= get(total) && get(limit) > 0;
+  });
 
   return {
     itemLength,
