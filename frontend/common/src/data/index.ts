@@ -70,6 +70,7 @@ export const AssetInfoWithTransformer = AssetInfo.transform(data => ({
 
 export type AssetInfo = z.infer<typeof AssetInfo>;
 
+// note: make sure that the identifier is checksummed
 export const assetSymbolToIdentifierMap: Record<string, string> = {
   DAI: 'eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F',
   ADX: 'eip155:1/erc20:0xADE00C28244d5CE17D72E40330B1c318cD12B7c3',
@@ -78,7 +79,7 @@ export const assetSymbolToIdentifierMap: Record<string, string> = {
   [Blockchain.POLYGON_POS]:
     'eip155:137/erc20:0x0000000000000000000000000000000000001010',
   [Blockchain.ARBITRUM_ONE]:
-    'eip155:42161/erc20:0x912ce59144191c1204e64559fe8253a0e49e6548'
+    'eip155:42161/erc20:0x912CE59144191C1204E64559FE8253a0e49E6548'
 };
 
 export const getIdentifierFromSymbolMap = (symbol: string): string => {
