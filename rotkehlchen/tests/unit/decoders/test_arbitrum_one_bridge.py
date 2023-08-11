@@ -252,6 +252,7 @@ def test_receive_erc20_on_arbitrum_one(database, arbitrum_one_inquirer, arbitrum
 @pytest.mark.vcr()
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0xbD91C9DF3C30F0e43B19b1dd05888CF9b647b781']])
 def test_withdraw_erc20_from_arbitrum_one_to_ethereum(database, arbitrum_one_inquirer, arbitrum_one_accounts):  # noqa: E501
+    """Test that LPT withdrawals from arbitrum to L1 work fine"""
     evmhash = deserialize_evm_tx_hash('0x90ca8a767118c27aa4f6370bc06d9f952ab88a9219431f68d8e2d33b4a15b395')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
@@ -296,6 +297,50 @@ def test_withdraw_erc20_from_arbitrum_one_to_ethereum(database, arbitrum_one_inq
             balance=Balance(amount=FVal('6000')),
             location_label=user_address,
             notes='Bridge 6000 LPT from Arbitrum One to Ethereum via Arbitrum One bridge',
+            counterparty=CPT_ARBITRUM_ONE,
+            address=ZERO_ADDRESS,
+        ),
+    ]
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
+def test_withdraw_dai_from_arbitrum_one_to_ethereum(database, arbitrum_one_inquirer, arbitrum_one_accounts):  # noqa: E501
+    """
+    Test that DAI withdrawals from arbitrum to L1 work fine. This is just to test that
+    our code is not token/gateway specific"""
+    evmhash = deserialize_evm_tx_hash('0xb425d3f1bfeb5438930115345ad2e3a4fb415db76f845e652d9b5ba945a484e2')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=arbitrum_one_inquirer,
+        database=database,
+        tx_hash=evmhash,
+    )
+
+    user_address = arbitrum_one_accounts[0]
+    assert events == [
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=0,
+            timestamp=TimestampMS(1654845413000),
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal('0.00032141102469615')),
+            location_label=user_address,
+            notes='Burned 0.00032141102469615 ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=7,
+            timestamp=TimestampMS(1654845413000),
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.BRIDGE,
+            asset=Asset('eip155:42161/erc20:0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1'),
+            balance=Balance(amount=FVal('39566.332611058195231384')),
+            location_label=user_address,
+            notes='Bridge 39566.332611058195231384 DAI from Arbitrum One to Ethereum via Arbitrum One bridge',  # noqa: E501
             counterparty=CPT_ARBITRUM_ONE,
             address=ZERO_ADDRESS,
         ),
