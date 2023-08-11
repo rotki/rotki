@@ -3,6 +3,7 @@ import logging
 from abc import ABCMeta
 from collections.abc import Iterator
 from enum import Enum, auto
+from http import HTTPStatus
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Literal, Optional, Union, overload
 
@@ -223,25 +224,31 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
         backoff = 1
         backoff_limit = 33
         while backoff < backoff_limit:
+            response = None
             log.debug(f'Querying {self.chain} etherscan: {query_str}')
             try:
                 response = self.session.get(query_str, timeout=timeout if timeout else CachedSettings().get_timeout_tuple())  # noqa: E501
             except requests.exceptions.RequestException as e:
-                if 'Max retries exceeded with url' in str(e):
-                    log.debug(
-                        f'Got max retries exceeded from {self.chain} etherscan. Will '
-                        f'backoff for {backoff} seconds.',
-                    )
-                    gevent.sleep(backoff)
-                    backoff = backoff * 2
-                    if backoff >= backoff_limit:
-                        raise RemoteError(
-                            f'Getting {self.chain} Etherscan max connections error even '
-                            f'after we incrementally backed off',
-                        ) from e
-                    continue
+                if 'Max retries exceeded with url' not in str(e):
+                    raise RemoteError(f'{self.chain} Etherscan API request failed due to {e!s}') from e  # noqa: E501
 
-                raise RemoteError(f'{self.chain} Etherscan API request failed due to {e!s}') from e  # noqa: E501
+            if (
+                    response is None or  # max retries exceeded with url
+                    response.status_code == HTTPStatus.TOO_MANY_REQUESTS
+            ):
+                if backoff >= backoff_limit:
+                    raise RemoteError(
+                        f'Getting {self.chain} Etherscan max retries/too many requests '
+                        f'error even after we incrementally backed off',
+                    )
+
+                log.debug(
+                    f'Got 429 or max retries exceeded from {self.chain} etherscan. Will '
+                    f'backoff for {backoff} seconds.',
+                )
+                gevent.sleep(backoff)
+                backoff = backoff * 2
+                continue
 
             if response.status_code != 200:
                 raise RemoteError(
