@@ -38,7 +38,6 @@ onMounted(() => {
 <template>
   <SettingsOption
     #default="{ error, success, update: updateTimeframeSetting }"
-    class="mt-4"
     setting="timeframeSetting"
     frontend-setting
     :success-message="successMessage"

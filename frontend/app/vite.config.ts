@@ -11,6 +11,7 @@ import { checker } from 'vite-plugin-checker';
 import istanbul from 'vite-plugin-istanbul';
 import { VitePWA } from 'vite-plugin-pwa';
 import Layouts from 'vite-plugin-vue-layouts';
+import { RuiComponentResolver } from './src/plugins/rui/component-resolver';
 
 const PACKAGE_ROOT = __dirname;
 const envPath = process.env.VITE_PUBLIC_PATH;
@@ -96,8 +97,9 @@ export default defineConfig({
     }),
     Components({
       dts: true,
+      dirs: ['src/components', '@rotki/ui-library-compat/components'],
       include: [/\.vue$/, /\.vue\?vue/],
-      resolvers: [VuetifyResolver()],
+      resolvers: [VuetifyResolver(), RuiComponentResolver()],
       types: [
         {
           from: 'vue-router',

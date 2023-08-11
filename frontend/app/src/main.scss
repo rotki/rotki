@@ -1,8 +1,12 @@
 @import '~@/scss/scroll';
 
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 html {
-  overflow-y: hidden !important;
-  max-height: 100vh;
+  @apply overflow-y-hidden #{!important};
+  @apply max-h-screen;
 }
 
 body {
@@ -11,7 +15,7 @@ body {
   scroll-behavior: smooth;
   scroll-padding-top: 64px;
   height: calc(100vh - 64px);
-  margin-top: 64px;
+  margin-top: 64px !important;
   background: var(--v-rotki-light-grey-base);
 
   @media only screen and (max-width: 960px) {
@@ -20,17 +24,23 @@ body {
   }
 }
 
-.v-application {
-  &--wrap {
-    min-height: 0 !important;
-  }
+.container {
+  max-width: 1500px;
+  @apply px-4;
 }
 
-.v-btn {
-  &--fixed {
-    z-index: 4;
-  }
+aside {
+  max-height: calc(100vh - 64px);
+  @apply fixed #{!important};
 }
+
+.table-inside-dialog {
+  scroll-behavior: smooth;
+  max-height: calc(100vh - 340px);
+  overflow: auto;
+}
+
+// Override vuetify styles
 
 .theme {
   &--light {
@@ -48,61 +58,55 @@ body {
   }
 }
 
-.container {
-  max-width: 1500px;
-  padding-left: 1rem;
-  padding-right: 1rem;
-}
-
-aside {
-  max-height: calc(100vh - 64px);
-  position: fixed !important;
-}
-
-.v-card {
-  border-radius: 8px !important;
-}
-
-/* stylelint-disable */
-.v-dialog {
-  > .v-card {
-    > .v-card__actions {
-      padding: 16px 24px !important;
-    }
+.v-application {
+  &--wrap {
+    @apply min-h-0 #{!important};
   }
 }
 
-.v-card:not(.v-card--flat):not(.v-sheet--outlined):not(.elevation-0) {
-  /* stylelint-enable */
-  box-shadow: 0 2px 12px rgba(74, 91, 120, 0.1) !important;
+.v-btn {
+  &--fixed {
+    @apply z-[4];
+  }
 }
 
 .v-menu {
   &__content {
-    background: white;
-
-    &.theme {
-      &--dark {
-        background: #363636;
-      }
-    }
+    @apply bg-white dark:bg-neutral-900;
   }
 }
 
+.v-data-table {
+  @apply bg-transparent dark:bg-neutral-900 #{!important};
+}
+
 .v-tab {
-  text-transform: uppercase;
+  @apply uppercase;
 }
 
-.table-inside-dialog {
-  scroll-behavior: smooth;
-  max-height: calc(100vh - 340px);
-  overflow: auto;
-}
+.v-card {
+  &__subtitle,
+  &__text,
+  &__title,
+  &__actions {
+    @apply px-6 #{!important};
+  }
 
-.fill-width {
-  width: 100%;
-}
+  &__title {
+    @apply pt-6 pb-5;
+  }
 
-.cursor-pointer {
-  cursor: pointer;
+  &__text {
+    &.no-padding {
+      @apply p-0 #{!important}
+    }
+
+    @apply pb-6;
+  }
+
+  &__actions {
+    @apply pb-6 #{!important};
+  }
+
+  @apply rounded-lg #{!important};
 }

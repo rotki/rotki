@@ -463,18 +463,18 @@ const abortLogin = () => {
 <style scoped lang="scss">
 .login {
   &__actions {
-    padding: 16px !important;
-
-    &__footer {
-      font-size: 0.9em;
-    }
-
     span,
     button {
       display: block;
       width: 100%;
       text-align: center;
     }
+
+    &__footer {
+      font-size: 0.9em;
+    }
+
+    @apply pt-8;
   }
 }
 

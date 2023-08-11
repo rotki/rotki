@@ -1,8 +1,7 @@
 import { RotkiApp } from '../rotki-app';
 
 export class HistoryPage {
-  visit() {
-    RotkiApp.navigateTo('history', 'history-trades');
-    cy.get('[data-cy=history-tab]').should('be.visible');
+  visit(submenu: string) {
+    RotkiApp.navigateTo('history', submenu);
   }
 }

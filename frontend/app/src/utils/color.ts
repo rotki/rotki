@@ -69,9 +69,21 @@ function hslToRgb(h: number, s: number, l: number): string {
   return `${toHex(r)}${toHex(g)}${toHex(b)}`;
 }
 
-export function randomColor(): string {
+export const randomColor = (): string => {
   const h = randomInt(0, 360);
   const s = randomInt(42, 98);
   const l = randomInt(40, 90);
   return hslToRgb((1 / 360) * h, s / 100, l / 100);
-}
+};
+
+export const hexToRgbPoints = (hex: string): [number, number, number] => {
+  // Remove the '#' symbol if present
+  hex = hex.replace('#', '');
+
+  // Convert the hex values to decimal
+  const r = parseInt(hex.substring(0, 2), 16);
+  const g = parseInt(hex.substring(2, 4), 16);
+  const b = parseInt(hex.substring(4, 6), 16);
+
+  return [r, g, b];
+};

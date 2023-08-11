@@ -166,7 +166,7 @@ const checkGroupLine = (entries: ProfitLossEvents, index: number) => {
 </script>
 
 <template>
-  <Card outlined-body>
+  <Card>
     <template #title>{{ t('common.events') }}</template>
     <DataTable
       :headers="tableHeaders"

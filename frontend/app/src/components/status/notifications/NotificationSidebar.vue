@@ -95,7 +95,7 @@ const { hasRunningTasks } = storeToRefs(useTaskStore());
         :class="$style['no-messages']"
       >
         <VIcon size="64px" color="primary">mdi-information</VIcon>
-        <div :class="css.label">
+        <div :class="css.label" class="text-rui-text">
           {{ t('notification_sidebar.no_messages') }}
         </div>
       </div>
@@ -158,7 +158,6 @@ const { hasRunningTasks } = storeToRefs(useTaskStore());
   font-size: 22px;
   margin-top: 22px;
   font-weight: 300;
-  color: rgb(0, 0, 0, 0.6);
 }
 
 .container {

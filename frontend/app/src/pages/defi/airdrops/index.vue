@@ -201,68 +201,66 @@ onMounted(async () => {
       </BlockchainAccountSelector>
       <VCard class="mt-8">
         <VCardText>
-          <VSheet outlined rounded>
-            <DataTable
-              :class="css.table"
-              :items="entries"
-              :headers="tableHeaders"
-              single-expand
-              :expanded.sync="expanded"
-              item-key="index"
-            >
-              <template #item.address="{ item }">
-                <HashLink :text="item.address" />
-              </template>
-              <template #item.amount="{ item }">
-                <AmountDisplay
-                  v-if="!hasDetails(item.source)"
-                  :value="item.amount"
-                  :asset="item.asset"
-                />
-                <span v-else>{{ item.details.length }}</span>
-              </template>
-              <template #item.source="{ item }">
-                <div class="d-flex flex-row align-center">
-                  <AdaptiveWrapper>
-                    <VImg
-                      width="24px"
-                      height="24px"
-                      contain
-                      position="left"
-                      max-height="32px"
-                      max-width="32px"
-                      :src="getIcon(item.source)"
-                    />
-                  </AdaptiveWrapper>
-                  <span class="ml-4" v-text="getLabel(item.source)" />
-                </div>
-              </template>
-              <template #item.link="{ item }">
-                <VBtn
-                  v-if="!hasDetails(item.source)"
-                  icon
-                  color="primary"
-                  :target="isPackaged ? undefined : '_blank'"
-                  :href="isPackaged ? undefined : item.link"
-                  @click="isPackaged ? navigate(item.link) : undefined"
-                >
-                  <VIcon>mdi-link</VIcon>
-                </VBtn>
-                <RowExpander
-                  v-else
-                  :expanded="expanded.includes(item)"
-                  @click="expand(item)"
-                />
-              </template>
-              <template #expanded-item="{ headers, item }">
-                <PoapDeliveryAirdrops
-                  :items="item.details"
-                  :colspan="headers.length"
-                  :visible="hasDetails(item.source)"
-                />
-              </template>
-            </DataTable>
-          </VSheet>
+          <DataTable
+            :class="css.table"
+            :items="entries"
+            :headers="tableHeaders"
+            single-expand
+            :expanded.sync="expanded"
+            item-key="index"
+          >
+            <template #item.address="{ item }">
+              <HashLink :text="item.address" />
+            </template>
+            <template #item.amount="{ item }">
+              <AmountDisplay
+                v-if="!hasDetails(item.source)"
+                :value="item.amount"
+                :asset="item.asset"
+              />
+              <span v-else>{{ item.details.length }}</span>
+            </template>
+            <template #item.source="{ item }">
+              <div class="d-flex flex-row align-center">
+                <AdaptiveWrapper>
+                  <VImg
+                    width="24px"
+                    height="24px"
+                    contain
+                    position="left"
+                    max-height="32px"
+                    max-width="32px"
+                    :src="getIcon(item.source)"
+                  />
+                </AdaptiveWrapper>
+                <span class="ml-4" v-text="getLabel(item.source)" />
+              </div>
+            </template>
+            <template #item.link="{ item }">
+              <VBtn
+                v-if="!hasDetails(item.source)"
+                icon
+                color="primary"
+                :target="isPackaged ? undefined : '_blank'"
+                :href="isPackaged ? undefined : item.link"
+                @click="isPackaged ? navigate(item.link) : undefined"
+              >
+                <VIcon>mdi-link</VIcon>
+              </VBtn>
+              <RowExpander
+                v-else
+                :expanded="expanded.includes(item)"
+                @click="expand(item)"
+              />
+            </template>
+            <template #expanded-item="{ headers, item }">
+              <PoapDeliveryAirdrops
+                :items="item.details"
+                :colspan="headers.length"
+                :visible="hasDetails(item.source)"
+              />
+            </template>
+          </DataTable>
         </VCardText>
       </VCard>
     </div>

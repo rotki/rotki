@@ -150,11 +150,11 @@ const costBasisMethodItem = computed<ActionDataEntry<CostBasisMethod> | null>(
 <style scoped lang="scss">
 .accounting-settings-display {
   &--yes {
-    color: var(--v-rotki-gain-base);
+    color: var(--v-rotki-success-base);
   }
 
   &--no {
-    color: var(--v-rotki-loss-base);
+    color: var(--v-rotki-error-base);
   }
 
   &--uppercase {

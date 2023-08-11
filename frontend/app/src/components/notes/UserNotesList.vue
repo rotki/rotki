@@ -320,7 +320,7 @@ onMounted(async () => {
         </div>
       </div>
 
-      <div v-else class="note__empty">
+      <div v-else class="note__empty text-rui-text">
         {{ t('notes_menu.empty_notes') }}
       </div>
     </div>
@@ -382,7 +382,6 @@ onMounted(async () => {
     font-weight: 300;
     margin-top: 2rem;
     text-align: center;
-    color: rgb(0, 0, 0, 0.6);
   }
 }
 </style>

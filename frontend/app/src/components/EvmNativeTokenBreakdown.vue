@@ -82,33 +82,31 @@ const percentage = (value: BigNumber) => {
 </script>
 
 <template>
-  <VSheet outlined>
-    <DataTable
-      :headers="tableHeaders"
-      :items="breakdowns"
-      sort-by="balance.amount"
-    >
-      <template #item.location="{ item }">
-        <LocationDisplay
-          :identifier="item.location"
-          :detail-path="item.detailPath"
-        />
-      </template>
-      <template #item.balance.amount="{ item }">
-        <AmountDisplay :value="item.balance.amount" />
-      </template>
-      <template #item.balance.usdValue="{ item }">
-        <AmountDisplay
-          show-currency="symbol"
-          :amount="item.balance.amount"
-          :price-asset="identifier"
-          fiat-currency="USD"
-          :value="item.balance.usdValue"
-        />
-      </template>
-      <template #item.percentage="{ item }">
-        <PercentageDisplay :value="percentage(item.balance.usdValue)" />
-      </template>
-    </DataTable>
-  </VSheet>
+  <DataTable
+    :headers="tableHeaders"
+    :items="breakdowns"
+    sort-by="balance.amount"
+  >
+    <template #item.location="{ item }">
+      <LocationDisplay
+        :identifier="item.location"
+        :detail-path="item.detailPath"
+      />
+    </template>
+    <template #item.balance.amount="{ item }">
+      <AmountDisplay :value="item.balance.amount" />
+    </template>
+    <template #item.balance.usdValue="{ item }">
+      <AmountDisplay
+        show-currency="symbol"
+        :amount="item.balance.amount"
+        :price-asset="identifier"
+        fiat-currency="USD"
+        :value="item.balance.usdValue"
+      />
+    </template>
+    <template #item.percentage="{ item }">
+      <PercentageDisplay :value="percentage(item.balance.usdValue)" />
+    </template>
+  </DataTable>
 </template>

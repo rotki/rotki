@@ -19,7 +19,7 @@ const toggleVisibility = () => {
     class-name="secondary--text text--lighten-4"
     @click="toggleVisibility()"
   >
-    <VIcon :class="visible ? 'help--visible' : null"> mdi-help-circle </VIcon>
+    <RuiIcon :class="visible ? 'help--visible' : null" name="question-line" />
   </MenuTooltipButton>
 </template>
 

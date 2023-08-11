@@ -2,7 +2,6 @@ import { BigNumber } from '@rotki/common';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { Zero } from '@/utils/bignumbers';
 import { Guid } from '../../common/guid';
-import { AccountBalancesPage } from '../../pages/account-balances-page';
 import {
   BlockchainBalancesPage,
   type FixtureBlockchainBalance
@@ -15,7 +14,6 @@ describe('blockchain balances', () => {
   let blockchainBalances: FixtureBlockchainBalance[];
   let username: string;
   let app: RotkiApp;
-  let page: AccountBalancesPage;
   let blockchainBalancesPage: BlockchainBalancesPage;
   let dashboardPage: DashboardPage;
   let tagManager: TagManager;
@@ -23,7 +21,6 @@ describe('blockchain balances', () => {
   before(() => {
     username = Guid.newGuid().toString();
     app = new RotkiApp();
-    page = new AccountBalancesPage();
     blockchainBalancesPage = new BlockchainBalancesPage();
     dashboardPage = new DashboardPage();
     tagManager = new TagManager();
@@ -40,8 +37,6 @@ describe('blockchain balances', () => {
         return { ...balance, address };
       });
     });
-    page.visit();
-    cy.get('.accounts-balances__blockchain-balances').should('be.visible');
     blockchainBalancesPage.visit();
   });
 
@@ -106,7 +101,6 @@ describe('blockchain balances', () => {
   });
 
   it('edit', () => {
-    page.visit();
     const newLabel = 'New ETH label';
     blockchainBalancesPage.visit();
     blockchainBalancesPage.editBalance(blockchainBalances[0], 0, newLabel);

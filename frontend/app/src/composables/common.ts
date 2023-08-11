@@ -9,10 +9,6 @@ export const useTheme = () => {
   const theme = computed(() => $vuetify.theme);
   const dark = computed(() => $vuetify.theme.dark);
 
-  const fontStyle = computed(() => ({
-    color: get(dark) ? 'rgba(255,255,255,0.87)' : 'rgba(0,0,0,0.87)'
-  }));
-
   const appBarColor = computed(() => {
     if (!get(dark)) {
       return 'white';
@@ -24,7 +20,6 @@ export const useTheme = () => {
     $vuetify,
     theme,
     dark,
-    fontStyle,
     appBarColor
   };
 };

@@ -257,7 +257,7 @@ const listeners = useListeners();
       </div>
     </template>
     <template #append>
-      <div v-if="loading" class="fill-height d-flex items-center">
+      <div v-if="loading" class="h-full d-flex items-center">
         <VProgressCircular
           class="asset-select__loading"
           color="primary"

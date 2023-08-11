@@ -87,16 +87,18 @@ const truncatedAliasName: ComputedRef<string> = computed(() => {
 </script>
 
 <template>
-  <div class="d-flex flex-row labeled-address-display align-center">
+  <div
+    class="flex items-center labeled-address-display rounded-full overflow-hidden border border-rui-primary"
+  >
     <VTooltip top open-delay="400" :disabled="!truncated && !aliasName">
       <template #activator="{ on }">
         <span
           data-cy="labeled-address-display"
-          class="labeled-address-display__address"
+          class="labeled-address-display__address py-2"
           :class="xs ? 'labeled-address-display__address--mobile' : null"
           v-on="on"
         >
-          <VChip label outlined class="labeled-address-display__chip">
+          <VChip label outlined class="labeled-address-display__chip py-2 pl-1">
             <VAvatar size="24" class="mr-2">
               <EnsAvatar :address="address" />
             </VAvatar>
@@ -115,8 +117,9 @@ const truncatedAliasName: ComputedRef<string> = computed(() => {
         <div>{{ address }}</div>
       </div>
     </VTooltip>
-    <div class="labeled-address-display__actions">
+    <div class="labeled-address-display__actions flex items-center pr-1">
       <HashLink
+        class="h-full"
         :text="account.address"
         buttons
         small
@@ -155,9 +158,6 @@ const truncatedAliasName: ComputedRef<string> = computed(() => {
   &__actions {
     height: 32px;
     background-color: var(--v-rotki-light-grey-base);
-    border: 1px solid var(--border-color);
-    border-left-width: 0;
-    border-radius: 0 4px 4px 0;
     display: inline-block;
   }
 

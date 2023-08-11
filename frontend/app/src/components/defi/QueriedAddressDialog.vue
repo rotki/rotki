@@ -88,7 +88,7 @@ const close = () => {
     @click:outside="close()"
     @close="close()"
   >
-    <Card outlined-body>
+    <Card>
       <template #title>{{ t('queried_address_dialog.title') }}</template>
       <template #subtitle>
         {{ t('queried_address_dialog.subtitle', { module: moduleName }) }}

@@ -18,7 +18,7 @@ const terminate = () => interop.closeApp();
     <div class="text-body-1 mt-2 text--secondary">
       {{ t('connection_failure.message') }}
     </div>
-    <div class="fill-width d-flex mt-4">
+    <div class="w-full d-flex mt-4">
       <VBtn v-if="!defaultBackend" text @click="toDefault()">
         {{ t('connection_failure.default') }}
       </VBtn>

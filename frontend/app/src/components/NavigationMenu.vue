@@ -43,9 +43,31 @@ const navItems: MenuItem[] = [
     ...Routes.DASHBOARD
   },
   {
-    type: 'item',
+    type: 'group',
     class: 'accounts-balances',
-    ...Routes.ACCOUNTS_BALANCES
+    ...Routes.ACCOUNTS_BALANCES,
+    items: [
+      {
+        type: 'item',
+        class: 'accounts-balances-blockchain',
+        ...Routes.ACCOUNTS_BALANCES_BLOCKCHAIN
+      },
+      {
+        type: 'item',
+        class: 'accounts-balances-exchange',
+        ...Routes.ACCOUNTS_BALANCES_EXCHANGE
+      },
+      {
+        type: 'item',
+        class: 'accounts-balances-manual',
+        ...Routes.ACCOUNTS_BALANCES_MANUAL
+      },
+      {
+        type: 'item',
+        class: 'accounts-balances-non-fungible',
+        ...Routes.ACCOUNTS_BALANCES_NON_FUNGIBLE
+      }
+    ]
   },
   {
     type: 'item',
@@ -64,7 +86,7 @@ const navItems: MenuItem[] = [
       },
       {
         type: 'item',
-        class: 'deposits-withdrawals',
+        class: 'history-deposits-withdrawals',
         ...Routes.HISTORY_DEPOSITS_WITHDRAWALS
       },
       {
@@ -74,7 +96,7 @@ const navItems: MenuItem[] = [
       },
       {
         type: 'item',
-        class: 'ledger',
+        class: 'history-ledger-actions',
         ...Routes.HISTORY_LEDGER_ACTIONS
       }
     ]
@@ -126,14 +148,43 @@ const navItems: MenuItem[] = [
     type: 'divider'
   },
   {
-    type: 'item',
+    type: 'group',
     class: 'asset-manager',
-    ...Routes.ASSET_MANAGER
+    ...Routes.ASSET_MANAGER,
+    items: [
+      {
+        type: 'item',
+        class: 'asset-manager-managed',
+        ...Routes.ASSET_MANAGER_MANAGED
+      },
+      {
+        type: 'item',
+        class: 'asset-manager-custom',
+        ...Routes.ASSET_MANAGER_CUSTOM
+      },
+      {
+        type: 'item',
+        class: 'asset-manager-newly-detected',
+        ...Routes.ASSET_MANAGER_NEWLY_DETECTED
+      }
+    ]
   },
   {
-    type: 'item',
+    type: 'group',
     class: 'price-manager',
-    ...Routes.PRICE_MANAGER
+    ...Routes.PRICE_MANAGER,
+    items: [
+      {
+        type: 'item',
+        class: 'price-manager-latest',
+        ...Routes.PRICE_MANAGER_LATEST
+      },
+      {
+        type: 'item',
+        class: 'price-manager-historic',
+        ...Routes.PRICE_MANAGER_HISTORIC
+      }
+    ]
   },
   {
     type: 'item',
@@ -144,9 +195,26 @@ const navItems: MenuItem[] = [
     type: 'divider'
   },
   {
-    type: 'item',
-    class: 'settings__api-keys',
-    ...Routes.API_KEYS
+    type: 'group',
+    class: 'api-keys',
+    ...Routes.API_KEYS,
+    items: [
+      {
+        type: 'item',
+        class: 'api-keys-premium',
+        ...Routes.API_KEYS_ROTKI_PREMIUM
+      },
+      {
+        type: 'item',
+        class: 'api-keys-exchanges',
+        ...Routes.API_KEYS_EXCHANGES
+      },
+      {
+        type: 'item',
+        class: 'api-keys-external-services',
+        ...Routes.API_KEYS_EXTERNAL_SERVICES
+      }
+    ]
   },
   {
     type: 'item',
@@ -167,7 +235,7 @@ const navItems: MenuItem[] = [
           <VListItem
             v-if="navItem.type === 'item'"
             :key="i"
-            :class="`navigation__${navItem.class}`"
+            :class="`navigation-menu__item navigation__${navItem.class}`"
             active-class="navigation-menu__item--active"
             :to="navItem.route"
           >
@@ -187,7 +255,7 @@ const navItems: MenuItem[] = [
                 :icon="navItem.icon"
                 :icon-component="navItem.component"
                 :image="navItem.image"
-                :class="`navigation__${navItem.class}`"
+                :class="`navigation-menu__item navigation__${navItem.class}`"
               />
             </template>
             <div
@@ -197,7 +265,7 @@ const navItems: MenuItem[] = [
               <VListItem
                 v-for="(subNavItem, si) in navItem.items"
                 :key="si"
-                :class="`navigation__${subNavItem.class}`"
+                :class="`navigation-menu__item navigation__${subNavItem.class}`"
                 active-class="navigation-menu__item--active"
                 :to="subNavItem.route"
               >
@@ -235,15 +303,24 @@ const navItems: MenuItem[] = [
 
 .navigation-menu {
   &__item {
+    /* stylelint-disable selector-class-pattern,selector-nested-pattern */
+
+    :deep(.v-list-item__icon) {
+      @apply text-rui-text-secondary;
+    }
+
     &--active {
-      background-color: var(--v-primary-base);
-      color: white !important;
-      font-weight: bold;
+      :deep(.v-list-item__icon) {
+        /* stylelint-enable selector-class-pattern,selector-nested-pattern */
+        @apply text-white;
+      }
 
       :deep(.nav-icon) {
         opacity: 1 !important;
         filter: brightness(0) invert(100%);
       }
+      @apply bg-rui-primary font-bold;
+      @apply text-white;
     }
   }
 
@@ -251,7 +328,7 @@ const navItems: MenuItem[] = [
     padding: 0;
 
     :deep(.v-list-item) {
-      padding-left: 28px;
+      padding-left: 1.5rem;
       justify-content: center;
 
       .v-list-item {

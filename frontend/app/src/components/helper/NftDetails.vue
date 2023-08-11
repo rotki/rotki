@@ -163,7 +163,7 @@ const fallbackData = computed(() => {
         </VTooltip>
       </div>
 
-      <div class="ml-5 overflow-hidden flex-fill">
+      <div class="ml-3 overflow-hidden flex-fill">
         <template v-if="isNftDetailLoading">
           <VSkeletonLoader class="mt-1" width="120" type="text" />
           <VSkeletonLoader class="mt-1" width="80" type="text" />

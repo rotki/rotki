@@ -14,12 +14,13 @@ export default defineConfig({
     screenshotsFolder: 'tests/e2e/screenshots',
     videosFolder: 'tests/e2e/videos',
     supportFile: 'tests/e2e/support/index.ts',
-    numTestsKeptInMemory: 5,
+    testIsolation: false,
+    experimentalMemoryManagement: true,
     setupNodeEvents(on, config) {
       on(
         'after:spec',
         (spec: Cypress.Spec, results: CypressCommandLine.RunResult) => {
-          if (results && results.video) {
+          if (results && results.video && results.tests) {
             // Do we have failures for any retry attempts?
             const failures = results.tests.some(test =>
               test.attempts.some(attempt => attempt.state === 'failed')

@@ -161,7 +161,7 @@ const showDeleteConfirmation = (item: ManualPrice) => {
         <PriceRefresh :additional-assets="latestAssets" />
       </VCol>
     </VRow>
-    <Card outlined-body>
+    <Card>
       <template #title>
         <RefreshButton
           :loading="loading"

@@ -99,7 +99,7 @@ const disableAll = async () => {
 </script>
 
 <template>
-  <Card outlined-body flat no-padding>
+  <Card flat no-padding :outlined="false">
     <template #search>
       <div class="d-flex flex-row">
         <div>

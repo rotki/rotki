@@ -1,5 +1,4 @@
 import { beforeAll, describe, test, vi } from 'vitest';
-import { useSessionStore } from '../../../../../src/store/session';
 
 vi.mock('vue-router/composables', () => ({
   useRoute: vi.fn(),

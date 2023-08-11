@@ -46,39 +46,37 @@ const getPrice = (asset: string) => get(assetPrice(asset)) ?? Zero;
 <template>
   <div class="py-4">
     <div class="text-h6 mb-4">{{ title }}</div>
-    <VSheet outlined rounded>
-      <DataTable
-        :items="assets"
-        :headers="headers"
-        class="account-asset-balances__table"
-        sort-by="usdValue"
-      >
-        <template #item.asset="{ item }">
-          <AssetDetails opens-details :asset="item.asset" />
-        </template>
-        <template #item.price="{ item }">
-          <AmountDisplay
-            v-if="assetPrice(item.asset).value"
-            tooltip
-            show-currency="symbol"
-            fiat-currency="USD"
-            :price-asset="item.asset"
-            :value="getPrice(item.asset)"
-          />
-          <div v-else>-</div>
-        </template>
-        <template #item.amount="{ item }">
-          <AmountDisplay :value="item.amount" />
-        </template>
-        <template #item.usdValue="{ item }">
-          <AmountDisplay
-            fiat-currency="USD"
-            :value="item.usdValue"
-            show-currency="symbol"
-          />
-        </template>
-      </DataTable>
-    </VSheet>
+    <DataTable
+      :items="assets"
+      :headers="headers"
+      class="account-asset-balances__table"
+      sort-by="usdValue"
+    >
+      <template #item.asset="{ item }">
+        <AssetDetails opens-details :asset="item.asset" />
+      </template>
+      <template #item.price="{ item }">
+        <AmountDisplay
+          v-if="assetPrice(item.asset).value"
+          tooltip
+          show-currency="symbol"
+          fiat-currency="USD"
+          :price-asset="item.asset"
+          :value="getPrice(item.asset)"
+        />
+        <div v-else>-</div>
+      </template>
+      <template #item.amount="{ item }">
+        <AmountDisplay :value="item.amount" />
+      </template>
+      <template #item.usdValue="{ item }">
+        <AmountDisplay
+          fiat-currency="USD"
+          :value="item.usdValue"
+          show-currency="symbol"
+        />
+      </template>
+    </DataTable>
   </div>
 </template>
 

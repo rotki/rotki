@@ -105,10 +105,8 @@ const showDeleteConfirmation = (selectedTag: Tag) => {
       @save="save($event)"
     />
 
-    <VDivider />
-
-    <div class="mx-n4">
-      <Card outlined-body flat>
+    <div>
+      <Card flat>
         <template #title>
           {{ t('tag_manager.my_tags') }}
         </template>

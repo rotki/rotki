@@ -25,7 +25,9 @@ const { t } = useI18n();
       <AddressNamePrioritySetting />
     </div>
 
-    <TimeFrameSetting />
+    <div class="mt-8">
+      <TimeFrameSetting />
+    </div>
 
     <div class="mt-8">
       <div class="text-h6">

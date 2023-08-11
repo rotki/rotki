@@ -100,7 +100,7 @@ const ignoreTokens = async (identifiers?: string[]) => {
 </script>
 
 <template>
-  <Card outlined-body>
+  <Card>
     <template #title>
       {{ t('asset_table.newly_detected.title') }}
     </template>

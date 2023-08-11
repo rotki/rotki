@@ -125,7 +125,7 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
 </script>
 
 <template>
-  <Card outlined-body>
+  <Card>
     <template #title>
       {{ t('asset_locations.title') }}
     </template>

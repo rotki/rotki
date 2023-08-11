@@ -3,20 +3,18 @@ import { useListeners } from 'vue';
 
 const props = withDefaults(
   defineProps<{
-    outlinedBody?: boolean;
     contained?: boolean;
-    noRadiusBottom?: boolean;
     fullHeight?: boolean;
     noPadding?: boolean;
     flat?: boolean;
+    outlined?: boolean;
   }>(),
   {
-    outlinedBody: false,
     contained: false,
-    noRadiusBottom: false,
     noPadding: false,
     fullHeight: false,
-    flat: false
+    flat: false,
+    outlined: true
   }
 );
 const css = useCssModule();
@@ -46,39 +44,26 @@ const otherHeights = computed(() => {
     v-bind="rootAttrs"
     :flat="flat"
     :class="{
-      [css['no-radius-bottom']]: noRadiusBottom,
-      [css['full-height']]: fullHeight
+      ['h-full']: fullHeight
     }"
+    :outlined="outlined"
     v-on="rootListeners"
   >
-    <VCardTitle v-if="slots.title" :class="{ 'pt-6': slots.icon }">
-      <slot v-if="slots.icon" name="icon" />
-      <CardTitle
-        :class="{
-          'ps-3': slots.icon,
-          [css.title]: slots.icon
-        }"
-      >
+    <VCardTitle v-if="slots.title">
+      <CardTitle>
         <slot name="title" />
       </CardTitle>
       <VSpacer v-if="slots.details" />
       <slot name="details" />
     </VCardTitle>
-    <VCardSubtitle v-if="slots.subtitle" :class="{ 'ms-14': slots.icon }">
-      <div
-        :class="{
-          'pt-2': slots.icon,
-          [css.subtitle]: slots.icon
-        }"
-      >
-        <slot name="subtitle" />
-      </div>
+    <VCardSubtitle v-if="slots.subtitle">
+      <slot name="subtitle" />
     </VCardSubtitle>
     <VCardText
       ref="bodyRef"
       :class="{
         [css.contained]: contained,
-        [css['no-padding']]: noPadding
+        ['no-padding']: noPadding
       }"
     >
       <slot name="search" />
@@ -88,53 +73,24 @@ const otherHeights = computed(() => {
       <div v-if="slots.hint" class="pb-4">
         <slot name="hint" />
       </div>
-      <VSheet v-if="outlinedBody" outlined rounded>
-        <slot />
-      </VSheet>
-      <slot v-else />
+      <slot />
       <div v-if="slots.options" :class="css.options">
         <slot name="options" />
       </div>
     </VCardText>
-    <VCardActions v-if="slots.buttons" ref="actionsRef" :class="css.actions">
+    <VCardActions v-if="slots.buttons" ref="actionsRef">
       <slot name="buttons" />
     </VCardActions>
   </VCard>
 </template>
 
 <style module lang="scss">
-.title {
-  margin-top: -22px;
-}
-
-.subtitle {
-  margin-top: -40px;
-  margin-left: 18px;
-}
-
 .options {
   margin-bottom: -36px;
 }
 
 .contained {
   height: calc(90vh - v-bind(otherHeights));
-  overflow-y: scroll;
-}
-
-.no-radius-bottom {
-  border-bottom-left-radius: 0 !important;
-  border-bottom-right-radius: 0 !important;
-}
-
-.actions {
-  padding: 16px !important;
-}
-
-.no-padding {
-  padding: 0 !important;
-}
-
-.full-height {
-  height: 100%;
+  overflow-y: auto;
 }
 </style>

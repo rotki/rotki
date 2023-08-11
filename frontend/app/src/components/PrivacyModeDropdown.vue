@@ -40,7 +40,7 @@ const { privacyModeIcon, privacyMode, togglePrivacyMode, changePrivacyMode } =
           class-name="privacy-mode-dropdown secondary--text text--lighten-4"
           @click="togglePrivacyMode()"
         >
-          <VIcon>{{ privacyModeIcon }}</VIcon>
+          <RuiIcon :name="privacyModeIcon" />
         </MenuTooltipButton>
         <VBtn
           data-cy="privacy-menu"
@@ -50,7 +50,7 @@ const { privacyModeIcon, privacyMode, togglePrivacyMode, changePrivacyMode } =
           x-small
           v-on="on"
         >
-          <VIcon>mdi-chevron-down</VIcon>
+          <RuiIcon size="16" name="arrow-down-s-line" />
         </VBtn>
       </template>
       <VCard>

@@ -1,13 +1,22 @@
 <script setup lang="ts">
 import Fragment from '@/components/helper/Fragment';
 
-defineProps({
-  visible: { required: true, type: Boolean },
-  colspan: { required: true, type: Number },
-  padded: { required: false, type: Boolean, default: true },
-  offset: { required: false, type: Number, default: 0 },
-  offsetClassName: { required: false, type: String, default: '' }
-});
+withDefaults(
+  defineProps<{
+    visible: boolean;
+    colspan: number;
+    padded?: boolean;
+    offset?: number;
+    offsetClassName?: string;
+    flat?: boolean;
+  }>(),
+  {
+    padded: true,
+    offset: 0,
+    offsetClassName: '',
+    flat: false
+  }
+);
 </script>
 
 <template>
@@ -25,14 +34,12 @@ defineProps({
         <div v-if="$scopedSlots.title" class="text-h6 mb-4">
           <slot name="title" />
         </div>
-        <VSheet
-          v-if="$scopedSlots.default"
-          outlined
-          rounded
-          :class="padded ? 'pa-4' : null"
-        >
-          <slot />
-        </VSheet>
+        <template v-if="$scopedSlots.default">
+          <VSheet v-if="!flat" outlined rounded :class="padded ? 'pa-4' : null">
+            <slot />
+          </VSheet>
+          <slot v-else />
+        </template>
         <div>
           <slot name="append" />
         </div>
@@ -49,7 +56,7 @@ defineProps({
     width: 599px;
 
     &__offset {
-      display: none;
+      @apply hidden;
     }
   }
 }

@@ -1,11 +1,11 @@
 import { type ExternalLedgerAction } from '../../support/types';
 import { selectAsset, selectLocation } from '../../support/utils';
+import { HistoryPage } from './index';
 
 export class LedgerActionPage {
+  page = new HistoryPage();
   visit() {
-    cy.get('.history__ledger-actions').scrollIntoView();
-    cy.get('.history__ledger-actions').should('be.visible');
-    cy.get('.history__ledger-actions').click();
+    this.page.visit('history-ledger-actions');
   }
 
   createWaitForLedgerActions() {
@@ -25,13 +25,13 @@ export class LedgerActionPage {
   addLedgerAction(ledgerAction: ExternalLedgerAction) {
     cy.get('[data-cy=ledger-actions__add]').click();
     cy.get('[data-cy=ledger-action-form]').should('be.visible');
-    selectLocation('[data-cy=location]', ledgerAction.location);
     cy.get('[data-cy=datetime]').type(
       `{selectall}{backspace}${ledgerAction.datetime}`
     );
+    selectLocation('[data-cy=location]', ledgerAction.location);
 
     // clicking outside to a fully visible element to close the datepicker
-    cy.get('[data-cy=bottom-dialog]').find('.card-title').click();
+    cy.get('[data-cy=bottom-dialog]').find('.v-card__title').click();
 
     selectAsset('[data-cy=asset]', ledgerAction.asset, ledgerAction.asset_id);
     cy.get('[data-cy=amount] input').type(ledgerAction.amount);
@@ -48,7 +48,7 @@ export class LedgerActionPage {
     const waitForLedgerActions = this.createWaitForLedgerActions();
     cy.get('.big-dialog__buttons__confirm').click();
     waitForLedgerActions();
-    cy.get('[data-cy=ledger-action-form]').should('not.exist');
+    cy.get('[data-cy=bottom-dialog]').should('not.be.visible');
   }
 
   visibleEntries(visible: number) {
@@ -97,7 +97,7 @@ export class LedgerActionPage {
       .should('contain', ledgerAction.amount);
   }
 
-  editTrade(position: number, amount: string) {
+  editLedgerAction(position: number, amount: string) {
     cy.get('[data-cy=ledger-actions] tbody > tr')
       .eq(position)
       .find('[data-cy=row-edit]')
@@ -111,6 +111,7 @@ export class LedgerActionPage {
     cy.get('.big-dialog__buttons__confirm').click();
     waitForLedgerActions();
     cy.get('[data-cy=ledger-action-form]').should('not.exist');
+    cy.get('.v-progress-linear__buffer').should('not.exist');
   }
 
   deleteLedgerAction(position: number) {
@@ -133,7 +134,7 @@ export class LedgerActionPage {
   filterLedgerActions(filter: string) {
     cy.get('[data-cy="table-filter"]').scrollIntoView();
     cy.get('[data-cy="table-filter"]').should('be.visible');
-    cy.get('[data-cy="table-filter"]').type(`${filter}{enter}`);
+    cy.get('[data-cy="table-filter"]').type(`${filter}{enter}{esc}`);
   }
 
   nextPage() {

@@ -205,7 +205,7 @@ onMounted(async () => {
     </template>
 
     <ApiKeyBox>
-      <VCard flat>
+      <VCard flat :outlined="false">
         <VCardTitle>
           {{ t('external_services.etherscan.title') }}
         </VCardTitle>

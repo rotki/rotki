@@ -30,6 +30,7 @@ const refresh = () => {
         depressed
         :disabled="loading || disabled"
         v-bind="attrs"
+        color="primary"
         @click="refresh()"
         v-on="on"
       >
@@ -39,9 +40,8 @@ const refresh = () => {
           indeterminate
           size="20"
           width="2"
-          color="primary"
         />
-        <VIcon v-else color="primary">mdi-refresh</VIcon>
+        <RuiIcon v-else name="restart-line" />
       </VBtn>
     </template>
     <span>{{ tooltip }}</span>

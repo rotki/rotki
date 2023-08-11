@@ -58,7 +58,7 @@ onMounted(async () => {
 
       <VStepperItems>
         <VStepperContent v-for="n in steps" :key="`${n}-content`" :step="n">
-          <VRow align="center">
+          <VRow align="center" no-gutters>
             <VCol cols="auto">
               <AdaptiveWrapper>
                 <VImg
@@ -70,13 +70,13 @@ onMounted(async () => {
               </AdaptiveWrapper>
             </VCol>
             <VCol>
-              <div class="text-h6">{{ modules[n - 1].name }}</div>
+              <div class="text-h6 ml-3">{{ modules[n - 1].name }}</div>
             </VCol>
           </VRow>
 
-          <VCard class="mb-12 mt-4" flat height="110px">
+          <VSheet class="mb-12 mt-4" flat height="110px">
             <ModuleQueriedAddress :module="modules[n - 1].identifier" />
-          </VCard>
+          </VSheet>
 
           <div>
             <VBtn v-if="step > 1" class="mr-4" text @click="previousStep()">

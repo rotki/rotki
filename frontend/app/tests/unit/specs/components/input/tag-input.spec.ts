@@ -6,7 +6,6 @@ import {
 import Vuetify from 'vuetify';
 import { setActivePinia } from 'pinia';
 import TagInput from '@/components/inputs/TagInput.vue';
-import { useTagStore } from '@/store/session/tags';
 import createCustomPinia from '../../../utils/create-pinia';
 
 vi.mock('@/composables/api/tags', () => ({

@@ -12,7 +12,7 @@ const { isPackaged, premiumURL, navigateToPremium } = useInterop();
       <template #activator="{ on }">
         <VBtn
           data-cy="get-premium-button"
-          color="warning"
+          color="accent"
           rounded
           :fab="mobile"
           small
@@ -26,7 +26,7 @@ const { isPackaged, premiumURL, navigateToPremium } = useInterop();
           <span v-if="!mobile" class="mr-2">
             {{ t('premium_settings.get') }}
           </span>
-          <VIcon>mdi-crown-outline</VIcon>
+          <RuiIcon name="vip-crown-line" />
         </VBtn>
       </template>
       <span>{{ t('premium_settings.get') }}</span>

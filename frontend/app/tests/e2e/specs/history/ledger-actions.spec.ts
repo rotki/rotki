@@ -1,5 +1,4 @@
 import { Guid } from '../../common/guid';
-import { HistoryPage } from '../../pages/history-page';
 import { LedgerActionPage } from '../../pages/history-page/ledger-action-page';
 import { RotkiApp } from '../../pages/rotki-app';
 import { type ExternalLedgerAction } from '../../support/types';
@@ -7,17 +6,14 @@ import { type ExternalLedgerAction } from '../../support/types';
 describe('ledger actions history', () => {
   let username: string;
   let app: RotkiApp;
-  let page: HistoryPage;
   let ledgerActionPage: LedgerActionPage;
   let externalLedgerActions: ExternalLedgerAction[];
 
   beforeEach(() => {
     username = Guid.newGuid().toString();
     app = new RotkiApp();
-    page = new HistoryPage();
     ledgerActionPage = new LedgerActionPage();
     app.fasterLogin(username);
-    page.visit();
     cy.fixture('history/ledger-actions').then(ledgerAction => {
       externalLedgerActions = ledgerAction;
     });
@@ -40,7 +36,7 @@ describe('ledger actions history', () => {
     cy.addLedgerAction(externalLedgerActions[0]);
     ledgerActionPage.visit();
     ledgerActionPage.visibleEntries(1);
-    ledgerActionPage.editTrade(0, '123.2');
+    ledgerActionPage.editLedgerAction(0, '123.2');
     ledgerActionPage.ledgerActionIsVisible(0, {
       ...externalLedgerActions[0],
       amount: '123.2'

@@ -166,10 +166,10 @@ const highlightedTextClasses = 'text-subtitle-2 text--secondary';
             :class="{
               [css.selected]: index === selectedSuggestion
             }"
-            class="text-none text-body-1 px-3 fill-width"
+            class="text-none text-body-1 px-3 w-full"
             @click="applyFilter(item)"
           >
-            <span class="text-start fill-width">
+            <span class="text-start w-full">
               <SuggestedItem :suggestion="item" />
             </span>
           </VBtn>

@@ -4,7 +4,7 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <Card v-if="!connected" flat>
+  <Card v-if="!connected" flat :outlined="false">
     <VRow class="my-6">
       <VCol cols="auto" class="mx-2">
         <VProgressCircular color="primary" indeterminate />

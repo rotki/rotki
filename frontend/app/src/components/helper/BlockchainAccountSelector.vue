@@ -191,7 +191,7 @@ const getItemKey = (item: AccountWithChain) => item.address + item.chain;
 </script>
 
 <template>
-  <VCard v-bind="$attrs">
+  <VCard :outlined="!!hint" v-bind="$attrs">
     <div :class="noPadding ? null : 'mx-4 pt-2'">
       <VAutocomplete
         :value="internalValue"

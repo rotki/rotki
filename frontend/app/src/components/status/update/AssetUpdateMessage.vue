@@ -64,7 +64,7 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <Card :flat="headless">
+  <Card :flat="headless" :outlined="false">
     <template #title>{{ t('asset_update.title') }}</template>
     <i18n class="text-body-1" tag="div" path="asset_update.description">
       <template #remote>

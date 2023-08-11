@@ -219,7 +219,7 @@ const showDeleteConfirmation = (item: NonFungibleBalance) => {
 </script>
 
 <template>
-  <Card outlined-body>
+  <Card>
     <template #title>
       {{ t('non_fungible_balances.title') }}
       <VIcon v-if="loading" color="primary" class="ml-2">

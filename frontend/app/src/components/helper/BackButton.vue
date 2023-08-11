@@ -47,7 +47,7 @@ const { t } = useI18n();
         v-on="on"
         @click="goBack()"
       >
-        <VIcon>mdi-arrow-left</VIcon>
+        <RuiIcon name="arrow-left-line" />
       </VBtn>
     </template>
     <span>{{ t('back_button.tooltip') }}</span>

@@ -78,19 +78,13 @@ const percentage = computed(() => {
   return bigNumber.isFinite() ? bigNumber.toFormat(2) : '-';
 });
 
-const indicator = computed(() => {
-  if (get(isLoading)) {
-    return '';
-  }
-  return get(balanceDelta).isNegative() ? 'mdi-menu-down' : 'mdi-menu-up';
-});
+const indicator = computed(() =>
+  get(balanceDelta).isNegative() ? 'arrow-down-line' : 'arrow-up-line'
+);
 
-const balanceClass = computed(() => {
-  if (get(isLoading)) {
-    return 'rotki-grey lighten-3';
-  }
-  return get(balanceDelta).isNegative() ? 'rotki-red lighten-1' : 'rotki-green';
-});
+const balanceClass = computed(() =>
+  get(balanceDelta).isNegative() ? 'error lighten-1' : 'success'
+);
 
 const setTimeframe = async (value: TimeFrameSetting) => {
   assert(value !== TimeFramePersist.REMEMBER);
@@ -119,11 +113,22 @@ const chartSectionHeight = computed<string>(() => {
   const height = 208 + (get(showGraphRangeSelector) ? 60 : 0);
   return `${height}px`;
 });
+
+const { dark } = useTheme();
 </script>
 
 <template>
   <VCard class="overall-balances">
-    <VRow no-gutters class="pa-5">
+    <div class="flex justify-between">
+      <VCardTitle>
+        {{ t('overall_balances.summary_graphic') }}
+      </VCardTitle>
+
+      <div class="p-4">
+        <SyncIndicator hide-database-sync />
+      </div>
+    </div>
+    <VRow class="pa-6 pt-0">
       <VCol
         cols="12"
         md="6"
@@ -144,27 +149,28 @@ const chartSectionHeight = computed<string>(() => {
           </div>
         </div>
         <div class="overall-balances__net-worth-change py-2">
+          <span v-if="isLoading">
+            <VSkeletonLoader width="170" height="32" type="image" />
+          </span>
           <span
-            :class="balanceClass"
-            class="pa-1 px-2 overall-balances__net-worth-change__pill"
+            v-else
+            :class="[balanceClass, !dark ? 'white--text' : 'black--text']"
+            class="pa-1 px-3 overall-balances__net-worth-change__pill"
           >
-            <Loading
-              v-if="isLoading"
-              class="overall-balances__net-worth__loading d-flex justify-center mt-n2"
-            />
-            <span v-else class="d-flex flex-row">
-              <span class="me-2">
-                <VIcon>{{ indicator }}</VIcon>
+            <span class="d-flex flex-row">
+              <span>
+                <RuiIcon :name="indicator" />
               </span>
               <AmountDisplay
                 v-if="!isLoading"
+                class="px-3"
                 show-currency="symbol"
                 :fiat-currency="currencySymbol"
                 :value="balanceDelta"
               />
               <PercentageDisplay
                 v-if="!isLoading"
-                class="ms-2 px-1 text--secondary pe-2"
+                class="pr-2 opacity-80"
                 :value="percentage"
               />
             </span>
@@ -225,8 +231,9 @@ const chartSectionHeight = computed<string>(() => {
     margin-bottom: 1em;
     min-height: 32px;
 
-    span {
-      border-radius: 0.75em;
+    > span {
+      border-radius: 50px;
+      overflow: hidden;
     }
 
     &__pill {

@@ -57,11 +57,7 @@ const { t } = useI18n();
             <template #subtitle>
               {{ t('defi_wizard.steps.select_modules.hint') }}
             </template>
-            <VRow>
-              <VCol>
-                <ModuleSelector />
-              </VCol>
-            </VRow>
+            <ModuleSelector />
           </Card>
           <div class="pb-4">
             <VBtn text @click="step = 1">

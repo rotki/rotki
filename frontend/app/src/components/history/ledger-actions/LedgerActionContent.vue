@@ -225,7 +225,7 @@ watch(loading, async (isLoading, wasLoading) => {
 
 <template>
   <Fragment>
-    <Card class="mt-8" outlined-body>
+    <Card class="mt-8">
       <VBtn
         v-if="!locationOverview"
         absolute

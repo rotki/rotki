@@ -11,8 +11,7 @@ export class AccountBalancesPage {
     return bigNumberify(amount).toFormat(2);
   }
 
-  visit() {
-    RotkiApp.navigateTo('accounts-balances');
-    cy.get('[data-cy=accounts-balances-tab]').should('be.visible');
+  visit(submenu: string) {
+    RotkiApp.navigateTo('accounts-balances', submenu);
   }
 }

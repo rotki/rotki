@@ -325,7 +325,7 @@ const { t } = useI18n();
   >
     <template #activator="{ on }">
       <div v-on="on">
-        <VCard flat class="d-flex" data-cy="table-filter" :disabled="disabled">
+        <VSheet class="d-flex" data-cy="table-filter" :disabled="disabled">
           <VCombobox
             ref="input"
             :class="css.filter"
@@ -391,7 +391,7 @@ const { t } = useI18n();
               @update:matches="updateMatches($event)"
             />
           </div>
-        </VCard>
+        </VSheet>
       </div>
     </template>
     <span :class="css.tooltip">

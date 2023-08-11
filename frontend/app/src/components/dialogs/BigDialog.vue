@@ -39,11 +39,6 @@ const secondary = computed(
 
 const confirm = () => emit('confirm');
 const cancel = () => emit('cancel');
-
-const contentStyle = computed(() => {
-  const height = 118 + (get(subtitle) ? 26 : 0);
-  return { height: `calc(90vh - ${height}px)` };
-});
 </script>
 
 <template>
@@ -58,69 +53,34 @@ const contentStyle = computed(() => {
     @keydown.esc.stop="cancel()"
     @input="cancel()"
   >
-    <VCard class="big-dialog" data-cy="bottom-dialog">
-      <VCardTitle>
-        <CardTitle>
-          {{ title }}
-        </CardTitle>
-      </VCardTitle>
-      <VCardSubtitle v-if="subtitle">
-        {{ subtitle }}
-      </VCardSubtitle>
-      <div class="big-dialog__content" :style="contentStyle">
-        <div class="big-dialog__body">
-          <slot v-if="display" />
-        </div>
-      </div>
-      <VSheet>
-        <VCardActions>
-          <VSpacer />
-          <VBtn
-            color="primary"
-            depressed
-            outlined
-            text
-            class="big-dialog__buttons__cancel"
-            @click="cancel()"
-          >
-            {{ secondary }}
-          </VBtn>
-          <VBtn
-            data-cy="confirm"
-            :color="themes[confirmType].color"
-            :disabled="actionDisabled || loading"
-            :loading="loading"
-            depressed
-            class="big-dialog__buttons__confirm"
-            @click="confirm()"
-          >
-            {{ primary }}
-          </VBtn>
-        </VCardActions>
-      </VSheet>
-    </VCard>
+    <Card contained data-cy="bottom-dialog">
+      <template #title> {{ title }}</template>
+      <template v-if="subtitle" #subtitle> {{ subtitle }}</template>
+      <slot v-if="display" />
+      <template #buttons>
+        <VSpacer />
+        <VBtn
+          color="primary"
+          depressed
+          outlined
+          text
+          class="big-dialog__buttons__cancel"
+          @click="cancel()"
+        >
+          {{ secondary }}
+        </VBtn>
+        <VBtn
+          data-cy="confirm"
+          :color="themes[confirmType].color"
+          :disabled="actionDisabled || loading"
+          :loading="loading"
+          depressed
+          class="big-dialog__buttons__confirm"
+          @click="confirm()"
+        >
+          {{ primary }}
+        </VBtn>
+      </template>
+    </Card>
   </VBottomSheet>
 </template>
-
-<style scoped lang="scss">
-.big-dialog {
-  &__body {
-    padding: 0 1.5rem;
-  }
-
-  &__content {
-    overflow-y: auto;
-  }
-}
-
-:deep(.v-card) {
-  border-bottom-left-radius: 0 !important;
-  border-bottom-right-radius: 0 !important;
-
-  .v-card {
-    &__actions {
-      padding: 1rem 1.5rem !important;
-    }
-  }
-}
-</style>
