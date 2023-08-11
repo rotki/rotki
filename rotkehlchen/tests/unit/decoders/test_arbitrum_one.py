@@ -6,17 +6,19 @@ from rotkehlchen.accounting.structures.types import HistoryEventSubType, History
 from rotkehlchen.chain.arbitrum_one.constants import CPT_ARBITRUM_ONE
 from rotkehlchen.chain.arbitrum_one.modules.airdrops.decoder import ARBITRUM_ONE_AIRDROP
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
+from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_ARB, A_ETH
 from rotkehlchen.fval import FVal
+from rotkehlchen.tests.utils.arbitrum_one import get_arbitrum_allthatnode
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
 user_address = '0x0c5b7A89b3689d86Ed473caE4E7CB00381949861'
 
 
-@pytest.mark.vcr(filter_query_parameters=['apikey'], match_on=['method', 'query', 'body'])  # We don't match on uri so that we don't have to record for all nodes. If node1 response is recorded and node2 is used during testing, the response of node1 will be used  # noqa: E501
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [[user_address]])
-@pytest.mark.parametrize('arbitrum_one_manager_connect_at_start', ['DEFAULT'])
+@pytest.mark.parametrize('arbitrum_one_manager_connect_at_start', [(get_arbitrum_allthatnode(ONE),)])  # noqa: E501
 def test_arbitrum_airdrop_claim(database, arbitrum_one_inquirer):
     """Data taken from
     https://arbiscan.io/tx/0xa230fc4d5e61db1d9be044215b00cb6ad1775b413a240ea23a98117153f6264e
