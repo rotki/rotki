@@ -82,7 +82,7 @@ export const useAccountDetails = (
       totalLoopringBalances = Object.entries(loopringBalance).length;
     }
 
-    return totalAssets + totalLiabilities + totalLoopringBalances > 1;
+    return totalAssets + totalLiabilities + totalLoopringBalances > 0;
   };
 
   const getLoopringBalances = (
