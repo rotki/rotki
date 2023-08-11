@@ -46,9 +46,7 @@ const rootAttrs = useAttrs();
 const rootListeners = useListeners();
 
 const { isTaskRunning } = useTaskStore();
-const { currencySymbol, treatEth2AsEth } = storeToRefs(
-  useGeneralSettingsStore()
-);
+const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { hasDetails, getLoopringBalances } = useAccountDetails(blockchain);
 const { getEthDetectedTokensInfo, detectingTokens } =
   useTokenDetection(blockchain);
@@ -303,10 +301,13 @@ const groupBy = (
 const asset: ComputedRef<string> = computed(() => {
   const chain = get(blockchain);
   const nativeAsset = getNativeAsset(chain);
+  if (get(isEth2)) {
+    return Blockchain.ETH.toUpperCase();
+  }
   if (nativeAsset === chain) {
     return chain.toUpperCase();
   }
-  return get(assetSymbol(nativeAsset, treatEth2AsEth));
+  return get(assetSymbol(nativeAsset));
 });
 
 const tableHeaders = computed<DataTableHeader[]>(() => {
