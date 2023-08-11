@@ -529,10 +529,9 @@ class EvmNodeInquirer(metaclass=ABCMeta):
                 log.warning(f'Failed to query {node_info} for {method!s} due to {e!s}')
                 # Catch all possible errors here and just try next node call
                 continue
-            except TransactionNotFound as e:
+            except TransactionNotFound:
                 if kwargs.get('must_exist', False) is True:
-                    tx_hash = kwargs.get('tx_hash', GENESIS_HASH)
-                    raise RemoteError(f'{self.chain_name} transaction call should exist for {tx_hash.hex()}') from e  # noqa: E501
+                    continue  # try other nodes, as transaction has to exist
                 return None
 
             return result
