@@ -29,6 +29,7 @@ from rotkehlchen.constants.assets import (
     A_XRP,
 )
 from rotkehlchen.constants.misc import ONE, ZERO, ZERO_PRICE
+from rotkehlchen.data_import.importers.constants import COINTRACKING_EVENT_PREFIX
 from rotkehlchen.db.filtering import (
     AssetMovementsFilterQuery,
     HistoryEventFilterQuery,
@@ -59,6 +60,7 @@ def get_cryptocom_note(desc: str):
 
 def assert_cointracking_import_results(rotki: Rotkehlchen):
     """A utility function to help assert on correctness of importing data from cointracking.info"""
+    dbevents = DBHistoryEvents(rotki.data.db)
     with rotki.data.db.conn.read_ctx() as cursor:
         trades = rotki.data.db.get_trades(cursor, filter_query=TradesFilterQuery.make(), has_premium=True)  # noqa: E501
         asset_movements = rotki.data.db.get_asset_movements(
@@ -66,6 +68,8 @@ def assert_cointracking_import_results(rotki: Rotkehlchen):
             filter_query=AssetMovementsFilterQuery.make(),
             has_premium=True,
         )
+        events = dbevents.get_history_events(cursor, filter_query=HistoryEventFilterQuery.make(), has_premium=True)  # noqa: E501
+
     warnings = rotki.msg_aggregator.consume_warnings()
     errors = rotki.msg_aggregator.consume_errors()
     assert len(errors) == 0
@@ -134,6 +138,23 @@ def assert_cointracking_import_results(rotki: Rotkehlchen):
         link='',
     )]
     assert expected_movements == asset_movements
+
+    assert len(events) == 2, 'Duplicated event was not ignored'
+    for event in events:
+        assert event.event_identifier.startswith(COINTRACKING_EVENT_PREFIX)
+        assert event.event_type == HistoryEventType.STAKING
+        assert event.event_subtype == HistoryEventSubType.REWARD
+        assert event.location == Location.BINANCE
+        assert event.location_label is None
+        if event.asset == A_AXS:
+            assert event.timestamp == 1641386280000
+            assert event.balance.amount == FVal(1)
+            assert event.notes == 'Stake reward of 1.00000000 AXS in binance'
+        else:
+            assert event.asset == A_ETH
+            assert event.timestamp == 1644319740000
+            assert event.balance.amount == FVal('2.12')
+            assert event.notes == 'Stake reward of 2.12000000 ETH in binance'
 
 
 def assert_cryptocom_import_results(rotki: Rotkehlchen):
