@@ -8,7 +8,8 @@ from rotkehlchen.accounting.structures.base import HistoryBaseEntry, HistoryEven
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.constants import ZERO
 from rotkehlchen.data_import.utils import (
-    BaseExchangeImporter, UnsupportedCSVEntry,
+    BaseExchangeImporter,
+    UnsupportedCSVEntry,
     process_rotki_generic_import_csv_fields,
 )
 from rotkehlchen.db.drivers.gevent import DBCursor
@@ -17,7 +18,7 @@ from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.serialization.deserialize import deserialize_asset_amount
 
-from .constants import EVENT_ID_PREFIX
+from .constants import ROTKI_EVENT_PREFIX
 
 GENERIC_TYPE_TO_HISTORY_EVENT_TYPE_MAPPINGS = {
     'Deposit': (HistoryEventType.DEPOSIT, HistoryEventSubType.SPEND),
@@ -42,7 +43,7 @@ class RotkiGenericEventsImporter(BaseExchangeImporter):
         - UnknownAsset
         - KeyError
         """
-        identifier = f'{EVENT_ID_PREFIX}_{uuid4().hex}'
+        identifier = f'{ROTKI_EVENT_PREFIX}_{uuid4().hex}'
         try:
             event_type, event_subtype = GENERIC_TYPE_TO_HISTORY_EVENT_TYPE_MAPPINGS[csv_row['Type']]  # noqa: E501
         except KeyError as e:

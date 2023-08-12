@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :feature:`6444` Users will now be able to see the asset graph in asset collection view.
+* :feature:`6274` Staking events from cointracking CSV can now be imported properly
 * :feature:`6041` Add external service timeout settings.
 * :feature:`6426` Users will now be able to import their BitMEX wallet history files.
 * :feature:`-`  Gnosis safe transaction execution or failure is now properly shown in the decoded history events.
@@ -12,7 +13,6 @@ Changelog
 * :feature:`-` Users will now be able to check their addresses able to claim the DIVA airdrop.
 * :feature:`-` DIVA token airdrop claim and delegations are now properly shown in the decoded history events.
 * :feature:`-` Transactions for adding, removing and changing owners threshold for a gnosis safe multisig will now be decoded properly.
-* :feature:`6033` Fix gas fee calculation for Optimism transactions to include L1 fees.
 * :bug:`-` Fix and issue where MEV rewards could not be correctly accounted and exported in the CSV summary.
 * :bug:`-` ENS names that use the new RegistrarController and are renewed will have their events properly detected.
 * :bug:`-` Fixed an error that prevented from exporting the PnL report with debug information.

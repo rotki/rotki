@@ -33,7 +33,7 @@ class BaseExchangeImporter(metaclass=ABCMeta):
         try:
             with self.db.user_write() as cursor:
                 self._import_csv(cursor, filepath=filepath, **kwargs)
-                self._flush_all(cursor)
+                self.flush_all(cursor)
         except InputError as e:
             return False, str(e)
         else:
@@ -68,9 +68,9 @@ class BaseExchangeImporter(metaclass=ABCMeta):
 
     def maybe_flush_all(self, cursor: DBCursor) -> None:
         if len(self._trades) + len(self._margin_trades) + len(self._asset_movements) + len(self._ledger_actions) + len(self._history_events) >= ITEMS_PER_DB_WRITE:  # noqa: E501
-            self._flush_all(cursor)
+            self.flush_all(cursor)
 
-    def _flush_all(self, cursor: DBCursor) -> None:
+    def flush_all(self, cursor: DBCursor) -> None:
         self.db.add_trades(cursor, trades=self._trades)
         self.db.add_margin_positions(cursor, margin_positions=self._margin_trades)
         self.db.add_asset_movements(cursor, asset_movements=self._asset_movements)
