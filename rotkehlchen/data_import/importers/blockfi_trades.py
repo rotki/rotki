@@ -18,7 +18,6 @@ from rotkehlchen.serialization.deserialize import (
 )
 from rotkehlchen.types import Location, Price, TradeType
 
-
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
@@ -26,7 +25,7 @@ log = RotkehlchenLogsAdapter(logger)
 class BlockfiTradesImporter(BaseExchangeImporter):
     def _consume_blockfi_trade(
             self,
-            cursor: DBCursor,
+            write_cursor: DBCursor,
             csv_row: dict[str, Any],
             timestamp_format: str = '%Y-%m-%d %H:%M:%S',
     ) -> None:
@@ -63,9 +62,9 @@ class BlockfiTradesImporter(BaseExchangeImporter):
             link='',
             notes=csv_row['Type'],
         )
-        self.add_trade(cursor, trade)
+        self.add_trade(write_cursor, trade)
 
-    def _import_csv(self, cursor: DBCursor, filepath: Path, **kwargs: Any) -> None:
+    def _import_csv(self, write_cursor: DBCursor, filepath: Path, **kwargs: Any) -> None:
         """
         Information for the values that the columns can have has been obtained from
         the issue in github #1674
@@ -76,7 +75,7 @@ class BlockfiTradesImporter(BaseExchangeImporter):
             data = csv.DictReader(csvfile)
             for row in data:
                 try:
-                    self._consume_blockfi_trade(cursor, row, **kwargs)
+                    self._consume_blockfi_trade(write_cursor, row, **kwargs)
                 except UnknownAsset as e:
                     self.db.msg_aggregator.add_warning(
                         f'During BlockFi CSV import found action with unknown '

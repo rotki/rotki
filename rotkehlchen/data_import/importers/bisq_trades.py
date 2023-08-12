@@ -21,7 +21,7 @@ from rotkehlchen.types import Location, Price, TradeType
 class BisqTradesImporter(BaseExchangeImporter):
     def _consume_bisq_trade(
             self,
-            cursor: DBCursor,
+            write_cursor: DBCursor,
             csv_row: dict[str, Any],
             timestamp_format: str = '%d %b %Y %H:%M:%S',
     ) -> None:
@@ -84,9 +84,9 @@ class BisqTradesImporter(BaseExchangeImporter):
             link='',
             notes=f'ID: {csv_row["Trade ID"]}',
         )
-        self.add_trade(cursor, trade)
+        self.add_trade(write_cursor, trade)
 
-    def _import_csv(self, cursor: DBCursor, filepath: Path, **kwargs: Any) -> None:
+    def _import_csv(self, write_cursor: DBCursor, filepath: Path, **kwargs: Any) -> None:
         """
         Import trades from bisq. The information and comments about this importer were addressed
         at the issue https://github.com/rotki/rotki/issues/824
@@ -97,7 +97,7 @@ class BisqTradesImporter(BaseExchangeImporter):
             data = csv.DictReader(csvfile)
             for row in data:
                 try:
-                    self._consume_bisq_trade(cursor, row, **kwargs)
+                    self._consume_bisq_trade(write_cursor, row, **kwargs)
                 except UnknownAsset as e:
                     self.db.msg_aggregator.add_warning(
                         f'During Bisq CSV import found action with unknown '

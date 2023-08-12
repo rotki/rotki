@@ -37,7 +37,7 @@ class ShapeshiftTradesImporter(BaseExchangeImporter):
 
     def _consume_shapeshift_trade(
             self,
-            cursor: DBCursor,
+            write_cursor: DBCursor,
             csv_row: dict[str, Any],
             timestamp_format: str = 'iso8601',
     ) -> None:
@@ -102,9 +102,9 @@ Trade from ShapeShift with ShapeShift Deposit Address:
             link='',
             notes=notes,
         )
-        self.add_trade(cursor, trade)
+        self.add_trade(write_cursor, trade)
 
-    def _import_csv(self, cursor: DBCursor, filepath: Path, **kwargs: Any) -> None:
+    def _import_csv(self, write_cursor: DBCursor, filepath: Path, **kwargs: Any) -> None:
         """
         Information for the values that the columns can have has been obtained from sample CSVs
         May raise:
@@ -114,7 +114,7 @@ Trade from ShapeShift with ShapeShift Deposit Address:
             data = csv.DictReader(csvfile)
             for row in data:
                 try:
-                    self._consume_shapeshift_trade(cursor, row, **kwargs)
+                    self._consume_shapeshift_trade(write_cursor, row, **kwargs)
                 except UnknownAsset as e:
                     self.db.msg_aggregator.add_warning(
                         f'During ShapeShift CSV import found action with unknown '

@@ -94,7 +94,7 @@ class CointrackingImporter(BaseExchangeImporter):
 
     def _consume_cointracking_entry(
             self,
-            cursor: DBCursor,
+            write_cursor: DBCursor,
             csv_row: dict[str, Any],
             timestamp_format: str = '%d.%m.%Y %H:%M:%S',
     ) -> None:
@@ -157,7 +157,7 @@ class CointrackingImporter(BaseExchangeImporter):
                 link='',
                 notes=notes,
             )
-            self.add_trade(cursor, trade)
+            self.add_trade(write_cursor, trade)
         elif row_type in ('Deposit', 'Withdrawal'):
             category = deserialize_asset_movement_category(row_type.lower())
             if category == AssetMovementCategory.DEPOSIT:
@@ -179,10 +179,10 @@ class CointrackingImporter(BaseExchangeImporter):
                 fee_asset=fee_currency,
                 link='',
             )
-            self.add_asset_movement(cursor, asset_movement)
+            self.add_asset_movement(write_cursor, asset_movement)
         elif row_type == 'Staking':  # TODO: Not like the way duplication is checked here
             # We probably need to work on standardizing this and improving performance
-            self.flush_all(cursor)  # so the DB check later can work and not miss unwritten events
+            self.flush_all(write_cursor)  # flush so that the DB check later can work and not miss unwritten events  # noqa: E501
             amount = deserialize_asset_amount(csv_row['Buy'])
             asset = asset_resolver(csv_row['Cur.Buy'])
             timestamp_ms = ts_sec_to_ms(timestamp)
@@ -212,7 +212,7 @@ class CointrackingImporter(BaseExchangeImporter):
                 balance=Balance(amount, ZERO),
                 notes=f'Stake reward of {amount} {asset.symbol} in {location!s}',
             )
-            self.add_history_events(cursor, [event])
+            self.add_history_events(write_cursor, [event])
         else:
             raise UnsupportedCSVEntry(
                 f'Unknown entry type "{row_type}" encountered during cointracking '
@@ -221,7 +221,7 @@ class CointrackingImporter(BaseExchangeImporter):
 
     def _import_csv(
             self,
-            cursor: DBCursor,
+            write_cursor: DBCursor,
             filepath: Path,
             **kwargs: Any,
     ) -> None:
@@ -233,7 +233,7 @@ class CointrackingImporter(BaseExchangeImporter):
             header = remap_header(next(data))
             for row in data:
                 try:
-                    self._consume_cointracking_entry(cursor, dict(zip(header, row)), **kwargs)
+                    self._consume_cointracking_entry(write_cursor, dict(zip(header, row)), **kwargs)  # noqa: E501
                 except UnknownAsset as e:
                     self.db.msg_aggregator.add_warning(
                         f'During cointracking CSV import found action with unknown '
