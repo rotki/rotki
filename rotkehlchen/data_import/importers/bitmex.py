@@ -103,7 +103,7 @@ class BitMEXImporter(BaseExchangeImporter):
             link=f'Imported from BitMEX CSV file. Transact Type: {transact_type}',
         )
 
-    def _import_csv(self, cursor: DBCursor, filepath: Path, **kwargs: Any) -> None:
+    def _import_csv(self, write_cursor: DBCursor, filepath: Path, **kwargs: Any) -> None:
         """
         Import deposits, withdrawals and realised pnl events from BitMEX.
         May raise:
@@ -116,11 +116,11 @@ class BitMEXImporter(BaseExchangeImporter):
                 try:
                     if row['transactType'] == 'RealisedPNL':
                         margin_position = self._consume_realised_pnl(row, **kwargs)
-                        self.add_margin_trade(cursor, margin_position)
+                        self.add_margin_trade(write_cursor, margin_position)
                     elif row['transactType'] in ['Deposit', 'Withdrawal']:
                         if row['transactStatus'] == 'Completed':
                             self.add_asset_movement(
-                                cursor, self._consume_deposits_or_withdrawals(row, **kwargs),
+                                write_cursor, self._consume_deposits_or_withdrawals(row, **kwargs),
                             )
                     else:
                         raise UnsupportedCSVEntry(

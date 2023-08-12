@@ -26,7 +26,7 @@ log = RotkehlchenLogsAdapter(logger)
 class RotkiGenericTradesImporter(BaseExchangeImporter):
     def _consume_rotki_trades(
             self,
-            cursor: DBCursor,
+            write_cursor: DBCursor,
             csv_row: dict[str, Any],
     ) -> None:
         """Consume rotki generic trades import CSV file.
@@ -51,9 +51,9 @@ class RotkiGenericTradesImporter(BaseExchangeImporter):
             amount=amount_bought,
             notes=csv_row['Description'],
         )
-        self.add_trade(cursor, trade)
+        self.add_trade(write_cursor, trade)
 
-    def _import_csv(self, cursor: DBCursor, filepath: Path, **kwargs: Any) -> None:
+    def _import_csv(self, write_cursor: DBCursor, filepath: Path, **kwargs: Any) -> None:
         """May raise:
         - InputError if one of the rows is malformed
         """
@@ -61,7 +61,7 @@ class RotkiGenericTradesImporter(BaseExchangeImporter):
             data = csv.DictReader(csvfile)
             for row in data:
                 try:
-                    self._consume_rotki_trades(cursor, row)
+                    self._consume_rotki_trades(write_cursor, row)
                 except UnknownAsset as e:
                     self.db.msg_aggregator.add_warning(
                         f'During rotki generic trades CSV import, found action with unknown '

@@ -32,7 +32,7 @@ GENERIC_TYPE_TO_HISTORY_EVENT_TYPE_MAPPINGS = {
 class RotkiGenericEventsImporter(BaseExchangeImporter):
     def _consume_rotki_event(
             self,
-            cursor: DBCursor,
+            write_cursor: DBCursor,
             csv_row: dict[str, Any],
             sequence_index: int,
     ) -> None:
@@ -81,9 +81,9 @@ class RotkiGenericEventsImporter(BaseExchangeImporter):
                 notes=csv_row['Description'],
             )
             events.append(fee_event)
-        self.add_history_events(cursor, events)  # event assets are always resolved here
+        self.add_history_events(write_cursor, events)  # event assets are always resolved here
 
-    def _import_csv(self, cursor: DBCursor, filepath: Path, **kwargs: Any) -> None:
+    def _import_csv(self, write_cursor: DBCursor, filepath: Path, **kwargs: Any) -> None:
         """May raise:
         - InputError if one of the rows is malformed
         """
@@ -92,7 +92,7 @@ class RotkiGenericEventsImporter(BaseExchangeImporter):
             for idx, row in enumerate(data):
                 try:
                     kwargs['sequence_index'] = idx
-                    self._consume_rotki_event(cursor, row, **kwargs)
+                    self._consume_rotki_event(write_cursor, row, **kwargs)
                 except UnknownAsset as e:
                     self.db.msg_aggregator.add_warning(
                         f'During rotki generic events CSV import, found action with unknown '

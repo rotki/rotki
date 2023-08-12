@@ -28,7 +28,7 @@ log = RotkehlchenLogsAdapter(logger)
 class UpholdTransactionsImporter(BaseExchangeImporter):
     def _consume_uphold_transaction(
             self,
-            cursor: DBCursor,
+            write_cursor: DBCursor,
             csv_row: dict[str, Any],
             timestamp_format: str = '%a %b %d %Y %H:%M:%S %Z%z',
     ) -> None:
@@ -84,7 +84,7 @@ Activity from uphold with uphold transaction id:
                     link='',
                     notes=notes,
                 )
-                self.add_ledger_action(cursor, action)
+                self.add_ledger_action(write_cursor, action)
             else:  # Assets or amounts differ (Trades)
                 # in uphold UI the exchanged amount includes the fee.
                 if fee_asset == destination_asset:
@@ -103,7 +103,7 @@ Activity from uphold with uphold transaction id:
                         link='',
                         notes=notes,
                     )
-                    self.add_trade(cursor, trade)
+                    self.add_trade(write_cursor, trade)
                 else:
                     log.debug(f'Ignoring trade with Destination Amount: {destination_amount}.')
         elif origin == 'uphold' and transaction_type == 'out':
@@ -120,7 +120,7 @@ Activity from uphold with uphold transaction id:
                     fee_asset=fee_asset,
                     link='',
                 )
-                self.add_asset_movement(cursor, asset_movement)
+                self.add_asset_movement(write_cursor, asset_movement)
             elif origin_amount > 0:  # Trades (sell)
                 trade = Trade(
                     timestamp=timestamp,
@@ -135,7 +135,7 @@ Activity from uphold with uphold transaction id:
                     link='',
                     notes=notes,
                 )
-                self.add_trade(cursor, trade)
+                self.add_trade(write_cursor, trade)
             else:
                 log.debug(f'Ignoring trade with Origin Amount: {origin_amount}.')
 
@@ -153,7 +153,7 @@ Activity from uphold with uphold transaction id:
                     fee_asset=fee_asset,
                     link='',
                 )
-                self.add_asset_movement(cursor, asset_movement)
+                self.add_asset_movement(write_cursor, asset_movement)
             elif destination_amount > 0:  # Trades (buy)
                 trade = Trade(
                     timestamp=timestamp,
@@ -168,11 +168,11 @@ Activity from uphold with uphold transaction id:
                     link='',
                     notes=notes,
                 )
-                self.add_trade(cursor, trade)
+                self.add_trade(write_cursor, trade)
             else:
                 log.debug(f'Ignoring trade with Destination Amount: {destination_amount}.')
 
-    def _import_csv(self, cursor: DBCursor, filepath: Path, **kwargs: Any) -> None:
+    def _import_csv(self, write_cursor: DBCursor, filepath: Path, **kwargs: Any) -> None:
         """
         Information for the values that the columns can have has been obtained from sample CSVs
         """
@@ -180,7 +180,7 @@ Activity from uphold with uphold transaction id:
             data = csv.DictReader(csvfile)
             for row in data:
                 try:
-                    self._consume_uphold_transaction(cursor, row, **kwargs)
+                    self._consume_uphold_transaction(write_cursor, row, **kwargs)
                 except UnknownAsset as e:
                     self.db.msg_aggregator.add_warning(
                         f'During uphold CSV import found action with unknown '

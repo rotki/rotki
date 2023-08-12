@@ -419,7 +419,7 @@ class BinanceImporter(BaseExchangeImporter):
 
     def _process_single_binance_entries(
             self,
-            cursor: DBCursor,
+            write_cursor: DBCursor,
             timestamp: Timestamp,
             rows: list[BinanceCsvRow],
     ) -> tuple[dict[BinanceSingleEntry, int], list[BinanceCsvRow]]:
@@ -430,7 +430,7 @@ class BinanceImporter(BaseExchangeImporter):
             for single_entry_class in SINGLE_BINANCE_ENTRIES:
                 if single_entry_class.is_entry(row['Operation']):
                     single_entry_class.process_entry(
-                        cursor=cursor,
+                        cursor=write_cursor,
                         importer=self,
                         timestamp=timestamp,
                         data=row,
@@ -443,7 +443,7 @@ class BinanceImporter(BaseExchangeImporter):
 
     def _process_multiple_binance_entries(
             self,
-            cursor: DBCursor,
+            write_cursor: DBCursor,
             timestamp: Timestamp,
             rows: list[BinanceCsvRow],
     ) -> tuple[Optional[BinanceEntry], int]:
@@ -453,7 +453,7 @@ class BinanceImporter(BaseExchangeImporter):
         for multiple_entry_class in MULTIPLE_BINANCE_ENTRIES:
             if multiple_entry_class.are_entries([row['Operation'] for row in rows]):
                 processed_count = multiple_entry_class.process_entries(
-                    cursor=cursor,
+                    cursor=write_cursor,
                     importer=self,
                     timestamp=timestamp,
                     data=rows,
@@ -463,14 +463,14 @@ class BinanceImporter(BaseExchangeImporter):
 
     def _process_binance_rows(
             self,
-            cursor: DBCursor,
+            write_cursor: DBCursor,
             multi: dict[Timestamp, list[BinanceCsvRow]],
     ) -> None:
         stats: dict[BinanceEntry, int] = defaultdict(int)
         skipped_rows: list[Any] = []
         for timestamp, rows in multi.items():
             single_processed, rows_without_single = self._process_single_binance_entries(
-                cursor=cursor,
+                write_cursor=write_cursor,
                 timestamp=timestamp,
                 rows=rows,
             )
@@ -478,7 +478,7 @@ class BinanceImporter(BaseExchangeImporter):
                 stats[entry_type] += amount
 
             multiple_type, multiple_count = self._process_multiple_binance_entries(
-                cursor=cursor,
+                write_cursor=write_cursor,
                 timestamp=timestamp,
                 rows=rows_without_single,
             )
@@ -514,7 +514,7 @@ class BinanceImporter(BaseExchangeImporter):
                 f'Check logs for details',
             )
 
-    def _import_csv(self, cursor: DBCursor, filepath: Path, **kwargs: Any) -> None:
+    def _import_csv(self, write_cursor: DBCursor, filepath: Path, **kwargs: Any) -> None:
         with open(filepath, encoding='utf-8-sig') as csvfile:
             input_rows = list(csv.DictReader(csvfile))
             skipped_count, multirows = _group_binance_rows(rows=input_rows, **kwargs)
@@ -522,4 +522,4 @@ class BinanceImporter(BaseExchangeImporter):
                 self.db.msg_aggregator.add_warning(
                     f'{skipped_count} Binance rows have bad format. Check logs for details.',
                 )
-            self._process_binance_rows(cursor, multirows)
+            self._process_binance_rows(write_cursor, multirows)

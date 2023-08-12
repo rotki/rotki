@@ -27,7 +27,7 @@ log = RotkehlchenLogsAdapter(logger)
 class BlockfiTransactionsImporter(BaseExchangeImporter):
     def _consume_blockfi_entry(
             self,
-            cursor: DBCursor,
+            write_cursor: DBCursor,
             csv_row: dict[str, Any],
             timestamp_format: str = '%Y-%m-%d %H:%M:%S',
     ) -> None:
@@ -70,7 +70,7 @@ class BlockfiTransactionsImporter(BaseExchangeImporter):
                 fee_asset=fee_asset,
                 link='',
             )
-            self.add_asset_movement(cursor, asset_movement)
+            self.add_asset_movement(write_cursor, asset_movement)
         elif entry_type in ('Withdrawal', 'Wire Withdrawal', 'ACH Withdrawal'):
             asset_movement = AssetMovement(
                 location=Location.BLOCKFI,
@@ -84,7 +84,7 @@ class BlockfiTransactionsImporter(BaseExchangeImporter):
                 fee_asset=fee_asset,
                 link='',
             )
-            self.add_asset_movement(cursor, asset_movement)
+            self.add_asset_movement(write_cursor, asset_movement)
         elif entry_type == 'Withdrawal Fee':
             action = LedgerAction(
                 identifier=0,  # whatever is not used at insertion
@@ -98,7 +98,7 @@ class BlockfiTransactionsImporter(BaseExchangeImporter):
                 link=None,
                 notes=f'{entry_type} from BlockFi',
             )
-            self.add_ledger_action(cursor, action)
+            self.add_ledger_action(write_cursor, action)
         elif entry_type in ('Interest Payment', 'Bonus Payment', 'Referral Bonus'):
             action = LedgerAction(
                 identifier=0,  # whatever is not used at insertion
@@ -112,7 +112,7 @@ class BlockfiTransactionsImporter(BaseExchangeImporter):
                 link=None,
                 notes=f'{entry_type} from BlockFi',
             )
-            self.add_ledger_action(cursor, action)
+            self.add_ledger_action(write_cursor, action)
         elif entry_type == 'Crypto Transfer':
             category = (
                 AssetMovementCategory.WITHDRAWAL if raw_amount < ZERO
@@ -130,13 +130,13 @@ class BlockfiTransactionsImporter(BaseExchangeImporter):
                 fee_asset=fee_asset,
                 link='',
             )
-            self.add_asset_movement(cursor, asset_movement)
+            self.add_asset_movement(write_cursor, asset_movement)
         elif entry_type == 'Trade':
             pass
         else:
             raise UnsupportedCSVEntry(f'Unsuported entry {entry_type}. Data: {csv_row}')
 
-    def _import_csv(self, cursor: DBCursor, filepath: Path, **kwargs: Any) -> None:
+    def _import_csv(self, write_cursor: DBCursor, filepath: Path, **kwargs: Any) -> None:
         """
         Information for the values that the columns can have has been obtained from
         https://github.com/BittyTax/BittyTax/blob/06794f51223398759852d6853bc7112ffb96129a/bittytax/conv/parsers/blockfi.py#L67
@@ -147,7 +147,7 @@ class BlockfiTransactionsImporter(BaseExchangeImporter):
             data = csv.DictReader(csvfile)
             for row in data:
                 try:
-                    self._consume_blockfi_entry(cursor, row, **kwargs)
+                    self._consume_blockfi_entry(write_cursor, row, **kwargs)
                 except UnknownAsset as e:
                     self.db.msg_aggregator.add_warning(
                         f'During BlockFi CSV import found action with unknown '
