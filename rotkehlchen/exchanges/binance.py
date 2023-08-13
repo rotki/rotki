@@ -367,7 +367,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
                     log.debug(f'Couldnt query {self.name} trades for {symbol} since its delisted')
                     return []
 
-                exception_class: Union[type[RemoteError], type[BinancePermissionError]]
+                exception_class: type[Union[RemoteError, BinancePermissionError]]
                 if response.status_code == 401 and code == REJECTED_MBX_KEY:
                     # Either API key permission error or if futures/dapi then not enabled yet
                     exception_class = BinancePermissionError
@@ -375,15 +375,8 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
                     exception_class = RemoteError
 
                 raise exception_class(
-                    '{} API request {} for {} failed with HTTP status '
-                    'code: {}, error code: {} and error message: {}'.format(
-                        self.name,
-                        response.url,
-                        method,
-                        response.status_code,
-                        code,
-                        msg,
-                    ))
+                    f'{self.name} API request {response.url} for {method} failed with HTTP status '
+                    f'code: {response.status_code}, error code: {code} and error message: {msg}')
 
             if response.status_code in (418, 429):
                 # Binance has limits and if we hit them we should backoff.

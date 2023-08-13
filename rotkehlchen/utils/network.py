@@ -19,7 +19,7 @@ def request_get(
         url: str,
         timeout: int = GLOBAL_REQUESTS_TIMEOUT,
         handle_429: bool = False,
-        backoff_in_seconds: Union[int, float] = 0,
+        backoff_in_seconds: float = 0,
 ) -> Union[dict, list]:
     """
     May raise:
@@ -56,7 +56,7 @@ def request_get_dict(
         url: str,
         timeout: int = GLOBAL_REQUESTS_TIMEOUT,
         handle_429: bool = False,
-        backoff_in_seconds: Union[int, float] = 0,
+        backoff_in_seconds: float = 0,
 ) -> dict:
     """Like request_get, but the endpoint only returns a dict
 
@@ -73,7 +73,7 @@ def retry_calls(
         times: int,
         location: str,
         handle_429: bool,
-        backoff_in_seconds: Union[int, float],
+        backoff_in_seconds: float,
         method_name: str,
         function: Callable[..., Any],
         **kwargs: Any,

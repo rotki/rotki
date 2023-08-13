@@ -272,12 +272,8 @@ def _check_and_get_response(response: Response, method: str) -> Union[str, dict]
         return 'Usual kraken 5xx shenanigans'
     if response.status_code != 200:
         raise RemoteError(
-            'Kraken API request {} for {} failed with HTTP status '
-            'code: {}'.format(
-                response.url,
-                method,
-                response.status_code,
-            ))
+            f'Kraken API request {response.url} for {method} failed with HTTP status '
+            f'code: {response.status_code}')
 
     try:
         decoded_json = jsonloads_dict(response.text)
@@ -554,7 +550,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
             else:
                 msg = (
                     'Kraken API request failed. Could not reach kraken due '
-                    'to {}'.format(e)
+                    f'to {e}'
                 )
                 log.error(msg)
                 return None, msg

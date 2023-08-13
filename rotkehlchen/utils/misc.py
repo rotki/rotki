@@ -185,7 +185,7 @@ def combine_stat_dicts(list_of_dicts: list[dict]) -> dict:
 
 
 def convert_to_int(
-        val: Union[FVal, bytes, str, int, float],
+        val: Union[FVal, bytes, str, float],
         accept_only_exact: bool = True,
 ) -> int:
     """Try to convert to an int. Either from an FVal or a string. If it's a float

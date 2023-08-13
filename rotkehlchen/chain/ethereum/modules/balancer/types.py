@@ -104,7 +104,7 @@ class BalancerInvestEvent(NamedTuple):
     def __hash__(self) -> int:
         return hash(self.tx_hash + str(self.log_index).encode())
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: object) -> bool:
         if other is None:
             return False
 
@@ -133,7 +133,7 @@ class BalancerBPTEvent(NamedTuple):
     def __hash__(self) -> int:
         return hash(self.tx_hash + str(self.log_index).encode())
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: object) -> bool:
         if other is None:
             return False
 

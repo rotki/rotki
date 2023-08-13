@@ -156,7 +156,7 @@ def deserialize_timestamp_from_bitstamp_date(date: str) -> Timestamp:
     )
 
 
-def deserialize_timestamp_from_kraken(time: Union[str, FVal, int, float]) -> Timestamp:
+def deserialize_timestamp_from_kraken(time: Union[str, FVal, float]) -> Timestamp:
     """Deserializes a timestamp from a kraken api query result entry
     Kraken has timestamps in floating point strings. Example: '1561161486.3056'.
 

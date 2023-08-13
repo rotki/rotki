@@ -323,7 +323,7 @@ class EvmTransaction:
     def __hash__(self) -> int:
         return hash(self.identifier)
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: object) -> bool:
         if not isinstance(other, EvmTransaction):
             return False
 
@@ -364,7 +364,7 @@ class EvmInternalTransaction(NamedTuple):
     def __hash__(self) -> int:
         return hash(self.identifier)
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: object) -> bool:
         if not isinstance(other, EvmInternalTransaction):
             return False
 
@@ -410,7 +410,7 @@ class CovalentTransaction(NamedTuple):
     def __hash__(self) -> int:
         return hash(self.identifier)
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: object) -> bool:
         if other is None or not isinstance(other, CovalentTransaction):
             return False
 

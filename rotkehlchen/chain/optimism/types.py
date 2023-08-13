@@ -46,7 +46,7 @@ class OptimismTransaction(EvmTransaction):
         result['l1_fee'] = str(result['l1_fee'])
         return result
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: object) -> bool:
         if not isinstance(other, OptimismTransaction):
             return False
 

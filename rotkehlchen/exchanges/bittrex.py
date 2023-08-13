@@ -300,7 +300,7 @@ class Bittrex(ExchangeInterface):
         except RemoteError as e:
             msg = (
                 'Bittrex API request failed. Could not reach bittrex due '
-                'to {}'.format(e)
+                f'to {e}'
             )
             log.error(msg)
             return None, msg

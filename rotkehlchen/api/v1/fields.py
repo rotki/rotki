@@ -406,7 +406,7 @@ class BlockchainField(fields.Field):
 class SerializableEnumField(fields.Field):
     """A field that takes an enum following the SerializableEnumMixin interface
     """
-    def __init__(self, enum_class: Union[type[SerializableEnumNameMixin], type[SerializableEnumIntValueMixin], type[DBCharEnumMixIn], type[DBIntEnumMixIn]], **kwargs: Any) -> None:  # noqa: E501
+    def __init__(self, enum_class: type[Union[SerializableEnumNameMixin, SerializableEnumIntValueMixin, DBCharEnumMixIn, DBIntEnumMixIn]], **kwargs: Any) -> None:  # noqa: E501
         """We give all possible types as unions instead of just type[SerializableEnumMixin]
         due to this bug https://github.com/python/mypy/issues/4717
         Normally it should have sufficed to give just the former.
@@ -482,13 +482,13 @@ class AssetField(fields.Field):
     def __init__(
             self,
             *,
-            expected_type: Union[
-                type[Asset],
-                type[AssetWithNameAndType],
-                type[AssetWithOracles],
-                type[CryptoAsset],
-                type[EvmToken],
-            ],
+            expected_type: type[Union[
+                Asset,
+                AssetWithNameAndType,
+                AssetWithOracles,
+                CryptoAsset,
+                EvmToken,
+            ]],
             form_with_incomplete_data: bool = False,
             **kwargs: Any,
     ) -> None:
