@@ -102,10 +102,10 @@ class DataHandler:
                 )
 
                 raise SystemPermissionError(
-                    'User {} exists but DB is missing. Somehow must have been manually '
+                    f'User {username} exists but DB is missing. Somehow must have been manually '
                     'deleted or is corrupt or access permissions do not allow reading. '
                     'Please recreate the user account. '
-                    'A backup of the user directory was created.'.format(username),
+                    'A backup of the user directory was created.',
                 ) from e
 
         self.db: DBHandler = DBHandler(

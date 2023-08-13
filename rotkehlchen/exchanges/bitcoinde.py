@@ -263,7 +263,7 @@ class Bitcoinde(ExchangeInterface):
         except RemoteError as e:
             msg = (
                 'Bitcoin.de request failed. Could not reach bitcoin.de due '
-                'to {}'.format(e)
+                f'to {e}'
             )
             log.error(msg)
             return None, msg

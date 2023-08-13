@@ -88,11 +88,11 @@ class EthStakingEvent(HistoryBaseEntry, metaclass=ABCMeta):
             notes=notes,
         )
 
-    def __eq__(self, other: Any) -> bool:
-        return (
+    def __eq__(self, other: object) -> bool:
+        return (  # ignores are due to object and type checks in super not recognized
             HistoryBaseEntry.__eq__(self, other) is True and
-            self.validator_index == other.validator_index and
-            self.is_exit_or_blocknumber == other.is_exit_or_blocknumber
+            self.validator_index == other.validator_index and  # type: ignore
+            self.is_exit_or_blocknumber == other.is_exit_or_blocknumber  # type: ignore
         )
 
 
@@ -393,7 +393,7 @@ class EthDepositEvent(EvmEvent, EthStakingEvent):
     def __repr__(self) -> str:
         return f'EthDepositEvent({self.validator_index=}, {self.timestamp=}, {self.tx_hash=})'  # noqa: E501
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: object) -> bool:
         return (
             EvmEvent.__eq__(self, other) is True and
             EthStakingEvent.__eq__(self, other) is True

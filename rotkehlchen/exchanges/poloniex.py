@@ -358,7 +358,7 @@ class Poloniex(ExchangeInterface):
         except RemoteError as e:
             msg = (
                 'Poloniex API request failed. Could not reach poloniex due '
-                'to {}'.format(e)
+                f'to {e}'
             )
             log.error(msg)
             return None, msg

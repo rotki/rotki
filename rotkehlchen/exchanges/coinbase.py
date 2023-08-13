@@ -420,7 +420,7 @@ class Coinbase(ExchangeInterface):
         except RemoteError as e:
             msg = (
                 'Coinbase API request failed. Could not reach coinbase due '
-                'to {}'.format(e)
+                f'to {e}'
             )
             log.error(msg)
             return None, msg

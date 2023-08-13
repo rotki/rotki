@@ -482,9 +482,9 @@ class DBHandler:
 
     def export_unencrypted(self, temppath: Path) -> None:
         self.conn.executescript(
-            'ATTACH DATABASE "{}" AS plaintext KEY "";'
+            f'ATTACH DATABASE "{temppath}" AS plaintext KEY "";'
             'SELECT sqlcipher_export("plaintext");'
-            'DETACH DATABASE plaintext;'.format(temppath),
+            'DETACH DATABASE plaintext;',
         )
 
     def import_unencrypted(self, unencrypted_db_data: bytes) -> None:
@@ -2849,7 +2849,7 @@ class DBHandler:
             self,
             cursor: 'DBCursor',
             table_name: str,
-            klass: Union[type[Trade], type[AssetMovement], type[MarginPosition]],
+            klass: type[Union[Trade, AssetMovement, MarginPosition]],
     ) -> None:
         updates: list[tuple[str, str]] = []
         log.debug(f'db integrity: start {table_name}')

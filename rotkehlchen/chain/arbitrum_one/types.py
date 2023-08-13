@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Optional
 
 from rotkehlchen.types import EvmTransaction
 
@@ -44,7 +44,7 @@ class ArbitrumOneTransaction(EvmTransaction):
             db_id=db_id,
         )
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: object) -> bool:
         if not isinstance(other, ArbitrumOneTransaction):
             return False
 
