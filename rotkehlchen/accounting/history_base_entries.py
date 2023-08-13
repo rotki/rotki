@@ -72,15 +72,15 @@ def make_default_accounting_settings(pot: 'AccountingPot') -> dict[str, BaseEven
     result[deposit_bridge_key] = BaseEventSettings(
         taxable=False,
         count_entire_amount_spend=False,
-        count_cost_basis_pnl=True,
+        count_cost_basis_pnl=False,
         method='spend',
         accounting_treatment=None,
     )
-    withdraw_bridge_key = str(HistoryEventType.WITHDRAWAL) + '__' + str(HistoryEventSubType.NONE)
+    withdraw_bridge_key = str(HistoryEventType.WITHDRAWAL) + '__' + str(HistoryEventSubType.BRIDGE)
     result[withdraw_bridge_key] = BaseEventSettings(
         taxable=False,
         count_entire_amount_spend=False,
-        count_cost_basis_pnl=True,
+        count_cost_basis_pnl=False,
         method='acquisition',
         accounting_treatment=None,
     )
