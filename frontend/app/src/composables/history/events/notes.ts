@@ -53,7 +53,7 @@ export const useHistoryEventNote = () => {
       let skip = false;
 
       // label each word from notes whether it is an address or not
-      const words = notesVal.split(/\s/);
+      const words = notesVal.split(/\s|,/);
 
       words.forEach((word, index) => {
         if (skip) {
