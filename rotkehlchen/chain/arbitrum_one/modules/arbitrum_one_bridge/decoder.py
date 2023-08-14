@@ -16,6 +16,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails, EventCategory
+from rotkehlchen.chain.evm.decoding.utils import bridge_match_transfer
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.errors.misc import RemoteError
@@ -174,8 +175,6 @@ class ArbitrumOneBridgeDecoder(ArbitrumDecoderInterface):
         if self.base.is_tracked(from_address) is False and self.base.is_tracked(to_address) is False:  # noqa: E501
             return DEFAULT_DECODING_OUTPUT
 
-        from_label, to_label = f' address {from_address}', f' address {to_address}'
-
         raw_amount = hex_or_bytes_to_int(context.tx_log.data[128:160])
         amount = from_wei(FVal(raw_amount))
         for event in context.decoded_events:
@@ -185,16 +184,17 @@ class ArbitrumOneBridgeDecoder(ArbitrumDecoderInterface):
                     event.asset == A_ETH and
                     event.balance.amount == amount
             ):
-                if event.location_label == from_address:
-                    from_label = ''
-                if to_address == from_address:
-                    to_label = ''
-                event.event_type = HistoryEventType.WITHDRAWAL
-                event.event_subtype = HistoryEventSubType.BRIDGE
-                event.counterparty = CPT_ARBITRUM_ONE
-                event.notes = (
-                    f'Bridge {amount} ETH from Arbitrum One{from_label} '
-                    f'to Ethereum{to_label} via Arbitrum One bridge'
+                bridge_match_transfer(
+                    event=event,
+                    from_address=from_address,
+                    to_address=to_address,
+                    from_chain=ChainID.ARBITRUM_ONE,
+                    to_chain=ChainID.ETHEREUM,
+                    amount=amount,
+                    asset=self.eth,
+                    expected_event_type=HistoryEventType.SPEND,
+                    new_event_type=HistoryEventType.WITHDRAWAL,
+                    counterparty=ARBITRUM_ONE_CPT_DETAILS,
                 )
                 break
 

@@ -11,6 +11,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails, EventCategory
+from rotkehlchen.chain.evm.decoding.utils import bridge_match_transfer, bridge_prepare_data
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.fval import FVal
@@ -118,17 +119,15 @@ class ArbitrumOneBridgeDecoder(DecoderInterface):
         asset = self.base.get_or_create_evm_token(ethereum_token_address)
         raw_amount = hex_or_bytes_to_int(tx_log.data[32:])
         amount = asset_normalized_value(raw_amount, asset)
-        from_label, to_label = f' address {from_address}', f' address {to_address}'
 
-        # Determine whether it is a deposit or a withdrawal
-        if tx_log.topics[0] == ERC20_DEPOSIT_INITIATED:
-            expected_event_type = HistoryEventType.SPEND
-            new_event_type = HistoryEventType.DEPOSIT
-            from_chain, to_chain = ChainID.ETHEREUM, ChainID.ARBITRUM_ONE
-        else:  # ERC20_WITHDRAWAL_FINALIZED
-            expected_event_type = HistoryEventType.RECEIVE
-            new_event_type = HistoryEventType.WITHDRAWAL
-            from_chain, to_chain = ChainID.ARBITRUM_ONE, ChainID.ETHEREUM
+        expected_event_type, new_event_type, from_chain, to_chain, _ = bridge_prepare_data(  # noqa: E501
+            tx_log=tx_log,
+            deposit_events=(ERC20_DEPOSIT_INITIATED,),
+            main_chain=ChainID.ETHEREUM,
+            l2_chain=ChainID.ARBITRUM_ONE,
+            from_address=from_address,
+            to_address=to_address,
+        )
 
         # Find the corresponding transfer event and update it
         for event in decoded_events:
@@ -137,24 +136,17 @@ class ArbitrumOneBridgeDecoder(DecoderInterface):
                 event.asset == asset and
                 event.balance.amount == amount
             ):
-                if expected_event_type == HistoryEventType.SPEND:
-                    if event.location_label == from_address:
-                        from_label = ''
-                    if to_address == from_address:
-                        to_label = ''
-
-                if expected_event_type == HistoryEventType.RECEIVE:
-                    if event.location_label == to_address:
-                        to_label = ''
-                    if to_address == from_address:
-                        from_label = ''
-
-                event.event_type = new_event_type
-                event.event_subtype = HistoryEventSubType.BRIDGE
-                event.counterparty = CPT_ARBITRUM_ONE
-                event.notes = (
-                    f'Bridge {amount} {asset.symbol} from {from_chain.label()}{from_label} to '
-                    f'{to_chain.label()}{to_label} via Arbitrum One bridge'
+                bridge_match_transfer(
+                    event=event,
+                    from_address=from_address,
+                    to_address=to_address,
+                    from_chain=from_chain,
+                    to_chain=to_chain,
+                    amount=amount,
+                    asset=asset,
+                    expected_event_type=expected_event_type,
+                    new_event_type=new_event_type,
+                    counterparty=ARBITRUM_ONE_CPT_DETAILS,
                 )
             elif (
                 event.event_type == HistoryEventType.SPEND and
