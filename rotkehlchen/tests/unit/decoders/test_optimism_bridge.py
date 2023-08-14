@@ -102,10 +102,8 @@ def test_deposit_eth(database, ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr()
 @pytest.mark.parametrize('optimism_accounts', [['0x4bBa290826C253BD854121346c370a9886d1bC26']])
-def test_receive_erc20_on_optimism(database, optimism_inquirer, optimism_accounts):
-    """Data is taken from
-    https://optimistic.etherscan.io/tx/0x1d47c8026bfc63ed0af553bd240430978cb43efba00864d597a747c90464074f
-    """
+def test_receive_erc20_on_optimism_legacy(database, optimism_inquirer, optimism_accounts):
+    """Legacy bridge deposit to optimism. Where l1fee exists in receipt data"""
     evmhash = deserialize_evm_tx_hash('0x1d47c8026bfc63ed0af553bd240430978cb43efba00864d597a747c90464074f')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=optimism_inquirer,
@@ -125,6 +123,35 @@ def test_receive_erc20_on_optimism(database, optimism_inquirer, optimism_account
             balance=Balance(amount=FVal('10')),
             location_label=user_address,
             notes='Bridge 10 USDC from Ethereum to Optimism via Optimism bridge',
+            counterparty=CPT_OPTIMISM,
+            address=ZERO_ADDRESS,
+        ),
+    ]
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('optimism_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
+def test_receive_erc20_on_optimism(database, optimism_inquirer, optimism_accounts):
+    """Newer bridge deposit to optimism. Where l1fee is 0 and missing from receipt data"""
+    evmhash = deserialize_evm_tx_hash('0x0c0515e562917f86c8895765058df1d3df5aaf98aff00813c6f7d22c62a9b7d4')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=optimism_inquirer,
+        database=database,
+        tx_hash=evmhash,
+    )
+    user_address = optimism_accounts[0]
+    assert events == [
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=0,
+            timestamp=TimestampMS(1691959569000),
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.BRIDGE,
+            asset=Asset('eip155:10/erc20:0x7F5c764cBc14f9669B88837ca1490cCa17c31607'),
+            balance=Balance(amount=FVal('10000')),
+            location_label=user_address,
+            notes='Bridge 10000 USDC from Ethereum to Optimism via Optimism bridge',
             counterparty=CPT_OPTIMISM,
             address=ZERO_ADDRESS,
         ),

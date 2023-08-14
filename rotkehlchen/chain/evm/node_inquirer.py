@@ -1349,7 +1349,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
     def _get_pruned_check_tx_hash(self) -> EVMTxHash:
         """Returns a transaction hash that can used for checking whether a node is pruned."""
 
-    def _additional_receipt_processing(self, tx_receipt: Optional[dict[str, Any]]) -> None:  # noqa: B027 E501
+    def _additional_receipt_processing(self, tx_receipt: dict[str, Any]) -> None:  # noqa: B027 E501
         """Performs additional tx_receipt processing where necessary"""
 
 

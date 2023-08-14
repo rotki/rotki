@@ -10,7 +10,7 @@ from rotkehlchen.chain.optimism.types import OptimismTransaction
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair
 from rotkehlchen.errors.serialization import ConversionError, DeserializationError
-from rotkehlchen.externalapis.utils import read_hash, read_integer
+from rotkehlchen.externalapis.utils import maybe_read_integer, read_hash, read_integer
 from rotkehlchen.fval import AcceptableFValInitInput, FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
@@ -608,7 +608,7 @@ def deserialize_evm_transaction(
         if chain_id == ChainID.OPTIMISM and evm_inquirer is not None:
             if not raw_receipt_data:
                 raw_receipt_data = evm_inquirer.get_transaction_receipt(tx_hash)
-            l1_fee = read_integer(raw_receipt_data, 'l1Fee', source)
+            l1_fee = maybe_read_integer(raw_receipt_data, 'l1Fee', source)
             return OptimismTransaction(
                 timestamp=timestamp,
                 chain_id=chain_id,
