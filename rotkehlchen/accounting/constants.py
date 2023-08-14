@@ -33,7 +33,6 @@ DEFAULT_EVENT_CATEGORY_MAPPINGS = {
     },
     HistoryEventType.TRANSFER: {
         HistoryEventSubType.NONE: EventCategory.TRANSFER,
-        HistoryEventSubType.BRIDGE: EventCategory.BRIDGE,
     },
     HistoryEventType.TRADE: {
         HistoryEventSubType.SPEND: EventCategory.SWAP_OUT,
@@ -43,12 +42,12 @@ DEFAULT_EVENT_CATEGORY_MAPPINGS = {
         HistoryEventSubType.NONE: EventCategory.WITHDRAW,
         HistoryEventSubType.REMOVE_ASSET: EventCategory.WITHDRAW,
         HistoryEventSubType.GENERATE_DEBT: EventCategory.BORROW,
-        HistoryEventSubType.BRIDGE: EventCategory.BRIDGE,
+        HistoryEventSubType.BRIDGE: EventCategory.BRIDGE_OUT,
     },
     HistoryEventType.DEPOSIT: {
         HistoryEventSubType.NONE: EventCategory.DEPOSIT,
         HistoryEventSubType.DEPOSIT_ASSET: EventCategory.DEPOSIT,
-        HistoryEventSubType.BRIDGE: EventCategory.BRIDGE,
+        HistoryEventSubType.BRIDGE: EventCategory.BRIDGE_IN,
         HistoryEventSubType.PLACE_ORDER: EventCategory.PLACE_ORDER,
     },
     HistoryEventType.MIGRATE: {
@@ -117,9 +116,15 @@ EVENT_CATEGORY_DETAILS = {
         label='deploy',
         icon='mdi-swap-horizontal',
     ),
-    EventCategory.BRIDGE: EventCategoryDetails(
+    EventCategory.BRIDGE_IN: EventCategoryDetails(
         label='bridge',
-        icon='mdi-bridge',
+        icon='mdi-arrow-expand-up',
+        color='red',
+    ),
+    EventCategory.BRIDGE_OUT: EventCategoryDetails(
+        label='bridge',
+        icon='mdi-arrow-expand-down',
+        color='green',
     ),
     EventCategory.GOVERNANCE: EventCategoryDetails(
         label='governance',

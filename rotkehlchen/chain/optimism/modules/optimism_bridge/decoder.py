@@ -13,7 +13,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails, EventCategory
-from rotkehlchen.chain.evm.decoding.utils import bridge_match_transfer
+from rotkehlchen.chain.evm.decoding.utils import bridge_match_transfer, bridge_prepare_data
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.optimism.constants import CPT_OPTIMISM
 from rotkehlchen.constants.assets import A_OPTIMISM_ETH
@@ -64,17 +64,14 @@ class OptimismBridgeDecoder(DecoderInterface):
 
         amount = asset_normalized_value(asset=asset, amount=raw_amount)
 
-        # Determine deposit/withdrawal. Not using bridge_prepare_data due to arg mismatches
-        if context.tx_log.topics[0] == DEPOSIT_FINALIZED:
-            expected_event_type = HistoryEventType.RECEIVE
-            expected_location_label = from_address
-            new_event_type = HistoryEventType.DEPOSIT
-            from_chain, to_chain = ChainID.ETHEREUM, ChainID.OPTIMISM
-        else:  # WITHDRAWAL_INITIATED
-            expected_event_type = HistoryEventType.SPEND
-            expected_location_label = to_address
-            new_event_type = HistoryEventType.WITHDRAWAL
-            from_chain, to_chain = ChainID.OPTIMISM, ChainID.ETHEREUM
+        expected_event_type, new_event_type, from_chain, to_chain, expected_location_label = bridge_prepare_data(  # noqa: E501
+            tx_log=context.tx_log,  # args are opposite here due to the way logs are
+            deposit_events=(WITHDRAWAL_INITIATED,),
+            main_chain=ChainID.OPTIMISM,
+            l2_chain=ChainID.ETHEREUM,
+            from_address=to_address,
+            to_address=from_address,
+        )
 
         # Find the corresponding transfer event and update it
         for event in context.decoded_events:
@@ -110,10 +107,10 @@ class OptimismBridgeDecoder(DecoderInterface):
     def possible_events(self) -> DecoderEventMappingType:
         return {CPT_OPTIMISM: {
             HistoryEventType.DEPOSIT: {
-                HistoryEventSubType.BRIDGE: EventCategory.BRIDGE,
+                HistoryEventSubType.BRIDGE: EventCategory.BRIDGE_IN,
             },
             HistoryEventType.WITHDRAWAL: {
-                HistoryEventSubType.BRIDGE: EventCategory.BRIDGE,
+                HistoryEventSubType.BRIDGE: EventCategory.BRIDGE_OUT,
             },
         }}
 
