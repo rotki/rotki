@@ -66,7 +66,7 @@ class ZksyncDecoder(DecoderInterface):
         return {
             CPT_ZKSYNC: {
                 HistoryEventType.DEPOSIT: {
-                    HistoryEventSubType.BRIDGE: EventCategory.BRIDGE,
+                    HistoryEventSubType.BRIDGE: EventCategory.BRIDGE_IN,
                 },
             },
         }

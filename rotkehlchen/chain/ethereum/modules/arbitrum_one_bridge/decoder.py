@@ -175,13 +175,10 @@ class ArbitrumOneBridgeDecoder(DecoderInterface):
     def possible_events(self) -> DecoderEventMappingType:
         return {CPT_ARBITRUM_ONE: {
             HistoryEventType.DEPOSIT: {
-                HistoryEventSubType.BRIDGE: EventCategory.BRIDGE,
-            },
-            HistoryEventType.RECEIVE: {
-                HistoryEventSubType.BRIDGE: EventCategory.BRIDGE,
+                HistoryEventSubType.BRIDGE: EventCategory.BRIDGE_IN,
             },
             HistoryEventType.WITHDRAWAL: {
-                HistoryEventSubType.BRIDGE: EventCategory.BRIDGE,
+                HistoryEventSubType.BRIDGE: EventCategory.BRIDGE_OUT,
             },
         }}
 
