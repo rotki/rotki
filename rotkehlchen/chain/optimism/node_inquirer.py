@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Any, Literal, Optional, cast
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 from eth_typing import BlockNumber
 
@@ -8,6 +8,7 @@ from rotkehlchen.chain.evm.contracts import EvmContracts
 from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirerWithDSProxy
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.externalapis.utils import maybe_read_integer
 from rotkehlchen.fval import FVal
 from rotkehlchen.greenlets.manager import GreenletManager
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -18,7 +19,7 @@ from rotkehlchen.types import (
     SupportedBlockchain,
     Timestamp,
 )
-from rotkehlchen.utils.misc import hexstr_to_int
+
 from .constants import (
     ARCHIVE_NODE_CHECK_ADDRESS,
     ARCHIVE_NODE_CHECK_BLOCK,
@@ -65,7 +66,7 @@ class OptimismInquirer(EvmNodeInquirerWithDSProxy):
         )
         self.etherscan = cast(OptimismEtherscan, self.etherscan)
 
-    def _additional_receipt_processing(self, tx_receipt: Optional[dict[str, Any]]) -> None:
+    def _additional_receipt_processing(self, tx_receipt: dict[str, Any]) -> None:
         """Performs additional tx_receipt processing where necessary
 
         May raise:
@@ -73,7 +74,7 @@ class OptimismInquirer(EvmNodeInquirerWithDSProxy):
             type is given.
             - KeyError if tx_receipt has no l1Fee entry
         """
-        tx_receipt['l1Fee'] = hexstr_to_int(tx_receipt['l1Fee'])  # type: ignore[index]
+        tx_receipt['l1Fee'] = maybe_read_integer(data=tx_receipt, key='l1Fee', api='web3 optimism')
 
     # -- Implementation of EvmNodeInquirer base methods --
 
