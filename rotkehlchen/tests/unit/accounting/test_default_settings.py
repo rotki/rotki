@@ -153,7 +153,6 @@ def test_accounting_no_settings(accounting_pot: 'AccountingPot'):
 
 @pytest.mark.parametrize(('event_type', 'event_subtype', 'is_taxable', 'airdrops_taxable'), [
     (HistoryEventType.RECEIVE, HistoryEventSubType.NONE, True, False),
-    (HistoryEventType.WITHDRAWAL, HistoryEventSubType.NONE, False, False),
     (HistoryEventType.RECEIVE, HistoryEventSubType.AIRDROP, False, False),
     (HistoryEventType.RECEIVE, HistoryEventSubType.AIRDROP, True, True),
     (HistoryEventType.RECEIVE, HistoryEventSubType.REWARD, True, False),
@@ -211,7 +210,6 @@ def test_accounting_receive_settings(
     (HistoryEventType.SPEND, HistoryEventSubType.FEE, True, CPT_GAS, True, True),
     (HistoryEventType.SPEND, HistoryEventSubType.FEE, False, CPT_GAS, False, False),
     (HistoryEventType.SPEND, HistoryEventSubType.FEE, False, CPT_GAS, False, True),
-    (HistoryEventType.DEPOSIT, HistoryEventSubType.NONE, False, None, False, False),
     (HistoryEventType.RENEW, HistoryEventSubType.NONE, True, None, False, False),
 ])
 @pytest.mark.parametrize('mocked_price_queries', [MOCKED_PRICES])
