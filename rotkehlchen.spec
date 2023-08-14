@@ -87,7 +87,8 @@ for exchange_name in SUPPORTED_EXCHANGES:
 ethereum_modules = collect_submodules('rotkehlchen.chain.ethereum.modules')
 optimism_modules = collect_submodules('rotkehlchen.chain.optimism.modules')
 polygon_pos_modules = collect_submodules('rotkehlchen.chain.polygon_pos.modules')
-dynamic_modules = ethereum_modules + optimism_modules + polygon_pos_modules
+arbitrum_one_modules = collect_submodules('rotkehlchen.chain.arbitrum_one.modules')
+dynamic_modules = ethereum_modules + optimism_modules + polygon_pos_modules + arbitrum_one_modules
 hiddenimports.extend(dynamic_modules)
 
 a = Entrypoint(
