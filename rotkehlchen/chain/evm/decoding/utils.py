@@ -1,8 +1,15 @@
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, Optional
 
+from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.assets.asset import AssetWithSymbol
+from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
+from rotkehlchen.fval import FVal
+from rotkehlchen.types import ChainID, ChecksumEvmAddress
+
 if TYPE_CHECKING:
     from rotkehlchen.accounting.structures.evm_event import EvmEvent
+    from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 
 
 def maybe_reshuffle_events(
@@ -37,3 +44,65 @@ def maybe_reshuffle_events(
     for idx, event in enumerate(actual_events):
         event.sequence_index = max_seq_index + idx + 1
     events_list = all_other_events + actual_events
+
+
+def bridge_prepare_data(
+        tx_log: 'EvmTxReceiptLog',
+        deposit_events: Sequence[bytes],
+        main_chain: ChainID,
+        l2_chain: ChainID,
+        from_address: ChecksumEvmAddress,
+        to_address: ChecksumEvmAddress,
+) -> tuple[HistoryEventType, HistoryEventType, ChainID, ChainID, ChecksumEvmAddress]:
+    """Method to prepare the bridge variables
+
+    When coming here the caller has to make sure that:
+    - tx_log topics is either in deposit_events or else is a withdrawal
+    """
+    # Determine whether it is a deposit or a withdrawal
+    if tx_log.topics[0] in deposit_events:
+        expected_event_type = HistoryEventType.SPEND
+        expected_location_label = from_address
+        new_event_type = HistoryEventType.DEPOSIT
+        from_chain, to_chain = main_chain, l2_chain
+    else:  # withdrawal
+        expected_event_type = HistoryEventType.RECEIVE
+        expected_location_label = to_address
+        new_event_type = HistoryEventType.WITHDRAWAL
+        from_chain, to_chain = l2_chain, main_chain
+
+    return expected_event_type, new_event_type, from_chain, to_chain, expected_location_label
+
+
+def bridge_match_transfer(
+        event: 'EvmEvent',
+        from_address: ChecksumEvmAddress,
+        to_address: ChecksumEvmAddress,
+        from_chain: ChainID,
+        to_chain: ChainID,
+        amount: FVal,
+        asset: AssetWithSymbol,
+        expected_event_type: HistoryEventType,
+        new_event_type: HistoryEventType,
+        counterparty: CounterpartyDetails,
+) -> None:
+    """Action to take when matching a bridge transfer event"""
+    from_label, to_label = f' address {from_address}', f' address {to_address}'
+    if expected_event_type == HistoryEventType.SPEND:
+        if event.location_label == from_address:
+            from_label = ''
+        if to_address == from_address:
+            to_label = ''
+    elif expected_event_type == HistoryEventType.RECEIVE:
+        if event.location_label == to_address:
+            to_label = ''
+        if to_address == from_address:
+            from_label = ''
+
+    event.event_type = new_event_type
+    event.event_subtype = HistoryEventSubType.BRIDGE
+    event.counterparty = counterparty.identifier
+    event.notes = (
+        f'Bridge {amount} {asset.symbol} from {from_chain.label()}{from_label} to '
+        f'{to_chain.label()}{to_label} via {counterparty.label} bridge'
+    )

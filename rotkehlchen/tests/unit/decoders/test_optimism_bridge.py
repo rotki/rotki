@@ -50,7 +50,7 @@ def test_deposit_erc20(database, ethereum_inquirer, ethereum_accounts):
             asset=Asset('eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'),
             balance=Balance(amount=FVal('10')),
             location_label=user_address,
-            notes=f'Bridge 10 USDC from ethereum address {user_address} to optimism address {user_address} via optimism bridge',  # noqa: E501
+            notes='Bridge 10 USDC from Ethereum to Optimism via Optimism bridge',
             counterparty=CPT_OPTIMISM,
             address=string_to_evm_address('0x99C9fc46f92E8a1c0deC1b1747d010903E884bE1'),
         ),
@@ -93,7 +93,7 @@ def test_deposit_eth(database, ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             balance=Balance(amount=FVal('0.1')),
             location_label=user_address,
-            notes=f'Bridge 0.1 ETH from ethereum address {user_address} to optimism address {user_address} via optimism bridge',  # noqa: E501
+            notes='Bridge 0.1 ETH from Ethereum to Optimism via Optimism bridge',
             counterparty=CPT_OPTIMISM,
             address=string_to_evm_address('0x99C9fc46f92E8a1c0deC1b1747d010903E884bE1'),
         ),
@@ -124,7 +124,7 @@ def test_receive_erc20_on_optimism(database, optimism_inquirer, optimism_account
             asset=Asset('eip155:10/erc20:0x7F5c764cBc14f9669B88837ca1490cCa17c31607'),
             balance=Balance(amount=FVal('10')),
             location_label=user_address,
-            notes=f'Bridge 10 USDC from ethereum address {user_address} to optimism address {user_address} via optimism bridge',  # noqa: E501
+            notes='Bridge 10 USDC from Ethereum to Optimism via Optimism bridge',
             counterparty=CPT_OPTIMISM,
             address=ZERO_ADDRESS,
         ),
@@ -155,7 +155,7 @@ def test_receive_eth_on_optimism(database, optimism_inquirer, optimism_accounts)
             asset=A_OPTIMISM_ETH,
             balance=Balance(amount=FVal('0.009')),
             location_label=user_address,
-            notes=f'Bridge 0.009 ETH from ethereum address {user_address} to optimism address {user_address} via optimism bridge',  # noqa: E501
+            notes='Bridge 0.009 ETH from Ethereum to Optimism via Optimism bridge',
             counterparty=CPT_OPTIMISM,
             address=ZERO_ADDRESS,
         ),
@@ -198,7 +198,7 @@ def test_withdraw_erc20(database, optimism_inquirer, optimism_accounts):
             asset=Asset('eip155:10/erc20:0x7F5c764cBc14f9669B88837ca1490cCa17c31607'),
             balance=Balance(amount=FVal('2718.857536')),
             location_label=user_address,
-            notes=f'Bridge 2718.857536 USDC from optimism address {user_address} to ethereum address {user_address} via optimism bridge',  # noqa: E501
+            notes='Bridge 2718.857536 USDC from Optimism to Ethereum via Optimism bridge',
             counterparty=CPT_OPTIMISM,
             address=ZERO_ADDRESS,
         ),
@@ -241,7 +241,7 @@ def test_withdraw_eth(database, optimism_inquirer, optimism_accounts):
             asset=Asset('eip155:10/erc20:0xDeadDeAddeAddEAddeadDEaDDEAdDeaDDeAD0000'),
             balance=Balance(amount=FVal('0.435796826762301485')),
             location_label=user_address,
-            notes=f'Bridge 0.435796826762301485 ETH from optimism address {user_address} to ethereum address {user_address} via optimism bridge',  # noqa: E501
+            notes='Bridge 0.435796826762301485 ETH from Optimism to Ethereum via Optimism bridge',
             counterparty=CPT_OPTIMISM,
             address=ZERO_ADDRESS,
         ),
@@ -284,7 +284,7 @@ def test_claim_erc20_on_ethereum(database, ethereum_inquirer, ethereum_accounts)
             asset=Asset('eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'),
             balance=Balance(amount=FVal('2718.857536')),
             location_label=user_address,
-            notes=f'Bridge 2718.857536 USDC from optimism address {user_address} to ethereum address {user_address} via optimism bridge',  # noqa: E501
+            notes='Bridge 2718.857536 USDC from Optimism to Ethereum via Optimism bridge',
             counterparty=CPT_OPTIMISM,
             address=string_to_evm_address('0x99C9fc46f92E8a1c0deC1b1747d010903E884bE1'),
         ),
@@ -327,7 +327,7 @@ def test_claim_eth_on_ethereum(database, ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             balance=Balance(amount=FVal('0.435796826762301485')),
             location_label=user_address,
-            notes=f'Bridge 0.435796826762301485 ETH from optimism address {user_address} to ethereum address {user_address} via optimism bridge',  # noqa: E501
+            notes='Bridge 0.435796826762301485 ETH from Optimism to Ethereum via Optimism bridge',
             counterparty=CPT_OPTIMISM,
             address=string_to_evm_address('0x99C9fc46f92E8a1c0deC1b1747d010903E884bE1'),
         ),
