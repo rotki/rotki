@@ -481,11 +481,21 @@ class DBHandler:
             setattr(self, conn_attribute, None)
 
     def export_unencrypted(self, temppath: Path) -> None:
-        self.conn.executescript(
-            f'ATTACH DATABASE "{temppath}" AS plaintext KEY "";'
-            'SELECT sqlcipher_export("plaintext");'
-            'DETACH DATABASE plaintext;',
-        )
+        """Export the unencrypted DB to the temppath as plaintext DB
+
+        The critical section is absolutely needed as a context switch
+        from inside this execute script can result in:
+        1. coming into this code again from another greenlet which can result
+        to DB plaintext already in use
+        2. Having a DB transaction open between the attach and detach and not
+        closed when we detach which will result in DB plaintext locked.
+        """
+        with self.conn.critical_section():
+            self.conn.executescript(
+                f'ATTACH DATABASE "{temppath}" AS plaintext KEY "";'
+                'SELECT sqlcipher_export("plaintext");'
+                'DETACH DATABASE plaintext;',
+            )
 
     def import_unencrypted(self, unencrypted_db_data: bytes) -> None:
         """Imports an unencrypted DB from raw data
