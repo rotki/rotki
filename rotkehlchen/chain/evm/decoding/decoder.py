@@ -718,7 +718,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             )
             return DEFAULT_DECODING_OUTPUT
 
-        if not any(self.base.is_tracked(x) for x in (owner_address, spender_address)):
+        if not self.base.any_tracked([owner_address, spender_address]):
             return DEFAULT_DECODING_OUTPUT
 
         amount = token_normalized_value(token_amount=amount_raw, token=token)

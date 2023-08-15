@@ -97,7 +97,7 @@ class ArbitrumOneBridgeDecoder(ArbitrumDecoderInterface):
         from_address = hex_or_bytes_to_address(context.tx_log.topics[2])
         to_address = hex_or_bytes_to_address(context.tx_log.topics[3])
 
-        if self.base.is_tracked(from_address) is False and self.base.is_tracked(to_address) is False:  # noqa: E501
+        if not self.base.any_tracked([from_address, to_address]):
             return DEFAULT_DECODING_OUTPUT
 
         try:
@@ -172,7 +172,7 @@ class ArbitrumOneBridgeDecoder(ArbitrumDecoderInterface):
         from_address = hex_or_bytes_to_address(context.tx_log.topics[1])
         to_address = hex_or_bytes_to_address(context.transaction.input_data[4:])  # only argument of input data is destination address # noqa: E501
 
-        if self.base.is_tracked(from_address) is False and self.base.is_tracked(to_address) is False:  # noqa: E501
+        if not self.base.any_tracked([from_address, to_address]):
             return DEFAULT_DECODING_OUTPUT
 
         raw_amount = hex_or_bytes_to_int(context.tx_log.data[128:160])
@@ -253,7 +253,7 @@ class ArbitrumOneBridgeDecoder(ArbitrumDecoderInterface):
         l1_token_address = hex_or_bytes_to_address(context.tx_log.topics[1])
         from_address = hex_or_bytes_to_address(context.tx_log.topics[2])
         to_address = hex_or_bytes_to_address(context.tx_log.topics[3])
-        if self.base.is_tracked(from_address) is False and self.base.is_tracked(to_address) is False:  # noqa: E501
+        if not self.base.any_tracked([from_address, to_address]):
             return DEFAULT_DECODING_OUTPUT
 
         from_label = f' address {from_address}' if from_address != to_address else ''
