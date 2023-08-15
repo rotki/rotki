@@ -49,8 +49,9 @@ class OneinchCommonDecoder(DecoderInterface, metaclass=ABCMeta):
     ) -> DecodingOutput:
         """Function to abstract the functionality of oneinch decoding where Once
         the data has been pulled from the log we create the decoded events"""
-        if not self.base.is_tracked(sender) and not self.base.is_tracked(receiver):
+        if not self.base.any_tracked([sender, receiver]):
             return DEFAULT_DECODING_OUTPUT
+
         source_token = self.base.get_or_create_evm_asset(source_token_address)
         destination_token = self.base.get_or_create_evm_asset(destination_token_address)
         spent_amount = asset_normalized_value(amount=spent_amount_raw, asset=source_token)

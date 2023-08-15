@@ -123,7 +123,7 @@ class Aavev2Decoder(DecoderInterface):
         """Decode aave v2 withdrawal event"""
         user = hex_or_bytes_to_address(tx_log.topics[2])
         to = hex_or_bytes_to_address(tx_log.topics[3])
-        if self.base.is_tracked(user) is False and self.base.is_tracked(to) is False:
+        if not self.base.any_tracked([user, to]):
             return
         amount = asset_normalized_value(
             amount=hex_or_bytes_to_int(tx_log.data),
@@ -161,8 +161,9 @@ class Aavev2Decoder(DecoderInterface):
         """Decode aave v2 borrow event"""
         on_behalf_of = hex_or_bytes_to_address(tx_log.topics[2])
         user = hex_or_bytes_to_address(tx_log.data[:32])
-        if self.base.is_tracked(user) is False and self.base.is_tracked(on_behalf_of) is False:  # noqa: E501
+        if not self.base.any_tracked([user, on_behalf_of]):
             return
+
         amount = asset_normalized_value(
             amount=hex_or_bytes_to_int(tx_log.data[32:64]),
             asset=token,
@@ -238,8 +239,9 @@ class Aavev2Decoder(DecoderInterface):
         """Decode aave v2 repay event"""
         user = hex_or_bytes_to_address(tx_log.topics[2])
         repayer = hex_or_bytes_to_address(tx_log.topics[3])
-        if self.base.is_tracked(user) is False and self.base.is_tracked(repayer) is False:  # noqa: E501
+        if not self.base.any_tracked([user, repayer]):
             return
+
         amount = asset_normalized_value(
             amount=hex_or_bytes_to_int(tx_log.data),
             asset=token,

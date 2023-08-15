@@ -112,7 +112,7 @@ class ArbitrumOneBridgeDecoder(DecoderInterface):
         from_address = hex_or_bytes_to_address(tx_log.topics[1])
         to_address = hex_or_bytes_to_address(tx_log.topics[2])
 
-        if self.base.is_tracked(from_address) is False and self.base.is_tracked(to_address) is False:  # noqa: E501
+        if not self.base.any_tracked([from_address, to_address]):
             return DEFAULT_DECODING_OUTPUT
 
         ethereum_token_address = hex_or_bytes_to_address(tx_log.data[:32])
