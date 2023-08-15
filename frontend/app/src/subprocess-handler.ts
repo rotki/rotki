@@ -137,7 +137,7 @@ export default class SubprocessHandler {
 
   get logDir(): string {
     if (import.meta.env.VITE_DEV_LOGS) {
-      return path.join('..', 'logs');
+      return path.join('frontend', 'logs');
     }
     return this.logDirectory ?? this.defaultLogDirectory;
   }
@@ -459,7 +459,7 @@ export default class SubprocessHandler {
       `Starting non-packaged rotki-core: python ${allArgs.join(' ')}`
     );
 
-    this.childProcess = spawn('python', allArgs);
+    this.childProcess = spawn('python', allArgs, { cwd: '../../' });
 
     if (!isDevelopment) {
       this.colibriProcess = spawn('colibri');
