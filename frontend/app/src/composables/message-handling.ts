@@ -93,14 +93,17 @@ export const useMessageHandling = () => {
 
   const handleNewTokenDetectedMessage = (
     data: NewDetectedToken
-  ): Notification => {
+  ): Notification | null => {
     const notification = get(notifications).find(
       ({ group }) => group === NotificationGroup.NEW_DETECTED_TOKENS
     );
 
-    addNewDetectedToken(data);
+    const countAdded = addNewDetectedToken(data);
+    const count = (notification?.groupCount || 0) + +countAdded;
 
-    const count = (notification?.groupCount || 0) + 1;
+    if (count === 0) {
+      return null;
+    }
 
     return {
       title: t('notification_messages.new_detected_token.title', count),
@@ -188,7 +191,10 @@ export const useMessageHandling = () => {
     } else if (type === SocketMessageType.EVM_ACCOUNTS_DETECTION) {
       setUpgradedAddresses(message.data);
     } else if (type === SocketMessageType.NEW_EVM_TOKEN_DETECTED) {
-      notifications.push(handleNewTokenDetectedMessage(message.data));
+      const notification = handleNewTokenDetectedMessage(message.data);
+      if (notification) {
+        notifications.push(notification);
+      }
     } else if (type === SocketMessageType.REFRESH_BALANCES) {
       await fetchBlockchainBalances({
         blockchain: message.data.blockchain,
