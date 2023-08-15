@@ -1,4 +1,5 @@
 import logging
+from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, Callable, Optional
 
 from rotkehlchen.accounting.structures.balance import Balance
@@ -69,6 +70,9 @@ class BaseDecoderTools:
 
     def is_tracked(self, adddress: ChecksumEvmAddress) -> bool:
         return adddress in self.tracked_accounts.get(self.evm_inquirer.chain_id.to_blockchain())
+
+    def any_tracked(self, addresses: Sequence[ChecksumEvmAddress]) -> bool:
+        return set(addresses).isdisjoint(self.tracked_accounts.get(self.evm_inquirer.chain_id.to_blockchain())) is False  # noqa: E501
 
     def maybe_get_proxy_owner(self, address: ChecksumEvmAddress) -> Optional[ChecksumEvmAddress]:  # pylint: disable=unused-argument  # noqa: E501
         """

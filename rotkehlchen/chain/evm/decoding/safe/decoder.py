@@ -28,6 +28,9 @@ log = RotkehlchenLogsAdapter(logger)
 class SafemultisigDecoder(DecoderInterface):
     def _decode_added_owner(self, context: DecoderContext) -> DecodingOutput:
         address = hex_or_bytes_to_address(context.tx_log.data[:32])
+        if not self.base.any_tracked([address, context.transaction.from_address, context.tx_log.address]):  # noqa: E501
+            return DEFAULT_DECODING_OUTPUT
+
         event = self.base.make_event_next_index(
             tx_hash=context.transaction.tx_hash,
             timestamp=context.transaction.timestamp,
@@ -44,6 +47,9 @@ class SafemultisigDecoder(DecoderInterface):
 
     def _decode_removed_owner(self, context: DecoderContext) -> DecodingOutput:
         address = hex_or_bytes_to_address(context.tx_log.data[:32])
+        if not self.base.any_tracked([address, context.transaction.from_address, context.tx_log.address]):  # noqa: E501
+            return DEFAULT_DECODING_OUTPUT
+
         event = self.base.make_event_next_index(
             tx_hash=context.transaction.tx_hash,
             timestamp=context.transaction.timestamp,
@@ -60,6 +66,9 @@ class SafemultisigDecoder(DecoderInterface):
 
     def _decode_changed_threshold(self, context: DecoderContext) -> DecodingOutput:
         threshold = hex_or_bytes_to_int(context.tx_log.data[:32])
+        if not self.base.any_tracked([context.transaction.from_address, context.tx_log.address]):
+            return DEFAULT_DECODING_OUTPUT
+
         event = self.base.make_event_next_index(
             tx_hash=context.transaction.tx_hash,
             timestamp=context.transaction.timestamp,
@@ -82,6 +91,9 @@ class SafemultisigDecoder(DecoderInterface):
             if event.counterparty == CPT_SAFE_MULTISIG and event.address == context.tx_log.address:
                 return DEFAULT_DECODING_OUTPUT  # only add if no other safe-specific events exist
 
+        if not self.base.any_tracked([context.transaction.from_address, context.tx_log.address]):
+            return DEFAULT_DECODING_OUTPUT
+
         safe_tx_hash = hex_or_bytes_to_str(context.tx_log.data[:32])
         event = self.base.make_event_next_index(
             tx_hash=context.transaction.tx_hash,
@@ -98,10 +110,14 @@ class SafemultisigDecoder(DecoderInterface):
         return DecodingOutput(event=event)
 
     def decode_safe_creation(self, context: DecoderContext) -> DecodingOutput:
+        if not self.base.any_tracked([context.transaction.from_address, context.tx_log.address]):
+            return DEFAULT_DECODING_OUTPUT
+
         num_owners = (len(context.tx_log.data) // 32) - 5  # data has 5 elements that are not the addresses  # noqa: E501
         owners = []
         # chunk the data and iterate in reverse order. First elements are the owners and then
         # comes the threshold
+        threshold = 0
         for index, entry in enumerate(reversed([context.tx_log.data[i:i + 32] for i in range(0, len(context.tx_log.data), 32)])):  # noqa: E501
             if index < num_owners:
                 owners.append(hex_or_bytes_to_address(entry))
@@ -125,6 +141,9 @@ class SafemultisigDecoder(DecoderInterface):
         return DecodingOutput(event=event)
 
     def _decode_execution_failure(self, context: DecoderContext) -> DecodingOutput:
+        if not self.base.any_tracked([context.transaction.from_address, context.tx_log.address]):
+            return DEFAULT_DECODING_OUTPUT
+
         safe_tx_hash = hex_or_bytes_to_str(context.tx_log.data[:32])
         event = self.base.make_event_next_index(
             tx_hash=context.transaction.tx_hash,
