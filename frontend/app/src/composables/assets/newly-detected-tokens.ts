@@ -16,11 +16,20 @@ export const useNewlyDetectedTokens = createSharedComposable(() => {
     set(internalTokens, []);
   };
 
+  const ignoredAssetStore = useIgnoredAssetsStore();
+  const { addIgnoredAsset } = ignoredAssetStore;
+
   const addNewDetectedToken = (data: NewDetectedToken) => {
+    if (data.isIgnored) {
+      addIgnoredAsset(data.tokenIdentifier);
+      return;
+    }
+
     const tokenList = [...get(internalTokens)];
     const tokenIndex = tokenList.findIndex(
       ({ tokenIdentifier }) => tokenIdentifier === data.tokenIdentifier
     );
+
     if (tokenIndex === -1) {
       tokenList.push(data);
     } else {

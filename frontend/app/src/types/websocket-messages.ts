@@ -98,7 +98,8 @@ export type MigratedAddresses = z.infer<typeof MigratedAddresses>;
 export const NewDetectedToken = z.object({
   tokenIdentifier: z.string(),
   seenTxHash: z.string().nullish(),
-  seenDescription: z.string().nullish()
+  seenDescription: z.string().nullish(),
+  isIgnored: z.boolean().optional()
 });
 
 export type NewDetectedToken = z.infer<typeof NewDetectedToken>;
