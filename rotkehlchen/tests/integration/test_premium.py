@@ -16,7 +16,6 @@ from rotkehlchen.errors.api import (
 )
 from rotkehlchen.premium.premium import Premium, PremiumCredentials
 from rotkehlchen.tests.utils.constants import A_GBP, DEFAULT_TESTS_MAIN_CURRENCY
-from rotkehlchen.tests.utils.factories import make_ethereum_event, make_ethereum_transaction
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.tests.utils.premium import (
     VALID_PREMIUM_KEY,
@@ -487,8 +486,9 @@ def test_upload_data_to_server_db_already_in_use(rotkehlchen_instance):
     all works out. Essentially a test for https://github.com/rotki/rotki/issues/5038
     where the DB is already in use error occurs.
 
-    This can happen if we get into maybe_upload_data_to_server from 2 different greenlets and reach the export code from both. The solution was to add a lock in the
-    entire maybe_upload_data_to_server.
+    This can happen if we get into maybe_upload_data_to_server from 2 different greenlets
+    and reach the export code from both.
+    The solution was to add a lock in the entire maybe_upload_data_to_server.
 
     We emulate bigger size by just lowering sql_vm_instructions_cb to force a context switch
     """
@@ -557,7 +557,7 @@ def test_upload_data_to_server_db_locked(rotkehlchen_instance):
         last_ts = rotkehlchen_instance.data.db.get_setting(cursor, name='last_data_upload_ts')
         assert last_ts == 0
         # Write anything in the DB to set a non-zero last_write_ts
-        rotkehlchen_instance.data.db.set_settings(cursor, ModifiableDBSettings(main_currency=A_EUR))  # noqa:
+        rotkehlchen_instance.data.db.set_settings(cursor, ModifiableDBSettings(main_currency=A_EUR))  # noqa: E501
 
     _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db()
     remote_hash = get_different_hash(our_hash)

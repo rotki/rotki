@@ -35,6 +35,7 @@ class PremiumSyncManager:
         # Initialize this with the value saved in the DB
         with data.db.conn.read_ctx() as cursor:
             self.last_data_upload_ts = data.db.get_setting(cursor, name='last_data_upload_ts')
+            self.last_upload_attempt_ts = self.last_data_upload_ts
         self.data = data
         self.migration_manager = migration_manager
         self.premium: Optional[Premium] = None
@@ -133,8 +134,8 @@ class PremiumSyncManager:
             if not self.data.db.get_setting(cursor, 'premium_should_sync') and not force_upload:
                 return False
 
-        # upload only once per hour
-        diff = ts_now() - self.last_data_upload_ts
+        # try an automatic upload only once per hour
+        diff = ts_now() - self.last_upload_attempt_ts
         if diff < 3600 and not force_upload:
             return False
 
@@ -154,6 +155,7 @@ class PremiumSyncManager:
             metadata = self.premium.query_last_data_metadata()
         except (RemoteError, PremiumAuthenticationError) as e:
             log.debug('upload to server -- fetching metadata error', error=str(e))
+            self.last_upload_attempt_ts = ts_now()
             return False, str(e)
 
         with self.data.db.conn.read_ctx() as cursor:
@@ -164,6 +166,7 @@ class PremiumSyncManager:
                 f'upload to server stopped -- remote db({metadata.last_modify_ts}) '
                 f'more recent than local({our_last_write_ts})',
             )
+            self.last_upload_attempt_ts = ts_now()
             return False, 'Remote database is more recent than local'
 
         data, our_hash = self.data.compress_and_encrypt_db()
@@ -176,6 +179,7 @@ class PremiumSyncManager:
         if our_hash == metadata.data_hash and not force_upload:
             log.debug('upload to server stopped -- same hash')
             # same hash -- no need to upload anything
+            self.last_upload_attempt_ts = ts_now()
             return False, 'Remote database is up to date'
 
         data_bytes_size = len(data)
@@ -186,6 +190,7 @@ class PremiumSyncManager:
                 f'upload to server stopped -- remote db({metadata.data_size}) '
                 f'bigger than local({data_bytes_size})',
             )
+            self.last_upload_attempt_ts = ts_now()
             return False, 'Remote database contains more data than the local one'
 
         try:
@@ -197,10 +202,12 @@ class PremiumSyncManager:
             )
         except (RemoteError, PremiumAuthenticationError) as e:
             log.debug('upload to server -- upload error', error=str(e))
+            self.last_upload_attempt_ts = ts_now()
             return False, str(e)
 
         # update the last data upload value
         self.last_data_upload_ts = ts_now()
+        self.last_upload_attempt_ts = self.last_data_upload_ts
         with self.data.db.user_write() as cursor:
             self.data.db.set_setting(cursor, name='last_data_upload_ts', value=self.last_data_upload_ts)  # noqa: E501
 
