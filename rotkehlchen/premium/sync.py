@@ -3,8 +3,6 @@ import shutil
 from enum import Enum
 from typing import Any, Literal, NamedTuple, Optional, Union
 
-from gevent.lock import Semaphore
-
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.data_migrations.manager import DataMigrationManager
 from rotkehlchen.errors.api import PremiumAuthenticationError, RotkehlchenPermissionError
@@ -40,7 +38,6 @@ class PremiumSyncManager:
         self.data = data
         self.migration_manager = migration_manager
         self.premium: Optional[Premium] = None
-        self.upload_lock = Semaphore()
 
     def _can_sync_data_from_server(self, new_account: bool) -> SyncCheckResult:
         """
@@ -151,64 +148,63 @@ class PremiumSyncManager:
         Returns a boolean value denoting whether we can upload the DB to the server.
         In case of error we also return a message to provide information to the user.
         """
-        with self.upload_lock:
-            assert self.premium is not None, 'caller should make sure premium exists'
-            log.debug('Starting maybe_upload_data_to_server')
-            try:
-                metadata = self.premium.query_last_data_metadata()
-            except (RemoteError, PremiumAuthenticationError) as e:
-                log.debug('upload to server -- fetching metadata error', error=str(e))
-                return False, str(e)
+        assert self.premium is not None, 'caller should make sure premium exists'
+        log.debug('Starting maybe_upload_data_to_server')
+        try:
+            metadata = self.premium.query_last_data_metadata()
+        except (RemoteError, PremiumAuthenticationError) as e:
+            log.debug('upload to server -- fetching metadata error', error=str(e))
+            return False, str(e)
 
-            with self.data.db.conn.read_ctx() as cursor:
-                our_last_write_ts = self.data.db.get_setting(cursor=cursor, name='last_write_ts')
-            if our_last_write_ts <= metadata.last_modify_ts and not force_upload:
-                # Server's DB was modified after our local DB
-                log.debug(
-                    f'upload to server stopped -- remote db({metadata.last_modify_ts}) '
-                    f'more recent than local({our_last_write_ts})',
-                )
-                return False, 'Remote database is more recent than local'
-
-            data, our_hash = self.data.compress_and_encrypt_db()
-
+        with self.data.db.conn.read_ctx() as cursor:
+            our_last_write_ts = self.data.db.get_setting(cursor=cursor, name='last_write_ts')
+        if our_last_write_ts <= metadata.last_modify_ts and not force_upload:
+            # Server's DB was modified after our local DB
             log.debug(
-                'CAN_PUSH',
-                ours=our_hash,
-                theirs=metadata.data_hash,
+                f'upload to server stopped -- remote db({metadata.last_modify_ts}) '
+                f'more recent than local({our_last_write_ts})',
             )
-            if our_hash == metadata.data_hash and not force_upload:
-                log.debug('upload to server stopped -- same hash')
-                # same hash -- no need to upload anything
-                return False, 'Remote database is up to date'
+            return False, 'Remote database is more recent than local'
 
-            data_bytes_size = len(data)
-            if data_bytes_size < metadata.data_size and not force_upload:
-                # Let's be conservative.
-                # TODO: Here perhaps prompt user in the future
-                log.debug(
-                    f'upload to server stopped -- remote db({metadata.data_size}) '
-                    f'bigger than local({data_bytes_size})',
-                )
-                return False, 'Remote database contains more data than the local one'
+        data, our_hash = self.data.compress_and_encrypt_db()
 
-            try:
-                self.premium.upload_data(
-                    data_blob=data,
-                    our_hash=our_hash,
-                    last_modify_ts=our_last_write_ts,
-                    compression_type='zlib',
-                )
-            except (RemoteError, PremiumAuthenticationError) as e:
-                log.debug('upload to server -- upload error', error=str(e))
-                return False, str(e)
+        log.debug(
+            'CAN_PUSH',
+            ours=our_hash,
+            theirs=metadata.data_hash,
+        )
+        if our_hash == metadata.data_hash and not force_upload:
+            log.debug('upload to server stopped -- same hash')
+            # same hash -- no need to upload anything
+            return False, 'Remote database is up to date'
 
-            # update the last data upload value
-            self.last_data_upload_ts = ts_now()
-            with self.data.db.user_write() as cursor:
-                self.data.db.set_setting(cursor, name='last_data_upload_ts', value=self.last_data_upload_ts)  # noqa: E501
+        data_bytes_size = len(data)
+        if data_bytes_size < metadata.data_size and not force_upload:
+            # Let's be conservative.
+            # TODO: Here perhaps prompt user in the future
+            log.debug(
+                f'upload to server stopped -- remote db({metadata.data_size}) '
+                f'bigger than local({data_bytes_size})',
+            )
+            return False, 'Remote database contains more data than the local one'
 
-            log.debug('upload to server -- success')
+        try:
+            self.premium.upload_data(
+                data_blob=data,
+                our_hash=our_hash,
+                last_modify_ts=our_last_write_ts,
+                compression_type='zlib',
+            )
+        except (RemoteError, PremiumAuthenticationError) as e:
+            log.debug('upload to server -- upload error', error=str(e))
+            return False, str(e)
+
+        # update the last data upload value
+        self.last_data_upload_ts = ts_now()
+        with self.data.db.user_write() as cursor:
+            self.data.db.set_setting(cursor, name='last_data_upload_ts', value=self.last_data_upload_ts)  # noqa: E501
+
+        log.debug('upload to server -- success')
         return True, None
 
     def sync_data(
