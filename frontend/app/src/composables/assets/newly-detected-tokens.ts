@@ -19,10 +19,10 @@ export const useNewlyDetectedTokens = createSharedComposable(() => {
   const ignoredAssetStore = useIgnoredAssetsStore();
   const { addIgnoredAsset } = ignoredAssetStore;
 
-  const addNewDetectedToken = (data: NewDetectedToken) => {
+  const addNewDetectedToken = (data: NewDetectedToken): boolean => {
     if (data.isIgnored) {
       addIgnoredAsset(data.tokenIdentifier);
-      return;
+      return false;
     }
 
     const tokenList = [...get(internalTokens)];
@@ -36,6 +36,7 @@ export const useNewlyDetectedTokens = createSharedComposable(() => {
       tokenList.splice(tokenIndex, 1, data);
     }
     set(internalTokens, tokenList.slice(-MAX_SIZE));
+    return tokenIndex === -1;
   };
 
   const removeNewDetectedTokens = (tokensToRemove: string[]) => {
