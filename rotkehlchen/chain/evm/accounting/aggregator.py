@@ -1,7 +1,6 @@
 import importlib
 import logging
 import pkgutil
-from contextlib import suppress
 from types import ModuleType
 from typing import TYPE_CHECKING, Union
 
@@ -55,8 +54,10 @@ class EVMAccountingAggregator:
 
             if is_pkg:
                 submodule = None
-                with suppress(ModuleNotFoundError):
+                try:
                     submodule = importlib.import_module(full_name + '.accountant')
+                except ModuleNotFoundError as e:
+                    log.warning(f'Did not find an accountant for module {full_name}. {e}')
 
                 if submodule is not None:
                     class_name = full_name[MODULES_PREFIX_LENGTH:].translate({ord('.'): None})
