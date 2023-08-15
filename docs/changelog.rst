@@ -23,6 +23,7 @@ Changelog
 * :feature:`-` Arbitrum One support has been added. Balances will be shown, transactions pulled and decoded and taken into account in the PnL report.
 * :feature:`-` The balances snapshot csv file exported from rotki now contains an asset symbol column.
 * :bug:`-` Remote errors should no longer affect the ethereum staking deposits decoded event view.
+* :bug:`-` Newer deposits to zksync lite should be decoded properly in the history events view.
 
 * :release:`1.29.1 <2023-07-27>`
 * :bug:`-` Fix a bug where some images indicating the location of the assets are not loaded.

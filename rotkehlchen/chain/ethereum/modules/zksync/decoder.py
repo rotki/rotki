@@ -9,26 +9,34 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails, EventCategory
-from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.types import ChecksumEvmAddress, DecoderEventMappingType
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
-from .constants import CPT_ZKSYNC
+from .constants import CPT_ZKSYNC, ZKSYNC_BRIDGE
 
-DEPOSIT = b'\xb6\x86k\x02\x9f:\xa2\x9c\xd9\xe2\xbf\xf8\x15\x9a\x8c\xca\xa48\x9fz\x08|q\th\xe0\xb2\x00\xc0\xc7;\x08'  # noqa: E501
-
-ZKSYNC_BRIDGE = string_to_evm_address('0xaBEA9132b05A70803a4E85094fD0e1800777fBEF')
+ONCHAIN_DEPOSIT = b'\xb6\x86k\x02\x9f:\xa2\x9c\xd9\xe2\xbf\xf8\x15\x9a\x8c\xca\xa48\x9fz\x08|q\th\xe0\xb2\x00\xc0\xc7;\x08'  # noqa: E501
+DEPOSIT = b'\x8f_QD\x83\x94i\x9a\xd6\xa3\xb8\x0c\xda\xdfN\xc6\x8c]rL\x8c?\xea\t\xbe\xa5[<-\x0e-\xd0'  # noqa: E501
+NEW_PRIORITY_REQUEST = b'\xd0\x943r\xc0\x8bC\x8a\x88\xd4\xb3\x9dw!i\x01\x07\x9e\xda\x9c\xa5\x9dE4\x98A\xc0\x99\x08;h0'  # noqa: E501
 
 
 class ZksyncDecoder(DecoderInterface):
 
     def _decode_event(self, context: DecoderContext) -> DecodingOutput:
-        if context.tx_log.topics[0] == DEPOSIT:
-            return self._decode_deposit(context)
+        if context.tx_log.topics[0] == ONCHAIN_DEPOSIT:
+            user_address = hex_or_bytes_to_address(context.tx_log.topics[1])
+            return self._decode_deposit(context, user_address)
+        elif context.tx_log.topics[0] == DEPOSIT:
+            for tx_log in context.all_logs:  # iterate
+                if tx_log.topics[0] == NEW_PRIORITY_REQUEST:
+                    op_type = hex_or_bytes_to_int(tx_log.data[64:96])
+                    if op_type != 1:
+                        continue  # 1 is deposit and this is what we are searching for
+                    user_address = hex_or_bytes_to_address(tx_log.data[0:32])
+                    return self._decode_deposit(context, user_address)
 
         return DEFAULT_DECODING_OUTPUT
 
-    def _decode_deposit(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_deposit(self, context: DecoderContext, user_address: ChecksumEvmAddress) -> DecodingOutput:  # noqa: E501
         """Match a zksync deposit with the transfer to decode it
 
         TODO: This is now quite bad. We don't use the token id of zksync as we should.
@@ -37,7 +45,6 @@ class ZksyncDecoder(DecoderInterface):
         https://github.com/rotki/rotki/pull/3985/files
         to get the ids of tokens and then match them to what is deposited.
         """
-        user_address = hex_or_bytes_to_address(context.tx_log.topics[1])
         amount_raw = hex_or_bytes_to_int(context.tx_log.data)
 
         for event in context.decoded_events:
