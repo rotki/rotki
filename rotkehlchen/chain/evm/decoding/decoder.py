@@ -251,8 +251,10 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
                 continue  # skip
 
             submodule = None
-            with suppress(ModuleNotFoundError):
+            try:
                 submodule = importlib.import_module(full_name + '.decoder')
+            except ModuleNotFoundError as e:
+                log.warning(f'Did not find a decoder for module {full_name}. {e}')
 
             if submodule is not None:
                 # take module name, transform it and find decoder if exists
