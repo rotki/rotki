@@ -101,8 +101,8 @@ const panel: Ref<number[]> = ref(get(ignoredInAccounting) ? [] : [0]);
 
 const isNoTxHash = (item: HistoryEventEntry) =>
   item.entryType === HistoryEventEntryType.EVM_EVENT &&
-  item.counterparty === 'eth2' &&
-  item.eventSubtype === 'deposit asset';
+  ((item.counterparty === 'eth2' && item.eventSubtype === 'deposit asset') ||
+    item.counterparty === 'safe-multisig');
 
 const options: TablePagination<HistoryEventEntry> = {
   itemsPerPage: -1,
