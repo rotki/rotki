@@ -180,7 +180,6 @@ class DBSnapshot:
                 currency_and_price=(main_currency, main_currency_price),
                 display_date_in_localtime=display_date_in_localtime,
             )
-            serialized_timed_balance['asset_symbol'] = balance.asset.symbol_or_name()
             serialized_timed_balances.append(serialized_timed_balance)
 
         serialized_timed_balances_for_import = [balance.serialize() for balance in timed_balances]
