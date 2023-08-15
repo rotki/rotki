@@ -76,12 +76,20 @@ export const useIgnoredAssetsStore = defineStore('assets/ignored', () => {
       return get(ignoredAssets).includes(selectedAsset);
     });
 
+  const addIgnoredAsset = (asset: string) => {
+    const ignored = get(ignoredAssets);
+    if (!ignored.includes(asset)) {
+      set(ignoredAssets, [...ignored, asset]);
+    }
+  };
+
   return {
     ignoredAssets,
     fetchIgnoredAssets,
     ignoreAsset,
     unignoreAsset,
-    isAssetIgnored
+    isAssetIgnored,
+    addIgnoredAsset
   };
 });
 
