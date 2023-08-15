@@ -1,6 +1,6 @@
 import logging
 from enum import auto
-from typing import TYPE_CHECKING, Literal, NamedTuple, Optional
+from typing import TYPE_CHECKING, Any, Literal, NamedTuple, Optional
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset, AssetWithOracles, EvmToken, UnderlyingToken
@@ -246,12 +246,14 @@ def get_or_create_evm_token(
                 GlobalDBHandler().edit_evm_token(evm_token)
             else:
                 # inform frontend new token detected
-                data = {'token_identifier': identifier}
+                data: dict[str, Any] = {'token_identifier': identifier}
                 if seen is not None:
                     if seen.tx_hash is not None:
                         data['seen_tx_hash'] = seen.tx_hash.hex()
                     else:  # description should have been given
-                        data['seen_description'] = seen.description  # type: ignore
+                        data['seen_description'] = seen.description
+                if is_spam_token:
+                    data['is_ignored'] = True
                 userdb.msg_aggregator.add_message(
                     message_type=WSMessageType.NEW_EVM_TOKEN_DETECTED,
                     data=data,
