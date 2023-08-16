@@ -5,27 +5,27 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
-    from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
+    from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.user_messages import MessagesAggregator
 
 
-class GitcoinDecoder(GitcoinV2CommonDecoder):
-    """This is the gitcoin v2 (allo protocol) decoder for Optimism
+class Gitcoinv2Decoder(GitcoinV2CommonDecoder):
+    """This is the gitcoin v2 (allo protocol) decoder for Ethereum
 
     No gitcoin v1 in optimism since v1 was only on mainnet and zksync lite (maybe polygon too?)
     """
 
     def __init__(  # pylint: disable=super-init-not-called
             self,
-            optimism_inquirer: 'OptimismInquirer',
+            evm_inquirer: 'EvmNodeInquirer',
             base_tools: 'BaseDecoderTools',
             msg_aggregator: 'MessagesAggregator',
     ) -> None:
         super().__init__(
-            evm_inquirer=optimism_inquirer,
+            evm_inquirer=evm_inquirer,
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
             round_impl_addresses=[
-                string_to_evm_address('0x99906Ea77C139000681254966b397a98E4bFdE21'),
+                string_to_evm_address('0xDA2F26B30e8f5aa9cbE9c5B7Ed58E1cA81D0EbF2'),
             ],
         )
