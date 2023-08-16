@@ -185,6 +185,10 @@ EVENT_CATEGORY_DETAILS = {
     ),
     EventCategory.CREATE_PROJECT: EventCategoryDetails(
         label='new project',
+        icon='mdi-clipboard-check-outline',
+    ),
+    EventCategory.UPDATE_PROJECT: EventCategoryDetails(
+        label='update project',
         icon='mdi-clipboard-plus-outline',
     ),
     EventCategory.APPLY: EventCategoryDetails(

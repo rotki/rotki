@@ -176,6 +176,19 @@ def test_optimism_create_project(database, optimism_inquirer, optimism_accounts)
         notes=f'Create gitcoin project with id 779 and owner {user_address}',
         counterparty=CPT_GITCOIN,
         address='0x8e1bD5Da87C14dd8e08F7ecc2aBf9D1d558ea174',
+    ), EvmEvent(
+        tx_hash=evmhash,
+        sequence_index=66,
+        timestamp=timestamp,
+        location=Location.OPTIMISM,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.UPDATE,
+        asset=A_ETH,
+        balance=Balance(),
+        location_label=user_address,
+        notes='Update gitcoin project with id 779',
+        counterparty=CPT_GITCOIN,
+        address='0x8e1bD5Da87C14dd8e08F7ecc2aBf9D1d558ea174',
     )]
     assert events == expected_events
 
@@ -218,5 +231,47 @@ def test_ethereum_project_apply(database, ethereum_inquirer, ethereum_accounts):
         notes='Apply to gitcoin round with project application id 0x755e5c4d042c1245555075b699e774c2ed0f0f1499460201fc936a0595e91683',  # noqa: E501
         counterparty=CPT_GITCOIN,
         address='0xe575282b376E3c9886779A841A2510F1Dd8C2CE4',
+    )]
+    assert events == expected_events
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('ethereum_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
+def test_ethereum_project_update(database, ethereum_inquirer, ethereum_accounts):
+    tx_hex = deserialize_evm_tx_hash('0xfe00fa198eb5395e1d809e017c6b416e882b0aef16e82bf00cd60ce5576bb122')  # noqa: E501
+    evmhash = deserialize_evm_tx_hash(tx_hex)
+    user_address = ethereum_accounts[0]
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hex,
+    )
+    timestamp = TimestampMS(1681330523000)
+    gas_str = '0.001464795019471285'
+    expected_events = [EvmEvent(
+        tx_hash=evmhash,
+        sequence_index=0,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        balance=Balance(amount=FVal(gas_str)),
+        location_label=user_address,
+        notes=f'Burned {gas_str} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_hash=evmhash,
+        sequence_index=192,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.UPDATE,
+        asset=A_ETH,
+        balance=Balance(),
+        location_label=user_address,
+        notes='Update gitcoin project with id 128',
+        counterparty=CPT_GITCOIN,
+        address='0x03506eD3f57892C85DB20C36846e9c808aFe9ef4',
     )]
     assert events == expected_events

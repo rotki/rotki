@@ -25,6 +25,7 @@ Changelog
 * :bug:`-` Remote errors should no longer affect the ethereum staking deposits decoded event view.
 * :bug:`-` Newer deposits to zksync lite should be decoded properly in the history events view.
 * :bug:`5038` The rare error some premium users got: "Plaintext DB is locked" should no longer happen.
+* :feature:`-` All gitcoin v2 related events are now properly decoded across supported EVM chains.
 
 
 * :release:`1.29.1 <2023-07-27>`
