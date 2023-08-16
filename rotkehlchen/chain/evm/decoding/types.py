@@ -49,4 +49,5 @@ class EventCategory(SerializableEnumNameMixin):
     MEV_REWARD = auto()
     CREATE_BLOCK = auto()
     CREATE_PROJECT = auto()
+    UPDATE_PROJECT = auto()
     APPLY = auto()

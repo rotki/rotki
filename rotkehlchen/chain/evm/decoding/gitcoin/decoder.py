@@ -35,7 +35,7 @@ log = RotkehlchenLogsAdapter(logger)
 VOTED = b'\x00d\xca\xa7?\x1dY\xb6\x9a\xdb\xebeeK\x0f\tSYy\x94\xe4$\x1e\xe2F\x0bV\x0b\x8de\xaa\xa2'  # noqa: E501 # example: https://etherscan.io/tx/0x71fc406467f342f5801560a326aa29ac424381daf17cc04b5573960425ba605b#eventlog
 VOTED_WITH_ORIGIN = b'\xbf5\xc00\x17\x8a\x1eg\x8c\x82\x96\xa4\xe5\x08>\x90!\xa2L\x1a\x1d\xef\xa5\xbf\xbd\xfd\xe7K\xce\xcf\xa3v'  # noqa: E501 # example: https://optimistic.etherscan.io/tx/0x08685669305ee26060a5a78ae70065aec76d9e62a35f0837c291fb1232f33601#eventlog
 PROJECT_CREATED = b'c\xc9/\x95\x05\xd4 \xbf\xf61\xcb\x9d\xf3;\xe9R\xbd\xc1\x1e!\x18\xda6\xa8P\xb4>k\xccL\xe4\xde'  # noqa: E501
-
+METADATA_UPDATED = b'\xf9,&9\xc2]j"\xc3\x8emk)?t\xa9\xb2$\x91\';\x1d\xbbg\xfc\x12U"&\x96\xbe['
 NEW_PROJECT_APPLICATION_3ARGS = b'\xcay&"\x04c%\xe9\xcdN$\xb4\x90\xcb\x00\x0e\xf7*\xce\xa3\xa1R\x84\xef\xc1N\xe7\t0z^\x00'  # noqa: E501
 NEW_PROJECT_APPLICATION_2ARGS = b'\xecy?\xe7\x04\xd3@\xd9b\xcd\x02\xd8\x1a\xd5@E\xe7\xce\xeaq:\xcaN1\xc7\xc5\xc4>=\xcb\x19*'  # noqa: E501
 
@@ -147,7 +147,7 @@ class GitcoinV2CommonDecoder(DecoderInterface, metaclass=ABCMeta):
                 if event.event_type == HistoryEventType.RECEIVE and event.event_subtype == HistoryEventSubType.NONE and event.asset == asset and event.balance.amount == amount:  # noqa: E501
                     event.event_subtype = HistoryEventSubType.DONATE
                     event.counterparty = CPT_GITCOIN
-                    event.notes = f'Receivea gitcoin donation of {amount} {asset.symbol} from {donator}'  # noqa: E501
+                    event.notes = f'Receive a gitcoin donation of {amount} {asset.symbol} from {donator}'  # noqa: E501
                     break
             else:
                 log.error(
@@ -157,25 +157,40 @@ class GitcoinV2CommonDecoder(DecoderInterface, metaclass=ABCMeta):
 
         return DEFAULT_DECODING_OUTPUT
 
-    def _decode_project_creation(self, context: DecoderContext) -> DecodingOutput:
-        if context.tx_log.topics[0] != PROJECT_CREATED:
-            return DEFAULT_DECODING_OUTPUT
+    def _decode_project_action(self, context: DecoderContext) -> DecodingOutput:
+        if context.tx_log.topics[0] == PROJECT_CREATED:
+            project_id = hex_or_bytes_to_int(context.tx_log.topics[1])
+            owner = hex_or_bytes_to_address(context.tx_log.topics[2])
+            event = self.base.make_event_from_transaction(
+                transaction=context.transaction,
+                tx_log=context.tx_log,
+                event_type=HistoryEventType.INFORMATIONAL,
+                event_subtype=HistoryEventSubType.DEPLOY,
+                asset=A_ETH,
+                balance=Balance(),
+                location_label=context.transaction.from_address,
+                notes=f'Create gitcoin project with id {project_id} and owner {owner}',
+                counterparty=CPT_GITCOIN,
+                address=context.tx_log.address,
+            )
+            return DecodingOutput(event=event)
+        elif context.tx_log.topics[0] == METADATA_UPDATED:
+            project_id = hex_or_bytes_to_int(context.tx_log.topics[1])
+            event = self.base.make_event_from_transaction(
+                transaction=context.transaction,
+                tx_log=context.tx_log,
+                event_type=HistoryEventType.INFORMATIONAL,
+                event_subtype=HistoryEventSubType.UPDATE,
+                asset=A_ETH,
+                balance=Balance(),
+                location_label=context.transaction.from_address,
+                notes=f'Update gitcoin project with id {project_id}',
+                counterparty=CPT_GITCOIN,
+                address=context.tx_log.address,
+            )
+            return DecodingOutput(event=event)
 
-        project_id = hex_or_bytes_to_int(context.tx_log.topics[1])
-        owner = hex_or_bytes_to_address(context.tx_log.topics[2])
-        event = self.base.make_event_from_transaction(
-            transaction=context.transaction,
-            tx_log=context.tx_log,
-            event_type=HistoryEventType.INFORMATIONAL,
-            event_subtype=HistoryEventSubType.DEPLOY,
-            asset=A_ETH,
-            balance=Balance(),
-            location_label=context.transaction.from_address,
-            notes=f'Create gitcoin project with id {project_id} and owner {owner}',
-            counterparty=CPT_GITCOIN,
-            address=context.tx_log.address,
-        )
-        return DecodingOutput(event=event)
+        return DEFAULT_DECODING_OUTPUT
 
     def _decode_round_action(self, context: DecoderContext) -> DecodingOutput:
         if context.tx_log.topics[0] not in (NEW_PROJECT_APPLICATION_2ARGS, NEW_PROJECT_APPLICATION_3ARGS):  # noqa: E501
@@ -211,6 +226,7 @@ class GitcoinV2CommonDecoder(DecoderInterface, metaclass=ABCMeta):
             },
             HistoryEventType.INFORMATIONAL: {
                 HistoryEventSubType.DEPLOY: EventCategory.CREATE_PROJECT,
+                HistoryEventSubType.UPDATE: EventCategory.UPDATE_PROJECT,
                 HistoryEventSubType.APPLY: EventCategory.APPLY,
             },
         }}
@@ -222,7 +238,7 @@ class GitcoinV2CommonDecoder(DecoderInterface, metaclass=ABCMeta):
         mappings |= {
             address: (self._decode_round_action,) for address in self.round_impl_addresses
         }
-        mappings[self.project_registry] = (self._decode_project_creation,)
+        mappings[self.project_registry] = (self._decode_project_action,)
         return mappings
 
     def counterparties(self) -> list[CounterpartyDetails]:
