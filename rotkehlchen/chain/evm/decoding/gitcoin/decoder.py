@@ -30,6 +30,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 VOTED = b'\x00d\xca\xa7?\x1dY\xb6\x9a\xdb\xebeeK\x0f\tSYy\x94\xe4$\x1e\xe2F\x0bV\x0b\x8de\xaa\xa2'  # noqa: E501 # example: https://etherscan.io/tx/0x71fc406467f342f5801560a326aa29ac424381daf17cc04b5573960425ba605b#eventlog
 VOTED_WITH_ORIGIN = b'\xbf5\xc00\x17\x8a\x1eg\x8c\x82\x96\xa4\xe5\x08>\x90!\xa2L\x1a\x1d\xef\xa5\xbf\xbd\xfd\xe7K\xce\xcf\xa3v'  # noqa: E501 # example: https://optimistic.etherscan.io/tx/0x08685669305ee26060a5a78ae70065aec76d9e62a35f0837c291fb1232f33601#eventlog
+PROJECT_CREATED = b'c\xc9/\x95\x05\xd4 \xbf\xf61\xcb\x9d\xf3;\xe9R\xbd\xc1\x1e!\x18\xda6\xa8P\xb4>k\xccL\xe4\xde'  # noqa: E501
 
 
 class GitcoinV2CommonDecoder(DecoderInterface, metaclass=ABCMeta):
@@ -46,6 +47,7 @@ class GitcoinV2CommonDecoder(DecoderInterface, metaclass=ABCMeta):
             evm_inquirer: 'EvmNodeInquirer',
             base_tools: 'BaseDecoderTools',
             msg_aggregator: 'MessagesAggregator',
+            project_registry: ChecksumEvmAddress,
             round_impl_addresses: list['ChecksumEvmAddress'],
     ) -> None:
         super().__init__(
@@ -53,6 +55,7 @@ class GitcoinV2CommonDecoder(DecoderInterface, metaclass=ABCMeta):
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
         )
+        self.project_registry = project_registry
         self.round_impl_addresses = round_impl_addresses
         self.eth = A_ETH.resolve_to_crypto_asset()
 
@@ -145,6 +148,26 @@ class GitcoinV2CommonDecoder(DecoderInterface, metaclass=ABCMeta):
 
         return DEFAULT_DECODING_OUTPUT
 
+    def _decode_project_creation(self, context: DecoderContext) -> DecodingOutput:
+        if context.tx_log.topics[0] != PROJECT_CREATED:
+            return DEFAULT_DECODING_OUTPUT
+
+        project_id = hex_or_bytes_to_int(context.tx_log.topics[1])
+        owner = hex_or_bytes_to_address(context.tx_log.topics[2])
+        event = self.base.make_event_from_transaction(
+            transaction=context.transaction,
+            tx_log=context.tx_log,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.DEPLOY,
+            asset=A_ETH,
+            balance=Balance(),
+            location_label=context.transaction.from_address,
+            notes=f'Create gitcoin project with id {project_id} and owner {owner}',
+            counterparty=CPT_GITCOIN,
+            address=context.tx_log.address,
+        )
+        return DecodingOutput(event=event)
+
     # -- DecoderInterface methods
 
     def possible_events(self) -> DecoderEventMappingType:
@@ -158,12 +181,17 @@ class GitcoinV2CommonDecoder(DecoderInterface, metaclass=ABCMeta):
             HistoryEventType.TRANSFER: {
                 HistoryEventSubType.DONATE: EventCategory.DONATE,
             },
+            HistoryEventType.INFORMATIONAL: {
+                HistoryEventSubType.DEPLOY: EventCategory.CREATE_PROJECT,
+            },
         }}
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
-        return {
+        mappings: dict[ChecksumEvmAddress, tuple[Any, ...]] = {
             address: (self._decode_action,) for address in self.round_impl_addresses
         }
+        mappings[self.project_registry] = (self._decode_project_creation,)
+        return mappings
 
     def counterparties(self) -> list[CounterpartyDetails]:
         return [GITCOIN_CPT_DETAILS]

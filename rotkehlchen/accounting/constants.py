@@ -183,6 +183,10 @@ EVENT_CATEGORY_DETAILS = {
         label='new block',
         icon='mdi-cube-outline',
     ),
+    EventCategory.CREATE_PROJECT: EventCategoryDetails(
+        label='new project',
+        icon='mdi-folder-plus',
+    ),
 }
 
 ACCOUNTING_EVENTS_ICONS = {
