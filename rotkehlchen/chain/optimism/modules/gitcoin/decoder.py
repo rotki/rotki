@@ -27,6 +27,9 @@ class GitcoinDecoder(GitcoinV2CommonDecoder):
             msg_aggregator=msg_aggregator,
             project_registry=string_to_evm_address('0x8e1bD5Da87C14dd8e08F7ecc2aBf9D1d558ea174'),
             round_impl_addresses=[
+                string_to_evm_address('0x8de918F0163b2021839A8D84954dD7E8e151326D'),
+            ],
+            voting_impl_addresses=[
                 string_to_evm_address('0x99906Ea77C139000681254966b397a98E4bFdE21'),
             ],
         )

@@ -178,3 +178,45 @@ def test_optimism_create_project(database, optimism_inquirer, optimism_accounts)
         address='0x8e1bD5Da87C14dd8e08F7ecc2aBf9D1d558ea174',
     )]
     assert events == expected_events
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('ethereum_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
+def test_ethereum_project_apply(database, ethereum_inquirer, ethereum_accounts):
+    tx_hex = deserialize_evm_tx_hash('0x3e4639d97be450c6d32ce77a146898780b75781caaf004d3c40bae083dec07c7')  # noqa: E501
+    evmhash = deserialize_evm_tx_hash(tx_hex)
+    user_address = ethereum_accounts[0]
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hex,
+    )
+    timestamp = TimestampMS(1673472803000)
+    gas_str = '0.000645250895735256'
+    expected_events = [EvmEvent(
+        tx_hash=evmhash,
+        sequence_index=0,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        balance=Balance(amount=FVal(gas_str)),
+        location_label=user_address,
+        notes=f'Burned {gas_str} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_hash=evmhash,
+        sequence_index=413,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.APPLY,
+        asset=A_ETH,
+        balance=Balance(),
+        location_label=user_address,
+        notes='Apply to gitcoin round with project application id 0x755e5c4d042c1245555075b699e774c2ed0f0f1499460201fc936a0595e91683',  # noqa: E501
+        counterparty=CPT_GITCOIN,
+        address='0xe575282b376E3c9886779A841A2510F1Dd8C2CE4',
+    )]
+    assert events == expected_events
