@@ -60,6 +60,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: 'EthereumTransact
         'Ens',
         'Eth2',
         'Gitcoin',
+        'Gitcoinv2',
         'Kyber',
         'Liquity',
         'Lockedgno',

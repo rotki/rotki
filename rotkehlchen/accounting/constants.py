@@ -185,7 +185,11 @@ EVENT_CATEGORY_DETAILS = {
     ),
     EventCategory.CREATE_PROJECT: EventCategoryDetails(
         label='new project',
-        icon='mdi-folder-plus',
+        icon='mdi-clipboard-plus-outline',
+    ),
+    EventCategory.APPLY: EventCategoryDetails(
+        label='apply',
+        icon='mdi-application-export',
     ),
 }
 

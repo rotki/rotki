@@ -17,7 +17,11 @@ from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails, EventCateg
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, DecoderEventMappingType
-from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import (
+    hex_or_bytes_to_address,
+    hex_or_bytes_to_int,
+    hex_or_bytes_to_str,
+)
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
@@ -31,6 +35,9 @@ log = RotkehlchenLogsAdapter(logger)
 VOTED = b'\x00d\xca\xa7?\x1dY\xb6\x9a\xdb\xebeeK\x0f\tSYy\x94\xe4$\x1e\xe2F\x0bV\x0b\x8de\xaa\xa2'  # noqa: E501 # example: https://etherscan.io/tx/0x71fc406467f342f5801560a326aa29ac424381daf17cc04b5573960425ba605b#eventlog
 VOTED_WITH_ORIGIN = b'\xbf5\xc00\x17\x8a\x1eg\x8c\x82\x96\xa4\xe5\x08>\x90!\xa2L\x1a\x1d\xef\xa5\xbf\xbd\xfd\xe7K\xce\xcf\xa3v'  # noqa: E501 # example: https://optimistic.etherscan.io/tx/0x08685669305ee26060a5a78ae70065aec76d9e62a35f0837c291fb1232f33601#eventlog
 PROJECT_CREATED = b'c\xc9/\x95\x05\xd4 \xbf\xf61\xcb\x9d\xf3;\xe9R\xbd\xc1\x1e!\x18\xda6\xa8P\xb4>k\xccL\xe4\xde'  # noqa: E501
+
+NEW_PROJECT_APPLICATION_3ARGS = b'\xcay&"\x04c%\xe9\xcdN$\xb4\x90\xcb\x00\x0e\xf7*\xce\xa3\xa1R\x84\xef\xc1N\xe7\t0z^\x00'  # noqa: E501
+NEW_PROJECT_APPLICATION_2ARGS = b'\xecy?\xe7\x04\xd3@\xd9b\xcd\x02\xd8\x1a\xd5@E\xe7\xce\xeaq:\xcaN1\xc7\xc5\xc4>=\xcb\x19*'  # noqa: E501
 
 
 class GitcoinV2CommonDecoder(DecoderInterface, metaclass=ABCMeta):
@@ -48,6 +55,7 @@ class GitcoinV2CommonDecoder(DecoderInterface, metaclass=ABCMeta):
             base_tools: 'BaseDecoderTools',
             msg_aggregator: 'MessagesAggregator',
             project_registry: ChecksumEvmAddress,
+            voting_impl_addresses: list['ChecksumEvmAddress'],
             round_impl_addresses: list['ChecksumEvmAddress'],
     ) -> None:
         super().__init__(
@@ -57,9 +65,10 @@ class GitcoinV2CommonDecoder(DecoderInterface, metaclass=ABCMeta):
         )
         self.project_registry = project_registry
         self.round_impl_addresses = round_impl_addresses
+        self.voting_impl_addresses = voting_impl_addresses
         self.eth = A_ETH.resolve_to_crypto_asset()
 
-    def _decode_action(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_vote_action(self, context: DecoderContext) -> DecodingOutput:
         if context.tx_log.topics[0] == VOTED_WITH_ORIGIN:
             donator = hex_or_bytes_to_address(context.tx_log.data[64:96])
             return self._decode_voted(context, donator, receiver_start_idx=96)
@@ -168,6 +177,25 @@ class GitcoinV2CommonDecoder(DecoderInterface, metaclass=ABCMeta):
         )
         return DecodingOutput(event=event)
 
+    def _decode_round_action(self, context: DecoderContext) -> DecodingOutput:
+        if context.tx_log.topics[0] not in (NEW_PROJECT_APPLICATION_2ARGS, NEW_PROJECT_APPLICATION_3ARGS):  # noqa: E501
+            return DEFAULT_DECODING_OUTPUT
+
+        application_id = hex_or_bytes_to_str(context.tx_log.topics[1])
+        event = self.base.make_event_from_transaction(
+            transaction=context.transaction,
+            tx_log=context.tx_log,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPLY,
+            asset=A_ETH,
+            balance=Balance(),
+            location_label=context.transaction.from_address,
+            notes=f'Apply to gitcoin round with project application id 0x{application_id}',
+            counterparty=CPT_GITCOIN,
+            address=context.tx_log.address,
+        )
+        return DecodingOutput(event=event)
+
     # -- DecoderInterface methods
 
     def possible_events(self) -> DecoderEventMappingType:
@@ -183,12 +211,16 @@ class GitcoinV2CommonDecoder(DecoderInterface, metaclass=ABCMeta):
             },
             HistoryEventType.INFORMATIONAL: {
                 HistoryEventSubType.DEPLOY: EventCategory.CREATE_PROJECT,
+                HistoryEventSubType.APPLY: EventCategory.APPLY,
             },
         }}
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         mappings: dict[ChecksumEvmAddress, tuple[Any, ...]] = {
-            address: (self._decode_action,) for address in self.round_impl_addresses
+            address: (self._decode_vote_action,) for address in self.voting_impl_addresses
+        }
+        mappings |= {
+            address: (self._decode_round_action,) for address in self.round_impl_addresses
         }
         mappings[self.project_registry] = (self._decode_project_creation,)
         return mappings
