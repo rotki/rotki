@@ -7,6 +7,9 @@ const createStorage = (username: string): Ref<NewDetectedToken[]> =>
 
 export const useNewlyDetectedTokens = createSharedComposable(() => {
   let internalTokens: Ref<NewDetectedToken[]> = ref([]);
+  const ignoredAssetStore = useIgnoredAssetsStore();
+  const { ignoredAssets } = storeToRefs(ignoredAssetStore);
+  const { addIgnoredAsset } = ignoredAssetStore;
 
   const initTokens = (username: string): void => {
     internalTokens = createStorage(username);
@@ -15,9 +18,6 @@ export const useNewlyDetectedTokens = createSharedComposable(() => {
   const clearInternalTokens = () => {
     set(internalTokens, []);
   };
-
-  const ignoredAssetStore = useIgnoredAssetsStore();
-  const { addIgnoredAsset } = ignoredAssetStore;
 
   const addNewDetectedToken = (data: NewDetectedToken): boolean => {
     if (data.isIgnored) {
@@ -50,6 +50,11 @@ export const useNewlyDetectedTokens = createSharedComposable(() => {
   const tokens: ComputedRef<NewDetectedToken[]> = computed(() =>
     get(internalTokens)
   );
+
+  watch(ignoredAssets, (value, oldValue) => {
+    const ignoredItems = value.filter(x => !oldValue.includes(x));
+    removeNewDetectedTokens(ignoredItems);
+  });
 
   return {
     tokens,
