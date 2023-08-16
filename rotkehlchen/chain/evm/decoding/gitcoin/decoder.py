@@ -26,7 +26,9 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
-VOTED = b'\xbf5\xc00\x17\x8a\x1eg\x8c\x82\x96\xa4\xe5\x08>\x90!\xa2L\x1a\x1d\xef\xa5\xbf\xbd\xfd\xe7K\xce\xcf\xa3v'  # noqa: E501
+
+VOTED = b'\x00d\xca\xa7?\x1dY\xb6\x9a\xdb\xebeeK\x0f\tSYy\x94\xe4$\x1e\xe2F\x0bV\x0b\x8de\xaa\xa2'  # noqa: E501 # example: https://etherscan.io/tx/0x71fc406467f342f5801560a326aa29ac424381daf17cc04b5573960425ba605b#eventlog
+VOTED_WITH_ORIGIN = b'\xbf5\xc00\x17\x8a\x1eg\x8c\x82\x96\xa4\xe5\x08>\x90!\xa2L\x1a\x1d\xef\xa5\xbf\xbd\xfd\xe7K\xce\xcf\xa3v'  # noqa: E501 # example: https://optimistic.etherscan.io/tx/0x08685669305ee26060a5a78ae70065aec76d9e62a35f0837c291fb1232f33601#eventlog
 
 
 class GitcoinV2CommonDecoder(DecoderInterface, metaclass=ABCMeta):
@@ -54,14 +56,22 @@ class GitcoinV2CommonDecoder(DecoderInterface, metaclass=ABCMeta):
         self.eth = A_ETH.resolve_to_crypto_asset()
 
     def _decode_action(self, context: DecoderContext) -> DecodingOutput:
-        if context.tx_log.topics[0] == VOTED:
-            return self._decode_voted(context)
+        if context.tx_log.topics[0] == VOTED_WITH_ORIGIN:
+            donator = hex_or_bytes_to_address(context.tx_log.data[64:96])
+            return self._decode_voted(context, donator, receiver_start_idx=96)
+        elif context.tx_log.topics[0] == VOTED:
+            donator = hex_or_bytes_to_address(context.tx_log.topics[1])
+            return self._decode_voted(context, donator, receiver_start_idx=64)
 
         return DEFAULT_DECODING_OUTPUT
 
-    def _decode_voted(self, context: DecoderContext) -> DecodingOutput:
-        donator = hex_or_bytes_to_address(context.tx_log.data[64:96])
-        receiver = hex_or_bytes_to_address(context.tx_log.data[96:128])
+    def _decode_voted(
+            self,
+            context: DecoderContext,
+            donator: ChecksumEvmAddress,
+            receiver_start_idx: int,
+    ) -> DecodingOutput:
+        receiver = hex_or_bytes_to_address(context.tx_log.data[receiver_start_idx:receiver_start_idx + 32])
         donator_tracked = self.base.is_tracked(donator)
         receiver_tracked = self.base.is_tracked(receiver)
         if donator_tracked is False and receiver_tracked is False:
@@ -99,7 +109,7 @@ class GitcoinV2CommonDecoder(DecoderInterface, metaclass=ABCMeta):
                 break
         else:
             log.error(
-                f'Could not find a corresponding event for gitcoin {verb} '
+                f'Could not find a corresponding event for {verb} donation '
                 f'{preposition} {target} in transaction {context.transaction.tx_hash.hex()}',
             )
 
