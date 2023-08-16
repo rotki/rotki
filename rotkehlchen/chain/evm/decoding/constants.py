@@ -4,6 +4,7 @@ from rotkehlchen.chain.optimism.constants import CPT_OPTIMISM
 
 CPT_GAS = 'gas'
 CPT_HOP = 'hop-protocol'
+CPT_GITCOIN = 'gitcoin'
 
 OUTGOING_EVENT_TYPES = {
     HistoryEventType.SPEND,
@@ -26,4 +27,9 @@ OPTIMISM_CPT_DETAILS = CounterpartyDetails(
     identifier=CPT_OPTIMISM,
     label='Optimism',
     image='optimism.svg',
+)
+GITCOIN_CPT_DETAILS = CounterpartyDetails(
+    identifier=CPT_GITCOIN,
+    label='Gitcoin',
+    image='gitcoin.svg',
 )

@@ -3,8 +3,7 @@ import pytest
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.chain.ethereum.modules.gitcoin.constants import CPT_GITCOIN
-from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
+from rotkehlchen.chain.evm.decoding.constants import CPT_GAS, CPT_GITCOIN
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_SAI
 from rotkehlchen.constants.misc import ZERO

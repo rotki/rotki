@@ -2,6 +2,7 @@ import logging
 from typing import Callable
 
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.chain.evm.decoding.constants import CPT_GITCOIN, GITCOIN_CPT_DETAILS
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     FAILED_ENRICHMENT_OUTPUT,
@@ -11,9 +12,6 @@ from rotkehlchen.chain.evm.decoding.structures import (
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails, EventCategory
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import DecoderEventMappingType
-
-from .constants import CPT_GITCOIN
-
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -65,4 +63,4 @@ class GitcoinDecoder(DecoderInterface):
         ]
 
     def counterparties(self) -> list[CounterpartyDetails]:
-        return [CounterpartyDetails(identifier=CPT_GITCOIN, label='Gitcoin', image='gitcoin.svg')]
+        return [GITCOIN_CPT_DETAILS]

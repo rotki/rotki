@@ -1,1 +1,0 @@
-CPT_GITCOIN = 'gitcoin'
