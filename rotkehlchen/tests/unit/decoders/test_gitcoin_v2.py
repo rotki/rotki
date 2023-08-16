@@ -3,7 +3,7 @@ import pytest
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.chain.evm.decoding.constants import CPT_GITCOIN
+from rotkehlchen.chain.evm.decoding.constants import CPT_GAS, CPT_GITCOIN
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
@@ -70,3 +70,69 @@ def test_ethereum_donation_received(database, ethereum_inquirer, ethereum_accoun
     assert events == expected_events
 
 
+@pytest.mark.vcr()
+@pytest.mark.parametrize('ethereum_accounts', [[
+    '0x1B274eaCc333F4a904D72b576B55A108532aB379',
+    # also track a grantee to see we handle donating to self fine
+    '0xB352bB4E2A4f27683435f153A259f1B207218b1b',
+]])
+def test_ethereum_make_donation(database, ethereum_inquirer, ethereum_accounts):
+    tx_hex = deserialize_evm_tx_hash('0xd8d55b66f19a6dbf260d171fbb0c4c146f00c90919f1215cf691d7f0684771c6')  # noqa: E501
+    evmhash = deserialize_evm_tx_hash(tx_hex)
+    user_address = ethereum_accounts[0]
+    tracked_grant = ethereum_accounts[1]
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hex,
+    )
+    timestamp = TimestampMS(1683676595000)
+    amount_str = '0.0006'
+    gas_str = '0.011086829409239852'
+    expected_events = [EvmEvent(
+        tx_hash=evmhash,
+        sequence_index=0,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        balance=Balance(amount=FVal(gas_str)),
+        location_label=user_address,
+        notes=f'Burned {gas_str} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_hash=evmhash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.TRANSFER,
+        event_subtype=HistoryEventSubType.DONATE,
+        asset=A_ETH,
+        balance=Balance(amount=FVal(amount_str)),
+        location_label=user_address,
+        notes=f'Transfer a gitcoin donation of {amount_str} ETH to {tracked_grant}',
+        counterparty=CPT_GITCOIN,
+        address=tracked_grant,
+    )]
+
+    expected_events += [EvmEvent(
+        tx_hash=evmhash,
+        sequence_index=idx,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.DONATE,
+        asset=A_ETH,
+        balance=Balance(amount=FVal(amount_str)),
+        location_label=user_address,
+        notes=f'Make a gitcoin donation of {amount_str} ETH to {grant_address}',
+        counterparty=CPT_GITCOIN,
+        address=grant_address,
+    ) for idx, grant_address in [
+        (2, '0x713Bc00D1df5C452F172C317D39eFf71B771C163'),
+        (107, '0xDEcf6615152AC768BFB688c4eF882e35DeBE08ac'),
+        (109, '0x187089b65520D2208aB93FB471C4970c29eAf929'),
+        (111, '0xb7081Fd06E7039D198D10A8b72B824e60C1B1E16'),
+    ]]
+    assert events == expected_events

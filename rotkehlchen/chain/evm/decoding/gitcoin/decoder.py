@@ -2,6 +2,7 @@ import logging
 from abc import ABCMeta
 from typing import TYPE_CHECKING, Any
 
+from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
@@ -71,12 +72,13 @@ class GitcoinV2CommonDecoder(DecoderInterface, metaclass=ABCMeta):
             donator: ChecksumEvmAddress,
             receiver_start_idx: int,
     ) -> DecodingOutput:
-        receiver = hex_or_bytes_to_address(context.tx_log.data[receiver_start_idx:receiver_start_idx + 32])
+        receiver = hex_or_bytes_to_address(context.tx_log.data[receiver_start_idx:receiver_start_idx + 32])  # noqa: E501
         donator_tracked = self.base.is_tracked(donator)
         receiver_tracked = self.base.is_tracked(receiver)
         if donator_tracked is False and receiver_tracked is False:
             return DEFAULT_DECODING_OUTPUT
 
+        round_address = hex_or_bytes_to_address(context.tx_log.topics[3])
         token_address = hex_or_bytes_to_address(context.tx_log.data[:32])
         if token_address == ZERO_ADDRESS:
             asset = self.eth
@@ -85,33 +87,61 @@ class GitcoinV2CommonDecoder(DecoderInterface, metaclass=ABCMeta):
         amount_raw = hex_or_bytes_to_int(context.tx_log.data[32:64])
         amount = asset_normalized_value(amount_raw, asset)
 
-        if donator_tracked and receiver_tracked:  # donating to himself??
-            expected_type = HistoryEventType.TRANSFER
-            verb = 'Transfer'
-            preposition = 'to'
-            target = receiver
-        elif donator_tracked:
-            expected_type = HistoryEventType.SPEND
-            verb = 'Make'
-            preposition = 'to'
-            target = receiver
-        else:  # only receiver tracked
-            expected_type = HistoryEventType.RECEIVE
-            verb = 'Receive'
-            preposition = 'from'
-            target = donator
+        if donator_tracked:  # with or without receiver tracked we take this
+            if receiver_tracked:
+                new_type = HistoryEventType.TRANSFER
+                expected_type = HistoryEventType.RECEIVE
+                verb = 'Transfer'
+                expected_address = context.tx_log.address
+                expected_location_label = receiver
+            else:
+                new_type = HistoryEventType.SPEND
+                expected_type = HistoryEventType.SPEND
+                verb = 'Make'
+                expected_address = round_address
+                expected_location_label = donator
 
-        for event in context.decoded_events:
-            if event.event_type == expected_type and event.event_subtype == HistoryEventSubType.NONE and event.asset == A_ETH and event.balance.amount == amount:  # noqa: E501
-                event.event_subtype = HistoryEventSubType.DONATE
-                event.counterparty = CPT_GITCOIN
-                event.notes = f'{verb} a gitcoin donation of {amount} {asset.symbol} {preposition} {target}'  # noqa: E501
-                break
-        else:
-            log.error(
-                f'Could not find a corresponding event for {verb} donation '
-                f'{preposition} {target} in transaction {context.transaction.tx_hash.hex()}',
-            )
+            notes = f'{verb} a gitcoin donation of {amount} {asset.symbol} to {receiver}'
+            for event in context.decoded_events:
+                if event.event_type == expected_type and event.event_subtype == HistoryEventSubType.NONE and event.asset == asset and event.location_label == expected_location_label and event.address == expected_address:  # noqa: E501
+                    # this is either the internal transfer to the contract that
+                    # should laterreak up into the transfers, or the internal
+                    # transfer to the grant if both are tracked. Replace it
+                    event.event_type = new_type
+                    event.event_subtype = HistoryEventSubType.DONATE
+                    event.counterparty = CPT_GITCOIN
+                    event.notes = notes
+                    event.address = receiver
+                    event.balance = Balance(amount)
+                    event.location_label = donator
+                    break
+            else:  # no event found, so create a new one
+                event = self.base.make_event_from_transaction(
+                    transaction=context.transaction,
+                    tx_log=context.tx_log,
+                    event_type=new_type,
+                    event_subtype=HistoryEventSubType.DONATE,
+                    asset=asset,
+                    balance=Balance(amount),
+                    location_label=donator,
+                    notes=notes,
+                    counterparty=CPT_GITCOIN,
+                    address=receiver,
+                )
+                return DecodingOutput(event=event)
+
+        else:  # only receiver tracked
+            for event in context.decoded_events:
+                if event.event_type == HistoryEventType.RECEIVE and event.event_subtype == HistoryEventSubType.NONE and event.asset == asset and event.balance.amount == amount:  # noqa: E501
+                    event.event_subtype = HistoryEventSubType.DONATE
+                    event.counterparty = CPT_GITCOIN
+                    event.notes = f'Receivea gitcoin donation of {amount} {asset.symbol} from {donator}'  # noqa: E501
+                    break
+            else:
+                log.error(
+                    f'Could not find a corresponding event for donation to {receiver}'
+                    f' in transaction {context.transaction.tx_hash.hex()}',
+                )
 
         return DEFAULT_DECODING_OUTPUT
 
