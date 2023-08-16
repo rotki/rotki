@@ -20,12 +20,15 @@ export const useAccountManagement = () => {
   const { clearUpgradeMessages } = authStore;
   const { setupCache } = useAccountMigrationStore();
   const { initTokens } = useNewlyDetectedTokens();
+  const { isDevelop } = storeToRefs(useMainStore());
 
   const createNewAccount = async (payload: CreateAccountPayload) => {
     set(loading, true);
     set(error, '');
-    setupCache(payload.credentials.username);
-    initTokens(payload.credentials.username);
+    const username = payload.credentials.username;
+    const userIdentifier = `${username}${get(isDevelop) ? '.dev' : ''}`;
+    setupCache(userIdentifier);
+    initTokens(userIdentifier);
     await connect();
     const start = Date.now();
     const result = await createAccount(payload);
@@ -54,8 +57,9 @@ export const useAccountManagement = () => {
     resumeFromBackup
   }: LoginCredentials): Promise<void> => {
     set(loading, true);
-    setupCache(username);
-    initTokens(username);
+    const userIdentifier = `${username}${get(isDevelop) ? '.dev' : ''}`;
+    setupCache(userIdentifier);
+    initTokens(userIdentifier);
     await connect();
 
     const result = await login({
