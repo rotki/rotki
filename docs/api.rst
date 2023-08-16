@@ -7565,7 +7565,7 @@ Getting Uniswap V3 balances
    :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
 
 Getting Uniswap/Sushiswap events
-=========================
+================================
 
 .. http:get:: /api/(version)/blockchains/eth/modules/{module}/stats
 

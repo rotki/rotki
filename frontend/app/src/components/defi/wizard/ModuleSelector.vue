@@ -22,12 +22,13 @@ const { resetStatus } = useStatusUpdater(Section.NON_FUNGIBLE_BALANCES);
 const headers = computed<DataTableHeader[]>(() => [
   {
     text: t('common.name'),
-    value: 'name',
-    width: '100%'
+    value: 'name'
   },
   {
     text: t('module_selector.table.enabled'),
-    value: 'enabled'
+    value: 'enabled',
+    align: 'end',
+    cellClass: 'd-flex justify-end align-center'
   }
 ]);
 
@@ -137,15 +138,13 @@ const disableAll = async () => {
     <DataTable :headers="headers" :items="modules" :loading="loading">
       <template #item.name="{ item }">
         <div class="d-flex flex-row align-center">
-          <VAvatar left class="d-flex">
-            <AdaptiveWrapper
-              class="d-flex align-center"
-              width="26px"
-              height="26px"
-            >
-              <VImg width="26px" contain max-height="24px" :src="item.icon" />
-            </AdaptiveWrapper>
-          </VAvatar>
+          <AdaptiveWrapper
+            class="d-flex align-center mr-4"
+            width="26px"
+            height="26px"
+          >
+            <VImg width="26px" contain max-height="24px" :src="item.icon" />
+          </AdaptiveWrapper>
           <span> {{ item.name }}</span>
         </div>
       </template>
@@ -154,6 +153,8 @@ const disableAll = async () => {
           :data-cy="`${item.identifier}-module-switch`"
           :disabled="loading"
           :input-value="item.enabled"
+          hide-details
+          class="mt-0 pt-0"
           @change="switchModule(item.identifier, $event)"
         />
       </template>
