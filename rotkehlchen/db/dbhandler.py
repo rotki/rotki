@@ -3053,21 +3053,21 @@ class DBHandler:
         """
         Adds a new rpc node.
         """
-        with self.user_write() as cursor:
+        with self.user_write() as write_cursor:
             try:
-                cursor.execute(
+                write_cursor.execute(
                     'INSERT INTO rpc_nodes(name, endpoint, owned, active, weight, blockchain) VALUES (?, ?, ?, ?, ?, ?)',   # noqa: E501
                     node.serialize_for_db(),
                 )
             except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
                 raise InputError(
-                    f'Node for {node.node_info.blockchain} with name {node.node_info.name} '
-                    f'already exists in db',
+                    f'Node for {node.node_info.blockchain} with endpoint '
+                    f'{node.node_info.endpoint} already exists in db',
                 ) from e
             self.rebalance_rpc_nodes_weights(
-                write_cursor=cursor,
+                write_cursor=write_cursor,
                 proportion_to_share=ONE - node.weight,
-                exclude_identifier=cursor.lastrowid,
+                exclude_identifier=write_cursor.lastrowid,
                 blockchain=node.node_info.blockchain,
             )
 
@@ -3079,18 +3079,24 @@ class DBHandler:
         - InputError if no entry with such
         """
         with self.user_write() as cursor:
-            cursor.execute(
-                'UPDATE rpc_nodes SET name=?, endpoint=?, owned=?, active=?, weight=? WHERE identifier=? AND blockchain=?',  # noqa: E501
-                (
-                    node.node_info.name,
-                    node.node_info.endpoint,
-                    node.node_info.owned,
-                    node.active,
-                    str(node.weight),
-                    node.identifier,
-                    node.node_info.blockchain.value,
-                ),
-            )
+            try:
+                cursor.execute(
+                    'UPDATE rpc_nodes SET name=?, endpoint=?, owned=?, active=?, weight=? WHERE identifier=? AND blockchain=?',  # noqa: E501
+                    (
+                        node.node_info.name,
+                        node.node_info.endpoint,
+                        node.node_info.owned,
+                        node.active,
+                        str(node.weight),
+                        node.identifier,
+                        node.node_info.blockchain.value,
+                    ),
+                )
+            except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
+                raise InputError(
+                    f'Node for {node.node_info.blockchain} with endpoint '
+                    f'{node.node_info.endpoint}  already exists in db',
+                ) from e
 
             if cursor.rowcount == 0:
                 raise InputError(f"Node with identifier {node.identifier} doesn't exist")

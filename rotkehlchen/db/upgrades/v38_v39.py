@@ -251,15 +251,48 @@ def _update_evm_transaction_data(write_cursor: 'DBCursor') -> None:
     log.debug('Exit _update_evm_transaction_data')
 
 
-def _add_arbitrum_one_location_and_nodes(write_cursor: 'DBCursor') -> None:
-    log.debug('Enter _add_arbitrum_one_location_and_nodes')
+def _add_arbitrum_one_location(write_cursor: 'DBCursor') -> None:
+    log.debug('Enter _add_arbitrum_one_location')
     write_cursor.execute('INSERT OR IGNORE INTO location(location, seq) VALUES ("i", 41);')
-    write_cursor.executemany(
-        'INSERT INTO rpc_nodes(name, endpoint, owned, active, weight, blockchain) '
-        'VALUES (?, ?, ?, ?, ?, ?)',
-        DEFAULT_ARBITRUM_ONE_NODES_AT_V39,
-    )
-    log.debug('Exit _add_arbitrum_one_location_and_nodes')
+    log.debug('Exit _add_arbitrum_one_location')
+
+
+def _update_rpc_nodes_table(write_cursor: 'DBCursor') -> None:
+    log.debug('Enter _update_rpc_nodes_table')
+    table_exists = write_cursor.execute(
+        "SELECT COUNT(*) FROM sqlite_master "
+        "WHERE type='table' AND name='rpc_nodes'",
+    ).fetchone()[0] == 1
+    table_to_create = 'rpc_nodes'
+    if table_exists is True:
+        table_to_create += '_new'
+    write_cursor.execute(f"""
+    CREATE TABLE IF NOT EXISTS {table_to_create}(
+        identifier INTEGER NOT NULL PRIMARY KEY,
+        name TEXT NOT NULL,
+        endpoint TEXT NOT NULL,
+        owned INTEGER NOT NULL CHECK (owned IN (0, 1)),
+        active INTEGER NOT NULL CHECK (active IN (0, 1)),
+        weight TEXT NOT NULL,
+        blockchain TEXT NOT NULL,
+        UNIQUE(endpoint, blockchain)
+    );
+    """)
+    if table_exists is True:
+        # For 1.28 we released v2 of the rpc nodes with polygon etherscan instead of
+        # polygon pos etherscan. In migration 10 we ensured that if it was
+        # present we delete "polygon etherscan" from the rpc nodes. Since data migrations happen
+        # after db upgrades we need to be sure that there are no duplicates since in both cases
+        # the chain and endpoint is the same.
+        write_cursor.execute('DELETE FROM rpc_nodes WHERE name="polygon etherscan"')
+        write_cursor.execute(
+            'INSERT OR IGNORE INTO rpc_nodes_new SELECT identifier, name, endpoint, owned, '
+            'active, weight, blockchain FROM rpc_nodes',
+        )
+        write_cursor.execute('DROP TABLE rpc_nodes')
+        write_cursor.execute('ALTER TABLE rpc_nodes_new RENAME TO rpc_nodes')
+
+    log.debug('Exit _update_rpc_nodes_table')
 
 
 def _remove_saddle_oracle(write_cursor: 'DBCursor') -> None:
@@ -322,7 +355,7 @@ def upgrade_v38_to_v39(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         - Add Arbitrum One location and nodes
     """
     log.debug('Entered userdb v38->v39 upgrade')
-    progress_handler.set_total_steps(8)
+    progress_handler.set_total_steps(9)
     with db.user_write() as write_cursor:
         _update_nfts_table(write_cursor)
         progress_handler.new_step()
@@ -334,9 +367,11 @@ def upgrade_v38_to_v39(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         progress_handler.new_step()
         _reset_decoded_events(write_cursor)
         progress_handler.new_step()
-        _add_arbitrum_one_location_and_nodes(write_cursor)
+        _add_arbitrum_one_location(write_cursor)
         progress_handler.new_step()
         _remove_saddle_oracle(write_cursor)
+        progress_handler.new_step()
+        _update_rpc_nodes_table(write_cursor)
         progress_handler.new_step()
 
     db.conn.execute('VACUUM;')

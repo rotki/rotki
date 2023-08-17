@@ -304,12 +304,28 @@ def test_manage_nodes(rotkehlchen_api_server):
             assert node['blockchain'] == blockchain_key
             break
 
-    # add a new node
+    # add a new node with duplicated endpoint/chain, should fail due to constraint in the db
     response = requests.put(
         api_url_for(rotkehlchen_api_server, 'rpcnodesresource', blockchain=blockchain_key),
         json={
             'name': 'my_super_node',
             'endpoint': 'ewarwae',
+            'owned': True,
+            'weight': '0.3',
+            'active': True,
+        },
+    )
+    result = assert_error_response(
+        response=response,
+        contained_in_msg='Node for ethereum with endpoint ewarwae already exists in db',
+        status_code=HTTPStatus.CONFLICT,
+    )
+    # add a new node that should be correct
+    response = requests.put(
+        api_url_for(rotkehlchen_api_server, 'rpcnodesresource', blockchain=blockchain_key),
+        json={
+            'name': 'my_super_node',
+            'endpoint': 'ewarwae.com',
             'owned': True,
             'weight': '0.3',
             'active': True,
