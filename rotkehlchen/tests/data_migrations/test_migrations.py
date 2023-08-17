@@ -311,13 +311,6 @@ def test_migration_10(
             ('polygon etherscan', '', 0, 1, '0.25', 'POLYGON_POS'),
         )
         assert write_cursor.execute('SELECT COUNT(*) FROM default_rpc_nodes WHERE name="polygon etherscan"').fetchone()[0] == 1  # noqa: E501
-    with rotki.data.db.user_write() as write_cursor:  # Also add it to the user db
-        write_cursor.execute(
-            'INSERT OR IGNORE INTO rpc_nodes(name, endpoint, owned, active, weight, blockchain) '  # noqa: E501
-            'VALUES (?, ?, ?, ?, ?, ?)',
-            ('polygon etherscan', '', 0, 1, '0.25', 'POLYGON_POS'),
-        )
-        assert write_cursor.execute('SELECT COUNT(*) FROM rpc_nodes WHERE name="polygon etherscan"').fetchone()[0] == 1  # noqa: E501
 
     with ExitStack() as stack:
         setup_evm_addresses_activity_mock(

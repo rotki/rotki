@@ -35,20 +35,12 @@ log = RotkehlchenLogsAdapter(logger)
 ALLOWED_ICON_EXTENSIONS = ('.png', '.svg', '.jpeg', '.jpg', '.webp')
 
 
-def _extract_http_type_from_extension(image_path: Path) -> str:
-    """
-    Given a file path extract the extension and return the type needed to be used in http headers
-    """
-    extension = image_path.suffix[1:]
-    if extension == 'svg':
-        extension = 'svg+xml'
-
-    return extension
-
-
 def _build_http_header_for_images(image_path: Path) -> dict[str, str]:
     """Given a path to an image return the headers to be used when sending it in a http request"""
-    http_type = _extract_http_type_from_extension(image_path)
+    http_type = image_path.suffix[1:]
+    if http_type == 'svg':
+        http_type = 'svg+xml'
+
     return {'mimetype': f'image/{http_type}', 'Content-Type': f'image/{http_type}'}
 
 
