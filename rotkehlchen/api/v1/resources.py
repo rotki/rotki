@@ -1284,7 +1284,6 @@ class UserPremiumSyncResource(BaseMethodView):
         return self.rest_api.sync_data(
             async_query=async_query,
             action=action,
-            perform_migrations=True,  # we can do migrations since all is initialized by now
         )
 
 
