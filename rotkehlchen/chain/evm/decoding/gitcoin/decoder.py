@@ -45,8 +45,10 @@ class GitcoinV2CommonDecoder(DecoderInterface, metaclass=ABCMeta):
 
     Not the same as gitcoin v1, or v1.5 (they have changed contracts many times).
 
-    Each round seems to have their own implementation contract address and we need to be
+    Each round seems to have their own contract address and we need to be
     adding them as part of the constructor here to create the proper mappings.
+
+    TODO: Figure out if this can scale better as finding all contract addresses is error prone
     """
 
     def __init__(  # pylint: disable=super-init-not-called
@@ -71,10 +73,20 @@ class GitcoinV2CommonDecoder(DecoderInterface, metaclass=ABCMeta):
     def _decode_vote_action(self, context: DecoderContext) -> DecodingOutput:
         if context.tx_log.topics[0] == VOTED_WITH_ORIGIN:
             donator = hex_or_bytes_to_address(context.tx_log.data[64:96])
-            return self._decode_voted(context, donator, receiver_start_idx=96)
+            return self._decode_voted(
+                context=context,
+                donator=donator,
+                receiver_start_idx=96,
+                paying_contract_idx=1,
+            )
         elif context.tx_log.topics[0] == VOTED:
             donator = hex_or_bytes_to_address(context.tx_log.topics[1])
-            return self._decode_voted(context, donator, receiver_start_idx=64)
+            return self._decode_voted(
+                context=context,
+                donator=donator,
+                receiver_start_idx=64,
+                paying_contract_idx=3,
+            )
 
         return DEFAULT_DECODING_OUTPUT
 
@@ -83,6 +95,7 @@ class GitcoinV2CommonDecoder(DecoderInterface, metaclass=ABCMeta):
             context: DecoderContext,
             donator: ChecksumEvmAddress,
             receiver_start_idx: int,
+            paying_contract_idx: int,
     ) -> DecodingOutput:
         receiver = hex_or_bytes_to_address(context.tx_log.data[receiver_start_idx:receiver_start_idx + 32])  # noqa: E501
         donator_tracked = self.base.is_tracked(donator)
@@ -90,7 +103,8 @@ class GitcoinV2CommonDecoder(DecoderInterface, metaclass=ABCMeta):
         if donator_tracked is False and receiver_tracked is False:
             return DEFAULT_DECODING_OUTPUT
 
-        round_address = hex_or_bytes_to_address(context.tx_log.topics[3])
+        # there is a discrepancy here between the 2 different Voted events
+        paying_contract_address = hex_or_bytes_to_address(context.tx_log.topics[paying_contract_idx])  # noqa: E501
         token_address = hex_or_bytes_to_address(context.tx_log.data[:32])
         if token_address == ZERO_ADDRESS:
             asset = self.eth
@@ -110,14 +124,14 @@ class GitcoinV2CommonDecoder(DecoderInterface, metaclass=ABCMeta):
                 new_type = HistoryEventType.SPEND
                 expected_type = HistoryEventType.SPEND
                 verb = 'Make'
-                expected_address = round_address
+                expected_address = paying_contract_address
                 expected_location_label = donator
 
             notes = f'{verb} a gitcoin donation of {amount} {asset.symbol} to {receiver}'
             for event in context.decoded_events:
                 if event.event_type == expected_type and event.event_subtype == HistoryEventSubType.NONE and event.asset == asset and event.location_label == expected_location_label and event.address == expected_address:  # noqa: E501
                     # this is either the internal transfer to the contract that
-                    # should laterreak up into the transfers, or the internal
+                    # should later break up into the transfers, or the internal
                     # transfer to the grant if both are tracked. Replace it
                     event.event_type = new_type
                     event.event_subtype = HistoryEventSubType.DONATE

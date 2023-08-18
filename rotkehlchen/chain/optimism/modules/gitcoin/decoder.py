@@ -31,5 +31,13 @@ class GitcoinDecoder(GitcoinV2CommonDecoder):
             ],
             voting_impl_addresses=[
                 string_to_evm_address('0x99906Ea77C139000681254966b397a98E4bFdE21'),
+                string_to_evm_address('0x6526B0942E171A933Fd9aF90C993d9c547251042'),
+                string_to_evm_address('0x8dE199ec70057A324053E454741997F2A99FE771'),
+                string_to_evm_address('0x201bF28933bdbe7c7ddde85D26646b524D4830DD'),
+                string_to_evm_address('0xFc78164b7Ae88ae0F1394A94868E6172E84928D1'),
+                string_to_evm_address('0xeE14BFf31165D23422a989201Db4cF70a420B5F0'),
+                string_to_evm_address('0x390664d7951AD78B1dE1E733016B9A9b2F0007e9'),
+                string_to_evm_address('0xCf065AA4a2870f9D762FaF2f9d760fbB174C6449'),
+                string_to_evm_address('0x1444D2837BDFfc409B66bD6BEeb38784e82F57ff'),
             ],
         )
