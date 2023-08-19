@@ -396,6 +396,9 @@ def test_writing_fetching_data(data_dir, username, sql_vm_instructions_cb):
         )
         assert set(eth_tokens) == {A_DAI, A_USDC}
 
+    with data.db.conn.read_ctx() as cursor:
+        ignored_assets_before = data.db.get_ignored_asset_ids(cursor)
+
     result, _ = data.add_ignored_assets([A_DAO])
     assert result
     result, _ = data.add_ignored_assets([A_DOGE])
@@ -405,14 +408,14 @@ def test_writing_fetching_data(data_dir, username, sql_vm_instructions_cb):
 
     with data.db.conn.read_ctx() as cursor:
         ignored_asset_ids = data.db.get_ignored_asset_ids(cursor)
-        assert ignored_asset_ids == {A_DAO.identifier, A_DOGE.identifier}
+        assert ignored_asset_ids - ignored_assets_before == {A_DAO.identifier, A_DOGE.identifier}
         # Test removing asset that is not in the list
         result, msg = data.remove_ignored_assets([A_RDN])
         assert 'not in ignored assets' in msg
         assert result is None
         result, _ = data.remove_ignored_assets([A_DOGE])
         assert result
-        assert data.db.get_ignored_asset_ids(cursor) == {A_DAO.identifier}
+        assert data.db.get_ignored_asset_ids(cursor) - ignored_assets_before == {A_DAO.identifier}
 
         # With nothing inserted in settings make sure default values are returned
         result = data.db.get_settings(cursor)

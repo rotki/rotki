@@ -107,15 +107,18 @@ def test_query_owned_assets(
 
 
 @pytest.mark.parametrize('new_db_unlock_actions', [None])
-def test_ignored_assets_modification(rotkehlchen_api_server_with_exchanges):
+def test_ignored_assets_modification(rotkehlchen_api_server):
     """Test that using the ignored assets endpoint to modify the ignored assets list works fine"""
-    rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    # for simplicity remove all pre-ignored assets from the global DB sync
+    with rotki.data.db.user_write() as write_cursor:
+        write_cursor.execute('DELETE FROM multisettings WHERE name=?', ('ignored_asset',))
 
     # add three assets to ignored assets
     ignored_assets = [A_GNO.identifier, A_RDN.identifier, 'XMR']
     response = requests.put(
         api_url_for(
-            rotkehlchen_api_server_with_exchanges,
+            rotkehlchen_api_server,
             'ignoredassetsresource',
         ), json={'assets': ignored_assets},
     )
@@ -129,7 +132,7 @@ def test_ignored_assets_modification(rotkehlchen_api_server_with_exchanges):
         # Query for ignored assets and check that the response returns them
         response = requests.get(
             api_url_for(
-                rotkehlchen_api_server_with_exchanges,
+                rotkehlchen_api_server,
                 'ignoredassetsresource',
             ),
         )
@@ -139,7 +142,7 @@ def test_ignored_assets_modification(rotkehlchen_api_server_with_exchanges):
         # remove 2 assets from ignored assets
         response = requests.delete(
             api_url_for(
-                rotkehlchen_api_server_with_exchanges,
+                rotkehlchen_api_server,
                 'ignoredassetsresource',
             ), json={'assets': [A_GNO.identifier, 'XMR']},
         )
@@ -152,7 +155,7 @@ def test_ignored_assets_modification(rotkehlchen_api_server_with_exchanges):
         # Query for ignored assets and check that the response returns them
         response = requests.get(
             api_url_for(
-                rotkehlchen_api_server_with_exchanges,
+                rotkehlchen_api_server,
                 'ignoredassetsresource',
             ),
         )
@@ -163,15 +166,15 @@ def test_ignored_assets_modification(rotkehlchen_api_server_with_exchanges):
 @pytest.mark.parametrize('new_db_unlock_actions', [None])
 @pytest.mark.parametrize('method', ['put', 'delete'])
 @pytest.mark.parametrize('data_migration_version', [0])
-def test_ignored_assets_endpoint_errors(rotkehlchen_api_server_with_exchanges, method):
+def test_ignored_assets_endpoint_errors(rotkehlchen_api_server, method):
     """Test errors are handled properly at the ignored assets endpoint"""
-    rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
 
     # add three assets to ignored assets
     ignored_assets = [A_GNO.identifier, A_RDN.identifier, 'XMR']
     response = requests.put(
         api_url_for(
-            rotkehlchen_api_server_with_exchanges,
+            rotkehlchen_api_server,
             'ignoredassetsresource',
         ), json={'assets': ignored_assets},
     )
@@ -180,7 +183,7 @@ def test_ignored_assets_endpoint_errors(rotkehlchen_api_server_with_exchanges, m
     # Test that omitting the assets argument is an error
     response = getattr(requests, method)(
         api_url_for(
-            rotkehlchen_api_server_with_exchanges,
+            rotkehlchen_api_server,
             'ignoredassetsresource',
         ),
     )
@@ -193,7 +196,7 @@ def test_ignored_assets_endpoint_errors(rotkehlchen_api_server_with_exchanges, m
     # Test that invalid type for assets list is an error
     response = getattr(requests, method)(
         api_url_for(
-            rotkehlchen_api_server_with_exchanges,
+            rotkehlchen_api_server,
             'ignoredassetsresource',
         ), json={'assets': 'foo'},
     )
@@ -206,7 +209,7 @@ def test_ignored_assets_endpoint_errors(rotkehlchen_api_server_with_exchanges, m
     # Test that list with invalid asset is an error
     response = getattr(requests, method)(
         api_url_for(
-            rotkehlchen_api_server_with_exchanges,
+            rotkehlchen_api_server,
             'ignoredassetsresource',
         ), json={'assets': ['notanasset']},
     )
@@ -224,7 +227,7 @@ def test_ignored_assets_endpoint_errors(rotkehlchen_api_server_with_exchanges, m
         asset = 'XMR'
     response = getattr(requests, method)(
         api_url_for(
-            rotkehlchen_api_server_with_exchanges,
+            rotkehlchen_api_server,
             'ignoredassetsresource',
         ), json={'assets': [asset, 'notanasset']},
     )
@@ -246,7 +249,7 @@ def test_ignored_assets_endpoint_errors(rotkehlchen_api_server_with_exchanges, m
             expected_msg = 'ETH is not in ignored assets'
         response = getattr(requests, method)(
             api_url_for(
-                rotkehlchen_api_server_with_exchanges,
+                rotkehlchen_api_server,
                 'ignoredassetsresource',
             ), json={'assets': [asset]},
         )
@@ -1015,6 +1018,9 @@ def test_search_nfts_with_levenshtein(rotkehlchen_api_server):
 
 def test_only_ignored_assets(rotkehlchen_api_server):
     """Test it's possible to ask to only see the ignored assets"""
+    # for simplicity remove all pre-ignored assets from the global DB sync
+    with rotkehlchen_api_server.rest_api.rotkehlchen.data.db.user_write() as write_cursor:
+        write_cursor.execute('DELETE FROM multisettings WHERE name=?', ('ignored_asset',))
     ignored_assets = [A_GNO.identifier, A_RDN.identifier]
     response = requests.put(
         api_url_for(

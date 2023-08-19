@@ -25,7 +25,7 @@ from rotkehlchen.oracles.structures import CurrentPriceOracle
 from rotkehlchen.tests.utils.database import (
     _use_prepared_db,
     mock_db_schema_sanity_check,
-    mock_dbhandler_add_globaldb_assetids,
+    mock_dbhandler_sync_globaldb_assets,
     mock_dbhandler_update_owned_assets,
 )
 from rotkehlchen.types import Location, deserialize_evm_tx_hash
@@ -113,7 +113,7 @@ def _init_db_with_target_version(
         stack.enter_context(no_tables_created_after_init)
         if target_version <= 25:
             stack.enter_context(mock_dbhandler_update_owned_assets())
-            stack.enter_context(mock_dbhandler_add_globaldb_assetids())
+            stack.enter_context(mock_dbhandler_sync_globaldb_assets())
         db = DBHandler(
             user_data_dir=user_data_dir,
             password='123',
@@ -783,7 +783,7 @@ def test_upgrade_db_34_to_35(user_data_dir):  # pylint: disable=unused-argument
     _use_prepared_db(user_data_dir, 'v34_rotkehlchen.db')
 
     # Make sure that assets from the globaldb at version 3 are not copied in the test database
-    with patch('rotkehlchen.db.dbhandler.DBHandler.add_globaldb_assetids', return_value=lambda *args: None):  # noqa: E501
+    with patch('rotkehlchen.db.dbhandler.DBHandler.sync_globaldb_assets', return_value=lambda *args: None):  # noqa: E501
         db_v34 = _init_db_with_target_version(
             target_version=34,
             user_data_dir=user_data_dir,

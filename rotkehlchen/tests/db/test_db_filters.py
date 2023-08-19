@@ -82,6 +82,10 @@ def test_filter_arguments(and_op, order_by, pagination):
 
 def test_ignored_assets(database):
     """Test that the ignored asset filter works fine in all 4 cases"""
+    # for simplicity remove all pre-ignored assets from the global DB sync
+    with database.user_write() as write_cursor:
+        write_cursor.execute('DELETE FROM multisettings WHERE name=?', ('ignored_asset',))
+
     # Test NOT IN with no ignored assets
     ignored_filter = DBIgnoredAssetsFilter(and_op=True, asset_key='assets.identifier', operator='NOT IN')  # noqa: E501
     querystr, bindings = ignored_filter.prepare()

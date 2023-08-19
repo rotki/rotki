@@ -111,6 +111,7 @@ from rotkehlchen.premium.premium import PremiumCredentials
 from rotkehlchen.serialization.deserialize import deserialize_hex_color_code, deserialize_timestamp
 from rotkehlchen.types import (
     EVM_CHAINS_WITH_TRANSACTIONS,
+    SPAM_PROTOCOL,
     SUPPORTED_EVM_CHAINS,
     ApiKey,
     ApiSecret,
@@ -206,7 +207,7 @@ class DBHandler:
             if initial_settings is not None:
                 self.set_settings(cursor, initial_settings)
             self.update_owned_assets_in_globaldb(cursor)
-            self.add_globaldb_assetids(cursor)
+            self.sync_globaldb_assets(cursor)
 
     def _check_unfinished_upgrades(self, resume_from_backup: bool) -> None:
         """
@@ -281,6 +282,7 @@ class DBHandler:
         Such as:
             - DB Upgrades
             - Create tables that are missing for new version
+            - sanity checks
 
         May raise:
         - AuthenticationError if a wrong password is given or if the DB is corrupt
@@ -2303,14 +2305,26 @@ class DBHandler:
             [(x,) for x in asset_identifiers],
         )
 
-    def add_globaldb_assetids(self, write_cursor: 'DBCursor') -> None:
-        """Makes sure that all the GlobalDB asset identifiers are mirrored in the user DB"""
+    def sync_globaldb_assets(self, write_cursor: 'DBCursor') -> None:
+        """Makes sure that:
+        - all the GlobalDB asset identifiers are mirrored in the user DB
+        - all the assets set to have the SPAM_PROTOCOL in the global DB
+        are set to be part of the user's ignored list
+        """
         with GlobalDBHandler().conn.read_ctx() as cursor:
             # after succesfull update add all asset ids
             cursor.execute('SELECT identifier from assets;')
             self.add_asset_identifiers(
                 write_cursor=write_cursor,
                 asset_identifiers=[x[0] for x in cursor],
+            )  # could do an attach DB here instead of two different cursor queries but probably would be overkill # noqa: E501
+            globaldb_spam = cursor.execute(
+                'SELECT identifier FROM evm_tokens WHERE protocol=?',
+                (SPAM_PROTOCOL,),
+            ).fetchall()
+            write_cursor.executemany(
+                'INSERT OR IGNORE INTO multisettings(name, value) VALUES(?, ?)',
+                [('ignored_asset', identifier[0]) for identifier in globaldb_spam],
             )
 
     def delete_asset_identifier(self, write_cursor: 'DBCursor', asset_id: str) -> None:
