@@ -1,18 +1,11 @@
 <script setup lang="ts">
-import { type PropType } from 'vue';
 import { type IgnoredAssetsHandlingType } from '@/types/asset';
 import { type NonFungibleBalance } from '@/types/nfbalances';
 
-defineProps({
-  selected: {
-    required: true,
-    type: Array as PropType<NonFungibleBalance[]>
-  },
-  ignoredAssetsHandling: {
-    required: true,
-    type: String as PropType<IgnoredAssetsHandlingType>
-  }
-});
+defineProps<{
+  selected: NonFungibleBalance[];
+  ignoredAssetsHandling: IgnoredAssetsHandlingType;
+}>();
 
 const emit = defineEmits<{
   (e: 'update:selected', selected: NonFungibleBalance[]): void;

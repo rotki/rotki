@@ -1,13 +1,7 @@
 <script setup lang="ts">
-import { type PropType } from 'vue';
 import { type NonFungibleBalance } from '@/types/nfbalances';
 
-const props = defineProps({
-  value: {
-    required: true,
-    type: Object as PropType<NonFungibleBalance>
-  }
-});
+const props = defineProps<{ value: NonFungibleBalance }>();
 
 const emit = defineEmits(['close', 'save']);
 
