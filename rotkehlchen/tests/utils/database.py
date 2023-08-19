@@ -146,10 +146,10 @@ def mock_dbhandler_update_owned_assets() -> _patch:
     )
 
 
-def mock_dbhandler_add_globaldb_assetids() -> _patch:
+def mock_dbhandler_sync_globaldb_assets() -> _patch:
     """Just make sure add globalds assetids does nothing for older DB tests"""
     return patch(
-        'rotkehlchen.db.dbhandler.DBHandler.add_globaldb_assetids',
+        'rotkehlchen.db.dbhandler.DBHandler.sync_globaldb_assets',
         lambda x, y: None,
     )
 
@@ -190,7 +190,7 @@ def perform_new_db_unlock_actions(db: DBHandler, new_db_unlock_actions: tuple[st
                 (SPAM_PROTOCOL,),
             )
             user_write_cursor.executemany(
-                'INSERT INTO multisettings(name, value) VALUES(?, ?)',
+                'INSERT OR IGNORE INTO multisettings(name, value) VALUES(?, ?)',
                 [('ignored_asset', asset_identifier[0]) for asset_identifier in spam_assets_ids],
             )
 
