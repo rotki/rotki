@@ -418,12 +418,13 @@ class Coinbase(ExchangeInterface):
         try:
             resp = self._api_query('accounts')
         except RemoteError as e:
+            msg_prefix = 'Coinbase API request failed.'
             msg = (
                 'Coinbase API request failed. Could not reach coinbase due '
                 f'to {e}'
             )
-            log.error(msg)
-            return None, msg
+            log.error(f'{msg_prefix} Could not reach coinbase due to {e}')
+            return None, f'{msg_prefix} Check logs for more details'
 
         returned_balances: defaultdict[AssetWithOracles, Balance] = defaultdict(Balance)
         for account in resp:

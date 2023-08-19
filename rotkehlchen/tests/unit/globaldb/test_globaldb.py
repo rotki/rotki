@@ -22,6 +22,7 @@ from rotkehlchen.assets.utils import (
     get_or_create_evm_token,
     symbol_to_asset_or_token,
 )
+from rotkehlchen.chain.ethereum.modules.compound.constants import CPT_COMPOUND
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_BAT, A_CRV, A_DAI, A_ETH, A_LUSD, A_PICKLE, A_USD
 from rotkehlchen.constants.misc import NFT_DIRECTIVE, ONE
@@ -1180,3 +1181,19 @@ def test_for_spam_tokens(database: 'DBHandler', ethereum_inquirer) -> None:
     assert token.protocol == SPAM_PROTOCOL
     with database.conn.read_ctx() as cursor:
         assert token.identifier in database.get_ignored_asset_ids(cursor)
+
+
+def test_get_evm_tokens(globaldb):
+    tokens = globaldb.get_evm_tokens(chain_id=ChainID.POLYGON_POS)
+    assert tokens and not any(token.protocol == SPAM_PROTOCOL for token in tokens)
+    assert all(token.chain_id == ChainID.POLYGON_POS for token in tokens)
+    tokens = globaldb.get_evm_tokens(chain_id=ChainID.POLYGON_POS, ignore_spam=False)
+    assert tokens and any(token.protocol == SPAM_PROTOCOL for token in tokens)
+
+    tokens = globaldb.get_evm_tokens(chain_id=ChainID.ETHEREUM, protocol=CPT_COMPOUND)
+    assert tokens and all(token.protocol == CPT_COMPOUND for token in tokens)
+    tokens_without_exception = len(tokens)
+    exception_address = tokens[0].evm_address
+    tokens = globaldb.get_evm_tokens(chain_id=ChainID.ETHEREUM, protocol=CPT_COMPOUND, exceptions=(exception_address,))  # noqa: E501
+    assert len(tokens) == tokens_without_exception - 1
+    assert not any(token.evm_address == exception_address for token in tokens)
