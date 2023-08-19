@@ -857,7 +857,7 @@ class GlobalDBHandler:
             if protocol is not None:
                 querystr_additions.append('B.protocol=? ')
                 bindings_list.append(protocol)
-            if ignore_spam:  # NB: != for nullable needs to be accompanies by IS NULL
+            if ignore_spam:  # NB: != for nullable needs to be accompanied by IS NULL
                 querystr_additions.append('(B.protocol!=? OR protocol IS NULL) ')
                 bindings_list.append(SPAM_PROTOCOL)
 

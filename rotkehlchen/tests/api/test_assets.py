@@ -24,6 +24,7 @@ from rotkehlchen.tests.utils.api import (
 )
 from rotkehlchen.tests.utils.checks import assert_asset_result_order
 from rotkehlchen.tests.utils.constants import A_GNO, A_RDN
+from rotkehlchen.tests.utils.database import clean_ignored_assets
 from rotkehlchen.tests.utils.factories import UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 from rotkehlchen.types import ChainID, Location
@@ -110,10 +111,7 @@ def test_query_owned_assets(
 def test_ignored_assets_modification(rotkehlchen_api_server):
     """Test that using the ignored assets endpoint to modify the ignored assets list works fine"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    # for simplicity remove all pre-ignored assets from the global DB sync
-    with rotki.data.db.user_write() as write_cursor:
-        write_cursor.execute('DELETE FROM multisettings WHERE name=?', ('ignored_asset',))
-
+    clean_ignored_assets(rotki.data.db)
     # add three assets to ignored assets
     ignored_assets = [A_GNO.identifier, A_RDN.identifier, 'XMR']
     response = requests.put(
@@ -262,7 +260,6 @@ def test_ignored_assets_endpoint_errors(rotkehlchen_api_server, method):
         assert rotki.data.db.get_ignored_asset_ids(cursor) >= set(ignored_assets)
 
 
-@pytest.mark.parametrize('new_db_unlock_actions', [('spam_assets',)])
 def test_get_all_assets(rotkehlchen_api_server):
     """Test that fetching all assets returns a paginated result."""
     response = requests.post(
@@ -587,7 +584,6 @@ def test_get_assets_mappings(rotkehlchen_api_server):
     assert all(identifier in ('BTC', 'TRY') for identifier in assets)
 
 
-@pytest.mark.parametrize('new_db_unlock_actions', [('spam_assets',)])
 def test_search_assets(rotkehlchen_api_server):
     """Test that searching for assets using a keyword works."""
     response = requests.post(
@@ -1018,9 +1014,7 @@ def test_search_nfts_with_levenshtein(rotkehlchen_api_server):
 
 def test_only_ignored_assets(rotkehlchen_api_server):
     """Test it's possible to ask to only see the ignored assets"""
-    # for simplicity remove all pre-ignored assets from the global DB sync
-    with rotkehlchen_api_server.rest_api.rotkehlchen.data.db.user_write() as write_cursor:
-        write_cursor.execute('DELETE FROM multisettings WHERE name=?', ('ignored_asset',))
+    clean_ignored_assets(rotkehlchen_api_server.rest_api.rotkehlchen.data.db)
     ignored_assets = [A_GNO.identifier, A_RDN.identifier]
     response = requests.put(
         api_url_for(
