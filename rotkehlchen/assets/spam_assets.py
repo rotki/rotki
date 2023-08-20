@@ -79,12 +79,18 @@ def update_spam_assets(db: 'DBHandler', assets_info: list[dict[str, Any]]) -> in
     # and in that case query_token_spam_list add it to the global DB
     with db.conn.read_ctx() as cursor:
         ignored_asset_ids = db.get_ignored_asset_ids(cursor)
-    assets_added = 0
+
+    write_data = []
     for token in spam_tokens:
         if token.identifier in ignored_asset_ids:
             continue
 
-        with db.user_write() as write_cursor:
-            db.add_to_ignored_assets(write_cursor=write_cursor, asset=token)
-        assets_added += 1
+        write_data.append(('ignored_asset', token.identifier))
+
+    with db.user_write() as write_cursor:
+        write_cursor.executemany(
+            'INSERT OR IGNORE INTO multisettings(name, value) VALUES(?, ?)', write_data,
+        )
+        assets_added = write_cursor.rowcount
+
     return assets_added
