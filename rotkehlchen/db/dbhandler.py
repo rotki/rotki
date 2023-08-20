@@ -2991,7 +2991,7 @@ class DBHandler:
             self,
             blockchain: SupportedBlockchain,
             only_active: bool = False,
-    ) -> list[WeightedNode]:
+    ) -> Sequence[WeightedNode]:
         """
         Get all the nodes in the database. If only_active is set to true only the nodes that
         have the column active set to True will be returned.

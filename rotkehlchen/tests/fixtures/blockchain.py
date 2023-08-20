@@ -30,6 +30,7 @@ from rotkehlchen.externalapis.beaconchain import BeaconChain
 from rotkehlchen.externalapis.covalent import Covalent
 from rotkehlchen.externalapis.opensea import Opensea
 from rotkehlchen.premium.premium import Premium
+from rotkehlchen.tests.utils.blockchain import maybe_modify_rpc_nodes
 from rotkehlchen.tests.utils.decoders import patch_decoder_reload_data
 from rotkehlchen.tests.utils.ethereum import wait_until_all_nodes_connected
 from rotkehlchen.tests.utils.evm import maybe_mock_evm_inquirer
@@ -64,18 +65,7 @@ def _initialize_and_yield_evm_inquirer_fixture(
     elif klass == ArbitrumOneInquirer:
         blockchain = SupportedBlockchain.ARBITRUM_ONE
 
-    if isinstance(manager_connect_at_start, str):
-        assert manager_connect_at_start == 'DEFAULT'
-        nodes_to_connect_to = database.get_rpc_nodes(blockchain, only_active=True)
-    else:
-        nodes_to_connect_to = manager_connect_at_start
-        with database.user_write() as write_cursor:
-            write_cursor.execute(  # Delete all but etherscan endpoint
-                'DELETE FROM rpc_nodes WHERE blockchain=? and endpoint!=""',
-                (blockchain.value,))
-        for entry in nodes_to_connect_to:
-            if entry.node_info.endpoint != '':  # don't re-add etherscan
-                database.add_rpc_node(entry)
+    nodes_to_connect_to = maybe_modify_rpc_nodes(database, blockchain, manager_connect_at_start)
 
     with ExitStack() as init_stack:
         if mock_other_web3 is True:
