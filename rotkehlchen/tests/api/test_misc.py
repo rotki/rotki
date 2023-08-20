@@ -158,6 +158,7 @@ def test_query_version_when_update_required(rotkehlchen_api_server):
     )
 
 
+@pytest.mark.parametrize('ethereum_manager_connect_at_start', ['DEFAULT'])
 def test_manage_nodes(rotkehlchen_api_server):
     """Test that list of nodes can be correctly updated and queried"""
     database = rotkehlchen_api_server.rest_api.rotkehlchen.data.db

@@ -20,6 +20,7 @@ from rotkehlchen.types import (
     EvmTokenKind,
     SupportedBlockchain,
 )
+from rotkehlchen.utils.version_check import VersionCheckResult
 
 ETHEREUM_SPAM_ASSET_ADDRESS = make_evm_address()
 OPTIMISM_SPAM_ASSET_ADDRESS = make_evm_address()
@@ -179,12 +180,22 @@ def make_mock_github_response(latest: int, min_version: Optional[str] = None, ma
     return mock_github_response
 
 
+@pytest.fixture(name='our_version')
+def fixture_our_version():
+    """Allow mocking our rotki version since in CI version is 0 and hard to control"""
+    return None
+
+
 @pytest.fixture(name='data_updater')
-def fixture_data_updater(messages_aggregator, database):
-    return RotkiDataUpdater(
-        msg_aggregator=messages_aggregator,
-        user_db=database,
-    )
+def fixture_data_updater(messages_aggregator, database, our_version):
+    """Initialize the DataUpdater object, optionally mocking our rotki version"""
+    with ExitStack() as stack:
+        if our_version is not None:
+            stack.enter_context(patch('rotkehlchen.db.updates.get_current_version', return_value=VersionCheckResult(our_version=our_version)))  # noqa: E501
+        return RotkiDataUpdater(
+            msg_aggregator=messages_aggregator,
+            user_db=database,
+        )
 
 
 def reset_update_type_mappings(data_updater) -> None:
@@ -289,6 +300,7 @@ def test_no_update_due_to_update_version(data_updater: RotkiDataUpdater) -> None
         assert {x[0] for x in cursor} == {'999'}
 
 
+@pytest.mark.parametrize('our_version', ['1.35.0'])  # set a normal version for CI
 def test_no_update_due_to_min_rotki(data_updater: RotkiDataUpdater) -> None:
     """Check updates don't execute if there is a min rotki version requirement greater than ours"""
     with ExitStack() as stack:
@@ -309,6 +321,7 @@ def test_no_update_due_to_min_rotki(data_updater: RotkiDataUpdater) -> None:
         assert {x[0] for x in cursor} == set()
 
 
+@pytest.mark.parametrize('our_version', ['1.35.0'])  # set a normal version for CI
 def test_no_update_due_to_max_rotki(data_updater: RotkiDataUpdater) -> None:
     """Check updates don't execute if there is a max rotki version requirement lower than ours"""
     with ExitStack() as stack:
