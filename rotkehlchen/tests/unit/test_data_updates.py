@@ -1,4 +1,6 @@
 import json
+from contextlib import ExitStack
+from typing import Callable, Optional
 from unittest.mock import patch
 
 import pytest
@@ -71,8 +73,55 @@ CONTRACT_DATA = [
 ]
 
 
-def make_mock_github_data_response(target: UpdateType):
-    """Creates a mocking function for github requests."""
+SPAM_ASSET_MOCK_DATA = {
+    'spam_assets': [
+        {
+            'address': ETHEREUM_SPAM_ASSET_ADDRESS,
+            'name': '$ ClaimUniLP.com',
+            'symbol': '$ ClaimUniLP.com - Visit to claim',
+            'decimals': 18,
+        },
+        {
+            'address': OPTIMISM_SPAM_ASSET_ADDRESS,
+            'name': 'spooky-v3.xyz',
+            'symbol': 'Visit https://spooky-v3.xyz and claim rewards',
+            'decimals': 18,
+            'chain': 'optimism',
+        },
+    ],
+}
+
+RPC_NODE_MOCK_DATA = {
+    'rpc_nodes': [
+        {
+            'name': 'pocket network',
+            'endpoint': 'https://eth-mainnet.gateway.pokt.network/v1/5f3453978e354ab992c4da79',
+            'weight': 0.50,
+            'owned': False,
+            'active': True,
+            'blockchain': 'ETH',
+        },
+        {
+            'name': 'alchemy free',
+            'endpoint': 'https://mainnet.optimism.io',
+            'weight': 0.50,
+            'owned': False,
+            'active': True,
+            'blockchain': 'OPTIMISM',
+        },
+    ],
+}
+
+CONTRACTS_MOCK_DATA = {
+    'contracts': {
+        'abis_data': ABI_DATA,
+        'contracts_data': CONTRACT_DATA,
+    },
+}
+
+
+def make_single_mock_github_data_response(target: UpdateType):
+    """Creates a mocking function for a single update type for github requests."""
     def mock_github_data_response(url, timeout):  # pylint: disable=unused-argument
         if 'info' in url:
             data = {
@@ -82,71 +131,52 @@ def make_mock_github_data_response(target: UpdateType):
                 'global_addressbook': {'latest': 1 if target == UpdateType.GLOBAL_ADDRESSBOOK else 0},  # noqa: E501
             }
         elif 'spam_assets/v' in url:
-            data = {
-                'spam_assets': [
-                    {
-                        'address': ETHEREUM_SPAM_ASSET_ADDRESS,
-                        'name': '$ ClaimUniLP.com',
-                        'symbol': '$ ClaimUniLP.com - Visit to claim',
-                        'decimals': 18,
-                    },
-                    {
-                        'address': OPTIMISM_SPAM_ASSET_ADDRESS,
-                        'name': 'spooky-v3.xyz',
-                        'symbol': 'Visit https://spooky-v3.xyz and claim rewards',
-                        'decimals': 18,
-                        'chain': 'optimism',
-                    },
-                ],
-            }
+            data = SPAM_ASSET_MOCK_DATA
         elif 'rpc_nodes/v' in url:
-            data = {
-                'rpc_nodes': [
-                    {
-                        'name': 'pocket network',
-                        'endpoint': 'https://eth-mainnet.gateway.pokt.network/v1/5f3453978e354ab992c4da79',  # noqa: E501
-                        'weight': 0.50,
-                        'owned': False,
-                        'active': True,
-                        'blockchain': 'ETH',
-                    },
-                    {
-                        'name': 'alchemy free',
-                        'endpoint': 'https://mainnet.optimism.io',
-                        'weight': 0.50,
-                        'owned': False,
-                        'active': True,
-                        'blockchain': 'OPTIMISM',
-                    },
-                ],
-            }
+            data = RPC_NODE_MOCK_DATA
         elif 'contracts/v' in url:
-            data = {
-                'contracts': {
-                    'abis_data': ABI_DATA,
-                    'contracts_data': CONTRACT_DATA,
-                },
-            }
+            data = CONTRACTS_MOCK_DATA
         elif 'global_addressbook/v' in url:
             data = {'global_addressbook': SERIALIZED_REMOTE_ADDRESSBOOK}
         else:
-            raise AssertionError(f'Unexpected url {url} called')
+            raise AssertionError(f'Unknown {url=} during test')
 
         return MockResponse(200, json.dumps(data))
 
     return mock_github_data_response
 
 
-def mock_github_data_response_old_update(url, timeout):  # pylint: disable=unused-argument
-    if 'info' not in url:
-        raise AssertionError(f'Unexpected url {url} called')
+def make_mock_github_response(latest: int, min_version: Optional[str] = None, max_version: Optional[str] = None) -> Callable:  # noqa: E501
+    """Creates a mocking function for all update types for github requests."""
+    def mock_github_response(url, timeout):  # pylint: disable=unused-argument
+        if 'info' in url:
+            result = {}
+            for update_type in UpdateType:
+                entry = {'latest': latest}
+                for i in range(1, latest + 1):
+                    if min_version or max_version:
+                        if 'limits' not in entry:  # not using defaultdict to see that if missing it's also handled by the code fine  # noqa: E501
+                            entry['limits'] = {}
+                        entry['limits'][i] = {}
+                        if min_version:
+                            entry['limits'][i]['min_version'] = min_version
+                        if max_version:
+                            entry['limits'][i]['max_version'] = max_version
+                result[update_type.value] = entry
+        elif 'spam_assets/v' in url:
+            result = SPAM_ASSET_MOCK_DATA
+        elif 'rpc_nodes/v' in url:
+            result = RPC_NODE_MOCK_DATA
+        elif 'contracts/v' in url:
+            result = CONTRACTS_MOCK_DATA
+        elif 'global_addressbook/v' in url:
+            result = {'global_addressbook': SERIALIZED_REMOTE_ADDRESSBOOK}
+        else:
+            raise AssertionError(f'Unknown {url=} during test')
 
-    return MockResponse(200, json.dumps({
-        'spam_assets': {'latest': 1},
-        'rpc_nodes': {'latest': 1},
-        'contracts': {'latest': 1},
-        'global_addressbook': {'latest': 1},
-    }))
+        return MockResponse(200, json.dumps(result))
+
+    return mock_github_response
 
 
 @pytest.fixture(name='data_updater')
@@ -155,6 +185,16 @@ def fixture_data_updater(messages_aggregator, database):
         msg_aggregator=messages_aggregator,
         user_db=database,
     )
+
+
+def reset_update_type_mappings(data_updater) -> None:
+    """Need to use this after mocking so that the mapping points to the mocked methods"""
+    data_updater.update_type_mappings = {
+        UpdateType.SPAM_ASSETS: data_updater.update_spam_assets,
+        UpdateType.RPC_NODES: data_updater.update_rpc_nodes,
+        UpdateType.CONTRACTS: data_updater.update_contracts,
+        UpdateType.GLOBAL_ADDRESSBOOK: data_updater.update_global_addressbook,
+    }
 
 
 def test_update_type_mappings_is_complete(data_updater: RotkiDataUpdater) -> None:
@@ -179,7 +219,7 @@ def test_update_spam_assets(data_updater: RotkiDataUpdater) -> None:
         EvmToken(op_spam_token_id)
 
     # set a high version of the globaldb to avoid conflicts with future changes
-    with patch('requests.get', wraps=make_mock_github_data_response(UpdateType.SPAM_ASSETS)):
+    with patch('requests.get', wraps=make_single_mock_github_data_response(UpdateType.SPAM_ASSETS)):  # noqa: E501
         data_updater.check_for_updates()
 
     ethereum_token = EvmToken(eth_spam_token_id)
@@ -193,10 +233,33 @@ def test_update_spam_assets(data_updater: RotkiDataUpdater) -> None:
         assert cursor.fetchall() == [(eth_spam_token_id,), (op_spam_token_id,)]
 
 
-def test_no_update_performed(data_updater: RotkiDataUpdater) -> None:
+def test_updates_run(data_updater: RotkiDataUpdater) -> None:
     """
-    Check that the updates don't execute if we have a higher version locally
+    Check that the invdividual update functions execute as many times as needed
+    due to latest. This is also a way to check the subsequent tests for updates
+    not executing are valid
     """
+    times = 2
+    with ExitStack() as stack:
+        stack.enter_context(patch('requests.get', wraps=make_mock_github_response(latest=times)))
+        patches = [
+            stack.enter_context(patch.object(data_updater, f'update_{update_type.value}'))
+            for update_type in UpdateType
+        ]
+        reset_update_type_mappings(data_updater)
+        data_updater.check_for_updates()
+
+    assert all(patch.call_count == times for patch in patches)
+    with data_updater.user_db.conn.read_ctx() as cursor:
+        cursor.execute(  # make sure latest DB value is also changed
+            'SELECT value from settings WHERE name IN(?, ?, ?, ?)',
+            [x.serialize() for x in UpdateType],
+        )
+        assert {x[0] for x in cursor} == {'2'}
+
+
+def test_no_update_due_to_update_version(data_updater: RotkiDataUpdater) -> None:
+    """Check that the updates don't execute if we have a higher update version locally"""
     # set a higher last version applied
     with data_updater.user_db.conn.write_ctx() as write_cursor:
         write_cursor.executemany(
@@ -208,19 +271,62 @@ def test_no_update_performed(data_updater: RotkiDataUpdater) -> None:
                 (UpdateType.GLOBAL_ADDRESSBOOK.serialize(), 999),
             ],
         )
-
-    with (
-        patch('requests.get', wraps=mock_github_data_response_old_update),
-        patch.object(data_updater, 'update_spam_assets') as spam_assets,
-        patch.object(data_updater, 'update_rpc_nodes') as rpc_nodes,
-        patch.object(data_updater, 'update_contracts') as contracts,
-        patch.object(data_updater, 'update_global_addressbook') as global_addressbook,
-    ):
+    with ExitStack() as stack:
+        stack.enter_context(patch('requests.get', wraps=make_mock_github_response(latest=1)))
+        patches = [
+            stack.enter_context(patch.object(data_updater, f'update_{update_type.value}'))
+            for update_type in UpdateType
+        ]
+        reset_update_type_mappings(data_updater)
         data_updater.check_for_updates()
-        assert spam_assets.call_count == 0
-        assert rpc_nodes.call_count == 0
-        assert contracts.call_count == 0
-        assert global_addressbook.call_count == 0
+
+    assert all(patch.call_count == 0 for patch in patches)
+    with data_updater.user_db.conn.read_ctx() as cursor:
+        cursor.execute(  # also make sure latest DB value is not changed
+            'SELECT value from settings WHERE name IN(?, ?, ?, ?)',
+            [x.serialize() for x in UpdateType],
+        )
+        assert {x[0] for x in cursor} == {'999'}
+
+
+def test_no_update_due_to_min_rotki(data_updater: RotkiDataUpdater) -> None:
+    """Check updates don't execute if there is a min rotki version requirement greater than ours"""
+    with ExitStack() as stack:
+        stack.enter_context(patch('requests.get', wraps=make_mock_github_response(latest=1, min_version='99.99.99')))  # noqa: E501
+        patches = [
+            stack.enter_context(patch.object(data_updater, f'update_{update_type.value}'))
+            for update_type in UpdateType
+        ]
+        reset_update_type_mappings(data_updater)
+        data_updater.check_for_updates()
+
+    assert all(patch.call_count == 0 for patch in patches)
+    with data_updater.user_db.conn.read_ctx() as cursor:
+        cursor.execute(  # also make sure latest DB value is not changed
+            'SELECT value from settings WHERE name IN(?, ?, ?, ?)',
+            [x.serialize() for x in UpdateType],
+        )
+        assert {x[0] for x in cursor} == set()
+
+
+def test_no_update_due_to_max_rotki(data_updater: RotkiDataUpdater) -> None:
+    """Check updates don't execute if there is a max rotki version requirement lower than ours"""
+    with ExitStack() as stack:
+        stack.enter_context(patch('requests.get', wraps=make_mock_github_response(latest=1, max_version='1.0.0')))  # noqa: E501
+        patches = [
+            stack.enter_context(patch.object(data_updater, f'update_{update_type.value}'))
+            for update_type in UpdateType
+        ]
+        reset_update_type_mappings(data_updater)
+        data_updater.check_for_updates()
+
+    assert all(patch.call_count == 0 for patch in patches)
+    with data_updater.user_db.conn.read_ctx() as cursor:
+        cursor.execute(  # also make sure latest DB value is not changed
+            'SELECT value from settings WHERE name IN(?, ?, ?, ?)',
+            [x.serialize() for x in UpdateType],
+        )
+        assert {x[0] for x in cursor} == set()
 
 
 def test_update_rpc_nodes(data_updater: RotkiDataUpdater) -> None:
@@ -244,7 +350,7 @@ def test_update_rpc_nodes(data_updater: RotkiDataUpdater) -> None:
         write_cursor.execute('SELECT COUNT(*) FROM rpc_nodes')
         assert write_cursor.fetchone()[0] == 22
 
-    with patch('requests.get', wraps=make_mock_github_data_response(UpdateType.RPC_NODES)):
+    with patch('requests.get', wraps=make_single_mock_github_data_response(UpdateType.RPC_NODES)):
         data_updater.check_for_updates()
 
     # check the db state after updating
@@ -274,7 +380,7 @@ def test_update_contracts(data_updater: RotkiDataUpdater) -> None:
         initial_contracts = cursor.execute('SELECT * FROM contract_data').fetchall()
         assert len(initial_contracts) > 0, 'There should be some contracts in the db'
 
-    with patch('requests.get', wraps=make_mock_github_data_response(UpdateType.CONTRACTS)):  # noqa: E501
+    with patch('requests.get', wraps=make_single_mock_github_data_response(UpdateType.CONTRACTS)):  # noqa: E501
         data_updater.check_for_updates()  # apply the update
 
     remote_id_to_local_id = {}
@@ -331,7 +437,7 @@ def test_global_addressbook(data_updater: RotkiDataUpdater) -> None:
             entries=initial_entries,
         )
 
-    with patch('requests.get', wraps=make_mock_github_data_response(UpdateType.GLOBAL_ADDRESSBOOK)):  # noqa: E501
+    with patch('requests.get', wraps=make_single_mock_github_data_response(UpdateType.GLOBAL_ADDRESSBOOK)):  # noqa: E501
         data_updater.check_for_updates()
 
     # Assert state of the address book after the update
