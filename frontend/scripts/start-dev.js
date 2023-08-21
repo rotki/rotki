@@ -42,7 +42,7 @@ const pids = {};
 const listeners = {};
 const subprocesses = [];
 
-const startProcess = (cmd, tag, name, args) => {
+const startProcess = (cmd, tag, name, args, opts = undefined) => {
   const createListeners = tag => ({
     out: buffer => {
       logger.debug(tag, buffer.toLocaleString());
@@ -53,6 +53,7 @@ const startProcess = (cmd, tag, name, args) => {
   });
 
   const child = spawn(cmd, args, {
+    ...opts,
     shell: true,
     stdio: [process.stdin]
   });
@@ -111,8 +112,7 @@ startProcess(
 
 if (noElectron) {
   logger.info('Starting python backend');
-
-  const logDir = path.join('logs');
+  const logDir = path.join(process.cwd(), 'logs');
   if (!fs.existsSync(logDir)) {
     fs.mkdirSync(logDir);
   }
@@ -125,10 +125,12 @@ if (noElectron) {
     '--api-cors',
     'http://localhost:*',
     '--logfile',
-    `${path.join('logs', 'backend.log')}`
+    `${path.join(logDir, 'backend.log')}`
   ];
 
-  startProcess('python', colors.yellow(BACKEND), BACKEND, args);
+  startProcess('python', colors.yellow(BACKEND), BACKEND, args, {
+    cwd: path.join('..')
+  });
 }
 
 logger.info('Starting rotki dev mode');
