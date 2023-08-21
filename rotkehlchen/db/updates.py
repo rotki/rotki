@@ -91,7 +91,7 @@ class RotkiDataUpdater:
                 updates = query_file(file_url, True)
             except RemoteError as e:
                 log.warning(f'Failed to update {update_type.value} due to {e!s}')
-                continue  # perhaps broken file? Skipping
+                continue  # perhaps broken link? Skipping
 
             updated_data = updates.get(update_type.value)
             if updated_data is None:

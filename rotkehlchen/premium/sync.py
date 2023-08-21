@@ -3,6 +3,7 @@ import shutil
 from enum import Enum
 from typing import Any, Literal, NamedTuple, Optional, Union
 
+from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.data_migrations.manager import DataMigrationManager
 from rotkehlchen.errors.api import PremiumAuthenticationError, RotkehlchenPermissionError
@@ -154,23 +155,31 @@ class PremiumSyncManager:
         try:
             metadata = self.premium.query_last_data_metadata()
         except (RemoteError, PremiumAuthenticationError) as e:
-            log.debug('upload to server -- fetching metadata error', error=str(e))
+            message = 'Fetching metadata error'
+            log.debug(f'upload to server -- {message}', error=str(e))
+            self.data.msg_aggregator.add_message(
+                message_type=WSMessageType.DATABASE_UPLOAD_RESULT,
+                data={'uploaded': False, 'actionable': False, 'message': message},
+            )
             self.last_upload_attempt_ts = ts_now()
-            return False, str(e)
+            return False, message
 
         with self.data.db.conn.read_ctx() as cursor:
             our_last_write_ts = self.data.db.get_setting(cursor=cursor, name='last_write_ts')
         if our_last_write_ts <= metadata.last_modify_ts and not force_upload:
-            # Server's DB was modified after our local DB
+            message = 'Remote database is more recent than local'
             log.debug(
                 f'upload to server stopped -- remote db({metadata.last_modify_ts}) '
                 f'more recent than local({our_last_write_ts})',
             )
+            self.data.msg_aggregator.add_message(
+                message_type=WSMessageType.DATABASE_UPLOAD_RESULT,
+                data={'uploaded': False, 'actionable': True, 'message': message},
+            )
             self.last_upload_attempt_ts = ts_now()
-            return False, 'Remote database is more recent than local'
+            return False, message
 
         data, our_hash = self.data.compress_and_encrypt_db()
-
         log.debug(
             'CAN_PUSH',
             ours=our_hash,
@@ -178,20 +187,27 @@ class PremiumSyncManager:
         )
         if our_hash == metadata.data_hash and not force_upload:
             log.debug('upload to server stopped -- same hash')
-            # same hash -- no need to upload anything
+            message = 'Remote database is up to date'
+            self.data.msg_aggregator.add_message(
+                message_type=WSMessageType.DATABASE_UPLOAD_RESULT,
+                data={'uploaded': False, 'actionable': True, 'message': message},
+            )
             self.last_upload_attempt_ts = ts_now()
-            return False, 'Remote database is up to date'
+            return False, message
 
         data_bytes_size = len(data)
         if data_bytes_size < metadata.data_size and not force_upload:
-            # Let's be conservative.
-            # TODO: Here perhaps prompt user in the future
+            message = 'Remote database bigger than the local one'
             log.debug(
                 f'upload to server stopped -- remote db({metadata.data_size}) '
                 f'bigger than local({data_bytes_size})',
             )
+            self.data.msg_aggregator.add_message(
+                message_type=WSMessageType.DATABASE_UPLOAD_RESULT,
+                data={'uploaded': False, 'actionable': True, 'message': message},
+            )
             self.last_upload_attempt_ts = ts_now()
-            return False, 'Remote database contains more data than the local one'
+            return False, message
 
         try:
             self.premium.upload_data(
@@ -201,9 +217,14 @@ class PremiumSyncManager:
                 compression_type='zlib',
             )
         except (RemoteError, PremiumAuthenticationError) as e:
-            log.debug('upload to server -- upload error', error=str(e))
+            message = str(e)
+            log.debug('upload to server -- upload error', error=message)
+            self.data.msg_aggregator.add_message(
+                message_type=WSMessageType.DATABASE_UPLOAD_RESULT,
+                data={'uploaded': False, 'actionable': False, 'message': message},
+            )
             self.last_upload_attempt_ts = ts_now()
-            return False, str(e)
+            return False, message
 
         # update the last data upload value
         self.last_data_upload_ts = ts_now()
@@ -211,6 +232,10 @@ class PremiumSyncManager:
         with self.data.db.user_write() as cursor:
             self.data.db.set_setting(cursor, name='last_data_upload_ts', value=self.last_data_upload_ts)  # noqa: E501
 
+        self.data.msg_aggregator.add_message(
+            message_type=WSMessageType.DATABASE_UPLOAD_RESULT,
+            data={'uploaded': True, 'actionable': False, 'message': None},
+        )
         log.debug('upload to server -- success')
         return True, None
 
