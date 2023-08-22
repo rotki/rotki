@@ -216,11 +216,13 @@ LLAMA_NODE = WeightedNode(
 @pytest.mark.vcr()
 @pytest.mark.parametrize('polygon_pos_manager_connect_at_start', [[LLAMA_NODE]])
 @pytest.mark.parametrize('polygon_pos_accounts', [['0x4bBa290826C253BD854121346c370a9886d1bC26']])
-def test_native_token_balance(blockchain):
+def test_native_token_balance(blockchain, polygon_pos_accounts):
     """
     Test that for different blockchains different assets are used as native tokens.
     We test it by requesting a Polygon POS balance and checking MATIC balance.
     """
+    address = polygon_pos_accounts[0]
+
     def mock_default_call_order(skip_etherscan: bool = False):  # pylint: disable=unused-argument
         return [LLAMA_NODE]  # Keep only one node to remove randomness, and thus make it vcr'able
 
@@ -231,29 +233,25 @@ def test_native_token_balance(blockchain):
     ):
         blockchain.polygon_pos.tokens.detect_tokens(
             only_cache=False,
-            addresses=[string_to_evm_address('0x4bBa290826C253BD854121346c370a9886d1bC26')],
+            addresses=[address],
         )
         blockchain.query_polygon_pos_balances()
-        assert blockchain.balances.polygon_pos == {
-            '0x4bBa290826C253BD854121346c370a9886d1bC26': BalanceSheet(
-                assets={
-                    A_POLYGON_POS_MATIC: Balance(
-                        amount=FVal('18.3848'),
-                        usd_value=FVal('27.57720'),
-                    ),
-                    Asset('eip155:137/erc20:0x0B91B07bEb67333225A5bA0259D55AeE10E3A578'): Balance(  # Minerum  # noqa: E501
-                        amount=FVal('300000'),
-                        usd_value=FVal('450000.0'),
-                    ),
-                    Asset('eip155:137/erc20:0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174'): Balance(  # USDC  # noqa: E501
-                        amount=FVal('29.982'),
-                        usd_value=FVal('44.9730'),
-                    ),
-                    Asset('eip155:137/erc20:0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619'): Balance(  # WETH  # noqa: E501
-                        amount=FVal('0.009792189476215069'),
-                        usd_value=FVal('0.0146882842143226035'),
-                    ),
-                },
-                liabilities={},
+        balances = blockchain.balances.polygon_pos[address].assets
+        assert balances == {
+            A_POLYGON_POS_MATIC: Balance(
+                amount=FVal('16.942897779121303751'),
+                usd_value=FVal('25.4143466686819556265'),
+            ),
+            Asset('eip155:137/erc20:0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174'): Balance(  # USDC
+                amount=FVal('9.982'),
+                usd_value=FVal('14.9730'),
+            ),
+            Asset('eip155:137/erc20:0x625E7708f30cA75bfd92586e17077590C60eb4cD'): Balance(  # aPolUSDC  # noqa: E501
+                amount=FVal('20.017082'),
+                usd_value=FVal('30.0256230'),
+            ),
+            Asset('eip155:137/erc20:0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619'): Balance(  # WETH
+                amount=FVal('0.009792189476215069'),
+                usd_value=FVal('0.0146882842143226035'),
             ),
         }

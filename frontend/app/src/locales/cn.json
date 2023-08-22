@@ -2737,12 +2737,7 @@
     "effective_interest_rate_tooltip": "你积极借贷的所有协议的储蓄率，根据每个协议中的相对位置加权。",
     "history": "历史",
     "loading": "正在加载您的余额，请稍候...",
-    "profit_earned": "获利",
-    "reset": {
-      "protocol_selection": "选择要重置的协议"
-    },
-    "reset_confirm": "此操作将覆盖数据库中所选协议的任何缓存历史条目，并将再次获取所有内容。根据帐户数量，这可能需要很长时间。您确定要继续吗？",
-    "reset_tooltip": "刷新数据覆盖缓存的 Aave 和 yearn.finance Vaults 历史条目"
+    "profit_earned": "获利"
   },
   "lending_asset_table": {
     "headers": {
@@ -3192,6 +3187,11 @@
     "address_migration": {
       "title": "地址已添加到{chain}|地址已添加到{chain}",
       "message": "以下地址已添加到{chain}:{addresses}|以下地址已添加到{chain}:{addresses}"
+    },
+    "db_upload_result": {
+      "title": "数据库同步失败",
+      "message": "我们无法完成上传，因为{reason}",
+      "action": "强力推"
     }
   },
   "notification_popup": {

@@ -3,6 +3,7 @@ import { type Balance } from '@rotki/common';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import isEqual from 'lodash/isEqual';
 import sortBy from 'lodash/sortBy';
+import some from 'lodash/some';
 import { type ComputedRef, type Ref, useListeners } from 'vue';
 import { type DataTableHeader } from '@/types/vuetify';
 import { type Properties } from '@/types';
@@ -403,6 +404,12 @@ const removeCollapsed = ({ derivationPath, xpub }: XpubPayload) => {
   }
 };
 
+const isExpanded = (address: string) => some(get(expanded), { address });
+
+const expand = (item: BlockchainAccountWithBalance) => {
+  set(expanded, isExpanded(item.address) ? [] : [item]);
+};
+
 defineExpose({
   removeCollapsed
 });
@@ -417,7 +424,7 @@ defineExpose({
       :loading="accountOperation || loading || detectingTokens"
       :loading-text="t('account_balances.data_table.loading')"
       single-expand
-      item-key="index"
+      item-key="address"
       :expanded.sync="expanded"
       sort-by="balance.usdValue"
       :custom-group="groupBy"
@@ -522,8 +529,8 @@ defineExpose({
       <template #item.expand="{ item }">
         <RowExpander
           v-if="hasTokenDetection && (hasDetails(item.address) || loopring)"
-          :expanded="expanded.includes(item)"
-          @click="expanded = expanded.includes(item) ? [] : [item]"
+          :expanded="isExpanded(item.address)"
+          @click="expand(item)"
         />
       </template>
       <template #group.header="{ group, isOpen, toggle }">

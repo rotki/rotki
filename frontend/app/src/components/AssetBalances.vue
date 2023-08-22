@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { type AssetBalanceWithPrice } from '@rotki/common';
 import { type Ref } from 'vue';
+import some from 'lodash/some';
 import { type DataTableHeader } from '@/types/vuetify';
 import { isEvmNativeToken } from '@/types/asset';
 
@@ -67,6 +68,12 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
 ]);
 
 const sortItems = getSortItems(asset => get(assetInfo(asset)));
+
+const isExpanded = (asset: string) => some(get(expanded), { asset });
+
+const expand = (item: AssetBalanceWithPrice) => {
+  set(expanded, isExpanded(item.asset) ? [] : [item]);
+};
 </script>
 
 <template>
@@ -151,8 +158,8 @@ const sortItems = getSortItems(asset => get(assetInfo(asset)));
         v-if="
           item.breakdown || (!hideBreakdown && isEvmNativeToken(item.asset))
         "
-        :expanded="expanded.includes(item)"
-        @click="expanded = expanded.includes(item) ? [] : [item]"
+        :expanded="isExpanded(item.asset)"
+        @click="expand(item)"
       />
     </template>
   </DataTable>

@@ -126,10 +126,6 @@ const refresh = async () => {
   await defiLending.fetchLending(true);
 };
 
-const reset = async (protocols: DefiProtocol[]) => {
-  await defiStore.resetDB(protocols);
-};
-
 onMounted(async () => {
   const currentRoute = get(route);
   const queryElement = currentRoute.query['protocol'];
@@ -175,7 +171,6 @@ const transactionEventProtocols: ComputedRef<string[]> = computed(() => {
           :title="t('common.deposits')"
           @refresh="refresh()"
         >
-          <DepositProtocolReset :loading="refreshing" @reset="reset($event)" />
           <template #actions>
             <ActiveModules :modules="modules" />
           </template>

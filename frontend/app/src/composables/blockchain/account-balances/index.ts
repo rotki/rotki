@@ -90,6 +90,7 @@ export const useAccountBalances = () => {
       get(ethStore.getBreakdown(asset))
         .concat(get(btcStore.getBreakdown(asset)))
         .concat(get(chainStore.getBreakdown(asset)))
+        .filter(item => !item.balance.amount.isZero())
     );
 
   return {

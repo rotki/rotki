@@ -14,6 +14,7 @@ from rotkehlchen.data_migrations.manager import (
     DataMigrationManager,
     MigrationRecord,
 )
+from rotkehlchen.db.constants import UpdateType
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -359,11 +360,15 @@ def test_migration_10(
         assert write_cursor.execute('SELECT COUNT(*) FROM rpc_nodes WHERE name="polygon pos etherscan"').fetchone()[0] == 1  # noqa: E501
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('data_migration_version', [10])
 @pytest.mark.parametrize('perform_upgrades_at_unlock', [True])
-@pytest.mark.parametrize('ethereum_accounts', [[make_evm_address(), make_evm_address()]])
+@pytest.mark.parametrize('ethereum_accounts', [[
+    '0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84',  # mainnet contract
+    '0x280fc92644Dd4b9f5Bb5be652B4849611e8AC9Dd',  # mainnet + arbitrum activity only (test time)
+]])
 @pytest.mark.parametrize('legacy_messages_via_websockets', [True])
+@pytest.mark.parametrize('network_mocking', [False])
 def test_migration_11(
         rotkehlchen_api_server: 'APIServer',
         ethereum_accounts: list[ChecksumEvmAddress],
@@ -375,25 +380,24 @@ def test_migration_11(
     - Test that detecting arbitrum one accounts works properly
     """
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-
+    # set high version so that DB data updates dont't get applied
+    with rotki.data.db.conn.write_ctx() as write_cursor:
+        write_cursor.executemany(
+            'INSERT OR REPLACE INTO settings(name, value) VALUES (?, ?)',
+            [
+                (UpdateType.SPAM_ASSETS.serialize(), 999),
+                (UpdateType.RPC_NODES.serialize(), 999),
+                (UpdateType.CONTRACTS.serialize(), 999),
+                (UpdateType.GLOBAL_ADDRESSBOOK.serialize(), 999),
+            ],
+        )
     migration_patch = patch(
         'rotkehlchen.data_migrations.manager.MIGRATION_LIST',
         new=[MIGRATION_LIST[5]],
     )
 
     arbitrum_one_addresses = [ethereum_accounts[1]]
-    with ExitStack() as stack:
-        setup_evm_addresses_activity_mock(
-            stack=stack,
-            chains_aggregator=rotki.chains_aggregator,
-            eth_contract_addresses=[ethereum_accounts[0]],
-            ethereum_addresses=[],
-            avalanche_addresses=[],
-            optimism_addresses=[],
-            polygon_pos_addresses=[],
-            arbitrum_one_addresses=arbitrum_one_addresses,
-        )
-        stack.enter_context(migration_patch)
+    with migration_patch:
         DataMigrationManager(rotki).maybe_migrate_data()
 
     # check that detecting arbitrum one accounts works properly

@@ -27,6 +27,7 @@ export const useBalancesBreakdown = () => {
         get(getBlockchainBreakdown(asset))
           .concat(get(getManualBreakdown(asset)))
           .concat(get(getExchangeBreakdown(asset)))
+          .filter(item => !item.balance.amount.isZero())
       )
     );
 

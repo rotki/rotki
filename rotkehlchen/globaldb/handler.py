@@ -29,7 +29,14 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind, Price, Timestamp
+from rotkehlchen.types import (
+    SPAM_PROTOCOL,
+    ChainID,
+    ChecksumEvmAddress,
+    EvmTokenKind,
+    Price,
+    Timestamp,
+)
 from rotkehlchen.utils.misc import timestamp_to_date, ts_now
 from rotkehlchen.utils.serialization import (
     deserialize_asset_with_oracles_from_db,
@@ -824,12 +831,14 @@ class GlobalDBHandler:
             chain_id: ChainID,
             exceptions: Optional[set[ChecksumEvmAddress]] = None,
             protocol: Optional[str] = None,
+            ignore_spam: bool = True,
     ) -> list[EvmToken]:
         """Gets all ethereum tokens from the DB
 
         Can also accept filtering parameters.
         - List of addresses to ignore via exceptions
         - Protocol for which to return tokens
+        - ignore_spam (default True) to filter out "spam protocol" assets
         """
         querystr = (
             'SELECT A.identifier, B.address,  B.chain, B.token_kind, B.decimals, A.name, '
@@ -839,7 +848,7 @@ class GlobalDBHandler:
             'C.identifier = B.identifier WHERE B.chain = ? '
         )
         bindings_list: list[Union[str, int, ChecksumEvmAddress]] = [chain_id.serialize_for_db()]  # noqa: E501
-        if exceptions is not None or protocol is not None:
+        if exceptions is not None or protocol is not None or ignore_spam is True:
             querystr_additions = []
             if exceptions is not None:
                 questionmarks = '?' * len(exceptions)
@@ -848,6 +857,9 @@ class GlobalDBHandler:
             if protocol is not None:
                 querystr_additions.append('B.protocol=? ')
                 bindings_list.append(protocol)
+            if ignore_spam:  # NB: != for nullable needs to be accompanied by IS NULL
+                querystr_additions.append('(B.protocol!=? OR protocol IS NULL) ')
+                bindings_list.append(SPAM_PROTOCOL)
 
             querystr += 'AND ' + 'AND '.join(querystr_additions) + ';'
         else:

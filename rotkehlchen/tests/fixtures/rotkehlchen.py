@@ -6,6 +6,7 @@ from unittest.mock import patch
 import pytest
 
 import rotkehlchen.tests.utils.exchanges as exchange_tests
+from rotkehlchen.chain.evm.node_inquirer import _connect_task_prefix
 from rotkehlchen.constants.misc import DEFAULT_MAX_LOG_SIZE_IN_MB
 from rotkehlchen.data_migrations.constants import LAST_DATA_MIGRATION
 from rotkehlchen.db.settings import DBSettings, ModifiableDBSettings
@@ -16,6 +17,7 @@ from rotkehlchen.premium.premium import Premium, PremiumCredentials
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.tests.utils.api import create_api_server
 from rotkehlchen.tests.utils.args import default_args
+from rotkehlchen.tests.utils.blockchain import maybe_modify_rpc_nodes
 from rotkehlchen.tests.utils.database import (
     _use_prepared_db,
     add_blockchain_accounts_to_db,
@@ -36,7 +38,7 @@ from rotkehlchen.tests.utils.history import maybe_mock_historical_price_queries
 from rotkehlchen.tests.utils.inquirer import inquirer_inject_ethereum_set_order
 from rotkehlchen.tests.utils.mock import mock_proxies, patch_avalanche_request
 from rotkehlchen.tests.utils.substrate import wait_until_all_substrate_nodes_connected
-from rotkehlchen.types import AVAILABLE_MODULES_MAP, Location
+from rotkehlchen.types import AVAILABLE_MODULES_MAP, Location, SupportedBlockchain
 
 
 @pytest.fixture(name='max_tasks_num')
@@ -124,6 +126,8 @@ def patch_and_enter_before_unlock(
         ksm_rpc_endpoint,
         ethereum_manager_connect_at_start,
         optimism_manager_connect_at_start,
+        polygon_pos_manager_connect_at_start,
+        arbitrum_one_manager_connect_at_start,
         kusama_manager_connect_at_start,
         have_decoders,
         use_custom_database,
@@ -133,10 +137,23 @@ def patch_and_enter_before_unlock(
 ) -> None:
     # Do not connect to the usual nodes at start by default. Do not want to spam
     # them during our tests. It's configurable per test, with the default being nothing
-    rpc_nodes_result = ethereum_manager_connect_at_start + optimism_manager_connect_at_start if network_mocking is False else []  # noqa: E501
+    def mock_get_rpc_nodes(blockchain, only_active):  # pylint: disable=unused-argument
+        if network_mocking is True:
+            return []
+
+        if blockchain == SupportedBlockchain.ETHEREUM:
+            return ethereum_manager_connect_at_start
+        elif blockchain == SupportedBlockchain.OPTIMISM:
+            return optimism_manager_connect_at_start
+        elif blockchain == SupportedBlockchain.POLYGON_POS:
+            return polygon_pos_manager_connect_at_start
+        elif blockchain == SupportedBlockchain.ARBITRUM_ONE:
+            return arbitrum_one_manager_connect_at_start
+
+        raise AssertionError(f'Got to get_rpc_nodes during test with unknown {blockchain=}')
     evm_rpcconnect_patch = patch(
         'rotkehlchen.db.dbhandler.DBHandler.get_rpc_nodes',
-        return_value=rpc_nodes_result,
+        side_effect=mock_get_rpc_nodes,
     )
 
     ksm_rpcconnect_patch = patch(
@@ -209,6 +226,8 @@ def patch_no_op_unlock(rotki, stack, should_mock_settings=True):
         ksm_rpc_endpoint='',
         ethereum_manager_connect_at_start=[],
         optimism_manager_connect_at_start=[],
+        polygon_pos_manager_connect_at_start=[],
+        arbitrum_one_manager_connect_at_start=[],
         kusama_manager_connect_at_start=[],
         have_decoders=False,
         use_custom_database=False,
@@ -239,6 +258,7 @@ def initialize_mock_rotkehlchen_instance(
         ethereum_manager_connect_at_start,
         optimism_manager_connect_at_start,
         polygon_pos_manager_connect_at_start,
+        arbitrum_one_manager_connect_at_start,
         kusama_manager_connect_at_start,
         ksm_rpc_endpoint,
         max_tasks_num,
@@ -301,6 +321,8 @@ def initialize_mock_rotkehlchen_instance(
             ksm_rpc_endpoint=ksm_rpc_endpoint,
             ethereum_manager_connect_at_start=ethereum_manager_connect_at_start,
             optimism_manager_connect_at_start=optimism_manager_connect_at_start,
+            polygon_pos_manager_connect_at_start=polygon_pos_manager_connect_at_start,
+            arbitrum_one_manager_connect_at_start=arbitrum_one_manager_connect_at_start,
             kusama_manager_connect_at_start=kusama_manager_connect_at_start,
             have_decoders=have_decoders,
             use_custom_database=use_custom_database,
@@ -325,6 +347,22 @@ def initialize_mock_rotkehlchen_instance(
     )
     # configure when task manager should run for tests
     rotki.task_manager.max_tasks_num = max_tasks_num
+    # by now DB probably has all default rpc nodes as populating rpc nodes is the default
+    # but for tests we should respect the connect_at_start fixtures
+    # also populate the nodes lists to wait for connection
+    evm_nodes_wait = []
+    for blockchain, connect_at_start, evm_manager in (
+            (SupportedBlockchain.ETHEREUM, ethereum_manager_connect_at_start, rotki.chains_aggregator.ethereum),  # noqa: E501
+            (SupportedBlockchain.OPTIMISM, optimism_manager_connect_at_start, rotki.chains_aggregator.optimism),  # noqa: E501
+            (SupportedBlockchain.POLYGON_POS, polygon_pos_manager_connect_at_start, rotki.chains_aggregator.polygon_pos),  # noqa: E501
+            (SupportedBlockchain.ARBITRUM_ONE, arbitrum_one_manager_connect_at_start, rotki.chains_aggregator.arbitrum_one),  # noqa: E501
+    ):
+        maybe_modify_rpc_nodes(rotki.data.db, blockchain, connect_at_start)
+        # since we are past evm inquirer initialization and we just wrote rpc nodes up we need to start the connection  # noqa: E501
+        evm_manager.node_inquirer.maybe_connect_to_nodes(when_tracked_accounts=True)
+        # Check if any connection tasks are pending to wait for
+        if rotki.greenlet_manager.has_task(_connect_task_prefix(evm_manager.node_inquirer.chain_name)):  # noqa: E501
+            evm_nodes_wait.append((evm_manager.node_inquirer, connect_at_start))
 
     if start_with_valid_premium:
         rotki.premium = Premium(rotki_premium_credentials)
@@ -350,18 +388,8 @@ def initialize_mock_rotkehlchen_instance(
         default_mock_value=default_mock_price_value,
     )
     if network_mocking is False:
-        wait_until_all_nodes_connected(
-            connect_at_start=ethereum_manager_connect_at_start,
-            evm_inquirer=rotki.chains_aggregator.ethereum.node_inquirer,
-        )
-        wait_until_all_nodes_connected(
-            connect_at_start=optimism_manager_connect_at_start,
-            evm_inquirer=rotki.chains_aggregator.optimism.node_inquirer,
-        )
-        wait_until_all_nodes_connected(
-            connect_at_start=polygon_pos_manager_connect_at_start,
-            evm_inquirer=rotki.chains_aggregator.polygon_pos.node_inquirer,
-        )
+        for evm_inquirer, connect_at_start in evm_nodes_wait:
+            wait_until_all_nodes_connected(connect_at_start=connect_at_start, evm_inquirer=evm_inquirer)  # noqa: E501
 
     wait_until_all_substrate_nodes_connected(
         substrate_manager_connect_at_start=kusama_manager_connect_at_start,
@@ -413,6 +441,7 @@ def fixture_rotkehlchen_api_server(
         ethereum_manager_connect_at_start,
         optimism_manager_connect_at_start,
         polygon_pos_manager_connect_at_start,
+        arbitrum_one_manager_connect_at_start,
         kusama_manager_connect_at_start,
         ksm_rpc_endpoint,
         max_tasks_num,
@@ -460,6 +489,7 @@ def fixture_rotkehlchen_api_server(
         ethereum_manager_connect_at_start=ethereum_manager_connect_at_start,
         optimism_manager_connect_at_start=optimism_manager_connect_at_start,
         polygon_pos_manager_connect_at_start=polygon_pos_manager_connect_at_start,
+        arbitrum_one_manager_connect_at_start=arbitrum_one_manager_connect_at_start,
         kusama_manager_connect_at_start=kusama_manager_connect_at_start,
         ksm_rpc_endpoint=ksm_rpc_endpoint,
         max_tasks_num=max_tasks_num,
@@ -485,6 +515,7 @@ def fixture_rotkehlchen_api_server(
                         ('ethereum', ethereum_manager_connect_at_start, ethereum_mock_data),
                         ('optimism', optimism_manager_connect_at_start, optimism_mock_data),
                         ('polygon_pos', [], {}),
+                        ('arbitrum_one', [], {}),
                 ):
                     maybe_mock_evm_inquirer(
                         should_mock=mock_other_web3,
@@ -526,6 +557,7 @@ def rotkehlchen_instance(
         ethereum_manager_connect_at_start,
         optimism_manager_connect_at_start,
         polygon_pos_manager_connect_at_start,
+        arbitrum_one_manager_connect_at_start,
         kusama_manager_connect_at_start,
         ksm_rpc_endpoint,
         max_tasks_num,
@@ -563,6 +595,7 @@ def rotkehlchen_instance(
         ethereum_manager_connect_at_start=ethereum_manager_connect_at_start,
         optimism_manager_connect_at_start=optimism_manager_connect_at_start,
         polygon_pos_manager_connect_at_start=polygon_pos_manager_connect_at_start,
+        arbitrum_one_manager_connect_at_start=arbitrum_one_manager_connect_at_start,
         kusama_manager_connect_at_start=kusama_manager_connect_at_start,
         ksm_rpc_endpoint=ksm_rpc_endpoint,
         max_tasks_num=max_tasks_num,

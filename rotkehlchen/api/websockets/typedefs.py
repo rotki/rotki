@@ -22,6 +22,7 @@ class WSMessageType(Enum):
     MISSING_API_KEY = auto()
     HISTORY_EVENTS_STATUS = auto()
     REFRESH_BALANCES = auto()
+    DATABASE_UPLOAD_RESULT = auto()
 
     def __str__(self) -> str:
         return self.name.lower()  # pylint: disable=no-member

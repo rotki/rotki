@@ -3047,7 +3047,7 @@ class RestAPI:
 
         if result is None:
             with self.rotkehlchen.data.db.user_write() as cursor:
-                self.rotkehlchen.data.db.add_globaldb_assetids(cursor)
+                self.rotkehlchen.data.db.sync_globaldb_assets(cursor)
             return OK_RESULT
 
         return {

@@ -3,6 +3,7 @@ import pytest
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS, CPT_GITCOIN
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.fval import FVal
@@ -275,3 +276,55 @@ def test_ethereum_project_update(database, ethereum_inquirer, ethereum_accounts)
         address='0x03506eD3f57892C85DB20C36846e9c808aFe9ef4',
     )]
     assert events == expected_events
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('optimism_accounts', [['0xd034Fd34eaEe5eC2c413C51936109E12873f4DA5']])
+def test_optimism_many_donations_different_strategies(database, optimism_inquirer, optimism_accounts):  # noqa: E501
+    tx_hex = deserialize_evm_tx_hash('0x5d85b436f5f177de6019baa9ecebae285e0def4924546307fac40556bece4cd7')  # noqa: E501
+    evmhash = deserialize_evm_tx_hash(tx_hex)
+    user_address = optimism_accounts[0]
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=optimism_inquirer,
+        database=database,
+        tx_hash=tx_hex,
+    )
+    timestamp = TimestampMS(1692300843000)
+    gas_str = '0.004506208027331091'
+    op_dai = Asset('eip155:10/erc20:0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1')
+    assert events[0:2] == [EvmEvent(
+        tx_hash=evmhash,
+        sequence_index=0,
+        timestamp=timestamp,
+        location=Location.OPTIMISM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        balance=Balance(amount=FVal(gas_str)),
+        location_label=user_address,
+        notes=f'Burned {gas_str} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_hash=evmhash,
+        sequence_index=50,
+        timestamp=timestamp,
+        location=Location.OPTIMISM,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.APPROVE,
+        asset=op_dai,
+        balance=Balance(FVal('147.7')),
+        location_label=user_address,
+        notes=f'Set DAI spending approval of {user_address} by 0x15fa08599EB017F89c1712d0Fe76138899FdB9db to 147.7',  # noqa: E501
+        address='0x15fa08599EB017F89c1712d0Fe76138899FdB9db',
+    )]
+
+    assert len(events) == 121  # 119 donations plus the 2 events above
+    for event in events[2:]:
+        assert event.location == Location.OPTIMISM
+        assert event.event_type == HistoryEventType.SPEND
+        assert event.event_subtype == HistoryEventSubType.DONATE
+        assert event.asset == op_dai
+        assert FVal(1) <= event.balance.amount <= FVal(5)
+        assert event.location_label == user_address
+        assert event.notes.startswith('Make a gitcoin donation')
+        assert event.counterparty == CPT_GITCOIN

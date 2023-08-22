@@ -178,7 +178,7 @@ def test_coinbase_query_balances_unexpected_data(function_scope_coinbase):
         '{"foo": 1}',
         expected_warnings_num=0,
         expected_errors_num=0,
-        contains_expected_msg='Coinbase json response does not contain data',
+        contains_expected_msg='Coinbase API request failed. Check logs for more details',
     )
     # account entry without "balance" key
     input_data = data.replace('"balance"', '"foo"')

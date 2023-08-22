@@ -1,7 +1,5 @@
 <script setup lang="ts">
-defineProps({
-  expanded: { required: true, type: Boolean }
-});
+defineProps<{ expanded: boolean }>();
 
 const emit = defineEmits(['click']);
 const click = () => emit('click');

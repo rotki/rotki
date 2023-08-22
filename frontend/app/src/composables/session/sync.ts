@@ -1,19 +1,28 @@
 import { Severity } from '@rotki/common/lib/messages';
-import { type MaybeRef } from '@vueuse/core';
 import { api } from '@/services/rotkehlchen-api';
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { SYNC_DOWNLOAD, type SyncAction } from '@/types/session/sync';
 
-export const useSync = () => {
+export const useSync = createSharedComposable(() => {
   const { isTaskRunning, awaitTask } = useTaskStore();
   const { notify } = useNotificationsStore();
   const { t } = useI18n();
+  const syncAction = ref<SyncAction>(SYNC_DOWNLOAD);
+  const displaySyncConfirmation = ref(false);
+  const confirmChecked = ref(false);
 
-  const forceSync = async (
-    action: MaybeRef<SyncAction>,
-    logout: () => Promise<void>
-  ): Promise<void> => {
+  const showSyncConfirmation = (action: SyncAction) => {
+    set(syncAction, action);
+    set(displaySyncConfirmation, true);
+  };
+
+  const cancelSync = () => {
+    set(displaySyncConfirmation, false);
+    set(confirmChecked, false);
+  };
+
+  const forceSync = async (logout: () => Promise<void>): Promise<void> => {
     const taskType = TaskType.FORCE_SYNC;
     if (get(isTaskRunning(taskType))) {
       return;
@@ -34,7 +43,7 @@ export const useSync = () => {
 
     try {
       api.cancel();
-      const { taskId } = await useSyncApi().forceSync(get(action));
+      const { taskId } = await useSyncApi().forceSync(get(syncAction));
       const { result, message } = await awaitTask<boolean, TaskMeta>(
         taskId,
         taskType,
@@ -54,7 +63,7 @@ export const useSync = () => {
           display: true
         });
 
-        if (get(action) === SYNC_DOWNLOAD) {
+        if (get(syncAction) === SYNC_DOWNLOAD) {
           await logout();
         }
       } else {
@@ -66,6 +75,11 @@ export const useSync = () => {
   };
 
   return {
-    forceSync
+    syncAction,
+    confirmChecked,
+    displaySyncConfirmation,
+    forceSync,
+    cancelSync,
+    showSyncConfirmation
   };
-};
+});

@@ -2,6 +2,11 @@
 Changelog
 =========
 
+* :release:`1.30.1 <2023-08-23>`
+* :bug:`-` Removed deprecated "Reset DB button" from the aave/yearn view.
+* :bug:`6524` Premium users will be able to explicity request to force push their local DB to the server backup properly again.
+* :bug:`-` Fix an issue where certain gitcoin donations were not detected in optimism and where the big transfer to the contract which later splits into the donations was mistakenly kept.
+
 * :release:`1.30.0 <2023-08-17>`
 * :feature:`6444` Users will now be able to see the asset graph in asset collection view.
 * :feature:`6274` Staking events from cointracking CSV can now be imported properly
@@ -14,15 +19,15 @@ Changelog
 * :feature:`-` Users will now be able to check their addresses able to claim the DIVA airdrop.
 * :feature:`-` DIVA token airdrop claim and delegations are now properly shown in the decoded history events.
 * :feature:`-` Transactions for adding, removing and changing owners threshold for a gnosis safe multisig will now be decoded properly.
-* :bug:`-` Fix and issue where MEV rewards could not be correctly accounted and exported in the CSV summary.
+* :bug:`-` Fix an issue where MEV rewards could not be correctly accounted and exported in the CSV summary.
 * :bug:`-` ENS names that use the new RegistrarController and are renewed will have their events properly detected.
 * :bug:`-` Fixed an error that prevented from exporting the PnL report with debug information.
 * :bug:`-` Fixed an error affecting compound decoders where having more than one asset with the same symbol made the decoding fail.
 * :bug:`-` Fix a bug where the ETH asset is not shown correctly in the location breakdown when the 'Treat ETH as ETH2' setting is activated.
 * :bug:`-` Improve date and hexadecimal address scrambling.
 * :bug:`-` Fix an error affecting the events pagination for non premium users.
-* :feature:`-` Arbitrum One support has been added. Balances will be shown, transactions pulled and decoded and taken into account in the PnL report.
-* :feature:`-` The balances snapshot csv file exported from rotki now contains an asset symbol column.
+* :feature:`3420` Arbitrum One support has been added. Balances will be shown, transactions pulled and decoded and taken into account in the PnL report.
+* :feature:`6454` The balances snapshot csv file exported from rotki now contains an asset symbol column.
 * :bug:`-` Remote errors should no longer affect the ethereum staking deposits decoded event view.
 * :bug:`-` Newer deposits to zksync lite should be decoded properly in the history events view.
 * :bug:`-` Using SVG icons for assets will now work.
