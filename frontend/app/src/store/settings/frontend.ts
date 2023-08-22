@@ -4,7 +4,6 @@ import {
   type TimeFramePeriod,
   type TimeFrameSetting
 } from '@rotki/common/lib/settings/graphs';
-import { clone } from 'lodash';
 import { getBnFormat } from '@/data/amount_formatter';
 import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { type CurrencyLocation } from '@/types/currency-location';
@@ -186,15 +185,18 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
         ({ version }) => version === defaultThemeVersionSetting
       );
 
-      const isKeyOfThemeColors = (key: string): key is keyof ThemeColors =>
-        Object.keys(ThemeColors).includes(key);
-
       if (historicDefaultTheme) {
-        const newLightTheme: ThemeColors = clone(LIGHT_COLORS);
-        const newDarkTheme: ThemeColors = clone(DARK_COLORS);
+        const newLightTheme: ThemeColors = { ...LIGHT_COLORS };
+        const newDarkTheme: ThemeColors = { ...DARK_COLORS };
         const savedLightTheme = get(lightTheme);
         const savedDarkTheme = get(darkTheme);
-        Object.keys(ThemeColors).forEach(key => {
+
+        const accentColors = Object.keys(ThemeColors.shape);
+
+        const isKeyOfThemeColors = (key: string): key is keyof ThemeColors =>
+          accentColors.includes(key);
+
+        accentColors.forEach(key => {
           if (!isKeyOfThemeColors(key)) {
             return;
           }

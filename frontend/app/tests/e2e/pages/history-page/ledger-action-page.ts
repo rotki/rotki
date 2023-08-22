@@ -25,10 +25,10 @@ export class LedgerActionPage {
   addLedgerAction(ledgerAction: ExternalLedgerAction) {
     cy.get('[data-cy=ledger-actions__add]').click();
     cy.get('[data-cy=ledger-action-form]').should('be.visible');
+    selectLocation('[data-cy=location]', ledgerAction.location);
     cy.get('[data-cy=datetime]').type(
       `{selectall}{backspace}${ledgerAction.datetime}`
     );
-    selectLocation('[data-cy=location]', ledgerAction.location);
 
     // clicking outside to a fully visible element to close the datepicker
     cy.get('[data-cy=bottom-dialog]').find('.v-card__title').click();

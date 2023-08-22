@@ -16,6 +16,8 @@ export default defineConfig({
     supportFile: 'tests/e2e/support/index.ts',
     testIsolation: false,
     experimentalMemoryManagement: true,
+    scrollBehavior: 'nearest',
+    numTestsKeptInMemory: 5,
     setupNodeEvents(on, config) {
       on(
         'after:spec',

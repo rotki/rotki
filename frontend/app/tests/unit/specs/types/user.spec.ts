@@ -60,6 +60,7 @@ describe('types/user', () => {
         accent: '#000000',
         graph: '#555555'
       },
+      defaultThemeVersion: 1,
       graphZeroBased: true,
       showGraphRangeSelector: true,
       nftsInNetValue: true,

@@ -66,6 +66,7 @@ describe('settings:frontend', () => {
             selectedTheme: Theme.AUTO,
             lightTheme: LIGHT_COLORS,
             darkTheme: DARK_COLORS,
+            defaultThemeVersion: 1,
             graphZeroBased: false,
             showGraphRangeSelector: true,
             nftsInNetValue: true,
@@ -144,6 +145,7 @@ describe('settings:frontend', () => {
         accent: '#000000',
         graph: '#555555'
       },
+      defaultThemeVersion: 1,
       graphZeroBased: true,
       showGraphRangeSelector: true,
       nftsInNetValue: true,
