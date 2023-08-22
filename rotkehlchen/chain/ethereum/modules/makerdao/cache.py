@@ -14,7 +14,7 @@ from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind, GeneralCacheType
+from rotkehlchen.types import CacheType, ChainID, ChecksumEvmAddress, EvmTokenKind
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 # a bit hacky but ETH-A ilk is our general update ilk cache timestamp reminder
-GENERAL_ILK_CACHE_KEY = f'{GeneralCacheType.MAKERDAO_VAULT_ILK.serialize()}ETH-A'
+GENERAL_ILK_CACHE_KEY = f'{CacheType.MAKERDAO_VAULT_ILK.serialize()}ETH-A'
 
 
 def _collateral_type_to_info(
@@ -35,7 +35,7 @@ def _collateral_type_to_info(
 ) -> Optional[tuple[int, ChecksumEvmAddress, ChecksumEvmAddress]]:
     cursor.execute(
         'SELECT value from unique_cache WHERE key=?',
-        (f'{GeneralCacheType.MAKERDAO_VAULT_ILK.serialize()}{collateral_type}',),
+        (f'{CacheType.MAKERDAO_VAULT_ILK.serialize()}{collateral_type}',),
     )
     result = cursor.fetchone()
     if result is None:
@@ -83,7 +83,7 @@ def ilk_cache_foreach(
         cursor: 'DBCursor',
 ) -> Iterator[tuple[str, int, CryptoAsset, ChecksumEvmAddress]]:
     """Reads the ilk cache from the globalDB and yields at each iteration of the cursor"""
-    cache_prefix = GeneralCacheType.MAKERDAO_VAULT_ILK.serialize()
+    cache_prefix = CacheType.MAKERDAO_VAULT_ILK.serialize()
     len_prefix = len(cache_prefix)
     cursor.execute(
         'SELECT key, value from unique_cache WHERE key LIKE ?',
@@ -184,7 +184,7 @@ def update_ilk_registry(
 
             cursor.execute(
                 'SELECT COUNT(*) from unique_cache WHERE key=?',
-                (f'{GeneralCacheType.MAKERDAO_VAULT_ILK.serialize()}{ilk}',),
+                (f'{CacheType.MAKERDAO_VAULT_ILK.serialize()}{ilk}',),
             )
             result = cursor.fetchone()[0]
             if result != 0:
@@ -232,7 +232,7 @@ def update_ilk_registry(
 
             # also add to tuples to write to cache
             write_tuples.append((
-                f'{GeneralCacheType.MAKERDAO_VAULT_ILK.serialize()}{ilk}',
+                f'{CacheType.MAKERDAO_VAULT_ILK.serialize()}{ilk}',
                 json.dumps((ilk_class, underlying_token.identifier, join_address), separators=(',', ':')),  # noqa: E501
                 now,
             ))
@@ -241,9 +241,9 @@ def update_ilk_registry(
         return
 
     with GlobalDBHandler().conn.write_ctx() as write_cursor:
-        # since the uniuqe cache is unique for every key, the value will be overwritten.
+        # since the unique cache is unique for every key, the value will be overwritten.
         write_cursor.executemany(
-            'INSERT INTO unique_cache(key, value, last_queried_ts) VALUES(?, ?, ?)',
+            'INSERT OR REPLACE INTO unique_cache(key, value, last_queried_ts) VALUES(?, ?, ?)',
             write_tuples,
         )
         write_cursor.execute(

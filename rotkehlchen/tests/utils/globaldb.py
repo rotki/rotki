@@ -11,7 +11,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.cache import compute_cache_key
 from rotkehlchen.globaldb.upgrades.manager import UPGRADES_LIST
 from rotkehlchen.tests.utils.factories import make_evm_address
-from rotkehlchen.types import ChainID, EvmTokenKind, GeneralCacheType, Timestamp
+from rotkehlchen.types import CacheType, ChainID, EvmTokenKind, Timestamp
 
 underlying_address1 = make_evm_address()
 underlying_address2 = make_evm_address()
@@ -114,7 +114,7 @@ def patch_for_globaldb_migrations(stack: ExitStack, new_list: list) -> ExitStack
 
 def globaldb_get_general_cache_last_queried_ts(
         cursor: DBCursor,
-        key_parts: Iterable[Union[str, GeneralCacheType]],
+        key_parts: Iterable[Union[str, CacheType]],
         value: str,
 ) -> Optional[Timestamp]:
     """Function to get timestamp at which pair key - value was queried last time."""

@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 
 from rotkehlchen.constants.timing import ETH_PROTOCOLS_CACHE_REFRESH
 from rotkehlchen.globaldb.cache import globaldb_set_cache_values_at_ts
-from rotkehlchen.types import GeneralCacheType, Timestamp
+from rotkehlchen.types import CacheType, Timestamp
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
@@ -55,7 +55,7 @@ def globaldb_data_migration_1(conn: 'DBConnection') -> None:
         for ilk, info in ilk_mapping.items():
             globaldb_set_cache_values_at_ts(
                 write_cursor=write_cursor,
-                key_parts=(GeneralCacheType.MAKERDAO_VAULT_ILK, ilk),
+                key_parts=(CacheType.MAKERDAO_VAULT_ILK, ilk),
                 values=(json.dumps(info, separators=(',', ':')),),
                 timestamp=timestamp,
             )

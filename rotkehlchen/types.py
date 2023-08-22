@@ -887,7 +887,8 @@ class EvmTokenKind(DBCharEnumMixIn):
     UNKNOWN = auto()
 
 
-class GeneralCacheType(Enum):
+class CacheType(Enum):
+    """It contains all types both for the general cache table and the unique cache table"""
     CURVE_LP_TOKENS = auto()
     CURVE_POOL_ADDRESS = auto()  # get pool addr by lp token
     CURVE_POOL_TOKENS = auto()  # get pool tokens by pool addr
@@ -900,6 +901,20 @@ class GeneralCacheType(Enum):
         # Using custom serialize method instead of SerializableEnumMixin since mixin replaces
         # `_` with ` ` and we don't need spaces here
         return self.name
+
+
+UniqueCacheType = Literal[
+    CacheType.CURVE_POOL_ADDRESS,
+    CacheType.MAKERDAO_VAULT_ILK,
+    CacheType.CURVE_GAUGE_ADDRESS,
+    CacheType.YEARN_VAULTS,
+]
+
+GeneralCacheType = Literal[
+    CacheType.CURVE_LP_TOKENS,
+    CacheType.CURVE_POOL_TOKENS,
+    CacheType.CURVE_POOL_UNDERLYING_TOKENS,
+]
 
 
 class OracleSource(SerializableEnumNameMixin):

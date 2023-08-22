@@ -1,6 +1,6 @@
 import logging
 from json import JSONDecodeError
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 import requests
 
@@ -18,9 +18,9 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
     YEARN_VAULTS_V1_PROTOCOL,
     YEARN_VAULTS_V2_PROTOCOL,
+    CacheType,
     ChainID,
     EvmTokenKind,
-    GeneralCacheType,
     Timestamp,
 )
 
@@ -57,13 +57,13 @@ def query_yearn_vaults(db: 'DBHandler', ethereum_inquirer: 'EthereumInquirer') -
     # If it was the same number of vaults this response has then we don't need to take
     # action since vaults are not removed from their API response.
     with GlobalDBHandler().conn.read_ctx() as cursor:
-        yearn_api_cache: list[str] = globaldb_get_cache_values(
+        yearn_api_cache: Optional[str] = globaldb_get_cache_values(
             cursor=cursor,
-            key_parts=[GeneralCacheType.YEARN_VAULTS],
+            key_parts=(CacheType.YEARN_VAULTS,),
         )
-    if len(yearn_api_cache) == 1 and int(yearn_api_cache[0]) == len(data):
+    if yearn_api_cache is not None and int(yearn_api_cache) == len(data):
         logging.debug(
-            f'Previous query of yearn vaults returned {yearn_api_cache[0]} vaults and last API '
+            f'Previous query of yearn vaults returned {yearn_api_cache} vaults and last API '
             f'response had the same amount of vaults. Not processing the API response since '
             f'it is identical to what we have.',
         )
@@ -71,8 +71,8 @@ def query_yearn_vaults(db: 'DBHandler', ethereum_inquirer: 'EthereumInquirer') -
             # update the timestamp of the last time this vaults were queried
             globaldb_set_cache_values(
                 write_cursor=write_cursor,
-                key_parts=[GeneralCacheType.YEARN_VAULTS],
-                values=[yearn_api_cache[0]],
+                key_parts=(CacheType.YEARN_VAULTS,),
+                values=[yearn_api_cache],
             )
         return
 
@@ -147,6 +147,6 @@ def query_yearn_vaults(db: 'DBHandler', ethereum_inquirer: 'EthereumInquirer') -
 
         globaldb_set_cache_values(
             write_cursor=write_cursor,
-            key_parts=[GeneralCacheType.YEARN_VAULTS],
+            key_parts=(CacheType.YEARN_VAULTS,),
             values=[str(len(data))],
         )

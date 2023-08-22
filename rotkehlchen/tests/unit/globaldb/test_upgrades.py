@@ -30,13 +30,7 @@ from rotkehlchen.globaldb.upgrades.v5_v6 import V5_V6_UPGRADE_UNIQUE_CACHE_KEYS
 from rotkehlchen.globaldb.utils import GLOBAL_DB_FILENAME, GLOBAL_DB_VERSION
 from rotkehlchen.tests.fixtures.globaldb import create_globaldb
 from rotkehlchen.tests.utils.globaldb import patch_for_globaldb_upgrade_to
-from rotkehlchen.types import (
-    YEARN_VAULTS_V1_PROTOCOL,
-    ChainID,
-    EvmTokenKind,
-    GeneralCacheType,
-    Timestamp,
-)
+from rotkehlchen.types import YEARN_VAULTS_V1_PROTOCOL, CacheType, ChainID, EvmTokenKind, Timestamp
 from rotkehlchen.utils.misc import ts_now
 
 # TODO: Perhaps have a saved version of that global DB for the tests and query it too?
@@ -320,12 +314,12 @@ def test_upgrade_v4_v5(globaldb):
         assert cursor.fetchone()[0] == 0
         last_queried_ts = globaldb_get_cache_last_queried_ts_by_key(
             cursor=cursor,
-            key_parts=[GeneralCacheType.CURVE_LP_TOKENS],
+            key_parts=[CacheType.CURVE_LP_TOKENS],
         )
         assert last_queried_ts == Timestamp(1676727187)  # 1676727187 is just some random value in the db  # noqa: E501
         pool_tokens_in_global_db = globaldb_get_cache_keys_and_values_like(
             cursor=cursor,
-            key_parts=[GeneralCacheType.CURVE_POOL_TOKENS],
+            key_parts=[CacheType.CURVE_POOL_TOKENS],
         )
         assert len(pool_tokens_in_global_db) > 0, 'There should be some pool tokens set'
         contracts_before_upgrade = cursor.execute(
@@ -370,12 +364,12 @@ def test_upgrade_v4_v5(globaldb):
 
         last_queried_ts = globaldb_get_cache_last_queried_ts_by_key(
             cursor=cursor,
-            key_parts=[GeneralCacheType.CURVE_LP_TOKENS],
+            key_parts=[CacheType.CURVE_LP_TOKENS],
         )
         assert last_queried_ts == Timestamp(0)
         pool_tokens_in_global_db = globaldb_get_cache_keys_and_values_like(
             cursor=cursor,
-            key_parts=[GeneralCacheType.CURVE_POOL_TOKENS],
+            key_parts=[CacheType.CURVE_POOL_TOKENS],
         )
         assert len(pool_tokens_in_global_db) == 0, 'All curve pool tokens should have been deleted'
         contracts_after_upgrade = cursor.execute('SELECT * FROM contract_data').fetchall()
@@ -392,7 +386,7 @@ def test_upgrade_v5_v6(globaldb):
     """Test the global DB upgrade from v5 to v6"""
     # Check the state before upgrading
     with globaldb.conn.read_ctx() as cursor:
-        # check existence of unique_cache table
+        # check that unique_cache table is not present in the database
         cursor.execute(
             'SELECT COUNT(*) FROM sqlite_master WHERE type="table" and name=?',
             ('unique_cache',),
@@ -402,17 +396,19 @@ def test_upgrade_v5_v6(globaldb):
         cursor.execute('SELECT COUNT(*) FROM general_cache')
         gen_cache_content_before = cursor.fetchone()[0]
         # check that unique_cache_keys content are still in general_cache
+        unique_keys_to_num_entries = {}
         gen_cache_unique_key_content = 0
         for key_part in V5_V6_UPGRADE_UNIQUE_CACHE_KEYS:
             cursor.execute(
                 'SELECT COUNT(*) FROM general_cache WHERE key LIKE ?',
                 (f'{key_part.serialize()}%',),
             )
-            gen_cache_unique_key_content += int(cursor.fetchone()[0])
+            unique_keys_to_num_entries[key_part] = int(cursor.fetchone()[0])
+            gen_cache_unique_key_content += unique_keys_to_num_entries[key_part]
         # add some dummy data into cache to verify behaviour during transfer.
-        cache_key = list(V5_V6_UPGRADE_UNIQUE_CACHE_KEYS)[0].serialize() + 'test'
+        test_cache_key = next(iter(V5_V6_UPGRADE_UNIQUE_CACHE_KEYS)).serialize() + 'test'
         values = ['abc', 'xyz', '123']
-        tuples = [(cache_key, value, ts_now()) for value in values]
+        tuples = [(test_cache_key, value, ts_now()) for value in values]
         cursor.executemany(
             'INSERT OR REPLACE INTO general_cache '
             '(key, value, last_queried_ts) VALUES (?, ?, ?)',
@@ -428,17 +424,17 @@ def test_upgrade_v5_v6(globaldb):
         )
     assert globaldb.get_setting_value('version', None) == 6
     with globaldb.conn.read_ctx() as cursor:
-        # check again existence of unique_cache table
+        # check that unique_cache table is present in the database
         cursor.execute(
             'SELECT COUNT(*) FROM sqlite_master WHERE type="table" and name=?',
             ('unique_cache',),
         )
         assert cursor.fetchone()[0] == 1
-        # check that of dummy entry, only first value is transfered to unique_cache
-        value = globaldb_get_cache_values(cursor, [list(V5_V6_UPGRADE_UNIQUE_CACHE_KEYS)[0], 'test'])  # noqa: E501
-        assert value == ['abc']
+        # check that of dummy entry, only first value is transferred to unique_cache
+        value = globaldb_get_cache_values(cursor, (next(iter(V5_V6_UPGRADE_UNIQUE_CACHE_KEYS)), 'test'))  # noqa: E501
+        assert value == values[0]
         # delete dummy entry to maintain db consistency
-        cursor.execute('DELETE FROM unique_cache WHERE key=?', (cache_key,))
+        cursor.execute('DELETE FROM unique_cache WHERE key=?', (test_cache_key,))
 
         # check that appropriate cache data is transfered
         for key_part in V5_V6_UPGRADE_UNIQUE_CACHE_KEYS:
@@ -446,7 +442,7 @@ def test_upgrade_v5_v6(globaldb):
                 'SELECT COUNT(*) FROM unique_cache WHERE key LIKE ?',
                 (f'{key_part.serialize()}%',),
             )
-            assert cursor.fetchone()[0] > 0
+            assert cursor.fetchone()[0] == unique_keys_to_num_entries[key_part]
             cursor.execute(
                 'SELECT COUNT(*) FROM general_cache WHERE key LIKE ?',
                 (f'{key_part.serialize()}%',),
@@ -454,8 +450,7 @@ def test_upgrade_v5_v6(globaldb):
             assert cursor.fetchone()[0] == 0
         unique_cache_content = cursor.execute('SELECT COUNT(*) FROM unique_cache').fetchone()[0]
         # get number of entries in general_cache after upgrade
-        cursor.execute('SELECT COUNT(*) FROM general_cache')
-        gen_cache_content_after = cursor.fetchone()[0]
+        gen_cache_content_after = cursor.execute('SELECT COUNT(*) FROM general_cache').fetchone()[0]  # noqa: E501
         assert gen_cache_unique_key_content == unique_cache_content
         assert gen_cache_content_before == gen_cache_content_after + gen_cache_unique_key_content
 

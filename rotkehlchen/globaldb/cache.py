@@ -1,32 +1,39 @@
 """Functions dealing with the general_cache table of the Global DB"""
 from collections.abc import Iterable
-from typing import Optional, Union
+from typing import Optional, Union, overload
 
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.db.drivers.gevent import DBCursor
-from rotkehlchen.types import ChecksumEvmAddress, GeneralCacheType, Timestamp
+from rotkehlchen.types import (
+    CacheType,
+    ChecksumEvmAddress,
+    GeneralCacheType,
+    Timestamp,
+    UniqueCacheType,
+)
 from rotkehlchen.utils.misc import ts_now
 
 UNIQUE_CACHE_TABLE_NAME = 'unique_cache'
 GENERAL_CACHE_TABLE_NAME = 'general_cache'
-UNIQUE_CACHE_KEYS: set[GeneralCacheType] = {
-    GeneralCacheType.CURVE_POOL_ADDRESS,
-    GeneralCacheType.MAKERDAO_VAULT_ILK,
-    GeneralCacheType.CURVE_GAUGE_ADDRESS,
+UNIQUE_CACHE_KEYS: set[CacheType] = {
+    CacheType.CURVE_POOL_ADDRESS,
+    CacheType.MAKERDAO_VAULT_ILK,
+    CacheType.CURVE_GAUGE_ADDRESS,
+    CacheType.YEARN_VAULTS,
 }
 
 
-def compute_cache_key(key_parts: Iterable[Union[str, GeneralCacheType]]) -> tuple[str, str]:
+def compute_cache_key(key_parts: Iterable[Union[str, CacheType]]) -> tuple[str, str]:
     """Function to compute cache key before accessing globaldb cache.
     Computes cache key by iterating through `key_parts` and making one string from them.
     Only tuple with the same values and the same order represents the same key. Also returns which
     cache table the data must be stored in."""
-    unique_cache = list(key_parts)[0] in UNIQUE_CACHE_KEYS
+    unique_cache = next(iter(key_parts)) in UNIQUE_CACHE_KEYS
     cache_table = UNIQUE_CACHE_TABLE_NAME if unique_cache else GENERAL_CACHE_TABLE_NAME
     cache_key = ''
     for part in key_parts:
-        if isinstance(part, GeneralCacheType):
+        if isinstance(part, CacheType):
             cache_key += part.serialize()
         else:
             cache_key += part
@@ -34,12 +41,12 @@ def compute_cache_key(key_parts: Iterable[Union[str, GeneralCacheType]]) -> tupl
 
 
 # Using any random address here, since length of all addresses is the same
-BASE_POOL_TOKENS_KEY_LENGTH = len(compute_cache_key([GeneralCacheType.CURVE_POOL_TOKENS, ZERO_ADDRESS])[0])  # noqa: E501
+BASE_POOL_TOKENS_KEY_LENGTH = len(compute_cache_key([CacheType.CURVE_POOL_TOKENS, ZERO_ADDRESS])[0])  # noqa: E501
 
 
 def globaldb_set_cache_values_at_ts(
         write_cursor: DBCursor,
-        key_parts: Iterable[Union[str, GeneralCacheType]],
+        key_parts: Iterable[Union[str, CacheType]],
         values: Iterable[str],
         timestamp: Timestamp,
 ) -> None:
@@ -56,7 +63,7 @@ def globaldb_set_cache_values_at_ts(
 
 def globaldb_set_cache_values(
         write_cursor: DBCursor,
-        key_parts: Iterable[Union[str, GeneralCacheType]],
+        key_parts: Iterable[Union[str, CacheType]],
         values: Iterable[str],
 ) -> None:
     """Function to update cache in globaldb. Inserts all values paired with the cache key.
@@ -70,19 +77,44 @@ def globaldb_set_cache_values(
     )
 
 
+@overload
 def globaldb_get_cache_values(
         cursor: DBCursor,
-        key_parts: Iterable[Union[str, GeneralCacheType]],
+        key_parts: Union[tuple[UniqueCacheType, str], tuple[UniqueCacheType]],
+) -> Optional[str]:
+    ...
+
+
+@overload
+def globaldb_get_cache_values(
+        cursor: DBCursor,
+        key_parts: Union[tuple[GeneralCacheType, str], tuple[GeneralCacheType]],
 ) -> list[str]:
-    """Function to read globaldb cache. Returns all the values that are paired with the key."""
+    ...
+
+
+def globaldb_get_cache_values(
+        cursor: DBCursor,
+        key_parts: Iterable[Union[str, CacheType]],
+) -> Union[Optional[str], list[str]]:
+    """Function to read globaldb cache. It reads either from the general cache or the unique cache
+    table. If it reads from the general cache, it returns all the values that are paired
+    with the given key."""
     cache_key, cache_table = compute_cache_key(key_parts)
     cursor.execute(f'SELECT value FROM {cache_table} WHERE key=?', (cache_key,))
-    return [entry[0] for entry in cursor]
+    results = [entry[0] for entry in cursor]
+
+    if next(iter(key_parts)) in UNIQUE_CACHE_KEYS:
+        if len(results) == 0:
+            return None
+        return results[0]
+    else:
+        return results
 
 
 def globaldb_get_general_cache_like(
         cursor: DBCursor,
-        key_parts: Iterable[Union[str, GeneralCacheType]],
+        key_parts: Iterable[Union[str, CacheType]],
 ) -> list[str]:
     """
     Function to read globaldb cache.
@@ -99,7 +131,7 @@ def globaldb_get_general_cache_like(
 
 def globaldb_get_cache_keys_and_values_like(
         cursor: DBCursor,
-        key_parts: Iterable[Union[str, GeneralCacheType]],
+        key_parts: Iterable[Union[str, CacheType]],
 ) -> list[tuple[str, str]]:
     """
     Function to read globaldb cache.
@@ -116,7 +148,7 @@ def globaldb_get_cache_keys_and_values_like(
 
 def globaldb_get_cache_last_queried_ts_by_key(
         cursor: DBCursor,
-        key_parts: Iterable[Union[str, GeneralCacheType]],
+        key_parts: Iterable[Union[str, CacheType]],
 ) -> Timestamp:
     """
     Get the last_queried_ts of the oldest stored element by key_parts. If there is no such
@@ -145,7 +177,7 @@ def read_curve_pool_tokens(
     """
     tokens_data = globaldb_get_cache_keys_and_values_like(
         cursor=cursor,
-        key_parts=[GeneralCacheType.CURVE_POOL_TOKENS, pool_address],
+        key_parts=[CacheType.CURVE_POOL_TOKENS, pool_address],
     )
     found_tokens: list[tuple[int, ChecksumEvmAddress]] = []
     for key, address in tokens_data:

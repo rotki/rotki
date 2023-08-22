@@ -28,10 +28,10 @@ from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import (
     CURVE_POOL_PROTOCOL,
     AddressbookEntry,
+    CacheType,
     ChainID,
     ChecksumEvmAddress,
     EvmTokenKind,
-    GeneralCacheType,
     SupportedBlockchain,
 )
 from rotkehlchen.utils.network import request_get_dict
@@ -88,21 +88,23 @@ def read_curve_pools_and_gauges() -> READ_CURVE_DATA_TYPE:
     with GlobalDBHandler().conn.read_ctx() as cursor:
         curve_pools_lp_tokens = globaldb_get_cache_values(
             cursor=cursor,
-            key_parts=[GeneralCacheType.CURVE_LP_TOKENS],
+            key_parts=(CacheType.CURVE_LP_TOKENS,),
         )
         curve_pools = {}
         curve_gauges = set()
         for lp_token_addr in curve_pools_lp_tokens:
             pool_address = globaldb_get_cache_values(
                 cursor=cursor,
-                key_parts=[GeneralCacheType.CURVE_POOL_ADDRESS, lp_token_addr],
-            )[0]
+                key_parts=(CacheType.CURVE_POOL_ADDRESS, lp_token_addr),
+            )
+            if pool_address is None:
+                continue
             gauge_address_data = globaldb_get_cache_values(
                 cursor=cursor,
-                key_parts=[GeneralCacheType.CURVE_GAUGE_ADDRESS, pool_address],
+                key_parts=(CacheType.CURVE_GAUGE_ADDRESS, pool_address),
             )
-            if len(gauge_address_data) > 0:
-                curve_gauges.add(string_to_evm_address(gauge_address_data[0]))
+            if gauge_address_data is not None:
+                curve_gauges.add(string_to_evm_address(gauge_address_data))
             pool_address = string_to_evm_address(pool_address)
             curve_pools[pool_address] = read_curve_pool_tokens(cursor=cursor, pool_address=pool_address)  # noqa: E501
 
@@ -252,31 +254,31 @@ def save_curve_data_to_cache(
 
         globaldb_set_cache_values(
             write_cursor=write_cursor,
-            key_parts=[GeneralCacheType.CURVE_LP_TOKENS],
+            key_parts=(CacheType.CURVE_LP_TOKENS,),
             values=[pool.lp_token_address],  # keys of pools_mapping are lp tokens
         )
         globaldb_set_cache_values(
             write_cursor=write_cursor,
-            key_parts=[GeneralCacheType.CURVE_POOL_ADDRESS, pool.lp_token_address],
+            key_parts=(CacheType.CURVE_POOL_ADDRESS, pool.lp_token_address),
             values=[pool.pool_address],
         )
         for idx, coin in enumerate(pool.coins):
             globaldb_set_cache_values(
                 write_cursor=write_cursor,
-                key_parts=[GeneralCacheType.CURVE_POOL_TOKENS, pool.pool_address, str(idx)],
+                key_parts=(CacheType.CURVE_POOL_TOKENS, pool.pool_address, str(idx)),
                 values=[coin],
             )
         if pool.underlying_coins is not None:
             for idx, underlying_coin in enumerate(pool.underlying_coins):
                 globaldb_set_cache_values(
                     write_cursor=write_cursor,
-                    key_parts=[GeneralCacheType.CURVE_POOL_UNDERLYING_TOKENS, pool.pool_address, str(idx)],  # noqa: E501
+                    key_parts=(CacheType.CURVE_POOL_UNDERLYING_TOKENS, pool.pool_address, str(idx)),  # noqa: E501
                     values=[underlying_coin],
                 )
         if pool.gauge_address is not None:
             globaldb_set_cache_values(
                 write_cursor=write_cursor,
-                key_parts=[GeneralCacheType.CURVE_GAUGE_ADDRESS, pool.pool_address],
+                key_parts=(CacheType.CURVE_GAUGE_ADDRESS, pool.pool_address),
                 values=[pool.gauge_address],
             )
 
@@ -435,7 +437,7 @@ def query_curve_data(ethereum: 'EthereumInquirer') -> Optional[list[CurvePoolDat
     with GlobalDBHandler().conn.read_ctx() as cursor:
         existing_pools = [
             string_to_evm_address(address)
-            for address in globaldb_get_general_cache_like(cursor=cursor, key_parts=[GeneralCacheType.CURVE_LP_TOKENS])  # noqa: E501
+            for address in globaldb_get_general_cache_like(cursor=cursor, key_parts=[CacheType.CURVE_LP_TOKENS])  # noqa: E501
         ]
     pools_data = None
     try:

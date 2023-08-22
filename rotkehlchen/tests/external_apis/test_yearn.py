@@ -15,7 +15,7 @@ from rotkehlchen.globaldb.cache import (
 )
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import YEARN_VAULTS_V2_PROTOCOL, ChainID, GeneralCacheType, Timestamp
+from rotkehlchen.types import YEARN_VAULTS_V2_PROTOCOL, CacheType, ChainID, Timestamp
 
 
 @pytest.mark.parametrize('globaldb_upgrades', [[]])
@@ -39,7 +39,7 @@ def test_yearn_api(database, ethereum_inquirer):
     with GlobalDBHandler().conn.read_ctx() as cursor:
         state_before = globaldb_get_cache_values(
             cursor=cursor,
-            key_parts=[GeneralCacheType.YEARN_VAULTS],
+            key_parts=(CacheType.YEARN_VAULTS,),
         )
 
     with patch.object(requests, 'get', wraps=mock_yearn_api):
@@ -48,19 +48,19 @@ def test_yearn_api(database, ethereum_inquirer):
     with GlobalDBHandler().conn.read_ctx() as cursor:
         state_after = globaldb_get_cache_values(
             cursor=cursor,
-            key_parts=[GeneralCacheType.YEARN_VAULTS],
+            key_parts=(CacheType.YEARN_VAULTS,),
         )
 
         last_queried_ts = globaldb_get_cache_last_queried_ts_by_key(
             cursor=cursor,
-            key_parts=[GeneralCacheType.YEARN_VAULTS],
+            key_parts=(CacheType.YEARN_VAULTS,),
         )
         assert last_queried_ts is not None
 
     assert state_after != state_before
     # 140 is the number of vaults at the moment of writing this test
-    assert len(state_before) == 0
-    assert int(state_after[0]) == 2
+    assert state_before is None
+    assert int(state_after) == 2
 
     # check that a new vault was added
     token = GlobalDBHandler.get_evm_token(
@@ -82,7 +82,7 @@ def test_yearn_api(database, ethereum_inquirer):
     with GlobalDBHandler().conn.read_ctx() as cursor:
         new_queried_ts = globaldb_get_cache_last_queried_ts_by_key(
             cursor=cursor,
-            key_parts=[GeneralCacheType.YEARN_VAULTS],
+            key_parts=[CacheType.YEARN_VAULTS],
         )
     assert new_queried_ts is not None
     assert new_queried_ts > last_queried_ts

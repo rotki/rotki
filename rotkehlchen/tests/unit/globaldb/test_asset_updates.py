@@ -42,7 +42,7 @@ def mock_github_assets_response(url, timeout):  # pylint: disable=unused-argumen
         data = json.dumps(
             {
                 'updates': {
-                    '998': {'min_schema_version': local_schema - 1, 'max_schema_version': local_schema - 1, 'changes': 1},  # noqa: E501
+                    '998': {'min_schema_version': 4, 'max_schema_version': 4, 'changes': 1},  # noqa: E501
                     '999': {'min_schema_version': local_schema, 'max_schema_version': local_schema, 'changes': 1},  # noqa: E501
                 },
                 'latest': 999,
@@ -469,5 +469,5 @@ def test_asset_update(assets_updater: AssetsUpdater):
     # required are correctly queried.
     warnings = assets_updater.msg_aggregator.consume_warnings()
     assert warnings == [
-        'Skipping assets update 998 since it requires a min schema of 4 and max schema of 4 while the local DB schema version is 5. You will have to follow an alternative method to obtain the assets of this update. Easiest would be to reset global DB.',  # noqa: E501
+        f'Skipping assets update 998 since it requires a min schema of 4 and max schema of 4 while the local DB schema version is {GlobalDBHandler().get_schema_version()}. You will have to follow an alternative method to obtain the assets of this update. Easiest would be to reset global DB.',  # noqa: E501
     ]
