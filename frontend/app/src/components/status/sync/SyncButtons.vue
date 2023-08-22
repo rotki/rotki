@@ -5,9 +5,7 @@ import {
   type SyncAction
 } from '@/types/session/sync';
 
-defineProps({
-  pending: { required: true, type: Boolean }
-});
+defineProps<{ pending: boolean }>();
 
 const emit = defineEmits<{
   (event: 'action', action: SyncAction): void;

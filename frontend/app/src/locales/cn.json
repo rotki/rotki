@@ -3192,6 +3192,11 @@
     "address_migration": {
       "title": "地址已添加到{chain}|地址已添加到{chain}",
       "message": "以下地址已添加到{chain}:{addresses}|以下地址已添加到{chain}:{addresses}"
+    },
+    "db_upload_result": {
+      "title": "数据库同步失败",
+      "message": "我们无法完成上传，因为{reason}",
+      "action": "强力推"
     }
   },
   "notification_popup": {

@@ -3131,6 +3131,11 @@
     "snapshot_failed": {
       "message": "Could not save the balance snapshot at {location}. {error}",
       "title": "Balance Snapshot failed"
+    },
+    "db_upload_result": {
+      "title": "Database sync failed",
+      "message": "We could not complete the upload because {reason}",
+      "action": "Force push"
     }
   },
   "notification_popup": {
