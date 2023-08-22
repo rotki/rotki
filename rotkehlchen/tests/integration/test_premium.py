@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import gevent
+import machineid
 import pytest
 
 from rotkehlchen.constants.assets import A_EUR
@@ -620,3 +621,9 @@ def test_error_db_too_big(rotkehlchen_instance: 'Rotkehlchen') -> None:
 
     assert status is False
     assert error == 'Size limit reached'
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+def test_device_limits(rotkehlchen_instance: 'Rotkehlchen') -> None:
+    rotkehlchen_instance.premium._register_new_device(machineid.hashed_id('yabirgb'))
+    assert False

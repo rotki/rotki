@@ -9,9 +9,11 @@ from collections.abc import Sequence
 from enum import Enum
 from http import HTTPStatus
 from json import JSONDecodeError
+import platform
 from typing import Any, Literal, NamedTuple, Optional
 from urllib.parse import urlencode
 
+import machineid
 import requests
 from urllib3.util.retry import Retry
 
@@ -83,7 +85,7 @@ def _process_dict_response(
         raise RemoteError('Could not decode rotki server response as json. Check logs') from e
 
     if response.status_code == HTTPStatus.UNAUTHORIZED:
-        raise PremiumAuthenticationError(result_dict.get('message', 'no message given'))
+        raise PremiumAuthenticationError(result_dict.get('error', 'no message given'))
 
     if 'error' in result_dict:
         raise RemoteError(result_dict['error'])
@@ -176,10 +178,13 @@ class Premium:
             allowed_methods=False,  # retry on all method verbs
         )
         self.session.mount('https://', adapter)
+        self.session.verify = False
         self.apiversion = '1'
-        self.rotki_api = f'https://rotki.com/api/{self.apiversion}/'
-        self.rotki_nest = f'https://rotki.com/nest/{self.apiversion}/'
+        self.rotki_api = f'https://localhost/api/{self.apiversion}/'
+        self.rotki_web = f'https://localhost/webapi/{self.apiversion}/'
+        self.rotki_nest = f'https://localhost/nest/{self.apiversion}/'
         self.reset_credentials(credentials)
+        self.username = 'yabirgb'
 
     def reset_credentials(self, credentials: PremiumCredentials) -> None:
         self.credentials = credentials
@@ -206,6 +211,72 @@ class Premium:
         if not active:
             self.reset_credentials(old_credentials)
             raise PremiumAuthenticationError('rotki API key was rejected by server')
+        
+    def get_remote_devices_information(self):
+        method = 'manage/premium/devices'
+        signature, data = self.sign(
+            method=method,
+            api_endpoint='webapi',
+        )
+        self.session.headers.update({'API-SIGN': base64.b64encode(signature.digest())})
+
+        try:
+            response = self.session.get(
+                f'{self.rotki_web}{method}',
+                data=data,
+                timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
+            )
+        except requests.exceptions.RequestException as e:
+            msg = f'Could not connect to rotki server due to {e!s}'
+            log.error(msg)
+            raise RemoteError(msg) from e
+        
+        data = _process_dict_response(response)
+        return data
+    
+    def authenticate_device(self):
+        device_data = self.get_remote_devices_information()
+        num_devices = len(device_data['devices'])
+        devices_limit = device_data['limit']
+        device_id = machineid.hashed_id(self.username)
+
+        device_found = False
+        for device in device_data['devices']:
+            if device['device_identifier'] != device_id:
+                continue
+            device_found = True
+            break
+
+        if not device_found:
+            if num_devices < devices_limit:
+                # try to sign up the device
+                self._register_new_device(device_id)
+            else:
+                # user has to edit his devices
+                raise PremiumAuthenticationError('The limit of devices has been reached')
+            
+    def _register_new_device(self, device_id: str):
+        log.debug(f'Registering new device {device_id}')
+        method = 'devices'
+        device_name = platform.system()
+        signature, data = self.sign(
+            method=method,
+            device_identifier=device_id,
+            device_name=device_name,
+        )
+        self.session.headers.update({'API-SIGN': base64.b64encode(signature.digest())})
+
+        try:
+            resposne = self.session.put(
+                url=f'{self.rotki_api}{method}',
+                data=data,
+            )
+        except requests.exceptions.RequestException as e:
+            logger.error(f'Failed to register device due to {str(e)}')
+            raise RemoteError from e
+        
+        response_body = _process_dict_response(resposne)
+        return response_body
 
     def is_active(self, catch_connection_errors: bool = True) -> bool:
         if self.status == SubscriptionStatus.ACTIVE:
@@ -225,8 +296,8 @@ class Premium:
             self.status = SubscriptionStatus.ACTIVE
             return True
 
-    def sign(self, method: str, **kwargs: Any) -> tuple[hmac.HMAC, dict]:
-        urlpath = '/api/' + self.apiversion + '/' + method
+    def sign(self, method: str, api_endpoint: str = '/api/' ,**kwargs: Any) -> tuple[hmac.HMAC, dict]:
+        urlpath = f'{api_endpoint}{self.apiversion}/{method}'
 
         req = kwargs
         if method != 'watchers':
@@ -441,6 +512,7 @@ def premium_create_and_verify(credentials: PremiumCredentials) -> Premium:
     premium = Premium(credentials)
 
     if premium.is_active(catch_connection_errors=True):
+        premium.authenticate_device()
         return premium
 
     raise PremiumAuthenticationError('rotki API key was rejected by server')
