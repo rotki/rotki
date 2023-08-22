@@ -129,7 +129,7 @@ export const useDefiStore = defineStore('defi', () => {
       return Object.values(accounts);
     });
 
-  const { getStatus, loading, setStatus, fetchDisabled } = useStatusUpdater(
+  const { getStatus, setStatus, fetchDisabled } = useStatusUpdater(
     Section.DEFI_OVERVIEW
   );
 
@@ -426,46 +426,6 @@ export const useDefiStore = defineStore('defi', () => {
     setStatus(Status.LOADED);
   }
 
-  async function resetDB(protocols: DefiProtocol[]) {
-    const premiumSection = Section.DEFI_LENDING_HISTORY;
-
-    if (!get(premium) || loading(premiumSection)) {
-      return;
-    }
-
-    setStatus(Status.REFRESHING, premiumSection);
-
-    const toReset: Promise<void>[] = [];
-
-    if (protocols.includes(DefiProtocol.YEARN_VAULTS)) {
-      toReset.push(
-        yearnStore.fetchHistory({
-          refresh: true,
-          reset: true,
-          version: ProtocolVersion.V1
-        })
-      );
-    }
-
-    if (protocols.includes(DefiProtocol.YEARN_VAULTS_V2)) {
-      toReset.push(
-        yearnStore.fetchHistory({
-          refresh: true,
-          reset: true,
-          version: ProtocolVersion.V2
-        })
-      );
-    }
-
-    if (protocols.includes(DefiProtocol.AAVE)) {
-      toReset.push(aaveStore.fetchHistory({ refresh: true, reset: true }));
-    }
-
-    await Promise.all(toReset);
-
-    setStatus(Status.LOADED, premiumSection);
-  }
-
   const modules: Record<string, () => void> = {
     [Module.MAKERDAO_DSR]: () => makerDaoStore.reset(Module.MAKERDAO_DSR),
     [Module.MAKERDAO_VAULTS]: () => makerDaoStore.reset(Module.MAKERDAO_VAULTS),
@@ -518,7 +478,6 @@ export const useDefiStore = defineStore('defi', () => {
     defiAccounts,
     fetchDefiBalances,
     fetchAllDefi,
-    resetDB,
     resetState,
     reset
   };

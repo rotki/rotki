@@ -2699,12 +2699,7 @@
     "effective_interest_rate_tooltip": "The savings rate across all of the protocols in which you are actively lending, weighted based on the relative position in each protocol.",
     "history": "History",
     "loading": "Please wait while your balances are getting loaded...",
-    "profit_earned": "Profit Earned",
-    "reset": {
-      "protocol_selection": "Select protocol(s) to reset"
-    },
-    "reset_confirm": "This action will overwrite any cached history entries in the DB for the selected protocols and will fetch everything again. Depending on the number of accounts it may take a long time. Are you sure you want to continue?",
-    "reset_tooltip": "Refreshes the data overwriting cached Aave and yearn.finance Vaults historical entries"
+    "profit_earned": "Profit Earned"
   },
   "lending_asset_table": {
     "headers": {

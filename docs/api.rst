@@ -6559,6 +6559,8 @@ Getting Aave stats
       Host: localhost:5042
 
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
+   :reqjson int from_timestamp: Timestamp from which to query aave historical data. If not given 0 is implied.
+   :reqjson int to_timestamp: Timestamp until which to query aave historical data. If not given current timestamp is implied.
 
    **Example Response**:
 
