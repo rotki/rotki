@@ -172,6 +172,7 @@ export const FrontendSettings = z.object({
   selectedTheme: ThemeEnum.default(Theme.AUTO),
   lightTheme: ThemeColors.default(LIGHT_COLORS),
   darkTheme: ThemeColors.default(DARK_COLORS),
+  defaultThemeVersion: z.number().default(1),
   graphZeroBased: z.boolean().default(false),
   showGraphRangeSelector: z.boolean().default(true),
   nftsInNetValue: z.boolean().default(true),

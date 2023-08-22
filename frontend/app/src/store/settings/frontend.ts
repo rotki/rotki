@@ -1,9 +1,10 @@
 import { BigNumber } from '@rotki/common';
-import { type Theme, type ThemeColors } from '@rotki/common/lib/settings';
+import { type Theme, ThemeColors } from '@rotki/common/lib/settings';
 import {
   type TimeFramePeriod,
   type TimeFrameSetting
 } from '@rotki/common/lib/settings/graphs';
+import { clone } from 'lodash';
 import { getBnFormat } from '@/data/amount_formatter';
 import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { type CurrencyLocation } from '@/types/currency-location';
@@ -24,6 +25,12 @@ import {
   type BaseSuggestion,
   type SavedFilterLocation
 } from '@/types/filtering';
+import {
+  CURRENT_DEFAULT_THEME_VERSION,
+  DARK_COLORS,
+  DEFAULT_THEME_HISTORIES,
+  LIGHT_COLORS
+} from '@/plugins/theme';
 
 export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
   const settings = reactive(FrontendSettings.parse({}));
@@ -81,6 +88,9 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
   );
   const darkTheme: ComputedRef<ThemeColors> = computed(
     () => settings.darkTheme
+  );
+  const defaultThemeVersion: ComputedRef<number> = computed(
+    () => settings.defaultThemeVersion
   );
   const graphZeroBased: ComputedRef<boolean> = computed(
     () => settings.graphZeroBased
@@ -169,6 +179,47 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
     checkMachineLanguage();
   });
 
+  const checkDefaultThemeVersion = () => {
+    const defaultThemeVersionSetting = get(defaultThemeVersion);
+    if (defaultThemeVersionSetting < CURRENT_DEFAULT_THEME_VERSION) {
+      const historicDefaultTheme = DEFAULT_THEME_HISTORIES.find(
+        ({ version }) => version === defaultThemeVersionSetting
+      );
+
+      const isKeyOfThemeColors = (key: string): key is keyof ThemeColors =>
+        Object.keys(ThemeColors).includes(key);
+
+      if (historicDefaultTheme) {
+        const newLightTheme: ThemeColors = clone(LIGHT_COLORS);
+        const newDarkTheme: ThemeColors = clone(DARK_COLORS);
+        const savedLightTheme = get(lightTheme);
+        const savedDarkTheme = get(darkTheme);
+        Object.keys(ThemeColors).forEach(key => {
+          if (!isKeyOfThemeColors(key)) {
+            return;
+          }
+
+          // If saved theme isn't the same with the default theme at that version, do not replace with new default.
+          if (historicDefaultTheme.lightColors[key] !== savedLightTheme[key]) {
+            newLightTheme[key] = savedLightTheme[key];
+          }
+
+          if (historicDefaultTheme.darkColors[key] !== savedDarkTheme[key]) {
+            newDarkTheme[key] = savedDarkTheme[key];
+          }
+        });
+
+        startPromise(
+          updateSetting({
+            lightTheme: newLightTheme,
+            darkTheme: newDarkTheme,
+            defaultThemeVersion: CURRENT_DEFAULT_THEME_VERSION
+          })
+        );
+      }
+    }
+  };
+
   return {
     forceUpdateMachineLanguage,
     defiSetupDone,
@@ -204,7 +255,8 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
     // return settings on development for state persistence
     ...(checkIfDevelopment() ? { settings } : {}),
     updateSetting,
-    update
+    update,
+    checkDefaultThemeVersion
   };
 });
 

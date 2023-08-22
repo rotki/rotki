@@ -39,3 +39,27 @@ export const LIGHT_COLORS: ThemeColors = {
   accent: LIGHT_ACCENT,
   graph: LIGHT_GRAPH
 };
+
+export const CURRENT_DEFAULT_THEME_VERSION = 2;
+
+interface DefaultThemeHistory {
+  version: number;
+  lightColors: ThemeColors;
+  darkColors: ThemeColors;
+}
+
+export const DEFAULT_THEME_HISTORIES: DefaultThemeHistory[] = [
+  {
+    version: 1,
+    lightColors: {
+      primary: '#7e4a3b',
+      accent: '#e45325',
+      graph: '#96DFD2'
+    },
+    darkColors: {
+      primary: '#ff5722',
+      accent: '#ff8a50',
+      graph: '#E96930'
+    }
+  }
+];
