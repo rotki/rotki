@@ -59,7 +59,7 @@ The [Pro Version](https://rotki.com/checkout/plan) of Rotki also supports additi
 
 * `node`
 * `npm` (Node package manager)
-* `python` (v3.9)
+* `python` (v3.10)
 * `pip` (Python package manager)
 * `Docker`
 
