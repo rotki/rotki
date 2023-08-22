@@ -210,11 +210,9 @@ export const useYearnStore = defineStore('defi/yearn', () => {
 
   async function fetchHistory(payload: {
     refresh?: boolean;
-    reset?: boolean;
     version: ProtocolVersion;
   }): Promise<void> {
     const refresh = payload?.refresh;
-    const reset = payload?.reset;
 
     const isV1 = payload.version === ProtocolVersion.V1;
     const isV2 = payload.version === ProtocolVersion.V2;
@@ -242,7 +240,7 @@ export const useYearnStore = defineStore('defi/yearn', () => {
       const taskType = isV1
         ? TaskType.DEFI_YEARN_VAULT_HISTORY
         : TaskType.DEFI_YEARN_VAULT_V2_HISTORY;
-      const { taskId } = await fetchYearnVaultsHistory(payload.version, reset);
+      const { taskId } = await fetchYearnVaultsHistory(payload.version);
       const { result } = await awaitTask<YearnVaultsHistory, TaskMeta>(
         taskId,
         taskType,

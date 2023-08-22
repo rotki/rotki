@@ -87,17 +87,13 @@ export const useAaveStore = defineStore('defi/aave', () => {
     setStatus(Status.LOADED);
   };
 
-  const fetchHistory = async (payload: {
-    refresh?: boolean;
-    reset?: boolean;
-  }) => {
+  const fetchHistory = async (payload: { refresh?: boolean }) => {
     if (!get(activeModules).includes(Module.AAVE) || !get(premium)) {
       return;
     }
 
     const section = Section.DEFI_AAVE_HISTORY;
     const refresh = payload?.refresh;
-    const reset = payload?.reset;
 
     if (fetchDisabled(!!refresh, section)) {
       return;
@@ -108,7 +104,7 @@ export const useAaveStore = defineStore('defi/aave', () => {
 
     try {
       const taskType = TaskType.AAVE_HISTORY;
-      const { taskId } = await fetchAaveHistory(reset);
+      const { taskId } = await fetchAaveHistory();
       const { result } = await awaitTask<AaveHistory, TaskMeta>(
         taskId,
         taskType,
