@@ -13,18 +13,22 @@ const { t } = useI18n();
 const { logout } = useSessionStore();
 const { lastBalanceSave, lastDataUpload } = storeToRefs(usePeriodicStore());
 const { upgradeVisible, canRequestData } = storeToRefs(useSessionAuthStore());
-const { forceSync } = useSync();
+const {
+  confirmChecked,
+  displaySyncConfirmation,
+  syncAction,
+  cancelSync,
+  forceSync,
+  showSyncConfirmation
+} = useSync();
 
 const { fetchBalances } = useBalances();
 const premium = usePremium();
 const { appSession } = useInterop();
 
 const pending = ref<boolean>(false);
-const confirmChecked = ref<boolean>(false);
 const ignoreErrors = ref<boolean>(false);
 const visible = ref<boolean>(false);
-const syncAction = ref<SyncAction>(SYNC_UPLOAD);
-const displayConfirmation = ref<boolean>(false);
 const balanceSnapshotUploader = ref<any>(null);
 const balanceSnapshotFile = ref<File | null>(null);
 const locationDataSnapshotUploader = ref<any>(null);
@@ -61,8 +65,7 @@ const refreshAllAndSave = async () => {
 
 const showConfirmation = (action: SyncAction) => {
   set(visible, false);
-  set(syncAction, action);
-  set(displayConfirmation, true);
+  showSyncConfirmation(action);
 };
 
 const actionLogout = async () => {
@@ -75,7 +78,7 @@ const performSync = async () => {
   if (get(syncAction) === SYNC_DOWNLOAD) {
     set(canRequestData, false);
   }
-  await forceSync(syncAction, actionLogout);
+  await forceSync(actionLogout);
   set(pending, false);
 };
 
@@ -84,15 +87,9 @@ const isSyncing = isTaskRunning(TaskType.FORCE_SYNC);
 
 watch(isSyncing, (current, prev) => {
   if (current !== prev && !current) {
-    set(displayConfirmation, false);
-    set(confirmChecked, false);
+    cancelSync();
   }
 });
-
-const cancel = () => {
-  set(displayConfirmation, false);
-  set(confirmChecked, false);
-};
 
 const importFilesCompleted = computed<boolean>(
   () => !!get(balanceSnapshotFile) && !!get(locationDataSnapshotFile)
@@ -355,7 +352,7 @@ const importSnapshot = async () => {
     <ConfirmDialog
       v-else
       confirm-type="warning"
-      :display="displayConfirmation"
+      :display="displaySyncConfirmation"
       :title="t('sync_indicator.upload_confirmation.title', textChoice)"
       :message="message"
       :disabled="!confirmChecked"
@@ -364,7 +361,7 @@ const importSnapshot = async () => {
       "
       :loading="isSyncing"
       :secondary-action="t('common.actions.cancel')"
-      @cancel="cancel()"
+      @cancel="cancelSync()"
       @confirm="performSync()"
     >
       <div

@@ -3316,6 +3316,11 @@
     "address_migration": {
       "title": "Address has been added to {chain}|Addresses have been added to {chain}",
       "message": "The following address has been added to {chain}: {addresses}|The following addresses have been added to {chain}: {addresses}"
+    },
+    "db_upload_result": {
+      "title": "Database sync failed",
+      "message": "We could not complete the upload because {reason}",
+      "action": "Force push"
     }
   },
   "notification_popup": {
