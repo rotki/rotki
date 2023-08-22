@@ -14,7 +14,7 @@ export const useDarkMode = createSharedComposable(() => {
     theme,
     theme => {
       // @ts-ignore
-      const themes = theme.parsedTheme!;
+      const themes = theme.parsedTheme;
       const defaultConfig = get(config)!;
       const newColors = {
         primary: {

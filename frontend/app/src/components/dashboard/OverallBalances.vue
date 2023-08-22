@@ -121,7 +121,7 @@ const { dark } = useTheme();
   <VCard class="overall-balances">
     <div class="flex justify-between">
       <VCardTitle>
-        {{ t('overall_balances.summary_graphic') }}
+        {{ t('overall_balances.summary') }}
       </VCardTitle>
 
       <div class="p-4">

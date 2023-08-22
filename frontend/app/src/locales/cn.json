@@ -3008,7 +3008,7 @@
     "api_keys_sub": {
       "exchanges": "交换",
       "external_services": "外部服务",
-      "premium": "Rotki 高级"
+      "premium": "rotki 高级"
     },
     "dashboard": "仪表板",
     "defi": "DeFi",
@@ -3242,7 +3242,7 @@
   "overall_balances": {
     "loading": "加载中",
     "premium_hint": "通过升级到 rotki premium 获得完整体验",
-    "summary_graphic": "摘要图"
+    "summary": "概括"
   },
   "overview": {
     "details_dialog": {

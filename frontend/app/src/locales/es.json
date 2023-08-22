@@ -2946,7 +2946,7 @@
     "api_keys_sub": {
       "exchanges": "Exchanges",
       "external_services": "External Services",
-      "premium": "Rotki Premium"
+      "premium": "rotki Premium"
     },
     "dashboard": "Dashboard",
     "defi": "DeFi",
@@ -3163,7 +3163,7 @@
   "overall_balances": {
     "loading": "Cargando",
     "premium_hint": "Get the full experience by upgrading to rotki premium",
-    "summary_graphic": "Gráfico de resumen"
+    "summary": "Resumen"
   },
   "overview": {
     "details_dialog": {

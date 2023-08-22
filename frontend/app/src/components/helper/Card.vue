@@ -67,9 +67,9 @@ const otherHeights = computed(() => {
       }"
     >
       <slot name="search" />
-      <VSheet v-if="slots.actions" outlined rounded class="pa-3 mb-4">
+      <div v-if="slots.actions" class="mb-4">
         <slot name="actions" />
-      </VSheet>
+      </div>
       <div v-if="slots.hint" class="pb-4">
         <slot name="hint" />
       </div>

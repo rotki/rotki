@@ -139,13 +139,13 @@ export class RotkiApp {
         click(menuClass);
       }
 
-      cy.get(menuClass)
-        .parent()
-        .parent()
-        .find('.v-list-group__items')
-        .scrollIntoView();
-
       if (submenu) {
+        cy.get(menuClass)
+          .parent()
+          .parent()
+          .find('.v-list-group__items')
+          .scrollIntoView();
+
         const subMenuClass = `.navigation__${submenu}`;
         click(subMenuClass);
       }

@@ -71,8 +71,8 @@ const css = useCssModule();
       />
       <RuiIcon v-else :name="icon" />
     </VListItemIcon>
-    <VListItemContent class="d-flex flex-grow-1 py-0">
-      <VListItemTitle :class="{ [css.small]: subMenu }">
+    <VListItemContent class="d-flex flex-grow-1 py-0 text-capitalize">
+      <VListItemTitle :class="{ 'text-sm': subMenu }">
         {{ text }}
       </VListItemTitle>
     </VListItemContent>
@@ -88,9 +88,5 @@ const css = useCssModule();
     opacity: 1;
     filter: brightness(0) invert(100%);
   }
-}
-
-.small {
-  font-size: 0.875rem;
 }
 </style>
