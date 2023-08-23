@@ -15,7 +15,7 @@
     "cypress:open": "cypress open",
     "cypress:run": "cypress run --headless",
     "electron:build": "pnpm run build && pnpm run electron:package",
-    "electron:package": "electron-builder build --config .electron-builder.config.js",
+    "electron:package": "electron-builder build --config .electron-builder.config.js --publish onTag",
     "electron:serve": "node scripts/serve.js",
     "i18n:report": "vue-i18n-extract report --vueFiles './src/**/*.?(ts|js|vue)' --languageFiles './src/locales/**/*.json'",
     "lint:style": "stylelint 'src/**/*.{vue,scss}'",
