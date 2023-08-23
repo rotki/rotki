@@ -97,7 +97,6 @@ export default defineConfig({
     }),
     Components({
       dts: true,
-      dirs: ['src/components', '@rotki/ui-library-compat/components'],
       include: [/\.vue$/, /\.vue\?vue/],
       resolvers: [VuetifyResolver(), RuiComponentResolver()],
       types: [
