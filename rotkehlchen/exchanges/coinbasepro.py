@@ -21,8 +21,8 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.assets.converters import asset_from_coinbasepro
 from rotkehlchen.assets.types import AssetType
+from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH
-from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError

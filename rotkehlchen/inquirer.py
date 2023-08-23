@@ -11,6 +11,7 @@ from rotkehlchen.chain.ethereum.defi.price import handle_defi_price_query
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import (
     A_3CRV,
     A_ALINK_V1,
@@ -55,7 +56,8 @@ from rotkehlchen.constants.assets import (
     A_YV1_WETH,
     A_YV1_YFI,
 )
-from rotkehlchen.constants.misc import CURRENCYCONVERTER_API_KEY, ONE, ZERO, ZERO_PRICE
+from rotkehlchen.constants.misc import CURRENCYCONVERTER_API_KEY
+from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.constants.timing import DAY_IN_SECONDS, MONTH_IN_SECONDS
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType

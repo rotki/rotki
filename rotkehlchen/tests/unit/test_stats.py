@@ -3,8 +3,8 @@ from typing import TYPE_CHECKING
 import pytest
 
 from rotkehlchen.chain.ethereum.modules.compound.compound import Compound
+from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_COMP, A_CUSDC, A_DAI, A_USDC, A_WBTC
-from rotkehlchen.constants.misc import ONE
 from rotkehlchen.fval import FVal
 from rotkehlchen.premium.premium import Premium, PremiumCredentials
 from rotkehlchen.types import ChecksumEvmAddress, Timestamp, deserialize_evm_tx_hash

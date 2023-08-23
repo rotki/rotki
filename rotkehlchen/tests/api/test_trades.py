@@ -6,9 +6,9 @@ import requests
 
 from rotkehlchen.accounting.structures.types import ActionType
 from rotkehlchen.api.v1.schemas import TradeSchema
+from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_AAVE, A_BTC, A_DAI, A_EUR, A_WETH
 from rotkehlchen.constants.limits import FREE_TRADES_LIMIT
-from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (

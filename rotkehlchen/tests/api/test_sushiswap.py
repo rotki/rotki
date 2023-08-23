@@ -7,7 +7,7 @@ import requests
 
 from rotkehlchen.api.server import APIServer
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants.misc import ONE
+from rotkehlchen.constants import ONE
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.tests.utils.api import (
     ASYNC_TASK_WAIT_TIMEOUT,

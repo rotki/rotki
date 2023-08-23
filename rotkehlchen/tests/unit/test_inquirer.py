@@ -9,6 +9,7 @@ from freezegun import freeze_time
 
 from rotkehlchen.assets.asset import Asset, CustomAsset, EvmToken, UnderlyingToken
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import (
     A_1INCH,
     A_AAVE,
@@ -22,7 +23,7 @@ from rotkehlchen.constants.assets import (
     A_USD,
     A_USDC,
 )
-from rotkehlchen.constants.misc import ZERO, ZERO_PRICE
+from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.constants.resolver import ethaddress_to_identifier, evm_address_to_identifier
 from rotkehlchen.db.custom_assets import DBCustomAssets
 from rotkehlchen.errors.misc import RemoteError

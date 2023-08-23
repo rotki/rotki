@@ -18,8 +18,8 @@ from rotkehlchen.accounting.structures.base import HistoryEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.assets.converters import asset_from_binance
+from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_USD
-from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.constants import BINANCE_MARKETS_KEY
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.ranges import DBQueryRanges

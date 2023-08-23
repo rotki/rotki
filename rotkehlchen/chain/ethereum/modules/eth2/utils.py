@@ -8,7 +8,7 @@ import gevent
 import requests
 from bs4 import BeautifulSoup, SoupStrainer
 
-from rotkehlchen.constants.misc import ONE, ZERO
+from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.beaconchain import BEACONCHAIN_ROOT_URL

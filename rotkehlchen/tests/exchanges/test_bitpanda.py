@@ -7,8 +7,8 @@ import pytest
 import requests
 
 from rotkehlchen.assets.converters import asset_from_bitpanda
+from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ADA, A_BEST, A_ETH, A_EUR, A_LTC, A_USDT
-from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade, TradeType

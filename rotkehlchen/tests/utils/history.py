@@ -8,8 +8,8 @@ from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.api.v1.schemas import TradeSchema
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
+from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_ETH2, A_USDC, A_USDT
-from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp

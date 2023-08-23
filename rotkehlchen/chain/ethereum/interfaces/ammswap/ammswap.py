@@ -23,8 +23,9 @@ from rotkehlchen.chain.ethereum.interfaces.ammswap.types import (
 )
 from rotkehlchen.chain.ethereum.modules.uniswap.utils import uniswap_lp_token_balances
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH, A_WETH
-from rotkehlchen.constants.misc import ZERO, ZERO_PRICE
+from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents

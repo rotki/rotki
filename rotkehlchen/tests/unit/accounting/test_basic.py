@@ -20,8 +20,11 @@ from rotkehlchen.tests.utils.constants import A_CHF, A_XMR
 from rotkehlchen.tests.utils.history import prices
 from rotkehlchen.tests.utils.messages import no_message_errors
 from rotkehlchen.types import (
-    EVM_CHAINS_WITH_TRANSACTIONS, CostBasisMethod, Location,
-    Timestamp, TradeType,
+    EVM_CHAINS_WITH_TRANSACTIONS,
+    CostBasisMethod,
+    Location,
+    Timestamp,
+    TradeType,
 )
 
 if TYPE_CHECKING:

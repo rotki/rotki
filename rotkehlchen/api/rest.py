@@ -56,7 +56,7 @@ from rotkehlchen.assets.asset import (
     ResolvedAsset,
 )
 from rotkehlchen.assets.resolver import AssetResolver
-from rotkehlchen.assets.types import AssetType
+from rotkehlchen.assets.types import ASSET_TYPES_EXCLUDED_FOR_USERS, AssetType
 from rotkehlchen.balances.manual import (
     ManuallyTrackedBalance,
     add_manually_tracked_balances,
@@ -78,6 +78,7 @@ from rotkehlchen.chain.ethereum.modules.yearn.utils import query_yearn_vaults
 from rotkehlchen.chain.ethereum.utils import try_download_ens_avatar
 from rotkehlchen.chain.evm.names import find_ens_mappings, search_for_addresses_names
 from rotkehlchen.chain.evm.types import WeightedNode
+from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.limits import (
     FREE_ASSET_MOVEMENTS_LIMIT,
@@ -88,14 +89,12 @@ from rotkehlchen.constants.limits import (
     FREE_USER_NOTES_LIMIT,
 )
 from rotkehlchen.constants.misc import (
-    ASSET_TYPES_EXCLUDED_FOR_USERS,
     DEFAULT_MAX_LOG_BACKUP_FILES,
     DEFAULT_MAX_LOG_SIZE_IN_MB,
     DEFAULT_SQL_VM_INSTRUCTIONS_CB,
     HTTP_STATUS_INTERNAL_DB_ERROR,
-    ONE,
-    ZERO_PRICE,
 )
+from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.constants.resolver import ChainID
 from rotkehlchen.constants.timing import ENS_AVATARS_REFRESH
 from rotkehlchen.data_import.manager import DataImportSource
@@ -2223,7 +2222,8 @@ class RestAPI:
         try:
             data = check_airdrops(
                 addresses=self.rotkehlchen.chains_aggregator.accounts.eth,
-                data_dir=self.rotkehlchen.data_dir,
+                database=self.rotkehlchen.data.db,
+                tolerance_for_amount_check=FVal('0.00000000000001000'),
             )
         except (RemoteError, UnableToDecryptRemoteData) as e:
             return wrap_in_fail_result(str(e), status_code=HTTPStatus.BAD_GATEWAY)

@@ -4,7 +4,8 @@ from typing import Any, NamedTuple, Optional
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EvmToken
-from rotkehlchen.constants.misc import ZERO, ZERO_PRICE
+from rotkehlchen.constants import ZERO
+from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, Price

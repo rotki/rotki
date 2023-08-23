@@ -13,6 +13,7 @@ import requests
 from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import AssetWithOracles
+from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import (
     A_AAVE,
     A_ADA,
@@ -49,7 +50,6 @@ from rotkehlchen.constants.assets import (
     A_YFI,
     A_ZRX,
 )
-from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError

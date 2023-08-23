@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Literal, Optional
 
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry, HistoryEvent
-from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants import ZERO
 from rotkehlchen.db.filtering import (
     AssetMovementsFilterQuery,
     EvmTransactionsFilterQuery,

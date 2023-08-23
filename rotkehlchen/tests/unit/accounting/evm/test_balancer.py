@@ -11,8 +11,8 @@ from rotkehlchen.accounting.structures.types import HistoryEventSubType, History
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.modules.balancer.constants import CPT_BALANCER_V1
 from rotkehlchen.chain.ethereum.modules.balancer.v1.accountant import Balancerv1Accountant
+from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_ETH, A_USDC
-from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
 from rotkehlchen.types import Location, Price, Timestamp

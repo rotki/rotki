@@ -40,7 +40,7 @@ from rotkehlchen.chain.substrate.utils import (
     POLKADOT_NODES_TO_CONNECT_AT_START,
 )
 from rotkehlchen.config import default_data_directory
-from rotkehlchen.constants.misc import ONE, ZERO
+from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.data_import.manager import CSVDataImporter
 from rotkehlchen.data_migrations.manager import DataMigrationManager

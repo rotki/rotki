@@ -2,7 +2,7 @@ import logging
 from typing import TYPE_CHECKING, Optional
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.constants.misc import ZERO_PRICE
+from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.types import HistoricalPriceOracle

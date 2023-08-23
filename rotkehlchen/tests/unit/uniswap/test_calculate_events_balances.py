@@ -3,7 +3,7 @@ from unittest.mock import patch
 
 import pytest
 
-from rotkehlchen.constants.misc import ONE
+from rotkehlchen.constants import ONE
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Timestamp, deserialize_evm_tx_hash
 from rotkehlchen.utils.misc import ts_now

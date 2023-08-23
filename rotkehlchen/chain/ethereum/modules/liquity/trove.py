@@ -9,8 +9,8 @@ from rotkehlchen.accounting.structures.balance import AssetBalance, Balance, Bal
 from rotkehlchen.chain.ethereum.defi.defisaver_proxy import HasDSProxy
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH, A_LQTY, A_LUSD
-from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors.misc import BlockchainQueryError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal

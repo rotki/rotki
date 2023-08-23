@@ -6,7 +6,7 @@ from rotkehlchen.chain.ethereum.modules.eth2.utils import (
     DAY_AFTER_ETH2_GENESIS,
     INITIAL_ETH_DEPOSIT,
 )
-from rotkehlchen.constants.misc import ONE
+from rotkehlchen.constants import ONE
 from rotkehlchen.db.constants import (
     HISTORY_MAPPING_KEY_STATE,
     HISTORY_MAPPING_STATE_CUSTOMIZED,

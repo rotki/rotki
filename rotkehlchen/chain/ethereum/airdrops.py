@@ -8,7 +8,11 @@ from typing import Any
 
 import requests
 
+from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
+from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import (
     A_1INCH,
     A_COMBO,
@@ -26,10 +30,12 @@ from rotkehlchen.constants.assets import (
     A_UNI,
     A_VCOW,
 )
+from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError, UnableToDecryptRemoteData
+from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress
+from rotkehlchen.types import ChecksumEvmAddress, FValWithTolerance
 from rotkehlchen.utils.serialization import jsonloads_dict, rlk_jsondumps
 
 logger = logging.getLogger(__name__)
@@ -282,9 +288,44 @@ def get_poap_airdrop_data(name: str, data_dir: Path) -> dict[str, Any]:
     return data_dict
 
 
+def calculate_claimed_airdrops(
+        airdrop_data: list[tuple[ChecksumEvmAddress, Asset, FValWithTolerance]],
+        database: DBHandler,
+) -> list[tuple[ChecksumEvmAddress, Asset, FVal]]:
+    """Calculates which of the given airdrops have been claimed.
+    It does so by checking if there is a claim history event in the database
+    that matches the airdrop data (address, asset and amount). It returns a list
+    of tuples with the airdrop data for which a claim event was found."""
+    if len(airdrop_data) == 0:
+        return []
+
+    query_parts = []
+    bindings = [HistoryEventType.RECEIVE.serialize(), HistoryEventSubType.AIRDROP.serialize()]
+    for airdrop_info in airdrop_data:
+        amount_with_tolerance = airdrop_info[2]
+        amount = amount_with_tolerance.value
+        half_range = amount_with_tolerance.tolerance / 2
+        query_parts.append('evm_info.address=? AND events.asset=? AND CAST(events.amount AS REAL) BETWEEN ? AND ?')  # noqa: E501
+        bindings.extend([airdrop_info[0], airdrop_info[1].serialize(), str(amount - half_range), str(amount + half_range)])  # noqa: E501
+
+    query_part = ' OR '.join(query_parts)
+    with database.conn.read_ctx() as cursor:
+        claim_events = cursor.execute(
+            'SELECT evm_info.address, events.asset, events.amount '
+            'FROM history_events AS events '
+            'JOIN evm_events_info AS evm_info ON events.identifier = evm_info.identifier '
+            'WHERE events.type=? AND events.subtype=? '
+            f'AND {query_part}',
+            tuple(bindings),
+        ).fetchall()
+
+    return [(event[0], event[1], event[2]) for event in claim_events]
+
+
 def check_airdrops(
         addresses: Sequence[ChecksumEvmAddress],
-        data_dir: Path,
+        database: DBHandler,
+        tolerance_for_amount_check: FVal = ZERO,
 ) -> dict[ChecksumEvmAddress, dict]:
     """Checks airdrop data for the given list of ethereum addresses
 
@@ -292,6 +333,8 @@ def check_airdrops(
         - RemoteError if the remote request fails
     """
     found_data: dict[ChecksumEvmAddress, dict] = defaultdict(lambda: defaultdict(dict))
+    data_dir = database.user_data_dir.parent
+    airdrop_tuples = []
     for protocol_name, airdrop_data in AIRDROPS.items():
         for row in get_airdrop_data(protocol_name, data_dir):
             if len(row) < 2:
@@ -312,11 +355,29 @@ def check_airdrops(
             ):
                 amount = token_normalized_value_decimals(int(amount), 18)  # type: ignore
             if addr in addresses:
+                asset = airdrop_data[1]
                 found_data[addr][protocol_name] = {  # type: ignore
                     'amount': str(amount),
-                    'asset': airdrop_data[1],
+                    'asset': asset,
                     'link': airdrop_data[2],
+                    'claimed': False,
                 }
+                airdrop_tuples.append((
+                    string_to_evm_address(addr),
+                    asset,
+                    FValWithTolerance(
+                        value=FVal(amount),
+                        tolerance=tolerance_for_amount_check,
+                    ),
+                ))
+
+    asset_to_protocol = {item[1]: protocol for protocol, item in AIRDROPS.items()}
+    claim_events_tuple = calculate_claimed_airdrops(
+        airdrop_data=airdrop_tuples,
+        database=database,
+    )
+    for event_tuple in claim_events_tuple:
+        found_data[event_tuple[0]][asset_to_protocol[event_tuple[1]]]['claimed'] = True  # noqa: E501
 
     for protocol_name, poap_airdrop_data in POAP_AIRDROPS.items():
         data_dict = get_poap_airdrop_data(protocol_name, data_dir)

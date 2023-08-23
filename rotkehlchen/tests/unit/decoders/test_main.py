@@ -18,8 +18,8 @@ from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.optimism.types import OptimismTransaction
+from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH, A_USDT
-from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.optimismtx import DBOptimismTx
 from rotkehlchen.errors.misc import InputError

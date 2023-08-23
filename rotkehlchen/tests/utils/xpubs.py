@@ -1,7 +1,7 @@
 from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
 from rotkehlchen.chain.bitcoin.xpub import XpubData, XpubDerivedAddressData
-from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants import ZERO
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.utils import insert_tag_mappings
 from rotkehlchen.types import SupportedBlockchain

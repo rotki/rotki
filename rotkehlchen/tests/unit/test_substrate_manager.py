@@ -5,8 +5,8 @@ import pytest
 
 from rotkehlchen.chain.substrate.manager import SubstrateManager
 from rotkehlchen.chain.substrate.types import BlockNumber, KusamaNodeName, NodeNameAttributes
+from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_KSM
-from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.substrate import (

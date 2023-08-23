@@ -4,8 +4,8 @@ from typing import TYPE_CHECKING
 
 from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
+from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_USD
-from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.utils import DBAssetBalance, LocationData
 from rotkehlchen.errors.asset import UnknownAsset

@@ -22,8 +22,8 @@ from rotkehlchen.chain.evm.decoding.structures import (
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails, EventCategory
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog, SwapData
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_ETH, A_WETH
-from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal

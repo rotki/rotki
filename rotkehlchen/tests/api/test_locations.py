@@ -2,8 +2,8 @@ import pytest
 import requests
 
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH, A_EUR
-from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import api_url_for, assert_proper_response_with_result

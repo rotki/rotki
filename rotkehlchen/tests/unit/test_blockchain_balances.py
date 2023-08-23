@@ -7,8 +7,8 @@ from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.balances import BlockchainBalances
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode, string_to_evm_address
+from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_BCH, A_BTC, A_ETH, A_LQTY, A_LUSD, A_POLYGON_POS_MATIC
-from rotkehlchen.constants.misc import ONE
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.factories import UNIT_BTC_ADDRESS1, make_evm_address
 from rotkehlchen.tests.utils.xpubs import setup_db_for_xpub_tests_impl

@@ -16,8 +16,8 @@ from rotkehlchen.accounting.structures.eth2 import (
 from rotkehlchen.chain.ethereum.modules.eth2.constants import CPT_ETH2
 from rotkehlchen.chain.ethereum.modules.eth2.eth2 import FREE_VALIDATORS_LIMIT
 from rotkehlchen.chain.ethereum.modules.eth2.structures import Eth2Validator
+from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_ETH, A_ETH2
-from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal

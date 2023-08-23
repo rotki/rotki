@@ -8,8 +8,8 @@ from rotkehlchen.accounting.structures.balance import Balance, BalanceType
 from rotkehlchen.assets.asset import Asset, AssetWithOracles, EvmToken
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.ethereum.defi.structures import DefiProtocolBalances
+from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
-from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.utils import DBAssetBalance, LocationData
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler

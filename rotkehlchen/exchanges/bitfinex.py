@@ -31,7 +31,7 @@ from rotkehlchen.assets.converters import (
     BITFINEX_TO_WORLD,
     asset_from_bitfinex,
 )
-from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants import ZERO
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError

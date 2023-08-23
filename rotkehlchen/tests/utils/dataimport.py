@@ -7,6 +7,7 @@ from rotkehlchen.accounting.structures.types import HistoryEventSubType, History
 from rotkehlchen.assets.asset import CryptoAsset, EvmToken
 from rotkehlchen.assets.converters import asset_from_binance, asset_from_cryptocom
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
+from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import (
     A_BAT,
     A_BCH,
@@ -28,7 +29,7 @@ from rotkehlchen.constants.assets import (
     A_USDT,
     A_XRP,
 )
-from rotkehlchen.constants.misc import ONE, ZERO, ZERO_PRICE
+from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.data_import.importers.constants import COINTRACKING_EVENT_PREFIX
 from rotkehlchen.db.filtering import (
     AssetMovementsFilterQuery,

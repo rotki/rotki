@@ -11,8 +11,8 @@ import requests
 from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.converters import asset_from_bitpanda
+from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_BEST
-from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError

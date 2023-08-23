@@ -13,7 +13,7 @@ from rotkehlchen.chain.evm.accounting.structures import (
     TxEventSettings,
 )
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
-from rotkehlchen.constants.misc import ONE
+from rotkehlchen.constants import ONE
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Price, Timestamp
 
