@@ -5808,6 +5808,7 @@ Querying periodic data
       }
 
    :resjson int last_balance_save: The last time (unix timestamp) at which balances were saved in the database.
+   :resjson int last_data_upload_ts: The last time (unix timestamp) at which a new DB was pushed to the remote as backup.
    :resjson object connected_nodes: A dictionary containing the evm chain name and a list of connected nodes.
    :statuscode 200: Data were queried successfully.
    :statuscode 409: No user is currently logged in.

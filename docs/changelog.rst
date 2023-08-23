@@ -3,6 +3,8 @@ Changelog
 =========
 
 * :release:`1.30.1 <2023-08-23>`
+* :bug:`-` Last premium DB upload will now show the last known DB upload time from the remote and not the time the local app did its last upload. This is important for people using multiple machines.
+* :bug:`6528` Spam assets will be synced across accounts sharing the same globaldb and won't be queried during token detection.
 * :bug:`-` Removed deprecated "Reset DB button" from the aave/yearn view.
 * :bug:`6524` Premium users will be able to explicity request to force push their local DB to the server backup properly again.
 * :bug:`-` Fix an issue where certain gitcoin donations were not detected in optimism and where the big transfer to the contract which later splits into the donations was mistakenly kept.
