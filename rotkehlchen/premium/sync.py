@@ -35,8 +35,11 @@ class PremiumSyncManager:
     def __init__(self, migration_manager: DataMigrationManager, data: DataHandler) -> None:
         # Initialize this with the value saved in the DB
         with data.db.conn.read_ctx() as cursor:
+            # These 2 vars contain the timestamp of our side. When did this DB try to upload
             self.last_data_upload_ts = data.db.get_setting(cursor, name='last_data_upload_ts')
             self.last_upload_attempt_ts = self.last_data_upload_ts
+        # This contains the last known succesful DB upload timestamp in the remote.
+        self.last_remote_data_upload_ts = 0  # gets populated only after the first API call
         self.data = data
         self.migration_manager = migration_manager
         self.premium: Optional[Premium] = None
@@ -229,6 +232,7 @@ class PremiumSyncManager:
         # update the last data upload value
         self.last_data_upload_ts = ts_now()
         self.last_upload_attempt_ts = self.last_data_upload_ts
+        self.last_remote_data_upload_ts = self.last_data_upload_ts
         with self.data.db.user_write() as cursor:
             self.data.db.set_setting(cursor, name='last_data_upload_ts', value=self.last_data_upload_ts)  # noqa: E501
 
