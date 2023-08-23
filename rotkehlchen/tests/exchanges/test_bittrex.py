@@ -3,8 +3,8 @@ from unittest.mock import patch
 
 from rotkehlchen.assets.asset import WORLD_TO_BITTREX, Asset
 from rotkehlchen.assets.converters import UNSUPPORTED_BITTREX_ASSETS, asset_from_bittrex
+from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_LTC
-from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.filtering import AssetMovementsFilterQuery
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchanges.bittrex import Bittrex

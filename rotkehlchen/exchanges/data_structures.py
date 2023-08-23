@@ -8,7 +8,7 @@ from rotkehlchen.accounting.mixins.event import AccountingEventMixin, Accounting
 from rotkehlchen.accounting.structures.types import ActionType
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
 from rotkehlchen.assets.converters import asset_from_binance
-from rotkehlchen.constants.misc import ONE, ZERO
+from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.crypto import sha3
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.fval import FVal

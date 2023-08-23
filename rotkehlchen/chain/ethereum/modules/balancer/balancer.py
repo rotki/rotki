@@ -15,7 +15,8 @@ from rotkehlchen.chain.ethereum.graph import (
     Graph,
     format_query_indentation,
 )
-from rotkehlchen.constants.misc import ZERO, ZERO_PRICE
+from rotkehlchen.constants import ZERO
+from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors.misc import ModuleInitializationFailure, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError

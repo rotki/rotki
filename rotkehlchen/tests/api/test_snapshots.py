@@ -12,8 +12,8 @@ import requests
 from freezegun import freeze_time
 
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
+from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_AVAX, A_BTC, A_ETH, A_EUR, A_USD
-from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.db.snapshots import (
     BALANCES_FILENAME,

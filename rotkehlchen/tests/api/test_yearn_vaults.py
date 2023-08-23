@@ -15,6 +15,7 @@ from rotkehlchen.chain.ethereum.modules.yearn.db import (
 from rotkehlchen.chain.ethereum.modules.yearn.structures import YearnVault
 from rotkehlchen.chain.ethereum.modules.yearn.vaults import YearnVaultEvent, YearnVaultHistory
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode, string_to_evm_address
+from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import (
     A_ALINK_V1,
     A_CRVP_DAIUSDCTTUSD,
@@ -29,7 +30,6 @@ from rotkehlchen.constants.assets import (
     A_YV1_USDT,
     A_YV1_YFI,
 )
-from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
     api_url_for,

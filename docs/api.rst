@@ -8609,19 +8609,22 @@ Querying ethereum airdrops
                   "1inch": {
                       "amount": "675.55",
                       "asset": "eip155:1/erc20:0x111111111117dC0aa78b770fA6A738034120C302",
-                      "link": "https://app.uniswap.org/"
+                      "link": "https://app.uniswap.org/",
+                      "claimed: false
                   }
               },
               "0x0B89f648eEcCc574a9B7449B5242103789CCD9D7": {
                   "1inch": {
                       "amount": "1823.23",
                       "asset": "eip155:1/erc20:0x111111111117dC0aa78b770fA6A738034120C302",
-                      "link": "https://1inch.exchange/"
+                      "link": "https://1inch.exchange/",
+                      "claimed: false
                   },
                   "uniswap": {
                       "amount": "400",
                       "asset": "eip155:1/erc20:0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984",
-                      "link": "https://app.uniswap.org/"
+                      "link": "https://app.uniswap.org/",
+                      "claimed: true
                   }
               },
           "message": ""

@@ -1,6 +1,6 @@
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode, string_to_evm_address
-from rotkehlchen.constants.misc import ONE
+from rotkehlchen.constants import ONE
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import SupportedBlockchain, Timestamp, deserialize_evm_tx_hash
 

@@ -12,8 +12,8 @@ from flaky import flaky
 from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.bitcoin import get_bitcoin_addresses_balances
+from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_AVAX, A_BTC, A_DAI, A_ETH, A_EUR, A_KSM
-from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (

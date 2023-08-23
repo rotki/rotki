@@ -25,7 +25,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails, EventCategory
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants import ZERO
 from rotkehlchen.types import UNISWAP_PROTOCOL, DecoderEventMappingType, EvmTransaction
 from rotkehlchen.utils.misc import hex_or_bytes_to_int
 

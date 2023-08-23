@@ -38,8 +38,8 @@ from rotkehlchen.chain.substrate.utils import (
     get_substrate_address_from_public_key,
     is_valid_substrate_address,
 )
+from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_ETH, A_ETH2
-from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.data_import.manager import DataImportSource
 from rotkehlchen.db.filtering import (
     AssetMovementsFilterQuery,

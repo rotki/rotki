@@ -165,12 +165,12 @@ def should_update_protocol_cache(cache_key: CacheType, *args: str) -> bool:
         if cache_key in UNIQUE_CACHE_KEYS:
             last_update_ts = globaldb_get_unique_cache_last_queried_ts_by_key(
                 cursor=cursor,
-                key_parts=(cache_key, *args),  # type: ignore
+                key_parts=(cache_key, *args),  # type: ignore  # cache_key needs type specification here  # noqa: E501
             )
         else:
             last_update_ts = globaldb_get_general_cache_last_queried_ts_by_key(
                 cursor=cursor,
-                key_parts=(cache_key, *args),  # type: ignore
+                key_parts=(cache_key, *args),  # type: ignore  # cache_key needs type specification here  # noqa: E501
             )
     return ts_now() - last_update_ts >= ETH_PROTOCOLS_CACHE_REFRESH
 

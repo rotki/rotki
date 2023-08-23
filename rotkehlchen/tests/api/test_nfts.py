@@ -14,7 +14,7 @@ from rotkehlchen.chain.ethereum.modules.nft.constants import FREE_NFT_LIMIT
 from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
 from rotkehlchen.chain.ethereum.modules.uniswap.v3.types import NFTLiquidityPool
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants import ZERO
 from rotkehlchen.db.queried_addresses import QueriedAddresses
 from rotkehlchen.externalapis.opensea import NFT, Collection
 from rotkehlchen.fval import FVal

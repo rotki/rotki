@@ -11,10 +11,10 @@ import requests
 from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.api.server import APIServer
 from rotkehlchen.assets.asset import Asset, EvmToken
-from rotkehlchen.assets.types import AssetType
+from rotkehlchen.assets.types import ASSET_TYPES_EXCLUDED_FOR_USERS, AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
+from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_DAI, A_EUR
-from rotkehlchen.constants.misc import ASSET_TYPES_EXCLUDED_FOR_USERS, ONE
 from rotkehlchen.constants.resolver import (
     ChainID,
     ethaddress_to_identifier,

@@ -6,8 +6,9 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_KFEE, A_USD
-from rotkehlchen.constants.misc import ONE, ZERO_PRICE
+from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset

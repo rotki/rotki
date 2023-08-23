@@ -6,8 +6,8 @@ from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.modules.uniswap.v3.types import AddressToUniswapV3LPBalances
+from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_USD
-from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.filtering import NFTFilterQuery
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError, RemoteError
