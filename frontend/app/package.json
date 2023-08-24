@@ -12,7 +12,7 @@
     "build:app": "cross-env NODE_ENV=production node scripts/build.js",
     "build:preview": "pnpm run build:app && vite preview",
     "preview": "vite preview",
-    "cypress:open": "CYPRESS_NO_COMMAND_LOG=1 cypress open",
+    "cypress:open": "cypress open",
     "cypress:run": "CYPRESS_NO_COMMAND_LOG=1 cypress run --headless",
     "electron:build": "pnpm run build && pnpm run electron:package",
     "electron:package": "electron-builder build --config .electron-builder.config.js --publish onTag",
@@ -40,7 +40,7 @@
   "dependencies": {
     "@rotki/common": "workspace:*",
     "@rotki/eslint-config-ts": "1.1.1",
-    "@rotki/ui-library-compat": "0.1.4",
+    "@rotki/ui-library-compat": "0.2.0",
     "@vuelidate/core": "2.0.3",
     "@vuelidate/validators": "2.0.3",
     "@vueuse/core": "10.2.1",
