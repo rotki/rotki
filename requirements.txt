@@ -24,11 +24,11 @@ cryptography==41.0.3
 jsonschema==4.17.3  # jsonchema 4.18 introduces a dependency that is missing wheels for macos in our CI. We have reported it but we will pin the version until is fixed https://github.com/crate-py/rpds/issues/11
 
 # For the rest api
-flask-cors==3.0.10
-flask==2.3.2
-marshmallow==3.19.0
+flask-cors==4.0.0
+flask==2.3.3
+marshmallow==3.20.1
 webargs==8.2.0
-werkzeug==2.3.3
+werkzeug==2.3.7
 
 # for icon validation
 filetype==1.2.0
