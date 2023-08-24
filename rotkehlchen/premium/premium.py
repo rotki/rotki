@@ -363,8 +363,6 @@ class Premium:
             log.error(f'{msg}. Response was {result}')
             raise RemoteError(msg) from e
 
-        # also save the last upload ts known at the remote
-        self.last_remote_data_upload_ts = metadata.upload_ts
         return metadata
 
     def query_premium_components(self) -> str:
