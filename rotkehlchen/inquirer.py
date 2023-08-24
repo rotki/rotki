@@ -74,7 +74,7 @@ from rotkehlchen.externalapis.xratescom import (
     get_historical_xratescom_exchange_rates,
 )
 from rotkehlchen.fval import FVal
-from rotkehlchen.globaldb.cache import globaldb_get_general_cache_values, read_curve_pool_tokens
+from rotkehlchen.globaldb.cache import globaldb_get_cache_values, read_curve_pool_tokens
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.interfaces import CurrentPriceOracleInterface
@@ -85,9 +85,9 @@ from rotkehlchen.types import (
     CURVE_POOL_PROTOCOL,
     UNISWAP_PROTOCOL,
     YEARN_VAULTS_V2_PROTOCOL,
+    CacheType,
     ChainID,
     EvmTokenKind,
-    GeneralCacheType,
     Price,
     ProtocolsWithPriceLogic,
     Timestamp,
@@ -751,14 +751,14 @@ class Inquirer:
         ethereum.assure_curve_cache_is_queried_and_decoder_updated()
 
         with GlobalDBHandler().conn.read_ctx() as cursor:
-            pool_addresses_in_cache = globaldb_get_general_cache_values(
+            pool_address_in_cache = globaldb_get_cache_values(
                 cursor=cursor,
-                key_parts=[GeneralCacheType.CURVE_POOL_ADDRESS, lp_token.evm_address],
+                key_parts=(CacheType.CURVE_POOL_ADDRESS, lp_token.evm_address),
             )
-            if len(pool_addresses_in_cache) == 0:
+            if pool_address_in_cache is None:
                 return None
             # pool address is guaranteed to be checksumed due to how we save it
-            pool_address = string_to_evm_address(pool_addresses_in_cache[0])
+            pool_address = string_to_evm_address(pool_address_in_cache)
             pool_tokens_addresses = read_curve_pool_tokens(cursor=cursor, pool_address=pool_address)  # noqa: E501
 
         tokens: list[EvmToken] = []

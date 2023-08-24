@@ -40,10 +40,10 @@ from rotkehlchen.greenlets.manager import GreenletManager
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import (
+    CacheType,
     ChainID,
     ChecksumEvmAddress,
     EVMTxHash,
-    GeneralCacheType,
     SupportedBlockchain,
     Timestamp,
 )
@@ -277,7 +277,7 @@ class EthereumInquirer(EvmNodeInquirerWithDSProxy, LockableQueryMixIn):
         3. Saves queried information in the cache in globaldb
         """
         if (
-            should_update_protocol_cache(GeneralCacheType.CURVE_LP_TOKENS) is False and
+            should_update_protocol_cache(CacheType.CURVE_LP_TOKENS) is False and
             force_refresh is False
         ):
             return False

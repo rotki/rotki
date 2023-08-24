@@ -1,14 +1,17 @@
+from collections.abc import Iterable
 from contextlib import ExitStack
 from copy import deepcopy
-from typing import Literal
+from typing import Literal, Optional, Union
 from unittest.mock import patch
 
 from rotkehlchen.assets.asset import EvmToken, UnderlyingToken
 from rotkehlchen.constants.assets import A_MKR
+from rotkehlchen.db.drivers.gevent import DBCursor
 from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb.cache import compute_cache_key
 from rotkehlchen.globaldb.upgrades.manager import UPGRADES_LIST
 from rotkehlchen.tests.utils.factories import make_evm_address
-from rotkehlchen.types import ChainID, EvmTokenKind, Timestamp
+from rotkehlchen.types import CacheType, ChainID, EvmTokenKind, Timestamp
 
 underlying_address1 = make_evm_address()
 underlying_address2 = make_evm_address()
@@ -76,7 +79,7 @@ USER_TOKEN3 = EvmToken.initialize(
 )
 
 
-def patch_for_globaldb_upgrade_to(stack: ExitStack, version: Literal[2, 3, 4]) -> ExitStack:
+def patch_for_globaldb_upgrade_to(stack: ExitStack, version: Literal[2, 3, 4, 6]) -> ExitStack:
     stack.enter_context(
         patch(
             'rotkehlchen.globaldb.upgrades.manager.GLOBAL_DB_VERSION',
@@ -107,3 +110,20 @@ def patch_for_globaldb_migrations(stack: ExitStack, new_list: list) -> ExitStack
         ),
     )
     return stack
+
+
+def globaldb_get_general_cache_last_queried_ts(
+        cursor: DBCursor,
+        key_parts: Iterable[Union[str, CacheType]],
+        value: str,
+) -> Optional[Timestamp]:
+    """Function to get timestamp at which pair key - value was queried last time."""
+    cache_key, _ = compute_cache_key(key_parts)
+    cursor.execute(
+        'SELECT MAX(last_queried_ts) FROM general_cache WHERE key=? AND value=?',
+        (cache_key, value),
+    )
+    result = cursor.fetchone()
+    if result is None:
+        return None
+    return Timestamp(result[0])

@@ -18,10 +18,10 @@ from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
-from rotkehlchen.globaldb.cache import globaldb_get_general_cache_last_queried_ts_by_key
+from rotkehlchen.globaldb.cache import globaldb_get_cache_last_queried_ts_by_key
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, GeneralCacheType
+from rotkehlchen.types import CacheType, ChecksumEvmAddress
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 from rotkehlchen.utils.misc import ts_now
 
@@ -152,13 +152,13 @@ def generate_address_via_create2(
     return to_checksum_address(contract_address)
 
 
-def should_update_protocol_cache(cache_key: GeneralCacheType, *args: str) -> bool:
+def should_update_protocol_cache(cache_key: CacheType, *args: str) -> bool:
     """
     Checks if the last time the cache_key was queried is far enough to trigger
     the process of querying it again.
     """
     with GlobalDBHandler().conn.read_ctx() as cursor:
-        last_update_ts = globaldb_get_general_cache_last_queried_ts_by_key(
+        last_update_ts = globaldb_get_cache_last_queried_ts_by_key(
             cursor=cursor,
             key_parts=[cache_key, *args],
         )

@@ -27,7 +27,7 @@ from rotkehlchen.constants.resolver import ethaddress_to_identifier, evm_address
 from rotkehlchen.db.custom_assets import DBCustomAssets
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
-from rotkehlchen.globaldb.cache import globaldb_set_general_cache_values
+from rotkehlchen.globaldb.cache import globaldb_set_cache_values
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.inquirer import (
@@ -39,7 +39,7 @@ from rotkehlchen.inquirer import (
 from rotkehlchen.interfaces import HistoricalPriceOracleInterface
 from rotkehlchen.tests.utils.constants import A_CNY, A_JPY
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import ChainID, EvmTokenKind, GeneralCacheType, Price, Timestamp
+from rotkehlchen.types import CacheType, ChainID, EvmTokenKind, Price, Timestamp
 from rotkehlchen.utils.misc import ts_now
 from rotkehlchen.utils.mixins.penalizable_oracle import ORACLE_PENALTY_TS
 
@@ -334,6 +334,7 @@ def test_find_uniswap_v2_lp_token_price(inquirer, ethereum_manager):
     assert price is not None
 
 
+@pytest.mark.vcr()
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_find_curve_lp_token_price(inquirer_defi, ethereum_manager):
@@ -342,24 +343,24 @@ def test_find_curve_lp_token_price(inquirer_defi, ethereum_manager):
     identifier = ethaddress_to_identifier(lp_token_address)
     inquirer_defi.inject_evm_managers([(ChainID.ETHEREUM, ethereum_manager)])
     with GlobalDBHandler().conn.write_ctx() as write_cursor:
-        globaldb_set_general_cache_values(
+        globaldb_set_cache_values(
             write_cursor=write_cursor,
-            key_parts=[GeneralCacheType.CURVE_LP_TOKENS],
+            key_parts=(CacheType.CURVE_LP_TOKENS,),
             values=[lp_token_address],
         )
-        globaldb_set_general_cache_values(
+        globaldb_set_cache_values(
             write_cursor=write_cursor,
-            key_parts=[GeneralCacheType.CURVE_POOL_ADDRESS, lp_token_address],
+            key_parts=(CacheType.CURVE_POOL_ADDRESS, lp_token_address),
             values=[pool_address],
         )
-        globaldb_set_general_cache_values(
+        globaldb_set_cache_values(
             write_cursor=write_cursor,
-            key_parts=[GeneralCacheType.CURVE_POOL_TOKENS, pool_address, '0'],
+            key_parts=(CacheType.CURVE_POOL_TOKENS, pool_address, '0'),
             values=['0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE'],
         )
-        globaldb_set_general_cache_values(
+        globaldb_set_cache_values(
             write_cursor=write_cursor,
-            key_parts=[GeneralCacheType.CURVE_POOL_TOKENS, pool_address, '1'],
+            key_parts=(CacheType.CURVE_POOL_TOKENS, pool_address, '1'),
             values=['0x5e74C9036fb86BD7eCdcb084a0673EFc32eA31cb'],
         )
     price = inquirer_defi.find_curve_pool_price(EvmToken(identifier))
