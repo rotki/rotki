@@ -1094,7 +1094,7 @@ class Rotkehlchen:
                 for evm_manager in self.chains_aggregator.iterate_evm_chain_managers():
                     connected_nodes[evm_manager.node_inquirer.chain_name] = [node.name for node in evm_manager.node_inquirer.get_connected_nodes()]  # noqa: E501
                 result['connected_nodes'] = connected_nodes
-                result['last_data_upload_ts'] = Timestamp(self.premium_sync_manager.last_data_upload_ts)  # noqa: E501
+                result['last_data_upload_ts'] = Timestamp(self.premium_sync_manager.last_remote_data_upload_ts)  # noqa: E501
         return result
 
     def shutdown(self) -> None:

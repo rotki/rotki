@@ -9,7 +9,12 @@ from rotkehlchen.data_migrations.manager import DataMigrationManager
 from rotkehlchen.errors.api import PremiumAuthenticationError, RotkehlchenPermissionError
 from rotkehlchen.errors.misc import RemoteError, UnableToDecryptRemoteData
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.premium.premium import Premium, PremiumCredentials, premium_create_and_verify
+from rotkehlchen.premium.premium import (
+    Premium,
+    PremiumCredentials,
+    RemoteMetadata,
+    premium_create_and_verify,
+)
 from rotkehlchen.utils.misc import ts_now
 
 logger = logging.getLogger(__name__)
@@ -35,11 +40,21 @@ class PremiumSyncManager:
     def __init__(self, migration_manager: DataMigrationManager, data: DataHandler) -> None:
         # Initialize this with the value saved in the DB
         with data.db.conn.read_ctx() as cursor:
+            # These 2 vars contain the timestamp of our side. When did this DB try to upload
             self.last_data_upload_ts = data.db.get_setting(cursor, name='last_data_upload_ts')
             self.last_upload_attempt_ts = self.last_data_upload_ts
+        # This contains the last known succesful DB upload timestamp in the remote.
+        self.last_remote_data_upload_ts = 0  # gets populated only after the first API call
         self.data = data
         self.migration_manager = migration_manager
         self.premium: Optional[Premium] = None
+
+    def _query_last_data_metadata(self) -> RemoteMetadata:
+        """Query remote metadata and keep up to date the last remote data upload ts"""
+        assert self.premium is not None, 'caller should make sure premium exists'
+        metadata = self.premium.query_last_data_metadata()
+        self.last_remote_data_upload_ts = metadata.upload_ts
+        return metadata
 
     def _can_sync_data_from_server(self, new_account: bool) -> SyncCheckResult:
         """
@@ -54,7 +69,7 @@ class PremiumSyncManager:
             return SyncCheckResult(can_sync=CanSync.NO, message='', payload=None)
 
         try:
-            metadata = self.premium.query_last_data_metadata()
+            metadata = self._query_last_data_metadata()
         except (RemoteError, PremiumAuthenticationError) as e:
             log.debug('can sync data from server failed', error=str(e))
             return SyncCheckResult(can_sync=CanSync.NO, message='', payload=None)
@@ -153,7 +168,7 @@ class PremiumSyncManager:
         assert self.premium is not None, 'caller should make sure premium exists'
         log.debug('Starting maybe_upload_data_to_server')
         try:
-            metadata = self.premium.query_last_data_metadata()
+            metadata = self._query_last_data_metadata()
         except (RemoteError, PremiumAuthenticationError) as e:
             message = 'Fetching metadata error'
             log.debug(f'upload to server -- {message}', error=str(e))
@@ -229,6 +244,7 @@ class PremiumSyncManager:
         # update the last data upload value
         self.last_data_upload_ts = ts_now()
         self.last_upload_attempt_ts = self.last_data_upload_ts
+        self.last_remote_data_upload_ts = self.last_data_upload_ts
         with self.data.db.user_write() as cursor:
             self.data.db.set_setting(cursor, name='last_data_upload_ts', value=self.last_data_upload_ts)  # noqa: E501
 
