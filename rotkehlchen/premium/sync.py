@@ -9,7 +9,12 @@ from rotkehlchen.data_migrations.manager import DataMigrationManager
 from rotkehlchen.errors.api import PremiumAuthenticationError, RotkehlchenPermissionError
 from rotkehlchen.errors.misc import RemoteError, UnableToDecryptRemoteData
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.premium.premium import Premium, PremiumCredentials, premium_create_and_verify
+from rotkehlchen.premium.premium import (
+    Premium,
+    PremiumCredentials,
+    RemoteMetadata,
+    premium_create_and_verify,
+)
 from rotkehlchen.utils.misc import ts_now
 
 logger = logging.getLogger(__name__)
@@ -44,6 +49,13 @@ class PremiumSyncManager:
         self.migration_manager = migration_manager
         self.premium: Optional[Premium] = None
 
+    def _query_last_data_metadata(self) -> RemoteMetadata:
+        """Query remote metadata and keep up to date the last remote data upload ts"""
+        assert self.premium is not None, 'caller should make sure premium exists'
+        metadata = self.premium.query_last_data_metadata()
+        self.last_remote_data_upload_ts = metadata.upload_ts
+        return metadata
+
     def _can_sync_data_from_server(self, new_account: bool) -> SyncCheckResult:
         """
         Checks if the remote data can be pulled from the server.
@@ -57,7 +69,7 @@ class PremiumSyncManager:
             return SyncCheckResult(can_sync=CanSync.NO, message='', payload=None)
 
         try:
-            metadata = self.premium.query_last_data_metadata()
+            metadata = self._query_last_data_metadata()
         except (RemoteError, PremiumAuthenticationError) as e:
             log.debug('can sync data from server failed', error=str(e))
             return SyncCheckResult(can_sync=CanSync.NO, message='', payload=None)
@@ -156,7 +168,7 @@ class PremiumSyncManager:
         assert self.premium is not None, 'caller should make sure premium exists'
         log.debug('Starting maybe_upload_data_to_server')
         try:
-            metadata = self.premium.query_last_data_metadata()
+            metadata = self._query_last_data_metadata()
         except (RemoteError, PremiumAuthenticationError) as e:
             message = 'Fetching metadata error'
             log.debug(f'upload to server -- {message}', error=str(e))
