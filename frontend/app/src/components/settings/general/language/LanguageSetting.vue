@@ -59,7 +59,7 @@ const { languageContributeUrl } = useInterop();
     <div class="d-flex align-center">
       <SettingsOption
         #default="{ error, success, update }"
-        class="fill-width"
+        class="w-full"
         setting="language"
         frontend-setting
         :error-message="t('general_settings.validation.language.error')"

@@ -2,8 +2,8 @@ import { mockRequest } from '../support/utils';
 import { RotkiApp } from './rotki-app';
 
 export class ApiKeysPage {
-  visit() {
-    RotkiApp.navigateTo('settings__api-keys');
+  visit(submenu: string) {
+    RotkiApp.navigateTo('api-keys', submenu);
   }
 
   addExchange(
@@ -12,7 +12,6 @@ export class ApiKeysPage {
     exchange: string,
     name: string
   ) {
-    cy.get('.tab-navigation__tabs .settings__api-keys__exchanges').click();
     cy.get('[data-cy="exchanges"]').find('[data-cy="add-exchange"]').click();
     cy.get('[data-cy="exchange-keys"]').as('keys');
     cy.get('[data-cy="bottom-dialog"]', { timeout: 45000 }).should(

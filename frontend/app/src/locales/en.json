@@ -2630,9 +2630,9 @@
       "name": "Nexo"
     },
     "note": "Important notes for importing data from {0}'s CSV exports.",
-    "notice": "{warning} Those platforms could change their format in a backwards incompatible way quite often. As such this import may stop working. If that happens {link} and we will see what we can do.",
+    "notice": "Those platforms could change their format in a backwards incompatible way quite often. As such this import may stop working. If that happens {link} and we will see what we can do.",
     "notice_link": "open an issue with rotki",
-    "notice_warning": "⚠️ Important notice ⚠️:",
+    "notice_warning": "Important notice:",
     "select_source": {
       "title": "Select source"
     },
@@ -3365,7 +3365,8 @@
   },
   "overall_balances": {
     "loading": "LOADING",
-    "premium_hint": "Get the full experience by upgrading to rotki premium"
+    "premium_hint": "Get the full experience by upgrading to rotki premium",
+    "summary": "Summary"
   },
   "overview": {
     "details_dialog": {

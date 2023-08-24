@@ -135,7 +135,7 @@ const css = useCssModule();
 
 <template>
   <div>
-    <VCard outlined>
+    <VCard outlined class="overflow-hidden">
       <VList max-height="300px" :class="css.list" three-line class="py-0">
         <template v-for="(item, index) in nodes">
           <VDivider v-if="index !== 0" :key="index" />

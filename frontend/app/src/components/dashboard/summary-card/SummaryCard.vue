@@ -31,26 +31,28 @@ const slots = useSlots();
     class="pb-1"
   >
     <VCardTitle
-      class="font-weight-medium text-capitalize px-4 pt-3 pb-0 secondary--text summary-card__header"
+      class="font-weight-medium text-capitalize summary-card__header pb-2 flex-nowrap flex justify-between gap-2"
     >
-      <CardTitle>
-        <NavigatorLink :enabled="!!navigatesTo" :to="{ path: navigatesTo }">
-          {{ t('summary_card.title', { name }) }}
-        </NavigatorLink>
-      </CardTitle>
-      <VSpacer />
+      <NavigatorLink
+        :enabled="!!navigatesTo"
+        :to="{ path: navigatesTo }"
+        tag="div"
+        class="text-clip truncate"
+        :title="t('summary_card.title', { name })"
+      >
+        {{ t('summary_card.title', { name }) }}
+      </NavigatorLink>
       <div class="d-flex align-center">
         <VTooltip v-if="canRefresh" bottom max-width="300px">
           <template #activator="{ on: tooltipOn }">
             <VBtn
               icon
-              small
               :disabled="isLoading"
               color="primary"
               @click="refresh(name)"
               v-on="tooltipOn"
             >
-              <VIcon small color="primary">mdi-refresh</VIcon>
+              <RuiIcon color="primary" name="restart-line" />
             </VBtn>
           </template>
           <span>

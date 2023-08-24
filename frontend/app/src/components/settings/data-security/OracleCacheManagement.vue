@@ -237,42 +237,36 @@ const showDeleteConfirmation = (entry: OracleCacheMeta) => {
             <span>{{ t('oracle_cache_management.create_tooltip') }}</span>
           </VTooltip>
         </div>
-        <VSheet outlined rounded>
-          <DataTable
-            :headers="headers"
-            :loading="loading"
-            :items="filteredData"
-          >
-            <template #item.fromAsset="{ item }">
-              <AssetDetails opens-details :asset="item.fromAsset" />
-            </template>
-            <template #item.toAsset="{ item }">
-              <AssetDetails opens-details :asset="item.toAsset" />
-            </template>
-            <template #item.toTimestamp="{ item }">
-              <DateDisplay :timestamp="item.toTimestamp" />
-            </template>
-            <template #item.fromTimestamp="{ item }">
-              <DateDisplay :timestamp="item.fromTimestamp" />
-            </template>
-            <template #item.actions="{ item }">
-              <VTooltip open-delay="400" top>
-                <template #activator="{ on, attrs }">
-                  <VBtn
-                    color="primary"
-                    v-bind="attrs"
-                    icon
-                    v-on="on"
-                    @click="showDeleteConfirmation(item)"
-                  >
-                    <VIcon>mdi-delete</VIcon>
-                  </VBtn>
-                </template>
-                <span>{{ t('oracle_cache_management.delete_tooltip') }}</span>
-              </VTooltip>
-            </template>
-          </DataTable>
-        </VSheet>
+        <DataTable :headers="headers" :loading="loading" :items="filteredData">
+          <template #item.fromAsset="{ item }">
+            <AssetDetails opens-details :asset="item.fromAsset" />
+          </template>
+          <template #item.toAsset="{ item }">
+            <AssetDetails opens-details :asset="item.toAsset" />
+          </template>
+          <template #item.toTimestamp="{ item }">
+            <DateDisplay :timestamp="item.toTimestamp" />
+          </template>
+          <template #item.fromTimestamp="{ item }">
+            <DateDisplay :timestamp="item.fromTimestamp" />
+          </template>
+          <template #item.actions="{ item }">
+            <VTooltip open-delay="400" top>
+              <template #activator="{ on, attrs }">
+                <VBtn
+                  color="primary"
+                  v-bind="attrs"
+                  icon
+                  v-on="on"
+                  @click="showDeleteConfirmation(item)"
+                >
+                  <VIcon>mdi-delete</VIcon>
+                </VBtn>
+              </template>
+              <span>{{ t('oracle_cache_management.delete_tooltip') }}</span>
+            </VTooltip>
+          </template>
+        </DataTable>
       </VCardText>
     </VCard>
   </Fragment>

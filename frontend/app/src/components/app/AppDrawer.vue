@@ -5,8 +5,6 @@ const { appBarColor } = useTheme();
 
 const remoteDrawerImage =
   'https://raw.githubusercontent.com/rotki/data/main/assets/icons/drawer_logo.png';
-
-const { t } = useI18n();
 </script>
 
 <template>
@@ -20,11 +18,8 @@ const { t } = useI18n();
     clipped
     app
   >
-    <div v-if="!isMini" class="app__logo">
-      <RotkiLogo height="150px" :url="remoteDrawerImage" />
-    </div>
-    <div v-else class="app__logo-mini">
-      {{ t('app.name') }}
+    <div class="app__logo" :class="{ 'app__logo--mini': isMini }">
+      <RuiLogo :text="!isMini" :custom-src="remoteDrawerImage" />
     </div>
     <NavigationMenu :is-mini="isMini" />
     <VSpacer />
@@ -43,20 +38,17 @@ const { t } = useI18n();
 <style scoped lang="scss">
 .app {
   &__logo {
-    margin-bottom: 15px;
-    margin-top: 15px;
+    padding: 1.5rem 1rem;
 
-    &-mini {
-      text-align: center;
-      align-self: center;
-      font-size: 3em;
-      font-weight: bold;
-      height: 150px;
-      width: 64px;
-      writing-mode: vertical-lr;
-      transform: rotate(-180deg);
-      margin-bottom: 15px;
-      margin-top: 15px;
+    &--mini {
+      padding: 1rem 0.5rem;
+      margin-bottom: 1rem;
+
+      > div {
+        height: 32px;
+        display: flex;
+        justify-content: center;
+      }
     }
   }
 
@@ -72,8 +64,6 @@ const { t } = useI18n();
 }
 
 .v-navigation-drawer {
-  box-shadow: 0 2px 12px rgba(74, 91, 120, 0.1);
-
   &--is-mobile {
     padding-top: 60px !important;
   }

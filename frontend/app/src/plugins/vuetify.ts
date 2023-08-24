@@ -3,20 +3,26 @@
 import '@mdi/font/css/materialdesignicons.css';
 import Vue from 'vue';
 import Vuetify from 'vuetify';
-import { VDialog, VNavigationDrawer, VSwitch } from 'vuetify/lib/components';
+import { VDialog, VNavigationDrawer } from 'vuetify/lib/components';
 import DiscordIcon from '@/components/svgs/DiscordIcon.vue';
 import {
   DARK_ACCENT,
+  DARK_ERROR,
   DARK_GRAPH,
+  DARK_INFO,
   DARK_PRIMARY,
+  DARK_SUCCESS,
+  DARK_WARNING,
   LIGHT_ACCENT,
+  LIGHT_ERROR,
   LIGHT_GRAPH,
-  LIGHT_PRIMARY
+  LIGHT_INFO,
+  LIGHT_PRIMARY,
+  LIGHT_SUCCESS,
+  LIGHT_WARNING
 } from '@/plugins/theme';
 
 Vue.use(Vuetify);
-// @ts-ignore
-VSwitch.options.props.inset.default = true;
 
 // Fix scroll error issue on VOverlay
 const newShouldScroll = (el: Element, e: WheelEvent): boolean => {
@@ -85,14 +91,12 @@ const vuetify = new Vuetify({
         accent: LIGHT_ACCENT,
         graph: LIGHT_GRAPH,
         graphFade: '#ffffff',
-        error: '#f03a47',
-        success: '#06D6A0',
+        error: LIGHT_ERROR,
+        success: LIGHT_SUCCESS,
+        info: LIGHT_INFO,
+        warning: LIGHT_WARNING,
         'rotki-light-grey': '#f9fafb',
         'rotki-grey': '#9fa6b2',
-        'rotki-green': '#06D6A0',
-        'rotki-red': '#F03A47',
-        'rotki-gain': '#4caf50',
-        'rotki-loss': '#d32f2f',
         'rotki-scrollbar': '#eeeeee'
       },
       dark: {
@@ -101,11 +105,11 @@ const vuetify = new Vuetify({
         graph: DARK_GRAPH,
         graphFade: DARK_GREY,
         dark: DARK_GREY,
+        error: DARK_ERROR,
+        success: DARK_SUCCESS,
+        info: DARK_INFO,
+        warning: DARK_WARNING,
         'rotki-light-grey': '#121212',
-        'rotki-green': '#4caf50',
-        'rotki-red': '#d32f2f',
-        'rotki-gain': '#4caf50',
-        'rotki-loss': '#d32f2f',
         'rotki-scrollbar': '#999999'
       }
     }

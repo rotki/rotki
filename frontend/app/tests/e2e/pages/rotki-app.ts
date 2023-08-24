@@ -125,8 +125,6 @@ export class RotkiApp {
   }
 
   static navigateTo(menu: string, submenu?: string) {
-    cy.get('.v-app-bar__nav-icon').click();
-
     const click = (selector: string) => {
       cy.get(selector).scrollIntoView();
       cy.get(selector).should('be.visible');
@@ -135,11 +133,22 @@ export class RotkiApp {
     };
 
     const menuClass = `.navigation__${menu}`;
-    click(menuClass);
+    cy.get(menuClass).then(menu => {
+      const parent = menu.parent().parent();
+      if (!parent.hasClass('v-list-group--active')) {
+        click(menuClass);
+      }
 
-    if (submenu) {
-      const subMenuClass = `.navigation__${submenu}`;
-      click(subMenuClass);
-    }
+      if (submenu) {
+        cy.get(menuClass)
+          .parent()
+          .parent()
+          .find('.v-list-group__items')
+          .scrollIntoView();
+
+        const subMenuClass = `.navigation__${submenu}`;
+        click(subMenuClass);
+      }
+    });
   }
 }

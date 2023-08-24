@@ -19,6 +19,7 @@ import {
   VTextField,
   VTooltip
 } from 'vuetify/lib/components';
+import { RuiIcon } from '@rotki/ui-library-compat';
 import AssetLink from '@/components/assets/AssetLink.vue';
 import PaginatedCards from '@/components/common/PaginatedCards.vue';
 import ExportSnapshotDialog from '@/components/dashboard/ExportSnapshotDialog.vue';
@@ -53,6 +54,7 @@ import StatisticsGraphSettings from '@/components/settings/StatisticsGraphSettin
 import CardTitle from '@/components/typography/CardTitle.vue';
 import HistoryEventsView from '@/components/history/events/HistoryEventsView.vue';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
+import LpPoolHeader from '@/components/display/defi/LpPoolHeader.vue';
 
 /**
  * Vuetify components that are used in the premium components
@@ -134,6 +136,9 @@ export function registerComponents(): void {
   Vue.component('BadgeDisplay', BadgeDisplay);
   // Version 21 - 1.28
   Vue.component('HistoryEventsView', HistoryEventsView);
+  // Version 24 - 1.31
+  Vue.component('RuiIcon', RuiIcon);
+  Vue.component('LpPoolHeader', LpPoolHeader);
   vuetifyRegister();
   logger.info('Components registered');
 }

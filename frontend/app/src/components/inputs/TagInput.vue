@@ -200,7 +200,7 @@ watch(tags, () => {
       :value="manageTags"
       max-width="800"
       class="tag-input__tag-manager"
-      content-class="fill-height"
+      content-class="h-full"
       @input="manageTags = false"
     >
       <TagManager v-if="manageTags" dialog @close="manageTags = false" />

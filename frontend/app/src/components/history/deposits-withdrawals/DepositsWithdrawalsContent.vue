@@ -135,7 +135,7 @@ watch(loading, async (isLoading, wasLoading) => {
 </script>
 
 <template>
-  <Card outlined-body class="mt-8">
+  <Card class="mt-8">
     <template #title>
       <RefreshButton
         v-if="!locationOverview"

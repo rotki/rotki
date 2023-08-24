@@ -374,11 +374,11 @@ const css = useCssModule();
 
 <style module lang="scss">
 .profit {
-  color: var(--v-rotki-gain-base);
+  color: var(--v-rotki-success-base);
 }
 
 .loss {
-  color: var(--v-rotki-loss-base);
+  color: var(--v-rotki-error-base);
 }
 
 .display {

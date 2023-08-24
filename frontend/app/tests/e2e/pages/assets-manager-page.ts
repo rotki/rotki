@@ -1,9 +1,8 @@
 import { RotkiApp } from './rotki-app';
 
 export class AssetsManagerPage {
-  visit() {
-    RotkiApp.navigateTo('asset-manager');
-    cy.get('[data-cy="managed-assets-table"]').should('be.visible');
+  visit(submenu: string) {
+    RotkiApp.navigateTo('asset-manager', submenu);
   }
 
   ignoredAssets() {
@@ -144,7 +143,7 @@ export class AssetsManagerPage {
     // dialog should be visible
     cy.get('[data-cy=bottom-dialog]').should('be.visible');
     // dialog title should match as well
-    cy.get('[data-cy=bottom-dialog] .card-title')
+    cy.get('[data-cy=bottom-dialog] .v-card__title')
       .contains('Add a new asset')
       .should('be.visible');
 
@@ -298,7 +297,7 @@ export class AssetsManagerPage {
     // dialog should be visible
     cy.get('[data-cy=bottom-dialog]').should('be.visible');
     // dialog title should match as well
-    cy.get('[data-cy=bottom-dialog] .card-title')
+    cy.get('[data-cy=bottom-dialog] .v-card__title')
       .contains('Edit an asset')
       .should('be.visible');
 

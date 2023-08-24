@@ -269,45 +269,38 @@ const getActions = (keyword: string): SearchItemWithoutValue[] => {
   const actionItems: SearchItemWithoutValue[] = [
     {
       text: t('exchange_settings.dialog.add.title').toString(),
-      route: `${Routes.API_KEYS_EXCHANGES.route}?add=true`,
-      icon: 'mdi-wallet-plus'
+      route: `${Routes.API_KEYS_EXCHANGES.route}?add=true`
     },
     {
       text: t('blockchain_balances.form_dialog.add_title').toString(),
-      route: `${Routes.ACCOUNTS_BALANCES_BLOCKCHAIN.route}?add=true`,
-      icon: 'mdi-lock-open-plus'
+      route: `${Routes.ACCOUNTS_BALANCES_BLOCKCHAIN.route}?add=true`
     },
     {
       text: t('manual_balances.dialog.add.title').toString(),
-      route: `${Routes.ACCOUNTS_BALANCES_MANUAL.route}?add=true`,
-      icon: 'mdi-note-plus'
+      route: `${Routes.ACCOUNTS_BALANCES_MANUAL.route}?add=true`
     },
     {
       text: t('closed_trades.dialog.add.title').toString(),
-      route: `${Routes.HISTORY_TRADES.route}?add=true`,
-      icon: 'mdi-plus-box-multiple'
+      route: `${Routes.HISTORY_TRADES.route}?add=true`
     },
     {
       text: t('ledger_actions.dialog.add.title').toString(),
-      route: `${Routes.HISTORY_LEDGER_ACTIONS.route}?add=true`,
-      icon: 'mdi-text-box-plus'
+      route: `${Routes.HISTORY_LEDGER_ACTIONS.route}?add=true`
     },
     {
       text: t('asset_management.add_title').toString(),
-      route: `${Routes.ASSET_MANAGER.route}?add=true`,
-      icon: 'mdi-plus-circle-multiple-outline'
+      route: `${Routes.ASSET_MANAGER.route}?add=true`
     },
     {
       text: t('price_management.latest.add_title').toString(),
-      route: `${Routes.PRICE_MANAGER_LATEST.route}?add=true`,
-      icon: 'mdi-database-plus'
+      route: `${Routes.PRICE_MANAGER_LATEST.route}?add=true`
     },
     {
       text: t('price_management.historic.add_title').toString(),
-      route: `${Routes.PRICE_MANAGER_HISTORIC.route}?add=true`,
-      icon: 'mdi-database-plus'
+      route: `${Routes.PRICE_MANAGER_HISTORIC.route}?add=true`
     }
-  ];
+  ].map(item => ({ ...item, icon: 'add-circle-line' }));
+
   return filterItems(actionItems, keyword);
 };
 
@@ -473,7 +466,7 @@ onBeforeMount(async () => {
         "
         :on-menu="on"
       >
-        <VIcon>mdi-magnify</VIcon>
+        <RuiIcon name="search-line" />
       </MenuTooltipButton>
     </template>
     <div :class="$style.wrapper">
@@ -494,7 +487,7 @@ onBeforeMount(async () => {
         @input="change($event)"
       >
         <template #item="{ item }">
-          <div class="d-flex align-center text-body-2 fill-width">
+          <div class="d-flex align-center text-body-2 w-full">
             <AssetIcon v-if="item.asset" size="30px" :identifier="item.asset" />
             <AdaptiveWrapper v-else tag="span">
               <LocationIcon
@@ -512,16 +505,19 @@ onBeforeMount(async () => {
                 position="left"
                 :src="item.image"
               />
-              <VIcon v-else size="30" color="grey">
-                {{ item.icon }}
-              </VIcon>
+              <RuiIcon v-else class="grey--text" size="30" :name="item.icon" />
             </AdaptiveWrapper>
             <span class="ml-3">
               <template v-if="item.texts">
                 <span v-for="(text, index) in item.texts" :key="text + index">
                   <span v-if="index === item.texts.length - 1">{{ text }}</span>
                   <span v-else class="grey--text">
-                    {{ text }}<VIcon small> mdi-chevron-right </VIcon>
+                    {{ text }}
+                    <RuiIcon
+                      class="d-inline mr-2"
+                      size="16"
+                      name="arrow-right-s-line"
+                    />
                   </span>
                 </span>
               </template>
@@ -549,7 +545,7 @@ onBeforeMount(async () => {
           </div>
         </template>
         <template #append>
-          <div v-if="loading" class="mt-n1 fill-height d-flex items-center">
+          <div v-if="loading" class="mt-n1 h-full d-flex items-center">
             <VProgressCircular
               class="asset-select__loading"
               color="primary"

@@ -14,7 +14,6 @@ const assetPadding = 3;
 
 const { vault } = toRefs(props);
 const premium = usePremium();
-const { fontStyle } = useTheme();
 const { t } = useI18n();
 
 const valueLost = computed(() => {
@@ -56,7 +55,7 @@ const dai: string = assetSymbolToIdentifierMap.DAI;
       </LoanRow>
     </div>
     <div>
-      <span :class="$style.header" :style="fontStyle">
+      <span :class="$style.header" class="text-rui-text">
         {{ t('loan_liquidation.liquidation_events') }}
       </span>
       <VSkeletonLoader

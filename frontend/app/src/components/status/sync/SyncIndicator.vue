@@ -9,6 +9,15 @@ import {
 } from '@/types/session/sync';
 import { type AllBalancePayload } from '@/types/blockchain/accounts';
 
+withDefaults(
+  defineProps<{
+    hideDatabaseSync?: boolean;
+  }>(),
+  {
+    hideDatabaseSync: false
+  }
+);
+
 const { t } = useI18n();
 const { logout } = useSessionStore();
 const { lastBalanceSave, lastDataUpload } = storeToRefs(usePeriodicStore());
@@ -178,12 +187,12 @@ const importSnapshot = async () => {
           class-name="secondary--text text--lighten-4"
           :on-menu="on"
         >
-          <VIcon> mdi-content-save </VIcon>
+          <RuiIcon name="screenshot-2-line" />
         </MenuTooltipButton>
       </template>
       <div>
         <div class="balance-saved-indicator__content">
-          <template v-if="premium">
+          <template v-if="premium && !hideDatabaseSync">
             <div class="font-weight-medium">
               {{ t('sync_indicator.last_data_upload') }}
             </div>

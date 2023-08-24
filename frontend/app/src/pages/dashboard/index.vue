@@ -61,7 +61,7 @@ const nftEnabled = isModuleEnabled(Module.NFTS);
             @refresh="refreshBalance($event)"
           >
             <div v-if="exchanges.length === 0">
-              <VCardActions class="px-4">
+              <div class="px-6 pb-3">
                 <VBtn
                   text
                   block
@@ -76,7 +76,7 @@ const nftEnabled = isModuleEnabled(Module.NFTS);
                     </span>
                   </div>
                 </VBtn>
-              </VCardActions>
+              </div>
             </div>
             <div v-else>
               <ExchangeBox
@@ -100,7 +100,7 @@ const nftEnabled = isModuleEnabled(Module.NFTS);
               <BlockchainBalanceRefreshBehaviourMenu />
             </template>
             <div v-if="blockchainTotals.length === 0">
-              <VCardActions class="px-4">
+              <div class="px-6 pb-3">
                 <VBtn
                   text
                   block
@@ -115,7 +115,7 @@ const nftEnabled = isModuleEnabled(Module.NFTS);
                     </span>
                   </div>
                 </VBtn>
-              </VCardActions>
+              </div>
             </div>
             <div v-else data-cy="blockchain-balances">
               <BlockchainBalanceCardList
@@ -136,7 +136,7 @@ const nftEnabled = isModuleEnabled(Module.NFTS);
             @refresh="fetchManualBalances()"
           >
             <div v-if="manualBalanceByLocation.length === 0">
-              <VCardActions class="px-4">
+              <div class="px-6 pb-3">
                 <VBtn
                   text
                   block
@@ -151,7 +151,7 @@ const nftEnabled = isModuleEnabled(Module.NFTS);
                     </span>
                   </div>
                 </VBtn>
-              </VCardActions>
+              </div>
             </div>
             <div v-else data-cy="manual-balances">
               <ManualBalanceCardList

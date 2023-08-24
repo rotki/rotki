@@ -115,7 +115,7 @@ const remoteAboutLogo =
       <VDivider class="mt-4 mb-2" />
       <VRow align="center">
         <VCol>
-          <table class="fill-width">
+          <table class="w-full">
             <tbody>
               <tr>
                 <td class="font-weight-medium" :class="css.label">

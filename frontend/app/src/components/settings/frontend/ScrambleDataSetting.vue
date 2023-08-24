@@ -60,7 +60,7 @@ const css = useCssModule();
               :disabled="!scrambleData"
               @click="randomMultiplier()"
             >
-              <VIcon>mdi-refresh</VIcon>
+              <RuiIcon name="shuffle-line" />
             </VBtn>
           </template>
         </AmountInput>

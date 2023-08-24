@@ -231,31 +231,25 @@ const blockEvent = isEthBlockEventRef(eventGroupHeader);
 .table {
   :global {
     .v-data-table {
-      background: transparent;
-
       &__wrapper {
-        overflow-x: hidden;
-
         tbody {
           tr {
             &:hover {
-              background-color: transparent !important;
+              @apply bg-transparent #{!important};
             }
 
             td {
-              padding-top: 1rem !important;
-              padding-bottom: 1rem !important;
-              min-height: 91px !important;
-              height: 91px !important;
+              @apply py-4 #{!important};
 
               @media screen and (max-width: 599px) {
-                padding-left: 0 !important;
-                padding-right: 0 !important;
+                @apply px-0 #{!important};
               }
             }
           }
         }
+        @apply overflow-x-hidden;
       }
+      @apply border-0 bg-transparent #{!important};
     }
   }
 }
@@ -263,7 +257,7 @@ const blockEvent = isEthBlockEventRef(eventGroupHeader);
 .row {
   &__type {
     width: 250px;
-    padding-left: 0 !important;
+    @apply pl-0 #{!important};
   }
 
   &__description {
@@ -275,7 +269,7 @@ const blockEvent = isEthBlockEventRef(eventGroupHeader);
 
   &__actions {
     width: 100px;
-    padding-right: 0 !important;
+    @apply pr-0 #{!important};
   }
 }
 
@@ -283,23 +277,20 @@ const blockEvent = isEthBlockEventRef(eventGroupHeader);
   &-panels {
     :global {
       .v-expansion-panel {
-        background: transparent !important;
-
         &::before {
-          box-shadow: none;
+          @apply shadow-none;
         }
 
         &-header {
-          padding: 0;
-          min-height: auto;
-          width: auto;
+          @apply p-0 min-h-[auto] w-auto;
         }
 
         &-content {
           &__wrap {
-            padding: 0;
+            @apply p-0;
           }
         }
+        @apply bg-transparent #{!important};
       }
     }
   }

@@ -77,7 +77,7 @@ const { status, pending, showConfirmation } = useCacheClear<RefreshableCache>(
               v-on="on"
               @click="showConfirmation(source)"
             >
-              <VIcon>mdi-refresh</VIcon>
+              <RuiIcon name="restart-line" />
             </VBtn>
           </template>
           <span> {{ t('data_management.refresh_cache.tooltip') }} </span>

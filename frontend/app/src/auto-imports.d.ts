@@ -123,6 +123,7 @@ declare global {
   const getValidSelectorFromEvmAddress: typeof import('./utils/assets')['getValidSelectorFromEvmAddress']
   const groupAssetBreakdown: typeof import('./utils/balances')['groupAssetBreakdown']
   const h: typeof import('vue')['h']
+  const hexToRgbPoints: typeof import('./utils/color')['hexToRgbPoints']
   const ignorableWatch: typeof import('@vueuse/core')['ignorableWatch']
   const indexedDb: typeof import('./utils/indexed-db')['default']
   const inject: typeof import('vue')['inject']
@@ -826,6 +827,7 @@ declare module 'vue' {
     readonly getValidSelectorFromEvmAddress: UnwrapRef<typeof import('./utils/assets')['getValidSelectorFromEvmAddress']>
     readonly groupAssetBreakdown: UnwrapRef<typeof import('./utils/balances')['groupAssetBreakdown']>
     readonly h: UnwrapRef<typeof import('vue')['h']>
+    readonly hexToRgbPoints: UnwrapRef<typeof import('./utils/color')['hexToRgbPoints']>
     readonly ignorableWatch: UnwrapRef<typeof import('@vueuse/core')['ignorableWatch']>
     readonly indexedDb: UnwrapRef<typeof import('./utils/indexed-db')['default']>
     readonly inject: UnwrapRef<typeof import('vue')['inject']>
@@ -1523,6 +1525,7 @@ declare module '@vue/runtime-core' {
     readonly getValidSelectorFromEvmAddress: UnwrapRef<typeof import('./utils/assets')['getValidSelectorFromEvmAddress']>
     readonly groupAssetBreakdown: UnwrapRef<typeof import('./utils/balances')['groupAssetBreakdown']>
     readonly h: UnwrapRef<typeof import('vue')['h']>
+    readonly hexToRgbPoints: UnwrapRef<typeof import('./utils/color')['hexToRgbPoints']>
     readonly ignorableWatch: UnwrapRef<typeof import('@vueuse/core')['ignorableWatch']>
     readonly indexedDb: UnwrapRef<typeof import('./utils/indexed-db')['default']>
     readonly inject: UnwrapRef<typeof import('vue')['inject']>

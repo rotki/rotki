@@ -30,7 +30,7 @@ const message = computed(() => {
 </script>
 
 <template>
-  <Card flat>
+  <Card flat :outlined="false">
     <template #title>{{ title }}</template>
     <div class="my-6 text-body-1">
       <VRow align="center">

@@ -173,7 +173,7 @@ const massIgnore = async (ignored: boolean) => {
 </script>
 
 <template>
-  <Card outlined-body data-cy="managed-assets-table">
+  <Card data-cy="managed-assets-table">
     <template #title>
       {{ t('common.assets') }}
     </template>

@@ -10,6 +10,8 @@ import { usePremiumApi } from '@/premium/setup-interface';
 import i18n from './i18n';
 import router from './router';
 
+import '@/plugins/rui';
+
 const isDevelopment = checkIfDevelopment() && !import.meta.env.VITE_TEST;
 Vue.config.productionTip = false;
 Vue.config.devtools = isDevelopment;

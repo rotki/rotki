@@ -128,25 +128,27 @@ const lpType = LpType.UNISWAP_V2;
     <PaginatedCards :identifier="getIdentifier" :items="balances" class="mt-4">
       <template #item="{ item }">
         <Card>
-          <template v-if="item.assets.length > 0" #title>
-            {{ getPoolName(lpType, getAssets(item.assets)) }}
-          </template>
-          <template #details>
-            <UniswapPoolDetails :balance="item" />
-          </template>
-          <template #subtitle>
-            <HashLink :text="item.address" />
-          </template>
-          <template #icon>
-            <LpPoolIcon :assets="getAssets(item.assets)" :type="lpType" />
-          </template>
+          <LpPoolHeader>
+            <template #icon>
+              <LpPoolIcon :assets="getAssets(item.assets)" :type="lpType" />
+            </template>
+            <template #name>
+              {{ getPoolName(lpType, getAssets(item.assets)) }}
+            </template>
+            <template #hash>
+              <HashLink :text="item.address" />
+            </template>
+            <template #detail>
+              <UniswapPoolDetails :balance="item" />
+            </template>
+          </LpPoolHeader>
 
-          <div class="mt-2">
+          <div class="mt-6">
             <div>
-              <div class="text--secondary text-body-2">
+              <div class="text-rui-text-secondary text-body-2">
                 {{ t('common.balance') }}
               </div>
-              <div class="d-flex text-h6">
+              <div class="d-flex text-h6 !leading-7">
                 <BalanceDisplay
                   :value="item.userBalance"
                   align="start"
@@ -157,7 +159,7 @@ const lpType = LpType.UNISWAP_V2;
             </div>
 
             <div class="mt-6">
-              <div class="text--secondary text-body-2">
+              <div class="text-rui-text-secondary text-body-2">
                 {{ t('common.assets') }}
               </div>
               <div>

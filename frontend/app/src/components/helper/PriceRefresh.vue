@@ -48,7 +48,7 @@ const disabled: ComputedRef<boolean> = computed(
     :disabled="disabled"
     @click="refresh()"
   >
-    <VIcon left>mdi-refresh</VIcon>
+    <RuiIcon name="refresh-line" class="mr-2" />
     {{ t('price_refresh.button') }}
   </VBtn>
 </template>

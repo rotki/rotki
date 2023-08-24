@@ -115,7 +115,7 @@ const showDeleteConfirmation = (id: number) => {
 </script>
 
 <template>
-  <Card class="manual-balances" outlined-body :class="$style.table">
+  <Card class="manual-balances" :class="$style.table">
     <template #title>
       <RefreshButton
         :loading="loading"

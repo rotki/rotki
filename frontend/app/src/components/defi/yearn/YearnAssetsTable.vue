@@ -59,7 +59,7 @@ const vaults = computed(() => {
 </script>
 
 <template>
-  <Card v-if="vaults.length > 0" outlined-body>
+  <Card v-if="vaults.length > 0">
     <template #title>
       {{ t('yearn_asset_table.title') }}
     </template>

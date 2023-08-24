@@ -26,7 +26,7 @@ describe('assets', () => {
   describe('ignored asset settings', () => {
     let ignoredAssets = 0;
     before(() => {
-      page.visit();
+      page.visit('asset-manager-managed');
       page.ignoredAssets().then(ignored => {
         ignoredAssets = Number.parseInt(ignored);
       });
@@ -51,7 +51,7 @@ describe('assets', () => {
 
   describe('add managed asset', () => {
     before(() => {
-      page.visit();
+      page.visit('asset-manager-managed');
     });
 
     it('should show modal with title, fields and button', () => {

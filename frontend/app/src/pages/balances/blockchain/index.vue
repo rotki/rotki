@@ -137,7 +137,7 @@ const { xl } = useDisplay();
         <PriceRefresh />
       </VCol>
     </VRow>
-    <Card class="blockchain-balances mt-8" outlined-body>
+    <Card class="blockchain-balances mt-8">
       <template #title>
         {{ t('blockchain_balances.title') }}
       </template>

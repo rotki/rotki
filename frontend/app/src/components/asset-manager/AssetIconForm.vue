@@ -90,7 +90,7 @@ defineExpose({
                 v-on="on"
                 @click="refreshIcon()"
               >
-                <VIcon>mdi-refresh</VIcon>
+                <RuiIcon name="refresh-line" />
               </VBtn>
             </template>
             {{ t('asset_form.fetch_latest_icon.title') }}

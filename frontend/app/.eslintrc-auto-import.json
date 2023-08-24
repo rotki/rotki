@@ -700,6 +700,7 @@
     "truncationPoints": true,
     "awaitParallelExecution": true,
     "groupAssetBreakdown": true,
-    "disposeEvmRpcNodeComposables": true
+    "disposeEvmRpcNodeComposables": true,
+    "hexToRgbPoints": true
   }
 }

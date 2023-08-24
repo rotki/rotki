@@ -234,7 +234,7 @@ const refreshHistoricalPrice = async (item: EditableMissingPrice) => {
                       v-on="on"
                       @click="refreshHistoricalPrice(item)"
                     >
-                      <VIcon>mdi-refresh</VIcon>
+                      <RuiIcon name="refresh-line" />
                     </VBtn>
                   </template>
                   <span>

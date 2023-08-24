@@ -49,7 +49,7 @@ const { darkModeEnabled } = useDarkMode();
           class-name="user-dropdown secondary--text text--lighten-4"
           :on-menu="on"
         >
-          <VIcon>mdi-account-circle</VIcon>
+          <RuiIcon name="account-circle-line" />
         </MenuTooltipButton>
       </template>
       <VList data-cy="user-dropdown">
@@ -58,23 +58,28 @@ const { darkModeEnabled } = useDarkMode();
             {{ username }}
           </VListItemTitle>
         </VListItem>
-        <VDivider class="mx-4" />
+        <VDivider />
         <VListItem
           key="settings"
-          class="user-dropdown__settings"
+          class="user-dropdown__settings px-6 py-1"
           to="/settings/general"
         >
-          <VListItemAvatar>
-            <VIcon color="primary">mdi-cog</VIcon>
+          <VListItemAvatar size="24">
+            <RuiIcon color="primary" name="settings-4-line" />
           </VListItemAvatar>
           <VListItemTitle>
             {{ t('user_dropdown.settings') }}
           </VListItemTitle>
         </VListItem>
 
-        <VListItem v-if="xs" key="privacy-mode" @click="togglePrivacyMode()">
-          <VListItemAvatar>
-            <VIcon color="primary"> {{ privacyModeIcon }}</VIcon>
+        <VListItem
+          v-if="xs"
+          key="privacy-mode"
+          class="px-6 py-1"
+          @click="togglePrivacyMode()"
+        >
+          <VListItemAvatar size="24">
+            <RuiIcon color="primary" :name="privacyModeIcon" />
           </VListItemAvatar>
           <VListItemTitle>
             {{ t('user_dropdown.change_privacy_mode.label') }}
@@ -85,14 +90,14 @@ const { darkModeEnabled } = useDarkMode();
           {{ t('user_dropdown.switch_theme') }}
         </ThemeControl>
 
-        <VDivider class="mx-4" />
+        <VDivider />
         <VListItem
           key="logout"
-          class="user-dropdown__logout"
+          class="user-dropdown__logout px-6 py-1"
           @click="showConfirmation()"
         >
-          <VListItemAvatar>
-            <VIcon color="primary">mdi-logout-variant</VIcon>
+          <VListItemAvatar size="24">
+            <RuiIcon color="primary" name="logout-box-r-line" />
           </VListItemAvatar>
           <VListItemTitle>
             {{ t('user_dropdown.logout') }}

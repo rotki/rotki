@@ -1,0 +1,44 @@
+diff --git a/lib/components/VCard/VCard.js b/lib/components/VCard/VCard.js
+index f432b8c151b912da7fc2d70da0655a682f1e17de..59e67afd65514388765a47dc007af02b056d3f31 100644
+--- a/lib/components/VCard/VCard.js
++++ b/lib/components/VCard/VCard.js
+@@ -12,6 +12,10 @@ import mixins from '../../util/mixins';
+ export default mixins(Loadable, Routable, VSheet).extend({
+   name: 'v-card',
+   props: {
++    outlined: {
++      type: Boolean,
++      default: true,
++    },
+     flat: Boolean,
+     hover: Boolean,
+     img: String,
+diff --git a/lib/components/VSwitch/VSwitch.js b/lib/components/VSwitch/VSwitch.js
+index a6acaeb422a3a8515a4ba7164b5867f15c59221a..32765adff755340bfb1bcc03809ffead7cd8f003 100644
+--- a/lib/components/VSwitch/VSwitch.js
++++ b/lib/components/VSwitch/VSwitch.js
+@@ -19,7 +19,10 @@ export default Selectable.extend({
+     Touch
+   },
+   props: {
+-    inset: Boolean,
++    inset: {
++      type: Boolean,
++      default: true
++    },
+     loading: {
+       type: [Boolean, String],
+       default: false
+diff --git a/src/styles/settings/_utilities.scss b/src/styles/settings/_utilities.scss
+index 6d8aa6bf68526921d6161d72b2b921927f9bf5be..7e4db4a005da60c336298b13612d888f2c7de6d4 100644
+--- a/src/styles/settings/_utilities.scss
++++ b/src/styles/settings/_utilities.scss
+@@ -420,7 +420,7 @@ $utilities: map-deep-merge(
+         font-family,
+         text-transform
+       ),
+-      class: text,
++      class: text-vuetify,
+       unimportant: (
+         font-weight,
+         line-height

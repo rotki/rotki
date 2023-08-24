@@ -1,5 +1,4 @@
 import { Guid } from '../../common/guid';
-import { HistoryPage } from '../../pages/history-page';
 import { TradeHistoryPage } from '../../pages/history-page/trade-history-page';
 import { RotkiApp } from '../../pages/rotki-app';
 import { type ExternalTrade } from '../../support/types';
@@ -7,14 +6,12 @@ import { type ExternalTrade } from '../../support/types';
 describe('trade history', () => {
   let username: string;
   let app: RotkiApp;
-  let page: HistoryPage;
   let tradeHistoryPage: TradeHistoryPage;
   let externalTrades: ExternalTrade[];
 
   beforeEach(() => {
     username = Guid.newGuid().toString();
     app = new RotkiApp();
-    page = new HistoryPage();
     tradeHistoryPage = new TradeHistoryPage();
 
     app.fasterLogin(username);
@@ -28,7 +25,6 @@ describe('trade history', () => {
   });
 
   it('add two external trades', () => {
-    page.visit();
     tradeHistoryPage.visit();
     // add trade by input rate
     tradeHistoryPage.addTrade(externalTrades[0]);
@@ -41,7 +37,6 @@ describe('trade history', () => {
 
   it('edit external trade', () => {
     cy.addExternalTrade(externalTrades[0]);
-    page.visit();
     tradeHistoryPage.visit();
     tradeHistoryPage.visibleEntries(1);
     tradeHistoryPage.tradeIsVisible(0, externalTrades[0]);
@@ -55,7 +50,6 @@ describe('trade history', () => {
   it('delete external trade', () => {
     cy.addExternalTrade(externalTrades[0]);
     cy.addExternalTrade(externalTrades[1]);
-    page.visit();
     tradeHistoryPage.visit();
     tradeHistoryPage.visibleEntries(2);
     tradeHistoryPage.tradeIsVisible(0, externalTrades[0]);
@@ -84,7 +78,6 @@ describe('trade history', () => {
       cy.addExternalTrade({ ...externalTrades[1], location: 'equities', time });
     }
 
-    page.visit();
     tradeHistoryPage.visit();
 
     // after addition, should have 24 entries on table

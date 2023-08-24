@@ -30,14 +30,13 @@ const { t } = useI18n();
       class-name="secondary--text text--lighten-4"
       @click="click()"
     >
-      <VIcon
+      <RuiIcon
         v-if="!hasRunningTasks"
         :class="{
           [$style.visible]: visible
         }"
-      >
-        mdi-bell
-      </VIcon>
+        name="notification-3-line"
+      />
       <VIcon v-else> mdi-spin mdi-loading </VIcon>
     </MenuTooltipButton>
   </VBadge>

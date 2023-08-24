@@ -193,7 +193,7 @@ const showConfirmation = (payload: XpubPayload | string[]) => {
                 v-on="on"
                 @click="detectTokensOfAllAddresses()"
               >
-                <VIcon class="mr-2">mdi-refresh</VIcon>
+                <RuiIcon class="mr-2" name="refresh-line" />
                 {{ t('account_balances.detect_tokens.tooltip.redetect') }}
               </VBtn>
             </template>

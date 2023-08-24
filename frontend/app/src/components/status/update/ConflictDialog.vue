@@ -114,7 +114,7 @@ const cancel = () => {
 
 <template>
   <VBottomSheet v-bind="rootAttrs" persistent width="98%" v-on="rootListeners">
-    <Card outlined-body contained no-radius-bottom>
+    <Card contained>
       <template #title>{{ t('conflict_dialog.title') }}</template>
       <template #subtitle>{{ t('conflict_dialog.subtitle') }}</template>
       <template #actions>

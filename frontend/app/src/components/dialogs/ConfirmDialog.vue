@@ -104,11 +104,3 @@ const secondaryText = computed(
     </VDialog>
   </VDialogTransition>
 </template>
-
-<style scoped lang="scss">
-.confirm-dialog {
-  &__actions {
-    padding: 16px !important;
-  }
-}
-</style>

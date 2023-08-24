@@ -67,7 +67,7 @@ const refresh = () => emit('refresh');
 </script>
 
 <template>
-  <Card outlined-body>
+  <Card>
     <template #title>
       <RefreshButton
         :loading="loading"

@@ -126,7 +126,7 @@ setSubmitFunc(save);
         <CardTitle>{{ t('address_book.title') }}</CardTitle>
       </VCol>
     </VRow>
-    <Card outlined-body class="mt-8">
+    <Card class="mt-8">
       <template #title>
         {{ t('address_book.table.title') }}
       </template>
