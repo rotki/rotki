@@ -1,8 +1,8 @@
-mypy==1.5.0
+mypy==1.5.1
 mypy-extensions==1.0.0
 pylint==2.17.5
 astroid==2.15.6  # engine of pylint, upgrade them together
-ruff==0.0.284
+ruff==0.0.286
 double-indent-rotki==0.1.7  # our fork of double indent
 flake8==6.1.0
 flake8-commas==2.1.0
