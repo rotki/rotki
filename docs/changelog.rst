@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :bug:`6550` Custom imported rotki events will now be taken properly into account in PnL and shown as recognized in history events view.
+
 * :release:`1.30.1 <2023-08-23>`
 * :bug:`-` Last premium DB upload will now show the last known DB upload time from the remote and not the time the local app did its last upload. This is important for people using multiple machines.
 * :bug:`6528` Spam assets will be synced across accounts sharing the same globaldb and won't be queried during token detection.

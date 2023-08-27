@@ -61,6 +61,7 @@ DEFAULT_EVENT_CATEGORY_MAPPINGS = {
         HistoryEventSubType.RETURN_WRAPPED: EventCategory.SEND,
         HistoryEventSubType.MEV_REWARD: EventCategory.MEV_REWARD,
         HistoryEventSubType.BLOCK_PRODUCTION: EventCategory.CREATE_BLOCK,
+        HistoryEventSubType.REWARD: EventCategory.STAKING_REWARD,
     },
 }
 
@@ -149,6 +150,10 @@ EVENT_CATEGORY_DETAILS = {
     EventCategory.TRANSFER: EventCategoryDetails(
         label='transfer',
         icon='mdi-swap-horizontal',
+    ),
+    EventCategory.STAKING_REWARD: EventCategoryDetails(
+        label='staking reward',
+        icon='mdi-treasure-chest',
     ),
     EventCategory.CLAIM_REWARD: EventCategoryDetails(
         label='claim reward',

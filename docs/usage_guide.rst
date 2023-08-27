@@ -799,9 +799,9 @@ A sample generic trades template can be found below
 
 Rotki Generic Events Import
 ----------------------------
-This is for importing generic events. Supported events are ``"Deposit"``, ``"Withdrawal"``, ``"Income"``, ``"Loss"`` and ``"Staking"``. The expected file format is **CSV** with the following headers and description as a guide:
+This is for importing generic events. Supported events are ``"Deposit"``, ``"Withdrawal"``, ``"Income"``, ``"Loss"``, ``"Spend"`` and ``"Staking"``. The expected file format is **CSV** with the following headers and description as a guide:
 
-1. **Type**: The event type. It can be one of ``"Deposit"``, ``"Withdrawal"``, ``"Income"``, ``"Loss"`` or ``"Staking"``.
+1. **Type**: The event type. It can be one of ``"Deposit"``, ``"Withdrawal"``, ``"Income"``, ``"Loss"``, ``"Spend"`` or ``"Staking"``.
 2. **Location**: This is the source of the data. It should be one of rotki's `supported locations`_. If it is not supported, use ``"external"``.
 3. **Currency**: The currency used during the specified event.
 4. **Amount**: The amount of the currency used by the event.
