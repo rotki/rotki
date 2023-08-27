@@ -21,10 +21,11 @@ from rotkehlchen.serialization.deserialize import deserialize_asset_amount
 from .constants import ROTKI_EVENT_PREFIX
 
 GENERIC_TYPE_TO_HISTORY_EVENT_TYPE_MAPPINGS = {
-    'Deposit': (HistoryEventType.DEPOSIT, HistoryEventSubType.SPEND),
-    'Withdrawal': (HistoryEventType.WITHDRAWAL, HistoryEventSubType.RECEIVE),
-    'Income': (HistoryEventType.RECEIVE, HistoryEventSubType.RECEIVE),
+    'Deposit': (HistoryEventType.DEPOSIT, HistoryEventSubType.NONE),
+    'Withdrawal': (HistoryEventType.WITHDRAWAL, HistoryEventSubType.NONE),
+    'Income': (HistoryEventType.RECEIVE, HistoryEventSubType.NONE),
     'Loss': (HistoryEventType.SPEND, HistoryEventSubType.NONE),
+    'Spend': (HistoryEventType.SPEND, HistoryEventSubType.NONE),  # synonym of loss
     'Staking': (HistoryEventType.STAKING, HistoryEventSubType.REWARD),
 }
 
@@ -71,7 +72,7 @@ class RotkiGenericEventsImporter(BaseExchangeImporter):
                 sequence_index=sequence_index + 1,
                 timestamp=timestamp,
                 location=location,
-                event_type=event_type,
+                event_type=HistoryEventType.SPEND,
                 event_subtype=HistoryEventSubType.FEE,
                 asset=fee_currency,  # type: ignore[arg-type]
                 balance=Balance(

@@ -61,6 +61,20 @@ def make_default_accounting_settings(pot: 'AccountingPot') -> dict[str, BaseEven
         count_cost_basis_pnl=True,
         method='spend',
     )
+    deposit_key = str(HistoryEventType.DEPOSIT) + '__' + str(HistoryEventSubType.NONE)
+    result[deposit_key] = BaseEventSettings(
+        taxable=False,
+        count_entire_amount_spend=False,
+        count_cost_basis_pnl=False,
+        method='spend',
+    )
+    withdrawal_key = str(HistoryEventType.WITHDRAWAL) + '__' + str(HistoryEventSubType.NONE)
+    result[withdrawal_key] = BaseEventSettings(
+        taxable=False,
+        count_entire_amount_spend=False,
+        count_cost_basis_pnl=False,
+        method='spend',
+    )
     renew_key = str(HistoryEventType.RENEW) + '__' + str(HistoryEventSubType.NONE)
     result[renew_key] = BaseEventSettings(
         taxable=True,
@@ -86,6 +100,14 @@ def make_default_accounting_settings(pot: 'AccountingPot') -> dict[str, BaseEven
     )
     reward_key = str(HistoryEventType.RECEIVE) + '__' + str(HistoryEventSubType.REWARD)
     result[reward_key] = BaseEventSettings(
+        taxable=True,
+        # count_entire_amount_spend and count_cost_basis_pnl don't matter for acquisitions.
+        count_entire_amount_spend=False,
+        count_cost_basis_pnl=False,
+        method='acquisition',
+    )
+    staking_reward_key = str(HistoryEventType.STAKING) + '__' + str(HistoryEventSubType.REWARD)
+    result[staking_reward_key] = BaseEventSettings(
         taxable=True,
         # count_entire_amount_spend and count_cost_basis_pnl don't matter for acquisitions.
         count_entire_amount_spend=False,

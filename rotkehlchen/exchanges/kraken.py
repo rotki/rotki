@@ -1222,7 +1222,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
                 HistoryEventSubType.FEE: EventCategory.FEE,
             },
             HistoryEventType.STAKING: {
-                HistoryEventSubType.REWARD: EventCategory.RECEIVE,
+                HistoryEventSubType.REWARD: EventCategory.STAKING_REWARD,
                 HistoryEventSubType.FEE: EventCategory.FEE,
             },
             HistoryEventType.ADJUSTMENT: {
