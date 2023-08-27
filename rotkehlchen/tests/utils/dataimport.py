@@ -1713,7 +1713,7 @@ def assert_rotki_generic_events_import_results(rotki: Rotkehlchen):
             location=Location.KUCOIN,
             asset=A_EUR,
             event_type=HistoryEventType.DEPOSIT,
-            event_subtype=HistoryEventSubType.SPEND,
+            event_subtype=HistoryEventSubType.NONE,
             balance=Balance(
                 amount=FVal('1000.00'),
                 usd_value=ZERO,
@@ -1727,7 +1727,7 @@ def assert_rotki_generic_events_import_results(rotki: Rotkehlchen):
             location=Location.BINANCE,
             asset=A_USDT,
             event_type=HistoryEventType.WITHDRAWAL,
-            event_subtype=HistoryEventSubType.RECEIVE,
+            event_subtype=HistoryEventSubType.NONE,
             balance=Balance(
                 amount=FVal('99.00'),
                 usd_value=ZERO,
@@ -1740,7 +1740,7 @@ def assert_rotki_generic_events_import_results(rotki: Rotkehlchen):
             timestamp=TimestampMS(1658998800000),
             location=Location.BINANCE,
             asset=A_USDT,
-            event_type=HistoryEventType.WITHDRAWAL,
+            event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             balance=Balance(
                 amount=FVal('1.00'),
@@ -1755,7 +1755,7 @@ def assert_rotki_generic_events_import_results(rotki: Rotkehlchen):
             location=Location.KRAKEN,
             asset=A_BNB,
             event_type=HistoryEventType.WITHDRAWAL,
-            event_subtype=HistoryEventSubType.RECEIVE,
+            event_subtype=HistoryEventSubType.NONE,
             balance=Balance(
                 amount=FVal('1.01'),
                 usd_value=ZERO,
