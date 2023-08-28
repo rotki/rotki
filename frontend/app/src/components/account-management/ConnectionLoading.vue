@@ -4,14 +4,16 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <Card v-if="!connected" flat :outlined="false">
-    <VRow class="my-6">
-      <VCol cols="auto" class="mx-2">
-        <VProgressCircular color="primary" indeterminate />
-      </VCol>
-      <VCol class="grey-darken-1--text text-h5">
-        <div class="ps-6">{{ t('connection_loading.message') }}</div>
-      </VCol>
-    </VRow>
-  </Card>
+  <RuiCard
+    v-if="!connected"
+    variant="flat"
+    class="max-w-[27.5rem] mx-auto !bg-transparent"
+  >
+    <div class="flex items-center space-x-14">
+      <RuiProgress color="primary" variant="indeterminate" circular />
+      <h5 class="text-rui-text-secondary text-h5">
+        {{ t('connection_loading.message') }}
+      </h5>
+    </div>
+  </RuiCard>
 </template>
