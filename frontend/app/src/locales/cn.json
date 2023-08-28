@@ -921,7 +921,8 @@
   },
   "app": {
     "moto": "保护您隐私的开源投资组合管理器",
-    "name": "rotki"
+    "name": "rotki",
+    "copyright": "© Rotki Solutions GmbH 2018-{year}"
   },
   "asset_balances": {
     "loading": "rotki 正在查询区块链，请稍候..."
@@ -2855,6 +2856,14 @@
       "title": "数据库同步所需的用户操作"
     },
     "title": "登录",
+    "welcome_title": "欢迎来到 rotki",
+    "welcome_description": "欢迎使用保护您隐私的开源投资组合管理器。",
+    "welcome_update_message": "登录以探索我们所做的更改。",
+    "description": {
+      "welcome": "欢迎！ 请输入您的详细信息。",
+      "our_docs": "我们的文档",
+      "more_details": "{documentation} 向您显示有关本地应用程序和用户的更多详细信息。"
+    },
     "upgrading_db": {
       "title": "数据库升级",
       "current": "已应用数据库升级 v{currentVersion} 的 {totalSteps} 步 {currentStep}。",
@@ -2864,6 +2873,11 @@
       "non_empty_password": "请提供密码",
       "non_empty_username": "请提供用户名",
       "valid_username": "用户名必须只包含字母数字字符且不能有空格"
+    },
+    "credential_error": {
+      "title": "请注意，您的网站帐户和应用程序帐户是分开的，不能互换使用。",
+      "description": "如果您尚未创建应用帐户，则需要创建应用帐户才能登录。",
+      "support": "如果您需要帮助，请通过我们的 Discord 支持渠道联系我们。"
     }
   },
   "macos_unsupported": {

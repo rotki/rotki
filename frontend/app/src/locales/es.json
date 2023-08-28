@@ -920,7 +920,8 @@
   },
   "app": {
     "moto": "the opensource portfolio manager that protects your privacy",
-    "name": "rotki"
+    "name": "rotki",
+    "copyright": "© Rotki Solutions GmbH 2018-{year}"
   },
   "asset_balances": {
     "loading": "Please wait while rotki queries the blockchain..."

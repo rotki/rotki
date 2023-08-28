@@ -917,7 +917,8 @@
   },
   "app": {
     "moto": "the opensource portfolio manager that protects your privacy",
-    "name": "rotki"
+    "name": "rotki",
+    "copyright": "© Rotki Solutions GmbH 2018-{year}"
   },
   "asset_balances": {
     "loading": "Please wait while rotki queries the blockchain..."
@@ -2787,7 +2788,9 @@
   },
   "login": {
     "button_new_account": "Create New Account",
+    "button_no_account": "Don’t have an account?",
     "button_signin": "Sign In",
+    "button_signup": "Sign Up",
     "custom_backend": {
       "hint": "The url the backend you would like to connect (leave empty for default).",
       "label": "Backend URL",
@@ -2811,7 +2814,15 @@
       "remote_modified": "Remote last modified: {0}",
       "title": "User action required for DB sync"
     },
-    "title": "Sign In",
+    "title": "Συνδεθείτε",
+    "welcome_title": "Καλώς ήρθατε στο rotki",
+    "welcome_description": "Καλώς ήρθατε στον διαχειριστή χαρτοφυλακίου ανοιχτού κώδικα που προστατεύει το απόρρητό σας.",
+    "welcome_update_message": "Συνδεθείτε για να εξερευνήσετε τις αλλαγές που έχουμε κάνει.",
+    "description": {
+      "welcome": "Καλως ΗΡΘΑΤΕ! Παρακαλώ εισάγετε τα στοιχεία σας.",
+      "our_docs": "Η τεκμηρίωσή μας",
+      "more_details": "Το {documentation} σάς δείχνει περισσότερες λεπτομέρειες σχετικά με την τοπική εφαρμογή και τον χρήστη."
+    },
     "upgrading_db": {
       "current": "Βήμα {currentStep} από {totalSteps} της αναβάθμισής της βάσης δεδομένων v{currentVersion}.",
       "warning": "Η βάση δεδομένων αναβαιμίζεται από την έκδοση {fromVersion} στην {toVersion}. Παρακαλώ μην κλείσετε την εφαρμογή μέχρι να ολοκληρωθεί."
@@ -2820,6 +2831,11 @@
       "non_empty_password": "Please provide a password",
       "non_empty_username": "Please provide a user name",
       "valid_username": "A username must contain only alphanumeric characters and have no spaces"
+    },
+    "credential_error": {
+      "title": "Λάβετε υπόψη ότι ο λογαριασμός του ιστότοπού σας και ο λογαριασμός εφαρμογής είναι ξεχωριστοί και δεν μπορούν να χρησιμοποιηθούν εναλλακτικά.",
+      "description": "Εάν δεν έχετε δημιουργήσει ακόμη λογαριασμό εφαρμογής, θα πρέπει να το κάνετε για να συνδεθείτε.",
+      "support": "Εάν χρειάζεστε βοήθεια, επικοινωνήστε μαζί μας στο κανάλι υποστήριξης στο discord."
     }
   },
   "macos_unsupported": {
