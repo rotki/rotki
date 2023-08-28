@@ -1,6 +1,8 @@
 <script setup lang="ts">
 const { showAbout } = storeToRefs(useAreaVisibilityStore());
 const { isPackaged } = useInterop();
+const { updateDarkMode } = useDarkMode();
+updateDarkMode(false);
 </script>
 
 <template>
