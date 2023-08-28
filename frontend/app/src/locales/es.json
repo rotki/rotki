@@ -2780,8 +2780,6 @@
     "total_asset_price": "Total Asset Price"
   },
   "login": {
-    "button_new_account": "Crear una nueva cuenta",
-    "button_signin": "Iniciar sesión",
     "custom_backend": {
       "hint": "The url the backend you would like to connect (leave empty for default).",
       "label": "Backend URL",

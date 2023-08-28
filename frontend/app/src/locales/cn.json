@@ -2825,8 +2825,6 @@
     "total_asset_price": "总资产价格"
   },
   "login": {
-    "button_new_account": "创建新账户",
-    "button_signin": "登录",
     "custom_backend": {
       "hint": "你想要连接的后端的 url(默认留空)",
       "label": "后台网址",
