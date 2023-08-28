@@ -18,6 +18,7 @@ import {
   RiDashboardLine,
   RiDatabase2Line,
   RiDatabaseLine,
+  RiDeleteBinFill,
   RiExchangeBoxLine,
   RiExchangeLine,
   RiEye2Line,
@@ -41,6 +42,7 @@ import {
   RiQuestionLine,
   RiRefreshLine,
   RiRestartLine,
+  RiSave2Fill,
   RiScalesFill,
   RiScalesLine,
   RiScreenshot2Line,
@@ -116,6 +118,8 @@ Vue.use(RuiPlugin, {
     RiRestartLine,
     RiRefreshLine,
     RiCodeBoxLine,
-    RiShuffleLine
+    RiShuffleLine,
+    RiSave2Fill,
+    RiDeleteBinFill
   ]
 });
