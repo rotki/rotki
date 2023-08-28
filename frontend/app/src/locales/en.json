@@ -958,7 +958,8 @@
   },
   "app": {
     "moto": "the opensource portfolio manager that protects your privacy",
-    "name": "rotki"
+    "name": "rotki",
+    "copyright": "© Rotki Solutions GmbH 2018-{year}"
   },
   "asset_balances": {
     "loading": "Please wait while rotki queries the blockchain..."
@@ -2938,7 +2939,9 @@
   },
   "login": {
     "button_new_account": "Create New Account",
+    "button_no_account": "Don’t have an account?",
     "button_signin": "Sign In",
+    "button_signup": "Sign Up",
     "custom_backend": {
       "hint": "The url the backend you would like to connect (leave empty for default).",
       "label": "Backend URL",
@@ -2974,6 +2977,14 @@
       "title": "User action required for DB sync"
     },
     "title": "Sign In",
+    "welcome_title": "Welcome to rotki",
+    "welcome_description": "Welcome to the open source portfolio manager that protects your privacy.",
+    "welcome_update_message": "Sign in to explore changes we’ve made.",
+    "description": {
+      "welcome": "Welcome! Please enter your details.",
+      "our_docs": "Our documentation",
+      "more_details": "{documentation} shows you more details about the local app and the user."
+    },
     "upgrading_db": {
       "title": "Database Upgrade",
       "current": "Step {currentStep} of {totalSteps} of database upgrade v{currentVersion} is applied.",
@@ -2983,6 +2994,11 @@
       "non_empty_password": "Please provide a password",
       "non_empty_username": "Please provide a user name",
       "valid_username": "A username must contain only alphanumeric characters and have no spaces"
+    },
+    "credential_error": {
+      "title": "Please note that your website account and app account are separate and cannot be used interchangeably.",
+      "description": "If you have not yet created an app account, you will need to do so in order to sign in.",
+      "support": "If you need assistance, please contact us in our support channel on discord."
     }
   },
   "macos_unsupported": {
