@@ -33,6 +33,8 @@ const newAccount = () => emit('new-account');
 const backendChanged = (url: string | null) => emit('backend-changed', url);
 
 const { logoutRemoteSession } = useSessionStore();
+const { usageGuideUrl } = useInterop();
+const css = useCssModule();
 
 const username: Ref<string> = ref('');
 const password: Ref<string> = ref('');
@@ -114,6 +116,35 @@ watch(
 const isLoggedInError = useArraySome(errors, error =>
   error.includes('is already logged in')
 );
+
+const usernameError = useArrayFind(errors, error => error.startsWith('User '));
+const passwordError = useArrayFind(errors, error =>
+  error.startsWith('Wrong password ')
+);
+
+const hasServerError = computed(
+  () => !!get(usernameError) || !!get(passwordError)
+);
+
+const usernameErrors = computed(() => {
+  const formErrors = [...get(v$).username.$errors.map(e => e.$message)];
+  const serverError = get(usernameError);
+  if (serverError) {
+    formErrors.push(serverError);
+  }
+
+  return formErrors;
+});
+
+const passwordErrors = computed(() => {
+  const formErrors = [...get(v$).password.$errors.map(e => e.$message)];
+  const serverError = get(passwordError);
+  if (serverError) {
+    formErrors.push(serverError);
+  }
+
+  return formErrors;
+});
 
 const logout = async () => {
   const { success } = await logoutRemoteSession();
@@ -254,105 +285,122 @@ const abortLogin = () => {
 </script>
 
 <template>
-  <VSlideYTransition>
-    <div class="login">
-      <VCardTitle>
-        {{ t('login.title') }}
-      </VCardTitle>
+  <Transition
+    enter-class="-top-5 opacity-0"
+    enter-to-class="top-0 opacity-1"
+    enter-active-class="transform duration-300"
+    leave-class="top-0 opacity-1"
+    leave-to-class="-top-5 opacity-0"
+    leave-active-class="transform duration-100"
+  >
+    <div :class="css.login">
+      <div :class="css.login__wrapper">
+        <h4 class="text-h4 mb-3">
+          {{ t('login.title') }}
+        </h4>
 
-      <VCardText class="pb-2">
-        <VForm :value="!v$.$invalid">
-          <VTextField
-            ref="usernameRef"
-            v-model="username"
-            class="login__fields__username"
-            color="secondary"
-            outlined
-            single-line
-            :label="t('login.label_username')"
-            prepend-inner-icon="mdi-account"
-            :error-messages="v$.username.$errors.map(e => e.$message)"
-            :disabled="loading || conflictExist || customBackendDisplay"
-            required
-            @keypress.enter="login()"
-          />
-
-          <RevealableInput
-            ref="passwordRef"
-            v-model="password"
-            outlined
-            :error-messages="v$.password.$errors.map(e => e.$message)"
-            :disabled="loading || conflictExist || customBackendDisplay"
-            type="password"
-            required
-            class="login__fields__password"
-            color="secondary"
-            :label="t('login.label_password')"
-            prepend-icon="mdi-lock"
-            @keypress.enter="login()"
-          />
-
-          <VRow no-gutters align="end">
-            <VCol>
-              <VCheckbox
-                v-model="rememberUsername"
-                :disabled="customBackendDisplay || rememberPassword || loading"
-                color="primary"
-                hide-details
-                class="mt-2 remember"
-                :label="t('login.remember_username')"
+        <div class="text-body-1 text-rui-text-secondary mb-8">
+          <p class="mb-3">{{ t('login.description.welcome') }}</p>
+          <i18n path="login.description.more_details" tag="p">
+            <template #documentation>
+              <BaseExternalLink
+                :text="t('login.description.our_docs')"
+                :href="usageGuideUrl"
+                class="underline !text-rui-text-secondary"
               />
-              <VRow v-if="isPackaged" class="pt-2" no-gutters>
-                <VCol cols="auto">
-                  <VCheckbox
-                    v-model="rememberPassword"
-                    :disabled="customBackendDisplay || loading"
-                    color="primary"
-                    hide-details
-                    class="mt-0 pt-0 remember"
-                    :label="t('login.remember_password')"
-                  />
-                </VCol>
-                <VCol>
-                  <VTooltip right max-width="200">
-                    <template #activator="{ on }">
-                      <VIcon small v-on="on"> mdi-help-circle </VIcon>
-                    </template>
-                    <div class="remember__tooltip">
-                      {{ t('login.remember_password_tooltip') }}
-                    </div>
-                  </VTooltip>
-                </VCol>
-              </VRow>
-            </VCol>
-            <VCol cols="auto">
-              <VTooltip open-delay="400" top>
-                <template #activator="{ on, attrs }">
-                  <VBtn
-                    icon
-                    :color="serverColor"
-                    v-bind="attrs"
+            </template>
+          </i18n>
+        </div>
+
+        <div>
+          <form @submit="login()">
+            <RuiTextField
+              ref="usernameRef"
+              v-model="username"
+              variant="outlined"
+              :label="t('login.label_username')"
+              :error-messages="usernameErrors"
+              :disabled="loading || conflictExist || customBackendDisplay"
+              class="mb-2 login__fields__username"
+            />
+
+            <RuiRevealableTextField
+              ref="passwordRef"
+              v-model="password"
+              variant="outlined"
+              :error-messages="passwordErrors"
+              :disabled="loading || conflictExist || customBackendDisplay"
+              class="mb-2 login__fields__password"
+              :label="t('login.label_password')"
+            />
+
+            <div class="flex items-center justify-between">
+              <div>
+                <RuiCheckbox
+                  v-model="rememberUsername"
+                  :disabled="
+                    customBackendDisplay || rememberPassword || loading
+                  "
+                  color="primary"
+                  hide-details
+                  :class="css.remember"
+                >
+                  {{ t('login.remember_username') }}
+                </RuiCheckbox>
+                <div
+                  v-if="isPackaged"
+                  class="pt-2 flex items-center justify-between"
+                  no-gutters
+                >
+                  <div>
+                    <RuiCheckbox
+                      v-model="rememberPassword"
+                      :disabled="customBackendDisplay || loading"
+                      color="primary"
+                      hide-details
+                      :class="css.remember"
+                    >
+                      {{ t('login.remember_password') }}
+                    </RuiCheckbox>
+                  </div>
+                  <RuiTooltip
+                    class="ml-2"
+                    :text="t('login.remember_password_tooltip')"
+                  >
+                    <RuiIcon name="question-line" color="primary" />
+                  </RuiTooltip>
+                </div>
+              </div>
+              <div>
+                <RuiTooltip
+                  :open-delay="400"
+                  :text="t('login.custom_backend.tooltip')"
+                >
+                  <RuiButton
                     :disabled="loading"
-                    v-on="on"
+                    type="button"
+                    icon
                     @click="customBackendDisplay = !customBackendDisplay"
                   >
-                    <VIcon>mdi-server</VIcon>
-                  </VBtn>
-                </template>
-                <span v-text="t('login.custom_backend.tooltip')" />
-              </VTooltip>
-            </VCol>
-          </VRow>
+                    <RuiIcon name="server-line" :color="serverColor" />
+                  </RuiButton>
+                </RuiTooltip>
+              </div>
+            </div>
 
-          <Transition v-if="customBackendDisplay" name="bounce">
-            <div class="animate mt-4">
-              <VDivider />
-              <VRow no-gutters class="mt-4" align="center">
-                <VCol>
-                  <VTextField
+            <Transition
+              enter-class="h-0 opacity-0"
+              enter-to-class="h-full opacity-1"
+              enter-active-class="transition duration-300"
+              leave-class="h-full opacity-1"
+              leave-to-class="h-0 opacity-0"
+              leave-active-class="transition duration-100"
+            >
+              <div v-if="customBackendDisplay">
+                <div class="flex flex-col justify-stretch space-y-4 mt-4">
+                  <RuiTextField
                     v-model="customBackendUrl"
-                    outlined
-                    prepend-inner-icon="mdi-server"
+                    variant="outlined"
                     :error-messages="
                       v$.customBackendUrl.$errors.map(e => e.$message)
                     "
@@ -360,151 +408,137 @@ const abortLogin = () => {
                     :label="t('login.custom_backend.label')"
                     :placeholder="t('login.custom_backend.placeholder')"
                     :hint="t('login.custom_backend.hint')"
-                    @keypress.enter="saveCustomBackend()"
-                  />
-                </VCol>
-                <VCol cols="auto" class="pb-7">
-                  <VBtn
-                    v-if="!customBackendSaved"
-                    class="ml-4"
-                    icon
-                    @click="saveCustomBackend()"
                   >
-                    <VIcon>mdi-content-save</VIcon>
-                  </VBtn>
-                  <VBtn v-else icon @click="clearCustomBackend()">
-                    <VIcon>mdi-delete</VIcon>
-                  </VBtn>
-                </VCol>
-              </VRow>
-              <VRow no-gutters>
-                <VCol>
-                  <VCheckbox
+                    <template #prepend>
+                      <RuiIcon name="server-line" :color="serverColor" />
+                    </template>
+                    <template #append>
+                      <RuiButton
+                        v-if="!customBackendSaved"
+                        :disabled="loading"
+                        variant="text"
+                        class="-mr-1 !p-2"
+                        type="button"
+                        icon
+                        @click="saveCustomBackend()"
+                      >
+                        <RuiIcon name="save-2-fill" color="primary" size="20" />
+                      </RuiButton>
+                      <RuiButton
+                        v-else
+                        variant="text"
+                        class="-mr-1 !p-2"
+                        icon
+                        @click="clearCustomBackend()"
+                      >
+                        <RuiIcon
+                          name="delete-bin-fill"
+                          color="primary"
+                          size="20"
+                        />
+                      </RuiButton>
+                    </template>
+                  </RuiTextField>
+
+                  <RuiCheckbox
                     v-model="customBackendSessionOnly"
-                    class="mt-0"
+                    :class="css.remember"
                     hide-details
                     :disabled="customBackendSaved"
-                    :label="t('login.custom_backend.session_only')"
-                  />
-                </VCol>
-              </VRow>
-            </div>
-          </Transition>
-
-          <PremiumSyncConflictAlert
-            @proceed="login({ syncApproval: $event })"
-          />
-
-          <IncompleteUpgradeAlert
-            @confirm="login({ resumeFromBackup: true })"
-            @cancel="abortLogin()"
-          />
-
-          <Transition name="bounce">
-            <VAlert
-              v-if="errors.length > 0"
-              class="animate mt-4 mb-0"
-              text
-              outlined
-              type="error"
-              icon="mdi-alert-circle-outline"
-            >
-              <VRow>
-                <VCol class="grow">
-                  <span v-for="(error, i) in errors" :key="i" v-text="error" />
-                </VCol>
-                <VCol class="shrink">
-                  <VBtn
-                    v-if="isLoggedInError"
-                    depressed
-                    color="primary"
-                    @click="logout()"
                   >
-                    {{ t('login.logout') }}
-                  </VBtn>
-                </VCol>
-              </VRow>
-            </VAlert>
-          </Transition>
-        </VForm>
-      </VCardText>
+                    {{ t('login.custom_backend.session_only') }}
+                  </RuiCheckbox>
+                </div>
+              </div>
+            </Transition>
 
-      <VCardActions class="login__actions d-block">
-        <span>
-          <VBtn
-            class="login__button__sign-in"
-            depressed
-            color="primary"
-            :disabled="
-              v$.$invalid || loading || conflictExist || customBackendDisplay
-            "
-            :loading="loading"
-            @click="login()"
-          >
-            {{ t('login.button_signin') }}
-          </VBtn>
-        </span>
-        <VDivider class="my-4" />
-        <span class="login__actions__footer">
-          <button
-            :disabled="loading"
-            data-cy="new-account"
-            class="login__button__new-account font-weight-bold secondary--text"
-            @click="newAccount()"
-          >
-            {{ t('login.button_new_account') }}
-          </button>
-        </span>
-      </VCardActions>
+            <PremiumSyncConflictAlert
+              @proceed="login({ syncApproval: $event })"
+            />
+
+            <IncompleteUpgradeAlert
+              @confirm="login({ resumeFromBackup: true })"
+              @cancel="abortLogin()"
+            />
+
+            <div :class="css.login__actions">
+              <RuiButton
+                color="primary"
+                size="lg"
+                :disabled="
+                  v$.$invalid ||
+                  loading ||
+                  conflictExist ||
+                  customBackendDisplay
+                "
+                :loading="loading"
+                type="submit"
+                class="login__button__sign-in"
+                @click="login()"
+              >
+                {{ t('common.actions.continue') }}
+              </RuiButton>
+
+              <span :class="css.login__actions__footer">
+                <span>{{ t('login.button_no_account') }}</span>
+                <RuiButton
+                  color="primary"
+                  size="lg"
+                  variant="text"
+                  :disabled="loading"
+                  type="button"
+                  @click="newAccount()"
+                >
+                  {{ t('login.button_signup') }}
+                </RuiButton>
+              </span>
+            </div>
+          </form>
+        </div>
+      </div>
+      <div v-if="hasServerError" class="mt-8 max-w-[41.25rem] mx-auto">
+        <RuiAlert
+          :action-text="isLoggedInError ? t('login.logout') : ''"
+          type="warning"
+          @action="logout()"
+        >
+          <template #title>
+            <p class="text-body-2 mb-2">
+              <span class="font-bold">
+                {{ t('login.credential_error.title') }}
+              </span>
+              {{ t('login.credential_error.description') }}
+            </p>
+            <p class="text-body-2 mb-0">
+              {{ t('login.credential_error.support') }}
+            </p>
+          </template>
+        </RuiAlert>
+      </div>
     </div>
-  </VSlideYTransition>
+  </Transition>
 </template>
 
-<style scoped lang="scss">
+<style module lang="scss">
 .login {
+  &__wrapper {
+    @apply max-w-[27.5rem] mx-auto;
+  }
+
   &__actions {
-    span,
-    button {
-      display: block;
-      width: 100%;
-      text-align: center;
-    }
+    @apply flex flex-col justify-stretch space-y-8 pt-8;
 
     &__footer {
-      font-size: 0.9em;
+      @apply flex items-center justify-center;
     }
-
-    @apply pt-8;
   }
 }
 
 .remember {
-  width: 190px;
+  @apply ml-2;
 
   &__tooltip {
     font-size: 0.8rem;
-  }
-}
-
-.bounce-enter-active {
-  animation: bounce-in 0.5s;
-}
-
-.bounce-leave-active {
-  animation: bounce-in 0.5s reverse;
-}
-
-@keyframes bounce-in {
-  0% {
-    transform: scale(0);
-  }
-
-  50% {
-    transform: scale(1.1);
-  }
-
-  100% {
-    transform: scale(1);
   }
 }
 </style>

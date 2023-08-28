@@ -1,4 +1,5 @@
 <script setup lang="ts">
+const { t } = useI18n();
 const css = useCssModule();
 
 const { autolog } = useAutoLogin();
@@ -18,77 +19,96 @@ const displayRouter = logicAnd(connected, loginIfConnected);
 </script>
 
 <template>
-  <LoginOverlay>
-    <div :class="css.wrapper">
-      <div :class="css.container">
-        <VCard
-          class="pb-4"
-          :class="css.card"
-          light
-          data-cy="account-management"
-        >
-          <LoginHeader />
-          <DockerWarning v-if="!dockerRiskAccepted && isDocker" />
-          <ConnectionLoading
-            v-else-if="!connectionFailure"
-            :connected="connected && !autolog"
-          />
-          <ConnectionFailureMessage v-else />
-          <div
-            v-if="displayRouter"
-            data-cy="account-management-forms"
-            :class="css.router"
-          >
-            <RouterView />
+  <div :class="css.overlay">
+    <div :class="css.overlay_scroll">
+      <section :class="css.section">
+        <div :class="css.container">
+          <div :class="css.wrapper">
+            <div class="pb-4" light data-cy="account-management">
+              <DockerWarning v-if="!dockerRiskAccepted && isDocker" />
+              <ConnectionLoading
+                v-else-if="!connectionFailure"
+                :connected="connected && !autolog"
+              />
+              <ConnectionFailureMessage v-else />
+              <div
+                v-if="displayRouter"
+                data-cy="account-management-forms"
+                :class="css.router"
+              >
+                <RouterView />
+              </div>
+            </div>
           </div>
-        </VCard>
-      </div>
-
-      <LoginIcon left>
-        <AnimationsButton />
-      </LoginIcon>
-      <PrivacyNotice />
-      <LoginIcon>
-        <template v-if="isPackaged">
-          <OnboardingSettingsButton />
-        </template>
-        <template v-else>
-          <AboutButton />
-        </template>
-      </LoginIcon>
+          <footer :class="css.container__footer">
+            <span :class="css.copyright">
+              {{ t('app.copyright', { year: new Date().getFullYear() }) }}
+            </span>
+            <div>
+              <template v-if="isPackaged || true">
+                <OnboardingSettingsButton />
+              </template>
+              <template v-else>
+                <AboutButton />
+              </template>
+            </div>
+          </footer>
+        </div>
+      </section>
+      <span class="border-l" />
+      <section :class="[css.section, css.section__welcome]">
+        <span :class="css.logo">
+          <RuiLogo />
+        </span>
+        <h2 class="text-h2 mb-6">{{ t('login.welcome_title') }}</h2>
+        <p class="text-body-2">{{ t('login.welcome_description') }}</p>
+        <p class="text-body-2 text-rui-primary">
+          {{ t('login.welcome_update_message') }}
+        </p>
+      </section>
     </div>
-  </LoginOverlay>
+  </div>
 </template>
 
 <style module lang="scss">
+.overlay {
+  @apply block overflow-y-auto w-full h-screen min-h-screen fixed top-0 bottom-0;
+
+  &_scroll {
+    @apply flex w-full;
+  }
+}
+
+.section {
+  @apply relative w-full;
+
+  &__welcome {
+    @apply w-[29%] p-12;
+  }
+}
+
 .container {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
+  @apply min-h-screen flex flex-col justify-center;
+
+  &__footer {
+    @apply flex items-center justify-between p-8;
+
+    .copyright {
+      @apply font-normal text-[0.875rem] leading-[1.4525rem] text-black/60;
+      letter-spacing: 0.025rem;
+    }
+  }
 }
 
 .wrapper {
-  width: 600px;
-  max-width: 100%;
-  padding: 32px 16px 24px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  height: 100vh;
-
-  @media (max-height: 800px) {
-    padding-top: 0;
-  }
+  @apply flex flex-col justify-center max-w-full grow px-4 pt-10 pb-6;
 }
 
 .router {
   min-height: 150px;
 }
 
-.card {
-  z-index: 5;
-  max-height: calc(100vh - 140px);
-  overflow: auto;
+.logo {
+  @apply rounded-full p-4 bg-rui-primary/20 inline-block mb-40;
 }
 </style>
