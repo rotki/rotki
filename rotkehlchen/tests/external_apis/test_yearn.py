@@ -10,8 +10,8 @@ from rotkehlchen.chain.ethereum.modules.yearn.utils import YEARN_OLD_API, query_
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.timing import WEEK_IN_SECONDS
 from rotkehlchen.globaldb.cache import (
-    globaldb_get_cache_last_queried_ts_by_key,
-    globaldb_get_cache_values,
+    globaldb_get_unique_cache_last_queried_ts_by_key,
+    globaldb_get_unique_cache_value,
 )
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.tests.utils.mock import MockResponse
@@ -37,7 +37,7 @@ def test_yearn_api(database, ethereum_inquirer):
         return original_request(url, timeout)
 
     with GlobalDBHandler().conn.read_ctx() as cursor:
-        state_before = globaldb_get_cache_values(
+        state_before = globaldb_get_unique_cache_value(
             cursor=cursor,
             key_parts=(CacheType.YEARN_VAULTS,),
         )
@@ -46,12 +46,12 @@ def test_yearn_api(database, ethereum_inquirer):
         query_yearn_vaults(db=database, ethereum_inquirer=ethereum_inquirer)
 
     with GlobalDBHandler().conn.read_ctx() as cursor:
-        state_after = globaldb_get_cache_values(
+        state_after = globaldb_get_unique_cache_value(
             cursor=cursor,
             key_parts=(CacheType.YEARN_VAULTS,),
         )
 
-        last_queried_ts = globaldb_get_cache_last_queried_ts_by_key(
+        last_queried_ts = globaldb_get_unique_cache_last_queried_ts_by_key(
             cursor=cursor,
             key_parts=(CacheType.YEARN_VAULTS,),
         )
@@ -80,9 +80,9 @@ def test_yearn_api(database, ethereum_inquirer):
         query_yearn_vaults(db=database, ethereum_inquirer=ethereum_inquirer)
 
     with GlobalDBHandler().conn.read_ctx() as cursor:
-        new_queried_ts = globaldb_get_cache_last_queried_ts_by_key(
+        new_queried_ts = globaldb_get_unique_cache_last_queried_ts_by_key(
             cursor=cursor,
-            key_parts=[CacheType.YEARN_VAULTS],
+            key_parts=(CacheType.YEARN_VAULTS,),
         )
     assert new_queried_ts is not None
     assert new_queried_ts > last_queried_ts

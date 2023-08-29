@@ -18,8 +18,9 @@ V5_V6_UPGRADE_UNIQUE_CACHE_KEYS: set[CacheType] = {
 }
 
 
-def _create_new_tables(cursor: 'DBCursor') -> None:
-    log.debug('Enter _create_new_tables')
+def _create_and_populate_unique_cache_table(cursor: 'DBCursor') -> None:
+    log.debug('Enter _create_and_populate_unique_cache_table')
+
     cursor.execute(
         """
         CREATE TABLE IF NOT EXISTS unique_cache (
@@ -29,18 +30,13 @@ def _create_new_tables(cursor: 'DBCursor') -> None:
         );
         """,
     )
-    log.debug('Exit _create_new_tables')
-
-
-def _transfer_unique_cache_data(cursor: 'DBCursor') -> None:
-    log.debug('Enter _transfer_unique_cache_data')
 
     cursor.execute(
         'SELECT COUNT(*) FROM sqlite_master WHERE type="table" and name=?',
         ('general_cache',),
     )
     if cursor.fetchone() is None:  # If the general_cache table doesn't exist then there is nothing to transfer to the unique_cache table. We can exit immediately.  # noqa: E501
-        log.debug('Exit _transfer_unique_cache_data')
+        log.debug('Exit _create_and_populate_unique_cache_table')
         return
 
     for key_part in V5_V6_UPGRADE_UNIQUE_CACHE_KEYS:
@@ -53,7 +49,7 @@ def _transfer_unique_cache_data(cursor: 'DBCursor') -> None:
             'DELETE FROM general_cache WHERE key LIKE ?',
             (f'{key_part.serialize()}%',),
         )
-    log.debug('Exit _transfer_unique_cache_data')
+    log.debug('Exit _create_and_populate_unique_cache_table')
 
 
 def migrate_to_v6(connection: 'DBConnection') -> None:
@@ -63,5 +59,4 @@ def migrate_to_v6(connection: 'DBConnection') -> None:
     log.debug('Entered globaldb v5->v6 upgrade')
 
     with connection.write_ctx() as cursor:
-        _create_new_tables(cursor)
-        _transfer_unique_cache_data(cursor)
+        _create_and_populate_unique_cache_table(cursor)

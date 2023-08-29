@@ -12,7 +12,10 @@ from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.utils import read_integer
-from rotkehlchen.globaldb.cache import globaldb_get_cache_values, globaldb_set_cache_values
+from rotkehlchen.globaldb.cache import (
+    globaldb_get_unique_cache_value,
+    globaldb_set_unique_cache_value,
+)
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
@@ -57,7 +60,7 @@ def query_yearn_vaults(db: 'DBHandler', ethereum_inquirer: 'EthereumInquirer') -
     # If it was the same number of vaults this response has then we don't need to take
     # action since vaults are not removed from their API response.
     with GlobalDBHandler().conn.read_ctx() as cursor:
-        yearn_api_cache: Optional[str] = globaldb_get_cache_values(
+        yearn_api_cache: Optional[str] = globaldb_get_unique_cache_value(
             cursor=cursor,
             key_parts=(CacheType.YEARN_VAULTS,),
         )
@@ -69,10 +72,10 @@ def query_yearn_vaults(db: 'DBHandler', ethereum_inquirer: 'EthereumInquirer') -
         )
         with GlobalDBHandler().conn.write_ctx() as write_cursor:
             # update the timestamp of the last time this vaults were queried
-            globaldb_set_cache_values(
+            globaldb_set_unique_cache_value(
                 write_cursor=write_cursor,
                 key_parts=(CacheType.YEARN_VAULTS,),
-                values=[yearn_api_cache],
+                value=yearn_api_cache,
             )
         return
 
@@ -145,8 +148,8 @@ def query_yearn_vaults(db: 'DBHandler', ethereum_inquirer: 'EthereumInquirer') -
         # overwrites the old value cached and store in the cache the amount of vaults
         # processed in this response.
 
-        globaldb_set_cache_values(
+        globaldb_set_unique_cache_value(
             write_cursor=write_cursor,
             key_parts=(CacheType.YEARN_VAULTS,),
-            values=[str(len(data))],
+            value=str(len(data)),
         )

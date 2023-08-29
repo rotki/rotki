@@ -14,7 +14,11 @@ from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.constants.timing import WEEK_IN_SECONDS
 from rotkehlchen.db.addressbook import DBAddressbook
 from rotkehlchen.errors.misc import InputError
-from rotkehlchen.globaldb.cache import globaldb_get_cache_values, read_curve_pool_tokens
+from rotkehlchen.globaldb.cache import (
+    globaldb_get_general_cache_values,
+    globaldb_get_unique_cache_value,
+    read_curve_pool_tokens,
+)
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import (
@@ -184,12 +188,12 @@ def test_curve_cache(rotkehlchen_instance, use_curve_api):
     pool_coins_in_cache = {}
     gauges_in_cache = {}
     with GlobalDBHandler().conn.read_ctx() as cursor:
-        lp_tokens_in_cache = globaldb_get_cache_values(
+        lp_tokens_in_cache = globaldb_get_general_cache_values(
             cursor=cursor,
             key_parts=(CacheType.CURVE_LP_TOKENS,),
         )
         for lp_token_addr in lp_tokens_in_cache:
-            pool_addr = globaldb_get_cache_values(
+            pool_addr = globaldb_get_unique_cache_value(
                 cursor=cursor,
                 key_parts=(CacheType.CURVE_POOL_ADDRESS, lp_token_addr),
             )
@@ -197,7 +201,7 @@ def test_curve_cache(rotkehlchen_instance, use_curve_api):
 
             pool_coins_in_cache[pool_addr] = read_curve_pool_tokens(cursor=cursor, pool_address=pool_addr)  # noqa: E501
 
-            gauge_data = globaldb_get_cache_values(
+            gauge_data = globaldb_get_unique_cache_value(
                 cursor=cursor,
                 key_parts=(CacheType.CURVE_GAUGE_ADDRESS, pool_addr),
             )
@@ -221,10 +225,10 @@ def test_curve_cache(rotkehlchen_instance, use_curve_api):
 
     # Check that initially set values are gone
     with GlobalDBHandler().conn.read_ctx() as cursor:
-        assert 'key123' not in globaldb_get_cache_values(cursor, key_parts=(CacheType.CURVE_LP_TOKENS,))  # noqa: E501
-        assert globaldb_get_cache_values(cursor, key_parts=(CacheType.CURVE_POOL_ADDRESS, 'abc')) is None  # noqa: E501
-        assert len(globaldb_get_cache_values(cursor, key_parts=(CacheType.CURVE_POOL_TOKENS, 'pool-address-1'))) == 0  # noqa: E501
-        assert globaldb_get_cache_values(cursor, key_parts=(CacheType.CURVE_GAUGE_ADDRESS, 'pool-address-1')) is None  # noqa: E501
+        assert 'key123' not in globaldb_get_general_cache_values(cursor, key_parts=(CacheType.CURVE_LP_TOKENS,))  # noqa: E501
+        assert globaldb_get_unique_cache_value(cursor, key_parts=(CacheType.CURVE_POOL_ADDRESS, 'abc')) is None  # noqa: E501
+        assert globaldb_get_unique_cache_value(cursor, key_parts=(CacheType.CURVE_POOL_TOKENS, 'pool-address-1')) is None  # noqa: E501
+        assert globaldb_get_unique_cache_value(cursor, key_parts=(CacheType.CURVE_GAUGE_ADDRESS, 'pool-address-1')) is None  # noqa: E501
 
     with GlobalDBHandler().conn.read_ctx() as cursor:
         known_addresses = db_addressbook.get_addressbook_entries(cursor=cursor)
