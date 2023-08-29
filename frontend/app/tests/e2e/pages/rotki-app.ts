@@ -96,12 +96,12 @@ export class RotkiApp {
     ).as('input');
 
     cy.get('@input').focus();
-    cy.get('@input').type('{downarrow}'.repeat(2));
+    cy.get('@input').type('{downArrow}'.repeat(2));
 
     if (mode > 0) {
-      cy.get('@input').type('{uparrow}'.repeat(mode));
+      cy.get('@input').type('{upArrow}'.repeat(mode));
     }
-    cy.get('[data-cy=privacy-menu]').click();
+    cy.get('[data-cy=privacy-menu]').click({ force: true });
   }
 
   /**

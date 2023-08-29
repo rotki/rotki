@@ -25,19 +25,18 @@ export class ManualBalancesPage extends AccountBalancesPage {
     cy.get(`#asset-${balance.asset.toLowerCase()}`).should('be.visible');
     cy.get('.v-autocomplete__content .v-list > div').should($list => {
       expect($list.eq(0)).to.contain(balance.asset);
+      $list.first().trigger('click');
     });
-    cy.get('.manual-balances-form__asset').type('{enter}');
     cy.get('.manual-balances-form__label').type(balance.label);
     cy.get('.manual-balances-form__amount').type(balance.amount);
     for (const tag of balance.tags) {
-      cy.get('.manual-balances-form__tags').type(tag);
-      cy.get('.manual-balances-form__tags').type('{enter}');
+      cy.get('.manual-balances-form__tags').type(`${tag}{enter}`);
     }
 
     cy.get('.manual-balances-form__location').click();
-    cy.get('.manual-balances-form__location').type(`{selectall}{backspace}`);
-    cy.get('.manual-balances-form__location').type(balance.location);
-    cy.get('.manual-balances-form__location').type('{enter}');
+    cy.get('.manual-balances-form__location').type(
+      `{selectall}{backspace}${balance.location}{enter}`
+    );
     cy.get('.v-autocomplete__content').should('not.be.visible');
     cy.get('.big-dialog__buttons__confirm').click();
     cy.get('[data-cy=bottom-dialog]', { timeout: 120000 }).should(

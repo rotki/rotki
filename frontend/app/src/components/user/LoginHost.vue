@@ -55,10 +55,10 @@ const displayRouter = logicAnd(connected, loginIfConnected);
           </footer>
         </div>
       </section>
-      <span class="border-l" />
+      <span class="border-b lg:border-l" />
       <section :class="[css.section, css.section__welcome]">
         <span :class="css.logo">
-          <RuiLogo />
+          <RuiLogo class="w-8 !h-8" />
         </span>
         <h2 class="text-h2 mb-6">{{ t('login.welcome_title') }}</h2>
         <p class="text-body-2">{{ t('login.welcome_description') }}</p>
@@ -73,7 +73,7 @@ const displayRouter = logicAnd(connected, loginIfConnected);
 <style module lang="scss">
 .overlay {
   &__scroll {
-    @apply flex w-full;
+    @apply flex flex-col-reverse lg:flex-row w-full;
   }
 
   @apply block overflow-y-auto w-full h-screen min-h-screen fixed top-0 bottom-0;
@@ -81,7 +81,7 @@ const displayRouter = logicAnd(connected, loginIfConnected);
 
 .section {
   &__welcome {
-    @apply w-[29%] p-12;
+    @apply max-w-[31rem] mx-auto lg:max-w-[29%] p-6 lg:p-12;
   }
 
   @apply relative w-full;
@@ -109,6 +109,6 @@ const displayRouter = logicAnd(connected, loginIfConnected);
 }
 
 .logo {
-  @apply rounded-full p-4 bg-rui-primary/20 inline-block mb-40;
+  @apply rounded-full p-4 bg-rui-primary/20 inline-block mb-6 lg:mb-10 xl:mb-40;
 }
 </style>
