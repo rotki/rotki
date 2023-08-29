@@ -313,11 +313,12 @@ const abortLogin = () => {
         </div>
 
         <div>
-          <form @submit="login()">
+          <form novalidate @submit.stop.prevent="login()">
             <RuiTextField
               ref="usernameRef"
               v-model="username"
               variant="outlined"
+              color="primary"
               :label="t('login.label_username')"
               :error-messages="usernameErrors"
               :disabled="loading || conflictExist || customBackendDisplay"
@@ -329,6 +330,7 @@ const abortLogin = () => {
               ref="passwordRef"
               v-model="password"
               variant="outlined"
+              color="primary"
               :error-messages="passwordErrors"
               :disabled="loading || conflictExist || customBackendDisplay"
               class="mb-2"
