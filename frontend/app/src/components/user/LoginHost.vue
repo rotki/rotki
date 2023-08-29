@@ -20,7 +20,7 @@ const displayRouter = logicAnd(connected, loginIfConnected);
 
 <template>
   <div :class="css.overlay">
-    <div :class="css.overlay_scroll">
+    <div :class="css.overlay__scroll">
       <section :class="css.section">
         <div :class="css.container">
           <div :class="css.wrapper">
@@ -72,32 +72,32 @@ const displayRouter = logicAnd(connected, loginIfConnected);
 
 <style module lang="scss">
 .overlay {
-  @apply block overflow-y-auto w-full h-screen min-h-screen fixed top-0 bottom-0;
-
-  &_scroll {
+  &__scroll {
     @apply flex w-full;
   }
+
+  @apply block overflow-y-auto w-full h-screen min-h-screen fixed top-0 bottom-0;
 }
 
 .section {
-  @apply relative w-full;
-
   &__welcome {
     @apply w-[29%] p-12;
   }
+
+  @apply relative w-full;
 }
 
 .container {
-  @apply min-h-screen flex flex-col justify-center;
-
   &__footer {
-    @apply flex items-center justify-between p-8;
-
     .copyright {
-      @apply font-normal text-[0.875rem] leading-[1.4525rem] text-black/60;
       letter-spacing: 0.025rem;
+      @apply font-normal text-[0.875rem] leading-[1.4525rem] text-black/60;
     }
+
+    @apply flex items-center justify-between p-8;
   }
+
+  @apply min-h-screen flex flex-col justify-center;
 }
 
 .wrapper {

@@ -321,7 +321,8 @@ const abortLogin = () => {
               :label="t('login.label_username')"
               :error-messages="usernameErrors"
               :disabled="loading || conflictExist || customBackendDisplay"
-              class="mb-2 login__fields__username"
+              class="mb-2"
+              data-cy="username-input"
             />
 
             <RuiRevealableTextField
@@ -330,8 +331,9 @@ const abortLogin = () => {
               variant="outlined"
               :error-messages="passwordErrors"
               :disabled="loading || conflictExist || customBackendDisplay"
-              class="mb-2 login__fields__password"
+              class="mb-2"
               :label="t('login.label_password')"
+              data-cy="password-input"
             />
 
             <div class="flex items-center justify-between">
@@ -428,6 +430,7 @@ const abortLogin = () => {
                         v-else
                         variant="text"
                         class="-mr-1 !p-2"
+                        type="button"
                         icon
                         @click="clearCustomBackend()"
                       >
@@ -473,7 +476,7 @@ const abortLogin = () => {
                 "
                 :loading="loading"
                 type="submit"
-                class="login__button__sign-in"
+                data-cy="login-submit"
                 @click="login()"
               >
                 {{ t('common.actions.continue') }}
@@ -526,19 +529,19 @@ const abortLogin = () => {
   }
 
   &__actions {
-    @apply flex flex-col justify-stretch space-y-8 pt-8;
-
     &__footer {
       @apply flex items-center justify-center;
     }
+
+    @apply flex flex-col justify-stretch space-y-8 pt-8;
   }
 }
 
 .remember {
-  @apply ml-2;
-
   &__tooltip {
     font-size: 0.8rem;
   }
+
+  @apply ml-2;
 }
 </style>
