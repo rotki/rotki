@@ -492,6 +492,7 @@ const abortLogin = () => {
                   variant="text"
                   :disabled="loading"
                   type="button"
+                  data-cy="new-account"
                   @click="newAccount()"
                 >
                   {{ t('login.button_signup') }}
