@@ -54,18 +54,18 @@ def fixture_session_data_dir(tmpdir_factory) -> Path:
 
 
 @pytest.fixture(name='user_data_dir')
-def fixture_user_data_dir(data_dir, username) -> Path:
+def fixture_user_data_dir(data_dir: Path, username: str, worker_id: str) -> Path:
     """Create and return the user data directory"""
-    user_data_dir = data_dir / username
-    user_data_dir.mkdir(exist_ok=True)
+    user_data_dir = data_dir / worker_id / username
+    user_data_dir.mkdir(exist_ok=True, parents=True)
     return user_data_dir
 
 
 @pytest.fixture(scope='session', name='session_user_data_dir')
-def fixture_session_user_data_dir(session_data_dir, session_username) -> Path:
+def fixture_session_user_data_dir(session_data_dir, session_username, worker_id: str) -> Path:
     """Create and return the session scoped user data directory"""
-    user_data_dir = session_data_dir / session_username
-    user_data_dir.mkdir(exist_ok=True)
+    user_data_dir = session_data_dir / worker_id / session_username
+    user_data_dir.mkdir(exist_ok=True, parents=True)
     return user_data_dir
 
 

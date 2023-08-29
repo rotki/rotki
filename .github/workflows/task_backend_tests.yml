@@ -94,7 +94,7 @@ jobs:
           then
             python pytestgeventwrapper.py $PYTEST_ARGS $COVERAGE_ARGS rotkehlchen/tests/api
           else
-            python pytestgeventwrapper.py $PYTEST_ARGS $COVERAGE_ARGS --ignore=rotkehlchen/tests/api rotkehlchen/tests/
+            python pytestgeventwrapper.py -n 4 $PYTEST_ARGS $COVERAGE_ARGS --ignore=rotkehlchen/tests/api rotkehlchen/tests/
           fi
           
           python pytestgeventwrapper.py --dead-fixtures

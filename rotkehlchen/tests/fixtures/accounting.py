@@ -32,10 +32,10 @@ def fixture_use_clean_caching_directory():
 
 
 @pytest.fixture(name='data_dir')
-def fixture_data_dir(use_clean_caching_directory, tmpdir_factory) -> Path:
+def fixture_data_dir(use_clean_caching_directory, tmpdir_factory, worker_id) -> Path:
     """The tests data dir is peristent so that we can cache price queries between
     tests. If use_clean_caching_directory is True then a completely fresh dir is returned"""
-    if use_clean_caching_directory:
+    if use_clean_caching_directory or worker_id != 'master':
         return Path(tmpdir_factory.mktemp('test_data_dir'))
 
     if 'CI' in os.environ:
