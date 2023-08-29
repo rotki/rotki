@@ -118,7 +118,7 @@ def globaldb_get_general_cache_last_queried_ts(
         value: str,
 ) -> Optional[Timestamp]:
     """Function to get timestamp at which pair key - value was queried last time."""
-    cache_key, _ = compute_cache_key(key_parts)
+    cache_key = compute_cache_key(key_parts)
     cursor.execute(
         'SELECT MAX(last_queried_ts) FROM general_cache WHERE key=? AND value=?',
         (cache_key, value),

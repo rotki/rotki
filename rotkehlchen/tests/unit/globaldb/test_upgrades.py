@@ -10,9 +10,9 @@ from rotkehlchen.assets.types import AssetType
 from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType
 from rotkehlchen.errors.misc import DBUpgradeError
 from rotkehlchen.globaldb.cache import (
-    globaldb_get_cache_keys_and_values_like,
-    globaldb_get_cache_last_queried_ts_by_key,
-    globaldb_get_cache_values,
+    globaldb_get_general_cache_keys_and_values_like,
+    globaldb_get_general_cache_last_queried_ts_by_key,
+    globaldb_get_unique_cache_value,
 )
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.globaldb.upgrades.manager import maybe_upgrade_globaldb
@@ -312,14 +312,14 @@ def test_upgrade_v4_v5(globaldb):
             ('default_rpc_nodes',),
         )
         assert cursor.fetchone()[0] == 0
-        last_queried_ts = globaldb_get_cache_last_queried_ts_by_key(
+        last_queried_ts = globaldb_get_general_cache_last_queried_ts_by_key(
             cursor=cursor,
-            key_parts=[CacheType.CURVE_LP_TOKENS],
+            key_parts=(CacheType.CURVE_LP_TOKENS,),
         )
         assert last_queried_ts == Timestamp(1676727187)  # 1676727187 is just some random value in the db  # noqa: E501
-        pool_tokens_in_global_db = globaldb_get_cache_keys_and_values_like(
+        pool_tokens_in_global_db = globaldb_get_general_cache_keys_and_values_like(
             cursor=cursor,
-            key_parts=[CacheType.CURVE_POOL_TOKENS],
+            key_parts=(CacheType.CURVE_POOL_TOKENS,),
         )
         assert len(pool_tokens_in_global_db) > 0, 'There should be some pool tokens set'
         contracts_before_upgrade = cursor.execute(
@@ -362,14 +362,14 @@ def test_upgrade_v4_v5(globaldb):
             nodes_tuples_from_db = cursor.execute('SELECT * FROM default_rpc_nodes').fetchall()
             assert nodes_tuples_from_db == nodes_tuples_from_file
 
-        last_queried_ts = globaldb_get_cache_last_queried_ts_by_key(
+        last_queried_ts = globaldb_get_general_cache_last_queried_ts_by_key(
             cursor=cursor,
-            key_parts=[CacheType.CURVE_LP_TOKENS],
+            key_parts=(CacheType.CURVE_LP_TOKENS,),
         )
         assert last_queried_ts == Timestamp(0)
-        pool_tokens_in_global_db = globaldb_get_cache_keys_and_values_like(
+        pool_tokens_in_global_db = globaldb_get_general_cache_keys_and_values_like(
             cursor=cursor,
-            key_parts=[CacheType.CURVE_POOL_TOKENS],
+            key_parts=(CacheType.CURVE_POOL_TOKENS,),
         )
         assert len(pool_tokens_in_global_db) == 0, 'All curve pool tokens should have been deleted'
         contracts_after_upgrade = cursor.execute('SELECT * FROM contract_data').fetchall()
@@ -431,7 +431,7 @@ def test_upgrade_v5_v6(globaldb):
         )
         assert cursor.fetchone()[0] == 1
         # check that of dummy entry, only first value is transferred to unique_cache
-        value = globaldb_get_cache_values(cursor, (next(iter(V5_V6_UPGRADE_UNIQUE_CACHE_KEYS)), 'test'))  # noqa: E501
+        value = globaldb_get_unique_cache_value(cursor, (next(iter(V5_V6_UPGRADE_UNIQUE_CACHE_KEYS)), 'test'))  # noqa: E501
         assert value == values[0]
         # delete dummy entry to maintain db consistency
         cursor.execute('DELETE FROM unique_cache WHERE key=?', (test_cache_key,))
