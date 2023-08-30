@@ -901,7 +901,8 @@
     "title": "Address Book Management"
   },
   "airdrops": {
-    "description": "* These are the airdrops rotki detected your tracked accounts are eligible for. You may have already claimed them. If not then visit the link for each protocol and claim your share.",
+    "description": "* Estos son los lanzamientos aéreos que rotki detectó para los que son elegibles sus cuentas rastreadas. Es posible que ya los hayas reclamado. De lo contrario, visite el enlace de cada protocolo y reclame su parte.",
+    "status_hint": "Mostrando resultados para lanzamientos aéreos de {status}.",
     "headers": {
       "source": "Source"
     },
@@ -1345,6 +1346,9 @@
   },
   "common": {
     "account": "Account",
+    "status": "Estado",
+    "claimed": "Reclamada",
+    "unclaimed": "No reclamado",
     "actions": {
       "back": "Atras",
       "cancel": "Cancelar",
