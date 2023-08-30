@@ -303,6 +303,19 @@ def async_api_call() -> Callable:
     return wrapper
 
 
+def login_lock() -> Callable:
+    """
+    This is a decorator that uses the login lock at RestAPI to avoid a race condition between
+    async tasks using the user unlock logic.
+    """
+    def wrapper(func: Callable[..., Response]) -> Callable[..., Response]:
+        def inner(rest_api: 'RestAPI', **kwargs: Any) -> Response:
+            with rest_api.login_lock:
+                return func(rest_api, **kwargs)
+        return inner
+    return wrapper
+
+
 class RestAPI:
     """ The Object holding the logic that runs inside all the API calls"""
     def __init__(self, rotkehlchen: Rotkehlchen) -> None:
@@ -313,6 +326,7 @@ class RestAPI:
         # Greenlets that will be waited for when we shutdown (just main loop)
         self.waited_greenlets = [mainloop_greenlet]
         self.task_lock = Semaphore()
+        self.login_lock = Semaphore()
         self.task_id = 0
         self.task_results: dict[int, Any] = {}
         self.trade_schema = TradeSchema()
@@ -1032,6 +1046,7 @@ class RestAPI:
         result_dict = _wrap_in_ok_result(result)
         return api_response(result_dict, status_code=HTTPStatus.OK)
 
+    @login_lock()
     @async_api_call()
     def create_new_user(
             self,
@@ -1115,6 +1130,7 @@ class RestAPI:
             'status_code': HTTPStatus.OK,
         }
 
+    @login_lock()
     @async_api_call()
     def user_login(
             self,
