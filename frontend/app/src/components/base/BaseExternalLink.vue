@@ -1,15 +1,12 @@
 <script setup lang="ts">
-import { type PropType } from 'vue';
-
-const props = defineProps({
-  href: {
-    required: false,
-    type: String as PropType<string | null | undefined>,
-    default: null
-  },
-  truncate: { required: false, type: Boolean, default: false },
-  text: { required: false, type: String, default: '' }
-});
+const props = withDefaults(
+  defineProps<{
+    href?: string | null;
+    truncate?: boolean;
+    text?: string;
+  }>(),
+  { href: null, truncate: false, text: '' }
+);
 
 const { href, truncate, text } = toRefs(props);
 const { openUrl, isPackaged } = useInterop();
