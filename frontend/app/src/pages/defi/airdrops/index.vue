@@ -318,7 +318,7 @@ onMounted(async () => {
 }
 
 .filters {
-  :global(.v-card__text) {
+  :global(.account-hint) {
     @apply px-0 pb-0 #{!important};
   }
 
