@@ -7,7 +7,7 @@ from rotkehlchen.accounting.structures.types import HistoryEventType
 from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.assets.utils import get_crypto_asset_by_symbol
 from rotkehlchen.chain.optimism.types import OptimismTransaction
-from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants import ZERO
 from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair
 from rotkehlchen.errors.serialization import ConversionError, DeserializationError
 from rotkehlchen.externalapis.utils import maybe_read_integer, read_hash, read_integer

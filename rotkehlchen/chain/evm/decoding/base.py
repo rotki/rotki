@@ -9,9 +9,8 @@ from rotkehlchen.assets.asset import CryptoAsset, EvmToken
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import OUTGOING_EVENT_TYPES
-from rotkehlchen.constants import ONE
+from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_ETH
-from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.types import ChecksumEvmAddress, Timestamp
 
 if TYPE_CHECKING:

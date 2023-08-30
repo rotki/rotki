@@ -12,8 +12,8 @@ from web3._utils.abi import get_abi_output_types
 from rotkehlchen.chain.ethereum.modules.makerdao.dsr import _dsrdai_to_dai
 from rotkehlchen.chain.evm.contracts import EvmContracts
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_DAI
-from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (

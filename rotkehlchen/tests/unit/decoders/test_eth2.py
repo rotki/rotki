@@ -7,8 +7,8 @@ from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.modules.eth2.structures import Eth2Validator
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
+from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_ETH
-from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.eth2 import DBEth2
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction

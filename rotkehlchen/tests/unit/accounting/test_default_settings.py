@@ -16,9 +16,8 @@ from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.processed_event import ProcessedAccountingEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
-from rotkehlchen.constants import ZERO
+from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_DAI, A_ETH
-from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash

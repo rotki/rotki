@@ -3,8 +3,8 @@ from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.modules.liquity.constants import CPT_LIQUITY
+from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_LQTY, A_LUSD
-from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import ChecksumEvmAddress

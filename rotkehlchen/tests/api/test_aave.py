@@ -16,7 +16,7 @@ from rotkehlchen.chain.ethereum.defi.structures import (
     DefiProtocolBalances,
 )
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants.misc import ONE
+from rotkehlchen.constants import ONE
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
     api_url_for,

@@ -1,8 +1,8 @@
 from unittest.mock import patch
 
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_BTC
-from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.exchanges.bitmex import Bitmex
 from rotkehlchen.exchanges.data_structures import AssetMovement, Location, MarginPosition
 from rotkehlchen.fval import FVal

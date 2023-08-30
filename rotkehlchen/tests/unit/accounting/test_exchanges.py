@@ -5,8 +5,8 @@ import pytest
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
 from rotkehlchen.accounting.mixins.event import AccountingEventType
+from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_LINK, A_USDT
-from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.fval import FVal

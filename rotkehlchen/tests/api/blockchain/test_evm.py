@@ -10,8 +10,8 @@ import requests
 from eth_utils import to_checksum_address
 
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_AVAX, A_ETH
-from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
     api_url_for,

@@ -12,8 +12,8 @@ from rotkehlchen.chain.ethereum.modules.makerdao.cache import (
 )
 from rotkehlchen.chain.ethereum.modules.makerdao.vaults import MakerdaoVault, MakerdaoVaults
 from rotkehlchen.chain.evm.types import Web3Node
+from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_BAT, A_DAI, A_ETH, A_USDC
-from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.migrations.manager import (
     MIGRATIONS_LIST,

@@ -9,6 +9,7 @@ from rotkehlchen.assets.asset import CryptoAsset, EvmToken
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.chain.evm.constants import MAX_BLOCKTIME_CACHE, ZERO_ADDRESS
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import (
     A_ALINK_V1,
     A_CRV_3CRV,
@@ -74,7 +75,7 @@ from rotkehlchen.constants.assets import (
     CRV_USDP,
     CRV_UST,
 )
-from rotkehlchen.constants.misc import EXP18, ZERO
+from rotkehlchen.constants.misc import EXP18
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.fval import FVal

@@ -5,8 +5,8 @@ import requests
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
 from rotkehlchen.assets.converters import asset_from_coinbase
+from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_1INCH, A_BTC, A_ETH, A_USD, A_USDC
-from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.exchanges.coinbase import Coinbase, trade_from_conversion
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade

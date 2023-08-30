@@ -11,8 +11,9 @@ from eth_utils import to_checksum_address
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
+from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH
-from rotkehlchen.constants.misc import NFT_DIRECTIVE, ZERO
+from rotkehlchen.constants.misc import NFT_DIRECTIVE
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset

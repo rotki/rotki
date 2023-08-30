@@ -18,6 +18,7 @@ from typing import (
 from eth_typing import ChecksumAddress
 from hexbytes import HexBytes as Web3HexBytes
 
+from rotkehlchen.constants import ZERO
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
@@ -879,6 +880,13 @@ class UserNote(NamedTuple):
             last_update_timestamp=Timestamp(entry[4]),
             is_pinned=bool(entry[5]),
         )
+
+
+class FValWithTolerance(NamedTuple):
+    """Represents a value with a tolerance around it.
+    Especially useful for comparing values with lots of decimal places"""
+    value: FVal
+    tolerance: FVal = ZERO
 
 
 class EvmTokenKind(DBCharEnumMixIn):

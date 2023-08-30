@@ -12,8 +12,8 @@ from rotkehlchen.chain.ethereum.modules.aave.common import (
 )
 from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_ETH
-from rotkehlchen.constants.misc import ONE
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler

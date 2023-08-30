@@ -4,8 +4,8 @@ from rotkehlchen.accounting.structures.eth2 import EthWithdrawalEvent
 from rotkehlchen.accounting.structures.evm_event import EvmEvent, EvmProduct
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.api.v1.types import IncludeExcludeFilterData
+from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_ETH
-from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED
 from rotkehlchen.db.filtering import EvmEventFilterQuery, HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents

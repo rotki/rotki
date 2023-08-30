@@ -15,7 +15,7 @@ from rotkehlchen.accounting.structures.types import ActionType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.accounts import BlockchainAccountData, BlockchainAccounts
-from rotkehlchen.constants import ONE, YEAR_IN_SECONDS
+from rotkehlchen.constants import ONE, YEAR_IN_SECONDS, ZERO
 from rotkehlchen.constants.assets import (
     A_1INCH,
     A_BTC,
@@ -26,7 +26,6 @@ from rotkehlchen.constants.assets import (
     A_USD,
     A_USDC,
 )
-from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.filtering import AssetMovementsFilterQuery, TradesFilterQuery

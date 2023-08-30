@@ -35,13 +35,14 @@ from rotkehlchen.chain.ethereum.modules.yearn.constants import (
     YEARN_VAULTS_V2_PREFIX,
 )
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode
+from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_ETH, A_ETH2, A_USD
 from rotkehlchen.constants.limits import (
     FREE_ASSET_MOVEMENTS_LIMIT,
     FREE_TRADES_LIMIT,
     FREE_USER_NOTES_LIMIT,
 )
-from rotkehlchen.constants.misc import NFT_DIRECTIVE, ONE, ZERO
+from rotkehlchen.constants.misc import NFT_DIRECTIVE
 from rotkehlchen.constants.timing import HOUR_IN_SECONDS
 from rotkehlchen.db.constants import (
     BINANCE_MARKETS_KEY,

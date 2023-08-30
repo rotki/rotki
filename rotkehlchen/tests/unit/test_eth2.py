@@ -27,8 +27,8 @@ from rotkehlchen.chain.ethereum.modules.eth2.utils import (
 )
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_DAI, A_ETH
-from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.db.eth2 import DBEth2
 from rotkehlchen.db.evmtx import DBEvmTx

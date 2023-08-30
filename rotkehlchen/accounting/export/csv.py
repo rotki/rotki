@@ -8,7 +8,7 @@ from zipfile import ZIP_DEFLATED, ZipFile
 
 from rotkehlchen.accounting.pnl import PnlTotals
 from rotkehlchen.accounting.structures.processed_event import AccountingEventExportType
-from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (

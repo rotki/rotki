@@ -22,8 +22,8 @@ from rotkehlchen.chain.evm.decoding.structures import (
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH, A_WETH
-from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.resolver import ChainID
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import NotERC20Conformant

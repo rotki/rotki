@@ -22,8 +22,10 @@ from rotkehlchen.chain.ethereum.oracles.uniswap import UniswapV3Oracle
 from rotkehlchen.chain.ethereum.utils import generate_address_via_create2
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_USDC
-from rotkehlchen.constants.misc import NFT_DIRECTIVE, ZERO, ZERO_PRICE
+from rotkehlchen.constants.misc import NFT_DIRECTIVE
+from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.errors.misc import NotERC20Conformant, RemoteError
 from rotkehlchen.errors.price import PriceQueryUnsupportedAsset
 from rotkehlchen.fval import FVal

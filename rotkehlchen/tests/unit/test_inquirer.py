@@ -9,6 +9,7 @@ from freezegun import freeze_time
 
 from rotkehlchen.assets.asset import Asset, CustomAsset, EvmToken, UnderlyingToken
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import (
     A_1INCH,
     A_AAVE,
@@ -22,12 +23,15 @@ from rotkehlchen.constants.assets import (
     A_USD,
     A_USDC,
 )
-from rotkehlchen.constants.misc import ZERO, ZERO_PRICE
+from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.constants.resolver import ethaddress_to_identifier, evm_address_to_identifier
 from rotkehlchen.db.custom_assets import DBCustomAssets
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
-from rotkehlchen.globaldb.cache import globaldb_set_cache_values
+from rotkehlchen.globaldb.cache import (
+    globaldb_set_general_cache_values,
+    globaldb_set_unique_cache_value,
+)
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.inquirer import (
@@ -343,22 +347,22 @@ def test_find_curve_lp_token_price(inquirer_defi, ethereum_manager):
     identifier = ethaddress_to_identifier(lp_token_address)
     inquirer_defi.inject_evm_managers([(ChainID.ETHEREUM, ethereum_manager)])
     with GlobalDBHandler().conn.write_ctx() as write_cursor:
-        globaldb_set_cache_values(
+        globaldb_set_general_cache_values(
             write_cursor=write_cursor,
             key_parts=(CacheType.CURVE_LP_TOKENS,),
             values=[lp_token_address],
         )
-        globaldb_set_cache_values(
+        globaldb_set_unique_cache_value(
             write_cursor=write_cursor,
             key_parts=(CacheType.CURVE_POOL_ADDRESS, lp_token_address),
-            values=[pool_address],
+            value=pool_address,
         )
-        globaldb_set_cache_values(
+        globaldb_set_general_cache_values(
             write_cursor=write_cursor,
             key_parts=(CacheType.CURVE_POOL_TOKENS, pool_address, '0'),
             values=['0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE'],
         )
-        globaldb_set_cache_values(
+        globaldb_set_general_cache_values(
             write_cursor=write_cursor,
             key_parts=(CacheType.CURVE_POOL_TOKENS, pool_address, '1'),
             values=['0x5e74C9036fb86BD7eCdcb084a0673EFc32eA31cb'],

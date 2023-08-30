@@ -8,7 +8,7 @@ from web3.datastructures import MutableAttributeDict
 from web3.exceptions import BadFunctionCallOutput
 
 from rotkehlchen.chain.constants import DEFAULT_EVM_RPC_TIMEOUT
-from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants import ZERO
 from rotkehlchen.errors.misc import BlockchainQueryError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.covalent import Covalent

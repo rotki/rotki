@@ -127,7 +127,7 @@ const hasServerError = computed(
 );
 
 const usernameErrors = computed(() => {
-  const formErrors = [...get(v$).username.$errors.map(e => e.$message)];
+  const formErrors = [...toMessages(get(v$).username)];
   const serverError = get(usernameError);
   if (serverError) {
     formErrors.push(serverError);
@@ -137,7 +137,7 @@ const usernameErrors = computed(() => {
 });
 
 const passwordErrors = computed(() => {
-  const formErrors = [...get(v$).password.$errors.map(e => e.$message)];
+  const formErrors = [...toMessages(get(v$).password)];
   const serverError = get(passwordError);
   if (serverError) {
     formErrors.push(serverError);
@@ -355,8 +355,7 @@ const abortLogin = () => {
                 </RuiCheckbox>
                 <div
                   v-if="isPackaged"
-                  class="pt-2 flex items-center justify-between"
-                  no-gutters
+                  class="flex items-center justify-between"
                 >
                   <div>
                     <RuiCheckbox
@@ -450,6 +449,7 @@ const abortLogin = () => {
                   <RuiCheckbox
                     v-model="customBackendSessionOnly"
                     :class="css.remember"
+                    color="primary"
                     hide-details
                     :disabled="customBackendSaved"
                   >

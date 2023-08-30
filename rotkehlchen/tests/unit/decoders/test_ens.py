@@ -9,8 +9,8 @@ from rotkehlchen.chain.ethereum.modules.ens.constants import CPT_ENS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_ETH
-from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction

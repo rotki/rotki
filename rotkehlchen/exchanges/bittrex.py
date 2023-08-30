@@ -14,7 +14,7 @@ from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.assets.converters import asset_from_bittrex
-from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants import ZERO
 from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError

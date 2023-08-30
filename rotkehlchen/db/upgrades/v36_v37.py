@@ -5,8 +5,8 @@ from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.accounting.structures.base import HistoryBaseEntryType
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH2
-from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.constants import (
     HISTORY_MAPPING_KEY_STATE,
     HISTORY_MAPPING_STATE_CUSTOMIZED,

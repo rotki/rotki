@@ -32,9 +32,9 @@ from rotkehlchen.api.websockets.typedefs import (
 )
 from rotkehlchen.assets.converters import asset_from_kraken
 from rotkehlchen.chain.evm.decoding.types import EventCategory
-from rotkehlchen.constants import KRAKEN_API_VERSION, KRAKEN_BASE_URL
+from rotkehlchen.constants import KRAKEN_API_VERSION, KRAKEN_BASE_URL, ZERO
 from rotkehlchen.constants.assets import A_ETH2, A_KFEE, A_USD
-from rotkehlchen.constants.misc import ZERO, ZERO_PRICE
+from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.db.constants import KRAKEN_ACCOUNT_TYPE_KEY
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents

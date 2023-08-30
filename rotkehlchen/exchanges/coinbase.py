@@ -12,7 +12,7 @@ import requests
 from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.converters import asset_from_coinbase
-from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants import ZERO
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError

@@ -1,6 +1,6 @@
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_BTC, A_ETH
-from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.rotkehlchen import BalancesTestSetup
 from rotkehlchen.utils.misc import from_wei, satoshis_to_btc

@@ -23,7 +23,7 @@ from rotkehlchen.assets.asset import (
     UnderlyingToken,
 )
 from rotkehlchen.assets.types import AssetType
-from rotkehlchen.constants.misc import ONE
+from rotkehlchen.constants import ONE
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.types import EvmTokenKind
 

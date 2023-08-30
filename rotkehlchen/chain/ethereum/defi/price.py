@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, Optional
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import (
     A_CRV_3CRV,
     A_CRV_3CRVSUSD,
@@ -33,7 +34,6 @@ from rotkehlchen.constants.assets import (
     A_YV1_WETH,
     A_YV1_YFI,
 )
-from rotkehlchen.constants.misc import ONE
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import Price
 

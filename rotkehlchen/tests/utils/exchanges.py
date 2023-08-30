@@ -6,8 +6,8 @@ from unittest.mock import patch
 
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
 from rotkehlchen.assets.converters import KRAKEN_TO_WORLD, asset_from_kraken
+from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_ETH2, A_EUR
-from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors.asset import UnprocessableTradePair
 from rotkehlchen.exchanges.binance import BINANCE_BASE_URL, BINANCEUS_BASE_URL, Binance
