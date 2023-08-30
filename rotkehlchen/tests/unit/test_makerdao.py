@@ -114,7 +114,7 @@ def fixture_makerdao_vaults(
 
     premium = None
     if start_with_valid_premium:
-        premium = Premium(rotki_premium_credentials, username=username)
+        premium = Premium(credentials=rotki_premium_credentials, username=username)
 
     with web3_patch:
         makerdao_vaults = MakerdaoVaults(

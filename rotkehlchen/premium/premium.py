@@ -10,7 +10,7 @@ from collections.abc import Sequence
 from enum import Enum
 from http import HTTPStatus
 from json import JSONDecodeError
-from typing import Any, Literal, NamedTuple, Optional
+from typing import Any, Literal, NamedTuple, Optional, cast
 from urllib.parse import urlencode
 
 import machineid
@@ -85,7 +85,7 @@ def _process_dict_response(
         raise RemoteError('Could not decode rotki server response as json. Check logs') from e
 
     if response.status_code == HTTPStatus.UNAUTHORIZED:
-        raise PremiumAuthenticationError(result_dict.get('error', 'no message given'))
+        raise PremiumAuthenticationError(result_dict.get('message', 'no message given'))
 
     if 'error' in result_dict:
         raise RemoteError(result_dict['error'])
@@ -178,11 +178,10 @@ class Premium:
             allowed_methods=False,  # retry on all method verbs
         )
         self.session.mount('https://', adapter)
-        self.session.verify = False
         self.apiversion = '1'
-        self.rotki_api = f'https://localhost/api/{self.apiversion}/'
-        self.rotki_web = f'https://localhost/webapi/{self.apiversion}/'
-        self.rotki_nest = f'https://localhost/nest/{self.apiversion}/'
+        self.rotki_api = f'https://rotki.com/api/{self.apiversion}/'
+        self.rotki_web = f'https://rotki.com/webapi/{self.apiversion}/'
+        self.rotki_nest = f'https://rotki.com/nest/{self.apiversion}/'
         self.reset_credentials(credentials)
         self.username = username
 
@@ -215,11 +214,10 @@ class Premium:
     def get_remote_devices_information(self) -> dict:
         """Get the list of devices for the current user"""
         method = 'manage/premium/devices'
-        signature, data = self.sign(
+        data = self.sign(
             method=method,
             api_endpoint='webapi',
         )
-        self.session.headers.update({'API-SIGN': base64.b64encode(signature.digest())})
 
         try:
             response = self.session.get(
@@ -239,49 +237,60 @@ class Premium:
         """
         Check if the device is in the list of the devices and if it isn't add it when possible.
         May raise:
+        - RemoteError
         - PremiumAuthenticationError: when the device can't be registered
         """
         device_data = self.get_remote_devices_information()
-        num_devices = len(device_data['devices'])
-        devices_limit = device_data['limit']
+        try:
+            num_devices, devices_limit = len(device_data['devices']), device_data['limit']
+        except KeyError as e:
+            raise RemoteError(
+                f'Could not fetch the list of devices due to missing key {e}',
+            ) from e
+
         device_id = machineid.hashed_id(self.username)
 
-        device_found = False
         for device in device_data['devices']:
-            if device['device_identifier'] != device_id:
-                continue
-            device_found = True
-            break
-
-        if not device_found:
+            device = cast(dict[str, str], device)
+            if (remote_id := device.get('device_identifier')) == device_id:
+                break
+            if remote_id is None:
+                log.error(f'Remote device {device} has no identifier in the server response')
+        else:  # device not found
             if num_devices < devices_limit:
-                # try to sign up the device
+                # try to register the device
                 self._register_new_device(device_id)
             else:
                 # user has to edit his devices
-                raise PremiumAuthenticationError('The limit of devices has been reached')
+                raise PremiumAuthenticationError(
+                    f'The limit of {devices_limit} devices has been reached',
+                )
 
     def _register_new_device(self, device_id: str) -> dict:
+        """
+        Register a new device at the rotki server using the provided id.
+        May raise:
+        - RemoteError
+        - PremiumAuthenticationError: if the queried API returns a 401 error
+        """
         log.debug(f'Registering new device {device_id}')
         method = 'devices'
         device_name = platform.system()
-        signature, data = self.sign(
+        data = self.sign(
             method=method,
             device_identifier=device_id,
             device_name=device_name,
         )
-        self.session.headers.update({'API-SIGN': base64.b64encode(signature.digest())})
 
         try:
-            resposne = self.session.put(
+            response = self.session.put(
                 url=f'{self.rotki_api}{method}',
                 data=data,
             )
         except requests.exceptions.RequestException as e:
-            logger.error(f'Failed to register device due to {e!s}')
-            raise RemoteError from e
+            raise RemoteError(f'Failed to register device due to: {e}') from e
 
-        response_body = _process_dict_response(resposne)
+        response_body = _process_dict_response(response)
         return response_body
 
     def is_active(self, catch_connection_errors: bool = True) -> bool:
@@ -307,7 +316,11 @@ class Premium:
             method: str,
             api_endpoint: str = '/api/',
             **kwargs: Any,
-    ) -> tuple[hmac.HMAC, dict]:
+    ) -> dict:
+        """
+        Create payload for signed requests. It sets the signature headers
+        for the current session
+        """
         urlpath = f'{api_endpoint}{self.apiversion}/{method}'
 
         req = kwargs
@@ -328,7 +341,8 @@ class Premium:
             message,
             hashlib.sha512,
         )
-        return signature, req
+        self.session.headers.update({'API-SIGN': base64.b64encode(signature.digest())})
+        return req
 
     def upload_data(
             self,
@@ -345,7 +359,7 @@ class Premium:
         there is an error returned by the server
         - PremiumAuthenticationError if the given key is rejected by the Rotkehlchen server
         """
-        signature, data = self.sign(
+        data = self.sign(
             'backup',
             original_hash=our_hash,
             last_modify_ts=last_modify_ts,
@@ -353,9 +367,6 @@ class Premium:
             length=len(data_blob),
             compression=compression_type,
         )
-        self.session.headers.update({
-            'API-SIGN': base64.b64encode(signature.digest()),
-        })
 
         try:
             response = self.session.post(
@@ -385,10 +396,7 @@ class Premium:
         there is an error returned by the server
         - PremiumAuthenticationError if the given key is rejected by the Rotkehlchen server
         """
-        signature, data = self.sign('backup')
-        self.session.headers.update({
-            'API-SIGN': base64.b64encode(signature.digest()),
-        })
+        data = self.sign('backup')
 
         try:
             response = self.session.get(
@@ -416,10 +424,7 @@ class Premium:
         there is an error returned by the server
         - PremiumAuthenticationError if the given key is rejected by the Rotkehlchen server
         """
-        signature, data = self.sign('last_data_metadata')
-        self.session.headers.update({
-            'API-SIGN': base64.b64encode(signature.digest()),
-        })
+        data = self.sign('last_data_metadata')
 
         try:
             response = self.session.get(
@@ -455,10 +460,7 @@ class Premium:
         there is an error returned by the server
         - Raises PremiumAuthenticationError if the given key is rejected by the Rotkehlchen server
         """
-        signature, data = self.sign('statistics_rendererv2', version=6)
-        self.session.headers.update({
-            'API-SIGN': base64.b64encode(signature.digest()),
-        })
+        data = self.sign('statistics_rendererv2', version=6)
 
         try:
             response = self.session.get(
@@ -487,11 +489,7 @@ class Premium:
         if data is None:
             data = {}
 
-        signature, _ = self.sign('watchers', **data)
-        self.session.headers.update({
-            'API-SIGN': base64.b64encode(signature.digest()),
-        })
-
+        self.sign('watchers', **data)
         try:
             response = self.session.request(
                 method=method,

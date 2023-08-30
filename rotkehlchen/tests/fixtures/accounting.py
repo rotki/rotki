@@ -112,7 +112,7 @@ def fixture_accountant(
 
     premium = None
     if start_with_valid_premium:
-        premium = Premium(rotki_premium_credentials, username)
+        premium = Premium(credentials=rotki_premium_credentials, username=username)
 
     accountant = Accountant(
         db=database,
