@@ -1,12 +1,11 @@
 <script setup lang="ts">
-import { BigNumber } from '@rotki/common';
-import { type PropType } from 'vue';
+import { type BigNumber } from '@rotki/common';
 import { type SupportedExchange } from '@/types/exchanges';
 
-const props = defineProps({
-  balance: { required: true, type: BigNumber },
-  exchange: { required: true, type: String as PropType<SupportedExchange> }
-});
+const props = defineProps<{
+  balance: BigNumber;
+  exchange: SupportedExchange;
+}>();
 
 const { exchange } = toRefs(props);
 const { exchangeName } = useLocations();

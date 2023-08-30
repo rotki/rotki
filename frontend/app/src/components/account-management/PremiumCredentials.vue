@@ -2,13 +2,13 @@
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
 
-const props = defineProps({
-  loading: { required: true, type: Boolean },
-  enabled: { required: true, type: Boolean },
-  apiSecret: { required: true, type: String },
-  apiKey: { required: true, type: String },
-  syncDatabase: { required: true, type: Boolean }
-});
+const props = defineProps<{
+  loading: boolean;
+  enabled: boolean;
+  apiSecret: string;
+  apiKey: string;
+  syncDatabase: boolean;
+}>();
 
 const emit = defineEmits<{
   (e: 'update:api-key', apiKey: string): void;
