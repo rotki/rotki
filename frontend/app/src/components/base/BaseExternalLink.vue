@@ -29,9 +29,7 @@ const displayText = computed(() =>
     class="text-no-wrap"
     @click="isPackaged ? openLink() : undefined"
   >
-    <slot>
-      {{ displayText }}
-    </slot>
+    <slot>{{ displayText }}</slot>
   </a>
   <div v-else>
     <slot />
