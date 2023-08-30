@@ -97,7 +97,7 @@ const displayRouter = logicAnd(connected, loginIfConnected);
     @apply flex items-center justify-between p-8;
   }
 
-  @apply min-h-screen flex flex-col justify-center;
+  @apply lg:min-h-screen flex flex-col justify-center;
 }
 
 .wrapper {

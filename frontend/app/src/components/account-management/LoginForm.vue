@@ -325,6 +325,7 @@ const abortLogin = () => {
               :disabled="loading || conflictExist || customBackendDisplay"
               class="mb-2"
               data-cy="username-input"
+              dense
             />
 
             <RuiRevealableTextField
@@ -338,6 +339,7 @@ const abortLogin = () => {
               class="mb-2"
               :label="t('login.label_password')"
               data-cy="password-input"
+              dense
             />
 
             <div class="flex items-center justify-between">
@@ -378,7 +380,7 @@ const abortLogin = () => {
               </div>
               <div>
                 <RuiTooltip
-                  :open-delay="400"
+                  :close-delay="0"
                   :text="t('login.custom_backend.tooltip')"
                 >
                   <RuiButton
@@ -413,6 +415,7 @@ const abortLogin = () => {
                     :label="t('login.custom_backend.label')"
                     :placeholder="t('login.custom_backend.placeholder')"
                     :hint="t('login.custom_backend.hint')"
+                    dense
                   >
                     <template #prepend>
                       <RuiIcon name="server-line" :color="serverColor" />
