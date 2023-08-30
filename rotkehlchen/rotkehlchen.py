@@ -311,14 +311,14 @@ class Rotkehlchen:
                 sync_approval=sync_approval,
                 sync_database=sync_database,
             )
-        except PremiumAuthenticationError:
+        except PremiumAuthenticationError as e:
             # Reraise it only if this is during the creation of a new account where
             # the premium credentials were given by the user
             if create_new:
                 raise
             self.msg_aggregator.add_warning(
-                'Could not authenticate the rotki premium API keys found in the DB.'
-                ' Has your subscription expired?',
+                'Could not authenticate the rotki premium API keys found in the DB. '
+                f'Error: {e}. Check logs for more details',
             )
             # else let's just continue. User signed in succesfully, but he just
             # has unauthenticable/invalid premium credentials remaining in his DB

@@ -358,7 +358,7 @@ class PremiumSyncManager:
             except (PremiumAuthenticationError, RemoteError) as e:
                 message = (
                     f'Could not authenticate with the rotkehlchen server with '
-                    f'the API keys found in the Database. Error: {e!s}'
+                    f'the API keys found in the Database. {e}'
                 )
                 log.error(message)
                 raise PremiumAuthenticationError(message) from e

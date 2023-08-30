@@ -470,7 +470,7 @@ def test_premium_toggle_chains_aggregator(blockchain, rotki_premium_credentials,
     for _, module in blockchain.iterate_modules():
         assert module.premium is None
 
-    premium_obj = Premium(rotki_premium_credentials, username=username)
+    premium_obj = Premium(credentials=rotki_premium_credentials, username=username)
     blockchain.activate_premium_status(premium_obj)
     for _, module in blockchain.iterate_modules():
         assert module.premium == premium_obj
@@ -627,7 +627,7 @@ def test_error_db_too_big(rotkehlchen_instance: 'Rotkehlchen') -> None:
 @pytest.mark.parametrize('device_limit', [1, 2])
 def test_device_limits(rotkehlchen_instance: 'Rotkehlchen', device_limit: int) -> None:
     """
-    Test that registering new devices works both when we can register the devices and when the
+    Test that registering new devices works both when we can register a new device and when the
     limit has been reached
     """
     device_registered = False

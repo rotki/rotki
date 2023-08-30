@@ -253,7 +253,7 @@ def test_check_premium_status(rotkehlchen_api_server, username):
     task_manager.last_premium_status_check = ts_now() - 3601
 
     premium_credentials = PremiumCredentials(VALID_PREMIUM_KEY, VALID_PREMIUM_SECRET)
-    premium = Premium(premium_credentials, username=username)
+    premium = Premium(credentials=premium_credentials, username=username)
     premium.status = SubscriptionStatus.ACTIVE
 
     def mock_check_premium_status():

@@ -98,7 +98,7 @@ def test_aave_v1_events_stats(
     aave = Aave(
         ethereum_inquirer=ethereum_inquirer,
         database=database,
-        premium=Premium(rotki_premium_credentials, username),
+        premium=Premium(credentials=rotki_premium_credentials, username=username),
         msg_aggregator=database.msg_aggregator,
     )
     stats = aave.get_stats_for_addresses(
