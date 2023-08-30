@@ -105,6 +105,7 @@ class TaskManager:
             update_curve_pools_cache: Callable,
             msg_aggregator: 'MessagesAggregator',
             data_updater: 'RotkiDataUpdater',
+            username: str,
     ) -> None:
         self.should_schedule = False
         self.max_tasks_num = max_tasks_num
@@ -131,6 +132,7 @@ class TaskManager:
         self.premium_check_retries = 0
         self.premium_sync_manager: Optional[PremiumSyncManager] = premium_sync_manager
         self.data_updater = data_updater
+        self.username = username
 
         self.potential_tasks: list[Callable[[], Optional[list[gevent.Greenlet]]]] = [
             self._maybe_schedule_cryptocompare_query,
@@ -460,7 +462,10 @@ class TaskManager:
             return
 
         try:
-            premium = premium_create_and_verify(db_credentials)
+            premium = premium_create_and_verify(
+                credentials=db_credentials,
+                username=self.username,
+            )
         except RemoteError:
             if self.premium_check_retries < PREMIUM_CHECK_RETRY_LIMIT:
                 self.premium_check_retries += 1

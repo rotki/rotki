@@ -43,6 +43,7 @@ def test_compound_events_stats(
         inquirer: 'Inquirer',  # pylint: disable=unused-argument
         price_historian: 'PriceHistorian',  # pylint: disable=unused-argument
         ethereum_accounts: list[ChecksumEvmAddress],
+        username: str,
 ):
     """
     Test compound events. The transactions have been obtained from
@@ -74,7 +75,7 @@ def test_compound_events_stats(
     compound = Compound(
         ethereum_inquirer=ethereum_inquirer,
         database=database,
-        premium=Premium(rotki_premium_credentials),
+        premium=Premium(rotki_premium_credentials, username),
         msg_aggregator=database.msg_aggregator,
     )
     stats = compound.get_stats_for_addresses(

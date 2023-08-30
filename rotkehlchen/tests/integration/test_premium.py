@@ -465,12 +465,12 @@ def test_premium_credentials():
 
 @pytest.mark.parametrize('ethereum_modules', [['uniswap', 'sushiswap']])
 @pytest.mark.parametrize('start_with_valid_premium', [False])
-def test_premium_toggle_chains_aggregator(blockchain, rotki_premium_credentials):
+def test_premium_toggle_chains_aggregator(blockchain, rotki_premium_credentials, username):
     """Tests that modules receive correctly the premium status when it's toggled"""
     for _, module in blockchain.iterate_modules():
         assert module.premium is None
 
-    premium_obj = Premium(rotki_premium_credentials)
+    premium_obj = Premium(rotki_premium_credentials, username=username)
     blockchain.activate_premium_status(premium_obj)
     for _, module in blockchain.iterate_modules():
         assert module.premium == premium_obj
@@ -624,6 +624,9 @@ def test_error_db_too_big(rotkehlchen_instance: 'Rotkehlchen') -> None:
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
-def test_device_limits(rotkehlchen_instance: 'Rotkehlchen') -> None:
-    rotkehlchen_instance.premium._register_new_device(machineid.hashed_id('yabirgb'))
-    assert False
+def test_device_limits(rotkehlchen_instance: 'Rotkehlchen', username: str) -> None:
+    premium = rotkehlchen_instance.premium
+    assert premium is not None
+
+    premium._register_new_device(machineid.hashed_id(username))
+    raise AssertionError

@@ -71,6 +71,7 @@ def test_aave_v1_events_stats(
         ethereum_inquirer: 'EthereumInquirer',
         ethereum_transaction_decoder: 'EthereumTransactionDecoder',
         rotki_premium_credentials: 'PremiumCredentials',
+        username: str,
         inquirer: 'Inquirer',  # pylint: disable=unused-argument
         price_historian: 'PriceHistorian',  # pylint: disable=unused-argument
 ):
@@ -97,7 +98,7 @@ def test_aave_v1_events_stats(
     aave = Aave(
         ethereum_inquirer=ethereum_inquirer,
         database=database,
-        premium=Premium(rotki_premium_credentials),
+        premium=Premium(rotki_premium_credentials, username),
         msg_aggregator=database.msg_aggregator,
     )
     stats = aave.get_stats_for_addresses(

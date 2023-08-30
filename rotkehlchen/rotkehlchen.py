@@ -458,6 +458,7 @@ class Rotkehlchen:
             update_curve_pools_cache=self.chains_aggregator.ethereum.assure_curve_cache_is_queried_and_decoder_updated,  # noqa: E501
             msg_aggregator=self.msg_aggregator,
             data_updater=self.data_updater,
+            username=user,
         )
 
         self.migration_manager.maybe_migrate_data()
@@ -532,7 +533,10 @@ class Rotkehlchen:
             self.premium.set_credentials(credentials)
         else:
             try:
-                self.premium = premium_create_and_verify(credentials)
+                self.premium = premium_create_and_verify(
+                    credentials=credentials,
+                    username=self.data.username,
+                )
             except RemoteError as e:
                 raise PremiumAuthenticationError(str(e)) from e
 

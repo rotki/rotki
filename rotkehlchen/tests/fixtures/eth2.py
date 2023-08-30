@@ -20,10 +20,11 @@ def fixture_eth2(
         beaconchain,
         network_mocking,
         eth2_mock_data,
+        username,
 ):
     premium = None
     if start_with_valid_premium:
-        premium = Premium(rotki_premium_credentials)
+        premium = Premium(rotki_premium_credentials, username=username)
     eth2 = Eth2(
         ethereum_inquirer=ethereum_inquirer,
         database=database,

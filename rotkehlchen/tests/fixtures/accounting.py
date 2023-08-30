@@ -105,13 +105,14 @@ def fixture_accountant(
         blockchain,
         start_with_valid_premium,
         rotki_premium_credentials,
+        username,
 ) -> Optional[Accountant]:
     if not start_with_logged_in_user:
         return None
 
     premium = None
     if start_with_valid_premium:
-        premium = Premium(rotki_premium_credentials)
+        premium = Premium(rotki_premium_credentials, username)
 
     accountant = Accountant(
         db=database,
