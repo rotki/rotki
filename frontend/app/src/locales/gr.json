@@ -2787,8 +2787,8 @@
     "total_asset_price": "Total Asset Price"
   },
   "login": {
-    "button_no_account": "Don’t have an account?",
-    "button_signup": "Sign Up",
+    "button_no_account": "Δεν έχετε λογαριασμό;",
+    "button_signup": "Εγγραφείτε",
     "custom_backend": {
       "hint": "The url the backend you would like to connect (leave empty for default).",
       "label": "Backend URL",
@@ -2822,6 +2822,7 @@
       "more_details": "Το {documentation} σάς δείχνει περισσότερες λεπτομέρειες σχετικά με την τοπική εφαρμογή και τον χρήστη."
     },
     "upgrading_db": {
+      "title": "Αναβάθμιση βάσης δεδομένων",
       "current": "Βήμα {currentStep} από {totalSteps} της αναβάθμισής της βάσης δεδομένων v{currentVersion}.",
       "warning": "Η βάση δεδομένων αναβαιμίζεται από την έκδοση {fromVersion} στην {toVersion}. Παρακαλώ μην κλείσετε την εφαρμογή μέχρι να ολοκληρωθεί."
     },

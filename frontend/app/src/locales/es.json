@@ -2780,6 +2780,8 @@
     "total_asset_price": "Total Asset Price"
   },
   "login": {
+    "button_no_account": "¿No tienes una cuenta?",
+    "button_signup": "Inscribirse",
     "custom_backend": {
       "hint": "The url the backend you would like to connect (leave empty for default).",
       "label": "Backend URL",
@@ -2804,10 +2806,20 @@
       "title": "User action required for DB sync"
     },
     "title": "Iniciar sesión",
+    "upgrading_db": {
+      "title": "Actualización de base de datos",
+      "current": "Se aplica el paso {currentStep} de {totalSteps} de la actualización de la base de datos v{currentVersion}.",
+      "warning": "La base de datos se está actualizando de la versión {fromVersion} a {toVersion}. No cierres la aplicación hasta que esté terminada."
+    },
     "validation": {
       "non_empty_password": "Por favor introduzca una contraseña",
       "non_empty_username": "Por favor introduzca un nombre de usuario",
       "valid_username": "A username must contain only alphanumeric characters and have no spaces"
+    },
+    "credential_error": {
+      "title": "Tenga en cuenta que la cuenta de su sitio web y su cuenta de aplicación están separadas y no se pueden usar indistintamente.",
+      "description": "Si aún no ha creado una cuenta de aplicación, deberá hacerlo para poder iniciar sesión.",
+      "support": "Si necesita ayuda, contáctenos en nuestro canal de soporte en discordia."
     }
   },
   "macos_unsupported": {
