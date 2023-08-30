@@ -523,7 +523,6 @@ def premium_create_and_verify(credentials: PremiumCredentials, username: str) ->
     premium = Premium(credentials=credentials, username=username)
 
     if premium.is_active(catch_connection_errors=True):
-        premium.authenticate_device()
         return premium
 
     raise PremiumAuthenticationError('rotki API key was rejected by server')
