@@ -365,7 +365,7 @@ def initialize_mock_rotkehlchen_instance(
             evm_nodes_wait.append((evm_manager.node_inquirer, connect_at_start))
 
     if start_with_valid_premium:
-        rotki.premium = Premium(rotki_premium_credentials)
+        rotki.premium = Premium(rotki_premium_credentials, username=username)
         rotki.premium_sync_manager.premium = rotki.premium
         rotki.chains_aggregator.premium = rotki.premium
         # Add premium to all the modules

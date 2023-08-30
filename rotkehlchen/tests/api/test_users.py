@@ -192,6 +192,7 @@ def test_user_creation_with_premium_credentials(rotkehlchen_api_server, data_dir
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     patched_premium_at_start, _, patched_get = create_patched_premium(
         PremiumCredentials(VALID_PREMIUM_KEY, VALID_PREMIUM_SECRET),
+        username=username,
         patch_get=True,
         metadata_last_modify_ts=0,
         metadata_data_hash=b'',
@@ -785,6 +786,7 @@ def test_user_set_premium_credentials(rotkehlchen_api_server: APIServer, usernam
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     _, patched_premium_at_set, patched_get = create_patched_premium(
         PremiumCredentials(VALID_PREMIUM_KEY, VALID_PREMIUM_SECRET),
+        username=username,
         patch_get=True,
         metadata_last_modify_ts=Timestamp(0),
         metadata_data_hash='',
@@ -814,6 +816,7 @@ def test_user_del_premium_credentials(rotkehlchen_api_server, username):
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     _, patched_premium_at_set, patched_get = create_patched_premium(
         PremiumCredentials(VALID_PREMIUM_KEY, VALID_PREMIUM_SECRET),
+        username=username,
         patch_get=True,
         metadata_last_modify_ts=Timestamp(0),
         metadata_data_hash='',

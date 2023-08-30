@@ -613,10 +613,11 @@ def fixture_blockchain(
         data_dir,
         beaconchain,
         btc_derivation_gap_limit,
+        username,
 ):
     premium = None
     if start_with_valid_premium:
-        premium = Premium(rotki_premium_credentials)
+        premium = Premium(credentials=rotki_premium_credentials, username=username)
 
     chains_aggregator = ChainsAggregator(
         blockchain_accounts=blockchain_accounts,

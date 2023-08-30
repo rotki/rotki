@@ -338,7 +338,10 @@ class PremiumSyncManager:
             assert create_new, 'We should never get here for an already existing account'
 
             try:
-                self.premium = premium_create_and_verify(given_premium_credentials)
+                self.premium = premium_create_and_verify(
+                    credentials=given_premium_credentials,
+                    username=username,
+                )
             except (PremiumAuthenticationError, RemoteError) as e:
                 self._abort_new_syncing_premium_user(username=username, original_exception=e)
 
@@ -348,7 +351,10 @@ class PremiumSyncManager:
         if db_credentials:
             assert not create_new, 'We should never get here for a new account'
             try:
-                self.premium = premium_create_and_verify(db_credentials)
+                self.premium = premium_create_and_verify(
+                    credentials=db_credentials,
+                    username=username,
+                )
             except (PremiumAuthenticationError, RemoteError) as e:
                 message = (
                     f'Could not authenticate with the rotkehlchen server with '

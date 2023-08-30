@@ -62,6 +62,7 @@ def fixture_task_manager(
         cryptocompare,
         exchange_manager,
         messages_aggregator,
+        username,
 ) -> TaskManager:
     task_manager = TaskManager(
         max_tasks_num=max_tasks_num,
@@ -78,6 +79,7 @@ def fixture_task_manager(
         activate_premium=lambda _: None,
         msg_aggregator=messages_aggregator,
         data_updater=RotkiDataUpdater(msg_aggregator=messages_aggregator, user_db=database),
+        username=username,
     )
     task_manager.should_schedule = True
     return task_manager
@@ -239,7 +241,7 @@ def test_maybe_schedule_ethereum_txreceipts(
 
 @pytest.mark.parametrize('max_tasks_num', [7])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
-def test_check_premium_status(rotkehlchen_api_server):
+def test_check_premium_status(rotkehlchen_api_server, username):
     """
     Test that the premium check tasks works correctly. The tests creates a valid subscription
     and verifies that after the task was scheduled the users premium is deactivated.
@@ -251,7 +253,7 @@ def test_check_premium_status(rotkehlchen_api_server):
     task_manager.last_premium_status_check = ts_now() - 3601
 
     premium_credentials = PremiumCredentials(VALID_PREMIUM_KEY, VALID_PREMIUM_SECRET)
-    premium = Premium(premium_credentials)
+    premium = Premium(premium_credentials, username=username)
     premium.status = SubscriptionStatus.ACTIVE
 
     def mock_check_premium_status():

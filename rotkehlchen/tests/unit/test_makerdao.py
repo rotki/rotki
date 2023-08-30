@@ -100,6 +100,7 @@ def fixture_makerdao_vaults(
         start_with_valid_premium,
         rotki_premium_credentials,
         makerdao_test_data,
+        username,
 ):
     if not use_etherscan:
         set_web3_node_in_inquirer(
@@ -113,7 +114,7 @@ def fixture_makerdao_vaults(
 
     premium = None
     if start_with_valid_premium:
-        premium = Premium(rotki_premium_credentials)
+        premium = Premium(rotki_premium_credentials, username=username)
 
     with web3_patch:
         makerdao_vaults = MakerdaoVaults(

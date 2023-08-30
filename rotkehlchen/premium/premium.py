@@ -2,6 +2,7 @@ import base64
 import hashlib
 import hmac
 import logging
+import platform
 import time
 from base64 import b64decode, b64encode
 from binascii import Error as BinasciiError
@@ -9,7 +10,6 @@ from collections.abc import Sequence
 from enum import Enum
 from http import HTTPStatus
 from json import JSONDecodeError
-import platform
 from typing import Any, Literal, NamedTuple, Optional
 from urllib.parse import urlencode
 
@@ -160,7 +160,7 @@ def _decode_premium_json(response: requests.Response) -> Any:
 
 class Premium:
 
-    def __init__(self, credentials: PremiumCredentials):
+    def __init__(self, credentials: PremiumCredentials, username: str):
         self.status = SubscriptionStatus.UNKNOWN
         self.session = requests.session()
         # Make sure to have 3 retries on read/connect/other errors for all requests
@@ -184,7 +184,7 @@ class Premium:
         self.rotki_web = f'https://localhost/webapi/{self.apiversion}/'
         self.rotki_nest = f'https://localhost/nest/{self.apiversion}/'
         self.reset_credentials(credentials)
-        self.username = 'yabirgb'
+        self.username = username
 
     def reset_credentials(self, credentials: PremiumCredentials) -> None:
         self.credentials = credentials
@@ -211,8 +211,9 @@ class Premium:
         if not active:
             self.reset_credentials(old_credentials)
             raise PremiumAuthenticationError('rotki API key was rejected by server')
-        
-    def get_remote_devices_information(self):
+
+    def get_remote_devices_information(self) -> dict:
+        """Get the list of devices for the current user"""
         method = 'manage/premium/devices'
         signature, data = self.sign(
             method=method,
@@ -230,11 +231,16 @@ class Premium:
             msg = f'Could not connect to rotki server due to {e!s}'
             log.error(msg)
             raise RemoteError(msg) from e
-        
+
         data = _process_dict_response(response)
         return data
-    
-    def authenticate_device(self):
+
+    def authenticate_device(self) -> None:
+        """
+        Check if the device is in the list of the devices and if it isn't add it when possible.
+        May raise:
+        - PremiumAuthenticationError: when the device can't be registered
+        """
         device_data = self.get_remote_devices_information()
         num_devices = len(device_data['devices'])
         devices_limit = device_data['limit']
@@ -254,8 +260,8 @@ class Premium:
             else:
                 # user has to edit his devices
                 raise PremiumAuthenticationError('The limit of devices has been reached')
-            
-    def _register_new_device(self, device_id: str):
+
+    def _register_new_device(self, device_id: str) -> dict:
         log.debug(f'Registering new device {device_id}')
         method = 'devices'
         device_name = platform.system()
@@ -272,9 +278,9 @@ class Premium:
                 data=data,
             )
         except requests.exceptions.RequestException as e:
-            logger.error(f'Failed to register device due to {str(e)}')
+            logger.error(f'Failed to register device due to {e!s}')
             raise RemoteError from e
-        
+
         response_body = _process_dict_response(resposne)
         return response_body
 
@@ -296,7 +302,12 @@ class Premium:
             self.status = SubscriptionStatus.ACTIVE
             return True
 
-    def sign(self, method: str, api_endpoint: str = '/api/' ,**kwargs: Any) -> tuple[hmac.HMAC, dict]:
+    def sign(
+            self,
+            method: str,
+            api_endpoint: str = '/api/',
+            **kwargs: Any,
+    ) -> tuple[hmac.HMAC, dict]:
         urlpath = f'{api_endpoint}{self.apiversion}/{method}'
 
         req = kwargs
@@ -500,7 +511,7 @@ class Premium:
         return _decode_premium_json(response)
 
 
-def premium_create_and_verify(credentials: PremiumCredentials) -> Premium:
+def premium_create_and_verify(credentials: PremiumCredentials, username: str) -> Premium:
     """Create a Premium object with the key pairs and verify them.
 
     Returns the created premium object
@@ -509,7 +520,7 @@ def premium_create_and_verify(credentials: PremiumCredentials) -> Premium:
     - PremiumAuthenticationError if the given key is rejected by the server
     - RemoteError if there are problems reaching the server
     """
-    premium = Premium(credentials)
+    premium = Premium(credentials=credentials, username=username)
 
     if premium.is_active(catch_connection_errors=True):
         premium.authenticate_device()

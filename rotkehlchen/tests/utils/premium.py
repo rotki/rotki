@@ -87,6 +87,7 @@ def create_patched_requests_get_for_premium(
 
 def create_patched_premium(
         premium_credentials: PremiumCredentials,
+        username: str,
         patch_get: bool,
         metadata_last_modify_ts: Optional[Timestamp] = None,
         metadata_data_hash: Optional[str] = None,
@@ -94,7 +95,7 @@ def create_patched_premium(
         saved_data: Optional[bytes] = None,
         consider_authentication_invalid: bool = False,
 ):
-    premium = Premium(premium_credentials)
+    premium = Premium(credentials=premium_credentials, username=username)
     patched_get = None
     if patch_get:
         patched_get = create_patched_requests_get_for_premium(
@@ -167,6 +168,7 @@ def setup_starting_environment(
 
     patched_premium_at_start, _, patched_get = create_patched_premium(
         premium_credentials=premium_credentials,
+        username=username,
         patch_get=True,
         metadata_last_modify_ts=Timestamp(metadata_last_modify_ts),
         metadata_data_hash=remote_hash,
