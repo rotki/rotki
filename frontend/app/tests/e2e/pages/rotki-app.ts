@@ -24,6 +24,7 @@ export class RotkiApp {
     cy.logout();
     // simulate high scaling / low res by making a very small viewport
     cy.get('.connection-loading__content').should('not.exist');
+    cy.get('[data-cy=account-management-forms]').scrollIntoView();
     cy.get('[data-cy=account-management-forms]').should('be.visible');
 
     cy.get('[data-cy=account-management]').then($body => {

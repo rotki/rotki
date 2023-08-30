@@ -319,6 +319,7 @@ const abortLogin = () => {
               v-model="username"
               variant="outlined"
               color="primary"
+              autocomplete="username"
               :label="t('login.label_username')"
               :error-messages="usernameErrors"
               :disabled="loading || conflictExist || customBackendDisplay"
@@ -331,6 +332,7 @@ const abortLogin = () => {
               v-model="password"
               variant="outlined"
               color="primary"
+              autocomplete="current-password"
               :error-messages="passwordErrors"
               :disabled="loading || conflictExist || customBackendDisplay"
               class="mb-2"
@@ -479,7 +481,6 @@ const abortLogin = () => {
                 :loading="loading"
                 type="submit"
                 data-cy="login-submit"
-                @click="login()"
               >
                 {{ t('common.actions.continue') }}
               </RuiButton>
@@ -502,8 +503,9 @@ const abortLogin = () => {
           </form>
         </div>
       </div>
-      <div v-if="hasServerError" class="mt-8 max-w-[41.25rem] mx-auto">
+      <div v-if="errors.length > 0" class="mt-8 max-w-[41.25rem] mx-auto">
         <RuiAlert
+          v-if="hasServerError"
           :action-text="isLoggedInError ? t('login.logout') : ''"
           type="warning"
           @action="logout()"
@@ -517,6 +519,20 @@ const abortLogin = () => {
             </p>
             <p class="text-body-2 mb-0">
               {{ t('login.credential_error.support') }}
+            </p>
+          </template>
+        </RuiAlert>
+        <RuiAlert v-else type="error">
+          <template #title>
+            <p
+              v-for="(error, i) in errors"
+              :key="i"
+              :class="{
+                'mb-2': i < errors.length - 1,
+                'mb-0': i === errors.length - 1
+              }"
+            >
+              {{ error }}
             </p>
           </template>
         </RuiAlert>
