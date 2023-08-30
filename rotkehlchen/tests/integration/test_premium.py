@@ -1,3 +1,4 @@
+import json
 from base64 import b64decode
 from http import HTTPStatus
 from pathlib import Path
@@ -5,7 +6,6 @@ from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import gevent
-import machineid
 import pytest
 
 from rotkehlchen.constants.assets import A_EUR
@@ -624,9 +624,48 @@ def test_error_db_too_big(rotkehlchen_instance: 'Rotkehlchen') -> None:
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
-def test_device_limits(rotkehlchen_instance: 'Rotkehlchen', username: str) -> None:
+@pytest.mark.parametrize('device_limit', [1, 2])
+def test_device_limits(rotkehlchen_instance: 'Rotkehlchen', device_limit: int) -> None:
+    """
+    Test that registering new devices works both when we can register the devices and when the
+    limit has been reached
+    """
+    device_registered = False
+    device_limit_reached = device_limit == 1
+    devices = {
+        'devices': [
+            {
+                'device_name': 'laptop',
+                'user': 'yabirgb',
+                'device_identifier': '21312312',
+            },
+        ],
+        'limit': device_limit,
+    }
+
+    def mock_devices_list(url, data, **kwargs):  # pylint: disable=unused-argument
+        nonlocal devices
+        if 'webapi/1/manage/premium/devices' in url:
+            return MockResponse(HTTPStatus.OK, json.dumps(devices))
+        raise NotImplementedError('unexpected url')
+
+    def mock_device_registration(url, data, **kwargs):  # pylint: disable=unused-argument
+        nonlocal device_registered
+        device_registered = True
+        return MockResponse(HTTPStatus.OK, json.dumps({'registered': True}))
+
     premium = rotkehlchen_instance.premium
     assert premium is not None
 
-    premium._register_new_device(machineid.hashed_id(username))
-    raise AssertionError
+    with (
+        patch.object(premium.session, 'get', side_effect=mock_devices_list),
+        patch.object(premium.session, 'put', side_effect=mock_device_registration),
+    ):
+        if device_limit_reached is True:
+            with pytest.raises(PremiumAuthenticationError):
+                premium.authenticate_device()
+        else:
+            premium.authenticate_device()
+
+    # check that the request to register the device was made when it is possible to register it
+    assert device_registered != device_limit_reached
