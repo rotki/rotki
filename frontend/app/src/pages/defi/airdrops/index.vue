@@ -35,8 +35,15 @@ type AirdropSources = {
   readonly [source in AirdropType]: AirdropSource;
 };
 
+const { t } = useI18n();
+
 const expanded: Ref<Airdrop[]> = ref([]);
 const selectedAccounts = ref<GeneralAccount[]>([]);
+const statusFilters = ref<{ text: string; value: boolean }[]>([
+  { text: t('common.unclaimed'), value: false },
+  { text: t('common.claimed'), value: true }
+]);
+const status = ref(false);
 const section = Section.DEFI_AIRDROPS;
 const ETH = Blockchain.ETH;
 const sources: AirdropSources = {
@@ -110,7 +117,6 @@ const sources: AirdropSources = {
   }
 };
 
-const { t } = useI18n();
 const css = useCssModule();
 const airdropStore = useAirdropStore();
 const { airdropAddresses } = storeToRefs(airdropStore);
@@ -123,10 +129,12 @@ const refreshing = isLoading(section);
 const entries = computed(() => {
   const addresses = get(selectedAccounts).map(({ address }) => address);
   const airdrops = get(airdropStore.airdropList(addresses));
-  return airdrops.map((value, index) => ({
-    ...value,
-    index
-  }));
+  return airdrops
+    .filter(airdrop => airdrop.claimed === get(status))
+    .map((value, index) => ({
+      ...value,
+      index
+    }));
 });
 
 const tableHeaders = computed<DataTableHeader[]>(() => [
@@ -143,6 +151,10 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
     text: t('common.amount'),
     value: 'amount',
     align: 'end'
+  },
+  {
+    text: t('common.status'),
+    value: 'claimed'
   },
   {
     text: '',
@@ -187,18 +199,40 @@ onMounted(async () => {
       <template #message>{{ t('airdrops.loading') }}</template>
     </ProgressScreen>
     <div v-else>
-      <BlockchainAccountSelector
-        v-model="selectedAccounts"
-        multiple
-        class="pt-2 mt-4"
-        hint
-        dense
-        outlined
-        :chains="[ETH]"
-        :usable-addresses="airdropAddresses"
-      >
-        <div class="text-caption mt-4" v-text="t('airdrops.description')" />
-      </BlockchainAccountSelector>
+      <RuiCard variant="outlined" :class="css.filters">
+        <div class="flex space-x-8">
+          <BlockchainAccountSelector
+            v-model="selectedAccounts"
+            multiple
+            class="w-full !shadow-none !border-none !p-0"
+            no-padding
+            hint
+            dense
+            outlined
+            :chains="[ETH]"
+            :usable-addresses="airdropAddresses"
+          />
+          <div class="flex flex-col min-w-[10rem] w-2/5">
+            <VSelect
+              v-model="status"
+              :items="statusFilters"
+              item-value="value"
+              item-text="text"
+              hide-details
+              dense
+              outlined
+            />
+            <p class="text-body-1 text-rui-text-secondary mt-0 mb-0">
+              {{
+                t('airdrops.status_hint', {
+                  status: status ? t('common.claimed') : t('common.unclaimed')
+                })
+              }}
+            </p>
+          </div>
+        </div>
+        <div class="text-caption mt-8" v-text="t('airdrops.description')" />
+      </RuiCard>
       <VCard class="mt-8">
         <VCardText>
           <DataTable
@@ -219,6 +253,13 @@ onMounted(async () => {
                 :asset="item.asset"
               />
               <span v-else>{{ item.details.length }}</span>
+            </template>
+            <template #item.claimed="{ item: { claimed } }">
+              <RuiChip
+                :color="claimed ? 'success' : 'grey'"
+                :label="claimed ? t('common.claimed') : t('common.unclaimed')"
+                size="sm"
+              />
             </template>
             <template #item.source="{ item }">
               <div class="d-flex flex-row align-center">
@@ -274,5 +315,13 @@ onMounted(async () => {
       height: 72px;
     }
   }
+}
+
+.filters {
+  :global(.v-card__text) {
+    @apply px-0 pb-0 #{!important};
+  }
+
+  @apply w-full;
 }
 </style>
