@@ -269,7 +269,7 @@ const getItemKey = (item: AccountWithChain) => item.address + item.chain;
         </template>
       </VAutocomplete>
     </div>
-    <VCardText v-if="hint">
+    <VCardText v-if="hint" class="account-hint">
       {{ t('blockchain_account_selector.hint', { hintText }) }}
       <slot />
     </VCardText>

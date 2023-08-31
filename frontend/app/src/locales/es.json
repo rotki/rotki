@@ -901,7 +901,8 @@
     "title": "Address Book Management"
   },
   "airdrops": {
-    "description": "* These are the airdrops rotki detected your tracked accounts are eligible for. You may have already claimed them. If not then visit the link for each protocol and claim your share.",
+    "description": "* Estos son los airdrops que rotki detectó para los que son elegibles sus cuentas rastreadas. Es posible que ya los hayas reclamado, de no ser así, visite el enlace de cada protocolo y reclame su parte.",
+    "status_hint": "Mostrando resultados para airdrops de {status}.",
     "headers": {
       "source": "Source"
     },
@@ -1345,6 +1346,9 @@
   },
   "common": {
     "account": "Account",
+    "status": "Estado",
+    "claimed": "Reclamada",
+    "unclaimed": "No reclamado",
     "actions": {
       "back": "Atras",
       "cancel": "Cancelar",
@@ -2781,7 +2785,7 @@
   },
   "login": {
     "button_no_account": "¿No tienes una cuenta?",
-    "button_signup": "Inscribirse",
+    "button_signup": "Registrarse",
     "custom_backend": {
       "hint": "The url the backend you would like to connect (leave empty for default).",
       "label": "Backend URL",
@@ -2808,7 +2812,7 @@
     "title": "Iniciar sesión",
     "upgrading_db": {
       "title": "Actualización de base de datos",
-      "current": "Se aplica el paso {currentStep} de {totalSteps} de la actualización de la base de datos v{currentVersion}.",
+      "current": "Aplicando paso {currentStep} de {totalSteps} para la actualización de la base de datos v{currentVersion}.",
       "warning": "La base de datos se está actualizando de la versión {fromVersion} a {toVersion}. No cierres la aplicación hasta que esté terminada."
     },
     "validation": {
@@ -2819,7 +2823,7 @@
     "credential_error": {
       "title": "Tenga en cuenta que la cuenta de su sitio web y su cuenta de aplicación están separadas y no se pueden usar indistintamente.",
       "description": "Si aún no ha creado una cuenta de aplicación, deberá hacerlo para poder iniciar sesión.",
-      "support": "Si necesita ayuda, contáctenos en nuestro canal de soporte en discordia."
+      "support": "Si necesita ayuda, contáctenos en nuestro canal de soporte en discord."
     }
   },
   "macos_unsupported": {

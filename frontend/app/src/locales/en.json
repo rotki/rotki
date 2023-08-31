@@ -939,6 +939,7 @@
   },
   "airdrops": {
     "description": "* These are the airdrops rotki detected your tracked accounts are eligible for. You may have already claimed them. If not then visit the link for each protocol and claim your share.",
+    "status_hint": "Showing results for {status} airdrops.",
     "headers": {
       "source": "Source"
     },
@@ -1425,6 +1426,9 @@
   },
   "common": {
     "account": "Account",
+    "status": "Status",
+    "claimed": "Claimed",
+    "unclaimed": "Unclaimed",
     "actions": {
       "accept": "Accept",
       "back": "Back",

@@ -897,7 +897,8 @@
     "title": "Address Book Management"
   },
   "airdrops": {
-    "description": "* These are the airdrops rotki detected your tracked accounts are eligible for. You may have already claimed them. If not then visit the link for each protocol and claim your share.",
+    "description": "* Αυτά είναι τα airdrops τα οποία το rotki εντόπισε ότι αντιστοιχούν στους λογαριασμούς σας.",
+    "status_hint": "Εμφάνιση αποτελεσμάτων για {status} airdrops.",
     "headers": {
       "source": "Source"
     },
@@ -1351,6 +1352,9 @@
   },
   "common": {
     "account": "Account",
+    "status": "Κατάσταση",
+    "claimed": "Διεκδικήθηκε",
+    "unclaimed": "αδιεκδίκητος",
     "actions": {
       "back": "Back",
       "cancel": "Cancel",
