@@ -2,7 +2,7 @@
 Changelog
 =========
 
-* :feature:`-` Users will now be able to filter claimed and inclaimed airdrops.
+* :feature:`-` Users will now have the ability to filter between claimed and unclaimed airdrops.
 
 * :release:`1.30.1 <2023-08-23>`
 * :bug:`-` Last premium DB upload will now show the last known DB upload time from the remote and not the time the local app did its last upload. This is important for people using multiple machines.
