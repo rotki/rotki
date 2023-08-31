@@ -305,15 +305,14 @@ def calculate_claimed_airdrops(
         amount_with_tolerance = airdrop_info[2]
         amount = amount_with_tolerance.value
         half_range = amount_with_tolerance.tolerance / 2
-        query_parts.append('evm_info.address=? AND events.asset=? AND CAST(events.amount AS REAL) BETWEEN ? AND ?')  # noqa: E501
+        query_parts.append('events.location_label=? AND events.asset=? AND CAST(events.amount AS REAL) BETWEEN ? AND ?')  # noqa: E501
         bindings.extend([airdrop_info[0], airdrop_info[1].serialize(), str(amount - half_range), str(amount + half_range)])  # noqa: E501
 
     query_part = ' OR '.join(query_parts)
     with database.conn.read_ctx() as cursor:
         claim_events = cursor.execute(
-            'SELECT evm_info.address, events.asset, events.amount '
+            'SELECT events.location_label, events.asset, events.amount '
             'FROM history_events AS events '
-            'JOIN evm_events_info AS evm_info ON events.identifier = evm_info.identifier '
             'WHERE events.type=? AND events.subtype=? '
             f'AND {query_part}',
             tuple(bindings),
