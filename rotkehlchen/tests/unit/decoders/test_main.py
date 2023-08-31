@@ -52,6 +52,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: 'EthereumTransact
         'Airdrops',
         'Balancerv1',
         'Balancerv2',
+        'BaseBridge',
         'Compound',
         'Cowswap',
         'Curve',
@@ -135,6 +136,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: 'EthereumTransact
         'safe-multisig',
         'diva',
         'arbitrum_one',
+        'base',
     }
 
 
