@@ -200,7 +200,7 @@ onMounted(async () => {
     </ProgressScreen>
     <div v-else>
       <RuiCard variant="outlined" :class="css.filters">
-        <div :class="css.filters_wrapper">
+        <div :class="css.filters__wrapper">
           <BlockchainAccountSelector
             v-model="selectedAccounts"
             multiple
