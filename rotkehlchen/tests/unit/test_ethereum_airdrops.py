@@ -50,7 +50,7 @@ def test_check_airdrops(ethereum_accounts, database):
             event_subtype=HistoryEventSubType.AIRDROP,
             asset=A_UNI,
             balance=Balance(amount=FVal('400') + tolerance_for_amount_check * FVal('0.25')),  # inside tolerance  # noqa: E501
-            address=string_to_evm_address(TEST_ADDR1),
+            location_label=string_to_evm_address(TEST_ADDR1),
         ), EvmEvent(
             tx_hash=make_evm_tx_hash(),
             sequence_index=0,
@@ -60,7 +60,7 @@ def test_check_airdrops(ethereum_accounts, database):
             event_subtype=HistoryEventSubType.AIRDROP,
             asset=A_1INCH,
             balance=Balance(amount=FVal('630.374421472277638654') + tolerance_for_amount_check * FVal('2')),  # outside tolerance  # noqa: E501
-            address=string_to_evm_address(TEST_ADDR1),
+            location_label=string_to_evm_address(TEST_ADDR1),
         ),
     ]
 
