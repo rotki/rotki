@@ -214,6 +214,7 @@ class ChainID(Enum):
     GNOSIS = 100
     POLYGON_POS = 137
     FANTOM = 250
+    BASE = 8453
     ARBITRUM_ONE = 42161
     AVALANCHE = 43114
     CELO = 42220
