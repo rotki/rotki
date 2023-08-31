@@ -1,18 +1,18 @@
 <script setup lang="ts">
 import { type Balance, type BigNumber } from '@rotki/common';
-import { type ComputedRef, type PropType } from 'vue';
+import { type ComputedRef } from 'vue';
 import Fragment from '@/components/helper/Fragment';
 import { type XpubAccountWithBalance } from '@/types/blockchain/accounts';
 
-const props = defineProps({
-  group: { required: true, type: String },
-  items: {
-    required: true,
-    type: Array as PropType<XpubAccountWithBalance[]>
-  },
-  expanded: { required: true, type: Boolean },
-  loading: { required: false, type: Boolean, default: false }
-});
+const props = withDefaults(
+  defineProps<{
+    group: string;
+    items: XpubAccountWithBalance[];
+    expanded: boolean;
+    loading?: boolean;
+  }>(),
+  { loading: false }
+);
 
 const emit = defineEmits(['delete-clicked', 'expand-clicked', 'edit-clicked']);
 

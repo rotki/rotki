@@ -24,6 +24,7 @@ export class RotkiApp {
     cy.logout();
     // simulate high scaling / low res by making a very small viewport
     cy.get('.connection-loading__content').should('not.exist');
+    cy.get('[data-cy=account-management-forms]').scrollIntoView();
     cy.get('[data-cy=account-management-forms]').should('be.visible');
 
     cy.get('[data-cy=account-management]').then($body => {
@@ -66,10 +67,14 @@ export class RotkiApp {
   }
 
   login(username: string, password = '1234') {
-    cy.get('.login__fields__username').should('be.visible');
-    cy.get('.login__fields__username').type(username);
-    cy.get('.login__fields__password').type(password);
-    cy.get('.login__button__sign-in').click();
+    cy.get('[data-cy=username-input]').should('be.visible');
+    cy.get('[data-cy=username-input] input:not([type=hidden])').as('username');
+    cy.get('[data-cy=password-input] input:not([type=hidden])').as('password');
+    cy.get('@username').clear();
+    cy.get('@username').type(username);
+    cy.get('@password').clear();
+    cy.get('@password').type(password);
+    cy.get('[data-cy=login-submit]').click();
   }
 
   logout() {
@@ -77,7 +82,7 @@ export class RotkiApp {
     cy.get('[data-cy=user-dropdown]').should('be.visible');
     cy.get('.user-dropdown__logout').click();
     cy.get('[data-cy=confirm-dialog]').find('[data-cy=button-confirm]').click();
-    cy.get('.login__fields__username').should('be.visible');
+    cy.get('[data-cy=username-input]').should('be.visible');
   }
 
   changeCurrency(currency: string) {
@@ -92,12 +97,12 @@ export class RotkiApp {
     ).as('input');
 
     cy.get('@input').focus();
-    cy.get('@input').type('{downarrow}'.repeat(2));
+    cy.get('@input').type('{downArrow}'.repeat(2));
 
     if (mode > 0) {
-      cy.get('@input').type('{uparrow}'.repeat(mode));
+      cy.get('@input').type('{upArrow}'.repeat(mode));
     }
-    cy.get('[data-cy=privacy-menu]').click();
+    cy.get('[data-cy=privacy-menu]').click({ force: true });
   }
 
   /**

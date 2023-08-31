@@ -1,10 +1,7 @@
 <script setup lang="ts">
-defineProps({
-  colspan: {
-    required: true,
-    type: Number
-  }
-});
+defineProps<{
+  colspan: number;
+}>();
 
 const { eth2Validators } = storeToRefs(useEthAccountsStore());
 const limit = computed(() => get(eth2Validators).entriesLimit);

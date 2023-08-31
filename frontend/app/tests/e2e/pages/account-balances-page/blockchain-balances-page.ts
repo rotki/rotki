@@ -37,8 +37,7 @@ export class BlockchainBalancesPage extends AccountBalancesPage {
     cy.get('[data-cy="account-label-field"]').type(balance.label);
 
     for (const tag of balance.tags) {
-      cy.get('[data-cy="account-tag-field"]').type(tag);
-      cy.get('[data-cy="account-tag-field"]').type('{enter}');
+      cy.get('[data-cy="account-tag-field"]').type(`${tag}{enter}`);
     }
 
     cy.get('.big-dialog__buttons__confirm').click();

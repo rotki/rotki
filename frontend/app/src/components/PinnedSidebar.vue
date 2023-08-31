@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { type ComputedRef } from 'vue';
-defineProps({
-  visible: { required: true, type: Boolean }
-});
+
+defineProps<{ visible: boolean }>();
 
 const emit = defineEmits<{ (e: 'visible:update', visible: boolean): void }>();
 

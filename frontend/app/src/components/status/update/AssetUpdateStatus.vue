@@ -30,17 +30,11 @@ const message = computed(() => {
 </script>
 
 <template>
-  <Card flat :outlined="false">
-    <template #title>{{ title }}</template>
-    <div class="my-6 text-body-1">
-      <VRow align="center">
-        <VCol cols="auto" class="mx-2">
-          <VProgressCircular color="primary" indeterminate class="mx-auto" />
-        </VCol>
-        <VCol>
-          {{ message }}
-        </VCol>
-      </VRow>
+  <RuiCard variant="flat" class="max-w-[27.5rem] mx-auto !bg-transparent">
+    <template #header>{{ title }}</template>
+    <div class="flex items-center space-x-14">
+      <RuiProgress color="primary" variant="indeterminate" circular />
+      <p class="mb-0 text-rui-text-secondary">{{ message }}</p>
     </div>
-  </Card>
+  </RuiCard>
 </template>
