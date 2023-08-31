@@ -8,7 +8,7 @@ from rotkehlchen.accounting.structures.types import HistoryEventSubType, History
 from rotkehlchen.chain.evm.accounting.interfaces import ModuleAccountantInterface
 from rotkehlchen.chain.evm.accounting.structures import TxEventSettings
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants import ZERO
 from rotkehlchen.fval import FVal
 
 from ..constants import CPT_AAVE_V2

@@ -33,16 +33,11 @@ class DBOptimismTx(DBEvmTx):
 
         tx_tuples = [(tx.l1_fee, tx.tx_hash) for tx in evm_transactions]
         query = """
-            INSERT INTO optimism_transactions(tx_id, l1_fee)
+            INSERT OR IGNORE INTO optimism_transactions(tx_id, l1_fee)
             SELECT evm_transactions.identifier, ? FROM
             evm_transactions WHERE tx_hash=? and chain_id=10
         """
-        self.db.write_tuples(
-            write_cursor=write_cursor,
-            tuple_type='evm_transaction',
-            query=query,
-            tuples=tx_tuples,
-        )
+        write_cursor.executemany(query, tx_tuples)
 
     def _form_evm_transaction_dbquery(self, query: str, bindings: list[Any], has_premium: bool) -> tuple[str, list[tuple]]:  # noqa: E501
         if has_premium:
@@ -70,6 +65,6 @@ class DBOptimismTx(DBEvmTx):
             gas_used=int(result[9]),
             input_data=result[10],
             nonce=result[11],
-            l1_fee=0 if result[12] is None else int(result[12]),
+            l1_fee=0 if result[12] is None else int(result[12]),  # this check is only needed when _build_evm_transaction is called from a code path that does not call assert_tx_data_is_pulled().  # noqa: E501
             db_id=result[13],
         )

@@ -6,6 +6,7 @@ from rotkehlchen.chain.evm.manager import EvmManager
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
+from .accountant import EthereumAccountingAggregator
 from .decoding.decoder import EthereumTransactionDecoder
 from .tokens import EthereumTokens
 
@@ -40,8 +41,12 @@ class EthereumManager(EvmManager):
                 ethereum_inquirer=node_inquirer,
                 transactions=transactions,
             ),
+            accounting_aggregator=EthereumAccountingAggregator(
+                node_inquirer=node_inquirer,
+                msg_aggregator=transactions.msg_aggregator,
+            ),
         )
-        self.node_inquirer: 'EthereumInquirer'  # just to make the type specific
+        self.node_inquirer: EthereumInquirer  # just to make the type specific
 
     def assure_curve_cache_is_queried_and_decoder_updated(self) -> None:
         """

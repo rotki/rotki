@@ -12,7 +12,7 @@ import requests
 from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.converters import asset_from_coinbase
-from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants import ZERO
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
@@ -418,12 +418,13 @@ class Coinbase(ExchangeInterface):
         try:
             resp = self._api_query('accounts')
         except RemoteError as e:
+            msg_prefix = 'Coinbase API request failed.'
             msg = (
                 'Coinbase API request failed. Could not reach coinbase due '
-                'to {}'.format(e)
+                f'to {e}'
             )
-            log.error(msg)
-            return None, msg
+            log.error(f'{msg_prefix} Could not reach coinbase due to {e}')
+            return None, f'{msg_prefix} Check logs for more details'
 
         returned_balances: defaultdict[AssetWithOracles, Balance] = defaultdict(Balance)
         for account in resp:

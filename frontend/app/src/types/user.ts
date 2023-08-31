@@ -50,7 +50,10 @@ const GeneralSettings = z.object({
   inferZeroTimedBalances: z.boolean(),
   nonSyncingExchanges: z.array(Exchange),
   treatEth2AsEth: z.boolean(),
-  addressNamePriority: z.array(AddressNamePriorityEnum)
+  addressNamePriority: z.array(AddressNamePriorityEnum),
+  queryRetryLimit: z.number().min(1),
+  connectTimeout: z.number().min(1),
+  readTimeout: z.number().min(1)
 });
 
 export type GeneralSettings = z.infer<typeof GeneralSettings>;
@@ -143,7 +146,10 @@ const getGeneralSettings = (settings: UserSettings): GeneralSettings => ({
   inferZeroTimedBalances: settings.inferZeroTimedBalances,
   nonSyncingExchanges: settings.nonSyncingExchanges,
   treatEth2AsEth: settings.treatEth2AsEth,
-  addressNamePriority: settings.addressNamePriority
+  addressNamePriority: settings.addressNamePriority,
+  queryRetryLimit: settings.queryRetryLimit,
+  connectTimeout: settings.connectTimeout,
+  readTimeout: settings.readTimeout
 });
 
 const getOtherSettings = (settings: UserSettings): OtherSettings => ({
@@ -184,6 +190,7 @@ export const ExternalServiceKeys = z.object({
   etherscan: ApiKey.optional(),
   optimismEtherscan: ApiKey.optional(),
   polygonPosEtherscan: ApiKey.optional(),
+  arbitrumOneEtherscan: ApiKey.optional(),
   cryptocompare: ApiKey.optional(),
   covalent: ApiKey.optional(),
   beaconchain: ApiKey.optional(),

@@ -60,8 +60,6 @@ const copy = async () => {
   await copyToClipboard(messageText);
 };
 
-const { fontStyle } = useTheme();
-
 const action = async (notification: NotificationData) => {
   const action = notification.action?.action;
   action?.();
@@ -106,8 +104,7 @@ const action = async (notification: NotificationData) => {
         </VTooltip>
       </div>
       <div
-        class="mt-1 px-2"
-        :style="fontStyle"
+        class="mt-1 px-2 text-rui-text"
         :class="[css.message, { [css.inline]: !popup }]"
       >
         <MissingKeyNotification

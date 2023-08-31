@@ -51,8 +51,8 @@ from rotkehlchen.chain.ethereum.modules.curve.balances import CurveBalances
 from rotkehlchen.chain.ethereum.modules.eth2.structures import Eth2Validator
 from rotkehlchen.chain.substrate.manager import wait_until_a_node_is_available
 from rotkehlchen.chain.substrate.utils import SUBSTRATE_NODE_CONNECTION_TIMEOUT
+from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_AVAX, A_BCH, A_BTC, A_DAI, A_DOT, A_ETH, A_ETH2, A_KSM
-from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.db.eth2 import DBEth2
 from rotkehlchen.db.filtering import Eth2DailyStatsFilterQuery
@@ -694,7 +694,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         if append_or_remove != 'append':
             return  # we only care about appending
 
-        substrate_manager: 'SubstrateManager' = getattr(self, blockchain.name.lower())
+        substrate_manager: SubstrateManager = getattr(self, blockchain.name.lower())
         # When adding account for the first time we should connect to the nodes
         if len(substrate_manager.available_nodes_call_order) == 0:
             substrate_manager.attempt_connections()

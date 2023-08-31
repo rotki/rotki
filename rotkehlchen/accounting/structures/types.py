@@ -99,6 +99,8 @@ class HistoryEventSubType(SerializableEnumNameMixin):
     REFUND = auto()  # for refunding, e.g. refunding ETH in cowswap
     BLOCK_PRODUCTION = auto()
     MEV_REWARD = auto()
+    APPLY = auto()
+    UPDATE = auto()
 
     def serialize_or_none(self) -> Optional[str]:
         """Serializes the subtype but for the subtype None it returns None"""

@@ -78,7 +78,7 @@ const expand = (item: Report) => {
 </script>
 
 <template>
-  <Card outlined-body>
+  <Card>
     <template #title>
       {{ t('profit_loss_reports.title') }}
     </template>

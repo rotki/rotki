@@ -170,6 +170,7 @@ const { dark } = useTheme();
   <div>
     <VDataTable
       ref="tableRef"
+      class="overflow-hidden rounded-xl border border-rui-grey-300 dark:border-rui-grey-600"
       v-bind="rootAttrs"
       :must-sort="mustSort"
       :multi-sort="multiSort"
@@ -232,6 +233,7 @@ const { dark } = useTheme();
         #top="{ pagination, options: opt, updateOptions }"
       >
         <VDataFooter
+          class="!border-t-0"
           v-bind="footerProps"
           :pagination="pagination"
           :options="opt"

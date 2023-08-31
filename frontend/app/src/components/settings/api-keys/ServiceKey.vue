@@ -77,7 +77,7 @@ watch(value, () => {
 </script>
 
 <template>
-  <VCard flat>
+  <VCard flat :outlined="false">
     <VCardTitle v-if="title">
       {{ title }}
     </VCardTitle>
@@ -105,7 +105,7 @@ watch(value, () => {
               <VBtn
                 icon
                 text
-                class="service-key__content__delete"
+                class="mt-2.5 service-key__content__delete"
                 :disabled="loading || !currentValue"
                 color="primary"
                 v-on="on"
@@ -148,17 +148,3 @@ watch(value, () => {
     </VCardActions>
   </VCard>
 </template>
-
-<style scoped lang="scss">
-.service-key {
-  &__buttons {
-    padding: 16px !important;
-  }
-
-  &__content {
-    &__delete {
-      margin-top: 10px;
-    }
-  }
-}
-</style>

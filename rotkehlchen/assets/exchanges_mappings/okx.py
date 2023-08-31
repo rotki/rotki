@@ -63,5 +63,7 @@ WORLD_TO_OKX = COMMON_ASSETS_MAPPINGS | {
     evm_address_to_identifier('0xBc7d6B50616989655AfD682fb42743507003056D', ChainID.BINANCE, EvmTokenKind.ERC20): 'ACH',  # noqa: E501
     evm_address_to_identifier('0x4922a015c4407F87432B179bb209e125432E4a2A', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'XAUT',  # noqa: E501
     evm_address_to_identifier('0x3c8b650257cfb5f272f799f5e2b4e65093a11a05', ChainID.OPTIMISM, EvmTokenKind.ERC20): 'VELODROME',  # noqa: E501
-
+    evm_address_to_identifier('0x3432B6A60D23Ca0dFCa7761B7ab56459D9C964D0', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'FXS',  # noqa: E501
+    evm_address_to_identifier('0x163f8C2467924be0ae7B5347228CABF260318753', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'WLD',  # noqa: E501
+    evm_address_to_identifier('0x582d872A1B094FC48F5DE31D3B73F2D9bE47def1', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'TON',  # noqa: E501
 }

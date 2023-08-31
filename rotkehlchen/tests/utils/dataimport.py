@@ -7,6 +7,7 @@ from rotkehlchen.accounting.structures.types import HistoryEventSubType, History
 from rotkehlchen.assets.asset import CryptoAsset, EvmToken
 from rotkehlchen.assets.converters import asset_from_binance, asset_from_cryptocom
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
+from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import (
     A_BAT,
     A_BCH,
@@ -28,7 +29,8 @@ from rotkehlchen.constants.assets import (
     A_USDT,
     A_XRP,
 )
-from rotkehlchen.constants.misc import ONE, ZERO, ZERO_PRICE
+from rotkehlchen.constants.prices import ZERO_PRICE
+from rotkehlchen.data_import.importers.constants import COINTRACKING_EVENT_PREFIX
 from rotkehlchen.db.filtering import (
     AssetMovementsFilterQuery,
     HistoryEventFilterQuery,
@@ -37,7 +39,7 @@ from rotkehlchen.db.filtering import (
 )
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.ledger_actions import DBLedgerActions
-from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
+from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.tests.utils.constants import A_AXS, A_CRO, A_GBP, A_MCO, A_XMR
@@ -59,6 +61,7 @@ def get_cryptocom_note(desc: str):
 
 def assert_cointracking_import_results(rotki: Rotkehlchen):
     """A utility function to help assert on correctness of importing data from cointracking.info"""
+    dbevents = DBHistoryEvents(rotki.data.db)
     with rotki.data.db.conn.read_ctx() as cursor:
         trades = rotki.data.db.get_trades(cursor, filter_query=TradesFilterQuery.make(), has_premium=True)  # noqa: E501
         asset_movements = rotki.data.db.get_asset_movements(
@@ -66,6 +69,8 @@ def assert_cointracking_import_results(rotki: Rotkehlchen):
             filter_query=AssetMovementsFilterQuery.make(),
             has_premium=True,
         )
+        events = dbevents.get_history_events(cursor, filter_query=HistoryEventFilterQuery.make(), has_premium=True)  # noqa: E501
+
     warnings = rotki.msg_aggregator.consume_warnings()
     errors = rotki.msg_aggregator.consume_errors()
     assert len(errors) == 0
@@ -134,6 +139,23 @@ def assert_cointracking_import_results(rotki: Rotkehlchen):
         link='',
     )]
     assert expected_movements == asset_movements
+
+    assert len(events) == 2, 'Duplicated event was not ignored'
+    for event in events:
+        assert event.event_identifier.startswith(COINTRACKING_EVENT_PREFIX)
+        assert event.event_type == HistoryEventType.STAKING
+        assert event.event_subtype == HistoryEventSubType.REWARD
+        assert event.location == Location.BINANCE
+        assert event.location_label is None
+        if event.asset == A_AXS:
+            assert event.timestamp == 1641386280000
+            assert event.balance.amount == FVal(1)
+            assert event.notes == 'Stake reward of 1.00000000 AXS in binance'
+        else:
+            assert event.asset == A_ETH
+            assert event.timestamp == 1644319740000
+            assert event.balance.amount == FVal('2.12')
+            assert event.notes == 'Stake reward of 2.12000000 ETH in binance'
 
 
 def assert_cryptocom_import_results(rotki: Rotkehlchen):
@@ -1210,6 +1232,127 @@ def assert_bisq_trades_import_results(rotki: Rotkehlchen):
         notes='ID: xxhee',
     )]
     assert trades == expected_trades
+
+
+def assert_bitmex_import_wallet_history(rotki: Rotkehlchen):
+    expected_asset_movements = [
+        AssetMovement(
+            location=Location.BITMEX,
+            category=AssetMovementCategory.DEPOSIT,
+            address=None,
+            transaction_id=None,
+            timestamp=Timestamp(1574825791),
+            asset=A_BTC,
+            amount=FVal(0.05000000),
+            fee_asset=A_BTC,
+            fee=Fee(FVal(00000000)),
+            link='Imported from BitMEX CSV file. Transact Type: Deposit',
+        ),
+        AssetMovement(
+            location=Location.BITMEX,
+            category=AssetMovementCategory.WITHDRAWAL,
+            address='3Qsy5NGSnGA1vd1cmcNgeMjLrKPsKNhfCe',
+            transaction_id=None,
+            timestamp=Timestamp(1577252845),
+            asset=A_BTC,
+            amount=FVal(0.05746216),
+            fee_asset=A_BTC,
+            fee=Fee(FVal(0.00100000)),
+            link='Imported from BitMEX CSV file. Transact Type: Withdrawal',
+        ),
+    ]
+    expected_margin_positions = [
+        MarginPosition(
+            location=Location.BITMEX,
+            open_time=None,
+            close_time=Timestamp(1576738800),
+            profit_loss=AssetAmount(FVal(0.00000373)),
+            pl_currency=A_BTC,
+            fee=Fee(FVal(0)),
+            fee_currency=A_BTC,
+            link='Imported from BitMEX CSV file. Transact Type: RealisedPNL',
+            notes='PnL from trade on XBTUSD',
+        ),
+        MarginPosition(
+            location=Location.BITMEX,
+            open_time=None,
+            close_time=Timestamp(1576825200),
+            profit_loss=AssetAmount(FVal(0.00000016)),
+            pl_currency=A_BTC,
+            fee=Fee(FVal(0)),
+            fee_currency=A_BTC,
+            link='Imported from BitMEX CSV file. Transact Type: RealisedPNL',
+            notes='PnL from trade on XBTUSD',
+        ),
+        MarginPosition(
+            location=Location.BITMEX,
+            open_time=None,
+            close_time=Timestamp(1576911600),
+            profit_loss=AssetAmount(FVal(-0.00000123)),
+            pl_currency=A_BTC,
+            fee=Fee(FVal(0)),
+            fee_currency=A_BTC,
+            link='Imported from BitMEX CSV file. Transact Type: RealisedPNL',
+            notes='PnL from trade on XBTUSD',
+        ),
+        MarginPosition(
+            location=Location.BITMEX,
+            open_time=None,
+            close_time=Timestamp(1576998000),
+            profit_loss=AssetAmount(FVal(-0.00000075)),
+            pl_currency=A_BTC,
+            fee=Fee(FVal(0)),
+            fee_currency=A_BTC,
+            link='Imported from BitMEX CSV file. Transact Type: RealisedPNL',
+            notes='PnL from trade on XBTUSD',
+        ),
+        MarginPosition(
+            location=Location.BITMEX,
+            open_time=None,
+            close_time=Timestamp(1577084400),
+            profit_loss=AssetAmount(FVal(-0.00000203)),
+            pl_currency=A_BTC,
+            fee=Fee(FVal(0)),
+            fee_currency=A_BTC,
+            link='Imported from BitMEX CSV file. Transact Type: RealisedPNL',
+            notes='PnL from trade on XBTUSD',
+        ),
+        MarginPosition(
+            location=Location.BITMEX,
+            open_time=None,
+            close_time=Timestamp(1577170800),
+            profit_loss=AssetAmount(FVal(-0.00000201)),
+            pl_currency=A_BTC,
+            fee=Fee(FVal(0)),
+            fee_currency=A_BTC,
+            link='Imported from BitMEX CSV file. Transact Type: RealisedPNL',
+            notes='PnL from trade on XBTUSD',
+        ),
+        MarginPosition(
+            location=Location.BITMEX,
+            open_time=None,
+            close_time=Timestamp(1577257200),
+            profit_loss=AssetAmount(FVal(0.00085517)),
+            pl_currency=A_BTC,
+            fee=Fee(FVal(0)),
+            fee_currency=A_BTC,
+            link='Imported from BitMEX CSV file. Transact Type: RealisedPNL',
+            notes='PnL from trade on XBTUSD',
+        ),
+    ]
+    with rotki.data.db.conn.read_ctx() as cursor:
+        margin_positions = rotki.data.db.get_margin_positions(cursor)
+        warnings = rotki.msg_aggregator.consume_warnings()
+        errors = rotki.msg_aggregator.consume_errors()
+        asset_movements = rotki.data.db.get_asset_movements(
+            cursor,
+            filter_query=AssetMovementsFilterQuery.make(),
+            has_premium=True,
+        )
+    assert asset_movements == expected_asset_movements
+    assert margin_positions == expected_margin_positions
+    assert len(warnings) == 0
+    assert len(errors) == 0
 
 
 def assert_binance_import_results(rotki: Rotkehlchen):

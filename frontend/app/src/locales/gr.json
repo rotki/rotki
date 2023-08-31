@@ -897,7 +897,8 @@
     "title": "Address Book Management"
   },
   "airdrops": {
-    "description": "* These are the airdrops rotki detected your tracked accounts are eligible for. You may have already claimed them. If not then visit the link for each protocol and claim your share.",
+    "description": "* Αυτά είναι τα airdrops τα οποία το rotki εντόπισε ότι αντιστοιχούν στους λογαριασμούς σας.",
+    "status_hint": "Εμφάνιση αποτελεσμάτων για {status} airdrops.",
     "headers": {
       "source": "Source"
     },
@@ -917,7 +918,8 @@
   },
   "app": {
     "moto": "the opensource portfolio manager that protects your privacy",
-    "name": "rotki"
+    "name": "rotki",
+    "copyright": "© Rotki Solutions GmbH 2018-{year}"
   },
   "asset_balances": {
     "loading": "Please wait while rotki queries the blockchain..."
@@ -1254,7 +1256,8 @@
       "eth2": "ETH balances",
       "ksm": "Kusama balances",
       "loopring": "Loopring balances",
-      "polygon_pos": "Polygon PoS balances"
+      "polygon_pos": "Polygon PoS balances",
+      "arbitrum_one": "Arbitrum One balances"
     },
     "form_dialog": {
       "add_title": "Add blockchain account",
@@ -1349,6 +1352,9 @@
   },
   "common": {
     "account": "Account",
+    "status": "Κατάσταση",
+    "claimed": "Διεκδικήθηκε",
+    "unclaimed": "αδιεκδίκητος",
     "actions": {
       "back": "Back",
       "cancel": "Cancel",
@@ -1891,6 +1897,9 @@
       "title": "Deleting {chain} RPC Node"
     },
     "delete_tooltip": "Delete the selected RPC Node",
+    "edit_dialog": {
+      "title": "Edit {chain} RPC Node"
+    },
     "edit_error": {
       "title": "Editing {chain} RPC Node"
     },
@@ -2223,6 +2232,31 @@
         "empty": "The decimal separator cannot be empty"
       }
     },
+    "external_service_setting": {
+      "label": {
+        "query_retry_limit": "Όριο επανάληψης ερωτήματος",
+        "query_retry_limit_hint": "Ο αριθμός των φορών που θα επαναληφθεί ένα ερώτημα προς εξωτερικές υπηρεσίες πριν αποδοθεί.",
+        "connect_timeout": "Χρονικό όριο σύνδεσης",
+        "connect_timeout_hint": "Ο αριθμός των δευτερολέπτων που θα περιμένετε πριν αποδοθείτε στην ίδρυση μιας σύνδεσης με μια εξωτερική υπηρεσία.",
+        "read_timeout": "Χρονικό όριο ανάγνωσης",
+        "read_timeout_hint": "Ο αριθμός των δευτερολέπτων που θα περιμένετε για τον πρώτο μπάιτ μετά την ίδρυση μιας σύνδεσης με μια εξωτερική υπηρεσία."
+      },
+      "title": "Ρυθμίσεις εξωτερικής υπηρεσίας",
+      "validation": {
+        "query_retry_limit": {
+          "non_empty": "Παρακαλώ εισαγάγετε το όριο επανάληψης ερωτήματος",
+          "invalid_range": "Το όριο επανάληψης ερωτήματος πρέπει να είναι μεγαλύτερο από {min}"
+        },
+        "connect_timeout": {
+          "non_empty": "Παρακαλώ εισαγάγετε το χρονικό όριο σύνδεσης",
+          "invalid_range": "Το χρονικό όριο σύνδεσης πρέπει να είναι μεγαλύτερο από {min}"
+        },
+        "read_timeout": {
+          "non_empty": "Παρακαλώ εισαγάγετε το χρονικό όριο ανάγνωσης",
+          "invalid_range": "Το χρονικό όριο ανάγνωσης πρέπει να είναι μεγαλύτερο από {min}"
+        }
+      }
+    },
     "labels": {
       "anonymous_analytics": "Should anonymous usage analytics be submitted?",
       "balance_saving_frequency": "Balance data saving frequency in hours",
@@ -2424,6 +2458,13 @@
       "line_one": "[Experimental] If you find an issue with the imported data, let us know so we can adapt the code accordingly.",
       "name": "Bisq"
     },
+    "bitmex": {
+      "import": "Import {0} from bitmex",
+      "import_types": "wallet history",
+      "line_one": "[Experimental] If you find an issue with the imported data, let us know so we can adapt the code accordingly.",
+      "line_two": "Amounts in the wallet history file are assumed to be Bitcoin. If you would like this feature supported for other currencies, please reach out.",
+      "name": "BitMEX"
+    },
     "bitcoin_tax": {
       "import": "Import {0} from bitcoin.tax",
       "import_types": "trades, income, and spending",
@@ -2472,9 +2513,9 @@
       "name": "Nexo"
     },
     "note": "Important notes for importing data from {0}'s CSV exports.",
-    "notice": "{warning} Those platforms could change their format in a backwards incompatible way quite often. As such this import may stop working. If that happens {link} and we will see what we can do.",
+    "notice": "Those platforms could change their format in a backwards incompatible way quite often. As such this import may stop working. If that happens {link} and we will see what we can do.",
     "notice_link": "open an issue with rotki",
-    "notice_warning": "⚠️ Important notice ⚠️:",
+    "notice_warning": "Important notice:",
     "select_source": {
       "title": "Select source"
     },
@@ -2663,12 +2704,7 @@
     "effective_interest_rate_tooltip": "The savings rate across all of the protocols in which you are actively lending, weighted based on the relative position in each protocol.",
     "history": "History",
     "loading": "Please wait while your balances are getting loaded...",
-    "profit_earned": "Profit Earned",
-    "reset": {
-      "protocol_selection": "Select protocol(s) to reset"
-    },
-    "reset_confirm": "This action will overwrite any cached history entries in the DB for the selected protocols and will fetch everything again. Depending on the number of accounts it may take a long time. Are you sure you want to continue?",
-    "reset_tooltip": "Refreshes the data overwriting cached Aave and yearn.finance Vaults historical entries"
+    "profit_earned": "Profit Earned"
   },
   "lending_asset_table": {
     "headers": {
@@ -2755,8 +2791,8 @@
     "total_asset_price": "Total Asset Price"
   },
   "login": {
-    "button_new_account": "Create New Account",
-    "button_signin": "Sign In",
+    "button_no_account": "Δεν έχετε λογαριασμό;",
+    "button_signup": "Εγγραφείτε",
     "custom_backend": {
       "hint": "The url the backend you would like to connect (leave empty for default).",
       "label": "Backend URL",
@@ -2780,8 +2816,17 @@
       "remote_modified": "Remote last modified: {0}",
       "title": "User action required for DB sync"
     },
-    "title": "Sign In",
+    "title": "Συνδεθείτε",
+    "welcome_title": "Καλώς ήρθατε στο rotki",
+    "welcome_description": "Καλώς ήρθατε στον διαχειριστή χαρτοφυλακίου ανοιχτού κώδικα που προστατεύει το απόρρητό σας.",
+    "welcome_update_message": "Συνδεθείτε για να εξερευνήσετε τις αλλαγές που έχουμε κάνει.",
+    "description": {
+      "welcome": "Καλως ΗΡΘΑΤΕ! Παρακαλώ εισάγετε τα στοιχεία σας.",
+      "our_docs": "Η τεκμηρίωσή μας",
+      "more_details": "Το {documentation} σάς δείχνει περισσότερες λεπτομέρειες σχετικά με την τοπική εφαρμογή και τον χρήστη."
+    },
     "upgrading_db": {
+      "title": "Αναβάθμιση βάσης δεδομένων",
       "current": "Βήμα {currentStep} από {totalSteps} της αναβάθμισής της βάσης δεδομένων v{currentVersion}.",
       "warning": "Η βάση δεδομένων αναβαιμίζεται από την έκδοση {fromVersion} στην {toVersion}. Παρακαλώ μην κλείσετε την εφαρμογή μέχρι να ολοκληρωθεί."
     },
@@ -2789,6 +2834,11 @@
       "non_empty_password": "Please provide a password",
       "non_empty_username": "Please provide a user name",
       "valid_username": "A username must contain only alphanumeric characters and have no spaces"
+    },
+    "credential_error": {
+      "title": "Λάβετε υπόψη ότι ο λογαριασμός του ιστότοπού σας και ο λογαριασμός εφαρμογής είναι ξεχωριστοί και δεν μπορούν να χρησιμοποιηθούν εναλλακτικά.",
+      "description": "Εάν δεν έχετε δημιουργήσει ακόμη λογαριασμό εφαρμογής, θα πρέπει να το κάνετε για να συνδεθείτε.",
+      "support": "Εάν χρειάζεστε βοήθεια, επικοινωνήστε μαζί μας στο κανάλι υποστήριξης στο discord."
     }
   },
   "macos_unsupported": {
@@ -3095,6 +3145,11 @@
     "snapshot_failed": {
       "message": "Could not save the balance snapshot at {location}. {error}",
       "title": "Balance Snapshot failed"
+    },
+    "db_upload_result": {
+      "title": "Database sync failed",
+      "message": "We could not complete the upload because {reason}",
+      "action": "Force push"
     }
   },
   "notification_popup": {
@@ -3144,7 +3199,8 @@
   },
   "overall_balances": {
     "loading": "LOADING",
-    "premium_hint": "Get the full experience by upgrading to rotki premium"
+    "premium_hint": "Get the full experience by upgrading to rotki premium",
+    "summary": "Περίληψη"
   },
   "overview": {
     "details_dialog": {

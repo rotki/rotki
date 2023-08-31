@@ -7,7 +7,7 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <Card flat>
+  <Card flat :outlined="false">
     <template #title>
       {{ t('asset_update.success.title') }}
     </template>

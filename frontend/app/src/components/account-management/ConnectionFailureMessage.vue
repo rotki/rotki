@@ -13,22 +13,21 @@ const terminate = () => interop.closeApp();
 </script>
 
 <template>
-  <div class="pa-4">
-    <div class="text-h6">{{ t('connection_failure.title') }}</div>
-    <div class="text-body-1 mt-2 text--secondary">
+  <RuiCard variant="flat" class="max-w-[27.5rem] mx-auto !bg-transparent">
+    <template #header>{{ t('connection_failure.title') }}</template>
+    <div class="text-rui-text-secondary">
       {{ t('connection_failure.message') }}
     </div>
-    <div class="fill-width d-flex mt-4">
-      <VBtn v-if="!defaultBackend" text @click="toDefault()">
+    <template #footer>
+      <RuiButton v-if="!defaultBackend" variant="text" @click="toDefault()">
         {{ t('connection_failure.default') }}
-      </VBtn>
-      <VSpacer />
-      <VBtn depressed @click="terminate()">
+      </RuiButton>
+      <RuiButton variant="text" @click="terminate()">
         {{ t('common.actions.terminate') }}
-      </VBtn>
-      <VBtn class="ml-4" depressed color="primary" @click="retry()">
+      </RuiButton>
+      <RuiButton class="ml-4" color="primary" @click="retry()">
         {{ t('connection_failure.retry') }}
-      </VBtn>
-    </div>
-  </div>
+      </RuiButton>
+    </template>
+  </RuiCard>
 </template>

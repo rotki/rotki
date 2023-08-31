@@ -11,6 +11,7 @@ from rotkehlchen.chain.ethereum.defi.price import handle_defi_price_query
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import (
     A_3CRV,
     A_ALINK_V1,
@@ -55,7 +56,8 @@ from rotkehlchen.constants.assets import (
     A_YV1_WETH,
     A_YV1_YFI,
 )
-from rotkehlchen.constants.misc import CURRENCYCONVERTER_API_KEY, ONE, ZERO, ZERO_PRICE
+from rotkehlchen.constants.misc import CURRENCYCONVERTER_API_KEY
+from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.constants.timing import DAY_IN_SECONDS, MONTH_IN_SECONDS
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
@@ -74,7 +76,7 @@ from rotkehlchen.externalapis.xratescom import (
     get_historical_xratescom_exchange_rates,
 )
 from rotkehlchen.fval import FVal
-from rotkehlchen.globaldb.cache import globaldb_get_general_cache_values, read_curve_pool_tokens
+from rotkehlchen.globaldb.cache import globaldb_get_unique_cache_value, read_curve_pool_tokens
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.interfaces import CurrentPriceOracleInterface
@@ -85,9 +87,9 @@ from rotkehlchen.types import (
     CURVE_POOL_PROTOCOL,
     UNISWAP_PROTOCOL,
     YEARN_VAULTS_V2_PROTOCOL,
+    CacheType,
     ChainID,
     EvmTokenKind,
-    GeneralCacheType,
     Price,
     ProtocolsWithPriceLogic,
     Timestamp,
@@ -98,7 +100,6 @@ from rotkehlchen.utils.network import request_get_dict
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
-    from rotkehlchen.chain.ethereum.oracles.saddle import SaddleOracle
     from rotkehlchen.chain.ethereum.oracles.uniswap import UniswapV2Oracle, UniswapV3Oracle
     from rotkehlchen.chain.evm.manager import EvmManager
     from rotkehlchen.externalapis.coingecko import Coingecko
@@ -130,7 +131,6 @@ CurrentPriceOracleInstance = Union[
     'Cryptocompare',
     'UniswapV3Oracle',
     'UniswapV2Oracle',
-    'SaddleOracle',
     'ManualCurrentOracle',
 ]
 
@@ -253,7 +253,6 @@ class Inquirer:
     _manualcurrent: 'ManualCurrentOracle'
     _uniswapv2: Optional['UniswapV2Oracle'] = None
     _uniswapv3: Optional['UniswapV3Oracle'] = None
-    _saddle: Optional['SaddleOracle'] = None
     _evm_managers: dict[ChainID, 'EvmManager']
     _oracles: Optional[Sequence[CurrentPriceOracle]] = None
     _oracle_instances: Optional[list[CurrentPriceOracleInstance]] = None
@@ -353,11 +352,9 @@ class Inquirer:
     def add_defi_oracles(
             uniswap_v2: Optional['UniswapV2Oracle'],
             uniswap_v3: Optional['UniswapV3Oracle'],
-            saddle: Optional['SaddleOracle'],
     ) -> None:
         Inquirer()._uniswapv2 = uniswap_v2
         Inquirer()._uniswapv3 = uniswap_v3
-        Inquirer()._saddle = saddle
 
     @staticmethod
     def get_cached_current_price_entry(
@@ -397,7 +394,7 @@ class Inquirer:
         instance._oracles_not_onchain = []
         instance._oracle_instances_not_onchain = []
         for oracle, oracle_instance in zip(instance._oracles, instance._oracle_instances):
-            if oracle not in (CurrentPriceOracle.UNISWAPV2, CurrentPriceOracle.UNISWAPV3, CurrentPriceOracle.SADDLE):  # noqa: E501
+            if oracle not in (CurrentPriceOracle.UNISWAPV2, CurrentPriceOracle.UNISWAPV3):  # noqa: E501
                 instance._oracles_not_onchain.append(oracle)
                 instance._oracle_instances_not_onchain.append(oracle_instance)
 
@@ -756,14 +753,14 @@ class Inquirer:
         ethereum.assure_curve_cache_is_queried_and_decoder_updated()
 
         with GlobalDBHandler().conn.read_ctx() as cursor:
-            pool_addresses_in_cache = globaldb_get_general_cache_values(
+            pool_address_in_cache = globaldb_get_unique_cache_value(
                 cursor=cursor,
-                key_parts=[GeneralCacheType.CURVE_POOL_ADDRESS, lp_token.evm_address],
+                key_parts=(CacheType.CURVE_POOL_ADDRESS, lp_token.evm_address),
             )
-            if len(pool_addresses_in_cache) == 0:
+            if pool_address_in_cache is None:
                 return None
             # pool address is guaranteed to be checksumed due to how we save it
-            pool_address = string_to_evm_address(pool_addresses_in_cache[0])
+            pool_address = string_to_evm_address(pool_address_in_cache)
             pool_tokens_addresses = read_curve_pool_tokens(cursor=cursor, pool_address=pool_address)  # noqa: E501
 
         tokens: list[EvmToken] = []

@@ -7,7 +7,7 @@ from urllib.parse import urlencode
 import requests
 
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
-from rotkehlchen.constants.misc import ZERO_PRICE
+from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.constants.resolver import evm_address_to_identifier, strethaddress_to_identifier
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.db.settings import CachedSettings

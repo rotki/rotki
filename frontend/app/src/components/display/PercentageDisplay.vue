@@ -74,7 +74,7 @@ const { t } = useI18n();
       v-if="!!value"
       :style="assetStyle"
       :class="assetPadding ? 'mr-1' : null"
-      class="ml-1 percentage-display__symbol text--secondary"
+      class="ml-1 percentage-display__symbol"
       :cols="justify === 'start' ? null : 'auto'"
     >
       {{ t('percentage_display.symbol') }}

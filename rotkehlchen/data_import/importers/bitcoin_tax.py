@@ -22,7 +22,7 @@ from rotkehlchen.serialization.deserialize import (
 from rotkehlchen.types import Fee, Location, TimestampMS
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
-from .constants import EVENT_ID_PREFIX
+from .constants import ROTKI_EVENT_PREFIX
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -60,7 +60,7 @@ def determine_csv_type(csv_data: csv.DictReader) -> CSVType:
 class BitcoinTaxImporter(BaseExchangeImporter):
     def _consume_trade_event(
             self,
-            cursor: DBCursor,
+            write_cursor: DBCursor,
             csv_row: dict[str, Any],
             event_identifier: str,
             timestamp: TimestampMS,
@@ -115,7 +115,7 @@ class BitcoinTaxImporter(BaseExchangeImporter):
             event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
         )
-        self.add_history_events(cursor, [spend_event, receive_event])
+        self.add_history_events(write_cursor, [spend_event, receive_event])
         if fee_asset_balance is not None:
             fee_event = HistoryEvent(
                 event_identifier=event_identifier,
@@ -128,11 +128,11 @@ class BitcoinTaxImporter(BaseExchangeImporter):
                 event_type=HistoryEventType.TRADE,
                 event_subtype=HistoryEventSubType.FEE,
             )
-            self.add_history_events(cursor, [fee_event])
+            self.add_history_events(write_cursor, [fee_event])
 
     def _consume_income_spending_event(
             self,
-            cursor: DBCursor,
+            write_cursor: DBCursor,
             csv_row: dict[str, Any],
             event_identifier: str,
             timestamp: TimestampMS,
@@ -165,7 +165,7 @@ class BitcoinTaxImporter(BaseExchangeImporter):
             event_type=event_type,
             event_subtype=event_subtype,
         )
-        self.add_history_events(cursor, [event])
+        self.add_history_events(write_cursor, [event])
         if fee_asset_balance is not None:
             fee_event = HistoryEvent(
                 event_identifier=event_identifier,
@@ -178,11 +178,11 @@ class BitcoinTaxImporter(BaseExchangeImporter):
                 event_type=HistoryEventType.SPEND,
                 event_subtype=HistoryEventSubType.FEE,
             )
-            self.add_history_events(cursor, [fee_event])
+            self.add_history_events(write_cursor, [fee_event])
 
     def _consume_event(
             self,
-            cursor: DBCursor,
+            write_cursor: DBCursor,
             csv_row: dict[str, Any],
             csv_type: CSVType,
             timestamp_format: str = '%Y-%m-%d %H:%M:%S %z',
@@ -201,7 +201,7 @@ class BitcoinTaxImporter(BaseExchangeImporter):
             return  # skip empty rows
 
         # use a deterministic event_identifier to avoid duplicate events in case of reimport
-        event_identifier = f'{EVENT_ID_PREFIX}BTX_{hash_csv_row(csv_row)}'
+        event_identifier = f'{ROTKI_EVENT_PREFIX}BTX_{hash_csv_row(csv_row)}'
         timestamp = ts_sec_to_ms(deserialize_timestamp_from_date(
             date=csv_row['Date'],
             formatstr=timestamp_format,
@@ -236,7 +236,7 @@ class BitcoinTaxImporter(BaseExchangeImporter):
             quote_asset_amount = deserialize_asset_amount(csv_row['Cost/Proceeds'])
             quote_asset_balance = AssetBalance(quote_asset, Balance(quote_asset_amount, ZERO))
             self._consume_trade_event(
-                cursor=cursor,
+                write_cursor=write_cursor,
                 csv_row=csv_row,
                 event_identifier=event_identifier,
                 timestamp=timestamp,
@@ -250,7 +250,7 @@ class BitcoinTaxImporter(BaseExchangeImporter):
             return
         # else
         self._consume_income_spending_event(
-            cursor=cursor,
+            write_cursor=write_cursor,
             csv_row=csv_row,
             event_identifier=event_identifier,
             timestamp=timestamp,
@@ -261,7 +261,7 @@ class BitcoinTaxImporter(BaseExchangeImporter):
             memo=memo,
         )
 
-    def _import_csv(self, cursor: DBCursor, filepath: Path, **kwargs: Any) -> None:
+    def _import_csv(self, write_cursor: DBCursor, filepath: Path, **kwargs: Any) -> None:
         """
         May raise:
         - InputError if one of the rows is malformed
@@ -271,7 +271,7 @@ class BitcoinTaxImporter(BaseExchangeImporter):
             csv_type = determine_csv_type(data)
             for _, row in enumerate(data):
                 try:
-                    self._consume_event(cursor, row, csv_type, **kwargs)
+                    self._consume_event(write_cursor, row, csv_type, **kwargs)
                 except UnknownAsset as e:
                     self.db.msg_aggregator.add_warning(
                         f'During Bitcoin_Tax csv import found action with unknown '

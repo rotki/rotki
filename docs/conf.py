@@ -24,9 +24,9 @@ copyright = '2018-2020, Eleftherios Karapetsas. 2020-2022, Rotki Solutions GmbH'
 author = 'The rotki team'
 
 # The short X.Y version
-version = '1.29.1'
+version = '1.30.1'
 # The full version, including alpha/beta/rc tags
-release = '1.29.1'
+release = '1.30.1'
 
 
 # -- General configuration ---------------------------------------------------

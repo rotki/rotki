@@ -26,14 +26,10 @@ from rotkehlchen.chain.aggregator import ChainsAggregator
 from rotkehlchen.chain.arbitrum_one.manager import ArbitrumOneManager
 from rotkehlchen.chain.arbitrum_one.node_inquirer import ArbitrumOneInquirer
 from rotkehlchen.chain.avalanche.manager import AvalancheManager
-from rotkehlchen.chain.ethereum.accountant import EthereumAccountingAggregator
 from rotkehlchen.chain.ethereum.manager import EthereumManager
 from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
-from rotkehlchen.chain.ethereum.oracles.saddle import SaddleOracle
 from rotkehlchen.chain.ethereum.oracles.uniswap import UniswapV2Oracle, UniswapV3Oracle
-from rotkehlchen.chain.evm.accounting.aggregator import EVMAccountingAggregators
 from rotkehlchen.chain.evm.nodes import populate_rpc_nodes_in_database
-from rotkehlchen.chain.optimism.accountant import OptimismAccountingAggregator
 from rotkehlchen.chain.optimism.manager import OptimismManager
 from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
 from rotkehlchen.chain.polygon_pos.manager import PolygonPOSManager
@@ -44,7 +40,7 @@ from rotkehlchen.chain.substrate.utils import (
     POLKADOT_NODES_TO_CONNECT_AT_START,
 )
 from rotkehlchen.config import default_data_directory
-from rotkehlchen.constants.misc import ONE, ZERO
+from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.data_import.manager import CSVDataImporter
 from rotkehlchen.data_migrations.manager import DataMigrationManager
@@ -405,11 +401,9 @@ class Rotkehlchen:
         Inquirer().inject_evm_managers([(ChainID.ETHEREUM, ethereum_manager)])
         uniswap_v2_oracle = UniswapV2Oracle(ethereum_inquirer)
         uniswap_v3_oracle = UniswapV3Oracle(ethereum_inquirer)
-        saddle_oracle = SaddleOracle(ethereum_inquirer)
         Inquirer().add_defi_oracles(
             uniswap_v2=uniswap_v2_oracle,
             uniswap_v3=uniswap_v3_oracle,
-            saddle=saddle_oracle,
         )
         Inquirer().set_oracles_order(settings.current_price_oracles)
 
@@ -432,16 +426,10 @@ class Rotkehlchen:
             btc_derivation_gap_limit=settings.btc_derivation_gap_limit,
         )
 
-        ethereum_accountant = EthereumAccountingAggregator(node_inquirer=ethereum_inquirer, msg_aggregator=self.msg_aggregator)  # noqa: E501
-        optimism_accountant = OptimismAccountingAggregator(node_inquirer=optimism_inquirer, msg_aggregator=self.msg_aggregator)  # noqa: E501
-        evm_accounting_aggregators = EVMAccountingAggregators(aggregators=[
-            ethereum_accountant,
-            optimism_accountant,
-        ])
         self.accountant = Accountant(
             db=self.data.db,
             msg_aggregator=self.msg_aggregator,
-            evm_accounting_aggregators=evm_accounting_aggregators,
+            chains_aggregator=self.chains_aggregator,
             premium=self.premium,
         )
         self.events_historian = EventsHistorian(
@@ -610,7 +598,7 @@ class Rotkehlchen:
             addresses=list(addresses_to_account_data.keys()),
         )
 
-        xpub_mappings: dict['XpubData', list[SingleBlockchainAccountData]] = {}
+        xpub_mappings: dict[XpubData, list[SingleBlockchainAccountData]] = {}
         for address, xpub_entry in address_to_xpub_mappings.items():
             if xpub_entry not in xpub_mappings:
                 xpub_mappings[xpub_entry] = []
@@ -1106,7 +1094,7 @@ class Rotkehlchen:
                 for evm_manager in self.chains_aggregator.iterate_evm_chain_managers():
                     connected_nodes[evm_manager.node_inquirer.chain_name] = [node.name for node in evm_manager.node_inquirer.get_connected_nodes()]  # noqa: E501
                 result['connected_nodes'] = connected_nodes
-                result['last_data_upload_ts'] = Timestamp(self.premium_sync_manager.last_data_upload_ts)  # noqa: E501
+                result['last_data_upload_ts'] = Timestamp(self.premium_sync_manager.last_remote_data_upload_ts)  # noqa: E501
         return result
 
     def shutdown(self) -> None:

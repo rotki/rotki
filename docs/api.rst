@@ -1107,10 +1107,9 @@ Query the latest price of assets
                 "cryptocompare": 2,
                 "uniswapv2": 3,
                 "uniswapv3": 4,
-                "saddle": 5,
-                "manualcurrent": 6,
-                "blockchain": 7,
-                "fiat": 8
+                "manualcurrent": 5,
+                "blockchain": 6,
+                "fiat": 7
               }
           },
           "message": ""
@@ -3871,8 +3870,8 @@ Statistics for netvalue over time
    :statuscode 409: No user is currently logged in or currently logged in user does not have a premium subscription.
    :statuscode 500: Internal rotki error.
 
-Statistics for asset balance over time
-======================================
+Statistics for asset or collection balance over time
+=====================================================
 
 .. http:post:: /api/(version)/statistics/balance
 
@@ -3880,7 +3879,7 @@ Statistics for asset balance over time
       This endpoint is only available for premium users
 
 
-   Doing a POST on the statistics asset balance over time endpoint will return all saved balance entries for an asset. Optionally you can filter for a specific time range by providing appropriate arguments.
+   Doing a POST on the statistics asset/collection balance over time endpoint will return all saved balance entries for an asset. Optionally you can filter for a specific time range by providing appropriate arguments. Depending on the given argument this will either query a single asset or a collection of assets.
 
 
    **Example Request**:
@@ -3895,10 +3894,8 @@ Statistics for asset balance over time
 
    :reqjson int from_timestamp: The timestamp after which to return saved balances for the asset. If not given zero is considered as the start.
    :reqjson int to_timestamp: The timestamp until which to return saved balances for the asset. If not given all balances until now are returned.
-   :reqjson string asset: Identifier of the asset.
-   :param int from_timestamp: The timestamp after which to return saved balances for the asset. If not given zero is considered as the start.
-   :param int to_timestamp: The timestamp until which to return saved balances for the asset. If not given all balances until now are returned.
-   :param string asset: Identifier of the asset.
+   :reqjson string asset: Identifier of the asset. This is mutually exclusive with the collection id. If this is given then only a single asset's balances will be queried. If not given a collection_id MUST be given.
+   :reqjson integer collection_id: Collection id to query. This is mutually exclusive with the asset. If this is given then combined balances of all assets of the collection are returned. If not given an asset MUST be given.
 
    **Example Response**:
 
@@ -5245,7 +5242,6 @@ Export PnL report debug data
                     "cryptocompare",
                     "uniswapv2",
                     "uniswapv3",
-                    "saddle"
                 ],
                 "historical_price_oracles": ["manual", "cryptocompare", "coingecko"],
                 "taxable_ledger_actions": [
@@ -5812,6 +5808,7 @@ Querying periodic data
       }
 
    :resjson int last_balance_save: The last time (unix timestamp) at which balances were saved in the database.
+   :resjson int last_data_upload_ts: The last time (unix timestamp) at which a new DB was pushed to the remote as backup.
    :resjson object connected_nodes: A dictionary containing the evm chain name and a list of connected nodes.
    :statuscode 200: Data were queried successfully.
    :statuscode 409: No user is currently logged in.
@@ -6563,6 +6560,8 @@ Getting Aave stats
       Host: localhost:5042
 
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
+   :reqjson int from_timestamp: Timestamp from which to query aave historical data. If not given 0 is implied.
+   :reqjson int to_timestamp: Timestamp until which to query aave historical data. If not given current timestamp is implied.
 
    **Example Response**:
 
@@ -7569,7 +7568,7 @@ Getting Uniswap V3 balances
    :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
 
 Getting Uniswap/Sushiswap events
-=========================
+================================
 
 .. http:get:: /api/(version)/blockchains/eth/modules/{module}/stats
 
@@ -8610,19 +8609,22 @@ Querying ethereum airdrops
                   "1inch": {
                       "amount": "675.55",
                       "asset": "eip155:1/erc20:0x111111111117dC0aa78b770fA6A738034120C302",
-                      "link": "https://app.uniswap.org/"
+                      "link": "https://app.uniswap.org/",
+                      "claimed: false
                   }
               },
               "0x0B89f648eEcCc574a9B7449B5242103789CCD9D7": {
                   "1inch": {
                       "amount": "1823.23",
                       "asset": "eip155:1/erc20:0x111111111117dC0aa78b770fA6A738034120C302",
-                      "link": "https://1inch.exchange/"
+                      "link": "https://1inch.exchange/",
+                      "claimed: false
                   },
                   "uniswap": {
                       "amount": "400",
                       "asset": "eip155:1/erc20:0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984",
-                      "link": "https://app.uniswap.org/"
+                      "link": "https://app.uniswap.org/",
+                      "claimed: true
                   }
               },
           "message": ""
@@ -10106,7 +10108,7 @@ Data imports
 
       {"source": "cointracking", "filepath": "/path/to/data/file", "timestamp_format": "%d/%m/%Y %H:%M:%S"}
 
-   :reqjson str source: The source of the data to import. Valid values are ``"cointracking"``, ``"cryptocom"``, ``"blockfi_transactions"``, ``"blockfi_trades"``, ``"nexo"``,  ``"shapeshift_trades"``, ``"uphold_transactions"``, ``"bisq_trades"``, ``"binance"``, ``"rotki_events"``, ``"rotki_trades"``, ``"bitcoin_tax"``.
+   :reqjson str source: The source of the data to import. Valid values are ``"cointracking"``, ``"cryptocom"``, ``"blockfi_transactions"``, ``"blockfi_trades"``, ``"nexo"``,  ``"shapeshift_trades"``, ``"uphold_transactions"``, ``"bitmex_wallet_history"``, ``"bisq_trades"``, ``"binance"``, ``"rotki_events"``, ``"rotki_trades"``, ``"bitcoin_tax"``.
    :reqjson str filepath: The filepath to the data for importing
    :reqjson str timestamp_format: Optional. Custom format to use for dates in the CSV file. Should follow rules at `Datetime docs <https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes>`__.
 

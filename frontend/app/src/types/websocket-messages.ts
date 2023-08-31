@@ -78,6 +78,14 @@ export const DbUpgradeStatusData = z.object({
 
 export type DbUpgradeStatusData = z.infer<typeof DbUpgradeStatusData>;
 
+export const DbUploadResult = z.object({
+  uploaded: z.boolean(),
+  actionable: z.boolean(),
+  message: z.string().nullable()
+});
+
+export type DbUploadResult = z.infer<typeof DbUploadResult>;
+
 export const DataMigrationStatusData = z.object({
   startVersion: z.number().nonnegative(),
   targetVersion: z.number().nonnegative(),
@@ -98,7 +106,8 @@ export type MigratedAddresses = z.infer<typeof MigratedAddresses>;
 export const NewDetectedToken = z.object({
   tokenIdentifier: z.string(),
   seenTxHash: z.string().nullish(),
-  seenDescription: z.string().nullish()
+  seenDescription: z.string().nullish(),
+  isIgnored: z.boolean().optional()
 });
 
 export type NewDetectedToken = z.infer<typeof NewDetectedToken>;
@@ -130,7 +139,8 @@ export const SocketMessageType = {
   EVM_ACCOUNTS_DETECTION: 'evm_accounts_detection',
   NEW_EVM_TOKEN_DETECTED: 'new_evm_token_detected',
   MISSING_API_KEY: 'missing_api_key',
-  REFRESH_BALANCES: 'refresh_balances'
+  REFRESH_BALANCES: 'refresh_balances',
+  DB_UPLOAD_RESULT: 'database_upload_result'
 } as const;
 
 export type SocketMessageType =
@@ -171,6 +181,11 @@ const DbUpgradeStatusMessage = z.object({
   data: DbUpgradeStatusData
 });
 
+const DbUploadResultMessage = z.object({
+  type: z.literal(SocketMessageType.DB_UPLOAD_RESULT),
+  data: DbUploadResult
+});
+
 const DataMigrationStatusMessage = z.object({
   type: z.literal(SocketMessageType.DATA_MIGRATION_STATUS),
   data: DataMigrationStatusData
@@ -208,6 +223,7 @@ export const WebsocketMessage = UnknownWebsocketMessage.or(
   .or(MigratedAccountsMessage)
   .or(NewEvmTokenDetectedMessage)
   .or(MissingApiKeyMessage)
-  .or(RefreshBalancesMessage);
+  .or(RefreshBalancesMessage)
+  .or(DbUploadResultMessage);
 
 export type WebsocketMessage = z.infer<typeof WebsocketMessage>;

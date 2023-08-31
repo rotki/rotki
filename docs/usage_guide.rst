@@ -148,6 +148,8 @@ Rotki calculates everything, including your total profit/loss during the PnL rep
 Customizing the application settings
 ====================================
 
+You can go to setting menu via :menuselection:`User icon --> Settings`.
+
 By choosing the "General" settings button you can customize some general application settings.
 
 
@@ -303,6 +305,11 @@ For privacy concerns, it is possible to allow all or only a certain list of doma
 
 More details here `<https://medium.com/@alxlpsc/critical-privacy-vulnerability-getting-exposed-by-metamask-693c63c2ce94>`_
 
+
+External Service Settings
+-------------------------
+
+You can define rules for retry and timeout for external service calls made by rotki.
 
 Frontend only settings
 -----------------------
@@ -565,11 +572,8 @@ query the specified addresses for the enabled modules. This can considerably imp
 Activating/Deactivating Modules
 ----------------------------------
 
-You can activate a module by selecting it from the dropdown menu that appears when you search in the "Select modules" input field.
-An active module will be visible in the input. In the screenshot above for example the Compound and MakerDAO DSR modules are active.
-
-To disable a module you need to press the (x) button at the end of the entry.
-
+You can see all modules in the table (2). Some modules are activated by default.
+You can enable/disable a module by toggling the switch on the right.
 After enabling or disabling a module you need to re-login again for the changes to take effect.
 
 Selecting Addresses
@@ -644,7 +648,7 @@ If all went well, you should be able to see your newly added exchange. If not pl
 You also have the option to enable/disable synchronization for the connected exchanges. Usually, you may want to disable the synchronization to prevent your IP getting banned because of too many syncs.
 
 .. image:: images/rotki_add_exchange_3.png
-   :alt: Add API keys for a new exchange
+   :alt: List of connected exchanges
    :align: center
 
 .. _api-key-permissions:
@@ -715,6 +719,13 @@ You can import data from `binance.com <https://binance.com/>`_ into rotki by cli
 Rotki can import a CSV data file exported from Binance. But due to Binance's csv format some data may be not importable. You will see warnings if this happens.
 
 By importing a csv file you are able to import more than with the API. Particularly: Trades, Deposits and Withdrawals, Small assets exchange BNB, ETH 2.0 Staking and ETH 2.0 Staking Rewards, Launchpool Interests, POS savings interest, POS savings purchase, POS savings redemption.
+
+BitMEX.com
+=============
+
+You can import data from `bitmex.com <https://bitmex.com/>`_ into rotki by clicking on "Import Data" on the left sidebar and then following the instructions.
+
+Rotki can import a CSV data file exported from BitMEX. You may see warnings if data can't be imported. If this happens please reach out to us on discord or open an issue on github.
 
 ShapeShift.com
 ====================
@@ -843,7 +854,19 @@ Adding and Removing Blockchain Accounts
 
 Rotki allows to track balances of blockchain accounts.
 
-To add or modify an account navigate to the "Blockchain Balances" sub-page and click the large "+" icon. Now choose the blockchain on which you want to add an account (for now only Bitcoin, Bitcoin Cash, Ethereum, Optimism, Kusama, Polkadot and Avalanche chains are supported). Then type or paste the address in the "Account" textbox and press the "Save" Button. Note that you can add multiple accounts if you click the "Add multiple addresses" checkbox and provide a comma separated list of addresses.
+For now, the following chains are supported in Rotki (and the list will be growing as we add more chains in the future):
+
+- Ethereum
+- Bitcoin
+- Bitcoin Cash
+- Kusuma
+- Avalanche
+- Polkadot
+- Optimism
+- Polygon PoS
+- Arbitrum One
+
+To add or modify an account navigate to the "Blockchain Balances" sub-page and click the large "+" icon. Now choose the blockchain on which you want to add an account. Then type or paste the address in the "Account" textbox and press the "Save" Button. Note that you can add multiple accounts if you click the "Add multiple addresses" checkbox and provide a comma separated list of addresses.
 
 If the selected chain is an EVM chain you will see "Add to all supported EVM chains" checkbox. It is checked by default and it means that rotki will try to add the address for all EVM chains. If the address is a contract in Ethereum mainnet it will only be added to Ethereum. Otherwise for each chain rotki will check whether the address had any activity there and will add only if it has at least one transaction. If you uncheck the checkbox, then the address will only be added to the selected chain.
 
@@ -1102,7 +1125,7 @@ If you stake LQTY in the protocol you can see stability pool deposits, staked am
    :alt: See your Liquity staking gains
    :align: center
 
-On the left side, we display information for your current deposited amount of ``LUSD`` in the stability pool along with the ``ETH`` and ``LQTY`` rewards that you haven't claimed yet. In the right side, we display the staked ``LQTY`` and the ``ETH`` and ``LUSD`` that are available to claim. 
+On the left side, we display information for your current deposited amount of ``LUSD`` in the stability pool along with the ``ETH`` and ``LQTY`` rewards that you haven't claimed yet. In the right side, we display the staked ``LQTY`` and the ``ETH`` and ``LUSD`` that are available to claim.
 
 The Liquity statistics are calculated using the queried events and you might need to wait for some time until all the events are queried to get the final values. The values in terms of USD can be displayed using prices at the moment of the different events (``historical``) or using prices at the present (``current``).
 
@@ -1356,7 +1379,7 @@ There are also some other fields that are completely optional and expand if you 
 6. And here add the underlying token's weight.
 7. Here you can edit or delete underlying token address/weights. Note: The weight of the underlying tokens should add up to 100%.
 
-**NOTE: Underlying tokens only apply to asset type of ``"EVM Token"``.**
+**NOTE: Underlying tokens only apply to asset type of ``EVM Token``.**
 
 Adding/editing a custom asset
 ===============================
@@ -1791,6 +1814,7 @@ Global search
 You can use global search provided to speed up your actions by clicking icon on top bar, or using shortcut :kbd:`Control-/` (:kbd:`Command-/` if you are using Mac).
 
 Some actions provided by this global search:
+
 - Navigate to any page in rotki
 - Some basic actions such as adding a new trade, or new ledger action.
 - Go to certain owned asset overview page.
@@ -1856,7 +1880,14 @@ Rotki provides an addressbook for EVM blockchains. This replaces addresses with 
    :alt: Displaying behaviour of an EVM address book
    :align: center
 
-**NOTE:** The address resolution order can be configured in the general user settings. The default order is: Private Address Book -> Blockchain Account Labels -> Global Address Book -> Ethereum Tokens -> Hardcoded Mappings -> ENS names.
+**NOTE:** The address resolution order can be configured in the general user settings. The default order is:
+
+1. Private Address Book
+2. Blockchain Account Labels
+3. Global Address Book
+4. Ethereum Tokens
+5. Hardcoded Mappings
+6. ENS names.
 
 
 .. _set-the-backend-s-arguments:

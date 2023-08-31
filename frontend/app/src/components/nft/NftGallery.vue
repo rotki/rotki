@@ -236,7 +236,7 @@ const sortNfts = (
             />
           </VCol>
           <VCol :cols="mobile ? '12' : '6'">
-            <VCard flat>
+            <VSheet flat>
               <div>
                 <VAutocomplete
                   v-model="selectedCollection"
@@ -251,7 +251,7 @@ const sortNfts = (
                   dense
                 />
               </div>
-            </VCard>
+            </VSheet>
           </VCol>
           <VCol :cols="mobile ? '12' : '6'">
             <SortingSelector

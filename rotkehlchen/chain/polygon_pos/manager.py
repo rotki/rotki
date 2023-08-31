@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING
 
 from rotkehlchen.chain.evm.manager import EvmManager
 
+from .accountant import PolygonPOSAccountingAggregator
 from .decoding.decoder import PolygonPOSTransactionDecoder
 from .tokens import PolygonPOSTokens
 from .transactions import PolygonPOSTransactions
@@ -33,5 +34,9 @@ class PolygonPOSManager(EvmManager):
                 polygon_pos_inquirer=node_inquirer,
                 transactions=transactions,
             ),
+            accounting_aggregator=PolygonPOSAccountingAggregator(
+                node_inquirer=node_inquirer,
+                msg_aggregator=transactions.msg_aggregator,
+            ),
         )
-        self.node_inquirer: 'PolygonPOSInquirer'  # just to make the type specific
+        self.node_inquirer: PolygonPOSInquirer  # just to make the type specific

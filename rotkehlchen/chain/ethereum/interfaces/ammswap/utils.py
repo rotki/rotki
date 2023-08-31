@@ -10,7 +10,8 @@ from rotkehlchen.chain.ethereum.interfaces.ammswap.types import (
     LiquidityPoolAsset,
 )
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
-from rotkehlchen.constants.misc import ZERO, ZERO_PRICE
+from rotkehlchen.constants import ZERO
+from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChainID, ChecksumEvmAddress

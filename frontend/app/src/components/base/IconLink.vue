@@ -1,17 +1,13 @@
 <script setup lang="ts">
 import { toRefs } from 'vue';
 
-const props = defineProps({
-  text: {
-    type: String,
-    required: false,
-    default: ''
-  },
-  url: {
-    type: String,
-    required: true
-  }
-});
+const props = withDefaults(
+  defineProps<{
+    text?: string;
+    url: string;
+  }>(),
+  { text: '' }
+);
 
 const { url } = toRefs(props);
 const { dark } = useTheme();

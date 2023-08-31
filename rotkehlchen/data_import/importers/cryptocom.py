@@ -7,8 +7,9 @@ from typing import Any
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
 from rotkehlchen.assets.converters import asset_from_cryptocom
+from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_USD
-from rotkehlchen.constants.misc import ONE, ZERO, ZERO_PRICE
+from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.data_import.utils import BaseExchangeImporter, UnsupportedCSVEntry
 from rotkehlchen.db.drivers.gevent import DBCursor
 from rotkehlchen.errors.asset import UnknownAsset
@@ -38,7 +39,7 @@ log = RotkehlchenLogsAdapter(logger)
 class CryptocomImporter(BaseExchangeImporter):
     def _consume_cryptocom_entry(
             self,
-            cursor: DBCursor,
+            write_cursor: DBCursor,
             csv_row: dict[str, Any],
             timestamp_format: str = '%Y-%m-%d %H:%M:%S',
     ) -> None:
@@ -119,7 +120,7 @@ class CryptocomImporter(BaseExchangeImporter):
                 link='',
                 notes=notes,
             )
-            self.add_trade(cursor, trade)
+            self.add_trade(write_cursor, trade)
 
         elif row_type in (
             'crypto_withdrawal',
@@ -147,7 +148,7 @@ class CryptocomImporter(BaseExchangeImporter):
                 fee_asset=asset,
                 link='',
             )
-            self.add_asset_movement(cursor, asset_movement)
+            self.add_asset_movement(write_cursor, asset_movement)
         elif row_type in (
             'airdrop_to_exchange_transfer',
             'mco_stake_reward',
@@ -178,7 +179,7 @@ class CryptocomImporter(BaseExchangeImporter):
                 link=None,
                 notes=notes,
             )
-            self.add_ledger_action(cursor, action)
+            self.add_ledger_action(write_cursor, action)
         elif row_type in ('crypto_payment', 'reimbursement_reverted', 'card_cashback_reverted'):
             asset = asset_from_cryptocom(csv_row['Currency'])
             amount = abs(deserialize_asset_amount(csv_row['Amount']))
@@ -194,7 +195,7 @@ class CryptocomImporter(BaseExchangeImporter):
                 link=None,
                 notes=notes,
             )
-            self.add_ledger_action(cursor, action)
+            self.add_ledger_action(write_cursor, action)
         elif row_type == 'invest_deposit':
             asset = asset_from_cryptocom(csv_row['Currency'])
             amount = deserialize_asset_amount(csv_row['Amount'])
@@ -210,7 +211,7 @@ class CryptocomImporter(BaseExchangeImporter):
                 fee_asset=fee_currency,
                 link='',
             )
-            self.add_asset_movement(cursor, asset_movement)
+            self.add_asset_movement(write_cursor, asset_movement)
         elif row_type == 'invest_withdrawal':
             asset = asset_from_cryptocom(csv_row['Currency'])
             amount = deserialize_asset_amount(csv_row['Amount'])
@@ -226,7 +227,7 @@ class CryptocomImporter(BaseExchangeImporter):
                 fee_asset=fee_currency,
                 link='',
             )
-            self.add_asset_movement(cursor, asset_movement)
+            self.add_asset_movement(write_cursor, asset_movement)
         elif row_type == 'crypto_transfer':
             asset = asset_from_cryptocom(csv_row['Currency'])
             amount = deserialize_asset_amount(csv_row['Amount'])
@@ -247,7 +248,7 @@ class CryptocomImporter(BaseExchangeImporter):
                 link=None,
                 notes=notes,
             )
-            self.add_ledger_action(cursor, action)
+            self.add_ledger_action(write_cursor, action)
         elif row_type in (
             'crypto_earn_program_created',
             'crypto_earn_program_withdrawn',
@@ -287,7 +288,7 @@ class CryptocomImporter(BaseExchangeImporter):
 
     def _import_cryptocom_associated_entries(
             self,
-            cursor: DBCursor,
+            write_cursor: DBCursor,
             data: Any,
             tx_kind: str,
             timestamp_format: str = '%Y-%m-%d %H:%M:%S',
@@ -435,7 +436,7 @@ class CryptocomImporter(BaseExchangeImporter):
                         link='',
                         notes=notes,
                     )
-                    self.add_trade(cursor, trade)
+                    self.add_trade(write_cursor, trade)
 
         # Compute investments profit
         if len(investments_withdrawals) != 0:
@@ -498,9 +499,9 @@ class CryptocomImporter(BaseExchangeImporter):
                             link=None,
                             notes=f'Stake profit for asset {asset}',
                         )
-                        self.add_ledger_action(cursor, action)
+                        self.add_ledger_action(write_cursor, action)
 
-    def _import_csv(self, cursor: DBCursor, filepath: Path, **kwargs: Any) -> None:
+    def _import_csv(self, write_cursor: DBCursor, filepath: Path, **kwargs: Any) -> None:
         """May raise:
         - InputError if one of the rows is malformed
         """
@@ -510,7 +511,7 @@ class CryptocomImporter(BaseExchangeImporter):
                 #  Notice: Crypto.com csv export gathers all swapping entries (`lockup_swap_*`,
                 # `crypto_wallet_swap_*`, ...) into one entry named `dynamic_coin_swap_*`.
                 self._import_cryptocom_associated_entries(
-                    cursor=cursor,
+                    write_cursor=write_cursor,
                     data=data,
                     tx_kind='dynamic_coin_swap',
                     **kwargs,
@@ -521,7 +522,7 @@ class CryptocomImporter(BaseExchangeImporter):
                 next(data)
 
                 self._import_cryptocom_associated_entries(
-                    cursor=cursor,
+                    write_cursor=write_cursor,
                     data=data,
                     tx_kind='dust_conversion',
                     **kwargs,
@@ -529,11 +530,11 @@ class CryptocomImporter(BaseExchangeImporter):
                 csvfile.seek(0)
                 next(data)
 
-                self._import_cryptocom_associated_entries(cursor, data, 'interest_swap', **kwargs)
+                self._import_cryptocom_associated_entries(write_cursor, data, 'interest_swap', **kwargs)  # noqa: E501
                 csvfile.seek(0)
                 next(data)
 
-                self._import_cryptocom_associated_entries(cursor, data, 'invest', **kwargs)
+                self._import_cryptocom_associated_entries(write_cursor, data, 'invest', **kwargs)
                 csvfile.seek(0)
                 next(data)
             except KeyError as e:
@@ -543,7 +544,7 @@ class CryptocomImporter(BaseExchangeImporter):
 
             for row in data:
                 try:
-                    self._consume_cryptocom_entry(cursor, row, **kwargs)
+                    self._consume_cryptocom_entry(write_cursor, row, **kwargs)
                 except UnknownAsset as e:
                     self.db.msg_aggregator.add_warning(
                         f'During cryptocom CSV import found action with unknown '

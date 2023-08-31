@@ -3,8 +3,10 @@ import pytest
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.safe.constants import CPT_SAFE_MULTISIG
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
@@ -254,6 +256,84 @@ def test_execution_failure(database, ethereum_inquirer, ethereum_accounts):
             notes=f'Failed to execute safe transaction 0x4663a55668527aaa4c7811e8277c7258b5e43af4269a651b1d1cf6ab24293b1e for multisig {multisig_address}',  # noqa: E501
             counterparty=CPT_SAFE_MULTISIG,
             address=multisig_address,
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('ethereum_accounts', [['0x96399Ddb62d833029fbEf774d1FE044AF33E98Ef']])
+def test_safe_creation(database, ethereum_inquirer, ethereum_accounts):
+    """Test that creation of new safes is tracked"""
+    tx_hex = deserialize_evm_tx_hash('0xa9e3c581f39403a0a2eb5a3e604be715c0a4ee8aa4bcc9bddece5c268b47e233')  # noqa: E501
+    evmhash = deserialize_evm_tx_hash(tx_hex)
+    user_address = ethereum_accounts[0]
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hex,
+    )
+    timestamp = TimestampMS(1691846051000)
+    gas_amount_str = '0.004928138478008416'
+    expected_events = [
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas_amount_str)),
+            location_label=user_address,
+            notes=f'Burned {gas_amount_str} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            balance=Balance(),
+            location_label=user_address,
+            notes='Create a new safe with a threshold of 2 and owners 0x95a47323EF5B86fa56F3960B86C2F2e78325b402,0x19e18956dfD3836fB8f9c422C8e306C787F0bE00',  # noqa: E501
+            counterparty=CPT_SAFE_MULTISIG,
+            address=string_to_evm_address('0x2eb2B9300036807A7674997e6c6874601275EDDD'),
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('polygon_pos_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])  # yabir.eth  # noqa: E501
+def test_safe_spam(database, polygon_pos_inquirer, polygon_pos_accounts):
+    """Test that a safe transaction if from an unrelated account, does not appear in events"""
+    tx_hex = deserialize_evm_tx_hash('0xefb07f4d166d6887eada96e61fd6821bfdf889d5435d75ab44d4ca0fa7627396')  # noqa: E501
+    evmhash = deserialize_evm_tx_hash(tx_hex)
+    user_address = polygon_pos_accounts[0]
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=polygon_pos_inquirer,
+        database=database,
+        tx_hash=tx_hex,
+    )
+    timestamp = TimestampMS(1651102781000)
+    amount_str = '0.00637462961483049'
+    spam_contract = '0xC63c477465a792537D291ADb32Ed15c0095E106B'
+    expected_events = [
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=431,
+            timestamp=timestamp,
+            location=Location.POLYGON_POS,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=Asset('eip155:137/erc20:0x580A84C73811E1839F75d86d75d88cCa0c241fF4'),
+            balance=Balance(amount=FVal(amount_str)),
+            location_label=user_address,
+            notes=f'Receive {amount_str} QI from {spam_contract} to {user_address}',
+            address=spam_contract,
         ),
     ]
     assert events == expected_events

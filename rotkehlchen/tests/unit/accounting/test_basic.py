@@ -20,8 +20,11 @@ from rotkehlchen.tests.utils.constants import A_CHF, A_XMR
 from rotkehlchen.tests.utils.history import prices
 from rotkehlchen.tests.utils.messages import no_message_errors
 from rotkehlchen.types import (
-    EVM_CHAINS_WITH_TRANSACTIONS, CostBasisMethod, Location,
-    Timestamp, TradeType,
+    EVM_CHAINS_WITH_TRANSACTIONS,
+    CostBasisMethod,
+    Location,
+    Timestamp,
+    TradeType,
 )
 
 if TYPE_CHECKING:
@@ -296,7 +299,7 @@ def test_asset_and_price_not_found_in_history_processing(accountant):
     errors = accountant.msg_aggregator.consume_errors()
     assert len(errors) == 0
     assert len(accountant.pots[0].cost_basis.missing_prices) == 1
-    assert list(accountant.pots[0].cost_basis.missing_prices)[0] == MissingPrice(
+    assert next(iter(accountant.pots[0].cost_basis.missing_prices)) == MissingPrice(
         from_asset=fgp,
         to_asset=A_EUR,
         time=time,

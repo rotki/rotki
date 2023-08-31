@@ -13,8 +13,8 @@ import requests
 from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.converters import asset_from_poloniex
+from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_LEND
-from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
@@ -358,7 +358,7 @@ class Poloniex(ExchangeInterface):
         except RemoteError as e:
             msg = (
                 'Poloniex API request failed. Could not reach poloniex due '
-                'to {}'.format(e)
+                f'to {e}'
             )
             log.error(msg)
             return None, msg

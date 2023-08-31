@@ -113,7 +113,10 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
       const balances = get(manualBalances);
 
       for (const balance of balances) {
-        if (balance.asset !== asset) {
+        const associatedAsset = get(
+          getAssociatedAssetIdentifier(balance.asset)
+        );
+        if (associatedAsset !== asset) {
           continue;
         }
         breakdown.push({

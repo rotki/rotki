@@ -161,6 +161,11 @@ CREATE TABLE IF NOT EXISTS evm_tokens (
 # for USDC we would create a row in asset_collections and then we would create as many entries in
 # the multiasset_mappings as USDC tokens we have in our database. This table allows to create a
 # relation between all the assets that should be treated as the same.
+#
+# TODO: This table needs to change ASAP in the next global DB upgrade. It's missing:
+# a composite primary key of ocllection_id and asset. The combination of those has to be unique
+# At the moment it's not a serious problem as we input all mappings manually so this
+# is not editable by the user. But needs to be fixed.
 DB_CREATE_MULTIASSET_MAPPINGS = """
 CREATE TABLE IF NOT EXISTS multiasset_mappings(
     collection_id INTEGER NOT NULL,
@@ -273,6 +278,15 @@ CREATE TABLE IF NOT EXISTS general_cache (
 );
 """
 
+DB_CREATE_UNIQUE_CACHE = """
+CREATE TABLE IF NOT EXISTS unique_cache (
+    key TEXT NOT NULL PRIMARY KEY,
+    value TEXT NOT NULL,
+    last_queried_ts INTEGER NOT NULL
+);
+"""
+
+
 DB_CREATE_CONTRACT_ABI = """
 CREATE TABLE IF NOT EXISTS contract_abi (
     id INTEGER NOT NULL PRIMARY KEY,
@@ -311,6 +325,7 @@ BEGIN TRANSACTION;
 {DB_CREATE_CUSTOM_ASSET}
 {DB_CREATE_ASSET_COLLECTIONS}
 {DB_CREATE_GENERAL_CACHE}
+{DB_CREATE_UNIQUE_CACHE}
 {DB_CREATE_CONTRACT_ABI}
 {DB_CREATE_CONTRACT_DATA}
 {DB_CREATE_DEFAULT_RPC_NODES}

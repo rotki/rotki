@@ -12,8 +12,8 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.modules.curve.accountant import CurveAccountant
 from rotkehlchen.chain.ethereum.modules.curve.constants import CPT_CURVE
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
+from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_DAI, A_ETH, A_USDC, A_USDT
-from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
 from rotkehlchen.types import Location, Price, Timestamp

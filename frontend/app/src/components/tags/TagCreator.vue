@@ -72,10 +72,11 @@ const randomize = () => {
             icon
             text
             class="tag-creator__random"
+            color="primary"
             v-on="on"
             @click="randomize()"
           >
-            <VIcon color="primary">mdi-refresh</VIcon>
+            <RuiIcon name="shuffle-line" />
           </VBtn>
         </template>
         <span>

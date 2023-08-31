@@ -2,6 +2,7 @@ import itertools
 import sqlite3
 from pathlib import Path
 from shutil import copyfile
+from typing import TYPE_CHECKING
 from uuid import uuid4
 
 import pytest
@@ -16,38 +17,53 @@ from rotkehlchen.assets.asset import (
 )
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.types import AssetData, AssetType
-from rotkehlchen.assets.utils import get_or_create_evm_token, symbol_to_asset_or_token
+from rotkehlchen.assets.utils import (
+    check_if_spam_token,
+    get_or_create_evm_token,
+    symbol_to_asset_or_token,
+)
+from rotkehlchen.chain.ethereum.modules.compound.constants import CPT_COMPOUND
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_BAT, A_CRV, A_DAI, A_ETH, A_LUSD, A_PICKLE, A_USD
-from rotkehlchen.constants.misc import NFT_DIRECTIVE, ONE
-from rotkehlchen.constants.resolver import ethaddress_to_identifier
+from rotkehlchen.constants.misc import NFT_DIRECTIVE
+from rotkehlchen.constants.resolver import ethaddress_to_identifier, evm_address_to_identifier
 from rotkehlchen.db.custom_assets import DBCustomAssets
 from rotkehlchen.db.filtering import CustomAssetsFilterQuery
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.globaldb.cache import (
-    globaldb_delete_general_cache,
-    globaldb_get_general_cache_last_queried_ts,
     globaldb_get_general_cache_values,
+    globaldb_get_unique_cache_last_queried_ts_by_key,
+    globaldb_get_unique_cache_value,
     globaldb_set_general_cache_values,
+    globaldb_set_unique_cache_value,
 )
 from rotkehlchen.globaldb.handler import GLOBAL_DB_VERSION, GlobalDBHandler
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.serialization.deserialize import deserialize_asset_amount
 from rotkehlchen.tests.fixtures.globaldb import create_globaldb
 from rotkehlchen.tests.utils.factories import make_evm_address
-from rotkehlchen.tests.utils.globaldb import create_initial_globaldb_test_tokens
+from rotkehlchen.tests.utils.globaldb import (
+    create_initial_globaldb_test_tokens,
+    globaldb_get_general_cache_last_queried_ts,
+)
 from rotkehlchen.types import (
+    SPAM_PROTOCOL,
+    CacheType,
     ChainID,
     EvmTokenKind,
-    GeneralCacheType,
     Location,
     Price,
     Timestamp,
     TradeType,
 )
 from rotkehlchen.utils.misc import ts_now
+
+if TYPE_CHECKING:
+    from rotkehlchen.db.dbhandler import DBHandler
+
 
 selfkey_address = string_to_evm_address('0x4CC19356f2D37338b9802aa8E8fc58B0373296E7')
 selfkey_id = ethaddress_to_identifier(selfkey_address)
@@ -948,22 +964,22 @@ def test_general_cache(globaldb):
         # write some values
         globaldb_set_general_cache_values(
             write_cursor=write_cursor,
-            key_parts=[GeneralCacheType.CURVE_LP_TOKENS],
+            key_parts=(CacheType.CURVE_POOL_TOKENS,),
             values=['abc'],
         )
         globaldb_set_general_cache_values(
             write_cursor=write_cursor,
-            key_parts=[GeneralCacheType.CURVE_POOL_TOKENS, '123'],
+            key_parts=(CacheType.CURVE_POOL_TOKENS, '123'),
             values=['xyz', 'klm'],
         )
         globaldb_set_general_cache_values(
             write_cursor=write_cursor,
-            key_parts=[GeneralCacheType.CURVE_POOL_ADDRESS, '123'],
+            key_parts=(CacheType.CURVE_LP_TOKENS, '123'),
             values=['abc', 'klm'],
         )
         globaldb_set_general_cache_values(
             write_cursor=write_cursor,
-            key_parts=[GeneralCacheType.CURVE_POOL_ADDRESS, '456'],
+            key_parts=(CacheType.CURVE_LP_TOKENS, '456'),
             values=['def', 'klm'],
         )
 
@@ -971,27 +987,27 @@ def test_general_cache(globaldb):
         # check that we can read saved values
         values_0 = globaldb_get_general_cache_values(
             cursor=cursor,
-            key_parts=[GeneralCacheType.CURVE_LP_TOKENS],
+            key_parts=(CacheType.CURVE_POOL_TOKENS,),
         )
         assert values_0 == ['abc']
         values_1 = globaldb_get_general_cache_values(
             cursor=cursor,
-            key_parts=[GeneralCacheType.CURVE_POOL_TOKENS, '123'],
+            key_parts=(CacheType.CURVE_POOL_TOKENS, '123'),
         )
         assert values_1 == ['klm', 'xyz']
         values_2 = globaldb_get_general_cache_values(
             cursor=cursor,
-            key_parts=[GeneralCacheType.CURVE_POOL_ADDRESS, '123'],
+            key_parts=(CacheType.CURVE_LP_TOKENS, '123'),
         )
         assert values_2 == ['abc', 'klm']
         values_3 = globaldb_get_general_cache_values(
             cursor=cursor,
-            key_parts=[GeneralCacheType.CURVE_POOL_ADDRESS, '456'],
+            key_parts=(CacheType.CURVE_LP_TOKENS, '456'),
         )
         assert values_3 == ['def', 'klm']
         values_4 = globaldb_get_general_cache_values(
             cursor=cursor,
-            key_parts=[GeneralCacheType.CURVE_POOL_ADDRESS, 'NO VALUE'],
+            key_parts=(CacheType.CURVE_LP_TOKENS, 'NO VALUE'),
         )
         assert len(values_4) == 0
 
@@ -999,47 +1015,83 @@ def test_general_cache(globaldb):
         ts_test_end = ts_now()
         last_queried_ts_0 = globaldb_get_general_cache_last_queried_ts(
             cursor=cursor,
-            key_parts=[GeneralCacheType.CURVE_POOL_TOKENS, '123'],
+            key_parts=[CacheType.CURVE_POOL_TOKENS, '123'],
             value='xyz',
         )
         assert ts_test_end >= last_queried_ts_0 >= ts_test_start
         last_queried_ts_1 = globaldb_get_general_cache_last_queried_ts(
             cursor=cursor,
-            key_parts=[GeneralCacheType.CURVE_POOL_TOKENS, '123'],
+            key_parts=[CacheType.CURVE_POOL_TOKENS, '123'],
             value='NON-EXISTENT',
         )
         assert last_queried_ts_1 is None
 
-    # check that deletion works properly
+
+@pytest.mark.parametrize('run_globaldb_migrations', [False])
+def test_unique_cache(globaldb):
+    """
+    Test that the added unique cache table in the globaldb works properly.
+    Tests insertion, deletion and reading.
+    """
+    ts_test_start = ts_now()
     with globaldb.conn.write_ctx() as write_cursor:
-        globaldb_delete_general_cache(
+        # write some values
+        globaldb_set_unique_cache_value(
             write_cursor=write_cursor,
-            key_parts=[GeneralCacheType.CURVE_POOL_ADDRESS, '123'],
+            key_parts=(CacheType.CURVE_POOL_ADDRESS, '0x123'),
+            value='abc',
         )
-        values_5 = globaldb_get_general_cache_values(
-            cursor=write_cursor,
-            key_parts=[GeneralCacheType.CURVE_POOL_ADDRESS, '123'],
-        )
-        assert len(values_5) == 0
-        values_6 = globaldb_get_general_cache_values(
-            cursor=write_cursor,
-            key_parts=[GeneralCacheType.CURVE_POOL_ADDRESS, '456'],
-        )
-        assert len(values_6) == 2   # should have not been touched by the deletion above
-        globaldb_delete_general_cache(
+        globaldb_set_unique_cache_value(
             write_cursor=write_cursor,
-            key_parts=[GeneralCacheType.CURVE_POOL_ADDRESS, '456'],
+            key_parts=(CacheType.MAKERDAO_VAULT_ILK, '0x456'),
+            value='xyz',
         )
-        values_7 = globaldb_get_general_cache_values(
+        globaldb_set_unique_cache_value(
+            write_cursor=write_cursor,
+            key_parts=(CacheType.CURVE_GAUGE_ADDRESS, '123'),
+            value='abc',
+        )
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        # check that we can read saved values
+        values_0 = globaldb_get_unique_cache_value(
+            cursor=cursor,
+            key_parts=(CacheType.CURVE_POOL_ADDRESS, '0x123'),
+        )
+        assert values_0 == 'abc'
+        values_1 = globaldb_get_unique_cache_value(
+            cursor=cursor,
+            key_parts=(CacheType.MAKERDAO_VAULT_ILK, '0x456'),
+        )
+        assert values_1 == 'xyz'
+        values_2 = globaldb_get_unique_cache_value(
+            cursor=cursor,
+            key_parts=(CacheType.CURVE_GAUGE_ADDRESS, '123'),
+        )
+        assert values_2 == 'abc'
+        # check that timestamps were saved properly
+        ts_test_end = ts_now()
+        last_queried_ts_0 = globaldb_get_unique_cache_last_queried_ts_by_key(
+            cursor=cursor,
+            key_parts=(CacheType.CURVE_POOL_ADDRESS, '0x123'),
+        )
+        assert ts_test_end >= last_queried_ts_0 >= ts_test_start
+        last_queried_ts_1 = globaldb_get_unique_cache_last_queried_ts_by_key(
+            cursor=cursor,
+            key_parts=(CacheType.CURVE_POOL_ADDRESS, 'abc'),
+        )
+        assert last_queried_ts_1 == 0
+    with globaldb.conn.write_ctx() as write_cursor:
+        # check that value in db is overwritten and not appended.
+        globaldb_set_unique_cache_value(
+            write_cursor=write_cursor,
+            key_parts=(CacheType.CURVE_POOL_ADDRESS, '0x123'),
+            value='def',
+        )
+        values_3 = globaldb_get_unique_cache_value(
             cursor=write_cursor,
-            key_parts=[GeneralCacheType.CURVE_POOL_ADDRESS, '456'],
+            key_parts=(CacheType.CURVE_POOL_ADDRESS, '0x123'),
         )
-        assert len(values_7) == 0
-        values_8 = globaldb_get_general_cache_values(
-            cursor=write_cursor,
-            key_parts=[GeneralCacheType.CURVE_POOL_TOKENS, '123'],
-        )
-        assert values_8 == values_1
+        assert values_3 == 'def'
 
 
 def test_edit_token_with_missing_information(database):
@@ -1149,3 +1201,40 @@ def test_get_assets_missing_information_by_symbol(globaldb):
     assets = globaldb.get_assets_with_symbol('BPTTT')
     assert len(assets) == 1
     assert assets[0].name == 'Test token'
+
+
+def test_for_spam_tokens(database: 'DBHandler', ethereum_inquirer) -> None:
+    """Test different cases of spam assets that we already know"""
+    # $ aavereward.com
+    assert check_if_spam_token(EvmToken(ethaddress_to_identifier(string_to_evm_address('0x39cf57b4dECb8aE3deC0dFcA1E2eA2C320416288'))).symbol) is True  # noqa: E501
+    # Visit https://op-reward.xyz and claim rewards
+    assert check_if_spam_token(EvmToken(evm_address_to_identifier(address='0x168fbA6072EE467931484a418EDeb5FcC1B9fb79', chain_id=ChainID.OPTIMISM, token_type=EvmTokenKind.ERC20)).symbol) is True  # noqa: E501
+    # $ USDCGift.com <- Visit to claim bonus
+    assert check_if_spam_token(EvmToken(ethaddress_to_identifier(string_to_evm_address('0x68Ca006dB91312Cd60a2238Ce775bE5F9f738bBa'))).symbol) is True  # noqa: E501
+    # test adding now $RPL Claim at RPoolBonus.com
+    token = get_or_create_evm_token(
+        userdb=database,
+        chain_id=ChainID.ETHEREUM,
+        token_kind=EvmTokenKind.ERC20,
+        evm_address=string_to_evm_address('0x245151454C790EB870498e9E5B590145fAC1463F'),
+        evm_inquirer=ethereum_inquirer,
+    )
+    assert token.protocol == SPAM_PROTOCOL
+    with database.conn.read_ctx() as cursor:
+        assert token.identifier in database.get_ignored_asset_ids(cursor)
+
+
+def test_get_evm_tokens(globaldb):
+    tokens = globaldb.get_evm_tokens(chain_id=ChainID.POLYGON_POS)
+    assert tokens and not any(token.protocol == SPAM_PROTOCOL for token in tokens)
+    assert all(token.chain_id == ChainID.POLYGON_POS for token in tokens)
+    tokens = globaldb.get_evm_tokens(chain_id=ChainID.POLYGON_POS, ignore_spam=False)
+    assert tokens and any(token.protocol == SPAM_PROTOCOL for token in tokens)
+
+    tokens = globaldb.get_evm_tokens(chain_id=ChainID.ETHEREUM, protocol=CPT_COMPOUND)
+    assert tokens and all(token.protocol == CPT_COMPOUND for token in tokens)
+    tokens_without_exception = len(tokens)
+    exception_address = tokens[0].evm_address
+    tokens = globaldb.get_evm_tokens(chain_id=ChainID.ETHEREUM, protocol=CPT_COMPOUND, exceptions=(exception_address,))  # noqa: E501
+    assert len(tokens) == tokens_without_exception - 1
+    assert not any(token.evm_address == exception_address for token in tokens)

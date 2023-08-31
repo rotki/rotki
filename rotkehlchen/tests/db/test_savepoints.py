@@ -17,7 +17,7 @@ def test_unnamed_savepoints():
     conn.execute('CREATE TABLE a(b INTEGER PRIMARY KEY)')
     with conn.savepoint_ctx() as cursor1:
         assert len(conn.savepoints) == 1
-        savepoint1 = list(conn.savepoints)[0]
+        savepoint1 = next(iter(conn.savepoints))
         cursor1.execute('INSERT INTO a VALUES (1)')
         cursor2, savepoint2 = conn._enter_savepoint()  # also check manual savepoints
         assert list(conn.savepoints) == [savepoint1, savepoint2]

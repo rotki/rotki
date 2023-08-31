@@ -79,7 +79,7 @@ class HopDecoder(DecoderInterface):
     def possible_events(self) -> DecoderEventMappingType:
         return {CPT_HOP: {
             HistoryEventType.WITHDRAWAL: {
-                HistoryEventSubType.BRIDGE: EventCategory.BRIDGE,
+                HistoryEventSubType.BRIDGE: EventCategory.BRIDGE_OUT,
             },
         }}
 

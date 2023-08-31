@@ -18,6 +18,7 @@ from typing import (
 from eth_typing import ChecksumAddress
 from hexbytes import HexBytes as Web3HexBytes
 
+from rotkehlchen.constants import ZERO
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
@@ -239,7 +240,7 @@ class ChainID(Enum):
         return self.name.lower()
 
     def name_and_label(self) -> tuple[str, str]:
-        """A label to be used by the frontend.
+        """Name and label to be used by the frontend
 
         Also returns the name since the only place where label is currently used
         the name is also needed. To avoid 1 extra call to name"""
@@ -254,6 +255,11 @@ class ChainID(Enum):
             label = name.capitalize()
 
         return name, label
+
+    def label(self) -> str:
+        """A label to be used by the frontend"""
+        _, label = self.name_and_label()
+        return label
 
     def __str__(self) -> str:
         return self.to_name()
@@ -318,7 +324,7 @@ class EvmTransaction:
     def __hash__(self) -> int:
         return hash(self.identifier)
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: object) -> bool:
         if not isinstance(other, EvmTransaction):
             return False
 
@@ -359,7 +365,7 @@ class EvmInternalTransaction(NamedTuple):
     def __hash__(self) -> int:
         return hash(self.identifier)
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: object) -> bool:
         if not isinstance(other, EvmInternalTransaction):
             return False
 
@@ -405,7 +411,7 @@ class CovalentTransaction(NamedTuple):
     def __hash__(self) -> int:
         return hash(self.identifier)
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: object) -> bool:
         if other is None or not isinstance(other, CovalentTransaction):
             return False
 
@@ -742,6 +748,7 @@ EXTERNAL_EXCHANGES = (
     Location.SHAPESHIFT,
     Location.UPHOLD,
     Location.BISQ,
+    Location.BITMEX,
 )
 
 
@@ -875,13 +882,21 @@ class UserNote(NamedTuple):
         )
 
 
+class FValWithTolerance(NamedTuple):
+    """Represents a value with a tolerance around it.
+    Especially useful for comparing values with lots of decimal places"""
+    value: FVal
+    tolerance: FVal = ZERO
+
+
 class EvmTokenKind(DBCharEnumMixIn):
     ERC20 = auto()
     ERC721 = auto()
     UNKNOWN = auto()
 
 
-class GeneralCacheType(Enum):
+class CacheType(Enum):
+    """It contains all types both for the general cache table and the unique cache table"""
     CURVE_LP_TOKENS = auto()
     CURVE_POOL_ADDRESS = auto()  # get pool addr by lp token
     CURVE_POOL_TOKENS = auto()  # get pool tokens by pool addr
@@ -894,6 +909,20 @@ class GeneralCacheType(Enum):
         # Using custom serialize method instead of SerializableEnumMixin since mixin replaces
         # `_` with ` ` and we don't need spaces here
         return self.name
+
+
+UniqueCacheType = Literal[
+    CacheType.CURVE_POOL_ADDRESS,
+    CacheType.MAKERDAO_VAULT_ILK,
+    CacheType.CURVE_GAUGE_ADDRESS,
+    CacheType.YEARN_VAULTS,
+]
+
+GeneralCacheType = Literal[
+    CacheType.CURVE_LP_TOKENS,
+    CacheType.CURVE_POOL_TOKENS,
+    CacheType.CURVE_POOL_UNDERLYING_TOKENS,
+]
 
 
 class OracleSource(SerializableEnumNameMixin):

@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import { type AssetPriceInfo } from '@/types/prices';
 
-const props = defineProps({
-  identifier: { required: true, type: String },
-  isCollectionParent: { required: false, type: Boolean, default: false }
-});
+const props = withDefaults(
+  defineProps<{
+    identifier: string;
+    isCollectionParent?: boolean;
+  }>(),
+  { isCollectionParent: false }
+);
 
 const { identifier, isCollectionParent } = toRefs(props);
 const { assetPriceInfo } = useAggregatedBalances();

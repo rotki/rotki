@@ -24,6 +24,7 @@ from rotkehlchen.tests.utils.api import (
 )
 from rotkehlchen.tests.utils.checks import assert_asset_result_order
 from rotkehlchen.tests.utils.constants import A_GNO, A_RDN
+from rotkehlchen.tests.utils.database import clean_ignored_assets
 from rotkehlchen.tests.utils.factories import UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 from rotkehlchen.types import ChainID, Location
@@ -107,15 +108,15 @@ def test_query_owned_assets(
 
 
 @pytest.mark.parametrize('new_db_unlock_actions', [None])
-def test_ignored_assets_modification(rotkehlchen_api_server_with_exchanges):
+def test_ignored_assets_modification(rotkehlchen_api_server):
     """Test that using the ignored assets endpoint to modify the ignored assets list works fine"""
-    rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
-
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    clean_ignored_assets(rotki.data.db)
     # add three assets to ignored assets
     ignored_assets = [A_GNO.identifier, A_RDN.identifier, 'XMR']
     response = requests.put(
         api_url_for(
-            rotkehlchen_api_server_with_exchanges,
+            rotkehlchen_api_server,
             'ignoredassetsresource',
         ), json={'assets': ignored_assets},
     )
@@ -129,7 +130,7 @@ def test_ignored_assets_modification(rotkehlchen_api_server_with_exchanges):
         # Query for ignored assets and check that the response returns them
         response = requests.get(
             api_url_for(
-                rotkehlchen_api_server_with_exchanges,
+                rotkehlchen_api_server,
                 'ignoredassetsresource',
             ),
         )
@@ -139,7 +140,7 @@ def test_ignored_assets_modification(rotkehlchen_api_server_with_exchanges):
         # remove 2 assets from ignored assets
         response = requests.delete(
             api_url_for(
-                rotkehlchen_api_server_with_exchanges,
+                rotkehlchen_api_server,
                 'ignoredassetsresource',
             ), json={'assets': [A_GNO.identifier, 'XMR']},
         )
@@ -152,7 +153,7 @@ def test_ignored_assets_modification(rotkehlchen_api_server_with_exchanges):
         # Query for ignored assets and check that the response returns them
         response = requests.get(
             api_url_for(
-                rotkehlchen_api_server_with_exchanges,
+                rotkehlchen_api_server,
                 'ignoredassetsresource',
             ),
         )
@@ -163,15 +164,15 @@ def test_ignored_assets_modification(rotkehlchen_api_server_with_exchanges):
 @pytest.mark.parametrize('new_db_unlock_actions', [None])
 @pytest.mark.parametrize('method', ['put', 'delete'])
 @pytest.mark.parametrize('data_migration_version', [0])
-def test_ignored_assets_endpoint_errors(rotkehlchen_api_server_with_exchanges, method):
+def test_ignored_assets_endpoint_errors(rotkehlchen_api_server, method):
     """Test errors are handled properly at the ignored assets endpoint"""
-    rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
 
     # add three assets to ignored assets
     ignored_assets = [A_GNO.identifier, A_RDN.identifier, 'XMR']
     response = requests.put(
         api_url_for(
-            rotkehlchen_api_server_with_exchanges,
+            rotkehlchen_api_server,
             'ignoredassetsresource',
         ), json={'assets': ignored_assets},
     )
@@ -180,7 +181,7 @@ def test_ignored_assets_endpoint_errors(rotkehlchen_api_server_with_exchanges, m
     # Test that omitting the assets argument is an error
     response = getattr(requests, method)(
         api_url_for(
-            rotkehlchen_api_server_with_exchanges,
+            rotkehlchen_api_server,
             'ignoredassetsresource',
         ),
     )
@@ -193,7 +194,7 @@ def test_ignored_assets_endpoint_errors(rotkehlchen_api_server_with_exchanges, m
     # Test that invalid type for assets list is an error
     response = getattr(requests, method)(
         api_url_for(
-            rotkehlchen_api_server_with_exchanges,
+            rotkehlchen_api_server,
             'ignoredassetsresource',
         ), json={'assets': 'foo'},
     )
@@ -206,7 +207,7 @@ def test_ignored_assets_endpoint_errors(rotkehlchen_api_server_with_exchanges, m
     # Test that list with invalid asset is an error
     response = getattr(requests, method)(
         api_url_for(
-            rotkehlchen_api_server_with_exchanges,
+            rotkehlchen_api_server,
             'ignoredassetsresource',
         ), json={'assets': ['notanasset']},
     )
@@ -224,7 +225,7 @@ def test_ignored_assets_endpoint_errors(rotkehlchen_api_server_with_exchanges, m
         asset = 'XMR'
     response = getattr(requests, method)(
         api_url_for(
-            rotkehlchen_api_server_with_exchanges,
+            rotkehlchen_api_server,
             'ignoredassetsresource',
         ), json={'assets': [asset, 'notanasset']},
     )
@@ -246,7 +247,7 @@ def test_ignored_assets_endpoint_errors(rotkehlchen_api_server_with_exchanges, m
             expected_msg = 'ETH is not in ignored assets'
         response = getattr(requests, method)(
             api_url_for(
-                rotkehlchen_api_server_with_exchanges,
+                rotkehlchen_api_server,
                 'ignoredassetsresource',
             ), json={'assets': [asset]},
         )
@@ -259,7 +260,6 @@ def test_ignored_assets_endpoint_errors(rotkehlchen_api_server_with_exchanges, m
         assert rotki.data.db.get_ignored_asset_ids(cursor) >= set(ignored_assets)
 
 
-@pytest.mark.parametrize('new_db_unlock_actions', [('spam_assets',)])
 def test_get_all_assets(rotkehlchen_api_server):
     """Test that fetching all assets returns a paginated result."""
     response = requests.post(
@@ -340,7 +340,7 @@ def test_get_all_assets(rotkehlchen_api_server):
     assert 'entries_limit' in result
     for entry in result['entries']:
         assert entry['asset_type'] == 'fiat'
-        assert entry['symbol'] != A_USD.resolve_to_asset_with_symbol().symbol and entry['symbol'] != A_EUR.resolve_to_asset_with_symbol().symbol  # noqa: E501
+        assert entry['symbol'] not in (A_USD.resolve_to_asset_with_symbol().symbol, A_EUR.resolve_to_asset_with_symbol().symbol)  # noqa: E501
     assert_asset_result_order(data=result['entries'], is_ascending=True, order_field='name')
 
     # test that user owned assets filter works
@@ -552,15 +552,15 @@ def test_get_assets_mappings(rotkehlchen_api_server):
         assert identifier in queried_assets
         if identifier == A_DAI.identifier:
             assert details['evm_chain'] == 'ethereum'
-            assert 'custom_asset_type' not in details.keys()
+            assert 'custom_asset_type' not in details
             assert details['asset_type'] != 'custom asset'
             assert details['collection_id'] == '23'
         elif identifier == custom_asset_id:
             assert details['custom_asset_type'] == 'random'
             assert details['asset_type'] == 'custom asset'
         else:
-            assert 'evm_chain' not in details.keys()
-            assert 'custom_asset_type' not in details.keys()
+            assert 'evm_chain' not in details
+            assert 'custom_asset_type' not in details
             assert details['asset_type'] != 'custom asset'
 
     assert result['asset_collections'] == {
@@ -584,7 +584,6 @@ def test_get_assets_mappings(rotkehlchen_api_server):
     assert all(identifier in ('BTC', 'TRY') for identifier in assets)
 
 
-@pytest.mark.parametrize('new_db_unlock_actions', [('spam_assets',)])
 def test_search_assets(rotkehlchen_api_server):
     """Test that searching for assets using a keyword works."""
     response = requests.post(
@@ -605,7 +604,7 @@ def test_search_assets(rotkehlchen_api_server):
     for entry in result:
         assert 'bitcoin' in entry['name'].lower()
     assert_asset_result_order(data=result, is_ascending=True, order_field='name')
-    assert all('custom_asset_type' not in entry.keys() and not entry['is_custom_asset'] for entry in result)  # noqa: E501
+    assert all('custom_asset_type' not in entry and not entry['is_custom_asset'] for entry in result)  # noqa: E501
 
     # use a different keyword
     response = requests.post(
@@ -626,7 +625,7 @@ def test_search_assets(rotkehlchen_api_server):
     for entry in result:
         assert 'eth' in entry['symbol'].lower()
     assert_asset_result_order(data=result, is_ascending=False, order_field='symbol')
-    assert all('custom_asset_type' not in entry.keys() and not entry['is_custom_asset'] for entry in result)  # noqa: E501
+    assert all('custom_asset_type' not in entry and not entry['is_custom_asset'] for entry in result)  # noqa: E501
 
     # check that searching for a non-existent asset returns nothing
     response = requests.post(
@@ -666,7 +665,7 @@ def test_search_assets(rotkehlchen_api_server):
     for entry in result:
         assert entry['symbol'] == 'ETH'
     assert_asset_result_order(data=result, is_ascending=False, order_field='name')
-    assert all('custom_asset_type' not in entry.keys() and not entry['is_custom_asset'] for entry in result)  # noqa: E501
+    assert all('custom_asset_type' not in entry and not entry['is_custom_asset'] for entry in result)  # noqa: E501
 
     # check that treat_eth2_as_eth` setting is respected
     # using the test above.
@@ -701,7 +700,7 @@ def test_search_assets(rotkehlchen_api_server):
         else:
             assert 'evm_chain' not in entry
     assert_asset_result_order(data=result, is_ascending=True, order_field='name')
-    assert all('custom_asset_type' not in entry.keys() and not entry['is_custom_asset'] for entry in result)  # noqa: E501
+    assert all('custom_asset_type' not in entry and not entry['is_custom_asset'] for entry in result)  # noqa: E501
 
     # search using a column that is not allowed
     response = requests.post(
@@ -799,7 +798,7 @@ def test_search_assets_with_levenshtein(rotkehlchen_api_server):
     # check that Bitcoin(BTC) appears at the top of result.
     assert_asset_at_top_position('BTC', max_position_index=1, result=result)
     assert_substring_in_search_result(result, 'Bitcoin')
-    assert all('custom_asset_type' not in entry.keys() and entry['asset_type'] != 'custom asset' for entry in result)  # noqa: E501
+    assert all('custom_asset_type' not in entry and entry['asset_type'] != 'custom asset' for entry in result)  # noqa: E501
 
     # use a different keyword
     # but add assets without name/symbol and see that nothing breaks
@@ -836,7 +835,7 @@ def test_search_assets_with_levenshtein(rotkehlchen_api_server):
     assert_asset_at_top_position('ETH', max_position_index=1, result=result)
     assert any(asset_without_name_id == entry['identifier'] for entry in result)
     assert any(asset_without_symbol_id == entry['identifier'] for entry in result)
-    assert all('custom_asset_type' not in entry.keys() and entry['asset_type'] != 'custom asset' for entry in result)  # noqa: E501
+    assert all('custom_asset_type' not in entry and entry['asset_type'] != 'custom asset' for entry in result)  # noqa: E501
 
     # check that treat_eth2_as_eth` setting is respected
     # using the test above.
@@ -859,7 +858,7 @@ def test_search_assets_with_levenshtein(rotkehlchen_api_server):
     assert_substring_in_search_result(result, 'ETH')
     # check that Ethereum(ETH) appears at the top of result.
     assert_asset_at_top_position('ETH', max_position_index=1, result=result)
-    assert all(entry['identifier'] != 'ETH2' and entry['asset_type'] != 'custom asset' and 'custom_asset_type' not in entry.keys() for entry in result)  # noqa: E501
+    assert all(entry['identifier'] != 'ETH2' and entry['asset_type'] != 'custom asset' and 'custom_asset_type' not in entry for entry in result)  # noqa: E501
 
     # check that searching for a non-existent asset returns nothing
     response = requests.post(
@@ -889,7 +888,7 @@ def test_search_assets_with_levenshtein(rotkehlchen_api_server):
     )
     result = assert_proper_response_with_result(response)
     assert 50 >= len(result) > 10
-    assert all(entry['evm_chain'] == 'ethereum' and entry['asset_type'] != 'custom asset' and 'custom_asset_type' not in entry.keys() for entry in result)  # noqa: E501
+    assert all(entry['evm_chain'] == 'ethereum' and entry['asset_type'] != 'custom asset' and 'custom_asset_type' not in entry for entry in result)  # noqa: E501
 
     assert_substring_in_search_result(result, 'dai')
     # check that Dai(DAI) appears at the top of result.
@@ -1015,6 +1014,7 @@ def test_search_nfts_with_levenshtein(rotkehlchen_api_server):
 
 def test_only_ignored_assets(rotkehlchen_api_server):
     """Test it's possible to ask to only see the ignored assets"""
+    clean_ignored_assets(rotkehlchen_api_server.rest_api.rotkehlchen.data.db)
     ignored_assets = [A_GNO.identifier, A_RDN.identifier]
     response = requests.put(
         api_url_for(

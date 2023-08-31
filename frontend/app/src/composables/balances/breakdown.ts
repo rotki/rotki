@@ -1,4 +1,5 @@
 import { type AssetBalanceWithPrice, type BigNumber } from '@rotki/common';
+import { type MaybeRef } from '@vueuse/core';
 import { TRADE_LOCATION_BLOCKCHAIN } from '@/data/defaults';
 import { type AssetBreakdown } from '@/types/blockchain/accounts';
 
@@ -22,37 +23,37 @@ export const useBalancesBreakdown = () => {
 
   const assetBreakdown = (asset: string): ComputedRef<AssetBreakdown[]> =>
     computed(() =>
-      get(getBlockchainBreakdown(asset))
-        .concat(get(getManualBreakdown(asset)))
-        .concat(get(getExchangeBreakdown(asset)))
-        .sort((a, b) => sortDesc(a.balance.usdValue, b.balance.usdValue))
+      groupAssetBreakdown(
+        get(getBlockchainBreakdown(asset))
+          .concat(get(getManualBreakdown(asset)))
+          .concat(get(getExchangeBreakdown(asset)))
+          .filter(item => !item.balance.amount.isZero())
+      )
     );
 
   const locationBreakdown = (
-    identifier: string
+    identifier: MaybeRef<string>
   ): ComputedRef<AssetBalanceWithPrice[]> =>
     computed(() => {
+      const id = get(identifier);
       let balances = mergeAssetBalances(
-        get(getManualLocationBreakdown(identifier)),
-        get(getExchangesLocationBreakdown(identifier))
+        get(getManualLocationBreakdown(id)),
+        get(getExchangesLocationBreakdown(id))
       );
 
-      if (identifier === TRADE_LOCATION_BLOCKCHAIN) {
+      if (id === TRADE_LOCATION_BLOCKCHAIN) {
         balances = mergeAssetBalances(
           balances,
           get(blockchainLocationBreakdown)
         );
       }
 
-      return Object.keys(balances)
-        .filter(asset => !get(isAssetIgnored(asset)))
-        .map(asset => ({
-          asset,
-          amount: balances[asset].amount,
-          usdValue: balances[asset].usdValue,
-          usdPrice: get(assetPrice(asset)) ?? NoPrice
-        }))
-        .sort((a, b) => sortDesc(a.usdValue, b.usdValue));
+      return toSortedAssetBalanceWithPrice(
+        balances,
+        asset => get(isAssetIgnored(asset)),
+        assetPrice,
+        true
+      );
     });
 
   const balancesByLocation: ComputedRef<Record<string, BigNumber>> = computed(

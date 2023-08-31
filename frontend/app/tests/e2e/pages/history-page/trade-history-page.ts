@@ -1,11 +1,11 @@
 import { type ExternalTrade } from '../../support/types';
 import { selectAsset } from '../../support/utils';
+import { HistoryPage } from './index';
 
 export class TradeHistoryPage {
+  page = new HistoryPage();
   visit() {
-    cy.get('.history__trades').scrollIntoView();
-    cy.get('.history__trades').should('be.visible');
-    cy.get('.history__trades').click();
+    this.page.visit('history-trades');
   }
 
   createWaitForTrades() {
@@ -27,7 +27,7 @@ export class TradeHistoryPage {
     cy.get('[data-cy=trade-form]').should('be.visible');
     cy.get('[data-cy=date]').type(`{selectall}{backspace}${trade.time}`);
     // clicking outside to a fully visible element to close the datepicker
-    cy.get('[data-cy=bottom-dialog]').find('.card-title').click();
+    cy.get('[data-cy=bottom-dialog]').find('.v-card__title').click();
 
     cy.intercept({
       method: 'GET',
@@ -133,6 +133,7 @@ export class TradeHistoryPage {
     cy.get('.big-dialog__buttons__confirm').click();
     waitForTrades();
     cy.get('[data-cy=trade-form]').should('not.exist');
+    cy.get('.v-progress-linear__buffer').should('not.exist');
   }
 
   deleteTrade(position: number) {
@@ -155,7 +156,7 @@ export class TradeHistoryPage {
   filterTrades(filter: string) {
     cy.get('[data-cy="table-filter"]').scrollIntoView();
     cy.get('[data-cy="table-filter"]').should('be.visible');
-    cy.get('[data-cy="table-filter"]').type(`${filter}{enter}`);
+    cy.get('[data-cy="table-filter"]').type(`${filter}{enter}{esc}`);
   }
 
   nextPage() {

@@ -10,8 +10,9 @@ from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_DAI, A_ETH, A_USDC, A_USDT
-from rotkehlchen.constants.misc import EXP18, ZERO
+from rotkehlchen.constants.misc import EXP18
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.fval import FVal

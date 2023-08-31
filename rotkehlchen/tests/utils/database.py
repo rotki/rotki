@@ -18,7 +18,6 @@ from rotkehlchen.errors.misc import InputError
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.tests.utils.constants import DEFAULT_TESTS_MAIN_CURRENCY
 from rotkehlchen.types import (
-    SPAM_PROTOCOL,
     ApiKey,
     ExternalService,
     ExternalServiceApiCredentials,
@@ -146,10 +145,10 @@ def mock_dbhandler_update_owned_assets() -> _patch:
     )
 
 
-def mock_dbhandler_add_globaldb_assetids() -> _patch:
+def mock_dbhandler_sync_globaldb_assets() -> _patch:
     """Just make sure add globalds assetids does nothing for older DB tests"""
     return patch(
-        'rotkehlchen.db.dbhandler.DBHandler.add_globaldb_assetids',
+        'rotkehlchen.db.dbhandler.DBHandler.sync_globaldb_assets',
         lambda x, y: None,
     )
 
@@ -180,19 +179,6 @@ def perform_new_db_unlock_actions(db: DBHandler, new_db_unlock_actions: tuple[st
                 db_write_cursor=write_cursor,
                 globaldb_cursor=globaldb_cursor,
             )
-    if 'spam_assets' in new_db_unlock_actions:
-        with (
-            GlobalDBHandler().conn.read_ctx() as globaldb_cursor,
-            db.user_write() as user_write_cursor,
-        ):
-            spam_assets_ids = globaldb_cursor.execute(
-                'SELECT identifier FROM evm_tokens WHERE protocol=?',
-                (SPAM_PROTOCOL,),
-            )
-            user_write_cursor.executemany(
-                'INSERT INTO multisettings(name, value) VALUES(?, ?)',
-                [('ignored_asset', asset_identifier[0]) for asset_identifier in spam_assets_ids],
-            )
 
 
 def run_no_db_upgrades(self) -> bool:
@@ -208,3 +194,10 @@ def run_no_db_upgrades(self) -> bool:
             return True  # fresh database. Nothing to upgrade.
 
     return False
+
+
+def clean_ignored_assets(database: DBHandler):
+    """Some tests need to be simplified by removing all pre-ignored assets
+    from the global DB sync or elsewhere so they start clean"""
+    with database.user_write() as write_cursor:
+        write_cursor.execute('DELETE FROM multisettings WHERE name=?', ('ignored_asset',))

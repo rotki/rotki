@@ -3,9 +3,9 @@ import { type AssetBalanceWithPrice } from '@rotki/common';
 import { type ComputedRef } from 'vue';
 import { TaskType } from '@/types/task-type';
 
-const props = defineProps({
-  identifier: { required: true, type: String }
-});
+const props = defineProps<{
+  identifier: string;
+}>();
 
 const { identifier } = toRefs(props);
 const { isTaskRunning } = useTaskStore();
@@ -13,9 +13,8 @@ const { isTaskRunning } = useTaskStore();
 const { t } = useI18n();
 
 const { locationBreakdown: breakdown } = useBalancesBreakdown();
-const locationBreakdown: ComputedRef<AssetBalanceWithPrice[]> = computed(() =>
-  get(breakdown(get(identifier)))
-);
+const locationBreakdown: ComputedRef<AssetBalanceWithPrice[]> =
+  breakdown(identifier);
 
 const loadingData = computed<boolean>(
   () =>
@@ -26,8 +25,12 @@ const loadingData = computed<boolean>(
 </script>
 
 <template>
-  <Card v-if="loadingData || locationBreakdown.length > 0" outlined-body>
+  <Card v-if="loadingData || locationBreakdown.length > 0">
     <template #title> {{ t('common.assets') }} </template>
-    <AssetBalances :loading="loadingData" :balances="locationBreakdown" />
+    <AssetBalances
+      :loading="loadingData"
+      :balances="locationBreakdown"
+      hide-breakdown
+    />
   </Card>
 </template>

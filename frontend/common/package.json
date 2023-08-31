@@ -23,11 +23,11 @@
   },
   "dependencies": {
     "bignumber.js": "9.1.1",
-    "zod": "3.21.4"
+    "zod": "3.22.2"
   },
   "devDependencies": {
-    "@vueuse/core": "10.2.1",
-    "core-js": "3.31.1",
+    "@vueuse/core": "10.3.0",
+    "core-js": "3.32.1",
     "rimraf": "5.0.1",
     "typescript": "5.1.6",
     "vue": "2.7.14"

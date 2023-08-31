@@ -49,7 +49,8 @@ const ExplorersSettings = z.object({
   [Blockchain.DOT]: ExplorerEndpoints.optional(),
   [Blockchain.AVAX]: ExplorerEndpoints.optional(),
   [Blockchain.OPTIMISM]: ExplorerEndpoints.optional(),
-  [Blockchain.POLYGON_POS]: ExplorerEndpoints.optional()
+  [Blockchain.POLYGON_POS]: ExplorerEndpoints.optional(),
+  [Blockchain.ARBITRUM_ONE]: ExplorerEndpoints.optional()
 });
 
 export type ExplorersSettings = z.infer<typeof ExplorersSettings>;
@@ -171,6 +172,7 @@ export const FrontendSettings = z.object({
   selectedTheme: ThemeEnum.default(Theme.AUTO),
   lightTheme: ThemeColors.default(LIGHT_COLORS),
   darkTheme: ThemeColors.default(DARK_COLORS),
+  defaultThemeVersion: z.number().default(1),
   graphZeroBased: z.boolean().default(false),
   showGraphRangeSelector: z.boolean().default(true),
   nftsInNetValue: z.boolean().default(true),

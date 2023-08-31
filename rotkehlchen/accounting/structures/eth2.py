@@ -88,11 +88,11 @@ class EthStakingEvent(HistoryBaseEntry, metaclass=ABCMeta):
             notes=notes,
         )
 
-    def __eq__(self, other: Any) -> bool:
-        return (
+    def __eq__(self, other: object) -> bool:
+        return (  # ignores are due to object and type checks in super not recognized
             HistoryBaseEntry.__eq__(self, other) is True and
-            self.validator_index == other.validator_index and
-            self.is_exit_or_blocknumber == other.is_exit_or_blocknumber
+            self.validator_index == other.validator_index and  # type: ignore
+            self.is_exit_or_blocknumber == other.is_exit_or_blocknumber  # type: ignore
         )
 
 
@@ -322,11 +322,10 @@ class EthBlockEvent(EthStakingEvent):
             accounting: 'AccountingPot',
             events_iterator: Iterator['AccountingEventMixin'],  # pylint: disable=unused-argument
     ) -> int:
-        """For block production events we should consume all 3 possible events directly here
-        so that we do not double count anything"""
-        if self.sequence_index == 1:
-            return 1  # this is always the block production mev reward, so ignore
-
+        """
+        For block production events we should consume all 3 possible events directly here
+        so that we do not double count anything
+        """
         with accounting.database.conn.read_ctx() as cursor:
             accounts = accounting.database.get_blockchain_accounts(cursor)
 
@@ -347,28 +346,7 @@ class EthBlockEvent(EthStakingEvent):
             amount=self.balance.amount,
             taxable=True,
         )
-
-        consumed = 1
-        if self.sequence_index == 0:  # the first event drives what else is consumed
-            event_seq1 = next(events_iterator, None)
-            if event_seq1 is None:
-                return consumed
-            if not isinstance(event_seq1, HistoryBaseEntry):  # not a base event. Just consume
-                consumed += event_seq1.process(accounting, events_iterator)
-                return consumed
-
-            if event_seq1.event_identifier == self.event_identifier:
-                # this is the block production mev reward so there is probably transaction receive after it  # noqa: E501
-                consumed += 1  # we skip it
-                event_seq2 = next(events_iterator, None)
-                if event_seq2 is None:
-                    return consumed  # mev block production event without transaction receive
-                # consume it no matter if it's block production or other kind of event
-                consumed += event_seq2.process(accounting, events_iterator)
-            else:  # just consume it -- is another event
-                consumed += event_seq1.process(accounting, events_iterator)
-
-        return consumed
+        return 1
 
 
 class EthDepositEvent(EvmEvent, EthStakingEvent):
@@ -415,7 +393,7 @@ class EthDepositEvent(EvmEvent, EthStakingEvent):
     def __repr__(self) -> str:
         return f'EthDepositEvent({self.validator_index=}, {self.timestamp=}, {self.tx_hash=})'  # noqa: E501
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: object) -> bool:
         return (
             EvmEvent.__eq__(self, other) is True and
             EthStakingEvent.__eq__(self, other) is True

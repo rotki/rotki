@@ -6,14 +6,13 @@ TEST_ACC1 = '0xc37b40ABdB939635068d3c5f13E7faF686F03B65'  # yabir.eth
 TEST_ACC2 = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'  # lefteris.eth
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ACC1]])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('ethereum_modules', [['nfts']])
 def test_addresses_queried_for_nfts(blockchain):
     """Tests that nfts are only queried for addresses stored in the database preventing the
     IntegrityError described in https://github.com/rotki/rotki/issues/4456
-
-    TODO: May make sense to VCR this as it makes multiple opensea queries.
     """
     nft_module = blockchain.get_module('nfts')
     nft_module.query_balances(

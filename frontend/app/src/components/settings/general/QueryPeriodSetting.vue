@@ -44,7 +44,7 @@ onMounted(() => {
 
 <template>
   <div class="mt-8">
-    <div class="text-h6">
+    <div class="text-h6 mb-3">
       {{ t('frontend_settings.subtitle.query') }}
     </div>
     <SettingsOption

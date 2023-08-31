@@ -39,9 +39,9 @@ from rotkehlchen.tasks.utils import query_missing_prices_of_base_entries, should
 from rotkehlchen.types import (
     EVM_CHAINS_WITH_TRANSACTIONS,
     SUPPORTED_BITCOIN_CHAINS,
+    CacheType,
     ChecksumEvmAddress,
     ExchangeLocationID,
-    GeneralCacheType,
     Location,
     Optional,
     SupportedBlockchain,
@@ -597,7 +597,7 @@ class TaskManager:
     def _maybe_update_curve_pools(self) -> Optional[list[gevent.Greenlet]]:
         """Function that schedules curve pools update task if either there is no curve pools cache
         yet or this cache has expired (i.e. it's been more than a week since last update)."""
-        if should_update_protocol_cache(GeneralCacheType.CURVE_LP_TOKENS) is False:
+        if should_update_protocol_cache(CacheType.CURVE_LP_TOKENS) is False:
             return None
 
         return [self.greenlet_manager.spawn_and_track(
@@ -608,8 +608,8 @@ class TaskManager:
         )]
 
     def _maybe_update_yearn_vaults(self) -> Optional[list[gevent.Greenlet]]:
-        if should_update_protocol_cache(GeneralCacheType.YEARN_VAULTS) is True:
-            ethereum_manager: 'EthereumManager' = self.chains_aggregator.get_chain_manager(SupportedBlockchain.ETHEREUM)  # noqa: E501
+        if should_update_protocol_cache(CacheType.YEARN_VAULTS) is True:
+            ethereum_manager: EthereumManager = self.chains_aggregator.get_chain_manager(SupportedBlockchain.ETHEREUM)  # noqa: E501
             return [self.greenlet_manager.spawn_and_track(
                 after_seconds=None,
                 task_name='Update yearn vaults',
@@ -652,7 +652,7 @@ class TaskManager:
         )]
 
     def _maybe_update_ilk_cache(self) -> Optional[list[gevent.Greenlet]]:
-        if should_update_protocol_cache(GeneralCacheType.MAKERDAO_VAULT_ILK, 'ETH-A') is True:
+        if should_update_protocol_cache(CacheType.MAKERDAO_VAULT_ILK, 'ETH-A') is True:
             return [self.greenlet_manager.spawn_and_track(
                 after_seconds=None,
                 task_name='Update ilk cache',

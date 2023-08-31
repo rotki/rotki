@@ -6,7 +6,8 @@ import { type UserSettingsModel } from '@/types/user';
 
 export const useSessionSettings = () => {
   const { premium, premiumSync } = storeToRefs(usePremiumStore());
-  const { update: updateFrontendSettings } = useFrontendSettingsStore();
+  const { update: updateFrontendSettings, checkDefaultThemeVersion } =
+    useFrontendSettingsStore();
   const { update: updateAccountingSettings } = useAccountingSettingsStore();
   const { update: updateGeneralSettings } = useGeneralSettingsStore();
   const { update: updateSessionSettings, setConnectedExchanges } =
@@ -34,6 +35,7 @@ export const useSessionSettings = () => {
       BigNumber.config({
         FORMAT: getBnFormat(thousandSeparator, decimalSeparator)
       });
+      checkDefaultThemeVersion();
     }
 
     set(premium, havePremium);

@@ -39,7 +39,7 @@ const { t } = useI18n();
               width="2"
               size="20"
             />
-            <VIcon v-else small>mdi-refresh</VIcon>
+            <RuiIcon v-else size="16" name="restart-line" />
           </VBtn>
         </template>
         <div class="text-center">

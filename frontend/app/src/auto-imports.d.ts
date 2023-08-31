@@ -84,6 +84,7 @@ declare global {
   const defineComponent: typeof import('vue')['defineComponent']
   const defineStore: typeof import('pinia')['defineStore']
   const deleteBackendUrl: typeof import('./utils/account-management')['deleteBackendUrl']
+  const disposeEvmRpcNodeComposables: typeof import('./composables/settings/general/rpc/form')['disposeEvmRpcNodeComposables']
   const downloadFileByUrl: typeof import('./utils/download')['downloadFileByUrl']
   const eagerComputed: typeof import('@vueuse/core')['eagerComputed']
   const effectScope: typeof import('vue')['effectScope']
@@ -120,7 +121,9 @@ declare global {
   const getSortItems: typeof import('./utils/assets')['getSortItems']
   const getTags: typeof import('./utils/tags')['getTags']
   const getValidSelectorFromEvmAddress: typeof import('./utils/assets')['getValidSelectorFromEvmAddress']
+  const groupAssetBreakdown: typeof import('./utils/balances')['groupAssetBreakdown']
   const h: typeof import('vue')['h']
+  const hexToRgbPoints: typeof import('./utils/color')['hexToRgbPoints']
   const ignorableWatch: typeof import('@vueuse/core')['ignorableWatch']
   const indexedDb: typeof import('./utils/indexed-db')['default']
   const inject: typeof import('vue')['inject']
@@ -786,6 +789,7 @@ declare module 'vue' {
     readonly defineComponent: UnwrapRef<typeof import('vue')['defineComponent']>
     readonly defineStore: UnwrapRef<typeof import('pinia')['defineStore']>
     readonly deleteBackendUrl: UnwrapRef<typeof import('./utils/account-management')['deleteBackendUrl']>
+    readonly disposeEvmRpcNodeComposables: UnwrapRef<typeof import('./composables/settings/general/rpc/form')['disposeEvmRpcNodeComposables']>
     readonly downloadFileByUrl: UnwrapRef<typeof import('./utils/download')['downloadFileByUrl']>
     readonly eagerComputed: UnwrapRef<typeof import('@vueuse/core')['eagerComputed']>
     readonly effectScope: UnwrapRef<typeof import('vue')['effectScope']>
@@ -821,7 +825,9 @@ declare module 'vue' {
     readonly getSortItems: UnwrapRef<typeof import('./utils/assets')['getSortItems']>
     readonly getTags: UnwrapRef<typeof import('./utils/tags')['getTags']>
     readonly getValidSelectorFromEvmAddress: UnwrapRef<typeof import('./utils/assets')['getValidSelectorFromEvmAddress']>
+    readonly groupAssetBreakdown: UnwrapRef<typeof import('./utils/balances')['groupAssetBreakdown']>
     readonly h: UnwrapRef<typeof import('vue')['h']>
+    readonly hexToRgbPoints: UnwrapRef<typeof import('./utils/color')['hexToRgbPoints']>
     readonly ignorableWatch: UnwrapRef<typeof import('@vueuse/core')['ignorableWatch']>
     readonly indexedDb: UnwrapRef<typeof import('./utils/indexed-db')['default']>
     readonly inject: UnwrapRef<typeof import('vue')['inject']>
@@ -1481,6 +1487,7 @@ declare module '@vue/runtime-core' {
     readonly defineComponent: UnwrapRef<typeof import('vue')['defineComponent']>
     readonly defineStore: UnwrapRef<typeof import('pinia')['defineStore']>
     readonly deleteBackendUrl: UnwrapRef<typeof import('./utils/account-management')['deleteBackendUrl']>
+    readonly disposeEvmRpcNodeComposables: UnwrapRef<typeof import('./composables/settings/general/rpc/form')['disposeEvmRpcNodeComposables']>
     readonly downloadFileByUrl: UnwrapRef<typeof import('./utils/download')['downloadFileByUrl']>
     readonly eagerComputed: UnwrapRef<typeof import('@vueuse/core')['eagerComputed']>
     readonly effectScope: UnwrapRef<typeof import('vue')['effectScope']>
@@ -1516,7 +1523,9 @@ declare module '@vue/runtime-core' {
     readonly getSortItems: UnwrapRef<typeof import('./utils/assets')['getSortItems']>
     readonly getTags: UnwrapRef<typeof import('./utils/tags')['getTags']>
     readonly getValidSelectorFromEvmAddress: UnwrapRef<typeof import('./utils/assets')['getValidSelectorFromEvmAddress']>
+    readonly groupAssetBreakdown: UnwrapRef<typeof import('./utils/balances')['groupAssetBreakdown']>
     readonly h: UnwrapRef<typeof import('vue')['h']>
+    readonly hexToRgbPoints: UnwrapRef<typeof import('./utils/color')['hexToRgbPoints']>
     readonly ignorableWatch: UnwrapRef<typeof import('@vueuse/core')['ignorableWatch']>
     readonly indexedDb: UnwrapRef<typeof import('./utils/indexed-db')['default']>
     readonly inject: UnwrapRef<typeof import('vue')['inject']>

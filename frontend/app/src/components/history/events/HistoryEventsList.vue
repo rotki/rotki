@@ -101,8 +101,9 @@ const panel: Ref<number[]> = ref(get(ignoredInAccounting) ? [] : [0]);
 
 const isNoTxHash = (item: HistoryEventEntry) =>
   item.entryType === HistoryEventEntryType.EVM_EVENT &&
-  item.counterparty === 'eth2' &&
-  item.eventSubtype === 'deposit asset';
+  ((item.counterparty === 'eth2' && item.eventSubtype === 'deposit asset') ||
+    (item.counterparty === 'gitcoin' && item.eventSubtype === 'apply') ||
+    item.counterparty === 'safe-multisig');
 
 const options: TablePagination<HistoryEventEntry> = {
   itemsPerPage: -1,
@@ -129,6 +130,7 @@ watch(
 );
 
 const { mdAndUp } = useDisplay();
+const blockEvent = isEthBlockEventRef(eventGroupHeader);
 </script>
 
 <template>
@@ -198,6 +200,9 @@ const { mdAndUp } = useDisplay();
                       :amount="item.balance.amount"
                       :chain="getChain(item.location)"
                       :no-tx-hash="isNoTxHash(item)"
+                      :block-number="
+                        item.blockNumber ?? blockEvent?.blockNumber
+                      "
                     />
                   </VLazy>
                 </template>
@@ -226,31 +231,25 @@ const { mdAndUp } = useDisplay();
 .table {
   :global {
     .v-data-table {
-      background: transparent;
-
       &__wrapper {
-        overflow-x: hidden;
-
         tbody {
           tr {
             &:hover {
-              background-color: transparent !important;
+              @apply bg-transparent #{!important};
             }
 
             td {
-              padding-top: 1rem !important;
-              padding-bottom: 1rem !important;
-              min-height: 91px !important;
-              height: 91px !important;
+              @apply py-4 #{!important};
 
               @media screen and (max-width: 599px) {
-                padding-left: 0 !important;
-                padding-right: 0 !important;
+                @apply px-0 #{!important};
               }
             }
           }
         }
+        @apply overflow-x-hidden;
       }
+      @apply border-0 bg-transparent #{!important};
     }
   }
 }
@@ -258,7 +257,7 @@ const { mdAndUp } = useDisplay();
 .row {
   &__type {
     width: 250px;
-    padding-left: 0 !important;
+    @apply pl-0 #{!important};
   }
 
   &__description {
@@ -270,7 +269,7 @@ const { mdAndUp } = useDisplay();
 
   &__actions {
     width: 100px;
-    padding-right: 0 !important;
+    @apply pr-0 #{!important};
   }
 }
 
@@ -278,23 +277,20 @@ const { mdAndUp } = useDisplay();
   &-panels {
     :global {
       .v-expansion-panel {
-        background: transparent !important;
-
         &::before {
-          box-shadow: none;
+          @apply shadow-none;
         }
 
         &-header {
-          padding: 0;
-          min-height: auto;
-          width: auto;
+          @apply p-0 min-h-[auto] w-auto;
         }
 
         &-content {
           &__wrap {
-            padding: 0;
+            @apply p-0;
           }
         }
+        @apply bg-transparent #{!important};
       }
     }
   }

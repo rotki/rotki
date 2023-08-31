@@ -1,9 +1,6 @@
 <script setup lang="ts">
-import groupBy from 'lodash/groupBy';
 import { type BigNumber } from '@rotki/common/lib';
 import { type DataTableHeader } from '@/types/vuetify';
-import { zeroBalance } from '@/utils/bignumbers';
-import { balanceSum, calculatePercentage } from '@/utils/calculation';
 import { CURRENCY_USD } from '@/types/currencies';
 
 const props = withDefaults(
@@ -29,23 +26,11 @@ const { assetBreakdown } = useBalancesBreakdown();
 
 const breakdowns = computed(() => {
   const asset = get(identifier);
-  const data = get(blockchainOnly)
+  const breakdown = get(blockchainOnly)
     ? get(getBlockchainBreakdown(asset))
     : get(assetBreakdown(asset));
 
-  const grouped = groupBy(data, 'location');
-
-  return Object.entries(grouped).map(([location, breakdown]) => {
-    const balance = zeroBalance();
-    return {
-      location,
-      balance: breakdown.reduce(
-        (previousValue, currentValue) =>
-          balanceSum(previousValue, currentValue.balance),
-        balance
-      )
-    };
-  });
+  return groupAssetBreakdown(breakdown, item => item.location);
 });
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
@@ -97,33 +82,31 @@ const percentage = (value: BigNumber) => {
 </script>
 
 <template>
-  <VSheet outlined>
-    <DataTable
-      :headers="tableHeaders"
-      :items="breakdowns"
-      sort-by="balance.amount"
-    >
-      <template #item.location="{ item }">
-        <LocationDisplay
-          :identifier="item.location"
-          :detail-path="item.detailPath"
-        />
-      </template>
-      <template #item.balance.amount="{ item }">
-        <AmountDisplay :value="item.balance.amount" />
-      </template>
-      <template #item.balance.usdValue="{ item }">
-        <AmountDisplay
-          show-currency="symbol"
-          :amount="item.balance.amount"
-          :price-asset="identifier"
-          fiat-currency="USD"
-          :value="item.balance.usdValue"
-        />
-      </template>
-      <template #item.percentage="{ item }">
-        <PercentageDisplay :value="percentage(item.balance.usdValue)" />
-      </template>
-    </DataTable>
-  </VSheet>
+  <DataTable
+    :headers="tableHeaders"
+    :items="breakdowns"
+    sort-by="balance.amount"
+  >
+    <template #item.location="{ item }">
+      <LocationDisplay
+        :identifier="item.location"
+        :detail-path="item.detailPath"
+      />
+    </template>
+    <template #item.balance.amount="{ item }">
+      <AmountDisplay :value="item.balance.amount" />
+    </template>
+    <template #item.balance.usdValue="{ item }">
+      <AmountDisplay
+        show-currency="symbol"
+        :amount="item.balance.amount"
+        :price-asset="identifier"
+        fiat-currency="USD"
+        :value="item.balance.usdValue"
+      />
+    </template>
+    <template #item.percentage="{ item }">
+      <PercentageDisplay :value="percentage(item.balance.usdValue)" />
+    </template>
+  </DataTable>
 </template>

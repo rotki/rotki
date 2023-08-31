@@ -1,8 +1,7 @@
 import json
 import re
-from collections import namedtuple
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, NamedTuple, Optional
 from unittest.mock import patch
 
 import requests
@@ -73,7 +72,7 @@ class MockWeb3:
 
     @property
     def net(self):
-        return namedtuple('Version', ['version'])(version=1)
+        return NamedTuple('Version', ['version'])(version=1)
 
 
 def patch_web3_request(given_web3, test_specific_mock_data):

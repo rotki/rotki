@@ -1,18 +1,25 @@
 import csv
+import logging
 from itertools import count
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
+from uuid import uuid4
 
+from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.accounting.structures.base import HistoryEvent
+from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.converters import LOCATION_TO_ASSET_MAPPING
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_USD
+from rotkehlchen.data_import.importers.constants import COINTRACKING_EVENT_PREFIX
 from rotkehlchen.data_import.utils import BaseExchangeImporter, UnsupportedCSVEntry
 from rotkehlchen.db.drivers.gevent import DBCursor
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
     deserialize_asset_amount_force_positive,
@@ -21,10 +28,15 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_timestamp_from_date,
 )
 from rotkehlchen.types import AssetAmount, AssetMovementCategory, Fee, Location, Price, TradeType
+from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import AssetWithOracles
     from rotkehlchen.db.dbhandler import DBHandler
+
+
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
 def remap_header(fieldnames: list[str]) -> list[str]:
@@ -82,7 +94,7 @@ class CointrackingImporter(BaseExchangeImporter):
 
     def _consume_cointracking_entry(
             self,
-            cursor: DBCursor,
+            write_cursor: DBCursor,
             csv_row: dict[str, Any],
             timestamp_format: str = '%d.%m.%Y %H:%M:%S',
     ) -> None:
@@ -145,7 +157,7 @@ class CointrackingImporter(BaseExchangeImporter):
                 link='',
                 notes=notes,
             )
-            self.add_trade(cursor, trade)
+            self.add_trade(write_cursor, trade)
         elif row_type in ('Deposit', 'Withdrawal'):
             category = deserialize_asset_movement_category(row_type.lower())
             if category == AssetMovementCategory.DEPOSIT:
@@ -167,16 +179,49 @@ class CointrackingImporter(BaseExchangeImporter):
                 fee_asset=fee_currency,
                 link='',
             )
-            self.add_asset_movement(cursor, asset_movement)
+            self.add_asset_movement(write_cursor, asset_movement)
+        elif row_type == 'Staking':  # TODO: Not like the way duplication is checked here
+            # We probably need to work on standardizing this and improving performance
+            self.flush_all(write_cursor)  # flush so that the DB check later can work and not miss unwritten events  # noqa: E501
+            amount = deserialize_asset_amount(csv_row['Buy'])
+            asset = asset_resolver(csv_row['Cur.Buy'])
+            timestamp_ms = ts_sec_to_ms(timestamp)
+            event_type = HistoryEventType.STAKING
+            event_subtype = HistoryEventSubType.REWARD
+            with self.db.conn.read_ctx() as read_cursor:
+                read_cursor.execute(
+                    f"SELECT COUNT(*) FROM history_events WHERE "
+                    f"event_identifier LIKE '{COINTRACKING_EVENT_PREFIX}%' "
+                    "AND asset=? AND amount=? AND timestamp=? AND location=? "
+                    "AND type=? AND subtype=?",
+                    (asset.identifier, str(amount), timestamp_ms, location.serialize_for_db(),
+                     event_type.serialize(), event_subtype.serialize()),
+                )
+                if read_cursor.fetchone()[0] != 0:
+                    log.warning(f'Cointracking staking event for {asset} at {timestamp} already exists in the DB')  # noqa: E501
+                    return
+
+            event = HistoryEvent(
+                event_identifier=f'{COINTRACKING_EVENT_PREFIX}_{uuid4().hex}',
+                sequence_index=0,
+                timestamp=timestamp_ms,
+                location=location,
+                event_type=event_type,
+                event_subtype=event_subtype,
+                asset=asset,
+                balance=Balance(amount, ZERO),
+                notes=f'Stake reward of {amount} {asset.symbol} in {location!s}',
+            )
+            self.add_history_events(write_cursor, [event])
         else:
             raise UnsupportedCSVEntry(
-                f'Unknown entrype type "{row_type}" encountered during cointracking '
+                f'Unknown entry type "{row_type}" encountered during cointracking '
                 f'data import. Ignoring entry',
             )
 
     def _import_csv(
             self,
-            cursor: DBCursor,
+            write_cursor: DBCursor,
             filepath: Path,
             **kwargs: Any,
     ) -> None:
@@ -188,7 +233,7 @@ class CointrackingImporter(BaseExchangeImporter):
             header = remap_header(next(data))
             for row in data:
                 try:
-                    self._consume_cointracking_entry(cursor, dict(zip(header, row)), **kwargs)
+                    self._consume_cointracking_entry(write_cursor, dict(zip(header, row)), **kwargs)  # noqa: E501
                 except UnknownAsset as e:
                     self.db.msg_aggregator.add_warning(
                         f'During cointracking CSV import found action with unknown '

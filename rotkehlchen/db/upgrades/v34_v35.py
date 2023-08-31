@@ -370,23 +370,22 @@ def _add_defillama_to_oracles(cursor: 'DBCursor', setting_name: Literal['current
         oracle_cls = HistoricalPriceOracle
         default_oracles = DEFAULT_HISTORICAL_PRICE_ORACLES_ORDER
 
-    oracle_list = default_oracles
+    oracles = [oracle.serialize() for oracle in default_oracles]
     if price_oracles is not None:
         oracles = json.loads(price_oracles[0])
-        oracle_list = [oracle_cls.deserialize(oracle) for oracle in oracles]
         try:
             # Type ignores here are needed since OracleSource can't have any member
             # or otherwise we would be re-defining them in their subclasses (they take different
             # values).
-            coingecko_pos = oracle_list.index(oracle_cls.COINGECKO)  # type: ignore
-            oracle_list.insert(coingecko_pos + 1, oracle_cls.DEFILLAMA)  # type: ignore
+            coingecko_pos = oracles.index(oracle_cls.COINGECKO.serialize())  # type: ignore[attr-defined]  # noqa: E501
+            oracles.insert(coingecko_pos + 1, oracle_cls.DEFILLAMA.serialize())  # type: ignore[attr-defined]  # noqa: E501
         except ValueError:
             # If coingecko is not in the list add at the end defillama
-            oracle_list.append(oracle_cls.DEFILLAMA)  # type: ignore
+            oracles.append(oracle_cls.DEFILLAMA.serialize())  # type: ignore[attr-defined]
 
     cursor.execute(
         'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
-        (setting_name, json.dumps([x.serialize() for x in oracle_list])),
+        (setting_name, json.dumps(oracles)),
     )
 
 

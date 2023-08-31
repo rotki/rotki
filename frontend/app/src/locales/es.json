@@ -901,7 +901,8 @@
     "title": "Address Book Management"
   },
   "airdrops": {
-    "description": "* These are the airdrops rotki detected your tracked accounts are eligible for. You may have already claimed them. If not then visit the link for each protocol and claim your share.",
+    "description": "* Estos son los airdrops que rotki detectó para los que son elegibles sus cuentas rastreadas. Es posible que ya los hayas reclamado, de no ser así, visite el enlace de cada protocolo y reclame su parte.",
+    "status_hint": "Mostrando resultados para airdrops de {status}.",
     "headers": {
       "source": "Source"
     },
@@ -920,7 +921,8 @@
   },
   "app": {
     "moto": "the opensource portfolio manager that protects your privacy",
-    "name": "rotki"
+    "name": "rotki",
+    "copyright": "© Rotki Solutions GmbH 2018-{year}"
   },
   "asset_balances": {
     "loading": "Please wait while rotki queries the blockchain..."
@@ -1248,7 +1250,8 @@
       "eth2": "ETH staking balances",
       "ksm": "Kusama balances",
       "loopring": "Loopring balances",
-      "polygon_pos": "Polygon PoS balances"
+      "polygon_pos": "Polygon PoS balances",
+      "arbitrum_one": "Arbitrum One balances"
     },
     "form_dialog": {
       "add_title": "Añade una cuenta en la blockchain",
@@ -1343,6 +1346,9 @@
   },
   "common": {
     "account": "Account",
+    "status": "Estado",
+    "claimed": "Reclamada",
+    "unclaimed": "No reclamado",
     "actions": {
       "back": "Atras",
       "cancel": "Cancelar",
@@ -1886,6 +1892,9 @@
       "title": "Deleting {chain} RPC Node"
     },
     "delete_tooltip": "Delete the selected RPC Node",
+    "edit_dialog": {
+      "title": "Edit {chain} RPC Node"
+    },
     "edit_error": {
       "title": "Editing {chain} RPC Node"
     },
@@ -2218,6 +2227,31 @@
         "empty": "The decimal separator cannot be empty"
       }
     },
+    "external_service_setting": {
+      "label": {
+        "query_retry_limit": "Límite de reintento de consulta",
+        "query_retry_limit_hint": "El número de veces que se intentará nuevamente una consulta a servicios externos antes de renunciar.",
+        "connect_timeout": "Tiempo de conexión agotado",
+        "connect_timeout_hint": "El número de segundos que se esperarán antes de renunciar a establecer una conexión con un servicio externo.",
+        "read_timeout": "Tiempo de lectura agotado",
+        "read_timeout_hint": "El número de segundos que se esperarán para el primer byte después de haber establecido una conexión con un servicio externo."
+      },
+      "title": "Configuración de servicio externo",
+      "validation": {
+        "query_retry_limit": {
+          "non_empty": "Por favor, ingrese el límite de reintento de consulta",
+          "invalid_range": "El límite de reintento de consulta debe ser mayor que {min}"
+        },
+        "connect_timeout": {
+          "non_empty": "Por favor, ingrese el tiempo de conexión agotado",
+          "invalid_range": "El tiempo de conexión agotado debe ser mayor que {min}"
+        },
+        "read_timeout": {
+          "non_empty": "Por favor, ingrese el tiempo de lectura agotado",
+          "invalid_range": "El tiempo de lectura agotado debe ser mayor que {min}"
+        }
+      }
+    },
     "labels": {
       "anonymous_analytics": "Should anonymous usage analytics be submitted?",
       "balance_saving_frequency": "Balance data saving frequency in hours",
@@ -2417,6 +2451,13 @@
       "line_one": "[Experimental] If you find an issue with the imported data, let us know so we can adapt the code accordingly.",
       "name": "Bisq"
     },
+    "bitmex": {
+      "import": "Import {0} from bitmex",
+      "import_types": "wallet history",
+      "line_one": "[Experimental] If you find an issue with the imported data, let us know so we can adapt the code accordingly.",
+      "line_two": "Amounts in the wallet history file are assumed to be Bitcoin. If you would like this feature supported for other currencies, please reach out.",
+      "name": "BitMEX"
+    },
     "bitcoin_tax": {
       "import": "Import {0} from bitcoin.tax",
       "import_types": "trades, income, and spending",
@@ -2465,9 +2506,9 @@
       "name": "Nexo"
     },
     "note": "Important notes for importing data from {0}'s CSV exports.",
-    "notice": "{warning} Those platforms could change their format in a backwards incompatible way quite often. As such this import may stop working. If that happens {link} and we will see what we can do.",
+    "notice": "Those platforms could change their format in a backwards incompatible way quite often. As such this import may stop working. If that happens {link} and we will see what we can do.",
     "notice_link": "open an issue with rotki",
-    "notice_warning": "⚠️ Important notice ⚠️:",
+    "notice_warning": "Important notice:",
     "select_source": {
       "title": "Select source"
     },
@@ -2656,12 +2697,7 @@
     "effective_interest_rate_tooltip": "The savings rate across all of the protocols in which you are actively lending, weighted based on the relative position in each protocol.",
     "history": "History",
     "loading": "Please wait while your balances are getting loaded...",
-    "profit_earned": "Profit Earned",
-    "reset": {
-      "protocol_selection": "Select protocol(s) to reset"
-    },
-    "reset_confirm": "This action will overwrite any cached history entries in the DB for the selected protocols and will fetch everything again. Depending on the number of accounts it may take a long time. Are you sure you want to continue?",
-    "reset_tooltip": "Refreshes the data overwriting cached Aave and yearn.finance Vaults historical entries"
+    "profit_earned": "Profit Earned"
   },
   "lending_asset_table": {
     "headers": {
@@ -2748,8 +2784,8 @@
     "total_asset_price": "Total Asset Price"
   },
   "login": {
-    "button_new_account": "Crear una nueva cuenta",
-    "button_signin": "Iniciar sesión",
+    "button_no_account": "¿No tienes una cuenta?",
+    "button_signup": "Registrarse",
     "custom_backend": {
       "hint": "The url the backend you would like to connect (leave empty for default).",
       "label": "Backend URL",
@@ -2774,10 +2810,20 @@
       "title": "User action required for DB sync"
     },
     "title": "Iniciar sesión",
+    "upgrading_db": {
+      "title": "Actualización de base de datos",
+      "current": "Aplicando paso {currentStep} de {totalSteps} para la actualización de la base de datos v{currentVersion}.",
+      "warning": "La base de datos se está actualizando de la versión {fromVersion} a {toVersion}. No cierres la aplicación hasta que esté terminada."
+    },
     "validation": {
       "non_empty_password": "Por favor introduzca una contraseña",
       "non_empty_username": "Por favor introduzca un nombre de usuario",
       "valid_username": "A username must contain only alphanumeric characters and have no spaces"
+    },
+    "credential_error": {
+      "title": "Tenga en cuenta que la cuenta de su sitio web y su cuenta de aplicación están separadas y no se pueden usar indistintamente.",
+      "description": "Si aún no ha creado una cuenta de aplicación, deberá hacerlo para poder iniciar sesión.",
+      "support": "Si necesita ayuda, contáctenos en nuestro canal de soporte en discord."
     }
   },
   "macos_unsupported": {
@@ -3078,6 +3124,11 @@
     "address_migration": {
       "title": "Address has been added to {chain}|Addresses have been added to {chain}",
       "message": "The following address has been added to {chain}: {addresses}|The following addresses have been added to {chain}: {addresses}"
+    },
+    "db_upload_result": {
+      "title": "Database sync failed",
+      "message": "We could not complete the upload because {reason}",
+      "action": "Force push"
     }
   },
   "notification_popup": {
@@ -3126,7 +3177,8 @@
   },
   "overall_balances": {
     "loading": "Cargando",
-    "premium_hint": "Get the full experience by upgrading to rotki premium"
+    "premium_hint": "Get the full experience by upgrading to rotki premium",
+    "summary": "Resumen"
   },
   "overview": {
     "details_dialog": {

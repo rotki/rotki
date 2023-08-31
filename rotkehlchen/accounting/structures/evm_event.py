@@ -246,14 +246,14 @@ class EvmEvent(HistoryBaseEntry):
 
         return type_identifier
 
-    def __eq__(self, other: Any) -> bool:
-        return (
+    def __eq__(self, other: object) -> bool:
+        return (  # ignores are due to object and type checks in super not recognized
             HistoryBaseEntry.__eq__(self, other) is True and
-            self.counterparty == other.counterparty and
-            self.tx_hash == other.tx_hash and
-            self.product == other.product and
-            self.address == other.address and
-            self.extra_data == other.extra_data
+            self.counterparty == other.counterparty and  # type: ignore
+            self.tx_hash == other.tx_hash and  # type: ignore
+            self.product == other.product and  # type: ignore
+            self.address == other.address and  # type: ignore
+            self.extra_data == other.extra_data  # type: ignore
         )
 
     def __repr__(self) -> str:

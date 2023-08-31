@@ -4,9 +4,9 @@ from http import HTTPStatus
 import pytest
 import requests
 from flaky import flaky
-from rotkehlchen.constants.assets import A_KSM
 
-from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants import ZERO
+from rotkehlchen.constants.assets import A_KSM
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
     api_url_for,

@@ -20,6 +20,7 @@ import {
   type BtcAccountData,
   type GeneralAccountData
 } from '@/types/blockchain/accounts';
+import { type Writeable } from '@/types';
 
 export const removeZeroAssets = (entries: AssetBalances): AssetBalances => {
   const balances = { ...entries };
@@ -64,6 +65,26 @@ export const mergeAssetBalances = (
     }
   }
   return merged;
+};
+
+export const groupAssetBreakdown = (
+  breakdowns: AssetBreakdown[],
+  groupBy: (item: AssetBreakdown) => string = (item: AssetBreakdown) =>
+    item.location + item.address
+): AssetBreakdown[] => {
+  const initial: Record<string, Writeable<AssetBreakdown>> = {};
+  const grouped = breakdowns.reduce((acc, breakdown) => {
+    const key = groupBy(breakdown);
+    if (!acc[key]) {
+      acc[key] = { ...breakdown, balance: zeroBalance() };
+    }
+    acc[key].balance = balanceSum(acc[key].balance, breakdown.balance);
+    return acc;
+  }, initial);
+
+  return Object.values(grouped).sort((a, b) =>
+    sortDesc(a.balance.usdValue, b.balance.usdValue)
+  );
 };
 
 export const appendAssetBalance = (

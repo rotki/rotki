@@ -7,8 +7,8 @@ import requests
 
 from rotkehlchen.assets.converters import UNSUPPORTED_GEMINI_ASSETS
 from rotkehlchen.assets.exchanges_mappings.gemini import WORLD_TO_GEMINI
+from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_BCH, A_BTC, A_ETH, A_LINK, A_LTC, A_USD
-from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair, UnsupportedAsset
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade, TradeType
 from rotkehlchen.exchanges.gemini import gemini_symbol_to_base_quote
@@ -22,7 +22,7 @@ from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import AssetMovementCategory, Location, Timestamp
 from rotkehlchen.utils.misc import ts_now
 
-UNSUPPORTED_GEMINI_PAIRS = {'btcgusdperp'}
+UNSUPPORTED_GEMINI_PAIRS = {'btcgusdperp', 'ethgusdperp', 'pepegusdperp'}
 
 
 @pytest.mark.skipif('CI' in os.environ, reason='temporarily skip gemini in CI')

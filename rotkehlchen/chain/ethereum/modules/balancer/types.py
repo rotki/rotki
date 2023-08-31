@@ -8,7 +8,7 @@ from eth_typing.evm import ChecksumAddress
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EvmToken, UnderlyingToken
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants.misc import ZERO_PRICE
+from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.serialization import DeserializationError
@@ -104,7 +104,7 @@ class BalancerInvestEvent(NamedTuple):
     def __hash__(self) -> int:
         return hash(self.tx_hash + str(self.log_index).encode())
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: object) -> bool:
         if other is None:
             return False
 
@@ -133,7 +133,7 @@ class BalancerBPTEvent(NamedTuple):
     def __hash__(self) -> int:
         return hash(self.tx_hash + str(self.log_index).encode())
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: object) -> bool:
         if other is None:
             return False
 

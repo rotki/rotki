@@ -36,6 +36,13 @@ export const useMainStore = defineStore('main', () => {
       : appVersion;
   });
 
+  const isDevelop = computed(() => {
+    const { version: appVersion } = get(version);
+    return (
+      appVersion.includes('dev') || get(dataDirectory).includes('develop_data')
+    );
+  });
+
   const getVersion = async (): Promise<void> => {
     const { version: appVersion } = await info(true);
     if (appVersion) {
@@ -131,6 +138,7 @@ export const useMainStore = defineStore('main', () => {
     updateNeeded,
     dockerRiskAccepted,
     defaultBackendArguments,
+    isDevelop,
     connect,
     getVersion,
     getInfo,

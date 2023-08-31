@@ -1,9 +1,11 @@
 import {
   TRADE_LOCATION_BANKS,
-  TRADE_LOCATION_BLOCKCHAIN
+  TRADE_LOCATION_BLOCKCHAIN,
+  TRADE_LOCATION_EXTERNAL
 } from '@/data/defaults';
 import { type AssetPrices } from '@/types/prices';
 import { BalanceType } from '@/types/balances';
+import { updateGeneralSettings } from '../../../utils/general-settings';
 
 vi.mock('@/store/balances/prices', () => ({
   useBalancePricesStore: vi.fn().mockReturnValue({
@@ -68,6 +70,29 @@ describe('store::balances/manual', () => {
     }
   ];
 
+  const ethAndEth2Balances = [
+    {
+      id: 4,
+      usdValue: bigNumberify(50),
+      amount: bigNumberify(50),
+      asset: 'ETH',
+      label: 'Ethereum',
+      tags: [],
+      location: TRADE_LOCATION_EXTERNAL,
+      balanceType: BalanceType.ASSET
+    },
+    {
+      id: 5,
+      usdValue: bigNumberify(100),
+      amount: bigNumberify(100),
+      asset: 'ETH2',
+      label: 'Staked ETH',
+      tags: [],
+      location: TRADE_LOCATION_EXTERNAL,
+      balanceType: BalanceType.ASSET
+    }
+  ];
+
   describe('computed', () => {
     const { manualBalancesData } = storeToRefs(store);
     set(manualBalancesData, balances);
@@ -116,12 +141,69 @@ describe('store::balances/manual', () => {
           tags: []
         }
       ]);
+
+      const { manualBalancesData } = storeToRefs(store);
+      set(manualBalancesData, ethAndEth2Balances);
+
+      const breakdown = store.getBreakdown('ETH');
+
+      updateGeneralSettings({
+        treatEth2AsEth: false
+      });
+
+      expect(get(breakdown)).toMatchObject([
+        {
+          address: '',
+          location: 'external',
+          balance: { amount: bigNumberify(50), usdValue: bigNumberify(50) },
+          tags: []
+        }
+      ]);
+
+      updateGeneralSettings({
+        treatEth2AsEth: true
+      });
+
+      expect(get(breakdown)).toMatchObject([
+        {
+          address: '',
+          location: 'external',
+          balance: { amount: bigNumberify(50), usdValue: bigNumberify(50) },
+          tags: []
+        },
+        {
+          address: '',
+          location: 'external',
+          balance: { amount: bigNumberify(100), usdValue: bigNumberify(100) },
+          tags: []
+        }
+      ]);
     });
 
     test('getLocationBreakdown', () => {
-      expect(
-        get(store.getLocationBreakdown(TRADE_LOCATION_BLOCKCHAIN))
-      ).toMatchObject({ DAI: balances[0], BTC: balances[1] });
+      updateGeneralSettings({
+        treatEth2AsEth: false
+      });
+
+      const locationBreakdown = store.getLocationBreakdown(
+        TRADE_LOCATION_EXTERNAL
+      );
+
+      expect(get(locationBreakdown)).toMatchObject({
+        ETH: ethAndEth2Balances[0],
+        ETH2: ethAndEth2Balances[1]
+      });
+
+      updateGeneralSettings({
+        treatEth2AsEth: true
+      });
+
+      expect(get(locationBreakdown)).toMatchObject({
+        ETH: {
+          amount: bigNumberify(150),
+          usdValue: bigNumberify(150)
+        }
+      });
     });
   });
 

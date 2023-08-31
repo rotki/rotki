@@ -3,7 +3,7 @@ from unittest.mock import patch
 import pytest
 
 from rotkehlchen.constants.assets import A_3CRV, A_BSQ
-from rotkehlchen.constants.misc import ZERO_PRICE
+from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.bisq_market import get_bisq_market_price
 

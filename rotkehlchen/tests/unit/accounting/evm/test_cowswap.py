@@ -11,8 +11,8 @@ from rotkehlchen.accounting.structures.processed_event import ProcessedAccountin
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.modules.cowswap.accountant import CowswapAccountant
 from rotkehlchen.chain.ethereum.modules.cowswap.constants import CPT_COWSWAP
+from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_USDC, A_WBTC
-from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
 from rotkehlchen.types import Location, Price, Timestamp, TimestampMS

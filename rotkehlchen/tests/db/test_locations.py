@@ -2,8 +2,8 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.modules.balancer.db import add_balancer_events
 from rotkehlchen.chain.ethereum.modules.balancer.types import BalancerBPTEventType, BalancerEvent
+from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_ETH, A_EUR, A_LTC, A_USD, A_USDC
-from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import (

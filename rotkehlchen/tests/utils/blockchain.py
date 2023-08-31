@@ -1,4 +1,5 @@
 import json
+from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, Optional, Union
 from unittest.mock import patch
 
@@ -8,8 +9,8 @@ from web3._utils.abi import get_abi_input_types, get_abi_output_types
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.ethereum.defi.zerionsdk import ZERION_ADAPTER_ADDRESS
 from rotkehlchen.chain.evm.types import NodeName, Web3Node, string_to_evm_address
+from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_BTC, A_ETH
-from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.serialization import DeserializationError
@@ -28,6 +29,8 @@ if TYPE_CHECKING:
 
     from rotkehlchen.chain.aggregator import ChainsAggregator
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
+    from rotkehlchen.chain.evm.types import WeightedNode
+    from rotkehlchen.db.dbhandler import DBHandler
 
 
 def assert_btc_balances_result(
@@ -355,7 +358,7 @@ def mock_etherscan_query(
                     # Get the ethscan multibalance subcalls
                     ethscan_contract = web3.eth.contract(address=contract.address, abi=contract.abi)  # noqa: E501
                     # not really the given args, but we just want the fn abi
-                    args = [list(eth_map.keys())[0], list(eth_map.keys())]
+                    args = [next(iter(eth_map.keys())), list(eth_map.keys())]
                     scan_fn_abi = ethscan_contract._find_matching_fn_abi(
                         fn_identifier='tokensBalance',
                         args=args,
@@ -679,3 +682,36 @@ def setup_evm_addresses_activity_mock(
         side_effect=mock_arbitrum_one_has_activity,
     ))
     return stack
+
+
+def maybe_modify_rpc_nodes(
+        database: 'DBHandler',
+        blockchain: SupportedBlockchain,
+        manager_connect_at_start: Union[str, Sequence['WeightedNode']],
+) -> Sequence['WeightedNode']:
+    """Modify the rpc nodes in the DB for the given blockchain depending on
+    the value of the managager_connect_at_start.
+
+    IF it's a string can only be default. In which case we get the nodes
+    to connect to directly as default from the DB.
+
+    But if it's a tuple of entries we clean the DB except the etherscan entry
+    and write that tuple. Tuple may also be empty which results in clean all nodes
+    except etherscan for the chain.
+
+    Returns the nodes to connect to.
+    """
+    if isinstance(manager_connect_at_start, str):
+        assert manager_connect_at_start == 'DEFAULT'
+        nodes_to_connect_to = database.get_rpc_nodes(blockchain, only_active=True)
+    else:
+        nodes_to_connect_to = manager_connect_at_start
+        with database.user_write() as write_cursor:
+            write_cursor.execute(  # Delete all but etherscan endpoint
+                'DELETE FROM rpc_nodes WHERE blockchain=? and endpoint!=""',
+                (blockchain.value,))
+        for entry in nodes_to_connect_to:
+            if entry.node_info.endpoint != '':  # don't re-add etherscan
+                database.add_rpc_node(entry)
+
+    return nodes_to_connect_to

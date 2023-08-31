@@ -72,7 +72,7 @@ class DBCursor:
     def __exit__(
             self,
             exctype: Optional[type[BaseException]],
-            value: Optional[type[BaseException]],
+            value: Optional[BaseException],
             traceback: Optional[TracebackType],
     ) -> bool:
         self.close()

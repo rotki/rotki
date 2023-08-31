@@ -35,6 +35,15 @@ log = RotkehlchenLogsAdapter(logger)
 ALLOWED_ICON_EXTENSIONS = ('.png', '.svg', '.jpeg', '.jpg', '.webp')
 
 
+def _build_http_header_for_images(image_path: Path) -> dict[str, str]:
+    """Given a path to an image return the headers to be used when sending it in a http request"""
+    http_type = image_path.suffix[1:]
+    if http_type == 'svg':
+        http_type = 'svg+xml'
+
+    return {'mimetype': f'image/{http_type}', 'Content-Type': f'image/{http_type}'}
+
+
 def check_if_image_is_cached(image_path: Path, match_header: Optional[str]) -> Optional[Response]:
     """Checks whether the file at `image_path` is an already cached image.
 
@@ -48,7 +57,7 @@ def check_if_image_is_cached(image_path: Path, match_header: Optional[str]) -> O
             (
                 b'',
                 HTTPStatus.NOT_MODIFIED,
-                {'mimetype': 'image/png', 'Content-Type': 'image/png'},
+                _build_http_header_for_images(image_path),
             ),
         )
 
@@ -67,7 +76,9 @@ def create_image_response(image_path: Path) -> Response:
     response = make_response(
         (
             image_data,
-            HTTPStatus.OK, {'mimetype': 'image/png', 'Content-Type': 'image/png'}),
+            HTTPStatus.OK,
+            _build_http_header_for_images(image_path),
+        ),
     )
     response.set_etag(hashlib.md5(image_data).hexdigest())
     return response
@@ -283,6 +294,11 @@ class IconManager:
         Completely replaces what was there before
         """
         quoted_identifier = urllib.parse.quote_plus(asset.identifier)
+
+        # delete possible old uploads
+        for extension in ALLOWED_ICON_EXTENSIONS:
+            (self.custom_icons_dir / f'{quoted_identifier}{extension}').unlink(missing_ok=True)
+
         shutil.copyfile(
             icon_path,
             self.custom_icons_dir / f'{quoted_identifier}{icon_path.suffix}',

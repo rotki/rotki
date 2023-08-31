@@ -35,13 +35,14 @@ from rotkehlchen.chain.ethereum.modules.yearn.constants import (
     YEARN_VAULTS_V2_PREFIX,
 )
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode
+from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_ETH, A_ETH2, A_USD
 from rotkehlchen.constants.limits import (
     FREE_ASSET_MOVEMENTS_LIMIT,
     FREE_TRADES_LIMIT,
     FREE_USER_NOTES_LIMIT,
 )
-from rotkehlchen.constants.misc import NFT_DIRECTIVE, ONE, ZERO
+from rotkehlchen.constants.misc import NFT_DIRECTIVE
 from rotkehlchen.constants.timing import HOUR_IN_SECONDS
 from rotkehlchen.db.constants import (
     BINANCE_MARKETS_KEY,
@@ -111,6 +112,7 @@ from rotkehlchen.premium.premium import PremiumCredentials
 from rotkehlchen.serialization.deserialize import deserialize_hex_color_code, deserialize_timestamp
 from rotkehlchen.types import (
     EVM_CHAINS_WITH_TRANSACTIONS,
+    SPAM_PROTOCOL,
     SUPPORTED_EVM_CHAINS,
     ApiKey,
     ApiSecret,
@@ -206,7 +208,7 @@ class DBHandler:
             if initial_settings is not None:
                 self.set_settings(cursor, initial_settings)
             self.update_owned_assets_in_globaldb(cursor)
-            self.add_globaldb_assetids(cursor)
+            self.sync_globaldb_assets(cursor)
 
     def _check_unfinished_upgrades(self, resume_from_backup: bool) -> None:
         """
@@ -281,6 +283,7 @@ class DBHandler:
         Such as:
             - DB Upgrades
             - Create tables that are missing for new version
+            - sanity checks
 
         May raise:
         - AuthenticationError if a wrong password is given or if the DB is corrupt
@@ -481,11 +484,21 @@ class DBHandler:
             setattr(self, conn_attribute, None)
 
     def export_unencrypted(self, temppath: Path) -> None:
-        self.conn.executescript(
-            'ATTACH DATABASE "{}" AS plaintext KEY "";'
-            'SELECT sqlcipher_export("plaintext");'
-            'DETACH DATABASE plaintext;'.format(temppath),
-        )
+        """Export the unencrypted DB to the temppath as plaintext DB
+
+        The critical section is absolutely needed as a context switch
+        from inside this execute script can result in:
+        1. coming into this code again from another greenlet which can result
+        to DB plaintext already in use
+        2. Having a DB transaction open between the attach and detach and not
+        closed when we detach which will result in DB plaintext locked.
+        """
+        with self.conn.critical_section():
+            self.conn.executescript(
+                f'ATTACH DATABASE "{temppath}" AS plaintext KEY "";'
+                'SELECT sqlcipher_export("plaintext");'
+                'DETACH DATABASE plaintext;',
+            )
 
     def import_unencrypted(self, unencrypted_db_data: bytes) -> None:
         """Imports an unencrypted DB from raw data
@@ -627,8 +640,11 @@ class DBHandler:
 
     @need_writable_cursor('user_write')
     def add_to_ignored_assets(self, write_cursor: 'DBCursor', asset: Asset) -> None:
+        """Add a new asset to the set of ignored assets. If the asset was already marked as
+        ignored then we don't do anything.
+        """
         write_cursor.execute(
-            'INSERT INTO multisettings(name, value) VALUES(?, ?)',
+            'INSERT OR IGNORE INTO multisettings(name, value) VALUES(?, ?)',
             ('ignored_asset', asset.identifier),
         )
 
@@ -2193,6 +2209,33 @@ class DBHandler:
 
         return balances
 
+    def query_collection_timed_balances(
+            self,
+            cursor: 'DBCursor',
+            collection_id: int,
+            from_ts: Optional[Timestamp] = None,
+            to_ts: Optional[Timestamp] = None,
+    ) -> list[SingleDBAssetBalance]:
+        """Query all balance entries for all assets of a collection within a range of timestamps
+        """
+        with GlobalDBHandler().conn.read_ctx() as global_cursor:
+            global_cursor.execute(
+                'SELECT asset FROM multiasset_mappings WHERE collection_id=?',
+                (collection_id,),
+            )
+            asset_balances: list[SingleDBAssetBalance] = []
+            for x in global_cursor:
+                asset_balances.extend(self.query_timed_balances(
+                    cursor=cursor,
+                    asset=Asset(x[0]),
+                    balance_type=BalanceType.ASSET,
+                    from_ts=from_ts,
+                    to_ts=to_ts,
+                ))
+
+        asset_balances.sort(key=lambda x: x.time)
+        return combine_asset_balances(asset_balances)
+
     def query_owned_assets(self, cursor: 'DBCursor') -> list[Asset]:
         """Query the DB for a list of all assets ever owned
 
@@ -2263,14 +2306,26 @@ class DBHandler:
             [(x,) for x in asset_identifiers],
         )
 
-    def add_globaldb_assetids(self, write_cursor: 'DBCursor') -> None:
-        """Makes sure that all the GlobalDB asset identifiers are mirrored in the user DB"""
+    def sync_globaldb_assets(self, write_cursor: 'DBCursor') -> None:
+        """Makes sure that:
+        - all the GlobalDB asset identifiers are mirrored in the user DB
+        - all the assets set to have the SPAM_PROTOCOL in the global DB
+        are set to be part of the user's ignored list
+        """
         with GlobalDBHandler().conn.read_ctx() as cursor:
             # after succesfull update add all asset ids
             cursor.execute('SELECT identifier from assets;')
             self.add_asset_identifiers(
                 write_cursor=write_cursor,
                 asset_identifiers=[x[0] for x in cursor],
+            )  # could do an attach DB here instead of two different cursor queries but probably would be overkill # noqa: E501
+            globaldb_spam = cursor.execute(
+                'SELECT identifier FROM evm_tokens WHERE protocol=?',
+                (SPAM_PROTOCOL,),
+            ).fetchall()
+            write_cursor.executemany(
+                'INSERT OR IGNORE INTO multisettings(name, value) VALUES(?, ?)',
+                [('ignored_asset', identifier[0]) for identifier in globaldb_spam],
             )
 
     def delete_asset_identifier(self, write_cursor: 'DBCursor', asset_id: str) -> None:
@@ -2819,7 +2874,7 @@ class DBHandler:
             self,
             cursor: 'DBCursor',
             table_name: str,
-            klass: Union[type[Trade], type[AssetMovement], type[MarginPosition]],
+            klass: type[Union[Trade, AssetMovement, MarginPosition]],
     ) -> None:
         updates: list[tuple[str, str]] = []
         log.debug(f'db integrity: start {table_name}')
@@ -2937,7 +2992,7 @@ class DBHandler:
             self,
             blockchain: SupportedBlockchain,
             only_active: bool = False,
-    ) -> list[WeightedNode]:
+    ) -> Sequence[WeightedNode]:
         """
         Get all the nodes in the database. If only_active is set to true only the nodes that
         have the column active set to True will be returned.
@@ -3013,21 +3068,21 @@ class DBHandler:
         """
         Adds a new rpc node.
         """
-        with self.user_write() as cursor:
+        with self.user_write() as write_cursor:
             try:
-                cursor.execute(
+                write_cursor.execute(
                     'INSERT INTO rpc_nodes(name, endpoint, owned, active, weight, blockchain) VALUES (?, ?, ?, ?, ?, ?)',   # noqa: E501
                     node.serialize_for_db(),
                 )
             except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
                 raise InputError(
-                    f'Node for {node.node_info.blockchain} with name {node.node_info.name} '
-                    f'already exists in db',
+                    f'Node for {node.node_info.blockchain} with endpoint '
+                    f'{node.node_info.endpoint} already exists in db',
                 ) from e
             self.rebalance_rpc_nodes_weights(
-                write_cursor=cursor,
+                write_cursor=write_cursor,
                 proportion_to_share=ONE - node.weight,
-                exclude_identifier=cursor.lastrowid,
+                exclude_identifier=write_cursor.lastrowid,
                 blockchain=node.node_info.blockchain,
             )
 
@@ -3039,18 +3094,24 @@ class DBHandler:
         - InputError if no entry with such
         """
         with self.user_write() as cursor:
-            cursor.execute(
-                'UPDATE rpc_nodes SET name=?, endpoint=?, owned=?, active=?, weight=? WHERE identifier=? AND blockchain=?',  # noqa: E501
-                (
-                    node.node_info.name,
-                    node.node_info.endpoint,
-                    node.node_info.owned,
-                    node.active,
-                    str(node.weight),
-                    node.identifier,
-                    node.node_info.blockchain.value,
-                ),
-            )
+            try:
+                cursor.execute(
+                    'UPDATE rpc_nodes SET name=?, endpoint=?, owned=?, active=?, weight=? WHERE identifier=? AND blockchain=?',  # noqa: E501
+                    (
+                        node.node_info.name,
+                        node.node_info.endpoint,
+                        node.node_info.owned,
+                        node.active,
+                        str(node.weight),
+                        node.identifier,
+                        node.node_info.blockchain.value,
+                    ),
+                )
+            except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
+                raise InputError(
+                    f'Node for {node.node_info.blockchain} with endpoint '
+                    f'{node.node_info.endpoint}  already exists in db',
+                ) from e
 
             if cursor.rowcount == 0:
                 raise InputError(f"Node with identifier {node.identifier} doesn't exist")

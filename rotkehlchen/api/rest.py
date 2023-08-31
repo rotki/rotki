@@ -56,7 +56,7 @@ from rotkehlchen.assets.asset import (
     ResolvedAsset,
 )
 from rotkehlchen.assets.resolver import AssetResolver
-from rotkehlchen.assets.types import AssetType
+from rotkehlchen.assets.types import ASSET_TYPES_EXCLUDED_FOR_USERS, AssetType
 from rotkehlchen.balances.manual import (
     ManuallyTrackedBalance,
     add_manually_tracked_balances,
@@ -78,6 +78,7 @@ from rotkehlchen.chain.ethereum.modules.yearn.utils import query_yearn_vaults
 from rotkehlchen.chain.ethereum.utils import try_download_ens_avatar
 from rotkehlchen.chain.evm.names import find_ens_mappings, search_for_addresses_names
 from rotkehlchen.chain.evm.types import WeightedNode
+from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.limits import (
     FREE_ASSET_MOVEMENTS_LIMIT,
@@ -88,14 +89,12 @@ from rotkehlchen.constants.limits import (
     FREE_USER_NOTES_LIMIT,
 )
 from rotkehlchen.constants.misc import (
-    ASSET_TYPES_EXCLUDED_FOR_USERS,
     DEFAULT_MAX_LOG_BACKUP_FILES,
     DEFAULT_MAX_LOG_SIZE_IN_MB,
     DEFAULT_SQL_VM_INSTRUCTIONS_CB,
     HTTP_STATUS_INTERNAL_DB_ERROR,
-    ONE,
-    ZERO_PRICE,
 )
+from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.constants.resolver import ChainID
 from rotkehlchen.constants.timing import ENS_AVATARS_REFRESH
 from rotkehlchen.data_import.manager import DataImportSource
@@ -304,6 +303,19 @@ def async_api_call() -> Callable:
     return wrapper
 
 
+def login_lock() -> Callable:
+    """
+    This is a decorator that uses the login lock at RestAPI to avoid a race condition between
+    async tasks using the user unlock logic.
+    """
+    def wrapper(func: Callable[..., Response]) -> Callable[..., Response]:
+        def inner(rest_api: 'RestAPI', **kwargs: Any) -> Response:
+            with rest_api.login_lock:
+                return func(rest_api, **kwargs)
+        return inner
+    return wrapper
+
+
 class RestAPI:
     """ The Object holding the logic that runs inside all the API calls"""
     def __init__(self, rotkehlchen: Rotkehlchen) -> None:
@@ -314,6 +326,7 @@ class RestAPI:
         # Greenlets that will be waited for when we shutdown (just main loop)
         self.waited_greenlets = [mainloop_greenlet]
         self.task_lock = Semaphore()
+        self.login_lock = Semaphore()
         self.task_id = 0
         self.task_results: dict[int, Any] = {}
         self.trade_schema = TradeSchema()
@@ -1033,6 +1046,7 @@ class RestAPI:
         result_dict = _wrap_in_ok_result(result)
         return api_response(result_dict, status_code=HTTPStatus.OK)
 
+    @login_lock()
     @async_api_call()
     def create_new_user(
             self,
@@ -1116,6 +1130,7 @@ class RestAPI:
             'status_code': HTTPStatus.OK,
         }
 
+    @login_lock()
     @async_api_call()
     def user_login(
             self,
@@ -1460,19 +1475,29 @@ class RestAPI:
 
     def query_timed_balances_data(
             self,
-            asset: Asset,
+            asset: Optional[Asset],
+            collection_id: Optional[int],
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
     ) -> Response:
-        # TODO: Think about this, but for now this is only balances, not liabilities
+
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
-            data = self.rotkehlchen.data.db.query_timed_balances(
-                cursor=cursor,
-                from_ts=from_timestamp,
-                to_ts=to_timestamp,
-                asset=asset,
-                balance_type=BalanceType.ASSET,
-            )
+            if asset is not None:
+                # TODO: Think about this, but for now this is only balances, not liabilities
+                data = self.rotkehlchen.data.db.query_timed_balances(
+                    cursor=cursor,
+                    from_ts=from_timestamp,
+                    to_ts=to_timestamp,
+                    asset=asset,
+                    balance_type=BalanceType.ASSET,
+                )
+            else:  # marshmallow check guarantees collection_id exists
+                data = self.rotkehlchen.data.db.query_collection_timed_balances(
+                    cursor=cursor,
+                    collection_id=collection_id,  # type: ignore  # collection_id exists here
+                    from_ts=from_timestamp,
+                    to_ts=to_timestamp,
+                )
 
         result = process_result_list(data)
         return api_response(
@@ -1555,7 +1580,7 @@ class RestAPI:
         debug_info = {
             'events': [entry.serialize_for_debug_import() for entry in events],
             'settings': settings.serialize(),
-            'ignored_events_ids': {k.serialize(): v for k, v in ignored_ids.items()},
+            'ignored_events_ids': {k.serialize(): list(v) for k, v in ignored_ids.items()},
             'pnl_settings': {
                 'from_timestamp': int(from_timestamp),
                 'to_timestamp': int(to_timestamp),
@@ -2213,7 +2238,8 @@ class RestAPI:
         try:
             data = check_airdrops(
                 addresses=self.rotkehlchen.chains_aggregator.accounts.eth,
-                data_dir=self.rotkehlchen.data_dir,
+                database=self.rotkehlchen.data.db,
+                tolerance_for_amount_check=FVal('0.00000000000001000'),
             )
         except (RemoteError, UnableToDecryptRemoteData) as e:
             return wrap_in_fail_result(str(e), status_code=HTTPStatus.BAD_GATEWAY)
@@ -3037,7 +3063,7 @@ class RestAPI:
 
         if result is None:
             with self.rotkehlchen.data.db.user_write() as cursor:
-                self.rotkehlchen.data.db.add_globaldb_assetids(cursor)
+                self.rotkehlchen.data.db.sync_globaldb_assets(cursor)
             return OK_RESULT
 
         return {
@@ -3458,11 +3484,12 @@ class RestAPI:
             entries_limit = - 1
 
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
-            events_result, entries_found = dbevents.get_history_events_and_limit_info(
+            events_result, entries_found, entries_with_limit = dbevents.get_history_events_and_limit_info(  # noqa: E501
                 cursor=cursor,
                 filter_query=filter_query,
                 has_premium=has_premium,
                 group_by_event_ids=group_by_event_ids,
+                entries_limit=entries_limit if entries_limit != -1 else None,
             )
             entries_total = self.rotkehlchen.data.db.get_entries_count(
                 cursor=cursor,
@@ -3501,10 +3528,13 @@ class RestAPI:
             ]
         result = {
             'entries': entries,
-            'entries_found': entries_found,
+            'entries_found': entries_with_limit,
             'entries_limit': entries_limit,
             'entries_total': entries_total,
         }
+        if has_premium is False:
+            result['entries_found_total'] = entries_found
+
         return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
 
     @async_api_call()
@@ -4063,7 +4093,7 @@ class RestAPI:
                     continue
                 events.append(staking_event)
 
-            entries_total = history_events_db.get_history_events_count(
+            entries_total, _ = history_events_db.get_history_events_count(
                 cursor=cursor,
                 query_filter=table_filter,
             )
@@ -4237,7 +4267,7 @@ class RestAPI:
         Collect the counterparties from decoders in the different evm chains and combine them
         removing duplicates.
         """
-        counterparties: set['CounterpartyDetails'] = reduce(
+        counterparties: set[CounterpartyDetails] = reduce(
             lambda x, y: x | y,
             [
                 self.rotkehlchen.chains_aggregator.get_evm_manager(chain_id).transactions_decoder.rules.all_counterparties

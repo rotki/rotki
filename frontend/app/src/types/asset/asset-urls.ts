@@ -66,5 +66,10 @@ export const explorerUrls: AssetExplorerUrls = {
     address: 'https://polygonscan.com/address/',
     transaction: 'https://polygonscan.com/tx/',
     block: 'https://polygonscan.com/block/'
+  },
+  [Blockchain.ARBITRUM_ONE]: {
+    address: 'https://arbiscan.io/address/',
+    transaction: 'https://arbiscan.io/tx/',
+    block: 'https://arbiscan.io/block/'
   }
 };

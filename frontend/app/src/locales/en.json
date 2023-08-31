@@ -159,7 +159,6 @@
     },
     "title": "Trade Settings"
   },
-
   "address_account_form": {
     "label": "Add to all supported EVM chains",
     "hint": "When checked this address will be tracked for all supported evm chains (Ethereum, Optimism etc)"
@@ -940,6 +939,7 @@
   },
   "airdrops": {
     "description": "* These are the airdrops rotki detected your tracked accounts are eligible for. You may have already claimed them. If not then visit the link for each protocol and claim your share.",
+    "status_hint": "Showing results for {status} airdrops.",
     "headers": {
       "source": "Source"
     },
@@ -959,7 +959,8 @@
   },
   "app": {
     "moto": "the opensource portfolio manager that protects your privacy",
-    "name": "rotki"
+    "name": "rotki",
+    "copyright": "© Rotki Solutions GmbH 2018-{year}"
   },
   "asset_balances": {
     "loading": "Please wait while rotki queries the blockchain..."
@@ -1325,7 +1326,8 @@
       "ksm": "Kusama balances",
       "loopring": "Loopring balances",
       "optimism": "Optimism",
-      "polygon_pos": "Polygon PoS balances"
+      "polygon_pos": "Polygon PoS balances",
+      "arbitrum_one": "Arbitrum One balances"
     },
     "evm_detection": {
       "title": "Detect EVM accounts",
@@ -1424,6 +1426,9 @@
   },
   "common": {
     "account": "Account",
+    "status": "Status",
+    "claimed": "Claimed",
+    "unclaimed": "Unclaimed",
     "actions": {
       "accept": "Accept",
       "back": "Back",
@@ -1991,6 +1996,9 @@
       "title": "Deleting {chain} RPC Node"
     },
     "delete_tooltip": "Delete the selected RPC Node",
+    "edit_dialog": {
+      "title": "Edit {chain} RPC Node"
+    },
     "edit_error": {
       "title": "Editing {chain} RPC Node"
     },
@@ -2330,6 +2338,31 @@
         "empty": "The decimal separator cannot be empty"
       }
     },
+    "external_service_setting": {
+      "label": {
+        "query_retry_limit": "Query retry limit",
+        "query_retry_limit_hint": "The number of times to retry a query to external services before giving up.",
+        "connect_timeout": "Connect timeout",
+        "connect_timeout_hint": "The number of seconds to wait before giving up on establishing a connection to an external service.",
+        "read_timeout": "Read timeout",
+        "read_timeout_hint": "The number of seconds to wait for the first byte after a connection to an external service has been established."
+      },
+      "title": "External service settings",
+      "validation": {
+        "query_retry_limit": {
+          "non_empty": "Please input the query retry limit",
+          "invalid_range": "Query retry limit must be larger than {min}"
+        },
+        "connect_timeout": {
+          "non_empty": "Please input the connect timeout",
+          "invalid_range": "Connect timeout must be larger than {min}"
+        },
+        "read_timeout": {
+          "non_empty": "Please input the read timeout",
+          "invalid_range": "Read timeout must be larger than {min}"
+        }
+      }
+    },
     "labels": {
       "anonymous_analytics": "Should anonymous usage analytics be submitted?",
       "balance_saving_frequency": "Balance data saving frequency in hours",
@@ -2541,6 +2574,13 @@
       "line_two": "Because of binance's csv format there is a chance that not all data will be imported. If this will happen, you will get warning.",
       "name": "Binance"
     },
+    "bitmex": {
+      "import": "Import {0} from bitmex",
+      "import_types": "wallet history",
+      "line_one": "[Experimental] If you find an issue with the imported data, let us know so we can adapt the code accordingly.",
+      "line_two": "Amounts in the wallet history file are assumed to be Bitcoin. If you would like this feature supported for other currencies, please reach out.",
+      "name": "BitMEX"
+    },
     "bisq": {
       "import": "Import {0} from Bisq",
       "import_trade": "trades",
@@ -2595,9 +2635,9 @@
       "name": "Nexo"
     },
     "note": "Important notes for importing data from {0}'s CSV exports.",
-    "notice": "{warning} Those platforms could change their format in a backwards incompatible way quite often. As such this import may stop working. If that happens {link} and we will see what we can do.",
+    "notice": "Those platforms could change their format in a backwards incompatible way quite often. As such this import may stop working. If that happens {link} and we will see what we can do.",
     "notice_link": "open an issue with rotki",
-    "notice_warning": "⚠️ Important notice ⚠️:",
+    "notice_warning": "Important notice:",
     "select_source": {
       "title": "Select source"
     },
@@ -2792,12 +2832,7 @@
     "effective_interest_rate_tooltip": "The savings rate across all of the protocols in which you are actively lending, weighted based on the relative position in each protocol.",
     "history": "History",
     "loading": "Please wait while your balances are getting loaded...",
-    "profit_earned": "Profit Earned",
-    "reset": {
-      "protocol_selection": "Select protocol(s) to reset"
-    },
-    "reset_confirm": "This action will overwrite any cached history entries in the DB for the selected protocols and will fetch everything again. Depending on the number of accounts it may take a long time. Are you sure you want to continue?",
-    "reset_tooltip": "Refreshes the data overwriting cached Aave and yearn.finance Vaults historical entries"
+    "profit_earned": "Profit Earned"
   },
   "lending_asset_table": {
     "headers": {
@@ -2907,8 +2942,8 @@
     "total_asset_price": "Total Asset Price"
   },
   "login": {
-    "button_new_account": "Create New Account",
-    "button_signin": "Sign In",
+    "button_no_account": "Don’t have an account?",
+    "button_signup": "Sign Up",
     "custom_backend": {
       "hint": "The url the backend you would like to connect (leave empty for default).",
       "label": "Backend URL",
@@ -2944,6 +2979,14 @@
       "title": "User action required for DB sync"
     },
     "title": "Sign In",
+    "welcome_title": "Welcome to rotki",
+    "welcome_description": "Welcome to the open source portfolio manager that protects your privacy.",
+    "welcome_update_message": "Sign in to explore changes we’ve made.",
+    "description": {
+      "welcome": "Welcome! Please enter your details.",
+      "our_docs": "Our documentation",
+      "more_details": "{documentation} shows you more details about the local app and the user."
+    },
     "upgrading_db": {
       "title": "Database Upgrade",
       "current": "Step {currentStep} of {totalSteps} of database upgrade v{currentVersion} is applied.",
@@ -2953,6 +2996,11 @@
       "non_empty_password": "Please provide a password",
       "non_empty_username": "Please provide a user name",
       "valid_username": "A username must contain only alphanumeric characters and have no spaces"
+    },
+    "credential_error": {
+      "title": "Please note that your website account and app account are separate and cannot be used interchangeably.",
+      "description": "If you have not yet created an app account, you will need to do so in order to sign in.",
+      "support": "If you need assistance, please contact us in our support channel on discord."
     }
   },
   "macos_unsupported": {
@@ -3281,6 +3329,11 @@
     "address_migration": {
       "title": "Address has been added to {chain}|Addresses have been added to {chain}",
       "message": "The following address has been added to {chain}: {addresses}|The following addresses have been added to {chain}: {addresses}"
+    },
+    "db_upload_result": {
+      "title": "Database sync failed",
+      "message": "We could not complete the upload because {reason}",
+      "action": "Force push"
     }
   },
   "notification_popup": {
@@ -3330,7 +3383,8 @@
   },
   "overall_balances": {
     "loading": "LOADING",
-    "premium_hint": "Get the full experience by upgrading to rotki premium"
+    "premium_hint": "Get the full experience by upgrading to rotki premium",
+    "summary": "Summary"
   },
   "overview": {
     "details_dialog": {

@@ -1,7 +1,6 @@
 import { BigNumber } from '@rotki/common';
 import { Zero } from '@/utils/bignumbers';
 import { Guid } from '../../common/guid';
-import { AccountBalancesPage } from '../../pages/account-balances-page';
 import {
   type FixtureManualBalance,
   ManualBalancesPage
@@ -14,7 +13,6 @@ import { waitForAsyncQuery } from '../../support/utils';
 describe('balances', () => {
   let username: string;
   let app: RotkiApp;
-  let page: AccountBalancesPage;
   let manualBalancesPage: ManualBalancesPage;
   let dashboardPage: DashboardPage;
   let settings: GeneralSettingsPage;
@@ -23,12 +21,10 @@ describe('balances', () => {
   before(() => {
     username = Guid.newGuid().toString();
     app = new RotkiApp();
-    page = new AccountBalancesPage();
     manualBalancesPage = new ManualBalancesPage();
     dashboardPage = new DashboardPage();
     settings = new GeneralSettingsPage();
     app.fasterLogin(username);
-    page.visit();
     cy.fixture('account-balances/manual-balances').then(balances => {
       manualBalances = balances;
     });
@@ -115,19 +111,16 @@ describe('balances', () => {
   });
 
   it('test scramble mode', () => {
-    page.visit();
     manualBalancesPage.visit();
     manualBalancesPage.balanceShouldMatch(manualBalances);
 
     settings.visit();
     settings.toggleScrambleData();
-    page.visit();
     manualBalancesPage.visit();
     manualBalancesPage.balanceShouldNotMatch(manualBalances);
 
     settings.visit();
     settings.toggleScrambleData();
-    page.visit();
     manualBalancesPage.visit();
   });
 

@@ -13,7 +13,7 @@ from substrateinterface.exceptions import BlockNotFound, SubstrateRequestExcepti
 from websocket import WebSocketException
 
 from rotkehlchen.assets.asset import CryptoAsset
-from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants import ZERO
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError

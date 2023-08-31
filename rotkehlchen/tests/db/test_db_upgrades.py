@@ -19,16 +19,16 @@ from rotkehlchen.db.upgrade_manager import (
     DBUpgradeProgressHandler,
 )
 from rotkehlchen.db.upgrades.v37_v38 import DEFAULT_POLYGON_NODES_AT_V38
-from rotkehlchen.db.upgrades.v38_v39 import DEFAULT_ARBITRUM_ONE_NODES_AT_V39
 from rotkehlchen.db.utils import table_exists
 from rotkehlchen.errors.misc import DBUpgradeError
+from rotkehlchen.oracles.structures import CurrentPriceOracle
 from rotkehlchen.tests.utils.database import (
     _use_prepared_db,
     mock_db_schema_sanity_check,
-    mock_dbhandler_add_globaldb_assetids,
+    mock_dbhandler_sync_globaldb_assets,
     mock_dbhandler_update_owned_assets,
 )
-from rotkehlchen.types import Location, SupportedBlockchain, deserialize_evm_tx_hash
+from rotkehlchen.types import Location, deserialize_evm_tx_hash
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.hexbytes import HexBytes
 from rotkehlchen.utils.misc import ts_now
@@ -113,7 +113,7 @@ def _init_db_with_target_version(
         stack.enter_context(no_tables_created_after_init)
         if target_version <= 25:
             stack.enter_context(mock_dbhandler_update_owned_assets())
-            stack.enter_context(mock_dbhandler_add_globaldb_assetids())
+            stack.enter_context(mock_dbhandler_sync_globaldb_assets())
         db = DBHandler(
             user_data_dir=user_data_dir,
             password='123',
@@ -783,7 +783,7 @@ def test_upgrade_db_34_to_35(user_data_dir):  # pylint: disable=unused-argument
     _use_prepared_db(user_data_dir, 'v34_rotkehlchen.db')
 
     # Make sure that assets from the globaldb at version 3 are not copied in the test database
-    with patch('rotkehlchen.db.dbhandler.DBHandler.add_globaldb_assetids', return_value=lambda *args: None):  # noqa: E501
+    with patch('rotkehlchen.db.dbhandler.DBHandler.sync_globaldb_assets', return_value=lambda *args: None):  # noqa: E501
         db_v34 = _init_db_with_target_version(
             target_version=34,
             user_data_dir=user_data_dir,
@@ -1681,6 +1681,17 @@ def test_upgrade_db_38_to_39(user_data_dir):  # pylint: disable=unused-argument
 
     assert cursor.execute('SELECT MAX(seq) FROM location').fetchone()[0] == 40
 
+    # get settings and confirm saddle is present before the upgrade
+    cursor.execute('SELECT value FROM settings WHERE name="current_price_oracles"')
+    oracles = json.loads(cursor.fetchone()[0])
+    assert 'saddle' in oracles
+
+    # get the rpc nodes in the user db
+    rpc_nodes = cursor.execute('SELECT * FROM rpc_nodes').fetchall()
+    # check that there are two nodes with the same endpoint and blockchain
+    assert len([x for x in rpc_nodes if 'flashbots' in x[2] == 'https://rpc.flashbots.net/' and x[-1] == 'ETH']) == 2  # noqa: E501
+
+    cursor.close()
     db_v38.logout()
     # Execute upgrade
     db = _init_db_with_target_version(
@@ -1771,10 +1782,19 @@ def test_upgrade_db_38_to_39(user_data_dir):  # pylint: disable=unused-argument
         (Location.ARBITRUM_ONE.serialize_for_db(),),
     ).fetchone()[0] == Location.ARBITRUM_ONE.serialize_for_db()
 
-    assert len(cursor.execute(  # check that Arbitrum One nodes were added
-        'SELECT * FROM rpc_nodes WHERE blockchain=?',
-        (SupportedBlockchain.ARBITRUM_ONE.value,),
-    ).fetchall()) == len(DEFAULT_ARBITRUM_ONE_NODES_AT_V39)
+    # check that nodes got correctly copied except for the duplicated one
+    assert cursor.execute('SELECT * FROM rpc_nodes').fetchall() == [node for node in rpc_nodes if node[0] != 18]  # node 18 is the duplicated flashbot node # noqa: E501
+    # check that inserting a node that already exists fails
+    with db.conn.write_ctx() as write_cursor, pytest.raises(sqlcipher.IntegrityError):  # pylint: disable=no-member  # noqa: E501
+        write_cursor.execute(
+            'INSERT INTO rpc_nodes(name, endpoint, owned, active, weight, blockchain) VALUES (?, ?, ?, ?, ?, ?)',   # noqa: E501
+            ('flashbots2', 'https://rpc.flashbots.net/', 0, 1, '0.2', 'ETH'),
+        )
+
+    # get current oracles and check that saddle was removed and all others remain as they were.
+    settings = db.get_settings(cursor=cursor)
+    expected_oracles = [CurrentPriceOracle.deserialize(oracle) for oracle in oracles if oracle != 'saddle']  # noqa: E501
+    assert settings.current_price_oracles == expected_oracles
 
 
 def test_latest_upgrade_adds_remove_tables(user_data_dir):

@@ -143,6 +143,7 @@ class DBAssetBalance:
                 ),
                 'category': self.category.serialize(),
                 'asset': str(self.asset),
+                'asset_symbol': self.asset.symbol_or_name(),
                 'amount': str(self.amount),
                 f'{currency_and_price[0].symbol.lower()}_value': str(self.usd_value * currency_and_price[1]),  # noqa: E501
             }

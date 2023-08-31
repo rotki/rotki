@@ -5,8 +5,9 @@ from typing import TYPE_CHECKING, Any, Literal, NamedTuple, Optional
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.types import ActionType
+from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_ETH, A_ETH2, A_USD
-from rotkehlchen.constants.misc import ONE, ZERO, ZERO_PRICE
+from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.price import PriceHistorian
@@ -25,8 +26,8 @@ class ValidatorID(NamedTuple):
     public_key: Eth2PubKey
     ownership_proportion: FVal
 
-    def __eq__(self, other: Any) -> bool:
-        return self.public_key == other.public_key
+    def __eq__(self, other: object) -> bool:
+        return isinstance(other, NamedTuple) and self.public_key == other.public_key  # type: ignore  # noqa: E501  # ignore is due to isinstance not recognized
 
     def __hash__(self) -> int:
         return hash(self.public_key)

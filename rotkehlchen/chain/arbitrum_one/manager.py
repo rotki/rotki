@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING
 
 from rotkehlchen.chain.evm.manager import EvmManager
 
+from .accountant import ArbitrumOneAccountingAggregator
 from .decoding.decoder import ArbitrumOneTransactionDecoder
 from .tokens import ArbitrumOneTokens
 from .transactions import ArbitrumOneTransactions
@@ -33,5 +34,9 @@ class ArbitrumOneManager(EvmManager):
                 arbitrum_inquirer=node_inquirer,
                 transactions=transactions,
             ),
+            accounting_aggregator=ArbitrumOneAccountingAggregator(
+                node_inquirer=node_inquirer,
+                msg_aggregator=transactions.msg_aggregator,
+            ),
         )
-        self.node_inquirer: 'ArbitrumOneInquirer'  # just to make the type specific
+        self.node_inquirer: ArbitrumOneInquirer  # just to make the type specific

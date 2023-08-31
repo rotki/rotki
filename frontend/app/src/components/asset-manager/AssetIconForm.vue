@@ -90,7 +90,7 @@ defineExpose({
                 v-on="on"
                 @click="refreshIcon()"
               >
-                <VIcon>mdi-refresh</VIcon>
+                <RuiIcon name="refresh-line" />
               </VBtn>
             </template>
             {{ t('asset_form.fetch_latest_icon.title') }}
@@ -108,7 +108,7 @@ defineExpose({
       <VCol>
         <FileUpload
           source="icon"
-          file-filter="image/*"
+          file-filter=".png, .svg, .jpeg, .jpg, .webp"
           @selected="icon = $event"
         />
       </VCol>

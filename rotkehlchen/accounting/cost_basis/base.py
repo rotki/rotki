@@ -8,8 +8,8 @@ from typing import TYPE_CHECKING, Any, Callable, Literal, NamedTuple, Optional, 
 
 from rotkehlchen.accounting.types import MissingAcquisition, MissingPrice
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH, A_WETH
-from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal

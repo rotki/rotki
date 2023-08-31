@@ -32,9 +32,9 @@ from rotkehlchen.api.websockets.typedefs import (
 )
 from rotkehlchen.assets.converters import asset_from_kraken
 from rotkehlchen.chain.evm.decoding.types import EventCategory
-from rotkehlchen.constants import KRAKEN_API_VERSION, KRAKEN_BASE_URL
+from rotkehlchen.constants import KRAKEN_API_VERSION, KRAKEN_BASE_URL, ZERO
 from rotkehlchen.constants.assets import A_ETH2, A_KFEE, A_USD
-from rotkehlchen.constants.misc import ZERO, ZERO_PRICE
+from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.db.constants import KRAKEN_ACCOUNT_TYPE_KEY
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -272,12 +272,8 @@ def _check_and_get_response(response: Response, method: str) -> Union[str, dict]
         return 'Usual kraken 5xx shenanigans'
     if response.status_code != 200:
         raise RemoteError(
-            'Kraken API request {} for {} failed with HTTP status '
-            'code: {}'.format(
-                response.url,
-                method,
-                response.status_code,
-            ))
+            f'Kraken API request {response.url} for {method} failed with HTTP status '
+            f'code: {response.status_code}')
 
     try:
         decoded_json = jsonloads_dict(response.text)
@@ -554,7 +550,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
             else:
                 msg = (
                     'Kraken API request failed. Could not reach kraken due '
-                    'to {}'.format(e)
+                    f'to {e}'
                 )
                 log.error(msg)
                 return None, msg

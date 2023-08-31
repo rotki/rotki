@@ -23,7 +23,7 @@ class MessagesAggregator:
     def __init__(self) -> None:
         self.warnings: deque = deque()
         self.errors: deque = deque()
-        self.rotki_notifier: Optional['RotkiNotifier'] = None
+        self.rotki_notifier: Optional[RotkiNotifier] = None
 
     def _append_warning(self, msg: str) -> None:
         self.warnings.appendleft(msg)

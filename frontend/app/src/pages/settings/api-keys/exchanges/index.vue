@@ -197,7 +197,7 @@ const showRemoveConfirmation = (item: Exchange) => {
 
 <template>
   <div class="exchange-settings" data-cy="exchanges">
-    <Card outlined-body>
+    <Card>
       <template #title>
         {{ t('exchange_settings.title') }}
       </template>

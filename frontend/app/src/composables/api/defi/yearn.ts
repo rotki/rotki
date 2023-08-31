@@ -5,13 +5,11 @@ import { type PendingTask } from '@/types/task';
 
 export const useYearnApi = () => {
   const fetchYearnVaultsHistory = async (
-    protocolVersion: ProtocolVersion = ProtocolVersion.V1,
-    reset?: boolean
+    protocolVersion: ProtocolVersion = ProtocolVersion.V1
   ): Promise<PendingTask> => {
     const path = protocolVersion === ProtocolVersion.V1 ? 'vaults' : 'vaultsv2';
     const url = `/blockchains/eth/modules/yearn/${path}/history`;
-    const params = reset ? { resetDbData: true } : undefined;
-    return fetchExternalAsync(api.instance, url, params);
+    return fetchExternalAsync(api.instance, url);
   };
 
   const fetchYearnVaultsBalances = async (

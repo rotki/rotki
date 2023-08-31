@@ -1,12 +1,14 @@
 <script setup lang="ts">
-import { type PropType } from 'vue';
 import { type ManualBalance } from '@/types/manual-balances';
 
-const props = defineProps({
-  title: { required: true, type: String },
-  loading: { required: false, type: Boolean, default: false },
-  balances: { required: true, type: Array as PropType<ManualBalance[]> }
-});
+const props = withDefaults(
+  defineProps<{
+    title: string;
+    balances: ManualBalance[];
+    loading?: boolean;
+  }>(),
+  { loading: false }
+);
 
 const emit = defineEmits(['refresh', 'edit']);
 
@@ -115,7 +117,7 @@ const showDeleteConfirmation = (id: number) => {
 </script>
 
 <template>
-  <Card class="manual-balances" outlined-body :class="$style.table">
+  <Card class="manual-balances" :class="$style.table">
     <template #title>
       <RefreshButton
         :loading="loading"

@@ -279,7 +279,6 @@ class MakerdaoVaults(HasDSProxy):
             'arg2': address_to_bytes32(urn),  # urn
             # arg3 can be urn for the 1st deposit, and proxy/owner for the next ones
             # so don't filter for it
-            # 'arg3': address_to_bytes32(proxy),  # proxy - owner
         }
         frob_events = self.makerdao_vat.get_logs_since_deployment(
             node_inquirer=self.ethereum,

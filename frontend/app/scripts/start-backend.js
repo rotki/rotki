@@ -67,5 +67,6 @@ process.on('SIGTERM', () => {
 });
 
 backend = spawn('python', args, {
-  stdio: [process.stdin, process.stdout, process.stderr]
+  stdio: [process.stdin, process.stdout, process.stderr],
+  cwd: path.join('..', '..')
 });

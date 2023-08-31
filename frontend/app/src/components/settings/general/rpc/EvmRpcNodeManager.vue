@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { type Blockchain } from '@rotki/common/lib/blockchain';
+import camelCase from 'lodash/camelCase';
 import {
   type EvmRpcNode,
   type EvmRpcNodeList,
@@ -21,11 +22,14 @@ const selectedNode = ref<EvmRpcNode>(getPlaceholderNode(get(chain)));
 const { notify } = useNotificationsStore();
 const { setMessage } = useMessageStore();
 
-const { setOpenDialog, closeDialog, setPostSubmitFunc } = useEvmRpcNodeForm();
+const { setOpenDialog, closeDialog, setPostSubmitFunc } =
+  useEvmRpcNodeForm(chain);
 
 const { connectedNodes } = storeToRefs(usePeriodicStore());
 const api = useEvmNodesApi(get(chain));
-const { getEvmChainName } = useSupportedChains();
+const { getEvmChainName, getChainName } = useSupportedChains();
+
+const chainName = computed(() => get(getChainName(chain)));
 
 async function loadNodes(): Promise<void> {
   try {
@@ -99,7 +103,7 @@ const isEtherscan = (item: EvmRpcNode) =>
 const isNodeConnected = (item: EvmRpcNode): boolean => {
   const blockchain = get(chain);
   const connected = get(connectedNodes);
-  const evmChain = getEvmChainName(blockchain);
+  const evmChain = camelCase(getEvmChainName(blockchain) ?? '');
   const nodes = evmChain && connected[evmChain] ? connected[evmChain] : [];
 
   return nodes.includes(item.name) || isEtherscan(item);
@@ -108,7 +112,7 @@ const isNodeConnected = (item: EvmRpcNode): boolean => {
 const { show } = useConfirmStore();
 
 const showDeleteConfirmation = (item: EvmRpcNode) => {
-  const chainProp = get(chain);
+  const chainProp = get(chainName);
   show(
     {
       title: t('evm_rpc_node_manager.confirm.title', { chain: chainProp }),
@@ -122,12 +126,16 @@ const showDeleteConfirmation = (item: EvmRpcNode) => {
   );
 };
 
+onUnmounted(() => {
+  disposeEvmRpcNodeComposables();
+});
+
 const css = useCssModule();
 </script>
 
 <template>
   <div>
-    <VCard outlined>
+    <VCard outlined class="overflow-hidden">
       <VList max-height="300px" :class="css.list" three-line class="py-0">
         <template v-for="(item, index) in nodes">
           <VDivider v-if="index !== 0" :key="index" />
@@ -229,6 +237,7 @@ const css = useCssModule();
       <EvmRpcNodeFormDialog
         v-model="selectedNode"
         :chain="chain"
+        :chain-name="chainName"
         :edit-mode="editMode"
         :is-etherscan="editMode && isEtherscan(selectedNode)"
         @reset="resetForm()"

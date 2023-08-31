@@ -13,7 +13,7 @@ from rotkehlchen.chain.evm.accounting.structures import (
     TxEventSettings,
 )
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
-from rotkehlchen.constants.misc import ONE
+from rotkehlchen.constants import ONE
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Price, Timestamp
 
@@ -52,20 +52,6 @@ def make_default_accounting_settings(pot: 'AccountingPot') -> dict[str, BaseEven
         taxable=True,
         count_entire_amount_spend=True,
         count_cost_basis_pnl=True,
-        method='acquisition',
-    )
-    deposit_key = str(HistoryEventType.DEPOSIT) + '__' + str(HistoryEventSubType.NONE)
-    result[deposit_key] = BaseEventSettings(
-        taxable=False,
-        count_entire_amount_spend=False,
-        count_cost_basis_pnl=False,
-        method='spend',
-    )
-    withdraw_key = str(HistoryEventType.WITHDRAWAL) + '__' + str(HistoryEventSubType.NONE)
-    result[withdraw_key] = BaseEventSettings(
-        taxable=False,
-        count_entire_amount_spend=False,
-        count_cost_basis_pnl=False,
         method='acquisition',
     )
     fee_key = str(HistoryEventType.SPEND) + '__' + str(HistoryEventSubType.FEE)

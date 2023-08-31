@@ -2,8 +2,8 @@ import json
 from typing import TYPE_CHECKING
 
 from rotkehlchen.constants.timing import ETH_PROTOCOLS_CACHE_REFRESH
-from rotkehlchen.globaldb.cache import globaldb_set_general_cache_values_at_ts
-from rotkehlchen.types import GeneralCacheType, Timestamp
+from rotkehlchen.globaldb.cache import globaldb_set_unique_cache_value_at_ts
+from rotkehlchen.types import CacheType, Timestamp
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
@@ -53,9 +53,9 @@ def globaldb_data_migration_1(conn: 'DBConnection') -> None:
         # Add a makerdao vault types cache, at a time that will allow refresh
         timestamp = Timestamp(ts_now() - ETH_PROTOCOLS_CACHE_REFRESH - 1)
         for ilk, info in ilk_mapping.items():
-            globaldb_set_general_cache_values_at_ts(
+            globaldb_set_unique_cache_value_at_ts(
                 write_cursor=write_cursor,
-                key_parts=(GeneralCacheType.MAKERDAO_VAULT_ILK, ilk),
-                values=(json.dumps(info, separators=(',', ':')),),
+                key_parts=(CacheType.MAKERDAO_VAULT_ILK, ilk),
+                value=json.dumps(info, separators=(',', ':')),
                 timestamp=timestamp,
             )

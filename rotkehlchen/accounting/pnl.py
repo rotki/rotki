@@ -62,7 +62,7 @@ class PNL:
 class PnlTotals(MutableMapping):
 
     def __init__(self, totals: Optional[dict['AccountingEventType', PNL]] = None) -> None:
-        self.totals: dict['AccountingEventType', PNL] = defaultdict(PNL)
+        self.totals: dict[AccountingEventType, PNL] = defaultdict(PNL)
         if totals is not None:
             for event_type, entry in totals.items():
                 self.totals[event_type] = entry

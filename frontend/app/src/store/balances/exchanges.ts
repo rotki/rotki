@@ -61,16 +61,21 @@ export const useExchangeBalancesStore = defineStore(
         const cexBalances = get(exchangeBalances);
         for (const exchange in cexBalances) {
           const exchangeData = cexBalances[exchange];
-          if (!exchangeData[asset]) {
-            continue;
-          }
+          for (const exchangeDataAsset in exchangeData) {
+            const associatedAsset = get(
+              getAssociatedAssetIdentifier(exchangeDataAsset)
+            );
+            if (associatedAsset !== asset) {
+              continue;
+            }
 
-          breakdown.push({
-            address: '',
-            location: exchange,
-            balance: exchangeData[asset],
-            tags: []
-          });
+            breakdown.push({
+              address: '',
+              location: exchange,
+              balance: exchangeData[exchangeDataAsset],
+              tags: []
+            });
+          }
         }
         return breakdown;
       });

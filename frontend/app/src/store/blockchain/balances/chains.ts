@@ -18,7 +18,8 @@ const defaultTotals = (): Totals => ({
   [Blockchain.DOT]: {},
   [Blockchain.AVAX]: {},
   [Blockchain.OPTIMISM]: {},
-  [Blockchain.POLYGON_POS]: {}
+  [Blockchain.POLYGON_POS]: {},
+  [Blockchain.ARBITRUM_ONE]: {}
 });
 
 const defaultBalances = (): Balances => ({
@@ -26,7 +27,8 @@ const defaultBalances = (): Balances => ({
   [Blockchain.DOT]: {},
   [Blockchain.AVAX]: {},
   [Blockchain.OPTIMISM]: {},
-  [Blockchain.POLYGON_POS]: {}
+  [Blockchain.POLYGON_POS]: {},
+  [Blockchain.ARBITRUM_ONE]: {}
 });
 
 export const useChainBalancesStore = defineStore('balances/chain', () => {

@@ -62,8 +62,8 @@ def test_upload_custom_icon(rotkehlchen_api_server, file_upload, data_dir):
     assert response.status_code == HTTPStatus.OK
     response.headers.pop('Date')
     assert response.headers == {
-        'mimetype': 'image/png',
-        'Content-Type': 'image/png',
+        'mimetype': 'image/svg+xml',
+        'Content-Type': 'image/svg+xml',
         'Content-Length': '563',
         'ETag': '"9b5e2a97c10bc6e4735b7d19897c0457"',
     }

@@ -35,7 +35,7 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <VCard v-bind="$attrs">
+  <VCard v-bind="$attrs" :outlined="false">
     <div
       :class="{
         'mx-4 pt-2': !noPadding

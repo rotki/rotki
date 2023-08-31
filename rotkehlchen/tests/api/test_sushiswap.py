@@ -7,7 +7,7 @@ import requests
 
 from rotkehlchen.api.server import APIServer
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants.misc import ONE
+from rotkehlchen.constants import ONE
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.tests.utils.api import (
     ASYNC_TASK_WAIT_TIMEOUT,
@@ -17,10 +17,7 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_response_with_result,
     wait_for_async_task,
 )
-from rotkehlchen.tests.utils.ethereum import (
-    ETHEREUM_NODES_PARAMETERS_WITH_PRUNED_AND_NOT_ARCHIVED,
-    get_decoded_events_of_transaction,
-)
+from rotkehlchen.tests.utils.ethereum import INFURA_ETH_NODE, get_decoded_events_of_transaction
 from rotkehlchen.types import ChecksumEvmAddress, deserialize_evm_tx_hash
 
 SWAP_ADDRESS = string_to_evm_address('0x63BC843b9640c4D79d6aE0105bc39F773172d121')
@@ -44,7 +41,7 @@ def test_get_balances_module_not_activated(rotkehlchen_api_server):
 @pytest.mark.parametrize('ethereum_accounts', [['0x31089Ef6f99FB83F95178DBBf08A7A4Bf2eC9fd2']])
 @pytest.mark.parametrize('ethereum_modules', [['sushiswap']])
 @pytest.mark.parametrize('network_mocking', [False])
-@pytest.mark.parametrize(*ETHEREUM_NODES_PARAMETERS_WITH_PRUNED_AND_NOT_ARCHIVED)
+@pytest.mark.parametrize('ethereum_manager_connect_at_start', [(INFURA_ETH_NODE,)])
 def test_get_balances(
         rotkehlchen_api_server: APIServer,
         start_with_valid_premium: bool,

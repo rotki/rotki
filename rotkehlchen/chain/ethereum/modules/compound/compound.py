@@ -11,8 +11,8 @@ from rotkehlchen.chain.ethereum.constants import ETH_MANTISSA
 from rotkehlchen.chain.ethereum.defi.structures import GIVEN_DEFI_BALANCES
 from rotkehlchen.chain.ethereum.modules.compound.constants import CPT_COMPOUND
 from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS
+from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_COMP, A_ETH
-from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents

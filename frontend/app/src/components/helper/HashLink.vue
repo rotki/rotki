@@ -21,6 +21,7 @@ const props = withDefaults(
     small?: boolean;
     truncateLength?: number;
     type?: keyof ExplorerUrls;
+    disableScramble?: boolean;
   }>(),
   {
     showIcon: true,
@@ -34,13 +35,14 @@ const props = withDefaults(
     buttons: false,
     small: false,
     truncateLength: 4,
-    type: 'address'
+    type: 'address',
+    disableScramble: false
   }
 );
 const { t } = useI18n();
 const { copy } = useClipboard();
 
-const { text, baseUrl, chain, evmChain, type } = toRefs(props);
+const { text, baseUrl, chain, evmChain, type, disableScramble } = toRefs(props);
 const { scrambleData, shouldShowAmount, scrambleHex, scrambleIdentifier } =
   useScramble();
 
@@ -74,6 +76,10 @@ const aliasName = computed<string | null>(() => {
 const displayText = computed<string>(() => {
   const linkText = get(text);
   const linkType = get(type);
+
+  if (get(disableScramble)) {
+    return linkText;
+  }
 
   if (linkType === 'block' || consistOfNumbers(linkText)) {
     return scrambleIdentifier(linkText);
@@ -119,7 +125,7 @@ const { href, onLinkClick } = useLinks(url);
 </script>
 
 <template>
-  <div class="d-flex flex-row shrink align-center">
+  <div class="d-flex flex-row shrink align-center gap-1">
     <span v-if="showIcon && !linkOnly && type === 'address'" class="d-flex">
       <VAvatar size="22" class="mr-2">
         <EnsAvatar :address="displayText" />
@@ -145,50 +151,50 @@ const { href, onLinkClick } = useLinks(url);
         <span> {{ displayText }} </span>
       </VTooltip>
     </span>
-    <VTooltip v-if="!linkOnly || buttons" top open-delay="600">
-      <template #activator="{ on, attrs }">
-        <VBtn
-          :x-small="!small"
-          :small="small"
-          icon
-          v-bind="attrs"
-          :width="!small ? '20px' : null"
-          color="primary"
-          class="ml-2"
-          :class="dark ? null : 'grey lighten-4'"
-          v-on="on"
-          @click="copy(text)"
-        >
-          <VIcon :x-small="!small" :small="small"> mdi-content-copy </VIcon>
-        </VBtn>
-      </template>
-      <span>{{ t('common.actions.copy') }}</span>
-    </VTooltip>
-    <VTooltip v-if="linkOnly || !noLink || buttons" top open-delay="600">
-      <template #activator="{ on, attrs }">
-        <VBtn
-          v-if="!!base"
-          :x-small="!small"
-          :small="small"
-          icon
-          v-bind="attrs"
-          :width="!small ? '20px' : null"
-          color="primary"
-          class="ml-1"
-          :class="dark ? null : 'grey lighten-4'"
-          :href="href"
-          target="_blank"
-          v-on="on"
-          @click="onLinkClick()"
-        >
-          <VIcon :x-small="!small" :small="small"> mdi-launch </VIcon>
-        </VBtn>
-      </template>
-      <div>
-        <div>{{ t('hash_link.open_link') }}:</div>
-        <div>{{ displayUrl }}</div>
-      </div>
-    </VTooltip>
+    <div class="flex items-center gap-1 pl-1">
+      <VTooltip v-if="!linkOnly || buttons" top open-delay="600">
+        <template #activator="{ on, attrs }">
+          <VBtn
+            :x-small="!small"
+            :small="small"
+            icon
+            v-bind="attrs"
+            :width="!small ? '20px' : null"
+            color="primary"
+            :class="dark ? null : 'grey lighten-4'"
+            v-on="on"
+            @click="copy(text)"
+          >
+            <VIcon :x-small="!small" :small="small"> mdi-content-copy </VIcon>
+          </VBtn>
+        </template>
+        <span>{{ t('common.actions.copy') }}</span>
+      </VTooltip>
+      <VTooltip v-if="linkOnly || !noLink || buttons" top open-delay="600">
+        <template #activator="{ on, attrs }">
+          <VBtn
+            v-if="!!base"
+            :x-small="!small"
+            :small="small"
+            icon
+            v-bind="attrs"
+            :width="!small ? '20px' : null"
+            color="primary"
+            :class="dark ? null : 'grey lighten-4'"
+            :href="href"
+            target="_blank"
+            v-on="on"
+            @click="onLinkClick()"
+          >
+            <VIcon :x-small="!small" :small="small"> mdi-launch </VIcon>
+          </VBtn>
+        </template>
+        <div>
+          <div>{{ t('hash_link.open_link') }}:</div>
+          <div>{{ displayUrl }}</div>
+        </div>
+      </VTooltip>
+    </div>
   </div>
 </template>
 

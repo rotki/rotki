@@ -10,8 +10,8 @@ from flaky import flaky
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.ethereum.modules.makerdao.vaults import MakerdaoVault
+from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_DAI, A_USDC, A_WBTC
-from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.conftest import TestEnvironment, requires_env
 from rotkehlchen.tests.utils.api import (

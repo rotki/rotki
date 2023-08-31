@@ -25,7 +25,7 @@ const multipleUpgrades = computed(() => {
 </script>
 
 <template>
-  <Card v-if="progress" flat>
+  <Card v-if="progress" flat :outlined="false">
     <template #title>
       <span v-if="dataMigration">{{ t('login.migrating_data.title') }} </span>
       <span v-else> {{ t('login.upgrading_db.title') }}</span>

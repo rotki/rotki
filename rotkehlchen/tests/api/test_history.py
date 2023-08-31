@@ -2,6 +2,7 @@ import random
 from contextlib import ExitStack
 from http import HTTPStatus
 from pathlib import Path
+from typing import TYPE_CHECKING
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -10,8 +11,9 @@ import requests
 from rotkehlchen.accounting.constants import FREE_PNL_EVENTS_LIMIT, FREE_REPORTS_LOOKUP_LIMIT
 from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
 from rotkehlchen.accounting.mixins.event import AccountingEventType
+from rotkehlchen.accounting.structures.types import ActionType
+from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_EUR
-from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
@@ -27,6 +29,7 @@ from rotkehlchen.tests.utils.api import (
     wait_for_async_task_with_result,
 )
 from rotkehlchen.tests.utils.constants import ETH_ADDRESS1, ETH_ADDRESS2, ETH_ADDRESS3
+from rotkehlchen.tests.utils.factories import make_evm_tx_hash
 from rotkehlchen.tests.utils.history import (
     assert_pnl_debug_import,
     prepare_rotki_for_history_processing_test,
@@ -36,6 +39,9 @@ from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.tests.utils.pnl_report import query_api_create_and_get_report
 from rotkehlchen.types import AssetAmount, Fee, Location, Price, Timestamp, TradeType
 from rotkehlchen.utils.misc import ts_now
+
+if TYPE_CHECKING:
+    from rotkehlchen.api.server import APIServer
 
 
 @pytest.mark.parametrize('have_decoders', [True])
@@ -337,9 +343,19 @@ def test_query_pnl_report_events_pagination_filtering(
             assert x['timestamp'] >= events[idx + 1]['timestamp']
 
 
-@pytest.mark.parametrize('ethereum_accounts', [])
-def test_history_debug_export(rotkehlchen_api_server):
+@pytest.mark.parametrize('ethereum_accounts', [[]])
+@pytest.mark.parametrize('have_decoders', [[True]])
+def test_history_debug_export(rotkehlchen_api_server: 'APIServer') -> None:
     """Check that the format of the data exported matches the expected type."""
+    tx_id = '10' + str(make_evm_tx_hash())  # add a random tx id to the ignore list to ensure that at least one kind of event is ignored and is not empty  # noqa: E501
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    with rotki.data.db.user_write() as write_cursor:
+        rotki.data.db.add_to_ignored_action_ids(
+            write_cursor=write_cursor,
+            action_type=ActionType.EVM_TRANSACTION,
+            identifiers=[tx_id],
+        )
+
     expected_keys = ('events', 'settings', 'ignored_events_ids', 'pnl_settings')
     now = ts_now()
     response = requests.post(
@@ -353,8 +369,9 @@ def test_history_debug_export(rotkehlchen_api_server):
         },
     )
     result = assert_proper_response_with_result(response)
-    assert result.keys() == expected_keys
+    assert tuple(result.keys()) == expected_keys
     assert result['pnl_settings'] == {'from_timestamp': Timestamp(0), 'to_timestamp': now}
+    assert result['ignored_events_ids'] == {'evm_transaction': [tx_id]}
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])

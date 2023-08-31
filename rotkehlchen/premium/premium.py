@@ -5,8 +5,10 @@ import logging
 import time
 from base64 import b64decode, b64encode
 from binascii import Error as BinasciiError
+from collections.abc import Sequence
 from enum import Enum
 from http import HTTPStatus
+from json import JSONDecodeError
 from typing import Any, Literal, NamedTuple, Optional
 from urllib.parse import urlencode
 
@@ -29,12 +31,6 @@ from rotkehlchen.utils.serialization import jsonloads_dict
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
-HANDLABLE_STATUS_CODES = [
-    HTTPStatus.OK,
-    HTTPStatus.UNAUTHORIZED,
-    HTTPStatus.BAD_REQUEST,
-]
-
 
 class RemoteMetadata(NamedTuple):
     # This is the last upload timestamp of the remote DB data
@@ -47,16 +43,44 @@ class RemoteMetadata(NamedTuple):
     data_size: int
 
 
-def _process_dict_response(response: requests.Response) -> dict:
+DEFAULT_ERROR_MSG = 'Failed to contact rotki server. Check logs for more details'
+DEFAULT_OK_CODES = (HTTPStatus.OK, HTTPStatus.UNAUTHORIZED, HTTPStatus.BAD_REQUEST)
+
+
+def check_response_status_code(
+        response: requests.Response,
+        status_codes: Sequence[HTTPStatus],
+        user_msg: str = DEFAULT_ERROR_MSG,
+) -> None:
+    """
+    Check the rotki.com response and if status code is not in the expected list
+    log the error and raise RemoteError
+    """
+    if response.status_code not in status_codes:
+        log.error(
+            f'rotki server responded with an error response to {response.url} '
+            f'{response.status_code=} and {response.text=}',
+        )
+        raise RemoteError(user_msg)
+
+
+def _process_dict_response(
+        response: requests.Response,
+        status_codes: Sequence[HTTPStatus] = DEFAULT_OK_CODES,
+        user_msg: str = DEFAULT_ERROR_MSG,
+) -> dict:
     """Processess a dict response returned from the Rotkehlchen server and returns
     the result for success or raises RemoteError if an error happened"""
-    if response.status_code not in HANDLABLE_STATUS_CODES:
-        raise RemoteError(
-            f'Unexpected status response({response.status_code}) from '
-            f'rotki server. {response.text=}',
-        )
-
-    result_dict = jsonloads_dict(response.text)
+    check_response_status_code(
+        response=response,
+        status_codes=status_codes,
+        user_msg=user_msg,
+    )
+    try:
+        result_dict = jsonloads_dict(response.text)
+    except JSONDecodeError as e:
+        log.error(f'Could not decode rotki response {response.text} as json due to {e}')
+        raise RemoteError('Could not decode rotki server response as json. Check logs') from e
 
     if response.status_code == HTTPStatus.UNAUTHORIZED:
         raise PremiumAuthenticationError(result_dict.get('message', 'no message given'))
@@ -151,7 +175,6 @@ class Premium:
             other=3,
             allowed_methods=False,  # retry on all method verbs
         )
-        self.session.mount('https://', adapter)
         self.session.mount('https://', adapter)
         self.apiversion = '1'
         self.rotki_api = f'https://rotki.com/api/{self.apiversion}/'
@@ -264,13 +287,11 @@ class Premium:
             log.error(msg)
             raise RemoteError(msg) from e
 
-        if response.status_code != 200:
-            msg = f'Could not upload database backup due to: {response.text}'
-            log.error(msg)
-            user_msg = 'Size limit reached' if response.status_code == HTTPStatus.REQUEST_ENTITY_TOO_LARGE else msg  # noqa: E501
-            raise RemoteError(user_msg)
-
-        return _process_dict_response(response)
+        return _process_dict_response(
+            response=response,
+            status_codes=(HTTPStatus.OK,),
+            user_msg='Size limit reached' if response.status_code == HTTPStatus.REQUEST_ENTITY_TOO_LARGE else f'Could not upload database backup due to: {response.text}',  # noqa: E501
+        )
 
     def pull_data(self) -> Optional[bytes]:
         """Pulls data from the server and returns the binary file with the database encrypted
@@ -298,11 +319,7 @@ class Premium:
             log.error(msg)
             raise RemoteError(msg) from e
 
-        if response.status_code not in (HTTPStatus.OK, HTTPStatus.NOT_FOUND):
-            msg = 'Could not connect to rotki server.'
-            log.error(f'{msg} due to {response.text}')
-            raise RemoteError(msg)
-
+        check_response_status_code(response, (HTTPStatus.OK, HTTPStatus.NOT_FOUND))
         if response.status_code == HTTPStatus.NOT_FOUND:
             return None
 
@@ -334,7 +351,6 @@ class Premium:
             raise RemoteError(msg) from e
 
         result = _process_dict_response(response)
-
         try:
             metadata = RemoteMetadata(
                 upload_ts=Timestamp(result['upload_ts']),
@@ -406,6 +422,10 @@ class Premium:
             log.error(msg)
             raise RemoteError(msg) from e
 
+        check_response_status_code(
+            response=response,
+            status_codes=(HTTPStatus.OK, HTTPStatus.UNAUTHORIZED, HTTPStatus.BAD_REQUEST),
+        )
         return _decode_premium_json(response)
 
 

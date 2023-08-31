@@ -38,7 +38,7 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <Card outlined-body :flat="flat">
+  <Card :flat="flat">
     <template #title>
       {{ t('profit_loss_overview.title') }}
     </template>

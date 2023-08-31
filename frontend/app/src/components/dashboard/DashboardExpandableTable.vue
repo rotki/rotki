@@ -5,7 +5,7 @@ const panel = computed<number>(() => (get(expanded) ? 0 : -1));
 </script>
 
 <template>
-  <Card :class="{ 'pb-4': expanded }">
+  <Card :class="{ 'pb-6': expanded }">
     <template #title>
       <div class="d-flex align-center">
         <div class="mr-2">
@@ -21,7 +21,7 @@ const panel = computed<number>(() => (get(expanded) ? 0 : -1));
             <VIcon v-else>mdi-plus-box-outline</VIcon>
           </VBtn>
         </div>
-        <div>
+        <div class="flex items-center gap-x-2">
           <slot name="title" />
         </div>
       </div>
@@ -34,9 +34,7 @@ const panel = computed<number>(() => (get(expanded) ? 0 : -1));
       <VExpansionPanels :value="panel">
         <VExpansionPanel>
           <VExpansionPanelContent>
-            <VSheet outlined>
-              <slot />
-            </VSheet>
+            <slot />
           </VExpansionPanelContent>
         </VExpansionPanel>
       </VExpansionPanels>

@@ -77,7 +77,7 @@ const getAsset = (item: CustomAsset) => ({
 </script>
 
 <template>
-  <Card outlined-body>
+  <Card>
     <template #title>
       {{ t('common.assets') }}
     </template>

@@ -28,7 +28,7 @@ log = RotkehlchenLogsAdapter(logger)
 class NexoImporter(BaseExchangeImporter):
     def _consume_nexo(
             self,
-            cursor: DBCursor,
+            write_cursor: DBCursor,
             csv_row: dict[str, Any],
             timestamp_format: str = '%Y-%m-%d %H:%M:%S',
     ) -> None:
@@ -83,7 +83,7 @@ class NexoImporter(BaseExchangeImporter):
                 fee_asset=A_USD,
                 link=transaction,
             )
-            self.add_asset_movement(cursor, asset_movement)
+            self.add_asset_movement(write_cursor, asset_movement)
         elif entry_type in ('Withdrawal', 'WithdrawExchanged'):
             asset_movement = AssetMovement(
                 location=Location.NEXO,
@@ -97,7 +97,7 @@ class NexoImporter(BaseExchangeImporter):
                 fee_asset=A_USD,
                 link=transaction,
             )
-            self.add_asset_movement(cursor, asset_movement)
+            self.add_asset_movement(write_cursor, asset_movement)
         elif entry_type == 'Withdrawal Fee':
             action = LedgerAction(
                 identifier=0,  # whatever is not used at insertion
@@ -111,7 +111,7 @@ class NexoImporter(BaseExchangeImporter):
                 link=None,
                 notes=f'{entry_type} from Nexo',
             )
-            self.add_ledger_action(cursor, action)
+            self.add_ledger_action(write_cursor, action)
         elif entry_type in ('Interest', 'Bonus', 'Dividend', 'FixedTermInterest', 'Cashback', 'ReferralBonus'):  # noqa: E501
             # A user shared a CSV file where some entries marked as interest had negative amounts.
             # we couldn't find information about this since they seem internal transactions made
@@ -133,7 +133,7 @@ class NexoImporter(BaseExchangeImporter):
                 link=transaction,
                 notes=f'{entry_type} from Nexo',
             )
-            self.add_ledger_action(cursor, action)
+            self.add_ledger_action(write_cursor, action)
         elif entry_type == 'Liquidation':
             input_asset = asset_from_nexo(csv_row['Input Currency'])
             input_amount = deserialize_asset_amount_force_positive(csv_row['Input Amount'])
@@ -149,13 +149,13 @@ class NexoImporter(BaseExchangeImporter):
                 link=transaction,
                 notes=f'{entry_type} from Nexo',
             )
-            self.add_ledger_action(cursor, action)
+            self.add_ledger_action(write_cursor, action)
         elif entry_type in ignored_entries:
             pass
         else:
             raise UnsupportedCSVEntry(f'Unsuported entry {entry_type}. Data: {csv_row}')
 
-    def _import_csv(self, cursor: DBCursor, filepath: Path, **kwargs: Any) -> None:
+    def _import_csv(self, write_cursor: DBCursor, filepath: Path, **kwargs: Any) -> None:
         """
         Information for the values that the columns can have has been obtained from
         https://github.com/BittyTax/BittyTax/blob/06794f51223398759852d6853bc7112ffb96129a/bittytax/conv/parsers/nexo.py
@@ -166,7 +166,7 @@ class NexoImporter(BaseExchangeImporter):
             data = csv.DictReader(csvfile)
             for row in data:
                 try:
-                    self._consume_nexo(cursor, row, **kwargs)
+                    self._consume_nexo(write_cursor, row, **kwargs)
                 except UnknownAsset as e:
                     self.db.msg_aggregator.add_warning(
                         f'During Nexo CSV import found action with unknown '

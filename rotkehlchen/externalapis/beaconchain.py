@@ -11,7 +11,7 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.eth2 import EthBlockEvent
 from rotkehlchen.chain.ethereum.modules.eth2.constants import LAST_PRODUCED_BLOCKS_QUERY_TS
 from rotkehlchen.chain.ethereum.modules.eth2.structures import ValidatorID, ValidatorPerformance
-from rotkehlchen.constants.misc import ONE
+from rotkehlchen.constants import ONE
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
@@ -62,7 +62,7 @@ class BeaconChain(ExternalServiceWithApiKey):
 
     def __init__(self, database: 'DBHandler', msg_aggregator: MessagesAggregator) -> None:
         super().__init__(database=database, service_name=ExternalService.BEACONCHAIN)
-        self.db: 'DBHandler'  # specifying DB is not optional
+        self.db: DBHandler  # specifying DB is not optional
         self.msg_aggregator = msg_aggregator
         self.session = requests.session()
         self.warning_given = False

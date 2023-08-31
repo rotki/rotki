@@ -51,9 +51,9 @@ const { t } = useI18n();
       v-for="(timeframe, i) in visibleTimeframes"
       :key="i"
       :class="activeClass(timeframe)"
-      class="ma-2"
+      class="ma-2 px-4"
       :disabled="(!premium && !worksWithoutPremium(timeframe)) || disabled"
-      small
+      label
       @click="input(timeframe)"
     >
       {{ timeframe }}

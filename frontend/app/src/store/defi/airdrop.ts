@@ -39,21 +39,23 @@ export const useAirdropStore = defineStore('defi/airdrops', () => {
             result.push({
               address,
               source: source as AirdropType,
-              details: details.map(value => ({
+              details: details.map(({ link, name, event }) => ({
                 amount: bigNumberify('1'),
-                link: value.link,
-                name: value.name,
-                event: value.event
+                link,
+                name,
+                event,
+                claimed: false
               }))
             });
           } else {
-            const { amount, asset, link } = element as AirdropDetail;
+            const { amount, asset, link, claimed } = element as AirdropDetail;
             result.push({
               address,
               amount,
               link,
               source: source as AirdropType,
-              asset
+              asset,
+              claimed
             });
           }
         }

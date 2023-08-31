@@ -18,10 +18,15 @@ const { showPinned, showNotesSidebar, showNotificationBar, showHelpBar } =
       <BackButton />
     </div>
     <VSpacer />
-    <div class="d-flex overflow-hidden fill-height align-center">
+    <div class="d-flex overflow-hidden h-full align-center">
       <GetPremiumButton />
-      <VBtn v-if="isDevelopment && smAndUp" to="/playground" icon>
-        <VIcon>mdi-crane</VIcon>
+      <VBtn
+        v-if="isDevelopment && smAndUp"
+        class="secondary--text text--lighten-4"
+        to="/playground"
+        icon
+      >
+        <RuiIcon name="code-box-line" />
       </VBtn>
       <AppUpdateIndicator />
       <UserNotesIndicator

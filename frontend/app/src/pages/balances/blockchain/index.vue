@@ -38,7 +38,8 @@ const intersections = ref<Intersections>({
   [Blockchain.DOT]: false,
   [Blockchain.AVAX]: false,
   [Blockchain.OPTIMISM]: false,
-  [Blockchain.POLYGON_POS]: false
+  [Blockchain.POLYGON_POS]: false,
+  [Blockchain.ARBITRUM_ONE]: false
 });
 
 const updateWhenRatio = (
@@ -57,7 +58,8 @@ const {
   dotAccounts,
   avaxAccounts,
   optimismAccounts,
-  polygonAccounts
+  polygonAccounts,
+  arbitrumAccounts
 } = useChainAccountBalances();
 const { btcAccounts, bchAccounts } = useBtcAccountBalances();
 
@@ -92,7 +94,9 @@ const observers: Observers = {
   [Blockchain.OPTIMISM]: (entries: IntersectionObserverEntry[]) =>
     updateWhenRatio(entries, Blockchain.OPTIMISM),
   [Blockchain.POLYGON_POS]: (entries: IntersectionObserverEntry[]) =>
-    updateWhenRatio(entries, Blockchain.POLYGON_POS)
+    updateWhenRatio(entries, Blockchain.POLYGON_POS),
+  [Blockchain.ARBITRUM_ONE]: (entries: IntersectionObserverEntry[]) =>
+    updateWhenRatio(entries, Blockchain.ARBITRUM_ONE)
 };
 
 const { isBlockchainLoading, isAccountOperationRunning } = useAccountLoading();
@@ -106,7 +110,8 @@ const busy: Busy = {
   [Blockchain.DOT]: isAccountOperationRunning(Blockchain.DOT),
   [Blockchain.AVAX]: isAccountOperationRunning(Blockchain.AVAX),
   [Blockchain.OPTIMISM]: isAccountOperationRunning(Blockchain.OPTIMISM),
-  [Blockchain.POLYGON_POS]: isAccountOperationRunning(Blockchain.POLYGON_POS)
+  [Blockchain.POLYGON_POS]: isAccountOperationRunning(Blockchain.POLYGON_POS),
+  [Blockchain.ARBITRUM_ONE]: isAccountOperationRunning(Blockchain.ARBITRUM_ONE)
 };
 
 const threshold = [0.5];
@@ -117,7 +122,9 @@ const showDetectEvmAccountsButton: Readonly<Ref<boolean>> = computedEager(
   () =>
     get(ethAccounts).length > 0 ||
     get(optimismAccounts).length > 0 ||
-    get(avaxAccounts).length > 0
+    get(avaxAccounts).length > 0 ||
+    get(polygonAccounts).length > 0 ||
+    get(arbitrumAccounts).length > 0
 );
 
 const { xl } = useDisplay();
@@ -130,7 +137,7 @@ const { xl } = useDisplay();
         <PriceRefresh />
       </VCol>
     </VRow>
-    <Card class="blockchain-balances mt-8" outlined-body>
+    <Card class="blockchain-balances mt-8">
       <template #title>
         {{ t('blockchain_balances.title') }}
       </template>
@@ -325,6 +332,23 @@ const { xl } = useDisplay();
       :blockchain="Blockchain.POLYGON_POS"
       :balances="polygonAccounts"
       :data-cy="`blockchain-balances-${Blockchain.POLYGON_POS}`"
+      @edit-account="editAccount($event)"
+    />
+
+    <AccountBalances
+      v-if="arbitrumAccounts.length > 0 || busy.arbitrum_one.value"
+      id="blockchain-balances-ARBITRUM"
+      v-intersect="{
+        handler: observers.arbitrum_one,
+        options: {
+          threshold
+        }
+      }"
+      class="mt-8"
+      :title="t('blockchain_balances.balances.arbitrum_one')"
+      :blockchain="Blockchain.ARBITRUM_ONE"
+      :balances="arbitrumAccounts"
+      :data-cy="`blockchain-balances-${Blockchain.ARBITRUM_ONE}`"
       @edit-account="editAccount($event)"
     />
   </div>

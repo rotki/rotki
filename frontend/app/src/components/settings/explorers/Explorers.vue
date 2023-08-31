@@ -102,6 +102,7 @@ const { t } = useI18n();
       outlined
       :items="supportedExplorers"
       :label="t('explorers.chain_selector')"
+      dense
       @change="onChange()"
     >
       <template #item="{ item }">

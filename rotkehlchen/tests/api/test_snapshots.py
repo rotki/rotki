@@ -11,9 +11,9 @@ import pytest
 import requests
 from freezegun import freeze_time
 
-from rotkehlchen.assets.asset import AssetWithOracles
+from rotkehlchen.assets.asset import Asset, AssetWithOracles
+from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_AVAX, A_BTC, A_ETH, A_EUR, A_USD
-from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.db.snapshots import (
     BALANCES_FILENAME,
@@ -329,13 +329,14 @@ def assert_csv_export_response(
         reader = csv.DictReader(csvfile)
         count = 0
         for row in reader:
-            assert len(row) == 5
+            assert len(row) == 6
             assert row['category'] in (
                 'asset',
                 'liability',
             )
             assert row['amount'] is not None
             assert row['asset'] is not None
+            assert row['asset_symbol'] == Asset(row['asset']).symbol_or_name()
             if timestamp_validation_data is None:
                 assert row['timestamp'] is not None
             else:

@@ -4,10 +4,10 @@ import { helpers, required, sameAs } from '@vuelidate/validators';
 import { type Ref } from 'vue';
 import { type CreateAccountPayload } from '@/types/login';
 
-const props = defineProps({
-  loading: { required: true, type: Boolean },
-  error: { required: false, type: String, default: '' }
-});
+const props = withDefaults(
+  defineProps<{ loading: boolean; error?: string }>(),
+  { error: '' }
+);
 
 const emit = defineEmits<{
   (e: 'confirm', payload: CreateAccountPayload): void;

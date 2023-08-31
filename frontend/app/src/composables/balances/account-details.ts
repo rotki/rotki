@@ -22,6 +22,8 @@ export const useAccountDetails = (
       return get(chainBalances)[chain];
     } else if (chain === Blockchain.POLYGON_POS) {
       return get(chainBalances)[chain];
+    } else if (chain === Blockchain.ARBITRUM_ONE) {
+      return get(chainBalances)[chain];
     }
     return {};
   });
@@ -80,7 +82,7 @@ export const useAccountDetails = (
       totalLoopringBalances = Object.entries(loopringBalance).length;
     }
 
-    return totalAssets + totalLiabilities + totalLoopringBalances > 1;
+    return totalAssets + totalLiabilities + totalLoopringBalances > 0;
   };
 
   const getLoopringBalances = (

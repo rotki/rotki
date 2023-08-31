@@ -8,8 +8,8 @@ from rotkehlchen.assets.utils import _query_or_get_given_token_info
 from rotkehlchen.chain.ethereum.tokens import EthereumTokens
 from rotkehlchen.chain.evm.tokens import generate_multicall_chunks
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_OMG, A_WETH
-from rotkehlchen.constants.misc import ONE
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.constants import A_LPT
 from rotkehlchen.tests.utils.factories import make_evm_address

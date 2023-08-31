@@ -45,6 +45,7 @@ const { t } = useI18n();
     <RpcSettings />
     <PriceOracleSettings />
     <NftSettings />
+    <ExternalServiceSettings />
     <FrontendSettings />
   </div>
 </template>

@@ -48,10 +48,9 @@ const { t } = useI18n();
 
 <template>
   <div>
-    <div
-      class="text-subtitle-1"
-      v-text="t('address_book.hint.priority.title')"
-    />
+    <div class="text-subtitle-1 mb-3">
+      {{ t('address_book.hint.priority.title') }}
+    </div>
     <SettingsOption
       #default="{ error, success, update }"
       setting="addressNamePriority"

@@ -197,7 +197,7 @@ class Asset:
     def __repr__(self) -> str:
         return f'<Asset identifier:{self.identifier}>'
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: object) -> bool:
         if other is None:
             return False
 

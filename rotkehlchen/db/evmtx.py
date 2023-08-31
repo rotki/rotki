@@ -599,7 +599,11 @@ class DBEvmTx:
         )
 
     def _build_evm_transaction(self, result: tuple[Any, ...]) -> EvmTransaction:
-        """Build a transaction object from queried data"""
+        """Build a transaction object from queried data
+
+        May raise:
+        - DeserializationError
+        """
         return EvmTransaction(
             tx_hash=deserialize_evm_tx_hash(result[0]),
             chain_id=ChainID.deserialize_from_db(result[1]),

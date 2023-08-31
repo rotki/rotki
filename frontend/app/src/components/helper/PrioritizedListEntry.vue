@@ -48,7 +48,6 @@ const labels: { [keys in PrioritizedListId]: string } = {
   cryptocompare: '',
   fiat: '',
   manual: '',
-  saddle: '',
   defillama: '',
   empty_list_id: ''
 };

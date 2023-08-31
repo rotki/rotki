@@ -13,6 +13,7 @@ import requests
 from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import AssetWithOracles
+from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import (
     A_AAVE,
     A_ADA,
@@ -49,7 +50,6 @@ from rotkehlchen.constants.assets import (
     A_YFI,
     A_ZRX,
 )
-from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
@@ -479,7 +479,6 @@ class Independentreserve(ExchangeInterface):
                         'toTimestampUtc': timestamp_to_iso8601(end_ts, utc_as_z=True),
                         # if we filter by tx type in my tests I started getting
                         # this {"Message":"A server error occurred. Please wait a few minutes and try again."}   # noqa: E501
-                        # 'txTypes': 'Deposit,Withdrawal',  # there is also DepositFee
                     },
                 )
             except KeyError as e:

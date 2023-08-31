@@ -31,3 +31,12 @@ def read_integer(data: dict[str, Any], key: str, api: str = DEFAULT_API) -> int:
             f'Failed to read {key} as an integer during {api} transaction query',
         ) from e
     return result
+
+
+def maybe_read_integer(data: dict[str, Any], key: str, api: str = DEFAULT_API, default_value: int = 0) -> int:  # noqa: E501
+    try:
+        result = read_integer(data=data, key=key, api=api)
+    except KeyError:
+        result = default_value
+
+    return result

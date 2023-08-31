@@ -16,9 +16,8 @@ from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.processed_event import ProcessedAccountingEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
-from rotkehlchen.constants import ZERO
+from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_DAI, A_ETH
-from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
@@ -153,7 +152,6 @@ def test_accounting_no_settings(accounting_pot: 'AccountingPot'):
 
 @pytest.mark.parametrize(('event_type', 'event_subtype', 'is_taxable', 'airdrops_taxable'), [
     (HistoryEventType.RECEIVE, HistoryEventSubType.NONE, True, False),
-    (HistoryEventType.WITHDRAWAL, HistoryEventSubType.NONE, False, False),
     (HistoryEventType.RECEIVE, HistoryEventSubType.AIRDROP, False, False),
     (HistoryEventType.RECEIVE, HistoryEventSubType.AIRDROP, True, True),
     (HistoryEventType.RECEIVE, HistoryEventSubType.REWARD, True, False),
@@ -211,7 +209,6 @@ def test_accounting_receive_settings(
     (HistoryEventType.SPEND, HistoryEventSubType.FEE, True, CPT_GAS, True, True),
     (HistoryEventType.SPEND, HistoryEventSubType.FEE, False, CPT_GAS, False, False),
     (HistoryEventType.SPEND, HistoryEventSubType.FEE, False, CPT_GAS, False, True),
-    (HistoryEventType.DEPOSIT, HistoryEventSubType.NONE, False, None, False, False),
     (HistoryEventType.RENEW, HistoryEventSubType.NONE, True, None, False, False),
 ])
 @pytest.mark.parametrize('mocked_price_queries', [MOCKED_PRICES])

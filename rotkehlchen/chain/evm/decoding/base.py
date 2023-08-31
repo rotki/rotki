@@ -1,4 +1,5 @@
 import logging
+from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, Callable, Optional
 
 from rotkehlchen.accounting.structures.balance import Balance
@@ -8,9 +9,8 @@ from rotkehlchen.assets.asset import CryptoAsset, EvmToken
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import OUTGOING_EVENT_TYPES
-from rotkehlchen.constants import ONE
+from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_ETH
-from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.types import ChecksumEvmAddress, Timestamp
 
 if TYPE_CHECKING:
@@ -69,6 +69,9 @@ class BaseDecoderTools:
 
     def is_tracked(self, adddress: ChecksumEvmAddress) -> bool:
         return adddress in self.tracked_accounts.get(self.evm_inquirer.chain_id.to_blockchain())
+
+    def any_tracked(self, addresses: Sequence[ChecksumEvmAddress]) -> bool:
+        return set(addresses).isdisjoint(self.tracked_accounts.get(self.evm_inquirer.chain_id.to_blockchain())) is False  # noqa: E501
 
     def maybe_get_proxy_owner(self, address: ChecksumEvmAddress) -> Optional[ChecksumEvmAddress]:  # pylint: disable=unused-argument  # noqa: E501
         """
@@ -190,7 +193,7 @@ class BaseDecoderTools:
         return self.make_event(
             tx_hash=transaction.tx_hash,
             sequence_index=self.get_sequence_index(tx_log),
-            timestamp=(transaction.timestamp),
+            timestamp=transaction.timestamp,
             event_type=event_type,
             event_subtype=HistoryEventSubType.NONE,
             asset=token,
@@ -336,7 +339,7 @@ class BaseDecoderToolsWithDSProxy(BaseDecoderTools):
             is_non_conformant_erc721_fn=is_non_conformant_erc721_fn,
             address_is_exchange_fn=address_is_exchange_fn,
         )
-        self.evm_inquirer: 'EvmNodeInquirerWithDSProxy'  # to specify the type
+        self.evm_inquirer: EvmNodeInquirerWithDSProxy  # to specify the type
 
     def maybe_get_proxy_owner(self, address: ChecksumEvmAddress) -> Optional[ChecksumEvmAddress]:
         """

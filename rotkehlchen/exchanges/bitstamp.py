@@ -14,7 +14,7 @@ from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.assets.converters import asset_from_bitstamp
-from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants import ZERO
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -622,7 +622,7 @@ class Bitstamp(ExchangeInterface):
         Can raise DeserializationError.
         """
         try:
-            pair = [key for key in raw_result if '_' in key and key != 'order_id'][0]
+            pair = next(key for key in raw_result if '_' in key and key != 'order_id')
         except IndexError as e:
             raise DeserializationError(
                 'Could not deserialize Bitstamp trade pair from user transaction. '

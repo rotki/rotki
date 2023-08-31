@@ -2,14 +2,42 @@
 Changelog
 =========
 
+* :feature:`-` Users will now have the ability to filter between claimed and unclaimed airdrops.
 
+* :release:`1.30.1 <2023-08-23>`
+* :bug:`-` Last premium DB upload will now show the last known DB upload time from the remote and not the time the local app did its last upload. This is important for people using multiple machines.
+* :bug:`6528` Spam assets will be synced across accounts sharing the same globaldb and won't be queried during token detection.
+* :bug:`-` Removed deprecated "Reset DB button" from the aave/yearn view.
+* :bug:`6524` Premium users will be able to explicity request to force push their local DB to the server backup properly again.
+* :bug:`-` Fix an issue where certain gitcoin donations were not detected in optimism and where the big transfer to the contract which later splits into the donations was mistakenly kept.
+
+* :release:`1.30.0 <2023-08-17>`
+* :feature:`6444` Users will now be able to see the asset graph in asset collection view.
+* :feature:`6274` Staking events from cointracking CSV can now be imported properly
+* :feature:`6041` Add external service timeout settings.
+* :feature:`6426` Users will now be able to import their BitMEX wallet history files.
 * :feature:`-`  Gnosis safe transaction execution or failure is now properly shown in the decoded history events.
 * :feature:`-`  The database size for users who have EVM transactions of any chain is now greatly reduced. Some databases had a reduction of up to 40%.
 * :feature:`6033` Optimism gas calculation is now correctly taking into account L1 gas fees.
 * :feature:`-` Optimism governance votes that include parameters should now be decoded properly.
+* :feature:`-` Users will now be able to check their addresses able to claim the DIVA airdrop.
+* :feature:`-` DIVA token airdrop claim and delegations are now properly shown in the decoded history events.
 * :feature:`-` Transactions for adding, removing and changing owners threshold for a gnosis safe multisig will now be decoded properly.
-* :feature:`6033` Fix gas fee calculation for Optimism transactions to include L1 fees.
+* :bug:`-` Fix an issue where MEV rewards could not be correctly accounted and exported in the CSV summary.
 * :bug:`-` ENS names that use the new RegistrarController and are renewed will have their events properly detected.
+* :bug:`-` Fixed an error that prevented from exporting the PnL report with debug information.
+* :bug:`-` Fixed an error affecting compound decoders where having more than one asset with the same symbol made the decoding fail.
+* :bug:`-` Fix a bug where the ETH asset is not shown correctly in the location breakdown when the 'Treat ETH as ETH2' setting is activated.
+* :bug:`-` Improve date and hexadecimal address scrambling.
+* :bug:`-` Fix an error affecting the events pagination for non premium users.
+* :feature:`3420` Arbitrum One support has been added. Balances will be shown, transactions pulled and decoded and taken into account in the PnL report.
+* :feature:`6454` The balances snapshot csv file exported from rotki now contains an asset symbol column.
+* :bug:`-` Remote errors should no longer affect the ethereum staking deposits decoded event view.
+* :bug:`-` Newer deposits to zksync lite should be decoded properly in the history events view.
+* :bug:`-` Using SVG icons for assets will now work.
+* :bug:`5038` The rare error some premium users got: "Plaintext DB is locked" should no longer happen.
+* :feature:`-` All gitcoin v2 related events are now properly decoded across supported EVM chains.
+
 
 * :release:`1.29.1 <2023-07-27>`
 * :bug:`-` Fix a bug where some images indicating the location of the assets are not loaded.

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type PropType, type Ref } from 'vue';
+import { type Ref } from 'vue';
 import { type DataTableHeader } from '@/types/vuetify';
 import { type ActionStatus } from '@/types/action';
 import { type IgnoredAssetsHandlingType } from '@/types/asset';
@@ -12,12 +12,7 @@ import {
 import { type ManualPriceFormPayload } from '@/types/prices';
 import { Section } from '@/types/status';
 
-defineProps({
-  modules: {
-    required: true,
-    type: Array as PropType<Module[]>
-  }
-});
+defineProps<{ modules: Module[] }>();
 
 const { fetchNonFungibleBalances, refreshNonFungibleBalances } =
   useNonFungibleBalancesStore();
@@ -224,7 +219,7 @@ const showDeleteConfirmation = (item: NonFungibleBalance) => {
 </script>
 
 <template>
-  <Card outlined-body>
+  <Card>
     <template #title>
       {{ t('non_fungible_balances.title') }}
       <VIcon v-if="loading" color="primary" class="ml-2">

@@ -50,6 +50,14 @@ const sources = [
     )
   },
   {
+    identifier: 'bitmex',
+    name: t('import_data.bitmex.name'),
+    logo: './assets/images/protocols/bitmex.svg',
+    form: defineAsyncComponent(
+      () => import('@/components/import/BitMEXImport.vue')
+    )
+  },
+  {
     identifier: 'bisq',
     name: t('import_data.bisq.name'),
     logo: './assets/images/protocols/bisq.svg',

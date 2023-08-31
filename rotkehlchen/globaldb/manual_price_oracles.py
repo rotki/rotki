@@ -2,7 +2,7 @@ import logging
 from typing import TYPE_CHECKING, Optional
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.constants.misc import ZERO_PRICE
+from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.types import HistoricalPriceOracle
@@ -59,7 +59,7 @@ class ManualCurrentOracle(CurrentPriceOracleInterface):
 
     def __init__(self) -> None:
         super().__init__(oracle_name='manual current price oracle')
-        self.database: Optional['DBHandler'] = None
+        self.database: Optional[DBHandler] = None
 
     def set_database(self, database: 'DBHandler') -> None:
         self.database = database

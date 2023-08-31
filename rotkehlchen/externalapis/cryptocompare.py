@@ -9,6 +9,7 @@ import gevent
 import requests
 
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
+from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import (
     A_BAT,
     A_BNB,
@@ -36,7 +37,7 @@ from rotkehlchen.constants.assets import (
     A_YFII,
     A_ZRX,
 )
-from rotkehlchen.constants.misc import ZERO, ZERO_PRICE
+from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset, WrongAssetType

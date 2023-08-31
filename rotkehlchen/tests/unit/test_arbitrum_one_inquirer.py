@@ -24,7 +24,7 @@ def test_arbitrum_one_nodes_prune_and_archive_status(
             assert web3_node.is_archive
         elif node_name.endpoint == 'https://arbitrum.blockpi.network/v1/rpc/public':
             assert not web3_node.is_pruned
-            assert not web3_node.is_archive
+            # not checking for archive here, as some times it is and some not
         # TODO add a check for a pruned node.
         # TODO All these calls should be mocked. Can't rely on a remote always being pruned, full or archive for a CI test  # noqa: E501
         else:

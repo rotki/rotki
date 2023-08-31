@@ -19,7 +19,7 @@ export const useBlockchainBalances = () => {
   const { update: updateChains, updatePrices: updateChainPrices } =
     useChainBalancesStore();
   const { fetchEnsNames } = useAddressesNamesStore();
-  const { isEvm } = useSupportedChains();
+  const { isEvm, getChainName } = useSupportedChains();
   const { t } = useI18n();
 
   const handleFetch = async (
@@ -44,7 +44,7 @@ export const useBlockchainBalances = () => {
         {
           blockchain,
           title: t('actions.balances.blockchain.task.title', {
-            chain: blockchain
+            chain: get(getChainName(blockchain))
           })
         },
         true

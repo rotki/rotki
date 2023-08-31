@@ -7,6 +7,7 @@ import {
 } from '@rotki/common/lib/messages';
 import {
   type BalanceSnapshotError,
+  type DbUploadResult,
   type EvmTransactionQueryData,
   type HistoryEventsQueryData,
   MESSAGE_WARNING,
@@ -19,6 +20,7 @@ import {
 import { camelCaseTransformer } from '@/services/axios-tranformers';
 import { Routes } from '@/router/routes';
 import router from '@/router';
+import { SYNC_UPLOAD } from '@/types/session/sync';
 
 export const useMessageHandling = () => {
   const { setQueryStatus: setTxQueryStatus } = useTxQueryStatusStore();
@@ -32,6 +34,7 @@ export const useMessageHandling = () => {
   const { addNewDetectedToken } = useNewlyDetectedTokens();
   const { t } = useI18n();
   const { consumeMessages } = useSessionApi();
+  const { showSyncConfirmation } = useSync();
   let isRunning = false;
 
   const handleSnapshotError = (data: BalanceSnapshotError): Notification => ({
@@ -93,14 +96,17 @@ export const useMessageHandling = () => {
 
   const handleNewTokenDetectedMessage = (
     data: NewDetectedToken
-  ): Notification => {
+  ): Notification | null => {
     const notification = get(notifications).find(
       ({ group }) => group === NotificationGroup.NEW_DETECTED_TOKENS
     );
 
-    addNewDetectedToken(data);
+    const countAdded = addNewDetectedToken(data);
+    const count = (notification?.groupCount || 0) + +countAdded;
 
-    const count = (notification?.groupCount || 0) + 1;
+    if (count === 0) {
+      return null;
+    }
 
     return {
       title: t('notification_messages.new_detected_token.title', count),
@@ -156,6 +162,27 @@ export const useMessageHandling = () => {
     };
   };
 
+  const handleDbUploadMessage = (data: DbUploadResult): Notification | null => {
+    const { actionable, message, uploaded } = data;
+
+    if (!actionable || uploaded) {
+      return null;
+    }
+
+    return {
+      title: t('notification_messages.db_upload_result.title'),
+      message: t('notification_messages.db_upload_result.message', {
+        reason: message
+      }),
+      severity: Severity.WARNING,
+      priority: Priority.ACTION,
+      action: {
+        label: t('notification_messages.db_upload_result.action'),
+        action: () => showSyncConfirmation(SYNC_UPLOAD)
+      }
+    };
+  };
+
   const handleMessage = async (data: string): Promise<void> => {
     const message: WebsocketMessage = WebsocketMessage.parse(
       camelCaseTransformer(JSON.parse(data))
@@ -188,12 +215,20 @@ export const useMessageHandling = () => {
     } else if (type === SocketMessageType.EVM_ACCOUNTS_DETECTION) {
       setUpgradedAddresses(message.data);
     } else if (type === SocketMessageType.NEW_EVM_TOKEN_DETECTED) {
-      notifications.push(handleNewTokenDetectedMessage(message.data));
+      const notification = handleNewTokenDetectedMessage(message.data);
+      if (notification) {
+        notifications.push(notification);
+      }
     } else if (type === SocketMessageType.REFRESH_BALANCES) {
       await fetchBlockchainBalances({
         blockchain: message.data.blockchain,
         ignoreCache: true
       });
+    } else if (type === SocketMessageType.DB_UPLOAD_RESULT) {
+      const notification = handleDbUploadMessage(message.data);
+      if (notification) {
+        notifications.push(notification);
+      }
     } else {
       logger.warn(`Unsupported socket message received: '${type}'`);
     }

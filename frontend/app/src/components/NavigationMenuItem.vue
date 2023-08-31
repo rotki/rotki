@@ -1,19 +1,25 @@
 <script setup lang="ts">
-import { type PropType, type VueConstructor } from 'vue';
+import { type VueConstructor } from 'vue';
 
-defineProps({
-  showTooltips: { required: false, type: Boolean, default: false },
-  icon: { required: false, type: String, default: '' },
-  text: { required: true, type: String },
-  image: { required: false, type: String, default: '' },
-  iconComponent: {
-    required: false,
-    type: Object as PropType<VueConstructor>,
-    default: null
-  },
-  active: { required: false, type: Boolean, default: false },
-  subMenu: { required: false, type: Boolean, default: false }
-});
+withDefaults(
+  defineProps<{
+    showTooltips?: boolean;
+    icon?: string;
+    text: string;
+    image?: string;
+    iconComponent?: VueConstructor | null;
+    active?: boolean;
+    subMenu?: boolean;
+  }>(),
+  {
+    showTooltips: false,
+    icon: '',
+    image: '',
+    iconComponent: null,
+    active: false,
+    subMenu: false
+  }
+);
 
 const { dark } = useTheme();
 
@@ -41,7 +47,7 @@ const css = useCssModule();
             v-else-if="iconComponent"
             :active="active"
           />
-          <VIcon v-else>{{ icon }}</VIcon>
+          <RuiIcon v-else :name="icon" />
         </VListItemIcon>
       </template>
       <span>{{ text }}</span>
@@ -63,10 +69,10 @@ const css = useCssModule();
         v-else-if="iconComponent"
         :active="active"
       />
-      <VIcon v-else>{{ icon }}</VIcon>
+      <RuiIcon v-else :name="icon" />
     </VListItemIcon>
-    <VListItemContent class="d-flex flex-grow-1 py-0">
-      <VListItemTitle :class="{ [css.small]: subMenu }">
+    <VListItemContent class="d-flex flex-grow-1 py-0 text-capitalize">
+      <VListItemTitle :class="{ 'text-sm': subMenu }">
         {{ text }}
       </VListItemTitle>
     </VListItemContent>
@@ -82,9 +88,5 @@ const css = useCssModule();
     opacity: 1;
     filter: brightness(0) invert(100%);
   }
-}
-
-.small {
-  font-size: 0.875rem;
 }
 </style>

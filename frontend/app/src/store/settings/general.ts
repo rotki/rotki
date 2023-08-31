@@ -65,6 +65,13 @@ export const useGeneralSettingsStore = defineStore('settings/general', () => {
   const addressNamePriority: ComputedRef<AddressNamePriority[]> = computed(
     () => settings.addressNamePriority
   );
+  const queryRetryLimit: ComputedRef<number> = computed(
+    () => settings.queryRetryLimit
+  );
+  const connectTimeout: ComputedRef<number> = computed(
+    () => settings.connectTimeout
+  );
+  const readTimeout: ComputedRef<number> = computed(() => settings.readTimeout);
 
   const currencySymbol: ComputedRef<SupportedCurrency> = computed(() => {
     const currency = get(mainCurrency);
@@ -97,6 +104,9 @@ export const useGeneralSettingsStore = defineStore('settings/general', () => {
     nonSyncingExchanges,
     treatEth2AsEth,
     addressNamePriority,
+    queryRetryLimit,
+    connectTimeout,
+    readTimeout,
     // return settings on development for state persistence
     ...(checkIfDevelopment() ? { settings } : {}),
     update

@@ -9,9 +9,9 @@ defineOptions({
   name: 'AssetBreakdown'
 });
 
-const props = defineProps({
-  identifier: { required: true, type: String }
-});
+const props = defineProps<{
+  identifier: string;
+}>();
 
 const { identifier } = toRefs(props);
 const { isAssetIgnored, ignoreAsset, unignoreAsset } = useIgnoredAssetsStore();
@@ -54,6 +54,15 @@ const isCollectionParent: ComputedRef<boolean> = computed(() => {
   const collectionParent = currentRoute.query['collectionParent'];
 
   return !!collectionParent;
+});
+
+const collectionId: ComputedRef<number | undefined> = computed(() => {
+  if (!get(isCollectionParent)) {
+    return undefined;
+  }
+
+  const collectionId = get(asset)?.collectionId;
+  return (collectionId && parseInt(collectionId)) || undefined;
 });
 
 const editRoute = computed<RawLocation>(() => ({
@@ -135,16 +144,17 @@ const collectionBalance: ComputedRef<AssetBalanceWithPrice[]> = computed(() => {
       :identifier="identifier"
     />
     <AssetAmountAndValueOverTime
-      v-if="premium && !isCollectionParent"
+      v-if="premium"
       class="mt-8"
       :asset="identifier"
+      :collection-id="collectionId"
     />
     <AssetLocations
       v-if="!isCollectionParent"
       class="mt-8"
       :identifier="identifier"
     />
-    <Card v-else class="mt-8" outlined-body>
+    <Card v-else class="mt-8">
       <template #title> {{ t('assets.multi_chain_assets') }} </template>
       <AssetBalances :balances="collectionBalance" />
     </Card>

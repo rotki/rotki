@@ -211,7 +211,7 @@ class Iconomi(ExchangeInterface):
         except RemoteError as e:
             msg = (
                 'ICONOMI API request failed. Could not reach ICONOMI due '
-                'to {}'.format(e)
+                f'to {e}'
             )
             log.error(msg)
             return None, msg

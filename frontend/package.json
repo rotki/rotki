@@ -36,10 +36,10 @@
     "@rotki/eslint-config": "1.1.1",
     "argparse": "2.0.1",
     "dotenv": "14.3.2",
-    "eslint": "8.45.0",
+    "eslint": "8.47.0",
     "husky": "8.0.3",
     "jsdom": "22.1.0",
-    "lint-staged": "13.2.3",
+    "lint-staged": "14.0.1",
     "rimraf": "5.0.1",
     "semver": "7.5.4",
     "typescript": "5.1.6"
@@ -55,7 +55,8 @@
   ],
   "pnpm": {
     "patchedDependencies": {
-      "bignumber.js@9.1.1": "patches/bignumber.js@9.1.1.patch"
+      "bignumber.js@9.1.1": "patches/bignumber.js@9.1.1.patch",
+      "vuetify@2.7.0": "patches/vuetify@2.7.0.patch"
     }
   },
   "lint-staged": {

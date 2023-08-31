@@ -119,22 +119,27 @@ class HistoryBaseEntry(AccountingEventMixin, metaclass=ABCMeta):
         self.notes = notes
         self.identifier = identifier
 
-    def __eq__(self, other: Any) -> bool:
-        if type(self) != type(other):  # pylint: disable=unidiomatic-typecheck
+    def __eq__(self, other: object) -> bool:
+        """Base equality check. for all HistoryBaseEntry and their subclasses
+
+        We use type() check and not isinstance() since we want to be sure the class of the
+        object is also correct and different subclasses with same other attributes are not equal.
+        """
+        if type(self) is not type(other):  # pylint: disable=unidiomatic-typecheck
             return False
 
-        return (
-            self.event_identifier == other.event_identifier and
-            self.sequence_index == other.sequence_index and
-            self.timestamp == other.timestamp and
-            self.location == other.location and
-            self.event_type == other.event_type and
-            self.event_subtype == other.event_subtype and
-            self.asset == other.asset and
-            self.balance == other.balance and
-            self.location_label == other.location_label and
-            self.notes == other.notes and
-            self.identifier == other.identifier
+        return (  # ignores are due to object and type check above not recognized
+            self.event_identifier == other.event_identifier and  # type: ignore
+            self.sequence_index == other.sequence_index and  # type: ignore
+            self.timestamp == other.timestamp and  # type: ignore
+            self.location == other.location and  # type: ignore
+            self.event_type == other.event_type and  # type: ignore
+            self.event_subtype == other.event_subtype and  # type: ignore
+            self.asset == other.asset and  # type: ignore
+            self.balance == other.balance and  # type: ignore
+            self.location_label == other.location_label and  # type: ignore
+            self.notes == other.notes and  # type: ignore
+            self.identifier == other.identifier  # type: ignore
         )
 
     def _history_base_entry_repr_fields(self) -> list[str]:

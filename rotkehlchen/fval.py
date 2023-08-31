@@ -42,7 +42,7 @@ class FVal:
         except InvalidOperation as e:
             raise ValueError(
                 'Expected string, int, float, or Decimal to initialize an FVal.'
-                'Found {}.'.format(type(data)),
+                f'Found {type(data)}.',
             ) from e
 
     def __str__(self) -> str:

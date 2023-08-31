@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Literal, Optional
 
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry, HistoryEvent
-from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants import ZERO
 from rotkehlchen.db.filtering import (
     AssetMovementsFilterQuery,
     EvmTransactionsFilterQuery,
@@ -304,7 +304,7 @@ class EventsHistorian:
                 base_entries_ignore_set=task_manager.base_entries_ignore_set,
             )
         has_premium = self.chains_aggregator.premium is not None
-        events, filter_total_found = db.get_history_events_and_limit_info(
+        events, filter_total_found, _ = db.get_history_events_and_limit_info(
             cursor=cursor,
             filter_query=filter_query,
             has_premium=has_premium,
@@ -333,7 +333,7 @@ class EventsHistorian:
             end_ts=end_ts,
         )
         # start creating the all trades history list
-        history: list['AccountingEventMixin'] = []
+        history: list[AccountingEventMixin] = []
         empty_or_error = ''
 
         def fail_history_cb(error_msg: str) -> None:
@@ -439,6 +439,8 @@ class EventsHistorian:
                 self.msg_aggregator.add_error(
                     f'Eth2 events are not included in the PnL report due to {e!s}',
                 )
+            # make sure that eth2 events and history events are combined
+            eth2.combine_block_with_tx_events()
 
         step = self._increase_progress(step, total_steps)
         self.processing_state_name = 'Querying base history events'

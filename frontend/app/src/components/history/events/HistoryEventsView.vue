@@ -544,7 +544,7 @@ const { locationData } = useLocations();
 
 <template>
   <div>
-    <Card class="mt-8" outlined-body>
+    <Card class="mt-8">
       <VBtn
         v-if="mainPage"
         absolute
@@ -643,7 +643,9 @@ const { locationData } = useLocations();
             itemLength,
             showUpgradeRow,
             limit,
-            total
+            total,
+            found,
+            entriesFoundTotal
           }"
         >
           <DataTable
@@ -655,7 +657,6 @@ const { locationData } = useLocations();
             :server-items-length="itemLength"
             :single-select="false"
             :item-class="getItemClass"
-            :class="$style.table"
             @update:options="setOptions($event)"
           >
             <template #item.ignoredInAccounting="{ item, isMobile }">
@@ -735,6 +736,8 @@ const { locationData } = useLocations();
                 v-if="showUpgradeRow"
                 :limit="limit"
                 :total="total"
+                :found="found"
+                :entries-found-total="entriesFoundTotal"
                 :colspan="headers.length"
                 :label="t('common.events')"
               />
@@ -753,22 +756,3 @@ const { locationData } = useLocations();
     <TransactionFormDialog :loading="sectionLoading" />
   </div>
 </template>
-
-<style module lang="scss">
-.table {
-  :global {
-    .v-data-table {
-      &__expanded {
-        &__content {
-          td {
-            &:first-child {
-              padding-left: 0 !important;
-              padding-right: 0 !important;
-            }
-          }
-        }
-      }
-    }
-  }
-}
-</style>

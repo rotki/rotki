@@ -17,8 +17,8 @@ from rotkehlchen.accounting.structures.types import HistoryEventSubType, History
 from rotkehlchen.accounting.types import MissingAcquisition
 from rotkehlchen.chain.ethereum.modules.uniswap.constants import CPT_UNISWAP_V2
 from rotkehlchen.chain.evm.accounting.structures import TxAccountingTreatment, TxEventSettings
+from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_3CRV, A_BTC, A_ETH, A_EUR, A_WETH
-from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
@@ -532,16 +532,17 @@ def test_accounting_lifo_order(accountant):
     cost_basis = accountant.pots[0].cost_basis
     cost_basis.reset(DBSettings(cost_basis_method=CostBasisMethod.LIFO))
     asset_events = cost_basis.get_events(asset)
+    base_ts = 1614556800  # 01/03/2021, changed from 1 for windows. See https://github.com/rotki/rotki/pull/6398#discussion_r1271323846 # noqa: E501
     # first we do a simple test that from 2 events the second is used
     event1 = AssetAcquisitionEvent(
         amount=ONE,
-        timestamp=1614556800,  # 01/03/2021, changed from 1 for windows. See https://github.com/rotki/rotki/pull/6398#discussion_r1271323846  # noqa: E501
+        timestamp=base_ts,
         rate=ONE,
         index=1,
     )
     event2 = AssetAcquisitionEvent(
         amount=ONE,
-        timestamp=1614556810,  # 01/03/2021, changed from 2 for windows. See https://github.com/rotki/rotki/pull/6398#discussion_r1271323846  # noqa: E501
+        timestamp=base_ts + 10,
         rate=ONE,
         index=2,
     )
@@ -556,13 +557,13 @@ def test_accounting_lifo_order(accountant):
     # checking what happens if one of the events has non-zero remaining_amount
     event3 = AssetAcquisitionEvent(
         amount=FVal(2),
-        timestamp=1614556800,  # 01/03/2021, changed from 1 for windows. See https://github.com/rotki/rotki/pull/6398#discussion_r1271323846  # noqa: E501
+        timestamp=base_ts,
         rate=ONE,
         index=1,
     )
     event4 = AssetAcquisitionEvent(
         amount=FVal(5),
-        timestamp=1614556810,  # 01/03/2021, changed from 2 for windows. See https://github.com/rotki/rotki/pull/6398#discussion_r1271323846  # noqa: E501
+        timestamp=base_ts + 10,
         rate=ONE,
         index=2,
     )
@@ -583,7 +584,7 @@ def test_accounting_lifo_order(accountant):
     # checking that new event after processing previous is added properly
     event5 = AssetAcquisitionEvent(
         amount=ONE,
-        timestamp=1614556800,  # 01/03/2021, changed from 1 for windows. See https://github.com/rotki/rotki/pull/6398#discussion_r1271323846  # noqa: E501
+        timestamp=base_ts,
         rate=ONE,
         index=1,
     )
@@ -603,7 +604,7 @@ def test_accounting_lifo_order(accountant):
     # check what happens if we use all remaining events
     event6 = AssetAcquisitionEvent(
         amount=ONE,
-        timestamp=1614556800,  # 01/03/2021, changed from 1 for windows. See https://github.com/rotki/rotki/pull/6398#discussion_r1271323846  # noqa: E501
+        timestamp=base_ts,
         rate=ONE,
         index=1,
     )
@@ -623,7 +624,7 @@ def test_accounting_lifo_order(accountant):
     # check what happens if we try to use more than available
     event7 = AssetAcquisitionEvent(
         amount=ONE,
-        timestamp=1614556800,  # 01/03/2021, changed from 1 for windows. See https://github.com/rotki/rotki/pull/6398#discussion_r1271323846  # noqa: E501
+        timestamp=base_ts,
         rate=ONE,
         index=1,
     )
@@ -678,16 +679,17 @@ def test_accounting_hifo_order(accountant):
     cost_basis = accountant.pots[0].cost_basis
     cost_basis.reset(DBSettings(cost_basis_method=CostBasisMethod.HIFO))
     asset_events = cost_basis.get_events(asset)
+    base_ts = 1614556800  # 01/03/2021, changed from 1 for windows. See https://github.com/rotki/rotki/pull/6398#discussion_r1271323846 # noqa: E501
     # checking that cost basis is correct if one of the events has non-zero remaining_amount
     event3 = AssetAcquisitionEvent(
         amount=FVal(2),
-        timestamp=1614556800,  # 01/03/2021, changed from 1 for windows. See https://github.com/rotki/rotki/pull/6398#discussion_r1271323846  # noqa: E501
+        timestamp=base_ts,
         rate=FVal(3),
         index=1,
     )
     event4 = AssetAcquisitionEvent(
         amount=FVal(5),
-        timestamp=1614556810,  # 01/03/2021, changed from 2 for windows. See https://github.com/rotki/rotki/pull/6398#discussion_r1271323846  # noqa: E501
+        timestamp=base_ts + 10,
         rate=ONE,
         index=2,
     )
@@ -708,7 +710,7 @@ def test_accounting_hifo_order(accountant):
     # check that adding a new event after processing the previous one is added properly
     event5 = AssetAcquisitionEvent(
         amount=ONE,
-        timestamp=1614556800,  # 01/03/2021, changed from 1 for windows. See https://github.com/rotki/rotki/pull/6398#discussion_r1271323846  # noqa: E501
+        timestamp=base_ts,
         rate=FVal(2),
         index=1,
     )
@@ -728,7 +730,7 @@ def test_accounting_hifo_order(accountant):
     # check that using all remaining events uses up all acquisitions
     event6 = AssetAcquisitionEvent(
         amount=ONE,
-        timestamp=1614556800,  # 01/03/2021, changed from 1 for windows. See https://github.com/rotki/rotki/pull/6398#discussion_r1271323846  # noqa: E501
+        timestamp=base_ts,
         rate=ONE,
         index=1,
     )
@@ -748,7 +750,7 @@ def test_accounting_hifo_order(accountant):
     # check that using more than available creates MissingAcquisition
     event7 = AssetAcquisitionEvent(
         amount=ONE,
-        timestamp=1614556800,  # 01/03/2021, changed from 1 for windows. See https://github.com/rotki/rotki/pull/6398#discussion_r1271323846  # noqa: E501
+        timestamp=base_ts,
         rate=ONE,
         index=1,
     )
@@ -780,6 +782,7 @@ def test_missing_acquisitions(accountant):
     expected_missing_acquisitions = []
     cost_basis = accountant.pots[0].cost_basis
     all_events = cost_basis.get_events(A_ETH)
+    base_ts = 1614556800  # 01/03/2021, changed from 1 for windows. See https://github.com/rotki/rotki/pull/6398#discussion_r1271323846 # noqa: E501
     # Test when there are no documented acquisitions
     cost_basis.reduce_asset_amount(
         asset=A_ETH,
@@ -809,7 +812,7 @@ def test_missing_acquisitions(accountant):
         amount=2,
         rate=1,
         index=1,
-        timestamp=1614556810,  # 01/03/2021, changed from 2 for windows. See https://github.com/rotki/rotki/pull/6398#discussion_r1271323846  # noqa: E501
+        timestamp=base_ts + 10,
     ))
     cost_basis.reduce_asset_amount(
         asset=A_ETH,
@@ -827,7 +830,7 @@ def test_missing_acquisitions(accountant):
         amount=2,
         rate=1,
         index=2,
-        timestamp=1614556820,  # 01/03/2021, changed from 3 for windows. See https://github.com/rotki/rotki/pull/6398#discussion_r1271323846  # noqa: E501
+        timestamp=base_ts + 20,
     ))
     all_events.acquisitions_manager.calculate_spend_cost_basis(
         spending_amount=3,

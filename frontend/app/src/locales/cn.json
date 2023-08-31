@@ -159,7 +159,6 @@
     },
     "title": "交易设置"
   },
-
   "address_account_form": {
     "label": "添加到所有支持的 EVM 链",
     "hint": "当检查时,将跟踪此地址的所有支持的EVM链(Ethereum, Optimism 等)"
@@ -903,6 +902,7 @@
   },
   "airdrops": {
     "description": "* 这些是 rotki 检测到您的跟踪帐户有资格获得的空投。您可能已经领取了它们。如果没有，请访问每个协议的链接并领取您的份额。",
+    "status_hint": "显示 {status} 空投的结果。",
     "headers": {
       "source": "来源"
     },
@@ -922,7 +922,8 @@
   },
   "app": {
     "moto": "保护您隐私的开源投资组合管理器",
-    "name": "rotki"
+    "name": "rotki",
+    "copyright": "© Rotki Solutions GmbH 2018-{year}"
   },
   "asset_balances": {
     "loading": "rotki 正在查询区块链，请稍候..."
@@ -1281,7 +1282,8 @@
       "ksm": "Kusama 余额",
       "loopring": "Loopring 余额",
       "optimism": "Optimism",
-      "polygon_pos": "Polygon PoS 余额"
+      "polygon_pos": "Polygon PoS 余额",
+      "arbitrum_one": "Arbitrum One 余额"
     },
     "form_dialog": {
       "add_title": "添加区块链账户",
@@ -1376,6 +1378,9 @@
   },
   "common": {
     "account": "账户",
+    "status": "地位",
+    "claimed": "声称",
+    "unclaimed": "无人认领",
     "actions": {
       "accept": "接受",
       "back": "返回",
@@ -1932,6 +1937,9 @@
       "title": "删除 {chain} RPC 节点"
     },
     "delete_tooltip": "删除选中的 RPC 节点",
+    "edit_dialog": {
+      "title": "编辑 {chain} RPC 节点"
+    },
     "edit_error": {
       "title": "编辑 {chain} RPC 节点"
     },
@@ -2262,6 +2270,31 @@
         "empty": "小数分隔符不能为空"
       }
     },
+    "external_service_setting": {
+      "label": {
+        "query_retry_limit": "查询重试限制",
+        "query_retry_limit_hint": "在放弃之前重试对外部服务的查询次数。",
+        "connect_timeout": "连接超时",
+        "connect_timeout_hint": "在放弃建立与外部服务的连接之前等待的秒数。",
+        "read_timeout": "读取超时",
+        "read_timeout_hint": "在与外部服务的连接建立后，等待第一个字节的秒数。"
+      },
+      "title": "外部服务设置",
+      "validation": {
+        "query_retry_limit": {
+          "non_empty": "请输入查询重试限制",
+          "invalid_range": "查询重试限制必须大于{min}"
+        },
+        "connect_timeout": {
+          "non_empty": "请输入连接超时",
+          "invalid_range": "连接超时必须大于{min}"
+        },
+        "read_timeout": {
+          "non_empty": "请输入读取超时",
+          "invalid_range": "读取超时必须大于{min}"
+        }
+      }
+    },
     "labels": {
       "anonymous_analytics": "是否应该提交匿名使用分析？",
       "balance_saving_frequency": "以小时为单位的余额数据保存频率",
@@ -2457,6 +2490,13 @@
       "line_two": "由于 binance 的 csv 格式，有可能不会导入所有数据。如果发生这种情况，您将收到警告。",
       "name": "币安"
     },
+    "bitmex": {
+      "import": "从 BitMEX 导入 {0}",
+      "import_types": "钱包历史",
+      "line_one": "[Experimental]如果您发现导入的数据有问题，请告诉我们，以便我们相应地调整代码。",
+      "line_two": "钱包历史文件中的金额假定为比特币。如果您希望其他货币支持此功能，请联系。",
+      "name": "BitMEX"
+    },
     "bisq": {
       "import": "从 Bisq 导入 {0}",
       "import_trade": "交易",
@@ -2511,9 +2551,9 @@
       "name": "Nexo"
     },
     "note": "从 {0} 的 CSV 导出中导入数据的重要注意事项。",
-    "notice": "{warning} 这些平台可能会经常以向后不兼容的方式更改其格式。 因此，此导入可能会停止工作。 如果发生这种情况{link}，我们将看看我们能做些什么。",
+    "notice": "这些平台可能会经常以向后不兼容的方式更改其格式。 因此，此导入可能会停止工作。 如果发生这种情况{link}，我们将看看我们能做些什么。",
     "notice_link": "用 rotki 打开一个问题",
-    "notice_warning": "⚠️重要通知⚠️:",
+    "notice_warning": "重要通知:",
     "select_source": {
       "title": "选择来源"
     },
@@ -2702,12 +2742,7 @@
     "effective_interest_rate_tooltip": "你积极借贷的所有协议的储蓄率，根据每个协议中的相对位置加权。",
     "history": "历史",
     "loading": "正在加载您的余额，请稍候...",
-    "profit_earned": "获利",
-    "reset": {
-      "protocol_selection": "选择要重置的协议"
-    },
-    "reset_confirm": "此操作将覆盖数据库中所选协议的任何缓存历史条目，并将再次获取所有内容。根据帐户数量，这可能需要很长时间。您确定要继续吗？",
-    "reset_tooltip": "刷新数据覆盖缓存的 Aave 和 yearn.finance Vaults 历史条目"
+    "profit_earned": "获利"
   },
   "lending_asset_table": {
     "headers": {
@@ -2794,8 +2829,8 @@
     "total_asset_price": "总资产价格"
   },
   "login": {
-    "button_new_account": "创建新账户",
-    "button_signin": "登录",
+    "button_no_account": "没有帐户？",
+    "button_signup": "报名",
     "custom_backend": {
       "hint": "你想要连接的后端的 url(默认留空)",
       "label": "后台网址",
@@ -2825,6 +2860,14 @@
       "title": "数据库同步所需的用户操作"
     },
     "title": "登录",
+    "welcome_title": "欢迎来到 rotki",
+    "welcome_description": "欢迎使用保护您隐私的开源投资组合管理器。",
+    "welcome_update_message": "登录以探索我们所做的更改。",
+    "description": {
+      "welcome": "欢迎！ 请输入您的详细信息。",
+      "our_docs": "我们的文档",
+      "more_details": "{documentation} 向您显示有关本地应用程序和用户的更多详细信息。"
+    },
     "upgrading_db": {
       "title": "数据库升级",
       "current": "已应用数据库升级 v{currentVersion} 的 {totalSteps} 步 {currentStep}。",
@@ -2834,6 +2877,11 @@
       "non_empty_password": "请提供密码",
       "non_empty_username": "请提供用户名",
       "valid_username": "用户名必须只包含字母数字字符且不能有空格"
+    },
+    "credential_error": {
+      "title": "请注意，您的网站帐户和应用程序帐户是分开的，不能互换使用。",
+      "description": "如果您尚未创建应用帐户，则需要创建应用帐户才能登录。",
+      "support": "如果您需要帮助，请通过我们的 Discord 支持渠道联系我们。"
     }
   },
   "macos_unsupported": {
@@ -3157,6 +3205,11 @@
     "address_migration": {
       "title": "地址已添加到{chain}|地址已添加到{chain}",
       "message": "以下地址已添加到{chain}:{addresses}|以下地址已添加到{chain}:{addresses}"
+    },
+    "db_upload_result": {
+      "title": "数据库同步失败",
+      "message": "我们无法完成上传，因为{reason}",
+      "action": "强力推"
     }
   },
   "notification_popup": {
@@ -3206,7 +3259,8 @@
   },
   "overall_balances": {
     "loading": "加载中",
-    "premium_hint": "通过升级到 rotki premium 获得完整体验"
+    "premium_hint": "通过升级到 rotki premium 获得完整体验",
+    "summary": "概括"
   },
   "overview": {
     "details_dialog": {

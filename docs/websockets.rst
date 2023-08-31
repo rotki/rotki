@@ -181,6 +181,7 @@ This also contains two optional, mutually excluded keys. If one exists the other
 
 - ``seen_tx_hash``: A transaction hash in the same chain as the token in which the token was first seen.
 - ``seen_description``: A description of the action in which the token was first seen and added to the DB. For example, querying curve pools, querying yearn pools etc.
+- ``is_ignored``(Optional): If it is set the backend has marked automatically the asset as ignored for the user.
 
 
 Missing API Key
@@ -266,3 +267,26 @@ If at some point backend detects that balances need to be refreshed, it will sen
 
 - ``type``: Balances section that needs a refresh. Valid values are: ``blockchain_balances``.
 - ``blockchain``: Returned only for section: ``blockchain_balances``. The blockchain for which balances need to be refreshed. Valid values are: ``optimism``, ``eth``.
+
+
+Premium Database Upload result
+========================================
+
+Whenever the backend attempts to upload a premium user DB there can be various reasons it did not upload. Either errors (non-actionable) or safety limits (actionable -- can be force pushed).  We use this websocket message to communicate to the frontend.
+
+::
+
+    {
+        "type": "database_upload_result",
+        "data": {
+            "uploaded": False,
+	    "actionable": True,
+            "message": "Remote database bigger than the local one"
+        }
+    }
+
+
+- ``uploaded``: A boolean, denoting if the premium database upload happened or not.
+- ``actionable``: If ``uploaded`` is false, then this explains if the reason it did not upload is something actionable that could be solved by force pushing. If True, then
+  that means it failed to upload for something like remote database being more recent than local or bigger than local etc. If false it's a bad error like "could not contact the server" in which case force pushing won't help.
+- ``message``: If ``uploaded`` is false, then this is a user facing message to explain why. IF ``uploaded`` is true this will be ``null``.

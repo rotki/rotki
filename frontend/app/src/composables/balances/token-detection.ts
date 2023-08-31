@@ -13,9 +13,8 @@ export const useTokenDetection = (
   } = useBlockchainTokensStore();
 
   const { ethAddresses } = storeToRefs(useEthAccountsStore());
-  const { optimismAddresses, polygonAddresses } = storeToRefs(
-    useChainsAccountsStore()
-  );
+  const { optimismAddresses, polygonAddresses, arbitrumAddresses } =
+    storeToRefs(useChainsAccountsStore());
   const { supportsTransactions } = useSupportedChains();
 
   const detectingTokens = computed<boolean>(() => {
@@ -56,6 +55,8 @@ export const useTokenDetection = (
       addresses = get(ethAddresses);
     } else if (blockchain === Blockchain.POLYGON_POS) {
       addresses = get(polygonAddresses);
+    } else if (blockchain === Blockchain.ARBITRUM_ONE) {
+      addresses = get(arbitrumAddresses);
     }
     if (addresses.length > 0) {
       await detectTokens(addresses);

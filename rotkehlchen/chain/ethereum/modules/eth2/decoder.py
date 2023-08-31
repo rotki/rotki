@@ -2,8 +2,8 @@ import logging
 from typing import Any
 
 from eth_utils import encode_hex
-from rotkehlchen.accounting.structures.balance import Balance
 
+from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.eth2 import EthDepositEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.constants import ETH2_DEPOSIT_ADDRESS
@@ -50,13 +50,13 @@ class Eth2Decoder(DecoderInterface):
                 # but yoloing it since it's a single query that won't happen often
                 # and the alternative of pushing beaconchain as an argument across all
                 # decoders seems wrong, dirty and breaking abstraction
+                beaconchain = BeaconChain(self.base.database, self.msg_aggregator)
                 try:
-                    beaconchain = BeaconChain(self.base.database, self.msg_aggregator)
+                    result = beaconchain.get_validator_data([public_key])
                 except RemoteError as e:
                     log.error(f'Failed to query validator index for {public_key} due to {e!s}')
                     extra_data = {'public_key': public_key}
                 else:
-                    result = beaconchain.get_validator_data([public_key])
                     validator_index = result[0]['validatorindex']
                     if not isinstance(validator_index, int) or validator_index < 0:
                         validator_index = UNKNOWN_VALIDATOR_INDEX

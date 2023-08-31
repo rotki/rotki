@@ -4,14 +4,14 @@ if TYPE_CHECKING:
     from rotkehlchen.assets.asset import Asset, CryptoAsset, CustomAsset, EvmToken, FiatAsset, Nft
 
 
-POSSIBLE_ASSET = Union[
-    type['Asset'],
-    type['FiatAsset'],
-    type['CryptoAsset'],
-    type['CustomAsset'],
-    type['EvmToken'],
-    type['Nft'],
-]
+POSSIBLE_ASSET = type[Union[
+    'Asset',
+    'FiatAsset',
+    'CryptoAsset',
+    'CustomAsset',
+    'EvmToken',
+    'Nft',
+]]
 
 
 class UnknownAsset(Exception):

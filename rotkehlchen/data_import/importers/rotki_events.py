@@ -6,17 +6,19 @@ from uuid import uuid4
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry, HistoryEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.assets.utils import symbol_to_asset_or_token
 from rotkehlchen.constants import ZERO
-from rotkehlchen.data_import.utils import BaseExchangeImporter, UnsupportedCSVEntry
+from rotkehlchen.data_import.utils import (
+    BaseExchangeImporter,
+    UnsupportedCSVEntry,
+    process_rotki_generic_import_csv_fields,
+)
 from rotkehlchen.db.drivers.gevent import DBCursor
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.serialization.deserialize import deserialize_asset_amount, deserialize_timestamp
-from rotkehlchen.types import Fee, Location, TimestampMS
+from rotkehlchen.serialization.deserialize import deserialize_asset_amount
 
-from .constants import EVENT_ID_PREFIX
+from .constants import ROTKI_EVENT_PREFIX
 
 GENERIC_TYPE_TO_HISTORY_EVENT_TYPE_MAPPINGS = {
     'Deposit': (HistoryEventType.DEPOSIT, HistoryEventSubType.SPEND),
@@ -30,7 +32,7 @@ GENERIC_TYPE_TO_HISTORY_EVENT_TYPE_MAPPINGS = {
 class RotkiGenericEventsImporter(BaseExchangeImporter):
     def _consume_rotki_event(
             self,
-            cursor: DBCursor,
+            write_cursor: DBCursor,
             csv_row: dict[str, Any],
             sequence_index: int,
     ) -> None:
@@ -41,19 +43,13 @@ class RotkiGenericEventsImporter(BaseExchangeImporter):
         - UnknownAsset
         - KeyError
         """
-        identifier = f'{EVENT_ID_PREFIX}_{uuid4().hex}'
+        identifier = f'{ROTKI_EVENT_PREFIX}_{uuid4().hex}'
         try:
             event_type, event_subtype = GENERIC_TYPE_TO_HISTORY_EVENT_TYPE_MAPPINGS[csv_row['Type']]  # noqa: E501
         except KeyError as e:
             raise UnsupportedCSVEntry(f'Unsupported entry {csv_row["Type"]}. Data: {csv_row}') from e  # noqa: E501
         events: list[HistoryBaseEntry] = []
-        location = Location.deserialize(csv_row['Location'])
-        timestamp = TimestampMS(deserialize_timestamp(csv_row['Timestamp']))
-        fee = Fee(deserialize_asset_amount(csv_row['Fee'])) if csv_row['Fee'] else Fee(ZERO)  # noqa: E501
-        fee_currency = (
-            symbol_to_asset_or_token(csv_row['Fee Currency'])
-            if csv_row['Fee Currency'] and fee is not None else None
-        )
+        asset, fee, fee_currency, location, timestamp = process_rotki_generic_import_csv_fields(csv_row, 'Currency')  # noqa: E501
         history_event = HistoryEvent(
             event_identifier=identifier,
             sequence_index=sequence_index,
@@ -61,7 +57,7 @@ class RotkiGenericEventsImporter(BaseExchangeImporter):
             location=location,
             event_type=event_type,
             event_subtype=event_subtype,
-            asset=symbol_to_asset_or_token(csv_row['Currency']),
+            asset=asset,
             balance=Balance(
                 amount=deserialize_asset_amount(csv_row['Amount']),
                 usd_value=ZERO,
@@ -69,7 +65,7 @@ class RotkiGenericEventsImporter(BaseExchangeImporter):
             notes=csv_row['Description'],
         )
         events.append(history_event)
-        if fee != ZERO and fee_currency is not None:
+        if fee:
             fee_event = HistoryEvent(
                 event_identifier=identifier,
                 sequence_index=sequence_index + 1,
@@ -77,7 +73,7 @@ class RotkiGenericEventsImporter(BaseExchangeImporter):
                 location=location,
                 event_type=event_type,
                 event_subtype=HistoryEventSubType.FEE,
-                asset=fee_currency,
+                asset=fee_currency,  # type: ignore[arg-type]
                 balance=Balance(
                     amount=fee,
                     usd_value=ZERO,
@@ -85,9 +81,9 @@ class RotkiGenericEventsImporter(BaseExchangeImporter):
                 notes=csv_row['Description'],
             )
             events.append(fee_event)
-        self.add_history_events(cursor, events)  # event assets are always resolved here
+        self.add_history_events(write_cursor, events)  # event assets are always resolved here
 
-    def _import_csv(self, cursor: DBCursor, filepath: Path, **kwargs: Any) -> None:
+    def _import_csv(self, write_cursor: DBCursor, filepath: Path, **kwargs: Any) -> None:
         """May raise:
         - InputError if one of the rows is malformed
         """
@@ -96,21 +92,21 @@ class RotkiGenericEventsImporter(BaseExchangeImporter):
             for idx, row in enumerate(data):
                 try:
                     kwargs['sequence_index'] = idx
-                    self._consume_rotki_event(cursor, row, **kwargs)
+                    self._consume_rotki_event(write_cursor, row, **kwargs)
                 except UnknownAsset as e:
                     self.db.msg_aggregator.add_warning(
                         f'During rotki generic events CSV import, found action with unknown '
                         f'asset {e.identifier}. Ignoring entry',
                     )
-                    continue
                 except DeserializationError as e:
                     self.db.msg_aggregator.add_warning(
                         f'Deserialization error during rotki generic events CSV import. '
                         f'{e!s}. Ignoring entry',
                     )
-                    continue
                 except UnsupportedCSVEntry as e:
                     self.db.msg_aggregator.add_warning(str(e))
-                    continue
                 except KeyError as e:
                     raise InputError(f'Could not find key {e!s} in csv row {row!s}') from e
+
+                # if more logic is ever added here,
+                # `continue` must be placed at the end of all the exceptions handlers

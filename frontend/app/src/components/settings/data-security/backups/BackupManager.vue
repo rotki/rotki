@@ -220,7 +220,7 @@ const showMassDeleteConfirmation = () => {
       :global-db="globalDb"
       :user-db="userDb"
     />
-    <Card outlined-body class="mt-8">
+    <Card class="mt-8">
       <template #title>{{ t('backup_manager.title') }}</template>
       <template #details>
         <RefreshButton

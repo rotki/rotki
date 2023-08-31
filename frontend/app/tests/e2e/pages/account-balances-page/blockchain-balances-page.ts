@@ -13,10 +13,9 @@ export interface FixtureBlockchainBalance {
 }
 
 export class BlockchainBalancesPage extends AccountBalancesPage {
+  page = new AccountBalancesPage();
   visit() {
-    cy.get('.accounts-balances__blockchain-balances').scrollIntoView();
-    cy.get('.accounts-balances__blockchain-balances').should('be.visible');
-    cy.get('.accounts-balances__blockchain-balances').click();
+    this.page.visit('accounts-balances-blockchain');
   }
 
   isGroupped(balance: FixtureBlockchainBalance) {
@@ -24,7 +23,7 @@ export class BlockchainBalancesPage extends AccountBalancesPage {
   }
 
   addBalance(balance: FixtureBlockchainBalance) {
-    cy.get('.big-dialog').should('be.visible');
+    cy.get('[data-cy=bottom-dialog]').should('be.visible');
     cy.get('[data-cy="blockchain-balance-form"]').should('be.visible');
     cy.get('[data-cy="account-blockchain-field"]').parent().click();
     cy.get('.v-menu__content').contains(balance.chainName).click();
@@ -38,8 +37,7 @@ export class BlockchainBalancesPage extends AccountBalancesPage {
     cy.get('[data-cy="account-label-field"]').type(balance.label);
 
     for (const tag of balance.tags) {
-      cy.get('[data-cy="account-tag-field"]').type(tag);
-      cy.get('[data-cy="account-tag-field"]').type('{enter}');
+      cy.get('[data-cy="account-tag-field"]').type(`${tag}{enter}`);
     }
 
     cy.get('.big-dialog__buttons__confirm').click();
@@ -54,7 +52,9 @@ export class BlockchainBalancesPage extends AccountBalancesPage {
       );
     }
 
-    cy.get('.big-dialog', { timeout: 120000 }).should('not.be.visible');
+    cy.get('[data-cy=bottom-dialog]', { timeout: 120000 }).should(
+      'not.be.visible'
+    );
   }
 
   isEntryVisible(position: number, balance: FixtureBlockchainBalance) {

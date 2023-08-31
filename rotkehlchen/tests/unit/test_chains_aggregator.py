@@ -8,7 +8,7 @@ from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.chain.aggregator import ChainsAggregator, _module_name_to_class
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode, string_to_evm_address
-from rotkehlchen.constants.misc import ONE
+from rotkehlchen.constants import ONE
 from rotkehlchen.tests.utils.blockchain import setup_evm_addresses_activity_mock
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.tests.utils.polygon_pos import ALCHEMY_RPC_ENDPOINT

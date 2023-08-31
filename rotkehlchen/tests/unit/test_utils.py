@@ -373,6 +373,7 @@ def test_jsonloads_list():
     assert 'Returned json is not a list' in str(e.value)
 
 
+@pytest.mark.vcr()
 def test_retrieve_old_erc20_token_info(ethereum_inquirer):
     info = ethereum_inquirer.get_erc20_contract_info('0x2C4Bd064b998838076fa341A83d007FC2FA50957')  # noqa: E501
     assert info['symbol'] == 'UNI-V1'

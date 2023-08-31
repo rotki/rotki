@@ -27,7 +27,7 @@ from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.constants import ZERO
 from rotkehlchen.db.constants import HISTORY_MAPPING_STATE_DECODED
 from rotkehlchen.db.evmtx import DBEvmTx
-from rotkehlchen.db.filtering import EvmEventFilterQuery, EvmTransactionsFilterQuery
+from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import InputError, ModuleLoadingError, NotERC20Conformant, RemoteError
@@ -171,7 +171,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
         )
         self.rules.event_rules.extend(event_rules)
         self.value_asset = value_asset
-        self.decoders: dict[str, 'DecoderInterface'] = {}
+        self.decoders: dict[str, DecoderInterface] = {}
         # store the mapping of possible counterparties to the allowed types and subtypes in events
         self.events_types_tuples: DecoderEventMappingType = {}
 
@@ -226,6 +226,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
         rules.post_decoding_rules.update(self.decoders[class_name].post_decoding_rules())  # noqa: E501
         rules.all_counterparties.update(self.decoders[class_name].counterparties())
         rules.addresses_to_counterparties.update(self.decoders[class_name].addresses_to_counterparties())  # noqa: E501
+        self._chain_specific_decoder_initialization(self.decoders[class_name])
 
     def _recursively_initialize_decoders(
             self,
@@ -278,7 +279,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
         return possible_products
 
     def get_decoders_event_types(self) -> DecoderEventMappingType:
-        """Get the mappings of counterparties to their possible even type
+        """Get the mappings of counterparties to their possible event type
         and subtype combinations
         """
         possible_types = {}
@@ -386,7 +387,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             if address_counterparty is not None:
                 counterparties.add(address_counterparty)
 
-        rules = []
+        rules = self._chain_specific_post_decoding_rules(transaction)
         # get the rules that need to be applied by counterparty
         for counterparty in counterparties:
             new_rules = self.rules.post_decoding_rules.get(counterparty)
@@ -399,7 +400,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             try:
                 decoded_events = rule(transaction=transaction, decoded_events=decoded_events, all_logs=all_logs)  # noqa: E501
             except (DeserializationError, IndexError) as e:
-                self.msg_aggregator.add_error(f'Applying post-decoding rule {rule} for {transaction.tx_hash.hex()} failed due to {e!s}. Skipping rule.')  # noqa: E501
+                log.error(f'Applying post-decoding rule {rule} for {transaction.tx_hash.hex()} failed due to {e!s}. Skipping rule.')  # noqa: E501
 
         assert self._check_correct_types(decoded_events)
         return decoded_events
@@ -537,11 +538,11 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
         The transaction hashes must exist in the DB at the time of the call
 
         May raise:
-        - DeserializationError if there is a problem with conacting a remote to get receipts
+        - DeserializationError if there is a problem with contacting a remote to get receipts
         - RemoteError if there is a problem with contacting a remote to get receipts
         - InputError if the transaction hash is not found in the DB
         """
-        events: list['EvmEvent'] = []
+        events: list[EvmEvent] = []
         refresh_balances = False
         with self.database.conn.read_ctx() as cursor:
             self.reload_data(cursor)
@@ -554,20 +555,19 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
                 tx_hashes = [EVMTxHash(x[0]) for x in cursor]
 
         for tx_hash in tx_hashes:
-            try:
-                receipt = self.transactions.get_or_query_transaction_receipt(tx_hash)
-            except RemoteError as e:
-                raise InputError(f'{self.evm_inquirer.chain_name} hash {tx_hash.hex()} does not correspond to a transaction') from e  # noqa: E501
-
             # TODO: Change this if transaction filter query can accept multiple hashes
             with self.database.conn.read_ctx() as cursor:
-                txs = self.dbevmtx.get_evm_transactions(
-                    cursor=cursor,
-                    filter_=EvmTransactionsFilterQuery.make(tx_hash=tx_hash, chain_id=self.evm_inquirer.chain_id),  # noqa: E501
-                    has_premium=True,  # ignore limiting here
-                )
+                try:
+                    tx, receipt = self.transactions.get_or_create_transaction(
+                        cursor=cursor,
+                        tx_hash=tx_hash,
+                        relevant_address=None,
+                    )
+                except RemoteError as e:
+                    raise InputError(f'{self.evm_inquirer.chain_name} hash {tx_hash.hex()} does not correspond to a transaction. {e}') from e  # noqa: E501
+
             new_events, new_refresh_balances = self._get_or_decode_transaction_events(
-                transaction=txs[0],
+                transaction=tx,
                 tx_receipt=receipt,
                 ignore_cache=ignore_cache,
             )
@@ -718,7 +718,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             )
             return DEFAULT_DECODING_OUTPUT
 
-        if not any(self.base.is_tracked(x) for x in (owner_address, spender_address)):
+        if not self.base.any_tracked([owner_address, spender_address]):
             return DEFAULT_DECODING_OUTPUT
 
         amount = token_normalized_value(token_amount=amount_raw, token=token)
@@ -745,7 +745,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             tx_receipt: EvmTxReceipt,
     ) -> list['EvmEvent']:
         """Decodes normal ETH transfers, internal transactions and gas cost payments"""
-        events: list['EvmEvent'] = []
+        events: list[EvmEvent] = []
         # check for gas spent
         direction_result = self.base.decode_direction(tx.from_address, tx.to_address)
         if direction_result is not None:
@@ -915,6 +915,23 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
                 },
             )
 
+    def _chain_specific_decoder_initialization(
+            self,
+            decoder: 'DecoderInterface',  # pylint: disable=unused-argument
+    ) -> None:
+        """Custom initialization for each decoder, based on the type of EVM chain.
+
+        This is a no-op by default
+        """
+        return None
+
+    def _chain_specific_post_decoding_rules(
+            self,
+            transaction: EvmTransaction,  # pylint: disable=unused-argument
+    ) -> list[tuple[int, Callable]]:
+        """Custom post-decoding rules for specific chains. This is a no-op by default."""
+        return []
+
     def _calculate_gas_burned(self, tx: EvmTransaction) -> FVal:
         """Calculates gas burn based on relevant chain's formula."""
         return from_wei(FVal(tx.gas_used * tx.gas_price))
@@ -986,5 +1003,5 @@ class EVMTransactionDecoderWithDSProxy(EVMTransactionDecoder, metaclass=ABCMeta)
             misc_counterparties=misc_counterparties,
             base_tools=base_tools,
         )
-        self.evm_inquirer: 'EvmNodeInquirerWithDSProxy'  # Set explicit type
+        self.evm_inquirer: EvmNodeInquirerWithDSProxy  # Set explicit type
         self.base: BaseDecoderToolsWithDSProxy  # Set explicit type

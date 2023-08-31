@@ -39,13 +39,15 @@ const { handleBlockchainRefresh } = useRefresh(blockchain);
 const { detectTokensOfAllAddresses, detectingTokens } =
   useTokenDetection(blockchain);
 const { show } = useConfirmStore();
-const { supportsTransactions } = useSupportedChains();
+const { getChainName, supportsTransactions } = useSupportedChains();
 
 const isEth2 = computed<boolean>(() => get(blockchain) === Blockchain.ETH2);
 
 const hasTokenDetection = computed<boolean>(() =>
   supportsTransactions(get(blockchain))
 );
+
+const chainName = computed(() => get(getChainName(blockchain)));
 
 const isQueryingBlockchain = isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES);
 
@@ -135,7 +137,11 @@ const showConfirmation = (payload: XpubPayload | string[]) => {
           <RefreshButton
             class="account-balances__refresh"
             :loading="isSectionLoading || detectingTokens"
-            :tooltip="t('account_balances.refresh_tooltip', { blockchain })"
+            :tooltip="
+              t('account_balances.refresh_tooltip', {
+                blockchain: chainName
+              })
+            "
             @refresh="handleBlockchainRefresh()"
           />
         </VCol>
@@ -187,7 +193,7 @@ const showConfirmation = (payload: XpubPayload | string[]) => {
                 v-on="on"
                 @click="detectTokensOfAllAddresses()"
               >
-                <VIcon class="mr-2">mdi-refresh</VIcon>
+                <RuiIcon class="mr-2" name="refresh-line" />
                 {{ t('account_balances.detect_tokens.tooltip.redetect') }}
               </VBtn>
             </template>

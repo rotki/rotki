@@ -1,6 +1,6 @@
 import logging
 from enum import auto
-from typing import TYPE_CHECKING, Literal, NamedTuple, Optional
+from typing import TYPE_CHECKING, Any, Literal, NamedTuple, Optional
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset, AssetWithOracles, EvmToken, UnderlyingToken
@@ -13,7 +13,14 @@ from rotkehlchen.errors.misc import NotERC20Conformant
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind, EVMTxHash, Timestamp
+from rotkehlchen.types import (
+    SPAM_PROTOCOL,
+    ChainID,
+    ChecksumEvmAddress,
+    EvmTokenKind,
+    EVMTxHash,
+    Timestamp,
+)
 from rotkehlchen.utils.mixins.enums import SerializableEnumNameMixin
 
 if TYPE_CHECKING:
@@ -122,6 +129,20 @@ def _edit_token_and_clean_cache(
         GlobalDBHandler().edit_evm_token(evm_token)
 
 
+def check_if_spam_token(symbol: Optional[str]) -> bool:
+    """Makes basic checks to test if a token could be spam or not"""
+    if symbol is None:
+        return False
+    if (
+        symbol.startswith('Visit https://') or
+        'Please Visit' in symbol or
+        (('Visit' in symbol or 'http' in symbol) and 'claim' in symbol.lower()) or
+        symbol.startswith('$') and symbol.endswith('.com')
+    ):
+        return True
+    return False
+
+
 class TokenSeenAt(NamedTuple):
     tx_hash: Optional[EVMTxHash] = None
     description: Optional[str] = None
@@ -205,6 +226,8 @@ def get_or_create_evm_token(
             name = identifier if name is None else name
             decimals = 18 if decimals is None else decimals
 
+            is_spam_token = protocol == SPAM_PROTOCOL or check_if_spam_token(symbol) is True
+
             # Store the information in the database
             evm_token = EvmToken.initialize(
                 address=evm_address,
@@ -213,7 +236,7 @@ def get_or_create_evm_token(
                 name=name,
                 decimals=decimals,
                 symbol=symbol,
-                protocol=protocol,
+                protocol=protocol if not is_spam_token else SPAM_PROTOCOL,
                 underlying_tokens=underlying_tokens,
                 started=started,
             )
@@ -223,12 +246,14 @@ def get_or_create_evm_token(
                 GlobalDBHandler().edit_evm_token(evm_token)
             else:
                 # inform frontend new token detected
-                data = {'token_identifier': identifier}
+                data: dict[str, Any] = {'token_identifier': identifier}
                 if seen is not None:
                     if seen.tx_hash is not None:
                         data['seen_tx_hash'] = seen.tx_hash.hex()
                     else:  # description should have been given
-                        data['seen_description'] = seen.description  # type: ignore
+                        data['seen_description'] = seen.description
+                if is_spam_token:
+                    data['is_ignored'] = True
                 userdb.msg_aggregator.add_message(
                     message_type=WSMessageType.NEW_EVM_TOKEN_DETECTED,
                     data=data,
@@ -236,8 +261,11 @@ def get_or_create_evm_token(
                 # This can but should not raise InputError since it should not already exist.
                 add_evm_token_to_db(token_data=evm_token)
 
-                with userdb.user_write() as cursor:
-                    userdb.add_asset_identifiers(cursor, [evm_token.identifier])
+                with userdb.user_write() as write_cursor:
+                    userdb.add_asset_identifiers(write_cursor, [evm_token.identifier])
+                    # at this point the newly detected asset has just been added to the DB
+                    if is_spam_token:
+                        userdb.add_to_ignored_assets(write_cursor=write_cursor, asset=evm_token)
 
     return evm_token
 

@@ -352,7 +352,7 @@ const css = useCssModule();
             </VRow>
           </VExpansionPanelContent>
           <VDivider />
-          <VExpansionPanelHeader class="d-flex justify-center fill-width">
+          <VExpansionPanelHeader class="d-flex justify-center w-full">
             <template #default="{ open }">
               <div class="grey--text mr-4 flex-grow-0" :class="css.large">
                 {{
