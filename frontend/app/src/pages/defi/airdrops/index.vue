@@ -38,12 +38,12 @@ type AirdropSources = {
 const { t } = useI18n();
 
 const expanded: Ref<Airdrop[]> = ref([]);
-const selectedAccounts = ref<GeneralAccount[]>([]);
-const statusFilters = ref<{ text: string; value: boolean }[]>([
+const selectedAccounts: Ref<GeneralAccount[]> = ref([]);
+const statusFilters: Ref<{ text: string; value: boolean }[]> = ref([
   { text: t('common.unclaimed'), value: false },
   { text: t('common.claimed'), value: true }
 ]);
-const status = ref(false);
+const status: Ref<boolean> = ref(false);
 const section = Section.DEFI_AIRDROPS;
 const ETH = Blockchain.ETH;
 const sources: AirdropSources = {
@@ -200,7 +200,7 @@ onMounted(async () => {
     </ProgressScreen>
     <div v-else>
       <RuiCard variant="outlined" :class="css.filters">
-        <div class="flex space-x-8">
+        <div :class="css.filters_wrapper">
           <BlockchainAccountSelector
             v-model="selectedAccounts"
             multiple
@@ -212,7 +212,7 @@ onMounted(async () => {
             :chains="[ETH]"
             :usable-addresses="airdropAddresses"
           />
-          <div class="flex flex-col min-w-[10rem] w-2/5">
+          <div class="flex flex-col min-w-[10rem] md:w-2/5">
             <VSelect
               v-model="status"
               :items="statusFilters"
@@ -222,7 +222,7 @@ onMounted(async () => {
               dense
               outlined
             />
-            <p class="text-body-1 text-rui-text-secondary mt-0 mb-0">
+            <p class="text-body-1 text-rui-text-secondary pt-3 mb-0">
               {{
                 t('airdrops.status_hint', {
                   status: status ? t('common.claimed') : t('common.unclaimed')
@@ -312,7 +312,7 @@ onMounted(async () => {
 .table {
   tbody {
     tr {
-      height: 72px;
+      @apply lg:h-[4.5rem];
     }
   }
 }
@@ -322,6 +322,10 @@ onMounted(async () => {
     @apply px-0 pb-0 #{!important};
   }
 
-  @apply w-full;
+  &__wrapper {
+    @apply flex flex-col md:flex-row space-y-6 md:space-y-0 md:space-x-8;
+  }
+
+  @apply w-full mt-8;
 }
 </style>
