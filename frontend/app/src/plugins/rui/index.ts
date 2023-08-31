@@ -30,6 +30,7 @@ import {
   RiHistoryLine,
   RiImageLine,
   RiInboxArchiveLine,
+  RiInformationLine,
   RiKeyLine,
   RiLineChartLine,
   RiLinksLine,
@@ -120,6 +121,7 @@ Vue.use(RuiPlugin, {
     RiCodeBoxLine,
     RiShuffleLine,
     RiSave2Fill,
-    RiDeleteBinFill
+    RiDeleteBinFill,
+    RiInformationLine
   ]
 });

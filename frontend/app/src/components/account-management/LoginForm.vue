@@ -555,15 +555,7 @@ const abortLogin = () => {
       @apply flex items-center justify-center;
     }
 
-    @apply flex flex-col justify-stretch space-y-8 pt-8;
+    @apply flex flex-col justify-stretch space-y-6 pt-6;
   }
-}
-
-.remember {
-  &__tooltip {
-    font-size: 0.8rem;
-  }
-
-  @apply ml-2;
 }
 </style>

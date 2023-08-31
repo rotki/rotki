@@ -44,8 +44,8 @@ const displayRouter = logicAnd(connected, loginIfConnected);
             <span :class="css.copyright">
               {{ t('app.copyright', { year: new Date().getFullYear() }) }}
             </span>
-            <div>
-              <template v-if="isPackaged || true">
+            <div class="ml-4">
+              <template v-if="isPackaged">
                 <OnboardingSettingsButton />
               </template>
               <template v-else>
@@ -73,7 +73,7 @@ const displayRouter = logicAnd(connected, loginIfConnected);
 <style module lang="scss">
 .overlay {
   &__scroll {
-    @apply flex flex-col-reverse lg:flex-row w-full;
+    @apply flex flex-col-reverse lg:flex-row w-full min-h-screen;
   }
 
   @apply block overflow-y-auto w-full h-screen min-h-screen fixed top-0 bottom-0;
@@ -81,27 +81,27 @@ const displayRouter = logicAnd(connected, loginIfConnected);
 
 .section {
   &__welcome {
-    @apply max-w-[31rem] mx-auto lg:max-w-[29%] p-6 lg:p-12;
+    @apply max-w-[31rem] mx-auto lg:max-w-[29%] p-6 lg:p-12 flex-grow-0 lg:flex-1 items-start;
   }
 
-  @apply relative w-full;
+  @apply relative w-full flex flex-col flex-1;
 }
 
 .container {
   &__footer {
     .copyright {
       letter-spacing: 0.025rem;
-      @apply font-normal text-[0.875rem] leading-[1.4525rem] text-black/60;
+      @apply font-normal text-[0.875rem] leading-[1.4525rem] text-rui-text-secondary;
     }
 
-    @apply flex items-center justify-between p-8;
+    @apply flex items-center justify-between p-6 lg:p-8;
   }
 
-  @apply lg:min-h-screen flex flex-col justify-center;
+  @apply lg:min-h-screen h-full grow flex flex-col justify-center;
 }
 
 .wrapper {
-  @apply flex flex-col justify-center max-w-full grow px-4 pt-10 pb-6;
+  @apply flex flex-col justify-start lg:justify-center max-w-full grow px-4 pt-10 pb-6;
 }
 
 .router {

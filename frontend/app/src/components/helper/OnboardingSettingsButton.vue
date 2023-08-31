@@ -12,7 +12,13 @@ const { connected } = toRefs(useMainStore());
         :disabled="!connected"
         :text="t('backend_settings_button.tooltip')"
       >
-        <RuiButton variant="text" color="primary" @click="visible = true">
+        <RuiButton
+          variant="text"
+          color="primary"
+          icon
+          rounded
+          @click="visible = true"
+        >
           <RuiIcon name="settings-4-line" />
         </RuiButton>
       </RuiTooltip>
