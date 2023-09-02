@@ -18,14 +18,6 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
-DEFAULT_ARBITRUM_ONE_NODES_AT_V39 = [
-    ('arbitrum one etherscan', '', 0, 1, '0.28', 'ARBITRUM_ONE'),
-    ('arbitrum one ankr', 'https://rpc.ankr.com/arbitrum', 0, 1, '0.18', 'ARBITRUM_ONE'),
-    ('arbitrum one BlockPi', 'https://arbitrum.blockpi.network/v1/rpc/public', 0, 1, '0.18', 'ARBITRUM_ONE'),  # noqa: E501
-    ('arbitrum one PublicNode', 'https://arbitrum-one.publicnode.com', 0, 1, '0.18', 'ARBITRUM_ONE'),  # noqa: E501
-    ('arbitrum one 1rpc', 'https://1rpc.io/arb', 0, 1, '0.18', 'ARBITRUM_ONE'),
-]
-
 
 def _update_nfts_table(write_cursor: 'DBCursor') -> None:
     """

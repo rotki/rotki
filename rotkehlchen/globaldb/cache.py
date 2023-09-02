@@ -14,8 +14,6 @@ from rotkehlchen.types import (
 )
 from rotkehlchen.utils.misc import ts_now
 
-UNIQUE_CACHE_TABLE_NAME = 'unique_cache'
-GENERAL_CACHE_TABLE_NAME = 'general_cache'
 UNIQUE_CACHE_KEYS: set[CacheType] = {
     CacheType.CURVE_POOL_ADDRESS,
     CacheType.MAKERDAO_VAULT_ILK,
