@@ -236,7 +236,7 @@ class LiquityDecoder(DecoderInterface):
             },
             HistoryEventType.STAKING: {
                 HistoryEventSubType.DEPOSIT_ASSET: EventCategory.DEPOSIT,
-                HistoryEventSubType.REWARD: EventCategory.RECEIVE,
+                HistoryEventSubType.REWARD: EventCategory.STAKING_REWARD,
                 HistoryEventSubType.REMOVE_ASSET: EventCategory.WITHDRAW,
             },
         }}

@@ -1,6 +1,6 @@
 import logging
 from json import JSONDecodeError
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 import requests
 
@@ -38,6 +38,38 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
+def _maybe_reset_yearn_cache_timestamp(data: Optional[dict[str, Any]]) -> bool:
+    """Get the number of vaults processed in the last execution of this function.
+    If it was the same number of vaults this response has then we don't need to take
+    action since vaults are not removed from their API response.
+
+    If data is None we force saving a new timestamp as it means an error happened
+
+    It returns if we should stop updating (True) or not (False)
+    """
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        yearn_api_cache: Optional[str] = globaldb_get_unique_cache_value(
+            cursor=cursor,
+            key_parts=(CacheType.YEARN_VAULTS,),
+        )
+    if data is None or (yearn_api_cache is not None and int(yearn_api_cache) == len(data)):
+        logging.debug(
+            f'Previous query of yearn vaults returned {yearn_api_cache} vaults and last API '
+            f'response had the same amount of vaults. Not processing the API response since '
+            f'it is identical to what we have.',
+        )
+        with GlobalDBHandler().conn.write_ctx() as write_cursor:
+            # update the timestamp of the last time these vaults were queried
+            globaldb_set_unique_cache_value(
+                write_cursor=write_cursor,
+                key_parts=(CacheType.YEARN_VAULTS,),
+                value=yearn_api_cache if yearn_api_cache else '0',
+            )
+        return True  # we should stop here
+
+    return False  # will continue
+
+
 def query_yearn_vaults(db: 'DBHandler', ethereum_inquirer: 'EthereumInquirer') -> None:
     """Query yearn API and ensure that all the tokens exist locally. If they exist but the protocol
     is not the correct one, then the asset will be edited.
@@ -45,40 +77,26 @@ def query_yearn_vaults(db: 'DBHandler', ethereum_inquirer: 'EthereumInquirer') -
     May raise:
     - RemoteError
     """
+    msg, data = None, None
     try:
         response = requests.get(YEARN_OLD_API, timeout=CachedSettings().get_timeout_tuple())
         data = response.json()
     except requests.exceptions.RequestException as e:
-        raise RemoteError(f'Failed to obtain yearn vault information. {e!s}') from e
+        msg = f'Failed to obtain yearn vault information. {e!s}'
     except (DeserializationError, JSONDecodeError) as e:
-        raise RemoteError(f"Failed to deserialize data from yearn's old api. {e!s}") from e
+        msg = f"Failed to deserialize data from yearn's old api. {e!s}"
+    else:
+        if not isinstance(data, list):
+            msg = f'Unexpected format from yearn vaults reponse. Expected a list, got {data}'
 
-    if not isinstance(data, list):
-        raise RemoteError(f'Unexpected format from yearn vaults reponse. Expected a list, got {data}')  # noqa: E501
+    should_stop = _maybe_reset_yearn_cache_timestamp(data=data)
+    if should_stop:
+        if msg is not None:  # we raise a remote error but thanks to timestamp reset won't get in here again  # noqa: E501
+            raise RemoteError(msg)
 
-    # get from the cache the number of vaults processed in the last execution of this function.
-    # If it was the same number of vaults this response has then we don't need to take
-    # action since vaults are not removed from their API response.
-    with GlobalDBHandler().conn.read_ctx() as cursor:
-        yearn_api_cache: Optional[str] = globaldb_get_unique_cache_value(
-            cursor=cursor,
-            key_parts=(CacheType.YEARN_VAULTS,),
-        )
-    if yearn_api_cache is not None and int(yearn_api_cache) == len(data):
-        logging.debug(
-            f'Previous query of yearn vaults returned {yearn_api_cache} vaults and last API '
-            f'response had the same amount of vaults. Not processing the API response since '
-            f'it is identical to what we have.',
-        )
-        with GlobalDBHandler().conn.write_ctx() as write_cursor:
-            # update the timestamp of the last time this vaults were queried
-            globaldb_set_unique_cache_value(
-                write_cursor=write_cursor,
-                key_parts=(CacheType.YEARN_VAULTS,),
-                value=yearn_api_cache,
-            )
-        return
+        return  # stop
 
+    assert data is not None, 'data exists. Checked by _maybe_reset_yearn_cache_timestamp'
     for vault in data:
         if 'type' not in vault:
             log.error(f'Could not identify the yearn vault type for {vault}. Skipping...')

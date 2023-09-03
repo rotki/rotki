@@ -47,6 +47,7 @@ class EventCategory(SerializableEnumNameMixin):
     REFUND = auto()
     FEE = auto()
     MEV_REWARD = auto()
+    STAKING_REWARD = auto()
     CREATE_BLOCK = auto()
     CREATE_PROJECT = auto()
     UPDATE_PROJECT = auto()

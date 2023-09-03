@@ -85,7 +85,7 @@ def _process_dict_response(
         raise RemoteError('Could not decode rotki server response as json. Check logs') from e
 
     if response.status_code == HTTPStatus.UNAUTHORIZED:
-        raise PremiumAuthenticationError(result_dict.get('message', 'no message given'))
+        raise PremiumAuthenticationError(result_dict.get('error', 'no message given'))
 
     if 'error' in result_dict:
         raise RemoteError(result_dict['error'])

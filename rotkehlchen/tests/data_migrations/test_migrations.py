@@ -14,6 +14,7 @@ from rotkehlchen.data_migrations.manager import (
     DataMigrationManager,
     MigrationRecord,
 )
+from rotkehlchen.data_migrations.migrations.migration_12 import PREFIX
 from rotkehlchen.db.constants import UpdateType
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.fval import FVal
@@ -412,6 +413,59 @@ def test_migration_11(
     migration_steps = 5  # 2 (eth accounts) + 3 (potentially write to db + updating spam assets and rpc nodes + step 0)  # noqa: E501
     chain_to_added_address = [{'evm_chain': 'arbitrum_one', 'address': ethereum_accounts[1]}]
     assert_add_addresses_migration_ws_messages(websocket_connection, 11, migration_steps, chain_to_added_address)  # noqa: E501
+
+
+@pytest.mark.parametrize('use_custom_database', ['data_migration_v12.db'])
+@pytest.mark.parametrize('data_migration_version', [11])
+@pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
+@pytest.mark.parametrize('new_db_unlock_actions', [None])
+def test_migration_12(rotkehlchen_api_server: 'APIServer') -> None:
+    """
+    Test migration 12.
+
+    - Test that the migration fixing https://github.com/rotki/rotki/issues/6550
+    works. When the migration is removed, this test should also be removed along with its
+    """
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    with rotki.data.db.conn.read_ctx() as cursor:
+        cursor.execute('SELECT type, subtype from history_events WHERE event_identifier LIKE ?', (PREFIX,))  # noqa: E501
+        events_before = cursor.fetchall()
+        cursor.execute('SELECT type, subtype from history_events WHERE event_identifier NOT LIKE ?', (PREFIX,))  # noqa: E501
+        other_events_before = cursor.fetchall()
+
+    assert events_before == [
+        ('deposit', 'spend'), ('deposit', 'fee'),
+        ('withdrawal', 'receive'), ('withdrawal', 'fee'),
+        ('receive', 'receive'), ('receive', 'fee'),
+        ('spend', 'none'), ('spend', 'fee'),
+        ('staking', 'reward'), ('staking', 'fee'),
+    ]
+    # also check that the non rotki events are not affected
+    assert other_events_before == [('deposit', 'spend'), ('withdrawal', 'fee'), ('receive', 'receive'), ('staking', 'fee')]  # noqa: E501
+
+    migration_patch = patch(
+        'rotkehlchen.data_migrations.manager.MIGRATION_LIST',
+        new=[MIGRATION_LIST[6]],
+    )
+    with migration_patch:
+        DataMigrationManager(rotki).maybe_migrate_data()
+
+    # check that the event types/subtypes migrated properly
+    with rotki.data.db.conn.read_ctx() as cursor:
+        cursor.execute('SELECT type, subtype from history_events WHERE event_identifier LIKE ?', (PREFIX,))  # noqa: E501
+        events_after = cursor.fetchall()
+        cursor.execute('SELECT type, subtype from history_events WHERE event_identifier NOT LIKE ?', (PREFIX,))  # noqa: E501
+        other_events_after = cursor.fetchall()
+
+    assert events_after == [
+        ('deposit', 'none'), ('spend', 'fee'),
+        ('withdrawal', 'none'), ('spend', 'fee'),
+        ('receive', 'none'), ('spend', 'fee'),
+        ('spend', 'none'), ('spend', 'fee'),
+        ('staking', 'reward'), ('spend', 'fee'),
+    ]
+    # also check that the non rotki events are not affected
+    assert other_events_after == [('deposit', 'spend'), ('withdrawal', 'fee'), ('receive', 'receive'), ('staking', 'fee')]  # noqa: E501
 
 
 @pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
