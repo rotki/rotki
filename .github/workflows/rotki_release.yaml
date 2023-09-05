@@ -19,7 +19,7 @@ jobs:
       upload_url: ${{ steps.create_release.outputs.upload_url }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Get Release Version
         run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
       - name: Generate changelog
@@ -104,7 +104,7 @@ jobs:
     needs: create_draft
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: Load env
@@ -174,7 +174,7 @@ jobs:
     needs: create_draft
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: Load env
@@ -184,7 +184,7 @@ jobs:
       - name: Get Release Version
         run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
       - name: Checkout libffi
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: libffi/libffi
           path: libffi
@@ -291,7 +291,7 @@ jobs:
     needs: create_draft
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: Load env
@@ -361,7 +361,7 @@ jobs:
     environment: docker
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
         with:
