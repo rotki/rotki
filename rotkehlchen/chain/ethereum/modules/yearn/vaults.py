@@ -377,7 +377,7 @@ class YearnVaults(EthereumModule):
 
         (A-B / X-Y) * blocksPerYear (2425846)
 
-        So the numbers you see displayed on http://yearn.finance/vaults
+        So the numbers you see displayed on http://yearn.fi/vaults
         are ROI since launch of contract. All vaults start with pricePerFullShare = 1e18
         """
         now_block_number = self.ethereum.get_latest_block_number()
