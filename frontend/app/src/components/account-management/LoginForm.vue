@@ -374,7 +374,9 @@ const abortLogin = () => {
                     class="ml-2"
                     :text="t('login.remember_password_tooltip')"
                   >
-                    <RuiIcon name="question-line" color="primary" />
+                    <template #activator>
+                      <RuiIcon name="question-line" color="primary" />
+                    </template>
                   </RuiTooltip>
                 </div>
               </div>
@@ -383,14 +385,16 @@ const abortLogin = () => {
                   :close-delay="0"
                   :text="t('login.custom_backend.tooltip')"
                 >
-                  <RuiButton
-                    :disabled="loading"
-                    type="button"
-                    icon
-                    @click="customBackendDisplay = !customBackendDisplay"
-                  >
-                    <RuiIcon name="server-line" :color="serverColor" />
-                  </RuiButton>
+                  <template #activator>
+                    <RuiButton
+                      :disabled="loading"
+                      type="button"
+                      icon
+                      @click="customBackendDisplay = !customBackendDisplay"
+                    >
+                      <RuiIcon name="server-line" :color="serverColor" />
+                    </RuiButton>
+                  </template>
                 </RuiTooltip>
               </div>
             </div>
