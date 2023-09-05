@@ -30,7 +30,7 @@ from web3.types import BlockIdentifier, FilterParams
 from rotkehlchen.assets.asset import CryptoAsset
 from rotkehlchen.chain.constants import DEFAULT_EVM_RPC_TIMEOUT
 from rotkehlchen.chain.ethereum.constants import DEFAULT_TOKEN_DECIMALS
-from rotkehlchen.chain.ethereum.utils import MULTICALL_CHUNKS
+from rotkehlchen.chain.ethereum.utils import MULTICALL_CHUNKS, should_update_protocol_cache
 from rotkehlchen.chain.evm.constants import FAKE_GENESIS_TX_RECEIPT, GENESIS_HASH
 from rotkehlchen.chain.evm.contracts import EvmContract, EvmContracts
 from rotkehlchen.chain.evm.proxies_inquirer import EvmProxiesInquirer
@@ -45,6 +45,7 @@ from rotkehlchen.errors.misc import (
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.greenlets.manager import GreenletManager
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
@@ -56,6 +57,7 @@ from rotkehlchen.serialization.serialize import process_result
 from rotkehlchen.types import (
     SUPPORTED_CHAIN_IDS,
     SUPPORTED_EVM_CHAINS,
+    CacheType,
     ChainID,
     ChecksumEvmAddress,
     EvmTokenKind,
@@ -64,6 +66,7 @@ from rotkehlchen.types import (
     Timestamp,
 )
 from rotkehlchen.utils.misc import from_wei, get_chunks, hex_or_bytes_to_str
+from rotkehlchen.utils.mixins.lockable import LockableQueryMixIn, protect_with_lock
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -1386,3 +1389,75 @@ class EvmNodeInquirerWithDSProxy(EvmNodeInquirer):
             node_inquirer=self,
             dsproxy_registry=dsproxy_registry,
         )
+
+
+class DSProxyInquirerWithCacheData(EvmNodeInquirerWithDSProxy, LockableQueryMixIn):
+    """This is the inquirer that needs to be used by chains with modules (protocols)
+    that store data in the cache tables of the globaldb. For example velodrome in
+    optimism and curve in ethereum store data in cache tables."""
+
+    def __init__(
+            self,
+            greenlet_manager: GreenletManager,
+            database: 'DBHandler',
+            etherscan: Etherscan,
+            blockchain: SUPPORTED_EVM_CHAINS,
+            etherscan_node: WeightedNode,
+            etherscan_node_name: str,
+            contracts: EvmContracts,
+            contract_scan: 'EvmContract',
+            contract_multicall: 'EvmContract',
+            dsproxy_registry: 'EvmContract',
+            native_token: CryptoAsset,
+            rpc_timeout: int = DEFAULT_EVM_RPC_TIMEOUT,
+    ) -> None:
+        LockableQueryMixIn.__init__(self)
+        super().__init__(
+            greenlet_manager=greenlet_manager,
+            database=database,
+            etherscan=etherscan,
+            blockchain=blockchain,
+            etherscan_node=etherscan_node,
+            etherscan_node_name=etherscan_node_name,
+            contracts=contracts,
+            contract_scan=contract_scan,
+            contract_multicall=contract_multicall,
+            rpc_timeout=rpc_timeout,
+            native_token=native_token,
+            dsproxy_registry=dsproxy_registry,
+        )
+
+    @protect_with_lock()
+    def ensure_cache_data_is_updated(
+            self,
+            cache_type: CacheType,
+            query_method: Callable,
+            save_method: Callable,
+            force_refresh: bool = False,
+    ) -> bool:
+        """
+        It checks if the cache data is fresh enough and if not, it queries
+        the remote sources of the data and stores it to the globaldb cache tables.
+        Returns true if the cache was modified or false otherwise.
+
+        - cache type: The cache type to check for freshness
+        - query_method: The method that queries the remote source for the data
+        - save_method: The method that saves the data to the cache tables
+        - force_refresh: If True, the cache will be updated even if it is fresh
+        """
+        if (
+            should_update_protocol_cache(cache_type) is False and
+            force_refresh is False
+        ):
+            return False
+
+        new_data = query_method(inquirer=self)
+        if new_data is None:
+            return False
+        with GlobalDBHandler().conn.write_ctx() as write_cursor:
+            save_method(
+                write_cursor=write_cursor,
+                database=self.database,
+                new_data=new_data,
+            )
+        return True

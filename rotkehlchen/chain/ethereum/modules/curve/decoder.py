@@ -27,6 +27,7 @@ from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
+    CacheType,
     ChainID,
     ChecksumEvmAddress,
     DecoderEventMappingType,
@@ -36,7 +37,7 @@ from rotkehlchen.types import (
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 from .constants import CPT_CURVE
-from .curve_cache import read_curve_pools_and_gauges
+from .curve_cache import query_curve_data, read_curve_pools_and_gauges, save_curve_data_to_cache
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.structures.evm_event import EvmEvent
@@ -812,7 +813,11 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
         If a query happens and any new mappings are generated they are returned,
         otherwise `None` is returned.
         """
-        self.ethereum.assure_curve_protocol_cache_is_queried()
+        self.ethereum.ensure_cache_data_is_updated(
+            cache_type=CacheType.CURVE_LP_TOKENS,
+            query_method=query_curve_data,
+            save_method=save_curve_data_to_cache,
+        )
         new_curve_pools, new_curve_gauges = read_curve_pools_and_gauges()
         curve_pools_diff = set(new_curve_pools.keys()) - set(self.curve_pools.keys())
         curve_gauges_diff = new_curve_gauges - self.curve_gauges

@@ -12228,7 +12228,7 @@ Refresh general cache
 
 .. http:post:: /api/(version)/cache/general/refresh
 
-   Doing a POST on this endpoint will refresh the entire general cache (curve, makerdao, yearn).
+   Doing a POST on this endpoint will refresh the entire cache (curve, makerdao, yearn, velodrome).
 
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``.

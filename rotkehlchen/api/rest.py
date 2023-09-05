@@ -67,6 +67,10 @@ from rotkehlchen.balances.manual import (
 from rotkehlchen.chain.accounts import SingleBlockchainAccountData
 from rotkehlchen.chain.bitcoin.xpub import XpubManager
 from rotkehlchen.chain.ethereum.airdrops import check_airdrops
+from rotkehlchen.chain.ethereum.modules.curve.curve_cache import (
+    query_curve_data,
+    save_curve_data_to_cache,
+)
 from rotkehlchen.chain.ethereum.modules.eth2.constants import FREE_VALIDATORS_LIMIT
 from rotkehlchen.chain.ethereum.modules.liquity.constants import CPT_LIQUITY
 from rotkehlchen.chain.ethereum.modules.liquity.statistics import get_stats as get_liquity_stats
@@ -78,6 +82,10 @@ from rotkehlchen.chain.ethereum.modules.yearn.utils import query_yearn_vaults
 from rotkehlchen.chain.ethereum.utils import try_download_ens_avatar
 from rotkehlchen.chain.evm.names import find_ens_mappings, search_for_addresses_names
 from rotkehlchen.chain.evm.types import WeightedNode
+from rotkehlchen.chain.optimism.modules.velodrome.velodrome_cache import (
+    query_velodrome_data,
+    save_velodrome_data_to_cache,
+)
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.limits import (
@@ -187,6 +195,7 @@ from rotkehlchen.types import (
     ApiSecret,
     AssetAmount,
     BTCAddress,
+    CacheType,
     ChecksumEvmAddress,
     Eth2PubKey,
     EVMTxHash,
@@ -4303,12 +4312,27 @@ class RestAPI:
     @async_api_call()
     def refresh_general_cache(self) -> dict[str, Any]:
         eth_node_inquirer = self.rotkehlchen.chains_aggregator.ethereum.node_inquirer
-        success = eth_node_inquirer.assure_curve_protocol_cache_is_queried(
+        curve_success = eth_node_inquirer.ensure_cache_data_is_updated(
+            cache_type=CacheType.CURVE_LP_TOKENS,
+            query_method=query_curve_data,
+            save_method=save_curve_data_to_cache,
             force_refresh=True,
         )
-        if success is False:
+        if curve_success is False:
             return wrap_in_fail_result(
                 message='Failed to refresh curve pools cache',
+                status_code=HTTPStatus.CONFLICT,
+            )
+        optimism_inquirer = self.rotkehlchen.chains_aggregator.optimism.node_inquirer
+        velodrome_success = optimism_inquirer.ensure_cache_data_is_updated(
+            cache_type=CacheType.VELODROME_POOL_ADDRESS,
+            query_method=query_velodrome_data,
+            save_method=save_velodrome_data_to_cache,
+            force_refresh=True,
+        )
+        if velodrome_success is False:
+            return wrap_in_fail_result(
+                message='Failed to refresh velodrome pools cache',
                 status_code=HTTPStatus.CONFLICT,
             )
         try:

@@ -121,15 +121,20 @@ def test_icons_and_avatars_cache_deletion(rotkehlchen_api_server):
     assert response.headers['Content-Type'] == 'image/png'
 
 
+@pytest.mark.vcr()
 def test_general_cache_refresh(rotkehlchen_api_server: 'APIServer'):
     """Tests that refreshing the general cache works as expected"""
     with ExitStack() as stack:
         stack.enter_context(patch(
-            'rotkehlchen.chain.ethereum.node_inquirer.should_update_protocol_cache',
+            'rotkehlchen.chain.evm.node_inquirer.should_update_protocol_cache',
             new=MagicMock(return_value=False),
         ))
         patched_curve_query = stack.enter_context(patch(
-            'rotkehlchen.chain.ethereum.node_inquirer.query_curve_data',
+            'rotkehlchen.api.rest.query_curve_data',
+            new=MagicMock(),
+        ))
+        patched_velodrome_query = stack.enter_context(patch(
+            'rotkehlchen.api.rest.query_velodrome_data',
             new=MagicMock(),
         ))
         patched_query_yearn_vaults = stack.enter_context(patch(
@@ -147,5 +152,6 @@ def test_general_cache_refresh(rotkehlchen_api_server: 'APIServer'):
         ))
         assert_proper_response(response)
         assert patched_curve_query.call_count == 1, 'Curve pools should have been queried despite should_update_protocol_cache being False'  # noqa: E501
+        assert patched_velodrome_query.call_count == 1, 'Velodrome pools should have been queried despite should_update_protocol_cache being False'  # noqa: E501
         assert patched_query_yearn_vaults.call_count == 1, 'Yearn vaults refresh should have been triggered'  # noqa: E501
         assert patched_ilk_registry.call_count == 1, 'Ilk registry refresh should have been triggered'  # noqa: E501

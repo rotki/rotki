@@ -20,27 +20,20 @@ from rotkehlchen.chain.ethereum.constants import (
     PRUNED_NODE_CHECK_TX_HASH,
 )
 from rotkehlchen.chain.ethereum.graph import Graph
-from rotkehlchen.chain.ethereum.modules.curve.curve_cache import (
-    ensure_curve_tokens_existence,
-    query_curve_data,
-    save_curve_data_to_cache,
-)
 from rotkehlchen.chain.evm.contracts import EvmContracts
 from rotkehlchen.chain.evm.node_inquirer import (
     WEB3_LOGQUERY_BLOCK_RANGE,
-    EvmNodeInquirerWithDSProxy,
+    DSProxyInquirerWithCacheData,
 )
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.errors.misc import InputError, RemoteError, UnableToDecryptRemoteData
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
-from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.greenlets.manager import GreenletManager
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import (
-    CacheType,
     ChainID,
     ChecksumEvmAddress,
     EVMTxHash,
@@ -48,12 +41,11 @@ from rotkehlchen.types import (
     Timestamp,
 )
 from rotkehlchen.utils.misc import get_chunks
-from rotkehlchen.utils.mixins.lockable import LockableQueryMixIn, protect_with_lock
 from rotkehlchen.utils.network import request_get_dict
 
 from .constants import ETH2_DEPOSIT_ADDRESS, ETHEREUM_ETHERSCAN_NODE_NAME, WeightedNode
 from .etherscan import EthereumEtherscan
-from .utils import ENS_RESOLVER_ABI_MULTICHAIN_ADDRESS, should_update_protocol_cache
+from .utils import ENS_RESOLVER_ABI_MULTICHAIN_ADDRESS
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -65,7 +57,7 @@ BLOCKCYPHER_URL = 'https://api.blockcypher.com/v1/eth/main'
 MAX_ADDRESSES_IN_REVERSE_ENS_QUERY = 80
 
 
-class EthereumInquirer(EvmNodeInquirerWithDSProxy, LockableQueryMixIn):
+class EthereumInquirer(DSProxyInquirerWithCacheData):
 
     def __init__(
             self,
@@ -77,7 +69,6 @@ class EthereumInquirer(EvmNodeInquirerWithDSProxy, LockableQueryMixIn):
             database=database,
             msg_aggregator=database.msg_aggregator,
         )
-        LockableQueryMixIn.__init__(self)
         contracts = EvmContracts[Literal[ChainID.ETHEREUM]](chain_id=ChainID.ETHEREUM)
         super().__init__(
             greenlet_manager=greenlet_manager,
@@ -265,35 +256,6 @@ class EthereumInquirer(EvmNodeInquirerWithDSProxy, LockableQueryMixIn):
             return None, None
 
         return deserialized_resolver_addr, normal_name
-
-    @protect_with_lock()
-    def assure_curve_protocol_cache_is_queried(self, force_refresh: bool = False) -> bool:
-        """
-        Make sure that curve information that needs to be queried is queried and if not query it.
-        Returns true if the cache was modified or false otherwise.
-
-        1. Deletes all previous cache values
-        2. Queries information about curve pools' addresses, lp tokens and used coins
-        3. Saves queried information in the cache in globaldb
-        """
-        if (
-            should_update_protocol_cache(CacheType.CURVE_LP_TOKENS) is False and
-            force_refresh is False
-        ):
-            return False
-
-        all_pools = query_curve_data(ethereum=self)
-        if all_pools is None:
-            return False
-        ensure_curve_tokens_existence(ethereum_inquirer=self, all_pools=all_pools)
-        with GlobalDBHandler().conn.write_ctx() as write_cursor:
-            save_curve_data_to_cache(
-                write_cursor=write_cursor,
-                database=self.database,
-                new_pools=all_pools,
-            )
-
-        return True
 
     # -- Implementation of EvmNodeInquirer base methods --
 
