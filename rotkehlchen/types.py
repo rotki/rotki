@@ -905,10 +905,16 @@ class CacheType(Enum):
     MAKERDAO_VAULT_ILK = auto()  # ilk(collateral type) to info (underlying_asset, join address)
     CURVE_GAUGE_ADDRESS = auto()  # get gauge address by pool address
     CURVE_POOL_UNDERLYING_TOKENS = auto()  # get underlying tokens by pool address
+    VELODROME_POOL_ADDRESS = auto()  # get pool address information
+    VELODROME_GAUGE_ADDRESS = auto()  # get gauge address by pool address
 
     def serialize(self) -> str:
         # Using custom serialize method instead of SerializableEnumMixin since mixin replaces
         # `_` with ` ` and we don't need spaces here
+        # TODO: Shorten all cache types not only velodrome
+        if 'VELODROME' in self.name:
+            parts = self.name.split('_')
+            return parts[0][:4] + parts[1][0]  # Shorten the name that is stored in the db to save space. For example: VELODROME_POOL_ADDRESS -> VELOP  # noqa: E501
         return self.name
 
 
@@ -917,12 +923,14 @@ UniqueCacheType = Literal[
     CacheType.MAKERDAO_VAULT_ILK,
     CacheType.CURVE_GAUGE_ADDRESS,
     CacheType.YEARN_VAULTS,
+    CacheType.VELODROME_GAUGE_ADDRESS,
 ]
 
 GeneralCacheType = Literal[
     CacheType.CURVE_LP_TOKENS,
     CacheType.CURVE_POOL_TOKENS,
     CacheType.CURVE_POOL_UNDERLYING_TOKENS,
+    CacheType.VELODROME_POOL_ADDRESS,
 ]
 
 
