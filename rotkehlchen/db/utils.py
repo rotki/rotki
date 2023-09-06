@@ -444,18 +444,33 @@ def protect_password_sqlcipher(password: str) -> str:
     return password.replace(r'"', r'""')
 
 
-def update_table_schema(write_cursor: 'DBCursor', table_name: str, schema: str, columns: str) -> None:  # noqa: E501
+def update_table_schema(
+        write_cursor: 'DBCursor',
+        table_name: str,
+        schema: str,
+        insert_columns: str,
+        insert_order: str = '',
+        insert_where: Optional[str] = None,
+) -> bool:
     """Update the schema of a given table. Need to provide:
     1. The name
     2. The schema
-    3. The columns of the old table that are to be inserted to the new one
+    3. The insert_columns of the old table that are to be inserted to the new one
+    4. Optionally an order of insertion parentheses in case not all are added or names changed.
+    5. Optionally a WHERE statement for the insertion
 
     Also is made error-proof to simply create the table if the old one for some
     reason did not exist.
+
+    Returns True if the table existed and insertions were made and False otherwise
     """
     new_table_name = f'{table_name}_new' if table_exists(write_cursor, table_name) else table_name
     write_cursor.execute(f'CREATE TABLE IF NOT EXISTS {new_table_name} ({schema});')
     if new_table_name != table_name:
-        write_cursor.execute(f'INSERT INTO {new_table_name} SELECT {columns} FROM {table_name}')
+        insert_where = f' WHERE {insert_where}' if insert_where else ''
+        write_cursor.execute(f'INSERT OR IGNORE INTO {new_table_name}{insert_order} SELECT {insert_columns} FROM {table_name}{insert_where}')  # noqa: E501
         write_cursor.execute(f'DROP TABLE {table_name}')
         write_cursor.execute(f'ALTER TABLE {new_table_name} RENAME TO {table_name}')
+        return True
+
+    return False

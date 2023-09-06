@@ -7,6 +7,7 @@ from rotkehlchen.db.constants import (
     HISTORY_MAPPING_STATE_CUSTOMIZED,
     HISTORY_MAPPING_STATE_DECODED,
 )
+from rotkehlchen.db.utils import update_table_schema
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 if TYPE_CHECKING:
@@ -24,16 +25,10 @@ def _update_nfts_table(write_cursor: 'DBCursor') -> None:
     Update the nft table to remove double quotes due to https://github.com/rotki/rotki/issues/6368
     """
     log.debug('Enter _update_nfts_table')
-    table_exists = write_cursor.execute(
-        "SELECT COUNT(*) FROM sqlite_master "
-        "WHERE type='table' AND name='evm_internal_transactions'",
-    ).fetchone()[0] == 1
-    table_to_create = 'nfts'
-    if table_exists is True:
-        table_to_create += '_new'
-    write_cursor.execute(f"""
-    CREATE TABLE IF NOT EXISTS {table_to_create} (
-        identifier TEXT NOT NULL PRIMARY KEY,
+    update_table_schema(
+        write_cursor=write_cursor,
+        table_name='nfts',
+        schema="""identifier TEXT NOT NULL PRIMARY KEY,
         name TEXT,
         last_price TEXT,
         last_price_asset TEXT,
@@ -45,15 +40,9 @@ def _update_nfts_table(write_cursor: 'DBCursor') -> None:
         collection_name TEXT,
         FOREIGN KEY(blockchain, owner_address) REFERENCES blockchain_accounts(blockchain, account) ON DELETE CASCADE,
         FOREIGN KEY (identifier) REFERENCES assets(identifier) ON UPDATE CASCADE,
-        FOREIGN KEY (last_price_asset) REFERENCES assets(identifier) ON UPDATE CASCADE
-    );""")  # noqa: E501
-    if table_exists is True:
-        write_cursor.execute(
-            'INSERT INTO nfts_new SELECT identifier, name, last_price, last_price_asset, '
-            'manual_price, owner_address, is_lp, image_url, collection_name FROM nfts')
-        write_cursor.execute('DROP TABLE nfts')
-        write_cursor.execute('ALTER TABLE nfts_new RENAME TO nfts')
-
+        FOREIGN KEY (last_price_asset) REFERENCES assets(identifier) ON UPDATE CASCADE""",  # noqa: E501
+        insert_columns='identifier, name, last_price, last_price_asset, manual_price, owner_address, is_lp, image_url, collection_name',  # noqa: E501
+    )
     log.debug('Exit _update_nfts_table')
 
 
@@ -255,35 +244,27 @@ def _update_rpc_nodes_table(write_cursor: 'DBCursor') -> None:
         "SELECT COUNT(*) FROM sqlite_master "
         "WHERE type='table' AND name='rpc_nodes'",
     ).fetchone()[0] == 1
-    table_to_create = 'rpc_nodes'
-    if table_exists is True:
-        table_to_create += '_new'
-    write_cursor.execute(f"""
-    CREATE TABLE IF NOT EXISTS {table_to_create}(
-        identifier INTEGER NOT NULL PRIMARY KEY,
-        name TEXT NOT NULL,
-        endpoint TEXT NOT NULL,
-        owned INTEGER NOT NULL CHECK (owned IN (0, 1)),
-        active INTEGER NOT NULL CHECK (active IN (0, 1)),
-        weight TEXT NOT NULL,
-        blockchain TEXT NOT NULL,
-        UNIQUE(endpoint, blockchain)
-    );
-    """)
-    if table_exists is True:
+    if table_exists:
         # For 1.28 we released v2 of the rpc nodes with polygon etherscan instead of
         # polygon pos etherscan. In migration 10 we ensured that if it was
         # present we delete "polygon etherscan" from the rpc nodes. Since data migrations happen
         # after db upgrades we need to be sure that there are no duplicates since in both cases
         # the chain and endpoint is the same.
         write_cursor.execute('DELETE FROM rpc_nodes WHERE name="polygon etherscan"')
-        write_cursor.execute(
-            'INSERT OR IGNORE INTO rpc_nodes_new SELECT identifier, name, endpoint, owned, '
-            'active, weight, blockchain FROM rpc_nodes',
-        )
-        write_cursor.execute('DROP TABLE rpc_nodes')
-        write_cursor.execute('ALTER TABLE rpc_nodes_new RENAME TO rpc_nodes')
 
+    update_table_schema(
+        write_cursor=write_cursor,
+        table_name='rpc_nodes',
+        schema="""identifier INTEGER NOT NULL PRIMARY KEY,
+        name TEXT NOT NULL,
+        endpoint TEXT NOT NULL,
+        owned INTEGER NOT NULL CHECK (owned IN (0, 1)),
+        active INTEGER NOT NULL CHECK (active IN (0, 1)),
+        weight TEXT NOT NULL,
+        blockchain TEXT NOT NULL,
+        UNIQUE(endpoint, blockchain)""",
+        insert_columns='identifier, name, endpoint, owned, active, weight, blockchain',
+    )
     log.debug('Exit _update_rpc_nodes_table')
 
 

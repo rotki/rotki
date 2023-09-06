@@ -13,7 +13,7 @@ from rotkehlchen.db.constants import (
     HISTORY_MAPPING_STATE_DECODED,
 )
 from rotkehlchen.db.settings import DEFAULT_ACTIVE_MODULES
-from rotkehlchen.db.utils import table_exists
+from rotkehlchen.db.utils import table_exists, update_table_schema
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChainID
@@ -525,19 +525,15 @@ def _upgrade_tags(write_cursor: 'DBCursor') -> None:
 
 def _upgrade_address_book_table(write_cursor: 'DBCursor') -> None:
     """Upgrades the address book table by making the blockchain column optional"""
-    write_cursor.execute(
-        """
-        CREATE TABLE IF NOT EXISTS address_book_new (
-            address TEXT NOT NULL,
-            blockchain TEXT,
-            name TEXT NOT NULL,
-            PRIMARY KEY(address, blockchain)
-        );
-        """,
+    update_table_schema(
+        write_cursor=write_cursor,
+        table_name='address_book',
+        schema="""address TEXT NOT NULL,
+        blockchain TEXT,
+        name TEXT NOT NULL,
+        PRIMARY KEY(address, blockchain)""",
+        insert_columns='address, blockchain, name',
     )
-    write_cursor.execute('INSERT INTO address_book_new SELECT address, blockchain, name FROM address_book')  # noqa: E501
-    write_cursor.execute('DROP TABLE address_book')
-    write_cursor.execute('ALTER TABLE address_book_new RENAME TO address_book;')
 
 
 def _add_okx(write_cursor: 'DBCursor') -> None:

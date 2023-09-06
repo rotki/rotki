@@ -414,7 +414,7 @@ def test_upgrade_v5_v6(globaldb):
         test_cache_key = next(iter(V5_V6_UPGRADE_UNIQUE_CACHE_KEYS)).serialize() + 'test'
         values = ['abc', 'xyz', '123']
         tuples = [(test_cache_key, value, ts_now()) for value in values]
-        write_cursor.executemany(  # TODO: Fix me.
+        write_cursor.executemany(
             'INSERT OR REPLACE INTO general_cache '
             '(key, value, last_queried_ts) VALUES (?, ?, ?)',
             tuples,

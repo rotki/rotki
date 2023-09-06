@@ -64,7 +64,7 @@ def _update_multiasset_mappings(cursor: 'DBCursor') -> None:
         FOREIGN KEY(collection_id) REFERENCES asset_collections(id) ON UPDATE CASCADE ON DELETE CASCADE,
         FOREIGN KEY(asset) REFERENCES assets(identifier) ON UPDATE CASCADE ON DELETE CASCADE,
         PRIMARY KEY(collection_id, asset)""",  # noqa: E501
-        columns='collection_id, asset',
+        insert_columns='collection_id, asset',
     )
     log.debug('Exit _upgrade_multiasset_mappings')
 

@@ -835,7 +835,7 @@ def test_global_db_reset(globaldb, database):
     ).fetchall()
     assert new_collection_after_reset == [('New collection', 'NEWCOLLECTION')]
     new_collection_assets = cursor.execute(
-        'SELECT asset FROM multiasset_mappings WHERE collection_id=?',
+        'SELECT asset FROM multiasset_mappings WHERE collection_id=? ORDER BY asset DESC',
         (new_collection_id,),
     ).fetchall()
     assert new_collection_assets == [(A_CRV.identifier,), (A_LUSD.identifier,)]

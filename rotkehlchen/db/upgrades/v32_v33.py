@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING
 
+from rotkehlchen.db.utils import update_table_schema
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.types import deserialize_evm_tx_hash
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
@@ -24,21 +25,17 @@ def _refactor_xpubs_and_xpub_mappings(cursor: 'DBCursor') -> None:
     # Keep a copy of the xpub_mappings because it will get deleted once
     # xpubs table is dropped.
     xpub_mappings = cursor.execute('SELECT * FROM xpub_mappings').fetchall()
-    cursor.execute("""
-    CREATE TABLE xpubs_copy (
-        xpub TEXT NOT NULL,
+    update_table_schema(
+        write_cursor=cursor,
+        table_name='xpubs',
+        schema="""xpub TEXT NOT NULL,
         derivation_path TEXT NOT NULL,
         label TEXT,
         blockchain TEXT NOT NULL,
-        PRIMARY KEY (xpub, derivation_path, blockchain)
-    );
-    """)
-    cursor.execute("""
-    INSERT INTO xpubs_copy(xpub, derivation_path, label, blockchain)
-    SELECT xpub, derivation_path, label, 'BTC' FROM xpubs;
-    """)
-    cursor.execute('DROP TABLE xpubs;')
-    cursor.execute('ALTER TABLE xpubs_copy RENAME TO xpubs;')
+        PRIMARY KEY (xpub, derivation_path, blockchain)""",
+        insert_columns="xpub, derivation_path, label, 'BTC'",
+        insert_order='(xpub, derivation_path, label, blockchain)',
+    )
 
     # Now populate the xpub_mappings table with its previous data
     # and set `blockchain` column to NOT NULL

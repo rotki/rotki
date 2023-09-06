@@ -10,6 +10,7 @@ from rotkehlchen.constants.resolver import (
     ChainID,
     evm_address_to_identifier,
 )
+from rotkehlchen.db.utils import update_table_schema
 from rotkehlchen.globaldb.upgrades.v2_v3 import OTHER_EVM_CHAINS_ASSETS
 from rotkehlchen.history.types import DEFAULT_HISTORICAL_PRICE_ORACLES_ORDER, HistoricalPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -169,20 +170,18 @@ def _clean_amm_swaps(cursor: 'DBCursor') -> None:
 
 def _add_blockchain_column_web3_nodes(cursor: 'DBCursor') -> None:
     log.debug('Enter _add_blockchain_column_web3_nodes')
-    cursor.execute('ALTER TABLE web3_nodes RENAME TO web3_nodes_old')
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS web3_nodes(
-        identifier INTEGER NOT NULL PRIMARY KEY,
+    update_table_schema(
+        write_cursor=cursor,
+        table_name='web3_nodes',
+        schema="""identifier INTEGER NOT NULL PRIMARY KEY,
         name TEXT NOT NULL,
         endpoint TEXT NOT NULL,
         owned INTEGER NOT NULL CHECK (owned IN (0, 1)),
         active INTEGER NOT NULL CHECK (active IN (0, 1)),
         weight INTEGER NOT NULL,
-        blockchain TEXT NOT NULL
-    );
-    """)
-    cursor.execute("INSERT INTO web3_nodes SELECT identifier, name, endpoint, owned, active, weight, 'ETH' FROM web3_nodes_old")  # noqa: E501
-    cursor.execute('DROP TABLE web3_nodes_old')
+        blockchain TEXT NOT NULL""",
+        insert_columns="identifier, name, endpoint, owned, active, weight, 'ETH'",
+    )
     log.debug('Exit _add_blockchain_column_web3_nodes')
 
 
