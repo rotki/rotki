@@ -31,7 +31,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
 
-YEARN_OLD_API = 'https://api.yearn.finance/v1/chains/1/vaults/all'
+YEARN_OLD_API = 'https://api.yearn.fi/v1/chains/1/vaults/all'
 
 
 logger = logging.getLogger(__name__)

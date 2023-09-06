@@ -2,9 +2,9 @@
 Changelog
 =========
 
-
 * :feature:`-` Users will now have the ability to filter between claimed and unclaimed airdrops.
 * :feature:`-` Transactions bridging from/to Base using the official bridge will be now decoded. 
+* :bug:`-` Pointed to the new yearn finance API domain.
 * :bug:`6550` Custom imported rotki events will now be taken properly into account in PnL and shown as recognized in history events view.
 
 * :release:`1.30.1 <2023-08-23>`
