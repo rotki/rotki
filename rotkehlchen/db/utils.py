@@ -392,7 +392,7 @@ def combine_asset_balances(balances: list[SingleDBAssetBalance]) -> list[SingleD
 
 def table_exists(cursor: 'DBCursor', name: str) -> bool:
     return cursor.execute(
-        f'SELECT COUNT(*) FROM sqlite_master WHERE type="table" AND name="{name}"',
+        'SELECT COUNT(*) FROM sqlite_master WHERE type="table" AND name=?', (name,),
     ).fetchone()[0] == 1
 
 
@@ -442,3 +442,20 @@ def protect_password_sqlcipher(password: str) -> str:
     source: https://stackoverflow.com/a/603579/110395
 """
     return password.replace(r'"', r'""')
+
+
+def update_table_schema(write_cursor: 'DBCursor', table_name: str, schema: str, columns: str) -> None:  # noqa: E501
+    """Update the schema of a given table. Need to provide:
+    1. The name
+    2. The schema
+    3. The columns of the old table that are to be inserted to the new one
+
+    Also is made error-proof to simply create the table if the old one for some
+    reason did not exist.
+    """
+    new_table_name = f'{table_name}_new' if table_exists(write_cursor, table_name) else table_name
+    write_cursor.execute(f'CREATE TABLE IF NOT EXISTS {new_table_name} ({schema});')
+    if new_table_name != table_name:
+        write_cursor.execute(f'INSERT INTO {new_table_name} SELECT {columns} FROM {table_name}')
+        write_cursor.execute(f'DROP TABLE {table_name}')
+        write_cursor.execute(f'ALTER TABLE {new_table_name} RENAME TO {table_name}')
