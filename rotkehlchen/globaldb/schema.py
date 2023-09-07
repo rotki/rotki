@@ -162,16 +162,13 @@ CREATE TABLE IF NOT EXISTS evm_tokens (
 # the multiasset_mappings as USDC tokens we have in our database. This table allows to create a
 # relation between all the assets that should be treated as the same.
 #
-# TODO: This table needs to change ASAP in the next global DB upgrade. It's missing:
-# a composite primary key of ocllection_id and asset. The combination of those has to be unique
-# At the moment it's not a serious problem as we input all mappings manually so this
-# is not editable by the user. But needs to be fixed.
 DB_CREATE_MULTIASSET_MAPPINGS = """
 CREATE TABLE IF NOT EXISTS multiasset_mappings(
     collection_id INTEGER NOT NULL,
     asset TEXT NOT NULL,
     FOREIGN KEY(collection_id) REFERENCES asset_collections(id) ON UPDATE CASCADE ON DELETE CASCADE,
-    FOREIGN KEY(asset) REFERENCES assets(identifier) ON UPDATE CASCADE ON DELETE CASCADE
+    FOREIGN KEY(asset) REFERENCES assets(identifier) ON UPDATE CASCADE ON DELETE CASCADE,
+    PRIMARY KEY(collection_id, asset)
 );
 """  # noqa: E501
 

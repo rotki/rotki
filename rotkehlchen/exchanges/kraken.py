@@ -585,7 +585,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
 
             balance = Balance(amount=amount)
             if our_asset.identifier != 'KFEE':
-                # There is no price value for KFEE. TODO: Shouldn't we then just skip the balance?
+                # There is no price value for KFEE
                 try:
                     usd_price = Inquirer().find_usd_price(our_asset)
                 except RemoteError as e:

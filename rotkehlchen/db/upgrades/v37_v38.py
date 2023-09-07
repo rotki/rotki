@@ -7,6 +7,7 @@ from rotkehlchen.db.constants import (
     HISTORY_MAPPING_STATE_CUSTOMIZED,
     HISTORY_MAPPING_STATE_DECODED,
 )
+from rotkehlchen.db.utils import update_table_schema
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 if TYPE_CHECKING:
@@ -44,33 +45,19 @@ def _add_polygon_pos_nodes(write_cursor: 'DBCursor') -> None:
 def _reduce_internal_txs(write_cursor: 'DBCursor') -> None:
     """Reduce the size of the evm internal transactions table by removing unused columns"""
     log.debug('Enter _reduce_internal_txs')
-    table_exists = write_cursor.execute(
-        'SELECT COUNT(*) FROM sqlite_master '
-        'WHERE type="table" AND name="evm_internal_transactions"',
-    ).fetchone()[0] == 1
-    table_to_create = 'evm_internal_transactions'
-    if table_exists is True:
-        table_to_create += '_new'
-    write_cursor.execute(f"""
-    CREATE TABLE IF NOT EXISTS {table_to_create} (
-        parent_tx_hash BLOB NOT NULL,
+    update_table_schema(
+        write_cursor=write_cursor,
+        table_name='evm_internal_transactions',
+        schema="""parent_tx_hash BLOB NOT NULL,
         chain_id INTEGER NOT NULL,
         trace_id INTEGER NOT NULL,
         from_address TEXT NOT NULL,
         to_address TEXT,
         value TEXT NOT NULL,
         FOREIGN KEY(parent_tx_hash, chain_id) REFERENCES evm_transactions(tx_hash, chain_id) ON DELETE CASCADE ON UPDATE CASCADE,
-        PRIMARY KEY(parent_tx_hash, chain_id, trace_id, from_address, to_address, value)
-    );""")  # noqa: E501
-    if table_exists is True:
-        write_cursor.execute(
-            'INSERT INTO evm_internal_transactions_new SELECT parent_tx_hash, chain_id, trace_id, '
-            'from_address, to_address, value FROM evm_internal_transactions',
-        )
-        write_cursor.execute('DROP TABLE evm_internal_transactions')
-        write_cursor.execute(
-            'ALTER TABLE evm_internal_transactions_new RENAME TO evm_internal_transactions',
-        )
+        PRIMARY KEY(parent_tx_hash, chain_id, trace_id, from_address, to_address, value)""",  # noqa: E501
+        insert_columns='parent_tx_hash, chain_id, trace_id, from_address, to_address, value',
+    )
     log.debug('Exit _reduce_internal_txs')
 
 

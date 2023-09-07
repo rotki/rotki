@@ -156,7 +156,7 @@ class DBEvmTransactionJoinsFilter(DBFilter):
             'evm_transactions.identifier=evmtx_address_mappings.tx_id AND ('
         )
         individual_queries = []
-        for address, _ in self.accounts:  # TODO: Chain part of accounts not needed here. Perhaps we can remove it all up the call chain?  # noqa: E501
+        for address, _ in self.accounts:  # chain not used here but accessed earlier up the chain
             individual_query = '(evmtx_address_mappings.address = ?'
             bindings.append(address)
             individual_query += ')'

@@ -2,6 +2,7 @@ from collections import defaultdict
 from typing import TYPE_CHECKING
 
 from rotkehlchen.db.constants import BINANCE_MARKETS_KEY
+from rotkehlchen.db.utils import update_table_schema
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -104,25 +105,18 @@ def _add_new_tables(cursor: 'DBCursor') -> None:
 
 
 def _refactor_manual_balance_id(cursor: 'DBCursor') -> None:
-    cursor.execute("""
-    CREATE TABLE manually_tracked_balances_copy (
-        id INTEGER PRIMARY KEY,
+    update_table_schema(
+        write_cursor=cursor,
+        table_name='manually_tracked_balances',
+        schema="""id INTEGER PRIMARY KEY,
         asset TEXT NOT NULL,
         label TEXT NOT NULL,
         amount TEXT,
         location CHAR(1) NOT NULL DEFAULT('A') REFERENCES location(location),
         category CHAR(1) NOT NULL DEFAULT('A') REFERENCES balance_category(category),
-        FOREIGN KEY(asset) REFERENCES assets(identifier) ON UPDATE CASCADE
-    );""")
-    cursor.execute("""
-    INSERT INTO manually_tracked_balances_copy(asset, label, amount, location, category)
-    SELECT asset, label, amount, location, category
-    FROM manually_tracked_balances;
-    """)
-    cursor.execute('DROP TABLE manually_tracked_balances;')
-    cursor.execute(
-        'ALTER TABLE manually_tracked_balances_copy RENAME TO '
-        'manually_tracked_balances;',
+        FOREIGN KEY(asset) REFERENCES assets(identifier) ON UPDATE CASCADE""",
+        insert_columns='asset, label, amount, location, category',
+        insert_order='(asset, label, amount, location, category)',
     )
 
 

@@ -115,6 +115,7 @@ def test_deserialize_transaction_from_etherscan():
     )
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 def test_etherscan_get_transactions_genesis_block(eth_transactions):
     """Test that the genesis transactions are correctly returned"""
     account = to_checksum_address('0xC951900c341aBbb3BAfbf7ee2029377071Dbc36A')
@@ -185,11 +186,9 @@ def test_etherscan_get_transactions_genesis_block(eth_transactions):
     ]
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 def test_etherscan_get_contract_abi(temp_etherscan):
-    """Test the contract abi fetching from etherscan
-
-    TODO: Mock it with vcr.py
-    """
+    """Test the contract abi fetching from etherscan"""
     abi = temp_etherscan.get_contract_abi('0x5a464C28D19848f44199D003BeF5ecc87d090F87')
     assert abi == json.loads(ILK_REGISTRY_ABI)
     assert temp_etherscan.get_contract_abi('0x9531C059098e3d194fF87FebB587aB07B30B1306') is None

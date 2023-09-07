@@ -12,6 +12,7 @@ from rotkehlchen.db.constants import (
     HISTORY_MAPPING_STATE_CUSTOMIZED,
     HISTORY_MAPPING_STATE_DECODED,
 )
+from rotkehlchen.db.utils import update_table_schema
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import EVM_LOCATIONS, Location, deserialize_evm_tx_hash
@@ -209,18 +210,16 @@ def _delete_old_tables(write_cursor: 'DBCursor') -> None:
 
 def _update_ens_mappings_schema(write_cursor: 'DBCursor') -> None:
     log.debug('Enter _update_ens_mappings_schema')
-    write_cursor.execute("""CREATE TABLE ens_mappings_copy (
-        address TEXT NOT NULL PRIMARY KEY,
+    update_table_schema(
+        write_cursor=write_cursor,
+        table_name='ens_mappings',
+        schema="""address TEXT NOT NULL PRIMARY KEY,
         ens_name TEXT UNIQUE,
         last_update INTEGER NOT NULL,
-        last_avatar_update INTEGER NOT NULL DEFAULT 0
-    )""")
-    write_cursor.execute(
-        'INSERT INTO ens_mappings_copy(address, ens_name, last_update) '
-        'SELECT address, ens_name, last_update FROM ens_mappings',
+        last_avatar_update INTEGER NOT NULL DEFAULT 0""",
+        insert_columns='address, ens_name, last_update',
+        insert_order='(address, ens_name, last_update)',
     )
-    write_cursor.execute('DROP TABLE ens_mappings')
-    write_cursor.execute('ALTER TABLE ens_mappings_copy RENAME TO ens_mappings')
     log.debug('Exit _update_ens_mappings_schema')
 
 
@@ -351,30 +350,17 @@ def _fix_kraken_events(write_cursor: 'DBCursor') -> None:
 def _trim_daily_stats(write_cursor: 'DBCursor') -> None:
     """Decreases the amount of data in the daily stats table"""
     log.debug('Enter _trim_daily_stats')
-    table_exists = write_cursor.execute(
-        'SELECT COUNT(*) FROM sqlite_master '
-        'WHERE type="table" AND name="eth2_daily_staking_details"',
-    ).fetchone()[0] == 1
-    table_to_create = 'eth2_daily_staking_details'
-    if table_exists is True:
-        table_to_create += '_new'
-    write_cursor.execute(f"""
-    CREATE TABLE IF NOT EXISTS {table_to_create} (
-        validator_index INTEGER NOT NULL,
+    update_table_schema(
+        write_cursor=write_cursor,
+        table_name='eth2_daily_staking_details',
+        schema="""validator_index INTEGER NOT NULL,
         timestamp INTEGER NOT NULL,
         pnl TEXT NOT NULL,
         FOREIGN KEY(validator_index) REFERENCES eth2_validators(validator_index) ON UPDATE CASCADE ON DELETE CASCADE,
-        PRIMARY KEY (validator_index, timestamp)
-    );""")  # noqa: E501
-    if table_exists is True:
-        write_cursor.execute(
-            'INSERT INTO eth2_daily_staking_details_new SELECT validator_index, timestamp, pnl '
-            'FROM eth2_daily_staking_details WHERE start_amount != 0 OR end_amount !=0 OR amount_deposited != 0',  # noqa: E501
-        )
-        write_cursor.execute('DROP TABLE eth2_daily_staking_details')
-        write_cursor.execute(
-            'ALTER TABLE eth2_daily_staking_details_new RENAME TO eth2_daily_staking_details',
-        )
+        PRIMARY KEY (validator_index, timestamp)""",  # noqa: E501
+        insert_columns='validator_index, timestamp, pnl',
+        insert_where='start_amount != 0 OR end_amount !=0 OR amount_deposited != 0',
+    )
     log.debug('Exit _trim_daily_stats')
 
 

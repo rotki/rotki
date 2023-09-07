@@ -2,6 +2,7 @@ import json
 import shutil
 from contextlib import ExitStack
 from pathlib import Path
+from sqlite3 import IntegrityError
 
 import pytest
 from freezegun import freeze_time
@@ -405,15 +406,34 @@ def test_upgrade_v5_v6(globaldb):
             )
             unique_keys_to_num_entries[key_part] = int(cursor.fetchone()[0])
             gen_cache_unique_key_content += unique_keys_to_num_entries[key_part]
+
+        old_multiasset_mappings = cursor.execute('SELECT * FROM multiasset_mappings ORDER BY collection_id, asset').fetchall()  # noqa: E501
+
+    with globaldb.conn.write_ctx() as write_cursor:
         # add some dummy data into cache to verify behaviour during transfer.
         test_cache_key = next(iter(V5_V6_UPGRADE_UNIQUE_CACHE_KEYS)).serialize() + 'test'
         values = ['abc', 'xyz', '123']
         tuples = [(test_cache_key, value, ts_now()) for value in values]
-        cursor.executemany(
+        write_cursor.executemany(
             'INSERT OR REPLACE INTO general_cache '
             '(key, value, last_queried_ts) VALUES (?, ?, ?)',
             tuples,
         )
+
+        # test you can add multiple combos of collection id and asset before upgrade
+        write_cursor.execute(
+            'INSERT INTO multiasset_mappings(collection_id, asset) VALUES(?, ?)',
+            (7, 'eip155:1/erc20:0xD46bA6D942050d489DBd938a2C909A5d5039A161'),
+        )
+        write_cursor.execute(  # delete to preserve correctness and add 1 back
+            'DELETE FROM multiasset_mappings WHERE collection_id=? AND asset=?',
+            (7, 'eip155:1/erc20:0xD46bA6D942050d489DBd938a2C909A5d5039A161'),
+        )
+        write_cursor.execute(
+            'INSERT INTO multiasset_mappings(collection_id, asset) VALUES(?, ?)',
+            (7, 'eip155:1/erc20:0xD46bA6D942050d489DBd938a2C909A5d5039A161'),
+        )
+
     # execute upgrade
     with ExitStack() as stack:
         patch_for_globaldb_upgrade_to(stack, 6)
@@ -433,8 +453,17 @@ def test_upgrade_v5_v6(globaldb):
         # check that of dummy entry, only first value is transferred to unique_cache
         value = globaldb_get_unique_cache_value(cursor, (next(iter(V5_V6_UPGRADE_UNIQUE_CACHE_KEYS)), 'test'))  # noqa: E501
         assert value == values[0]
-        # delete dummy entry to maintain db consistency
-        cursor.execute('DELETE FROM unique_cache WHERE key=?', (test_cache_key,))
+
+        with globaldb.conn.write_ctx() as write_cursor:
+            # delete dummy entry to maintain db consistency
+            write_cursor.execute('DELETE FROM unique_cache WHERE key=?', (test_cache_key,))
+
+            # Check we can't add already existing collection_id + asset to multiasset_mappings
+            with pytest.raises(IntegrityError):
+                write_cursor.execute(
+                    'INSERT INTO multiasset_mappings(collection_id, asset) VALUES(?, ?)',
+                    (7, 'eip155:1/erc20:0xD46bA6D942050d489DBd938a2C909A5d5039A161'),
+                )
 
         # check that appropriate cache data is transfered
         for key_part in V5_V6_UPGRADE_UNIQUE_CACHE_KEYS:
@@ -453,6 +482,8 @@ def test_upgrade_v5_v6(globaldb):
         gen_cache_content_after = cursor.execute('SELECT COUNT(*) FROM general_cache').fetchone()[0]  # noqa: E501
         assert gen_cache_unique_key_content == unique_cache_content
         assert gen_cache_content_before == gen_cache_content_after + gen_cache_unique_key_content
+
+        assert cursor.execute('SELECT * FROM multiasset_mappings ORDER BY collection_id, asset').fetchall() == old_multiasset_mappings  # noqa: E501
 
 
 @pytest.mark.parametrize('custom_globaldb', ['v2_global.db'])
