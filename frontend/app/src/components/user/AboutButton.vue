@@ -8,9 +8,14 @@ const show = () => {
 </script>
 
 <template>
-  <RuiTooltip :text="t('account_management.about_tooltip')">
-    <RuiButton variant="text" color="primary" icon rounded @click="show()">
-      <RuiIcon name="information-line" />
-    </RuiButton>
+  <RuiTooltip
+    :text="t('account_management.about_tooltip')"
+    :popper="{ placement: 'top', offsetDistance: 0 }"
+  >
+    <template #activator>
+      <RuiButton variant="text" color="primary" icon rounded @click="show()">
+        <RuiIcon name="information-line" />
+      </RuiButton>
+    </template>
   </RuiTooltip>
 </template>

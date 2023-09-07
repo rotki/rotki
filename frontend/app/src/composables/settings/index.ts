@@ -107,7 +107,7 @@ export const useClearableMessages = () => {
   };
 
   const wait = async () => await promiseTimeout(200);
-  const { start, stop } = useTimeoutFn(clear, 5500);
+  const { start, stop } = useTimeoutFn(clear, 3500);
   watch([error, success], ([error, success]) => {
     if (error || success) {
       start();

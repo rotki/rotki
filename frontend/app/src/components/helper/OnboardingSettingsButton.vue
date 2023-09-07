@@ -8,19 +8,22 @@ const { connected } = toRefs(useMainStore());
   <VBottomSheet v-model="visible" width="98%" class="backend-settings-button">
     <template #activator="{ attrs }">
       <RuiTooltip
-        v-bind="attrs"
-        :disabled="!connected"
         :text="t('backend_settings_button.tooltip')"
+        :popper="{ placement: 'top', offsetDistance: 0 }"
       >
-        <RuiButton
-          variant="text"
-          color="primary"
-          icon
-          rounded
-          @click="visible = true"
-        >
-          <RuiIcon name="settings-4-line" />
-        </RuiButton>
+        <template #activator>
+          <RuiButton
+            v-bind="attrs"
+            :disabled="!connected"
+            variant="text"
+            color="primary"
+            icon
+            rounded
+            @click="visible = true"
+          >
+            <RuiIcon name="settings-4-line" />
+          </RuiButton>
+        </template>
       </RuiTooltip>
     </template>
     <OnboardingSettings v-if="visible" @dismiss="visible = false" />
