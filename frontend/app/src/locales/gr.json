@@ -1465,32 +1465,57 @@
     "incomplete": "(Incomplete)"
   },
   "create_account": {
-    "premium": {
-      "button_premium_approve": "Yes, enable premium",
-      "premium_link_text": "here.",
-      "premium_question": "Are you already a rotki premium user and want to enable premium features? This is needed if you want to sync your rotki database from another device at account creation. You can buy premium {premiumLink}",
-      "title": "Enable Premium"
+    "have_account": {
+      "description": "Έχετε ήδη λογαριασμό;",
+      "log_in": "Σύνδεση"
     },
-    "select_credentials": {
-      "label_password": "Password",
-      "label_password_backup_reminder": "rotki saves all user data locally. I understand that if I lose my password, I lose access to my data. I have created a backup of the password.",
-      "label_password_repeat": "Repeat Password",
-      "label_username": "Username",
-      "password_sync_requirement": "Ensure that the account uses the same password as the database originally backed up. You can't access the database if you input a different password.",
-      "title": "Select Credentials",
+    "introduction": {
+      "description": "Το rotki είναι μια τοπική εφαρμογή που σέβεται την ιδιωτικότητά σας.\n\nΟι λογαριασμοί του rotki κρυπτογραφούνται χρησιμοποιώντας τον κωδικό πρόσβασής σας και το {highlight}.\n\nΟ λογαριασμός που δημιουργείτε εδώ είναι χρήσιμος μόνο για την εφαρμογή, στον ιστό χρησιμοποιούμε διαφορετική βάση δεδομένων.",
+      "highlight": "αποθηκεύεται στο τοπικό σας σύστημα αρχείων"
+    },
+    "premium": {
+      "button_premium_approve": "Ναι, ενεργοποίηση προηγμένης έκδοσης",
+      "premium_link_text": "εδώ.",
+      "premium_question": "Είστε ήδη προηγμένος χρήστης του rotki και θέλετε να ενεργοποιήσετε τις προηγμένες λειτουργίες;\nΑυτό απαιτείται αν θέλετε να συγχρονίσετε τη βάση δεδομένων του rotki από άλλη συσκευή κατά τη δημιουργία του λογαριασμού. Μπορείτε να αγοράσετε την προηγμένη έκδοση {premiumLink}"
+    },
+    "credentials": {
+      "label_password": "Κωδικός πρόσβασης",
+      "label_password_backup_reminder": "Ο rotki αποθηκεύει όλα τα δεδομένα του χρήστη τοπικά. Καταλαβαίνω ότι αν χάσω τον κωδικό πρόσβασης, χάνω την πρόσβαση στα δεδομένα μου. Έχω δημιουργήσει αντίγραφο ασφαλείας του κωδικού πρόσβασης.",
+      "label_password_repeat": "Επανάληψη κωδικού πρόσβασης",
+      "label_username": "Όνομα χρήστη",
+      "password_sync_requirement": "Βεβαιωθείτε ότι ο λογαριασμός χρησιμοποιεί τον ίδιο κωδικό πρόσβασης με την αρχική βάση δεδομένων. Δεν μπορείτε να αποκτήσετε πρόσβαση στη βάση δεδομένων αν εισαγάγετε διαφορετικό κωδικό πρόσβασης.",
+      "description": "Θυμηθείτε ότι ο χρήστης που δημιουργείτε εδώ είναι {highlight}, ανεξάρτητα από τον λογαριασμό που δημιουργείτε στον ιστό.",
+      "highlight": "ενεργοποιημένος μόνο στην εφαρμογή",
       "validation": {
-        "non_empty_password": "Please provide a password",
-        "non_empty_password_confirmation": "Please provide a password confirmation",
-        "non_empty_username": "Please provide a user name",
-        "password_confirmation_mismatch": "The password confirmation does not match the provided password",
-        "valid_username": "A username must contain only alphanumeric characters and have no spaces"
+        "non_empty_password": "Παρακαλώ δώστε έναν κωδικό πρόσβασης",
+        "non_empty_password_confirmation": "Παρακαλώ δώστε επιβεβαίωση κωδικού πρόσβασης",
+        "non_empty_username": "Παρακαλώ δώστε ένα όνομα χρήστη",
+        "password_confirmation_mismatch": "Η επιβεβαίωση του κωδικού πρόσβασης δεν ταιριάζει με τον παρεχόμενο κωδικό πρόσβασης",
+        "valid_username": "Ένα όνομα χρήστη πρέπει να περιέχει μόνο αλφαριθμητικούς χαρακτήρες και να μην περιέχει κενά",
+        "check_prompt": "Επιβεβαιώστε ότι έχετε διαβάσει και δημιουργήσει αντίγραφο ασφαλείας"
       }
     },
-    "title": "Create Account",
+    "steps": {
+      "step_1": {
+        "title": "Εισαγωγή",
+        "description": "Πρώτο βήμα"
+      },
+      "step_2": {
+        "title": "Ενεργοποίηση προηγμένης έκδοσης",
+        "description": "Έχετε προηγμένο λογαριασμό στην ιστοσελίδα μας;"
+      },
+      "step_3": {
+        "title": "Δημιουργία λογαριασμού",
+        "description": "Ορίστε τα διαπιστευτήριά σας"
+      },
+      "step_4": {
+        "title": "Αναλυτικά στοιχεία χρήσης"
+      }
+    },
+    "title": "Δημιουργία Λογαριασμού",
     "usage_analytics": {
-      "description": "rotki is a local application and anonymous usage analytics is the only way for us to have an idea of how many people use our software, where they are from etc. These data are really important to us, are completely anonymous and help us create a better product for you.",
-      "label_confirm": "Submit anonymous usage analytics",
-      "title": "Usage analytics"
+      "description": "Το rotki είναι μια τοπική εφαρμογή και η ανώνυμη ανάλυση χρήσης είναι ο μόνος τρόπος για εμάς να έχουμε μια ιδέα πόσοι άνθρωποι χρησιμοποιούν το λογισμικό μας, από πού προέρχονται κ.λπ. Αυτά τα δεδομένα είναι πολύ σημαντικά για εμάς, είναι πλήρως ανώνυμα και μας βοηθούν να δημιουργήσουμε ένα καλύτερο προϊόν για εσάς.",
+      "label_confirm": "Υποβολή ανώνυμης ανάλυσης χρήσης"
     }
   },
   "currencies": {
@@ -2141,11 +2166,6 @@
     }
   },
   "frontend_settings": {
-    "animations": {
-      "disable": "Disable animations",
-      "disable_hint": "Disabling animations will improve app performance.",
-      "enable": "Enable animations"
-    },
     "hint": {
       "refresh": "How often (in minutes) your balances will be automatically refreshed"
     },

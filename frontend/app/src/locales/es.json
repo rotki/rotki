@@ -1460,32 +1460,57 @@
     "incomplete": "(Incomplete)"
   },
   "create_account": {
-    "premium": {
-      "button_premium_approve": "Yes, enable premium",
-      "premium_link_text": "here.",
-      "premium_question": "Are you already a rotki premium user and want to enable premium features? This is needed if you want to sync your rotki database from another device at account creation. You can buy premium {premiumLink}",
-      "title": "Enable Premium"
+    "have_account": {
+      "description": "¿Ya tienes una cuenta?",
+      "log_in": "Iniciar sesión"
     },
-    "select_credentials": {
-      "label_password": "Password",
-      "label_password_backup_reminder": "rotki saves all user data locally. I understand that if I lose my password, I lose access to my data. I have created a backup of the password.",
-      "label_password_repeat": "Repeat Password",
-      "label_username": "Username",
-      "password_sync_requirement": "Ensure that the account uses the same password as the database originally backed up. You can't access the database if you input a different password.",
-      "title": "Select Credentials",
+    "introduction": {
+      "description": "rotki es una aplicación local que respeta tu privacidad.\n\nLas cuentas de rotki están encriptadas usando tu contraseña y {highlight}.\n\nLa cuenta que creas aquí solo es útil para la aplicación; en la web utilizamos una base de datos diferente.",
+      "highlight": "guardada en tu sistema de archivos local"
+    },
+    "premium": {
+      "button_premium_approve": "Sí, habilitar premium",
+      "premium_link_text": "aquí.",
+      "premium_question": "¿Ya eres un usuario premium de rotki y quieres habilitar funciones premium?\nEsto es necesario si deseas sincronizar tu base de datos de rotki desde otro dispositivo al crear la cuenta. Puedes comprar premium {premiumLink}"
+    },
+    "credentials": {
+      "label_password": "Contraseña",
+      "label_password_backup_reminder": "rotki guarda todos los datos del usuario localmente. Entiendo que si pierdo mi contraseña, perderé acceso a mis datos. He creado una copia de seguridad de la contraseña.",
+      "label_password_repeat": "Repetir contraseña",
+      "label_username": "Nombre de usuario",
+      "password_sync_requirement": "Asegúrate de que la cuenta utilice la misma contraseña que la base de datos respaldada originalmente. No podrás acceder a la base de datos si ingresas una contraseña diferente.",
+      "description": "Recuerda que el usuario que creas aquí está {highlight}, independientemente de la cuenta creada en la web.",
+      "highlight": "solo habilitado en la aplicación",
       "validation": {
-        "non_empty_password": "Please provide a password",
-        "non_empty_password_confirmation": "Please provide a password confirmation",
-        "non_empty_username": "Please provide a user name",
-        "password_confirmation_mismatch": "The password confirmation does not match the provided password",
-        "valid_username": "A username must contain only alphanumeric characters and have no spaces"
+        "non_empty_password": "Por favor, proporciona una contraseña",
+        "non_empty_password_confirmation": "Por favor, proporciona una confirmación de contraseña",
+        "non_empty_username": "Por favor, proporciona un nombre de usuario",
+        "password_confirmation_mismatch": "La confirmación de contraseña no coincide con la contraseña proporcionada",
+        "valid_username": "Un nombre de usuario debe contener solo caracteres alfanuméricos y no tener espacios",
+        "check_prompt": "Confirma que has leído y creado una copia de seguridad"
       }
     },
-    "title": "Create Account",
+    "steps": {
+      "step_1": {
+        "title": "Introducción",
+        "description": "Primer paso"
+      },
+      "step_2": {
+        "title": "Habilitar Premium",
+        "description": "¿Tienes una cuenta premium en nuestro sitio web?"
+      },
+      "step_3": {
+        "title": "Crear cuenta",
+        "description": "Configura tus credenciales"
+      },
+      "step_4": {
+        "title": "Análisis de uso"
+      }
+    },
+    "title": "Crear Cuenta",
     "usage_analytics": {
-      "description": "rotki is a local application and anonymous usage analytics is the only way for us to have an idea of how many people use our software, where they are from etc. These data are really important to us, are completely anonymous and help us create a better product for you.",
-      "label_confirm": "Submit anonymous usage analytics",
-      "title": "Usage analytics"
+      "description": "rotki es una aplicación local y el análisis de uso anónimo es la única forma que tenemos de tener una idea de cuántas personas utilizan nuestro software, de dónde son, etc. Estos datos son muy importantes para nosotros, son completamente anónimos y nos ayudan a crear un mejor producto para ti.",
+      "label_confirm": "Enviar análisis de uso anónimo"
     }
   },
   "currencies": {
@@ -2136,11 +2161,6 @@
     }
   },
   "frontend_settings": {
-    "animations": {
-      "disable": "Desactivar animaciones",
-      "disable_hint": "Desactivar las animaciones mejorará el rendimiento.",
-      "enable": "Activar animaciones"
-    },
     "hint": {
       "refresh": "Con qué frecuencia (en minutos) tu balance será actualizado."
     },

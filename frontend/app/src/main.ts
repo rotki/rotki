@@ -2,7 +2,6 @@
 import { PiniaVuePlugin, createPinia } from 'pinia';
 import Vue, { provide } from 'vue';
 import App from '@/App.vue';
-import '@/main.scss';
 import 'roboto-fontface/css/roboto/roboto-fontface.css';
 import 'typeface-roboto-mono';
 import { vuetify } from '@/plugins/vuetify';
@@ -11,6 +10,7 @@ import i18n from './i18n';
 import router from './router';
 
 import '@/plugins/rui';
+import '@/main.scss';
 
 const isDevelopment = checkIfDevelopment() && !import.meta.env.VITE_TEST;
 Vue.config.productionTip = false;

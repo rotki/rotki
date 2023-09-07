@@ -1544,32 +1544,57 @@
     "incomplete": "(Incomplete)"
   },
   "create_account": {
+    "have_account": {
+      "description": "Already have an account?",
+      "log_in": "Log in"
+    },
+    "introduction": {
+      "description": "rotki is a local application that respects your privacy.\n\nrotki accounts are encrypted using your password and {highlight}.\n\nThe account you create here is only useful for the app, on the web we use a different database.",
+      "highlight": "saved in your local filesystem"
+    },
     "premium": {
       "button_premium_approve": "Yes, enable premium",
       "premium_link_text": "here.",
-      "premium_question": "Are you already a rotki premium user and want to enable premium features? This is needed if you want to sync your rotki database from another device at account creation. You can buy premium {premiumLink}",
-      "title": "Enable Premium"
+      "premium_question": "Are you already a rotki premium user and want to enable premium features?\nThis is needed if you want to sync your rotki database from another device at account creation. You can buy premium {premiumLink}"
     },
-    "select_credentials": {
+    "credentials": {
       "label_password": "Password",
       "label_password_backup_reminder": "rotki saves all user data locally. I understand that if I lose my password, I lose access to my data. I have created a backup of the password.",
       "label_password_repeat": "Repeat Password",
       "label_username": "Username",
       "password_sync_requirement": "Ensure that the account uses the same password as the database originally backed up. You can't access the database if you input a different password.",
-      "title": "Select Credentials",
+      "description": "Remember that the user you create here is {highlight}, independent of the account create on the web.",
+      "highlight": "only enabled in the application",
       "validation": {
         "non_empty_password": "Please provide a password",
         "non_empty_password_confirmation": "Please provide a password confirmation",
         "non_empty_username": "Please provide a user name",
         "password_confirmation_mismatch": "The password confirmation does not match the provided password",
-        "valid_username": "A username must contain only alphanumeric characters and have no spaces"
+        "valid_username": "A username must contain only alphanumeric characters and have no spaces",
+        "check_prompt": "Confirm that you have read and created a backup"
+      }
+    },
+    "steps": {
+      "step_1": {
+        "title": "Introduction",
+        "description": "First step"
+      },
+      "step_2": {
+        "title": "Enable Premium",
+        "description": "Do you have a premium account on our website?"
+      },
+      "step_3": {
+        "title": "Create account",
+        "description": "Set your credentials"
+      },
+      "step_4": {
+        "title": "Usage analytics"
       }
     },
     "title": "Create Account",
     "usage_analytics": {
       "description": "rotki is a local application and anonymous usage analytics is the only way for us to have an idea of how many people use our software, where they are from etc. These data are really important to us, are completely anonymous and help us create a better product for you.",
-      "label_confirm": "Submit anonymous usage analytics",
-      "title": "Usage analytics"
+      "label_confirm": "Submit anonymous usage analytics"
     }
   },
   "currencies": {
@@ -2247,11 +2272,6 @@
     }
   },
   "frontend_settings": {
-    "animations": {
-      "disable": "Disable animations",
-      "disable_hint": "Disabling animations will improve app performance.",
-      "enable": "Enable animations"
-    },
     "hint": {
       "refresh": "How often (in minutes) your balances will be automatically refreshed"
     },
