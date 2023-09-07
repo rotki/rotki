@@ -47,13 +47,24 @@ def test_trove_position(rotkehlchen_api_server, inquirer):  # pylint: disable=un
     else:
         result = assert_proper_response_with_result(response)
 
-    assert LQTY_ADDR in result
-    trove_data = result[LQTY_ADDR]
-    assert 'collateral' in trove_data
-    assert 'debt' in trove_data
-    assert 'collateralization_ratio' in trove_data
-    assert 'liquidation_price' in trove_data
-    assert trove_data['active'] is True
+    assert LQTY_ADDR in result['balances']
+    assert 'balances' in result
+    assert 'final_collateral_ratio' in result
+
+    balances = result['balances']
+    assert isinstance(balances, dict)
+
+    for trove_data in balances.values():
+        assert 'collateral' in trove_data
+        assert 'debt' in trove_data
+        assert 'collateralization_ratio' in trove_data
+        assert 'liquidation_price' in trove_data
+        assert trove_data['active'] is True
+
+        collateral_data = trove_data['collateral']
+        assert 'amount' in collateral_data
+        assert 'usd_value' in collateral_data
+        assert 'asset' in collateral_data
 
 
 @pytest.mark.parametrize('should_mock_web3', [True])
@@ -129,7 +140,13 @@ def test_account_without_info(rotkehlchen_api_server, inquirer):  # pylint: disa
     else:
         result = assert_proper_response_with_result(response)
 
-    assert ADDR_WITHOUT_TROVE not in result
+    assert 'balances' in result
+    assert 'final_collateral_ratio' in result
+
+    balances = result['balances']
+    assert isinstance(balances, dict)
+
+    assert ADDR_WITHOUT_TROVE not in balances
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[LQTY_PROXY, ADDR_WITHOUT_TROVE, LQTY_ADDR]])
@@ -149,9 +166,16 @@ def test_account_with_proxy(rotkehlchen_api_server, inquirer):  # pylint: disabl
     else:
         result = assert_proper_response_with_result(response)
 
-    assert LQTY_PROXY in result
-    assert ADDR_WITHOUT_TROVE not in result
-    assert LQTY_ADDR in result
+    assert 'balances' in result
+    assert 'final_collateral_ratio' in result
+
+    balances = result['balances']
+    assert isinstance(balances, dict)
+
+    assert LQTY_PROXY in balances
+    assert ADDR_WITHOUT_TROVE not in balances
+    assert LQTY_ADDR in balances
+
     # test that the list of addresses was not mutated
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     assert len(rotki.chains_aggregator.accounts.eth) == 3

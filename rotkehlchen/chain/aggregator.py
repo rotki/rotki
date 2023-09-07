@@ -1072,7 +1072,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             liquity_addresses = self.queried_addresses_for_module('liquity')
             # Get trove information
             liquity_balances = liquity_module.get_positions(given_addresses=liquity_addresses)
-            for address, deposits in liquity_balances.items():
+            for address, deposits in liquity_balances['balances'].items():
                 collateral = deposits.collateral.balance
                 if collateral.amount > ZERO:
                     eth_balances[address].assets[A_ETH] += collateral

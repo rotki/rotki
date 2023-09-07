@@ -84,8 +84,32 @@ class Liquity(HasDSProxy):
     def get_positions(
             self,
             given_addresses: Sequence[ChecksumEvmAddress],
-    ) -> dict[ChecksumEvmAddress, Trove]:
-        """Query liquity contract to detect open troves"""
+    ) -> dict[str, Any]:
+        """Query liquity contract to get the collateral ratio and detect open troves"""
+
+        eth_price = Inquirer().find_usd_price(A_ETH)
+        lusd_price = Inquirer().find_usd_price(A_LUSD)
+
+        try:
+            system_collateral = self.trove_manager_contract.call(
+                node_inquirer=self.ethereum,
+                method_name='getEntireSystemColl',
+                arguments=[],
+            )
+            system_debt = self.trove_manager_contract.call(
+                node_inquirer=self.ethereum,
+                method_name='getEntireSystemDebt',
+                arguments=[],
+            )
+
+            if system_debt != 0:
+                final_collateral_ratio = eth_price * system_collateral / system_debt * lusd_price
+            else:
+                final_collateral_ratio = None
+
+        except RemoteError as e:
+            log.debug(f'Failed {e!s}')
+
         addresses = list(given_addresses)  # turn to a mutable list copy to add proxies
         proxied_addresses = self.ethereum.proxies_inquirer.get_accounts_having_proxy()
         proxies_to_address = {v: k for k, v in proxied_addresses.items()}
@@ -101,8 +125,6 @@ class Liquity(HasDSProxy):
         )
 
         data: dict[ChecksumEvmAddress, Trove] = {}
-        eth_price = Inquirer().find_usd_price(A_ETH)
-        lusd_price = Inquirer().find_usd_price(A_LUSD)
         for idx, output in enumerate(outputs):
             status, result = output
             if status is True:
@@ -159,7 +181,8 @@ class Liquity(HasDSProxy):
                         f'Ignoring Liquity trove information. '
                         f'Failed to decode contract information. {e!s}.',
                     )
-        return data
+        final_result = {'balances': data, 'final_collateral_ratio': final_collateral_ratio}
+        return final_result
 
     def _query_deposits_and_rewards(
             self,
