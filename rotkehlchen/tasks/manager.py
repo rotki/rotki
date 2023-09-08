@@ -102,7 +102,6 @@ class TaskManager:
             deactivate_premium: Callable[[], None],
             activate_premium: Callable[[Premium], None],
             query_balances: Callable,
-            update_curve_pools_cache: Callable,
             msg_aggregator: 'MessagesAggregator',
             data_updater: 'RotkiDataUpdater',
             username: str,
@@ -125,7 +124,6 @@ class TaskManager:
         self.deactivate_premium = deactivate_premium
         self.activate_premium = activate_premium
         self.query_balances = query_balances
-        self.update_curve_pools_cache = update_curve_pools_cache
         self.query_yearn_vaults = query_yearn_vaults
         self.last_premium_status_check = ts_now()
         self.msg_aggregator = msg_aggregator
@@ -145,7 +143,6 @@ class TaskManager:
             self._maybe_check_premium_status,
             self._maybe_check_data_updates,
             self._maybe_update_snapshot_balances,
-            self._maybe_update_curve_pools,
             self._maybe_update_yearn_vaults,
             self._maybe_detect_evm_accounts,
             self._maybe_update_ilk_cache,
@@ -597,19 +594,6 @@ class TaskManager:
             method=process_events,
             chains_aggregator=self.chains_aggregator,
             database=self.database,
-        )]
-
-    def _maybe_update_curve_pools(self) -> Optional[list[gevent.Greenlet]]:
-        """Function that schedules curve pools update task if either there is no curve pools cache
-        yet or this cache has expired (i.e. it's been more than a week since last update)."""
-        if should_update_protocol_cache(CacheType.CURVE_LP_TOKENS) is False:
-            return None
-
-        return [self.greenlet_manager.spawn_and_track(
-            after_seconds=None,
-            task_name='Update curve pools cache',
-            exception_is_error=True,
-            method=self.update_curve_pools_cache,
         )]
 
     def _maybe_update_yearn_vaults(self) -> Optional[list[gevent.Greenlet]]:
