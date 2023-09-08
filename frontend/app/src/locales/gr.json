@@ -4009,6 +4009,9 @@
       "semi_private_mode": {
         "description": "Hide amount and show percentage",
         "label": "Semi Private"
+      },
+      "scramble": {
+        "label": "Scramble"
       }
     },
     "confirmation": {

@@ -4105,6 +4105,9 @@
       "semi_private_mode": {
         "description": "隐藏金额显示百分比",
         "label": "半私人"
+      },
+      "scramble": {
+        "label": "争夺"
       }
     },
     "confirmation": {
