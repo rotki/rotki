@@ -40,6 +40,7 @@ from rotkehlchen.chain.substrate.utils import (
 )
 from rotkehlchen.constants.assets import A_ETH, A_ETH2
 from rotkehlchen.constants.misc import ONE, ZERO
+from rotkehlchen.constants.resolver import EVM_CHAIN_DIRECTIVE
 from rotkehlchen.data_import.manager import DataImportSource
 from rotkehlchen.db.filtering import (
     AssetMovementsFilterQuery,
@@ -2114,6 +2115,18 @@ class AssetsMappingSchema(Schema):
 class AssetsReplaceSchema(Schema):
     source_identifier = fields.String(required=True)
     target_asset = AssetField(required=True, expected_type=Asset, form_with_incomplete_data=True)
+
+    @validates_schema
+    def validate_schema(
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
+    ) -> None:
+        if data['source_identifier'].startswith(EVM_CHAIN_DIRECTIVE):
+            raise ValidationError(
+                message="Can't merge two evm tokens",
+                field_name='source_identifier',
+            )
 
 
 class QueriedAddressesSchema(Schema):
