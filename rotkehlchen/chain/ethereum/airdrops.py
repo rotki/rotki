@@ -240,7 +240,7 @@ def get_airdrop_data(name: str, data_dir: Path) -> Iterator[list[str]]:
     if not filename.is_file():
         # if not cached, get it from the gist
         try:
-            response = requests.get(url=AIRDROPS[name][0], timeout=CachedSettings().get_timeout_tuple())  # noqa: E501
+            response = requests.get(url=AIRDROPS[name][0], timeout=(30, 100))  # a large read timeout is necessary because the queried data is quite large  # noqa: E501
         except requests.exceptions.RequestException as e:
             raise RemoteError(f'Airdrops Gist request failed due to {e!s}') from e
         try:

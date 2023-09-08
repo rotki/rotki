@@ -1,15 +1,14 @@
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.chain.ethereum.airdrops import AIRDROPS, check_airdrops
+from rotkehlchen.chain.ethereum.airdrops import AIRDROPS, POAP_AIRDROPS, check_airdrops
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_1INCH, A_GRAIN, A_UNI
 from rotkehlchen.db.history_events import DBHistoryEvents
-from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.errors.misc import UnableToDecryptRemoteData
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.factories import make_evm_tx_hash
@@ -66,18 +65,42 @@ def test_check_airdrops(ethereum_accounts, database):
 
     events_db = DBHistoryEvents(database)
     with database.conn.write_ctx() as write_cursor:
-        database.set_settings(
-            write_cursor=write_cursor,
-            settings=ModifiableDBSettings(read_timeout=90),  # this test needs longer timeout because it requests from github the airdrop csv files which are quite large  # noqa: E501
-        )
         events_db.add_history_events(write_cursor, claim_events)
 
-    # get the airdrop data
-    data = check_airdrops(
-        addresses=ethereum_accounts + [TEST_ADDR1, TEST_ADDR2],
-        database=database,
-        tolerance_for_amount_check=tolerance_for_amount_check,
-    )
+    def mock_requests_get(url: str, timeout: int):  # pylint: disable=unused-argument
+        """Mocking the airdrop data is very convenient here because the airdrop data is quite large
+        and read timeout errors can happen even with 90secs threshold. Vcr-ing it is not possible
+        because the vcr yaml file is above the github limit of 100MB."""
+        url_to_data_map = {
+            AIRDROPS['uniswap'][0]:
+                f'address,uni,is_lp,is_user,is_socks\n{TEST_ADDR1},400,False,True,False\n{TEST_ADDR2},400.050642,True,True,False\n',  # noqa: E501
+            AIRDROPS['1inch'][0]:
+                f'address,tokens\n{TEST_ADDR1},630.374421472277638654\n',
+            AIRDROPS['shapeshift'][0]:
+                f'address,tokens\n{TEST_ADDR1},200\n',
+            AIRDROPS['cow_gnosis'][0]:
+                f'address,tokens\n{TEST_ADDR1},99807039723201809834\n',
+            AIRDROPS['diva'][0]:
+                f'address,tokens\n{TEST_ADDR1},84000\n',
+            AIRDROPS['grain'][0]:
+                f'address,tokens\n{TEST_ADDR2},16301717650649890035791\n',
+        }
+        mock_response = Mock()
+        mock_response.text = url_to_data_map.get(url, 'address,tokens\n')  # Return the data from the dictionary or just a header if 'url' is not found  # noqa: E501
+        if url in [poap_url[0] for poap_url in POAP_AIRDROPS.values()]:
+            mock_response.text = '{}'  # any valid json response will do because tested addresses do not have poap airdrops  # noqa: E501
+        mock_response.content = mock_response.text.encode('utf-8')
+        return mock_response
+
+    with (
+        patch('rotkehlchen.chain.ethereum.airdrops.SMALLEST_AIRDROP_SIZE', 1),
+        patch('rotkehlchen.chain.ethereum.airdrops.requests.get', side_effect=mock_requests_get),  # noqa: E501
+    ):
+        data = check_airdrops(
+            addresses=ethereum_accounts + [TEST_ADDR1, TEST_ADDR2],
+            database=database,
+            tolerance_for_amount_check=tolerance_for_amount_check,
+        )
 
     # Test data is returned for the address correctly
     assert len(data) == 2
@@ -116,11 +139,6 @@ def test_check_airdrops(ethereum_accounts, database):
 
 @pytest.mark.parametrize('airdrop_list', [NOT_CSV_WEBPAGE])
 def test_airdrop_fail(mock_airdrop_list, database):  # pylint: disable=unused-argument
-    with database.conn.write_ctx() as write_cursor:
-        database.set_settings(
-            write_cursor=write_cursor,
-            settings=ModifiableDBSettings(read_timeout=90),  # this test needs longer timeout because it requests from github the airdrop csv files which are quite large  # noqa: E501
-        )
     with pytest.raises(UnableToDecryptRemoteData):
         check_airdrops(
             addresses=[TEST_ADDR1],
