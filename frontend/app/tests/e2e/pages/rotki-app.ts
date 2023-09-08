@@ -90,8 +90,17 @@ export class RotkiApp {
     cy.get(`#change-to-${currency.toLocaleLowerCase()}`).click();
   }
 
+  togglePrivacyMenu(show?: boolean) {
+    cy.get('[data-cy=privacy-menu]').as('menu');
+    if (show) {
+      cy.get('@menu').click();
+    } else {
+      cy.get('@menu').click({ force: true });
+    }
+  }
+
   changePrivacyMode(mode: number) {
-    cy.get('[data-cy=privacy-menu]').click();
+    this.togglePrivacyMenu(true);
     cy.get(
       '[data-cy="privacy-mode-dropdown__input"] ~ .v-slider__thumb-container'
     ).as('input');
@@ -102,7 +111,45 @@ export class RotkiApp {
     if (mode > 0) {
       cy.get('@input').type('{upArrow}'.repeat(mode));
     }
-    cy.get('[data-cy=privacy-menu]').click({ force: true });
+    this.togglePrivacyMenu();
+  }
+
+  toggleScrambler(enable: boolean) {
+    this.togglePrivacyMenu(true);
+    cy.get(
+      '[data-cy="privacy-mode-scramble__toggle"] input[type="checkbox"]'
+    ).as('input');
+
+    if (enable) {
+      cy.get('@input').check();
+    } else {
+      cy.get('@input').uncheck();
+    }
+    this.togglePrivacyMenu();
+  }
+
+  changeScrambleValue(multiplier: string) {
+    this.toggleScrambler(true);
+    this.togglePrivacyMenu(true);
+    cy.get(
+      '[data-cy="privacy-mode-scramble__multiplier"] input[type="number"]'
+    ).as('input');
+
+    cy.get('@input').type(multiplier);
+
+    this.togglePrivacyMenu();
+  }
+
+  changeRandomScrambleValue() {
+    this.toggleScrambler(true);
+    this.togglePrivacyMenu(true);
+    cy.get(
+      '[data-cy="privacy-mode-scramble__multiplier"] input[type="number"]'
+    ).as('input');
+    cy.get('[data-cy="privacy-mode-scramble__random-multiplier"]').as('button');
+
+    cy.get('@button').click();
+    this.togglePrivacyMenu();
   }
 
   /**

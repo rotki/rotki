@@ -124,6 +124,30 @@ describe('balances', () => {
     manualBalancesPage.visit();
   });
 
+  it('test scramble mode from top nav', () => {
+    app.toggleScrambler(false);
+    manualBalancesPage.visit();
+    manualBalancesPage.balanceShouldMatch(manualBalances);
+
+    app.toggleScrambler(true);
+    manualBalancesPage.balanceShouldNotMatch(manualBalances);
+
+    app.toggleScrambler(false);
+    manualBalancesPage.balanceShouldMatch(manualBalances);
+
+    app.changeScrambleValue('0.5');
+    manualBalancesPage.balanceShouldNotMatch(manualBalances);
+
+    app.toggleScrambler(false);
+    manualBalancesPage.balanceShouldMatch(manualBalances);
+
+    app.changeRandomScrambleValue();
+    manualBalancesPage.balanceShouldNotMatch(manualBalances);
+
+    app.toggleScrambler(false);
+    manualBalancesPage.balanceShouldMatch(manualBalances);
+  });
+
   it('edit', () => {
     const newAmount = '200';
     manualBalancesPage.visit();
