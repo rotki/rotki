@@ -1,19 +1,24 @@
 <script setup lang="ts">
-const { scrambleData: enabled, scrambleMultiplier: multiplier } =
-  useSessionSettingsStore();
+const { scrambleData: enabled, scrambleMultiplier: multiplier } = storeToRefs(
+  useSessionSettingsStore()
+);
 
 const scrambleData = ref<boolean>(false);
 const scrambleMultiplier = ref<string>('0');
-
-onMounted(() => {
-  set(scrambleData, get(enabled));
-  set(scrambleMultiplier, get(multiplier).toString());
-});
 
 const { t } = useI18n();
 const randomMultiplier = () => {
   set(scrambleMultiplier, generateRandomScrambleMultiplier().toString());
 };
+
+const setData = () => {
+  set(scrambleData, get(enabled));
+  set(scrambleMultiplier, get(multiplier).toString());
+};
+
+onMounted(setData);
+
+watch([enabled, multiplier], setData);
 
 const css = useCssModule();
 </script>
