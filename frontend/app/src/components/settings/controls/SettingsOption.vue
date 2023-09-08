@@ -1,45 +1,31 @@
 <script setup lang="ts">
 import { type MaybeRef } from '@vueuse/core';
-import { type PropType } from 'vue';
 import { type FrontendSettingsPayload } from '@/types/frontend-settings';
 import { type SettingsUpdate } from '@/types/user';
 import { type SessionSettings } from '@/types/session';
 
-const props = defineProps({
-  setting: {
-    required: true,
-    type: String as PropType<
+type TransformMessageCallback<T = any> = (value: any) => T;
+
+const props = withDefaults(
+  defineProps<{
+    setting:
       | keyof SettingsUpdate
       | keyof FrontendSettingsPayload
-      | keyof SessionSettings
-    >
-  },
-  frontendSetting: {
-    required: false,
-    type: Boolean,
-    default: false
-  },
-  sessionSetting: {
-    required: false,
-    type: Boolean,
-    default: false
-  },
-  transform: {
-    required: false,
-    type: Function as PropType<(value: any) => any>,
-    default: null
-  },
-  successMessage: {
-    required: false,
-    type: [String, Function] as PropType<((value: any) => string) | string>,
-    default: ''
-  },
-  errorMessage: {
-    required: false,
-    type: [String, Function] as PropType<((value: any) => string) | string>,
-    default: ''
+      | keyof SessionSettings;
+    frontendSetting?: boolean;
+    sessionSetting?: boolean;
+    transform?: TransformMessageCallback | null;
+    successMessage?: string | TransformMessageCallback<string>;
+    errorMessage?: string | TransformMessageCallback<string>;
+  }>(),
+  {
+    frontendSetting: false,
+    sessionSetting: false,
+    transform: null,
+    successMessage: '',
+    errorMessage: ''
   }
-});
+);
 
 const emit = defineEmits(['updated', 'finished']);
 
@@ -56,7 +42,7 @@ const { error, success, clear, wait, stop, setSuccess, setError } =
 const { updateSetting } = useSettings();
 
 const getMessage = (
-  ref: MaybeRef<string | ((value: any) => string)>,
+  ref: MaybeRef<string | TransformMessageCallback<string>>,
   value: any
 ) => {
   const message = get(ref);
