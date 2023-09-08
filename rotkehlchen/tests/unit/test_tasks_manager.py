@@ -75,7 +75,6 @@ def fixture_task_manager(
         exchange_manager=exchange_manager,
         deactivate_premium=lambda: None,
         query_balances=lambda: None,
-        update_curve_pools_cache=lambda: None,
         activate_premium=lambda _: None,
         msg_aggregator=messages_aggregator,
         data_updater=RotkiDataUpdater(msg_aggregator=messages_aggregator, user_db=database),
@@ -318,31 +317,6 @@ def test_update_snapshot_balances(task_manager):
             )
     except gevent.Timeout as e:
         raise AssertionError(f'Update snapshot balances was not completed within {timeout} seconds') from e  # noqa: E501
-
-
-@pytest.mark.parametrize('globaldb_upgrades', [[]])
-@pytest.mark.parametrize('run_globaldb_migrations', [False])
-@pytest.mark.parametrize('custom_globaldb', ['v4_global_before_migration1.db'])
-def test_update_curve_pools(task_manager):
-    """
-    Check that task for curve pools cache update is scheduled properly.
-
-    Using an old globalDB which does not contain updated pools so that the task is
-    executed.
-    """
-    task_manager.potential_tasks = [task_manager._maybe_update_curve_pools]
-    query_balances_patch = patch.object(
-        task_manager,
-        'update_curve_pools_cache',
-    )
-    timeout = 5
-    try:
-        with gevent.Timeout(timeout), query_balances_patch as query_mock:
-            task_manager.schedule()
-            while query_mock.call_count != 1:
-                gevent.sleep(.2)
-    except gevent.Timeout as e:
-        raise AssertionError(f'Update curve pools was not completed within {timeout} seconds') from e  # noqa: E501
 
 
 def test_try_start_same_task(rotkehlchen_api_server):
