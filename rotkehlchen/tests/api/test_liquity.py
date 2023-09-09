@@ -49,7 +49,7 @@ def test_trove_position(rotkehlchen_api_server, inquirer):  # pylint: disable=un
 
     assert LQTY_ADDR in result['balances']
     assert 'balances' in result
-    assert 'final_collateral_ratio' in result
+    assert 'total_collateral_ratio' in result
 
     balances = result['balances']
     assert isinstance(balances, dict)
@@ -141,7 +141,7 @@ def test_account_without_info(rotkehlchen_api_server, inquirer):  # pylint: disa
         result = assert_proper_response_with_result(response)
 
     assert 'balances' in result
-    assert 'final_collateral_ratio' in result
+    assert 'total_collateral_ratio' in result
 
     balances = result['balances']
     assert isinstance(balances, dict)
@@ -167,7 +167,7 @@ def test_account_with_proxy(rotkehlchen_api_server, inquirer):  # pylint: disabl
         result = assert_proper_response_with_result(response)
 
     assert 'balances' in result
-    assert 'final_collateral_ratio' in result
+    assert 'total_collateral_ratio' in result
 
     balances = result['balances']
     assert isinstance(balances, dict)

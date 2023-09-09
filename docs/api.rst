@@ -7052,25 +7052,28 @@ Getting Liquity balances
       Content-Type: application/json
 
       {
-          "result": {
-            "0x063c26fF1592688B73d8e2A18BA4C23654e2792E": {
-                "collateral": {
-                    "asset": "ETH"
-                    "amount": "5.3100000000000005",
-                    "usd_value": "16161.675300000001521815"
-                },
-                "debt": {
-                    "asset": "eip155:1/erc20:0x5f98805A4E8be255a32880FDeC7F6728C6568bA0"
-                    "amount": "6029.001719188487",
-                    "usd_value": "6089.29173638037187"
-                },
-                "collateralization_ratio": "268.0655281381374051287323733",
-                "liquidation_price": "1261.435199626818912670885158",
-                "active": true,
-                "trove_id": 148
+         "result": {
+            "balances": {
+                  "0x063c26fF1592688B73d8e2A18BA4C23654e2792E": {
+                     "collateral": {
+                        "asset": "ETH",
+                        "amount": "5.3100000000000005",
+                        "usd_value": "16161.675300000001521815"
+                        },
+                     "debt": {
+                        "asset": "eip155:1/erc20:0x5f98805A4E8be255a32880FDeC7F6728C6568bA0",
+                        "amount": "6029.001719188487",
+                        "usd_value": "6089.29173638037187"
+                        },
+                     "collateralization_ratio": "268.0655281381374051287323733",
+                     "liquidation_price": "1261.435199626818912670885158",
+                     "active": true,
+                     "trove_id": 148
+                  },
+            "total_collateral_ratio": "0.003138414276398289779741030787"
             }
-          },
-          "message": ""
+         },
+         "message": ""
       }
 
    :resjson object result: A mapping of all accounts that currently have Liquity positions to ``trove`` information.
