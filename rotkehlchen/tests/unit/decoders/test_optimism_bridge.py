@@ -4,6 +4,7 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.chain.ethereum.modules.optimism_bridge.decoder import OPTIMISM_PORTAL_ADDRESS
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -357,5 +358,50 @@ def test_claim_eth_on_ethereum(database, ethereum_inquirer, ethereum_accounts):
             notes='Bridge 0.435796826762301485 ETH from Optimism to Ethereum via Optimism bridge',
             counterparty=CPT_OPTIMISM,
             address=string_to_evm_address('0x99C9fc46f92E8a1c0deC1b1747d010903E884bE1'),
+        ),
+    ]
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('ethereum_accounts', [['0xC02ad7b9a9121fc849196E844DC869D2250DF3A6']])
+def test_prove_withdrawal(database, ethereum_inquirer, ethereum_accounts):
+    """Test that withdrawal proving of the 2-step withdrawal is recognized properly
+    https://blog.oplabs.co/two-step-withdrawals/
+    """
+    evmhash = deserialize_evm_tx_hash('0xc68e09838d421ea4cdde39a30917579943a29d74e3d93266b52ee8ebdc841f78')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=evmhash,
+    )
+    timestamp = TimestampMS(1694198291000)
+    user_address = ethereum_accounts[0]
+    gas_str = '0.015525942536120381'
+    assert events == [
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas_str)),
+            location_label=user_address,
+            notes=f'Burned {gas_str} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            balance=Balance(),
+            location_label=user_address,
+            notes='Prove optimism bridge withdrawal 0xa030ef121ef8a49271b3201cc277c919063e740cc2fefe9b50d2f7327359710b',  # noqa: E501
+            counterparty=CPT_OPTIMISM,
+            address=OPTIMISM_PORTAL_ADDRESS,
         ),
     ]

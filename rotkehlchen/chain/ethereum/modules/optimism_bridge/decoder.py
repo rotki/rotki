@@ -1,5 +1,6 @@
 from typing import Any
 
+from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
@@ -17,14 +18,20 @@ from rotkehlchen.chain.optimism.constants import CPT_OPTIMISM
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.types import ChainID, ChecksumEvmAddress, DecoderEventMappingType, EvmTokenKind
-from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import (
+    hex_or_bytes_to_address,
+    hex_or_bytes_to_int,
+    hex_or_bytes_to_str,
+)
 
 BRIDGE_ADDRESS = string_to_evm_address('0x99C9fc46f92E8a1c0deC1b1747d010903E884bE1')
+OPTIMISM_PORTAL_ADDRESS = string_to_evm_address('0xbEb5Fc579115071764c7423A4f12eDde41f106Ed')
 
 ERC20_DEPOSIT_INITIATED = b'q\x85\x94\x02z\xbdN\xae\xd5\x9f\x95\x16%c\xe0\xccm\x0e\x8d[\x86\xb1\xc7\xbe\x8b\x1b\n\xc34=\x03\x96'  # noqa: E501
 ETH_DEPOSIT_INITIATED = b'5\xd7\x9a\xb8\x1f+ \x17\xe1\x9a\xfb\\Uqw\x88wx-z\x87\x86\xf5\x90\x7f\x93\xb0\xf4p/O#'  # noqa: E501
 ERC20_WITHDRAWAL_FINALIZED = b'<\xee\xe0l\x1e7d\x8f\xcb\xb6\xedR\xe1{>\x1f\'Z\x1f\x8c{"\xa8K+\x84s$1\xe0F\xb3'  # noqa: E501
 ETH_WITHDRAWAL_FINALIZED = b'*\xc6\x9e\xe8\x04\xd9\xa7\xa0\x98BI\xf5\x08\xdf\xab|\xb2SKF[l\xe1X\x0f\x99\xa3\x8b\xa9\xc5\xe61'  # noqa: E501
+WITHDRAWAL_PROVEN = b'g\xa6 \x8c\xfc\xc0\x80\x1dP\xf6\xcb\xe7ds?O\xdd\xf6j\xc0\xb0DB\x06\x1a\x8a\x8c\x0c\xb6\xb6?b'  # noqa: E501
 
 
 class OptimismBridgeDecoder(DecoderInterface):
@@ -91,6 +98,26 @@ class OptimismBridgeDecoder(DecoderInterface):
 
         return DEFAULT_DECODING_OUTPUT
 
+    def _decode_prove_withdrawal(self, context: DecoderContext) -> DecodingOutput:
+        """Decodes a proving withdrawal event."""
+        if context.tx_log.topics[0] != WITHDRAWAL_PROVEN:
+            return DEFAULT_DECODING_OUTPUT
+
+        withdrawal_hash = hex_or_bytes_to_str(context.tx_log.topics[1])
+        event = self.base.make_event_next_index(
+            tx_hash=context.transaction.tx_hash,
+            timestamp=context.transaction.timestamp,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            balance=Balance(),
+            location_label=context.transaction.from_address,
+            notes=f'Prove optimism bridge withdrawal 0x{withdrawal_hash}',
+            counterparty=CPT_OPTIMISM,
+            address=context.tx_log.address,
+        )
+        return DecodingOutput(event=event)
+
     # -- DecoderInterface methods
 
     def possible_events(self) -> DecoderEventMappingType:
@@ -106,6 +133,7 @@ class OptimismBridgeDecoder(DecoderInterface):
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {
             BRIDGE_ADDRESS: (self._decode_bridge,),
+            OPTIMISM_PORTAL_ADDRESS: (self._decode_prove_withdrawal,),
         }
 
     def counterparties(self) -> list[CounterpartyDetails]:
