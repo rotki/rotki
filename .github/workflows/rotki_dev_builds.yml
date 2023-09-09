@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: Load env
@@ -88,7 +88,7 @@ jobs:
     runs-on: macos-11
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: Load env
@@ -96,7 +96,7 @@ jobs:
         with:
           env_file: .github/.env.ci
       - name: Checkout libffi
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: libffi/libffi
           path: libffi
@@ -213,7 +213,7 @@ jobs:
     environment: windows_sign
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: Load env
@@ -274,7 +274,7 @@ jobs:
     environment: docker
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: Set up QEMU
@@ -331,7 +331,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 1
       - name: Check if any task failed
