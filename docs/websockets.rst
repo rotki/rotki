@@ -181,7 +181,7 @@ This also contains two optional, mutually excluded keys. If one exists the other
 
 - ``seen_tx_hash``: A transaction hash in the same chain as the token in which the token was first seen.
 - ``seen_description``: A description of the action in which the token was first seen and added to the DB. For example, querying curve pools, querying yearn pools etc.
-- ``is_ignored``(Optional): If it is set the backend has marked automatically the asset as ignored for the user.
+- ``is_ignored`` (Optional): If it is set the backend has marked automatically the asset as ignored for the user.
 
 
 Missing API Key
