@@ -125,8 +125,9 @@ describe('balances', () => {
   });
 
   it('test scramble mode from top nav', () => {
-    app.toggleScrambler(false);
     manualBalancesPage.visit();
+    app.togglePrivacyMenu(true);
+    app.toggleScrambler(false);
     manualBalancesPage.balanceShouldMatch(manualBalances);
 
     app.toggleScrambler(true);
@@ -146,6 +147,7 @@ describe('balances', () => {
 
     app.toggleScrambler(false);
     manualBalancesPage.balanceShouldMatch(manualBalances);
+    app.togglePrivacyMenu();
   });
 
   it('edit', () => {
