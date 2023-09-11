@@ -276,7 +276,7 @@ def test_weth_interaction_with_protocols_withdrawal(database, ethereum_inquirer)
             address=string_to_evm_address('0xC36442b4a4522E871399CD717aBDD847Ab11FE88'),
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=244,
+            sequence_index=243,
             timestamp=timesatmp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.WITHDRAWAL,

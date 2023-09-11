@@ -77,7 +77,6 @@ class Balancerv2Decoder(DecoderInterface):
         )
         action_item = ActionItem(
             action='skip & keep',
-            sequence_index=context.tx_log.log_index,
             from_event_type=HistoryEventType.RECEIVE,
             from_event_subtype=HistoryEventSubType.NONE,
             asset=to_token,

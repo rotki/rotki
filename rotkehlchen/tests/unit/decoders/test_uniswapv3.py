@@ -934,7 +934,7 @@ def test_uniswap_v3_remove_liquidity(database, ethereum_inquirer, eth_transactio
             address=string_to_evm_address('0xC36442b4a4522E871399CD717aBDD847Ab11FE88'),
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=56,
+            sequence_index=55,
             timestamp=TimestampMS(1672413263000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.WITHDRAWAL,

@@ -224,7 +224,6 @@ class MakerdaosaiDecoder(DecoderInterface):
         # to transform the "receive" event later
         action_item = ActionItem(
             action='transform',
-            sequence_index=context.tx_log.log_index,
             from_event_type=HistoryEventType.RECEIVE,
             from_event_subtype=HistoryEventSubType.NONE,
             asset=self.sai,

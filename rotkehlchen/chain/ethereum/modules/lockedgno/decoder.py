@@ -69,7 +69,6 @@ class LockedgnoDecoder(DecoderInterface):
                 # though it's the other way around in reality.
                 action_item = ActionItem(
                     action='transform',
-                    sequence_index=context.tx_log.log_index,
                     from_event_type=HistoryEventType.SPEND,
                     from_event_subtype=HistoryEventSubType.NONE,
                     asset=self.lgno,
@@ -96,7 +95,6 @@ class LockedgnoDecoder(DecoderInterface):
                 # though it's the other way around in reality.
                 action_item = ActionItem(
                     action='transform',
-                    sequence_index=context.tx_log.log_index,
                     from_event_type=HistoryEventType.RECEIVE,
                     from_event_subtype=HistoryEventSubType.NONE,
                     asset=self.lgno,

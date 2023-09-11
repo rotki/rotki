@@ -105,7 +105,6 @@ class CompoundDecoder(DecoderInterface):
         # also create an action item for the receive of the cTokens
         action_item = ActionItem(
             action='transform',
-            sequence_index=tx_log.log_index,
             from_event_type=HistoryEventType.RECEIVE,
             from_event_subtype=HistoryEventSubType.NONE,
             asset=compound_token,

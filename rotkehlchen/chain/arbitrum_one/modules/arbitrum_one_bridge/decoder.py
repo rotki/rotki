@@ -152,7 +152,6 @@ class ArbitrumOneBridgeDecoder(ArbitrumDecoderInterface):
         )
         action_item = ActionItem(
             action='transform',
-            sequence_index=context.tx_log.log_index,
             from_event_type=HistoryEventType.SPEND,
             from_event_subtype=HistoryEventSubType.NONE,
             asset=from_token,

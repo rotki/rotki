@@ -195,7 +195,6 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
             # need to get a cdp frob event and compare vault id to address matches
             action_item = ActionItem(
                 action='transform',
-                sequence_index=context.tx_log.log_index,
                 from_event_type=HistoryEventType.SPEND,
                 from_event_subtype=HistoryEventSubType.NONE,
                 asset=self.dai,
@@ -274,7 +273,6 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
             # The transfer event will be in a subsequent logs
             action_item = ActionItem(
                 action='transform',
-                sequence_index=context.tx_log.log_index,
                 from_event_type=HistoryEventType.RECEIVE,
                 from_event_subtype=HistoryEventSubType.NONE,
                 asset=self.dai,
@@ -356,7 +354,6 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
         # The transfer event appears after the debt generation event, so we need to transform it
         action_item = ActionItem(
             action='transform',
-            sequence_index=context.tx_log.log_index,
             from_event_type=HistoryEventType.RECEIVE,
             from_event_subtype=HistoryEventSubType.NONE,
             asset=self.dai,
@@ -462,7 +459,6 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
             # also create action item for the receive transfer
             action_item = ActionItem(
                 action='transform',
-                sequence_index=context.tx_log.log_index,
                 from_event_type=HistoryEventType.RECEIVE,
                 from_event_subtype=HistoryEventSubType.NONE,
                 asset=self.dai,

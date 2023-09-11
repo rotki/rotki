@@ -144,7 +144,8 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):
             addresses: list[ChecksumEvmAddress],
             ignore_cache: bool,
     ) -> NFTResult:
-        """Gets info for all NFTs of the given addresses
+        """Gets info for all NFTs of the given addresses.
+        Used by rest API get_nfts.
 
         Returns a tuple with:
         - Mapping of addresses to list of NFTs
@@ -348,7 +349,9 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):
             to_asset: Asset,
             price: Price,
     ) -> bool:
-        """May raise:
+        """
+        Only used by rest API add_manual_latest_price
+        May raise:
          - InputError
         """
         with self.db.user_write() as cursor:
@@ -367,6 +370,7 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):
         return True
 
     def delete_price_for_nft(self, asset: Asset) -> bool:
+        """This is only used by rest API delete_manual_latest_price"""
         with self.db.user_write() as cursor:
             try:
                 cursor.execute(
