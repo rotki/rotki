@@ -4,11 +4,13 @@ import { type EvmHistoryEvent } from '@/types/history/events';
 const props = withDefaults(
   defineProps<{
     editableItem?: EvmHistoryEvent | null;
+    nextSequence?: string | null;
     loading?: boolean;
     transaction: EvmHistoryEvent;
   }>(),
   {
     editableItem: null,
+    nextSequence: null,
     loading: false
   }
 );
@@ -40,6 +42,7 @@ const title: ComputedRef<string> = computed(() =>
     <HistoryEventForm
       :transaction="transaction"
       :editable-item="editableItem"
+      :next-sequence="nextSequence"
     />
   </BigDialog>
 </template>

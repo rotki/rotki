@@ -74,6 +74,7 @@ const {
   onlyChains
 } = toRefs(props);
 
+const nextSequence: Ref<string | null> = ref(null);
 const editableItem: Ref<EvmHistoryEvent | null> = ref(null);
 const selectedTransaction: Ref<EvmHistoryEvent | null> = ref(null);
 const eventToDelete: Ref<HistoryEventEntry | null> = ref(null);
@@ -340,15 +341,42 @@ setPostSubmitFunc(() => {
   }
 });
 
+const suggestNextSequence = (): string => {
+  const eventHeader = get(selectedTransaction);
+
+  if (!eventHeader) {
+    return '0';
+  }
+
+  const all = get(allEvents);
+
+  if (!all?.length) {
+    return (Number(eventHeader.sequenceIndex) + 1).toString();
+  }
+
+  const eventIdentifierHeader = eventHeader.eventIdentifier;
+  const filtered = all
+    .filter(
+      ({ eventIdentifier, hidden }) =>
+        eventIdentifier === eventIdentifierHeader && !hidden
+    )
+    .map(({ sequenceIndex }) => Number(sequenceIndex))
+    .sort((a, b) => b - a);
+
+  return ((filtered[0] ?? Number(eventHeader.sequenceIndex)) + 1).toString();
+};
+
 const addEvent = (tx: EvmHistoryEvent) => {
   set(selectedTransaction, tx);
   set(editableItem, null);
+  set(nextSequence, suggestNextSequence());
   setOpenDialog(true);
 };
 
 const editEventHandler = (event: EvmHistoryEvent, tx: EvmHistoryEvent) => {
   set(selectedTransaction, tx);
   set(editableItem, event);
+  set(nextSequence, null);
   setOpenDialog(true);
 };
 
@@ -752,6 +780,7 @@ const { locationData } = useLocations();
       :loading="sectionLoading"
       :editable-item="editableItem"
       :transaction="selectedTransaction"
+      :next-sequence="nextSequence"
     />
 
     <TransactionFormDialog :loading="sectionLoading" />
