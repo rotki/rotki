@@ -241,7 +241,7 @@ const save = async (): Promise<boolean> => {
     },
     location: get(location),
     locationLabel: get(locationLabel) || null,
-    notes: get(notes) || '',
+    notes: get(notes) || undefined,
     counterparty: get(counterparty) || null,
     product: get(product) || null
   };
@@ -713,7 +713,7 @@ const { mdAndUp } = useDisplay();
     <VDivider class="mb-6 mt-2" />
 
     <VTextarea
-      v-model="notes"
+      v-model.trim="notes"
       prepend-inner-icon="mdi-text-box-outline"
       persistent-hint
       outlined
