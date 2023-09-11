@@ -239,7 +239,7 @@ const save = async (): Promise<boolean> => {
     },
     location: get(location),
     locationLabel: get(locationLabel) || null,
-    notes: get(notes) || null,
+    notes: get(notes) || '',
     counterparty: get(counterparty) || null,
     product: get(product) || null
   };
