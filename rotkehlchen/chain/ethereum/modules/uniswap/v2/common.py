@@ -300,7 +300,6 @@ def decode_uniswap_like_deposit_and_withdrawals(
             if decoded_event_idx is None:
                 action_item = ActionItem(
                     action='transform',
-                    sequence_index=tx_log.log_index,
                     from_event_type=from_event_type[0],
                     from_event_subtype=from_event_type[1],
                     asset=asset,

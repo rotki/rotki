@@ -467,7 +467,6 @@ class Uniswapv3Decoder(DecoderInterface):
             new_action_items.append(
                 ActionItem(
                     action='transform',
-                    sequence_index=self.base.get_next_sequence_counter(),
                     from_event_type=from_event_type[0],
                     from_event_subtype=from_event_type[1],
                     asset=resolved_assets_and_amounts[0].asset,
@@ -487,7 +486,6 @@ class Uniswapv3Decoder(DecoderInterface):
             new_action_items.append(
                 ActionItem(
                     action='transform',
-                    sequence_index=self.base.get_next_sequence_counter(),
                     from_event_type=from_event_type[0],
                     from_event_subtype=from_event_type[1],
                     asset=resolved_assets_and_amounts[1].asset,
