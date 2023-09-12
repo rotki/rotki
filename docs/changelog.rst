@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`6587` All Kraken special & staking assets, like staking assets bonded for a specific time will now be handled properly.
 * :bug:`-` Pointed to the new yearn finance API domain.
 * :bug:`6550` Custom imported rotki events will now be taken properly into account in PnL and shown as recognized in history events view.
 

@@ -891,11 +891,13 @@ def asset_from_kraken(kraken_name: str) -> AssetWithOracles:
     if not isinstance(kraken_name, str):
         raise DeserializationError(f'Got non-string type {type(kraken_name)} for kraken asset')
 
-    if kraken_name.endswith(('.S', '.M')):
-        # this is a staked coin. For now since we don't show staked coins
-        # consider it as the normal version. In the future we may perhaps
-        # differentiate between them in the balances https://github.com/rotki/rotki/issues/569
+    if kraken_name.endswith(('.S', '.M', '.P')):
+        # this is a special staked/use coin. Map to the normal version
         kraken_name = kraken_name[:-2]
+
+        if kraken_name != 'ETH2':
+            while kraken_name[-1].isdigit():  # get rid of bonded number days assets
+                kraken_name = kraken_name[:-1]  # see https://github.com/rotki/rotki/issues/6587
 
     if kraken_name.endswith('.HOLD'):
         kraken_name = kraken_name[:-5]
@@ -909,6 +911,8 @@ def asset_from_kraken(kraken_name: str) -> AssetWithOracles:
         name = 'BTC'
     elif kraken_name == 'XDG':
         name = 'DOGE'
+    elif kraken_name == 'FLOWH':
+        name = 'FLOW'
     elif kraken_name in ('ETH', 'EUR', 'USD', 'GBP', 'CAD', 'JPY', 'KRW', 'CHF', 'AUD'):
         name = kraken_name
     else:
