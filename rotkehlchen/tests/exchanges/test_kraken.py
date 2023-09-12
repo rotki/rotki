@@ -18,14 +18,19 @@ from rotkehlchen.constants.assets import (
     A_BCH,
     A_BTC,
     A_DAI,
+    A_DOT,
     A_ETH,
     A_ETH2,
+    A_GRT,
+    A_KSM,
     A_LTC,
     A_USD,
+    A_USDC,
     A_USDT,
     A_XRP,
 )
 from rotkehlchen.constants.limits import FREE_HISTORY_EVENTS_LIMIT
+from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair
 from rotkehlchen.errors.serialization import DeserializationError
@@ -71,49 +76,52 @@ def test_name():
 def test_coverage_of_kraken_balances(kraken):
     got_assets = set(kraken.online_api_query('Assets').keys())
     expected_assets = (set(KRAKEN_TO_WORLD.keys()) - set(KRAKEN_DELISTED))
-    # Ignore the staking assets from the got assets
-    got_assets.remove('XTZ.S')
-    got_assets.remove('DOT.S')
-    got_assets.remove('ATOM.S')
-    got_assets.remove('EUR.M')
-    got_assets.remove('USD.M')
-    got_assets.remove('XBT.M')
-    got_assets.remove('KSM.S')
-    got_assets.remove('ETH2.S')
-    got_assets.remove('KAVA.S')
-    got_assets.remove('EUR.HOLD')
-    got_assets.remove('USD.HOLD')
-    got_assets.remove('FLOW.S')
-    got_assets.remove('FLOWH.S')
-    got_assets.remove('FLOWH')  # what is FLOWH?
-    got_assets.remove('ADA.S')
-    got_assets.remove('SOL.S')
-    got_assets.remove('KSM.P')  # kusama bonded for parachains
-    got_assets.remove('ALGO.S')
-    got_assets.remove('DOT.P')
-    got_assets.remove('MINA.S')
-    got_assets.remove('TRX.S')
-    got_assets.remove('LUNA.S')
-    got_assets.remove('SCRT.S')
-    got_assets.remove('MATIC.S')
-    got_assets.remove('GBP.HOLD')
-    got_assets.remove('CHF.HOLD')
-    got_assets.remove('CAD.HOLD')
-    got_assets.remove('AUD.HOLD')
-    got_assets.remove('AED.HOLD')
-    got_assets.remove('USDC.M')
-    got_assets.remove('GRT.S')
-    got_assets.remove('FLR.S')
-    got_assets.remove('USDT.M')
-    got_assets.remove('DOT28.S')
-    got_assets.remove('GRT28.S')
-    got_assets.remove('SCRT21.S')
-    got_assets.remove('KAVA21.S')
-    got_assets.remove('ATOM21.S')
-    got_assets.remove('SOL03.S')
-    got_assets.remove('FLOW14.S')
-    got_assets.remove('MATIC04.S')
-    got_assets.remove('KSM07.S')
+    # Special/staking assets and which assets they should map to
+    special_assets = {
+        'XTZ.S': Asset('XTZ'),
+        'DOT.S': A_DOT,
+        'ATOM.S': Asset('ATOM'),
+        'EUR.M': A_EUR,
+        'USD.M': A_USD,
+        'XBT.M': A_BTC,
+        'KSM.S': A_KSM,
+        'ETH2.S': A_ETH2,
+        'KAVA.S': Asset('KAVA'),
+        'EUR.HOLD': A_EUR,
+        'USD.HOLD': A_USD,
+        'FLOW.S': Asset('FLOW'),
+        'FLOWH.S': Asset('FLOW'),
+        'FLOWH': Asset('FLOW'),
+        'ADA.S': A_ADA,
+        'SOL.S': Asset('SOL-2'),
+        'KSM.P': A_KSM,  # kusama bonded for parachains
+        'ALGO.S': Asset('ALGO'),
+        'DOT.P': A_DOT,
+        'MINA.S': Asset('MINA'),
+        'TRX.S': strethaddress_to_identifier('0xf230b790E05390FC8295F4d3F60332c93BEd42e2'),
+        'LUNA.S': strethaddress_to_identifier('0xd2877702675e6cEb975b4A1dFf9fb7BAF4C91ea9'),
+        'SCRT.S': Asset('SCRT'),
+        'MATIC.S': strethaddress_to_identifier('0x7D1AfA7B718fb893dB30A3aBc0Cfc608AaCfeBB0'),
+        'GBP.HOLD': Asset('GBP'),
+        'CHF.HOLD': Asset('CHF'),
+        'CAD.HOLD': Asset('CAD'),
+        'AUD.HOLD': Asset('AUD'),
+        'AED.HOLD': Asset('AED'),
+        'USDC.M': A_USDC,
+        'GRT.S': A_GRT,
+        'FLR.S': Asset('FLR'),
+        'USDT.M': A_USDT,
+        'DOT28.S': A_DOT,
+        'GRT28.S': A_GRT,
+        'SCRT21.S': Asset('SCRT'),
+        'KAVA21.S': Asset('KAVA'),
+        'ATOM21.S': Asset('ATOM'),
+        'SOL03.S': Asset('SOL-2'),
+        'FLOW14.S': Asset('FLOW'),
+        'MATIC04.S': strethaddress_to_identifier('0x7D1AfA7B718fb893dB30A3aBc0Cfc608AaCfeBB0'),
+        'KSM07.S': A_KSM,
+    }
+    got_assets -= set(special_assets.keys())
 
     diff = expected_assets.symmetric_difference(got_assets)
     if len(diff) != 0:
@@ -125,10 +133,9 @@ def test_coverage_of_kraken_balances(kraken):
         for kraken_asset in got_assets:
             _ = asset_from_kraken(kraken_asset)
 
-    # also check that staked assets are properly processed
-    assert asset_from_kraken('XTZ.S') == Asset('XTZ')
-    assert asset_from_kraken('EUR.M') == Asset('EUR')
-    assert asset_from_kraken('ADA.S') == Asset('ADA')
+    # also check that all special/staked assets are properly processed
+    for kraken_asset, expected_asset in special_assets.items():
+        assert asset_from_kraken(kraken_asset) == expected_asset
 
 
 def test_querying_balances(function_scope_kraken):
