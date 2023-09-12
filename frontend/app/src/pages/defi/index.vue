@@ -6,7 +6,6 @@ const yearn = useYearnStore();
 const aave = useAaveStore();
 const compound = useCompoundStore();
 const maker = useMakerDaoStore();
-const airdrops = useAirdropStore();
 
 const { resetDefiStatus } = useStatusStore();
 
@@ -16,7 +15,6 @@ onUnmounted(() => {
   aave.$reset();
   compound.$reset();
   maker.$reset();
-  airdrops.$reset();
   resetDefiStatus();
 });
 </script>

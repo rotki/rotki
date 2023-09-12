@@ -293,7 +293,6 @@
     "useAddressesNamesApi": true,
     "useAddressesNamesStore": true,
     "useAggregatedBalances": true,
-    "useAirdropStore": true,
     "useAnimate": true,
     "useAnimation": true,
     "useAppNavigation": true,
