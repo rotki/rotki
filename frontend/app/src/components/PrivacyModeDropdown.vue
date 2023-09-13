@@ -23,14 +23,32 @@ const sliderWrapperStyle: Record<string, string> = {
 
 const { privacyModeIcon, privacyMode, togglePrivacyMode, changePrivacyMode } =
   usePrivacyMode();
+
+const { scrambleData: enabled, scrambleMultiplier: multiplier } = storeToRefs(
+  useSessionSettingsStore()
+);
+
+const scrambleData = ref<boolean>(false);
+const scrambleMultiplier = ref<string>('0');
+
+const randomMultiplier = () => generateRandomScrambleMultiplier().toString();
+
+const setData = () => {
+  set(scrambleData, get(enabled));
+  set(scrambleMultiplier, get(multiplier).toString());
+};
+
+onMounted(setData);
+
+watch([enabled, multiplier], setData);
 </script>
 
 <template>
   <div class="privacy-mode-dropdown">
     <VMenu
       offset-y
-      :max-width="280"
-      :min-width="280"
+      :max-width="360"
+      :min-width="360"
       :close-on-content-click="false"
       content-class="privacy-mode-dropdown__menu"
     >
@@ -54,7 +72,7 @@ const { privacyModeIcon, privacyMode, togglePrivacyMode, changePrivacyMode } =
         </VBtn>
       </template>
       <VCard>
-        <div class="slider-wrapper pa-8" :style="sliderWrapperStyle">
+        <div class="slider-wrapper" :style="sliderWrapperStyle">
           <VSlider
             :value="privacyMode"
             data-cy="privacy-mode-dropdown__input"
@@ -69,6 +87,69 @@ const { privacyModeIcon, privacyMode, togglePrivacyMode, changePrivacyMode } =
             @change="changePrivacyMode($event)"
           />
         </div>
+        <div class="scrambler">
+          <div
+            class="w-full border-t border-black/[.12] dark:border-white/[.12] mb-4"
+          />
+          <div class="flex">
+            <SettingsOption
+              #default="{ update: updateScramble }"
+              class="scrambler-toggle"
+              setting="scrambleData"
+              session-setting
+            >
+              <RuiCheckbox
+                v-model="scrambleData"
+                color="secondary"
+                size="sm"
+                data-cy="privacy-mode-scramble__toggle"
+                hide-details
+                @input="updateScramble($event)"
+              >
+                <span class="text-white">
+                  {{ t('user_dropdown.change_privacy_mode.scramble.label') }}
+                </span>
+              </RuiCheckbox>
+            </SettingsOption>
+
+            <SettingsOption
+              #default="{ update: updateMultiplier }"
+              setting="scrambleMultiplier"
+              class="scrambler-data"
+              :error-message="t('frontend_settings.validation.scramble.error')"
+              session-setting
+            >
+              <RuiTextField
+                v-model="scrambleMultiplier"
+                :label="t('frontend_settings.label.scramble_multiplier')"
+                :disabled="!scrambleData"
+                variant="outlined"
+                color="secondary"
+                min="0"
+                step="0.01"
+                type="number"
+                data-cy="privacy-mode-scramble__multiplier"
+                hide-details
+                dense
+                @input="updateMultiplier($event || 1)"
+              >
+                <template #append>
+                  <RuiButton
+                    :disabled="!scrambleData"
+                    variant="text"
+                    type="button"
+                    class="-mr-2 !p-2"
+                    data-cy="privacy-mode-scramble__random-multiplier"
+                    icon
+                    @click="updateMultiplier(randomMultiplier())"
+                  >
+                    <RuiIcon name="shuffle-line" />
+                  </RuiButton>
+                </template>
+              </RuiTextField>
+            </SettingsOption>
+          </div>
+        </div>
       </VCard>
     </VMenu>
   </div>
@@ -79,14 +160,11 @@ const { privacyModeIcon, privacyMode, togglePrivacyMode, changePrivacyMode } =
   position: relative;
 
   &__expander {
-    position: absolute;
-    z-index: 1;
     width: 20px;
     height: 20px;
     top: 32px;
-    right: 0;
-    color: black;
     background-color: #f5f5f5 !important;
+    @apply p-0 absolute z-10 right-0 text-black;
   }
 
   &__menu {
@@ -185,6 +263,26 @@ const { privacyModeIcon, privacyMode, togglePrivacyMode, changePrivacyMode } =
         }
         /* stylelint-enable plugin/stylelint-bem-namics */
       }
+
+      @apply p-8;
+    }
+
+    .scrambler {
+      &-toggle {
+        :deep(svg) {
+          @apply text-white;
+        }
+
+        @apply bg-rui-secondary border border-rui-secondary text-white px-2 rounded-l;
+      }
+
+      &-data {
+        :deep(fieldset) {
+          @apply rounded-l-none;
+        }
+      }
+
+      @apply px-4 mb-4;
     }
   }
 }

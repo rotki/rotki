@@ -40,6 +40,19 @@ aside {
   overflow: auto;
 }
 
+input {
+  &::-webkit-outer-spin-button,
+  &::-webkit-inner-spin-button {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+  }
+
+  &[type='number'] {
+    -moz-appearance: textfield;
+  }
+}
+
 // Override vuetify styles
 
 .theme {
@@ -47,7 +60,9 @@ aside {
     --border-color: rgba(0, 0, 0, 0.12);
     /* stylelint-disable selector-class-pattern,selector-nested-pattern,scss/selector-nest-combinators */
 
-    .v-btn:not(.v-btn--flat):not(.v-btn--text):not(.v-btn--outlined):not(.primary) {
+    .v-btn:not(.v-btn--flat):not(.v-btn--text):not(.v-btn--outlined):not(
+        .primary
+      ) {
       /* stylelint-enable selector-class-pattern,selector-nested-pattern,scss/selector-nest-combinators */
       background-color: transparent;
     }
@@ -98,7 +113,7 @@ aside {
 
   &__text {
     &.no-padding {
-      @apply p-0 #{!important}
+      @apply p-0 #{!important};
     }
 
     @apply pb-6;
