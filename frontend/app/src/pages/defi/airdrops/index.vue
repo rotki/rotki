@@ -22,9 +22,14 @@ import {
   AIRDROP_TORNADO,
   AIRDROP_UNISWAP,
   type Airdrop,
-  type AirdropType
+  type AirdropDetail,
+  type AirdropType,
+  Airdrops,
+  type PoapDelivery
 } from '@/types/airdrops';
-import { Section } from '@/types/status';
+import { Section, Status } from '@/types/status';
+import { TaskType } from '@/types/task-type';
+import { type TaskMeta } from '@/types/task';
 
 interface AirdropSource {
   readonly icon: string;
@@ -35,15 +40,6 @@ type AirdropSources = {
   readonly [source in AirdropType]: AirdropSource;
 };
 
-const { t } = useI18n();
-
-const expanded: Ref<Airdrop[]> = ref([]);
-const selectedAccounts: Ref<GeneralAccount[]> = ref([]);
-const statusFilters: Ref<{ text: string; value: boolean }[]> = ref([
-  { text: t('common.unclaimed'), value: false },
-  { text: t('common.claimed'), value: true }
-]);
-const status: Ref<boolean> = ref(false);
 const section = Section.DEFI_AIRDROPS;
 const ETH = Blockchain.ETH;
 const sources: AirdropSources = {
@@ -117,18 +113,37 @@ const sources: AirdropSources = {
   }
 };
 
+const { t } = useI18n();
 const css = useCssModule();
-const airdropStore = useAirdropStore();
-const { airdropAddresses } = storeToRefs(airdropStore);
 const { isPackaged, navigate } = useInterop();
 const { isLoading, shouldShowLoadingScreen } = useStatusStore();
+const { awaitTask } = useTaskStore();
+const { notify } = useNotificationsStore();
+const { setStatus, fetchDisabled } = useStatusUpdater(Section.DEFI_AIRDROPS);
+const { fetchAirdrops: fetchAirdropsCaller } = useDefiApi();
 
 const loading = shouldShowLoadingScreen(section);
 const refreshing = isLoading(section);
 
+const expanded: Ref<Airdrop[]> = ref([]);
+const selectedAccounts: Ref<GeneralAccount[]> = ref([]);
+const statusFilters: Ref<{ text: string; value: boolean }[]> = ref([
+  { text: t('common.unclaimed'), value: false },
+  { text: t('common.claimed'), value: true }
+]);
+const status: Ref<boolean> = ref(false);
+const refreshTooltip: Ref<string> = ref(
+  t('helpers.refresh_header.tooltip', {
+    title: t('airdrops.title').toLocaleLowerCase()
+  })
+);
+const airdrops: Ref<Airdrops> = ref({});
+
+const airdropAddresses = computed(() => Object.keys(get(airdrops)));
+
 const entries = computed(() => {
   const addresses = get(selectedAccounts).map(({ address }) => address);
-  const airdrops = get(airdropStore.airdropList(addresses));
+  const airdrops = get(airdropList(addresses));
   return airdrops
     .filter(airdrop => airdrop.claimed === get(status))
     .map((value, index) => ({
@@ -164,8 +179,79 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
   }
 ]);
 
+const airdropList = (addresses: string[]): ComputedRef<Airdrop[]> =>
+  computed(() => {
+    const result: Airdrop[] = [];
+    const data = get(airdrops);
+    for (const address in data) {
+      if (addresses.length > 0 && !addresses.includes(address)) {
+        continue;
+      }
+      const airdrop = data[address];
+      for (const source in airdrop) {
+        const element = airdrop[source];
+        if (source === AIRDROP_POAP) {
+          const details = element as PoapDelivery[];
+          result.push({
+            address,
+            source: source as AirdropType,
+            details: details.map(({ link, name, event }) => ({
+              amount: bigNumberify('1'),
+              link,
+              name,
+              event,
+              claimed: false
+            }))
+          });
+        } else {
+          const { amount, asset, link, claimed } = element as AirdropDetail;
+          result.push({
+            address,
+            amount,
+            link,
+            source: source as AirdropType,
+            asset,
+            claimed
+          });
+        }
+      }
+    }
+    return result;
+  });
+
+const fetchAirdrops = async (refresh = false) => {
+  if (fetchDisabled(refresh)) {
+    return;
+  }
+
+  const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
+  setStatus(newStatus);
+
+  try {
+    const { taskId } = await fetchAirdropsCaller();
+    const { result } = await awaitTask<Airdrops, TaskMeta>(
+      taskId,
+      TaskType.DEFI_AIRDROPS,
+      {
+        title: t('actions.defi.airdrops.task.title').toString()
+      }
+    );
+    set(airdrops, Airdrops.parse(result));
+  } catch (e: any) {
+    logger.error(e);
+    notify({
+      title: t('actions.defi.airdrops.error.title').toString(),
+      message: t('actions.defi.airdrops.error.description', {
+        error: e.message
+      }).toString(),
+      display: true
+    });
+  }
+  setStatus(Status.LOADED);
+};
+
 const refresh = async () => {
-  await airdropStore.fetchAirdrops(true);
+  await fetchAirdrops(true);
 };
 
 const getIcon = (source: AirdropType) => sources[source]?.icon ?? '';
@@ -180,26 +266,32 @@ const expand = (item: Airdrop) => {
 };
 
 onMounted(async () => {
-  await airdropStore.fetchAirdrops();
+  await fetchAirdrops();
 });
 </script>
 
 <template>
-  <div>
-    <VRow class="mt-8">
-      <VCol>
-        <RefreshHeader
-          :loading="refreshing"
-          :title="t('airdrops.title')"
-          @refresh="refresh()"
-        />
-      </VCol>
-    </VRow>
-    <ProgressScreen v-if="loading">
-      <template #message>{{ t('airdrops.loading') }}</template>
-    </ProgressScreen>
-    <div v-else>
-      <RuiCard variant="outlined" :class="css.filters">
+  <div class="mt-8">
+    <RuiCard variant="outlined" :class="css.filters">
+      <template #custom-header>
+        <div class="px-6 pt-6 pb-1">
+          <CardTitle>
+            <RefreshButton
+              :loading="refreshing"
+              :tooltip="refreshTooltip"
+              @refresh="refresh()"
+            />
+            <span>
+              {{ t('airdrops.title') }}
+            </span>
+          </CardTitle>
+        </div>
+      </template>
+
+      <ProgressScreen v-if="loading">
+        <template #message>{{ t('airdrops.loading') }}</template>
+      </ProgressScreen>
+      <div v-else class="px-2 pb-2">
         <div :class="css.filters__wrapper">
           <BlockchainAccountSelector
             v-model="selectedAccounts"
@@ -231,10 +323,9 @@ onMounted(async () => {
             </p>
           </div>
         </div>
-        <div class="text-caption mt-8" v-text="t('airdrops.description')" />
-      </RuiCard>
-      <VCard class="mt-8">
-        <VCardText>
+        <div class="text-caption mt-4" v-text="t('airdrops.description')" />
+
+        <div class="mt-4">
           <DataTable
             :class="css.table"
             :items="entries"
@@ -302,9 +393,9 @@ onMounted(async () => {
               />
             </template>
           </DataTable>
-        </VCardText>
-      </VCard>
-    </div>
+        </div>
+      </div>
+    </RuiCard>
   </div>
 </template>
 
@@ -325,7 +416,5 @@ onMounted(async () => {
   &__wrapper {
     @apply flex flex-col md:flex-row space-y-6 md:space-y-0 md:space-x-8;
   }
-
-  @apply w-full mt-8;
 }
 </style>

@@ -459,10 +459,8 @@ export const useDefiStore = defineStore('defi', () => {
     }
   };
 
-  const airdropStore = useAirdropStore();
   const reset = () => {
     set(allProtocols, {});
-    airdropStore.$reset();
     resetState(ALL_MODULES);
   };
 

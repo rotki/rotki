@@ -304,7 +304,6 @@ declare global {
   const useAddressesNamesApi: typeof import('./composables/api/blockchain/addresses-names')['useAddressesNamesApi']
   const useAddressesNamesStore: typeof import('./store/blockchain/accounts/addresses-names')['useAddressesNamesStore']
   const useAggregatedBalances: typeof import('./composables/balances/aggregated')['useAggregatedBalances']
-  const useAirdropStore: typeof import('./store/defi/airdrop')['useAirdropStore']
   const useAnimate: typeof import('@vueuse/core')['useAnimate']
   const useAnimation: typeof import('./composables/user/animations')['useAnimation']
   const useAppNavigation: typeof import('./composables/navigation')['useAppNavigation']
@@ -1008,7 +1007,6 @@ declare module 'vue' {
     readonly useAddressesNamesApi: UnwrapRef<typeof import('./composables/api/blockchain/addresses-names')['useAddressesNamesApi']>
     readonly useAddressesNamesStore: UnwrapRef<typeof import('./store/blockchain/accounts/addresses-names')['useAddressesNamesStore']>
     readonly useAggregatedBalances: UnwrapRef<typeof import('./composables/balances/aggregated')['useAggregatedBalances']>
-    readonly useAirdropStore: UnwrapRef<typeof import('./store/defi/airdrop')['useAirdropStore']>
     readonly useAnimate: UnwrapRef<typeof import('@vueuse/core')['useAnimate']>
     readonly useAnimation: UnwrapRef<typeof import('./composables/user/animations')['useAnimation']>
     readonly useAppNavigation: UnwrapRef<typeof import('./composables/navigation')['useAppNavigation']>
@@ -1706,7 +1704,6 @@ declare module '@vue/runtime-core' {
     readonly useAddressesNamesApi: UnwrapRef<typeof import('./composables/api/blockchain/addresses-names')['useAddressesNamesApi']>
     readonly useAddressesNamesStore: UnwrapRef<typeof import('./store/blockchain/accounts/addresses-names')['useAddressesNamesStore']>
     readonly useAggregatedBalances: UnwrapRef<typeof import('./composables/balances/aggregated')['useAggregatedBalances']>
-    readonly useAirdropStore: UnwrapRef<typeof import('./store/defi/airdrop')['useAirdropStore']>
     readonly useAnimate: UnwrapRef<typeof import('@vueuse/core')['useAnimate']>
     readonly useAnimation: UnwrapRef<typeof import('./composables/user/animations')['useAnimation']>
     readonly useAppNavigation: UnwrapRef<typeof import('./composables/navigation')['useAppNavigation']>
