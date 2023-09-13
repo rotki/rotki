@@ -87,7 +87,7 @@ export const CommonHistoryEvent = z.object({
   eventType: z.string().nullable(),
   eventSubtype: z.string().nullable(),
   locationLabel: z.string().nullable(),
-  notes: z.string().nullable()
+  notes: z.string().nullable().optional()
 });
 
 export const EvmHistoryEvent = CommonHistoryEvent.extend({

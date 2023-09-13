@@ -19,10 +19,12 @@ import { type HistoricalPriceFormPayload } from '@/types/prices';
 const props = withDefaults(
   defineProps<{
     editableItem?: EvmHistoryEvent | null;
+    nextSequence?: string | null;
     transaction: EvmHistoryEvent;
   }>(),
   {
-    editableItem: null
+    editableItem: null,
+    nextSequence: null
   }
 );
 
@@ -30,7 +32,7 @@ const emit = defineEmits<{ (e: 'input', valid: boolean): void }>();
 
 const { t } = useI18n();
 
-const { editableItem, transaction } = toRefs(props);
+const { editableItem, transaction, nextSequence } = toRefs(props);
 
 const { isTaskRunning } = useTaskStore();
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
@@ -167,7 +169,7 @@ const fetching = isTaskRunning(TaskType.FETCH_HISTORIC_PRICE);
 
 const reset = () => {
   set(identifier, null);
-  set(sequenceIndex, '0');
+  set(sequenceIndex, get(nextSequence) ?? '0');
   set(
     datetime,
     convertFromTimestamp(get(transaction).timestamp || dayjs().unix(), true)
@@ -239,7 +241,7 @@ const save = async (): Promise<boolean> => {
     },
     location: get(location),
     locationLabel: get(locationLabel) || null,
-    notes: get(notes) || null,
+    notes: get(notes) || undefined,
     counterparty: get(counterparty) || null,
     product: get(product) || null
   };
@@ -711,7 +713,7 @@ const { mdAndUp } = useDisplay();
     <VDivider class="mb-6 mt-2" />
 
     <VTextarea
-      v-model="notes"
+      v-model.trim="notes"
       prepend-inner-icon="mdi-text-box-outline"
       persistent-hint
       outlined
