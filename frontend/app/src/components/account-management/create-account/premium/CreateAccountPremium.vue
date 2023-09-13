@@ -1,7 +1,5 @@
 <script lang="ts" setup>
-import { type Ref } from 'vue';
 import { type PremiumSetup } from '@/types/login';
-import CreateAccountPremiumForm from '@/components/account-management/create-account/premium/CreateAccountPremiumForm.vue';
 
 const props = defineProps<{
   loading: boolean;
@@ -25,10 +23,10 @@ const { newUser } = toRefs(store);
 
 const valid: Ref<boolean> = ref(false);
 
-const premiumSelectionButtons = [
+const premiumSelectionButtons = computed(() => [
   { value: false, text: t('common.actions.no') },
   { value: true, text: t('create_account.premium.button_premium_approve') }
-];
+]);
 </script>
 
 <template>

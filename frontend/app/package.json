@@ -40,7 +40,7 @@
   "dependencies": {
     "@rotki/common": "workspace:*",
     "@rotki/eslint-config-ts": "1.1.1",
-    "@rotki/ui-library-compat": "file:/Users/lukicenturi/Sites/ui-library-compat",
+    "@rotki/ui-library-compat": "0.3.0",
     "@vuelidate/core": "2.0.3",
     "@vuelidate/validators": "2.0.3",
     "@vueuse/core": "10.3.0",

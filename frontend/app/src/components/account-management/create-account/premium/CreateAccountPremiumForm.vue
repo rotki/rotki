@@ -24,7 +24,7 @@ const apiKey = computed({
     return get(form).apiKey;
   },
   set(value: string | null) {
-    input({ apiKey: value?.trim() ?? '' });
+    input({ apiKey: value || '' });
   }
 });
 
@@ -33,7 +33,7 @@ const apiSecret = computed({
     return get(form).apiSecret;
   },
   set(value: string | null) {
-    input({ apiSecret: value?.trim() ?? '' });
+    input({ apiSecret: value || '' });
   }
 });
 
@@ -51,20 +51,6 @@ watch(enabled, enabled => {
     set(syncDatabase, false);
   }
 });
-
-const onApiKeyPaste = (_event: ClipboardEvent) => {
-  const paste = trimOnPaste(_event);
-  if (paste) {
-    set(apiKey, paste);
-  }
-};
-
-const onApiSecretPaste = (_event: ClipboardEvent) => {
-  const paste = trimOnPaste(_event);
-  if (paste) {
-    set(apiSecret, paste);
-  }
-};
 
 const rules = {
   apiKey: {
@@ -102,18 +88,17 @@ const input = (newInput: Partial<PremiumSetup>) => {
   <div v-if="enabled">
     <div class="space-y-3">
       <RuiRevealableTextField
-        v-model="apiKey"
+        v-model.trim="apiKey"
         dense
         variant="outlined"
         :disabled="loading"
         color="primary"
         class="premium-settings__fields__api-key"
-        :error-messages="toMessages(v$.apiKey)"
         :label="t('premium_credentials.label_api_key')"
-        @paste="onApiKeyPaste($event)"
+        :error-messages="toMessages(v$.apiKey)"
       />
       <RuiRevealableTextField
-        v-model="apiSecret"
+        v-model.trim="apiSecret"
         dense
         variant="outlined"
         :disabled="loading"
@@ -121,7 +106,6 @@ const input = (newInput: Partial<PremiumSetup>) => {
         class="premium-settings__fields__api-secret"
         :label="t('premium_credentials.label_api_secret')"
         :error-messages="toMessages(v$.apiSecret)"
-        @paste="onApiSecretPaste($event)"
       />
     </div>
     <RuiCheckbox

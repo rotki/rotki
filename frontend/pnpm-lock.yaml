@@ -56,8 +56,8 @@ importers:
         specifier: 1.1.1
         version: 1.1.1(eslint@8.47.0)
       '@rotki/ui-library-compat':
-        specifier: file:/Users/lukicenturi/Sites/ui-library-compat
-        version: file:../../ui-library-compat(@vueuse/core@10.3.0)(@vueuse/shared@10.3.0)(vue@2.7.14)
+        specifier: 0.3.0
+        version: 0.3.0(@vueuse/core@10.3.0)(@vueuse/shared@10.3.0)(vue@2.7.14)
       '@vuelidate/core':
         specifier: 2.0.3
         version: 2.0.3(vue@2.7.14)
@@ -2541,6 +2541,21 @@ packages:
       - supports-color
       - vue
     dev: true
+
+  /@rotki/ui-library-compat@0.3.0(@vueuse/core@10.3.0)(@vueuse/shared@10.3.0)(vue@2.7.14):
+    resolution: {integrity: sha512-LewxDn3mnwAIBe/iy0hdOQAsDjk+Zz56DCQeefayCtgW2mFoQNWCOAFQvH1dpKacPURrbPbpu9AMsr49CQCm1g==}
+    engines: {pnpm: '>=8 <9'}
+    peerDependencies:
+      '@vueuse/core': '>10.0.0'
+      '@vueuse/shared': '>10.0.0'
+      vue: '>=2.7.14 <3'
+    dependencies:
+      '@vueuse/core': 10.3.0(vue@2.7.14)
+      '@vueuse/shared': 10.3.0(vue@2.7.14)
+      vue: 2.7.14
+    optionalDependencies:
+      vue-router: 3.6.5(vue@2.7.14)
+    dev: false
 
   /@sideway/address@4.1.4:
     resolution: {integrity: sha512-7vwq+rOHVWjyXxVlR76Agnvhy8I9rpzjosTESvmhNeXOXdZZB15Fl+TI9x1SiHZH5Jv2wTGduSxFDIaq0m3DUw==}
@@ -11703,21 +11718,4 @@ packages:
 
   /zod@3.22.2:
     resolution: {integrity: sha512-wvWkphh5WQsJbVk1tbx1l1Ly4yg+XecD+Mq280uBGt9wa5BKSWf4Mhp6GmrkPixhMxmabYY7RbzlwVP32pbGCg==}
-    dev: false
-
-  file:../../ui-library-compat(@vueuse/core@10.3.0)(@vueuse/shared@10.3.0)(vue@2.7.14):
-    resolution: {directory: ../../ui-library-compat, type: directory}
-    id: file:../../ui-library-compat
-    name: '@rotki/ui-library-compat'
-    engines: {pnpm: '>=8 <9'}
-    peerDependencies:
-      '@vueuse/core': '>10.0.0'
-      '@vueuse/shared': '>10.0.0'
-      vue: '>=2.7.14 <3'
-    dependencies:
-      '@vueuse/core': 10.3.0(vue@2.7.14)
-      '@vueuse/shared': 10.3.0(vue@2.7.14)
-      vue: 2.7.14
-    optionalDependencies:
-      vue-router: 3.6.5(vue@2.7.14)
     dev: false

@@ -86,13 +86,49 @@ const v$ = useVuelidate(
 watchImmediate(v$, ({ $invalid }) => {
   emit('update:valid', !$invalid);
 });
+
+const username = computed({
+  get() {
+    return get(form).username;
+  },
+  set(value: string) {
+    input({ username: value });
+  }
+});
+
+const password = computed({
+  get() {
+    return get(form).password;
+  },
+  set(value: string) {
+    input({ password: value });
+  }
+});
+
+const passwordConfirmModel = computed({
+  get() {
+    return get(passwordConfirm);
+  },
+  set(value: string) {
+    emit('update:password-confirm', value);
+  }
+});
+
+const userPromptedModel = computed({
+  get() {
+    return get(userPrompted);
+  },
+  set(value: boolean) {
+    emit('update:user-prompted', value);
+  }
+});
 </script>
 
 <template>
   <div>
     <div class="space-y-3">
       <RuiTextField
-        :value="form.username"
+        v-model="username"
         dense
         color="primary"
         variant="outlined"
@@ -101,10 +137,9 @@ watchImmediate(v$, ({ $invalid }) => {
         :label="t('create_account.credentials.label_username')"
         :error-messages="toMessages(v$.username)"
         :disabled="loading"
-        @input="input({ username: $event })"
       />
       <RuiRevealableTextField
-        :value="form.password"
+        v-model="password"
         dense
         color="primary"
         variant="outlined"
@@ -112,10 +147,9 @@ watchImmediate(v$, ({ $invalid }) => {
         :label="t('create_account.credentials.label_password')"
         :error-messages="toMessages(v$.password)"
         :disabled="loading"
-        @input="input({ password: $event })"
       />
       <RuiRevealableTextField
-        :value="passwordConfirm"
+        v-model="passwordConfirmModel"
         dense
         color="primary"
         variant="outlined"
@@ -123,16 +157,14 @@ watchImmediate(v$, ({ $invalid }) => {
         :label="t('create_account.credentials.label_password_repeat')"
         :error-messages="toMessages(v$.passwordConfirm)"
         :disabled="loading"
-        @input="emit('update:password-confirm', $event)"
       />
     </div>
     <RuiCheckbox
+      v-model="userPromptedModel"
       data-cy="create-account__boxes__user-prompted"
-      :value="userPrompted"
       :disabled="loading"
       color="primary"
       :error-messages="toMessages(v$.userPrompted)"
-      @input="emit('update:user-prompted', $event)"
     >
       {{ t('create_account.credentials.label_password_backup_reminder') }}
     </RuiCheckbox>

@@ -1,5 +1,4 @@
 <script setup lang="ts">
-const isDocker = import.meta.env.VITE_DOCKER;
 const { dockerRiskAccepted } = storeToRefs(useMainStore());
 const { t } = useI18n();
 const { usageGuideUrl } = useInterop();
@@ -10,7 +9,7 @@ const proceed = () => {
 </script>
 
 <template>
-  <div v-if="!dockerRiskAccepted && isDocker" class="max-w-[41.25rem] mx-auto">
+  <div class="max-w-[41.25rem] mx-auto">
     <RuiAlert type="warning">
       <i18n path="docker_warning.title" tag="div">
         <BaseExternalLink
