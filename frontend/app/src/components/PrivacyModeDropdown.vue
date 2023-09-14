@@ -152,6 +152,24 @@ watch([enabled, multiplier], setData);
         </div>
       </VCard>
     </VMenu>
+    <Transition
+      appear
+      enter-class="scale-0 opacity-0"
+      enter-to-class="scale-100 opacity-1"
+      enter-active-class="transform duration-300"
+      leave-class="scale-100 opacity-1"
+      leave-to-class="scale-0 opacity-0"
+      leave-active-class="transform duration-100"
+    >
+      <span
+        v-if="enabled"
+        aria-atomic="true"
+        aria-label="Badge"
+        aria-live="polite"
+        role="status"
+        class="scrambler-indicator"
+      />
+    </Transition>
   </div>
 </template>
 
@@ -284,6 +302,10 @@ watch([enabled, multiplier], setData);
 
       @apply px-4 mb-4;
     }
+  }
+
+  .scrambler-indicator {
+    @apply bg-rui-error rounded-full absolute top-[0.0625rem] right-1 w-3 h-3;
   }
 }
 
