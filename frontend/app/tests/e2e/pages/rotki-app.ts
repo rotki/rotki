@@ -23,7 +23,7 @@ export class RotkiApp {
   createAccount(username: string, password = '1234') {
     cy.logout();
     // simulate high scaling / low res by making a very small viewport
-    cy.get('.connection-loading__content').should('not.exist');
+    cy.get('[data-cy=connection-loading__content]').should('not.exist');
     cy.get('[data-cy=account-management-forms]').scrollIntoView();
     cy.get('[data-cy=account-management-forms]').should('be.visible');
 
@@ -35,14 +35,19 @@ export class RotkiApp {
       }
     });
 
+    cy.get('[data-cy="create-account__introduction__continue"]').click();
     cy.get('[data-cy="create-account__premium__button__continue"]').click();
-    cy.get('.create-account__fields__username').type(username);
-    cy.get('.create-account__fields__password').type(password);
-    cy.get('.create-account__fields__password-repeat').type(password);
-    cy.get('.create-account__boxes__user-prompted').click();
-    cy.get('.create-account__credentials__button__continue').click();
-    cy.get('.create-account__analytics__button__confirm').click();
-    cy.get('[data-cy=account-management__loading]').should('not.exist');
+    cy.get('[data-cy="create-account__fields__username"] input').type(username);
+    cy.get('[data-cy="create-account__fields__password"] input').type(password);
+    cy.get('[data-cy="create-account__fields__password-repeat"] input').type(
+      password
+    );
+    cy.get('[data-cy="create-account__boxes__user-prompted"] input').click();
+    cy.get('[data-cy="create-account__credentials__button__continue"]').click();
+    cy.get(
+      '[data-cy="create-account__submit-analytics__button__continue"]'
+    ).click();
+    cy.get('[data-cy=account-management-forms]').should('not.exist');
     cy.updateAssets();
     this.loadEnv();
   }

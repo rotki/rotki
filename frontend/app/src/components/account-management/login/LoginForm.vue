@@ -286,11 +286,12 @@ const abortLogin = () => {
 
 <template>
   <Transition
-    enter-class="-top-5 opacity-0"
-    enter-to-class="top-0 opacity-1"
+    appear
+    enter-class="translate-y-5 opacity-0"
+    enter-to-class="translate-y-0 opacity-1"
     enter-active-class="transform duration-300"
-    leave-class="top-0 opacity-1"
-    leave-to-class="-top-5 opacity-0"
+    leave-class="-translate-y-0 opacity-1"
+    leave-to-class="-translate-y-5 opacity-0"
     leave-active-class="transform duration-100"
   >
     <div :class="css.login">
@@ -492,7 +493,7 @@ const abortLogin = () => {
                 {{ t('common.actions.continue') }}
               </RuiButton>
 
-              <span :class="css.login__actions__footer">
+              <div :class="css.login__actions__footer">
                 <span>{{ t('login.button_no_account') }}</span>
                 <RuiButton
                   color="primary"
@@ -501,11 +502,12 @@ const abortLogin = () => {
                   :disabled="loading"
                   type="button"
                   data-cy="new-account"
+                  class="py-1"
                   @click="newAccount()"
                 >
                   {{ t('login.button_signup') }}
                 </RuiButton>
-              </span>
+              </div>
             </div>
           </form>
         </div>
@@ -514,7 +516,7 @@ const abortLogin = () => {
         <RuiAlert
           v-if="hasServerError"
           :action-text="isLoggedInError ? t('login.logout') : ''"
-          type="warning"
+          type="error"
           @action="logout()"
         >
           <template #title>
@@ -556,10 +558,10 @@ const abortLogin = () => {
 
   &__actions {
     &__footer {
-      @apply flex items-center justify-center;
+      @apply flex items-center justify-center text-rui-text-secondary;
     }
 
-    @apply flex flex-col justify-stretch space-y-6 pt-6;
+    @apply flex flex-col justify-stretch space-y-8 pt-6;
   }
 }
 </style>

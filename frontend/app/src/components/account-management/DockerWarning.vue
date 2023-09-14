@@ -9,20 +9,18 @@ const proceed = () => {
 </script>
 
 <template>
-  <div class="pa-6 pb-2">
-    <VAlert type="warning" text prominent class="pl-8">
-      <div class="ml-4">
-        <i18n path="docker_warning.title" tag="div">
-          <BaseExternalLink
-            :text="t('docker_warning.documentation')"
-            :href="usageGuideUrl + '#docker'"
-          />
-        </i18n>
-      </div>
-    </VAlert>
+  <div class="max-w-[41.25rem] mx-auto">
+    <RuiAlert type="warning">
+      <i18n path="docker_warning.title" tag="div">
+        <BaseExternalLink
+          :text="t('docker_warning.documentation')"
+          :href="usageGuideUrl + '#docker'"
+        />
+      </i18n>
 
-    <VBtn class="mt-8" block depressed color="primary" @click="proceed()">
-      {{ t('docker_warning.action') }}
-    </VBtn>
+      <RuiButton class="mt-4" depressed color="primary" @click="proceed()">
+        {{ t('docker_warning.action') }}
+      </RuiButton>
+    </RuiAlert>
   </div>
 </template>

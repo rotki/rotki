@@ -33,7 +33,6 @@ export const useAccountManagement = () => {
     const start = Date.now();
     const result = await createAccount(payload);
     const duration = (Date.now() - start) / 1000;
-    set(loading, false);
 
     if (result.success) {
       if (get(upgradeVisible) && duration < 10) {
@@ -48,6 +47,8 @@ export const useAccountManagement = () => {
     } else {
       set(error, result.message ?? t('account_management.creation.error'));
     }
+
+    set(loading, false);
   };
 
   const userLogin = async ({

@@ -20,14 +20,14 @@ const routes = setupLayouts([
     path: Routes.USER_LOGIN,
     component: async () => import('../pages/user/login/index.vue'),
     meta: {
-      layout: 'login'
+      layout: 'auth'
     }
   },
   {
     path: Routes.USER_CREATE,
     component: async () => import('../pages/user/create/index.vue'),
     meta: {
-      layout: 'login'
+      layout: 'auth'
     }
   },
   {

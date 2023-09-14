@@ -1495,32 +1495,57 @@
     "incomplete": "（不完整）"
   },
   "create_account": {
-    "premium": {
-      "button_premium_approve": "是的，启用高级",
-      "premium_link_text": "这里。",
-      "premium_question": "您已经是 rotki 高级用户并且想启用高级功能吗？如果您想在创建帐户时从另一台设备同步您的 rotki 数据库，这是必需的。您可以购买高级版 {premiumLink}",
-      "title": "启用高级"
+    "have_account": {
+      "description": "已经有账户了？",
+      "log_in": "登录"
     },
-    "select_credentials": {
+    "introduction": {
+      "description": "rotki 是一个尊重您隐私的本地应用程序。\n\nrotki 账户使用您的密码和 {highlight} 进行加密。\n\n您在此处创建的帐户仅适用于应用程序，在网页上我们使用不同的数据库。",
+      "highlight": "保存在您的本地文件系统中"
+    },
+    "premium": {
+      "button_premium_approve": "是的，启用高级版",
+      "premium_link_text": "这里。",
+      "premium_question": "您已经是 rotki 高级用户并想要启用高级功能吗？\n如果您想在创建帐户时从另一台设备同步您的 rotki 数据库，则需要进行此操作。您可以在 {premiumLink} 购买高级版"
+    },
+    "credentials": {
       "label_password": "密码",
-      "label_password_backup_reminder": "rotki 在本地保存所有用户数据。我知道如果我丢失了密码，我将无法访问我的数据。我已经创建了密码备份。",
+      "label_password_backup_reminder": "rotki 会将所有用户数据保存在本地。我明白如果我丢失密码，我将无法访问我的数据。我已经创建了密码的备份。",
       "label_password_repeat": "重复密码",
       "label_username": "用户名",
-      "password_sync_requirement": "确保该账户使用的密码与原先备份的数据库相同。输入不同的密码将无法访问数据库。",
-      "title": "选择凭证",
+      "password_sync_requirement": "请确保该帐户使用与最初备份的数据库相同的密码。如果输入不同的密码，您将无法访问数据库。",
+      "description": "请记住，您在此处创建的用户是 {highlight}，与在网页上创建的帐户无关。",
+      "highlight": "仅在应用程序中启用",
       "validation": {
         "non_empty_password": "请提供密码",
         "non_empty_password_confirmation": "请提供密码确认",
         "non_empty_username": "请提供用户名",
         "password_confirmation_mismatch": "密码确认与提供的密码不匹配",
-        "valid_username": "用户名必须只包含字母数字字符且不能有空格"
+        "valid_username": "用户名必须仅包含字母数字字符，不得包含空格",
+        "check_prompt": "确认您已阅读并创建了备份"
       }
     },
-    "title": "创建账号",
+    "steps": {
+      "step_1": {
+        "title": "介绍",
+        "description": "第一步"
+      },
+      "step_2": {
+        "title": "启用高级版",
+        "description": "您在我们的网站上是否有高级帐户？"
+      },
+      "step_3": {
+        "title": "创建帐户",
+        "description": "设置您的凭据"
+      },
+      "step_4": {
+        "title": "使用分析"
+      }
+    },
+    "title": "创建帐户",
     "usage_analytics": {
-      "description": "rotki 是一个本地应用程序，匿名使用分析是我们了解有多少人使用我们的软件，他们来自哪里等的唯一方式。这些数据对我们非常重要，完全匿名并且 帮助我们为您创造更好的产品。",
-      "label_confirm": "提交匿名使用分析",
-      "title": "使用分析"
+      "description": "rotki 是一个本地应用程序，匿名使用分析是我们了解有多少人使用我们的软件，他们来自哪里等信息的唯一方式。这些数据对我们非常重要，它们完全匿名，并帮助我们为您创建更好的产品。",
+      "label_confirm": "提交匿名使用分析"
     }
   },
   "currencies": {
@@ -2181,11 +2206,6 @@
     }
   },
   "frontend_settings": {
-    "animations": {
-      "disable": "禁用动画",
-      "disable_hint": "禁用动画将提高应用性能。",
-      "enable": "启用动画"
-    },
     "hint": {
       "refresh": "您的余额多久（以分钟为单位）自动刷新一次"
     },

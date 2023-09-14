@@ -1,6 +1,6 @@
 <script setup lang="ts">
 const { isMini, showDrawer } = storeToRefs(useAreaVisibilityStore());
-const { appVersion } = toRefs(useMainStore());
+const { appVersion } = storeToRefs(useMainStore());
 const { appBarColor } = useTheme();
 
 const remoteDrawerImage =

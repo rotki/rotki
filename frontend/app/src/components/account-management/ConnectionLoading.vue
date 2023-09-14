@@ -11,7 +11,10 @@ const { t } = useI18n();
   >
     <div class="flex items-center space-x-14">
       <RuiProgress color="primary" variant="indeterminate" circular />
-      <h5 class="text-rui-text-secondary text-h5">
+      <h5
+        class="text-rui-text-secondary text-h5"
+        data-cy="connection-loading__content"
+      >
         {{ t('connection_loading.message') }}
       </h5>
     </div>
