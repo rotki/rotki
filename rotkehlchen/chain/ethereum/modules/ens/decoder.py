@@ -198,7 +198,7 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):
             log.error(f'Could not decode an ERC721 transfer for an ENS name transfer: {context.transaction.tx_hash.hex()}')  # noqa: E501
             return DEFAULT_DECODING_OUTPUT
 
-        label_hash = hex(transfer_event.extra_data['token_id'])  # type: ignore[index]  # noqa: E501  # ERC721 transfer always has extra data
+        label_hash = "0x{:064x}".format(transfer_event.extra_data['token_id'])  # type: ignore[index]  # noqa: E501  # ERC721 transfer always has extra data
         try:
             result = self.graph.query(
                 querystr=f'query{{domains(first:1, where:{{labelhash:"{label_hash}"}}){{labelName}}}}')  # noqa: E501
