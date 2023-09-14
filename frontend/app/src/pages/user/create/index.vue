@@ -53,7 +53,7 @@ const steps = [
         </div>
         <div class="w-[420px] max-w-full mx-auto px-4 mt-8">
           <RuiFooterStepper
-            :model-value="step"
+            :value="step"
             :pages="steps.length"
             variant="pill"
           />
