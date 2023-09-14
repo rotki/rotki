@@ -19,6 +19,7 @@ from rotkehlchen.db.upgrade_manager import (
     DBUpgradeProgressHandler,
 )
 from rotkehlchen.db.upgrades.v37_v38 import DEFAULT_POLYGON_NODES_AT_V38
+from rotkehlchen.db.upgrades.v39_v40 import PREFIX
 from rotkehlchen.db.utils import table_exists
 from rotkehlchen.errors.misc import DBUpgradeError
 from rotkehlchen.oracles.structures import CurrentPriceOracle
@@ -1795,6 +1796,59 @@ def test_upgrade_db_38_to_39(user_data_dir):  # pylint: disable=unused-argument
     settings = db.get_settings(cursor=cursor)
     expected_oracles = [CurrentPriceOracle.deserialize(oracle) for oracle in oracles if oracle != 'saddle']  # noqa: E501
     assert settings.current_price_oracles == expected_oracles
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_upgrade_db_39_to_40(user_data_dir):  # pylint: disable=unused-argument
+    """Test upgrading the DB from version 39 to version 40"""
+    msg_aggregator = MessagesAggregator()
+    _use_prepared_db(user_data_dir, 'v39_rotkehlchen.db')
+    db_v39 = _init_db_with_target_version(
+        target_version=39,
+        user_data_dir=user_data_dir,
+        msg_aggregator=msg_aggregator,
+        resume_from_backup=False,
+    )
+    cursor = db_v39.conn.cursor()
+    cursor.execute('SELECT type, subtype from history_events WHERE event_identifier LIKE ?', (PREFIX,))  # noqa: E501
+    events_before = cursor.fetchall()
+    cursor.execute('SELECT type, subtype from history_events WHERE event_identifier NOT LIKE ?', (PREFIX,))  # noqa: E501
+    other_events_before = cursor.fetchall()
+
+    assert events_before == [
+        ('deposit', 'spend'), ('deposit', 'fee'),
+        ('withdrawal', 'receive'), ('withdrawal', 'fee'),
+        ('receive', 'receive'), ('receive', 'fee'),
+        ('spend', 'none'), ('spend', 'fee'),
+        ('staking', 'reward'), ('staking', 'fee'),
+    ]
+    # also check that the non rotki events are not affected
+    assert other_events_before == [('deposit', 'spend'), ('withdrawal', 'fee'), ('receive', 'receive'), ('staking', 'fee')]  # noqa: E501
+
+    cursor.close()
+    db_v39.logout()
+    # Execute upgrade
+    db = _init_db_with_target_version(
+        target_version=40,
+        user_data_dir=user_data_dir,
+        msg_aggregator=msg_aggregator,
+        resume_from_backup=False,
+    )
+    cursor = db.conn.cursor()
+    cursor.execute('SELECT type, subtype from history_events WHERE event_identifier LIKE ?', (PREFIX,))  # noqa: E501
+    events_after = cursor.fetchall()
+    cursor.execute('SELECT type, subtype from history_events WHERE event_identifier NOT LIKE ?', (PREFIX,))  # noqa: E501
+    other_events_after = cursor.fetchall()
+
+    assert events_after == [
+        ('deposit', 'none'), ('spend', 'fee'),
+        ('withdrawal', 'none'), ('spend', 'fee'),
+        ('receive', 'none'), ('spend', 'fee'),
+        ('spend', 'none'), ('spend', 'fee'),
+        ('staking', 'reward'), ('spend', 'fee'),
+    ]
+    # also check that the non rotki events are not affected
+    assert other_events_after == [('deposit', 'spend'), ('withdrawal', 'fee'), ('receive', 'receive'), ('staking', 'fee')]  # noqa: E501
 
 
 def test_latest_upgrade_adds_remove_tables(user_data_dir):
