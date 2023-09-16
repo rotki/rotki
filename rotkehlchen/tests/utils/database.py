@@ -100,8 +100,8 @@ def add_settings_to_test_db(
     }
     # Set the given db_settings. The pre-set values have priority unless overriden here
     if db_settings is not None:
-        for key, value in db_settings.items():
-            settings[key] = value
+        settings.update(db_settings)
+
     with db.user_write() as cursor:
         db.set_settings(cursor, ModifiableDBSettings(**settings))  # type: ignore
 

@@ -83,6 +83,7 @@ disallow_untyped_defs = false
 # -- ruff config section --
 
 [tool.ruff]
+preview = true  # https://docs.astral.sh/ruff/preview/
 line-length = 99
 
 select = [
@@ -160,10 +161,12 @@ ignore = [
     "PGH003",  # we do use blanket type: ignore. Perhaps can fix in the future
     "SIM108",  # we do use ternary operator when it makes sense. But forcing it everywhere makes the code unreadable.
     "PLR2004", # we try to use constant vars where possile but this complains abouttoo many things
+    "PLR0904", # too many public methods. This is a bit too much to enforce in the codebase
     "PLR0913", # too many arguments to function call. This is a bit too much to enforce in the codebase
     "PLR0915", # too many statements -- we probably could use this ... but with custom statements number?
     "PLR0911", # too many return statements -- we dont care
     "PLR0912", # too many branches -- we dont care
+    "PLR6301", # could be a staticmethod or function -- breaks for interfaces
     "PLC1901", # we prefer direct comparison to empty string for explicitness
     # Some bandit rules we don't check for
     "S101",  # asserts are fine

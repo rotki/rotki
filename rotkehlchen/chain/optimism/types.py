@@ -3,7 +3,7 @@ from typing import Any, Optional
 from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTransaction, EVMTxHash, Timestamp
 
 
-class OptimismTransaction(EvmTransaction):
+class OptimismTransaction(EvmTransaction):  # noqa: PLW1641  # hash implemented by superclass
     """Represent an Optimism transaction"""
     l1_fee: int
 

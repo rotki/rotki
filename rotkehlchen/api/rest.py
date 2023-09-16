@@ -501,10 +501,7 @@ class RestAPI:
             else:
                 asset_rates[asset] = Price(ONE / usd_price)
 
-        fiat_rates = Inquirer().get_fiat_usd_exchange_rates(fiat_currencies)
-        for fiat, rate in fiat_rates.items():
-            asset_rates[fiat] = rate
-
+        asset_rates.update(Inquirer().get_fiat_usd_exchange_rates(fiat_currencies))  # type: ignore  # noqa: E501  # type narrowing does not work here
         return _wrap_in_ok_result(process_result(asset_rates))
 
     @async_api_call()
