@@ -6,7 +6,7 @@ if TYPE_CHECKING:
     from rotkehlchen.types import ChainID, ChecksumEvmAddress, EVMTxHash, Timestamp
 
 
-class ArbitrumOneTransaction(EvmTransaction):
+class ArbitrumOneTransaction(EvmTransaction):  # noqa: PLW1641  # hash implemented by superclass
     """Represents an Arbitrum One transaction"""
     tx_type: int
 

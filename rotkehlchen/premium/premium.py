@@ -127,6 +127,9 @@ class PremiumCredentials:
             return NotImplemented
         return self.api_key == other.api_key and self.api_secret == other.api_secret
 
+    def __hash__(self) -> int:
+        return hash(self.api_key + str(self.api_secret))
+
 
 def _decode_response_json(response: requests.Response) -> Any:
     """Decodes a python requests response to json and returns it.

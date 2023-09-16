@@ -55,7 +55,7 @@ EVM_DEPOSIT_EVENT_DB_TUPLE_READ = tuple[
 ]
 
 
-class EthStakingEvent(HistoryBaseEntry, metaclass=ABCMeta):
+class EthStakingEvent(HistoryBaseEntry, metaclass=ABCMeta):  # noqa: PLW1641  # hash in superclass
     """An ETH staking related event. Block production/withdrawal"""
 
     def __init__(
@@ -349,7 +349,7 @@ class EthBlockEvent(EthStakingEvent):
         return 1
 
 
-class EthDepositEvent(EvmEvent, EthStakingEvent):
+class EthDepositEvent(EvmEvent, EthStakingEvent):  # noqa: PLW1641  # hash in superclass
     """An ETH deposit event"""
 
     def __init__(

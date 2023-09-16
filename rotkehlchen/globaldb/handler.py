@@ -888,17 +888,13 @@ class GlobalDBHandler:
     def get_tokens_mappings(addresses: list[ChecksumEvmAddress]) -> dict[ChecksumEvmAddress, str]:  # noqa: E501
         """Gets mappings: address -> name for tokens whose address is in the provided list"""
         questionmarks = ','.join('?' * len(addresses))
-        mappings = {}
         with GlobalDBHandler().conn.read_ctx() as cursor:
             cursor.execute(
                 f'SELECT evm_tokens.address, assets.name FROM evm_tokens INNER JOIN assets ON '
                 f'evm_tokens.identifier = assets.identifier WHERE address IN ({questionmarks});',
                 addresses,
             )
-            for address, name in cursor:
-                mappings[address] = name
-
-        return mappings
+            return dict(cursor)
 
     @staticmethod
     def add_evm_token_data(write_cursor: DBCursor, entry: EvmToken) -> None:

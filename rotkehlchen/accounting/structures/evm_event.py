@@ -60,7 +60,7 @@ def get_tx_event_type_identifier(event_type: HistoryEventType, event_subtype: Hi
     return str(event_type) + '__' + str(event_subtype) + '__' + counterparty
 
 
-class EvmEvent(HistoryBaseEntry):
+class EvmEvent(HistoryBaseEntry):  # noqa: PLW1641  # hash in superclass
     """This is a class for storing evm events data and it extends HistoryBaseEntry.
 
     It adds the following fields:
