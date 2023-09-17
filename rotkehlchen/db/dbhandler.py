@@ -3250,3 +3250,15 @@ class DBHandler:
             result = cursor.fetchone()
 
         return None if result is None else result[0]
+
+    def add_skipped_external_event(
+            self,
+            write_cursor: 'DBCursor',
+            location: Location,
+            data: str,
+            location_label: Optional[str],
+    ) -> None:
+        write_cursor.execute(
+            'INSERT OR IGNORE INTO skipped_external_events(data, location, location_label) VALUES(?, ?, ?)',  # noqa: E501
+            (data, location.serialize_for_db(), location_label),
+        )

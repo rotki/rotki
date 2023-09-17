@@ -1151,6 +1151,13 @@ class EventsOnlineQueryResource(BaseMethodView):
         )
 
 
+class HistorySkippedExternalEventResource(BaseMethodView):
+
+    @require_loggedin_user()
+    def post(self) -> Response:
+        return self.rest_api.reprocess_skipped_external_events()
+
+
 class HistoryEventResource(BaseMethodView):
 
     put_schema = EvmEventSchema()

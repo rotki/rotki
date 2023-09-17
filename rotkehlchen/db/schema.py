@@ -548,6 +548,16 @@ CREATE TABLE IF NOT EXISTS eth2_daily_staking_details (
 );
 """  # noqa: E501
 
+
+DB_CREATE_SKIPPED_EXTERNAL_EVENTS = """
+CREATE TABLE IF NOT EXISTS skipped_external_events (
+    identifier INTEGER NOT NULL PRIMARY KEY,
+    data TEXT NOT NULL,
+    location CHAR(1) NOT NULL DEFAULT('A') REFERENCES location(location),
+    location_label TEXT
+);
+"""
+
 DB_CREATE_HISTORY_EVENTS = """
 CREATE TABLE IF NOT EXISTS history_events (
     identifier INTEGER NOT NULL PRIMARY KEY,
@@ -741,6 +751,7 @@ BEGIN TRANSACTION;
 {DB_CREATE_ADDRESS_BOOK}
 {DB_CREATE_RPC_NODES}
 {DB_CREATE_USER_NOTES}
+{DB_CREATE_SKIPPED_EXTERNAL_EVENTS}
 COMMIT;
 PRAGMA foreign_keys=on;
 """
