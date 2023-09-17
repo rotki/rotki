@@ -170,6 +170,7 @@ from rotkehlchen.globaldb.assets_management import export_assets_from_file, impo
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.globaldb.updates import ASSETS_VERSION_KEY
 from rotkehlchen.history.price import PriceHistorian
+from rotkehlchen.history.skipped import reprocess_skipped_external_events
 from rotkehlchen.history.types import NOT_EXPOSED_SOURCES, HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.icons import (
     check_if_image_is_cached,
@@ -4374,3 +4375,7 @@ class RestAPI:
                 'icon': protocol.icon,
             })
         return api_response(result=_wrap_in_ok_result(result=result))
+
+    def reprocess_skipped_external_events(self) -> Response:
+        reprocess_skipped_external_events(self.rotkehlchen)
+        return api_response(OK_RESULT, status_code=HTTPStatus.OK)

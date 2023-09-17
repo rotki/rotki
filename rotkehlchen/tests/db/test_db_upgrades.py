@@ -1824,6 +1824,8 @@ def test_upgrade_db_39_to_40(user_data_dir):  # pylint: disable=unused-argument
     ]
     # also check that the non rotki events are not affected
     assert other_events_before == [('deposit', 'spend'), ('withdrawal', 'fee'), ('receive', 'receive'), ('staking', 'fee')]  # noqa: E501
+    # check the tables we create don't exist before
+    assert table_exists(cursor, 'skipped_external_events') is False
 
     cursor.close()
     db_v39.logout()
@@ -1849,6 +1851,8 @@ def test_upgrade_db_39_to_40(user_data_dir):  # pylint: disable=unused-argument
     ]
     # also check that the non rotki events are not affected
     assert other_events_after == [('deposit', 'spend'), ('withdrawal', 'fee'), ('receive', 'receive'), ('staking', 'fee')]  # noqa: E501
+    # check new tables are created
+    assert table_exists(cursor, 'skipped_external_events') is True
 
 
 def test_latest_upgrade_adds_remove_tables(user_data_dir):
@@ -1861,10 +1865,10 @@ def test_latest_upgrade_adds_remove_tables(user_data_dir):
     this is just to reminds us not to forget to add create table statements.
     """
     msg_aggregator = MessagesAggregator()
-    base_database = 'v37_rotkehlchen.db'
+    base_database = 'v39_rotkehlchen.db'
     _use_prepared_db(user_data_dir, base_database)
     last_db = _init_db_with_target_version(
-        target_version=37,
+        target_version=39,
         user_data_dir=user_data_dir,
         msg_aggregator=msg_aggregator,
         resume_from_backup=False,
@@ -1879,7 +1883,7 @@ def test_latest_upgrade_adds_remove_tables(user_data_dir):
 
     # Execute upgrade
     db = _init_db_with_target_version(
-        target_version=38,
+        target_version=40,
         user_data_dir=user_data_dir,
         msg_aggregator=msg_aggregator,
         resume_from_backup=False,
@@ -1896,16 +1900,16 @@ def test_latest_upgrade_adds_remove_tables(user_data_dir):
     result = cursor.execute('SELECT name FROM sqlite_master WHERE type="view"')
     views_after_creation = {x[0] for x in result}
 
-    removed_tables = {'aave_events', 'amm_events'}
+    removed_tables = set()
     removed_views = set()
     missing_tables = tables_before - tables_after_upgrade
     missing_views = views_before - views_after_upgrade
     assert missing_tables == removed_tables
     assert missing_views == removed_views
-    assert tables_after_creation - tables_after_upgrade == {'optimism_transactions'}
+    assert tables_after_creation - tables_after_upgrade == set()
     assert views_after_creation - views_after_upgrade == set()
     new_tables = tables_after_upgrade - tables_before
-    assert new_tables == set()
+    assert new_tables == {'skipped_external_events'}
     new_views = views_after_upgrade - views_before
     assert new_views == set()
 

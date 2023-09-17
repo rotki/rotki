@@ -12346,3 +12346,111 @@ Getting Metadata For Defi Protocols
 
    :statuscode 200: Information was correctly returned
    :statuscode 500: Internal rotki error
+
+Dealing with skipped external events
+========================================
+
+.. http:get:: /api/(version)/history/skipped_external_events
+
+   Doing a GET on this endpoint will return a summary of skipped external events in the DB.
+
+
+  **Example Request**
+
+  .. http:example:: curl wget httpie python-requests
+
+    GET /api/1/history/skipped_external_events HTTP/1.1
+    Host: localhost:5042
+
+
+  **Example Response**
+
+  .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "result": {
+	    "locations": {
+	        "kraken": 5,
+	        "binance": 3
+            },
+	    "total": 8
+        },
+        "message": ""
+      }
+
+  :resjson bool result: The mapping of skipped event locations to the number of skipped events per location.
+
+  :statuscode 200: All okay
+  :statuscode 500: Internal rotki error
+
+
+.. http:put:: /api/(version)/history/skipped_external_events
+.. http:patch:: /api/(version)/history/skipped_external_events
+
+   Doing a PUT on this endpoint with a filepath path as argument will export all skipped external events in a csv to that filepath.
+   Doing a PATCH on this endpoint will download all skipped external events in a csv file.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PUT /api/1/history/skipped_external_events HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {"filepath": "/home/username/path/to/file.csv"}
+
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": true,
+          "message": ""
+      }
+
+   :resjson bool result: Boolean denoting success or failure.
+   :statuscode 200: File were exported successfully
+   :statuscode 400: Provided JSON is in some way malformed or given string is not a directory.
+   :statuscode 404: No file was found when trying to export the events in CSV.
+   :statuscode 409: No user is currently logged in. No permissions to write in the given directory. Check error message.
+   :statuscode 500: Internal rotki error.
+
+
+.. http:post:: /api/(version)/history/skipped_external_events
+
+   Doing a POST on this endpoint will try to reprocess all skipped external events saved in the DB.
+
+
+  **Example Request**
+
+  .. http:example:: curl wget httpie python-requests
+
+    POST /api/1/history/skipped_external_events HTTP/1.1
+    Host: localhost:5042
+
+
+  **Example Response**
+
+  .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "result": true,
+        "message": ""
+      }
+
+  :resjson bool result: Always true.
+
+  :statuscode 200: Reprocessing went fine.
+  :statuscode 409: An issue ocurred during reprocessing
+  :statuscode 500: Internal rotki error

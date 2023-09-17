@@ -64,16 +64,35 @@ def _purge_kraken_events(write_cursor: 'DBCursor') -> None:
     log.debug('Exit _reset_kraken_events')
 
 
+def _add_new_tables(write_cursor: 'DBCursor') -> None:
+    """
+    Add new tables for this upgrade
+    """
+    log.debug('Entered _add_new_tables')
+    write_cursor.execute("""CREATE TABLE IF NOT EXISTS skipped_external_events (
+    identifier INTEGER NOT NULL PRIMARY KEY,
+    data TEXT NOT NULL,
+    location CHAR(1) NOT NULL DEFAULT('A') REFERENCES location(location),
+    location_label TEXT
+    );""")
+    log.debug('Exit _add_new_tables')
+
+
 def upgrade_v39_to_v40(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
     """Upgrades the DB from v39 to v40. This was in v1.31.0 release.
+
         - Migrate rotki events that were broken due to https://github.com/rotki/rotki/issues/6550
+        - Purge kraken events
+        - Create new tables
     """
     log.debug('Entered userdb v39->v40 upgrade')
-    progress_handler.set_total_steps(3)
+    progress_handler.set_total_steps(4)
     with db.user_write() as write_cursor:
         _migrate_rotki_events(write_cursor)
         progress_handler.new_step()
         _purge_kraken_events(write_cursor)
+        progress_handler.new_step()
+        _add_new_tables(write_cursor)
         progress_handler.new_step()
 
     db.conn.execute('VACUUM;')

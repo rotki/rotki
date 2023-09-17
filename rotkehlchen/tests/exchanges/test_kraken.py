@@ -637,16 +637,16 @@ def test_trade_from_kraken_unexpected_data(function_scope_kraken):
 
     input_trades = test_trades
     input_trades = input_trades.replace('"amount": "-100"', '"amount": null')
-    query_kraken_and_test(input_trades, expected_warnings_num=0, expected_errors_num=1)
+    query_kraken_and_test(input_trades, expected_warnings_num=0, expected_errors_num=2)
 
     input_trades = test_trades
     input_trades = input_trades.replace('"fee": "0.1"', '"fee": "dsdsad"')
-    query_kraken_and_test(input_trades, expected_warnings_num=0, expected_errors_num=1)
+    query_kraken_and_test(input_trades, expected_warnings_num=0, expected_errors_num=2)
 
     # Also test key error
     input_trades = test_trades
     input_trades = input_trades.replace('"amount": "-100",', '')
-    query_kraken_and_test(input_trades, expected_warnings_num=0, expected_errors_num=1)
+    query_kraken_and_test(input_trades, expected_warnings_num=0, expected_errors_num=2)
 
 
 def test_emptry_kraken_balance_response():

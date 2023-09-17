@@ -121,145 +121,6 @@ def kraken_ledger_entry_type_to_ours(value: str) -> HistoryEventType:
     return HistoryEventType.INFORMATIONAL  # returned for kraken's unknown events
 
 
-def history_event_from_kraken(
-        events: list[dict[str, Any]],
-        name: str,
-        msg_aggregator: MessagesAggregator,
-) -> tuple[list[HistoryEvent], bool]:
-    """
-    This function gets raw data from kraken and creates a list of related history events
-    to be used in the app. It returns a list of events and a boolean in the case that an unknown
-    type is found.
-    """
-    group_events = []
-    # for receive/spend events they could be airdrops but they could also be instant swaps.
-    # the only way to know if it was a trade is by finding a pair of receive/spend events.
-    # This is why we collect them instead of directly pushing to group_events
-    receive_spend_events: dict[str, list[HistoryEvent]] = defaultdict(list)
-    found_unknown_event = False
-    current_fee_index = len(events)
-    for idx, raw_event in enumerate(events):
-        try:
-            timestamp = TimestampMS((deserialize_fval(
-                value=raw_event['time'], name='time', location='kraken ledger processing',
-            ) * 1000).to_int(exact=False))
-            identifier = raw_event['refid']
-            event_type = kraken_ledger_entry_type_to_ours(raw_event['type'])
-            asset = asset_from_kraken(raw_event['asset'])
-            event_subtype = HistoryEventSubType.NONE
-            notes = None
-            raw_amount = deserialize_fval(
-                raw_event['amount'],
-                name='event amount',
-                location='kraken ledger processing',
-            )
-            # If we don't know how to handle an event atm or we find an unsupported
-            # event type the logic will be to store it as unknown and if in the future
-            # we need some information from it we can take actions to process them
-            if event_type == HistoryEventType.TRANSFER:
-                if raw_event['subtype'] == 'spottostaking':
-                    event_type = HistoryEventType.STAKING
-                    event_subtype = HistoryEventSubType.DEPOSIT_ASSET
-                elif raw_event['subtype'] == 'stakingfromspot':
-                    event_type = HistoryEventType.STAKING
-                    event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
-                elif raw_event['subtype'] == 'stakingtospot':
-                    event_type = HistoryEventType.STAKING
-                    event_subtype = HistoryEventSubType.REMOVE_ASSET
-                elif raw_event['subtype'] == 'spotfromstaking':
-                    event_type = HistoryEventType.STAKING
-                    event_subtype = HistoryEventSubType.RETURN_WRAPPED
-            elif event_type in (HistoryEventType.ADJUSTMENT, HistoryEventType.TRADE):
-                if raw_amount < ZERO:
-                    event_subtype = HistoryEventSubType.SPEND
-                    raw_amount = -raw_amount
-                else:
-                    event_subtype = HistoryEventSubType.RECEIVE
-            elif event_type == HistoryEventType.STAKING:
-                # in the case of ETH.S after the activation of withdrawals rewards no longer
-                # compound unlike what happens with other assets and a virtual event with
-                # negative amount is created
-                if asset == A_ETH2 and raw_amount < ZERO:
-                    event_type = HistoryEventType.INFORMATIONAL
-                    notes = 'Automatic virtual conversion of staked ETH rewards to ETH'
-                    raw_amount = -raw_amount
-                else:
-                    event_subtype = HistoryEventSubType.REWARD
-            elif event_type == HistoryEventType.INFORMATIONAL:
-                found_unknown_event = True
-                notes = raw_event['type']
-                log.warning(
-                    f'Encountered kraken historic event type we do not process. {raw_event}',
-                )
-            elif event_type == HistoryEventType.WITHDRAWAL:
-                raw_amount = -raw_amount
-
-            fee_amount = deserialize_asset_amount(raw_event['fee'])
-
-            # Make sure to not generate an event for KFEES that is not of type FEE
-            if asset != A_KFEE:
-                event = HistoryEvent(
-                    event_identifier=identifier,
-                    sequence_index=idx,
-                    timestamp=timestamp,
-                    location=Location.KRAKEN,
-                    location_label=name,
-                    asset=asset,
-                    balance=Balance(
-                        amount=raw_amount,
-                        usd_value=ZERO,
-                    ),
-                    notes=notes,
-                    event_type=event_type,
-                    event_subtype=event_subtype,
-                )
-                if event.event_type in (HistoryEventType.RECEIVE, HistoryEventType.SPEND):
-                    receive_spend_events[event.event_identifier].append(event)
-                else:
-                    group_events.append(event)
-            if fee_amount != ZERO:
-                group_events.append(HistoryEvent(
-                    event_identifier=identifier,
-                    sequence_index=current_fee_index,
-                    timestamp=timestamp,
-                    location=Location.KRAKEN,
-                    location_label=name,
-                    asset=asset,
-                    balance=Balance(
-                        amount=fee_amount,
-                        usd_value=ZERO,
-                    ),
-                    notes=notes,
-                    event_type=event_type,
-                    event_subtype=HistoryEventSubType.FEE,
-                ))
-                # Increase the fee index to not have duplicates in the case of having a normal
-                # fee and KFEE
-                current_fee_index += 1
-        except (DeserializationError, KeyError, UnknownAsset) as e:
-            msg = str(e)
-            if isinstance(e, KeyError):
-                msg = f'Keyrror {msg}'
-            msg_aggregator.add_error(
-                f'Failed to read ledger event from kraken {raw_event} due to {msg}',
-            )
-            return [], False
-
-    for event_set in receive_spend_events.values():
-        if len(event_set) == 2:
-            for event in event_set:
-                if event.event_type == HistoryEventType.RECEIVE:
-                    event.event_subtype = HistoryEventSubType.RECEIVE
-                else:
-                    event.event_subtype = HistoryEventSubType.SPEND
-                    event.balance.amount = -event.balance.amount
-                event.event_type = HistoryEventType.TRADE
-
-        # make sure to add all the events to group_events
-        group_events.extend(event_set)
-    return group_events, found_unknown_event
-
-
 def _check_and_get_response(response: Response, method: str) -> Union[str, dict]:
     """Checks the kraken response and if it's succesfull returns the result.
 
@@ -1075,6 +936,49 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
 
         return trades, Timestamp(max_ts)
 
+    def process_kraken_raw_events(
+            self,
+            events: list[dict[str, Any]],
+            events_source: str,
+            save_skipped_events: bool,
+    ) -> list[HistoryEvent]:
+        # Group related events
+        raw_events_grouped = defaultdict(list)
+        for raw_event in events:
+            raw_events_grouped[raw_event['refid']].append(raw_event)
+
+        new_events = []
+        for raw_events in raw_events_grouped.values():
+            try:
+                events = sorted(
+                    raw_events,
+                    key=lambda x: deserialize_fval(x['time'], 'time', 'kraken ledgers') * 1000,
+                )
+            except DeserializationError as e:
+                self.msg_aggregator.add_error(
+                    f'Failed to read timestamp in kraken event group '
+                    f'due to {e!s}. For more information read the logs. Skipping event',
+                )
+                log.error(f'Failed to read timestamp for {raw_events}')
+                continue
+
+            group_events, found_unknown_event = self.history_event_from_kraken(events=events, save_skipped_events=save_skipped_events)  # noqa: E501
+            if found_unknown_event:
+                for event in group_events:
+                    event.event_type = HistoryEventType.INFORMATIONAL
+            new_events.extend(group_events)
+
+        if len(new_events) != 0:
+            with self.db.user_write() as write_cursor:
+                try:
+                    self.history_events_db.add_history_events(write_cursor=write_cursor, history=new_events)  # noqa: E501
+                except InputError as e:  # not catching IntegrityError. event asset is resolved
+                    self.msg_aggregator.add_error(
+                        f'Failed to save kraken events from {events_source} in database. {e!s}',
+                    )
+
+        return new_events
+
     @protect_with_lock()
     def query_kraken_ledgers(
             self,
@@ -1134,45 +1038,13 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
                 )
                 return True
 
-            # Group related events
-            raw_events_groupped = defaultdict(list)
-            for raw_event in response:
-                raw_events_groupped[raw_event['refid']].append(raw_event)
-
-            new_events = []
-            for raw_events in raw_events_groupped.values():
-                try:
-                    events = sorted(
-                        raw_events,
-                        key=lambda x: deserialize_fval(x['time'], 'time', 'kraken ledgers') * 1000,
-                    )
-                except DeserializationError as e:
-                    self.msg_aggregator.add_error(
-                        f'Failed to read timestamp in kraken event group '
-                        f'due to {e!s}. For more information read the logs. Skipping event',
-                    )
-                    log.error(f'Failed to read timestamp for {raw_events}')
-                    continue
-                group_events, found_unknown_event = history_event_from_kraken(
-                    events=events,
-                    name=self.name,
-                    msg_aggregator=self.msg_aggregator,
-                )
-                if found_unknown_event:
-                    for event in group_events:
-                        event.event_type = HistoryEventType.INFORMATIONAL
-                new_events.extend(group_events)
-
+            new_events = self.process_kraken_raw_events(
+                events=response,
+                events_source=f'{query_start_ts} to {query_end_ts}',
+                save_skipped_events=True,
+            )
             if len(new_events) != 0:
                 with self.db.user_write() as write_cursor:
-                    try:
-                        self.history_events_db.add_history_events(write_cursor=write_cursor, history=new_events)  # noqa: E501
-                    except InputError as e:  # not catching IntegrityError. event asset is resolved
-                        self.msg_aggregator.add_error(
-                            f'Failed to save kraken events from {query_start_ts} '
-                            f'to {query_end_ts} in database. {e!s}',
-                        )
-
                     ranges.update_used_query_range(
                         write_cursor=write_cursor,
                         location_string=range_query_name,
@@ -1183,6 +1055,176 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
                 return True  # we had errors so stop any further queries and quit
 
         return False  # no errors
+
+    def history_event_from_kraken(
+            self,
+            events: list[dict[str, Any]],
+            save_skipped_events: bool,
+    ) -> tuple[list[HistoryEvent], bool]:
+        """
+        This function gets raw data from kraken and creates a list of related history events
+        to be used in the app. It returns a list of events
+        and a boolean in the case that an unknown type is found.
+
+        If `save_skipped_events` is True then any events that are skipped are saved
+        in the DB for processing later.
+        """
+        group_events = []
+        skipped_refids = set()
+        # for receive/spend events they could be airdrops but they could also be instant swaps.
+        # the only way to know if it was a trade is by finding a pair of receive/spend events.
+        # This is why we collect them instead of directly pushing to group_events
+        receive_spend_events: dict[str, list[tuple[int, HistoryEvent]]] = defaultdict(list)
+        found_unknown_event = False
+        current_fee_index = len(events)
+
+        for idx, raw_event in enumerate(events):
+            try:
+                timestamp = TimestampMS((deserialize_fval(
+                    value=raw_event['time'], name='time', location='kraken ledger processing',
+                ) * 1000).to_int(exact=False))
+                if (identifier := raw_event['refid']) in skipped_refids:  # using exception for control flow is ugly. May make sense to change in a refactor  # noqa: E501
+                    raise DeserializationError(f'Hit a skipped refid {identifier}')
+
+                event_type = kraken_ledger_entry_type_to_ours(raw_event['type'])
+                asset = asset_from_kraken(raw_event['asset'])
+                event_subtype = HistoryEventSubType.NONE
+                notes = None
+                raw_amount = deserialize_fval(
+                    raw_event['amount'],
+                    name='event amount',
+                    location='kraken ledger processing',
+                )
+                # If we don't know how to handle an event atm or we find an unsupported
+                # event type the logic will be to store it as unknown and if in the future
+                # we need some information from it we can take actions to process them
+                if event_type == HistoryEventType.TRANSFER:
+                    if raw_event['subtype'] == 'spottostaking':
+                        event_type = HistoryEventType.STAKING
+                        event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+                    elif raw_event['subtype'] == 'stakingfromspot':
+                        event_type = HistoryEventType.STAKING
+                        event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
+                    elif raw_event['subtype'] == 'stakingtospot':
+                        event_type = HistoryEventType.STAKING
+                        event_subtype = HistoryEventSubType.REMOVE_ASSET
+                    elif raw_event['subtype'] == 'spotfromstaking':
+                        event_type = HistoryEventType.STAKING
+                        event_subtype = HistoryEventSubType.RETURN_WRAPPED
+                elif event_type in (HistoryEventType.ADJUSTMENT, HistoryEventType.TRADE):
+                    if raw_amount < ZERO:
+                        event_subtype = HistoryEventSubType.SPEND
+                        raw_amount = -raw_amount
+                    else:
+                        event_subtype = HistoryEventSubType.RECEIVE
+                elif event_type == HistoryEventType.STAKING:
+                    # in the case of ETH.S after the activation of withdrawals rewards no longer
+                    # compound unlike what happens with other assets and a virtual event with
+                    # negative amount is created
+                    if asset == A_ETH2 and raw_amount < ZERO:
+                        event_type = HistoryEventType.INFORMATIONAL
+                        notes = 'Automatic virtual conversion of staked ETH rewards to ETH'
+                        raw_amount = -raw_amount
+                    else:
+                        event_subtype = HistoryEventSubType.REWARD
+                elif event_type == HistoryEventType.INFORMATIONAL:
+                    found_unknown_event = True
+                    notes = raw_event['type']
+                    log.warning(
+                        f'Encountered kraken historic event type we do not process. {raw_event}',
+                    )
+                elif event_type == HistoryEventType.WITHDRAWAL:
+                    raw_amount = -raw_amount
+
+                fee_amount = deserialize_asset_amount(raw_event['fee'])
+
+                # Make sure to not generate an event for KFEES that is not of type FEE
+                if asset != A_KFEE:
+                    event = HistoryEvent(
+                        event_identifier=identifier,
+                        sequence_index=idx,
+                        timestamp=timestamp,
+                        location=Location.KRAKEN,
+                        location_label=self.name,
+                        asset=asset,
+                        balance=Balance(
+                            amount=raw_amount,
+                            usd_value=ZERO,
+                        ),
+                        notes=notes,
+                        event_type=event_type,
+                        event_subtype=event_subtype,
+                    )
+                    if event.event_type in (HistoryEventType.RECEIVE, HistoryEventType.SPEND):
+                        receive_spend_events[event.event_identifier].append((idx, event))
+                    else:
+                        group_events.append((idx, event))
+                if fee_amount != ZERO:
+                    group_events.append((idx, HistoryEvent(
+                        event_identifier=identifier,
+                        sequence_index=current_fee_index,
+                        timestamp=timestamp,
+                        location=Location.KRAKEN,
+                        location_label=self.name,
+                        asset=asset,
+                        balance=Balance(
+                            amount=fee_amount,
+                            usd_value=ZERO,
+                        ),
+                        notes=notes,
+                        event_type=event_type,
+                        event_subtype=HistoryEventSubType.FEE,
+                    )))
+                    # Increase the fee index to not have duplicates in the case of having a normal
+                    # fee and KFEE
+                    current_fee_index += 1
+            except (DeserializationError, KeyError, UnknownAsset) as e:
+                if (refid := raw_event.get('refid')) is not None:
+                    skipped_refids.add(refid)
+                msg = str(e)
+                if isinstance(e, KeyError):
+                    msg = f'Keyrror {msg}'
+                self.msg_aggregator.add_error(
+                    f'Failed to read ledger event from kraken {raw_event} due to {msg}',
+                )
+                if save_skipped_events:
+                    with self.db.user_write() as write_cursor:
+                        self.db.add_skipped_external_event(
+                            write_cursor=write_cursor,
+                            location=Location.KRAKEN,
+                            data=json.dumps(raw_event),
+                            location_label=self.name,
+                        )
+                continue
+
+        for event_set in receive_spend_events.values():
+            if len(event_set) == 2:
+                for _, event in event_set:
+                    if event.event_type == HistoryEventType.RECEIVE:
+                        event.event_subtype = HistoryEventSubType.RECEIVE
+                    else:
+                        event.event_subtype = HistoryEventSubType.SPEND
+                        event.balance.amount = -event.balance.amount
+                    event.event_type = HistoryEventType.TRADE
+
+            # make sure to add all the events to group_events
+            group_events.extend(event_set)
+
+        returned_events = []
+        for raw_event_idx, event in group_events:
+            if event.event_identifier in skipped_refids:  # add it also to skipped events if another event with same refid had to be skipped  # noqa: E501
+                with self.db.user_write() as write_cursor:
+                    self.db.add_skipped_external_event(
+                        write_cursor=write_cursor,
+                        location=Location.KRAKEN,
+                        data=json.dumps(events[raw_event_idx]),
+                        location_label=self.name,
+                    )
+                continue
+
+            returned_events.append(event)
+
+        return returned_events, found_unknown_event
 
     def query_history_events(self) -> None:
         self.msg_aggregator.add_message(

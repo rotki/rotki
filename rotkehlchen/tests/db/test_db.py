@@ -149,6 +149,7 @@ TABLES_AT_INIT = [
     'user_notes',
     'evm_events_info',
     'eth_staking_events_info',
+    'skipped_external_events',
 ]
 
 
