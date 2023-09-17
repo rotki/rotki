@@ -2,6 +2,7 @@ import logging
 from typing import TYPE_CHECKING
 
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.types import Location
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -42,14 +43,37 @@ def _migrate_rotki_events(write_cursor: 'DBCursor') -> None:
     log.debug('Exit _migrate_rotki_events')
 
 
+def _purge_kraken_events(write_cursor: 'DBCursor') -> None:
+    """
+    Purge kraken events, after the changes that allows for processing of new assets.
+    We may have had missed events so now let's repull. And since we will also
+    get https://github.com/rotki/rotki/issues/6582 this resetting should not need to
+    happen in the future.
+
+    This just mimics DBHandler::purge_exchange_data
+    """
+    log.debug('Enter _reset_kraken_events')
+    write_cursor.execute(
+        'DELETE FROM used_query_ranges WHERE name LIKE ? ESCAPE ?;',
+        (f'{Location.KRAKEN!s}\\_%', '\\'),
+    )
+    location = Location.KRAKEN.serialize_for_db()
+    for table in ('trades', 'asset_movements', 'ledger_actions', 'history_events'):
+        write_cursor.execute(f'DELETE FROM {table} WHERE location = ?;', (location,))
+
+    log.debug('Exit _reset_kraken_events')
+
+
 def upgrade_v39_to_v40(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
     """Upgrades the DB from v39 to v40. This was in v1.31.0 release.
         - Migrate rotki events that were broken due to https://github.com/rotki/rotki/issues/6550
     """
     log.debug('Entered userdb v39->v40 upgrade')
-    progress_handler.set_total_steps(2)
+    progress_handler.set_total_steps(3)
     with db.user_write() as write_cursor:
         _migrate_rotki_events(write_cursor)
+        progress_handler.new_step()
+        _purge_kraken_events(write_cursor)
         progress_handler.new_step()
 
     db.conn.execute('VACUUM;')
