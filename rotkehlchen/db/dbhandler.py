@@ -841,26 +841,11 @@ class DBHandler:
 
     def purge_exchange_data(self, write_cursor: 'DBCursor', location: Location) -> None:
         self.delete_used_query_range_for_exchange(write_cursor=write_cursor, location=location)
-        write_cursor.execute(
-            'DELETE FROM trades WHERE location = ?;',
-            (location.serialize_for_db(),),
-        )
-        write_cursor.execute(
-            'DELETE FROM asset_movements WHERE location = ?;',
-            (location.serialize_for_db(),),
-        )
-        write_cursor.execute(
-            'DELETE FROM ledger_actions WHERE location = ?;',
-            (location.serialize_for_db(),),
-        )
-        write_cursor.execute(
-            'DELETE FROM asset_movements WHERE location = ?;',
-            (location.serialize_for_db(),),
-        )
-        write_cursor.execute(
-            'DELETE FROM history_events WHERE location = ?;',
-            (location.serialize_for_db(),),
-        )
+        serialized_location = location.serialize_for_db()
+        for table in ('trades', 'asset_movements', 'ledger_actions', 'history_events'):
+            write_cursor.execute(
+                f'DELETE FROM {table} WHERE location = ?;', (serialized_location,),
+            )
 
     def update_used_query_range(self, write_cursor: 'DBCursor', name: str, start_ts: Timestamp, end_ts: Timestamp) -> None:  # noqa: E501
         write_cursor.execute(
