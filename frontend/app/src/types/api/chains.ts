@@ -6,9 +6,14 @@ const BasicChainInfo = z.object({
   type: z.string()
 });
 
-const EvmChainInfo = z.object({
-  id: z.string(),
-  name: z.string(),
+const SubstrateChainInfo = BasicChainInfo.extend({
+  type: z.literal('substrate'),
+  nativeToken: z.string().optional()
+});
+
+export type SubstrateChainInfo = z.infer<typeof SubstrateChainInfo>;
+
+const EvmChainInfo = BasicChainInfo.extend({
   type: z.literal('evm'),
   evmChainName: z.string(),
   nativeToken: z.string().optional()
@@ -16,10 +21,12 @@ const EvmChainInfo = z.object({
 
 export type EvmChainInfo = z.infer<typeof EvmChainInfo>;
 
-export const ChainInfo = EvmChainInfo.or(BasicChainInfo).transform(obj => ({
-  ...obj,
-  name: toCapitalCase(obj.name)
-}));
+export const ChainInfo = EvmChainInfo.or(SubstrateChainInfo)
+  .or(BasicChainInfo)
+  .transform(obj => ({
+    ...obj,
+    name: toCapitalCase(obj.name)
+  }));
 
 export type ChainInfo = z.infer<typeof ChainInfo>;
 
