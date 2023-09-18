@@ -128,6 +128,8 @@ jobs:
           make install
           echo "::endgroup::"
         working-directory: libffi
+      - name: Add rust target for building deps
+        run: rustup target add aarch64-apple-darwin
       - name: Cache python pkg
         uses: actions/cache@v3
         with:
