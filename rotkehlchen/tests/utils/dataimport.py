@@ -1956,3 +1956,60 @@ def assert_bitcoin_tax_trades_import_results(
 
     else:
         raise AssertionError(f'Unexpected csv file name {csv_file_name}')
+
+
+def assert_bitstamp_trades_import_results(rotki: Rotkehlchen):
+    """A utility function to help assert on correctness of importing data from bitstamp"""
+    DBHistoryEvents(rotki.data.db)
+    with rotki.data.db.conn.read_ctx() as cursor:
+        trades = rotki.data.db.get_trades(cursor, filter_query=TradesFilterQuery.make(), has_premium=True)  # noqa: E501
+        asset_movements = rotki.data.db.get_asset_movements(
+            cursor,
+            filter_query=AssetMovementsFilterQuery.make(),
+            has_premium=True,
+        )
+
+    warnings = rotki.msg_aggregator.consume_warnings()
+    errors = rotki.msg_aggregator.consume_errors()
+    assert len(errors) == 0
+    assert len(warnings) == 0
+
+    expected_trades = [Trade(
+        timestamp=Timestamp(1643329860),
+        location=Location.BITSTAMP,
+        base_asset=A_EUR,
+        quote_asset=A_ETH,
+        trade_type=TradeType.SELL,
+        amount=AssetAmount(FVal('2214.01')),
+        rate=Price(FVal('2214.01')),
+        fee=Fee(FVal('10.87005')),
+        fee_currency=A_EUR,
+        link='',
+        notes='',
+    )]
+    assert expected_trades == trades
+
+    expected_movements = [AssetMovement(
+        location=Location.BITSTAMP,
+        category=AssetMovementCategory.DEPOSIT,
+        timestamp=Timestamp(1643328780),
+        address=None,
+        transaction_id=None,
+        asset=A_ETH,
+        amount=AssetAmount(FVal('2')),
+        fee_asset=A_USD,
+        fee=Fee(ZERO),
+        link='',
+    ), AssetMovement(
+        location=Location.BITSTAMP,
+        category=AssetMovementCategory.WITHDRAWAL,
+        address=None,
+        transaction_id=None,
+        timestamp=Timestamp(1643542800),
+        asset=A_EUR,
+        amount=AssetAmount(FVal('2211.01')),
+        fee_asset=A_USD,
+        fee=Fee(ZERO),
+        link='',
+    )]
+    assert expected_movements == asset_movements
