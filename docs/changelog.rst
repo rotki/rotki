@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Substrate balances in the blockchain & accounts view will now display correctly.
 * :bug:`6587` All Kraken special & staking assets, like staking assets bonded for a specific time will now be handled properly.
 * :bug:`-` Pointed to the new yearn finance API domain.
 * :bug:`-` rotki will now prevent users from merging EVM tokens.
