@@ -1,4 +1,4 @@
-lockfileVersion: '6.0'
+lockfileVersion: '6.1'
 
 settings:
   autoInstallPeers: true
@@ -220,8 +220,8 @@ importers:
         specifier: 5.1.0
         version: 5.1.0
       electron:
-        specifier: 26.1.0
-        version: 26.1.0
+        specifier: 26.2.1
+        version: 26.2.1
       electron-builder:
         specifier: 24.6.3
         version: 24.6.3
@@ -5258,8 +5258,8 @@ packages:
       mkdirp: 0.5.6
     dev: false
 
-  /electron@26.1.0:
-    resolution: {integrity: sha512-qEh19H09Pysn3ibms5nZ0haIh5pFoOd7/5Ww7gzmAwDQOulRi8Sa2naeueOyIb1GKpf+6L4ix3iceYRAuA5r5Q==}
+  /electron@26.2.1:
+    resolution: {integrity: sha512-SNT24Cf/wRvfcFZQoERXjzswUlg5ouqhIuA2t9x2L7VdTn+2Jbs0QXRtOfzcnOV/raVMz3e8ICyaU2GGeciKLg==}
     engines: {node: '>= 12.20.55'}
     hasBin: true
     requiresBuild: true
