@@ -1,0 +1,4 @@
+Type,Datetime,Account,Amount,Value,Rate,Fee,Sub Type
+Deposit,"Jan. 28, 2022, 12:13 AM",Main Account,2.00000000 ETH,,,,
+Market,"Jan. 28, 2022, 12:31 AM",Main Account,1.00000000 ETH,2214.01 EUR,2214.01 EUR,10.87005 EUR,Sell
+Withdrawal,"Jan. 30, 2022, 11:40 AM",Main Account,2211.01 EUR,,,3.00 EUR,
