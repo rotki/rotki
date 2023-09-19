@@ -923,7 +923,6 @@ UniqueCacheType = Literal[
     CacheType.MAKERDAO_VAULT_ILK,
     CacheType.CURVE_GAUGE_ADDRESS,
     CacheType.YEARN_VAULTS,
-    CacheType.VELODROME_GAUGE_ADDRESS,
 ]
 
 GeneralCacheType = Literal[
@@ -931,6 +930,7 @@ GeneralCacheType = Literal[
     CacheType.CURVE_POOL_TOKENS,
     CacheType.CURVE_POOL_UNDERLYING_TOKENS,
     CacheType.VELODROME_POOL_ADDRESS,
+    CacheType.VELODROME_GAUGE_ADDRESS,
 ]
 
 

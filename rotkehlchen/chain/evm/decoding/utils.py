@@ -17,7 +17,7 @@ def maybe_reshuffle_events(
         events_list: list['EvmEvent'],
 ) -> None:
     """Takes a list of events to order and makes sure that the sequence index of each
-    of them is in ascending order and that the the events are consecutive in the
+    of them is in ascending order and that the events are consecutive in the
     decoded events list.
 
     This is for two reasons.
