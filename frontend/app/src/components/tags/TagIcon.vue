@@ -1,11 +1,15 @@
 <script setup lang="ts">
-import { type PropType } from 'vue';
 import { type Tag } from '@/types/tags';
 
-defineProps({
-  tag: { required: true, type: Object as PropType<Tag> },
-  small: { required: false, type: Boolean, default: false }
-});
+withDefaults(
+  defineProps<{
+    tag: Tag;
+    small?: boolean;
+  }>(),
+  {
+    small: false
+  }
+);
 </script>
 
 <template>

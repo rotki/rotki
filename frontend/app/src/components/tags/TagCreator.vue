@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
-import { type PropType, type Ref } from 'vue';
+import { type Ref } from 'vue';
 import { type Tag, type TagEvent } from '@/types/tags';
 
-const props = defineProps({
-  tag: { required: true, type: Object as PropType<Tag> },
-  editMode: { required: true, type: Boolean }
-});
+const props = defineProps<{
+  tag: Tag;
+  editMode: boolean;
+}>();
 
 const emit = defineEmits(['changed', 'save', 'cancel']);
 const { t } = useI18n();

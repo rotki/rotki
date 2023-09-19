@@ -1,6 +1,6 @@
 ﻿<script setup lang="ts">
 import { type SupportedAsset } from '@rotki/common/lib/data';
-import { type PropType, type Ref, useListeners } from 'vue';
+import { type Ref, useListeners } from 'vue';
 import { type DataTableHeader } from '@/types/vuetify';
 import { type Writeable } from '@/types';
 import {
@@ -9,12 +9,9 @@ import {
   type ConflictResolutionStrategy
 } from '@/types/asset';
 
-const props = defineProps({
-  conflicts: {
-    required: true,
-    type: Array as PropType<AssetUpdateConflictResult[]>
-  }
-});
+const props = defineProps<{
+  conflicts: AssetUpdateConflictResult[];
+}>();
 
 const emit = defineEmits<{
   (e: 'cancel'): void;

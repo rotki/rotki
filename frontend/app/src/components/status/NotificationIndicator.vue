@@ -1,7 +1,7 @@
 <script setup lang="ts">
-defineProps({
-  visible: { required: true, type: Boolean }
-});
+defineProps<{
+  visible: boolean;
+}>();
 
 const emit = defineEmits(['click']);
 const { count } = storeToRefs(useNotificationsStore());
