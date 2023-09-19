@@ -12,9 +12,10 @@ export const useSupportedChainsApi = () => {
   };
 
   const fetchAllEvmChains = async (): Promise<EvmChainEntries> => {
-    const response = await api.instance.get<ActionResult<EvmChainEntries>>(
-      `/blockchains/evm/all`
-    );
+    const response =
+      await api.instance.get<ActionResult<EvmChainEntries>>(
+        `/blockchains/evm/all`
+      );
     return EvmChainEntries.parse(handleResponse(response));
   };
 

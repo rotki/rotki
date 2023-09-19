@@ -700,6 +700,7 @@
     "awaitParallelExecution": true,
     "groupAssetBreakdown": true,
     "disposeEvmRpcNodeComposables": true,
-    "hexToRgbPoints": true
+    "hexToRgbPoints": true,
+    "WritableComputedRef": true
   }
 }

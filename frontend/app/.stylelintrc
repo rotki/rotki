@@ -1,7 +1,6 @@
 {
   "plugins": [
     "stylelint-scss",
-    "@namics/stylelint-bem",
     "stylelint-order"
   ],
   "extends": "stylelint-config-recommended-vue/scss",
@@ -27,10 +26,6 @@
     ],
     "scss/selector-nest-combinators": "always",
     "scss/selector-no-redundant-nesting-selector": true,
-    "plugin/stylelint-bem-namics": {
-      "patternPrefixes": [],
-      "helperPrefixes": []
-    },
     "rule-empty-line-before": [
       "always", {
         "except": ["first-nested"]

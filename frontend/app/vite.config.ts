@@ -44,7 +44,11 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     deps: {
-      inline: ['vuetify']
+      optimizer: {
+        web: {
+          include: ['vuetify']
+        }
+      }
     },
     setupFiles: ['tests/unit/setup-files/setup.ts'],
     coverage: {

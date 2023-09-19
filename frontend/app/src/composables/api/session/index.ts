@@ -7,9 +7,8 @@ import { snakeCaseTransformer } from '@/services/axios-tranformers';
 
 export const useSessionApi = () => {
   const consumeMessages = async (): Promise<Messages> => {
-    const response = await api.instance.get<ActionResult<Messages>>(
-      '/messages'
-    );
+    const response =
+      await api.instance.get<ActionResult<Messages>>('/messages');
 
     return handleResponse(response);
   };

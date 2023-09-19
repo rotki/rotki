@@ -33,16 +33,16 @@
     "lint-staged": "lint-staged"
   },
   "devDependencies": {
-    "@rotki/eslint-config": "1.1.1",
+    "@rotki/eslint-config": "1.1.2",
     "argparse": "2.0.1",
     "dotenv": "14.3.2",
-    "eslint": "8.47.0",
+    "eslint": "8.49.0",
     "husky": "8.0.3",
     "jsdom": "22.1.0",
     "lint-staged": "14.0.1",
     "rimraf": "5.0.1",
     "semver": "7.5.4",
-    "typescript": "5.1.6"
+    "typescript": "5.2.2"
   },
   "engines": {
     "node": ">=18 <19",
