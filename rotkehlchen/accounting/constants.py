@@ -37,6 +37,7 @@ DEFAULT_EVENT_CATEGORY_MAPPINGS = {
     HistoryEventType.TRADE: {
         HistoryEventSubType.SPEND: EventCategory.SWAP_OUT,
         HistoryEventSubType.RECEIVE: EventCategory.SWAP_IN,
+        HistoryEventSubType.FEE: EventCategory.FEE,
     },
     HistoryEventType.WITHDRAWAL: {
         HistoryEventSubType.NONE: EventCategory.WITHDRAW,
