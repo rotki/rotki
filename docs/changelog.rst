@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` ENS registrations that involve a refund to the user due to paying too much should reflect the proper amount in the decoded event.
 * :bug:`6597` Transactions involving ENS labelhashes with odd number of digits will now be decoded correctly and the entire decoding process should not halt if they are encountered.
 * :bug:`-` Substrate balances in the blockchain & accounts view will now display correctly.
 * :bug:`6587` All Kraken special & staking assets, like staking assets bonded for a specific time will now be handled properly.
