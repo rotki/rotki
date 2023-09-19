@@ -42,11 +42,13 @@ def test_mint_ens_name(database, ethereum_inquirer):
         tx_hash=tx_hash,
     )
     expires_timestamp = 2142055301
+    timestamp = TimestampMS(1637144069000)
+    register_fee_str = '0.019345192039577752'
     expected_events = [
         EvmEvent(
             tx_hash=tx_hash,
             sequence_index=0,
-            timestamp=1637144069000,
+            timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -58,14 +60,14 @@ def test_mint_ens_name(database, ethereum_inquirer):
         ), EvmEvent(
             tx_hash=tx_hash,
             sequence_index=2,
-            timestamp=1637144069000,
+            timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_ETH,
-            balance=Balance(amount=FVal('0.021279711243535527')),
+            balance=Balance(amount=FVal(register_fee_str)),
             location_label=ADDY,
-            notes=f'Register ENS name hania.eth for 0.019345192039577752 ETH until {decoder.decoders["Ens"].timestamp_to_date(expires_timestamp)}',  # noqa: E501
+            notes=f'Register ENS name hania.eth for {register_fee_str} ETH until {decoder.decoders["Ens"].timestamp_to_date(expires_timestamp)}',  # noqa: E501
             counterparty=CPT_ENS,
             address=string_to_evm_address('0x283Af0B28c62C092C9727F1Ee09c02CA627EB7F5'),
         )]
@@ -658,7 +660,7 @@ def test_for_truncated_labelhash(database, ethereum_inquirer, ethereum_accounts)
             event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_ETH,
-            balance=Balance(amount=FVal('0.128749338636028262')),
+            balance=Balance(amount=FVal(register_fee_str)),
             location_label=user_address,
             notes=f'Register ENS name cantillon.eth for {register_fee_str} ETH until {decoder.decoders["Ens"].timestamp_to_date(expires_timestamp)}',  # noqa: E501
             counterparty=CPT_ENS,

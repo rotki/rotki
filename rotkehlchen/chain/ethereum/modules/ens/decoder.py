@@ -127,6 +127,7 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):
                 if event.balance.amount != expected_amount:
                     return DEFAULT_DECODING_OUTPUT  # registration amount did not match
 
+                event.balance.amount = amount  # adjust the spent amount too, after refund
                 event.event_type = HistoryEventType.TRADE
                 event.event_subtype = HistoryEventSubType.SPEND
                 event.counterparty = CPT_ENS
