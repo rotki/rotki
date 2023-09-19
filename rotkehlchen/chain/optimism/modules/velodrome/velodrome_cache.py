@@ -11,9 +11,7 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.globaldb.cache import (
     globaldb_get_general_cache_like,
     globaldb_get_general_cache_values,
-    globaldb_get_unique_cache_value,
     globaldb_set_general_cache_values,
-    globaldb_set_unique_cache_value,
 )
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -40,7 +38,6 @@ class VelodromePoolData(NamedTuple):
     pool_address: ChecksumEvmAddress
     pool_name: str
     gauge_address: Optional[ChecksumEvmAddress]
-    coins: list[ChecksumEvmAddress]
 
 
 def save_velodrome_data_to_cache(
@@ -49,13 +46,11 @@ def save_velodrome_data_to_cache(
         new_data: list[VelodromePoolData],
 ) -> None:
     """
-    Stores data about velodrome pools and gauges in the gloabal db cache tables.
-
-    unique_cache table:
-    VELOG + {pool address} -> {gauge address}
+    Stores data about velodrome pools and gauges in the global db cache tables.
 
     general_cache table:
     VELOP -> {pool address}
+    VELOG -> {gauge address}
     """
     db_addressbook = DBAddressbook(db_handler=database)
     for pool in new_data:
@@ -86,10 +81,10 @@ def save_velodrome_data_to_cache(
             values=[pool.pool_address],
         )
         if pool.gauge_address is not None:
-            globaldb_set_unique_cache_value(
+            globaldb_set_general_cache_values(
                 write_cursor=write_cursor,
-                key_parts=(CacheType.VELODROME_GAUGE_ADDRESS, pool.pool_address),
-                value=pool.gauge_address,
+                key_parts=(CacheType.VELODROME_GAUGE_ADDRESS,),
+                values=[pool.gauge_address],
             )
 
 
@@ -105,9 +100,9 @@ def read_velodrome_pools_and_gauges_from_cache() -> tuple[set[ChecksumEvmAddress
         str_pool_addresses = globaldb_get_general_cache_values(cursor=cursor, key_parts=(CacheType.VELODROME_POOL_ADDRESS,))  # noqa: E501
         for pool_address in str_pool_addresses:
             pool_addresses.add(string_to_evm_address(pool_address))
-            gauge_address = globaldb_get_unique_cache_value(cursor=cursor, key_parts=(CacheType.VELODROME_GAUGE_ADDRESS, pool_address))  # noqa: E501
-            if gauge_address is None:
-                continue
+
+        str_gauge_addresses = globaldb_get_general_cache_values(cursor=cursor, key_parts=(CacheType.VELODROME_GAUGE_ADDRESS,))  # noqa: E501
+        for gauge_address in str_gauge_addresses:
             gauge_addresses.add(string_to_evm_address(gauge_address))
 
     return pool_addresses, gauge_addresses
@@ -121,6 +116,10 @@ def query_velodrome_data_from_chain_and_maybe_create_tokens(
     Queries velodrome data from chain from the Velodrome Finance LP Sugar v2 contract.
     If new pools are found their tokens are created and the pools are returned.
     (Find more details for the contract here: https://github.com/velodrome-finance/sugar).
+
+    - It only queries velodrome v2. Velodrome v1 data is "hardcoded" in the packaged db
+    because they are not expected to change and there is no reason to make this method slower
+    by querying v1 too.
 
     May raise:
     - RemoteError if there is an error connecting with the remote source of data
@@ -183,7 +182,6 @@ def query_velodrome_data_from_chain_and_maybe_create_tokens(
                     pool_address=pool_address,
                     pool_name=pool[1],
                     gauge_address=gauge_address if gauge_address != ZERO_ADDRESS else None,
-                    coins=[token0, token1],
                 ),
             )
 

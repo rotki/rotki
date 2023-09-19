@@ -1428,7 +1428,7 @@ def test_3pool_add_liquidity(ethereum_transaction_decoder, ethereum_accounts):
             location_label=user_address,
             counterparty=CPT_CURVE,
             address=string_to_evm_address('0xA79828DF1850E8a3A3064576f380D90aECDD3359'),
-            notes='Deposit 200000 USDT in curve pool 0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7',  # noqa: E501
+            notes='Deposit 200000 USDT in curve pool 0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7',
         ),
     ]
     assert events == expected_events
