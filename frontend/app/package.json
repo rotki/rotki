@@ -89,7 +89,7 @@
     "dmg-license": "1.0.11",
     "dotenv": "14.3.2",
     "dotenv-cli": "5.1.0",
-    "electron": "25.3.1",
+    "electron": "25.8.1",
     "electron-builder": "24.4.0",
     "electron-devtools-installer": "3.2.0",
     "electron-store": "8.1.0",
