@@ -6,6 +6,7 @@ from rotkehlchen.accounting.structures.types import HistoryEventSubType, History
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.ethereum.modules.ens.constants import CPT_ENS
+from rotkehlchen.chain.ethereum.modules.ens.decoder import ENS_REGISTRAR_CONTROLLER_1
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -607,4 +608,78 @@ def test_transfer_ens_name(database, ethereum_inquirer, action, ethereum_account
             'token_name': 'ERC721 token',
         },
     ))
+    assert events == expected_events
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('ethereum_accounts', [['0x5f0eb172CaA67d45865AAd955FA77654Da33196F']])
+def test_for_truncated_labelhash(database, ethereum_inquirer, ethereum_accounts):
+    """Test for https://github.com/rotki/rotki/issues/6597 where some labelhashes
+    had their leading 0s truncated and lead to graph failures
+    """
+    tx_hex = deserialize_evm_tx_hash('0x8a809c2286342e04ce74494808c1dee5efd7aeb0af57b600780cb04eb3f83441')  # noqa: E501
+    evmhash = deserialize_evm_tx_hash(tx_hex)
+    user_address = ethereum_accounts[0]
+    events, decoder = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hex,
+    )
+    timestamp = TimestampMS(1603662139000)
+    gas_str = '0.003424155'
+    register_fee_str = '0.122618417748598345'
+    expires_timestamp = Timestamp(1919231659)
+    erc721_asset = get_or_create_evm_token(  # TODO: Better way to test than this for ERC721 ...?
+        userdb=database,
+        evm_address=string_to_evm_address('0x57f1887a8BF19b14fC0dF6Fd9B2acc9Af147eA85'),
+        chain_id=ChainID.ETHEREUM,
+        token_kind=EvmTokenKind.ERC721,
+        evm_inquirer=ethereum_inquirer,
+    )
+    expected_events = [
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas_str)),
+            location_label=user_address,
+            notes=f'Burned {gas_str} ETH for gas',
+            counterparty=CPT_GAS,
+            address=None,
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=2,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_ETH,
+            balance=Balance(amount=FVal('0.128749338636028262')),
+            location_label=user_address,
+            notes=f'Register ENS name cantillon.eth for {register_fee_str} ETH until {decoder.decoders["Ens"].timestamp_to_date(expires_timestamp)}',  # noqa: E501
+            counterparty=CPT_ENS,
+            address=ENS_REGISTRAR_CONTROLLER_1,
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=207,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=erc721_asset,
+            balance=Balance(amount=FVal(1)),
+            location_label=user_address,
+            notes=f'Receive ENS name cantillon.eth from {ENS_REGISTRAR_CONTROLLER_1} to {user_address}',  # noqa: E501
+            counterparty=CPT_ENS,
+            address=ENS_REGISTRAR_CONTROLLER_1,
+            extra_data={
+                'token_id': 520289412805995815014030902380736904960994587318475958708983757899533811755,  # noqa: E501
+                'token_name': 'ERC721 token',
+            },
+        ),
+    ]
     assert events == expected_events
