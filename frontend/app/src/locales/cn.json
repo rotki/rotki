@@ -159,10 +159,6 @@
     },
     "title": "交易设置"
   },
-  "address_account_form": {
-    "label": "添加到所有支持的 EVM 链",
-    "hint": "当检查时,将跟踪此地址的所有支持的EVM链(Ethereum, Optimism 等)"
-  },
   "actions": {
     "add_eth2_validator": {
       "error": {
@@ -243,8 +239,8 @@
       "blockchain_accounts_add": {
         "error": {
           "description": "无法添加 {addresses} 个新的 {blockchain} 账户： {error}",
-          "failed_list_description": "无法添加 {addresses} 个新的 {blockchain} 账户。请再次检查这些账户是否有效：\n {list}",
           "empty_addresses_description": "地址 {address} 未添加，因为它是合约或在任何受支持的 EVM 链中没有任何活动",
+          "failed_list_description": "无法添加 {addresses} 个新的 {blockchain} 账户。请再次检查这些账户是否有效：\n {list}",
           "title": "添加 {blockchain} 账户"
         },
         "no_new": {
@@ -791,23 +787,23 @@
       }
     },
     "transactions_redecode": {
-      "task": {
-        "description": "检索交易事件",
-        "title": "Evm 交易事件检索"
-      },
       "error": {
         "description": "无法从交易中检索事件：{error}",
         "title": "从交易中检索事件"
+      },
+      "task": {
+        "description": "检索交易事件",
+        "title": "Evm 交易事件检索"
       }
     },
     "transactions_redecode_missing": {
-      "task": {
-        "description": "检索地址的交易事件：{address} ({evmChain})",
-        "title": "Evm 事务丢失事件检索"
-      },
       "error": {
         "description": "无法从地址 {address} ({evmChain}) 的交易中检索丢失的事件：{error}",
         "title": "从交易中检索丢失的事件"
+      },
+      "task": {
+        "description": "检索地址的交易事件：{address} ({evmChain})",
+        "title": "Evm 事务丢失事件检索"
       }
     },
     "unignore": {
@@ -824,6 +820,10 @@
       "title": "启用模块"
     },
     "view_addresses": "查看 {name} 的查询地址"
+  },
+  "address_account_form": {
+    "hint": "当检查时,将跟踪此地址的所有支持的EVM链(Ethereum, Optimism 等)",
+    "label": "添加到所有支持的 EVM 链"
   },
   "address_book": {
     "actions": {
@@ -902,11 +902,11 @@
   },
   "airdrops": {
     "description": "* 这些是 rotki 检测到您的跟踪帐户有资格获得的空投。您可能已经领取了它们。如果没有，请访问每个协议的链接并领取您的份额。",
-    "status_hint": "显示 {status} 空投的结果。",
     "headers": {
       "source": "来源"
     },
     "loading": "请稍候,rotki 正在查询您的地址空投......",
+    "status_hint": "显示 {status} 空投的结果。",
     "title": "空投"
   },
   "alias_names": {
@@ -921,9 +921,9 @@
     "manual_tooltip": "手动定义价格"
   },
   "app": {
+    "copyright": "© Rotki Solutions GmbH 2018-{year}",
     "moto": "保护您隐私的开源投资组合管理器",
-    "name": "rotki",
-    "copyright": "© Rotki Solutions GmbH 2018-{year}"
+    "name": "rotki"
   },
   "asset_balances": {
     "loading": "rotki 正在查询区块链，请稍候..."
@@ -1077,13 +1077,13 @@
     "up_to_version": "只更新到版本"
   },
   "asset_update_status": {
-    "checking": {
-      "title": "正在检查更新的资产",
-      "message": "正在执行资产更新检查，请稍候"
-    },
     "applying": {
-      "title": "应用资产更新",
-      "message": "请稍候，您的资产数据正在更新到版本 {remoteVersion}"
+      "message": "请稍候，您的资产数据正在更新到版本 {remoteVersion}",
+      "title": "应用资产更新"
+    },
+    "checking": {
+      "message": "正在执行资产更新检查，请稍候",
+      "title": "正在检查更新的资产"
     }
   },
   "assets": {
@@ -1099,8 +1099,8 @@
       "type": "按自定义资产类型过滤",
       "type_hint": "使用资产类型搜索"
     },
-    "multi_chain_assets": "多链资产",
     "ignore": "忽略资产",
+    "multi_chain_assets": "多链资产",
     "value": "价值"
   },
   "back_button": {
@@ -1273,6 +1273,7 @@
   "blockchain_balances": {
     "add_account": "添加账户",
     "balances": {
+      "arbitrum_one": "Arbitrum One 余额",
       "avax": "Avalanche 余额",
       "bch": "Bitcoin Cash 余额",
       "btc": "Bitcoin 余额",
@@ -1282,8 +1283,7 @@
       "ksm": "Kusama 余额",
       "loopring": "Loopring 余额",
       "optimism": "Optimism",
-      "polygon_pos": "Polygon PoS 余额",
-      "arbitrum_one": "Arbitrum One 余额"
+      "polygon_pos": "Polygon PoS 余额"
     },
     "form_dialog": {
       "add_title": "添加区块链账户",
@@ -1378,9 +1378,6 @@
   },
   "common": {
     "account": "账户",
-    "status": "地位",
-    "claimed": "声称",
-    "unclaimed": "无人认领",
     "actions": {
       "accept": "接受",
       "back": "返回",
@@ -1419,6 +1416,7 @@
     "available_to_premium": "仅对高级用户可用。",
     "balance": "余额",
     "category": "类别",
+    "claimed": "声称",
     "datetime": "日期/时间",
     "deposits": "存款",
     "description": "描述",
@@ -1429,6 +1427,7 @@
     "location": "位置",
     "multi_chain": "多链",
     "name": "姓名",
+    "never": "从不",
     "no_premium": "未检测到高级订阅。",
     "of": "of",
     "price": "价格",
@@ -1437,10 +1436,12 @@
     "protocol": "协议",
     "rewards": "奖励",
     "select_address": "选择地址",
+    "status": "地位",
     "total": "总计",
     "tx": "Tx",
     "tx_hash": "交易哈希",
     "type": "类型",
+    "unclaimed": "无人认领",
     "validator_index": "验证器索引",
     "value_in_symbol": "{symbol} 值",
     "visit_website": "要获得高级订阅，请访问我们的 {0}"
@@ -1495,6 +1496,23 @@
     "incomplete": "（不完整）"
   },
   "create_account": {
+    "credentials": {
+      "description": "请记住，您在此处创建的用户是 {highlight}，与在网页上创建的帐户无关。",
+      "highlight": "仅在应用程序中启用",
+      "label_password": "密码",
+      "label_password_backup_reminder": "rotki 会将所有用户数据保存在本地。我明白如果我丢失密码，我将无法访问我的数据。我已经创建了密码的备份。",
+      "label_password_repeat": "重复密码",
+      "label_username": "用户名",
+      "password_sync_requirement": "请确保该帐户使用与最初备份的数据库相同的密码。如果输入不同的密码，您将无法访问数据库。",
+      "validation": {
+        "check_prompt": "确认您已阅读并创建了备份",
+        "non_empty_password": "请提供密码",
+        "non_empty_password_confirmation": "请提供密码确认",
+        "non_empty_username": "请提供用户名",
+        "password_confirmation_mismatch": "密码确认与提供的密码不匹配",
+        "valid_username": "用户名必须仅包含字母数字字符，不得包含空格"
+      }
+    },
     "have_account": {
       "description": "已经有账户了？",
       "log_in": "登录"
@@ -1508,35 +1526,18 @@
       "premium_link_text": "这里。",
       "premium_question": "您已经是 rotki 高级用户并想要启用高级功能吗？\n如果您想在创建帐户时从另一台设备同步您的 rotki 数据库，则需要进行此操作。您可以在 {premiumLink} 购买高级版"
     },
-    "credentials": {
-      "label_password": "密码",
-      "label_password_backup_reminder": "rotki 会将所有用户数据保存在本地。我明白如果我丢失密码，我将无法访问我的数据。我已经创建了密码的备份。",
-      "label_password_repeat": "重复密码",
-      "label_username": "用户名",
-      "password_sync_requirement": "请确保该帐户使用与最初备份的数据库相同的密码。如果输入不同的密码，您将无法访问数据库。",
-      "description": "请记住，您在此处创建的用户是 {highlight}，与在网页上创建的帐户无关。",
-      "highlight": "仅在应用程序中启用",
-      "validation": {
-        "non_empty_password": "请提供密码",
-        "non_empty_password_confirmation": "请提供密码确认",
-        "non_empty_username": "请提供用户名",
-        "password_confirmation_mismatch": "密码确认与提供的密码不匹配",
-        "valid_username": "用户名必须仅包含字母数字字符，不得包含空格",
-        "check_prompt": "确认您已阅读并创建了备份"
-      }
-    },
     "steps": {
       "step_1": {
-        "title": "介绍",
-        "description": "第一步"
+        "description": "第一步",
+        "title": "介绍"
       },
       "step_2": {
-        "title": "启用高级版",
-        "description": "您在我们的网站上是否有高级帐户？"
+        "description": "您在我们的网站上是否有高级帐户？",
+        "title": "启用高级版"
       },
       "step_3": {
-        "title": "创建帐户",
-        "description": "设置您的凭据"
+        "description": "设置您的凭据",
+        "title": "创建帐户"
       },
       "step_4": {
         "title": "使用分析"
@@ -1579,12 +1580,12 @@
   "dashboard": {
     "blockchain_balances": {
       "add": "添加区块链地址",
-      "title": "区块链",
       "behaviour": {
         "only_refresh_balances": "只刷新余额",
         "redetect_tokens": "重新检测代币并刷新余额",
         "title": "区块链刷新按钮行为"
-      }
+      },
+      "title": "区块链"
     },
     "exchange_balances": {
       "add": "添加交易所",
@@ -1715,17 +1716,17 @@
         "message": "您确定要清除为 {source} 缓存的图像吗？",
         "title": "确认缓存的清晰图像"
       },
+      "error": "清除 {source} 的缓存图像失败：{message}",
+      "hint": "清空此字段以删除所有缓存",
       "label": {
         "asset_icons": "资产图标",
         "asset_to_clear": "搜索资产图标以清除",
         "ens_avatars": "ENS头像",
         "ens_to_clear": "ENS头像清零"
       },
-      "hint": "清空此字段以删除所有缓存",
-      "error": "清除 {source} 的缓存图像失败：{message}",
-      "success": "缓存已成功清除",
       "select_image_source": "选择要清除的图像缓存源",
       "subtitle": "允许您清除 rotki 缓存的图像",
+      "success": "缓存已成功清除",
       "title": "清除图像缓存",
       "tooltip": "清除所选来源的缓存图像"
     },
@@ -1734,13 +1735,13 @@
         "message": "您确定要刷新 {source} 的缓存吗？",
         "title": "确认刷新缓存"
       },
+      "error": "清除 {source} 的缓存失败：{message}",
       "label": {
         "general_cache": "通用缓存 (Curve, MakerDAO, Yearn)"
       },
-      "error": "清除 {source} 的缓存失败：{message}",
-      "success": "缓存已成功清除",
       "select_cache": "选择要刷新的缓存",
       "subtitle": "允许您刷新 rotki 缓存的数据",
+      "success": "缓存已成功清除",
       "title": "刷新缓存",
       "tooltip": "刷新选定源的缓存"
     },
@@ -2292,26 +2293,26 @@
     },
     "external_service_setting": {
       "label": {
-        "query_retry_limit": "查询重试限制",
-        "query_retry_limit_hint": "在放弃之前重试对外部服务的查询次数。",
         "connect_timeout": "连接超时",
         "connect_timeout_hint": "在放弃建立与外部服务的连接之前等待的秒数。",
+        "query_retry_limit": "查询重试限制",
+        "query_retry_limit_hint": "在放弃之前重试对外部服务的查询次数。",
         "read_timeout": "读取超时",
         "read_timeout_hint": "在与外部服务的连接建立后，等待第一个字节的秒数。"
       },
       "title": "外部服务设置",
       "validation": {
-        "query_retry_limit": {
-          "non_empty": "请输入查询重试限制",
-          "invalid_range": "查询重试限制必须大于{min}"
-        },
         "connect_timeout": {
-          "non_empty": "请输入连接超时",
-          "invalid_range": "连接超时必须大于{min}"
+          "invalid_range": "连接超时必须大于{min}",
+          "non_empty": "请输入连接超时"
+        },
+        "query_retry_limit": {
+          "invalid_range": "查询重试限制必须大于{min}",
+          "non_empty": "请输入查询重试限制"
         },
         "read_timeout": {
-          "non_empty": "请输入读取超时",
-          "invalid_range": "读取超时必须大于{min}"
+          "invalid_range": "读取超时必须大于{min}",
+          "non_empty": "请输入读取超时"
         }
       }
     },
@@ -2332,14 +2333,14 @@
     },
     "language_contribution_tooltip": "此功能是实验性的，对于某些语言可能无法按预期工作。这是因为应用程序中的所有静态句子都必须手动翻译，这是一个漫长而持续的过程。因此，我们需要您的贡献来加快速度 起来。单击此处了解更多信息。",
     "nft_setting": {
-      "title": "NFT setting",
       "label": {
         "include_nfts": "在图表和总净值中包含 NFT",
         "include_nfts_hint": "默认情况下图表和仪表板包含所有 NFT 的值"
       },
       "subtitle": {
         "include_nfts": "在图表和总量中包含 NFT"
-      }
+      },
+      "title": "NFT setting"
     },
     "rpc_node_setting": {
       "title": "RPC节点设置"
@@ -2510,13 +2511,6 @@
       "line_two": "由于 binance 的 csv 格式，有可能不会导入所有数据。如果发生这种情况，您将收到警告。",
       "name": "币安"
     },
-    "bitmex": {
-      "import": "从 BitMEX 导入 {0}",
-      "import_types": "钱包历史",
-      "line_one": "[Experimental]如果您发现导入的数据有问题，请告诉我们，以便我们相应地调整代码。",
-      "line_two": "钱包历史文件中的金额假定为比特币。如果您希望其他货币支持此功能，请联系。",
-      "name": "BitMEX"
-    },
     "bisq": {
       "import": "从 Bisq 导入 {0}",
       "import_trade": "交易",
@@ -2527,9 +2521,16 @@
       "import": "从 bitcoin.tax 导入 {0}",
       "import_types": "交易、收入和支出",
       "line_one": "我们支持导入交易、收入和支出 csv 文件类型。",
-      "line_two": "所有导入的事件都映射到 rotki 的历史事件。",
       "line_three": "代表硬币重命名或分叉的交易文件类型的“交换”操作由 rotki 在别处处理，因此不需要为其创建历史事件。",
+      "line_two": "所有导入的事件都映射到 rotki 的历史事件。",
       "name": "bitcoin.tax"
+    },
+    "bitmex": {
+      "import": "从 BitMEX 导入 {0}",
+      "import_types": "钱包历史",
+      "line_one": "[Experimental]如果您发现导入的数据有问题，请告诉我们，以便我们相应地调整代码。",
+      "line_two": "钱包历史文件中的金额假定为比特币。如果您希望其他货币支持此功能，请联系。",
+      "name": "BitMEX"
     },
     "bitstamp": {
       "import": "从 Bitstamp 导入 {0}",
@@ -2847,8 +2848,8 @@
   },
   "loan_stake": {
     "no_lqty_staked": "没有质押的 LQTY",
-    "unclaimed_rewards": "无人认领的奖励",
-    "title": "Stake"
+    "title": "Stake",
+    "unclaimed_rewards": "无人认领的奖励"
   },
   "locations": {
     "total_asset_price": "总资产价格"
@@ -2856,6 +2857,11 @@
   "login": {
     "button_no_account": "没有帐户？",
     "button_signup": "报名",
+    "credential_error": {
+      "description": "如果您尚未创建应用帐户，则需要创建应用帐户才能登录。",
+      "support": "如果您需要帮助，请通过我们的 Discord 支持渠道联系我们。",
+      "title": "请注意，您的网站帐户和应用程序帐户是分开的，不能互换使用。"
+    },
     "custom_backend": {
       "hint": "你想要连接的后端的 url(默认留空)",
       "label": "后台网址",
@@ -2867,12 +2873,17 @@
         "url": "插入的条目不是有效的 url 格式"
       }
     },
+    "description": {
+      "more_details": "{documentation} 向您显示有关本地应用程序和用户的更多详细信息。",
+      "our_docs": "我们的文档",
+      "welcome": "欢迎！ 请输入您的详细信息。"
+    },
     "label_password": "密码",
     "label_username": "用户名",
     "logout": "注销",
     "migrating_data": {
-      "title": "数据迁移",
       "current": "已应用数据迁移 {currentVersion} 的 {totalSteps} 步 {currentStep}。.",
+      "title": "数据迁移",
       "warning": "数据迁移 {currentVersion} 正在运行。在完成之前请不要关闭应用程序。"
     },
     "remember_password": "记住密码d",
@@ -2885,17 +2896,9 @@
       "title": "数据库同步所需的用户操作"
     },
     "title": "登录",
-    "welcome_title": "欢迎来到 rotki",
-    "welcome_description": "欢迎使用保护您隐私的开源投资组合管理器。",
-    "welcome_update_message": "登录以探索我们所做的更改。",
-    "description": {
-      "welcome": "欢迎！ 请输入您的详细信息。",
-      "our_docs": "我们的文档",
-      "more_details": "{documentation} 向您显示有关本地应用程序和用户的更多详细信息。"
-    },
     "upgrading_db": {
-      "title": "数据库升级",
       "current": "已应用数据库升级 v{currentVersion} 的 {totalSteps} 步 {currentStep}。",
+      "title": "数据库升级",
       "warning": "数据库正在从版本 {fromVersion} 升级到 {toVersion}。在完成之前请不要关闭应用程序。"
     },
     "validation": {
@@ -2903,11 +2906,9 @@
       "non_empty_username": "请提供用户名",
       "valid_username": "用户名必须只包含字母数字字符且不能有空格"
     },
-    "credential_error": {
-      "title": "请注意，您的网站帐户和应用程序帐户是分开的，不能互换使用。",
-      "description": "如果您尚未创建应用帐户，则需要创建应用帐户才能登录。",
-      "support": "如果您需要帮助，请通过我们的 Discord 支持渠道联系我们。"
-    }
+    "welcome_description": "欢迎使用保护您隐私的开源投资组合管理器。",
+    "welcome_title": "欢迎来到 rotki",
+    "welcome_update_message": "登录以探索我们所做的更改。"
   },
   "macos_unsupported": {
     "header": "不支持的 macOS 版本",
@@ -3022,11 +3023,11 @@
     "settings_link": "模块设置"
   },
   "module_selector": {
-    "filter": "搜索模块",
     "actions": {
-      "enable_all": "启用全部",
-      "disable_all": "禁用所有"
+      "disable_all": "禁用所有",
+      "enable_all": "启用全部"
     },
+    "filter": "搜索模块",
     "table": {
       "enabled": "已启用"
     }
@@ -3079,13 +3080,13 @@
     },
     "import_data": "导入数据",
     "locations": "地点",
+    "manage_address_book": "管理地址簿",
     "manage_assets": "管理资产",
     "manage_assets_sub": {
       "custom_assets": "自定义资产",
       "managed_assets": "托管资产",
       "newly_detected": "新检测到的令牌"
     },
-    "manage_address_book": "管理地址簿",
     "manage_prices": "管理价格",
     "manage_prices_sub": {
       "historic_prices": "历史价格",
@@ -3199,8 +3200,27 @@
     "tooltip": "通知"
   },
   "notification_messages": {
+    "address_migration": {
+      "message": "以下地址已添加到{chain}:{addresses}|以下地址已添加到{chain}:{addresses}",
+      "title": "地址已添加到{chain}|地址已添加到{chain}"
+    },
     "backend": {
       "title": "后端"
+    },
+    "db_upload_result": {
+      "action": "强力推",
+      "message": "我们无法完成上传，因为{reason}",
+      "title": "数据库同步失败"
+    },
+    "missing_api_key": {
+      "action": "回车键",
+      "message": "您没有配置 {location} {service} API 密钥。 rotki {service} 查询仍然有效，但会很慢。如果你没有使用自己的{location}节点，建议去{url}，创建一个API密钥，然后在rotki的外部服务凭证设置中输入它",
+      "title": "{location} {service} API 密钥"
+    },
+    "new_detected_token": {
+      "action": "查看更多",
+      "message": "从事件处理和查询中检测到标识符为 {identifier} 的新令牌。|从事件处理和查询中检测到 {count} 个新令牌。",
+      "title": "检测到新令牌|检测到新令牌"
     },
     "premium": {
       "active": {
@@ -3213,28 +3233,9 @@
         "title": "高级功能已停用"
       }
     },
-    "new_detected_token": {
-      "action": "查看更多",
-      "title": "检测到新令牌|检测到新令牌",
-      "message": "从事件处理和查询中检测到标识符为 {identifier} 的新令牌。|从事件处理和查询中检测到 {count} 个新令牌。"
-    },
-    "missing_api_key": {
-      "title": "{location} {service} API 密钥",
-      "message": "您没有配置 {location} {service} API 密钥。 rotki {service} 查询仍然有效，但会很慢。如果你没有使用自己的{location}节点，建议去{url}，创建一个API密钥，然后在rotki的外部服务凭证设置中输入它",
-      "action": "回车键"
-    },
     "snapshot_failed": {
       "message": "无法在{location} 保存余额快照。{error}",
       "title": "余额快照失败"
-    },
-    "address_migration": {
-      "title": "地址已添加到{chain}|地址已添加到{chain}",
-      "message": "以下地址已添加到{chain}:{addresses}|以下地址已添加到{chain}:{addresses}"
-    },
-    "db_upload_result": {
-      "title": "数据库同步失败",
-      "message": "我们无法完成上传，因为{reason}",
-      "action": "强力推"
     }
   },
   "notification_popup": {
@@ -3362,7 +3363,7 @@
       },
       "overview": "概述",
       "ranges": {
-        "one_day": "1D",
+        "one_day": 1.0,
         "one_month": "1M",
         "one_week": "1W",
         "one_year": "1Y"
@@ -3771,6 +3772,26 @@
     "not_saved": "设置未保存",
     "saved": "设置已保存"
   },
+  "snapshot_action_button": {
+    "force_save": "强制保存",
+    "ignore_errors_label": "忽略错误",
+    "ignore_errors_tooltip": "保存余额快照，忽略外部 API 上的任何错误。这可能导致快照不完整。",
+    "menu_tooltip": "查看上次余额快照的日期",
+    "messages": {
+      "failed_description": "导入快照失败: {message}",
+      "success_description": "快照导入成功。您现在将退出。",
+      "title": "快照导入"
+    },
+    "snapshot_title": "最后余额快照",
+    "snapshot_tooltip": "这将强制拍摄所有余额的快照，忽略任何缓存。请谨慎使用，因为它可能会导致您受到速率限制。"
+  },
+  "snapshot_import_dialog": {
+    "balance_snapshot_file": "余额快照文件",
+    "balance_snapshot_file_suggested": "建议的文件名:balances_snapshot_import.csv",
+    "location_data_snapshot_file": "位置数据快照文件",
+    "location_data_snapshot_suggested": "建议文件名:location_data_snapshot_import.csv",
+    "title": "手动导入快照"
+  },
   "sorting_selector": {
     "desc": {
       "sort_asc_tooltip": "将排序改为升序",
@@ -3795,8 +3816,8 @@
   },
   "statistics_graph_settings": {
     "infer_zero_timed_balances": {
-      "title": "推断零时间余额",
-      "label": "为在特定时间没有余额的资产推断零时间余额。这对于在图表中显示零余额期间很有用。"
+      "label": "为在特定时间没有余额的资产推断零时间余额。这对于在图表中显示零余额期间很有用。",
+      "title": "推断零时间余额"
     },
     "multiplier": {
       "label": "乘数",
@@ -3823,25 +3844,8 @@
     "upload_tooltip": "将您的本地数据库推送到服务器并替换那里的所有数据"
   },
   "sync_indicator": {
-    "force_save": "强制保存",
-    "ignore_errors": "保存余额快照，忽略外部 API 上的任何错误。这可能导致快照不完整。",
-    "import_snapshot": {
-      "balance_snapshot_file": "余额快照文件",
-      "balance_snapshot_file_suggested": "建议的文件名:balances_snapshot_import.csv",
-      "location_data_snapshot_file": "位置数据快照文件",
-      "location_data_snapshot_suggested": "建议文件名:location_data_snapshot_import.csv",
-      "messages": {
-        "failed_description": "导入快照失败: {message}",
-        "success_description": "快照导入成功。您现在将退出。",
-        "title": "快照导入"
-      },
-      "title": "手动导入快照"
-    },
     "last_data_upload": "上次高级数据库同步",
-    "menu_tooltip": "查看上次余额快照的日期 | 查看上次余额快照的日期，以及上次高级数据库同步的时间",
-    "never_saved": "从不",
-    "snapshot_title": "最后余额快照",
-    "snapshot_tooltip": "这将强制拍摄所有余额的快照，忽略任何缓存。请谨慎使用，因为它可能会导致您受到速率限制。",
+    "menu_tooltip": "查看上次高级数据库同步的时间，并执行手动同步。",
     "upload_confirmation": {
       "action": "推|拉",
       "confirm_check": "我明白了",
@@ -3852,28 +3856,28 @@
     }
   },
   "table_filter": {
+    "exclusion": {
+      "description": "使用运算符 `!=` 过滤掉选项，例如",
+      "example": "type != evm event"
+    },
     "hint": {
       "description": "* 输入过滤器，然后按回车键，例如。",
       "example": "开始 = 26/05/2022"
     },
     "hint_filter": "组合过滤器将同时应用",
-    "exclusion": {
-      "description": "使用运算符 `!=` 过滤掉选项，例如",
-      "example": "type != evm event"
-    },
     "no_suggestions": "没有找到{search}的建议",
     "saved_filters": {
       "actions": {
-        "list": "打开保存的过滤器列表",
         "add": "将当前过滤器保存到列表",
         "apply": "应用这个保存的过滤器",
+        "list": "打开保存的过滤器列表",
         "remove": "移除这个已保存的过滤器"
       },
       "added": "过滤器已保存",
       "empty": "您没有任何已保存的过滤器。 照常应用过滤器，然后单击此按钮 {button} 保存过滤器。",
       "saving": {
-        "title": "未能保存过滤器",
-        "limited": "您最多只能保存 {limit} 个过滤器。 删除其他过滤器以便能够再次添加。"
+        "limited": "您最多只能保存 {limit} 个过滤器。 删除其他过滤器以便能够再次添加。",
+        "title": "未能保存过滤器"
       }
     },
     "title": "可用过滤器",
@@ -4127,12 +4131,12 @@
         "description": "隐藏金额和百分比",
         "label": "私人"
       },
+      "scramble": {
+        "label": "争夺"
+      },
       "semi_private_mode": {
         "description": "隐藏金额显示百分比",
         "label": "半私人"
-      },
-      "scramble": {
-        "label": "争夺"
       }
     },
     "confirmation": {

@@ -2,7 +2,11 @@ import { Severity } from '@rotki/common/lib/messages';
 import { api } from '@/services/rotkehlchen-api';
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
-import { SYNC_DOWNLOAD, type SyncAction } from '@/types/session/sync';
+import {
+  SYNC_DOWNLOAD,
+  SYNC_UPLOAD,
+  type SyncAction
+} from '@/types/session/sync';
 
 export const useSync = createSharedComposable(() => {
   const { isTaskRunning, awaitTask } = useTaskStore();
@@ -28,7 +32,7 @@ export const useSync = createSharedComposable(() => {
       return;
     }
 
-    function notifyFailure(error: string): void {
+    const notifyFailure = (error: string): void => {
       const title = t('actions.session.force_sync.error.title');
       const message = t('actions.session.force_sync.error.message', {
         error
@@ -39,11 +43,15 @@ export const useSync = createSharedComposable(() => {
         message,
         display: true
       });
-    }
+    };
 
     try {
       api.cancel();
-      const { taskId } = await useSyncApi().forceSync(get(syncAction));
+      const action = get(syncAction);
+      if (action === SYNC_UPLOAD) {
+        set(displaySyncConfirmation, false);
+      }
+      const { taskId } = await useSyncApi().forceSync(action);
       const { result, message } = await awaitTask<boolean, TaskMeta>(
         taskId,
         taskType,
@@ -63,7 +71,7 @@ export const useSync = createSharedComposable(() => {
           display: true
         });
 
-        if (get(syncAction) === SYNC_DOWNLOAD) {
+        if (action === SYNC_DOWNLOAD) {
           await logout();
         }
       } else {

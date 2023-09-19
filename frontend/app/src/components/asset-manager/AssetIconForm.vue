@@ -107,9 +107,9 @@ defineExpose({
       </VCol>
       <VCol>
         <FileUpload
+          v-model="icon"
           source="icon"
           file-filter=".png, .svg, .jpeg, .jpg, .webp"
-          @selected="icon = $event"
         />
       </VCol>
     </VRow>

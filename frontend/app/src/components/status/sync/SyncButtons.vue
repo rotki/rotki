@@ -23,43 +23,41 @@ const action = (action: SyncAction) => {
 </script>
 
 <template>
-  <div class="flex flex-wrap mx-n1">
-    <VTooltip top open-delay="400">
-      <template #activator="{ on, attrs }">
-        <VBtn
-          v-bind="attrs"
-          outlined
-          depressed
-          class="ma-1"
+  <div class="flex flex-row justify-between gap-1">
+    <RuiTooltip open-delay="400" class="w-full" close-delay="50000">
+      <template #activator>
+        <RuiButton
+          variant="outlined"
           color="primary"
+          class="w-full"
           :disabled="!premium || pending"
-          v-on="on"
           @click="action(UPLOAD)"
         >
-          <VIcon>mdi-cloud-upload</VIcon>
-          <span class="ml-2">{{ t('common.actions.push') }}</span>
-        </VBtn>
+          <template #prepend>
+            <RuiIcon name="upload-cloud-line" />
+          </template>
+          {{ t('common.actions.push') }}
+        </RuiButton>
       </template>
       <span>{{ t('sync_buttons.upload_tooltip') }}</span>
-    </VTooltip>
+    </RuiTooltip>
 
-    <VTooltip top open-delay="400">
-      <template #activator="{ on, attrs }">
-        <VBtn
-          v-bind="attrs"
-          outlined
-          depressed
-          class="ma-1"
+    <RuiTooltip open-delay="400" class="w-full">
+      <template #activator>
+        <RuiButton
+          variant="outlined"
           color="primary"
+          class="w-full"
           :disabled="!premium || pending"
-          v-on="on"
           @click="action(DOWNLOAD)"
         >
-          <VIcon>mdi-cloud-download</VIcon>
-          <span class="ml-2">{{ t('common.actions.pull') }}</span>
-        </VBtn>
+          <template #prepend>
+            <RuiIcon name="download-cloud-line" />
+          </template>
+          {{ t('common.actions.pull') }}
+        </RuiButton>
       </template>
       <span>{{ t('sync_buttons.download_tooltip') }}</span>
-    </VTooltip>
+    </RuiTooltip>
   </div>
 </template>

@@ -125,7 +125,7 @@ const { dark } = useTheme();
       </VCardTitle>
 
       <div class="p-4">
-        <SyncIndicator hide-database-sync />
+        <SnapshotActionButton />
       </div>
     </div>
     <VRow class="pa-6 pt-0">
