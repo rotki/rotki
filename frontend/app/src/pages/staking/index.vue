@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { type PropType } from 'vue';
 import { Routes } from '@/router/routes';
 
 interface StakingInfo {
@@ -9,13 +8,14 @@ interface StakingInfo {
   img?: boolean;
 }
 
-const props = defineProps({
-  location: {
-    required: false,
-    type: String as PropType<'eth2' | 'liquity' | 'kraken' | null>,
-    default: null
+const props = withDefaults(
+  defineProps<{
+    location?: 'eth2' | 'liquity' | 'kraken' | null;
+  }>(),
+  {
+    location: null
   }
-});
+);
 
 const iconSize = '64px';
 

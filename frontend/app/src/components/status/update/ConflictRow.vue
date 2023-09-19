@@ -1,9 +1,14 @@
 <script setup lang="ts">
-const props = defineProps({
-  field: { required: true, type: String },
-  value: { required: false, type: [String, Number], default: null },
-  diff: { required: true, type: Boolean }
-});
+const props = withDefaults(
+  defineProps<{
+    field: string;
+    value?: string | number | null;
+    diff: boolean;
+  }>(),
+  {
+    value: null
+  }
+);
 
 const { field } = toRefs(props);
 

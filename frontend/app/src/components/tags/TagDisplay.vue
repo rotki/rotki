@@ -1,15 +1,16 @@
 <script setup lang="ts">
-import { type PropType } from 'vue';
-
-defineProps({
-  tags: {
-    required: false,
-    type: Array as PropType<string[]>,
-    default: () => []
-  },
-  small: { required: false, type: Boolean, default: false },
-  wrapperClass: { required: false, type: String, default: '' }
-});
+withDefaults(
+  defineProps<{
+    tags?: string[];
+    small?: boolean;
+    wrapperClass?: string;
+  }>(),
+  {
+    tags: () => [],
+    small: false,
+    wrapperClass: ''
+  }
+);
 
 const { availableTags } = storeToRefs(useTagStore());
 </script>

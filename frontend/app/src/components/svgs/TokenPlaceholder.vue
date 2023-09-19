@@ -1,11 +1,12 @@
 <script setup lang="ts">
-defineProps({
-  size: {
-    required: false,
-    type: String,
-    default: '24px'
+withDefaults(
+  defineProps<{
+    size?: string;
+  }>(),
+  {
+    size: '24px'
   }
-});
+);
 </script>
 
 <template>
