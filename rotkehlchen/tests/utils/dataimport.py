@@ -1960,56 +1960,97 @@ def assert_bitcoin_tax_trades_import_results(
 
 def assert_bitstamp_trades_import_results(rotki: Rotkehlchen):
     """A utility function to help assert on correctness of importing data from bitstamp"""
-    DBHistoryEvents(rotki.data.db)
     with rotki.data.db.conn.read_ctx() as cursor:
-        trades = rotki.data.db.get_trades(cursor, filter_query=TradesFilterQuery.make(), has_premium=True)  # noqa: E501
-        asset_movements = rotki.data.db.get_asset_movements(
-            cursor,
-            filter_query=AssetMovementsFilterQuery.make(),
-            has_premium=True,
+        history_db = DBHistoryEvents(rotki.data.db)
+        history_events = history_db.get_history_events(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(),
+            has_premium=False,
         )
 
     warnings = rotki.msg_aggregator.consume_warnings()
     errors = rotki.msg_aggregator.consume_errors()
     assert len(errors) == 0
     assert len(warnings) == 0
+    assert len(history_events) == 5
 
-    expected_trades = [Trade(
-        timestamp=Timestamp(1643329860),
-        location=Location.BITSTAMP,
-        base_asset=A_EUR,
-        quote_asset=A_ETH,
-        trade_type=TradeType.SELL,
-        amount=AssetAmount(FVal('2214.01')),
-        rate=Price(FVal('2214.01')),
-        fee=Fee(FVal('10.87005')),
-        fee_currency=A_EUR,
-        link='',
-        notes='',
-    )]
-    assert expected_trades == trades
+    expected_history_events = [
+        HistoryEvent(
+            identifier=1,
+            event_identifier='1xyz',  # just a placeholder as comparison is done without this field  # noqa: E501
+            sequence_index=0,
+            timestamp=TimestampMS(1643328780000),
+            location=Location.BITSTAMP,
+            asset=A_ETH,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.NONE,
+            balance=Balance(
+                amount=FVal('2.00000000'),
+                usd_value=ZERO,
+            ),
+            notes='Deposit of 2.00000000 ETH(Ethereum) on Bitstamp',
+        ),
+        HistoryEvent(
+            identifier=2,
+            event_identifier='1xyz',  # just a placeholder as comparison is done without this field  # noqa: E501
+            sequence_index=0,
+            timestamp=TimestampMS(1643329860000),
+            location=Location.BITSTAMP,
+            asset=A_ETH,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.SPEND,
+            balance=Balance(
+                amount=FVal('1.00000000'),
+                usd_value=ZERO,
+            ),
+            notes='Spend 1.00000000 ETH(Ethereum) as the result of a trade on Bitstamp',
+        ),
+        HistoryEvent(
+            identifier=3,
+            event_identifier='1xyz',  # just a placeholder as comparison is done without this field  # noqa: E501
+            sequence_index=1,
+            timestamp=TimestampMS(1643329860000),
+            location=Location.BITSTAMP,
+            asset=A_EUR,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            balance=Balance(
+                amount=FVal('2214.01'),
+                usd_value=ZERO,
+            ),
+            notes='Receive 2214.01 EUR(Euro) as the result of a trade on Bitstamp',
+        ),
+        HistoryEvent(
+            identifier=4,
+            event_identifier='1xyz',  # just a placeholder as comparison is done without this field  # noqa: E501
+            sequence_index=2,
+            timestamp=TimestampMS(1643329860000),
+            location=Location.BITSTAMP,
+            asset=A_EUR,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.FEE,
+            balance=Balance(
+                amount=FVal('10.87005'),
+                usd_value=ZERO,
+            ),
+            notes='Fee of 10.87005 EUR(Euro) as the result of a trade on Bitstamp',
+        ),
+        HistoryEvent(
+            identifier=5,
+            event_identifier='1xyz',  # just a placeholder as comparison is done without this field  # noqa: E501
+            sequence_index=0,
+            timestamp=TimestampMS(1643542800000),
+            location=Location.BITSTAMP,
+            asset=A_EUR,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.NONE,
+            balance=Balance(
+                amount=FVal('2211.01'),
+                usd_value=ZERO,
+            ),
+            notes='Withdrawal of 2211.01 EUR(Euro) on Bitstamp',
+        ),
+    ]
 
-    expected_movements = [AssetMovement(
-        location=Location.BITSTAMP,
-        category=AssetMovementCategory.DEPOSIT,
-        timestamp=Timestamp(1643328780),
-        address=None,
-        transaction_id=None,
-        asset=A_ETH,
-        amount=AssetAmount(FVal('2')),
-        fee_asset=A_USD,
-        fee=Fee(ZERO),
-        link='',
-    ), AssetMovement(
-        location=Location.BITSTAMP,
-        category=AssetMovementCategory.WITHDRAWAL,
-        address=None,
-        transaction_id=None,
-        timestamp=Timestamp(1643542800),
-        asset=A_EUR,
-        amount=AssetAmount(FVal('2211.01')),
-        fee_asset=A_USD,
-        fee=Fee(ZERO),
-        link='',
-    )]
-    assert expected_movements == asset_movements
+    for actual, expected in zip(history_events, expected_history_events):
+        assert_is_equal_history_event(actual=actual, expected=expected)
