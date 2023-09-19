@@ -5,8 +5,12 @@ Changelog
 * :feature:`-` Properly decode optimism bridge 2 step withdrawal proving transactions
 * :feature:`-` Users will now have the ability to filter between claimed and unclaimed airdrops.
 * :feature:`-` Transactions bridging from/to Base using the official bridge will be now decoded. 
+* :bug:`-` ENS registrations that involve a refund to the user due to paying too much should reflect the proper amount in the decoded event.
+* :bug:`6597` Transactions involving ENS labelhashes with odd number of digits will now be decoded correctly and the entire decoding process should not halt if they are encountered.
+* :bug:`-` Substrate balances in the blockchain & accounts view will now display correctly.
 * :bug:`6587` All Kraken special & staking assets, like staking assets bonded for a specific time will now be handled properly.
 * :bug:`-` Pointed to the new yearn finance API domain.
+* :bug:`-` rotki will now prevent users from merging EVM tokens.
 * :bug:`6550` Custom imported rotki events will now be taken properly into account in PnL and shown as recognized in history events view.
 
 * :release:`1.30.1 <2023-08-23>`

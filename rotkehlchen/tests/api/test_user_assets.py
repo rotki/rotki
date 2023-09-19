@@ -13,8 +13,8 @@ from rotkehlchen.api.server import APIServer
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.assets.types import ASSET_TYPES_EXCLUDED_FOR_USERS, AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
-from rotkehlchen.constants import ONE
-from rotkehlchen.constants.assets import A_DAI, A_EUR
+from rotkehlchen.constants.assets import A_BCH, A_BTC, A_DAI, A_DOT, A_EUR, A_USDC
+from rotkehlchen.constants.misc import ONE
 from rotkehlchen.constants.resolver import (
     ChainID,
     ethaddress_to_identifier,
@@ -863,14 +863,29 @@ def test_replace_asset_edge_cases(rotkehlchen_api_server, globaldb):
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
-    response = requests.put(
-        api_url_for(
-            rotkehlchen_api_server,
-            'assetsreplaceresource',
-        ),
-        json={'source_identifier': glm_id, 'target_asset': 'ICP'},
-    )
-    assert_proper_response(response)
+    # try to merge combinations of EVM tokens/other assets. When the source is a evm token it
+    # should fail to avoid users from breaking assets in history events and other places
+    for asset_a, asset_b, should_succeed in (
+        (A_DAI, A_USDC, False),  # evm -> evm
+        (A_DAI, A_BTC, False),  # evm -> normal
+        (A_DOT, A_USDC, True),  # normal -> evm
+        (A_BTC, A_BCH, True),  # normal -> normal
+    ):
+        response = requests.put(
+            api_url_for(
+                rotkehlchen_api_server,
+                'assetsreplaceresource',
+            ),
+            json={'source_identifier': asset_a.identifier, 'target_asset': asset_b.identifier},
+        )
+        if should_succeed:
+            assert_proper_response(response)
+        else:
+            assert_error_response(
+                response=response,
+                contained_in_msg="Can't merge two evm tokens",
+                status_code=HTTPStatus.BAD_REQUEST,
+            )
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])

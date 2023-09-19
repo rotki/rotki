@@ -1,11 +1,11 @@
 import logging
-from multiprocessing.managers import RemoteError
 from typing import TYPE_CHECKING, Literal, Optional
+
 from rotkehlchen.constants.assets import A_USD
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-
 from rotkehlchen.serialization.deserialize import deserialize_timestamp
 from rotkehlchen.utils.misc import ts_now
 

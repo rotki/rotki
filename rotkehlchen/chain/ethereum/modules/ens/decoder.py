@@ -1,5 +1,4 @@
 import logging
-from multiprocessing.managers import RemoteError
 from typing import TYPE_CHECKING, Any, Optional
 
 import content_hash
@@ -21,8 +20,9 @@ from rotkehlchen.chain.evm.decoding.structures import (
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails, EventCategory
 from rotkehlchen.chain.evm.names import find_ens_mappings
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, DecoderEventMappingType, EvmTokenKind
@@ -127,6 +127,7 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):
                 if event.balance.amount != expected_amount:
                     return DEFAULT_DECODING_OUTPUT  # registration amount did not match
 
+                event.balance.amount = amount  # adjust the spent amount too, after refund
                 event.event_type = HistoryEventType.TRADE
                 event.event_subtype = HistoryEventSubType.SPEND
                 event.counterparty = CPT_ENS
@@ -198,7 +199,7 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):
             log.error(f'Could not decode an ERC721 transfer for an ENS name transfer: {context.transaction.tx_hash.hex()}')  # noqa: E501
             return DEFAULT_DECODING_OUTPUT
 
-        label_hash = hex(transfer_event.extra_data['token_id'])  # type: ignore[index]  # noqa: E501  # ERC721 transfer always has extra data
+        label_hash = '0x{:064x}'.format(transfer_event.extra_data['token_id'])  # type: ignore[index]  # noqa: E501  # ERC721 transfer always has extra data
         try:
             result = self.graph.query(
                 querystr=f'query{{domains(first:1, where:{{labelhash:"{label_hash}"}}){{labelName}}}}')  # noqa: E501
