@@ -2918,3 +2918,15 @@ class RefreshGeneralCacheResource(BaseMethodView):
     @use_kwargs(post_schema, location='json_and_query')
     def post(self, async_query: bool) -> Response:
         return self.rest_api.refresh_general_cache(async_query=async_query)
+
+
+class AirdropsMetadataResource(BaseMethodView):
+
+    def get(self) -> Response:
+        return self.rest_api.get_airdrops_metadata()
+
+
+class DefiMetadataResource(BaseMethodView):
+
+    def get(self) -> Response:
+        return self.rest_api.get_defi_metadata()

@@ -23,6 +23,7 @@ from rotkehlchen.api.v1.resources import (
     AccountingReportDataResource,
     AccountingReportsResource,
     AddressbookResource,
+    AirdropsMetadataResource,
     AllAssetsResource,
     AllBalancesResource,
     AllEvmChainsResource,
@@ -57,6 +58,7 @@ from rotkehlchen.api.v1.resources import (
     DataImportResource,
     DBSnapshotsResource,
     DefiBalancesResource,
+    DefiMetadataResource,
     DetectTokensResource,
     EnsAvatarsResource,
     ERC20TokenInfo,
@@ -310,6 +312,8 @@ URLS_V1: URLS = [
     ('/notes', UserNotesResource),
     ('/cache/<string:cache_type>/clear', ClearCacheResource),
     ('/cache/general/refresh', RefreshGeneralCacheResource),
+    ('/airdrops/metadata', AirdropsMetadataResource),
+    ('/defi/metadata', DefiMetadataResource),
 ]
 
 logger = logging.getLogger(__name__)
