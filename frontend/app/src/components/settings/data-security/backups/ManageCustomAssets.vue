@@ -60,7 +60,7 @@ const { t } = useI18n();
       <VAlert v-if="exportError" type="error" outlined dense>
         {{ exportError }}
       </VAlert>
-      <div class="d-flex flex-row align-center mt-4">
+      <div class="flex flex-row items-center mt-4">
         <VBtn color="primary" :loading="downloading" @click="exportZip()">
           {{ t('manage_user_assets.export.button') }}
         </VBtn>

@@ -139,7 +139,7 @@ watch([symbol, changeable, identifier], (curr, prev) => {
             <div
               v-bind="attrs"
               :style="styled"
-              class="d-flex"
+              class="flex"
               :class="{ [css.circle]: circle }"
               v-on="on"
             >

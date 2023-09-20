@@ -69,7 +69,7 @@ const { t } = useI18n();
             @click="data.select"
             @click:close="remove(data.item)"
           >
-            <span class="font-weight-medium">
+            <span class="font-medium">
               {{ getPoolName(type, data.item.assets) }}
             </span>
           </VChip>
@@ -77,7 +77,7 @@ const { t } = useI18n();
         <template #item="{ item }">
           <VListItemContent
             :id="`ua-${item.address.toLocaleLowerCase()}`"
-            class="font-weight-medium"
+            class="font-medium"
           >
             <VListItemTitle>
               {{ getPoolName(type, item.assets) }}

@@ -36,7 +36,7 @@ onMounted(async () => {
               :step="n"
               editable
             >
-              <span class="d-flex flex-column align-center justify-start">
+              <span class="flex flex-col items-center justify-start">
                 <AdaptiveWrapper>
                   <VImg
                     width="24px"

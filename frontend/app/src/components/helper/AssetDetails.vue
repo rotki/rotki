@@ -38,7 +38,7 @@ const currentAsset: ComputedRef<AssetInfoWithId> = computed(() => ({
 </script>
 
 <template>
-  <div class="flex-row d-flex">
+  <div class="flex-row flex">
     <AssetDetailsBase
       :hide-name="hideName"
       :asset="currentAsset"

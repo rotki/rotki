@@ -70,10 +70,10 @@ const textColor = computed<string>(
   <span
     v-else
     :style="wrapperStyle"
-    class="d-flex align-center justify-center generated-icon"
+    class="flex items-center justify-center generated-icon"
     :class="currency ? ' font-weight-medium' : 'font-weight-bold'"
   >
-    <span class="d-flex align-center justify-center" :style="circle">
+    <span class="flex items-center justify-center" :style="circle">
       <span :style="textStyle">
         {{ text }}
       </span>

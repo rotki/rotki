@@ -28,7 +28,7 @@ const { t } = useI18n();
       [$style.horizontal]: horizontal
     }"
   >
-    <div class="font-weight-medium text-truncate">
+    <div class="font-medium text-truncate">
       {{ truncateAddress(validator.publicKey, length) }}
     </div>
     <div>

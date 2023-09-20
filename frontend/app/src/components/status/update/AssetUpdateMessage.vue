@@ -68,17 +68,17 @@ const { t } = useI18n();
     <template #title>{{ t('asset_update.title') }}</template>
     <i18n class="text-body-1" tag="div" path="asset_update.description">
       <template #remote>
-        <span class="font-weight-medium">{{ versions.remote }}</span>
+        <span class="font-medium">{{ versions.remote }}</span>
       </template>
       <template #local>
-        <span class="font-weight-medium">{{ versions.local }}</span>
+        <span class="font-medium">{{ versions.local }}</span>
       </template>
     </i18n>
     <div class="text-body-1 mt-4">
       {{ t('asset_update.total_changes', { changes: versions.changes }) }}
     </div>
 
-    <div v-if="multiple" class="font-weight-medium text-body-1 mt-4">
+    <div v-if="multiple" class="font-medium text-body-1 mt-4">
       {{ t('asset_update.advanced') }}
     </div>
     <VRow v-if="multiple">

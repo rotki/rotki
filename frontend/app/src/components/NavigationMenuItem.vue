@@ -27,7 +27,7 @@ const css = useCssModule();
 </script>
 
 <template>
-  <div class="d-flex flex-grow-1">
+  <div class="flex grow">
     <VTooltip v-if="showTooltips" right>
       <template #activator="{ on }">
         <VListItemIcon :class="subMenu ? 'my-2 mr-2' : 'my-3 mr-3'" v-on="on">
@@ -71,7 +71,7 @@ const css = useCssModule();
       />
       <RuiIcon v-else :name="icon" />
     </VListItemIcon>
-    <VListItemContent class="d-flex flex-grow-1 py-0 text-capitalize">
+    <VListItemContent class="flex grow py-0 text-capitalize">
       <VListItemTitle :class="{ 'text-sm': subMenu }">
         {{ text }}
       </VListItemTitle>

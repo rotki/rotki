@@ -7,7 +7,7 @@ const panel = computed<number>(() => (get(expanded) ? 0 : -1));
 <template>
   <Card :class="{ 'pb-6': expanded }">
     <template #title>
-      <div class="d-flex align-center">
+      <div class="flex items-center">
         <div class="mr-2">
           <VBtn
             text

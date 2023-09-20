@@ -31,7 +31,7 @@ const resetEvent = (event: EvmHistoryEvent) => emit('reset', event);
 </script>
 
 <template>
-  <div class="d-flex align-center">
+  <div class="flex items-center">
     <VMenu
       v-if="evmEvent"
       transition="slide-y-transition"

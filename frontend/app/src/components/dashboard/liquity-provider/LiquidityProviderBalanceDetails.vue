@@ -110,7 +110,7 @@ const transformAssets = (assets: XswapAsset[]): AssetBalanceWithPrice[] =>
         />
       </template>
     </DataTable>
-    <div v-else class="d-flex align-center">
+    <div v-else class="flex items-center">
       <VAvatar rounded :color="dark ? 'white' : 'grey lighten-3'">
         <VIcon>mdi-lock</VIcon>
       </VAvatar>

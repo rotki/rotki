@@ -133,11 +133,9 @@ const { dark } = useTheme();
         cols="12"
         md="6"
         lg="5"
-        class="d-flex flex-column align-center justify-center"
+        class="flex flex-col items-center justify-center"
       >
-        <div
-          class="overall-balances__net-worth text-center font-weight-medium mb-2"
-        >
+        <div class="overall-balances__net-worth text-center font-medium mb-2">
           <div :style="`font-size: ${adjustedTotalNetWorthFontSize}em`">
             <AmountDisplay
               class="ps-4"
@@ -157,7 +155,7 @@ const { dark } = useTheme();
             :class="[balanceClass, !dark ? 'white--text' : 'black--text']"
             class="pa-1 px-3 overall-balances__net-worth-change__pill"
           >
-            <span class="d-flex flex-row">
+            <span class="flex flex-row">
               <span>
                 <RuiIcon :name="indicator" />
               </span>
@@ -182,9 +180,9 @@ const { dark } = useTheme();
           @input="setTimeframe($event)"
         />
       </VCol>
-      <VCol cols="12" md="6" lg="7" class="d-flex">
+      <VCol cols="12" md="6" lg="7" class="flex">
         <div
-          class="d-flex justify-center align-center flex-grow-1 overall-balances__net-worth-chart"
+          class="flex justify-center items-center grow overall-balances__net-worth-chart"
         >
           <NetWorthChart
             v-if="!isLoading"
@@ -195,7 +193,7 @@ const { dark } = useTheme();
           <div v-else class="overall-balances__net-worth-chart__loader">
             <VProgressCircular
               indeterminate
-              class="align-self-center"
+              class="self-center"
               color="primary"
             />
             <div class="pt-5 text-caption">

@@ -133,7 +133,7 @@ watch(search, search => {
     </template>
     <template #item="data">
       <div
-        class="binance-market-selector__list__item d-flex justify-space-between flex-grow-1"
+        class="binance-market-selector__list__item flex justify-between grow"
       >
         <div class="binance-market-selector__list__item__address-label">
           <VChip :color="dark ? null : 'grey lighten-3'" filter>

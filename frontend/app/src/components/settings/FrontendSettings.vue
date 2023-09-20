@@ -16,7 +16,7 @@ const { t } = useI18n();
     <ScrambleDataSetting />
 
     <div class="mt-8">
-      <div class="d-flex align-center">
+      <div class="flex items-center">
         <div class="text-h6">
           {{ t('frontend_settings.subtitle.alias_names') }}
         </div>

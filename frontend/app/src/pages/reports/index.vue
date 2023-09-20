@@ -213,7 +213,7 @@ const progress = computed(() => reportsStore.progress);
               @selected="reportDebugData = $event"
             />
           </div>
-          <div class="mt-2 d-flex justify-end">
+          <div class="mt-2 flex justify-end">
             <VBtn class="mr-4" depressed @click="importDataDialog = false">
               {{ t('common.actions.cancel') }}
             </VBtn>

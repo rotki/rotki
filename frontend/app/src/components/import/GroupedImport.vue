@@ -111,7 +111,7 @@ const form = computed(
         :hide-details="true"
       >
         <template v-for="slotName in ['item', 'selection']" #[slotName]="data">
-          <div v-if="data.item" :key="slotName" class="d-flex align-center">
+          <div v-if="data.item" :key="slotName" class="flex items-center">
             <AdaptiveWrapper>
               <VImg
                 v-if="data.item.logo"

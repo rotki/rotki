@@ -248,7 +248,7 @@ const { mdAndUp } = useDisplay();
                   <template v-if="step === index + 1" #actions="{ items }">
                     <VSheet
                       elevation="10"
-                      class="d-flex align-center"
+                      class="flex items-center"
                       :class="{
                         [$style.raise]: true,
                         'pa-2': isPinned,
@@ -261,10 +261,7 @@ const { mdAndUp } = useDisplay();
 
                       <VSpacer />
 
-                      <div
-                        class="d-flex"
-                        :class="isPinned ? 'flex-column' : ''"
-                      >
+                      <div class="flex" :class="isPinned ? 'flex-column' : ''">
                         <VBtn
                           v-if="step > 1"
                           :small="isPinned"

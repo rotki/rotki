@@ -24,12 +24,12 @@ const css = useCssModule();
 </script>
 
 <template>
-  <div class="d-flex align-center">
-    <div class="ml-1 d-flex align-center">
+  <div class="flex items-center">
+    <div class="ml-1 flex items-center">
       <div
         v-for="(country, index) in countries"
         :key="country"
-        class="d-flex align-center"
+        class="flex items-center"
       >
         <span v-if="index > 0" class="px-1">/</span>
         <span :class="css.flag">

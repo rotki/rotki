@@ -166,7 +166,7 @@ defineExpose({
 
     <div
       v-if="fiatPriceHint"
-      class="mt-n10 mb-8 text-body-2 font-weight-bold green--text"
+      class="mt-n10 mb-8 text-body-2 font-bold green--text"
     >
       <span
         >{{

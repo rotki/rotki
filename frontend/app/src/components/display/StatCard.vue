@@ -10,7 +10,7 @@ const { dark } = useTheme();
 </script>
 
 <template>
-  <VCard class="stat-card d-flex flex-columns pa-0 h-full">
+  <VCard class="stat-card flex flex-columns pa-0 h-full">
     <div v-if="bordered" class="stat-card__border">
       <div class="stat-card__image ma-2">
         <VImg
@@ -31,7 +31,7 @@ const { dark } = useTheme();
         "
       />
     </div>
-    <div class="stat-card__content flex-grow-1">
+    <div class="stat-card__content grow">
       <VCardTitle>
         <span v-if="title">
           <CardTitle>{{ title }}</CardTitle>

@@ -136,12 +136,12 @@ const getIdentifier = (item: XswapBalance) => item.nftId;
           <div class="mt-6">
             <NftDetails v-if="item.nftId" :identifier="item.nftId" />
 
-            <div class="d-flex flex-wrap">
+            <div class="flex flex-wrap">
               <div class="mt-6 mr-16">
                 <div class="text-rui-text-secondary text-body-2">
                   {{ t('common.balance') }}
                 </div>
-                <div class="d-flex text-h6">
+                <div class="flex text-h6">
                   <AmountDisplay
                     :value="item.userBalance.usdValue"
                     fiat-currency="USD"
@@ -156,7 +156,7 @@ const getIdentifier = (item: XswapBalance) => item.nftId;
                 <div class="text-rui-text-secondary text-body-2">
                   {{ t('uniswap.price_range') }}
                 </div>
-                <div class="d-flex text-h6">
+                <div class="flex text-h6">
                   <AmountDisplay
                     :value="item.priceRange[0]"
                     fiat-currency="USD"
@@ -185,7 +185,7 @@ const getIdentifier = (item: XswapBalance) => item.nftId;
                   <VCol cols="auto">
                     <AssetIcon :identifier="asset.asset" size="32px" />
                   </VCol>
-                  <VCol class="d-flex ml-4" cols="auto">
+                  <VCol class="flex ml-4" cols="auto">
                     <div class="mr-4">
                       <BalanceDisplay
                         no-icon
@@ -202,7 +202,7 @@ const getIdentifier = (item: XswapBalance) => item.nftId;
                 </VRow>
               </div>
 
-              <div v-else class="pt-4 d-flex align-center">
+              <div v-else class="pt-4 flex items-center">
                 <VAvatar rounded :color="dark ? 'white' : 'grey lighten-3'">
                   <VIcon>mdi-lock</VIcon>
                 </VAvatar>

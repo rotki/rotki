@@ -45,7 +45,7 @@ const refresh = () => load(true);
         <VCol>
           <VRow align="center" justify="center">
             <VCol cols="auto">
-              <span class="font-weight-bold text-h5">
+              <span class="font-bold text-h5">
                 {{ t('kraken_page.page.title') }}
               </span>
             </VCol>
@@ -64,10 +64,7 @@ const refresh = () => load(true);
 
           <VRow class="mt-md-10 mt-2" justify="center">
             <VCol cols="auto">
-              <div
-                class="font-weight-light text-h6"
-                :class="$style.description"
-              >
+              <div class="font-light text-h6" :class="$style.description">
                 <i18n path="kraken_page.page.description">
                   <template #link>
                     <InternalLink :to="Routes.API_KEYS_EXCHANGES">

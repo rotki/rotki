@@ -28,7 +28,7 @@ onMounted(() => {
 
 <template>
   <div>
-    <CardTitle class="font-weight-medium mb-2">
+    <CardTitle class="font-medium mb-2">
       {{ t('statistics_graph_settings.infer_zero_timed_balances.title') }}
     </CardTitle>
     <SettingsOption

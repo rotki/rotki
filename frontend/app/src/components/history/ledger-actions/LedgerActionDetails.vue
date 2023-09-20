@@ -27,7 +27,7 @@ const { href, hasLink, onLinkClick } = useLinks(link);
       {{ t('ledger_actions.details.title') }}
     </template>
     <VRow>
-      <VCol cols="auto" class="font-weight-medium">
+      <VCol cols="auto" class="font-medium">
         {{ t('ledger_actions.details.rate_asset') }}
       </VCol>
       <VCol>
@@ -42,7 +42,7 @@ const { href, hasLink, onLinkClick } = useLinks(link);
       </VCol>
     </VRow>
     <VRow align="center">
-      <VCol cols="auto" class="font-weight-medium">
+      <VCol cols="auto" class="font-medium">
         {{ t('ledger_actions.details.link') }}
       </VCol>
       <VCol>

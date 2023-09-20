@@ -12,7 +12,7 @@ defineProps({
     >
       <slot name="title" />
     </dt>
-    <dd class="primary--text text-h5 font-weight-bold">
+    <dd class="primary--text text-h5 font-bold">
       <slot />
     </dd>
   </dl>

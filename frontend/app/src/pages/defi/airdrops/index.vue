@@ -353,7 +353,7 @@ onMounted(async () => {
               />
             </template>
             <template #item.source="{ item }">
-              <div class="d-flex flex-row align-center">
+              <div class="flex flex-row items-center">
                 <AdaptiveWrapper>
                   <VImg
                     width="24px"

@@ -282,7 +282,7 @@ const showResetConfirmation = () => {
 <template>
   <Card contained class="pt-4">
     <div class="mb-4">
-      <CardTitle class="font-weight-medium">
+      <CardTitle class="font-medium">
         {{ t('frontend_settings.title') }}
       </CardTitle>
     </div>
@@ -292,7 +292,7 @@ const showResetConfirmation = () => {
     </div>
 
     <div class="mb-4">
-      <CardTitle class="font-weight-medium">
+      <CardTitle class="font-medium">
         {{ t('backend_settings.title') }}
       </CardTitle>
       <VCardSubtitle class="pa-0">

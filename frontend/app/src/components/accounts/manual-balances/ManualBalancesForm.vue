@@ -263,7 +263,7 @@ const css = useCssModule();
               v-on="on"
               @click="openCustomAssetForm()"
             >
-              <div class="d-flex">
+              <div class="flex">
                 <VIcon large>mdi-pencil-circle-outline</VIcon>
                 <VIcon small class="mt-n4">mdi-plus</VIcon>
               </div>

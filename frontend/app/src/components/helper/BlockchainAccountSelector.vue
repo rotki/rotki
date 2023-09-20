@@ -250,7 +250,7 @@ const getItemKey = (item: AccountWithChain) => item.address + item.chain;
         </template>
         <template #item="data">
           <div
-            class="blockchain-account-selector__list__item d-flex align-center justify-space-between flex-grow-1"
+            class="blockchain-account-selector__list__item flex items-center justify-between grow"
           >
             <div class="blockchain-account-selector__list__item__address-label">
               <VChip

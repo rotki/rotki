@@ -179,7 +179,7 @@ const highlightedTextClasses = 'text-subtitle-2 text--secondary';
         <div class="text--secondary">
           <i18n path="table_filter.no_suggestions">
             <template #search>
-              <span class="font-weight-medium">
+              <span class="font-medium">
                 {{ keywordSplited.key }}
               </span>
             </template>
@@ -193,7 +193,7 @@ const highlightedTextClasses = 'text-subtitle-2 text--secondary';
         class="font-weight-regular pt-2"
       >
         {{ t('table_filter.exclusion.description') }}
-        <span class="font-weight-medium">
+        <span class="font-medium">
           {{ t('table_filter.exclusion.example') }}
         </span>
       </div>
@@ -208,13 +208,10 @@ const highlightedTextClasses = 'text-subtitle-2 text--secondary';
     </div>
     <div v-else-if="keyword && matchers.length === 0" class="pb-2">
       <span>{{ t('table_filter.unsupported_filter') }}</span>
-      <span class="font-weight-medium ms-2">{{ keyword }}</span>
+      <span class="font-medium ms-2">{{ keyword }}</span>
     </div>
     <div v-if="!selectedMatcher && matchers.length > 0">
-      <div
-        :class="highlightedTextClasses"
-        class="text-uppercase font-weight-bold"
-      >
+      <div :class="highlightedTextClasses" class="text-uppercase font-bold">
         {{ t('table_filter.title') }}
       </div>
       <VDivider class="my-2" />
@@ -232,7 +229,7 @@ const highlightedTextClasses = 'text-subtitle-2 text--secondary';
     <div :class="highlightedTextClasses" class="font-weight-regular mt-2">
       <VDivider class="my-2" />
       <span>{{ t('table_filter.hint.description') }}</span>
-      <span class="font-weight-medium">
+      <span class="font-medium">
         {{ t('table_filter.hint.example') }}
       </span>
       <div>

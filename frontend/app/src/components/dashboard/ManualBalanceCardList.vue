@@ -28,7 +28,7 @@ const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
       <LocationDisplay :identifier="name" icon />
     </VListItemAvatar>
     <VListItemContent>
-      <VListItemTitle class="d-flex justify-space-between">
+      <VListItemTitle class="flex justify-between">
         <span>
           {{ toSentenceCase(name) }}
         </span>

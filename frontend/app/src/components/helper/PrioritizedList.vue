@@ -174,7 +174,7 @@ const autoCompleteHint: ComputedRef<string> = computed(() => {
           </tr>
           <tr v-for="(identifier, index) in value" :key="identifier">
             <td>
-              <div class="flex flex-column py-2">
+              <div class="flex flex-col py-2">
                 <div>
                   <VBtn
                     :id="'move-up-' + identifier"

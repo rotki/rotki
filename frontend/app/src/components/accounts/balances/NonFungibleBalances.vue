@@ -236,7 +236,7 @@ const showDeleteConfirmation = (item: NonFungibleBalance) => {
       />
     </template>
     <template #details>
-      <div class="d-flex">
+      <div class="flex">
         <NftImageRenderingSettingMenu />
         <ActiveModules :modules="modules" class="mx-2" />
         <RefreshButton
@@ -263,7 +263,7 @@ const showDeleteConfirmation = (item: NonFungibleBalance) => {
             <NftDetails :identifier="item.id" />
           </template>
           <template #item.ignored="{ item }">
-            <div class="d-flex justify-center">
+            <div class="flex justify-center">
               <VSwitch
                 :input-value="isIgnored(item.id)"
                 @change="toggleIgnoreAsset(item.id)"

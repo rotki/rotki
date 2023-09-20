@@ -194,7 +194,7 @@ onMounted(async () => {
 <template>
   <Fragment>
     <div class="pa-4 pb-0">
-      <div class="mb-4 d-flex items-center">
+      <div class="mb-4 flex items-center">
         <VBtn
           rounded
           color="primary"
@@ -220,7 +220,7 @@ onMounted(async () => {
       </div>
     </div>
 
-    <div v-if="loading" class="d-flex justify-center pt-2">
+    <div v-if="loading" class="flex justify-center pt-2">
       <VProgressCircular color="primary" indeterminate width="2" size="50" />
     </div>
 
@@ -255,8 +255,8 @@ onMounted(async () => {
                   animateDelete && idToDelete === note.identifier
               }"
             >
-              <div class="d-flex justify-space-between align-center">
-                <div class="font-weight-bold note__title">
+              <div class="flex justify-between items-center">
+                <div class="font-bold note__title">
                   {{ note.title }}
                 </div>
                 <VBtn icon @click="togglePin(note)">
@@ -271,7 +271,7 @@ onMounted(async () => {
 
               <div
                 v-if="showDeleteConfirmation && idToDelete === note.identifier"
-                class="d-flex justify-space-between align-center pt-2"
+                class="flex justify-between items-center pt-2"
               >
                 <div class="note__content font-italic">
                   {{ t('notes_menu.delete_confirmation') }}
@@ -286,10 +286,7 @@ onMounted(async () => {
                   </VBtn>
                 </div>
               </div>
-              <div
-                v-else
-                class="d-flex justify-space-between align-center pt-2"
-              >
+              <div v-else class="flex justify-between items-center pt-2">
                 <div class="note__datetime text--secondary font-italic">
                   <i18n path="notes_menu.last_updated">
                     <template #datetime>

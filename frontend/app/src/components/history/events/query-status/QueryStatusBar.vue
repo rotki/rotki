@@ -17,7 +17,7 @@ const css = useCssModule();
 <template>
   <tr v-if="items.length > 0" :class="css.tr">
     <td :colspan="colspan" class="py-2">
-      <div class="d-flex">
+      <div class="flex">
         <div v-if="finished" class="pr-2">
           <VBtn icon @click="emit('reset')">
             <VIcon>mdi-close</VIcon>
@@ -36,7 +36,7 @@ const css = useCssModule();
         <div>
           <div
             v-if="finished || (!openStatusDropdown && items.length > 1)"
-            class="py-2 d-flex align-center"
+            class="py-2 flex items-center"
           >
             <div class="mr-4">
               <VProgressCircular
@@ -57,7 +57,7 @@ const css = useCssModule();
             v-for="item in items"
             v-else
             :key="getKey(item)"
-            class="d-flex align-center"
+            class="flex items-center"
           >
             <div class="mr-4">
               <VProgressCircular

@@ -19,7 +19,7 @@ const name = computed<string>(() => {
 </script>
 
 <template>
-  <div class="d-flex flex-row">
+  <div class="flex flex-row">
     <div class="ml-2 mr-6">
       <LocationDisplay
         v-if="exchange"
@@ -28,7 +28,7 @@ const name = computed<string>(() => {
         icon
       />
     </div>
-    <div class="d-flex flex-column my-3">
+    <div class="flex flex-col my-3">
       <span class="text-h6">
         {{ name }}
       </span>

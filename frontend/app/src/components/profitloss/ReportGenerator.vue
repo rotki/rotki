@@ -90,7 +90,7 @@ const isDevelopment = checkIfDevelopment();
               <VList>
                 <VListItem link @click="exportReportData()">
                   <VListItemTitle>
-                    <div class="d-flex align-center">
+                    <div class="flex items-center">
                       <VIcon class="mr-2">mdi-export</VIcon>
                       <span>
                         {{ t('profit_loss_reports.debug.export_data') }}
@@ -100,7 +100,7 @@ const isDevelopment = checkIfDevelopment();
                 </VListItem>
                 <VListItem link @click="importReportData()">
                   <VListItemTitle>
-                    <div class="d-flex align-center">
+                    <div class="flex items-center">
                       <VIcon class="mr-2">mdi-import</VIcon>
                       <span>
                         {{ t('profit_loss_reports.debug.import_data') }}

@@ -12,13 +12,13 @@ const { showPinned, showNotesSidebar, showNotificationBar, showHelpBar } =
 
 <template>
   <Fragment>
-    <div class="d-flex overflow-hidden">
+    <div class="flex overflow-hidden">
       <SyncIndicator />
       <GlobalSearch v-if="smAndUp" />
       <BackButton />
     </div>
     <VSpacer />
-    <div class="d-flex overflow-hidden h-full align-center">
+    <div class="flex overflow-hidden h-full items-center">
       <GetPremiumButton />
       <VBtn
         v-if="isDevelopment && smAndUp"

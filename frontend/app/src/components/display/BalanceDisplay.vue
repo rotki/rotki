@@ -70,7 +70,7 @@ const css = useCssModule();
 
 <template>
   <div
-    class="d-flex flex-row shrink pt-1 pb-1 align-center"
+    class="flex flex-row shrink pt-1 pb-1 items-center"
     :class="{
       'justify-end': !noJustify,
       [css.gain]: mode === 'gain',
@@ -83,7 +83,7 @@ const css = useCssModule();
         :asset="asset"
         :asset-padding="assetPadding"
         :value="amount"
-        class="d-block font-weight-medium"
+        class="d-block font-medium"
       />
       <AmountDisplay
         :fiat-currency="valueCurrency"

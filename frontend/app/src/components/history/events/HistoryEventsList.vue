@@ -149,7 +149,7 @@ const blockEvent = isEthBlockEventRef(eventGroupHeader);
         <VExpansionPanel>
           <VExpansionPanelHeader v-if="showDropdown">
             <template #default="{ open }">
-              <div class="primary--text font-weight-bold">
+              <div class="primary--text font-bold">
                 {{
                   open
                     ? t('transactions.events.view.hide')

@@ -145,7 +145,7 @@ const showDeleteConfirmation = (id: number) => {
     >
       <template #item.label="{ item }">
         <div
-          class="font-weight-medium"
+          class="font-medium"
           data-cy="label"
           :class="{
             'pt-0': !item.tags,
@@ -171,7 +171,7 @@ const showDeleteConfirmation = (id: number) => {
           fiat-currency="USD"
           :value="item.usdPrice"
         />
-        <div v-else class="d-flex justify-end">
+        <div v-else class="flex justify-end">
           <VSkeletonLoader width="70" type="text" />
         </div>
       </template>

@@ -114,12 +114,12 @@ onBeforeMount(async () => {
     </div>
     <div v-else>
       <div
-        class="d-flex flex-row align-center justify-md-end justify-center mt-2 mr-md-6"
+        class="flex flex-row items-center justify-md-end justify-center mt-2 mr-md-6"
       >
-        <div class="flex-shrink-0">
+        <div class="shrink-0">
           <VIcon>mdi-arrow-up-left</VIcon>
         </div>
-        <div class="text--secondary pt-3 flex-shrink-0 ms-2">
+        <div class="text--secondary pt-3 shrink-0 ms-2">
           {{ t('staking_page.dropdown_hint') }}
         </div>
       </div>
@@ -128,7 +128,7 @@ onBeforeMount(async () => {
           <VCol>
             <VRow align="center" justify="center">
               <VCol cols="auto">
-                <span class="font-weight-bold text-h5">
+                <span class="font-bold text-h5">
                   {{ t('staking_page.page.title') }}
                 </span>
               </VCol>
@@ -166,10 +166,7 @@ onBeforeMount(async () => {
 
             <VRow class="mt-md-10 mt-2" justify="center">
               <VCol cols="auto">
-                <div
-                  class="font-weight-light text-h6"
-                  :class="$style.description"
-                >
+                <div class="font-light text-h6" :class="$style.description">
                   {{ t('staking_page.page.description') }}
                 </div>
               </VCol>

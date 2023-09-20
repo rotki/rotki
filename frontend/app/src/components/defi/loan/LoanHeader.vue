@@ -17,7 +17,7 @@ const { t } = useI18n();
       </div>
       <div class="loan-header__owner secondary--text text--lighten-2">
         {{ t('loan_header.owned_by') }}
-        <HashLink :text="owner" class="d-inline font-weight-medium" />
+        <HashLink :text="owner" class="d-inline font-medium" />
       </div>
     </VCol>
   </VRow>

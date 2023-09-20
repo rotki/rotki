@@ -31,7 +31,7 @@ const location: ComputedRef<TradeLocationData | null> = computed(() => {
 
 <template>
   <span
-    class="d-flex align-center"
+    class="flex items-center"
     :class="{
       'flex-row': horizontal,
       'flex-column': !horizontal,

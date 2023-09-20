@@ -101,7 +101,7 @@ const disableAll = async () => {
 <template>
   <Card flat no-padding :outlined="false">
     <template #search>
-      <div class="d-flex flex-row">
+      <div class="flex flex-row">
         <div>
           <VBtn
             color="primary"
@@ -137,9 +137,9 @@ const disableAll = async () => {
     </template>
     <DataTable :headers="headers" :items="modules" :loading="loading">
       <template #item.name="{ item }">
-        <div class="d-flex flex-row align-center">
+        <div class="flex flex-row items-center">
           <AdaptiveWrapper
-            class="d-flex align-center mr-4"
+            class="flex items-center mr-4"
             width="26px"
             height="26px"
           >

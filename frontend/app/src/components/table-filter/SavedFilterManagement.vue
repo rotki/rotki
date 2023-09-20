@@ -76,7 +76,7 @@ const css = useCssModule();
 </script>
 
 <template>
-  <div class="d-flex">
+  <div class="flex">
     <VTooltip top>
       <template #activator="{ on }">
         <VBtn
@@ -135,8 +135,8 @@ const css = useCssModule();
       <VList v-if="savedFilters.length > 0" class="py-4">
         <div v-for="(filters, index) in savedFilters" :key="index">
           <VDivider v-if="index > 0" class="my-3" />
-          <div class="d-flex px-4">
-            <div class="d-flex flex-grow-1 flex-wrap pr-4">
+          <div class="flex px-4">
+            <div class="flex grow flex-wrap pr-4">
               <VChip
                 v-for="(filter, filterIndex) in filters"
                 :key="filterIndex"
@@ -147,7 +147,7 @@ const css = useCssModule();
                 <SuggestedItem chip :suggestion="filter" />
               </VChip>
             </div>
-            <div class="d-flex">
+            <div class="flex">
               <VTooltip top>
                 <template #activator="{ on }">
                   <VBtn

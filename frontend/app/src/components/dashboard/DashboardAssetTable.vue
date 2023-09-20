@@ -220,7 +220,7 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
           fiat-currency="USD"
           :value="item.usdPrice"
         />
-        <div v-else class="d-flex justify-end">
+        <div v-else class="flex justify-end">
           <VSkeletonLoader width="70" type="text" />
         </div>
       </template>

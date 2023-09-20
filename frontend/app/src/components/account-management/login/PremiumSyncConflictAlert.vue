@@ -31,14 +31,14 @@ const lastModified = useRefMap(syncConflict, conflict => {
       <ul v-if="lastModified" class="mt-2">
         <li>
           <i18n path="login.sync_error.local_modified">
-            <div class="font-weight-medium">
+            <div class="font-medium">
               <DateDisplay :timestamp="lastModified.local" />
             </div>
           </i18n>
         </li>
         <li class="mt-2">
           <i18n path="login.sync_error.remote_modified">
-            <div class="font-weight-medium">
+            <div class="font-medium">
               <DateDisplay :timestamp="lastModified.remote" />
             </div>
           </i18n>

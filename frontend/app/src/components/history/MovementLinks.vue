@@ -39,13 +39,13 @@ const transactionId = computed<string>(() => {
 </script>
 
 <template>
-  <span class="d-flex flex-column pt-1">
-    <span v-if="item.address" class="d-flex flex-row">
-      <span class="mr-1 font-weight-medium"> {{ t('common.address') }}: </span>
+  <span class="flex flex-col pt-1">
+    <span v-if="item.address" class="flex flex-row">
+      <span class="mr-1 font-medium"> {{ t('common.address') }}: </span>
       <HashLink :text="item.address" :chain="chain" full-address no-link />
     </span>
-    <span v-if="item.transactionId" class="d-flex flex-row mt-1">
-      <span class="mr-1 font-weight-medium"> {{ t('common.tx') }}: </span>
+    <span v-if="item.transactionId" class="flex flex-row mt-1">
+      <span class="mr-1 font-medium"> {{ t('common.tx') }}: </span>
       <HashLink
         v-if="isValidTxHash(transactionId)"
         :text="transactionId"

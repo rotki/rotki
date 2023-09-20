@@ -62,7 +62,7 @@ const editClicked = (_payload: XpubAccountWithBalance) =>
 </script>
 
 <template>
-  <td v-if="!group" class="font-weight-medium" colspan="5" :class="mobileClass">
+  <td v-if="!group" class="font-medium" colspan="5" :class="mobileClass">
     {{ t('account_group_header.standalone') }}
   </td>
   <Fragment v-else>
@@ -87,7 +87,7 @@ const editClicked = (_payload: XpubAccountWithBalance) =>
           <VIcon v-else small>mdi-chevron-down</VIcon>
         </VBtn>
         <VBtn v-else small icon disabled />
-        <span class="font-weight-medium">
+        <span class="font-medium">
           {{ t('account_group_header.xpub') }}
         </span>
         <span :class="{ 'blur-content': !shouldShowAmount }">
@@ -106,7 +106,7 @@ const editClicked = (_payload: XpubAccountWithBalance) =>
           v-if="xpub.derivationPath"
           :class="{ 'blur-content': !shouldShowAmount }"
         >
-          <span class="font-weight-medium">
+          <span class="font-medium">
             {{ t('account_group_header.derivation_path') }}
           </span>
           {{ xpub.derivationPath }}
@@ -134,7 +134,7 @@ const editClicked = (_payload: XpubAccountWithBalance) =>
       />
     </td>
     <td class="text-end" :class="mobileClass">
-      <div class="d-flex">
+      <div class="flex">
         <VTooltip top>
           <template #activator="{ on, attrs }">
             <VBtn

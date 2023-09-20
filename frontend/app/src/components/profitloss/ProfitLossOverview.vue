@@ -82,10 +82,10 @@ const { t } = useI18n();
           <td colspan="3" />
         </tr>
         <tr>
-          <td class="font-weight-medium text-subtitle-1">
+          <td class="font-medium text-subtitle-1">
             {{ t('common.total') }}
           </td>
-          <td class="text-right font-weight-medium text-subtitle-1">
+          <td class="text-right font-medium text-subtitle-1">
             <AmountDisplay
               pnl
               force-currency
@@ -94,7 +94,7 @@ const { t } = useI18n();
               :fiat-currency="report.settings.profitCurrency"
             />
           </td>
-          <td class="text-right font-weight-medium text-subtitle-1">
+          <td class="text-right font-medium text-subtitle-1">
             <AmountDisplay
               pnl
               force-currency

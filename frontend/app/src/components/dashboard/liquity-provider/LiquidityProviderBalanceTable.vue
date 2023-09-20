@@ -216,9 +216,9 @@ const getAssets = (assets: XswapAsset[]) => assets.map(({ asset }) => asset);
           />
         </div>
 
-        <div v-else class="d-flex align-center py-4">
+        <div v-else class="flex items-center py-4">
           <LpPoolIcon :type="item.lpType" :assets="getAssets(item.assets)" />
-          <div class="pl-4 font-weight-medium">
+          <div class="pl-4 font-medium">
             {{ getPoolName(item.lpType, getAssets(item.assets)) }}
           </div>
         </div>

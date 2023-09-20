@@ -28,7 +28,7 @@ const { xl } = useDisplay();
 
 <template>
   <div>
-    <i18n :path="translationKey" tag="span" class="d-flex align-center">
+    <i18n :path="translationKey" tag="span" class="flex items-center">
       <template #location>
         {{ toSentenceCase(event.location) }}
       </template>

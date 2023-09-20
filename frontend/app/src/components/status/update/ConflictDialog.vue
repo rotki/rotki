@@ -136,10 +136,10 @@ const cancel = () => {
       <template #hint>
         <i18n path="conflict_dialog.hint" tag="span">
           <template #conflicts>
-            <span class="font-weight-medium"> {{ conflicts.length }} </span>
+            <span class="font-medium"> {{ conflicts.length }} </span>
           </template>
           <template #remaining>
-            <span class="font-weight-medium"> {{ remaining }} </span>
+            <span class="font-medium"> {{ remaining }} </span>
           </template>
         </i18n>
       </template>

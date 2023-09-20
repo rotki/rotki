@@ -21,7 +21,7 @@ const loading = isLoading(Section.DEFI_LIQUITY_STAKING);
   <Card :loading="loading">
     <template #title> {{ t('loan_stake.title') }} </template>
     <template v-if="stake">
-      <div class="d-flex align-center py-4 justify-end">
+      <div class="flex items-center py-4 justify-end">
         <BalanceDisplay
           :asset="stake.staked.asset"
           :value="stake.staked"
@@ -30,7 +30,7 @@ const loading = isLoading(Section.DEFI_LIQUITY_STAKING);
       </div>
       <VDivider />
       <div class="pt-4">
-        <div class="d-flex align-center mb-1 justify-space-between">
+        <div class="flex items-center mb-1 justify-between">
           <div class="grey--text">{{ t('loan_stake.unclaimed_rewards') }}</div>
           <div>
             <BalanceDisplay

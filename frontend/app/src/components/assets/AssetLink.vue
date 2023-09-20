@@ -32,7 +32,7 @@ const navigateToDetails = async () => {
 </script>
 
 <template>
-  <div class="d-flex flex-row">
+  <div class="flex flex-row">
     <VBtn :icon="icon" :text="text" @click="navigateToDetails()">
       <slot />
     </VBtn>

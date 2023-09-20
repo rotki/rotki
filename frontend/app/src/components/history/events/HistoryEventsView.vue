@@ -709,7 +709,7 @@ const { locationData } = useLocations();
             </template>
             <template #item.txHash="{ item }">
               <VLazy>
-                <div class="d-flex align-center">
+                <div class="flex items-center">
                   <div class="mr-2">
                     <LocationIcon
                       icon

@@ -47,7 +47,7 @@ const calculateFontSize = (symbol: string) => {
           v-on="on"
         >
           <VListItemAvatar
-            class="general-settings__currency-list primary--text font-weight-bold"
+            class="general-settings__currency-list primary--text font-bold"
             :style="{ fontSize: calculateFontSize(item.unicodeSymbol) }"
           >
             {{ item.unicodeSymbol }}

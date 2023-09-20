@@ -14,7 +14,7 @@ defineProps({
 </script>
 
 <template>
-  <div class="d-flex justify-space-between">
+  <div class="flex justify-between">
     <div>
       {{ title }}
     </div>

@@ -22,7 +22,7 @@ const { exchangeName } = useLocations();
       <LocationDisplay :identifier="location" icon />
     </VListItemAvatar>
     <VListItemContent>
-      <VListItemTitle class="d-flex justify-space-between">
+      <VListItemTitle class="flex justify-between">
         <span>
           {{ exchangeName(location) }}
         </span>

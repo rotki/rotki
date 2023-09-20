@@ -28,12 +28,12 @@ const { xs } = useDisplay();
 
 <template>
   <tr class="tr">
-    <td :colspan="xs ? 2 : colspan" class="upgrade-row font-weight-medium">
+    <td :colspan="xs ? 2 : colspan" class="upgrade-row font-medium">
       <i18n
         v-if="events"
         tag="span"
         path="upgrade_row.events"
-        class="d-flex flex-row justify-center align-end"
+        class="flex flex-row justify-center items-end"
       >
         <template #total>
           {{ total }}
@@ -62,7 +62,7 @@ const { xs } = useDisplay();
         v-else
         tag="span"
         path="upgrade_row.upgrade"
-        class="d-flex flex-row justify-center align-end"
+        class="flex flex-row justify-center items-end"
       >
         <template #total>
           {{ isDefined(entriesFoundTotal) ? entriesFoundTotal : total }}

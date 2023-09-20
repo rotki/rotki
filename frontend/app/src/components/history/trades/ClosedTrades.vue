@@ -307,7 +307,7 @@ watch(loading, async (isLoading, wasLoading) => {
       </template>
       <template v-if="!locationOverview" #actions>
         <VRow>
-          <VCol cols="12" md="6" class="d-flex">
+          <VCol cols="12" md="6" class="flex">
             <div>
               <VRow>
                 <VCol cols="auto">

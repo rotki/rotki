@@ -38,7 +38,7 @@ const rightColspan = useToNumber(rightPatchColspan);
 </script>
 
 <template>
-  <tr class="font-weight-medium append-row" :class="formattedClassName">
+  <tr class="font-medium append-row" :class="formattedClassName">
     <td v-if="leftColspan >= 1 && !isMobile" :colspan="leftColspan" />
     <td :colspan="labelColspan" :class="{ 'd-flex align-center': isMobile }">
       {{ label }}

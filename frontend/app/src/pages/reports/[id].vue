@@ -98,12 +98,12 @@ const regenerateReport = async () => {
     <Card v-if="showUpgradeMessage" class="mt-4 mb-8">
       <i18n tag="div" path="profit_loss_report.upgrade" class="text-subtitle-1">
         <template #processed>
-          <span class="font-weight-medium">{{ report.entriesFound }}</span>
+          <span class="font-medium">{{ report.entriesFound }}</span>
         </template>
         <template #start>
           <DateDisplay
             :timestamp="report.firstProcessedTimestamp"
-            class="font-weight-medium"
+            class="font-medium"
           />
         </template>
       </i18n>
@@ -120,7 +120,7 @@ const regenerateReport = async () => {
       :accounting-settings="settings"
       class="mt-4 mb-8"
     />
-    <div class="d-flex">
+    <div class="flex">
       <template v-if="latest">
         <ExportReportCsv class="mr-2" />
         <ReportActionable

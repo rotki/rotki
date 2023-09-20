@@ -23,7 +23,7 @@ const loading = isLoading(Section.DEFI_LIQUITY_STAKING_POOLS);
       {{ t('liquity_pools.title') }}
     </template>
     <template v-if="pool">
-      <div class="d-flex align-center py-4 justify-end">
+      <div class="flex items-center py-4 justify-end">
         <BalanceDisplay
           :asset="pool.deposited.asset"
           :value="pool.deposited"
@@ -32,13 +32,13 @@ const loading = isLoading(Section.DEFI_LIQUITY_STAKING_POOLS);
       </div>
       <VDivider />
       <div class="pt-4">
-        <div class="d-flex align-center mb-1 justify-space-between">
+        <div class="flex items-center mb-1 justify-between">
           <div class="grey--text">{{ t('liquity_pools.rewards') }}</div>
           <div>
             <BalanceDisplay :asset="pool.rewards.asset" :value="pool.rewards" />
           </div>
         </div>
-        <div class="d-flex align-center mb-1 justify-space-between">
+        <div class="flex items-center mb-1 justify-between">
           <div class="grey--text">
             {{ t('liquity_pools.liquidation_gains') }}
           </div>

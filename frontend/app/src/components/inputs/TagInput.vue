@@ -157,7 +157,7 @@ watch(tags, () => {
       <template #selection="{ item, selected, select }">
         <VChip
           label
-          class="font-weight-medium"
+          class="font-medium"
           :input-value="selected"
           :color="`#${item.backgroundColor}`"
           :text-color="`#${item.foregroundColor}`"

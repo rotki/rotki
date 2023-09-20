@@ -28,7 +28,7 @@ const { href, hasLink, onLinkClick } = useLinks(link);
       {{ t('closed_trades.details.title') }}
     </template>
     <VRow>
-      <VCol cols="auto" class="font-weight-medium">
+      <VCol cols="auto" class="font-medium">
         {{ t('closed_trades.details.fee') }}
       </VCol>
       <VCol>
@@ -42,7 +42,7 @@ const { href, hasLink, onLinkClick } = useLinks(link);
       </VCol>
     </VRow>
     <VRow align="center">
-      <VCol cols="auto" class="font-weight-medium">
+      <VCol cols="auto" class="font-medium">
         {{ t('closed_trades.details.link') }}
       </VCol>
       <VCol>

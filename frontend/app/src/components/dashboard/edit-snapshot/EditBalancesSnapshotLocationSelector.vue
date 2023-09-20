@@ -46,7 +46,7 @@ const { t } = useI18n();
       <div class="text-subtitle-2">
         {{ t('dashboard.snapshot.edit.dialog.balances.preview.title') }}
       </div>
-      <div class="d-flex align-center mt-2">
+      <div class="flex items-center mt-2">
         <div>
           <div class="text-overline text--secondary mb-n2">
             {{ t('dashboard.snapshot.edit.dialog.balances.preview.from') }}

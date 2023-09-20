@@ -26,7 +26,7 @@ const { t } = useI18n();
       </div>
       <div :class="css.copy">
         <div
-          class="text-uppercase font-weight-bold text-caption"
+          class="text-uppercase font-bold text-caption"
           :class="{
             [css['copy__wrapper']]: true,
             [css['copy__wrapper--copied']]: copied

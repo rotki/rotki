@@ -7,7 +7,7 @@ defineProps({
 
 <template>
   <div
-    class="d-flex justify-space-between py-1"
+    class="flex justify-between py-1"
     :class="{
       'font-weight-medium': medium
     }"

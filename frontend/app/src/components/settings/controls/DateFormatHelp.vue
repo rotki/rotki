@@ -63,7 +63,7 @@ const description = (directive: string): string => {
       <div class="date-format-help__content">
         <div v-for="directive in directives" :key="directive" class="mt-2">
           <div>
-            <span class="font-weight-medium date-format-help__directive">
+            <span class="font-medium date-format-help__directive">
               {{ directive }}
             </span>
             <span class="text--secondary ml-2">

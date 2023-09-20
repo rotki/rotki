@@ -338,7 +338,7 @@ const { coingeckoContributeUrl, cryptocompareContributeUrl } = useInterop();
       class="text-caption text--secondary py-2"
       align="center"
     >
-      <VCol cols="auto" class="font-weight-medium">
+      <VCol cols="auto" class="font-medium">
         {{ t('asset_form.identifier') }}
       </VCol>
       <VCol>
@@ -437,7 +437,7 @@ const { coingeckoContributeUrl, cryptocompareContributeUrl } = useInterop();
         </VCol>
       </VRow>
       <VRow>
-        <VCol cols="12" md="6" class="d-flex flex-row">
+        <VCol cols="12" md="6" class="flex flex-row">
           <VTextField
             v-model="coingecko"
             outlined
@@ -465,7 +465,7 @@ const { coingeckoContributeUrl, cryptocompareContributeUrl } = useInterop();
             <span> {{ t('asset_form.oracle_disable') }}</span>
           </VTooltip>
         </VCol>
-        <VCol cols="12" md="6" class="d-flex flex-row">
+        <VCol cols="12" md="6" class="flex flex-row">
           <VTextField
             v-model="cryptocompare"
             outlined
