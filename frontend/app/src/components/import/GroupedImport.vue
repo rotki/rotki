@@ -82,6 +82,14 @@ const sources = [
     )
   },
   {
+    identifier: 'bitstamp',
+    name: t('import_data.bitstamp.name'),
+    logo: './assets/images/protocols/bitstamp.svg',
+    form: defineAsyncComponent(
+      () => import('@/components/import/BitstampImport.vue')
+    )
+  },
+  {
     identifier: 'custom',
     name: t('import_data.custom.name'),
     icon: 'mdi-book-open',

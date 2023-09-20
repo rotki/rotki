@@ -14,6 +14,7 @@ export const SOURCES = [
   'binance',
   'bitcoin_tax',
   'bitmex_wallet_history',
+  'bitstamp',
   'rotki_events',
   'rotki_trades'
 ] as const;

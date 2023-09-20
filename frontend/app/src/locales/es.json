@@ -2486,6 +2486,11 @@
       "line_three": "The ‘swap’ action of the trade file type that represents a coin rename or a fork, is treated elsewhere by rotki so no history event needs to be created for it.",
       "name": "bitcoin.tax"
     },
+    "bitstamp": {
+      "import": "Import {0} from Bitstamp",
+      "import_types": "trades, deposits, and withdrawals",
+      "name": "Bitstamp"
+    },
     "blockfi": {
       "import": "Import {0} from BlockFi",
       "import_trade": "trades",
