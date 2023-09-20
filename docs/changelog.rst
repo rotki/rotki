@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :feature:`-` ENS governance voting related transactions will now be properly decoded and shown to the user.
+* :feature:`-` Base support has been added. Balances will be shown, transactions pulled and decoded and taken into account in the PnL report.
 * :feature:`6275` Transaction events from bitstamp CSV can now be imported
 * :feature:`-` Properly decode optimism bridge 2 step withdrawal proving transactions
 * :feature:`2000` Users will now have the ability to filter between claimed and unclaimed airdrops.

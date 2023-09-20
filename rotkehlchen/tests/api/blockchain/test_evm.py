@@ -244,6 +244,7 @@ def test_add_multievm_accounts(rotkehlchen_api_server):
             optimism_addresses=[common_account],
             polygon_pos_addresses=[common_account],
             arbitrum_one_addresses=[common_account],
+            base_addresses=[common_account],
         )
 
         # add two addresses for all evm chains, one with tag
@@ -268,6 +269,7 @@ def test_add_multievm_accounts(rotkehlchen_api_server):
         'optimism': [common_account],
         'polygon_pos': [common_account],
         'arbitrum_one': [common_account],
+        'base': [common_account],
     }
 
     # Now get accounts to make sure they are all input correctly

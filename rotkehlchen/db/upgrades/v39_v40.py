@@ -26,6 +26,14 @@ CHANGES = [  # TO TYPE, TO SUBTYPE, FROM TYPE, FROM SUBTYPE
     (HistoryEventType.SPEND, HistoryEventSubType.FEE, HistoryEventType.STAKING, HistoryEventSubType.FEE),  # noqa: E501
 ]
 
+DEFAULT_BASE_NODES_AT_V40 = [
+    ('base etherscan', '', 0, 1, '0.28', 'BASE'),
+    ('base ankr', 'https://rpc.ankr.com/base', 0, 1, '0.18', 'BASE'),
+    ('base BlockPi', 'https://base.blockpi.network/v1/rpc/public', 0, 1, '0.18', 'BASE'),
+    ('base PublicNode', 'https://base.publicnode.com', 0, 1, '0.18', 'BASE'),
+    ('base 1rpc', 'https://1rpc.io/base', 0, 1, '0.18', 'BASE'),
+]
+
 
 def _migrate_rotki_events(write_cursor: 'DBCursor') -> None:
     """
@@ -64,6 +72,17 @@ def _purge_kraken_events(write_cursor: 'DBCursor') -> None:
     log.debug('Exit _reset_kraken_events')
 
 
+def _add_base_chain_data(write_cursor: 'DBCursor') -> None:
+    log.debug('Enter _add_base_chain_data')
+    write_cursor.execute('INSERT OR IGNORE INTO location(location, seq) VALUES ("j", 42);')
+    write_cursor.executemany(
+        'INSERT OR IGNORE INTO rpc_nodes(name, endpoint, owned, active, weight, blockchain) '
+        'VALUES (?, ?, ?, ?, ?, ?)',
+        DEFAULT_BASE_NODES_AT_V40,
+    )
+    log.debug('Exit _add_base_chain_data')
+
+
 def _add_new_tables(write_cursor: 'DBCursor') -> None:
     """
     Add new tables for this upgrade
@@ -86,11 +105,13 @@ def upgrade_v39_to_v40(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         - Create new tables
     """
     log.debug('Entered userdb v39->v40 upgrade')
-    progress_handler.set_total_steps(4)
+    progress_handler.set_total_steps(5)
     with db.user_write() as write_cursor:
         _migrate_rotki_events(write_cursor)
         progress_handler.new_step()
         _purge_kraken_events(write_cursor)
+        progress_handler.new_step()
+        _add_base_chain_data(write_cursor)
         progress_handler.new_step()
         _add_new_tables(write_cursor)
         progress_handler.new_step()

@@ -121,6 +121,7 @@ class ExternalService(SerializableEnumNameMixin):
     OPTIMISM_ETHERSCAN = 6
     POLYGON_POS_ETHERSCAN = 7
     ARBITRUM_ONE_ETHERSCAN = 8
+    BASE_ETHERSCAN = 9
 
 
 class ExternalServiceApiCredentials(NamedTuple):
@@ -253,6 +254,8 @@ class ChainID(Enum):
             label = 'Binance Smart Chain'
         elif self == ChainID.ARBITRUM_ONE:
             label = 'Arbitrum One'
+        elif self == ChainID.BASE:
+            label = 'Base'
         else:
             label = name.capitalize()
 
@@ -289,6 +292,7 @@ SUPPORTED_CHAIN_IDS = Literal[
     ChainID.OPTIMISM,
     ChainID.POLYGON_POS,
     ChainID.ARBITRUM_ONE,
+    ChainID.BASE,
 ]
 
 
@@ -438,6 +442,7 @@ class SupportedBlockchain(SerializableEnumValueMixin):
     OPTIMISM = 'OPTIMISM'
     POLYGON_POS = 'POLYGON_POS'
     ARBITRUM_ONE = 'ARBITRUM_ONE'
+    BASE = 'BASE'
 
     def __str__(self) -> str:
         return SUPPORTED_BLOCKCHAIN_NAMES_MAPPING.get(self, super().__str__())
@@ -464,7 +469,7 @@ class SupportedBlockchain(SerializableEnumValueMixin):
 
     def get_native_token_id(self) -> str:
         """Returns the string identifier of the native token for the chain"""
-        if self in (SupportedBlockchain.OPTIMISM, SupportedBlockchain.ARBITRUM_ONE):
+        if self in (SupportedBlockchain.OPTIMISM, SupportedBlockchain.ARBITRUM_ONE, SupportedBlockchain.BASE):  # noqa: E501
             return 'ETH'
         if self == SupportedBlockchain.POLYGON_POS:
             return 'eip155:137/erc20:0x0000000000000000000000000000000000001010'
@@ -514,6 +519,7 @@ SUPPORTED_BLOCKCHAIN_NAMES_MAPPING = {
     SupportedBlockchain.ETHEREUM_BEACONCHAIN: 'Ethereum Staking',
     SupportedBlockchain.POLYGON_POS: 'Polygon PoS',
     SupportedBlockchain.ARBITRUM_ONE: 'Arbitrum One',
+    SupportedBlockchain.BASE: 'Base',
 }
 
 EVM_CHAINS_WITH_TRANSACTIONS_TYPE = Literal[
@@ -521,6 +527,7 @@ EVM_CHAINS_WITH_TRANSACTIONS_TYPE = Literal[
     SupportedBlockchain.OPTIMISM,
     SupportedBlockchain.POLYGON_POS,
     SupportedBlockchain.ARBITRUM_ONE,
+    SupportedBlockchain.BASE,
 ]
 
 EVM_CHAINS_WITH_TRANSACTIONS: tuple[EVM_CHAINS_WITH_TRANSACTIONS_TYPE, ...] = typing.get_args(EVM_CHAINS_WITH_TRANSACTIONS_TYPE)  # noqa: E501
@@ -530,6 +537,7 @@ EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE = Literal[
     ChainID.OPTIMISM,
     ChainID.POLYGON_POS,
     ChainID.ARBITRUM_ONE,
+    ChainID.BASE,
 ]
 
 EVM_CHAIN_IDS_WITH_TRANSACTIONS: tuple[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE, ...] = typing.get_args(EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE)  # noqa: E501
@@ -545,6 +553,7 @@ SUPPORTED_EVM_CHAINS = Literal[
     SupportedBlockchain.AVALANCHE,
     SupportedBlockchain.POLYGON_POS,
     SupportedBlockchain.ARBITRUM_ONE,
+    SupportedBlockchain.BASE,
 ]
 
 SUPPORTED_NON_BITCOIN_CHAINS = Literal[
@@ -556,6 +565,7 @@ SUPPORTED_NON_BITCOIN_CHAINS = Literal[
     SupportedBlockchain.OPTIMISM,
     SupportedBlockchain.POLYGON_POS,
     SupportedBlockchain.ARBITRUM_ONE,
+    SupportedBlockchain.BASE,
 ]
 
 SUPPORTED_BITCOIN_CHAINS = Literal[
@@ -574,6 +584,7 @@ SUPPORTED_BLOCKCHAIN_TO_CHAINID = {
     SupportedBlockchain.AVALANCHE: ChainID.AVALANCHE,
     SupportedBlockchain.POLYGON_POS: ChainID.POLYGON_POS,
     SupportedBlockchain.ARBITRUM_ONE: ChainID.ARBITRUM_ONE,
+    SupportedBlockchain.BASE: ChainID.BASE,
 }
 CHAINID_TO_SUPPORTED_BLOCKCHAIN = {
     value: key
@@ -586,6 +597,7 @@ CHAINS_WITH_CHAIN_MANAGER = Literal[
     SupportedBlockchain.OPTIMISM,
     SupportedBlockchain.POLYGON_POS,
     SupportedBlockchain.ARBITRUM_ONE,
+    SupportedBlockchain.BASE,
     SupportedBlockchain.AVALANCHE,
     SupportedBlockchain.POLKADOT,
     SupportedBlockchain.KUSAMA,
@@ -666,6 +678,7 @@ class Location(DBCharEnumMixIn):
     OPTIMISM = 39  # on-chain optimism events
     POLYGON_POS = 40  # on-chain Polygon POS events
     ARBITRUM_ONE = 41  # on-chain Arbitrum One events
+    BASE = 42  # on-chain Base events
 
     @staticmethod
     def from_chain_id(chain_id: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE) -> 'Location':
@@ -677,6 +690,10 @@ class Location(DBCharEnumMixIn):
 
         if chain_id == ChainID.ARBITRUM_ONE:
             return Location.ARBITRUM_ONE
+
+        if chain_id == ChainID.BASE:
+            return Location.BASE
+
         # else
         return Location.POLYGON_POS
 
@@ -692,11 +709,13 @@ class Location(DBCharEnumMixIn):
             return 10
         if self == Location.ARBITRUM_ONE:
             return 42161
+        if self == Location.BASE:
+            return 8453
         assert self == Location.POLYGON_POS, 'should have only been polygon pos here'
         return 137
 
 
-EVM_LOCATIONS_TYPE_ = Literal[Location.ETHEREUM, Location.OPTIMISM, Location.POLYGON_POS, Location.ARBITRUM_ONE]  # noqa: E501
+EVM_LOCATIONS_TYPE_ = Literal[Location.ETHEREUM, Location.OPTIMISM, Location.POLYGON_POS, Location.ARBITRUM_ONE, Location.BASE]  # noqa: E501
 EVM_LOCATIONS: tuple[EVM_LOCATIONS_TYPE_, ...] = typing.get_args(EVM_LOCATIONS_TYPE_)
 
 

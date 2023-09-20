@@ -379,7 +379,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
             web3.middleware_onion.remove('gas_estimate')
             # we do our own handling for ens names
             web3.middleware_onion.remove('name_to_address')
-        if self.chain_id in (ChainID.OPTIMISM, ChainID.POLYGON_POS, ChainID.ARBITRUM_ONE):
+        if self.chain_id in (ChainID.OPTIMISM, ChainID.POLYGON_POS, ChainID.ARBITRUM_ONE, ChainID.BASE):  # noqa: E501
             # TODO: Is it needed for all non-mainet EVM chains?
             # https://web3py.readthedocs.io/en/stable/middleware.html#why-is-geth-poa-middleware-necessary
             web3.middleware_onion.inject(geth_poa_middleware, layer=0)
@@ -1391,41 +1391,13 @@ class EvmNodeInquirerWithDSProxy(EvmNodeInquirer):
         )
 
 
-class DSProxyInquirerWithCacheData(EvmNodeInquirerWithDSProxy, LockableQueryMixIn):
-    """This is the inquirer that needs to be used by chains with modules (protocols)
-    that store data in the cache tables of the globaldb. For example velodrome in
-    optimism and curve in ethereum store data in cache tables."""
-
+class UpdatableCacheDataMixin(LockableQueryMixIn):
     def __init__(
             self,
-            greenlet_manager: GreenletManager,
             database: 'DBHandler',
-            etherscan: Etherscan,
-            blockchain: SUPPORTED_EVM_CHAINS,
-            etherscan_node: WeightedNode,
-            etherscan_node_name: str,
-            contracts: EvmContracts,
-            contract_scan: 'EvmContract',
-            contract_multicall: 'EvmContract',
-            dsproxy_registry: 'EvmContract',
-            native_token: CryptoAsset,
-            rpc_timeout: int = DEFAULT_EVM_RPC_TIMEOUT,
     ) -> None:
-        LockableQueryMixIn.__init__(self)
-        super().__init__(
-            greenlet_manager=greenlet_manager,
-            database=database,
-            etherscan=etherscan,
-            blockchain=blockchain,
-            etherscan_node=etherscan_node,
-            etherscan_node_name=etherscan_node_name,
-            contracts=contracts,
-            contract_scan=contract_scan,
-            contract_multicall=contract_multicall,
-            rpc_timeout=rpc_timeout,
-            native_token=native_token,
-            dsproxy_registry=dsproxy_registry,
-        )
+        super().__init__()
+        self.database = database
 
     @protect_with_lock()
     def ensure_cache_data_is_updated(
@@ -1461,3 +1433,40 @@ class DSProxyInquirerWithCacheData(EvmNodeInquirerWithDSProxy, LockableQueryMixI
                 new_data=new_data,
             )
         return True
+
+
+class DSProxyInquirerWithCacheData(EvmNodeInquirerWithDSProxy, UpdatableCacheDataMixin):
+    """This is the inquirer that needs to be used by chains with modules (protocols)
+    that store data in the cache tables of the globaldb. For example velodrome in
+    optimism and curve in ethereum store data in cache tables."""
+
+    def __init__(
+            self,
+            greenlet_manager: GreenletManager,
+            database: 'DBHandler',
+            etherscan: Etherscan,
+            blockchain: SUPPORTED_EVM_CHAINS,
+            etherscan_node: WeightedNode,
+            etherscan_node_name: str,
+            contracts: EvmContracts,
+            contract_scan: 'EvmContract',
+            contract_multicall: 'EvmContract',
+            dsproxy_registry: 'EvmContract',
+            native_token: CryptoAsset,
+            rpc_timeout: int = DEFAULT_EVM_RPC_TIMEOUT,
+    ) -> None:
+        UpdatableCacheDataMixin.__init__(self, database)
+        super().__init__(
+            greenlet_manager=greenlet_manager,
+            database=database,
+            etherscan=etherscan,
+            blockchain=blockchain,
+            etherscan_node=etherscan_node,
+            etherscan_node_name=etherscan_node_name,
+            contracts=contracts,
+            contract_scan=contract_scan,
+            contract_multicall=contract_multicall,
+            rpc_timeout=rpc_timeout,
+            native_token=native_token,
+            dsproxy_registry=dsproxy_registry,
+        )

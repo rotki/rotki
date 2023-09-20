@@ -53,4 +53,5 @@ LOCATION_DETAILS = {
     Location.OPTIMISM: LocationDetails(image='optimism.svg'),
     Location.POLYGON_POS: LocationDetails(image='polygon_pos.svg'),
     Location.ARBITRUM_ONE: LocationDetails(image='arbitrum_one.svg'),
+    Location.BASE: LocationDetails(image='base.svg'),
 }

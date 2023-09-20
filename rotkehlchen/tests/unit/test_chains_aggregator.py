@@ -82,6 +82,7 @@ def test_detect_evm_accounts(blockchain: 'ChainsAggregator') -> None:
         (SupportedBlockchain.AVALANCHE, everywhere_addy),
         (SupportedBlockchain.POLYGON_POS, everywhere_addy),
         (SupportedBlockchain.ARBITRUM_ONE, everywhere_addy),
+        (SupportedBlockchain.BASE, everywhere_addy),
     ]
 
     for chain, addy in addies_to_start_with:
@@ -111,6 +112,7 @@ def test_detect_evm_accounts(blockchain: 'ChainsAggregator') -> None:
             avalanche_addresses=[eth_addy_contract, everywhere_addy, addy_eoa_1],
             polygon_pos_addresses=[everywhere_addy, addy_eoa_3],
             arbitrum_one_addresses=[everywhere_addy, addy_eoa_3],
+            base_addresses=[everywhere_addy, addy_eoa_3],
         )
 
         blockchain.detect_evm_accounts()
@@ -120,6 +122,7 @@ def test_detect_evm_accounts(blockchain: 'ChainsAggregator') -> None:
     assert set(blockchain.accounts.avax) == {addy_eoa_1, everywhere_addy}
     assert set(blockchain.accounts.polygon_pos) == {addy_eoa_3, everywhere_addy}
     assert set(blockchain.accounts.arbitrum_one) == {addy_eoa_3, everywhere_addy}
+    assert set(blockchain.accounts.base) == {addy_eoa_3, everywhere_addy}
 
     # Also check the db
     expected_accounts_data = initial_accounts_data + [
@@ -141,6 +144,10 @@ def test_detect_evm_accounts(blockchain: 'ChainsAggregator') -> None:
         ),
         BlockchainAccountData(
             chain=SupportedBlockchain.ARBITRUM_ONE,
+            address=addy_eoa_3,
+        ),
+        BlockchainAccountData(
+            chain=SupportedBlockchain.BASE,
             address=addy_eoa_3,
         ),
     ]
@@ -167,6 +174,10 @@ def test_detect_evm_accounts(blockchain: 'ChainsAggregator') -> None:
             chain=SupportedBlockchain.ARBITRUM_ONE,
             address=account,
         ) for account in raw_accounts.arbitrum_one])
+        accounts_in_db.extend([BlockchainAccountData(
+            chain=SupportedBlockchain.BASE,
+            address=account,
+        ) for account in raw_accounts.base])
 
     assert set(accounts_in_db) == set(expected_accounts_data)
     assert len(accounts_in_db) == len(expected_accounts_data)
