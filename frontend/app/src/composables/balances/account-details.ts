@@ -24,6 +24,8 @@ export const useAccountDetails = (
       return get(chainBalances)[chain];
     } else if (chain === Blockchain.ARBITRUM_ONE) {
       return get(chainBalances)[chain];
+    } else if (chain === Blockchain.BASE) {
+      return get(chainBalances)[chain];
     }
     return {};
   });

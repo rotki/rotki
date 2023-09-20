@@ -71,5 +71,10 @@ export const explorerUrls: AssetExplorerUrls = {
     address: 'https://arbiscan.io/address/',
     transaction: 'https://arbiscan.io/tx/',
     block: 'https://arbiscan.io/block/'
+  },
+  [Blockchain.BASE]: {
+    address: 'https://basescan.org/address/',
+    transaction: 'https://basescan.org/tx/',
+    block: 'https://basescan.org/block/'
   }
 };

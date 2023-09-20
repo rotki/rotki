@@ -1,5 +1,6 @@
 import {
   TRADE_LOCATION_ARBITRUM_ONE,
+  TRADE_LOCATION_BASE,
   TRADE_LOCATION_ETHEREUM,
   TRADE_LOCATION_OPTIMISM,
   TRADE_LOCATION_POLYGON_POS
@@ -62,6 +63,11 @@ export const getEtherScanRegisterUrl = (location: string) => {
     case TRADE_LOCATION_ARBITRUM_ONE:
       return {
         external: 'https://arbiscan.io/register',
+        route: { path: Routes.API_KEYS_EXTERNAL_SERVICES, hash: `#${location}` }
+      };
+    case TRADE_LOCATION_BASE:
+      return {
+        external: 'https://basescan.org/register',
         route: { path: Routes.API_KEYS_EXTERNAL_SERVICES, hash: `#${location}` }
       };
     default:

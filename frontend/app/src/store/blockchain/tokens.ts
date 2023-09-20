@@ -22,7 +22,8 @@ const defaultTokens = (): Tokens => ({
   [Blockchain.ETH]: {},
   [Blockchain.OPTIMISM]: {},
   [Blockchain.POLYGON_POS]: {},
-  [Blockchain.ARBITRUM_ONE]: {}
+  [Blockchain.ARBITRUM_ONE]: {},
+  [Blockchain.BASE]: {}
 });
 
 export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
@@ -33,8 +34,12 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
   const { isAssetIgnored } = useIgnoredAssetsStore();
   const { t } = useI18n();
   const { ethAddresses } = storeToRefs(useEthAccountsStore());
-  const { optimismAddresses, polygonAddresses, arbitrumAddresses } =
-    storeToRefs(useChainsAccountsStore());
+  const {
+    optimismAddresses,
+    polygonAddresses,
+    arbitrumAddresses,
+    baseAddresses
+  } = storeToRefs(useChainsAccountsStore());
   const {
     fetchDetectedTokensTask,
     fetchDetectedTokens: fetchDetectedTokensCaller
@@ -173,6 +178,13 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
     await fetchDetectedTokens(Blockchain.ARBITRUM_ONE);
   });
 
+  watch(baseAddresses, async (curr, prev) => {
+    if (curr.length === 0 || isEqual(curr, prev)) {
+      return;
+    }
+    await fetchDetectedTokens(Blockchain.BASE);
+  });
+
   const { isTaskRunning } = useTaskStore();
   const { fetchBlockchainBalances } = useBlockchainBalances();
 
@@ -220,6 +232,18 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
     if (get(shouldRefreshBalances) && wasDetecting && !isDetecting) {
       await fetchBlockchainBalances({
         blockchain: Blockchain.ARBITRUM_ONE,
+        ignoreCache: true
+      });
+    }
+  });
+
+  const isBaseDetecting = isTaskRunning(TaskType.FETCH_DETECTED_TOKENS, {
+    chain: Blockchain.BASE
+  });
+  watch(isBaseDetecting, async (isDetecting, wasDetecting) => {
+    if (get(shouldRefreshBalances) && wasDetecting && !isDetecting) {
+      await fetchBlockchainBalances({
+        blockchain: Blockchain.BASE,
         ignoreCache: true
       });
     }
