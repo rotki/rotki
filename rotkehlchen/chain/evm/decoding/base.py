@@ -1,6 +1,6 @@
 import logging
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any, Callable, Optional
+from typing import TYPE_CHECKING, Any, Callable, Optional, Union
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.evm_event import EvmEvent, EvmProduct
@@ -15,6 +15,9 @@ from rotkehlchen.types import ChecksumEvmAddress, Timestamp
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer, EvmNodeInquirerWithDSProxy
+    from rotkehlchen.chain.optimism_superchain.node_inquirer import (
+        DSProxyOptimismSuperchainInquirerWithCacheData,
+    )
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
     from rotkehlchen.assets.asset import Asset
@@ -329,7 +332,7 @@ class BaseDecoderToolsWithDSProxy(BaseDecoderTools):
     def __init__(
             self,
             database: 'DBHandler',
-            evm_inquirer: 'EvmNodeInquirerWithDSProxy',
+            evm_inquirer: Union['EvmNodeInquirerWithDSProxy', 'DSProxyOptimismSuperchainInquirerWithCacheData'],  # noqa: E501
             is_non_conformant_erc721_fn: Callable[[ChecksumEvmAddress], bool],
             address_is_exchange_fn: Callable[[ChecksumEvmAddress], Optional[str]],
     ) -> None:

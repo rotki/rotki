@@ -1,14 +1,15 @@
 import logging
-from typing import TYPE_CHECKING, Any, Literal, cast
+from typing import TYPE_CHECKING, Literal, cast
 
 from eth_typing import BlockNumber
 
 from rotkehlchen.chain.constants import DEFAULT_EVM_RPC_TIMEOUT
 from rotkehlchen.chain.evm.contracts import EvmContracts
-from rotkehlchen.chain.evm.node_inquirer import DSProxyInquirerWithCacheData
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.chain.optimism_superchain.node_inquirer import (
+    DSProxyOptimismSuperchainInquirerWithCacheData,
+)
 from rotkehlchen.constants.assets import A_ETH
-from rotkehlchen.externalapis.utils import maybe_read_integer
 from rotkehlchen.fval import FVal
 from rotkehlchen.greenlets.manager import GreenletManager
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -37,7 +38,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class OptimismInquirer(DSProxyInquirerWithCacheData):
+class OptimismInquirer(DSProxyOptimismSuperchainInquirerWithCacheData):
 
     def __init__(
             self,
@@ -65,16 +66,6 @@ class OptimismInquirer(DSProxyInquirerWithCacheData):
             native_token=A_ETH.resolve_to_crypto_asset(),
         )
         self.etherscan = cast(OptimismEtherscan, self.etherscan)
-
-    def _additional_receipt_processing(self, tx_receipt: dict[str, Any]) -> None:
-        """Performs additional tx_receipt processing where necessary
-
-        May raise:
-            - DeserializationError if it can't convert a value to an int or if an unexpected
-            type is given.
-            - KeyError if tx_receipt has no l1Fee entry
-        """
-        tx_receipt['l1Fee'] = maybe_read_integer(data=tx_receipt, key='l1Fee', api='web3 optimism')
 
     # -- Implementation of EvmNodeInquirer base methods --
 

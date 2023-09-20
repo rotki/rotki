@@ -2036,6 +2036,7 @@ Getting all supported chains
                 {"id": "BTC", "name": "bitcoin", "type": "bitcoin", "native_token": "BTC"},
                 {"id": "BCH", "name": "bitcoin cash", "type": "bitcoin", "native_token": "BCH"},
                 {"id": "POLYGON_POS", "name": "polygon pos", "type": "evm", "native_token": "eip155:137/erc20:0x0000000000000000000000000000000000001010"}
+                {"id": "BASE", "name": "Base", "type": "evm", "evm_chain_name": "base", "native_token": "ETH"},
             ]
             "message": ""
         }

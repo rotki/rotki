@@ -31,11 +31,11 @@ class DBOptimismTx(DBEvmTx):
             relevant_address,
         )
 
-        tx_tuples = [(tx.l1_fee, tx.tx_hash) for tx in evm_transactions]
+        tx_tuples = [(tx.l1_fee, tx.tx_hash, tx.chain_id.serialize_for_db()) for tx in evm_transactions]  # noqa: E501
         query = """
             INSERT OR IGNORE INTO optimism_transactions(tx_id, l1_fee)
             SELECT evm_transactions.identifier, ? FROM
-            evm_transactions WHERE tx_hash=? and chain_id=10
+            evm_transactions WHERE tx_hash=? and chain_id=?
         """
         write_cursor.executemany(query, tx_tuples)
 

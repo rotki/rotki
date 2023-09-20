@@ -2,18 +2,17 @@ import logging
 from typing import TYPE_CHECKING, Optional
 
 from rotkehlchen.chain.evm.decoding.base import BaseDecoderToolsWithDSProxy
-from rotkehlchen.chain.evm.decoding.decoder import EVMTransactionDecoder
 from rotkehlchen.chain.evm.decoding.structures import (
     FAILED_ENRICHMENT_OUTPUT,
     TransferEnrichmentOutput,
 )
-from rotkehlchen.chain.optimism.types import OptimismTransaction
+from rotkehlchen.chain.optimism_superchain.decoding.decoder import (
+    OptimismSuperchainTransactionDecoder,
+)
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.db.optimismtx import DBOptimismTx
-from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
-from rotkehlchen.utils.misc import from_wei
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.structures import EnricherContext
@@ -25,7 +24,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class OptimismTransactionDecoder(EVMTransactionDecoder):
+class OptimismTransactionDecoder(OptimismSuperchainTransactionDecoder):
 
     def __init__(
             self,
@@ -35,7 +34,7 @@ class OptimismTransactionDecoder(EVMTransactionDecoder):
     ):
         super().__init__(
             database=database,
-            evm_inquirer=optimism_inquirer,
+            node_inquirer=optimism_inquirer,
             transactions=transactions,
             value_asset=A_ETH.resolve_to_asset_with_oracles(),
             event_rules=[],
@@ -48,9 +47,6 @@ class OptimismTransactionDecoder(EVMTransactionDecoder):
             ),
             dbevmtx_class=DBOptimismTx,
         )
-
-    def _calculate_gas_burned(self, tx: OptimismTransaction) -> FVal:  # type: ignore[override]
-        return from_wei(FVal(tx.gas_used * tx.gas_price + tx.l1_fee))
 
     # -- methods that need to be implemented by child classes --
 

@@ -610,6 +610,7 @@ def setup_evm_addresses_activity_mock(
         optimism_addresses: Optional[list[ChecksumEvmAddress]] = None,
         polygon_pos_addresses: Optional[list[ChecksumEvmAddress]] = None,
         arbitrum_one_addresses: Optional[list[ChecksumEvmAddress]] = None,
+        base_addresses: Optional[list[ChecksumEvmAddress]] = None,
 ) -> 'ExitStack':
     def mock_ethereum_get_code(account):
         if account in eth_contract_addresses:
@@ -643,6 +644,11 @@ def setup_evm_addresses_activity_mock(
 
     def mock_arbitrum_one_has_activity(account):
         if account in arbitrum_one_addresses:
+            return EtherscanHasChainActivity.TRANSACTIONS
+        return EtherscanHasChainActivity.NONE
+
+    def mock_base_has_activity(account):
+        if account in base_addresses:
             return EtherscanHasChainActivity.TRANSACTIONS
         return EtherscanHasChainActivity.NONE
 
@@ -680,6 +686,11 @@ def setup_evm_addresses_activity_mock(
         chains_aggregator.arbitrum_one.node_inquirer.etherscan,
         'has_activity',
         side_effect=mock_arbitrum_one_has_activity,
+    ))
+    stack.enter_context(patch.object(
+        chains_aggregator.base.node_inquirer.etherscan,
+        'has_activity',
+        side_effect=mock_base_has_activity,
     ))
     return stack
 

@@ -26,6 +26,8 @@ from rotkehlchen.chain.aggregator import ChainsAggregator
 from rotkehlchen.chain.arbitrum_one.manager import ArbitrumOneManager
 from rotkehlchen.chain.arbitrum_one.node_inquirer import ArbitrumOneInquirer
 from rotkehlchen.chain.avalanche.manager import AvalancheManager
+from rotkehlchen.chain.base.manager import BaseManager
+from rotkehlchen.chain.base.node_inquirer import BaseInquirer
 from rotkehlchen.chain.ethereum.manager import EthereumManager
 from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 from rotkehlchen.chain.ethereum.oracles.uniswap import UniswapV2Oracle, UniswapV3Oracle
@@ -371,6 +373,11 @@ class Rotkehlchen:
             database=self.data.db,
         )
         arbitrum_one_manager = ArbitrumOneManager(arbitrum_one_inquirer)
+        base_inquirer = BaseInquirer(
+            greenlet_manager=self.greenlet_manager,
+            database=self.data.db,
+        )
+        base_manager = BaseManager(base_inquirer)
         kusama_manager = SubstrateManager(
             chain=SupportedBlockchain.KUSAMA,
             msg_aggregator=self.msg_aggregator,
@@ -413,6 +420,7 @@ class Rotkehlchen:
             optimism_manager=optimism_manager,
             polygon_pos_manager=polygon_pos_manager,
             arbitrum_one_manager=arbitrum_one_manager,
+            base_manager=base_manager,
             kusama_manager=kusama_manager,
             polkadot_manager=polkadot_manager,
             avalanche_manager=avalanche_manager,

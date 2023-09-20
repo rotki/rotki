@@ -19,7 +19,7 @@ from rotkehlchen.db.upgrade_manager import (
     DBUpgradeProgressHandler,
 )
 from rotkehlchen.db.upgrades.v37_v38 import DEFAULT_POLYGON_NODES_AT_V38
-from rotkehlchen.db.upgrades.v39_v40 import PREFIX
+from rotkehlchen.db.upgrades.v39_v40 import DEFAULT_BASE_NODES_AT_V40, PREFIX
 from rotkehlchen.db.utils import table_exists
 from rotkehlchen.errors.misc import DBUpgradeError
 from rotkehlchen.oracles.structures import CurrentPriceOracle
@@ -1827,6 +1827,9 @@ def test_upgrade_db_39_to_40(user_data_dir):  # pylint: disable=unused-argument
     # check the tables we create don't exist before
     assert table_exists(cursor, 'skipped_external_events') is False
 
+    max_initial_node_id = cursor.execute('SELECT MAX(identifier) FROM rpc_nodes').fetchone()[0]
+    nodes_before = cursor.execute('SELECT * FROM rpc_nodes').fetchall()
+
     cursor.close()
     db_v39.logout()
     # Execute upgrade
@@ -1853,6 +1856,17 @@ def test_upgrade_db_39_to_40(user_data_dir):  # pylint: disable=unused-argument
     assert other_events_after == [('deposit', 'spend'), ('withdrawal', 'fee'), ('receive', 'receive'), ('staking', 'fee')]  # noqa: E501
     # check new tables are created
     assert table_exists(cursor, 'skipped_external_events') is True
+
+    assert cursor.execute(  # Check that BASE location was added
+        'SELECT location FROM location WHERE seq=?',
+        (Location.BASE.value,),
+    ).fetchone()[0] == Location.BASE.serialize_for_db()
+    nodes_after = cursor.execute('SELECT * FROM rpc_nodes').fetchall()
+    default_base_nodes_with_ids = [
+        (id, *node)
+        for id, node in enumerate(DEFAULT_BASE_NODES_AT_V40, start=max_initial_node_id + 1)
+    ]
+    assert nodes_after == nodes_before + default_base_nodes_with_ids
 
 
 def test_latest_upgrade_adds_remove_tables(user_data_dir):

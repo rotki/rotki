@@ -299,6 +299,7 @@ def test_migration_10(
     optimism_addresses = [ethereum_accounts[2], ethereum_accounts[3]]
     polygon_pos_addresses = [ethereum_accounts[3]]
     arbitrum_one_addresses = [ethereum_accounts[3]]
+    base_addresses = [ethereum_accounts[2]]
 
     # insert a bad polygon etherscan name in the database. By mistake we published an error
     # in this name and could affect users
@@ -323,6 +324,7 @@ def test_migration_10(
             optimism_addresses=optimism_addresses,
             polygon_pos_addresses=polygon_pos_addresses,
             arbitrum_one_addresses=arbitrum_one_addresses,
+            base_addresses=base_addresses,
         )
         stack.enter_context(migration_patch)
         DataMigrationManager(rotki).maybe_migrate_data()
@@ -340,6 +342,8 @@ def test_migration_10(
     assert set(rotki.chains_aggregator.accounts.polygon_pos) == set(polygon_pos_addresses)
     assert set(accounts.arbitrum_one) == set(arbitrum_one_addresses)
     assert set(rotki.chains_aggregator.accounts.arbitrum_one) == set(arbitrum_one_addresses)
+    assert set(accounts.base) == set(base_addresses)
+    assert set(rotki.chains_aggregator.accounts.base) == set(base_addresses)
 
     migration_steps = 8  # 4 (eth accounts) + 4 (potentially write to db + updating spam assets + polygon rpc + step 0)  # noqa: E501
     chain_to_added_address = [
@@ -349,6 +353,7 @@ def test_migration_10(
         {'evm_chain': 'optimism', 'address': ethereum_accounts[2]},
         {'evm_chain': 'optimism', 'address': ethereum_accounts[3]},
         {'evm_chain': 'arbitrum_one', 'address': ethereum_accounts[3]},
+        {'evm_chain': 'base', 'address': ethereum_accounts[2]},
     ]
     assert_add_addresses_migration_ws_messages(websocket_connection, 10, migration_steps, chain_to_added_address)  # noqa: E501
 
