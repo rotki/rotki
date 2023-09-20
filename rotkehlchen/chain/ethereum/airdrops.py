@@ -4,7 +4,7 @@ from collections import defaultdict
 from collections.abc import Iterator, Sequence
 from json.decoder import JSONDecodeError
 from pathlib import Path
-from typing import Any
+from typing import Any, NamedTuple
 
 import requests
 
@@ -42,94 +42,142 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 SMALLEST_AIRDROP_SIZE = 20900
-AIRDROPS = {
-    'uniswap': (
+
+
+class Airdrop(NamedTuple):
+    """Airdrop class for representing airdrop data.
+
+    This contains the definition of the Airdrop class, which is used to represent
+    individual airdrops along with their associated data, such as URL, token address,
+    website URL, name, and icon filename.
+    """
+    csv_url: str
+    asset: Asset
+    url: str
+    name: str
+    icon: str
+
+
+AIRDROPS: dict[str, Airdrop] = {
+    'uniswap': Airdrop(
         # is checksummed
-        'https://gist.githubusercontent.com/LefterisJP/d883cb7187a7c4fcf98c7a62f45568e7/raw/3718c95d572a29b9c3906d7c64726d3bd7524bfd/uniswap.csv',  # noqa: E501
-        A_UNI,
-        'https://app.uniswap.org/',
+        csv_url='https://gist.githubusercontent.com/LefterisJP/d883cb7187a7c4fcf98c7a62f45568e7/raw/3718c95d572a29b9c3906d7c64726d3bd7524bfd/uniswap.csv',  # noqa: E501
+        asset=A_UNI,
+        url='https://app.uniswap.org/',
+        name='Uniswap',
+        icon='uniswap.svg',
     ),
-    '1inch': (
+    '1inch': Airdrop(
         # is checksummed
-        'https://gist.githubusercontent.com/LefterisJP/8f41d1511bf354d7e56810188116a410/raw/87d967e86e1435aa3a9ddb97ce20531e4e52dbad/1inch.csv',  # noqa: E501
-        A_1INCH,
-        'https://1inch.exchange/',
+        csv_url='https://gist.githubusercontent.com/LefterisJP/8f41d1511bf354d7e56810188116a410/raw/87d967e86e1435aa3a9ddb97ce20531e4e52dbad/1inch.csv',  # noqa: E501
+        asset=A_1INCH,
+        url='https://1inch.exchange/',
+        name='1inch',
+        icon='1inch.svg',
     ),
-    'tornado': (
+    'tornado': Airdrop(
         # is checksummed
-        'https://raw.githubusercontent.com/rotki/data/main/airdrops/tornado.csv',
-        A_TORN,
-        'https://tornado.cash/',
+        csv_url='https://raw.githubusercontent.com/rotki/data/main/airdrops/tornado.csv',
+        asset=A_TORN,
+        url='https://tornado.cash/',
+        name='Tornado Cash',
+        icon='tornado.svg',
     ),
-    'cornichon': (
+    'cornichon': Airdrop(
         # is checksummed
-        'https://gist.githubusercontent.com/LefterisJP/5199d8bc6caa3253c343cd5084489088/raw/7e9ca4c4772fc50780bfe9997e1c43525e1b7445/cornichon_airdrop.csv',  # noqa: E501
-        A_CORN,
-        'https://cornichon.ape.tax/',
+        csv_url='https://gist.githubusercontent.com/LefterisJP/5199d8bc6caa3253c343cd5084489088/raw/7e9ca4c4772fc50780bfe9997e1c43525e1b7445/cornichon_airdrop.csv',  # noqa: E501
+        asset=A_CORN,
+        url='https://cornichon.ape.tax/',
+        name='Cornichon',
+        icon='cornichon.svg',
     ),
-    'grain': (
+    'grain': Airdrop(
         # is checksummed
-        'https://gist.githubusercontent.com/LefterisJP/08d7a5b28876741b300c944650c89280/raw/987ab4a92d5363fdbe262f639565732bd1fd3921/grain_iou.csv',  # noqa: E501
-        A_GRAIN,
-        'https://claim.harvest.finance/',
+        csv_url='https://gist.githubusercontent.com/LefterisJP/08d7a5b28876741b300c944650c89280/raw/987ab4a92d5363fdbe262f639565732bd1fd3921/grain_iou.csv',  # noqa: E501
+        asset=A_GRAIN,
+        url='https://claim.harvest.finance/',
+        name='Grain',
+        icon='grain.png',
     ),
-    'furucombo': (
+    'furucombo': Airdrop(
         # is checksummed
-        'https://gist.githubusercontent.com/LefterisJP/69612e155e8063fd6b3422d4efbf22a3/raw/b9023960ab1c478ee2620c456e208e5124115c19/furucombo_airdrop.csv',  # noqa: E501
-        A_COMBO,
-        'https://furucombo.app/',
+        csv_url='https://gist.githubusercontent.com/LefterisJP/69612e155e8063fd6b3422d4efbf22a3/raw/b9023960ab1c478ee2620c456e208e5124115c19/furucombo_airdrop.csv',  # noqa: E501
+        asset=A_COMBO,
+        url='https://furucombo.app/',
+        name='Furucombo',
+        icon='furucombo.svg',
     ),
-    'lido': (
+    'lido': Airdrop(
         # is checksummed
-        'https://gist.githubusercontent.com/LefterisJP/57a8d65280a482fed6f3e2cc00c0e540/raw/e6ebac56c438cc8a882585c5f5bfba64eb57c424/lido_airdrop.csv',  # noqa: E501
-        A_LDO,
-        'https://lido.fi/',
+        csv_url='https://gist.githubusercontent.com/LefterisJP/57a8d65280a482fed6f3e2cc00c0e540/raw/e6ebac56c438cc8a882585c5f5bfba64eb57c424/lido_airdrop.csv',  # noqa: E501
+        asset=A_LDO,
+        url='https://lido.fi/',
+        name='Lido',
+        icon='lido.svg',
     ),
-    'curve': (
+    'curve': Airdrop(
         # is checksummed
-        'https://gist.githubusercontent.com/LefterisJP/9a37e5342ddb6219a805a82bcd3d63fe/raw/71e89f0e95ea8ef5503fb1ac569447fea63f1ede/curve_airdrop.csv',  # noqa: E501
-        A_CRV,
-        'https://www.curve.fi/',
+        csv_url='https://gist.githubusercontent.com/LefterisJP/9a37e5342ddb6219a805a82bcd3d63fe/raw/71e89f0e95ea8ef5503fb1ac569447fea63f1ede/curve_airdrop.csv',  # noqa: E501
+        asset=A_CRV,
+        url='https://www.curve.fi/',
+        name='Curve Finance',
+        icon='curve.png',
     ),
-    'convex': (
-        'https://gist.githubusercontent.com/LefterisJP/fd0ebccbc645f7de2b142907bd207363/raw/0613689dd5212b81788ed1a108c751b29b2ce93a/convex_airdrop.csv',  # noqa: E501
-        A_CVX,
-        'https://www.convexfinance.com/',
+    'convex': Airdrop(
+        csv_url='https://gist.githubusercontent.com/LefterisJP/fd0ebccbc645f7de2b142907bd207363/raw/0613689dd5212b81788ed1a108c751b29b2ce93a/convex_airdrop.csv',  # noqa: E501
+        asset=A_CVX,
+        url='https://www.convexfinance.com/',
+        name='Convex',
+        icon='convex.jpeg',
     ),
-    'shapeshift': (
-        'https://raw.githubusercontent.com/rotki/data/main/airdrops/shapeshift.csv',
-        A_FOX,
-        'https://shapeshift.com/shapeshift-decentralize-airdrop',
+    'shapeshift': Airdrop(
+        csv_url='https://raw.githubusercontent.com/rotki/data/main/airdrops/shapeshift.csv',
+        asset=A_FOX,
+        url='https://shapeshift.com/shapeshift-decentralize-airdrop',
+        name='ShapeShift',
+        icon='shapeshift.svg',
     ),
-    'ens': (
-        'https://raw.githubusercontent.com/rotki/data/main/airdrops/ens.csv',
-        A_ENS,
-        'https://claim.ens.domains/',
+    'ens': Airdrop(
+        csv_url='https://raw.githubusercontent.com/rotki/data/main/airdrops/ens.csv',
+        asset=A_ENS,
+        url='https://claim.ens.domains/',
+        name='ENS',
+        icon='ens.svg',
     ),
-    'psp': (
-        'https://raw.githubusercontent.com/rotki/data/main/airdrops/psp.csv',
-        A_PSP,
-        'https://paraswap.io/',
+    'psp': Airdrop(
+        csv_url='https://raw.githubusercontent.com/rotki/data/main/airdrops/psp.csv',
+        asset=A_PSP,
+        url='https://paraswap.io/',
+        name='ParaSwap',
+        icon='paraswap.svg',
     ),
-    'sdl': (
-        'https://raw.githubusercontent.com/rotki/data/main/airdrops/saddle_finance.csv',
-        A_SDL,
-        'https://saddle.exchange/#/',
+    'sdl': Airdrop(
+        csv_url='https://raw.githubusercontent.com/rotki/data/main/airdrops/saddle_finance.csv',
+        asset=A_SDL,
+        url='https://saddle.exchange/#/',
+        name='SaddleFinance',
+        icon='saddle-finance.svg',
     ),
-    'cow_mainnet': (
-        'https://raw.githubusercontent.com/rotki/data/main/airdrops/cow_mainnet.csv',
-        A_VCOW,
-        'https://cowswap.exchange/#/claim',
+    'cow_mainnet': Airdrop(
+        csv_url='https://raw.githubusercontent.com/rotki/data/main/airdrops/cow_mainnet.csv',
+        asset=A_VCOW,
+        url='https://cowswap.exchange/#/claim',
+        name='COW (ethereum)',
+        icon='cow.svg',
     ),
-    'cow_gnosis': (
-        'https://raw.githubusercontent.com/rotki/data/main/airdrops/cow_gnosis.csv',
-        A_VCOW,
-        'https://cowswap.exchange/#/claim',
+    'cow_gnosis': Airdrop(
+        csv_url='https://raw.githubusercontent.com/rotki/data/main/airdrops/cow_gnosis.csv',
+        asset=A_VCOW,
+        url='https://cowswap.exchange/#/claim',
+        name='COW (gnosis chain)',
+        icon='cow.svg',
     ),
-    'diva': (
-        'https://raw.githubusercontent.com/rotki/data/develop/airdrops/diva.csv',
-        A_DIVA,
-        'https://claim.diva.community/',
+    'diva': Airdrop(
+        csv_url='https://raw.githubusercontent.com/rotki/data/develop/airdrops/diva.csv',
+        asset=A_DIVA,
+        url='https://claim.diva.community/',
+        name='DIVA',
+        icon='diva.svg',
     ),
 }
 

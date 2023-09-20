@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` Transaction events from bitstamp CSV can now be imported
 * :feature:`-` Properly decode optimism bridge 2 step withdrawal proving transactions
 * :feature:`-` Users will now have the ability to filter between claimed and unclaimed airdrops.
 * :feature:`-` Transactions bridging from/to Base using the official bridge will be now decoded. 

@@ -8587,14 +8587,12 @@ Querying ethereum airdrops
 
    Doing a GET on the ethereum airdrops endpoint will return how much and of which token any of the tracked ethereum addresses are entitled to.
 
-
-   **Example Request**:
+   **Example Request**
 
    .. http:example:: curl wget httpie python-requests
 
-      GET /api/1/blockchains/eth/airdrops HTTP/1.1
-      Host: localhost:5042
-
+    GET /api/1/blockchains/eth/airdrops HTTP/1.1
+    Host: localhost:5042
 
    **Example Response**:
 
@@ -8604,31 +8602,33 @@ Querying ethereum airdrops
       Content-Type: application/json
 
       {
-          "result": {
-              "0xe5B3330A43CeC5A01A80E75ebaB2d3bc17e70819": {
+         "result": {
+            "0xe5B3330A43CeC5A01A80E75ebaB2d3bc17e70819": {
                   "1inch": {
-                      "amount": "675.55",
-                      "asset": "eip155:1/erc20:0x111111111117dC0aa78b770fA6A738034120C302",
-                      "link": "https://app.uniswap.org/",
-                      "claimed: false
+                     "amount": "675.55",
+                     "asset": "eip155:1/erc20:0x111111111117dC0aa78b770fA6A738034120C302",
+                     "link": "https://app.uniswap.org/",
+                     "claimed": false
                   }
-              },
-              "0x0B89f648eEcCc574a9B7449B5242103789CCD9D7": {
+            },
+            "0x0B89f648eEcCc574a9B7449B5242103789CCD9D7": {
                   "1inch": {
-                      "amount": "1823.23",
-                      "asset": "eip155:1/erc20:0x111111111117dC0aa78b770fA6A738034120C302",
-                      "link": "https://1inch.exchange/",
-                      "claimed: false
+                     "amount": "1823.23",
+                     "asset": "eip155:1/erc20:0x111111111117dC0aa78b770fA6A738034120C302",
+                     "link": "https://1inch.exchange/",
+                     "claimed": false
                   },
                   "uniswap": {
-                      "amount": "400",
-                      "asset": "eip155:1/erc20:0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984",
-                      "link": "https://app.uniswap.org/",
-                      "claimed: true
+                     "amount": "400",
+                     "asset": "eip155:1/erc20:0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984",
+                     "link": "https://app.uniswap.org/",
+                     "claimed": true
                   }
-              },
-          "message": ""
+            },
+            "message": ""
+         }
       }
+
 
    :reqjson object result: A mapping of addresses to protocols for which claimable airdrops exist
 
@@ -12258,3 +12258,91 @@ Refresh general cache
   :statuscode 200: Caches were correctly updated
   :statuscode 409: An issue during refreshing caches occured
   :statuscode 500: Internal rotki error
+
+Getting Metadata For Airdrops
+===================================
+
+.. http:get:: /api/(version)/airdrops/metadata
+
+   Doing a GET on this endpoint will return metadata for all the airdrops that are supported by rotki.
+
+   **Example Request**
+
+   .. http:example:: curl wget httpie python-requests
+
+    GET /airdrops/metadata HTTP/1.1
+    Host: localhost:5042
+
+   **Example Response**
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+         "result":[
+            {
+               "identifier": "uniswap",
+               "name": "Uniswap",
+               "icon": "uniswap.svg"
+            },
+            {
+               "identifier": "1inch", 
+               "name": "1inch", 
+               "icon": "1inch.svg"
+            }
+         ],
+         "message": "",
+      }
+
+   :resjson string identifier: The identifier of the airdrop.
+   :resjson string name: The name of the airdrop.
+   :resjson string icon: The icon of the airdrop.
+
+   :statuscode 200: Information was correctly returned
+   :statuscode 500: Internal rotki error
+
+Getting Metadata For Defi Protocols
+==========================================
+
+.. http:get:: /api/(version)/defi/metadata
+
+   Doing a GET on this endpoint will return metadata for all the defi protocols that are supported by rotki.
+
+   **Example Request**
+
+   .. http:example:: curl wget httpie python-requests
+
+    GET /defi/metadata HTTP/1.1
+    Host: localhost:5042
+
+   **Example Response**
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+         "result":[
+            {
+               "identifier": "uniswapv1",
+               "name": "Uniswap V1",
+               "icon": "uniswap.svg"
+            },
+            {
+               "identifier": "oneinch_liquidity",
+               "name": "1inch Liquidity Protocol",
+               "icon": "1inch.svg"
+            }
+         ],
+         "message": ""
+      }
+
+   :resjson string identifier: The identifier of the defi protocol.
+   :resjson string name: The name of the defi protocol.
+   :resjson string icon: The icon of the defi protocol.
+
+   :statuscode 200: Information was correctly returned
+   :statuscode 500: Internal rotki error

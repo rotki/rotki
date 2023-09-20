@@ -66,7 +66,8 @@ from rotkehlchen.balances.manual import (
 )
 from rotkehlchen.chain.accounts import SingleBlockchainAccountData
 from rotkehlchen.chain.bitcoin.xpub import XpubManager
-from rotkehlchen.chain.ethereum.airdrops import check_airdrops
+from rotkehlchen.chain.ethereum.airdrops import AIRDROPS, check_airdrops
+from rotkehlchen.chain.ethereum.defi.protocols import DEFI_PROTOCOLS
 from rotkehlchen.chain.ethereum.modules.curve.curve_cache import (
     query_curve_data,
     save_curve_data_to_cache,
@@ -4351,3 +4352,25 @@ class RestAPI:
                 status_code=HTTPStatus.CONFLICT,
             )
         return OK_RESULT
+
+    def get_airdrops_metadata(self) -> Response:
+        """Returns a list of airdrops metadata"""
+        result = []
+        for identifier, airdrop in AIRDROPS.items():
+            result.append({
+                'identifier': identifier,
+                'name': airdrop.name,
+                'icon': airdrop.icon,
+            })
+        return api_response(result=_wrap_in_ok_result(result=result))
+
+    def get_defi_metadata(self) -> Response:
+        """Returns a list of defi metadata"""
+        result = []
+        for identifier, protocol in DEFI_PROTOCOLS.items():
+            result.append({
+                'identifier': identifier,
+                'name': protocol.name,
+                'icon': protocol.icon,
+            })
+        return api_response(result=_wrap_in_ok_result(result=result))
