@@ -727,6 +727,13 @@ You can import data from `bitmex.com <https://bitmex.com/>`_ into rotki by click
 
 Rotki can import a CSV data file exported from BitMEX. You may see warnings if data can't be imported. If this happens please reach out to us on discord or open an issue on github.
 
+Bitstamp.net
+=============
+
+You can import data from `bitstamp.net <https://www.bitstamp.net/>`_ into rotki by clicking on "Import Data" on the left sidebar and then following the instructions.
+
+Rotki can import a CSV data file exported from Bitstamp. You may see warnings if data can't be imported. If this happens please reach out to us on discord or open an issue on github.
+
 ShapeShift.com
 ====================
 
