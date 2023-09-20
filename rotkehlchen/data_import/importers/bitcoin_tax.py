@@ -1,5 +1,4 @@
 import csv
-import hashlib
 import logging
 from pathlib import Path
 from typing import Any, Literal, Optional
@@ -9,7 +8,7 @@ from rotkehlchen.accounting.structures.base import HistoryEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.converters import LOCATION_TO_ASSET_MAPPING, asset_from_common_identifier
 from rotkehlchen.constants import ZERO
-from rotkehlchen.data_import.utils import BaseExchangeImporter, UnsupportedCSVEntry
+from rotkehlchen.data_import.utils import BaseExchangeImporter, UnsupportedCSVEntry, hash_csv_row
 from rotkehlchen.db.drivers.gevent import DBCursor
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
@@ -41,12 +40,6 @@ ACTION_TO_HISTORY_EVENT_TYPE = {
     'LOST': (HistoryEventType.SPEND, HistoryEventSubType.NONE),
     'REPAY': (HistoryEventType.SPEND, HistoryEventSubType.PAYBACK_DEBT),
 }
-
-
-def hash_csv_row(csv_row: dict[str, Any]) -> str:
-    """Convert the row to string and encode it to a hex string to get a unique hash"""
-    row_str = str(csv_row).encode()
-    return hashlib.sha256(row_str).hexdigest()
 
 
 def determine_csv_type(csv_data: csv.DictReader) -> CSVType:

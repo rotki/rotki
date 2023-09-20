@@ -146,4 +146,6 @@ WORLD_TO_BINANCE = COMMON_ASSETS_MAPPINGS | {
     evm_address_to_identifier('0xfFffFffF2ba8F66D4e51811C5190992176930278', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'COMBO',  # noqa: E501
     evm_address_to_identifier('0x163f8C2467924be0ae7B5347228CABF260318753', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'WLD',  # noqa: E501
     evm_address_to_identifier('0x808507121B80c02388fAd14726482e061B8da827', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'PENDLE',  # noqa: E501
+    evm_address_to_identifier('0x95aD61b0a150d79219dCF64E1E6Cc01f0B64C4cE', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'SHIB',  # noqa: E501
+    evm_address_to_identifier('0x4200000000000000000000000000000000000042', ChainID.OPTIMISM, EvmTokenKind.ERC20): 'OP',  # noqa: E501
 }
