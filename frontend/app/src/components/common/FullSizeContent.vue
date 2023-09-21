@@ -13,7 +13,7 @@ const css = useCssModule();
 
 <template>
   <div
-    class="d-flex flex-column align-center"
+    class="flex flex-col items-center"
     :class="{
       [css.empty]: true,
       'pa-2 mt-2': xs

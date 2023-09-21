@@ -38,7 +38,7 @@ const { t } = useI18n();
 <template>
   <div
     :style="`height: calc(100vh - ${top + 64}px);`"
-    class="d-flex flex-column align-center justify-center"
+    class="flex flex-col items-center justify-center"
   >
     <div class="module-not-active__container">
       <VRow align="center" justify="center">

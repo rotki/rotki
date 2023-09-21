@@ -310,7 +310,7 @@ const cancel = () => {
                 @input="loadedWatchers[key].args.ratio = $event"
               />
             </VCol>
-            <VCol class="d-flex align-center justify-space-between" cols="2">
+            <VCol class="flex items-center justify-between" cols="2">
               <VBtn icon @click="editWatcher(loadedWatchers[key])">
                 <VIcon small>
                   {{ existingWatchersIcon(watcher.identifier) }}
@@ -357,7 +357,7 @@ const cancel = () => {
                 suffix="%"
               />
             </VCol>
-            <VCol class="d-flex align-center justify-center" cols="1">
+            <VCol class="flex items-center justify-center" cols="1">
               <VBtn
                 :disabled="watcherOperation === null || watcherValue === null"
                 icon

@@ -40,7 +40,7 @@ const loading = isAccountOperationRunning();
 <template>
   <VRow v-if="visibleModules.length > 0">
     <VCol>
-      <div class="font-weight-medium">{{ t('module_activator.title') }}</div>
+      <div class="font-medium">{{ t('module_activator.title') }}</div>
       <div class="text-caption text--secondary">
         {{ t('module_activator.subtitle') }}
       </div>

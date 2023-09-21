@@ -43,8 +43,8 @@ const balanceBlockchainRoute = Routes.ACCOUNTS_BALANCES_BLOCKCHAIN;
         <AssetIcon size="24px" :identifier="chain" :show-chain="false" />
       </VListItemAvatar>
       <VListItemContent>
-        <div class="d-flex flex-row">
-          <span class="flex-grow-1 flex-shrink-1">
+        <div class="flex flex-row">
+          <span class="grow shrink">
             {{ toSentenceCase(name) }}
           </span>
           <span class="ml-2 text-end shrink">

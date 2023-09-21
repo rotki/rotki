@@ -28,7 +28,7 @@ const size = computed(() => {
         <slot name="first-col" />
       </VCol>
       <VCol
-        class="stat-card-wide__second-col d-flex"
+        class="stat-card-wide__second-col flex"
         :class="{
           'stat-card-wide__second-col--horizontal': smAndUp
         }"
@@ -36,7 +36,7 @@ const size = computed(() => {
         :sm="size"
       >
         <VDivider :vertical="smAndUp" />
-        <div class="stat-card-wide__second-col__content pa-6 flex-grow-1">
+        <div class="stat-card-wide__second-col__content pa-6 grow">
           <slot name="second-col" />
         </div>
         <VDivider v-if="cols > 2" :vertical="smAndUp" />

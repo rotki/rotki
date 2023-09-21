@@ -176,7 +176,7 @@ const css = useCssModule();
 
 <template>
   <div>
-    <div class="py-10 d-flex flex-column align-center">
+    <div class="py-10 flex flex-col items-center">
       <div :class="css.wrapper">
         <div class="text-h6 mb-4 text-center">
           {{ t('common.total') }}
@@ -211,7 +211,7 @@ const css = useCssModule();
               large
               @click="setTotal(number)"
             >
-              <div class="d-flex flex-column align-center">
+              <div class="flex flex-col items-center">
                 <span>
                   {{ suggestionsLabel[key] }}
                 </span>
@@ -230,7 +230,7 @@ const css = useCssModule();
         </div>
       </div>
     </div>
-    <VSheet elevation="10" class="d-flex justify-end pa-4">
+    <VSheet elevation="10" class="flex justify-end pa-4">
       <VSpacer />
       <VBtn class="mr-4" @click="updateStep(2)">
         <VIcon>mdi-chevron-left</VIcon>

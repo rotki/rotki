@@ -190,7 +190,7 @@ const warningUrl =
           <li
             v-for="domain in whitelistedDomainsForNftImages"
             :key="domain"
-            class="orange--text font-weight-bold"
+            class="orange--text font-bold"
           >
             {{ domain }}
           </li>

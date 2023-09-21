@@ -12,7 +12,7 @@ defineProps({
 </script>
 
 <template>
-  <span v-bind="$attrs" class="d-flex flex-row align-center">
+  <span v-bind="$attrs" class="flex flex-row items-center">
     <VImg
       width="26px"
       contain

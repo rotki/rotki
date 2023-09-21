@@ -119,7 +119,7 @@ const fallbackData = computed(() => {
 
 <template>
   <div>
-    <div class="d-flex align-center overflow-hidden">
+    <div class="flex items-center overflow-hidden">
       <div class="cursor-pointer">
         <VTooltip
           top
@@ -158,7 +158,7 @@ const fallbackData = computed(() => {
           <span>
             {{ t('nft_balance_table.hidden_hint') }}
             {{ t('nft_gallery.allow_domain') }}
-            <span class="font-weight-bold warning--text">{{ domain }}</span>
+            <span class="font-bold warning--text">{{ domain }}</span>
           </span>
         </VTooltip>
       </div>
@@ -169,7 +169,7 @@ const fallbackData = computed(() => {
           <VSkeletonLoader class="mt-1" width="80" type="text" />
         </template>
         <div v-else-if="name" :class="css['nft-details']">
-          <div class="font-weight-medium" :class="css['nft-details__entry']">
+          <div class="font-medium" :class="css['nft-details__entry']">
             {{ name }}
           </div>
           <div
@@ -181,15 +181,15 @@ const fallbackData = computed(() => {
           </div>
         </div>
         <div v-else>
-          <div class="d-flex">
+          <div class="flex">
             <div>{{ t('nft_balance_table.contract_address') }}:</div>
-            <div class="pl-1 font-weight-medium">
+            <div class="pl-1 font-medium">
               <HashLink :text="fallbackData.address" />
             </div>
           </div>
-          <div class="d-flex">
+          <div class="flex">
             <div>{{ t('nft_balance_table.token_id') }}:</div>
-            <div class="pl-1 font-weight-medium">
+            <div class="pl-1 font-medium">
               {{ fallbackData.tokenId }}
             </div>
           </div>

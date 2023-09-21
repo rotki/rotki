@@ -5,7 +5,7 @@ const { t } = useI18n();
 <template>
   <VCard>
     <VAlert color="error" icon="mdi-alert" outlined prominent>
-      <span class="font-weight-medium">
+      <span class="font-medium">
         {{ t('premium_loading_failed.title') }}
       </span>
       <p class="mt-1">

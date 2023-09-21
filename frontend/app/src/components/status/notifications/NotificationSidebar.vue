@@ -73,7 +73,7 @@ const { hasRunningTasks } = storeToRefs(useTaskStore());
         </VCol>
         <VCol>
           <span
-            class="text-uppercase text--secondary text-caption font-weight-medium pl-1"
+            class="text-uppercase text--secondary text-caption font-medium pl-1"
           >
             {{ t('notification_sidebar.title') }}
           </span>

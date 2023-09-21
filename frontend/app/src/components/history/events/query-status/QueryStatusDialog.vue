@@ -19,7 +19,7 @@ const css = useCssModule();
     </template>
     <template #default="dialog">
       <VCard :class="css.card">
-        <VCardTitle class="d-flex justify-space-between pb-0">
+        <VCardTitle class="flex justify-between pb-0">
           <div>
             <slot name="title" />
           </div>
@@ -32,7 +32,7 @@ const css = useCssModule();
 
         <div class="px-6 pb-4">
           <div v-for="item in items" :key="getKey(item)" :class="css.item">
-            <div class="d-flex align-center">
+            <div class="flex items-center">
               <slot name="item" :item="item" />
 
               <VTooltip v-if="showTooltip ? showTooltip(item) : true" bottom>

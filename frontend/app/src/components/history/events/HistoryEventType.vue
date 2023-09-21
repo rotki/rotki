@@ -31,7 +31,7 @@ const { locationData } = useLocations();
 </script>
 
 <template>
-  <div class="d-flex align-center text-left">
+  <div class="flex items-center text-left">
     <DefineAvatar #default="{ type }">
       <VAvatar
         class="text--darken-4"
@@ -53,8 +53,8 @@ const { locationData } = useLocations();
     <ReuseAvatar v-else :type="attrs" />
 
     <div class="ml-4">
-      <div class="font-weight-bold text-uppercase">{{ attrs.label }}</div>
-      <div v-if="event.locationLabel" class="grey--text d-flex align-center">
+      <div class="font-bold text-uppercase">{{ attrs.label }}</div>
+      <div v-if="event.locationLabel" class="grey--text flex items-center">
         <LocationIcon
           v-if="onlineEvent"
           icon
@@ -74,7 +74,7 @@ const { locationData } = useLocations();
       <div v-if="event.customized" class="pt-1">
         <VChip small label color="primary accent-1">
           <VIcon x-small> mdi-file-document-edit </VIcon>
-          <div class="pl-2 text-caption font-weight-bold">
+          <div class="pl-2 text-caption font-bold">
             {{ t('transactions.events.customized_event') }}
           </div>
         </VChip>

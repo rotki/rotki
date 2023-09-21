@@ -278,7 +278,7 @@ const css = useCssModule();
           </template>
           <div class="pa-4">
             <div v-for="(proxies, key, index) in proxyInformation" :key="key">
-              <div class="d-flex align-center">
+              <div class="flex items-center">
                 <VChip class="pl-1 pr-2">
                   <HashLink :text="key" />
                 </VChip>

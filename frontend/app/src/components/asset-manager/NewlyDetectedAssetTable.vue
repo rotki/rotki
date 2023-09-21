@@ -108,7 +108,7 @@ const ignoreTokens = async (identifiers?: string[]) => {
       {{ t('asset_table.newly_detected.subtitle') }}
     </template>
     <template #actions>
-      <div class="d-flex align-center">
+      <div class="flex items-center">
         <div class="mr-8">
           <VBtn outlined @click="selectDeselectAllTokens()">
             <VIcon>mdi-checkbox-multiple-marked-outline</VIcon>
@@ -116,7 +116,7 @@ const ignoreTokens = async (identifiers?: string[]) => {
               {{ t('asset_table.newly_detected.select_deselect_all_tokens') }}
             </span>
           </VBtn>
-          <div class="d-flex mt-4">
+          <div class="flex mt-4">
             <div class="mr-4 mt-1">
               {{ t('asset_table.selected', { count: selected.length }) }}
             </div>

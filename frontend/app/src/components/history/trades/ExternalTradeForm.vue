@@ -329,9 +329,9 @@ onMounted(setEditMode);
           </VRadioGroup>
         </div>
       </VCol>
-      <VCol cols="12" md="8" class="d-flex flex-column">
+      <VCol cols="12" md="8" class="flex flex-col">
         <VRow>
-          <VCol cols="12" md="5" class="d-flex flex-row align-center">
+          <VCol cols="12" md="5" class="flex flex-row items-center">
             <AssetSelect
               v-model="base"
               outlined
@@ -343,12 +343,12 @@ onMounted(setEditMode);
               @blur="v$.baseAsset.$touch()"
             />
           </VCol>
-          <VCol class="d-flex flex-row align-center">
+          <VCol class="flex flex-row items-center">
             <div class="text--secondary external-trade-form__action-hint">
               {{ quoteHint }}
             </div>
           </VCol>
-          <VCol cols="12" md="5" class="d-flex flex-row align-center">
+          <VCol cols="12" md="5" class="flex flex-row items-center">
             <AssetSelect
               v-model="quote"
               required

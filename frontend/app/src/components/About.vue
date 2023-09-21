@@ -91,7 +91,7 @@ const remoteAboutLogo =
 
 <template>
   <VCard class="pb-6" width="500px" light :class="css.about">
-    <div class="pt-6 pb-3 text-h2 font-weight-black white--text primary">
+    <div class="pt-6 pb-3 text-h2 font-black white--text primary">
       <span class="px-6">{{ t('app.name') }}</span>
       <span class="d-block mb-3 pl-6 text-caption">
         {{ t('app.moto') }}
@@ -101,8 +101,8 @@ const remoteAboutLogo =
       <div class="mt-4 mb-2">
         <RotkiLogo width="72px" :url="remoteAboutLogo" />
       </div>
-      <div class="d-flex flex-row align-center mt-4" :class="css.version">
-        <div class="font-weight-bold">{{ version.version }}</div>
+      <div class="flex flex-row items-center mt-4" :class="css.version">
+        <div class="font-bold">{{ version.version }}</div>
         <div class="font-weight-regular ml-4">
           <BaseExternalLink
             :href="`https://github.com/rotki/rotki/releases/tag/v${version.version}`"
@@ -118,11 +118,11 @@ const remoteAboutLogo =
           <table class="w-full">
             <tbody>
               <tr>
-                <td class="font-weight-medium" :class="css.label">
+                <td class="font-medium" :class="css.label">
                   {{ t('about.data_directory') }}
                 </td>
                 <td>
-                  <div class="d-flex flex-row">
+                  <div class="flex flex-row">
                     <VTooltip top open-delay="400">
                       <template #activator="{ on }">
                         <div
@@ -164,7 +164,7 @@ const remoteAboutLogo =
                 </td>
               </tr>
               <tr>
-                <td class="font-weight-medium" :class="css.label">
+                <td class="font-medium" :class="css.label">
                   {{ t('about.frontend_version') }}
                 </td>
                 <td>
@@ -172,19 +172,19 @@ const remoteAboutLogo =
                 </td>
               </tr>
               <tr v-if="webVersion">
-                <td class="font-weight-medium" :class="css.label">
+                <td class="font-medium" :class="css.label">
                   {{ t('about.platform') }}
                 </td>
                 <td>{{ webVersion.platform }}</td>
               </tr>
               <tr v-if="webVersion">
-                <td class="font-weight-medium" :class="css.label">
+                <td class="font-medium" :class="css.label">
                   {{ t('about.user_agent') }}
                 </td>
                 <td>{{ webVersion.userAgent }}</td>
               </tr>
               <tr v-if="electronVersion">
-                <td class="font-weight-medium" :class="css.label">
+                <td class="font-medium" :class="css.label">
                   {{ t('about.platform') }}
                 </td>
                 <td>
@@ -193,7 +193,7 @@ const remoteAboutLogo =
                 </td>
               </tr>
               <tr v-if="electronVersion">
-                <td class="font-weight-medium" :class="css.label">
+                <td class="font-medium" :class="css.label">
                   {{ t('about.electron') }}
                 </td>
                 <td>
@@ -203,19 +203,19 @@ const remoteAboutLogo =
               <tr v-if="componentsVersion">
                 <td colspan="2">
                   <VDivider class="mt-4 mb-2" />
-                  <div class="font-weight-bold mb-1">
+                  <div class="font-bold mb-1">
                     {{ t('about.components.title') }}
                   </div>
                 </td>
               </tr>
               <tr v-if="componentsVersion?.version">
-                <td class="font-weight-medium" :class="css.label">
+                <td class="font-medium" :class="css.label">
                   {{ t('about.components.version') }}
                 </td>
                 <td>{{ componentsVersion.version }}</td>
               </tr>
               <tr v-if="componentsVersion?.build">
-                <td class="font-weight-medium" :class="css.label">
+                <td class="font-medium" :class="css.label">
                   {{ t('about.components.build') }}
                 </td>
                 <td>

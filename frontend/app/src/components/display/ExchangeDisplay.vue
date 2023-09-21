@@ -14,7 +14,7 @@ const image = useRefMap(location, location => location?.image);
 </script>
 
 <template>
-  <div class="d-flex flex-row align-center shrink">
+  <div class="flex flex-row items-center shrink">
     <AdaptiveWrapper>
       <VImg width="24px" height="24px" contain :src="image" />
     </AdaptiveWrapper>

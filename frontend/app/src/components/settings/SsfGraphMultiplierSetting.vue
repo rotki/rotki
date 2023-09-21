@@ -58,7 +58,7 @@ onMounted(() => {
 
 <template>
   <div>
-    <CardTitle class="font-weight-medium mb-2">
+    <CardTitle class="font-medium mb-2">
       {{ t('statistics_graph_settings.multiplier.title') }}
     </CardTitle>
     <VCardSubtitle class="pa-0 mb-4">

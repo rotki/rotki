@@ -24,8 +24,8 @@ const location = locationData(identifier);
           no-padding
         />
       </VCol>
-      <VCol class="d-flex flex-column" cols="auto">
-        <span v-if="location" class="text-h5 font-weight-medium">
+      <VCol class="flex flex-col" cols="auto">
+        <span v-if="location" class="text-h5 font-medium">
           {{ location.name }}
         </span>
       </VCol>

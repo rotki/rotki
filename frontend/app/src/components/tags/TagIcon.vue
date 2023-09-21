@@ -14,7 +14,7 @@ withDefaults(
 
 <template>
   <VChip
-    class="tag font-weight-medium"
+    class="tag font-medium"
     label
     :small="small"
     :color="`#${tag.backgroundColor}`"

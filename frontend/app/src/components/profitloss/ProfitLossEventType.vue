@@ -12,7 +12,7 @@ const label = useRefMap(data, ({ label }) => label);
 </script>
 
 <template>
-  <span class="d-flex align-center" :class="'flex-column'">
+  <span class="flex items-center" :class="'flex-column'">
     <span>
       <VIcon color="accent"> {{ icon }} </VIcon>
     </span>

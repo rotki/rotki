@@ -56,7 +56,7 @@ const { languageContributeUrl } = useInterop();
 
 <template>
   <div>
-    <div class="d-flex align-center">
+    <div class="flex items-center">
       <SettingsOption
         #default="{ error, success, update }"
         class="w-full"

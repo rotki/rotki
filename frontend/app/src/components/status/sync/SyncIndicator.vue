@@ -193,7 +193,7 @@ const importSnapshot = async () => {
       <div>
         <div class="balance-saved-indicator__content">
           <template v-if="premium && !hideDatabaseSync">
-            <div class="font-weight-medium">
+            <div class="font-medium">
               {{ t('sync_indicator.last_data_upload') }}
             </div>
             <div class="py-2 text--secondary">
@@ -211,7 +211,7 @@ const importSnapshot = async () => {
             <VDivider class="my-4" />
           </template>
           <div>
-            <div class="font-weight-medium">
+            <div class="font-medium">
               {{ t('sync_indicator.snapshot_title') }}
             </div>
             <div class="pt-2 text--secondary">
@@ -256,7 +256,7 @@ const importSnapshot = async () => {
             </VRow>
             <VDivider class="my-4" />
             <div>
-              <div class="font-weight-medium">
+              <div class="font-medium">
                 {{ t('sync_indicator.import_snapshot.title') }}
               </div>
               <div class="pt-4">
@@ -280,7 +280,7 @@ const importSnapshot = async () => {
                     <div class="pt-2">
                       <VRow>
                         <VCol>
-                          <div class="font-weight-bold">
+                          <div class="font-bold">
                             {{
                               t(
                                 'sync_indicator.import_snapshot.balance_snapshot_file'
@@ -303,7 +303,7 @@ const importSnapshot = async () => {
                           </div>
                         </VCol>
                         <VCol>
-                          <div class="font-weight-bold">
+                          <div class="font-bold">
                             {{
                               t(
                                 'sync_indicator.import_snapshot.location_data_snapshot_file'
@@ -375,7 +375,7 @@ const importSnapshot = async () => {
     >
       <div
         v-if="isDownload"
-        class="font-weight-medium mt-3"
+        class="font-medium mt-3"
         v-text="
           t('sync_indicator.upload_confirmation.message_download_relogin')
         "

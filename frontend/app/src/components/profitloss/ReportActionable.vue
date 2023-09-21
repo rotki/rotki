@@ -40,7 +40,7 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <div v-if="actionableItemsLength" class="d-flex">
+  <div v-if="actionableItemsLength" class="flex">
     <VDialog v-model="mainDialogOpen" max-width="1000">
       <template #activator="{ on }">
         <VBtn color="error" depressed v-on="on">

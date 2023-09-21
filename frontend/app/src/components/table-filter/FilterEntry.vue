@@ -32,9 +32,7 @@ const { dark } = useTheme();
       @click="click(matcher)"
     >
       <span class="text-start" :class="css.wrapper">
-        <span class="font-weight-medium primary--text">
-          {{ matcher.key }}:
-        </span>
+        <span class="font-medium primary--text"> {{ matcher.key }}: </span>
         <span class="ms-2 font-weight-regular" :class="css.description">
           {{ matcher.description }}
         </span>

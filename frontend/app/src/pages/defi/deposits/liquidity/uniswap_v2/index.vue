@@ -148,7 +148,7 @@ const lpType = LpType.UNISWAP_V2;
               <div class="text-rui-text-secondary text-body-2">
                 {{ t('common.balance') }}
               </div>
-              <div class="d-flex text-h6 !leading-7">
+              <div class="flex text-h6 !leading-7">
                 <BalanceDisplay
                   :value="item.userBalance"
                   align="start"
@@ -173,7 +173,7 @@ const lpType = LpType.UNISWAP_V2;
                   <VCol cols="auto">
                     <AssetIcon :identifier="asset.asset" size="32px" />
                   </VCol>
-                  <VCol class="d-flex ml-4" cols="auto">
+                  <VCol class="flex ml-4" cols="auto">
                     <div class="mr-4">
                       <BalanceDisplay
                         no-icon

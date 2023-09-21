@@ -13,7 +13,7 @@ const css = useCssModule();
   <VList>
     <VListItem
       :class="css['filter-heading']"
-      class="font-weight-bold text-uppercase py-2"
+      class="font-bold text-uppercase py-2"
     >
       {{ t('dashboard.blockchain_balances.behaviour.title') }}:
     </VListItem>

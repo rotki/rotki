@@ -13,7 +13,7 @@ const rootListeners = useListeners();
     small
     :color="`${color} lighten-5`"
     :text-color="color"
-    class="font-weight-black rounded py-0 px-2 text-overline"
+    class="font-black rounded py-0 px-2 text-overline"
     v-bind="rootAttrs"
     v-on="rootListeners"
   >

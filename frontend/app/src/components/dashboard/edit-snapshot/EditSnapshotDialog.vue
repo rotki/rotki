@@ -210,7 +210,7 @@ const updateAndComplete = (event: LocationDataSnapshot[]) => {
           </VStepperItems>
         </VStepper>
       </div>
-      <div v-else class="d-flex flex-column justify-center align-center py-6">
+      <div v-else class="flex flex-col justify-center items-center py-6">
         <VProgressCircular size="50" color="primary" width="2" indeterminate />
         <div class="pt-6">
           {{ t('dashboard.snapshot.edit.dialog.fetch.loading') }}

@@ -325,7 +325,7 @@ const { t } = useI18n();
   >
     <template #activator="{ on }">
       <div v-on="on">
-        <VSheet class="d-flex" data-cy="table-filter" :disabled="disabled">
+        <VSheet class="flex" data-cy="table-filter" :disabled="disabled">
           <VCombobox
             ref="input"
             :class="css.filter"
@@ -355,7 +355,7 @@ const { t } = useI18n();
               <VChip
                 label
                 small
-                class="font-weight-medium px-2"
+                class="font-medium px-2"
                 :input-value="selected"
                 close
                 @click:close="removeSelection(item)"

@@ -18,7 +18,7 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <div class="d-flex align-center justify-end">
+  <div class="flex items-center justify-end">
     <div class="mr-2">
       {{ detectedTokens.total }}
     </div>

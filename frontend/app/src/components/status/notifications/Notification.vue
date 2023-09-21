@@ -79,8 +79,8 @@ const action = async (notification: NotificationData) => {
     :outlined="!popup"
     :elevation="0"
   >
-    <VListItem :class="css.body" class="flex-column align-stretch">
-      <div class="d-flex pa-1">
+    <VListItem :class="css.body" class="flex-col items-stretch">
+      <div class="flex pa-1">
         <VListItemAvatar class="mr-3 ml-1 my-0" :color="color">
           <VIcon size="24px" color="white">
             {{ icon }}
@@ -116,8 +116,8 @@ const action = async (notification: NotificationData) => {
         </div>
       </div>
       <slot />
-      <div class="d-flex mt-auto align-center ml-n1">
-        <div v-if="notification.action" class="d-flex align-start mr-2">
+      <div class="flex mt-auto items-center ml-n1">
+        <div v-if="notification.action" class="flex items-start mr-2">
           <VBtn
             color="primary"
             depressed

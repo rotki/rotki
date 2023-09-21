@@ -26,7 +26,7 @@ const { t } = useI18n();
         <VCardTitle>
           <CardTitle>{{ t('common.price') }}</CardTitle>
         </VCardTitle>
-        <VCardText class="text-end text-h5 font-weight-medium pt-4">
+        <VCardText class="text-end text-h5 font-medium pt-4">
           <AmountDisplay
             v-if="info.usdPrice && info.usdPrice.gte(0)"
             show-currency="symbol"
@@ -35,7 +35,7 @@ const { t } = useI18n();
             fiat-currency="USD"
             :value="info.usdPrice"
           />
-          <div v-else class="pt-3 d-flex justify-end">
+          <div v-else class="pt-3 flex justify-end">
             <VSkeletonLoader height="20" width="70" type="text" />
           </div>
         </VCardText>
@@ -46,7 +46,7 @@ const { t } = useI18n();
         <VCardTitle>
           <CardTitle>{{ t('assets.amount') }}</CardTitle>
         </VCardTitle>
-        <VCardText class="text-end text-h5 font-weight-medium pt-4">
+        <VCardText class="text-end text-h5 font-medium pt-4">
           <AmountDisplay :value="info.amount" :asset="identifier" />
         </VCardText>
       </VCard>
@@ -56,7 +56,7 @@ const { t } = useI18n();
         <VCardTitle>
           <CardTitle>{{ t('assets.value') }}</CardTitle>
         </VCardTitle>
-        <VCardText class="text-end text-h5 font-weight-medium pt-4">
+        <VCardText class="text-end text-h5 font-medium pt-4">
           <AmountDisplay
             show-currency="symbol"
             :amount="info.amount"

@@ -23,7 +23,7 @@ const symbol = assetSymbol(eventAsset);
 
 <template>
   <div>
-    <div class="py-2 d-flex align-center">
+    <div class="py-2 flex items-center">
       <div class="mr-2">
         <AssetLink :asset="event.asset" icon>
           <AssetIcon size="32px" :identifier="event.asset" />

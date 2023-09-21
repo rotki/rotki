@@ -40,16 +40,14 @@ const { t } = useI18n();
       <VCol>
         <VRow no-gutters>
           <VCol>
-            <div class="font-weight-medium">
+            <div class="font-medium">
               {{ t('kraken_staking_overview.earned') }}
             </div>
           </VCol>
         </VRow>
         <VRow justify="space-between" align="center" no-gutters class="mt-2">
           <VCol cols="auto">
-            <div
-              class="d-flex align-center text--secondary font-weight-light ms-2"
-            >
+            <div class="flex items-center text--secondary font-light ms-2">
               {{ t('kraken_staking_overview.historical') }}
               <VTooltip open-delay="400" top>
                 <template #activator="{ attrs, on }">
@@ -62,7 +60,7 @@ const { t } = useI18n();
             </div>
           </VCol>
           <VCol cols="auto">
-            <div class="d-flex align-center">
+            <div class="flex items-center">
               <ValueAccuracyHint />
               <AmountDisplay
                 show-currency="ticker"
@@ -75,9 +73,7 @@ const { t } = useI18n();
         </VRow>
         <VRow justify="space-between" align="center" no-gutters class="mt-2">
           <VCol cols="auto">
-            <div
-              class="d-flex align-center text--secondary font-weight-light ms-2"
-            >
+            <div class="flex items-center text--secondary font-light ms-2">
               {{ t('kraken_staking_overview.current') }}
               <VTooltip open-delay="400" top>
                 <template #activator="{ attrs, on }">

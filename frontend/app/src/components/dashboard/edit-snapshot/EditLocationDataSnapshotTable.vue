@@ -227,10 +227,10 @@ const showDeleteConfirmation = (item: IndexedLocationDataSnapshot) => {
         />
       </template>
     </DataTable>
-    <VSheet elevation="10" class="d-flex align-center px-4 py-2">
+    <VSheet elevation="10" class="flex items-center px-4 py-2">
       <div>
         <div class="text-caption">{{ t('common.total') }}:</div>
-        <div class="font-weight-bold text-h6 mt-n1">
+        <div class="font-bold text-h6 mt-n1">
           <AmountDisplay :value="total" fiat-currency="USD" />
         </div>
       </div>

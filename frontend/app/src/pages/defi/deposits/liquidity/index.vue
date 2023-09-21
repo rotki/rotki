@@ -22,7 +22,7 @@ onMounted(() => {
 <template>
   <div>
     <div
-      class="d-flex flex-row align-center justify-center liquidity__navigation"
+      class="flex flex-row items-center justify-center liquidity__navigation"
     >
       <VBtnToggle v-model="path">
         <VBtn

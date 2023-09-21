@@ -45,7 +45,7 @@ const { dark } = useTheme();
 </script>
 
 <template>
-  <span class="font-weight-medium d-flex align-center">
+  <span class="font-medium flex items-center">
     <span>
       {{ suggestion.key }}
     </span>
@@ -54,7 +54,7 @@ const { dark } = useTheme();
         [css.comparator]: chip,
         [css['comparator--dark']]: dark
       }"
-      class="px-1 font-weight-bold"
+      class="px-1 font-bold"
     >
       <span>{{ suggestion.exclude ? '!=' : '=' }}</span>
     </span>

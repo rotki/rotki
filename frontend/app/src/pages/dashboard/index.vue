@@ -69,7 +69,7 @@ const nftEnabled = isModuleEnabled(Module.NFTS);
                   :to="`${Routes.API_KEYS_EXCHANGES}?add=true`"
                   class="py-8"
                 >
-                  <div class="d-flex flex-column align-center">
+                  <div class="flex flex-col items-center">
                     <VIcon class="mb-2">mdi-plus-circle-outline</VIcon>
                     <span>
                       {{ t('dashboard.exchange_balances.add') }}
@@ -108,7 +108,7 @@ const nftEnabled = isModuleEnabled(Module.NFTS);
                   :to="`${Routes.ACCOUNTS_BALANCES}?add=true`"
                   class="py-8"
                 >
-                  <div class="d-flex flex-column align-center">
+                  <div class="flex flex-col items-center">
                     <VIcon class="mb-2">mdi-plus-circle-outline</VIcon>
                     <span>
                       {{ t('dashboard.blockchain_balances.add') }}
@@ -144,7 +144,7 @@ const nftEnabled = isModuleEnabled(Module.NFTS);
                   :to="`${Routes.ACCOUNTS_BALANCES_MANUAL}?add=true`"
                   class="py-8"
                 >
-                  <div class="d-flex flex-column align-center">
+                  <div class="flex flex-col items-center">
                     <VIcon class="mb-2">mdi-plus-circle-outline</VIcon>
                     <span>
                       {{ t('dashboard.manual_balances.add') }}

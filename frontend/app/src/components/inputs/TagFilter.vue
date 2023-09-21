@@ -55,7 +55,7 @@ const remove = (tag: string) => {
       <VChip
         label
         small
-        class="font-weight-medium"
+        class="font-medium"
         :input-value="selected"
         :color="`#${item.backgroundColor}`"
         :text-color="`#${item.foregroundColor}`"

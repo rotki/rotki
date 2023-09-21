@@ -221,7 +221,7 @@ const massIgnore = async (ignored: boolean) => {
               </VListItem>
               <VListItem
                 :class="css['filter-heading']"
-                class="font-weight-bold text-uppercase py-2"
+                class="font-bold text-uppercase py-2"
               >
                 {{ t('asset_table.filter_by_ignored_status') }}
               </VListItem>
@@ -315,7 +315,7 @@ const massIgnore = async (ignored: boolean) => {
         {{ formatType(item.assetType) }}
       </template>
       <template #item.ignored="{ item }">
-        <div class="d-flex justify-center">
+        <div class="flex justify-center">
           <VSwitch
             :input-value="isAssetIgnored(item.identifier)"
             @change="toggleIgnoreAsset(item.identifier)"

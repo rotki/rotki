@@ -143,7 +143,7 @@ const mediaStyle: ComputedRef<StyleValue> = computed(() => {
         </template>
         <span>
           {{ t('nft_gallery.allow_domain') }}
-          <span class="font-weight-bold warning--text">{{ domain }}</span>
+          <span class="font-bold warning--text">{{ domain }}</span>
         </span>
       </VTooltip>
     </div>
@@ -151,7 +151,7 @@ const mediaStyle: ComputedRef<StyleValue> = computed(() => {
       <div :class="css.title">
         <VRow align="center" justify="space-between" class="flex-nowrap">
           <VCol
-            class="text-truncate text-subtitle-1 font-weight-medium shrink"
+            class="text-truncate text-subtitle-1 font-medium shrink"
             cols="auto"
           >
             <VTooltip top open-delay="400" max-width="450">

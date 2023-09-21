@@ -45,7 +45,7 @@ const css = useCssModule();
   >
     <div v-if="summary.liabilities">
       <span
-        class="text-subtitle-1 font-weight-bold pb-2 d-flex flex-row justify-space-between"
+        class="text-subtitle-1 font-bold pb-2 flex flex-row justify-between"
       >
         {{ t('overview.stat_card.headers.borrowing') }}
         <VBtn :to="summary.liabilitiesUrl" icon small color="primary">
@@ -66,7 +66,7 @@ const css = useCssModule();
     </div>
     <div v-if="summary.deposits">
       <div
-        class="pb-2 d-flex flex-row justify-space-between text-subtitle-1 font-weight-medium"
+        class="pb-2 flex flex-row justify-between text-subtitle-1 font-medium"
       >
         {{ t('common.deposits') }}
         <VBtn
@@ -93,15 +93,12 @@ const css = useCssModule();
     :protocol-icon="icon"
     :class="css.overview"
   >
-    <span
-      v-if="summary.tokenInfo"
-      class="text-subtitle-1 font-weight-bold pb-2"
-    >
+    <span v-if="summary.tokenInfo" class="text-subtitle-1 font-bold pb-2">
       {{ summary.tokenInfo.tokenName }}
     </span>
     <InfoRow :title="t('common.balance')" fiat :value="summary.balanceUsd" />
     <VDivider class="my-4" />
-    <div class="d-flex justify-end">
+    <div class="flex justify-end">
       <VDialog v-model="details" scrollable max-width="450px">
         <template #activator="{ on, attrs }">
           <VBtn small v-bind="attrs" text class="justify-end" v-on="on">

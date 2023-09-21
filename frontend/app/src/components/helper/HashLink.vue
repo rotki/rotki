@@ -125,8 +125,8 @@ const { href, onLinkClick } = useLinks(url);
 </script>
 
 <template>
-  <div class="d-flex flex-row shrink align-center gap-1">
-    <span v-if="showIcon && !linkOnly && type === 'address'" class="d-flex">
+  <div class="flex flex-row shrink items-center gap-1">
+    <span v-if="showIcon && !linkOnly && type === 'address'" class="flex">
       <VAvatar size="22" class="mr-2">
         <EnsAvatar :address="displayText" />
       </VAvatar>

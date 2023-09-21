@@ -10,10 +10,10 @@ const { getItemTranslationKey } = useEventsQueryStatus();
   <i18n
     :path="getItemTranslationKey(item)"
     tag="div"
-    class="d-flex py-2 text-no-wrap flex-wrap"
+    class="flex py-2 text-no-wrap flex-wrap"
   >
     <template #name>
-      <div class="font-weight-bold px-2 text-no-wrap">
+      <div class="font-bold px-2 text-no-wrap">
         <HashLink
           :text="item.name"
           no-link
@@ -23,12 +23,12 @@ const { getItemTranslationKey } = useEventsQueryStatus();
       </div>
     </template>
     <template #start>
-      <div v-if="item.period" class="font-weight-bold px-1 text-no-wrap">
+      <div v-if="item.period" class="font-bold px-1 text-no-wrap">
         <DateDisplay :timestamp="item.period[0]" />
       </div>
     </template>
     <template #end>
-      <div v-if="item.period" class="font-weight-bold px-1 text-no-wrap">
+      <div v-if="item.period" class="font-bold px-1 text-no-wrap">
         <DateDisplay :timestamp="item.period[1]" />
       </div>
     </template>

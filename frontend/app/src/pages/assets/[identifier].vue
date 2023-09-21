@@ -99,14 +99,14 @@ const collectionBalance: ComputedRef<AssetBalanceWithPrice[]> = computed(() => {
               :show-chain="!isCollectionParent"
             />
           </VCol>
-          <VCol v-if="!isCustomAsset" class="d-flex flex-column" cols="auto">
-            <span class="text-h5 font-weight-medium">{{ symbol }}</span>
+          <VCol v-if="!isCustomAsset" class="flex flex-col" cols="auto">
+            <span class="text-h5 font-medium">{{ symbol }}</span>
             <span class="text-subtitle-2 text--secondary">
               {{ name }}
             </span>
           </VCol>
-          <VCol v-else class="d-flex flex-column" cols="auto">
-            <span class="text-h5 font-weight-medium">{{ name }}</span>
+          <VCol v-else class="flex flex-col" cols="auto">
+            <span class="text-h5 font-medium">{{ name }}</span>
             <span class="text-subtitle-2 text--secondary">
               {{ asset?.customAssetType }}
             </span>

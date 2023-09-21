@@ -153,7 +153,7 @@ const randomize = () => {
       </VCol>
     </VRow>
     <VRow class="mb-2">
-      <VCol cols="12" class="d-flex justify-end">
+      <VCol cols="12" class="flex justify-end">
         <VBtn
           v-if="editMode"
           class="mr-4"

@@ -21,17 +21,17 @@ defineProps({
     v-if="details"
     :id="`${child.protocol}_box`"
     :key="child.protocol"
-    class="d-flex flex-row blockchain-balance-box__item sub-item"
+    class="flex flex-row blockchain-balance-box__item sub-item"
     :to="details.detailPath"
   >
     <VListItemAvatar tile class="blockchain-balance-box__icon shrink pl-12">
-      <AdaptiveWrapper class="d-flex">
+      <AdaptiveWrapper class="flex">
         <VImg :src="details.icon" width="24px" height="24px" />
       </AdaptiveWrapper>
     </VListItemAvatar>
     <VListItemContent>
-      <div class="d-flex flex-row ps-2">
-        <span class="flex-grow-1 flex-shrink-1">
+      <div class="flex flex-row ps-2">
+        <span class="grow shrink">
           {{ details.label }}
         </span>
         <span class="ml-2 text-end shrink">

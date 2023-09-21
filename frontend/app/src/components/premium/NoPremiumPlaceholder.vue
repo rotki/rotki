@@ -16,7 +16,7 @@ const remoteEmptyScreenLogo =
       <VCol cols="12">
         <VRow align="center" justify="center">
           <VCol cols="auto">
-            <div :class="css.logo" class="d-flex justify-center align-center">
+            <div :class="css.logo" class="flex justify-center items-center">
               <RotkiLogo
                 :width="mobile ? '100px' : '200px'"
                 :url="remoteEmptyScreenLogo"
@@ -26,7 +26,7 @@ const remoteEmptyScreenLogo =
         </VRow>
         <VRow class="text-center mt-14">
           <VCol>
-            <p class="text-h5 font-weight-bold pb-4">
+            <p class="text-h5 font-bold pb-4">
               {{ t('no_premium_placeholder.no_premium') }}
             </p>
             <div class="text--secondary text-no-wrap">
@@ -40,7 +40,7 @@ const remoteEmptyScreenLogo =
               <BaseExternalLink
                 text="website."
                 :href="premiumURL"
-                class="font-weight-medium"
+                class="font-medium"
               />
             </i18n>
           </VCol>

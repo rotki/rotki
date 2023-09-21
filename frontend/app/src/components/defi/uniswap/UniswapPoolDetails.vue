@@ -50,7 +50,7 @@ const getTotal = ({ totalAmount, usdPrice }: XswapAsset) =>
                 <div class="text--secondary text-body-2">
                   {{ t('liquidity_pool_details.total_amount') }}
                 </div>
-                <div class="d-flex font-weight-bold">
+                <div class="flex font-bold">
                   <AmountDisplay
                     :asset="token.asset"
                     :value="token.totalAmount ?? Zero"
@@ -65,7 +65,7 @@ const getTotal = ({ totalAmount, usdPrice }: XswapAsset) =>
                     })
                   }}
                 </div>
-                <div class="d-flex font-weight-bold">
+                <div class="flex font-bold">
                   <AmountDisplay fiat-currency="USD" :value="getTotal(token)" />
                 </div>
               </VCol>
@@ -73,11 +73,11 @@ const getTotal = ({ totalAmount, usdPrice }: XswapAsset) =>
           </VCol>
         </VRow>
       </template>
-      <div v-if="balance.totalSupply" class="d-flex pt-6">
+      <div v-if="balance.totalSupply" class="flex pt-6">
         <div class="text--secondary text-body-2">
           {{ t('liquidity_pool_details.liquidity') }}:
         </div>
-        <div class="pl-2 font-weight-bold">
+        <div class="pl-2 font-bold">
           <AmountDisplay :value="balance.totalSupply" />
         </div>
       </div>

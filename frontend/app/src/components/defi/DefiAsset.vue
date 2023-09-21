@@ -15,11 +15,11 @@ const evmIdentifier: ComputedRef<string> = computed(() =>
 </script>
 
 <template>
-  <div class="defi-asset d-flex flex-row align-center py-4">
+  <div class="defi-asset flex flex-row items-center py-4">
     <AssetIcon size="32px" :identifier="evmIdentifier" />
     <span class="ml-3">{{ asset.tokenSymbol }}</span>
     <VSpacer />
-    <div class="d-flex flex-column align-end">
+    <div class="flex flex-col items-end">
       <BalanceDisplay no-icon :asset="evmIdentifier" :value="asset.balance" />
     </div>
   </div>

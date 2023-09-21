@@ -213,23 +213,23 @@ const css = useCssModule();
     </template>
     <template v-if="statisticWithAdjustedPrice">
       <VRow class="ma-n6" :class="css.large">
-        <VCol md="6" class="pa-6 py-8 d-flex justify-space-between">
+        <VCol md="6" class="pa-6 py-8 flex justify-between">
           <div>{{ t('liquity_statistic.total_gains_stability_pool') }}</div>
           <VSheet>
             <AmountDisplay
               :value="statisticWithAdjustedPrice.totalUsdGainsStabilityPool"
               :fiat-currency="CURRENCY_USD"
-              class="font-weight-bold"
+              class="font-bold"
             />
           </VSheet>
         </VCol>
-        <VCol md="6" class="pa-6 py-8 d-flex justify-space-between">
+        <VCol md="6" class="pa-6 py-8 flex justify-between">
           <div>{{ t('liquity_statistic.total_gains_staking') }}</div>
           <VSheet>
             <AmountDisplay
               :value="statisticWithAdjustedPrice.totalUsdGainsStaking"
               :fiat-currency="CURRENCY_USD"
-              class="font-weight-bold"
+              class="font-bold"
             />
           </VSheet>
         </VCol>
@@ -243,7 +243,7 @@ const css = useCssModule();
                 <div>
                   <VDivider />
                   <div class="text-right py-4">
-                    <div class="font-weight-medium pb-2" :class="css.label">
+                    <div class="font-medium pb-2" :class="css.label">
                       {{
                         t('liquity_statistic.total_deposited_stability_pool')
                       }}
@@ -258,7 +258,7 @@ const css = useCssModule();
                 <div>
                   <VDivider />
                   <div class="text-right py-4">
-                    <div class="font-weight-medium pb-2" :class="css.label">
+                    <div class="font-medium pb-2" :class="css.label">
                       {{
                         t('liquity_statistic.total_withdrawn_stability_pool')
                       }}
@@ -273,7 +273,7 @@ const css = useCssModule();
                 <div>
                   <VDivider />
                   <div class="text-right py-4">
-                    <div class="font-weight-medium pb-2" :class="css.label">
+                    <div class="font-medium pb-2" :class="css.label">
                       {{ t('liquity_statistic.stability_pool_gains') }}
                     </div>
 
@@ -301,7 +301,7 @@ const css = useCssModule();
                 <div v-if="totalPnl">
                   <VDivider />
                   <div class="text-right py-4">
-                    <div class="font-weight-medium pb-2" :class="css.label">
+                    <div class="font-medium pb-2" :class="css.label">
                       <VTooltip open-delay="400" top>
                         <template #activator="{ on, attrs }">
                           <VIcon v-bind="attrs" small class="mx-2" v-on="on">
@@ -326,7 +326,7 @@ const css = useCssModule();
                 <div>
                   <VDivider />
                   <div class="text-right py-4">
-                    <div class="font-weight-medium pb-2" :class="css.label">
+                    <div class="font-medium pb-2" :class="css.label">
                       {{ t('liquity_statistic.staking_gains') }}
                     </div>
 
@@ -352,9 +352,9 @@ const css = useCssModule();
             </VRow>
           </VExpansionPanelContent>
           <VDivider />
-          <VExpansionPanelHeader class="d-flex justify-center w-full">
+          <VExpansionPanelHeader class="flex justify-center w-full">
             <template #default="{ open }">
-              <div class="grey--text mr-4 flex-grow-0" :class="css.large">
+              <div class="grey--text mr-4 grow-0" :class="css.large">
                 {{
                   open
                     ? t('liquity_statistic.view.hide')

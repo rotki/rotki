@@ -36,7 +36,7 @@ const asset: ComputedRef<string> = computed(
     <VSheet
       v-if="snapshot"
       outlined
-      class="pa-4 mt-4 d-flex justify-center"
+      class="pa-4 mt-4 flex justify-center"
       rounded
     >
       <BalanceDisplay :asset="asset" :value="snapshot" class="mr-4" no-icon />

@@ -144,7 +144,7 @@ const css = useCssModule();
             data-cy="ethereum-node"
             class="px-2"
           >
-            <div class="mr-2 pa-4 text-center d-flex flex-column align-center">
+            <div class="mr-2 pa-4 text-center flex flex-col items-center">
               <div>
                 <VTooltip v-if="!item.owned" top open-delay="400">
                   <template #activator="{ on, attrs }">
@@ -187,7 +187,7 @@ const css = useCssModule();
             </div>
 
             <VListItemContent>
-              <VListItemTitle class="font-weight-medium">
+              <VListItemTitle class="font-medium">
                 {{ item.name }}
               </VListItemTitle>
               <VListItemSubtitle>

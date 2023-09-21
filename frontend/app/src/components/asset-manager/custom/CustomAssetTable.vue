@@ -150,7 +150,7 @@ const getAsset = (item: CustomAsset) => ({
       </template>
       <template #expanded-item="{ item }">
         <TableExpandContainer visible :colspan="tableHeaders.length">
-          <div class="font-weight-bold">{{ t('asset_table.notes') }}:</div>
+          <div class="font-bold">{{ t('asset_table.notes') }}:</div>
           <div class="pt-2">
             {{ item.notes }}
           </div>

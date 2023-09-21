@@ -60,7 +60,7 @@ const css = useCssModule();
         <VList>
           <VListItem
             :class="css['filter-heading']"
-            class="font-weight-bold text-uppercase py-2"
+            class="font-bold text-uppercase py-2"
           >
             {{ t('asset_table.filter_by_ignored_status') }}
           </VListItem>

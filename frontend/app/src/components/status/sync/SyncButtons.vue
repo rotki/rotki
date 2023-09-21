@@ -23,7 +23,7 @@ const action = (action: SyncAction) => {
 </script>
 
 <template>
-  <div class="d-flex flex-wrap mx-n1">
+  <div class="flex flex-wrap mx-n1">
     <VTooltip top open-delay="400">
       <template #activator="{ on, attrs }">
         <VBtn

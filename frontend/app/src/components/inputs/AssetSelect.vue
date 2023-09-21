@@ -235,13 +235,13 @@ const listeners = useListeners();
           )}`"
         >
           <template v-if="!item.isCustomAsset">
-            <VListItemTitle class="font-weight-medium">
+            <VListItemTitle class="font-medium">
               {{ item.symbol }}
             </VListItemTitle>
             <VListItemSubtitle>{{ item.name }}</VListItemSubtitle>
           </template>
           <template v-else>
-            <VListItemTitle class="font-weight-medium">
+            <VListItemTitle class="font-medium">
               {{ item.name }}
             </VListItemTitle>
             <VListItemSubtitle>
@@ -257,7 +257,7 @@ const listeners = useListeners();
       </div>
     </template>
     <template #append>
-      <div v-if="loading" class="h-full d-flex items-center">
+      <div v-if="loading" class="h-full flex items-center">
         <VProgressCircular
           class="asset-select__loading"
           color="primary"

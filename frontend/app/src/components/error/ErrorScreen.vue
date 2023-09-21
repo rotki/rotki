@@ -44,7 +44,7 @@ const errorText = computed(() => {
       <VCardSubtitle>
         {{ subtitle }}
       </VCardSubtitle>
-      <VCardText class="font-weight-light error-screen__description">
+      <VCardText class="font-light error-screen__description">
         <pre
           class="font-weight-regular text-caption text-wrap error-screen__description__message"
         >

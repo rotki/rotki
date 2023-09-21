@@ -144,11 +144,8 @@ defineExpose({ removeFile });
         @dragenter="onEnter($event)"
         @dragleave="onLeave($event)"
       >
-        <div
-          v-if="error"
-          class="d-flex flex-column align-center justify-center"
-        >
-          <VBtn icon small class="align-self-end" @click="error = ''">
+        <div v-if="error" class="flex flex-col items-center justify-center">
+          <VBtn icon small class="self-end" @click="error = ''">
             <VIcon>mdi-close</VIcon>
           </VBtn>
           <VIcon x-large color="error">mdi-alert-circle</VIcon>
@@ -156,7 +153,7 @@ defineExpose({ removeFile });
         </div>
         <div
           v-else-if="loading"
-          class="d-flex flex-column align-center justify-center py-2"
+          class="flex flex-col items-center justify-center py-2"
         >
           <VProgressCircular indeterminate color="primary" />
 
@@ -166,7 +163,7 @@ defineExpose({ removeFile });
         </div>
         <div
           v-else-if="!uploaded"
-          class="d-flex flex-column align-center justify-center"
+          class="flex flex-col items-center justify-center"
         >
           <VIcon x-large color="primary">mdi-upload</VIcon>
           <input
@@ -184,7 +181,7 @@ defineExpose({ removeFile });
                 tag="div"
               >
                 <template #name>
-                  <div class="font-weight-bold text-truncate">
+                  <div class="font-bold text-truncate">
                     {{ file.name }}
                   </div>
                 </template>
@@ -221,7 +218,7 @@ defineExpose({ removeFile });
             </div>
           </div>
         </div>
-        <div v-else class="d-flex flex-column align-center justify-center">
+        <div v-else class="flex flex-col items-center justify-center">
           <VIcon x-large color="primary">mdi-check-circle</VIcon>
           <div class="mt-2" v-text="t('file_upload.import_complete')" />
         </div>

@@ -51,8 +51,8 @@ const css = useCssModule();
 </script>
 
 <template>
-  <div class="d-flex">
-    <div class="d-flex align-center">
+  <div class="flex">
+    <div class="flex items-center">
       <AssetIcon
         circle
         :identifier="assets[0]"

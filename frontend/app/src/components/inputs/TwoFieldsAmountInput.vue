@@ -58,7 +58,7 @@ const updateSecondaryValue = (value: string) => {
 
 <template>
   <div
-    class="wrapper d-flex"
+    class="wrapper flex"
     :class="{
       'flex-column': !reversed,
       'flex-column-reverse': reversed

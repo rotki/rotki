@@ -31,7 +31,7 @@ const slots = useSlots();
     class="pb-1"
   >
     <VCardTitle
-      class="font-weight-medium text-capitalize summary-card__header pb-2 flex-nowrap flex justify-between gap-2"
+      class="font-medium text-capitalize summary-card__header pb-2 flex-nowrap flex justify-between gap-2"
     >
       <NavigatorLink
         :enabled="!!navigatesTo"
@@ -42,7 +42,7 @@ const slots = useSlots();
       >
         {{ t('summary_card.title', { name }) }}
       </NavigatorLink>
-      <div class="d-flex align-center">
+      <div class="flex items-center">
         <VTooltip v-if="canRefresh" bottom max-width="300px">
           <template #activator="{ on: tooltipOn }">
             <VBtn

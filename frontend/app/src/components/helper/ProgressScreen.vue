@@ -25,7 +25,7 @@ const { t } = useI18n();
           v-if="progress"
           align="center"
           justify="center"
-          class="font-weight-light"
+          class="font-light"
           :class="$style.percentage"
         >
           {{ t('progress_screen.progress', { progress: percentage }) }}
@@ -51,7 +51,7 @@ const { t } = useI18n();
           </VCol>
         </VRow>
         <VRow align="center" justify="center">
-          <p class="text-center font-weight-light" :class="$style.description">
+          <p class="text-center font-light" :class="$style.description">
             <slot name="message" />
           </p>
         </VRow>
@@ -61,7 +61,7 @@ const { t } = useI18n();
           </VCol>
         </VRow>
         <VRow align="center" justify="center" :class="$style.warning">
-          <div class="font-weight-light text-subtitle-2 text-center">
+          <div class="font-light text-subtitle-2 text-center">
             <slot />
           </div>
         </VRow>

@@ -160,7 +160,7 @@ const showDeleteConfirmation = () => {
       <div class="mb-n2">
         <div>
           <div>{{ t('common.datetime') }}:</div>
-          <div class="font-weight-bold">
+          <div class="font-bold">
             <DateDisplay :timestamp="timestamp" />
           </div>
         </div>
@@ -170,7 +170,7 @@ const showDeleteConfirmation = () => {
             <AmountDisplay
               :value="formattedSelectedBalance"
               :fiat-currency="currencySymbol"
-              class="font-weight-bold"
+              class="font-bold"
             />
           </div>
         </div>

@@ -487,7 +487,7 @@ onBeforeMount(async () => {
         @input="change($event)"
       >
         <template #item="{ item }">
-          <div class="d-flex align-center text-body-2 w-full">
+          <div class="flex items-center text-body-2 w-full">
             <AssetIcon v-if="item.asset" size="30px" :identifier="item.asset" />
             <AdaptiveWrapper v-else tag="span">
               <LocationIcon
@@ -529,7 +529,7 @@ onBeforeMount(async () => {
             <div v-if="item.price" class="text-right">
               <div class="text-caption">{{ t('common.price') }}:</div>
               <AmountDisplay
-                class="font-weight-bold"
+                class="font-bold"
                 :fiat-currency="currencySymbol"
                 :value="item.price"
               />
@@ -537,7 +537,7 @@ onBeforeMount(async () => {
             <div v-if="item.total" class="text-right">
               <div class="text-caption">{{ t('common.total') }}:</div>
               <AmountDisplay
-                class="font-weight-bold"
+                class="font-bold"
                 :fiat-currency="currencySymbol"
                 :value="item.total"
               />
@@ -545,7 +545,7 @@ onBeforeMount(async () => {
           </div>
         </template>
         <template #append>
-          <div v-if="loading" class="mt-n1 h-full d-flex items-center">
+          <div v-if="loading" class="mt-n1 h-full flex items-center">
             <VProgressCircular
               class="asset-select__loading"
               color="primary"

@@ -54,7 +54,7 @@ const { darkModeEnabled } = useDarkMode();
       </template>
       <VList data-cy="user-dropdown">
         <VListItem key="username" class="user-username">
-          <VListItemTitle class="font-weight-bold text-center">
+          <VListItemTitle class="font-bold text-center">
             {{ username }}
           </VListItemTitle>
         </VListItem>

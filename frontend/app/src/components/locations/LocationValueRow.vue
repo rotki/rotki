@@ -25,7 +25,7 @@ const totalValue = computed<BigNumber>(() => {
         <VCardTitle>
           <CardTitle>{{ t('locations.total_asset_price') }}</CardTitle>
         </VCardTitle>
-        <VCardText class="text-end text-h5 font-weight-medium">
+        <VCardText class="text-end text-h5 font-medium">
           <AmountDisplay
             class="pt-4"
             tooltip

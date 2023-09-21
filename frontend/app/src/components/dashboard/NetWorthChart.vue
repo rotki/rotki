@@ -649,7 +649,7 @@ const css = useCssModule();
       <GraphTooltipWrapper :tooltip-option="tooltipDisplayOption">
         <template #content>
           <div>
-            <div class="font-weight-bold text-center">
+            <div class="font-bold text-center">
               <AmountDisplay
                 force-currency
                 show-currency="symbol"

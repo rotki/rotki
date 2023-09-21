@@ -41,7 +41,7 @@ const css = useCssModule();
 
 <template>
   <div
-    class="d-flex flex-row align-center"
+    class="flex flex-row items-center"
     :class="mode === 'icon' ? 'justify-center' : null"
   >
     <VTooltip top :disabled="mode !== 'icon'" open-delay="300ms">

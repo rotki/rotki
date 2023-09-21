@@ -22,7 +22,7 @@ const { t } = useI18n();
       {{ t('deposits_withdrawals.details.title') }}
     </template>
     <MovementLinks v-if="item.address || item.transactionId" :item="item" />
-    <div v-else class="font-weight-medium pa-4" :class="$style.empty">
+    <div v-else class="font-medium pa-4" :class="$style.empty">
       {{ t('deposits_withdrawals.details.no_details') }}
     </div>
   </TableExpandContainer>

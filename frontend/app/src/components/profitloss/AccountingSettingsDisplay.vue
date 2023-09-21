@@ -94,7 +94,7 @@ const costBasisMethodItem = computed<ActionDataEntry<CostBasisMethod> | null>(
         <span class="text--primary">
           {{ t('account_settings_display.tax_free_period') }}
         </span>
-        <span class="font-weight-medium ms-2">
+        <span class="font-medium ms-2">
           <span
             v-if="accountingSettings.taxfreeAfterPeriod"
             :class="color(accountingSettings.taxfreeAfterPeriod > 0)"

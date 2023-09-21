@@ -209,7 +209,7 @@ const { dark } = useTheme();
       <slot v-for="slot in Object.keys($slots)" :slot="slot" :name="slot" />
 
       <template #footer.page-text="footerPageTextProps">
-        <div class="d-flex align-center items-page-select">
+        <div class="flex items-center items-page-select">
           <span>{{ t('data_table.items_no') }}</span>
           <VSelect
             v-if="footerPageTextProps.itemsLength > 0"
@@ -240,7 +240,7 @@ const { dark } = useTheme();
           @update:options="updateOptions($event)"
         >
           <template #page-text="footerPageTextProps">
-            <div class="d-flex align-center items-page-select">
+            <div class="flex items-center items-page-select">
               <span>{{ t('data_table.items_no') }}</span>
               <VSelect
                 v-if="footerPageTextProps.itemsLength > 0"
