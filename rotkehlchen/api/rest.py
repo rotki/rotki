@@ -30,6 +30,7 @@ from rotkehlchen.accounting.constants import (
     FREE_REPORTS_LOOKUP_LIMIT,
 )
 from rotkehlchen.accounting.debugimporter.json import DebugHistoryImporter
+from rotkehlchen.accounting.export.csv import CSVWriteError
 from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures.balance import Balance, BalanceType
 from rotkehlchen.accounting.structures.base import HistoryBaseEntryType, StakingEvent
@@ -170,7 +171,11 @@ from rotkehlchen.globaldb.assets_management import export_assets_from_file, impo
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.globaldb.updates import ASSETS_VERSION_KEY
 from rotkehlchen.history.price import PriceHistorian
-from rotkehlchen.history.skipped import reprocess_skipped_external_events
+from rotkehlchen.history.skipped import (
+    export_skipped_external_events,
+    get_skipped_external_events_summary,
+    reprocess_skipped_external_events,
+)
 from rotkehlchen.history.types import NOT_EXPOSED_SOURCES, HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.icons import (
     check_if_image_is_cached,
@@ -4375,6 +4380,32 @@ class RestAPI:
                 'icon': protocol.icon,
             })
         return api_response(result=_wrap_in_ok_result(result=result))
+
+    def get_skipped_external_events_summary(self) -> Response:
+        summary = get_skipped_external_events_summary(self.rotkehlchen)
+        return api_response(result=summary, status_code=HTTPStatus.OK)
+
+    def export_skipped_external_events(self, filepath: Optional[Path]) -> Response:
+        try:
+            exportpath = export_skipped_external_events(rotki=self.rotkehlchen, filepath=filepath)
+        except CSVWriteError as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
+
+        if filepath is None:
+            try:
+                return send_file(
+                    path_or_file=exportpath,
+                    mimetype='text/csv',
+                    as_attachment=True,
+                    download_name='history.csv',
+                )
+            except FileNotFoundError:
+                return api_response(
+                    wrap_in_fail_result('No file was found'),
+                    status_code=HTTPStatus.NOT_FOUND,
+                )
+        else:
+            return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     def reprocess_skipped_external_events(self) -> Response:
         reprocess_skipped_external_events(self.rotkehlchen)

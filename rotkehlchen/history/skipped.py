@@ -1,8 +1,11 @@
 import json
 import logging
+import tempfile
 from collections import defaultdict
-from typing import TYPE_CHECKING, cast
+from pathlib import Path
+from typing import TYPE_CHECKING, Any, Optional, cast
 
+from rotkehlchen.accounting.export.csv import _dict_to_csv_file
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Location
 
@@ -13,6 +16,47 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+
+def get_skipped_external_events_summary(rotki: 'Rotkehlchen') -> dict[str, Any]:
+    """Get a summary of skipped external events by location"""
+    summary: dict[str, Any] = {'locations': {}}
+    with rotki.data.db.conn.read_ctx() as cursor:
+        cursor.execute('SELECT COUNT(*), location FROM skipped_external_events GROUP BY location')
+
+        total = 0
+        for count, location in cursor:
+            summary['locations'][location] = count
+            total += count
+
+    summary['total'] = total
+    return summary
+
+
+def export_skipped_external_events(rotki: 'Rotkehlchen', filepath: Optional[Path]) -> Path:
+    """
+    Export the skipped events in a CSV file.
+
+    If `filepath` is provides the export generated is written to that file.
+    Otherwise a file is created, the data are written to this file and the path
+    is returned for download
+
+    May raise:
+    - CSVWriteError is CSV can't be written
+    """
+    with rotki.data.db.conn.read_ctx() as cursor:
+        cursor.execute('SELECT location, data FROM skipped_external_events')
+        data = [{'location': x.deserialize_from_db(), 'data': y} for x, y in cursor]
+
+    if filepath is None:
+        _, newfilename = tempfile.mkstemp()
+        newfilepath = Path(newfilename)
+    else:
+        filepath.touch(exist_ok=True)
+        newfilepath = filepath
+
+    _dict_to_csv_file(path=newfilepath, dictionary_list=data)
+    return Path(newfilepath)
 
 
 def reprocess_skipped_external_events(rotki: 'Rotkehlchen') -> None:
