@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :release:`1.30.2 <2023-09-21>`
 * :feature:`-` Improved support for importing Binance CSV files.
 * :bug:`-` ENS registrations that involve a refund to the user due to paying too much should reflect the proper amount in the decoded event.
 * :bug:`6597` Transactions involving ENS labelhashes with odd number of digits will now be decoded correctly and the entire decoding process should not halt if they are encountered.
