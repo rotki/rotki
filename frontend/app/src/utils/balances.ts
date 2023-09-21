@@ -7,7 +7,7 @@ import {
 } from '@rotki/common';
 import { type Blockchain } from '@rotki/common/lib/blockchain';
 import { type MaybeRef } from '@vueuse/core';
-import groupBy from 'lodash/groupBy';
+import { groupBy } from 'lodash-es';
 import { type AssetBalances } from '@/types/balances';
 import {
   type BlockchainAssetBalances,

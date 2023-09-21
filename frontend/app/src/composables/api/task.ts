@@ -1,6 +1,6 @@
 import { type ActionResult } from '@rotki/common/lib/data';
 import { type AxiosRequestConfig } from 'axios';
-import isEmpty from 'lodash/isEmpty';
+import { isEmpty } from 'lodash-es';
 import {
   TaskNotFoundError,
   type TaskResultResponse,

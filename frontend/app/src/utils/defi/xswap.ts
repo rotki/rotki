@@ -5,7 +5,7 @@ import {
   type XswapPool,
   type XswapPoolProfit
 } from '@rotki/common/lib/defi/xswap';
-import cloneDeep from 'lodash/cloneDeep';
+import { cloneDeep } from 'lodash-es';
 import { type Writeable } from '@/types';
 
 export function getPools(

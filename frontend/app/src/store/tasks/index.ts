@@ -1,7 +1,6 @@
 import { type ActionResult } from '@rotki/common/lib/data';
 import dayjs from 'dayjs';
-import find from 'lodash/find';
-import toArray from 'lodash/toArray';
+import { find, toArray } from 'lodash-es';
 import {
   BackendCancelledTaskError,
   type Task,

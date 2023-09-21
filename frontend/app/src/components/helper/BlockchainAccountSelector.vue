@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import uniqBy from 'lodash/uniqBy';
+import { uniqBy } from 'lodash-es';
 import { type GeneralAccount } from '@rotki/common/lib/account';
 import {
   Blockchain,

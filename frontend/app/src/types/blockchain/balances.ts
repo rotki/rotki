@@ -1,6 +1,6 @@
 import { Balance } from '@rotki/common';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import camelCase from 'lodash/camelCase';
+import { camelCase } from 'lodash-es';
 import { z } from 'zod';
 
 export const Balances = z.record(Balance);

@@ -1,5 +1,5 @@
 import { type Blockchain } from '@rotki/common/lib/blockchain';
-import groupBy from 'lodash/groupBy';
+import { groupBy } from 'lodash-es';
 import { Section, Status } from '@/types/status';
 import {
   type AddTransactionHashPayload,

@@ -1,5 +1,5 @@
 import { type MaybeRef } from '@vueuse/core';
-import omit from 'lodash/omit';
+import { omit } from 'lodash-es';
 import { type Collection } from '@/types/collection';
 import {
   type HistoryEventEntry,

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { type Blockchain } from '@rotki/common/lib/blockchain';
-import camelCase from 'lodash/camelCase';
+import { camelCase } from 'lodash-es';
 import {
   type EvmRpcNode,
   type EvmRpcNodeList,

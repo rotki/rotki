@@ -1,6 +1,6 @@
 import { type MaybeRef } from '@vueuse/core';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import isEqual from 'lodash/isEqual';
+import { isEqual } from 'lodash-es';
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import {

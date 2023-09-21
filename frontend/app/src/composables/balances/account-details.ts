@@ -1,7 +1,7 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type AssetBalance } from '@rotki/common';
 import { type MaybeRef } from '@vueuse/core';
-import isEmpty from 'lodash/isEmpty';
+import { isEmpty } from 'lodash-es';
 import { type BlockchainAssetBalances } from '@/types/blockchain/balances';
 
 export const useAccountDetails = (
