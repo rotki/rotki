@@ -1,4 +1,5 @@
 import logging
+from http import HTTPStatus
 from json import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Optional
 
@@ -32,7 +33,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
 
-YEARN_OLD_API = 'https://api.yearn.fi/v1/chains/1/vaults/all'
+YEARN_OLD_API = 'https://api.yexporter.io/v1/chains/1/vaults/all'
 
 
 logger = logging.getLogger(__name__)
@@ -54,8 +55,9 @@ def _maybe_reset_yearn_cache_timestamp(data: Optional[dict[str, Any]]) -> bool:
             key_parts=[GeneralCacheType.YEARN_VAULTS],
         )
     if data is None or (len(yearn_api_cache) == 1 and int(yearn_api_cache[0]) == len(data)):
-        logging.debug(
-            f'Previous query of yearn vaults returned {yearn_api_cache[0]} vaults and last API '
+        vaults_amount = yearn_api_cache[0] if len(yearn_api_cache) == 1 else '0'
+        log.debug(
+            f'Previous query of yearn vaults returned {vaults_amount} vaults and last API '
             f'response had the same amount of vaults. Not processing the API response since '
             f'it is identical to what we have.',
         )
@@ -64,7 +66,7 @@ def _maybe_reset_yearn_cache_timestamp(data: Optional[dict[str, Any]]) -> bool:
             globaldb_set_general_cache_values(
                 write_cursor=write_cursor,
                 key_parts=[GeneralCacheType.YEARN_VAULTS],
-                values=[yearn_api_cache[0]],
+                values=[vaults_amount],
             )
         return True  # we should stop here
 
@@ -81,14 +83,19 @@ def query_yearn_vaults(db: 'DBHandler', ethereum_inquirer: 'EthereumInquirer') -
     msg, data = None, None
     try:
         response = requests.get(YEARN_OLD_API, timeout=CachedSettings().get_timeout_tuple())
-        data = response.json()
     except requests.exceptions.RequestException as e:
         msg = f'Failed to obtain yearn vault information. {e!s}'
-    except (DeserializationError, JSONDecodeError) as e:
-        msg = f"Failed to deserialize data from yearn's old api. {e!s}"
+
+    if response.status_code in (HTTPStatus.NOT_FOUND, HTTPStatus.SERVICE_UNAVAILABLE):
+        msg = 'Failed to obtain a response from the yearn API'
     else:
-        if not isinstance(data, list):
-            msg = f'Unexpected format from yearn vaults reponse. Expected a list, got {data}'
+        try:
+            data = response.json()
+        except (DeserializationError, JSONDecodeError) as e:
+            msg = f"Failed to deserialize data from yearn's old api. {e!s}"
+        else:
+            if not isinstance(data, list):
+                msg = f'Unexpected format from yearn vaults response. Expected a list, got {data}'
 
     should_stop = _maybe_reset_yearn_cache_timestamp(data=data)
     if should_stop:
