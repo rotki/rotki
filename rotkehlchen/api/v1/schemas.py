@@ -3027,3 +3027,7 @@ class EthStakingHistoryStatsProfit(EthStakingHistoryStats, TimestampRangeSchema)
 
 class EthStakingHistoryStatsDetails(EthStakingHistoryStats, AsyncIgnoreCacheQueryArgumentSchema):
     """Schema for querying ethereum staking history details"""
+
+
+class SkippedExternalEventsExportSchema:
+    filepath = FileField(required=True, allowed_extensions=['.csv'])

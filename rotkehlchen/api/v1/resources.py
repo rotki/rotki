@@ -125,6 +125,7 @@ from rotkehlchen.api.v1.schemas import (
     SingleAssetIdentifierSchema,
     SingleAssetWithOraclesIdentifierSchema,
     SingleFileSchema,
+    SkippedExternalEventsExportSchema,
     SnapshotEditingSchema,
     SnapshotImportingSchema,
     SnapshotQuerySchema,
@@ -1152,6 +1153,21 @@ class EventsOnlineQueryResource(BaseMethodView):
 
 
 class HistorySkippedExternalEventResource(BaseMethodView):
+
+    put_schema = SkippedExternalEventsExportSchema()
+
+    @require_loggedin_user()
+    def get(self) -> Response:
+        return self.rest_api.get_skipped_external_events_summary()
+
+    @require_loggedin_user()
+    @use_kwargs(put_schema, location='json_and_query')
+    def put(self, filepath: Path) -> Response:
+        return self.rest_api.export_skipped_external_events(filepath=filepath)
+
+    @require_loggedin_user()
+    def patch(self) -> Response:
+        return self.rest_api.export_skipped_external_events(filepath=None)
 
     @require_loggedin_user()
     def post(self) -> Response:
