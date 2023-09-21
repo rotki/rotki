@@ -9,6 +9,7 @@ import {
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { type ActionStatus } from '@/types/action';
+import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 
 export const useAssets = () => {
   const { awaitTask } = useTaskStore();
@@ -98,7 +99,7 @@ export const useAssets = () => {
   const mergeAssets = async ({
     sourceIdentifier,
     targetIdentifier
-  }: AssetMergePayload): Promise<ActionStatus> => {
+  }: AssetMergePayload): Promise<ActionStatus<string | ValidationErrors>> => {
     try {
       const success = await mergeAssetsCaller(
         sourceIdentifier,
@@ -108,9 +109,13 @@ export const useAssets = () => {
         success
       };
     } catch (e: any) {
+      let message: string | ValidationErrors = e.message;
+      if (e instanceof ApiValidationError) {
+        message = e.getValidationErrors({ sourceIdentifier, targetIdentifier });
+      }
       return {
         success: false,
-        message: e.message
+        message
       };
     }
   };
