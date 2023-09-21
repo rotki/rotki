@@ -1,7 +1,7 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { Severity } from '@rotki/common/lib/messages';
 import { type MaybeRef } from '@vueuse/core';
-import isEmpty from 'lodash/isEmpty';
+import { isEmpty } from 'lodash-es';
 import { TaskType } from '@/types/task-type';
 import { isBlockchain } from '@/types/blockchain/chains';
 import {

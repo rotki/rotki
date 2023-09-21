@@ -1,8 +1,5 @@
 import { type MaybeRef } from '@vueuse/core';
-import isEmpty from 'lodash/isEmpty';
-import isEqual from 'lodash/isEqual';
-import keys from 'lodash/keys';
-import pick from 'lodash/pick';
+import { isEmpty, isEqual, keys, pick } from 'lodash-es';
 import { type ZodSchema } from 'zod';
 import { type PaginationRequestPayload } from '@/types/common';
 import { type Collection } from '@/types/collection';

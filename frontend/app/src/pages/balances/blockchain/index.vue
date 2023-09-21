@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import pickBy from 'lodash/pickBy';
+import { pickBy } from 'lodash-es';
 import { type ComputedRef, type Ref } from 'vue';
 
 const { t } = useI18n();

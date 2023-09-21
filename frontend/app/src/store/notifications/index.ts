@@ -7,7 +7,7 @@ import {
   Severity
 } from '@rotki/common/lib/messages';
 import { useSessionStorage } from '@vueuse/core';
-import orderBy from 'lodash/orderBy';
+import { orderBy } from 'lodash-es';
 
 const notificationDefaults = (): NotificationPayload => ({
   title: '',

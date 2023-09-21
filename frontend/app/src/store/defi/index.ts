@@ -2,7 +2,7 @@
 /* eslint-disable max-lines */
 import { type DefiAccount } from '@rotki/common/lib/account';
 import { Blockchain, DefiProtocol } from '@rotki/common/lib/blockchain';
-import sortBy from 'lodash/sortBy';
+import { sortBy } from 'lodash-es';
 import { type Writeable } from '@/types';
 import {
   AllDefiProtocols,

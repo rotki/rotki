@@ -6,7 +6,7 @@ import {
   type UnderlyingToken
 } from '@rotki/common/lib/data';
 import { helpers, required, requiredIf } from '@vuelidate/validators';
-import omit from 'lodash/omit';
+import { omit } from 'lodash-es';
 import { type ComputedRef, type Ref } from 'vue';
 import Fragment from '@/components/helper/Fragment';
 import { toSentenceCase } from '@/utils/text';

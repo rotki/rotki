@@ -1,4 +1,4 @@
-import cloneDeep from 'lodash/cloneDeep';
+import { cloneDeep } from 'lodash-es';
 import { type PiniaPluginContext, type StoreGeneric } from 'pinia';
 
 export const StoreResetPlugin = ({ store }: PiniaPluginContext): void => {

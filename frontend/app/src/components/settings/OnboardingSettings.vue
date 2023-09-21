@@ -8,7 +8,7 @@ import {
   required
 } from '@vuelidate/validators';
 import { type Ref } from 'vue';
-import isEqual from 'lodash/isEqual';
+import { isEqual } from 'lodash-es';
 import { type BackendOptions } from '@/electron-main/ipc';
 import { type Writeable } from '@/types';
 import { LogLevel } from '@/utils/log-level';

@@ -4,7 +4,7 @@ import {
   type Blockchain,
   type BlockchainSelection
 } from '@rotki/common/lib/blockchain';
-import isEqual from 'lodash/isEqual';
+import { isEqual } from 'lodash-es';
 import { type ComputedRef, type Ref } from 'vue';
 import { not } from '@vueuse/math';
 import { type HistoryEventEntryType } from '@rotki/common/lib/history/events';

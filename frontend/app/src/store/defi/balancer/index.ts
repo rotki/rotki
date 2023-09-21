@@ -6,7 +6,7 @@ import {
   type BalancerProfitLoss
 } from '@rotki/common/lib/defi/balancer';
 import { type XswapPool } from '@rotki/common/lib/defi/xswap';
-import cloneDeep from 'lodash/cloneDeep';
+import { cloneDeep } from 'lodash-es';
 import { type Writeable } from '@/types';
 import { Module } from '@/types/modules';
 import { Section } from '@/types/status';

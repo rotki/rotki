@@ -1,6 +1,6 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type MaybeRef } from '@vueuse/core';
-import camelCase from 'lodash/camelCase';
+import { camelCase } from 'lodash-es';
 import { type AssetBalances } from '@/types/balances';
 import {
   type BlockchainAssetBalances,

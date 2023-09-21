@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { helpers, required } from '@vuelidate/validators';
-import omit from 'lodash/omit';
+import { omit } from 'lodash-es';
 import { type CustomAsset } from '@/types/asset';
 import AssetIconForm from '@/components/asset-manager/AssetIconForm.vue';
 import { toMessages } from '@/utils/validation';

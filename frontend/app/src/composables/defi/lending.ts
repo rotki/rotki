@@ -7,7 +7,7 @@ import {
   type AaveHistoryTotal,
   type AaveLending
 } from '@rotki/common/lib/defi/aave';
-import sortBy from 'lodash/sortBy';
+import { sortBy } from 'lodash-es';
 import {
   type AaveLoan,
   type BaseDefiBalance,

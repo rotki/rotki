@@ -8,7 +8,7 @@ import {
   minValue,
   requiredUnless
 } from '@vuelidate/validators';
-import isEmpty from 'lodash/isEmpty';
+import { isEmpty } from 'lodash-es';
 import { type Eth2Validator } from '@/types/balances';
 import { type ValidationErrors } from '@/types/api/errors';
 import { toMessages } from '@/utils/validation';

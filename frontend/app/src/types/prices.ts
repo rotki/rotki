@@ -4,7 +4,7 @@ import {
   type BigNumber,
   NumericString
 } from '@rotki/common';
-import forEach from 'lodash/forEach';
+import { forEach } from 'lodash-es';
 import { z } from 'zod';
 import { type PriceOracle, PriceOracleEnum } from '@/types/price-oracle';
 

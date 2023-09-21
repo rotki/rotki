@@ -4,7 +4,7 @@ import {
   type XswapAsset,
   type XswapBalance
 } from '@rotki/common/lib/defi/xswap';
-import isEqual from 'lodash/isEqual';
+import { isEqual } from 'lodash-es';
 import { type Ref } from 'vue';
 import { type DataTableHeader } from '@/types/vuetify';
 import { Routes } from '@/router/routes';

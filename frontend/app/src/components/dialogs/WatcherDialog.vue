@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { type ComputedRef, type PropType, type Ref } from 'vue';
-import cloneDeep from 'lodash/cloneDeep';
+import { cloneDeep } from 'lodash-es';
 import {
   type Watcher,
   type WatcherOpTypes,

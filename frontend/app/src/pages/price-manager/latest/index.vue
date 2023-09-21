@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import omit from 'lodash/omit';
+import { omit } from 'lodash-es';
 import { type Nullable } from '@/types';
 import { type ManualPrice, type ManualPriceFormPayload } from '@/types/prices';
 

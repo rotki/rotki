@@ -1,6 +1,6 @@
 import { type AssetBalanceWithPrice } from '@rotki/common';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import sortBy from 'lodash/sortBy';
+import { sortBy } from 'lodash-es';
 import { TRADE_LOCATION_BANKS } from '@/data/defaults';
 import { type BtcBalances } from '@/types/blockchain/balances';
 import { useCurrencies } from '@/types/currencies';

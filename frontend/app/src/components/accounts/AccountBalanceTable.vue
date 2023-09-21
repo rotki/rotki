@@ -1,9 +1,7 @@
 <script setup lang="ts">
 import { type Balance } from '@rotki/common';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import isEqual from 'lodash/isEqual';
-import sortBy from 'lodash/sortBy';
-import some from 'lodash/some';
+import { isEqual, some, sortBy } from 'lodash-es';
 import { type ComputedRef, type Ref, useListeners } from 'vue';
 import { type DataTableHeader } from '@/types/vuetify';
 import { type Properties } from '@/types';

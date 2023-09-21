@@ -58,6 +58,9 @@ importers:
       '@rotki/ui-library-compat':
         specifier: 0.4.1
         version: 0.4.1(@vueuse/core@10.4.1)(@vueuse/shared@10.4.1)(vue@2.7.14)
+      '@types/lodash-es':
+        specifier: ^4.17.9
+        version: 4.17.9
       '@vuelidate/core':
         specifier: 2.0.3
         version: 2.0.3(vue@2.7.14)
@@ -106,8 +109,8 @@ importers:
       imask:
         specifier: 6.6.2
         version: 6.6.2
-      lodash:
-        specifier: 4.17.21
+      lodash-es:
+        specifier: ^4.17.21
         version: 4.17.21
       loglevel:
         specifier: 1.8.1
@@ -180,9 +183,6 @@ importers:
       '@types/electron-devtools-installer':
         specifier: 2.2.2
         version: 2.2.2
-      '@types/lodash':
-        specifier: 4.14.198
-        version: 4.14.198
       '@types/node':
         specifier: 18.16.16
         version: 18.16.16
@@ -2634,9 +2634,15 @@ packages:
       '@types/node': 18.16.16
     dev: true
 
+  /@types/lodash-es@4.17.9:
+    resolution: {integrity: sha512-ZTcmhiI3NNU7dEvWLZJkzG6ao49zOIjEgIE0RgV7wbPxU0f2xT3VSAHw2gmst8swH6V0YkLRGp4qPlX/6I90MQ==}
+    dependencies:
+      '@types/lodash': 4.14.198
+    dev: false
+
   /@types/lodash@4.14.198:
     resolution: {integrity: sha512-trNJ/vtMZYMLhfN45uLq4ShQSw0/S7xCTLLVM+WM1rmFpba/VS42jVUgaO3w/NOLiWR/09lnYk0yMaA/atdIsg==}
-    dev: true
+    dev: false
 
   /@types/mdast@3.0.12:
     resolution: {integrity: sha512-DT+iNIRNX884cx0/Q1ja7NyUPpZuv0KPyL5rGNxm1WC1OtHstl7n4Jb7nk+xacNShQMbczJjt8uFzznpp6kYBg==}
@@ -7409,6 +7415,10 @@ packages:
     engines: {node: '>=10'}
     dependencies:
       p-locate: 5.0.0
+
+  /lodash-es@4.17.21:
+    resolution: {integrity: sha512-mKnC+QJ9pWVzv+C4/U3rRsHapFfHvQFoFB92e52xeyGMcX6/OlIl78je1u8vePzYZSkkogMPJ2yjxxsb89cxyw==}
+    dev: false
 
   /lodash.debounce@4.0.8:
     resolution: {integrity: sha512-FT1yDzDYEoYWhnSGnpE/4Kj1fLZkDFyqRb7fNt6FdYOSxlUWAtp42Eh6Wb0rGIv/m9Bgo7x4GhQbm5Ys4SG5ow==}

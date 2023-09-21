@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { type AssetBalanceWithPrice } from '@rotki/common';
 import { type Ref } from 'vue';
-import some from 'lodash/some';
+import { some } from 'lodash-es';
 import { type DataTableHeader } from '@/types/vuetify';
 import { isEvmNativeToken } from '@/types/asset';
 
