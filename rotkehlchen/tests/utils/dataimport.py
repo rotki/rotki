@@ -53,6 +53,7 @@ from rotkehlchen.types import (
     TimestampMS,
     TradeType,
 )
+from rotkehlchen.utils.misc import ts_sec_to_ms
 
 
 def get_cryptocom_note(desc: str):
@@ -1539,6 +1540,19 @@ def assert_binance_import_results(rotki: Rotkehlchen):
             link='',
             notes='Imported from binance CSV file. Binance operation: Buy / Sell',
         ),
+        Trade(
+            timestamp=Timestamp(1685994420),
+            location=Location.BINANCE,
+            base_asset=EvmToken('eip155:1/erc20:0x7D1AfA7B718fb893dB30A3aBc0Cfc608AaCfeBB0'),
+            quote_asset=EvmToken('eip155:1/erc20:0x4Fabb145d64652a948d72533023f6E7A623C7C53'),
+            trade_type=TradeType.BUY,
+            amount=AssetAmount(FVal('140.1195285')),
+            rate=Price(FVal('1.115362302368987512692144529')),
+            fee=None,
+            fee_currency=None,
+            link='',
+            notes='Imported from binance CSV file. Binance operation: Buy / Sell',
+        ),
     ]
     expected_asset_movements = [
         AssetMovement(
@@ -1628,6 +1642,81 @@ def assert_binance_import_results(rotki: Rotkehlchen):
             notes='Imported from binance CSV file. Binance operation: POS savings interest',
         ),
     ]
+    expected_events = [
+        HistoryEvent(
+            identifier=1,
+            event_identifier='BNC_5d651c8364e0b853f3f4c4b3812b2d370607fc008bedb30291137fabae0d93ef',
+            sequence_index=0,
+            timestamp=ts_sec_to_ms(Timestamp(1673587740)),
+            location=Location.BINANCE,
+            asset=EvmToken('eip155:1/erc20:0x7D1AfA7B718fb893dB30A3aBc0Cfc608AaCfeBB0'),
+            balance=Balance(amount=FVal('0.00001605')),
+            event_type=HistoryEventType.STAKING,
+            event_subtype=HistoryEventSubType.REWARD,
+            location_label='CSV import',
+            notes='Reward from Simple Earn Locked Rewards',
+        ), HistoryEvent(
+            identifier=2,
+            event_identifier='BNC_e2433b7eddb388759cbab8d440dda8447a0d1d6733889000f2bd3145454cae59',
+            sequence_index=0,
+            timestamp=ts_sec_to_ms(Timestamp(1673589660)),
+            location=Location.BINANCE,
+            asset=EvmToken('eip155:1/erc20:0x4Fabb145d64652a948d72533023f6E7A623C7C53'),
+            balance=Balance(amount=FVal('0.00003634')),
+            event_type=HistoryEventType.STAKING,
+            event_subtype=HistoryEventSubType.REWARD,
+            location_label='CSV import',
+            notes='Reward from Simple Earn Flexible Interest',
+        ), HistoryEvent(
+            identifier=4,
+            event_identifier='BNC_f5b62b836a4f520729099765bd12f49bce839ae53aef5c53f6e2b12cd4a5d2e2',
+            sequence_index=0,
+            timestamp=ts_sec_to_ms(Timestamp(1673590320)),
+            location=Location.BINANCE,
+            asset=EvmToken('eip155:1/erc20:0x4Fabb145d64652a948d72533023f6E7A623C7C53'),
+            balance=Balance(amount=FVal('0.00003634')),
+            event_type=HistoryEventType.STAKING,
+            event_subtype=HistoryEventSubType.REWARD,
+            location_label='CSV import',
+            notes='Reward from Simple Earn Flexible Interest',
+        ), HistoryEvent(
+            identifier=3,
+            event_identifier='BNC_8ee2c667b24dc991ccaf81050b48cf33d9ccdd45471e1517efcb64c0bbfcb318',
+            sequence_index=0,
+            timestamp=ts_sec_to_ms(Timestamp(1673593020)),
+            location=Location.BINANCE,
+            asset=EvmToken('eip155:1/erc20:0x4Fabb145d64652a948d72533023f6E7A623C7C53'),
+            balance=Balance(amount=FVal('0.00003634')),
+            event_type=HistoryEventType.STAKING,
+            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+            location_label='CSV import',
+            notes='Deposit in Simple Earn Flexible Subscription',
+        ), HistoryEvent(
+            identifier=5,
+            event_identifier='BNC_6f2a1947e66d9d38c1d07ade18706be20fbbddf48cdbfbd345e6976a85333e35',
+            sequence_index=0,
+            timestamp=ts_sec_to_ms(Timestamp(1673593560)),
+            location=Location.BINANCE,
+            asset=EvmToken('eip155:1/erc20:0x4Fabb145d64652a948d72533023f6E7A623C7C53'),
+            balance=Balance(amount=FVal('0.00003634')),
+            event_type=HistoryEventType.STAKING,
+            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+            location_label='CSV import',
+            notes='Deposit in Simple Earn Flexible Subscription',
+        ), HistoryEvent(
+            identifier=6,
+            event_identifier='BNC_93ffcc0bba0a90bddb72dd100479e6c784e5dd5ea68e2bf4c5a0a9c3432a24b9',
+            sequence_index=0,
+            timestamp=ts_sec_to_ms(Timestamp(1686389700)),
+            location=Location.BINANCE,
+            asset=CryptoAsset('SUI'),
+            balance=Balance(amount=FVal('0.0080696')),
+            event_type=HistoryEventType.STAKING,
+            event_subtype=HistoryEventSubType.REWARD,
+            location_label='CSV import',
+            notes='Reward from BNB Vault Rewards',
+        ),
+    ]
 
     with rotki.data.db.conn.read_ctx() as cursor:
         trades = rotki.data.db.get_trades(cursor, filter_query=TradesFilterQuery.make(), has_premium=True)  # noqa: E501
@@ -1645,9 +1734,16 @@ def assert_binance_import_results(rotki: Rotkehlchen):
             filter_query=LedgerActionsFilterQuery.make(),
             has_premium=True,
         )
+        history_db = DBHistoryEvents(rotki.data.db)
+        history_events = history_db.get_history_events(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(),
+            has_premium=True,
+        )
     assert trades == expected_trades
     assert asset_movements == expected_asset_movements
     assert ledger_actions == expected_ledger_actions
+    assert expected_events == history_events
     expected_warnings = [
         '2 Binance rows have bad format. Check logs for details.',
         'Skipped 4 rows during processing binance csv file. Check logs for details',

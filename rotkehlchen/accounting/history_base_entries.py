@@ -114,6 +114,20 @@ def make_default_accounting_settings(pot: 'AccountingPot') -> dict[str, BaseEven
         count_cost_basis_pnl=False,
         method='acquisition',
     )
+    staking_deposit_key = str(HistoryEventType.STAKING) + '__' + str(HistoryEventSubType.DEPOSIT_ASSET)  # noqa: E501
+    result[staking_deposit_key] = BaseEventSettings(
+        taxable=False,
+        count_entire_amount_spend=False,
+        count_cost_basis_pnl=False,
+        method='spend',
+    )
+    staking_withdrawal_key = str(HistoryEventType.STAKING) + '__' + str(HistoryEventSubType.REMOVE_ASSET)  # noqa: E501
+    result[staking_withdrawal_key] = BaseEventSettings(
+        taxable=False,
+        count_entire_amount_spend=False,
+        count_cost_basis_pnl=False,
+        method='acquisition',
+    )
     return result
 
 

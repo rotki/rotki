@@ -1,3 +1,4 @@
+import hashlib
 from abc import ABCMeta, abstractmethod
 from pathlib import Path
 from typing import Any, Optional
@@ -104,3 +105,9 @@ def process_rotki_generic_import_csv_fields(
         if csv_row['Fee Currency'] and fee is not None else None
     )
     return asset, fee, fee_currency, location, timestamp
+
+
+def hash_csv_row(csv_row: dict[str, Any]) -> str:
+    """Convert the row to string and encode it to a hex string to get a unique hash"""
+    row_str = str(csv_row).encode()
+    return hashlib.sha256(row_str).hexdigest()

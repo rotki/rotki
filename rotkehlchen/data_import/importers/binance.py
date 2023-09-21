@@ -6,12 +6,16 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Final, Optional
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
+from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.accounting.structures.base import HistoryEvent
+from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.converters import asset_from_binance
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_USD
-from rotkehlchen.data_import.utils import BaseExchangeImporter
+from rotkehlchen.data_import.utils import BaseExchangeImporter, hash_csv_row
 from rotkehlchen.db.drivers.gevent import DBCursor
 from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
@@ -31,6 +35,7 @@ from rotkehlchen.types import (
     TradeID,
     TradeType,
 )
+from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import AssetWithOracles
@@ -40,6 +45,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 BinanceCsvRow = dict[str, Any]
 BINANCE_TRADE_OPERATIONS = {'Buy', 'Sell', 'Fee'}
+EVENT_IDENTIFIER_PREFIX = 'BNC'
 
 
 class BinanceEntry(metaclass=abc.ABCMeta):  # noqa: B024
@@ -67,7 +73,7 @@ class BinanceSingleEntry(BinanceEntry, metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def process_entry(
             self,
-            cursor: DBCursor,
+            write_cursor: DBCursor,
             importer: BaseExchangeImporter,
             timestamp: Timestamp,
             data: BinanceCsvRow,
@@ -85,7 +91,7 @@ class BinanceMultipleEntry(BinanceEntry, metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def process_entries(
             self,
-            cursor: DBCursor,
+            write_cursor: DBCursor,
             importer: BaseExchangeImporter,
             timestamp: Timestamp,
             data: list[BinanceCsvRow],
@@ -118,7 +124,8 @@ class BinanceTradeEntry(BinanceMultipleEntry):
             (keys == {'Transaction Related'} and counted['Transaction Related'] % 2 == 0) or
             (keys == {'Small assets exchange BNB'} and counted['Small assets exchange BNB'] % 2 == 0) or  # noqa: E501
             (keys == {'ETH 2.0 Staking'} and counted['ETH 2.0 Staking'] % 2 == 0) or
-            (keys == {'Buy', 'Transaction Related'} and counted['Buy'] - counted['Transaction Related'] == 0)  # noqa: E501
+            (keys == {'Buy', 'Transaction Related'} and counted['Buy'] - counted['Transaction Related'] == 0) or  # noqa: E501
+            (keys == {'Binance Convert'} and counted['Binance Convert'] % 2 == 0)
         )
 
     @staticmethod
@@ -266,14 +273,14 @@ class BinanceTradeEntry(BinanceMultipleEntry):
 
     def process_entries(
             self,
-            cursor: DBCursor,
+            write_cursor: DBCursor,
             importer: BaseExchangeImporter,
             timestamp: Timestamp,
             data: list[BinanceCsvRow],
     ) -> int:
         trades = self.process_trades(importer=importer, timestamp=timestamp, data=data)
         for trade in trades:
-            importer.add_trade(cursor, trade)
+            importer.add_trade(write_cursor=write_cursor, trade=trade)
         return len(trades)
 
 
@@ -285,7 +292,7 @@ class BinanceDepositWithdrawEntry(BinanceSingleEntry):
 
     def process_entry(
             self,
-            cursor: DBCursor,
+            write_cursor: DBCursor,
             importer: BaseExchangeImporter,
             timestamp: Timestamp,
             data: BinanceCsvRow,
@@ -308,18 +315,25 @@ class BinanceDepositWithdrawEntry(BinanceSingleEntry):
             fee_asset=A_USD,
             link=f'Imported from binance CSV file. Binance operation: {data["Operation"]}',
         )
-        importer.add_asset_movement(cursor, asset_movement)
+        importer.add_asset_movement(write_cursor=write_cursor, asset_movement=asset_movement)
 
 
 class BinanceStakingRewardsEntry(BinanceSingleEntry):
-    """Processing ETH 2.0 Staking Rewards and Launchpool Interest
-        which are LedgerActions in the internal representation"""
+    """
+    Processing ETH 2.0 Staking Rewards and Launchpool Interest
+    which are LedgerActions in the internal representation. Also processes
+    other staking rewards in the Binance program.
+    """
 
-    AVAILABLE_OPERATIONS: Final[tuple[str, ...]] = ('ETH 2.0 Staking Rewards', 'Launchpool Interest')  # type: ignore[misc]  # noqa: E501  # figure out how to mark final only in this class
+    AVAILABLE_OPERATIONS: Final[tuple[str, ...]] = (  # type: ignore[misc]  # figure out how to mark final only in this class  # noqa: E501
+        'ETH 2.0 Staking Rewards',
+        'Launchpool Interest',
+        'Staking Rewards',
+    )
 
     def process_entry(
             self,
-            cursor: DBCursor,
+            write_cursor: DBCursor,
             importer: BaseExchangeImporter,
             timestamp: Timestamp,
             data: BinanceCsvRow,
@@ -338,7 +352,89 @@ class BinanceStakingRewardsEntry(BinanceSingleEntry):
             link=None,
             notes=f'Imported from binance CSV file. Binance operation: {data["Operation"]}',
         )
-        importer.add_ledger_action(cursor, ledger_action)
+        importer.add_ledger_action(write_cursor=write_cursor, ledger_action=ledger_action)
+
+
+class BinanceEarnProgram(BinanceSingleEntry):
+    AVAILABLE_OPERATIONS = (
+        'Simple Earn Flexible Interest',
+        'Simple Earn Flexible Subscription',
+        'Simple Earn Locked Rewards',
+        'Simple Earn Locked Redemption',
+        'Simple Earn Flexible Redemption',
+        'BNB Vault Rewards',
+        'Swap Farming Rewards',
+    )
+
+    def process_entry(
+            self,
+            write_cursor: DBCursor,
+            importer: BaseExchangeImporter,
+            timestamp: Timestamp,
+            data: BinanceCsvRow,
+    ) -> None:
+        """
+        Process rewards, deposit and withdrawals from the binance earn program. It includes
+        the flexible deposit, locking and staking. May raise:
+        - KeyError
+        - DeserializationError: if the event is malformed when being stored in the db
+        """
+        asset = data['Coin']
+        amount = abs(data['Change'])
+        event_identifier = f'{EVENT_IDENTIFIER_PREFIX}_{hash_csv_row(data)}'
+        timestamp_ms = ts_sec_to_ms(timestamp)
+        staking_event = None
+        if data['Operation'] in (
+            'Simple Earn Flexible Interest',
+            'Simple Earn Locked Rewards',
+            'BNB Vault Rewards',
+            'Swap Farming Rewards',
+        ):
+            staking_event = HistoryEvent(
+                event_identifier=event_identifier,
+                sequence_index=0,
+                timestamp=timestamp_ms,
+                location=Location.BINANCE,
+                event_type=HistoryEventType.STAKING,
+                event_subtype=HistoryEventSubType.REWARD,
+                asset=asset,
+                balance=Balance(amount=amount),
+                location_label='CSV import',
+                notes=f'Reward from {data["Operation"]}',
+            )
+        elif data['Operation'] == 'Simple Earn Flexible Subscription':
+            staking_event = HistoryEvent(
+                event_identifier=event_identifier,
+                sequence_index=0,
+                timestamp=timestamp_ms,
+                location=Location.BINANCE,
+                event_type=HistoryEventType.STAKING,
+                event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+                asset=asset,
+                balance=Balance(amount=amount),
+                location_label='CSV import',
+                notes=f'Deposit in {data["Operation"]}',
+            )
+        elif data['Operation'] == (
+            'Simple Earn Locked Redemption',
+            'Simple Earn Flexible Redemption',
+        ):
+            staking_event = HistoryEvent(
+                event_identifier=event_identifier,
+                sequence_index=0,
+                timestamp=timestamp_ms,
+                location=Location.BINANCE,
+                event_type=HistoryEventType.STAKING,
+                event_subtype=HistoryEventSubType.REMOVE_ASSET,
+                asset=asset,
+                balance=Balance(amount=amount),
+                location_label='CSV import',
+                notes=f'Unstake {asset} in {data["Operation"]}',
+            )
+        if staking_event is None:
+            log.error(f'Could not process Binance CSV entry {data}')
+            return
+        importer.add_history_events(write_cursor=write_cursor, history_events=[staking_event])
 
 
 class BinancePOSEntry(BinanceSingleEntry):
@@ -353,7 +449,7 @@ class BinancePOSEntry(BinanceSingleEntry):
 
     def process_entry(
             self,
-            cursor: DBCursor,
+            write_cursor: DBCursor,
             importer: BaseExchangeImporter,
             timestamp: Timestamp,
             data: BinanceCsvRow,
@@ -374,13 +470,14 @@ class BinancePOSEntry(BinanceSingleEntry):
             link=None,
             notes=f'Imported from binance CSV file. Binance operation: {data["Operation"]}',
         )
-        importer.add_ledger_action(cursor, ledger_action)
+        importer.add_ledger_action(write_cursor=write_cursor, ledger_action=ledger_action)
 
 
 SINGLE_BINANCE_ENTRIES = [
     BinanceDepositWithdrawEntry(),
     BinanceStakingRewardsEntry(),
     BinancePOSEntry(),
+    BinanceEarnProgram(),
 ]
 
 MULTIPLE_BINANCE_ENTRIES = [
@@ -423,20 +520,31 @@ class BinanceImporter(BaseExchangeImporter):
             timestamp: Timestamp,
             rows: list[BinanceCsvRow],
     ) -> tuple[dict[BinanceSingleEntry, int], list[BinanceCsvRow]]:
-        """Processes binance entries that are represented with a single row in a csv file"""
+        """
+        Processes binance entries that are represented with a single row in a csv file.
+        May raise:
+        - InputError
+        """
         processed: dict[BinanceSingleEntry, int] = defaultdict(int)
         ignored: list[BinanceCsvRow] = []
         for row in rows:
             for single_entry_class in SINGLE_BINANCE_ENTRIES:
-                if single_entry_class.is_entry(row['Operation']):
-                    single_entry_class.process_entry(
-                        cursor=write_cursor,
-                        importer=self,
-                        timestamp=timestamp,
-                        data=row,
-                    )
-                    processed[single_entry_class] += 1
-                    break
+                try:
+                    if single_entry_class.is_entry(row['Operation']):
+                        single_entry_class.process_entry(
+                            write_cursor=write_cursor,
+                            importer=self,
+                            timestamp=timestamp,
+                            data=row,
+                        )
+                        processed[single_entry_class] += 1
+                        break
+                except KeyError as e:
+                    raise InputError(f'Could not read key {e} in binance CSV row {row}') from e
+                except DeserializationError as e:
+                    raise InputError(
+                        f'Could not deserialize object {e} before adding it to the database',
+                    ) from e
             else:  # there was no break in the for loop above
                 ignored.append(row)
         return processed, ignored
@@ -453,7 +561,7 @@ class BinanceImporter(BaseExchangeImporter):
         for multiple_entry_class in MULTIPLE_BINANCE_ENTRIES:
             if multiple_entry_class.are_entries([row['Operation'] for row in rows]):
                 processed_count = multiple_entry_class.process_entries(
-                    cursor=write_cursor,
+                    write_cursor=write_cursor,
                     importer=self,
                     timestamp=timestamp,
                     data=rows,
@@ -515,6 +623,10 @@ class BinanceImporter(BaseExchangeImporter):
             )
 
     def _import_csv(self, write_cursor: DBCursor, filepath: Path, **kwargs: Any) -> None:
+        """
+        Group and process binance CSV entries. May raise:
+        - InputError
+        """
         with open(filepath, encoding='utf-8-sig') as csvfile:
             input_rows = list(csv.DictReader(csvfile))
             skipped_count, multirows = _group_binance_rows(rows=input_rows, **kwargs)
@@ -522,4 +634,4 @@ class BinanceImporter(BaseExchangeImporter):
                 self.db.msg_aggregator.add_warning(
                     f'{skipped_count} Binance rows have bad format. Check logs for details.',
                 )
-            self._process_binance_rows(write_cursor, multirows)
+            self._process_binance_rows(write_cursor=write_cursor, multi=multirows)

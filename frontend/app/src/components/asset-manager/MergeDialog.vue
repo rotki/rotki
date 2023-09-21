@@ -3,13 +3,17 @@ import useVuelidate from '@vuelidate/core';
 import { helpers, requiredUnless } from '@vuelidate/validators';
 import { toMessages } from '@/utils/validation';
 
+type Errors = Partial<
+  Record<'targetIdentifier' | 'sourceIdentifier', string[]>
+>;
+
 defineProps<{ value: boolean }>();
 
-const emit = defineEmits(['input']);
+const emit = defineEmits<{ (e: 'input', value: boolean): void }>();
 const done = ref(false);
-const errorMessages = ref<string[]>([]);
-const target = ref('');
-const source = ref('');
+const errorMessages = ref<Errors>({});
+const targetIdentifier = ref('');
+const sourceIdentifier = ref('');
 const pending = ref(false);
 
 const { mergeAssets } = useAssets();
@@ -17,34 +21,35 @@ const { t } = useI18n();
 
 const reset = () => {
   set(done, false);
-  set(target, '');
-  set(source, '');
+  set(targetIdentifier, '');
+  set(sourceIdentifier, '');
   set(pending, false);
-  set(errorMessages, []);
+  set(errorMessages, {});
   get(v$).$reset();
 };
 
 const clearErrors = () => {
-  const elements = get(errorMessages).length;
-  for (let i = 0; i < elements; i++) {
-    set(errorMessages, []);
-  }
+  set(errorMessages, {});
 };
 
 async function merge() {
   set(pending, true);
   const result = await mergeAssets({
-    sourceIdentifier: get(source),
-    targetIdentifier: get(target)
+    sourceIdentifier: get(sourceIdentifier),
+    targetIdentifier: get(targetIdentifier)
   });
 
   if (result.success) {
     set(done, true);
   } else {
-    set(errorMessages, [
-      ...get(errorMessages),
-      result.message ?? t('merge_dialog.error').toString()
-    ]);
+    set(
+      errorMessages,
+      typeof result.message === 'string'
+        ? ({
+            sourceIdentifier: [result.message || t('merge_dialog.error')]
+          } satisfies Errors)
+        : result.message
+    );
     await get(v$).$validate();
   }
   set(pending, false);
@@ -56,13 +61,13 @@ const input = (value: boolean) => {
 };
 
 const rules = {
-  source: {
+  sourceIdentifier: {
     required: helpers.withMessage(
       t('merge_dialog.source.non_empty').toString(),
       requiredUnless(done)
     )
   },
-  target: {
+  targetIdentifier: {
     required: helpers.withMessage(
       t('merge_dialog.target.non_empty').toString(),
       requiredUnless(done)
@@ -73,12 +78,12 @@ const rules = {
 const v$ = useVuelidate(
   rules,
   {
-    source,
-    target
+    sourceIdentifier,
+    targetIdentifier
   },
   {
     $autoDirty: true,
-    $externalResults: computed(() => ({ source: get(errorMessages) }))
+    $externalResults: errorMessages
   }
 );
 </script>
@@ -115,15 +120,15 @@ const v$ = useVuelidate(
         <!-- We use `v-text-field` here instead `asset-select` -->
         <!-- because the source can be filled with unknown identifier -->
         <VTextField
-          v-model="source"
+          v-model="sourceIdentifier"
           :label="t('merge_dialog.source.label')"
-          :error-messages="toMessages(v$.source)"
+          :error-messages="toMessages(v$.sourceIdentifier)"
           outlined
           :disabled="pending"
           persistent-hint
           :hint="t('merge_dialog.source_hint')"
           @focus="clearErrors()"
-          @blur="v$.source.$touch()"
+          @blur="v$.sourceIdentifier.$touch()"
         />
         <VRow align="center" justify="center" class="my-4">
           <VCol cols="auto">
@@ -131,13 +136,13 @@ const v$ = useVuelidate(
           </VCol>
         </VRow>
         <AssetSelect
-          v-model="target"
+          v-model="targetIdentifier"
           outlined
-          :error-messages="toMessages(v$.target)"
+          :error-messages="toMessages(v$.targetIdentifier)"
           :label="t('merge_dialog.target.label')"
           :disabled="pending"
           @focus="clearErrors()"
-          @blur="v$.target.$touch()"
+          @blur="v$.targetIdentifier.$touch()"
         />
       </VForm>
     </Card>
