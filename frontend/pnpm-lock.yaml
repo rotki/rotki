@@ -56,8 +56,8 @@ importers:
         specifier: 1.1.2
         version: 1.1.2(eslint@8.49.0)
       '@rotki/ui-library-compat':
-        specifier: 0.4.0
-        version: 0.4.0(@vueuse/core@10.4.1)(@vueuse/shared@10.4.1)(vue@2.7.14)
+        specifier: 0.4.1
+        version: 0.4.1(@vueuse/core@10.4.1)(@vueuse/shared@10.4.1)(vue@2.7.14)
       '@vuelidate/core':
         specifier: 2.0.3
         version: 2.0.3(vue@2.7.14)
@@ -2435,8 +2435,8 @@ packages:
       - vue
     dev: true
 
-  /@rotki/ui-library-compat@0.4.0(@vueuse/core@10.4.1)(@vueuse/shared@10.4.1)(vue@2.7.14):
-    resolution: {integrity: sha512-VYTT3Nf4aljT1VNAYTsVTVbf+IQisftMkKgt/IVoMGlpMqFUF+uB+S0gpBwLDfGQZrAoyBCrADYog0WYkUP3uw==}
+  /@rotki/ui-library-compat@0.4.1(@vueuse/core@10.4.1)(@vueuse/shared@10.4.1)(vue@2.7.14):
+    resolution: {integrity: sha512-AK9nPJbGKT2Up9B7tbuEzscoxdLKLyDZoBvCgz2XX8HUVTk88EEQa2x7vz8q6iFRKdOxG/NdizaKwEZDJddymg==}
     engines: {pnpm: '>=8 <9'}
     peerDependencies:
       '@vueuse/core': '>10.0.0'
