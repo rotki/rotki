@@ -61,9 +61,9 @@ const { t } = useI18n();
         {{ exportError }}
       </VAlert>
       <div class="flex flex-row items-center mt-4">
-        <VBtn color="primary" :loading="downloading" @click="exportZip()">
+        <RuiButton color="primary" :loading="downloading" @click="exportZip()">
           {{ t('manage_user_assets.export.button') }}
-        </VBtn>
+        </RuiButton>
         <VIcon v-if="downloaded" class="ms-4" color="success">
           mdi-check-circle
         </VIcon>
@@ -87,7 +87,7 @@ const { t } = useI18n();
         @selected="zip = $event"
         @update:uploaded="uploaded = $event"
       />
-      <VBtn
+      <RuiButton
         color="primary"
         class="mt-4"
         :disabled="importDisabled"
@@ -95,7 +95,7 @@ const { t } = useI18n();
         @click="importZip()"
       >
         {{ t('common.actions.import') }}
-      </VBtn>
+      </RuiButton>
     </VSheet>
   </Card>
 </template>

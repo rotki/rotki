@@ -79,26 +79,24 @@ const secondaryText = computed(
 
         <VCardActions class="confirm-dialog__actions">
           <VSpacer />
-          <VBtn
+          <RuiButton
             v-if="!singleAction"
-            depressed
-            outlined
-            text
+            variant="default"
             data-cy="button-cancel"
             @click="emit('cancel')"
           >
             {{ secondaryText }}
-          </VBtn>
-          <VBtn
+          </RuiButton>
+          <RuiButton
             :color="color"
-            depressed
+            variant="default"
             :disabled="disabled"
             data-cy="button-confirm"
             :loading="loading"
             @click="emit('confirm')"
           >
             {{ primaryText }}
-          </VBtn>
+          </RuiButton>
         </VCardActions>
       </VCard>
     </VDialog>

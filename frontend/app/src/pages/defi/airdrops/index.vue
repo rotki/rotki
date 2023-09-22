@@ -369,16 +369,17 @@ onMounted(async () => {
               </div>
             </template>
             <template #item.link="{ item }">
-              <VBtn
+              <RuiButton
                 v-if="!hasDetails(item.source)"
                 icon
+                variant="text"
                 color="primary"
                 :target="isPackaged ? undefined : '_blank'"
                 :href="isPackaged ? undefined : item.link"
                 @click="isPackaged ? navigate(item.link) : undefined"
               >
                 <VIcon>mdi-link</VIcon>
-              </VBtn>
+              </RuiButton>
               <RowExpander
                 v-else
                 :expanded="expanded.includes(item)"

@@ -13,8 +13,9 @@ const click = () => emit('click');
 <template>
   <VTooltip bottom z-index="215" class="block" open-delay="250">
     <template #activator="{ on: menu }">
-      <VBtn
+      <RuiButton
         icon
+        variant="text"
         :class="className"
         class="!w-12 !h-12"
         :retain-focus-on-click="retainFocusOnClick"
@@ -22,7 +23,7 @@ const click = () => emit('click');
         v-on="{ ...menu, ...onMenu }"
       >
         <slot />
-      </VBtn>
+      </RuiButton>
     </template>
     <span>{{ tooltip }}</span>
   </VTooltip>

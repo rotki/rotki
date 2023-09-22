@@ -141,15 +141,16 @@ const remoteAboutLogo =
                     <div v-if="isPackaged" class="ml-2">
                       <VTooltip top open-delay="400">
                         <template #activator="{ on, attrs }">
-                          <VBtn
+                          <RuiButton
                             v-bind="attrs"
                             icon
-                            x-small
+                            variant="text"
+                            size="sm"
                             v-on="on"
                             @click="openPath(dataDirectory)"
                           >
                             <VIcon x-small>mdi-launch</VIcon>
-                          </VBtn>
+                          </RuiButton>
                         </template>
                         <span>{{ t('about.open_data_dir_tooltip') }}</span>
                       </VTooltip>

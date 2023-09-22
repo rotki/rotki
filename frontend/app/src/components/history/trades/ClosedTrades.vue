@@ -281,10 +281,10 @@ watch(loading, async (isLoading, wasLoading) => {
 <template>
   <Fragment>
     <Card class="mt-8">
-      <VBtn
+      <RuiButton
         v-if="!locationOverview"
         absolute
-        fab
+        variant="fab"
         top
         right
         dark
@@ -293,7 +293,7 @@ watch(loading, async (isLoading, wasLoading) => {
         @click="newExternalTrade()"
       >
         <VIcon> mdi-plus </VIcon>
-      </VBtn>
+      </RuiButton>
       <template #title>
         <RefreshButton
           v-if="!locationOverview"
@@ -317,22 +317,21 @@ watch(loading, async (isLoading, wasLoading) => {
                   />
                 </VCol>
                 <VCol>
-                  <VBtn
-                    text
-                    outlined
+                  <RuiButton
+                    variant="outlined"
                     color="red"
                     :disabled="selected.length === 0"
                     @click="massDelete()"
                   >
                     <VIcon> mdi-delete-outline </VIcon>
-                  </VBtn>
+                  </RuiButton>
                 </VCol>
               </VRow>
               <div v-if="selected.length > 0" class="mt-2 ms-1">
                 {{ t('closed_trades.selected', { count: selected.length }) }}
-                <VBtn small text @click="selected = []">
+                <RuiButton size="sm" @click="selected = []">
                   {{ t('common.actions.clear_selection') }}
-                </VBtn>
+                </RuiButton>
               </div>
             </div>
             <div>

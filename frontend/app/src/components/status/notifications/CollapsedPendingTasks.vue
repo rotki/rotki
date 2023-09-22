@@ -29,10 +29,10 @@ const { t } = useI18n();
       </VCol>
 
       <VCol cols="auto">
-        <VBtn icon small @click="input()">
+        <RuiButton icon variant="text" size="sm" @click="input()">
           <VIcon v-if="value">mdi-chevron-up</VIcon>
           <VIcon v-else>mdi-chevron-down</VIcon>
-        </VBtn>
+        </RuiButton>
       </VCol>
     </VRow>
   </Card>

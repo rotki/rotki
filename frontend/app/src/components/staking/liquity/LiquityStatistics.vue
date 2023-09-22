@@ -203,12 +203,12 @@ const css = useCssModule();
     </template>
     <template #details>
       <VBtnToggle v-model="current" dense mandatory>
-        <VBtn :value="true">
+        <RuiButton :value="true">
           {{ t('liquity_statistic.switch.current') }}
-        </VBtn>
-        <VBtn :value="false">
+        </RuiButton>
+        <RuiButton :value="false">
           {{ t('liquity_statistic.switch.historical') }}
-        </VBtn>
+        </RuiButton>
       </VBtnToggle>
     </template>
     <template v-if="statisticWithAdjustedPrice">

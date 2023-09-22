@@ -23,12 +23,10 @@ const refresh = () => {
 <template>
   <VTooltip top>
     <template #activator="{ on, attrs }">
-      <VBtn
-        fab
-        text
-        small
-        depressed
+      <RuiButton
+        size="sm"
         :disabled="loading || disabled"
+        variant="text"
         v-bind="attrs"
         color="primary"
         @click="refresh()"
@@ -42,7 +40,7 @@ const refresh = () => {
           width="2"
         />
         <RuiIcon v-else name="restart-line" />
-      </VBtn>
+      </RuiButton>
     </template>
     <span>{{ tooltip }}</span>
   </VTooltip>

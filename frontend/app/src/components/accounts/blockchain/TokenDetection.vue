@@ -25,8 +25,8 @@ const { t } = useI18n();
     <div>
       <VTooltip top>
         <template #activator="{ on }">
-          <VBtn
-            text
+          <RuiButton
+            variant="text"
             icon
             :disabled="detectingTokens || loading"
             v-on="on"
@@ -40,7 +40,7 @@ const { t } = useI18n();
               size="20"
             />
             <RuiIcon v-else size="16" name="restart-line" />
-          </VBtn>
+          </RuiButton>
         </template>
         <div class="text-center">
           <div>

@@ -189,25 +189,24 @@ const massIgnore = async (ignored: boolean) => {
           />
           <div v-if="selected.length > 0" class="mt-2 ms-1">
             {{ t('asset_table.selected', { count: selected.length }) }}
-            <VBtn small text @click="updateSelected([])">
+            <RuiButton size="sm" @click="updateSelected([])">
               {{ t('common.actions.clear_selection') }}
-            </VBtn>
+            </RuiButton>
           </div>
         </VCol>
         <VCol />
         <VCol cols="12" md="auto">
           <VMenu offset-y :close-on-content-click="false">
             <template #activator="{ on }">
-              <VBtn
-                outlined
-                text
+              <RuiButton
+                variant="outlined"
                 height="40px"
                 data-cy="asset-filter"
                 v-on="on"
               >
                 {{ t('common.actions.filter') }}
                 <VIcon class="ml-2">mdi-chevron-down</VIcon>
-              </VBtn>
+              </RuiButton>
             </template>
             <VList data-cy="asset-filter-menu">
               <VListItem link @click="updateShowOwned(!onlyShowOwned)">
@@ -263,10 +262,10 @@ const massIgnore = async (ignored: boolean) => {
         </VCol>
       </VRow>
     </template>
-    <VBtn
+    <RuiButton
       data-cy="managed-asset-add-btn"
       absolute
-      fab
+      variant="fab"
       top
       right
       dark
@@ -274,7 +273,7 @@ const massIgnore = async (ignored: boolean) => {
       @click="add()"
     >
       <VIcon> mdi-plus </VIcon>
-    </VBtn>
+    </RuiButton>
     <DataTable
       :value="selected"
       :items="tokens"

@@ -45,15 +45,16 @@ const slots = useSlots();
       <div class="flex items-center">
         <VTooltip v-if="canRefresh" bottom max-width="300px">
           <template #activator="{ on: tooltipOn }">
-            <VBtn
+            <RuiButton
               icon
+              variant="text"
               :disabled="isLoading"
               color="primary"
               @click="refresh(name)"
               v-on="tooltipOn"
             >
               <RuiIcon color="primary" name="restart-line" />
-            </VBtn>
+            </RuiButton>
           </template>
           <span>
             {{ t('summary_card.refresh_tooltip', { name }) }}

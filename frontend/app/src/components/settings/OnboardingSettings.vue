@@ -318,13 +318,14 @@ const showResetConfirmation = () => {
       @click="selectDataDirectory()"
     >
       <template #append>
-        <VBtn
+        <RuiButton
           icon
+          variant="text"
           :disabled="!userDataDirectory"
           @click="selectDataDirectory()"
         >
           <VIcon>mdi-folder</VIcon>
-        </VBtn>
+        </RuiButton>
       </template>
     </VTextField>
 
@@ -345,9 +346,9 @@ const showResetConfirmation = () => {
         @click="selectLogsDirectory()"
       >
         <template #append>
-          <VBtn icon @click="selectLogsDirectory()">
+          <RuiButton icon variant="text" @click="selectLogsDirectory()">
             <VIcon>mdi-folder</VIcon>
-          </VBtn>
+          </RuiButton>
         </template>
       </VTextField>
 
@@ -484,21 +485,21 @@ const showResetConfirmation = () => {
 
     <template #buttons>
       <VSpacer />
-      <VBtn depressed @click="dismiss()">
+      <RuiButton variant="default" @click="dismiss()">
         {{ t('common.actions.cancel') }}
-      </VBtn>
-      <VBtn depressed @click="showResetConfirmation()">
+      </RuiButton>
+      <RuiButton variant="default" @click="showResetConfirmation()">
         {{ t('backend_settings.actions.reset') }}
-      </VBtn>
-      <VBtn
-        depressed
+      </RuiButton>
+      <RuiButton
+        variant="default"
         data-cy="onboarding-setting__submit-button"
         color="primary"
         :disabled="!anyValueChanged || !valid"
         @click="save()"
       >
         {{ t('common.actions.save') }}
-      </VBtn>
+      </RuiButton>
     </template>
   </Card>
 </template>

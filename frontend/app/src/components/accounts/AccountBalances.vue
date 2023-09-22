@@ -158,54 +158,58 @@ const showConfirmation = (payload: XpubPayload | string[]) => {
       </VRow>
     </VCardTitle>
     <VCardText>
-      <VRow class="mb-2">
-        <VCol cols="12" sm="6">
-          <VTooltip top>
-            <template #activator="{ on, attrs }">
-              <span v-bind="attrs" v-on="on">
-                <VBtn
-                  data-cy="account-balances__delete-button"
-                  color="red"
-                  text
-                  outlined
-                  :disabled="
-                    isAnyBalancesFetching ||
-                    operationRunning ||
-                    selectedAddresses.length === 0
-                  "
-                  @click="showConfirmation(selectedAddresses)"
-                >
-                  <VIcon> mdi-delete-outline </VIcon>
-                  <span>{{ t('common.actions.delete') }}</span>
-                </VBtn>
-              </span>
-            </template>
-            <span>{{ t('account_balances.delete_tooltip') }}</span>
-          </VTooltip>
-          <VTooltip v-if="hasTokenDetection" top>
-            <template #activator="{ on }">
-              <VBtn
-                class="ml-2"
-                text
-                outlined
-                :loading="detectingTokens"
-                :disabled="detectingTokens || isSectionLoading"
-                v-on="on"
-                @click="detectTokensOfAllAddresses()"
+      <div class="flex flex-row items-center mb-4">
+        <VTooltip top>
+          <template #activator="{ on, attrs }">
+            <span v-bind="attrs" v-on="on">
+              <RuiButton
+                data-cy="account-balances__delete-button"
+                color="error"
+                variant="outlined"
+                :disabled="
+                  isAnyBalancesFetching ||
+                  operationRunning ||
+                  selectedAddresses.length === 0
+                "
+                @click="showConfirmation(selectedAddresses)"
               >
-                <RuiIcon class="mr-2" name="refresh-line" />
-                {{ t('account_balances.detect_tokens.tooltip.redetect') }}
-              </VBtn>
-            </template>
-            <span>
-              {{ t('account_balances.detect_tokens.tooltip.redetect_all') }}
+                <template #prepend>
+                  <VIcon> mdi-delete-outline </VIcon>
+                </template>
+                <span>{{ t('common.actions.delete') }}</span>
+              </RuiButton>
             </span>
-          </VTooltip>
-        </VCol>
-        <VCol v-if="!isEth2" cols="12" sm="6">
-          <TagFilter v-model="visibleTags" hide-details />
-        </VCol>
-      </VRow>
+          </template>
+          <span>{{ t('account_balances.delete_tooltip') }}</span>
+        </VTooltip>
+        <VTooltip v-if="hasTokenDetection" top>
+          <template #activator="{ on }">
+            <RuiButton
+              class="ml-2"
+              variant="outlined"
+              :loading="detectingTokens"
+              :disabled="detectingTokens || isSectionLoading"
+              v-on="on"
+              @click="detectTokensOfAllAddresses()"
+            >
+              <template #prepend>
+                <RuiIcon name="refresh-line" />
+              </template>
+              {{ t('account_balances.detect_tokens.tooltip.redetect') }}
+            </RuiButton>
+          </template>
+          <span>
+            {{ t('account_balances.detect_tokens.tooltip.redetect_all') }}
+          </span>
+        </VTooltip>
+        <div class="grow" />
+        <TagFilter
+          v-if="!isEth2"
+          v-model="visibleTags"
+          hide-details
+          class="max-w-[360px]"
+        />
+      </div>
 
       <AccountBalanceTable
         ref="balanceTable"

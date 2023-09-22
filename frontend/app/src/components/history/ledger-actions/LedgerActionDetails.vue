@@ -53,9 +53,10 @@ const { href, hasLink, onLinkClick } = useLinks(link);
           {{ item.link }}
           <VTooltip v-if="hasLink" top open-delay="600">
             <template #activator="{ on, attrs }">
-              <VBtn
-                small
+              <RuiButton
+                size="sm"
                 icon
+                variant="text"
                 v-bind="attrs"
                 color="primary"
                 class="ml-2"
@@ -66,7 +67,7 @@ const { href, hasLink, onLinkClick } = useLinks(link);
                 @click="onLinkClick()"
               >
                 <VIcon :small="true"> mdi-launch </VIcon>
-              </VBtn>
+              </RuiButton>
             </template>
             <span>{{ item.link }}</span>
           </VTooltip>

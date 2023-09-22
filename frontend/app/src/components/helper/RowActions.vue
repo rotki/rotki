@@ -37,9 +37,10 @@ const css = useCssModule();
   <div :class="css.actions">
     <VTooltip v-if="!noEdit" top>
       <template #activator="{ on, attrs }">
-        <VBtn
+        <RuiButton
           v-bind="attrs"
           icon
+          variant="text"
           :disabled="disabled || editDisabled"
           class="mx-1 actions__edit"
           data-cy="row-edit"
@@ -47,15 +48,16 @@ const css = useCssModule();
           @click="editClick()"
         >
           <VIcon small> mdi-pencil-outline </VIcon>
-        </VBtn>
+        </RuiButton>
       </template>
       <span>{{ editTooltip }}</span>
     </VTooltip>
     <VTooltip v-if="!noDelete" top>
       <template #activator="{ on, attrs }">
-        <VBtn
+        <RuiButton
           v-bind="attrs"
           icon
+          variant="text"
           :disabled="disabled || deleteDisabled"
           class="mx-1 actions__delete"
           data-cy="row-delete"
@@ -63,7 +65,7 @@ const css = useCssModule();
           @click="deleteClick()"
         >
           <VIcon small> mdi-delete-outline </VIcon>
-        </VBtn>
+        </RuiButton>
       </template>
       <span>{{ deleteTooltip }}</span>
     </VTooltip>

@@ -11,18 +11,15 @@ const css = useCssModule();
       :close-on-content-click="false"
     >
       <template #activator="{ on }">
-        <VBtn
+        <RuiButton
           v-if="slots.refreshMenu"
           icon
-          depressed
-          fab
-          x-small
           class="pa-0"
           :class="css['refresh-menu-activator']"
           v-on="on"
         >
           <VIcon>mdi-chevron-down</VIcon>
-        </VBtn>
+        </RuiButton>
       </template>
       <slot name="refreshMenu" />
     </VMenu>

@@ -42,16 +42,14 @@ const isDevelopment = checkIfDevelopment();
       <template #details>
         <VTooltip top>
           <template #activator="{ on, attrs }">
-            <VBtn
-              text
-              fab
-              depressed
+            <RuiButton
+              variant="default"
               v-bind="attrs"
               to="/settings/accounting"
               v-on="on"
             >
               <VIcon color="primary">mdi-cog</VIcon>
-            </VBtn>
+            </RuiButton>
           </template>
           <span>{{ t('profit_loss_report.settings_tooltip') }}</span>
         </VTooltip>
@@ -60,32 +58,31 @@ const isDevelopment = checkIfDevelopment();
       <template #buttons>
         <VRow no-gutters>
           <VCol>
-            <VBtn
+            <RuiButton
               color="primary"
-              class="px-8"
+              class="px-8 w-full"
               large
-              depressed
-              block
+              variant="default"
               :disabled="!valid"
               @click="generate()"
             >
               <VIcon class="mr-2">mdi-file-chart</VIcon>
               {{ t('common.actions.generate') }}
-            </VBtn>
+            </RuiButton>
           </VCol>
           <VCol cols="auto">
             <VMenu v-if="isDevelopment" offset-y left>
               <template #activator="{ on }">
-                <VBtn
+                <RuiButton
                   color="warning"
-                  depressed
+                  variant="default"
                   large
                   class="px-4 ml-4"
                   v-on="on"
                 >
                   <VIcon class="mr-2">mdi-wrench</VIcon>
                   {{ t('profit_loss_reports.debug.title') }}
-                </VBtn>
+                </RuiButton>
               </template>
               <VList>
                 <VListItem link @click="exportReportData()">
@@ -110,17 +107,17 @@ const isDevelopment = checkIfDevelopment();
                 </VListItem>
               </VList>
             </VMenu>
-            <VBtn
+            <RuiButton
               v-else
               color="warning"
-              depressed
+              variant="default"
               large
               class="px-4 ml-4"
               @click="exportReportData()"
             >
               <VIcon class="mr-2">mdi-export</VIcon>
               {{ t('profit_loss_reports.debug.export_data') }}
-            </VBtn>
+            </RuiButton>
           </VCol>
         </VRow>
       </template>

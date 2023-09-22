@@ -166,9 +166,9 @@ const getAssets = (assets: XswapAsset[]) => assets.map(({ asset }) => asset);
         @refresh="fetch(true)"
       />
       {{ t('dashboard.liquidity_position.title') }}
-      <VBtn :to="route" icon class="ml-2">
+      <RuiButton :to="route" icon variant="text" class="ml-2">
         <VIcon>mdi-chevron-right</VIcon>
-      </VBtn>
+      </RuiButton>
     </template>
     <template #details>
       <VMenu

@@ -129,26 +129,32 @@ onMounted(async () => {
 
     <template #action="{ attrs }">
       <div v-if="error">
-        <VBtn text v-bind="attrs" @click="dismiss()">
+        <RuiButton variant="text" v-bind="attrs" @click="dismiss()">
           {{ t('common.actions.dismiss') }}
-        </VBtn>
+        </RuiButton>
       </div>
       <div v-else-if="!downloading && !restarting">
-        <VBtn text v-bind="attrs" @click="dismiss()">
+        <RuiButton variant="text" v-bind="attrs" @click="dismiss()">
           {{ t('common.actions.cancel') }}
-        </VBtn>
-        <VBtn
+        </RuiButton>
+        <RuiButton
           v-if="!downloadReady"
           color="primary"
-          text
+          variant="text"
           v-bind="attrs"
           @click="update()"
         >
           {{ t('common.actions.update') }}
-        </VBtn>
-        <VBtn v-else color="primary" text v-bind="attrs" @click="install()">
+        </RuiButton>
+        <RuiButton
+          v-else
+          color="primary"
+          variant="text"
+          v-bind="attrs"
+          @click="install()"
+        >
           {{ t('common.actions.install') }}
-        </VBtn>
+        </RuiButton>
       </div>
     </template>
   </VSnackbar>

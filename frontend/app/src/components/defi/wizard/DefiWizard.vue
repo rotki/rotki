@@ -34,16 +34,20 @@ const { t } = useI18n();
             </p>
           </Card>
           <div class="pb-4">
-            <VBtn text class="defi-wizard__use-default" @click="done()">
+            <RuiButton
+              variant="text"
+              class="defi-wizard__use-default"
+              @click="done()"
+            >
               {{ t('defi_wizard.steps.setup.used_default') }}
-            </VBtn>
-            <VBtn
+            </RuiButton>
+            <RuiButton
               color="primary"
               class="defi-wizard__select-modules ml-4"
               @click="step = 2"
             >
               {{ t('common.actions.continue') }}
-            </VBtn>
+            </RuiButton>
           </div>
         </VStepperContent>
         <VStepperStep :complete="step > 2" step="2">
@@ -60,16 +64,16 @@ const { t } = useI18n();
             <ModuleSelector />
           </Card>
           <div class="pb-4">
-            <VBtn text @click="step = 1">
+            <RuiButton variant="text" @click="step = 1">
               {{ t('common.actions.back') }}
-            </VBtn>
-            <VBtn
+            </RuiButton>
+            <RuiButton
               color="primary"
               class="defi-wizard__select-accounts ml-4"
               @click="step = 3"
             >
               {{ t('common.actions.continue') }}
-            </VBtn>
+            </RuiButton>
           </div>
         </VStepperContent>
         <VStepperStep :complete="step > 3" step="3">
@@ -86,16 +90,16 @@ const { t } = useI18n();
             <ModuleAddressSelector class="defi-wizard__address-selector" />
           </Card>
           <div class="pb-4">
-            <VBtn text @click="step = 2">
+            <RuiButton variant="text" @click="step = 2">
               {{ t('common.actions.back') }}
-            </VBtn>
-            <VBtn
+            </RuiButton>
+            <RuiButton
               color="primary"
               class="defi-wizard__done ml-4"
               @click="done()"
             >
               {{ t('common.actions.continue') }}
-            </VBtn>
+            </RuiButton>
           </div>
         </VStepperContent>
       </VStepper>

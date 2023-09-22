@@ -79,16 +79,21 @@ onMounted(async () => {
           </VSheet>
 
           <div>
-            <VBtn v-if="step > 1" class="mr-4" text @click="previousStep()">
+            <RuiButton
+              v-if="step > 1"
+              class="mr-4"
+              variant="text"
+              @click="previousStep()"
+            >
               {{ t('common.actions.back') }}
-            </VBtn>
-            <VBtn
+            </RuiButton>
+            <RuiButton
               v-if="step < modules.length"
               color="primary"
               @click="nextStep()"
             >
               {{ t('common.actions.next') }}
-            </VBtn>
+            </RuiButton>
           </div>
         </VStepperContent>
       </VStepperItems>

@@ -26,17 +26,15 @@ const { t } = useI18n();
     <template #activator="{ on: menuListeners, attrs }">
       <VTooltip top>
         <template #activator="{ on: tooltipListeners }">
-          <VBtn
+          <RuiButton
             v-bind="attrs"
             icon
-            fab
-            small
-            depressed
+            size="sm"
             :disabled="loading"
             v-on="{ ...menuListeners, ...tooltipListeners }"
           >
             <VIcon color="primary">mdi-database-refresh</VIcon>
-          </VBtn>
+          </RuiButton>
         </template>
         <span>
           {{ tooltip }}
@@ -50,12 +48,17 @@ const { t } = useI18n();
       </VCardText>
       <VCardActions>
         <VSpacer />
-        <VBtn text @click="menu = false">
+        <RuiButton variant="text" @click="menu = false">
           {{ t('common.actions.cancel') }}
-        </VBtn>
-        <VBtn color="primary" text :disabled="disabled" @click="reset()">
+        </RuiButton>
+        <RuiButton
+          color="primary"
+          variant="text"
+          :disabled="disabled"
+          @click="reset()"
+        >
           {{ t('common.actions.confirm') }}
-        </VBtn>
+        </RuiButton>
       </VCardActions>
     </VCard>
   </VMenu>

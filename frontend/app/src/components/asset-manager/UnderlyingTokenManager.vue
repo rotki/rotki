@@ -131,14 +131,15 @@ const deleteToken = (address: string) => {
           :label="t('underlying_token_manager.labels.weight')"
         >
           <template #append-outer>
-            <VBtn
+            <RuiButton
               icon
+              variant="text"
               :disabled="v$.$invalid"
               class="mt-n2"
               @click="addToken()"
             >
               <VIcon>mdi-plus</VIcon>
-            </VBtn>
+            </RuiButton>
           </template>
         </VTextField>
       </VCol>

@@ -164,9 +164,15 @@ const warningUrl =
         </SettingsOption>
       </VCol>
       <VCol cols="auto">
-        <VBtn class="mt-2" icon :disabled="!changed" @click="confirmUpdated()">
+        <RuiButton
+          class="mt-2"
+          icon
+          variant="text"
+          :disabled="!changed"
+          @click="confirmUpdated()"
+        >
           <VIcon>mdi-content-save</VIcon>
-        </VBtn>
+        </RuiButton>
       </VCol>
     </VRow>
 

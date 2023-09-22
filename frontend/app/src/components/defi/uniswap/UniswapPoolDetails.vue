@@ -24,14 +24,15 @@ const getTotal = ({ totalAmount, usdPrice }: XswapAsset) =>
     <template #activator="{ on, attrs }">
       <VTooltip open-delay="400" top>
         <template #activator="{ on: tipOn, attrs: tipAttrs }">
-          <VBtn
+          <RuiButton
             icon
-            small
+            variant="text"
+            size="sm"
             v-bind="{ ...tipAttrs, ...attrs }"
             v-on="{ ...on, ...tipOn }"
           >
             <VIcon small color="primary">mdi-launch</VIcon>
-          </VBtn>
+          </RuiButton>
         </template>
         <span>{{ t('liquidity_pool_details.tooltip') }}</span>
       </VTooltip>

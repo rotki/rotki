@@ -53,16 +53,17 @@ const exportCSV = async () => {
   <span v-if="icon">
     <VTooltip top open-delay="400">
       <template #activator="{ on, attrs }">
-        <VBtn
+        <RuiButton
           icon
+          variant="text"
           v-bind="attrs"
-          small
+          size="sm"
           color="primary"
           v-on="on"
           @click="exportCSV()"
         >
           <VIcon small> mdi-export </VIcon>
-        </VBtn>
+        </RuiButton>
       </template>
       <span>
         {{
@@ -73,10 +74,10 @@ const exportCSV = async () => {
       </span>
     </VTooltip>
   </span>
-  <VBtn
+  <RuiButton
     v-else
     class="profit_loss_report__export-csv"
-    depressed
+    variant="default"
     color="primary"
     @click="exportCSV()"
   >
@@ -86,5 +87,5 @@ const exportCSV = async () => {
         ? t('profit_loss_report.export_csv')
         : t('profit_loss_report.download_csv')
     }}
-  </VBtn>
+  </RuiButton>
 </template>

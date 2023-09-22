@@ -573,10 +573,10 @@ const { locationData } = useLocations();
 <template>
   <div>
     <Card class="mt-8">
-      <VBtn
+      <RuiButton
         v-if="mainPage"
         absolute
-        fab
+        variant="fab"
         top
         right
         dark
@@ -585,7 +585,7 @@ const { locationData } = useLocations();
         @click="addTransactionHash()"
       >
         <VIcon>mdi-plus</VIcon>
-      </VBtn>
+      </RuiButton>
       <template #title>
         <RefreshButton
           :disabled="refreshing"
@@ -601,18 +601,17 @@ const { locationData } = useLocations();
               <VCol v-if="includeEvmEvents" cols="auto">
                 <VTooltip top>
                   <template #activator="{ on }">
-                    <VBtn
+                    <RuiButton
                       color="primary"
-                      depressed
+                      variant="default"
                       height="40px"
-                      small
                       :loading="eventTaskLoading"
                       :disabled="refreshing"
                       v-on="on"
                       @click="redecodeAllEvmEvents()"
                     >
                       <VIcon> mdi-select-compare </VIcon>
-                    </VBtn>
+                    </RuiButton>
                   </template>
                   <span>
                     {{ t('transactions.redecode_events.title') }}

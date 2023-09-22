@@ -98,9 +98,9 @@ const showDoneConfirmation = () => {
     <template v-if="dropdown">
       <VMenu offset-y>
         <template #activator="{ on }">
-          <VBtn color="primary" depressed v-on="on">
+          <RuiButton color="primary" variant="default" v-on="on">
             {{ t('asset_update.restore.title') }}
-          </VBtn>
+          </RuiButton>
         </template>
         <VList>
           <VListItem two-line link @click="showRestoreConfirmation('soft')">
@@ -129,29 +129,28 @@ const showDoneConfirmation = () => {
     <template v-else>
       <VTooltip top max-width="200">
         <template #activator="{ on }">
-          <VBtn
-            outlined
-            depressed
+          <RuiButton
+            variant="default"
             color="primary"
             v-on="on"
             @click="showRestoreConfirmation('soft')"
           >
             {{ t('asset_update.restore.soft_reset') }}
-          </VBtn>
+          </RuiButton>
         </template>
         <span>{{ t('asset_update.restore.soft_reset_hint') }}</span>
       </VTooltip>
       <VTooltip top max-width="200">
         <template #activator="{ on }">
-          <VBtn
+          <RuiButton
             class="ml-4"
-            depressed
+            variant="default"
             color="primary"
             v-on="on"
             @click="showRestoreConfirmation('hard')"
           >
             {{ t('asset_update.restore.hard_reset') }}
-          </VBtn>
+          </RuiButton>
         </template>
         <span>{{ t('asset_update.restore.hard_reset_hint') }}</span>
       </VTooltip>

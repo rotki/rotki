@@ -131,18 +131,19 @@ const autoCompleteHint: ComputedRef<string> = computed(() => {
           <VCol cols="auto">
             <VTooltip open-delay="400" top>
               <template #activator="{ on, attrs }">
-                <VBtn
+                <RuiButton
                   id="add-item-btn"
                   color="primary"
                   v-bind="attrs"
                   icon
+                  variant="text"
                   class="mt-3"
                   :disabled="!selection"
                   v-on="on"
                   @click="addItem()"
                 >
                   <VIcon>mdi-plus</VIcon>
-                </VBtn>
+                </RuiButton>
               </template>
               <span>
                 {{ t('prioritized_list.add_tooltip', itemNameTr) }}
@@ -176,26 +177,28 @@ const autoCompleteHint: ComputedRef<string> = computed(() => {
             <td>
               <div class="flex flex-col py-2">
                 <div>
-                  <VBtn
+                  <RuiButton
                     :id="'move-up-' + identifier"
                     icon
-                    small
+                    variant="text"
+                    size="sm"
                     :disabled="isFirst(identifier)"
                     @click="move(identifier, false)"
                   >
                     <VIcon>mdi-chevron-up</VIcon>
-                  </VBtn>
+                  </RuiButton>
                 </div>
                 <div>
-                  <VBtn
+                  <RuiButton
                     :id="'move-down-' + identifier"
                     icon
-                    small
+                    variant="text"
+                    size="sm"
                     :disabled="isLast(identifier)"
                     @click="move(identifier, true)"
                   >
                     <VIcon>mdi-chevron-down</VIcon>
-                  </VBtn>
+                  </RuiButton>
                 </div>
               </div>
             </td>
@@ -206,15 +209,16 @@ const autoCompleteHint: ComputedRef<string> = computed(() => {
             <td class="text-end">
               <VTooltip v-if="!disableDelete" open-delay="400" top>
                 <template #activator="{ on, attrs }">
-                  <VBtn
+                  <RuiButton
                     :id="'delete-' + identifier"
                     icon
+                    variant="text"
                     v-bind="attrs"
                     v-on="on"
                     @click="remove(identifier)"
                   >
                     <VIcon>mdi-close</VIcon>
-                  </VBtn>
+                  </RuiButton>
                 </template>
                 <span>
                   {{ t('prioritized_list.item.delete', itemNameTr) }}

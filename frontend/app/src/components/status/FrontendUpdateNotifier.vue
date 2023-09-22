@@ -62,15 +62,15 @@ const { t } = useI18n();
       <Card>
         <div class="pt-5 text-center">
           {{ t('update_notifier.update_available') }}
-          <VBtn
-            depressed
+          <RuiButton
+            variant="default"
             class="ml-6"
             color="primary"
             :loading="updating"
             @click="update()"
           >
             {{ t('common.actions.update') }}
-          </VBtn>
+          </RuiButton>
         </div>
       </Card>
     </VDialog>

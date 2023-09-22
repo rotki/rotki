@@ -160,8 +160,8 @@ const highlightedTextClasses = 'text-subtitle-2 text--secondary';
           :key="item.index"
           :tabindex="index"
         >
-          <VBtn
-            text
+          <RuiButton
+            variant="text"
             color="primary"
             :class="{
               [css.selected]: index === selectedSuggestion
@@ -172,7 +172,7 @@ const highlightedTextClasses = 'text-subtitle-2 text--secondary';
             <span class="text-start w-full">
               <SuggestedItem :suggestion="item" />
             </span>
-          </VBtn>
+          </RuiButton>
         </div>
       </div>
       <div v-else class="pb-0">

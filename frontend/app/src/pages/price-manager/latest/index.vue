@@ -115,9 +115,16 @@ onMounted(async () => {
       :asset-filter="assetFilter"
       @edit="openForm($event)"
     >
-      <VBtn absolute fab top right color="primary" @click="openForm()">
+      <RuiButton
+        absolute
+        variant="fab"
+        top
+        right
+        color="primary"
+        @click="openForm()"
+      >
         <VIcon> mdi-plus </VIcon>
-      </VBtn>
+      </RuiButton>
     </LatestPriceTable>
     <BigDialog
       :display="openDialog"

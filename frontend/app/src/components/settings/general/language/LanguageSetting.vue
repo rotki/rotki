@@ -96,9 +96,9 @@ const { languageContributeUrl } = useInterop();
         <VTooltip open-delay="400" bottom max-width="400">
           <template #activator="{ on }">
             <BaseExternalLink :href="languageContributeUrl">
-              <VBtn icon v-on="on">
+              <RuiButton icon variant="text" v-on="on">
                 <VIcon>mdi-account-edit</VIcon>
-              </VBtn>
+              </RuiButton>
             </BaseExternalLink>
           </template>
           <span>

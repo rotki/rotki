@@ -466,15 +466,15 @@ const tableContainer = computed(() => get(tableRef)?.$el);
         </div>
       </div>
       <VSpacer />
-      <VBtn text color="primary" class="mr-4" @click="add()">
+      <RuiButton variant="text" color="primary" class="mr-4" @click="add()">
         <VIcon class="mr-2">mdi-plus</VIcon>
         <span>
           {{ t('dashboard.snapshot.edit.dialog.actions.add_new_entry') }}
         </span>
-      </VBtn>
-      <VBtn color="primary" @click="updateStep(2)">
+      </RuiButton>
+      <RuiButton color="primary" @click="updateStep(2)">
         {{ t('common.actions.next') }}
-      </VBtn>
+      </RuiButton>
     </VSheet>
 
     <BigDialog

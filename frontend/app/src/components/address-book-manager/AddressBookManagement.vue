@@ -183,16 +183,9 @@ setSubmitFunc(save);
         </VCol>
         <VCol />
         <VCol cols="auto">
-          <VBtn
-            class="mr-2"
-            small
-            depressed
-            fab
-            color="primary"
-            @click="openForm()"
-          >
+          <RuiButton class="mr-2" size="sm" color="primary" @click="openForm()">
             <VIcon>mdi-plus</VIcon>
-          </VBtn>
+          </RuiButton>
         </VCol>
       </VRow>
 

@@ -31,16 +31,16 @@ const slots = useSlots();
 
     <VRow justify="end" class="mt-2">
       <VCol cols="auto" class="shrink">
-        <VBtn color="error" depressed @click="emit('cancel')">
+        <RuiButton color="error" variant="default" @click="emit('cancel')">
           <slot v-if="slots.cancel" name="cancel" />
           <span v-else> {{ t('common.actions.no') }} </span>
-        </VBtn>
+        </RuiButton>
       </VCol>
       <VCol cols="auto" class="shrink">
-        <VBtn color="success" depressed @click="emit('confirm')">
+        <RuiButton color="success" variant="default" @click="emit('confirm')">
           <slot v-if="slots.confirm" name="confirm" />
           <span v-else> {{ t('common.actions.yes') }} </span>
-        </VBtn>
+        </RuiButton>
       </VCol>
     </VRow>
   </VAlert>

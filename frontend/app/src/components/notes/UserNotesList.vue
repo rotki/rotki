@@ -195,17 +195,15 @@ onMounted(async () => {
   <Fragment>
     <div class="pa-4 pb-0">
       <div class="mb-4 flex items-center">
-        <VBtn
+        <RuiButton
           rounded
           color="primary"
-          fab
-          small
-          depressed
+          size="sm"
           :disabled="showUpgradeRow"
           @click="addNote()"
         >
           <VIcon>mdi-plus</VIcon>
-        </VBtn>
+        </RuiButton>
 
         <VTextField
           v-model="search"
@@ -259,10 +257,10 @@ onMounted(async () => {
                 <div class="font-bold note__title">
                   {{ note.title }}
                 </div>
-                <VBtn icon @click="togglePin(note)">
+                <RuiButton icon variant="text" @click="togglePin(note)">
                   <VIcon v-if="note.isPinned" color="primary">mdi-pin</VIcon>
                   <VIcon v-else color="gray">mdi-pin-outline</VIcon>
-                </VBtn>
+                </RuiButton>
               </div>
 
               <div class="text--secondary note__content">
@@ -277,13 +275,23 @@ onMounted(async () => {
                   {{ t('notes_menu.delete_confirmation') }}
                 </div>
                 <div>
-                  <VBtn icon small @click="clearDeleteDialog()">
+                  <RuiButton
+                    icon
+                    variant="text"
+                    size="sm"
+                    @click="clearDeleteDialog()"
+                  >
                     <VIcon small color="red">mdi-close</VIcon>
-                  </VBtn>
+                  </RuiButton>
 
-                  <VBtn icon small @click="confirmDelete()">
+                  <RuiButton
+                    icon
+                    variant="text"
+                    size="sm"
+                    @click="confirmDelete()"
+                  >
                     <VIcon small color="green">mdi-check</VIcon>
-                  </VBtn>
+                  </RuiButton>
                 </div>
               </div>
               <div v-else class="flex justify-between items-center pt-2">
@@ -295,13 +303,23 @@ onMounted(async () => {
                   </i18n>
                 </div>
                 <div>
-                  <VBtn icon small @click="editNote(note)">
+                  <RuiButton
+                    icon
+                    variant="text"
+                    size="sm"
+                    @click="editNote(note)"
+                  >
                     <VIcon small>mdi-pencil-outline</VIcon>
-                  </VBtn>
+                  </RuiButton>
 
-                  <VBtn icon small @click="deleteNote(note.identifier)">
+                  <RuiButton
+                    icon
+                    variant="text"
+                    size="sm"
+                    @click="deleteNote(note.identifier)"
+                  >
                     <VIcon small>mdi-delete-outline</VIcon>
-                  </VBtn>
+                  </RuiButton>
                 </div>
               </div>
             </VSheet>

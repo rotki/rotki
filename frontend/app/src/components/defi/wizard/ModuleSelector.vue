@@ -103,26 +103,24 @@ const disableAll = async () => {
     <template #search>
       <div class="flex flex-row">
         <div>
-          <VBtn
+          <RuiButton
             color="primary"
             :loading="loading"
-            depressed
+            variant="default"
             data-cy="modules_enable_all"
             @click="enableAll()"
           >
             {{ t('module_selector.actions.enable_all') }}
-          </VBtn>
-          <VBtn
+          </RuiButton>
+          <RuiButton
             color="primary"
-            depressed
-            outlined
-            text
+            variant="default"
             class="ml-2"
             data-cy="modules_disable_all"
             @click="disableAll()"
           >
             {{ t('module_selector.actions.disable_all') }}
-          </VBtn>
+          </RuiButton>
         </div>
         <VSpacer />
         <VTextField

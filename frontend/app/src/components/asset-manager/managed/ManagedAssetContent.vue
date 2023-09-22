@@ -170,8 +170,8 @@ watch(identifier, async assetId => {
       <VCol cols="auto">
         <VTooltip open-delay="400" top>
           <template #activator="{ on, attrs }">
-            <VBtn
-              outlined
+            <RuiButton
+              variant="outlined"
               color="primary"
               v-bind="attrs"
               v-on="on"
@@ -179,7 +179,7 @@ watch(identifier, async assetId => {
             >
               <VIcon class="mr-2">mdi-merge</VIcon>
               <span>{{ t('asset_management.merge_assets') }}</span>
-            </VBtn>
+            </RuiButton>
           </template>
           <span>{{ t('asset_management.merge_assets_tooltip') }}</span>
         </VTooltip>

@@ -96,9 +96,14 @@ const action = async (notification: NotificationData) => {
         </VListItemContent>
         <VTooltip bottom open-delay="400" z-index="9999">
           <template #activator="{ on }">
-            <VBtn text icon v-on="on" @click="dismiss(notification.id)">
+            <RuiButton
+              variant="text"
+              icon
+              v-on="on"
+              @click="dismiss(notification.id)"
+            >
               <VIcon>mdi-close</VIcon>
-            </VBtn>
+            </RuiButton>
           </template>
           <span>{{ t('notification.dismiss_tooltip') }}</span>
         </VTooltip>
@@ -118,24 +123,28 @@ const action = async (notification: NotificationData) => {
       <slot />
       <div class="flex mt-auto items-center ml-n1">
         <div v-if="notification.action" class="flex items-start mr-2">
-          <VBtn
+          <RuiButton
             color="primary"
-            depressed
-            small
+            variant="default"
             plain
-            text
             @click="action(notification)"
           >
             {{ notification.action.label }}
             <VIcon class="ml-1" small>mdi-arrow-right</VIcon>
-          </VBtn>
+          </RuiButton>
         </div>
         <VTooltip bottom open-delay="400" z-index="9999">
           <template #activator="{ on }">
-            <VBtn color="primary" small plain text v-on="on" @click="copy()">
+            <RuiButton
+              color="primary"
+              size="sm"
+              plain
+              v-on="on"
+              @click="copy()"
+            >
               {{ t('notification.copy') }}
               <VIcon class="ml-1" x-small>mdi-content-copy</VIcon>
-            </VBtn>
+            </RuiButton>
           </template>
           <span> {{ t('notification.copy_tooltip') }}</span>
         </VTooltip>

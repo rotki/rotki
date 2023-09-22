@@ -44,13 +44,11 @@ const { dark } = useTheme();
 
 <template>
   <Fragment>
-    <VBtn
-      small
+    <RuiButton
+      size="sm"
       rounded
-      block
-      depressed
       :color="dark ? null : 'grey lighten-3 grey--text text--darken-2'"
-      class="text-decoration-none"
+      class="text-decoration-none w-full"
       @click="openWatcherDialog()"
     >
       <VIcon x-small left>mdi-bell-outline</VIcon>
@@ -69,7 +67,7 @@ const { dark } = useTheme();
         {{ t('loan_collateral.watchers.add') }}
       </span>
       <PremiumLock v-if="!premium" x-small />
-    </VBtn>
+    </RuiButton>
     <WatcherDialog
       :display="showWatcherDialog"
       :title="t('loan_collateral.watchers.dialog.title')"

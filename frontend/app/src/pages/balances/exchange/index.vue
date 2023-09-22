@@ -92,139 +92,139 @@ const isBinance = computed(() => {
   );
 });
 
-const { xl, mdAndUp } = useDisplay();
+const { mdAndUp } = useDisplay();
 </script>
 
 <template>
-  <Card class="exchange-balances mt-8">
-    <template #title>
-      <RefreshButton
-        class="exchange-balances__refresh"
-        :loading="isExchangeLoading"
-        :tooltip="t('exchange_balances.refresh_tooltip')"
-        @refresh="refreshExchangeBalances()"
-      />
-      {{ t('exchange_balances.title') }}
-    </template>
-    <VBtn
-      v-blur
-      fixed
-      bottom
-      right
-      :fab="!xl"
-      :rounded="xl"
-      :x-large="xl"
-      color="primary"
-      to="/settings/api-keys/exchanges?add=true"
-    >
-      <VIcon> mdi-plus </VIcon>
-      <div v-if="xl" class="ml-2">
-        {{ t('exchange_balances.add_exchange') }}
-      </div>
-    </VBtn>
-    <VSheet outlined class="rounded-xl overflow-hidden">
-      <VRow
-        v-if="usedExchanges.length > 0"
-        no-gutters
-        class="exchange-balances__content"
+  <Fragment>
+    <div class="flex flex-row items-center">
+      <div class="grow" />
+      <RuiButton
+        v-blur
+        color="primary"
+        to="/settings/api-keys/exchanges?add=true"
       >
-        <VCol cols="12" class="hidden-md-and-up">
-          <VSelect
-            v-model="selectedExchange"
-            filled
-            :items="usedExchanges"
-            hide-details
-            :label="t('exchange_balances.select_exchange')"
-            class="exchange-balances__content__select"
-            @change="openExchangeDetails()"
-          >
-            <template #selection="{ item }">
-              <ExchangeAmountRow
-                :balance="exchangeBalance(item)"
-                :exchange="item"
-              />
-            </template>
-            <template #item="{ item }">
-              <ExchangeAmountRow
-                :balance="exchangeBalance(item)"
-                :exchange="item"
-              />
-            </template>
-          </VSelect>
-        </VCol>
-        <VCol cols="2" class="hidden-sm-and-down">
-          <VTabs
-            fixed-tabs
-            vertical
-            hide-slider
-            optional
-            class="exchange-balances__tabs"
-          >
-            <VTab
-              v-for="(usedExchange, i) in usedExchanges"
-              :key="i"
-              class="exchange-balances__tab text-none"
-              active-class="exchange-balances__tab--active"
-              :to="`/accounts-balances/exchange-balances/${usedExchange}`"
-              @click="selectedExchange = usedExchange"
+        <template #prepend>
+          <RuiIcon name="add-line"></RuiIcon>
+        </template>
+
+        {{ t('exchange_balances.add_exchange') }}
+      </RuiButton>
+    </div>
+    <Card class="exchange-balances mt-8">
+      <template #title>
+        <RefreshButton
+          class="exchange-balances__refresh"
+          :loading="isExchangeLoading"
+          :tooltip="t('exchange_balances.refresh_tooltip')"
+          @refresh="refreshExchangeBalances()"
+        />
+        {{ t('exchange_balances.title') }}
+      </template>
+      <VSheet outlined class="rounded-xl overflow-hidden">
+        <VRow
+          v-if="usedExchanges.length > 0"
+          no-gutters
+          class="exchange-balances__content"
+        >
+          <VCol cols="12" class="hidden-md-and-up">
+            <VSelect
+              v-model="selectedExchange"
+              filled
+              :items="usedExchanges"
+              hide-details
+              :label="t('exchange_balances.select_exchange')"
+              class="exchange-balances__content__select"
+              @change="openExchangeDetails()"
             >
-              <LocationDisplay :identifier="usedExchange" size="36px" />
-              <div class="exchange-balances__tab__amount d-block">
-                <AmountDisplay
-                  show-currency="symbol"
-                  fiat-currency="USD"
-                  :value="exchangeBalance(usedExchange)"
+              <template #selection="{ item }">
+                <ExchangeAmountRow
+                  :balance="exchangeBalance(item)"
+                  :exchange="item"
                 />
-              </div>
-            </VTab>
-          </VTabs>
-        </VCol>
-        <VCol :class="mdAndUp ? 'exchange-balances__balances' : null">
-          <div>
-            <div v-if="exchange">
-              <VTabs v-model="exchangeDetailTabs">
-                <VTab>{{ t('exchange_balances.tabs.balances') }}</VTab>
-                <VTab v-if="isBinance">{{
-                  t('exchange_balances.tabs.savings_interest_history')
-                }}</VTab>
-              </VTabs>
-
-              <VDivider />
-
-              <VTabsItems v-model="exchangeDetailTabs">
-                <VTabItem class="pa-4">
-                  <AssetBalances
-                    hide-breakdown
-                    :loading="isExchangeLoading"
-                    :balances="balances"
-                  />
-                </VTabItem>
-                <VTabItem v-if="isBinance" class="pa-4">
-                  <BinanceSavingDetail :exchange="exchange" />
-                </VTabItem>
-              </VTabsItems>
-            </div>
-
-            <div v-else class="pa-4">
-              {{ t('exchange_balances.select_hint') }}
-            </div>
-          </div>
-        </VCol>
-      </VRow>
-      <VRow v-else class="px-4 py-8">
-        <VCol>
-          <i18n path="exchange_balances.no_connected_exchanges">
-            <InternalLink
-              :to="Routes.API_KEYS_EXCHANGES"
-              class="module-not-active__link font-weight-regular text-body-1 text-decoration-none"
+              </template>
+              <template #item="{ item }">
+                <ExchangeAmountRow
+                  :balance="exchangeBalance(item)"
+                  :exchange="item"
+                />
+              </template>
+            </VSelect>
+          </VCol>
+          <VCol cols="2" class="hidden-sm-and-down">
+            <VTabs
+              fixed-tabs
+              vertical
+              hide-slider
+              optional
+              class="exchange-balances__tabs"
             >
-              {{ t('exchange_balances.click_here') }}
-            </InternalLink>
-          </i18n>
-        </VCol>
-      </VRow>
-    </VSheet>
-  </Card>
+              <VTab
+                v-for="(usedExchange, i) in usedExchanges"
+                :key="i"
+                class="exchange-balances__tab text-none"
+                active-class="exchange-balances__tab--active"
+                :to="`/accounts-balances/exchange-balances/${usedExchange}`"
+                @click="selectedExchange = usedExchange"
+              >
+                <LocationDisplay :identifier="usedExchange" size="36px" />
+                <div class="exchange-balances__tab__amount d-block">
+                  <AmountDisplay
+                    show-currency="symbol"
+                    fiat-currency="USD"
+                    :value="exchangeBalance(usedExchange)"
+                  />
+                </div>
+              </VTab>
+            </VTabs>
+          </VCol>
+          <VCol :class="mdAndUp ? 'exchange-balances__balances' : null">
+            <div>
+              <div v-if="exchange">
+                <VTabs v-model="exchangeDetailTabs">
+                  <VTab>{{ t('exchange_balances.tabs.balances') }}</VTab>
+                  <VTab v-if="isBinance">{{
+                    t('exchange_balances.tabs.savings_interest_history')
+                  }}</VTab>
+                </VTabs>
+
+                <VDivider />
+
+                <VTabsItems v-model="exchangeDetailTabs">
+                  <VTabItem class="pa-4">
+                    <AssetBalances
+                      hide-breakdown
+                      :loading="isExchangeLoading"
+                      :balances="balances"
+                    />
+                  </VTabItem>
+                  <VTabItem v-if="isBinance" class="pa-4">
+                    <BinanceSavingDetail :exchange="exchange" />
+                  </VTabItem>
+                </VTabsItems>
+              </div>
+
+              <div v-else class="pa-4">
+                {{ t('exchange_balances.select_hint') }}
+              </div>
+            </div>
+          </VCol>
+        </VRow>
+        <VRow v-else class="px-4 py-8">
+          <VCol>
+            <i18n path="exchange_balances.no_connected_exchanges">
+              <InternalLink
+                :to="Routes.API_KEYS_EXCHANGES"
+                class="module-not-active__link font-weight-regular text-body-1 text-decoration-none"
+              >
+                {{ t('exchange_balances.click_here') }}
+              </InternalLink>
+            </i18n>
+          </VCol>
+        </VRow>
+      </VSheet>
+    </Card>
+  </Fragment>
 </template>
 
 <style scoped lang="scss">

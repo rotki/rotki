@@ -75,15 +75,16 @@ const { navigate, isPackaged } = useInterop();
         </VRow>
       </template>
       <template #item.link="{ item }">
-        <VBtn
+        <RuiButton
           icon
+          variant="text"
           color="primary"
           :target="isPackaged ? undefined : '_blank'"
           :href="isPackaged ? undefined : item.link"
           @click="isPackaged ? navigate(item.link) : undefined"
         >
           <VIcon>mdi-link</VIcon>
-        </VBtn>
+        </RuiButton>
       </template>
     </DataTable>
   </TableExpandContainer>

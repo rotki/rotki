@@ -119,17 +119,18 @@ const css = useCssModule();
       <VCol cols="auto">
         <VTooltip open-delay="400" top>
           <template #activator="{ on, attrs }">
-            <VBtn
+            <RuiButton
               class="mt-n8"
               v-bind="attrs"
               icon
+              variant="text"
               :disabled="!source || pending"
               :loading="pending"
               v-on="on"
               @click="showConfirmation(source)"
             >
               <VIcon>mdi-delete</VIcon>
-            </VBtn>
+            </RuiButton>
           </template>
           <span> {{ t('data_management.purge_images_cache.tooltip') }} </span>
         </VTooltip>

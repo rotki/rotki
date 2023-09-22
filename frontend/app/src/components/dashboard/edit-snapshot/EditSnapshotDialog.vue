@@ -155,9 +155,9 @@ const updateAndComplete = (event: LocationDataSnapshot[]) => {
   <VDialog persistent :value="true" :max-width="1400">
     <VCard elevation="0">
       <VToolbar dark color="primary">
-        <VBtn icon dark @click="close()">
+        <RuiButton icon variant="text" dark @click="close()">
           <VIcon>mdi-close</VIcon>
-        </VBtn>
+        </RuiButton>
 
         <VToolbarTitle class="pl-2">
           <i18n path="dashboard.snapshot.edit.dialog.title">

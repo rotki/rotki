@@ -28,10 +28,12 @@ const { t } = useI18n();
         <template #activator="{ on, attrs }">
           <div v-bind="attrs" v-on="on">
             <VBtnToggle v-model="filterType" dense mandatory>
-              <VBtn value="validator">{{ t('eth2_page.toggle.key') }}</VBtn>
-              <VBtn value="address">
+              <RuiButton value="validator">{{
+                t('eth2_page.toggle.key')
+              }}</RuiButton>
+              <RuiButton value="address">
                 {{ t('eth2_page.toggle.depositor') }}
-              </VBtn>
+              </RuiButton>
             </VBtnToggle>
           </div>
         </template>

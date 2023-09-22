@@ -9,9 +9,9 @@ const { closeApp } = useInterop();
     :header="t('win_unsupported.header')"
     :alternative="t('win_unsupported.message')"
   >
-    <VBtn depressed color="primary" @click="closeApp()">
+    <RuiButton variant="default" color="primary" @click="closeApp()">
       {{ t('common.actions.terminate') }}
-    </VBtn>
+    </RuiButton>
   </ErrorScreen>
 </template>
 

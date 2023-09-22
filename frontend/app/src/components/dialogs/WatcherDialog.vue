@@ -311,14 +311,22 @@ const cancel = () => {
               />
             </VCol>
             <VCol class="flex items-center justify-between" cols="2">
-              <VBtn icon @click="editWatcher(loadedWatchers[key])">
+              <RuiButton
+                icon
+                variant="text"
+                @click="editWatcher(loadedWatchers[key])"
+              >
                 <VIcon small>
                   {{ existingWatchersIcon(watcher.identifier) }}
                 </VIcon>
-              </VBtn>
-              <VBtn icon @click="deleteWatcher(watcher.identifier)">
+              </RuiButton>
+              <RuiButton
+                icon
+                variant="text"
+                @click="deleteWatcher(watcher.identifier)"
+              >
                 <VIcon small> mdi-delete </VIcon>
-              </VBtn>
+              </RuiButton>
             </VCol>
           </VRow>
         </VCol>
@@ -358,13 +366,14 @@ const cancel = () => {
               />
             </VCol>
             <VCol class="flex items-center justify-center" cols="1">
-              <VBtn
+              <RuiButton
                 :disabled="watcherOperation === null || watcherValue === null"
                 icon
+                variant="text"
                 @click="addWatcher()"
               >
                 <VIcon> mdi-plus </VIcon>
-              </VBtn>
+              </RuiButton>
             </VCol>
           </VRow>
         </VCol>
@@ -376,14 +385,14 @@ const cancel = () => {
           >
             {{ validationMessage }}
           </div>
-          <VBtn
-            depressed
+          <RuiButton
+            variant="default"
             color="primary"
             class="watcher-dialog__buttons__close"
             @click="cancel()"
           >
             {{ t('common.actions.close') }}
-          </VBtn>
+          </RuiButton>
         </div>
       </template>
     </Card>

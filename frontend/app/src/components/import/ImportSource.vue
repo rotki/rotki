@@ -183,9 +183,9 @@ const isRotkiCustomImport = computed(() => get(source).startsWith('rotki_'));
           persistent-hint
         >
           <template #append>
-            <VBtn small icon @click="formatHelp = true">
+            <RuiButton size="sm" icon variant="text" @click="formatHelp = true">
               <VIcon small> mdi-information </VIcon>
-            </VBtn>
+            </RuiButton>
           </template>
         </VTextField>
 
@@ -202,16 +202,16 @@ const isRotkiCustomImport = computed(() => get(source).startsWith('rotki_'));
           </VRow>
         </div>
         <div class="mt-6">
-          <VBtn
+          <RuiButton
+            class="w-full"
             color="primary"
-            depressed
-            block
+            variant="default"
             data-cy="button-import"
             :disabled="v$.$invalid || !file || loading"
             @click="uploadFile()"
           >
             {{ t('common.actions.import') }}
-          </VBtn>
+          </RuiButton>
         </div>
       </VForm>
     </div>

@@ -44,7 +44,7 @@ const loading = isAccountOperationRunning();
       mandatory
       @change="update($event)"
     >
-      <VBtn
+      <RuiButton
         :value="InputMode.MANUAL_ADD"
         data-cy="input-mode-manual"
         :disabled="loading"
@@ -53,8 +53,8 @@ const loading = isAccountOperationRunning();
         <span class="hidden-sm-and-down ml-1">
           {{ t('input_mode_select.manual_add.label') }}
         </span>
-      </VBtn>
-      <VBtn
+      </RuiButton>
+      <RuiButton
         v-if="isSupportedEvmChain"
         :value="InputMode.METAMASK_IMPORT"
         :disabled="!isMetaMaskSupported() || loading"
@@ -67,13 +67,13 @@ const loading = isAccountOperationRunning();
         <span class="hidden-sm-and-down ml-1">
           {{ t('input_mode_select.metamask_import.label') }}
         </span>
-      </VBtn>
-      <VBtn v-if="isBitcoin" :value="InputMode.XPUB_ADD">
+      </RuiButton>
+      <RuiButton v-if="isBitcoin" :value="InputMode.XPUB_ADD">
         <VIcon>mdi-key-plus</VIcon>
         <span class="hidden-sm-and-down ml-1">
           {{ t('input_mode_select.xpub_add.label') }}
         </span>
-      </VBtn>
+      </RuiButton>
     </VBtnToggle>
     <p
       v-if="isSupportedEvmChain && isMetaMask"

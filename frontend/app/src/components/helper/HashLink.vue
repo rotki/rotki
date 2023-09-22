@@ -154,10 +154,10 @@ const { href, onLinkClick } = useLinks(url);
     <div class="flex items-center gap-1 pl-1">
       <VTooltip v-if="!linkOnly || buttons" top open-delay="600">
         <template #activator="{ on, attrs }">
-          <VBtn
-            :x-small="!small"
-            :small="small"
+          <RuiButton
+            :size="undefined ? 'sm' : undefined"
             icon
+            variant="text"
             v-bind="attrs"
             :width="!small ? '20px' : null"
             color="primary"
@@ -166,17 +166,17 @@ const { href, onLinkClick } = useLinks(url);
             @click="copy(text)"
           >
             <VIcon :x-small="!small" :small="small"> mdi-content-copy </VIcon>
-          </VBtn>
+          </RuiButton>
         </template>
         <span>{{ t('common.actions.copy') }}</span>
       </VTooltip>
       <VTooltip v-if="linkOnly || !noLink || buttons" top open-delay="600">
         <template #activator="{ on, attrs }">
-          <VBtn
+          <RuiButton
             v-if="!!base"
-            :x-small="!small"
-            :small="small"
+            :size="undefined ? 'sm' : undefined"
             icon
+            variant="text"
             v-bind="attrs"
             :width="!small ? '20px' : null"
             color="primary"
@@ -187,7 +187,7 @@ const { href, onLinkClick } = useLinks(url);
             @click="onLinkClick()"
           >
             <VIcon :x-small="!small" :small="small"> mdi-launch </VIcon>
-          </VBtn>
+          </RuiButton>
         </template>
         <div>
           <div>{{ t('hash_link.open_link') }}:</div>

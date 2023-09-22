@@ -6,8 +6,8 @@ const { isPackaged, premiumURL, navigateToPremium } = useInterop();
 <template>
   <VTooltip top>
     <template #activator="{ on }">
-      <VBtn
-        text
+      <RuiButton
+        variant="text"
         icon
         target="_blank"
         v-bind="$attrs"
@@ -16,7 +16,7 @@ const { isPackaged, premiumURL, navigateToPremium } = useInterop();
         @click="isPackaged ? navigateToPremium() : undefined"
       >
         <VIcon>mdi-lock</VIcon>
-      </VBtn>
+      </RuiButton>
     </template>
     <span v-text="t('premium_lock.tooltip')" />
   </VTooltip>

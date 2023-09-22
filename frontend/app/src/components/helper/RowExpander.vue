@@ -7,11 +7,11 @@ const click = () => emit('click');
 
 <template>
   <span>
-    <VBtn icon @click="click()">
+    <RuiButton icon variant="text" @click="click()">
       <VIcon :class="{ icon: true, 'icon--expanded': expanded }">
         mdi-chevron-down
       </VIcon>
-    </VBtn>
+    </RuiButton>
   </span>
 </template>
 

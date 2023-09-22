@@ -145,9 +145,15 @@ defineExpose({ removeFile });
         @dragleave="onLeave($event)"
       >
         <div v-if="error" class="flex flex-col items-center justify-center">
-          <VBtn icon small class="self-end" @click="error = ''">
+          <RuiButton
+            icon
+            variant="text"
+            size="sm"
+            class="self-end"
+            @click="error = ''"
+          >
             <VIcon>mdi-close</VIcon>
-          </VBtn>
+          </RuiButton>
           <VIcon x-large color="error">mdi-alert-circle</VIcon>
           <span class="error--text mt-2">{{ error }}</span>
         </div>
@@ -187,16 +193,14 @@ defineExpose({ removeFile });
                 </template>
               </i18n>
               <div>
-                <VBtn
+                <RuiButton
                   class="mt-2"
                   color="primary"
-                  small
-                  text
-                  outlined
+                  size="sm"
                   @click="clickSelect()"
                 >
                   {{ t('file_upload.change_file') }}
-                </VBtn>
+                </RuiButton>
               </div>
             </div>
             <div v-else>
@@ -204,16 +208,14 @@ defineExpose({ removeFile });
                 {{ t('file_upload.drop_area') }}
               </div>
               <div>
-                <VBtn
+                <RuiButton
                   class="mt-2"
                   color="primary"
-                  small
-                  text
-                  outlined
+                  size="sm"
                   @click="clickSelect()"
                 >
                   {{ t('file_upload.select_file') }}
-                </VBtn>
+                </RuiButton>
               </div>
             </div>
           </div>

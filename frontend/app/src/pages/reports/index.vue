@@ -184,9 +184,9 @@ const progress = computed(() => reportsStore.progress);
       :subtitle="t('profit_loss_report.error.subtitle')"
     >
       <template #bottom>
-        <VBtn text class="mt-2" @click="clearError()">
+        <RuiButton variant="text" class="mt-2" @click="clearError()">
           {{ t('common.actions.close') }}
-        </VBtn>
+        </RuiButton>
       </template>
     </ErrorScreen>
     <ReportsTable v-show="!isRunning && !reportError.message" class="mt-8" />
@@ -214,17 +214,21 @@ const progress = computed(() => reportsStore.progress);
             />
           </div>
           <div class="mt-2 flex justify-end">
-            <VBtn class="mr-4" depressed @click="importDataDialog = false">
+            <RuiButton
+              class="mr-4"
+              variant="default"
+              @click="importDataDialog = false"
+            >
               {{ t('common.actions.cancel') }}
-            </VBtn>
-            <VBtn
+            </RuiButton>
+            <RuiButton
               color="primary"
               :disabled="!reportDebugData"
               :loading="importDataLoading"
               @click="importData()"
             >
               {{ t('common.actions.import') }}
-            </VBtn>
+            </RuiButton>
           </div>
         </div>
       </Card>

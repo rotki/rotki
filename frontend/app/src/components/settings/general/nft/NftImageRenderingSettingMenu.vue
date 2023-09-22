@@ -1,9 +1,9 @@
 <template>
   <VMenu offset-x left min-width="500" :close-on-content-click="false">
     <template #activator="{ on }">
-      <VBtn icon v-on="on">
+      <RuiButton icon variant="text" v-on="on">
         <VIcon>mdi-cog</VIcon>
-      </VBtn>
+      </RuiButton>
     </template>
     <div class="pa-4">
       <NftImageRenderingSetting />

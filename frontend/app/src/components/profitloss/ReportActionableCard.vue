@@ -165,9 +165,9 @@ const { mdAndUp } = useDisplay();
         :height="isPinned ? 40 : 'auto'"
         :class="{ [$style['pinned__toolbar']]: isPinned }"
       >
-        <VBtn v-if="!isPinned" icon dark @click="close()">
+        <RuiButton v-if="!isPinned" icon variant="text" dark @click="close()">
           <VIcon>mdi-close</VIcon>
-        </VBtn>
+        </RuiButton>
 
         <VToolbarTitle
           :class="{
@@ -186,10 +186,11 @@ const { mdAndUp } = useDisplay();
 
         <VTooltip bottom>
           <template #activator="{ on }">
-            <VBtn
+            <RuiButton
               icon
+              variant="text"
               dark
-              :small="isPinned"
+              :size="isPinned ? 'sm' : undefined"
               v-on="on"
               @click="isPinned ? setPinned(null) : pinSection()"
             >
@@ -197,7 +198,7 @@ const { mdAndUp } = useDisplay();
                 mdi-pin-off
               </VIcon>
               <VIcon v-else :class="$style.pin">mdi-pin</VIcon>
-            </VBtn>
+            </RuiButton>
           </template>
           <span v-if="isPinned">
             {{ t('profit_loss_report.actionable.actions.unpin_section') }}
@@ -262,45 +263,44 @@ const { mdAndUp } = useDisplay();
                       <VSpacer />
 
                       <div class="flex" :class="isPinned ? 'flex-column' : ''">
-                        <VBtn
+                        <RuiButton
                           v-if="step > 1"
-                          :small="isPinned"
-                          text
+                          :size="isPinned ? 'sm' : undefined"
                           @click="step = step - 1"
                         >
                           {{ t('common.actions.back') }}
-                        </VBtn>
-                        <VBtn
+                        </RuiButton>
+                        <RuiButton
                           v-if="step < stepperContents.length"
                           class="ml-4"
                           color="primary"
-                          :small="isPinned"
+                          :size="isPinned ? 'sm' : undefined"
                           elevation="1"
                           @click="step = step + 1"
                         >
                           {{ t('common.actions.next') }}
-                        </VBtn>
+                        </RuiButton>
                         <template v-if="step === stepperContents.length">
-                          <VBtn
+                          <RuiButton
                             v-if="
                               !isPinned && content.key === 'missingAcquisitions'
                             "
                             color="primary"
-                            :small="isPinned"
+                            :size="isPinned ? 'sm' : undefined"
                             @click="setDialog(false)"
                           >
                             {{ t('common.actions.close') }}
-                          </VBtn>
-                          <VBtn
+                          </RuiButton>
+                          <RuiButton
                             v-else-if="content.key !== 'missingAcquisitions'"
                             :class="!isPinned ? 'ml-4' : ''"
                             color="primary"
-                            :small="isPinned"
+                            :size="isPinned ? 'sm' : undefined"
                             elevation="1"
                             @click="submitActionableItems(items)"
                           >
                             {{ t('common.actions.finish') }}
-                          </VBtn>
+                          </RuiButton>
                         </template>
                       </div>
                     </VSheet>
@@ -369,19 +369,23 @@ const { mdAndUp } = useDisplay();
         </div>
         <template #buttons>
           <VSpacer />
-          <VBtn text class="mr-2" @click="confirmationDialogOpen = false">
+          <RuiButton
+            variant="text"
+            class="mr-2"
+            @click="confirmationDialogOpen = false"
+          >
             {{ t('common.actions.cancel') }}
-          </VBtn>
-          <VBtn
+          </RuiButton>
+          <RuiButton
             v-if="filledMissingPrices"
             color="primary"
             @click="regenerateReport()"
           >
             {{ t('profit_loss_report.actionable.actions.regenerate_report') }}
-          </VBtn>
-          <VBtn v-else color="primary" @click="ignoreIssues()">
+          </RuiButton>
+          <RuiButton v-else color="primary" @click="ignoreIssues()">
             {{ t('common.actions.yes') }}
-          </VBtn>
+          </RuiButton>
         </template>
       </Card>
     </VDialog>

@@ -694,7 +694,7 @@ const css = useCssModule();
             [css['range__marker__limit--start']]: true
           }"
         >
-          <VBtn
+          <RuiButton
             :color="dark ? 'black' : 'white'"
             :ripple="false"
             :class="css['range__marker__limit__button']"
@@ -704,7 +704,7 @@ const css = useCssModule();
             <VIcon :class="css['range__marker__limit__button__icon']">
               mdi-equal
             </VIcon>
-          </VBtn>
+          </RuiButton>
         </div>
         <div
           :class="{
@@ -712,7 +712,7 @@ const css = useCssModule();
             [css['range__marker__limit--end']]: true
           }"
         >
-          <VBtn
+          <RuiButton
             :color="dark ? 'black' : 'white'"
             :ripple="false"
             :class="css['range__marker__limit__button']"
@@ -722,7 +722,7 @@ const css = useCssModule();
             <VIcon :class="css['range__marker__limit__button__icon']">
               mdi-equal
             </VIcon>
-          </VBtn>
+          </RuiButton>
         </div>
       </div>
     </div>

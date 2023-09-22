@@ -10,14 +10,12 @@ const { isPackaged, premiumURL, navigateToPremium } = useInterop();
   <div v-if="!premium" class="mr-2">
     <VTooltip bottom :disabled="!mobile">
       <template #activator="{ on }">
-        <VBtn
+        <RuiButton
           data-cy="get-premium-button"
           color="accent"
           rounded
-          :fab="mobile"
-          small
+          size="sm"
           class="py-4"
-          depressed
           target="_blank"
           :href="isPackaged ? undefined : premiumURL"
           v-on="on"
@@ -27,7 +25,7 @@ const { isPackaged, premiumURL, navigateToPremium } = useInterop();
             {{ t('premium_settings.get') }}
           </span>
           <RuiIcon name="vip-crown-line" />
-        </VBtn>
+        </RuiButton>
       </template>
       <span>{{ t('premium_settings.get') }}</span>
     </VTooltip>

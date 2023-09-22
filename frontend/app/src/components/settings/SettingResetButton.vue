@@ -7,9 +7,15 @@ const { t } = useI18n();
   <div class="mt-n2">
     <VTooltip top max-width="200">
       <template #activator="{ on, attrs }">
-        <VBtn icon v-bind="attrs" v-on="on" @click="emit('click')">
+        <RuiButton
+          icon
+          variant="text"
+          v-bind="attrs"
+          v-on="on"
+          @click="emit('click')"
+        >
           <VIcon>mdi-cog-counterclockwise</VIcon>
-        </VBtn>
+        </RuiButton>
       </template>
       <span>{{ t('backend_settings.actions.reset') }}</span>
     </VTooltip>

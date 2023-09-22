@@ -81,22 +81,23 @@ onMounted(() => {
         @change="callIfValid($event, update)"
       >
         <template #append>
-          <VBtn small icon @click="formatHelp = true">
+          <RuiButton size="sm" icon variant="text" @click="formatHelp = true">
             <VIcon small> mdi-information </VIcon>
-          </VBtn>
+          </RuiButton>
         </template>
         <template #append-outer>
           <VTooltip top open-delay="400">
             <template #activator="{ on, attrs }">
-              <VBtn
+              <RuiButton
                 class="general-settings__date-restore mt-n2"
                 icon
+                variant="text"
                 v-bind="attrs"
                 @click="update(defaultDateDisplayFormat)"
                 v-on="on"
               >
                 <VIcon> mdi-backup-restore </VIcon>
-              </VBtn>
+              </RuiButton>
             </template>
             <span>{{ t('general_settings.date_display_tooltip') }}</span>
           </VTooltip>

@@ -102,9 +102,9 @@ watch(value, () => {
         <VCol cols="auto">
           <VTooltip top>
             <template #activator="{ on }">
-              <VBtn
+              <RuiButton
                 icon
-                text
+                variant="text"
                 class="mt-2.5 service-key__content__delete"
                 :disabled="loading || !currentValue"
                 color="primary"
@@ -112,7 +112,7 @@ watch(value, () => {
                 @click="deleteKey()"
               >
                 <VIcon>mdi-delete</VIcon>
-              </VBtn>
+              </RuiButton>
             </template>
             <span>
               {{ tooltip }}
@@ -127,24 +127,24 @@ watch(value, () => {
       </VRow>
     </VCardText>
     <VCardActions class="service-key__buttons">
-      <VBtn
+      <RuiButton
         class="service-key__buttons__save"
-        depressed
+        variant="default"
         color="primary"
         :disabled="(editMode && currentValue === '') || loading"
         @click="saveHandler()"
       >
         {{ editMode ? t('common.actions.save') : t('common.actions.edit') }}
-      </VBtn>
-      <VBtn
+      </RuiButton>
+      <RuiButton
         v-if="editMode && cancellable"
         class="service-key__buttons__cancel"
-        depressed
+        variant="default"
         color="primary"
         @click="cancel()"
       >
         {{ t('common.actions.cancel') }}
-      </VBtn>
+      </RuiButton>
     </VCardActions>
   </VCard>
 </template>

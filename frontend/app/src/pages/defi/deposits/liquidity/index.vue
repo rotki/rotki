@@ -25,19 +25,19 @@ onMounted(() => {
       class="flex flex-row items-center justify-center liquidity__navigation"
     >
       <VBtnToggle v-model="path">
-        <VBtn
+        <RuiButton
           v-for="provider in providers"
           :key="provider.route"
           :to="provider.route"
           class="lp-navigation"
-          text
+          variant="text"
           :value="provider.route"
         >
           <AdaptiveWrapper class="me-2">
             <VImg contain width="24" height="24" :src="provider.image" />
           </AdaptiveWrapper>
           {{ provider.text }}
-        </VBtn>
+        </RuiButton>
       </VBtnToggle>
     </div>
     <div>

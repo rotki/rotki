@@ -7,8 +7,8 @@ const { t } = useI18n();
   <VTooltip bottom>
     <template #activator="{ on }">
       <VBadge color="transparent" offset-y="20" offset-x="20">
-        <VBtn
-          text
+        <RuiButton
+          variant="text"
           icon
           target="_blank"
           class="secondary--text text--lighten-4"
@@ -17,7 +17,7 @@ const { t } = useI18n();
           @click="onLinkClick()"
         >
           <VIcon>mdi-white-balance-sunny</VIcon>
-        </VBtn>
+        </RuiButton>
         <template #badge>
           <VIcon color="primary" small>mdi-lock</VIcon>
         </template>

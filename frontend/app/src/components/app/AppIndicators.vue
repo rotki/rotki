@@ -20,14 +20,15 @@ const { showPinned, showNotesSidebar, showNotificationBar, showHelpBar } =
     <VSpacer />
     <div class="flex overflow-hidden h-full items-center">
       <GetPremiumButton />
-      <VBtn
+      <RuiButton
         v-if="isDevelopment && smAndUp"
         class="secondary--text text--lighten-4"
         to="/playground"
         icon
+        variant="text"
       >
         <RuiIcon name="code-box-line" />
-      </VBtn>
+      </RuiButton>
       <AppUpdateIndicator />
       <UserNotesIndicator
         :visible="showNotesSidebar"

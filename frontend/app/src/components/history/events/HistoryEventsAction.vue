@@ -40,9 +40,9 @@ const resetEvent = (event: EvmHistoryEvent) => emit('reset', event);
       offset-y
     >
       <template #activator="{ on }">
-        <VBtn class="ml-1" icon v-on="on">
+        <RuiButton class="ml-1" icon variant="text" v-on="on">
           <VIcon>mdi-dots-vertical</VIcon>
-        </VBtn>
+        </RuiButton>
       </template>
       <VList>
         <VListItem link @click="addEvent(evmEvent)">

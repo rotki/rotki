@@ -224,18 +224,18 @@ const refreshHistoricalPrice = async (item: EditableMissingPrice) => {
                   :disabled="refreshing"
                 >
                   <template #activator="{ on }">
-                    <VBtn
+                    <RuiButton
                       :disabled="!!item.price || refreshing"
                       :loading="refreshing"
                       class="mr-n3"
-                      depressed
+                      variant="default"
                       height="100%"
                       color="primary"
                       v-on="on"
                       @click="refreshHistoricalPrice(item)"
                     >
                       <RuiIcon name="refresh-line" />
-                    </VBtn>
+                    </RuiButton>
                   </template>
                   <span>
                     {{

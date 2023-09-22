@@ -29,12 +29,12 @@ const { t } = useI18n();
     <template #title>{{ t('kraken_staking_received.title') }}</template>
     <template #details>
       <VBtnToggle v-model="current" dense mandatory>
-        <VBtn :value="true">
+        <RuiButton :value="true">
           {{ t('kraken_staking_received.switch.current') }}
-        </VBtn>
-        <VBtn :value="false">
+        </RuiButton>
+        <RuiButton :value="false">
           {{ t('kraken_staking_received.switch.historical') }}
-        </VBtn>
+        </RuiButton>
       </VBtnToggle>
     </template>
     <div :class="$style.received">

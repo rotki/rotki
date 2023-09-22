@@ -168,8 +168,9 @@ watch(errorMessages, errors => {
             <VTooltip open-delay="400" top>
               <template #activator="{ on, attrs }">
                 <div class="account-form__advanced">
-                  <VBtn
+                  <RuiButton
                     icon
+                    variant="text"
                     class="mt-n2"
                     v-bind="attrs"
                     v-on="on"
@@ -177,7 +178,7 @@ watch(errorMessages, errors => {
                   >
                     <VIcon v-if="advanced">mdi-chevron-up</VIcon>
                     <VIcon v-else>mdi-chevron-down</VIcon>
-                  </VBtn>
+                  </RuiButton>
                 </div>
               </template>
               <span>

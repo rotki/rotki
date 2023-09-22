@@ -209,9 +209,9 @@ const showRemoveConfirmation = (item: Exchange) => {
           />
         </i18n>
       </template>
-      <VBtn
+      <RuiButton
         absolute
-        fab
+        variant="fab"
         top
         right
         color="primary"
@@ -219,7 +219,7 @@ const showRemoveConfirmation = (item: Exchange) => {
         @click="addExchange()"
       >
         <VIcon> mdi-plus </VIcon>
-      </VBtn>
+      </RuiButton>
       <DataTable
         key="index"
         data-cy="exchange-table"

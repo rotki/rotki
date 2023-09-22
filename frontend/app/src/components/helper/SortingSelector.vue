@@ -34,8 +34,9 @@ const { t } = useI18n();
     <div>
       <VTooltip open-delay="400" top>
         <template #activator="{ on, attrs }">
-          <VBtn
+          <RuiButton
             icon
+            variant="text"
             v-bind="attrs"
             color="primary"
             @click="updateSortDesc()"
@@ -43,7 +44,7 @@ const { t } = useI18n();
           >
             <VIcon v-if="sortDescending">mdi-sort-descending</VIcon>
             <VIcon v-else>mdi-sort-ascending</VIcon>
-          </VBtn>
+          </RuiButton>
         </template>
         <span v-if="sortDescending">
           {{ t('sorting_selector.desc.sort_asc_tooltip') }}

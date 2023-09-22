@@ -79,17 +79,16 @@ const css = useCssModule();
   <div class="flex">
     <VTooltip top>
       <template #activator="{ on }">
-        <VBtn
+        <RuiButton
           icon
-          fab
-          x-small
+          size="sm"
           class="mr-2"
           :disabled="selection.length === 0"
           v-on="on"
           @click="addToSavedFilter()"
         >
           <VIcon>mdi-content-save-plus</VIcon>
-        </VBtn>
+        </RuiButton>
       </template>
       <div class="text-center" :class="css['add-tooltip']">
         <div
@@ -116,18 +115,16 @@ const css = useCssModule();
       <template #activator="{ on }">
         <VTooltip top>
           <template #activator="{ on: tooltipOn }">
-            <VBtn
+            <RuiButton
               color="primary"
-              x-small
-              fab
-              depressed
+              size="sm"
               v-on="{
                 ...on,
                 ...tooltipOn
               }"
             >
               <VIcon>mdi-filter-cog</VIcon>
-            </VBtn>
+            </RuiButton>
           </template>
           <span>{{ t('table_filter.saved_filters.actions.list') }}</span>
         </VTooltip>
@@ -150,16 +147,14 @@ const css = useCssModule();
             <div class="flex">
               <VTooltip top>
                 <template #activator="{ on }">
-                  <VBtn
+                  <RuiButton
                     color="green"
-                    fab
-                    x-small
-                    depressed
+                    size="sm"
                     v-on="on"
                     @click="applyFilter(filters)"
                   >
                     <VIcon color="white">mdi-filter-check</VIcon>
-                  </VBtn>
+                  </RuiButton>
                 </template>
                 <span>
                   {{ t('table_filter.saved_filters.actions.apply') }}
@@ -168,17 +163,16 @@ const css = useCssModule();
 
               <VTooltip top>
                 <template #activator="{ on }">
-                  <VBtn
+                  <RuiButton
                     icon
                     class="ml-2"
                     color="red"
-                    fab
-                    x-small
+                    size="sm"
                     v-on="on"
                     @click="deleteFilter(index)"
                   >
                     <VIcon>mdi-delete-outline</VIcon>
-                  </VBtn>
+                  </RuiButton>
                 </template>
                 <span>
                   {{ t('table_filter.saved_filters.actions.remove') }}
@@ -191,9 +185,9 @@ const css = useCssModule();
       <div v-else class="pa-4">
         <i18n path="table_filter.saved_filters.empty">
           <template #button>
-            <VBtn icon fab disabled small>
+            <RuiButton icon disabled size="sm">
               <VIcon>mdi-content-save-plus</VIcon>
-            </VBtn>
+            </RuiButton>
           </template>
         </i18n>
       </div>

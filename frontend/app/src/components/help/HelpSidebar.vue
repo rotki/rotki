@@ -99,9 +99,9 @@ const { smAndDown } = useDisplay();
     <VRow justify="space-between" class="mt-0 pa-4">
       <VCol class="text-h5">{{ t('help_sidebar.title') }}</VCol>
       <VCol cols="auto">
-        <VBtn icon @click="visibleUpdate(false)">
+        <RuiButton icon variant="text" @click="visibleUpdate(false)">
           <VIcon>mdi-close</VIcon>
-        </VBtn>
+        </RuiButton>
       </VCol>
     </VRow>
     <VList class="mt-2">

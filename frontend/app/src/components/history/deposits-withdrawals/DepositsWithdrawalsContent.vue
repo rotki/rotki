@@ -156,9 +156,9 @@ watch(loading, async (isLoading, wasLoading) => {
           />
           <div v-if="selected.length > 0" class="mt-2 ms-1">
             {{ t('deposits_withdrawals.selected', { count: selected.length }) }}
-            <VBtn small text @click="selected = []">
+            <RuiButton size="sm" @click="selected = []">
               {{ t('common.actions.clear_selection') }}
-            </VBtn>
+            </RuiButton>
           </div>
         </VCol>
         <VCol cols="12" sm="6">

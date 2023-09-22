@@ -44,18 +44,25 @@ const css = useCssModule();
       />
       <div v-if="selected.length > 0" class="mt-2 ms-1">
         {{ t('asset_table.selected', { count: selected.length }) }}
-        <VBtn small text @click="updateSelected([])">
+        <RuiButton size="sm" @click="updateSelected([])">
           {{ t('common.actions.clear_selection') }}
-        </VBtn>
+        </RuiButton>
       </div>
     </VCol>
     <VCol cols="12" md="6" class="pb-md-8">
       <VMenu offset-y :close-on-content-click="false">
         <template #activator="{ on }">
-          <VBtn outlined text height="40px" data-cy="asset-filter" v-on="on">
+          <RuiButton
+            variant="outlined"
+            height="40px"
+            data-cy="asset-filter"
+            v-on="on"
+          >
             {{ t('common.actions.filter') }}
-            <VIcon class="ml-2">mdi-chevron-down</VIcon>
-          </VBtn>
+            <template #append>
+              <RuiIcon name="arrow-down-s-line"></RuiIcon>
+            </template>
+          </RuiButton>
         </template>
         <VList>
           <VListItem

@@ -18,10 +18,9 @@ const { dark } = useTheme();
 
 <template>
   <div>
-    <VBtn
-      text
-      class="text-none text-body-1"
-      block
+    <RuiButton
+      variant="text"
+      class="text-none text-body-1 w-full"
       :class="[
         {
           [css.button]: true,
@@ -37,7 +36,7 @@ const { dark } = useTheme();
           {{ matcher.description }}
         </span>
       </span>
-    </VBtn>
+    </RuiButton>
   </div>
 </template>
 

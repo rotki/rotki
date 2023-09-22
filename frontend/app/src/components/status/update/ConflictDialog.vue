@@ -123,12 +123,20 @@ const cancel = () => {
           </VCol>
           <VCol cols="auto">
             <VRow no-gutters justify="end">
-              <VBtn text value="local" @click="setResolution('local')">
+              <RuiButton
+                variant="text"
+                value="local"
+                @click="setResolution('local')"
+              >
                 {{ t('conflict_dialog.keep_local') }}
-              </VBtn>
-              <VBtn text value="remote" @click="setResolution('remote')">
+              </RuiButton>
+              <RuiButton
+                variant="text"
+                value="remote"
+                @click="setResolution('remote')"
+              >
                 {{ t('conflict_dialog.keep_remote') }}
-              </VBtn>
+              </RuiButton>
             </VRow>
           </VCol>
         </VRow>
@@ -170,12 +178,12 @@ const cancel = () => {
         </template>
         <template #item.keep="{ item: conflict }">
           <VBtnToggle v-model="resolution[conflict.identifier]">
-            <VBtn class="conflict-dialog__action" value="local">
+            <RuiButton class="conflict-dialog__action" value="local">
               {{ t('conflict_dialog.action.local') }}
-            </VBtn>
-            <VBtn class="conflict-dialog__action" value="remote">
+            </RuiButton>
+            <RuiButton class="conflict-dialog__action" value="remote">
               {{ t('conflict_dialog.action.remote') }}
-            </VBtn>
+            </RuiButton>
           </VBtnToggle>
         </template>
       </DataTable>
@@ -185,19 +193,19 @@ const cancel = () => {
       <template #buttons>
         <VRow no-gutters justify="end">
           <VCol cols="auto">
-            <VBtn text @click="cancel()">
+            <RuiButton variant="text" @click="cancel()">
               {{ t('common.actions.cancel') }}
-            </VBtn>
+            </RuiButton>
           </VCol>
           <VCol cols="auto">
-            <VBtn
-              text
+            <RuiButton
+              variant="text"
               color="primary"
               :disabled="!valid"
               @click="resolve(resolution)"
             >
               {{ t('common.actions.confirm') }}
-            </VBtn>
+            </RuiButton>
           </VCol>
         </VRow>
       </template>

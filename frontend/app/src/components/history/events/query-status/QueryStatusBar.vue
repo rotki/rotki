@@ -19,19 +19,20 @@ const css = useCssModule();
     <td :colspan="colspan" class="py-2">
       <div class="flex">
         <div v-if="finished" class="pr-2">
-          <VBtn icon @click="emit('reset')">
+          <RuiButton icon variant="text" @click="emit('reset')">
             <VIcon>mdi-close</VIcon>
-          </VBtn>
+          </RuiButton>
         </div>
         <div class="pr-2">
-          <VBtn
+          <RuiButton
             v-if="items.length > 1 && !finished"
             icon
+            variant="text"
             @click="openStatusDropdown = !openStatusDropdown"
           >
             <VIcon v-if="openStatusDropdown"> mdi-chevron-up </VIcon>
             <VIcon v-else> mdi-chevron-down </VIcon>
-          </VBtn>
+          </RuiButton>
         </div>
         <div>
           <div

@@ -12,14 +12,14 @@ const resetState = 'Reset State ->';
 <template>
   <VApp id="rotki">
     <VAppBar app fixed>
-      <VBtn icon :to="Routes.DASHBOARD">
+      <RuiButton icon variant="text" :to="Routes.DASHBOARD">
         <VIcon>mdi-home</VIcon>
-      </VBtn>
+      </RuiButton>
       <VSpacer />
       <span> {{ resetState }}</span>
-      <VBtn icon class="ml-2" @click="reset()">
+      <RuiButton icon variant="text" class="ml-2" @click="reset()">
         <VIcon>mdi-delete</VIcon>
-      </VBtn>
+      </RuiButton>
     </VAppBar>
     <VMain>
       <VContainer>

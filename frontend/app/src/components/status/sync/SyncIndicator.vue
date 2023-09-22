@@ -226,10 +226,14 @@ const importSnapshot = async () => {
             <VDivider class="my-4" />
             <VRow>
               <VCol>
-                <VBtn color="primary" outlined @click="refreshAllAndSave()">
+                <RuiButton
+                  color="primary"
+                  variant="outlined"
+                  @click="refreshAllAndSave()"
+                >
                   <VIcon left>mdi-content-save</VIcon>
                   {{ t('sync_indicator.force_save') }}
-                </VBtn>
+                </RuiButton>
                 <VTooltip right max-width="300px">
                   <template #activator="{ on, attrs }">
                     <div v-bind="attrs" v-on="on">
@@ -268,10 +272,10 @@ const importSnapshot = async () => {
                   "
                 >
                   <template #activator="{ on }">
-                    <VBtn color="primary" outlined v-on="on">
+                    <RuiButton color="primary" variant="outlined" v-on="on">
                       <VIcon left>mdi-import</VIcon>
                       {{ t('common.actions.import') }}
-                    </VBtn>
+                    </RuiButton>
                   </template>
                   <Card>
                     <template #title>
@@ -329,21 +333,21 @@ const importSnapshot = async () => {
                     </div>
                     <template #buttons>
                       <VSpacer />
-                      <VBtn
+                      <RuiButton
                         color="primary"
-                        text
+                        variant="text"
                         @click="importSnapshotDialog = false"
                       >
                         {{ t('common.actions.cancel') }}
-                      </VBtn>
-                      <VBtn
+                      </RuiButton>
+                      <RuiButton
                         color="primary"
                         :disabled="!importFilesCompleted"
                         :loading="importSnapshotLoading"
                         @click="importSnapshot()"
                       >
                         {{ t('common.actions.import') }}
-                      </VBtn>
+                      </RuiButton>
                     </template>
                   </Card>
                 </VDialog>

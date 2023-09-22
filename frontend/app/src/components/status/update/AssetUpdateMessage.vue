@@ -116,14 +116,14 @@ const { t } = useI18n();
     <template #buttons>
       <VRow justify="end" no-gutters>
         <VCol cols="auto" class="mr-2">
-          <VBtn text @click="emit('dismiss', skipUpdate)">
+          <RuiButton variant="text" @click="emit('dismiss', skipUpdate)">
             {{ t('common.actions.skip') }}
-          </VBtn>
+          </RuiButton>
         </VCol>
         <VCol cols="auto">
-          <VBtn color="primary" depressed @click="emit('confirm')">
+          <RuiButton color="primary" variant="default" @click="emit('confirm')">
             {{ t('common.actions.update') }}
-          </VBtn>
+          </RuiButton>
         </VCol>
       </VRow>
     </template>

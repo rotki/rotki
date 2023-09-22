@@ -132,14 +132,15 @@ const mediaStyle: ComputedRef<StyleValue> = computed(() => {
 
       <VTooltip v-if="!renderImage" top max-width="200">
         <template #activator="{ on }">
-          <VBtn
+          <RuiButton
             icon
+            variant="text"
             :class="css['unlock-button']"
             @click="showAllowDomainConfirmation()"
             v-on="on"
           >
             <VIcon>mdi-camera-lock-open</VIcon>
-          </VBtn>
+          </RuiButton>
         </template>
         <span>
           {{ t('nft_gallery.allow_domain') }}

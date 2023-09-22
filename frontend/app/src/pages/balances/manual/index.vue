@@ -92,34 +92,25 @@ const context = computed(() => {
 });
 
 const threshold = [1];
-
-const { xl } = useDisplay();
 </script>
 
 <template>
   <Fragment>
-    <VRow justify="end" class="mb-5">
-      <VCol cols="auto">
-        <PriceRefresh />
-      </VCol>
-    </VRow>
-    <VBtn
-      v-blur
-      fixed
-      bottom
-      right
-      :fab="!xl"
-      :rounded="xl"
-      :x-large="xl"
-      color="primary"
-      class="manual-balances__add-balance"
-      @click="add()"
-    >
-      <VIcon> mdi-plus </VIcon>
-      <div v-if="xl" class="ml-2">
+    <div class="flex flex-row items-center gap-2">
+      <div class="grow" />
+      <PriceRefresh />
+      <RuiButton
+        v-blur
+        color="primary"
+        class="manual-balances__add-balance"
+        @click="add()"
+      >
+        <template #prepend>
+          <RuiIcon name="add-line" />
+        </template>
         {{ t('manual_balances.add_manual_balance') }}
-      </div>
-    </VBtn>
+      </RuiButton>
+    </div>
     <ManualBalanceTable
       v-intersect="{
         handler: observers.asset,
@@ -127,6 +118,7 @@ const { xl } = useDisplay();
           threshold
         }
       }"
+      class="mt-2"
       data-cy="manual-balances"
       :title="t('manual_balances.balances')"
       :balances="manualBalances"

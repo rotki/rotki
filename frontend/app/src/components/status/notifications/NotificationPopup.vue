@@ -62,9 +62,15 @@ const { dark } = useTheme();
       <VCol cols="auto">
         <VTooltip open-delay="400" top>
           <template #activator="{ on, attrs }">
-            <VBtn icon v-bind="attrs" v-on="on" @click="dismissAll()">
+            <RuiButton
+              icon
+              variant="text"
+              v-bind="attrs"
+              v-on="on"
+              @click="dismissAll()"
+            >
               <VIcon>mdi-notification-clear-all</VIcon>
-            </VBtn>
+            </RuiButton>
           </template>
           <span>{{ t('notification_popup.dismiss_all') }}</span>
         </VTooltip>

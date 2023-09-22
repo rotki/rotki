@@ -40,15 +40,16 @@ const { t } = useI18n();
 <template>
   <VTooltip v-if="canNavigateBack || page" open-delay="400" top>
     <template #activator="{ on, attrs }">
-      <VBtn
+      <RuiButton
         icon
+        variant="text"
         class="back-button__button"
         v-bind="attrs"
         v-on="on"
         @click="goBack()"
       >
         <RuiIcon name="arrow-left-line" />
-      </VBtn>
+      </RuiButton>
     </template>
     <span>{{ t('back_button.tooltip') }}</span>
   </VTooltip>

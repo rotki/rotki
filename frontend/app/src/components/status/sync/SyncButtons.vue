@@ -26,10 +26,9 @@ const action = (action: SyncAction) => {
   <div class="flex flex-wrap mx-n1">
     <VTooltip top open-delay="400">
       <template #activator="{ on, attrs }">
-        <VBtn
+        <RuiButton
           v-bind="attrs"
-          outlined
-          depressed
+          variant="default"
           class="ma-1"
           color="primary"
           :disabled="!premium || pending"
@@ -38,17 +37,16 @@ const action = (action: SyncAction) => {
         >
           <VIcon>mdi-cloud-upload</VIcon>
           <span class="ml-2">{{ t('common.actions.push') }}</span>
-        </VBtn>
+        </RuiButton>
       </template>
       <span>{{ t('sync_buttons.upload_tooltip') }}</span>
     </VTooltip>
 
     <VTooltip top open-delay="400">
       <template #activator="{ on, attrs }">
-        <VBtn
+        <RuiButton
           v-bind="attrs"
-          outlined
-          depressed
+          variant="default"
           class="ma-1"
           color="primary"
           :disabled="!premium || pending"
@@ -57,7 +55,7 @@ const action = (action: SyncAction) => {
         >
           <VIcon>mdi-cloud-download</VIcon>
           <span class="ml-2">{{ t('common.actions.pull') }}</span>
-        </VBtn>
+        </RuiButton>
       </template>
       <span>{{ t('sync_buttons.download_tooltip') }}</span>
     </VTooltip>

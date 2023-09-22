@@ -107,8 +107,8 @@ const change = async () => {
     </VForm>
 
     <template #buttons>
-      <VBtn
-        depressed
+      <RuiButton
+        variant="default"
         class="user-security-settings__buttons__change-password"
         color="primary"
         :loading="loading"
@@ -116,7 +116,7 @@ const change = async () => {
         @click="change()"
       >
         {{ t('change_password.button') }}
-      </VBtn>
+      </RuiButton>
     </template>
   </Card>
 </template>

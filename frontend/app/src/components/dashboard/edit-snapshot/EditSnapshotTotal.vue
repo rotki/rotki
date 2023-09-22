@@ -203,10 +203,9 @@ const css = useCssModule();
         </div>
         <div>
           <div v-for="(number, key) in suggestions" :key="key">
-            <VBtn
-              block
+            <RuiButton
               color="primary"
-              class="mb-4"
+              class="mb-4 w-full"
               :class="css.button"
               large
               @click="setTotal(number)"
@@ -221,7 +220,7 @@ const css = useCssModule();
                   fiat-currency="USD"
                 />
               </div>
-            </VBtn>
+            </RuiButton>
 
             <div v-if="key === 'location'" class="text--secondary text-caption">
               {{ t('dashboard.snapshot.edit.dialog.total.hint') }}
@@ -232,14 +231,14 @@ const css = useCssModule();
     </div>
     <VSheet elevation="10" class="flex justify-end pa-4">
       <VSpacer />
-      <VBtn class="mr-4" @click="updateStep(2)">
+      <RuiButton class="mr-4" @click="updateStep(2)">
         <VIcon>mdi-chevron-left</VIcon>
         {{ t('common.actions.back') }}
-      </VBtn>
-      <VBtn color="primary" @click="trySubmit()">
+      </RuiButton>
+      <RuiButton color="primary" @click="trySubmit()">
         {{ t('common.actions.finish') }}
         <VIcon>mdi-chevron-right</VIcon>
-      </VBtn>
+      </RuiButton>
     </VSheet>
   </div>
 </template>

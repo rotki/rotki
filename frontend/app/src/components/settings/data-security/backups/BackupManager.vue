@@ -238,23 +238,23 @@ const showMassDeleteConfirmation = () => {
         @remove="remove($event)"
       />
       <template #buttons>
-        <VBtn
-          depressed
+        <RuiButton
+          variant="default"
           color="primary"
           :disabled="saving"
           :loading="saving"
           @click="backup()"
         >
           {{ t('backup_manager.backup_button') }}
-        </VBtn>
-        <VBtn
+        </RuiButton>
+        <RuiButton
           v-if="selected.length > 0"
-          depressed
+          variant="default"
           color="error"
           @click="showMassDeleteConfirmation()"
         >
           {{ t('backup_manager.delete_selected') }}
-        </VBtn>
+        </RuiButton>
       </template>
     </Card>
   </Fragment>

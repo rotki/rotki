@@ -51,14 +51,14 @@ const loading = isAccountOperationRunning();
         class="mt-2"
         @change="updateSelection($event)"
       >
-        <VBtn
+        <RuiButton
           v-for="module in visibleModules"
           :key="module.identifier"
           icon
+          variant="text"
           :disabled="loading"
           :value="module.identifier"
           color="primary"
-          depressed
           cols="auto"
         >
           <VTooltip top open-delay="400">
@@ -74,7 +74,7 @@ const loading = isAccountOperationRunning();
             </template>
             <span>{{ module.name }}</span>
           </VTooltip>
-        </VBtn>
+        </RuiButton>
       </VBtnToggle>
       <div class="text-caption text--secondary mt-1 mb-2">
         {{ t('module_activator.hint') }}

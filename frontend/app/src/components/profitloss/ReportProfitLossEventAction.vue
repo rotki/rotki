@@ -84,9 +84,9 @@ const updatePrice = async () => {
   <div>
     <VMenu transition="slide-y-transaction" max-width="250px" offset-y>
       <template #activator="{ on }">
-        <VBtn class="ml-1" icon v-on="on">
+        <RuiButton class="ml-1" icon variant="text" v-on="on">
           <VIcon>mdi-dots-vertical</VIcon>
-        </VBtn>
+        </RuiButton>
       </template>
       <VList>
         <VListItem link @click="openEditHistoricPriceDialog()">
@@ -156,12 +156,12 @@ const updatePrice = async () => {
 
         <template #buttons>
           <VSpacer />
-          <VBtn depressed @click="showDialog = false">
+          <RuiButton variant="default" @click="showDialog = false">
             {{ t('common.actions.cancel') }}
-          </VBtn>
-          <VBtn color="primary" @click="updatePrice()">
+          </RuiButton>
+          <RuiButton color="primary" @click="updatePrice()">
             {{ t('price_form.update_price') }}
-          </VBtn>
+          </RuiButton>
         </template>
       </Card>
     </VDialog>

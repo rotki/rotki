@@ -370,9 +370,9 @@ const focus = () => {
           class="date-time-picker"
         >
           <template #activator="{ on }">
-            <VBtn icon class="mt-n2" v-on="on">
+            <RuiButton icon variant="text" class="mt-n2" v-on="on">
               <VIcon>mdi-earth</VIcon>
-            </VBtn>
+            </RuiButton>
           </template>
 
           <div :class="css.menu">
@@ -388,14 +388,15 @@ const focus = () => {
             />
           </div>
         </VMenu>
-        <VBtn
+        <RuiButton
           data-cy="date-time-picker__set-now-button"
           icon
+          variant="text"
           class="mt-n2"
           @click="setNow()"
         >
           <VIcon>mdi-clock-outline</VIcon>
-        </VBtn>
+        </RuiButton>
       </template>
     </VTextField>
   </div>

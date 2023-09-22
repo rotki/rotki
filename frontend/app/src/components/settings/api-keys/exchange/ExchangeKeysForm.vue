@@ -221,8 +221,9 @@ const v$ = setValidation(rules, exchange, { $autoDirty: true });
       {{ t('exchange_settings.keys') }}
       <VTooltip top open-delay="400">
         <template #activator="{ on, attrs }">
-          <VBtn
+          <RuiButton
             icon
+            variant="text"
             v-bind="attrs"
             class="ml-4"
             v-on="on"
@@ -230,7 +231,7 @@ const v$ = setValidation(rules, exchange, { $autoDirty: true });
           >
             <VIcon v-if="!editKeys">mdi-pencil-outline</VIcon>
             <VIcon v-else>mdi-close</VIcon>
-          </VBtn>
+          </RuiButton>
         </template>
         <span>
           {{

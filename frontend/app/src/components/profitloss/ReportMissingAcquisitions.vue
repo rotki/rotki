@@ -187,9 +187,9 @@ const isIgnored = (asset: string) => get(isAssetIgnored(asset));
       <template #item.action="{ item }">
         <VMenu offset-y>
           <template #activator="{ on }">
-            <VBtn icon v-on="on">
+            <RuiButton icon variant="text" v-on="on">
               <VIcon>mdi-dots-vertical</VIcon>
-            </VBtn>
+            </RuiButton>
           </template>
           <VList>
             <VListItem link @click="ignoreAsset(item.asset)">
@@ -238,9 +238,9 @@ const isIgnored = (asset: string) => get(isAssetIgnored(asset));
             <template #item.action="{ item: childItem }">
               <VMenu offset-y>
                 <template #activator="{ on }">
-                  <VBtn icon v-on="on">
+                  <RuiButton icon variant="text" v-on="on">
                     <VIcon>mdi-dots-vertical</VIcon>
-                  </VBtn>
+                  </RuiButton>
                 </template>
                 <VList>
                   <VListItem link @click="addLedgerAction(childItem)">

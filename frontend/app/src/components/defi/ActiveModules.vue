@@ -20,12 +20,6 @@ const supportedModules = SUPPORTED_MODULES;
 const { fetchQueriedAddresses } = useQueriedAddressesStore();
 const { update } = useSettingsStore();
 const { activeModules } = storeToRefs(useGeneralSettingsStore());
-const { dark } = useTheme();
-
-const style = computed(() => ({
-  background: get(dark) ? '#1E1E1E' : 'white',
-  width: `${get(modules).length * 38}px`
-}));
 
 const moduleStatus = computed(() => {
   const active = get(activeModules);
@@ -93,57 +87,42 @@ const showConfirmation = () => {
 </script>
 
 <template>
-  <VRow justify="end">
-    <VCol cols="auto">
-      <VSheet outlined :style="style">
-        <VRow align="center" justify="center" no-gutters>
-          <VCol
-            v-for="module in moduleStatus"
-            :key="module.identifier"
-            cols="auto"
+  <div class="flex flex-row items-center justify-end border rounded">
+    <div
+      v-for="module in moduleStatus"
+      :key="module.identifier"
+      class="flex flex-column"
+    >
+      <RuiTooltip open-delay="400" top>
+        <template #activator="{ on, attrs }">
+          <RuiButton
+            v-bind="attrs"
+            icon
+            variant="text"
+            :class="module.enabled ? null : 'active-modules__disabled'"
+            v-on="on"
+            @click="onModulePress(module)"
           >
-            <VTooltip open-delay="400" top>
-              <template #activator="{ on, attrs }">
-                <VBtn
-                  v-bind="attrs"
-                  icon
-                  :class="module.enabled ? null : 'active-modules__disabled'"
-                  v-on="on"
-                  @click="onModulePress(module)"
-                >
-                  <VImg
-                    width="24px"
-                    height="24px"
-                    contain
-                    :src="icon(module.identifier)"
-                  />
-                </VBtn>
-              </template>
-              <span v-if="module.enabled">
-                {{
-                  t('active_modules.view_addresses', getName(module.identifier))
-                }}
-              </span>
-              <span v-else>
-                {{ t('active_modules.activate', getName(module.identifier)) }}
-              </span>
-            </VTooltip>
-          </VCol>
-        </VRow>
-      </VSheet>
-      <QueriedAddressDialog
-        v-if="manageModule"
-        :module="manageModule"
-        @close="manageModule = null"
-      />
-    </VCol>
-  </VRow>
+            <VImg
+              width="24px"
+              height="24px"
+              contain
+              :src="icon(module.identifier)"
+            />
+          </RuiButton>
+        </template>
+        <span v-if="module.enabled">
+          {{ t('active_modules.view_addresses', getName(module.identifier)) }}
+        </span>
+        <span v-else>
+          {{ t('active_modules.activate', getName(module.identifier)) }}
+        </span>
+      </RuiTooltip>
+    </div>
+    <QueriedAddressDialog
+      v-if="manageModule"
+      :module="manageModule"
+      @close="manageModule = null"
+    />
+  </div>
 </template>
-
-<style scoped lang="scss">
-.active-modules {
-  &__disabled {
-    filter: grayscale(100%);
-  }
-}
-</style>

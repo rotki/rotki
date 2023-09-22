@@ -12,10 +12,10 @@ const css = useCssModule();
 <template>
   <VDialog width="1200">
     <template #activator="{ on }">
-      <VBtn text class="ml-4" v-on="on">
+      <RuiButton variant="text" class="ml-4" v-on="on">
         {{ t('common.details') }}
         <VIcon small>mdi-chevron-right</VIcon>
-      </VBtn>
+      </RuiButton>
     </template>
     <template #default="dialog">
       <VCard :class="css.card">
@@ -23,9 +23,9 @@ const css = useCssModule();
           <div>
             <slot name="title" />
           </div>
-          <VBtn icon @click="dialog.value = false">
+          <RuiButton icon variant="text" @click="dialog.value = false">
             <VIcon>mdi-close</VIcon>
-          </VBtn>
+          </RuiButton>
         </VCardTitle>
 
         <slot name="current" />

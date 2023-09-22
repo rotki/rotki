@@ -245,14 +245,14 @@ const css = useCssModule();
     </VCard>
 
     <div class="pt-8">
-      <VBtn
-        depressed
+      <RuiButton
+        variant="default"
         color="primary"
         data-cy="add-node"
         @click="setOpenDialog(true)"
       >
         {{ t('evm_rpc_node_manager.add_button') }}
-      </VBtn>
+      </RuiButton>
     </div>
   </div>
 </template>

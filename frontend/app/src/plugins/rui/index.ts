@@ -1,6 +1,7 @@
 import {
   RiAccountCircleLine,
   RiAddCircleLine,
+  RiAddLine,
   RiArrowDownLine,
   RiArrowDownSLine,
   RiArrowLeftLine,
@@ -21,6 +22,7 @@ import {
   RiDeleteBinFill,
   RiExchangeBoxLine,
   RiExchangeLine,
+  RiExternalLinkLine,
   RiEye2Line,
   RiEyeLine,
   RiEyeOffLine,
@@ -122,6 +124,8 @@ Vue.use(RuiPlugin, {
     RiShuffleLine,
     RiSave2Fill,
     RiDeleteBinFill,
-    RiInformationLine
+    RiInformationLine,
+    RiAddLine,
+    RiExternalLinkLine
   ]
 });

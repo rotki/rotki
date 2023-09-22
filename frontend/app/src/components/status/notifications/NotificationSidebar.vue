@@ -64,9 +64,9 @@ const { hasRunningTasks } = storeToRefs(useTaskStore());
         <VCol cols="auto">
           <VTooltip bottom>
             <template #activator="{ on }">
-              <VBtn text icon v-on="on" @click="close()">
+              <RuiButton variant="text" icon v-on="on" @click="close()">
                 <VIcon>mdi-chevron-right</VIcon>
-              </VBtn>
+              </RuiButton>
             </template>
             <span>{{ t('notification_sidebar.close_tooltip') }}</span>
           </VTooltip>
@@ -79,15 +79,15 @@ const { hasRunningTasks } = storeToRefs(useTaskStore());
           </span>
         </VCol>
         <VCol cols="auto">
-          <VBtn
-            text
+          <RuiButton
+            variant="text"
             class="text-caption text-lowercase"
             color="accent"
             :disabled="notifications.length === 0"
             @click="showConfirmation()"
           >
             {{ t('notification_sidebar.clear_tooltip') }}
-          </VBtn>
+          </RuiButton>
         </VCol>
       </VRow>
       <div

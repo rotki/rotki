@@ -255,8 +255,8 @@ const css = useCssModule();
       <VCol cols="auto">
         <VTooltip top>
           <template #activator="{ on }">
-            <VBtn
-              text
+            <RuiButton
+              variant="text"
               color="primary"
               class="mt-1 py-6"
               :disabled="submitting"
@@ -267,7 +267,7 @@ const css = useCssModule();
                 <VIcon large>mdi-pencil-circle-outline</VIcon>
                 <VIcon small class="mt-n4">mdi-plus</VIcon>
               </div>
-            </VBtn>
+            </RuiButton>
           </template>
           <span>
             {{ t('manual_balances_form.fields.create_a_custom_asset') }}

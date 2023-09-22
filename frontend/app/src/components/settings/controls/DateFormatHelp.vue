@@ -56,9 +56,9 @@ const description = (directive: string): string => {
       <template #subtitle>{{ t('date_format_help.subtitle') }}</template>
       <template #buttons>
         <VSpacer />
-        <VBtn depressed color="primary" @click="input(false)">
+        <RuiButton variant="default" color="primary" @click="input(false)">
           {{ t('common.actions.close') }}
-        </VBtn>
+        </RuiButton>
       </template>
       <div class="date-format-help__content">
         <div v-for="directive in directives" :key="directive" class="mt-2">

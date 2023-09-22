@@ -45,12 +45,17 @@ const { t } = useI18n();
       />
       <template #buttons>
         <VSpacer />
-        <VBtn depressed @click="close()">
+        <RuiButton variant="default" @click="close()">
           {{ t('common.actions.cancel') }}
-        </VBtn>
-        <VBtn depressed color="primary" :disabled="!valid" @click="save()">
+        </RuiButton>
+        <RuiButton
+          variant="default"
+          color="primary"
+          :disabled="!valid"
+          @click="save()"
+        >
           {{ t('common.actions.save') }}
-        </VBtn>
+        </RuiButton>
       </template>
     </Card>
   </VDialog>

@@ -176,19 +176,19 @@ const showDeleteConfirmation = () => {
         </div>
       </div>
       <template #buttons>
-        <VBtn color="primary" @click="editMode = true">
+        <RuiButton color="primary" @click="editMode = true">
           <VIcon class="mr-2">mdi-pencil-outline</VIcon>
           {{ t('common.actions.edit') }}
-        </VBtn>
-        <VBtn color="error" @click="showDeleteConfirmation()">
+        </RuiButton>
+        <RuiButton color="error" @click="showDeleteConfirmation()">
           <VIcon class="mr-2">mdi-delete-outline</VIcon>
           {{ t('common.actions.delete') }}
-        </VBtn>
+        </RuiButton>
         <VSpacer />
-        <VBtn color="primary" @click="exportSnapshot()">
+        <RuiButton color="primary" @click="exportSnapshot()">
           <VIcon class="mr-2">mdi-download</VIcon>
           {{ t('common.actions.download') }}
-        </VBtn>
+        </RuiButton>
       </template>
     </Card>
     <EditSnapshotDialog

@@ -126,30 +126,32 @@ const expand = (item: Report) => {
         <ExportReportCsv v-if="latestReport(item.identifier)" icon />
         <VTooltip top open-delay="400">
           <template #activator="{ on, attrs }">
-            <VBtn
+            <RuiButton
               icon
+              variant="text"
               color="primary"
               v-bind="attrs"
               :to="getReportUrl(item.identifier)"
               v-on="on"
             >
               <VIcon small>mdi-open-in-app</VIcon>
-            </VBtn>
+            </RuiButton>
           </template>
           <span>{{ t('reports_table.load.tooltip') }}</span>
         </VTooltip>
 
         <VTooltip top open-delay="400">
           <template #activator="{ on, attrs }">
-            <VBtn
+            <RuiButton
               icon
+              variant="text"
               color="primary"
               v-bind="attrs"
               @click="deleteReport(item.identifier)"
               v-on="on"
             >
               <VIcon small>mdi-delete</VIcon>
-            </VBtn>
+            </RuiButton>
           </template>
           <span>{{ t('reports_table.delete.tooltip') }}</span>
         </VTooltip>

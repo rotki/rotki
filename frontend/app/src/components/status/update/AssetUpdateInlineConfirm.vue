@@ -23,9 +23,9 @@ const { t } = useI18n();
 
     <template #buttons>
       <VSpacer />
-      <VBtn color="primary" depressed @click="emit('confirm')">
+      <RuiButton color="primary" variant="default" @click="emit('confirm')">
         {{ t('asset_update.success.ok') }}
-      </VBtn>
+      </RuiButton>
     </template>
   </Card>
 </template>

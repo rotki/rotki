@@ -11,9 +11,16 @@ const { copy } = useClipboard({ source: value });
 <template>
   <VTooltip top open-delay="400">
     <template #activator="{ on, attrs }">
-      <VBtn small v-bind="attrs" icon @click="copy()" v-on="on">
+      <RuiButton
+        size="sm"
+        v-bind="attrs"
+        icon
+        variant="text"
+        @click="copy()"
+        v-on="on"
+      >
         <VIcon small>mdi-content-copy</VIcon>
-      </VBtn>
+      </RuiButton>
     </template>
     <span>{{ tooltip }}</span>
   </VTooltip>

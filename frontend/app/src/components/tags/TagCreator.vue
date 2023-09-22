@@ -68,16 +68,16 @@ const randomize = () => {
       <TagIcon class="tag-creator__preview" :tag="tag" />
       <VTooltip bottom>
         <template #activator="{ on }">
-          <VBtn
+          <RuiButton
             icon
-            text
+            variant="text"
             class="tag-creator__random"
             color="primary"
             v-on="on"
             @click="randomize()"
           >
             <RuiIcon name="shuffle-line" />
-          </VBtn>
+          </RuiButton>
         </template>
         <span>
           {{ t('tag_creator.refresh_tooltip') }}
@@ -154,25 +154,25 @@ const randomize = () => {
     </VRow>
     <VRow class="mb-2">
       <VCol cols="12" class="flex justify-end">
-        <VBtn
+        <RuiButton
           v-if="editMode"
           class="mr-4"
           width="100"
-          depressed
+          variant="default"
           @click="cancel()"
         >
           {{ t('common.actions.cancel') }}
-        </VBtn>
-        <VBtn
+        </RuiButton>
+        <RuiButton
           class="tag-creator__buttons__save"
           width="100"
-          depressed
+          variant="default"
           color="primary"
           :disabled="v$.$invalid"
           @click="save()"
         >
           {{ t('common.actions.save') }}
-        </VBtn>
+        </RuiButton>
       </VCol>
     </VRow>
   </VForm>

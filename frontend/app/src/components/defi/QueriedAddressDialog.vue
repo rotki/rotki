@@ -111,21 +111,22 @@ const close = () => {
             />
           </VCol>
           <VCol cols="auto">
-            <VBtn
+            <RuiButton
               icon
+              variant="text"
               color="primary"
               :disabled="selectedAccounts.length === 0"
               @click="addAddress()"
             >
               <VIcon>mdi-plus</VIcon>
-            </VBtn>
+            </RuiButton>
           </VCol>
         </VRow>
       </template>
       <template #details>
-        <VBtn icon @click="close()">
+        <RuiButton icon variant="text" @click="close()">
           <VIcon>mdi-close</VIcon>
-        </VBtn>
+        </RuiButton>
       </template>
       <div v-if="addresses.length > 0" class="queried-address-dialog__list">
         <VRow
@@ -144,9 +145,10 @@ const close = () => {
           <VCol cols="auto">
             <VTooltip open-delay="400" top>
               <template #activator="{ on, attrs }">
-                <VBtn
-                  small
+                <RuiButton
+                  size="sm"
                   icon
+                  variant="text"
                   color="primary"
                   v-bind="attrs"
                   v-on="on"
@@ -158,7 +160,7 @@ const close = () => {
                   "
                 >
                   <VIcon>mdi-delete</VIcon>
-                </VBtn>
+                </RuiButton>
               </template>
               <span>{{ t('queried_address_dialog.remove_tooltip') }}</span>
             </VTooltip>

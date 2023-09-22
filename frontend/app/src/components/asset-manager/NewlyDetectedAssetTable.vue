@@ -110,33 +110,31 @@ const ignoreTokens = async (identifiers?: string[]) => {
     <template #actions>
       <div class="flex items-center">
         <div class="mr-8">
-          <VBtn outlined @click="selectDeselectAllTokens()">
+          <RuiButton variant="outlined" @click="selectDeselectAllTokens()">
             <VIcon>mdi-checkbox-multiple-marked-outline</VIcon>
             <span class="ml-2">
               {{ t('asset_table.newly_detected.select_deselect_all_tokens') }}
             </span>
-          </VBtn>
+          </RuiButton>
           <div class="flex mt-4">
             <div class="mr-4 mt-1">
               {{ t('asset_table.selected', { count: selected.length }) }}
             </div>
-            <VBtn
-              small
-              text
+            <RuiButton
+              size="sm"
               :disabled="selected.length === 0"
               @click="selected = []"
             >
               {{ t('common.actions.clear_selection') }}
-            </VBtn>
+            </RuiButton>
           </div>
         </div>
         <VDivider vertical class="mr-8" />
 
         <VTooltip bottom>
           <template #activator="{ on }">
-            <VBtn
-              fab
-              outlined
+            <RuiButton
+              variant="fab"
               color="green"
               class="mr-4"
               :disabled="selected.length === 0"
@@ -144,23 +142,22 @@ const ignoreTokens = async (identifiers?: string[]) => {
               v-on="on"
             >
               <VIcon> mdi-check </VIcon>
-            </VBtn>
+            </RuiButton>
           </template>
           <span>{{ t('asset_table.newly_detected.accept_selected') }}</span>
         </VTooltip>
 
         <VTooltip bottom>
           <template #activator="{ on }">
-            <VBtn
+            <RuiButton
               color="red"
-              fab
-              outlined
+              variant="fab"
               :disabled="selected.length === 0"
               @click="ignoreTokens()"
               v-on="on"
             >
               <VIcon>mdi-eye-off</VIcon>
-            </VBtn>
+            </RuiButton>
           </template>
           <span>
             {{ t('asset_table.newly_detected.ignore_selected') }}
@@ -199,15 +196,25 @@ const ignoreTokens = async (identifiers?: string[]) => {
       </template>
 
       <template #item.accept="{ item }">
-        <VBtn icon color="green" @click="removeTokens([item.tokenIdentifier])">
+        <RuiButton
+          icon
+          variant="text"
+          color="green"
+          @click="removeTokens([item.tokenIdentifier])"
+        >
           <VIcon> mdi-check </VIcon>
-        </VBtn>
+        </RuiButton>
       </template>
 
       <template #item.ignore="{ item }">
-        <VBtn icon color="red" @click="ignoreTokens([item.tokenIdentifier])">
+        <RuiButton
+          icon
+          variant="text"
+          color="red"
+          @click="ignoreTokens([item.tokenIdentifier])"
+        >
           <VIcon> mdi-eye-off </VIcon>
-        </VBtn>
+        </RuiButton>
       </template>
     </DataTable>
   </Card>

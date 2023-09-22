@@ -321,9 +321,9 @@ onMounted(async () => {
             {{ t('external_services.loopring.not_enabled') }}
           </VCol>
           <VCol class="shrink">
-            <VBtn to="/settings/modules" color="primary">
+            <RuiButton to="/settings/modules" color="primary">
               {{ t('external_services.loopring.settings') }}
-            </VBtn>
+            </RuiButton>
           </VCol>
         </VRow>
       </VAlert>

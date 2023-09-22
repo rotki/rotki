@@ -126,14 +126,15 @@ const { t } = useI18n();
       @click:clear="saveAddress()"
     >
       <template #append-outer>
-        <VBtn
+        <RuiButton
           icon
+          variant="text"
           :disabled="!isValid(address)"
           class="mt-n2"
           @click="saveAddress(address)"
         >
           <VIcon>mdi-content-save</VIcon>
-        </VBtn>
+        </RuiButton>
       </template>
     </VTextField>
     <VTextField
@@ -148,14 +149,15 @@ const { t } = useI18n();
       @click:clear="saveTransaction()"
     >
       <template #append-outer>
-        <VBtn
+        <RuiButton
           icon
+          variant="text"
           :disabled="!isValid(tx)"
           class="mt-n2"
           @click="saveTransaction(tx)"
         >
           <VIcon>mdi-content-save</VIcon>
-        </VBtn>
+        </RuiButton>
       </template>
     </VTextField>
     <VTextField
@@ -170,14 +172,15 @@ const { t } = useI18n();
       @click:clear="saveBlock()"
     >
       <template #append-outer>
-        <VBtn
+        <RuiButton
           icon
+          variant="text"
           :disabled="!isValid(block)"
           class="mt-n2"
           @click="saveBlock(block)"
         >
           <VIcon>mdi-content-save</VIcon>
-        </VBtn>
+        </RuiButton>
       </template>
     </VTextField>
   </div>

@@ -43,14 +43,14 @@ const { t } = useI18n();
   <div v-if="actionableItemsLength" class="flex">
     <VDialog v-model="mainDialogOpen" max-width="1000">
       <template #activator="{ on }">
-        <VBtn color="error" depressed v-on="on">
+        <RuiButton color="error" variant="default" v-on="on">
           <span class="pr-2">
             {{ t('profit_loss_report.actionable.show_issues') }}
           </span>
           <VChip x-small class="px-2" color="error darken-2">
             {{ actionableItemsLength }}
           </VChip>
-        </VBtn>
+        </RuiButton>
       </template>
       <ReportActionableCard
         v-if="mainDialogOpen"

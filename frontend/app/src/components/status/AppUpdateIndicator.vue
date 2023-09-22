@@ -52,9 +52,9 @@ const { t } = useI18n();
 <template>
   <VTooltip v-if="updateNeeded" bottom>
     <template #activator="{ on }">
-      <VBtn text icon @click="update()">
+      <RuiButton variant="text" icon @click="update()">
         <VIcon color="error" dark v-on="on"> mdi-arrow-up-bold-circle </VIcon>
-      </VBtn>
+      </RuiButton>
     </template>
     <span v-text="t('update_indicator.version', { appVersion })" />
   </VTooltip>

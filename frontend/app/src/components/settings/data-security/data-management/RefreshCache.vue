@@ -69,16 +69,17 @@ const { status, pending, showConfirmation } = useCacheClear<RefreshableCache>(
       <VCol cols="auto">
         <VTooltip open-delay="400" top>
           <template #activator="{ on, attrs }">
-            <VBtn
+            <RuiButton
               v-bind="attrs"
               icon
+              variant="text"
               :disabled="!source || pending"
               :loading="pending"
               v-on="on"
               @click="showConfirmation(source)"
             >
               <RuiIcon name="restart-line" />
-            </VBtn>
+            </RuiButton>
           </template>
           <span> {{ t('data_management.refresh_cache.tooltip') }} </span>
         </VTooltip>

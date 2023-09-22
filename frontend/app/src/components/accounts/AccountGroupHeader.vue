@@ -77,16 +77,17 @@ const editClicked = (_payload: XpubAccountWithBalance) =>
         <span class="text-subtitle-2">{{ label }}</span>
       </div>
       <div>
-        <VBtn
+        <RuiButton
           v-if="items.length > 0"
-          small
+          size="sm"
           icon
+          variant="text"
           @click="expandClicked({ ...xpub, balance })"
         >
           <VIcon v-if="expanded" small>mdi-chevron-up</VIcon>
           <VIcon v-else small>mdi-chevron-down</VIcon>
-        </VBtn>
-        <VBtn v-else small icon disabled />
+        </RuiButton>
+        <RuiButton v-else size="sm" icon variant="text" disabled />
         <span class="font-medium">
           {{ t('account_group_header.xpub') }}
         </span>
@@ -137,24 +138,31 @@ const editClicked = (_payload: XpubAccountWithBalance) =>
       <div class="flex">
         <VTooltip top>
           <template #activator="{ on, attrs }">
-            <VBtn
+            <RuiButton
               v-bind="attrs"
               icon
+              variant="text"
               :disabled="false"
               class="mx-1"
               v-on="on"
               @click="editClicked(xpub)"
             >
               <VIcon small> mdi-pencil-outline </VIcon>
-            </VBtn>
+            </RuiButton>
           </template>
           <span>{{ t('account_group_header.edit_tooltip') }}</span>
         </VTooltip>
         <VTooltip top open-delay="400">
           <template #activator="{ on }">
-            <VBtn icon class="mr-1" v-on="on" @click="deleteClicked(xpub)">
+            <RuiButton
+              icon
+              variant="text"
+              class="mr-1"
+              v-on="on"
+              @click="deleteClicked(xpub)"
+            >
               <VIcon small>mdi-delete-outline</VIcon>
-            </VBtn>
+            </RuiButton>
           </template>
           <span> {{ t('account_group_header.delete_tooltip') }} </span>
         </VTooltip>

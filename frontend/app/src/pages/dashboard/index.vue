@@ -62,12 +62,11 @@ const nftEnabled = isModuleEnabled(Module.NFTS);
           >
             <div v-if="exchanges.length === 0">
               <div class="px-6 pb-3">
-                <VBtn
-                  text
-                  block
+                <RuiButton
+                  variant="text"
                   color="primary"
                   :to="`${Routes.API_KEYS_EXCHANGES}?add=true`"
-                  class="py-8"
+                  class="py-8 w-full"
                 >
                   <div class="flex flex-col items-center">
                     <VIcon class="mb-2">mdi-plus-circle-outline</VIcon>
@@ -75,7 +74,7 @@ const nftEnabled = isModuleEnabled(Module.NFTS);
                       {{ t('dashboard.exchange_balances.add') }}
                     </span>
                   </div>
-                </VBtn>
+                </RuiButton>
               </div>
             </div>
             <div v-else>
@@ -101,12 +100,11 @@ const nftEnabled = isModuleEnabled(Module.NFTS);
             </template>
             <div v-if="blockchainTotals.length === 0">
               <div class="px-6 pb-3">
-                <VBtn
-                  text
-                  block
+                <RuiButton
+                  variant="text"
                   color="primary"
                   :to="`${Routes.ACCOUNTS_BALANCES}?add=true`"
-                  class="py-8"
+                  class="py-8 w-full"
                 >
                   <div class="flex flex-col items-center">
                     <VIcon class="mb-2">mdi-plus-circle-outline</VIcon>
@@ -114,7 +112,7 @@ const nftEnabled = isModuleEnabled(Module.NFTS);
                       {{ t('dashboard.blockchain_balances.add') }}
                     </span>
                   </div>
-                </VBtn>
+                </RuiButton>
               </div>
             </div>
             <div v-else data-cy="blockchain-balances">
@@ -137,12 +135,11 @@ const nftEnabled = isModuleEnabled(Module.NFTS);
           >
             <div v-if="manualBalanceByLocation.length === 0">
               <div class="px-6 pb-3">
-                <VBtn
-                  text
-                  block
+                <RuiButton
+                  variant="text"
                   color="primary"
                   :to="`${Routes.ACCOUNTS_BALANCES_MANUAL}?add=true`"
-                  class="py-8"
+                  class="py-8 w-full"
                 >
                   <div class="flex flex-col items-center">
                     <VIcon class="mb-2">mdi-plus-circle-outline</VIcon>
@@ -150,7 +147,7 @@ const nftEnabled = isModuleEnabled(Module.NFTS);
                       {{ t('dashboard.manual_balances.add') }}
                     </span>
                   </div>
-                </VBtn>
+                </RuiButton>
               </div>
             </div>
             <div v-else data-cy="manual-balances">

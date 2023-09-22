@@ -41,14 +41,17 @@ const disabled: ComputedRef<boolean> = computed(
 </script>
 
 <template>
-  <VBtn
-    outlined
+  <RuiButton
+    variant="outlined"
     color="primary"
     :loading="refreshing"
     :disabled="disabled"
     @click="refresh()"
   >
-    <RuiIcon name="refresh-line" class="mr-2" />
+    <template #prepend>
+      <RuiIcon name="refresh-line" />
+    </template>
+
     {{ t('price_refresh.button') }}
-  </VBtn>
+  </RuiButton>
 </template>

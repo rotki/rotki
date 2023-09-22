@@ -236,9 +236,16 @@ setPostSubmitFunc(() => refresh({ modified: true }));
       @edit="openForm($event)"
       @delete="showDeleteConfirmation($event)"
     >
-      <VBtn absolute fab top right color="primary" @click="openForm()">
+      <RuiButton
+        absolute
+        variant="fab"
+        top
+        right
+        color="primary"
+        @click="openForm()"
+      >
         <VIcon> mdi-plus </VIcon>
-      </VBtn>
+      </RuiButton>
     </HistoricPriceTable>
     <BigDialog
       :display="openDialog"

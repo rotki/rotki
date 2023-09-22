@@ -33,9 +33,13 @@ const navigateToDetails = async () => {
 
 <template>
   <div class="flex flex-row">
-    <VBtn :icon="icon" :text="text" @click="navigateToDetails()">
+    <RuiButton
+      :icon="icon"
+      :variant="text ? 'text' : undefined"
+      @click="navigateToDetails()"
+    >
       <slot />
-    </VBtn>
+    </RuiButton>
     <HashLink
       v-if="address && link"
       link-only

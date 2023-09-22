@@ -16,14 +16,14 @@ const { href, onLinkClick } = useLinks(url);
 </script>
 
 <template>
-  <VTooltip top open-delay="600">
+  <RuiTooltip top open-delay="600">
     <template #activator="{ on, attrs }">
-      <VBtn
-        small
+      <RuiButton
+        size="sm"
         :icon="!text"
-        :text="!!text"
         v-bind="attrs"
         color="primary"
+        variant="text"
         class="ml-2"
         :class="dark || text ? null : 'grey lighten-4'"
         :href="href"
@@ -32,9 +32,11 @@ const { href, onLinkClick } = useLinks(url);
         @click="onLinkClick()"
       >
         <span v-if="text" class="mr-2"> {{ text }}</span>
-        <VIcon :small="true"> mdi-launch </VIcon>
-      </VBtn>
+        <template #append>
+          <RuiIcon name="external-link-line" size="20" />
+        </template>
+      </RuiButton>
     </template>
     <span>{{ url }}</span>
-  </VTooltip>
+  </RuiTooltip>
 </template>

@@ -129,10 +129,15 @@ const regenerateReport = async () => {
           @regenerate="regenerateReport()"
         />
       </template>
-      <VBtn class="ml-2" color="primary" text @click="regenerateReport()">
+      <RuiButton
+        class="ml-2"
+        color="primary"
+        variant="text"
+        @click="regenerateReport()"
+      >
         <RuiIcon class="mr-2" name="refresh-line" />
         {{ t('profit_loss_report.actionable.actions.regenerate_report') }}
-      </VBtn>
+      </RuiButton>
     </div>
     <ProfitLossOverview
       class="mt-8"

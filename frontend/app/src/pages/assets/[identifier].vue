@@ -121,9 +121,9 @@ const collectionBalance: ComputedRef<AssetBalanceWithPrice[]> = computed(() => {
             />
           </VCol>
           <VCol v-if="!isCollectionParent" cols="auto">
-            <VBtn icon :to="editRoute">
+            <RuiButton icon variant="text" :to="editRoute">
               <VIcon>mdi-pencil</VIcon>
-            </VBtn>
+            </RuiButton>
           </VCol>
         </VRow>
       </VCol>

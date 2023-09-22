@@ -138,9 +138,9 @@ watch(loading, async (isLoading, wasLoading) => {
         @refresh="refreshNonFungibleBalances(true)"
       />
       {{ t('nft_balance_table.title') }}
-      <VBtn :to="nonFungibleRoute" icon class="ml-2">
+      <RuiButton :to="nonFungibleRoute" icon variant="text" class="ml-2">
         <VIcon>mdi-chevron-right</VIcon>
-      </VBtn>
+      </RuiButton>
     </template>
     <template #details>
       <VMenu

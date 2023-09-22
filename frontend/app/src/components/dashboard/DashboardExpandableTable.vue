@@ -9,8 +9,8 @@ const panel = computed<number>(() => (get(expanded) ? 0 : -1));
     <template #title>
       <div class="flex items-center">
         <div class="mr-2">
-          <VBtn
-            text
+          <RuiButton
+            variant="text"
             icon
             color="grey"
             class="px-0"
@@ -19,7 +19,7 @@ const panel = computed<number>(() => (get(expanded) ? 0 : -1));
           >
             <VIcon v-if="expanded">mdi-minus-box-outline</VIcon>
             <VIcon v-else>mdi-plus-box-outline</VIcon>
-          </VBtn>
+          </RuiButton>
         </div>
         <div class="flex items-center gap-x-2">
           <slot name="title" />

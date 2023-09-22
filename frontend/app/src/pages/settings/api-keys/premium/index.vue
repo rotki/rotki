@@ -156,9 +156,9 @@ const showDeleteConfirmation = () => {
         <template #buttons>
           <VRow align="center">
             <VCol cols="auto">
-              <VBtn
+              <RuiButton
                 class="premium-settings__button__setup"
-                depressed
+                variant="default"
                 color="primary"
                 type="submit"
                 @click="setupPremium()"
@@ -168,29 +168,28 @@ const showDeleteConfirmation = () => {
                     ? t('premium_settings.actions.replace')
                     : t('premium_settings.actions.setup')
                 }}
-              </VBtn>
+              </RuiButton>
             </VCol>
             <VCol v-if="premium && !edit" cols="auto">
-              <VBtn
+              <RuiButton
                 class="premium-settings__button__delete"
-                depressed
-                outlined
+                variant="default"
                 color="primary"
                 type="submit"
                 @click="showDeleteConfirmation()"
               >
                 {{ t('premium_settings.actions.delete') }}
-              </VBtn>
+              </RuiButton>
             </VCol>
             <VCol v-if="edit && premium" cols="auto">
-              <VBtn
+              <RuiButton
                 id="premium-edit-cancel-button"
-                depressed
+                variant="default"
                 color="primary"
                 @click="cancelEdit()"
               >
                 {{ t('common.actions.cancel') }}
-              </VBtn>
+              </RuiButton>
             </VCol>
             <VCol v-if="premium && !edit" cols="auto">
               <VSwitch

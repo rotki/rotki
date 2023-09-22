@@ -20,9 +20,14 @@ const { t } = useI18n();
       </i18n>
     </div>
     <template #buttons>
-      <VBtn depressed color="primary" :loading="loading" @click="emit('check')">
+      <RuiButton
+        variant="default"
+        color="primary"
+        :loading="loading"
+        @click="emit('check')"
+      >
         {{ t('asset_update.manual.check') }}
-      </VBtn>
+      </RuiButton>
     </template>
   </Card>
 </template>

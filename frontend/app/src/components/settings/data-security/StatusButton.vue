@@ -15,14 +15,14 @@ const rootListeners = useListeners();
     <VCol cols="auto">
       <VTooltip top>
         <template #activator="{ on, attrs }">
-          <VBtn
+          <RuiButton
             color="primary"
-            depressed
+            variant="default"
             v-bind="{ ...attrs, ...rootAttrs }"
             v-on="{ ...on, ...rootListeners }"
           >
             <slot />
-          </VBtn>
+          </RuiButton>
         </template>
         <span>{{ tooltip }}</span>
       </VTooltip>

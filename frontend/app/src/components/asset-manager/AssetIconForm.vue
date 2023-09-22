@@ -80,10 +80,8 @@ defineExpose({
         <VSheet outlined rounded class="asset-form__icon">
           <VTooltip v-if="preview && refreshable" right>
             <template #activator="{ on }">
-              <VBtn
-                fab
-                x-small
-                depressed
+              <RuiButton
+                size="sm"
                 class="asset-form__icon__refresh"
                 color="primary"
                 :loading="refreshIconLoading"
@@ -91,7 +89,7 @@ defineExpose({
                 @click="refreshIcon()"
               >
                 <RuiIcon name="refresh-line" />
-              </VBtn>
+              </RuiButton>
             </template>
             {{ t('asset_form.fetch_latest_icon.title') }}
           </VTooltip>

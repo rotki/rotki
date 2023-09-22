@@ -96,9 +96,9 @@ const getAsset = (item: CustomAsset) => ({
         </VCol>
       </VRow>
     </template>
-    <VBtn
+    <RuiButton
       absolute
-      fab
+      variant="fab"
       top
       right
       dark
@@ -107,7 +107,7 @@ const getAsset = (item: CustomAsset) => ({
       @click="add()"
     >
       <VIcon> mdi-plus </VIcon>
-    </VBtn>
+    </RuiButton>
     <DataTable
       :items="assets"
       :loading="loading"

@@ -128,16 +128,17 @@ const { status, pending, showConfirmation } = useCacheClear<Purgeable>(
       <VCol cols="auto">
         <VTooltip open-delay="400" top>
           <template #activator="{ on, attrs }">
-            <VBtn
+            <RuiButton
               v-bind="attrs"
               icon
+              variant="text"
               :disabled="!source || pending"
               :loading="pending"
               v-on="on"
               @click="showConfirmation(source)"
             >
               <VIcon>mdi-delete</VIcon>
-            </VBtn>
+            </RuiButton>
           </template>
           <span> {{ t('purge_selector.tooltip') }} </span>
         </VTooltip>

@@ -90,9 +90,14 @@ const showDeleteConfirmation = (selectedTag: Tag) => {
       {{ t('tag_manager.title') }}
     </template>
     <template v-if="dialog" #details>
-      <VBtn class="tag-manager__close" icon text @click="close()">
+      <RuiButton
+        class="tag-manager__close"
+        icon
+        variant="text"
+        @click="close()"
+      >
         <VIcon>mdi-close</VIcon>
-      </VBtn>
+      </RuiButton>
     </template>
     <template #subtitle>
       {{ t('tag_manager.subtitle') }}

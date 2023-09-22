@@ -214,14 +214,14 @@ const showDeleteConfirmation = (entry: OracleCacheMeta) => {
               />
             </VCol>
             <VCol cols="auto" class="pb-10 pr-8">
-              <VBtn icon large @click="clearFilter()">
+              <RuiButton icon variant="text" large @click="clearFilter()">
                 <VIcon>mdi-close</VIcon>
-              </VBtn>
+              </RuiButton>
             </VCol>
           </VRow>
           <VTooltip open-delay="400" top>
             <template #activator="{ on, attrs }">
-              <VBtn
+              <RuiButton
                 v-bind="attrs"
                 :loading="pending"
                 large
@@ -232,7 +232,7 @@ const showDeleteConfirmation = (entry: OracleCacheMeta) => {
               >
                 <VIcon class="mr-2">mdi-plus-circle</VIcon>
                 {{ t('oracle_cache_management.create_cache') }}
-              </VBtn>
+              </RuiButton>
             </template>
             <span>{{ t('oracle_cache_management.create_tooltip') }}</span>
           </VTooltip>
@@ -253,15 +253,16 @@ const showDeleteConfirmation = (entry: OracleCacheMeta) => {
           <template #item.actions="{ item }">
             <VTooltip open-delay="400" top>
               <template #activator="{ on, attrs }">
-                <VBtn
+                <RuiButton
                   color="primary"
                   v-bind="attrs"
                   icon
+                  variant="text"
                   v-on="on"
                   @click="showDeleteConfirmation(item)"
                 >
                   <VIcon>mdi-delete</VIcon>
-                </VBtn>
+                </RuiButton>
               </template>
               <span>{{ t('oracle_cache_management.delete_tooltip') }}</span>
             </VTooltip>

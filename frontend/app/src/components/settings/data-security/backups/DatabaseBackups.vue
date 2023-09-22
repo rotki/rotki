@@ -116,22 +116,24 @@ const showDeleteConfirmation = (item: UserDbBackup & { index: number }) => {
       <template #item.actions="{ item }">
         <VTooltip top>
           <template #activator="{ on, attrs }">
-            <VBtn
+            <RuiButton
               v-bind="attrs"
               icon
+              variant="text"
               class="mx-1"
               v-on="on"
               @click="showDeleteConfirmation(item)"
             >
               <VIcon small> mdi-delete-outline </VIcon>
-            </VBtn>
+            </RuiButton>
           </template>
           <span>{{ t('database_backups.action.delete') }}</span>
         </VTooltip>
         <VTooltip top>
           <template #activator="{ on, attrs }">
-            <VBtn
+            <RuiButton
               icon
+              variant="text"
               :href="getLink(item)"
               v-bind="attrs"
               class="mx-1"
@@ -139,7 +141,7 @@ const showDeleteConfirmation = (item: UserDbBackup & { index: number }) => {
               v-on="on"
             >
               <VIcon small> mdi-download </VIcon>
-            </VBtn>
+            </RuiButton>
           </template>
           <span>{{ t('database_backups.action.download') }}</span>
         </VTooltip>

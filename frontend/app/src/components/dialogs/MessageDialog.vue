@@ -59,14 +59,14 @@ const { t } = useI18n();
 
         <VCardActions>
           <VSpacer />
-          <VBtn
+          <RuiButton
             :color="success ? 'green' : 'red'"
-            text
+            variant="text"
             class="message-dialog__buttons__confirm"
             @click="dismiss()"
           >
             {{ t('common.actions.ok') }}
-          </VBtn>
+          </RuiButton>
         </VCardActions>
       </VCard>
     </VDialog>

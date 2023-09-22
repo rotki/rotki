@@ -48,9 +48,15 @@ const css = useCssModule();
         class="text-subtitle-1 font-bold pb-2 flex flex-row justify-between"
       >
         {{ t('overview.stat_card.headers.borrowing') }}
-        <VBtn :to="summary.liabilitiesUrl" icon small color="primary">
+        <RuiButton
+          :to="summary.liabilitiesUrl"
+          icon
+          variant="text"
+          size="sm"
+          color="primary"
+        >
           <VIcon small color="primary">mdi-launch</VIcon>
-        </VBtn>
+        </RuiButton>
       </span>
       <InfoRow
         :title="t('overview.stat_card.content.labels.total_collateral')"
@@ -69,15 +75,16 @@ const css = useCssModule();
         class="pb-2 flex flex-row justify-between text-subtitle-1 font-medium"
       >
         {{ t('common.deposits') }}
-        <VBtn
+        <RuiButton
           v-if="summary.depositsUrl"
           :to="summary.depositsUrl"
           icon
-          small
+          variant="text"
+          size="sm"
           color="primary"
         >
           <VIcon small color="primary">mdi-launch</VIcon>
-        </VBtn>
+        </RuiButton>
       </div>
       <InfoRow
         :title="t('overview.stat_card.content.labels.total_deposited')"
@@ -101,10 +108,10 @@ const css = useCssModule();
     <div class="flex justify-end">
       <VDialog v-model="details" scrollable max-width="450px">
         <template #activator="{ on, attrs }">
-          <VBtn small v-bind="attrs" text class="justify-end" v-on="on">
+          <RuiButton size="sm" v-bind="attrs" class="justify-end" v-on="on">
             {{ t('common.details') }}
             <VIcon color="primary" right>mdi-launch</VIcon>
-          </VBtn>
+          </RuiButton>
         </template>
         <VCard>
           <VCardTitle class="mb-2">

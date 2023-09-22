@@ -235,20 +235,20 @@ const showDeleteConfirmation = (item: IndexedLocationDataSnapshot) => {
         </div>
       </div>
       <VSpacer />
-      <VBtn text color="primary" class="mr-4" @click="add()">
+      <RuiButton variant="text" color="primary" class="mr-4" @click="add()">
         <VIcon class="mr-2">mdi-plus</VIcon>
         <span>
           {{ t('dashboard.snapshot.edit.dialog.actions.add_new_entry') }}
         </span>
-      </VBtn>
-      <VBtn class="mr-4" @click="updateStep(1)">
+      </RuiButton>
+      <RuiButton class="mr-4" @click="updateStep(1)">
         <VIcon>mdi-chevron-left</VIcon>
         {{ t('common.actions.back') }}
-      </VBtn>
-      <VBtn color="primary" @click="updateStep(3)">
+      </RuiButton>
+      <RuiButton color="primary" @click="updateStep(3)">
         {{ t('common.actions.next') }}
         <VIcon>mdi-chevron-right</VIcon>
-      </VBtn>
+      </RuiButton>
     </VSheet>
 
     <BigDialog

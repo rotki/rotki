@@ -56,9 +56,14 @@ const { t } = useI18n();
 <template>
   <VRow align="center">
     <VCol cols="auto">
-      <VBtn icon :disabled="value === 1" @click="previousPage()">
+      <RuiButton
+        icon
+        variant="text"
+        :disabled="value === 1"
+        @click="previousPage()"
+      >
         <VIcon>mdi-chevron-left</VIcon>
-      </VBtn>
+      </RuiButton>
     </VCol>
     <VCol cols="auto">
       <div
@@ -82,9 +87,14 @@ const { t } = useI18n();
     </VCol>
     <VCol cols="auto">{{ t('pagination.of', { length }) }}</VCol>
     <VCol cols="auto">
-      <VBtn icon :disabled="value === length" @click="nextPage()">
+      <RuiButton
+        icon
+        variant="text"
+        :disabled="value === length"
+        @click="nextPage()"
+      >
         <VIcon>mdi-chevron-right</VIcon>
-      </VBtn>
+      </RuiButton>
     </VCol>
   </VRow>
 </template>

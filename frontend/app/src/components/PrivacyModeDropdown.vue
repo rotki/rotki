@@ -60,16 +60,14 @@ watch([enabled, multiplier], setData);
         >
           <RuiIcon :name="privacyModeIcon" />
         </MenuTooltipButton>
-        <VBtn
+        <RuiButton
           data-cy="privacy-menu"
           class="privacy-mode-dropdown__expander pa-0"
-          depressed
-          fab
-          x-small
+          variant="default"
           v-on="on"
         >
           <RuiIcon size="16" name="arrow-down-s-line" />
-        </VBtn>
+        </RuiButton>
       </template>
       <VCard>
         <div class="slider-wrapper" :style="sliderWrapperStyle">

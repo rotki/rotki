@@ -120,9 +120,9 @@ const { smAndDown } = useDisplay();
           </VTabs>
         </VCol>
         <VCol cols="auto" class="pr-2">
-          <VBtn icon @click="visibleUpdate(false)">
+          <RuiButton icon variant="text" @click="visibleUpdate(false)">
             <VIcon>mdi-close</VIcon>
-          </VBtn>
+          </RuiButton>
         </VCol>
       </VRow>
     </VSheet>

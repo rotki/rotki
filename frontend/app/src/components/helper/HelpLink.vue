@@ -14,9 +14,10 @@ const { href, onLinkClick } = useLinks(url);
 <template>
   <VTooltip open-delay="400" top>
     <template #activator="{ attrs, on }">
-      <VBtn
+      <RuiButton
         icon
-        :small="small"
+        variant="text"
+        :size="small ? 'sm' : undefined"
         v-bind="attrs"
         :href="href"
         target="_blank"
@@ -24,7 +25,7 @@ const { href, onLinkClick } = useLinks(url);
         @click="onLinkClick()"
       >
         <VIcon :small="small">mdi-help-circle</VIcon>
-      </VBtn>
+      </RuiButton>
     </template>
     <span>{{ tooltip }}</span>
   </VTooltip>
