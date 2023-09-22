@@ -60,7 +60,7 @@ const css = useCssModule();
           >
             {{ t('common.actions.filter') }}
             <template #append>
-              <RuiIcon name="arrow-down-s-line"></RuiIcon>
+              <RuiIcon name="arrow-down-s-line" />
             </template>
           </RuiButton>
         </template>

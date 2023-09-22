@@ -13,7 +13,6 @@ const { t } = useI18n();
     <template #activator="{ on }">
       <RuiButton
         color="primary"
-        variant="default"
         :loading="isEvmAccountsDetecting"
         :disabled="isEvmAccountsDetecting"
         v-on="on"

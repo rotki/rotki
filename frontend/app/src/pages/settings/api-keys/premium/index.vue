@@ -158,7 +158,6 @@ const showDeleteConfirmation = () => {
             <VCol cols="auto">
               <RuiButton
                 class="premium-settings__button__setup"
-                variant="default"
                 color="primary"
                 type="submit"
                 @click="setupPremium()"
@@ -173,7 +172,6 @@ const showDeleteConfirmation = () => {
             <VCol v-if="premium && !edit" cols="auto">
               <RuiButton
                 class="premium-settings__button__delete"
-                variant="default"
                 color="primary"
                 type="submit"
                 @click="showDeleteConfirmation()"
@@ -184,7 +182,6 @@ const showDeleteConfirmation = () => {
             <VCol v-if="edit && premium" cols="auto">
               <RuiButton
                 id="premium-edit-cancel-button"
-                variant="default"
                 color="primary"
                 @click="cancelEdit()"
               >

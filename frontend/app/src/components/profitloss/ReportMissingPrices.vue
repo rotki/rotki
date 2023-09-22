@@ -228,7 +228,6 @@ const refreshHistoricalPrice = async (item: EditableMissingPrice) => {
                       :disabled="!!item.price || refreshing"
                       :loading="refreshing"
                       class="mr-n3"
-                      variant="default"
                       height="100%"
                       color="primary"
                       v-on="on"

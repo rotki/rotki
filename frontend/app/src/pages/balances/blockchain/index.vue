@@ -129,8 +129,8 @@ const showDetectEvmAccountsButton: Readonly<Ref<boolean>> = computedEager(
 </script>
 
 <template>
-  <div>
-    <div class="flex flex-row items-center gap-2">
+  <TablePage>
+    <template #header>
       <div class="grow" />
       <PriceRefresh />
       <RuiButton
@@ -144,8 +144,9 @@ const showDetectEvmAccountsButton: Readonly<Ref<boolean>> = computedEager(
         </template>
         {{ t('blockchain_balances.add_account') }}
       </RuiButton>
-    </div>
-    <Card class="blockchain-balances mt-8">
+    </template>
+
+    <Card class="blockchain-balances">
       <template #title>
         {{ t('blockchain_balances.title') }}
       </template>
@@ -342,5 +343,5 @@ const showDetectEvmAccountsButton: Readonly<Ref<boolean>> = computedEager(
       :data-cy="`blockchain-balances-${Blockchain.ARBITRUM_ONE}`"
       @edit-account="editAccount($event)"
     />
-  </div>
+  </TablePage>
 </template>

@@ -286,10 +286,7 @@ const sortNfts = (
         {{ t('nft_gallery.empty_filter') }}
       </div>
     </div>
-    <div
-      v-else
-      class="flex flex-row flex-wrap gap-2 mt-4"
-    >
+    <div v-else class="flex flex-row flex-wrap gap-2 mt-4">
       <NftGalleryItem
         v-for="item in visibleNfts"
         :key="item.tokenIdentifier"

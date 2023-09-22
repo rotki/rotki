@@ -246,7 +246,6 @@ const css = useCssModule();
 
     <div class="pt-8">
       <RuiButton
-        variant="default"
         color="primary"
         data-cy="add-node"
         @click="setOpenDialog(true)"

@@ -571,21 +571,17 @@ const { locationData } = useLocations();
 </script>
 
 <template>
-  <div>
-    <Card class="mt-8">
-      <RuiButton
-        v-if="mainPage"
-        absolute
-        variant="fab"
-        top
-        right
-        dark
-        color="primary"
-        data-cy="ledger-actions__add"
-        @click="addTransactionHash()"
-      >
-        <VIcon>mdi-plus</VIcon>
+  <TablePage>
+    <template #header>
+      <div class="grow" />
+      <RuiButton v-if="mainPage" color="primary" @click="addTransactionHash()">
+        <template #prepend>
+          <RuiIcon name="add-line" />
+        </template>
+        {{ t('transactions.dialog.add_tx') }}
       </RuiButton>
+    </template>
+    <Card class="mt-8">
       <template #title>
         <RefreshButton
           :disabled="refreshing"
@@ -603,7 +599,6 @@ const { locationData } = useLocations();
                   <template #activator="{ on }">
                     <RuiButton
                       color="primary"
-                      variant="default"
                       height="40px"
                       :loading="eventTaskLoading"
                       :disabled="refreshing"
@@ -782,5 +777,5 @@ const { locationData } = useLocations();
     />
 
     <TransactionFormDialog :loading="sectionLoading" />
-  </div>
+  </TablePage>
 </template>

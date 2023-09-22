@@ -56,7 +56,7 @@ const description = (directive: string): string => {
       <template #subtitle>{{ t('date_format_help.subtitle') }}</template>
       <template #buttons>
         <VSpacer />
-        <RuiButton variant="default" color="primary" @click="input(false)">
+        <RuiButton color="primary" @click="input(false)">
           {{ t('common.actions.close') }}
         </RuiButton>
       </template>

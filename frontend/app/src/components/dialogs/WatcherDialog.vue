@@ -386,7 +386,6 @@ const cancel = () => {
             {{ validationMessage }}
           </div>
           <RuiButton
-            variant="default"
             color="primary"
             class="watcher-dialog__buttons__close"
             @click="cancel()"

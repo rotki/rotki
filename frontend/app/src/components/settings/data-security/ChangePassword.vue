@@ -108,7 +108,6 @@ const change = async () => {
 
     <template #buttons>
       <RuiButton
-        variant="default"
         class="user-security-settings__buttons__change-password"
         color="primary"
         :loading="loading"

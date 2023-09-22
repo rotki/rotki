@@ -154,19 +154,12 @@ const randomize = () => {
     </VRow>
     <VRow class="mb-2">
       <VCol cols="12" class="flex justify-end">
-        <RuiButton
-          v-if="editMode"
-          class="mr-4"
-          width="100"
-          variant="default"
-          @click="cancel()"
-        >
+        <RuiButton v-if="editMode" class="mr-4" width="100" @click="cancel()">
           {{ t('common.actions.cancel') }}
         </RuiButton>
         <RuiButton
           class="tag-creator__buttons__save"
           width="100"
-          variant="default"
           color="primary"
           :disabled="v$.$invalid"
           @click="save()"

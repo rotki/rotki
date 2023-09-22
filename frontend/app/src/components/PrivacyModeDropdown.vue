@@ -63,7 +63,7 @@ watch([enabled, multiplier], setData);
         <RuiButton
           data-cy="privacy-menu"
           class="privacy-mode-dropdown__expander pa-0"
-          variant="default"
+          rounded
           v-on="on"
         >
           <RuiIcon size="16" name="arrow-down-s-line" />

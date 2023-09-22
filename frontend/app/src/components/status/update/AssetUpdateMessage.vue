@@ -121,7 +121,7 @@ const { t } = useI18n();
           </RuiButton>
         </VCol>
         <VCol cols="auto">
-          <RuiButton color="primary" variant="default" @click="emit('confirm')">
+          <RuiButton color="primary" @click="emit('confirm')">
             {{ t('common.actions.update') }}
           </RuiButton>
         </VCol>

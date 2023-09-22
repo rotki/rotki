@@ -35,7 +35,7 @@ const showMenu: Ref<boolean> = ref(false);
 
       <template #buttons>
         <VSpacer />
-        <RuiButton variant="default" color="primary" @click="showMenu = false">
+        <RuiButton color="primary" @click="showMenu = false">
           {{ t('common.actions.close') }}
         </RuiButton>
       </template>

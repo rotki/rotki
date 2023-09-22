@@ -76,18 +76,19 @@ const css = useCssModule();
 </script>
 
 <template>
-  <div class="flex">
-    <VTooltip top>
+  <div class="flex flex-row">
+    <RuiTooltip :popper="{ placement: 'top' }" open-delay="400">
       <template #activator="{ on }">
         <RuiButton
           icon
           size="sm"
           class="mr-2"
+          variant="text"
           :disabled="selection.length === 0"
           v-on="on"
           @click="addToSavedFilter()"
         >
-          <VIcon>mdi-content-save-plus</VIcon>
+          <RuiIcon name="save-line" />
         </RuiButton>
       </template>
       <div class="text-center" :class="css['add-tooltip']">
@@ -103,7 +104,7 @@ const css = useCssModule();
           </div>
         </div>
       </div>
-    </VTooltip>
+    </RuiTooltip>
 
     <VMenu
       v-model="open"
@@ -113,25 +114,27 @@ const css = useCssModule();
       :close-on-content-click="false"
     >
       <template #activator="{ on }">
-        <VTooltip top>
+        <RuiTooltip :popper="{ placement: 'top' }" open-delay="400">
           <template #activator="{ on: tooltipOn }">
             <RuiButton
               color="primary"
               size="sm"
+              variant="text"
+              icon
               v-on="{
                 ...on,
                 ...tooltipOn
               }"
             >
-              <VIcon>mdi-filter-cog</VIcon>
+              <RuiIcon name="filter-line" />
             </RuiButton>
           </template>
           <span>{{ t('table_filter.saved_filters.actions.list') }}</span>
-        </VTooltip>
+        </RuiTooltip>
       </template>
       <VList v-if="savedFilters.length > 0" class="py-4">
         <div v-for="(filters, index) in savedFilters" :key="index">
-          <VDivider v-if="index > 0" class="my-3" />
+          <div v-if="index > 0" class="my-3 border-b" />
           <div class="flex px-4">
             <div class="flex grow flex-wrap pr-4">
               <VChip
@@ -145,39 +148,42 @@ const css = useCssModule();
               </VChip>
             </div>
             <div class="flex">
-              <VTooltip top>
+              <RuiTooltip :popper="{ placement: 'top' }" open-delay="400">
                 <template #activator="{ on }">
                   <RuiButton
-                    color="green"
+                    color="success"
                     size="sm"
+                    variant="text"
+                    icon
                     v-on="on"
                     @click="applyFilter(filters)"
                   >
-                    <VIcon color="white">mdi-filter-check</VIcon>
+                    <RuiIcon name="filter-line" />
                   </RuiButton>
                 </template>
                 <span>
                   {{ t('table_filter.saved_filters.actions.apply') }}
                 </span>
-              </VTooltip>
+              </RuiTooltip>
 
-              <VTooltip top>
+              <RuiTooltip :popper="{ placement: 'top' }" open-delay="400">
                 <template #activator="{ on }">
                   <RuiButton
                     icon
+                    variant="text"
                     class="ml-2"
-                    color="red"
+                    color="error"
                     size="sm"
                     v-on="on"
                     @click="deleteFilter(index)"
                   >
-                    <VIcon>mdi-delete-outline</VIcon>
+                    <RuiIcon name="delete-bin-line" />
                   </RuiButton>
                 </template>
                 <span>
                   {{ t('table_filter.saved_filters.actions.remove') }}
                 </span>
-              </VTooltip>
+              </RuiTooltip>
             </div>
           </div>
         </div>
@@ -185,8 +191,8 @@ const css = useCssModule();
       <div v-else class="pa-4">
         <i18n path="table_filter.saved_filters.empty">
           <template #button>
-            <RuiButton icon disabled size="sm">
-              <VIcon>mdi-content-save-plus</VIcon>
+            <RuiButton icon variant="text" disabled size="sm">
+              <RuiIcon name="save-line" />
             </RuiButton>
           </template>
         </i18n>

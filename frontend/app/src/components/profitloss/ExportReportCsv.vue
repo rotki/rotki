@@ -77,7 +77,6 @@ const exportCSV = async () => {
   <RuiButton
     v-else
     class="profit_loss_report__export-csv"
-    variant="default"
     color="primary"
     @click="exportCSV()"
   >

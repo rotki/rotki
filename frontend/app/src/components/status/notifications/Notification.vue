@@ -123,12 +123,7 @@ const action = async (notification: NotificationData) => {
       <slot />
       <div class="flex mt-auto items-center ml-n1">
         <div v-if="notification.action" class="flex items-start mr-2">
-          <RuiButton
-            color="primary"
-            variant="default"
-            plain
-            @click="action(notification)"
-          >
+          <RuiButton color="primary" plain @click="action(notification)">
             {{ notification.action.label }}
             <VIcon class="ml-1" small>mdi-arrow-right</VIcon>
           </RuiButton>

@@ -205,7 +205,6 @@ const isRotkiCustomImport = computed(() => get(source).startsWith('rotki_'));
           <RuiButton
             class="w-full"
             color="primary"
-            variant="default"
             data-cy="button-import"
             :disabled="v$.$invalid || !file || loading"
             @click="uploadFile()"

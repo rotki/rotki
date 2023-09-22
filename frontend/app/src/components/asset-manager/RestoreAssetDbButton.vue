@@ -98,7 +98,7 @@ const showDoneConfirmation = () => {
     <template v-if="dropdown">
       <VMenu offset-y>
         <template #activator="{ on }">
-          <RuiButton color="primary" variant="default" v-on="on">
+          <RuiButton color="primary" v-on="on">
             {{ t('asset_update.restore.title') }}
           </RuiButton>
         </template>
@@ -130,7 +130,6 @@ const showDoneConfirmation = () => {
       <VTooltip top max-width="200">
         <template #activator="{ on }">
           <RuiButton
-            variant="default"
             color="primary"
             v-on="on"
             @click="showRestoreConfirmation('soft')"
@@ -144,7 +143,6 @@ const showDoneConfirmation = () => {
         <template #activator="{ on }">
           <RuiButton
             class="ml-4"
-            variant="default"
             color="primary"
             v-on="on"
             @click="showRestoreConfirmation('hard')"

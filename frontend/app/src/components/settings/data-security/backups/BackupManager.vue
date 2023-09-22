@@ -239,7 +239,6 @@ const showMassDeleteConfirmation = () => {
       />
       <template #buttons>
         <RuiButton
-          variant="default"
           color="primary"
           :disabled="saving"
           :loading="saving"
@@ -249,7 +248,6 @@ const showMassDeleteConfirmation = () => {
         </RuiButton>
         <RuiButton
           v-if="selected.length > 0"
-          variant="default"
           color="error"
           @click="showMassDeleteConfirmation()"
         >

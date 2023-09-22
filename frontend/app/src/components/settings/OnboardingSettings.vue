@@ -485,14 +485,13 @@ const showResetConfirmation = () => {
 
     <template #buttons>
       <VSpacer />
-      <RuiButton variant="default" @click="dismiss()">
+      <RuiButton @click="dismiss()">
         {{ t('common.actions.cancel') }}
       </RuiButton>
-      <RuiButton variant="default" @click="showResetConfirmation()">
+      <RuiButton @click="showResetConfirmation()">
         {{ t('backend_settings.actions.reset') }}
       </RuiButton>
       <RuiButton
-        variant="default"
         data-cy="onboarding-setting__submit-button"
         color="primary"
         :disabled="!anyValueChanged || !valid"

@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { type Ref } from 'vue';
-import Fragment from '@/components/helper/Fragment';
 import { type ManualBalance } from '@/types/manual-balances';
 import { BalanceType } from '@/types/balances';
 
@@ -95,8 +94,8 @@ const threshold = [1];
 </script>
 
 <template>
-  <Fragment>
-    <div class="flex flex-row items-center gap-2">
+  <TablePage>
+    <template #header>
       <div class="grow" />
       <PriceRefresh />
       <RuiButton
@@ -110,7 +109,8 @@ const threshold = [1];
         </template>
         {{ t('manual_balances.add_manual_balance') }}
       </RuiButton>
-    </div>
+    </template>
+
     <ManualBalanceTable
       v-intersect="{
         handler: observers.asset,
@@ -118,7 +118,6 @@ const threshold = [1];
           threshold
         }
       }"
-      class="mt-2"
       data-cy="manual-balances"
       :title="t('manual_balances.balances')"
       :balances="manualBalances"
@@ -152,5 +151,5 @@ const threshold = [1];
     >
       <ManualBalancesForm :edit="balanceToEdit" :context="context" />
     </BigDialog>
-  </Fragment>
+  </TablePage>
 </template>

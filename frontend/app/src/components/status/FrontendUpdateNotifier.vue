@@ -63,7 +63,6 @@ const { t } = useI18n();
         <div class="pt-5 text-center">
           {{ t('update_notifier.update_available') }}
           <RuiButton
-            variant="default"
             class="ml-6"
             color="primary"
             :loading="updating"

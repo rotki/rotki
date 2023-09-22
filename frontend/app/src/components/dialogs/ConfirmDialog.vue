@@ -81,7 +81,8 @@ const secondaryText = computed(
           <VSpacer />
           <RuiButton
             v-if="!singleAction"
-            variant="default"
+            variant="text"
+            color="primary"
             data-cy="button-cancel"
             @click="emit('cancel')"
           >
@@ -89,7 +90,6 @@ const secondaryText = computed(
           </RuiButton>
           <RuiButton
             :color="color"
-            variant="default"
             :disabled="disabled"
             data-cy="button-confirm"
             :loading="loading"

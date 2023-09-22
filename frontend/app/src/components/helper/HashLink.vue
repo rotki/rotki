@@ -47,7 +47,6 @@ const { scrambleData, shouldShowAmount, scrambleHex, scrambleIdentifier } =
   useScramble();
 
 const { explorers } = storeToRefs(useFrontendSettingsStore());
-const { dark } = useTheme();
 const { getChain } = useSupportedChains();
 
 const { addressNameSelector } = useAddressesNamesStore();
@@ -140,6 +139,7 @@ const { href, onLinkClick } = useLinks(url);
           <span
             :class="{ 'blur-content': !shouldShowAmount }"
             v-bind="attrs"
+            Ï
             v-on="on"
           >
             <span v-if="aliasName">{{ aliasName }}</span>
@@ -160,12 +160,10 @@ const { href, onLinkClick } = useLinks(url);
             variant="text"
             v-bind="attrs"
             :width="!small ? '20px' : null"
-            color="primary"
-            :class="dark ? null : 'grey lighten-4'"
             v-on="on"
             @click="copy(text)"
           >
-            <VIcon :x-small="!small" :small="small"> mdi-content-copy </VIcon>
+            <RuiIcon size="16px" name="file-copy-line" />
           </RuiButton>
         </template>
         <span>{{ t('common.actions.copy') }}</span>
@@ -179,14 +177,12 @@ const { href, onLinkClick } = useLinks(url);
             variant="text"
             v-bind="attrs"
             :width="!small ? '20px' : null"
-            color="primary"
-            :class="dark ? null : 'grey lighten-4'"
             :href="href"
             target="_blank"
             v-on="on"
             @click="onLinkClick()"
           >
-            <VIcon :x-small="!small" :small="small"> mdi-launch </VIcon>
+            <RuiIcon size="16px" name="external-link-line" />
           </RuiButton>
         </template>
         <div>

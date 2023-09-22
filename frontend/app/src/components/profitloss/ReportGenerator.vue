@@ -42,12 +42,7 @@ const isDevelopment = checkIfDevelopment();
       <template #details>
         <VTooltip top>
           <template #activator="{ on, attrs }">
-            <RuiButton
-              variant="default"
-              v-bind="attrs"
-              to="/settings/accounting"
-              v-on="on"
-            >
+            <RuiButton v-bind="attrs" to="/settings/accounting" v-on="on">
               <VIcon color="primary">mdi-cog</VIcon>
             </RuiButton>
           </template>
@@ -62,7 +57,6 @@ const isDevelopment = checkIfDevelopment();
               color="primary"
               class="px-8 w-full"
               large
-              variant="default"
               :disabled="!valid"
               @click="generate()"
             >
@@ -73,13 +67,7 @@ const isDevelopment = checkIfDevelopment();
           <VCol cols="auto">
             <VMenu v-if="isDevelopment" offset-y left>
               <template #activator="{ on }">
-                <RuiButton
-                  color="warning"
-                  variant="default"
-                  large
-                  class="px-4 ml-4"
-                  v-on="on"
-                >
+                <RuiButton color="warning" large class="px-4 ml-4" v-on="on">
                   <VIcon class="mr-2">mdi-wrench</VIcon>
                   {{ t('profit_loss_reports.debug.title') }}
                 </RuiButton>
@@ -110,7 +98,6 @@ const isDevelopment = checkIfDevelopment();
             <RuiButton
               v-else
               color="warning"
-              variant="default"
               large
               class="px-4 ml-4"
               @click="exportReportData()"

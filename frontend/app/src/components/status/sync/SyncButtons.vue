@@ -28,7 +28,6 @@ const action = (action: SyncAction) => {
       <template #activator="{ on, attrs }">
         <RuiButton
           v-bind="attrs"
-          variant="default"
           class="ma-1"
           color="primary"
           :disabled="!premium || pending"
@@ -46,7 +45,6 @@ const action = (action: SyncAction) => {
       <template #activator="{ on, attrs }">
         <RuiButton
           v-bind="attrs"
-          variant="default"
           class="ma-1"
           color="primary"
           :disabled="!premium || pending"

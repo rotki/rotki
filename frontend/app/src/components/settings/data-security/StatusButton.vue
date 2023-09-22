@@ -17,7 +17,6 @@ const rootListeners = useListeners();
         <template #activator="{ on, attrs }">
           <RuiButton
             color="primary"
-            variant="default"
             v-bind="{ ...attrs, ...rootAttrs }"
             v-on="{ ...on, ...rootListeners }"
           >

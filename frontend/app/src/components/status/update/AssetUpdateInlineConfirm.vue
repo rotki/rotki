@@ -23,7 +23,7 @@ const { t } = useI18n();
 
     <template #buttons>
       <VSpacer />
-      <RuiButton color="primary" variant="default" @click="emit('confirm')">
+      <RuiButton color="primary" @click="emit('confirm')">
         {{ t('asset_update.success.ok') }}
       </RuiButton>
     </template>

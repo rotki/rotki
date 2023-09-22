@@ -96,7 +96,7 @@ const v$ = useVuelidate(
       <template v-if="!done" #hint>{{ t('merge_dialog.hint') }}</template>
       <template #buttons>
         <VSpacer />
-        <RuiButton variant="default" @click="input(false)">
+        <RuiButton @click="input(false)">
           <span v-if="done">{{ t('common.actions.close') }}</span>
           <span v-else>
             {{ t('common.actions.cancel') }}
@@ -104,7 +104,6 @@ const v$ = useVuelidate(
         </RuiButton>
         <RuiButton
           v-if="!done"
-          variant="default"
           color="primary"
           :disabled="v$.$invalid || pending"
           :loading="pending"

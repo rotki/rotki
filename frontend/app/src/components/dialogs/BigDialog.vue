@@ -61,7 +61,6 @@ const cancel = () => emit('cancel');
         <VSpacer />
         <RuiButton
           color="primary"
-          variant="default"
           class="big-dialog__buttons__cancel"
           @click="cancel()"
         >
@@ -72,7 +71,6 @@ const cancel = () => emit('cancel');
           :color="themes[confirmType].color"
           :disabled="actionDisabled || loading"
           :loading="loading"
-          variant="default"
           class="big-dialog__buttons__confirm"
           @click="confirm()"
         >

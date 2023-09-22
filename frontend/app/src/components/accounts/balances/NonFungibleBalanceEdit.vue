@@ -45,15 +45,10 @@ const { t } = useI18n();
       />
       <template #buttons>
         <VSpacer />
-        <RuiButton variant="default" @click="close()">
+        <RuiButton @click="close()">
           {{ t('common.actions.cancel') }}
         </RuiButton>
-        <RuiButton
-          variant="default"
-          color="primary"
-          :disabled="!valid"
-          @click="save()"
-        >
+        <RuiButton color="primary" :disabled="!valid" @click="save()">
           {{ t('common.actions.save') }}
         </RuiButton>
       </template>

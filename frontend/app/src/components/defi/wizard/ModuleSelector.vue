@@ -106,7 +106,6 @@ const disableAll = async () => {
           <RuiButton
             color="primary"
             :loading="loading"
-            variant="default"
             data-cy="modules_enable_all"
             @click="enableAll()"
           >
@@ -114,7 +113,6 @@ const disableAll = async () => {
           </RuiButton>
           <RuiButton
             color="primary"
-            variant="default"
             class="ml-2"
             data-cy="modules_disable_all"
             @click="disableAll()"

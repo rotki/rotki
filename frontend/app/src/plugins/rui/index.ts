@@ -20,6 +20,7 @@ import {
   RiDatabase2Line,
   RiDatabaseLine,
   RiDeleteBinFill,
+  RiDeleteBinLine,
   RiExchangeBoxLine,
   RiExchangeLine,
   RiExternalLinkLine,
@@ -27,6 +28,8 @@ import {
   RiEyeLine,
   RiEyeOffLine,
   RiFileChartLine,
+  RiFileCopyLine,
+  RiFilterLine,
   RiFolderReceivedLine,
   RiGiftLine,
   RiHistoryLine,
@@ -46,6 +49,7 @@ import {
   RiRefreshLine,
   RiRestartLine,
   RiSave2Fill,
+  RiSaveLine,
   RiScalesFill,
   RiScalesLine,
   RiScreenshot2Line,
@@ -126,6 +130,10 @@ Vue.use(RuiPlugin, {
     RiDeleteBinFill,
     RiInformationLine,
     RiAddLine,
-    RiExternalLinkLine
+    RiExternalLinkLine,
+    RiSaveLine,
+    RiFilterLine,
+    RiDeleteBinLine,
+    RiFileCopyLine
   ]
 });

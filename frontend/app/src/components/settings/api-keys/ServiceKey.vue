@@ -129,7 +129,6 @@ watch(value, () => {
     <VCardActions class="service-key__buttons">
       <RuiButton
         class="service-key__buttons__save"
-        variant="default"
         color="primary"
         :disabled="(editMode && currentValue === '') || loading"
         @click="saveHandler()"
@@ -139,7 +138,6 @@ watch(value, () => {
       <RuiButton
         v-if="editMode && cancellable"
         class="service-key__buttons__cancel"
-        variant="default"
         color="primary"
         @click="cancel()"
       >

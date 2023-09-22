@@ -96,8 +96,8 @@ const { mdAndUp } = useDisplay();
 </script>
 
 <template>
-  <Fragment>
-    <div class="flex flex-row items-center">
+  <TablePage>
+    <template #header>
       <div class="grow" />
       <RuiButton
         v-blur
@@ -105,13 +105,14 @@ const { mdAndUp } = useDisplay();
         to="/settings/api-keys/exchanges?add=true"
       >
         <template #prepend>
-          <RuiIcon name="add-line"></RuiIcon>
+          <RuiIcon name="add-line" />
         </template>
 
         {{ t('exchange_balances.add_exchange') }}
       </RuiButton>
-    </div>
-    <Card class="exchange-balances mt-8">
+    </template>
+
+    <Card class="exchange-balances">
       <template #title>
         <RefreshButton
           class="exchange-balances__refresh"
@@ -224,7 +225,7 @@ const { mdAndUp } = useDisplay();
         </VRow>
       </VSheet>
     </Card>
-  </Fragment>
+  </TablePage>
 </template>
 
 <style scoped lang="scss">

@@ -214,11 +214,7 @@ const progress = computed(() => reportsStore.progress);
             />
           </div>
           <div class="mt-2 flex justify-end">
-            <RuiButton
-              class="mr-4"
-              variant="default"
-              @click="importDataDialog = false"
-            >
+            <RuiButton class="mr-4" @click="importDataDialog = false">
               {{ t('common.actions.cancel') }}
             </RuiButton>
             <RuiButton

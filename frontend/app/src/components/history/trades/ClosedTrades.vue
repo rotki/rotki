@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { type DataTableHeader } from '@/types/vuetify';
 import { type Collection } from '@/types/collection';
-import Fragment from '@/components/helper/Fragment';
 import { Routes } from '@/router/routes';
 import { type TradeLocation } from '@/types/history/trade/location';
 import {
@@ -279,21 +278,23 @@ watch(loading, async (isLoading, wasLoading) => {
 </script>
 
 <template>
-  <Fragment>
-    <Card class="mt-8">
+  <TablePage>
+    <template #header>
+      <div class="grow" />
       <RuiButton
         v-if="!locationOverview"
-        absolute
-        variant="fab"
-        top
-        right
-        dark
         color="primary"
         data-cy="closed-trades__add-trade"
         @click="newExternalTrade()"
       >
-        <VIcon> mdi-plus </VIcon>
+        <template #prepend>
+          <RuiIcon name="add-line" />
+        </template>
+        {{ t('closed_trades.dialog.add.title') }}
       </RuiButton>
+    </template>
+
+    <Card>
       <template #title>
         <RefreshButton
           v-if="!locationOverview"
@@ -477,5 +478,5 @@ watch(loading, async (isLoading, wasLoading) => {
       </CollectionHandler>
     </Card>
     <ExternalTradeFormDialog :loading="loading" :editable-item="editableItem" />
-  </Fragment>
+  </TablePage>
 </template>

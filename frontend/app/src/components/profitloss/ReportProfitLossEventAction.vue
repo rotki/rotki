@@ -156,7 +156,7 @@ const updatePrice = async () => {
 
         <template #buttons>
           <VSpacer />
-          <RuiButton variant="default" @click="showDialog = false">
+          <RuiButton @click="showDialog = false">
             {{ t('common.actions.cancel') }}
           </RuiButton>
           <RuiButton color="primary" @click="updatePrice()">
