@@ -12445,11 +12445,12 @@ Dealing with skipped external events
       Content-Type: application/json
 
       {
-        "result": true,
+        "result": {"total": 10, "successfull": 5},
         "message": ""
       }
 
-  :resjson bool result: Always true.
+  :resjson int total: The total number of skipped events that we tried to reprocess
+  :resjson int succesfull: The number of skipped events that we reprocessed succesfully and were thus deleted from the skipped events table.
 
   :statuscode 200: Reprocessing went fine.
   :statuscode 409: An issue ocurred during reprocessing

@@ -1192,8 +1192,8 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
                         self.db.add_skipped_external_event(
                             write_cursor=write_cursor,
                             location=Location.KRAKEN,
-                            data=json.dumps(raw_event),
-                            location_label=self.name,
+                            data=raw_event,
+                            extra_data={'location_label': self.name},
                         )
                 continue
 
@@ -1217,8 +1217,8 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
                     self.db.add_skipped_external_event(
                         write_cursor=write_cursor,
                         location=Location.KRAKEN,
-                        data=json.dumps(events[raw_event_idx]),
-                        location_label=self.name,
+                        data=events[raw_event_idx],
+                        extra_data={'location_label': self.name},
                     )
                 continue
 

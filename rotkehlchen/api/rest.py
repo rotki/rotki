@@ -4383,7 +4383,7 @@ class RestAPI:
 
     def get_skipped_external_events_summary(self) -> Response:
         summary = get_skipped_external_events_summary(self.rotkehlchen)
-        return api_response(result=summary, status_code=HTTPStatus.OK)
+        return api_response(result=_wrap_in_ok_result(summary), status_code=HTTPStatus.OK)
 
     def export_skipped_external_events(self, filepath: Optional[Path]) -> Response:
         try:
@@ -4408,5 +4408,8 @@ class RestAPI:
             return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     def reprocess_skipped_external_events(self) -> Response:
-        reprocess_skipped_external_events(self.rotkehlchen)
-        return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+        total, successfull = reprocess_skipped_external_events(self.rotkehlchen)
+        return api_response(
+            result=_wrap_in_ok_result({'total': total, 'successfull': successfull}),
+            status_code=HTTPStatus.OK,
+        )

@@ -73,7 +73,7 @@ def _add_new_tables(write_cursor: 'DBCursor') -> None:
     identifier INTEGER NOT NULL PRIMARY KEY,
     data TEXT NOT NULL,
     location CHAR(1) NOT NULL DEFAULT('A') REFERENCES location(location),
-    location_label TEXT
+    extra_data TEXT
     );""")
     log.debug('Exit _add_new_tables')
 

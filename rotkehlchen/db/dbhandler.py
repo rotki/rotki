@@ -3255,10 +3255,13 @@ class DBHandler:
             self,
             write_cursor: 'DBCursor',
             location: Location,
-            data: str,
-            location_label: Optional[str],
+            data: dict[str, Any],
+            extra_data: Optional[dict[str, Any]],
     ) -> None:
+        serialized_extra_data = None
+        if extra_data is not None:
+            serialized_extra_data = json.dumps(extra_data, separators=(',', ':'))
         write_cursor.execute(
-            'INSERT OR IGNORE INTO skipped_external_events(data, location, location_label) VALUES(?, ?, ?)',  # noqa: E501
-            (data, location.serialize_for_db(), location_label),
+            'INSERT OR IGNORE INTO skipped_external_events(data, location, extra_data) VALUES(?, ?, ?)',  # noqa: E501
+            (json.dumps(data, separators=(',', ':')), location.serialize_for_db(), serialized_extra_data),  # noqa: E501
         )
