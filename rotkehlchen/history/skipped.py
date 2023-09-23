@@ -26,7 +26,8 @@ def get_skipped_external_events_summary(rotki: 'Rotkehlchen') -> dict[str, Any]:
 
         total = 0
         for count, location in cursor:
-            summary['locations'][location] = count
+            serialized_location = Location.deserialize_from_db(location).serialize()
+            summary['locations'][serialized_location] = count
             total += count
 
     summary['total'] = total
@@ -45,8 +46,8 @@ def export_skipped_external_events(rotki: 'Rotkehlchen', filepath: Optional[Path
     - CSVWriteError is CSV can't be written
     """
     with rotki.data.db.conn.read_ctx() as cursor:
-        cursor.execute('SELECT location, data FROM skipped_external_events')
-        data = [{'location': x.deserialize_from_db(), 'data': y} for x, y in cursor]
+        cursor.execute('SELECT location, data, extra_data FROM skipped_external_events')
+        data = [{'location': Location.deserialize_from_db(x).serialize(), 'data': y, 'extra_data': z} for x, y, z in cursor]  # noqa: E501
 
     if filepath is None:
         _, newfilename = tempfile.mkstemp()
@@ -59,20 +60,32 @@ def export_skipped_external_events(rotki: 'Rotkehlchen', filepath: Optional[Path
     return Path(newfilepath)
 
 
-def reprocess_skipped_external_events(rotki: 'Rotkehlchen') -> None:
+def reprocess_skipped_external_events(rotki: 'Rotkehlchen') -> tuple[int, int]:
     """Go through the skipped external events, try to re-process them and if any
     are succesfully reprocessed them remove them from the table
 
     This is effectively containing only the kraken exchange logic right now
+
+    Returns number of current skipped events processed, and how many were
+    reprocessed succesfully.
     """
     raw_kraken_events = defaultdict(list)
+    total_num, processed_num = 0, 0
     with rotki.data.db.conn.read_ctx() as cursor:
-        cursor.execute('SELECT identifier, data, location, location_label FROM skipped_external_events')  # noqa: E501
-        for identifier, data, raw_location, location_label in cursor:
+        cursor.execute('SELECT identifier, data, location, extra_data FROM skipped_external_events')  # noqa: E501
+        for identifier, data, raw_location, extra_data in cursor:
             location = Location.deserialize_from_db(raw_location)  # should not raise
             if location != Location.KRAKEN:
                 continue
-            if location_label is None:
+            extra_json = None
+            if extra_data is not None:
+                try:
+                    extra_json = json.loads(extra_data)
+                except json.JSONDecodeError as e:  # should not happen
+                    log.error(f"Could not decode json from DB's skipped event extra data due to: {e}")  # noqa: E501
+                    continue
+
+            if extra_json is None or (location_label := extra_json.get('location_label')) is None:
                 continue  # kraken skipped events should be saved with name as location label
 
             raw_kraken_events[location_label].append((identifier, json.loads(data)))
@@ -85,17 +98,19 @@ def reprocess_skipped_external_events(rotki: 'Rotkehlchen') -> None:
             identifiers_to_delete.update({x[0] for x in raw_events})
             continue
 
+        total_num += len(raw_events)
         exchange = cast('Kraken', exchange)
         processed_events = exchange.process_kraken_raw_events(
             events=[x[1] for x in raw_events],
             events_source='processing skipped events',
             save_skipped_events=False,
         )
+        processed_num += len(processed_events)
 
         for processed_event in processed_events:
             for identifier, raw_data in raw_events:
                 try:
-                    if identifier == processed_event.event_identifier:
+                    if raw_data['refid'] == processed_event.event_identifier:
                         identifiers_to_delete.add(identifier)
                 except KeyError:
                     log.error(f'Processing skipped kraken event could not find refid in {raw_data}')  # noqa: E501
@@ -103,4 +118,6 @@ def reprocess_skipped_external_events(rotki: 'Rotkehlchen') -> None:
 
     if len(identifiers_to_delete) != 0:  # delete some skipped events if needed
         with rotki.data.db.user_write() as write_cursor:
-            write_cursor.executemany('DELETE FROM skipped_external_events WHERE identifier=?', list(identifiers_to_delete))  # noqa: E501
+            write_cursor.executemany('DELETE FROM skipped_external_events WHERE identifier=?', [(x,) for x in identifiers_to_delete])  # noqa: E501
+
+    return total_num, processed_num
