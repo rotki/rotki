@@ -216,6 +216,14 @@ class HistoryBaseEntry(AccountingEventMixin, metaclass=ABCMeta):
             'notes': self.notes,
         }
 
+    def serialize_for_csv(self) -> dict[str, Any]:
+        """Serialize event data for CSV export"""
+        entry = self.serialize()
+        balance = entry.pop('balance')
+        entry['balance_amount'] = balance['amount']
+        entry['balance_usd_value'] = balance['usd_value']
+        return entry
+
     def serialize_for_api(
             self,
             customized_event_ids: list[int],

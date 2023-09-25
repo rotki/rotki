@@ -1,23 +1,20 @@
 import json
 import random
 from http import HTTPStatus
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 import pytest
 import requests
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry, HistoryEvent
 from rotkehlchen.accounting.structures.evm_event import SUB_SWAPS_DETAILS, EvmEvent
 from rotkehlchen.accounting.structures.types import (
     ActionType,
     HistoryEventSubType,
     HistoryEventType,
 )
-from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants import ONE
-from rotkehlchen.constants.assets import A_DAI, A_ETH, A_ETH2, A_SUSHI, A_USDT
+from rotkehlchen.constants.assets import A_ETH, A_SUSHI, A_USDT
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmEventFilterQuery, HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -30,6 +27,7 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_response_with_result,
     assert_simple_ok_response,
 )
+from rotkehlchen.tests.utils.history_base_entry import add_entries, entry_to_input_dict
 from rotkehlchen.types import (
     ChainID,
     EvmTransaction,
@@ -45,138 +43,11 @@ if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
 
 
-def entry_to_input_dict(
-        entry: 'EvmEvent',
-        include_identifier: bool,
-) -> dict[str, Any]:
-    serialized = entry.serialize()
-    if include_identifier:
-        assert entry.identifier is not None
-        serialized['identifier'] = entry.identifier
-    else:
-        serialized.pop('identifier')  # there is `identifier`: `None` which we have to remove
-    serialized.pop('event_identifier')
-    serialized.pop('entry_type')
-    return serialized
-
-
-def _add_entries(server: 'APIServer', events_db: DBHistoryEvents, add_directly: bool = False) -> list['HistoryBaseEntry']:  # noqa: E501
-    entries = [EvmEvent(
-        tx_hash=deserialize_evm_tx_hash('0x64f1982504ab714037467fdd45d3ecf5a6356361403fc97dd325101d8c038c4e'),  # noqa: E501
-        sequence_index=162,
-        timestamp=TimestampMS(1569924574000),
-        location=Location.ETHEREUM,
-        event_type=HistoryEventType.INFORMATIONAL,
-        asset=A_DAI,
-        balance=Balance(amount=FVal('1.542'), usd_value=FVal('1.675')),
-        location_label='0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
-        notes='Set DAI spending approval of 0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12 by 0xdf869FAD6dB91f437B59F1EdEFab319493D4C4cE to 1',  # noqa: E501
-        event_subtype=HistoryEventSubType.APPROVE,
-        address=string_to_evm_address('0xdf869FAD6dB91f437B59F1EdEFab319493D4C4cE'),
-    ), EvmEvent(
-        tx_hash=deserialize_evm_tx_hash('0x64f1982504ab714037467fdd45d3ecf5a6356361403fc97dd325101d8c038c4e'),  # noqa: E501
-        sequence_index=163,
-        timestamp=TimestampMS(1569924574000),
-        location=Location.ETHEREUM,
-        event_type=HistoryEventType.INFORMATIONAL,
-        asset=A_USDT,
-        balance=Balance(amount=FVal('1.542'), usd_value=FVal('1.675')),
-        location_label='0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
-        notes='Set USDT spending approval of 0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12 by 0xdf869FAD6dB91f437B59F1EdEFab319493D4C4cE to 1',  # noqa: E501
-        event_subtype=HistoryEventSubType.APPROVE,
-        address=string_to_evm_address('0xdf869FAD6dB91f437B59F1EdEFab319493D4C4cE'),
-    ), EvmEvent(
-        tx_hash=deserialize_evm_tx_hash('0xf32e81dbaae8a763cad17bc96b77c7d9e8c59cc31ed4378b8109ce4b301adbbc'),  # noqa: E501
-        sequence_index=2,
-        timestamp=TimestampMS(1619924574000),
-        location=Location.ETHEREUM,
-        event_type=HistoryEventType.SPEND,
-        asset=A_ETH,
-        balance=Balance(amount=FVal('0.0001'), usd_value=FVal('5.31')),
-        location_label='0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
-        notes='Burned 0.0001 ETH for gas',
-        event_subtype=HistoryEventSubType.FEE,
-        counterparty=CPT_GAS,
-        extra_data={'testing_data': 42},
-    ), EvmEvent(
-        tx_hash=deserialize_evm_tx_hash('0xf32e81dbaae8a763cad17bc96b77c7d9e8c59cc31ed4378b8109ce4b301adbbc'),  # noqa: E501
-        sequence_index=3,
-        timestamp=TimestampMS(1619924574000),
-        location=Location.ETHEREUM,
-        event_type=HistoryEventType.DEPOSIT,
-        asset=A_ETH,
-        balance=Balance(amount=FVal('0.0001'), usd_value=FVal('5.31')),
-        location_label='0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
-        notes='Deposit something somewhere',
-        event_subtype=HistoryEventSubType.NONE,
-        counterparty='somewhere',
-    ), EvmEvent(
-        tx_hash=deserialize_evm_tx_hash('0x4b5489ed325483db3a8c4831da1d5ac08fb9ab0fd8c570aa3657e0c267a7d023'),  # noqa: E501
-        sequence_index=55,
-        timestamp=TimestampMS(1629924574000),
-        location=Location.ETHEREUM,
-        event_type=HistoryEventType.RECEIVE,
-        asset=A_ETH,
-        balance=Balance(amount=ONE, usd_value=FVal('1525.11')),
-        location_label='0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
-        notes='Receive 1 ETH from 0x0EbD2E2130b73107d0C45fF2E16c93E7e2e10e3a',
-        event_subtype=HistoryEventSubType.NONE,
-        address=string_to_evm_address('0x0EbD2E2130b73107d0C45fF2E16c93E7e2e10e3a'),
-    ), HistoryEvent(
-        event_identifier='STARK-STARK-STARK',
-        sequence_index=0,
-        timestamp=TimestampMS(1673146287380),
-        location=Location.KRAKEN,
-        location_label='Kraken',
-        asset=A_ETH2,
-        balance=Balance(
-            amount=FVal('0.0000400780'),
-            usd_value=FVal('0.051645312360'),
-        ),
-        event_type=HistoryEventType.STAKING,
-        event_subtype=HistoryEventSubType.REWARD,
-        notes='Staking reward from kraken',
-    )]
-
-    entries_added_using_api = 0
-    for entry in entries:
-        if (
-            add_directly is True or
-            isinstance(entry, HistoryEvent) or
-            (isinstance(entry, EvmEvent) and entry.extra_data is not None)
-        ):
-            # If any entry has extra data add it directly to the database instead of
-            # making use of the API. The reason is that the API doesn't allow to edit
-            # the extra data field.
-            # Also add HistoryEvent since the API doesn't allow to add them atm
-            with events_db.db.conn.write_ctx() as write_cursor:
-                identifier = events_db.add_history_event(
-                    write_cursor=write_cursor,
-                    event=entry,
-                )
-                entry.identifier = identifier
-        else:
-            json_data = entry_to_input_dict(entry, include_identifier=False)  # type: ignore
-            response = requests.put(
-                api_url_for(server, 'historyeventresource'),
-                json=json_data,
-            )
-            result = assert_proper_response_with_result(response)
-            assert 'identifier' in result
-            entry.identifier = result['identifier']
-            entries_added_using_api += 1
-
-    if add_directly is False:
-        assert entries_added_using_api == 4, 'api was used directly and event is missing'
-
-    return entries
-
-
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer'):
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     db = DBHistoryEvents(rotki.data.db)
-    entries = _add_entries(server=rotkehlchen_api_server, events_db=db)
+    entries = add_entries(server=rotkehlchen_api_server, events_db=db)
     with rotki.data.db.conn.read_ctx() as cursor:
         saved_events = db.get_history_events(
             cursor=cursor,
@@ -435,7 +306,7 @@ def test_event_with_details(rotkehlchen_api_server: 'APIServer'):
 def test_get_events(rotkehlchen_api_server: 'APIServer'):
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     db = DBHistoryEvents(rotki.data.db)
-    entries = _add_entries(server=rotkehlchen_api_server, events_db=db, add_directly=True)
+    entries = add_entries(server=rotkehlchen_api_server, events_db=db, add_directly=True)
     expected_entries = [x.serialize() for x in entries]
 
     # add one event to the list of ignored events to check that the field ignored_in_accounting
@@ -454,9 +325,9 @@ def test_get_events(rotkehlchen_api_server: 'APIServer'):
         ),
     )
     result = assert_proper_response_with_result(response)
-    assert result['entries_found'] == 6
+    assert result['entries_found'] == 9
     assert result['entries_limit'] == 100
-    assert result['entries_total'] == 6
+    assert result['entries_total'] == 9
     for event in result['entries']:
         assert event['entry'] in expected_entries
 
@@ -475,10 +346,10 @@ def test_get_events(rotkehlchen_api_server: 'APIServer'):
         json={'group_by_event_ids': True},
     )
     result = assert_proper_response_with_result(response)
-    assert result['entries_found'] == 4
+    assert result['entries_found'] == 6
     assert result['entries_limit'] == 100
-    assert result['entries_total'] == 4
-    assert len(result['entries']) == 4
+    assert result['entries_total'] == 6
+    assert len(result['entries']) == 6
 
     # now try with grouping and pagination
     response = requests.post(
@@ -490,9 +361,9 @@ def test_get_events(rotkehlchen_api_server: 'APIServer'):
     )
     result = assert_proper_response_with_result(response)
     assert len(result['entries']) == 1
-    assert result['entries_found'] == 4
+    assert result['entries_found'] == 6
     assert result['entries_limit'] == 100
-    assert result['entries_total'] == 4
+    assert result['entries_total'] == 6
 
     # now with grouping, pagination and a filter
     response = requests.post(
@@ -504,9 +375,9 @@ def test_get_events(rotkehlchen_api_server: 'APIServer'):
     )
     result = assert_proper_response_with_result(response)
     assert len(result['entries']) == 1
-    assert result['entries_found'] == 2
+    assert result['entries_found'] == 4
     assert result['entries_limit'] == 100
-    assert result['entries_total'] == 4
+    assert result['entries_total'] == 6
 
     # filter by location using kraken and ethereum
     response = requests.post(
@@ -520,7 +391,7 @@ def test_get_events(rotkehlchen_api_server: 'APIServer'):
     assert len(result['entries']) == 1
     assert result['entries_found'] == 1
     assert result['entries_limit'] == 100
-    assert result['entries_total'] == 6
+    assert result['entries_total'] == 9
 
     response = requests.post(
         api_url_for(
@@ -530,10 +401,10 @@ def test_get_events(rotkehlchen_api_server: 'APIServer'):
         json={'location': Location.ETHEREUM.serialize()},
     )
     result = assert_proper_response_with_result(response)
-    assert len(result['entries']) == 5
-    assert result['entries_found'] == 5
+    assert len(result['entries']) == 8
+    assert result['entries_found'] == 8
     assert result['entries_limit'] == 100
-    assert result['entries_total'] == 6
+    assert result['entries_total'] == 9
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])

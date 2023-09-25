@@ -82,6 +82,7 @@ from rotkehlchen.api.v1.schemas import (
     ExchangesResourceAddSchema,
     ExchangesResourceEditSchema,
     ExchangesResourceRemoveSchema,
+    ExportHistoryEventSchema,
     ExternalServicesResourceAddSchema,
     ExternalServicesResourceDeleteSchema,
     FileListSchema,
@@ -2953,3 +2954,19 @@ class DefiMetadataResource(BaseMethodView):
 
     def get(self) -> Response:
         return self.rest_api.get_defi_metadata()
+
+
+class ExportHistoryEventResource(BaseMethodView):
+
+    post_schema = ExportHistoryEventSchema()
+    put_schema = ExportHistoryEventSchema(exclude=('directory_path',))
+
+    @require_loggedin_user()
+    @use_kwargs(post_schema, location='json_and_query')
+    def post(self, filter_query: 'HistoryBaseEntryFilterQuery', directory_path: Path) -> Response:
+        return self.rest_api.export_history_events(filter_query=filter_query, directory_path=directory_path)  # noqa: E501
+
+    @require_loggedin_user()
+    @use_kwargs(put_schema, location='json_and_query')
+    def patch(self, filter_query: 'HistoryBaseEntryFilterQuery') -> Response:
+        return self.rest_api.export_history_events(filter_query=filter_query, directory_path=None)

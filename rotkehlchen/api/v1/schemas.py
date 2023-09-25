@@ -669,14 +669,12 @@ class HistoryEventSchema(TimestampRangeSchema, DBPaginationSchema, DBOrderBySche
             should_query_eth_staking_event = True
             should_query_evm_event = False
 
-        common_arguments = {
+        common_arguments = self.make_extra_filtering_arguments(data) | {
             'order_by_rules': create_order_by_rules_list(
                 data=data,  # descending timestamp and ascending sequence index
                 default_order_by_fields=['timestamp', 'sequence_index'],
                 default_ascending=[False, True],
             ),
-            'limit': data['limit'],
-            'offset': data['offset'],
             'entry_types': entry_types,
             'from_ts': data['from_timestamp'],
             'to_ts': data['to_timestamp'],
@@ -688,6 +686,7 @@ class HistoryEventSchema(TimestampRangeSchema, DBPaginationSchema, DBOrderBySche
             'event_subtypes': data['event_subtypes'],
             'location': data['location'],
         }
+
         filter_query: Union[HistoryEventFilterQuery, EvmEventFilterQuery, EthStakingEventFilterQuery]  # noqa: E501
         if should_query_evm_event:
             filter_query = EvmEventFilterQuery.make(
@@ -705,10 +704,20 @@ class HistoryEventSchema(TimestampRangeSchema, DBPaginationSchema, DBOrderBySche
         else:
             filter_query = HistoryEventFilterQuery.make(**common_arguments)
 
-        return {
+        return self.generate_fields_post_validation(data) | {
             'filter_query': filter_query,
-            'group_by_event_ids': data['group_by_event_ids'],
         }
+
+    def make_extra_filtering_arguments(self, data: dict[str, Any]) -> dict[str, Any]:
+        """Generates the extra fields to be included in the filter_query dictionary"""
+        return {
+            'limit': data['limit'],
+            'offset': data['offset'],
+        }
+
+    def generate_fields_post_validation(self, data: dict[str, Any]) -> dict[str, Any]:
+        """Generates extra fields that will be returned after validation"""
+        return {'group_by_event_ids': data['group_by_event_ids']}
 
 
 class EvmEventSchema(Schema):
@@ -3031,3 +3040,17 @@ class EthStakingHistoryStatsDetails(EthStakingHistoryStats, AsyncIgnoreCacheQuer
 
 class SkippedExternalEventsExportSchema(Schema):
     filepath = FileField(required=True, allowed_extensions=['.csv'])
+
+
+class ExportHistoryEventSchema(HistoryEventSchema):
+    """Schema for quering history events"""
+    directory_path = DirectoryField(required=True)
+
+    def make_extra_filtering_arguments(self, data: dict[str, Any]) -> dict[str, Any]:
+        return {}
+
+    def generate_fields_post_validation(self, data: dict[str, Any]) -> dict[str, Any]:
+        extra_fields = {}
+        if (directory_path := data.get('directory_path')) is not None:
+            extra_fields['directory_path'] = directory_path
+        return extra_fields

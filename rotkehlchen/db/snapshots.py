@@ -4,7 +4,7 @@ from tempfile import mkdtemp
 from typing import TYPE_CHECKING, Optional
 from zipfile import ZIP_DEFLATED, ZipFile
 
-from rotkehlchen.accounting.export.csv import CSVWriteError, _dict_to_csv_file
+from rotkehlchen.accounting.export.csv import CSVWriteError, dict_to_csv_file
 from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.constants.misc import NFT_DIRECTIVE
 from rotkehlchen.db.dbhandler import DBHandler
@@ -194,19 +194,19 @@ class DBSnapshot:
 
         try:
             directory.mkdir(parents=True, exist_ok=True)
-            _dict_to_csv_file(
+            dict_to_csv_file(
                 directory / BALANCES_FILENAME,
                 serialized_timed_balances,
             )
-            _dict_to_csv_file(
+            dict_to_csv_file(
                 directory / BALANCES_FOR_IMPORT_FILENAME,
                 serialized_timed_balances_for_import,
             )
-            _dict_to_csv_file(
+            dict_to_csv_file(
                 directory / LOCATION_DATA_FILENAME,
                 serialized_timed_location_data,
             )
-            _dict_to_csv_file(
+            dict_to_csv_file(
                 directory / LOCATION_DATA_IMPORT_FILENAME,
                 serialized_timed_location_data_for_import,
             )

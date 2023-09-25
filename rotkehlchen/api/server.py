@@ -82,6 +82,7 @@ from rotkehlchen.api.v1.resources import (
     ExchangeRatesResource,
     ExchangesDataResource,
     ExchangesResource,
+    ExportHistoryEventResource,
     ExternalServicesResource,
     HistoricalAssetsPriceResource,
     HistoryActionableItemsResource,
@@ -217,6 +218,7 @@ URLS_V1: URLS = [
     ('/history/events/counterparties', EvmCounterpartiesResource),
     ('/history/events/products', EvmProductsResource),
     ('/history/events/details', EventDetailsResource),
+    ('/history/events/export', ExportHistoryEventResource),
     ('/history/actionable_items', HistoryActionableItemsResource),
     ('/reports', AccountingReportsResource),
     (

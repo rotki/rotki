@@ -1,9 +1,10 @@
 import json
 import logging
+from collections.abc import Collection
 from csv import DictWriter
 from pathlib import Path
 from tempfile import mkdtemp
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Literal, Optional
 from zipfile import ZIP_DEFLATED, ZipFile
 
 from rotkehlchen.accounting.pnl import PnlTotals
@@ -30,6 +31,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 FILENAME_ALL_CSV = 'all_events.csv'
+FILENAME_HISTORY_EVENTS_CSV = 'history_events.csv'
 ETHERSCAN_EXPLORER_TX_URL = 'https://{base_url}/tx/'
 
 ACCOUNTING_SETTINGS = (
@@ -48,7 +50,11 @@ class CSVWriteError(Exception):
     pass
 
 
-def _dict_to_csv_file(path: Path, dictionary_list: list) -> None:
+def dict_to_csv_file(
+        path: Path,
+        dictionary_list: list,
+        headers: Optional[Collection] = None,
+) -> None:
     """Takes a filepath and a list of dictionaries representing the rows and writes them
     into the file as a CSV
 
@@ -61,7 +67,7 @@ def _dict_to_csv_file(path: Path, dictionary_list: list) -> None:
         return
 
     with open(path, 'w', newline='', encoding='utf-8') as f:
-        w = DictWriter(f, fieldnames=dictionary_list[0].keys())
+        w = DictWriter(f, fieldnames=dictionary_list[0].keys() if headers is None else headers)
         w.writeheader()
         try:
             for dic in dictionary_list:
@@ -323,7 +329,7 @@ class CSVExporter(CustomizableDateMixin):
         self._maybe_add_summary(events=serialized_events, pnls=pnls)
         try:
             directory.mkdir(parents=True, exist_ok=True)
-            _dict_to_csv_file(
+            dict_to_csv_file(
                 directory / FILENAME_ALL_CSV,
                 serialized_events,
             )

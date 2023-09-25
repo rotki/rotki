@@ -4677,23 +4677,8 @@ Dealing with History Events
 
    :reqjson int limit: This signifies the limit of records to return as per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
    :reqjson int offset: This signifies the offset from which to start the return of records per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
-   :reqjson list[string] order_by_attributes: This is the list of attributes of the transaction by which to order the results.
-   :reqjson list[bool] ascending: Should the order be ascending? This is the default. If set to false, it will be on descending order.
-   :reqjson bool group_by_event_ids: A boolean determining if results should be grouped by common event identifiers. If true, the result will return only first event of each group but also the number of events the group has. Default is false.
-   :reqjson int from_timestamp: The timestamp from which to start querying. Default is 0.
-   :reqjson int to_timestamp: The timestamp until which to query. Default is now.
-   :reqjson list[string] event_identifiers: An optional list of event identifiers to filter for.
-   :reqjson list[string] event_types: An optional list of event types by which to filter the decoded events.
-   :reqjson list[string] event_subtypes: An optional list of event subtypes by which to filter the decoded events.
-   :reqjson list location: An optional location name to filter events only for that location.
-   :reqjson list[string] location_labels: A list of location labels to optionally filter by. Location label is a string field that allows to provide more information about the location. When we use this structure in blockchains, it is used to specify the user address. For exchange events it's the exchange name assigned by the user.
-   :reqjson object entry_types: An object with two keys named 'values' and 'behaviour'. 'values' is a list of entry types to optionally filter by. 'behaviour' is optional and is a string with the value 'include' or 'exclude' which defines the filtering behaviour. It defaults to 'include'. Entry type is the event category and defines the schema. Possible values are: ``"history event"``, ``"evm event"``, ``"eth withdrawal event"``, ``"eth block event"``, ``"eth deposit event"``.
-   :reqjson string asset: The asset to optionally filter by.
-   :reqjson list[string] tx_hashes: An optional list of transaction hashes to filter for. This will make it an EVM event query.
-   :reqjson list[string] counterparties: An optional list of counterparties to filter by. List of strings. This will make it an EVM event query. We currently have a special exception for ``"eth2"`` as a counterparty. It filters for all eth staking events if given. It can't be given along with other counterparties in a filter. Or with an entry types filter.
-   :reqjson list[string] products: An optional list of product type to filter by. List of strings. This will make it an EVM event query.
-   :reqjson list[string] addresses: An optional list of EVM addresses to filter by in the set of counterparty addresses. This will make it an EVM event query.
-   :reqjson list[int] validator_indices: An optional list of validator indices to filter by. This makes it an EthStakingevent query
+   
+   :ref:`filter-request-args-label`
 
    **Example Response**:
 
@@ -4991,6 +4976,82 @@ Dealing with History Events
    :statuscode 409: No user is logged in or one of the identifiers to delete did not correspond to an event in the DB or one of the identifiers was for the last event in the corresponding transaction hash and force_delete was false..
    :statuscode 500: Internal rotki error
 
+Exporting History Events
+============================================
+
+.. http:post:: /api/(version)/history/events/export
+
+   Doing a POST on this endpoint with the given filter parameters will export a csv with all history events matching the filter to a file in the provided directory. Only the 'directory_path' argument is required. If no filter is used all the events will be exported.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      POST /api/1/history/events/export HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {
+          "directory_path": "/home",
+          "from_timestamp": 1500,
+          "to_timestamp": 999999
+      }
+
+   .. _history_export_schema_section:
+   
+   :reqjson string directory_path: The directory in which to write the exported CSV file
+   
+   :ref:`filter-request-args-label`
+
+   
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": true,
+          "message" "",
+      }
+
+   :statuscode 200: Events succesfully exported
+   :statuscode 400: Provided JSON is in some way malformed
+   :statuscode 409: No user is logged in or failure at event export.
+   :statuscode 500: Internal rotki error
+
+.. http:put:: /api/(version)/history/events/export
+
+   Doing a PUT on this endpoint with the given filter parameters will download a csv with all history events matching the filter. All arguments are optional. If no filter is used all the events will be downloaded.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PUT /api/1/history/events/export HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {
+          "from_timestamp": 1500,
+          "to_timestamp": 999999
+      }
+
+   
+   :ref:`filter-request-args-label`
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: text/csv
+
+   :statuscode 200: Events succesfully downloaded
+   :statuscode 400: Provided JSON is in some way malformed
+   :statuscode 409: No user is logged in or failure at event download.
+   :statuscode 500: Internal rotki error
 
 Querying online events
 ============================================
@@ -12455,3 +12516,31 @@ Dealing with skipped external events
   :statuscode 200: Reprocessing went fine.
   :statuscode 409: An issue ocurred during reprocessing
   :statuscode 500: Internal rotki error
+
+Schema
+***********
+
+.. _filter-request-args-label:
+
+HistoryEvents Filter Request Arguments
+========================================
+
+These filter request arguments are common to multiple api endpoints that deal with history events filtering.
+
+- :reqjson list[string] order_by_attributes: This is the list of attributes of the transaction by which to order the results.
+- :reqjson list[bool] ascending: Should the order be ascending? This is the default. If set to false, it will be on descending order.
+- :reqjson bool group_by_event_ids: A boolean determining if results should be grouped by common event identifiers. If true, the result will return only the first event of each group but also the number of events the group has. Default is false.
+- :reqjson int from_timestamp: The timestamp from which to start querying. Default is 0.
+- :reqjson int to_timestamp: The timestamp until which to query. Default is now.
+- :reqjson list[string] event_identifiers: An optional list of event identifiers to filter for.
+- :reqjson list[string] event_types: An optional list of event types by which to filter the decoded events.
+- :reqjson list[string] event_subtypes: An optional list of event subtypes by which to filter the decoded events.
+- :reqjson list location: An optional location name to filter events only for that location.
+- :reqjson list[string] location_labels: A list of location labels to optionally filter by. Location label is a string field that allows you to provide more information about the location. When used in blockchains, it is used to specify the user's address. For exchange events, it's the exchange name assigned by the user.
+- :reqjson object entry_types: An object with two keys named 'values' and 'behavior'. 'values' is a list of entry types to optionally filter by. 'behavior' is optional and is a string with the value 'include' or 'exclude' which defines the filtering behavior. It defaults to 'include'. Entry type is the event category and defines the schema. Possible values are: "history event," "evm event," "eth withdrawal event," "eth block event," "eth deposit event."
+- :reqjson string asset: The asset to optionally filter by.
+- :reqjson list[string] tx_hashes: An optional list of transaction hashes to filter for. This will make it an EVM event query.
+- :reqjson list[string] counterparties: An optional list of counterparties to filter by. List of strings. This will make it an EVM event query. We currently have a special exception for "eth2" as a counterparty. It filters for all eth staking events if given. It can't be given along with other counterparties in a filter. Or with an entry types filter.
+- :reqjson list[string] products: An optional list of product type to filter by. List of strings. This will make it an EVM event query.
+- :reqjson list[string] addresses: An optional list of EVM addresses to filter by in the set of counterparty addresses. This will make it an EVM event query.
+- :reqjson list[int] validator_indices: An optional list of validator indices to filter by. This makes it an EthStakingevent query.
