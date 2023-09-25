@@ -83,13 +83,13 @@ def find_uniswap_v2_lp_price(
 ) -> Optional[Price]:
     """
     Calculate the price for a uniswap v2 LP token. That is
-    value = (Total value of liquidity pool) / (Current suply of LP tokens)
+    value = (Total value of liquidity pool) / (Current supply of LP tokens)
     We need:
     - Price of token 0
     - Price of token 1
     - Pooled amount of token 0
     - Pooled amount of token 1
-    - Total supply of of pool token
+    - Total supply of pool token
     """
     address = token.evm_address
     abi = ethereum.contracts.abi('UNISWAP_V2_LP')
