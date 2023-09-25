@@ -5,7 +5,7 @@ from rotkehlchen.chain.ethereum.interfaces.balances import ProtocolWithGauges
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.types import ChecksumEvmAddress
 
-from .constants import CPT_CURVE
+from .constants import CPT_VELODROME
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.structures.evm_event import EvmEvent
@@ -13,14 +13,15 @@ if TYPE_CHECKING:
     from rotkehlchen.types import CHAIN_IDS_WITH_BALANCE_PROTOCOLS
 
 
-class CurveBalances(ProtocolWithGauges):
+class VelodromeBalances(ProtocolWithGauges):
     """
-    Query balances in Curve gauges.
+    Query balances in Velodrome gauges.
     LP tokens are already queried by the normal token detection.
     """
 
     def __init__(
-            self, database: DBHandler,
+            self,
+            database: DBHandler,
             evm_inquirer: 'EvmNodeInquirer',
             chain_id: 'CHAIN_IDS_WITH_BALANCE_PROTOCOLS',
     ):
@@ -28,7 +29,7 @@ class CurveBalances(ProtocolWithGauges):
             database=database,
             evm_inquirer=evm_inquirer,
             chain_id=chain_id,
-            counterparty=CPT_CURVE,
+            counterparty=CPT_VELODROME,
         )
 
     def get_gauge_deposit_events(self) -> set[tuple[HistoryEventType, HistoryEventSubType]]:

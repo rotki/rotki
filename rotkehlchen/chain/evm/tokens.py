@@ -100,7 +100,7 @@ def generate_multicall_chunks(
 
 def get_chunk_size_call_order(evm_inquirer: 'EvmNodeInquirer') -> tuple[int, list[WeightedNode]]:
     """
-    Return the max number of tokens that can be queried in a single call depending wheter we
+    Return the max number of tokens that can be queried in a single call depending on whether we
     have a web3 node connected or we are going to use etherscan.
     We also return the nodes call order. In the case of having web3 nodes available we
     skip etherscan because chunk size is too big for etherscan.

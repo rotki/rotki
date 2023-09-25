@@ -1,16 +1,12 @@
 import logging
-from collections import defaultdict
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.evm_event import EvmProduct
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.assets.asset import EvmToken
-from rotkehlchen.chain.ethereum.interfaces.balances import ProtocolWithBalance
-from rotkehlchen.chain.ethereum.modules.curve.balances import query_gauges_balances
+from rotkehlchen.chain.ethereum.interfaces.balances import ProtocolWithGauges
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.contracts import EvmContract
-from rotkehlchen.chain.evm.tokens import get_chunk_size_call_order
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_CVX
@@ -23,24 +19,43 @@ from rotkehlchen.types import ChecksumEvmAddress
 from .constants import CPT_CONVEX
 
 if TYPE_CHECKING:
+    from rotkehlchen.accounting.structures.evm_event import EvmEvent
+    from rotkehlchen.chain.ethereum.interfaces.balances import BalancesType
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
+    from rotkehlchen.types import CHAIN_IDS_WITH_BALANCE_PROTOCOLS
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
-BalancesType = dict[ChecksumEvmAddress, dict[EvmToken, Balance]]
 
-
-class ConvexBalances(ProtocolWithBalance):
+class ConvexBalances(ProtocolWithGauges):
     """Query staked balances in the Convex gauges"""
 
-    def __init__(self, database: DBHandler, evm_inquirer: 'EvmNodeInquirer'):
-        super().__init__(database=database, evm_inquirer=evm_inquirer, counterparty=CPT_CONVEX)
+    def __init__(
+            self,
+            database: DBHandler,
+            evm_inquirer: 'EvmNodeInquirer',
+            chain_id: 'CHAIN_IDS_WITH_BALANCE_PROTOCOLS',
+    ):
+        super().__init__(
+            database=database,
+            evm_inquirer=evm_inquirer,
+            chain_id=chain_id,
+            counterparty=CPT_CONVEX,
+        )
         self.cvx = A_CVX.resolve_to_evm_token()
+
+    def get_gauge_deposit_events(self) -> set[tuple[HistoryEventType, HistoryEventSubType]]:
+        return {(HistoryEventType.DEPOSIT, HistoryEventSubType.NONE)}
+
+    def get_gauge_address(self, event: 'EvmEvent') -> Optional[ChecksumEvmAddress]:
+        if event.extra_data is None:
+            return None
+        return event.extra_data.get('gauge_address')  # can be None
 
     def _query_staked_cvx(
             self,
-            balances: BalancesType,
+            balances: 'BalancesType',
             staking_contract: EvmContract,
     ) -> None:
         """
@@ -84,36 +99,8 @@ class ConvexBalances(ProtocolWithBalance):
 
         return None
 
-    def query_balances(self) -> BalancesType:
-        balances: BalancesType = defaultdict(lambda: defaultdict(Balance))
-        gauges_to_token: dict[ChecksumEvmAddress, EvmToken] = {}
-
-        # query addresses and gauges where they interacted
-        addresses_with_deposits = self.addresses_with_deposits(
-            product=EvmProduct.GAUGE,
-            deposit_events={(HistoryEventType.DEPOSIT, HistoryEventSubType.NONE)},
-        )
-
-        # get details to query balances on chain
-        chunk_size, call_order = get_chunk_size_call_order(self.evm_inquirer)
-        for address, events in addresses_with_deposits.items():
-            balances[address] = defaultdict(Balance)
-            # Create a mapping of gauge to its token
-            for event in events:
-                if event.address is None:
-                    continue
-                if event.extra_data is None or (gauge_address := event.extra_data.get('gauge_address')) is None:  # noqa: E501
-                    continue
-                gauges_to_token[gauge_address] = event.asset.resolve_to_evm_token()
-
-            balances[address] = query_gauges_balances(
-                user_address=address,
-                gauges_to_token=gauges_to_token,
-                call_order=call_order,
-                chunk_size=chunk_size,
-                balances_contract=self._get_staking_contract_balances,
-            )
-
+    def query_balances(self) -> 'BalancesType':
+        balances = super().query_balances()
         # query CVX locked but not staked
         cvx_lock_contract = self.evm_inquirer.contracts.contract(string_to_evm_address('0xCF50b810E57Ac33B91dCF525C6ddd9881B139332'))  # noqa: E501
         self._query_staked_cvx(balances, cvx_lock_contract)

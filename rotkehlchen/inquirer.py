@@ -620,7 +620,7 @@ class Inquirer:
             coming_from_latest_price: bool = False,
             match_main_currency: bool = False,
     ) -> tuple[Price, CurrentPriceOracle, bool]:
-        """Returns the current price of the asset, oracle that was used and hether returned price
+        """Returns the current price of the asset, oracle that was used and whether returned price
         is in main currency.
 
         Returns ZERO_PRICE if all options have been exhausted and errors are logged in the logs.
@@ -641,7 +641,7 @@ class Inquirer:
             price, oracle = instance._query_fiat_pair(base=asset, quote=instance.usd)
             return price, oracle, False
 
-        # continue, asset isnt fiat or a price can be found by one of the oracles (CC for example)
+        # continue, asset isn't fiat or a price can be found by one of the oracles (CC for example)
 
         # Try and check if it is an ethereum token with specified protocol or underlying tokens
         is_known_protocol = False

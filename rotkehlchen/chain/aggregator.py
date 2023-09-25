@@ -49,6 +49,7 @@ from rotkehlchen.chain.ethereum.modules import (
 from rotkehlchen.chain.ethereum.modules.convex.balances import ConvexBalances
 from rotkehlchen.chain.ethereum.modules.curve.balances import CurveBalances
 from rotkehlchen.chain.ethereum.modules.eth2.structures import Eth2Validator
+from rotkehlchen.chain.optimism.modules.velodrome.balances import VelodromeBalances
 from rotkehlchen.chain.substrate.manager import wait_until_a_node_is_available
 from rotkehlchen.chain.substrate.utils import SUBSTRATE_NODE_CONNECTION_TIMEOUT
 from rotkehlchen.constants import ONE, ZERO
@@ -72,12 +73,14 @@ from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.types import (
+    CHAIN_IDS_WITH_BALANCE_PROTOCOLS,
     CHAINS_WITH_CHAIN_MANAGER,
     EVM_CHAINS_WITH_TRANSACTIONS_TYPE,
     SUPPORTED_CHAIN_IDS,
     SUPPORTED_EVM_CHAINS,
     SUPPORTED_SUBSTRATE_CHAINS,
     BlockchainAddress,
+    ChainID,
     ChecksumEvmAddress,
     Eth2PubKey,
     ListOfBlockchainAddresses,
@@ -170,6 +173,10 @@ DEFI_PROTOCOLS_TO_SKIP_LIABILITIES = {
     'Aave': True,
     'Aave V2': True,
     'Compound': True,
+}
+CHAIN_TO_BALANCE_PROTOCOLS = {
+    ChainID.ETHEREUM: (CurveBalances, ConvexBalances),
+    ChainID.OPTIMISM: (VelodromeBalances,),
 }
 
 
@@ -927,6 +934,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         Same potential exceptions as ethereum
         """
         self.query_evm_chain_balances(chain=SupportedBlockchain.OPTIMISM)
+        self._query_protocols_with_balance(chain_id=ChainID.OPTIMISM)
 
     @protect_with_lock()
     @cache_response_timewise()
@@ -972,25 +980,29 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         self.query_evm_chain_balances(chain=SupportedBlockchain.ETHEREUM)
         self.query_defi_balances()
         self._add_eth_protocol_balances(eth_balances=self.balances.eth)
-        self._add_staking_protocol_balances()
+        self._query_protocols_with_balance(chain_id=ChainID.ETHEREUM)
 
-    def _add_staking_protocol_balances(self) -> None:
+    def _query_protocols_with_balance(self, chain_id: CHAIN_IDS_WITH_BALANCE_PROTOCOLS) -> None:
         """
-        Query protocols that have staked balances and special contracts need to be called.
-        This includes:
-        - Curve gauges
-        - Convex gauges
+        Query for balances of protocols in which tokens can be locked without returning a liquid
+        version of the locked token. For example staking tokens in a curve gauge. This balance
+        needs to be added to the total balance of the account. Examples of such protocols are
+        Curve, Convex and Velodrome.
         """
-        balance_inquirers = [CurveBalances, ConvexBalances]
-        for inquirer_cls in balance_inquirers:
-            inquirer: ProtocolWithBalance = inquirer_cls(
+        chain = ChainID.to_blockchain(chain_id)
+        inquirer = self.get_chain_manager(chain).node_inquirer  # type: ignore  # chain's type here is a subset of the type expected by get_chain_manager  # noqa: E501
+        existing_balances = self.balances.get(chain)
+        for protocol in CHAIN_TO_BALANCE_PROTOCOLS[chain_id]:
+            protocol_with_balance: ProtocolWithBalance = protocol(  # type: ignore  # protocol here is an implementation of the abstract class not the abstract class itself  # noqa: E501
                 database=self.database,
-                evm_inquirer=self.ethereum.node_inquirer,
+                evm_inquirer=inquirer,
+                chain_id=chain_id,
             )
-            balances = inquirer.query_balances()
-            for address, asset_balances in balances.items():
+            protocol_balances = protocol_with_balance.query_balances()
+            for address, asset_balances in protocol_balances.items():
+                address_balances = existing_balances[address]  # type: ignore  # chain's type is a subset of the type expected by balances.get so existing_balances is of the correct type here  # noqa: E501
                 for asset, balance in asset_balances.items():
-                    self.balances.eth[address].assets[asset] += balance
+                    address_balances.assets[asset] += balance  # type: ignore  # chain's type is a subset of the type expected by balances.get so address_balances is of the correct type here  # noqa: E501
 
     def _add_eth_protocol_balances(self, eth_balances: defaultdict[ChecksumEvmAddress, BalanceSheet]) -> None:  # noqa: E501
         """Also count token balances that may come from various eth protocols"""
