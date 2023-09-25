@@ -14,36 +14,23 @@ withDefaults(
 const emit = defineEmits<{
   (e: 'refresh'): void;
 }>();
-
-const refresh = () => {
-  emit('refresh');
-};
 </script>
 
 <template>
-  <VTooltip top>
-    <template #activator="{ on, attrs }">
-      <VBtn
-        fab
-        text
-        small
-        depressed
+  <RuiTooltip :popper="{ placement: 'top' }" open-delay="400">
+    <template #activator>
+      <RuiButton
+        icon
+        size="sm"
+        variant="text"
         :disabled="loading || disabled"
-        v-bind="attrs"
+        :loading="loading"
         color="primary"
-        @click="refresh()"
-        v-on="on"
+        @click="emit('refresh')"
       >
-        <VProgressCircular
-          v-if="loading"
-          rounded
-          indeterminate
-          size="20"
-          width="2"
-        />
-        <RuiIcon v-else name="restart-line" />
-      </VBtn>
+        <RuiIcon name="restart-line" />
+      </RuiButton>
     </template>
     <span>{{ tooltip }}</span>
-  </VTooltip>
+  </RuiTooltip>
 </template>

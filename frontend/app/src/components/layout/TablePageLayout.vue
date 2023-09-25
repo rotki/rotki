@@ -5,13 +5,15 @@ withDefaults(defineProps<{ hideHeader?: boolean }>(), {
 </script>
 
 <template>
-  <div>
+  <div class="flex flex-col gap-4">
     <div v-if="!hideHeader" class="flex flex-row flex-wrap items-center gap-2">
-      <slot name="title" />
+      <div class="text-body-1 text-rui-text">
+        <slot name="title" />
+      </div>
       <div class="hidden sm:block sm:grow" />
       <slot name="buttons" />
     </div>
-    <div class="mt-8">
+    <div>
       <slot />
     </div>
   </div>

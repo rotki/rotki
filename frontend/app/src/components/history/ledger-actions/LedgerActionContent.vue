@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { type DataTableHeader } from '@/types/vuetify';
 import { type Collection } from '@/types/collection';
-import Fragment from '@/components/helper/Fragment';
 import { Routes } from '@/router/routes';
 import { type TradeLocation } from '@/types/history/trade/location';
 import {
@@ -17,15 +16,15 @@ import type { Filters, Matcher } from '@/composables/filters/ledger-actions';
 const props = withDefaults(
   defineProps<{
     locationOverview?: TradeLocation;
-    mainPage?: boolean;
   }>(),
   {
-    locationOverview: '',
-    mainPage: false
+    locationOverview: ''
   }
 );
 
-const { locationOverview, mainPage } = toRefs(props);
+const { locationOverview } = toRefs(props);
+
+const mainPage = computed(() => get(locationOverview) === '');
 
 const { t } = useI18n();
 const router = useRouter();
@@ -224,73 +223,79 @@ watch(loading, async (isLoading, wasLoading) => {
 </script>
 
 <template>
-  <Fragment>
-    <Card class="mt-8">
-      <VBtn
-        v-if="!locationOverview"
-        absolute
-        fab
-        top
-        right
-        dark
+  <TablePageLayout :hide-header="!mainPage">
+    <template #title>
+      {{ t('ledger_actions.title') }}
+    </template>
+    <template v-if="mainPage" #buttons>
+      <RuiButton
+        :loading="loading"
+        color="primary"
+        variant="outlined"
+        @click="refreshLedgerActions(true)"
+      >
+        <template #prepend>
+          <RuiIcon name="restart-line" />
+        </template>
+        {{ t('ledger_actions.refresh_tooltip') }}
+      </RuiButton>
+
+      <RuiButton
         color="primary"
         data-cy="ledger-actions__add"
         @click="newLedgerAction()"
       >
-        <VIcon> mdi-plus </VIcon>
-      </VBtn>
-      <template #title>
-        <RefreshButton
-          v-if="!locationOverview"
-          :loading="loading"
-          :tooltip="t('ledger_actions.refresh_tooltip')"
-          @refresh="refreshLedgerActions(true)"
+        <template #prepend>
+          <RuiIcon name="add-line" />
+        </template>
+        {{ t('ledger_actions.dialog.add.title') }}
+      </RuiButton>
+    </template>
+
+    <RuiCard>
+      <template v-if="!mainPage" #header>
+        <CardTitle>
+          <NavigatorLink :to="{ path: pageRoute }">
+            {{ t('ledger_actions.title') }}
+          </NavigatorLink>
+        </CardTitle>
+      </template>
+
+      <HistoryTableActions v-if="mainPage">
+        <template #filter>
+          <TableFilter
+            :matches="filters"
+            :matchers="matchers"
+            :location="SavedFilterLocation.HISTORY_LEDGER_ACTIONS"
+            @update:matches="setFilter($event)"
+          />
+        </template>
+
+        <RuiButton
+          variant="outlined"
+          color="error"
+          :disabled="selected.length === 0"
+          @click="massDelete()"
+        >
+          <RuiIcon name="delete-bin-line" />
+        </RuiButton>
+
+        <IgnoreButtons
+          :disabled="selected.length === 0 || loading"
+          @ignore="ignore($event)"
         />
-        <NavigatorLink :to="{ path: pageRoute }" :enabled="!!locationOverview">
-          {{ t('ledger_actions.title') }}
-        </NavigatorLink>
-      </template>
-      <template v-if="!locationOverview" #actions>
-        <VRow>
-          <VCol cols="12" md="6">
-            <VRow>
-              <VCol cols="auto">
-                <IgnoreButtons
-                  :disabled="selected.length === 0 || loading"
-                  @ignore="ignore($event)"
-                />
-              </VCol>
-              <VCol>
-                <VBtn
-                  text
-                  outlined
-                  color="red"
-                  :disabled="selected.length === 0"
-                  @click="massDelete()"
-                >
-                  <VIcon> mdi-delete-outline </VIcon>
-                </VBtn>
-              </VCol>
-            </VRow>
-            <div v-if="selected.length > 0" class="mt-2 ms-1">
-              {{ t('ledger_actions.selected', { count: selected.length }) }}
-              <VBtn small text @click="selected = []">
-                {{ t('common.actions.clear_selection') }}
-              </VBtn>
-            </div>
-          </VCol>
-          <VCol cols="12" md="6">
-            <div class="pb-md-8">
-              <TableFilter
-                :matches="filters"
-                :matchers="matchers"
-                :location="SavedFilterLocation.HISTORY_LEDGER_ACTIONS"
-                @update:matches="setFilter($event)"
-              />
-            </div>
-          </VCol>
-        </VRow>
-      </template>
+
+        <div
+          v-if="selected.length > 0"
+          class="flex flex-row items-center gap-2 text-body-2"
+        >
+          {{ t('ledger_actions.selected', { count: selected.length }) }}
+          <RuiButton variant="text" size="sm" @click="selected = []">
+            {{ t('common.actions.clear_selection') }}
+          </RuiButton>
+        </div>
+      </HistoryTableActions>
+
       <CollectionHandler
         :collection="ledgerActions"
         @set-page="setPage($event)"
@@ -384,8 +389,11 @@ watch(loading, async (isLoading, wasLoading) => {
           </DataTable>
         </template>
       </CollectionHandler>
-    </Card>
 
-    <LedgerActionFormDialog :loading="loading" :editable-item="editableItem" />
-  </Fragment>
+      <LedgerActionFormDialog
+        :loading="loading"
+        :editable-item="editableItem"
+      />
+    </RuiCard>
+  </TablePageLayout>
 </template>
