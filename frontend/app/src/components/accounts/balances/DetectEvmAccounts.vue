@@ -9,21 +9,17 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <VTooltip right max-width="300">
-    <template #activator="{ on }">
-      <VBtn
+  <RuiTooltip :popper="{ placement: 'right' }" max-width="300">
+    <template #activator>
+      <RuiButton
         color="primary"
-        depressed
         :loading="isEvmAccountsDetecting"
         :disabled="isEvmAccountsDetecting"
-        v-on="on"
         @click="detectEvmAccounts()"
       >
         {{ t('blockchain_balances.evm_detection.title') }}
-      </VBtn>
+      </RuiButton>
     </template>
-    <span>
-      {{ t('blockchain_balances.evm_detection.tooltip') }}
-    </span>
-  </VTooltip>
+    {{ t('blockchain_balances.evm_detection.tooltip') }}
+  </RuiTooltip>
 </template>

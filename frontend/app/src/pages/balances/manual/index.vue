@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { type Ref } from 'vue';
-import Fragment from '@/components/helper/Fragment';
 import { type ManualBalance } from '@/types/manual-balances';
 import { BalanceType } from '@/types/balances';
 
@@ -92,34 +91,25 @@ const context = computed(() => {
 });
 
 const threshold = [1];
-
-const { xl } = useDisplay();
 </script>
 
 <template>
-  <Fragment>
-    <VRow justify="end" class="mb-5">
-      <VCol cols="auto">
-        <PriceRefresh />
-      </VCol>
-    </VRow>
-    <VBtn
-      v-blur
-      fixed
-      bottom
-      right
-      :fab="!xl"
-      :rounded="xl"
-      :x-large="xl"
-      color="primary"
-      class="manual-balances__add-balance"
-      @click="add()"
-    >
-      <VIcon> mdi-plus </VIcon>
-      <div v-if="xl" class="ml-2">
+  <TablePageLayout>
+    <template #buttons>
+      <PriceRefresh />
+      <RuiButton
+        v-blur
+        color="primary"
+        class="manual-balances__add-balance"
+        @click="add()"
+      >
+        <template #prepend>
+          <RuiIcon name="add-line" />
+        </template>
         {{ t('manual_balances.add_manual_balance') }}
-      </div>
-    </VBtn>
+      </RuiButton>
+    </template>
+
     <ManualBalanceTable
       v-intersect="{
         handler: observers.asset,
@@ -160,5 +150,5 @@ const { xl } = useDisplay();
     >
       <ManualBalancesForm :edit="balanceToEdit" :context="context" />
     </BigDialog>
-  </Fragment>
+  </TablePageLayout>
 </template>

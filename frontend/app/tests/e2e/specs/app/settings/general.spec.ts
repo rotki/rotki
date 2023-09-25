@@ -30,10 +30,6 @@ describe('settings::general', () => {
     pageGeneral.visit();
   });
 
-  after(() => {
-    app.fasterLogout();
-  });
-
   it('change precision & validate UI message', () => {
     pageGeneral.setFloatingPrecision(settings.floatingPrecision);
     pageGeneral.confirmInlineSuccess(

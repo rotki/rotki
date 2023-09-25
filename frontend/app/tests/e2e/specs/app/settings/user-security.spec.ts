@@ -18,10 +18,6 @@ describe('settings::data & security', () => {
     app.fasterLogin(username);
   });
 
-  after(() => {
-    app.fasterLogout();
-  });
-
   it('change user password', () => {
     pageUserSecurity.visit();
     pageUserSecurity.changePassword(password, newPassword);

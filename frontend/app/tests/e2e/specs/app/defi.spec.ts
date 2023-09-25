@@ -21,8 +21,4 @@ describe('defi', () => {
     page.selectAccounts();
     page.defiOverviewIsVisible();
   });
-
-  after(() => {
-    app.fasterLogout();
-  });
 });

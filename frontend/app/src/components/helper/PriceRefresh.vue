@@ -1,15 +1,16 @@
 <script setup lang="ts">
-import { type ComputedRef, type PropType } from 'vue';
+import { type ComputedRef } from 'vue';
 import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 
-const props = defineProps({
-  additionalAssets: {
-    required: false,
-    type: Array as PropType<string[]>,
-    default: () => []
+const props = withDefaults(
+  defineProps<{
+    additionalAssets?: string[];
+  }>(),
+  {
+    additionalAssets: () => []
   }
-});
+);
 
 const { isTaskRunning } = useTaskStore();
 const { refreshPrices } = useBalances();
@@ -41,14 +42,16 @@ const disabled: ComputedRef<boolean> = computed(
 </script>
 
 <template>
-  <VBtn
-    outlined
+  <RuiButton
+    variant="outlined"
     color="primary"
     :loading="refreshing"
     :disabled="disabled"
     @click="refresh()"
   >
-    <RuiIcon name="refresh-line" class="mr-2" />
+    <template #prepend>
+      <RuiIcon name="refresh-line" />
+    </template>
     {{ t('price_refresh.button') }}
-  </VBtn>
+  </RuiButton>
 </template>

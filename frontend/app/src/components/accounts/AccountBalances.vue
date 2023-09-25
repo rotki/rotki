@@ -130,95 +130,95 @@ const showConfirmation = (payload: XpubPayload | string[]) => {
 </script>
 
 <template>
-  <VCard :class="`${blockchain.toLocaleLowerCase()}-account-balances`">
-    <VCardTitle>
-      <VRow align="center" no-gutters>
-        <VCol cols="auto">
-          <RefreshButton
-            class="account-balances__refresh"
-            :loading="isSectionLoading || detectingTokens"
-            :tooltip="
-              t('account_balances.refresh_tooltip', {
-                blockchain: chainName
-              })
-            "
-            @refresh="handleBlockchainRefresh()"
-          />
-        </VCol>
-        <VCol cols="auto">
-          <SummaryCardRefreshMenu v-if="hasTokenDetection">
-            <template #refreshMenu>
-              <BlockchainBalanceRefreshBehaviourMenu />
-            </template>
-          </SummaryCardRefreshMenu>
-        </VCol>
-        <VCol class="ps-2">
-          <CardTitle>{{ title }}</CardTitle>
-        </VCol>
-      </VRow>
-    </VCardTitle>
-    <VCardText>
-      <VRow class="mb-2">
-        <VCol cols="12" sm="6">
-          <VTooltip top>
-            <template #activator="{ on, attrs }">
-              <span v-bind="attrs" v-on="on">
-                <VBtn
-                  data-cy="account-balances__delete-button"
-                  color="red"
-                  text
-                  outlined
-                  :disabled="
-                    isAnyBalancesFetching ||
-                    operationRunning ||
-                    selectedAddresses.length === 0
-                  "
-                  @click="showConfirmation(selectedAddresses)"
-                >
-                  <VIcon> mdi-delete-outline </VIcon>
-                  <span>{{ t('common.actions.delete') }}</span>
-                </VBtn>
-              </span>
-            </template>
-            <span>{{ t('account_balances.delete_tooltip') }}</span>
-          </VTooltip>
-          <VTooltip v-if="hasTokenDetection" top>
-            <template #activator="{ on }">
-              <VBtn
-                class="ml-2"
-                text
-                outlined
-                :loading="detectingTokens"
-                :disabled="detectingTokens || isSectionLoading"
-                v-on="on"
-                @click="detectTokensOfAllAddresses()"
-              >
-                <RuiIcon class="mr-2" name="refresh-line" />
-                {{ t('account_balances.detect_tokens.tooltip.redetect') }}
-              </VBtn>
-            </template>
-            <span>
-              {{ t('account_balances.detect_tokens.tooltip.redetect_all') }}
-            </span>
-          </VTooltip>
-        </VCol>
-        <VCol v-if="!isEth2" cols="12" sm="6">
-          <TagFilter v-model="visibleTags" hide-details />
-        </VCol>
-      </VRow>
+  <RuiCard :class="`${blockchain.toLocaleLowerCase()}-account-balances`">
+    <template #header>
+      <div class="flex flex-row items-center gap-2">
+        <RefreshButton
+          class="account-balances__refresh"
+          :loading="isSectionLoading || detectingTokens"
+          :tooltip="
+            t('account_balances.refresh_tooltip', {
+              blockchain: chainName
+            })
+          "
+          @refresh="handleBlockchainRefresh()"
+        />
+        <SummaryCardRefreshMenu v-if="hasTokenDetection">
+          <template #refreshMenu>
+            <BlockchainBalanceRefreshBehaviourMenu />
+          </template>
+        </SummaryCardRefreshMenu>
+        <CardTitle>{{ title }}</CardTitle>
+      </div>
+    </template>
 
-      <AccountBalanceTable
-        ref="balanceTable"
-        data-cy="blockchain-balances"
-        :loopring="loopring"
-        :blockchain="blockchain"
-        :balances="balances"
-        :visible-tags="visibleTags"
-        :selected="selectedAddresses"
-        @edit-click="editAccount($event)"
-        @delete-xpub="showConfirmation($event)"
-        @addresses-selected="selectedAddresses = $event"
+    <div class="flex flex-row items-center gap-2">
+      <RuiTooltip :popper="{ placement: 'top' }" :open-delay="400">
+        <template #activator>
+          <RuiButton
+            data-cy="account-balances__delete-button"
+            color="error"
+            variant="outlined"
+            :disabled="
+              isAnyBalancesFetching ||
+              operationRunning ||
+              selectedAddresses.length === 0
+            "
+            @click="showConfirmation(selectedAddresses)"
+          >
+            <template #prepend>
+              <RuiIcon name="delete-bin-line" />
+            </template>
+            {{ t('common.actions.delete') }}
+          </RuiButton>
+        </template>
+        {{ t('account_balances.delete_tooltip') }}
+      </RuiTooltip>
+
+      <RuiTooltip
+        v-if="hasTokenDetection"
+        :popper="{ placement: 'top' }"
+        :open-delay="400"
+      >
+        <template #activator>
+          <RuiButton
+            class="ml-2"
+            variant="outlined"
+            color="primary"
+            :loading="detectingTokens"
+            :disabled="detectingTokens || isSectionLoading"
+            @click="detectTokensOfAllAddresses()"
+          >
+            <template #prepend>
+              <RuiIcon name="refresh-line" />
+            </template>
+
+            {{ t('account_balances.detect_tokens.tooltip.redetect') }}
+          </RuiButton>
+        </template>
+        {{ t('account_balances.detect_tokens.tooltip.redetect_all') }}
+      </RuiTooltip>
+      <div class="grow" />
+      <TagFilter
+        v-if="!isEth2"
+        v-model="visibleTags"
+        class="max-w-[360px]"
+        hide-details
       />
-    </VCardText>
-  </VCard>
+    </div>
+
+    <AccountBalanceTable
+      ref="balanceTable"
+      class="mt-4"
+      data-cy="blockchain-balances"
+      :loopring="loopring"
+      :blockchain="blockchain"
+      :balances="balances"
+      :visible-tags="visibleTags"
+      :selected="selectedAddresses"
+      @edit-click="editAccount($event)"
+      @delete-xpub="showConfirmation($event)"
+      @addresses-selected="selectedAddresses = $event"
+    />
+  </RuiCard>
 </template>
