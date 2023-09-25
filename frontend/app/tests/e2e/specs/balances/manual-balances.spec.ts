@@ -31,10 +31,6 @@ describe('balances', () => {
     manualBalancesPage.visit();
   });
 
-  after(() => {
-    app.fasterLogout();
-  });
-
   it('add first entry', () => {
     cy.get('.manual-balances__add-balance').should('be.visible');
     cy.get('.manual-balances__add-balance').click();

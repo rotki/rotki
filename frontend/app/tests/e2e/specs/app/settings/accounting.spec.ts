@@ -15,10 +15,6 @@ describe('settings::accounting', () => {
     pageAccounting.visit();
   });
 
-  after(() => {
-    app.fasterLogout();
-  });
-
   it('change crypto2crypto switch & validate UI message', () => {
     pageAccounting.changeSwitch('.accounting-settings__crypto2crypto', false);
   });

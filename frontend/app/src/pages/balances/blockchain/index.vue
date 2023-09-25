@@ -126,38 +126,30 @@ const showDetectEvmAccountsButton: Readonly<Ref<boolean>> = computedEager(
     get(polygonAccounts).length > 0 ||
     get(arbitrumAccounts).length > 0
 );
-
-const { xl } = useDisplay();
 </script>
 
 <template>
-  <div>
-    <VRow justify="end">
-      <VCol cols="auto">
-        <PriceRefresh />
-      </VCol>
-    </VRow>
-    <Card class="blockchain-balances mt-8">
-      <template #title>
-        {{ t('blockchain_balances.title') }}
-      </template>
-      <VBtn
+  <TablePageLayout>
+    <template #buttons>
+      <PriceRefresh />
+      <RuiButton
         v-blur
         data-cy="add-blockchain-balance"
-        fixed
-        bottom
-        right
-        :fab="!xl"
-        :rounded="xl"
-        :x-large="xl"
         color="primary"
         @click="createAccount()"
       >
-        <VIcon> mdi-plus </VIcon>
-        <div v-if="xl" class="ml-2">
-          {{ t('blockchain_balances.add_account') }}
-        </div>
-      </VBtn>
+        <template #prepend>
+          <RuiIcon name="add-line" />
+        </template>
+        {{ t('blockchain_balances.add_account') }}
+      </RuiButton>
+    </template>
+
+    <RuiCard>
+      <template #header>
+        <CardTitle>{{ t('blockchain_balances.title') }}</CardTitle>
+      </template>
+
       <AccountDialog :context="context" />
       <AssetBalances
         data-cy="blockchain-asset-balances"
@@ -165,7 +157,7 @@ const { xl } = useDisplay();
         :title="t('blockchain_balances.per_asset.title')"
         :balances="blockchainAssets"
       />
-    </Card>
+    </RuiCard>
 
     <div class="mt-8">
       <DetectEvmAccounts v-if="showDetectEvmAccountsButton" />
@@ -351,5 +343,5 @@ const { xl } = useDisplay();
       :data-cy="`blockchain-balances-${Blockchain.ARBITRUM_ONE}`"
       @edit-account="editAccount($event)"
     />
-  </div>
+  </TablePageLayout>
 </template>

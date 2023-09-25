@@ -40,10 +40,6 @@ describe('blockchain balances', () => {
     blockchainBalancesPage.visit();
   });
 
-  after(() => {
-    app.fasterLogout();
-  });
-
   it('add an ETH account and view the account balance', () => {
     cy.get('[data-cy="add-blockchain-balance"]').should('be.visible');
     cy.get('[data-cy="add-blockchain-balance"]').click();
