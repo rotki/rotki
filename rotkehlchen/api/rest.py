@@ -30,7 +30,11 @@ from rotkehlchen.accounting.constants import (
     FREE_REPORTS_LOOKUP_LIMIT,
 )
 from rotkehlchen.accounting.debugimporter.json import DebugHistoryImporter
-from rotkehlchen.accounting.export.csv import CSVWriteError
+from rotkehlchen.accounting.export.csv import (
+    FILENAME_HISTORY_EVENTS_CSV,
+    CSVWriteError,
+    dict_to_csv_file,
+)
 from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures.balance import Balance, BalanceType
 from rotkehlchen.accounting.structures.base import HistoryBaseEntryType, StakingEvent
@@ -4413,3 +4417,72 @@ class RestAPI:
             result=_wrap_in_ok_result({'total': total, 'successfull': successfull}),
             status_code=HTTPStatus.OK,
         )
+
+    def export_history_events(
+            self,
+            filter_query: HistoryBaseEntryFilterQuery,
+            directory_path: Optional[Path],
+    ) -> Response:
+        """ Export or Download history events data to a CSV file."""
+        dbevents = DBHistoryEvents(self.rotkehlchen.data.db)
+        with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
+            history_events, _, _ = dbevents.get_history_events_and_limit_info(
+                cursor=cursor,
+                filter_query=filter_query,
+                has_premium=True,
+                entries_limit=None,
+            )
+
+        if len(history_events) == 0:
+            return api_response(
+                wrap_in_fail_result('No history processed in order to perform an export'),
+                status_code=HTTPStatus.CONFLICT,
+            )
+
+        serialized_history_events = []
+        headers: dict[str, None] = {}
+        for event in history_events:
+            serialized_event = event.serialize_for_csv()
+            serialized_history_events.append(serialized_event)
+            # maintain insertion order without storing extra info
+            headers.update({key: None for key in serialized_event})
+
+        if directory_path is None:  # on download
+            with tempfile.TemporaryDirectory() as temp_dir:
+                file_path = Path(temp_dir) / FILENAME_HISTORY_EVENTS_CSV
+
+                try:
+                    dict_to_csv_file(
+                        file_path,
+                        serialized_history_events,
+                        headers.keys(),
+                    )
+                    return send_file(
+                        path_or_file=file_path,
+                        mimetype='text/csv',
+                        as_attachment=True,
+                        download_name=FILENAME_HISTORY_EVENTS_CSV,
+                    )
+                except (CSVWriteError, PermissionError) as e:
+                    return api_response(
+                        wrap_in_fail_result(str(e)),
+                        status_code=HTTPStatus.CONFLICT,
+                    )
+                except FileNotFoundError:
+                    return api_response(
+                        wrap_in_fail_result('No file was found'),
+                        status_code=HTTPStatus.NOT_FOUND,
+                    )
+
+        try:  # from here and below we do a direct export to filesystem
+            directory_path.mkdir(parents=True, exist_ok=True)
+            file_path = directory_path / FILENAME_HISTORY_EVENTS_CSV
+            dict_to_csv_file(
+                file_path,
+                serialized_history_events,
+                headers.keys(),
+            )
+        except (CSVWriteError, PermissionError) as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
+
+        return api_response(OK_RESULT, status_code=HTTPStatus.OK)

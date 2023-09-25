@@ -5,7 +5,7 @@ from collections import defaultdict
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional, cast
 
-from rotkehlchen.accounting.export.csv import _dict_to_csv_file
+from rotkehlchen.accounting.export.csv import dict_to_csv_file
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Location
 
@@ -38,7 +38,7 @@ def export_skipped_external_events(rotki: 'Rotkehlchen', filepath: Optional[Path
     """
     Export the skipped events in a CSV file.
 
-    If `filepath` is provides the export generated is written to that file.
+    If `filepath` is provided the export generated is written to that file.
     Otherwise a file is created, the data are written to this file and the path
     is returned for download
 
@@ -56,7 +56,7 @@ def export_skipped_external_events(rotki: 'Rotkehlchen', filepath: Optional[Path
         filepath.touch(exist_ok=True)
         newfilepath = filepath
 
-    _dict_to_csv_file(path=newfilepath, dictionary_list=data)
+    dict_to_csv_file(path=newfilepath, dictionary_list=data)
     return Path(newfilepath)
 
 
