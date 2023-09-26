@@ -280,20 +280,28 @@ watch(loading, async (isLoading, wasLoading) => {
 <template>
   <TablePageLayout :hide-header="!!locationOverview">
     <template #title>
+      <span class="text-rui-text-secondary">
+        {{ t('navigation_menu.history') }} /
+      </span>
       {{ t('closed_trades.title') }}
     </template>
     <template #buttons>
-      <RuiButton
-        variant="outlined"
-        color="primary"
-        :loading="loading"
-        @click="refreshTrades(true)"
-      >
-        <template #prepend>
-          <RuiIcon name="restart-line" />
+      <RuiTooltip>
+        <template #activator>
+          <RuiButton
+            variant="outlined"
+            color="primary"
+            :loading="loading"
+            @click="refreshTrades(true)"
+          >
+            <template #prepend>
+              <RuiIcon name="refresh-line" />
+            </template>
+            {{ t('common.refresh') }}
+          </RuiButton>
         </template>
         {{ t('closed_trades.refresh_tooltip') }}
-      </RuiButton>
+      </RuiTooltip>
       <RuiButton
         color="primary"
         data-cy="closed-trades__add-trade"

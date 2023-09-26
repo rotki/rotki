@@ -1419,7 +1419,7 @@
     "label": "trades",
     "refresh_tooltip": "Refresh trades",
     "selected": "{count} trade(s) selected",
-    "title": "Closed Orders"
+    "title": "Exchange Trades"
   },
   "collapsed_pending_tasks": {
     "title": "{count} pending task | {count} pending tasks"
@@ -1482,6 +1482,7 @@
     "price_in_symbol": "Price in {symbol}",
     "priority": "Priority",
     "protocol": "Protocol",
+    "refresh": "Refresh",
     "rewards": "Rewards",
     "select_address": "Select address(es)",
     "status": "Status",
@@ -3483,7 +3484,7 @@
       },
       "overview": "Overview",
       "ranges": {
-        "one_day": 1.0,
+        "one_day": "1D",
         "one_month": "1M",
         "one_week": "1W",
         "one_year": "1Y"

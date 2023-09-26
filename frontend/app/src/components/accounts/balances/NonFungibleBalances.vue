@@ -219,112 +219,123 @@ const showDeleteConfirmation = (item: NonFungibleBalance) => {
 </script>
 
 <template>
-  <Card>
+  <TablePageLayout>
     <template #title>
+      <span class="text-rui-text-secondary">
+        {{ t('navigation_menu.accounts_balances') }} /
+      </span>
       {{ t('non_fungible_balances.title') }}
-      <VIcon v-if="loading" color="primary" class="ml-2">
-        mdi-spin mdi-loading
-      </VIcon>
     </template>
-    <template #actions>
+    <template #buttons>
+      <div class="flex flex-row items-center justify-end gap-2">
+        <RuiTooltip>
+          <template #activator>
+            <RuiButton
+              variant="outlined"
+              color="primary"
+              :loading="loading"
+              @click="refreshNonFungibleBalances(true)"
+            >
+              <template #prepend>
+                <RuiIcon name="refresh-line" />
+              </template>
+              {{ t('common.refresh') }}
+            </RuiButton>
+          </template>
+          {{ t('non_fungible_balances.refresh') }}
+        </RuiTooltip>
+        <ActiveModules :modules="modules" />
+        <NftImageRenderingSettingMenu />
+      </div>
+    </template>
+
+    <RuiCard>
       <NonFungibleBalancesFilter
+        class="mb-4"
         :selected="selected"
         :ignored-assets-handling="ignoredAssetsHandling"
         @update:selected="selected = $event"
         @update:ignored-assets-handling="ignoredAssetsHandling = $event"
         @mass-ignore="massIgnore($event)"
       />
-    </template>
-    <template #details>
-      <div class="flex">
-        <NftImageRenderingSettingMenu />
-        <ActiveModules :modules="modules" class="mx-2" />
-        <RefreshButton
-          :loading="loading"
-          :tooltip="t('non_fungible_balances.refresh')"
-          @refresh="refreshNonFungibleBalances(true)"
-        />
-      </div>
-    </template>
-
-    <CollectionHandler :collection="balances" @set-page="setPage($event)">
-      <template #default="{ data, itemLength, totalUsdValue }">
-        <DataTable
-          v-model="selected"
-          :headers="tableHeaders"
-          :items="data"
-          :options="options"
-          :server-items-length="itemLength"
-          :loading="isLoading"
-          show-select
-          @update:options="setOptions($event)"
-        >
-          <template #item.name="{ item }">
-            <NftDetails :identifier="item.id" />
-          </template>
-          <template #item.ignored="{ item }">
-            <div class="flex justify-center">
-              <VSwitch
-                :input-value="isIgnored(item.id)"
-                @change="toggleIgnoreAsset(item.id)"
-              />
-            </div>
-          </template>
-          <template #item.priceInAsset="{ item }">
-            <AmountDisplay
-              v-if="item.priceAsset !== currencySymbol"
-              :value="item.priceInAsset"
-              :asset="item.priceAsset"
-            />
-            <span v-else>-</span>
-          </template>
-          <template #item.lastPrice="{ item }">
-            <AmountDisplay
-              :price-asset="item.priceAsset"
-              :amount="item.priceInAsset"
-              :value="item.usdPrice"
-              no-scramble
-              show-currency="symbol"
-              fiat-currency="USD"
-            />
-          </template>
-          <template #item.actions="{ item }">
-            <RowActions
-              :delete-tooltip="t('non_fungible_balances.row.delete')"
-              :edit-tooltip="t('non_fungible_balances.row.edit')"
-              :delete-disabled="!item.manuallyInput"
-              @delete-click="showDeleteConfirmation(item)"
-              @edit-click="edit = item"
-            />
-          </template>
-          <template #item.manuallyInput="{ item }">
-            <VIcon v-if="item.manuallyInput" color="green">mdi-check</VIcon>
-          </template>
-          <template #body.append="{ isMobile }">
-            <RowAppend
-              label-colspan="4"
-              :label="t('common.total')"
-              :right-patch-colspan="1"
-              :is-mobile="isMobile"
-            >
+      <CollectionHandler :collection="balances" @set-page="setPage($event)">
+        <template #default="{ data, itemLength, totalUsdValue }">
+          <DataTable
+            v-model="selected"
+            :headers="tableHeaders"
+            :items="data"
+            :options="options"
+            :server-items-length="itemLength"
+            :loading="isLoading"
+            show-select
+            @update:options="setOptions($event)"
+          >
+            <template #item.name="{ item }">
+              <NftDetails :identifier="item.id" />
+            </template>
+            <template #item.ignored="{ item }">
+              <div class="flex justify-center">
+                <VSwitch
+                  :input-value="isIgnored(item.id)"
+                  @change="toggleIgnoreAsset(item.id)"
+                />
+              </div>
+            </template>
+            <template #item.priceInAsset="{ item }">
               <AmountDisplay
-                :value="totalUsdValue"
+                v-if="item.priceAsset !== currencySymbol"
+                :value="item.priceInAsset"
+                :asset="item.priceAsset"
+              />
+              <span v-else>-</span>
+            </template>
+            <template #item.lastPrice="{ item }">
+              <AmountDisplay
+                :price-asset="item.priceAsset"
+                :amount="item.priceInAsset"
+                :value="item.usdPrice"
+                no-scramble
                 show-currency="symbol"
                 fiat-currency="USD"
               />
-            </RowAppend>
-          </template>
-        </DataTable>
-      </template>
-    </CollectionHandler>
-
+            </template>
+            <template #item.actions="{ item }">
+              <RowActions
+                :delete-tooltip="t('non_fungible_balances.row.delete')"
+                :edit-tooltip="t('non_fungible_balances.row.edit')"
+                :delete-disabled="!item.manuallyInput"
+                @delete-click="showDeleteConfirmation(item)"
+                @edit-click="edit = item"
+              />
+            </template>
+            <template #item.manuallyInput="{ item }">
+              <VIcon v-if="item.manuallyInput" color="green">mdi-check</VIcon>
+            </template>
+            <template #body.append="{ isMobile }">
+              <RowAppend
+                label-colspan="4"
+                :label="t('common.total')"
+                :right-patch-colspan="1"
+                :is-mobile="isMobile"
+              >
+                <AmountDisplay
+                  :value="totalUsdValue"
+                  show-currency="symbol"
+                  fiat-currency="USD"
+                />
+              </RowAppend>
+            </template>
+          </DataTable>
+        </template>
+      </CollectionHandler>
+    </RuiCard>
     <NonFungibleBalanceEdit
       v-if="!!edit"
       :value="edit"
       @close="edit = null"
       @save="setPrice($event.price, $event.asset)"
     />
-  </Card>
+  </TablePageLayout>
 </template>
 
 <style scoped lang="scss">

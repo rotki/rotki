@@ -1339,7 +1339,7 @@
     "label": "Intercambios",
     "refresh_tooltip": "Refrescar intercambios",
     "selected": "{count} interambio(s) seleccionados",
-    "title": "Closed Orders"
+    "title": "Exchange Trades"
   },
   "collapsed_pending_tasks": {
     "title": "{count} pending task | {count} pending tasks"
@@ -1399,6 +1399,7 @@
     "price": "Precio",
     "price_in_symbol": "Precio en {symbol}",
     "protocol": "Protocol",
+    "refresh": "Actualizar",
     "rewards": "Rewards",
     "select_address": "Select address(es)",
     "status": "Estado",
@@ -3262,7 +3263,7 @@
       },
       "overview": "Overview",
       "ranges": {
-        "one_day": 1.0,
+        "one_day": "1D",
         "one_month": "1M",
         "one_week": "1W",
         "one_year": "1Y"

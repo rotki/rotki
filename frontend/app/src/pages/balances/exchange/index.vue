@@ -102,7 +102,32 @@ const { mdAndUp } = useDisplay();
 
 <template>
   <TablePageLayout>
+    <template #title>
+      <span class="text-rui-text-secondary">
+        {{ t('navigation_menu.accounts_balances') }}
+        /
+      </span>
+      {{ t('exchange_balances.title') }}
+    </template>
     <template #buttons>
+      <RuiTooltip open-delay="400">
+        <template #activator>
+          <RuiButton
+            color="primary"
+            variant="outlined"
+            class="exchange-balances__refresh"
+            :disabled="exchangeDetailTabs === 0"
+            :loading="isExchangeLoading"
+            @click="refreshExchangeBalances()"
+          >
+            <template #prepend>
+              <RuiIcon name="refresh-line" />
+            </template>
+            {{ t('common.refresh') }}
+          </RuiButton>
+        </template>
+        {{ t('exchange_balances.refresh_tooltip') }}
+      </RuiTooltip>
       <RuiButton v-blur color="primary" @click="navigate()">
         <template #prepend>
           <RuiIcon name="add-line" />
@@ -111,17 +136,6 @@ const { mdAndUp } = useDisplay();
       </RuiButton>
     </template>
     <RuiCard class="exchange-balances">
-      <template #header>
-        <div class="flex flex-row items-center gap-2">
-          <RefreshButton
-            class="exchange-balances__refresh"
-            :loading="isExchangeLoading"
-            :tooltip="t('exchange_balances.refresh_tooltip')"
-            @refresh="refreshExchangeBalances()"
-          />
-          <CardTitle>{{ t('exchange_balances.title') }}</CardTitle>
-        </div>
-      </template>
       <VSheet outlined class="rounded-xl overflow-hidden">
         <VRow
           v-if="usedExchanges.length > 0"

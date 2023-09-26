@@ -225,20 +225,28 @@ watch(loading, async (isLoading, wasLoading) => {
 <template>
   <TablePageLayout :hide-header="!mainPage">
     <template #title>
+      <span class="text-rui-text-secondary">
+        {{ t('navigation_menu.history') }} /
+      </span>
       {{ t('ledger_actions.title') }}
     </template>
     <template v-if="mainPage" #buttons>
-      <RuiButton
-        :loading="loading"
-        color="primary"
-        variant="outlined"
-        @click="refreshLedgerActions(true)"
-      >
-        <template #prepend>
-          <RuiIcon name="restart-line" />
+      <RuiTooltip open-delay="400">
+        <template #activator>
+          <RuiButton
+            :loading="loading"
+            color="primary"
+            variant="outlined"
+            @click="refreshLedgerActions(true)"
+          >
+            <template #prepend>
+              <RuiIcon name="restart-line" />
+            </template>
+            {{ t('common.refresh') }}
+          </RuiButton>
         </template>
         {{ t('ledger_actions.refresh_tooltip') }}
-      </RuiButton>
+      </RuiTooltip>
 
       <RuiButton
         color="primary"

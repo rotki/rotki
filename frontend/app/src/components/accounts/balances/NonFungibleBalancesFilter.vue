@@ -36,20 +36,22 @@ const css = useCssModule();
 </script>
 
 <template>
-  <VRow>
-    <VCol cols="12" md="6">
+  <div class="flex flex-row items-center justify-between flex-wrap gap-2">
+    <div class="flex flex-row gap-2">
       <IgnoreButtons
         :disabled="selected.length === 0"
         @ignore="massIgnore($event)"
       />
-      <div v-if="selected.length > 0" class="mt-2 ms-1">
-        {{ t('asset_table.selected', { count: selected.length }) }}
-        <VBtn small text @click="updateSelected([])">
+      <div v-if="selected.length > 0" class="flex flex-row items-center gap-2">
+        <span class="text-body-2 text-rui-text-secondary">{{
+          t('asset_table.selected', { count: selected.length })
+        }}</span>
+        <RuiButton size="sm" variant="outlined" @click="updateSelected([])">
           {{ t('common.actions.clear_selection') }}
-        </VBtn>
+        </RuiButton>
       </div>
-    </VCol>
-    <VCol cols="12" md="6" class="pb-md-8">
+    </div>
+    <div>
       <VMenu offset-y :close-on-content-click="false">
         <template #activator="{ on }">
           <VBtn outlined text height="40px" data-cy="asset-filter" v-on="on">
@@ -85,8 +87,8 @@ const css = useCssModule();
           </VListItem>
         </VList>
       </VMenu>
-    </VCol>
-  </VRow>
+    </div>
+  </div>
 </template>
 
 <style module lang="scss">
