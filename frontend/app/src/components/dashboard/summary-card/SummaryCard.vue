@@ -25,49 +25,57 @@ const slots = useSlots();
 </script>
 
 <template>
-  <VCard
+  <RuiCard
     :loading="isLoading"
     :class="`dashboard__summary-card__${name}`"
-    class="pb-4"
+    class="pb-6 pt-4 h-auto"
   >
-    <VCardTitle
-      class="font-medium text-capitalize summary-card__header flex-nowrap flex justify-between gap-2 pb-4"
-    >
-      <NavigatorLink
-        :enabled="!!navigatesTo"
-        :to="{ path: navigatesTo }"
-        tag="div"
-        class="text-clip truncate"
-        :title="t('summary_card.title', { name })"
+    <template #custom-header>
+      <CardTitle
+        class="text-capitalize summary-card__header flex-nowrap flex justify-between gap-2 pb-4 px-6"
       >
-        {{ t('summary_card.title', { name }) }}
-      </NavigatorLink>
-      <div class="flex items-center">
-        <VTooltip v-if="canRefresh" bottom max-width="300px">
-          <template #activator="{ on: tooltipOn }">
-            <VBtn
-              icon
-              :disabled="isLoading"
-              color="primary"
-              @click="refresh(name)"
-              v-on="tooltipOn"
-            >
-              <RuiIcon color="primary" name="restart-line" />
-            </VBtn>
-          </template>
-          <span>
-            {{ t('summary_card.refresh_tooltip', { name }) }}
-          </span>
-        </VTooltip>
-        <SummaryCardRefreshMenu>
-          <template v-if="slots.refreshMenu" #refreshMenu>
-            <slot name="refreshMenu" />
-          </template>
-        </SummaryCardRefreshMenu>
-      </div>
-    </VCardTitle>
-    <VList class="py-0">
+        <NavigatorLink
+          :enabled="!!navigatesTo"
+          :to="{ path: navigatesTo }"
+          tag="div"
+          class="text-clip truncate"
+          :title="t('summary_card.title', { name })"
+        >
+          {{ t('summary_card.title', { name }) }}
+        </NavigatorLink>
+        <div class="flex items-center">
+          <RuiTooltip
+            v-if="canRefresh"
+            open-delay="400"
+            :popper="{ placement: 'bottom', offsetDistance: 0 }"
+            max-width="300px"
+          >
+            <template #activator="{ on: tooltipOn }">
+              <RuiButton
+                icon
+                variant="text"
+                :loading="isLoading"
+                color="primary"
+                @click="refresh(name)"
+                v-on="tooltipOn"
+              >
+                <RuiIcon color="primary" name="restart-line" />
+              </RuiButton>
+            </template>
+            <span>
+              {{ t('summary_card.refresh_tooltip', { name }) }}
+            </span>
+          </RuiTooltip>
+          <SummaryCardRefreshMenu>
+            <template v-if="slots.refreshMenu" #refreshMenu>
+              <slot name="refreshMenu" />
+            </template>
+          </SummaryCardRefreshMenu>
+        </div>
+      </CardTitle>
+    </template>
+    <VList class="py-0 -m-4">
       <slot />
     </VList>
-  </VCard>
+  </RuiCard>
 </template>

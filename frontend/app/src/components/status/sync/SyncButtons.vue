@@ -24,7 +24,7 @@ const action = (action: SyncAction) => {
 
 <template>
   <div class="flex flex-row justify-between gap-1">
-    <RuiTooltip open-delay="400" class="w-full" close-delay="50000">
+    <RuiTooltip open-delay="400" class="w-full">
       <template #activator>
         <RuiButton
           variant="outlined"

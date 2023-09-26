@@ -33,6 +33,7 @@ import {
   RiEyeLine,
   RiEyeOffLine,
   RiFileChartLine,
+  RiFileCopyLine,
   RiFileUploadLine,
   RiFilterLine,
   RiFolderReceivedLine,
@@ -151,6 +152,7 @@ Vue.use(RuiPlugin, {
     RiLockLine,
     RiCloseLine,
     RiErrorWarningLine,
-    RiFilterLine
+    RiFilterLine,
+    RiFileCopyLine
   ]
 });

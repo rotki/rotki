@@ -341,9 +341,11 @@ const { coingeckoContributeUrl, cryptocompareContributeUrl } = useInterop();
       <VCol cols="auto" class="font-medium">
         {{ t('asset_form.identifier') }}
       </VCol>
-      <VCol>
+      <VCol class="flex items-center">
         {{ editableItem.identifier }}
         <CopyButton
+          class="ml-2"
+          size="sm"
           :value="editableItem.identifier"
           :tooltip="t('asset_form.identifier_copy')"
         />
