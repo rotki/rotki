@@ -571,98 +571,94 @@ const { locationData } = useLocations();
 </script>
 
 <template>
-  <div>
-    <Card class="mt-8">
-      <VBtn
-        v-if="mainPage"
-        absolute
-        fab
-        top
-        right
-        dark
+  <TablePageLayout :hide-header="!mainPage">
+    <template #title>
+      {{ usedTitle }}
+    </template>
+    <template #buttons>
+      <RuiButton
+        :disabled="refreshing"
+        variant="outlined"
+        color="primary"
+        @click="refresh(true)"
+      >
+        <template #prepend>
+          <RuiIcon name="restart-line" />
+        </template>
+        {{ t('transactions.refresh_tooltip') }}
+      </RuiButton>
+      <RuiButton
         color="primary"
         data-cy="ledger-actions__add"
         @click="addTransactionHash()"
       >
-        <VIcon>mdi-plus</VIcon>
-      </VBtn>
-      <template #title>
-        <RefreshButton
-          :disabled="refreshing"
-          :tooltip="t('transactions.refresh_tooltip')"
-          @refresh="refresh(true)"
-        />
-        {{ usedTitle }}
+        <template #prepend>
+          <RuiIcon name="add-line" />
+        </template>
+        {{ t('transactions.dialog.add_tx') }}
+      </RuiButton>
+    </template>
+
+    <RuiCard>
+      <template v-if="!mainPage" #header>
+        <CardTitle>
+          <RefreshButton
+            :disabled="refreshing"
+            :tooltip="t('transactions.refresh_tooltip')"
+            @refresh="refresh(true)"
+          />
+          {{ usedTitle }}
+        </CardTitle>
       </template>
-      <template #actions>
-        <VRow>
-          <VCol cols="12" md="5">
-            <VRow>
-              <VCol v-if="includeEvmEvents" cols="auto">
-                <VTooltip top>
-                  <template #activator="{ on }">
-                    <VBtn
-                      color="primary"
-                      depressed
-                      height="40px"
-                      small
-                      :loading="eventTaskLoading"
-                      :disabled="refreshing"
-                      v-on="on"
-                      @click="redecodeAllEvmEvents()"
-                    >
-                      <VIcon> mdi-select-compare </VIcon>
-                    </VBtn>
-                  </template>
-                  <span>
-                    {{ t('transactions.redecode_events.title') }}
-                  </span>
-                </VTooltip>
-              </VCol>
-              <VCol v-if="!useExternalAccountFilter">
-                <div>
-                  <BlockchainAccountSelector
-                    :value="accounts"
-                    :chains="txChains"
-                    dense
-                    :label="t('transactions.filter.account')"
-                    outlined
-                    no-padding
-                    multichain
-                    hide-chain-icon
-                    unique
-                    flat
-                    @input="onFilterAccountsChanged($event)"
-                  />
-                </div>
-              </VCol>
-            </VRow>
-          </VCol>
-          <VCol cols="12" md="7">
-            <div>
-              <TableFilter
-                :matches="filters"
-                :matchers="matchers"
-                :location="SavedFilterLocation.HISTORY_EVENTS"
-                :disabled="!premium"
-                @update:matches="setFilter($event)"
-              >
-                <template #tooltip>
-                  <i18n tag="span" path="transactions.filtering_premium_hint">
-                    <template #link>
-                      <b>
-                        <ExternalLink url="https://rotki.com/products">
-                          {{ t('common.website') }}
-                        </ExternalLink>
-                      </b>
-                    </template>
-                  </i18n>
+
+      <HistoryTableActions hide-divider>
+        <template #filter>
+          <TableFilter
+            :matches="filters"
+            :matchers="matchers"
+            :location="SavedFilterLocation.HISTORY_EVENTS"
+            :disabled="!premium"
+            @update:matches="setFilter($event)"
+          >
+            <template #tooltip>
+              <i18n tag="span" path="transactions.filtering_premium_hint">
+                <template #link>
+                  <b>
+                    <ExternalLink url="https://rotki.com/products">
+                      {{ t('common.website') }}
+                    </ExternalLink>
+                  </b>
                 </template>
-              </TableFilter>
-            </div>
-          </VCol>
-        </VRow>
-      </template>
+              </i18n>
+            </template>
+          </TableFilter>
+        </template>
+
+        <RuiButton
+          v-if="includeEvmEvents"
+          color="primary"
+          :loading="eventTaskLoading"
+          :disabled="refreshing"
+          @click="redecodeAllEvmEvents()"
+        >
+          {{ t('transactions.redecode_events.title') }}
+        </RuiButton>
+
+        <BlockchainAccountSelector
+          v-if="!useExternalAccountFilter"
+          :value="accounts"
+          :chains="txChains"
+          dense
+          :label="t('transactions.filter.account')"
+          outlined
+          no-padding
+          multichain
+          hide-chain-icon
+          unique
+          flat
+          @input="onFilterAccountsChanged($event)"
+        />
+      </HistoryTableActions>
 
       <CollectionHandler :collection="eventsHeader" @set-page="setPage($event)">
         <template
@@ -773,15 +769,15 @@ const { locationData } = useLocations();
           </DataTable>
         </template>
       </CollectionHandler>
-    </Card>
 
-    <HistoryEventFormDialog
-      :loading="sectionLoading"
-      :editable-item="editableItem"
-      :transaction="selectedTransaction"
-      :next-sequence="nextSequence"
-    />
+      <HistoryEventFormDialog
+        :loading="sectionLoading"
+        :editable-item="editableItem"
+        :transaction="selectedTransaction"
+        :next-sequence="nextSequence"
+      />
 
-    <TransactionFormDialog :loading="sectionLoading" />
-  </div>
+      <TransactionFormDialog :loading="sectionLoading" />
+    </RuiCard>
+  </TablePageLayout>
 </template>

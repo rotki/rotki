@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { type DataTableHeader } from '@/types/vuetify';
 import { type Collection } from '@/types/collection';
-import Fragment from '@/components/helper/Fragment';
 import { Routes } from '@/router/routes';
 import { type TradeLocation } from '@/types/history/trade/location';
 import {
@@ -279,83 +278,87 @@ watch(loading, async (isLoading, wasLoading) => {
 </script>
 
 <template>
-  <Fragment>
-    <Card class="mt-8">
-      <VBtn
-        v-if="!locationOverview"
-        absolute
-        fab
-        top
-        right
-        dark
+  <TablePageLayout :hide-header="!!locationOverview">
+    <template #title>
+      {{ t('closed_trades.title') }}
+    </template>
+    <template #buttons>
+      <RuiButton
+        variant="outlined"
+        color="primary"
+        :loading="loading"
+        @click="refreshTrades(true)"
+      >
+        <template #prepend>
+          <RuiIcon name="restart-line" />
+        </template>
+        {{ t('closed_trades.refresh_tooltip') }}
+      </RuiButton>
+      <RuiButton
         color="primary"
         data-cy="closed-trades__add-trade"
         @click="newExternalTrade()"
       >
-        <VIcon> mdi-plus </VIcon>
-      </VBtn>
-      <template #title>
-        <RefreshButton
-          v-if="!locationOverview"
-          :loading="loading"
-          :tooltip="t('closed_trades.refresh_tooltip')"
-          @refresh="refreshTrades(true)"
+        <template #prepend>
+          <RuiIcon name="add-line" />
+        </template>
+        {{ t('closed_trades.dialog.add.title') }}
+      </RuiButton>
+    </template>
+
+    <RuiCard>
+      <template v-if="!!locationOverview" #header>
+        <CardTitle>
+          <NavigatorLink :to="{ path: pageRoute }">
+            {{ t('closed_trades.title') }}
+          </NavigatorLink>
+        </CardTitle>
+      </template>
+
+      <HistoryTableActions
+        v-if="!locationOverview"
+        class="flex flex-row items-center flex-wrap gap-2 mb-4"
+      >
+        <template #filter>
+          <TableFilter
+            :matches="filters"
+            :matchers="matchers"
+            :location="SavedFilterLocation.HISTORY_TRADES"
+            @update:matches="setFilter($event)"
+          />
+        </template>
+
+        <RuiButton
+          variant="outlined"
+          color="error"
+          :disabled="selected.length === 0"
+          @click="massDelete()"
+        >
+          <RuiIcon name="delete-bin-line" />
+        </RuiButton>
+
+        <IgnoreButtons
+          :disabled="selected.length === 0 || loading"
+          @ignore="ignore($event)"
         />
-        <NavigatorLink :to="{ path: pageRoute }" :enabled="!!locationOverview">
-          {{ t('closed_trades.title') }}
-        </NavigatorLink>
-      </template>
-      <template v-if="!locationOverview" #actions>
-        <VRow>
-          <VCol cols="12" md="6" class="flex">
-            <div>
-              <VRow>
-                <VCol cols="auto">
-                  <IgnoreButtons
-                    :disabled="selected.length === 0 || loading"
-                    @ignore="ignore($event)"
-                  />
-                </VCol>
-                <VCol>
-                  <VBtn
-                    text
-                    outlined
-                    color="red"
-                    :disabled="selected.length === 0"
-                    @click="massDelete()"
-                  >
-                    <VIcon> mdi-delete-outline </VIcon>
-                  </VBtn>
-                </VCol>
-              </VRow>
-              <div v-if="selected.length > 0" class="mt-2 ms-1">
-                {{ t('closed_trades.selected', { count: selected.length }) }}
-                <VBtn small text @click="selected = []">
-                  {{ t('common.actions.clear_selection') }}
-                </VBtn>
-              </div>
-            </div>
-            <div>
-              <VSwitch
-                v-model="hideIgnoredTrades"
-                class="mt-0 ml-8"
-                hide-details
-                :label="t('closed_trades.hide_ignored_trades')"
-              />
-            </div>
-          </VCol>
-          <VCol cols="12" md="6">
-            <div class="pb-md-8">
-              <TableFilter
-                :matches="filters"
-                :matchers="matchers"
-                :location="SavedFilterLocation.HISTORY_TRADES"
-                @update:matches="setFilter($event)"
-              />
-            </div>
-          </VCol>
-        </VRow>
-      </template>
+        <div
+          v-if="selected.length > 0"
+          class="flex flex-row items-center gap-2"
+        >
+          {{ t('closed_trades.selected', { count: selected.length }) }}
+          <RuiButton variant="text" @click="selected = []">
+            {{ t('common.actions.clear_selection') }}
+          </RuiButton>
+        </div>
+      </HistoryTableActions>
+
+      <VSwitch
+        v-if="mainPage"
+        v-model="hideIgnoredTrades"
+        class="mb-4"
+        hide-details
+        :label="t('closed_trades.hide_ignored_trades')"
+      />
 
       <CollectionHandler :collection="trades" @set-page="setPage($event)">
         <template #default="{ data, limit, total, showUpgradeRow, itemLength }">
@@ -476,7 +479,10 @@ watch(loading, async (isLoading, wasLoading) => {
           </DataTable>
         </template>
       </CollectionHandler>
-    </Card>
-    <ExternalTradeFormDialog :loading="loading" :editable-item="editableItem" />
-  </Fragment>
+      <ExternalTradeFormDialog
+        :loading="loading"
+        :editable-item="editableItem"
+      />
+    </RuiCard>
+  </TablePageLayout>
 </template>
