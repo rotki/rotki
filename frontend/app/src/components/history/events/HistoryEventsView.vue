@@ -573,20 +573,28 @@ const { locationData } = useLocations();
 <template>
   <TablePageLayout :hide-header="!mainPage">
     <template #title>
+      <span class="text-rui-text-secondary">
+        {{ t('navigation_menu.history') }} /
+      </span>
       {{ usedTitle }}
     </template>
     <template #buttons>
-      <RuiButton
-        :disabled="refreshing"
-        variant="outlined"
-        color="primary"
-        @click="refresh(true)"
-      >
-        <template #prepend>
-          <RuiIcon name="restart-line" />
+      <RuiTooltip open-delay="400">
+        <template #activator>
+          <RuiButton
+            :disabled="refreshing"
+            variant="outlined"
+            color="primary"
+            @click="refresh(true)"
+          >
+            <template #prepend>
+              <RuiIcon name="refresh-line" />
+            </template>
+            {{ t('common.refresh') }}
+          </RuiButton>
         </template>
         {{ t('transactions.refresh_tooltip') }}
-      </RuiButton>
+      </RuiTooltip>
       <RuiButton
         color="primary"
         data-cy="ledger-actions__add"

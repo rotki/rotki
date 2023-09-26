@@ -137,20 +137,28 @@ watch(loading, async (isLoading, wasLoading) => {
 <template>
   <TablePageLayout :hide-header="!mainPage">
     <template #title>
+      <span class="text-rui-text-secondary">
+        {{ t('navigation_menu.history') }} /
+      </span>
       {{ t('deposits_withdrawals.title') }}
     </template>
     <template #buttons>
-      <RuiButton
-        variant="outlined"
-        color="primary"
-        :loading="loading"
-        @click="refreshAssetMovements(true)"
-      >
-        <template #prepend>
-          <RuiIcon name="restart-line" />
+      <RuiTooltip open-delay="400">
+        <template #activator>
+          <RuiButton
+            variant="outlined"
+            color="primary"
+            :loading="loading"
+            @click="refreshAssetMovements(true)"
+          >
+            <template #prepend>
+              <RuiIcon name="refresh-line" />
+            </template>
+            {{ t('common.refresh') }}
+          </RuiButton>
         </template>
         {{ t('deposits_withdrawals.refresh_tooltip') }}
-      </RuiButton>
+      </RuiTooltip>
     </template>
 
     <RuiCard>

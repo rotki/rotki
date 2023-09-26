@@ -130,6 +130,12 @@ const showDetectEvmAccountsButton: Readonly<Ref<boolean>> = computedEager(
 
 <template>
   <TablePageLayout>
+    <template #title>
+      <span class="text-rui-text-secondary">
+        {{ t('navigation_menu.accounts_balances') }} /
+      </span>
+      {{ t('navigation_menu.accounts_balances_sub.blockchain_balances') }}
+    </template>
     <template #buttons>
       <PriceRefresh />
       <RuiButton

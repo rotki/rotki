@@ -96,8 +96,12 @@
       }
     }
   },
+  "closed_trades": {
+    "title": "Börsengeschäften"
+  },
   "common": {
-    "never": "Niemals"
+    "never": "Niemals",
+    "refresh": "Αktualisieren"
   },
   "snapshot_action_button": {
     "force_save": "Speichern forcieren",
