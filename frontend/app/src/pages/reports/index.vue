@@ -208,9 +208,9 @@ const progress = computed(() => reportsStore.progress);
           <div class="py-2">
             <FileUpload
               ref="reportDebugDataUploader"
+              v-model="reportDebugData"
               source="json"
               file-filter=".json"
-              @selected="reportDebugData = $event"
             />
           </div>
           <div class="mt-2 flex justify-end">

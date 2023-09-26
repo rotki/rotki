@@ -95,5 +95,13 @@
         }
       }
     }
+  },
+  "common": {
+    "never": "Niemals"
+  },
+  "snapshot_action_button": {
+    "force_save": "Speichern forcieren",
+    "menu_tooltip": "View the date of the last balances snapshot",
+    "snapshot_title": ""
   }
 }

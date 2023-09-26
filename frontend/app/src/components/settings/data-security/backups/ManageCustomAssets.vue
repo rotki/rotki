@@ -79,12 +79,12 @@ const { t } = useI18n();
         {{ t('manage_user_assets.import.subtitle') }}
       </div>
       <FileUpload
+        v-model="zip"
         class="mt-4"
         source="zip"
         file-filter=".zip"
         :uploaded="uploaded"
         :error-message="importError"
-        @selected="zip = $event"
         @update:uploaded="uploaded = $event"
       />
       <VBtn

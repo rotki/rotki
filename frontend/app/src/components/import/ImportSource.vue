@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
 import { helpers, requiredIf } from '@vuelidate/validators';
-import { type PropType } from 'vue';
 import { displayDateFormatter } from '@/data/date_formatter';
 import { api } from '@/services/rotkehlchen-api';
 import { DateFormat } from '@/types/date-format';
@@ -9,14 +8,10 @@ import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { type ImportSourceType } from '@/types/upload-types';
 
-const props = defineProps({
-  icon: {
-    required: false,
-    default: '',
-    type: String
-  },
-  source: { required: true, type: String as PropType<ImportSourceType> }
-});
+const props = withDefaults(
+  defineProps<{ source: ImportSourceType; icon?: string }>(),
+  { icon: '' }
+);
 
 const { source } = toRefs(props);
 const dateInputFormat = ref<string | null>(null);
@@ -27,10 +22,6 @@ const file = ref<File | null>(null);
 
 const { t } = useI18n();
 const { isPackaged } = useInterop();
-
-const upload = (selectedFile: File) => {
-  set(file, selectedFile);
-};
 
 const rules = {
   dateInputFormat: {
@@ -152,11 +143,11 @@ const isRotkiCustomImport = computed(() => get(source).startsWith('rotki_'));
       </div>
       <VForm :value="!v$.$invalid">
         <FileUpload
+          v-model="file"
           :loading="loading"
           :uploaded="uploaded"
           :source="source"
           :error-message="errorMessage"
-          @selected="upload($event)"
           @update:uploaded="uploaded = $event"
         />
         <VSwitch

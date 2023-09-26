@@ -1,25 +1,33 @@
 <script setup lang="ts">
-import { type PropType } from 'vue';
-import { type ImportSourceType, SOURCES } from '@/types/upload-types';
+import { type ImportSourceType } from '@/types/upload-types';
 
-const props = defineProps({
-  source: {
-    required: true,
-    type: String as PropType<ImportSourceType>,
-    validator: (value: ImportSourceType) => SOURCES.includes(value)
-  },
-  loading: { required: false, type: Boolean, default: false },
-  fileFilter: { required: false, type: String, default: '.csv' },
-  uploaded: { required: false, type: Boolean, default: false },
-  errorMessage: { required: false, type: String, default: '' }
-});
+const props = withDefaults(
+  defineProps<{
+    value: File | null;
+    source: ImportSourceType;
+    loading?: boolean;
+    fileFilter?: string;
+    uploaded?: boolean;
+    errorMessage?: string;
+  }>(),
+  {
+    loading: false,
+    fileFilter: '.csv',
+    uploaded: false,
+    errorMessage: ''
+  }
+);
 
-const emit = defineEmits(['selected', 'update:uploaded']);
+const emit = defineEmits<{
+  (e: 'input', file: File | null): void;
+  (e: 'update:uploaded', uploaded: boolean): void;
+}>();
 const { source, fileFilter, uploaded, errorMessage } = toRefs(props);
+
+const file = useVModel(props, 'value', emit, { eventName: 'input' });
 
 const error = ref('');
 const active = ref(false);
-const file = ref<File | null>(null);
 const select = ref<HTMLInputElement>();
 const { count, inc, dec, reset } = useCounter(0, { min: 0 });
 const { t } = useI18n();
@@ -103,7 +111,6 @@ const check = (files: FileList) => {
 
 const selected = (selected: File | null) => {
   set(file, selected);
-  emit('selected', selected);
 };
 
 const updateUploaded = (value: boolean) => {
@@ -113,10 +120,6 @@ const updateUploaded = (value: boolean) => {
 const clickSelect = () => {
   get(select)?.click();
 };
-
-watch(file, file => {
-  selected(file);
-});
 
 watch(uploaded, uploaded => {
   if (!uploaded) {
@@ -129,43 +132,42 @@ watch(uploaded, uploaded => {
 });
 
 watch(errorMessage, message => onError(message));
-
-defineExpose({ removeFile });
 </script>
 
 <template>
-  <VRow>
-    <VCol>
-      <div
-        class="file-upload__drop"
-        :class="active ? 'file-upload__drop--active' : null"
-        @dragover.prevent
-        @drop="onDrop($event)"
-        @dragenter="onEnter($event)"
-        @dragleave="onLeave($event)"
-      >
-        <div v-if="error" class="flex flex-col items-center justify-center">
-          <VBtn icon small class="self-end" @click="error = ''">
-            <VIcon>mdi-close</VIcon>
-          </VBtn>
-          <VIcon x-large color="error">mdi-alert-circle</VIcon>
+  <div class="flex flex-row">
+    <div
+      class="pa-4 border rounded-md w-full"
+      :class="{ 'border-primary': active }"
+      @dragover.prevent
+      @drop="onDrop($event)"
+      @dragenter="onEnter($event)"
+      @dragleave="onLeave($event)"
+    >
+      <div class="flex flex-col items-center justify-center">
+        <template v-if="error">
+          <RuiButton variant="text" class="self-end" icon @click="error = ''">
+            <RuiIcon name="close-line" />
+          </RuiButton>
+          <RuiIcon size="48" name="error-warning-line" color="error" />
           <span class="error--text mt-2">{{ error }}</span>
-        </div>
-        <div
-          v-else-if="loading"
-          class="flex flex-col items-center justify-center py-2"
-        >
-          <VProgressCircular indeterminate color="primary" />
+        </template>
+
+        <template v-else-if="loading">
+          <RuiProgress
+            circular
+            variant="indeterminate"
+            color="primary"
+            size="24"
+          />
 
           <div class="pt-4">
             {{ t('file_upload.loading') }}
           </div>
-        </div>
-        <div
-          v-else-if="!uploaded"
-          class="flex flex-col items-center justify-center"
-        >
-          <VIcon x-large color="primary">mdi-upload</VIcon>
+        </template>
+
+        <template v-else-if="!uploaded">
+          <RuiIcon name="file-upload-line" color="primary" />
           <input
             ref="select"
             type="file"
@@ -173,81 +175,46 @@ defineExpose({ removeFile });
             hidden
             @change="onSelect($event)"
           />
-          <div class="mt-2 text-center">
-            <div v-if="file">
-              <i18n
-                path="file_upload.selected_file"
-                class="text-caption text--secondary"
-                tag="div"
-              >
+          <div
+            class="flex flex-col mt-2 text-center justify-center text-caption text--secondary w-full"
+          >
+            <template v-if="file">
+              <i18n path="file_upload.selected_file" tag="div">
                 <template #name>
                   <div class="font-bold text-truncate">
                     {{ file.name }}
                   </div>
                 </template>
               </i18n>
-              <div>
-                <VBtn
-                  class="mt-2"
-                  color="primary"
-                  small
-                  text
-                  outlined
-                  @click="clickSelect()"
-                >
-                  {{ t('file_upload.change_file') }}
-                </VBtn>
-              </div>
-            </div>
-            <div v-else>
-              <div class="text-caption text--secondary">
-                {{ t('file_upload.drop_area') }}
-              </div>
-              <div>
-                <VBtn
-                  class="mt-2"
-                  color="primary"
-                  small
-                  text
-                  outlined
-                  @click="clickSelect()"
-                >
-                  {{ t('file_upload.select_file') }}
-                </VBtn>
-              </div>
-            </div>
+              <RuiButton
+                class="mt-2"
+                color="primary"
+                variant="outlined"
+                @click="clickSelect()"
+              >
+                {{ t('file_upload.change_file') }}
+              </RuiButton>
+            </template>
+            <template v-else>
+              {{ t('file_upload.drop_area') }}
+              <div class="h-5" />
+              <RuiButton
+                class="mt-2"
+                color="primary"
+                variant="outlined"
+                @click="clickSelect()"
+              >
+                {{ t('file_upload.select_file') }}
+              </RuiButton>
+            </template>
           </div>
-        </div>
-        <div v-else class="flex flex-col items-center justify-center">
-          <VIcon x-large color="primary">mdi-check-circle</VIcon>
+        </template>
+
+        <template v-else>
+          <RuiIcon name="checkbox-circle-line" color="primary" />
           <div class="mt-2" v-text="t('file_upload.import_complete')" />
-        </div>
+        </template>
       </div>
-    </VCol>
-  </VRow>
+    </div>
+  </div>
 </template>
-
-<style scoped lang="scss">
-.file-upload {
-  &__drop {
-    padding: 12px;
-    border: var(--v-rotki-light-grey-darken1) solid thin;
-    width: 100%;
-    border-radius: 4px;
-
-    &--active {
-      background-color: var(--v-rotki-light-grey-darken1);
-    }
-  }
-}
-
-.theme {
-  &--dark {
-    .file-upload {
-      &__drop {
-        border-color: var(--v-rotki-light-grey-lighten2);
-      }
-    }
-  }
-}
-</style>

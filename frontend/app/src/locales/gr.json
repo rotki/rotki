@@ -233,8 +233,8 @@
       "blockchain_accounts_add": {
         "error": {
           "description": "Failed to add {addresses} new {blockchain} accounts: {error}",
-          "failed_list_description": "Failed to add {addresses} new {blockchain} accounts. Please check again if these account(s) are valid:\n {list}",
           "empty_addresses_description": "Η διεύθυνση {address} δεν προστέθηκε επειδή είτε είναι contract είτε δεν έχει καμία δραστηριότητα σε καμία από τις υποστηριζόμενες EVM chains",
+          "failed_list_description": "Failed to add {addresses} new {blockchain} accounts. Please check again if these account(s) are valid:\n {list}",
           "title": "Adding {blockchain} accounts"
         },
         "no_new": {
@@ -790,23 +790,23 @@
       }
     },
     "transactions_redecode": {
-      "task": {
-        "description": "Retrieving transactions events",
-        "title": "Evm Transactions Events Retrieval"
-      },
       "error": {
         "description": "Failed to retrieve events from transactions: {error}",
         "title": "Retrieving events from transactions"
+      },
+      "task": {
+        "description": "Retrieving transactions events",
+        "title": "Evm Transactions Events Retrieval"
       }
     },
     "transactions_redecode_missing": {
-      "task": {
-        "description": "Retrieving transactions events for address: {address} ({evmChain})",
-        "title": "Evm Transaction Missing Events Retrieval"
-      },
       "error": {
         "description": "Failed to retrieve missing events from transactions for address {address} ({evmChain}): {error}",
         "title": "Retrieving missing events from transactions"
+      },
+      "task": {
+        "description": "Retrieving transactions events for address: {address} ({evmChain})",
+        "title": "Evm Transaction Missing Events Retrieval"
       }
     },
     "unignore": {
@@ -898,11 +898,11 @@
   },
   "airdrops": {
     "description": "* Αυτά είναι τα airdrops τα οποία το rotki εντόπισε ότι αντιστοιχούν στους λογαριασμούς σας.",
-    "status_hint": "Εμφάνιση αποτελεσμάτων για {status} airdrops.",
     "headers": {
       "source": "Source"
     },
     "loading": "Please wait while rotki queries the airdrops for your addresses...",
+    "status_hint": "Εμφάνιση αποτελεσμάτων για {status} airdrops.",
     "title": "Airdrops"
   },
   "alias_names": {
@@ -917,9 +917,9 @@
     "manual_tooltip": "Χειροκίνητα ορισμένη τιμή"
   },
   "app": {
+    "copyright": "© Rotki Solutions GmbH 2018-{year}",
     "moto": "the opensource portfolio manager that protects your privacy",
-    "name": "rotki",
-    "copyright": "© Rotki Solutions GmbH 2018-{year}"
+    "name": "rotki"
   },
   "asset_balances": {
     "loading": "Please wait while rotki queries the blockchain..."
@@ -1071,8 +1071,8 @@
       "type": "Filter by the type of the custom asset",
       "type_hint": "Search using the asset type"
     },
-    "multi_chain_assets": "Multi Chain Assets",
     "ignore": "Ignore Asset",
+    "multi_chain_assets": "Multi Chain Assets",
     "value": "Value"
   },
   "back_button": {
@@ -1248,6 +1248,7 @@
   "blockchain_balances": {
     "add_account": "Add Account",
     "balances": {
+      "arbitrum_one": "Arbitrum One balances",
       "avax": "Avalanche balances",
       "bch": "Bitcoin Cash balances",
       "btc": "Bitcoin balances",
@@ -1256,8 +1257,7 @@
       "eth2": "ETH balances",
       "ksm": "Kusama balances",
       "loopring": "Loopring balances",
-      "polygon_pos": "Polygon PoS balances",
-      "arbitrum_one": "Arbitrum One balances"
+      "polygon_pos": "Polygon PoS balances"
     },
     "form_dialog": {
       "add_title": "Add blockchain account",
@@ -1352,9 +1352,6 @@
   },
   "common": {
     "account": "Account",
-    "status": "Κατάσταση",
-    "claimed": "Διεκδικήθηκε",
-    "unclaimed": "αδιεκδίκητος",
     "actions": {
       "back": "Back",
       "cancel": "Cancel",
@@ -1392,6 +1389,7 @@
     "available_to_premium": "only available to premium users.",
     "balance": "Balance",
     "category": "Category",
+    "claimed": "Διεκδικήθηκε",
     "datetime": "Date/Time",
     "deposits": "Deposits",
     "description": "Description",
@@ -1401,16 +1399,19 @@
     "ignored_in_accounting": "Ignored in Accounting",
     "location": "Location",
     "name": "Name",
+    "never": "Ποτέ",
     "no_premium": "No premium subscription detected. ",
     "of": "από",
     "price": "Price",
     "price_in_symbol": "Price in {symbol}",
     "protocol": "Protocol",
     "rewards": "Rewards",
+    "status": "Κατάσταση",
     "total": "Total",
     "tx": "Tx",
     "tx_hash": "Tx Hash",
     "type": "Type",
+    "unclaimed": "αδιεκδίκητος",
     "validator_index": "Validator Index",
     "value_in_symbol": "{symbol} Value",
     "visit_website": "To get a premium subscription please visit our {0}"
@@ -1465,6 +1466,23 @@
     "incomplete": "(Incomplete)"
   },
   "create_account": {
+    "credentials": {
+      "description": "Θυμηθείτε ότι ο χρήστης που δημιουργείτε εδώ είναι {highlight}, ανεξάρτητα από τον λογαριασμό που δημιουργείτε στον ιστό.",
+      "highlight": "ενεργοποιημένος μόνο στην εφαρμογή",
+      "label_password": "Κωδικός πρόσβασης",
+      "label_password_backup_reminder": "Το rotki αποθηκεύει όλα τα δεδομένα χρήστη τοπικά. Κατανοώ ότι εάν χάσω τον κωδικό πρόσβασής μου, χάνω την πρόσβαση στα δεδομένα μου. Έχω δημιουργήσει ένα αντίγραφο ασφαλείας του κωδικού πρόσβασης.",
+      "label_password_repeat": "Επανάληψη κωδικού πρόσβασης",
+      "label_username": "Όνομα χρήστη",
+      "password_sync_requirement": "Βεβαιωθείτε ότι ο λογαριασμός χρησιμοποιεί τον ίδιο κωδικό πρόσβασης με την αρχική βάση δεδομένων. Δεν μπορείτε να αποκτήσετε πρόσβαση στη βάση δεδομένων αν εισαγάγετε διαφορετικό κωδικό πρόσβασης.",
+      "validation": {
+        "check_prompt": "Επιβεβαιώστε ότι έχετε διαβάσει και δημιουργήσει αντίγραφο ασφαλείας",
+        "non_empty_password": "Παρακαλώ δώστε έναν κωδικό πρόσβασης",
+        "non_empty_password_confirmation": "Παρακαλώ δώστε επιβεβαίωση κωδικού πρόσβασης",
+        "non_empty_username": "Παρακαλώ δώστε ένα όνομα χρήστη",
+        "password_confirmation_mismatch": "Η επιβεβαίωση του κωδικού πρόσβασης δεν ταιριάζει με τον παρεχόμενο κωδικό πρόσβασης",
+        "valid_username": "Ένα όνομα χρήστη πρέπει να περιέχει μόνο αλφαριθμητικούς χαρακτήρες και να μην περιέχει κενά"
+      }
+    },
     "have_account": {
       "description": "Έχετε ήδη λογαριασμό;",
       "log_in": "Σύνδεση"
@@ -1478,35 +1496,18 @@
       "premium_link_text": "εδώ.",
       "premium_question": "Είστε ήδη χρήστης premium του rotki και θέλετε να ενεργοποιήσετε τις λειτουργίες premium?\nΑυτό είναι απαραίτητο εάν θέλετε να συγχρονίσετε τη βάση δεδομένων rotki από άλλη συσκευή κατά τη δημιουργία λογαριασμού. Μπορείτε να αγοράσετε premium {premiumLink}"
     },
-    "credentials": {
-      "label_password": "Κωδικός πρόσβασης",
-      "label_password_backup_reminder": "Το rotki αποθηκεύει όλα τα δεδομένα χρήστη τοπικά. Κατανοώ ότι εάν χάσω τον κωδικό πρόσβασής μου, χάνω την πρόσβαση στα δεδομένα μου. Έχω δημιουργήσει ένα αντίγραφο ασφαλείας του κωδικού πρόσβασης.",
-      "label_password_repeat": "Επανάληψη κωδικού πρόσβασης",
-      "label_username": "Όνομα χρήστη",
-      "password_sync_requirement": "Βεβαιωθείτε ότι ο λογαριασμός χρησιμοποιεί τον ίδιο κωδικό πρόσβασης με την αρχική βάση δεδομένων. Δεν μπορείτε να αποκτήσετε πρόσβαση στη βάση δεδομένων αν εισαγάγετε διαφορετικό κωδικό πρόσβασης.",
-      "description": "Θυμηθείτε ότι ο χρήστης που δημιουργείτε εδώ είναι {highlight}, ανεξάρτητα από τον λογαριασμό που δημιουργείτε στον ιστό.",
-      "highlight": "ενεργοποιημένος μόνο στην εφαρμογή",
-      "validation": {
-        "non_empty_password": "Παρακαλώ δώστε έναν κωδικό πρόσβασης",
-        "non_empty_password_confirmation": "Παρακαλώ δώστε επιβεβαίωση κωδικού πρόσβασης",
-        "non_empty_username": "Παρακαλώ δώστε ένα όνομα χρήστη",
-        "password_confirmation_mismatch": "Η επιβεβαίωση του κωδικού πρόσβασης δεν ταιριάζει με τον παρεχόμενο κωδικό πρόσβασης",
-        "valid_username": "Ένα όνομα χρήστη πρέπει να περιέχει μόνο αλφαριθμητικούς χαρακτήρες και να μην περιέχει κενά",
-        "check_prompt": "Επιβεβαιώστε ότι έχετε διαβάσει και δημιουργήσει αντίγραφο ασφαλείας"
-      }
-    },
     "steps": {
       "step_1": {
-        "title": "Εισαγωγή",
-        "description": "Πρώτο βήμα"
+        "description": "Πρώτο βήμα",
+        "title": "Εισαγωγή"
       },
       "step_2": {
-        "title": "Ενεργοποίηση προηγμένης έκδοσης",
-        "description": "Έχετε προηγμένο λογαριασμό στην ιστοσελίδα μας;"
+        "description": "Έχετε προηγμένο λογαριασμό στην ιστοσελίδα μας;",
+        "title": "Ενεργοποίηση προηγμένης έκδοσης"
       },
       "step_3": {
-        "title": "Δημιουργία λογαριασμού",
-        "description": "Ορίστε τα διαπιστευτήριά σας"
+        "description": "Ορίστε τα διαπιστευτήριά σας",
+        "title": "Δημιουργία λογαριασμού"
       },
       "step_4": {
         "title": "Αναλυτικά στοιχεία χρήσης"
@@ -1680,17 +1681,17 @@
         "message": "Are you sure you want to clear the images cached for {source}?",
         "title": "Confirm clear images cached"
       },
+      "error": "Clear the cached images for {source} failed: {message}",
+      "hint": "Empty this field to remove the cache for all",
       "label": {
         "asset_icons": "Asset icons",
         "asset_to_clear": "Search asset icon to clear",
         "ens_avatars": "ENS avatars",
         "ens_to_clear": "ENS avatars to clear"
       },
-      "hint": "Empty this field to remove the cache for all",
-      "error": "Clear the cached images for {source} failed: {message}",
-      "success": "Cache was successfully cleared",
       "select_image_source": "Select image cache source to clear",
       "subtitle": "Allows you to purge image cached by rotki",
+      "success": "Cache was successfully cleared",
       "title": "Purge Images Cache",
       "tooltip": "Purge the cached images for the selected source"
     },
@@ -1699,13 +1700,13 @@
         "message": "Are you sure you want to refresh the cache for {source}?",
         "title": "Confirm refresh cache"
       },
+      "error": "Clear the cache for {source} failed: {message}",
       "label": {
         "general_cache": "General cache (Curve, MakerDAO, Yearn)"
       },
-      "error": "Clear the cache for {source} failed: {message}",
-      "success": "Cache was successfully cleared",
       "select_cache": "Select cache to refresh",
       "subtitle": "Allows you to refresh data cached by rotki",
+      "success": "Cache was successfully cleared",
       "title": "Refresh cache",
       "tooltip": "Refresh cache for selected source"
     },
@@ -2187,9 +2188,9 @@
       "abbreviate_number": "For example, 1.234.567 will appear as 1.23 M when this setting is enabled",
       "alias_names": "Alias name for addresses",
       "graph_basis": "Graph basis",
-      "scramble_multiplier": "Multiplier number used when scrambling balances. This will affects amount and fiat value.",
       "query": "Periodic status query",
       "refresh": "Automatic balance refresh",
+      "scramble_multiplier": "Multiplier number used when scrambling balances. This will affects amount and fiat value.",
       "show_graph_range_selector": "Show graph range selector"
     },
     "title": "Frontend-only Settings",
@@ -2254,26 +2255,26 @@
     },
     "external_service_setting": {
       "label": {
-        "query_retry_limit": "Όριο επανάληψης ερωτήματος",
-        "query_retry_limit_hint": "Ο αριθμός των φορών που θα επαναληφθεί ένα ερώτημα προς εξωτερικές υπηρεσίες πριν αποδοθεί.",
         "connect_timeout": "Χρονικό όριο σύνδεσης",
         "connect_timeout_hint": "Ο αριθμός των δευτερολέπτων που θα περιμένετε πριν αποδοθείτε στην ίδρυση μιας σύνδεσης με μια εξωτερική υπηρεσία.",
+        "query_retry_limit": "Όριο επανάληψης ερωτήματος",
+        "query_retry_limit_hint": "Ο αριθμός των φορών που θα επαναληφθεί ένα ερώτημα προς εξωτερικές υπηρεσίες πριν αποδοθεί.",
         "read_timeout": "Χρονικό όριο ανάγνωσης",
         "read_timeout_hint": "Ο αριθμός των δευτερολέπτων που θα περιμένετε για τον πρώτο μπάιτ μετά την ίδρυση μιας σύνδεσης με μια εξωτερική υπηρεσία."
       },
       "title": "Ρυθμίσεις εξωτερικής υπηρεσίας",
       "validation": {
-        "query_retry_limit": {
-          "non_empty": "Παρακαλώ εισαγάγετε το όριο επανάληψης ερωτήματος",
-          "invalid_range": "Το όριο επανάληψης ερωτήματος πρέπει να είναι μεγαλύτερο από {min}"
-        },
         "connect_timeout": {
-          "non_empty": "Παρακαλώ εισαγάγετε το χρονικό όριο σύνδεσης",
-          "invalid_range": "Το χρονικό όριο σύνδεσης πρέπει να είναι μεγαλύτερο από {min}"
+          "invalid_range": "Το χρονικό όριο σύνδεσης πρέπει να είναι μεγαλύτερο από {min}",
+          "non_empty": "Παρακαλώ εισαγάγετε το χρονικό όριο σύνδεσης"
+        },
+        "query_retry_limit": {
+          "invalid_range": "Το όριο επανάληψης ερωτήματος πρέπει να είναι μεγαλύτερο από {min}",
+          "non_empty": "Παρακαλώ εισαγάγετε το όριο επανάληψης ερωτήματος"
         },
         "read_timeout": {
-          "non_empty": "Παρακαλώ εισαγάγετε το χρονικό όριο ανάγνωσης",
-          "invalid_range": "Το χρονικό όριο ανάγνωσης πρέπει να είναι μεγαλύτερο από {min}"
+          "invalid_range": "Το χρονικό όριο ανάγνωσης πρέπει να είναι μεγαλύτερο από {min}",
+          "non_empty": "Παρακαλώ εισαγάγετε το χρονικό όριο ανάγνωσης"
         }
       }
     },
@@ -2294,14 +2295,14 @@
     },
     "language_contribution_tooltip": "This feature is experimental and may not work as expected for some languages. This is because all static sentences in the app have to be manually translated and that is a long and ongoing process. Therefore, we need your contribution to speed it up. Click here for more information.",
     "nft_setting": {
-      "title": "NFT setting",
       "label": {
         "include_nfts": "Include NFTs in the graphs and total networth",
         "include_nfts_hint": "By default graphs and dashboard include the value of all the NFTs"
       },
       "subtitle": {
         "include_nfts": "Include NFTs in graphs and total amounts"
-      }
+      },
+      "title": "NFT setting"
     },
     "rpc_node_setting": {
       "title": "RPC node setting"
@@ -2478,20 +2479,20 @@
       "line_one": "[Experimental] If you find an issue with the imported data, let us know so we can adapt the code accordingly.",
       "name": "Bisq"
     },
+    "bitcoin_tax": {
+      "import": "Import {0} from bitcoin.tax",
+      "import_types": "trades, income, and spending",
+      "line_one": "We support the import of trades, income and spending csv file types.",
+      "line_three": "The ‘swap’ action of the trade file type that represents a coin rename or a fork, is treated elsewhere by rotki so no history event needs to be created for it.",
+      "line_two": "All imported events are mapped to rotki’s history events.",
+      "name": "bitcoin.tax"
+    },
     "bitmex": {
       "import": "Import {0} from bitmex",
       "import_types": "wallet history",
       "line_one": "[Experimental] If you find an issue with the imported data, let us know so we can adapt the code accordingly.",
       "line_two": "Amounts in the wallet history file are assumed to be Bitcoin. If you would like this feature supported for other currencies, please reach out.",
       "name": "BitMEX"
-    },
-    "bitcoin_tax": {
-      "import": "Import {0} from bitcoin.tax",
-      "import_types": "trades, income, and spending",
-      "line_one": "We support the import of trades, income and spending csv file types.",
-      "line_two": "All imported events are mapped to rotki’s history events.",
-      "line_three": "The ‘swap’ action of the trade file type that represents a coin rename or a fork, is treated elsewhere by rotki so no history event needs to be created for it.",
-      "name": "bitcoin.tax"
     },
     "bitstamp": {
       "import": "Import {0} from Bitstamp",
@@ -2809,8 +2810,8 @@
   },
   "loan_stake": {
     "no_lqty_staked": "No LQTY staked",
-    "unclaimed_rewards": "Αζήτητες ανταμοιβές",
-    "title": "Stake"
+    "title": "Stake",
+    "unclaimed_rewards": "Αζήτητες ανταμοιβές"
   },
   "locations": {
     "total_asset_price": "Total Asset Price"
@@ -2818,6 +2819,11 @@
   "login": {
     "button_no_account": "Δεν έχετε λογαριασμό;",
     "button_signup": "Εγγραφείτε",
+    "credential_error": {
+      "description": "Εάν δεν έχετε δημιουργήσει ακόμη λογαριασμό εφαρμογής, θα πρέπει να το κάνετε για να συνδεθείτε.",
+      "support": "Εάν χρειάζεστε βοήθεια, επικοινωνήστε μαζί μας στο κανάλι υποστήριξης στο discord.",
+      "title": "Λάβετε υπόψη ότι ο λογαριασμός του ιστότοπού σας και ο λογαριασμός εφαρμογής είναι ξεχωριστοί και δεν μπορούν να χρησιμοποιηθούν εναλλακτικά."
+    },
     "custom_backend": {
       "hint": "The url the backend you would like to connect (leave empty for default).",
       "label": "Backend URL",
@@ -2828,6 +2834,11 @@
         "non_empty": "The custom backend url cannot be empty",
         "url": "The entry inserted is not in a valid url format"
       }
+    },
+    "description": {
+      "more_details": "Το {documentation} σάς δείχνει περισσότερες λεπτομέρειες σχετικά με την τοπική εφαρμογή και τον χρήστη.",
+      "our_docs": "Η τεκμηρίωσή μας",
+      "welcome": "Καλως ΗΡΘΑΤΕ! Παρακαλώ εισάγετε τα στοιχεία σας."
     },
     "label_password": "Password",
     "label_username": "Username",
@@ -2842,17 +2853,9 @@
       "title": "User action required for DB sync"
     },
     "title": "Συνδεθείτε",
-    "welcome_title": "Καλώς ήρθατε στο rotki",
-    "welcome_description": "Καλώς ήρθατε στον διαχειριστή χαρτοφυλακίου ανοιχτού κώδικα που προστατεύει το απόρρητό σας.",
-    "welcome_update_message": "Συνδεθείτε για να εξερευνήσετε τις αλλαγές που έχουμε κάνει.",
-    "description": {
-      "welcome": "Καλως ΗΡΘΑΤΕ! Παρακαλώ εισάγετε τα στοιχεία σας.",
-      "our_docs": "Η τεκμηρίωσή μας",
-      "more_details": "Το {documentation} σάς δείχνει περισσότερες λεπτομέρειες σχετικά με την τοπική εφαρμογή και τον χρήστη."
-    },
     "upgrading_db": {
-      "title": "Αναβάθμιση βάσης δεδομένων",
       "current": "Βήμα {currentStep} από {totalSteps} της αναβάθμισής της βάσης δεδομένων v{currentVersion}.",
+      "title": "Αναβάθμιση βάσης δεδομένων",
       "warning": "Η βάση δεδομένων αναβαιμίζεται από την έκδοση {fromVersion} στην {toVersion}. Παρακαλώ μην κλείσετε την εφαρμογή μέχρι να ολοκληρωθεί."
     },
     "validation": {
@@ -2860,11 +2863,9 @@
       "non_empty_username": "Please provide a user name",
       "valid_username": "A username must contain only alphanumeric characters and have no spaces"
     },
-    "credential_error": {
-      "title": "Λάβετε υπόψη ότι ο λογαριασμός του ιστότοπού σας και ο λογαριασμός εφαρμογής είναι ξεχωριστοί και δεν μπορούν να χρησιμοποιηθούν εναλλακτικά.",
-      "description": "Εάν δεν έχετε δημιουργήσει ακόμη λογαριασμό εφαρμογής, θα πρέπει να το κάνετε για να συνδεθείτε.",
-      "support": "Εάν χρειάζεστε βοήθεια, επικοινωνήστε μαζί μας στο κανάλι υποστήριξης στο discord."
-    }
+    "welcome_description": "Καλώς ήρθατε στον διαχειριστή χαρτοφυλακίου ανοιχτού κώδικα που προστατεύει το απόρρητό σας.",
+    "welcome_title": "Καλώς ήρθατε στο rotki",
+    "welcome_update_message": "Συνδεθείτε για να εξερευνήσετε τις αλλαγές που έχουμε κάνει."
   },
   "macos_unsupported": {
     "header": "Unsupported macOS Version",
@@ -2975,11 +2976,11 @@
     "settings_link": "Module settings"
   },
   "module_selector": {
-    "filter": "Αναζήτηση Module",
     "actions": {
-      "enable_all": "Ενεργοποίηση όλων",
-      "disable_all": "Απενεργοποίηση όλων"
+      "disable_all": "Απενεργοποίηση όλων",
+      "enable_all": "Ενεργοποίηση όλων"
     },
+    "filter": "Αναζήτηση Module",
     "table": {
       "enabled": "Ενεργό"
     }
@@ -3032,12 +3033,12 @@
     },
     "import_data": "Εισαγωγή δεδομένων",
     "locations": "Locations",
+    "manage_address_book": "Manage Address Book",
     "manage_assets": "Manage Assets",
     "manage_assets_sub": {
       "custom_assets": "Custom Assets",
       "managed_assets": "Managed Assets"
     },
-    "manage_address_book": "Manage Address Book",
     "manage_prices": "Manage Prices",
     "manage_prices_sub": {
       "historic_prices": "Ιστορικές τιμές",
@@ -3075,6 +3076,11 @@
       "collection": "Collection"
     },
     "upgrade": "Displaying {limit} NFTs. To view more please upgrade to {link}"
+  },
+  "no_premium_placeholder": {
+    "get_premium": "@:common.visit_website",
+    "no_premium": "@:common.no_premium",
+    "premium_only": " {text} @:common.available_to_premium"
   },
   "no_task_running": {
     "description": "No Pending tasks"
@@ -3146,6 +3152,21 @@
     "backend": {
       "title": "Backend"
     },
+    "db_upload_result": {
+      "action": "Force push",
+      "message": "We could not complete the upload because {reason}",
+      "title": "Database sync failed"
+    },
+    "missing_api_key": {
+      "action": "Εισάγετε κλειδί",
+      "message": "Δεν έχετε διαμορφώσει ένα κλειδί API {location} {service}. Τα ερωτήματα rotki {service} θα εξακολουθούν να λειτουργούν αλλά θα είναι πολύ αργά. Εάν δεν χρησιμοποιείτε τον δικό σας κόμβο {location}, συνιστάται να μεταβείτε στο {url}, να δημιουργήσετε ένα κλειδί API και, στη συνέχεια, να το εισαγάγετε στη ρύθμιση διαπιστευτηρίων εξωτερικής υπηρεσίας του rotki",
+      "title": "Κλειδί API {location} {service}"
+    },
+    "new_detected_token": {
+      "action": "See more",
+      "message": "New token with identifier {identifier} was detected from event processing and queries.|{count} new tokens were detected from event processing and queries.",
+      "title": "New Token Detected|New Tokens Detected"
+    },
     "premium": {
       "active": {
         "message": "Your premium subscription is detected.",
@@ -3157,24 +3178,9 @@
         "title": "Premium features deactivated"
       }
     },
-    "new_detected_token": {
-      "action": "See more",
-      "title": "New Token Detected|New Tokens Detected",
-      "message": "New token with identifier {identifier} was detected from event processing and queries.|{count} new tokens were detected from event processing and queries."
-    },
-    "missing_api_key": {
-      "title": "Κλειδί API {location} {service}",
-      "message": "Δεν έχετε διαμορφώσει ένα κλειδί API {location} {service}. Τα ερωτήματα rotki {service} θα εξακολουθούν να λειτουργούν αλλά θα είναι πολύ αργά. Εάν δεν χρησιμοποιείτε τον δικό σας κόμβο {location}, συνιστάται να μεταβείτε στο {url}, να δημιουργήσετε ένα κλειδί API και, στη συνέχεια, να το εισαγάγετε στη ρύθμιση διαπιστευτηρίων εξωτερικής υπηρεσίας του rotki",
-      "action": "Εισάγετε κλειδί"
-    },
     "snapshot_failed": {
       "message": "Could not save the balance snapshot at {location}. {error}",
       "title": "Balance Snapshot failed"
-    },
-    "db_upload_result": {
-      "title": "Database sync failed",
-      "message": "We could not complete the upload because {reason}",
-      "action": "Force push"
     }
   },
   "notification_popup": {
@@ -3278,7 +3284,7 @@
       },
       "overview": "Overview",
       "ranges": {
-        "one_day": "1D",
+        "one_day": 1.0,
         "one_month": "1M",
         "one_week": "1W",
         "one_year": "1Y"
@@ -3671,6 +3677,26 @@
     "not_saved": "Setting not saved",
     "saved": "Setting saved"
   },
+  "snapshot_action_button": {
+    "force_save": "Εξαναγκαστική αποθήκευση",
+    "ignore_errors_label": "Αγνόηση σφαλμάτων",
+    "ignore_errors_tooltip": "Save the balance snapshot ignoring any errors on external APIs. This can cause the snapshot to be incomplete.",
+    "menu_tooltip": "View the date of the last balances snapshot",
+    "messages": {
+      "failed_description": "Importing snapshot failed: {message}",
+      "success_description": "Snapshot successfully imported. You will be logged out now.",
+      "title": "Snapshot import"
+    },
+    "snapshot_title": "Last balances snapshot",
+    "snapshot_tooltip": "This will force taking a snapshot of all your balances, ignoring any cache. Use this sparingly as it may lead to you being rate-limited."
+  },
+  "snapshot_import_dialog": {
+    "balance_snapshot_file": "Balance snapshot file",
+    "balance_snapshot_file_suggested": "Suggested filename: balances_snapshot_import.csv",
+    "location_data_snapshot_file": "Location data snapshot file",
+    "location_data_snapshot_suggested": "Suggested filename: location_data_snapshot_import.csv",
+    "title": "Import snapshot manually"
+  },
   "sorting_selector": {
     "desc": {
       "sort_asc_tooltip": "Change sort to ascending",
@@ -3695,8 +3721,8 @@
   },
   "statistics_graph_settings": {
     "infer_zero_timed_balances": {
-      "title": "Infer zero timed balances",
-      "label": "Infer zero timed balances for assets that have no balance at a specific time. This is useful for showing zero balance periods in graphs."
+      "label": "Infer zero timed balances for assets that have no balance at a specific time. This is useful for showing zero balance periods in graphs.",
+      "title": "Infer zero timed balances"
     },
     "multiplier": {
       "label": "Multiplier",
@@ -3723,25 +3749,8 @@
     "upload_tooltip": "Push your local database to the server and replace all data there"
   },
   "sync_indicator": {
-    "force_save": "Force save",
-    "ignore_errors": "Save the balance snapshot ignoring any errors on external APIs. This can cause the snapshot to be incomplete.",
-    "import_snapshot": {
-      "balance_snapshot_file": "Balance snapshot file",
-      "balance_snapshot_file_suggested": "Suggested filename: balances_snapshot_import.csv",
-      "location_data_snapshot_file": "Location data snapshot file",
-      "location_data_snapshot_suggested": "Suggested filename: location_data_snapshot_import.csv",
-      "messages": {
-        "failed_description": "Importing snapshot failed: {message}",
-        "success_description": "Snapshot successfully imported. You will be logged out now.",
-        "title": "Snapshot import"
-      },
-      "title": "Import snapshot manually"
-    },
     "last_data_upload": "Last premium database sync",
-    "menu_tooltip": "View the date of the last balances snapshot | View the date of the last balances snapshot, and the time of the last premium database sync",
-    "never_saved": "Never",
-    "snapshot_title": "Last balances snapshot",
-    "snapshot_tooltip": "This will force taking a snapshot of all your balances, ignoring any cache. Use this sparingly as it may lead to you being rate-limited.",
+    "menu_tooltip": "View the time of the last premium database sync and perform manual sync.",
     "upload_confirmation": {
       "action": "Push | Pull",
       "confirm_check": "I understand",
@@ -3752,37 +3761,32 @@
     }
   },
   "table_filter": {
+    "exclusion": {
+      "description": "Use operator `!=` to filter out option, e.g.",
+      "example": "type != evm event"
+    },
     "hint": {
       "description": "* type the filter and then press enter e.g.",
       "example": "start = 26/05/2022"
     },
     "hint_filter": "The combined filters will be applied at the same time",
-    "exclusion": {
-      "description": "Use operator `!=` to filter out option, e.g.",
-      "example": "type != evm event"
-    },
     "no_suggestions": "No suggestions found for {search}",
     "saved_filters": {
       "actions": {
-        "list": "Open saved filter list",
         "add": "Save current filter to list",
         "apply": "Apply this saved filter",
+        "list": "Open saved filter list",
         "remove": "Remove this saved filter"
       },
       "added": "Filter saved",
       "empty": "You don't have any saved filter. Apply the filter as usual, and click this button {button} to save the filter.",
       "saving": {
-        "title": "Failed to save filter",
-        "limited": "You are only allowed to save up to {limit} filters. Remove other filters to be able to add again."
+        "limited": "You are only allowed to save up to {limit} filters. Remove other filters to be able to add again.",
+        "title": "Failed to save filter"
       }
     },
     "title": "Available filters",
     "unsupported_filter": "Unsupported filter:"
-  },
-  "no_premium_placeholder": {
-    "get_premium": "@:common.visit_website",
-    "no_premium": "@:common.no_premium",
-    "premium_only": " {text} @:common.available_to_premium"
   },
   "tag_creator": {
     "labels": {
@@ -4031,12 +4035,12 @@
         "description": "Hide amount and percentage",
         "label": "Private"
       },
+      "scramble": {
+        "label": "Scramble"
+      },
       "semi_private_mode": {
         "description": "Hide amount and show percentage",
         "label": "Semi Private"
-      },
-      "scramble": {
-        "label": "Scramble"
       }
     },
     "confirmation": {
