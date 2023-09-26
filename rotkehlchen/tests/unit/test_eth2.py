@@ -546,33 +546,21 @@ def test_deposits_pubkey_re(eth2: 'Eth2', database):
     assert result[pubkey2] == ADDR2
 
 
+@pytest.mark.vcr()
+@pytest.mark.freeze_time('2023-09-26 08:47:11 GMT')
 def test_scrape_validator_withdrawals():
-    """Simple test for withdrawal scraping.
-    Uses goerli since mainnet has few withdrawals for pagination.
-
-    Maybe switch to mainnet and also use VCR? But it's not a slow test and this
-    way we get an early warning system if they change anything as they do that
-    first in Goerli.
     """
-    goerli_url = patch(
-        'rotkehlchen.chain.ethereum.modules.eth2.utils.BEACONCHAIN_ROOT_URL',
-        new='https://goerli.beaconcha.in',
-    )
-    goerli_start = patch(
-        'rotkehlchen.chain.ethereum.modules.eth2.utils.ETH2_GENESIS_TIMESTAMP',
-        new=1616508000,
-    )
-
+    Simple test for withdrawal scraping. We use VCR since in the CI this test used to timeout often
+    """
     # 20 days before exit withdrawal so we have ~2-3 pages
-    last_known_timestamp = 1685258639 - 20 * DAY_IN_SECONDS
-    with goerli_url, goerli_start:
-        withdrawal_data = scrape_validator_withdrawals(270410, last_known_timestamp)
+    last_known_timestamp = 1695718031 - 130 * DAY_IN_SECONDS  # 2023-09-26 08:47:11 GMT - 130 days
+    withdrawal_data = scrape_validator_withdrawals(354933, last_known_timestamp)
 
     assert len(withdrawal_data) >= 20, 'should have multiple pages'
     for entry in withdrawal_data:
         assert isinstance(entry[0], int)
         assert entry[0] > last_known_timestamp
-        assert entry[1] == '0xBC86717BaD3F8CcF86d2882a6bC351C94580A994'
+        assert entry[1] == '0xB9D7934878B5FB9610B3fE8A5e441e8fad7E293f'
         assert isinstance(entry[2], FVal)
 
 
