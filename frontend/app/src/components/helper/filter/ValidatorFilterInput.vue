@@ -43,60 +43,47 @@ const removeValidator = (validator: Eth2ValidatorEntry) => {
 const { dark } = useTheme();
 
 const { t } = useI18n();
-const css = useCssModule();
 </script>
 
 <template>
-  <VCard flat>
-    <VAutocomplete
-      :class="css.filter"
-      :filter="filter"
-      :value="value"
-      :items="items"
-      :search-input.sync="search"
-      :loading="loading"
-      :disabled="loading"
-      hide-details
-      hide-selected
-      hide-no-data
-      return-object
-      chips
-      clearable
-      multiple
-      dense
-      outlined
-      item-value="publicKey"
-      :label="t('validator_filter_input.label')"
-      :open-on-clear="false"
-      item-text="publicKey"
-      @input="input($event)"
-    >
-      <template #item="{ item }">
-        <ValidatorDisplay :validator="item" />
-      </template>
-      <template #selection="{ item }">
-        <VChip
-          small
-          :color="dark ? null : 'grey lighten-3'"
-          filter
-          class="text-truncate"
-          :class="css.chip"
-          close
-          @click:close="removeValidator(item)"
-        >
-          <ValidatorDisplay :validator="item" horizontal />
-        </VChip>
-      </template>
-    </VAutocomplete>
-  </VCard>
+  <VAutocomplete
+    :filter="filter"
+    :value="value"
+    :items="items"
+    :search-input.sync="search"
+    :loading="loading"
+    :disabled="loading"
+    hide-details
+    hide-selected
+    hide-no-data
+    return-object
+    chips
+    clearable
+    multiple
+    solo
+    flat
+    dense
+    outlined
+    item-value="publicKey"
+    :label="t('validator_filter_input.label')"
+    :open-on-clear="false"
+    item-text="publicKey"
+    @input="input($event)"
+  >
+    <template #item="{ item }">
+      <ValidatorDisplay :validator="item" />
+    </template>
+    <template #selection="{ item }">
+      <VChip
+        small
+        :color="dark ? null : 'grey lighten-3'"
+        filter
+        class="text-truncate m-0.5"
+        close
+        @click:close="removeValidator(item)"
+      >
+        <ValidatorDisplay :validator="item" horizontal />
+      </VChip>
+    </template>
+  </VAutocomplete>
 </template>
-
-<style module lang="scss">
-.filter {
-  border-radius: 4px !important;
-}
-
-.chip {
-  margin: 2px;
-}
-</style>

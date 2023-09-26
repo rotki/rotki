@@ -83,7 +83,7 @@ const css = useCssModule();
         :asset="asset"
         :asset-padding="assetPadding"
         :value="amount"
-        class="d-block font-medium"
+        class="block font-medium"
       />
       <AmountDisplay
         :fiat-currency="valueCurrency"
@@ -91,7 +91,7 @@ const css = useCssModule();
         :value="valueInCurrency"
         :show-currency="ticker ? 'ticker' : 'none'"
         :loading="loading"
-        class="d-block grey--text"
+        class="block grey--text"
       />
     </div>
     <AssetLink v-if="!noIcon" class="ml-4" icon :asset="asset">

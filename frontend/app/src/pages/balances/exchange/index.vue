@@ -183,7 +183,7 @@ const { mdAndUp } = useDisplay();
                 @click="selectedExchange = usedExchange"
               >
                 <LocationDisplay :identifier="usedExchange" size="36px" />
-                <div class="exchange-balances__tab__amount d-block">
+                <div class="exchange-balances__tab__amount block">
                   <AmountDisplay
                     show-currency="symbol"
                     fiat-currency="USD"

@@ -1,19 +1,18 @@
 <script setup lang="ts">
-import { type PropType } from 'vue';
 import { type SubBlockchainTotal } from '@/types/blockchain';
 import { type ActionDataEntry } from '@/types/action';
 
-defineProps({
-  child: {
-    required: true,
-    type: Object as PropType<SubBlockchainTotal>
-  },
-  details: {
-    required: false,
-    type: Object as PropType<ActionDataEntry | null>,
-    default: null
+withDefaults(
+  defineProps<{
+    child: SubBlockchainTotal;
+    details: ActionDataEntry | null;
+  }>(),
+  {
+    details: null
   }
-});
+);
+
+const css = useCssModule();
 </script>
 
 <template>
@@ -21,72 +20,39 @@ defineProps({
     v-if="details"
     :id="`${child.protocol}_box`"
     :key="child.protocol"
-    class="flex flex-row blockchain-balance-box__item sub-item"
+    class="blockchain-balance-box__item sub-item min-h-[2.25rem] group"
     :to="details.detailPath"
+    :class="css['sub-item']"
   >
-    <VListItemAvatar tile class="blockchain-balance-box__icon shrink pl-12">
-      <AdaptiveWrapper class="flex">
+    <VListItemAvatar
+      tile
+      class="grayscale group-hover:grayscale-0 m-0 mr-1 ml-10"
+    >
+      <AdaptiveWrapper>
         <VImg :src="details.icon" width="24px" height="24px" />
       </AdaptiveWrapper>
     </VListItemAvatar>
     <VListItemContent>
-      <div class="flex flex-row ps-2">
-        <span class="grow shrink">
+      <div class="flex flex-wrap justify-between gap-2">
+        <span>
           {{ details.label }}
         </span>
-        <span class="ml-2 text-end shrink">
-          <AmountDisplay
-            show-currency="symbol"
-            fiat-currency="USD"
-            :value="child.usdValue"
-            :loading="child.loading"
-          />
-        </span>
+        <AmountDisplay
+          show-currency="symbol"
+          fiat-currency="USD"
+          :value="child.usdValue"
+          :loading="child.loading"
+        />
       </div>
     </VListItemContent>
   </VListItem>
 </template>
 
-<style scoped lang="scss">
-.blockchain-balance-box {
-  &__icon {
-    filter: grayscale(100%);
-    margin: 0;
-    margin-right: 5px !important;
-    width: auto !important;
-  }
-
-  &__item:hover &__icon {
-    filter: grayscale(0);
-  }
-}
-
+<style module lang="scss">
 .sub-item {
   &:after {
-    opacity: 0.75 !important;
-    position: absolute;
-    border-bottom: 1px solid rgb(100, 100, 100);
-    border-left: 1px solid rgb(100, 100, 100);
-    content: '' !important;
-    display: inline-block;
-    left: 2.2rem;
-    top: 0.7rem;
-    height: 1rem;
-    width: 1rem;
-    min-width: 1rem;
-    min-height: 1rem;
-  }
-}
-
-.theme {
-  &--dark {
-    .sub-item {
-      &:after {
-        color: var(--v-dark-base);
-        border-bottom: 1px solid rgb(200, 200, 200);
-        border-left: 1px solid rgb(200, 200, 200);
-      }
-    }
+    @apply absolute opacity-50 border-rui-text-secondary border-b border-l;
+    @apply w-4 min-h-[1rem] h-[40%] top-[10%] left-[2.2rem];
   }
 }
 </style>

@@ -1,19 +1,16 @@
 <script setup lang="ts">
-import { BigNumber } from '@rotki/common';
+import { type BigNumber } from '@rotki/common';
 import { toSentenceCase } from '@/utils/text';
+import { Routes } from '@/router/routes';
 
-defineProps({
-  name: {
-    required: true,
-    type: String
-  },
-  amount: {
-    required: true,
-    type: BigNumber
-  }
-});
+defineProps<{
+  name: string;
+  amount: BigNumber;
+}>();
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
+
+const manualBalancesRoute = Routes.ACCOUNTS_BALANCES_MANUAL;
 </script>
 
 <template>
@@ -21,39 +18,23 @@ const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
     :id="`${name}_box`"
     :ripple="false"
     :data-cy="`manual-balance-box__item__${name}`"
-    class="manual-balance-box__item"
-    to="/accounts-balances/manual-balances"
+    class="manual-balance-box__item min-h-[2.25rem] group"
+    :to="manualBalancesRoute"
   >
-    <VListItemAvatar tile class="manual-balance-box__icon">
+    <VListItemAvatar tile class="grayscale group-hover:grayscale-0 m-0 mr-1">
       <LocationDisplay :identifier="name" icon />
     </VListItemAvatar>
     <VListItemContent>
-      <VListItemTitle class="flex justify-between">
+      <div class="flex flex-wrap justify-between gap-2">
         <span>
           {{ toSentenceCase(name) }}
         </span>
-        <span class="text-end">
-          <AmountDisplay
-            show-currency="symbol"
-            :fiat-currency="currencySymbol"
-            :value="amount"
-          />
-        </span>
-      </VListItemTitle>
+        <AmountDisplay
+          show-currency="symbol"
+          :fiat-currency="currencySymbol"
+          :value="amount"
+        />
+      </div>
     </VListItemContent>
   </VListItem>
 </template>
-
-<style scoped lang="scss">
-.manual-balance-box {
-  &__icon {
-    filter: grayscale(100%);
-    margin: 0;
-    margin-right: 5px !important;
-  }
-
-  &__item:hover &__icon {
-    filter: grayscale(0);
-  }
-}
-</style>

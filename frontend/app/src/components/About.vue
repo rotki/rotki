@@ -90,10 +90,10 @@ const remoteAboutLogo =
 </script>
 
 <template>
-  <VCard class="pb-6" width="500px" light :class="css.about">
-    <div class="pt-6 pb-3 text-h2 font-black white--text primary">
-      <span class="px-6">{{ t('app.name') }}</span>
-      <span class="d-block mb-3 pl-6 text-caption">
+  <VSheet>
+    <div class="p-6 bg-rui-primary text-white">
+      <h4 class="text-h4">{{ t('app.name') }}</h4>
+      <span class="text-body-1">
         {{ t('app.moto') }}
       </span>
     </div>
@@ -233,7 +233,7 @@ const remoteAboutLogo =
         </VCol>
       </VRow>
     </VCardText>
-  </VCard>
+  </VSheet>
 </template>
 
 <style module lang="scss">

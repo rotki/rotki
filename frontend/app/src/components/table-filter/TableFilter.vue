@@ -328,7 +328,6 @@ const { t } = useI18n();
         <VSheet class="flex" data-cy="table-filter" :disabled="disabled">
           <VCombobox
             ref="input"
-            :class="css.filter"
             :value="selection"
             outlined
             dense
@@ -401,10 +400,6 @@ const { t } = useI18n();
 </template>
 
 <style module lang="css">
-.filter {
-  border-radius: 4px !important;
-}
-
 .tooltip {
   pointer-events: initial !important;
 }

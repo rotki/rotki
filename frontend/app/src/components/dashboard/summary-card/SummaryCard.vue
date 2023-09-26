@@ -28,10 +28,10 @@ const slots = useSlots();
   <VCard
     :loading="isLoading"
     :class="`dashboard__summary-card__${name}`"
-    class="pb-1"
+    class="pb-4"
   >
     <VCardTitle
-      class="font-medium text-capitalize summary-card__header pb-2 flex-nowrap flex justify-between gap-2"
+      class="font-medium text-capitalize summary-card__header flex-nowrap flex justify-between gap-2 pb-4"
     >
       <NavigatorLink
         :enabled="!!navigatesTo"
@@ -66,7 +66,7 @@ const slots = useSlots();
         </SummaryCardRefreshMenu>
       </div>
     </VCardTitle>
-    <VList>
+    <VList class="py-0">
       <slot />
     </VList>
   </VCard>
