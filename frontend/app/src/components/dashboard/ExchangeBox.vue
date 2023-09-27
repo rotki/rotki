@@ -1,53 +1,44 @@
 <script setup lang="ts">
-import { BigNumber } from '@rotki/common';
-import { type PropType } from 'vue';
+import { type BigNumber } from '@rotki/common';
 import { type TradeLocation } from '@/types/history/trade/location';
+import { Routes } from '@/router/routes';
 
-defineProps({
-  location: { required: true, type: String as PropType<TradeLocation> },
-  amount: { required: true, type: BigNumber }
-});
+const props = defineProps<{
+  location: TradeLocation;
+  amount: BigNumber;
+}>();
+
+const { location } = toRefs(props);
 
 const { exchangeName } = useLocations();
+
+const exchangeLocationRoute = computed(() => {
+  const route = Routes.ACCOUNTS_BALANCES_EXCHANGE;
+  return `${route}/${get(location)}`;
+});
 </script>
 
 <template>
   <VListItem
     :id="`${location}_box`"
-    :to="`/accounts-balances/exchange-balances/${location}`"
+    :to="exchangeLocationRoute"
     :ripple="false"
-    class="exchange-box__item"
+    class="exchange-box__item min-h-[2.25rem] group"
   >
-    <VListItemAvatar tile class="exchange-box__icon">
+    <VListItemAvatar tile class="grayscale group-hover:grayscale-0 m-0 mr-1">
       <LocationDisplay :identifier="location" icon />
     </VListItemAvatar>
     <VListItemContent>
-      <VListItemTitle class="flex justify-between">
+      <div class="flex flex-wrap justify-between gap-2">
         <span>
           {{ exchangeName(location) }}
         </span>
-        <span class="text-end">
-          <AmountDisplay
-            show-currency="symbol"
-            fiat-currency="USD"
-            :value="amount"
-          />
-        </span>
-      </VListItemTitle>
+        <AmountDisplay
+          show-currency="symbol"
+          fiat-currency="USD"
+          :value="amount"
+        />
+      </div>
     </VListItemContent>
   </VListItem>
 </template>
-
-<style scoped lang="scss">
-.exchange-box {
-  &__icon {
-    filter: grayscale(100%);
-    margin: 0;
-    margin-right: 5px !important;
-  }
-
-  &__item:hover &__icon {
-    filter: grayscale(0);
-  }
-}
-</style>

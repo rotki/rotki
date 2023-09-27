@@ -308,7 +308,7 @@ const css = useCssModule();
 </script>
 
 <template>
-  <div class="d-inline-block">
+  <div class="inline-block">
     <div class="flex flex-row items-baseline">
       <ManualPriceIndicator v-if="timestamp < 0" :price-asset="priceAsset" />
       <span

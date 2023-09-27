@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { type PropType } from 'vue';
 import Fragment from '@/components/helper/Fragment';
 import { Routes } from '@/router/routes';
 import {
@@ -9,9 +8,9 @@ import {
 import { toSentenceCase } from '@/utils/text';
 import { type ActionDataEntry } from '@/types/action';
 
-const props = defineProps({
-  total: { required: true, type: Object as PropType<BlockchainTotal> }
-});
+const props = defineProps<{
+  total: BlockchainTotal;
+}>();
 
 const { total } = toRefs(props);
 
@@ -36,25 +35,23 @@ const balanceBlockchainRoute = Routes.ACCOUNTS_BALANCES_BLOCKCHAIN;
     <VListItem
       :id="`${name}_box`"
       :data-cy="`blockchain-balance-box__item__${name}`"
-      class="blockchain-balance-box__item"
+      class="blockchain-balance-box__item min-h-[2.25rem] group"
       :to="`${balanceBlockchainRoute}#blockchain-balances-${total.chain}`"
     >
-      <VListItemAvatar tile class="blockchain-balance-box__icon">
+      <VListItemAvatar tile class="grayscale group-hover:grayscale-0 m-0 mr-1">
         <AssetIcon size="24px" :identifier="chain" :show-chain="false" />
       </VListItemAvatar>
       <VListItemContent>
-        <div class="flex flex-row">
-          <span class="grow shrink">
+        <div class="flex flex-wrap justify-between gap-2">
+          <span>
             {{ toSentenceCase(name) }}
           </span>
-          <span class="ml-2 text-end shrink">
-            <AmountDisplay
-              show-currency="symbol"
-              fiat-currency="USD"
-              :value="amount"
-              :loading="loading"
-            />
-          </span>
+          <AmountDisplay
+            show-currency="symbol"
+            fiat-currency="USD"
+            :value="amount"
+            :loading="loading"
+          />
         </div>
       </VListItemContent>
     </VListItem>
@@ -69,18 +66,3 @@ const balanceBlockchainRoute = Routes.ACCOUNTS_BALANCES_BLOCKCHAIN;
     </VList>
   </Fragment>
 </template>
-
-<style scoped lang="scss">
-.blockchain-balance-box {
-  &__icon {
-    filter: grayscale(100%);
-    margin: 0;
-    margin-right: 5px !important;
-    width: auto !important;
-  }
-
-  &__item:hover &__icon {
-    filter: grayscale(0);
-  }
-}
-</style>

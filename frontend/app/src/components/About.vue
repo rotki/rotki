@@ -87,153 +87,169 @@ const versionText = computed(() => {
 
 const remoteAboutLogo =
   'https://raw.githubusercontent.com/rotki/data/main/assets/icons/about_logo.png';
+
+const { copy } = useClipboard({ source: versionText });
 </script>
 
 <template>
-  <VCard class="pb-6" width="500px" light :class="css.about">
-    <div class="pt-6 pb-3 text-h2 font-black white--text primary">
-      <span class="px-6">{{ t('app.name') }}</span>
-      <span class="d-block mb-3 pl-6 text-caption">
-        {{ t('app.moto') }}
-      </span>
-    </div>
-    <VCardText>
-      <div class="mt-4 mb-2">
-        <RotkiLogo width="72px" :url="remoteAboutLogo" />
+  <!-- TODO: Remove bg class when https://github.com/rotki/ui-library/issues/124 is resolved -->
+  <RuiCard variant="flat" class="dark:bg-[#1E1E1E]">
+    <template #custom-header>
+      <div class="p-6 bg-rui-primary text-white">
+        <RuiLogo :custom-src="remoteAboutLogo" />
+        <h4 class="text-h4">{{ t('app.name') }}</h4>
+        <span class="text-body-1">
+          {{ t('app.moto') }}
+        </span>
       </div>
-      <div class="flex flex-row items-center mt-4" :class="css.version">
+    </template>
+    <div class="flex items-center justify-between" :class="css.version">
+      <div class="flex items-center">
         <div class="font-bold">{{ version.version }}</div>
-        <div class="font-weight-regular ml-4">
+        <div class="ml-4">
           <BaseExternalLink
             :href="`https://github.com/rotki/rotki/releases/tag/v${version.version}`"
             :text="t('about.release_notes')"
           />
         </div>
-        <VSpacer />
-        <AppUpdateIndicator />
       </div>
-      <VDivider class="mt-4 mb-2" />
-      <VRow align="center">
-        <VCol>
-          <table class="w-full">
-            <tbody>
-              <tr>
-                <td class="font-medium" :class="css.label">
-                  {{ t('about.data_directory') }}
-                </td>
-                <td>
-                  <div class="flex flex-row">
-                    <VTooltip top open-delay="400">
-                      <template #activator="{ on }">
-                        <div
-                          class="text-truncate"
-                          :class="css.directory"
-                          v-on="on"
-                        >
-                          {{ dataDirectory }}
-                        </div>
-                      </template>
-                      <span :class="css.directory">
-                        {{ dataDirectory }}
-                      </span>
-                    </VTooltip>
-                    <VSpacer />
-                    <div v-if="isPackaged" class="ml-2">
-                      <VTooltip top open-delay="400">
-                        <template #activator="{ on, attrs }">
-                          <VBtn
-                            v-bind="attrs"
-                            icon
-                            x-small
-                            v-on="on"
-                            @click="openPath(dataDirectory)"
-                          >
-                            <VIcon x-small>mdi-launch</VIcon>
-                          </VBtn>
-                        </template>
-                        <span>{{ t('about.open_data_dir_tooltip') }}</span>
-                      </VTooltip>
+      <AppUpdateIndicator />
+    </div>
+    <div
+      class="border-t border-rui-grey-200 dark:border-rui-grey-800 mt-3 pt-4"
+    >
+      <table class="w-full">
+        <tbody>
+          <tr>
+            <td :class="css.label">
+              {{ t('about.data_directory') }}
+            </td>
+            <td>
+              <div class="flex flex-row justify-between">
+                <RuiTooltip :popper="{ placement: 'top' }" open-delay="400">
+                  <template #activator>
+                    <div
+                      class="text-truncate text-rui-text-secondary"
+                      :class="css.directory"
+                    >
+                      {{ dataDirectory }}
                     </div>
-                    <div v-else>
-                      <CopyButton
-                        :value="dataDirectory"
-                        :tooltip="t('about.copy_data_directory_tooltip')"
-                      />
-                    </div>
-                  </div>
-                </td>
-              </tr>
-              <tr>
-                <td class="font-medium" :class="css.label">
-                  {{ t('about.frontend_version') }}
-                </td>
-                <td>
-                  {{ frontendVersion }}
-                </td>
-              </tr>
-              <tr v-if="webVersion">
-                <td class="font-medium" :class="css.label">
-                  {{ t('about.platform') }}
-                </td>
-                <td>{{ webVersion.platform }}</td>
-              </tr>
-              <tr v-if="webVersion">
-                <td class="font-medium" :class="css.label">
-                  {{ t('about.user_agent') }}
-                </td>
-                <td>{{ webVersion.userAgent }}</td>
-              </tr>
-              <tr v-if="electronVersion">
-                <td class="font-medium" :class="css.label">
-                  {{ t('about.platform') }}
-                </td>
-                <td>
-                  {{ electronVersion.os }} {{ electronVersion.arch }}
-                  {{ electronVersion.osVersion }}
-                </td>
-              </tr>
-              <tr v-if="electronVersion">
-                <td class="font-medium" :class="css.label">
-                  {{ t('about.electron') }}
-                </td>
-                <td>
-                  {{ electronVersion.electron }}
-                </td>
-              </tr>
-              <tr v-if="componentsVersion">
-                <td colspan="2">
-                  <VDivider class="mt-4 mb-2" />
-                  <div class="font-bold mb-1">
-                    {{ t('about.components.title') }}
-                  </div>
-                </td>
-              </tr>
-              <tr v-if="componentsVersion?.version">
-                <td class="font-medium" :class="css.label">
-                  {{ t('about.components.version') }}
-                </td>
-                <td>{{ componentsVersion.version }}</td>
-              </tr>
-              <tr v-if="componentsVersion?.build">
-                <td class="font-medium" :class="css.label">
-                  {{ t('about.components.build') }}
-                </td>
-                <td>
-                  <DateDisplay :timestamp="componentsVersion.build / 1000" />
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </VCol>
-        <VCol cols="auto">
-          <CopyButton
-            :value="versionText"
-            :tooltip="t('about.copy_information_tooltip')"
-          />
-        </VCol>
-      </VRow>
-    </VCardText>
-  </VCard>
+                  </template>
+                  <span :class="css.directory">
+                    {{ dataDirectory }}
+                  </span>
+                </RuiTooltip>
+                <div v-if="isPackaged" class="ml-2">
+                  <RuiTooltip :popper="{ placement: 'top' }" open-delay="400">
+                    <template #activator>
+                      <RuiButton
+                        icon
+                        size="sm"
+                        variant="text"
+                        @click="openPath(dataDirectory)"
+                      >
+                        <RuiIcon size="18" name="folder-open-line" />
+                      </RuiButton>
+                    </template>
+                    <span>{{ t('about.open_data_dir_tooltip') }}</span>
+                  </RuiTooltip>
+                </div>
+                <div v-else>
+                  <CopyButton
+                    size="sm"
+                    :value="dataDirectory"
+                    :tooltip="t('about.copy_data_directory_tooltip')"
+                  />
+                </div>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td :class="css.label">
+              {{ t('about.frontend_version') }}
+            </td>
+            <td class="text-rui-text-secondary">
+              {{ frontendVersion }}
+            </td>
+          </tr>
+          <template v-if="webVersion">
+            <tr>
+              <td :class="css.label">
+                {{ t('about.platform') }}
+              </td>
+              <td class="text-rui-text-secondary">
+                {{ webVersion.platform }}
+              </td>
+            </tr>
+            <tr>
+              <td :class="css.label">
+                {{ t('about.user_agent') }}
+              </td>
+              <td class="text-rui-text-secondary">
+                {{ webVersion.userAgent }}
+              </td>
+            </tr>
+          </template>
+          <template v-if="electronVersion">
+            <tr>
+              <td :class="css.label">
+                {{ t('about.platform') }}
+              </td>
+              <td class="text-rui-text-secondary">
+                {{ electronVersion.os }} {{ electronVersion.arch }}
+                {{ electronVersion.osVersion }}
+              </td>
+            </tr>
+            <tr>
+              <td :class="css.label">
+                {{ t('about.electron') }}
+              </td>
+              <td class="text-rui-text-secondary">
+                {{ electronVersion.electron }}
+              </td>
+            </tr>
+          </template>
+          <template v-if="componentsVersion">
+            <tr>
+              <td colspan="2">
+                <div
+                  class="border-t border-rui-grey-200 dark:border-rui-grey-800 mt-4 pt-4 font-bold mb-2"
+                >
+                  {{ t('about.components.title') }}
+                </div>
+              </td>
+            </tr>
+            <tr v-if="componentsVersion.version">
+              <td :class="css.label">
+                {{ t('about.components.version') }}
+              </td>
+              <td class="text-rui-text-secondary">
+                {{ componentsVersion.version }}
+              </td>
+            </tr>
+            <tr v-if="componentsVersion.build">
+              <td :class="css.label">
+                {{ t('about.components.build') }}
+              </td>
+              <td class="text-rui-text-secondary">
+                <DateDisplay :timestamp="componentsVersion.build / 1000" />
+              </td>
+            </tr>
+          </template>
+        </tbody>
+      </table>
+    </div>
+    <template #footer>
+      <div class="p-3 flex justify-end w-full">
+        <RuiButton color="primary" @click="copy()">
+          <template #prepend>
+            <RuiIcon size="20" name="file-copy-line" />
+          </template>
+          {{ t('about.copy_information_tooltip') }}
+        </RuiButton>
+      </div>
+    </template>
+  </RuiCard>
 </template>
 
 <style module lang="scss">
@@ -243,6 +259,7 @@ const remoteAboutLogo =
 
 .label {
   min-width: 130px;
+  @apply font-medium py-0.5;
 }
 
 .directory {

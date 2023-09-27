@@ -58,7 +58,7 @@
     "eslint-plugin-vue": "9.17.0",
     "eslint-plugin-vuetify": "1.1.0",
     "imask": "6.6.2",
-    "lodash-es": "^4.17.21",
+    "lodash-es": "4.17.21",
     "loglevel": "1.8.1",
     "pinia": "2.1.6",
     "ps-list": "8.1.1",

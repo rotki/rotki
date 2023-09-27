@@ -27,7 +27,7 @@ const attrs = useAttrs();
 <template>
   <Component
     :is="tag"
-    class="wrapper"
+    class="wrapper flex"
     :class="{ 'wrapper--inverted': dark }"
     v-bind="attrs"
     :style="{ width, height }"
