@@ -3535,8 +3535,7 @@
       "title": "管理历史价格"
     },
     "latest": {
-      "add_title": "添加手动最新价格",
-      "title": "管理最新价格"
+      "add_title": "添加手动最新价格"
     },
     "to_asset": "To Asset"
   },
@@ -3586,9 +3585,6 @@
       "title": "手动历史价格"
     },
     "is_worth": "值得",
-    "latest": {
-      "title": "手动最新价格"
-    },
     "on": "上",
     "refresh_tooltip": "刷新价格",
     "was_worth": "值得"

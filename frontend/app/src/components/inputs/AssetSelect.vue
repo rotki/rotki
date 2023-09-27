@@ -267,6 +267,9 @@ const listeners = useListeners();
         />
       </div>
     </template>
+    <template #prepend>
+      <slot name="prepend" />
+    </template>
   </VAutocomplete>
 </template>
 

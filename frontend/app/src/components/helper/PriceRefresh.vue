@@ -3,20 +3,12 @@ import { type ComputedRef } from 'vue';
 import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 
-const props = withDefaults(
-  defineProps<{
-    additionalAssets?: string[];
-  }>(),
-  {
-    additionalAssets: () => []
-  }
-);
-
 const { isTaskRunning } = useTaskStore();
 const { refreshPrices } = useBalances();
 const { isLoading } = useStatusStore();
 
 const refreshing = isLoading(Section.PRICES);
+const { t } = useI18n();
 
 const loadingData = computed<boolean>(
   () =>
@@ -27,14 +19,10 @@ const loadingData = computed<boolean>(
 );
 
 const { assets } = useAggregatedBalances();
-const { additionalAssets } = toRefs(props);
 
 const refresh = async () => {
-  const additionals = get(additionalAssets);
-  await refreshPrices(true, [...additionals, ...get(assets())]);
+  await refreshPrices(true, get(assets()));
 };
-
-const { t } = useI18n();
 
 const disabled: ComputedRef<boolean> = computed(
   () => get(refreshing) || get(loadingData)
