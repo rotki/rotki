@@ -149,7 +149,8 @@ const {
   setOptions,
   setFilter,
   updateFilter,
-  fetchData
+  fetchData,
+  pageParams
 } = usePaginationFilters<
   HistoryEvent,
   HistoryEventRequestPayload,
@@ -684,7 +685,7 @@ const onSkippedExternalEventsReprocessed = async () => {
         >
           {{ t('transactions.redecode_events.title') }}
         </RuiButton>
-
+        <HistoryEventsExport :filters="pageParams" />
         <BlockchainAccountSelector
           v-if="!useExternalAccountFilter"
           :value="accounts"

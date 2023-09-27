@@ -142,7 +142,7 @@ const showDoneConfirmation = () => {
         message: t('asset_update.success.description', {
           remoteVersion: get(changes).upToVersion
         }),
-        primaryAction: t('asset_update.success.ok'),
+        primaryAction: t('common.actions.ok'),
         singleAction: true,
         type: 'success'
       },

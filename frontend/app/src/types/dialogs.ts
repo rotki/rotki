@@ -14,7 +14,7 @@ export interface DialogTheme {
 export type DialogThemes = { [type in DialogType]: DialogTheme };
 
 export const themes: DialogThemes = {
-  info: { icon: 'mdi-information', color: 'primary' },
-  warning: { icon: 'mdi-alert-circle', color: 'error' },
-  success: { icon: 'mdi-check-circle', color: 'success' }
+  info: { icon: 'information-line', color: 'primary' },
+  warning: { icon: 'error-warning-line', color: 'error' },
+  success: { icon: 'checkbox-circle-line', color: 'success' }
 } as const;

@@ -84,7 +84,7 @@ const showDoneConfirmation = () => {
     {
       title: t('asset_update.restore.success.title'),
       message: t('asset_update.restore.success.description'),
-      primaryAction: t('asset_update.success.ok'),
+      primaryAction: t('common.actions.ok'),
       singleAction: true,
       type: DialogType.SUCCESS
     },

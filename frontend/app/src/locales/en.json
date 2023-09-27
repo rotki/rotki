@@ -588,6 +588,13 @@
         "title": "History Events Query"
       }
     },
+    "history_events_export": {
+      "message": {
+        "failure": "History events export failed",
+        "success": "History events exported to CSV successfully"
+      },
+      "title": "History Events Export"
+    },
     "ignore": {
       "error": {
         "description": "Failed to ignore the selected actions: {error}",
@@ -1105,7 +1112,6 @@
     "skip_notification": "Don't notify me until the next update",
     "success": {
       "description": "The asset database has been successfully updated to version {remoteVersion}. You will now need to re-login to apply the changes",
-      "ok": "OK",
       "title": "Asset database update"
     },
     "title": "A supported asset update is available",
@@ -1447,7 +1453,7 @@
       "install": "Install",
       "next": "Next",
       "no": "No",
-      "ok": "Ok",
+      "ok": "OK",
       "pull": "Pull",
       "push": "Push",
       "save": "Save",
@@ -4098,6 +4104,11 @@
         "edit": {
           "title": "Edit Event"
         }
+      },
+      "export": {
+        "confirmation_message": "Are you sure you want to export this document with the selected filters applied?",
+        "csv_export_error": "There was an error with export",
+        "download_failed": "Download of CSV is not possible"
       },
       "form": {
         "amount": {

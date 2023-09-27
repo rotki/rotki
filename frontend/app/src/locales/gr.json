@@ -564,6 +564,13 @@
         "title": "History Events Query"
       }
     },
+    "history_events_export": {
+      "message": {
+        "failure": "Αποτυχία εξαγωγής ιστορικών γεγονότων",
+        "success": "Επιτυχής εξαγωγή ιστορικών γεγονότων σε CSV"
+      },
+      "title": "Εξαγωγή Ιστορικών Γεγονότων"
+    },
     "ignore": {
       "error": {
         "description": "Failed to ignore the selected actions: {error}",
@@ -1059,7 +1066,6 @@
     "skip_notification": "Don't notify me until the next update",
     "success": {
       "description": "The asset database has been successfully updated to version {remoteVersion}. You will now need to re-login to apply the changes",
-      "ok": "OK",
       "title": "Asset database update"
     },
     "title": "A supported asset update is available",
@@ -1382,7 +1388,7 @@
       "install": "Install",
       "next": "Next",
       "no": "No",
-      "ok": "Ok",
+      "ok": "OK",
       "pull": "Pull",
       "push": "Push",
       "save": "Save",
@@ -3878,6 +3884,11 @@
         "edit": {
           "title": "Edit Event"
         }
+      },
+      "export": {
+        "confirmation_message": "Είστε σίγουροι ότι θέλετε να εξάγετε αυτό το έγγραφο με τα επιλεγμένα φίλτρα εφαρμοσμένα;",
+        "csv_export_error": "Παρουσιάστηκε σφάλμα κατά την εξαγωγή σε CSV",
+        "download_failed": "Η λήψη του CSV δεν είναι δυνατή"
       },
       "form": {
         "amount": {

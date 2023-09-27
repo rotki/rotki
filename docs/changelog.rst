@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`630` Users will be able to export history events to CSV.
 * :feature:`6582` Users will be able to see skipped external events on the history events page, export them to CSV, and reprocess those events.
 * :feature:`6621` Transactions involving the SDAI contract will now be properly decoded.
 * :feature:`-` Base support has been added. Balances will be shown, transactions pulled and decoded and taken into account in the PnL report.

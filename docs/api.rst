@@ -5020,9 +5020,9 @@ Exporting History Events
    :statuscode 409: No user is logged in or failure at event export.
    :statuscode 500: Internal rotki error
 
-.. http:put:: /api/(version)/history/events/export
+.. http:patch:: /api/(version)/history/events/export
 
-   Doing a PUT on this endpoint with the given filter parameters will download a csv with all history events matching the filter. All arguments are optional. If no filter is used all the events will be downloaded.
+   Doing a PATCH on this endpoint with the given filter parameters will download a csv with all history events matching the filter. All arguments are optional. If no filter is used all the events will be downloaded.
 
    .. _filter-request-args-label:
 
@@ -5030,7 +5030,7 @@ Exporting History Events
 
    .. http:example:: curl wget httpie python-requests
 
-      PUT /api/1/history/events/export HTTP/1.1
+      PATCH /api/1/history/events/export HTTP/1.1
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
