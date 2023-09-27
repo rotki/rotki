@@ -1,6 +1,7 @@
 import logging
 from typing import TYPE_CHECKING
 
+from rotkehlchen.db.utils import update_table_schema
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Location
 
@@ -51,6 +52,31 @@ def _migrate_rotki_events(write_cursor: 'DBCursor') -> None:
     log.debug('Exit _migrate_rotki_events')
 
 
+def _upgrade_rotki_events(write_cursor: 'DBCursor') -> None:
+    """Upgrade the rotki events schema table to specify location as a type"""
+    log.debug('Enter _upgrade_rotki_events')
+    update_table_schema(
+        write_cursor=write_cursor,
+        table_name='history_events',
+        schema="""identifier INTEGER NOT NULL PRIMARY KEY,
+        entry_type INTEGER NOT NULL,
+        event_identifier TEXT NOT NULL,
+        sequence_index INTEGER NOT NULL,
+        timestamp INTEGER NOT NULL,
+        location CHAR(1) NOT NULL DEFAULT('A') REFERENCES location(location),
+        location_label TEXT,
+        asset TEXT NOT NULL,
+        amount TEXT NOT NULL,
+        usd_value TEXT NOT NULL,
+        notes TEXT,
+        type TEXT NOT NULL,
+        subtype TEXT NOT NULL,
+        FOREIGN KEY(asset) REFERENCES assets(identifier) ON UPDATE CASCADE,
+        UNIQUE(event_identifier, sequence_index)""",
+    )
+    log.debug('Exit _upgrade_rotki_events')
+
+
 def _purge_kraken_events(write_cursor: 'DBCursor') -> None:
     """
     Purge kraken events, after the changes that allows for processing of new assets.
@@ -83,6 +109,16 @@ def _add_base_chain_data(write_cursor: 'DBCursor') -> None:
     log.debug('Exit _add_base_chain_data')
 
 
+def _migrate_ledger_actions(write_cursor: 'DBCursor') -> None:
+    """
+    Migrate all ledger actions to history events, so that we can get rid of the
+    deprecated ledger action structure.
+
+    Part of https://github.com/rotki/rotki/issues/6096
+    """
+
+
+
 def _add_new_tables(write_cursor: 'DBCursor') -> None:
     """
     Add new tables for this upgrade
@@ -112,6 +148,10 @@ def upgrade_v39_to_v40(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         _purge_kraken_events(write_cursor)
         progress_handler.new_step()
         _add_base_chain_data(write_cursor)
+        progress_handler.new_step()
+        _upgrade_rotki_events(write_cursor)
+        progress_handler.new_step()
+        _migrate_ledger_actions(write_cursor)
         progress_handler.new_step()
         _add_new_tables(write_cursor)
         progress_handler.new_step()
