@@ -448,14 +448,14 @@ def update_table_schema(
         write_cursor: 'DBCursor',
         table_name: str,
         schema: str,
-        insert_columns: str,
+        insert_columns: Optional[str] = None,
         insert_order: str = '',
         insert_where: Optional[str] = None,
 ) -> bool:
     """Update the schema of a given table. Need to provide:
     1. The name
     2. The schema
-    3. The insert_columns of the old table that are to be inserted to the new one
+    3. The insert_columns of the old table that are to be inserted to the new one. If missing * is used
     4. Optionally an order of insertion parentheses in case not all are added or names changed.
     5. Optionally a WHERE statement for the insertion
 
@@ -463,12 +463,13 @@ def update_table_schema(
     reason did not exist.
 
     Returns True if the table existed and insertions were made and False otherwise
-    """
+    """  # noqa: E501
     new_table_name = f'{table_name}_new' if table_exists(write_cursor, table_name) else table_name
+    select_insert_columns = '*' if insert_columns is None else insert_columns
     write_cursor.execute(f'CREATE TABLE IF NOT EXISTS {new_table_name} ({schema});')
     if new_table_name != table_name:
         insert_where = f' WHERE {insert_where}' if insert_where else ''
-        write_cursor.execute(f'INSERT OR IGNORE INTO {new_table_name}{insert_order} SELECT {insert_columns} FROM {table_name}{insert_where}')  # noqa: E501
+        write_cursor.execute(f'INSERT OR IGNORE INTO {new_table_name}{insert_order} SELECT {select_insert_columns} FROM {table_name}{insert_where}')  # noqa: E501
         write_cursor.execute(f'DROP TABLE {table_name}')
         write_cursor.execute(f'ALTER TABLE {new_table_name} RENAME TO {table_name}')
         return True

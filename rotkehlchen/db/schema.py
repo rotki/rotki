@@ -567,7 +567,7 @@ CREATE TABLE IF NOT EXISTS history_events (
     event_identifier TEXT NOT NULL,
     sequence_index INTEGER NOT NULL,
     timestamp INTEGER NOT NULL,
-    location TEXT NOT NULL,
+    location CHAR(1) NOT NULL DEFAULT('A') REFERENCES location(location),
     location_label TEXT,
     asset TEXT NOT NULL,
     amount TEXT NOT NULL,
