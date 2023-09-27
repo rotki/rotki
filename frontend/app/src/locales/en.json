@@ -3664,8 +3664,7 @@
       "title": "Manage Historic Prices"
     },
     "latest": {
-      "add_title": "Add a manual latest price",
-      "title": "Manage Latest Prices"
+      "add_title": "Add a manual latest price"
     },
     "to_asset": "To Asset"
   },
@@ -3715,9 +3714,6 @@
       "title": "Manual Historic Prices"
     },
     "is_worth": "is worth",
-    "latest": {
-      "title": "Manual Latest Prices"
-    },
     "on": "on",
     "refresh_tooltip": "Refresh prices",
     "was_worth": "was worth"

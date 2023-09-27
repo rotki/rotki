@@ -34,6 +34,7 @@ import {
   RiEyeOffLine,
   RiFileChartLine,
   RiFileUploadLine,
+  RiFilterLine,
   RiFolderReceivedLine,
   RiGiftLine,
   RiHistoryLine,
@@ -149,6 +150,7 @@ Vue.use(RuiPlugin, {
     RiCheckboxCircleLine,
     RiLockLine,
     RiCloseLine,
-    RiErrorWarningLine
+    RiErrorWarningLine,
+    RiFilterLine
   ]
 });

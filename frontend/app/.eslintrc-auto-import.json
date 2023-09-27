@@ -701,6 +701,7 @@
     "groupAssetBreakdown": true,
     "disposeEvmRpcNodeComposables": true,
     "hexToRgbPoints": true,
-    "WritableComputedRef": true
+    "WritableComputedRef": true,
+    "useLatestPrices": true
   }
 }

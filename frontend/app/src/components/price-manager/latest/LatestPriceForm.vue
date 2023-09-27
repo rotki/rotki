@@ -75,59 +75,55 @@ const v$ = setValidation(
 
 <template>
   <VForm :value="valid">
-    <VRow class="mt-2">
-      <VCol cols="12" md="6">
-        <AssetSelect
-          :value="value.fromAsset"
-          :label="t('price_form.from_asset')"
-          outlined
-          include-nfts
-          :disabled="edit"
-          :error-messages="toMessages(v$.fromAsset)"
-          @input="input({ fromAsset: $event })"
-        />
-      </VCol>
-      <VCol cols="12" md="6">
-        <AssetSelect
-          :value="value.toAsset"
-          :label="t('price_form.to_asset')"
-          outlined
-          :error-messages="toMessages(v$.toAsset)"
-          @input="input({ toAsset: $event })"
-        />
-      </VCol>
-    </VRow>
-    <VRow>
-      <VCol>
-        <AmountInput
-          v-model="price"
-          outlined
-          :error-messages="toMessages(v$.price)"
-          :label="t('common.price')"
-        />
-        <div
-          v-if="price && fromAsset && toAsset"
-          class="text-caption green--text mt-n6 pb-1 pl-3"
-        >
-          <i18n tag="div" path="price_form.latest.hint">
-            <template #fromAsset>
-              <strong>
-                {{ fromAsset }}
-              </strong>
-            </template>
-            <template #toAsset>
-              <strong>
-                {{ toAsset }}
-              </strong>
-            </template>
-            <template #price>
-              <strong>
-                <AmountDisplay :value="numericPrice" :tooltip="false" />
-              </strong>
-            </template>
-          </i18n>
-        </div>
-      </VCol>
-    </VRow>
+    <div class="flex flex-row flex-wrap items-center gap-2 mt-2">
+      <AssetSelect
+        :value="value.fromAsset"
+        :label="t('price_form.from_asset')"
+        outlined
+        class="flex-1"
+        include-nfts
+        :disabled="edit"
+        :error-messages="toMessages(v$.fromAsset)"
+        @input="input({ fromAsset: $event })"
+      />
+      <AssetSelect
+        :value="value.toAsset"
+        :label="t('price_form.to_asset')"
+        outlined
+        class="flex-1"
+        :error-messages="toMessages(v$.toAsset)"
+        @input="input({ toAsset: $event })"
+      />
+    </div>
+    <div>
+      <AmountInput
+        v-model="price"
+        outlined
+        :error-messages="toMessages(v$.price)"
+        :label="t('common.price')"
+      />
+      <div
+        v-if="price && fromAsset && toAsset"
+        class="text-caption green--text mt-n6 pb-1 pl-3"
+      >
+        <i18n tag="div" path="price_form.latest.hint">
+          <template #fromAsset>
+            <strong>
+              {{ fromAsset }}
+            </strong>
+          </template>
+          <template #toAsset>
+            <strong>
+              {{ toAsset }}
+            </strong>
+          </template>
+          <template #price>
+            <strong>
+              <AmountDisplay :value="numericPrice" :tooltip="false" />
+            </strong>
+          </template>
+        </i18n>
+      </div>
+    </div>
   </VForm>
 </template>

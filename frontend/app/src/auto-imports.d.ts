@@ -491,6 +491,7 @@ declare global {
   const useLastChanged: typeof import('@vueuse/core')['useLastChanged']
   const useLastLanguage: typeof import('./composables/session/language')['useLastLanguage']
   const useLatestPriceForm: typeof import('./composables/price-manager/latest/form')['useLatestPriceForm']
+  const useLatestPrices: typeof import('./composables/price-manager/latest/index')['useLatestPrices']
   const useLedgerActionData: typeof import('./composables/history/ledger-actions/data')['useLedgerActionData']
   const useLedgerActions: typeof import('./composables/history/ledger-actions/index')['useLedgerActions']
   const useLedgerActionsApi: typeof import('./composables/api/history/ledger-actions')['useLedgerActionsApi']
@@ -1193,6 +1194,7 @@ declare module 'vue' {
     readonly useLastChanged: UnwrapRef<typeof import('@vueuse/core')['useLastChanged']>
     readonly useLastLanguage: UnwrapRef<typeof import('./composables/session/language')['useLastLanguage']>
     readonly useLatestPriceForm: UnwrapRef<typeof import('./composables/price-manager/latest/form')['useLatestPriceForm']>
+    readonly useLatestPrices: UnwrapRef<typeof import('./composables/price-manager/latest/index')['useLatestPrices']>
     readonly useLedgerActionData: UnwrapRef<typeof import('./composables/history/ledger-actions/data')['useLedgerActionData']>
     readonly useLedgerActions: UnwrapRef<typeof import('./composables/history/ledger-actions/index')['useLedgerActions']>
     readonly useLedgerActionsApi: UnwrapRef<typeof import('./composables/api/history/ledger-actions')['useLedgerActionsApi']>
@@ -1889,6 +1891,7 @@ declare module '@vue/runtime-core' {
     readonly useLastChanged: UnwrapRef<typeof import('@vueuse/core')['useLastChanged']>
     readonly useLastLanguage: UnwrapRef<typeof import('./composables/session/language')['useLastLanguage']>
     readonly useLatestPriceForm: UnwrapRef<typeof import('./composables/price-manager/latest/form')['useLatestPriceForm']>
+    readonly useLatestPrices: UnwrapRef<typeof import('./composables/price-manager/latest/index')['useLatestPrices']>
     readonly useLedgerActionData: UnwrapRef<typeof import('./composables/history/ledger-actions/data')['useLedgerActionData']>
     readonly useLedgerActions: UnwrapRef<typeof import('./composables/history/ledger-actions/index')['useLedgerActions']>
     readonly useLedgerActionsApi: UnwrapRef<typeof import('./composables/api/history/ledger-actions')['useLedgerActionsApi']>
