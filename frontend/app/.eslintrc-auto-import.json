@@ -703,6 +703,9 @@
     "hexToRgbPoints": true,
     "WritableComputedRef": true,
     "useLatestPrices": true,
-    "useHistoricPrices": true
+    "useHistoricPrices": true,
+    "downloadFileByBlobResponse": true,
+    "downloadFileByTextContent": true,
+    "useSkippedHistoryEventsApi": true
   }
 }

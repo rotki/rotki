@@ -1,10 +1,14 @@
 <script setup lang="ts">
 import IndexedDb from '@/utils/indexed-db';
 
-defineProps({
-  visible: { required: true, type: Boolean }
-});
-const emit = defineEmits(['visible:update', 'about']);
+defineProps<{
+  visible: boolean;
+}>();
+
+const emit = defineEmits<{
+  (e: 'visible:update', visible: boolean): void;
+  (e: 'about'): void;
+}>();
 const { t } = useI18n();
 
 interface Entry {
@@ -72,11 +76,7 @@ const downloadBrowserLog = async () => {
       return;
     }
     const messages = data.map((item: any) => item.message).join('\n');
-
-    downloadFileByUrl(
-      `data:text/plain;charset=utf-8,${encodeURIComponent(messages)}`,
-      'frontend_log.txt'
-    );
+    downloadFileByTextContent(messages, 'frontend_log.txt');
   });
 };
 

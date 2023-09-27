@@ -116,8 +116,7 @@ export const useAssetsApi = () => {
           }
         );
         if (response.status === 200) {
-          const url = window.URL.createObjectURL(response.request.response);
-          downloadFileByUrl(url, 'assets.zip');
+          downloadFileByBlobResponse(response, 'assets.zip');
           return { success: true };
         }
         const body = await (response.data as Blob).text();

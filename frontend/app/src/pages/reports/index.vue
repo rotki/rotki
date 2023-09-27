@@ -102,9 +102,7 @@ const exportData = async ({ start, end }: ProfitLossReportPeriod) => {
     const isLocal = appSession;
     if (isLocal) {
       const directoryPath =
-        (await openDirectory(
-          t('profit_loss_reports.debug.select_directory')
-        )) || '';
+        (await openDirectory(t('common.select_directory'))) || '';
       if (!directoryPath) {
         return;
       }
@@ -122,11 +120,11 @@ const exportData = async ({ start, end }: ProfitLossReportPeriod) => {
         success: !!result
       };
     } else {
-      const file = new Blob([JSON.stringify(result, null, 2)], {
-        type: 'text/json'
-      });
-      const link = window.URL.createObjectURL(file);
-      downloadFileByUrl(link, 'pnl_debug.json');
+      downloadFileByTextContent(
+        JSON.stringify(result, null, 2),
+        'pnl_debug.json',
+        'json'
+      );
     }
   } catch (e: any) {
     message = {

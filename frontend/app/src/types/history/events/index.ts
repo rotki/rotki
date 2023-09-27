@@ -214,3 +214,21 @@ export interface OnlineHistoryEventsRequestPayload {
   readonly asyncQuery: boolean;
   readonly queryType: OnlineHistoryEventsQueryType;
 }
+
+export const SkippedHistoryEventsSummary = z.object({
+  locations: z.record(z.number()),
+  total: z.number()
+});
+
+export type SkippedHistoryEventsSummary = z.infer<
+  typeof SkippedHistoryEventsSummary
+>;
+
+export const ProcessSkippedHistoryEventsResponse = z.object({
+  total: z.number(),
+  successfull: z.number()
+});
+
+export type ProcessSkippedHistoryEventsResponse = z.infer<
+  typeof ProcessSkippedHistoryEventsResponse
+>;

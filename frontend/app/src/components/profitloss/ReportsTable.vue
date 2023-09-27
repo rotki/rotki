@@ -123,36 +123,33 @@ const expand = (item: Report) => {
         />
       </template>
       <template #item.actions="{ item }">
-        <ExportReportCsv v-if="latestReport(item.identifier)" icon />
-        <VTooltip top open-delay="400">
-          <template #activator="{ on, attrs }">
-            <VBtn
-              icon
-              color="primary"
-              v-bind="attrs"
-              :to="getReportUrl(item.identifier)"
-              v-on="on"
-            >
-              <VIcon small>mdi-open-in-app</VIcon>
-            </VBtn>
-          </template>
-          <span>{{ t('reports_table.load.tooltip') }}</span>
-        </VTooltip>
-
-        <VTooltip top open-delay="400">
-          <template #activator="{ on, attrs }">
-            <VBtn
-              icon
-              color="primary"
-              v-bind="attrs"
-              @click="deleteReport(item.identifier)"
-              v-on="on"
-            >
-              <VIcon small>mdi-delete</VIcon>
-            </VBtn>
-          </template>
-          <span>{{ t('reports_table.delete.tooltip') }}</span>
-        </VTooltip>
+        <div class="flex justify-end gap-1">
+          <ExportReportCsv v-if="latestReport(item.identifier)" icon />
+          <RuiTooltip :popper="{ placement: 'top' }" open-delay="400">
+            <template #activator>
+              <RouterLink :to="getReportUrl(item.identifier)">
+                <RuiButton size="sm" icon variant="text" color="primary">
+                  <RuiIcon size="20" name="file-text-line" />
+                </RuiButton>
+              </RouterLink>
+            </template>
+            <span>{{ t('reports_table.load.tooltip') }}</span>
+          </RuiTooltip>
+          <RuiTooltip :popper="{ placement: 'top' }" open-delay="400">
+            <template #activator>
+              <RuiButton
+                icon
+                size="sm"
+                variant="text"
+                color="primary"
+                @click="deleteReport(item.identifier)"
+              >
+                <RuiIcon size="20" name="delete-bin-5-line" />
+              </RuiButton>
+            </template>
+            <span>{{ t('reports_table.delete.tooltip') }}</span>
+          </RuiTooltip>
+        </div>
       </template>
       <template #expanded-item="{ headers, item }">
         <TableExpandContainer visible :colspan="headers.length">

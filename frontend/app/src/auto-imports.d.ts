@@ -85,6 +85,8 @@ declare global {
   const defineStore: typeof import('pinia')['defineStore']
   const deleteBackendUrl: typeof import('./utils/account-management')['deleteBackendUrl']
   const disposeEvmRpcNodeComposables: typeof import('./composables/settings/general/rpc/form')['disposeEvmRpcNodeComposables']
+  const downloadFileByBlobResponse: typeof import('./utils/download')['downloadFileByBlobResponse']
+  const downloadFileByTextContent: typeof import('./utils/download')['downloadFileByTextContent']
   const downloadFileByUrl: typeof import('./utils/download')['downloadFileByUrl']
   const eagerComputed: typeof import('@vueuse/core')['eagerComputed']
   const effectScope: typeof import('vue')['effectScope']
@@ -465,7 +467,7 @@ declare global {
   const useHistoryEventMappings: typeof import('./composables/history/events/mapping')['useHistoryEventMappings']
   const useHistoryEventNote: typeof import('./composables/history/events/notes')['useHistoryEventNote']
   const useHistoryEvents: typeof import('./composables/history/events/index')['useHistoryEvents']
-  const useHistoryEventsApi: typeof import('./composables/api/history/events')['useHistoryEventsApi']
+  const useHistoryEventsApi: typeof import('./composables/api/history/events/index')['useHistoryEventsApi']
   const useHistoryEventsForm: typeof import('./composables/history/events/form')['useHistoryEventsForm']
   const useHistoryIgnoringApi: typeof import('./composables/api/history/ignore')['useHistoryIgnoringApi']
   const useHistoryStore: typeof import('./store/history/index')['useHistoryStore']
@@ -602,6 +604,7 @@ declare global {
   const useSettingsApi: typeof import('./composables/api/settings/settings-api')['useSettingsApi']
   const useSettingsStore: typeof import('./store/settings/index')['useSettingsStore']
   const useShare: typeof import('@vueuse/core')['useShare']
+  const useSkippedHistoryEventsApi: typeof import('./composables/api/history/events/skipped')['useSkippedHistoryEventsApi']
   const useSlots: typeof import('vue')['useSlots']
   const useSnapshotApi: typeof import('./composables/api/settings/snapshot-api')['useSnapshotApi']
   const useSorted: typeof import('@vueuse/core')['useSorted']
@@ -791,6 +794,8 @@ declare module 'vue' {
     readonly defineStore: UnwrapRef<typeof import('pinia')['defineStore']>
     readonly deleteBackendUrl: UnwrapRef<typeof import('./utils/account-management')['deleteBackendUrl']>
     readonly disposeEvmRpcNodeComposables: UnwrapRef<typeof import('./composables/settings/general/rpc/form')['disposeEvmRpcNodeComposables']>
+    readonly downloadFileByBlobResponse: UnwrapRef<typeof import('./utils/download')['downloadFileByBlobResponse']>
+    readonly downloadFileByTextContent: UnwrapRef<typeof import('./utils/download')['downloadFileByTextContent']>
     readonly downloadFileByUrl: UnwrapRef<typeof import('./utils/download')['downloadFileByUrl']>
     readonly eagerComputed: UnwrapRef<typeof import('@vueuse/core')['eagerComputed']>
     readonly effectScope: UnwrapRef<typeof import('vue')['effectScope']>
@@ -1169,7 +1174,7 @@ declare module 'vue' {
     readonly useHistoryEventMappings: UnwrapRef<typeof import('./composables/history/events/mapping')['useHistoryEventMappings']>
     readonly useHistoryEventNote: UnwrapRef<typeof import('./composables/history/events/notes')['useHistoryEventNote']>
     readonly useHistoryEvents: UnwrapRef<typeof import('./composables/history/events/index')['useHistoryEvents']>
-    readonly useHistoryEventsApi: UnwrapRef<typeof import('./composables/api/history/events')['useHistoryEventsApi']>
+    readonly useHistoryEventsApi: UnwrapRef<typeof import('./composables/api/history/events/index')['useHistoryEventsApi']>
     readonly useHistoryEventsForm: UnwrapRef<typeof import('./composables/history/events/form')['useHistoryEventsForm']>
     readonly useHistoryIgnoringApi: UnwrapRef<typeof import('./composables/api/history/ignore')['useHistoryIgnoringApi']>
     readonly useHistoryStore: UnwrapRef<typeof import('./store/history/index')['useHistoryStore']>
@@ -1306,6 +1311,7 @@ declare module 'vue' {
     readonly useSettingsApi: UnwrapRef<typeof import('./composables/api/settings/settings-api')['useSettingsApi']>
     readonly useSettingsStore: UnwrapRef<typeof import('./store/settings/index')['useSettingsStore']>
     readonly useShare: UnwrapRef<typeof import('@vueuse/core')['useShare']>
+    readonly useSkippedHistoryEventsApi: UnwrapRef<typeof import('./composables/api/history/events/skipped')['useSkippedHistoryEventsApi']>
     readonly useSlots: UnwrapRef<typeof import('vue')['useSlots']>
     readonly useSnapshotApi: UnwrapRef<typeof import('./composables/api/settings/snapshot-api')['useSnapshotApi']>
     readonly useSorted: UnwrapRef<typeof import('@vueuse/core')['useSorted']>
@@ -1489,6 +1495,8 @@ declare module '@vue/runtime-core' {
     readonly defineStore: UnwrapRef<typeof import('pinia')['defineStore']>
     readonly deleteBackendUrl: UnwrapRef<typeof import('./utils/account-management')['deleteBackendUrl']>
     readonly disposeEvmRpcNodeComposables: UnwrapRef<typeof import('./composables/settings/general/rpc/form')['disposeEvmRpcNodeComposables']>
+    readonly downloadFileByBlobResponse: UnwrapRef<typeof import('./utils/download')['downloadFileByBlobResponse']>
+    readonly downloadFileByTextContent: UnwrapRef<typeof import('./utils/download')['downloadFileByTextContent']>
     readonly downloadFileByUrl: UnwrapRef<typeof import('./utils/download')['downloadFileByUrl']>
     readonly eagerComputed: UnwrapRef<typeof import('@vueuse/core')['eagerComputed']>
     readonly effectScope: UnwrapRef<typeof import('vue')['effectScope']>
@@ -1867,7 +1875,7 @@ declare module '@vue/runtime-core' {
     readonly useHistoryEventMappings: UnwrapRef<typeof import('./composables/history/events/mapping')['useHistoryEventMappings']>
     readonly useHistoryEventNote: UnwrapRef<typeof import('./composables/history/events/notes')['useHistoryEventNote']>
     readonly useHistoryEvents: UnwrapRef<typeof import('./composables/history/events/index')['useHistoryEvents']>
-    readonly useHistoryEventsApi: UnwrapRef<typeof import('./composables/api/history/events')['useHistoryEventsApi']>
+    readonly useHistoryEventsApi: UnwrapRef<typeof import('./composables/api/history/events/index')['useHistoryEventsApi']>
     readonly useHistoryEventsForm: UnwrapRef<typeof import('./composables/history/events/form')['useHistoryEventsForm']>
     readonly useHistoryIgnoringApi: UnwrapRef<typeof import('./composables/api/history/ignore')['useHistoryIgnoringApi']>
     readonly useHistoryStore: UnwrapRef<typeof import('./store/history/index')['useHistoryStore']>
@@ -2004,6 +2012,7 @@ declare module '@vue/runtime-core' {
     readonly useSettingsApi: UnwrapRef<typeof import('./composables/api/settings/settings-api')['useSettingsApi']>
     readonly useSettingsStore: UnwrapRef<typeof import('./store/settings/index')['useSettingsStore']>
     readonly useShare: UnwrapRef<typeof import('@vueuse/core')['useShare']>
+    readonly useSkippedHistoryEventsApi: UnwrapRef<typeof import('./composables/api/history/events/skipped')['useSkippedHistoryEventsApi']>
     readonly useSlots: UnwrapRef<typeof import('vue')['useSlots']>
     readonly useSnapshotApi: UnwrapRef<typeof import('./composables/api/settings/snapshot-api')['useSnapshotApi']>
     readonly useSorted: UnwrapRef<typeof import('@vueuse/core')['useSorted']>

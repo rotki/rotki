@@ -139,7 +139,7 @@ export const useAssets = () => {
       let file: string | undefined = undefined;
       if (appSession) {
         const directory = await openDirectory(
-          t('profit_loss_report.select_directory').toString()
+          t('common.select_directory').toString()
         );
         if (!directory) {
           return {

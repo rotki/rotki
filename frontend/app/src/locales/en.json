@@ -658,6 +658,15 @@
       "task": {
         "description": "Requesting new {queryType} events",
         "title": "Querying events"
+      },
+      "skipped": {
+        "csv_export": {
+          "message": {
+            "failure": "Skipped events export failed",
+            "success": "Skipped events exported to CSV successfully"
+          },
+          "title": "CSV Export"
+        }
       }
     },
     "reports": {
@@ -1428,7 +1437,9 @@
       "delete": "Delete",
       "dismiss": "Dismiss",
       "download": "Download",
+      "download_csv": "Download CSV",
       "edit": "Edit",
+      "export_csv": "Export CSV",
       "filter": "Filter",
       "finish": "Finish",
       "generate": "Generate",
@@ -1474,6 +1485,7 @@
     "refresh": "Refresh",
     "rewards": "Rewards",
     "select_address": "Select address(es)",
+    "select_directory": "Select a directory",
     "status": "Status",
     "total": "Total",
     "tx": "Tx",
@@ -1736,7 +1748,6 @@
       },
       "export_database_snapshot": "Export database snapshot",
       "search_asset": "Search asset",
-      "select_directory": "Select a directory",
       "subtitle": "Click the button below to download snapshot for"
     }
   },
@@ -3788,18 +3799,15 @@
       "show_issues": "Show Issues"
     },
     "csv_export_error": "There was an error with export",
-    "download_csv": "Download CSV",
     "download_failed": "Download of report is not possible",
     "error": {
       "subtitle": "The report generation was not possible due to an error",
       "title": "Profit and Loss Report Generation"
     },
-    "export_csv": "Export CSV",
     "loading": "Please wait while your PnL report is loading",
     "loading_hint": "Your report generation might take a while depending on the amount of trades and actions you performed during the selected period.",
     "loading_message": "Please wait while your report is generated...",
     "report_period": "Report starting from {start} to {end}",
-    "select_directory": "Select a directory",
     "settings_tooltip": "Open the accounting settings",
     "upgrade": "{processed} total events have been processed starting from {start}.",
     "upgrade2": "The limit of the free version has been reached. To get the full report please upgrade to {link}"
@@ -3829,7 +3837,6 @@
         "success": "PnL report debug data imported successfully",
         "title": "Import PnL report debug data"
       },
-      "select_directory": "Select a directory",
       "title": "Debug"
     },
     "notification": {
@@ -4172,6 +4179,26 @@
       },
       "loading": "Loading events...",
       "no_data": "Events are hidden because they contain ignored assets",
+      "skipped": {
+        "csv_export_error": "There was an error with export",
+        "download_failed": "Download of CSV is not possible",
+        "headers": {
+          "number": "Number of skipped events"
+        },
+        "reprocess": {
+          "action": "Reprocess events",
+          "failed": {
+            "title": "Error reprocessing skipped events",
+            "no_processed_events": "No skipped external events processed"
+          },
+          "success": {
+            "all": "All skipped external events have been processed",
+            "some": "{successfull} of {total} skipped external events have been processed",
+            "title": "Skipped events processed"
+          }
+        },
+        "title": "Skipped external events"
+      },
       "view": {
         "hide": "Hide events",
         "show": "Show events ({length})"

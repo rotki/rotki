@@ -33,13 +33,13 @@ export const useReportsApi = () => {
     return handleResponse(response);
   };
 
-  const exportReportCSV = async (directory: string): Promise<boolean> => {
+  const exportReportCSV = async (directoryPath: string): Promise<boolean> => {
     const response = await api.instance.get<ActionResult<boolean>>(
       '/history/export',
       {
-        params: {
-          directory_path: directory
-        },
+        params: snakeCaseTransformer({
+          directoryPath
+        }),
         validateStatus: validStatus
       }
     );
@@ -55,8 +55,7 @@ export const useReportsApi = () => {
       });
 
       if (response.status === 200) {
-        const url = window.URL.createObjectURL(response.request.response);
-        downloadFileByUrl(url, 'reports.zip');
+        downloadFileByBlobResponse(response, 'reports.zip');
         return { success: true };
       }
 

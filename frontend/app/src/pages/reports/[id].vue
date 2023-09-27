@@ -120,19 +120,21 @@ const regenerateReport = async () => {
       :accounting-settings="settings"
       class="mt-4 mb-8"
     />
-    <div class="flex">
+    <div class="flex gap-2">
       <template v-if="latest">
-        <ExportReportCsv class="mr-2" />
+        <ExportReportCsv />
         <ReportActionable
           :report="selectedReport"
           :initial-open="initialOpenReportActionable"
           @regenerate="regenerateReport()"
         />
       </template>
-      <VBtn class="ml-2" color="primary" text @click="regenerateReport()">
-        <RuiIcon class="mr-2" name="refresh-line" />
+      <RuiButton color="primary" variant="text" @click="regenerateReport()">
+        <template #prepend>
+          <RuiIcon name="refresh-line" />
+        </template>
         {{ t('profit_loss_report.actionable.actions.regenerate_report') }}
-      </VBtn>
+      </RuiButton>
     </div>
     <ProfitLossOverview
       class="mt-8"
