@@ -127,11 +127,10 @@ const { copy } = useClipboard({ source: versionText });
             <td>
               <div class="flex flex-row justify-between">
                 <RuiTooltip :popper="{ placement: 'top' }" open-delay="400">
-                  <template #activator="{ on }">
+                  <template #activator>
                     <div
                       class="text-truncate text-rui-text-secondary"
                       :class="css.directory"
-                      v-on="on"
                     >
                       {{ dataDirectory }}
                     </div>
@@ -140,18 +139,17 @@ const { copy } = useClipboard({ source: versionText });
                     {{ dataDirectory }}
                   </span>
                 </RuiTooltip>
-                <div v-if="!isPackaged" class="ml-2">
+                <div v-if="isPackaged" class="ml-2">
                   <RuiTooltip :popper="{ placement: 'top' }" open-delay="400">
-                    <template #activator="{ on, attrs }">
-                      <VBtn
-                        v-bind="attrs"
+                    <template #activator>
+                      <RuiButton
                         icon
-                        x-small
-                        v-on="on"
+                        size="sm"
+                        variant="text"
                         @click="openPath(dataDirectory)"
                       >
-                        <VIcon x-small>mdi-launch</VIcon>
-                      </VBtn>
+                        <RuiIcon size="18" name="folder-open-line" />
+                      </RuiButton>
                     </template>
                     <span>{{ t('about.open_data_dir_tooltip') }}</span>
                   </RuiTooltip>
@@ -175,7 +173,7 @@ const { copy } = useClipboard({ source: versionText });
             </td>
           </tr>
           <template v-if="webVersion">
-            <tr v-if="webVersion">
+            <tr>
               <td :class="css.label">
                 {{ t('about.platform') }}
               </td>
@@ -183,7 +181,7 @@ const { copy } = useClipboard({ source: versionText });
                 {{ webVersion.platform }}
               </td>
             </tr>
-            <tr v-if="webVersion">
+            <tr>
               <td :class="css.label">
                 {{ t('about.user_agent') }}
               </td>

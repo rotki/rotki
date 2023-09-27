@@ -13,7 +13,9 @@ withDefaults(
   }
 );
 
-const emit = defineEmits(['refresh']);
+const emit = defineEmits<{
+  (e: 'refresh', balanceSource: string): void;
+}>();
 
 const refresh = (balanceSource: string) => {
   emit('refresh', balanceSource.toLowerCase());
@@ -50,14 +52,13 @@ const slots = useSlots();
             :popper="{ placement: 'bottom', offsetDistance: 0 }"
             max-width="300px"
           >
-            <template #activator="{ on: tooltipOn }">
+            <template #activator>
               <RuiButton
                 icon
                 variant="text"
                 :loading="isLoading"
                 color="primary"
                 @click="refresh(name)"
-                v-on="tooltipOn"
               >
                 <RuiIcon color="primary" name="restart-line" />
               </RuiButton>

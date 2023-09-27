@@ -14,15 +14,8 @@ const { copy } = useClipboard({ source: value });
     :popper="{ placement: 'top', offsetDistance: 0 }"
     open-delay="400"
   >
-    <template #activator="{ on, attrs }">
-      <RuiButton
-        :size="size"
-        variant="text"
-        v-bind="attrs"
-        icon
-        @click="copy()"
-        v-on="on"
-      >
+    <template #activator>
+      <RuiButton :size="size" variant="text" icon @click="copy()">
         <RuiIcon size="14" name="file-copy-line" />
       </RuiButton>
     </template>
