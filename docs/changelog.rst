@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`6621` Transactions involving the SDAI contract will now be properly decoded.
 * :feature:`-` Base support has been added. Balances will be shown, transactions pulled and decoded and taken into account in the PnL report.
 * :feature:`-` ENS and DIVA governance voting related transactions will now be properly decoded and shown to the user.
 * :feature:`6275` Transaction events from bitstamp CSV can now be imported
