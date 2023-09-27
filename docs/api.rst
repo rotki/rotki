@@ -4677,8 +4677,7 @@ Dealing with History Events
 
    :reqjson int limit: This signifies the limit of records to return as per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
    :reqjson int offset: This signifies the offset from which to start the return of records per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
-   
-   :ref:`filter-request-args-label`
+   :reqjson object otherargs: Check the documentation of the remaining arguments `here <filter-request-args-label_>`_.
 
    **Example Response**:
 
@@ -5000,8 +4999,7 @@ Exporting History Events
    .. _history_export_schema_section:
    
    :reqjson string directory_path: The directory in which to write the exported CSV file
-   
-   :ref:`filter-request-args-label`
+   :reqjson object otherargs: Check the documentation of the remaining arguments `here <filter-request-args-label_>`_.
 
    
    **Example Response**:
@@ -5025,6 +5023,8 @@ Exporting History Events
 
    Doing a PUT on this endpoint with the given filter parameters will download a csv with all history events matching the filter. All arguments are optional. If no filter is used all the events will be downloaded.
 
+   .. _filter-request-args-label:
+
    **Example Request**:
 
    .. http:example:: curl wget httpie python-requests
@@ -5038,8 +5038,24 @@ Exporting History Events
           "to_timestamp": 999999
       }
 
-   
-   :ref:`filter-request-args-label`
+   :reqjson list[string] order_by_attributes: This is the list of attributes of the transaction by which to order the results.
+   :reqjson list[bool] ascending: Should the order be ascending? This is the default. If set to false, it will be on descending order.
+   :reqjson bool group_by_event_ids: A boolean determining if results should be grouped by common event identifiers. If true, the result will return only the first event of each group but also the number of events the group has. Default is false.
+   :reqjson int from_timestamp: The timestamp from which to start querying. Default is 0.
+   :reqjson int to_timestamp: The timestamp until which to query. Default is now.
+   :reqjson list[string] event_identifiers: An optional list of event identifiers to filter for.
+   :reqjson list[string] event_types: An optional list of event types by which to filter the decoded events.
+   :reqjson list[string] event_subtypes: An optional list of event subtypes by which to filter the decoded events.
+   :reqjson list location: An optional location name to filter events only for that location.
+   :reqjson list[string] location_labels: A list of location labels to optionally filter by. Location label is a string field that allows you to provide more information about the location. When used in blockchains, it is used to specify the user's address. For exchange events, it's the exchange name assigned by the user.
+   :reqjson object entry_types: An object with two keys named 'values' and 'behavior'. 'values' is a list of entry types to optionally filter by. 'behavior' is optional and is a string with the value 'include' or 'exclude' which defines the filtering behavior. It defaults to 'include'. Entry type is the event category and defines the schema. Possible values are: "history event," "evm event," "eth withdrawal event," "eth block event," "eth deposit event."
+   :reqjson string asset: The asset to optionally filter by.
+   :reqjson list[string] tx_hashes: An optional list of transaction hashes to filter for. This will make it an EVM event query.
+   :reqjson list[string] counterparties: An optional list of counterparties to filter by. List of strings. This will make it an EVM event query. We currently have a special exception for "eth2" as a counterparty. It filters for all eth staking events if given. It can't be given along with other counterparties in a filter. Or with an entry types filter.
+   :reqjson list[string] products: An optional list of product type to filter by. List of strings. This will make it an EVM event query.
+   :reqjson list[string] addresses: An optional list of EVM addresses to filter by in the set of counterparty addresses. This will make it an EVM event query.
+   :reqjson list[int] validator_indices: An optional list of validator indices to filter by. This makes it an EthStakingevent query.
+
 
    **Example Response**:
 
@@ -5592,7 +5608,7 @@ Query saved PnL Reports
       GET /api/1/reports/4 HTTP/1.1
       Host: localhost:5042
 
-   :reqview int report_id: An optional id to limit the query to that specific report.
+   :reqjson int report_id: An optional id to limit the query to that specific report.
 
    **Example Response**:
 
@@ -5719,7 +5735,7 @@ Get saved events of a PnL Report
       POST /api/1/reports/4/data HTTP/1.1
       Host: localhost:5042
 
-   :reqview int report_id: Optional. The id of the report to query as a view arg.
+   :reqjson int report_id: Optional. The id of the report to query as a view arg.
    :reqjson int limit: Optional. This signifies the limit of records to return as per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
    :reqjson int offset: This signifies the offset from which to start the return of records per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
    :reqjson str from_timestamp: Optional. A filter for the from_timestamp of the range of events to query.
@@ -5814,7 +5830,7 @@ Purge PnL report and all its data
       DELETE /api/1/reports/4 HTTP/1.1
       Host: localhost:5042
 
-   :reqview int report_id: The id of the report to delete as a view arg.
+   :reqjson int report_id: The id of the report to delete as a view arg.
 
    **Example Response**:
 
@@ -12516,31 +12532,3 @@ Dealing with skipped external events
   :statuscode 200: Reprocessing went fine.
   :statuscode 409: An issue ocurred during reprocessing
   :statuscode 500: Internal rotki error
-
-Schema
-***********
-
-.. _filter-request-args-label:
-
-HistoryEvents Filter Request Arguments
-========================================
-
-These filter request arguments are common to multiple api endpoints that deal with history events filtering.
-
-- :reqjson list[string] order_by_attributes: This is the list of attributes of the transaction by which to order the results.
-- :reqjson list[bool] ascending: Should the order be ascending? This is the default. If set to false, it will be on descending order.
-- :reqjson bool group_by_event_ids: A boolean determining if results should be grouped by common event identifiers. If true, the result will return only the first event of each group but also the number of events the group has. Default is false.
-- :reqjson int from_timestamp: The timestamp from which to start querying. Default is 0.
-- :reqjson int to_timestamp: The timestamp until which to query. Default is now.
-- :reqjson list[string] event_identifiers: An optional list of event identifiers to filter for.
-- :reqjson list[string] event_types: An optional list of event types by which to filter the decoded events.
-- :reqjson list[string] event_subtypes: An optional list of event subtypes by which to filter the decoded events.
-- :reqjson list location: An optional location name to filter events only for that location.
-- :reqjson list[string] location_labels: A list of location labels to optionally filter by. Location label is a string field that allows you to provide more information about the location. When used in blockchains, it is used to specify the user's address. For exchange events, it's the exchange name assigned by the user.
-- :reqjson object entry_types: An object with two keys named 'values' and 'behavior'. 'values' is a list of entry types to optionally filter by. 'behavior' is optional and is a string with the value 'include' or 'exclude' which defines the filtering behavior. It defaults to 'include'. Entry type is the event category and defines the schema. Possible values are: "history event," "evm event," "eth withdrawal event," "eth block event," "eth deposit event."
-- :reqjson string asset: The asset to optionally filter by.
-- :reqjson list[string] tx_hashes: An optional list of transaction hashes to filter for. This will make it an EVM event query.
-- :reqjson list[string] counterparties: An optional list of counterparties to filter by. List of strings. This will make it an EVM event query. We currently have a special exception for "eth2" as a counterparty. It filters for all eth staking events if given. It can't be given along with other counterparties in a filter. Or with an entry types filter.
-- :reqjson list[string] products: An optional list of product type to filter by. List of strings. This will make it an EVM event query.
-- :reqjson list[string] addresses: An optional list of EVM addresses to filter by in the set of counterparty addresses. This will make it an EVM event query.
-- :reqjson list[int] validator_indices: An optional list of validator indices to filter by. This makes it an EthStakingevent query.
