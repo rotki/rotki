@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING, Any, Literal, NamedTuple, Optional, Union, ove
 
 import gevent
 import requests
-from cryptography.fernet import Fernet
 from eth_utils import to_checksum_address
 
 from rotkehlchen.assets.asset import Asset
@@ -99,47 +98,6 @@ class Opensea(ExternalServiceWithApiKey):
         self.backup_key: Optional[str] = None
         self.eth_asset = A_ETH.resolve_to_crypto_asset()
 
-    def maybe_get_backup_key(self) -> Optional[str]:
-        """This will attempt to fetch the backup key from our server if not already fetched"""
-        if self.backup_key is not None:
-            return self.backup_key
-
-        try:
-            response = requests.get(
-                url='https://rotki.com/api/1/credentials',
-                json={'name': 'opensea'},
-                timeout=CachedSettings().get_timeout_tuple(),
-            )
-        except requests.exceptions.RequestException as e:
-            log.error(f'Could not connect to rotki server for fetching backup opensea key due to {e!s}')  # noqa: E501
-            return None
-
-        try:
-            json_ret = response.json()
-        except JSONDecodeError as e:
-            log.error(f'Could not decode rotki server response for opensea key: {response.text} due to {e!s}')  # noqa: E501
-            return None
-
-        if response.status_code != 200:
-            log.error(
-                f'Call to rotki server for opensea key failed with status {response.status_code} '
-                f'and text: {response.text}',
-            )
-            return None
-
-        encrypted_key = json_ret.get('result')
-        if encrypted_key is None:
-            log.error(
-                f'Could not get result from json response of rotki server for '
-                f'opensea key: {json_ret}',
-            )
-            return None
-
-        f = Fernet(b'draq3jF_MZR2MAV4tYTtGNjZQGAyEQkE-hr1cYF8kIc=')
-        computed_key = f.decrypt(encrypted_key.encode()).decode()
-        self.backup_key = computed_key
-        return self.backup_key
-
     @overload
     def _query(
             self,
@@ -194,9 +152,8 @@ class Opensea(ExternalServiceWithApiKey):
 
             if response.status_code != 200:
                 if api_key is None and self.backup_key is None:
-                    backup_key = self.maybe_get_backup_key()
-                    if backup_key is not None:
-                        self.session.headers.update({'X-API-KEY': backup_key})
+                    self.backup_key = 'f6bc0f7f7a5944f9bd63366130edd306'
+                    self.session.headers.update({'X-API-KEY': self.backup_key})
 
                 log.debug(
                     f'Got {response.status_code} response from opensea. Will backoff for {backoff} seconds',  # noqa: E501
