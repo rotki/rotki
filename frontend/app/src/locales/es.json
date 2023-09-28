@@ -893,12 +893,7 @@
       },
       "private": "Private",
       "private_description": "address book is saved only for this account."
-    },
-    "table": {
-      "subtitle": "Add, edit, remove alias name for addresses. Changes in the names will be reflected across the app.",
-      "title": "Address Book"
-    },
-    "title": "Address Book Management"
+    }
   },
   "airdrops": {
     "description": "* Estos son los airdrops que rotki detectó para los que son elegibles sus cuentas rastreadas. Es posible que ya los hayas reclamado, de no ser así, visite el enlace de cada protocolo y reclame su parte.",

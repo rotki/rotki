@@ -890,12 +890,7 @@
       },
       "private": "私人",
       "private_description": "地址簿仅为该账户保存。"
-    },
-    "table": {
-      "subtitle": "添加、编辑、删除地址的别名。名称的更改将反映在整个应用程序中。",
-      "title": "地址簿"
-    },
-    "title": "地址簿管理"
+    }
   },
   "address_name_priority_setting": {
     "data_name": "优先级"

@@ -120,84 +120,64 @@ setSubmitFunc(save);
 </script>
 
 <template>
-  <VContainer>
-    <VRow justify="space-between" align="center" no-gutters>
-      <VCol>
-        <CardTitle>{{ t('address_book.title') }}</CardTitle>
-      </VCol>
-    </VRow>
-    <Card class="mt-8">
-      <template #title>
-        {{ t('address_book.table.title') }}
-      </template>
-      <template #subtitle>
-        {{ t('address_book.table.subtitle') }}
-      </template>
+  <TablePageLayout class="p-4">
+    <template #title>
+      {{ t('navigation_menu.manage_address_book') }}
+    </template>
+    <template #buttons>
+      <RuiButton color="primary" @click="openForm()">
+        <template #prepend>
+          <RuiIcon name="add-line" />
+        </template>
+        {{ t('address_book.dialog.add_title') }}
+      </RuiButton>
+    </template>
 
-      <template #search>
-        <VRow class="pt-2 pb-6" justify="end">
-          <VCol cols="12" sm="4" md="3">
-            <ChainSelect
-              evm-only
-              :model-value="selectedChain"
-              hide-details
-              dense
-              @update:model-value="selectedChain = $event"
-            />
-          </VCol>
-          <VCol cols="12" sm="8" md="6" lg="4">
-            <VTextField
-              :value="pendingSearch"
-              input-class=""
-              hide-details
-              prepend-inner-icon="mdi-magnify"
-              :label="t('common.actions.filter')"
-              outlined
-              dense
-              clearable
-              @input="onSearchTermChange($event)"
-            >
-              <template v-if="isTimeoutPending" #append>
-                <VProgressCircular
-                  indeterminate
-                  color="primary"
-                  width="2"
-                  size="24"
-                />
-              </template>
-            </VTextField>
-          </VCol>
-        </VRow>
-      </template>
+    <RuiCard>
+      <div class="flex flex-row flex-wrap items-center justify-end gap-2">
+        <ChainSelect
+          evm-only
+          :model-value="selectedChain"
+          hide-details
+          class="flex-1 max-w-full md:max-w-[22rem]"
+          dense
+          @update:model-value="selectedChain = $event"
+        />
+        <RuiTextField
+          :value="pendingSearch"
+          hide-details
+          prepend-icon
+          class="flex-1 max-w-full md:max-w-[22rem]"
+          dense
+          :label="t('common.actions.filter')"
+          variant="outlined"
+          @input="onSearchTermChange($event)"
+        >
+          <template v-if="isTimeoutPending" #append>
+            <div class="flex flex-row items-center">
+              <RuiProgress
+                variant="indeterminate"
+                circular
+                size="20"
+                thickness="3"
+                color="primary"
+              />
+            </div>
+          </template>
+        </RuiTextField>
+      </div>
 
-      <VRow align="center">
-        <VCol cols="auto">
-          <VTabs v-model="tab">
-            <VTab v-for="loc in locations" :key="loc">
-              {{ loc }}
-            </VTab>
-          </VTabs>
-        </VCol>
-        <VCol class="pl-0">
-          <EthNamesHint with-header />
-        </VCol>
-        <VCol />
-        <VCol cols="auto">
-          <VBtn
-            class="mr-2"
-            small
-            depressed
-            fab
-            color="primary"
-            @click="openForm()"
-          >
-            <VIcon>mdi-plus</VIcon>
-          </VBtn>
-        </VCol>
-      </VRow>
+      <div class="flex flex-row gap-2">
+        <RuiTabs v-model="tab" color="primary">
+          <RuiTab v-for="loc in locations" :key="loc" class="capitalize">
+            {{ loc }}
+          </RuiTab>
+        </RuiTabs>
+        <EthNamesHint with-header />
+      </div>
 
-      <VTabsItems v-model="tab">
-        <VTabItem v-for="loc in locations" :key="loc">
+      <RuiTabItems v-model="tab">
+        <RuiTabItem v-for="loc in locations" :key="loc">
           <AddressBookTable
             :location="loc"
             :blockchain="selectedChain"
@@ -206,9 +186,9 @@ setSubmitFunc(save);
           >
             {{ loc }}
           </AddressBookTable>
-        </VTabItem>
-      </VTabsItems>
-    </Card>
+        </RuiTabItem>
+      </RuiTabItems>
+    </RuiCard>
 
     <AddressBookFormDialog
       v-model="formPayload"
@@ -217,5 +197,5 @@ setSubmitFunc(save);
       @update:enable-for-all-chains="enableForAllChains = $event"
       @reset="resetForm()"
     />
-  </VContainer>
+  </TablePageLayout>
 </template>
