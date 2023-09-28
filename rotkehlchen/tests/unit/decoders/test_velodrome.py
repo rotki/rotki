@@ -3,7 +3,7 @@ import pytest
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.evm_event import EvmEvent, EvmProduct
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -14,7 +14,14 @@ from rotkehlchen.constants.assets import A_ETH, A_OP, A_WETH_OPT
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
-from rotkehlchen.types import ChainID, EvmTokenKind, Location, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.types import (
+    VELODROME_POOL_PROTOCOL,
+    ChainID,
+    EvmTokenKind,
+    Location,
+    TimestampMS,
+    deserialize_evm_tx_hash,
+)
 
 WETH_OP_POOL_ADDRESS = string_to_evm_address('0xd25711EdfBf747efCE181442Cc1D8F5F8fc8a0D3')
 WETH_OP_GAUGE_ADDRESS = string_to_evm_address('0xCC53CD0a8EC812D46F0E2c7CC5AADd869b6F0292')
@@ -117,6 +124,7 @@ def test_add_liquidity_v2(optimism_transaction_decoder, optimism_accounts):
         ),
     ]
     assert events == expected_events
+    assert EvmToken(WETH_OP_LP_TOKEN).protocol == VELODROME_POOL_PROTOCOL
 
 
 @pytest.mark.vcr()
@@ -132,6 +140,7 @@ def test_add_liquidity_v1(optimism_transaction_decoder, optimism_accounts):
     )
     timestamp = TimestampMS(1685968046000)
     pool = string_to_evm_address('0x6fE665F19517Cd6076866dB0548177d0E628156a')
+    lp_token_identifier = evm_address_to_identifier(pool, ChainID.OPTIMISM, EvmTokenKind.ERC20)
     expected_events = [
         EvmEvent(
             tx_hash=evmhash,
@@ -180,7 +189,7 @@ def test_add_liquidity_v1(optimism_transaction_decoder, optimism_accounts):
             location=Location.OPTIMISM,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
-            asset=Asset('eip155:10/erc20:0x6fE665F19517Cd6076866dB0548177d0E628156a'),
+            asset=Asset(lp_token_identifier),
             balance=Balance(FVal('21.069827457300304618')),
             location_label=user_address,
             counterparty=CPT_VELODROME,
@@ -190,6 +199,7 @@ def test_add_liquidity_v1(optimism_transaction_decoder, optimism_accounts):
         ),
     ]
     assert events == expected_events
+    assert EvmToken(lp_token_identifier).protocol == VELODROME_POOL_PROTOCOL
 
 
 @pytest.mark.vcr()
@@ -739,6 +749,7 @@ def test_stake_lp_token_to_gauge_v2(optimism_accounts, optimism_transaction_deco
         ),
     ]
     assert events == expected_events
+    assert EvmToken(WETH_OP_LP_TOKEN).protocol == VELODROME_POOL_PROTOCOL
 
 
 @pytest.mark.vcr()

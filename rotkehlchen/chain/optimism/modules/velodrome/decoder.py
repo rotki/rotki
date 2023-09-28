@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any, Optional
 
 from rotkehlchen.accounting.structures.evm_event import EvmEvent, EvmProduct
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.assets.utils import set_token_protocol_if_missing
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface, ReloadableDecoderMixin
@@ -22,7 +23,12 @@ from rotkehlchen.chain.optimism.modules.velodrome.velodrome_cache import (
     save_velodrome_data_to_cache,
 )
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import CacheType, ChecksumEvmAddress, DecoderEventMappingType
+from rotkehlchen.types import (
+    VELODROME_POOL_PROTOCOL,
+    CacheType,
+    ChecksumEvmAddress,
+    DecoderEventMappingType,
+)
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 if TYPE_CHECKING:
@@ -97,6 +103,10 @@ class VelodromeDecoder(DecoderInterface, ReloadableDecoderMixin):
                 event.counterparty = CPT_VELODROME
                 event.notes = f'Receive {event.balance.amount} {crypto_asset.symbol} after depositing in velodrome pool {tx_log.address}'  # noqa: E501
                 event.product = EvmProduct.POOL
+                set_token_protocol_if_missing(
+                    evm_token=event.asset.resolve_to_evm_token(),
+                    protocol=VELODROME_POOL_PROTOCOL,
+                )
 
         return DEFAULT_DECODING_OUTPUT
 
@@ -213,6 +223,7 @@ class VelodromeDecoder(DecoderInterface, ReloadableDecoderMixin):
                     event.event_type = HistoryEventType.DEPOSIT
                     event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
                     event.notes = f'Deposit {event.balance.amount} {crypto_asset.symbol} into {gauge_address} velodrome gauge'  # noqa: E501
+                    set_token_protocol_if_missing(event.asset.resolve_to_evm_token(), VELODROME_POOL_PROTOCOL)  # noqa: E501
                 elif context.tx_log.topics[0] == GAUGE_WITHDRAW_V2:
                     event.event_type = HistoryEventType.WITHDRAWAL
                     event.event_subtype = HistoryEventSubType.REMOVE_ASSET

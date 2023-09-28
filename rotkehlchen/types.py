@@ -82,6 +82,7 @@ SUSHISWAP_PROTOCOL: Final = 'SLP'
 YEARN_VAULTS_V1_PROTOCOL = 'yearn_vaults_v1'
 YEARN_VAULTS_V2_PROTOCOL = 'yearn_vaults_v2'
 CURVE_POOL_PROTOCOL = 'curve_pool'
+VELODROME_POOL_PROTOCOL = 'velodrome_pool'
 PICKLE_JAR_PROTOCOL = 'pickle_jar'
 SPAM_PROTOCOL = 'spam'
 
