@@ -4997,11 +4997,11 @@ Exporting History Events
       }
 
    .. _history_export_schema_section:
-   
+
    :reqjson string directory_path: The directory in which to write the exported CSV file
    :reqjson object otherargs: Check the documentation of the remaining arguments `here <filter-request-args-label_>`_.
 
-   
+
    **Example Response**:
 
    .. sourcecode:: http
@@ -12365,8 +12365,8 @@ Getting Metadata For Airdrops
                "icon": "uniswap.svg"
             },
             {
-               "identifier": "1inch", 
-               "name": "1inch", 
+               "identifier": "1inch",
+               "name": "1inch",
                "icon": "1inch.svg"
             }
          ],
@@ -12467,7 +12467,7 @@ Dealing with skipped external events
 .. http:put:: /api/(version)/history/skipped_external_events
 .. http:patch:: /api/(version)/history/skipped_external_events
 
-   Doing a PUT on this endpoint with a filepath path as argument will export all skipped external events in a csv to that filepath.
+   Doing a PUT on this endpoint with a filepath path as argument will export all skipped external events in a csv to that directory.
    Doing a PATCH on this endpoint will download all skipped external events in a csv file.
 
    **Example Request**:
@@ -12478,7 +12478,7 @@ Dealing with skipped external events
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
-      {"filepath": "/home/username/path/to/file.csv"}
+      {"directory_path": "/home/username/path/to/csvdir"}
 
 
    **Example Response**:

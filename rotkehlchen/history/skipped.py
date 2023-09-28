@@ -5,7 +5,10 @@ from collections import defaultdict
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional, cast
 
-from rotkehlchen.accounting.export.csv import dict_to_csv_file
+from rotkehlchen.accounting.export.csv import (
+    FILENAME_SKIPPED_EXTERNAL_EVENTS_CSV,
+    dict_to_csv_file,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Location
 
@@ -34,11 +37,11 @@ def get_skipped_external_events_summary(rotki: 'Rotkehlchen') -> dict[str, Any]:
     return summary
 
 
-def export_skipped_external_events(rotki: 'Rotkehlchen', filepath: Optional[Path]) -> Path:
+def export_skipped_external_events(rotki: 'Rotkehlchen', directory: Optional[Path]) -> Path:
     """
     Export the skipped events in a CSV file.
 
-    If `filepath` is provided the export generated is written to that file.
+    If `directory` is provided, the export generated is written to that directory.
     Otherwise a file is created, the data are written to this file and the path
     is returned for download
 
@@ -49,10 +52,11 @@ def export_skipped_external_events(rotki: 'Rotkehlchen', filepath: Optional[Path
         cursor.execute('SELECT location, data, extra_data FROM skipped_external_events')
         data = [{'location': Location.deserialize_from_db(x).serialize(), 'data': y, 'extra_data': z} for x, y, z in cursor]  # noqa: E501
 
-    if filepath is None:
+    if directory is None:
         _, newfilename = tempfile.mkstemp()
         newfilepath = Path(newfilename)
     else:
+        filepath = directory / FILENAME_SKIPPED_EXTERNAL_EVENTS_CSV
         filepath.touch(exist_ok=True)
         newfilepath = filepath
 

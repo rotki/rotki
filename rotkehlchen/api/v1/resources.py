@@ -1163,12 +1163,12 @@ class HistorySkippedExternalEventResource(BaseMethodView):
 
     @require_loggedin_user()
     @use_kwargs(put_schema, location='json')
-    def put(self, filepath: Path) -> Response:
-        return self.rest_api.export_skipped_external_events(filepath=filepath)
+    def put(self, directory_path: Path) -> Response:
+        return self.rest_api.export_skipped_external_events(directory_path=directory_path)
 
     @require_loggedin_user()
     def patch(self) -> Response:
-        return self.rest_api.export_skipped_external_events(filepath=None)
+        return self.rest_api.export_skipped_external_events(directory_path=None)
 
     @require_loggedin_user()
     def post(self) -> Response:
