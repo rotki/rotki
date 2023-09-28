@@ -117,6 +117,8 @@ export const useLatestPrices = (
     set(refreshing, false);
   };
 
+  onMounted(refresh);
+
   return {
     items,
     loading,

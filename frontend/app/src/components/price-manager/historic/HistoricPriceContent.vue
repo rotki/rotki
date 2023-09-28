@@ -1,23 +1,12 @@
 <script setup lang="ts">
 import { type DataTableHeader } from '@/types/vuetify';
-import { isNft } from '@/utils/nft';
-import { type ManualPrice, type ManualPriceFormPayload } from '@/types/prices';
+import {
+  type HistoricalPrice,
+  type HistoricalPriceFormPayload
+} from '@/types/prices';
 import { type Nullable } from '@/types';
-import { useLatestPrices } from '@/composables/price-manager/latest';
 
 const { t } = useI18n();
-
-const emptyPrice: () => ManualPriceFormPayload = () => ({
-  fromAsset: '',
-  toAsset: '',
-  price: '0'
-});
-
-const price = ref<ManualPriceFormPayload>(emptyPrice());
-const filter = ref<Nullable<string>>(null);
-const update = ref(false);
-
-const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
 const headers = computed<DataTableHeader[]>(() => [
   {
@@ -26,7 +15,7 @@ const headers = computed<DataTableHeader[]>(() => [
   },
   {
     text: '',
-    value: 'isWorth',
+    value: 'wasWorth',
     sortable: false
   },
   {
@@ -39,33 +28,80 @@ const headers = computed<DataTableHeader[]>(() => [
     value: 'toAsset'
   },
   {
-    text: t('common.price_in_symbol', { symbol: get(currencySymbol) }),
-    value: 'usdPrice',
-    align: 'end'
+    text: '',
+    value: 'on',
+    sortable: false
+  },
+  {
+    text: t('common.datetime'),
+    value: 'timestamp'
   },
   {
     text: '',
-    value: 'actions',
-    sortable: false
+    value: 'actions'
   }
 ]);
 
+const emptyPrice: () => HistoricalPriceFormPayload = () => ({
+  fromAsset: '',
+  toAsset: '',
+  price: '0',
+  timestamp: 0
+});
+
+const price = ref<HistoricalPriceFormPayload>(emptyPrice());
+const filter = reactive<{
+  fromAsset: Nullable<string>;
+  toAsset: Nullable<string>;
+}>({
+  fromAsset: null,
+  toAsset: null
+});
+const update = ref(false);
+
 const router = useRouter();
 const route = useRoute();
-const { items, loading, refreshing, save, deletePrice, refresh } =
-  useLatestPrices(filter, t);
+
+const { items, loading, save, deletePrice, refresh } = useHistoricPrices(
+  filter,
+  t
+);
+
 const {
-  setPostSubmitFunc,
   openDialog,
   setOpenDialog,
   submitting,
   closeDialog,
   setSubmitFunc,
-  trySubmit
-} = useLatestPriceForm();
+  trySubmit,
+  setPostSubmitFunc
+} = useHistoricPriceForm();
+
+const openForm = (hPrice: HistoricalPrice | null = null) => {
+  set(update, !!hPrice);
+  if (hPrice) {
+    set(price, {
+      ...hPrice,
+      price: hPrice.price.toFixed() ?? ''
+    });
+  } else {
+    set(price, {
+      ...emptyPrice(),
+      fromAsset: filter.fromAsset ?? '',
+      toAsset: filter.toAsset ?? ''
+    });
+  }
+  setOpenDialog(true);
+};
+
+const hideForm = function () {
+  closeDialog();
+  set(price, emptyPrice());
+};
+
 const { show } = useConfirmStore();
 
-const showDeleteConfirmation = (item: ManualPrice) => {
+const showDeleteConfirmation = (item: HistoricalPrice) => {
   show(
     {
       title: t('price_table.delete.dialog.title'),
@@ -75,31 +111,8 @@ const showDeleteConfirmation = (item: ManualPrice) => {
   );
 };
 
-const openForm = (cPrice: ManualPrice | null = null) => {
-  set(update, !!cPrice);
-  if (cPrice) {
-    set(price, {
-      ...cPrice,
-      price: cPrice.price.toFixed() ?? ''
-    });
-  } else {
-    set(price, {
-      ...emptyPrice(),
-      fromAsset: get(filter) ?? ''
-    });
-  }
-  setOpenDialog(true);
-};
-
-const hideForm = () => {
-  closeDialog();
-  set(price, emptyPrice());
-};
-
 onMounted(async () => {
   setSubmitFunc(() => save(get(price), get(update)));
-  setPostSubmitFunc(refresh);
-
   const query = get(route).query;
 
   if (query.add) {
@@ -107,24 +120,26 @@ onMounted(async () => {
     await router.replace({ query: {} });
   }
 });
+
+setPostSubmitFunc(() => refresh({ modified: true }));
 </script>
 
 <template>
   <TablePageLayout>
     <template #title>
       <span class="text-rui-text-secondary">
-        {{ t('navigation_menu.manage_prices') }} /
+        {{ t('navigation_menu.manage_prices') }}/
       </span>
-      {{ t('navigation_menu.manage_prices_sub.latest_prices') }}
+      {{ t('navigation_menu.manage_prices_sub.historic_prices') }}
     </template>
 
     <template #buttons>
       <RuiTooltip :open-delay="400">
         <template #activator>
           <RuiButton
-            color="primary"
             variant="outlined"
-            :loading="loading || refreshing"
+            color="primary"
+            :loading="loading"
             @click="refresh()"
           >
             <template #prepend>
@@ -135,7 +150,6 @@ onMounted(async () => {
         </template>
         {{ t('price_table.refresh_tooltip') }}
       </RuiTooltip>
-
       <RuiButton color="primary" @click="openForm()">
         <template #prepend>
           <RuiIcon name="add-line" />
@@ -143,53 +157,53 @@ onMounted(async () => {
         {{ t('price_management.dialog.add_title') }}
       </RuiButton>
     </template>
-
     <RuiCard>
-      <div class="mb-4 flex flex-row-reverse">
+      <div class="flex flex-row flex-wrap mb-4 gap-2">
         <AssetSelect
-          v-model="filter"
-          class="max-w-[360px]"
+          v-model="filter.fromAsset"
           outlined
-          include-nfts
           :label="t('price_management.from_asset')"
+          clearable
+          class="flex-1"
+          hide-details
+        >
+          <template #prepend>
+            <RuiIcon name="filter-line" />
+          </template>
+        </AssetSelect>
+        <AssetSelect
+          v-model="filter.toAsset"
+          outlined
+          class="flex-1"
+          :label="t('price_management.to_asset')"
           clearable
           hide-details
         >
           <template #prepend>
-            <RuiIcon size="20" name="filter-line" />
+            <RuiIcon name="filter-line" />
           </template>
         </AssetSelect>
       </div>
-      <DataTable :items="items" :headers="headers" :loading="loading">
+      <DataTable
+        :items="items"
+        :headers="headers"
+        :loading="loading"
+        sort-by="timestamp"
+      >
         <template #item.fromAsset="{ item }">
-          <NftDetails
-            v-if="isNft(item.fromAsset)"
-            :identifier="item.fromAsset"
-          />
-          <AssetDetails v-else :asset="item.fromAsset" />
+          <AssetDetails :asset="item.fromAsset" />
         </template>
         <template #item.toAsset="{ item }">
           <AssetDetails :asset="item.toAsset" />
         </template>
+        <template #item.timestamp="{ item }">
+          <DateDisplay :timestamp="item.timestamp" />
+        </template>
         <template #item.price="{ item }">
           <AmountDisplay :value="item.price" />
         </template>
-        <template #item.isWorth>
-          {{ t('price_table.is_worth') }}
-        </template>
-        <template #item.usdPrice="{ item }">
-          <AmountDisplay
-            v-if="item.usdPrice && item.usdPrice.gte(0)"
-            show-currency="symbol"
-            :price-asset="item.fromAsset"
-            :price-of-asset="item.usdPrice"
-            fiat-currency="USD"
-            :value="item.usdPrice"
-          />
-          <div v-else class="flex justify-end">
-            <VSkeletonLoader width="70" type="text" />
-          </div>
-        </template>
+        <template #item.wasWorth>{{ t('price_table.was_worth') }}</template>
+        <template #item.on>{{ t('price_table.on') }}</template>
         <template #item.actions="{ item }">
           <RowActions
             :disabled="loading"
@@ -213,7 +227,7 @@ onMounted(async () => {
       @confirm="trySubmit()"
       @cancel="hideForm()"
     >
-      <LatestPriceForm v-model="price" :edit="update" />
+      <HistoricPriceForm v-model="price" :edit="update" />
     </BigDialog>
   </TablePageLayout>
 </template>
