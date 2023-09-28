@@ -190,7 +190,7 @@ class ProtocolWithGauges(ProtocolWithBalance):
         """
         Query gauge balances for the addresses that have interacted with known gauges.
         """
-        balances: BalancesType = {}
+        balances: BalancesType = defaultdict(lambda: defaultdict(Balance))
         gauges_to_token: dict[ChecksumEvmAddress, EvmToken] = {}
         # query addresses and gauges where they interacted
         addresses_with_deposits = self.addresses_with_deposits(
