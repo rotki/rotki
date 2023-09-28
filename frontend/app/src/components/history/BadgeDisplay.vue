@@ -1,22 +1,25 @@
 <script setup lang="ts">
-import { useListeners } from 'vue';
+const props = withDefaults(
+  defineProps<{
+    color?: 'grey' | 'red' | 'green';
+  }>(),
+  {
+    color: 'grey'
+  }
+);
 
-defineProps({
-  color: { required: false, type: String, default: 'grey-darken' }
-});
-const rootAttrs = useAttrs();
-const rootListeners = useListeners();
+const colorVariants: Record<typeof props.color, string> = {
+  grey: 'text-rui-grey-600 bg-rui-grey-100',
+  red: 'text-rui-red-600 bg-rui-red-100',
+  green: 'text-green-600 bg-rui-green-100'
+};
 </script>
 
 <template>
-  <VChip
-    small
-    :color="`${color} lighten-5`"
-    :text-color="color"
-    class="font-black rounded py-0 px-2 text-overline"
-    v-bind="rootAttrs"
-    v-on="rootListeners"
+  <div
+    :class="colorVariants[color]"
+    class="font-black rounded py-[0.15rem] px-2 text-overline"
   >
     <slot />
-  </VChip>
+  </div>
 </template>
