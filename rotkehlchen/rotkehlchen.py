@@ -405,7 +405,10 @@ class Rotkehlchen:
             msg_aggregator=self.msg_aggregator,
         )
 
-        Inquirer().inject_evm_managers([(ChainID.ETHEREUM, ethereum_manager)])
+        Inquirer().inject_evm_managers([
+            (ChainID.ETHEREUM, ethereum_manager),
+            (ChainID.OPTIMISM, optimism_manager),
+        ])
         uniswap_v2_oracle = UniswapV2Oracle(ethereum_inquirer)
         uniswap_v3_oracle = UniswapV3Oracle(ethereum_inquirer)
         Inquirer().add_defi_oracles(

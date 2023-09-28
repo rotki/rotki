@@ -92,8 +92,14 @@ ProtocolsWithPriceLogic = (
     UNISWAP_PROTOCOL,
     YEARN_VAULTS_V2_PROTOCOL,
     CURVE_POOL_PROTOCOL,
+    VELODROME_POOL_PROTOCOL,
 )
 
+LP_TOKEN_AS_POOL_PROTOCOLS = (  # In these protocols the LP token of a pool and the pool itself are the same contract  # noqa: E501
+    UNISWAP_PROTOCOL,
+    VELODROME_POOL_PROTOCOL,
+)
+LP_TOKEN_AS_POOL_CONTRACT_ABIS = Literal['VELO_V2_LP', 'UNISWAP_V2_LP']  # These contract are both the pool and the LP token of the pool  # noqa: E501
 
 T_Timestamp = int
 Timestamp = NewType('Timestamp', T_Timestamp)

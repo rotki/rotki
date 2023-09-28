@@ -8,6 +8,7 @@ import requests
 from freezegun import freeze_time
 
 from rotkehlchen.assets.asset import Asset, CustomAsset, EvmToken, UnderlyingToken
+from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import (
@@ -43,7 +44,14 @@ from rotkehlchen.inquirer import (
 from rotkehlchen.interfaces import HistoricalPriceOracleInterface
 from rotkehlchen.tests.utils.constants import A_CNY, A_JPY
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import CacheType, ChainID, EvmTokenKind, Price, Timestamp
+from rotkehlchen.types import (
+    VELODROME_POOL_PROTOCOL,
+    CacheType,
+    ChainID,
+    EvmTokenKind,
+    Price,
+    Timestamp,
+)
 from rotkehlchen.utils.misc import ts_now
 from rotkehlchen.utils.mixins.penalizable_oracle import ORACLE_PENALTY_TS
 
@@ -328,13 +336,37 @@ def test_price_underlying_tokens(inquirer, globaldb):
     assert price == FVal(67)
 
 
+@pytest.mark.vcr()
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-@pytest.mark.parametrize('should_mock_current_price_queries', [True])
-def test_find_uniswap_v2_lp_token_price(inquirer, ethereum_manager):
-    address = '0xa2107FA5B38d9bbd2C461D6EDf11B11A50F6b974'
-    identifier = ethaddress_to_identifier(address)
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_find_uniswap_v2_lp_token_price(inquirer, ethereum_manager, globaldb):
+    """Tests that the Uniswap v2 lp token's price is correctly found. The special price
+    calculation that is needed, is applied based on the protocol attribute of the lp token"""
+    identifier = ethaddress_to_identifier(string_to_evm_address('0xa2107FA5B38d9bbd2C461D6EDf11B11A50F6b974'))  # LINK ETH POOL  # noqa: E501
+    with globaldb.conn.write_ctx() as write_cursor:
+        write_cursor.execute(  # the protocol attribute is missing from the packaged db for this token and is necessary for price calculation  # noqa: E501
+            'UPDATE evm_tokens SET protocol=? WHERE identifier=?',
+            ('UNI-V2', identifier),
+        )
     inquirer.inject_evm_managers([(ChainID.ETHEREUM, ethereum_manager)])
-    price = inquirer.find_uniswap_v2_lp_price(EvmToken(identifier))
+    price = inquirer.find_lp_price_from_uniswaplike_pool(token=EvmToken(identifier))
+    assert price is not None
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_find_velodrome_v2_lp_token_price(inquirer, optimism_manager):
+    """Tests that the Velodrome v2 lp token's price is correctly found. The special price
+    calculation that is needed, is applied based on the protocol attribute of the lp token"""
+    token = get_or_create_evm_token(
+        userdb=optimism_manager.node_inquirer.database,
+        evm_address=string_to_evm_address('0xd25711EdfBf747efCE181442Cc1D8F5F8fc8a0D3'),
+        chain_id=ChainID.OPTIMISM,
+        protocol=VELODROME_POOL_PROTOCOL,
+    )
+    inquirer.inject_evm_managers([(ChainID.OPTIMISM, optimism_manager)])
+    price = inquirer.find_lp_price_from_uniswaplike_pool(token=token)
     assert price is not None
 
 
