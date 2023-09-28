@@ -87,7 +87,7 @@ class ProtocolWithBalance(metaclass=abc.ABCMeta):
                 continue
             if event.location_label is None:
                 continue
-            address_with_deposits[string_to_evm_address(event.location_label)].append(event)  # noqa: E501
+            address_with_deposits[string_to_evm_address(event.location_label)].append(event)
 
         return address_with_deposits
 

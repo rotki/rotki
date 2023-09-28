@@ -4,6 +4,7 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.evm_event import EvmEvent, EvmProduct
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import Asset, EvmToken
+from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -206,6 +207,13 @@ def test_add_liquidity_v1(optimism_transaction_decoder, optimism_accounts):
 @pytest.mark.parametrize('optimism_accounts', [['0x78C13393Aee675DD7ED07ce992210750D1F5dB88']])
 def test_remove_liquidity_v2(optimism_transaction_decoder, optimism_accounts):
     """Check that removing liquidity from a velodrome v2 pool is properly decoded."""
+    get_or_create_evm_token(  # the token is needed for the approval event to be created
+        userdb=optimism_transaction_decoder.evm_inquirer.database,
+        evm_address=string_to_evm_address('0xd25711EdfBf747efCE181442Cc1D8F5F8fc8a0D3'),
+        chain_id=ChainID.OPTIMISM,
+        protocol=VELODROME_POOL_PROTOCOL,
+        symbol='vAMMV2-WETH/OP',
+    )
     evmhash = deserialize_evm_tx_hash('0x81351bf9ca6d78bff92d2b714d68dd7c785bb70de0e250bc7bc6ab073736d1ce')  # noqa: E501
     user_address = optimism_accounts[0]
     events, _ = get_decoded_events_of_transaction(
@@ -227,6 +235,18 @@ def test_remove_liquidity_v2(optimism_transaction_decoder, optimism_accounts):
             location_label=user_address,
             counterparty=CPT_GAS,
             notes='Burned 0.000024369543627752 ETH for gas',
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=33,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=Asset(WETH_OP_LP_TOKEN),
+            balance=Balance(ZERO),
+            location_label=user_address,
+            address=ROUTER_V2,
+            notes=f'Revoke vAMMV2-WETH/OP spending approval of {user_address} by {ROUTER_V2}',
         ), EvmEvent(
             tx_hash=evmhash,
             sequence_index=34,
@@ -711,6 +731,13 @@ def test_swap_tokens_v1(optimism_accounts, optimism_transaction_decoder):
 @pytest.mark.parametrize('optimism_accounts', [['0x78C13393Aee675DD7ED07ce992210750D1F5dB88']])
 def test_stake_lp_token_to_gauge_v2(optimism_accounts, optimism_transaction_decoder):
     """Check that depositing lp tokens to a velodrome v2 gauge is properly decoded."""
+    get_or_create_evm_token(  # the token is needed for the approval event to be created
+        userdb=optimism_transaction_decoder.evm_inquirer.database,
+        evm_address=string_to_evm_address('0xd25711EdfBf747efCE181442Cc1D8F5F8fc8a0D3'),
+        chain_id=ChainID.OPTIMISM,
+        protocol=VELODROME_POOL_PROTOCOL,
+        symbol='vAMMV2-WETH/OP',
+    )
     evmhash = deserialize_evm_tx_hash('0x1bfa588dc839b13205e80bbfd7b7748a4c599854a03b52bb5476d6edae2e95a9')  # noqa: E501
     user_address = optimism_accounts[0]
     events, _ = get_decoded_events_of_transaction(
@@ -732,6 +759,18 @@ def test_stake_lp_token_to_gauge_v2(optimism_accounts, optimism_transaction_deco
             location_label=user_address,
             counterparty=CPT_GAS,
             notes='Burned 0.000019177994860846 ETH for gas',
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=19,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=Asset(WETH_OP_LP_TOKEN),
+            balance=Balance(ZERO),
+            location_label=user_address,
+            address=WETH_OP_GAUGE_ADDRESS,
+            notes=f'Revoke vAMMV2-WETH/OP spending approval of {user_address} by {WETH_OP_GAUGE_ADDRESS}',  # noqa: E501
         ), EvmEvent(
             tx_hash=evmhash,
             sequence_index=20,

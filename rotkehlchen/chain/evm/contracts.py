@@ -28,6 +28,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
     from rotkehlchen.chain.evm.types import WeightedNode
+    from rotkehlchen.chain.optimism.types import OPTIMISM_KNOWN_ABI
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -260,7 +261,7 @@ class EvmContracts(Generic[T]):
         ...
 
     @overload
-    def abi(self: 'EvmContracts[Literal[ChainID.OPTIMISM]]', name: Literal['']) -> list[dict[str, Any]]:  # noqa: E501
+    def abi(self: 'EvmContracts[Literal[ChainID.OPTIMISM]]', name: 'OPTIMISM_KNOWN_ABI') -> list[dict[str, Any]]:  # noqa: E501
         ...
 
     @overload

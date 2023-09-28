@@ -1,10 +1,7 @@
 import logging
-from typing import TYPE_CHECKING, Any, Callable, Optional
-
-from web3.types import BlockIdentifier
+from typing import TYPE_CHECKING, Callable
 
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.defi.zerionsdk import ZERION_ADAPTER_ADDRESS
 from rotkehlchen.chain.ethereum.interfaces.ammswap.types import LiquidityPool
 from rotkehlchen.chain.ethereum.interfaces.ammswap.utils import decode_result
@@ -14,14 +11,11 @@ from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.decoding.structures import DEFAULT_DECODING_OUTPUT, DecodingOutput
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.types import WeightedNode
-from rotkehlchen.constants import ONE, ZERO
+from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_ETH
-from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
-from rotkehlchen.errors.misc import RemoteError
-from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, Price
+from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import get_chunks
 
 if TYPE_CHECKING:
@@ -72,105 +66,6 @@ def uniswap_lp_token_balances(
         balances = [decode_result(userdb, entry) for entry in result[1]]
 
     return balances
-
-
-def find_uniswap_v2_lp_price(
-        ethereum: 'EthereumInquirer',
-        token: EvmToken,
-        token_price_func: Callable,
-        token_price_func_args: list[Any],
-        block_identifier: BlockIdentifier,
-) -> Optional[Price]:
-    """
-    Calculate the price for a uniswap v2 LP token. That is
-    value = (Total value of liquidity pool) / (Current supply of LP tokens)
-    We need:
-    - Price of token 0
-    - Price of token 1
-    - Pooled amount of token 0
-    - Pooled amount of token 1
-    - Total supply of pool token
-    """
-    address = token.evm_address
-    abi = ethereum.contracts.abi('UNISWAP_V2_LP')
-    contract = EvmContract(address=address, abi=abi, deployed_block=0)
-    methods = ['token0', 'token1', 'totalSupply', 'getReserves', 'decimals']
-    multicall_method = ethereum.multicall_2  # choose which multicall to use
-    if isinstance(block_identifier, int):
-        if block_identifier <= 7929876:
-            log.error(
-                f'No multicall contract at the block {block_identifier}. Uniswap v2 LP '
-                f'query failed. Should implement direct queries',
-            )
-            return None
-
-        if block_identifier <= 12336033:
-            multicall_method = ethereum.multicall
-
-    try:
-        output = multicall_method(
-            require_success=True,
-            calls=[(address, contract.encode(method_name=method)) for method in methods],
-            block_identifier=block_identifier,
-        )
-    except RemoteError as e:
-        log.error(
-            f'Remote error calling multicall contract for uniswap v2 lp '
-            f'token {token.evm_address} properties: {e!s}',
-        )
-        return None
-
-    # decode output
-    decoded = []
-    for (method_output, method_name) in zip(output, methods):
-        call_success = True
-        if multicall_method == ethereum.multicall_2:
-            call_success = method_output[0]
-            call_result = method_output[1]
-        else:
-            call_result = method_output  # type: ignore
-        if call_success and len(call_result) != 0:
-            decoded_method = contract.decode(call_result, method_name)
-            if len(decoded_method) == 1:
-                # https://github.com/PyCQA/pylint/issues/4739
-                decoded.append(decoded_method[0])
-            else:
-                decoded.append(decoded_method)
-        else:
-            log.debug(
-                f'Multicall to Uniswap V2 LP failed to fetch field {method_name} '
-                f'for token {token.evm_address}',
-            )
-            return None
-
-    try:
-        token0 = EvmToken(ethaddress_to_identifier(decoded[0]))
-        token1 = EvmToken(ethaddress_to_identifier(decoded[1]))
-    except (UnknownAsset, WrongAssetType):
-        log.debug(f'Unknown assets while querying uniswap v2 lp price {decoded[0]} {decoded[1]}')
-        return None
-
-    try:
-        token0_supply = FVal(decoded[3][0] * 10**-token0.decimals)
-        token1_supply = FVal(decoded[3][1] * 10**-token1.decimals)
-        total_supply = FVal(decoded[2] * 10 ** - decoded[4])
-    except ValueError as e:
-        log.debug(
-            f'Failed to deserialize token amounts for token {address} '
-            f'with values {decoded!s}. f{e!s}',
-        )
-        return None
-    token0_price = token_price_func(token0, *token_price_func_args)
-    token1_price = token_price_func(token1, *token_price_func_args)
-
-    if ZERO in (token0_price, token1_price):
-        log.debug(
-            f'Couldnt retrieve non zero price information for tokens {token0}, {token1} '
-            f'with result {token0_price}, {token1_price}',
-        )
-    numerator = token0_supply * token0_price + token1_supply * token1_price
-    share_value = numerator / total_supply
-    return Price(share_value)
 
 
 def decode_basic_uniswap_info(

@@ -17,6 +17,7 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import (
+    VELODROME_POOL_PROTOCOL,
     AddressbookEntry,
     CacheType,
     ChainID,
@@ -162,7 +163,7 @@ def query_velodrome_data_from_chain_and_maybe_create_tokens(
             )
             continue
 
-        for token in (token0, token1):  # create the tokens for the new pools
+        for token in (token0, token1, pool_address):  # create the tokens for the new pools. Keep in mind that the pool address is the address of the lp token received when depositing to the pool  # noqa: E501
             try:
                 get_or_create_evm_token(
                     userdb=inquirer.database,
@@ -170,6 +171,7 @@ def query_velodrome_data_from_chain_and_maybe_create_tokens(
                     chain_id=ChainID.OPTIMISM,
                     evm_inquirer=inquirer,
                     seen=TokenSeenAt(description='Querying velodrome pools'),
+                    protocol=VELODROME_POOL_PROTOCOL if token == pool_address else None,  # mark the lp tokens with the protocol to identify them for special treatment for price calculation  # noqa: E501
                 )
             except NotERC20Conformant as e:
                 log.error(

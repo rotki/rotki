@@ -11,6 +11,7 @@ from rotkehlchen.chain.ethereum.defi.price import handle_defi_price_query
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.chain.evm.utils import lp_price_from_uniswaplike_pool_contract
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import (
     A_3CRV,
@@ -85,7 +86,7 @@ from rotkehlchen.oracles.structures import CurrentPriceOracle
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import (
     CURVE_POOL_PROTOCOL,
-    UNISWAP_PROTOCOL,
+    LP_TOKEN_AS_POOL_PROTOCOLS,
     YEARN_VAULTS_V2_PROTOCOL,
     CacheType,
     ChainID,
@@ -99,7 +100,6 @@ from rotkehlchen.utils.mixins.penalizable_oracle import PenalizablePriceOracleMi
 from rotkehlchen.utils.network import request_get_dict
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.chain.ethereum.oracles.uniswap import UniswapV2Oracle, UniswapV3Oracle
     from rotkehlchen.chain.evm.manager import EvmManager
     from rotkehlchen.externalapis.coingecko import Coingecko
@@ -150,7 +150,7 @@ def _check_curve_contract_call(decoded: tuple[Any, ...]) -> bool:
     )
 
 
-def get_underlying_asset_price(token: EvmToken) -> tuple[Optional[Price], CurrentPriceOracle]:  # noqa: E501
+def get_underlying_asset_price(token: EvmToken) -> tuple[Optional[Price], CurrentPriceOracle]:
     """Gets the underlying asset price for the given ethereum token
 
     TODO: This should be eventually pulled from the assets DB. All of these
@@ -160,15 +160,12 @@ def get_underlying_asset_price(token: EvmToken) -> tuple[Optional[Price], Curren
     due to recursive import problems
     """
     price, oracle = None, CurrentPriceOracle.BLOCKCHAIN
-    if token.protocol == UNISWAP_PROTOCOL:
-        price = Inquirer().find_uniswap_v2_lp_price(token)
-        oracle = CurrentPriceOracle.UNISWAPV2
+    if token.protocol in LP_TOKEN_AS_POOL_PROTOCOLS:
+        price = Inquirer().find_lp_price_from_uniswaplike_pool(token)
     elif token.protocol == CURVE_POOL_PROTOCOL:
         price = Inquirer().find_curve_pool_price(token)
-        oracle = CurrentPriceOracle.BLOCKCHAIN
     elif token.protocol == YEARN_VAULTS_V2_PROTOCOL:
         price = Inquirer().find_yearn_price(token)
-        oracle = CurrentPriceOracle.BLOCKCHAIN
 
     if token == A_YV1_ALINK:
         price, oracle, _ = Inquirer().find_usd_price_and_oracle(A_ALINK_V1)
@@ -342,11 +339,10 @@ class Inquirer:
         for chain_id, evm_manager in evm_managers:
             instance._evm_managers[chain_id] = evm_manager
 
-    @staticmethod
-    def get_ethereum_manager() -> 'EthereumManager':
-        ethereum_manager = Inquirer()._evm_managers.get(ChainID.ETHEREUM)
-        assert ethereum_manager is not None, 'ethereum manager should have been injected'
-        return ethereum_manager  # type: ignore  # should be ethereum manager
+    def get_evm_manager(self, chain_id: ChainID) -> 'EvmManager':
+        evm_manager = self._evm_managers.get(chain_id)
+        assert evm_manager is not None, f'evm manager for chain id {chain_id} should have been injected'  # noqa: E501
+        return evm_manager
 
     @staticmethod
     def add_defi_oracles(
@@ -654,11 +650,11 @@ class Inquirer:
 
         # Check if it is a special token
         if asset.identifier in instance.special_tokens:
-            ethereum = instance.get_ethereum_manager()
+            ethereum = instance.get_evm_manager(chain_id=ChainID.ETHEREUM)
             assert token, 'all assets in special tokens are already ethereum tokens'
             underlying_asset_price, oracle = get_underlying_asset_price(token)
             usd_price = handle_defi_price_query(
-                ethereum=ethereum.node_inquirer,
+                ethereum=ethereum.node_inquirer,  # type:ignore  # ethereum is an EthereumManager so the inquirer is of the expected type  # noqa: E501
                 token=token,
                 underlying_asset_price=underlying_asset_price,
             )
@@ -684,7 +680,7 @@ class Inquirer:
                 return usd_price, oracle, False
             # else known protocol on-chain query failed. Continue to external oracles
 
-        # BSQ is a special asset that doesnt have oracle information but its custom API
+        # BSQ is a special asset that doesn't have oracle information but its custom API
         if asset == A_BSQ:
             try:
                 bsq = A_BSQ.resolve_to_crypto_asset()
@@ -722,14 +718,14 @@ class Inquirer:
         )
         return price, oracle, used_main_currency
 
-    def find_uniswap_v2_lp_price(
+    def find_lp_price_from_uniswaplike_pool(
             self,
             token: EvmToken,
     ) -> Optional[Price]:
-        # BAD BAD BAD. TODO: Need to rethinking placement of modules here
-        from rotkehlchen.chain.ethereum.modules.uniswap.utils import find_uniswap_v2_lp_price  # isort:skip  # noqa: E501  # pylint: disable=import-outside-toplevel
-        return find_uniswap_v2_lp_price(
-            ethereum=self.get_ethereum_manager().node_inquirer,
+        """Calculates the price for a uniswaplike LP token the contract of which is also
+        the contract of the pool it represents. For example uniswap or velodrome LP tokens."""
+        return lp_price_from_uniswaplike_pool_contract(
+            evm_inquirer=self.get_evm_manager(token.chain_id).node_inquirer,  # get the inquirer for the chain the token is in  # noqa: E501
             token=token,
             token_price_func=self.find_usd_price,
             token_price_func_args=[],
@@ -749,8 +745,8 @@ class Inquirer:
 
         Returns the price of 1 LP token from the pool
         """
-        ethereum = self.get_ethereum_manager()
-        ethereum.assure_curve_cache_is_queried_and_decoder_updated()
+        ethereum = self.get_evm_manager(chain_id=ChainID.ETHEREUM)
+        ethereum.assure_curve_cache_is_queried_and_decoder_updated()  # type:ignore  # ethereum is an EthereumManager here  # noqa: E501
 
         with GlobalDBHandler().conn.read_ctx() as cursor:
             pool_address_in_cache = globaldb_get_unique_cache_value(
@@ -861,7 +857,7 @@ class Inquirer:
         Query price for a yearn vault v2 token using the pricePerShare method
         and the price of the underlying token.
         """
-        ethereum = self.get_ethereum_manager()
+        ethereum = self.get_evm_manager(chain_id=ChainID.ETHEREUM)
         globaldb = GlobalDBHandler()
         with globaldb.conn.read_ctx() as cursor:
             maybe_underlying_tokens = globaldb.fetch_underlying_tokens(cursor, ethaddress_to_identifier(token.evm_address))  # noqa: E501
