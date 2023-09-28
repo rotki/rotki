@@ -11,7 +11,7 @@ from rotkehlchen.chain.ethereum.abi import decode_event_data_abi_str
 from rotkehlchen.chain.ethereum.graph import Graph
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.interfaces import GovernableDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     DecoderContext,
@@ -60,9 +60,10 @@ TEXT_CHANGED_KEY_ONLY_ABI = '{"anonymous":false,"inputs":[{"indexed":true,"inter
 TEXT_CHANGED_KEY_AND_VALUE = b'D\x8b\xc0\x14\xf1Sg&\xcf\x8dT\xff=d\x81\xed<\xbch<%\x91\xca Bt\x00\x9a\xfa\t\xb1\xa1'  # noqa: E501
 TEXT_CHANGED_KEY_AND_VALUE_ABI = '{"anonymous":false,"inputs":[{"indexed":true,"internalType":"bytes32","name":"node","type":"bytes32"},{"indexed":true,"internalType":"string","name":"indexedKey","type":"string"},{"indexed":false,"internalType":"string","name":"key","type":"string"},{"indexed":false,"internalType":"string","name":"value","type":"string"}],"name":"TextChanged","type":"event"}'  # noqa: E501
 CONTENT_HASH_CHANGED = b'\xe3y\xc1bN\xd7\xe7\x14\xcc\t7R\x8a25\x9di\xd5(\x137vS\x13\xdb\xa4\xe0\x81\xb7-ux'  # noqa: E501
+ENS_GOVERNOR = string_to_evm_address('0x323A76393544d5ecca80cd6ef2A560C6a395b7E3')
 
 
-class EnsDecoder(DecoderInterface, CustomizableDateMixin):
+class EnsDecoder(GovernableDecoderInterface, CustomizableDateMixin):
     def __init__(  # pylint: disable=super-init-not-called
             self,
             ethereum_inquirer: 'EthereumInquirer',
@@ -73,6 +74,8 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):
             evm_inquirer=ethereum_inquirer,
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
+            protocol=CPT_ENS,
+            proposals_url='https://www.tally.xyz/gov/ens/proposal',
         )
         self.base = base_tools
         self.ethereum = ethereum_inquirer
@@ -410,11 +413,13 @@ class EnsDecoder(DecoderInterface, CustomizableDateMixin):
             },
             HistoryEventType.INFORMATIONAL: {
                 HistoryEventSubType.NONE: EventCategory.INFORMATIONAL,
+                HistoryEventSubType.GOVERNANCE: EventCategory.GOVERNANCE,
             },
         }}
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {
+            ENS_GOVERNOR: (self._decode_vote_cast,),
             ENS_REGISTRAR_CONTROLLER_1: (self._decode_ens_registrar_event,),
             ENS_REGISTRAR_CONTROLLER_2: (self._decode_ens_registrar_event,),
             ENS_BASE_REGISTRAR_IMPLEMENTATION: (self._decode_name_transfer,),
