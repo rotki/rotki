@@ -380,6 +380,7 @@ const routes = setupLayouts([
       {
         path: Routes.SETTINGS_ACCOUNTING,
         meta: {
+          canNavigateBack: true,
           noteLocation: NoteLocation.SETTINGS_ACCOUNTING
         },
         component: async () => import('../pages/settings/accounting/index.vue')

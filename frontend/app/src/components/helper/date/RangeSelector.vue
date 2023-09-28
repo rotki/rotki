@@ -94,38 +94,40 @@ watch(v$, ({ $invalid }) => {
 </script>
 
 <template>
-  <div class="range-selector">
+  <div class="range-selector flex flex-col gap-4">
     <ReportPeriodSelector
       :year="year"
       :quarter="quarter"
       @update:period="onPeriodChange($event)"
       @update:selection="onChanged($event)"
     />
-    <VRow v-if="custom">
-      <VCol cols="12" md="6">
+    <div v-if="custom" class="grid md:grid-cols-2 gap-4">
+      <div>
         <DateTimePicker
           :value="value.start"
           outlined
-          label="Start Date"
+          :label="t('generate.labels.start_date')"
           limit-now
           allow-empty
           :error-messages="v$.start.$errors.map(e => e.$message)"
           @input="$emit('input', { start: $event, end: value.end })"
         />
-      </VCol>
-      <VCol cols="12" md="6">
+      </div>
+      <div>
         <DateTimePicker
           :value="value.end"
           outlined
-          label="End Date"
+          :label="t('generate.labels.end_date')"
           limit-now
           :error-messages="v$.end.$errors.map(e => e.$message)"
           @input="$emit('input', { start: value.start, end: $event })"
         />
-      </VCol>
-    </VRow>
-    <VAlert v-model="invalidRange" type="error" dense>
-      {{ t('generate.validation.end_after_start') }}
-    </VAlert>
+      </div>
+    </div>
+    <RuiAlert v-if="invalidRange" type="error">
+      <template #title>
+        {{ t('generate.validation.end_after_start') }}
+      </template>
+    </RuiAlert>
   </div>
 </template>

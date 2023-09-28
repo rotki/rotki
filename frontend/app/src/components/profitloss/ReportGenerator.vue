@@ -1,5 +1,12 @@
 <script setup lang="ts">
-const emit = defineEmits(['generate', 'export-data', 'import-data']);
+import { type ProfitLossReportPeriod } from '@/types/reports';
+import { Routes } from '@/router/routes';
+
+const emit = defineEmits<{
+  (e: 'generate', data: ProfitLossReportPeriod): void;
+  (e: 'export-data', data: ProfitLossReportPeriod): void;
+  (e: 'import-data'): void;
+}>();
 
 const { t } = useI18n();
 
@@ -31,6 +38,7 @@ const importReportData = () => {
 };
 
 const isDevelopment = checkIfDevelopment();
+const accountSettingsRoute = Routes.SETTINGS_ACCOUNTING;
 </script>
 
 <template>
@@ -40,58 +48,49 @@ const isDevelopment = checkIfDevelopment();
         {{ t('common.actions.generate') }}
       </template>
       <template #details>
-        <VTooltip top>
-          <template #activator="{ on, attrs }">
-            <VBtn
-              text
-              fab
-              depressed
-              v-bind="attrs"
-              to="/settings/accounting"
-              v-on="on"
-            >
-              <VIcon color="primary">mdi-cog</VIcon>
-            </VBtn>
+        <RuiTooltip :popper="{ placement: 'top' }" open-delay="400">
+          <template #activator>
+            <RouterLink :to="accountSettingsRoute">
+              <RuiButton variant="text" icon color="primary">
+                <RuiIcon name="settings-3-line" />
+              </RuiButton>
+            </RouterLink>
           </template>
           <span>{{ t('profit_loss_report.settings_tooltip') }}</span>
-        </VTooltip>
+        </RuiTooltip>
       </template>
       <RangeSelector v-model="range" @update:valid="valid = $event" />
       <template #buttons>
-        <VRow no-gutters>
-          <VCol>
-            <VBtn
+        <div class="flex gap-4 w-full">
+          <div class="grow">
+            <RuiButton
+              class="w-full"
               color="primary"
-              class="px-8"
-              large
-              depressed
-              block
+              size="lg"
               :disabled="!valid"
               @click="generate()"
             >
-              <VIcon class="mr-2">mdi-file-chart</VIcon>
+              <template #prepend>
+                <RuiIcon name="file-list-3-line" />
+              </template>
               {{ t('common.actions.generate') }}
-            </VBtn>
-          </VCol>
-          <VCol cols="auto">
+            </RuiButton>
+          </div>
+          <div>
             <VMenu v-if="isDevelopment" offset-y left>
               <template #activator="{ on }">
-                <VBtn
-                  color="warning"
-                  depressed
-                  large
-                  class="px-4 ml-4"
-                  v-on="on"
-                >
-                  <VIcon class="mr-2">mdi-wrench</VIcon>
+                <RuiButton size="lg" v-on="on">
+                  <template #prepend>
+                    <RuiIcon name="file-settings-line" />
+                  </template>
                   {{ t('profit_loss_reports.debug.title') }}
-                </VBtn>
+                </RuiButton>
               </template>
               <VList>
                 <VListItem link @click="exportReportData()">
                   <VListItemTitle>
                     <div class="flex items-center">
-                      <VIcon class="mr-2">mdi-export</VIcon>
+                      <RuiIcon class="mr-2" name="file-download-line" />
                       <span>
                         {{ t('profit_loss_reports.debug.export_data') }}
                       </span>
@@ -101,7 +100,7 @@ const isDevelopment = checkIfDevelopment();
                 <VListItem link @click="importReportData()">
                   <VListItemTitle>
                     <div class="flex items-center">
-                      <VIcon class="mr-2">mdi-import</VIcon>
+                      <RuiIcon class="mr-2" name="file-upload-line" />
                       <span>
                         {{ t('profit_loss_reports.debug.import_data') }}
                       </span>
@@ -110,19 +109,14 @@ const isDevelopment = checkIfDevelopment();
                 </VListItem>
               </VList>
             </VMenu>
-            <VBtn
-              v-else
-              color="warning"
-              depressed
-              large
-              class="px-4 ml-4"
-              @click="exportReportData()"
-            >
-              <VIcon class="mr-2">mdi-export</VIcon>
+            <RuiButton v-else size="lg" @click="exportReportData()">
+              <template #prepend>
+                <RuiIcon name="file-download-line" />
+              </template>
               {{ t('profit_loss_reports.debug.export_data') }}
-            </VBtn>
-          </VCol>
-        </VRow>
+            </RuiButton>
+          </div>
+        </div>
       </template>
     </Card>
   </VForm>

@@ -25,9 +25,9 @@ const icon = computed(() => {
   switch (get(notification).severity) {
     case Severity.ERROR:
     case Severity.INFO:
-      return 'mdi-information-outline';
+      return 'error-warning-line';
     case Severity.WARNING:
-      return 'mdi-alarm-light-outline';
+      return 'alarm-warning-line';
   }
   return '';
 });
@@ -82,9 +82,9 @@ const action = async (notification: NotificationData) => {
     <VListItem :class="css.body" class="flex-col items-stretch">
       <div class="flex pa-1">
         <VListItemAvatar class="mr-3 ml-1 my-0" :color="color">
-          <VIcon size="24px" color="white">
-            {{ icon }}
-          </VIcon>
+          <div>
+            <RuiIcon size="24" class="text-white" :name="icon" />
+          </div>
         </VListItemAvatar>
         <VListItemContent class="py-0">
           <VListItemTitle>
@@ -94,14 +94,18 @@ const action = async (notification: NotificationData) => {
             {{ date }}
           </VListItemSubtitle>
         </VListItemContent>
-        <VTooltip bottom open-delay="400" z-index="9999">
-          <template #activator="{ on }">
-            <VBtn text icon v-on="on" @click="dismiss(notification.id)">
-              <VIcon>mdi-close</VIcon>
-            </VBtn>
+        <RuiTooltip
+          :popper="{ placement: 'bottom', offsetDistance: 0 }"
+          open-delay="400"
+          class="z-[9999]"
+        >
+          <template #activator>
+            <RuiButton variant="text" icon @click="dismiss(notification.id)">
+              <RuiIcon name="close-line" />
+            </RuiButton>
           </template>
           <span>{{ t('notification.dismiss_tooltip') }}</span>
-        </VTooltip>
+        </RuiTooltip>
       </div>
       <div
         class="mt-1 px-2 text-rui-text"
@@ -116,29 +120,35 @@ const action = async (notification: NotificationData) => {
         </div>
       </div>
       <slot />
-      <div class="flex mt-auto items-center ml-n1">
+      <div class="flex mt-auto items-center mx-0.5">
         <div v-if="notification.action" class="flex items-start mr-2">
-          <VBtn
+          <RuiButton
             color="primary"
-            depressed
-            small
-            plain
-            text
+            variant="text"
+            size="sm"
             @click="action(notification)"
           >
             {{ notification.action.label }}
-            <VIcon class="ml-1" small>mdi-arrow-right</VIcon>
-          </VBtn>
+            <template #append>
+              <RuiIcon name="arrow-right-line" size="16" />
+            </template>
+          </RuiButton>
         </div>
-        <VTooltip bottom open-delay="400" z-index="9999">
-          <template #activator="{ on }">
-            <VBtn color="primary" small plain text v-on="on" @click="copy()">
+        <RuiTooltip
+          :popper="{ placement: 'bottom', offsetDistance: 0 }"
+          open-delay="400"
+          class="z-[9999]"
+        >
+          <template #activator>
+            <RuiButton color="primary" variant="text" size="sm" @click="copy()">
               {{ t('notification.copy') }}
-              <VIcon class="ml-1" x-small>mdi-content-copy</VIcon>
-            </VBtn>
+              <template #append>
+                <RuiIcon name="file-copy-line" size="16" />
+              </template>
+            </RuiButton>
           </template>
           <span> {{ t('notification.copy_tooltip') }}</span>
-        </VTooltip>
+        </RuiTooltip>
       </div>
     </VListItem>
   </VCard>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type Message } from '@rotki/common/lib/messages';
+import { type Message, Priority, Severity } from '@rotki/common/lib/messages';
 import { Routes } from '@/router/routes';
 import {
   type ProfitLossReportDebugPayload,
@@ -7,6 +7,7 @@ import {
 } from '@/types/reports';
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
+import { displayDateFormatter } from '@/data/date_formatter';
 
 const { isTaskRunning } = useTaskStore();
 const reportsStore = useReportsStore();
@@ -45,17 +46,43 @@ onMounted(async () => {
 
 const { pinned } = storeToRefs(useAreaVisibilityStore());
 
+const { notify } = useNotificationsStore();
+
+const { dateDisplayFormat } = storeToRefs(useGeneralSettingsStore());
+
 const generate = async (period: ProfitLossReportPeriod) => {
   if (get(pinned)?.name === 'report-actionable-card') {
     set(pinned, null);
   }
 
+  const formatDate = (timestamp: number) =>
+    displayDateFormatter.format(
+      new Date(timestamp * 1000),
+      get(dateDisplayFormat)
+    );
+
   const reportId = await generateReport(period);
+
   if (reportId > 0) {
-    await router.push({
-      path: Routes.PROFIT_LOSS_REPORT.replace(':id', reportId.toString()),
-      query: {
-        openReportActionable: 'true'
+    notify({
+      title: t('profit_loss_reports.notification.title'),
+      message: t('profit_loss_reports.notification.message', {
+        start: formatDate(period.start),
+        end: formatDate(period.end)
+      }),
+      display: true,
+      severity: Severity.INFO,
+      priority: Priority.ACTION,
+      action: {
+        label: t('profit_loss_reports.notification.action'),
+        action: () => {
+          router.push({
+            path: Routes.PROFIT_LOSS_REPORT.replace(':id', reportId.toString()),
+            query: {
+              openReportActionable: 'true'
+            }
+          });
+        }
       }
     });
   }
