@@ -1,0 +1,29 @@
+<script setup lang="ts">
+withDefaults(
+  defineProps<{
+    mobile?: boolean;
+  }>(),
+  {
+    mobile: false
+  }
+);
+
+const { t } = useI18n();
+</script>
+
+<template>
+  <div>
+    <BadgeDisplay v-if="mobile" color="grey">
+      <RuiIcon size="18" name="eye-off-line" />
+      {{ t('common.ignored_in_accounting') }}
+    </BadgeDisplay>
+    <RuiTooltip v-else :popper="{ placement: 'bottom' }" :open-delay="400">
+      <template #activator>
+        <BadgeDisplay color="grey">
+          <RuiIcon size="18" name="eye-off-line" />
+        </BadgeDisplay>
+      </template>
+      {{ t('common.ignored_in_accounting') }}
+    </RuiTooltip>
+  </div>
+</template>

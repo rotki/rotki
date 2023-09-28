@@ -692,24 +692,10 @@ const { locationData } = useLocations();
             @update:options="setOptions($event)"
           >
             <template #item.ignoredInAccounting="{ item, isMobile }">
-              <div v-if="item.ignoredInAccounting" class="pl-4">
-                <BadgeDisplay v-if="isMobile" color="grey">
-                  <VIcon small> mdi-eye-off</VIcon>
-                  <span class="ml-2">
-                    {{ t('common.ignored_in_accounting') }}
-                  </span>
-                </BadgeDisplay>
-                <VTooltip v-else bottom>
-                  <template #activator="{ on }">
-                    <BadgeDisplay color="grey" v-on="on">
-                      <VIcon small> mdi-eye-off</VIcon>
-                    </BadgeDisplay>
-                  </template>
-                  <span>
-                    {{ t('common.ignored_in_accounting') }}
-                  </span>
-                </VTooltip>
-              </div>
+              <IgnoredInAcountingIcon
+                v-if="item.ignoredInAccounting"
+                :mobile="isMobile"
+              />
             </template>
             <template #item.txHash="{ item }">
               <VLazy>
