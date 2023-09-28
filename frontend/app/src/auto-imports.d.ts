@@ -458,6 +458,7 @@ declare global {
   const useGraph: typeof import('./composables/graphs')['useGraph']
   const useHistoricCachePriceStore: typeof import('./store/prices/historic')['useHistoricCachePriceStore']
   const useHistoricPriceForm: typeof import('./composables/price-manager/historic/form')['useHistoricPriceForm']
+  const useHistoricPrices: typeof import('./composables/price-manager/historic/index')['useHistoricPrices']
   const useHistoryApi: typeof import('./composables/api/history/index')['useHistoryApi']
   const useHistoryAutoRefresh: typeof import('./composables/history/auto-refresh')['useHistoryAutoRefresh']
   const useHistoryEventFilter: typeof import('./composables/filters/events')['useHistoryEventFilter']
@@ -1161,6 +1162,7 @@ declare module 'vue' {
     readonly useGraph: UnwrapRef<typeof import('./composables/graphs')['useGraph']>
     readonly useHistoricCachePriceStore: UnwrapRef<typeof import('./store/prices/historic')['useHistoricCachePriceStore']>
     readonly useHistoricPriceForm: UnwrapRef<typeof import('./composables/price-manager/historic/form')['useHistoricPriceForm']>
+    readonly useHistoricPrices: UnwrapRef<typeof import('./composables/price-manager/historic/index')['useHistoricPrices']>
     readonly useHistoryApi: UnwrapRef<typeof import('./composables/api/history/index')['useHistoryApi']>
     readonly useHistoryAutoRefresh: UnwrapRef<typeof import('./composables/history/auto-refresh')['useHistoryAutoRefresh']>
     readonly useHistoryEventFilter: UnwrapRef<typeof import('./composables/filters/events')['useHistoryEventFilter']>
@@ -1858,6 +1860,7 @@ declare module '@vue/runtime-core' {
     readonly useGraph: UnwrapRef<typeof import('./composables/graphs')['useGraph']>
     readonly useHistoricCachePriceStore: UnwrapRef<typeof import('./store/prices/historic')['useHistoricCachePriceStore']>
     readonly useHistoricPriceForm: UnwrapRef<typeof import('./composables/price-manager/historic/form')['useHistoricPriceForm']>
+    readonly useHistoricPrices: UnwrapRef<typeof import('./composables/price-manager/historic/index')['useHistoricPrices']>
     readonly useHistoryApi: UnwrapRef<typeof import('./composables/api/history/index')['useHistoryApi']>
     readonly useHistoryAutoRefresh: UnwrapRef<typeof import('./composables/history/auto-refresh')['useHistoryAutoRefresh']>
     readonly useHistoryEventFilter: UnwrapRef<typeof import('./composables/filters/events')['useHistoryEventFilter']>

@@ -3443,11 +3443,9 @@
         "title": "Price edit failed"
       }
     },
-    "filter_title": "Filter Prices",
     "from_asset": "From Asset",
     "historic": {
-      "add_title": "Add a manual historical price",
-      "title": "Manage Historic Prices"
+      "add_title": "Add a manual historical price"
     },
     "latest": {
       "add_title": "Add a manual latest price"
@@ -3494,9 +3492,6 @@
     "headers": {
       "from_asset": "From Asset",
       "to_asset": "To Asset"
-    },
-    "historic": {
-      "title": "Manual Historic Prices"
     },
     "is_worth": "is worth",
     "on": "on",

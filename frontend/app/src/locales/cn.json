@@ -3528,11 +3528,9 @@
         "title": "价格修改失败"
       }
     },
-    "filter_title": "过滤价格",
     "from_asset": "来自资产",
     "historic": {
-      "add_title": "添加手动历史价格",
-      "title": "管理历史价格"
+      "add_title": "添加手动历史价格"
     },
     "latest": {
       "add_title": "添加手动最新价格"
@@ -3580,9 +3578,6 @@
     "headers": {
       "from_asset": "来自资产",
       "to_asset": "To Asset"
-    },
-    "historic": {
-      "title": "手动历史价格"
     },
     "is_worth": "值得",
     "on": "上",

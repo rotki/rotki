@@ -702,6 +702,7 @@
     "disposeEvmRpcNodeComposables": true,
     "hexToRgbPoints": true,
     "WritableComputedRef": true,
-    "useLatestPrices": true
+    "useLatestPrices": true,
+    "useHistoricPrices": true
   }
 }
