@@ -3039,7 +3039,7 @@ class EthStakingHistoryStatsDetails(EthStakingHistoryStats, AsyncIgnoreCacheQuer
 
 
 class SkippedExternalEventsExportSchema(Schema):
-    filepath = FileField(required=True, allowed_extensions=['.csv'])
+    directory_path = DirectoryField(load_default=None)
 
 
 class ExportHistoryEventSchema(HistoryEventSchema):

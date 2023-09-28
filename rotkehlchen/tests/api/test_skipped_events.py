@@ -1,12 +1,12 @@
 import csv
 import string
-import tempfile
 from pathlib import Path
 from unittest.mock import patch
 
 import pytest
 import requests
 
+from rotkehlchen.accounting.export.csv import FILENAME_SKIPPED_EXTERNAL_EVENTS_CSV
 from rotkehlchen.assets.asset import CryptoAsset
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.constants import ONE
@@ -31,7 +31,7 @@ TEST_PRICES['NEWASSET'] = {
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 @pytest.mark.parametrize('added_exchanges', [(Location.KRAKEN,)])
-def test_skipped_external_events(rotkehlchen_api_server_with_exchanges, globaldb):
+def test_skipped_external_events(rotkehlchen_api_server_with_exchanges, globaldb, tmpdir_factory):
     server = rotkehlchen_api_server_with_exchanges
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
     # The input has extra information to test that the filters work correctly.
@@ -136,25 +136,25 @@ def test_skipped_external_events(rotkehlchen_api_server_with_exchanges, globaldb
     # now let's test the export skipped external events endpoint
     flat_general = KRAKEN_GENERAL_LEDGER_RESPONSE.translate({ord(c): None for c in string.whitespace})  # noqa: E501
     flat_stake = input_ledger.translate({ord(c): None for c in string.whitespace})
-    with tempfile.NamedTemporaryFile(delete=True, suffix='.csv') as tempcsvexport:
-        temppath = Path(tempcsvexport.name)
-        response = requests.put(
-            api_url_for(server, 'historyskippedexternaleventresource'),
-            json={'filepath': str(temppath)},
-        )
-        assert_simple_ok_response(response)
-        with open(temppath, newline='', encoding='utf-8') as csvfile:
-            reader = csv.DictReader(csvfile)
-            count = 0
-            for row in reader:
-                count += 1
-                assert row['location'] == 'kraken'
-                assert row['extra_data'] == '{"location_label":"mockkraken"}'
-                if 'D3' in row['data'] or 'W3' in row['data']:
-                    assert row['data'] in flat_general
-                else:
-                    assert row['data'] in flat_stake
-        assert count == 5
+
+    export_dir = Path(tmpdir_factory.mktemp('test_csv_dir'))
+    response = requests.put(
+        api_url_for(server, 'historyskippedexternaleventresource'),
+        json={'directory_path': str(export_dir)},
+    )
+    assert_simple_ok_response(response)
+    with open(export_dir / FILENAME_SKIPPED_EXTERNAL_EVENTS_CSV, newline='', encoding='utf-8') as csvfile:  # noqa: E501
+        reader = csv.DictReader(csvfile)
+        count = 0
+        for row in reader:
+            count += 1
+            assert row['location'] == 'kraken'
+            assert row['extra_data'] == '{"location_label":"mockkraken"}'
+            if 'D3' in row['data'] or 'W3' in row['data']:
+                assert row['data'] in flat_general
+            else:
+                assert row['data'] in flat_stake
+    assert count == 5
 
     # now try to reprocess the skipped events after adding the asset to the kraken mapping
     globaldb.add_asset(CryptoAsset.initialize(

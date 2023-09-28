@@ -32,6 +32,7 @@ from rotkehlchen.accounting.constants import (
 from rotkehlchen.accounting.debugimporter.json import DebugHistoryImporter
 from rotkehlchen.accounting.export.csv import (
     FILENAME_HISTORY_EVENTS_CSV,
+    FILENAME_SKIPPED_EXTERNAL_EVENTS_CSV,
     CSVWriteError,
     dict_to_csv_file,
 )
@@ -4389,19 +4390,22 @@ class RestAPI:
         summary = get_skipped_external_events_summary(self.rotkehlchen)
         return api_response(result=_wrap_in_ok_result(summary), status_code=HTTPStatus.OK)
 
-    def export_skipped_external_events(self, filepath: Optional[Path]) -> Response:
+    def export_skipped_external_events(self, directory_path: Optional[Path]) -> Response:
         try:
-            exportpath = export_skipped_external_events(rotki=self.rotkehlchen, filepath=filepath)
+            exportpath = export_skipped_external_events(
+                rotki=self.rotkehlchen,
+                directory=directory_path,
+            )
         except CSVWriteError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 
-        if filepath is None:
+        if directory_path is None:
             try:
                 return send_file(
                     path_or_file=exportpath,
                     mimetype='text/csv',
                     as_attachment=True,
-                    download_name='history.csv',
+                    download_name=FILENAME_SKIPPED_EXTERNAL_EVENTS_CSV,
                 )
             except FileNotFoundError:
                 return api_response(
