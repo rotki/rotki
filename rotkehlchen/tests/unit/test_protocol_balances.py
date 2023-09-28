@@ -117,6 +117,39 @@ def test_convex_staking_balances(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x0c3ce74FCB2B93F9244544919572818Dc2AC0641']])
+def test_convex_staking_balances_without_gauges(
+        ethereum_inquirer: 'EthereumInquirer',
+        ethereum_transaction_decoder: 'EthereumTransactionDecoder',
+        ethereum_accounts: list[ChecksumEvmAddress],
+        inquirer: 'Inquirer',  # pylint: disable=unused-argument
+) -> None:
+    """
+    Check that convex balances are correctly propagated if one account doesn't have gauges
+    deposits but has staked CVX since staked/locked CVX is added to the balances returned from
+    gauges.
+    """
+    database = ethereum_transaction_decoder.database
+    tx_hex = deserialize_evm_tx_hash('0x38bd199803e7cb065c809ce07957afc0647a41da4c0610d1209a843d9b045cd6')  # noqa: E501
+    get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=ethereum_transaction_decoder.database,
+        tx_hash=tx_hex,
+    )
+    convex_balances_inquirer = ConvexBalances(
+        database=database,
+        evm_inquirer=ethereum_inquirer,
+        chain_id=ChainID.ETHEREUM,
+    )
+    convex_balances = convex_balances_inquirer.query_balances()
+    user_balance = convex_balances[ethereum_accounts[0]]
+    assert user_balance[A_CVX.resolve_to_evm_token()] == Balance(
+        amount=FVal('44.126532249621479557'),
+        usd_value=FVal('66.1897983744322193355'),
+    )
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('optimism_accounts', [['0x78C13393Aee675DD7ED07ce992210750D1F5dB88']])
 def test_velodrome_v2_staking_balances(
         optimism_inquirer: 'OptimismInquirer',
