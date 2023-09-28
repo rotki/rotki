@@ -30,6 +30,7 @@ from rotkehlchen.tests.utils.constants import A_DAO, A_SNGLS, A_XMR
 from rotkehlchen.types import Price, Timestamp
 
 
+@pytest.mark.skip('They are updating their systems & cleaning inactive pairs. Check again soon')
 def test_cryptocompare_query_pricehistorical(cryptocompare):
     """Test that cryptocompare price historical query works fine"""
     price = cryptocompare.query_endpoint_pricehistorical(
@@ -95,6 +96,7 @@ def check_cc_result(result: list, forward: bool):
             raise AssertionError(f'Unexpected time entry {entry.time}')
 
 
+@pytest.mark.skip('They are updating their systems & cleaning inactive pairs. Check again soon')
 @pytest.mark.freeze_time()
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_cryptocompare_histohour_data_going_forward(data_dir, database, freezer):
@@ -138,6 +140,7 @@ def test_cryptocompare_histohour_data_going_forward(data_dir, database, freezer)
     assert data_range[1] == 1301544000  # that's the closest ts to now_ts cc returns
 
 
+@pytest.mark.skip('They are updating their systems & cleaning inactive pairs. Check again soon')
 @pytest.mark.freeze_time()
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_cryptocompare_histohour_data_going_backward(data_dir, database, freezer):
@@ -313,6 +316,7 @@ def test_cryptocompare_query_compound_tokens(
     assert price is not None
 
 
+@pytest.mark.skip('They are updating their systems & cleaning inactive pairs. Check again soon')
 @pytest.mark.parametrize('include_cryptocompare_key', [True])
 def test_cryptocompare_query_with_api_key(cryptocompare):
     """Just try to query cryptocompare endpoints with an api key

@@ -345,7 +345,7 @@ onMounted(async () => {
         <i18n tag="div" path="external_services.opensea.link">
           <template #link>
             <ExternalLink
-              url="https://docs.opensea.io/reference/request-an-api-key"
+              url="https://docs.opensea.io/reference/api-keys#how-do-i-get-an-api-key"
             >
               {{ t('common.here') }}
             </ExternalLink>
