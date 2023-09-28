@@ -13,11 +13,14 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH, A_USDT
 from rotkehlchen.constants.misc import EXP18
+from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import (
+    SUSHISWAP_PROTOCOL,
     ChainID,
     EvmInternalTransaction,
+    EvmTokenKind,
     EvmTransaction,
     Location,
     Timestamp,
@@ -461,6 +464,11 @@ def test_sushiswap_v2_add_liquidity(database, ethereum_inquirer, eth_transaction
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
     events, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
 
+    lp_token_identifier = evm_address_to_identifier(
+        address='0x06da0fd433C1A5d7a4faa01111c044910A184553',
+        chain_id=ChainID.ETHEREUM,
+        token_type=EvmTokenKind.ERC20,
+    )
     assert len(events) == 4
     expected_events = [
         EvmEvent(
@@ -510,7 +518,7 @@ def test_sushiswap_v2_add_liquidity(database, ethereum_inquirer, eth_transaction
             location=Location.ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
-            asset=Asset('eip155:1/erc20:0x06da0fd433C1A5d7a4faa01111c044910A184553'),
+            asset=Asset(lp_token_identifier),
             balance=Balance(amount=FVal('1.7297304741E-8')),
             location_label=ADDY_3,
             notes='Receive 0.000000017297304741 SLP from sushiswap-v2 pool',
@@ -519,3 +527,4 @@ def test_sushiswap_v2_add_liquidity(database, ethereum_inquirer, eth_transaction
         ),
     ]
     assert events == expected_events
+    assert EvmToken(lp_token_identifier).protocol == SUSHISWAP_PROTOCOL

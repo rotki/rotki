@@ -13,12 +13,15 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_DAI, A_ETH, A_USDC
 from rotkehlchen.constants.misc import EXP18
+from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import (
+    UNISWAP_PROTOCOL,
     ChainID,
     EvmInternalTransaction,
+    EvmTokenKind,
     EvmTransaction,
     Location,
     Timestamp,
@@ -495,6 +498,11 @@ def test_uniswap_v2_add_liquidity(database, ethereum_inquirer, eth_transactions)
     events, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
 
     assert len(events) == 4
+    lp_token_identifier = evm_address_to_identifier(
+        address='0xAE461cA67B15dc8dc81CE7615e0320dA1A9aB8D5',
+        chain_id=ChainID.ETHEREUM,
+        token_type=EvmTokenKind.ERC20,
+    )
     expected_events = [
         EvmEvent(
             tx_hash=evmhash,
@@ -543,7 +551,7 @@ def test_uniswap_v2_add_liquidity(database, ethereum_inquirer, eth_transactions)
             location=Location.ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
-            asset=Asset('eip155:1/erc20:0xAE461cA67B15dc8dc81CE7615e0320dA1A9aB8D5'),
+            asset=Asset(lp_token_identifier),
             balance=Balance(amount=FVal('0.000022187913295974')),
             location_label=ADDY_2,
             notes='Receive 0.000022187913295974 UNI-V2 from uniswap-v2 pool',
@@ -552,6 +560,7 @@ def test_uniswap_v2_add_liquidity(database, ethereum_inquirer, eth_transactions)
         ),
     ]
     assert events == expected_events
+    assert EvmToken(lp_token_identifier).protocol == UNISWAP_PROTOCOL
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY_3]])

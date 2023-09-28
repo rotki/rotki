@@ -6,7 +6,11 @@ from web3 import Web3
 
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import CryptoAsset, EvmToken, UnderlyingToken
-from rotkehlchen.assets.utils import TokenSeenAt, get_or_create_evm_token
+from rotkehlchen.assets.utils import (
+    TokenSeenAt,
+    get_or_create_evm_token,
+    set_token_protocol_if_missing,
+)
 from rotkehlchen.chain.ethereum.modules.constants import AMM_ASSETS_SYMBOLS
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value, generate_address_via_create2
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
@@ -31,7 +35,14 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, EvmTokenKind, EvmTransaction, EVMTxHash
+from rotkehlchen.types import (
+    SUSHISWAP_PROTOCOL,
+    UNISWAP_PROTOCOL,
+    ChecksumEvmAddress,
+    EvmTokenKind,
+    EvmTransaction,
+    EVMTxHash,
+)
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 if TYPE_CHECKING:
@@ -348,6 +359,7 @@ def enrich_uniswap_v2_like_lp_tokens_transfers(
         context.event.counterparty = counterparty
         context.event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
         context.event.notes = f'Receive {context.event.balance.amount} {resolved_asset.symbol} from {counterparty} pool'  # noqa: E501
+        set_token_protocol_if_missing(context.event.asset.resolve_to_evm_token(), UNISWAP_PROTOCOL if lp_token_symbol == 'UNI-V2' else SUSHISWAP_PROTOCOL)  # noqa: E501
         return TransferEnrichmentOutput(matched_counterparty=counterparty)
 
     if (

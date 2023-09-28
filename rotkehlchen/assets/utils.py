@@ -270,6 +270,19 @@ def get_or_create_evm_token(
     return evm_token
 
 
+def set_token_protocol_if_missing(evm_token: EvmToken, protocol: str) -> None:
+    """
+    Check if the provided token has the expected protocol and if the protocol is not the expected
+    update the token and update it in the database.
+    """
+    if evm_token.protocol == protocol:
+        return
+
+    object.__setattr__(evm_token, 'protocol', protocol)  # since is a frozen dataclass
+    AssetResolver.clean_memory_cache(evm_token.identifier)
+    GlobalDBHandler().edit_evm_token(evm_token)
+
+
 def get_crypto_asset_by_symbol(
         symbol: str,
         asset_type: Optional[AssetType] = None,
