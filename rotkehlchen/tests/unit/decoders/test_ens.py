@@ -6,7 +6,7 @@ from rotkehlchen.accounting.structures.types import HistoryEventSubType, History
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.ethereum.modules.ens.constants import CPT_ENS
-from rotkehlchen.chain.ethereum.modules.ens.decoder import ENS_REGISTRAR_CONTROLLER_1
+from rotkehlchen.chain.ethereum.modules.ens.decoder import ENS_GOVERNOR, ENS_REGISTRAR_CONTROLLER_1
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -682,6 +682,52 @@ def test_for_truncated_labelhash(database, ethereum_inquirer, ethereum_accounts)
                 'token_id': 520289412805995815014030902380736904960994587318475958708983757899533811755,  # noqa: E501
                 'token_name': 'ERC721 token',
             },
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('ethereum_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
+def test_vote_cast(database, ethereum_inquirer, ethereum_accounts):
+    """Test voting for ENS governance"""
+    tx_hex = deserialize_evm_tx_hash('0x4677ffa104b011d591ae0c056ba651a978db982c0dfd131520db74c1b46ff564')  # noqa: E501
+    evmhash = deserialize_evm_tx_hash(tx_hex)
+    user_address = ethereum_accounts[0]
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hex,
+    )
+    timestamp = TimestampMS(1695935903000)
+    gas_str = '0.000916189648966683'
+    expected_events = [
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas_str)),
+            location_label=user_address,
+            notes=f'Burned {gas_str} ETH for gas',
+            counterparty=CPT_GAS,
+            address=None,
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=365,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.GOVERNANCE,
+            asset=A_ETH,
+            balance=Balance(),
+            location_label=user_address,
+            notes='Voted FOR ens governance proposal https://www.tally.xyz/gov/ens/proposal/10686228418271748393758532071249002330319730525037728746406757788787068261444',  # noqa: E501
+            counterparty=CPT_ENS,
+            address=ENS_GOVERNOR,
         ),
     ]
     assert events == expected_events

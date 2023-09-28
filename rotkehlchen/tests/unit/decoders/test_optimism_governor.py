@@ -15,9 +15,6 @@ from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 @pytest.mark.vcr()
 @pytest.mark.parametrize('optimism_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
 def test_vote_cast(database, optimism_inquirer, optimism_accounts):
-    """Data is taken from
-    https://optimistic.etherscan.io/tx/0xeb9fb7b5047a30c4bb7e68343c6657ba4b0f0bcaf3d64972dcc01ccc3c10608b
-    """
     evmhash = deserialize_evm_tx_hash('0xeb9fb7b5047a30c4bb7e68343c6657ba4b0f0bcaf3d64972dcc01ccc3c10608b')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=optimism_inquirer,

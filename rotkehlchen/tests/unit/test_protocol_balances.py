@@ -126,8 +126,9 @@ def test_convex_staking_balances_without_gauges(
 ) -> None:
     """
     Check that convex balances are correctly propagated if one account doesn't have gauges
-    deposits but has staked CVX. The reason for this test is that staked/locked CVX is added to the balances 
-    returned from the gauges and those balances before this commit were not a defaultdict and could lead to a failure.
+    deposits but has staked CVX. The reason for this test is that staked/locked CVX is added to the
+    balances returned from the gauges and those balances before this test were
+    not a defaultdict and could lead to a failure.
     """
     database = ethereum_transaction_decoder.database
     tx_hex = deserialize_evm_tx_hash('0x38bd199803e7cb065c809ce07957afc0647a41da4c0610d1209a843d9b045cd6')  # noqa: E501
