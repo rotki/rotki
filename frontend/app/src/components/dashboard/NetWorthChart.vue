@@ -169,10 +169,10 @@ const transformData = ({ times, data }: NetValue) => {
   times.forEach((epoch, i) => {
     const value = data[i];
 
-    if (i < times.length - 1 || value > 0) {
+    if (i < times.length - 1 || value.gt(0)) {
       newBalances.push({
         x: epoch * 1000,
-        y: value
+        y: value.toNumber()
       });
     } else {
       showVirtual = false;

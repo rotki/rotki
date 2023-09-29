@@ -33,15 +33,15 @@ const isLoading = logicOr(
 const startingValue = computed(() => {
   const data = get(timeframeData).data;
   let start = data[0];
-  if (start === 0) {
+  if (start.isZero()) {
     for (let i = 1; i < data.length; i++) {
-      if (data[i] > 0) {
+      if (data[i].gt(0)) {
         start = data[i];
         break;
       }
     }
   }
-  return bigNumberify(start);
+  return start;
 });
 
 const adjustedTotalNetWorthFontSize = computed(() => {
@@ -78,13 +78,27 @@ const percentage = computed(() => {
   return bigNumber.isFinite() ? bigNumber.toFormat(2) : '-';
 });
 
-const indicator = computed(() =>
-  get(balanceDelta).isNegative() ? 'arrow-down-line' : 'arrow-up-line'
-);
+const indicator = computed(() => {
+  const delta = get(balanceDelta);
+  if (delta.isNegative()) {
+    return 'arrow-down-line';
+  }
+  if (delta.isZero()) {
+    return 'git-commit-line';
+  }
+  return 'arrow-up-line';
+});
 
-const balanceClass = computed(() =>
-  get(balanceDelta).isNegative() ? 'error lighten-1' : 'success'
-);
+const balanceClass = computed(() => {
+  const delta = get(balanceDelta);
+  if (delta.isNegative()) {
+    return 'bg-rui-error-lighter';
+  }
+  if (delta.isZero()) {
+    return 'bg-rui-grey-500';
+  }
+  return 'bg-rui-success';
+});
 
 const setTimeframe = async (value: TimeFrameSetting) => {
   assert(value !== TimeFramePersist.REMEMBER);
@@ -128,129 +142,84 @@ const { dark } = useTheme();
         <SnapshotActionButton />
       </div>
     </div>
-    <VRow class="pa-6 pt-0">
-      <VCol
-        cols="12"
-        md="6"
-        lg="5"
-        class="flex flex-col items-center justify-center"
-      >
-        <div class="overall-balances__net-worth text-center font-medium mb-2">
-          <div :style="`font-size: ${adjustedTotalNetWorthFontSize}em`">
-            <AmountDisplay
-              class="ps-4"
-              xl
-              show-currency="symbol"
-              :fiat-currency="currencySymbol"
-              :value="totalNetWorth"
-            />
-          </div>
+    <div
+      class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[42%_58%] pa-6 pt-0 gap-4"
+    >
+      <div class="w-full flex flex-col items-center justify-center">
+        <div
+          class="text-center font-medium"
+          data-cy="overall-balances__net-worth"
+          :style="`font-size: ${adjustedTotalNetWorthFontSize}em`"
+        >
+          <AmountDisplay
+            class="ps-4"
+            xl
+            show-currency="symbol"
+            :fiat-currency="currencySymbol"
+            :value="totalNetWorth"
+          />
         </div>
-        <div class="overall-balances__net-worth-change py-2">
-          <span v-if="isLoading">
+        <div class="flex justify-center items-baseline">
+          <span v-if="isLoading" class="rounded-full overflow-hidden">
             <VSkeletonLoader width="170" height="32" type="image" />
           </span>
           <span
             v-else
             :class="[balanceClass, !dark ? 'white--text' : 'black--text']"
-            class="pa-1 px-3 overall-balances__net-worth-change__pill"
+            class="pa-1 px-3 flex flex-row rounded-full min-h-[2rem] min-w-[170px]"
           >
-            <span class="flex flex-row">
-              <span>
-                <RuiIcon :name="indicator" />
-              </span>
-              <AmountDisplay
-                v-if="!isLoading"
-                class="px-3"
-                show-currency="symbol"
-                :fiat-currency="currencySymbol"
-                :value="balanceDelta"
-              />
-              <PercentageDisplay
-                v-if="!isLoading"
-                class="pr-2 opacity-80"
-                :value="percentage"
-              />
+            <span>
+              <RuiIcon :name="indicator" />
             </span>
+            <AmountDisplay
+              v-if="!isLoading"
+              class="px-3"
+              show-currency="symbol"
+              :fiat-currency="currencySymbol"
+              :value="balanceDelta"
+            />
+            <PercentageDisplay
+              v-if="!isLoading"
+              class="pr-2 opacity-80"
+              :value="percentage"
+            />
           </span>
         </div>
         <TimeframeSelector
+          class="py-6"
           :value="timeframe"
           :visible-timeframes="visibleTimeframes"
           @input="setTimeframe($event)"
         />
-      </VCol>
-      <VCol cols="12" md="6" lg="7" class="flex">
+      </div>
+      <div
+        class="w-full flex justify-center items-center overall-balances__net-worth-chart"
+      >
+        <NetWorthChart
+          v-if="!isLoading"
+          :chart-data="timeframeData"
+          :timeframe="timeframe"
+          :timeframes="allTimeframes"
+        />
         <div
-          class="flex justify-center items-center grow overall-balances__net-worth-chart"
+          v-else
+          class="overall-balances__net-worth-chart__loader flex h-full flex flex-col text-center justify-center items-center"
         >
-          <NetWorthChart
-            v-if="!isLoading"
-            :chart-data="timeframeData"
-            :timeframe="timeframe"
-            :timeframes="allTimeframes"
-          />
-          <div v-else class="overall-balances__net-worth-chart__loader">
-            <VProgressCircular
-              indeterminate
-              class="self-center"
-              color="primary"
-            />
-            <div class="pt-5 text-caption">
-              {{ t('overall_balances.loading') }}
-            </div>
+          <RuiProgress circular variant="indeterminate" color="primary" />
+          <div class="pt-5 text-caption">
+            {{ t('overall_balances.loading') }}
           </div>
         </div>
-      </VCol>
-    </VRow>
+      </div>
+    </div>
   </VCard>
 </template>
 
 <style scoped lang="scss">
 .overall-balances {
-  &__balance {
-    display: flex;
-    justify-content: center;
-    align-items: baseline;
-  }
-
-  &__net-worth {
-    &__loading {
-      font-size: 1.5em;
-      line-height: 1em;
-      margin-bottom: -10px;
-    }
-  }
-
-  &__net-worth-change {
-    display: flex;
-    justify-content: center;
-    align-items: baseline;
-    margin-bottom: 1em;
-    min-height: 32px;
-
-    > span {
-      border-radius: 50px;
-      overflow: hidden;
-    }
-
-    &__pill {
-      min-height: 32px;
-      min-width: 170px;
-    }
-  }
-
   &__net-worth-chart {
-    width: 100%;
-
     &__loader {
       min-height: v-bind(chartSectionHeight);
-      display: flex;
-      height: 100%;
-      flex-direction: column;
-      align-content: center;
-      justify-content: center;
-      text-align: center;
     }
   }
 }

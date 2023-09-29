@@ -16,7 +16,7 @@ export class DashboardPage {
   getOverallBalance() {
     let overallBalance: BigNumber = Zero;
     return cy
-      .get('.overall-balances__net-worth [data-cy="display-amount"]')
+      .get('[data-cy="overall-balances__net-worth"] [data-cy="display-amount"]')
       .then($amount => {
         overallBalance = bigNumberify(
           this.getSanitizedAmountString($amount.text())

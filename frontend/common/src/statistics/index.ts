@@ -31,7 +31,9 @@ export const TimedAssetBalances = z.array(TimedAssetBalance);
 
 export type TimedAssetBalances = z.infer<typeof TimedAssetBalances>;
 
-export interface NetValue {
-  readonly times: number[];
-  readonly data: number[];
-}
+export const NetValue = z.object({
+  times: z.array(z.number()),
+  data: z.array(NumericString)
+});
+
+export type NetValue = z.infer<typeof NetValue>;
