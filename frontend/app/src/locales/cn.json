@@ -988,9 +988,6 @@
     "delete_error": "无法删除 {address}: {message}",
     "edit_error": "无法编辑资产：{message}",
     "edit_title": "编辑资产",
-    "managed": {
-      "title": "管理资产"
-    },
     "merge_assets": "合并资产",
     "merge_assets_tooltip": "将两个资产合并为一个（可用于将自定义资产迁移到官方支持的资产）"
   },
@@ -1009,9 +1006,6 @@
     "filter_by_ignored_status": "按忽略状态过滤",
     "headers": {
       "started": "开始"
-    },
-    "managed": {
-      "subtitle": "添加、编辑、删除代币和资产。资产的变化将反映在您的所有账户中"
     },
     "newly_detected": {
       "accept_selected": "接受选择的代币",
@@ -2935,6 +2929,9 @@
     "title": "导出/导入用户资产",
     "warning": "此功能旨在让您轻松地将资产从一个 rotki 实例移动到另一个实例。它要求两个实例具有相同的版本。在不同版本之间使用此功能可能会导致错误。"
   },
+  "managed_asset_content": {
+    "add_asset": "增加资产"
+  },
   "manual_balances": {
     "add_manual_balance": "添加手动余额",
     "balances": "手动跟踪余额",
@@ -3363,7 +3360,7 @@
       },
       "overview": "概述",
       "ranges": {
-        "one_day": 1.0,
+        "one_day": "1D",
         "one_month": "1M",
         "one_week": "1W",
         "one_year": "1Y"

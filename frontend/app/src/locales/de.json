@@ -103,6 +103,9 @@
     "never": "Niemals",
     "refresh": "Αktualisieren"
   },
+  "managed_asset_content": {
+    "add_asset": "Vermögenswert hinzufügen"
+  },
   "snapshot_action_button": {
     "force_save": "Speichern forcieren",
     "menu_tooltip": "View the date of the last balances snapshot",

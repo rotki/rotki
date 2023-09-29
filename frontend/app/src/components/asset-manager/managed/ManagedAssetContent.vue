@@ -1,3 +1,4 @@
+m
 <script setup lang="ts">
 import { type SupportedAsset } from '@rotki/common/lib/data';
 import { type Collection } from '@/types/collection';
@@ -19,13 +20,21 @@ const props = withDefaults(
 const { identifier, mainPage } = toRefs(props);
 
 const mergeTool = ref<boolean>(false);
-const ignoredAssetsHandling = ref<IgnoredAssetsHandlingType>('exclude');
-const showUserOwnedAssetsOnly = ref(false);
+const ignoredFilter = ref<{
+  onlyShowOwned: boolean;
+  ignoredAssetsHandling: IgnoredAssetsHandlingType;
+}>({
+  onlyShowOwned: false,
+  ignoredAssetsHandling: 'exclude'
+});
 
-const extraParams = computed(() => ({
-  ignoredAssetsHandling: get(ignoredAssetsHandling),
-  showUserOwnedAssetsOnly: get(showUserOwnedAssetsOnly).toString()
-}));
+const extraParams = computed(() => {
+  const { ignoredAssetsHandling, onlyShowOwned } = get(ignoredFilter);
+  return {
+    ignoredAssetsHandling,
+    showUserOwnedAssetsOnly: onlyShowOwned.toString()
+  };
+});
 
 const dialogTitle = computed<string>(() =>
   get(editableItem)
@@ -88,7 +97,7 @@ const confirmDelete = async (toDeleteAsset: SupportedAsset) => {
   await deleteAssetHandler(toDeleteAsset.identifier);
 };
 
-watch([ignoredAssetsHandling, showUserOwnedAssetsOnly], async () => {
+watch(ignoredFilter, async () => {
   setPage(1);
 });
 
@@ -114,8 +123,10 @@ const {
   Matcher
 >(null, mainPage, useAssetFilter, queryAllAssets, {
   onUpdateFilters(query) {
-    set(ignoredAssetsHandling, query.ignoredAssetsHandling || 'exclude');
-    set(showUserOwnedAssetsOnly, query.showUserOwnedAssetsOnly === 'true');
+    set(ignoredFilter, {
+      onlyShowOwned: query.showUserOwnedAssetsOnly === 'true',
+      ignoredAssetsHandling: query.ignoredAssetsHandling || 'exclude'
+    });
   },
   extraParams,
   defaultSortBy: {
@@ -159,67 +170,78 @@ watch(identifier, async assetId => {
 </script>
 
 <template>
-  <VContainer>
-    <RefreshHeader
-      :title="t('asset_management.managed.title')"
-      :loading="loading"
-      @refresh="fetchData()"
-    />
+  <TablePageLayout>
+    <template #title>
+      <span class="text-rui-text-secondary">
+        {{ t('navigation_menu.manage_assets') }} /
+      </span>
+      {{ t('navigation_menu.manage_assets_sub.managed_assets') }}
+    </template>
+    <template #buttons>
+      <RuiButton
+        color="primary"
+        variant="outlined"
+        :loading="loading"
+        @click="fetchData()"
+      >
+        <template #prepend>
+          <RuiIcon name="refresh-line" />
+        </template>
+        {{ t('common.refresh') }}
+      </RuiButton>
+      <RestoreAssetDbButton dropdown />
+      <RuiTooltip open-delay="400" :popper="{ placement: 'top' }">
+        <template #activator>
+          <RuiButton
+            variant="outlined"
+            color="primary"
+            @click="mergeTool = true"
+          >
+            <template #prepend>
+              <RuiIcon name="git-merge-line" />
+            </template>
+            {{ t('asset_management.merge_assets') }}
+          </RuiButton>
+        </template>
+        {{ t('asset_management.merge_assets_tooltip') }}
+      </RuiTooltip>
+      <RuiButton data-cy="managed-asset-add-btn" color="primary" @click="add()">
+        <template #prepend>
+          <RuiIcon name="add-line" />
+        </template>
+        {{ t('managed_asset_content.add_asset') }}
+      </RuiButton>
+    </template>
 
-    <VRow class="mt-2" justify="space-between">
-      <VCol cols="auto">
-        <VTooltip open-delay="400" top>
-          <template #activator="{ on, attrs }">
-            <VBtn
-              outlined
-              color="primary"
-              v-bind="attrs"
-              v-on="on"
-              @click="mergeTool = true"
-            >
-              <VIcon class="mr-2">mdi-merge</VIcon>
-              <span>{{ t('asset_management.merge_assets') }}</span>
-            </VBtn>
-          </template>
-          <span>{{ t('asset_management.merge_assets_tooltip') }}</span>
-        </VTooltip>
-      </VCol>
-      <VCol cols="auto">
-        <RestoreAssetDbButton dropdown />
-      </VCol>
-    </VRow>
+    <RuiCard>
+      <MergeDialog v-model="mergeTool" />
 
-    <MergeDialog v-model="mergeTool" />
+      <ManagedAssetTable
+        :tokens="assets.data"
+        :loading="loading"
+        :change="!loading"
+        :server-item-length="assets.found"
+        :filters="filters"
+        :matchers="matchers"
+        :ignored-assets="ignoredAssets"
+        :ignored-filter="ignoredFilter"
+        :expanded="expanded"
+        :selected="selected"
+        :options="options"
+        @refresh="fetchData()"
+        @edit="edit($event)"
+        @delete-asset="showDeleteConfirmation($event)"
+        @update:pagination="setOptions($event)"
+        @update:filters="setFilter($event)"
+        @update:expanded="expanded = $event"
+        @update:selected="selected = $event"
+        @update:ignored-filter="ignoredFilter = $event"
+      />
 
-    <ManagedAssetTable
-      class="mt-12"
-      :tokens="assets.data"
-      :loading="loading"
-      :change="!loading"
-      :server-item-length="assets.found"
-      :filters="filters"
-      :matchers="matchers"
-      :ignored-assets="ignoredAssets"
-      :ignored-assets-handling="ignoredAssetsHandling"
-      :only-show-owned="showUserOwnedAssetsOnly"
-      :expanded="expanded"
-      :selected="selected"
-      :options="options"
-      @refresh="fetchData()"
-      @add="add()"
-      @edit="edit($event)"
-      @delete-asset="showDeleteConfirmation($event)"
-      @update:pagination="setOptions($event)"
-      @update:filters="setFilter($event)"
-      @update:expanded="expanded = $event"
-      @update:selected="selected = $event"
-      @update:ignored-assets-handling="ignoredAssetsHandling = $event"
-      @update:only-show-owned="showUserOwnedAssetsOnly = $event"
-    />
-
-    <ManagedAssetFormDialog
-      :title="dialogTitle"
-      :editable-item="editableItem"
-    />
-  </VContainer>
+      <ManagedAssetFormDialog
+        :title="dialogTitle"
+        :editable-item="editableItem"
+      />
+    </RuiCard>
+  </TablePageLayout>
 </template>

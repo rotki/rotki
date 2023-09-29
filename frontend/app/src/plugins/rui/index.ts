@@ -44,6 +44,7 @@ import {
   RiFolderOpenLine,
   RiFolderReceivedLine,
   RiGiftLine,
+  RiGitMergeLine,
   RiHistoryLine,
   RiImageLine,
   RiInboxArchiveLine,
@@ -167,6 +168,7 @@ Vue.use(RuiPlugin, {
     RiFileSettingsLine,
     RiFileDownloadLine,
     RiArrowRightLine,
-    RiAlarmWarningLine
+    RiAlarmWarningLine,
+    RiGitMergeLine
   ]
 });

@@ -6,7 +6,7 @@ withDefaults(defineProps<{ hideHeader?: boolean }>(), {
 
 <template>
   <div class="flex flex-col gap-4">
-    <div v-if="!hideHeader" class="flex flex-row flex-wrap items-center gap-2">
+    <div v-if="!hideHeader" class="flex flex-row flex-wrap items-center gap-4">
       <div class="text-body-1 text-rui-text">
         <slot name="title" />
       </div>

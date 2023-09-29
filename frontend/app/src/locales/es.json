@@ -984,9 +984,6 @@
     "delete_error": "Could not delete {address}: {message}",
     "edit_error": "Could not edit asset: {message}",
     "edit_title": "Edit an asset",
-    "managed": {
-      "title": "Managed Assets"
-    },
     "merge_assets": "Merge Assets",
     "merge_assets_tooltip": "Merge two assets into one (can be used to migrate custom assets to officially supported ones)"
   },
@@ -1002,9 +999,6 @@
     "filter_by_ignored_status": "Filter by ignored status",
     "headers": {
       "started": "Started"
-    },
-    "managed": {
-      "subtitle": "Add, edit, remove tokens and assets. Changes in the assets will be reflected across all your accounts"
     },
     "notes": "Notes",
     "only_show_ignored": "Only show ignored assets ({length}) | Only show ignored assets",
@@ -2876,6 +2870,9 @@
     },
     "title": "Export/Import User Assets",
     "warning": "This functionality is designed to allow you to easily move your assets from one instance of rotki to another. It requires both instances to be of the same version. Using this functionality across different versions might result in errors."
+  },
+  "managed_asset_content": {
+    "add_asset": "Añadir activo"
   },
   "manual_balances": {
     "add_manual_balance": "Add Manual Balance",
