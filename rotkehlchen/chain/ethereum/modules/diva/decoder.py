@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.interfaces import GovernableDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     DecoderContext,
@@ -29,9 +29,10 @@ log = RotkehlchenLogsAdapter(logger)
 DELEGATE_CHANGED = b'14\xe8\xa2\xe6\xd9~\x92\x9a~T\x01\x1e\xa5H]}\x19m\xd5\xf0\xbaMN\xf9X\x03\xe8\xe3\xfc%\x7f'  # noqa: E501
 CLAIM_AIRDROP = b'N\xc9\x0e\x96U\x19\xd9&\x81&tg\xf7u\xad\xa5\xbd!J\xa9,\r\xc9=\x90\xa5\xe8\x80\xce\x9e\xd0&'  # noqa: E501
 DIVA_AIDROP_CONTRACT = string_to_evm_address('0x777E2B2Cc7980A6bAC92910B95269895EEf0d2E8')
+DIVA_GOVERNOR = string_to_evm_address('0xFb6B7C11a55C57767643F1FF65c34C8693a11A70')
 
 
-class DivaDecoder(DecoderInterface):
+class DivaDecoder(GovernableDecoderInterface):
 
     def __init__(
             self,
@@ -43,6 +44,8 @@ class DivaDecoder(DecoderInterface):
             evm_inquirer=evm_inquirer,
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
+            protocol=CPT_DIVA,
+            proposals_url='https://www.tally.xyz/gov/diva/proposal',
         )
         self.diva = A_DIVA.resolve_to_evm_token()
 
@@ -104,10 +107,14 @@ class DivaDecoder(DecoderInterface):
             HistoryEventType.INFORMATIONAL: {
                 HistoryEventSubType.GOVERNANCE: EventCategory.GOVERNANCE,
             },
+            HistoryEventType.RECEIVE: {
+                HistoryEventSubType.AIRDROP: EventCategory.AIRDROP,
+            },
         }}
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {
+            DIVA_GOVERNOR: (self._decode_vote_cast,),
             DIVA_ADDRESS: (self._decode_delegation_change,),
             DIVA_AIDROP_CONTRACT: (self._decode_diva_claim,),
         }
