@@ -9,6 +9,7 @@ Changelog
 * :feature:`2000` Users will now have the ability to filter between claimed and unclaimed airdrops.
 * :feature:`-` Transactions bridging from/to Base using the official bridge will be now decoded.
 * :bug:`-` History event header will now be visible only on mobile.
+* :bug:`6647` When PnL report generation is finished, users will not be redirected to the report page, but will get notified instead.
 
 * :release:`1.30.2 <2023-09-21>`
 * :feature:`-` Improved support for importing Binance CSV files.

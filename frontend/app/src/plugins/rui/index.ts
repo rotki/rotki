@@ -2,9 +2,11 @@ import {
   RiAccountCircleLine,
   RiAddCircleLine,
   RiAddLine,
+  RiAlarmWarningLine,
   RiArrowDownLine,
   RiArrowDownSLine,
   RiArrowLeftLine,
+  RiArrowRightLine,
   RiArrowRightSLine,
   RiArrowUpLine,
   RiBankLine,
@@ -34,6 +36,9 @@ import {
   RiEyeOffLine,
   RiFileChartLine,
   RiFileCopyLine,
+  RiFileDownloadLine,
+  RiFileList3Line,
+  RiFileSettingsLine,
   RiFileUploadLine,
   RiFilterLine,
   RiFolderOpenLine,
@@ -63,6 +68,7 @@ import {
   RiScreenshot2Line,
   RiSearchLine,
   RiServerLine,
+  RiSettings3Line,
   RiSettings4Line,
   RiShuffleLine,
   RiStickyNoteLine,
@@ -155,6 +161,12 @@ Vue.use(RuiPlugin, {
     RiErrorWarningLine,
     RiFilterLine,
     RiFileCopyLine,
-    RiFolderOpenLine
+    RiFolderOpenLine,
+    RiSettings3Line,
+    RiFileList3Line,
+    RiFileSettingsLine,
+    RiFileDownloadLine,
+    RiArrowRightLine,
+    RiAlarmWarningLine
   ]
 });

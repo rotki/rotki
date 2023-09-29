@@ -125,21 +125,20 @@ const subPeriods = [
 </script>
 
 <template>
-  <VRow>
-    <VCol cols="12">
-      <span class="text-h6">{{ t('generate.period') }}</span>
+  <div class="flex flex-col gap-4">
+    <div>
+      <span class="text-subtitle-1 font-bold">{{ t('generate.period') }}</span>
       <VChipGroup
         :value="year"
         mandatory
         column
-        class="mx-n2"
         @change="onChange({ year: $event })"
       >
         <VChip
           v-for="period in periods"
           :key="period"
           :color="year === period ? 'primary' : null"
-          class="ma-2 px-4"
+          class="px-4"
           :value="period"
           label
         >
@@ -147,20 +146,21 @@ const subPeriods = [
         </VChip>
         <VChip
           value="custom"
-          class="ma-2 px-4"
+          class="px-4"
           label
           :color="isCustom ? 'primary' : null"
         >
           {{ t('generate.custom_selection') }}
         </VChip>
       </VChipGroup>
-    </VCol>
-    <VCol v-if="year !== 'custom'" cols="12">
-      <span class="text-h6">{{ t('generate.sub_period_label') }}</span>
+    </div>
+    <div v-if="year !== 'custom'">
+      <span class="text-subtitle-1 font-bold">
+        {{ t('generate.sub_period_label') }}
+      </span>
       <VChipGroup
         :value="quarter"
         mandatory
-        class="mx-n2"
         @change="onChange({ quarter: $event })"
       >
         <VChip
@@ -170,11 +170,11 @@ const subPeriods = [
           :value="subPeriod.id"
           :disabled="isStartAfterNow(subPeriod.id)"
           label
-          class="ma-2 px-4"
+          class="px-4"
         >
           {{ subPeriod.name }}
         </VChip>
       </VChipGroup>
-    </VCol>
-  </VRow>
+    </div>
+  </div>
 </template>

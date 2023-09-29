@@ -2381,6 +2381,10 @@
   },
   "generate": {
     "custom_selection": "Custom",
+    "labels": {
+      "end_date": "Fecha de Finalización",
+      "start_date": "Fecha de Inicio"
+    },
     "period": "Periodo",
     "sub_period": {
       "all": "All"
@@ -3583,6 +3587,11 @@
       },
       "select_directory": "Select a directory",
       "title": "Debug"
+    },
+    "notification": {
+      "action": "Ver el informe",
+      "message": "Se ha generado el informe de PnL desde {start} hasta {end}.",
+      "title": "Se ha generado el informe de PnL"
     },
     "title": "Saved Historical Reports"
   },

@@ -2388,6 +2388,10 @@
   },
   "generate": {
     "custom_selection": "Custom",
+    "labels": {
+      "end_date": "Ημερομηνία Λήξης",
+      "start_date": "Ημερομηνία Έναρξης"
+    },
     "period": "Period",
     "sub_period": {
       "all": "All"
@@ -3608,6 +3612,11 @@
       },
       "select_directory": "Select a directory",
       "title": "Debug"
+    },
+    "notification": {
+      "action": "Δείτε την αναφορά",
+      "message": "Η αναφορά PnL από {start} έως {end} έχει δημιουργηθεί.",
+      "title": "Η αναφορά PnL έχει δημιουργηθεί"
     },
     "title": "Saved Historical Reports"
   },

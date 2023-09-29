@@ -2426,6 +2426,10 @@
   },
   "generate": {
     "custom_selection": "自定义",
+    "labels": {
+      "end_date": "结束日期",
+      "start_date": "开始日期"
+    },
     "period": "时期",
     "sub_period": {
       "all": "全部"
@@ -3703,6 +3707,11 @@
       },
       "select_directory": "选择目录",
       "title": "调试"
+    },
+    "notification": {
+      "action": "查看报告",
+      "message": "从 {start} 到 {end} 生成了盈亏报告。",
+      "title": "已生成盈亏报告"
     },
     "title": "保存的历史报告"
   },
