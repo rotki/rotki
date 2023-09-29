@@ -129,7 +129,7 @@ watch(
   }
 );
 
-const { mdAndUp } = useDisplay();
+const { xs } = useDisplay();
 const blockEvent = isEthBlockEventRef(eventGroupHeader);
 </script>
 
@@ -177,7 +177,7 @@ const blockEvent = isEthBlockEventRef(eventGroupHeader);
                 :options="options"
                 hide-default-footer
                 disable-floating-header
-                :hide-default-header="mdAndUp"
+                :hide-default-header="!xs"
               >
                 <template #progress><span /></template>
                 <template #item.type="{ item }">
