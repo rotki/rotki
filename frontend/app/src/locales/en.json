@@ -927,12 +927,7 @@
       },
       "private": "Private",
       "private_description": "address book is saved only for this account."
-    },
-    "table": {
-      "subtitle": "Add, edit, remove alias name for addresses. Changes in the names will be reflected across the app.",
-      "title": "Address Book"
-    },
-    "title": "Address Book Management"
+    }
   },
   "address_name_priority_setting": {
     "data_name": "priority"
