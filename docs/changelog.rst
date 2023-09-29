@@ -7,7 +7,8 @@ Changelog
 * :feature:`6275` Transaction events from bitstamp CSV can now be imported
 * :feature:`-` Properly decode optimism bridge 2 step withdrawal proving transactions
 * :feature:`2000` Users will now have the ability to filter between claimed and unclaimed airdrops.
-* :feature:`-` Transactions bridging from/to Base using the official bridge will be now decoded. 
+* :feature:`-` Transactions bridging from/to Base using the official bridge will be now decoded.
+* :bug:`-` History event header will now be visible only on mobile.
 
 * :release:`1.30.2 <2023-09-21>`
 * :feature:`-` Improved support for importing Binance CSV files.
