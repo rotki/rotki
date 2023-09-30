@@ -58,6 +58,7 @@ import {
   RiLogoutBoxRLine,
   RiLogoutCircleRLine,
   RiMoonLine,
+  RiMore2Fill,
   RiNotification3Line,
   RiQuestionLine,
   RiRefreshLine,
@@ -169,6 +170,7 @@ Vue.use(RuiPlugin, {
     RiFileDownloadLine,
     RiArrowRightLine,
     RiAlarmWarningLine,
-    RiGitMergeLine
+    RiGitMergeLine,
+    RiMore2Fill
   ]
 });

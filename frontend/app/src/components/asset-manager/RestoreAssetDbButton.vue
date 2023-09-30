@@ -94,24 +94,22 @@ const showDoneConfirmation = () => {
 </script>
 
 <template>
-  <VMenu v-if="dropdown" offset-y>
+  <VMenu v-if="dropdown" offset-x left>
     <template #activator="{ on }">
-      <RuiTooltip :open-delay="400" :popper="{ placement: 'top' }">
-        <template #activator>
-          <RuiButton
-            id="reset-asset-activator"
-            color="primary"
-            variant="outlined"
-            v-on="on"
-          >
-            <RuiIcon name="restart-line" />
-            <template #append>
-              <RuiIcon name="arrow-down-s-line" />
-            </template>
-          </RuiButton>
+      <RuiButton
+        id="reset-asset-activator"
+        variant="text"
+        class="!p-3 rounded-none"
+        v-on="on"
+      >
+        <template #prepend>
+          <RuiIcon name="restart-line" />
         </template>
         {{ t('asset_update.restore.title') }}
-      </RuiTooltip>
+        <template #append>
+          <RuiIcon name="arrow-down-s-line" />
+        </template>
+      </RuiButton>
     </template>
     <VList>
       <VListItem two-line link @click="showRestoreConfirmation('soft')">

@@ -189,28 +189,43 @@ watch(identifier, async assetId => {
         </template>
         {{ t('common.refresh') }}
       </RuiButton>
-      <RestoreAssetDbButton dropdown />
-      <RuiTooltip open-delay="400" :popper="{ placement: 'top' }">
-        <template #activator>
-          <RuiButton
-            variant="outlined"
-            color="primary"
-            @click="mergeTool = true"
-          >
-            <template #prepend>
-              <RuiIcon name="git-merge-line" />
-            </template>
-            {{ t('asset_management.merge_assets') }}
-          </RuiButton>
-        </template>
-        {{ t('asset_management.merge_assets_tooltip') }}
-      </RuiTooltip>
+
       <RuiButton data-cy="managed-asset-add-btn" color="primary" @click="add()">
         <template #prepend>
           <RuiIcon name="add-line" />
         </template>
         {{ t('managed_asset_content.add_asset') }}
       </RuiButton>
+      <VMenu offset-y left :close-on-content-click="false">
+        <template #activator="{ on }">
+          <RuiButton variant="text" icon size="sm" class="!p-2" v-on="on">
+            <RuiIcon name="more-2-fill" />
+          </RuiButton>
+        </template>
+        <VList>
+          <RestoreAssetDbButton dropdown />
+          <RuiTooltip
+            open-delay="400"
+            class="w-full"
+            :popper="{ placement: 'left' }"
+            tooltip-class="max-w-[200px]"
+          >
+            <template #activator>
+              <RuiButton
+                class="w-full justify-start !p-3 rounded-none"
+                variant="text"
+                @click="mergeTool = true"
+              >
+                <template #prepend>
+                  <RuiIcon name="git-merge-line" />
+                </template>
+                {{ t('asset_management.merge_assets') }}
+              </RuiButton>
+            </template>
+            {{ t('asset_management.merge_assets_tooltip') }}
+          </RuiTooltip>
+        </VList>
+      </VMenu>
     </template>
 
     <RuiCard>
