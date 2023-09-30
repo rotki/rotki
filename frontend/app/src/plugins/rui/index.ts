@@ -37,6 +37,7 @@ import {
   RiFileChartLine,
   RiFileCopyLine,
   RiFileDownloadLine,
+  RiFileEditLine,
   RiFileList3Line,
   RiFileSettingsLine,
   RiFileUploadLine,
@@ -171,6 +172,7 @@ Vue.use(RuiPlugin, {
     RiArrowRightLine,
     RiAlarmWarningLine,
     RiGitMergeLine,
-    RiMore2Fill
+    RiMore2Fill,
+    RiFileEditLine
   ]
 });

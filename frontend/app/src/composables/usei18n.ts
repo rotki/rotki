@@ -20,19 +20,7 @@ export const useI18n = (): ModifiedI18n => {
   const vm = instance?.proxy || new Vue();
 
   // @ts-ignore
-  const i18n = vm._i18nBridgeRoot.global as VueI18n;
-
-  const locale = computed({
-    get() {
-      return i18n.locale;
-    },
-    set(v) {
-      i18n.locale = v;
-    }
-  });
-
-  return {
-    ...i18n,
-    locale
+  return vm._i18nBridgeRoot.global as VueI18n & {
+    locale: WritableComputedRef<string>;
   };
 };

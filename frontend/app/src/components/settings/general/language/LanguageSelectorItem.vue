@@ -1,16 +1,10 @@
 <script setup lang="ts">
-import { type PropType, useCssModule } from 'vue';
+import { useCssModule } from 'vue';
 
-defineProps({
-  countries: {
-    required: true,
-    type: Array as PropType<string[]>
-  },
-  label: {
-    required: true,
-    type: String
-  }
-});
+defineProps<{
+  countries: string[];
+  label: string;
+}>();
 
 const getFlagEmoji = (code: string) => {
   const codePoints = code
