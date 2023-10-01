@@ -11,11 +11,11 @@ coincurve==17.0.0
 base58check==1.0.2
 bech32==1.2.0
 gql==2.0.0
-scalecodec==1.2.6
+scalecodec==1.2.7
 py-sr25519-bindings==0.2.0
 py-ed25519-zebra-bindings==1.0.1
 py-bip39-bindings==0.1.11
-substrate-interface==1.7.3
+substrate-interface==1.7.4
 beautifulsoup4==4.12.2
 maxminddb==2.2.0
 miniupnpc==2.0.2; sys_platform != 'win32'
@@ -25,10 +25,10 @@ py-machineid==0.4.3
 
 # For the rest api
 flask-cors==4.0.0
-flask==2.3.3
+flask==3.0.0
 marshmallow==3.20.1
 webargs==8.2.0
-werkzeug==2.3.7
+werkzeug==3.0.0
 
 # for icon validation
 filetype==1.2.0
