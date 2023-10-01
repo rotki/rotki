@@ -14,13 +14,6 @@ from rotkehlchen.types import (
 )
 from rotkehlchen.utils.misc import ts_now
 
-UNIQUE_CACHE_KEYS: set[CacheType] = {
-    CacheType.CURVE_POOL_ADDRESS,
-    CacheType.MAKERDAO_VAULT_ILK,
-    CacheType.CURVE_GAUGE_ADDRESS,
-    CacheType.YEARN_VAULTS,
-}
-
 
 def compute_cache_key(key_parts: Iterable[Union[str, CacheType]]) -> str:
     """Function that computes the cache key for accessing the globaldb general or unique cache

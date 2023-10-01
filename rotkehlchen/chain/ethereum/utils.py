@@ -19,13 +19,12 @@ from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.cache import (
-    UNIQUE_CACHE_KEYS,
     globaldb_get_general_cache_last_queried_ts_by_key,
     globaldb_get_unique_cache_last_queried_ts_by_key,
 )
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import CacheType, ChecksumEvmAddress
+from rotkehlchen.types import UNIQUE_CACHE_KEYS, CacheType, ChecksumEvmAddress
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 from rotkehlchen.utils.misc import ts_now
 
