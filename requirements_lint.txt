@@ -1,7 +1,7 @@
 mypy==1.5.1
 mypy-extensions==1.0.0
-pylint==2.17.5
-astroid==2.15.6  # engine of pylint, upgrade them together
+pylint==2.17.7
+astroid==2.15.8  # engine of pylint, upgrade them together
 ruff==0.0.291
 double-indent-rotki==0.1.7  # our fork of double indent
 flake8==6.1.0
@@ -22,6 +22,6 @@ types-cryptography==3.3.23.2
 types-enum34==1.1.8
 types-ipaddress==1.0.8
 types-pkg-resources==0.1.3
-types-requests==2.31.0.4
+types-requests==2.31.0.5
 types-urllib3==1.26.25.14
 types-toml==0.10.8.7
