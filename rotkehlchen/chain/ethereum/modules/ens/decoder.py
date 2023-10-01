@@ -2,14 +2,13 @@ import logging
 from typing import TYPE_CHECKING, Any, Optional
 
 import content_hash
-from eth_utils import to_checksum_address
+from ens import ENS
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.utils import TokenSeenAt, get_or_create_evm_token
 from rotkehlchen.chain.ethereum.abi import decode_event_data_abi_str
 from rotkehlchen.chain.ethereum.graph import Graph
-from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.interfaces import GovernableDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
@@ -18,14 +17,18 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails, EventCategory
-from rotkehlchen.chain.evm.names import find_ens_mappings
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.globaldb.cache import (
+    globaldb_get_unique_cache_value,
+    globaldb_set_unique_cache_value,
+)
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, DecoderEventMappingType, EvmTokenKind
+from rotkehlchen.types import CacheType, ChecksumEvmAddress, DecoderEventMappingType, EvmTokenKind
 from rotkehlchen.utils.misc import from_wei, hex_or_bytes_to_address
 from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
 
@@ -47,6 +50,7 @@ ENS_BASE_REGISTRAR_IMPLEMENTATION = string_to_evm_address('0x57f1887a8BF19b14fC0
 ENS_REGISTRY_WITH_FALLBACK = string_to_evm_address('0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e')
 ENS_PUBLIC_RESOLVER_2_ADDRESS = string_to_evm_address('0x4976fb03C32e5B8cfe2b6cCB31c09Ba78EBaBa41')
 ENS_PUBLIC_RESOLVER_3_ADDRESS = string_to_evm_address('0x231b0Ee14048e9dCcD1d247744d114a4EB5E8E63')
+ENS_REVERSE_RESOLVER = string_to_evm_address('0xA2C122BE93b0074270ebeE7f6b7292C7deB45047')
 
 NAME_RENEWED = b'=\xa2L\x02E\x82\x93\x1c\xfa\xf8&}\x8e\xd2M\x13\xa8*\x80h\xd5\xbd3}0\xecE\xce\xa4\xe5\x06\xae'  # noqa: E501
 NAME_RENEWED_ABI = '{"anonymous":false,"inputs":[{"indexed":false,"internalType":"string","name":"name","type":"string"},{"indexed":true,"internalType":"bytes32","name":"label","type":"bytes32"},{"indexed":false,"internalType":"uint256","name":"cost","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"expires","type":"uint256"}],"name":"NameRenewed","type":"event"}'  # noqa: E501
@@ -61,6 +65,28 @@ TEXT_CHANGED_KEY_AND_VALUE = b'D\x8b\xc0\x14\xf1Sg&\xcf\x8dT\xff=d\x81\xed<\xbch
 TEXT_CHANGED_KEY_AND_VALUE_ABI = '{"anonymous":false,"inputs":[{"indexed":true,"internalType":"bytes32","name":"node","type":"bytes32"},{"indexed":true,"internalType":"string","name":"indexedKey","type":"string"},{"indexed":false,"internalType":"string","name":"key","type":"string"},{"indexed":false,"internalType":"string","name":"value","type":"string"}],"name":"TextChanged","type":"event"}'  # noqa: E501
 CONTENT_HASH_CHANGED = b'\xe3y\xc1bN\xd7\xe7\x14\xcc\t7R\x8a25\x9di\xd5(\x137vS\x13\xdb\xa4\xe0\x81\xb7-ux'  # noqa: E501
 ENS_GOVERNOR = string_to_evm_address('0x323A76393544d5ecca80cd6ef2A560C6a395b7E3')
+
+
+def _save_hash_mappings_get_fullname(name: str) -> str:
+    """
+    Saves the namehash -> name and labelhash -> name mappings to the global DB
+    cache and gets name with.eth suffix.
+
+    The given name has to be without the .eth suffix and is returned with it
+    """
+    full_name = f'{name}.eth'
+    with GlobalDBHandler().conn.write_ctx() as write_cursor:
+        globaldb_set_unique_cache_value(
+            write_cursor=write_cursor,
+            key_parts=(CacheType.ENS_NAMEHASH, ENS.namehash(full_name).hex()),
+            value=full_name,
+        )
+        globaldb_set_unique_cache_value(
+            write_cursor=write_cursor,
+            key_parts=(CacheType.ENS_LABELHASH, ENS.labelhash(name).hex()),
+            value=name,
+        )
+    return full_name
 
 
 class EnsDecoder(GovernableDecoderInterface, CustomizableDateMixin):
@@ -105,7 +131,7 @@ class EnsDecoder(GovernableDecoderInterface, CustomizableDateMixin):
             log.debug(f'Failed to decode ENS name registered event due to {e!s}')
             return DEFAULT_DECODING_OUTPUT
 
-        name = decoded_data[0]
+        fullname = _save_hash_mappings_get_fullname(name=decoded_data[0])
         if context.tx_log.topics[0] == NAME_REGISTERED_SINGLE_COST:
             amount = from_wei(decoded_data[1])
             expires = decoded_data[2]
@@ -134,7 +160,7 @@ class EnsDecoder(GovernableDecoderInterface, CustomizableDateMixin):
                 event.event_type = HistoryEventType.TRADE
                 event.event_subtype = HistoryEventSubType.SPEND
                 event.counterparty = CPT_ENS
-                event.notes = f'Register ENS name {name}.eth for {amount} ETH until {self.timestamp_to_date(expires)}'  # noqa: E501
+                event.notes = f'Register ENS name {fullname} for {amount} ETH until {self.timestamp_to_date(expires)}'  # noqa: E501
 
             # Find the ENS ERC721 receive event which should be before the registered event
             if event.event_type == HistoryEventType.RECEIVE and event.asset.identifier == 'eip155:1/erc721:0x57f1887a8BF19b14fC0dF6Fd9B2acc9Af147eA85':  # noqa: E501
@@ -153,7 +179,7 @@ class EnsDecoder(GovernableDecoderInterface, CustomizableDateMixin):
             log.error(f'Failed to decode ENS name renewed event due to {e!s}')
             return DEFAULT_DECODING_OUTPUT
 
-        name = decoded_data[0]
+        fullname = _save_hash_mappings_get_fullname(name=decoded_data[0])
         logged_cost = from_wei(decoded_data[1])  # logs msg.value for new controller and actual cost for old  # noqa: E501
         expires = decoded_data[2]
 
@@ -174,7 +200,7 @@ class EnsDecoder(GovernableDecoderInterface, CustomizableDateMixin):
                 event.event_type = HistoryEventType.RENEW
                 event.event_subtype = HistoryEventSubType.NFT
                 event.counterparty = CPT_ENS
-                event.notes = f'Renew ENS name {name} for {event.balance.amount} ETH until {self.timestamp_to_date(expires)}'  # noqa: E501
+                event.notes = f'Renew ENS name {fullname} for {event.balance.amount} ETH until {self.timestamp_to_date(expires)}'  # noqa: E501
 
         if refund_event_idx is not None:
             del context.decoded_events[refund_event_idx]
@@ -202,20 +228,28 @@ class EnsDecoder(GovernableDecoderInterface, CustomizableDateMixin):
             log.error(f'Could not decode an ERC721 transfer for an ENS name transfer: {context.transaction.tx_hash.hex()}')  # noqa: E501
             return DEFAULT_DECODING_OUTPUT
 
-        label_hash = '0x{:064x}'.format(transfer_event.extra_data['token_id'])  # type: ignore[index]  # noqa: E501  # ERC721 transfer always has extra data
-        try:
-            result = self.graph.query(
-                querystr=f'query{{domains(first:1, where:{{labelhash:"{label_hash}"}}){{labelName}}}}')  # noqa: E501
-            name_to_show = result['domains'][0]['labelName'] + '.eth '
-        except (RemoteError, KeyError, IndexError) as e:
-            msg = str(e)
-            if isinstance(e, KeyError):
-                msg = f'Missing key {msg}'
-            log.error(
-                f'Failed to query graph for token ID to ENS name due to {msg} '
-                f'during decoding events. Not adding name to event',
-            )
-            name_to_show = ''
+        label_hash = '0x{:064x}'.format(transfer_event.extra_data['token_id'])  # type: ignore[index]  # noqa: E501  # ERC721 transfer always has extra data. This code is to transform the int token id to a 32 bytes hex label hash
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            found_name = globaldb_get_unique_cache_value(cursor=cursor, key_parts=(CacheType.ENS_LABELHASH, label_hash))  # noqa: E501
+
+        if found_name is None:  # ask the graph
+            try:
+                result = self.graph.query(
+                    querystr=f'query{{domains(first:1, where:{{labelhash:"{label_hash}"}}){{name}}}}')  # noqa: E501
+                name_to_show = result['domains'][0]['name'] + ' '
+            except (RemoteError, KeyError, IndexError) as e:
+                msg = str(e)
+                if isinstance(e, KeyError):
+                    msg = f'Missing key {msg}'
+                log.error(
+                    f'Failed to query graph for token ID to ENS name due to {msg} '
+                    f'during decoding events. Not adding name to event',
+                )
+                name_to_show = ''
+            else:
+                pass
+        else:
+            name_to_show = f'{found_name}.eth '
 
         from_text = to_text = ''
         if transfer_event.event_type == HistoryEventType.SPEND:
@@ -239,75 +273,67 @@ class EnsDecoder(GovernableDecoderInterface, CustomizableDateMixin):
 
     def _decode_ens_registry_with_fallback_event(self, context: DecoderContext) -> DecodingOutput:
         """Decode event where address is set for an ENS name."""
-        if context.tx_log.topics[0] == NEW_RESOLVER:
-            node = context.tx_log.topics[1]
-            try:
-                ens_name = self.ethereum.contracts.contract(string_to_evm_address('0xA2C122BE93b0074270ebeE7f6b7292C7deB45047')).call(  # noqa: E501
-                    node_inquirer=self.ethereum,
-                    method_name='name',
-                    arguments=[node],
-                )
-            except RemoteError as e:
-                log.debug(f'Failed to decode ENS set-text event due to {e!s}')
-                return DEFAULT_DECODING_OUTPUT
+        if context.tx_log.topics[0] != NEW_RESOLVER:
+            return DEFAULT_DECODING_OUTPUT
 
-            if ens_name == '':
-                # By checking the contract code, I don't think it can happen. But just in case.
-                return DEFAULT_DECODING_OUTPUT
+        ens_name = self._get_name_to_show(node=context.tx_log.topics[1])
+        suffix = ens_name if ens_name is not None else 'an ENS name'
 
-            # Not able to give more info to the user such as address that was set since
-            # we don't have historical info and event doesn't provide it
-            notes = f'Set ENS address for {ens_name}'
-            context.decoded_events.append(self.base.make_event_from_transaction(
-                transaction=context.transaction,
-                tx_log=context.tx_log,
-                event_type=HistoryEventType.INFORMATIONAL,
-                event_subtype=HistoryEventSubType.NONE,
-                asset=A_ETH,
-                balance=Balance(),
-                location_label=context.transaction.from_address,
-                notes=notes,
-                counterparty=CPT_ENS,
-                address=context.transaction.to_address,
-            ))
+        # Not able to give more info to the user such as address that was set since
+        # we don't have historical info and event doesn't provide it
+        notes = f'Set ENS address for {suffix}'
+        context.decoded_events.append(self.base.make_event_from_transaction(
+            transaction=context.transaction,
+            tx_log=context.tx_log,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            balance=Balance(),
+            location_label=context.transaction.from_address,
+            notes=notes,
+            counterparty=CPT_ENS,
+            address=context.transaction.to_address,
+        ))
         return DEFAULT_DECODING_OUTPUT
 
-    def _get_name_to_show(self, node: bytes, resolver_address: ChecksumEvmAddress) -> Optional[str]:  # noqa: E501
-        """Try to find the name associated with the ENS node that is being modified
+    def _get_name_to_show(self, node: bytes) -> Optional[str]:
+        """Try to find the name associated with the ENS namehash/node that is being modified
 
-        TODO: IF the name has been changed this will return None too. We should use
-        archive nodes to check the name to show when possible.
+        Returns the fullname
         """
-        contract = self.ethereum.contracts.contract_by_address(address=resolver_address)
+        namehash = '0x' + node.hex()
+        queried_graph = False
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            name_to_show = globaldb_get_unique_cache_value(cursor=cursor, key_parts=(CacheType.ENS_NAMEHASH, namehash))  # noqa: E501
 
-        if contract is None:
-            self.msg_aggregator.add_error(
-                f'Failed to find ENS public resolver contract with address '
-                f'{resolver_address}. This should never happen. Please, '
-                f"open an issue in rotki's github repository.",
-            )
-            return None
+        if name_to_show is None:  # ask the graph
+            try:
+                result = self.graph.query(
+                    querystr=f'query{{domains(first:1, where:{{id:"{namehash}"}}){{name}}}}')  # noqa: E501
+                name_to_show = result['domains'][0]['name']
+                queried_graph = True
+            except (RemoteError, KeyError, IndexError) as e:
+                msg = str(e)
+                if isinstance(e, KeyError):
+                    msg = f'Missing key {msg}'
+                log.error(
+                    f'Failed to query graph for namehash to ENS name due to {msg} '
+                    f'during decoding events. Not adding name to event',
+                )
+            else:
+                if '].addr.reverse' in name_to_show:  # then this node is not a namehash
+                    try:  # this kind of result can be returned by the graph query and means we need to do reverse resolution  # noqa: E501
+                        name_to_show = self.ethereum.contracts.contract(ENS_REVERSE_RESOLVER).call(
+                            node_inquirer=self.ethereum,
+                            method_name='name',
+                            arguments=[node],
+                        )
+                    except RemoteError as e:
+                        log.debug(f'Failed to reverse resolve ENS name ue to {e!s}')
+                        return None
 
-        name_to_show: Optional[str] = None
-        try:
-            address = contract.call(
-                node_inquirer=self.ethereum,
-                method_name='addr',
-                arguments=[node],
-            )
-        except RemoteError as e:
-            log.debug(f'Failed to query ENS name of node {node.hex()} due to: {e!s}')
-        else:
-            address = to_checksum_address(address)
-            ens_mapping = find_ens_mappings(
-                ethereum_inquirer=self.ethereum,
-                addresses=[address],
-                ignore_cache=False,
-            )
-            name_to_show = ens_mapping.get(address, address)
-
-        if name_to_show == ZERO_ADDRESS:
-            return None
+        elif queried_graph:  # if we succesfully asked the graph, save the mapping
+            _save_hash_mappings_get_fullname(name=name_to_show[:-4])
 
         return name_to_show
 
@@ -324,9 +350,8 @@ class EnsDecoder(GovernableDecoderInterface, CustomizableDateMixin):
             return DEFAULT_DECODING_OUTPUT
 
         result = contract.decode_event(context.tx_log, 'ContenthashChanged', argument_names=None)  # noqa: E501
-        node = result[0][0]
         new_hash = result[1][0].hex()
-        name_to_show = self._get_name_to_show(node=node, resolver_address=context.tx_log.address)
+        name_to_show = self._get_name_to_show(node=node)
 
         try:
             codec = content_hash.get_codec(new_hash)
@@ -382,7 +407,7 @@ class EnsDecoder(GovernableDecoderInterface, CustomizableDateMixin):
         new_value = decoded_data[1] if context.tx_log.topics[0] == TEXT_CHANGED_KEY_AND_VALUE else None  # noqa: E501
         node = context.tx_log.topics[1]  # node is a hash of the name used by ens internals
 
-        name_to_show = self._get_name_to_show(node=node, resolver_address=context.tx_log.address)
+        name_to_show = self._get_name_to_show(node=node)
         notes = f'Set ENS {changed_key} {f"to {new_value} " if new_value else ""}attribute'
         if name_to_show is not None:
             notes += f' for {name_to_show}'

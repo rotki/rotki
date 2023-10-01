@@ -932,6 +932,8 @@ class CacheType(Enum):
     CURVE_POOL_UNDERLYING_TOKENS = auto()  # get underlying tokens by pool address
     VELODROME_POOL_ADDRESS = auto()  # get pool address information
     VELODROME_GAUGE_ADDRESS = auto()  # get gauge address by pool address
+    ENS_NAMEHASH = auto()  # map ENS namehash -> ens name
+    ENS_LABELHASH = auto()  # map ENS labelhash -> ens name
 
     def serialize(self) -> str:
         # Using custom serialize method instead of SerializableEnumMixin since mixin replaces
@@ -948,7 +950,11 @@ UniqueCacheType = Literal[
     CacheType.MAKERDAO_VAULT_ILK,
     CacheType.CURVE_GAUGE_ADDRESS,
     CacheType.YEARN_VAULTS,
+    CacheType.ENS_NAMEHASH,
+    CacheType.ENS_LABELHASH,
 ]
+
+UNIQUE_CACHE_KEYS: tuple[UniqueCacheType, ...] = typing.get_args(UniqueCacheType)
 
 GeneralCacheType = Literal[
     CacheType.CURVE_LP_TOKENS,

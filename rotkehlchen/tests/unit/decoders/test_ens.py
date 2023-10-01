@@ -6,7 +6,12 @@ from rotkehlchen.accounting.structures.types import HistoryEventSubType, History
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.ethereum.modules.ens.constants import CPT_ENS
-from rotkehlchen.chain.ethereum.modules.ens.decoder import ENS_GOVERNOR, ENS_REGISTRAR_CONTROLLER_1
+from rotkehlchen.chain.ethereum.modules.ens.decoder import (
+    ENS_GOVERNOR,
+    ENS_PUBLIC_RESOLVER_2_ADDRESS,
+    ENS_REGISTRAR_CONTROLLER_1,
+    ENS_REGISTRAR_CONTROLLER_2,
+)
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -32,9 +37,6 @@ ADDY = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'
 @pytest.mark.vcr()
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY]])
 def test_mint_ens_name(database, ethereum_inquirer):
-    """Data taken from
-    https://etherscan.io/tx/0x74e72600c6cd5a1f0170a3ca38ecbf7d59edeb8ceb48adab2ed9b85d12cc2b99
-    """
     tx_hash = deserialize_evm_tx_hash('0x74e72600c6cd5a1f0170a3ca38ecbf7d59edeb8ceb48adab2ed9b85d12cc2b99')  # noqa: E501
     events, decoder = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
@@ -69,9 +71,23 @@ def test_mint_ens_name(database, ethereum_inquirer):
             location_label=ADDY,
             notes=f'Register ENS name hania.eth for {register_fee_str} ETH until {decoder.decoders["Ens"].timestamp_to_date(expires_timestamp)}',  # noqa: E501
             counterparty=CPT_ENS,
-            address=string_to_evm_address('0x283Af0B28c62C092C9727F1Ee09c02CA627EB7F5'),
-        )]
-    assert expected_events == events[0:2]
+            address=ENS_REGISTRAR_CONTROLLER_1,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=43,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            balance=Balance(),
+            location_label=ADDY,
+            notes='Set ENS address for hania.eth',
+            counterparty=CPT_ENS,
+            address=ENS_REGISTRAR_CONTROLLER_1,
+        ),
+    ]
+    assert expected_events == events[0:3]
     erc721_asset = get_or_create_evm_token(  # TODO: Better way to test than this for ERC721 ...?
         userdb=database,
         evm_address=string_to_evm_address('0x57f1887a8BF19b14fC0dF6Fd9B2acc9Af147eA85'),
@@ -79,10 +95,10 @@ def test_mint_ens_name(database, ethereum_inquirer):
         token_kind=EvmTokenKind.ERC721,
         evm_inquirer=ethereum_inquirer,
     )
-    assert events[2] == EvmEvent(
+    assert events[3] == EvmEvent(
         tx_hash=tx_hash,
         sequence_index=47,
-        timestamp=1637144069000,
+        timestamp=timestamp,
         location=Location.ETHEREUM,
         event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
@@ -91,7 +107,7 @@ def test_mint_ens_name(database, ethereum_inquirer):
         location_label=ADDY,
         notes=f'Receive ENS name hania.eth from 0x283Af0B28c62C092C9727F1Ee09c02CA627EB7F5 to {ADDY}',  # noqa: E501
         counterparty=CPT_ENS,
-        address=string_to_evm_address('0x283Af0B28c62C092C9727F1Ee09c02CA627EB7F5'),
+        address=ENS_REGISTRAR_CONTROLLER_1,
         extra_data={
             'token_id': 88045077199635585930173998576189366882372899073811035545363728149974713265418,  # noqa: E501
             'token_name': 'ERC721 token',
@@ -112,7 +128,7 @@ def test_text_changed_old_name(ethereum_transaction_decoder, ethereum_accounts):
         timestamp=0,
         block_number=0,
         from_address=ethereum_accounts[0],
-        to_address=string_to_evm_address('0x4976fb03C32e5B8cfe2b6cCB31c09Ba78EBaBa41'),
+        to_address=ENS_PUBLIC_RESOLVER_2_ADDRESS,
         value=ZERO,
         gas=0,
         gas_price=0,
@@ -130,7 +146,7 @@ def test_text_changed_old_name(ethereum_transaction_decoder, ethereum_accounts):
             EvmTxReceiptLog(
                 log_index=289,
                 data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000375726c0000000000000000000000000000000000000000000000000000000000'),  # noqa: E501
-                address=string_to_evm_address('0x4976fb03C32e5B8cfe2b6cCB31c09Ba78EBaBa41'),
+                address=ENS_PUBLIC_RESOLVER_2_ADDRESS,
                 removed=False,
                 topics=[
                     hexstring_to_bytes('0xd8c9334b1a9c2f9da342a0a2b32629c1a229b6445dad78947f674b44444a7550'),  # noqa: E501
@@ -140,7 +156,7 @@ def test_text_changed_old_name(ethereum_transaction_decoder, ethereum_accounts):
             ), EvmTxReceiptLog(
                 log_index=290,
                 data=hexstring_to_bytes('0x000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000066176617461720000000000000000000000000000000000000000000000000000'),  # noqa: E501
-                address=string_to_evm_address('0x4976fb03C32e5B8cfe2b6cCB31c09Ba78EBaBa41'),
+                address=ENS_PUBLIC_RESOLVER_2_ADDRESS,
                 removed=False,
                 topics=[
                     hexstring_to_bytes('0xd8c9334b1a9c2f9da342a0a2b32629c1a229b6445dad78947f674b44444a7550'),  # noqa: E501
@@ -187,7 +203,7 @@ def test_text_changed_old_name(ethereum_transaction_decoder, ethereum_accounts):
             counterparty=CPT_ENS,
             identifier=None,
             extra_data=None,
-            address=string_to_evm_address('0x4976fb03C32e5B8cfe2b6cCB31c09Ba78EBaBa41'),
+            address=ENS_PUBLIC_RESOLVER_2_ADDRESS,
         ), EvmEvent(
             tx_hash=tx_hash,
             sequence_index=291,
@@ -202,7 +218,7 @@ def test_text_changed_old_name(ethereum_transaction_decoder, ethereum_accounts):
             counterparty=CPT_ENS,
             identifier=None,
             extra_data=None,
-            address=string_to_evm_address('0x4976fb03C32e5B8cfe2b6cCB31c09Ba78EBaBa41'),
+            address=ENS_PUBLIC_RESOLVER_2_ADDRESS,
         ),
     ]
     assert events == expected_events
@@ -210,11 +226,8 @@ def test_text_changed_old_name(ethereum_transaction_decoder, ethereum_accounts):
 
 @pytest.mark.parametrize('ethereum_accounts', [['0x4bBa290826C253BD854121346c370a9886d1bC26']])  # noqa: E501
 def test_set_resolver(ethereum_transaction_decoder, ethereum_accounts):
-    """
-    Data taken from
-    https://etherscan.io/tx/0xae2cd848ce02c425bc50a8f46f8430eec32234475efb6fcff28315d2791329f6
-    """
     tx_hash = deserialize_evm_tx_hash('0xae2cd848ce02c425bc50a8f46f8430eec32234475efb6fcff28315d2791329f6')  # noqa: E501
+    user_address = ethereum_accounts[0]
     transaction = EvmTransaction(
         tx_hash=tx_hash,
         chain_id=ChainID.ETHEREUM,
@@ -277,7 +290,7 @@ def test_set_resolver(ethereum_transaction_decoder, ethereum_accounts):
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
             balance=Balance(),
-            location_label='0x4bBa290826C253BD854121346c370a9886d1bC26',
+            location_label=user_address,
             notes='Burned 0 ETH for gas',
             counterparty=CPT_GAS,
             identifier=None,
@@ -291,7 +304,7 @@ def test_set_resolver(ethereum_transaction_decoder, ethereum_accounts):
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
             balance=Balance(amount=ZERO, usd_value=ZERO),
-            location_label='0x4bBa290826C253BD854121346c370a9886d1bC26',
+            location_label=user_address,
             notes='Set ENS address for nebolax.eth',
             counterparty=CPT_ENS,
             identifier=None,
@@ -358,12 +371,13 @@ def test_register_v2(database, ethereum_inquirer, ethereum_accounts):
         database=database,
         tx_hash=tx_hex,
     )
+    timestamp = TimestampMS(1681220435000)
     expires_timestamp = Timestamp(1712756435)
     expected_events = [
         EvmEvent(
             tx_hash=evmhash,
             sequence_index=0,
-            timestamp=TimestampMS(1681220435000),
+            timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -376,7 +390,7 @@ def test_register_v2(database, ethereum_inquirer, ethereum_accounts):
         ), EvmEvent(
             tx_hash=evmhash,
             sequence_index=1,
-            timestamp=TimestampMS(1681220435000),
+            timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
@@ -385,7 +399,20 @@ def test_register_v2(database, ethereum_inquirer, ethereum_accounts):
             location_label=user_address,
             notes=f'Register ENS name ens2qr.eth for 0.002609751671170445 ETH until {decoder.decoders["Ens"].timestamp_to_date(expires_timestamp)}',  # noqa: E501
             counterparty=CPT_ENS,
-            address=string_to_evm_address('0x253553366Da8546fC250F225fe3d25d0C782303b'),
+            address=ENS_REGISTRAR_CONTROLLER_2,
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=289,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            balance=Balance(),
+            location_label=user_address,
+            notes='Set ENS address for ens2qr.eth',
+            counterparty=CPT_ENS,
+            address=ENS_REGISTRAR_CONTROLLER_2,
         ),
     ]
     assert events == expected_events
@@ -432,16 +459,16 @@ def test_renewal_with_refund_old_controller(database, ethereum_inquirer, ethereu
             asset=A_ETH,
             balance=Balance(amount=FVal('0.054034186623924151')),
             location_label=user_address,
-            notes=f'Renew ENS name dfern for 0.054034186623924151 ETH until {decoder.decoders["Ens"].timestamp_to_date(expires_timestamp)}',  # noqa: E501
+            notes=f'Renew ENS name dfern.eth for 0.054034186623924151 ETH until {decoder.decoders["Ens"].timestamp_to_date(expires_timestamp)}',  # noqa: E501
             counterparty=CPT_ENS,
-            address=string_to_evm_address('0x283Af0B28c62C092C9727F1Ee09c02CA627EB7F5'),
+            address=ENS_REGISTRAR_CONTROLLER_1,
         ),
     ]
     assert events == expected_events
 
 
 @pytest.mark.vcr()
-@pytest.mark.parametrize('ethereum_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
+@pytest.mark.parametrize('ethereum_accounts', [[ADDY]])
 def test_renewal_with_refund_new_controller(database, ethereum_inquirer, ethereum_accounts):
     """
     Check that if there was a refund during a renewal, the refund is subtracted from the
@@ -481,9 +508,9 @@ def test_renewal_with_refund_new_controller(database, ethereum_inquirer, ethereu
             asset=A_ETH,
             balance=Balance(amount=FVal('0.013465329469696502')),
             location_label=user_address,
-            notes=f'Renew ENS name karapetsas for 0.013465329469696502 ETH until {decoder.decoders["Ens"].timestamp_to_date(expires_timestamp)}',  # noqa: E501
+            notes=f'Renew ENS name karapetsas.eth for 0.013465329469696502 ETH until {decoder.decoders["Ens"].timestamp_to_date(expires_timestamp)}',  # noqa: E501
             counterparty=CPT_ENS,
-            address=string_to_evm_address('0x253553366Da8546fC250F225fe3d25d0C782303b'),
+            address=ENS_REGISTRAR_CONTROLLER_2,
         ),
     ]
     assert events == expected_events
@@ -528,7 +555,7 @@ def test_content_hash_changed(database, ethereum_inquirer, ethereum_accounts):
             location_label=user_address,
             notes='Change ENS content hash to ipns://12D3KooWFu3TexBDLUusrnFkjh9eh9PL2PY5UuwbQcgesXMRmcyM for kelsos.eth',  # noqa: E501
             counterparty=CPT_ENS,
-            address=string_to_evm_address('0x4976fb03C32e5B8cfe2b6cCB31c09Ba78EBaBa41'),
+            address=ENS_PUBLIC_RESOLVER_2_ADDRESS,
         ),
     ]
     assert events == expected_events
@@ -667,6 +694,19 @@ def test_for_truncated_labelhash(database, ethereum_inquirer, ethereum_accounts)
             address=ENS_REGISTRAR_CONTROLLER_1,
         ), EvmEvent(
             tx_hash=evmhash,
+            sequence_index=203,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            balance=Balance(),
+            location_label=user_address,
+            notes='Set ENS address for cantillon.eth',
+            counterparty=CPT_ENS,
+            address=ENS_REGISTRAR_CONTROLLER_1,
+        ), EvmEvent(
+            tx_hash=evmhash,
             sequence_index=207,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -688,7 +728,7 @@ def test_for_truncated_labelhash(database, ethereum_inquirer, ethereum_accounts)
 
 
 @pytest.mark.vcr()
-@pytest.mark.parametrize('ethereum_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
+@pytest.mark.parametrize('ethereum_accounts', [[ADDY]])
 def test_vote_cast(database, ethereum_inquirer, ethereum_accounts):
     """Test voting for ENS governance"""
     tx_hex = deserialize_evm_tx_hash('0x4677ffa104b011d591ae0c056ba651a978db982c0dfd131520db74c1b46ff564')  # noqa: E501
@@ -728,6 +768,52 @@ def test_vote_cast(database, ethereum_inquirer, ethereum_accounts):
             notes='Voted FOR ens governance proposal https://www.tally.xyz/gov/ens/proposal/10686228418271748393758532071249002330319730525037728746406757788787068261444',  # noqa: E501
             counterparty=CPT_ENS,
             address=ENS_GOVERNOR,
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('ethereum_accounts', [[ADDY]])
+def test_set_attribute_for_non_primary_name(database, ethereum_inquirer, ethereum_accounts):
+    """Test that setting ens text attribute for a name that is controlle by but not
+    set as the primary name of the address works correctly"""
+    tx_hex = deserialize_evm_tx_hash('0x07aa7d1ac61fc03f6416a25c0d6cf96f286e2ce84e9b350dd2a9a1bd6426aef2')  # noqa: E501
+    evmhash = deserialize_evm_tx_hash(tx_hex)
+    user_address = ethereum_accounts[0]
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hex,
+    )
+    gas_str = '0.00054662131669239'
+    timestamp = TimestampMS(1694558075000)
+    expected_events = [
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas_str)),
+            location_label=user_address,
+            notes=f'Burned {gas_str} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=344,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            balance=Balance(),
+            location_label=user_address,
+            notes='Set ENS avatar attribute for hania.eth',
+            counterparty=CPT_ENS,
+            address=ENS_PUBLIC_RESOLVER_2_ADDRESS,
         ),
     ]
     assert events == expected_events

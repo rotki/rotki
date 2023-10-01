@@ -10,6 +10,7 @@ Changelog
 * :feature:`-` Transactions bridging from/to Base using the official bridge will be now decoded.
 * :bug:`-` History event header will now be visible only on mobile.
 * :bug:`6647` When PnL report generation is finished, users will not be redirected to the report page, but will get notified instead.
+* :bug:`6667` Wrong ENS name should no longer be reported for some edge case of ENS actions and the name should also appear in more events than before.
 
 * :release:`1.30.2 <2023-09-21>`
 * :feature:`-` Improved support for importing Binance CSV files.
