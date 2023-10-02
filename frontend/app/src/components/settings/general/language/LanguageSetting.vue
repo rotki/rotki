@@ -2,23 +2,18 @@
 import { supportedLanguages } from '@/data/supported-language';
 import { SupportedLanguage } from '@/types/frontend-settings';
 
-const props = defineProps({
-  dense: {
-    required: false,
-    type: Boolean,
-    default: false
-  },
-  showLabel: {
-    required: false,
-    type: Boolean,
-    default: true
-  },
-  useLocalSetting: {
-    required: false,
-    type: Boolean,
-    default: false
+const props = withDefaults(
+  defineProps<{
+    dense?: boolean;
+    showLabel?: boolean;
+    useLocalSetting?: boolean;
+  }>(),
+  {
+    dense: false,
+    showLabel: true,
+    useLocalSetting: false
   }
-});
+);
 
 const { useLocalSetting } = toRefs(props);
 
@@ -93,18 +88,21 @@ const { languageContributeUrl } = useInterop();
         </VSelect>
       </SettingsOption>
       <div class="ml-2">
-        <VTooltip open-delay="400" bottom max-width="400">
-          <template #activator="{ on }">
+        <RuiTooltip
+          :popper="{ placement: 'bottom', offsetDistance: 0 }"
+          tooltip-class="max-w-[25rem]"
+        >
+          <template #activator>
             <BaseExternalLink :href="languageContributeUrl">
-              <VBtn icon v-on="on">
-                <VIcon>mdi-account-edit</VIcon>
-              </VBtn>
+              <RuiButton variant="text" icon>
+                <RuiIcon name="file-edit-line" />
+              </RuiButton>
             </BaseExternalLink>
           </template>
           <span>
             {{ t('general_settings.language_contribution_tooltip') }}
           </span>
-        </VTooltip>
+        </RuiTooltip>
       </div>
     </div>
     <div v-if="!useLocalSetting" class="mb-n10">
