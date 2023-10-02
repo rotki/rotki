@@ -35,6 +35,7 @@
   <a href="https://rotki.com/checkout/plan" target="_blank">💻 Pro version</a>
 </p>
 
+---
 
 ## Overview
 [Rotki](https://rotki.com/) is an open source portfolio tracking, analytics, accounting, and tax reporting tool that protects your privacy.  The mission of rotki is to bring transparency into the crypto and financial sectors through the use of open source. Most importantly, unlike virtually every other competing service which consists of closed source SaaS onto which you are forced to hand over all your financial data, with rotki your data is stored encrypted locally in your computer. It enables you to take ownership of your financial data!
@@ -106,7 +107,7 @@ To get in touch with Rotki team for bugs/feature requests, support questions or 
 We are thankful to all the people who have contributed to this project.
 
 <a href="https://github.com/rotki/rotki/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=rotki/rotki" />
+  <img src="https://contrib.rocks/image?repo=rotki/rotki&max=999&anon=1&columns=12" />
 </a>
 
 #### GitHub sponsor
@@ -127,6 +128,7 @@ Your contribution will go directly towards enhancing the project, covering devel
 We appreciate every donation, no matter the size. It helps to ensure the project's sustainability and motivates us to continue delivering valuable updates and improvements.
 
 Thank you for considering a donation to support our work!
+
 ## License
 
-Distributed under the AGPLv3 License. See [`LICENSE.md`](https://github.com/rotki/rotki/blob/develop/LICENSE.md) for more information
+rotki is committed to being open and transparent. Our chosen license ensures that the software remains open to use and that contributions are transparent and welcomed. Distributed under the **AGPLv3** License. See [`LICENSE.md`](https://github.com/rotki/rotki/blob/develop/LICENSE.md) for more information
