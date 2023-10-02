@@ -24,10 +24,10 @@ export const downloadFileByBlobResponse = (
 export const downloadFileByTextContent = (
   text: string,
   filename: string,
-  type: 'plain' | 'json' | 'csv' = 'plain'
+  type: 'text/plain' | 'application/json' | 'text/csv' = 'text/plain'
 ) => {
   const file = new Blob([text], {
-    type: `text/${type}`
+    type
   });
   const url = window.URL.createObjectURL(file);
   downloadFileByUrl(url, filename);

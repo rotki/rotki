@@ -123,7 +123,7 @@ const exportData = async ({ start, end }: ProfitLossReportPeriod) => {
       downloadFileByTextContent(
         JSON.stringify(result, null, 2),
         'pnl_debug.json',
-        'json'
+        'application/json'
       );
     }
   } catch (e: any) {
