@@ -16,7 +16,6 @@ import gevent
 import requests
 from requests import Response
 
-from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import (
     HistoryBaseEntryType,
@@ -77,6 +76,7 @@ from rotkehlchen.utils.mixins.lockable import protect_with_lock
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
+    from rotkehlchen.accounting.ledger_actions import LedgerAction
     from rotkehlchen.assets.asset import Asset, AssetWithOracles
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
@@ -696,7 +696,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
             self,
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,
-    ) -> list[LedgerAction]:
+    ) -> list['LedgerAction']:
         return []  # noop for kraken
 
     def process_kraken_events_for_trade(
