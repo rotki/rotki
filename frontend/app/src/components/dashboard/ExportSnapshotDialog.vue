@@ -6,9 +6,9 @@ import { api } from '@/services/rotkehlchen-api';
 
 const props = withDefaults(
   defineProps<{
-    value: boolean;
-    timestamp: number;
-    balance: number;
+    value?: boolean;
+    timestamp?: number;
+    balance?: number;
   }>(),
   {
     value: false,

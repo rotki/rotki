@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import {
-  TimeFramePeriod,
+  type TimeFramePeriod,
   type Timeframe,
   type Timeframes,
   getTimeframeByRange
@@ -13,19 +13,13 @@ import {
   type TooltipOptions
 } from 'chart.js';
 import dayjs from 'dayjs';
-import { type PropType } from 'vue';
 import { type ValueOverTime } from '@/types/graphs';
 
-const props = defineProps({
-  timeframe: {
-    required: true,
-    type: String as PropType<TimeFramePeriod>,
-    validator: (value: TimeFramePeriod) =>
-      Object.values(TimeFramePeriod).includes(value)
-  },
-  timeframes: { required: true, type: Object as PropType<Timeframes> },
-  chartData: { required: true, type: Object as PropType<NetValue> }
-});
+const props = defineProps<{
+  timeframe: TimeFramePeriod;
+  timeframes: Timeframes;
+  chartData: NetValue;
+}>();
 
 const { t } = useI18n();
 
