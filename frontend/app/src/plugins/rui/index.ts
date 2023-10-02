@@ -42,6 +42,7 @@ import {
   RiFileEditLine,
   RiFileList3Line,
   RiFileSettingsLine,
+  RiFileTextLine,
   RiFileUploadLine,
   RiFilterLine,
   RiFolderOpenLine,
@@ -77,6 +78,7 @@ import {
   RiSettings3Line,
   RiSettings4Line,
   RiShuffleLine,
+  RiSkipRightLine,
   RiStickyNoteLine,
   RiSunLine,
   RiSwapLine,
@@ -179,6 +181,8 @@ Vue.use(RuiPlugin, {
     RiFileEditLine,
     RiEditLine,
     RiDeleteBin5Line,
-    RiGitCommitLine
+    RiGitCommitLine,
+    RiSkipRightLine,
+    RiFileTextLine
   ]
 });

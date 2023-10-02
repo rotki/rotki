@@ -2,7 +2,6 @@
 import { type BigNumber } from '@rotki/common';
 import { type Message } from '@rotki/common/lib/messages';
 import dayjs from 'dayjs';
-import { api } from '@/services/rotkehlchen-api';
 
 const props = withDefaults(
   defineProps<{
@@ -38,14 +37,12 @@ const formattedSelectedBalance = computed<BigNumber | null>(() => {
 });
 
 const downloadSnapshot = async () => {
-  const resp = await snapshotApi.downloadSnapshot(get(timestamp));
-
-  const url = window.URL.createObjectURL(resp.request.response);
+  const response = await snapshotApi.downloadSnapshot(get(timestamp));
 
   const date = dayjs(get(timestamp) * 1000).format('YYYYDDMMHHmmss');
   const fileName = `${date}-snapshot.zip`;
 
-  downloadFileByUrl(url, fileName);
+  downloadFileByBlobResponse(response, fileName);
 
   updateVisibility(false);
 };
@@ -55,16 +52,14 @@ const { setMessage } = useMessageStore();
 const { t } = useI18n();
 
 const snapshotApi = useSnapshotApi();
-const interop = useInterop();
+const { appSession, openDirectory } = useInterop();
 
 const exportSnapshotCSV = async () => {
   let message: Message | null = null;
 
   try {
-    if (interop.isPackaged && api.defaultBackend) {
-      const path = await interop.openDirectory(
-        t('dashboard.snapshot.select_directory').toString()
-      );
+    if (appSession) {
+      const path = await openDirectory(t('common.select_directory').toString());
 
       if (!path) {
         return;
@@ -101,7 +96,7 @@ const exportSnapshotCSV = async () => {
 };
 
 const exportSnapshot = async () => {
-  if (interop.isPackaged) {
+  if (appSession) {
     await exportSnapshotCSV();
   } else {
     await downloadSnapshot();

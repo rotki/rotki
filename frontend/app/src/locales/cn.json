@@ -623,6 +623,25 @@
         "message_title": "后端消息"
       }
     },
+    "online_events": {
+      "error": {
+        "description": "使用查询类型 {queryType} 查询在线事件失败：{error}",
+        "title": "在线事件查询"
+      },
+      "task": {
+        "description": "请求新的 {queryType} 事件",
+        "title": "查询事件"
+      },
+      "skipped": {
+        "csv_export": {
+          "message": {
+            "failure": "跳过事件导出失败",
+            "success": "成功导出跳过的事件到CSV"
+          },
+          "title": "CSV导出"
+        }
+      }
+    },
     "reports": {
       "csv_export": {
         "message": {
@@ -1380,7 +1399,9 @@
       "delete": "删除",
       "dismiss": "驳回",
       "download": "下载",
+      "download_csv": "下载 CSV",
       "edit": "编辑",
+      "export_csv": "导出 CSV",
       "filter": "过滤器",
       "finish": "完成",
       "generate": "生成",
@@ -1426,6 +1447,7 @@
     "refresh": "刷新",
     "rewards": "奖励",
     "select_address": "选择地址",
+    "select_directory": "选择目录",
     "status": "地位",
     "total": "总计",
     "tx": "Tx",
@@ -1677,7 +1699,6 @@
         }
       },
       "export_database_snapshot": "导出数据库快照",
-      "select_directory": "选择目录",
       "subtitle": "点击下方按钮下载快照"
     }
   },
@@ -3656,18 +3677,15 @@
       "show_issues": "显示问题"
     },
     "csv_export_error": "导出错误",
-    "download_csv": "下载 CSV",
     "download_failed": "无法下载报告",
     "error": {
       "subtitle": "由于错误无法生成报告",
       "title": "损益表生成"
     },
-    "export_csv": "导出 CSV",
     "loading": "正在加载您的 PnL 报告，请稍候",
     "loading_hint": "您的报告生成可能需要一段时间，具体取决于您在选定时间段内执行的交易量和操作。",
     "loading_message": "正在生成您的报告，请稍候...",
     "report_period": "报告从{start}到{end}",
-    "select_directory": "选择目录",
     "settings_tooltip": "打开会计设置",
     "upgrade": "从 {start} 开始处理了 {processed} 个事件。",
     "upgrade2": "已达到免费版本的限制。要获得完整报告，请升级到{link}"
@@ -3697,7 +3715,6 @@
         "success": "PnL报告调试数据导入成功",
         "title": "导入PnL报告调试数据"
       },
-      "select_directory": "选择目录",
       "title": "调试"
     },
     "notification": {
@@ -4018,6 +4035,26 @@
       },
       "loading": "正在加载事件...",
       "no_data": "事件被隐藏是因为它们包含被忽略的资产",
+      "skipped": {
+        "csv_export_error": "导出为CSV时出错",
+        "download_failed": "无法下载CSV",
+        "headers": {
+          "number": "被跳过的事件数量"
+        },
+        "reprocess": {
+          "action": "重新处理事件",
+          "failed": {
+            "title": "重新处理被跳过事件时出错",
+            "no_processed_events": "未处理任何被跳过的外部事件"
+          },
+          "success": {
+            "all": "所有被跳过的外部事件已被处理",
+            "some": "已处理 {successfull} 个（共 {total} 个）被跳过的外部事件",
+            "title": "已处理的被跳过事件"
+          }
+        },
+        "title": "被跳过的外部事件"
+      },
       "view": {
         "hide": "隐藏事件",
         "show": "显示事件 ({length})"

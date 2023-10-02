@@ -626,6 +626,25 @@
         "message_title": "Backend messages"
       }
     },
+    "online_events": {
+      "error": {
+        "description": "Αποτυχία ερωτήματος online εκδηλώσεων με τύπο ερωτήματος {queryType}: {error}",
+        "title": "Ερώτημα Εκδηλώσεων Σε Απευθείας Σύνδεση"
+      },
+      "task": {
+        "description": "Αίτημα για νέες εκδηλώσεις {queryType}",
+        "title": "Ερώτημα για Εκδηλώσεις"
+      },
+      "skipped": {
+        "csv_export": {
+          "message": {
+            "failure": "Απέτυχε η εξαγωγή παραγραφών εκδηλώσεων",
+            "success": "Επιτυχής εξαγωγή παραγραφών εκδηλώσεων σε CSV"
+          },
+          "title": "Εξαγωγή σε CSV"
+        }
+      }
+    },
     "reports": {
       "csv_export": {
         "message": {
@@ -1353,7 +1372,9 @@
       "delete": "Delete",
       "dismiss": "Dismiss",
       "download": "Download",
+      "download_csv": "Download CSV",
       "edit": "Edit",
+      "export_csv": "Export CSV",
       "filter": "Filter",
       "finish": "Finish",
       "generate": "Generate",
@@ -1396,6 +1417,8 @@
     "protocol": "Protocol",
     "refresh": "Ανανέωση",
     "rewards": "Rewards",
+    "select_address": "Επιλογή διεύθυνσης(εων)",
+    "select_directory": "Επιλέξτε έναν κατάλογο",
     "status": "Κατάσταση",
     "total": "Total",
     "tx": "Tx",
@@ -1642,7 +1665,6 @@
         }
       },
       "export_database_snapshot": "Export database snapshot",
-      "select_directory": "Select a directory",
       "subtitle": "Click the button below to download snapshot for"
     }
   },
@@ -3561,18 +3583,15 @@
       "show_issues": "Show Issues"
     },
     "csv_export_error": "There was an error with export",
-    "download_csv": "Download CSV",
     "download_failed": "Download of report is not possible",
     "error": {
       "subtitle": "The report generation was not possible due to an error",
       "title": "Profit and Loss Report Generation"
     },
-    "export_csv": "Export CSV",
     "loading": "Please wait while your PnL report is loading",
     "loading_hint": "Your report generation might take a while depending on the amount of trades and actions you performed during the selected period.",
     "loading_message": "Please wait while your report is generated...",
     "report_period": "Report starting from {start} to {end}",
-    "select_directory": "Select a directory",
     "settings_tooltip": "Open the accounting settings",
     "upgrade": "{processed} total events have been processed starting from {start}.",
     "upgrade2": "The limit of the free version has been reached. To get the full report please upgrade to {link}"
@@ -3602,7 +3621,6 @@
         "success": "PnL report debug data imported successfully",
         "title": "Import PnL report debug data"
       },
-      "select_directory": "Select a directory",
       "title": "Debug"
     },
     "notification": {
@@ -3922,6 +3940,27 @@
         "event_identifier": "Event information"
       },
       "loading": "Loading events...",
+      "no_data": "Τα γεγονότα είναι κρυμμένα επειδή περιέχουν αγνοούμενα αγαθά",
+      "skipped": {
+        "csv_export_error": "Παρουσιάστηκε σφάλμα κατά την εξαγωγή σε CSV",
+        "download_failed": "Η λήψη του CSV δεν είναι δυνατή",
+        "headers": {
+          "number": "Αριθμός αγνοημένων γεγονότων"
+        },
+        "reprocess": {
+          "action": "Επεξεργασία ξανά των γεγονότων",
+          "failed": {
+            "title": "Σφάλμα κατά την επεξεργασία των αγνοημένων γεγονότων",
+            "no_processed_events": "Δεν έχουν επεξεργαστεί αγνοημένα εξωτερικά γεγονότα"
+          },
+          "success": {
+            "all": "Όλα τα αγνοημένα εξωτερικά γεγονότα έχουν επεξεργαστεί",
+            "some": "{successfull} από {total} αγνοημένα εξωτερικά γεγονότα έχουν επεξεργαστεί",
+            "title": "Επεξεργασία αγνοημένων γεγονότων"
+          }
+        },
+        "title": "Αγνοημένα εξωτερικά γεγονότα"
+      },
       "view": {
         "hide": "Hide events",
         "show": "Show events ({length})"

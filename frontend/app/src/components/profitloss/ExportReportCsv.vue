@@ -1,19 +1,18 @@
 <script setup lang="ts">
-import { api } from '@/services/rotkehlchen-api';
-
-defineProps({
-  icon: {
-    required: false,
-    type: Boolean,
-    default: false
+withDefaults(
+  defineProps<{
+    icon?: boolean;
+  }>(),
+  {
+    icon: false
   }
-});
+);
 
 const { createCsv } = useReportsStore();
 const { setMessage } = useMessageStore();
 
 const { t } = useI18n();
-const { isPackaged, openDirectory } = useInterop();
+const { appSession, openDirectory } = useInterop();
 
 const { downloadReportCSV } = useReportsApi();
 
@@ -27,9 +26,9 @@ const showMessage = (description: string) => {
 
 const exportCSV = async () => {
   try {
-    if (isPackaged && api.defaultBackend) {
+    if (appSession) {
       const directory = await openDirectory(
-        t('profit_loss_report.select_directory').toString()
+        t('common.select_directory').toString()
       );
       if (!directory) {
         return;
@@ -47,44 +46,38 @@ const exportCSV = async () => {
     showMessage(e.message);
   }
 };
+
+const [DefineButton, ReuseButton] = createReusableTemplate();
+
+const label = computed(() =>
+  appSession ? t('common.actions.export_csv') : t('common.actions.download_csv')
+);
 </script>
 
 <template>
-  <span v-if="icon">
-    <VTooltip top open-delay="400">
-      <template #activator="{ on, attrs }">
-        <VBtn
-          icon
-          v-bind="attrs"
-          small
-          color="primary"
-          v-on="on"
-          @click="exportCSV()"
-        >
-          <VIcon small> mdi-export </VIcon>
-        </VBtn>
-      </template>
-      <span>
-        {{
-          isPackaged
-            ? t('profit_loss_report.export_csv')
-            : t('profit_loss_report.download_csv')
-        }}
-      </span>
-    </VTooltip>
+  <span>
+    <DefineButton>
+      <RuiButton
+        :size="icon ? 'sm' : 'md'"
+        :variant="icon ? 'text' : 'filled'"
+        :icon="icon"
+        color="primary"
+        @click="exportCSV()"
+      >
+        <div class="flex items-center gap-2">
+          <RuiIcon size="20" name="file-download-line" />
+          <span v-if="!icon">{{ label }}</span>
+        </div>
+      </RuiButton>
+    </DefineButton>
+    <span v-if="icon">
+      <RuiTooltip :popper="{ placement: 'top' }" open-delay="400">
+        <template #activator>
+          <ReuseButton />
+        </template>
+        <span> {{ label }} </span>
+      </RuiTooltip>
+    </span>
+    <ReuseButton v-else />
   </span>
-  <VBtn
-    v-else
-    class="profit_loss_report__export-csv"
-    depressed
-    color="primary"
-    @click="exportCSV()"
-  >
-    <VIcon small class="mr-2"> mdi-export </VIcon>
-    {{
-      isPackaged
-        ? t('profit_loss_report.export_csv')
-        : t('profit_loss_report.download_csv')
-    }}
-  </VBtn>
 </template>

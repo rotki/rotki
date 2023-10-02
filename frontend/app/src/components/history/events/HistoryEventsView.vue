@@ -17,13 +17,15 @@ import {
   type EvmHistoryEvent,
   type HistoryEvent,
   type HistoryEventEntry,
-  type HistoryEventRequestPayload
+  type HistoryEventRequestPayload,
+  type SkippedHistoryEventsSummary
 } from '@/types/history/events';
 import { RouterAccountsSchema } from '@/types/route';
 import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import { type Writeable } from '@/types';
 import HistoryEventsAction from '@/components/history/events/HistoryEventsAction.vue';
+import HistoryEventsSkippedExternalEvents from '@/components/history/events/HistoryEventsSkippedExternalEvents.vue';
 import type { Filters, Matcher } from '@/composables/filters/events';
 
 const props = withDefaults(
@@ -568,6 +570,33 @@ const includeOnlineEvents: ComputedRef<boolean> = useEmptyOrSome(
 );
 
 const { locationData } = useLocations();
+
+const { getSkippedEventsSummary } = useSkippedHistoryEventsApi();
+
+const { state: skippedExternalEvents, execute: executeSkippedExternalEvents } =
+  useAsyncState<SkippedHistoryEventsSummary>(
+    getSkippedEventsSummary,
+    {
+      locations: {},
+      total: 0
+    },
+    {
+      immediate: true,
+      resetOnExecute: false,
+      delay: 0
+    }
+  );
+
+watch(onlineHistoryEventsLoading, async (isLoading, wasLoading) => {
+  if (!isLoading && wasLoading) {
+    await executeSkippedExternalEvents();
+  }
+});
+
+const onSkippedExternalEventsReprocessed = async () => {
+  await executeSkippedExternalEvents();
+  await fetchData();
+};
 </script>
 
 <template>
@@ -579,6 +608,10 @@ const { locationData } = useLocations();
       {{ usedTitle }}
     </template>
     <template #buttons>
+      <HistoryEventsSkippedExternalEvents
+        :skipped-events="skippedExternalEvents"
+        @reprocessed="onSkippedExternalEventsReprocessed()"
+      />
       <RuiTooltip open-delay="400">
         <template #activator>
           <RuiButton

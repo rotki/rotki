@@ -2,7 +2,6 @@
 import useVuelidate from '@vuelidate/core';
 import { helpers, requiredIf } from '@vuelidate/validators';
 import { displayDateFormatter } from '@/data/date_formatter';
-import { api } from '@/services/rotkehlchen-api';
 import { DateFormat } from '@/types/date-format';
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
@@ -21,7 +20,7 @@ const formatHelp = ref<boolean>(false);
 const file = ref<File | null>(null);
 
 const { t } = useI18n();
-const { isPackaged } = useInterop();
+const { appSession } = useInterop();
 
 const rules = {
   dateInputFormat: {
@@ -91,7 +90,7 @@ const uploadPackaged = async (file: string) => {
 const uploadFile = async () => {
   const fileVal = get(file);
   if (fileVal) {
-    if (isPackaged && api.defaultBackend) {
+    if (appSession) {
       await uploadPackaged(fileVal.path);
     } else {
       const formData = new FormData();
