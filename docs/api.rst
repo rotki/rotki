@@ -5020,9 +5020,9 @@ Exporting History Events
    :statuscode 409: No user is logged in or failure at event export.
    :statuscode 500: Internal rotki error
 
-.. http:patch:: /api/(version)/history/events/export
+.. http:put:: /api/(version)/history/events/export
 
-   Doing a PATCH on this endpoint with the given filter parameters will download a csv with all history events matching the filter. All arguments are optional. If no filter is used all the events will be downloaded.
+   Doing a PUT on this endpoint with the given filter parameters will download a csv with all history events matching the filter. All arguments are optional. If no filter is used all the events will be downloaded.
 
    .. _filter-request-args-label:
 
@@ -5030,7 +5030,7 @@ Exporting History Events
 
    .. http:example:: curl wget httpie python-requests
 
-      PATCH /api/1/history/events/export HTTP/1.1
+      PUT /api/1/history/events/export HTTP/1.1
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
@@ -11156,7 +11156,7 @@ Get mappings from addressbook
 
 .. http:post:: /api/(version)/names/addressbook
 
-    Doing a POST on the addressbook endpoint with either /global or /private postfix with a list of addresses will return found address mappings for specified addresses. If addresses parameter isn't specified, all known mappings are returned.
+    Doing a POST on the addressbook endpoint with either /global or /private postfix with a list of addresses will return found address mappings with the specified filter arguments. If no filter argument is specified, all known mappings are returned.
 
     **Example Request**
 
@@ -11167,13 +11167,21 @@ Get mappings from addressbook
         Content-Type: application/json;charset=UTF-8
 
         {
+          "offset": 0,
+          "limit": 1,
+          "blockchain": "eth",
+          "name_substring": "neighbour",
           "addresses": [
             {"address": "0x9531c059098e3d194ff87febb587ab07b30b1306", "blockchain": "eth"},
             {"address": "0x8A4973ABBCEd48596D6D79ac6B53Ceda65e342CD"}
            ]
         }
 
-    :reqjson object addresses: List of addresses that the backend should find names for. When the blockchain field is missing it will delete the other entries for the same address and the name will be used for all blockchains.
+    :reqjson int[optional] limit: This signifies the limit of records to return as per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
+    :reqjson int[optional] offset: This signifies the offset from which to start the return of records per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
+    :reqjson str[optional] name_substring: The substring to use as filter for the name to be found in the addressbook.
+    :reqjson str[optional] blockchain: The chain in which to use the provided name.
+    :reqjson object[optional] addresses: List of addresses that the backend should find names for.
 
     **Example Response**
 
@@ -11183,14 +11191,20 @@ Get mappings from addressbook
         Content-Type: application/zip
 
         {
-            "result": [
+            "result": {
+              "entries": [
                 { "address": "0x9531c059098e3d194ff87febb587ab07b30b1306", "name": "My dear friend Tom", "blockchain": "eth" },
                 { "address": "0x8A4973ABBCEd48596D6D79ac6B53Ceda65e342CD", "name": "Neighbour Frank", "blockchain": "eth" }
-            ],
+               ],
+              "entries_found": 1,
+              "entries_total": 3
+            },
             "message": ""
         }
 
-    :resjson object result: A dictionary of mappings. Address -> name.
+    :resjson object entries: An array of address objects. Each entry is composed of the address under the ``"address"`` key and other metadata like ``"name"`` and ``"blockchain"`` for each address.
+    :resjson int entries_found: The number of entries found for the current filter. Ignores pagination.
+    :resjson int entries_total: The number of total entries ignoring all filters.
     :resjson str message: Error message if any errors occurred.
     :statuscode 200: Mappings were returned successfully.
     :statuscode 400: Provided JSON is in some way malformed.

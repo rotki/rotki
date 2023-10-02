@@ -18,6 +18,7 @@ from rotkehlchen.chain.optimism.modules.velodrome.velodrome_cache import (
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.constants.timing import WEEK_IN_SECONDS
 from rotkehlchen.db.addressbook import DBAddressbook
+from rotkehlchen.db.filtering import AddressbookFilterQuery
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.globaldb.cache import (
     globaldb_get_general_cache_values,
@@ -167,7 +168,10 @@ def test_velodrome_cache(optimism_inquirer):
     assert gauges >= VELODROME_SOME_EXPECTED_GAUGES
 
     with GlobalDBHandler().conn.read_ctx() as cursor:
-        addressbook_entries = DBAddressbook(optimism_inquirer.database).get_addressbook_entries(cursor=cursor)  # noqa: E501
+        addressbook_entries = DBAddressbook(optimism_inquirer.database).get_addressbook_entries(
+            cursor=cursor,
+            filter_query=AddressbookFilterQuery.make(),
+        )[0]
         asset_identifiers = cursor.execute('SELECT identifier FROM assets').fetchall()
 
     assert all(entry in addressbook_entries for entry in VELODROME_SOME_EXPECTED_ADDRESBOOK_ENTRIES)  # noqa: E501
@@ -208,7 +212,10 @@ def test_curve_cache(rotkehlchen_instance, use_curve_api):
     with GlobalDBHandler().conn.write_ctx() as write_cursor:
         write_cursor.execute('DELETE FROM address_book')
     with GlobalDBHandler().conn.read_ctx() as cursor:
-        known_addresses = db_addressbook.get_addressbook_entries(cursor=cursor)
+        known_addresses = db_addressbook.get_addressbook_entries(
+            cursor=cursor,
+            filter_query=AddressbookFilterQuery.make(),
+        )[0]
     assert len(known_addresses) == 0
 
     curve_address_provider = ethereum_inquirer.contracts.contract(string_to_evm_address('0x0000000022D53366457F9d5E68Ec105046FC4383'))  # noqa: E501
@@ -310,7 +317,10 @@ def test_curve_cache(rotkehlchen_instance, use_curve_api):
         assert globaldb_get_unique_cache_value(cursor, key_parts=(CacheType.CURVE_GAUGE_ADDRESS, 'pool-address-1')) is None  # noqa: E501
 
     with GlobalDBHandler().conn.read_ctx() as cursor:
-        known_addresses = db_addressbook.get_addressbook_entries(cursor=cursor)
+        known_addresses = db_addressbook.get_addressbook_entries(
+            cursor=cursor,
+            filter_query=AddressbookFilterQuery.make(),
+        )[0]
     if use_curve_api:
         assert known_addresses == CURVE_EXPECTED_ADDRESBOOK_ENTRIES_FROM_API
     else:

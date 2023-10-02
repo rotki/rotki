@@ -1750,6 +1750,7 @@ class DBHandler:
             self,
             cursor: 'DBCursor',
             entries_table: Literal[
+                'address_book',
                 'asset_movements',
                 'trades',
                 'evm_transactions',

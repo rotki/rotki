@@ -118,6 +118,7 @@ from rotkehlchen.api.v1.schemas import (
     NFTLpFilterSchema,
     OptionalAddressesWithBlockchainsListSchema,
     QueriedAddressesSchema,
+    QueryAddressbookSchema,
     ReverseEnsSchema,
     RpcAddNodeSchema,
     RpcNodeEditSchema,
@@ -171,6 +172,7 @@ from rotkehlchen.chain.evm.types import NodeName, WeightedNode
 from rotkehlchen.constants.location_details import LOCATION_DETAILS
 from rotkehlchen.data_import.manager import DataImportSource
 from rotkehlchen.db.filtering import (
+    AddressbookFilterQuery,
     AssetMovementsFilterQuery,
     AssetsFilterQuery,
     CustomAssetsFilterQuery,
@@ -2693,19 +2695,20 @@ class ReverseEnsResource(BaseMethodView):
 
 
 class AddressbookResource(BaseMethodView):
-    post_delete_schema = AddressbookAddressesSchema()
+    delete_schema = AddressbookAddressesSchema()
+    post_schema = QueryAddressbookSchema()
     update_schema = AddressbookUpdateSchema()
 
     @require_loggedin_user()
-    @use_kwargs(post_delete_schema, location='json_and_view_args')
+    @use_kwargs(post_schema, location='json_and_view_args')
     def post(
             self,
+            filter_query: AddressbookFilterQuery,
             book_type: AddressbookType,
-            addresses: Optional[list[OptionalChainAddress]],
     ) -> Response:
         return self.rest_api.get_addressbook_entries(
             book_type=book_type,
-            chain_addresses=addresses,
+            filter_query=filter_query,
         )
 
     @require_loggedin_user()
@@ -2727,7 +2730,7 @@ class AddressbookResource(BaseMethodView):
         return self.rest_api.update_addressbook_entries(book_type=book_type, entries=entries)
 
     @require_loggedin_user()
-    @use_kwargs(post_delete_schema, location='json_and_view_args')
+    @use_kwargs(delete_schema, location='json_and_view_args')
     def delete(
             self,
             book_type: AddressbookType,
@@ -2968,5 +2971,5 @@ class ExportHistoryEventResource(BaseMethodView):
 
     @require_loggedin_user()
     @use_kwargs(put_schema, location='json_and_query')
-    def patch(self, filter_query: 'HistoryBaseEntryFilterQuery') -> Response:
+    def put(self, filter_query: 'HistoryBaseEntryFilterQuery') -> Response:
         return self.rest_api.export_history_events(filter_query=filter_query, directory_path=None)

@@ -1,7 +1,7 @@
 import sqlite3
 from collections.abc import Generator
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Optional
 
 from pysqlcipher3 import dbapi2
 
@@ -18,6 +18,7 @@ from rotkehlchen.types import (
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.filtering import AddressbookFilterQuery
 
 
 class DBAddressbook:
@@ -48,45 +49,27 @@ class DBAddressbook:
     def get_addressbook_entries(
             self,
             cursor: 'DBCursor',
-            optional_chain_addresses: Optional[list[OptionalChainAddress]] = None,
-    ) -> list[AddressbookEntry]:
+            filter_query: 'AddressbookFilterQuery',
+    ) -> tuple[list[AddressbookEntry], int]:
         """
-        Returns addressbook entries for the given pairs (address, blockchain).
+        Returns paginated addressbook entries for the given pairs (address, blockchain).
         If blockchain is None for a given pair, returns all entries for the pair's address.
         """
-        entries = []
-        if optional_chain_addresses is None:
-            cursor.execute('SELECT address, name, blockchain FROM address_book')
-            for address, name, blockchain_str in cursor:
-                deserialized_blockchain = SupportedBlockchain(blockchain_str) if blockchain_str is not None else None  # noqa: E501
-                entries.append(AddressbookEntry(
-                    address=ChecksumEvmAddress(address),
-                    name=name,
-                    blockchain=deserialized_blockchain,
-                ))
-        else:  # group the addresses by blockchain to minimize the number of db queries
-            query_filters = []
-            bindings: list[Union[str, ChecksumEvmAddress]] = []
-            for optional_chain_address in optional_chain_addresses:
-                query_part = 'address = ?'
-                bindings.append(optional_chain_address.address)
-                if optional_chain_address.blockchain is not None:
-                    query_part += ' AND blockchain = ?'
-                    bindings.append(optional_chain_address.blockchain.value)
+        query, bindings = filter_query.prepare(with_pagination=False) if filter_query is not None else ('', [])  # noqa: E501
+        query = 'SELECT COUNT(*) FROM address_book ' + query
+        total_found_result: int = cursor.execute(query, bindings).fetchone()[0]
 
-                query_filters.append(query_part)
-
-            query_str_filter = ' OR '.join(query_filters)
-            query = 'SELECT address, name, blockchain FROM address_book WHERE ' + query_str_filter  # noqa: E501
-            cursor.execute(query, bindings)
-            for address, name, blockchain_str in cursor:
-                entries.append(AddressbookEntry(
-                    address=ChecksumEvmAddress(address),
-                    name=name,
-                    blockchain=SupportedBlockchain(blockchain_str) if blockchain_str is not None else None,  # noqa: E501
-                ))
-
-        return entries
+        query, bindings = filter_query.prepare() if filter_query is not None else ('', [])
+        query = 'SELECT address, name, blockchain FROM address_book ' + query
+        cursor.execute(query, bindings)
+        entries = [
+            AddressbookEntry(
+                address=ChecksumEvmAddress(address),
+                name=name,
+                blockchain=SupportedBlockchain(blockchain_str) if blockchain_str is not None else None,  # noqa: E501
+            ) for address, name, blockchain_str in cursor
+        ]
+        return entries, total_found_result
 
     def add_addressbook_entries(
             self,

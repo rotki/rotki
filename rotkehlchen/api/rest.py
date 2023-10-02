@@ -120,6 +120,7 @@ from rotkehlchen.db.ens import DBEns
 from rotkehlchen.db.eth2 import DBEth2
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import (
+    AddressbookFilterQuery,
     AssetMovementsFilterQuery,
     AssetsFilterQuery,
     CustomAssetsFilterQuery,
@@ -3785,16 +3786,25 @@ class RestAPI:
     def get_addressbook_entries(
             self,
             book_type: AddressbookType,
-            chain_addresses: Optional[list[OptionalChainAddress]],
+            filter_query: AddressbookFilterQuery,
     ) -> Response:
         db_addressbook = DBAddressbook(self.rotkehlchen.data.db)
         with db_addressbook.read_ctx(book_type) as cursor:
-            entries = db_addressbook.get_addressbook_entries(
+            entries, entries_found = db_addressbook.get_addressbook_entries(
                 cursor=cursor,
-                optional_chain_addresses=chain_addresses,
+                filter_query=filter_query,
+            )
+            entries_total = self.rotkehlchen.data.db.get_entries_count(
+                cursor=cursor,
+                entries_table='address_book',
             )
         serialized = [entry.serialize() for entry in entries]
-        return api_response(_wrap_in_ok_result(serialized))
+        result = {
+            'entries': serialized,
+            'entries_found': entries_found,
+            'entries_total': entries_total,
+        }
+        return api_response(_wrap_in_ok_result(result))
 
     def add_addressbook_entries(
             self,
