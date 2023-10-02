@@ -25,6 +25,8 @@ from rotkehlchen.types import (
     ChecksumEvmAddress,
     EVMTxHash,
     Location,
+    OptionalChainAddress,
+    SupportedBlockchain,
     Timestamp,
     TradeType,
 )
@@ -578,6 +580,25 @@ class DBMultiBytesFilter(DBMultiValueFilter[bytes]):
 
 class DBMultiIntegerFilter(DBMultiValueFilter[int]):
     """Filter a column having an integer value out of a selection of values"""
+
+
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class DBOptionalChainAddressesFilter(DBFilter):
+    """Filter the address column by a selection of optional chain addresses"""
+    optional_chain_addresses: Optional[list[OptionalChainAddress]]
+
+    def prepare(self) -> tuple[list[str], list[str]]:
+        query_filters = []
+        bindings: list[Union[str, ChecksumEvmAddress]] = []
+        if self.optional_chain_addresses is not None:
+            for optional_chain_address in self.optional_chain_addresses:
+                query_part = 'address = ?'
+                bindings.append(optional_chain_address.address)
+                if optional_chain_address.blockchain is not None:
+                    query_part += ' AND blockchain = ?'
+                    bindings.append(optional_chain_address.blockchain.value)
+                query_filters.append(query_part)
+        return query_filters, bindings
 
 
 class TradesFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLocation):
@@ -1326,6 +1347,49 @@ class UserNotesFilterQuery(DBFilterQuery, FilterWithTimestamp):
         if location is not None:
             filters.append(DBEqualsFilter(and_op=True, column='location', value=location))
         filters.append(filter_query.timestamp_filter)
+        filter_query.filters = filters
+        return filter_query
+
+
+class AddressbookFilterQuery(DBFilterQuery):
+    """
+    Filter used to find the paginated addressbook entries using the blockchain,
+    name and optional chain addresses as a filter.
+    """
+    @classmethod
+    def make(
+            cls,
+            and_op: bool = True,
+            limit: Optional[int] = None,
+            offset: Optional[int] = None,
+            blockchain: Optional[SupportedBlockchain] = None,
+            optional_chain_addresses: Optional[list[OptionalChainAddress]] = None,
+            substring_search: Optional[str] = None,
+    ) -> 'AddressbookFilterQuery':
+        filter_query = cls.create(
+            and_op=and_op,
+            limit=limit,
+            offset=offset,
+        )
+        filter_query = cast('AddressbookFilterQuery', filter_query)
+        filters: list[DBFilter] = []
+        if substring_search is not None:
+            filters.append(DBSubStringFilter(
+                and_op=True,
+                field='name',
+                search_string=substring_search,
+            ))
+        if blockchain is not None:
+            filters.append(DBEqualsFilter(
+                and_op=True,
+                column='blockchain',
+                value=blockchain.value,
+            ))
+        if optional_chain_addresses is not None:
+            filters.append(DBOptionalChainAddressesFilter(
+                and_op=False,
+                optional_chain_addresses=optional_chain_addresses,
+            ))
         filter_query.filters = filters
         return filter_query
 

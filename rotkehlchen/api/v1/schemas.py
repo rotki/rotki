@@ -44,6 +44,7 @@ from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.constants.resolver import EVM_CHAIN_DIRECTIVE
 from rotkehlchen.data_import.manager import DataImportSource
 from rotkehlchen.db.filtering import (
+    AddressbookFilterQuery,
     AssetMovementsFilterQuery,
     AssetsFilterQuery,
     CustomAssetsFilterQuery,
@@ -2555,6 +2556,34 @@ class AddressbookAddressesSchema(
     OptionalAddressesWithBlockchainsListSchema,
 ):
     ...
+
+
+class QueryAddressbookSchema(
+    BaseAddressbookSchema,
+    OptionalAddressesWithBlockchainsListSchema,
+    DBPaginationSchema,
+):
+    """Schema for querying addressbook entries"""
+    name_substring = fields.String(load_default=None)
+    blockchain = BlockchainField(load_default=None)
+
+    @post_load
+    def make_get_addressbook_query(
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
+    ) -> dict[str, Any]:
+        filter_query = AddressbookFilterQuery.make(
+            limit=data['limit'],
+            offset=data['offset'],
+            blockchain=data['blockchain'],
+            substring_search=data['name_substring'],
+            optional_chain_addresses=data['addresses'],
+        )
+        return {
+            'filter_query': filter_query,
+            'book_type': data['book_type'],
+        }
 
 
 class AddressbookEntrySchema(Schema):

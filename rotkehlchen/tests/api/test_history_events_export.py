@@ -109,7 +109,7 @@ def test_history_export_download_csv(
     assert_csv_export_response(response, csv_dir2, 2, includes_extra_headers=False)
 
     # now query the download CSV endpoint
-    response = requests.patch(
+    response = requests.put(
         api_url_for(rotkehlchen_api_server_with_exchanges, 'exporthistoryeventresource'),
     )
     temp_csv_file = Path(download_dir, FILENAME_HISTORY_EVENTS_CSV)

@@ -8,6 +8,7 @@ import pytest
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.db.addressbook import DBAddressbook
+from rotkehlchen.db.filtering import AddressbookFilterQuery
 from rotkehlchen.db.updates import RotkiDataUpdater, UpdateType
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -455,6 +456,9 @@ def test_global_addressbook(data_updater: RotkiDataUpdater) -> None:
 
     # Assert state of the address book after the update
     with GlobalDBHandler().conn.read_ctx() as cursor:
-        all_entries = db_addressbook.get_addressbook_entries(cursor=cursor)
+        all_entries = db_addressbook.get_addressbook_entries(
+            cursor=cursor,
+            filter_query=AddressbookFilterQuery.make(),
+        )[0]
 
     assert set(all_entries) == set(initial_entries[:2] + REMOTE_ADDRESSBOOK[:2])
