@@ -1,7 +1,7 @@
 import { type ActionResult } from '@rotki/common/lib/data';
 import {
   LocationData,
-  type NetValue,
+  NetValue,
   TimedAssetBalances,
   TimedBalances
 } from '@rotki/common/lib/statistics';
@@ -21,7 +21,7 @@ export const useStatisticsApi = () => {
       }
     );
 
-    return handleResponse(response);
+    return NetValue.parse(handleResponse(response));
   };
 
   const queryTimedBalancesData = async (

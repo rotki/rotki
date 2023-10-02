@@ -68,18 +68,19 @@ export const useStatisticsStore = defineStore('statistics', () => {
       dayjs().subtract(amount, unit).startOf(TimeUnit.DAY).unix()
     );
     const startingDate = allTimeframes[selectedTimeframe].startingDate();
+
     const startingValue: () => BigNumber = () => {
       const data = get(getNetValue(startingDate)).data;
       let start = data[0];
-      if (start === 0) {
+      if (start.isZero()) {
         for (let i = 1; i < data.length; i++) {
-          if (data[i] > 0) {
+          if (data[i].gt(0)) {
             start = data[i];
             break;
           }
         }
       }
-      return bigNumberify(start);
+      return start;
     };
 
     const starting = startingValue();
@@ -127,27 +128,20 @@ export const useStatisticsStore = defineStore('statistics', () => {
       const currency = get(currencySymbol);
       const rate = get(exchangeRate(currency)) ?? One;
 
-      const convert = (value: string | number | BigNumber): number => {
-        const bigNumber =
-          typeof value === 'string' || typeof value === 'number'
-            ? bigNumberify(value)
-            : value;
-        const convertedValue =
-          currency === CURRENCY_USD ? bigNumber : bigNumber.multipliedBy(rate);
-        return convertedValue.toNumber();
-      };
+      const convert = (value: BigNumber): BigNumber =>
+        currency === CURRENCY_USD ? value : value.multipliedBy(rate);
 
       const { times, data } = get(netValue);
 
       const now = Math.floor(Date.now() / 1000);
-      const netWorth = get(totalNetWorth).toNumber();
+      const netWorth = get(totalNetWorth);
 
       if (times.length === 0 && data.length === 0) {
         const oneDayTimestamp = 24 * 60 * 60;
 
         return {
           times: [now - oneDayTimestamp, now],
-          data: [0, netWorth]
+          data: [Zero, netWorth]
         };
       }
 

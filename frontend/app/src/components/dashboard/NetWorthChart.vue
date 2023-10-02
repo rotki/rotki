@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import {
-  TimeFramePeriod,
+  type TimeFramePeriod,
   type Timeframe,
   type Timeframes,
   getTimeframeByRange
@@ -13,19 +13,13 @@ import {
   type TooltipOptions
 } from 'chart.js';
 import dayjs from 'dayjs';
-import { type PropType } from 'vue';
 import { type ValueOverTime } from '@/types/graphs';
 
-const props = defineProps({
-  timeframe: {
-    required: true,
-    type: String as PropType<TimeFramePeriod>,
-    validator: (value: TimeFramePeriod) =>
-      Object.values(TimeFramePeriod).includes(value)
-  },
-  timeframes: { required: true, type: Object as PropType<Timeframes> },
-  chartData: { required: true, type: Object as PropType<NetValue> }
-});
+const props = defineProps<{
+  timeframe: TimeFramePeriod;
+  timeframes: Timeframes;
+  chartData: NetValue;
+}>();
 
 const { t } = useI18n();
 
@@ -169,10 +163,10 @@ const transformData = ({ times, data }: NetValue) => {
   times.forEach((epoch, i) => {
     const value = data[i];
 
-    if (i < times.length - 1 || value > 0) {
+    if (i < times.length - 1 || value.gt(0)) {
       newBalances.push({
         x: epoch * 1000,
-        y: value
+        y: value.toNumber()
       });
     } else {
       showVirtual = false;

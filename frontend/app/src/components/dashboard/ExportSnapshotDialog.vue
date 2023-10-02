@@ -4,13 +4,22 @@ import { type Message } from '@rotki/common/lib/messages';
 import dayjs from 'dayjs';
 import { api } from '@/services/rotkehlchen-api';
 
-const props = defineProps({
-  value: { required: false, type: Boolean, default: false },
-  timestamp: { required: false, type: Number, default: 0 },
-  balance: { required: false, type: Number, default: 0 }
-});
+const props = withDefaults(
+  defineProps<{
+    value?: boolean;
+    timestamp?: number;
+    balance?: number;
+  }>(),
+  {
+    value: false,
+    timestamp: 0,
+    balance: 0
+  }
+);
 
-const emit = defineEmits(['input']);
+const emit = defineEmits<{
+  (e: 'input', visible: boolean): void;
+}>();
 
 const { timestamp, balance } = toRefs(props);
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
@@ -176,19 +185,29 @@ const showDeleteConfirmation = () => {
         </div>
       </div>
       <template #buttons>
-        <VBtn color="primary" @click="editMode = true">
-          <VIcon class="mr-2">mdi-pencil-outline</VIcon>
-          {{ t('common.actions.edit') }}
-        </VBtn>
-        <VBtn color="error" @click="showDeleteConfirmation()">
-          <VIcon class="mr-2">mdi-delete-outline</VIcon>
-          {{ t('common.actions.delete') }}
-        </VBtn>
-        <VSpacer />
-        <VBtn color="primary" @click="exportSnapshot()">
-          <VIcon class="mr-2">mdi-download</VIcon>
+        <div class="flex items-center justify-between w-full">
+          <div class="flex items-center gap-2">
+            <RuiButton color="primary" @click="editMode = true">
+              <template #prepend>
+                <RuiIcon name="edit-line" />
+              </template>
+              {{ t('common.actions.edit') }}
+            </RuiButton>
+            <RuiButton color="error" @click="showDeleteConfirmation()">
+              <template #prepend>
+                <RuiIcon name="delete-bin-5-line" />
+              </template>
+              {{ t('common.actions.delete') }}
+            </RuiButton>
+          </div>
+        </div>
+
+        <RuiButton color="primary" @click="exportSnapshot()">
+          <template #prepend>
+            <RuiIcon name="file-download-line" />
+          </template>
           {{ t('common.actions.download') }}
-        </VBtn>
+        </RuiButton>
       </template>
     </Card>
     <EditSnapshotDialog

@@ -24,10 +24,12 @@ import {
   RiDashboardLine,
   RiDatabase2Line,
   RiDatabaseLine,
+  RiDeleteBin5Line,
   RiDeleteBinFill,
   RiDeleteBinLine,
   RiDownloadCloud2Line,
   RiDownloadCloudLine,
+  RiEditLine,
   RiErrorWarningLine,
   RiExchangeBoxLine,
   RiExchangeLine,
@@ -45,6 +47,7 @@ import {
   RiFolderOpenLine,
   RiFolderReceivedLine,
   RiGiftLine,
+  RiGitCommitLine,
   RiGitMergeLine,
   RiHistoryLine,
   RiImageLine,
@@ -173,6 +176,9 @@ Vue.use(RuiPlugin, {
     RiAlarmWarningLine,
     RiGitMergeLine,
     RiMore2Fill,
-    RiFileEditLine
+    RiFileEditLine,
+    RiEditLine,
+    RiDeleteBin5Line,
+    RiGitCommitLine
   ]
 });
