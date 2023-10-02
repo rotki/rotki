@@ -1811,21 +1811,23 @@ def test_upgrade_db_39_to_40(user_data_dir):  # pylint: disable=unused-argument
     )
     cursor = db_v39.conn.cursor()
     cursor.execute('SELECT type, subtype from history_events WHERE event_identifier LIKE ?', (PREFIX,))  # noqa: E501
-    events_before = cursor.fetchall()
+    events_types_before = set(cursor.fetchall())
     cursor.execute('SELECT type, subtype from history_events WHERE event_identifier NOT LIKE ?', (PREFIX,))  # noqa: E501
-    other_events_before = cursor.fetchall()
+    other_events_types_before = set(cursor.fetchall())
 
-    assert events_before == [
+    assert events_types_before == {
         ('deposit', 'spend'), ('deposit', 'fee'),
         ('withdrawal', 'receive'), ('withdrawal', 'fee'),
         ('receive', 'receive'), ('receive', 'fee'),
         ('spend', 'none'), ('spend', 'fee'),
         ('staking', 'reward'), ('staking', 'fee'),
-    ]
+    }
     # also check that the non rotki events are not affected
-    assert other_events_before == [('deposit', 'spend'), ('withdrawal', 'fee'), ('receive', 'receive'), ('staking', 'fee')]  # noqa: E501
-    # check the tables we create don't exist before
+    assert other_events_types_before == {('deposit', 'spend'), ('withdrawal', 'fee'), ('receive', 'receive'), ('staking', 'fee')}  # noqa: E501
+    # check the tables we create don't exist and ones we remove exist before the upgrade
     assert table_exists(cursor, 'skipped_external_events') is False
+    assert table_exists(cursor, 'ledger_action_type') is True
+    assert table_exists(cursor, 'ledger_actions') is True
 
     max_initial_node_id = cursor.execute('SELECT MAX(identifier) FROM rpc_nodes').fetchone()[0]
     nodes_before = cursor.execute('SELECT * FROM rpc_nodes').fetchall()
@@ -1841,21 +1843,23 @@ def test_upgrade_db_39_to_40(user_data_dir):  # pylint: disable=unused-argument
     )
     cursor = db.conn.cursor()
     cursor.execute('SELECT type, subtype from history_events WHERE event_identifier LIKE ?', (PREFIX,))  # noqa: E501
-    events_after = cursor.fetchall()
+    events_types_after = set(cursor.fetchall())
     cursor.execute('SELECT type, subtype from history_events WHERE event_identifier NOT LIKE ?', (PREFIX,))  # noqa: E501
-    other_events_after = cursor.fetchall()
+    other_events_types_after = set(cursor.fetchall())
 
-    assert events_after == [
+    assert events_types_after == {
         ('deposit', 'none'), ('spend', 'fee'),
         ('withdrawal', 'none'), ('spend', 'fee'),
         ('receive', 'none'), ('spend', 'fee'),
         ('spend', 'none'), ('spend', 'fee'),
         ('staking', 'reward'), ('spend', 'fee'),
-    ]
+    }
     # also check that the non rotki events are not affected
-    assert other_events_after == [('deposit', 'spend'), ('withdrawal', 'fee'), ('receive', 'receive'), ('staking', 'fee')]  # noqa: E501
-    # check new tables are created
+    assert other_events_types_after == {('deposit', 'spend'), ('withdrawal', 'fee'), ('receive', 'receive'), ('staking', 'fee'), ('receive', 'none'), ('spend', 'none'), ('receive', 'donate'), ('receive', 'airdrop')}  # noqa: E501
+    # check new tables are created and old are removed
     assert table_exists(cursor, 'skipped_external_events') is True
+    assert table_exists(cursor, 'ledger_action_type') is False
+    assert table_exists(cursor, 'ledger_actions') is False
 
     assert cursor.execute(  # Check that BASE location was added
         'SELECT location FROM location WHERE seq=?',
@@ -1867,6 +1871,19 @@ def test_upgrade_db_39_to_40(user_data_dir):  # pylint: disable=unused-argument
         for id, node in enumerate(DEFAULT_BASE_NODES_AT_V40, start=max_initial_node_id + 1)
     ]
     assert nodes_after == nodes_before + default_base_nodes_with_ids
+
+    # test that all 8 ledger actions were moved to history events
+    assert all(x == (1, 0) for x in cursor.execute('SELECT entry_type, sequence_index from history_events WHERE event_identifier LIKE "MLA_%"'))  # noqa: E501
+    assert cursor.execute('SELECT timestamp, location, location_label, asset, amount, notes, type, subtype from history_events WHERE event_identifier LIKE "MLA_%"').fetchall() == [  # noqa: E501
+        (1674229230000, 'A', None, 'eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F', '100', 'This is my income action. Migrated from a ledger action of income type. https://alink.com', 'receive', 'none'),  # noqa: E501
+        (1695307330000, 'B', None, 'ETH', '0.5', 'I lost ETH here. Migrated from a ledger action of loss type. https://etherscan.io/tx/0x4677ffa104b011d591ae0c056ba651a978db982c0dfd131520db74c1b46ff564', 'spend', 'none'),  # noqa: E501
+        (1695480219000, 'J', None, 'eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', '50', 'Migrated from a ledger action of donation received type', 'receive', 'donate'),  # noqa: E501
+        (1695566739000, 'J', None, 'eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7', '50', 'Spent $50 for lunch. Migrated from a ledger action of expense type', 'spend', 'none'),  # noqa: E501
+        (1695739914000, 'J', None, 'eip155:1/erc20:0xDe30da39c46104798bB5aA3fe8B9e0e1F348163F', '10', 'Got dividends in GTC for some reason.. Migrated from a ledger action of dividends income type', 'receive', 'none'),  # noqa: E501
+        (1695826372000, 'J', None, 'eip155:1/erc20:0x111111111117dC0aa78b770fA6A738034120C302', '69', 'Hue hue 69 1inch tokens airdrop. Hue hue!. Migrated from a ledger action of airdrop type', 'receive', 'airdrop'),  # noqa: E501
+        (1696085745000, 'B', None, 'BTC', '1', 'Kraken gave me 1 BTC because I am a good boy. Migrated from a ledger action of gift type', 'receive', 'none'),  # noqa: E501
+        (1695913006000, 'h', None, 'eip155:1/erc20:0x7D1AfA7B718fb893dB30A3aBc0Cfc608AaCfeBB0', '1000', 'Polygon paid us for something (as if). Migrated from a ledger action of grant type. https://polygonscan.com/tx/0xc0b96f46f7d2be3e5b68583b1223cab0d46526a6a37415a125698687c7cbd87d', 'receive', 'none'),  # noqa: E501
+    ]
 
 
 def test_latest_upgrade_adds_remove_tables(user_data_dir):
@@ -1914,7 +1931,7 @@ def test_latest_upgrade_adds_remove_tables(user_data_dir):
     result = cursor.execute('SELECT name FROM sqlite_master WHERE type="view"')
     views_after_creation = {x[0] for x in result}
 
-    removed_tables = set()
+    removed_tables = {'ledger_action_type', 'ledger_actions'}
     removed_views = set()
     missing_tables = tables_before - tables_after_upgrade
     missing_views = views_before - views_after_upgrade

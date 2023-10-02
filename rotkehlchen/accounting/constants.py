@@ -22,6 +22,7 @@ DEFAULT_EVENT_CATEGORY_MAPPINGS = {
         HistoryEventSubType.REWARD: EventCategory.CLAIM_REWARD,
         HistoryEventSubType.NONE: EventCategory.RECEIVE,
         HistoryEventSubType.NFT: EventCategory.RECEIVE,
+        HistoryEventSubType.DONATE: EventCategory.RECEIVE_DONATION,
     },
     HistoryEventType.INFORMATIONAL: {
         HistoryEventSubType.APPROVE: EventCategory.APPROVAL,

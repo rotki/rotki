@@ -130,30 +130,6 @@ INSERT OR IGNORE INTO balance_category(category, seq) VALUES ('A', 1);
 INSERT OR IGNORE INTO balance_category(category, seq) VALUES ('B', 2);
 """
 
-# Custom enum table for LedgerAction categories (income, expense, loss and more)
-DB_CREATE_LEDGER_ACTION_TYPE = """
-CREATE TABLE IF NOT EXISTS ledger_action_type (
-  type    CHAR(1)       PRIMARY KEY NOT NULL,
-  seq     INTEGER UNIQUE
-);
-/* Income Action Type */
-INSERT OR IGNORE INTO ledger_action_type(type, seq) VALUES ('A', 1);
-/* Expense Action Type */
-INSERT OR IGNORE INTO ledger_action_type(type, seq) VALUES ('B', 2);
-/* Loss Action Type */
-INSERT OR IGNORE INTO ledger_action_type(type, seq) VALUES ('C', 3);
-/* Dividends Income Action Type */
-INSERT OR IGNORE INTO ledger_action_type(type, seq) VALUES ('D', 4);
-/* Donation Received Action Type */
-INSERT OR IGNORE INTO ledger_action_type(type, seq) VALUES ('E', 5);
-/* Airdrop Action Type */
-INSERT OR IGNORE INTO ledger_action_type(type, seq) VALUES ('F', 6);
-/* Gift Action Type */
-INSERT OR IGNORE INTO ledger_action_type(type, seq) VALUES ('G', 7);
-/* Grant Action Type */
-INSERT OR IGNORE INTO ledger_action_type(type, seq) VALUES ('H', 8);
-"""
-
 # Custom enum table for taxable action types
 DB_CREATE_ACTION_TYPE = """
 CREATE TABLE IF NOT EXISTS action_type (
@@ -403,23 +379,6 @@ CREATE TABLE IF NOT EXISTS asset_movements (
     link TEXT,
     FOREIGN KEY(asset) REFERENCES assets(identifier) ON UPDATE CASCADE,
     FOREIGN KEY(fee_asset) REFERENCES assets(identifier) ON UPDATE CASCADE
-);
-"""
-
-DB_CREATE_LEDGER_ACTIONS = """
-CREATE TABLE IF NOT EXISTS ledger_actions (
-    identifier INTEGER NOT NULL PRIMARY KEY,
-    timestamp INTEGER NOT NULL,
-    type CHAR(1) NOT NULL DEFAULT('A') REFERENCES ledger_action_type(type),
-    location CHAR(1) NOT NULL DEFAULT('A') REFERENCES location(location),
-    amount TEXT NOT NULL,
-    asset TEXT NOT NULL,
-    rate TEXT,
-    rate_asset TEXT,
-    link TEXT,
-    notes TEXT,
-    FOREIGN KEY(asset) REFERENCES assets(identifier) ON UPDATE CASCADE,
-    FOREIGN KEY(rate_asset) REFERENCES assets(identifier) ON UPDATE CASCADE
 );
 """
 
@@ -743,8 +702,6 @@ BEGIN TRANSACTION;
 {DB_CREATE_EVM_EVENTS_INFO}
 {DB_CREATE_ETH_STAKING_EVENTS_INFO}
 {DB_CREATE_HISTORY_EVENTS_MAPPINGS}
-{DB_CREATE_LEDGER_ACTION_TYPE}
-{DB_CREATE_LEDGER_ACTIONS}
 {DB_CREATE_ACTION_TYPE}
 {DB_CREATE_IGNORED_ACTIONS}
 {DB_CREATE_BALANCER_EVENTS}
