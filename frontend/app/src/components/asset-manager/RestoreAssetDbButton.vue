@@ -94,67 +94,66 @@ const showDoneConfirmation = () => {
 </script>
 
 <template>
-  <div>
-    <template v-if="dropdown">
-      <VMenu offset-y>
-        <template #activator="{ on }">
-          <VBtn color="primary" depressed v-on="on">
-            {{ t('asset_update.restore.title') }}
-          </VBtn>
+  <VMenu v-if="dropdown" offset-x left>
+    <template #activator="{ on }">
+      <RuiButton
+        id="reset-asset-activator"
+        variant="text"
+        class="!p-3 rounded-none"
+        v-on="on"
+      >
+        <template #prepend>
+          <RuiIcon name="restart-line" />
         </template>
-        <VList>
-          <VListItem two-line link @click="showRestoreConfirmation('soft')">
-            <VListItemContent>
-              <VListItemTitle>
-                {{ t('asset_update.restore.soft_reset') }}
-              </VListItemTitle>
-              <VListItemSubtitle>
-                {{ t('asset_update.restore.soft_reset_hint') }}
-              </VListItemSubtitle>
-            </VListItemContent>
-          </VListItem>
-          <VListItem two-line link @click="showRestoreConfirmation('hard')">
-            <VListItemContent>
-              <VListItemTitle>
-                {{ t('asset_update.restore.hard_reset') }}
-              </VListItemTitle>
-              <VListItemSubtitle>
-                {{ t('asset_update.restore.hard_reset_hint') }}
-              </VListItemSubtitle>
-            </VListItemContent>
-          </VListItem>
-        </VList>
-      </VMenu>
+        {{ t('asset_update.restore.title') }}
+        <template #append>
+          <RuiIcon name="arrow-down-s-line" />
+        </template>
+      </RuiButton>
     </template>
-    <template v-else>
-      <VTooltip top max-width="200">
-        <template #activator="{ on }">
-          <VBtn
-            outlined
-            depressed
-            color="primary"
-            v-on="on"
-            @click="showRestoreConfirmation('soft')"
-          >
+    <VList>
+      <VListItem two-line link @click="showRestoreConfirmation('soft')">
+        <VListItemContent>
+          <VListItemTitle>
             {{ t('asset_update.restore.soft_reset') }}
-          </VBtn>
-        </template>
-        <span>{{ t('asset_update.restore.soft_reset_hint') }}</span>
-      </VTooltip>
-      <VTooltip top max-width="200">
-        <template #activator="{ on }">
-          <VBtn
-            class="ml-4"
-            depressed
-            color="primary"
-            v-on="on"
-            @click="showRestoreConfirmation('hard')"
-          >
+          </VListItemTitle>
+          <VListItemSubtitle>
+            {{ t('asset_update.restore.soft_reset_hint') }}
+          </VListItemSubtitle>
+        </VListItemContent>
+      </VListItem>
+      <VListItem two-line link @click="showRestoreConfirmation('hard')">
+        <VListItemContent>
+          <VListItemTitle>
             {{ t('asset_update.restore.hard_reset') }}
-          </VBtn>
-        </template>
-        <span>{{ t('asset_update.restore.hard_reset_hint') }}</span>
-      </VTooltip>
-    </template>
+          </VListItemTitle>
+          <VListItemSubtitle>
+            {{ t('asset_update.restore.hard_reset_hint') }}
+          </VListItemSubtitle>
+        </VListItemContent>
+      </VListItem>
+    </VList>
+  </VMenu>
+  <div v-else class="flex flex-row gap-2">
+    <RuiTooltip :popper="{ placement: 'top' }">
+      <template #activator>
+        <RuiButton
+          variant="outlined"
+          color="primary"
+          @click="showRestoreConfirmation('soft')"
+        >
+          {{ t('asset_update.restore.soft_reset') }}
+        </RuiButton>
+      </template>
+      {{ t('asset_update.restore.soft_reset_hint') }}
+    </RuiTooltip>
+    <RuiTooltip :popper="{ placement: 'top ' }">
+      <template #activator>
+        <RuiButton color="primary" @click="showRestoreConfirmation('hard')">
+          {{ t('asset_update.restore.hard_reset') }}
+        </RuiButton>
+      </template>
+      {{ t('asset_update.restore.hard_reset_hint') }}
+    </RuiTooltip>
   </div>
 </template>

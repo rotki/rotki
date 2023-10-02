@@ -20,15 +20,17 @@ const props = withDefaults(
     selected: SupportedAsset[];
     options: TablePagination<SupportedAsset>;
     ignoredAssets: string[];
-    onlyShowOwned: boolean;
-    ignoredAssetsHandling: IgnoredAssetsHandlingType;
+    ignoredFilter: {
+      onlyShowOwned: boolean;
+      ignoredAssetsHandling: IgnoredAssetsHandlingType;
+    };
+
     loading?: boolean;
   }>(),
   { loading: false }
 );
 
 const emit = defineEmits<{
-  (e: 'add'): void;
   (e: 'refresh'): void;
   (e: 'edit', asset: SupportedAsset): void;
   (e: 'delete-asset', asset: SupportedAsset): void;
@@ -37,10 +39,12 @@ const emit = defineEmits<{
   (e: 'update:selected', selectedAssets: SupportedAsset[]): void;
   (e: 'update:expanded', expandedAssets: SupportedAsset[]): void;
   (
-    e: 'update:ignored-assets-handling',
-    ignoredAssetsHandling: IgnoredAssetsHandlingType
+    e: 'update:ignored-filter',
+    value: {
+      onlyShowOwned: boolean;
+      ignoredAssetsHandling: IgnoredAssetsHandlingType;
+    }
   ): void;
-  (e: 'update:only-show-owned', onlyShowOwned: boolean): void;
 }>();
 
 const { t } = useI18n();
@@ -80,8 +84,6 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
     sortable: false
   }
 ]);
-
-const add = () => emit('add');
 const edit = (asset: SupportedAsset) => emit('edit', asset);
 const deleteAsset = (asset: SupportedAsset) => emit('delete-asset', asset);
 
@@ -92,14 +94,10 @@ const updateSelected = (selectedAssets: SupportedAsset[]) =>
   emit('update:selected', selectedAssets);
 const updateExpanded = (expandedAssets: SupportedAsset[]) =>
   emit('update:expanded', expandedAssets);
-const updateIgnoredAssetsHandling = (
-  ignoredAssetsHandling: IgnoredAssetsHandlingType
-) => {
-  emit('update:ignored-assets-handling', ignoredAssetsHandling);
-};
-const updateShowOwned = (onlyShowOwned: boolean) => {
-  emit('update:only-show-owned', onlyShowOwned);
-};
+
+const ignoredFilter = useVModel(props, 'ignoredFilter', emit, {
+  eventName: 'update:ignored-filter'
+});
 
 const formatType = (string?: string) => toSentenceCase(string ?? 'EVM token');
 
@@ -123,7 +121,6 @@ const getAsset = (item: SupportedAsset) => {
 const { setMessage } = useMessageStore();
 const { isAssetIgnored, ignoreAsset, unignoreAsset } = useIgnoredAssetsStore();
 const { getChain } = useSupportedChains();
-const css = useCssModule();
 
 const toggleIgnoreAsset = async (identifier: string) => {
   if (get(isAssetIgnored(identifier))) {
@@ -131,7 +128,7 @@ const toggleIgnoreAsset = async (identifier: string) => {
   } else {
     await ignoreAsset(identifier);
   }
-  if (props.ignoredAssetsHandling !== 'none') {
+  if (props.ignoredFilter.ignoredAssetsHandling !== 'none') {
     emit('refresh');
   }
 };
@@ -165,7 +162,7 @@ const massIgnore = async (ignored: boolean) => {
 
   if (status.success) {
     updateSelected([]);
-    if (props.ignoredAssetsHandling !== 'none') {
+    if (props.ignoredFilter.ignoredAssetsHandling !== 'none') {
       emit('refresh');
     }
   }
@@ -173,108 +170,40 @@ const massIgnore = async (ignored: boolean) => {
 </script>
 
 <template>
-  <Card data-cy="managed-assets-table">
-    <template #title>
-      {{ t('common.assets') }}
-    </template>
-    <template #subtitle>
-      {{ t('asset_table.managed.subtitle') }}
-    </template>
-    <template #actions>
-      <VRow>
-        <VCol cols="12" md="4">
-          <IgnoreButtons
-            :disabled="selected.length === 0"
-            @ignore="massIgnore($event)"
-          />
-          <div v-if="selected.length > 0" class="mt-2 ms-1">
-            {{ t('asset_table.selected', { count: selected.length }) }}
-            <VBtn small text @click="updateSelected([])">
-              {{ t('common.actions.clear_selection') }}
-            </VBtn>
-          </div>
-        </VCol>
-        <VCol />
-        <VCol cols="12" md="auto">
-          <VMenu offset-y :close-on-content-click="false">
-            <template #activator="{ on }">
-              <VBtn
-                outlined
-                text
-                height="40px"
-                data-cy="asset-filter"
-                v-on="on"
-              >
-                {{ t('common.actions.filter') }}
-                <VIcon class="ml-2">mdi-chevron-down</VIcon>
-              </VBtn>
-            </template>
-            <VList data-cy="asset-filter-menu">
-              <VListItem link @click="updateShowOwned(!onlyShowOwned)">
-                <VCheckbox
-                  data-cy="asset-filter-only-show-owned"
-                  :input-value="onlyShowOwned"
-                  class="mt-0 py-2"
-                  :label="t('asset_table.only_show_owned')"
-                  hide-details
-                />
-              </VListItem>
-              <VListItem
-                :class="css['filter-heading']"
-                class="font-bold text-uppercase py-2"
-              >
-                {{ t('asset_table.filter_by_ignored_status') }}
-              </VListItem>
-              <VListItem>
-                <VRadioGroup
-                  :value="ignoredAssetsHandling"
-                  class="mt-0"
-                  data-cy="asset-filter-ignored"
-                  @change="updateIgnoredAssetsHandling($event)"
-                >
-                  <VRadio value="none" :label="t('asset_table.show_all')" />
-                  <VRadio
-                    value="exclude"
-                    :label="t('asset_table.only_show_unignored')"
-                  />
-                  <VRadio
-                    value="show_only"
-                    :label="
-                      t(
-                        'asset_table.only_show_ignored',
-                        {
-                          length: ignoredAssets.length
-                        },
-                        1
-                      )
-                    "
-                  />
-                </VRadioGroup>
-              </VListItem>
-            </VList>
-          </VMenu>
-        </VCol>
-        <VCol cols="12" md="5" class="pb-md-8">
-          <TableFilter
-            :matches="filters"
-            :matchers="matchers"
-            @update:matches="updateFilter($event)"
-          />
-        </VCol>
-      </VRow>
-    </template>
-    <VBtn
-      data-cy="managed-asset-add-btn"
-      absolute
-      fab
-      top
-      right
-      dark
-      color="primary"
-      @click="add()"
-    >
-      <VIcon> mdi-plus </VIcon>
-    </VBtn>
+  <div data-cy="managed-assets-table">
+    <div class="flex flex-row flex-wrap items-center gap-2 mb-4">
+      <div class="flex flex-row gap-2">
+        <IgnoreButtons
+          :disabled="selected.length === 0"
+          @ignore="massIgnore($event)"
+        />
+        <div
+          v-if="selected.length > 0"
+          class="flex flex-row items-center gap-2"
+        >
+          {{ t('asset_table.selected', { count: selected.length }) }}
+          <RuiButton size="sm" variant="text" @click="updateSelected([])">
+            {{ t('common.actions.clear_selection') }}
+          </RuiButton>
+        </div>
+      </div>
+
+      <div class="grow" />
+
+      <AssetStatusFilter
+        v-model="ignoredFilter"
+        :count="ignoredAssets.length"
+      />
+
+      <div class="w-full md:w-[25rem]">
+        <TableFilter
+          :matches="filters"
+          :matchers="matchers"
+          @update:matches="updateFilter($event)"
+        />
+      </div>
+    </div>
+
     <DataTable
       :value="selected"
       :items="tokens"
@@ -348,12 +277,5 @@ const massIgnore = async (ignored: boolean) => {
         />
       </template>
     </DataTable>
-  </Card>
+  </div>
 </template>
-
-<style module lang="scss">
-.filter-heading {
-  font-size: 0.875rem;
-  min-height: auto;
-}
-</style>

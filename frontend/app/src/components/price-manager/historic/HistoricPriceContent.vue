@@ -128,7 +128,7 @@ setPostSubmitFunc(() => refresh({ modified: true }));
   <TablePageLayout>
     <template #title>
       <span class="text-rui-text-secondary">
-        {{ t('navigation_menu.manage_prices') }}/
+        {{ t('navigation_menu.manage_prices') }} /
       </span>
       {{ t('navigation_menu.manage_prices_sub.historic_prices') }}
     </template>
