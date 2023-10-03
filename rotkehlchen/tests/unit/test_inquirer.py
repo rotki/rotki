@@ -344,7 +344,7 @@ def test_find_uniswap_v2_lp_token_price(inquirer, ethereum_manager, globaldb):
     calculation that is needed, is applied based on the protocol attribute of the lp token"""
     identifier = ethaddress_to_identifier(string_to_evm_address('0xa2107FA5B38d9bbd2C461D6EDf11B11A50F6b974'))  # LINK ETH POOL  # noqa: E501
     with globaldb.conn.write_ctx() as write_cursor:
-        write_cursor.execute(  # the protocol attribute is missing from the packaged db for this token and is necessary for price calculation  # noqa: E501
+        write_cursor.execute(  # the protocol attribute is missing from the packaged db for this token as of this commit and is necessary for price calculation  # noqa: E501
             'UPDATE evm_tokens SET protocol=? WHERE identifier=?',
             ('UNI-V2', identifier),
         )
