@@ -1,29 +1,49 @@
 <script setup lang="ts">
-defineProps({
-  tooltip: { required: true, type: String, default: '' },
-  onMenu: { required: false, type: Object, default: () => {} },
-  retainFocusOnClick: { required: false, type: Boolean, default: false },
-  className: { required: false, type: String, default: '' }
-});
+withDefaults(
+  defineProps<{
+    tooltip: string;
+    onMenu?: object;
+    retainFocusOnClick?: boolean;
+    className?: string;
+    href?: string;
+  }>(),
+  {
+    onMenu: undefined,
+    retainFocusOnClick: false,
+    className: '',
+    href: undefined
+  }
+);
 
-const emit = defineEmits(['click']);
+const emit = defineEmits<{
+  (e: 'click'): void;
+}>();
+
 const click = () => emit('click');
 </script>
 
 <template>
-  <VTooltip bottom z-index="215" class="block" open-delay="250">
-    <template #activator="{ on: menu }">
-      <VBtn
+  <RuiTooltip
+    :popper="{ placement: 'bottom' }"
+    open-delay="250"
+    close-delay="0"
+  >
+    <template #activator>
+      <RuiButton
+        variant="text"
         icon
+        :href="href"
+        :tag="href ? 'a' : 'button'"
+        target="_blank"
         :class="className"
         class="!w-12 !h-12"
         :retain-focus-on-click="retainFocusOnClick"
         @click="click()"
-        v-on="{ ...menu, ...onMenu }"
+        v-on="onMenu"
       >
         <slot />
-      </VBtn>
+      </RuiButton>
     </template>
     <span>{{ tooltip }}</span>
-  </VTooltip>
+  </RuiTooltip>
 </template>

@@ -1,23 +1,15 @@
 <script setup lang="ts">
 const { t } = useI18n();
-const { isPackaged, premiumURL, navigateToPremium } = useInterop();
+const { href, onLinkClick } = useLinks();
 </script>
 
 <template>
-  <VTooltip top>
-    <template #activator="{ on }">
-      <VBtn
-        text
-        icon
-        target="_blank"
-        v-bind="$attrs"
-        :href="isPackaged ? undefined : premiumURL"
-        v-on="on"
-        @click="isPackaged ? navigateToPremium() : undefined"
-      >
-        <VIcon>mdi-lock</VIcon>
-      </VBtn>
-    </template>
-    <span v-text="t('premium_lock.tooltip')" />
-  </VTooltip>
+  <MenuTooltipButton
+    :tooltip="t('premium_lock.tooltip')"
+    class-name="secondary--text text--lighten-4"
+    :href="href"
+    @click="onLinkClick()"
+  >
+    <RuiIcon name="lock-line" />
+  </MenuTooltipButton>
 </template>

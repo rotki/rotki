@@ -3,33 +3,34 @@ const { t } = useI18n();
 const premium = usePremium();
 
 const { mobile } = useDisplay();
-const { isPackaged, premiumURL, navigateToPremium } = useInterop();
+const { href, onLinkClick } = useLinks();
 </script>
 
 <template>
   <div v-if="!premium" class="mr-2">
-    <VTooltip bottom :disabled="!mobile">
+    <RuiTooltip :popper="{ placement: 'bottom' }" :disabled="!mobile">
       <template #activator="{ on }">
-        <VBtn
+        <RuiButton
           data-cy="get-premium-button"
-          color="accent"
-          rounded
+          color="secondary"
           :fab="mobile"
-          small
-          class="py-4"
-          depressed
+          icon
+          class="py-2"
           target="_blank"
-          :href="isPackaged ? undefined : premiumURL"
+          :href="href"
+          :tag="href ? 'a' : 'button'"
           v-on="on"
-          @click="isPackaged ? navigateToPremium() : undefined"
+          @click="onLinkClick()"
         >
-          <span v-if="!mobile" class="mr-2">
-            {{ t('premium_settings.get') }}
-          </span>
-          <RuiIcon name="vip-crown-line" />
-        </VBtn>
+          <div class="flex">
+            <span v-if="!mobile" class="mr-2">
+              {{ t('premium_settings.get') }}
+            </span>
+            <RuiIcon name="vip-crown-line" />
+          </div>
+        </RuiButton>
       </template>
       <span>{{ t('premium_settings.get') }}</span>
-    </VTooltip>
+    </RuiTooltip>
   </div>
 </template>

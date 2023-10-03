@@ -4,27 +4,23 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <VTooltip bottom>
-    <template #activator="{ on }">
-      <VBadge color="transparent" offset-y="20" offset-x="20">
-        <VBtn
-          text
-          icon
-          target="_blank"
-          class="secondary--text text--lighten-4"
-          :href="href"
-          v-on="on"
-          @click="onLinkClick()"
-        >
-          <VIcon>mdi-white-balance-sunny</VIcon>
-        </VBtn>
-        <template #badge>
-          <VIcon color="primary" small>mdi-lock</VIcon>
-        </template>
-      </VBadge>
+  <RuiBadge
+    placement="top"
+    offset-y="12"
+    offset-x="-10"
+    size="sm"
+    color="default"
+  >
+    <template #icon>
+      <RuiIcon name="lock-line" color="primary" size="14" />
     </template>
-    <span>
-      {{ t('theme_switch_lock.tooltip') }}
-    </span>
-  </VTooltip>
+    <MenuTooltipButton
+      :tooltip="t('theme_switch_lock.tooltip')"
+      class-name="secondary--text text--lighten-4"
+      :href="href"
+      @click="onLinkClick()"
+    >
+      <RuiIcon name="sun-line" />
+    </MenuTooltipButton>
+  </RuiBadge>
 </template>
