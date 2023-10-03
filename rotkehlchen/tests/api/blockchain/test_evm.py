@@ -334,6 +334,7 @@ def test_detect_evm_accounts(
         {'evm_chain': ChainID.POLYGON_POS.to_name(), 'address': ethereum_accounts[0]},
         {'evm_chain': ChainID.OPTIMISM.to_name(), 'address': ethereum_accounts[0]},
         {'evm_chain': ChainID.ARBITRUM_ONE.to_name(), 'address': ethereum_accounts[0]},
+        {'evm_chain': ChainID.BASE.to_name(), 'address': ethereum_accounts[0]},
     ], key=operator.itemgetter('evm_chain', 'address'))
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     db = rotki.data.db
