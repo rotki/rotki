@@ -3,7 +3,6 @@ import { NumericString } from '@rotki/common';
 import { z } from 'zod';
 import { type PaginationRequestPayload } from '@/types/common';
 import { EntryMeta } from '@/types/history/meta';
-import { TradeLocation } from '@/types/history/trade/location';
 import { CollectionCommonFields } from '@/types/collection';
 
 export const TradeType = z.enum([
@@ -18,7 +17,7 @@ export type TradeType = z.infer<typeof TradeType>;
 export const Trade = z.object({
   tradeId: z.string(),
   timestamp: z.number(),
-  location: TradeLocation,
+  location: z.string(),
   baseAsset: z.string(),
   quoteAsset: z.string(),
   tradeType: TradeType,

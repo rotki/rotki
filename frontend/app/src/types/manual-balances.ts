@@ -1,6 +1,5 @@
 import { NumericString } from '@rotki/common';
 import { z } from 'zod';
-import { TradeLocation } from '@/types/history/trade/location';
 import { BalanceType } from '@/types/balances';
 
 export const ManualBalance = z.object({
@@ -8,7 +7,7 @@ export const ManualBalance = z.object({
   asset: z.string(),
   label: z.string(),
   amount: NumericString,
-  location: TradeLocation,
+  location: z.string(),
   tags: z.array(z.string()).nullable(),
   balanceType: z.nativeEnum(BalanceType)
 });
