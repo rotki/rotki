@@ -64,6 +64,13 @@
       "type": "evm",
       "native_token": "ETH",
       "evm_chain_name": "arbitrum_one"
+    },
+    {
+      "id": "base",
+      "name": "Base",
+      "type": "evm",
+      "native_token": "ETH",
+      "evm_chain_name": "base"
     }
   ],
   "message": ""

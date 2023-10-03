@@ -19,6 +19,8 @@ export const useRefresh = (blockchain?: MaybeRef<Blockchain>) => {
     useTokenDetection(Blockchain.POLYGON_POS);
   const { detectTokensOfAllAddresses: detectTokensOfAllArbitrumAddresses } =
     useTokenDetection(Blockchain.ARBITRUM_ONE);
+  const { detectTokensOfAllAddresses: detectTokensOfAllBaseAddresses } =
+    useTokenDetection(Blockchain.BASE);
 
   const { shouldRefreshBalances } = storeToRefs(useBlockchainTokensStore());
 
@@ -54,6 +56,9 @@ export const useRefresh = (blockchain?: MaybeRef<Blockchain>) => {
       }
       if (!chain || chain === Blockchain.ARBITRUM_ONE) {
         promises.push(detectTokensOfAllArbitrumAddresses());
+      }
+      if (!chain || chain === Blockchain.BASE) {
+        promises.push(detectTokensOfAllBaseAddresses());
       }
 
       set(shouldRefreshBalances, false);

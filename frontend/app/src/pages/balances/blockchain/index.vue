@@ -39,7 +39,8 @@ const intersections = ref<Intersections>({
   [Blockchain.AVAX]: false,
   [Blockchain.OPTIMISM]: false,
   [Blockchain.POLYGON_POS]: false,
-  [Blockchain.ARBITRUM_ONE]: false
+  [Blockchain.ARBITRUM_ONE]: false,
+  [Blockchain.BASE]: false
 });
 
 const updateWhenRatio = (
@@ -59,7 +60,8 @@ const {
   avaxAccounts,
   optimismAccounts,
   polygonAccounts,
-  arbitrumAccounts
+  arbitrumAccounts,
+  baseAccounts
 } = useChainAccountBalances();
 const { btcAccounts, bchAccounts } = useBtcAccountBalances();
 
@@ -96,7 +98,9 @@ const observers: Observers = {
   [Blockchain.POLYGON_POS]: (entries: IntersectionObserverEntry[]) =>
     updateWhenRatio(entries, Blockchain.POLYGON_POS),
   [Blockchain.ARBITRUM_ONE]: (entries: IntersectionObserverEntry[]) =>
-    updateWhenRatio(entries, Blockchain.ARBITRUM_ONE)
+    updateWhenRatio(entries, Blockchain.ARBITRUM_ONE),
+  [Blockchain.BASE]: (entries: IntersectionObserverEntry[]) =>
+    updateWhenRatio(entries, Blockchain.BASE)
 };
 
 const { isBlockchainLoading, isAccountOperationRunning } = useAccountLoading();
@@ -111,7 +115,8 @@ const busy: Busy = {
   [Blockchain.AVAX]: isAccountOperationRunning(Blockchain.AVAX),
   [Blockchain.OPTIMISM]: isAccountOperationRunning(Blockchain.OPTIMISM),
   [Blockchain.POLYGON_POS]: isAccountOperationRunning(Blockchain.POLYGON_POS),
-  [Blockchain.ARBITRUM_ONE]: isAccountOperationRunning(Blockchain.ARBITRUM_ONE)
+  [Blockchain.ARBITRUM_ONE]: isAccountOperationRunning(Blockchain.ARBITRUM_ONE),
+  [Blockchain.BASE]: isAccountOperationRunning(Blockchain.BASE)
 };
 
 const threshold = [0.5];
@@ -124,7 +129,8 @@ const showDetectEvmAccountsButton: Readonly<Ref<boolean>> = computedEager(
     get(optimismAccounts).length > 0 ||
     get(avaxAccounts).length > 0 ||
     get(polygonAccounts).length > 0 ||
-    get(arbitrumAccounts).length > 0
+    get(arbitrumAccounts).length > 0 ||
+    get(baseAccounts).length > 0
 );
 </script>
 
@@ -347,6 +353,23 @@ const showDetectEvmAccountsButton: Readonly<Ref<boolean>> = computedEager(
       :blockchain="Blockchain.ARBITRUM_ONE"
       :balances="arbitrumAccounts"
       :data-cy="`blockchain-balances-${Blockchain.ARBITRUM_ONE}`"
+      @edit-account="editAccount($event)"
+    />
+
+    <AccountBalances
+      v-if="baseAccounts.length > 0 || busy.base.value"
+      id="blockchain-balances-BASE"
+      v-intersect="{
+        handler: observers.base,
+        options: {
+          threshold
+        }
+      }"
+      class="mt-8"
+      :title="t('blockchain_balances.balances.base')"
+      :blockchain="Blockchain.BASE"
+      :balances="baseAccounts"
+      :data-cy="`blockchain-balances-${Blockchain.BASE}`"
       @edit-account="editAccount($event)"
     />
   </TablePageLayout>

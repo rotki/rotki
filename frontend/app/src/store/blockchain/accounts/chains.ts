@@ -11,6 +11,7 @@ export const useChainsAccountsStore = defineStore(
     const optimism: Ref<GeneralAccountData[]> = ref([]);
     const polygon: Ref<GeneralAccountData[]> = ref([]);
     const arbitrum: Ref<GeneralAccountData[]> = ref([]);
+    const base: Ref<GeneralAccountData[]> = ref([]);
 
     const removeTag = (tag: string) => {
       set(ksm, removeTags(ksm, tag));
@@ -19,6 +20,7 @@ export const useChainsAccountsStore = defineStore(
       set(optimism, removeTags(optimism, tag));
       set(polygon, removeTags(polygon, tag));
       set(arbitrum, removeTags(arbitrum, tag));
+      set(base, removeTags(base, tag));
     };
 
     const update = (chain: RestChains, data: GeneralAccountData[]) => {
@@ -34,6 +36,8 @@ export const useChainsAccountsStore = defineStore(
         set(polygon, data);
       } else if (chain === Blockchain.ARBITRUM_ONE) {
         set(arbitrum, data);
+      } else if (chain === Blockchain.BASE) {
+        set(base, data);
       }
     };
 
@@ -49,6 +53,10 @@ export const useChainsAccountsStore = defineStore(
       get(arbitrum).map(({ address }) => address)
     );
 
+    const baseAddresses: ComputedRef<string[]> = computed(() =>
+      get(base).map(({ address }) => address)
+    );
+
     return {
       ksm,
       dot,
@@ -56,9 +64,11 @@ export const useChainsAccountsStore = defineStore(
       optimism,
       polygon,
       arbitrum,
+      base,
       optimismAddresses,
       polygonAddresses,
       arbitrumAddresses,
+      baseAddresses,
       update,
       removeTag
     };

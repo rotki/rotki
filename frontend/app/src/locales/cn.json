@@ -1283,6 +1283,7 @@
     "balances": {
       "arbitrum_one": "Arbitrum One 余额",
       "avax": "Avalanche 余额",
+      "base": "Base 余额",
       "bch": "Bitcoin Cash 余额",
       "btc": "Bitcoin 余额",
       "dot": "Polkadot 余额",

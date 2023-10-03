@@ -9,7 +9,8 @@ const RestChains = [
   Blockchain.AVAX,
   Blockchain.OPTIMISM,
   Blockchain.POLYGON_POS,
-  Blockchain.ARBITRUM_ONE
+  Blockchain.ARBITRUM_ONE,
+  Blockchain.BASE
 ] as const;
 
 export type BtcChains = (typeof BtcChains)[number];

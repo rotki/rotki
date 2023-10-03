@@ -7,7 +7,7 @@ import {
 } from '@/types/blockchain/accounts';
 
 export const useChainAccountBalances = () => {
-  const { ksm, dot, avax, optimism, polygon, arbitrum } = storeToRefs(
+  const { ksm, dot, avax, optimism, polygon, arbitrum, base } = storeToRefs(
     useChainsAccountsStore()
   );
   const { balances } = storeToRefs(useChainBalancesStore());
@@ -48,6 +48,10 @@ export const useChainAccountBalances = () => {
     )
   );
 
+  const baseAccounts: ComputedRef<AccountWithBalance[]> = computed(() =>
+    accountsWithBalances(get(base), get(balances).base, Blockchain.BASE)
+  );
+
   const { shouldShowLoadingScreen } = useStatusStore();
   const chainTotals: ComputedRef<BlockchainTotal[]> = computed(() => [
     {
@@ -85,6 +89,12 @@ export const useChainAccountBalances = () => {
       children: [],
       usdValue: sum(get(arbitrumAccounts)),
       loading: get(shouldShowLoadingScreen(Section.BLOCKCHAIN_ARBITRUM))
+    },
+    {
+      chain: Blockchain.BASE,
+      children: [],
+      usdValue: sum(get(baseAccounts)),
+      loading: get(shouldShowLoadingScreen(Section.BLOCKCHAIN_BASE))
     }
   ]);
 
@@ -125,6 +135,12 @@ export const useChainAccountBalances = () => {
         get(balances).arbitrum_one,
         get(arbitrumAccounts),
         asset
+      ),
+      ...getBlockchainBreakdown(
+        Blockchain.BASE,
+        get(balances).base,
+        get(baseAccounts),
+        asset
       )
     ]);
 
@@ -135,6 +151,7 @@ export const useChainAccountBalances = () => {
     optimismAccounts,
     polygonAccounts,
     arbitrumAccounts,
+    baseAccounts,
     chainTotals,
     getBreakdown
   };
