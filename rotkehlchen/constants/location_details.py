@@ -51,7 +51,7 @@ LOCATION_DETAILS = {
     Location.OKX: LocationDetails(image='okx.svg'),
     Location.ETHEREUM: LocationDetails(image='ethereum.svg'),
     Location.OPTIMISM: LocationDetails(image='optimism.svg'),
-    Location.POLYGON_POS: LocationDetails(image='polygon_pos.svg'),
-    Location.ARBITRUM_ONE: LocationDetails(image='arbitrum_one.svg'),
+    Location.POLYGON_POS: LocationDetails(image='polygon.svg'),
+    Location.ARBITRUM_ONE: LocationDetails(image='arbitrum.svg'),
     Location.BASE: LocationDetails(image='base.svg'),
 }

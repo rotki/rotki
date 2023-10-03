@@ -473,6 +473,9 @@ class SupportedBlockchain(SerializableEnumValueMixin):
     def is_substrate(self) -> bool:
         return self in get_args(SUPPORTED_SUBSTRATE_CHAINS)
 
+    def get_image_name(self) -> str:
+        return SUPPORTED_BLOCKCHAIN_IMAGE_NAME_MAPPING[self]
+
     def get_native_token_id(self) -> str:
         """Returns the string identifier of the native token for the chain"""
         if self in (SupportedBlockchain.OPTIMISM, SupportedBlockchain.ARBITRUM_ONE, SupportedBlockchain.BASE):  # noqa: E501
@@ -525,7 +528,20 @@ SUPPORTED_BLOCKCHAIN_NAMES_MAPPING = {
     SupportedBlockchain.ETHEREUM_BEACONCHAIN: 'Ethereum Staking',
     SupportedBlockchain.POLYGON_POS: 'Polygon PoS',
     SupportedBlockchain.ARBITRUM_ONE: 'Arbitrum One',
-    SupportedBlockchain.BASE: 'Base',
+}
+
+SUPPORTED_BLOCKCHAIN_IMAGE_NAME_MAPPING = {
+    SupportedBlockchain.ETHEREUM: 'ethereum.svg',
+    SupportedBlockchain.ETHEREUM_BEACONCHAIN: 'ethereum.svg',
+    SupportedBlockchain.BITCOIN: 'bitcoin.svg',
+    SupportedBlockchain.BITCOIN_CASH: 'bitcoin-cash.svg',
+    SupportedBlockchain.KUSAMA: 'kusama.svg',
+    SupportedBlockchain.AVALANCHE: 'avalanche.svg',
+    SupportedBlockchain.POLKADOT: 'polkadot.svg',
+    SupportedBlockchain.OPTIMISM: 'optimism.svg',
+    SupportedBlockchain.POLYGON_POS: 'polygon.svg',
+    SupportedBlockchain.ARBITRUM_ONE: 'arbitrum.svg',
+    SupportedBlockchain.BASE: 'base.svg',
 }
 
 EVM_CHAINS_WITH_TRANSACTIONS_TYPE = Literal[
