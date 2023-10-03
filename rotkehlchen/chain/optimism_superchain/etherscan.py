@@ -52,10 +52,13 @@ class OptimismSuperchainEtherscan(Etherscan, metaclass=ABCMeta):
             # TODO: write this tx_receipt to DB so it doesn't need to be queried again
             # https://github.com/rotki/rotki/pull/6359#discussion_r1252850465
             tx_receipt = self.get_transaction_receipt(tx.tx_hash)
+            l1_fee = 0
             if tx_receipt is not None:
-                l1_fee = int(tx_receipt['l1Fee'], 16)
+                if 'l1Fee' in tx_receipt:
+                    # system tx like deposits don't have the l1fee attribute
+                    # https://github.com/ethereum-optimism/optimism/blob/84ead32601fb825a060cde5a6635be2e8aea1a95/specs/deposits.md  # noqa: E501
+                    l1_fee = int(tx_receipt['l1Fee'], 16)
             else:
-                l1_fee = 0
                 log.error(f'Could not query receipt for {self.chain.name.lower()} transaction {tx.tx_hash.hex()}. Using 0 l1 fee')  # noqa: E501
 
             tx = OptimismTransaction(
