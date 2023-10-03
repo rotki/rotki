@@ -692,6 +692,7 @@ class RestAPI:
                 'name': str(blockchain),
                 'type': blockchain.get_chain_type(),
                 'native_token': blockchain.get_native_token_id(),
+                'image': blockchain.get_image_name(),
             }
             if blockchain.is_evm() is True:
                 data['evm_chain_name'] = blockchain.to_chain_id().to_name()
