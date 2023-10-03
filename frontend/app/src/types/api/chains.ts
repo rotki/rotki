@@ -3,7 +3,8 @@ import { z } from 'zod';
 const BasicChainInfo = z.object({
   id: z.string(),
   name: z.string(),
-  type: z.string()
+  type: z.string(),
+  image: z.string()
 });
 
 const SubstrateChainInfo = BasicChainInfo.extend({

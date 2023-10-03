@@ -25,31 +25,25 @@ const chainData = computed(() => {
     image: getImageUrl(chainProp)
   };
 });
-
-const css = useCssModule();
 </script>
 
 <template>
-  <VTooltip v-if="chainData" top :disabled="!tooltip">
-    <template #activator="{ on }">
+  <RuiTooltip
+    :popper="{ placement: 'top' }"
+    open-delay="400"
+    :disabled="!tooltip"
+  >
+    <template #activator>
       <VImg
-        :class="{ [css.circle]: !tile }"
+        :class="{ 'rounded-full overflow-hidden': !tile }"
         :src="chainData.image"
         :width="size"
         :max-width="size"
         :height="size"
         :max-height="size"
         contain
-        v-on="on"
       />
     </template>
     <span>{{ chainData.label }}</span>
-  </VTooltip>
+  </RuiTooltip>
 </template>
-
-<style lang="scss" module>
-.circle {
-  border-radius: 50%;
-  overflow: hidden;
-}
-</style>

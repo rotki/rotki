@@ -18,7 +18,7 @@ const colorVariants: Record<typeof props.color, string> = {
 <template>
   <div
     :class="colorVariants[color]"
-    class="font-black rounded py-[0.15rem] px-2 text-overline"
+    class="font-black rounded px-2 text-overline inline-flex"
   >
     <slot />
   </div>

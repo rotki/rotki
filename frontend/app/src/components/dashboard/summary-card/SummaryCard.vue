@@ -34,7 +34,7 @@ const slots = useSlots();
   >
     <template #custom-header>
       <CardTitle
-        class="text-capitalize summary-card__header flex-nowrap flex justify-between gap-2 pb-4 px-6"
+        class="text-capitalize summary-card__header flex-nowrap flex justify-between gap-2 pb-2 px-6"
       >
         <NavigatorLink
           :enabled="!!navigatesTo"
