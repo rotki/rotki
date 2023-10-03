@@ -1,4 +1,5 @@
 import { type ActionResult } from '@rotki/common/lib/data';
+import { omit } from 'lodash-es';
 import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import {
@@ -27,7 +28,7 @@ import {
   type HistoryEventProductData,
   HistoryEventTypeData
 } from '@/types/history/events/event-type';
-import { type ActionDataEntry } from '@/types/action';
+import { type ActionDataEntry, type ActionStatus } from '@/types/action';
 
 export const useHistoryEventsApi = () => {
   const internalEvmTransactions = async <T>(
@@ -227,6 +228,51 @@ export const useHistoryEventsApi = () => {
     return handleResponse(response);
   };
 
+  const exportHistoryEventsCSV = async (
+    directoryPath: string,
+    filters: HistoryEventRequestPayload
+  ): Promise<boolean> => {
+    const response = await api.instance.post<ActionResult<boolean>>(
+      '/history/events/export',
+      snakeCaseTransformer({
+        directoryPath,
+        ...omit(filters, ['accounts'])
+      }),
+      {
+        validateStatus: validStatus
+      }
+    );
+
+    return handleResponse(response);
+  };
+
+  const downloadHistoryEventsCSV = async (
+    filters: HistoryEventRequestPayload
+  ): Promise<ActionStatus> => {
+    try {
+      const response = await api.instance.patch(
+        '/history/events/export',
+        snakeCaseTransformer(omit(filters, ['accounts'])),
+        {
+          responseType: 'blob',
+          validateStatus: validTaskStatus
+        }
+      );
+
+      if (response.status === 200) {
+        downloadFileByBlobResponse(response, 'history_events.csv');
+        return { success: true };
+      }
+
+      const body = await (response.data as Blob).text();
+      const result: ActionResult<null> = JSON.parse(body);
+
+      return { success: false, message: result.message };
+    } catch (e: any) {
+      return { success: false, message: e.message };
+    }
+  };
+
   return {
     fetchEvmTransactionsTask,
     deleteEvmTransactions,
@@ -241,6 +287,8 @@ export const useHistoryEventsApi = () => {
     getHistoryEventCounterpartiesData,
     getHistoryEventProductsData,
     fetchHistoryEvents,
-    queryOnlineHistoryEvents
+    queryOnlineHistoryEvents,
+    exportHistoryEventsCSV,
+    downloadHistoryEventsCSV
   };
 };

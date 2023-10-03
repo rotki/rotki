@@ -76,114 +76,100 @@ const css = useCssModule();
 </script>
 
 <template>
-  <div class="flex">
-    <VTooltip top>
+  <div class="flex items-center">
+    <RuiTooltip :popper="{ placement: 'top' }" open-delay="400">
       <template #activator="{ on }">
-        <VBtn
+        <RuiButton
+          color="secondary"
+          variant="text"
           icon
-          fab
-          x-small
-          class="mr-2"
           :disabled="selection.length === 0"
           v-on="on"
           @click="addToSavedFilter()"
         >
-          <VIcon>mdi-content-save-plus</VIcon>
-        </VBtn>
+          <RuiIcon size="20" name="play-list-add-line" />
+        </RuiButton>
       </template>
       <div class="text-center" :class="css['add-tooltip']">
-        <div
-          :class="{
-            [css['add-tooltip__wrapper']]: true,
-            [css['add-tooltip__wrapper--added']]: added
-          }"
-        >
-          <div>{{ t('table_filter.saved_filters.actions.add') }}</div>
-          <div class="green--text text--lighten-2">
+        <div class="h-4 transition-all" :class="{ '-mt-4': added }">
+          <div>
+            {{ t('table_filter.saved_filters.actions.add') }}
+          </div>
+          <div class="text-rui-success-lighter">
             {{ t('table_filter.saved_filters.added') }}
           </div>
         </div>
       </div>
-    </VTooltip>
+    </RuiTooltip>
 
     <VMenu
       v-model="open"
       offset-y
+      left
       max-width="400"
       max-height="500"
       :close-on-content-click="false"
     >
       <template #activator="{ on }">
-        <VTooltip top>
-          <template #activator="{ on: tooltipOn }">
-            <VBtn
-              color="primary"
-              x-small
-              fab
-              depressed
-              v-on="{
-                ...on,
-                ...tooltipOn
-              }"
-            >
-              <VIcon>mdi-filter-cog</VIcon>
-            </VBtn>
+        <RuiTooltip :popper="{ placement: 'top' }" open-delay="400">
+          <template #activator>
+            <RuiButton color="primary" variant="text" icon v-on="on">
+              <RuiIcon size="20" name="filter-line" />
+            </RuiButton>
           </template>
           <span>{{ t('table_filter.saved_filters.actions.list') }}</span>
-        </VTooltip>
+        </RuiTooltip>
       </template>
       <VList v-if="savedFilters.length > 0" class="py-4">
         <div v-for="(filters, index) in savedFilters" :key="index">
           <VDivider v-if="index > 0" class="my-3" />
           <div class="flex px-4">
-            <div class="flex grow flex-wrap pr-4">
+            <div class="flex flex-wrap pr-4 gap-1">
               <VChip
                 v-for="(filter, filterIndex) in filters"
                 :key="filterIndex"
                 label
                 small
-                class="ma-1"
               >
                 <SuggestedItem chip :suggestion="filter" />
               </VChip>
             </div>
-            <div class="flex">
-              <VTooltip top>
-                <template #activator="{ on }">
-                  <VBtn
-                    color="green"
-                    fab
-                    x-small
-                    depressed
-                    v-on="on"
+            <div class="flex items-center gap-1">
+              <RuiTooltip :popper="{ placement: 'top' }" open-delay="400">
+                <template #activator>
+                  <RuiButton
+                    color="primary"
+                    variant="text"
+                    size="sm"
+                    class="!p-2"
+                    icon
                     @click="applyFilter(filters)"
                   >
-                    <VIcon color="white">mdi-filter-check</VIcon>
-                  </VBtn>
+                    <RuiIcon size="16" name="corner-left-up-line" />
+                  </RuiButton>
                 </template>
                 <span>
                   {{ t('table_filter.saved_filters.actions.apply') }}
                 </span>
-              </VTooltip>
+              </RuiTooltip>
 
-              <VTooltip top>
-                <template #activator="{ on }">
-                  <VBtn
+              <RuiTooltip :popper="{ placement: 'top' }" open-delay="400">
+                <template #activator>
+                  <RuiButton
+                    color="primary"
+                    variant="text"
+                    size="sm"
+                    class="!p-2"
                     icon
-                    class="ml-2"
-                    color="red"
-                    fab
-                    x-small
-                    v-on="on"
                     @click="deleteFilter(index)"
                   >
-                    <VIcon>mdi-delete-outline</VIcon>
-                  </VBtn>
+                    <RuiIcon size="16" name="delete-bin-5-line" />
+                  </RuiButton>
                 </template>
                 <span>
                   {{ t('table_filter.saved_filters.actions.remove') }}
                 </span>
-              </VTooltip>
+              </RuiTooltip>
             </div>
           </div>
         </div>
@@ -191,9 +177,15 @@ const css = useCssModule();
       <div v-else class="pa-4">
         <i18n path="table_filter.saved_filters.empty">
           <template #button>
-            <VBtn icon fab disabled small>
-              <VIcon>mdi-content-save-plus</VIcon>
-            </VBtn>
+            <RuiButton
+              color="secondary"
+              variant="text"
+              size="sm"
+              disabled
+              class="inline-flex"
+            >
+              <RuiIcon size="16" name="play-list-add-line" />
+            </RuiButton>
           </template>
         </i18n>
       </div>
@@ -203,14 +195,14 @@ const css = useCssModule();
 
 <style module lang="scss">
 .add-tooltip {
-  height: 22px;
+  height: 1rem;
   overflow: hidden;
 
   &__wrapper {
     transition: 0.2s all;
 
     &--added {
-      margin-top: -22px;
+      margin-top: -1rem;
     }
   }
 }

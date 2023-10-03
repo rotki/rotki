@@ -64,41 +64,37 @@ const secondaryText = computed(
           {{ title }}
         </VCardTitle>
         <VCardText class="confirm-dialog__text">
-          <VRow align="center">
-            <VCol cols="auto" class="text-center">
-              <VIcon :color="color" x-large>
-                {{ icon }}
-              </VIcon>
-            </VCol>
-            <VCol class="text-body-1">
+          <div class="flex gap-4">
+            <div>
+              <RuiIcon :color="color" size="36" :name="icon" />
+            </div>
+            <div class="text-body-1">
               {{ message }}
               <slot />
-            </VCol>
-          </VRow>
+            </div>
+          </div>
         </VCardText>
 
-        <VCardActions class="confirm-dialog__actions">
+        <VCardActions class="confirm-dialog__actions gap-2">
           <VSpacer />
-          <VBtn
+          <RuiButton
             v-if="!singleAction"
-            depressed
-            outlined
-            text
+            variant="text"
+            color="primary"
             data-cy="button-cancel"
             @click="emit('cancel')"
           >
             {{ secondaryText }}
-          </VBtn>
-          <VBtn
+          </RuiButton>
+          <RuiButton
             :color="color"
-            depressed
             :disabled="disabled"
             data-cy="button-confirm"
             :loading="loading"
             @click="emit('confirm')"
           >
             {{ primaryText }}
-          </VBtn>
+          </RuiButton>
         </VCardActions>
       </VCard>
     </VDialog>

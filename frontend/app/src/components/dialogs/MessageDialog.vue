@@ -1,11 +1,19 @@
 <script setup lang="ts">
-const props = defineProps({
-  title: { required: true, type: String },
-  message: { required: true, type: String },
-  success: { required: false, type: Boolean, default: false }
-});
+const props = withDefaults(
+  defineProps<{
+    title: string;
+    message: string;
+    success?: boolean;
+  }>(),
+  {
+    success: false
+  }
+);
 
-const emit = defineEmits(['dismiss']);
+const emit = defineEmits<{
+  (e: 'dismiss'): void;
+}>();
+
 const { message, success } = toRefs(props);
 const visible = ref<boolean>(false);
 
@@ -59,14 +67,14 @@ const { t } = useI18n();
 
         <VCardActions>
           <VSpacer />
-          <VBtn
-            :color="success ? 'green' : 'red'"
-            text
-            class="message-dialog__buttons__confirm"
+          <RuiButton
+            :color="success ? 'success' : 'error'"
+            variant="text"
+            class="message-dialog__buttons__confirm px-4"
             @click="dismiss()"
           >
             {{ t('common.actions.ok') }}
-          </VBtn>
+          </RuiButton>
         </VCardActions>
       </VCard>
     </VDialog>

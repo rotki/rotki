@@ -21,6 +21,7 @@ import {
   RiCloudLine,
   RiCodeBoxLine,
   RiCoinsLine,
+  RiCornerLeftUpLine,
   RiDashboardLine,
   RiDatabase2Line,
   RiDatabaseLine,
@@ -65,6 +66,7 @@ import {
   RiMoonLine,
   RiMore2Fill,
   RiNotification3Line,
+  RiPlayListAddLine,
   RiQuestionLine,
   RiRefreshLine,
   RiRestartLine,
@@ -180,9 +182,11 @@ Vue.use(RuiPlugin, {
     RiMore2Fill,
     RiFileEditLine,
     RiEditLine,
-    RiDeleteBin5Line,
     RiGitCommitLine,
     RiSkipRightLine,
-    RiFileTextLine
+    RiFileTextLine,
+    RiDeleteBin5Line,
+    RiPlayListAddLine,
+    RiCornerLeftUpLine
   ]
 });

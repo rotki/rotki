@@ -325,7 +325,11 @@ const { t } = useI18n();
   >
     <template #activator="{ on }">
       <div v-on="on">
-        <VSheet class="flex" data-cy="table-filter" :disabled="disabled">
+        <VSheet
+          class="flex items-center gap-2"
+          data-cy="table-filter"
+          :disabled="disabled"
+        >
           <VCombobox
             ref="input"
             :value="selection"
@@ -382,7 +386,7 @@ const { t } = useI18n();
             </template>
           </VCombobox>
 
-          <div v-if="location" class="ml-2 mt-1">
+          <div v-if="location">
             <SavedFilterManagement
               :selection="selection"
               :location="location"

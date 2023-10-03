@@ -561,6 +561,13 @@
         "title": "历史事件查询"
       }
     },
+    "history_events_export": {
+      "message": {
+        "failure": "历史事件导出失败",
+        "success": "历史事件成功导出为CSV文件"
+      },
+      "title": "历史事件导出"
+    },
     "ignore": {
       "error": {
         "description": "无法忽略所选操作：{error}",
@@ -1076,7 +1083,6 @@
     "skip_notification": "下次更新前不要通知我",
     "success": {
       "description": "资产数据库已成功更新到版本 {remoteVersion}。您现在需要重新登录才能应用更改",
-      "ok": "OK",
       "title": "资产数据库更新"
     },
     "title": "支持的资产更新可用",
@@ -3973,6 +3979,11 @@
         "edit": {
           "title": "编辑活动"
         }
+      },
+      "export": {
+        "confirmation_message": "您确定要导出此文档并应用所选的过滤器吗？",
+        "csv_export_error": "导出CSV时发生错误",
+        "download_failed": "无法下载CSV文件"
       },
       "form": {
         "amount": {

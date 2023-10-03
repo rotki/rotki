@@ -24,7 +24,7 @@ const { t } = useI18n();
     <template #buttons>
       <VSpacer />
       <VBtn color="primary" depressed @click="emit('confirm')">
-        {{ t('asset_update.success.ok') }}
+        {{ t('common.actions.ok') }}
       </VBtn>
     </template>
   </Card>

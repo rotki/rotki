@@ -568,6 +568,13 @@
         "title": "History Events Query"
       }
     },
+    "history_events_export": {
+      "message": {
+        "failure": "Fallo en la exportación de eventos de historial",
+        "success": "Eventos de historial exportados a CSV exitosamente"
+      },
+      "title": "Exportación de Eventos de Historial"
+    },
     "ignore": {
       "error": {
         "description": "Failed to ignore the selected actions: {error}",
@@ -1061,7 +1068,6 @@
     "skip_notification": "Don't notify me until the next update",
     "success": {
       "description": "The asset database has been successfully updated to version {remoteVersion}. You will now need to re-login to apply the changes",
-      "ok": "OK",
       "title": "Asset database update"
     },
     "title": "A supported asset update is available",
@@ -1377,7 +1383,7 @@
       "install": "Instalar",
       "next": "Siguiente",
       "no": "No",
-      "ok": "Ok",
+      "ok": "OK",
       "pull": "Descargar",
       "push": "Subir",
       "save": "Guardar",
@@ -3853,6 +3859,11 @@
         "edit": {
           "title": "Edit Event"
         }
+      },
+      "export": {
+        "confirmation_message": "¿Estás seguro de que deseas exportar este documento con los filtros seleccionados aplicados?",
+        "csv_export_error": "Hubo un error al exportar a CSV",
+        "download_failed": "No es posible descargar el archivo CSV"
       },
       "form": {
         "amount": {
