@@ -10,7 +10,6 @@ from urllib.parse import urlencode
 
 import requests
 
-from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.converters import UNSUPPORTED_ICONOMI_ASSETS, asset_from_iconomi
 from rotkehlchen.constants import ZERO
@@ -38,6 +37,7 @@ from rotkehlchen.types import ApiKey, ApiSecret, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 
 if TYPE_CHECKING:
+    from rotkehlchen.accounting.structures.base import HistoryEvent
     from rotkehlchen.assets.asset import AssetWithOracles
     from rotkehlchen.db.dbhandler import DBHandler
 
@@ -389,5 +389,5 @@ class Iconomi(ExchangeInterface):
             self,
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,
-    ) -> list[LedgerAction]:
+    ) -> list['HistoryEvent']:
         return []  # noop for iconomi

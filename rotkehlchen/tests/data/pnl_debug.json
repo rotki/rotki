@@ -128,19 +128,6 @@
       "notes": null
     },
     {
-      "identifier": 1,
-      "timestamp": 1643381540,
-      "action_type": "income",
-      "location": "bitcoinde",
-      "amount": "0",
-      "accounting_event_type": "ledger action",
-      "asset": "eip155:1/erc20:0x68A118Ef45063051Eac49c7e647CE5Ace48a68a5",
-      "rate": "123",
-      "rate_asset": null,
-      "link": null,
-      "notes": null
-    },
-    {
       "location": "binance",
       "category": "deposit",
       "address": null,
@@ -230,14 +217,6 @@
       "uniswapv3"
     ],
     "historical_price_oracles": ["manual", "cryptocompare", "coingecko"],
-    "taxable_ledger_actions": [
-      "income",
-      "expense",
-      "loss",
-      "dividends income",
-      "donation received",
-      "grant"
-    ],
     "pnl_csv_with_formulas": true,
     "pnl_csv_have_summary": false,
     "ssf_graph_multiplier": 0,
@@ -261,7 +240,7 @@
     "read_timeout": 30
   },
   "ignored_events_ids": {
-    "ledger_action": ["2"],
+    "history_event": ["100x0xca0a482213c17ccb0471b02ffab40b92279ae7f25da53e426fda5e73e915509f"],
     "asset_movement": [
       "a86d6d7d2f94db9f3ba96d29afbc26fa0c550e689638cde74123867b04a61916",
       "4c7a5f933609815f0b0b4f6c5b777cbe565864d45005fba32f109f6ce9ed8e4c"

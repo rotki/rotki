@@ -76,7 +76,6 @@ from rotkehlchen.utils.mixins.lockable import protect_with_lock
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
-    from rotkehlchen.accounting.ledger_actions import LedgerAction
     from rotkehlchen.assets.asset import Asset, AssetWithOracles
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
@@ -579,7 +578,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
                 has_premium=True,
             )
 
-        trades, max_ts = self.process_kraken_trades(trades_raw)  # type: ignore # limited by entry type  # noqa: E501
+        trades, max_ts = self.process_kraken_trades(trades_raw)
         queried_range = (start_ts, Timestamp(max_ts)) if with_errors else (start_ts, end_ts)
         return trades, queried_range
 
@@ -696,7 +695,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
             self,
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,
-    ) -> list['LedgerAction']:
+    ) -> list['HistoryEvent']:
         return []  # noop for kraken
 
     def process_kraken_events_for_trade(

@@ -2,6 +2,8 @@ import logging
 from typing import TYPE_CHECKING
 from uuid import uuid4
 
+from pysqlcipher3 import dbapi2 as sqlcipher
+
 from rotkehlchen.constants import ZERO
 from rotkehlchen.db.utils import update_table_schema
 from rotkehlchen.errors.serialization import DeserializationError
@@ -20,7 +22,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 PREFIX = 'RE_%'  # hard-coded since this is a migration and prefix may change in the future
-LEDGER_ACTIONS_PREFIX = 'MLA_'  # prefix to add to ledger actions migrated to history events id
+MIGRATION_PREFIX = 'MLA_'  # prefix to add to ledger actions migrated to history events id
 CHANGES = [  # TO TYPE, TO SUBTYPE, FROM TYPE, FROM SUBTYPE
     (HistoryEventType.DEPOSIT, HistoryEventSubType.NONE, HistoryEventType.DEPOSIT, HistoryEventSubType.SPEND),  # noqa: E501
     (HistoryEventType.WITHDRAWAL, HistoryEventSubType.NONE, HistoryEventType.WITHDRAWAL, HistoryEventSubType.RECEIVE),  # noqa: E501
@@ -72,6 +74,7 @@ def _migrate_rotki_events(write_cursor: 'DBCursor') -> None:
 def _upgrade_rotki_events(write_cursor: 'DBCursor') -> None:
     """Upgrade the rotki events schema table to specify location as a type"""
     log.debug('Enter _upgrade_rotki_events')
+    write_cursor.executescript('PRAGMA foreign_keys = OFF;')
     update_table_schema(
         write_cursor=write_cursor,
         table_name='history_events',
@@ -91,6 +94,7 @@ def _upgrade_rotki_events(write_cursor: 'DBCursor') -> None:
         FOREIGN KEY(asset) REFERENCES assets(identifier) ON UPDATE CASCADE,
         UNIQUE(event_identifier, sequence_index)""",
     )
+    write_cursor.executescript('PRAGMA foreign_keys = ON;')
     log.debug('Exit _upgrade_rotki_events')
 
 
@@ -130,6 +134,8 @@ def _migrate_ledger_actions(write_cursor: 'DBCursor', conn: 'DBConnection') -> N
     """
     Migrate all ledger actions to history events, so that we can get rid of the
     deprecated ledger action structure.
+
+    Then remove all no longer needed DB data
 
     Part of https://github.com/rotki/rotki/issues/6096
     """
@@ -179,11 +185,12 @@ def _migrate_ledger_actions(write_cursor: 'DBCursor', conn: 'DBConnection') -> N
                 event_type = 'receive'
                 event_subtype = 'airdrop'
             else:
-                raise AssertionError('Should never happen. Guaranteed by DB consistency')
+                log.error(f'Corrupt ledger action type. Skipping entry during upgrade: {entry}')
+                continue
 
             history_events.append((
                 1,  # entry_type -> HISTORY_EVENT
-                f'{LEDGER_ACTIONS_PREFIX}{uuid4().hex}',  # event_identifier
+                f'{MIGRATION_PREFIX}{uuid4().hex}',  # event_identifier
                 0,  # sequence_index
                 entry[0] * 1000,  # timestamp
                 location,
@@ -211,6 +218,23 @@ def _migrate_ledger_actions(write_cursor: 'DBCursor', conn: 'DBConnection') -> N
     subtype) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""", history_events)
     write_cursor.execute('DROP TABLE IF EXISTS ledger_actions;')
     write_cursor.execute('DROP TABLE IF EXISTS ledger_action_type;')
+    write_cursor.execute('DELETE from settings WHERE name=?', ('taxable_ledger_actions',))
+
+    with conn.read_ctx() as cursor:  # migrate coinbase ledger action query ranges
+        cursor.execute("SELECT name FROM used_query_ranges WHERE name LIKE '%_ledger_actions_%'")
+        for entry in cursor:
+            try:
+                write_cursor.execute(
+                    'UPDATE used_query_ranges SET name = ? WHERE name = ?',
+                    (entry[0].replace('_ledger_actions_', '_history_events_'), entry[0]),
+                )
+            except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
+                log.error(f'Failed to update used query range {entry[0]} due to {e}')
+                continue
+
+    # Clean up any ignored ledger actions # THINK: Migrate the ignoring if action exists and is migrated to history event or let user do it again? Probably let's keep it simple  # noqa: E501
+    write_cursor.execute('DELETE FROM ignored_actions WHERE type=?', ('D',))
+    write_cursor.execute('DELETE FROM action_type WHERE type=?', ('D',))
 
     log.debug('Exit _migrate_ledger_actions')
 

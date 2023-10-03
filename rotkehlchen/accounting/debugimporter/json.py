@@ -5,7 +5,6 @@ from typing import Any
 
 from marshmallow import EXCLUDE, ValidationError
 
-from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
 from rotkehlchen.accounting.structures.base import HistoryEvent
 from rotkehlchen.accounting.structures.types import ActionType
@@ -62,8 +61,6 @@ class DebugHistoryImporter:
                     events.append(MarginPosition.deserialize(event))
                 elif event_type == AccountingEventType.TRADE:
                     events.append(Trade.deserialize(event))
-                elif event_type == AccountingEventType.LEDGER_ACTION:
-                    events.append(LedgerAction.deserialize(event))
                 elif event_type == AccountingEventType.STAKING:
                     events.append(ValidatorDailyStats.deserialize(event))
         except (DeserializationError, KeyError, UnknownAsset) as e:

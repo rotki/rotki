@@ -3,7 +3,9 @@ from unittest.mock import patch
 
 import requests
 
-from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
+from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.accounting.structures.base import HistoryEvent
+from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.converters import asset_from_coinbase
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_1INCH, A_BTC, A_ETH, A_USD, A_USDC
@@ -20,7 +22,7 @@ from rotkehlchen.tests.utils.exchanges import (
 )
 from rotkehlchen.tests.utils.history import TEST_END_TS
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import AssetMovementCategory, Location, TradeType
+from rotkehlchen.types import AssetMovementCategory, Location, TimestampMS, TradeType
 
 
 def test_name():
@@ -561,12 +563,15 @@ def test_coinbase_query_deposit_withdrawals(function_scope_coinbase):
     assert movements[2].timestamp == 1502554304
 
 
-def test_coinbase_query_income_loss_expense(function_scope_coinbase):
+def test_coinbase_query_income_loss_expense(
+        function_scope_coinbase,
+        price_historian,    # pylint: disable=unused-argument
+):
     """Test that coinbase deposit/withdrawals history query works fine for the happy path"""
     coinbase = function_scope_coinbase
 
     with patch.object(coinbase.session, 'get', side_effect=mock_normal_coinbase_query):
-        ledger_actions = coinbase.query_online_income_loss_expense(
+        events = coinbase.query_online_income_loss_expense(
             start_ts=0,
             end_ts=1611426233,
         )
@@ -575,39 +580,35 @@ def test_coinbase_query_income_loss_expense(function_scope_coinbase):
     errors = coinbase.msg_aggregator.consume_errors()
     assert len(warnings) == 0
     assert len(errors) == 0
-    assert len(ledger_actions) == 2
-    expected_ledger_actions = [LedgerAction(
-        identifier=ledger_actions[0].identifier,
-        location=Location.COINBASE,
-        action_type=LedgerActionType.INCOME,
-        timestamp=1609877514,
-        asset=asset_from_coinbase('NMR'),
-        amount=FVal('0.02762431'),
-        rate=FVal('36.56199919563601769600761069'),
-        rate_asset=A_USD,
-        link='id4',
-        notes=('Received Numeraire '
-               'From Coinbase Earn '
-               'Received 0.02762431 NMR ($1.01)'),
-    ), LedgerAction(
-        identifier=ledger_actions[1].identifier,
-        location=Location.COINBASE,
-        action_type=LedgerActionType.INCOME,
-        timestamp=1611426233,
-        asset=asset_from_coinbase('ALGO'),
-        amount=FVal('0.000076'),
-        rate=ZERO,
-        rate_asset=A_USD,
-        link='id5',
-        notes=('Algorand reward '
-               'From Coinbase '
-               'Received 0.000076 ALGO ($0.00)'),
-    )]
-    assert expected_ledger_actions == ledger_actions
+    assert len(events) == 2
+    expected_events = [
+        HistoryEvent(
+            event_identifier='CBE_id4',
+            sequence_index=0,
+            timestamp=TimestampMS(1609877514000),
+            location=Location.COINBASE,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=asset_from_coinbase('NMR'),
+            balance=Balance(amount=FVal('0.02762431'), usd_value=FVal('1.01')),
+            notes='Received 0.02762431 NMR ($1.01)',
+        ), HistoryEvent(
+            event_identifier='CBE_id5',
+            sequence_index=0,
+            timestamp=TimestampMS(1611426233000),
+            location=Location.COINBASE,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=asset_from_coinbase('ALGO'),
+            balance=Balance(amount=FVal('0.000076'), usd_value=ZERO),
+            notes='Received 0.000076 ALGO ($0.00)',
+        ),
+    ]
+    assert expected_events == events
 
     # and now try to query within a specific range
     with patch.object(coinbase.session, 'get', side_effect=mock_normal_coinbase_query):
-        ledger_actions = coinbase.query_online_income_loss_expense(
+        events = coinbase.query_online_income_loss_expense(
             start_ts=0,
             end_ts=1609877514,
         )
@@ -616,9 +617,7 @@ def test_coinbase_query_income_loss_expense(function_scope_coinbase):
     errors = coinbase.msg_aggregator.consume_errors()
     assert len(warnings) == 0
     assert len(errors) == 0
-    assert len(ledger_actions) == 1
-    assert ledger_actions[0].action_type == LedgerActionType.INCOME
-    assert ledger_actions[0].timestamp == 1609877514
+    assert events == [expected_events[0]]
 
 
 def test_coinbase_query_deposit_withdrawals_unexpected_data(function_scope_coinbase):

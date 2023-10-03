@@ -322,18 +322,12 @@ def test_query_transactions(rotkehlchen_api_server):
     assert result['entries_limit'] == FREE_ETH_TX_LIMIT
 
     # now let's ignore two transactions
-    ignored_data = [{
-        'evm_chain': 'ethereum',
-        'tx_hash': EXPECTED_AFB7_TXS[2]['tx_hash'],
-    }, {
-        'evm_chain': 'ethereum',
-        'tx_hash': EXPECTED_AFB7_TXS[3]['tx_hash'],
-    }]
+    ignored_data = [f"1{EXPECTED_AFB7_TXS[2]['tx_hash']}", f"1{EXPECTED_AFB7_TXS[3]['tx_hash']}"]
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
             'ignoredactionsresource',
-        ), json={'action_type': 'evm_transaction', 'data': ignored_data},
+        ), json={'action_type': 'history_event', 'data': ignored_data},
     )
     assert_simple_ok_response(response)
 

@@ -3,14 +3,12 @@ from abc import ABCMeta, abstractmethod
 from pathlib import Path
 from typing import Any, Optional
 
-from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
 from rotkehlchen.assets.converters import LOCATION_TO_ASSET_MAPPING, asset_from_common_identifier
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.drivers.gevent import DBCursor
 from rotkehlchen.db.history_events import DBHistoryEvents
-from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.serialization.deserialize import deserialize_asset_amount, deserialize_timestamp
@@ -22,12 +20,10 @@ ITEMS_PER_DB_WRITE = 400
 class BaseExchangeImporter(metaclass=ABCMeta):
     def __init__(self, db: DBHandler) -> None:
         self.db = db
-        self.db_ledger = DBLedgerActions(self.db, self.db.msg_aggregator)
         self.history_db = DBHistoryEvents(self.db)
         self._trades: list[Trade] = []
         self._margin_trades: list[MarginPosition] = []
         self._asset_movements: list[AssetMovement] = []
-        self._ledger_actions: list[LedgerAction] = []
         self._history_events: list[HistoryBaseEntry] = []
 
     def import_csv(self, filepath: Path, **kwargs: Any) -> tuple[bool, str]:
@@ -59,28 +55,22 @@ class BaseExchangeImporter(metaclass=ABCMeta):
         self._asset_movements.append(asset_movement)
         self.maybe_flush_all(write_cursor)
 
-    def add_ledger_action(self, write_cursor: DBCursor, ledger_action: LedgerAction) -> None:
-        self._ledger_actions.append(ledger_action)
-        self.maybe_flush_all(write_cursor)
-
     def add_history_events(self, write_cursor: DBCursor, history_events: list[HistoryBaseEntry]) -> None:  # noqa: E501
         self._history_events.extend(history_events)
         self.maybe_flush_all(write_cursor)
 
     def maybe_flush_all(self, cursor: DBCursor) -> None:
-        if len(self._trades) + len(self._margin_trades) + len(self._asset_movements) + len(self._ledger_actions) + len(self._history_events) >= ITEMS_PER_DB_WRITE:  # noqa: E501
+        if len(self._trades) + len(self._margin_trades) + len(self._asset_movements) + len(self._history_events) >= ITEMS_PER_DB_WRITE:  # noqa: E501
             self.flush_all(cursor)
 
     def flush_all(self, write_cursor: DBCursor) -> None:
         self.db.add_trades(write_cursor, trades=self._trades)
         self.db.add_margin_positions(write_cursor, margin_positions=self._margin_trades)
         self.db.add_asset_movements(write_cursor, asset_movements=self._asset_movements)
-        self.db_ledger.add_ledger_actions(write_cursor, actions=self._ledger_actions)
         self.history_db.add_history_events(write_cursor, history=self._history_events)
         self._trades = []
         self._margin_trades = []
         self._asset_movements = []
-        self._ledger_actions = []
         self._history_events = []
 
 

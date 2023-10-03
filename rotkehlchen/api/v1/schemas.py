@@ -7,7 +7,6 @@ from eth_utils import to_checksum_address
 from marshmallow import Schema, fields, post_load, validate, validates_schema
 from marshmallow.exceptions import ValidationError
 
-from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
 from rotkehlchen.accounting.structures.balance import Balance, BalanceType
 from rotkehlchen.accounting.structures.base import HistoryBaseEntryType
 from rotkehlchen.accounting.structures.evm_event import EvmEvent, EvmProduct
@@ -53,7 +52,6 @@ from rotkehlchen.db.filtering import (
     EvmEventFilterQuery,
     EvmTransactionsFilterQuery,
     HistoryEventFilterQuery,
-    LedgerActionsFilterQuery,
     LevenshteinFilterQuery,
     NFTFilterQuery,
     ReportDataFilterQuery,
@@ -845,84 +843,6 @@ class AssetMovementsQuerySchema(
         }
 
 
-class LedgerActionsQuerySchema(
-        AsyncQueryArgumentSchema,
-        TimestampRangeSchema,
-        OnlyCacheQuerySchema,
-        DBPaginationSchema,
-        DBOrderBySchema,
-):
-    asset = AssetField(expected_type=Asset, load_default=None)
-    type = SerializableEnumField(enum_class=LedgerActionType, load_default=None)
-    location = LocationField(load_default=None)
-
-    def __init__(
-            self,
-            treat_eth2_as_eth: bool,
-    ) -> None:
-        super().__init__()
-        self.treat_eth2_as_eth = treat_eth2_as_eth
-
-    @validates_schema
-    def validate_ledger_action_query_schema(
-            self,
-            data: dict[str, Any],
-            **_kwargs: Any,
-    ) -> None:
-        valid_ordering_attr = {
-            None,
-            'timestamp',
-            'type',
-            'location',
-            'amount',
-            'rate',
-        }
-        if (
-            data['order_by_attributes'] is not None and
-            not set(data['order_by_attributes']).issubset(valid_ordering_attr)
-        ):
-            error_msg = (
-                f'order_by_attributes for ledger actions can not be '
-                f'{",".join(set(data["order_by_attributes"]) - valid_ordering_attr)}'
-            )
-            raise ValidationError(
-                message=error_msg,
-                field_name='order_by_attributes',
-            )
-
-    @post_load
-    def make_ledger_actions_query(
-            self,
-            data: dict[str, Any],
-            **_kwargs: Any,
-    ) -> dict[str, Any]:
-        asset_list: Optional[tuple[Asset, ...]] = None
-        if data['asset'] is not None:
-            asset_list = (data['asset'],)
-        if self.treat_eth2_as_eth is True and data['asset'] == A_ETH:
-            asset_list = (A_ETH, A_ETH2)
-
-        filter_query = LedgerActionsFilterQuery.make(
-            order_by_rules=create_order_by_rules_list(
-                data=data,
-                default_order_by_fields=['timestamp'],
-                default_ascending=[False],
-            ),
-            limit=data['limit'],
-            offset=data['offset'],
-            from_ts=data['from_timestamp'],
-            to_ts=data['to_timestamp'],
-            assets=asset_list,
-            action_type=[data['type']] if data['type'] is not None else None,
-            location=data['location'],
-        )
-        return {
-            'async_query': data['async_query'],
-            'only_cache': data['only_cache'],
-            'filter_query': filter_query,
-        }
-
-
 class TradeSchema(Schema):
     timestamp = TimestampUntilNowField(required=True)
     location = LocationField(required=True)
@@ -958,43 +878,6 @@ class TradeSchema(Schema):
 
         if data['rate'] == ZERO:
             raise ValidationError('A zero rate is not allowed', field_name='rate')
-
-
-class LedgerActionSchema(Schema):
-    identifier = fields.Integer(load_default=None, required=False)
-    timestamp = TimestampUntilNowField(required=True)
-    action_type = SerializableEnumField(enum_class=LedgerActionType, required=True)
-    location = LocationField(required=True)
-    amount = AmountField(required=True)
-    asset = AssetField(expected_type=Asset, required=True)
-    rate = PriceField(load_default=None)
-    rate_asset = AssetField(expected_type=Asset, load_default=None)
-    link = fields.String(load_default=None)
-    notes = fields.String(load_default=None)
-
-    def __init__(self, identifier_required: bool):
-        super().__init__()
-        self.identifier_required = identifier_required
-
-    @validates_schema
-    def validate_ledger_action_schema(
-            self,
-            data: dict[str, Any],
-            **_kwargs: Any,
-    ) -> None:
-        if self.identifier_required is True and data['identifier'] is None:
-            raise ValidationError(
-                message='Ledger action identifier should be given',
-                field_name='identifier',
-            )
-
-    @post_load(pass_many=True)
-    def make_ledger_action(
-            self,
-            data: dict[str, Any],
-            **_kwargs: Any,
-    ) -> dict[str, LedgerAction]:
-        return {'action': LedgerAction(**data)}
 
 
 class IntegerIdentifierListSchema(Schema):
@@ -1203,10 +1086,6 @@ class ModifiableSettingsSchema(Schema):
         validate=_validate_historical_price_oracles,
         load_default=None,
     )
-    taxable_ledger_actions = fields.List(
-        SerializableEnumField(enum_class=LedgerActionType),
-        load_default=None,
-    )
     pnl_csv_with_formulas = fields.Bool(load_default=None)
     pnl_csv_have_summary = fields.Bool(load_default=None)
     ssf_graph_multiplier = fields.Integer(
@@ -1292,7 +1171,6 @@ class ModifiableSettingsSchema(Schema):
             display_date_in_localtime=data['display_date_in_localtime'],
             historical_price_oracles=data['historical_price_oracles'],
             current_price_oracles=data['current_price_oracles'],
-            taxable_ledger_actions=data['taxable_ledger_actions'],
             pnl_csv_with_formulas=data['pnl_csv_with_formulas'],
             pnl_csv_have_summary=data['pnl_csv_have_summary'],
             ssf_graph_multiplier=data['ssf_graph_multiplier'],
@@ -1964,34 +1842,7 @@ class IgnoredAssetsSchema(Schema):
 
 class IgnoredActionsModifySchema(Schema):
     action_type = SerializableEnumField(enum_class=ActionType, required=True)
-    data = fields.List(fields.Raw(), required=True)
-
-    @post_load
-    def transform_data(
-            self,
-            data: dict[str, Any],
-            **_kwargs: Any,
-    ) -> Any:
-        given_data = data['data']
-        new_data = []
-        action_type = data['action_type']
-        if action_type == ActionType.EVM_TRANSACTION:
-            for entry in given_data:
-                try:
-                    chain_id = EvmChainNameField()._deserialize(entry['evm_chain'], None, None)
-                    tx_hash = EVMTransactionHashField()._deserialize(entry['tx_hash'], None, None)
-                except KeyError as e:
-                    raise ValidationError(f'Did not find {e!s} at the given data') from e
-                new_data.append(f'{chain_id.value}{tx_hash.hex()}')  # pylint: disable=no-member
-        else:
-            if not all(isinstance(x, str) for x in given_data):
-                raise ValidationError(
-                    f'The ignored action data for {action_type.serialize()} need to be a list of strings',  # noqa: E501
-                )
-            new_data = given_data
-
-        data['data'] = new_data
-        return data
+    data = DelimitedOrNormalList(fields.String(required=True), required=True)
 
 
 class AssetsPostSchema(DBPaginationSchema, DBOrderBySchema):

@@ -3,11 +3,7 @@ from collections.abc import Iterator
 from typing import TYPE_CHECKING, Any, Optional, cast
 
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
-from rotkehlchen.accounting.structures.types import (
-    ActionType,
-    HistoryEventSubType,
-    HistoryEventType,
-)
+from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.constants import ETH2_DEPOSIT_ADDRESS
 from rotkehlchen.chain.ethereum.modules.eth2.constants import CPT_ETH2, UNKNOWN_VALIDATOR_INDEX
 from rotkehlchen.errors.serialization import DeserializationError
@@ -186,9 +182,6 @@ class EthWithdrawalEvent(EthStakingEvent):
     def get_accounting_event_type() -> AccountingEventType:
         return AccountingEventType.HISTORY_EVENT
 
-    def should_ignore(self, ignored_ids_mapping: dict[ActionType, set[str]]) -> bool:
-        return False  # TODO: Same question on ignoring as general HistoryEvent
-
     def process(
             self,
             accounting: 'AccountingPot',
@@ -313,9 +306,6 @@ class EthBlockEvent(EthStakingEvent):
     @staticmethod
     def get_accounting_event_type() -> AccountingEventType:
         return AccountingEventType.HISTORY_EVENT
-
-    def should_ignore(self, ignored_ids_mapping: dict[ActionType, set[str]]) -> bool:
-        return False  # TODO: Same question on ignoring as general HistoryEvent
 
     def process(
             self,
@@ -454,9 +444,6 @@ class EthDepositEvent(EvmEvent, EthStakingEvent):  # noqa: PLW1641  # hash in su
     @staticmethod
     def get_accounting_event_type() -> AccountingEventType:
         return AccountingEventType.HISTORY_EVENT
-
-    def should_ignore(self, ignored_ids_mapping: dict[ActionType, set[str]]) -> bool:
-        return False  # TODO: Same question on ignoring as general HistoryEvent
 
     def process(
             self,

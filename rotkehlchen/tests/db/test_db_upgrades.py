@@ -1823,7 +1823,13 @@ def test_upgrade_db_39_to_40(user_data_dir):  # pylint: disable=unused-argument
         ('staking', 'reward'), ('staking', 'fee'),
     }
     # also check that the non rotki events are not affected
-    assert other_events_types_before == {('deposit', 'spend'), ('withdrawal', 'fee'), ('receive', 'receive'), ('staking', 'fee')}  # noqa: E501
+    assert other_events_types_before == {('deposit', 'spend'), ('withdrawal', 'fee'), ('receive', 'receive'), ('staking', 'fee'), ('receive', 'none'), ('remove_asset', 'staking')}  # noqa: E501
+    # check that the evm events info is populated and connected to
+    assert cursor.execute('SELECT * from evm_events_info').fetchall() == [
+        (15, 'bytehash', 'aprotocol', 'aproduct', '0x4bBa290826C253BD854121346c370a9886d1bC26', None),  # noqa: E501
+    ]
+    assert cursor.execute('SELECT * from eth_staking_events_info').fetchall() == [(16, 19564, 0)]
+
     # check the tables we create don't exist and ones we remove exist before the upgrade
     assert table_exists(cursor, 'skipped_external_events') is False
     assert table_exists(cursor, 'ledger_action_type') is True
@@ -1831,6 +1837,22 @@ def test_upgrade_db_39_to_40(user_data_dir):  # pylint: disable=unused-argument
 
     max_initial_node_id = cursor.execute('SELECT MAX(identifier) FROM rpc_nodes').fetchone()[0]
     nodes_before = cursor.execute('SELECT * FROM rpc_nodes').fetchall()
+
+    # Check used query ranges before
+    assert cursor.execute('SELECT * from used_query_ranges').fetchall() == [
+        ('last_withdrawals_query_ts', 0, 1693141835),
+        ('coinbase_ledger_actions_coinbase1', 0, 100),
+        ('coinbase_ledger_actions_coinbase2', 500, 1000),
+    ]
+    # Check that ledger actions settings are there
+    assert cursor.execute('SELECT COUNT(*) FROM settings WHERE name=?', ('taxable_ledger_actions',)).fetchone()[0] == 1  # noqa: E501
+    # Check that ignored ledger actions are there
+    assert cursor.execute('SELECT type, identifier FROM ignored_actions').fetchall() == [
+        ('D', '2'), ('D', '7'),
+    ]
+    assert cursor.execute('SELECT type, seq FROM action_type').fetchall() == [
+        ('A', 1), ('B', 2), ('C', 3), ('D', 4),
+    ]
 
     cursor.close()
     db_v39.logout()
@@ -1855,7 +1877,12 @@ def test_upgrade_db_39_to_40(user_data_dir):  # pylint: disable=unused-argument
         ('staking', 'reward'), ('spend', 'fee'),
     }
     # also check that the non rotki events are not affected
-    assert other_events_types_after == {('deposit', 'spend'), ('withdrawal', 'fee'), ('receive', 'receive'), ('staking', 'fee'), ('receive', 'none'), ('spend', 'none'), ('receive', 'donate'), ('receive', 'airdrop')}  # noqa: E501
+    assert other_events_types_after == {('deposit', 'spend'), ('withdrawal', 'fee'), ('receive', 'receive'), ('staking', 'fee'), ('receive', 'none'), ('spend', 'none'), ('receive', 'donate'), ('receive', 'airdrop'), ('remove_asset', 'staking')}  # noqa: E501
+    # check that after upgrade tables depending on base history events are still connected
+    assert cursor.execute('SELECT * from evm_events_info').fetchall() == [
+        (15, 'bytehash', 'aprotocol', 'aproduct', '0x4bBa290826C253BD854121346c370a9886d1bC26', None),  # noqa: E501
+    ]
+    assert cursor.execute('SELECT * from eth_staking_events_info').fetchall() == [(16, 19564, 0)]
     # check new tables are created and old are removed
     assert table_exists(cursor, 'skipped_external_events') is True
     assert table_exists(cursor, 'ledger_action_type') is False
@@ -1883,6 +1910,19 @@ def test_upgrade_db_39_to_40(user_data_dir):  # pylint: disable=unused-argument
         (1695826372000, 'J', None, 'eip155:1/erc20:0x111111111117dC0aa78b770fA6A738034120C302', '69', 'Hue hue 69 1inch tokens airdrop. Hue hue!. Migrated from a ledger action of airdrop type', 'receive', 'airdrop'),  # noqa: E501
         (1696085745000, 'B', None, 'BTC', '1', 'Kraken gave me 1 BTC because I am a good boy. Migrated from a ledger action of gift type', 'receive', 'none'),  # noqa: E501
         (1695913006000, 'h', None, 'eip155:1/erc20:0x7D1AfA7B718fb893dB30A3aBc0Cfc608AaCfeBB0', '1000', 'Polygon paid us for something (as if). Migrated from a ledger action of grant type. https://polygonscan.com/tx/0xc0b96f46f7d2be3e5b68583b1223cab0d46526a6a37415a125698687c7cbd87d', 'receive', 'none'),  # noqa: E501
+    ]
+    # Assert used query ranges got updated
+    assert cursor.execute('SELECT * from used_query_ranges').fetchall() == [
+        ('last_withdrawals_query_ts', 0, 1693141835),
+        ('coinbase_history_events_coinbase1', 0, 100),
+        ('coinbase_history_events_coinbase2', 500, 1000),
+    ]
+    # Check that ledger actions settings are removed
+    assert cursor.execute('SELECT COUNT(*) FROM settings WHERE name=?', ('taxable_ledger_actions',)).fetchone()[0] == 0  # noqa: E501
+    # Check that ignored ledger actions are removed
+    assert cursor.execute('SELECT type, identifier FROM ignored_actions').fetchall() == []
+    assert cursor.execute('SELECT type, seq FROM action_type').fetchall() == [
+        ('A', 1), ('B', 2), ('C', 3),
     ]
 
 

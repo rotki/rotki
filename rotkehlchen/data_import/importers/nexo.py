@@ -3,11 +3,13 @@ import logging
 from pathlib import Path
 from typing import Any
 
-from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
+from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.accounting.structures.base import HistoryEvent
+from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.converters import asset_from_nexo
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_USD
-from rotkehlchen.data_import.utils import BaseExchangeImporter, UnsupportedCSVEntry
+from rotkehlchen.data_import.utils import BaseExchangeImporter, UnsupportedCSVEntry, hash_csv_row
 from rotkehlchen.db.drivers.gevent import DBCursor
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
@@ -20,9 +22,13 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_timestamp_from_date,
 )
 from rotkehlchen.types import AssetMovementCategory, Fee, Location
+from rotkehlchen.utils.misc import ts_sec_to_ms
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+
+NEXO_PREFIX = 'NEXO_'
 
 
 class NexoImporter(BaseExchangeImporter):
@@ -99,19 +105,19 @@ class NexoImporter(BaseExchangeImporter):
             )
             self.add_asset_movement(write_cursor, asset_movement)
         elif entry_type == 'Withdrawal Fee':
-            action = LedgerAction(
-                identifier=0,  # whatever is not used at insertion
-                timestamp=timestamp,
-                action_type=LedgerActionType.EXPENSE,
+            event = HistoryEvent(
+                event_identifier=f'{NEXO_PREFIX}{hash_csv_row(csv_row)}',
+                sequence_index=0,
+                timestamp=ts_sec_to_ms(timestamp),
                 location=Location.NEXO,
-                amount=amount,
+                event_type=HistoryEventType.SPEND,
+                event_subtype=HistoryEventSubType.FEE,
+                balance=Balance(amount=amount),
                 asset=asset,
-                rate=None,
-                rate_asset=None,
-                link=None,
+                location_label=transaction,
                 notes=f'{entry_type} from Nexo',
             )
-            self.add_ledger_action(write_cursor, action)
+            self.add_history_events(write_cursor, [event])
         elif entry_type in ('Interest', 'Bonus', 'Dividend', 'FixedTermInterest', 'Cashback', 'ReferralBonus'):  # noqa: E501
             # A user shared a CSV file where some entries marked as interest had negative amounts.
             # we couldn't find information about this since they seem internal transactions made
@@ -121,35 +127,36 @@ class NexoImporter(BaseExchangeImporter):
             if deserialize_asset_amount(csv_row['Output Amount']) < 0:
                 log.debug(f'Ignoring nexo entry {csv_row} with negative interest')
                 return
-            action = LedgerAction(
-                identifier=0,  # whatever is not used at insertion
-                timestamp=timestamp,
-                action_type=LedgerActionType.INCOME,
+
+            event = HistoryEvent(
+                event_identifier=f'{NEXO_PREFIX}{hash_csv_row(csv_row)}',
+                sequence_index=0,
+                timestamp=ts_sec_to_ms(timestamp),
                 location=Location.NEXO,
-                amount=amount,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.NONE,
+                balance=Balance(amount=amount),
                 asset=asset,
-                rate=None,
-                rate_asset=None,
-                link=transaction,
+                location_label=transaction,
                 notes=f'{entry_type} from Nexo',
             )
-            self.add_ledger_action(write_cursor, action)
+            self.add_history_events(write_cursor, [event])
         elif entry_type == 'Liquidation':
             input_asset = asset_from_nexo(csv_row['Input Currency'])
             input_amount = deserialize_asset_amount_force_positive(csv_row['Input Amount'])
-            action = LedgerAction(
-                identifier=0,
-                timestamp=timestamp,
-                action_type=LedgerActionType.LOSS,
+            event = HistoryEvent(
+                event_identifier=f'{NEXO_PREFIX}{hash_csv_row(csv_row)}',
+                sequence_index=0,
+                timestamp=ts_sec_to_ms(timestamp),
                 location=Location.NEXO,
+                event_type=HistoryEventType.SPEND,
+                event_subtype=HistoryEventSubType.LIQUIDATE,
+                balance=Balance(amount=input_amount),
                 asset=input_asset,
-                amount=input_amount,
-                rate=None,
-                rate_asset=None,
-                link=transaction,
+                location_label=transaction,
                 notes=f'{entry_type} from Nexo',
             )
-            self.add_ledger_action(write_cursor, action)
+            self.add_history_events(write_cursor, [event])
         elif entry_type in ignored_entries:
             pass
         else:

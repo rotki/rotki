@@ -197,6 +197,16 @@ prices = {
             1635314397: ZERO,
         },
     },
+    strethaddress_to_identifier('0x1776e1F26f98b1A5dF9cD347953a26dd3Cb46671'): {  # NMR
+        'EUR': {
+            1609877514: FVal('23.15'),
+        },
+    },
+    'ALGO': {
+        'EUR': {
+            1611426233: FVal('0.4573'),
+        },
+    },
     'CHF': {
         'EUR': {
             1496979735: FVal(1.001),

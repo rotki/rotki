@@ -4,15 +4,14 @@ from typing import TYPE_CHECKING, Any, Callable, Optional
 
 import requests
 
-from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.db.filtering import (
     AssetMovementsFilterQuery,
-    LedgerActionsFilterQuery,
+    HistoryEventFilterQuery,
     TradesFilterQuery,
 )
-from rotkehlchen.db.ledger_actions import DBLedgerActions
+from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
@@ -33,6 +32,7 @@ from rotkehlchen.utils.mixins.cacheable import CacheableMixIn
 from rotkehlchen.utils.mixins.lockable import LockableQueryMixIn, protect_with_lock
 
 if TYPE_CHECKING:
+    from rotkehlchen.accounting.structures.base import HistoryEvent
     from rotkehlchen.db.dbhandler import DBHandler
 
 logger = logging.getLogger(__name__)
@@ -219,8 +219,8 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> list[LedgerAction]:
-        """Queries the exchange's API for the ledger actions of the user
+    ) -> list['HistoryEvent']:
+        """Queries the exchange's API for simple history events of the user
 
         Should be implemented in subclasses.
         Has to be implemented by exchanges if they have anything exchange specific
@@ -417,27 +417,26 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
             start_ts: Timestamp,
             end_ts: Timestamp,
             only_cache: bool,
-    ) -> list[LedgerAction]:
+    ) -> list['HistoryEvent']:
         """Queries the local DB and the exchange for the income/loss/expense history of the user
 
         If only_cache is true only what is already cached in the DB is returned without
         an actual exchange query.
         """
-        db = DBLedgerActions(self.db, self.db.msg_aggregator)
-        filter_query = LedgerActionsFilterQuery.make(
+        db = DBHistoryEvents(self.db)
+        filter_query = HistoryEventFilterQuery.make(
             from_ts=start_ts,
             to_ts=end_ts,
             location=self.location,
         )
-
         with self.db.conn.read_ctx() as cursor:
             # has_premium True is fine here since the result of this is not user facing atm
-            ledger_actions = db.get_ledger_actions(cursor, filter_query=filter_query, has_premium=True)  # noqa: E501
+            events = db.get_history_events(cursor, filter_query=filter_query, has_premium=True)
             if only_cache:
-                return ledger_actions
+                return events
 
             ranges = DBQueryRanges(self.db)
-            location_string = f'{self.location!s}_ledger_actions_{self.name}'
+            location_string = f'{self.location!s}_history_events_{self.name}'
             ranges_to_query = ranges.get_location_query_ranges(
                 cursor=cursor,
                 location_string=location_string,
@@ -446,21 +445,21 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
             )
 
         for query_start_ts, query_end_ts in ranges_to_query:
-            new_ledger_actions = self.query_online_income_loss_expense(
+            new_events = self.query_online_income_loss_expense(
                 start_ts=query_start_ts,
                 end_ts=query_end_ts,
             )
             with self.db.user_write() as write_cursor:
-                if len(new_ledger_actions) != 0:
-                    db.add_ledger_actions(write_cursor, new_ledger_actions)
+                if len(new_events) != 0:
+                    db.add_history_events(write_cursor, new_events)
                 ranges.update_used_query_range(
                     write_cursor=write_cursor,
                     location_string=location_string,
                     queried_ranges=[(query_start_ts, query_end_ts)],
                 )
-            ledger_actions.extend(new_ledger_actions)
+            events.extend(new_events)
 
-        return ledger_actions
+        return events
 
     def query_history_with_callbacks(
             self,

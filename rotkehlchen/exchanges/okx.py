@@ -9,7 +9,6 @@ from urllib.parse import urlencode, urljoin
 
 import requests
 
-from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.converters import asset_from_okx
 from rotkehlchen.constants import ZERO
@@ -38,6 +37,7 @@ from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_ms_to_sec, ts_sec_to_ms
 
 if TYPE_CHECKING:
+    from rotkehlchen.accounting.structures.base import HistoryEvent
     from rotkehlchen.assets.asset import AssetWithOracles
     from rotkehlchen.db.dbhandler import DBHandler
 
@@ -374,7 +374,7 @@ class Okx(ExchangeInterface):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> list[LedgerAction]:
+    ) -> list['HistoryEvent']:
         return []  # noop for okx
 
     def trade_from_okx(self, raw_trade: dict[str, Any]) -> Optional[Trade]:

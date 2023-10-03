@@ -833,10 +833,10 @@ def test_phising_zero_transfers(database, ethereum_inquirer):
     with database.conn.read_ctx() as cursor:
         ignored_actions = database.get_ignored_action_ids(
             cursor=cursor,
-            action_type=ActionType.EVM_TRANSACTION,
+            action_type=ActionType.HISTORY_EVENT,
         )
 
-    assert ignored_actions == {ActionType.EVM_TRANSACTION: {f'{ChainID.ETHEREUM.value}{tx_hex}'}}, 'Transaction with only zero transfers should have been marked as ignored'  # noqa: E501
+    assert ignored_actions == {ActionType.HISTORY_EVENT: {f'{ChainID.ETHEREUM.value}{tx_hex}'}}, 'Transaction with only zero transfers should have been marked as ignored'  # noqa: E501
 
     # Repeat the same process to see that redecoding doesnt break anything
     events, _ = get_decoded_events_of_transaction(
@@ -849,7 +849,7 @@ def test_phising_zero_transfers(database, ethereum_inquirer):
     with database.conn.read_ctx() as cursor:
         ignored_actions = database.get_ignored_action_ids(
             cursor=cursor,
-            action_type=ActionType.EVM_TRANSACTION,
+            action_type=ActionType.HISTORY_EVENT,
         )
 
-    assert ignored_actions == {ActionType.EVM_TRANSACTION: {f'{ChainID.ETHEREUM.value}{tx_hex}'}}, 'Transaction with only zero transfers should have been marked as ignored'  # noqa: E501
+    assert ignored_actions == {ActionType.HISTORY_EVENT: {f'{ChainID.ETHEREUM.value}{tx_hex}'}}, 'Transaction with only zero transfers should have been marked as ignored'  # noqa: E501

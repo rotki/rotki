@@ -314,7 +314,7 @@ def test_get_events(rotkehlchen_api_server: 'APIServer'):
     with rotki.data.db.conn.write_ctx() as cursor:
         rotki.data.db.add_to_ignored_action_ids(
             write_cursor=cursor,
-            action_type=ActionType.EVM_TRANSACTION,
+            action_type=ActionType.HISTORY_EVENT,
             identifiers=[f'{entries[0].event_identifier}'],
         )
 

@@ -3,23 +3,28 @@ import hmac
 import logging
 import time
 from collections import defaultdict
+from contextlib import suppress
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Optional
 from urllib.parse import urlencode
 
 import requests
 
-from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
 from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.accounting.structures.base import HistoryEvent
+from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.converters import asset_from_coinbase
 from rotkehlchen.constants import ZERO
+from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.price import NoPriceForGivenTimestamp
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
 from rotkehlchen.exchanges.utils import deserialize_asset_movement_address, get_key_if_has_val
+from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
@@ -42,6 +47,7 @@ from rotkehlchen.types import (
     TradeType,
 )
 from rotkehlchen.user_messages import MessagesAggregator
+from rotkehlchen.utils.misc import ts_ms_to_sec, ts_sec_to_ms
 from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
 from rotkehlchen.utils.mixins.lockable import protect_with_lock
 from rotkehlchen.utils.serialization import jsonloads_dict
@@ -52,6 +58,9 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+
+CB_EVENTS_PREFIX = 'CBE_'
 
 
 def trade_from_coinbase(raw_trade: dict[str, Any]) -> Optional[Trade]:
@@ -747,7 +756,7 @@ class Coinbase(ExchangeInterface):
 
         return movements
 
-    def _deserialize_ledger_action(self, raw_data: dict[str, Any]) -> Optional[LedgerAction]:
+    def _deserialize_history_event(self, raw_data: dict[str, Any]) -> Optional[HistoryEvent]:
         """Processes a single transaction from coinbase and deserializes it
 
         Can log error/warning and return None if something went wrong at deserialization
@@ -767,7 +776,6 @@ class Coinbase(ExchangeInterface):
             if 'type' in raw_data:
                 # The parent method filtered with 'from' attribute, so it is from another user.
                 # https://developers.coinbase.com/api/v2?python#transaction-resource
-                action_type = LedgerActionType.INCOME
                 if raw_data.get('type', '') not in ('send', 'inflation_reward'):
                     msg = (
                         'Non "send" or "inflation_reward" type '
@@ -780,28 +788,36 @@ class Coinbase(ExchangeInterface):
                 native_amount_data = raw_data.get('native_amount', {})
                 native_amount = deserialize_asset_amount(native_amount_data['amount'])
                 native_asset = asset_from_coinbase(native_amount_data['currency'])
-                rate = ZERO
+                usd_value = ZERO
                 if amount_data and native_amount_data and native_amount and amount != ZERO:
+                    # This got moved from when it was ledger actions with a rate asset
+                    # being the native asset andrate being native_amount / amount
+                    # This does not translate well to a single simple history event
+                    # and what I do here is probably best approximation. But depending
+                    # on what this is for we may need to add multiple events. Though
+                    # from docs it seems native asset/amount is just fiat so probably fine
                     rate = native_amount / amount
-                if 'details' in raw_data and 'title' in raw_data['details'] \
-                        and 'subtitle' in raw_data['details'] and 'header' in raw_data['details']:
-                    details = raw_data.get('details', {})
-                    notes = (f"{details.get('title', '')} "
-                             f"{details.get('subtitle', '')} "
-                             f"{details.get('header', '')}")
-                else:
-                    notes = ''
-                return LedgerAction(
-                    identifier=0,
+                    with suppress(NoPriceForGivenTimestamp):
+                        native_asset_usd_price = PriceHistorian().query_historical_price(
+                            from_asset=native_asset,
+                            to_asset=A_USD,
+                            timestamp=timestamp,
+                        )
+                        usd_value = native_asset_usd_price * rate * amount
+
+                return HistoryEvent(
+                    event_identifier=f'{CB_EVENTS_PREFIX}{raw_data["id"]!s}',
+                    sequence_index=0,
+                    timestamp=ts_sec_to_ms(timestamp),
                     location=Location.COINBASE,
-                    action_type=action_type,
-                    timestamp=timestamp,
+                    event_type=HistoryEventType.RECEIVE,
+                    event_subtype=HistoryEventSubType.NONE,
                     asset=asset,
-                    amount=amount,
-                    rate=Price(rate),
-                    rate_asset=native_asset,
-                    link=str(raw_data['id']),
-                    notes=notes)
+                    balance=Balance(amount=amount, usd_value=usd_value),
+                    location_label=None,
+                    notes=raw_data.get('details', {}).get('header', ''),
+                )
+
         except UnknownAsset as e:
             self.msg_aggregator.add_warning(
                 f'Found coinbase transaction with unknown asset '
@@ -818,11 +834,11 @@ class Coinbase(ExchangeInterface):
                 msg = f'Missing key entry for {msg}.'
             self.msg_aggregator.add_error(
                 'Unexpected data encountered during deserialization of a coinbase '
-                'ledger action. Check logs for details and open a bug report.',
+                'history event. Check logs for details and open a bug report.',
             )
             log.error(
                 f'Unexpected data encountered during deserialization of coinbase '
-                f'ledger action {raw_data}. Error was: {msg}',
+                f'history event {raw_data}. Error was: {msg}',
             )
         return None
 
@@ -830,7 +846,7 @@ class Coinbase(ExchangeInterface):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> list[LedgerAction]:
+    ) -> list[HistoryEvent]:
         account_data = self._api_query('accounts')
         account_ids = self._get_account_ids(account_data)
         raw_data = []
@@ -845,15 +861,15 @@ class Coinbase(ExchangeInterface):
 
         log.debug('coinbase transactions history result', results_num=len(raw_data))
 
-        ledger_actions = []
-        for raw_ledger_action in raw_data:
-            ledger_action = self._deserialize_ledger_action(raw_ledger_action)
+        history_events = []
+        for raw_event in raw_data:
+            history_event = self._deserialize_history_event(raw_event)
             # limit coinbase transactions in the requested time range
             #  here since there is no argument in the API call
-            if ledger_action and start_ts <= ledger_action.timestamp <= end_ts:
-                ledger_actions.append(ledger_action)
+            if history_event and start_ts <= ts_ms_to_sec(history_event.timestamp) <= end_ts:
+                history_events.append(history_event)
 
-        return ledger_actions
+        return history_events
 
     def query_online_margin_history(
             self,

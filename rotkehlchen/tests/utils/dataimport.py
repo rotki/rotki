@@ -1,11 +1,10 @@
 from typing import Literal
 
-from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry, HistoryEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import CryptoAsset, EvmToken
-from rotkehlchen.assets.converters import asset_from_binance, asset_from_cryptocom
+from rotkehlchen.assets.converters import asset_from_binance
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import (
@@ -34,11 +33,9 @@ from rotkehlchen.data_import.importers.constants import COINTRACKING_EVENT_PREFI
 from rotkehlchen.db.filtering import (
     AssetMovementsFilterQuery,
     HistoryEventFilterQuery,
-    LedgerActionsFilterQuery,
     TradesFilterQuery,
 )
 from rotkehlchen.db.history_events import DBHistoryEvents
-from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.rotkehlchen import Rotkehlchen
@@ -168,10 +165,10 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
             filter_query=AssetMovementsFilterQuery.make(),
             has_premium=True,
         )
-        ledger_db = DBLedgerActions(rotki.data.db, rotki.msg_aggregator)
-        ledger_actions = ledger_db.get_ledger_actions(
-            cursor,
-            filter_query=LedgerActionsFilterQuery.make(),
+        events_db = DBHistoryEvents(rotki.data.db)
+        events = events_db.get_history_events(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(),
             has_premium=True,
         )
     warnings = rotki.msg_aggregator.consume_warnings()
@@ -327,161 +324,161 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
     )]
     assert expected_movements == asset_movements
 
-    expected_ledger_actions = [LedgerAction(
+    expected_events = [HistoryEvent(
         identifier=5,
-        timestamp=Timestamp(1596014223),
-        action_type=LedgerActionType.INCOME,
+        event_identifier='CCM_8742d989ca51cb724a6de9492cab6a647074635ea1fb5cad8c9db5596ec4cf46',
+        sequence_index=0,
+        timestamp=TimestampMS(1596014223000),
         location=Location.CRYPTOCOM,
-        amount=AssetAmount(FVal('12.32402069')),
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.NONE,
+        balance=Balance(FVal('12.32402069')),
         asset=A_MCO,
-        rate=None,
-        rate_asset=None,
-        link=None,
         notes=get_cryptocom_note('Sign-up Bonus Unlocked'),
-    ), LedgerAction(
+    ), HistoryEvent(
         identifier=4,
-        timestamp=Timestamp(1596429934),
-        action_type=LedgerActionType.INCOME,
+        event_identifier='CCM_983789e023405101a67cc9bb77faba8819e49e78de4ad4fda5281d2ecffd8052',
+        sequence_index=0,
+        timestamp=TimestampMS(1596429934000),
         location=Location.CRYPTOCOM,
-        amount=AssetAmount(FVal('0.00061475')),
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.NONE,
+        balance=Balance(FVal('0.00061475')),
         asset=A_ETH,
-        rate=None,
-        rate_asset=None,
-        link=None,
         notes=get_cryptocom_note('Crypto Earn'),
-    ), LedgerAction(
+    ), HistoryEvent(
         identifier=3,
-        timestamp=Timestamp(1599934176),
-        action_type=LedgerActionType.INCOME,
+        event_identifier='CCM_f24eb95216e362d79bb4a9cec0743fbb5bfd387c743e98ce51a97c6b3c430987',
+        sequence_index=0,
+        timestamp=TimestampMS(1599934176000),
         location=Location.CRYPTOCOM,
-        amount=AssetAmount(FVal('138.256')),
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.NONE,
+        balance=Balance(FVal('138.256')),
         asset=A_CRO,
-        rate=None,
-        rate_asset=None,
-        link=None,
         notes=get_cryptocom_note('Card Rebate: Deliveries'),
-    ), LedgerAction(
+    ), HistoryEvent(
         identifier=2,
-        timestamp=Timestamp(1602515376),
-        action_type=LedgerActionType.INCOME,
+        event_identifier='CCM_eadaa0af72f57a3a987faa9da84b149a14af47c94a5cf37f3dc0d3a6b795af95',
+        sequence_index=0,
+        timestamp=TimestampMS(1602515376000),
         location=Location.CRYPTOCOM,
-        amount=AssetAmount(FVal('52.151')),
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.NONE,
+        balance=Balance(FVal('52.151')),
         asset=A_CRO,
-        rate=None,
-        rate_asset=None,
-        link=None,
         notes=get_cryptocom_note('Card Cashback'),
-    ), LedgerAction(
+    ), HistoryEvent(
         identifier=1,
-        timestamp=Timestamp(1602526176),
-        action_type=LedgerActionType.INCOME,
+        event_identifier='CCM_10f2e57d3ff770148095e4b1f8407858dacb5b0f738679a5e30a61a9e65abd2c',
+        sequence_index=0,
+        timestamp=TimestampMS(1602526176000),
         location=Location.CRYPTOCOM,
-        amount=AssetAmount(FVal('482.2566417')),
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.NONE,
+        balance=Balance(FVal('482.2566417')),
         asset=A_CRO,
-        rate=None,
-        rate_asset=None,
-        link=None,
         notes=get_cryptocom_note('Referral Bonus Reward'),
-    ), LedgerAction(
+    ), HistoryEvent(
         identifier=13,
-        timestamp=Timestamp(1614989135),
-        action_type=LedgerActionType.INCOME,
+        event_identifier='CCM_da60cedfc97c1df9319d7c2102e0269cbca97d4abac374d2d96a385ab02d072c',
+        sequence_index=0,
+        timestamp=TimestampMS(1614989135000),
         location=Location.CRYPTOCOM,
-        amount=AssetAmount(FVal('7.76792828')),
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.NONE,
+        balance=Balance(FVal('7.76792828')),
         asset=A_CRO,
-        rate=None,
-        rate_asset=None,
-        link=None,
         notes=get_cryptocom_note('Card Rebate: Netflix'),
-    ), LedgerAction(
+    ), HistoryEvent(
         identifier=12,
-        timestamp=Timestamp(1615097829),
-        action_type=LedgerActionType.EXPENSE,
+        event_identifier='CCM_0bcbe9abf2d75f68eecebc2c99611efb56e6f8795fbaa2e2c33db348864e6f4c',
+        sequence_index=0,
+        timestamp=TimestampMS(1615097829000),
         location=Location.CRYPTOCOM,
-        amount=AssetAmount(FVal('7.76792828')),
-        asset=symbol_to_asset_or_token('CRO'),
-        rate=None,
-        rate_asset=None,
-        link=None,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.NONE,
+        balance=Balance(FVal('7.76792828')),
+        asset=A_CRO,
         notes=get_cryptocom_note('Card Rebate Reversal: Netflix'),
-    ), LedgerAction(
+    ), HistoryEvent(
         identifier=10,
-        timestamp=Timestamp(1616237351),
-        action_type=LedgerActionType.INCOME,
+        event_identifier='CCM_a5051400dab1a0736302f3d80c969067f60def2e01f00fe5088d46016c351121',
+        sequence_index=0,
+        timestamp=TimestampMS(1616237351000),
         location=Location.CRYPTOCOM,
-        amount=AssetAmount(FVal('10')),
-        asset=symbol_to_asset_or_token('CRO'),
-        rate=None,
-        rate_asset=None,
-        link=None,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.NONE,
+        balance=Balance(FVal('10')),
+        asset=A_CRO,
         notes=get_cryptocom_note('Pay Rewards'),
-    ), LedgerAction(
+    ), HistoryEvent(
         identifier=11,
-        timestamp=Timestamp(1616237351),
-        action_type=LedgerActionType.EXPENSE,
+        event_identifier='CCM_f1b8ad8d5c58fbdc361faa8e2747ac6dd3d7ddc85025dc965f6324149ffe2b08',
+        sequence_index=0,
+        timestamp=TimestampMS(1616237351000),
         location=Location.CRYPTOCOM,
-        amount=AssetAmount(FVal('100')),
-        asset=symbol_to_asset_or_token('CRO'),
-        rate=None,
-        rate_asset=None,
-        link=None,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.NONE,
+        balance=Balance(FVal('100')),
+        asset=A_CRO,
         notes=get_cryptocom_note('To +49XXXXXXXXXX'),
-    ), LedgerAction(
+    ), HistoryEvent(
         identifier=9,
-        timestamp=Timestamp(1616266740),
-        action_type=LedgerActionType.INCOME,
+        event_identifier='CCM_29fe97c4aa05263dfccd478c2f90177f0006fea259bd71e22d3813b6602d9692',
+        sequence_index=0,
+        timestamp=TimestampMS(1616266740000),
         location=Location.CRYPTOCOM,
-        amount=AssetAmount(FVal('100')),
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.NONE,
+        balance=Balance(FVal('100')),
         asset=symbol_to_asset_or_token('CRO'),
-        rate=None,
-        rate_asset=None,
-        link=None,
         notes=get_cryptocom_note('From +49XXXXXXXXXX'),
-    ), LedgerAction(
+    ), HistoryEvent(
         identifier=8,
-        timestamp=Timestamp(1616669547),
-        action_type=LedgerActionType.EXPENSE,
+        event_identifier='CCM_5450de111ff9e242523f011a42f2b1ed9684110bf2cb1b3c893ea3c5957bc3db',
+        sequence_index=0,
+        timestamp=TimestampMS(1616669547000),
         location=Location.CRYPTOCOM,
-        amount=AssetAmount(FVal('15.38')),
-        asset=symbol_to_asset_or_token('CRO'),
-        rate=None,
-        rate_asset=None,
-        link=None,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.NONE,
+        balance=Balance(FVal('15.38')),
+        asset=A_CRO,
         notes=get_cryptocom_note('Merchant XXX'),
-    ), LedgerAction(
+    ), HistoryEvent(
         identifier=7,
-        timestamp=Timestamp(1616669548),
-        action_type=LedgerActionType.INCOME,
+        event_identifier='CCM_61d0b5ca125f051c7a3b04be7d94ee450d86d6777b0ef9cd334689883138bf5e',
+        sequence_index=0,
+        timestamp=TimestampMS(1616669548000),
         location=Location.CRYPTOCOM,
-        amount=AssetAmount(FVal('0.3076')),
-        asset=symbol_to_asset_or_token('CRO'),
-        rate=None,
-        rate_asset=None,
-        link=None,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.NONE,
+        balance=Balance(FVal('0.3076')),
+        asset=A_CRO,
         notes=get_cryptocom_note('Pay Rewards'),
-    ), LedgerAction(
+    ), HistoryEvent(
         identifier=6,
-        timestamp=Timestamp(1616670041),
-        action_type=LedgerActionType.INCOME,
+        event_identifier='CCM_68a055044785832276c423a6acc538b7118ce2e04021859a687c9655c47c16d9',
+        sequence_index=0,
+        timestamp=TimestampMS(1616670041000),
         location=Location.CRYPTOCOM,
-        amount=AssetAmount(FVal('15.31')),
-        asset=symbol_to_asset_or_token('CRO'),
-        rate=None,
-        rate_asset=None,
-        link=None,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.NONE,
+        balance=Balance(FVal('15.31')),
+        asset=A_CRO,
         notes=get_cryptocom_note('Refund from Merchant XXX'),
     )]
-    assert list(expected_ledger_actions) == ledger_actions
+    assert expected_events == events
 
 
 def assert_cryptocom_special_events_import_results(rotki: Rotkehlchen):
     """A utility function to help assert on correctness of importing data from crypto.com"""
     with rotki.data.db.conn.read_ctx() as cursor:
         trades = rotki.data.db.get_trades(cursor, filter_query=TradesFilterQuery.make(), has_premium=True)  # noqa: E501
-        ledger_db = DBLedgerActions(rotki.data.db, rotki.msg_aggregator)
-        ledger_actions = ledger_db.get_ledger_actions(
-            cursor,
-            filter_query=LedgerActionsFilterQuery.make(),
+        events_db = DBHistoryEvents(rotki.data.db)
+        events = events_db.get_history_events(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(),
             has_premium=True,
         )
     warnings = rotki.msg_aggregator.consume_warnings()
@@ -489,85 +486,85 @@ def assert_cryptocom_special_events_import_results(rotki: Rotkehlchen):
     assert len(errors) == 0
     assert len(warnings) == 0
 
-    expected_actions = [LedgerAction(
-        identifier=7,
-        timestamp=Timestamp(1635477398),
-        action_type=LedgerActionType.EXPENSE,
-        location=Location.CRYPTOCOM,
-        amount=AssetAmount(FVal('0.5678')),
-        asset=asset_from_cryptocom('CRO'),
-        rate=None,
-        rate_asset=None,
-        link=None,
-        notes=get_cryptocom_note('Card Cashback Reversal'),
-    ), LedgerAction(
-        identifier=6,
-        timestamp=Timestamp(1635390997),
-        action_type=LedgerActionType.INCOME,
-        location=Location.CRYPTOCOM,
-        amount=AssetAmount(FVal('0.00356292')),
-        asset=asset_from_cryptocom('AXS'),
-        rate=None,
-        rate_asset=None,
-        link=None,
-        notes=get_cryptocom_note('Supercharger Reward'),
-    ), LedgerAction(
-        identifier=5,
-        timestamp=Timestamp(1609884000),
-        action_type=LedgerActionType.INCOME,
-        location=Location.CRYPTOCOM,
-        amount=AssetAmount(FVal('1')),
-        asset=symbol_to_asset_or_token('CRO'),
-        rate=None,
-        rate_asset=None,
-        link=None,
-        notes=get_cryptocom_note('CRO Airdrop to Exchange'),
-    ), LedgerAction(
-        identifier=4,
-        timestamp=Timestamp(1609884000),
-        action_type=LedgerActionType.INCOME,
-        location=Location.CRYPTOCOM,
-        amount=AssetAmount(FVal('0.5')),
-        asset=symbol_to_asset_or_token('MCO'),
-        rate=None,
-        rate_asset=None,
-        link=None,
-        notes=get_cryptocom_note('MCO Stake Rewards'),
-    ), LedgerAction(
-        identifier=3,
-        timestamp=Timestamp(1609884000),
-        action_type=LedgerActionType.INCOME,
-        location=Location.CRYPTOCOM,
-        amount=AssetAmount(FVal('1')),
-        asset=symbol_to_asset_or_token('CRO'),
-        rate=None,
-        rate_asset=None,
-        link=None,
-        notes=get_cryptocom_note('CRO Stake Rewards'),
-    ), LedgerAction(
-        identifier=2,
-        timestamp=Timestamp(1609797600),
-        action_type=LedgerActionType.INCOME,
-        location=Location.CRYPTOCOM,
-        amount=AssetAmount(FVal('0.02005')),
-        asset=A_BTC,
-        rate=None,
-        rate_asset=None,
-        link=None,
-        notes='Stake profit for asset BTC',
-    ), LedgerAction(
+    expected_events = [HistoryEvent(
         identifier=1,
-        timestamp=Timestamp(1609624800),
-        action_type=LedgerActionType.INCOME,
+        event_identifier='CCM_26556241ec9e68acba8cd0d6a6e7b5c010f344b7c763d4b45fa1b6d2abfaf2af',
+        sequence_index=0,
+        timestamp=TimestampMS(1609624800000),
         location=Location.CRYPTOCOM,
-        amount=AssetAmount(FVal('0.00005')),
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.NONE,
+        balance=Balance(FVal('0.00005')),
         asset=A_BTC,
-        rate=None,
-        rate_asset=None,
-        link=None,
-        notes='Stake profit for asset BTC',
+        notes='Staking profit for BTC',
+    ), HistoryEvent(
+        identifier=2,
+        event_identifier='CCM_680977437f573e30752041fb8971be234a8fdb4d72f707d56eb5643d40908d82',
+        sequence_index=0,
+        timestamp=TimestampMS(1609797600000),
+        location=Location.CRYPTOCOM,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.NONE,
+        balance=Balance(FVal('0.02005')),
+        asset=A_BTC,
+        notes='Staking profit for BTC',
+    ), HistoryEvent(
+        identifier=3,
+        event_identifier='CCM_4edba1d54872a176b913a3a1afc476f4b7d9565d665b86d7fb0c8b1f56ca8cbf',
+        sequence_index=0,
+        timestamp=TimestampMS(1609884000000),
+        location=Location.CRYPTOCOM,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.NONE,
+        balance=Balance(ONE),
+        asset=A_CRO,
+        notes=get_cryptocom_note('CRO Stake Rewards'),
+    ), HistoryEvent(
+        identifier=5,
+        event_identifier='CCM_afb12f3eac3e93695a1ac1b09b4708f678d7cf395a3f364390376510ec801059',
+        sequence_index=0,
+        timestamp=TimestampMS(1609884000000),
+        location=Location.CRYPTOCOM,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.NONE,
+        balance=Balance(ONE),
+        asset=A_CRO,
+        notes=get_cryptocom_note('CRO Airdrop to Exchange'),
+    ), HistoryEvent(
+        identifier=4,
+        event_identifier='CCM_b0bb99d65ac111caec2d5d9b6a2b69bae1a13de50f89358a2a25dfc0992c51c4',
+        sequence_index=0,
+        timestamp=TimestampMS(1609884000000),
+        location=Location.CRYPTOCOM,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.NONE,
+        balance=Balance(FVal('0.5')),
+        asset=A_MCO,
+        notes=get_cryptocom_note('MCO Stake Rewards'),
+    ), HistoryEvent(
+        identifier=6,
+        event_identifier='CCM_64288070ac60947e3fcaaf150f76c5768122a08538c8efdec806d689d4c49d62',
+        sequence_index=0,
+        timestamp=TimestampMS(1635390997000),
+        location=Location.CRYPTOCOM,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.NONE,
+        balance=Balance(FVal('0.00356292')),
+        asset=A_AXS,
+        notes=get_cryptocom_note('Supercharger Reward'),
+    ), HistoryEvent(
+        identifier=7,
+        event_identifier='CCM_e66810bd6561fbe1d31aec4ad7942d854d63115808c2d1a7b2cd0df8bb110e49',
+        sequence_index=0,
+        timestamp=TimestampMS(1635477398000),
+        location=Location.CRYPTOCOM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.NONE,
+        balance=Balance(FVal('0.5678')),
+        asset=A_CRO,
+        notes=get_cryptocom_note('Card Cashback Reversal'),
     )]
-    assert list(reversed(expected_actions)) == ledger_actions
+    assert expected_events == events
 
     expected_trades = [Trade(
         timestamp=Timestamp(1609884000),
@@ -599,11 +596,11 @@ def assert_cryptocom_special_events_import_results(rotki: Rotkehlchen):
 
 def assert_blockfi_transactions_import_results(rotki: Rotkehlchen):
     """A utility function to help assert on correctness of importing data from blockfi"""
-    ledger_db = DBLedgerActions(rotki.data.db, rotki.msg_aggregator)
     with rotki.data.db.conn.read_ctx() as cursor:
-        ledger_actions = ledger_db.get_ledger_actions(
+        events_db = DBHistoryEvents(rotki.data.db)
+        events = events_db.get_history_events(
             cursor=cursor,
-            filter_query=LedgerActionsFilterQuery.make(),
+            filter_query=HistoryEventFilterQuery.make(),
             has_premium=True,
         )
         asset_movements = rotki.data.db.get_asset_movements(
@@ -616,41 +613,41 @@ def assert_blockfi_transactions_import_results(rotki: Rotkehlchen):
     assert len(errors) == 0
     assert len(warnings) == 0
 
-    expected_actions = [LedgerAction(
+    expected_events = [HistoryEvent(
         identifier=3,
-        timestamp=Timestamp(1600293599),
-        action_type=LedgerActionType.INCOME,
+        event_identifier='BLF_a8ef6e164b0130b0df9b4d1e877d1c0a601bbc66f244682b6d4f3fe3aadd66e9',
+        sequence_index=0,
+        timestamp=TimestampMS(1600293599000),
         location=Location.BLOCKFI,
-        amount=AssetAmount(FVal('0.48385358')),
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.NONE,
+        balance=Balance(FVal('0.48385358')),
         asset=A_ETH,
-        rate=None,
-        rate_asset=None,
-        link=None,
         notes='Bonus Payment from BlockFi',
-    ), LedgerAction(
+    ), HistoryEvent(
         identifier=2,
-        timestamp=Timestamp(1606953599),
-        action_type=LedgerActionType.INCOME,
+        event_identifier='BLF_e027e251abadf0f748d49341c94f0a9bdaff50a2e4f735bb410dd5b594a3b1ec',
+        sequence_index=0,
+        timestamp=TimestampMS(1606953599000),
         location=Location.BLOCKFI,
-        amount=AssetAmount(FVal('0.00052383')),
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.NONE,
+        balance=Balance(FVal('0.00052383')),
         asset=A_BTC,
-        rate=None,
-        rate_asset=None,
-        link=None,
         notes='Referral Bonus from BlockFi',
-    ), LedgerAction(
+    ), HistoryEvent(
         identifier=1,
-        timestamp=Timestamp(1612051199),
-        action_type=LedgerActionType.INCOME,
+        event_identifier='BLF_d6e38784f89609668f70a37dd67f67e57fb926a74fc9c1cd1ea4e557317c0b9d',
+        sequence_index=0,
+        timestamp=TimestampMS(1612051199000),
         location=Location.BLOCKFI,
-        amount=AssetAmount(FVal('0.56469042')),
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.NONE,
+        balance=Balance(FVal('0.56469042')),
         asset=A_ETH,
-        rate=None,
-        rate_asset=None,
-        link=None,
         notes='Interest Payment from BlockFi',
     )]
-    assert expected_actions == ledger_actions
+    assert expected_events == events
 
     expected_movements = [AssetMovement(
         location=Location.BLOCKFI,
@@ -728,10 +725,10 @@ def assert_blockfi_trades_import_results(rotki: Rotkehlchen):
 def assert_nexo_results(rotki: Rotkehlchen):
     """A utility function to help assert on correctness of importing data from nexo"""
     with rotki.data.db.conn.read_ctx() as cursor:
-        ledger_db = DBLedgerActions(rotki.data.db, rotki.msg_aggregator)
-        ledger_actions = ledger_db.get_ledger_actions(
-            cursor,
-            filter_query=LedgerActionsFilterQuery.make(),
+        events_db = DBHistoryEvents(rotki.data.db)
+        events = events_db.get_history_events(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(),
             has_premium=True,
         )
         asset_movements = rotki.data.db.get_asset_movements(
@@ -745,71 +742,77 @@ def assert_nexo_results(rotki: Rotkehlchen):
     assert len(warnings) == 2
     assert 'Found exchange/credit card status transaction in nexo csv' in str(warnings)
 
-    expected_actions = [LedgerAction(
+    expected_events = [HistoryEvent(
         identifier=1,
-        timestamp=Timestamp(1643698860),
-        action_type=LedgerActionType.INCOME,
+        event_identifier='NEXO_2d5982954882e11e51eb48b57dee0cfcdb81a694566ebec9ca676c1f98324549',
+        sequence_index=0,
+        timestamp=TimestampMS(1643698860000),
         location=Location.NEXO,
-        amount=AssetAmount(FVal('127.5520683')),
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.NONE,
+        balance=Balance(FVal('127.5520683')),
         asset=A_GBP,
-        rate=None,
-        rate_asset=None,
-        link='NXTZOvzs3be6e',
+        location_label='NXTZOvzs3be6e',
         notes='FixedTermInterest from Nexo',
-    ), LedgerAction(
+    ), HistoryEvent(
         identifier=2,
-        timestamp=Timestamp(1646092800),
-        action_type=LedgerActionType.INCOME,
+        event_identifier='NEXO_94e18e416d15dc105fd81b7ae9521f3fb786893b6f9c0d5e82c1c7d1c3780b8d',
+        sequence_index=0,
+        timestamp=TimestampMS(1646092800000),
         location=Location.NEXO,
-        amount=AssetAmount(FVal('0.10000001')),
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.NONE,
+        balance=Balance(FVal('0.10000001')),
         asset=symbol_to_asset_or_token('NEXO'),
-        rate=None,
-        rate_asset=None,
-        link='NXTabcdefghij',
+        location_label='NXTabcdefghij',
         notes='Cashback from Nexo',
-    ), LedgerAction(
+    ), HistoryEvent(
         identifier=3,
-        timestamp=Timestamp(1649462400),
-        action_type=LedgerActionType.LOSS,
+        event_identifier='NEXO_bbc830740a414967910f96e18d7cffe0d1374a88ad8e75da592e29379e4b6d2c',
+        sequence_index=0,
+        timestamp=TimestampMS(1649462400000),
         location=Location.NEXO,
-        amount=AssetAmount(FVal('710.82000000')),
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.LIQUIDATE,
+        balance=Balance(FVal('710.82000000')),
         asset=A_GBP,
-        rate=None,
-        rate_asset=None,
-        link='NXTabcdefghij',
+        location_label='NXTabcdefghij',
         notes='Liquidation from Nexo',
-    ), LedgerAction(
+    ), HistoryEvent(
         identifier=4,
-        timestamp=Timestamp(1649548800),
-        action_type=LedgerActionType.INCOME,
+        event_identifier='NEXO_c8f26485f6117a1065b3dbf0b37ed387e930b3ce36598132800a788661a0ca93',
+        sequence_index=0,
+        timestamp=TimestampMS(1649548800000),
         location=Location.NEXO,
-        amount=AssetAmount(FVal('0.00999999')),
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.NONE,
+        balance=Balance(FVal('0.00999999')),
         asset=A_BTC,
-        rate=None,
-        rate_asset=None,
-        link='NXTabcdefghij',
+        location_label='NXTabcdefghij',
         notes='ReferralBonus from Nexo',
-    ), LedgerAction(
+    ), HistoryEvent(
         identifier=5,
-        timestamp=Timestamp(1650438000),
-        action_type=LedgerActionType.INCOME,
+        event_identifier='NEXO_935f100260ccb46dca16fe73f73e403bc87980d73de4def178b41afea7f9b3a8',
+        sequence_index=0,
+        timestamp=TimestampMS(1650438000000),
         location=Location.NEXO,
-        amount=AssetAmount(FVal('1.09246793')),
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.NONE,
+        balance=Balance(FVal('1.09246793')),
         asset=A_USDC,
-        rate=None,
-        rate_asset=None,
-        link='NXTGWynyMmm5K',
+        location_label='NXTGWynyMmm5K',
         notes='Interest from Nexo',
-    ), LedgerAction(
+    ), HistoryEvent(
         identifier=6,
-        timestamp=Timestamp(1657782007),
-        action_type=LedgerActionType.INCOME,
+        event_identifier='NEXO_ed51354616d9959a07babb6dbbc86903fbb03375fd5796e87694688148ff3ee7',
+        sequence_index=0,
+        timestamp=TimestampMS(1657782007000),
         location=Location.NEXO,
-        amount=AssetAmount(FVal('0.00178799')),
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.NONE,
+        balance=Balance(FVal('0.00178799')),
         asset=A_ETH,
-        rate=None,
-        rate_asset=None,
-        link='NXT1isX0Refua',
+        location_label='NXT1isX0Refua',
         notes='Interest from Nexo',
     )]
 
@@ -880,7 +883,7 @@ def assert_nexo_results(rotki: Rotkehlchen):
         fee=Fee(ZERO),
         link='NXTdtS1ezWxeN',
     )]
-    assert ledger_actions == expected_actions
+    assert events == expected_events
     assert asset_movements == expected_movements
 
 
@@ -951,12 +954,13 @@ def assert_uphold_transactions_import_results(rotki: Rotkehlchen):
             filter_query=AssetMovementsFilterQuery.make(),
             has_premium=True,
         )
-        ledger_db = DBLedgerActions(rotki.data.db, rotki.msg_aggregator)
-        ledger_actions = ledger_db.get_ledger_actions(
-            cursor,
-            filter_query=LedgerActionsFilterQuery.make(),
+        history_db = DBHistoryEvents(rotki.data.db)
+        events = history_db.get_history_events(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(),
             has_premium=True,
         )
+
     warnings = rotki.msg_aggregator.consume_warnings()
     errors = rotki.msg_aggregator.consume_errors()
     notes1 = """
@@ -1057,24 +1061,23 @@ Activity from uphold with uphold transaction id:
         fee=Fee(ZERO),
         link='',
     )]
-    expected_ledger_actions = [LedgerAction(
-        identifier=ledger_actions[0].identifier,
+    expected_events = [HistoryEvent(
+        identifier=1,
+        event_identifier='UPH_55d4d58869d96ad9adf18929bf89caaae87e657482ea20ae4c8c66b8ab34f4e2',
+        sequence_index=0,
+        timestamp=TimestampMS(1576780809000),
         location=Location.UPHOLD,
-        action_type=LedgerActionType.INCOME,
-        timestamp=Timestamp(1576780809),
         asset=A_BAT,
-        amount=AssetAmount(FVal('5.15')),
-        rate=None,
-        rate_asset=None,
-        link='',
+        balance=Balance(amount=FVal('5.15')),
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.NONE,
         notes=notes5,
     )]
     assert len(trades) == 4
     assert trades == expected_trades
     assert len(asset_movements) == 1
     assert asset_movements == expected_movements
-    assert len(ledger_actions) == 1
-    assert ledger_actions == expected_ledger_actions
+    assert events == expected_events
 
 
 def assert_custom_cointracking(rotki: Rotkehlchen):
@@ -1580,71 +1583,64 @@ def assert_binance_import_results(rotki: Rotkehlchen):
             link='Imported from binance CSV file. Binance operation: Withdraw',
         ),
     ]
-    expected_ledger_actions = [
-        LedgerAction(
-            identifier=1,
-            timestamp=Timestamp(1603926662),
-            action_type=LedgerActionType.EXPENSE,
-            location=Location.BINANCE,
-            amount=AssetAmount(FVal(0.577257355)),
-            asset=asset_from_binance('BNB'),
-            rate=None,
-            rate_asset=None,
-            link=None,
-            notes='Imported from binance CSV file. Binance operation: POS savings purchase',
-        ),
-        LedgerAction(
-            identifier=2,
-            timestamp=Timestamp(1604223373),
-            action_type=LedgerActionType.INCOME,
-            location=Location.BINANCE,
-            amount=AssetAmount(FVal(0.000004615)),
-            asset=A_ETH2,
-            rate=None,
-            rate_asset=None,
-            link=None,
-            notes='Imported from binance CSV file. Binance operation: ETH 2.0 Staking Rewards',
-        ),
-        LedgerAction(
-            identifier=3,
-            timestamp=Timestamp(1604274610),
-            action_type=LedgerActionType.INCOME,
-            location=Location.BINANCE,
-            amount=AssetAmount(FVal(0.115147055)),
-            asset=EvmToken('eip155:56/erc20:0x23CE9e926048273eF83be0A3A8Ba9Cb6D45cd978'),
-            rate=None,
-            rate_asset=None,
-            link=None,
-            notes='Imported from binance CSV file. Binance operation: Launchpool Interest',
-        ),
-        LedgerAction(
-            identifier=4,
-            timestamp=Timestamp(1604450188),
-            action_type=LedgerActionType.INCOME,
-            location=Location.BINANCE,
-            amount=AssetAmount(FVal(1.18837124)),
-            asset=A_AXS,
-            rate=None,
-            rate_asset=None,
-            link=None,
-            notes='Imported from binance CSV file. Binance operation: POS savings redemption',
-        ),
-        LedgerAction(
-            identifier=5,
-            timestamp=Timestamp(1604456888),
-            action_type=LedgerActionType.INCOME,
-            location=Location.BINANCE,
-            amount=AssetAmount(FVal(0.000092675)),
-            asset=asset_from_binance('BNB'),
-            rate=None,
-            rate_asset=None,
-            link=None,
-            notes='Imported from binance CSV file. Binance operation: POS savings interest',
-        ),
-    ]
     expected_events = [
         HistoryEvent(
             identifier=1,
+            event_identifier='BNC_1a75acacbf626a04e8be50cb3f79ec8abd1f573e2cb9d9650df576626e437ddf',
+            sequence_index=0,
+            timestamp=TimestampMS(1603926662000),
+            location=Location.BINANCE,
+            asset=A_BNB,
+            balance=Balance(amount=FVal('0.577257355')),
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.NONE,
+            notes='Imported from binance CSV file. Binance operation: POS savings purchase',
+        ), HistoryEvent(
+            identifier=2,
+            event_identifier='BNC_14e2f3956bf5c9506a460c8bf35ff199139555118a0ef40ea6f732248fcac5a0',
+            sequence_index=0,
+            timestamp=TimestampMS(1604223373000),
+            location=Location.BINANCE,
+            asset=A_ETH2,
+            balance=Balance(amount=FVal('0.000004615')),
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.NONE,
+            notes='Imported from binance CSV file. Binance operation: ETH 2.0 Staking Rewards',
+        ), HistoryEvent(
+            identifier=3,
+            event_identifier='BNC_d5dc6cca7342e668707b496d951a317156146eee348073cbb55ba852fb8f7a72',
+            sequence_index=0,
+            timestamp=TimestampMS(1604274610000),
+            location=Location.BINANCE,
+            asset=EvmToken('eip155:56/erc20:0x23CE9e926048273eF83be0A3A8Ba9Cb6D45cd978'),
+            balance=Balance(amount=FVal('0.115147055')),
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.NONE,
+            notes='Imported from binance CSV file. Binance operation: Launchpool Interest',
+        ), HistoryEvent(
+            identifier=4,
+            event_identifier='BNC_2d10e01a5946dac7ff1904203810cb6a6bafd1ab92e387fc6850384b17d1eae9',
+            sequence_index=0,
+            timestamp=TimestampMS(1604450188000),
+            location=Location.BINANCE,
+            asset=A_AXS,
+            balance=Balance(amount=FVal('1.18837124')),
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.NONE,
+            notes='Imported from binance CSV file. Binance operation: POS savings redemption',
+        ), HistoryEvent(
+            identifier=5,
+            event_identifier='BNC_9a2793560cc940557e51500ca876e0a0d11324666eae644f3145cf7038cbc9bd',
+            sequence_index=0,
+            timestamp=TimestampMS(1604456888000),
+            location=Location.BINANCE,
+            asset=A_BNB,
+            balance=Balance(amount=FVal('0.000092675')),
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.NONE,
+            notes='Imported from binance CSV file. Binance operation: POS savings interest',
+        ), HistoryEvent(
+            identifier=6,
             event_identifier='BNC_5d651c8364e0b853f3f4c4b3812b2d370607fc008bedb30291137fabae0d93ef',
             sequence_index=0,
             timestamp=ts_sec_to_ms(Timestamp(1673587740)),
@@ -1656,7 +1652,7 @@ def assert_binance_import_results(rotki: Rotkehlchen):
             location_label='CSV import',
             notes='Reward from Simple Earn Locked Rewards',
         ), HistoryEvent(
-            identifier=2,
+            identifier=7,
             event_identifier='BNC_e2433b7eddb388759cbab8d440dda8447a0d1d6733889000f2bd3145454cae59',
             sequence_index=0,
             timestamp=ts_sec_to_ms(Timestamp(1673589660)),
@@ -1668,7 +1664,7 @@ def assert_binance_import_results(rotki: Rotkehlchen):
             location_label='CSV import',
             notes='Reward from Simple Earn Flexible Interest',
         ), HistoryEvent(
-            identifier=4,
+            identifier=9,
             event_identifier='BNC_f5b62b836a4f520729099765bd12f49bce839ae53aef5c53f6e2b12cd4a5d2e2',
             sequence_index=0,
             timestamp=ts_sec_to_ms(Timestamp(1673590320)),
@@ -1680,7 +1676,7 @@ def assert_binance_import_results(rotki: Rotkehlchen):
             location_label='CSV import',
             notes='Reward from Simple Earn Flexible Interest',
         ), HistoryEvent(
-            identifier=3,
+            identifier=8,
             event_identifier='BNC_8ee2c667b24dc991ccaf81050b48cf33d9ccdd45471e1517efcb64c0bbfcb318',
             sequence_index=0,
             timestamp=ts_sec_to_ms(Timestamp(1673593020)),
@@ -1692,7 +1688,7 @@ def assert_binance_import_results(rotki: Rotkehlchen):
             location_label='CSV import',
             notes='Deposit in Simple Earn Flexible Subscription',
         ), HistoryEvent(
-            identifier=5,
+            identifier=10,
             event_identifier='BNC_6f2a1947e66d9d38c1d07ade18706be20fbbddf48cdbfbd345e6976a85333e35',
             sequence_index=0,
             timestamp=ts_sec_to_ms(Timestamp(1673593560)),
@@ -1704,7 +1700,7 @@ def assert_binance_import_results(rotki: Rotkehlchen):
             location_label='CSV import',
             notes='Deposit in Simple Earn Flexible Subscription',
         ), HistoryEvent(
-            identifier=6,
+            identifier=11,
             event_identifier='BNC_93ffcc0bba0a90bddb72dd100479e6c784e5dd5ea68e2bf4c5a0a9c3432a24b9',
             sequence_index=0,
             timestamp=ts_sec_to_ms(Timestamp(1686389700)),
@@ -1726,24 +1722,15 @@ def assert_binance_import_results(rotki: Rotkehlchen):
             filter_query=AssetMovementsFilterQuery.make(),
             has_premium=True,
         )
-        ledger_actions = DBLedgerActions(
-            database=rotki.data.db,
-            msg_aggregator=rotki.data.msg_aggregator,
-        ).get_ledger_actions(
-            cursor,
-            filter_query=LedgerActionsFilterQuery.make(),
-            has_premium=True,
-        )
         history_db = DBHistoryEvents(rotki.data.db)
-        history_events = history_db.get_history_events(
+        events = history_db.get_history_events(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(),
             has_premium=True,
         )
     assert trades == expected_trades
     assert asset_movements == expected_asset_movements
-    assert ledger_actions == expected_ledger_actions
-    assert expected_events == history_events
+    assert expected_events == events
     expected_warnings = [
         '2 Binance rows have bad format. Check logs for details.',
         'Skipped 4 rows during processing binance csv file. Check logs for details',

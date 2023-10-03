@@ -5,7 +5,6 @@ from collections import Counter, defaultdict
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Final, Optional
 
-from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import HistoryEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
@@ -45,7 +44,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 BinanceCsvRow = dict[str, Any]
 BINANCE_TRADE_OPERATIONS = {'Buy', 'Sell', 'Fee'}
-EVENT_IDENTIFIER_PREFIX = 'BNC'
+EVENT_IDENTIFIER_PREFIX = 'BNC_'
 
 
 class BinanceEntry(metaclass=abc.ABCMeta):  # noqa: B024
@@ -320,8 +319,7 @@ class BinanceDepositWithdrawEntry(BinanceSingleEntry):
 
 class BinanceStakingRewardsEntry(BinanceSingleEntry):
     """
-    Processing ETH 2.0 Staking Rewards and Launchpool Interest
-    which are LedgerActions in the internal representation. Also processes
+    Processing ETH 2.0 Staking Rewards and Launchpool Interests. Also processes
     other staking rewards in the Binance program.
     """
 
@@ -340,19 +338,18 @@ class BinanceStakingRewardsEntry(BinanceSingleEntry):
     ) -> None:
         asset = data['Coin']
         amount = data['Change']
-        ledger_action = LedgerAction(
-            identifier=0,
-            timestamp=timestamp,
-            action_type=LedgerActionType.INCOME,
+        event = HistoryEvent(
+            event_identifier=f'{EVENT_IDENTIFIER_PREFIX}{hash_csv_row(data)}',
+            sequence_index=0,
+            timestamp=ts_sec_to_ms(timestamp),
             location=Location.BINANCE,
-            amount=amount,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.NONE,
+            balance=Balance(amount=amount),
             asset=asset,
-            rate=None,
-            rate_asset=None,
-            link=None,
             notes=f'Imported from binance CSV file. Binance operation: {data["Operation"]}',
         )
-        importer.add_ledger_action(write_cursor=write_cursor, ledger_action=ledger_action)
+        importer.add_history_events(write_cursor=write_cursor, history_events=[event])
 
 
 class BinanceEarnProgram(BinanceSingleEntry):
@@ -381,7 +378,7 @@ class BinanceEarnProgram(BinanceSingleEntry):
         """
         asset = data['Coin']
         amount = abs(data['Change'])
-        event_identifier = f'{EVENT_IDENTIFIER_PREFIX}_{hash_csv_row(data)}'
+        event_identifier = f'{EVENT_IDENTIFIER_PREFIX}{hash_csv_row(data)}'
         timestamp_ms = ts_sec_to_ms(timestamp)
         staking_event = None
         if data['Operation'] in (
@@ -438,8 +435,7 @@ class BinanceEarnProgram(BinanceSingleEntry):
 
 
 class BinancePOSEntry(BinanceSingleEntry):
-    """Processing POS related actions
-        which are LedgerActions in the internal representation"""
+    """Processing POS related actions"""
 
     AVAILABLE_OPERATIONS: Final[tuple[str, ...]] = (  # type: ignore[misc]  # noqa: E501  # figure out how to mark final only in this class
         'POS savings interest',
@@ -456,21 +452,25 @@ class BinancePOSEntry(BinanceSingleEntry):
     ) -> None:
         asset = data['Coin']
         amount = data['Change']
-        action_type = LedgerActionType.INCOME if amount > 0 else LedgerActionType.EXPENSE
-        amount = abs(amount)
-        ledger_action = LedgerAction(
-            identifier=0,
-            timestamp=timestamp,
-            action_type=action_type,
+        if amount >= 0:
+            event_type = HistoryEventType.RECEIVE
+            event_subtype = HistoryEventSubType.NONE
+        else:
+            event_type = HistoryEventType.SPEND
+            event_subtype = HistoryEventSubType.NONE
+
+        event = HistoryEvent(
+            event_identifier=f'{EVENT_IDENTIFIER_PREFIX}{hash_csv_row(data)}',
+            sequence_index=0,
+            timestamp=ts_sec_to_ms(timestamp),
             location=Location.BINANCE,
-            amount=amount,
+            event_type=event_type,
+            event_subtype=event_subtype,
+            balance=Balance(amount=abs(amount)),
             asset=asset,
-            rate=None,
-            rate_asset=None,
-            link=None,
             notes=f'Imported from binance CSV file. Binance operation: {data["Operation"]}',
         )
-        importer.add_ledger_action(write_cursor=write_cursor, ledger_action=ledger_action)
+        importer.add_history_events(write_cursor=write_cursor, history_events=[event])
 
 
 SINGLE_BINANCE_ENTRIES = [

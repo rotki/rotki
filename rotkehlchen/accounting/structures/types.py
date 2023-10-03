@@ -37,8 +37,8 @@ EVM_EVENT_DB_TUPLE_READ = tuple[
 class ActionType(DBCharEnumMixIn):
     TRADE = 1
     ASSET_MOVEMENT = 2
-    EVM_TRANSACTION = 3
-    LEDGER_ACTION = 4
+    HISTORY_EVENT = 3
+    # ledger action that was removed was 4
 
     def serialize(self) -> str:
         return self.name.lower()

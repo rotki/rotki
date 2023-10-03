@@ -23,7 +23,7 @@ def data_migration_1(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgressH
 
     Migration was introduced at least before 1.22.3
     """
-    exchange_re = re.compile(r'(.*?)_(trades|margins|asset_movements|ledger_actions).*')
+    exchange_re = re.compile(r'(.*?)_(trades|margins|asset_movements).*')
     db = rotki.data.db
     with db.conn.read_ctx() as cursor:
         used_ranges = cursor.execute('SELECT * from used_query_ranges').fetchall()
@@ -78,10 +78,6 @@ def data_migration_1(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgressH
                 )
                 write_cursor.execute(
                     'DELETE FROM asset_movements WHERE location = ?;',
-                    (location.serialize_for_db(),),
-                )
-                write_cursor.execute(
-                    'DELETE FROM ledger_actions WHERE location = ?;',
                     (location.serialize_for_db(),),
                 )
                 write_cursor.execute(

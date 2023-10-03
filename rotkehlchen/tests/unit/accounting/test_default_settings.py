@@ -7,7 +7,6 @@ from rotkehlchen.accounting.cost_basis.base import (
     CostBasisInfo,
     MatchedAcquisition,
 )
-from rotkehlchen.accounting.ledger_actions import LedgerActionType
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL
 from rotkehlchen.accounting.structures.balance import Balance
@@ -56,11 +55,6 @@ MOCKED_PRICES = {
 }
 
 
-@pytest.fixture(name='airdrops_taxable')
-def fixture_airdrops_taxable():
-    return True
-
-
 @pytest.fixture(name='gas_taxable')
 def fixture_gas_taxable():
     return True
@@ -72,13 +66,12 @@ def fixture_include_crypto2crypto():
 
 
 @pytest.fixture(name='accounting_pot')
-def fixture_accounting_pot(accountant, airdrops_taxable, gas_taxable, include_crypto2crypto):
+def fixture_accounting_pot(accountant, gas_taxable, include_crypto2crypto):
     pot = accountant.pots[0]
     with pot.database.user_write() as write_cursor:
         pot.database.set_settings(
             write_cursor=write_cursor,
             settings=ModifiableDBSettings(
-                taxable_ledger_actions=[LedgerActionType.AIRDROP] if airdrops_taxable else [],
                 include_gas_costs=gas_taxable,
                 include_crypto2crypto=include_crypto2crypto,
             ),
@@ -150,11 +143,10 @@ def test_accounting_no_settings(accounting_pot: 'AccountingPot'):
     assert len(accounting_pot.pnls) == 0, 'Nothing should have happened since there were no settings'  # noqa: E501
 
 
-@pytest.mark.parametrize(('event_type', 'event_subtype', 'is_taxable', 'airdrops_taxable'), [
-    (HistoryEventType.RECEIVE, HistoryEventSubType.NONE, True, False),
-    (HistoryEventType.RECEIVE, HistoryEventSubType.AIRDROP, False, False),
-    (HistoryEventType.RECEIVE, HistoryEventSubType.AIRDROP, True, True),
-    (HistoryEventType.RECEIVE, HistoryEventSubType.REWARD, True, False),
+@pytest.mark.parametrize(('event_type', 'event_subtype', 'is_taxable'), [
+    (HistoryEventType.RECEIVE, HistoryEventSubType.NONE, True),
+    (HistoryEventType.RECEIVE, HistoryEventSubType.AIRDROP, False),
+    (HistoryEventType.RECEIVE, HistoryEventSubType.REWARD, True),
 ])
 @pytest.mark.parametrize('mocked_price_queries', [MOCKED_PRICES])
 # Check that accounting rules are applied no matter what event class is used

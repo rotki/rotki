@@ -3,15 +3,17 @@ from http import HTTPStatus
 import pytest
 import requests
 
-from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
-from rotkehlchen.constants.assets import A_DAI, A_ETH, A_USD
+from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.accounting.structures.base import HistoryEvent
+from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.constants.assets import A_DAI, A_ETH
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
     assert_simple_ok_response,
 )
-from rotkehlchen.types import Location
+from rotkehlchen.types import Location, TimestampMS
 
 
 def _populate_ignored_actions(rotkehlchen_api_server) -> dict[str, list[str]]:
@@ -19,19 +21,12 @@ def _populate_ignored_actions(rotkehlchen_api_server) -> dict[str, list[str]]:
         ('trade', ['1', '2', '3']),
         ('asset_movement', ['1', '4', '5', '7']),
         (
-            'evm_transaction',
-            [{
-                'evm_chain': 'ethereum',
-                'tx_hash': '0x9c7096c0a2a5e1b8bcf444a6929881af55d83fb0b713ad3f7f0028006ff9ec53',
-            }, {
-                'evm_chain': 'ethereum',
-                'tx_hash': '0x6328a70f18534d60f6fc085c22a1273fd4a7c7f2e6cdc3bb49168c2846af4b53',
-            }, {
-                'evm_chain': 'optimism',
-                'tx_hash': '0x6328a70f18534d60f6fc085c22a1273fd4a7c7f2e6cdc3bb49168c2846af4b53',
-            }],
-        ),
-        ('ledger_action', ['1', '2', '3']),
+            'history_event',
+            [
+                '10x9c7096c0a2a5e1b8bcf444a6929881af55d83fb0b713ad3f7f0028006ff9ec53',
+                '10x6328a70f18534d60f6fc085c22a1273fd4a7c7f2e6cdc3bb49168c2846af4b53',
+                '100x6328a70f18534d60f6fc085c22a1273fd4a7c7f2e6cdc3bb49168c2846af4b53',
+            ]),
     ]
 
     for action_type, action_ids in data:
@@ -51,12 +46,11 @@ def _populate_ignored_actions(rotkehlchen_api_server) -> dict[str, list[str]]:
     assert serialized_result == {
         'trade': {'1', '2', '3'},
         'asset_movement': {'1', '4', '5', '7'},
-        'evm_transaction': {
+        'history_event': {
             '10x9c7096c0a2a5e1b8bcf444a6929881af55d83fb0b713ad3f7f0028006ff9ec53',
             '10x6328a70f18534d60f6fc085c22a1273fd4a7c7f2e6cdc3bb49168c2846af4b53',
             '100x6328a70f18534d60f6fc085c22a1273fd4a7c7f2e6cdc3bb49168c2846af4b53',
         },
-        'ledger_action': {'1', '2', '3'},
     }
     return serialized_result
 
@@ -104,11 +98,8 @@ def test_remove_ignored_actions(rotkehlchen_api_server):
             rotkehlchen_api_server,
             'ignoredactionsresource',
         ), json={
-            'action_type': 'evm_transaction',
-            'data': [{
-                'evm_chain': 'ethereum',
-                'tx_hash': '0x6328a70f18534d60f6fc085c22a1273fd4a7c7f2e6cdc3bb49168c2846af4b53',
-            }],
+            'action_type': 'history_event',
+            'data': ['10x6328a70f18534d60f6fc085c22a1273fd4a7c7f2e6cdc3bb49168c2846af4b53'],
         },
     )
     assert_simple_ok_response(response)
@@ -127,12 +118,12 @@ def test_remove_ignored_actions(rotkehlchen_api_server):
         api_url_for(
             rotkehlchen_api_server,
             'ignoredactionsresource',
-        ), json={'action_type': 'ledger_action', 'data': ['1', '5', '2']},
+        ), json={'action_type': 'history_event', 'data': ['42', '666']},
     )
     assert_error_response(
         response=response,
         status_code=HTTPStatus.CONFLICT,
-        contained_in_msg='Tried to remove 1 ignored actions that do not exist',
+        contained_in_msg='Tried to remove 2 ignored actions that do not exist',
     )
 
     # get all entries again and make sure deleted ones do not appear
@@ -142,8 +133,7 @@ def test_remove_ignored_actions(rotkehlchen_api_server):
     serialized_result = {k.serialize(): v for k, v in result.items()}
     assert serialized_result == {
         'asset_movement': {'4', '5'},
-        'ledger_action': {'1', '2', '3'},
-        'evm_transaction': {
+        'history_event': {
             '10x9c7096c0a2a5e1b8bcf444a6929881af55d83fb0b713ad3f7f0028006ff9ec53',
             '100x6328a70f18534d60f6fc085c22a1273fd4a7c7f2e6cdc3bb49168c2846af4b53',
         },
@@ -151,41 +141,38 @@ def test_remove_ignored_actions(rotkehlchen_api_server):
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
-def test_ignore_ledger_actions_in_accountant(rotkehlchen_api_server):
-    """Test that ignored ledger actions are correctly ignored by the accountant"""
+def test_ignore_history_events_in_accountant(rotkehlchen_api_server):
+    """Test that ignored history events are correctly ignored by the accountant"""
     accountant = rotkehlchen_api_server.rest_api.rotkehlchen.accountant
-    ledger_actions_list = [
-        LedgerAction(
-            identifier=1,
-            timestamp=1467279735,
-            action_type=LedgerActionType.INCOME,
+    events_list = [
+        HistoryEvent(
+            event_identifier='a',
+            sequence_index=0,
+            timestamp=TimestampMS(1467279735000),
             location=Location.BLOCKCHAIN,
-            amount=FVal(1000),
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.NONE,
+            balance=Balance(FVal(1000)),
             asset=A_ETH,
-            rate=FVal(100),
-            rate_asset=A_USD,
-            link=None,
-            notes=None,
-        ), LedgerAction(
-            identifier=2,
-            timestamp=1467279735,
-            action_type=LedgerActionType.EXPENSE,
+        ), HistoryEvent(
+            event_identifier='b',
+            sequence_index=0,
+            timestamp=TimestampMS(1467279736000),
             location=Location.BLOCKCHAIN,
-            amount=FVal(5),
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.NONE,
+            balance=Balance(FVal(5)),
             asset=A_DAI,
-            rate=None,
-            rate_asset=None,
-            link='foo',
             notes='boo',
         ),
     ]
 
-    # Set the server to ignore second ledger action
+    # Set the server to ignore second event
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
             'ignoredactionsresource',
-        ), json={'action_type': 'ledger_action', 'data': ['2']},
+        ), json={'action_type': 'history_event', 'data': ['b']},
     )
     assert_simple_ok_response(response)
 
@@ -194,8 +181,8 @@ def test_ignore_ledger_actions_in_accountant(rotkehlchen_api_server):
         ignored_actions = accountant.db.get_ignored_action_ids(cursor, action_type=None)
     ignored = []
     # Call the should_ignore method used in the accountant
-    for action in ledger_actions_list:
-        should_ignore = action.should_ignore(ignored_actions)
+    for event in events_list:
+        should_ignore = event.should_ignore(ignored_actions)
         ignored.append(should_ignore)
 
     assert ignored == [False, True]

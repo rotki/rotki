@@ -8,11 +8,9 @@ from rotkehlchen.db.filtering import (
     AssetMovementsFilterQuery,
     EvmTransactionsFilterQuery,
     HistoryEventFilterQuery,
-    LedgerActionsFilterQuery,
     TradesFilterQuery,
 )
 from rotkehlchen.db.history_events import DBHistoryEvents
-from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
 from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES, ExchangeManager
@@ -25,7 +23,6 @@ from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import timestamp_to_date
 
 if TYPE_CHECKING:
-    from rotkehlchen.accounting.ledger_actions import LedgerAction
     from rotkehlchen.accounting.mixins.event import AccountingEventMixin
     from rotkehlchen.chain.aggregator import ChainsAggregator
     from rotkehlchen.db.dbhandler import DBHandler
@@ -41,12 +38,11 @@ log = RotkehlchenLogsAdapter(logger)
 #    chain.tx decoding
 #
 # reading from the db trades, asset movements, margin positions
-# ledger actions
 # eth2
 # base history entries
 #
 # Please, update this number each time a history query step is either added or removed
-NUM_HISTORY_QUERY_STEPS_EXCL_EXCHANGES = 4 + 3 * len(EVM_CHAINS_WITH_TRANSACTIONS)
+NUM_HISTORY_QUERY_STEPS_EXCL_EXCHANGES = 3 + 3 * len(EVM_CHAINS_WITH_TRANSACTIONS)
 STEPS_PER_CEX = 5
 
 
@@ -89,36 +85,6 @@ class EventsHistorian:
         step += step_by
         self.progress = FVal(step / total_steps) * 100
         return step
-
-    def query_ledger_actions(
-            self,
-            filter_query: LedgerActionsFilterQuery,
-            only_cache: bool,
-    ) -> tuple[list['LedgerAction'], int]:
-        """Queries the ledger actions with the given filter query
-
-        :param only_cache: Optional. If this is true then the equivalent exchange/location
-         is not queried, but only what is already in the DB is returned.
-        """
-        location = filter_query.location
-        from_ts = filter_query.from_ts
-        to_ts = filter_query.to_ts
-        if only_cache is False:  # query services
-            for exchange in self.exchange_manager.iterate_exchanges():
-                if location is None or exchange.location == location:
-                    exchange.query_income_loss_expense(
-                        start_ts=from_ts,
-                        end_ts=to_ts,
-                        only_cache=False,
-                    )
-
-        db = DBLedgerActions(self.db, self.msg_aggregator)
-        has_premium = self.chains_aggregator.premium is not None
-        actions, filter_total_found = db.get_ledger_actions_and_limit_info(
-            filter_query=filter_query,
-            has_premium=has_premium,
-        )
-        return actions, filter_total_found
 
     def _query_services_for_trades(self, filter_query: TradesFilterQuery) -> None:
         """Queries all services requested for trades and writes them to the DB"""
@@ -415,15 +381,6 @@ class EventsHistorian:
             self.processing_state_name = f'Decoding {str_blockchain} raw transactions'
             evm_manager.transactions_decoder.get_and_decode_undecoded_transactions(limit=None)
             step = self._increase_progress(step, total_steps)
-
-        # include all ledger actions
-        self.processing_state_name = 'Querying ledger actions history'
-        ledger_actions, _ = self.query_ledger_actions(
-            filter_query=LedgerActionsFilterQuery.make(to_ts=end_ts),
-            only_cache=True,
-        )
-        history.extend(ledger_actions)
-        step = self._increase_progress(step, total_steps)
 
         # include eth2 staking events
         eth2 = self.chains_aggregator.get_module('eth2')

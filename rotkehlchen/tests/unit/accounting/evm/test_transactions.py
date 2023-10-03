@@ -2,10 +2,10 @@
 
 import pytest
 
-from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL, PnlTotals
 from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.accounting.structures.base import HistoryEvent
 from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import (
     ActionType,
@@ -20,7 +20,7 @@ from rotkehlchen.tests.utils.accounting import accounting_history_process, check
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.tests.utils.history import prices
 from rotkehlchen.tests.utils.messages import no_message_errors
-from rotkehlchen.types import Location, Timestamp, deserialize_evm_tx_hash
+from rotkehlchen.types import Location, Timestamp, TimestampMS, deserialize_evm_tx_hash
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -34,7 +34,7 @@ def test_receiving_value_from_tx(accountant, google_service):
         EvmEvent(
             tx_hash=tx_hash,
             sequence_index=0,
-            timestamp=1569924574000,
+            timestamp=Timestamp(1569924574000),
             location=Location.ETHEREUM,
             location_label=make_evm_address(),
             asset=A_ETH,
@@ -46,8 +46,8 @@ def test_receiving_value_from_tx(accountant, google_service):
         )]
     accounting_history_process(
         accountant,
-        start_ts=0,
-        end_ts=1640493376,
+        start_ts=Timestamp(0),
+        end_ts=Timestamp(1640493376),
         history_list=history,
     )
     no_message_errors(accountant.msg_aggregator)
@@ -65,21 +65,19 @@ def test_gas_fees_after_year(accountant, google_service):
     """
     tx_hash = deserialize_evm_tx_hash('0x5cc0e6e62753551313412492296d5e57bea0a9d1ce507cc96aa4aa076c5bde7a')  # noqa: E501
     history = [
-        LedgerAction(
-            identifier=0,
-            timestamp=Timestamp(1539713238),  # 178.615 EUR/ETH
-            action_type=LedgerActionType.GIFT,  # gift so not counting as income
-            location=Location.KRAKEN,
-            amount=ONE,
+        HistoryEvent(
+            event_identifier='1',
+            sequence_index=0,
+            timestamp=TimestampMS(1539713238000),  # 178.615 EUR/ETH
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.AIRDROP,  # not counting as income by default
             asset=A_ETH,
-            rate=None,
-            rate_asset=None,
-            link=None,
-            notes='',
+            balance=Balance(ONE),
         ), EvmEvent(
             tx_hash=tx_hash,
             sequence_index=0,
-            timestamp=1640493374000,  # 4072.51 EUR/ETH
+            timestamp=TimestampMS(1640493374000),  # 4072.51 EUR/ETH
             location=Location.ETHEREUM,
             location_label=make_evm_address(),
             asset=A_ETH,
@@ -91,8 +89,8 @@ def test_gas_fees_after_year(accountant, google_service):
         )]
     accounting_history_process(
         accountant,
-        start_ts=0,
-        end_ts=1640493376,
+        start_ts=Timestamp(0),
+        end_ts=Timestamp(1640493376),
         history_list=history,
     )
     no_message_errors(accountant.msg_aggregator)
@@ -119,7 +117,7 @@ def test_ignoring_transaction_from_accounting(accountant, google_service, databa
             identifier=1,
             tx_hash=tx_hash,
             sequence_index=0,
-            timestamp=1569924574000,
+            timestamp=TimestampMS(1569924574000),
             location=Location.OPTIMISM,
             location_label=make_evm_address(),
             asset=A_ETH,
@@ -132,7 +130,7 @@ def test_ignoring_transaction_from_accounting(accountant, google_service, databa
             identifier=2,
             tx_hash=tx_hash,
             sequence_index=0,
-            timestamp=1569924574000,
+            timestamp=TimestampMS(1569924574000),
             location=Location.ETHEREUM,
             location_label=make_evm_address(),
             asset=A_ETH,
@@ -145,13 +143,13 @@ def test_ignoring_transaction_from_accounting(accountant, google_service, databa
     with database.user_write() as write_cursor:
         database.add_to_ignored_action_ids(
             write_cursor=write_cursor,
-            action_type=ActionType.EVM_TRANSACTION,
+            action_type=ActionType.HISTORY_EVENT,
             identifiers=['10' + tx_hash.hex()],  # pylint: disable=no-member
         )
     events = accounting_history_process(
         accountant,
-        start_ts=0,
-        end_ts=1640493376,
+        start_ts=Timestamp(0),
+        end_ts=Timestamp(1640493376),
         history_list=history,
     )
     assert len(events) == 2

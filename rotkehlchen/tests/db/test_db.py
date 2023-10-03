@@ -9,7 +9,6 @@ from unittest.mock import patch
 
 import pytest
 
-from rotkehlchen.accounting.ledger_actions import LedgerActionType
 from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.accounting.structures.types import ActionType
 from rotkehlchen.assets.asset import Asset
@@ -55,7 +54,6 @@ from rotkehlchen.db.settings import (
     DEFAULT_QUERY_RETRY_LIMIT,
     DEFAULT_READ_TIMEOUT,
     DEFAULT_SSF_GRAPH_MULTIPLIER,
-    DEFAULT_TAXABLE_LEDGER_ACTIONS,
     DEFAULT_TREAT_ETH2_AS_ETH,
     DEFAULT_UI_FLOATING_PRECISION,
     ROTKEHLCHEN_DB_VERSION,
@@ -135,8 +133,6 @@ TABLES_AT_INIT = [
     'xpub_mappings',
     'eth2_daily_staking_details',
     'eth2_validators',
-    'ledger_actions',
-    'ledger_action_type',
     'ignored_actions',
     'action_type',
     'balancer_events',
@@ -448,7 +444,6 @@ def test_writing_fetching_data(data_dir, username, sql_vm_instructions_cb):
         'display_date_in_localtime': DEFAULT_DISPLAY_DATE_IN_LOCALTIME,
         'current_price_oracles': DEFAULT_CURRENT_PRICE_ORACLES,
         'historical_price_oracles': DEFAULT_HISTORICAL_PRICE_ORACLES,
-        'taxable_ledger_actions': DEFAULT_TAXABLE_LEDGER_ACTIONS,
         'pnl_csv_with_formulas': DEFAULT_PNL_CSV_WITH_FORMULAS,
         'pnl_csv_have_summary': DEFAULT_PNL_CSV_HAVE_SUMMARY,
         'ssf_graph_multiplier': DEFAULT_SSF_GRAPH_MULTIPLIER,
@@ -1707,8 +1702,6 @@ def test_int_overflow_at_tuple_insertion(database, caplog):
         TradeType.deserialize_from_db, TradeType.deserialize),
     (ActionType, 'SELECT type, seq from action_type',
         ActionType.deserialize_from_db, ActionType.deserialize),
-    (LedgerActionType, 'SELECT type, seq from ledger_action_type',
-        LedgerActionType.deserialize_from_db, LedgerActionType.deserialize),
     (AssetMovementCategory, 'SELECT category, seq from asset_movement_category',
         AssetMovementCategory.deserialize_from_db, deserialize_asset_movement_category),
 ])
@@ -1751,7 +1744,6 @@ def test_all_balance_types_in_db(database):
     (Location, 'location'),
     (TradeType, 'trade_type'),
     (ActionType, 'action_type'),
-    (LedgerActionType, 'ledger_action_type'),
     (BalanceType, 'balance_category'),
     (AssetMovementCategory, 'asset_movement_category'),
 ])

@@ -1,9 +1,12 @@
 from typing import TYPE_CHECKING
+
 import pytest
 
-from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
 from rotkehlchen.accounting.pnl import PNL, PnlTotals
+from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.accounting.structures.base import HistoryEvent
+from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_ETH, A_ETH2, A_EUR, A_KFEE, A_USD, A_USDT
 from rotkehlchen.exchanges.data_structures import Trade
@@ -12,7 +15,7 @@ from rotkehlchen.tests.utils.accounting import accounting_history_process, check
 from rotkehlchen.tests.utils.constants import A_GBP
 from rotkehlchen.tests.utils.history import prices
 from rotkehlchen.tests.utils.messages import no_message_errors
-from rotkehlchen.types import AssetAmount, Fee, Location, Price, Timestamp, TradeType
+from rotkehlchen.types import AssetAmount, Fee, Location, Price, Timestamp, TimestampMS, TradeType
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.accountant import Accountant
@@ -27,51 +30,47 @@ def test_kfee_price_in_accounting(accountant, google_service):
     KFEE price is fixed at $0.01
     """
     history = [
-        LedgerAction(
-            identifier=0,
-            timestamp=Timestamp(1539713238),  # 178.615 EUR/ETH
-            action_type=LedgerActionType.INCOME,
-            location=Location.KRAKEN,
-            amount=ONE,
+        HistoryEvent(
+            event_identifier='1',
+            sequence_index=0,
+            timestamp=TimestampMS(1539713238000),  # 178.615 EUR/ETH
+            location=Location.COINBASE,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
-            rate=None,
-            rate_asset=None,
-            link=None,
-            notes='',
-        ), LedgerAction(
-            identifier=0,
-            timestamp=Timestamp(1539713238),  # 0.8612 USD/EUR. 1 KFEE = $0.01 so 8.612 EUR
-            action_type=LedgerActionType.INCOME,
-            location=Location.KRAKEN,
-            amount=FVal(1000),
+            balance=Balance(amount=ONE),
+        ), HistoryEvent(
+            event_identifier='2',
+            sequence_index=0,
+            timestamp=TimestampMS(1539713238000),  # 0.8612 USD/EUR. 1 KFEE = $0.01 so 8.612 EUR
+            location=Location.COINBASE,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.NONE,
             asset=A_KFEE,
-            rate=None,
-            rate_asset=None,
-            link=None,
-            notes='',
+            balance=Balance(amount=FVal(1000)),
         ), Trade(
-            timestamp=1609537953,
+            timestamp=Timestamp(1609537953),
             location=Location.KRAKEN,  # PNL: 598.26 ETH/EUR -> PNL: 0.02 * 598.26 - 0.02*178.615 ->  8.3929  # noqa: E501
             base_asset=A_ETH,
             quote_asset=A_USDT,
             trade_type=TradeType.SELL,
-            amount=FVal('0.02'),
-            rate=FVal(1000),
-            fee=FVal(30),  # KFEE should not be taken into account
+            amount=AssetAmount(FVal('0.02')),
+            rate=Price(FVal(1000)),
+            fee=Fee(FVal(30)),  # KFEE should not be taken into account
             fee_currency=A_KFEE,
             link=None,
         ),
     ]
     accounting_history_process(
         accountant,
-        start_ts=1539713238,
-        end_ts=1624395187,
+        start_ts=Timestamp(1539713238),
+        end_ts=Timestamp(1624395187),
         history_list=history,
     )
     no_message_errors(accountant.msg_aggregator)
     expected_pnls = PnlTotals({
         AccountingEventType.TRADE: PNL(taxable=ZERO, free=FVal('8.3929')),
-        AccountingEventType.LEDGER_ACTION: PNL(taxable=FVal('187.227'), free=ZERO),
+        AccountingEventType.TRANSACTION_EVENT: PNL(taxable=FVal('187.227'), free=ZERO),
     })
     check_pnls_and_csv(accountant, expected_pnls, google_service)
 
@@ -81,39 +80,39 @@ def test_fees_count_in_cost_basis(accountant, google_service):
     """Make sure that asset amounts used in fees are reduced."""
     history = [
         Trade(
-            timestamp=1609537953,
+            timestamp=Timestamp(1609537953),
             location=Location.KRAKEN,
             base_asset=A_ETH,
             quote_asset=A_EUR,
             trade_type=TradeType.BUY,
-            amount=ONE,
-            rate=FVal('598.26'),
-            fee=ONE,
+            amount=AssetAmount(ONE),
+            rate=Price(FVal('598.26')),
+            fee=Fee(ONE),
             fee_currency=A_EUR,
             link=None,
         ), Trade(
             # fee: 0.5 * 1862.06 -> 931.03
             # PNL: 0.5 * 1862.06 - 0.5 * 599.26 - fee -> -299.63
-            timestamp=1624395186,
+            timestamp=Timestamp(1624395186),
             location=Location.KRAKEN,
             base_asset=A_ETH,
             quote_asset=A_EUR,
             trade_type=TradeType.SELL,
-            amount=FVal('0.5'),
-            rate=FVal('1862.06'),
-            fee=FVal('0.5'),
+            amount=AssetAmount(FVal('0.5')),
+            rate=Price(FVal('1862.06')),
+            fee=Fee(FVal('0.5')),
             fee_currency=A_ETH,
             link=None,
         ), Trade(
             # No ETH is owned at this point.
             # PNL: 0.5 * 1837.31 -> 918.655
-            timestamp=1625001464,
+            timestamp=Timestamp(1625001464),
             location=Location.KRAKEN,
             base_asset=A_ETH,
             quote_asset=A_EUR,
             trade_type=TradeType.SELL,
-            amount=FVal('0.5'),
-            rate=FVal('1837.31'),
+            amount=AssetAmount(FVal('0.5')),
+            rate=Price(FVal('1837.31')),
             fee=None,
             fee_currency=None,
             link=None,
@@ -121,8 +120,8 @@ def test_fees_count_in_cost_basis(accountant, google_service):
     ]
     accounting_history_process(
         accountant=accountant,
-        start_ts=1436979735,
-        end_ts=1625001466,
+        start_ts=Timestamp(1436979735),
+        end_ts=Timestamp(1625001466),
         history_list=history,
     )
 
@@ -143,24 +142,21 @@ def test_fees_in_received_asset(accountant, google_service):
     where the PnL report said that there was no documented acquisition.
     """
     history = [
-        LedgerAction(
-            identifier=0,
-            timestamp=Timestamp(1539713238),  # 178.615 EUR/ETH
-            action_type=LedgerActionType.INCOME,
+        HistoryEvent(
+            event_identifier='1',
+            sequence_index=0,
+            timestamp=TimestampMS(1539713238000),  # 178.615 EUR/ETH
             location=Location.BINANCE,
-            amount=ONE,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
-            rate=None,
-            rate_asset=None,
-            link=None,
-            notes='',
-        ),
-        Trade(
+            balance=Balance(amount=ONE),
+        ), Trade(
             # Sell 0.02 ETH for USDT with rate 1000 USDT/ETH and 0.10 USDT fee
             # So acquired 20 USDT for 0.02 ETH + 0.10 USDT
             # So acquired 20 USDT for 0.02 * 598.26 + 0.10 * 0.89 -> 12.0542 EUR
             # So paid 12.0542/20 -> 0.60271 EUR/USDT
-            timestamp=1609537953,  # 0.89 EUR/USDT
+            timestamp=Timestamp(1609537953),  # 0.89 EUR/USDT
             location=Location.BINANCE,
             base_asset=A_ETH,  # 598.26 EUR/ETH
             quote_asset=A_USDT,
@@ -175,8 +171,8 @@ def test_fees_in_received_asset(accountant, google_service):
 
     accounting_history_process(
         accountant,
-        start_ts=1539713238,
-        end_ts=1624395187,
+        start_ts=Timestamp(1539713238),
+        end_ts=Timestamp(1624395187),
         history_list=history,
     )
     no_message_errors(accountant.msg_aggregator)
@@ -184,7 +180,7 @@ def test_fees_in_received_asset(accountant, google_service):
     expected_pnls = PnlTotals({
         AccountingEventType.TRADE: PNL(taxable=ZERO, free=FVal('8.3929')),
         AccountingEventType.FEE: PNL(taxable=FVal('-0.059826'), free=ZERO),
-        AccountingEventType.LEDGER_ACTION: PNL(taxable=FVal('178.615'), free=ZERO),
+        AccountingEventType.TRANSACTION_EVENT: PNL(taxable=FVal('178.615'), free=ZERO),
     })
     check_pnls_and_csv(accountant, expected_pnls, google_service)
 

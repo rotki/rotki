@@ -1,77 +1,72 @@
-from random import randint, uniform
+from random import randint
+from uuid import uuid4
 
 import gevent
 import pytest
 
-from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
+from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.accounting.structures.base import HistoryEvent
+from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.constants.assets import A_ETH
-from rotkehlchen.db.filtering import LedgerActionsFilterQuery
-from rotkehlchen.db.ledger_actions import DBLedgerActions
+from rotkehlchen.db.filtering import HistoryEventFilterQuery
+from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
-from rotkehlchen.types import Location
+from rotkehlchen.types import Location, TimestampMS
 
 
-def make_ledger_action():
-    return LedgerAction(
-        identifier=1,
-        timestamp=randint(1, 16433333),
-        asset=A_ETH,
-        action_type=LedgerActionType.INCOME,
+def make_history_event():
+    return HistoryEvent(
+        event_identifier=uuid4().hex,
+        sequence_index=0,
+        timestamp=TimestampMS(randint(1000, 16433333000)),
         location=Location.BLOCKCHAIN,
-        amount=FVal(randint(1, 1642323)),
-        rate=FVal(uniform(0.00001, 5)),
-        link='dasd',
+        asset=A_ETH,
+        balance=Balance(amount=FVal(randint(1, 1642323))),
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.NONE,
         notes='asdsad',
     )
 
 
-def write_actions(database, num):
-    actions = [make_ledger_action() for _ in range(1, num)]
-    query = """
-    INSERT INTO ledger_actions(
-    timestamp, type, location, amount, asset, rate, rate_asset, link, notes
-    )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);"""
-    with database.user_write() as cursor:
-        cursor.executemany(query, [x.serialize_for_db() for x in actions])
-
-
-def write_single_action(database, action):
-    query = """
-    INSERT INTO ledger_actions(
-    timestamp, type, location, amount, asset, rate, rate_asset, link, notes
-    )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);"""
+def write_events(database, num):
+    dbevents = DBHistoryEvents(database)
+    events = [make_history_event() for _ in range(1, num)]
     with database.user_write() as write_cursor:
-        write_cursor.execute(query, action.serialize_for_db())
+        dbevents.add_history_events(write_cursor=write_cursor, history=events)
 
 
-def write_single_action_frequently(database, num, sleep_between_writes):
+def write_single_event(database, event):
+    dbevents = DBHistoryEvents(database)
+    with database.user_write() as write_cursor:
+        dbevents.add_history_event(write_cursor, event)
+
+
+def write_single_event_frequently(database, num, sleep_between_writes):
     for _ in range(num):
-        write_single_action(database, make_ledger_action())
+        write_single_event(database, make_history_event())
         gevent.sleep(sleep_between_writes)
 
 
-def read_single_action_frequently(database, msg_aggregator, num, limit, sleep_between_reads):
-    dbla = DBLedgerActions(database, msg_aggregator)
+def read_single_event_frequently(database, num, limit, sleep_between_reads):
+    dbevents = DBHistoryEvents(database)
     for _ in range(num):
         with database.conn.read_ctx() as cursor:
-            dbla.get_ledger_actions(cursor, LedgerActionsFilterQuery.make(limit=limit), has_premium=True)  # noqa: E501
+            dbevents.get_history_events(cursor, HistoryEventFilterQuery.make(limit=limit), has_premium=True)  # noqa: E501
         gevent.sleep(sleep_between_reads)
 
 
-def read_actions(database, limit, msg_aggregator):
-    dbla = DBLedgerActions(database, msg_aggregator)
+def read_events(database, limit):
+    dbevents = DBHistoryEvents(database)
     with database.conn.read_ctx() as cursor:
-        dbla.get_ledger_actions(
-            cursor,
-            LedgerActionsFilterQuery.make(limit=limit),
+        dbevents.get_history_events(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(limit=limit),
             has_premium=True,
         )
 
 
 @pytest.mark.parametrize('sql_vm_instructions_cb', [100])
-def test_callback_segfault_simple(database, function_scope_messages_aggregator):
+def test_callback_segfault_simple(database):
     """Test that the async and sqlite progress handler segfault yielding bug does not hit us
     This one is protected against by having the lock inside the callback.
 
@@ -85,22 +80,21 @@ def test_callback_segfault_simple(database, function_scope_messages_aggregator):
     7. Segmentation fault.
     """
     # first write some data in the DB to have enough data to read.
-    write_actions(database, 1000)
+    write_events(database, 1000)
 
     # Then start reading from one greenlet and writing from others to create the problem
     a = gevent.spawn(
-        read_actions,
+        read_events,
         database=database,
         limit=100,
-        msg_aggregator=function_scope_messages_aggregator,
     )
-    b = gevent.spawn(write_actions, database=database, num=200)
-    c = gevent.spawn(write_actions, database=database, num=200)
+    b = gevent.spawn(write_events, database=database, num=200)
+    c = gevent.spawn(write_events, database=database, num=200)
     gevent.joinall([a, b, c])
 
 
 @pytest.mark.parametrize('sql_vm_instructions_cb', [100])
-def test_callback_segfault_complex(database, function_scope_messages_aggregator):
+def test_callback_segfault_complex(database):
     """Test that we protect against the yielding segfault bug that happens when lots
     of complicated actions happen at the same time.
 
@@ -115,37 +109,35 @@ def test_callback_segfault_complex(database, function_scope_messages_aggregator)
     and the callback is exited. Since the connection has been modified KABOOM SEGFAULT.
     """
     # first write some data in the DB to have enough data to read.
-    write_actions(database, 500)
+    write_events(database, 500)
 
     # Then have lots of stuff happen at the same time so that the situation described
     # in the docstring occurs
     a = gevent.spawn(
-        read_actions,
+        read_events,
         database=database,
         limit=50,
-        msg_aggregator=function_scope_messages_aggregator,
     )
     b = gevent.spawn(
-        write_actions,
+        write_events,
         database=database,
         num=100,
     )
     c = gevent.spawn(
-        write_single_action_frequently,
+        write_single_event_frequently,
         database=database,
         num=10,
         sleep_between_writes=0.5,
     )
     d = gevent.spawn(
-        read_single_action_frequently,
+        read_single_event_frequently,
         database=database,
-        msg_aggregator=function_scope_messages_aggregator,
         num=10,
         limit=1,
         sleep_between_reads=0.5,
     )
     e = gevent.spawn(
-        write_actions,
+        write_events,
         database=database,
         num=100,
     )

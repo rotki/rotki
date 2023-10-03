@@ -12,7 +12,6 @@ from uuid import uuid4
 import gevent
 import requests
 
-from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.base import HistoryEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
@@ -1460,5 +1459,5 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
             self,
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,
-    ) -> list[LedgerAction]:
+    ) -> list['HistoryEvent']:
         return []  # noop for binance

@@ -211,7 +211,6 @@ ACCOUNTING_EVENTS_ICONS = {
     AccountingEventType.MARGIN_POSITION: 'mdi-margin',
     AccountingEventType.LOAN: 'mdi-handshake',
     AccountingEventType.PREFORK_ACQUISITION: 'mdi-source-fork',
-    AccountingEventType.LEDGER_ACTION: 'mdi-book-open-variant',
     AccountingEventType.STAKING: 'mdi-sprout',
     AccountingEventType.HISTORY_EVENT: 'mdi-history',
     AccountingEventType.TRANSACTION_EVENT: 'mdi-swap-horizontal',

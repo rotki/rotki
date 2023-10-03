@@ -3,7 +3,6 @@ from typing import Any, Union
 from hexbytes import HexBytes
 from web3.datastructures import AttributeDict
 
-from rotkehlchen.accounting.ledger_actions import LedgerActionType
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.structures.balance import AssetBalance, Balance, BalanceType
 from rotkehlchen.accounting.structures.base import HistoryBaseEntryType, StakingEvent
@@ -195,7 +194,6 @@ def _process_entry(entry: Any) -> Union[str, list[Any], dict[str, Any], Any]:
             AssetMovementCategory,
             CurrentPriceOracle,
             HistoricalPriceOracle,
-            LedgerActionType,
             BalanceType,
             CostBasisMethod,
             EvmTokenKind,
