@@ -1,13 +1,15 @@
 import logging
-from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.accounting.structures.evm_event import EvmEvent, EvmProduct
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.utils import set_token_protocol_if_missing
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface, ReloadableDecoderMixin
+from rotkehlchen.chain.evm.decoding.interfaces import (
+    DecoderInterface,
+    ReloadablePoolsAndGaugesDecoderMixin,
+)
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     DecoderContext,
@@ -53,7 +55,7 @@ GAUGE_WITHDRAW_V2 = b'\x88N\xda\xd9\xceo\xa2D\r\x8aT\xcc\x124\x90\xeb\x96\xd2v\x
 CLAIM_REWARDS_V2 = b"\x1f\x89\xf9c3\xd3\x130\x00\xeeDts\x15\x1f\xa9`eC6\x8f\x02'\x1c\x9d\x95\xae\x14\xf1;\xccg"  # noqa: E501
 
 
-class VelodromeDecoder(DecoderInterface, ReloadableDecoderMixin):
+class VelodromeDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin):
     """A decoder class for velodrome related events."""
 
     def __init__(
@@ -67,7 +69,14 @@ class VelodromeDecoder(DecoderInterface, ReloadableDecoderMixin):
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
         )
-        self.pools, self.gauges = read_velodrome_pools_and_gauges_from_cache()
+        ReloadablePoolsAndGaugesDecoderMixin.__init__(
+            self,
+            evm_inquirer=optimism_inquirer,
+            cache_type_to_check_for_freshness=CacheType.VELODROME_POOL_ADDRESS,
+            query_data_method=query_velodrome_data,
+            save_data_to_cache_method=save_velodrome_data_to_cache,
+            read_pools_and_gauges_from_cache_method=read_velodrome_pools_and_gauges_from_cache,
+        )
         self.protocol_addresses = {ROUTER_V2, ROUTER_V1}.union(self.pools)  # velodrome addresses that appear on decoded events  # noqa: E501
 
     def _decode_add_liquidity_events(
@@ -181,7 +190,7 @@ class VelodromeDecoder(DecoderInterface, ReloadableDecoderMixin):
         )
         return DEFAULT_DECODING_OUTPUT
 
-    def _decode_velodrome_pool_events(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_pool_events(self, context: DecoderContext) -> DecodingOutput:
         """Decodes transactions that interact with a velodrome v1 or v2 pool"""
         if context.tx_log.topics[0] in (REMOVE_LIQUIDITY_EVENT_V2, REMOVE_LIQUIDITY_EVENT_V1):
             return self._decode_remove_liquidity_events(
@@ -198,7 +207,7 @@ class VelodromeDecoder(DecoderInterface, ReloadableDecoderMixin):
 
         return DEFAULT_DECODING_OUTPUT
 
-    def _decode_velodrome_gauge_events(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_gauge_events(self, context: DecoderContext) -> DecodingOutput:
         """
         Decodes transactions that interact with a velodrome v2 gauge. Velodrome v1 had no gauges
         """
@@ -237,11 +246,11 @@ class VelodromeDecoder(DecoderInterface, ReloadableDecoderMixin):
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         mapping: dict[ChecksumEvmAddress, tuple[Any, ...]] = {
-            address: (self._decode_velodrome_pool_events,)
+            address: (self._decode_pool_events,)
             for address in self.pools
         }
         mapping.update({  # addresses of pools and gauges don't intersect, so combining like this is fine  # noqa: E501
-            gauge_address: (self._decode_velodrome_gauge_events,)
+            gauge_address: (self._decode_gauge_events,)
             for gauge_address in self.gauges
         })
         return mapping
@@ -277,35 +286,3 @@ class VelodromeDecoder(DecoderInterface, ReloadableDecoderMixin):
 
     def counterparties(self) -> list['CounterpartyDetails']:
         return [CounterpartyDetails(identifier=CPT_VELODROME, label='velodrome_finance', image='velodrome.svg')]  # noqa: E501
-
-    def reload_data(self) -> Optional[Mapping[ChecksumEvmAddress, tuple[Any, ...]]]:
-        """Make sure velodrome pools are recently queried from the chain, saved in the DB
-        and loaded to the decoder's memory.
-
-        If a query happens and any new mappings are generated they are returned,
-        otherwise `None` is returned.
-        TODO: consider abstracting this method (it is similar to curve's one)
-        """
-        self.evm_inquirer.ensure_cache_data_is_updated(  # type: ignore  # mypy doesn't understand that the optimism inquirer is a DSProxyInquirerWithCacheData with an ensure_cache_data_is_updated method  # noqa: E501
-            cache_type=CacheType.VELODROME_POOL_ADDRESS,
-            query_method=query_velodrome_data,
-            save_method=save_velodrome_data_to_cache,
-        )
-        new_pools, new_gauges = read_velodrome_pools_and_gauges_from_cache()
-        pools_diff = new_pools - self.pools
-        gauges_diff = new_gauges - self.gauges
-        if len(pools_diff) == 0 and len(gauges_diff) == 0:
-            return None
-
-        self.pools = new_pools
-        self.gauges = new_gauges
-        new_mapping: dict[ChecksumEvmAddress, tuple[Any, ...]] = {
-            pool_address: (self._decode_velodrome_pool_events,)
-            for pool_address in pools_diff
-        }
-        new_mapping.update({
-            # addresses of pools and gauges don't intersect, so combining like this is fine
-            gauge_address: (self._decode_velodrome_gauge_events,)
-            for gauge_address in gauges_diff
-        })
-        return new_mapping

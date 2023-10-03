@@ -1,5 +1,4 @@
 import logging
-from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, Callable, Literal, Optional
 
 from rotkehlchen.accounting.structures.balance import Balance
@@ -9,7 +8,10 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.modules.aave.constants import CPT_AAVE_V1, CPT_AAVE_V2
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS, ZERO_ADDRESS
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface, ReloadableDecoderMixin
+from rotkehlchen.chain.evm.decoding.interfaces import (
+    DecoderInterface,
+    ReloadablePoolsAndGaugesDecoderMixin,
+)
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     FAILED_ENRICHMENT_OUTPUT,
@@ -145,7 +147,7 @@ def _read_curve_asset(
     ))
 
 
-class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
+class CurveDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin):
 
     def __init__(
             self,
@@ -158,7 +160,14 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
         )
-        self.curve_pools, self.curve_gauges = read_curve_pools_and_gauges()
+        ReloadablePoolsAndGaugesDecoderMixin.__init__(
+            self,
+            evm_inquirer=ethereum_inquirer,
+            cache_type_to_check_for_freshness=CacheType.CURVE_LP_TOKENS,
+            query_data_method=query_curve_data,
+            save_data_to_cache_method=save_curve_data_to_cache,
+            read_pools_and_gauges_from_cache_method=read_curve_pools_and_gauges,
+        )
         self.ethereum = ethereum_inquirer
 
     def _decode_curve_remove_events(
@@ -205,7 +214,7 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
                 event.notes = f'Return {event.balance.amount} {crypto_asset.symbol}'
                 return_event = event
             elif (  # Withdraw receive asset
-                tx_log.address in self.curve_pools and
+                tx_log.address in self.pools and
                 transaction.from_address == user_or_contract_address
             ):
                 notes = f'Remove {event.balance.amount} {crypto_asset.symbol} from {tx_log.address} curve pool'  # noqa: E501
@@ -309,7 +318,7 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
                 event.event_type == HistoryEventType.RECEIVE and
                 event.event_subtype == HistoryEventSubType.NONE and
                 event.location_label == user_or_contract_address and
-                tx_log.address in self.curve_pools
+                tx_log.address in self.pools
             ):
                 event.event_type = HistoryEventType.RECEIVE
                 event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
@@ -323,7 +332,7 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
                     event.location_label == user_or_contract_address or
                     user_or_contract_address in CURVE_DEPOSIT_CONTRACTS
                 ) and
-                tx_log.address in self.curve_pools
+                tx_log.address in self.pools
             ):
                 event.event_type = HistoryEventType.DEPOSIT
                 event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
@@ -406,11 +415,11 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
             raw_bought_amount = hex_or_bytes_to_int(context.tx_log.data[96:128])
             if (
                 context.tx_log.topics[0] == TOKEN_EXCHANGE and
-                pool_address in self.curve_pools and
-                len(self.curve_pools[pool_address]) > max(sold_token_id, bought_token_id)  # Make sure that tokens of the pool are cached  # noqa: E501
+                pool_address in self.pools and
+                len(self.pools[pool_address]) > max(sold_token_id, bought_token_id)  # type: ignore  # self.pools is a dict here  # Make sure that tokens of the pool are cached  # noqa: E501
             ):
-                sold_token_address = self.curve_pools[pool_address][sold_token_id]
-                bought_token_address = self.curve_pools[pool_address][bought_token_id]
+                sold_token_address = self.pools[pool_address][sold_token_id]  # type: ignore  # self.pools is a dict here # noqa: E501
+                bought_token_address = self.pools[pool_address][bought_token_id]  # type: ignore  # self.pools is a dict here # noqa: E501
         else:  # EXCHANGE_MULTIPLE
             swapping_contract = CURVE_SWAP_ROUTER
             spender_address = hex_or_bytes_to_address(context.tx_log.topics[1])
@@ -476,7 +485,7 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
 
         return DEFAULT_DECODING_OUTPUT
 
-    def _decode_curve_events(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_pool_events(self, context: DecoderContext) -> DecodingOutput:
         if context.tx_log.topics[0] in REMOVE_LIQUIDITY_EVENTS:
             # it can either be the user or a deposit zap contract
             user_or_contract_address = hex_or_bytes_to_address(context.tx_log.topics[1])
@@ -539,7 +548,7 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
         )
         return DecodingOutput(event=event, refresh_balances=False)
 
-    def _decode_curve_gauge_events(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_gauge_events(self, context: DecoderContext) -> DecodingOutput:
         if context.tx_log.topics[0] not in (GAUGE_DEPOSIT, GAUGE_WITHDRAW):
             return DEFAULT_DECODING_OUTPUT
 
@@ -629,7 +638,7 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
                 (
                     event.address in CURVE_DEPOSIT_CONTRACTS or
                     event.address == ZERO_ADDRESS or
-                    event.address in self.curve_pools
+                    event.address in self.pools
                 )
             ):
                 receive_event_idx = idx
@@ -679,7 +688,7 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
                 event.location_label == transaction.from_address and
                 (
                     event.address in CURVE_DEPOSIT_CONTRACTS or
-                    event.address in self.curve_pools
+                    event.address in self.pools
                 )
             ):
                 crypto_asset = event.asset.resolve_to_crypto_asset()
@@ -714,7 +723,7 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
         if (
             context.event.event_type == HistoryEventType.RECEIVE and
             context.event.event_subtype == HistoryEventSubType.NONE and
-            source_address in self.curve_gauges
+            source_address in self.gauges
         ):
             crypto_asset = context.event.asset.resolve_to_crypto_asset()
             context.event.event_subtype = HistoryEventSubType.REWARD
@@ -784,14 +793,14 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         mapping: dict[ChecksumEvmAddress, tuple[Any, ...]] = {
-            address: (self._decode_curve_events,)
-            for address in self.curve_pools
+            address: (self._decode_pool_events,)
+            for address in self.pools
         }
         mapping.update({  # addresses of pools and gauges don't intersect, so combining like this is fine  # noqa: E501
-            gauge_address: (self._decode_curve_gauge_events,)
-            for gauge_address in self.curve_gauges
+            gauge_address: (self._decode_gauge_events,)
+            for gauge_address in self.gauges
         })
-        mapping[CURVE_SWAP_ROUTER] = (self._decode_curve_events,)
+        mapping[CURVE_SWAP_ROUTER] = (self._decode_pool_events,)
         mapping[GAUGE_CONTROLLER] = (self._decode_curve_gauge_votes,)
         return mapping
 
@@ -805,33 +814,3 @@ class CurveDecoder(DecoderInterface, ReloadableDecoderMixin):
 
     def counterparties(self) -> list[CounterpartyDetails]:
         return [CounterpartyDetails(identifier=CPT_CURVE, label='Curve.fi', image='curve.png')]
-
-    def reload_data(self) -> Optional[Mapping[ChecksumEvmAddress, tuple[Any, ...]]]:
-        """Make sure curve pools are recently queried from the chain, saved in the DB
-        and loaded to the decoder's memory.
-
-        If a query happens and any new mappings are generated they are returned,
-        otherwise `None` is returned.
-        """
-        self.ethereum.ensure_cache_data_is_updated(
-            cache_type=CacheType.CURVE_LP_TOKENS,
-            query_method=query_curve_data,
-            save_method=save_curve_data_to_cache,
-        )
-        new_curve_pools, new_curve_gauges = read_curve_pools_and_gauges()
-        curve_pools_diff = set(new_curve_pools.keys()) - set(self.curve_pools.keys())
-        curve_gauges_diff = new_curve_gauges - self.curve_gauges
-        if len(curve_pools_diff) == 0 and len(curve_gauges_diff) == 0:
-            return None
-
-        self.curve_pools = new_curve_pools
-        self.curve_gauges = new_curve_gauges
-        new_mapping: dict[ChecksumEvmAddress, tuple[Any, ...]] = {
-            pool_address: (self._decode_curve_events,)
-            for pool_address in curve_pools_diff
-        }
-        new_mapping.update({  # addresses of pools and gauges don't intersect, so combining like this is fine  # noqa: E501
-            gauge_address: (self._decode_curve_gauge_events,)
-            for gauge_address in curve_gauges_diff
-        })
-        return new_mapping

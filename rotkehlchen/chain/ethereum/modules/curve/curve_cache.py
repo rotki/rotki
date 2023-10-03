@@ -49,7 +49,6 @@ log = RotkehlchenLogsAdapter(logger)
 READ_CURVE_DATA_TYPE = tuple[
     dict[ChecksumEvmAddress, list[ChecksumEvmAddress]],
     set[ChecksumEvmAddress],
-
 ]
 # list of pools that we know contain bad tokens
 IGNORED_CURVE_POOLS = {'0x066B6e1E93FA7dcd3F0Eb7f8baC7D5A747CE0BF9'}
