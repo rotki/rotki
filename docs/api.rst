@@ -12378,3 +12378,202 @@ Dealing with skipped external events
   :statuscode 200: Reprocessing went fine.
   :statuscode 409: An issue ocurred during reprocessing
   :statuscode 500: Internal rotki error
+
+
+Managing custom accounting rules
+========================================
+
+.. http:post:: /api/(version)/accounting/rules
+
+   Doing a POST on this endpoint will allow querying the accounting rules by a list of possible values. This endpoint allows pagination.
+
+
+  **Example Request**
+
+  .. http:example:: curl wget httpie python-requests
+
+      POST /api/1/accounting/rules HTTP/1.1
+      Host: localhost:5042
+
+      {
+         "event_types":["deposit", "withdrawal"],
+         "counterparties":["uniswap", "compound"]
+      }
+
+  :reqjsonarr optional[array[string]] event_types: List of possible event types to use while filtering.
+  :reqjsonarr optional[array[string]] event_subtypes: List of possible event subtypes to use while filtering.
+  :reqjsonarr optional[array[string]] counterparties: List of possible counterparties to use while filtering.
+
+
+  **Example Response**
+
+  .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+      "result":{
+         "entries":[{
+            "taxable":false,
+            "count_cost_basis_pnl":true,
+            "count_entire_amount_spend":false,
+            "method":"spend",
+            "accounting_treatment":null,
+            "identifier":2,
+            "event_type":"staking",
+            "event_subtype":"spend",
+            "counterparty":"compound"
+         }],
+         "entries_found":1,
+         "entries_total":1,
+         "entries_limit":-1
+      },
+      "message":""
+      }
+
+  :resjson array entries: List of all the rules with their identifier. For the meaning of each field refer to :ref:`accounting_rules_fields`
+  :resjson int entries_found: The number of entries found for the current filter. Ignores pagination.
+  :resjson int entries_limit: The limit of entries if free version. Always -1 for this endpoint.
+  :resjson int entries_total: The number of total entries ignoring all filters.
+
+  :statuscode 200: All okay
+  :statuscode 409: Bad set of filters provided 
+  :statuscode 500: Internal rotki error
+
+
+.. http:put:: /api/(version)/accounting/rules
+
+  Doing a PUT request on this endpoint will allow to create a new accounting rule.
+
+  **Example Request**
+
+  .. http:example:: curl wget httpie python-requests
+
+      PUT /api/1/accounting/rules HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {
+         "taxable":true,
+         "count_entire_amount_spend":false,
+         "count_cost_basis_pnl":true,
+         "method":"spend",
+         "event_type":"staking",
+         "event_subtype":"spend",
+         "counterparty": "compound",
+         "accounting_treatment":"swap"
+      }
+
+  .. _accounting_rules_fields:
+
+  :reqjsonarr boolean taxable: ``true`` if the event should be considered as taxable
+  :reqjsonarr boolean count_entire_amount_spend: if ``true`` then the entire amount is counted as a spend. Which means an expense (negative pnl).
+  :reqjsonarr boolean count_cost_basis_pnl: if ``true`` then we also count any profit/loss the asset may have had compared to when it was acquired.
+  :reqjsonarr string method: Can be either ``spend`` or ``acquisition``.
+  :reqjsonarr string event_type: The event type that the rule targets.
+  :reqjsonarr string event_subtype: The event subtype that the rule targets.
+  :reqjsonarr optional[string] counterparty: The counterparty that the rule targets.
+  :reqjsonarr accounting_treatment: Special rule to handle pairs of events. Can be ``swap`` or ``swap with fee``
+
+  **Example Response**:
+
+  .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+         "result": true,
+         "message": ""
+      }
+
+  :resjson bool result: Boolean denoting success or failure.
+  :statuscode 200: Entry correctly stored.
+  :statuscode 409: No user is currently logged in. Failed to validate the data.
+  :statuscode 500: Internal rotki error.
+
+
+.. http:patch:: /api/(version)/accounting/rules
+
+  Doing a PATCH on this endpoint allows to edit an accounting rule. Takes the same parameters as the PUT verb plus the identifier of the entry being updated.
+
+  **Example Request**:
+
+  .. http:example:: curl wget httpie python-requests
+
+    PATCH /api/1/accounting/rules HTTP/1.1
+    Host: localhost:5042
+    Content-Type: application/json;charset=UTF-8
+
+    {
+      "identifier": 1,
+      "taxable": true,
+      "count_entire_amount_spend": false,
+      "count_cost_basis_pnl": true,
+      "method": "spend",
+      "event_type": "staking",
+      "event_subtype": "spend",
+      "counterparty": "uniswap",
+      "accounting_treatment": "swap"
+    }
+
+  :ref:`accounting_rules_fields`
+
+  :reqjsonarr integer identifier: The id of the rule being updated.
+
+  **Example Response**:
+
+  .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "result": true,
+        "message": ""
+      }
+
+  :resjson bool result: Boolean denoting success or failure.
+  :statuscode 200: Entry correctly updated.
+  :statuscode 409: No user is currently logged in. Failed to validate the data. Or entry doesn't exist.
+  :statuscode 500: Internal rotki error.
+
+.. http:delete:: /api/(version)/accounting/rules
+
+  Doing a DELETE on this endpoint allows deleting a rule by their event type, subtype and counterparty.
+
+  **Example Request**:
+
+  .. http:example:: curl wget httpie python-requests
+
+    PATCH /api/1/accounting/rules HTTP/1.1
+    Host: localhost:5042
+    Content-Type: application/json;charset=UTF-8
+
+    {
+      "event_type": "staking",
+      "event_subtype": "spend",
+      "counterparty": "uniswap"
+    }
+
+  :reqjsonarr string event_type: The event type target of the delete
+  :reqjsonarr string event_subtype: The event subtype target of the delete
+  :reqjsonarr optional[string] counterparty: The optional counterparty target of the delete. If an entry has a counterparty for the same type and subtype it won't be deleted if this field is null.
+
+  **Example Response**:
+
+  .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "result": true,
+        "message": ""
+      }
+
+  :resjson bool result: Boolean denoting success or failure.
+  :statuscode 200: Entry correctly deleted.
+  :statuscode 409: No user is currently logged in. Failed to validate the data. Or entry doesn't exist.
+  :statuscode 500: Internal rotki error.

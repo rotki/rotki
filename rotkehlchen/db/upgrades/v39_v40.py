@@ -250,6 +250,19 @@ def _add_new_tables(write_cursor: 'DBCursor') -> None:
     location CHAR(1) NOT NULL DEFAULT('A') REFERENCES location(location),
     extra_data TEXT
     );""")
+    write_cursor.execute("""
+    CREATE TABLE IF NOT EXISTS accounting_rules(
+        type TEXT NOT NULL,
+        subtype TEXT NOT NULL,
+        counterparty TEXT NOT NULL,
+        taxable INTEGER NOT NULL CHECK (taxable IN (0, 1)),
+        count_entire_amount_spend INTEGER NOT NULL CHECK (count_entire_amount_spend IN (0, 1)),
+        count_cost_basis_pnl INTEGER NOT NULL CHECK (count_cost_basis_pnl IN (0, 1)),
+        method TEXT,
+        accounting_treatment TEXT,
+        PRIMARY KEY(type, subtype, counterparty)
+    );
+    """)
     log.debug('Exit _add_new_tables')
 
 

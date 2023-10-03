@@ -1,6 +1,8 @@
 from collections.abc import Iterator
-from enum import Enum
-from typing import TYPE_CHECKING, Literal, Optional, Protocol
+from enum import auto
+from typing import TYPE_CHECKING, Any, Literal, Optional, Protocol, Union
+
+from rotkehlchen.utils.mixins.enums import DBCharEnumMixIn
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.pot import AccountingPot
@@ -23,9 +25,19 @@ class EventsAccountantCallback(Protocol):
         """
 
 
-class TxAccountingTreatment(Enum):
-    SWAP = 0
-    SWAP_WITH_FEE = 1
+class TxAccountingTreatment(DBCharEnumMixIn):
+    SWAP = auto()
+    SWAP_WITH_FEE = auto()
+
+
+ACCOUNTING_METHOD_TYPE = Literal['acquisition', 'spend']
+ACCOUNTING_SETTING_DB_TUPLE = tuple[
+    int,  # taxable
+    int,  # count_entire_amount_spend
+    int,  # count_cost_basis_pnl
+    ACCOUNTING_METHOD_TYPE,  # method
+    Union[str, None],  # accounting_treatment
+]
 
 
 class BaseEventSettings:
@@ -35,7 +47,7 @@ class BaseEventSettings:
             taxable: bool,
             count_entire_amount_spend: bool,
             count_cost_basis_pnl: bool,
-            method: Literal['acquisition', 'spend'],
+            method: ACCOUNTING_METHOD_TYPE,
             accounting_treatment: Optional[TxAccountingTreatment] = None,
     ):
         self.taxable = taxable
@@ -43,6 +55,34 @@ class BaseEventSettings:
         self.count_cost_basis_pnl = count_cost_basis_pnl
         self.method = method
         self.accounting_treatment = accounting_treatment
+
+    @classmethod
+    def deserialize_from_db(cls, entry: ACCOUNTING_SETTING_DB_TUPLE) -> 'BaseEventSettings':
+        return cls(
+            taxable=bool(entry[0]),
+            count_entire_amount_spend=bool(entry[1]),
+            count_cost_basis_pnl=bool(entry[2]),
+            method=entry[3],
+            accounting_treatment=TxAccountingTreatment.deserialize_from_db(entry[4]) if entry[4] else None,  # noqa: E501
+        )
+
+    def serialize_for_db(self) -> ACCOUNTING_SETTING_DB_TUPLE:
+        return (
+            self.taxable,
+            self.count_entire_amount_spend,
+            self.count_cost_basis_pnl,
+            self.method,
+            self.accounting_treatment.serialize_for_db() if self.accounting_treatment else None,
+        )
+
+    def serialize(self) -> dict[str, Any]:
+        return {
+            'taxable': self.taxable,
+            'count_cost_basis_pnl': self.count_cost_basis_pnl,
+            'count_entire_amount_spend': self.count_entire_amount_spend,
+            'method': self.method,
+            'accounting_treatment': self.accounting_treatment,
+        }
 
 
 class TxEventSettings(BaseEventSettings):
@@ -52,7 +92,7 @@ class TxEventSettings(BaseEventSettings):
             taxable: bool,
             count_entire_amount_spend: bool,
             count_cost_basis_pnl: bool,
-            method: Literal['acquisition', 'spend'],
+            method: ACCOUNTING_METHOD_TYPE,
             accounting_treatment: Optional[TxAccountingTreatment] = None,
             accountant_cb: Optional[EventsAccountantCallback] = None,
     ):

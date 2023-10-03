@@ -94,7 +94,7 @@ def test_cowswap_swap_with_fee(accountant: 'Accountant', ethereum_inquirer: 'Evm
         msg_aggregator=ethereum_inquirer.database.msg_aggregator,
     )
     settings = cowswap_accountant.event_settings(pot)
-    events_accountant.event_settings.update(settings)
+    events_accountant.rules_manager.event_settings.update(settings)
     events_iterator = iter(events)
     for event in events_iterator:
         pot.events_accountant.process(event=event, events_iterator=events_iterator)

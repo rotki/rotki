@@ -10,6 +10,7 @@ from rotkehlchen.accounting.structures.base import (
     HISTORY_EVENT_DB_TUPLE_WRITE,
     HistoryBaseEntry,
     HistoryBaseEntryType,
+    get_event_type_identifier,
 )
 from rotkehlchen.accounting.structures.types import (
     EVM_EVENT_DB_TUPLE_READ,
@@ -54,10 +55,6 @@ class EvmProduct(SerializableEnumNameMixin):
     POOL = auto()
     STAKING = auto()
     GAUGE = auto()
-
-
-def get_tx_event_type_identifier(event_type: HistoryEventType, event_subtype: HistoryEventSubType, counterparty: str) -> str:  # noqa: E501
-    return str(event_type) + '__' + str(event_subtype) + '__' + counterparty
 
 
 class EvmEvent(HistoryBaseEntry):  # noqa: PLW1641  # hash in superclass
@@ -240,11 +237,11 @@ class EvmEvent(HistoryBaseEntry):  # noqa: PLW1641  # hash in superclass
         Computes the identifier from event type, event subtype and counterparty if
         `include_counterparty` is True.
         """
-        type_identifier = super().get_type_identifier()
-        if include_counterparty is True and self.counterparty is not None:
-            type_identifier += '__' + self.counterparty
-
-        return type_identifier
+        return get_event_type_identifier(
+            event_type=self.event_type,
+            event_subtype=self.event_subtype,
+            counterparty=self.counterparty if include_counterparty is True else None,
+        )
 
     def __eq__(self, other: object) -> bool:
         return (  # ignores are due to object and type checks in super not recognized

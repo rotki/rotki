@@ -51,6 +51,7 @@ from rotkehlchen.chain.ethereum.modules.yearn.vaults import (
     YearnVaultEvent,
     YearnVaultHistory,
 )
+from rotkehlchen.chain.evm.accounting.structures import TxAccountingTreatment
 from rotkehlchen.chain.evm.decoding.types import (
     CounterpartyDetails,
     EventCategory,
@@ -136,6 +137,7 @@ def _process_entry(entry: Any) -> Union[str, list[Any], dict[str, Any], Any]:
             LocationDetails,
             EvmProduct,
             DBSettings,
+            TxAccountingTreatment,
     )):
         return entry.serialize()
     if isinstance(entry, (

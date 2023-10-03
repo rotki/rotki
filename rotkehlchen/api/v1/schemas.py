@@ -30,6 +30,11 @@ from rotkehlchen.chain.ethereum.constants import ETHEREUM_ETHERSCAN_NODE_NAME
 from rotkehlchen.chain.ethereum.modules.eth2.constants import CPT_ETH2
 from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
 from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
+from rotkehlchen.chain.evm.accounting.structures import (
+    ACCOUNTING_METHOD_TYPE,
+    BaseEventSettings,
+    TxAccountingTreatment,
+)
 from rotkehlchen.chain.evm.types import EvmAccount
 from rotkehlchen.chain.optimism.constants import OPTIMISM_ETHERSCAN_NODE_NAME
 from rotkehlchen.chain.polygon_pos.constants import POLYGON_POS_ETHERSCAN_NODE_NAME
@@ -43,6 +48,7 @@ from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.constants.resolver import EVM_CHAIN_DIRECTIVE
 from rotkehlchen.data_import.manager import DataImportSource
 from rotkehlchen.db.filtering import (
+    AccountingRulesFilterQuery,
     AddressbookFilterQuery,
     AssetMovementsFilterQuery,
     AssetsFilterQuery,
@@ -578,11 +584,7 @@ class StakingQuerySchema(BaseStakingQuerySchema):
         )
 
 
-class HistoryEventSchema(TimestampRangeSchema, DBPaginationSchema, DBOrderBySchema):
-    """Schema for quering history events"""
-    exclude_ignored_assets = fields.Boolean(load_default=True)
-    group_by_event_ids = fields.Boolean(load_default=False)
-    event_identifiers = DelimitedOrNormalList(fields.String(), load_default=None)
+class TypesAndCounterpatiesFiltersSchema(Schema):
     event_types = DelimitedOrNormalList(
         SerializableEnumField(enum_class=HistoryEventType),
         load_default=None,
@@ -591,6 +593,19 @@ class HistoryEventSchema(TimestampRangeSchema, DBPaginationSchema, DBOrderBySche
         SerializableEnumField(enum_class=HistoryEventSubType),
         load_default=None,
     )
+    counterparties = DelimitedOrNormalList(fields.String(), load_default=None)
+
+
+class HistoryEventSchema(
+    TypesAndCounterpatiesFiltersSchema,
+    TimestampRangeSchema,
+    DBPaginationSchema,
+    DBOrderBySchema,
+):
+    """Schema for quering history events"""
+    exclude_ignored_assets = fields.Boolean(load_default=True)
+    group_by_event_ids = fields.Boolean(load_default=False)
+    event_identifiers = DelimitedOrNormalList(fields.String(), load_default=None)
     location = SerializableEnumField(Location, load_default=None)
     location_labels = DelimitedOrNormalList(fields.String(), load_default=None)
     asset = AssetField(expected_type=CryptoAsset, load_default=None)
@@ -601,7 +616,6 @@ class HistoryEventSchema(TimestampRangeSchema, DBPaginationSchema, DBOrderBySche
 
     # EvmEvent only
     tx_hashes = DelimitedOrNormalList(EVMTransactionHashField(), load_default=None)
-    counterparties = DelimitedOrNormalList(fields.String(), load_default=None)
     products = DelimitedOrNormalList(SerializableEnumField(enum_class=EvmProduct), load_default=None)  # noqa: E501
     addresses = DelimitedOrNormalList(EvmAddressField(), load_default=None)
 
@@ -2936,3 +2950,87 @@ class ExportHistoryEventSchema(HistoryEventSchema):
         if (directory_path := data.get('directory_path')) is not None:
             extra_fields['directory_path'] = directory_path
         return extra_fields
+
+
+class AccountingRuleIdSchema(Schema):
+    event_type = SerializableEnumField(enum_class=HistoryEventType, required=True)
+    event_subtype = SerializableEnumField(enum_class=HistoryEventSubType, required=True)
+    counterparty = fields.String(required=False, load_default=None)
+
+
+class CreateAccountingRuleSchema(AccountingRuleIdSchema):
+    taxable = fields.Boolean(required=True)
+    count_entire_amount_spend = fields.Boolean(required=True)
+    count_cost_basis_pnl = fields.Boolean(required=True)
+    method = fields.String(
+        validate=webargs.validate.OneOf(choices=get_args(ACCOUNTING_METHOD_TYPE)),
+    )
+    accounting_treatment = SerializableEnumField(enum_class=TxAccountingTreatment, required=False, load_default=None)  # noqa: E501
+
+    def _create_settings(
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
+    ) -> dict[str, Any]:
+        rule = BaseEventSettings(
+            taxable=data['taxable'],
+            count_entire_amount_spend=data['count_entire_amount_spend'],
+            count_cost_basis_pnl=data['count_cost_basis_pnl'],
+            method=data['method'],
+            accounting_treatment=data['accounting_treatment'],
+        )
+        return {
+            'rule': rule,
+            'event_type': data['event_type'],
+            'event_subtype': data['event_subtype'],
+            'counterparty': data['counterparty'],
+        }
+
+    @post_load
+    def prepare_rule_info(
+            self,
+            data: dict[str, Any],
+            **kwargs: Any,
+    ) -> dict[str, Any]:
+        return self._create_settings(data, **kwargs)
+
+
+class EditAccountingRuleSchema(CreateAccountingRuleSchema):
+    identifier = fields.Integer(required=True)
+
+    @post_load
+    def prepare_rule_info(
+            self,
+            data: dict[str, Any],
+            **kwargs: Any,
+    ) -> dict[str, Any]:
+        return {'identifier': data['identifier'], **self._create_settings(data, **kwargs)}
+
+
+class AccountingRulesQuerySchema(
+        TypesAndCounterpatiesFiltersSchema,
+        DBPaginationSchema,
+        DBOrderBySchema,
+):
+
+    @post_load
+    def make_rules_query(
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
+    ) -> dict[str, Any]:
+        filter_query = AccountingRulesFilterQuery.make(
+            order_by_rules=create_order_by_rules_list(
+                data=data,
+                default_order_by_fields=['identifier', 'type', 'subtype', 'counterparty'],
+                default_ascending=[False, True, True, True],
+            ),
+            limit=data['limit'],
+            offset=data['offset'],
+            event_types=data['event_types'],
+            event_subtypes=data['event_subtypes'],
+            counterparties=data['counterparties'],
+        )
+        return {
+            'filter_query': filter_query,
+        }

@@ -1710,3 +1710,54 @@ class TransactionsNotDecodedFilterQuery(DBFilterQuery):
 
         filter_query.filters = filters
         return filter_query
+
+
+class AccountingRulesFilterQuery(DBFilterQuery):
+    """Filter accounting rules using pagination by type, subtype and counterparty"""
+
+    @classmethod
+    def make(
+            cls,
+            and_op: bool = True,
+            order_by_rules: Optional[list[tuple[str, bool]]] = None,
+            limit: Optional[int] = None,
+            offset: Optional[int] = None,
+            event_types: Optional[list[HistoryEventType]] = None,
+            event_subtypes: Optional[list[HistoryEventSubType]] = None,
+            counterparties: Optional[list[str]] = None,
+    ) -> 'AccountingRulesFilterQuery':
+        if order_by_rules is None:
+            order_by_rules = [('identifier', False)]
+
+        filter_query = cls.create(
+            and_op=and_op,
+            limit=limit,
+            offset=offset,
+            order_by_rules=order_by_rules,
+        )
+        filter_query = cast('AccountingRulesFilterQuery', filter_query)
+        filters: list[DBFilter] = []
+        if event_types is not None:
+            filters.append(DBMultiStringFilter(
+                and_op=True,
+                column='type',
+                values=[x.serialize() for x in event_types],
+                operator='IN',
+            ))
+        if event_subtypes is not None:
+            filters.append(DBMultiStringFilter(
+                and_op=True,
+                column='subtype',
+                values=[x.serialize() for x in event_subtypes],
+                operator='IN',
+            ))
+        if counterparties is not None:
+            filter_query.filters.append(DBMultiStringFilter(
+                and_op=True,
+                column='counterparty',
+                values=counterparties,
+                operator='IN',
+            ))
+
+        filter_query.filters = filters
+        return filter_query

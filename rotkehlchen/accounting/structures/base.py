@@ -197,7 +197,10 @@ class HistoryBaseEntry(AccountingEventMixin, metaclass=ABCMeta):
 
     def get_type_identifier(self, **kwargs: Any) -> str:  # pylint: disable=unused-argument
         """Get the type identifier for this event. Subclasses may accept additional arguments"""
-        return str(self.event_type) + '__' + str(self.event_subtype)
+        return get_event_type_identifier(
+            event_type=self.event_type,
+            event_subtype=self.event_subtype,
+        )
 
     def serialize(self) -> dict[str, Any]:
         """Serialize the event alone for api"""
@@ -470,3 +473,15 @@ class StakingEvent:
 
         balance = abs(self.balance).serialize()
         return {**data, **balance}
+
+
+def get_event_type_identifier(
+        event_type: HistoryEventType,
+        event_subtype: HistoryEventSubType,
+        counterparty: Optional[str] = None,
+) -> str:
+    key = f'{event_type.serialize()}{event_subtype.serialize()}'
+    if counterparty is not None:
+        key += counterparty
+
+    return key

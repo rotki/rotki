@@ -1832,6 +1832,7 @@ def test_upgrade_db_39_to_40(user_data_dir):  # pylint: disable=unused-argument
 
     # check the tables we create don't exist and ones we remove exist before the upgrade
     assert table_exists(cursor, 'skipped_external_events') is False
+    assert table_exists(cursor, 'accounting_rules') is False
     assert table_exists(cursor, 'ledger_action_type') is True
     assert table_exists(cursor, 'ledger_actions') is True
 
@@ -1885,6 +1886,7 @@ def test_upgrade_db_39_to_40(user_data_dir):  # pylint: disable=unused-argument
     assert cursor.execute('SELECT * from eth_staking_events_info').fetchall() == [(16, 19564, 0)]
     # check new tables are created and old are removed
     assert table_exists(cursor, 'skipped_external_events') is True
+    assert table_exists(cursor, 'accounting_rules') is True
     assert table_exists(cursor, 'ledger_action_type') is False
     assert table_exists(cursor, 'ledger_actions') is False
 
@@ -1980,7 +1982,7 @@ def test_latest_upgrade_adds_remove_tables(user_data_dir):
     assert tables_after_creation - tables_after_upgrade == set()
     assert views_after_creation - views_after_upgrade == set()
     new_tables = tables_after_upgrade - tables_before
-    assert new_tables == {'skipped_external_events'}
+    assert new_tables == {'skipped_external_events', 'accounting_rules'}
     new_views = views_after_upgrade - views_before
     assert new_views == set()
 

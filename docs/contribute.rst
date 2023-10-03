@@ -326,7 +326,7 @@ Each accountant should implement the ``reset()`` method to reset its internal st
 Event Settings mapping
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-Each accountant should implement the ``event_settings()`` method. That is a mapping between each unique decoded event type, identified by ``get_tx_event_type_identifier()`` and its ``TxEventSettings()``.
+Each accountant should implement the ``event_settings()`` method. That is a mapping between each unique decoded event type, identified by ``get_event_type_identifier()`` and its ``TxEventSettings()``.
 
 So essentially determining whether:
 
