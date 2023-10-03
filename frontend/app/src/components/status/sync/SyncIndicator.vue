@@ -18,7 +18,7 @@ const {
   forceSync,
   showSyncConfirmation
 } = useSync();
-const { onLinkClick } = useLinks();
+const { href, onLinkClick } = useLinks();
 
 const premium = usePremium();
 
@@ -122,11 +122,12 @@ const { navigateToUserLogin } = useAppNavigation();
         color="default"
       >
         <template #icon>
-          <RuiIcon name="lock-line" color="primary" size="14px" />
+          <RuiIcon name="lock-line" color="primary" size="14" />
         </template>
         <MenuTooltipButton
           :tooltip="t('sync_indicator.menu_tooltip')"
           class-name="secondary--text text--lighten-4"
+          :href="href"
           @click="onLinkClick()"
         >
           <RuiIcon name="cloud-line" />
