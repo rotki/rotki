@@ -5,12 +5,14 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
-from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
+from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.accounting.structures.base import HistoryEvent
+from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.converters import asset_from_cryptocom
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.prices import ZERO_PRICE
-from rotkehlchen.data_import.utils import BaseExchangeImporter, UnsupportedCSVEntry
+from rotkehlchen.data_import.utils import BaseExchangeImporter, UnsupportedCSVEntry, hash_csv_row
 from rotkehlchen.db.drivers.gevent import DBCursor
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
@@ -31,9 +33,13 @@ from rotkehlchen.types import (
     Timestamp,
     TradeType,
 )
+from rotkehlchen.utils.misc import ts_sec_to_ms
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+
+CRYPTOCOM_PREFIX = 'CCM_'
 
 
 class CryptocomImporter(BaseExchangeImporter):
@@ -167,35 +173,33 @@ class CryptocomImporter(BaseExchangeImporter):
         ):
             asset = asset_from_cryptocom(csv_row['Currency'])
             amount = deserialize_asset_amount(csv_row['Amount'])
-            action = LedgerAction(
-                identifier=0,  # whatever is not used at insertion
-                timestamp=timestamp,
-                action_type=LedgerActionType.INCOME,
+            event = HistoryEvent(
+                event_identifier=f'{CRYPTOCOM_PREFIX}{hash_csv_row(csv_row)}',
+                sequence_index=0,
+                timestamp=ts_sec_to_ms(timestamp),
                 location=Location.CRYPTOCOM,
-                amount=amount,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.NONE,
+                balance=Balance(amount=amount),
                 asset=asset,
-                rate=None,
-                rate_asset=None,
-                link=None,
                 notes=notes,
             )
-            self.add_ledger_action(write_cursor, action)
+            self.add_history_events(write_cursor, [event])
         elif row_type in ('crypto_payment', 'reimbursement_reverted', 'card_cashback_reverted'):
             asset = asset_from_cryptocom(csv_row['Currency'])
             amount = abs(deserialize_asset_amount(csv_row['Amount']))
-            action = LedgerAction(
-                identifier=0,  # whatever is not used at insertion
-                timestamp=timestamp,
-                action_type=LedgerActionType.EXPENSE,
+            event = HistoryEvent(
+                event_identifier=f'{CRYPTOCOM_PREFIX}{hash_csv_row(csv_row)}',
+                sequence_index=0,
+                timestamp=ts_sec_to_ms(timestamp),
                 location=Location.CRYPTOCOM,
-                amount=amount,
+                event_type=HistoryEventType.SPEND,
+                event_subtype=HistoryEventSubType.NONE,
+                balance=Balance(amount=amount),
                 asset=asset,
-                rate=None,
-                rate_asset=None,
-                link=None,
                 notes=notes,
             )
-            self.add_ledger_action(write_cursor, action)
+            self.add_history_events(write_cursor, [event])
         elif row_type == 'invest_deposit':
             asset = asset_from_cryptocom(csv_row['Currency'])
             amount = deserialize_asset_amount(csv_row['Amount'])
@@ -232,23 +236,23 @@ class CryptocomImporter(BaseExchangeImporter):
             asset = asset_from_cryptocom(csv_row['Currency'])
             amount = deserialize_asset_amount(csv_row['Amount'])
             if amount < 0:
-                action_type = LedgerActionType.EXPENSE
+                event_type = HistoryEventType.SPEND
                 amount = abs(amount)
             else:
-                action_type = LedgerActionType.INCOME
-            action = LedgerAction(
-                identifier=0,  # whatever is not used at insertion
-                timestamp=timestamp,
-                action_type=action_type,
+                event_type = HistoryEventType.RECEIVE
+
+            event = HistoryEvent(
+                event_identifier=f'{CRYPTOCOM_PREFIX}{hash_csv_row(csv_row)}',
+                sequence_index=0,
+                timestamp=ts_sec_to_ms(timestamp),
                 location=Location.CRYPTOCOM,
-                amount=amount,
+                event_type=event_type,
+                event_subtype=HistoryEventSubType.NONE,
+                balance=Balance(amount=amount),
                 asset=asset,
-                rate=None,
-                rate_asset=None,
-                link=None,
                 notes=notes,
             )
-            self.add_ledger_action(write_cursor, action)
+            self.add_history_events(write_cursor, [event])
         elif row_type in (
             'crypto_earn_program_created',
             'crypto_earn_program_withdrawn',
@@ -487,19 +491,18 @@ class CryptocomImporter(BaseExchangeImporter):
                     profit = amount_withdrawal + amount_deposited
                     if profit >= ZERO:
                         last_date = withdrawal_date
-                        action = LedgerAction(
-                            identifier=0,  # whatever is not used at insertion
-                            timestamp=withdrawal_date,
-                            action_type=LedgerActionType.INCOME,
+                        event = HistoryEvent(
+                            event_identifier=f'{CRYPTOCOM_PREFIX}{hash_csv_row(withdrawal)}',
+                            sequence_index=0,
+                            timestamp=ts_sec_to_ms(withdrawal_date),
                             location=Location.CRYPTOCOM,
-                            amount=AssetAmount(profit),
+                            event_type=HistoryEventType.RECEIVE,
+                            event_subtype=HistoryEventSubType.NONE,
+                            balance=Balance(amount=profit),
                             asset=asset_object,
-                            rate=None,
-                            rate_asset=None,
-                            link=None,
-                            notes=f'Stake profit for asset {asset}',
+                            notes=f'Staking profit for {asset}',
                         )
-                        self.add_ledger_action(write_cursor, action)
+                        self.add_history_events(write_cursor, [event])
 
     def _import_csv(self, write_cursor: DBCursor, filepath: Path, **kwargs: Any) -> None:
         """May raise:

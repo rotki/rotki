@@ -267,14 +267,9 @@ class EvmEvent(HistoryBaseEntry):  # noqa: PLW1641  # hash in superclass
         return f'EvmEvent({", ".join(fields)})'
 
     # -- Methods of AccountingEventMixin
-
     @staticmethod
     def get_accounting_event_type() -> AccountingEventType:
         return AccountingEventType.TRANSACTION_EVENT
-
-    def should_ignore(self, ignored_ids_mapping: dict[ActionType, set[str]]) -> bool:
-        ignored_ids = ignored_ids_mapping.get(ActionType.EVM_TRANSACTION, set())
-        return self.event_identifier in ignored_ids
 
     def process(
             self,

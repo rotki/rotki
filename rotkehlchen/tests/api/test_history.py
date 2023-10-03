@@ -9,12 +9,17 @@ import pytest
 import requests
 
 from rotkehlchen.accounting.constants import FREE_PNL_EVENTS_LIMIT, FREE_REPORTS_LOOKUP_LIMIT
-from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
 from rotkehlchen.accounting.mixins.event import AccountingEventType
-from rotkehlchen.accounting.structures.types import ActionType
+from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.accounting.structures.base import HistoryEvent
+from rotkehlchen.accounting.structures.types import (
+    ActionType,
+    HistoryEventSubType,
+    HistoryEventType,
+)
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_EUR
-from rotkehlchen.db.ledger_actions import DBLedgerActions
+from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.externalapis.defillama import Defillama
@@ -37,7 +42,7 @@ from rotkehlchen.tests.utils.history import (
 )
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.tests.utils.pnl_report import query_api_create_and_get_report
-from rotkehlchen.types import AssetAmount, Fee, Location, Price, Timestamp, TradeType
+from rotkehlchen.types import AssetAmount, Fee, Location, Price, Timestamp, TimestampMS, TradeType
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
@@ -352,7 +357,7 @@ def test_history_debug_export(rotkehlchen_api_server: 'APIServer') -> None:
     with rotki.data.db.user_write() as write_cursor:
         rotki.data.db.add_to_ignored_action_ids(
             write_cursor=write_cursor,
-            action_type=ActionType.EVM_TRANSACTION,
+            action_type=ActionType.HISTORY_EVENT,
             identifiers=[tx_id],
         )
 
@@ -371,7 +376,7 @@ def test_history_debug_export(rotkehlchen_api_server: 'APIServer') -> None:
     result = assert_proper_response_with_result(response)
     assert tuple(result.keys()) == expected_keys
     assert result['pnl_settings'] == {'from_timestamp': Timestamp(0), 'to_timestamp': now}
-    assert result['ignored_events_ids'] == {'evm_transaction': [tx_id]}
+    assert result['ignored_events_ids'] == {'history_event': [tx_id]}
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -432,20 +437,18 @@ def test_missing_prices_in_pnl_report(rotkehlchen_api_server):
     """
     # set environment
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    action = LedgerAction(
-        identifier=0,  # whatever
-        timestamp=1665336822,
-        action_type=LedgerActionType.INCOME,
+    event = HistoryEvent(
+        event_identifier='whatever',
+        sequence_index=0,
+        timestamp=TimestampMS(1665336822000),
         location=Location.EXTERNAL,
-        amount=FVal(0.5),
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.NONE,
+        balance=Balance(FVal(0.5)),
         asset=A_BTC,
-        rate=None,
-        rate_asset=None,
-        link=None,
-        notes=None,
     )
     trade = Trade(
-        timestamp=1665336822,
+        timestamp=Timestamp(1665336822),
         location=Location.EXTERNAL,
         base_asset=A_DAI,
         quote_asset=A_EUR,
@@ -457,10 +460,10 @@ def test_missing_prices_in_pnl_report(rotkehlchen_api_server):
         link='',
         notes='',
     )
-    with rotki.data.db.user_write() as cursor:
-        db = DBLedgerActions(rotki.data.db, rotki.msg_aggregator)
-        db.add_ledger_action(cursor, action)
-        rotki.data.db.add_trades(cursor, [trade])
+    with rotki.data.db.user_write() as write_cursor:
+        db = DBHistoryEvents(rotki.data.db)
+        db.add_history_event(write_cursor, event)
+        rotki.data.db.add_trades(write_cursor, [trade])
 
     coingecko = PriceHistorian._coingecko
     PriceHistorian._PriceHistorian__instance = None
@@ -483,8 +486,8 @@ def test_missing_prices_in_pnl_report(rotkehlchen_api_server):
     with coingecko_patch:
         query_api_create_and_get_report(
             server=rotkehlchen_api_server,
-            start_ts=1665336820,
-            end_ts=1665336823,
+            start_ts=Timestamp(1665336820),
+            end_ts=Timestamp(1665336823),
             prepare_mocks=False,
         )
 

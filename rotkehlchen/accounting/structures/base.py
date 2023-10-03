@@ -301,6 +301,9 @@ class HistoryBaseEntry(AccountingEventMixin, metaclass=ABCMeta):
         return ts_ms_to_sec(self.timestamp)
 
     # -- Methods of AccountingEventMixin
+    def should_ignore(self, ignored_ids_mapping: dict[ActionType, set[str]]) -> bool:
+        ignored_ids = ignored_ids_mapping.get(ActionType.HISTORY_EVENT, set())
+        return self.event_identifier in ignored_ids
 
     def get_timestamp(self) -> Timestamp:
         return self.get_timestamp_in_sec()
@@ -396,16 +399,13 @@ class HistoryEvent(HistoryBaseEntry):
     def get_accounting_event_type() -> AccountingEventType:
         return AccountingEventType.HISTORY_EVENT
 
-    def should_ignore(self, ignored_ids_mapping: dict[ActionType, set[str]]) -> bool:
-        return False  # TODO: How do we ignore general history events? Not possible yet, I think
-
     def process(
             self,
             accounting: 'AccountingPot',
             events_iterator: Iterator['AccountingEventMixin'],  # pylint: disable=unused-argument
     ) -> int:
         if self.location == Location.KRAKEN:
-            if (
+            if (  # LEF: Why the heck do we have this here? Perhaps to ignore all the ledger events that comprise the trades  # noqa: E501
                 self.event_type != HistoryEventType.STAKING or
                 self.event_subtype != HistoryEventSubType.REWARD
             ):

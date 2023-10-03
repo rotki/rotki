@@ -155,7 +155,6 @@ Handling user creation, sign-in, log-out and querying
                   "active_modules": ["makerdao_dsr", "makerdao_vaults", "aave"],
                   "current_price_oracles": ["cryptocompare", "coingecko"],
                   "historical_price_oracles": ["cryptocompare", "coingecko"],
-                  "taxable_ledger_actions": ["income", "airdrop"],
                   "ssf_graph_multiplier": 2,
                   "non_sync_exchanges": [{"location": "binance", "name": "binance1"}]
               }
@@ -227,7 +226,6 @@ Handling user creation, sign-in, log-out and querying
                   "active_modules": ["makerdao_dsr", "makerdao_vaults", "aave"],
                   "current_price_oracles": ["cryptocompare", "coingecko"],
                   "historical_price_oracles": ["cryptocompare", "coingecko"],
-                  "taxable_ledger_actions": ["income", "airdrop"],
                   "ssf_graph_multiplier": 2,
                   "non_sync_exchanges": [{"location": "binance", "name": "binance1"}]
               }
@@ -603,7 +601,6 @@ Getting or modifying settings
               "active_modules": ["makerdao_dsr", "makerdao_vaults", "aave"],
               "current_price_oracles": ["coingecko"],
               "historical_price_oracles": ["cryptocompare", "coingecko"],
-              "taxable_ledger_actions": ["income", "airdrop"],
               "ssf_graph_multiplier": 2,
               "non_sync_exchanges": [{"location": "binance", "name": "binance1"}],
               "cost_basis_method": "fifo",
@@ -634,7 +631,6 @@ Getting or modifying settings
    :resjson list active_module: A list of strings denoting the active modules with which rotki is running.
    :resjson list current_price_oracles: A list of strings denoting the price oracles rotki should query in specific order for requesting current prices.
    :resjson list historical_price_oracles: A list of strings denoting the price oracles rotki should query in specific order for requesting historical prices.
-   :resjson list taxable_ledger_actions: A list of strings denoting the ledger action types that will be taken into account in the profit/loss calculation during accounting. All others will only be taken into account in the cost basis and will not be taxed.
    :resjson int ssf_graph_multiplier: A multiplier to the snapshot saving frequency for zero amount graphs. Originally 0 by default. If set it denotes the multiplier of the snapshot saving frequency at which to insert 0 save balances for a graph between two saved values.
    :resjson string cost_basis_method: Defines which method to use during the cost basis calculation. Currently supported: fifo, lifo.
    :resjson string address_name_priority: Defines the priority to search for address names. From first to last location in this array, the first name found will be displayed.
@@ -680,7 +676,6 @@ Getting or modifying settings
    :reqjson list active_module: A list of strings denoting the active modules with which rotki should run.
    :reqjson list current_price_oracles: A list of strings denoting the price oracles rotki should query in specific order for requesting current prices.
    :reqjson list historical_price_oracles: A list of strings denoting the price oracles rotki should query in specific order for requesting historical prices.
-   :reqjson list taxable_ledger_actions: A list of strings denoting the ledger action types that will be taken into account in the profit/loss calculation during accounting. All others will only be taken into account in the cost basis and will not be taxed.
    :resjson int ssf_graph_multiplier: A multiplier to the snapshot saving frequency for zero amount graphs. Originally 0 by default. If set it denotes the multiplier of the snapshot saving frequency at which to insert 0 save balances for a graph between two saved values.
    :resjson bool infer_zero_timed_balances: A boolean denoting whether to infer zero timed balances for assets that have no balance at a specific time. This is useful for showing zero balance periods in graphs.
    :resjson int query_retry_limit: The number of times to retry a query to external services before giving up. Default is 5.
@@ -714,7 +709,6 @@ Getting or modifying settings
               "active_modules": ["makerdao_dsr", "makerdao_vaults", "aave"],
               "current_price_oracles": ["cryptocompare"],
               "historical_price_oracles": ["coingecko", "cryptocompare"],
-              "taxable_ledger_actions": ["income", "airdrop"],
               "ssf_graph_multiplier": 2,
               "non_sync_exchanges": [{"location": "binance", "name": "binance1"}]
           },
@@ -4499,233 +4493,6 @@ Querying asset movements
    :statuscode 500: Internal rotki error
    :statuscode 502: Error querying the remote for the asset movements
 
-
-Dealing with ledger actions
-=============================
-
-.. http:get:: /api/(version)/ledgeractions
-
-   .. note::
-      This endpoint can also be queried asynchronously by using ``"async_query": true``
-
-   .. note::
-      This endpoint also accepts parameters as query arguments.
-
-   Doing a GET on this endpoint will return all ledger actions of the current user. That means income, loss, expense and other actions. They can be further filtered by time range and/or location. If the user is not premium and has more than 50 actions then the returned results will be limited to that number. Any filtering will also be limited to those first 50 actions. Actions are returned most recent first.
-
-   **Example Request**:
-
-   .. http:example:: curl wget httpie python-requests
-
-      GET /api/1/ledgeractions HTTP/1.1
-      Host: localhost:5042
-      Content-Type: application/json;charset=UTF-8
-
-      {"from_timestamp": 1451606400, "to_timestamp": 1571663098, "location": "blockchain"}
-
-   :reqjson int limit: Optional. This signifies the limit of records to return as per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
-   :reqjson int offset: This signifies the offset from which to start the return of records per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
-   :reqjson list[string] order_by_attributes: Optional. This is the list of attributes of the ledger actions table by which to order the results. If none is given 'timestamp' is assumed. Valid values are: ['timestamp', 'location', 'type', 'amount', 'rate'].
-   :reqjson list[bool] ascending: Optional. False by default. Defines the order by which results are returned depending on the chosen order by attribute.
-   :reqjson int from_timestamp: The timestamp from which to query. Can be missing in which case we query from 0.
-   :reqjson int to_timestamp: The timestamp until which to query. Can be missing in which case we query until now.
-   :reqjson string asset: Optionally filter by action asset. A valid asset has to be provided. If missing asset filtering does not happen.
-   :reqjson string location: Optionally filter actions by location. A valid location name has to be provided. If missing location filtering does not happen.
-   :reqjson string type: Optionally filter by ledger action type. A valid action type to be provided. If missing action type filtering does not happen.
-   :reqjson bool only_cache: Optional. If this is true then the equivalent exchange/location is not queried, but only what is already in the DB is returned.
-
-   .. _ledger_actions_schema_section:
-
-   **Example Response**:
-
-   .. sourcecode:: http
-
-      HTTP/1.1 200 OK
-      Content-Type: application/json
-
-      {
-          "result": {
-              "entries": [{
-                  "entry": {
-                      "identifier": 344,
-                      "timestamp": 1491606401,
-                      "action_type": "loss",
-                      "location": "blockchain",
-                      "amount": "1550",
-                      "asset": "eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F",
-                      "rate": "0.85",
-                      "rate_asset": "EUR",
-                      "link": "https://etherscan.io/tx/0xea5594ad7a1e552f64e427b501676cbba66fd91bac372481ff6c6f1162b8a109"
-                      "notes": "The DAI I lost in the pickle finance hack"
-                  },
-                  "ignored_in_accounting": false
-              }],
-              "entries_found": 1,
-              "entries_total": 1,
-              "entries_limit": 50,
-          "message": ""
-      }
-
-   :resjson object entries: An array of action objects and their metadata. Each entry is composed of the ledger action entry under the ``"entry"`` key and other metadata like ``"ignored_in_accounting"`` for each action.
-   :resjsonarr int identifier: The uniquely identifying identifier for this action.
-   :resjsonarr int timestamp: The timestamp at which the action occurred
-   :resjsonarr string action_type: The type of action. Valid types are: ``income``, ``loss``, ``donation received``, ``expense`` and ``dividends income``.
-   :resjsonarr string location: A valid location at which the action happened.
-   :resjsonarr string amount: The amount of asset for the action
-   :resjsonarr string asset: The asset for the action
-   :resjsonarr string rate: Optional. If given then this is the rate in ``rate_asset`` for the ``asset`` of the action.
-   :resjsonarr string rate_asset: Optional. If given then this is the asset for which ``rate`` is given.
-   :resjsonarr string link: Optional unique identifier or link to the action. Can be an empty string
-   :resjsonarr string notes: Optional notes about the action. Can be an empty string
-   :resjson int entries_found: The number of entries found for the current filter. Ignores pagination.
-   :resjson int entries_limit: The limit of entries if free version. -1 for premium.
-   :resjson int entries_total: The number of total entries ignoring all filters.
-   :statuscode 200: Actions are successfully returned
-   :statuscode 400: Provided JSON is in some way malformed
-   :statuscode 409: No user is logged in.
-   :statuscode 500: Internal rotki error
-
-.. http:put:: /api/(version)/ledgeractions
-
-   Doing a PUT on this endpoint adds a new ledgeraction to rotki's currently logged in user. The identifier of the new created action is returned.
-
-   **Example Request**:
-
-   .. http:example:: curl wget httpie python-requests
-
-      PUT /api/1/ledgeraction HTTP/1.1
-      Host: localhost:5042
-      Content-Type: application/json;charset=UTF-8
-
-      {
-          "action": {
-              "timestamp": 1491606401,
-              "action_type": "income",
-              "location": "external",
-              "amount": "1",
-              "asset": "ETH",
-              "rate": "650",
-              "rate_asset": "EUR",
-              "link": "Optional unique identifier",
-              "notes": "Eth I received for being pretty"
-      }}
-
-   The request object is the same as above, a LedgerAction entry.
-
-   **Example Response**:
-
-   .. sourcecode:: http
-
-      HTTP/1.1 200 OK
-      Content-Type: application/json
-
-      {
-          "result": {"identifier": 1},
-          "message": ""
-      }
-
-   :resjson object result: The identifier of the newly created ledger action
-   :statuscode 200: Ledger action was successfully added.
-   :statuscode 400: Provided JSON is in some way malformed
-   :statuscode 409: No user is currently logged in.
-   :statuscode 500: Internal rotki error
-
-.. http:patch:: /api/(version)/ledgeractions
-
-   Doing a PATCH on this endpoint edits an existing ledger action in rotki's currently logged in user using the given ``identifier``.
-
-   **Example Request**:
-
-   .. http:example:: curl wget httpie python-requests
-
-      PATCH /api/1/ledgeractions HTTP/1.1
-      Host: localhost:5042
-      Content-Type: application/json;charset=UTF-8
-
-      {
-          "identifier": 55,
-          "timestamp": 1491606401,
-          "action_type": "income",
-          "location": "external",
-          "amount": "2",
-          "asset": "ETH",
-          "rate": "650",
-          "rate_asset": "EUR",
-          "link": "Optional unique identifier",
-          "notes": "Eth I received for being pretty"
-      }
-
-   The request object is the same as above, a LedgerAction entry, with the addition of the identifier which signifies which ledger action entry will be edited.
-
-   **Example Response**:
-
-   .. sourcecode:: http
-
-      HTTP/1.1 200 OK
-      Content-Type: application/json
-
-      {
-          "result": {
-              "entries": [{
-                  "entry": {
-                      "identifier": 55,
-                      "timestamp": 1491606401,
-                      "action_type": "income"
-                      "location": "external",
-                      "amount": "2",
-                      "asset": "ETH",
-                      "rate": "650",
-                      "rate_asset": "EUR",
-                      "link": "Optional unique identifier",
-                      "notes": "Eth I received for being pretty"
-                  },
-                  "ignored_in_accounting": false
-              }],
-              "entries_found": 1,
-              "entries_limit": 50,
-          "message": ""
-      }
-
-   :resjson object entries: An array of action objects after editing. Same schema as the get method.
-   :resjson int entries_found: The amount of actions found for the user. That disregards the filter and shows all actions found.
-   :resjson int entries_limit: The actions limit for the account tier of the user. If unlimited then -1 is returned.
-   :statuscode 200: Actions was successfully edited.
-   :statuscode 400: Provided JSON is in some way malformed
-   :statuscode 409: No user is logged in.
-   :statuscode 500: Internal rotki error
-
-.. http:delete:: /api/(version)/ledgeractions
-
-   Doing a DELETE on this endpoint deletes an existing ledger action in rotki's currently logged in user using the ``identifier``.
-
-   **Example Request**:
-
-   .. http:example:: curl wget httpie python-requests
-
-      DELETE /api/1/ledgeractions HTTP/1.1
-      Host: localhost:5042
-      Content-Type: application/json;charset=UTF-8
-
-      {"identifiers" : [55]}
-
-   :reqjson integer identifiers: The list of identifiers of the actions to delete.
-
-   **Example Response**:
-
-   .. sourcecode:: http
-
-      HTTP/1.1 200 OK
-      Content-Type: application/json
-
-      {"result": true, "message": ""}
-
-   :resjson bool result: Returns ``true`` if all identifiers were found and deleted, otherwise returns ``false``.
-   :resjson string message: Returns ``""`` if ``result`` is ``True`` else return the error message.
-   :statuscode 200: Action was successfully removed.
-   :statuscode 400: Provided JSON is in some way malformed
-   :statuscode 409: No user is logged in.
-   :statuscode 500: Internal rotki error
-
 Dealing with History Events
 ============================================
 
@@ -5394,14 +5161,6 @@ Export PnL report debug data
                     "uniswapv3",
                 ],
                 "historical_price_oracles": ["manual", "cryptocompare", "coingecko"],
-                "taxable_ledger_actions": [
-                    "income",
-                    "expense",
-                    "loss",
-                    "dividends income",
-                    "donation received",
-                    "grant"
-                ],
                 "pnl_csv_with_formulas": true,
                 "pnl_csv_have_summary": false,
                 "ssf_graph_multiplier": 0,
@@ -10073,7 +9832,7 @@ Dealing with ignored actions
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
-      {"action_type": "ledger action", "data": ["Z231-XH23K"]}
+      {"action_type": "history event", "data": ["Z231-XH23K"]}
 
    :reqjson str action_type: A type of actions whose ignored ids to add. Defined above. Depending on the type, the data field is different.
    :reqjson list data: The data to ignore. For type "evm_transaction" it's an object with the following keys: ``"evm_chain"`` with the name of the evm chain the transaction happened in and ``"tx_hash"`` the string of the transaction hash to ignore. For all other types it's a list of strings representing the identifier of the action to ignore.
@@ -11631,7 +11390,7 @@ Handling user notes
       {
             "title": "#5",
             "content": "Go to bed now",
-            "location": "ledger actions"
+            "location": "history events"
       }
 
    :reqjson str title: The title of the note to be created.

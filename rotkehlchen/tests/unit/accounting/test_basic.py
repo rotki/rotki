@@ -2,9 +2,11 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL, PnlTotals
+from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.accounting.structures.base import HistoryEvent
+from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.accounting.types import MissingPrice
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.constants import ONE, ZERO
@@ -24,6 +26,7 @@ from rotkehlchen.types import (
     CostBasisMethod,
     Location,
     Timestamp,
+    TimestampMS,
     TradeType,
 )
 
@@ -313,13 +316,15 @@ def test_acquisition_price_not_found(accountant, google_service):
     """Test that if for an acquisition the price is not found, price of
     zero is taken and asset is not ignored and no missing acquisition is counted"""
     history = [
-        LedgerAction(
-            identifier=1,
-            timestamp=1446979735,
-            action_type=LedgerActionType.INCOME,
+        HistoryEvent(
+            event_identifier='1',
+            sequence_index=0,
+            timestamp=TimestampMS(1446979735000),
             location=Location.EXTERNAL,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.NONE,
             asset=A_COMP,
-            amount=ONE,
+            balance=Balance(amount=ONE),
         ), Trade(
             timestamp=1635314397,  # cryptocompare hourly COMP/EUR price: 261.39
             location=Location.POLONIEX,
@@ -336,7 +341,7 @@ def test_acquisition_price_not_found(accountant, google_service):
     comp_acquisitions = accountant.pots[0].cost_basis.get_events(A_COMP).used_acquisitions
     assert len(comp_acquisitions) == 1
     expected_pnls = PnlTotals({
-        AccountingEventType.LEDGER_ACTION: PNL(taxable=ZERO, free=ZERO),
+        AccountingEventType.TRANSACTION_EVENT: PNL(taxable=ZERO, free=ZERO),
         AccountingEventType.TRADE: PNL(taxable=ZERO, free=FVal('261.39')),
     })
     check_pnls_and_csv(accountant, expected_pnls, google_service)

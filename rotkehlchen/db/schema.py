@@ -140,10 +140,8 @@ CREATE TABLE IF NOT EXISTS action_type (
 INSERT OR IGNORE INTO action_type(type, seq) VALUES ('A', 1);
 /* Asset Movement Type */
 INSERT OR IGNORE INTO action_type(type, seq) VALUES ('B', 2);
-/* Ethereum Transaction Type */
+/* History Event Type - Used to be Ethereum Transaction */
 INSERT OR IGNORE INTO action_type(type, seq) VALUES ('C', 3);
-/* Ledger Actions Type */
-INSERT OR IGNORE INTO action_type(type, seq) VALUES ('D', 4);
 """
 
 DB_CREATE_ASSETS = """

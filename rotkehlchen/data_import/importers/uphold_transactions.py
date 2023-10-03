@@ -3,10 +3,12 @@ import logging
 from pathlib import Path
 from typing import Any
 
-from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType
+from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.accounting.structures.base import HistoryEvent
+from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.converters import asset_from_uphold
 from rotkehlchen.constants import ZERO
-from rotkehlchen.data_import.utils import BaseExchangeImporter
+from rotkehlchen.data_import.utils import BaseExchangeImporter, hash_csv_row
 from rotkehlchen.db.drivers.gevent import DBCursor
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
@@ -20,9 +22,13 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_timestamp_from_date,
 )
 from rotkehlchen.types import AssetAmount, AssetMovementCategory, Fee, Location, Price, TradeType
+from rotkehlchen.utils.misc import ts_sec_to_ms
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+
+UPHOLD_PREFIX = 'UPH_'
 
 
 class UpholdTransactionsImporter(BaseExchangeImporter):
@@ -66,25 +72,24 @@ Activity from uphold with uphold transaction id:
         if origin == destination == 'uphold':  # On exchange Transfers / Trades
             if origin_asset == destination_asset and origin_amount == destination_amount:
                 if transaction_type == 'in':
-                    action_type = LedgerActionType.INCOME
+                    event_type = HistoryEventType.RECEIVE
                 elif transaction_type == 'out':
-                    action_type = LedgerActionType.EXPENSE
+                    event_type = HistoryEventType.SPEND
                 else:
                     log.debug(f'Ignoring uncaught transaction type of {transaction_type}.')
                     return
-                action = LedgerAction(
-                    identifier=0,
-                    timestamp=timestamp,
-                    action_type=action_type,
+                event = HistoryEvent(
+                    event_identifier=f'{UPHOLD_PREFIX}{hash_csv_row(csv_row)}',
+                    sequence_index=0,
+                    timestamp=ts_sec_to_ms(timestamp),
                     location=Location.UPHOLD,
-                    amount=destination_amount,
+                    event_type=event_type,
+                    event_subtype=HistoryEventSubType.NONE,
+                    balance=Balance(amount=destination_amount),
                     asset=destination_asset,
-                    rate=None,
-                    rate_asset=None,
-                    link='',
                     notes=notes,
                 )
-                self.add_ledger_action(write_cursor, action)
+                self.add_history_events(write_cursor, [event])
             else:  # Assets or amounts differ (Trades)
                 # in uphold UI the exchanged amount includes the fee.
                 if fee_asset == destination_asset:

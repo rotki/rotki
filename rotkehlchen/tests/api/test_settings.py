@@ -161,8 +161,6 @@ def test_set_settings(rotkehlchen_api_server):
             value = ['coingecko', 'cryptocompare', 'uniswapv2', 'uniswapv3']
         elif setting == 'historical_price_oracles':
             value = ['coingecko', 'cryptocompare']
-        elif setting == 'taxable_ledger_actions':
-            value = ['income']
         elif setting == 'non_syncing_exchanges':
             value = [ExchangeLocationID(name='test_name', location=Location.KRAKEN).serialize()]
         elif setting == 'cost_basis_method':

@@ -61,7 +61,7 @@ def _remove_adex(write_cursor: 'DBCursor') -> None:
 
 
 def _upgrade_ignored_actionids(write_cursor: 'DBCursor') -> None:
-    """ignored_action_ids of ActionType.ETHEREUM_TRANSACTION need chainid prepended"""
+    """ignored_action_ids of ActionType ETHEREUM_TRANSACTION need chainid prepended"""
     log.debug('Enter _upgrade_ignored_actionids')
     if table_exists(write_cursor, 'used_query_ranges'):
         write_cursor.execute('UPDATE ignored_actions SET identifier = "1" || identifier WHERE type="C"')  # noqa: E501

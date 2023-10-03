@@ -36,7 +36,6 @@ from rotkehlchen.accounting.export.csv import (
     CSVWriteError,
     dict_to_csv_file,
 )
-from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures.balance import Balance, BalanceType
 from rotkehlchen.accounting.structures.base import HistoryBaseEntryType, StakingEvent
 from rotkehlchen.accounting.structures.evm_event import EvmProduct
@@ -99,7 +98,6 @@ from rotkehlchen.constants.limits import (
     FREE_ASSET_MOVEMENTS_LIMIT,
     FREE_ETH_TX_LIMIT,
     FREE_HISTORY_EVENTS_LIMIT,
-    FREE_LEDGER_ACTIONS_LIMIT,
     FREE_TRADES_LIMIT,
     FREE_USER_NOTES_LIMIT,
 )
@@ -130,7 +128,6 @@ from rotkehlchen.db.filtering import (
     EvmTransactionsFilterQuery,
     HistoryBaseEntryFilterQuery,
     HistoryEventFilterQuery,
-    LedgerActionsFilterQuery,
     LevenshteinFilterQuery,
     NFTFilterQuery,
     ReportDataFilterQuery,
@@ -138,7 +135,6 @@ from rotkehlchen.db.filtering import (
     UserNotesFilterQuery,
 )
 from rotkehlchen.db.history_events import DBHistoryEvents
-from rotkehlchen.db.ledger_actions import DBLedgerActions
 from rotkehlchen.db.queried_addresses import QueriedAddresses
 from rotkehlchen.db.reports import DBAccountingReports
 from rotkehlchen.db.search_assets import search_assets_levenshtein
@@ -890,68 +886,6 @@ class RestAPI:
             }
 
         return {'result': result, 'message': msg, 'status_code': status_code}
-
-    @async_api_call()
-    def get_ledger_actions(
-            self,
-            filter_query: LedgerActionsFilterQuery,
-            only_cache: bool,
-    ) -> dict[str, Any]:
-        actions, filter_total_found = self.rotkehlchen.events_historian.query_ledger_actions(
-            filter_query=filter_query,
-            only_cache=only_cache,
-        )
-
-        with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
-            mapping = self.rotkehlchen.data.db.get_ignored_action_ids(cursor, ActionType.LEDGER_ACTION)  # noqa: E501
-            ignored_ids = mapping.get(ActionType.LEDGER_ACTION, set())
-            entries_result = [{
-                'entry': x.serialize(),
-                'ignored_in_accounting': str(x.identifier) in ignored_ids,
-            } for x in actions]
-
-            result = {
-                'entries': entries_result,
-                'entries_found': filter_total_found,
-                'entries_total': self.rotkehlchen.data.db.get_entries_count(cursor, 'ledger_actions'),  # noqa: E501
-                'entries_limit': FREE_LEDGER_ACTIONS_LIMIT if self.rotkehlchen.premium is None else -1,  # noqa: E501
-            }
-
-        return {'result': result, 'message': '', 'status_code': HTTPStatus.OK}
-
-    def add_ledger_action(self, action: LedgerAction) -> Response:
-        db = DBLedgerActions(self.rotkehlchen.data.db, self.rotkehlchen.msg_aggregator)
-        with self.rotkehlchen.data.db.user_write() as cursor:
-            try:
-                identifier = db.add_ledger_action(cursor, action)
-            except sqlcipher.IntegrityError:  # pylint: disable=no-member
-                error_msg = 'Failed to add Ledger action due to entry already existing in the DB'
-                return api_response(wrap_in_fail_result(error_msg), status_code=HTTPStatus.CONFLICT)  # noqa: E501
-
-        result_dict = _wrap_in_ok_result({'identifier': identifier})
-        return api_response(result_dict, status_code=HTTPStatus.OK)
-
-    def edit_ledger_action(self, action: LedgerAction) -> Response:
-        db = DBLedgerActions(self.rotkehlchen.data.db, self.rotkehlchen.msg_aggregator)
-        error_msg = db.edit_ledger_action(action)
-        if error_msg is not None:
-            return api_response(wrap_in_fail_result(error_msg), status_code=HTTPStatus.CONFLICT)
-
-        # Success - return all ledger actions after the edit
-        return self.get_ledger_actions(
-            filter_query=LedgerActionsFilterQuery.make(),
-            only_cache=True,
-        )
-
-    def delete_ledger_actions(self, identifiers: list[int]) -> Response:
-        db = DBLedgerActions(self.rotkehlchen.data.db, self.rotkehlchen.msg_aggregator)
-        try:
-            with self.rotkehlchen.data.db.user_write() as cursor:
-                db.remove_ledger_actions(cursor, identifiers=identifiers)
-        except InputError as e:
-            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
-
-        return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     def add_history_event(self, event: 'EvmEvent') -> Response:
         db = DBHistoryEvents(self.rotkehlchen.data.db)
@@ -3526,7 +3460,7 @@ class RestAPI:
             hidden_event_ids = dbevents.get_hidden_event_ids(cursor)
             ignored_ids_mapping = self.rotkehlchen.data.db.get_ignored_action_ids(
                 cursor=cursor,
-                action_type=ActionType.EVM_TRANSACTION,
+                action_type=ActionType.HISTORY_EVENT,
             )
 
         if group_by_event_ids is True:

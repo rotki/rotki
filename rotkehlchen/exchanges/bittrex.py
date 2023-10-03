@@ -10,7 +10,6 @@ from urllib.parse import urlencode
 import gevent
 import requests
 
-from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.assets.converters import asset_from_bittrex
@@ -51,6 +50,7 @@ from rotkehlchen.utils.mixins.lockable import protect_with_lock
 from rotkehlchen.utils.serialization import jsonloads_list
 
 if TYPE_CHECKING:
+    from rotkehlchen.accounting.structures.base import HistoryEvent
     from rotkehlchen.db.dbhandler import DBHandler
 
 
@@ -543,5 +543,5 @@ class Bittrex(ExchangeInterface):
             self,
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,
-    ) -> list[LedgerAction]:
+    ) -> list['HistoryEvent']:
         return []  # noop for bittrex

@@ -19,7 +19,6 @@ class AccountingEventType(SerializableEnumNameMixin):
     MARGIN_POSITION = auto()
     LOAN = auto()
     PREFORK_ACQUISITION = auto()
-    LEDGER_ACTION = auto()
     STAKING = auto()
     HISTORY_EVENT = auto()
     TRANSACTION_EVENT = auto()

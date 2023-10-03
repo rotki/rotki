@@ -152,7 +152,6 @@ TABLES_WITH_ASSETS = (
     ('trades', 'base_asset', 'quote_asset', 'fee_currency'),
     ('margin_positions', 'pl_currency', 'fee_currency'),
     ('asset_movements', 'asset', 'fee_asset'),
-    ('ledger_actions', 'asset', 'rate_asset'),
     ('balancer_events', 'pool_address_token'),
     ('timed_balances', 'currency'),
 )
@@ -811,7 +810,6 @@ class DBHandler:
         - {exchange_location_name}_trades_{exchange_name}
         - {exchange_location_name}_margins_{exchange_name}
         - {exchange_location_name}_asset_movements_{exchange_name}
-        - {exchange_location_name}_ledger_actions_{exchange_name}
         - {location}_history_events_{optional_label}
         - {exchange_location_name}_lending_history_{exchange_name}
         - yearn_vaults_events_{address}
@@ -842,7 +840,7 @@ class DBHandler:
     def purge_exchange_data(self, write_cursor: 'DBCursor', location: Location) -> None:
         self.delete_used_query_range_for_exchange(write_cursor=write_cursor, location=location)
         serialized_location = location.serialize_for_db()
-        for table in ('trades', 'asset_movements', 'ledger_actions', 'history_events'):
+        for table in ('trades', 'asset_movements', 'history_events'):
             write_cursor.execute(
                 f'DELETE FROM {table} WHERE location = ?;', (serialized_location,),
             )
@@ -1395,7 +1393,7 @@ class DBHandler:
                 raise InputError(f'Could not update DB user_credentials_mappings due to {e!s}') from e  # noqa: E501
 
         if new_name is not None:
-            exchange_re = re.compile(r'(.*?)_(trades|margins|asset_movements|ledger_actions).*')
+            exchange_re = re.compile(r'(.*?)_(trades|margins|asset_movements).*')
             used_ranges = write_cursor.execute(
                 'SELECT * from used_query_ranges WHERE name LIKE ?',
                 (f'{location!s}_%_{name}',),
@@ -1754,7 +1752,6 @@ class DBHandler:
                 'asset_movements',
                 'trades',
                 'evm_transactions',
-                'ledger_actions',
                 'eth2_daily_staking_details',
                 'entries_notes',
                 'user_notes',
@@ -2951,7 +2948,6 @@ class DBHandler:
             cursor.execute(
                 'SELECT location FROM trades UNION '
                 'SELECT location FROM asset_movements UNION '
-                'SELECT location FROM ledger_actions UNION '
                 'SELECT location FROM margin_positions UNION '
                 'SELECT location FROM user_credentials UNION '
                 'SELECT location FROM history_events',

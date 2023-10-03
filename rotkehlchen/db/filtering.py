@@ -4,7 +4,6 @@ from collections.abc import Collection
 from dataclasses import dataclass, field
 from typing import Any, Generic, Literal, NamedTuple, Optional, TypeVar, Union, cast
 
-from rotkehlchen.accounting.ledger_actions import LedgerActionType
 from rotkehlchen.accounting.structures.base import HistoryBaseEntryType
 from rotkehlchen.accounting.structures.evm_event import EvmProduct
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
@@ -525,7 +524,6 @@ class DBTypeFilter(DBFilter):
     filter_types: Union[
         list[TradeType],
         list[AssetMovementCategory],
-        list[LedgerActionType],
     ]
     type_key: Literal['type', 'subtype', 'category']
 
@@ -715,58 +713,6 @@ class AssetMovementsFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLo
                 )
         if action is not None:
             filters.append(DBTypeFilter(and_op=True, filter_types=action, type_key='category'))
-        if location is not None:
-            filter_query.location_filter = DBLocationFilter(and_op=True, location=location)
-            filters.append(filter_query.location_filter)
-
-        filter_query.timestamp_filter = DBTimestampFilter(
-            and_op=True,
-            from_ts=from_ts,
-            to_ts=to_ts,
-        )
-        filters.append(filter_query.timestamp_filter)
-        filter_query.filters = filters
-        return filter_query
-
-
-class LedgerActionsFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLocation):
-
-    @classmethod
-    def make(
-            cls,
-            and_op: bool = True,
-            order_by_rules: Optional[list[tuple[str, bool]]] = None,
-            limit: Optional[int] = None,
-            offset: Optional[int] = None,
-            from_ts: Optional[Timestamp] = None,
-            to_ts: Optional[Timestamp] = None,
-            assets: Optional[tuple[Asset, ...]] = None,
-            action_type: Optional[list[LedgerActionType]] = None,
-            location: Optional[Location] = None,
-    ) -> 'LedgerActionsFilterQuery':
-        if order_by_rules is None:
-            order_by_rules = [('timestamp', True)]
-        filter_query = cls.create(
-            and_op=and_op,
-            limit=limit,
-            offset=offset,
-            order_by_rules=order_by_rules,
-        )
-        filter_query = cast('LedgerActionsFilterQuery', filter_query)
-        filters: list[DBFilter] = []
-        if assets is not None:
-            if len(assets) == 1:
-                filters.append(DBAssetFilter(and_op=True, asset=assets[0], asset_key='asset'))
-            else:
-                filters.append(
-                    DBMultiStringFilter(
-                        and_op=True,
-                        column='asset',
-                        values=[asset.identifier for asset in assets],
-                    ),
-                )
-        if action_type is not None:
-            filters.append(DBTypeFilter(and_op=True, filter_types=action_type, type_key='type'))
         if location is not None:
             filter_query.location_filter = DBLocationFilter(and_op=True, location=location)
             filters.append(filter_query.location_filter)

@@ -14,7 +14,6 @@ from webargs.flaskparser import parser, use_kwargs
 from webargs.multidictproxy import MultiDictProxy
 from werkzeug.datastructures import FileStorage
 
-from rotkehlchen.accounting.ledger_actions import LedgerAction
 from rotkehlchen.accounting.structures.types import ActionType
 from rotkehlchen.api.rest import RestAPI, api_response, wrap_in_fail_result
 from rotkehlchen.api.v1.parser import ignore_kwarg_parser, resource_parser
@@ -95,10 +94,7 @@ from rotkehlchen.api.v1.schemas import (
     HistoryProcessingSchema,
     IgnoredActionsModifySchema,
     IgnoredAssetsSchema,
-    IntegerIdentifierListSchema,
     IntegerIdentifierSchema,
-    LedgerActionSchema,
-    LedgerActionsQuerySchema,
     ManuallyTrackedBalancesAddSchema,
     ManuallyTrackedBalancesDeleteSchema,
     ManuallyTrackedBalancesEditSchema,
@@ -180,7 +176,6 @@ from rotkehlchen.db.filtering import (
     EthStakingEventFilterQuery,
     EvmTransactionsFilterQuery,
     HistoryBaseEntryFilterQuery,
-    LedgerActionsFilterQuery,
     LevenshteinFilterQuery,
     NFTFilterQuery,
     ReportDataFilterQuery,
@@ -1094,52 +1089,6 @@ class TagsResource(BaseMethodView):
     @use_kwargs(delete_schema, location='json')
     def delete(self, name: str) -> Response:
         return self.rest_api.delete_tag(name=name)
-
-
-class LedgerActionsResource(BaseMethodView):
-
-    def make_get_schema(self) -> LedgerActionsQuerySchema:
-        with self.rest_api.rotkehlchen.data.db.conn.read_ctx() as cursor:
-            settings = self.rest_api.rotkehlchen.data.db.get_settings(cursor)
-        return LedgerActionsQuerySchema(
-            treat_eth2_as_eth=settings.treat_eth2_as_eth,
-        )
-
-    put_schema = LedgerActionSchema(identifier_required=False)
-    patch_schema = LedgerActionSchema(identifier_required=True)
-    delete_schema = IntegerIdentifierListSchema()
-
-    @require_loggedin_user()
-    @resource_parser.use_kwargs(make_get_schema, location='json_and_query')
-    def get(
-            self,
-            filter_query: LedgerActionsFilterQuery,
-            async_query: bool,
-            only_cache: bool,
-    ) -> Response:
-        return self.rest_api.get_ledger_actions(
-            filter_query=filter_query,
-            async_query=async_query,
-            only_cache=only_cache,
-        )
-
-    @require_loggedin_user()
-    @use_kwargs(put_schema, location='json')
-    def put(
-            self,
-            action: LedgerAction,
-    ) -> Response:
-        return self.rest_api.add_ledger_action(action=action)
-
-    @require_loggedin_user()
-    @use_kwargs(patch_schema, location='json')
-    def patch(self, action: LedgerAction) -> Response:
-        return self.rest_api.edit_ledger_action(action=action)
-
-    @require_loggedin_user()
-    @use_kwargs(delete_schema, location='json')
-    def delete(self, identifiers: list[int]) -> Response:
-        return self.rest_api.delete_ledger_actions(identifiers=identifiers)
 
 
 class EventsOnlineQueryResource(BaseMethodView):

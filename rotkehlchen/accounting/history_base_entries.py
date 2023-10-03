@@ -2,7 +2,6 @@ import logging
 from collections.abc import Iterator
 from typing import TYPE_CHECKING, Any, Optional, TypeVar
 
-from rotkehlchen.accounting.ledger_actions import LedgerActionType
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.evm_event import EvmEvent
@@ -92,7 +91,7 @@ def make_default_accounting_settings(pot: 'AccountingPot') -> dict[str, BaseEven
     )
     airdrop_key = str(HistoryEventType.RECEIVE) + '__' + str(HistoryEventSubType.AIRDROP)
     result[airdrop_key] = BaseEventSettings(
-        taxable=LedgerActionType.AIRDROP in pot.settings.taxable_ledger_actions,
+        taxable=False,  # this needs to become configurable as per https://github.com/rotki/rotki/issues/4341 since it used to respect the airdrop ledger action settings  # noqa: E501
         # count_entire_amount_spend and count_cost_basis_pnl don't matter for acquisitions.
         count_entire_amount_spend=False,
         count_cost_basis_pnl=False,

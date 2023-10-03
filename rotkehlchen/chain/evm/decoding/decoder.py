@@ -498,7 +498,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
                 with suppress(InputError):  # We don't care if it's already in the DB
                     self.database.add_to_ignored_action_ids(
                         write_cursor=write_cursor,
-                        action_type=ActionType.EVM_TRANSACTION,
+                        action_type=ActionType.HISTORY_EVENT,
                         identifiers=[transaction.identifier],
                     )
             tx_id = transaction.get_or_query_db_id(write_cursor)
