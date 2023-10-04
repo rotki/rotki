@@ -39,7 +39,7 @@ const balanceBlockchainRoute = Routes.ACCOUNTS_BALANCES_BLOCKCHAIN;
       :to="`${balanceBlockchainRoute}#blockchain-balances-${total.chain}`"
     >
       <VListItemAvatar tile class="grayscale group-hover:grayscale-0 m-0 mr-1">
-        <AssetIcon size="24px" :identifier="chain" :show-chain="false" />
+        <ChainIcon size="26px" :chain="chain" />
       </VListItemAvatar>
       <VListItemContent>
         <div class="flex flex-wrap justify-between gap-2">

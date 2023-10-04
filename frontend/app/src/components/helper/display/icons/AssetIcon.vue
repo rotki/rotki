@@ -4,18 +4,30 @@ import { type ComputedRef } from 'vue';
 import { useCurrencies } from '@/types/currencies';
 import { isBlockchain } from '@/types/blockchain/chains';
 
-const props = defineProps({
-  identifier: { required: true, type: String },
-  size: { required: true, type: String },
-  changeable: { required: false, type: Boolean, default: false },
-  styled: { required: false, type: Object, default: () => null },
-  noTooltip: { required: false, type: Boolean, default: false },
-  timestamp: { required: false, type: Number, default: null },
-  circle: { required: false, type: Boolean, default: false },
-  padding: { required: false, type: String, default: '2px' },
-  enableAssociation: { required: false, type: Boolean, default: true },
-  showChain: { required: false, type: Boolean, default: true }
-});
+const props = withDefaults(
+  defineProps<{
+    identifier: string;
+    size: string;
+    changeable?: boolean;
+    styled?: object | null;
+    noTooltip?: boolean;
+    timestamp?: number | null;
+    circle?: boolean;
+    padding?: string;
+    enableAssociation?: boolean;
+    showChain?: boolean;
+  }>(),
+  {
+    changeable: false,
+    styled: null,
+    noTooltip: false,
+    timestamp: null,
+    circle: false,
+    padding: '2px',
+    enableAssociation: true,
+    showChain: true
+  }
+);
 
 const { t } = useI18n();
 

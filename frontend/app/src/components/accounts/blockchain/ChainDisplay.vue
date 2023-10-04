@@ -22,7 +22,7 @@ const name = getChainName(chain);
 <template>
   <ListItem :dense="dense" :title="name" :full-width="fullWidth">
     <template #icon>
-      <AssetIcon size="26px" :identifier="chain" :show-chain="false" />
+      <ChainIcon :chain="chain" />
     </template>
   </ListItem>
 </template>

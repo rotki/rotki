@@ -104,6 +104,14 @@ export const useSupportedChains = createSharedComposable(() => {
     return Blockchain.ETH;
   };
 
+  const getChainImageUrl = (chain: MaybeRef<Blockchain>): ComputedRef<string> =>
+    computed(() => {
+      const chainVal = get(chain);
+      const image = get(getChainInfoById(chainVal))?.image || `${chainVal}.svg`;
+
+      return `./assets/images/protocols/${image}`;
+    });
+
   return {
     allEvmChains,
     supportedChains,
@@ -115,6 +123,7 @@ export const useSupportedChains = createSharedComposable(() => {
     getChain,
     getChainInfoById,
     getChainName,
+    getChainImageUrl,
     isEvm,
     supportsTransactions
   };

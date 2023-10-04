@@ -1,7 +1,7 @@
 <script lang="ts" setup>
-const props = defineProps({
-  url: { required: true, type: String }
-});
+const props = defineProps<{
+  url: string;
+}>();
 
 const { url } = toRefs(props);
 const { onLinkClick } = useLinks(url);

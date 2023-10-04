@@ -1,4 +1,3 @@
-import { getIdentifierFromSymbolMap } from '@rotki/common/lib/data';
 import { type MaybeRef } from '@vueuse/core';
 import { Routes } from '@/router/routes';
 import { isBlockchain } from '@/types/blockchain/chains';
@@ -19,22 +18,20 @@ export const useLocations = createSharedComposable(() => {
     return exchange.name;
   };
 
-  const { getAssetImageUrl } = useAssetIcon();
-  const { getChainName } = useSupportedChains();
+  const { getChainName, getChainImageUrl } = useSupportedChains();
 
   const locationData = (
     identifier: MaybeRef<string>
   ): ComputedRef<TradeLocationData | null> =>
     computed(() => {
       const id = get(identifier);
+      const blockchainId = id.split(' ').join('_');
 
-      if (isBlockchain(id)) {
-        const assetId = getIdentifierFromSymbolMap(id);
-
+      if (isBlockchain(blockchainId)) {
         return {
-          name: get(getChainName(id)),
-          identifier: assetId,
-          image: getAssetImageUrl(assetId),
+          name: get(getChainName(blockchainId)),
+          identifier: blockchainId,
+          image: get(getChainImageUrl(blockchainId)),
           detailPath: `${Routes.ACCOUNTS_BALANCES_BLOCKCHAIN}#blockchain-balances-${id}`
         };
       }

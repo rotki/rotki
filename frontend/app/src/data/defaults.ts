@@ -71,9 +71,9 @@ export const TRADE_LOCATION_ETHEREUM = 'ethereum';
 
 export const TRADE_LOCATION_OPTIMISM = 'optimism';
 
-export const TRADE_LOCATION_POLYGON_POS = 'polygon_pos';
+export const TRADE_LOCATION_POLYGON_POS = 'polygon pos';
 
-export const TRADE_LOCATION_ARBITRUM_ONE = 'arbitrum_one';
+export const TRADE_LOCATION_ARBITRUM_ONE = 'arbitrum one';
 
 export const TRADE_LOCATION_BASE = 'base';
 

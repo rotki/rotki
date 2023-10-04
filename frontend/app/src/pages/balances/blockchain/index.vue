@@ -177,7 +177,7 @@ const showDetectEvmAccountsButton: Readonly<Ref<boolean>> = computedEager(
 
     <AccountBalances
       v-if="ethAccounts.length > 0 || busy.eth.value"
-      id="blockchain-balances-ETH"
+      :id="`blockchain-balances-${Blockchain.ETH}`"
       v-intersect="{
         handler: observers.eth,
         options: {
@@ -194,7 +194,7 @@ const showDetectEvmAccountsButton: Readonly<Ref<boolean>> = computedEager(
 
     <AccountBalances
       v-if="eth2Accounts.length > 0 || busy.eth2.value"
-      id="blockchain-balances-ETH2"
+      :id="`blockchain-balances-${Blockchain.ETH2}`"
       v-intersect="{
         handler: observers.eth2,
         options: {
@@ -211,7 +211,7 @@ const showDetectEvmAccountsButton: Readonly<Ref<boolean>> = computedEager(
 
     <AccountBalances
       v-if="btcAccounts.length > 0 || busy.btc.value"
-      id="blockchain-balances-BTC"
+      :id="`blockchain-balances-${Blockchain.BTC}`"
       v-intersect="{
         handler: observers.btc,
         options: {
@@ -228,7 +228,7 @@ const showDetectEvmAccountsButton: Readonly<Ref<boolean>> = computedEager(
 
     <AccountBalances
       v-if="bchAccounts.length > 0 || busy.bch.value"
-      id="blockchain-balances-BCH"
+      :id="`blockchain-balances-${Blockchain.BCH}`"
       v-intersect="{
         handler: observers.bch,
         options: {
@@ -245,7 +245,7 @@ const showDetectEvmAccountsButton: Readonly<Ref<boolean>> = computedEager(
 
     <AccountBalances
       v-if="ksmAccounts.length > 0 || busy.ksm.value"
-      id="blockchain-balances-KSM"
+      :id="`blockchain-balances-${Blockchain.KSM}`"
       v-intersect="{
         handler: observers.ksm,
         options: {
@@ -262,7 +262,7 @@ const showDetectEvmAccountsButton: Readonly<Ref<boolean>> = computedEager(
 
     <AccountBalances
       v-if="dotAccounts.length > 0 || busy.dot.value"
-      id="blockchain-balances-DOT"
+      :id="`blockchain-balances-${Blockchain.DOT}`"
       v-intersect="{
         handler: observers.dot,
         options: {
@@ -279,7 +279,7 @@ const showDetectEvmAccountsButton: Readonly<Ref<boolean>> = computedEager(
 
     <AccountBalances
       v-if="avaxAccounts.length > 0 || busy.avax.value"
-      id="blockchain-balances-AVAX"
+      :id="`blockchain-balances-${Blockchain.AVAX}`"
       v-intersect="{
         handler: observers.avax,
         options: {
@@ -295,19 +295,8 @@ const showDetectEvmAccountsButton: Readonly<Ref<boolean>> = computedEager(
     />
 
     <AccountBalances
-      v-if="loopringAccounts.length > 0"
-      id="blockchain-balances-LRC"
-      loopring
-      class="mt-8"
-      :title="t('blockchain_balances.balances.loopring')"
-      :blockchain="Blockchain.ETH"
-      :balances="loopringAccounts"
-      data-cy="blockchain-balances-LRC"
-    />
-
-    <AccountBalances
       v-if="optimismAccounts.length > 0 || busy.optimism.value"
-      id="blockchain-balances-OPTIMISM"
+      :id="`blockchain-balances-${Blockchain.OPTIMISM}`"
       v-intersect="{
         handler: observers.optimism,
         options: {
@@ -324,7 +313,7 @@ const showDetectEvmAccountsButton: Readonly<Ref<boolean>> = computedEager(
 
     <AccountBalances
       v-if="polygonAccounts.length > 0 || busy.polygon_pos.value"
-      id="blockchain-balances-POLYGON"
+      :id="`blockchain-balances-${Blockchain.POLYGON_POS}`"
       v-intersect="{
         handler: observers.polygon_pos,
         options: {
@@ -341,7 +330,7 @@ const showDetectEvmAccountsButton: Readonly<Ref<boolean>> = computedEager(
 
     <AccountBalances
       v-if="arbitrumAccounts.length > 0 || busy.arbitrum_one.value"
-      id="blockchain-balances-ARBITRUM"
+      :id="`blockchain-balances-${Blockchain.ARBITRUM_ONE}`"
       v-intersect="{
         handler: observers.arbitrum_one,
         options: {
@@ -358,7 +347,7 @@ const showDetectEvmAccountsButton: Readonly<Ref<boolean>> = computedEager(
 
     <AccountBalances
       v-if="baseAccounts.length > 0 || busy.base.value"
-      id="blockchain-balances-BASE"
+      :id="`blockchain-balances-${Blockchain.BASE}`"
       v-intersect="{
         handler: observers.base,
         options: {
@@ -371,6 +360,17 @@ const showDetectEvmAccountsButton: Readonly<Ref<boolean>> = computedEager(
       :balances="baseAccounts"
       :data-cy="`blockchain-balances-${Blockchain.BASE}`"
       @edit-account="editAccount($event)"
+    />
+
+    <AccountBalances
+      v-if="loopringAccounts.length > 0"
+      id="blockchain-balances-LRC"
+      loopring
+      class="mt-8"
+      :title="t('blockchain_balances.balances.loopring')"
+      :blockchain="Blockchain.ETH"
+      :balances="loopringAccounts"
+      data-cy="blockchain-balances-LRC"
     />
   </TablePageLayout>
 </template>
