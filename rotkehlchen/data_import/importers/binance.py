@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Final, Optional
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.base import HistoryEvent
+from rotkehlchen.accounting.structures.base import HistoryBaseEntry, HistoryEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.converters import asset_from_binance
 from rotkehlchen.constants import ZERO
@@ -63,9 +63,13 @@ class BinanceSingleEntry(BinanceEntry, metaclass=abc.ABCMeta):
     """
     AVAILABLE_OPERATIONS: tuple[str, ...]
 
-    def is_entry(self, requested_operation: str) -> bool:
+    def is_entry(self, requested_operation: str, account: str, change: AssetAmount) -> bool:  # pylint: disable=unused-argument
         """This method checks whether row with "requested_operation" could be processed
-        by a class on which this method has been called
+        by a class on which this method has been called.
+        Some subclasses require combined checks with the "account" and "change" to
+        check if a row can be processed.
+        - "account" maps to the "Account" field on the csv
+        - "change" maps to the "Change" field on the csv
         The default implementation can also be used in a subclass"""
         return requested_operation in self.AVAILABLE_OPERATIONS
 
@@ -98,6 +102,61 @@ class BinanceMultipleEntry(BinanceEntry, metaclass=abc.ABCMeta):
         """Turns given csv rows into internal rotki's representation"""
 
 
+class BinanceTransferEntry(BinanceMultipleEntry):
+    def are_entries(self, requested_operations: list[str]) -> bool:
+        """
+        This class supports several formats of Transfers from the csv.
+        Supports the following combinations of "Operation" column's values:
+            - Transfer Between Spot Account and UM Futures Account
+            - Transfer Between Spot Account and CM Futures Account
+            - Transfer Between Main and Funding Wallet
+        """
+        return len(requested_operations) == 2 and requested_operations[0].startswith('Transfer Between ')  # noqa: E501
+
+    @staticmethod
+    def process_transfers(
+            timestamp: Timestamp,
+            data: list[BinanceCsvRow],
+    ) -> list[HistoryBaseEntry]:
+        """
+        Processes transfer events
+        May raise:
+        - KeyError
+        """
+        row = data[0]
+        return [
+            HistoryEvent(
+                event_identifier=f'{EVENT_IDENTIFIER_PREFIX}{hash_csv_row(row)}',
+                sequence_index=0,
+                timestamp=ts_sec_to_ms(timestamp),
+                location=Location.BINANCE,
+                event_type=HistoryEventType.TRANSFER,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=row['Coin'],
+                balance=Balance(amount=abs(row['Change'])),
+                location_label='CSV import',
+                notes=row['Operation'],
+            ),
+        ]
+
+    def process_entries(
+            self,
+            write_cursor: DBCursor,
+            importer: BaseExchangeImporter,
+            timestamp: Timestamp,
+            data: list[BinanceCsvRow],
+    ) -> int:
+        """
+        Processes and adds the transfer history event to db
+        May raise:
+        - KeyError
+        - DeserializationError: if the event is malformed when being stored in the db
+        """
+        history_events = self.process_transfers(timestamp=timestamp, data=data)
+        importer.add_history_events(write_cursor=write_cursor, history_events=history_events)
+        return len(history_events)
+
+
 class BinanceTradeEntry(BinanceMultipleEntry):
     def are_entries(self, requested_operations: list) -> bool:
         """This class supports several formats of Trade entries from the csv.
@@ -111,20 +170,27 @@ class BinanceTradeEntry(BinanceMultipleEntry):
             - DOESN'T support mixed Fee and Non-fee Trades
             - (Transaction Related + Transaction Related) * N
             - (Small assets exchange BNB + Small assets exchange BNB) * N
+            - (Asset Conversion Transfer + Asset Conversion Transfer) * N
+            - (Binance Convert + Binance Convert) * N
             - (Buy + Transaction Related) * N
         """
         counted = Counter(requested_operations)
         counted.pop('Fee', None)
+        counted.pop('Transaction Fee', None)  # popped both fees to validate main trade components
         keys = set(counted.keys())
         return (
+            (keys == {'Transaction Buy', 'Transaction Spend'} and counted['Transaction Buy'] - counted['Transaction Spend'] == 0) or  # noqa: E501
+            (keys == {'Transaction Revenue', 'Transaction Sold'} and counted['Transaction Revenue'] - counted['Transaction Sold'] == 0) or  # noqa: E501
             (keys == {'Buy', 'Sell'} and counted['Buy'] % 2 == 0 and counted['Sell'] % 2 == 0) or
             (keys == {'Buy'} and counted['Buy'] % 2 == 0) or
             (keys == {'Sell'} and counted['Sell'] % 2 == 0) or
             (keys == {'Transaction Related'} and counted['Transaction Related'] % 2 == 0) or
             (keys == {'Small assets exchange BNB'} and counted['Small assets exchange BNB'] % 2 == 0) or  # noqa: E501
+            (keys == {'Small Assets Exchange BNB'} and counted['Small Assets Exchange BNB'] % 2 == 0) or  # noqa: E501
             (keys == {'ETH 2.0 Staking'} and counted['ETH 2.0 Staking'] % 2 == 0) or
             (keys == {'Buy', 'Transaction Related'} and counted['Buy'] - counted['Transaction Related'] == 0) or  # noqa: E501
-            (keys == {'Binance Convert'} and counted['Binance Convert'] % 2 == 0)
+            (keys == {'Binance Convert'} and counted['Binance Convert'] % 2 == 0) or
+            (keys == {'Asset Conversion Transfer'} and counted['Asset Conversion Transfer'] % 2 == 0)  # noqa: E501
         )
 
     @staticmethod
@@ -151,7 +217,7 @@ class BinanceTradeEntry(BinanceMultipleEntry):
         same_assets = True
         assets: dict[str, Optional[AssetWithOracles]] = defaultdict(lambda: None)
         for row in data:
-            if row['Operation'] == 'Fee':
+            if row['Operation'] in ('Fee', 'Transaction Fee'):
                 cur_operation = 'Fee'
             elif row['Change'] < 0:
                 cur_operation = 'Sold'
@@ -162,11 +228,12 @@ class BinanceTradeEntry(BinanceMultipleEntry):
                 same_assets = False
                 break
 
+        price_at_timestamp: dict[AssetWithOracles, Price] = {}
         # Querying usd value if needed
         if same_assets is False:
             for row in data:
                 try:
-                    price = PriceHistorian.query_historical_price(
+                    price_at_timestamp[row['Coin']] = PriceHistorian.query_historical_price(
                         from_asset=row['Coin'],
                         to_asset=A_USD,
                         timestamp=timestamp,
@@ -175,16 +242,15 @@ class BinanceTradeEntry(BinanceMultipleEntry):
                     # If we can't find price we can't group, so we quit the method
                     log.warning(f'Couldn\'t find price of {row["Coin"]} on {timestamp}')
                     return []
-                row['usd_value'] = row['Change'] * price
 
         # Group rows depending on whether they are fee or not and then sort them by amount
         rows_grouped_by_fee: dict[bool, list[BinanceCsvRow]] = defaultdict(list)
         for row in data:
-            is_fee = row['Operation'] == 'Fee'
+            is_fee = row['Operation'] in ('Fee', 'Transaction Fee')
             rows_grouped_by_fee[is_fee].append(row)
 
         for rows_group in rows_grouped_by_fee.values():
-            rows_group.sort(key=lambda x: x['Change'] if same_assets else x['usd_value'], reverse=True)  # noqa: E501
+            rows_group.sort(key=lambda x: x['Change'] if same_assets else x['Change'] * price_at_timestamp[x['Coin']], reverse=True)  # noqa: E501
 
         # Grouping by combining the highest sold with the highest bought and the highest fee
         # Using fee only we were provided with fee (checking by "True in rows_by_operation")
@@ -209,9 +275,9 @@ class BinanceTradeEntry(BinanceMultipleEntry):
             for row in trade_rows:
                 cur_asset = row['Coin']
                 amount = row['Change']
-                if row['Operation'] == 'Fee':
+                if row['Operation'] in ('Fee', 'Transaction Fee'):
                     fee_asset = cur_asset
-                    fee_amount = Fee(amount)
+                    fee_amount = Fee(abs(amount))
                 else:
                     trade_type = TradeType.SELL if row['Operation'] == 'Sell' else TradeType.BUY
                     if amount < 0:
@@ -287,7 +353,12 @@ class BinanceDepositWithdrawEntry(BinanceSingleEntry):
     """This class processes Deposit and Withdraw actions
         which are AssetMovements in the internal representation"""
 
-    AVAILABLE_OPERATIONS: Final[tuple[str, ...]] = ('Deposit', 'Withdraw')  # type: ignore[misc]  # figure out how to mark final only in this class
+    AVAILABLE_OPERATIONS: Final[tuple[str, ...]] = (  # type: ignore[misc]  # figure out how to mark final only in this class
+        'Deposit',
+        'Buy Crypto',  # it's a direct buy where you deposit fiat and get credited with crypto
+        'Fiat Deposit',
+        'Withdraw',
+    )
 
     def process_entry(
             self,
@@ -296,12 +367,8 @@ class BinanceDepositWithdrawEntry(BinanceSingleEntry):
             timestamp: Timestamp,
             data: BinanceCsvRow,
     ) -> None:
-        amount = data['Change']
         asset = data['Coin']
-        category = AssetMovementCategory.DEPOSIT if data['Operation'] == 'Deposit' else AssetMovementCategory.WITHDRAWAL  # noqa: E501
-        if category == AssetMovementCategory.WITHDRAWAL:
-            amount = -amount
-
+        category = AssetMovementCategory.WITHDRAWAL if data['Operation'] == 'Withdraw' else AssetMovementCategory.DEPOSIT  # else clause also covers 'Buy Crypto' & 'Fiat Deposit'  # noqa: E501
         asset_movement = AssetMovement(
             location=Location.BINANCE,
             category=category,
@@ -309,12 +376,48 @@ class BinanceDepositWithdrawEntry(BinanceSingleEntry):
             transaction_id=None,
             timestamp=timestamp,
             asset=asset,
-            amount=AssetAmount(amount),
+            amount=abs(data['Change']),
             fee=Fee(ZERO),
             fee_asset=A_USD,
             link=f'Imported from binance CSV file. Binance operation: {data["Operation"]}',
         )
         importer.add_asset_movement(write_cursor=write_cursor, asset_movement=asset_movement)
+
+
+class BinanceDistributionEntry(BinanceSingleEntry):
+    """Used to handle the distributions on Binance"""
+    AVAILABLE_OPERATIONS = (
+        'Cash Voucher Distribution',
+        'Mission Reward Distribution',
+    )
+
+    def process_entry(
+            self,
+            write_cursor: DBCursor,
+            importer: BaseExchangeImporter,
+            timestamp: Timestamp,
+            data: BinanceCsvRow,
+    ) -> None:
+        """
+        Process distributions from binance. It includes
+        Cash Voucher Distribution and Mission Reward Distribution. May raise:
+        - KeyError
+        - DeserializationError: if the event is malformed when being stored in the db
+        """
+        importer.add_history_events(write_cursor, history_events=[
+            HistoryEvent(
+                event_identifier=f'{EVENT_IDENTIFIER_PREFIX}{hash_csv_row(data)}',
+                sequence_index=0,
+                timestamp=ts_sec_to_ms(timestamp),
+                location=Location.BINANCE,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.REWARD,
+                asset=data['Coin'],
+                balance=Balance(amount=data['Change']),
+                location_label='CSV import',
+                notes=f'Reward from {data["Operation"]}',
+            ),
+        ])
 
 
 class BinanceStakingRewardsEntry(BinanceSingleEntry):
@@ -336,8 +439,6 @@ class BinanceStakingRewardsEntry(BinanceSingleEntry):
             timestamp: Timestamp,
             data: BinanceCsvRow,
     ) -> None:
-        asset = data['Coin']
-        amount = data['Change']
         event = HistoryEvent(
             event_identifier=f'{EVENT_IDENTIFIER_PREFIX}{hash_csv_row(data)}',
             sequence_index=0,
@@ -345,8 +446,8 @@ class BinanceStakingRewardsEntry(BinanceSingleEntry):
             location=Location.BINANCE,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.NONE,
-            balance=Balance(amount=amount),
-            asset=asset,
+            balance=Balance(amount=data['Change']),
+            asset=data['Coin'],
             notes=f'Imported from binance CSV file. Binance operation: {data["Operation"]}',
         )
         importer.add_history_events(write_cursor=write_cursor, history_events=[event])
@@ -356,11 +457,14 @@ class BinanceEarnProgram(BinanceSingleEntry):
     AVAILABLE_OPERATIONS = (
         'Simple Earn Flexible Interest',
         'Simple Earn Flexible Subscription',
+        'Simple Earn Locked Subscription',
         'Simple Earn Locked Rewards',
         'Simple Earn Locked Redemption',
         'Simple Earn Flexible Redemption',
+        'Staking Redemption',
         'BNB Vault Rewards',
         'Swap Farming Rewards',
+        'Staking Purchase',
     )
 
     def process_entry(
@@ -399,7 +503,11 @@ class BinanceEarnProgram(BinanceSingleEntry):
                 location_label='CSV import',
                 notes=f'Reward from {data["Operation"]}',
             )
-        elif data['Operation'] == 'Simple Earn Flexible Subscription':
+        elif data['Operation'] in (
+            'Simple Earn Flexible Subscription',
+            'Simple Earn Locked Subscription',
+            'Staking Purchase',
+        ):
             staking_event = HistoryEvent(
                 event_identifier=event_identifier,
                 sequence_index=0,
@@ -415,6 +523,7 @@ class BinanceEarnProgram(BinanceSingleEntry):
         elif data['Operation'] == (
             'Simple Earn Locked Redemption',
             'Simple Earn Flexible Redemption',
+            'Staking Redemption',
         ):
             staking_event = HistoryEvent(
                 event_identifier=event_identifier,
@@ -434,6 +543,67 @@ class BinanceEarnProgram(BinanceSingleEntry):
         importer.add_history_events(write_cursor=write_cursor, history_events=[staking_event])
 
 
+class BinanceUSDMProgram(BinanceSingleEntry):
+    """All Binance USDM Program Single Events are processed here"""
+    ACCOUNT = 'USD-MFutures'  # specifying account because fee is ambiguous
+    AVAILABLE_OPERATIONS = (
+        'Fee',
+        'Funding Fee',
+        'Realized Profit and Loss',
+    )
+
+    def is_entry(self, requested_operation: str, account: str, change: AssetAmount) -> bool:
+        if requested_operation in ('Fee', 'Funding Fee') and change == abs(change):
+            return False
+        return requested_operation in self.AVAILABLE_OPERATIONS and account == self.ACCOUNT
+
+    def _get_event(self, timestamp: Timestamp, data: BinanceCsvRow) -> HistoryEvent:
+        """
+        Process USDM Program Events. It includes
+        Fee, Funding Fee, and Realized Profit and Loss. May raise:
+        - KeyError
+        """
+        amount = abs(data['Change'])
+        if data['Operation'] in ('Fee', 'Funding Fee'):
+            event_type = HistoryEventType.SPEND
+            event_subtype = HistoryEventSubType.FEE
+            notes = f'{amount} {data["Coin"].symbol} fee paid on binance USD-MFutures'
+        else:  # is Realized Profit and Loss
+            is_profit = data['Change'] == amount
+            event_type = HistoryEventType.RECEIVE if is_profit else HistoryEventType.SPEND
+            event_subtype = HistoryEventSubType.REWARD if is_profit else HistoryEventSubType.PAYBACK_DEBT  # noqa: E501
+            action = 'profit' if is_profit else 'loss'
+            notes = f'{amount} {data["Coin"].symbol} realized {action} on binance USD-MFutures'
+        return HistoryEvent(
+            event_identifier=f'{EVENT_IDENTIFIER_PREFIX}{hash_csv_row(data)}',
+            sequence_index=0,
+            timestamp=ts_sec_to_ms(timestamp),
+            location=Location.BINANCE,
+            event_type=event_type,
+            event_subtype=event_subtype,
+            asset=data['Coin'],
+            balance=Balance(amount=amount),
+            location_label='CSV import',
+            notes=notes,
+        )
+
+    def process_entry(
+            self,
+            write_cursor: DBCursor,
+            importer: BaseExchangeImporter,
+            timestamp: Timestamp,
+            data: BinanceCsvRow,
+    ) -> None:
+        """
+        Processes and adds the history event to db
+        May raise:
+        - KeyError
+        - DeserializationError: if the event is malformed when being stored in the db
+        """
+        history_event = self._get_event(timestamp, data)
+        importer.add_history_events(write_cursor=write_cursor, history_events=[history_event])
+
+
 class BinancePOSEntry(BinanceSingleEntry):
     """Processing POS related actions"""
 
@@ -450,9 +620,7 @@ class BinancePOSEntry(BinanceSingleEntry):
             timestamp: Timestamp,
             data: BinanceCsvRow,
     ) -> None:
-        asset = data['Coin']
-        amount = data['Change']
-        if amount >= 0:
+        if data['Change'] >= 0:
             event_type = HistoryEventType.RECEIVE
             event_subtype = HistoryEventSubType.NONE
         else:
@@ -466,22 +634,25 @@ class BinancePOSEntry(BinanceSingleEntry):
             location=Location.BINANCE,
             event_type=event_type,
             event_subtype=event_subtype,
-            balance=Balance(amount=abs(amount)),
-            asset=asset,
+            balance=Balance(amount=abs(data['Change'])),
+            asset=data['Coin'],
             notes=f'Imported from binance CSV file. Binance operation: {data["Operation"]}',
         )
         importer.add_history_events(write_cursor=write_cursor, history_events=[event])
 
 
-SINGLE_BINANCE_ENTRIES = [
+SINGLE_BINANCE_ENTRIES: list[BinanceSingleEntry] = [
     BinanceDepositWithdrawEntry(),
     BinanceStakingRewardsEntry(),
     BinancePOSEntry(),
     BinanceEarnProgram(),
+    BinanceUSDMProgram(),
+    BinanceDistributionEntry(),
 ]
 
-MULTIPLE_BINANCE_ENTRIES = [
+MULTIPLE_BINANCE_ENTRIES: list[BinanceMultipleEntry] = [
     BinanceTradeEntry(),
+    BinanceTransferEntry(),
 ]
 
 
@@ -530,7 +701,11 @@ class BinanceImporter(BaseExchangeImporter):
         for row in rows:
             for single_entry_class in SINGLE_BINANCE_ENTRIES:
                 try:
-                    if single_entry_class.is_entry(row['Operation']):
+                    if single_entry_class.is_entry(
+                        requested_operation=row['Operation'],
+                        account=row['Account'],
+                        change=row['Change'],
+                    ):
                         single_entry_class.process_entry(
                             write_cursor=write_cursor,
                             importer=self,

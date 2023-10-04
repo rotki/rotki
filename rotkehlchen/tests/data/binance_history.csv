@@ -48,6 +48,14 @@ User_ID,UTC_Time,Account,Operation,Coin,Change,Remark
 1,2020-12-01 15:51:47,Spot,Buy,BTC,0.09564009919439999,""
 1,2020-12-02 22:30:01,Spot,Buy,IOTA,882,"Trade with no fee for test"
 1,2020-12-02 22:30:01,Spot,Buy,USDT,-1146.3354,
+1,2021-12-31 00:33:45,Spot,Transfer Between Main and Funding Wallet,USDT,500.00000000,""
+1,2021-12-31 00:33:45,Funding,Transfer Between Main and Funding Wallet,USDT,-500.00000000,""
+1,2021-12-31 01:00:22,Spot,Transfer Between Spot Account and UM Futures Account,USDT,100.00000000,""
+1,2021-12-31 01:00:22,USD-MFutures,Transfer Between Spot Account and UM Futures Account,USDT,-100.00000000,""
+1,2021-12-31 01:05:06,Spot,Transfer Between Spot Account and CM Futures Account,USDT,60.00000000,""
+1,2021-12-31 01:05:06,Coin-MFutures,Transfer Between Spot Account and CM Futures Account,USDT,-60.00000000,""
+1,2021-12-31 01:18:18,Spot,Transfer Between Spot Account and UM Futures Account,USDT,40.00000000,""
+1,2021-12-31 01:18:18,USD-MFutures,Transfer Between Spot Account and UM Futures Account,USDT,-40.00000000,""
 1,2023-01-13 05:29:00,Spot,Simple Earn Locked Rewards,MATIC,0.00001605,Binance Earn
 1,2023-01-13 06:01:00,Spot,Simple Earn Flexible Interest,BUSD,0.00003634,Binance Earn
 1,2023-01-13 06:57:00,Spot,Simple Earn Flexible Subscription,BUSD,-0.00003634,Binance Earn
@@ -57,3 +65,21 @@ User_ID,UTC_Time,Account,Operation,Coin,Change,Remark
 1,2023-06-05 19:47:00,Spot,Binance Convert,BUSD,-125.626918
 1,2023-06-05 19:47:00,Spot,Binance Convert,MATIC,140.1195285
 1,2023-06-10 09:35:00,Spot,BNB Vault Rewards,SUI,0.0080696
+1,2023-06-12 03:01:26,Spot,Staking Redemption,BNB,0.95901726,""
+1,2023-06-12 03:11:08,Spot,Staking Purchase,BNB,-0.96455172,""
+1,2023-06-12 04:11:29,Spot,Simple Earn Locked Subscription,MATIC,-602.5193197,Binance Earn
+1,2023-06-12 12:06:41,Spot,Buy Crypto,BUSD,479.6780028,""
+1,2023-06-12 12:09:22,Spot,Fiat Deposit,EUR,2435.34,""
+1,2023-06-15 10:29:11,Spot,Cash Voucher Distribution,BUSD,0.35628294,""
+1,2023-06-15 10:30:00,Spot,Mission Reward Distribution,BUSD,4.87068,""
+1,2023-07-25 05:18:04,Spot,Transaction Revenue,USDT,2641.26410000,""
+1,2023-07-25 05:18:04,Spot,Transaction Sold,USDC,-2641.00000000,""
+1,2023-07-28 18:48:58,Spot,Transaction Revenue,USDT,26.82490000,""
+1,2023-07-28 18:48:58,Spot,Transaction Sold,SOL,-1.07000000,""
+1,2023-07-28 18:48:58,Spot,Transaction Fee,BNB,-0.00008316,""
+1,2023-09-12 08:00:02,USD-MFutures,Funding Fee,USDT,-0.07779065,""
+1,2023-09-13 16:43:41,USD-MFutures,Realized Profit and Loss,USDT,-0.05576000,""
+1,2023-09-13 16:43:41,USD-MFutures,Realized Profit and Loss,USDT,1.29642000,""
+1,2023-09-29 09:56:26,Spot,Transaction Buy,ETH,0.01700000,""
+1,2023-09-29 09:56:26,Spot,Transaction Fee,BNB,-0.00009883,""
+1,2023-09-29 09:56:26,Spot,Transaction Spend,USDT,-28.46106000,""
