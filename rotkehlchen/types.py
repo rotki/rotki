@@ -524,6 +524,10 @@ class SupportedBlockchain(SerializableEnumValueMixin):
         return f'{self.value}{range_type}'
 
 
+"""
+Name mapping for chains with more than one word or custom case.
+If the name is not specified here, it will use the default value (the chain ID in lowercase).
+"""
 SUPPORTED_BLOCKCHAIN_NAMES_MAPPING = {
     SupportedBlockchain.ETHEREUM_BEACONCHAIN: 'Ethereum Staking',
     SupportedBlockchain.POLYGON_POS: 'Polygon PoS',
