@@ -95,7 +95,6 @@ class DBFilter:
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class DBNestedFilter(DBFilter):
     """Filter that allows combination of multiple subfilters with different operands."""
-    and_op: bool
     filters: list[DBFilter]
 
     def prepare(self) -> tuple[list[str], list[Any]]:
