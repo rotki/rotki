@@ -112,8 +112,8 @@ const reProcessSkippedEvents = async () => {
   set(loading, true);
   let message: Message;
   try {
-    const { total, successfull } = await reProcessSkippedEventsCaller();
-    if (successfull === 0) {
+    const { total, successful } = await reProcessSkippedEventsCaller();
+    if (successful === 0) {
       message = {
         title: t('transactions.events.skipped.reprocess.failed.title'),
         description: t(
@@ -125,10 +125,10 @@ const reProcessSkippedEvents = async () => {
       message = {
         title: t('transactions.events.skipped.reprocess.success.title'),
         description:
-          successfull < total
+          successful < total
             ? t('transactions.events.skipped.reprocess.success.some', {
                 total,
-                successfull
+                successful
               })
             : t('transactions.events.skipped.reprocess.success.all'),
         success: true

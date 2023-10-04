@@ -4061,7 +4061,7 @@
           },
           "success": {
             "all": "所有被跳过的外部事件已被处理",
-            "some": "已处理 {successfull} 个（共 {total} 个）被跳过的外部事件",
+            "some": "已处理 {successful} 个（共 {total} 个）被跳过的外部事件",
             "title": "已处理的被跳过事件"
           }
         },

@@ -171,7 +171,7 @@ def test_skipped_external_events(rotkehlchen_api_server_with_exchanges, globaldb
     )
     result = assert_proper_response_with_result(response)
     assert result['total'] == 5
-    assert result['successfull'] == 3
+    assert result['successful'] == 3
     response = requests.get(
         api_url_for(server, 'historyskippedexternaleventresource'),
     )

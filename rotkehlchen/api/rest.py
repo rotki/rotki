@@ -4416,9 +4416,9 @@ class RestAPI:
             return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     def reprocess_skipped_external_events(self) -> Response:
-        total, successfull = reprocess_skipped_external_events(self.rotkehlchen)
+        total, successful = reprocess_skipped_external_events(self.rotkehlchen)
         return api_response(
-            result=_wrap_in_ok_result({'total': total, 'successfull': successfull}),
+            result=_wrap_in_ok_result({'total': total, 'successful': successful}),
             status_code=HTTPStatus.OK,
         )
 

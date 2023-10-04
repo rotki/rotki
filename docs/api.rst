@@ -12523,7 +12523,7 @@ Dealing with skipped external events
       Content-Type: application/json
 
       {
-        "result": {"total": 10, "successfull": 5},
+        "result": {"total": 10, "successful": 5},
         "message": ""
       }
 
