@@ -3941,7 +3941,7 @@
           },
           "success": {
             "all": "Todos los eventos externos omitidos se han procesado",
-            "some": "{successfull} de {total} eventos externos omitidos se han procesado",
+            "some": "{successful} de {total} eventos externos omitidos se han procesado",
             "title": "Eventos omitidos procesados"
           }
         },

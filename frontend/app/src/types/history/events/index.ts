@@ -226,7 +226,7 @@ export type SkippedHistoryEventsSummary = z.infer<
 
 export const ProcessSkippedHistoryEventsResponse = z.object({
   total: z.number(),
-  successfull: z.number()
+  successful: z.number()
 });
 
 export type ProcessSkippedHistoryEventsResponse = z.infer<
