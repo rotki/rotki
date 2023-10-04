@@ -29,7 +29,7 @@ export class UserSecuritySettingsPage {
   }
 
   confirmSuccess() {
-    cy.get('.message-dialog__title').should('include.text', 'Success');
-    cy.get('.message-dialog__buttons__confirm').click();
+    cy.get('[data-cy=message-dialog__title]').should('include.text', 'Success');
+    cy.get('[data-cy=message-dialog__ok]').click();
   }
 }

@@ -53,30 +53,27 @@ const secondaryText = computed(
       :value="true"
       persistent
       :max-width="maxWidth"
-      class="confirm-dialog"
       @keydown.esc.stop="emit('cancel')"
     >
-      <VCard data-cy="confirm-dialog">
-        <VCardTitle
-          class="confirm-dialog__title text-h5"
-          data-cy="dialog-title"
-        >
-          {{ title }}
-        </VCardTitle>
-        <VCardText class="confirm-dialog__text">
-          <div class="flex gap-4">
-            <div>
-              <RuiIcon :color="color" size="36" :name="icon" />
-            </div>
-            <div class="text-body-1">
-              {{ message }}
-              <slot />
-            </div>
-          </div>
-        </VCardText>
+      <RuiCard data-cy="confirm-dialog">
+        <template #header>
+          <span class="text-h5" data-cy="dialog-title">
+            {{ title }}
+          </span>
+        </template>
 
-        <VCardActions class="confirm-dialog__actions gap-2">
-          <VSpacer />
+        <div class="flex gap-4">
+          <div>
+            <RuiIcon :color="color" size="36" :name="icon" />
+          </div>
+          <div class="text-body-1">
+            {{ message }}
+            <slot />
+          </div>
+        </div>
+
+        <template #footer>
+          <div class="grow" />
           <RuiButton
             v-if="!singleAction"
             variant="text"
@@ -95,8 +92,8 @@ const secondaryText = computed(
           >
             {{ primaryText }}
           </RuiButton>
-        </VCardActions>
-      </VCard>
+        </template>
+      </RuiCard>
     </VDialog>
   </VDialogTransition>
 </template>
