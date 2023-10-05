@@ -122,6 +122,7 @@ declare global {
   const getTags: typeof import('./utils/tags')['getTags']
   const getValidSelectorFromEvmAddress: typeof import('./utils/assets')['getValidSelectorFromEvmAddress']
   const groupAssetBreakdown: typeof import('./utils/balances')['groupAssetBreakdown']
+  const guessTimezone: typeof import('./utils/date')['guessTimezone']
   const h: typeof import('vue')['h']
   const ignorableWatch: typeof import('@vueuse/core')['ignorableWatch']
   const indexedDb: typeof import('./utils/indexed-db')['default']
@@ -825,6 +826,7 @@ declare module 'vue' {
     readonly getTags: UnwrapRef<typeof import('./utils/tags')['getTags']>
     readonly getValidSelectorFromEvmAddress: UnwrapRef<typeof import('./utils/assets')['getValidSelectorFromEvmAddress']>
     readonly groupAssetBreakdown: UnwrapRef<typeof import('./utils/balances')['groupAssetBreakdown']>
+    readonly guessTimezone: UnwrapRef<typeof import('./utils/date')['guessTimezone']>
     readonly h: UnwrapRef<typeof import('vue')['h']>
     readonly ignorableWatch: UnwrapRef<typeof import('@vueuse/core')['ignorableWatch']>
     readonly indexedDb: UnwrapRef<typeof import('./utils/indexed-db')['default']>
@@ -1522,6 +1524,7 @@ declare module '@vue/runtime-core' {
     readonly getTags: UnwrapRef<typeof import('./utils/tags')['getTags']>
     readonly getValidSelectorFromEvmAddress: UnwrapRef<typeof import('./utils/assets')['getValidSelectorFromEvmAddress']>
     readonly groupAssetBreakdown: UnwrapRef<typeof import('./utils/balances')['groupAssetBreakdown']>
+    readonly guessTimezone: UnwrapRef<typeof import('./utils/date')['guessTimezone']>
     readonly h: UnwrapRef<typeof import('vue')['h']>
     readonly ignorableWatch: UnwrapRef<typeof import('@vueuse/core')['ignorableWatch']>
     readonly indexedDb: UnwrapRef<typeof import('./utils/indexed-db')['default']>

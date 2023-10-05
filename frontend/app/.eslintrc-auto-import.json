@@ -700,6 +700,8 @@
     "truncationPoints": true,
     "awaitParallelExecution": true,
     "groupAssetBreakdown": true,
-    "disposeEvmRpcNodeComposables": true
+    "disposeEvmRpcNodeComposables": true,
+    "WritableComputedRef": true,
+    "guessTimezone": true
   }
 }

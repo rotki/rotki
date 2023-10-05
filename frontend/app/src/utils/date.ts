@@ -5,6 +5,17 @@ import localizedFormat from 'dayjs/plugin/localizedFormat';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import { DateFormat } from '@/types/date-format';
+import { timezones } from '@/data/timezones';
+
+export const guessTimezone = () => {
+  const guessedTimezone = dayjs.tz.guess();
+  const offset = dayjs().utcOffset();
+  const timezone = timezones.find(tz => tz === guessedTimezone);
+
+  const hour = Math.round(offset / 60);
+  const isNegative = hour < 0;
+  return timezone ?? `ETC/GMT${isNegative ? '' : '+'}${hour}`;
+};
 
 export function getDateInputISOFormat(format: DateFormat): string {
   return {
@@ -72,8 +83,8 @@ export function convertDateByTimezone(
     return date;
   }
 
-  fromTimezone = fromTimezone || dayjs.tz.guess();
-  toTimezone = toTimezone || dayjs.tz.guess();
+  fromTimezone = fromTimezone || guessTimezone();
+  toTimezone = toTimezone || guessTimezone();
 
   let format: string = getDateInputISOFormat(dateFormat);
   if (date.includes(' ')) {
@@ -99,5 +110,4 @@ export function setupDayjs(): void {
   dayjs.extend(timezone);
   dayjs.extend(localizedFormat);
   dayjs.extend(isToday);
-  dayjs.tz.guess();
 }
