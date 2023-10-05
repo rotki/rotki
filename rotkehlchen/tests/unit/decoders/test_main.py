@@ -75,6 +75,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: 'EthereumTransact
         'Safemultisig',
         'Stakedao',
         'Sushiswap',
+        'Thegraph',
         'Uniswapv1',
         'Uniswapv2',
         'Uniswapv3',
@@ -138,6 +139,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: 'EthereumTransact
         'arbitrum_one',
         'base',
         'sDAI',
+        'thegraph',
     }
 
 
