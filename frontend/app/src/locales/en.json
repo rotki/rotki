@@ -3653,7 +3653,6 @@
       },
       "issues_found": "{total} issues found with the generated report",
       "missing_acquisitions": {
-        "add_ledger_action": "Add ledger action",
         "asset_is_ignored": "This asset is ignored",
         "headers": {
           "found_amount": "Found Amount",
