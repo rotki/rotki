@@ -14,6 +14,8 @@ const emit = defineEmits<{
   (e: 'dismiss'): void;
 }>();
 
+const { t } = useI18n();
+
 const { message, success } = toRefs(props);
 const visible = ref<boolean>(false);
 
@@ -22,75 +24,52 @@ watch(message, message => {
 });
 
 const icon = computed<string>(() =>
-  get(success) ? 'mdi-check-circle ' : 'mdi-alert-circle'
+  get(success) ? 'checkbox-circle-line' : 'error-warning-line'
 );
-
-const dismiss = () => emit('dismiss');
-
-const { t } = useI18n();
 </script>
 
 <template>
-  <div>
-    <VDialog
-      :value="visible"
-      max-width="500"
-      class="message-dialog"
-      persistent
-      @close="dismiss()"
-      @keydown.esc="dismiss()"
-      @keydown.enter="dismiss()"
-    >
-      <VCard>
-        <VCardTitle
-          :class="{ 'green--text': success, 'red--text': !success }"
-          class="text-h5 message-dialog__title"
+  <VDialog
+    :value="visible"
+    max-width="500"
+    persistent
+    @close="emit('dismiss')"
+    @keydown.esc="emit('dismiss')"
+    @keydown.enter="emit('dismiss')"
+  >
+    <RuiCard>
+      <template #header>
+        <span
+          :class="success ? 'text-rui-success' : 'text-rui-error'"
+          class="text-h5"
         >
           {{ title }}
-        </VCardTitle>
-        <VRow align="center" class="mx-0 message-dialog__body">
-          <VCol cols="1">
-            <VIcon
-              size="40"
-              class="dialog-icon"
-              :class="{ 'green--text': success, 'red--text': !success }"
-            >
-              {{ icon }}
-            </VIcon>
-          </VCol>
-          <VCol cols="11">
-            <VCardText class="message-dialog__message">
-              {{ message }}
-            </VCardText>
-          </VCol>
-        </VRow>
+        </span>
+      </template>
 
-        <VCardActions>
-          <VSpacer />
-          <RuiButton
-            :color="success ? 'success' : 'error'"
-            variant="text"
-            class="message-dialog__buttons__confirm px-4"
-            @click="dismiss()"
-          >
-            {{ t('common.actions.ok') }}
-          </RuiButton>
-        </VCardActions>
-      </VCard>
-    </VDialog>
-  </div>
+      <div class="flex flex-row items-center gap-2">
+        <div>
+          <RuiIcon
+            size="40"
+            :name="icon"
+            :class="success ? 'text-rui-success' : 'text-rui-error'"
+          />
+        </div>
+        <div class="hyphens-auto break-words" data-cy="message-dialog__title">
+          {{ message }}
+        </div>
+      </div>
+
+      <template #footer>
+        <div class="grow" />
+        <RuiButton
+          data-cy="message-dialog__ok"
+          :color="success ? 'success' : 'error'"
+          @click="emit('dismiss')"
+        >
+          {{ t('common.actions.ok') }}
+        </RuiButton>
+      </template>
+    </RuiCard>
+  </VDialog>
 </template>
-
-<style scoped lang="scss">
-.message-dialog {
-  &__message {
-    overflow-wrap: break-word;
-    word-wrap: break-word;
-    hyphens: auto;
-  }
-
-  &__body {
-    padding: 0 16px;
-  }
-}
-</style>
