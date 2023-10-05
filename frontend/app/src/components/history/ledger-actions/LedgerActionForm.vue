@@ -138,7 +138,7 @@ const setEditMode = () => {
   } else {
     set(actionType, LedgerActionType.ACTION_INCOME);
   }
-  set(rate, ledgerAction.rate?.toFixed() ?? '');
+  set(rate, (ledgerAction.rateAsset && ledgerAction.rate?.toFixed()) ?? '');
   set(rateAsset, ledgerAction.rateAsset ?? '');
   set(link, ledgerAction.link ?? '');
   set(notes, ledgerAction.notes ?? '');
@@ -159,7 +159,7 @@ const save = async (): Promise<boolean> => {
     asset: get(asset),
     amount: numericAmount.isNaN() ? Zero : numericAmount,
     actionType: get(actionType) as LedgerActionType,
-    rate: numericRate.isNaN() ? undefined : numericRate,
+    rate: !get(rateAsset) || numericRate.isNaN() ? undefined : numericRate,
     rateAsset: get(rateAsset) ? get(rateAsset) : undefined,
     link: get(link) ? get(link) : undefined,
     notes: get(notes) ? get(notes) : undefined
