@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :bug:`-` Aave v2 accounting for deposit interest profit and borrow payback loss should now work correctly again.
+
 * :release:`1.30.2 <2023-09-21>`
 * :feature:`-` Improved support for importing Binance CSV files.
 * :bug:`6625` Error text when merging assets will now appear properly.
