@@ -640,22 +640,7 @@ def test_aave_v2_withdraw(database, ethereum_inquirer, eth_transactions):
             extra_data=None,
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=26,
-            timestamp=0,
-            location=Location.ETHEREUM,
-            event_type=HistoryEventType.WITHDRAWAL,
-            event_subtype=HistoryEventSubType.REMOVE_ASSET,
-            asset=A_WETH,
-            balance=Balance(amount=FVal('5504.540904812179621204')),
-            location_label=user_address,
-            notes='Withdraw 5504.540904812179621204 WETH from AAVE v2 to 0x6B44ba0a126a2A1a8aa6cD1AdeeD002e141Bcd44',  # noqa: E501
-            counterparty=CPT_AAVE_V2,
-            identifier=None,
-            extra_data=None,
-            address=string_to_evm_address('0x030bA81f1c18d280636F32af80b9AAd02Cf0854e'),
-        ), EvmEvent(
-            tx_hash=evmhash,
-            sequence_index=27,
+            sequence_index=1,
             timestamp=0,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
@@ -668,6 +653,21 @@ def test_aave_v2_withdraw(database, ethereum_inquirer, eth_transactions):
             identifier=None,
             extra_data=None,
             address=ZERO_ADDRESS,
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=2,
+            timestamp=0,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.REMOVE_ASSET,
+            asset=A_WETH,
+            balance=Balance(amount=FVal('5504.540904812179621204')),
+            location_label=user_address,
+            notes='Withdraw 5504.540904812179621204 WETH from AAVE v2 to 0x6B44ba0a126a2A1a8aa6cD1AdeeD002e141Bcd44',  # noqa: E501
+            counterparty=CPT_AAVE_V2,
+            identifier=None,
+            extra_data=None,
+            address=string_to_evm_address('0x030bA81f1c18d280636F32af80b9AAd02Cf0854e'),
         ),
     ]
     assert events == expected_events

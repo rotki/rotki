@@ -13,6 +13,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails, EventCategory
+from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.resolver import evm_address_to_identifier
@@ -123,6 +124,7 @@ class Aavev2Decoder(DecoderInterface):
         """Decode aave v2 withdrawal event"""
         user = hex_or_bytes_to_address(tx_log.topics[2])
         to = hex_or_bytes_to_address(tx_log.topics[3])
+        return_event, withdraw_event = None, None
         if not self.base.any_tracked([user, to]):
             return
         amount = asset_normalized_value(
@@ -145,12 +147,19 @@ class Aavev2Decoder(DecoderInterface):
                     event.event_subtype = HistoryEventSubType.REMOVE_ASSET
                     event.location_label = user
                     event.notes = notes
+                    withdraw_event = event
                 else:
                     event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
                     resolved_asset = event.asset.resolve_to_asset_with_symbol()
                     event.notes = f'Return {amount} {resolved_asset.symbol} to AAVE v2'  # noqa: E501
+                    return_event = event
                 # Set protocol for both events
                 event.counterparty = CPT_AAVE_V2
+
+        maybe_reshuffle_events(  # Make sure that the out event comes first
+            ordered_events=[return_event, withdraw_event],
+            events_list=decoded_events,
+        )
 
     def _decode_borrow(
             self,
