@@ -123,10 +123,6 @@ const getRoutes = (keyword: string): SearchItemWithoutValue[] => {
       texts: [Routes.HISTORY.text, Routes.HISTORY_EVENTS.text]
     },
     {
-      ...Routes.HISTORY_LEDGER_ACTIONS,
-      texts: [Routes.HISTORY.text, Routes.HISTORY_LEDGER_ACTIONS.text]
-    },
-    {
       ...Routes.DEFI_OVERVIEW,
       texts: [Routes.DEFI.text, Routes.DEFI_OVERVIEW.text]
     },
@@ -282,10 +278,6 @@ const getActions = (keyword: string): SearchItemWithoutValue[] => {
     {
       text: t('closed_trades.dialog.add.title').toString(),
       route: `${Routes.HISTORY_TRADES.route}?add=true`
-    },
-    {
-      text: t('ledger_actions.dialog.add.title').toString(),
-      route: `${Routes.HISTORY_LEDGER_ACTIONS.route}?add=true`
     },
     {
       text: t('asset_management.add_title').toString(),

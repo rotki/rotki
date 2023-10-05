@@ -93,11 +93,6 @@ const navItems: MenuItem[] = [
         type: 'item',
         class: 'history-events',
         ...Routes.HISTORY_EVENTS
-      },
-      {
-        type: 'item',
-        class: 'history-ledger-actions',
-        ...Routes.HISTORY_LEDGER_ACTIONS
       }
     ]
   },

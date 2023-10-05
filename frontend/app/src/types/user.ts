@@ -5,7 +5,6 @@ import { AddressNamePriorityEnum } from '@/types/address-name-priorities';
 import { useCurrencies } from '@/types/currencies';
 import { Exchange, KrakenAccountType } from '@/types/exchanges';
 import { FrontendSettings } from '@/types/frontend-settings';
-import { LedgerActionEnum } from '@/types/history/ledger-action/ledger-actions-type';
 import { ModuleEnum } from '@/types/modules';
 import { PriceOracleEnum } from '@/types/price-oracle';
 import { type ToSnakeCase } from '@/types/common';
@@ -84,7 +83,6 @@ const AccountingSettings = z
   .object({
     pnlCsvWithFormulas: z.boolean(),
     pnlCsvHaveSummary: z.boolean(),
-    taxableLedgerActions: z.array(LedgerActionEnum),
     costBasisMethod: CostBasisMethodEnum.default(CostBasisMethod.FIFO)
   })
   .merge(BaseAccountingSettings);
@@ -123,7 +121,6 @@ const getAccountingSettings = (settings: UserSettings): AccountingSettings => ({
   includeCrypto2crypto: settings.includeCrypto2crypto,
   accountForAssetsMovements: settings.accountForAssetsMovements,
   calculatePastCostBasis: settings.calculatePastCostBasis,
-  taxableLedgerActions: settings.taxableLedgerActions,
   costBasisMethod: settings.costBasisMethod,
   ethStakingTaxableAfterWithdrawalEnabled:
     settings.ethStakingTaxableAfterWithdrawalEnabled

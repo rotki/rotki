@@ -495,11 +495,6 @@ declare global {
   const useLastLanguage: typeof import('./composables/session/language')['useLastLanguage']
   const useLatestPriceForm: typeof import('./composables/price-manager/latest/form')['useLatestPriceForm']
   const useLatestPrices: typeof import('./composables/price-manager/latest/index')['useLatestPrices']
-  const useLedgerActionData: typeof import('./composables/history/ledger-actions/data')['useLedgerActionData']
-  const useLedgerActions: typeof import('./composables/history/ledger-actions/index')['useLedgerActions']
-  const useLedgerActionsApi: typeof import('./composables/api/history/ledger-actions')['useLedgerActionsApi']
-  const useLedgerActionsFilter: typeof import('./composables/filters/ledger-actions')['useLedgerActionsFilter']
-  const useLedgerActionsForm: typeof import('./composables/history/ledger-actions/form')['useLedgerActionsForm']
   const useLink: typeof import('vue-router/composables')['useLink']
   const useLinks: typeof import('./composables/links')['useLinks']
   const useLiquidityPosition: typeof import('./composables/defi/index')['useLiquidityPosition']
@@ -1202,11 +1197,6 @@ declare module 'vue' {
     readonly useLastLanguage: UnwrapRef<typeof import('./composables/session/language')['useLastLanguage']>
     readonly useLatestPriceForm: UnwrapRef<typeof import('./composables/price-manager/latest/form')['useLatestPriceForm']>
     readonly useLatestPrices: UnwrapRef<typeof import('./composables/price-manager/latest/index')['useLatestPrices']>
-    readonly useLedgerActionData: UnwrapRef<typeof import('./composables/history/ledger-actions/data')['useLedgerActionData']>
-    readonly useLedgerActions: UnwrapRef<typeof import('./composables/history/ledger-actions/index')['useLedgerActions']>
-    readonly useLedgerActionsApi: UnwrapRef<typeof import('./composables/api/history/ledger-actions')['useLedgerActionsApi']>
-    readonly useLedgerActionsFilter: UnwrapRef<typeof import('./composables/filters/ledger-actions')['useLedgerActionsFilter']>
-    readonly useLedgerActionsForm: UnwrapRef<typeof import('./composables/history/ledger-actions/form')['useLedgerActionsForm']>
     readonly useLink: UnwrapRef<typeof import('vue-router/composables')['useLink']>
     readonly useLinks: UnwrapRef<typeof import('./composables/links')['useLinks']>
     readonly useLiquidityPosition: UnwrapRef<typeof import('./composables/defi/index')['useLiquidityPosition']>
@@ -1903,11 +1893,6 @@ declare module '@vue/runtime-core' {
     readonly useLastLanguage: UnwrapRef<typeof import('./composables/session/language')['useLastLanguage']>
     readonly useLatestPriceForm: UnwrapRef<typeof import('./composables/price-manager/latest/form')['useLatestPriceForm']>
     readonly useLatestPrices: UnwrapRef<typeof import('./composables/price-manager/latest/index')['useLatestPrices']>
-    readonly useLedgerActionData: UnwrapRef<typeof import('./composables/history/ledger-actions/data')['useLedgerActionData']>
-    readonly useLedgerActions: UnwrapRef<typeof import('./composables/history/ledger-actions/index')['useLedgerActions']>
-    readonly useLedgerActionsApi: UnwrapRef<typeof import('./composables/api/history/ledger-actions')['useLedgerActionsApi']>
-    readonly useLedgerActionsFilter: UnwrapRef<typeof import('./composables/filters/ledger-actions')['useLedgerActionsFilter']>
-    readonly useLedgerActionsForm: UnwrapRef<typeof import('./composables/history/ledger-actions/form')['useLedgerActionsForm']>
     readonly useLink: UnwrapRef<typeof import('vue-router/composables')['useLink']>
     readonly useLinks: UnwrapRef<typeof import('./composables/links')['useLinks']>
     readonly useLiquidityPosition: UnwrapRef<typeof import('./composables/defi/index')['useLiquidityPosition']>

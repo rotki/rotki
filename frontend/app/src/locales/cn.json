@@ -583,16 +583,6 @@
         "title": "查询Kraken质押事件"
       }
     },
-    "ledger_actions": {
-      "error": {
-        "description": "{exchange} 查询失败：{error}",
-        "title": "{exchange} 的账本操作"
-      },
-      "task": {
-        "description": "检索{exchange}的账本操作",
-        "title": "账本操作"
-      }
-    },
     "manual_balances": {
       "add": {
         "error": {
@@ -1188,7 +1178,6 @@
       "asset_movement": "资产移动",
       "fee": "Fee",
       "history_base_entry": "历史数据库条目",
-      "ledger_action": "账本操作",
       "loan": "贷款",
       "margin_position": "保证金位置",
       "prefork_acquisition": "预叉收购",
@@ -2682,108 +2671,6 @@
     },
     "title": "每项资产赚取"
   },
-  "ledger_action_form": {
-    "amount": {
-      "validation": {
-        "non_empty": "金额字段不能为空。"
-      }
-    },
-    "asset": {
-      "validation": {
-        "non_empty": "资产字段不能为空"
-      }
-    },
-    "date": {
-      "hint": "动作发生的日期",
-      "label": "日期"
-    },
-    "link": {
-      "hint": "[Optional]操作链接。例如在资源管理器中",
-      "label": "链接"
-    },
-    "location": {
-      "validation": {
-        "non_empty": "位置字段不能为空。"
-      }
-    },
-    "notes": {
-      "hint": "[Optional] 为操作存储的附加注释",
-      "label": "注释"
-    },
-    "rate": {
-      "hint": "[Optional] 动作的自定义速率。如果没有给出资产在给定时间的速率将被使用。",
-      "label": "率"
-    },
-    "rate_asset": {
-      "hint": "[Optional] 用于汇率的资产",
-      "label": "评价资产"
-    },
-    "type": {
-      "validation": {
-        "non_empty": "类型字段不能为空。"
-      }
-    }
-  },
-  "ledger_action_settings": {
-    "header": {
-      "ledger_action": "账本操作",
-      "taxable": "应纳税"
-    },
-    "subtitle": "在损益报告生成过程中控制哪些分类账行为被认为是应纳税的。这意味着哪些将增加/减去利润损失。无论此设置如何，所有分类账行为都将被考虑 成本基础计算。",
-    "title": "应税分类帐操作"
-  },
-  "ledger_actions": {
-    "actions": {
-      "airdrop": "空投",
-      "dividends": "股息收入",
-      "donation": "收到捐赠",
-      "expense": "费用",
-      "gift": "礼物",
-      "grant": "授予",
-      "income": "收入",
-      "loss": "损失"
-    },
-    "delete": {
-      "message": "你确定要删除这个账本操作吗？",
-      "multiple_message": "您确定要删除这些 {length} 个账本操作吗？",
-      "title": "删除账本操作"
-    },
-    "delete_tooltip": "删除账本操作",
-    "details": {
-      "link": "链接",
-      "link_data": "没有找到链接。",
-      "rate_asset": "利率",
-      "rate_data": "未使用自定义汇率",
-      "title": "详情"
-    },
-    "dialog": {
-      "add": {
-        "subtitle": "添加收入/损失/支出等的手动输入。",
-        "title": "添加Ledger操作"
-      },
-      "edit": {
-        "subtitle": "编辑现有 ledger 操作",
-        "title": "编辑 Ledger 操作"
-      }
-    },
-    "edit_tooltip": "编辑 Ledger 操作",
-    "filter": {
-      "action_type": "按账本操作类型（收入、损失等...）过滤",
-      "asset": "按账本操作的资产过滤",
-      "date_hint": "format {format} HH:mm:ss （时间/秒可选）",
-      "end_date": "按账本操作期的结束日期筛选",
-      "location": "按分类帐操作位置过滤",
-      "start_date": "按账本操作期的开始日期过滤"
-    },
-    "headers": {
-      "actions": "动作"
-    },
-    "label": "ledger 动作",
-    "loading": "正在加载您的分类帐操作，请稍候...",
-    "refresh_tooltip": "刷新你的ledger操作",
-    "selected": "{count} 个项目被选中",
-    "title": "Ledger 操作"
-  },
   "lending": {
     "currently_deposited": "当前已存入",
     "effective_interest_rate": "有效储蓄率",
@@ -3100,7 +2987,6 @@
     "history_sub": {
       "deposits_withdrawals": "交换。存款和取款",
       "history_events": "历史事件",
-      "ledger_actions": "Ledger 操作",
       "trades": "交换。行业"
     },
     "import_data": "导入数据",
@@ -3651,7 +3537,6 @@
       },
       "issues_found": "在生成的报告中发现了 {total} 个问题",
       "missing_acquisitions": {
-        "add_ledger_action": "添加账本操作",
         "asset_is_ignored": "该资产被忽略",
         "headers": {
           "found_amount": "发现数量",

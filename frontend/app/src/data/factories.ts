@@ -39,7 +39,6 @@ export const defaultAccountingSettings = (): AccountingSettings => ({
   taxfreeAfterPeriod: null,
   accountForAssetsMovements: true,
   calculatePastCostBasis: true,
-  taxableLedgerActions: [],
   ethStakingTaxableAfterWithdrawalEnabled: false,
   costBasisMethod: CostBasisMethod.FIFO
 });

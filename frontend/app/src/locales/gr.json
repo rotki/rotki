@@ -586,16 +586,6 @@
         "title": "Querying Kraken staking events"
       }
     },
-    "ledger_actions": {
-      "error": {
-        "description": "Failed query for {exchange}: {error}",
-        "title": "Ledger actions for {exchange}"
-      },
-      "task": {
-        "description": "Retrieving ledger actions for {exchange}",
-        "title": "Ledger actions"
-      }
-    },
     "manual_balances": {
       "add": {
         "error": {
@@ -1163,7 +1153,6 @@
       "asset_movement": "Asset Movement",
       "fee": "Fee",
       "history_base_entry": "History Base Entry",
-      "ledger_action": "Ledger Action",
       "loan": "Loan",
       "margin_position": "Margin Position",
       "prefork_acquisition": "Prefork Acquisition",
@@ -2644,108 +2633,6 @@
       "historical": "Historical"
     },
     "title": "Earned Per Asset"
-  },
-  "ledger_action_form": {
-    "amount": {
-      "validation": {
-        "non_empty": "The amount field cannot be empty."
-      }
-    },
-    "asset": {
-      "validation": {
-        "non_empty": "The asset field cannot be empty"
-      }
-    },
-    "date": {
-      "hint": "The date of when the action happened",
-      "label": "Date"
-    },
-    "link": {
-      "hint": "[Optional] A link for the action. e.g. in an explorer",
-      "label": "Link"
-    },
-    "location": {
-      "validation": {
-        "non_empty": "The location field cannot be empty."
-      }
-    },
-    "notes": {
-      "hint": "[Optional] Additional notes to store for the action",
-      "label": "Notes"
-    },
-    "rate": {
-      "hint": "[Optional] Custom rate of the action. If not given the rate for the asset at the given time will be used.",
-      "label": "Rate"
-    },
-    "rate_asset": {
-      "hint": "[Optional] The asset used for the rate",
-      "label": "Rate asset"
-    },
-    "type": {
-      "validation": {
-        "non_empty": "The type field cannot be empty."
-      }
-    }
-  },
-  "ledger_action_settings": {
-    "header": {
-      "ledger_action": "Ledger Action",
-      "taxable": "Taxable"
-    },
-    "subtitle": "Control which ledger actions are considered taxable or not during the profit/loss report generation. That means which ones will add/subtract to/from the profit loss. All ledger actions irrespective of this setting will be taken into account for cost basis calculation.",
-    "title": "Taxable ledger actions"
-  },
-  "ledger_actions": {
-    "actions": {
-      "airdrop": "Airdrop",
-      "dividends": "Dividends Income",
-      "donation": "Donation Received",
-      "expense": "Expense",
-      "gift": "Gift",
-      "grant": "Grant",
-      "income": "Income",
-      "loss": "Loss"
-    },
-    "delete": {
-      "message": "Are you sure wou want to delete this ledger action?",
-      "multiple_message": "Are you sure you want to delete these {length} ledger actions?",
-      "title": "Delete Ledger Action"
-    },
-    "delete_tooltip": "Delete the ledger action",
-    "details": {
-      "link": "Link",
-      "link_data": "No link found.",
-      "rate_asset": "Rate",
-      "rate_data": "No custom rate used",
-      "title": "Details"
-    },
-    "dialog": {
-      "add": {
-        "subtitle": "Add a manual entry of income/loss/expense etc.",
-        "title": "Add a ledger action"
-      },
-      "edit": {
-        "subtitle": "Edit an existing ledger action",
-        "title": "Edit Ledger Action"
-      }
-    },
-    "edit_tooltip": "Edit the ledger action",
-    "filter": {
-      "action_type": "filter by the ledger action type (income, loss, etc...)",
-      "asset": "filter by the asset of the ledger action",
-      "date_hint": "format {format} HH:mm:ss (time/seconds are optional)",
-      "end_date": "filter by the end date of the ledger action period",
-      "location": "filter by the ledger action location",
-      "start_date": "filter by the start date of the ledger action period"
-    },
-    "headers": {
-      "actions": "Actions"
-    },
-    "label": "ledger actions",
-    "loading": "Please wait while your ledger actions are getting loaded...",
-    "refresh_tooltip": "Refresh your ledger actions",
-    "selected": "{count} item(s) selected",
-    "title": "Ledger Actions"
   },
   "lending": {
     "currently_deposited": "Currently Deposited",

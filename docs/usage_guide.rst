@@ -426,8 +426,6 @@ The method that should be used during the profit and loss execution to calculate
 - HIFO: `Highest In, First Out`
 - ACB: `Adjusted Cost Basis`
 
-.. _ledger_action_settings:
-
 Include fees in cost basis
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -437,16 +435,6 @@ A setting to determine whether trade fees should be included into the cost basis
 - ``True``:  The fee event just reduces the amount of the fee asset paid and nothing else. The actual fee is used to determine the cost basis of the asset sold/bought instead. So if say you bought 1 ETH for 10 EUR and paid 1 EUR fee, then the cost basis of that ETH is 11 EUR. This is where the fee is taken into account.
 
 - ``False``: The above does not happen. So if say you bought 1 ETH for 10 EUR and paid 1 EUR fee, then the cost basis of that ETH is 10 EUR. But at the time of  the trade you also have a spend event of 1 EUR as fee.
-
-
-Ledger action settings
------------------------
-
-.. image:: images/sc_accounting_ledger_action_settings.png
-   :alt: Customizing the accounting ledger action settings
-   :align: center
-
-Here you can choose which types of historical actions should be considered taxable and which not. For example in Germany airdrops are considered windfall profits and are not taxed, so you can specify that here.
 
 
 CSV Export settings
@@ -1264,32 +1252,6 @@ In the Trades page you can see a table of all your external trades. You can edit
 
 Currently rotki tracks your balance by querying the different supported protocols, exchanges and blockchains. If you manually add information about a trade your balances will not be updated since trades are not consulted when updating the accounts' balances. If you want to manually update your balance for an asset please refer to the :ref:`manual balances section <track_balances>`.
 
-.. _adding-ledgeraction:
-
-Adding ledger actions
-=====================
-
-With ledger actions you can add events that represent incomes, losses, expenses, etc. On the left sidebar click on History and then the Ledger Actions button from the dropdown menu.
-To add a ledger action click on the ``+`` button.
-You can provide a location, for example an exchange, a bank, a blockchain or others. For the action type you can select from:
-
-* Income
-* Loss
-* Donation Received
-* Expense
-* Dividends Income
-* Airdrop
-* Gift
-* Grant
-
-.. image:: images/ledger_action.png
-   :alt: Add a ledger action
-   :align: center
-
-For ledger actions you can optionally specify a rate and an asset for the rate. This is the rate linked to the asset for this action. If no rate is provided, the historical price at the date of the action is used.
-
-When generating a profit and loss report some ledger actions might be taxable in your jurisdiction and some not. To customize the list of taxable actions refer to the :ref:`ledger actions settings <ledger_action_settings>` section.
-
 Filtering trades
 ================
 
@@ -1839,7 +1801,7 @@ You can use global search provided to speed up your actions by clicking icon on 
 Some actions provided by this global search:
 
 - Navigate to any page in rotki
-- Some basic actions such as adding a new trade, or new ledger action.
+- Some basic actions such as adding a new trade.
 - Go to certain owned asset overview page.
 - Go to certain location overview page.
 
