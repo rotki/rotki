@@ -17,7 +17,6 @@ const { t } = useI18n();
       <EthStakingTaxableAfterWithdrawalSetting />
       <CostBasisMethodSetting />
     </SettingCategory>
-    <LedgerActionSettings />
     <SettingCategory>
       <template #title>
         {{ t('account_settings.csv_export_settings.title') }}

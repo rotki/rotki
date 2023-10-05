@@ -23,7 +23,7 @@
 //
 // -- This is will overwrite an existing command --
 // Cypress.Commands.overwrite("visit", (originalFn, url, options) => { ... });
-import { type ExternalLedgerAction, type ExternalTrade } from './types';
+import { type ExternalTrade } from './types';
 
 const backendUrl = Cypress.env('BACKEND_URL');
 
@@ -132,25 +132,6 @@ const addExternalTrade = (trade: ExternalTrade) =>
     })
     .its('body');
 
-const addLedgerAction = (action: ExternalLedgerAction) =>
-  cy
-    .request({
-      url: `${backendUrl}/api/1/ledgeractions`,
-      method: 'PUT',
-      body: {
-        timestamp: new Date(action.datetime).getTime() / 1000,
-        action_type: action.action_type,
-        location: action.location,
-        amount: action.amount,
-        asset: action.asset_id,
-        rate: action.rate,
-        rate_asset: action.rate_asset_id,
-        link: action.link,
-        notes: action.notes
-      }
-    })
-    .its('body');
-
 const addEtherscanKey = (key: string) =>
   cy
     .request({
@@ -171,5 +152,4 @@ Cypress.Commands.add('updateAssets', updateAssets);
 Cypress.Commands.add('disableModules', disableModules);
 Cypress.Commands.add('createAccount', createAccount);
 Cypress.Commands.add('addExternalTrade', addExternalTrade);
-Cypress.Commands.add('addLedgerAction', addLedgerAction);
 Cypress.Commands.add('addEtherscanKey', addEtherscanKey);

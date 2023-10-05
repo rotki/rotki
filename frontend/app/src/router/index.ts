@@ -131,14 +131,6 @@ const routes = setupLayouts([
           noteLocation: NoteLocation.HISTORY_EVENTS
         },
         component: () => import('../pages/history/transactions/index.vue')
-      },
-      {
-        path: Routes.HISTORY_LEDGER_ACTIONS,
-        name: 'ledger-actions',
-        meta: {
-          noteLocation: NoteLocation.HISTORY_LEDGER_ACTIONS
-        },
-        component: () => import('../pages/history/ledger-actions/index.vue')
       }
     ]
   },

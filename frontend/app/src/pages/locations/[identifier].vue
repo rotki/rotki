@@ -24,6 +24,5 @@ const location = locationData(identifier);
     <LocationAssets :identifier="identifier" />
     <ClosedTrades :location-overview="identifier" />
     <DepositsWithdrawalsContent :location-overview="identifier" />
-    <LedgerActionContent :location-overview="identifier" />
   </div>
 </template>

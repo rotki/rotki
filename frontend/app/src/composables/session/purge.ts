@@ -30,7 +30,6 @@ export const useSessionPurge = () => {
     if (exchange === ALL_CENTRALIZED_EXCHANGES) {
       resetStatus();
       resetStatus(Section.ASSET_MOVEMENT);
-      resetStatus(Section.LEDGER_ACTIONS);
     }
   };
 
