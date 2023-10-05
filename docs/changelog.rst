@@ -3,6 +3,8 @@ Changelog
 =========
 
 * :bug:`-` Aave v2 accounting for deposit interest profit and borrow payback loss should now work correctly again.
+* :bug:`-` Fix issue for some users where the datepicker field is not automatically filled with current datetime
+* :bug:`-` Fix issue with editing ledger entries whose rate is not set.
 
 * :release:`1.30.2 <2023-09-21>`
 * :feature:`-` Improved support for importing Binance CSV files.
