@@ -1,4 +1,3 @@
-m
 <script setup lang="ts">
 import { type SupportedAsset } from '@rotki/common/lib/data';
 import { type Collection } from '@/types/collection';
@@ -77,11 +76,14 @@ const editAsset = async (assetId: Nullable<string>) => {
   }
 };
 
+const { deleteCacheKey } = useAssetCacheStore();
+
 const deleteAssetHandler = async (identifier: string) => {
   try {
     const success = await deleteAsset(identifier);
     if (success) {
       await fetchData();
+      deleteCacheKey(identifier);
     }
   } catch (e: any) {
     setMessage({

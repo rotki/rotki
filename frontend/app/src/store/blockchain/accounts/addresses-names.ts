@@ -1,15 +1,19 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type MaybeRef } from '@vueuse/core';
 import {
-  AddressBookEntries,
+  type AddressBookEntries,
+  type AddressBookEntry,
   type AddressBookLocation,
+  type AddressBookRequestPayload,
   type AddressBookSimplePayload,
+  type AddressNameRequestPayload,
   type EthNames
 } from '@/types/eth-names';
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
-import { type Chains } from '@/types/asset/asset-urls';
 import { isBlockchain } from '@/types/blockchain/chains';
+import { type Collection } from '@/types/collection';
+import { type Chains } from '@/types/asset/asset-urls';
 
 export const useAddressesNamesStore = defineStore(
   'blockchains/accounts/addresses-names',
@@ -20,24 +24,17 @@ export const useAddressesNamesStore = defineStore(
     const addressesNames = ref<AddressBookEntries>([]);
     const ensNames = ref<EthNames>({});
 
-    const addressBookGlobal = ref<AddressBookEntries>([]);
-    const addressBookPrivate = ref<AddressBookEntries>([]);
-
-    const addressBookEntries = computed(() => ({
-      global: get(addressBookGlobal),
-      private: get(addressBookPrivate)
-    }));
-
     const { awaitTask } = useTaskStore();
-    const { notify } = useNotificationsStore();
     const { t } = useI18n();
+
+    const { notify } = useNotificationsStore();
 
     const {
       getEnsNames,
       getEnsNamesTask,
       getAddressesNames,
-      getAddressBook,
       ensAvatarUrl,
+      fetchAddressBook,
       addAddressBook: addAddressBookCaller,
       deleteAddressBook: deleteAddressBookCaller,
       updateAddressBook: updateAddressBookCaller
@@ -52,15 +49,6 @@ export const useAddressesNamesStore = defineStore(
     onBeforeMount(() => {
       setLastRefreshedAvatar();
     });
-
-    const getFetchedAddressesList = (
-      blockchain: MaybeRef<Blockchain | null>
-    ): ComputedRef<string[]> =>
-      computed(() =>
-        get(fetchedEntries)
-          .filter(item => item.blockchain === blockchain)
-          .map(({ address }) => address)
-      );
 
     const fetchEnsNames = async (
       payload: AddressBookSimplePayload[],
@@ -93,74 +81,13 @@ export const useAddressesNamesStore = defineStore(
           ...get(ensNames),
           ...result
         });
+        resetAddressesNames();
       } else {
         const result = await getEnsNames(filteredAddresses);
 
         set(ensNames, {
           ...get(ensNames),
           ...result
-        });
-      }
-
-      startPromise(fetchAddressesNames(payload));
-    };
-
-    const addFetchedEntries = (newEntries: AddressBookSimplePayload[]) => {
-      const arr = [...get(fetchedEntries), ...newEntries];
-      const unique = uniqueObjects(
-        arr,
-        (item: AddressBookSimplePayload) => item.address + item.blockchain
-      );
-      set(fetchedEntries, unique);
-    };
-
-    const addSavedAddressesNames = (
-      payload: AddressBookSimplePayload[],
-      newEntries: AddressBookEntries
-    ) => {
-      const filtered = get(addressesNames).filter(
-        item =>
-          !payload.some(
-            entry =>
-              item.address === entry.address &&
-              item.blockchain === entry.blockchain
-          )
-      );
-      const newAddresses = [...filtered, ...newEntries];
-      set(addressesNames, newAddresses);
-    };
-
-    const fetchAddressesNames = async (
-      payload: AddressBookSimplePayload[] | null = null
-    ): Promise<void> => {
-      if (payload) {
-        addFetchedEntries(payload);
-      } else {
-        payload = [
-          ...get(addressBookGlobal).map(item => ({
-            address: item.address,
-            blockchain: item.blockchain
-          })),
-          ...get(addressBookPrivate).map(item => ({
-            address: item.address,
-            blockchain: item.blockchain
-          })),
-          ...get(fetchedEntries)
-        ];
-      }
-
-      payload = uniqueObjects(payload, item => item.address + item.blockchain);
-
-      try {
-        const result = await getAddressesNames(payload);
-        addSavedAddressesNames(payload, AddressBookEntries.parse(result));
-      } catch (e: any) {
-        logger.error(e);
-        const message = e?.message ?? e ?? '';
-        notify({
-          title: t('alias_names.error.title'),
-          message: t('alias_names.error.message', { message }),
-          display: true
         });
       }
     };
@@ -184,56 +111,110 @@ export const useAddressesNamesStore = defineStore(
         return ensAvatarUrl(ens, get(lastRefreshedAvatar));
       });
 
+    const createKey = (address: string, blockchain: Blockchain) =>
+      `${address}#${blockchain}`;
+
+    const fetchAddressesNames = async (keys: string[]) => {
+      const payload: AddressNameRequestPayload[] = [];
+      keys.forEach(key => {
+        const [address, blockchain] = key.split('#');
+        if (isBlockchain(blockchain)) {
+          payload.push({ address, blockchain });
+        }
+      });
+
+      let result: AddressBookEntries;
+      try {
+        result = await getAddressesNames(payload);
+      } catch (e: any) {
+        logger.error(e);
+        const message = e?.message ?? e ?? '';
+        notify({
+          title: t('alias_names.error.title'),
+          message: t('alias_names.error.message', { message }),
+          display: true
+        });
+        result = [];
+      }
+
+      return function* () {
+        for (const entry of payload) {
+          const key = createKey(entry.address, entry.blockchain);
+
+          const item =
+            result.find(
+              res =>
+                res.address === entry.address &&
+                res.blockchain === entry.blockchain
+            )?.name || '';
+
+          yield { key, item };
+        }
+      };
+    };
+
+    const {
+      isPending,
+      retrieve,
+      unknown,
+      deleteCacheKey,
+      reset: resetAddressesNames
+    } = useItemCache<string>(keys => fetchAddressesNames(keys));
+
+    const getAddressesWithoutNames = (): string[] => {
+      const entries = unknown.keys();
+      return [...entries]
+        .map(entry => entry.split('#')[0])
+        .filter(uniqueStrings);
+    };
+
     const addressNameSelector = (
       address: MaybeRef<string>,
       blockchain: MaybeRef<Chains> = Blockchain.ETH
     ) =>
       computed<string | null>(() => {
-        if (!get(enableAliasNames)) {
+        const addressVal = get(address);
+        if (!get(enableAliasNames) || !isValidEthAddress(get(address))) {
           return null;
         }
 
-        let chain = get(blockchain);
+        const chain = get(blockchain);
+
         if (!isBlockchain(chain)) {
-          chain = Blockchain.ETH;
-        }
-        const addr = get(address);
-        const found = get(addressesNames).filter(
-          item =>
-            item.address === addr &&
-            (item.blockchain === chain || item.blockchain === null)
-        );
-
-        if (found.length === 0) {
           return null;
         }
-        if (found.length === 1) {
-          return found[0].name;
+
+        const key = createKey(addressVal, chain);
+
+        if (get(isPending(key))) {
+          return null;
         }
 
-        return found.find(item => item.blockchain !== null)?.name ?? null;
+        return get(retrieve(key)) || null;
       });
 
-    const updateAddressBookState = async (
-      location: AddressBookLocation,
-      result: AddressBookEntries
-    ) => {
-      if (location === 'global') {
-        set(addressBookGlobal, result);
-      } else {
-        set(addressBookPrivate, result);
-      }
+    const resetAddressNamesData = (items: AddressBookSimplePayload[]) => {
+      items.forEach(item => {
+        const chains: Blockchain[] = item.blockchain
+          ? [item.blockchain]
+          : Object.values(Blockchain);
 
-      await fetchAddressesNames();
+        chains.forEach(chain => {
+          const key = createKey(item.address, chain);
+          deleteCacheKey(key);
+        });
+      });
     };
 
-    const fetchAddressBook = async (
+    const getAddressBook = async (
       location: AddressBookLocation,
-      addresses?: string[]
-    ) => {
-      const notifyError = (error?: any) => {
-        logger.error(error);
-        const message = error?.message ?? error ?? '';
+      payload: MaybeRef<AddressBookRequestPayload>
+    ): Promise<Collection<AddressBookEntry>> => {
+      try {
+        return await fetchAddressBook(location, get(payload));
+      } catch (e: any) {
+        logger.error(e);
+        const message = e?.message ?? e ?? '';
         notify({
           title: t('address_book.actions.fetch.error.title').toString(),
           message: t('address_book.actions.fetch.error.message', {
@@ -241,12 +222,8 @@ export const useAddressesNamesStore = defineStore(
           }).toString(),
           display: true
         });
-      };
-      try {
-        const result = await getAddressBook(location, addresses);
-        await updateAddressBookState(location, result);
-      } catch (e: any) {
-        notifyError(e);
+
+        return defaultCollectionState();
       }
     };
 
@@ -257,8 +234,10 @@ export const useAddressesNamesStore = defineStore(
       const result = await addAddressBookCaller(location, entries);
 
       if (result) {
-        await fetchAddressBook(location);
+        resetAddressNamesData(entries);
       }
+
+      return result;
     };
 
     const updateAddressBook = async (
@@ -268,8 +247,10 @@ export const useAddressesNamesStore = defineStore(
       const result = await updateAddressBookCaller(location, entries);
 
       if (result) {
-        await fetchAddressBook(location);
+        resetAddressNamesData(entries);
       }
+
+      return result;
     };
 
     const deleteAddressBook = async (
@@ -279,26 +260,28 @@ export const useAddressesNamesStore = defineStore(
       const result = await deleteAddressBookCaller(location, addresses);
 
       if (result) {
-        await fetchAddressBook(location);
+        resetAddressNamesData(addresses);
       }
+
+      return result;
     };
 
     return {
       ensNames,
       fetchEnsNames,
       fetchedEntries,
-      getFetchedAddressesList,
+      getAddressesWithoutNames,
       setLastRefreshedAvatar,
       addressesNames,
       ensNameSelector,
       getEnsAvatarUrl,
       addressNameSelector,
-      addressBookEntries,
-      fetchAddressesNames,
-      fetchAddressBook,
+      getAddressBook,
       addAddressBook,
       updateAddressBook,
-      deleteAddressBook
+      deleteAddressBook,
+      resetAddressNamesData,
+      resetAddressesNames
     };
   }
 );

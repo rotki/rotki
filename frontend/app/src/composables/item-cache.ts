@@ -34,6 +34,10 @@ export const useItemCache = <T>(
     const copy = { ...get(cache) };
     delete copy[key];
     set(cache, copy);
+
+    if (unknown.has(key)) {
+      unknown.delete(key);
+    }
   };
 
   const updateCacheKey = (key: string, value: T): void => {
@@ -146,6 +150,7 @@ export const useItemCache = <T>(
 
   return {
     cache,
+    unknown,
     isPending,
     retrieve,
     reset,

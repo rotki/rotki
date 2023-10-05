@@ -15,11 +15,11 @@ import {
 
 const currentAddressNamePriorities = ref<PrioritizedListId[]>([]);
 const { addressNamePriority } = storeToRefs(useGeneralSettingsStore());
-const { fetchAddressesNames } = useAddressesNamesStore();
+const { resetAddressesNames } = useAddressesNamesStore();
 
 const finishEditing = async () => {
   resetCurrentAddressNamePriorities();
-  await fetchAddressesNames();
+  resetAddressesNames();
 };
 
 const resetCurrentAddressNamePriorities = () => {

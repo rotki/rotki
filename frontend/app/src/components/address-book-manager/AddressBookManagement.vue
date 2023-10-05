@@ -1,15 +1,16 @@
 <script setup lang="ts">
-import { Blockchain } from '@rotki/common/lib/blockchain';
+import { type Blockchain } from '@rotki/common/lib/blockchain';
 import { type Ref } from 'vue';
 import {
   type AddressBookEntry,
   type AddressBookLocation,
-  type AddressBookPayload
+  type AddressBookPayload,
+  type AddressBookRequestPayload
 } from '@/types/eth-names';
+import { type Collection } from '@/types/collection';
+import { type Filters, type Matcher } from '@/composables/filters/address-book';
 
-const search: Ref<string> = ref('');
-const pendingSearch: Ref<string> = ref('');
-const selectedChain: Ref<Blockchain> = ref(Blockchain.ETH);
+const selectedChain: Ref<Blockchain | null> = ref(null);
 const enableForAllChains: Ref<boolean> = ref(false);
 
 const tab = ref<number>(0);
@@ -53,27 +54,8 @@ const resetForm = function () {
 const editMode = ref<boolean>(false);
 const formPayload = ref<AddressBookPayload>(emptyForm());
 
-const {
-  isPending: isTimeoutPending,
-  start,
-  stop
-} = useTimeoutFn(
-  () => {
-    set(search, get(pendingSearch));
-  },
-  600,
-  { immediate: false }
-);
-
-const onSearchTermChange = (term: string | null) => {
-  set(pendingSearch, term || '');
-  if (get(isTimeoutPending)) {
-    stop();
-  }
-  start();
-};
-
-const { addAddressBook, updateAddressBook } = useAddressesNamesStore();
+const { getAddressBook, addAddressBook, updateAddressBook } =
+  useAddressesNamesStore();
 const { setMessage } = useMessageStore();
 
 const save = async () => {
@@ -98,6 +80,7 @@ const save = async () => {
     }
 
     closeDialog();
+    await fetchData();
     return true;
   } catch (e: any) {
     const values = { message: e.message };
@@ -117,6 +100,43 @@ const save = async () => {
 };
 
 setSubmitFunc(save);
+
+const {
+  filters,
+  matchers,
+  state,
+  isLoading,
+  options,
+  fetchData,
+  setOptions,
+  setFilter,
+  setPage
+} = usePaginationFilters<
+  AddressBookEntry,
+  AddressBookRequestPayload,
+  AddressBookEntry,
+  Collection<AddressBookEntry>,
+  Filters,
+  Matcher
+>(
+  null,
+  true,
+  useAddressBookFilter,
+  filter => getAddressBook(get(location), filter),
+  {
+    extraParams: computed(() => ({
+      blockchain: get(selectedChain)
+    }))
+  }
+);
+
+onMounted(async () => {
+  await fetchData();
+});
+
+watch(location, async () => {
+  await fetchData();
+});
 </script>
 
 <template>
@@ -139,35 +159,21 @@ setSubmitFunc(save);
           evm-only
           :model-value="selectedChain"
           hide-details
-          class="flex-1 max-w-full md:max-w-[22rem]"
+          class="flex-1 max-w-full md:max-w-[15rem]"
           dense
           @update:model-value="selectedChain = $event"
         />
-        <RuiTextField
-          :value="pendingSearch"
-          hide-details
-          prepend-icon
-          class="flex-1 max-w-full md:max-w-[22rem]"
-          dense
-          :label="t('common.actions.filter')"
-          variant="outlined"
-          @input="onSearchTermChange($event)"
-        >
-          <template v-if="isTimeoutPending" #append>
-            <div class="flex flex-row items-center">
-              <RuiProgress
-                variant="indeterminate"
-                circular
-                size="20"
-                thickness="3"
-                color="primary"
-              />
-            </div>
-          </template>
-        </RuiTextField>
+
+        <div class="max-w-[25rem]">
+          <TableFilter
+            :matchers="matchers"
+            :matches="filters"
+            @update:matches="setFilter($event)"
+          />
+        </div>
       </div>
 
-      <div class="flex flex-row gap-2">
+      <div class="flex flex-row items-end gap-2">
         <RuiTabs v-model="tab" color="primary">
           <RuiTab v-for="loc in locations" :key="loc" class="capitalize">
             {{ loc }}
@@ -178,14 +184,19 @@ setSubmitFunc(save);
 
       <RuiTabItems v-model="tab">
         <RuiTabItem v-for="loc in locations" :key="loc">
-          <AddressBookTable
-            :location="loc"
-            :blockchain="selectedChain"
-            :search="search"
-            @edit="openForm($event)"
-          >
-            {{ loc }}
-          </AddressBookTable>
+          <template #default>
+            <AddressBookTable
+              :collection="state"
+              :location="loc"
+              :loading="isLoading"
+              :options="options"
+              :blockchain="selectedChain"
+              @edit="openForm($event)"
+              @update:page="setPage($event)"
+              @update:options="setOptions($event)"
+              @refresh="fetchData()"
+            />
+          </template>
         </RuiTabItem>
       </RuiTabItems>
     </RuiCard>

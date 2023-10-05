@@ -302,6 +302,7 @@ declare global {
   const useAccountMigrationStore: typeof import('./store/blockchain/accounts/migrate')['useAccountMigrationStore']
   const useAccountingSettingsStore: typeof import('./store/settings/accounting')['useAccountingSettingsStore']
   const useActiveElement: typeof import('@vueuse/core')['useActiveElement']
+  const useAddressBookFilter: typeof import('./composables/filters/address-book')['useAddressBookFilter']
   const useAddressBookForm: typeof import('./composables/address-book/form')['useAddressBookForm']
   const useAddressesNamesApi: typeof import('./composables/api/blockchain/addresses-names')['useAddressesNamesApi']
   const useAddressesNamesStore: typeof import('./store/blockchain/accounts/addresses-names')['useAddressesNamesStore']
@@ -1006,6 +1007,7 @@ declare module 'vue' {
     readonly useAccountMigrationStore: UnwrapRef<typeof import('./store/blockchain/accounts/migrate')['useAccountMigrationStore']>
     readonly useAccountingSettingsStore: UnwrapRef<typeof import('./store/settings/accounting')['useAccountingSettingsStore']>
     readonly useActiveElement: UnwrapRef<typeof import('@vueuse/core')['useActiveElement']>
+    readonly useAddressBookFilter: UnwrapRef<typeof import('./composables/filters/address-book')['useAddressBookFilter']>
     readonly useAddressBookForm: UnwrapRef<typeof import('./composables/address-book/form')['useAddressBookForm']>
     readonly useAddressesNamesApi: UnwrapRef<typeof import('./composables/api/blockchain/addresses-names')['useAddressesNamesApi']>
     readonly useAddressesNamesStore: UnwrapRef<typeof import('./store/blockchain/accounts/addresses-names')['useAddressesNamesStore']>
@@ -1703,6 +1705,7 @@ declare module '@vue/runtime-core' {
     readonly useAccountMigrationStore: UnwrapRef<typeof import('./store/blockchain/accounts/migrate')['useAccountMigrationStore']>
     readonly useAccountingSettingsStore: UnwrapRef<typeof import('./store/settings/accounting')['useAccountingSettingsStore']>
     readonly useActiveElement: UnwrapRef<typeof import('@vueuse/core')['useActiveElement']>
+    readonly useAddressBookFilter: UnwrapRef<typeof import('./composables/filters/address-book')['useAddressBookFilter']>
     readonly useAddressBookForm: UnwrapRef<typeof import('./composables/address-book/form')['useAddressBookForm']>
     readonly useAddressesNamesApi: UnwrapRef<typeof import('./composables/api/blockchain/addresses-names')['useAddressesNamesApi']>
     readonly useAddressesNamesStore: UnwrapRef<typeof import('./store/blockchain/accounts/addresses-names')['useAddressesNamesStore']>

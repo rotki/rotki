@@ -705,6 +705,7 @@
     "ExtractDefaultPropTypes": true,
     "ExtractPropTypes": true,
     "ExtractPublicPropTypes": true,
-    "useAirdropsMetadata": true
+    "useAirdropsMetadata": true,
+    "useAddressBookFilter": true
   }
 }

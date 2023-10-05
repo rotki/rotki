@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { helpers, required } from '@vuelidate/validators';
-import { type ComputedRef } from 'vue';
 import {
   type AddressBookLocation,
   type AddressBookPayload
@@ -29,11 +28,9 @@ const { t } = useI18n();
 const { value, enableForAllChains } = toRefs(props);
 
 const addressesNamesStore = useAddressesNamesStore();
-const { getFetchedAddressesList } = addressesNamesStore;
+const { getAddressesWithoutNames } = addressesNamesStore;
 
-const addressSuggestions: ComputedRef<string[]> = computed(() =>
-  get(getFetchedAddressesList(get(value).blockchain))
-);
+const addressSuggestions = getAddressesWithoutNames();
 
 const input = (payload: Partial<AddressBookPayload>) => {
   emit('input', { ...get(value), ...payload });

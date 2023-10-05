@@ -1,12 +1,17 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
+import flushPromises from 'flush-promises';
+import {
+  type AddressBookEntry,
+  type AddressBookSimplePayload
+} from '@/types/eth-names';
+import { type Collection } from '@/types/collection';
 import { FrontendSettings } from '@/types/frontend-settings';
-import { type AddressBookSimplePayload } from '@/types/eth-names';
 
 vi.mock('@/composables/api/blockchain/addresses-names', () => ({
   useAddressesNamesApi: vi.fn().mockReturnValue({
     getEnsNamesTask: vi.fn().mockResolvedValue(1),
     getEnsNames: vi.fn().mockResolvedValue([]),
-    getAddressBook: vi.fn().mockResolvedValue([]),
+    fetchAddressBook: vi.fn().mockResolvedValue(defaultCollectionState()),
     addAddressBook: vi.fn().mockResolvedValue(true),
     updateAddressBook: vi.fn().mockResolvedValue(true),
     deleteAddressBook: vi.fn().mockResolvedValue(true),
@@ -32,6 +37,7 @@ describe('store::blockchain/accounts/addresses-names', () => {
   let api: ReturnType<typeof useAddressesNamesApi>;
 
   beforeEach(() => {
+    vi.useFakeTimers();
     store = useAddressesNamesStore();
     api = useAddressesNamesApi();
     vi.clearAllMocks();
@@ -56,7 +62,6 @@ describe('store::blockchain/accounts/addresses-names', () => {
       expect(api.getEnsNames).toHaveBeenCalledWith(
         addresses.map(({ address }) => address)
       );
-      expect(api.getAddressesNames).toHaveBeenCalledOnce();
     });
 
     test('with same addresses, forceUpdate=true', async () => {
@@ -65,7 +70,6 @@ describe('store::blockchain/accounts/addresses-names', () => {
       expect(api.getEnsNamesTask).toHaveBeenCalledWith(
         addresses.map(({ address }) => address)
       );
-      expect(api.getAddressesNames).toHaveBeenCalledOnce();
     });
 
     test('filter invalid addresses, forceUpdate=true', async () => {
@@ -77,13 +81,17 @@ describe('store::blockchain/accounts/addresses-names', () => {
       expect(api.getEnsNamesTask).toHaveBeenCalledWith(
         addresses.map(({ address }) => address)
       );
-      expect(api.getAddressesNames).toHaveBeenCalledOnce();
     });
   });
 
   describe('fetchAddressBook', () => {
-    const addresses = ['0x4585FE77225b41b697C938B01232131231231233'];
-    const addressesWithEns = [
+    const address = ['0x4585FE77225b41b697C938B01232131231231233'];
+    const payload = {
+      address,
+      limit: 10,
+      offset: 0
+    };
+    const addressesWithEns: AddressBookEntry[] = [
       {
         address: '0x4585FE77225b41b697C938B01232131231231233',
         name: 'test.eth',
@@ -91,28 +99,31 @@ describe('store::blockchain/accounts/addresses-names', () => {
       }
     ];
 
+    const collection: Collection<AddressBookEntry> = {
+      data: addressesWithEns,
+      limit: 0,
+      found: 1,
+      total: 1
+    };
+
     test('location=global', async () => {
-      const { addressBookEntries } = storeToRefs(store);
+      vi.mocked(api.fetchAddressBook).mockResolvedValue(collection);
 
-      vi.mocked(api.getAddressBook).mockResolvedValue(addressesWithEns);
+      const result = await store.getAddressBook('global', payload);
 
-      await store.fetchAddressBook('global', addresses);
+      expect(api.fetchAddressBook).toHaveBeenCalledWith('global', payload);
 
-      expect(api.getAddressBook).toHaveBeenCalledWith('global', addresses);
-
-      expect(get(addressBookEntries).global).toEqual(addressesWithEns);
+      expect(result).toEqual(collection);
     });
 
-    test('location=private', async () => {
-      const { addressBookEntries } = storeToRefs(store);
+    test('location=global', async () => {
+      vi.mocked(api.fetchAddressBook).mockResolvedValue(collection);
 
-      vi.mocked(api.getAddressBook).mockResolvedValue(addressesWithEns);
+      const result = await store.getAddressBook('private', payload);
 
-      await store.fetchAddressBook('private', addresses);
+      expect(api.fetchAddressBook).toHaveBeenCalledWith('private', payload);
 
-      expect(api.getAddressBook).toHaveBeenCalledWith('private', addresses);
-
-      expect(get(addressBookEntries).private).toEqual(addressesWithEns);
+      expect(result).toEqual(collection);
     });
   });
 
@@ -175,34 +186,7 @@ describe('store::blockchain/accounts/addresses-names', () => {
     });
   });
 
-  const addresses: AddressBookSimplePayload[] = [
-    {
-      address: '0x4585FE77225b41b697C938B01232131231231233',
-      blockchain: Blockchain.ETH
-    },
-    {
-      address: '0x4585FE77225b41b697C938B01232131231231231',
-      blockchain: Blockchain.ETH
-    }
-  ];
-
-  describe('fetchAddressesNames', () => {
-    const addressesWithEthNames = [
-      {
-        address: '0x4585FE77225b41b697C938B01232131231231233',
-        name: 'test_name',
-        blockchain: Blockchain.ETH
-      }
-    ];
-
-    const addressesWithEns = [
-      {
-        address: '0x4585FE77225b41b697C938B01232131231231231',
-        name: 'test1.eth',
-        blockchain: Blockchain.ETH
-      }
-    ];
-
+  describe('addressNameSelector', () => {
     const mockedResult = [
       {
         address: '0x4585FE77225b41b697C938B01232131231231233',
@@ -216,94 +200,72 @@ describe('store::blockchain/accounts/addresses-names', () => {
       }
     ];
 
-    test('default', async () => {
-      vi.mocked(api.getAddressBook).mockResolvedValue(addressesWithEns);
+    test('enableAliasNames=true', async () => {
+      useFrontendSettingsStore().update({
+        ...FrontendSettings.parse({}),
+        enableAliasNames: true
+      });
+
       vi.mocked(api.getAddressesNames).mockResolvedValue(mockedResult);
+      const firstAddressName = store.addressNameSelector(
+        '0x4585FE77225b41b697C938B01232131231231233'
+      );
 
-      const { addressesNames } = storeToRefs(store);
+      const secondAddressName = store.addressNameSelector(
+        '0x4585FE77225b41b697C938B01232131231231231'
+      );
 
-      await store.updateAddressBook('global', addressesWithEthNames);
-      await store.updateAddressBook('private', addressesWithEthNames);
+      expect(get(firstAddressName)).toEqual(null);
+      expect(get(secondAddressName)).toEqual(null);
 
-      await store.fetchEnsNames(addresses);
+      vi.advanceTimersByTime(2500);
+      await flushPromises();
 
-      expect(api.getAddressesNames).toHaveBeenCalledWith([
-        {
-          address: '0x4585FE77225b41b697C938B01232131231231233',
-          blockchain: Blockchain.ETH
-        },
-        {
-          address: '0x4585FE77225b41b697C938B01232131231231231',
-          blockchain: Blockchain.ETH
-        }
-      ]);
+      expect(api.getAddressesNames).toHaveBeenCalledOnce();
 
-      expect(get(addressesNames)).toMatchObject(mockedResult);
-    });
-  });
-
-  describe('addressNameSelector', () => {
-    test('enableAliasNames=true', () => {
-      expect(
-        get(
-          store.addressNameSelector(
-            '0x4585FE77225b41b697C938B01232131231231233'
-          )
-        )
-      ).toEqual('test_name');
-
-      expect(
-        get(
-          store.addressNameSelector(
-            '0x4585FE77225b41b697C938B01232131231231231'
-          )
-        )
-      ).toEqual('test1.eth');
+      expect(get(firstAddressName)).toEqual('test_name');
+      expect(get(secondAddressName)).toEqual('test1.eth');
     });
 
-    test('enableAliasNames=false', () => {
+    test('use the value from cache if addresses names has been fetched before', async () => {
+      const firstAddressName = store.addressNameSelector(
+        '0x4585FE77225b41b697C938B01232131231231233'
+      );
+
+      const secondAddressName = store.addressNameSelector(
+        '0x4585FE77225b41b697C938B01232131231231231'
+      );
+
+      vi.advanceTimersByTime(2500);
+      await flushPromises();
+
+      expect(api.getAddressesNames).not.toHaveBeenCalled();
+
+      expect(get(firstAddressName)).toEqual('test_name');
+      expect(get(secondAddressName)).toEqual('test1.eth');
+    });
+
+    test('enableAliasNames=false', async () => {
       useFrontendSettingsStore().update({
         ...FrontendSettings.parse({}),
         enableAliasNames: false
       });
 
-      expect(
-        get(
-          store.addressNameSelector(
-            '0x4585FE77225b41b697C938B01232131231231233'
-          )
-        )
-      ).toEqual(null);
+      const firstAddressName = store.addressNameSelector(
+        '0x4585FE77225b41b697C938B01232131231231233'
+      );
 
-      expect(
-        get(
-          store.addressNameSelector(
-            '0x4585FE77225b41b697C938B01232131231231231'
-          )
-        )
-      ).toEqual(null);
+      const secondAddressName = store.addressNameSelector(
+        '0x4585FE77225b41b697C938B01232131231231231'
+      );
+
+      vi.advanceTimersByTime(2500);
+      await flushPromises();
+
+      expect(api.getAddressesNames).not.toHaveBeenCalled();
+
+      expect(get(firstAddressName)).toEqual(null);
+      expect(get(secondAddressName)).toEqual(null);
     });
-  });
-
-  test('should remove stored names when no alias name is found for the addresses', async () => {
-    vi.mocked(api.getAddressBook).mockResolvedValue([]);
-    vi.mocked(api.getAddressesNames).mockResolvedValue([]);
-
-    const { addressesNames } = storeToRefs(store);
-
-    await store.fetchEnsNames(addresses);
-
-    expect(api.getAddressesNames).toHaveBeenCalledWith([
-      {
-        address: '0x4585FE77225b41b697C938B01232131231231233',
-        blockchain: Blockchain.ETH
-      },
-      {
-        address: '0x4585FE77225b41b697C938B01232131231231231',
-        blockchain: Blockchain.ETH
-      }
-    ]);
-
-    expect(get(addressesNames)).toMatchObject([]);
   });
 });
