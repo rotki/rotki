@@ -631,7 +631,7 @@ const onSkippedExternalEventsReprocessed = async () => {
       </RuiTooltip>
       <RuiButton
         color="primary"
-        data-cy="ledger-actions__add"
+        data-cy="history-events__add"
         @click="addTransactionHash()"
       >
         <template #prepend>

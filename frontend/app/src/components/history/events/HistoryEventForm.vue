@@ -53,7 +53,7 @@ const isCurrentCurrencyUsd: ComputedRef<boolean> = computed(
 );
 
 const lastLocation = useLocalStorage(
-  'rotki.ledger_action.location',
+  'rotki.history_event.location',
   TRADE_LOCATION_EXTERNAL
 );
 
