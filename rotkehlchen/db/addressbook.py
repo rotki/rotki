@@ -168,12 +168,18 @@ class DBAddressbook:
             chain_address: OptionalChainAddress,
     ) -> Optional[str]:
         """
-        Returns the name for the specified address and blockchain or None if either there is
-        no name set or the pair (address, blockchain) doesn't exist in the database.
+        Returns the name for the specified address and blockchain.
+        It will search for the pair of address and the exact blockchain.
+        If it's not found, it will search for the pair of address
+        with blockchain=NULL (meaning, for all EVM chains).
+        Otherwise, it will return None.
+
+        The `ORDER BY` part on the query is to prioritize the one with exact blockchain
+        instead the NULL one.
         """
         with self.read_ctx(book_type) as read_cursor:
             query = read_cursor.execute(
-                'SELECT name FROM address_book WHERE address=? AND blockchain IS ?',
+                'SELECT name FROM address_book WHERE address=? AND (blockchain IS ? OR blockchain IS null) ORDER BY blockchain DESC',  # noqa: E501
                 (chain_address.address, chain_address.blockchain.value if chain_address.blockchain is not None else None),  # noqa: E501
             )
             result = query.fetchone()
