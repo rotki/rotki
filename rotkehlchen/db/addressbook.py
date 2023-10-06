@@ -169,13 +169,13 @@ class DBAddressbook:
     ) -> Optional[str]:
         """
         Returns the name for the specified address and blockchain.
-        It will search for the pair of address and the exact blockchain.
+        It will search for the pair of address and the exact blockchain (or null).
         If it's not found, it will search for the pair of address
-        with blockchain=NULL (meaning, for all EVM chains).
+        with blockchain=NULL (meaning, for all chains).
         Otherwise, it will return None.
 
         The `ORDER BY` part on the query is to prioritize the one with exact blockchain
-        instead the NULL one.
+        instead of the NULL one.
         """
         with self.read_ctx(book_type) as read_cursor:
             query = read_cursor.execute(
