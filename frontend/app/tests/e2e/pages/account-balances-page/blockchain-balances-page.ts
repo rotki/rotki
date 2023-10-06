@@ -1,7 +1,8 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { Zero, bigNumberify } from '@/utils/bignumbers';
+import { BigNumber } from '@rotki/common';
 import { setCheckBox, waitForAsyncQuery } from '../../support/utils';
-import { AccountBalancesPage } from './index';
+import { RotkiApp } from '../rotki-app';
+import { updateLocationBalance } from '../../utils/amounts';
 
 export interface FixtureBlockchainBalance {
   readonly blockchain: Blockchain;
@@ -12,10 +13,9 @@ export interface FixtureBlockchainBalance {
   readonly tags: string[];
 }
 
-export class BlockchainBalancesPage extends AccountBalancesPage {
-  page = new AccountBalancesPage();
+export class BlockchainBalancesPage {
   visit() {
-    this.page.visit('accounts-balances-blockchain');
+    RotkiApp.navigateTo('accounts-balances', 'accounts-balances-blockchain');
   }
 
   isGroupped(balance: FixtureBlockchainBalance) {
@@ -25,8 +25,10 @@ export class BlockchainBalancesPage extends AccountBalancesPage {
   addBalance(balance: FixtureBlockchainBalance) {
     cy.get('[data-cy=bottom-dialog]').should('be.visible');
     cy.get('[data-cy="blockchain-balance-form"]').should('be.visible');
-    cy.get('[data-cy="account-blockchain-field"]').parent().click();
-    cy.get('.v-menu__content').contains(balance.chainName).click();
+    cy.get('[data-cy="account-blockchain-field"]').type(
+      `{selectall}{backspace}${balance.chainName}`
+    );
+    cy.get('[data-cy="account-blockchain-field"]').type('{enter}');
     cy.get('[data-cy="input-mode-manual"]').click();
 
     if (balance.blockchain === Blockchain.ETH) {
@@ -60,7 +62,7 @@ export class BlockchainBalancesPage extends AccountBalancesPage {
   isEntryVisible(position: number, balance: FixtureBlockchainBalance) {
     // account balances card section for particular blockchain type should be visible
     // sometime the table need long time to be loaded
-    cy.get(`[data-cy="blockchain-balances-${balance.blockchain}"]`, {
+    cy.get(`[data-cy=account-table][data-location=${balance.blockchain}]`, {
       timeout: 120000
     }).as('blockchain-section');
 
@@ -70,7 +72,7 @@ export class BlockchainBalancesPage extends AccountBalancesPage {
       .should('not.exist');
 
     cy.get('@blockchain-section')
-      .find('[data-cy="blockchain-balances"] tbody')
+      .find('tbody')
       .find('tr')
       .eq(position + (this.isGroupped(balance) ? 0 : 1))
       .as('row');
@@ -104,40 +106,62 @@ export class BlockchainBalancesPage extends AccountBalancesPage {
     cy.get('@address-label').trigger('mouseleave');
   }
 
-  getBlockchainBalances() {
-    const blockchainBalances = [
-      { blockchain: 'Ethereum', symbol: Blockchain.ETH, value: Zero },
-      { blockchain: 'Bitcoin', symbol: Blockchain.BTC, value: Zero }
-    ];
+  private getBalances() {
+    const balances: Map<string, BigNumber> = new Map();
 
     cy.get('[data-cy=blockchain-asset-balances] .v-data-table__empty-wrapper', {
       timeout: 300000
     }).should('not.exist');
 
-    blockchainBalances.forEach(blockchainBalance => {
-      const tableClass = `[data-cy="blockchain-balances-${blockchainBalance.symbol}"]`;
-      cy.get(tableClass).scrollIntoView();
-      cy.get('body').then($body => {
-        if ($body.find(tableClass).length > 0) {
-          cy.get(`${tableClass} .v-data-table__progress`, {
-            timeout: 240000
-          }).should('not.be.exist');
+    cy.get('[data-cy=account-table]').each($element =>
+      this.updateTableBalance($element, balances)
+    );
 
-          cy.get(
-            `${tableClass} tr:contains(${blockchainBalance.symbol.toUpperCase()}) td:nth-child(4) [data-cy="display-amount"]`,
-            {
-              timeout: 120000
-            }
-          ).each($amount => {
-            blockchainBalance.value = blockchainBalance.value.plus(
-              bigNumberify(this.getSanitizedAmountString($amount.text()))
-            );
-          });
-        }
+    return cy.wrap(balances);
+  }
+
+  getTotals() {
+    return this.getBalances().then($balances => {
+      let total = new BigNumber(0);
+      const balances: { blockchain: string; value: BigNumber }[] = [];
+
+      $balances.forEach((value, blockchain) => {
+        total = total.plus(value.toFixed(2, BigNumber.ROUND_DOWN));
+        balances.push({ blockchain, value });
+      });
+
+      return cy.wrap({
+        total,
+        balances
       });
     });
+  }
 
-    return cy.wrap(blockchainBalances);
+  private updateTableBalance(
+    $element: JQuery<HTMLElement>,
+    balances: Map<string, BigNumber>
+  ) {
+    const blockchain = $element.attr('data-location');
+
+    if (!blockchain) {
+      cy.log('missing blockchain');
+      return true;
+    }
+
+    cy.wrap($element).as(`${blockchain}-table`);
+    cy.get(`@${blockchain}-table`).scrollIntoView();
+    cy.get(`@${blockchain}-table`)
+      .find('.v-data-table__progress', {
+        timeout: 240000
+      })
+      .should('not.be.exist');
+
+    const amount = $element
+      .find(
+        `tr:contains(${blockchain.toUpperCase()}) td:nth-child(4) [data-cy="display-amount"]`
+      )
+      .text();
+    updateLocationBalance(amount, balances, blockchain);
   }
 
   editBalance(
@@ -145,7 +169,7 @@ export class BlockchainBalancesPage extends AccountBalancesPage {
     position: number,
     label: string
   ) {
-    cy.get(`[data-cy="blockchain-balances-${balance.blockchain}"] tbody`)
+    cy.get(`[data-cy=account-table][data-location=${balance.blockchain}] tbody`)
       .find('tr')
       .eq(position + (this.isGroupped(balance) ? 0 : 1))
       .find('button.actions__edit')
@@ -165,19 +189,19 @@ export class BlockchainBalancesPage extends AccountBalancesPage {
   }
 
   deleteBalance(balance: FixtureBlockchainBalance, position: number) {
-    cy.get(`[data-cy="blockchain-balances-${balance.blockchain}"] tbody`)
+    cy.get(`[data-cy=account-table][data-location=${balance.blockchain}] tbody`)
       .find('tr')
       .eq(position + (this.isGroupped(balance) ? 0 : 1))
       .find('[data-cy="account-balances-item-checkbox"]')
       .click();
 
-    cy.get(`[data-cy="blockchain-balances-${balance.blockchain}"]`)
+    cy.get(`[data-cy=account-balances][data-location=${balance.blockchain}]`)
       .find('[data-cy="account-balances__delete-button"]')
       .click();
 
     this.confirmDelete();
 
-    cy.get(`[data-cy="blockchain-balances-${balance.blockchain}"]`, {
+    cy.get(`[data-cy=account-table][data-location=${balance.blockchain}]`, {
       timeout: 120000
     }).should('not.be.exist');
   }

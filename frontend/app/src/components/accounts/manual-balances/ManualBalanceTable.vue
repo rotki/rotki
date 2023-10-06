@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import {
+  type DataTableColumn,
+  type DataTableSortColumn
+} from '@rotki/ui-library-compat/components';
 import { type ManualBalance } from '@/types/manual-balances';
 
 const props = withDefaults(
@@ -10,12 +14,21 @@ const props = withDefaults(
   { loading: false }
 );
 
-const emit = defineEmits(['refresh', 'edit']);
+const emit = defineEmits<{
+  (e: 'refresh'): void;
+  (e: 'edit', value: ManualBalance): void;
+}>();
 
 const { t } = useI18n();
 
 const { balances } = toRefs(props);
+
 const onlyTags = ref<string[]>([]);
+const sort = ref<DataTableSortColumn>({
+  column: 'usdValue',
+  direction: 'desc'
+});
+
 const refresh = () => {
   emit('refresh');
 };
@@ -59,46 +72,49 @@ const total = computed(() =>
 const getRowClass = (item: ManualBalance) =>
   `manual-balance__location__${item.location}`;
 
-const headers = computed(() => [
+const cols = computed<DataTableColumn[]>(() => [
   {
-    text: t('common.location').toString(),
-    value: 'location',
-    align: 'center',
+    label: t('common.location'),
+    key: 'location',
+    align: 'start',
     width: '120px'
   },
   {
-    text: t('manual_balances_table.columns.label').toString(),
-    value: 'label'
+    label: t('manual_balances_table.columns.label'),
+    key: 'label'
   },
   {
-    text: t('common.asset').toString(),
-    value: 'asset',
+    label: t('common.asset'),
+    key: 'asset',
+    sortable: true,
     width: '200'
   },
   {
-    text: t('common.price_in_symbol', {
+    label: t('common.price_in_symbol', {
       symbol: get(currencySymbol)
-    }).toString(),
-    value: 'usdPrice',
+    }),
+    key: 'usdPrice',
+    sortable: true,
     align: 'end'
   },
   {
-    text: t('common.amount').toString(),
-    value: 'amount',
+    label: t('common.amount'),
+    key: 'amount',
+    sortable: true,
     align: 'end'
   },
   {
-    text: t('common.value_in_symbol', {
+    label: t('common.value_in_symbol', {
       symbol: get(currencySymbol)
-    }).toString(),
-    value: 'usdValue',
+    }),
+    key: 'usdValue',
+    sortable: true,
     align: 'end'
   },
   {
-    text: t('manual_balances_table.columns.actions').toString(),
-    value: 'actions',
-    align: 'center',
-    sortable: false,
+    label: t('manual_balances_table.columns.actions'),
+    key: 'actions',
+    align: 'start',
     width: '50'
   }
 ]);
@@ -117,128 +133,110 @@ const showDeleteConfirmation = (id: number) => {
 </script>
 
 <template>
-  <Card class="manual-balances" :class="$style.table">
-    <template #title>
-      <RefreshButton
-        :loading="loading"
-        :tooltip="t('manual_balances_table.refresh.tooltip')"
-        @refresh="refresh()"
-      />
-      <span>
-        {{ title }}
-      </span>
+  <RuiCard class="manual-balances">
+    <template #custom-header>
+      <div class="px-4 pt-4">
+        <div class="flex flex-row items-center flex-wrap">
+          <RefreshButton
+            :loading="loading"
+            :tooltip="t('manual_balances_table.refresh.tooltip')"
+            @refresh="refresh()"
+          />
+          <span class="text-h6">
+            {{ title }}
+          </span>
+          <div class="grow" />
+          <TagFilter v-model="onlyTags" class="max-w-sm" hide-details />
+        </div>
+      </div>
     </template>
-    <template #actions>
-      <VRow no-gutters justify="end">
-        <VCol cols="12" md="6" lg="4">
-          <TagFilter v-model="onlyTags" />
-        </VCol>
-      </VRow>
-    </template>
-    <DataTable
+    <RuiDataTable
+      outlined
       :loading="loading"
-      :headers="headers"
-      :items="visibleBalances"
+      :cols="cols"
+      :rows="visibleBalances"
+      :sort="sort"
       :item-class="getRowClass"
       class="manual-balances-list"
       sort-by="usdValue"
+      @update:sort="sort = $event"
     >
-      <template #item.label="{ item }">
+      <template #item.label="{ row }">
         <div
           class="font-medium"
           data-cy="label"
           :class="{
-            'pt-0': !item.tags,
-            [$style.label]: true
+            'pt-0': !row.tags,
+            '!pb-0': true
           }"
         >
-          {{ item.label }}
+          {{ row.label }}
         </div>
         <div>
-          <TagDisplay :tags="item.tags" :small="true" />
+          <TagDisplay :tags="row.tags" :small="true" />
         </div>
       </template>
-      <template #item.asset="{ item }">
-        <AssetDetails opens-details :asset="item.asset" />
+      <template #item.asset="{ row }">
+        <AssetDetails opens-details :asset="row.asset" />
       </template>
-      <template #item.usdPrice="{ item }">
+      <template #item.usdPrice="{ row }">
         <AmountDisplay
-          v-if="item.usdPrice && item.usdPrice.gte(0)"
+          v-if="row.usdPrice && row.usdPrice.gte(0)"
           no-scramble
           show-currency="symbol"
-          :price-asset="item.asset"
-          :price-of-asset="item.usdPrice"
+          :price-asset="row.asset"
+          :price-of-asset="row.usdPrice"
           fiat-currency="USD"
-          :value="item.usdPrice"
+          :value="row.usdPrice"
         />
         <div v-else class="flex justify-end">
           <VSkeletonLoader width="70" type="text" />
         </div>
       </template>
-      <template #item.amount="{ item }">
-        <AmountDisplay
-          class="manual-balances-list__amount"
-          :value="item.amount"
-        />
+      <template #item.amount="{ row }">
+        <AmountDisplay data-cy="manual-balances__amount" :value="row.amount" />
       </template>
-      <template #item.usdValue="{ item }">
+      <template #item.usdValue="{ row }">
         <AmountDisplay
           show-currency="symbol"
-          :amount="item.amount"
-          :price-asset="item.asset"
-          :price-of-asset="item.usdPrice"
+          :amount="row.amount"
+          :price-asset="row.asset"
+          :price-of-asset="row.usdPrice"
           fiat-currency="USD"
-          :value="item.usdValue"
+          :value="row.usdValue"
         />
       </template>
-      <template #item.location="{ item }">
+      <template #item.location="{ row }">
         <LocationDisplay
-          class="manual-balances-list__location"
-          :identifier="item.location"
-          :data-cy="`manual-balances__location__${item.location}`"
+          :identifier="row.location"
+          data-cy="manual-balances__location"
         />
       </template>
-      <template #item.actions="{ item }">
+      <template #item.actions="{ row }">
         <RowActions
           :edit-tooltip="t('manual_balances_table.edit_tooltip')"
           :delete-tooltip="t('manual_balances_table.delete_tooltip')"
-          @edit-click="edit(item)"
-          @delete-click="showDeleteConfirmation(item.id)"
+          @edit-click="edit(row)"
+          @delete-click="showDeleteConfirmation(row.id)"
         />
       </template>
-      <template v-if="visibleBalances.length > 0" #body.append="{ isMobile }">
-        <RowAppend
-          label-colspan="5"
-          :label="t('common.total')"
-          :is-mobile="isMobile"
-          :right-patch-colspan="1"
-        >
+      <template v-if="visibleBalances.length > 0" #body.append>
+        <RowAppend :label-colspan="5" :right-patch-colspan="1">
+          <template #label>
+            <span class="p-4">
+              {{ t('common.total') }}
+            </span>
+          </template>
+
           <AmountDisplay
             show-currency="symbol"
-            class="manual-balances-list__amount"
+            class="p-4"
             :fiat-currency="currencySymbol"
+            data-cy="manual-balances__amount"
             :value="total"
           />
         </RowAppend>
       </template>
-    </DataTable>
-  </Card>
+    </RuiDataTable>
+  </RuiCard>
 </template>
-
-<style module lang="scss">
-.label {
-  padding-bottom: 0 !important;
-}
-
-.table {
-  :global {
-    th {
-      &:first-child {
-        span {
-          padding-left: 16px;
-        }
-      }
-    }
-  }
-}
-</style>

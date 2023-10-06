@@ -28,7 +28,7 @@ const emit = defineEmits<{
         color="primary"
         @click="emit('refresh')"
       >
-        <RuiIcon name="restart-line" />
+        <RuiIcon name="refresh-line" />
       </RuiButton>
     </template>
     <span>{{ tooltip }}</span>

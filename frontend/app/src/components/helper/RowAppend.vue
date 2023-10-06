@@ -1,18 +1,22 @@
 <script setup lang="ts">
-import { type PropType } from 'vue';
-
-const props = defineProps({
-  className: {
-    required: false,
-    type: [String, Object] as PropType<string | Record<string, any>>,
-    default: ''
-  },
-  label: { required: false, type: String, default: '' },
-  labelColspan: { required: false, type: [Number, String], default: 1 },
-  leftPatchColspan: { required: false, type: [Number, String], default: 0 },
-  isMobile: { required: true, type: Boolean },
-  rightPatchColspan: { required: false, type: [Number, String], default: 0 }
-});
+const props = withDefaults(
+  defineProps<{
+    className?: string | Record<string, any>;
+    label?: string;
+    labelColspan?: string | number;
+    leftPatchColspan?: string | number;
+    rightPatchColspan?: string | number;
+    isMobile?: boolean;
+  }>(),
+  {
+    className: '',
+    label: '',
+    labelColspan: 1,
+    leftPatchColspan: 0,
+    rightPatchColspan: 0,
+    isMobile: false
+  }
+);
 
 const { className, isMobile, leftPatchColspan, rightPatchColspan } =
   toRefs(props);
@@ -28,7 +32,7 @@ const formattedClassName = computed(() => {
         };
 
   return {
-    'd-flex justify-space-between': isMobile.value,
+    'flex justify-between': isMobile.value,
     ...propClassName
   };
 });
@@ -38,29 +42,24 @@ const rightColspan = useToNumber(rightPatchColspan);
 </script>
 
 <template>
-  <tr class="font-medium append-row" :class="formattedClassName">
+  <tr
+    class="font-medium append-row hover:bg-transparent"
+    :class="formattedClassName"
+  >
     <td v-if="leftColspan >= 1 && !isMobile" :colspan="leftColspan" />
-    <td :colspan="labelColspan" :class="{ 'd-flex align-center': isMobile }">
-      {{ label }}
+    <td :colspan="labelColspan" :class="{ 'flex align-center': isMobile }">
+      <slot name="label">
+        {{ label }}
+      </slot>
     </td>
     <slot name="custom-columns" />
     <td
       v-if="slots.default"
       class="text-end"
-      :class="{ 'd-flex align-center': isMobile }"
+      :class="{ 'flex align-center': isMobile }"
     >
       <slot />
     </td>
     <td v-if="rightColspan >= 1 && !isMobile" :colspan="rightColspan" />
   </tr>
 </template>
-
-<style scoped lang="scss">
-.append {
-  &-row {
-    &:hover {
-      background-color: transparent !important;
-    }
-  }
-}
-</style>

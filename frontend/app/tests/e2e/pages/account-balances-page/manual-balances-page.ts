@@ -1,7 +1,8 @@
+import { BigNumber } from '@rotki/common';
 import { type TradeLocation } from '@/types/history/trade/location';
-import { Zero, bigNumberify } from '@/utils/bignumbers';
 import { toSentenceCase } from '@/utils/text';
-import { AccountBalancesPage } from './index';
+import { RotkiApp } from '../rotki-app';
+import { formatAmount, updateLocationBalance } from '../../utils/amounts';
 
 export interface FixtureManualBalance {
   readonly asset: string;
@@ -12,10 +13,9 @@ export interface FixtureManualBalance {
   readonly tags: string[];
 }
 
-export class ManualBalancesPage extends AccountBalancesPage {
-  page = new AccountBalancesPage();
+export class ManualBalancesPage {
   visit() {
-    this.page.visit('accounts-balances-manual');
+    RotkiApp.navigateTo('accounts-balances', 'accounts-balances-manual');
   }
 
   addBalance(balance: FixtureManualBalance) {
@@ -57,8 +57,8 @@ export class ManualBalancesPage extends AccountBalancesPage {
       cy.get('[data-cy="manual-balances"] tbody').find('tr').eq(i).as('row');
 
       cy.get('@row')
-        .find('.manual-balances-list__amount')
-        .should('contain', this.formatAmount(balance.amount));
+        .find('[data-cy=manual-balances__amount]')
+        .should('contain', formatAmount(balance.amount));
 
       i += 1;
     }
@@ -70,8 +70,8 @@ export class ManualBalancesPage extends AccountBalancesPage {
       cy.get('[data-cy="manual-balances"] tbody').find('tr').eq(i).as('row');
 
       cy.get('@row')
-        .find('.manual-balances-list__amount')
-        .should('not.contain', this.formatAmount(balance.amount));
+        .find('[data-cy=manual-balances__amount]')
+        .should('not.contain', formatAmount(balance.amount));
 
       i += 1;
     }
@@ -86,13 +86,13 @@ export class ManualBalancesPage extends AccountBalancesPage {
     cy.get('@row').find('[data-cy=label]').should('contain', balance.label);
 
     cy.get('@row')
-      .find('.manual-balances-list__amount')
-      .should('contain', this.formatAmount(balance.amount));
+      .find('[data-cy=manual-balances__amount]')
+      .should('contain', formatAmount(balance.amount));
 
     cy.get('[data-cy="manual-balances"] thead').first().scrollIntoView();
 
     cy.get('@row')
-      .find('.manual-balances-list__location')
+      .find('[data-cy=manual-balances__location]')
       .should('contain', toSentenceCase(balance.location));
 
     cy.get('@row')
@@ -104,32 +104,41 @@ export class ManualBalancesPage extends AccountBalancesPage {
     }
   }
 
-  getLocationBalances() {
-    const balanceLocations = [
-      { location: 'blockchain', value: Zero },
-      { location: 'banks', value: Zero },
-      { location: 'external', value: Zero },
-      { location: 'commodities', value: Zero },
-      { location: 'real estate', value: Zero },
-      { location: 'equities', value: Zero }
-    ];
+  private getLocationBalances() {
+    const balances: Map<string, BigNumber> = new Map();
 
-    balanceLocations.forEach(balanceLocation => {
-      const rowClass = `.manual-balance__location__${balanceLocation.location}`;
-      cy.get('body').then($body => {
-        if ($body.find(rowClass).length > 0) {
-          cy.get(`${rowClass} td:nth-child(6) [data-cy="display-amount"]`).each(
-            $amount => {
-              balanceLocation.value = balanceLocation.value.plus(
-                bigNumberify(this.getSanitizedAmountString($amount.text()))
-              );
-            }
-          );
-        }
-      });
+    cy.get('[data-cy=manual-balances__location]').each($element => {
+      const location = $element.attr('data-location');
+      if (!location) {
+        cy.log('missing location for element ', $element);
+        return true;
+      }
+
+      const amount = $element
+        .closest('tr')
+        .find('td:nth-child(6) [data-cy="display-amount"]')
+        .text();
+      updateLocationBalance(amount, balances, location);
     });
 
-    return cy.wrap(balanceLocations);
+    return cy.wrap(balances);
+  }
+
+  getTotals() {
+    return this.getLocationBalances().then($balances => {
+      let total = new BigNumber(0);
+      const balances: { location: string; value: BigNumber }[] = [];
+
+      $balances.forEach((value, location) => {
+        total = total.plus(value.toFixed(2, BigNumber.ROUND_DOWN));
+        balances.push({ location, value });
+      });
+
+      return cy.wrap({
+        total,
+        balances
+      });
+    });
   }
 
   editBalance(position: number, amount: string) {

@@ -85,10 +85,10 @@ const filter = (chain: Blockchain, queryText: string) => {
     :label="t('account_form.labels.blockchain')"
     :search-input.sync="search"
     :value="modelValue"
-    class="account-form__chain"
     clearable
     data-cy="account-blockchain-field"
     outlined
+    auto-select-first
     single-line
     v-bind="rootAttrs"
     @change="updateBlockchain($event)"

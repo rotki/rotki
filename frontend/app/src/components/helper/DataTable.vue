@@ -34,6 +34,11 @@ const props = withDefaults(
     loadingText?: string;
     options?: TablePagination<any> | null;
     disableFloatingHeader?: boolean;
+    customGroup?: (
+      items: any[],
+      groupBy: string[],
+      groupDesc: boolean[]
+    ) => Record<string, any[]>;
   }>(),
   {
     sortDesc: true,
@@ -46,7 +51,8 @@ const props = withDefaults(
     loading: false,
     loadingText: '',
     options: () => null,
-    disableFloatingHeader: false
+    disableFloatingHeader: false,
+    customGroup: undefined
   }
 );
 
@@ -186,6 +192,7 @@ const { dark } = useTheme();
       :loading="loading"
       :loading-text="loadingText"
       :options="options"
+      :custom-group="customGroup"
       v-on="rootListeners"
       @update:items-per-page="onItemsPerPageChange($event)"
       @update:page="scrollToTop()"

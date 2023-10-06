@@ -1,5 +1,3 @@
-import { BigNumber } from '@rotki/common';
-import { Zero } from '@/utils/bignumbers';
 import { Guid } from '../../common/guid';
 import {
   type FixtureManualBalance,
@@ -9,6 +7,8 @@ import { DashboardPage } from '../../pages/dashboard-page';
 import { GeneralSettingsPage } from '../../pages/general-settings-page';
 import { RotkiApp } from '../../pages/rotki-app';
 import { waitForAsyncQuery } from '../../support/utils';
+
+const PRECISION = 0.1;
 
 describe('balances', () => {
   let username: string;
@@ -24,36 +24,24 @@ describe('balances', () => {
     manualBalancesPage = new ManualBalancesPage();
     dashboardPage = new DashboardPage();
     settings = new GeneralSettingsPage();
-    app.fasterLogin(username);
+
     cy.fixture('account-balances/manual-balances').then(balances => {
       manualBalances = balances;
     });
+    app.fasterLogin(username);
     manualBalancesPage.visit();
   });
 
-  it('add first entry', () => {
+  it('add manual balances', () => {
     cy.get('.manual-balances__add-balance').should('be.visible');
-    cy.get('.manual-balances__add-balance').click();
-    manualBalancesPage.addBalance(manualBalances[0]);
-    manualBalancesPage.visibleEntries(1);
-    manualBalancesPage.isVisible(0, manualBalances[0]);
-  });
 
-  it('change currency', () => {
-    app.changeCurrency('EUR');
-    manualBalancesPage.showsCurrency('EUR');
-  });
-
-  it('add second & third entires', () => {
-    cy.get('.manual-balances__add-balance').click();
-    manualBalancesPage.addBalance(manualBalances[1]);
-    manualBalancesPage.visibleEntries(2);
-    manualBalancesPage.isVisible(1, manualBalances[1]);
-
-    cy.get('.manual-balances__add-balance').click();
-    manualBalancesPage.addBalance(manualBalances[2]);
-    manualBalancesPage.visibleEntries(3);
-    manualBalancesPage.isVisible(2, manualBalances[2]);
+    for (let i = 0; i < 3; i++) {
+      cy.get('.manual-balances__add-balance').click();
+      const balance = manualBalances[i];
+      manualBalancesPage.addBalance(balance);
+      manualBalancesPage.visibleEntries(i + 1);
+      manualBalancesPage.isVisible(i, balance);
+    }
 
     waitForAsyncQuery({
       method: 'POST',
@@ -61,26 +49,32 @@ describe('balances', () => {
     });
   });
 
+  it('change currency', () => {
+    app.changeCurrency('EUR');
+    manualBalancesPage.showsCurrency('EUR');
+  });
+
   it('data is reflected in dashboard', () => {
-    manualBalancesPage.getLocationBalances().then($manualBalances => {
-      const total = $manualBalances.reduce(
-        (sum: BigNumber, location) =>
-          sum.plus(location.value.toFixed(2, BigNumber.ROUND_DOWN)),
-        Zero
-      );
+    manualBalancesPage.getTotals().then(({ total, balances }) => {
       dashboardPage.visit();
       dashboardPage.getOverallBalance().then($overallBalance => {
-        // compare overall balance with blockchain balance
-        // with tolerance 0.01 (precision = 2)
-        expect($overallBalance.minus(total).abs().isLessThan(0.01));
+        expect($overallBalance.toNumber(), 'total').to.be.within(
+          total.minus(PRECISION).toNumber(),
+          total.plus(PRECISION).toNumber()
+        );
       });
       dashboardPage.getLocationBalances().then($dashboardBalances => {
-        $dashboardBalances.forEach((dashboardBalances, index) => {
-          const { location, value } = $manualBalances[index];
-          const dashboardBalance = dashboardBalances.value;
-          expect(dashboardBalance.toNumber(), location).within(
-            value.minus(0.01).toNumber(),
-            value.plus(0.01).toNumber()
+        expect(
+          balances.map(x => x.location),
+          'dashboard and manual balances'
+        ).to.have.members(Array.from($dashboardBalances.keys()));
+
+        balances.forEach(({ location, value }) => {
+          const dashboardBalance = $dashboardBalances.get(location);
+          expect(dashboardBalance, `${location} balance`).to.not.be.undefined;
+          expect(dashboardBalance?.toNumber(), location).to.be.within(
+            value.minus(PRECISION).toNumber(),
+            value.plus(PRECISION).toNumber()
           );
         });
       });
@@ -146,25 +140,23 @@ describe('balances', () => {
     app.togglePrivacyMenu();
   });
 
-  it('edit', () => {
-    const newAmount = '200';
+  it('edit and add', () => {
+    const firstNewAmount = '200';
     manualBalancesPage.visit();
-    manualBalancesPage.editBalance(1, newAmount);
+    manualBalancesPage.editBalance(1, firstNewAmount);
     manualBalancesPage.visibleEntries(3);
     manualBalancesPage.isVisible(1, {
       ...manualBalances[1],
-      amount: newAmount
+      amount: firstNewAmount
     });
-  });
 
-  it('edit and add new', () => {
-    const newAmount = '300';
+    const secondNewAmount = '300';
     manualBalancesPage.visit();
-    manualBalancesPage.editBalance(1, newAmount);
+    manualBalancesPage.editBalance(1, secondNewAmount);
     manualBalancesPage.visibleEntries(3);
     manualBalancesPage.isVisible(1, {
       ...manualBalances[1],
-      amount: newAmount
+      amount: secondNewAmount
     });
 
     cy.get('.manual-balances__add-balance').click();

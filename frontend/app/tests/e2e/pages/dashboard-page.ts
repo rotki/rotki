@@ -1,6 +1,6 @@
 import { type BigNumber } from '@rotki/common';
-import { Blockchain } from '@rotki/common/lib/blockchain';
-import { Zero, bigNumberify } from '@/utils/bignumbers';
+import { Zero } from '@/utils/bignumbers';
+import { parseBigNumber, updateLocationBalance } from '../utils/amounts';
 import { RotkiApp } from './rotki-app';
 
 export class DashboardPage {
@@ -8,91 +8,72 @@ export class DashboardPage {
     RotkiApp.navigateTo('dashboard');
   }
 
-  getSanitizedAmountString(amount: string) {
-    // TODO: extract the `replace(/,/g, '')` as to use user settings (when implemented)
-    return amount.replace(/,/g, '');
-  }
-
   getOverallBalance() {
-    let overallBalance: BigNumber = Zero;
     return cy
       .get('[data-cy="overall-balances__net-worth"] [data-cy="display-amount"]')
-      .then($amount => {
-        overallBalance = bigNumberify(
-          this.getSanitizedAmountString($amount.text())
-        );
-        return overallBalance;
-      });
+      .then($amount => parseBigNumber($amount.text()));
   }
 
   getBlockchainBalances() {
-    cy.get('.dashboard__summary-card__blockchain').should('be.visible');
+    cy.get('[data-cy=blockchain-balances]').should('be.visible');
     cy.get('[data-cy=blockchain-balances]').should('not.be.empty');
-    const blockchainBalances = [
-      { blockchain: 'Ethereum', symbol: Blockchain.ETH, value: Zero },
-      { blockchain: 'Bitcoin', symbol: Blockchain.BTC, value: Zero }
-    ];
 
-    blockchainBalances.forEach(blockchainBalance => {
-      const rowClass = `.dashboard__summary-card__blockchain [data-cy="blockchain-balance-box__item__${blockchainBalance.blockchain}"]`;
-      cy.get('body').then($body => {
-        if ($body.find(rowClass).length > 0) {
-          cy.get(`${rowClass} [data-cy="display-amount"]`).each($amount => {
-            blockchainBalance.value = blockchainBalance.value.plus(
-              bigNumberify(this.getSanitizedAmountString($amount.text()))
-            );
-          });
-        }
-      });
+    const balances: Map<string, BigNumber> = new Map<string, BigNumber>();
+
+    cy.get('[data-cy=blockchain-balance__summary').each($element => {
+      const location = $element.attr('data-location');
+      if (!location) {
+        cy.log('missing location for element ', $element);
+        return true;
+      }
+
+      const amount = $element.find('[data-cy="display-amount"]').text();
+      updateLocationBalance(amount, balances, location);
     });
-
-    return cy.wrap(blockchainBalances);
+    return cy.wrap(balances);
   }
 
   getNonFungibleBalances() {
-    return cy.get('body').then($body => {
-      const item =
-        '[data-cy="nft-balance-table"] tbody tr:last-child td:nth-child(2) [data-cy="display-amount"]';
-      const ntfTableExists = $body.find(item).length > 0;
-      cy.log('NFT table exists', ntfTableExists);
-      if (ntfTableExists) {
-        return cy.get(item).then($amount => {
-          if ($amount.length > 0) {
-            return bigNumberify(this.getSanitizedAmountString($amount.text()));
-          }
-          return Zero;
-        });
+    return cy.get('[data-cy=dashboard]').then($dashboard => {
+      const nftTable = $dashboard.find('[data-cy="nft-balance-table"]');
+      const nftTableExists = nftTable.length > 0;
+
+      cy.log('NFT table exists', nftTableExists);
+
+      if (!nftTableExists) {
+        return cy.wrap(Zero);
       }
-      return cy.wrap(Zero);
+      const selector =
+        'tbody tr:last-child td:nth-child(2) [data-cy="display-amount"]';
+      const $displayAmount = nftTable.find(selector);
+
+      let amount = Zero;
+      if ($displayAmount.length > 0) {
+        amount = parseBigNumber($displayAmount.text());
+      }
+      return cy.wrap(amount);
     });
   }
 
   getLocationBalances() {
-    cy.get('.dashboard__summary-card__manual').should('be.visible');
-    cy.get('[data-cy=manual-balances]').should('not.be.empty');
-    const balanceLocations = [
-      { location: 'blockchain', value: Zero },
-      { location: 'banks', value: Zero },
-      { location: 'external', value: Zero },
-      { location: 'commodities', value: Zero },
-      { location: 'real estate', value: Zero },
-      { location: 'equities', value: Zero }
-    ];
+    cy.get('[data-cy=manual-balances]').as('manual_balances');
+    cy.get('@manual_balances').should('be.visible');
+    cy.get('@manual_balances').should('not.be.empty');
 
-    balanceLocations.forEach(balanceLocation => {
-      const rowClass = `.dashboard__summary-card__manual [data-cy="manual-balance-box__item__${balanceLocation.location}"]`;
-      cy.get('body').then($body => {
-        if ($body.find(rowClass).length > 0) {
-          cy.get(`${rowClass} [data-cy="display-amount"]`).each($amount => {
-            balanceLocation.value = balanceLocation.value.plus(
-              bigNumberify(this.getSanitizedAmountString($amount.text()))
-            );
-          });
-        }
-      });
+    const balances: Map<string, BigNumber> = new Map();
+
+    cy.get('[data-cy=manual-balance__summary').each($element => {
+      const location = $element.attr('data-location');
+      if (!location) {
+        cy.log('missing location for element ', $element);
+        return true;
+      }
+
+      const amount = $element.find('[data-cy="display-amount"]').text();
+      updateLocationBalance(amount, balances, location);
     });
 
-    return cy.wrap(balanceLocations);
+    return cy.wrap(balances);
   }
 
   amountDisplayIsBlurred() {
