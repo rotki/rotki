@@ -885,16 +885,16 @@ class GlobalDBHandler:
         return tokens
 
     @staticmethod
-    def get_tokens_mappings(addresses: list[ChecksumEvmAddress]) -> dict[ChecksumEvmAddress, str]:  # noqa: E501
-        """Gets mappings: address -> name for tokens whose address is in the provided list"""
-        questionmarks = ','.join('?' * len(addresses))
+    def get_token_name(address: ChecksumEvmAddress, chain_id: ChainID) -> Optional[str]:
+        """Gets address -> name for the token and given chain if existing"""
         with GlobalDBHandler().conn.read_ctx() as cursor:
             cursor.execute(
-                f'SELECT evm_tokens.address, assets.name FROM evm_tokens INNER JOIN assets ON '
-                f'evm_tokens.identifier = assets.identifier WHERE address IN ({questionmarks});',
-                addresses,
+                'SELECT assets.name FROM evm_tokens INNER JOIN assets ON '
+                'evm_tokens.identifier = assets.identifier WHERE address = ? and chain = ?',
+                (address, chain_id.serialize_for_db()),
             )
-            return dict(cursor)
+            result = cursor.fetchone()
+            return result if result is None else result[0]
 
     @staticmethod
     def add_evm_token_data(write_cursor: DBCursor, entry: EvmToken) -> None:

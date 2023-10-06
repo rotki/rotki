@@ -200,11 +200,12 @@ def _token_mappings_address_to_name(
         _: DBHandler,
         chain_address: OptionalChainAddress,
 ) -> Optional[str]:
-    """Returns the token name for a token address in the global database or None
-    if the address is no token address
+    """Returns the token name for a token address/chain id combination
+    in the global database or None if the address is no token address
     """
-    token_mappings = GlobalDBHandler().get_tokens_mappings(addresses=[chain_address.address])
-    return token_mappings.get(chain_address.address, None)
+    if chain_address.blockchain is None or chain_address.blockchain.is_evm() is False:
+        return None
+    return GlobalDBHandler().get_token_name(address=chain_address.address, chain_id=chain_address.blockchain.to_chain_id())  # noqa: E501
 
 
 def _ens_address_to_name(
