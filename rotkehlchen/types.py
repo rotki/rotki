@@ -517,6 +517,7 @@ class SupportedBlockchain(SerializableEnumValueMixin):
         raise AssertionError(f'Invalid SupportedBlockchain value: {self}')
 
     def to_chain_id(self) -> ChainID:
+        """Warning: Caller has to make sure this is an evm blockchain"""
         return SUPPORTED_BLOCKCHAIN_TO_CHAINID[self]
 
     def to_range_prefix(self, range_type: Literal['txs', 'internaltxs', 'tokentxs']) -> str:
