@@ -71,7 +71,7 @@
     "vue-i18n-bridge": "9.4.1",
     "vue-router": "3.6.5",
     "vuetify": "2.7.0",
-    "zod": "3.22.2"
+    "zod": "3.22.3"
   },
   "devDependencies": {
     "@electron/notarize": "2.1.0",
