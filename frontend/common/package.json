@@ -23,7 +23,7 @@
   },
   "dependencies": {
     "bignumber.js": "9.1.1",
-    "zod": "3.22.2"
+    "zod": "3.22.3"
   },
   "devDependencies": {
     "@vueuse/core": "10.4.1",
