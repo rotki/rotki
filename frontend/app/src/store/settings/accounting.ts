@@ -17,7 +17,6 @@ export const useAccountingSettingsStore = defineStore(
     const calculatePastCostBasis = computed(
       () => settings.calculatePastCostBasis
     );
-    const taxableLedgerActions = computed(() => settings.taxableLedgerActions);
     const ethStakingTaxableAfterWithdrawalEnabled = computed(
       () => settings.ethStakingTaxableAfterWithdrawalEnabled
     );
@@ -35,7 +34,6 @@ export const useAccountingSettingsStore = defineStore(
       taxfreeAfterPeriod,
       accountForAssetsMovements,
       calculatePastCostBasis,
-      taxableLedgerActions,
       ethStakingTaxableAfterWithdrawalEnabled,
       costBasisMethod,
       // return settings on development for state persistence

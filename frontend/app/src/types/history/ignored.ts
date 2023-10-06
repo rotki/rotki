@@ -7,7 +7,7 @@ export enum IgnoreActionType {
   TRADES = 'trade',
   MOVEMENTS = 'asset_movement',
   EVM_TRANSACTIONS = 'evm_transaction',
-  LEDGER_ACTIONS = 'ledger_action'
+  HISTORY_EVENTS = 'history_event'
 }
 
 export interface CommonIgnorePayload {

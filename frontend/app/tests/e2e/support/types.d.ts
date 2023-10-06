@@ -16,20 +16,6 @@ export interface ExternalTrade {
   readonly location?: string;
 }
 
-export interface ExternalLedgerAction {
-  readonly datetime: string;
-  readonly asset: string;
-  readonly asset_id: string;
-  readonly rate_asset: string;
-  readonly rate_asset_id: string;
-  readonly rate: string;
-  readonly location: string;
-  readonly amount: string;
-  readonly action_type: string;
-  readonly link: string;
-  readonly notes: string;
-}
-
 declare global {
   namespace Cypress {
     interface Chainable {
@@ -38,7 +24,6 @@ declare global {
       disableModules: () => void;
       createAccount: (username: string, password?: string) => Chainable;
       addExternalTrade: (trade: ExternalTrade) => Chainable;
-      addLedgerAction: (action: ExternalLedgerAction) => Chainable;
       addEtherscanKey: (key: string) => Chainable;
     }
   }

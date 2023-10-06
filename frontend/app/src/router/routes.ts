@@ -14,7 +14,6 @@ enum RouteNames {
   HISTORY_TRADES = 'HISTORY_TRADES',
   HISTORY_DEPOSITS_WITHDRAWALS = 'HISTORY_DEPOSITS_WITHDRAWALS',
   HISTORY_EVENTS = 'HISTORY_EVENTS',
-  HISTORY_LEDGER_ACTIONS = 'HISTORY_LEDGER_ACTIONS',
   DEFI = 'DEFI',
   DEFI_OVERVIEW = 'DEFI_OVERVIEW',
   DEFI_DEPOSITS = 'DEFI_DEPOSITS',
@@ -72,7 +71,6 @@ export const Routes: AppRouteMap<string> = {
   HISTORY_TRADES: '/history/trades',
   HISTORY_DEPOSITS_WITHDRAWALS: '/history/deposits-withdrawals',
   HISTORY_EVENTS: '/history/transactions',
-  HISTORY_LEDGER_ACTIONS: '/history/ledger-actions',
   DEFI: '/defi',
   DEFI_OVERVIEW: '/defi/overview',
   DEFI_DEPOSITS: '/defi/deposits',
@@ -167,11 +165,6 @@ export const useAppRoutes = createSharedComposable(() => {
       route: Routes.HISTORY_EVENTS,
       icon: 'exchange-box-line',
       text: t('navigation_menu.history_sub.history_events')
-    },
-    HISTORY_LEDGER_ACTIONS: {
-      route: Routes.HISTORY_LEDGER_ACTIONS,
-      icon: 'book-read-line',
-      text: t('navigation_menu.history_sub.ledger_actions')
     },
     DEFI: {
       route: Routes.DEFI,

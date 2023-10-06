@@ -323,8 +323,8 @@ const resetEvents = (data: EvmHistoryEvent) => {
 
 const { ignore } = useIgnore<HistoryEventEntry>(
   {
-    actionType: IgnoreActionType.EVM_TRANSACTIONS,
-    toData: (item: HistoryEventEntry) => toEvmChainAndTxHash(item)
+    actionType: IgnoreActionType.HISTORY_EVENTS,
+    toData: (item: HistoryEventEntry) => item.eventIdentifier
   },
   selected,
   fetchData
@@ -631,7 +631,7 @@ const onSkippedExternalEventsReprocessed = async () => {
       </RuiTooltip>
       <RuiButton
         color="primary"
-        data-cy="ledger-actions__add"
+        data-cy="history-events__add"
         @click="addTransactionHash()"
       >
         <template #prepend>

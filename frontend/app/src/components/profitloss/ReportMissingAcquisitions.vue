@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { type PropType, type Ref } from 'vue';
+import { type PropType } from 'vue';
 import { type DataTableHeader } from '@/types/vuetify';
 import { type MissingAcquisition, type SelectedReport } from '@/types/reports';
-import { type LedgerAction } from '@/types/history/ledger-action/ledger-actions';
 
 type GroupedItems = Record<string, MissingAcquisition[]>;
 
@@ -133,20 +132,6 @@ const childHeaders = computed<DataTableHeader[]>(() => {
   ];
 });
 
-const { setOpenDialog } = useLedgerActionsForm();
-
-const ledgerActionForm: Ref<Partial<LedgerAction> | null> = ref(null);
-const addLedgerAction = (item: MissingAcquisition) => {
-  const form = {
-    timestamp: item.time,
-    amount: item.missingAmount,
-    asset: item.asset
-  };
-
-  set(ledgerActionForm, form);
-  setOpenDialog(true);
-};
-
 const isIgnored = (asset: string) => get(isAssetIgnored(asset));
 </script>
 
@@ -235,33 +220,11 @@ const isIgnored = (asset: string) => get(isAssetIgnored(asset));
             <template #item.missingAmount="{ item: childItem }">
               <AmountDisplay pnl :value="childItem.missingAmount" />
             </template>
-            <template #item.action="{ item: childItem }">
-              <VMenu offset-y>
-                <template #activator="{ on }">
-                  <VBtn icon v-on="on">
-                    <VIcon>mdi-dots-vertical</VIcon>
-                  </VBtn>
-                </template>
-                <VList>
-                  <VListItem link @click="addLedgerAction(childItem)">
-                    <VListItemTitle>
-                      {{
-                        t(
-                          'profit_loss_report.actionable.missing_acquisitions.add_ledger_action'
-                        )
-                      }}
-                    </VListItemTitle>
-                  </VListItem>
-                </VList>
-              </VMenu>
-            </template>
           </DataTable>
         </TableExpandContainer>
       </template>
     </DataTable>
     <slot name="actions" />
-
-    <LedgerActionFormDialog :editable-item="ledgerActionForm" />
   </div>
 </template>
 
