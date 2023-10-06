@@ -701,6 +701,9 @@
     "useHistoricPrices": true,
     "downloadFileByBlobResponse": true,
     "downloadFileByTextContent": true,
-    "useSkippedHistoryEventsApi": true
+    "useSkippedHistoryEventsApi": true,
+    "ExtractDefaultPropTypes": true,
+    "ExtractPropTypes": true,
+    "ExtractPublicPropTypes": true
   }
 }
