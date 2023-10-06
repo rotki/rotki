@@ -542,43 +542,59 @@ def test_names_compilation(rotkehlchen_api_server: 'APIServer') -> None:
                     {'address': chain_address.address, 'blockchain': chain_address.blockchain.serialize() if chain_address.blockchain is not None else None} for chain_address in chain_addresses],  # noqa: E501
             },
         )
-    address_rotki = to_checksum_address('0x9531c059098e3d194ff87febb587ab07b30b1306')
-    address_cody = to_checksum_address('0x368B9ad9B6AAaeFCE33b8c21781cfF375e09be67')
-    address_rose = to_checksum_address('0xE07Af3FBEAf8584dc885f5bAA7c72419BDDf002D')
-    address_tylor = to_checksum_address('0xC88eA7a5df3A7BA59C72393C5b2dc2CE260ff04D')
-    address_nonlabel = to_checksum_address('0x9d904063e7e120302a13c6820561940538a2ad57')
-    address_1world = to_checksum_address('0xfDBc1aDc26F0F8f8606a5d63b7D3a3CD21c22B23')
-    address_firstblood = to_checksum_address('0xAf30D2a7E90d7DC361c8C4585e9BB7D2F6f15bc7')
-    address_kraken10 = to_checksum_address('0xAe2D4617c862309A3d75A0fFB358c7a5009c673F')
 
+    address_rotki = string_to_evm_address('0x9531C059098e3d194fF87FebB587aB07B30B1306')
+    address_cody = string_to_evm_address('0x368B9ad9B6AAaeFCE33b8c21781cfF375e09be67')
+    address_rose = string_to_evm_address('0xE07Af3FBEAf8584dc885f5bAA7c72419BDDf002D')
+    address_tylor = string_to_evm_address('0xC88eA7a5df3A7BA59C72393C5b2dc2CE260ff04D')
+    address_nonlabel = string_to_evm_address('0x9D904063e7e120302a13C6820561940538a2Ad57')
+    address_firstblood = string_to_evm_address('0xAf30D2a7E90d7DC361c8C4585e9BB7D2F6f15bc7')
+    address_kraken10 = string_to_evm_address('0xAe2D4617c862309A3d75A0fFB358c7a5009c673F')
+    address_titan = string_to_evm_address('0x4838B106FCe9647Bdf1E7877BF73cE8B0BAD5f97')
     db_handler = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
     db_ens = DBEns(db_handler=db_handler)
     db_addressbook = DBAddressbook(db_handler=db_handler)
-
     with db_handler.user_write() as cursor:
-        db_ens.add_ens_mapping(
+        db_ens.add_ens_mapping(  # write ens rotki.eth
             write_cursor=cursor,
             address=address_rotki,
             name='rotki.eth',
             now=Timestamp(1),
         )
+    with GlobalDBHandler().conn.write_ctx() as write_cursor:
+        db_addressbook.add_addressbook_entries(  # add an entry for all chains
+            write_cursor=write_cursor,
+            entries=[AddressbookEntry(address=address_titan, name='Titan Builder', blockchain=None)],  # noqa: E501
+        )
     publicly_known_addresses = [
-        OptionalChainAddress(address_rotki, SupportedBlockchain.ETHEREUM),
-        OptionalChainAddress(address_1world, SupportedBlockchain.ETHEREUM),
+        OptionalChainAddress(address_rotki, None),
+        OptionalChainAddress(address_titan, None),
         OptionalChainAddress(address_kraken10, SupportedBlockchain.ETHEREUM),
         OptionalChainAddress(address_firstblood, SupportedBlockchain.ETHEREUM),
         # Below is an address that we don't know anything about
         OptionalChainAddress(to_checksum_address('0x42F47A289B1E17BCbbBc1630f112c036ed901f5d'), SupportedBlockchain.ETHEREUM),  # noqa: E501
     ]
-    publicly_known_expected = {
-        AddressbookEntry(address=address_rotki, blockchain=SupportedBlockchain.ETHEREUM, name='rotki.eth'),  # noqa: E501
-        AddressbookEntry(address=address_1world, blockchain=SupportedBlockchain.ETHEREUM, name='1World'),  # noqa: E501
+    publicly_known_expected = [
+        AddressbookEntry(address=address_rotki, blockchain=None, name='rotki.eth'),
+        AddressbookEntry(address=address_titan, blockchain=None, name='Titan Builder'),
         AddressbookEntry(address=address_kraken10, blockchain=SupportedBlockchain.ETHEREUM, name='Kraken 10'),  # noqa: E501
         AddressbookEntry(address=address_firstblood, blockchain=SupportedBlockchain.ETHEREUM, name='FirstBlood'),  # noqa: E501
-    }
+    ]
+
     response = names_request(publicly_known_addresses)
     result = assert_proper_response_with_result(response)
-    assert {AddressbookEntry.deserialize(x) for x in result} == publicly_known_expected
+    assert {AddressbookEntry.deserialize(x) for x in result} == set(publicly_known_expected)
+
+    # now query names that are saved for all chains, but for a specific chain and see they appear
+    response = names_request([
+        OptionalChainAddress(address_rotki, SupportedBlockchain.ETHEREUM),
+        OptionalChainAddress(address_titan, SupportedBlockchain.ETHEREUM),
+    ])
+    result = assert_proper_response_with_result(response)
+    assert {AddressbookEntry.deserialize(x) for x in result} == {
+        AddressbookEntry(address=address_rotki, blockchain=SupportedBlockchain.ETHEREUM, name='rotki.eth'),  # noqa: E501
+        AddressbookEntry(address=address_titan, blockchain=SupportedBlockchain.ETHEREUM, name='Titan Builder'),  # noqa: E501
+    }
 
     with db_addressbook.write_ctx(book_type=AddressbookType.GLOBAL) as write_cursor:
         db_addressbook.add_addressbook_entries(
