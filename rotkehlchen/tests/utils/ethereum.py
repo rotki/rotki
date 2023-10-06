@@ -17,6 +17,8 @@ from rotkehlchen.chain.evm.decoding.decoder import EVMTransactionDecoder
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.chain.evm.transactions import EvmTransactions
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode, string_to_evm_address
+from rotkehlchen.chain.gnosis.decoding.decoder import GnosisTransactionDecoder
+from rotkehlchen.chain.gnosis.transactions import GnosisTransactions
 from rotkehlchen.chain.optimism.decoding.decoder import OptimismTransactionDecoder
 from rotkehlchen.chain.optimism.transactions import OptimismTransactions
 from rotkehlchen.chain.polygon_pos.decoding.decoder import PolygonPOSTransactionDecoder
@@ -419,6 +421,7 @@ def get_decoded_events_of_transaction(
         ChainID.POLYGON_POS: (PolygonPOSTransactions, PolygonPOSTransactionDecoder),
         ChainID.ARBITRUM_ONE: (ArbitrumOneTransactions, ArbitrumOneTransactionDecoder),
         ChainID.BASE: (BaseTransactions, BaseTransactionDecoder),
+        ChainID.GNOSIS: (GnosisTransactions, GnosisTransactionDecoder),
     }
     mappings_result = chain_mappings.get(evm_inquirer.chain_id)
     if mappings_result is not None:

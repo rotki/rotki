@@ -95,6 +95,7 @@ class CSVExporter(CustomizableDateMixin):
             SupportedBlockchain.POLYGON_POS: ETHERSCAN_EXPLORER_TX_URL.format(base_url='polygonscan.com'),  # noqa: E501
             SupportedBlockchain.ARBITRUM_ONE: ETHERSCAN_EXPLORER_TX_URL.format(base_url='arbiscan.io'),  # noqa: E501
             SupportedBlockchain.BASE: ETHERSCAN_EXPLORER_TX_URL.format(base_url='basescan.org'),
+            SupportedBlockchain.GNOSIS: ETHERSCAN_EXPLORER_TX_URL.format(base_url='gnosisscan.io'),
         }
         with self.database.conn.read_ctx() as cursor:
             self.reload_settings(cursor)

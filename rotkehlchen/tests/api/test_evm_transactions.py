@@ -225,12 +225,12 @@ def test_evm_transaction_hash_addition(rotkehlchen_api_server: 'APIServer') -> N
             'evmtransactionshashresource',
         ), json={
             'async_query': is_async_query,
-            'evm_chain': ChainID.GNOSIS.to_name(),
+            'evm_chain': ChainID.FANTOM.to_name(),
             'tx_hash': tx_hash,
             'associated_address': ADDY,
         },
     )
-    assert_error_response(response, 'Given chain_id gnosis is not one of ethereum,optimism,polygon_pos,arbitrum_one,base as needed by the endpoint')  # noqa: E501
+    assert_error_response(response, 'Given chain_id fantom is not one of ethereum,optimism,polygon_pos,arbitrum_one,base,gnosis as needed by the endpoint')  # noqa: E501
 
     # add an already existing transaction
     response = requests.put(

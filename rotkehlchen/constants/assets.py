@@ -14,6 +14,7 @@ A_DOGE = Asset('DOGE')
 A_BSQ = Asset('BSQ')
 A_KFEE = Asset('KFEE')
 A_SOL = Asset('SOL-2')
+A_XDAI = Asset('XDAI')
 
 A_OP = Asset('eip155:10/erc20:0x4200000000000000000000000000000000000042')
 A_OPTIMISM_ETH = Asset('eip155:10/erc20:0xDeadDeAddeAddEAddeadDEaDDEAdDeaDDeAD0000')

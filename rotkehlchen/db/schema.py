@@ -104,6 +104,8 @@ INSERT OR IGNORE INTO location(location, seq) VALUES ('h', 40);
 INSERT OR IGNORE INTO location(location, seq) VALUES ('i', 41);
 /* BASE */
 INSERT OR IGNORE INTO location(location, seq) VALUES ('j', 42);
+/* GNOSIS */
+INSERT OR IGNORE INTO location(location, seq) VALUES ('k', 43);
 """
 
 # Custom enum table for AssetMovement categories (deposit/withdrawal)

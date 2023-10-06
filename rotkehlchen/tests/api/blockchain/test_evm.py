@@ -245,6 +245,7 @@ def test_add_multievm_accounts(rotkehlchen_api_server):
             polygon_pos_addresses=[common_account],
             arbitrum_one_addresses=[common_account],
             base_addresses=[common_account],
+            gnosis_addresses=[common_account],
         )
 
         # add two addresses for all evm chains, one with tag
@@ -270,6 +271,7 @@ def test_add_multievm_accounts(rotkehlchen_api_server):
         'polygon_pos': [common_account],
         'arbitrum_one': [common_account],
         'base': [common_account],
+        'gnosis': [common_account],
     }
 
     # Now get accounts to make sure they are all input correctly
@@ -335,6 +337,7 @@ def test_detect_evm_accounts(
         {'evm_chain': ChainID.OPTIMISM.to_name(), 'address': ethereum_accounts[0]},
         {'evm_chain': ChainID.ARBITRUM_ONE.to_name(), 'address': ethereum_accounts[0]},
         {'evm_chain': ChainID.BASE.to_name(), 'address': ethereum_accounts[0]},
+        {'evm_chain': ChainID.GNOSIS.to_name(), 'address': ethereum_accounts[0]},
     ], key=operator.itemgetter('evm_chain', 'address'))
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     db = rotki.data.db
@@ -344,6 +347,8 @@ def test_detect_evm_accounts(
     assert ethereum_accounts[0] in blockchain_accounts.polygon_pos
     assert ethereum_accounts[0] in blockchain_accounts.optimism
     assert ethereum_accounts[0] in blockchain_accounts.arbitrum_one
+    assert ethereum_accounts[0] in blockchain_accounts.base
+    assert ethereum_accounts[0] in blockchain_accounts.gnosis
 
 
 @pytest.mark.parametrize('have_decoders', [True])

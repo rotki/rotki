@@ -11,13 +11,7 @@ from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.fval import FVal
 from rotkehlchen.greenlets.manager import GreenletManager
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import (
-    ChainID,
-    ChecksumEvmAddress,
-    EVMTxHash,
-    SupportedBlockchain,
-    Timestamp,
-)
+from rotkehlchen.types import ChainID, ChecksumEvmAddress, EVMTxHash, SupportedBlockchain
 
 from .constants import (
     ARBITRUM_ONE_ETHERSCAN_NODE,
@@ -80,15 +74,3 @@ class ArbitrumOneInquirer(EvmNodeInquirer):
             ARCHIVE_NODE_CHECK_BLOCK,
             ARCHIVE_NODE_CHECK_EXPECTED_BALANCE,
         )
-
-    def get_blocknumber_by_time(
-            self,
-            ts: Timestamp,
-            etherscan: bool = True,
-            closest: Literal['before', 'after'] = 'before',
-    ) -> int:
-        """Searches for the blocknumber of a specific timestamp
-
-        May raise RemoteError
-        """
-        return self.etherscan.get_blocknumber_by_time(ts=ts, closest=closest)

@@ -7,6 +7,7 @@ from rotkehlchen.chain.ethereum.constants import ETHEREUM_GENESIS
 from rotkehlchen.chain.evm.constants import GENESIS_HASH, ZERO_ADDRESS
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import EvmAccount
+from rotkehlchen.chain.gnosis.constants import GNOSIS_GENESIS
 from rotkehlchen.chain.optimism.constants import OPTIMISM_GENESIS
 from rotkehlchen.chain.polygon_pos.constants import POLYGON_POS_GENESIS
 from rotkehlchen.db.constants import HISTORY_MAPPING_STATE_DECODED
@@ -564,6 +565,8 @@ class DBEvmTx:
                 timestamp = ARBITRUM_ONE_GENESIS
             elif chain_id == ChainID.BASE:
                 timestamp = BASE_GENESIS
+            elif chain_id == ChainID.GNOSIS:
+                timestamp = GNOSIS_GENESIS
             else:
                 timestamp = POLYGON_POS_GENESIS
             tx = EvmTransaction(
