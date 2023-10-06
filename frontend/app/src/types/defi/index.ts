@@ -30,3 +30,9 @@ export enum ProtocolVersion {
   V1 = 'v1',
   V2 = 'v2'
 }
+
+export interface ProtocolMetadata {
+  identifier: string;
+  name: string;
+  icon: string;
+}

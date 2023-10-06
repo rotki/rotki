@@ -1,14 +1,13 @@
 <script setup lang="ts">
-import { type PropType } from 'vue';
 import { type DataTableHeader } from '@/types/vuetify';
 import { type PoapDeliveryDetails } from '@/types/airdrops';
 import { default as images } from './poap.json';
 
-defineProps({
-  visible: { required: true, type: Boolean },
-  colspan: { required: true, type: Number },
-  items: { required: true, type: Array as PropType<PoapDeliveryDetails[]> }
-});
+defineProps<{
+  visible: boolean;
+  colspan: number;
+  items: PoapDeliveryDetails[];
+}>();
 
 const events = [
   'aave_v2_pioneers',
@@ -50,8 +49,6 @@ const getImage = (event: EventType): string => {
   const image = images[event];
   return image ?? '';
 };
-
-const { navigate, isPackaged } = useInterop();
 </script>
 
 <template>
@@ -61,8 +58,8 @@ const { navigate, isPackaged } = useInterop();
     </template>
     <DataTable :items="items" :headers="headers">
       <template #item.name="{ item }">
-        <VRow align="center">
-          <VCol cols="auto">
+        <div class="flex items-center gap-4">
+          <AdaptiveWrapper>
             <VImg
               class="poap-delivery-airdrops__image"
               width="36px"
@@ -70,20 +67,19 @@ const { navigate, isPackaged } = useInterop();
               contain
               :src="getImage(item.event)"
             />
-          </VCol>
-          <VCol> {{ item.name }}</VCol>
-        </VRow>
+          </AdaptiveWrapper>
+          <div>{{ item.name }}</div>
+        </div>
       </template>
       <template #item.link="{ item }">
-        <VBtn
+        <ExternalLinkButton
           icon
           color="primary"
-          :target="isPackaged ? undefined : '_blank'"
-          :href="isPackaged ? undefined : item.link"
-          @click="isPackaged ? navigate(item.link) : undefined"
+          :url="item.link"
+          variant="text"
         >
-          <VIcon>mdi-link</VIcon>
-        </VBtn>
+          <RuiIcon size="16" name="external-link-line" />
+        </ExternalLinkButton>
       </template>
     </DataTable>
   </TableExpandContainer>

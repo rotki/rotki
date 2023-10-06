@@ -4,118 +4,21 @@ import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type Ref } from 'vue';
 import { type DataTableHeader } from '@/types/vuetify';
 import {
-  AIRDROP_1INCH,
-  AIRDROP_CONVEX,
-  AIRDROP_CORNICHON,
-  AIRDROP_COW_GNOSIS,
-  AIRDROP_COW_MAINNET,
-  AIRDROP_CURVE,
-  AIRDROP_DIVA,
-  AIRDROP_ENS,
-  AIRDROP_FURUCOMBO,
-  AIRDROP_GRAIN,
-  AIRDROP_LIDO,
-  AIRDROP_PARASWAP,
   AIRDROP_POAP,
-  AIRDROP_SADDLE,
-  AIRDROP_SHAPESHIFT,
-  AIRDROP_TORNADO,
-  AIRDROP_UNISWAP,
   type Airdrop,
   type AirdropDetail,
-  type AirdropType,
   Airdrops,
   type PoapDelivery
 } from '@/types/airdrops';
 import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import { type TaskMeta } from '@/types/task';
-
-interface AirdropSource {
-  readonly icon: string;
-  readonly name: string;
-}
-
-type AirdropSources = {
-  readonly [source in AirdropType]: AirdropSource;
-};
+import AirdropDisplay from '@/components/defi/airdrops/AirdropDisplay.vue';
 
 const section = Section.DEFI_AIRDROPS;
 const ETH = Blockchain.ETH;
-const sources: AirdropSources = {
-  [AIRDROP_UNISWAP]: {
-    icon: './assets/images/protocols/uniswap.svg',
-    name: 'Uniswap'
-  },
-  [AIRDROP_1INCH]: {
-    icon: './assets/images/protocols/1inch.svg',
-    name: '1inch'
-  },
-  [AIRDROP_TORNADO]: {
-    icon: './assets/images/protocols/tornado.svg',
-    name: 'Tornado Cash'
-  },
-  [AIRDROP_CORNICHON]: {
-    icon: './assets/images/protocols/cornichon.svg',
-    name: 'Cornichon'
-  },
-  [AIRDROP_GRAIN]: {
-    icon: './assets/images/protocols/grain.png',
-    name: 'Grain'
-  },
-  [AIRDROP_LIDO]: {
-    icon: './assets/images/protocols/lido.svg',
-    name: 'Lido'
-  },
-  [AIRDROP_FURUCOMBO]: {
-    icon: './assets/images/protocols/furucombo.png',
-    name: 'Furucombo'
-  },
-  [AIRDROP_CURVE]: {
-    icon: './assets/images/protocols/curve.png',
-    name: 'Curve Finance'
-  },
-  [AIRDROP_POAP]: {
-    icon: './assets/images/protocols/poap.svg',
-    name: 'POAP Delivery'
-  },
-  [AIRDROP_CONVEX]: {
-    icon: './assets/images/protocols/convex.jpeg',
-    name: 'Convex'
-  },
-  [AIRDROP_SHAPESHIFT]: {
-    icon: './assets/images/protocols/shapeshift.svg',
-    name: 'ShapeShift'
-  },
-  [AIRDROP_ENS]: {
-    icon: './assets/images/protocols/ens.svg',
-    name: 'ENS'
-  },
-  [AIRDROP_PARASWAP]: {
-    icon: './assets/images/protocols/paraswap.svg',
-    name: 'ParaSwap'
-  },
-  [AIRDROP_SADDLE]: {
-    icon: './assets/images/protocols/saddle-finance.svg',
-    name: 'SaddleFinance'
-  },
-  [AIRDROP_COW_MAINNET]: {
-    icon: './assets/images/protocols/cow.svg',
-    name: 'COW (ethereum)'
-  },
-  [AIRDROP_COW_GNOSIS]: {
-    icon: './assets/images/protocols/cow.svg',
-    name: 'COW (gnosis chain)'
-  },
-  [AIRDROP_DIVA]: {
-    icon: './assets/images/protocols/diva.svg',
-    name: 'DIVA'
-  }
-};
-
 const { t } = useI18n();
 const css = useCssModule();
-const { isPackaged, navigate } = useInterop();
 const { isLoading, shouldShowLoadingScreen } = useStatusStore();
 const { awaitTask } = useTaskStore();
 const { notify } = useNotificationsStore();
@@ -194,7 +97,7 @@ const airdropList = (addresses: string[]): ComputedRef<Airdrop[]> =>
           const details = element as PoapDelivery[];
           result.push({
             address,
-            source: source as AirdropType,
+            source,
             details: details.map(({ link, name, event }) => ({
               amount: bigNumberify('1'),
               link,
@@ -209,7 +112,7 @@ const airdropList = (addresses: string[]): ComputedRef<Airdrop[]> =>
             address,
             amount,
             link,
-            source: source as AirdropType,
+            source,
             asset,
             claimed
           });
@@ -253,13 +156,7 @@ const fetchAirdrops = async (refresh = false) => {
 const refresh = async () => {
   await fetchAirdrops(true);
 };
-
-const getIcon = (source: AirdropType) => sources[source]?.icon ?? '';
-
-const getLabel = (source: AirdropType) => sources[source]?.name ?? '';
-
-const hasDetails = (source: AirdropType): boolean =>
-  [AIRDROP_POAP].includes(source);
+const hasDetails = (source: string): boolean => [AIRDROP_POAP].includes(source);
 
 const expand = (item: Airdrop) => {
   set(expanded, get(expanded).includes(item) ? [] : [item]);
@@ -353,32 +250,18 @@ onMounted(async () => {
               />
             </template>
             <template #item.source="{ item }">
-              <div class="flex flex-row items-center">
-                <AdaptiveWrapper>
-                  <VImg
-                    width="24px"
-                    height="24px"
-                    contain
-                    position="left"
-                    max-height="32px"
-                    max-width="32px"
-                    :src="getIcon(item.source)"
-                  />
-                </AdaptiveWrapper>
-                <span class="ml-4" v-text="getLabel(item.source)" />
-              </div>
+              <AirdropDisplay :source="item.source" />
             </template>
             <template #item.link="{ item }">
-              <VBtn
+              <ExternalLinkButton
                 v-if="!hasDetails(item.source)"
                 icon
                 color="primary"
-                :target="isPackaged ? undefined : '_blank'"
-                :href="isPackaged ? undefined : item.link"
-                @click="isPackaged ? navigate(item.link) : undefined"
+                :url="item.link"
+                variant="text"
               >
-                <VIcon>mdi-link</VIcon>
-              </VBtn>
+                <RuiIcon size="16" name="external-link-line" />
+              </ExternalLinkButton>
               <RowExpander
                 v-else
                 :expanded="expanded.includes(item)"
