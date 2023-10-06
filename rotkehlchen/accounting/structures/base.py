@@ -209,7 +209,7 @@ class HistoryBaseEntry(AccountingEventMixin, metaclass=ABCMeta):
             'entry_type': self.entry_type.serialize(),
             'event_identifier': self.event_identifier,
             'sequence_index': self.sequence_index,
-            'timestamp': ts_ms_to_sec(self.timestamp),  # serialize to api in seconds MS
+            'timestamp': self.timestamp,
             'location': str(self.location),
             'asset': self.asset.identifier,
             'balance': self.balance.serialize(),

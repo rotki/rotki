@@ -1091,8 +1091,9 @@ def test_query_transactions_check_decoded_events(
             'notes': 'Burned 0.00863351371344 ETH for gas',
             'product': None,
             'sequence_index': 0,
-            'timestamp': 1642802807,
+            'timestamp': 1642802807000,
             'tx_hash': '0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f',
+            'extra_data': None,
         },
     }, {
         'entry': {
@@ -1103,15 +1104,16 @@ def test_query_transactions_check_decoded_events(
             'counterparty': None,
             'address': '0xA090e606E30bD747d4E6245a1517EbE430F0057e',
             'event_identifier': '10x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f',  # noqa: E501
-            'event_subtype': None,
+            'event_subtype': 'none',
             'event_type': 'spend',
             'location': 'ethereum',
             'location_label': '0x6e15887E2CEC81434C16D587709f64603b39b545',
             'notes': 'Send 0.096809163374771208 ETH to 0xA090e606E30bD747d4E6245a1517EbE430F0057e',
             'product': None,
             'sequence_index': 1,
-            'timestamp': 1642802807,
+            'timestamp': 1642802807000,
             'tx_hash': '0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f',
+            'extra_data': None,
         },
     }]
     assert returned_events[:2] == tx1_events
@@ -1131,8 +1133,9 @@ def test_query_transactions_check_decoded_events(
             'notes': 'Burned 0.017690836625228792 ETH for gas',
             'product': None,
             'sequence_index': 0,
-            'timestamp': 1642802735,
+            'timestamp': 1642802735000,
             'tx_hash': '0x38ed9c2d4f0855f2d88823d502f8794b993d28741da48724b7dfb559de520602',
+            'extra_data': None,
         },
     }, {
         'entry': {
@@ -1143,15 +1146,16 @@ def test_query_transactions_check_decoded_events(
             'balance': {'amount': '1166', 'usd_value': '0'},
             'counterparty': None,
             'event_identifier': '10x38ed9c2d4f0855f2d88823d502f8794b993d28741da48724b7dfb559de520602',  # noqa: E501
-            'event_subtype': None,
+            'event_subtype': 'none',
             'event_type': 'spend',
             'location': 'ethereum',
             'location_label': '0x6e15887E2CEC81434C16D587709f64603b39b545',
             'notes': 'Send 1166 USDT from 0x6e15887E2CEC81434C16D587709f64603b39b545 to 0xb5d85CBf7cB3EE0D56b3bB207D5Fc4B82f43F511',  # noqa: E501
             'product': None,
             'sequence_index': 308,
-            'timestamp': 1642802735,
+            'timestamp': 1642802735000,
             'tx_hash': '0x38ed9c2d4f0855f2d88823d502f8794b993d28741da48724b7dfb559de520602',
+            'extra_data': None,
         },
     }]
     assert returned_events[2:4] == tx2_events
@@ -1164,15 +1168,16 @@ def test_query_transactions_check_decoded_events(
             'balance': {'amount': '0.125', 'usd_value': '0'},
             'counterparty': None,
             'event_identifier': '10x6c27ea39e5046646aaf24e1bb451caf466058278685102d89979197fdb89d007',  # noqa: E501
-            'event_subtype': None,
+            'event_subtype': 'none',
             'event_type': 'receive',
             'location': 'ethereum',
             'location_label': '0x6e15887E2CEC81434C16D587709f64603b39b545',
             'notes': 'Receive 0.125 ETH from 0xeB2629a2734e272Bcc07BDA959863f316F4bD4Cf',
             'product': None,
             'sequence_index': 0,
-            'timestamp': 1642802651,
+            'timestamp': 1642802651000,
             'tx_hash': '0x6c27ea39e5046646aaf24e1bb451caf466058278685102d89979197fdb89d007',
+            'extra_data': None,
         },
     }]
     assert returned_events[4:5] == tx3_events
@@ -1185,15 +1190,16 @@ def test_query_transactions_check_decoded_events(
             'balance': {'amount': '1166', 'usd_value': '0'},
             'counterparty': None,
             'event_identifier': '10xccb6a445e136492b242d1c2c0221dc4afd4447c96601e88c156ec4d52e993b8f',  # noqa: E501
-            'event_subtype': None,
+            'event_subtype': 'none',
             'event_type': 'receive',
             'location': 'ethereum',
             'location_label': '0x6e15887E2CEC81434C16D587709f64603b39b545',
             'notes': 'Receive 1166 USDT from 0xE21c192cD270286DBBb0fBa10a8B8D9957d431E5 to 0x6e15887E2CEC81434C16D587709f64603b39b545',  # noqa: E501
             'product': None,
             'sequence_index': 385,
-            'timestamp': 1642802286,
+            'timestamp': 1642802286000,
             'tx_hash': '0xccb6a445e136492b242d1c2c0221dc4afd4447c96601e88c156ec4d52e993b8f',
+            'extra_data': None,
         },
     }]
     assert returned_events[5:6] == tx4_events
@@ -1208,7 +1214,7 @@ def test_query_transactions_check_decoded_events(
     tx2_events[1]['customized'] = True
     response = requests.patch(
         api_url_for(rotkehlchen_api_server, 'historyeventresource'),
-        json={key: value for key, value in event.items() if key not in ('extra_data', 'event_identifier', 'entry_type')},  # noqa: E501
+        json={key: value for key, value in event.items() if key not in ('event_identifier',)},
     )
     assert_simple_ok_response(response)
 
@@ -1227,14 +1233,15 @@ def test_query_transactions_check_decoded_events(
             'notes': 'Some kind of deposit',
             'product': 'pool',
             'sequence_index': 1,
-            'timestamp': 1642802286,
+            'timestamp': 1642802286000,
             'tx_hash': '0xccb6a445e136492b242d1c2c0221dc4afd4447c96601e88c156ec4d52e993b8f',
+            'extra_data': None,
         },
         'customized': True,
     })
     response = requests.put(
         api_url_for(rotkehlchen_api_server, 'historyeventresource'),
-        json={key: value for key, value in tx4_events[0]['entry'].items() if key not in ('extra_data', 'event_identifier', 'entry_type')},  # noqa: E501
+        json={key: value for key, value in tx4_events[0]['entry'].items() if key not in ('event_identifier',)},  # noqa: E501
     )
     result = assert_proper_response_with_result(response)
     tx4_events[0]['entry']['identifier'] = result['identifier']

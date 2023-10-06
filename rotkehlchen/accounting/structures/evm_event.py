@@ -153,6 +153,7 @@ class EvmEvent(HistoryBaseEntry):  # noqa: PLW1641  # hash in superclass
             'counterparty': self.counterparty,
             'product': self.product.serialize() if self.product is not None else None,
             'address': self.address,
+            'extra_data': self.extra_data,
         }
 
     def serialize_for_api(

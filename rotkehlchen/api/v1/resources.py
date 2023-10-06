@@ -59,12 +59,13 @@ from rotkehlchen.api.v1.schemas import (
     ClearCacheSchema,
     ClearIconsCacheSchema,
     CreateAccountingRuleSchema,
+    CreateHistoryEventSchema,
     CurrentAssetsPriceSchema,
     CustomAssetsQuerySchema,
     DataImportSchema,
     DetectTokensSchema,
     EditAccountingRuleSchema,
-    EditEvmEventSchema,
+    EditHistoryEventSchema,
     EditSettingsSchema,
     EnsAvatarsSchema,
     ERC20InfoSchema,
@@ -77,7 +78,6 @@ from rotkehlchen.api.v1.schemas import (
     EventDetailsQuerySchema,
     EventsOnlineQuerySchema,
     EvmAccountsPutSchema,
-    EvmEventSchema,
     EvmPendingTransactionDecodingSchema,
     EvmTransactionDecodingSchema,
     EvmTransactionHashAdditionSchema,
@@ -236,7 +236,7 @@ from .types import (
 )
 
 if TYPE_CHECKING:
-    from rotkehlchen.accounting.structures.evm_event import EvmEvent
+    from rotkehlchen.accounting.structures.base import HistoryBaseEntry
     from rotkehlchen.chain.bitcoin.hdkey import HDKey
     from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings
     from rotkehlchen.db.filtering import HistoryEventFilterQuery
@@ -1138,9 +1138,9 @@ class HistorySkippedExternalEventResource(BaseMethodView):
 
 class HistoryEventResource(BaseMethodView):
 
-    put_schema = EvmEventSchema()
+    put_schema = CreateHistoryEventSchema()
     post_schema = HistoryEventSchema()
-    patch_schema = EditEvmEventSchema()
+    patch_schema = EditHistoryEventSchema()
     delete_schema = HistoryEventsDeletionSchema()
 
     @require_loggedin_user()
@@ -1150,12 +1150,12 @@ class HistoryEventResource(BaseMethodView):
 
     @require_loggedin_user()
     @use_kwargs(put_schema, location='json')
-    def put(self, event: 'EvmEvent') -> Response:
+    def put(self, event: 'HistoryBaseEntry') -> Response:
         return self.rest_api.add_history_event(event=event)
 
     @require_loggedin_user()
     @use_kwargs(patch_schema, location='json')
-    def patch(self, event: 'EvmEvent') -> Response:
+    def patch(self, event: 'HistoryBaseEntry') -> Response:
         return self.rest_api.edit_history_event(event=event)
 
     @require_loggedin_user()

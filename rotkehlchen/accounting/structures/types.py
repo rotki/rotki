@@ -103,8 +103,4 @@ class HistoryEventSubType(SerializableEnumNameMixin):
     UPDATE = auto()
 
     def serialize_or_none(self) -> Optional[str]:
-        """Serializes the subtype but for the subtype None it returns None"""
-        if self == HistoryEventSubType.NONE:
-            return None
-
         return self.serialize()

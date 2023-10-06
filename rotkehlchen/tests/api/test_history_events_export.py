@@ -81,9 +81,8 @@ def test_history_export_download_csv(
         tmpdir_factory,
 ):
     """Test that the csv export/download REST API endpoint works correctly."""
-    rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
-    db = DBHistoryEvents(rotki.data.db)
-    add_entries(server=rotkehlchen_api_server_with_exchanges, events_db=db, add_directly=True)
+    db = DBHistoryEvents(rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen.data.db)
+    add_entries(events_db=db)
 
     csv_dir = str(tmpdir_factory.mktemp('test_csv_dir'))
     csv_dir2 = str(tmpdir_factory.mktemp('test_csv_dir2'))
@@ -141,9 +140,8 @@ def test_history_export_csv_errors(
     )
 
     # Now, add data for exporting
-    rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
     db = DBHistoryEvents(rotki.data.db)
-    add_entries(server=rotkehlchen_api_server_with_exchanges, events_db=db, add_directly=True)
+    add_entries(events_db=db)
 
     # And now provide non-existing path for directory
     response = requests.post(

@@ -1,10 +1,12 @@
 
 from typing import TYPE_CHECKING, Any
 
-import requests
-
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry, HistoryEvent
+from rotkehlchen.accounting.structures.base import (
+    HistoryBaseEntry,
+    HistoryBaseEntryType,
+    HistoryEvent,
+)
 from rotkehlchen.accounting.structures.eth2 import (
     EthBlockEvent,
     EthDepositEvent,
@@ -16,21 +18,36 @@ from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_DAI, A_ETH, A_ETH2, A_USDT
-from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
-from rotkehlchen.tests.utils.api import api_url_for, assert_proper_response_with_result
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
 if TYPE_CHECKING:
-    from rotkehlchen.api.server import APIServer
+    from rotkehlchen.db.history_events import DBHistoryEvents
+
+
+KEYS_IN_ENTRY_TYPE: dict[HistoryBaseEntryType, set[str]] = {
+    HistoryBaseEntryType.HISTORY_EVENT: {'sequence_index', 'location', 'event_type', 'event_subtype', 'asset', 'notes', 'event_identifier'},  # noqa: E501
+    HistoryBaseEntryType.ETH_BLOCK_EVENT: {'validator_index', 'block_number', 'event_subtype'},
+    HistoryBaseEntryType.ETH_DEPOSIT_EVENT: {'tx_hash', 'validator_index', 'sequence_index', 'event_identifier', 'extra_data'},  # noqa: E501
+    HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT: {'validator_index', 'is_exit'},
+    HistoryBaseEntryType.EVM_EVENT: {'tx_hash', 'sequence_index', 'location', 'event_type', 'event_subtype', 'asset', 'notes', 'counterparty', 'product', 'address', 'extra_data', 'event_identifier'},  # noqa: E501
+}
+
+
+def pop_multiple_keys(serialized_event: dict[str, Any], entry_type: HistoryBaseEntryType):
+    valid_keys = KEYS_IN_ENTRY_TYPE[entry_type].union({'entry_type', 'timestamp', 'balance', 'location_label', 'identifier'})  # noqa: E501
+    event_keys = set(serialized_event.keys())
+    for field in event_keys:
+        if field not in valid_keys:
+            serialized_event.pop(field)
 
 
 def entry_to_input_dict(
-        entry: 'EvmEvent',
+        entry: 'HistoryBaseEntry',
         include_identifier: bool,
 ) -> dict[str, Any]:
     """
-    Converts an EvmEvent entry into a dictionary, optionally including the event identifier.
+    Converts a HistoryBaseEntry into a dictionary, optionally including the event identifier.
     """
     serialized = entry.serialize()
     if include_identifier:
@@ -38,17 +55,22 @@ def entry_to_input_dict(
         serialized['identifier'] = entry.identifier
     else:
         serialized.pop('identifier')  # there is `identifier`: `None` which we have to remove
-    serialized.pop('event_identifier')
-    serialized.pop('entry_type')
+    pop_multiple_keys(serialized, entry.entry_type)
+    if entry.entry_type == HistoryBaseEntryType.EVM_EVENT:
+        serialized.pop('event_identifier')
+    elif entry.entry_type == HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT:
+        serialized['withdrawal_address'] = serialized.pop('location_label')
+    elif entry.entry_type == HistoryBaseEntryType.ETH_BLOCK_EVENT:
+        serialized['fee_recipient'] = serialized.pop('location_label')
+        serialized['is_mev_reward'] = serialized.pop('event_subtype') == HistoryEventSubType.MEV_REWARD.serialize()  # noqa: E501
+    elif entry.entry_type == HistoryBaseEntryType.ETH_DEPOSIT_EVENT:
+        serialized['depositor'] = serialized.pop('location_label')
     return serialized
 
 
-def add_entries(server: 'APIServer', events_db: DBHistoryEvents, add_directly: bool = False) -> list['HistoryBaseEntry']:  # noqa: E501
-    """
-    Adds a pre-set list of history entries to the database, either directly or
-    through the API, depending on the `add_directly` flag.
-    """
-    entries = [EvmEvent(
+def add_entries(events_db: 'DBHistoryEvents') -> list['HistoryBaseEntry']:
+    """Adds a pre-set list of history entries to the database"""
+    entries: list[HistoryBaseEntry] = [EvmEvent(
         tx_hash=deserialize_evm_tx_hash('0x64f1982504ab714037467fdd45d3ecf5a6356361403fc97dd325101d8c038c4e'),
         sequence_index=162,
         timestamp=TimestampMS(1569924574000),
@@ -148,35 +170,11 @@ def add_entries(server: 'APIServer', events_db: DBHistoryEvents, add_directly: b
         depositor=string_to_evm_address('0x0EbD2E2130b73107d0C45fF2E16c93E7e2e10e3a'),
     )]
 
-    entries_added_using_api = 0
     for entry in entries:
-        if (
-            add_directly is True or
-            isinstance(entry, (EthBlockEvent, EthDepositEvent, EthWithdrawalEvent, HistoryEvent)) or  # noqa: E501
-            (isinstance(entry, EvmEvent) and entry.extra_data is not None)
-        ):
-            # If any entry has extra data add it directly to the database instead of
-            # making use of the API. The reason is that the API doesn't allow to edit
-            # the extra data field.
-            # Also add HistoryEvent since the API doesn't allow to add them atm
-            with events_db.db.conn.write_ctx() as write_cursor:
-                identifier = events_db.add_history_event(
-                    write_cursor=write_cursor,
-                    event=entry,
-                )
-                entry.identifier = identifier
-        else:
-            json_data = entry_to_input_dict(entry, include_identifier=False)  # type: ignore
-            response = requests.put(
-                api_url_for(server, 'historyeventresource'),
-                json=json_data,
+        with events_db.db.conn.write_ctx() as write_cursor:
+            identifier = events_db.add_history_event(
+                write_cursor=write_cursor,
+                event=entry,
             )
-            result = assert_proper_response_with_result(response)
-            assert 'identifier' in result
-            entry.identifier = result['identifier']
-            entries_added_using_api += 1
-
-    if add_directly is False:
-        assert entries_added_using_api == 4, 'api was used directly and event is missing'
-
+            entry.identifier = identifier
     return entries
