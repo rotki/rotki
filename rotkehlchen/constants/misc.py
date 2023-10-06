@@ -1,6 +1,6 @@
 from rotkehlchen.fval import FVal
 
-CURRENCYCONVERTER_API_KEY = '950873c204f11268e253'
+CURRENCYCONVERTER_API_KEY = '0529ead07a5a12d2db0e'
 
 ZERO = FVal(0)
 ONE = FVal(1)

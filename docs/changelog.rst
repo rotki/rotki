@@ -2,6 +2,7 @@
 Changelog
 =========
 
+
 * :feature:`5843` Velodrome is now supported in Optimism. Related transactions should be decoded properly and shown in human readable format and any balances in Velodrome auto-detected.
 * :feature:`630` Users will be able to export history events to CSV.
 * :feature:`6582` Users will be able to see skipped external events on the history events page, export them to CSV, and reprocess those events.
@@ -15,6 +16,7 @@ Changelog
 * :bug:`-` History event header will now be visible only on mobile.
 * :bug:`6647` When PnL report generation is finished, users will not be redirected to the report page, but will get notified instead.
 * :bug:`6667` Wrong ENS name should no longer be reported for some edge case of ENS actions and the name should also appear in more events than before.
+* :bug:`-` Aave v2 accounting for deposit interest profit and borrow payback loss should now work correctly again.
 
 * :release:`1.30.2 <2023-09-21>`
 * :feature:`-` Improved support for importing Binance CSV files.

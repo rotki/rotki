@@ -42,7 +42,7 @@ class ProcessedAccountingEvent:
     taxable_amount: FVal
     price: Price
     pnl: PNL
-    cost_basis: Optional['CostBasisInfo']
+    cost_basis: Optional[CostBasisInfo]
     index: int
     # This is set only for some events to remember extra data that can be used later
     # such as the transaction hash of an event

@@ -82,9 +82,9 @@ class Aavev2Accountant(ModuleAccountantInterface):
         key = (string_to_evm_address(event.location_label), event.asset)  # type: ignore[arg-type]  # location_label can't be None here  # noqa: E501
         self.assets_supplied[key] -= event.balance.amount
         if self.assets_supplied[key] < ZERO:
-            gain = -1 * self.assets_borrowed[key]
+            gain = -1 * self.assets_supplied[key]
             resolved_asset = event.asset.resolve_to_asset_with_symbol()
-            pot.add_spend(
+            pot.add_acquisition(
                 event_type=AccountingEventType.TRANSACTION_EVENT,
                 notes=f'Gained {gain} {resolved_asset.symbol} on Aave v2 as interest rate for {event.location_label}',  # noqa: E501
                 location=event.location,
@@ -94,7 +94,7 @@ class Aavev2Accountant(ModuleAccountantInterface):
                 taxable=True,
                 extra_data={'tx_hash': event.tx_hash.hex()},
             )
-            self.assets_borrowed[key] = ZERO
+            self.assets_supplied[key] = ZERO
 
     def event_settings(self, pot: 'AccountingPot') -> dict[str, TxEventSettings]:  # pylint: disable=unused-argument  # noqa: E501
         """Being defined at function call time is fine since this function is called only once"""
