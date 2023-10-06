@@ -20,6 +20,7 @@ class BlockchainAccounts:
     polygon_pos: tuple[ChecksumEvmAddress, ...] = field(default_factory=tuple)
     arbitrum_one: tuple[ChecksumEvmAddress, ...] = field(default_factory=tuple)
     base: tuple[ChecksumEvmAddress, ...] = field(default_factory=tuple)
+    gnosis: tuple[ChecksumEvmAddress, ...] = field(default_factory=tuple)
     btc: tuple[BTCAddress, ...] = field(default_factory=tuple)
     bch: tuple[BTCAddress, ...] = field(default_factory=tuple)
     ksm: tuple[SubstrateAddress, ...] = field(default_factory=tuple)

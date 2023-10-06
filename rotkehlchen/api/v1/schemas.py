@@ -36,6 +36,7 @@ from rotkehlchen.chain.evm.accounting.structures import (
     TxAccountingTreatment,
 )
 from rotkehlchen.chain.evm.types import EvmAccount
+from rotkehlchen.chain.gnosis.constants import GNOSIS_ETHERSCAN_NODE_NAME
 from rotkehlchen.chain.optimism.constants import OPTIMISM_ETHERSCAN_NODE_NAME
 from rotkehlchen.chain.polygon_pos.constants import POLYGON_POS_ETHERSCAN_NODE_NAME
 from rotkehlchen.chain.substrate.types import SubstrateAddress, SubstratePublicKey
@@ -2623,6 +2624,7 @@ class RpcNodeEditSchema(RpcAddNodeSchema):
                 POLYGON_POS_ETHERSCAN_NODE_NAME,
                 ARBITRUM_ONE_ETHERSCAN_NODE_NAME,
                 BASE_ETHERSCAN_NODE_NAME,
+                GNOSIS_ETHERSCAN_NODE_NAME,
             ):
                 raise ValidationError(
                     message="Can't change the etherscan node name",

@@ -1301,9 +1301,17 @@ class EvmNodeInquirer(metaclass=ABCMeta):
         May Raise RemoteError if querying fails
         """
 
-    @abstractmethod
-    def get_blocknumber_by_time(self, ts: Timestamp, etherscan: bool = True, closest: Literal['before', 'after'] = 'before') -> int:  # noqa: E501
-        """Searches for the blocknumber of a specific timestamp"""
+    def get_blocknumber_by_time(
+            self,
+            ts: Timestamp,
+            etherscan: bool = True,  # pylint: disable=unused-argument  # it is used in the ethereum inquirer method
+            closest: Literal['before', 'after'] = 'before',
+    ) -> int:
+        """Searches for the blocknumber of a specific timestamp
+
+        May raise RemoteError
+        """
+        return self.etherscan.get_blocknumber_by_time(ts=ts, closest=closest)
 
     # -- methods to be optionally implemented by child classes --
 

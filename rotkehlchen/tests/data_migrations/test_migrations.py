@@ -22,7 +22,13 @@ from rotkehlchen.icons import IconManager
 from rotkehlchen.tests.utils.blockchain import setup_evm_addresses_activity_mock
 from rotkehlchen.tests.utils.exchanges import check_saved_events_for_exchange
 from rotkehlchen.tests.utils.factories import make_evm_address
-from rotkehlchen.types import ChecksumEvmAddress, Location, TradeType
+from rotkehlchen.types import (
+    SUPPORTED_EVM_CHAINS,
+    ChecksumEvmAddress,
+    Location,
+    SupportedBlockchain,
+    TradeType,
+)
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
@@ -74,9 +80,9 @@ def assert_add_addresses_migration_ws_messages(
     websocket_connection.wait_until_messages_num(num=num_messages, timeout=10)
     assert websocket_connection.messages_num() == num_messages
 
-    for i in range(migration_steps):
+    for i in range(num_messages):
         msg = websocket_connection.pop_message()
-        if i == migration_steps:  # message for added address
+        if i == migration_steps:  # message for added address. The message is only one and not one per chain. The added addresses per chain are checked from the message data  # noqa: E501
             assert msg['type'] == 'evm_accounts_detection'
             assert sorted(msg['data'], key=operator.itemgetter('evm_chain', 'address')) == sorted(
                 chain_to_added_address, key=operator.itemgetter('evm_chain', 'address'),
@@ -94,13 +100,62 @@ def assert_add_addresses_migration_ws_messages(
             elif i == 7:
                 assert_progress_message(msg, i, 'Potentially write migrated addresses to the DB', migration_version, migration_steps)  # noqa: E501
 
-        elif migration_version == 11:
+        elif migration_version in (11, 12):
             if i == 1:
                 assert_progress_message(msg, i, 'Fetching new spam assets and rpc data info', migration_version, migration_steps)  # noqa: E501
             elif i in (2, 3):
                 assert_progress_message(msg, i, 'EVM chain activity', migration_version, migration_steps)  # noqa: E501
             elif i == 4:
                 assert_progress_message(msg, i, 'Potentially write migrated addresses to the DB', migration_version, migration_steps)  # noqa: E501
+
+
+def detect_accounts_migration_check(
+        expected_detected_addresses_per_chain: dict[SUPPORTED_EVM_CHAINS, list[ChecksumEvmAddress]],  # noqa: E501
+        migration_version: int,
+        migration_steps: int,
+        migration_list: list[MigrationRecord],
+        current_evm_accounts: list[ChecksumEvmAddress],
+        rotkehlchen_api_server: 'APIServer',
+        websocket_connection: 'WebsocketReader',
+) -> None:
+    """Tests that a migration that detects accounts with activity in the given evm chains is
+    properly applied."""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    # set high version so that DB data updates don't get applied
+    with rotki.data.db.conn.write_ctx() as write_cursor:
+        write_cursor.executemany(
+            'INSERT OR REPLACE INTO settings(name, value) VALUES (?, ?)',
+            [
+                (UpdateType.SPAM_ASSETS.serialize(), 999),
+                (UpdateType.RPC_NODES.serialize(), 999),
+                (UpdateType.CONTRACTS.serialize(), 999),
+                (UpdateType.GLOBAL_ADDRESSBOOK.serialize(), 999),
+            ],
+        )
+    migration_patch = patch(
+        'rotkehlchen.data_migrations.manager.MIGRATION_LIST',
+        new=migration_list,
+    )
+
+    with migration_patch:
+        DataMigrationManager(rotki).maybe_migrate_data()
+
+    # check that detecting chain accounts works properly
+    with rotki.data.db.conn.read_ctx() as cursor:  # make sure DB is also written
+        accounts = rotki.data.db.get_blockchain_accounts(cursor)
+
+    assert set(accounts.eth) == set(current_evm_accounts)
+    assert set(rotki.chains_aggregator.accounts.eth) == set(current_evm_accounts)
+    chain_to_added_address = []
+    for chain in expected_detected_addresses_per_chain:
+        chain_addresses = expected_detected_addresses_per_chain[chain]
+        assert set(getattr(accounts, chain.get_key())) == set(chain_addresses)
+        assert set(getattr(rotki.chains_aggregator.accounts, chain.get_key())) == set(chain_addresses)  # noqa: E501
+        chain_to_added_address.extend(
+            [{'evm_chain': chain.to_chain_id().to_name(), 'address': address} for address in chain_addresses],  # noqa: E501
+        )
+
+    assert_add_addresses_migration_ws_messages(websocket_connection, migration_version, migration_steps, chain_to_added_address)  # noqa: E501
 
 
 @pytest.mark.parametrize('use_custom_database', ['data_migration_v0.db'])
@@ -278,6 +333,7 @@ def test_migration_5(database, data_dir, greenlet_manager):
     assert Path(icons_path, '_ceth_0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9_small.png').exists() is False  # noqa: E501
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('data_migration_version', [9])
 @pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
 @pytest.mark.parametrize('ethereum_accounts', [[make_evm_address(), make_evm_address(), make_evm_address(), make_evm_address()]])  # noqa: E501
@@ -291,16 +347,6 @@ def test_migration_10(
     Test that accounts are properly duplicated from ethereum to optimism and avalanche
     """
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    migration_patch = patch(
-        'rotkehlchen.data_migrations.manager.MIGRATION_LIST',
-        new=[MIGRATION_LIST[4]],
-    )
-    avalanche_addresses = [ethereum_accounts[1], ethereum_accounts[3]]
-    optimism_addresses = [ethereum_accounts[2], ethereum_accounts[3]]
-    polygon_pos_addresses = [ethereum_accounts[3]]
-    arbitrum_one_addresses = [ethereum_accounts[3]]
-    base_addresses = [ethereum_accounts[2]]
-
     # insert a bad polygon etherscan name in the database. By mistake we published an error
     # in this name and could affect users
     with GlobalDBHandler().conn.write_ctx() as write_cursor:
@@ -314,6 +360,9 @@ def test_migration_10(
         )
         assert write_cursor.execute('SELECT COUNT(*) FROM default_rpc_nodes WHERE name="polygon etherscan"').fetchone()[0] == 1  # noqa: E501
 
+    avalanche_addresses = [ethereum_accounts[1], ethereum_accounts[3]]
+    optimism_addresses = [ethereum_accounts[2], ethereum_accounts[3]]
+    polygon_pos_addresses = [ethereum_accounts[3]]
     with ExitStack() as stack:
         setup_evm_addresses_activity_mock(
             stack=stack,
@@ -323,39 +372,20 @@ def test_migration_10(
             avalanche_addresses=avalanche_addresses,
             optimism_addresses=optimism_addresses,
             polygon_pos_addresses=polygon_pos_addresses,
-            arbitrum_one_addresses=arbitrum_one_addresses,
-            base_addresses=base_addresses,
         )
-        stack.enter_context(migration_patch)
-        DataMigrationManager(rotki).maybe_migrate_data()
-
-    with rotki.data.db.conn.read_ctx() as cursor:  # make sure DB is also written
-        accounts = rotki.data.db.get_blockchain_accounts(cursor)
-
-    assert set(accounts.eth) == set(ethereum_accounts)
-    assert set(rotki.chains_aggregator.accounts.eth) == set(ethereum_accounts)
-    assert set(accounts.avax) == set(avalanche_addresses)
-    assert set(rotki.chains_aggregator.accounts.avax) == set(avalanche_addresses)
-    assert set(accounts.optimism) == set(optimism_addresses)
-    assert set(rotki.chains_aggregator.accounts.optimism) == set(optimism_addresses)
-    assert set(accounts.polygon_pos) == set(polygon_pos_addresses)
-    assert set(rotki.chains_aggregator.accounts.polygon_pos) == set(polygon_pos_addresses)
-    assert set(accounts.arbitrum_one) == set(arbitrum_one_addresses)
-    assert set(rotki.chains_aggregator.accounts.arbitrum_one) == set(arbitrum_one_addresses)
-    assert set(accounts.base) == set(base_addresses)
-    assert set(rotki.chains_aggregator.accounts.base) == set(base_addresses)
-
-    migration_steps = 8  # 4 (eth accounts) + 4 (potentially write to db + updating spam assets + polygon rpc + step 0)  # noqa: E501
-    chain_to_added_address = [
-        {'evm_chain': 'avalanche', 'address': ethereum_accounts[1]},
-        {'evm_chain': 'avalanche', 'address': ethereum_accounts[3]},
-        {'evm_chain': 'polygon_pos', 'address': ethereum_accounts[3]},
-        {'evm_chain': 'optimism', 'address': ethereum_accounts[2]},
-        {'evm_chain': 'optimism', 'address': ethereum_accounts[3]},
-        {'evm_chain': 'arbitrum_one', 'address': ethereum_accounts[3]},
-        {'evm_chain': 'base', 'address': ethereum_accounts[2]},
-    ]
-    assert_add_addresses_migration_ws_messages(websocket_connection, 10, migration_steps, chain_to_added_address)  # noqa: E501
+        detect_accounts_migration_check(
+            expected_detected_addresses_per_chain={
+                SupportedBlockchain.AVALANCHE: avalanche_addresses,
+                SupportedBlockchain.OPTIMISM: optimism_addresses,
+                SupportedBlockchain.POLYGON_POS: polygon_pos_addresses,
+            },
+            migration_version=10,
+            migration_steps=8,  # 4 (current eth accounts) + 4 (potentially write to db + updating spam assets + polygon rpc + new round msg)  # noqa: E501
+            migration_list=[MIGRATION_LIST[4]],
+            current_evm_accounts=ethereum_accounts,
+            rotkehlchen_api_server=rotkehlchen_api_server,
+            websocket_connection=websocket_connection,
+        )
 
     with GlobalDBHandler().conn.write_ctx() as write_cursor:  # check the global db for the polygon etherscan node  # noqa: E501
         assert write_cursor.execute('SELECT COUNT(*) FROM default_rpc_nodes WHERE name="polygon etherscan"').fetchone()[0] == 0  # noqa: E501
@@ -384,39 +414,48 @@ def test_migration_11(
 
     - Test that detecting arbitrum one accounts works properly
     """
-    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    # set high version so that DB data updates dont't get applied
-    with rotki.data.db.conn.write_ctx() as write_cursor:
-        write_cursor.executemany(
-            'INSERT OR REPLACE INTO settings(name, value) VALUES (?, ?)',
-            [
-                (UpdateType.SPAM_ASSETS.serialize(), 999),
-                (UpdateType.RPC_NODES.serialize(), 999),
-                (UpdateType.CONTRACTS.serialize(), 999),
-                (UpdateType.GLOBAL_ADDRESSBOOK.serialize(), 999),
-            ],
-        )
-    migration_patch = patch(
-        'rotkehlchen.data_migrations.manager.MIGRATION_LIST',
-        new=[MIGRATION_LIST[5]],
+    detect_accounts_migration_check(
+        expected_detected_addresses_per_chain={SupportedBlockchain.ARBITRUM_ONE: [ethereum_accounts[1]]},  # noqa: E501
+        migration_version=11,
+        migration_steps=5,  # 2 (current eth accounts) + 3 (potentially write to db + updating spam assets and rpc nodes + new round msg)  # noqa: E501
+        migration_list=[MIGRATION_LIST[5]],
+        current_evm_accounts=ethereum_accounts,
+        rotkehlchen_api_server=rotkehlchen_api_server,
+        websocket_connection=websocket_connection,
     )
 
-    arbitrum_one_addresses = [ethereum_accounts[1]]
-    with migration_patch:
-        DataMigrationManager(rotki).maybe_migrate_data()
 
-    # check that detecting arbitrum one accounts works properly
-    with rotki.data.db.conn.read_ctx() as cursor:  # make sure DB is also written
-        accounts = rotki.data.db.get_blockchain_accounts(cursor)
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('data_migration_version', [11])
+@pytest.mark.parametrize('perform_upgrades_at_unlock', [True])
+@pytest.mark.parametrize('ethereum_accounts', [[
+    '0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84',  # mainnet contract
+    '0x78C13393Aee675DD7ED07ce992210750D1F5dB88',  # mainnet + gnosis + base + other evm chains activity  # noqa: E501
+]])
+@pytest.mark.parametrize('legacy_messages_via_websockets', [True])
+@pytest.mark.parametrize('network_mocking', [False])
+def test_migration_12(
+        rotkehlchen_api_server: 'APIServer',
+        ethereum_accounts: list[ChecksumEvmAddress],
+        websocket_connection: 'WebsocketReader',
+) -> None:
+    """
+    Test migration 12.
 
-    assert set(accounts.eth) == set(ethereum_accounts)
-    assert set(rotki.chains_aggregator.accounts.eth) == set(ethereum_accounts)
-    assert set(accounts.arbitrum_one) == set(arbitrum_one_addresses)
-    assert set(rotki.chains_aggregator.accounts.arbitrum_one) == set(arbitrum_one_addresses)
-
-    migration_steps = 5  # 2 (eth accounts) + 3 (potentially write to db + updating spam assets and rpc nodes + step 0)  # noqa: E501
-    chain_to_added_address = [{'evm_chain': 'arbitrum_one', 'address': ethereum_accounts[1]}]
-    assert_add_addresses_migration_ws_messages(websocket_connection, 11, migration_steps, chain_to_added_address)  # noqa: E501
+    - Test that detecting gnosis and base accounts works properly
+    """
+    detect_accounts_migration_check(
+        expected_detected_addresses_per_chain={
+            SupportedBlockchain.GNOSIS: [ethereum_accounts[1]],
+            SupportedBlockchain.BASE: [ethereum_accounts[1]],
+        },
+        migration_version=12,
+        migration_steps=5,  # 2 (current eth accounts) + 3 (potentially write to db + updating spam assets and rpc nodes + new round msg)  # noqa: E501
+        migration_list=[MIGRATION_LIST[6]],
+        current_evm_accounts=ethereum_accounts,
+        rotkehlchen_api_server=rotkehlchen_api_server,
+        websocket_connection=websocket_connection,
+    )
 
 
 @pytest.mark.parametrize('perform_upgrades_at_unlock', [False])

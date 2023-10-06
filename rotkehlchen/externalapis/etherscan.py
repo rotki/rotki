@@ -84,6 +84,7 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
                 ExternalService.POLYGON_POS_ETHERSCAN,
                 ExternalService.ARBITRUM_ONE_ETHERSCAN,
                 ExternalService.BASE_ETHERSCAN,
+                ExternalService.GNOSIS_ETHERSCAN,
             ],
     ) -> None:
         super().__init__(database=database, service_name=service)
@@ -94,6 +95,7 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
             SupportedBlockchain.POLYGON_POS,
             SupportedBlockchain.ARBITRUM_ONE,
             SupportedBlockchain.BASE,
+            SupportedBlockchain.GNOSIS,
         ) else 'api-'
         self.base_url = base_url
         self.session = requests.session()
@@ -108,6 +110,8 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
             self.earliest_ts = 1622243344
         elif service == ExternalService.BASE_ETHERSCAN:
             self.earliest_ts = 1686789347
+        elif service == ExternalService.GNOSIS_ETHERSCAN:
+            self.earliest_ts = 1539024185
         else:  # Polygon POS
             self.earliest_ts = 1590856200
 

@@ -20,7 +20,7 @@ from rotkehlchen.db.upgrade_manager import (
     DBUpgradeProgressHandler,
 )
 from rotkehlchen.db.upgrades.v37_v38 import DEFAULT_POLYGON_NODES_AT_V38
-from rotkehlchen.db.upgrades.v39_v40 import DEFAULT_BASE_NODES_AT_V40, PREFIX
+from rotkehlchen.db.upgrades.v39_v40 import PREFIX
 from rotkehlchen.db.utils import table_exists
 from rotkehlchen.errors.misc import DBUpgradeError
 from rotkehlchen.oracles.structures import CurrentPriceOracle
@@ -1837,9 +1837,6 @@ def test_upgrade_db_39_to_40(user_data_dir):  # pylint: disable=unused-argument
     assert table_exists(cursor, 'ledger_action_type') is True
     assert table_exists(cursor, 'ledger_actions') is True
 
-    max_initial_node_id = cursor.execute('SELECT MAX(identifier) FROM rpc_nodes').fetchone()[0]
-    nodes_before = cursor.execute('SELECT * FROM rpc_nodes').fetchall()
-
     # Check used query ranges before
     assert cursor.execute('SELECT * from used_query_ranges').fetchall() == [
         ('last_withdrawals_query_ts', 0, 1693141835),
@@ -1891,16 +1888,10 @@ def test_upgrade_db_39_to_40(user_data_dir):  # pylint: disable=unused-argument
     assert table_exists(cursor, 'ledger_action_type') is False
     assert table_exists(cursor, 'ledger_actions') is False
 
-    assert cursor.execute(  # Check that BASE location was added
-        'SELECT location FROM location WHERE seq=?',
-        (Location.BASE.value,),
-    ).fetchone()[0] == Location.BASE.serialize_for_db()
-    nodes_after = cursor.execute('SELECT * FROM rpc_nodes').fetchall()
-    default_base_nodes_with_ids = [
-        (id, *node)
-        for id, node in enumerate(DEFAULT_BASE_NODES_AT_V40, start=max_initial_node_id + 1)
-    ]
-    assert nodes_after == nodes_before + default_base_nodes_with_ids
+    assert cursor.execute(  # Check that BASE and GNOSIS locations were added
+        'SELECT location FROM location WHERE seq IN (?, ?) ORDER BY seq',
+        (Location.BASE.value, Location.GNOSIS.value),
+    ).fetchall() == [(Location.BASE.serialize_for_db(),), (Location.GNOSIS.serialize_for_db(),)]
 
     # test that all 8 ledger actions were moved to history events
     assert all(x == (1, 0) for x in cursor.execute('SELECT entry_type, sequence_index from history_events WHERE event_identifier LIKE "MLA_%"'))  # noqa: E501

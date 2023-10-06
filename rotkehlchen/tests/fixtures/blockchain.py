@@ -18,6 +18,8 @@ from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 from rotkehlchen.chain.ethereum.transactions import EthereumTransactions
 from rotkehlchen.chain.evm.contracts import EvmContracts
 from rotkehlchen.chain.evm.types import NodeName
+from rotkehlchen.chain.gnosis.manager import GnosisManager
+from rotkehlchen.chain.gnosis.node_inquirer import GnosisInquirer
 from rotkehlchen.chain.optimism.decoding.decoder import OptimismTransactionDecoder
 from rotkehlchen.chain.optimism.manager import OptimismManager
 from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
@@ -68,6 +70,8 @@ def _initialize_and_yield_evm_inquirer_fixture(
         blockchain = SupportedBlockchain.ARBITRUM_ONE
     elif klass == BaseInquirer:
         blockchain = SupportedBlockchain.BASE
+    elif klass == GnosisInquirer:
+        blockchain = SupportedBlockchain.GNOSIS
 
     nodes_to_connect_to = maybe_modify_rpc_nodes(database, blockchain, manager_connect_at_start)
 
@@ -130,6 +134,11 @@ def fixture_base_accounts() -> list[ChecksumEvmAddress]:
     return []
 
 
+@pytest.fixture(name='gnosis_accounts')
+def fixture_gnosis_accounts() -> list[ChecksumEvmAddress]:
+    return []
+
+
 @pytest.fixture(name='btc_accounts')
 def fixture_btc_accounts() -> list[BTCAddress]:
     return []
@@ -172,6 +181,7 @@ def fixture_blockchain_accounts(
         polygon_pos_accounts: list[ChecksumEvmAddress],
         arbitrum_one_accounts: list[ChecksumEvmAddress],
         base_accounts: list[ChecksumEvmAddress],
+        gnosis_accounts: list[ChecksumEvmAddress],
         avax_accounts: list[ChecksumEvmAddress],
         btc_accounts: list[BTCAddress],
         bch_accounts: list[BTCAddress],
@@ -184,6 +194,7 @@ def fixture_blockchain_accounts(
         polygon_pos=tuple(polygon_pos_accounts),
         arbitrum_one=tuple(arbitrum_one_accounts),
         base=tuple(base_accounts),
+        gnosis=tuple(gnosis_accounts),
         avax=tuple(avax_accounts),
         btc=tuple(btc_accounts),
         bch=tuple(bch_accounts),
@@ -481,6 +492,42 @@ def fixture_base_manager(base_inquirer):
     return BaseManager(node_inquirer=base_inquirer)
 
 
+@pytest.fixture(name='gnosis_manager_connect_at_start')
+def fixture_gnosis_manager_connect_at_start() -> Union[Literal['DEFAULT'], Sequence[NodeName]]:
+    """A sequence of nodes to connect to at the start of the test.
+    Can be either a sequence of nodes to connect to for this chain.
+    Or an empty sequence to connect to no nodes for this chain.
+    Or the DEFAULT string literal meaning to connect to the built-in default nodes.
+    """
+    return ()
+
+
+@pytest.fixture(name='gnosis_inquirer')
+def fixture_gnosis_inquirer(
+        gnosis_manager_connect_at_start,
+        greenlet_manager,
+        database,
+        mock_other_web3,
+):
+    with ExitStack() as stack:
+        yield _initialize_and_yield_evm_inquirer_fixture(
+            parent_stack=stack,
+            klass=GnosisInquirer,
+            class_path='rotkehlchen.chain.gnosis.node_inquirer.GnosisInquirer',
+            manager_connect_at_start=gnosis_manager_connect_at_start,
+            greenlet_manager=greenlet_manager,
+            database=database,
+            mock_other_web3=mock_other_web3,
+            mock_data={},  # Not used in gnosis. TODO: remove it for all other chains too since we now have vcr  # noqa: E501
+            mocked_proxies=None,
+        )
+
+
+@pytest.fixture(name='gnosis_manager')
+def fixture_gnosis_manager(gnosis_inquirer):
+    return GnosisManager(node_inquirer=gnosis_inquirer)
+
+
 @pytest.fixture(name='ksm_rpc_endpoint')
 def fixture_ksm_rpc_endpoint() -> Optional[str]:
     return None
@@ -647,6 +694,7 @@ def fixture_blockchain(
         polygon_pos_manager,
         arbitrum_one_manager,
         base_manager,
+        gnosis_manager,
         kusama_manager,
         polkadot_manager,
         avalanche_manager,
@@ -674,6 +722,7 @@ def fixture_blockchain(
         polygon_pos_manager=polygon_pos_manager,
         arbitrum_one_manager=arbitrum_one_manager,
         base_manager=base_manager,
+        gnosis_manager=gnosis_manager,
         kusama_manager=kusama_manager,
         polkadot_manager=polkadot_manager,
         avalanche_manager=avalanche_manager,

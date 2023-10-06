@@ -32,6 +32,8 @@ from rotkehlchen.chain.ethereum.manager import EthereumManager
 from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 from rotkehlchen.chain.ethereum.oracles.uniswap import UniswapV2Oracle, UniswapV3Oracle
 from rotkehlchen.chain.evm.nodes import populate_rpc_nodes_in_database
+from rotkehlchen.chain.gnosis.manager import GnosisManager
+from rotkehlchen.chain.gnosis.node_inquirer import GnosisInquirer
 from rotkehlchen.chain.optimism.manager import OptimismManager
 from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
 from rotkehlchen.chain.polygon_pos.manager import PolygonPOSManager
@@ -378,6 +380,11 @@ class Rotkehlchen:
             database=self.data.db,
         )
         base_manager = BaseManager(base_inquirer)
+        gnosis_inquirer = GnosisInquirer(
+            greenlet_manager=self.greenlet_manager,
+            database=self.data.db,
+        )
+        gnosis_manager = GnosisManager(gnosis_inquirer)
         kusama_manager = SubstrateManager(
             chain=SupportedBlockchain.KUSAMA,
             msg_aggregator=self.msg_aggregator,
@@ -424,6 +431,7 @@ class Rotkehlchen:
             polygon_pos_manager=polygon_pos_manager,
             arbitrum_one_manager=arbitrum_one_manager,
             base_manager=base_manager,
+            gnosis_manager=gnosis_manager,
             kusama_manager=kusama_manager,
             polkadot_manager=polkadot_manager,
             avalanche_manager=avalanche_manager,

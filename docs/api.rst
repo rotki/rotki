@@ -2102,6 +2102,14 @@ Getting all supported chains
                     "native_token": "ETH",
                     "image": "base.svg",
                     "evm_chain_name": "base"
+                },
+                {
+                    "id": "gnosis",
+                    "name": "gnosis",
+                    "type": "evm",
+                    "native_token": "XDAI",
+                    "image": "gnosis.svg",
+                    "evm_chain_name": "gnosis"
                 }
             ],
             "message": ""
@@ -11842,6 +11850,7 @@ Get all EVM Chains
                 {"id": 137, "name": "polygon_pos", "label": "Polygon POS"},
                 {"id": 250, "name": "fantom", "label": "Fantom"},
                 {"id": 42161, "name": "arbitrum_one", "label": "Arbitrum One"},
+                {"id": 8453, "name": "base", "label": "Base"},
                 {"id": 43114, "name": "avalanche", "label": "Avalanche"},
                 {"id": 42220, "name": "celo", "label": "Celo"}
             ],

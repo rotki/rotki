@@ -42,6 +42,13 @@ DEFAULT_BASE_NODES_AT_V40 = [
     ('base 1rpc', 'https://1rpc.io/base', 0, 1, '0.18', 'BASE'),
 ]
 
+DEFAULT_GNOSIS_NODES_AT_V40 = [
+    ('gnosis etherscan', '', 0, 1, '0.28', 'GNOSIS'),
+    ('gnosis ankr', 'https://rpc.ankr.com/gnosis', 0, 1, '0.18', 'GNOSIS'),
+    ('gnosis BlockPi', 'https://gnosis.blockpi.network/v1/rpc/public', 0, 1, '0.18', 'GNOSIS'),
+    ('gnosis PublicNode', 'https://gnosis.publicnode.com', 0, 1, '0.18', 'GNOSIS'),
+    ('gnosis 1rpc', 'https://1rpc.io/gnosis', 0, 1, '0.18', 'GNOSIS'),
+]
 
 LEDGER_ACTION_TYPE_TO_NAME = {
     'A': 'income',
@@ -119,15 +126,14 @@ def _purge_kraken_events(write_cursor: 'DBCursor') -> None:
     log.debug('Exit _reset_kraken_events')
 
 
-def _add_base_chain_data(write_cursor: 'DBCursor') -> None:
-    log.debug('Enter _add_base_chain_data')
-    write_cursor.execute('INSERT OR IGNORE INTO location(location, seq) VALUES ("j", 42);')
+def _add_new_supported_chains_locations(write_cursor: 'DBCursor') -> None:
+    log.debug('Enter _add_new_supported_chains_locations')
     write_cursor.executemany(
-        'INSERT OR IGNORE INTO rpc_nodes(name, endpoint, owned, active, weight, blockchain) '
-        'VALUES (?, ?, ?, ?, ?, ?)',
-        DEFAULT_BASE_NODES_AT_V40,
+        'INSERT OR IGNORE INTO location(location, seq) '
+        'VALUES (?, ?)',
+        (('j', 42), ('k', 43)),
     )
-    log.debug('Exit _add_base_chain_data')
+    log.debug('Exit _add_new_supported_chains_locations')
 
 
 def _migrate_ledger_actions(write_cursor: 'DBCursor', conn: 'DBConnection') -> None:
@@ -281,7 +287,7 @@ def upgrade_v39_to_v40(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         progress_handler.new_step()
         _purge_kraken_events(write_cursor)
         progress_handler.new_step()
-        _add_base_chain_data(write_cursor)
+        _add_new_supported_chains_locations(write_cursor)
         progress_handler.new_step()
         _upgrade_rotki_events(write_cursor)
         progress_handler.new_step()

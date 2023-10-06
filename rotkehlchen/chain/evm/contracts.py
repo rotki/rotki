@@ -276,6 +276,10 @@ class EvmContracts(Generic[T]):
     def abi(self: 'EvmContracts[Literal[ChainID.BASE]]', name: Literal['']) -> list[dict[str, Any]]:  # noqa: E501
         ...
 
+    @overload
+    def abi(self: 'EvmContracts[Literal[ChainID.GNOSIS]]', name: Literal['']) -> list[dict[str, Any]]:  # noqa: E501
+        ...
+
     def abi(self, name: str) -> list[dict[str, Any]]:
         """Gets abi of an evm contract from the abi json file
 

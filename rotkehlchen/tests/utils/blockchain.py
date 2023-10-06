@@ -21,7 +21,13 @@ from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.tests.utils.eth_tokens import CONTRACT_ADDRESS_TO_TOKEN
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import BTCAddress, ChecksumEvmAddress, SupportedBlockchain
+from rotkehlchen.types import (
+    EVM_CHAINS_WITH_TRANSACTIONS,
+    SUPPORTED_EVM_CHAINS,
+    BTCAddress,
+    ChecksumEvmAddress,
+    SupportedBlockchain,
+)
 from rotkehlchen.utils.misc import from_wei, satoshis_to_btc
 
 if TYPE_CHECKING:
@@ -605,13 +611,16 @@ def setup_evm_addresses_activity_mock(
         stack: 'ExitStack',
         chains_aggregator: 'ChainsAggregator',
         eth_contract_addresses: list[ChecksumEvmAddress],
-        ethereum_addresses: list[ChecksumEvmAddress],
+        ethereum_addresses: list[ChecksumEvmAddress],  # pylint: disable=unused-argument  # used by the saved locals  # noqa: E501, RUF100
         avalanche_addresses: Optional[list[ChecksumEvmAddress]] = None,
-        optimism_addresses: Optional[list[ChecksumEvmAddress]] = None,
-        polygon_pos_addresses: Optional[list[ChecksumEvmAddress]] = None,
-        arbitrum_one_addresses: Optional[list[ChecksumEvmAddress]] = None,
-        base_addresses: Optional[list[ChecksumEvmAddress]] = None,
+        optimism_addresses: Optional[list[ChecksumEvmAddress]] = None,  # pylint: disable=unused-argument  # used by the saved locals  # noqa: E501, RUF100
+        polygon_pos_addresses: Optional[list[ChecksumEvmAddress]] = None,  # pylint: disable=unused-argument  # used by the saved locals  # noqa: E501, RUF100
+        arbitrum_one_addresses: Optional[list[ChecksumEvmAddress]] = None,  # pylint: disable=unused-argument  # used by the saved locals  # noqa: E501, RUF100
+        base_addresses: Optional[list[ChecksumEvmAddress]] = None,  # pylint: disable=unused-argument  # used by the saved locals  # noqa: E501, RUF100
+        gnosis_addresses: Optional[list[ChecksumEvmAddress]] = None,  # pylint: disable=unused-argument  # used by the saved locals  # noqa: E501, RUF100
 ) -> 'ExitStack':
+    saved_locals = locals()  # bit hacky, but save locals here so they can be accessed by mock_chain_has_activity  # noqa: E501
+
     def mock_ethereum_get_code(account):
         if account in eth_contract_addresses:
             return '0xsomecode'
@@ -627,30 +636,9 @@ def setup_evm_addresses_activity_mock(
             return FVal(1)
         return ZERO
 
-    def mock_optimism_has_activity(account):
-        if account in optimism_addresses:
-            return EtherscanHasChainActivity.TRANSACTIONS
-        return EtherscanHasChainActivity.NONE
-
-    def mock_polygon_pos_has_activity(account):
-        if account in polygon_pos_addresses:
-            return EtherscanHasChainActivity.TRANSACTIONS
-        return EtherscanHasChainActivity.NONE
-
-    def mock_ethereum_has_activity(account):
-        if account in ethereum_addresses:
-            return EtherscanHasChainActivity.TRANSACTIONS
-        return EtherscanHasChainActivity.NONE
-
-    def mock_arbitrum_one_has_activity(account):
-        if account in arbitrum_one_addresses:
-            return EtherscanHasChainActivity.TRANSACTIONS
-        return EtherscanHasChainActivity.NONE
-
-    def mock_base_has_activity(account):
-        if account in base_addresses:
-            return EtherscanHasChainActivity.TRANSACTIONS
-        return EtherscanHasChainActivity.NONE
+    def mock_chain_has_activity(account: ChecksumEvmAddress, chain: SUPPORTED_EVM_CHAINS):
+        addresses = saved_locals[f'{chain.to_chain_id().to_name()}_addresses']
+        return EtherscanHasChainActivity.TRANSACTIONS if addresses is not None and account in addresses else EtherscanHasChainActivity.NONE  # noqa: E501
 
     stack.enter_context(patch.object(
         chains_aggregator.ethereum.node_inquirer,
@@ -667,31 +655,14 @@ def setup_evm_addresses_activity_mock(
         'get_avax_balance',
         side_effect=mock_avax_balance,
     ))
-    stack.enter_context(patch.object(
-        chains_aggregator.optimism.node_inquirer.etherscan,
-        'has_activity',
-        side_effect=mock_optimism_has_activity,
-    ))
-    stack.enter_context(patch.object(
-        chains_aggregator.polygon_pos.node_inquirer.etherscan,
-        'has_activity',
-        side_effect=mock_polygon_pos_has_activity,
-    ))
-    stack.enter_context(patch.object(
-        chains_aggregator.ethereum.node_inquirer.etherscan,
-        'has_activity',
-        side_effect=mock_ethereum_has_activity,
-    ))
-    stack.enter_context(patch.object(
-        chains_aggregator.arbitrum_one.node_inquirer.etherscan,
-        'has_activity',
-        side_effect=mock_arbitrum_one_has_activity,
-    ))
-    stack.enter_context(patch.object(
-        chains_aggregator.base.node_inquirer.etherscan,
-        'has_activity',
-        side_effect=mock_base_has_activity,
-    ))
+
+    for chain in EVM_CHAINS_WITH_TRANSACTIONS:
+        stack.enter_context(patch.object(
+            chains_aggregator.get_evm_manager(chain.to_chain_id()).node_inquirer.etherscan,  # type: ignore  # chain id is of the expected type here
+            'has_activity',
+            side_effect=lambda account, i_chain=chain: mock_chain_has_activity(account, i_chain),  # use i_chain to avoid the problem with the lambda late binding  # noqa: E501
+        ))
+
     return stack
 
 
