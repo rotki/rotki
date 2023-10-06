@@ -22,6 +22,9 @@ import './commands';
 Cypress.on('uncaught:exception', err => {
   // returning false here prevents Cypress from
   // failing the test
-  console.error(err);
+  if (!err.message.includes('ResizeObserver loop limit exceeded')) {
+    console.error(err);
+  }
+
   return false;
 });

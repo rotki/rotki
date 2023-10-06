@@ -1,6 +1,4 @@
-import { BigNumber } from '@rotki/common';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { Zero } from '@/utils/bignumbers';
 import { Guid } from '../../common/guid';
 import {
   BlockchainBalancesPage,
@@ -9,6 +7,8 @@ import {
 import { DashboardPage } from '../../pages/dashboard-page';
 import { RotkiApp } from '../../pages/rotki-app';
 import { TagManager } from '../../pages/tag-manager';
+
+const PRECISION = 0.1;
 
 describe('blockchain balances', () => {
   let blockchainBalances: FixtureBlockchainBalance[];
@@ -62,35 +62,36 @@ describe('blockchain balances', () => {
   });
 
   it('data is reflected in dashboard', () => {
-    blockchainBalancesPage.getBlockchainBalances().then($blockchainBalances => {
-      const total = $blockchainBalances.reduce(
-        (sum: BigNumber, location) =>
-          sum.plus(location.value.toFixed(2, BigNumber.ROUND_DOWN)),
-        Zero
-      );
-
+    blockchainBalancesPage.getTotals().then(({ total, balances }) => {
       dashboardPage.visit();
       dashboardPage.getOverallBalance().then($overallBalance => {
         dashboardPage.getNonFungibleBalances().then($nonFungibleBalance => {
-          // compare overall balance with blockchain balance + non-fungible balance,
-          // with tolerance 0.01 (precision = 2)
-          expect(
-            $overallBalance
-              .minus(total.plus($nonFungibleBalance))
-              .abs()
-              .isLessThan(0.01)
+          const totalPlusNft = total.plus($nonFungibleBalance);
+          expect($overallBalance.toNumber(), 'overall balance').to.be.within(
+            totalPlusNft.minus(PRECISION).toNumber(),
+            totalPlusNft.plus(PRECISION).toNumber()
           );
         });
       });
 
       dashboardPage.getBlockchainBalances().then($dashboardBalances => {
-        $dashboardBalances.forEach((dashboardBalances, index) => {
-          const { blockchain, value } = $blockchainBalances[index];
-          const dashboardValue = dashboardBalances.value;
-          expect(dashboardValue.toNumber(), blockchain).within(
-            value.minus(0.01).toNumber(),
-            value.plus(0.01).toNumber()
-          );
+        expect(
+          balances.filter(x => x.value.gt(0)).map(x => x.blockchain),
+          'dashboard and blockchain balances'
+        ).to.have.members(Array.from($dashboardBalances.keys()));
+
+        balances.forEach(({ blockchain, value }) => {
+          const dashboardBalance = $dashboardBalances.get(blockchain);
+          const label = `${blockchain} balance`;
+          if (value.gt(0)) {
+            expect(dashboardBalance, label).to.not.be.undefined;
+            expect(dashboardBalance?.toNumber(), blockchain).to.be.within(
+              value.minus(PRECISION).toNumber(),
+              value.plus(PRECISION).toNumber()
+            );
+          } else {
+            expect(dashboardBalance, label).to.be.undefined;
+          }
         });
       });
     });

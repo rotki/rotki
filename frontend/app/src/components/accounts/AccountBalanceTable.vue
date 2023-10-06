@@ -426,6 +426,8 @@ defineExpose({
     sort-by="balance.usdValue"
     :custom-group="groupBy"
     class="account-balances-list"
+    data-cy="account-table"
+    :data-location="blockchain"
     :group-by="isBtcNetwork ? ['xpub', 'derivationPath'] : undefined"
     v-on="rootListeners"
   >

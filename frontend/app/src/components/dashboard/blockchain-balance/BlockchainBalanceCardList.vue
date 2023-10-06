@@ -33,9 +33,9 @@ const balanceBlockchainRoute = Routes.ACCOUNTS_BALANCES_BLOCKCHAIN;
 <template>
   <Fragment>
     <VListItem
-      :id="`${name}_box`"
-      :data-cy="`blockchain-balance-box__item__${name}`"
-      class="blockchain-balance-box__item min-h-[2.25rem] group"
+      data-cy="blockchain-balance__summary"
+      :data-location="total.chain"
+      class="min-h-[2.25rem] group"
       :to="`${balanceBlockchainRoute}#blockchain-balances-${total.chain}`"
     >
       <VListItemAvatar tile class="grayscale group-hover:grayscale-0 m-0 mr-1">

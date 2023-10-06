@@ -46,7 +46,7 @@ const nftEnabled = isModuleEnabled(Module.NFTS);
 </script>
 
 <template>
-  <div class="pb-6">
+  <div class="pb-6" data-cy="dashboard">
     <VContainer>
       <VRow>
         <VCol cols="12">

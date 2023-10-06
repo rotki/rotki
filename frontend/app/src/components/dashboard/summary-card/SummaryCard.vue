@@ -27,14 +27,10 @@ const slots = useSlots();
 </script>
 
 <template>
-  <RuiCard
-    :loading="isLoading"
-    :class="`dashboard__summary-card__${name}`"
-    class="pb-6 pt-4 h-auto"
-  >
+  <RuiCard :loading="isLoading" class="pb-6 pt-4 h-auto">
     <template #custom-header>
       <CardTitle
-        class="text-capitalize summary-card__header flex-nowrap flex justify-between gap-2 pb-2 px-6"
+        class="text-capitalize flex-nowrap flex justify-between gap-2 pb-2 px-6"
       >
         <NavigatorLink
           :enabled="!!navigatesTo"

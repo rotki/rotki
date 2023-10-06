@@ -104,7 +104,7 @@ const cols = computed<DataTableColumn[]>(() => [
     align: 'end'
   },
   {
-    label: t('common.price_in_symbol', {
+    label: t('common.value_in_symbol', {
       symbol: get(currencySymbol)
     }),
     key: 'usdValue',
@@ -194,10 +194,7 @@ const showDeleteConfirmation = (id: number) => {
         </div>
       </template>
       <template #item.amount="{ row }">
-        <AmountDisplay
-          class="manual-balances-list__amount"
-          :value="row.amount"
-        />
+        <AmountDisplay data-cy="manual-balances__amount" :value="row.amount" />
       </template>
       <template #item.usdValue="{ row }">
         <AmountDisplay
@@ -211,9 +208,8 @@ const showDeleteConfirmation = (id: number) => {
       </template>
       <template #item.location="{ row }">
         <LocationDisplay
-          class="manual-balances-list__location"
           :identifier="row.location"
-          :data-cy="`manual-balances__location__${row.location}`"
+          data-cy="manual-balances__location"
         />
       </template>
       <template #item.actions="{ row }">
@@ -236,6 +232,7 @@ const showDeleteConfirmation = (id: number) => {
             show-currency="symbol"
             class="p-4"
             :fiat-currency="currencySymbol"
+            data-cy="manual-balances__amount"
             :value="total"
           />
         </RowAppend>

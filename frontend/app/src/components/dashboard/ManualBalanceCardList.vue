@@ -15,10 +15,10 @@ const manualBalancesRoute = Routes.ACCOUNTS_BALANCES_MANUAL;
 
 <template>
   <VListItem
-    :id="`${name}_box`"
     :ripple="false"
-    :data-cy="`manual-balance-box__item__${name}`"
-    class="manual-balance-box__item min-h-[2.25rem] group"
+    data-cy="manual-balance__summary"
+    :data-location="name"
+    class="min-h-[2.25rem] group"
     :to="manualBalancesRoute"
   >
     <VListItemAvatar tile class="grayscale group-hover:grayscale-0 m-0 mr-1">
