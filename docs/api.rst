@@ -4689,41 +4689,170 @@ Dealing with History Events
 
 .. http:put:: /api/(version)/history/events
 
-   Doing a PUT on this endpoint can add a new evm event to rotki. For each entry evm chain also has to be specified. The unique identifier for the entry is returned as success.
+   .. _add_event_args_label:
 
-   **Example Request**:
+   Doing a PUT on this endpoint can add a new event to rotki. For each entry type, the specified arguments are different. The unique identifier for the entry is returned as success.
+   
+   .. tab:: History Event
 
-   .. http:example:: curl wget httpie python-requests
+      **Example Request**:
 
-      PUT /api/1/history/events HTTP/1.1
-      Host: localhost:5042
-      Content-Type: application/json;charset=UTF-8
+      .. http:put:: /api/(version)/history/events
 
-      {
-          "tx_hash": "0x64f1982504ab714037467fdd45d3ecf5a6356361403fc97dd325101d8c038c4e",
-          "sequence_index": 162,
-          "timestamp": 1569924574,
-          "location": "ethereum",
-          "event_type": "informational",
-          "asset": "eip155:1/erc20:0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359",
-          "balance": {"amount": "1.542", "usd_value": "1.675"},
-          "location_label": "0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12",
-          "notes": "Approve 1 SAI of 0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12 for spending by 0xdf869FAD6dB91f437B59F1EdEFab319493D4C4cE",
-          "event_subtype": "approve",
-          "counterparty": "0xdf869FAD6dB91f437B59F1EdEFab319493D4C4cE"
-      }
+         .. http:example:: curl wget httpie python-requests
 
-   :reqjson string tx_hash: This is the transaction hash of the evm event
-   :reqjson int sequence_index: This is an index that tries to provide the order of history entries for a single event_identifier.
+            PUT /api/1/history/events HTTP/1.1
+            Host: localhost:5042
+            Content-Type: application/json;charset=UTF-8
+
+            {
+               "entry_type": "history event",
+               "event_identifier": "RE_xxxxxxxxxx",
+               "location": "ethereum",
+               "timestamp": 1569924574,
+               "balance": {"amount": "1.542", "usd_value": "1.675"},
+               "sequence_index": 162,
+               "event_type": "informational",
+               "event_subtype": "approve",
+               "asset": "eip155:1/erc20:0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359",
+               "location_label": "0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12",
+               "notes": "Approve 1 SAI of 0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12 for spending by 0xdf869FAD6dB91f437B59F1EdEFab319493D4C4cE"
+            }
+
+         :reqjson int sequence_index: This is an index that tries to provide the order of history entries for a single event_identifier.
+         :reqjson string location: The location of the entry. Such as "ethereum", "optimism", etc.
+         :reqjson string asset: The asset identifier for this entry
+         :reqjson string event_identifier: The event identifier to be used for the event.
+         :reqjson string event_type: The main event type of the entry. Possible event types can be seen in the `HistoryEventType enum <https://github.com/rotki/rotki/blob/59aa288dacd1776e62682e711a916f32a14c04c2/rotkehlchen/accounting/structures/types.py#L54>`_.
+         :reqjson string event_subtype: The subtype for the entry. Possible event types can be seen in the `HistoryEventSubType enum <https://github.com/rotki/rotki/blob/59aa288dacd1776e62682e711a916f32a14c04c2/rotkehlchen/accounting/structures/types.py#L72>`_.
+         :reqjson string[optional] location_label: location_label is a string field that allows to provide more information about the location. For example when we use this structure in blockchains can be used to specify the source address.
+         :reqjson string[optional] notes: This is a description of the event entry in plain text explaining what is being done. This is supposed to be shown to the user.
+
+   .. tab:: Evm Event
+
+      **Example Request**:
+
+      .. http:put:: /api/(version)/history/events
+
+         .. http:example:: curl wget httpie python-requests
+
+            PUT /api/1/history/events HTTP/1.1
+            Host: localhost:5042
+            Content-Type: application/json;charset=UTF-8
+
+            {
+               "entry_type": "evm event",
+               "tx_hash": "0x64f1982504ab714037467fdd45d3ecf5a6356361403fc97dd325101d8c038c4e",
+               "sequence_index": 162,
+               "timestamp": 1569924574,
+               "location": "ethereum",
+               "event_type": "informational",
+               "asset": "eip155:1/erc20:0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359",
+               "balance": {"amount": "1.542", "usd_value": "1.675"},
+               "location_label": "0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12",
+               "notes": "Approve 1 SAI of 0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12 for spending by 0xdf869FAD6dB91f437B59F1EdEFab319493D4C4cE",
+               "event_subtype": "approve",
+               "counterparty": "0xdf869FAD6dB91f437B59F1EdEFab319493D4C4cE",
+               "extra_data": {}
+            }
+
+         :reqjson string tx_hash: This is the transaction hash of the evm event
+         :reqjson int sequence_index: This is an index that tries to provide the order of history entries for a single event_identifier.
+         :reqjson string location: The location of the entry. Such as "ethereum", "optimism", etc.
+         :reqjson string asset: The asset identifier for this entry
+         :reqjson string event_type: The main event type of the entry. Possible event types can be seen in the `HistoryEventType enum <https://github.com/rotki/rotki/blob/59aa288dacd1776e62682e711a916f32a14c04c2/rotkehlchen/accounting/structures/types.py#L54>`_.
+         :reqjson string event_subtype: The subtype for the entry. Possible event types can be seen in the `HistoryEventSubType enum <https://github.com/rotki/rotki/blob/59aa288dacd1776e62682e711a916f32a14c04c2/rotkehlchen/accounting/structures/types.py#L72>`_.
+         :reqjson string[optional] location_label: location_label is a string field that allows to provide more information about the location. For example when we use this structure in blockchains can be used to specify the source address.
+         :reqjson string[optional] notes: This is a description of the event entry in plain text explaining what is being done. This is supposed to be shown to the user.
+         :reqjson string[optional] counterparty: An identifier for a potential counterparty of the event entry. For a send it's the target. For a receive it's the sender. For bridged transfer it's the bridge's network identifier. For a protocol interaction it's the protocol.
+         :reqjson object[optional] extra_data: An object containing any other data to be stored.
+
+   .. tab:: Eth Block Event
+
+      **Example Request**:
+
+      .. http:put:: /api/(version)/history/events
+
+         .. http:example:: curl wget httpie python-requests
+
+            PUT /api/1/history/events HTTP/1.1
+            Host: localhost:5042
+            Content-Type: application/json;charset=UTF-8
+
+            {
+               "entry_type": "eth block event",
+               "timestamp": 1569924574,
+               "balance": {"amount": "1.542", "usd_value": "1.675"},
+               "block_number": 11,
+               "validator_index": 1,
+               "fee_recipient": "0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12",
+               "is_mev_reward": true
+            }
+
+         :reqjson int block_number: This is the number of the block where the event took place.
+         :reqjson int validator_index: This is the index of the validator.
+         :reqjson string fee_recipient: an evm address field to specify the fee recipient in an "eth block event".
+         :reqjson bool is_mev_reward: true if the "eth block event" is an mev reward event.
+
+   .. tab:: Eth Deposit Event
+
+      **Example Request**:
+
+      .. http:put:: /api/(version)/history/events
+
+         .. http:example:: curl wget httpie python-requests
+
+            PUT /api/1/history/events HTTP/1.1
+            Host: localhost:5042
+            Content-Type: application/json;charset=UTF-8
+
+            {
+               "entry_type": "eth deposit event",
+               "timestamp": 1569924574,
+               "balance": {"amount": "1.542", "usd_value": "1.675"},
+               "tx_hash": "0x64f1982504ab714037467fdd45d3ecf5a6356361403fc97dd325101d8c038c4e",
+               "event_identifier": "RE_xxxxxxxxxx",
+               "validator_index": 1,
+               "sequence_index": 162,
+               "depositor": "0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12",
+               "extra_data": {}
+            }
+
+         :reqjson string tx_hash: This is the transaction hash of the evm event
+         :reqjson int sequence_index: This is an index that tries to provide the order of history entries for a single event_identifier.
+         :reqjson int validator_index: This is the index of the validator.
+         :reqjson string event_identifier: The event identifier to be used for the event.
+         :reqjson string depositor: an evm address field to specify the depositor in an "eth deposit event".
+         :reqjson object[optional] extra_data: An object containing any other data to be stored.
+
+   .. tab:: Eth Withdrawal Event
+
+      **Example Request**:
+
+      .. http:put:: /api/(version)/history/events
+
+         .. http:example:: curl wget httpie python-requests
+
+            PUT /api/1/history/events HTTP/1.1
+            Host: localhost:5042
+            Content-Type: application/json;charset=UTF-8
+
+            {
+               "entry_type": "eth withdrawal event",
+               "timestamp": 1569924574,
+               "balance": {"amount": "1.542", "usd_value": "1.675"},
+               "is_exit": true,
+               "validator_index": 1,
+               "withdrawal_address": "0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12"
+            }
+
+         :reqjson int validator_index: This is the index of the validator.
+         :reqjson string withdrawal_address: an evm address field to specify the withdrawer in an "eth withdrawal event".
+         :reqjson bool is_exit: true if the "eth withdrawal event" is an exit event.
+
+   :reqjson string entry_type: The type of the event that will be processed. Different validation is used based on the value for this field. Possible values are: ``"history event"``, ``"evm event"``, ``"eth withdrawal event"``, ``"eth block event"``, ``"eth deposit event"``.
    :reqjson int timestamp: The timestamp of the entry
-   :reqjson string location: The location of the entry. Such as "ethereum", "optimism", etc.
-   :reqjson string event_type: The main event type of the entry. Possible event types can be seen in HistoryEventType enum.
-   :reqjson string asset: The asset identifier for this entry
    :reqjson object balance: The amount/usd value of the event. If not known usd_value can also be "0".
-   :reqjson string location_label: location_label is a string field that allows to provide more information about the location. For example when we use this structure in blockchains can be used to specify the source address.
-   :reqjson string notes: This is a description of the event entry in plain text explaining what is being done. This is supposed to be shown to the user.
-   :reqjson string event_subtype: Optional. An optional subtype for the entry. Possible event types can be seen in HistoryEventSubType enum.
-   :reqjson string counterparty: Optional. An identifier for a potential counterparty of the event entry. For a send it's the target. For a receive it's the sender. For bridged transfer it's the bridge's network identifier. For a protocol interaction it's the protocol.
 
    **Example Response**:
 
@@ -4756,6 +4885,7 @@ Dealing with History Events
       Content-Type: application/json;charset=UTF-8
 
       {
+          "entry_type": "evm event",
           "identifier": 243,
           "event_identifier": "0x64f1982504ab714037467fdd45d3ecf5a6356361403fc97dd325101d8c038c4e",
           "sequence_index": 162,
@@ -4770,7 +4900,7 @@ Dealing with History Events
           "counterparty": "0xdf869FAD6dB91f437B59F1EdEFab319493D4C4cE"
       }
 
-   The request object is the same as above, a base history entry, with the addition of the identifier which signifies which entry will be edited.
+   The request object uses all the same arguments for each entry type as the `add event endpoint <add_event_args_label_>`_, with the addition of the identifier which signifies which entry will be edited. 
 
    **Example Response**:
 

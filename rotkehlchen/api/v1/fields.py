@@ -53,6 +53,7 @@ from rotkehlchen.types import (
     Price,
     SupportedBlockchain,
     Timestamp,
+    TimestampMS,
     deserialize_evm_tx_hash,
 )
 from rotkehlchen.utils.misc import ts_now
@@ -192,6 +193,26 @@ class TimestampField(fields.Field):
             raise ValidationError(str(e)) from e
 
         return Timestamp(timestamp * self.ts_multiplier)
+
+
+class TimestampMSField(fields.Field):
+
+    def __init__(self, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
+
+    def _deserialize(
+            self,
+            value: str,
+            attr: Optional[str],  # pylint: disable=unused-argument
+            data: Optional[Mapping[str, Any]],
+            **_kwargs: Any,
+    ) -> TimestampMS:
+        try:
+            timestamp = deserialize_timestamp(value)
+        except DeserializationError as e:
+            raise ValidationError(str(e)) from e
+
+        return TimestampMS(timestamp)
 
 
 class TimestampUntilNowField(TimestampField):

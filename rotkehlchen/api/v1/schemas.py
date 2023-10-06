@@ -1,14 +1,19 @@
 import logging
-from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, Union, get_args
+from typing import TYPE_CHECKING, Any, Callable, Final, Literal, Optional, Union, get_args
 
 import marshmallow
 import webargs
 from eth_utils import to_checksum_address
-from marshmallow import Schema, fields, post_load, validate, validates_schema
+from marshmallow import INCLUDE, Schema, fields, post_load, validate, validates_schema
 from marshmallow.exceptions import ValidationError
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceType
-from rotkehlchen.accounting.structures.base import HistoryBaseEntryType
+from rotkehlchen.accounting.structures.base import HistoryBaseEntryType, HistoryEvent
+from rotkehlchen.accounting.structures.eth2 import (
+    EthBlockEvent,
+    EthDepositEvent,
+    EthWithdrawalEvent,
+)
 from rotkehlchen.accounting.structures.evm_event import EvmEvent, EvmProduct
 from rotkehlchen.accounting.structures.types import (
     ActionType,
@@ -131,6 +136,7 @@ from .fields import (
     SerializableEnumField,
     TaxFreeAfterPeriodField,
     TimestampField,
+    TimestampMSField,
     TimestampUntilNowField,
     XpubField,
 )
@@ -735,27 +741,130 @@ class HistoryEventSchema(
         return {'group_by_event_ids': data['group_by_event_ids']}
 
 
-class EvmEventSchema(Schema):
+class CreateHistoryEventSchema(Schema):
     """Schema used when adding a new event in the EVM transactions view"""
-    tx_hash = EVMTransactionHashField(required=True)
-    sequence_index = fields.Integer(required=True)
-    # Timestamp coming in from the API is in seconds, in contrast to what we save in the struct
-    timestamp = TimestampField(ts_multiplier=1000, required=True)
-    location = LocationField(required=True)
-    event_type = SerializableEnumField(enum_class=HistoryEventType, required=True)
-    asset = AssetField(required=True, expected_type=Asset, form_with_incomplete_data=True)
-    balance = fields.Nested(BalanceSchema, required=True)
-    location_label = fields.String(required=False)
-    notes = fields.String(required=False)
-    event_subtype = SerializableEnumField(
-        enum_class=HistoryEventSubType,
-        required=False,
-        load_default=HistoryEventSubType.NONE,
-        allow_none=True,
-    )
-    counterparty = fields.String(load_default=None)
-    product = SerializableEnumField(enum_class=EvmProduct, load_default=None)
-    address = EvmAddressField(load_default=None)
+    include_identifier: bool = False
+    entry_type = SerializableEnumField(enum_class=HistoryBaseEntryType, required=True)
+
+    class BaseSchema(Schema):
+        timestamp = TimestampMSField(required=True)
+        balance = fields.Nested(BalanceSchema, required=True)
+        identifier = fields.Integer(required=True)
+
+    class BaseEventSchema(BaseSchema):
+        event_type = SerializableEnumField(enum_class=HistoryEventType, required=True)
+        event_subtype = SerializableEnumField(
+            enum_class=HistoryEventSubType,
+            required=True,
+        )
+        asset = AssetField(required=True, expected_type=Asset, form_with_incomplete_data=True)
+        notes = fields.String(load_default=None)
+        sequence_index = fields.Integer(required=True)
+        location_label = fields.String(load_default=None)
+
+    class CreateBaseHistoryEventSchema(BaseEventSchema):
+        event_identifier = fields.String(required=True)
+        location = LocationField(required=True)
+
+        @post_load
+        def make_history_base_entry(
+                self,
+                data: dict[str, Any],
+                **_kwargs: Any,
+        ) -> dict[str, Any]:
+            return {'event': HistoryEvent(**data)}
+
+    class CreateEvmEventSchema(BaseEventSchema):
+        """Schema used when adding a new event in the EVM transactions view"""
+        tx_hash = EVMTransactionHashField(required=True)
+        counterparty = fields.String(load_default=None)
+        product = SerializableEnumField(enum_class=EvmProduct, load_default=None)
+        address = EvmAddressField(load_default=None)
+        extra_data = fields.Dict(load_default=None)
+        location = LocationField(required=True, limit_to=EVM_LOCATIONS)
+
+        @post_load
+        def make_history_base_entry(
+                self,
+                data: dict[str, Any],
+                **_kwargs: Any,
+        ) -> dict[str, Any]:
+            return {'event': EvmEvent(**data)}
+
+    class CreateEthBlockEventEventSchema(BaseSchema):
+        is_mev_reward = fields.Boolean(required=True)
+        fee_recipient = EvmAddressField(required=True)
+        block_number = fields.Integer(
+            required=True,
+            validate=webargs.validate.Range(
+                min=0,
+                error='Block number must be an integer >= 0',
+            ),
+        )
+        validator_index = fields.Integer(
+            required=True,
+            validate=webargs.validate.Range(
+                min=0,
+                error='Validator index must be an integer >= 0',
+            ),
+        )
+
+        @post_load
+        def make_history_base_entry(
+                self,
+                data: dict[str, Any],
+                **_kwargs: Any,
+        ) -> dict[str, Any]:
+            return {'event': EthBlockEvent(**data)}
+
+    class CreateEthDepositEventEventSchema(BaseSchema):
+        tx_hash = EVMTransactionHashField(required=True)
+        depositor = EvmAddressField(required=True)
+        event_identifier = fields.String(required=True)
+        sequence_index = fields.Integer(required=True)
+        validator_index = fields.Integer(
+            required=True,
+            validate=webargs.validate.Range(
+                min=0,
+                error='Validator index must be an integer >= 0',
+            ),
+        )
+        extra_data = fields.Dict(load_default=None)
+
+        @post_load
+        def make_history_base_entry(
+                self,
+                data: dict[str, Any],
+                **_kwargs: Any,
+        ) -> dict[str, Any]:
+            return {'event': EthDepositEvent(**data)}
+
+    class CreateEthWithdrawalEventEventSchema(BaseSchema):
+        is_exit = fields.Boolean(required=True)
+        withdrawal_address = EvmAddressField(required=True)
+        validator_index = fields.Integer(
+            required=True,
+            validate=webargs.validate.Range(
+                min=0,
+                error='Validator index must be an integer >= 0',
+            ),
+        )
+
+        @post_load
+        def make_history_base_entry(
+                self,
+                data: dict[str, Any],
+                **_kwargs: Any,
+        ) -> dict[str, Any]:
+            return {'event': EthWithdrawalEvent(**data)}
+
+    ENTRY_TO_SCHEMA: Final[dict[HistoryBaseEntryType, type[Schema]]] = {
+        HistoryBaseEntryType.HISTORY_EVENT: CreateBaseHistoryEventSchema,
+        HistoryBaseEntryType.ETH_BLOCK_EVENT: CreateEthBlockEventEventSchema,
+        HistoryBaseEntryType.ETH_DEPOSIT_EVENT: CreateEthDepositEventEventSchema,
+        HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT: CreateEthWithdrawalEventEventSchema,
+        HistoryBaseEntryType.EVM_EVENT: CreateEvmEventSchema,
+    }
 
     @post_load
     def make_history_base_entry(
@@ -763,21 +872,17 @@ class EvmEventSchema(Schema):
             data: dict[str, Any],
             **_kwargs: Any,
     ) -> dict[str, Any]:
-        if data.get('event_subtype', None) is None:
-            data['event_subtype'] = HistoryEventSubType.NONE
+        entry_type = data.pop('entry_type')  # already used to decide schema
+        exclude = () if self.include_identifier else ('identifier',)
+        return self.ENTRY_TO_SCHEMA[entry_type](exclude=exclude).load(data)
 
-        if data['location'] not in EVM_LOCATIONS:
-            raise ValidationError(
-                message=f'EVM event location needs to be one of {EVM_LOCATIONS}',
-                field_name='location',
-            )
-
-        return {'event': EvmEvent(**data)}
+    class Meta:  # need it to validate extra fields in make_history_base_entry
+        unknown = INCLUDE
 
 
-class EditEvmEventSchema(EvmEventSchema):
+class EditHistoryEventSchema(CreateHistoryEventSchema):
     """Schema used when editing an existing event in the EVM transactions view"""
-    identifier = fields.Integer(required=True)
+    include_identifier = True
 
 
 class AssetMovementsQuerySchema(

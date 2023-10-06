@@ -1,7 +1,7 @@
 import json
 import random
 from http import HTTPStatus
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import pytest
 import requests
@@ -27,7 +27,11 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_response_with_result,
     assert_simple_ok_response,
 )
-from rotkehlchen.tests.utils.history_base_entry import add_entries, entry_to_input_dict
+from rotkehlchen.tests.utils.history_base_entry import (
+    KEYS_IN_ENTRY_TYPE,
+    add_entries,
+    entry_to_input_dict,
+)
 from rotkehlchen.types import (
     ChainID,
     EvmTransaction,
@@ -40,14 +44,57 @@ from rotkehlchen.types import (
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
+    from rotkehlchen.accounting.structures.base import HistoryBaseEntry
     from rotkehlchen.api.server import APIServer
+
+
+def assert_editing_works(
+        entry: 'HistoryBaseEntry',
+        rotkehlchen_api_server: 'APIServer',
+        events_db: 'DBHistoryEvents',
+        sequence_index: int,
+):
+    valid_keys = KEYS_IN_ENTRY_TYPE[entry.entry_type]
+
+    def edit_entry(attr: str, value: Any):
+        if attr in valid_keys:
+            setattr(entry, attr, value)
+
+    """Assert that editing any subclass of history base entry is successfully done"""
+    entry.timestamp = TimestampMS(1639924575000)
+    entry.balance = Balance(amount=FVal('1500.1'), usd_value=FVal('1499.45'))
+    edit_entry('event_type', HistoryEventType.DEPOSIT)
+    edit_entry('event_subtype', HistoryEventSubType.NONE)
+    edit_entry('asset', A_USDT)
+    edit_entry('location_label', '0x9531C059098e3d194fF87FebB587aB07B30B1306')
+    edit_entry('notes', f'Updated entry for test using type {entry.entry_type}')
+    edit_entry('validator_index', 1001)
+    edit_entry('block_number', 1)
+    edit_entry('sequence_index', sequence_index)
+    edit_entry('is_exit', True)
+    response = requests.patch(
+        api_url_for(rotkehlchen_api_server, 'historyeventresource'),
+        json=entry_to_input_dict(entry, include_identifier=True),
+    )
+    assert_simple_ok_response(response)
+    assert entry.identifier is not None
+    with events_db.db.conn.read_ctx() as cursor:
+        events = events_db.get_history_events(
+            cursor=cursor,
+            filter_query=EvmEventFilterQuery.make(event_identifiers=[entry.event_identifier]),
+            has_premium=True,
+            group_by_event_ids=False,
+        )
+    for event in events:
+        if event.identifier == entry.identifier:
+            assert event == entry
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer'):
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     db = DBHistoryEvents(rotki.data.db)
-    entries = add_entries(server=rotkehlchen_api_server, events_db=db)
+    entries = add_entries(events_db=db)
     with rotki.data.db.conn.read_ctx() as cursor:
         saved_events = db.get_history_events(
             cursor=cursor,
@@ -86,7 +133,7 @@ def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer'):
         contained_in_msg='Tried to edit event to have event_identifier 10xf32e81dbaae8a763cad17bc96b77c7d9e8c59cc31ed4378b8109ce4b301adbbc and sequence_index 3 but it already exists',  # noqa: E501
         status_code=HTTPStatus.CONFLICT,
     )
-    # test adding event with  sequence index same as an existing one fails
+    # test adding event with sequence index same as an existing one fails
     entry.sequence_index = 3
     entry.timestamp = TimestampMS(1649924575000)
     json_data = entry_to_input_dict(entry, include_identifier=False)
@@ -99,25 +146,11 @@ def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer'):
         contained_in_msg='Failed to add event to the DB. It already exists',
         status_code=HTTPStatus.CONFLICT,
     )
-    # test editing works
-    entry.sequence_index = 4
-    entry.timestamp = TimestampMS(1639924575000)
-    entry.event_type = HistoryEventType.DEPOSIT
-    entry.asset = A_USDT
-    entry.balance = Balance(amount=FVal('1500.1'), usd_value=FVal('1499.45'))
-    entry.location_label = '0x9531C059098e3d194fF87FebB587aB07B30B1306'
-    entry.notes = 'Deposit stuff for staking somewhere'
-    entry.event_subtype = HistoryEventSubType.NONE
-    entry.address = string_to_evm_address('0xAB8d71d59827dcc90fEDc5DDb97f87eFfB1B1A5B')
-    json_data = entry_to_input_dict(entry, include_identifier=True)
-    assert entry.extra_data == {'testing_data': 42}
-
-    response = requests.patch(
-        api_url_for(rotkehlchen_api_server, 'historyeventresource'),
-        json=json_data,
-    )
-    assert_simple_ok_response(response)
-    assert entry.identifier is not None
+    assert_editing_works(entry, rotkehlchen_api_server, db, 4)  # evm event
+    assert_editing_works(entries[5], rotkehlchen_api_server, db, 5)  # history event
+    assert_editing_works(entries[6], rotkehlchen_api_server, db, 6)  # eth withdrawal event
+    assert_editing_works(entries[7], rotkehlchen_api_server, db, 7)  # eth block event
+    assert_editing_works(entries[8], rotkehlchen_api_server, db, 8)  # eth deposit event
 
     # check that the extra data information hasn't been overwritten
     with db.db.conn.read_ctx() as cursor:
@@ -306,7 +339,7 @@ def test_event_with_details(rotkehlchen_api_server: 'APIServer'):
 def test_get_events(rotkehlchen_api_server: 'APIServer'):
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     db = DBHistoryEvents(rotki.data.db)
-    entries = add_entries(server=rotkehlchen_api_server, events_db=db, add_directly=True)
+    entries = add_entries(events_db=db)
     expected_entries = [x.serialize() for x in entries]
 
     # add one event to the list of ignored events to check that the field ignored_in_accounting

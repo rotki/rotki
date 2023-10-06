@@ -231,7 +231,7 @@ from rotkehlchen.utils.snapshots import parse_import_snapshot_data
 from rotkehlchen.utils.version_check import get_current_version
 
 if TYPE_CHECKING:
-    from rotkehlchen.accounting.structures.evm_event import EvmEvent
+    from rotkehlchen.accounting.structures.base import HistoryBaseEntry
     from rotkehlchen.chain.bitcoin.xpub import XpubData
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings
@@ -890,7 +890,7 @@ class RestAPI:
 
         return {'result': result, 'message': msg, 'status_code': status_code}
 
-    def add_history_event(self, event: 'EvmEvent') -> Response:
+    def add_history_event(self, event: 'HistoryBaseEntry') -> Response:
         db = DBHistoryEvents(self.rotkehlchen.data.db)
         with self.rotkehlchen.data.db.user_write() as cursor:
             try:
@@ -913,7 +913,7 @@ class RestAPI:
         result_dict = _wrap_in_ok_result({'identifier': identifier})
         return api_response(result_dict, status_code=HTTPStatus.OK)
 
-    def edit_history_event(self, event: 'EvmEvent') -> Response:
+    def edit_history_event(self, event: 'HistoryBaseEntry') -> Response:
         db = DBHistoryEvents(self.rotkehlchen.data.db)
         result, msg = db.edit_history_event(event)
         if result is False:

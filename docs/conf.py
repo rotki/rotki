@@ -44,6 +44,7 @@ extensions = [
     'sphinx.ext.ifconfig',
     'sphinxcontrib.httpdomain',
     'sphinxcontrib.httpexample',
+    'sphinx_inline_tabs',
 ]
 
 
