@@ -1,10 +1,8 @@
 # Some example checkers that have complicated logic
 # https://github.com/PyCQA/pylint/tree/master/pylint/checkers
-from typing import Final
 
 import astroid
 from pylint.checkers import BaseChecker, utils
-from pylint.interfaces import IAstroidChecker
 
 NONBOOLEANNOT_SYMBOL = 'rotki-nonbooleannot'
 NONBOOLEANNOT_MSG = 'Do not use the not operator with non boolean values'
@@ -16,11 +14,10 @@ def register(linter):
 
 class NotBooleanChecker(BaseChecker):
     """A pylint custom checker to detect if we use not for non boolean values"""
-    __implements__ = IAstroidChecker
 
     name = 'nonbooleannot'
     priority = -1
-    msgs: Final[dict[str, tuple[str, ...]]] = {
+    msgs = {  # noqa: RUF012  # can't control library's base class typing
         'E9011': (
             NONBOOLEANNOT_MSG,
             NONBOOLEANNOT_SYMBOL,
