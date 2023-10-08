@@ -191,7 +191,7 @@ class DBPaginationSchema(Schema):
 
 class DBOrderBySchema(Schema):
     order_by_attributes = DelimitedOrNormalList(fields.String(), load_default=None)
-    ascending = DelimitedOrNormalList(fields.Boolean(), load_default=None)  # noqa: E501 most recent first by default
+    ascending = DelimitedOrNormalList(fields.Boolean(), load_default=None)  # most recent first by default  # noqa: E501
 
     @validates_schema
     def validate_order_by_schema(
@@ -1177,7 +1177,7 @@ class ModifiableSettingsSchema(Schema):
             non_syncing_exchanges=data['non_syncing_exchanges'],
             cost_basis_method=data['cost_basis_method'],
             treat_eth2_as_eth=data['treat_eth2_as_eth'],
-            eth_staking_taxable_after_withdrawal_enabled=data['eth_staking_taxable_after_withdrawal_enabled'],  # noqa: E501
+            eth_staking_taxable_after_withdrawal_enabled=data['eth_staking_taxable_after_withdrawal_enabled'],
             address_name_priority=data['address_name_priority'],
             include_fees_in_cost_basis=data['include_fees_in_cost_basis'],
             infer_zero_timed_balances=data['infer_zero_timed_balances'],
@@ -2901,7 +2901,7 @@ class EthStakingHistoryStatsProfit(EthStakingHistoryStats, TimestampRangeSchema)
             **common_arguments,
             event_types=[HistoryEventType.STAKING],
             event_subtypes=[HistoryEventSubType.REMOVE_ASSET],
-            entry_types=IncludeExcludeFilterData(values=[HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT]),  # noqa: E501
+            entry_types=IncludeExcludeFilterData(values=[HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT]),
         )
         execution_filter_query = EthStakingEventFilterQuery.make(
             **common_arguments,

@@ -404,7 +404,7 @@ class AccountingPot(CustomizableDateMixin):
             if price_to_use == 'in':
                 calculated_in_price = in_price
             else:
-                calculated_in_price = Price((amount_out * out_price) / amount_in)  # type: ignore[operator]  # out_price is not None  # noqa: E501
+                calculated_in_price = Price((amount_out * out_price) / amount_in)  # type: ignore[operator]  # out_price is not None
 
         else:  # if asset_out is fiat or both assets are crypto or both are fiat
             if fee_info is not None and fee_price is not None:
@@ -413,8 +413,8 @@ class AccountingPot(CustomizableDateMixin):
             calculated_in_price = Price(total_paid / amount_in)
 
             if price_to_use == 'out':
-                calculated_out_price = out_price  # type: ignore[assignment]  # out_price is not None  # noqa: E501
+                calculated_out_price = out_price  # type: ignore[assignment]  # out_price is not None
             else:
-                calculated_out_price = Price((amount_in * in_price) / amount_out)  # type: ignore[operator]  # in_price is not None  # noqa: E501
+                calculated_out_price = Price((amount_in * in_price) / amount_out)  # type: ignore[operator]  # in_price is not None
 
-        return (calculated_out_price, calculated_in_price)  # type: ignore[return-value]  # calculated_in_price is not None  # noqa: E501
+        return (calculated_out_price, calculated_in_price)  # type: ignore[return-value]  # calculated_in_price is not None

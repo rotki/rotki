@@ -128,7 +128,7 @@ def test_swap_token_to_eth(database, ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             balance=Balance(amount=FVal('0.053419767450716028')),
             location_label=user_address,
-            notes='Receive 0.053419767450716028 ETH as the result of a swap in cowswap',  # noqa: E501
+            notes='Receive 0.053419767450716028 ETH as the result of a swap in cowswap',
             counterparty=CPT_COWSWAP,
             address=GPV2_SETTLEMENT_ADDRESS,
         ),
@@ -236,7 +236,7 @@ def test_2_decoded_swaps(database, ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=asset_fund,
-            balance=Balance(amount=FVal('115792089237316195423570985000000000000000000000000000000000000000000')),  # noqa: E501
+            balance=Balance(amount=FVal('115792089237316195423570985000000000000000000000000000000000000000000')),
             location_label=user_address_1,
             notes='Set FUND spending approval of 0x0D2f07876685bEcd81DDa1C897f2D6Cacc733fc1 by 0xC92E8bdf79f0507f65a392b0ab4667716BFE0110 to 115792089237316195423570985000000000000000000000000000000000000000000',  # noqa: E501
             address='0xC92E8bdf79f0507f65a392b0ab4667716BFE0110',
@@ -277,7 +277,7 @@ def test_2_decoded_swaps(database, ethereum_inquirer, ethereum_accounts):
             asset=A_WETH,
             balance=Balance(amount=FVal('4.870994011222719015')),
             location_label=user_address_1,
-            notes='Receive 4.870994011222719015 WETH as the result of a swap in cowswap',  # noqa: E501
+            notes='Receive 4.870994011222719015 WETH as the result of a swap in cowswap',
             counterparty=CPT_COWSWAP,
             address=GPV2_SETTLEMENT_ADDRESS,
         ), EvmEvent(  # 2nd swap with USDT
@@ -316,7 +316,7 @@ def test_2_decoded_swaps(database, ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             balance=Balance(amount=FVal('0.053419767450716028')),
             location_label=user_address_2,
-            notes='Receive 0.053419767450716028 ETH as the result of a swap in cowswap',  # noqa: E501
+            notes='Receive 0.053419767450716028 ETH as the result of a swap in cowswap',
             counterparty=CPT_COWSWAP,
             address=GPV2_SETTLEMENT_ADDRESS,
         ),

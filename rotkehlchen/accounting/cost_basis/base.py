@@ -185,7 +185,7 @@ class BaseCostBasisMethod(metaclass=ABCMeta):
         been found.
         """  # noqa: E501
         remaining_sold_amount = spending_amount
-        taxfree_bought_cost = taxable_bought_cost = taxable_amount = taxfree_amount = ZERO  # noqa: E501
+        taxfree_bought_cost = taxable_bought_cost = taxable_amount = taxfree_amount = ZERO
         matched_acquisitions = []
 
         for acquisition_event in self.processing_iterator():
@@ -375,7 +375,7 @@ class AverageCostBasisMethod(BaseCostBasisMethod):
         `current_amount` is guaranteed to be greater than zero since `consume_result` is
         supposed to be called under `processing_iterator`.
         """
-        self.current_total_acb *= (self.current_amount - used_amount) / self.current_amount  # noqa: E501
+        self.current_total_acb *= (self.current_amount - used_amount) / self.current_amount
         self.current_amount -= used_amount
         super().consume_result(used_amount)
 

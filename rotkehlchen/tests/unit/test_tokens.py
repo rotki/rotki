@@ -21,7 +21,7 @@ ERC721_INFO_RESPONSE = ((True, b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x0
 
 
 @pytest.fixture(name='tokens')
-def fixture_ethereumtokens(ethereum_inquirer, database, inquirer):  # pylint: disable=unused-argument  # noqa: E501
+def fixture_ethereumtokens(ethereum_inquirer, database, inquirer):  # pylint: disable=unused-argument
     return EthereumTokens(database, ethereum_inquirer)
 
 
@@ -74,7 +74,7 @@ def test_detect_tokens_for_addresses(rotkehlchen_api_server, ethereum_accounts):
     assert len(result[addr3]) >= 1
     assert len(result[addr3_proxy]) >= 1
     assert A_WETH in result[addr3_proxy], 'WETH (which is owned by the proxy) is in the result of the proxy'  # noqa: E501
-    assert A_WETH not in result[addr3], 'WETH is not in the result of the proxy owner address'  # noqa: E501
+    assert A_WETH not in result[addr3], 'WETH is not in the result of the proxy owner address'
 
     # test that  ignored assets are not queried
     assert A_LPT not in result[addr1] and A_LPT not in result[addr2]

@@ -91,7 +91,7 @@ def check_vault_history(name, expected_history, result_history):
             msg = f'Unexpected data for event with idx "{idx}" and key "{key}" of {name} vault'
             assert s[key] == result['events'][idx][key], msg
         assert FVal(s['from_value']['amount']) == FVal(result['events'][idx]['from_value']['amount'])  # noqa: E501
-        assert FVal(s['to_value']['amount']) == FVal(result['events'][idx]['to_value']['amount'])  # noqa: E501
+        assert FVal(s['to_value']['amount']) == FVal(result['events'][idx]['to_value']['amount'])
         if s['realized_pnl']:
             assert FVal(s['realized_pnl']['amount']) == FVal(result['events'][idx]['realized_pnl']['amount'])  # noqa: E501
 
@@ -580,7 +580,7 @@ def test_query_yearn_vault_history(rotkehlchen_api_server, ethereum_accounts):
 @pytest.mark.parametrize('ethereum_modules', [['yearn_vaults']])
 @pytest.mark.parametrize('start_with_valid_premium', [False])
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
-def test_query_yearn_vault_history_non_premium(rotkehlchen_api_server, ethereum_accounts):  # pylint: disable=unused-argument  # noqa: E501
+def test_query_yearn_vault_history_non_premium(rotkehlchen_api_server, ethereum_accounts):  # pylint: disable=unused-argument
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
         'yearnvaultshistoryresource',

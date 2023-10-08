@@ -34,7 +34,7 @@ if TYPE_CHECKING:
 
 @pytest.fixture(name='premium_remote_data')
 def fixture_load_remote_premium_data() -> bytes:
-    remote_db_path = Path(__file__).resolve().parent.parent / 'data' / 'remote_encrypted_db.bin'  # noqa: E501
+    remote_db_path = Path(__file__).resolve().parent.parent / 'data' / 'remote_encrypted_db.bin'
     with open(remote_db_path, 'rb') as f:
         return f.read()
 
@@ -102,7 +102,7 @@ def test_upload_data_to_server(
 
     now = ts_now()
     with patched_get, patched_put:
-        tasks = rotkehlchen_instance.task_manager._maybe_schedule_db_upload()  # type: ignore[union-attr]  # task_manager can't be none here  # noqa: E501
+        tasks = rotkehlchen_instance.task_manager._maybe_schedule_db_upload()  # type: ignore[union-attr]  # task_manager can't be none here
         if tasks is not None:
             gevent.wait(tasks)
 

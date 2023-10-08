@@ -120,7 +120,7 @@ class ArbitrumOneBridgeDecoder(DecoderInterface):
         raw_amount = hex_or_bytes_to_int(tx_log.data[32:])
         amount = asset_normalized_value(raw_amount, asset)
 
-        expected_event_type, new_event_type, from_chain, to_chain, _ = bridge_prepare_data(  # noqa: E501
+        expected_event_type, new_event_type, from_chain, to_chain, _ = bridge_prepare_data(
             tx_log=tx_log,
             deposit_events=(ERC20_DEPOSIT_INITIATED,),
             main_chain=ChainID.ETHEREUM,

@@ -58,8 +58,8 @@ class PolygonPOSInquirer(EvmNodeInquirer):
             etherscan_node_name=POLYGON_POS_ETHERSCAN_NODE_NAME,
             contracts=contracts,
             rpc_timeout=rpc_timeout,
-            contract_multicall=contracts.contract(string_to_evm_address('0x275617327c958bD06b5D6b871E7f491D76113dd8')),  # noqa: E501
-            contract_scan=contracts.contract(string_to_evm_address('0x2aB513B211C801673758D1C32815605B5289ad29')),  # noqa: E501
+            contract_multicall=contracts.contract(string_to_evm_address('0x275617327c958bD06b5D6b871E7f491D76113dd8')),
+            contract_scan=contracts.contract(string_to_evm_address('0x2aB513B211C801673758D1C32815605B5289ad29')),
             native_token=A_POLYGON_POS_MATIC.resolve_to_crypto_asset(),
         )
         self.etherscan = cast(PolygonPOSEtherscan, self.etherscan)

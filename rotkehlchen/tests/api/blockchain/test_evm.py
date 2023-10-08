@@ -378,7 +378,7 @@ def test_evm_account_deletion_does_not_wait_for_pending_txn_queries(
         # schedule last address query through task manager
         task_manager.schedule()
         assert len(task_manager.running_greenlets) == 1
-        greenlets = task_manager.running_greenlets[task_manager._maybe_query_evm_transactions]  # noqa: E501
+        greenlets = task_manager.running_greenlets[task_manager._maybe_query_evm_transactions]
         assert len(greenlets) == 1
         assert not greenlets[0].dead
         # query first two addresses via the api
@@ -419,7 +419,7 @@ def test_evm_account_deletion_does_not_wait_for_pending_txn_queries(
     assert len(api_task_greenlets) == 2
     assert api_task_greenlets[0].dead
     assert len(task_manager.running_greenlets) == 1
-    assert task_manager.running_greenlets[task_manager._maybe_query_evm_transactions][0].dead  # noqa: E501
+    assert task_manager.running_greenlets[task_manager._maybe_query_evm_transactions][0].dead
     assert not api_task_greenlets[1].dead, 'The other address api greenlet should still run'
 
     # retrieve ethereum accounts from the DB and see they are deleted

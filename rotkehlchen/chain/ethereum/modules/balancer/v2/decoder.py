@@ -108,7 +108,7 @@ class Balancerv2Decoder(DecoderInterface):
                 ):
                     event.event_type = HistoryEventType.TRADE
                     event.event_subtype = HistoryEventSubType.SPEND
-                    event.notes = f'Swap {event.balance.amount} {self.eth.symbol} in Balancer v2'  # noqa: E501
+                    event.notes = f'Swap {event.balance.amount} {self.eth.symbol} in Balancer v2'
                     event.counterparty = CPT_BALANCER_V2
 
         return DecodingOutput(action_items=[action_item])
@@ -132,7 +132,7 @@ class Balancerv2Decoder(DecoderInterface):
         asset = context.event.asset.resolve_to_evm_token()
         if (
             isinstance(context.action_items[-1].asset, EvmToken) is False or
-            context.action_items[-1].asset.evm_address != context.tx_log.address or  # type: ignore[attr-defined]  # noqa: E501 mypy fails to understand that due the previous statmenet in the or this check won't be evaluated if the asset isn't a token
+            context.action_items[-1].asset.evm_address != context.tx_log.address or  # type: ignore[attr-defined]  # mypy fails to understand that due the previous statmenet in the or this check won't be evaluated if the asset isn't a token
             context.action_items[-1].amount != context.event.balance.amount
         ):
             return FAILED_ENRICHMENT_OUTPUT

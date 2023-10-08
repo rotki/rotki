@@ -82,7 +82,7 @@ class YearnVaultsV2Graph:
             msg_aggregator: MessagesAggregator,
     ) -> None:
         self.msg_aggregator = msg_aggregator
-        self.graph = Graph('https://api.thegraph.com/subgraphs/name/rareweasel/yearn-vaults-v2-subgraph-mainnet')  # noqa: E501
+        self.graph = Graph('https://api.thegraph.com/subgraphs/name/rareweasel/yearn-vaults-v2-subgraph-mainnet')
 
     def _process_event(
             self,
@@ -131,7 +131,7 @@ class YearnVaultsV2Graph:
                     f'in yearn vaults v2 graph query. {e!s}.',
                 )
                 self.msg_aggregator.add_warning(
-                    f'Ignoring {event_type} {tx_hash.hex()} in yearn vault V2 Failed to decode'  # noqa: E501 pylint: disable=no-member
+                    f'Ignoring {event_type} {tx_hash.hex()} in yearn vault V2 Failed to decode'  # pylint: disable=no-member
                     f' remote information. ',
                 )
                 continue
@@ -140,13 +140,13 @@ class YearnVaultsV2Graph:
                 from_asset_usd_price = get_usd_price_zero_if_error(
                     asset=from_asset,
                     time=Timestamp(int(entry['timestamp']) // 1000),
-                    location=f'yearn vault v2 deposit {tx_hash.hex()}',  # noqa: E501 pylint: disable=no-member
+                    location=f'yearn vault v2 deposit {tx_hash.hex()}',  # pylint: disable=no-member
                     msg_aggregator=self.msg_aggregator,
                 )
                 to_asset_usd_price = get_usd_price_zero_if_error(
                     asset=to_asset,
                     time=Timestamp(int(entry['timestamp']) // 1000),
-                    location=f'yearn v2 vault deposit {tx_hash.hex()}',  # noqa: E501 pylint: disable=no-member
+                    location=f'yearn v2 vault deposit {tx_hash.hex()}',  # pylint: disable=no-member
                     msg_aggregator=self.msg_aggregator,
                 )
                 if event_type == 'deposit':
@@ -196,7 +196,7 @@ class YearnVaultsV2Graph:
                     error=msg,
                 )
                 self.msg_aggregator.add_warning(
-                    f'Ignoring {event_type} {tx_hash.hex()} in yearn vault V2 from '  # noqa: E501 pylint: disable=no-member
+                    f'Ignoring {event_type} {tx_hash.hex()} in yearn vault V2 from '  # pylint: disable=no-member
                     f'{from_asset} to {to_asset} because the remote information is not correct.',
                 )
                 continue

@@ -63,7 +63,7 @@ class MockMiddlewareOnion:
 
 class MockWeb3:
 
-    def __init__(self, providers=None, middlewares=None, ens=None):  # pylint: disable=unused-argument  # noqa: E501
+    def __init__(self, providers=None, middlewares=None, ens=None):  # pylint: disable=unused-argument
         self.eth = MockEth(0)
         self.middleware_onion = MockMiddlewareOnion()
 
@@ -142,7 +142,7 @@ def _mock_etherscan_eth_call(counter, url, eth_call_data):
     contract_to = match.group(1)
     data = match.group(2)
     if eth_call_data is None:
-        raise AssertionError(f'No eth_call mock data given in test for {contract_to=} and {data=}')  # noqa: E501
+        raise AssertionError(f'No eth_call mock data given in test for {contract_to=} and {data=}')
 
     contract_result = eth_call_data.get(contract_to)
     if contract_result is None:
@@ -150,10 +150,10 @@ def _mock_etherscan_eth_call(counter, url, eth_call_data):
 
     data_result = contract_result.get(data)
     if data_result is None:
-        raise AssertionError(f'{data=} not found in eth_call mock data for contract {contract_to}')  # noqa: E501
+        raise AssertionError(f'{data=} not found in eth_call mock data for contract {contract_to}')
 
     if 'latest' not in data_result:
-        raise AssertionError(f'No latest mock result given in test for {contract_to=} and {data=}')  # noqa: E501
+        raise AssertionError(f'No latest mock result given in test for {contract_to=} and {data=}')
 
     result = data_result['latest']
     return f'{{"id": {counter}, "jsonrpc": "2.0", "result": "{result}"}}'

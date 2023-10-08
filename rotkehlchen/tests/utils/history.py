@@ -265,7 +265,7 @@ prices = {
 }
 
 
-def check_result_of_history_creation_for_remote_errors(  # type: ignore[return] # pylint: disable=useless-return  # noqa: E501
+def check_result_of_history_creation_for_remote_errors(  # type: ignore[return] # pylint: disable=useless-return
         start_ts: Timestamp,  # pylint: disable=unused-argument
         end_ts: Timestamp,  # pylint: disable=unused-argument
         events: list[AccountingEventMixin],
@@ -405,7 +405,7 @@ def mock_exchange_responses(rotki: Rotkehlchen, remote_errors: bool):
             )
         return MockResponse(200, payload)
 
-    def mock_bittrex_api_queries(url, method, json):  # pylint: disable=unused-argument,redefined-outer-name  # noqa: E501
+    def mock_bittrex_api_queries(url, method, json):  # pylint: disable=unused-argument,redefined-outer-name
         if remote_errors:
             payload = invalid_payload
         elif 'orders/closed' in url:
@@ -1010,7 +1010,7 @@ def prepare_rotki_for_history_processing_test(
     Makes sure blockchain accounts are loaded, kraken does not generate random trades
     and that all mocks are ready.
     """
-    kraken = cast(MockKraken, rotki.exchange_manager.connected_exchanges.get(Location.KRAKEN)[0])  # type: ignore  # noqa: E501
+    kraken = cast(MockKraken, rotki.exchange_manager.connected_exchanges.get(Location.KRAKEN)[0])  # type: ignore
     kraken.random_trade_data = False
     kraken.random_ledgers_data = False
     kraken.remote_errors = remote_errors

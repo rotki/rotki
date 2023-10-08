@@ -13,7 +13,7 @@ from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
 
 @pytest.mark.vcr()
-@pytest.mark.parametrize('ethereum_accounts', [['0x648aA14e4424e0825A5cE739C8C68610e143FB79']])  # noqa: E501
+@pytest.mark.parametrize('ethereum_accounts', [['0x648aA14e4424e0825A5cE739C8C68610e143FB79']])
 def test_makerdao_simple_transaction(
         database,
         ethereum_inquirer,
@@ -60,7 +60,7 @@ def test_makerdao_simple_transaction(
 
 
 @pytest.mark.vcr()
-@pytest.mark.parametrize('ethereum_accounts', [['0xa217BDa86b0EDb86eE7d4D6e34F493eDF1ea4F29']])  # noqa: E501
+@pytest.mark.parametrize('ethereum_accounts', [['0xa217BDa86b0EDb86eE7d4D6e34F493eDF1ea4F29']])
 def test_withdraw_dai_from_sdai(
         database,
         ethereum_inquirer,
@@ -119,7 +119,7 @@ def test_withdraw_dai_from_sdai(
 
 
 @pytest.mark.vcr()
-@pytest.mark.parametrize('ethereum_accounts', [['0xa217BDa86b0EDb86eE7d4D6e34F493eDF1ea4F29']])  # noqa: E501
+@pytest.mark.parametrize('ethereum_accounts', [['0xa217BDa86b0EDb86eE7d4D6e34F493eDF1ea4F29']])
 def test_deposit_dai_to_sdai(
         database,
         ethereum_inquirer,

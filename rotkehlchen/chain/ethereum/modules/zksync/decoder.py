@@ -62,7 +62,7 @@ class ZksyncDecoder(DecoderInterface):
                 event.event_subtype = HistoryEventSubType.BRIDGE
                 event.counterparty = CPT_ZKSYNC
                 crypto_asset = resolved_event_asset
-                event.notes = f'Deposit {event.balance.amount} {crypto_asset.symbol} to zksync'  # noqa: E501
+                event.notes = f'Deposit {event.balance.amount} {crypto_asset.symbol} to zksync'
                 break
 
         return DEFAULT_DECODING_OUTPUT

@@ -795,7 +795,7 @@ class Rotkehlchen:
                 evm_manager = self.chains_aggregator.get_chain_manager(blockchain)
                 evm_addresses: list[ChecksumEvmAddress] = cast(list[ChecksumEvmAddress], accounts)
                 self.maybe_kill_running_tx_query_tasks(blockchain, evm_addresses)
-                stack.enter_context(evm_manager.transactions.wait_until_no_query_for(evm_addresses))  # noqa: E501
+                stack.enter_context(evm_manager.transactions.wait_until_no_query_for(evm_addresses))
                 stack.enter_context(evm_manager.transactions.missing_receipts_lock)
                 stack.enter_context(evm_manager.transactions_decoder.undecoded_tx_query_lock)
             write_cursor = stack.enter_context(self.data.db.user_write())

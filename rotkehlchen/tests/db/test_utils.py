@@ -46,7 +46,7 @@ from rotkehlchen.fval import FVal
             'timestamp',
             1609336000,
             1609336240,
-            'SELECT * FROM trades WHERE timestamp >= ? AND timestamp <= ? ORDER BY timestamp ASC;',  # noqa: E501
+            'SELECT * FROM trades WHERE timestamp >= ? AND timestamp <= ? ORDER BY timestamp ASC;',
             (1609336000, 1609336240),
         ),
     ],

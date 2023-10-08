@@ -388,7 +388,7 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
                 options['txHash'] = period_or_hash.hex()
                 parent_tx_hash = period_or_hash
 
-        transactions: Union[list[EvmTransaction], list[EvmInternalTransaction]] = []  # type: ignore  # noqa: E501
+        transactions: Union[list[EvmTransaction], list[EvmInternalTransaction]] = []  # type: ignore
         is_internal = action == 'txlistinternal'
         chain_id = self.chain.to_chain_id()
         while True:

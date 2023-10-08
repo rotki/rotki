@@ -55,7 +55,7 @@ def parse_args() -> argparse.Namespace:
 
 def get_remote_global_db(directory: Path, version: int, branch: str) -> Path:
     try:
-        url = f'https://github.com/rotki/assets/raw/{branch}/databases/v{version}_global.db'  # noqa: E501
+        url = f'https://github.com/rotki/assets/raw/{branch}/databases/v{version}_global.db'
         response = requests.get(url=url, timeout=CachedSettings().get_timeout_tuple())
     except requests.exceptions.RequestException:
         print(f'Couldnt download v{version} global.db from github')

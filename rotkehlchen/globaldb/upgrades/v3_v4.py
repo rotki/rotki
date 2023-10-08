@@ -140,7 +140,7 @@ def _add_eth_abis_json(cursor: 'DBCursor') -> None:
     abi_entries_tuples = []
     for name, value in abi_entries.items():
         abi_entries_tuples.append((name, json.dumps(value, separators=(',', ':'))))
-    cursor.executemany('INSERT INTO contract_abi(name, value) VALUES(?, ?)', abi_entries_tuples)  # noqa: E501
+    cursor.executemany('INSERT INTO contract_abi(name, value) VALUES(?, ?)', abi_entries_tuples)
 
     log.debug('Exit _add_eth_abis_json')
 

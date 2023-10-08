@@ -247,7 +247,7 @@ class ReloadablePoolsAndGaugesDecoderMixin(ReloadableDecoderMixin, metaclass=ABC
         If a query happens and any new mappings are generated they are returned,
         otherwise `None` is returned.
         """
-        self.evm_inquirer.ensure_cache_data_is_updated(  # type:ignore  # evm_inquirer has the required method here  # noqa: E501
+        self.evm_inquirer.ensure_cache_data_is_updated(  # type:ignore  # evm_inquirer has the required method here
             cache_type=self.cache_type_to_check_for_freshness,
             query_method=self.query_data_method,
             save_method=self.save_data_to_cache_method,

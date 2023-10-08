@@ -115,7 +115,7 @@ def test_mint_ens_name(database, ethereum_inquirer):
     )
 
 
-@pytest.mark.parametrize('ethereum_accounts', [['0x4bBa290826C253BD854121346c370a9886d1bC26']])  # noqa: E501
+@pytest.mark.parametrize('ethereum_accounts', [['0x4bBa290826C253BD854121346c370a9886d1bC26']])
 def test_text_changed_old_name(ethereum_transaction_decoder, ethereum_accounts):
     """
     Test that text changed for an address that is no longer
@@ -145,23 +145,23 @@ def test_text_changed_old_name(ethereum_transaction_decoder, ethereum_accounts):
         logs=[
             EvmTxReceiptLog(
                 log_index=289,
-                data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000375726c0000000000000000000000000000000000000000000000000000000000'),  # noqa: E501
+                data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000375726c0000000000000000000000000000000000000000000000000000000000'),
                 address=ENS_PUBLIC_RESOLVER_2_ADDRESS,
                 removed=False,
                 topics=[
-                    hexstring_to_bytes('0xd8c9334b1a9c2f9da342a0a2b32629c1a229b6445dad78947f674b44444a7550'),  # noqa: E501
-                    hexstring_to_bytes('0x3b0f515e5cdd012547353abc42e419c23a4f3f0d78c3ba681a942d7ed618f5cd'),  # noqa: E501
-                    hexstring_to_bytes('0xb68b5f5089998f2978a1dcc681e8ef27962b90d5c26c4c0b9c1945814ffa5ef0'),  # noqa: E501
+                    hexstring_to_bytes('0xd8c9334b1a9c2f9da342a0a2b32629c1a229b6445dad78947f674b44444a7550'),
+                    hexstring_to_bytes('0x3b0f515e5cdd012547353abc42e419c23a4f3f0d78c3ba681a942d7ed618f5cd'),
+                    hexstring_to_bytes('0xb68b5f5089998f2978a1dcc681e8ef27962b90d5c26c4c0b9c1945814ffa5ef0'),
                 ],
             ), EvmTxReceiptLog(
                 log_index=290,
-                data=hexstring_to_bytes('0x000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000066176617461720000000000000000000000000000000000000000000000000000'),  # noqa: E501
+                data=hexstring_to_bytes('0x000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000066176617461720000000000000000000000000000000000000000000000000000'),
                 address=ENS_PUBLIC_RESOLVER_2_ADDRESS,
                 removed=False,
                 topics=[
-                    hexstring_to_bytes('0xd8c9334b1a9c2f9da342a0a2b32629c1a229b6445dad78947f674b44444a7550'),  # noqa: E501
-                    hexstring_to_bytes('0x3b0f515e5cdd012547353abc42e419c23a4f3f0d78c3ba681a942d7ed618f5cd'),  # noqa: E501
-                    hexstring_to_bytes('0xd1f86c93d831119ad98fe983e643a7431e4ac992e3ead6e3007f4dd1adf66343'),  # noqa: E501
+                    hexstring_to_bytes('0xd8c9334b1a9c2f9da342a0a2b32629c1a229b6445dad78947f674b44444a7550'),
+                    hexstring_to_bytes('0x3b0f515e5cdd012547353abc42e419c23a4f3f0d78c3ba681a942d7ed618f5cd'),
+                    hexstring_to_bytes('0xd1f86c93d831119ad98fe983e643a7431e4ac992e3ead6e3007f4dd1adf66343'),
                 ],
             ),
         ],
@@ -224,7 +224,7 @@ def test_text_changed_old_name(ethereum_transaction_decoder, ethereum_accounts):
     assert events == expected_events
 
 
-@pytest.mark.parametrize('ethereum_accounts', [['0x4bBa290826C253BD854121346c370a9886d1bC26']])  # noqa: E501
+@pytest.mark.parametrize('ethereum_accounts', [['0x4bBa290826C253BD854121346c370a9886d1bC26']])
 def test_set_resolver(ethereum_transaction_decoder, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0xae2cd848ce02c425bc50a8f46f8430eec32234475efb6fcff28315d2791329f6')  # noqa: E501
     user_address = ethereum_accounts[0]
@@ -251,22 +251,22 @@ def test_set_resolver(ethereum_transaction_decoder, ethereum_accounts):
         logs=[
             EvmTxReceiptLog(
                 log_index=269,
-                data=hexstring_to_bytes('0x000000000000000000000000084b1c3c81545d370f3634392de611caabff8148'),  # noqa: E501
+                data=hexstring_to_bytes('0x000000000000000000000000084b1c3c81545d370f3634392de611caabff8148'),
                 address=string_to_evm_address('0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e'),
                 removed=False,
                 topics=[
-                    hexstring_to_bytes('0xce0457fe73731f824cc272376169235128c118b49d344817417c6d108d155e82'),  # noqa: E501
-                    hexstring_to_bytes('0x91d1777781884d03a6757a803996e38de2a42967fb37eeaca72729271025a9e2'),  # noqa: E501
-                    hexstring_to_bytes('0xa5809490c7b97cf8ebf6dd2d9667569d617a4fdcccaf3dd7b4e74fbcdeda8fb0'),  # noqa: E501
+                    hexstring_to_bytes('0xce0457fe73731f824cc272376169235128c118b49d344817417c6d108d155e82'),
+                    hexstring_to_bytes('0x91d1777781884d03a6757a803996e38de2a42967fb37eeaca72729271025a9e2'),
+                    hexstring_to_bytes('0xa5809490c7b97cf8ebf6dd2d9667569d617a4fdcccaf3dd7b4e74fbcdeda8fb0'),
                 ],
             ), EvmTxReceiptLog(
                 log_index=270,
-                data=hexstring_to_bytes('0x000000000000000000000000a2c122be93b0074270ebee7f6b7292c7deb45047'),  # noqa: E501
+                data=hexstring_to_bytes('0x000000000000000000000000a2c122be93b0074270ebee7f6b7292c7deb45047'),
                 address=string_to_evm_address('0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e'),
                 removed=False,
                 topics=[
-                    hexstring_to_bytes('0x335721b01866dc23fbee8b6b2c7b1e14d6f05c28cd35a2c934239f94095602a0'),  # noqa: E501
-                    hexstring_to_bytes('0x9c74c6eee8c468cc09629fac3a5d83791d48b57b4f8ec0841dd847fd6f0a1d20'),  # noqa: E501
+                    hexstring_to_bytes('0x335721b01866dc23fbee8b6b2c7b1e14d6f05c28cd35a2c934239f94095602a0'),
+                    hexstring_to_bytes('0x9c74c6eee8c468cc09629fac3a5d83791d48b57b4f8ec0841dd847fd6f0a1d20'),
                 ],
             ),
         ],
@@ -351,7 +351,7 @@ def test_set_attribute_v2(database, ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             balance=Balance(),
             location_label=user_address,
-            notes='Set ENS url to https://mercury.foundation attribute for alextatarsky.eth',  # noqa: E501
+            notes='Set ENS url to https://mercury.foundation attribute for alextatarsky.eth',
             counterparty=CPT_ENS,
             address=string_to_evm_address('0x231b0Ee14048e9dCcD1d247744d114a4EB5E8E63'),
         ),
@@ -765,7 +765,7 @@ def test_vote_cast(database, ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             balance=Balance(),
             location_label=user_address,
-            notes='Voted FOR ens governance proposal https://www.tally.xyz/gov/ens/proposal/10686228418271748393758532071249002330319730525037728746406757788787068261444',  # noqa: E501
+            notes='Voted FOR ens governance proposal https://www.tally.xyz/gov/ens/proposal/10686228418271748393758532071249002330319730525037728746406757788787068261444',
             counterparty=CPT_ENS,
             address=ENS_GOVERNOR,
         ),

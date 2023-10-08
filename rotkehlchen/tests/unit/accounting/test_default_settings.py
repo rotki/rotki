@@ -28,7 +28,7 @@ if TYPE_CHECKING:
     from rotkehlchen.accounting.pot import AccountingPot
 
 EXAMPLE_EVM_HASH = make_evm_tx_hash()
-EXAMPLE_TX_HASH_HEX = EXAMPLE_EVM_HASH.hex()  # pylint: disable=no-member  # EvmTxHash does have hex() member  # noqa: E501
+EXAMPLE_TX_HASH_HEX = EXAMPLE_EVM_HASH.hex()  # pylint: disable=no-member  # EvmTxHash does have hex() member
 EXAMPLE_ADDRESS = make_evm_address()
 
 # Some utility timestamps. They are used for mocked prices.
@@ -98,7 +98,7 @@ def _gain_one_ether(
     kwargs: dict[str, Any]
     if entry_type == 'history_event':
         event_class = HistoryEvent
-        kwargs = {'event_identifier': f'rotki_events_{EXAMPLE_EVM_HASH.hex()}'}  # pylint: disable=no-member  # noqa: E501
+        kwargs = {'event_identifier': f'rotki_events_{EXAMPLE_EVM_HASH.hex()}'}  # pylint: disable=no-member
     else:  # can only be evm event
         event_class = EvmEvent
         kwargs = {'tx_hash': EXAMPLE_EVM_HASH}

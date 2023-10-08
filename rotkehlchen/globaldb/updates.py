@@ -34,9 +34,9 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 ASSETS_VERSION_KEY = 'assets_version'
-ASSETS_UPDATES_URL = 'https://raw.githubusercontent.com/rotki/assets/{branch}/updates/{version}/updates.sql'  # noqa: E501
-ASSET_COLLECTIONS_UPDATES_URL = 'https://raw.githubusercontent.com/rotki/assets/{branch}/updates/{version}/asset_collections_updates.sql'  # noqa: E501
-ASSET_COLLECTIONS_MAPPINGS_UPDATES_URL = 'https://raw.githubusercontent.com/rotki/assets/{branch}/updates/{version}/asset_collections_mappings_updates.sql'  # noqa: E501
+ASSETS_UPDATES_URL = 'https://raw.githubusercontent.com/rotki/assets/{branch}/updates/{version}/updates.sql'
+ASSET_COLLECTIONS_UPDATES_URL = 'https://raw.githubusercontent.com/rotki/assets/{branch}/updates/{version}/asset_collections_updates.sql'
+ASSET_COLLECTIONS_MAPPINGS_UPDATES_URL = 'https://raw.githubusercontent.com/rotki/assets/{branch}/updates/{version}/asset_collections_mappings_updates.sql'
 FIRST_VERSION_WITH_COLLECTIONS = 16
 
 
@@ -134,7 +134,7 @@ class AssetsUpdater:
         try:
             response = requests.get(url=url, timeout=CachedSettings().get_timeout_tuple())
         except requests.exceptions.RequestException as e:
-            raise RemoteError(f'Failed to query Github {url} during assets update: {e!s}') from e  # noqa: E501
+            raise RemoteError(f'Failed to query Github {url} during assets update: {e!s}') from e
 
         try:
             json_data = response.json()

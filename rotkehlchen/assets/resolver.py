@@ -68,8 +68,8 @@ class AssetResolver:
         """
         # TODO: This is ugly here but is here to avoid a cyclic import in the Assets file
         # Couldn't find a reorg that solves this cyclic import
-        from rotkehlchen.constants.assets import CONSTANT_ASSETS  # pylint: disable=import-outside-toplevel  # isort:skip  # noqa: E501
-        from rotkehlchen.globaldb.handler import GlobalDBHandler  # pylint: disable=import-outside-toplevel  # isort:skip  # noqa: E501
+        from rotkehlchen.constants.assets import CONSTANT_ASSETS  # pylint: disable=import-outside-toplevel  # isort:skip
+        from rotkehlchen.globaldb.handler import GlobalDBHandler  # pylint: disable=import-outside-toplevel  # isort:skip
 
         instance = AssetResolver()
         cached_data = instance.assets_cache.get(identifier)
@@ -94,8 +94,8 @@ class AssetResolver:
     def get_asset_type(identifier: str, query_packaged_db: bool = True) -> AssetType:
         # TODO: This is ugly here but is here to avoid a cyclic import in the Assets file
         # Couldn't find a reorg that solves this cyclic import
-        from rotkehlchen.constants.assets import CONSTANT_ASSETS  # pylint: disable=import-outside-toplevel  # isort:skip  # noqa: E501
-        from rotkehlchen.globaldb.handler import GlobalDBHandler   # pylint: disable=import-outside-toplevel  # isort:skip  # noqa: E501
+        from rotkehlchen.constants.assets import CONSTANT_ASSETS  # pylint: disable=import-outside-toplevel  # isort:skip
+        from rotkehlchen.globaldb.handler import GlobalDBHandler   # pylint: disable=import-outside-toplevel  # isort:skip
 
         instance = AssetResolver()
         cached_data = instance.types_cache.get(identifier)
@@ -125,8 +125,8 @@ class AssetResolver:
         """
         # TODO: This is ugly here but is here to avoid a cyclic import in the Assets file
         # Couldn't find a reorg that solves this cyclic import
-        from rotkehlchen.constants.assets import CONSTANT_ASSETS  # pylint: disable=import-outside-toplevel  # isort:skip  # noqa: E501
-        from rotkehlchen.globaldb.handler import GlobalDBHandler   # pylint: disable=import-outside-toplevel  # isort:skip  # noqa: E501
+        from rotkehlchen.constants.assets import CONSTANT_ASSETS  # pylint: disable=import-outside-toplevel  # isort:skip
+        from rotkehlchen.globaldb.handler import GlobalDBHandler   # pylint: disable=import-outside-toplevel  # isort:skip
 
         instance = AssetResolver()
         cached_data = instance.assets_cache.get(identifier)
@@ -156,8 +156,8 @@ class AssetResolver:
         - WrongAssetType: if the asset is resolved but the class is not the expected one.
         - UnknownAsset: if the asset was not found in the database.
         """
-        from rotkehlchen.constants.assets import CONSTANT_ASSETS  # pylint: disable=import-outside-toplevel  # isort:skip  # noqa: E501
-        from rotkehlchen.globaldb.handler import GlobalDBHandler   # pylint: disable=import-outside-toplevel  # isort:skip  # noqa: E501
+        from rotkehlchen.constants.assets import CONSTANT_ASSETS  # pylint: disable=import-outside-toplevel  # isort:skip
+        from rotkehlchen.globaldb.handler import GlobalDBHandler   # pylint: disable=import-outside-toplevel  # isort:skip
 
         resolved_asset = AssetResolver().resolve_asset(identifier=identifier)
         if isinstance(resolved_asset, expected_type) is True:

@@ -74,7 +74,7 @@ class OptimismSuperchainTransactions(EvmTransactions, metaclass=ABCMeta):
         ).fetchone()[0]
         with self.database.user_write() as write_cursor:
             write_cursor.execute(
-                'INSERT OR IGNORE INTO optimism_transactions(tx_id, l1_fee) VALUES(?, ?)',  # noqa: E501
+                'INSERT OR IGNORE INTO optimism_transactions(tx_id, l1_fee) VALUES(?, ?)',
                 (tx_id, str(transaction.l1_fee)),
             )
         query, bindings = EvmTransactionsFilterQuery.make(tx_hash=tx_hash, chain_id=self.evm_inquirer.chain_id).prepare()  # noqa: E501

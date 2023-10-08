@@ -86,7 +86,7 @@ class LiquityDecoder(DecoderInterface):
                 event.event_type = HistoryEventType.WITHDRAWAL
                 event.event_subtype = HistoryEventSubType.GENERATE_DEBT
                 event.counterparty = CPT_LIQUITY
-                event.notes = f'Generate {event.balance.amount} {self.lusd.symbol} from liquity'  # noqa: E501
+                event.notes = f'Generate {event.balance.amount} {self.lusd.symbol} from liquity'
             elif event.event_type == HistoryEventType.SPEND and event.asset == A_LUSD:
                 event.event_type = HistoryEventType.SPEND
                 event.event_subtype = HistoryEventSubType.PAYBACK_DEBT

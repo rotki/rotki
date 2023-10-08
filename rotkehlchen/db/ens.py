@@ -1,8 +1,8 @@
 from typing import TYPE_CHECKING, Optional, Union
 
 from pysqlcipher3 import dbapi2 as sqlcipher
-from rotkehlchen.errors.misc import InputError
 
+from rotkehlchen.errors.misc import InputError
 from rotkehlchen.types import ChecksumEvmAddress, EnsMapping, Timestamp
 from rotkehlchen.utils.misc import ts_now
 
@@ -49,7 +49,7 @@ class DBEns:
         - If address is not found in the DB it's not in the result
         """
         cursor.execute(
-            f'SELECT ens_name, address, last_update FROM ens_mappings WHERE address IN ({",".join("?"*len(addresses))})',  # noqa: E501
+            f'SELECT ens_name, address, last_update FROM ens_mappings WHERE address IN ({",".join("?" * len(addresses))})',  # noqa: E501
             addresses,
         )
         result = {}

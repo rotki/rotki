@@ -22,7 +22,7 @@ RE_MULTIPLE_WHITESPACE = re.compile(r'\s+')
 RETRY_BACKOFF_FACTOR = 0.2
 SUBGRAPH_REMOTE_ERROR_MSG = (
     'Failed to request the {protocol} subgraph due to {error_msg}. '
-    'All the deposits and withdrawals history queries are not functioning until this is fixed. '  # noqa: E501
+    'All the deposits and withdrawals history queries are not functioning until this is fixed. '
     "Probably will get fixed with time. If not report it to rotki's support channel"
 )
 
@@ -73,7 +73,7 @@ class Graph:
             try:
                 result = self.client.execute(gql(querystr), variable_values=param_values)
             # need to catch Exception here due to stupidity of gql library
-            except (requests.exceptions.RequestException, Exception) as e:  # pylint: disable=broad-except  # noqa: E501
+            except (requests.exceptions.RequestException, Exception) as e:  # pylint: disable=broad-except
                 # NB: the lack of a good API error handling by The Graph combined
                 # with gql v2 raising bare exceptions doesn't allow us to act
                 # better on failed requests. Currently all trigger the retry logic.

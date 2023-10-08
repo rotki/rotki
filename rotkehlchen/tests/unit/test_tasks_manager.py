@@ -174,7 +174,7 @@ def test_maybe_schedule_exchange_query(task_manager, exchange_manager, poloniex)
             assert poloniex_mock.call_count == 1, '2nd schedule should do nothing'
 
     except gevent.Timeout as e:
-        raise AssertionError(f'exchange query was not scheduled within {timeout} seconds') from e  # noqa: E501
+        raise AssertionError(f'exchange query was not scheduled within {timeout} seconds') from e
 
 
 def test_maybe_schedule_exchange_query_ignore_exchanges(
@@ -201,7 +201,7 @@ def test_maybe_schedule_ethereum_txreceipts(
         database,
         one_receipt_in_db,
 ):
-    task_manager.potential_tasks = [task_manager._maybe_schedule_evm_txreceipts]  # pylint: disable=protected-member  # noqa: E501
+    task_manager.potential_tasks = [task_manager._maybe_schedule_evm_txreceipts]  # pylint: disable=protected-member
     _, receipts = setup_ethereum_transactions_test(
         database=database,
         transaction_already_queried=True,
@@ -230,7 +230,7 @@ def test_maybe_schedule_ethereum_txreceipts(
             assert receipt_task_mock.call_count == 1 if one_receipt_in_db else 2, '2nd schedule should do nothing'  # noqa: E501
 
     except gevent.Timeout as e:
-        raise AssertionError(f'receipts query was not completed within {timeout} seconds') from e  # noqa: E501
+        raise AssertionError(f'receipts query was not completed within {timeout} seconds') from e
 
     receipt1 = eth_transactions.get_or_query_transaction_receipt(tx_hash_1)
     assert receipt1 == receipts[0]
@@ -424,7 +424,7 @@ def test_maybe_kill_running_tx_query_tasks(rotkehlchen_api_server, ethereum_acco
     rotki.task_manager.potential_tasks = [rotki.task_manager._maybe_query_evm_transactions]
     eth_manager = rotki.chains_aggregator.get_chain_manager(SupportedBlockchain.ETHEREUM)
 
-    def patched_address_query_transactions(self, address, start_ts, end_ts):  # pylint: disable=unused-argument  # noqa: E501
+    def patched_address_query_transactions(self, address, start_ts, end_ts):  # pylint: disable=unused-argument
         while True:  # busy wait :D just for the test
             gevent.sleep(1)
 

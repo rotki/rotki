@@ -500,7 +500,7 @@ def test_unfinished_upgrades(globaldb: GlobalDBHandler):
         create_globaldb(globaldb._data_directory, 0)
 
     # Add a backup
-    backup_path = globaldb._data_directory / 'global_data' / f'{ts_now()}_global_db_v2.backup'  # type: ignore  # _data_directory is definitely not null here  # noqa: E501
+    backup_path = globaldb._data_directory / 'global_data' / f'{ts_now()}_global_db_v2.backup'  # type: ignore  # _data_directory is definitely not null here
     shutil.copy(Path(__file__).parent.parent.parent / 'data' / 'v2_global.db', backup_path)
     backup_connection = DBConnection(
         path=str(backup_path),

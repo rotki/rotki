@@ -102,7 +102,7 @@ class EthereumTransactionDecoder(EVMTransactionDecoderWithDSProxy):
             for event in decoded_events:
                 if event.asset == A_1INCH and event.event_type == HistoryEventType.RECEIVE:
                     event.event_subtype = HistoryEventSubType.AIRDROP
-                    event.notes = f'Claim {event.balance.amount} 1INCH from the 1INCH airdrop'  # noqa: E501
+                    event.notes = f'Claim {event.balance.amount} 1INCH from the 1INCH airdrop'
             return DEFAULT_DECODING_OUTPUT
 
         if tx_log.topics[0] == GNOSIS_CHAIN_BRIDGE_RECEIVE and tx_log.address == '0x88ad09518695c6c3712AC10a214bE5109a655671':  # noqa: E501

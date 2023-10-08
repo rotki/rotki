@@ -141,7 +141,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: 'EthereumTransact
     }
 
 
-@pytest.mark.parametrize('ethereum_accounts', [['0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045']])  # noqa: E501
+@pytest.mark.parametrize('ethereum_accounts', [['0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045']])
 def test_no_logs_and_zero_eth(
         database,
         ethereum_accounts,
@@ -247,13 +247,13 @@ def test_simple_erc20_transfer(
         logs=[
             EvmTxReceiptLog(
                 log_index=73,
-                data=hexstring_to_bytes('0x000000000000000000000000000000000000000000000000000000000243de35'),  # noqa: E501
+                data=hexstring_to_bytes('0x000000000000000000000000000000000000000000000000000000000243de35'),
                 address=tether_address,
                 removed=False,
                 topics=[
-                    hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),  # noqa: E501
-                    hexstring_to_bytes('0x0000000000000000000000004bba290826c253bd854121346c370a9886d1bc26'),  # noqa: E501
-                    hexstring_to_bytes('0x000000000000000000000000ed2f12b896d0c7bff4050d3d8c4f95bd61aaa12d'),  # noqa: E501
+                    hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),
+                    hexstring_to_bytes('0x0000000000000000000000004bba290826c253bd854121346c370a9886d1bc26'),
+                    hexstring_to_bytes('0x000000000000000000000000ed2f12b896d0c7bff4050d3d8c4f95bd61aaa12d'),
                 ],
             ),
         ],

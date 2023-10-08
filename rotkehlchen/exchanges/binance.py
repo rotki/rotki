@@ -641,7 +641,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
 
                 for entry in response:
                     try:
-                        interest_received = deserialize_asset_amount(entry['interest'])  # noqa: E501
+                        interest_received = deserialize_asset_amount(entry['interest'])
                         if interest_received == ZERO:
                             continue
 

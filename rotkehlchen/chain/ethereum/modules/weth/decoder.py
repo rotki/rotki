@@ -70,7 +70,7 @@ class WethDecoder(DecoderInterface):
                 event.counterparty = CPT_WETH
                 event.event_type = HistoryEventType.DEPOSIT
                 event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
-                event.notes = f'Wrap {deposited_amount} {self.eth.symbol} in {self.weth.symbol}'  # noqa: E501
+                event.notes = f'Wrap {deposited_amount} {self.eth.symbol} in {self.weth.symbol}'
                 out_event = event
 
         if out_event is None:

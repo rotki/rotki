@@ -50,7 +50,7 @@ def test_gitcoin_old_donation(database, ethereum_inquirer):
             asset=A_SAI,
             balance=Balance(amount=FVal('0.95'), usd_value=ZERO),
             location_label=ADDY,
-            notes='Donate 0.95 SAI to 0xEbDb626C95a25f4e304336b1adcAd0521a1Bdca1 via gitcoin',  # noqa: E501
+            notes='Donate 0.95 SAI to 0xEbDb626C95a25f4e304336b1adcAd0521a1Bdca1 via gitcoin',
             counterparty=CPT_GITCOIN,
             address=string_to_evm_address('0xEbDb626C95a25f4e304336b1adcAd0521a1Bdca1'),
         ), EvmEvent(
@@ -63,7 +63,7 @@ def test_gitcoin_old_donation(database, ethereum_inquirer):
             asset=A_SAI,
             balance=Balance(amount=FVal('0.05'), usd_value=ZERO),
             location_label=ADDY,
-            notes='Donate 0.05 SAI to 0x00De4B13153673BCAE2616b67bf822500d325Fc3 via gitcoin',  # noqa: E501
+            notes='Donate 0.05 SAI to 0x00De4B13153673BCAE2616b67bf822500d325Fc3 via gitcoin',
             counterparty=CPT_GITCOIN,
             address=string_to_evm_address('0x00De4B13153673BCAE2616b67bf822500d325Fc3'),
         ),

@@ -48,7 +48,7 @@ class ReserveData(NamedTuple):
     """Aave v1 and v2 reserve data
 
     v1: https://docs.aave.com/developers/v/1.0/developing-on-aave/the-protocol/lendingpool#getreservedata
-    v2: https://docs.aave.com/developers/the-core-protocol/lendingpool#getreservedata"""  # noqa: E501
+    v2: https://docs.aave.com/developers/the-core-protocol/lendingpool#getreservedata"""
     liquidity_rate: FVal
     variable_borrow_rate: FVal
     stable_borrow_rate: FVal
@@ -172,7 +172,7 @@ class Aave(EthereumModule):
                 # no aave balances for the account
                 continue
 
-            aave_balances[account] = AaveBalances(lending=lending_map, borrowing=borrowing_map)  # type: ignore  # noqa: E501
+            aave_balances[account] = AaveBalances(lending=lending_map, borrowing=borrowing_map)  # type: ignore
 
         return aave_balances
 

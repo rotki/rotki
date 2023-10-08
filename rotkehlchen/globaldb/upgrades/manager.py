@@ -67,7 +67,7 @@ def maybe_upgrade_globaldb(
             f'globaldb version is {db_version}. To be able to use it you will need to '
             f'first use a previous version of rotki and then use this one. '
             f'Refer to the documentation for more information. '
-            f'https://rotki.readthedocs.io/en/latest/usage_guide.html#upgrading-rotki-after-a-very-long-time',  # noqa: E501
+            f'https://rotki.readthedocs.io/en/latest/usage_guide.html#upgrading-rotki-after-a-very-long-time',
         )
     if db_version > GLOBAL_DB_VERSION:
         raise ValueError(

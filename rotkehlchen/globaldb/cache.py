@@ -29,7 +29,7 @@ def compute_cache_key(key_parts: Iterable[Union[str, CacheType]]) -> str:
 
 
 # Using any random address here, since length of all addresses is the same
-BASE_POOL_TOKENS_KEY_LENGTH = len(compute_cache_key([CacheType.CURVE_POOL_TOKENS, ZERO_ADDRESS]))  # noqa: E501
+BASE_POOL_TOKENS_KEY_LENGTH = len(compute_cache_key([CacheType.CURVE_POOL_TOKENS, ZERO_ADDRESS]))
 
 
 def globaldb_set_general_cache_values_at_ts(

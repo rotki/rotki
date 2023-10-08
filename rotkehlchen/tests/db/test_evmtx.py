@@ -254,12 +254,12 @@ def test_query_also_internal_evm_transactions(data_dir, username, sql_vm_instruc
 
     dbevmtx = DBEvmTx(data.db)
     with data.db.user_write() as cursor:
-        dbevmtx.add_evm_transactions(cursor, [tx1, tx3, tx4, tx5], relevant_address=ETH_ADDRESS1)  # noqa: E501
+        dbevmtx.add_evm_transactions(cursor, [tx1, tx3, tx4, tx5], relevant_address=ETH_ADDRESS1)
         dbevmtx.add_evm_transactions(cursor, [tx2], relevant_address=ETH_ADDRESS2)
         dbevmtx.add_evm_transactions(cursor, [tx1, tx3], relevant_address=ETH_ADDRESS3)
         dbevmtx.add_evm_internal_transactions(cursor, [internal_tx2, internal_tx3, internal_tx4], relevant_address=ETH_ADDRESS1)  # noqa: E501
         dbevmtx.add_evm_internal_transactions(cursor, [internal_tx1, internal_tx4], relevant_address=ETH_ADDRESS3)  # noqa: E501
-        dbevmtx.add_evm_internal_transactions(cursor, [internal_tx1], relevant_address=address_4)  # noqa: E501
+        dbevmtx.add_evm_internal_transactions(cursor, [internal_tx1], relevant_address=address_4)
         errors = msg_aggregator.consume_errors()
         warnings = msg_aggregator.consume_warnings()
         assert len(errors) == 0

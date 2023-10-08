@@ -437,8 +437,8 @@ class UniswapV2Oracle(UniswapOracle):
             block_identifier=block_identifier,
         )
 
-        token_0_address = pool_contract.decode(output[1], 'token0')[0]  # noqa: E501 pylint:disable=unsubscriptable-object
-        token_1_address = pool_contract.decode(output[2], 'token1')[0]  # noqa: E501 pylint:disable=unsubscriptable-object
+        token_0_address = pool_contract.decode(output[1], 'token0')[0]  # pylint:disable=unsubscriptable-object
+        token_1_address = pool_contract.decode(output[2], 'token1')[0]  # pylint:disable=unsubscriptable-object
 
         try:
             token_0 = EvmToken(

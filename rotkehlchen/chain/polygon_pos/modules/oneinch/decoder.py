@@ -26,7 +26,7 @@ class OneinchDecoder(OneinchCommonDecoder):
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
             router_address=ONEINCH_POLYGON_POS_ROUTER,
-            swapped_signatures=[b'\xd6\xd4\xf5h\x1c$l\x9fB\xc2\x03\xe2\x87\x97Z\xf1`\x1f\x8d\xf8\x03Z\x92Q\xf7\x9a\xab\\\x8f\t\xe2\xf8'],  # noqa: E501
+            swapped_signatures=[b'\xd6\xd4\xf5h\x1c$l\x9fB\xc2\x03\xe2\x87\x97Z\xf1`\x1f\x8d\xf8\x03Z\x92Q\xf7\x9a\xab\\\x8f\t\xe2\xf8'],
             counterparty=CPT_ONEINCH,
         )
 

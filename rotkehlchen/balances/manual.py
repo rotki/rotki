@@ -94,7 +94,7 @@ def add_manually_tracked_balances(
         db.add_manually_tracked_balances(write_cursor=cursor, data=data)
 
 
-def edit_manually_tracked_balances(db: 'DBHandler', data: list[ManuallyTrackedBalance]) -> None:  # noqa: E501
+def edit_manually_tracked_balances(db: 'DBHandler', data: list[ManuallyTrackedBalance]) -> None:
     """Edits manually tracked balances
 
     May raise:

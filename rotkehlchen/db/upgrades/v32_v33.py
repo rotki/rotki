@@ -436,7 +436,7 @@ def _force_bytes_for_tx_hashes(cursor: 'DBCursor') -> None:
     """)  # noqa: E501
 
     # this is cascaded when `history_events` is dropped, so keep a copy
-    history_events_mappings = cursor.execute('SELECT * FROM history_events_mappings').fetchall()  # noqa: E501
+    history_events_mappings = cursor.execute('SELECT * FROM history_events_mappings').fetchall()
     cursor.execute("""
     CREATE TABLE history_events_copy (
         identifier INTEGER NOT NULL PRIMARY KEY,

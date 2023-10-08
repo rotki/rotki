@@ -73,7 +73,7 @@ def test_check_airdrops(ethereum_accounts, database):
         because the vcr yaml file is above the github limit of 100MB."""
         url_to_data_map = {
             AIRDROPS['uniswap'][0]:
-                f'address,uni,is_lp,is_user,is_socks\n{TEST_ADDR1},400,False,True,False\n{TEST_ADDR2},400.050642,True,True,False\n',  # noqa: E501
+                f'address,uni,is_lp,is_user,is_socks\n{TEST_ADDR1},400,False,True,False\n{TEST_ADDR2},400.050642,True,True,False\n',
             AIRDROPS['1inch'][0]:
                 f'address,tokens\n{TEST_ADDR1},630.374421472277638654\n',
             AIRDROPS['shapeshift'][0]:
@@ -94,7 +94,7 @@ def test_check_airdrops(ethereum_accounts, database):
 
     with (
         patch('rotkehlchen.chain.ethereum.airdrops.SMALLEST_AIRDROP_SIZE', 1),
-        patch('rotkehlchen.chain.ethereum.airdrops.requests.get', side_effect=mock_requests_get),  # noqa: E501
+        patch('rotkehlchen.chain.ethereum.airdrops.requests.get', side_effect=mock_requests_get),
     ):
         data = check_airdrops(
             addresses=ethereum_accounts + [TEST_ADDR1, TEST_ADDR2],

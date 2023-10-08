@@ -23,7 +23,7 @@ def test_get_customized_event_identifiers(database):
         db.add_history_event(
             write_cursor=write_cursor,
             event=HistoryEvent(
-                event_identifier=deserialize_evm_tx_hash('0x75ceef8e258c08fc2724c1286da0426cb6ec8df208a9ec269108430c30262791'),  # noqa: E501
+                event_identifier=deserialize_evm_tx_hash('0x75ceef8e258c08fc2724c1286da0426cb6ec8df208a9ec269108430c30262791'),
                 sequence_index=1,
                 timestamp=TimestampMS(1),
                 location=Location.ETHEREUM,
@@ -38,7 +38,7 @@ def test_get_customized_event_identifiers(database):
             write_cursor=write_cursor,
             history=[
                 HistoryEvent(
-                    event_identifier=deserialize_evm_tx_hash('0x15ceef8e258c08fc2724c1286da0426cb6ec8df208a9ec269108430c30262791'),  # noqa: E501
+                    event_identifier=deserialize_evm_tx_hash('0x15ceef8e258c08fc2724c1286da0426cb6ec8df208a9ec269108430c30262791'),
                     sequence_index=1,
                     timestamp=TimestampMS(1),
                     location=Location.OPTIMISM,
@@ -47,7 +47,7 @@ def test_get_customized_event_identifiers(database):
                     asset=A_ETH,
                     balance=Balance(1),
                 ), HistoryEvent(
-                    event_identifier=deserialize_evm_tx_hash('0x25ceef8e258c08fc2724c1286da0426cb6ec8df208a9ec269108430c30262791'),  # noqa: E501
+                    event_identifier=deserialize_evm_tx_hash('0x25ceef8e258c08fc2724c1286da0426cb6ec8df208a9ec269108430c30262791'),
                     sequence_index=1,
                     timestamp=TimestampMS(2),
                     location=Location.OPTIMISM,
@@ -61,7 +61,7 @@ def test_get_customized_event_identifiers(database):
         db.add_history_event(
             write_cursor=write_cursor,
             event=HistoryEvent(
-                event_identifier=deserialize_evm_tx_hash('0x35ceef8e258c08fc2724c1286da0426cb6ec8df208a9ec269108430c30262791'),  # noqa: E501
+                event_identifier=deserialize_evm_tx_hash('0x35ceef8e258c08fc2724c1286da0426cb6ec8df208a9ec269108430c30262791'),
                 sequence_index=1,
                 timestamp=TimestampMS(3),
                 location=Location.OPTIMISM,

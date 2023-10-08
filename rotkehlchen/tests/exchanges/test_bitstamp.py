@@ -77,7 +77,7 @@ def test_bitstamp_exchange_assets_are_known(mock_bitstamp):
 
 def test_validate_api_key_invalid_json(mock_bitstamp):
     """Test when status code is not 200, an invalid JSON response is handled."""
-    def mock_api_query_response(endpoint, method='', options=None):  # pylint: disable=unused-argument  # noqa: E501
+    def mock_api_query_response(endpoint, method='', options=None):  # pylint: disable=unused-argument
         return MockResponse(HTTPStatus.FORBIDDEN, '{"key"}')
 
     with patch.object(mock_bitstamp, '_api_query', side_effect=mock_api_query_response):
@@ -88,7 +88,7 @@ def test_validate_api_key_invalid_json(mock_bitstamp):
 
 def test_validate_api_key_err_auth_nonce(mock_bitstamp):
     """Test the error code related with the nonce authentication is properly handled"""
-    def mock_api_query_response(endpoint, method='', options=None):  # pylint: disable=unused-argument  # noqa: E501
+    def mock_api_query_response(endpoint, method='', options=None):  # pylint: disable=unused-argument
         return MockResponse(
             HTTPStatus.FORBIDDEN,
             f'{{"code": "{API_ERR_AUTH_NONCE_CODE}", "reason": "whatever"}}',

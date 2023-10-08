@@ -26,7 +26,7 @@ class Oneinchv2Decoder(OneinchCommonDecoder):
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
             router_address=ONEINCH_V2_MAINNET_ROUTER,
-            swapped_signatures=[b'v\xaf"J\x148e\xa5\x0bAIn\x1asb&\x98i,V\\\x12\x14\xbc\x86/\x18\xe2-\x82\x9c^'],  # noqa: E501
+            swapped_signatures=[b'v\xaf"J\x148e\xa5\x0bAIn\x1asb&\x98i,V\\\x12\x14\xbc\x86/\x18\xe2-\x82\x9c^'],
             counterparty=CPT_ONEINCH_V2,
         )
 

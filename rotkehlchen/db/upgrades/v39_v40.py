@@ -159,7 +159,7 @@ def _migrate_ledger_actions(write_cursor: 'DBCursor', conn: 'DBConnection') -> N
                     amount = deserialize_fval(entry[3], 'amount', 'ledger actions migration')
                     rate = deserialize_fval(entry[5], 'rate', 'ledger actions migration')
                 except DeserializationError as e:
-                    log.error(f'Skipped a ledger action from migration to history event due {e}')  # noqa: E501
+                    log.error(f'Skipped a ledger action from migration to history event due {e}')
                     continue
 
                 usd_value = amount * rate

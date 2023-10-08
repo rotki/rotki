@@ -198,7 +198,7 @@ class TaskManager:
                 continue  # not supported in cryptocompare
 
             if asset.cryptocompare is None and asset.symbol is None:
-                continue  # type: ignore  # asset.symbol may be None for auto generated underlying tokens # noqa: E501
+                continue  # type: ignore  # asset.symbol may be None for auto generated underlying tokens
 
             data_range = GlobalDBHandler().get_historical_price_range(
                 from_asset=asset,
@@ -335,7 +335,7 @@ class TaskManager:
         random.shuffle(shuffled_chains)
         for blockchain in shuffled_chains:
             hash_results = dbevmtx.get_transaction_hashes_no_receipt(
-                tx_filter_query=EvmTransactionsFilterQuery.make(chain_id=blockchain.to_chain_id()),  # type: ignore[arg-type]  # noqa: E501
+                tx_filter_query=EvmTransactionsFilterQuery.make(chain_id=blockchain.to_chain_id()),  # type: ignore[arg-type]
                 limit=TX_RECEIPTS_QUERY_LIMIT,
             )
             if len(hash_results) == 0:

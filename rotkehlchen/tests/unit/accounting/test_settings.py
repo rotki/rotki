@@ -303,7 +303,7 @@ def test_assets_movements_not_accounted_for(accountant, expected, google_service
     no_message_errors(accountant.msg_aggregator)
     expected_pnls = PnlTotals()
     if expected != ZERO:
-        expected_pnls[AccountingEventType.ASSET_MOVEMENT] = PNL(taxable=expected, free=ZERO)  # noqa: E501
+        expected_pnls[AccountingEventType.ASSET_MOVEMENT] = PNL(taxable=expected, free=ZERO)
     check_pnls_and_csv(accountant, expected_pnls, google_service)
 
 

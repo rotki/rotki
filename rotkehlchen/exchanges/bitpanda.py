@@ -280,7 +280,7 @@ class Bitpanda(ExchangeInterface):
             fee_asset = A_BEST
             if entry['attributes']['bfc_used'] is True:
                 fee = deserialize_fee(
-                    entry['attributes']['best_fee_collection']['attributes']['wallet_transaction']['attributes']['fee'],  # noqa: E501
+                    entry['attributes']['best_fee_collection']['attributes']['wallet_transaction']['attributes']['fee'],
                 )
 
         except (DeserializationError, KeyError) as e:

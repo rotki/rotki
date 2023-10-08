@@ -54,7 +54,7 @@ def default_data_directory() -> Path:
         appdata = get_win32_appdata()
         datadir = appdata / 'rotki' / data_dir_name
     elif platform.system() == 'Darwin':
-        datadir = Path(os.path.expanduser(f'~/Library/Application Support/rotki/{data_dir_name}'))  # noqa: E501
+        datadir = Path(os.path.expanduser(f'~/Library/Application Support/rotki/{data_dir_name}'))
     else:
         raise AssertionError(f'rotki running in unknown system: {platform.system()}')
 

@@ -36,18 +36,18 @@ REWARD_TOPICS = {
 # example transaction: https://etherscan.io/tx/0xe03d27127fda879144ea4cc587470bd37040be9921ff6a90f48d4efd0cb4fe13#eventlog  # noqa: E501
 # data about abras is taken from: https://github.com/convex-eth/platform/blob/eb87f1fddcf5efcc4294f564b58cca7ac4ccbc90/contracts/contracts.json  # noqa: E501
 CONVEX_ABRAS_HEX = {  # using set since we only need to check if an address is "in" these pools
-    b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xd9$\x94\xcb\x92\x1e\\\r:9\xea\x88\xd0\x14{\xbd\x82\xe5\x10\x08',  # noqa: E501
+    b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xd9$\x94\xcb\x92\x1e\\\r:9\xea\x88\xd0\x14{\xbd\x82\xe5\x10\x08',
     b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00YX\xa8\xdb}\xfe\x0c\xc4\x93\x82 \x90i\xb0\x0fT\xe1y)\xc2',  # noqa: E501
-    b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xb6^\xde\x13E!\xf0\xef\xd4\xe9C\xc85\xf4P\x13}\xc6\xe8>',  # noqa: E501
-    b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00;\xa2\x07\xc2Z'\x85$\xe1\xcc\x7f\xaa\xea\x95\x07S\x04\x90r\xa4",  # noqa: E501
+    b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xb6^\xde\x13E!\xf0\xef\xd4\xe9C\xc85\xf4P\x13}\xc6\xe8>',
+    b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00;\xa2\x07\xc2Z'\x85$\xe1\xcc\x7f\xaa\xea\x95\x07S\x04\x90r\xa4",
 }
 
 
 CONVEX_POOLS = {  # mapping of pool rewards address: pool name
     string_to_evm_address('0xf34DFF761145FF0B05e917811d488B441F33a968'): 'cDAI+cUSDC',
     string_to_evm_address('0x8B55351ea358e5Eda371575B031ee24F462d503e'): 'cDAI+cUSDC+USDT',
-    string_to_evm_address('0xd802a8351A76ED5eCd89A7502Ca615F2225A585d'): 'yDAI+yUSDC+yUSDT+yTUSD',  # noqa: E501
-    string_to_evm_address('0x602c4cD53a715D8a7cf648540FAb0d3a2d546560'): 'yDAI+yUSDC+yUSDT+yBUSD',  # noqa: E501
+    string_to_evm_address('0xd802a8351A76ED5eCd89A7502Ca615F2225A585d'): 'yDAI+yUSDC+yUSDT+yTUSD',
+    string_to_evm_address('0x602c4cD53a715D8a7cf648540FAb0d3a2d546560'): 'yDAI+yUSDC+yUSDT+yBUSD',
     string_to_evm_address('0x22eE18aca7F3Ee920D01F25dA85840D12d98E8Ca'): 'crvPlain3andSUSD',
     string_to_evm_address('0xe3DaafC8C14147d5B4A7a56F0BfdED240158e51e'): 'ypaxCrv',
     string_to_evm_address('0x8E299C62EeD737a5d5a53539dF37b5356a27b07D'): 'crvRenWBTC',

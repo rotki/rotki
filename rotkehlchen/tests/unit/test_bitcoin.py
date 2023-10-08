@@ -284,11 +284,11 @@ def test_from_bad_xpub():
     with pytest.raises(XPUBError):
         HDKey.from_xpub('ddodod')
     with pytest.raises(XPUBError):
-        HDKey.from_xpub('zpub6quTRdxqWmerHdiWVKZdLMp9FY641F1F171gfT2RS4D1FyHnutwFSMiab58Nbsdu4fXBaFwpy5xyGnKZ8d6xn2j4r4yNmQ3Yp33333333333333yDDxQUo3q')  # noqa: E501
+        HDKey.from_xpub('zpub6quTRdxqWmerHdiWVKZdLMp9FY641F1F171gfT2RS4D1FyHnutwFSMiab58Nbsdu4fXBaFwpy5xyGnKZ8d6xn2j4r4yNmQ3Yp33333333333333yDDxQUo3q')
     with pytest.raises(XPUBError):
-        HDKey.from_xpub('xpriv68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk')  # noqa: E501
+        HDKey.from_xpub('xpriv68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk')
     with pytest.raises(XPUBError):
-        HDKey.from_xpub('apfiv68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk')  # noqa: E501
+        HDKey.from_xpub('apfiv68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk')
 
 
 def test_xpub_data_comparison():

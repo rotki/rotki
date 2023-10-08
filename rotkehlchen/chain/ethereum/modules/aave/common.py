@@ -107,7 +107,7 @@ def asset_to_atoken(asset: CryptoAsset, version: int) -> Optional[EvmToken]:
     try:
         return EvmToken(result[0][0])
     except UnknownAsset:  # should not happen
-        log.error(f'Could not derive atoken from {asset}. Couldnt turn {result[0]} to EvmToken')  # noqa: E501
+        log.error(f'Could not derive atoken from {asset}. Couldnt turn {result[0]} to EvmToken')
         return None
 
 

@@ -29,19 +29,19 @@ def test_withdrawals(eth2: 'Eth2', database):
         dbeth2.add_validators(write_cursor, [
             Eth2Validator(  # this has exited
                 index=7287,
-                public_key=Eth2PubKey('0xb7763831fdf87f3ee728e60a579cf2be889f6cc89a4878c8651a2a267377cf7e9406b4bcd8f664b88a3e20c368155bf6'),  # noqa: E501
+                public_key=Eth2PubKey('0xb7763831fdf87f3ee728e60a579cf2be889f6cc89a4878c8651a2a267377cf7e9406b4bcd8f664b88a3e20c368155bf6'),
                 ownership_proportion=ONE,
             ), Eth2Validator(  # this has exited
                 index=7288,
-                public_key=Eth2PubKey('0x92db89739c6a3529facf858223b8872bbcf150c4bf3b30eb21ab8b09d4ea2f4d7b07b949a27d9766c70807d3b18ad934'),  # noqa: E501
+                public_key=Eth2PubKey('0x92db89739c6a3529facf858223b8872bbcf150c4bf3b30eb21ab8b09d4ea2f4d7b07b949a27d9766c70807d3b18ad934'),
                 ownership_proportion=ONE,
             ), Eth2Validator(  # this is active and has withdrawals
                 index=295601,
-                public_key=Eth2PubKey('0xab82f22254143786651a1600ce747f22f79bb3c3b016f7a2564e104ffb16af409fc3a8bb48b0ba012454a79c3460f5ae'),  # noqa: E501
+                public_key=Eth2PubKey('0xab82f22254143786651a1600ce747f22f79bb3c3b016f7a2564e104ffb16af409fc3a8bb48b0ba012454a79c3460f5ae'),
                 ownership_proportion=ONE,
             ), Eth2Validator(  # this is active and has withdrawals
                 index=295603,
-                public_key=Eth2PubKey('0x97777229490da343d0b7e661eda342fe1083e35a5c4076da76297ccac08cea6e2c8520fad2afdd4e43d73f0e620cc155'),  # noqa: E501
+                public_key=Eth2PubKey('0x97777229490da343d0b7e661eda342fe1083e35a5c4076da76297ccac08cea6e2c8520fad2afdd4e43d73f0e620cc155'),
                 ownership_proportion=ONE,
             ),
         ])
@@ -131,11 +131,11 @@ def test_block_production(eth2: 'Eth2', database):
         dbeth2.add_validators(write_cursor, [
             Eth2Validator(
                 index=vindex1,
-                public_key=Eth2PubKey('0xadd9843b2eb53ccaf5afb52abcc0a13223088320656fdfb162360ca53a71ebf8775dbebd0f1f1bf6c3e823d4bf2815f7'),  # noqa: E501
+                public_key=Eth2PubKey('0xadd9843b2eb53ccaf5afb52abcc0a13223088320656fdfb162360ca53a71ebf8775dbebd0f1f1bf6c3e823d4bf2815f7'),
                 ownership_proportion=ONE,
             ), Eth2Validator(
                 index=vindex2,
-                public_key=Eth2PubKey('0x8cd650758f377763bf7ebaf7fe60cb14b4b05f3ffe750820abf4ae70bc4bf25f84ccdff3a92489e1435ebf94768a03f1'),  # noqa: E501
+                public_key=Eth2PubKey('0x8cd650758f377763bf7ebaf7fe60cb14b4b05f3ffe750820abf4ae70bc4bf25f84ccdff3a92489e1435ebf94768a03f1'),
                 ownership_proportion=ONE,
             ),
         ])

@@ -44,7 +44,7 @@ class Aavev2Accountant(ModuleAccountantInterface):
         Process payback events. If the payed back amount is higher that the borrowed amount,
         a loss event is added to the accounting pot.
         """
-        key = (string_to_evm_address(event.location_label), event.asset)  # type: ignore[arg-type]  # location_label can't be None here  # noqa: E501
+        key = (string_to_evm_address(event.location_label), event.asset)  # type: ignore[arg-type]  # location_label can't be None here
         self.assets_borrowed[key] -= event.balance.amount
         if self.assets_borrowed[key] < ZERO:
             loss = -1 * self.assets_borrowed[key]
@@ -79,7 +79,7 @@ class Aavev2Accountant(ModuleAccountantInterface):
         Process withdrawal events. If the withdrawn amount is higher that the deposited amount,
         a gain event is added to the accounting pot.
         """
-        key = (string_to_evm_address(event.location_label), event.asset)  # type: ignore[arg-type]  # location_label can't be None here  # noqa: E501
+        key = (string_to_evm_address(event.location_label), event.asset)  # type: ignore[arg-type]  # location_label can't be None here
         self.assets_supplied[key] -= event.balance.amount
         if self.assets_supplied[key] < ZERO:
             gain = -1 * self.assets_supplied[key]
@@ -96,7 +96,7 @@ class Aavev2Accountant(ModuleAccountantInterface):
             )
             self.assets_supplied[key] = ZERO
 
-    def event_settings(self, pot: 'AccountingPot') -> dict[str, TxEventSettings]:  # pylint: disable=unused-argument  # noqa: E501
+    def event_settings(self, pot: 'AccountingPot') -> dict[str, TxEventSettings]:  # pylint: disable=unused-argument
         """Being defined at function call time is fine since this function is called only once"""
         return {
             get_tx_event_type_identifier(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET, CPT_AAVE_V2): TxEventSettings(  # noqa: E501

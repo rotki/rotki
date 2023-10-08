@@ -151,7 +151,7 @@ class Aavev2Decoder(DecoderInterface):
                 else:
                     event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
                     resolved_asset = event.asset.resolve_to_asset_with_symbol()
-                    event.notes = f'Return {amount} {resolved_asset.symbol} to AAVE v2'  # noqa: E501
+                    event.notes = f'Return {amount} {resolved_asset.symbol} to AAVE v2'
                     return_event = event
                 # Set protocol for both events
                 event.counterparty = CPT_AAVE_V2
@@ -197,7 +197,7 @@ class Aavev2Decoder(DecoderInterface):
                 else:
                     event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
                     resolved_asset = event.asset.resolve_to_asset_with_symbol()
-                    event.notes = f'Receive {amount} {resolved_asset.symbol} from AAVE v2'  # noqa: E501
+                    event.notes = f'Receive {amount} {resolved_asset.symbol} from AAVE v2'
                 # Set protocol for both events
                 event.counterparty = CPT_AAVE_V2
 

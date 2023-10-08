@@ -569,7 +569,7 @@ class Eth2(EthereumModule):
 
         # now check validator data for all these keys
         try:
-            results = self.beaconchain.get_validator_data(indices_or_pubkeys=list(pubkey_to_data))  # noqa: E501
+            results = self.beaconchain.get_validator_data(indices_or_pubkeys=list(pubkey_to_data))
         except RemoteError as e:
             log.error(f'During refreshing activated validator deposits got error: {e!s}')
             return

@@ -231,7 +231,7 @@ class Liquity(HasDSProxy):
                 if data[proxy_owner]['proxies'] is None:
                     data[proxy_owner]['proxies'] = defaultdict(dict)
 
-                data[proxy_owner]['proxies'][current_address][key] = AssetBalance(  # type: ignore[index]  # here and below mypy fails to detect that we check the None case  # noqa: E501
+                data[proxy_owner]['proxies'][current_address][key] = AssetBalance(  # type: ignore[index]  # here and below mypy fails to detect that we check the None case
                     asset=asset,
                     balance=Balance(
                         amount=amount,

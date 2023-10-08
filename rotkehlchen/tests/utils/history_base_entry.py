@@ -49,7 +49,7 @@ def add_entries(server: 'APIServer', events_db: DBHistoryEvents, add_directly: b
     through the API, depending on the `add_directly` flag.
     """
     entries = [EvmEvent(
-        tx_hash=deserialize_evm_tx_hash('0x64f1982504ab714037467fdd45d3ecf5a6356361403fc97dd325101d8c038c4e'),  # noqa: E501
+        tx_hash=deserialize_evm_tx_hash('0x64f1982504ab714037467fdd45d3ecf5a6356361403fc97dd325101d8c038c4e'),
         sequence_index=162,
         timestamp=TimestampMS(1569924574000),
         location=Location.ETHEREUM,
@@ -61,7 +61,7 @@ def add_entries(server: 'APIServer', events_db: DBHistoryEvents, add_directly: b
         event_subtype=HistoryEventSubType.APPROVE,
         address=string_to_evm_address('0xdf869FAD6dB91f437B59F1EdEFab319493D4C4cE'),
     ), EvmEvent(
-        tx_hash=deserialize_evm_tx_hash('0x64f1982504ab714037467fdd45d3ecf5a6356361403fc97dd325101d8c038c4e'),  # noqa: E501
+        tx_hash=deserialize_evm_tx_hash('0x64f1982504ab714037467fdd45d3ecf5a6356361403fc97dd325101d8c038c4e'),
         sequence_index=163,
         timestamp=TimestampMS(1569924574000),
         location=Location.ETHEREUM,
@@ -73,7 +73,7 @@ def add_entries(server: 'APIServer', events_db: DBHistoryEvents, add_directly: b
         event_subtype=HistoryEventSubType.APPROVE,
         address=string_to_evm_address('0xdf869FAD6dB91f437B59F1EdEFab319493D4C4cE'),
     ), EvmEvent(
-        tx_hash=deserialize_evm_tx_hash('0xf32e81dbaae8a763cad17bc96b77c7d9e8c59cc31ed4378b8109ce4b301adbbc'),  # noqa: E501
+        tx_hash=deserialize_evm_tx_hash('0xf32e81dbaae8a763cad17bc96b77c7d9e8c59cc31ed4378b8109ce4b301adbbc'),
         sequence_index=2,
         timestamp=TimestampMS(1619924574000),
         location=Location.ETHEREUM,
@@ -86,7 +86,7 @@ def add_entries(server: 'APIServer', events_db: DBHistoryEvents, add_directly: b
         counterparty=CPT_GAS,
         extra_data={'testing_data': 42},
     ), EvmEvent(
-        tx_hash=deserialize_evm_tx_hash('0xf32e81dbaae8a763cad17bc96b77c7d9e8c59cc31ed4378b8109ce4b301adbbc'),  # noqa: E501
+        tx_hash=deserialize_evm_tx_hash('0xf32e81dbaae8a763cad17bc96b77c7d9e8c59cc31ed4378b8109ce4b301adbbc'),
         sequence_index=3,
         timestamp=TimestampMS(1619924574000),
         location=Location.ETHEREUM,
@@ -98,7 +98,7 @@ def add_entries(server: 'APIServer', events_db: DBHistoryEvents, add_directly: b
         event_subtype=HistoryEventSubType.NONE,
         counterparty='somewhere',
     ), EvmEvent(
-        tx_hash=deserialize_evm_tx_hash('0x4b5489ed325483db3a8c4831da1d5ac08fb9ab0fd8c570aa3657e0c267a7d023'),  # noqa: E501
+        tx_hash=deserialize_evm_tx_hash('0x4b5489ed325483db3a8c4831da1d5ac08fb9ab0fd8c570aa3657e0c267a7d023'),
         sequence_index=55,
         timestamp=TimestampMS(1629924574000),
         location=Location.ETHEREUM,

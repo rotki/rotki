@@ -129,9 +129,9 @@ class Opensea(ExternalServiceWithApiKey):
             self.session.headers.update({'X-API-KEY': api_key})
 
         if endpoint == 'collectionstats':
-            query_str = f'https://api.opensea.io/api/v1/collection/{options["name"]}/stats'  # type: ignore  # noqa: E501
+            query_str = f'https://api.opensea.io/api/v1/collection/{options["name"]}/stats'  # type: ignore
         elif endpoint == 'asset':
-            query_str = f'https://api.opensea.io/api/v1/asset/{options["address"]}/{options["item_id"]}'  # type: ignore  # noqa: E501
+            query_str = f'https://api.opensea.io/api/v1/asset/{options["address"]}/{options["item_id"]}'  # type: ignore
             options = None
         else:
             query_str = f'https://api.opensea.io/api/v1/{endpoint}'
@@ -267,7 +267,7 @@ class Opensea(ExternalServiceWithApiKey):
     def gather_account_collections(self, account: ChecksumEvmAddress) -> None:
         """Gathers account collection information and keeps them in memory"""
         offset = 0
-        options = {'offset': offset, 'limit': CONTRACTS_MAX_LIMIT, 'asset_owner': account}  # noqa: E501
+        options = {'offset': offset, 'limit': CONTRACTS_MAX_LIMIT, 'asset_owner': account}
 
         raw_result: list[dict[str, Any]] = []
         while True:

@@ -287,7 +287,7 @@ class ChainID(Enum):
         try:
             return getattr(cls, upper_value)
         except AttributeError as e:
-            raise DeserializationError(f'Failed to deserialize evm chain value {value}') from e  # noqa: E501
+            raise DeserializationError(f'Failed to deserialize evm chain value {value}') from e
 
     def to_blockchain(self) -> 'SupportedBlockchain':
         return CHAINID_TO_SUPPORTED_BLOCKCHAIN[self]
@@ -385,7 +385,7 @@ class EvmInternalTransaction(NamedTuple):
 
     @property
     def identifier(self) -> str:
-        return str(self.chain_id.serialize()) + self.parent_tx_hash.hex() + str(self.trace_id)  # noqa: E501
+        return str(self.chain_id.serialize()) + self.parent_tx_hash.hex() + str(self.trace_id)
 
 
 class CovalentTransaction(NamedTuple):

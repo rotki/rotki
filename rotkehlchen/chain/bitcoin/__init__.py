@@ -125,12 +125,12 @@ def get_bitcoin_addresses_balances(
             errors[api_name] = str(e)
             continue
         except KeyError as e:
-            errors[api_name] = f"Got unexpected response from {api_name}. Couldn't find key {e!s}"  # noqa: E501
+            errors[api_name] = f"Got unexpected response from {api_name}. Couldn't find key {e!s}"
         else:
             return balances
 
     serialized_errors = ', '.join(f'{source} error is: "{error}"' for (source, error) in errors.items())  # noqa: E501
-    raise RemoteError(f'Bitcoin external API request for balances failed. {serialized_errors}')  # noqa: E501
+    raise RemoteError(f'Bitcoin external API request for balances failed. {serialized_errors}')
 
 
 def _check_blockstream_for_transactions(

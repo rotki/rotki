@@ -96,7 +96,7 @@ DEPOSIT_ENTRIES = [
         asset=Asset('eip155:1/erc20:0xe2f2a5C287993345a840Db3B0845fbC70f5935a5'),
         balance=Balance(amount=FVal('6578.947368421052624578')),
         location_label=USER_ADDRESS,
-        notes='Refunded 6578.947368421052624578 mUSD after depositing in Balancer V1 pool',  # noqa: E501
+        notes='Refunded 6578.947368421052624578 mUSD after depositing in Balancer V1 pool',
         counterparty=CPT_BALANCER_V1,
         identifier=None,
         extra_data=None,

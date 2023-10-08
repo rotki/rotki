@@ -137,9 +137,9 @@ def assert_all_balances(
                 Location.BLOCKCHAIN.serialize_for_db(),
             }
             if got_external:
-                expected_locations.add(Location.EXTERNAL.serialize_for_db())  # pylint: disable=no-member  # noqa: E501
+                expected_locations.add(Location.EXTERNAL.serialize_for_db())  # pylint: disable=no-member
             if total_eur != ZERO:
-                expected_locations.add(Location.BANKS.serialize_for_db())  # pylint: disable=no-member  # noqa: E501
+                expected_locations.add(Location.BANKS.serialize_for_db())  # pylint: disable=no-member
             locations = {x.location for x in location_data}
             assert locations == expected_locations
 

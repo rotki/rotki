@@ -592,7 +592,7 @@ UNSUPPORTED_BITFINEX_ASSETS = {
     'CHEX',  # no cryptocompare/coingecko data (chintai)
     'PLANETS',  # PlanetWatch (PLANETS) but has no cryptocompare/coingecko
     'MCS',  # no cryptocompare/coingecko data yet
-    'EXO',  # noqa: E501 #  https://blog.exordium.co/exo-security-token-to-be-listed-on-bitfinex-securities-ltd-24cb03dc8bb0 no cc/coingecko data
+    'EXO',  # https://blog.exordium.co/exo-security-token-to-be-listed-on-bitfinex-securities-ltd-24cb03dc8bb0 no cc/coingecko data  # noqa: E501
     'BMN',  # no cryptocompare and coingecko doesn't update it
     'LUXO',  # no cc/coingecko data
 }

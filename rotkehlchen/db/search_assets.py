@@ -73,7 +73,7 @@ def _search_only_assets_levenstein(
                         lev_dist_min,
                         levenshtein(filter_query.substring_search, entry[2].casefold()),
                     )
-                if treat_eth2_as_eth is True and entry[0] in (A_ETH.identifier, A_ETH2.identifier):  # noqa: E501
+                if treat_eth2_as_eth is True and entry[0] in (A_ETH.identifier, A_ETH2.identifier):
                     if found_eth is False:
                         search_result.append((lev_dist_min, {
                             'identifier': resolved_eth.identifier,

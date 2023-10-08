@@ -151,16 +151,16 @@ def handle_defi_price_query(
     if token == A_YV1_DAIUSDCTTUSD:
         usd_value = _handle_yearn_curve_vault(
             ethereum=ethereum,
-            curve_contract=ethereum.contracts.contract(string_to_evm_address('0x45F783CCE6B7FF23B2ab2D70e416cdb7D6055f51')),  # noqa: E501
-            yearn_contract=ethereum.contracts.contract(string_to_evm_address('0x5dbcF33D8c2E976c6b560249878e6F1491Bca25c')),  # noqa: E501
+            curve_contract=ethereum.contracts.contract(string_to_evm_address('0x45F783CCE6B7FF23B2ab2D70e416cdb7D6055f51')),
+            yearn_contract=ethereum.contracts.contract(string_to_evm_address('0x5dbcF33D8c2E976c6b560249878e6F1491Bca25c')),
             div_decimals=36,
             asset_price=ONE,  # assuming price of $1 for all stablecoins in pool
         )
     elif token == A_YV1_DAIUSDCTBUSD:
         usd_value = _handle_yearn_curve_vault(
             ethereum=ethereum,
-            curve_contract=ethereum.contracts.contract(string_to_evm_address('0x79a8C46DeA5aDa233ABaFFD40F3A0A2B1e5A4F27')),  # noqa: E501
-            yearn_contract=ethereum.contracts.contract(string_to_evm_address('0x2994529C0652D127b7842094103715ec5299bBed')),  # noqa: E501
+            curve_contract=ethereum.contracts.contract(string_to_evm_address('0x79a8C46DeA5aDa233ABaFFD40F3A0A2B1e5A4F27')),
+            yearn_contract=ethereum.contracts.contract(string_to_evm_address('0x2994529C0652D127b7842094103715ec5299bBed')),
             div_decimals=36,
             asset_price=ONE,  # assuming price of $1 for all stablecoins in pool
         )
@@ -168,16 +168,16 @@ def handle_defi_price_query(
         assert underlying_asset_price
         usd_value = _handle_yearn_curve_vault(
             ethereum=ethereum,
-            curve_contract=ethereum.contracts.contract(string_to_evm_address('0x7fC77b5c7614E1533320Ea6DDc2Eb61fa00A9714')),  # noqa: E501
-            yearn_contract=ethereum.contracts.contract(string_to_evm_address('0x7Ff566E1d69DEfF32a7b244aE7276b9f90e9D0f6')),  # noqa: E501
+            curve_contract=ethereum.contracts.contract(string_to_evm_address('0x7fC77b5c7614E1533320Ea6DDc2Eb61fa00A9714')),
+            yearn_contract=ethereum.contracts.contract(string_to_evm_address('0x7Ff566E1d69DEfF32a7b244aE7276b9f90e9D0f6')),
             div_decimals=36,
             asset_price=underlying_asset_price,
         )
     elif token == A_YV1_3CRV:
         usd_value = _handle_yearn_curve_vault(
             ethereum=ethereum,
-            curve_contract=ethereum.contracts.contract(string_to_evm_address('0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7')),  # noqa: E501
-            yearn_contract=ethereum.contracts.contract(string_to_evm_address('0x9cA85572E6A3EbF24dEDd195623F188735A5179f')),  # noqa: E501
+            curve_contract=ethereum.contracts.contract(string_to_evm_address('0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7')),
+            yearn_contract=ethereum.contracts.contract(string_to_evm_address('0x9cA85572E6A3EbF24dEDd195623F188735A5179f')),
             div_decimals=36,
             asset_price=ONE,  # assuming price of $1 for all stablecoins in pool
         )
@@ -189,7 +189,7 @@ def handle_defi_price_query(
         assert underlying_asset_price
         usd_value = _handle_curvepool_price(
             ethereum=ethereum,
-            contract=ethereum.contracts.contract(string_to_evm_address('0x93054188d876f558f4a66B2EF1d97d16eDf0895B')),  # noqa: E501
+            contract=ethereum.contracts.contract(string_to_evm_address('0x93054188d876f558f4a66B2EF1d97d16eDf0895B')),
             div_decimals=token.decimals,
             asset_price=underlying_asset_price,
         )
@@ -197,7 +197,7 @@ def handle_defi_price_query(
         assert underlying_asset_price
         usd_value = _handle_curvepool_price(
             ethereum=ethereum,
-            contract=ethereum.contracts.contract(string_to_evm_address('0x7fC77b5c7614E1533320Ea6DDc2Eb61fa00A9714')),  # noqa: E501
+            contract=ethereum.contracts.contract(string_to_evm_address('0x7fC77b5c7614E1533320Ea6DDc2Eb61fa00A9714')),
             div_decimals=token.decimals,
             asset_price=underlying_asset_price,
         )
@@ -216,7 +216,7 @@ def handle_defi_price_query(
         assert underlying_asset_price
         usd_value = handle_underlying_price_yearn_vault(
             ethereum=ethereum,
-            contract=ethereum.contracts.contract(string_to_evm_address('0x29E240CFD7946BA20895a7a02eDb25C210f9f324')),  # noqa: E501
+            contract=ethereum.contracts.contract(string_to_evm_address('0x29E240CFD7946BA20895a7a02eDb25C210f9f324')),
             div_decimals=token.decimals,
             asset_price=underlying_asset_price,
         )
@@ -224,7 +224,7 @@ def handle_defi_price_query(
         assert underlying_asset_price
         usd_value = handle_underlying_price_yearn_vault(
             ethereum=ethereum,
-            contract=ethereum.contracts.contract(string_to_evm_address('0xACd43E627e64355f1861cEC6d3a6688B31a6F952')),  # noqa: E501
+            contract=ethereum.contracts.contract(string_to_evm_address('0xACd43E627e64355f1861cEC6d3a6688B31a6F952')),
             div_decimals=token.decimals,
             asset_price=underlying_asset_price,
         )
@@ -232,7 +232,7 @@ def handle_defi_price_query(
         assert underlying_asset_price
         usd_value = handle_underlying_price_yearn_vault(
             ethereum=ethereum,
-            contract=ethereum.contracts.contract(string_to_evm_address('0xe1237aA7f535b0CC33Fd973D66cBf830354D16c7')),  # noqa: E501
+            contract=ethereum.contracts.contract(string_to_evm_address('0xe1237aA7f535b0CC33Fd973D66cBf830354D16c7')),
             div_decimals=token.decimals,
             asset_price=underlying_asset_price,
         )
@@ -240,7 +240,7 @@ def handle_defi_price_query(
         assert underlying_asset_price
         usd_value = handle_underlying_price_yearn_vault(
             ethereum=ethereum,
-            contract=ethereum.contracts.contract(string_to_evm_address('0xBA2E7Fed597fd0E3e70f5130BcDbbFE06bB94fe1')),  # noqa: E501
+            contract=ethereum.contracts.contract(string_to_evm_address('0xBA2E7Fed597fd0E3e70f5130BcDbbFE06bB94fe1')),
             div_decimals=token.decimals,
             asset_price=underlying_asset_price,
         )
@@ -248,7 +248,7 @@ def handle_defi_price_query(
         assert underlying_asset_price
         usd_value = handle_underlying_price_yearn_vault(
             ethereum=ethereum,
-            contract=ethereum.contracts.contract(string_to_evm_address('0x2f08119C6f07c006695E079AAFc638b8789FAf18')),  # noqa: E501
+            contract=ethereum.contracts.contract(string_to_evm_address('0x2f08119C6f07c006695E079AAFc638b8789FAf18')),
             div_decimals=token.decimals,
             asset_price=underlying_asset_price,
         )
@@ -256,7 +256,7 @@ def handle_defi_price_query(
         assert underlying_asset_price
         usd_value = handle_underlying_price_yearn_vault(
             ethereum=ethereum,
-            contract=ethereum.contracts.contract(string_to_evm_address('0x597aD1e0c13Bfe8025993D9e79C69E1c0233522e')),  # noqa: E501
+            contract=ethereum.contracts.contract(string_to_evm_address('0x597aD1e0c13Bfe8025993D9e79C69E1c0233522e')),
             div_decimals=token.decimals,
             asset_price=underlying_asset_price,
         )
@@ -264,7 +264,7 @@ def handle_defi_price_query(
         assert underlying_asset_price
         usd_value = handle_underlying_price_yearn_vault(
             ethereum=ethereum,
-            contract=ethereum.contracts.contract(string_to_evm_address('0x37d19d1c4E1fa9DC47bD1eA12f742a0887eDa74a')),  # noqa: E501
+            contract=ethereum.contracts.contract(string_to_evm_address('0x37d19d1c4E1fa9DC47bD1eA12f742a0887eDa74a')),
             div_decimals=token.decimals,
             asset_price=underlying_asset_price,
         )
@@ -272,7 +272,7 @@ def handle_defi_price_query(
         assert underlying_asset_price
         usd_value = handle_underlying_price_yearn_vault(
             ethereum=ethereum,
-            contract=ethereum.contracts.contract(string_to_evm_address('0xec0d8D3ED5477106c6D4ea27D90a60e594693C90')),  # noqa: E501
+            contract=ethereum.contracts.contract(string_to_evm_address('0xec0d8D3ED5477106c6D4ea27D90a60e594693C90')),
             div_decimals=token.decimals,
             asset_price=underlying_asset_price,
         )

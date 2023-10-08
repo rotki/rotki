@@ -1137,7 +1137,7 @@ def test_packaged_db_check_for_constant_assets(globaldb):
 
     # delete another asset and try checking its existence
     with globaldb.conn.write_ctx() as cursor:
-        cursor.execute('DELETE FROM assets WHERE identifier=?;', (A_DAI.identifier, ))  # noqa: E501
+        cursor.execute('DELETE FROM assets WHERE identifier=?;', (A_DAI.identifier, ))
         assert cursor.rowcount == 1
     # now check the asset type is correct and does not raise an error
     assert A_DAI.is_evm_token() is True
@@ -1163,11 +1163,11 @@ def test_packaged_db_check_for_constant_assets(globaldb):
 
     # check that the information was correctly updated locally
     with globaldb.conn.read_ctx() as cursor:
-        cursor.execute('SELECT type FROM assets WHERE identifier=?;', (A_DAI.identifier,))  # noqa: E501
+        cursor.execute('SELECT type FROM assets WHERE identifier=?;', (A_DAI.identifier,))
         assert AssetType.deserialize_from_db(cursor.fetchone()[0]) == AssetType.EVM_TOKEN
-        cursor.execute('SELECT type FROM assets WHERE identifier=?;', (A_USD.identifier,))  # noqa: E501
+        cursor.execute('SELECT type FROM assets WHERE identifier=?;', (A_USD.identifier,))
         assert AssetType.deserialize_from_db(cursor.fetchone()[0]) == AssetType.FIAT
-        cursor.execute('SELECT type FROM assets WHERE identifier=?;', (A_LUSD.identifier,))  # noqa: E501
+        cursor.execute('SELECT type FROM assets WHERE identifier=?;', (A_LUSD.identifier,))
         assert AssetType.deserialize_from_db(cursor.fetchone()[0]) == AssetType.EVM_TOKEN
 
 

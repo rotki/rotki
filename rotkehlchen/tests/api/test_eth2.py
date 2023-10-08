@@ -94,7 +94,7 @@ def test_query_eth2_deposits_details_and_stats(rotkehlchen_api_server, ethereum_
     expected_pubkey = '0xb016e31f633a21fbe42a015152399361184f1e2c0803d89823c224994af74a561c4ad8cfc94b18781d589d03e952cd5b'  # noqa: E501
     assert FVal(details[0]['balance']['amount']) >= ZERO
     assert FVal(details[0]['balance']['usd_value']) >= ZERO
-    assert details[0]['eth1_depositor'] == '0xfeF0E7635281eF8E3B705e9C5B86e1d3B0eAb397'  # noqa: E501
+    assert details[0]['eth1_depositor'] == '0xfeF0E7635281eF8E3B705e9C5B86e1d3B0eAb397'
     assert details[0]['index'] == 9
     assert details[0]['public_key'] == expected_pubkey
     for duration in ('1d', '1w', '1m', '1y'):
@@ -399,19 +399,19 @@ def test_add_get_edit_delete_eth2_validators(rotkehlchen_api_server, start_with_
 
     validators = [Eth2Validator(
         index=4235,
-        public_key='0xadd548bb2e6962c255ec5420e40e6e506dfc936592c700d56718ada7dcc52e4295644ff8f94f4ef898aa8a5ad81a5b84',  # noqa: E501
+        public_key='0xadd548bb2e6962c255ec5420e40e6e506dfc936592c700d56718ada7dcc52e4295644ff8f94f4ef898aa8a5ad81a5b84',
         ownership_proportion=ONE,
     ), Eth2Validator(
         index=5235,
-        public_key='0x827e0f30c3d34e3ee58957dd7956b0f194d64cc404fca4a7313dc1b25ac1f28dcaddf59d05fbda798fa5b894c91b84fb',  # noqa: E501
+        public_key='0x827e0f30c3d34e3ee58957dd7956b0f194d64cc404fca4a7313dc1b25ac1f28dcaddf59d05fbda798fa5b894c91b84fb',
         ownership_proportion=ONE,
     ), Eth2Validator(
         index=23948,
-        public_key='0x8a569c702a5b51894a25b261960f6b792aa35f8f67d9e1d96a52b15857cf0ee4fa30670b9bfca40e9a9dba81057ba4c7',  # noqa: E501
+        public_key='0x8a569c702a5b51894a25b261960f6b792aa35f8f67d9e1d96a52b15857cf0ee4fa30670b9bfca40e9a9dba81057ba4c7',
         ownership_proportion=ONE,
     ), Eth2Validator(
         index=43948,
-        public_key='0x922127b0722e0fca3ceeffe78a6d2f91f5b78edff42b65cce438f5430e67f389ff9f8f6a14a26ee6467051ddb1cc21eb',  # noqa: E501
+        public_key='0x922127b0722e0fca3ceeffe78a6d2f91f5b78edff42b65cce438f5430e67f389ff9f8f6a14a26ee6467051ddb1cc21eb',
         ownership_proportion=ONE,
     )]
     response = requests.put(
@@ -538,12 +538,12 @@ def test_add_get_edit_delete_eth2_validators(rotkehlchen_api_server, start_with_
     custom_percentage_validators = [
         Eth2Validator(
             index=5235,
-            public_key='0x827e0f30c3d34e3ee58957dd7956b0f194d64cc404fca4a7313dc1b25ac1f28dcaddf59d05fbda798fa5b894c91b84fb',  # noqa: E501
+            public_key='0x827e0f30c3d34e3ee58957dd7956b0f194d64cc404fca4a7313dc1b25ac1f28dcaddf59d05fbda798fa5b894c91b84fb',
             ownership_proportion=FVal(0.4025),
         ),
         Eth2Validator(
             index=43948,
-            public_key='0x922127b0722e0fca3ceeffe78a6d2f91f5b78edff42b65cce438f5430e67f389ff9f8f6a14a26ee6467051ddb1cc21eb',  # noqa: E501
+            public_key='0x922127b0722e0fca3ceeffe78a6d2f91f5b78edff42b65cce438f5430e67f389ff9f8f6a14a26ee6467051ddb1cc21eb',
             ownership_proportion=FVal(0.5),
         ),
     ]
@@ -594,7 +594,7 @@ def test_add_delete_validator_errors(rotkehlchen_api_server, method):
         ), json={},
     )
     if method == 'PUT':
-        msg = 'Need to provide either a validator index or a public key for an eth2 validator'  # noqa: E501
+        msg = 'Need to provide either a validator index or a public key for an eth2 validator'
     else:
         msg = 'Missing data for required field.'
 
@@ -629,7 +629,7 @@ def test_add_delete_validator_errors(rotkehlchen_api_server, method):
         ), json=unknown_index,
     )
     if method == 'PUT':
-        msg = 'Validator data for 999957426 could not be found. Likely invalid validator'  # noqa: E501
+        msg = 'Validator data for 999957426 could not be found. Likely invalid validator'
         status_code = HTTPStatus.BAD_GATEWAY
     else:  # DELETE
         msg = 'Tried to delete eth2 validator/s with indices [999957426] from the DB but at least one of them did not exist'  # noqa: E501
@@ -651,7 +651,7 @@ def test_add_delete_validator_errors(rotkehlchen_api_server, method):
         )
         assert_error_response(
             response=response,
-            contained_in_msg='The given eth2 public key fooboosoozloklkl is not valid hex',  # noqa: E501
+            contained_in_msg='The given eth2 public key fooboosoozloklkl is not valid hex',
             status_code=HTTPStatus.BAD_REQUEST,
         )
         invalid_hex = {'public_key': '0x827e0f30c3d34e3ee58957dd7956b0f194d64cc404fca4a7313dc1b25ac1f28dcaddf59d05fbda798fa5b894c91b84fbcd'}  # noqa: E501
@@ -729,11 +729,11 @@ def test_query_eth2_balances(rotkehlchen_api_server, query_all_balances):
 
     validators = [Eth2Validator(
         index=4235,
-        public_key='0xadd548bb2e6962c255ec5420e40e6e506dfc936592c700d56718ada7dcc52e4295644ff8f94f4ef898aa8a5ad81a5b84',  # noqa: E501
+        public_key='0xadd548bb2e6962c255ec5420e40e6e506dfc936592c700d56718ada7dcc52e4295644ff8f94f4ef898aa8a5ad81a5b84',
         ownership_proportion=ONE,
     ), Eth2Validator(
         index=5235,
-        public_key='0x827e0f30c3d34e3ee58957dd7956b0f194d64cc404fca4a7313dc1b25ac1f28dcaddf59d05fbda798fa5b894c91b84fb',  # noqa: E501
+        public_key='0x827e0f30c3d34e3ee58957dd7956b0f194d64cc404fca4a7313dc1b25ac1f28dcaddf59d05fbda798fa5b894c91b84fb',
         ownership_proportion=ownership_proportion,
     )]
     response = requests.put(

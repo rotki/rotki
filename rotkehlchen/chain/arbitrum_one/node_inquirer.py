@@ -58,8 +58,8 @@ class ArbitrumOneInquirer(EvmNodeInquirer):
             etherscan_node_name=ARBITRUM_ONE_ETHERSCAN_NODE_NAME,
             contracts=contracts,
             rpc_timeout=rpc_timeout,
-            contract_multicall=contracts.contract(string_to_evm_address('0xcA11bde05977b3631167028862bE2a173976CA11')),  # noqa: E501
-            contract_scan=contracts.contract(string_to_evm_address('0x532E03C3167726cCfE0C777758b58b31054d3402')),  # noqa: E501
+            contract_multicall=contracts.contract(string_to_evm_address('0xcA11bde05977b3631167028862bE2a173976CA11')),
+            contract_scan=contracts.contract(string_to_evm_address('0x532E03C3167726cCfE0C777758b58b31054d3402')),
             native_token=A_ETH.resolve_to_crypto_asset(),
         )
         self.etherscan = cast(ArbitrumOneEtherscan, self.etherscan)

@@ -78,7 +78,7 @@ class DxdaomesaDecoder(DecoderInterface):
                 event.event_type = HistoryEventType.DEPOSIT
                 event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
                 event.counterparty = CPT_DXDAO_MESA
-                event.notes = f'Deposit {amount} {deposited_asset.symbol} to DXDao mesa exchange'  # noqa: E501
+                event.notes = f'Deposit {amount} {deposited_asset.symbol} to DXDao mesa exchange'
                 break
 
         return DEFAULT_DECODING_OUTPUT
@@ -98,7 +98,7 @@ class DxdaomesaDecoder(DecoderInterface):
                 event.event_type = HistoryEventType.WITHDRAWAL
                 event.event_subtype = HistoryEventSubType.REMOVE_ASSET
                 event.counterparty = CPT_DXDAO_MESA
-                event.notes = f'Withdraw {amount} {withdraw_asset.symbol} from DXDao mesa exchange'  # noqa: E501
+                event.notes = f'Withdraw {amount} {withdraw_asset.symbol} from DXDao mesa exchange'
                 break
 
         return DEFAULT_DECODING_OUTPUT

@@ -93,7 +93,7 @@ class AvalancheManager:
         - BlockNotFound if number used to lookup the block can't be found. Raised
         by web3.eth.get_block().
         """
-        block_data: MutableAttributeDict = MutableAttributeDict(self.w3.eth.get_block(num))  # type: ignore # pylint: disable=no-member  # noqa: E501
+        block_data: MutableAttributeDict = MutableAttributeDict(self.w3.eth.get_block(num))  # type: ignore # pylint: disable=no-member
         block_data['hash'] = hex_or_bytes_to_str(block_data['hash'])
         return dict(block_data)
 

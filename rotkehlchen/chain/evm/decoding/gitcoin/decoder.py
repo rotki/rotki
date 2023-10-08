@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-VOTED = b'\x00d\xca\xa7?\x1dY\xb6\x9a\xdb\xebeeK\x0f\tSYy\x94\xe4$\x1e\xe2F\x0bV\x0b\x8de\xaa\xa2'  # noqa: E501 # example: https://etherscan.io/tx/0x71fc406467f342f5801560a326aa29ac424381daf17cc04b5573960425ba605b#eventlog
+VOTED = b'\x00d\xca\xa7?\x1dY\xb6\x9a\xdb\xebeeK\x0f\tSYy\x94\xe4$\x1e\xe2F\x0bV\x0b\x8de\xaa\xa2'  # example: https://etherscan.io/tx/0x71fc406467f342f5801560a326aa29ac424381daf17cc04b5573960425ba605b#eventlog  # noqa: E501
 VOTED_WITH_ORIGIN = b'\xbf5\xc00\x17\x8a\x1eg\x8c\x82\x96\xa4\xe5\x08>\x90!\xa2L\x1a\x1d\xef\xa5\xbf\xbd\xfd\xe7K\xce\xcf\xa3v'  # noqa: E501 # example: https://optimistic.etherscan.io/tx/0x08685669305ee26060a5a78ae70065aec76d9e62a35f0837c291fb1232f33601#eventlog
 PROJECT_CREATED = b'c\xc9/\x95\x05\xd4 \xbf\xf61\xcb\x9d\xf3;\xe9R\xbd\xc1\x1e!\x18\xda6\xa8P\xb4>k\xccL\xe4\xde'  # noqa: E501
 METADATA_UPDATED = b'\xf9,&9\xc2]j"\xc3\x8emk)?t\xa9\xb2$\x91\';\x1d\xbbg\xfc\x12U"&\x96\xbe['

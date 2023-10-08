@@ -52,7 +52,7 @@ def test_sushiswap_single_swap(database, ethereum_inquirer, eth_transactions):
         gas=171249,
         gas_price=22990000000,
         gas_used=171249,
-        input_data=hexstring_to_bytes('0x38ed173900000000000000000000000000000000000000000000000109dccca56ed38b8c000000000000000000000000000000000000000000000000ff1886165de79bd900000000000000000000000000000000000000000000000000000000000000a00000000000000000000000003ba6eb0e4327b96ade6d4f3b578724208a590cef0000000000000000000000000000000000000000000000000000000060ba9a13000000000000000000000000000000000000000000000000000000000000000200000000000000000000000062b9c7356a2dc64a1969e19c23e4f579f9810aa7000000000000000000000000d533a949740bb3306d119cc777fa900ba034cd52'),  # noqa: E501
+        input_data=hexstring_to_bytes('0x38ed173900000000000000000000000000000000000000000000000109dccca56ed38b8c000000000000000000000000000000000000000000000000ff1886165de79bd900000000000000000000000000000000000000000000000000000000000000a00000000000000000000000003ba6eb0e4327b96ade6d4f3b578724208a590cef0000000000000000000000000000000000000000000000000000000060ba9a13000000000000000000000000000000000000000000000000000000000000000200000000000000000000000062b9c7356a2dc64a1969e19c23e4f579f9810aa7000000000000000000000000d533a949740bb3306d119cc777fa900ba034cd52'),
         nonce=0,
     )
     receipt = EvmTxReceipt(
@@ -64,33 +64,33 @@ def test_sushiswap_single_swap(database, ethereum_inquirer, eth_transactions):
         logs=[
             EvmTxReceiptLog(
                 log_index=306,
-                data=hexstring_to_bytes('0x00000000000000000000000000000000000000000000000109dccca56ed38b8c'),  # noqa: E501
+                data=hexstring_to_bytes('0x00000000000000000000000000000000000000000000000109dccca56ed38b8c'),
                 address=string_to_evm_address('0x62B9c7356A2Dc64a1969e19C23e4f579F9810Aa7'),
                 removed=False,
                 topics=[
-                    hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),  # noqa: E501
-                    hexstring_to_bytes('0x0000000000000000000000003ba6eb0e4327b96ade6d4f3b578724208a590cef'),  # noqa: E501
-                    hexstring_to_bytes('0x00000000000000000000000033f6ddaea2a8a54062e021873bcaee006cdf4007'),  # noqa: E501
+                    hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),
+                    hexstring_to_bytes('0x0000000000000000000000003ba6eb0e4327b96ade6d4f3b578724208a590cef'),
+                    hexstring_to_bytes('0x00000000000000000000000033f6ddaea2a8a54062e021873bcaee006cdf4007'),
                 ],
             ), EvmTxReceiptLog(
                 log_index=308,
-                data=hexstring_to_bytes('0x000000000000000000000000000000000000000000000001005f0be0b7f96826'),  # noqa: E501
+                data=hexstring_to_bytes('0x000000000000000000000000000000000000000000000001005f0be0b7f96826'),
                 address=string_to_evm_address('0xD533a949740bb3306d119CC777fa900bA034cd52'),
                 removed=False,
                 topics=[
-                    hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),  # noqa: E501
-                    hexstring_to_bytes('0x00000000000000000000000033f6ddaea2a8a54062e021873bcaee006cdf4007'),  # noqa: E501
-                    hexstring_to_bytes('0x0000000000000000000000003ba6eb0e4327b96ade6d4f3b578724208a590cef'),  # noqa: E501
+                    hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),
+                    hexstring_to_bytes('0x00000000000000000000000033f6ddaea2a8a54062e021873bcaee006cdf4007'),
+                    hexstring_to_bytes('0x0000000000000000000000003ba6eb0e4327b96ade6d4f3b578724208a590cef'),
                 ],
             ), EvmTxReceiptLog(
                 log_index=310,
-                data=hexstring_to_bytes('0x00000000000000000000000000000000000000000000000109dccca56ed38b8c00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001005f0be0b7f96826'),  # noqa: E501
+                data=hexstring_to_bytes('0x00000000000000000000000000000000000000000000000109dccca56ed38b8c00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001005f0be0b7f96826'),
                 address=string_to_evm_address('0x33F6DDAEa2a8a54062E021873bCaEE006CdF4007'),
                 removed=False,
                 topics=[
-                    hexstring_to_bytes('0xd78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822'),  # noqa: E501
-                    hexstring_to_bytes('0x000000000000000000000000d9e1ce17f2641f24ae83637ab66a2cca9c378b9f'),  # noqa: E501
-                    hexstring_to_bytes('0x0000000000000000000000003ba6eb0e4327b96ade6d4f3b578724208a590cef'),  # noqa: E501
+                    hexstring_to_bytes('0xd78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822'),
+                    hexstring_to_bytes('0x000000000000000000000000d9e1ce17f2641f24ae83637ab66a2cca9c378b9f'),
+                    hexstring_to_bytes('0x0000000000000000000000003ba6eb0e4327b96ade6d4f3b578724208a590cef'),
                 ],
             ),
         ],
@@ -174,7 +174,7 @@ def test_sushiswap_v2_remove_liquidity(database, ethereum_inquirer, eth_transact
         gas=600000,
         gas_price=34000000000,
         gas_used=196129,
-        input_data=hexstring_to_bytes('0x02751cec000000000000000000000000dac17f958d2ee523a2206206994597c13d831ec70000000000000000000000000000000000000000000000000000162806697b7c000000000000000000000000000000000000000000000000000000004b92334c0000000000000000000000000000000000000000000000000e042f1c0f4b0c180000000000000000000000001f14be60172b40dac0ad9cd72f6f0f2c245992e8000000000000000000000000000000000000000000000000000001857ff21afb'),  # noqa: E501
+        input_data=hexstring_to_bytes('0x02751cec000000000000000000000000dac17f958d2ee523a2206206994597c13d831ec70000000000000000000000000000000000000000000000000000162806697b7c000000000000000000000000000000000000000000000000000000004b92334c0000000000000000000000000000000000000000000000000e042f1c0f4b0c180000000000000000000000001f14be60172b40dac0ad9cd72f6f0f2c245992e8000000000000000000000000000000000000000000000000000001857ff21afb'),
         nonce=9642,
     )
     internal_tx = EvmInternalTransaction(
@@ -194,90 +194,90 @@ def test_sushiswap_v2_remove_liquidity(database, ethereum_inquirer, eth_transact
         logs=[
             EvmTxReceiptLog(
                 log_index=21,
-                data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000000162806697b7c'),  # noqa: E501
+                data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000000162806697b7c'),
                 address=string_to_evm_address('0x06da0fd433C1A5d7a4faa01111c044910A184553'),
                 removed=False,
                 topics=[
-                    hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),  # noqa: E501
-                    hexstring_to_bytes('0x0000000000000000000000001f14be60172b40dac0ad9cd72f6f0f2c245992e8'),  # noqa: E501
-                    hexstring_to_bytes('0x00000000000000000000000006da0fd433c1a5d7a4faa01111c044910a184553'),  # noqa: E501
+                    hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),
+                    hexstring_to_bytes('0x0000000000000000000000001f14be60172b40dac0ad9cd72f6f0f2c245992e8'),
+                    hexstring_to_bytes('0x00000000000000000000000006da0fd433c1a5d7a4faa01111c044910a184553'),
                 ],
             ), EvmTxReceiptLog(
                 log_index=22,
-                data=hexstring_to_bytes('0x000000000000000000000000000000000000000000000000000000cef84e1df5'),  # noqa: E501
+                data=hexstring_to_bytes('0x000000000000000000000000000000000000000000000000000000cef84e1df5'),
                 address=string_to_evm_address('0x06da0fd433C1A5d7a4faa01111c044910A184553'),
                 removed=False,
                 topics=[
-                    hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),  # noqa: E501
-                    hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000000000000000000'),  # noqa: E501
-                    hexstring_to_bytes('0x0000000000000000000000005ad6211cd3fde39a9cecb5df6f380b8263d1e277'),  # noqa: E501
+                    hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),
+                    hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000000000000000000'),
+                    hexstring_to_bytes('0x0000000000000000000000005ad6211cd3fde39a9cecb5df6f380b8263d1e277'),
                 ],
             ), EvmTxReceiptLog(
                 log_index=23,
-                data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000000162806697b7c'),  # noqa: E501
+                data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000000162806697b7c'),
                 address=string_to_evm_address('0x06da0fd433C1A5d7a4faa01111c044910A184553'),
                 removed=False,
                 topics=[
-                    hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),  # noqa: E501
-                    hexstring_to_bytes('0x00000000000000000000000006da0fd433c1a5d7a4faa01111c044910a184553'),  # noqa: E501
-                    hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000000000000000000'),  # noqa: E501
+                    hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),
+                    hexstring_to_bytes('0x00000000000000000000000006da0fd433c1a5d7a4faa01111c044910a184553'),
+                    hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000000000000000000'),
                 ],
             ), EvmTxReceiptLog(
                 log_index=24,
-                data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000f92d9abf9009bf4'),  # noqa: E501
+                data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000f92d9abf9009bf4'),
                 address=string_to_evm_address('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),
                 removed=False,
                 topics=[
-                    hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),  # noqa: E501
-                    hexstring_to_bytes('0x00000000000000000000000006da0fd433c1a5d7a4faa01111c044910a184553'),  # noqa: E501
-                    hexstring_to_bytes('0x000000000000000000000000d9e1ce17f2641f24ae83637ab66a2cca9c378b9f'),  # noqa: E501
+                    hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),
+                    hexstring_to_bytes('0x00000000000000000000000006da0fd433c1a5d7a4faa01111c044910a184553'),
+                    hexstring_to_bytes('0x000000000000000000000000d9e1ce17f2641f24ae83637ab66a2cca9c378b9f'),
                 ],
             ), EvmTxReceiptLog(
                 log_index=25,
-                data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000000000053f7aa5c'),  # noqa: E501
+                data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000000000053f7aa5c'),
                 address=string_to_evm_address('0xdAC17F958D2ee523a2206206994597C13D831ec7'),
                 removed=False,
                 topics=[
-                    hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),  # noqa: E501
-                    hexstring_to_bytes('0x00000000000000000000000006da0fd433c1a5d7a4faa01111c044910a184553'),  # noqa: E501
-                    hexstring_to_bytes('0x000000000000000000000000d9e1ce17f2641f24ae83637ab66a2cca9c378b9f'),  # noqa: E501
+                    hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),
+                    hexstring_to_bytes('0x00000000000000000000000006da0fd433c1a5d7a4faa01111c044910a184553'),
+                    hexstring_to_bytes('0x000000000000000000000000d9e1ce17f2641f24ae83637ab66a2cca9c378b9f'),
                 ],
             ), EvmTxReceiptLog(
                 log_index=26,
-                data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000001a7309b55651a1b9acd000000000000000000000000000000000000000000000000000008e9b01789fe'),  # noqa: E501
+                data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000001a7309b55651a1b9acd000000000000000000000000000000000000000000000000000008e9b01789fe'),
                 address=string_to_evm_address('0x06da0fd433C1A5d7a4faa01111c044910A184553'),
                 removed=False,
                 topics=[
-                    hexstring_to_bytes('0x1c411e9a96e071241c2f21f7726b17ae89e3cab4c78be50e062b03a9fffbbad1'),  # noqa: E501
+                    hexstring_to_bytes('0x1c411e9a96e071241c2f21f7726b17ae89e3cab4c78be50e062b03a9fffbbad1'),
                 ],
             ), EvmTxReceiptLog(
                 log_index=27,
-                data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000f92d9abf9009bf40000000000000000000000000000000000000000000000000000000053f7aa5c'),  # noqa: E501
+                data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000f92d9abf9009bf40000000000000000000000000000000000000000000000000000000053f7aa5c'),
                 address=string_to_evm_address('0x06da0fd433C1A5d7a4faa01111c044910A184553'),
                 removed=False,
                 topics=[
-                    hexstring_to_bytes('0xdccd412f0b1252819cb1fd330b93224ca42612892bb3f4f789976e6d81936496'),  # noqa: E501
-                    hexstring_to_bytes('0x000000000000000000000000d9e1ce17f2641f24ae83637ab66a2cca9c378b9f'),  # noqa: E501
-                    hexstring_to_bytes('0x000000000000000000000000d9e1ce17f2641f24ae83637ab66a2cca9c378b9f'),  # noqa: E501
+                    hexstring_to_bytes('0xdccd412f0b1252819cb1fd330b93224ca42612892bb3f4f789976e6d81936496'),
+                    hexstring_to_bytes('0x000000000000000000000000d9e1ce17f2641f24ae83637ab66a2cca9c378b9f'),
+                    hexstring_to_bytes('0x000000000000000000000000d9e1ce17f2641f24ae83637ab66a2cca9c378b9f'),
                 ],
             ), EvmTxReceiptLog(
                 log_index=28,
-                data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000000000053f7aa5c'),  # noqa: E501
+                data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000000000053f7aa5c'),
                 address=string_to_evm_address('0xdAC17F958D2ee523a2206206994597C13D831ec7'),
                 removed=False,
                 topics=[
-                    hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),  # noqa: E501
-                    hexstring_to_bytes('0x000000000000000000000000d9e1ce17f2641f24ae83637ab66a2cca9c378b9f'),  # noqa: E501
-                    hexstring_to_bytes('0x0000000000000000000000001f14be60172b40dac0ad9cd72f6f0f2c245992e8'),  # noqa: E501
+                    hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),
+                    hexstring_to_bytes('0x000000000000000000000000d9e1ce17f2641f24ae83637ab66a2cca9c378b9f'),
+                    hexstring_to_bytes('0x0000000000000000000000001f14be60172b40dac0ad9cd72f6f0f2c245992e8'),
                 ],
             ), EvmTxReceiptLog(
                 log_index=29,
-                data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000f92d9abf9009bf4'),  # noqa: E501
+                data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000f92d9abf9009bf4'),
                 address=string_to_evm_address('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),
                 removed=False,
                 topics=[
-                    hexstring_to_bytes('0x7fcf532c15f0a6db0bd6d0e038bea71d30d808c7d98cb3bf7268a95bf5081b65'),  # noqa: E501
-                    hexstring_to_bytes('0x000000000000000000000000d9e1ce17f2641f24ae83637ab66a2cca9c378b9f'),  # noqa: E501
+                    hexstring_to_bytes('0x7fcf532c15f0a6db0bd6d0e038bea71d30d808c7d98cb3bf7268a95bf5081b65'),
+                    hexstring_to_bytes('0x000000000000000000000000d9e1ce17f2641f24ae83637ab66a2cca9c378b9f'),
                 ],
             ),
         ],
@@ -290,7 +290,7 @@ def test_sushiswap_v2_remove_liquidity(database, ethereum_inquirer, eth_transact
     )
     with database.user_write() as cursor:
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
-        dbevmtx.add_evm_internal_transactions(cursor, [internal_tx], relevant_address=ADDY_2)  # noqa: E501
+        dbevmtx.add_evm_internal_transactions(cursor, [internal_tx], relevant_address=ADDY_2)
     events, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
 
     assert len(events) == 4
@@ -375,7 +375,7 @@ def test_sushiswap_v2_add_liquidity(database, ethereum_inquirer, eth_transaction
         gas=245745,
         gas_price=17231958700,
         gas_used=178679,
-        input_data=hexstring_to_bytes('0xf305d719000000000000000000000000dac17f958d2ee523a2206206994597c13d831ec700000000000000000000000000000000000000000000000000000000000f424000000000000000000000000000000000000000000000000000000000000f2eb80000000000000000000000000000000000000000000000000002d1412337da580000000000000000000000003d6a724247c4b133c3b279558e90edd0c5d257510000000000000000000000000000000000000000000000000000000063b65ceb'),  # noqa: E501
+        input_data=hexstring_to_bytes('0xf305d719000000000000000000000000dac17f958d2ee523a2206206994597c13d831ec700000000000000000000000000000000000000000000000000000000000f424000000000000000000000000000000000000000000000000000000000000f2eb80000000000000000000000000000000000000000000000000002d1412337da580000000000000000000000003d6a724247c4b133c3b279558e90edd0c5d257510000000000000000000000000000000000000000000000000000000063b65ceb'),
         nonce=67,
     )
     receipt = EvmTxReceipt(
@@ -387,69 +387,69 @@ def test_sushiswap_v2_add_liquidity(database, ethereum_inquirer, eth_transaction
         logs=[
             EvmTxReceiptLog(
                 log_index=216,
-                data=hexstring_to_bytes('0x00000000000000000000000000000000000000000000000000000000000f4238'),  # noqa: E501
+                data=hexstring_to_bytes('0x00000000000000000000000000000000000000000000000000000000000f4238'),
                 address=string_to_evm_address('0xdAC17F958D2ee523a2206206994597C13D831ec7'),
                 removed=False,
                 topics=[
-                    hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),  # noqa: E501
-                    hexstring_to_bytes('0x0000000000000000000000003d6a724247c4b133c3b279558e90edd0c5d25751'),  # noqa: E501
-                    hexstring_to_bytes('0x00000000000000000000000006da0fd433c1a5d7a4faa01111c044910a184553'),  # noqa: E501
+                    hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),
+                    hexstring_to_bytes('0x0000000000000000000000003d6a724247c4b133c3b279558e90edd0c5d25751'),
+                    hexstring_to_bytes('0x00000000000000000000000006da0fd433c1a5d7a4faa01111c044910a184553'),
                 ],
             ), EvmTxReceiptLog(
                 log_index=217,
-                data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000002d4e0fb840878'),  # noqa: E501
+                data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000002d4e0fb840878'),
                 address=string_to_evm_address('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),
                 removed=False,
                 topics=[
-                    hexstring_to_bytes('0xe1fffcc4923d04b559f4d29a8bfc6cda04eb5b0d3c460751c2402c5c5cc9109c'),  # noqa: E501
-                    hexstring_to_bytes('0x000000000000000000000000d9e1ce17f2641f24ae83637ab66a2cca9c378b9f'),  # noqa: E501
+                    hexstring_to_bytes('0xe1fffcc4923d04b559f4d29a8bfc6cda04eb5b0d3c460751c2402c5c5cc9109c'),
+                    hexstring_to_bytes('0x000000000000000000000000d9e1ce17f2641f24ae83637ab66a2cca9c378b9f'),
                 ],
             ), EvmTxReceiptLog(
                 log_index=218,
-                data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000002d4e0fb840878'),  # noqa: E501
+                data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000002d4e0fb840878'),
                 address=string_to_evm_address('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),
                 removed=False,
                 topics=[
-                    hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),  # noqa: E501
-                    hexstring_to_bytes('0x000000000000000000000000d9e1ce17f2641f24ae83637ab66a2cca9c378b9f'),  # noqa: E501
-                    hexstring_to_bytes('0x00000000000000000000000006da0fd433c1a5d7a4faa01111c044910a184553'),  # noqa: E501
+                    hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),
+                    hexstring_to_bytes('0x000000000000000000000000d9e1ce17f2641f24ae83637ab66a2cca9c378b9f'),
+                    hexstring_to_bytes('0x00000000000000000000000006da0fd433c1a5d7a4faa01111c044910a184553'),
                 ],
             ), EvmTxReceiptLog(
                 log_index=219,
-                data=hexstring_to_bytes('0x000000000000000000000000000000000000000000000000000000022bb176c3'),  # noqa: E501
+                data=hexstring_to_bytes('0x000000000000000000000000000000000000000000000000000000022bb176c3'),
                 address=string_to_evm_address('0x06da0fd433C1A5d7a4faa01111c044910A184553'),
                 removed=False,
                 topics=[
-                    hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),  # noqa: E501
-                    hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000000000000000000'),  # noqa: E501
-                    hexstring_to_bytes('0x0000000000000000000000005ad6211cd3fde39a9cecb5df6f380b8263d1e277'),  # noqa: E501
+                    hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),
+                    hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000000000000000000'),
+                    hexstring_to_bytes('0x0000000000000000000000005ad6211cd3fde39a9cecb5df6f380b8263d1e277'),
                 ],
             ), EvmTxReceiptLog(
                 log_index=220,
-                data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000000000406ffeca5'),  # noqa: E501
+                data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000000000406ffeca5'),
                 address=string_to_evm_address('0x06da0fd433C1A5d7a4faa01111c044910A184553'),
                 removed=False,
                 topics=[
-                    hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),  # noqa: E501
-                    hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000000000000000000'),  # noqa: E501
-                    hexstring_to_bytes('0x0000000000000000000000003d6a724247c4b133c3b279558e90edd0c5d25751'),  # noqa: E501
+                    hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),
+                    hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000000000000000000'),
+                    hexstring_to_bytes('0x0000000000000000000000003d6a724247c4b133c3b279558e90edd0c5d25751'),
                 ],
             ), EvmTxReceiptLog(
                 log_index=221,
-                data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000001a750097ed3da4ab454000000000000000000000000000000000000000000000000000008e92483e6d3'),  # noqa: E501
+                data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000001a750097ed3da4ab454000000000000000000000000000000000000000000000000000008e92483e6d3'),
                 address=string_to_evm_address('0x06da0fd433C1A5d7a4faa01111c044910A184553'),
                 removed=False,
                 topics=[
-                    hexstring_to_bytes('0x1c411e9a96e071241c2f21f7726b17ae89e3cab4c78be50e062b03a9fffbbad1'),  # noqa: E501
+                    hexstring_to_bytes('0x1c411e9a96e071241c2f21f7726b17ae89e3cab4c78be50e062b03a9fffbbad1'),
                 ],
             ), EvmTxReceiptLog(
                 log_index=222,
-                data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000002d4e0fb84087800000000000000000000000000000000000000000000000000000000000f4238'),  # noqa: E501
+                data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000002d4e0fb84087800000000000000000000000000000000000000000000000000000000000f4238'),
                 address=string_to_evm_address('0x06da0fd433C1A5d7a4faa01111c044910A184553'),
                 removed=False,
                 topics=[
-                    hexstring_to_bytes('0x4c209b5fc8ad50758f13e2e1088ba56a560dff690a1c6fef26394f4c03821c4f'),  # noqa: E501
-                    hexstring_to_bytes('0x000000000000000000000000d9e1ce17f2641f24ae83637ab66a2cca9c378b9f'),  # noqa: E501
+                    hexstring_to_bytes('0x4c209b5fc8ad50758f13e2e1088ba56a560dff690a1c6fef26394f4c03821c4f'),
+                    hexstring_to_bytes('0x000000000000000000000000d9e1ce17f2641f24ae83637ab66a2cca9c378b9f'),
                 ],
             ),
         ],

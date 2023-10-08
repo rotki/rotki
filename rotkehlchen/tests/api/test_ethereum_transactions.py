@@ -215,12 +215,12 @@ def assert_force_redecode_txns_works(api_server: 'APIServer', hashes: Optional[l
     get_eth_txns_patch = patch.object(
         rotki.chains_aggregator.ethereum.transactions_decoder.transactions,
         'get_or_create_transaction',
-        wraps=rotki.chains_aggregator.ethereum.transactions_decoder.transactions.get_or_create_transaction,  # noqa: E501
+        wraps=rotki.chains_aggregator.ethereum.transactions_decoder.transactions.get_or_create_transaction,
     )
     get_or_decode_txn_events_patch = patch.object(
         rotki.chains_aggregator.ethereum.transactions_decoder,
         '_get_or_decode_transaction_events',
-        wraps=rotki.chains_aggregator.ethereum.transactions_decoder._get_or_decode_transaction_events,  # noqa: E501
+        wraps=rotki.chains_aggregator.ethereum.transactions_decoder._get_or_decode_transaction_events,
     )
     with ExitStack() as stack:
         function_call_counters = []
@@ -261,7 +261,7 @@ def _write_transactions_to_db(
     """Common function to replicate writing transactions in the DB for tests in this file"""
     with db.user_write() as cursor:
         dbevmtx = DBEvmTx(db)
-        dbevmtx.add_evm_transactions(cursor, transactions, relevant_address=ethereum_accounts[0])  # noqa: E501
+        dbevmtx.add_evm_transactions(cursor, transactions, relevant_address=ethereum_accounts[0])
         dbevmtx.add_evm_transactions(cursor, extra_transactions, relevant_address=ethereum_accounts[1])  # noqa: E501
         # Also make sure to update query ranges so as not to query etherscan at all
         for address in ethereum_accounts:
@@ -1107,7 +1107,7 @@ def test_query_transactions_check_decoded_events(
             'event_type': 'spend',
             'location': 'ethereum',
             'location_label': '0x6e15887E2CEC81434C16D587709f64603b39b545',
-            'notes': 'Send 0.096809163374771208 ETH to 0xA090e606E30bD747d4E6245a1517EbE430F0057e',  # noqa: E501
+            'notes': 'Send 0.096809163374771208 ETH to 0xA090e606E30bD747d4E6245a1517EbE430F0057e',
             'product': None,
             'sequence_index': 1,
             'timestamp': 1642802807,
@@ -1263,7 +1263,7 @@ def test_query_transactions_check_decoded_events(
                 ('history_events_mappings', 2),
         ):
             assert cursor.execute(f'SELECT COUNT(*) from {name}').fetchone()[0] == count
-        customized_events = dbevents.get_history_events(cursor, EvmEventFilterQuery.make(), True)  # noqa: E501
+        customized_events = dbevents.get_history_events(cursor, EvmEventFilterQuery.make(), True)
 
     assert customized_events[0].serialize() == tx4_events[0]['entry']
     assert customized_events[1].serialize() == tx2_events[1]['entry']
@@ -1274,13 +1274,13 @@ def test_query_transactions_check_decoded_events(
     returned_events = query_events(rotkehlchen_api_server, json={'location': 'ethereum'}, expected_num_with_grouping=4, expected_totals_with_grouping=4)  # noqa: E501
 
     assert len(returned_events) == 7
-    assert_serialized_lists_equal(returned_events[0:2], tx1_events, ignore_keys='identifier')  # noqa: E501
-    assert_serialized_lists_equal(returned_events[2:4], tx2_events, ignore_keys='identifier')  # noqa: E501
-    assert_serialized_lists_equal(returned_events[4:5], tx3_events, ignore_keys='identifier')  # noqa: E501
-    assert_serialized_lists_equal(returned_events[5:7], tx4_events, ignore_keys='identifier')  # noqa: E501
+    assert_serialized_lists_equal(returned_events[0:2], tx1_events, ignore_keys='identifier')
+    assert_serialized_lists_equal(returned_events[2:4], tx2_events, ignore_keys='identifier')
+    assert_serialized_lists_equal(returned_events[4:5], tx3_events, ignore_keys='identifier')
+    assert_serialized_lists_equal(returned_events[5:7], tx4_events, ignore_keys='identifier')
 
     # explicitly delete the customized (added/edited) transactions
-    dbevents.delete_history_events_by_identifier([x.identifier for x in customized_events])  # noqa: E501
+    dbevents.delete_history_events_by_identifier([x.identifier for x in customized_events])
 
     with rotki.data.db.user_write() as write_cursor:
         # and now purge all transactions again and see everything is deleted
@@ -1294,7 +1294,7 @@ def test_query_transactions_check_decoded_events(
                 'history_events_mappings',
         ):
             assert cursor.execute(f'SELECT COUNT(*) from {name}').fetchone()[0] == 0
-        assert dbevents.get_history_events(cursor, EvmEventFilterQuery.make(), True) == []  # noqa: E501
+        assert dbevents.get_history_events(cursor, EvmEventFilterQuery.make(), True) == []
 
 
 @pytest.mark.parametrize('should_mock_price_queries', [True])
@@ -1333,7 +1333,7 @@ def test_events_filter_params(rotkehlchen_api_server, ethereum_accounts, start_w
     dbevmtx = DBEvmTx(db)
     dbevents = DBHistoryEvents(db)
     with db.user_write() as cursor:
-        dbevmtx.add_evm_transactions(cursor, [tx1, tx2], relevant_address=ethereum_accounts[0])  # noqa: E501
+        dbevmtx.add_evm_transactions(cursor, [tx1, tx2], relevant_address=ethereum_accounts[0])
         dbevmtx.add_evm_transactions(cursor, [tx3], relevant_address=ethereum_accounts[1])
         dbevmtx.add_evm_transactions(cursor, [tx4], relevant_address=ethereum_accounts[2])
         dbevents.add_history_events(cursor, [event1, event2, event3, event4, event5, event6])
@@ -1517,7 +1517,7 @@ def test_ignored_assets(rotkehlchen_api_server, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('have_decoders', [True])
-@pytest.mark.parametrize('ethereum_accounts', [['0x59ABf3837Fa962d6853b4Cc0a19513AA031fd32b']])  # noqa: E501
+@pytest.mark.parametrize('ethereum_accounts', [['0x59ABf3837Fa962d6853b4Cc0a19513AA031fd32b']])
 @patch.object(EthereumTransactions, '_get_internal_transactions_for_ranges', lambda *args, **kargs: None)  # noqa: E501
 @patch.object(EthereumTransactions, '_get_erc20_transfers_for_ranges', lambda *args, **kargs: None)
 @pytest.mark.parametrize('should_mock_price_queries', [True])

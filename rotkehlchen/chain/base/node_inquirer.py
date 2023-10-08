@@ -58,8 +58,8 @@ class BaseInquirer(OptimismSuperchainInquirer):
             etherscan_node_name=BASE_ETHERSCAN_NODE_NAME,
             contracts=contracts,
             rpc_timeout=rpc_timeout,
-            contract_multicall=contracts.contract(string_to_evm_address('0xeDF6D2a16e8081F777eB623EeB4411466556aF3d')),  # noqa: E501
-            contract_scan=contracts.contract(string_to_evm_address('0x2d26d6b698f6494efdB908A2A4f11ae5Fee86099')),  # noqa: E501
+            contract_multicall=contracts.contract(string_to_evm_address('0xeDF6D2a16e8081F777eB623EeB4411466556aF3d')),
+            contract_scan=contracts.contract(string_to_evm_address('0x2d26d6b698f6494efdB908A2A4f11ae5Fee86099')),
             native_token=A_ETH.resolve_to_crypto_asset(),
         )
         self.etherscan = cast(BaseEtherscan, self.etherscan)

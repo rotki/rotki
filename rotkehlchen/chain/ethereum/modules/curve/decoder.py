@@ -54,7 +54,7 @@ ADD_LIQUIDITY_EVENTS = {
     b'?\x19\x15w^\x0c\x9a8\xa5z{\xb7\xf1\xf9\x00_Ho\xb9\x04\xe1\xf8J\xa2\x156MVs\x19\xa5\x8d',  # ADD_LIQUIDITY_4_ASSETS  # noqa: E501
 }
 REMOVE_LIQUIDITY_IMBALANCE = {
-    b'\xb9d\xb7/s\xf5\xef[\xf0\xfd\xc5Y\xb2\xfa\xb9\xa7\xb1*9\xe4x\x17\xa5G\xf1\xf0\xae\xe4\x7f\xeb\xd6\x02',  # noqa: E501
+    b'\xb9d\xb7/s\xf5\xef[\xf0\xfd\xc5Y\xb2\xfa\xb9\xa7\xb1*9\xe4x\x17\xa5G\xf1\xf0\xae\xe4\x7f\xeb\xd6\x02',
     b'+U\x087\x8d~\x19\xe0\xd5\xfa3\x84\x19\x03G1AlO[!\x9a\x107\x99V\xf7d1\x7f\xd4~',
 }
 REMOVE_LIQUIDITY_EVENTS = {
@@ -312,7 +312,7 @@ class CurveDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin):
                 event.event_type = HistoryEventType.DEPOSIT
                 event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
                 event.counterparty = CPT_CURVE
-                event.notes = f'Deposit {event.balance.amount} {crypto_asset.symbol} in curve pool'  # noqa: E501
+                event.notes = f'Deposit {event.balance.amount} {crypto_asset.symbol} in curve pool'
                 deposit_events.append(event)
             elif (  # Deposit receive pool token
                 event.event_type == HistoryEventType.RECEIVE and
@@ -416,10 +416,10 @@ class CurveDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin):
             if (
                 context.tx_log.topics[0] == TOKEN_EXCHANGE and
                 pool_address in self.pools and
-                len(self.pools[pool_address]) > max(sold_token_id, bought_token_id)  # type: ignore  # self.pools is a dict here  # Make sure that tokens of the pool are cached  # noqa: E501
+                len(self.pools[pool_address]) > max(sold_token_id, bought_token_id)  # type: ignore  # self.pools is a dict here  # Make sure that tokens of the pool are cached
             ):
-                sold_token_address = self.pools[pool_address][sold_token_id]  # type: ignore  # self.pools is a dict here # noqa: E501
-                bought_token_address = self.pools[pool_address][bought_token_id]  # type: ignore  # self.pools is a dict here # noqa: E501
+                sold_token_address = self.pools[pool_address][sold_token_id]  # type: ignore  # self.pools is a dict here
+                bought_token_address = self.pools[pool_address][bought_token_id]  # type: ignore  # self.pools is a dict here
         else:  # EXCHANGE_MULTIPLE
             swapping_contract = CURVE_SWAP_ROUTER
             spender_address = hex_or_bytes_to_address(context.tx_log.topics[1])

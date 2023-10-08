@@ -211,7 +211,7 @@ class BitcoinTaxImporter(BaseExchangeImporter):
         asset_resolver = LOCATION_TO_ASSET_MAPPING.get(location, asset_from_common_identifier)
         base_asset = asset_resolver(csv_row['Symbol'])
         base_asset_amount = deserialize_asset_amount(csv_row['Volume'])
-        fee_amount = Fee(deserialize_asset_amount(csv_row['Fee'])) if csv_row['Fee'] else Fee(ZERO)  # noqa: E501
+        fee_amount = Fee(deserialize_asset_amount(csv_row['Fee'])) if csv_row['Fee'] else Fee(ZERO)
         fee_asset = (
             asset_resolver(csv_row['FeeCurrency'])
             if csv_row['FeeCurrency'] and fee_amount is not None else None

@@ -573,8 +573,8 @@ def test_get_manual_prices_with_nfts(
             'identifier, name, last_price, last_price_asset, manual_price, owner_address, is_lp, image_url, collection_name'  # noqa: E501
             ') VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)',
             [
-                (nft_id_1, 'Custom NFT', '1', 'ETH', 1, ethereum_accounts[0], 0, '', 'custom'),  # noqa: E501
-                (nft_id_2, 'Custom NFT', '2', 'BTC', 1, ethereum_accounts[0], 0, '', 'custom'),  # noqa: E501
+                (nft_id_1, 'Custom NFT', '1', 'ETH', 1, ethereum_accounts[0], 0, '', 'custom'),
+                (nft_id_2, 'Custom NFT', '2', 'BTC', 1, ethereum_accounts[0], 0, '', 'custom'),
             ],
         )
 

@@ -100,7 +100,7 @@ class Compound(EthereumModule):
             log.error(f'Could not query cToken {address} for supply/borrow rate: {e!s}')
             return None
 
-        apy = ((FVal(rate) / ETH_MANTISSA * BLOCKS_PER_DAY) + 1) ** (DAYS_PER_YEAR - 1) - 1  # noqa: E501
+        apy = ((FVal(rate) / ETH_MANTISSA * BLOCKS_PER_DAY) + 1) ** (DAYS_PER_YEAR - 1) - 1
         return apy
 
     def get_balances(
@@ -211,7 +211,7 @@ class Compound(EthereumModule):
 
         balances = self.get_balances(given_defi_balances)
         for event in events:
-            address = ChecksumEvmAddress(event.location_label)  # type: ignore[arg-type]  # location label is not none here  # noqa: E501
+            address = ChecksumEvmAddress(event.location_label)  # type: ignore[arg-type]  # location label is not none here
             if event.event_subtype == HistoryEventSubType.DEPOSIT_ASSET:
                 assets[address][event.asset] -= event.balance
             elif event.event_subtype == HistoryEventSubType.GENERATE_DEBT:

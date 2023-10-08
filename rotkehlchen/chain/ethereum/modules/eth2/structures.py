@@ -27,7 +27,7 @@ class ValidatorID(NamedTuple):
     ownership_proportion: FVal
 
     def __eq__(self, other: object) -> bool:
-        return isinstance(other, NamedTuple) and self.public_key == other.public_key  # type: ignore  # noqa: E501  # ignore is due to isinstance not recognized
+        return isinstance(other, NamedTuple) and self.public_key == other.public_key  # type: ignore  # ignore is due to isinstance not recognized
 
     def __hash__(self) -> int:
         return hash(self.public_key)

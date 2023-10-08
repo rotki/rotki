@@ -390,7 +390,7 @@ def test_manage_nodes(rotkehlchen_api_server):
     result = assert_proper_response_with_result(response)
     for node in result:
         response = requests.patch(
-            api_url_for(rotkehlchen_api_server, 'rpcnodesresource', blockchain=node['blockchain']),  # noqa: E501
+            api_url_for(rotkehlchen_api_server, 'rpcnodesresource', blockchain=node['blockchain']),
             json={
                 'identifier': node['identifier'],
                 'name': node['name'],

@@ -65,7 +65,7 @@ def request_get_dict(
     - Remote error if the get request fails
     """
     response = request_get(url, timeout, handle_429, backoff_in_seconds)
-    assert isinstance(response, dict)  # pylint: disable=isinstance-second-argument-not-valid-type  # noqa: E501
+    assert isinstance(response, dict)  # pylint: disable=isinstance-second-argument-not-valid-type
     return response
 
 
@@ -137,7 +137,7 @@ def query_file(url: str, is_json: bool = False) -> Union[str, dict[str, Any]]:
     and is_json is set to true.
     """
     try:
-        response = requests.get(url=url, timeout=CachedSettings().get_timeout_tuple())  # noqa: E501
+        response = requests.get(url=url, timeout=CachedSettings().get_timeout_tuple())
     except requests.exceptions.RequestException as e:
         raise RemoteError(f'Failed to query file {url} due to: {e!s}') from e
 

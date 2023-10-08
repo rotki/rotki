@@ -191,10 +191,10 @@ class CompoundDecoder(DecoderInterface):
                 event.counterparty = CPT_COMPOUND
                 event.notes = f'Collect {event.balance.amount} COMP from compound'
             elif (
-                event.event_type == HistoryEventType.SPEND and event.balance.amount == amount and  # noqa: E501
+                event.event_type == HistoryEventType.SPEND and event.balance.amount == amount and
                 (
-                    (underlying_asset == self.eth and event.address == MAXIMILLION_ADDR) or  # noqa: E501
-                    (event.location_label == payer and event.address == compound_token.evm_address)  # noqa: E501
+                    (underlying_asset == self.eth and event.address == MAXIMILLION_ADDR) or
+                    (event.location_label == payer and event.address == compound_token.evm_address)
                 )
             ):
                 event.event_subtype = HistoryEventSubType.PAYBACK_DEBT

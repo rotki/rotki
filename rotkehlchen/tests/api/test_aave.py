@@ -152,7 +152,7 @@ def test_query_aave_defi_borrowing(
                 ),
                 balance_type='Debt',
                 base_balance=DefiBalance(
-                    token_address=string_to_evm_address('0xdAC17F958D2ee523a2206206994597C13D831ec7'),  # noqa: E501
+                    token_address=string_to_evm_address('0xdAC17F958D2ee523a2206206994597C13D831ec7'),
                     token_name='Tether USD',
                     token_symbol='USDT',
                     balance=Balance(
@@ -171,7 +171,7 @@ def test_query_aave_defi_borrowing(
                 ),
                 balance_type='Asset',
                 base_balance=DefiBalance(
-                    token_address=string_to_evm_address('0x9ff58f4fFB29fA2266Ab25e75e2A8b3503311656'),  # noqa: E501
+                    token_address=string_to_evm_address('0x9ff58f4fFB29fA2266Ab25e75e2A8b3503311656'),
                     token_name='Aave interest bearing WBTC',
                     token_symbol='aWBTC',
                     balance=Balance(
@@ -181,7 +181,7 @@ def test_query_aave_defi_borrowing(
                 ),
                 underlying_balances=[
                     DefiBalance(
-                        token_address=string_to_evm_address('0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599'),  # noqa: E501
+                        token_address=string_to_evm_address('0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599'),
                         token_name='Wrapped BTC',
                         token_symbol='WBTC',
                         balance=Balance(

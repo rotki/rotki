@@ -69,7 +69,7 @@ def assert_tx_hash_is_bytes(
                 raw_event_identifier=_new[1],
             )
         else:
-            _new[tx_hash_index] = deserialize_evm_tx_hash(_new[tx_hash_index]).hex()  # noqa: E501 pylint: disable=no-member
+            _new[tx_hash_index] = deserialize_evm_tx_hash(_new[tx_hash_index]).hex()  # pylint: disable=no-member
         assert _old == _new
 
 
@@ -647,7 +647,7 @@ def test_upgrade_db_32_to_33(user_data_dir):  # pylint: disable=unused-argument
     assert 'cannot INSERT into generated column "blockchain"' in str(exc_info)
     xpub_mapping_data = (
         '1LZypJUwJJRdfdndwvDmtAjrVYaHko136r',
-        'xpub68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk',  # noqa: E501
+        'xpub68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk',
         'm',
         0,
         0,
@@ -842,7 +842,7 @@ def test_upgrade_db_34_to_35(user_data_dir):  # pylint: disable=unused-argument
         tokens = json.loads(cursor.fetchone()[0])
         assert tokens['tokens'] == ['_ceth_0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e']
         # check that history events contain a transaction with an old style token identifier
-        old_tx_assets_ids = cursor.execute('SELECT DISTINCT asset FROM history_events;').fetchall()  # noqa: E501
+        old_tx_assets_ids = cursor.execute('SELECT DISTINCT asset FROM history_events;').fetchall()
         asset_missing_from_assets_table = '_ceth_0xb3d608c31ACa7a1c7D6DAcec5978E5493181b67A'
         assert old_tx_assets_ids == [
             ('ETH',),
@@ -908,7 +908,7 @@ def test_upgrade_db_34_to_35(user_data_dir):  # pylint: disable=unused-argument
             ),
         )
     # it should fail before the upgrade
-    with db_v34.conn.write_ctx() as write_cursor, pytest.raises(sqlcipher.IntegrityError):  # pylint: disable=no-member  # noqa: E501
+    with db_v34.conn.write_ctx() as write_cursor, pytest.raises(sqlcipher.IntegrityError):  # pylint: disable=no-member
         try_insert_mapping(write_cursor)
 
     # Migrate the database
@@ -978,7 +978,7 @@ def test_upgrade_db_34_to_35(user_data_dir):  # pylint: disable=unused-argument
 
         fixed_asset_id = 'eip155:1/erc20:0xb3d608c31ACa7a1c7D6DAcec5978E5493181b67A'
         # check that history events contain a transaction with new style token identifier
-        new_tx_assets_ids = cursor.execute('SELECT DISTINCT asset FROM history_events;').fetchall()  # noqa: E501
+        new_tx_assets_ids = cursor.execute('SELECT DISTINCT asset FROM history_events;').fetchall()
         assert new_tx_assets_ids == [
             ('ETH',),
             ('AVAX',),
@@ -1069,7 +1069,7 @@ def test_upgrade_db_35_to_36(user_data_dir):  # pylint: disable=unused-argument
     assert len(tx_receipt_logs_result) == 8291
     tx_receipt_log_topics_result = cursor.execute('SELECT * from ethtx_receipt_log_topics').fetchall()  # noqa: E501
     assert len(tx_receipt_log_topics_result) == 24124
-    tx_address_mappings_result = cursor.execute('SELECT * from ethtx_address_mappings').fetchall()  # noqa: E501
+    tx_address_mappings_result = cursor.execute('SELECT * from ethtx_address_mappings').fetchall()
     assert len(tx_address_mappings_result) == 305
     tx_mappings_result = cursor.execute('SELECT * from evm_tx_mappings').fetchall()
     assert len(tx_mappings_result) == 305
@@ -1232,7 +1232,7 @@ def test_upgrade_db_35_to_36(user_data_dir):  # pylint: disable=unused-argument
                 assert entry[i] == 1
             else:
                 assert entry[i] == tx_address_mappings_result[idx][i - 1]
-    new_tx_mappings_result = cursor.execute('SELECT * from evm_tx_mappings').fetchall()  # noqa: E501
+    new_tx_mappings_result = cursor.execute('SELECT * from evm_tx_mappings').fetchall()
     # All 305 mappings that we had before the upgrade are deleted, so that
     # the events get redecoded.
     assert len(new_tx_mappings_result) == 0
@@ -1628,10 +1628,10 @@ def test_upgrade_db_38_to_39(user_data_dir):  # pylint: disable=unused-argument
     cursor = db_v38.conn.cursor()
     assert cursor.execute("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='optimism_transactions';").fetchone()[0] == 0  # noqa: E501
     withdrawal_events_before = {x[0] for x in cursor.execute(
-        "SELECT identifier FROM history_events WHERE event_identifier LIKE 'eth2_withdrawal_%'",  # noqa: E501
+        "SELECT identifier FROM history_events WHERE event_identifier LIKE 'eth2_withdrawal_%'",
     ).fetchall()}
     block_events_before = {x[0] for x in cursor.execute(
-        "SELECT identifier FROM history_events WHERE event_identifier LIKE 'evm_1_block_%'",  # noqa: E501
+        "SELECT identifier FROM history_events WHERE event_identifier LIKE 'evm_1_block_%'",
     ).fetchall()}
     assert cursor.execute("SELECT event_identifier FROM history_events WHERE event_identifier LIKE 'rotki_events_%'").fetchall() == [  # noqa: E501
         ('rotki_events_0x2123',), ('rotki_events_bitcoin_tax_0x4123',),
@@ -1725,7 +1725,7 @@ def test_upgrade_db_38_to_39(user_data_dir):  # pylint: disable=unused-argument
     assert cursor.execute('SELECT COUNT(*) FROM evmtx_receipts').fetchone()[0] == receipts_num
     assert cursor.execute('SELECT COUNT(*) FROM evmtx_receipt_logs').fetchone()[0] == logs_num
     assert cursor.execute('SELECT COUNT(*) FROM evmtx_receipt_log_topics').fetchone()[0] == topics_num  # noqa: E501
-    assert cursor.execute('SELECT COUNT(*) FROM evm_tx_mappings').fetchone()[0] == 0  # noqa: E501  # events have been reset so no transactions are now decoded
+    assert cursor.execute('SELECT COUNT(*) FROM evm_tx_mappings').fetchone()[0] == 0  # events have been reset so no transactions are now decoded  # noqa: E501
     assert cursor.execute('SELECT COUNT(*) FROM evmtx_address_mappings').fetchone()[0] == address_mappings_num  # noqa: E501
 
     # Now make sure mappings are correct and point to the same data after upgrade
@@ -1786,7 +1786,7 @@ def test_upgrade_db_38_to_39(user_data_dir):  # pylint: disable=unused-argument
     # check that nodes got correctly copied except for the duplicated one
     assert cursor.execute('SELECT * FROM rpc_nodes').fetchall() == [node for node in rpc_nodes if node[0] != 18]  # node 18 is the duplicated flashbot node # noqa: E501
     # check that inserting a node that already exists fails
-    with db.conn.write_ctx() as write_cursor, pytest.raises(sqlcipher.IntegrityError):  # pylint: disable=no-member  # noqa: E501
+    with db.conn.write_ctx() as write_cursor, pytest.raises(sqlcipher.IntegrityError):  # pylint: disable=no-member
         write_cursor.execute(
             'INSERT INTO rpc_nodes(name, endpoint, owned, active, weight, blockchain) VALUES (?, ?, ?, ?, ?, ?)',   # noqa: E501
             ('flashbots2', 'https://rpc.flashbots.net/', 0, 1, '0.2', 'ETH'),
