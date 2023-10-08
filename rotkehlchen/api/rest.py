@@ -510,7 +510,7 @@ class RestAPI:
             else:
                 asset_rates[asset] = Price(ONE / usd_price)
 
-        asset_rates.update(Inquirer().get_fiat_usd_exchange_rates(fiat_currencies))  # type: ignore  # noqa: E501  # type narrowing does not work here
+        asset_rates.update(Inquirer().get_fiat_usd_exchange_rates(fiat_currencies))  # type: ignore  # type narrowing does not work here
         return _wrap_in_ok_result(process_result(asset_rates))
 
     @async_api_call()
@@ -659,7 +659,7 @@ class RestAPI:
         if exchanges_list is None:
             return {
                 'result': None,
-                'message': f'Could not query balances for {location!s} since it is not registered',  # noqa: E501
+                'message': f'Could not query balances for {location!s} since it is not registered',
                 'status_code': HTTPStatus.CONFLICT,
             }
 
@@ -978,7 +978,7 @@ class RestAPI:
                     foreground_color=foreground_color,
                 )
         except InputError as e:
-            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)  # noqa: E501
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)
         except TagConstraintError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 
@@ -1137,7 +1137,7 @@ class RestAPI:
             self.rotkehlchen.reset_after_failed_account_creation_or_login()
             return wrap_in_fail_result(
                 message=f'Unexpected database error: {e!s}',
-                status_code=HTTP_STATUS_INTERNAL_DB_ERROR,  # type: ignore  # Is a custom status code, not a member of HTTPStatus  # noqa: E501
+                status_code=HTTP_STATUS_INTERNAL_DB_ERROR,  # type: ignore  # Is a custom status code, not a member of HTTPStatus
             )
 
         # Success!
@@ -1575,7 +1575,7 @@ class RestAPI:
                 filepath.save(tmpfilepath)
                 filepath = Path(tmpfilepath)
 
-            return self._import_history_debug(async_query=async_query, filepath=filepath)  # pylint: disable=unexpected-keyword-arg  # pylint doesn't see the async decorator  # noqa: E501
+            return self._import_history_debug(async_query=async_query, filepath=filepath)  # pylint: disable=unexpected-keyword-arg  # pylint doesn't see the async decorator
 
     def get_history_actionable_items(self) -> Response:
         pot = self.rotkehlchen.accountant.pots[0]
@@ -1674,7 +1674,7 @@ class RestAPI:
             with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
                 data = self.rotkehlchen.get_blockchain_account_data(cursor, xpub_data.blockchain)
         except InputError as e:
-            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)  # noqa: E501
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)
 
         return api_response(process_result(_wrap_in_result(data, '')), status_code=HTTPStatus.OK)
 
@@ -1789,7 +1789,7 @@ class RestAPI:
         except TagConstraintError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
         except InputError as e:
-            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)  # noqa: E501
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)
 
         return api_response(process_result(_wrap_in_result(data, '')), status_code=HTTPStatus.OK)
 
@@ -2447,7 +2447,7 @@ class RestAPI:
             # are retrieved only after we are sure the defi balances have been
             # queried.
             given_defi_balances=lambda: self.rotkehlchen.chains_aggregator.defi_balances,
-            addresses=self.rotkehlchen.chains_aggregator.queried_addresses_for_module('yearn_vaults'),  # noqa: E501
+            addresses=self.rotkehlchen.chains_aggregator.queried_addresses_for_module('yearn_vaults'),
             reset_db_data=reset_db_data,
             from_timestamp=from_timestamp,
             to_timestamp=to_timestamp,
@@ -2531,7 +2531,7 @@ class RestAPI:
             module_name='liquity',
             method='get_positions',
             query_specific_balances_before=None,
-            given_addresses=self.rotkehlchen.chains_aggregator.queried_addresses_for_module('liquity'),  # noqa: E501
+            given_addresses=self.rotkehlchen.chains_aggregator.queried_addresses_for_module('liquity'),
         )
 
     @async_api_call()
@@ -2850,7 +2850,7 @@ class RestAPI:
                     oracle = CurrentPriceOracle.MANUALCURRENT if nft_price_data['manually_input'] is True else CurrentPriceOracle.BLOCKCHAIN  # noqa: E501
                     assets_price[asset] = [Price(nft_price_data['usd_price']), oracle.value, False]
                 else:
-                    price, oracle, used_main_currency = Inquirer().find_price_and_oracle(  # noqa: E501
+                    price, oracle, used_main_currency = Inquirer().find_price_and_oracle(
                         from_asset=asset,
                         to_asset=target_asset,
                         ignore_cache=ignore_cache,
@@ -2978,7 +2978,7 @@ class RestAPI:
         data = {
             # don't expose some sources in the api
             'history': [{'id': str(x), 'name': str(x).capitalize()} for x in HistoricalPriceOracle if x not in NOT_EXPOSED_SOURCES],  # noqa: E501
-            'current': [{'id': str(x), 'name': str(x).capitalize()} for x in CurrentPriceOracle],  # noqa: E501
+            'current': [{'id': str(x), 'name': str(x).capitalize()} for x in CurrentPriceOracle],
         }
         result_dict = _wrap_in_ok_result(data)
         return api_response(result_dict, status_code=HTTPStatus.OK)
@@ -3172,7 +3172,7 @@ class RestAPI:
                 module_name='uniswap',
                 method='get_v3_balances',
                 query_specific_balances_before=None,
-                addresses=self.rotkehlchen.chains_aggregator.queried_addresses_for_module('uniswap'),  # noqa: E501
+                addresses=self.rotkehlchen.chains_aggregator.queried_addresses_for_module('uniswap'),
             )
             self._eth_module_query(
                 module_name='nfts',
@@ -3287,8 +3287,8 @@ class RestAPI:
         }
         if self.rotkehlchen.user_is_logged_in:
             with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
-                result_dict['userdb']['info'] = self.rotkehlchen.data.db.get_db_info(cursor)  # type: ignore  # noqa: E501
-            result_dict['userdb']['backups'] = self.rotkehlchen.data.db.get_backups()  # type: ignore  # noqa: E501
+                result_dict['userdb']['info'] = self.rotkehlchen.data.db.get_db_info(cursor)  # type: ignore
+            result_dict['userdb']['backups'] = self.rotkehlchen.data.db.get_backups()  # type: ignore
 
         return api_response(_wrap_in_ok_result(result_dict), status_code=HTTPStatus.OK)
 
@@ -4014,7 +4014,7 @@ class RestAPI:
             event_types=event_types,
             event_subtypes=event_subtypes,
             exclude_subtypes=exclude_subtypes,
-            entry_types=IncludeExcludeFilterData(values=[HistoryBaseEntryType.HISTORY_EVENT]),  # noqa: E501
+            entry_types=IncludeExcludeFilterData(values=[HistoryBaseEntryType.HISTORY_EVENT]),
         )
 
         message = ''
@@ -4034,7 +4034,7 @@ class RestAPI:
         # query events from db and remote data(if `only_cache` is false).
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
             try:
-                events_raw, entries_found = self.rotkehlchen.events_historian.query_history_events(  # noqa: E501
+                events_raw, entries_found = self.rotkehlchen.events_historian.query_history_events(
                     cursor=cursor,
                     location=location,
                     filter_query=query_filter,
@@ -4052,7 +4052,7 @@ class RestAPI:
                 try:
                     staking_event = StakingEvent.from_history_base_entry(event)
                 except DeserializationError as e:
-                    log.warning(f'Could not deserialize staking event: {event} due to {e!s}')  # noqa: E501
+                    log.warning(f'Could not deserialize staking event: {event} due to {e!s}')
                     continue
                 events.append(staking_event)
 

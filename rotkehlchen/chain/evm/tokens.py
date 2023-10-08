@@ -391,7 +391,7 @@ class EvmTokensWithDSProxy(EvmTokens, metaclass=ABCMeta):
         super()._query_new_tokens(addresses)
         self.maybe_detect_proxies_tokens(addresses)
 
-    def maybe_detect_proxies_tokens(self, addresses: Sequence[ChecksumEvmAddress]) -> None:  # pylint: disable=unused-argument  # noqa: E501
+    def maybe_detect_proxies_tokens(self, addresses: Sequence[ChecksumEvmAddress]) -> None:  # pylint: disable=unused-argument
         """Subclasses may implement this method to detect tokens for proxies"""
         return None
 

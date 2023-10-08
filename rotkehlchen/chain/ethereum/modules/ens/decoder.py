@@ -228,7 +228,7 @@ class EnsDecoder(GovernableDecoderInterface, CustomizableDateMixin):
             log.error(f'Could not decode an ERC721 transfer for an ENS name transfer: {context.transaction.tx_hash.hex()}')  # noqa: E501
             return DEFAULT_DECODING_OUTPUT
 
-        label_hash = '0x{:064x}'.format(transfer_event.extra_data['token_id'])  # type: ignore[index]  # noqa: E501  # ERC721 transfer always has extra data. This code is to transform the int token id to a 32 bytes hex label hash
+        label_hash = '0x{:064x}'.format(transfer_event.extra_data['token_id'])  # type: ignore[index]  # ERC721 transfer always has extra data. This code is to transform the int token id to a 32 bytes hex label hash
         with GlobalDBHandler().conn.read_ctx() as cursor:
             found_name = globaldb_get_unique_cache_value(cursor=cursor, key_parts=(CacheType.ENS_LABELHASH, label_hash))  # noqa: E501
 
@@ -309,7 +309,7 @@ class EnsDecoder(GovernableDecoderInterface, CustomizableDateMixin):
         if name_to_show is None:  # ask the graph
             try:
                 result = self.graph.query(
-                    querystr=f'query{{domains(first:1, where:{{id:"{namehash}"}}){{name}}}}')  # noqa: E501
+                    querystr=f'query{{domains(first:1, where:{{id:"{namehash}"}}){{name}}}}')
                 name_to_show = result['domains'][0]['name']
                 queried_graph = True
             except (RemoteError, KeyError, IndexError) as e:
@@ -349,7 +349,7 @@ class EnsDecoder(GovernableDecoderInterface, CustomizableDateMixin):
             )
             return DEFAULT_DECODING_OUTPUT
 
-        result = contract.decode_event(context.tx_log, 'ContenthashChanged', argument_names=None)  # noqa: E501
+        result = contract.decode_event(context.tx_log, 'ContenthashChanged', argument_names=None)
         new_hash = result[1][0].hex()
         name_to_show = self._get_name_to_show(node=node)
 

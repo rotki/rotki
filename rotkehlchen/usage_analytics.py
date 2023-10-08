@@ -74,7 +74,7 @@ def retrieve_location_data(data_dir: Path) -> Optional[GeolocationData]:
         # Download latest version
         try:
             response = requests.get(
-                url='https://github.com/geoacumen/geoacumen-country/raw/master/Geoacumen-Country.mmdb',  # noqa: E501
+                url='https://github.com/geoacumen/geoacumen-country/raw/master/Geoacumen-Country.mmdb',
                 timeout=CachedSettings().get_timeout_tuple(),
                 stream=True,
             )

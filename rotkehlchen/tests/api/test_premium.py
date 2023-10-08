@@ -37,7 +37,7 @@ def test_upload_db(rotkehlchen_api_server):
     ))
 
     with ExitStack() as stack:
-        [stack.enter_context(patch) for patch in patches]  # pylint: disable=expression-not-assigned  # noqa: E501
+        [stack.enter_context(patch) for patch in patches]  # pylint: disable=expression-not-assigned
         response = requests.put(api_url_for(
             rotkehlchen_api_server,  # testing normal flow works fine
             'userpremiumsyncresource',
@@ -80,7 +80,7 @@ def test_pull_db(rotkehlchen_api_server):
     ))
 
     with ExitStack() as stack:
-        [stack.enter_context(patch) for patch in patches]  # pylint: disable=expression-not-assigned  # noqa: E501
+        [stack.enter_context(patch) for patch in patches]  # pylint: disable=expression-not-assigned
         response = requests.put(api_url_for(
             rotkehlchen_api_server,  # testing normal flow works fine
             'userpremiumsyncresource',

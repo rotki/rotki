@@ -98,7 +98,7 @@ class DBAddressbook:
                     entry.serialize_for_db(),
                 )
             # Handling both private db (pysqlcipher) and global db (raw sqlite3)
-            except (dbapi2.IntegrityError, sqlite3.IntegrityError) as e:  # pylint: disable=no-member  # noqa: E501
+            except (dbapi2.IntegrityError, sqlite3.IntegrityError) as e:  # pylint: disable=no-member
                 raise InputError(
                     f'{entry} already exists in the address book. Identifier must be unique.',
                 ) from e
@@ -135,7 +135,7 @@ class DBAddressbook:
         addresses = {chain_address.address for chain_address in chain_addresses}
         with self.read_ctx(book_type) as read_cursor:
             read_cursor.execute(
-                f'SELECT DISTINCT address FROM address_book WHERE address IN ({",".join("?"*len(chain_addresses))})',  # noqa: E501
+                f'SELECT DISTINCT address FROM address_book WHERE address IN ({",".join("?" * len(chain_addresses))})',  # noqa: E501
                 list(addresses),
             )
             db_addresses = {row[0] for row in read_cursor}

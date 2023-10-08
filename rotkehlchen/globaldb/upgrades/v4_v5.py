@@ -46,7 +46,7 @@ def _populate_rpc_nodes(cursor: 'DBCursor', root_dir: Path) -> None:
     ]
     log.debug(nodes_tuples)
     cursor.executemany(
-        'INSERT INTO default_rpc_nodes(name, endpoint, owned, active, weight, blockchain) '  # noqa: E501
+        'INSERT INTO default_rpc_nodes(name, endpoint, owned, active, weight, blockchain) '
         'VALUES (?, ?, ?, ?, ?, ?)',
         nodes_tuples,
     )

@@ -91,7 +91,7 @@ def test_add_and_get_yearn_vault_events(
 
         ydai_vault = YearnVault(
             name='YDAI Vault',
-            contract=ethereum_contracts.contract(string_to_evm_address('0xACd43E627e64355f1861cEC6d3a6688B31a6F952')),  # noqa: E501
+            contract=ethereum_contracts.contract(string_to_evm_address('0xACd43E627e64355f1861cEC6d3a6688B31a6F952')),
             underlying_token=A_DAI,
             token=A_YV1_DAI,
         )

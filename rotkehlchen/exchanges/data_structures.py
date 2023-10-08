@@ -384,7 +384,7 @@ class Trade(AccountingEventMixin):
             asset_in=asset_in,
             amount_out=amount_out,
             asset_out=asset_out,
-            fee_info=fee_info_for_cost_basis,  # type: ignore[arg-type]  # mypy doesn't see that `should_calculate_fee` condition makes sure that the values are not None.  # noqa: E501
+            fee_info=fee_info_for_cost_basis,  # type: ignore[arg-type]  # mypy doesn't see that `should_calculate_fee` condition makes sure that the values are not None.
         )
         if prices is None:
             log.debug(f'Skipping {self} at accounting due to inability to find a price')
@@ -437,8 +437,8 @@ class Trade(AccountingEventMixin):
                 notes=notes + 'Fee',
                 location=self.location,
                 timestamp=self.timestamp,
-                asset=self.fee_currency,  # type: ignore[arg-type]  # mypy doesn't see that `calculate_fee` condition makes sure that the values are not None.  # noqa: E501
-                amount=self.fee,  # type: ignore[arg-type]  # mypy doesn't see that `calculate_fee` condition makes sure that the values are not None.  # noqa: E501
+                asset=self.fee_currency,  # type: ignore[arg-type]  # mypy doesn't see that `calculate_fee` condition makes sure that the values are not None.
+                amount=self.fee,  # type: ignore[arg-type]  # mypy doesn't see that `calculate_fee` condition makes sure that the values are not None.
                 taxable=fee_taxable,
                 given_price=fee_price,
                 # By setting the taxable amount ratio we determine how much of the fee

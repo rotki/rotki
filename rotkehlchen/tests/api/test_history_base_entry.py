@@ -201,7 +201,7 @@ def test_event_with_details(rotkehlchen_api_server: 'APIServer'):
     db = rotki.data.db
 
     transaction = EvmTransaction(
-        tx_hash=deserialize_evm_tx_hash('0x66e3d2686193e01a4fbf0f598872236402edfe2f4efad84c4f6cdc753b8c78e3'),  # noqa: E501
+        tx_hash=deserialize_evm_tx_hash('0x66e3d2686193e01a4fbf0f598872236402edfe2f4efad84c4f6cdc753b8c78e3'),
         chain_id=ChainID.ETHEREUM,
         timestamp=Timestamp(1672580821),
         block_number=16383832,
@@ -300,7 +300,7 @@ def test_event_with_details(rotkehlchen_api_server: 'APIServer'):
         ), json={'identifier': events[1]['entry']['identifier']},
     )
     result = assert_proper_response_with_result(response)
-    assert result == {SUB_SWAPS_DETAILS: event2.extra_data[SUB_SWAPS_DETAILS]}  # type: ignore[index]  # extra_data is not None here  # noqa: E501
+    assert result == {SUB_SWAPS_DETAILS: event2.extra_data[SUB_SWAPS_DETAILS]}  # type: ignore[index]  # extra_data is not None here
 
 
 def test_get_events(rotkehlchen_api_server: 'APIServer'):

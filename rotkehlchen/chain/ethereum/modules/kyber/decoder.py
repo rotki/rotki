@@ -67,7 +67,7 @@ def _maybe_update_events_legacy_contrats(
             event.event_type = HistoryEventType.TRADE
             event.event_subtype = HistoryEventSubType.RECEIVE
             event.counterparty = CPT_KYBER
-            event.notes = f'Receive {event.balance.amount} {crypto_asset.symbol} from kyber swap'  # noqa: E501
+            event.notes = f'Receive {event.balance.amount} {crypto_asset.symbol} from kyber swap'
             in_event = event
 
         maybe_reshuffle_events(ordered_events=[out_event, in_event], events_list=decoded_events)

@@ -847,7 +847,7 @@ class GlobalDBHandler:
             'assets AS A on B.identifier = A.identifier JOIN common_asset_details AS C ON '
             'C.identifier = B.identifier WHERE B.chain = ? '
         )
-        bindings_list: list[Union[str, int, ChecksumEvmAddress]] = [chain_id.serialize_for_db()]  # noqa: E501
+        bindings_list: list[Union[str, int, ChecksumEvmAddress]] = [chain_id.serialize_for_db()]
         if exceptions is not None or protocol is not None or ignore_spam is True:
             querystr_additions = []
             if exceptions is not None:
@@ -925,7 +925,7 @@ class GlobalDBHandler:
                     f'in the DB due to asset with identifier {entry.identifier} dosent exist'
                 )
             else:
-                msg = f'Ethereum token with identifier {entry.identifier} already exists in the DB'  # noqa: E501
+                msg = f'Ethereum token with identifier {entry.identifier} already exists in the DB'
             raise InputError(msg) from e
 
         if entry.underlying_tokens is not None:
@@ -1052,7 +1052,7 @@ class GlobalDBHandler:
             ) from e
 
         if asset.is_evm_token():
-            GlobalDBHandler().edit_evm_token(asset)  # type: ignore[arg-type]  # It's evm token as guaranteed by the if  # noqa: E501
+            GlobalDBHandler().edit_evm_token(asset)  # type: ignore[arg-type]  # It's evm token as guaranteed by the if
             return
 
         details_update_query = 'UPDATE common_asset_details SET symbol=?, coingecko=?, cryptocompare=?'  # noqa: E501
@@ -1616,7 +1616,7 @@ class GlobalDBHandler:
                     only_owned=True,
                 )
                 if len(diff_ids) != 0 and not force:
-                    msg = 'There are assets that can not be deleted. Check logs for more details.'  # noqa: E501
+                    msg = 'There are assets that can not be deleted. Check logs for more details.'
                     return False, msg
 
             with self.packaged_db_lock:

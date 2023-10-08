@@ -213,7 +213,7 @@ class BinanceTradeEntry(BinanceMultipleEntry):
                     fee_asset = cur_asset
                     fee_amount = Fee(amount)
                 else:
-                    trade_type = TradeType.SELL if row['Operation'] == 'Sell' else TradeType.BUY  # noqa:  E501
+                    trade_type = TradeType.SELL if row['Operation'] == 'Sell' else TradeType.BUY
                     if amount < 0:
                         from_asset = cur_asset
                         from_amount = AssetAmount(-amount)
@@ -287,7 +287,7 @@ class BinanceDepositWithdrawEntry(BinanceSingleEntry):
     """This class processes Deposit and Withdraw actions
         which are AssetMovements in the internal representation"""
 
-    AVAILABLE_OPERATIONS: Final[tuple[str, ...]] = ('Deposit', 'Withdraw')  # type: ignore[misc]  # noqa: E501  # figure out how to mark final only in this class
+    AVAILABLE_OPERATIONS: Final[tuple[str, ...]] = ('Deposit', 'Withdraw')  # type: ignore[misc]  # figure out how to mark final only in this class
 
     def process_entry(
             self,
@@ -323,7 +323,7 @@ class BinanceStakingRewardsEntry(BinanceSingleEntry):
     other staking rewards in the Binance program.
     """
 
-    AVAILABLE_OPERATIONS: Final[tuple[str, ...]] = (  # type: ignore[misc]  # figure out how to mark final only in this class  # noqa: E501
+    AVAILABLE_OPERATIONS: Final[tuple[str, ...]] = (  # type: ignore[misc]  # figure out how to mark final only in this class
         'ETH 2.0 Staking Rewards',
         'Launchpool Interest',
         'Staking Rewards',
@@ -437,7 +437,7 @@ class BinanceEarnProgram(BinanceSingleEntry):
 class BinancePOSEntry(BinanceSingleEntry):
     """Processing POS related actions"""
 
-    AVAILABLE_OPERATIONS: Final[tuple[str, ...]] = (  # type: ignore[misc]  # noqa: E501  # figure out how to mark final only in this class
+    AVAILABLE_OPERATIONS: Final[tuple[str, ...]] = (  # type: ignore[misc]  # figure out how to mark final only in this class
         'POS savings interest',
         'POS savings purchase',
         'POS savings redemption',

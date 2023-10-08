@@ -105,7 +105,7 @@ def decode_basic_uniswap_info(
             event.event_type = HistoryEventType.TRADE
             event.event_subtype = HistoryEventSubType.SPEND
             event.counterparty = counterparty
-            event.notes = f'Swap {event.balance.amount} {crypto_asset.symbol} in {counterparty}'  # noqa: E501
+            event.notes = f'Swap {event.balance.amount} {crypto_asset.symbol} in {counterparty}'
             spend_event = event
         elif (
             event.balance.amount == asset_normalized_value(amount=amount_received, asset=crypto_asset) and  # noqa: E501

@@ -42,7 +42,7 @@ def mock_github_assets_response(url, timeout):  # pylint: disable=unused-argumen
         data = json.dumps(
             {
                 'updates': {
-                    '998': {'min_schema_version': 4, 'max_schema_version': 4, 'changes': 1},  # noqa: E501
+                    '998': {'min_schema_version': 4, 'max_schema_version': 4, 'changes': 1},
                     '999': {'min_schema_version': local_schema, 'max_schema_version': local_schema, 'changes': 1},  # noqa: E501
                 },
                 'latest': 999,
@@ -93,7 +93,7 @@ def mock_github_assets_response(url, timeout):  # pylint: disable=unused-argumen
             started=Timestamp(123),
             forked=None,
             swapped_for=None,
-            address=string_to_evm_address('0xD178b20c6007572bD1FD01D205cC20D32B4A6015'),  # noqa: E501
+            address=string_to_evm_address('0xD178b20c6007572bD1FD01D205cC20D32B4A6015'),
             chain_id=ChainID.ETHEREUM,
             token_kind=EvmTokenKind.ERC20,
             decimals=18,
@@ -178,7 +178,7 @@ def mock_github_assets_response(url, timeout):  # pylint: disable=unused-argumen
             started=Timestamp(123),
             forked=None,
             swapped_for='eip155:1/erc20:0xD178b20c6007572bD1FD01D205cC20D32B4A6015',
-            address=string_to_evm_address('0x76dc5F01A1977F37b483F2C5b06618ed8FcA898C'),  # noqa: E501
+            address=string_to_evm_address('0x76dc5F01A1977F37b483F2C5b06618ed8FcA898C'),
             chain_id=ChainID.ETHEREUM,
             token_kind=EvmTokenKind.ERC20,
             decimals=18,
@@ -225,7 +225,7 @@ def mock_github_assets_response(url, timeout):  # pylint: disable=unused-argumen
             started=Timestamp(123),
             forked=None,
             swapped_for='eip155:1/erc20:0xD178b20c6007572bD1FD01D205cC20D32B4A6015',
-            address=string_to_evm_address('0x76dc5F01A1977F37b483F2C5b06618ed8FcA898C'),  # noqa: E501
+            address=string_to_evm_address('0x76dc5F01A1977F37b483F2C5b06618ed8FcA898C'),
             chain_id=ChainID.ETHEREUM,
             token_kind=EvmTokenKind.ERC20,
             decimals=18,

@@ -47,7 +47,7 @@ def find_ens_mappings(
         cur_time = ts_now()
         for address, cached_value in cached_data.items():
             has_name = isinstance(cached_value, EnsMapping)
-            last_update: Timestamp = cached_value.last_update if has_name else cached_value  # type: ignore  # mypy doesn't see `isinstance` check  # noqa: E501
+            last_update: Timestamp = cached_value.last_update if has_name else cached_value  # type: ignore  # mypy doesn't see `isinstance` check
             if cur_time - last_update > ENS_UPDATE_INTERVAL:
                 addresses_to_query.append(address)
             elif has_name:

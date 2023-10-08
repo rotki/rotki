@@ -16,7 +16,7 @@ defillama_mocked_historical_prices = {
 @pytest.mark.parametrize('should_mock_price_queries', [True])
 @pytest.mark.parametrize('ignore_mocked_prices_for', ['ETH'])
 @pytest.mark.parametrize('mocked_price_queries', [defillama_mocked_historical_prices])
-def test_defillama_historical_price(price_historian, session_defillama):  # pylint: disable=unused-argument  # noqa: E501
+def test_defillama_historical_price(price_historian, session_defillama):  # pylint: disable=unused-argument
     eth = A_ETH.resolve()
     usd = A_USD.resolve()
     dai = A_DAI.resolve()
@@ -48,7 +48,7 @@ def test_defillama_historical_price(price_historian, session_defillama):  # pyli
 
 
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_defillama_current_price(inquirer, session_defillama, session_coingecko):  # pylint: disable=unused-argument  # noqa: E501
+def test_defillama_current_price(inquirer, session_defillama, session_coingecko):  # pylint: disable=unused-argument
     """Test that defillama current price queries work fine in comparison with other oracles"""
     eth = A_ETH.resolve()
     usd = A_USD.resolve()

@@ -21,7 +21,7 @@ def test_polygon_pos_nodes_prune_and_archive_status(
         if node_name.endpoint == 'https://polygon-bor.publicnode.com':
             assert web3_node.is_pruned
             assert not web3_node.is_archive
-        elif node_name.endpoint in ('https://rpc.ankr.com/polygon', 'https://polygon-mainnet.g.alchemy.com/v2/uNdnI7_6XXc7ayswOxtd_RuTBGojJhIf'):  # noqa: E501
+        elif node_name.endpoint in ('https://rpc.ankr.com/polygon', 'https://polygon-mainnet.g.alchemy.com/v2/uNdnI7_6XXc7ayswOxtd_RuTBGojJhIf'):
             assert not web3_node.is_pruned
             assert web3_node.is_archive
         else:

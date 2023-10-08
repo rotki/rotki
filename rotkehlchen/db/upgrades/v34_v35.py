@@ -119,7 +119,7 @@ def _rename_assets_identifiers(write_cursor: 'DBCursor') -> None:
 
     sqlite_tuples = [(new_id, old_id) for old_id, new_id in old_id_to_new.items()]
     log.debug('About to execute the asset id update with executemany')
-    write_cursor.executemany('UPDATE assets SET identifier=? WHERE identifier=?', sqlite_tuples)  # noqa: E501
+    write_cursor.executemany('UPDATE assets SET identifier=? WHERE identifier=?', sqlite_tuples)
     log.debug('Exit _rename_assets_identifiers')
 
 
@@ -376,8 +376,8 @@ def _add_defillama_to_oracles(cursor: 'DBCursor', setting_name: Literal['current
             # Type ignores here are needed since OracleSource can't have any member
             # or otherwise we would be re-defining them in their subclasses (they take different
             # values).
-            coingecko_pos = oracles.index(oracle_cls.COINGECKO.serialize())  # type: ignore[attr-defined]  # noqa: E501
-            oracles.insert(coingecko_pos + 1, oracle_cls.DEFILLAMA.serialize())  # type: ignore[attr-defined]  # noqa: E501
+            coingecko_pos = oracles.index(oracle_cls.COINGECKO.serialize())  # type: ignore[attr-defined]
+            oracles.insert(coingecko_pos + 1, oracle_cls.DEFILLAMA.serialize())  # type: ignore[attr-defined]
         except ValueError:
             # If coingecko is not in the list add at the end defillama
             oracles.append(oracle_cls.DEFILLAMA.serialize())  # type: ignore[attr-defined]

@@ -76,7 +76,7 @@ class MessagesAggregator:
         `wait_on_send` is used to determine if the message should be sent asynchronously
         by spawning a greenlet or if it should just do it synchronously.
         """
-        fallback_msg = json.dumps({'type': str(message_type), 'data': data})  # noqa: E501  # kind of silly to repeat it here. Same code in broadcast
+        fallback_msg = json.dumps({'type': str(message_type), 'data': data})  # kind of silly to repeat it here. Same code in broadcast  # noqa: E501
 
         if self.rotki_notifier is not None:
             self.rotki_notifier.broadcast(

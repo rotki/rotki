@@ -186,7 +186,7 @@ class DBEth2:
         )  # checking against literal 1 is safe since block 1 was not mined during PoS
         return {x[0] for x in cursor}
 
-    def add_validators(self, write_cursor: 'DBCursor', validators: list[Eth2Validator]) -> None:  # noqa: E501
+    def add_validators(self, write_cursor: 'DBCursor', validators: list[Eth2Validator]) -> None:
         write_cursor.executemany(
             'INSERT OR IGNORE INTO '
             'eth2_validators(validator_index, public_key, ownership_proportion) VALUES(?, ?, ?)',

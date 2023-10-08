@@ -205,9 +205,9 @@ def uniswap_v3_lp_token_balances(
         tokens_a, tokens_b = [], []
         for position in positions:
             try:
-                token1_info = ethereum.get_erc20_contract_info(to_checksum_address(position[2]))  # noqa: E501
+                token1_info = ethereum.get_erc20_contract_info(to_checksum_address(position[2]))
                 tokens_a.append(token1_info)
-                token2_info = ethereum.get_erc20_contract_info(to_checksum_address(position[3]))  # noqa: E501
+                token2_info = ethereum.get_erc20_contract_info(to_checksum_address(position[3]))
                 tokens_b.append(token2_info)
             except (BadFunctionCallOutput, ValueError) as e:
                 log.error(

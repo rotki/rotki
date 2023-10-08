@@ -28,7 +28,7 @@ def _rename_icons(rotki: 'Rotkehlchen') -> None:
             log.debug(f'Skipping {old_name} because {new_name} already exists')
 
 
-def data_migration_5(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgressHandler') -> None:  # pylint: disable=unused-argument  # noqa: E501
+def data_migration_5(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgressHandler') -> None:  # pylint: disable=unused-argument
     """
     - Rename icons after modifying the identifiers in 1.26
     """

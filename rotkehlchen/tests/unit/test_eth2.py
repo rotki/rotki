@@ -168,7 +168,7 @@ def mock_scrape_validator_daily_stats(network_mocking: bool):
 
 
 @pytest.mark.parametrize('default_mock_price_value', [FVal(1.55)])
-def test_validator_daily_stats(network_mocking, price_historian):  # pylint: disable=unused-argument  # noqa: E501
+def test_validator_daily_stats(network_mocking, price_historian):  # pylint: disable=unused-argument
     validator_index = 33710
 
     with mock_scrape_validator_daily_stats(network_mocking):
@@ -275,7 +275,7 @@ def test_validator_daily_stats(network_mocking, price_historian):  # pylint: dis
 
 
 @pytest.mark.parametrize('default_mock_price_value', [FVal(1.55)])
-def test_validator_daily_stats_with_last_known_timestamp(network_mocking, price_historian):  # pylint: disable=unused-argument  # noqa: E501
+def test_validator_daily_stats_with_last_known_timestamp(network_mocking, price_historian):  # pylint: disable=unused-argument
     validator_index = 33710
     with mock_scrape_validator_daily_stats(network_mocking):
         stats = scrape_validator_daily_stats(
@@ -472,17 +472,17 @@ def test_ownership_proportion(eth2: 'Eth2', database):
         dbeth2.add_validators(cursor, [
             Eth2Validator(
                 index=9,
-                public_key=Eth2PubKey('0xb016e31f633a21fbe42a015152399361184f1e2c0803d89823c224994af74a561c4ad8cfc94b18781d589d03e952cd5b'),  # noqa: E501
+                public_key=Eth2PubKey('0xb016e31f633a21fbe42a015152399361184f1e2c0803d89823c224994af74a561c4ad8cfc94b18781d589d03e952cd5b'),
                 ownership_proportion=FVal(0.5),
             ),
             Eth2Validator(
                 index=1647,
-                public_key=Eth2PubKey('0xb80777b022a115579f22674883996d0a904e51afaf0ddef4e577c7bc72ec4e14fc7714b8c58fb77ceb7b5162809d1475'),  # noqa: E501
+                public_key=Eth2PubKey('0xb80777b022a115579f22674883996d0a904e51afaf0ddef4e577c7bc72ec4e14fc7714b8c58fb77ceb7b5162809d1475'),
                 ownership_proportion=FVal(0.7),
             ),
             Eth2Validator(  # This validator is tracked but not owned by any of the addresses
                 index=1757,
-                public_key=Eth2PubKey('0xac3d4d453d58c6e6fd5186d8f231eb00ff5a753da3669c208157419055c7c562b7e317654d8c67783c656a956927209d'),  # noqa: E501
+                public_key=Eth2PubKey('0xac3d4d453d58c6e6fd5186d8f231eb00ff5a753da3669c208157419055c7c562b7e317654d8c67783c656a956927209d'),
                 ownership_proportion=FVal(0.9),
             ),
         ])
@@ -825,7 +825,7 @@ def test_combine_block_with_tx_events(eth2, database):
         dbeth2.add_validators(write_cursor, [
             Eth2Validator(
                 index=vindex1,
-                public_key=Eth2PubKey('0xadd9843b2eb53ccaf5afb52abcc0a1322308832065v6fdfb162360ca53a71ebf8775dbebd0f1f1bf6c3e823d4bf2815f7'),  # noqa: E501
+                public_key=Eth2PubKey('0xadd9843b2eb53ccaf5afb52abcc0a1322308832065v6fdfb162360ca53a71ebf8775dbebd0f1f1bf6c3e823d4bf2815f7'),
                 ownership_proportion=ONE,
             ),
         ])
@@ -919,15 +919,15 @@ def test_refresh_activated_validators_deposits(eth2, database):
     dbeth2 = DBEth2(database)
     validator1 = Eth2Validator(
         index=30932,
-        public_key=Eth2PubKey('0xa7d4c301a02b7dc747c0f8ff32579226588c7771e133e9b2817cc7a9a977f0004dbee4f4f7f89451a1f5f761e3bb8c81'),  # noqa: E501
+        public_key=Eth2PubKey('0xa7d4c301a02b7dc747c0f8ff32579226588c7771e133e9b2817cc7a9a977f0004dbee4f4f7f89451a1f5f761e3bb8c81'),
     )
     validator2 = Eth2Validator(
         index=207003,
-        public_key=Eth2PubKey('0x989620ffd512c08907841e28a2c472bbfad2e57c73f474814bf64bab3ae3b44436b1db7b05e4ccc1eb2c3f949a546278'),  # noqa: E501
+        public_key=Eth2PubKey('0x989620ffd512c08907841e28a2c472bbfad2e57c73f474814bf64bab3ae3b44436b1db7b05e4ccc1eb2c3f949a546278'),
     )
     validator3 = Eth2Validator(
         index=4523,
-        public_key=Eth2PubKey('0x967c17368bcb6a90164d1af369115b3bf265b82c350fc78d9b1fa9389f2a216867ca02121f21c4be121f334ce2ac7f4f'),  # noqa: E501
+        public_key=Eth2PubKey('0x967c17368bcb6a90164d1af369115b3bf265b82c350fc78d9b1fa9389f2a216867ca02121f21c4be121f334ce2ac7f4f'),
     )
     with database.user_write() as write_cursor:
         dbeth2.add_validators(write_cursor, [validator1])  # first one is active and in DB at time of deposit decoding  # noqa: E501

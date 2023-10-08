@@ -33,12 +33,12 @@ def _ws_send_impl(
         log.error(f'Websocket send with message {to_send_msg} failed due to {e!s}')
 
         if failure_callback:
-            failure_callback_args = {} if failure_callback_args is None else failure_callback_args  # noqa: E501
+            failure_callback_args = {} if failure_callback_args is None else failure_callback_args
             failure_callback(**failure_callback_args)
         return
 
     if success_callback:  # send success
-        success_callback_args = {} if success_callback_args is None else success_callback_args  # noqa: E501
+        success_callback_args = {} if success_callback_args is None else success_callback_args
         success_callback(**success_callback_args)
 
 
@@ -57,7 +57,7 @@ class RotkiNotifier:
         self.locks.pop(websocket, None)
         with suppress(ValueError):
             self.subscribers.remove(websocket)
-            log.info(f'Websocket with hash id {hash(websocket)} unsubscribed from rotki notifier')  # noqa: E501
+            log.info(f'Websocket with hash id {hash(websocket)} unsubscribed from rotki notifier')
 
     def broadcast(
             self,
@@ -107,7 +107,7 @@ class RotkiNotifier:
                 i for j, i in enumerate(self.subscribers) if j not in to_remove_indices
             ]
         if spawned_one_broadcast is False and failure_callback is not None:
-            failure_callback_args = {} if failure_callback_args is None else failure_callback_args  # noqa: E501
+            failure_callback_args = {} if failure_callback_args is None else failure_callback_args
             failure_callback(**failure_callback_args)
 
 

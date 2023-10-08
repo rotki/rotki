@@ -149,7 +149,7 @@ def test_vote_cast(database, ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             balance=Balance(),
             location_label=user_address,
-            notes='Voted FOR diva governance proposal https://www.tally.xyz/gov/diva/proposal/52481024395238134144299582623582875841236980209822828761178984408970724801644',  # noqa: E501
+            notes='Voted FOR diva governance proposal https://www.tally.xyz/gov/diva/proposal/52481024395238134144299582623582875841236980209822828761178984408970724801644',
             counterparty=CPT_DIVA,
             address=DIVA_GOVERNOR,
         ),

@@ -689,7 +689,7 @@ class DBHandler:
                 tuples,
             )
         except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
-            raise InputError('One of the given action ids already exists in the database') from e  # noqa: E501
+            raise InputError('One of the given action ids already exists in the database') from e
 
     def remove_from_ignored_action_ids(
             self,
@@ -952,7 +952,7 @@ class DBHandler:
         # Assure all are there
         accounts_number = write_cursor.execute(
             f'SELECT COUNT(*) from blockchain_accounts WHERE blockchain = ? '
-            f'AND account IN ({",".join("?"*len(accounts))})',
+            f'AND account IN ({",".join("?" * len(accounts))})',
             (blockchain.value, *accounts),
         ).fetchone()[0]
         if accounts_number != len(accounts):
@@ -1408,14 +1408,14 @@ class DBHandler:
             write_cursor.executemany(
                 'UPDATE used_query_ranges SET name=? WHERE name=?',
                 [
-                    (f'{location!s}_{entry_type}_{new_name}', f'{location!s}_{entry_type}_{name}')  # noqa: E501
+                    (f'{location!s}_{entry_type}_{new_name}', f'{location!s}_{entry_type}_{name}')
                     for entry_type in entry_types
                 ],
             )
 
             # also update the name of the events related to this exchange
             write_cursor.execute(
-                'UPDATE history_events SET location_label=? WHERE location=? AND location_label=?',  # noqa: E501
+                'UPDATE history_events SET location_label=? WHERE location=? AND location_label=?',
                 (new_name, location.serialize_for_db(), name),
             )
 
@@ -1805,7 +1805,7 @@ class DBHandler:
         )
 
         dbtx = DBEvmTx(self)
-        dbtx.delete_transactions(write_cursor=write_cursor, address=address, chain=blockchain)  # noqa: E501
+        dbtx.delete_transactions(write_cursor=write_cursor, address=address, chain=blockchain)
 
     def add_trades(self, write_cursor: 'DBCursor', trades: list[Trade]) -> None:
         trade_tuples = [(
@@ -1907,7 +1907,7 @@ class DBHandler:
             query = 'SELECT * from trades ' + query
             results = cursor.execute(query, bindings)
         else:
-            query = 'SELECT * FROM (SELECT * from trades ORDER BY timestamp DESC LIMIT ?) ' + query  # noqa: E501
+            query = 'SELECT * FROM (SELECT * from trades ORDER BY timestamp DESC LIMIT ?) ' + query
             results = cursor.execute(query, [FREE_TRADES_LIMIT] + bindings)
 
         trades = []
@@ -2096,7 +2096,7 @@ class DBHandler:
                         time=timestamp,
                         amount=ZERO,
                         usd_value=ZERO,
-                        category=BalanceType.deserialize_from_db(all_categories[idx - 1]),  # noqa: E501  # the category of the previous timed_balance of the asset
+                        category=BalanceType.deserialize_from_db(all_categories[idx - 1]),  # the category of the previous timed_balance of the asset  # noqa: E501
                     ),
                 )
                 is_zero_period_open = True
@@ -2107,13 +2107,13 @@ class DBHandler:
                         time=prev_timestamp,
                         amount=ZERO,
                         usd_value=ZERO,
-                        category=inferred_balances[-1].category,  # noqa: E501  # the category of the asset at the start of the zero balance period
+                        category=inferred_balances[-1].category,  # the category of the asset at the start of the zero balance period  # noqa: E501
                     ),
                 )
                 is_zero_period_open = False
                 last_asset_category = inferred_balances[-1].category
             elif has_asset_balance is True:
-                last_asset_category = BalanceType.deserialize_from_db(all_categories[idx])  # noqa: E501
+                last_asset_category = BalanceType.deserialize_from_db(all_categories[idx])
             prev_has_asset_balance, prev_timestamp = has_asset_balance, timestamp
         return inferred_balances
 
@@ -2717,7 +2717,7 @@ class DBHandler:
                 data=addresses_data,
                 object_reference_keys=['chain', 'address'],
             )
-            key = xpub_data.xpub.xpub + xpub_data.serialize_derivation_path_for_db()  # type: ignore # noqa: E501
+            key = xpub_data.xpub.xpub + xpub_data.serialize_derivation_path_for_db()  # type: ignore
             # Delete the tag mappings for the xpub itself (type ignore is for xpub is not None)
             write_cursor.execute('DELETE FROM tag_mappings WHERE object_reference=?', (key,))
             replace_tag_mappings(

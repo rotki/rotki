@@ -398,7 +398,7 @@ def initialize_mock_rotkehlchen_instance(
 
 
 @pytest.fixture(name='uninitialized_rotkehlchen')
-def fixture_uninitialized_rotkehlchen(cli_args, inquirer, asset_resolver, globaldb) -> Rotkehlchen:  # pylint: disable=unused-argument  # noqa: E501
+def fixture_uninitialized_rotkehlchen(cli_args, inquirer, asset_resolver, globaldb) -> Rotkehlchen:  # pylint: disable=unused-argument
     """A rotkehlchen instance that has only had __init__ run but is not unlocked
 
     Adding the inquirer fixture as a requirement to make sure that any mocking that

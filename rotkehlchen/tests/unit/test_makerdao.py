@@ -199,7 +199,7 @@ def test_query_ilk_registry_and_update_cache(globaldb, ethereum_inquirer):
         contract = ethereum_inquirer.contracts.contract_by_address(join_address)
         assert contract.address == expected_join_address
         for entry in contract.abi:
-            if entry['type'] == expected_abi_entry[0] and entry['name'] == expected_abi_entry[1]:  # noqa: E501
+            if entry['type'] == expected_abi_entry[0] and entry['name'] == expected_abi_entry[1]:
                 break
         else:
             raise AssertionError(

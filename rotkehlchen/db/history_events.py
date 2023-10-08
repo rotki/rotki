@@ -152,7 +152,7 @@ class DBHistoryEvents:
                 )
             except sqlcipher.IntegrityError:  # pylint: disable=no-member
                 msg = (
-                    f'Tried to edit event to have event_identifier {event.event_identifier} '  # noqa: E501
+                    f'Tried to edit event to have event_identifier {event.event_identifier} '
                     f'and sequence_index {event.sequence_index} but it already exists'
                 )
                 return False, msg
@@ -421,7 +421,7 @@ class DBHistoryEvents:
             bindings.insert(0, FREE_HISTORY_EVENTS_LIMIT)
 
         cursor.execute(base_query + prepared_query, bindings)
-        output: Union[list[HistoryBaseEntry], list[tuple[int, HistoryBaseEntry]]] = []  # type: ignore  # noqa: E501
+        output: Union[list[HistoryBaseEntry], list[tuple[int, HistoryBaseEntry]]] = []  # type: ignore
         data_start_idx = type_idx + 1
         for entry in cursor:
             entry_type = HistoryBaseEntryType(entry[type_idx])
@@ -473,7 +473,7 @@ class DBHistoryEvents:
             else:
                 output.append(deserialized_event)  # type: ignore
 
-        return output  # type: ignore # This is due to needing a generic HistoryBaseEntry return in this function, but the overloads would not work since HistoryEvent` is the same. Essentially the non-abstract version of HistoryBaseEntry   # noqa: E501
+        return output  # type: ignore # This is due to needing a generic HistoryBaseEntry return in this function, but the overloads would not work since HistoryEvent` is the same. Essentially the non-abstract version of HistoryBaseEntry
 
     @overload
     def get_history_events_and_limit_info(
@@ -524,7 +524,7 @@ class DBHistoryEvents:
         Also returns how many are the total found for the filter and the total found applying
         the limit if provided. Otherwise count_with_limit and count_without_limit are equal.
         """
-        events = self.get_history_events(  # type: ignore  # is due to HistoryBaseEntryFilterQuery not possible to be overloaded in get_history_events  # noqa: E501
+        events = self.get_history_events(  # type: ignore  # is due to HistoryBaseEntryFilterQuery not possible to be overloaded in get_history_events
             cursor=cursor,
             filter_query=filter_query,
             has_premium=has_premium,

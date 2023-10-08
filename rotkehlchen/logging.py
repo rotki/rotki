@@ -76,7 +76,7 @@ if TYPE_CHECKING:
         """Just for typing. Have not found another way to do correct type checking
         for custom log level loggers"""
 
-        def trace(self, msg: str, *args: Any, **kwargs: Any) -> None:  # pylint: disable=unused-argument  # noqa: E501
+        def trace(self, msg: str, *args: Any, **kwargs: Any) -> None:  # pylint: disable=unused-argument
             ...
 
 
@@ -96,7 +96,7 @@ class RotkehlchenLogsAdapter(logging.LoggerAdapter):
         msg = str(given_msg)
         greenlet = gevent.getcurrent()
         greenlet_name = get_greenlet_name(greenlet)
-        msg = greenlet_name + ': ' + msg + ','.join(f' {a[0]}={a[1]}' for a in kwargs.items())  # noqa: E501
+        msg = greenlet_name + ': ' + msg + ','.join(f' {a[0]}={a[1]}' for a in kwargs.items())
         return msg, {}
 
     def trace(self, msg: str, *args: Any, **kwargs: Any) -> None:

@@ -69,7 +69,7 @@ def _get_stats(
         query_filters=query_staking,
         bindings=bindings_staking,
     )
-    total_usd_stability_rewards, stability_rewards_breakdown = history_events_db.get_value_stats(  # noqa: E501
+    total_usd_stability_rewards, stability_rewards_breakdown = history_events_db.get_value_stats(
         cursor=cursor,
         query_filters=query_stability_pool,
         bindings=bindings_stability_pool,

@@ -146,7 +146,7 @@ class Balancer(EthereumModule):
         for pool_balance in pool_balances:
             profit_loss_amounts = pool_addr_to_profit_loss_amounts[pool_balance.pool_token]
             for idx, underlying_token_balance in enumerate(pool_balance.underlying_tokens_balance):
-                profit_loss_amounts[idx] += underlying_token_balance.user_balance.amount  # type: ignore # noqa: E501
+                profit_loss_amounts[idx] += underlying_token_balance.user_balance.amount  # type: ignore
                 pool_addr_to_usd_value[pool_balance.pool_token] += underlying_token_balance.user_balance.usd_value  # noqa: E501
 
         for pool_address_token, pool_events in pool_addr_to_events.items():
@@ -771,7 +771,7 @@ class Balancer(EthereumModule):
                 try:
                     address, balancer_pool = deserialize_pool_share(self.database, raw_pool_share)
                     for pool_token in balancer_pool.pool_token.underlying_tokens:
-                        token = EvmToken(ethaddress_to_identifier(pool_token.address))  # noqa: E501  # should not raise
+                        token = EvmToken(ethaddress_to_identifier(pool_token.address))  # should not raise  # noqa: E501
                         if token.has_oracle():
                             known_tokens.add(token)
                         else:

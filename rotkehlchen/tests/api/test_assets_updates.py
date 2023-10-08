@@ -246,7 +246,7 @@ INSERT INTO assets(identifier, name, type) VALUES("eip155:1/erc20:0x1B175474E890
         protocol=None,
         underlying_tokens=None,
     ))
-    globaldb.add_user_owned_assets([Asset('eip155:1/erc20:0x1B175474E89094C44Da98b954EedeAC495271d0F')])  # noqa: E501
+    globaldb.add_user_owned_assets([Asset('eip155:1/erc20:0x1B175474E89094C44Da98b954EedeAC495271d0F')])
     update_patch = mock_asset_updates(
         original_requests_get=requests.get,
         latest=999999991,

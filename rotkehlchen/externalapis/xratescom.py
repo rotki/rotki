@@ -80,7 +80,7 @@ def _scrape_xratescom_exchange_rates(url: str) -> dict[FiatAsset, Price]:
     return prices
 
 
-def get_current_xratescom_exchange_rates(from_currency: FiatAsset) -> dict[FiatAsset, Price]:  # noqa: E501
+def get_current_xratescom_exchange_rates(from_currency: FiatAsset) -> dict[FiatAsset, Price]:
     """
     Get the current exchanges rates of currency from x-rates.com
 

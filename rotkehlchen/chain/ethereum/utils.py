@@ -164,12 +164,12 @@ def should_update_protocol_cache(cache_key: CacheType, *args: str) -> bool:
         if cache_key in UNIQUE_CACHE_KEYS:
             last_update_ts = globaldb_get_unique_cache_last_queried_ts_by_key(
                 cursor=cursor,
-                key_parts=(cache_key, *args),  # type: ignore  # cache_key needs type specification here  # noqa: E501
+                key_parts=(cache_key, *args),  # type: ignore  # cache_key needs type specification here
             )
         else:
             last_update_ts = globaldb_get_general_cache_last_queried_ts_by_key(
                 cursor=cursor,
-                key_parts=(cache_key, *args),  # type: ignore  # cache_key needs type specification here  # noqa: E501
+                key_parts=(cache_key, *args),  # type: ignore  # cache_key needs type specification here
             )
     return ts_now() - last_update_ts >= ETH_PROTOCOLS_CACHE_REFRESH
 
@@ -238,10 +238,10 @@ def try_download_ens_avatar(
 
     if avatar is None:  # we have not populated it via an NFT query above yet
         try:
-            response = requests.get(avatar_url, timeout=CachedSettings().get_timeout_tuple())  # noqa: E501
+            response = requests.get(avatar_url, timeout=CachedSettings().get_timeout_tuple())
             avatar = _get_response_image(response)
         except (RequestException, RemoteError) as e:
-            log.error(f'Got error {e!s} while querying ens avatar {avatar_url} for {ens_name}.')  # noqa: E501
+            log.error(f'Got error {e!s} while querying ens avatar {avatar_url} for {ens_name}.')
             return
 
     avatars_dir.mkdir(exist_ok=True)  # Ensure that the avatars directory exists

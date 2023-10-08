@@ -26,7 +26,7 @@ def _validate_asset_icons(icon_manager: 'IconManager') -> None:
                 icon_entry.unlink()
 
 
-def data_migration_3(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgressHandler') -> None:  # pylint: disable=unused-argument  # noqa: E501
+def data_migration_3(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgressHandler') -> None:  # pylint: disable=unused-argument
     """
     Migration created in 1.24
     - Delete malformed assets icons.

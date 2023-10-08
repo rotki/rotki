@@ -519,7 +519,7 @@ def test_balance_save_frequency_check(data_dir, username, sql_vm_instructions_cb
     data_save_ts = now - 24 * 60 * 60 + 20
     with data.db.user_write() as cursor:
         data.db.add_multiple_location_data(cursor, [LocationData(
-            time=data_save_ts, location=Location.KRAKEN.serialize_for_db(), usd_value='1500',  # pylint: disable=no-member  # noqa: E501
+            time=data_save_ts, location=Location.KRAKEN.serialize_for_db(), usd_value='1500',  # pylint: disable=no-member
         )])
 
         assert not data.db.should_save_balances(cursor)
@@ -948,7 +948,7 @@ def test_query_owned_assets(data_dir, username, sql_vm_instructions_cb):
 
     with data.db.conn.read_ctx() as cursor:
         assets_list = data.db.query_owned_assets(cursor)
-    assert set(assets_list) == {A_USD, A_ETH, A_BTC, A_XMR, A_SDC, A_SDT2, A_SUSHI, A_1INCH}  # noqa: E501
+    assert set(assets_list) == {A_USD, A_ETH, A_BTC, A_XMR, A_SDC, A_SDT2, A_SUSHI, A_1INCH}
     assert all(isinstance(x, Asset) for x in assets_list)
     warnings = data.db.msg_aggregator.consume_warnings()
     assert len(warnings) == 0

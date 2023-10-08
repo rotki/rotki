@@ -40,37 +40,37 @@ NFT_ID_FOR_TEST_ACC6_1 = '_nft_0xc36442b4a4522e871399cd717abdd847ab11fe88_360680
 NFT_ID_FOR_TEST_ACC6_2 = '_nft_0xc36442b4a4522e871399cd717abdd847ab11fe88_360762'
 
 TEST_NFT_NEBOLAX_ETH = NFT(
-    token_identifier='_nft_0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85_73552724610198397480670284492690114609730214421511097849210414928326607694469',  # noqa: E501
+    token_identifier='_nft_0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85_73552724610198397480670284492690114609730214421511097849210414928326607694469',
     background_color=None,
     image_url='https://openseauserdata.com/files/8fd18b22e4c81aff3998956e7a712d93.svg',
     name='nebolax.eth',
     external_link='https://app.ens.domains/name/nebolax.eth',
-    permalink='https://opensea.io/assets/ethereum/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/73552724610198397480670284492690114609730214421511097849210414928326607694469',  # noqa: E501
+    permalink='https://opensea.io/assets/ethereum/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/73552724610198397480670284492690114609730214421511097849210414928326607694469',
     price_eth=FVal(0.0012),
     price_usd=FVal(1.2379458),
     collection=Collection(
         name='ENS: Ethereum Name Service',
         banner_image=None,
         description='Ethereum Name Service (ENS) domains are secure domain names for the decentralized world. ENS domains provide a way for users to map human readable names to blockchain and non-blockchain resources, like Ethereum addresses, IPFS hashes, or website URLs. ENS domains can be bought and sold on secondary markets.',  # noqa: E501
-        large_image='https://i.seadn.io/gae/BBj09xD7R4bBtg1lgnAAS9_TfoYXKwMtudlk-0fVljlURaK7BWcARCpkM-1LGNGTAcsGO6V1TgrtmQFvCo8uVYW_QEfASK-9j6Nr?w=500&auto=format',  # noqa: E501
+        large_image='https://i.seadn.io/gae/BBj09xD7R4bBtg1lgnAAS9_TfoYXKwMtudlk-0fVljlURaK7BWcARCpkM-1LGNGTAcsGO6V1TgrtmQFvCo8uVYW_QEfASK-9j6Nr?w=500&auto=format',
         floor_price=FVal(0.00098),
     ),
 )
 
 TEST_NFT_YABIR_ETH = NFT(
-    token_identifier='_nft_0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85_26612040215479394739615825115912800930061094786769410446114278812336794170041',  # noqa: E501
+    token_identifier='_nft_0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85_26612040215479394739615825115912800930061094786769410446114278812336794170041',
     background_color=None,
     image_url='https://openseauserdata.com/files/3f7c0c7d1ba51e61fe05ef53875f9f7e.svg',
     name='yabir.eth',
     external_link='https://app.ens.domains/name/yabir.eth',
-    permalink='https://opensea.io/assets/ethereum/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/26612040215479394739615825115912800930061094786769410446114278812336794170041',  # noqa: E501
+    permalink='https://opensea.io/assets/ethereum/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/26612040215479394739615825115912800930061094786769410446114278812336794170041',
     price_eth=FVal(0.00098),
     price_usd=FVal(1.2379458),
     collection=Collection(
         name='ENS: Ethereum Name Service',
         banner_image=None,
         description='Ethereum Name Service (ENS) domains are secure domain names for the decentralized world. ENS domains provide a way for users to map human readable names to blockchain and non-blockchain resources, like Ethereum addresses, IPFS hashes, or website URLs. ENS domains can be bought and sold on secondary markets.',  # noqa: E501
-        large_image='https://i.seadn.io/gae/BBj09xD7R4bBtg1lgnAAS9_TfoYXKwMtudlk-0fVljlURaK7BWcARCpkM-1LGNGTAcsGO6V1TgrtmQFvCo8uVYW_QEfASK-9j6Nr?w=500&auto=format',  # noqa: E501
+        large_image='https://i.seadn.io/gae/BBj09xD7R4bBtg1lgnAAS9_TfoYXKwMtudlk-0fVljlURaK7BWcARCpkM-1LGNGTAcsGO6V1TgrtmQFvCo8uVYW_QEfASK-9j6Nr?w=500&auto=format',
         floor_price=FVal(0.00098),
     ),
 )
@@ -321,7 +321,7 @@ def test_nft_balances_and_prices(rotkehlchen_api_server):
     assert result_with_cache['entries_found'] == 2
     assert result_with_cache['entries_total'] == 4
     expected_nfts_without_ignored = {NFT_ID_FOR_TEST_ACC5, NFT_ID_FOR_TEST_ACC6_1}
-    assert {entry['id'] for entry in result_with_cache['entries']} == expected_nfts_without_ignored  # noqa: E501
+    assert {entry['id'] for entry in result_with_cache['entries']} == expected_nfts_without_ignored
     response = requests.get(api_url_for(
         rotkehlchen_api_server,
         'nftsbalanceresource',
@@ -399,7 +399,7 @@ def test_edit_delete_nft(rotkehlchen_api_server):
         result = assert_proper_response_with_result(response)
         assert result['entries_found'] == 2
         assert result['entries'][1]['price_in_asset'] == '0.0012'
-        assert result['entries'][1]['image_url'] == 'https://openseauserdata.com/files/8fd18b22e4c81aff3998956e7a712d93.svg'  # noqa: E501
+        assert result['entries'][1]['image_url'] == 'https://openseauserdata.com/files/8fd18b22e4c81aff3998956e7a712d93.svg'
 
         # Also check that db was updated properly
         with db.conn.read_ctx() as cursor:
@@ -410,24 +410,24 @@ def test_edit_delete_nft(rotkehlchen_api_server):
             ).fetchall()
             assert len(price_and_image_url_in_db) == 1
             assert price_and_image_url_in_db[0][0] == '0.0012'
-            assert price_and_image_url_in_db[0][1] == 'https://openseauserdata.com/files/8fd18b22e4c81aff3998956e7a712d93.svg'  # noqa: E501
+            assert price_and_image_url_in_db[0][1] == 'https://openseauserdata.com/files/8fd18b22e4c81aff3998956e7a712d93.svg'
 
         # Change one of the NFTs' price and image_url in the response and make sure these changes
         # are reflected in the response and the db
         nft_map[TEST_ACC5][0] = NFT(
-            token_identifier='_nft_0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85_73552724610198397480670284492690114609730214421511097849210414928326607694469',  # noqa: E501
+            token_identifier='_nft_0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85_73552724610198397480670284492690114609730214421511097849210414928326607694469',
             background_color=None,
             image_url='https://openseauserdata.com/files/3f7c0c7d1ba51e61fe05ef53875f9f7e.svg',
             name='nebolax.eth',
             external_link='https://app.ens.domains/name/nebolax.eth',
-            permalink='https://opensea.io/assets/ethereum/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/73552724610198397480670284492690114609730214421511097849210414928326607694469',  # noqa: E501
+            permalink='https://opensea.io/assets/ethereum/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/73552724610198397480670284492690114609730214421511097849210414928326607694469',
             price_eth=FVal(0.5),
             price_usd=FVal(1.2379458),
             collection=Collection(
                 name='ENS: Ethereum Name Service',
                 banner_image=None,
                 description='Ethereum Name Service (ENS) domains are secure domain names for the decentralized world. ENS domains provide a way for users to map human readable names to blockchain and non-blockchain resources, like Ethereum addresses, IPFS hashes, or website URLs. ENS domains can be bought and sold on secondary markets.',  # noqa: E501
-                large_image='https://i.seadn.io/gae/BBj09xD7R4bBtg1lgnAAS9_TfoYXKwMtudlk-0fVljlURaK7BWcARCpkM-1LGNGTAcsGO6V1TgrtmQFvCo8uVYW_QEfASK-9j6Nr?w=500&auto=format',  # noqa: E501
+                large_image='https://i.seadn.io/gae/BBj09xD7R4bBtg1lgnAAS9_TfoYXKwMtudlk-0fVljlURaK7BWcARCpkM-1LGNGTAcsGO6V1TgrtmQFvCo8uVYW_QEfASK-9j6Nr?w=500&auto=format',
                 floor_price=FVal(0.00098),
             ),
         )
@@ -441,7 +441,7 @@ def test_edit_delete_nft(rotkehlchen_api_server):
         result = assert_proper_response_with_result(response)
         assert result['entries_found'] == 2
         assert result['entries'][1]['price_in_asset'] == '0.5'
-        assert result['entries'][1]['image_url'] == 'https://openseauserdata.com/files/3f7c0c7d1ba51e61fe05ef53875f9f7e.svg'  # noqa: E501
+        assert result['entries'][1]['image_url'] == 'https://openseauserdata.com/files/3f7c0c7d1ba51e61fe05ef53875f9f7e.svg'
 
         # Also check that db was updated properly
         with db.conn.read_ctx() as cursor:
@@ -452,7 +452,7 @@ def test_edit_delete_nft(rotkehlchen_api_server):
             ).fetchall()
             assert len(price_and_image_url_in_db) == 1
             assert price_and_image_url_in_db[0][0] == '0.5'
-            assert price_and_image_url_in_db[0][1] == 'https://openseauserdata.com/files/3f7c0c7d1ba51e61fe05ef53875f9f7e.svg'  # noqa: E501
+            assert price_and_image_url_in_db[0][1] == 'https://openseauserdata.com/files/3f7c0c7d1ba51e61fe05ef53875f9f7e.svg'
 
         # Remove one of the accounts with an NFT from the response
         # and check that response and db are the expected ones.
@@ -694,7 +694,7 @@ def test_nft_no_price(rotkehlchen_api_server):
         'entries': [{
             'collection_name': 'Devcon VI Souvenir V4',
             'id': '_nft_0x7522dc5a357891b4daec194e285551ea5ea66d09_336510496872176433120578',
-            'image_url': 'https://i.seadn.io/gae/-N3ctyPYwIF0s-pShI-Zcg96KJr7dYG05KyFtI25WG0yIZeOpBxjAIIUBiBmHcbviAFkY57Xfo0-MRaonHHx4a53LS-q2yOoEwzF?w=500&auto=format',  # noqa: E501
+            'image_url': 'https://i.seadn.io/gae/-N3ctyPYwIF0s-pShI-Zcg96KJr7dYG05KyFtI25WG0yIZeOpBxjAIIUBiBmHcbviAFkY57Xfo0-MRaonHHx4a53LS-q2yOoEwzF?w=500&auto=format',
             'is_lp': False,
             'manually_input': False,
             'name': 'Devcon VI Souvenir',
@@ -722,34 +722,34 @@ def test_lp_nfts_filtering(rotkehlchen_api_server):
                 NFT(
                     token_identifier='_nft_0xc36442b4a4522e871399cd717abdd847ab11fe88_360762',
                     background_color=None,
-                    image_url='https://openseauserdata.com/files/99b67e38e2d1abc16d6d843f478b5224.svg',  # noqa: E501
+                    image_url='https://openseauserdata.com/files/99b67e38e2d1abc16d6d843f478b5224.svg',
                     name='Uniswap - 0.3% - SHIB/WETH - 79010000<>166260000',
                     external_link=None,
-                    permalink='https://opensea.io/assets/ethereum/0xc36442b4a4522e871399cd717abdd847ab11fe88/360762',  # noqa: E501
+                    permalink='https://opensea.io/assets/ethereum/0xc36442b4a4522e871399cd717abdd847ab11fe88/360762',
                     price_eth=ZERO,
                     price_usd=ZERO,
                     collection=Collection(
                         name='Uniswap V3 Positions',
-                        banner_image='https://i.seadn.io/gae/Xq98abLTjlFfzdIxsXNL0sVE2W-3FGcJ2TFUkphz9dh9wEH4rcUesMhE7RzEh_ivPCdL5KxkNVfyE5gb870OgqOLQnBP6sIL54-G0A?w=500&auto=format',  # noqa: E501
+                        banner_image='https://i.seadn.io/gae/Xq98abLTjlFfzdIxsXNL0sVE2W-3FGcJ2TFUkphz9dh9wEH4rcUesMhE7RzEh_ivPCdL5KxkNVfyE5gb870OgqOLQnBP6sIL54-G0A?w=500&auto=format',
                         description='',
-                        large_image='https://i.seadn.io/gae/cnVFmcBCIreYJxfaZ2ba62kEdC9ocuP7vawwcfZx9QIOVNlisuJTV2f19D48hg2NSUxPFX6peemTKaYshJvs-vIcy_3Kv3nCiF7t9g?w=500&auto=format',  # noqa: E501
+                        large_image='https://i.seadn.io/gae/cnVFmcBCIreYJxfaZ2ba62kEdC9ocuP7vawwcfZx9QIOVNlisuJTV2f19D48hg2NSUxPFX6peemTKaYshJvs-vIcy_3Kv3nCiF7t9g?w=500&auto=format',
                         floor_price=None,
                     ),
                 ),
                 NFT(
                     token_identifier='_nft_0xc36442b4a4522e871399cd717abdd847ab11fe88_360680',
                     background_color=None,
-                    image_url='https://openseauserdata.com/files/53f418fceab543a174d22efd0a55782c.svg',  # noqa: E501
+                    image_url='https://openseauserdata.com/files/53f418fceab543a174d22efd0a55782c.svg',
                     name='Uniswap - 0.3% - USDT/WETH - 224.56<>2445.5',
                     external_link=None,
-                    permalink='https://opensea.io/assets/ethereum/0xc36442b4a4522e871399cd717abdd847ab11fe88/360680',  # noqa: E501
+                    permalink='https://opensea.io/assets/ethereum/0xc36442b4a4522e871399cd717abdd847ab11fe88/360680',
                     price_eth=ZERO,
                     price_usd=ZERO,
                     collection=Collection(
                         name='Uniswap V3 Positions',
-                        banner_image='https://i.seadn.io/gae/Xq98abLTjlFfzdIxsXNL0sVE2W-3FGcJ2TFUkphz9dh9wEH4rcUesMhE7RzEh_ivPCdL5KxkNVfyE5gb870OgqOLQnBP6sIL54-G0A?w=500&auto=format',  # noqa: E501
+                        banner_image='https://i.seadn.io/gae/Xq98abLTjlFfzdIxsXNL0sVE2W-3FGcJ2TFUkphz9dh9wEH4rcUesMhE7RzEh_ivPCdL5KxkNVfyE5gb870OgqOLQnBP6sIL54-G0A?w=500&auto=format',
                         description='',
-                        large_image='https://i.seadn.io/gae/cnVFmcBCIreYJxfaZ2ba62kEdC9ocuP7vawwcfZx9QIOVNlisuJTV2f19D48hg2NSUxPFX6peemTKaYshJvs-vIcy_3Kv3nCiF7t9g?w=500&auto=format',  # noqa: E501
+                        large_image='https://i.seadn.io/gae/cnVFmcBCIreYJxfaZ2ba62kEdC9ocuP7vawwcfZx9QIOVNlisuJTV2f19D48hg2NSUxPFX6peemTKaYshJvs-vIcy_3Kv3nCiF7t9g?w=500&auto=format',
                         floor_price=None,
                     ),
                 ),
@@ -764,7 +764,7 @@ def test_lp_nfts_filtering(rotkehlchen_api_server):
                     address=string_to_evm_address('0x4e68Ccd3E89f51C3074ca5072bbAC773960dFa36'),
                     assets=[
                         LiquidityPoolAsset(
-                            token=EvmToken('eip155:1/erc20:0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),  # noqa: E501
+                            token=EvmToken('eip155:1/erc20:0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),
                             total_amount=FVal(467.1438481374891080028754879),
                             user_balance=Balance(
                                 amount=FVal(0.07634689899681738268929722925),
@@ -772,7 +772,7 @@ def test_lp_nfts_filtering(rotkehlchen_api_server):
                             ),
                             usd_price=Price(FVal(1.5)),
                         ), LiquidityPoolAsset(
-                            token=EvmToken('eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7'),  # noqa: E501
+                            token=EvmToken('eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7'),
                             total_amount=FVal(590091.4573701435329438497875),
                             user_balance=Balance(
                                 amount=FVal(197.9498109045197253831082955),
@@ -796,7 +796,7 @@ def test_lp_nfts_filtering(rotkehlchen_api_server):
                     address=string_to_evm_address('0x2F62f2B4c5fcd7570a709DeC05D68EA19c82A9ec'),
                     assets=[
                         LiquidityPoolAsset(
-                            token=EvmToken('eip155:1/erc20:0x95aD61b0a150d79219dCF64E1E6Cc01f0B64C4cE'),  # noqa: E501
+                            token=EvmToken('eip155:1/erc20:0x95aD61b0a150d79219dCF64E1E6Cc01f0B64C4cE'),
                             total_amount=FVal(7434412870.4299540940086804),
                             user_balance=Balance(
                                 amount=FVal(14993034.44120264275215351374),
@@ -804,7 +804,7 @@ def test_lp_nfts_filtering(rotkehlchen_api_server):
                             ),
                             usd_price=Price(FVal(1.5)),
                         ), LiquidityPoolAsset(
-                            token=EvmToken('eip155:1/erc20:0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),  # noqa: E501
+                            token=EvmToken('eip155:1/erc20:0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),
                             total_amount=FVal(54.08313355138617618618670289),
                             user_balance=Balance(
                                 amount=FVal(0.04035273849436677000793717497),

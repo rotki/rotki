@@ -32,7 +32,7 @@ def make_default_accounting_settings(pot: 'AccountingPot') -> dict[str, BaseEven
     https://github.com/rotki/rotki/issues/4341
     """
     result = {}
-    gas_key = str(HistoryEventType.SPEND) + '__' + str(HistoryEventSubType.FEE) + '__' + CPT_GAS  # noqa: E501
+    gas_key = str(HistoryEventType.SPEND) + '__' + str(HistoryEventSubType.FEE) + '__' + CPT_GAS
     result[gas_key] = BaseEventSettings(
         taxable=pot.settings.include_gas_costs,
         count_entire_amount_spend=pot.settings.include_gas_costs,

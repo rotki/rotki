@@ -73,7 +73,7 @@ class BeaconChain(ExternalServiceWithApiKey):
     def _query(
             self,
             module: Literal['validator', 'execution'],
-            endpoint: Optional[Literal['performance', 'eth1', 'deposits', 'produced']],  # noqa: E501
+            endpoint: Optional[Literal['performance', 'eth1', 'deposits', 'produced']],
             encoded_args: str,
             extra_args: Optional[dict[str, Any]] = None,
     ) -> Union[list[dict[str, Any]], dict[str, Any]]:

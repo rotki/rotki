@@ -64,7 +64,7 @@ class OneinchCommonDecoder(DecoderInterface, metaclass=ABCMeta):
                 event.event_type = HistoryEventType.TRADE
                 event.event_subtype = HistoryEventSubType.SPEND
                 event.counterparty = self.counterparty
-                event.notes = f'Swap {spent_amount} {source_token.symbol} in {self.counterparty}'  # noqa: E501
+                event.notes = f'Swap {spent_amount} {source_token.symbol} in {self.counterparty}'
                 event.address = self.router_address
                 out_event = event
             elif event.event_type == HistoryEventType.RECEIVE and event.location_label == sender and receiver == event.location_label and return_amount == event.balance.amount and destination_token == event.asset:  # noqa: E501

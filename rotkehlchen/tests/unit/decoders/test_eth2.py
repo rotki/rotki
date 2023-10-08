@@ -72,15 +72,15 @@ def test_multiple_deposits(database, ethereum_inquirer, ethereum_accounts):
     validators = [
         Eth2Validator(
             index=55750,
-            public_key=Eth2PubKey('0x91108c07526641ad22e91b1038c640b9efce236e9aa8c1c355676a6862e4c082454ceaa599b305ceca9c15984fdbf1a8'),  # noqa: E501
+            public_key=Eth2PubKey('0x91108c07526641ad22e91b1038c640b9efce236e9aa8c1c355676a6862e4c082454ceaa599b305ceca9c15984fdbf1a8'),
             ownership_proportion=ONE,
         ), Eth2Validator(
             index=55751,
-            public_key=Eth2PubKey('0x8e31e6d9771094182a70b75882f7d186986d726f7b4da95f542d18a1cb7fa38cd31b450a9fc62867d81dfc9ad9cbd641'),  # noqa: E501
+            public_key=Eth2PubKey('0x8e31e6d9771094182a70b75882f7d186986d726f7b4da95f542d18a1cb7fa38cd31b450a9fc62867d81dfc9ad9cbd641'),
             ownership_proportion=ONE,
         ), Eth2Validator(
             index=55752,
-            public_key=Eth2PubKey('0xa01b86a30e5e349dccc04aee560502dd49ba87342c22ea88e462ab2c843c92eed08407150a8eaa849dc9de909c59679a'),  # noqa: E501
+            public_key=Eth2PubKey('0xa01b86a30e5e349dccc04aee560502dd49ba87342c22ea88e462ab2c843c92eed08407150a8eaa849dc9de909c59679a'),
             ownership_proportion=ONE,
         ),
     ]

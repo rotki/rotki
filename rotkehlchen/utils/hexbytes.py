@@ -48,7 +48,7 @@ class HexBytes(bytes):
             val: Union[Web3HexBytes, bytearray, bytes, str],
     ) -> 'HexBytes':
         bytesval = to_bytes(val)
-        return cast(HexBytes, super().__new__(cls, bytesval))  # type: ignore  # https://github.com/python/typeshed/issues/2630  # noqa: E501
+        return cast(HexBytes, super().__new__(cls, bytesval))  # type: ignore  # https://github.com/python/typeshed/issues/2630
 
     def hex(self) -> str:  # type: ignore
         """

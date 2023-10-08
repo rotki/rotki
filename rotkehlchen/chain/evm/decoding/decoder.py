@@ -219,13 +219,13 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
         if len(intersection) != 0:
             raise ValueError(f'Input data duplicates found in decoding rules for {intersection}')
 
-        rules.address_mappings.update(self.decoders[class_name].addresses_to_decoders())  # noqa: E501
+        rules.address_mappings.update(self.decoders[class_name].addresses_to_decoders())
         rules.event_rules.extend(self.decoders[class_name].decoding_rules())
         rules.input_data_rules.update(new_input_data_rules)
         rules.token_enricher_rules.extend(self.decoders[class_name].enricher_rules())
-        rules.post_decoding_rules.update(self.decoders[class_name].post_decoding_rules())  # noqa: E501
+        rules.post_decoding_rules.update(self.decoders[class_name].post_decoding_rules())
         rules.all_counterparties.update(self.decoders[class_name].counterparties())
-        rules.addresses_to_counterparties.update(self.decoders[class_name].addresses_to_counterparties())  # noqa: E501
+        rules.addresses_to_counterparties.update(self.decoders[class_name].addresses_to_counterparties())
         self._chain_specific_decoder_initialization(self.decoders[class_name])
 
     def _recursively_initialize_decoders(

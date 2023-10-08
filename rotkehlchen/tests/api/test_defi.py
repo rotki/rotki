@@ -10,7 +10,7 @@ from rotkehlchen.tests.utils.api import api_url_for, assert_proper_response_with
 
 @flaky(max_runs=3, min_passes=1)  # failed in a flaky way sometimes in the CI due to etherscan
 @pytest.mark.parametrize('ethereum_accounts', [[AAVE_TEST_ACC_1]])
-def test_query_defi_balances(rotkehlchen_api_server, ethereum_accounts):  # pylint: disable=unused-argument  # noqa: E501
+def test_query_defi_balances(rotkehlchen_api_server, ethereum_accounts):  # pylint: disable=unused-argument
     """Check querying the defi balances endpoint works. Uses real data.
 
     TODO: Here we should use a test account for which we will know what balances

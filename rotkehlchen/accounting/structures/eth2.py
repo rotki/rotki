@@ -163,7 +163,7 @@ class EthWithdrawalEvent(EthStakingEvent):
             withdrawal_address = deserialize_evm_address(data['location_label'])
             is_exit = data['is_exit']
         except KeyError as e:
-            raise DeserializationError(f'Did not find expected withdrawal event key {e!s}') from e  # noqa: E501
+            raise DeserializationError(f'Did not find expected withdrawal event key {e!s}') from e
 
         if not isinstance(validator_index, int):
             raise DeserializationError(f'Found non-int validator index {validator_index}')
@@ -287,7 +287,7 @@ class EthBlockEvent(EthStakingEvent):
             fee_recipient = deserialize_evm_address(data['location_label'])
             block_number = data['block_number']
         except KeyError as e:
-            raise DeserializationError(f'Did not find expected eth block event key {e!s}') from e  # noqa: E501
+            raise DeserializationError(f'Did not find expected eth block event key {e!s}') from e
 
         if not isinstance(validator_index, int):
             raise DeserializationError(f'Found non-int validator index {validator_index}')
@@ -381,7 +381,7 @@ class EthDepositEvent(EvmEvent, EthStakingEvent):  # noqa: PLW1641  # hash in su
         return HistoryBaseEntryType.ETH_DEPOSIT_EVENT
 
     def __repr__(self) -> str:
-        return f'EthDepositEvent({self.validator_index=}, {self.timestamp=}, {self.tx_hash=})'  # noqa: E501
+        return f'EthDepositEvent({self.validator_index=}, {self.timestamp=}, {self.tx_hash=})'
 
     def __eq__(self, other: object) -> bool:
         return (

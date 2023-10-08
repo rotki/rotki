@@ -94,7 +94,7 @@ class CSVExporter(CustomizableDateMixin):
             SupportedBlockchain.OPTIMISM: ETHERSCAN_EXPLORER_TX_URL.format(base_url='optimistic.etherscan.io'),  # noqa: E501
             SupportedBlockchain.POLYGON_POS: ETHERSCAN_EXPLORER_TX_URL.format(base_url='polygonscan.com'),  # noqa: E501
             SupportedBlockchain.ARBITRUM_ONE: ETHERSCAN_EXPLORER_TX_URL.format(base_url='arbiscan.io'),  # noqa: E501
-            SupportedBlockchain.BASE: ETHERSCAN_EXPLORER_TX_URL.format(base_url='basescan.org'),  # noqa: E501
+            SupportedBlockchain.BASE: ETHERSCAN_EXPLORER_TX_URL.format(base_url='basescan.org'),
         }
         with self.database.conn.read_ctx() as cursor:
             self.reload_settings(cursor)
@@ -146,7 +146,7 @@ class CSVExporter(CustomizableDateMixin):
 
         index = event.index + CSV_INDEX_OFFSET
         value_formula = f'{amount_column}{index}*H{index}'
-        total_value_formula = f'(F{index}*H{index}+G{index}*H{index})'  # noqa: E501  # formula of both free and taxable
+        total_value_formula = f'(F{index}*H{index}+G{index}*H{index})'  # formula of both free and taxable  # noqa: E501
         cost_basis_column = 'K' if name == 'taxable' else 'L'
         cost_basis = f'{cost_basis_column}{index}'
 
@@ -246,8 +246,8 @@ class CSVExporter(CustomizableDateMixin):
         entry = template.copy()
         entry['free_amount'] = 'TOTAL'
         if sums != 0:
-            entry['taxable_amount'] = f'=SUM(G{start_sums_index}:G{start_sums_index+sums-1})'
-            entry['price'] = f'=SUM(H{start_sums_index}:H{start_sums_index+sums-1})'
+            entry['taxable_amount'] = f'=SUM(G{start_sums_index}:G{start_sums_index + sums - 1})'
+            entry['price'] = f'=SUM(H{start_sums_index}:H{start_sums_index + sums - 1})'
         else:
             entry['taxable_amount'] = entry['price'] = 0
         events.append(entry)

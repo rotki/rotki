@@ -300,7 +300,7 @@ def query_curve_data_from_api(existing_pools: list[ChecksumEvmAddress]) -> list[
         try:
             all_api_pools.extend(response_json['data']['poolData'])
         except KeyError as e:
-            raise RemoteError(f'Curve api endpoint {api_url} response is missing {e} key') from e  # noqa: E501
+            raise RemoteError(f'Curve api endpoint {api_url} response is missing {e} key') from e
 
     processed_new_pools = []
     for api_pool_data in all_api_pools:
@@ -356,7 +356,7 @@ def query_curve_data_from_chain(
 
     metaregistry = EvmContract(
         address=metaregistry_address,
-        abi=ethereum.contracts.abi('CURVE_METAREGISTRY'),  # type: ignore[call-overload]  # for some reason mypy doesn't properly see argument type  # noqa: E501
+        abi=ethereum.contracts.abi('CURVE_METAREGISTRY'),  # type: ignore[call-overload]  # for some reason mypy doesn't properly see argument type
         deployed_block=0,  # deployment_block is not used and the contract is dynamic
     )
     pool_count = metaregistry.call(node_inquirer=ethereum, method_name='pool_count')

@@ -358,7 +358,7 @@ def translate_assets_in_price_table(cursor: 'DBCursor') -> list[tuple[str, str, 
     )
     cursor.execute(
         f'SELECT from_asset, to_asset, source_type, timestamp, price FROM '
-        f'price_history WHERE (source_type=="A" OR from_asset IN ({",".join(["?"]*len(assets))}))',
+        f'price_history WHERE (source_type=="A" OR from_asset IN ({",".join(["?"] * len(assets))}))',  # noqa: E501
         assets,
     )
     updated_rows = []

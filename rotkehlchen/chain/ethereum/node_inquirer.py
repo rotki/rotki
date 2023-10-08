@@ -79,12 +79,12 @@ class EthereumInquirer(DSProxyInquirerWithCacheData):
             etherscan_node_name=ETHEREUM_ETHERSCAN_NODE_NAME,
             contracts=contracts,
             rpc_timeout=rpc_timeout,
-            contract_multicall=contracts.contract(string_to_evm_address('0x5BA1e12693Dc8F9c48aAD8770482f4739bEeD696')),  # noqa: E501
-            contract_scan=contracts.contract(string_to_evm_address('0x86F25b64e1Fe4C5162cDEeD5245575D32eC549db')),  # noqa: E501
-            dsproxy_registry=contracts.contract(string_to_evm_address('0x4678f0a6958e4D2Bc4F1BAF7Bc52E8F3564f3fE4')),  # noqa: E501
+            contract_multicall=contracts.contract(string_to_evm_address('0x5BA1e12693Dc8F9c48aAD8770482f4739bEeD696')),
+            contract_scan=contracts.contract(string_to_evm_address('0x86F25b64e1Fe4C5162cDEeD5245575D32eC549db')),
+            dsproxy_registry=contracts.contract(string_to_evm_address('0x4678f0a6958e4D2Bc4F1BAF7Bc52E8F3564f3fE4')),
             native_token=A_ETH.resolve_to_crypto_asset(),
         )
-        self.blocks_subgraph = Graph('https://api.thegraph.com/subgraphs/name/blocklytics/ethereum-blocks')  # noqa: E501
+        self.blocks_subgraph = Graph('https://api.thegraph.com/subgraphs/name/blocklytics/ethereum-blocks')
         self.etherscan = cast(EthereumEtherscan, self.etherscan)
         self.ens_reverse_records = self.contracts.contract(string_to_evm_address('0x3671aE578E63FdF66ad4F3E12CC0c0d71Ac7510C'))  # noqa: E501
 
@@ -340,7 +340,7 @@ class EthereumInquirer(DSProxyInquirerWithCacheData):
         a lot of results. So limit the query range to not hit the infura limits every tiem
         """
         infura_eth2_log_query = (
-            'infura.io' in web3.manager.provider.endpoint_uri and  # type: ignore # noqa: E501 lgtm [py/incomplete-url-substring-sanitization]
+            'infura.io' in web3.manager.provider.endpoint_uri and  # type: ignore # lgtm [py/incomplete-url-substring-sanitization]
             contract_address == ETH2_DEPOSIT_ADDRESS
         )
         return WEB3_LOGQUERY_BLOCK_RANGE if infura_eth2_log_query is False else 75000

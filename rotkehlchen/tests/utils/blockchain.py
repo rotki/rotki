@@ -399,7 +399,7 @@ def mock_etherscan_query(
             else:
                 raise AssertionError('Unexpected etherscan multicall during tests: {url}')
 
-        elif f'api.etherscan.io/api?module=proxy&action=eth_call&to={eth_scan.address}' in url:  # noqa: E501
+        elif f'api.etherscan.io/api?module=proxy&action=eth_call&to={eth_scan.address}' in url:
             if 'ethscan' in original_queries:
                 return original_requests_get(url, *args, **kwargs)
 

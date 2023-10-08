@@ -451,7 +451,7 @@ class Coinbasepro(ExchangeInterface):
                         transaction_id = entry['details']['crypto_transaction_hash']
                         fee = deserialize_fee(entry['details']['fee'])
 
-                if transaction_id and (asset == A_ETH or asset.asset_type == AssetType.EVM_TOKEN):  # noqa: E501
+                if transaction_id and (asset == A_ETH or asset.asset_type == AssetType.EVM_TOKEN):
                     transaction_id = '0x' + transaction_id
 
                 movements.append(AssetMovement(

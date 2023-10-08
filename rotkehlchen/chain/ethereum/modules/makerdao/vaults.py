@@ -118,7 +118,7 @@ class MakerdaoVault(NamedTuple):
         starting_assets = {self.collateral_asset: self.collateral} if self.collateral.amount != ZERO else {}  # noqa: E501
         starting_liabilities = {A_DAI: self.debt} if self.debt.amount != ZERO else {}
         return BalanceSheet(
-            assets=defaultdict(Balance, starting_assets),  # type: ignore # Doesn't recognize that the defaultdict CryptoAsset is an Asset  # noqa: E501
+            assets=defaultdict(Balance, starting_assets),  # type: ignore # Doesn't recognize that the defaultdict CryptoAsset is an Asset
             liabilities=defaultdict(Balance, starting_liabilities),
         )
 
@@ -287,7 +287,7 @@ class MakerdaoVaults(HasDSProxy):
         )
         frob_event_tx_hashes = [x['transactionHash'] for x in frob_events]
         # ethereum is EthereumInquirer here
-        gemjoin = collateral_type_to_join_contract(vault.collateral_type, ethereum=self.ethereum)  # type: ignore[arg-type]  # noqa: E501
+        gemjoin = collateral_type_to_join_contract(vault.collateral_type, ethereum=self.ethereum)  # type: ignore[arg-type]
         if gemjoin is None:
             self.msg_aggregator.add_warning(
                 f'Unknown makerdao vault collateral type detected {vault.collateral_type}.'
@@ -721,7 +721,7 @@ class MakerdaoVaults(HasDSProxy):
         return balances
 
     # -- Methods following the EthereumModule interface -- #
-    def on_account_addition(self, address: ChecksumEvmAddress) -> None:  # pylint: disable=useless-return  # noqa: E501
+    def on_account_addition(self, address: ChecksumEvmAddress) -> None:  # pylint: disable=useless-return
         super().on_account_addition(address)
         # Check if it has been added to the mapping
         proxy_address = self.ethereum.proxies_inquirer.address_to_proxy.get(address)

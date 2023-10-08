@@ -159,7 +159,7 @@ def test_etherscan_get_transactions_genesis_block(eth_transactions):
             input_data=b'',
             nonce=0,
         ), EvmTransaction(
-            tx_hash=deserialize_evm_tx_hash('0x352b93ac19dfbfd65d4d8385cded959d7a156c3f352a71a5a49560b088e1c8df'),  # noqa: E501
+            tx_hash=deserialize_evm_tx_hash('0x352b93ac19dfbfd65d4d8385cded959d7a156c3f352a71a5a49560b088e1c8df'),
             chain_id=ChainID.ETHEREUM,
             timestamp=Timestamp(1443534531),
             block_number=307793,

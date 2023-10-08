@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-def data_migration_1(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgressHandler') -> None:  # pylint: disable=unused-argument  # noqa: E501
+def data_migration_1(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgressHandler') -> None:  # pylint: disable=unused-argument
     """
     Purge data for exchanges where there is more than one instance. Also purge information
     from kraken as requested for https://github.com/rotki/rotki/pull/3755

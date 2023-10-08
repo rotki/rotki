@@ -496,7 +496,7 @@ class Bitstamp(ExchangeInterface):
                 # NB: re-assign dict instead of update, prevent lose call args values
                 call_options = call_options.copy()
                 offset = 0 if has_results else call_options['offset'] + API_MAX_LIMIT
-                since_id = int(results[-1].link) + 1 if has_results else call_options['since_id']  # type: ignore # noqa: E501 # we always got a link in bitstamp trades
+                since_id = int(results[-1].link) + 1 if has_results else call_options['since_id']  # type: ignore # we always got a link in bitstamp trades
                 call_options.update({
                     'since_id': since_id,
                     'offset': offset,

@@ -20,7 +20,7 @@ def test_query_transactions_single_chain(eth_transactions: 'EthereumTransactions
     """
     queried_addresses = []
 
-    def mock_single_address_query_transactions(address, **kwargs):  # pylint: disable=unused-argument  # noqa: E501
+    def mock_single_address_query_transactions(address, **kwargs):  # pylint: disable=unused-argument
         queried_addresses.append(address)
 
     query_patch = patch.object(

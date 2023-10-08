@@ -288,7 +288,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
     def deactivate_premium_status(self) -> None:
         self.premium = None
         for _, module in self.iterate_modules():
-            if hasattr(module, 'premium') is True and module.premium is not None:  # type: ignore  # noqa: E501
+            if hasattr(module, 'premium') is True and module.premium is not None:  # type: ignore
                 module.premium = None  # type: ignore
 
     def process_new_modules_list(self, module_names: list[ModuleName]) -> None:
@@ -494,13 +494,13 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             query_method = f'query_{blockchain.get_key()}_balances'
             getattr(self, query_method)(ignore_cache=ignore_cache)
             if ignore_cache is True and blockchain.is_bitcoin():
-                xpub_manager.check_for_new_xpub_addresses(blockchain=blockchain)  # type: ignore # is checked in the if  # noqa: E501
+                xpub_manager.check_for_new_xpub_addresses(blockchain=blockchain)  # type: ignore # is checked in the if
         else:  # all chains
             for chain in SupportedBlockchain:
                 query_method = f'query_{chain.get_key()}_balances'
                 getattr(self, query_method)(ignore_cache=ignore_cache)
                 if ignore_cache is True and chain.is_bitcoin():
-                    xpub_manager.check_for_new_xpub_addresses(blockchain=chain)  # type: ignore # is checked in the if  # noqa: E501
+                    xpub_manager.check_for_new_xpub_addresses(blockchain=chain)  # type: ignore # is checked in the if
 
         self.totals = self.balances.recalculate_totals()
         return self.get_balances_update(blockchain)
@@ -780,7 +780,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                     if chain_modify_append is not None:
                         chain_modify_append(blockchain, account)
                 else:  # remove
-                    balances.pop(account, None)  # type: ignore  # mypy can't understand each account has same type  # noqa: E501
+                    balances.pop(account, None)  # type: ignore  # mypy can't understand each account has same type
                     self.accounts.remove(blockchain=blockchain, address=account)
                     chain_modify_remove = self.chain_modify_remove.get(blockchain)
                     if chain_modify_remove is not None:
@@ -1008,19 +1008,19 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         Curve, Convex and Velodrome.
         """
         chain = ChainID.to_blockchain(chain_id)
-        inquirer = self.get_chain_manager(chain).node_inquirer  # type: ignore  # chain's type here is a subset of the type expected by get_chain_manager  # noqa: E501
+        inquirer = self.get_chain_manager(chain).node_inquirer  # type: ignore  # chain's type here is a subset of the type expected by get_chain_manager
         existing_balances = self.balances.get(chain)
         for protocol in CHAIN_TO_BALANCE_PROTOCOLS[chain_id]:
-            protocol_with_balance: ProtocolWithBalance = protocol(  # type: ignore  # protocol here is an implementation of the abstract class not the abstract class itself  # noqa: E501
+            protocol_with_balance: ProtocolWithBalance = protocol(  # type: ignore  # protocol here is an implementation of the abstract class not the abstract class itself
                 database=self.database,
                 evm_inquirer=inquirer,
                 chain_id=chain_id,
             )
             protocol_balances = protocol_with_balance.query_balances()
             for address, asset_balances in protocol_balances.items():
-                address_balances = existing_balances[address]  # type: ignore  # chain's type is a subset of the type expected by balances.get so existing_balances is of the correct type here  # noqa: E501
+                address_balances = existing_balances[address]  # type: ignore  # chain's type is a subset of the type expected by balances.get so existing_balances is of the correct type here
                 for asset, balance in asset_balances.items():
-                    address_balances.assets[asset] += balance  # type: ignore  # chain's type is a subset of the type expected by balances.get so address_balances is of the correct type here  # noqa: E501
+                    address_balances.assets[asset] += balance  # type: ignore  # chain's type is a subset of the type expected by balances.get so address_balances is of the correct type here
 
     def _add_eth_protocol_balances(self, eth_balances: defaultdict[ChecksumEvmAddress, BalanceSheet]) -> None:  # noqa: E501
         """Also count token balances that may come from various eth protocols"""
@@ -1095,7 +1095,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             )
             for address, pickle_balances in pickle_balances_per_address.items():
                 for asset_balance in pickle_balances:
-                    eth_balances[address].assets[asset_balance.asset] += asset_balance.balance  # noqa: E501
+                    eth_balances[address].assets[asset_balance.asset] += asset_balance.balance
 
         liquity_module = self.get_module('liquity')
         if liquity_module is not None:

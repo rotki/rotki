@@ -409,7 +409,7 @@ def test_update_addressbook(
         optional_chain_addresses = [OptionalChainAddress(new_entry_addr, None)]
         names, _ = db_addressbook.get_addressbook_entries(
             cursor=cursor,
-            filter_query=AddressbookFilterQuery.make(optional_chain_addresses=optional_chain_addresses),  # noqa: E501
+            filter_query=AddressbookFilterQuery.make(optional_chain_addresses=optional_chain_addresses),
         )
         assert names[0].name == 'super name ray'
 
@@ -507,7 +507,7 @@ def test_delete_addressbook(
         optional_chain_addresses = [OptionalChainAddress(address=KELSOS_ADDR, blockchain=None)]
         assert db_addressbook.get_addressbook_entries(
             cursor=cursor,
-            filter_query=AddressbookFilterQuery.make(optional_chain_addresses=optional_chain_addresses),  # noqa: E501
+            filter_query=AddressbookFilterQuery.make(optional_chain_addresses=optional_chain_addresses),
         )[0] == [KELSOS_BOOK_ENTRY]
 
     response = requests.delete(
@@ -525,7 +525,7 @@ def test_delete_addressbook(
         optional_chain_addresses = [OptionalChainAddress(address=KELSOS_ADDR, blockchain=None)]
         assert len(db_addressbook.get_addressbook_entries(
             cursor=cursor,
-            filter_query=AddressbookFilterQuery.make(optional_chain_addresses=optional_chain_addresses))[0],  # noqa: E501
+            filter_query=AddressbookFilterQuery.make(optional_chain_addresses=optional_chain_addresses))[0],
         ) == 0
 
 

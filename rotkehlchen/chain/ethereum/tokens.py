@@ -72,7 +72,7 @@ class EthereumTokens(EvmTokensWithDSProxy):
             ilk_collaterals = {x for _, _, x, _ in ilk_cache_foreach(cursor) if x != A_ETH}
 
         # We ignore A_ETH so all other ones should be tokens
-        tokens_for_proxies: list[EvmToken] = list(self.tokens_for_proxies_set | ilk_collaterals)  # type: ignore[operator]  # noqa: E501
+        tokens_for_proxies: list[EvmToken] = list(self.tokens_for_proxies_set | ilk_collaterals)  # type: ignore[operator]
         proxies_mapping = self.evm_inquirer.proxies_inquirer.get_accounts_having_proxy()
         proxies_to_use = {k: v for k, v in proxies_mapping.items() if k in addresses}
         self._detect_tokens(

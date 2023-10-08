@@ -78,7 +78,7 @@ def test_query_user_tokens(rotkehlchen_api_server):
     expected_result = [x.to_dict() for x in expected_tokens]
     assert_token_entry_exists_in_result(result, expected_result)
     # This check is to make sure the sqlite query works correctly and queries only for tokens
-    assert all(x['address'] is not None for x in result), 'All returned tokens should have address'  # noqa: E501
+    assert all(x['address'] is not None for x in result), 'All returned tokens should have address'
 
     # test that querying an unknown address for a token is properly handled
     unknown_address = make_evm_address()
@@ -163,7 +163,7 @@ def test_adding_user_tokens(rotkehlchen_api_server):
     assert result == 4
     result = cursor.execute(
         'SELECT COUNT(*) from evm_tokens WHERE address IN (?, ?, ?, ?)',
-        (underlying_address1, underlying_address2, underlying_address3, underlying_address4),  # noqa: E501
+        (underlying_address1, underlying_address2, underlying_address3, underlying_address4),
     ).fetchone()[0]
     assert result == 4
 
@@ -443,7 +443,7 @@ def test_deleting_user_tokens(rotkehlchen_api_server):
     assert_token_entry_exists_in_result(result, expected_result)
     # also check the mapping for the underlying still tokens exists
     result = cursor.execute('SELECT COUNT(*) from underlying_tokens_list').fetchone()[0]
-    assert result == initial_underlying_num, 'check underlying tokens mapping is unchanged'  # noqa: E501
+    assert result == initial_underlying_num, 'check underlying tokens mapping is unchanged'
 
     # test that deleting a non existing address is handled properly
     non_existent_address = make_evm_address()

@@ -446,7 +446,7 @@ def fixture_arbitrum_one_manager(arbitrum_one_inquirer):
 
 
 @pytest.fixture(name='base_manager_connect_at_start')
-def fixture_base_manager_connect_at_start() -> Union[Literal['DEFAULT'], Sequence[NodeName]]:  # noqa: E501
+def fixture_base_manager_connect_at_start() -> Union[Literal['DEFAULT'], Sequence[NodeName]]:
     """A sequence of nodes to connect to at the start of the test.
     Can be either a sequence of nodes to connect to for this chain.
     Or an empty sequence to connect to no nodes for this chain.

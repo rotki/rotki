@@ -17,7 +17,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 class Balancerv2Accountant(ModuleAccountantInterface):
 
-    def event_settings(self, pot: 'AccountingPot') -> dict[str, TxEventSettings]:  # pylint: disable=unused-argument  # noqa: E501
+    def event_settings(self, pot: 'AccountingPot') -> dict[str, TxEventSettings]:  # pylint: disable=unused-argument
         """Being defined at function call time is fine since this function is called only once"""
         return {
             get_tx_event_type_identifier(HistoryEventType.TRADE, HistoryEventSubType.SPEND, CPT_BALANCER_V2): TxEventSettings(  # noqa: E501

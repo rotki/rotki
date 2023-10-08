@@ -179,7 +179,7 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
                     self.dbranges.update_used_query_range(
                         write_cursor=write_cursor,
                         location_string=location_string,
-                        queried_ranges=[(period.from_value, new_transactions[-1].timestamp)],  # type: ignore  # noqa: E501
+                        queried_ranges=[(period.from_value, new_transactions[-1].timestamp)],  # type: ignore
                     )
 
                 self.msg_aggregator.add_message(
@@ -286,7 +286,7 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
                         self.dbranges.update_used_query_range(
                             write_cursor=write_cursor,
                             location_string=location_string,
-                            queried_ranges=[(period_or_hash.from_value, timestamp)],  # type: ignore  # noqa: E501
+                            queried_ranges=[(period_or_hash.from_value, timestamp)],  # type: ignore
                         )
 
                     self.msg_aggregator.add_message(
@@ -295,7 +295,7 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
                             'address': address,
                             'evm_chain': self.evm_inquirer.chain_id.to_name(),
                             'period': [period_or_hash.from_value, timestamp],
-                            'status': str(TransactionStatusStep.QUERYING_INTERNAL_TRANSACTIONS),  # noqa: E501
+                            'status': str(TransactionStatusStep.QUERYING_INTERNAL_TRANSACTIONS),
                         },
                     )
 
@@ -608,7 +608,7 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
                 chain_id=self.evm_inquirer.chain_id,
             )
 
-        return added_tx[0], tx_receipt  # type: ignore  # tx_receipt was just added in the DB so should be there  # noqa: E501
+        return added_tx[0], tx_receipt  # type: ignore  # tx_receipt was just added in the DB so should be there
 
     def get_or_query_transaction_receipt(self, tx_hash: EVMTxHash) -> 'EvmTxReceipt':
         """
@@ -724,5 +724,5 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
                 tx_hash=tx_hash,
                 chain_id=self.evm_inquirer.chain_id,
             )
-        assert tx_receipt is not None, 'transaction receipt was added just above, so should exist'  # noqa: E501
+        assert tx_receipt is not None, 'transaction receipt was added just above, so should exist'
         return transaction, tx_receipt

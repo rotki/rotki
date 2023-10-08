@@ -353,7 +353,7 @@ class MakerdaosaiDecoder(DecoderInterface):
             ):
                 event.event_type = HistoryEventType.DEPOSIT
                 event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
-                event.notes = f'Supply {event.balance.amount} {self.eth.symbol} to Sai vault'  # noqa: E501
+                event.notes = f'Supply {event.balance.amount} {self.eth.symbol} to Sai vault'
                 event.counterparty = CPT_SAI
                 return DEFAULT_DECODING_OUTPUT
 

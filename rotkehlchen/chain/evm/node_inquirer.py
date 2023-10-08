@@ -278,7 +278,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
         ===> Runs: 66, 82, 72, 58, 72 seconds
         ---> Average: 70 seconds
         """
-        open_nodes = self.database.get_rpc_nodes(blockchain=self.blockchain, only_active=True)  # noqa: E501
+        open_nodes = self.database.get_rpc_nodes(blockchain=self.blockchain, only_active=True)
         if skip_etherscan:
             selection = [wnode for wnode in open_nodes if wnode.node_info.name != self.etherscan_node_name and wnode.node_info.owned is False]  # noqa: E501
         else:
@@ -489,7 +489,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
             if weighted_node.node_info.name == self.etherscan_node_name:
                 continue
 
-            task_name = f'{_connect_task_prefix(self.chain_name)} {weighted_node.node_info.name!s}'  # noqa: E501
+            task_name = f'{_connect_task_prefix(self.chain_name)} {weighted_node.node_info.name!s}'
             self.greenlet_manager.spawn_and_track(
                 after_seconds=None,
                 task_name=task_name,
@@ -584,7 +584,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
         if web3 is None:
             return self.etherscan.get_block_by_number(num)
 
-        block_data: MutableAttributeDict = MutableAttributeDict(web3.eth.get_block(num))  # type: ignore # pylint: disable=no-member  # noqa: E501
+        block_data: MutableAttributeDict = MutableAttributeDict(web3.eth.get_block(num))  # type: ignore # pylint: disable=no-member
         block_data['hash'] = hex_or_bytes_to_str(block_data['hash'])
         return dict(block_data)
 
@@ -1352,7 +1352,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
     def _get_pruned_check_tx_hash(self) -> EVMTxHash:
         """Returns a transaction hash that can used for checking whether a node is pruned."""
 
-    def _additional_receipt_processing(self, tx_receipt: dict[str, Any]) -> None:  # noqa: B027 E501
+    def _additional_receipt_processing(self, tx_receipt: dict[str, Any]) -> None:  # noqa: B027
         """Performs additional tx_receipt processing where necessary"""
 
 

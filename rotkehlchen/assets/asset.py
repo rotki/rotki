@@ -61,7 +61,7 @@ class Asset:
     identifier: str
     direct_field_initialization: InitVar[bool] = field(default=False)
 
-    def __post_init__(self, direct_field_initialization: bool) -> None:  # pylint: disable=unused-argument  # noqa: E501
+    def __post_init__(self, direct_field_initialization: bool) -> None:  # pylint: disable=unused-argument
         if not isinstance(self.identifier, str):
             raise DeserializationError(
                 'Tried to initialize an asset out of a non-string identifier',

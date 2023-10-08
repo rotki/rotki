@@ -227,7 +227,7 @@ class Bitmex(ExchangeInterface):
             options: Optional[dict] = None,
     ) -> dict:
         result = self._api_query(verb, path, options)
-        assert isinstance(result, dict)  # pylint: disable=isinstance-second-argument-not-valid-type  # noqa: E501
+        assert isinstance(result, dict)  # pylint: disable=isinstance-second-argument-not-valid-type
         return result
 
     def _api_query_list(
@@ -237,7 +237,7 @@ class Bitmex(ExchangeInterface):
             options: Optional[dict] = None,
     ) -> list:
         result = self._api_query(verb, path, options)
-        assert isinstance(result, list)  # pylint: disable=isinstance-second-argument-not-valid-type  # noqa: E501
+        assert isinstance(result, list)  # pylint: disable=isinstance-second-argument-not-valid-type
         return result
 
     @protect_with_lock()

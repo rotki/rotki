@@ -199,7 +199,7 @@ class DBEvmTx:
         """
         txs = self.get_evm_transactions(cursor, filter_=filter_, has_premium=has_premium)
         query, bindings = filter_.prepare(with_pagination=False)
-        query = 'SELECT COUNT(DISTINCT evm_transactions.tx_hash) FROM evm_transactions ' + query  # noqa: E501
+        query = 'SELECT COUNT(DISTINCT evm_transactions.tx_hash) FROM evm_transactions ' + query
         total_found_result = cursor.execute(query, bindings)
         return txs, total_found_result.fetchone()[0]  # always returns result
 
@@ -211,7 +211,7 @@ class DBEvmTx:
         if chain is not None:
             chains = [chain]
             delete_query += ' WHERE chain_id = ?'
-            delete_bindings = (chain.to_chain_id().serialize_for_db(),)    # type: ignore[assignment]  # noqa: E501
+            delete_bindings = (chain.to_chain_id().serialize_for_db(),)    # type: ignore[assignment]
         else:
             chains = get_args(SUPPORTED_EVM_CHAINS)  # type: ignore[assignment]
 
@@ -342,7 +342,7 @@ class DBEvmTx:
 
         for log_entry in data['logs']:
             write_cursor.execute(
-                'INSERT INTO evmtx_receipt_logs (tx_id, log_index, data, address, removed) '  # noqa: E501
+                'INSERT INTO evmtx_receipt_logs (tx_id, log_index, data, address, removed) '
                 'VALUES(? ,? ,? ,? ,?)',
                 (
                     tx_id,

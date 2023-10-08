@@ -92,10 +92,10 @@ class SerializableEnumValueMixin(SerializableEnumMixin):
     """An enum that uses lowercase value for serialization but uses name for __str__"""
 
     def __str__(self) -> str:
-        return ' '.join(word.lower() for word in self.name.split('_'))  # pylint: disable=no-member  # noqa: E501
+        return ' '.join(word.lower() for word in self.name.split('_'))  # pylint: disable=no-member
 
     def serialize(self) -> str:
-        return ' '.join(word.lower() for word in self.value.split('_'))  # pylint: disable=no-member  # noqa: E501
+        return ' '.join(word.lower() for word in self.value.split('_'))  # pylint: disable=no-member
 
     @classmethod
     def deserialize(cls: type[S], value: str) -> S:
@@ -117,10 +117,10 @@ class SerializableEnumIntValueMixin(SerializableEnumMixin):
     For serialization to/from DB the int value is used"""
 
     def __str__(self) -> str:
-        return ' '.join(word.lower() for word in self.name.split('_'))  # pylint: disable=no-member  # noqa: E501
+        return ' '.join(word.lower() for word in self.name.split('_'))  # pylint: disable=no-member
 
     def serialize(self) -> str:
-        return ' '.join(word.lower() for word in self.value.split('_'))  # pylint: disable=no-member  # noqa: E501
+        return ' '.join(word.lower() for word in self.value.split('_'))  # pylint: disable=no-member
 
     @classmethod
     def deserialize(cls: type[S], value: str) -> S:

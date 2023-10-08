@@ -236,8 +236,8 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):
             # Remove NFTs that the user no longer owns from the DB cache
             write_cursor.execute(
                 f'DELETE FROM nfts WHERE owner_address IN '
-                f'({",".join("?"*len(addresses))}) AND identifier NOT IN '
-                f'({",".join("?"*len(fresh_nfts_identifiers))})',
+                f'({",".join("?" * len(addresses))}) AND identifier NOT IN '
+                f'({",".join("?" * len(fresh_nfts_identifiers))})',
                 tuple(addresses) + tuple(fresh_nfts_identifiers),
             )
 

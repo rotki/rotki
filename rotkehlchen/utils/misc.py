@@ -138,7 +138,7 @@ V = TypeVar('V')
 
 
 @overload
-def combine_dicts(a: dict[K, V], b: dict[K, V], op: Callable = operator.add) -> dict[K, V]:  # type: ignore[misc] # noqa: E501
+def combine_dicts(a: dict[K, V], b: dict[K, V], op: Callable = operator.add) -> dict[K, V]:  # type: ignore[misc]
     ...
 
 
@@ -374,7 +374,7 @@ def create_order_by_rules_list(
     ascending = data['ascending'] if data['ascending'] is not None else default_ascending
     if ascending is None:
         ascending = []
-    return list(zip_longest(order_by_attributes, ascending, fillvalue=is_ascending_by_default))  # type: ignore[arg-type]  # noqa: E501
+    return list(zip_longest(order_by_attributes, ascending, fillvalue=is_ascending_by_default))  # type: ignore[arg-type]
 
 
 def is_production() -> bool:

@@ -195,7 +195,7 @@ def test_fallback_to_coingecko(inquirer):  # pylint: disable=unused-argument
 def test_find_usd_price_cache(inquirer, freezer):  # pylint: disable=unused-argument
     call_count = 0
 
-    def mock_query_price(from_asset, to_asset, match_main_currency):  # pylint: disable=unused-argument  # noqa: E501
+    def mock_query_price(from_asset, to_asset, match_main_currency):  # pylint: disable=unused-argument
         assert from_asset.identifier == 'ETH'
         assert to_asset.identifier == 'USD'
         nonlocal call_count

@@ -27,7 +27,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 SUBGRAPH_REMOTE_ERROR_MSG = (
     'Failed to request the {location} subgraph due to {error_msg}. '
-    'All {location} balances and historical queries are not functioning until this is fixed. '  # noqa: E501
+    'All {location} balances and historical queries are not functioning until this is fixed. '
     "Probably will get fixed with time. If not report it to rotki's support channel"
 )
 

@@ -5,7 +5,7 @@ from rotkehlchen.tests.utils.constants import A_EUR
 from rotkehlchen.types import Price, Timestamp
 
 
-def test_get_historical_price_range(globaldb, historical_price_test_data):  # pylint: disable=unused-argument  # noqa: E501
+def test_get_historical_price_range(globaldb, historical_price_test_data):  # pylint: disable=unused-argument
     assert globaldb.get_historical_price_range(
         from_asset=A_ETH,
         to_asset=A_EUR,
@@ -41,7 +41,7 @@ def test_get_historical_price_range(globaldb, historical_price_test_data):  # py
     ) is None
 
 
-def test_get_historical_price_data(globaldb, historical_price_test_data):  # pylint: disable=unused-argument  # noqa: E501
+def test_get_historical_price_data(globaldb, historical_price_test_data):  # pylint: disable=unused-argument
     data = globaldb.get_historical_price_data(source=HistoricalPriceOracle.CRYPTOCOMPARE)
     assert data == [{
         'from_asset': 'BTC',
@@ -56,7 +56,7 @@ def test_get_historical_price_data(globaldb, historical_price_test_data):  # pyl
     }]
 
 
-def test_get_historical_price(globaldb, historical_price_test_data):  # pylint: disable=unused-argument  # noqa: E501
+def test_get_historical_price(globaldb, historical_price_test_data):  # pylint: disable=unused-argument
     # test normal operation, multiple arguments
     expected_entry = HistoricalPrice(
         from_asset=A_ETH,

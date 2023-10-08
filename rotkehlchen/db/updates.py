@@ -86,7 +86,7 @@ class RotkiDataUpdater:
                     log.warning(f'Not updating {update_type.value} to {update_version=} due to {max_version=}')  # noqa: E501
                     continue  # probably can never apply this update. Check next one
 
-            file_url = f'https://raw.githubusercontent.com/rotki/data/{self.branch}/updates/{update_type.value}/v{update_version}.json'  # noqa: E501
+            file_url = f'https://raw.githubusercontent.com/rotki/data/{self.branch}/updates/{update_type.value}/v{update_version}.json'
             try:
                 updates = query_file(file_url, True)
             except RemoteError as e:
@@ -131,7 +131,7 @@ class RotkiDataUpdater:
         Spam assets update code. Assets are also added to the globaldb if they don't exist
         locally
         """
-        log.info(f'Applying update for spam assets to v{version}. {len(data)} tokens to add')  # noqa: E501
+        log.info(f'Applying update for spam assets to v{version}. {len(data)} tokens to add')
         with GlobalDBHandler().conn.critical_section():
             # Use a critical section to avoid another greenlet adding spam assets at
             # the same time
@@ -234,7 +234,7 @@ class RotkiDataUpdater:
             )
             if existing_name is None:
                 entries_to_add.append(entry)
-            elif raw_entry.get('old_name') is not None and existing_name == raw_entry['old_name']:  # noqa: E501
+            elif raw_entry.get('old_name') is not None and existing_name == raw_entry['old_name']:
                 # If old_name is specified, replace the entry with the old name.
                 db_addressbook.delete_addressbook_entries(
                     book_type=AddressbookType.GLOBAL,
@@ -350,7 +350,7 @@ class RotkiDataUpdater:
         with self.user_db.user_write() as write_cursor:
             log.debug(f'Adding {nodes_to_add} nodes to the user database...')
             write_cursor.executemany(
-                'INSERT INTO rpc_nodes(name, endpoint, owned, active, weight, blockchain) '  # noqa: E501
+                'INSERT INTO rpc_nodes(name, endpoint, owned, active, weight, blockchain) '
                 'VALUES(?, ?, ?, ?, ?, ?)',
                 nodes_to_add,
             )

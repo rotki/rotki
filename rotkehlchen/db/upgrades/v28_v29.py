@@ -95,7 +95,7 @@ def _upgrade_existing_tables(
     );
     """)  # noqa: E501
     cursor.executemany(
-        'INSERT INTO xpub_mappings(address, xpub, derivation_path, account_index, derived_index) '  # noqa: E501
+        'INSERT INTO xpub_mappings(address, xpub, derivation_path, account_index, derived_index) '
         'VALUES(?, ?, ?, ?, ?);',
         xpub_mappings_data,
     )

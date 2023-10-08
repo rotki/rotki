@@ -40,7 +40,7 @@ covalent_tx_receipt_result = {
                     'sender_address_label': None,
                     'sender_contract_decimals': 18,
                     'sender_contract_ticker_symbol': 'PGL',
-                    'sender_logo_url': 'https://logos.covalenthq.com/tokens/43114/0x9ee0a4e21bd333a6bb2ab298194320b8daa26516.png',  # noqa: E501
+                    'sender_logo_url': 'https://logos.covalenthq.com/tokens/43114/0x9ee0a4e21bd333a6bb2ab298194320b8daa26516.png',
                     'sender_name': 'Pangolin Liquidity',
                     'tx_hash': '0x7e7dee4b821331437524d0fd176a5090abbe4e857c849b06dfe9224f00e22f4d',  # noqa: E501
                     'tx_offset': 1},
@@ -60,7 +60,7 @@ covalent_tx_receipt_result = {
                     'sender_address_label': None,
                     'sender_contract_decimals': 18,
                     'sender_contract_ticker_symbol': 'PGL',
-                    'sender_logo_url': 'https://logos.covalenthq.com/tokens/43114/0x9ee0a4e21bd333a6bb2ab298194320b8daa26516.png',  # noqa: E501
+                    'sender_logo_url': 'https://logos.covalenthq.com/tokens/43114/0x9ee0a4e21bd333a6bb2ab298194320b8daa26516.png',
                     'sender_name': 'Pangolin Liquidity',
                     'tx_hash': '0x7e7dee4b821331437524d0fd176a5090abbe4e857c849b06dfe9224f00e22f4d',  # noqa: E501
                     'tx_offset': 1},
@@ -82,7 +82,7 @@ covalent_tx_receipt_result = {
                     'sender_address_label': None,
                     'sender_contract_decimals': 6,
                     'sender_contract_ticker_symbol': 'USDT',
-                    'sender_logo_url': 'https://logos.covalenthq.com/tokens/43114/0xde3a24028580884448a5397872046a019649b084.png',  # noqa: E501
+                    'sender_logo_url': 'https://logos.covalenthq.com/tokens/43114/0xde3a24028580884448a5397872046a019649b084.png',
                     'sender_name': 'Tether USD',
                     'tx_hash': '0x7e7dee4b821331437524d0fd176a5090abbe4e857c849b06dfe9224f00e22f4d',  # noqa: E501
                     'tx_offset': 1},
@@ -104,7 +104,7 @@ covalent_tx_receipt_result = {
                     'sender_address_label': None,
                     'sender_contract_decimals': 18,
                     'sender_contract_ticker_symbol': 'WAVAX',
-                    'sender_logo_url': 'https://logos.covalenthq.com/tokens/0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7.png',  # noqa: E501
+                    'sender_logo_url': 'https://logos.covalenthq.com/tokens/0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7.png',
                     'sender_name': 'Wrapped AVAX',
                     'tx_hash': '0x7e7dee4b821331437524d0fd176a5090abbe4e857c849b06dfe9224f00e22f4d',  # noqa: E501
                     'tx_offset': 1},
@@ -124,7 +124,7 @@ covalent_tx_receipt_result = {
                     'sender_address_label': None,
                     'sender_contract_decimals': 18,
                     'sender_contract_ticker_symbol': 'WAVAX',
-                    'sender_logo_url': 'https://logos.covalenthq.com/tokens/0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7.png',  # noqa: E501
+                    'sender_logo_url': 'https://logos.covalenthq.com/tokens/0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7.png',
                     'sender_name': 'Wrapped AVAX',
                     'tx_hash': '0x7e7dee4b821331437524d0fd176a5090abbe4e857c849b06dfe9224f00e22f4d',  # noqa: E501
                     'tx_offset': 1}],

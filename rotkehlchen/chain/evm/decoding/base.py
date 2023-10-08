@@ -76,7 +76,7 @@ class BaseDecoderTools:
     def any_tracked(self, addresses: Sequence[ChecksumEvmAddress]) -> bool:
         return set(addresses).isdisjoint(self.tracked_accounts.get(self.evm_inquirer.chain_id.to_blockchain())) is False  # noqa: E501
 
-    def maybe_get_proxy_owner(self, address: ChecksumEvmAddress) -> Optional[ChecksumEvmAddress]:  # pylint: disable=unused-argument  # noqa: E501
+    def maybe_get_proxy_owner(self, address: ChecksumEvmAddress) -> Optional[ChecksumEvmAddress]:  # pylint: disable=unused-argument
         """
         Checks whether given address is a proxy owned by any of the tracked accounts.
         If it is a proxy, it returns the owner of the proxy, otherwise `None`.

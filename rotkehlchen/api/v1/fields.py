@@ -170,7 +170,7 @@ class DelimitedOrNormalList(webargs.fields.DelimitedList):
             raise ValidationError('List cant be empty')
 
         # purposefully skip the superclass here
-        return fields.List._deserialize(self, ret, attr, data, **kwargs)  # pylint: disable=bad-super-call  # noqa: E501
+        return fields.List._deserialize(self, ret, attr, data, **kwargs)  # pylint: disable=bad-super-call
 
 
 class TimestampField(fields.Field):
@@ -679,7 +679,7 @@ class AssetTypeField(fields.Field):
 
 class LocationField(fields.Field):
 
-    def __init__(self, *, limit_to: Optional[tuple[Location, ...]] = None, **kwargs: Any) -> None:  # noqa: E501
+    def __init__(self, *, limit_to: Optional[tuple[Location, ...]] = None, **kwargs: Any) -> None:
         self.limit_to = limit_to
         super().__init__(**kwargs)
 

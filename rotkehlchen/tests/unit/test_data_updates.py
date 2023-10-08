@@ -394,7 +394,7 @@ def test_update_contracts(data_updater: RotkiDataUpdater) -> None:
         initial_contracts = cursor.execute('SELECT * FROM contract_data').fetchall()
         assert len(initial_contracts) > 0, 'There should be some contracts in the db'
 
-    with patch('requests.get', wraps=make_single_mock_github_data_response(UpdateType.CONTRACTS)):  # noqa: E501
+    with patch('requests.get', wraps=make_single_mock_github_data_response(UpdateType.CONTRACTS)):
         data_updater.check_for_updates()  # apply the update
 
     remote_id_to_local_id = {}

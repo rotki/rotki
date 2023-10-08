@@ -353,7 +353,7 @@ class Independentreserve(ExchangeInterface):
         try:
             response = self._api_query(verb='post', method_type='Private', path='GetAccounts')
         except RemoteError as e:
-            msg = f'IndependentReserve request failed. Could not reach the exchange due to {e!s}'  # noqa: E501
+            msg = f'IndependentReserve request failed. Could not reach the exchange due to {e!s}'
             log.error(msg)
             return None, msg
 

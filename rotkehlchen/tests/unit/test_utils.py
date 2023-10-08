@@ -188,7 +188,7 @@ class Foo(CacheableMixIn):
         return 5
 
     @cache_response_timewise(arguments_matter=False)
-    def do_something_arguments_dont_matter(self, arg1, arg2, **kwargs):  # pylint: disable=unused-argument  # noqa: E501
+    def do_something_arguments_dont_matter(self, arg1, arg2, **kwargs):  # pylint: disable=unused-argument
         self.do_something_arguments_dont_matter_count += 1
         return arg1 + arg2
 
@@ -305,7 +305,7 @@ def test_convert_to_int():
     (
         '0x00000000000000000000000000000000deadbeef',
         '0x00000000000000000000000000000000000000000000000000000000cafebabe',
-        '0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef',  # noqa: E501
+        '0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef',
         False,
         '0x1d8bfDC5D46DC4f61D6b6115972536eBE6A8854C',
     ),
@@ -375,7 +375,7 @@ def test_jsonloads_list():
 
 @pytest.mark.vcr()
 def test_retrieve_old_erc20_token_info(ethereum_inquirer):
-    info = ethereum_inquirer.get_erc20_contract_info('0x2C4Bd064b998838076fa341A83d007FC2FA50957')  # noqa: E501
+    info = ethereum_inquirer.get_erc20_contract_info('0x2C4Bd064b998838076fa341A83d007FC2FA50957')
     assert info['symbol'] == 'UNI-V1'
     assert info['name'] == 'Uniswap V1'
 

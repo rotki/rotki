@@ -6,8 +6,8 @@ from typing import Callable
 from .constants import INTERVAL_SECONDS
 
 if os.name != 'nt':  # signal on windows doesn't have these attributes
-    TIMER = signal.ITIMER_PROF  # type: ignore[attr-defined,unused-ignore]  # pylint: disable=no-member  # noqa: E501  # linters don't understand the os.name check
-    TIMER_SIGNAL = signal.SIGPROF  # type: ignore[attr-defined,unused-ignore]  # pylint: disable=no-member  # noqa: E501  # linters don't understand the os.name check
+    TIMER = signal.ITIMER_PROF  # type: ignore[attr-defined,unused-ignore]  # pylint: disable=no-member  # linters don't understand the os.name check
+    TIMER_SIGNAL = signal.SIGPROF  # type: ignore[attr-defined,unused-ignore]  # pylint: disable=no-member  # linters don't understand the os.name check
 
 SignalHandler = Callable[[int, FrameType], None]
 
@@ -25,7 +25,7 @@ class Timer:
 
         signal.signal(timer_signal, self.callback)  # type: ignore
         if os.name != 'nt':
-            signal.setitimer(timer, interval, interval)  # type: ignore[attr-defined,unused-ignore]  # pylint: disable=no-member  # noqa: E501  # linters don't understand the os.name check
+            signal.setitimer(timer, interval, interval)  # type: ignore[attr-defined,unused-ignore]  # pylint: disable=no-member  # linters don't understand the os.name check
 
         self._callback = callback
 

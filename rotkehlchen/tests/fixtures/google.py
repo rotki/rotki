@@ -78,7 +78,7 @@ class GoogleService:
             ).execute()
             for file in response.get('files', []):
                 file_id = file.get('id')
-                self.drive_service.files().delete(fileId=file_id).execute()  # noqa: E501 # pylint: disable=no-member
+                self.drive_service.files().delete(fileId=file_id).execute()  # pylint: disable=no-member
                 log.info(f'Deleted drive file: {file.get("name")} with id {file_id}')
 
             page_token = response.get('nextPageToken', None)

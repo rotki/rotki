@@ -157,7 +157,7 @@ def test_associated_locations(database):
                     address=ChecksumEvmAddress('0xa2107FA5B38d9bbd2C461D6EDf11B11A50F6b974'),
                     timestamp=Timestamp(1609301469),
                     event_type=BalancerBPTEventType.MINT,
-                    pool_address_token=EvmToken('eip155:1/erc20:0x514910771AF9Ca656af840dff83E8264EcF986CA'),  # noqa: E501
+                    pool_address_token=EvmToken('eip155:1/erc20:0x514910771AF9Ca656af840dff83E8264EcF986CA'),
                     lp_balance=Balance(amount=FVal(2), usd_value=FVal(3)),
                     amounts=[
                         AssetAmount(ONE),

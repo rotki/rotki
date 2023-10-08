@@ -22,7 +22,7 @@ def _do_query_validator_data(rotki: 'Rotkehlchen') -> None:
         eth2.fetch_and_update_eth1_validator_data(addresses)
 
 
-def data_migration_2(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgressHandler') -> None:  # pylint: disable=unused-argument  # noqa: E501
+def data_migration_2(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgressHandler') -> None:  # pylint: disable=unused-argument
     """
     At v1.23.0 we added a new eth2 validators table and all validators are detected
     from there. But for already existing addresses there is no validators detected

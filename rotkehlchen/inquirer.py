@@ -390,7 +390,7 @@ class Inquirer:
         instance._oracles_not_onchain = []
         instance._oracle_instances_not_onchain = []
         for oracle, oracle_instance in zip(instance._oracles, instance._oracle_instances):
-            if oracle not in (CurrentPriceOracle.UNISWAPV2, CurrentPriceOracle.UNISWAPV3):  # noqa: E501
+            if oracle not in (CurrentPriceOracle.UNISWAPV2, CurrentPriceOracle.UNISWAPV3):
                 instance._oracles_not_onchain.append(oracle)
                 instance._oracle_instances_not_onchain.append(oracle_instance)
 
@@ -444,7 +444,7 @@ class Inquirer:
 
             try:
                 price, used_main_currency = oracle_instance.query_current_price(
-                    from_asset=from_asset,  # type: ignore  # type is guaranteed by the if above  # noqa: E501
+                    from_asset=from_asset,  # type: ignore  # type is guaranteed by the if above
                     to_asset=to_asset,  # type: ignore  # type is guaranteed by the if above
                     match_main_currency=match_main_currency,
                 )
@@ -464,7 +464,7 @@ class Inquirer:
                 # Infinite loop can happen if user creates a loop of manual current prices
                 # (e.g. said that 1 BTC costs 2 ETH and 1 ETH costs 5 BTC).
                 instance._msg_aggregator.add_warning(
-                    f'Was not able to find price from {from_asset!s} to {to_asset!s} since your '  # noqa: E501
+                    f'Was not able to find price from {from_asset!s} to {to_asset!s} since your '
                     f'manual latest prices form a loop. For now, other oracles will be used.',
                 )
                 continue
@@ -654,7 +654,7 @@ class Inquirer:
             assert token, 'all assets in special tokens are already ethereum tokens'
             underlying_asset_price, oracle = get_underlying_asset_price(token)
             usd_price = handle_defi_price_query(
-                ethereum=ethereum.node_inquirer,  # type:ignore  # ethereum is an EthereumManager so the inquirer is of the expected type  # noqa: E501
+                ethereum=ethereum.node_inquirer,  # type:ignore  # ethereum is an EthereumManager so the inquirer is of the expected type
                 token=token,
                 underlying_asset_price=underlying_asset_price,
             )
@@ -746,7 +746,7 @@ class Inquirer:
         Returns the price of 1 LP token from the pool
         """
         ethereum = self.get_evm_manager(chain_id=ChainID.ETHEREUM)
-        ethereum.assure_curve_cache_is_queried_and_decoder_updated()  # type:ignore  # ethereum is an EthereumManager here  # noqa: E501
+        ethereum.assure_curve_cache_is_queried_and_decoder_updated()  # type:ignore  # ethereum is an EthereumManager here
 
         with GlobalDBHandler().conn.read_ctx() as cursor:
             pool_address_in_cache = globaldb_get_unique_cache_value(
@@ -926,7 +926,7 @@ class Inquirer:
         return None
 
     @staticmethod
-    def get_fiat_usd_exchange_rates(currencies: Iterable[FiatAsset]) -> dict[FiatAsset, Price]:  # noqa: E501
+    def get_fiat_usd_exchange_rates(currencies: Iterable[FiatAsset]) -> dict[FiatAsset, Price]:
         """Gets the USD exchange rate of any of the given assets
 
         In case of failure to query a rate it's returned as zero"""

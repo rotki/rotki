@@ -244,7 +244,7 @@ class EventsHistorian:
                         end_ts=filter_query.to_ts,
                     )
                 else:
-                    with_errors = exchange_instance.query_lending_interests_history(  # type: ignore  # noqa: E501
+                    with_errors = exchange_instance.query_lending_interests_history(  # type: ignore
                         cursor=cursor,
                         start_ts=filter_query.from_ts,
                         end_ts=filter_query.to_ts,
