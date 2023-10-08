@@ -1,9 +1,7 @@
 from contextlib import suppress
-from typing import Final
 
 from astroid.exceptions import InferenceError
 from pylint.checkers import BaseChecker
-from pylint.interfaces import IAstroidChecker
 
 LOGNOKWARGS_SYMBOL = 'rotki-lognokwargs'
 LOGNOKWARGS_MSG = (
@@ -26,11 +24,10 @@ def register(linter):
 
 class LogNokwargsChecker(BaseChecker):
     """A pylint custom checker to detect if we ever use kwargs in a normal Logger call"""
-    __implements__ = IAstroidChecker
 
     name = 'lognokwargs'
     priority = -1
-    msgs: Final[dict[str, tuple[str, ...]]] = {
+    msgs = {  # noqa: RUF012  # can't control library's base class typing
         'E9001': (
             LOGNOKWARGS_MSG,
             LOGNOKWARGS_SYMBOL,

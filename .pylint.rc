@@ -114,6 +114,9 @@ enable=
     superfluous-parens,
     return-in-init,
     undefined-loop-variable,
+    kwarg-superseded-by-positional-arg,
+#    invalid-field-call,  # https://github.com/pylint-dev/pylint/issues/9130
+    return-in-finally,
     assignment-from-none,
     simplifiable-if-expression,
     bad-super-call,
