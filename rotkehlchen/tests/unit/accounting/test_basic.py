@@ -23,8 +23,11 @@ from rotkehlchen.tests.utils.history import prices
 from rotkehlchen.tests.utils.messages import no_message_errors
 from rotkehlchen.types import (
     EVM_CHAINS_WITH_TRANSACTIONS,
+    AssetAmount,
     CostBasisMethod,
+    Fee,
     Location,
+    Price,
     Timestamp,
     TimestampMS,
     TradeType,
@@ -77,41 +80,41 @@ def test_simple_accounting(accountant, google_service, expected_pnls):
 def test_selling_crypto_bought_with_crypto(accountant, google_service, expected_pnl_totals):
     history = [
         Trade(
-            timestamp=1446979735,
+            timestamp=Timestamp(1446979735),
             location=Location.EXTERNAL,
             base_asset=A_BTC,
             quote_asset=A_EUR,
             trade_type=TradeType.BUY,
-            amount=FVal(82),
-            rate=FVal('268.678317859'),
+            amount=AssetAmount(FVal(82)),
+            rate=Price(FVal('268.678317859')),
             fee=None,
             fee_currency=None,
             link=None,
         ), Trade(
-            timestamp=1449809536,  # cryptocompare hourly BTC/EUR price: 386.175
+            timestamp=Timestamp(1449809536),  # cryptocompare hourly BTC/EUR price: 386.175
             location=Location.POLONIEX,
             base_asset=A_XMR,  # cryptocompare hourly XMR/EUR price: 0.39665
             quote_asset=A_BTC,
             trade_type=TradeType.BUY,
-            amount=FVal(375),
-            rate=FVal('0.0010275'),
-            fee=FVal('0.9375'),
+            amount=AssetAmount(FVal(375)),
+            rate=Price(FVal('0.0010275')),
+            fee=Fee(FVal('0.9375')),
             fee_currency=A_XMR,
             link=None,
         ), Trade(
-            timestamp=1458070370,  # cryptocompare hourly rate XMR/EUR price: 1.0443027675
+            timestamp=Timestamp(1458070370),  # cryptocompare hourly rate XMR/EUR price: 1.0443027675  # noqa: E501
             location=Location.KRAKEN,
             base_asset=A_XMR,
             quote_asset=A_EUR,
             trade_type=TradeType.SELL,
-            amount=FVal(45),
-            rate=FVal('1.0443027675'),
-            fee=FVal('0.117484061344'),
+            amount=AssetAmount(FVal(45)),
+            rate=Price(FVal('1.0443027675')),
+            fee=Fee(FVal('0.117484061344')),
             fee_currency=A_XMR,
             link=None,
         ),
     ]
-    accounting_history_process(accountant, 1436979735, 1495751688, history)
+    accounting_history_process(accountant, Timestamp(1436979735), Timestamp(1495751688), history)
     no_message_errors(accountant.msg_aggregator)
     # Make sure buying XMR with BTC also creates a BTC sell
     sells = accountant.pots[0].cost_basis.get_events(A_BTC).spends
@@ -127,30 +130,30 @@ def test_selling_crypto_bought_with_crypto(accountant, google_service, expected_
 def test_buy_event_creation(accountant):
     history = [
         Trade(
-            timestamp=1476979735,
+            timestamp=Timestamp(1476979735),
             location=Location.KRAKEN,
             base_asset=A_BTC,
             quote_asset=A_EUR,
             trade_type=TradeType.BUY,
-            amount=FVal(5),
-            rate=FVal('578.505'),
-            fee=FVal('0.0012'),
+            amount=AssetAmount(FVal(5)),
+            rate=Price(FVal('578.505')),
+            fee=Fee(FVal('0.0012')),
             fee_currency=A_BTC,
             link=None,
         ), Trade(
-            timestamp=1476979735,
+            timestamp=Timestamp(1476979735),
             location=Location.KRAKEN,
             base_asset=A_BTC,
             quote_asset=A_EUR,
             trade_type=TradeType.BUY,
-            amount=FVal(5),
-            rate=FVal('578.505'),
-            fee=FVal('0.0012'),
+            amount=AssetAmount(FVal(5)),
+            rate=Price(FVal('578.505')),
+            fee=Fee(FVal('0.0012')),
             fee_currency=A_EUR,
             link=None,
         ),
     ]
-    accounting_history_process(accountant, 1436979735, 1519693374, history)
+    accounting_history_process(accountant, Timestamp(1436979735), Timestamp(1519693374), history)
     no_message_errors(accountant.msg_aggregator)
     buys = accountant.pots[0].cost_basis.get_events(A_BTC).acquisitions_manager.get_acquisitions()
     assert len(buys) == 2
@@ -168,21 +171,21 @@ def test_buy_event_creation(accountant):
 def test_no_corresponding_buy_for_sell(accountant, google_service):
     """Test that if there is no corresponding buy for a sell, the entire sell counts as profit"""
     history = [Trade(
-        timestamp=1476979735,
+        timestamp=Timestamp(1476979735),
         location=Location.KRAKEN,
         base_asset=A_BTC,
         quote_asset=A_EUR,
         trade_type=TradeType.SELL,
-        amount=ONE,
-        rate=FVal('2519.62'),
-        fee=FVal('0.02'),
+        amount=AssetAmount(ONE),
+        rate=Price(FVal('2519.62')),
+        fee=Fee(FVal('0.02')),
         fee_currency=A_EUR,
         link=None,
     )]
     accounting_history_process(
         accountant=accountant,
-        start_ts=1436979735,
-        end_ts=1519693374,
+        start_ts=Timestamp(1436979735),
+        end_ts=Timestamp(1519693374),
         history_list=history,
     )
 
@@ -198,8 +201,8 @@ def test_accounting_works_for_empty_history(accountant, google_service):
     history = []
     accounting_history_process(
         accountant=accountant,
-        start_ts=1436979735,
-        end_ts=1519693374,
+        start_ts=Timestamp(1436979735),
+        end_ts=Timestamp(1519693374),
         history_list=history,
     )
     no_message_errors(accountant.msg_aggregator)
@@ -219,52 +222,147 @@ def test_sell_fiat_for_crypto(accountant, google_service):
     """
     history = [
         Trade(
-            timestamp=1446979735,
+            timestamp=Timestamp(1446979735),
             location=Location.KRAKEN,
             base_asset=A_EUR,
             quote_asset=A_BTC,
             trade_type=TradeType.SELL,
-            amount=FVal(2000),
-            rate=FVal('0.002'),
-            fee=FVal('0.0012'),
+            amount=AssetAmount(FVal(2000)),
+            rate=Price(FVal('0.002')),
+            fee=Fee(FVal('0.0012')),
             fee_currency=A_EUR,
             link=None,
         ), Trade(
             # Selling 500 CHF for ETH with 0.004 CHF/ETH. + 0.02 EUR
             # That means 2 ETH for 500 CHF + 0.02 EUR -> with 1.001 CHF/EUR ->
             # (500*1.001 + 0.02)/2 -> 250.26 EUR per ETH
-            timestamp=1496979735,
+            timestamp=Timestamp(1496979735),
             location=Location.KRAKEN,
             base_asset=A_CHF,
             quote_asset=A_ETH,
             trade_type=TradeType.SELL,
-            amount=FVal(500),
-            rate=FVal('0.004'),
-            fee=FVal('0.02'),
+            amount=AssetAmount(FVal(500)),
+            rate=Price(FVal('0.004')),
+            fee=Fee(FVal('0.02')),
             fee_currency=A_EUR,
             link=None,
         ), Trade(
-            timestamp=1506979735,
+            timestamp=Timestamp(1506979735),
             location=Location.KRAKEN,
             base_asset=A_ETH,
             quote_asset=A_EUR,
             trade_type=TradeType.SELL,
-            amount=ONE,
-            rate=FVal(25000),
-            fee=FVal('0.02'),
+            amount=AssetAmount(ONE),
+            rate=Price(FVal(25000)),
+            fee=Fee(FVal('0.02')),
             fee_currency=A_EUR,
             link=None,
         ),
     ]
     accounting_history_process(
         accountant=accountant,
-        start_ts=1436979735,
-        end_ts=1519693374,
+        start_ts=Timestamp(1436979735),
+        end_ts=Timestamp(1519693374),
         history_list=history,
     )
     no_message_errors(accountant.msg_aggregator)
     expected_pnls = PnlTotals({
         AccountingEventType.TRADE: PNL(taxable=FVal('24749.72'), free=ZERO),
+    })
+    check_pnls_and_csv(accountant, expected_pnls, google_service)
+
+
+@pytest.mark.parametrize('db_settings', [{
+    'taxfree_after_period': -1,
+}])
+@pytest.mark.parametrize('mocked_price_queries', [prices])
+def test_direct_profit_currency_fiat_trades(accountant, google_service):
+    """Test that buying crypto with fiat and then selling crypto for fiat takes the
+    trade rate as is, if it's the chosen profit currency
+    """
+    buy_price, sell_price = Price(FVal('0.80')), Price(FVal('10.9'))
+    history = [
+        Trade(
+            timestamp=Timestamp(1446979735),  # 1 ETH = 0.8583 EUR according to oracle
+            location=Location.KRAKEN,
+            base_asset=A_ETH,
+            quote_asset=A_EUR,
+            trade_type=TradeType.BUY,
+            amount=AssetAmount(FVal(1)),
+            rate=buy_price,  # But we bought in discount
+            fee=Fee(ZERO),
+            fee_currency=A_EUR,
+            link=None,
+        ), Trade(
+            timestamp=Timestamp(1463508234),  # 1 ETH = 10.785 EUR according to oracle
+            location=Location.KRAKEN,
+            base_asset=A_ETH,
+            quote_asset=A_EUR,
+            trade_type=TradeType.SELL,
+            amount=AssetAmount(FVal(1)),
+            rate=sell_price,  # But we sold for more than oracle
+            fee=Fee(ZERO),
+            fee_currency=A_EUR,
+            link=None,
+        ),
+    ]
+    accounting_history_process(
+        accountant=accountant,
+        start_ts=Timestamp(1436979735),
+        end_ts=Timestamp(1519693374),
+        history_list=history,
+    )
+    no_message_errors(accountant.msg_aggregator)
+    expected_pnls = PnlTotals({
+        AccountingEventType.TRADE: PNL(taxable=sell_price - buy_price, free=ZERO),
+    })
+    check_pnls_and_csv(accountant, expected_pnls, google_service)
+
+
+@pytest.mark.parametrize('db_settings', [{
+    'taxfree_after_period': -1,
+}])
+@pytest.mark.parametrize('mocked_price_queries', [prices])
+def test_other_currency_fiat_trades(accountant, google_service):
+    """Test that buying crypto with fiat and then selling crypto for fiat takes the
+    price from the fiat part.
+    """
+    buy_price, sell_price = Price(FVal('0.80')), Price(FVal('10.9'))
+    history = [
+        Trade(
+            timestamp=Timestamp(1446979735),  # 1 ETH = 0.8583 EUR according to oracle
+            location=Location.KRAKEN,
+            base_asset=A_ETH,
+            quote_asset=A_USD,
+            trade_type=TradeType.BUY,
+            amount=AssetAmount(FVal(1)),
+            rate=buy_price,  # But we bought in discount
+            fee=Fee(ZERO),
+            fee_currency=A_USD,
+            link=None,
+        ), Trade(
+            timestamp=Timestamp(1463508234),  # 1 ETH = 10.785 EUR according to oracle
+            location=Location.KRAKEN,
+            base_asset=A_ETH,
+            quote_asset=A_USD,  # USD/EUR -> 0.8878
+            trade_type=TradeType.SELL,
+            amount=AssetAmount(FVal(1)),
+            rate=sell_price,  # But we sold for more than oracle
+            fee=Fee(ZERO),
+            fee_currency=A_USD,
+            link=None,
+        ),
+    ]
+    accounting_history_process(
+        accountant=accountant,
+        start_ts=Timestamp(1436979735),
+        end_ts=Timestamp(1519693374),
+        history_list=history,
+    )
+    no_message_errors(accountant.msg_aggregator)
+    expected_pnl = sell_price * prices['USD']['EUR'][history[1].timestamp] - buy_price * prices['USD']['EUR'][history[0].timestamp]  # noqa: E501
+    expected_pnls = PnlTotals({
+        AccountingEventType.TRADE: PNL(taxable=expected_pnl, free=ZERO),
     })
     check_pnls_and_csv(accountant, expected_pnls, google_service)
 
@@ -286,17 +384,17 @@ def test_asset_and_price_not_found_in_history_processing(accountant):
         base_asset=A_EUR,
         quote_asset=A_BTC,
         trade_type=TradeType.BUY,
-        amount=FVal('2.5'),
-        rate=FVal(.11000),
-        fee=FVal('0.15'),
+        amount=AssetAmount(FVal('2.5')),
+        rate=Price(FVal(.11000)),
+        fee=Fee(FVal('0.15')),
         fee_currency=fgp,
         link=None,
     )
     history = [trade, trade]  # duplicate missing price
     accounting_history_process(
         accountant,
-        start_ts=0,
-        end_ts=1514764799,  # 31/12/2017
+        start_ts=Timestamp(0),
+        end_ts=Timestamp(1514764799),  # 31/12/2017
         history_list=history,
     )
     errors = accountant.msg_aggregator.consume_errors()
@@ -326,17 +424,17 @@ def test_acquisition_price_not_found(accountant, google_service):
             asset=A_COMP,
             balance=Balance(amount=ONE),
         ), Trade(
-            timestamp=1635314397,  # cryptocompare hourly COMP/EUR price: 261.39
+            timestamp=Timestamp(1635314397),  # cryptocompare hourly COMP/EUR price: 261.39
             location=Location.POLONIEX,
             base_asset=A_COMP,
             quote_asset=A_EUR,
             trade_type=TradeType.SELL,
-            amount=ONE,
-            rate=FVal('261.39'),
+            amount=AssetAmount(ONE),
+            rate=Price(FVal('261.39')),
             link=None,
         ),
     ]
-    accounting_history_process(accountant, 1436979735, 1636314397, history)
+    accounting_history_process(accountant, Timestamp(1436979735), Timestamp(1636314397), history)
     no_message_errors(accountant.msg_aggregator)
     comp_acquisitions = accountant.pots[0].cost_basis.get_events(A_COMP).used_acquisitions
     assert len(comp_acquisitions) == 1
@@ -351,27 +449,27 @@ def test_acquisition_price_not_found(accountant, google_service):
 def test_no_fiat_missing_acquisitions(accountant):
     history = [
         Trade(
-            timestamp=1459024920,
+            timestamp=Timestamp(1459024920),
             location=Location.UPHOLD,
             base_asset=A_EUR,
             quote_asset=A_USD,
             trade_type=TradeType.BUY,
-            amount=ONE,
-            rate=FVal('0.8982'),
+            amount=AssetAmount(ONE),
+            rate=Price(FVal('0.8982')),
             link=None,
         ),
         Trade(
-            timestamp=1446979735,
+            timestamp=Timestamp(1446979735),
             location=Location.POLONIEX,
             base_asset=A_BTC,
             quote_asset=A_EUR,
             trade_type=TradeType.BUY,
-            amount=ONE,
-            rate=FVal(355.9),
+            amount=AssetAmount(ONE),
+            rate=Price(FVal(355.9)),
             link=None,
         ),
     ]
-    accounting_history_process(accountant, 1446979735, 1635314397, history)
+    accounting_history_process(accountant, Timestamp(1446979735), Timestamp(1635314397), history)
     no_message_errors(accountant.msg_aggregator)
     missing_acquisitions = accountant.pots[0].cost_basis.missing_acquisitions
     assert missing_acquisitions == []
