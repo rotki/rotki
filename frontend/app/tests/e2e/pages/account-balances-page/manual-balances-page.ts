@@ -145,7 +145,7 @@ export class ManualBalancesPage {
     cy.get('[data-cy="manual-balances"] tbody')
       .find('tr')
       .eq(position)
-      .find('button.actions__edit')
+      .find('button[data-cy="row-edit"]')
       .click();
 
     cy.get('[data-cy="manual-balance-form"]').as('edit-form');
@@ -158,7 +158,7 @@ export class ManualBalancesPage {
     cy.get('[data-cy="manual-balances"] tbody')
       .find('tr')
       .eq(position)
-      .find('button.actions__delete')
+      .find('button[data-cy="row-delete"]')
       .click();
 
     this.confirmDelete();

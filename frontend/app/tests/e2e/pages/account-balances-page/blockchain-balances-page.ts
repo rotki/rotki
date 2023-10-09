@@ -172,7 +172,7 @@ export class BlockchainBalancesPage {
     cy.get(`[data-cy=account-table][data-location=${balance.blockchain}] tbody`)
       .find('tr')
       .eq(position + (this.isGroupped(balance) ? 0 : 1))
-      .find('button.actions__edit')
+      .find('button[data-cy="row-edit"]')
       .click();
 
     cy.get('[data-cy="blockchain-balance-form"]').as('edit-form');

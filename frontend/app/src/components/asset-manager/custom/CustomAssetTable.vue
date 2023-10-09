@@ -24,7 +24,6 @@ withDefaults(
 );
 
 const emit = defineEmits<{
-  (e: 'add'): void;
   (e: 'edit', asset: CustomAsset): void;
   (e: 'delete-asset', asset: CustomAsset): void;
   (e: 'update:pagination', pagination: CustomAssetRequestPayload): void;
@@ -58,7 +57,6 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
   }
 ]);
 
-const add = () => emit('add');
 const edit = (asset: CustomAsset) => emit('edit', asset);
 const deleteAsset = (asset: CustomAsset) => emit('delete-asset', asset);
 const updatePagination = (pagination: CustomAssetRequestPayload) =>
@@ -77,37 +75,19 @@ const getAsset = (item: CustomAsset) => ({
 </script>
 
 <template>
-  <Card>
-    <template #title>
-      {{ t('common.assets') }}
-    </template>
-    <template #subtitle>
-      {{ t('asset_table.custom.subtitle') }}
-    </template>
-    <template #actions>
-      <VRow>
-        <VCol class="d-none d-md-block" />
-        <VCol cols="12" md="6" class="pb-md-8">
+  <RuiCard>
+    <template #custom-header>
+      <div class="flex justify-between px-4 pt-4">
+        <CustomAssetSubtitleHint />
+        <div class="w-full sm:max-w-[25rem] align-self-center">
           <TableFilter
             :matches="filters"
             :matchers="matchers"
             @update:matches="updateFilter($event)"
           />
-        </VCol>
-      </VRow>
+        </div>
+      </div>
     </template>
-    <VBtn
-      absolute
-      fab
-      top
-      right
-      dark
-      color="primary"
-      data-cy="add-manual-asset"
-      @click="add()"
-    >
-      <VIcon> mdi-plus </VIcon>
-    </VBtn>
     <DataTable
       :items="assets"
       :loading="loading"
@@ -164,5 +144,5 @@ const getAsset = (item: CustomAsset) => ({
         />
       </template>
     </DataTable>
-  </Card>
+  </RuiCard>
 </template>

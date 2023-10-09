@@ -994,9 +994,6 @@
       "message": "Are you sure you want to delete {asset} from the asset database?",
       "title": "Delete asset"
     },
-    "custom": {
-      "title": "Custom Assets"
-    },
     "delete_error": "Could not delete {address}: {message}",
     "edit_error": "Could not edit asset: {message}",
     "edit_title": "Edit an asset",

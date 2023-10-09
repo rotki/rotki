@@ -2,7 +2,7 @@
 const props = defineProps<{
   value: string;
   tooltip: string;
-  size?: string;
+  size?: 'sm' | 'lg';
 }>();
 
 const { value } = toRefs(props);
@@ -16,7 +16,7 @@ const { copy } = useClipboard({ source: value });
   >
     <template #activator>
       <RuiButton :size="size" variant="text" icon @click="copy()">
-        <RuiIcon size="14" name="file-copy-line" />
+        <RuiIcon size="16" name="file-copy-line" />
       </RuiButton>
     </template>
     <span>{{ tooltip }}</span>
