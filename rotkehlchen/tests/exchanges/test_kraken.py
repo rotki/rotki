@@ -545,6 +545,51 @@ def test_kraken_trade_no_counterpart(function_scope_kraken):
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_kraken_failed_withdrawals(function_scope_kraken):
+    """Test that failed withdrawals are processed properly"""
+    kraken = function_scope_kraken
+    kraken.random_trade_data = False
+    kraken.random_ledgers_data = False
+    kraken.cache_ttl_secs = 0
+
+    test_events = """{
+        "ledger": {
+            "W1": {
+                "refid": "1",
+                "time": 1636406000.8555,
+                "type": "withdrawal",
+                "subtype": "",
+                "aclass": "currency",
+                "asset": "ZEUR",
+                "amount": "-1000.0",
+                "fee": "1.0",
+                "balance": "1"
+            },
+            "W2": {
+                "refid": "1",
+                "time": 1636508000.8555,
+                "type": "withdrawal",
+                "subtype": "",
+                "aclass": "currency",
+                "asset": "ZEUR",
+                "amount": "1000",
+                "fee": "-1.0",
+                "balance": "1"
+            }
+        },
+        "count": 2
+    }"""
+
+    target = 'rotkehlchen.tests.utils.kraken.KRAKEN_GENERAL_LEDGER_RESPONSE'
+    with patch(target, new=test_events):
+        withdrawals = kraken.query_online_deposits_withdrawals(
+            start_ts=0,
+            end_ts=Timestamp(1637406001),
+        )
+    assert len(withdrawals) == 0
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_trade_from_kraken_unexpected_data(function_scope_kraken):
     """Test that getting unexpected data from kraken leads to skipping the trade
     and does not lead to a crash"""
