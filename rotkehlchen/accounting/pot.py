@@ -11,6 +11,7 @@ from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL, PnlTotals
 from rotkehlchen.accounting.structures.processed_event import ProcessedAccountingEvent
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.chain.evm.accounting.structures import ACCOUNTING_METHOD_TYPE
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_KFEE
 from rotkehlchen.constants.prices import ZERO_PRICE
@@ -294,7 +295,7 @@ class AccountingPot(CustomizableDateMixin):
 
     def add_asset_change_event(
             self,
-            method: Literal['acquisition', 'spend'],
+            method: ACCOUNTING_METHOD_TYPE,
             event_type: AccountingEventType,
             notes: str,
             location: Location,

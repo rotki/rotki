@@ -1,6 +1,6 @@
 from collections.abc import Iterator
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Literal, NamedTuple, Optional
+from typing import TYPE_CHECKING, Any, NamedTuple, Optional
 
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
 from rotkehlchen.accounting.structures.balance import Balance
@@ -18,6 +18,7 @@ from rotkehlchen.utils.misc import from_gwei
 if TYPE_CHECKING:
     from rotkehlchen.accounting.pot import AccountingPot
     from rotkehlchen.assets.asset import Asset
+    from rotkehlchen.chain.evm.accounting.structures import ACCOUNTING_METHOD_TYPE
 
 
 class ValidatorID(NamedTuple):
@@ -166,7 +167,7 @@ class ValidatorDailyStats(AccountingEventMixin):
         if accounting.settings.eth_staking_taxable_after_withdrawal_enabled is True:
             return 1
 
-        method: Literal['acquisition', 'spend']
+        method: ACCOUNTING_METHOD_TYPE
         if self.pnl > ZERO:
             method = 'acquisition'
         else:

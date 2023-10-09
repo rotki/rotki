@@ -18,6 +18,8 @@ EVM_ACCOUNTS_DETAILS_TOKENS = 'tokens'
 
 LAST_DATA_UPDATES_KEY: Final = 'last_data_updates_ts'
 
+NO_ACCOUNTING_COUNTERPARTY = 'NONE'
+
 
 class UpdateType(Enum):
     SPAM_ASSETS = 'spam_assets'

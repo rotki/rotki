@@ -1,7 +1,7 @@
 import logging
 from abc import ABCMeta, abstractmethod
 from collections.abc import Iterator
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING
 
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.structures.types import HistoryEventType
@@ -11,6 +11,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 if TYPE_CHECKING:
     from rotkehlchen.accounting.pot import AccountingPot
     from rotkehlchen.accounting.structures.evm_event import EvmEvent
+    from rotkehlchen.chain.evm.accounting.structures import ACCOUNTING_METHOD_TYPE
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.user_messages import MessagesAggregator
 
@@ -72,7 +73,7 @@ class DepositableAccountantInterface(ModuleAccountantInterface):
         The return wrapped event needs to have the key `withdrawal_events_num` with the number
         of events in the return event.
         """
-        method: Literal['acquisition', 'spend']
+        method: ACCOUNTING_METHOD_TYPE
         if event.event_type == HistoryEventType.RECEIVE:
             # Pool token is received, which means it is a deposit
             events_to_consume = event.extra_data.get('deposit_events_num', None) if event.extra_data is not None else None  # noqa: E501

@@ -3,15 +3,14 @@ from collections.abc import Iterator
 from typing import TYPE_CHECKING, Any, Optional, TypeVar
 
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
+from rotkehlchen.accounting.rules import AccountingRulesManager
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.evm_event import EvmEvent
-from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.evm.accounting.structures import (
     BaseEventSettings,
     TxAccountingTreatment,
     TxEventSettings,
 )
-from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.constants import ONE
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Price, Timestamp
@@ -22,114 +21,6 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
-
-
-def make_default_accounting_settings(pot: 'AccountingPot') -> dict[str, BaseEventSettings]:
-    """
-    Returns accounting settings for events that can come from various decoders and thus don't have
-    any particular protocol. These settings also allow users to customize events in the UI.
-    Users are supposed to apply these settings in the history view once they become customizable:
-    https://github.com/rotki/rotki/issues/4341
-    """
-    result = {}
-    gas_key = str(HistoryEventType.SPEND) + '__' + str(HistoryEventSubType.FEE) + '__' + CPT_GAS
-    result[gas_key] = BaseEventSettings(
-        taxable=pot.settings.include_gas_costs,
-        count_entire_amount_spend=pot.settings.include_gas_costs,
-        count_cost_basis_pnl=pot.settings.include_crypto2crypto,
-        method='spend',
-    )
-    spend_key = str(HistoryEventType.SPEND) + '__' + str(HistoryEventSubType.NONE)
-    result[spend_key] = BaseEventSettings(
-        taxable=True,
-        count_entire_amount_spend=True,
-        count_cost_basis_pnl=True,
-        method='spend',
-    )
-    receive_key = str(HistoryEventType.RECEIVE) + '__' + str(HistoryEventSubType.NONE)
-    result[receive_key] = BaseEventSettings(
-        taxable=True,
-        count_entire_amount_spend=True,
-        count_cost_basis_pnl=True,
-        method='acquisition',
-    )
-    fee_key = str(HistoryEventType.SPEND) + '__' + str(HistoryEventSubType.FEE)
-    result[fee_key] = BaseEventSettings(
-        taxable=True,
-        count_entire_amount_spend=True,
-        count_cost_basis_pnl=True,
-        method='spend',
-    )
-    deposit_key = str(HistoryEventType.DEPOSIT) + '__' + str(HistoryEventSubType.NONE)
-    result[deposit_key] = BaseEventSettings(
-        taxable=False,
-        count_entire_amount_spend=False,
-        count_cost_basis_pnl=False,
-        method='spend',
-    )
-    withdrawal_key = str(HistoryEventType.WITHDRAWAL) + '__' + str(HistoryEventSubType.NONE)
-    result[withdrawal_key] = BaseEventSettings(
-        taxable=False,
-        count_entire_amount_spend=False,
-        count_cost_basis_pnl=False,
-        method='spend',
-    )
-    renew_key = str(HistoryEventType.RENEW) + '__' + str(HistoryEventSubType.NONE)
-    result[renew_key] = BaseEventSettings(
-        taxable=True,
-        count_entire_amount_spend=True,
-        count_cost_basis_pnl=True,
-        method='spend',
-    )
-    swap_key = str(HistoryEventType.TRADE) + '__' + str(HistoryEventSubType.SPEND)
-    result[swap_key] = BaseEventSettings(
-        taxable=True,
-        count_entire_amount_spend=False,
-        count_cost_basis_pnl=True,
-        method='spend',
-        accounting_treatment=TxAccountingTreatment.SWAP,
-    )
-    airdrop_key = str(HistoryEventType.RECEIVE) + '__' + str(HistoryEventSubType.AIRDROP)
-    result[airdrop_key] = BaseEventSettings(
-        taxable=False,  # this needs to become configurable as per https://github.com/rotki/rotki/issues/4341 since it used to respect the airdrop ledger action settings  # noqa: E501
-        # count_entire_amount_spend and count_cost_basis_pnl don't matter for acquisitions.
-        count_entire_amount_spend=False,
-        count_cost_basis_pnl=False,
-        method='acquisition',
-    )
-    reward_key = str(HistoryEventType.RECEIVE) + '__' + str(HistoryEventSubType.REWARD)
-    result[reward_key] = BaseEventSettings(
-        taxable=True,
-        # count_entire_amount_spend and count_cost_basis_pnl don't matter for acquisitions.
-        count_entire_amount_spend=False,
-        count_cost_basis_pnl=False,
-        method='acquisition',
-    )
-    staking_reward_key = str(HistoryEventType.STAKING) + '__' + str(HistoryEventSubType.REWARD)
-    result[staking_reward_key] = BaseEventSettings(
-        taxable=True,
-        # count_entire_amount_spend and count_cost_basis_pnl don't matter for acquisitions.
-        count_entire_amount_spend=False,
-        count_cost_basis_pnl=False,
-        method='acquisition',
-    )
-    staking_deposit_key = str(HistoryEventType.STAKING) + '__' + str(HistoryEventSubType.DEPOSIT_ASSET)  # noqa: E501
-    result[staking_deposit_key] = BaseEventSettings(
-        taxable=False,
-        count_entire_amount_spend=False,
-        count_cost_basis_pnl=False,
-        method='spend',
-    )
-    staking_withdrawal_key = str(HistoryEventType.STAKING) + '__' + str(HistoryEventSubType.REMOVE_ASSET)  # noqa: E501
-    result[staking_withdrawal_key] = BaseEventSettings(
-        taxable=False,
-        count_entire_amount_spend=False,
-        count_cost_basis_pnl=False,
-        method='acquisition',
-    )
-    return result
-
-
 T = TypeVar('T', bound=HistoryBaseEntry)
 
 
@@ -166,14 +57,14 @@ class EventsAccountant:
     ) -> None:
         self.evm_accounting_aggregators = evm_accounting_aggregators
         self.pot = pot
-        self.event_settings: dict[str, BaseEventSettings] = {}
+        self.rules_manager = AccountingRulesManager(
+            database=self.pot.database,
+            evm_aggregators=self.evm_accounting_aggregators,
+            pot=self.pot,
+        )
 
     def reset(self) -> None:
-        self.evm_accounting_aggregators.reset()
-        self.event_settings = (  # Using | operator is fine since keys are unique
-            self.evm_accounting_aggregators.get_accounting_settings(self.pot) |
-            make_default_accounting_settings(self.pot)
-        )
+        self.rules_manager.reset()
 
     def process(
             self,
@@ -182,21 +73,13 @@ class EventsAccountant:
     ) -> int:
         """Process a history base entry and return number of actions consumed from the iterator"""
         timestamp = event.get_timestamp_in_sec()
-        event_settings = self.event_settings.get(event.get_type_identifier(), None)
+        event_settings = self.rules_manager.get_event_settings(event)
         if event_settings is None:
-            if isinstance(event, EvmEvent) is False:
-                return 1
-
-            # For evm events try to find settings without counterparty
-            event_settings = self.event_settings.get(
-                event.get_type_identifier(include_counterparty=False),
+            log.debug(
+                f'During transaction accounting found history base entry {event} '
+                f'with no mapped event settings. Skipping...',
             )
-            if event_settings is None:
-                log.debug(
-                    f'During transaction accounting found history base entry {event} '
-                    f'with no mapped event settings. Skipping...',
-                )
-                return 1
+            return 1
 
         # if there is any module specific accountant functionality call it
         if (

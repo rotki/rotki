@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from rotkehlchen.accounting.structures.evm_event import get_tx_event_type_identifier
+from rotkehlchen.accounting.structures.base import get_event_type_identifier
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 
 from .interfaces import ModuleAccountantInterface
@@ -26,7 +26,7 @@ class BaseAirdropsAccountant(ModuleAccountantInterface):
     def event_settings(self, pot: 'AccountingPot') -> dict[str, 'TxEventSettings']:
         """Being defined at function call time is fine since this function is called only once"""
         return {
-            get_tx_event_type_identifier(HistoryEventType.RECEIVE, HistoryEventSubType.AIRDROP, protocol): TxEventSettings(  # noqa: E501
+            get_event_type_identifier(HistoryEventType.RECEIVE, HistoryEventSubType.AIRDROP, protocol): TxEventSettings(  # noqa: E501
                 taxable=False,  # this used to depend on ledger actions. Needs https://github.com/rotki/rotki/issues/4341  # noqa: E501
                 count_entire_amount_spend=False,
                 count_cost_basis_pnl=False,

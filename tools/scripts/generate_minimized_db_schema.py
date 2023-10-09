@@ -1,5 +1,5 @@
 """
-This script generates a minimized db schema (either user or globabl databases) for schema
+This script generates a minimized db schema (either user or global databases) for schema
 sanity check and puts it either in rotkehlchen/db/minimized_schema.py or
 rotkehlchen/globaldb/minimized_schema.py depending on the mode.
 The mode is selected by passing either --db-name user or --db-name global.

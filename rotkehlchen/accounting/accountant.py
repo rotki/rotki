@@ -212,6 +212,10 @@ class Accountant:
             total_actions=actions_length,
             pnls=self.pots[0].pnls,
         )
+
+        for pot in self.pots:  # delete rules stored in memory since they won't be needed and can be queried again from the db  # noqa: E501
+            pot.events_accountant.rules_manager.clean_rules()
+
         return report_id
 
     def _process_event(

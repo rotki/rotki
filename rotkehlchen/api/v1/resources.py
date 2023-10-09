@@ -14,12 +14,18 @@ from webargs.flaskparser import parser, use_kwargs
 from webargs.multidictproxy import MultiDictProxy
 from werkzeug.datastructures import FileStorage
 
-from rotkehlchen.accounting.structures.types import ActionType
+from rotkehlchen.accounting.structures.types import (
+    ActionType,
+    HistoryEventSubType,
+    HistoryEventType,
+)
 from rotkehlchen.api.rest import RestAPI, api_response, wrap_in_fail_result
 from rotkehlchen.api.v1.parser import ignore_kwarg_parser, resource_parser
 from rotkehlchen.api.v1.schemas import (
     AccountingReportDataSchema,
     AccountingReportsSchema,
+    AccountingRuleIdSchema,
+    AccountingRulesQuerySchema,
     AddressbookAddressesSchema,
     AddressbookUpdateSchema,
     AllBalancesQuerySchema,
@@ -52,10 +58,12 @@ from rotkehlchen.api.v1.schemas import (
     ClearAvatarsCacheSchema,
     ClearCacheSchema,
     ClearIconsCacheSchema,
+    CreateAccountingRuleSchema,
     CurrentAssetsPriceSchema,
     CustomAssetsQuerySchema,
     DataImportSchema,
     DetectTokensSchema,
+    EditAccountingRuleSchema,
     EditEvmEventSchema,
     EditSettingsSchema,
     EnsAvatarsSchema,
@@ -168,6 +176,7 @@ from rotkehlchen.chain.evm.types import NodeName, WeightedNode
 from rotkehlchen.constants.location_details import LOCATION_DETAILS
 from rotkehlchen.data_import.manager import DataImportSource
 from rotkehlchen.db.filtering import (
+    AccountingRulesFilterQuery,
     AddressbookFilterQuery,
     AssetMovementsFilterQuery,
     AssetsFilterQuery,
@@ -229,6 +238,7 @@ from .types import (
 if TYPE_CHECKING:
     from rotkehlchen.accounting.structures.evm_event import EvmEvent
     from rotkehlchen.chain.bitcoin.hdkey import HDKey
+    from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings
     from rotkehlchen.db.filtering import HistoryEventFilterQuery
     from rotkehlchen.exchanges.kraken import KrakenAccountType
 
@@ -2922,3 +2932,64 @@ class ExportHistoryEventResource(BaseMethodView):
     @use_kwargs(put_schema, location='json_and_query')
     def put(self, filter_query: 'HistoryBaseEntryFilterQuery') -> Response:
         return self.rest_api.export_history_events(filter_query=filter_query, directory_path=None)
+
+
+class AccountingRulesResource(BaseMethodView):
+
+    put_schema = CreateAccountingRuleSchema()
+    delete_schema = AccountingRuleIdSchema()
+    post_schema = AccountingRulesQuerySchema()
+    patch_schema = EditAccountingRuleSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(put_schema, location='json_and_query')
+    def put(
+            self,
+            event_type: HistoryEventType,
+            event_subtype: HistoryEventSubType,
+            counterparty: Optional[str],
+            rule: 'BaseEventSettings',
+    ) -> Response:
+        return self.rest_api.add_accounting_rule(
+            event_type=event_type,
+            event_subtype=event_subtype,
+            counterparty=counterparty,
+            rule=rule,
+        )
+
+    @require_loggedin_user()
+    @use_kwargs(patch_schema, location='json_and_query')
+    def patch(
+            self,
+            event_type: HistoryEventType,
+            event_subtype: HistoryEventSubType,
+            counterparty: Optional[str],
+            rule: 'BaseEventSettings',
+            identifier: int,
+    ) -> Response:
+        return self.rest_api.update_accounting_rule(
+            event_type=event_type,
+            event_subtype=event_subtype,
+            counterparty=counterparty,
+            rule=rule,
+            identifier=identifier,
+        )
+
+    @require_loggedin_user()
+    @use_kwargs(post_schema, location='json_and_query')
+    def post(self, filter_query: 'AccountingRulesFilterQuery') -> Response:
+        return self.rest_api.query_accounting_rules(filter_query)
+
+    @require_loggedin_user()
+    @use_kwargs(delete_schema, location='json_and_query')
+    def delete(
+            self,
+            event_type: HistoryEventType,
+            event_subtype: HistoryEventSubType,
+            counterparty: Optional[str],
+    ) -> Response:
+        return self.rest_api.delete_accounting_rule(
+            event_type=event_type,
+            event_subtype=event_subtype,
+            counterparty=counterparty,
+        )

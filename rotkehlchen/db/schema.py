@@ -659,6 +659,21 @@ CREATE TABLE IF NOT EXISTS user_notes(
 );
 """
 
+DB_CREATE_ACCOUNTING_RULE = """
+CREATE TABLE IF NOT EXISTS accounting_rules(
+    identifier INTEGER NOT NULL PRIMARY KEY,
+    type TEXT NOT NULL,
+    subtype TEXT NOT NULL,
+    counterparty TEXT NOT NULL,
+    taxable INTEGER NOT NULL CHECK (taxable IN (0, 1)),
+    count_entire_amount_spend INTEGER NOT NULL CHECK (count_entire_amount_spend IN (0, 1)),
+    count_cost_basis_pnl INTEGER NOT NULL CHECK (count_cost_basis_pnl IN (0, 1)),
+    method TEXT,
+    accounting_treatment TEXT,
+    UNIQUE(type, subtype, counterparty)
+);
+"""
+
 DB_SCRIPT_CREATE_TABLES = f"""
 PRAGMA foreign_keys=off;
 BEGIN TRANSACTION;
@@ -709,6 +724,7 @@ BEGIN TRANSACTION;
 {DB_CREATE_RPC_NODES}
 {DB_CREATE_USER_NOTES}
 {DB_CREATE_SKIPPED_EXTERNAL_EVENTS}
+{DB_CREATE_ACCOUNTING_RULE}
 COMMIT;
 PRAGMA foreign_keys=on;
 """

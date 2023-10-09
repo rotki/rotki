@@ -138,12 +138,12 @@ def test_balancer_multiple_deposit(accountant: 'Accountant', ethereum_inquirer: 
     """Test that the default accounting settings for balancer are correct"""
     pot = accountant.pots[0]
     events_accountant = pot.events_accountant
-    curve_accountant = Balancerv1Accountant(
+    balancer_accountant = Balancerv1Accountant(
         node_inquirer=ethereum_inquirer,
         msg_aggregator=ethereum_inquirer.database.msg_aggregator,
     )
-    curve_settings = curve_accountant.event_settings(pot)
-    events_accountant.event_settings.update(curve_settings)
+    balancer_settings = balancer_accountant.event_settings(pot)
+    events_accountant.rules_manager.event_settings.update(balancer_settings)
     events_iterator = iter(DEPOSIT_ENTRIES)
     for event in events_iterator:
         pot.events_accountant.process(event=event, events_iterator=events_iterator)

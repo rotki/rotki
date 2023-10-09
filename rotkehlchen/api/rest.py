@@ -111,6 +111,7 @@ from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.constants.resolver import ChainID
 from rotkehlchen.constants.timing import ENS_AVATARS_REFRESH
 from rotkehlchen.data_import.manager import DataImportSource
+from rotkehlchen.db.accounting_rules import DBAccountingRules
 from rotkehlchen.db.addressbook import DBAddressbook
 from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED
 from rotkehlchen.db.custom_assets import DBCustomAssets
@@ -118,6 +119,7 @@ from rotkehlchen.db.ens import DBEns
 from rotkehlchen.db.eth2 import DBEth2
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import (
+    AccountingRulesFilterQuery,
     AddressbookFilterQuery,
     AssetMovementsFilterQuery,
     AssetsFilterQuery,
@@ -232,6 +234,7 @@ if TYPE_CHECKING:
     from rotkehlchen.accounting.structures.evm_event import EvmEvent
     from rotkehlchen.chain.bitcoin.xpub import XpubData
     from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings
     from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
     from rotkehlchen.chain.evm.manager import EvmManager
     from rotkehlchen.db.dbhandler import DBHandler
@@ -4435,3 +4438,76 @@ class RestAPI:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+
+    def add_accounting_rule(
+            self,
+            event_type: HistoryEventType,
+            event_subtype: HistoryEventSubType,
+            counterparty: Optional[str],
+            rule: 'BaseEventSettings',
+    ) -> Response:
+        db = DBAccountingRules(self.rotkehlchen.data.db)
+        try:
+            db.add_accounting_rule(
+                event_type=event_type,
+                event_subtype=event_subtype,
+                counterparty=counterparty,
+                rule=rule,
+            )
+        except InputError as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
+
+        return api_response(_wrap_in_ok_result(True), status_code=HTTPStatus.OK)
+
+    def update_accounting_rule(
+            self,
+            event_type: HistoryEventType,
+            event_subtype: HistoryEventSubType,
+            counterparty: Optional[str],
+            rule: 'BaseEventSettings',
+            identifier: int,
+    ) -> Response:
+        db = DBAccountingRules(self.rotkehlchen.data.db)
+        try:
+            db.update_accounting_rule(
+                event_type=event_type,
+                event_subtype=event_subtype,
+                counterparty=counterparty,
+                rule=rule,
+                identifier=identifier,
+            )
+        except InputError as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
+
+        return api_response(_wrap_in_ok_result(True), status_code=HTTPStatus.OK)
+
+    def delete_accounting_rule(
+            self,
+            event_type: HistoryEventType,
+            event_subtype: HistoryEventSubType,
+            counterparty: Optional[str],
+    ) -> Response:
+        db = DBAccountingRules(self.rotkehlchen.data.db)
+        try:
+            db.remove_accounting_rule(
+                event_type=event_type,
+                event_subtype=event_subtype,
+                counterparty=counterparty,
+            )
+        except InputError as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
+
+        return api_response(_wrap_in_ok_result(True), status_code=HTTPStatus.OK)
+
+    def query_accounting_rules(self, filter_query: AccountingRulesFilterQuery) -> Response:
+        db = self.rotkehlchen.data.db
+        entries, total_filter_count = DBAccountingRules(db).query_rules_and_serialize(filter_query=filter_query)  # noqa: E501
+        with db.conn.read_ctx() as cursor:
+            result = {
+                'entries': entries,
+                'entries_found': total_filter_count,
+                'entries_total': self.rotkehlchen.data.db.get_entries_count(cursor=cursor, entries_table='accounting_rules'),  # noqa: E501
+                'entries_limit': -1,
+            }
+
+        return api_response(process_result(_wrap_in_ok_result(result)), status_code=HTTPStatus.OK)

@@ -42,7 +42,7 @@ def test_v2_withdraw(accountant: 'Accountant', ethereum_inquirer: 'EvmNodeInquir
         msg_aggregator=ethereum_inquirer.database.msg_aggregator,
     )
     aave_settings = aave_accountant.event_settings(pot)
-    events_accountant.event_settings.update(aave_settings)
+    events_accountant.rules_manager.event_settings.update(aave_settings)
     events_iterator = iter([EvmEvent(
         tx_hash=HASH1,
         sequence_index=0,
@@ -150,7 +150,7 @@ def test_v2_payback(accountant: 'Accountant', ethereum_inquirer: 'EvmNodeInquire
         msg_aggregator=ethereum_inquirer.database.msg_aggregator,
     )
     aave_settings = aave_accountant.event_settings(pot)
-    events_accountant.event_settings.update(aave_settings)
+    events_accountant.rules_manager.event_settings.update(aave_settings)
     events_iterator = iter([EvmEvent(
         tx_hash=HASH1,
         sequence_index=0,

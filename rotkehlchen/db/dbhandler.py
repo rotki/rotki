@@ -1757,6 +1757,7 @@ class DBHandler:
                 'user_notes',
                 'assets',
                 'history_events',
+                'accounting_rules',
             ],
             op: Literal['OR', 'AND'] = 'OR',
             group_by: Optional[str] = None,
