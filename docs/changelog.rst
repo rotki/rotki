@@ -3,6 +3,7 @@ Changelog
 =========
 
 
+* :feature:`6712` The Graph protocol support has been added. The events related to delegator staking now will be properly displayed and accounted for.
 * :feature:`5843` Velodrome is now supported in Optimism. Related transactions should be decoded properly and shown in human readable format and any balances in Velodrome auto-detected.
 * :feature:`630` Users will be able to export history events to CSV.
 * :feature:`6582` Users will be able to see skipped external events on the history events page, export them to CSV, and reprocess those events.
