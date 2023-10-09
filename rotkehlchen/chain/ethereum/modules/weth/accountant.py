@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 
 class WethAccountant(ModuleAccountantInterface):
-    def event_settings(self, pot: 'AccountingPot') -> dict[str, TxEventSettings]:  # pylint: disable=unused-argument
+    def event_settings(self, pot: 'AccountingPot') -> dict[int, TxEventSettings]:  # pylint: disable=unused-argument
         """Being defined at function call time is fine since this function is called only once"""
         return {
             get_event_type_identifier(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET, CPT_WETH): TxEventSettings(  # noqa: E501

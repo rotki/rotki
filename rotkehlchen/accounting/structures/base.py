@@ -195,7 +195,7 @@ class HistoryBaseEntry(AccountingEventMixin, metaclass=ABCMeta):
     def entry_type(self) -> HistoryBaseEntryType:
         """The event category for this event"""
 
-    def get_type_identifier(self, **kwargs: Any) -> str:  # pylint: disable=unused-argument
+    def get_type_identifier(self, **kwargs: Any) -> int:  # pylint: disable=unused-argument
         """Get the type identifier for this event. Subclasses may accept additional arguments"""
         return get_event_type_identifier(
             event_type=self.event_type,
@@ -479,9 +479,9 @@ def get_event_type_identifier(
         event_type: HistoryEventType,
         event_subtype: HistoryEventSubType,
         counterparty: Optional[str] = None,
-) -> str:
+) -> int:
     key = f'{event_type.serialize()}{event_subtype.serialize()}'
     if counterparty is not None:
         key += counterparty
 
-    return key
+    return hash(key)

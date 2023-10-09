@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
 
 
-def make_default_accounting_settings(pot: 'AccountingPot') -> dict[str, BaseEventSettings]:
+def make_default_accounting_settings(pot: 'AccountingPot') -> dict[int, BaseEventSettings]:
     """
     Returns accounting settings for events that can come from various decoders and thus don't have
     any particular protocol. These settings also allow users to customize events in the UI.
@@ -117,7 +117,7 @@ class AccountingRulesManager:
         self.database = database
         self.aggregators = evm_aggregators
         self.pot = pot
-        self.event_settings: dict[str, BaseEventSettings] = {}
+        self.event_settings: dict[int, BaseEventSettings] = {}
 
     def _query_db_rules(self) -> None:
         """Query the accounting rules in the db and update event_settings with them"""

@@ -18,7 +18,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 class CurveAccountant(DepositableAccountantInterface):
 
-    def event_settings(self, pot: 'AccountingPot') -> dict[str, TxEventSettings]:  # pylint: disable=unused-argument
+    def event_settings(self, pot: 'AccountingPot') -> dict[int, TxEventSettings]:  # pylint: disable=unused-argument
         """Being defined at function call time is fine since this function is called only once"""
         return {
             get_event_type_identifier(HistoryEventType.RECEIVE, HistoryEventSubType.RECEIVE_WRAPPED, CPT_CURVE): TxEventSettings(  # noqa: E501

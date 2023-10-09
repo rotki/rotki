@@ -87,7 +87,7 @@ class MakerdaoAccountant(ModuleAccountantInterface):
             )
             self.dsr_balances[address] = ZERO
 
-    def event_settings(self, pot: 'AccountingPot') -> dict[str, TxEventSettings]:  # pylint: disable=unused-argument
+    def event_settings(self, pot: 'AccountingPot') -> dict[int, TxEventSettings]:  # pylint: disable=unused-argument
         """Being defined at function call time is fine since this function is called only once"""
         # TODO: How can we count here loss from debt and gain from DSR? We need to keep state
         return {  # vault collateral deposit

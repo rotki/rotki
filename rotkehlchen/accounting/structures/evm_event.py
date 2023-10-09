@@ -232,7 +232,7 @@ class EvmEvent(HistoryBaseEntry):  # noqa: PLW1641  # hash in superclass
         except KeyError as e:
             raise DeserializationError(f'Did not find key {e!s} in Evm Event data') from e
 
-    def get_type_identifier(self, include_counterparty: bool = True, **kwargs: Any) -> str:
+    def get_type_identifier(self, include_counterparty: bool = True, **kwargs: Any) -> int:
         """
         Computes the identifier from event type, event subtype and counterparty if
         `include_counterparty` is True.
