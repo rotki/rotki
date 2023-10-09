@@ -1,16 +1,9 @@
 import { Balance, NumericString } from '@rotki/common';
 import { z } from 'zod';
-import { OverviewDefiProtocol } from '@/types/defi/protocols';
 
 const DefiProtocolInfo = z.object({
-  name: OverviewDefiProtocol
+  name: z.string()
 });
-
-const DefiProtocolIcon = z.object({
-  icon: z.string()
-});
-
-const DefiProtocolInfoWithIcon = DefiProtocolIcon.merge(DefiProtocolInfo);
 
 const TokenInfo = z.object({
   tokenName: z.string(),
@@ -29,7 +22,7 @@ const DefiAsset = z.object({
 export type DefiAsset = z.infer<typeof DefiAsset>;
 
 const DefiProtocolSummary = z.object({
-  protocol: DefiProtocolInfoWithIcon,
+  protocol: z.string(),
   balanceUsd: NumericString.optional(),
   assets: z.array(DefiAsset),
   tokenInfo: TokenInfo.nullable(),

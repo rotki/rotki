@@ -1,24 +1,13 @@
 <script setup lang="ts">
-import { type PropType } from 'vue';
 import { type DefiProtocolSummary } from '@/types/defi/overview';
 
-const props = defineProps({
-  summary: {
-    required: true,
-    type: Object as PropType<DefiProtocolSummary>
-  }
-});
+const props = defineProps<{
+  summary: DefiProtocolSummary;
+}>();
 
 const details = ref(false);
 const { summary } = toRefs(props);
 const { t } = useI18n();
-const icon = computed(() => {
-  const { protocol } = get(summary);
-  if (!protocol.icon) {
-    return '';
-  }
-  return `./assets/images/protocols/${protocol.icon}`;
-});
 
 const assets = computed(() => {
   const { assets } = get(summary);
@@ -33,13 +22,28 @@ const assets = computed(() => {
 });
 
 const css = useCssModule();
+
+const { getDefiName, getDefiImage } = useDefiMetadata();
+
+const protocol = useRefMap(summary, i => i.protocol);
+
+const name = computed(() => decodeHtmlEntities(get(getDefiName(protocol))));
+const image = getDefiImage(protocol);
+
+const imageUrl = computed(() => {
+  const imageVal = get(image);
+  if (!imageVal) {
+    return '';
+  }
+  return `./assets/images/protocols/${imageVal}`;
+});
 </script>
 
 <template>
   <StatCard
     v-if="!summary.balanceUsd"
-    :title="summary.protocol.name"
-    :protocol-icon="icon"
+    :title="name"
+    :protocol-icon="imageUrl"
     bordered
     :class="css.overview"
   >
@@ -89,8 +93,8 @@ const css = useCssModule();
   <StatCard
     v-else
     bordered
-    :title="summary.protocol.name"
-    :protocol-icon="icon"
+    :title="name"
+    :protocol-icon="imageUrl"
     :class="css.overview"
   >
     <span v-if="summary.tokenInfo" class="text-subtitle-1 font-bold pb-2">
@@ -110,13 +114,13 @@ const css = useCssModule();
           <VCardTitle class="mb-2">
             <VImg
               aspect-ratio="1"
-              :src="icon"
+              :src="imageUrl"
               max-width="32px"
               max-height="32px"
               contain
             />
             <span class="ml-2">
-              {{ summary.protocol.name }}
+              {{ name }}
             </span>
           </VCardTitle>
           <VCardSubtitle>

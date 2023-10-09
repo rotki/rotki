@@ -706,6 +706,9 @@
     "ExtractPropTypes": true,
     "ExtractPublicPropTypes": true,
     "useAirdropsMetadata": true,
-    "useAddressBookFilter": true
+    "useAddressBookFilter": true,
+    "useDefiMetadata": true,
+    "decodeHtmlEntities": true,
+    "useDefiOverviewStore": true
   }
 }
