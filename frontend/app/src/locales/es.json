@@ -912,12 +912,9 @@
     }
   },
   "airdrops": {
-    "description": "* Estos son los airdrops que rotki detectó para los que son elegibles sus cuentas rastreadas. Es posible que ya los hayas reclamado, de no ser así, visite el enlace de cada protocolo y reclame su parte.",
     "headers": {
       "source": "Source"
     },
-    "loading": "Please wait while rotki queries the airdrops for your addresses...",
-    "status_hint": "Mostrando resultados para airdrops de {status}.",
     "title": "Airdrops"
   },
   "alias_names": {
