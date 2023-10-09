@@ -998,9 +998,6 @@
       "message": "您确定要从资产数据库中删除{asset}吗？",
       "title": "删除资产"
     },
-    "custom": {
-      "title": "自定义资产"
-    },
     "delete_error": "无法删除 {address}: {message}",
     "edit_error": "无法编辑资产：{message}",
     "edit_title": "编辑资产",

@@ -138,14 +138,34 @@ watch(identifier, assetId => {
 </script>
 
 <template>
-  <VContainer>
-    <RefreshHeader
-      :title="t('asset_management.custom.title')"
-      :loading="loading"
-      @refresh="refresh()"
-    />
+  <TablePageLayout>
+    <template #title>
+      <span class="text-rui-text-secondary">
+        {{ t('navigation_menu.manage_assets') }} /
+      </span>
+      {{ t('navigation_menu.manage_assets_sub.custom_assets') }}
+    </template>
+    <template #buttons>
+      <RuiButton
+        color="primary"
+        variant="outlined"
+        :loading="loading"
+        @click="refresh()"
+      >
+        <template #prepend>
+          <RuiIcon name="refresh-line" />
+        </template>
+        {{ t('common.refresh') }}
+      </RuiButton>
+
+      <RuiButton data-cy="managed-asset-add-btn" color="primary" @click="add()">
+        <template #prepend>
+          <RuiIcon name="add-line" />
+        </template>
+        {{ t('managed_asset_content.add_asset') }}
+      </RuiButton>
+    </template>
     <CustomAssetTable
-      class="mt-12"
       :assets="state.data"
       :loading="loading"
       :server-item-length="state.found"
@@ -153,7 +173,6 @@ watch(identifier, assetId => {
       :matchers="matchers"
       :expanded="expanded"
       :options="options"
-      @add="add()"
       @edit="edit($event)"
       @delete-asset="showDeleteConfirmation($event)"
       @update:pagination="setOptions($event)"
@@ -165,5 +184,5 @@ watch(identifier, assetId => {
       :types="types"
       :editable-item="editableItem"
     />
-  </VContainer>
+  </TablePageLayout>
 </template>
