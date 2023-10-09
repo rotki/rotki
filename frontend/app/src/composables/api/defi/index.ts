@@ -7,6 +7,7 @@ import {
 import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import { type PendingTask } from '@/types/task';
+import { type SupportedModule } from '@/types/modules';
 
 export const useDefiApi = () => {
   const fetchAllDefi = async (): Promise<PendingTask> =>
@@ -26,8 +27,18 @@ export const useDefiApi = () => {
     return handleResponse(response);
   };
 
+  const fetchAirdropsMetadata = async (): Promise<SupportedModule[]> => {
+    const response =
+      await api.instance.get<ActionResult<SupportedModule[]>>(
+        '/airdrops/metadata'
+      );
+
+    return handleResponse(response);
+  };
+
   return {
     fetchAllDefi,
-    fetchAirdrops
+    fetchAirdrops,
+    fetchAirdropsMetadata
   };
 };

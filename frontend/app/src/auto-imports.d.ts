@@ -306,6 +306,7 @@ declare global {
   const useAddressesNamesApi: typeof import('./composables/api/blockchain/addresses-names')['useAddressesNamesApi']
   const useAddressesNamesStore: typeof import('./store/blockchain/accounts/addresses-names')['useAddressesNamesStore']
   const useAggregatedBalances: typeof import('./composables/balances/aggregated')['useAggregatedBalances']
+  const useAirdropsMetadata: typeof import('./composables/defi/airdrops/metadata')['useAirdropsMetadata']
   const useAnimate: typeof import('@vueuse/core')['useAnimate']
   const useAnimation: typeof import('./composables/user/animations')['useAnimation']
   const useAppNavigation: typeof import('./composables/navigation')['useAppNavigation']
@@ -1009,6 +1010,7 @@ declare module 'vue' {
     readonly useAddressesNamesApi: UnwrapRef<typeof import('./composables/api/blockchain/addresses-names')['useAddressesNamesApi']>
     readonly useAddressesNamesStore: UnwrapRef<typeof import('./store/blockchain/accounts/addresses-names')['useAddressesNamesStore']>
     readonly useAggregatedBalances: UnwrapRef<typeof import('./composables/balances/aggregated')['useAggregatedBalances']>
+    readonly useAirdropsMetadata: UnwrapRef<typeof import('./composables/defi/airdrops/metadata')['useAirdropsMetadata']>
     readonly useAnimate: UnwrapRef<typeof import('@vueuse/core')['useAnimate']>
     readonly useAppNavigation: UnwrapRef<typeof import('./composables/navigation')['useAppNavigation']>
     readonly useAreaVisibilityStore: UnwrapRef<typeof import('./store/session/visibility')['useAreaVisibilityStore']>
@@ -1705,6 +1707,7 @@ declare module '@vue/runtime-core' {
     readonly useAddressesNamesApi: UnwrapRef<typeof import('./composables/api/blockchain/addresses-names')['useAddressesNamesApi']>
     readonly useAddressesNamesStore: UnwrapRef<typeof import('./store/blockchain/accounts/addresses-names')['useAddressesNamesStore']>
     readonly useAggregatedBalances: UnwrapRef<typeof import('./composables/balances/aggregated')['useAggregatedBalances']>
+    readonly useAirdropsMetadata: UnwrapRef<typeof import('./composables/defi/airdrops/metadata')['useAirdropsMetadata']>
     readonly useAnimate: UnwrapRef<typeof import('@vueuse/core')['useAnimate']>
     readonly useAppNavigation: UnwrapRef<typeof import('./composables/navigation')['useAppNavigation']>
     readonly useAreaVisibilityStore: UnwrapRef<typeof import('./store/session/visibility')['useAreaVisibilityStore']>

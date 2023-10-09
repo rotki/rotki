@@ -34,6 +34,7 @@ import {
   RiErrorWarningLine,
   RiExchangeBoxLine,
   RiExchangeLine,
+  RiExternalLinkLine,
   RiEye2Line,
   RiEyeLine,
   RiEyeOffLine,
@@ -187,6 +188,7 @@ Vue.use(RuiPlugin, {
     RiFileTextLine,
     RiDeleteBin5Line,
     RiPlayListAddLine,
-    RiCornerLeftUpLine
+    RiCornerLeftUpLine,
+    RiExternalLinkLine
   ]
 });
