@@ -8,29 +8,53 @@ import { type Ref } from 'vue';
 import { type Blockchain } from '@rotki/common/lib/blockchain';
 import { type DataTableHeader } from '@/types/vuetify';
 import {
-  type AddressBookEntries,
   type AddressBookEntry,
-  type AddressBookLocation
+  type AddressBookLocation,
+  type AddressBookRequestPayload
 } from '@/types/eth-names';
+import { type Collection } from '@/types/collection';
+import { type TablePagination } from '@/types/pagination';
 
-const props = withDefaults(defineProps<Props>(), {
-  search: ''
-});
+const props = defineProps<{
+  collection: Collection<AddressBookEntry>;
+  location: AddressBookLocation;
+  loading: boolean;
+  options: TablePagination<AddressBookEntry>;
+}>();
+
 const emit = defineEmits<{
   (e: 'edit', item: AddressBookEntry): void;
+  (e: 'update:page', page: number): void;
+  (e: 'update:options', pagination: AddressBookRequestPayload): void;
+  (e: 'refresh'): void;
 }>();
+
 const { t } = useI18n();
+
+const setPage = (page: number) => {
+  emit('update:page', page);
+};
+
+const updatePagination = (pagination: AddressBookRequestPayload) =>
+  emit('update:options', pagination);
+
+const refresh = () => {
+  emit('refresh');
+};
+
 const addressBookDeletion = (location: Ref<AddressBookLocation>) => {
   const { show } = useConfirmStore();
   const { notify } = useNotificationsStore();
   const { deleteAddressBook: deleteAddressBookCaller } =
     useAddressesNamesStore();
+
   const deleteAddressBook = async (
     address: string,
     blockchain: Blockchain | null
   ) => {
     try {
       await deleteAddressBookCaller(get(location), [{ address, blockchain }]);
+      refresh();
     } catch (e: any) {
       const notification: NotificationPayload = {
         title: t('address_book.actions.delete.error.title'),
@@ -65,46 +89,11 @@ const addressBookDeletion = (location: Ref<AddressBookLocation>) => {
   };
 };
 
-interface Props {
-  location: AddressBookLocation;
-  blockchain: Blockchain;
-  search?: string;
-}
-
-const { location, search, blockchain } = toRefs(props);
-const loading = ref<boolean>(false);
-
-const addressesNamesStore = useAddressesNamesStore();
-const { fetchAddressBook } = addressesNamesStore;
-const { addressBookEntries } = toRefs(addressesNamesStore);
-
-const data = computed<AddressBookEntries>(
-  () => get(addressBookEntries)[get(location)]
-);
-
-const filteredData = computed<AddressBookEntries>(() => {
-  const keyword = get(search).toLowerCase();
-  const selectedChain = get(blockchain)?.toLowerCase();
-
-  return get(data).filter(
-    item =>
-      (!keyword ||
-        item.address.includes(keyword) ||
-        item.name.toLowerCase().includes(keyword)) &&
-      (item.blockchain === null ||
-        item.blockchain?.toLowerCase() === selectedChain)
-  );
-});
+const { location } = toRefs(props);
 
 const edit = (item: AddressBookEntry) => {
   emit('edit', item);
 };
-
-onBeforeMount(async () => {
-  set(loading, true);
-  await fetchAddressBook(get(location));
-  set(loading, false);
-});
 
 const tableHeaders = computed<DataTableHeader[]>(() => [
   {
@@ -127,26 +116,37 @@ const { showDeleteConfirmation } = addressBookDeletion(location);
 
 <template>
   <div>
-    <DataTable :items="filteredData" :headers="tableHeaders" :loading="loading">
-      <template #item.address="{ item }">
-        <AccountDisplay
-          :account="{
-            address: item.address,
-            chain: item.blockchain
-          }"
-          :use-alias-name="false"
-          :truncate="false"
-        />
+    <CollectionHandler :collection="collection" @set-page="setPage($event)">
+      <template #default="{ data, itemLength }">
+        <DataTable
+          :items="data"
+          :headers="tableHeaders"
+          :loading="loading"
+          :options="options"
+          :server-items-length="itemLength"
+          @update:options="updatePagination($event)"
+        >
+          <template #item.address="{ item }">
+            <AccountDisplay
+              :account="{
+                address: item.address,
+                chain: item.blockchain
+              }"
+              :use-alias-name="false"
+              :truncate="false"
+            />
+          </template>
+          <template #item.actions="{ item }">
+            <RowActions
+              :disabled="loading"
+              :delete-tooltip="t('address_book.actions.delete.tooltip')"
+              :edit-tooltip="t('address_book.actions.edit.tooltip')"
+              @delete-click="showDeleteConfirmation(item)"
+              @edit-click="edit(item)"
+            />
+          </template>
+        </DataTable>
       </template>
-      <template #item.actions="{ item }">
-        <RowActions
-          :disabled="loading"
-          :delete-tooltip="t('address_book.actions.delete.tooltip')"
-          :edit-tooltip="t('address_book.actions.edit.tooltip')"
-          @delete-click="showDeleteConfirmation(item)"
-          @edit-click="edit(item)"
-        />
-      </template>
-    </DataTable>
+    </CollectionHandler>
   </div>
 </template>

@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { type Writeable } from '@/types';
 import { type AllBalancePayload } from '@/types/blockchain/accounts';
-import { useAppNavigation } from '@/composables/navigation';
 import SnapshotImportDialog from '@/components/dashboard/SnapshotImportDialog.vue';
 
 const ignoreErrors = ref<boolean>(false);

@@ -51,11 +51,10 @@ const { t } = useI18n();
       <VRow align="center" no-gutters class="flex-nowrap" v-on="on">
         <VCol v-if="!hideChainIcon" cols="auto" class="pr-2">
           <VAvatar left size="28px" class="mr-0">
-            <AssetIcon
+            <ChainIcon
               v-if="account.chain && account.chain !== 'ALL'"
               size="24px"
-              :identifier="account.chain"
-              :show-chain="false"
+              :chain="account.chain"
             />
             <VTooltip v-else top>
               <template #activator="{ childOn }">

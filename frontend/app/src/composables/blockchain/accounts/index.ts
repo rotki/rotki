@@ -38,6 +38,8 @@ export const useBlockchainAccounts = () => {
     useChainsAccountsStore();
   const { awaitTask } = useTaskStore();
   const { notify } = useNotificationsStore();
+
+  const { fetchEnsNames, resetAddressNamesData } = useAddressesNamesStore();
   const { t } = useI18n();
 
   const addAccount = async (
@@ -108,9 +110,12 @@ export const useBlockchainAccounts = () => {
   ): Promise<BtcAccountData | GeneralAccountData[]> => {
     const { blockchain } = payload;
 
-    return isBtcChain(blockchain)
-      ? await editBtcAccount(payload)
-      : await editBlockchainAccount(payload);
+    if (isBtcChain(blockchain)) {
+      return await editBtcAccount(payload);
+    }
+    const result = editBlockchainAccount(payload);
+    resetAddressNamesData([payload]);
+    return result;
   };
 
   const removeAccount = async (payload: BasicBlockchainAccountPayload) => {
@@ -156,7 +161,6 @@ export const useBlockchainAccounts = () => {
     }
   };
 
-  const { fetchEnsNames, fetchAddressesNames } = useAddressesNamesStore();
   const { isEvm } = useSupportedChains();
 
   const fetchBlockchainAccounts = async (
@@ -182,8 +186,6 @@ export const useBlockchainAccounts = () => {
 
       if (isEvm(blockchain)) {
         startPromise(fetchEnsNames(namesPayload));
-      } else {
-        startPromise(fetchAddressesNames(namesPayload));
       }
       return accounts.map(account => account.address);
     } catch (e: any) {
@@ -204,19 +206,6 @@ export const useBlockchainAccounts = () => {
     try {
       const accounts = await queryBtcAccounts(chain);
       updateBtc(chain, accounts);
-
-      // TODO: enable alias name for BTC when backend support enabled
-      // const addresses = [
-      //   ...accounts.standalone.map(({ address }) => address),
-      //   ...accounts.xpubs
-      //     .flatMap(({ addresses }) => addresses)
-      //     .map(item => item?.address || '')
-      // ];
-      // startPromise(
-      //   fetchAddressesNames(
-      //     addresses.map(address => ({ address, blockchain: chain }))
-      //   )
-      // );
       return true;
     } catch (e: any) {
       logger.error(e);

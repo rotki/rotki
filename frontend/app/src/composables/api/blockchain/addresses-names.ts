@@ -1,4 +1,5 @@
 import { type ActionResult } from '@rotki/common/lib/data';
+import { omit } from 'lodash-es';
 import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import {
@@ -7,12 +8,16 @@ import {
   validWithSessionAndExternalService
 } from '@/services/utils';
 import {
-  AddressBookEntries,
+  AddressBookCollectionResponse,
+  type AddressBookEntries,
+  type AddressBookEntry,
   type AddressBookLocation,
+  type AddressBookRequestPayload,
   type AddressBookSimplePayload,
   EthNames
 } from '@/types/eth-names';
 import { type PendingTask } from '@/types/task';
+import { type Collection, type CollectionResponse } from '@/types/collection';
 
 export const useAddressesNamesApi = () => {
   const internalEnsNames = async <T>(
@@ -45,19 +50,32 @@ export const useAddressesNamesApi = () => {
     return EthNames.parse(response);
   };
 
-  const getAddressBook = async (
+  const fetchAddressBook = async (
     location: AddressBookLocation,
-    addresses?: string[]
-  ): Promise<AddressBookEntries> => {
-    const response = await api.instance.post<ActionResult<EthNames>>(
+    payload: AddressBookRequestPayload
+  ): Promise<Collection<AddressBookEntry>> => {
+    const payloadVal = get(payload);
+    const filteredPayload = omit(payloadVal, [
+      'orderByAttributes',
+      'ascending',
+      'address'
+    ]);
+    const response = await api.instance.post<
+      ActionResult<CollectionResponse<AddressBookEntry>>
+    >(
       `/names/addressbook/${location}`,
-      addresses ? { addresses } : null,
+      snakeCaseTransformer({
+        ...filteredPayload,
+        addresses: payloadVal.address?.map(address => ({ address }))
+      }),
       {
         validateStatus: validWithSessionAndExternalService
       }
     );
 
-    return AddressBookEntries.parse(handleResponse(response));
+    return mapCollectionResponse(
+      AddressBookCollectionResponse.parse(handleResponse(response))
+    );
   };
 
   const addAddressBook = async (
@@ -146,7 +164,7 @@ export const useAddressesNamesApi = () => {
   return {
     getEnsNamesTask,
     getEnsNames,
-    getAddressBook,
+    fetchAddressBook,
     addAddressBook,
     updateAddressBook,
     deleteAddressBook,

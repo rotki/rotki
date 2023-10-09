@@ -295,11 +295,14 @@ const handleError = (
   }
 };
 
+const { deleteCacheKey } = useAssetCacheStore();
+
 const save = async () => {
   try {
     const newIdentifier = await saveAsset();
     set(identifier, newIdentifier);
     await get(assetIconFormRef)?.saveIcon(newIdentifier);
+    deleteCacheKey(newIdentifier);
     return true;
   } catch (e: any) {
     let errorsMessage = e.message;

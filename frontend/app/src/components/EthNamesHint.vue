@@ -6,11 +6,13 @@ const visible = ref(false);
 
 <template>
   <div>
-    <RuiButton id="eth-names-hint" variant="text" icon @click="visible = true">
-      <RuiIcon name="question-line" />
-    </RuiButton>
-    <VMenu v-model="visible" offset-x nudge-right="25" attach="#eth-names-hint">
-      <div class="pa-4 min-w-[20rem] flex flex-col gap-2">
+    <VMenu v-model="visible" offset-x>
+      <template #activator="{ on }">
+        <RuiButton variant="text" icon @click="visible = true" v-on="on">
+          <RuiIcon name="question-line" />
+        </RuiButton>
+      </template>
+      <div class="pa-4 max-w-[20rem] flex flex-col gap-2">
         <div>
           <b>{{ t('address_book.hint.global') }}</b>
           {{ t('address_book.hint.global_description') }}

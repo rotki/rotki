@@ -3,7 +3,6 @@ import { type DataTableHeader } from '@/types/vuetify';
 import { isNft } from '@/utils/nft';
 import { type ManualPrice, type ManualPriceFormPayload } from '@/types/prices';
 import { type Nullable } from '@/types';
-import { useLatestPrices } from '@/composables/price-manager/latest';
 
 const { t } = useI18n();
 

@@ -24,7 +24,6 @@ const errorMessages = ref<Record<string, string[]>>({});
 const { addAccounts, addEvmAccounts, fetchAccounts } = useBlockchains();
 const { editAccount } = useBlockchainAccounts();
 const { setMessage } = useMessageStore();
-const { fetchAddressesNames } = useAddressesNamesStore();
 const { isEvm } = useSupportedChains();
 const { valid, setSave, accountToEdit } = useAccountDialog();
 const { pending, loading } = useAccountLoading();
@@ -56,10 +55,6 @@ const save = async () => {
         tags: get(tags)
       };
       await editAccount(payload);
-
-      if (get(evmChain)) {
-        await fetchAddressesNames([{ address, blockchain: chain }]);
-      }
       startPromise(fetchAccounts(chain));
     } else {
       const payload = entries.map(address => ({
