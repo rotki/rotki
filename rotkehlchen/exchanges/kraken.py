@@ -961,7 +961,10 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
                 log.error(f'Failed to read timestamp for {raw_events}')
                 continue
 
-            group_events, found_unknown_event = self.history_event_from_kraken(events=events, save_skipped_events=save_skipped_events)  # noqa: E501
+            group_events, found_unknown_event = self.history_event_from_kraken(
+                events=events,
+                save_skipped_events=save_skipped_events,
+            )
             if found_unknown_event:
                 for event in group_events:
                     event.event_type = HistoryEventType.INFORMATIONAL
@@ -1094,28 +1097,36 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
                     name='event amount',
                     location='kraken ledger processing',
                 )
+
                 # If we don't know how to handle an event atm or we find an unsupported
                 # event type the logic will be to store it as unknown and if in the future
                 # we need some information from it we can take actions to process them
                 if event_type == HistoryEventType.TRANSFER:
-                    if raw_event['subtype'] == 'spottostaking':
+                    if raw_event['subtype'] == '':  # Internal kraken events
+                        # Lefteris has seen it in: Crediting airdrops/fork coins
+                        # such as ETC, BCH, BSV. OR the XXLM airdrop. Also for forced
+                        # removal of a coin due to delisting(negative amount), which is followed
+                        # by another similar transfer with positive amount. Also OTC
+                        # or other private deals seem to have this type
+                        event_type = HistoryEventType.ADJUSTMENT
+                        event_subtype = HistoryEventSubType.SPEND if raw_amount < ZERO else HistoryEventSubType.RECEIVE  # noqa: E501
+                    elif raw_event['subtype'] == 'spottostaking':
                         event_type = HistoryEventType.STAKING
                         event_subtype = HistoryEventSubType.DEPOSIT_ASSET
                     elif raw_event['subtype'] == 'stakingfromspot':
-                        event_type = HistoryEventType.STAKING
-                        event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
+                        continue  # no need to have an event here. Covered by deposit_asset
                     elif raw_event['subtype'] == 'stakingtospot':
                         event_type = HistoryEventType.STAKING
                         event_subtype = HistoryEventSubType.REMOVE_ASSET
                     elif raw_event['subtype'] == 'spotfromstaking':
-                        event_type = HistoryEventType.STAKING
-                        event_subtype = HistoryEventSubType.RETURN_WRAPPED
-                elif event_type in (HistoryEventType.ADJUSTMENT, HistoryEventType.TRADE):
-                    if raw_amount < ZERO:
-                        event_subtype = HistoryEventSubType.SPEND
-                        raw_amount = -raw_amount
-                    else:
+                        continue  # no need to have an event here - covered by remove_asset
+                    elif raw_event['subtype'] == 'spotfromfutures':
+                        # at least for lefteris the credit of ETHW is this type
+                        event_type = HistoryEventType.ADJUSTMENT
                         event_subtype = HistoryEventSubType.RECEIVE
+
+                elif event_type in (HistoryEventType.ADJUSTMENT, HistoryEventType.TRADE):
+                    event_subtype = HistoryEventSubType.SPEND if raw_amount < ZERO else HistoryEventSubType.RECEIVE  # noqa: E501
                 elif event_type == HistoryEventType.STAKING:
                     # in the case of ETH.S after the activation of withdrawals rewards no longer
                     # compound unlike what happens with other assets and a virtual event with
@@ -1123,7 +1134,6 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
                     if asset == A_ETH2 and raw_amount < ZERO:
                         event_type = HistoryEventType.INFORMATIONAL
                         notes = 'Automatic virtual conversion of staked ETH rewards to ETH'
-                        raw_amount = -raw_amount
                     else:
                         event_subtype = HistoryEventSubType.REWARD
                 elif event_type == HistoryEventType.INFORMATIONAL:
@@ -1132,8 +1142,6 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
                     log.warning(
                         f'Encountered kraken historic event type we do not process. {raw_event}',
                     )
-                elif event_type == HistoryEventType.WITHDRAWAL:
-                    raw_amount = -raw_amount
 
                 fee_amount = deserialize_asset_amount(raw_event['fee'])
 
@@ -1146,8 +1154,8 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
                         location=Location.KRAKEN,
                         location_label=self.name,
                         asset=asset,
-                        balance=Balance(
-                            amount=raw_amount,
+                        balance=Balance(  # amount sign was used above to determine types
+                            amount=abs(raw_amount),  # now enforce positive
                             usd_value=ZERO,
                         ),
                         notes=notes,
@@ -1199,11 +1207,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
         for event_set in receive_spend_events.values():
             if len(event_set) == 2:
                 for _, event in event_set:
-                    if event.event_type == HistoryEventType.RECEIVE:
-                        event.event_subtype = HistoryEventSubType.RECEIVE
-                    else:
-                        event.event_subtype = HistoryEventSubType.SPEND
-                        event.balance.amount = -event.balance.amount
+                    event.event_subtype = HistoryEventSubType.RECEIVE if event.event_type == HistoryEventType.RECEIVE else HistoryEventSubType.SPEND  # noqa: E501
                     event.event_type = HistoryEventType.TRADE
 
             # make sure to add all the events to group_events
