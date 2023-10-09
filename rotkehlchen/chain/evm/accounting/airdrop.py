@@ -23,7 +23,7 @@ class BaseAirdropsAccountant(ModuleAccountantInterface):
         super().__init__(node_inquirer=node_inquirer, msg_aggregator=msg_aggregator)
         self.airdrops_list = airdrops_list
 
-    def event_settings(self, pot: 'AccountingPot') -> dict[str, 'TxEventSettings']:
+    def event_settings(self, pot: 'AccountingPot') -> dict[int, 'TxEventSettings']:
         """Being defined at function call time is fine since this function is called only once"""
         return {
             get_event_type_identifier(HistoryEventType.RECEIVE, HistoryEventSubType.AIRDROP, protocol): TxEventSettings(  # noqa: E501

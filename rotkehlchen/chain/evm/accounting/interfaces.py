@@ -39,7 +39,7 @@ class ModuleAccountantInterface(metaclass=ABCMeta):
         self.reset()
 
     @abstractmethod
-    def event_settings(self, pot: 'AccountingPot') -> dict[str, 'TxEventSettings']:
+    def event_settings(self, pot: 'AccountingPot') -> dict[int, 'TxEventSettings']:
         """
         Subclasses implement this to specify rules/settings for their created events
         """

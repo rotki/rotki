@@ -82,7 +82,7 @@ class EVMAccountingAggregator:
         """Recursively check all submodules to get all accountants and initialize them"""
         self._recursively_initialize_accountants(MODULES_PACKAGE)
 
-    def get_accounting_settings(self, pot: 'AccountingPot') -> dict[str, TxEventSettings]:
+    def get_accounting_settings(self, pot: 'AccountingPot') -> dict[int, TxEventSettings]:
         """Iterate through loaded accountants and get accounting settings for each event type
 
         This does not contain the default built-in settings.
@@ -107,7 +107,7 @@ class EVMAccountingAggregators:
     def __init__(self, aggregators: list[EVMAccountingAggregator]) -> None:
         self.aggregators = aggregators
 
-    def get_accounting_settings(self, pot: 'AccountingPot') -> dict[str, TxEventSettings]:
+    def get_accounting_settings(self, pot: 'AccountingPot') -> dict[int, TxEventSettings]:
         """
         Iterate through loaded accountants and get accounting settings for each event type
 

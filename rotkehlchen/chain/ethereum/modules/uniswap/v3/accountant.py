@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 class Uniswapv3Accountant(ModuleAccountantInterface):
 
-    def event_settings(self, pot: 'AccountingPot') -> dict[str, 'TxEventSettings']:
+    def event_settings(self, pot: 'AccountingPot') -> dict[int, 'TxEventSettings']:
         """Being defined at function call time is fine since this function is called only once"""
         return {
             get_event_type_identifier(HistoryEventType.TRADE, HistoryEventSubType.SPEND, CPT_UNISWAP_V3): TxEventSettings(  # noqa: E501
