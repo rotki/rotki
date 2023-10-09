@@ -104,21 +104,20 @@ def reprocess_skipped_external_events(rotki: 'Rotkehlchen') -> tuple[int, int]:
 
         total_num += len(raw_events)
         exchange = cast('Kraken', exchange)
-        processed_events = exchange.process_kraken_raw_events(
+        _, processed_refids = exchange.process_kraken_raw_events(
             events=[x[1] for x in raw_events],
             events_source='processing skipped events',
             save_skipped_events=False,
         )
-        processed_num += len(processed_events)
-
-        for processed_event in processed_events:
-            for identifier, raw_data in raw_events:
-                try:
-                    if raw_data['refid'] == processed_event.event_identifier:
-                        identifiers_to_delete.add(identifier)
-                except KeyError:
-                    log.error(f'Processing skipped kraken event could not find refid in {raw_data}')  # noqa: E501
-                    continue
+        processed_num = 0
+        for identifier, raw_data in raw_events:
+            try:
+                if raw_data['refid'] in processed_refids:
+                    identifiers_to_delete.add(identifier)
+                    processed_num += 1
+            except KeyError:  # should never really happen
+                log.error(f'Processing skipped kraken event could not find refid in {raw_data}')
+                continue
 
     if len(identifiers_to_delete) != 0:  # delete some skipped events if needed
         with rotki.data.db.user_write() as write_cursor:

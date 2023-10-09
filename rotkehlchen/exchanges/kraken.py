@@ -940,9 +940,14 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
             events: list[dict[str, Any]],
             events_source: str,
             save_skipped_events: bool,
-    ) -> list[HistoryEvent]:
+    ) -> tuple[list[HistoryEvent], set[str]]:
+        """Run through a list of raw kraken events with different refids and process them.
+
+        Returns a list of the newly created rotki events and a set of all processed refids
+        """
         # Group related events
         raw_events_grouped = defaultdict(list)
+        processed_refids = set()
         for raw_event in events:
             raw_events_grouped[raw_event['refid']].append(raw_event)
 
@@ -961,13 +966,15 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
                 log.error(f'Failed to read timestamp for {raw_events}')
                 continue
 
-            group_events, found_unknown_event = self.history_event_from_kraken(
+            group_events, skipped, found_unknown_event = self.history_event_from_kraken(
                 events=events,
                 save_skipped_events=save_skipped_events,
             )
             if found_unknown_event:
                 for event in group_events:
                     event.event_type = HistoryEventType.INFORMATIONAL
+            if not skipped:
+                processed_refids.add(events[0]['refid'])
             new_events.extend(group_events)
 
         if len(new_events) != 0:
@@ -979,7 +986,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
                         f'Failed to save kraken events from {events_source} in database. {e!s}',
                     )
 
-        return new_events
+        return new_events, processed_refids
 
     @protect_with_lock()
     def query_kraken_ledgers(
@@ -1040,7 +1047,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
                 )
                 return True
 
-            new_events = self.process_kraken_raw_events(
+            new_events, _ = self.process_kraken_raw_events(
                 events=response,
                 events_source=f'{query_start_ts} to {query_end_ts}',
                 save_skipped_events=True,
@@ -1062,17 +1069,19 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
             self,
             events: list[dict[str, Any]],
             save_skipped_events: bool,
-    ) -> tuple[list[HistoryEvent], bool]:
+    ) -> tuple[list[HistoryEvent], bool, bool]:
         """
         This function gets raw data from kraken and creates a list of related history events
-        to be used in the app. It returns a list of events
+        to be used in the app. All events passed to this functon have same refid.
+
+        It returns a list of events, a boolean indicating events are skipped
         and a boolean in the case that an unknown type is found.
 
         If `save_skipped_events` is True then any events that are skipped are saved
         in the DB for processing later.
         """
-        group_events = []
-        skipped_refids = set()
+        group_events: list[tuple[int, HistoryEvent]] = []
+        skipped = False
         # for receive/spend events they could be airdrops but they could also be instant swaps.
         # the only way to know if it was a trade is by finding a pair of receive/spend events.
         # This is why we collect them instead of directly pushing to group_events
@@ -1082,11 +1091,13 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
 
         for idx, raw_event in enumerate(events):
             try:
+                if skipped:  # bad: Using exception for control flow. This function needs refactor
+                    raise DeserializationError('Hit a skipped event')
+
+                identifier = raw_event['refid']
                 timestamp = TimestampMS((deserialize_fval(
                     value=raw_event['time'], name='time', location='kraken ledger processing',
                 ) * 1000).to_int(exact=False))
-                if (identifier := raw_event['refid']) in skipped_refids:  # using exception for control flow is ugly. May make sense to change in a refactor  # noqa: E501
-                    raise DeserializationError(f'Hit a skipped refid {identifier}')
 
                 event_type = kraken_ledger_entry_type_to_ours(raw_event['type'])
                 asset = asset_from_kraken(raw_event['asset'])
@@ -1144,6 +1155,17 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
                     )
 
                 fee_amount = deserialize_asset_amount(raw_event['fee'])
+                # check for failed events (events that cancel each other out -- like failed
+                if (  # withdrawals). Compare if amounts cancel themselves out (also fee if exists)
+                        len(events) == 2 and idx == 1 and
+                        events[0]['type'] == events[1]['type'] and
+                        events[0]['subtype'] == events[1]['subtype'] and
+                        abs(raw_amount) == group_events[0][1].balance.amount and (
+                            len(group_events) != 2 or
+                            abs(fee_amount) == group_events[1][1].balance.amount)
+                ):
+                    log.info(f'Skipping failed kraken events that cancel each other out: {events}')
+                    return [], skipped, False
 
                 # Make sure to not generate an event for KFEES that is not of type FEE
                 if asset != A_KFEE:
@@ -1175,7 +1197,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
                         location_label=self.name,
                         asset=asset,
                         balance=Balance(
-                            amount=fee_amount,
+                            amount=abs(fee_amount),
                             usd_value=ZERO,
                         ),
                         notes=notes,
@@ -1186,8 +1208,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
                     # fee and KFEE
                     current_fee_index += 1
             except (DeserializationError, KeyError, UnknownAsset) as e:
-                if (refid := raw_event.get('refid')) is not None:
-                    skipped_refids.add(refid)
+                skipped = True
                 msg = str(e)
                 if isinstance(e, KeyError):
                     msg = f'Keyrror {msg}'
@@ -1215,7 +1236,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
 
         returned_events = []
         for raw_event_idx, event in group_events:
-            if event.event_identifier in skipped_refids:  # add it also to skipped events if another event with same refid had to be skipped  # noqa: E501
+            if skipped:  # add it also to skipped events if another event with same refid had to be skipped  # noqa: E501
                 with self.db.user_write() as write_cursor:
                     self.db.add_skipped_external_event(
                         write_cursor=write_cursor,
@@ -1227,7 +1248,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
 
             returned_events.append(event)
 
-        return returned_events, found_unknown_event
+        return returned_events, skipped, found_unknown_event
 
     def query_history_events(self) -> None:
         self.msg_aggregator.add_message(
@@ -1275,9 +1296,11 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
                 HistoryEventSubType.RECEIVE: EventCategory.RECEIVE,
             },
             HistoryEventType.WITHDRAWAL: {
+                HistoryEventSubType.NONE: EventCategory.WITHDRAW,
                 HistoryEventSubType.FEE: EventCategory.FEE,
             },
             HistoryEventType.DEPOSIT: {
+                HistoryEventSubType.NONE: EventCategory.DEPOSIT,
                 HistoryEventSubType.FEE: EventCategory.FEE,
             },
         }

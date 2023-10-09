@@ -16,20 +16,11 @@ from rotkehlchen.tests.utils.api import (
     assert_simple_ok_response,
 )
 from rotkehlchen.tests.utils.exchanges import try_get_first_exchange
-from rotkehlchen.tests.utils.history import prices
 from rotkehlchen.tests.utils.kraken import KRAKEN_GENERAL_LEDGER_RESPONSE
 from rotkehlchen.types import Location
 
-TEST_PRICES = prices
-TEST_PRICES['NEWASSET'] = {
-    'USD': {
-        1636740198: ONE,
-        1640493374: ONE,
-    },
-}
 
-
-@pytest.mark.parametrize('mocked_price_queries', [prices])
+@pytest.mark.parametrize('default_mock_price_value', [ONE])
 @pytest.mark.parametrize('added_exchanges', [(Location.KRAKEN,)])
 def test_skipped_external_events(rotkehlchen_api_server_with_exchanges, globaldb, tmpdir_factory):
     server = rotkehlchen_api_server_with_exchanges
@@ -82,9 +73,20 @@ def test_skipped_external_events(rotkehlchen_api_server_with_exchanges, globaldb
             "amount": "0.0600000000",
             "fee": "0.0000000000",
             "balance": "0.0600000000"
+        },
+        "DDD": {
+            "refid": "ZZZZZZZZZ",
+            "time": 1636750198.9674,
+            "type": "staking",
+            "subtype": "stakingtospot",
+            "aclass": "currency",
+            "asset": "NEWASSET",
+            "amount": "0.0600000000",
+            "fee": "0.0000000000",
+            "balance": "0.0600000000"
         }
     },
-    "count": 4
+    "count": 5
     }
     """
     # Test that before populating we don't have any event
@@ -129,8 +131,8 @@ def test_skipped_external_events(rotkehlchen_api_server_with_exchanges, globaldb
         api_url_for(server, 'historyskippedexternaleventresource'),
     )
     result = assert_proper_response_with_result(response)
-    assert result['total'] == 5  # 5 is due to +2 unknown assets set up during fixture
-    assert result['locations']['kraken'] == 5
+    assert result['total'] == 6  # 5 is due to +2 unknown assets set up during fixture
+    assert result['locations']['kraken'] == 6
     assert len(result['locations']) == 1
 
     # now let's test the export skipped external events endpoint
@@ -154,7 +156,7 @@ def test_skipped_external_events(rotkehlchen_api_server_with_exchanges, globaldb
                 assert row['data'] in flat_general
             else:
                 assert row['data'] in flat_stake
-    assert count == 5
+    assert count == 6
 
     # now try to reprocess the skipped events after adding the asset to the kraken mapping
     globaldb.add_asset(CryptoAsset.initialize(
@@ -170,8 +172,8 @@ def test_skipped_external_events(rotkehlchen_api_server_with_exchanges, globaldb
         api_url_for(server, 'historyskippedexternaleventresource'),
     )
     result = assert_proper_response_with_result(response)
-    assert result['total'] == 5
-    assert result['successful'] == 3
+    assert result['total'] == 6
+    assert result['successful'] == 4
     response = requests.get(
         api_url_for(server, 'historyskippedexternaleventresource'),
     )
@@ -193,4 +195,4 @@ def test_skipped_external_events(rotkehlchen_api_server_with_exchanges, globaldb
     )
     result = assert_proper_response_with_result(response)
     events = result['entries']
-    assert len(events) == 4
+    assert len(events) == 3

@@ -327,7 +327,7 @@ def get_random_kraken_asset() -> str:
 def generate_random_kraken_balance_response() -> dict[str, FVal]:
     kraken_assets = set(KRAKEN_TO_WORLD.keys()) - set(KRAKEN_DELISTED)
     number_of_assets = random.randrange(0, len(kraken_assets))
-    chosen_assets = random.sample(kraken_assets, number_of_assets)
+    chosen_assets = random.sample(list(kraken_assets), number_of_assets)
 
     balances = {}
     for asset in chosen_assets:
