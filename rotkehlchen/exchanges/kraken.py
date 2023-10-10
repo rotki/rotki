@@ -1245,6 +1245,10 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
                         extra_data={'location_label': self.name},
                     )
                 continue
+            if event.event_type == HistoryEventType.TRADE and event.event_subtype == HistoryEventSubType.SPEND:  # noqa: E501
+                event.sequence_index = 0
+            elif event.event_type == HistoryEventType.TRADE and event.event_subtype == HistoryEventSubType.RECEIVE:  # noqa: E501
+                event.sequence_index = 1
 
             returned_events.append(event)
 
