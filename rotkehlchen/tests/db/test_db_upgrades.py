@@ -9,6 +9,7 @@ from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.constants.misc import DEFAULT_SQL_VM_INSTRUCTIONS_CB
 from rotkehlchen.data_handler import DataHandler
+from rotkehlchen.db.checks import sanity_check_impl
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType
 from rotkehlchen.db.schema import DB_SCRIPT_CREATE_TABLES
@@ -1928,11 +1929,11 @@ def test_upgrade_db_39_to_40(user_data_dir):  # pylint: disable=unused-argument
     ]
 
 
-def test_latest_upgrade_adds_remove_tables(user_data_dir):
+def test_latest_upgrade_correctness(user_data_dir):
     """
     This is a test that we can only do for the last upgrade.
     It tests that we know and have included addition statements for all
-    of the new database tables introduced.
+    of the new database tables introduced and also checks for the correctness of the schema.
 
     Each time a new database upgrade is added this will need to be modified as
     this is just to reminds us not to forget to add create table statements.
@@ -1962,6 +1963,11 @@ def test_latest_upgrade_adds_remove_tables(user_data_dir):
         resume_from_backup=False,
     )
     cursor = db.conn.cursor()
+    sanity_check_impl(  # do sanity check on the db schema
+        cursor=cursor,
+        db_name=db.conn.connection_type.name.lower(),
+        minimized_schema=db.conn.minimized_schema,
+    )
     result = cursor.execute('SELECT name FROM sqlite_master WHERE type="table"')
     tables_after_upgrade = {x[0] for x in result}
     result = cursor.execute('SELECT name FROM sqlite_master WHERE type="view"')
