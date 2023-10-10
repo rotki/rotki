@@ -10,6 +10,7 @@ import requests
 
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import KRAKEN_TO_WORLD, asset_from_kraken
 from rotkehlchen.constants import ONE, ZERO
@@ -31,6 +32,8 @@ from rotkehlchen.constants.assets import (
 )
 from rotkehlchen.constants.limits import FREE_HISTORY_EVENTS_LIMIT
 from rotkehlchen.constants.resolver import strethaddress_to_identifier
+from rotkehlchen.db.filtering import HistoryEventFilterQuery
+from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair
 from rotkehlchen.errors.serialization import DeserializationError
@@ -65,6 +68,18 @@ from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.tests.utils.pnl_report import query_api_create_and_get_report
 from rotkehlchen.types import AssetMovementCategory, Location, Timestamp, TradeType
 from rotkehlchen.utils.misc import ts_now
+
+
+def _check_trade_history_events_order(db, expected):
+    """Check that the history events for the trades have the expected order"""
+    dbevents = DBHistoryEvents(db)
+    with db.conn.read_ctx() as cursor:
+        events = dbevents.get_history_events(cursor, HistoryEventFilterQuery.make(), True)
+        assert len(events) == len(expected)
+        for event in events:
+            assert event.sequence_index == expected[event.sequence_index][0]
+            assert event.event_type == expected[event.sequence_index][1]
+            assert event.event_subtype == expected[event.sequence_index][2]
 
 
 def test_name():
@@ -415,6 +430,11 @@ def test_kraken_trade_with_spend_receive(function_scope_kraken):
     assert trade.base_asset == A_ETH
     assert trade.quote_asset == A_EUR
     assert trade.fee == FVal(0.45)
+    _check_trade_history_events_order(kraken.db, {
+        0: (0, HistoryEventType.TRADE, HistoryEventSubType.SPEND),
+        1: (1, HistoryEventType.TRADE, HistoryEventSubType.RECEIVE),
+        2: (2, HistoryEventType.SPEND, HistoryEventSubType.FEE),
+    })
     errors = kraken.msg_aggregator.consume_errors()
     warnings = kraken.msg_aggregator.consume_warnings()
     assert len(errors) == 0
