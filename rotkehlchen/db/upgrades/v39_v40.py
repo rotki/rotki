@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING
 from uuid import uuid4
 
 from pysqlcipher3 import dbapi2 as sqlcipher
-from rotkehlchen.chain.evm.accounting.structures import TxEventSettings
 
 from rotkehlchen.constants import ZERO
 from rotkehlchen.db.constants import NO_ACCOUNTING_COUNTERPARTY
@@ -269,21 +268,18 @@ def _migrate_ledger_airdrop_accounting_setting(write_cursor: 'DBCursor') -> None
                     HistoryEventType.RECEIVE.serialize(),
                     HistoryEventSubType.AIRDROP.serialize(),
                     NO_ACCOUNTING_COUNTERPARTY,
-                    *TxEventSettings(
-                        taxable=True,  # make it taxable
-                        count_entire_amount_spend=False,
-                        count_cost_basis_pnl=False,
-                        method='acquisition',
-                        accounting_treatment=None,
-                    ).serialize_for_db(),
+                    True,  # taxable
+                    False,
+                    False,
+                    None,
                 )
     if new_accounting_rule is None:
         return
 
     write_cursor.execute(
         'INSERT INTO accounting_rules(type, subtype, counterparty, taxable, '
-        'count_entire_amount_spend, count_cost_basis_pnl, method, '
-        'accounting_treatment) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        'count_entire_amount_spend, count_cost_basis_pnl, '
+        'accounting_treatment) VALUES (?, ?, ?, ?, ?, ?, ?)',
         new_accounting_rule,
     )
 
@@ -308,9 +304,16 @@ def _add_new_tables(write_cursor: 'DBCursor') -> None:
         taxable INTEGER NOT NULL CHECK (taxable IN (0, 1)),
         count_entire_amount_spend INTEGER NOT NULL CHECK (count_entire_amount_spend IN (0, 1)),
         count_cost_basis_pnl INTEGER NOT NULL CHECK (count_cost_basis_pnl IN (0, 1)),
-        method TEXT,
         accounting_treatment TEXT,
         UNIQUE(type, subtype, counterparty)
+    );
+    """)
+    write_cursor.execute("""
+    CREATE TABLE IF NOT EXISTS linked_rules_properties(
+        identifier INTEGER PRIMARY KEY NOT NULL,
+        accounting_rule INTEGER REFERENCES accounting_rules(identifier),
+        property_name TEXT NOT NULL,
+        setting_name TEXT NOT NULL references settings(name)
     );
     """)
     log.debug('Exit _add_new_tables')

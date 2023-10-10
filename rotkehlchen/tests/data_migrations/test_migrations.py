@@ -130,6 +130,7 @@ def detect_accounts_migration_check(
                 (UpdateType.RPC_NODES.serialize(), 999),
                 (UpdateType.CONTRACTS.serialize(), 999),
                 (UpdateType.GLOBAL_ADDRESSBOOK.serialize(), 999),
+                (UpdateType.ACCOUNTING_RULES.serialize(), 999),
             ],
         )
     migration_patch = patch(

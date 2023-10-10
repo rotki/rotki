@@ -12556,9 +12556,8 @@ Managing custom accounting rules
       "result":{
          "entries":[{
             "taxable":false,
-            "count_cost_basis_pnl":true,
-            "count_entire_amount_spend":false,
-            "method":"spend",
+            "count_cost_basis_pnl": {"value": true},
+            "count_entire_amount_spend":{"value": false},
             "accounting_treatment":null,
             "identifier":2,
             "event_type":"staking",
@@ -12596,9 +12595,8 @@ Managing custom accounting rules
 
       {
          "taxable":true,
-         "count_entire_amount_spend":false,
-         "count_cost_basis_pnl":true,
-         "method":"spend",
+         "count_entire_amount_spend":{"value": false, "linked_setting": "include_crypto2crypto"},
+         "count_cost_basis_pnl":{"value": true},
          "event_type":"staking",
          "event_subtype":"spend",
          "counterparty": "compound",
@@ -12608,9 +12606,9 @@ Managing custom accounting rules
   .. _accounting_rules_fields:
 
   :reqjsonarr boolean taxable: ``true`` if the event should be considered as taxable
-  :reqjsonarr boolean count_entire_amount_spend: if ``true`` then the entire amount is counted as a spend. Which means an expense (negative pnl).
-  :reqjsonarr boolean count_cost_basis_pnl: if ``true`` then we also count any profit/loss the asset may have had compared to when it was acquired.
-  :reqjsonarr string method: Can be either ``spend`` or ``acquisition``.
+  :reqjsonarr object count_entire_amount_spend: if ``true`` then the entire amount is counted as a spend. Which means an expense (negative pnl). Allows to link the property to an accounting setting.
+  :reqjsonarr object count_cost_basis_pnl: if ``true`` then we also count any profit/loss the asset may have had compared to when it was acquired. Allows to link the property to an accounting setting.
+  :reqjsonarr string linked_setting: If it takes any value this property will take the value of the provided setting. Can be either `include_gas_costs` or `include_crypto2crypto`.
   :reqjsonarr string event_type: The event type that the rule targets.
   :reqjsonarr string event_subtype: The event subtype that the rule targets.
   :reqjsonarr optional[string] counterparty: The counterparty that the rule targets.
@@ -12646,17 +12644,16 @@ Managing custom accounting rules
     Host: localhost:5042
     Content-Type: application/json;charset=UTF-8
 
-    {
-      "identifier": 1,
-      "taxable": true,
-      "count_entire_amount_spend": false,
-      "count_cost_basis_pnl": true,
-      "method": "spend",
-      "event_type": "staking",
-      "event_subtype": "spend",
-      "counterparty": "uniswap",
-      "accounting_treatment": "swap"
-    }
+      {
+         "identifier": 1,
+         "taxable": true,
+         "count_entire_amount_spend": {"value": false},
+         "count_cost_basis_pnl":{"value": true},
+         "event_type": "staking",
+         "event_subtype": "spend",
+         "counterparty": "uniswap",
+         "accounting_treatment": "swap"
+      }
 
   :ref:`accounting_rules_fields`
 
@@ -12681,7 +12678,7 @@ Managing custom accounting rules
 
 .. http:delete:: /api/(version)/accounting/rules
 
-  Doing a DELETE on this endpoint allows deleting a rule by their event type, subtype and counterparty.
+  Doing a DELETE on this endpoint allows deleting a rule by their identifier.
 
   **Example Request**:
 
@@ -12692,14 +12689,10 @@ Managing custom accounting rules
     Content-Type: application/json;charset=UTF-8
 
     {
-      "event_type": "staking",
-      "event_subtype": "spend",
-      "counterparty": "uniswap"
+      "identifier": 2
     }
 
-  :reqjsonarr string event_type: The event type target of the delete
-  :reqjsonarr string event_subtype: The event subtype target of the delete
-  :reqjsonarr optional[string] counterparty: The optional counterparty target of the delete. If an entry has a counterparty for the same type and subtype it won't be deleted if this field is null.
+  :reqjsonarr integer identifier: The identifier of the rule that will be deleted
 
   **Example Response**:
 

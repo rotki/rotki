@@ -1,15 +1,39 @@
-from typing import TYPE_CHECKING, Any, Optional
+import logging
+from typing import TYPE_CHECKING, Any, NamedTuple, Optional
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings
-from rotkehlchen.db.constants import NO_ACCOUNTING_COUNTERPARTY
+from rotkehlchen.db.constants import (
+    LINKABLE_ACCOUNTING_PROPERTIES,
+    LINKABLE_ACCOUNTING_SETTINGS_NAME,
+    NO_ACCOUNTING_COUNTERPARTY,
+)
+from rotkehlchen.db.drivers.gevent import DBCursor
 from rotkehlchen.db.filtering import AccountingRulesFilterQuery
 from rotkehlchen.errors.misc import InputError
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
+
+
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
+
+
+class RuleInformation(NamedTuple):
+    """
+    Represent a rule that matches a tuple (event_type, event_subtype, counterparty)
+    to the accounting rule that should be considered.
+
+    links contains the properties in rule that have been linked to an accounting setting.
+    """
+    identifier: int
+    event_key: tuple[HistoryEventType, HistoryEventSubType, str]
+    rule: BaseEventSettings
+    links: dict[str, str]
 
 
 class DBAccountingRules:
@@ -32,9 +56,11 @@ class DBAccountingRules:
             event_subtype: HistoryEventSubType,
             counterparty: Optional[str],
             rule: 'BaseEventSettings',
-    ) -> None:
+            links: dict[LINKABLE_ACCOUNTING_PROPERTIES, LINKABLE_ACCOUNTING_SETTINGS_NAME],
+    ) -> int:
         """
-        Add a single accounting rule to the database.
+        Add a single accounting rule to the database. It returns the identifier
+        of the created rule.
         May raise:
         - InputError: If the combination of type, subtype and counterparty already exists.
         """
@@ -42,8 +68,8 @@ class DBAccountingRules:
             try:
                 write_cursor.execute(
                     'INSERT INTO accounting_rules(type, subtype, counterparty, taxable, '
-                    'count_entire_amount_spend, count_cost_basis_pnl, method, '
-                    'accounting_treatment) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+                    'count_entire_amount_spend, count_cost_basis_pnl, '
+                    'accounting_treatment) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING identifier',
                     (
 
                         event_type.serialize(),
@@ -57,32 +83,34 @@ class DBAccountingRules:
                     f'{self._rule_for_string(event_type=event_type, event_subtype=event_subtype, counterparty=counterparty)} already exists',  # noqa: E501
                 ) from e
 
-    def remove_accounting_rule(
-            self,
-            event_type: HistoryEventType,
-            event_subtype: HistoryEventSubType,
-            counterparty: Optional[str],
-    ) -> None:
+            inserted_rule_id = write_cursor.fetchone()[0]
+            for property_name, setting_name in links.items():
+                self.add_linked_setting(
+                    write_cursor=write_cursor,
+                    rule_identifier=inserted_rule_id,
+                    rule_property=property_name,
+                    setting_name=setting_name,
+                )
+
+            return inserted_rule_id
+
+    def remove_accounting_rule(self, rule_id: int) -> None:
         """
-        Delete an accounting rule by (type, subtype, counterparty).
+        Delete an accounting using its identifier
         May raise:
         - InputError if the rule doesn't exist
         """
         with self.db.conn.write_ctx() as write_cursor:
             write_cursor.execute(
-                'DELETE FROM accounting_rules WHERE type=? AND subtype=? AND counterparty IS ?',
-                (
-                    event_type.serialize(),
-                    event_subtype.serialize(),
-                    counterparty if counterparty is not None else NO_ACCOUNTING_COUNTERPARTY,
-                ),
+                'DELETE FROM linked_rules_properties WHERE accounting_rule=?',
+                (rule_id,))
+            write_cursor.execute(
+                'DELETE FROM accounting_rules WHERE identifier=?',
+                (rule_id,),
             )
             if write_cursor.rowcount != 1:
                 # we know that at max there is one due to the primary key in the table
-                raise InputError(
-                    f'{self._rule_for_string(event_type=event_type, event_subtype=event_subtype, counterparty=counterparty)}'  # noqa: E501
-                    ' does not exist',
-                )
+                raise InputError(f'Rule with id {rule_id} does not exist')
 
     def update_accounting_rule(
             self,
@@ -90,6 +118,7 @@ class DBAccountingRules:
             event_subtype: HistoryEventSubType,
             counterparty: Optional[str],
             rule: 'BaseEventSettings',
+            links: dict[LINKABLE_ACCOUNTING_PROPERTIES, LINKABLE_ACCOUNTING_SETTINGS_NAME],
             identifier: int,
     ) -> None:
         """
@@ -101,7 +130,7 @@ class DBAccountingRules:
         with self.db.conn.write_ctx() as write_cursor:
             write_cursor.execute(
                 'UPDATE accounting_rules SET type=?, subtype=?, counterparty=?, taxable=?, '
-                'count_entire_amount_spend=?, count_cost_basis_pnl=?, method=?, '
+                'count_entire_amount_spend=?, count_cost_basis_pnl=?, '
                 'accounting_treatment=? WHERE identifier=?',
                 (
                     event_type.serialize(),
@@ -117,30 +146,96 @@ class DBAccountingRules:
                     ' but it was not found',
                 )
 
+            # update links. First delete them for this rule and re-add them
+            write_cursor.execute(
+                'DELETE FROM linked_rules_properties WHERE accounting_rule=?',
+                (identifier,),
+            )
+            write_cursor.executemany(
+                'INSERT INTO linked_rules_properties(accounting_rule, property_name, '
+                'setting_name) VALUES (?, ?, ?)',
+                [
+                    (identifier, rule_property, setting_name)
+                    for rule_property, setting_name in links.items()
+                ],
+            )
+
+    def add_linked_setting(
+            self,
+            write_cursor: DBCursor,
+            rule_identifier: int,
+            rule_property: LINKABLE_ACCOUNTING_PROPERTIES,
+            setting_name: LINKABLE_ACCOUNTING_SETTINGS_NAME,
+    ) -> None:
+        """
+        Store in the database a rule linked property that links it to a setting in the
+        settings table.
+        May raise: InputError
+        """
+        try:
+            write_cursor.execute(
+                'INSERT INTO linked_rules_properties(accounting_rule, property_name, '
+                'setting_name) VALUES (?, ?, ?)',
+                (rule_identifier, rule_property, setting_name),
+            )
+        except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
+            raise InputError(
+                f'Link of rule for {rule_property} to setting {setting_name} already exists',
+            ) from e
+
     def query_rules(
             self,
             filter_query: AccountingRulesFilterQuery,
-    ) -> tuple[
-        list[tuple[tuple[int, HistoryEventType, HistoryEventSubType, Optional[str]], BaseEventSettings]],  # noqa: E501
-        int,
-    ]:
+    ) -> tuple[list[RuleInformation], int]:
         """
         Query rules in the database using the provided filter. It returns the list of rules and
         the total amount of rules matching the filter without pagination.
         """
         query = 'SELECT * FROM accounting_rules '
         filter_query_str, bindings = filter_query.prepare()
-        rules = []
         with self.db.conn.read_ctx() as cursor:
             cursor.execute(query + filter_query_str, bindings)
-            rules = [
-                (entry[:4], BaseEventSettings.deserialize_from_db(entry[4:]))
+            rules = {
+                entry[0]: RuleInformation(
+                    identifier=entry[0],
+                    event_key=entry[1:4],
+                    rule=BaseEventSettings.deserialize_from_db(entry[4:]),
+                    links={},
+                )
                 for entry in cursor
-            ]
+            }
             query, bindings = filter_query.prepare(with_pagination=False)
             query = 'SELECT COUNT(*) from accounting_rules ' + query
             total_found_result = cursor.execute(query, bindings).fetchone()[0]
-        return rules, total_found_result
+
+            # check the settings linked to the rule
+            settings = self.db.get_settings(cursor)
+            cursor.execute('SELECT * FROM linked_rules_properties')
+            for (
+                _,
+                accountint_rule_id,
+                property_name,
+                setting_name,
+            ) in cursor:
+                setting_value = getattr(settings, setting_name, None)
+                if setting_value is None:
+                    log.error(
+                        f'Failed to read setting value for {setting_name} in '
+                        'links for accounting rules',
+                    )
+                    continue
+
+                if property_name == 'count_entire_amount_spend':
+                    rules[accountint_rule_id].rule.count_entire_amount_spend = setting_value
+                elif property_name == 'count_cost_basis_pnl':
+                    rules[accountint_rule_id].rule.count_cost_basis_pnl = setting_value
+                else:
+                    log.error(f'Unknown accounting rule property {property_name}')
+                    continue
+
+                rules[accountint_rule_id].links[property_name] = setting_name
+
+        return list(rules.values()), total_found_result
 
     def query_rules_and_serialize(
             self,
@@ -153,10 +248,12 @@ class DBAccountingRules:
         entries = []
         for entry in rules_raw:
             # serialize the rule and add information about the key to what it applies
-            data = entry[1].serialize()
-            data['identifier'] = entry[0][0]
-            data['event_type'] = entry[0][1]
-            data['event_subtype'] = entry[0][2]
-            data['counterparty'] = entry[0][3] if entry[0][3] != NO_ACCOUNTING_COUNTERPARTY else None  # noqa: E501
+            data = entry.rule.serialize()
+            data['identifier'] = entry.identifier
+            data['event_type'] = entry.event_key[0]
+            data['event_subtype'] = entry.event_key[1]
+            data['counterparty'] = entry.event_key[2] if entry.event_key[2] != NO_ACCOUNTING_COUNTERPARTY else None  # noqa: E501
+            for linked_property, setting_name in entry.links.items():
+                data[linked_property]['linked_setting'] = setting_name
             entries.append(data)
         return entries, total_found_result

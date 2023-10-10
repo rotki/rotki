@@ -124,7 +124,7 @@ class AccountingRulesManager:
         with self.database.conn.read_ctx() as cursor:
             cursor.execute(
                 'SELECT type, subtype, counterparty, taxable, count_entire_amount_spend, '
-                'count_cost_basis_pnl, method, accounting_treatment FROM accounting_rules',
+                'count_cost_basis_pnl, accounting_treatment FROM accounting_rules',
             )
             for entry in cursor:
                 rule = BaseEventSettings.deserialize_from_db(entry[3:])

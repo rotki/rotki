@@ -147,6 +147,7 @@ TABLES_AT_INIT = [
     'eth_staking_events_info',
     'skipped_external_events',
     'accounting_rules',
+    'linked_rules_properties',
 ]
 
 

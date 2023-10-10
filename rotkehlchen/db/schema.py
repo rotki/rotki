@@ -670,9 +670,17 @@ CREATE TABLE IF NOT EXISTS accounting_rules(
     taxable INTEGER NOT NULL CHECK (taxable IN (0, 1)),
     count_entire_amount_spend INTEGER NOT NULL CHECK (count_entire_amount_spend IN (0, 1)),
     count_cost_basis_pnl INTEGER NOT NULL CHECK (count_cost_basis_pnl IN (0, 1)),
-    method TEXT,
     accounting_treatment TEXT,
     UNIQUE(type, subtype, counterparty)
+);
+"""
+
+DB_CREATE_MAPPED_ACCOUNTING_RULES = """
+CREATE TABLE IF NOT EXISTS linked_rules_properties(
+    identifier INTEGER PRIMARY KEY NOT NULL,
+    accounting_rule INTEGER REFERENCES accounting_rules(identifier),
+    property_name TEXT NOT NULL,
+    setting_name TEXT NOT NULL references settings(name)
 );
 """
 
@@ -727,6 +735,7 @@ BEGIN TRANSACTION;
 {DB_CREATE_USER_NOTES}
 {DB_CREATE_SKIPPED_EXTERNAL_EVENTS}
 {DB_CREATE_ACCOUNTING_RULE}
+{DB_CREATE_MAPPED_ACCOUNTING_RULES}
 COMMIT;
 PRAGMA foreign_keys=on;
 """

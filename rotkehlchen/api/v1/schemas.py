@@ -35,11 +35,7 @@ from rotkehlchen.chain.ethereum.constants import ETHEREUM_ETHERSCAN_NODE_NAME
 from rotkehlchen.chain.ethereum.modules.eth2.constants import CPT_ETH2
 from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
 from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
-from rotkehlchen.chain.evm.accounting.structures import (
-    ACCOUNTING_METHOD_TYPE,
-    BaseEventSettings,
-    TxAccountingTreatment,
-)
+from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings, TxAccountingTreatment
 from rotkehlchen.chain.evm.types import EvmAccount
 from rotkehlchen.chain.gnosis.constants import GNOSIS_ETHERSCAN_NODE_NAME
 from rotkehlchen.chain.optimism.constants import OPTIMISM_ETHERSCAN_NODE_NAME
@@ -53,6 +49,10 @@ from rotkehlchen.constants.assets import A_ETH, A_ETH2
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.constants.resolver import EVM_CHAIN_DIRECTIVE
 from rotkehlchen.data_import.manager import DataImportSource
+from rotkehlchen.db.constants import (
+    LINKABLE_ACCOUNTING_PROPERTIES,
+    LINKABLE_ACCOUNTING_SETTINGS_NAME,
+)
 from rotkehlchen.db.filtering import (
     AccountingRulesFilterQuery,
     AddressbookFilterQuery,
@@ -3065,13 +3065,23 @@ class AccountingRuleIdSchema(Schema):
     counterparty = fields.String(required=False, load_default=None)
 
 
+class LinkedAccountingSetting(Schema):
+    """
+    For some accounting rules properties we allow to link its value to an accounting settings.
+    Value will be the value (true or false) given to the property by default and linked_setting
+    if provided will be the name of the setting from which the rule's property will take its value
+    """
+    value = fields.Boolean(required=True)
+    linked_setting = fields.String(
+        validate=webargs.validate.OneOf(choices=get_args(LINKABLE_ACCOUNTING_SETTINGS_NAME)),
+        load_default=None,
+    )
+
+
 class CreateAccountingRuleSchema(AccountingRuleIdSchema):
     taxable = fields.Boolean(required=True)
-    count_entire_amount_spend = fields.Boolean(required=True)
-    count_cost_basis_pnl = fields.Boolean(required=True)
-    method = fields.String(
-        validate=webargs.validate.OneOf(choices=get_args(ACCOUNTING_METHOD_TYPE)),
-    )
+    count_entire_amount_spend = fields.Nested(LinkedAccountingSetting)
+    count_cost_basis_pnl = fields.Nested(LinkedAccountingSetting)
     accounting_treatment = SerializableEnumField(enum_class=TxAccountingTreatment, required=False, load_default=None)  # noqa: E501
 
     def _create_settings(
@@ -3081,16 +3091,22 @@ class CreateAccountingRuleSchema(AccountingRuleIdSchema):
     ) -> dict[str, Any]:
         rule = BaseEventSettings(
             taxable=data['taxable'],
-            count_entire_amount_spend=data['count_entire_amount_spend'],
-            count_cost_basis_pnl=data['count_cost_basis_pnl'],
-            method=data['method'],
+            count_entire_amount_spend=data['count_entire_amount_spend']['value'],
+            count_cost_basis_pnl=data['count_cost_basis_pnl']['value'],
+            method='spend',  # TODO 1.31: REMOVE THE METHOD field
             accounting_treatment=data['accounting_treatment'],
         )
+        links = {
+            key: data[key]['linked_setting']
+            for key in get_args(LINKABLE_ACCOUNTING_PROPERTIES)
+            if data[key]['linked_setting'] is not None
+        }
         return {
             'rule': rule,
             'event_type': data['event_type'],
             'event_subtype': data['event_subtype'],
             'counterparty': data['counterparty'],
+            'links': links,
         }
 
     @post_load

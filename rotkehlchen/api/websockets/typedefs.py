@@ -23,6 +23,7 @@ class WSMessageType(Enum):
     HISTORY_EVENTS_STATUS = auto()
     REFRESH_BALANCES = auto()
     DATABASE_UPLOAD_RESULT = auto()
+    ACCOUNTING_RULE_CONFLICT = auto()
 
     def __str__(self) -> str:
         return self.name.lower()  # pylint: disable=no-member
