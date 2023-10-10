@@ -1,6 +1,7 @@
+import pytest
 import requests
-from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 
+from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_proper_response_with_result,
@@ -8,22 +9,24 @@ from rotkehlchen.tests.utils.api import (
 )
 
 
+@pytest.mark.parametrize('db_settings', [{'include_crypto2crypto': False}])
 def test_manage_rules(rotkehlchen_api_server):
     """Test basic operations in the endpoint for managing accounting rules"""
     rule_1 = {
         'taxable': True,
-        'count_entire_amount_spend': False,
-        'count_cost_basis_pnl': True,
-        'method': 'spend',
+        'count_entire_amount_spend': {
+            'value': False,
+            'linked_setting': 'include_crypto2crypto',
+        },
+        'count_cost_basis_pnl': {'value': True},
         'event_type': HistoryEventType.DEPOSIT.serialize(),
         'event_subtype': HistoryEventSubType.SPEND.serialize(),
         'counterparty': 'uniswap',
     }
     rule_2 = {
         'taxable': True,
-        'count_entire_amount_spend': False,
-        'count_cost_basis_pnl': True,
-        'method': 'spend',
+        'count_entire_amount_spend': {'value': False},
+        'count_cost_basis_pnl': {'value': True},
         'event_type': HistoryEventType.STAKING.serialize(),
         'event_subtype': HistoryEventSubType.SPEND.serialize(),
         'counterparty': None,
@@ -109,11 +112,7 @@ def test_manage_rules(rotkehlchen_api_server):
         api_url_for(
             rotkehlchen_api_server,
             'accountingrulesresource',
-        ), json={
-            'event_type': HistoryEventType.DEPOSIT.serialize(),
-            'event_subtype': HistoryEventSubType.SPEND.serialize(),
-            'counterparty': 'uniswap',
-        },
+        ), json={'identifier': 1},
     )
     assert_simple_ok_response(response)
 

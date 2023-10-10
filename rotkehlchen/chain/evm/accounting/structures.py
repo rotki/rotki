@@ -35,7 +35,6 @@ ACCOUNTING_SETTING_DB_TUPLE = tuple[
     int,  # taxable
     int,  # count_entire_amount_spend
     int,  # count_cost_basis_pnl
-    ACCOUNTING_METHOD_TYPE,  # method
     Union[str, None],  # accounting_treatment
 ]
 
@@ -62,8 +61,8 @@ class BaseEventSettings:
             taxable=bool(entry[0]),
             count_entire_amount_spend=bool(entry[1]),
             count_cost_basis_pnl=bool(entry[2]),
-            method=entry[3],
-            accounting_treatment=TxAccountingTreatment.deserialize_from_db(entry[4]) if entry[4] else None,  # noqa: E501
+            method='spend',  # TODO 1.31: REMOVE THIS when removing the method from this class
+            accounting_treatment=TxAccountingTreatment.deserialize_from_db(entry[3]) if entry[3] else None,  # noqa: E501
         )
 
     def serialize_for_db(self) -> ACCOUNTING_SETTING_DB_TUPLE:
@@ -71,16 +70,14 @@ class BaseEventSettings:
             self.taxable,
             self.count_entire_amount_spend,
             self.count_cost_basis_pnl,
-            self.method,
             self.accounting_treatment.serialize_for_db() if self.accounting_treatment else None,
         )
 
     def serialize(self) -> dict[str, Any]:
         return {
             'taxable': self.taxable,
-            'count_cost_basis_pnl': self.count_cost_basis_pnl,
-            'count_entire_amount_spend': self.count_entire_amount_spend,
-            'method': self.method,
+            'count_cost_basis_pnl': {'value': self.count_cost_basis_pnl},
+            'count_entire_amount_spend': {'value': self.count_entire_amount_spend},
             'accounting_treatment': self.accounting_treatment,
         }
 

@@ -24,7 +24,6 @@ from rotkehlchen.api.v1.parser import ignore_kwarg_parser, resource_parser
 from rotkehlchen.api.v1.schemas import (
     AccountingReportDataSchema,
     AccountingReportsSchema,
-    AccountingRuleIdSchema,
     AccountingRulesQuerySchema,
     AddressbookAddressesSchema,
     AddressbookUpdateSchema,
@@ -175,6 +174,10 @@ from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode
 from rotkehlchen.constants.location_details import LOCATION_DETAILS
 from rotkehlchen.data_import.manager import DataImportSource
+from rotkehlchen.db.constants import (
+    LINKABLE_ACCOUNTING_PROPERTIES,
+    LINKABLE_ACCOUNTING_SETTINGS_NAME,
+)
 from rotkehlchen.db.filtering import (
     AccountingRulesFilterQuery,
     AddressbookFilterQuery,
@@ -2937,7 +2940,7 @@ class ExportHistoryEventResource(BaseMethodView):
 class AccountingRulesResource(BaseMethodView):
 
     put_schema = CreateAccountingRuleSchema()
-    delete_schema = AccountingRuleIdSchema()
+    delete_schema = IntegerIdentifierSchema()
     post_schema = AccountingRulesQuerySchema()
     patch_schema = EditAccountingRuleSchema()
 
@@ -2949,12 +2952,14 @@ class AccountingRulesResource(BaseMethodView):
             event_subtype: HistoryEventSubType,
             counterparty: Optional[str],
             rule: 'BaseEventSettings',
+            links: dict[LINKABLE_ACCOUNTING_PROPERTIES, LINKABLE_ACCOUNTING_SETTINGS_NAME],
     ) -> Response:
         return self.rest_api.add_accounting_rule(
             event_type=event_type,
             event_subtype=event_subtype,
             counterparty=counterparty,
             rule=rule,
+            links=links,
         )
 
     @require_loggedin_user()
@@ -2965,6 +2970,7 @@ class AccountingRulesResource(BaseMethodView):
             event_subtype: HistoryEventSubType,
             counterparty: Optional[str],
             rule: 'BaseEventSettings',
+            links: dict[LINKABLE_ACCOUNTING_PROPERTIES, LINKABLE_ACCOUNTING_SETTINGS_NAME],
             identifier: int,
     ) -> Response:
         return self.rest_api.update_accounting_rule(
@@ -2973,6 +2979,7 @@ class AccountingRulesResource(BaseMethodView):
             counterparty=counterparty,
             rule=rule,
             identifier=identifier,
+            links=links,
         )
 
     @require_loggedin_user()
@@ -2982,14 +2989,5 @@ class AccountingRulesResource(BaseMethodView):
 
     @require_loggedin_user()
     @use_kwargs(delete_schema, location='json_and_query')
-    def delete(
-            self,
-            event_type: HistoryEventType,
-            event_subtype: HistoryEventSubType,
-            counterparty: Optional[str],
-    ) -> Response:
-        return self.rest_api.delete_accounting_rule(
-            event_type=event_type,
-            event_subtype=event_subtype,
-            counterparty=counterparty,
-        )
+    def delete(self, identifier: int) -> Response:
+        return self.rest_api.delete_accounting_rule(rule_id=identifier)

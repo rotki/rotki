@@ -4,11 +4,13 @@ from typing import Callable, Optional
 from unittest.mock import patch
 
 import pytest
+from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.constants.resolver import evm_address_to_identifier
+from rotkehlchen.db.accounting_rules import DBAccountingRules
 from rotkehlchen.db.addressbook import DBAddressbook
-from rotkehlchen.db.filtering import AddressbookFilterQuery
+from rotkehlchen.db.filtering import AccountingRulesFilterQuery, AddressbookFilterQuery
 from rotkehlchen.db.updates import RotkiDataUpdater, UpdateType
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -49,14 +51,12 @@ SERIALIZED_REMOTE_ADDRESSBOOK = [
         'address': ADDRESSBOOK_ADDRESS_1,
         'blockchain': 'ETH',
         'new_name': 'Remote name that doesnt conflict with anything',
-    },
-    {
+    }, {
         'address': ADDRESSBOOK_ADDRESS_2,
         'blockchain': 'OPTIMISM',
         'new_name': 'Remote name that has a conflict, and it should replace the local name',
         'old_name': 'Local name that has a conflict and should be replaced by the remote name',
-    },
-    {
+    }, {
         'address': ADDRESSBOOK_ADDRESS_2,
         'blockchain': 'ETH',
         'new_name': 'Remote name that has a conflict, but the local name should be preferred',
@@ -82,8 +82,7 @@ SPAM_ASSET_MOCK_DATA = {
             'name': '$ ClaimUniLP.com',
             'symbol': '$ ClaimUniLP.com - Visit to claim',
             'decimals': 18,
-        },
-        {
+        }, {
             'address': OPTIMISM_SPAM_ASSET_ADDRESS,
             'name': 'spooky-v3.xyz',
             'symbol': 'Visit https://spooky-v3.xyz and claim rewards',
@@ -102,8 +101,7 @@ RPC_NODE_MOCK_DATA = {
             'owned': False,
             'active': True,
             'blockchain': 'ETH',
-        },
-        {
+        }, {
             'name': 'alchemy free',
             'endpoint': 'https://mainnet.optimism.io',
             'weight': 0.50,
@@ -121,6 +119,40 @@ CONTRACTS_MOCK_DATA = {
     },
 }
 
+ACCOUNTING_RULES_DATA = {
+    'accounting_rules': [
+        {
+            'event_type': HistoryEventType.SPEND.serialize(),
+            'event_subtype': HistoryEventSubType.FEE.serialize(),
+            'counterparty': 'test_counterparty',
+            'taxable': True,
+            'count_entire_amount_spend': True,
+            'count_cost_basis_pnl': True,
+            'method': 'spend',
+            'accounting_treatment': None,
+            'links': {'count_cost_basis_pnl': 'include_crypto2crypto'},
+        }, {
+            'event_type': HistoryEventType.SPEND.serialize(),
+            'event_subtype': HistoryEventSubType.RETURN_WRAPPED.serialize(),
+            'counterparty': 'test_counterparty',
+            'taxable': False,
+            'count_entire_amount_spend': True,
+            'count_cost_basis_pnl': True,
+            'method': 'spend',
+            'accounting_treatment': None,
+        }, {
+            'event_type': HistoryEventType.RECEIVE.serialize(),
+            'event_subtype': HistoryEventSubType.RECEIVE_WRAPPED.serialize(),
+            'counterparty': 'test_counterparty',
+            'taxable': False,
+            'count_entire_amount_spend': True,
+            'count_cost_basis_pnl': True,
+            'method': 'acquisition',
+            'accounting_treatment': None,
+        },
+    ],
+}
+
 
 def make_single_mock_github_data_response(target: UpdateType):
     """Creates a mocking function for a single update type for github requests."""
@@ -131,6 +163,7 @@ def make_single_mock_github_data_response(target: UpdateType):
                 'rpc_nodes': {'latest': 1 if target == UpdateType.RPC_NODES else 0},
                 'contracts': {'latest': 1 if target == UpdateType.CONTRACTS else 0},
                 'global_addressbook': {'latest': 1 if target == UpdateType.GLOBAL_ADDRESSBOOK else 0},  # noqa: E501
+                'accounting_rules': {'latest': 1 if target == UpdateType.ACCOUNTING_RULES else 0},
             }
         elif 'spam_assets/v' in url:
             data = SPAM_ASSET_MOCK_DATA
@@ -140,6 +173,8 @@ def make_single_mock_github_data_response(target: UpdateType):
             data = CONTRACTS_MOCK_DATA
         elif 'global_addressbook/v' in url:
             data = {'global_addressbook': SERIALIZED_REMOTE_ADDRESSBOOK}
+        elif 'accounting_rules/v' in url:
+            data = ACCOUNTING_RULES_DATA
         else:
             raise AssertionError(f'Unknown {url=} during test')
 
@@ -173,6 +208,8 @@ def make_mock_github_response(latest: int, min_version: Optional[str] = None, ma
             result = CONTRACTS_MOCK_DATA
         elif 'global_addressbook/v' in url:
             result = {'global_addressbook': SERIALIZED_REMOTE_ADDRESSBOOK}
+        elif 'accounting_rules/v' in url:
+            result = ACCOUNTING_RULES_DATA
         else:
             raise AssertionError(f'Unknown {url=} during test')
 
@@ -199,13 +236,14 @@ def fixture_data_updater(messages_aggregator, database, our_version):
         )
 
 
-def reset_update_type_mappings(data_updater) -> None:
+def reset_update_type_mappings(data_updater: RotkiDataUpdater) -> None:
     """Need to use this after mocking so that the mapping points to the mocked methods"""
     data_updater.update_type_mappings = {
         UpdateType.SPAM_ASSETS: data_updater.update_spam_assets,
         UpdateType.RPC_NODES: data_updater.update_rpc_nodes,
         UpdateType.CONTRACTS: data_updater.update_contracts,
         UpdateType.GLOBAL_ADDRESSBOOK: data_updater.update_global_addressbook,
+        UpdateType.ACCOUNTING_RULES: data_updater.update_accounting_rules,
     }
 
 
@@ -264,7 +302,7 @@ def test_updates_run(data_updater: RotkiDataUpdater) -> None:
     assert all(patch.call_count == times for patch in patches)
     with data_updater.user_db.conn.read_ctx() as cursor:
         cursor.execute(  # make sure latest DB value is also changed
-            'SELECT value from settings WHERE name IN(?, ?, ?, ?)',
+            f'SELECT value from settings WHERE name IN({", ".join("?" * len(UpdateType))})',
             [x.serialize() for x in UpdateType],
         )
         assert {x[0] for x in cursor} == {'2'}
@@ -281,6 +319,7 @@ def test_no_update_due_to_update_version(data_updater: RotkiDataUpdater) -> None
                 (UpdateType.RPC_NODES.serialize(), 999),
                 (UpdateType.CONTRACTS.serialize(), 999),
                 (UpdateType.GLOBAL_ADDRESSBOOK.serialize(), 999),
+                (UpdateType.ACCOUNTING_RULES.serialize(), 999),
             ],
         )
     with ExitStack() as stack:
@@ -295,7 +334,7 @@ def test_no_update_due_to_update_version(data_updater: RotkiDataUpdater) -> None
     assert all(patch.call_count == 0 for patch in patches)
     with data_updater.user_db.conn.read_ctx() as cursor:
         cursor.execute(  # also make sure latest DB value is not changed
-            'SELECT value from settings WHERE name IN(?, ?, ?, ?)',
+            f'SELECT value from settings WHERE name IN({", ".join("?" * len(UpdateType))})',
             [x.serialize() for x in UpdateType],
         )
         assert {x[0] for x in cursor} == {'999'}
@@ -316,7 +355,7 @@ def test_no_update_due_to_min_rotki(data_updater: RotkiDataUpdater) -> None:
     assert all(patch.call_count == 0 for patch in patches)
     with data_updater.user_db.conn.read_ctx() as cursor:
         cursor.execute(  # also make sure latest DB value is not changed
-            'SELECT value from settings WHERE name IN(?, ?, ?, ?)',
+            f'SELECT value from settings WHERE name IN({", ".join("?" * len(UpdateType))})',
             [x.serialize() for x in UpdateType],
         )
         assert {x[0] for x in cursor} == set()
@@ -337,7 +376,7 @@ def test_no_update_due_to_max_rotki(data_updater: RotkiDataUpdater) -> None:
     assert all(patch.call_count == 0 for patch in patches)
     with data_updater.user_db.conn.read_ctx() as cursor:
         cursor.execute(  # also make sure latest DB value is not changed
-            'SELECT value from settings WHERE name IN(?, ?, ?, ?)',
+            f'SELECT value from settings WHERE name IN({", ".join("?" * len(UpdateType))})',
             [x.serialize() for x in UpdateType],
         )
         assert {x[0] for x in cursor} == set()
@@ -462,3 +501,54 @@ def test_global_addressbook(data_updater: RotkiDataUpdater) -> None:
         )[0]
 
     assert set(all_entries) == set(initial_entries[:2] + REMOTE_ADDRESSBOOK[:2])
+
+
+@pytest.mark.parametrize('db_settings', [{'include_crypto2crypto': True}])
+def test_accounting_rules_updates(data_updater: RotkiDataUpdater) -> None:
+    """Test that remote updates for accounting rules work"""
+    # check state of the address book before updating
+    with data_updater.user_db.conn.read_ctx() as cursor:
+        cursor.execute('SELECT COUNT(*) FROM accounting_rules')
+        assert cursor.fetchone()[0] == 0
+        cursor.execute('SELECT COUNT(*) FROM linked_rules_properties')
+        assert cursor.fetchone()[0] == 0
+
+    with patch(
+        'requests.get',
+        wraps=make_single_mock_github_data_response(UpdateType.ACCOUNTING_RULES),
+    ):
+        data_updater.check_for_updates()
+
+    db = DBAccountingRules(data_updater.user_db)
+    rules, n_rules = db.query_rules_and_serialize(AccountingRulesFilterQuery.make())
+    assert n_rules == 3
+    assert rules == [
+        {
+            'taxable': False,
+            'count_cost_basis_pnl': {'value': True},
+            'count_entire_amount_spend': {'value': True},
+            'accounting_treatment': None,
+            'identifier': 3,
+            'event_type': 'receive',
+            'event_subtype': 'receive wrapped',
+            'counterparty': 'test_counterparty',
+        }, {
+            'taxable': False,
+            'count_cost_basis_pnl': {'value': True},
+            'count_entire_amount_spend': {'value': True},
+            'accounting_treatment': None,
+            'identifier': 2,
+            'event_type': 'spend',
+            'event_subtype': 'return wrapped',
+            'counterparty': 'test_counterparty',
+        }, {
+            'taxable': True,
+            'count_cost_basis_pnl': {'value': True, 'linked_setting': 'include_crypto2crypto'},
+            'count_entire_amount_spend': {'value': True},
+            'accounting_treatment': None,
+            'identifier': 1,
+            'event_type': 'spend',
+            'event_subtype': 'fee',
+            'counterparty': 'test_counterparty',
+        },
+    ]

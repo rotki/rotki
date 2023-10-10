@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Final
+from typing import Final, Literal
 
 from rotkehlchen.errors.serialization import DeserializationError
 
@@ -19,6 +19,14 @@ EVM_ACCOUNTS_DETAILS_TOKENS = 'tokens'
 LAST_DATA_UPDATES_KEY: Final = 'last_data_updates_ts'
 
 NO_ACCOUNTING_COUNTERPARTY = 'NONE'
+LINKABLE_ACCOUNTING_SETTINGS_NAME = Literal[
+    'include_gas_costs',
+    'include_crypto2crypto',
+]
+LINKABLE_ACCOUNTING_PROPERTIES = Literal[
+    'count_entire_amount_spend',
+    'count_cost_basis_pnl',
+]
 
 
 class UpdateType(Enum):
@@ -26,6 +34,7 @@ class UpdateType(Enum):
     RPC_NODES = 'rpc_nodes'
     CONTRACTS = 'contracts'
     GLOBAL_ADDRESSBOOK = 'global_addressbook'
+    ACCOUNTING_RULES = 'accounting_rules'
 
     def serialize(self) -> str:
         """Serializes the update type for the DB and API"""

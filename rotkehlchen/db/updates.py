@@ -6,10 +6,15 @@ from typing import TYPE_CHECKING, Any
 import requests
 
 from packaging import version as pversion
+from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.spam_assets import update_spam_assets
+from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings, TxAccountingTreatment
+from rotkehlchen.db.accounting_rules import DBAccountingRules
 from rotkehlchen.db.addressbook import DBAddressbook
+from rotkehlchen.db.filtering import AccountingRulesFilterQuery
 from rotkehlchen.db.settings import CachedSettings
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -29,7 +34,7 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBCursor, DBHandler
     from rotkehlchen.user_messages import MessagesAggregator
 
-from .constants import LAST_DATA_UPDATES_KEY, UpdateType
+from .constants import LAST_DATA_UPDATES_KEY, NO_ACCOUNTING_COUNTERPARTY, UpdateType
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -55,6 +60,7 @@ class RotkiDataUpdater:
             UpdateType.RPC_NODES: self.update_rpc_nodes,
             UpdateType.CONTRACTS: self.update_contracts,
             UpdateType.GLOBAL_ADDRESSBOOK: self.update_global_addressbook,
+            UpdateType.ACCOUNTING_RULES: self.update_accounting_rules,
         }  # If we ever change this also change tests/unit/test_data_updates::reset_update_type_mappings  # noqa: E501
         self.version = pversion.parse(get_current_version().our_version)
 
@@ -165,6 +171,58 @@ class RotkiDataUpdater:
             existing_default_nodes=existing_default_nodes,
             new_default_nodes=new_default_nodes,
         )
+
+    def update_accounting_rules(self, data: list[dict[str, Any]], version: int) -> None:
+        """
+        Add remote rules to the user database. In case of conflict we notify the user sending
+        a ws message
+        """
+        log.info(f'Applying update for accounting rules to v{version}')
+        rules_db = DBAccountingRules(self.user_db)
+        for rule_data in data:
+            try:
+                event_type = HistoryEventType.deserialize(rule_data['event_type'])
+                event_subtype = HistoryEventSubType.deserialize(rule_data['event_subtype'])
+                counterparty = rule_data['counterparty'] if rule_data['counterparty'] is not None else NO_ACCOUNTING_COUNTERPARTY  # noqa: E501
+                rule = BaseEventSettings(
+                    taxable=rule_data['taxable'],
+                    count_entire_amount_spend=rule_data['count_entire_amount_spend'],
+                    count_cost_basis_pnl=rule_data['count_cost_basis_pnl'],
+                    method=rule_data['method'],  # todo 1.31. Remove it
+                    accounting_treatment=TxAccountingTreatment.deserialize(rule_data['accounting_treatment']) if rule_data['accounting_treatment'] else None,  # noqa: E501
+                )
+            except (KeyError, DeserializationError) as e:
+                log.error(f'Failed to read key {e} while iterating new accounting rules')
+                continue
+
+            try:
+                rules_db.add_accounting_rule(
+                    event_type=event_type,
+                    event_subtype=event_subtype,
+                    counterparty=counterparty,
+                    rule=rule,
+                    links={} if 'links' not in rule_data else rule_data['links'],
+                )
+            except InputError as e:
+                # there is a conflict in the rule. Notify the frontend about it
+                rules, _ = rules_db.query_rules_and_serialize(
+                    filter_query=AccountingRulesFilterQuery.make(
+                        event_types=[event_type],
+                        event_subtypes=[event_subtype],
+                        counterparties=[counterparty],
+                    ),
+                )
+                if len(rules) == 1:  # can be either 0 or 1
+                    self.msg_aggregator.add_message(
+                        message_type=WSMessageType.ACCOUNTING_RULE_CONFLICT,
+                        data={
+                            'local_rule': rules[0],
+                            'remote_rule': rule_data,
+                        },
+                    )
+
+                log.debug(f'Failed to add accounting rule {rule_data} due to {e}')
+                continue
 
     def update_contracts(self, data: dict[str, Any], version: int) -> None:
         """

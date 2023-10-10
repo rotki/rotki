@@ -113,7 +113,12 @@ from rotkehlchen.constants.timing import ENS_AVATARS_REFRESH
 from rotkehlchen.data_import.manager import DataImportSource
 from rotkehlchen.db.accounting_rules import DBAccountingRules
 from rotkehlchen.db.addressbook import DBAddressbook
-from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED
+from rotkehlchen.db.constants import (
+    HISTORY_MAPPING_KEY_STATE,
+    HISTORY_MAPPING_STATE_CUSTOMIZED,
+    LINKABLE_ACCOUNTING_PROPERTIES,
+    LINKABLE_ACCOUNTING_SETTINGS_NAME,
+)
 from rotkehlchen.db.custom_assets import DBCustomAssets
 from rotkehlchen.db.ens import DBEns
 from rotkehlchen.db.eth2 import DBEth2
@@ -4445,6 +4450,7 @@ class RestAPI:
             event_subtype: HistoryEventSubType,
             counterparty: Optional[str],
             rule: 'BaseEventSettings',
+            links: dict[LINKABLE_ACCOUNTING_PROPERTIES, LINKABLE_ACCOUNTING_SETTINGS_NAME],
     ) -> Response:
         db = DBAccountingRules(self.rotkehlchen.data.db)
         try:
@@ -4453,6 +4459,7 @@ class RestAPI:
                 event_subtype=event_subtype,
                 counterparty=counterparty,
                 rule=rule,
+                links=links,
             )
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
@@ -4465,6 +4472,7 @@ class RestAPI:
             event_subtype: HistoryEventSubType,
             counterparty: Optional[str],
             rule: 'BaseEventSettings',
+            links: dict[LINKABLE_ACCOUNTING_PROPERTIES, LINKABLE_ACCOUNTING_SETTINGS_NAME],
             identifier: int,
     ) -> Response:
         db = DBAccountingRules(self.rotkehlchen.data.db)
@@ -4474,6 +4482,7 @@ class RestAPI:
                 event_subtype=event_subtype,
                 counterparty=counterparty,
                 rule=rule,
+                links=links,
                 identifier=identifier,
             )
         except InputError as e:
@@ -4481,19 +4490,10 @@ class RestAPI:
 
         return api_response(_wrap_in_ok_result(True), status_code=HTTPStatus.OK)
 
-    def delete_accounting_rule(
-            self,
-            event_type: HistoryEventType,
-            event_subtype: HistoryEventSubType,
-            counterparty: Optional[str],
-    ) -> Response:
+    def delete_accounting_rule(self, rule_id: int) -> Response:
         db = DBAccountingRules(self.rotkehlchen.data.db)
         try:
-            db.remove_accounting_rule(
-                event_type=event_type,
-                event_subtype=event_subtype,
-                counterparty=counterparty,
-            )
+            db.remove_accounting_rule(rule_id=rule_id)
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 
