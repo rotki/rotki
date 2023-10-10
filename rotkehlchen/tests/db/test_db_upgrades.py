@@ -6,6 +6,7 @@ from unittest.mock import patch
 
 import pytest
 from pysqlcipher3 import dbapi2 as sqlcipher
+from rotkehlchen.chain.evm.accounting.structures import TxEventSettings
 
 from rotkehlchen.constants.misc import DEFAULT_SQL_VM_INSTRUCTIONS_CB
 from rotkehlchen.data_handler import DataHandler
@@ -1852,6 +1853,9 @@ def test_upgrade_db_39_to_40(user_data_dir):  # pylint: disable=unused-argument
     assert cursor.execute('SELECT type, seq FROM action_type').fetchall() == [
         ('A', 1), ('B', 2), ('C', 3), ('D', 4),
     ]
+    # check settings in db for ledger accounting contains the airdrop type
+    cursor.execute('SELECT value FROM settings where name=?', ('taxable_ledger_actions',))
+    assert 'airdrop' in json.loads(cursor.fetchone()[0])
 
     cursor.close()
     db_v39.logout()
@@ -1918,6 +1922,18 @@ def test_upgrade_db_39_to_40(user_data_dir):  # pylint: disable=unused-argument
     assert cursor.execute('SELECT type, seq FROM action_type').fetchall() == [
         ('A', 1), ('B', 2), ('C', 3),
     ]
+    # check that we have a defined accounting rule for aidrops comming from ledger actions
+    accounting_row = cursor.execute(
+        'SELECT * FROM accounting_rules WHERE type="receive" AND subtype="airdrop"',
+    ).fetchone()
+    assert accounting_row[:4] == (1, 'receive', 'airdrop', 'NONE')
+    assert TxEventSettings(
+        taxable=True,
+        count_entire_amount_spend=False,
+        count_cost_basis_pnl=False,
+        method='acquisition',
+        accounting_treatment=None,
+    ).serialize() == TxEventSettings.deserialize_from_db(accounting_row[4:]).serialize()
 
 
 def test_latest_upgrade_correctness(user_data_dir):
