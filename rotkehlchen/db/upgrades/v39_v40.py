@@ -252,6 +252,7 @@ def _add_new_tables(write_cursor: 'DBCursor') -> None:
     );""")
     write_cursor.execute("""
     CREATE TABLE IF NOT EXISTS accounting_rules(
+        identifier INTEGER NOT NULL PRIMARY KEY,
         type TEXT NOT NULL,
         subtype TEXT NOT NULL,
         counterparty TEXT NOT NULL,
@@ -260,7 +261,7 @@ def _add_new_tables(write_cursor: 'DBCursor') -> None:
         count_cost_basis_pnl INTEGER NOT NULL CHECK (count_cost_basis_pnl IN (0, 1)),
         method TEXT,
         accounting_treatment TEXT,
-        PRIMARY KEY(type, subtype, counterparty)
+        UNIQUE(type, subtype, counterparty)
     );
     """)
     log.debug('Exit _add_new_tables')
