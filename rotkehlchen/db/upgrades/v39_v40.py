@@ -1,10 +1,13 @@
+import json
 import logging
 from typing import TYPE_CHECKING
 from uuid import uuid4
 
 from pysqlcipher3 import dbapi2 as sqlcipher
+from rotkehlchen.chain.evm.accounting.structures import TxEventSettings
 
 from rotkehlchen.constants import ZERO
+from rotkehlchen.db.constants import NO_ACCOUNTING_COUNTERPARTY
 from rotkehlchen.db.utils import update_table_schema
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -143,7 +146,8 @@ def _migrate_ledger_actions(write_cursor: 'DBCursor', conn: 'DBConnection') -> N
 
     Then remove all no longer needed DB data
 
-    Part of https://github.com/rotki/rotki/issues/6096
+    Part of https://github.com/rotki/rotki/issues/6096. Requires the new tables to be
+    already created.
     """
     log.debug('Enter _migrate_ledger_actions')
     history_events = []
@@ -245,6 +249,45 @@ def _migrate_ledger_actions(write_cursor: 'DBCursor', conn: 'DBConnection') -> N
     log.debug('Exit _migrate_ledger_actions')
 
 
+def _migrate_ledger_airdrop_accounting_setting(write_cursor: 'DBCursor') -> None:
+    """
+    Migrates the accounting setting for airdrops to the new table for accounting
+    rules. It requires the existence of the accounting_rules table and the existence of
+    `taxable_ledger_actions` on the settings table.
+    """
+    # copy the taxable ledger actions rules
+    new_accounting_rule = None
+    write_cursor.execute('SELECT value FROM settings WHERE name=?', ('taxable_ledger_actions',))
+    if (taxable_ledgers_row := write_cursor.fetchone()) is not None:
+        try:
+            taxable_ledger_events = json.loads(taxable_ledgers_row[0])
+        except json.JSONDecodeError as e:
+            log.error(f'Failed to decode ledger action taxable rules {e}')
+        else:
+            if 'airdrop' in taxable_ledger_events:
+                new_accounting_rule = (
+                    HistoryEventType.RECEIVE.serialize(),
+                    HistoryEventSubType.AIRDROP.serialize(),
+                    NO_ACCOUNTING_COUNTERPARTY,
+                    *TxEventSettings(
+                        taxable=True,  # make it taxable
+                        count_entire_amount_spend=False,
+                        count_cost_basis_pnl=False,
+                        method='acquisition',
+                        accounting_treatment=None,
+                    ).serialize_for_db(),
+                )
+    if new_accounting_rule is None:
+        return
+
+    write_cursor.execute(
+        'INSERT INTO accounting_rules(type, subtype, counterparty, taxable, '
+        'count_entire_amount_spend, count_cost_basis_pnl, method, '
+        'accounting_treatment) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        new_accounting_rule,
+    )
+
+
 def _add_new_tables(write_cursor: 'DBCursor') -> None:
     """
     Add new tables for this upgrade
@@ -281,8 +324,10 @@ def upgrade_v39_to_v40(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         - Create new tables
     """
     log.debug('Entered userdb v39->v40 upgrade')
-    progress_handler.set_total_steps(7)
+    progress_handler.set_total_steps(8)
     with db.user_write() as write_cursor:
+        _add_new_tables(write_cursor)
+        progress_handler.new_step()
         _migrate_rotki_events(write_cursor)
         progress_handler.new_step()
         _purge_kraken_events(write_cursor)
@@ -291,9 +336,9 @@ def upgrade_v39_to_v40(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         progress_handler.new_step()
         _upgrade_rotki_events(write_cursor)
         progress_handler.new_step()
-        _migrate_ledger_actions(write_cursor, db.conn)
+        _migrate_ledger_airdrop_accounting_setting(write_cursor)
         progress_handler.new_step()
-        _add_new_tables(write_cursor)
+        _migrate_ledger_actions(write_cursor, db.conn)
         progress_handler.new_step()
 
     db.conn.execute('VACUUM;')

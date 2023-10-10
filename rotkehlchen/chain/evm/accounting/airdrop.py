@@ -27,7 +27,7 @@ class BaseAirdropsAccountant(ModuleAccountantInterface):
         """Being defined at function call time is fine since this function is called only once"""
         return {
             get_event_type_identifier(HistoryEventType.RECEIVE, HistoryEventSubType.AIRDROP, protocol): TxEventSettings(  # noqa: E501
-                taxable=False,  # this used to depend on ledger actions. Needs https://github.com/rotki/rotki/issues/4341  # noqa: E501
+                taxable=False,
                 count_entire_amount_spend=False,
                 count_cost_basis_pnl=False,
                 method='acquisition',

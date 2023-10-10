@@ -70,7 +70,7 @@ def make_default_accounting_settings(pot: 'AccountingPot') -> dict[int, BaseEven
         accounting_treatment=TxAccountingTreatment.SWAP,
     )
     result[get_event_type_identifier(HistoryEventType.RECEIVE, HistoryEventSubType.AIRDROP)] = BaseEventSettings(  # noqa: E501
-        taxable=False,  # this needs to become configurable as per https://github.com/rotki/rotki/issues/4341 since it used to respect the airdrop ledger action settings  # noqa: E501
+        taxable=False,
         # count_entire_amount_spend and count_cost_basis_pnl don't matter for acquisitions.
         count_entire_amount_spend=False,
         count_cost_basis_pnl=False,
