@@ -3,7 +3,7 @@ import { type BigNumber } from '@rotki/common';
 import { type DataTableHeader } from '@/types/vuetify';
 import { type IgnoredAssetsHandlingType } from '@/types/asset';
 import { Routes } from '@/router/routes';
-import { DashboardTableType } from '@/types/frontend-settings';
+import { DashboardTableType } from '@/types/settings/frontend-settings';
 import {
   type NonFungibleBalance,
   type NonFungibleBalanceWithLastPrice,

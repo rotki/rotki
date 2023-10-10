@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { supportedLanguages } from '@/data/supported-language';
-import { SupportedLanguage } from '@/types/frontend-settings';
+import { SupportedLanguage } from '@/types/settings/frontend-settings';
 
 const props = withDefaults(
   defineProps<{

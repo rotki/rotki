@@ -10,7 +10,7 @@ import Vue from 'vue';
 import Vuetify from 'vuetify';
 import PrioritizedList from '@/components/helper/PrioritizedList.vue';
 import PrioritizedListEntry from '@/components/helper/PrioritizedListEntry.vue';
-import { PrioritizedListData } from '@/types/prioritized-list-data';
+import { PrioritizedListData } from '@/types/settings/prioritized-list-data';
 import '../../../i18n';
 
 Vue.use(Vuetify);

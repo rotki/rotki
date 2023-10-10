@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { BlockchainRefreshButtonBehaviour } from '@/types/frontend-settings';
+import { BlockchainRefreshButtonBehaviour } from '@/types/settings/frontend-settings';
 
 const { blockchainRefreshButtonBehaviour } = storeToRefs(
   useFrontendSettingsStore()

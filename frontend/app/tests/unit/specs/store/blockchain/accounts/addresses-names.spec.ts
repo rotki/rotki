@@ -5,7 +5,7 @@ import {
   type AddressBookSimplePayload
 } from '@/types/eth-names';
 import { type Collection } from '@/types/collection';
-import { FrontendSettings } from '@/types/frontend-settings';
+import { FrontendSettings } from '@/types/settings/frontend-settings';
 
 vi.mock('@/composables/api/blockchain/addresses-names', () => ({
   useAddressesNamesApi: vi.fn().mockReturnValue({

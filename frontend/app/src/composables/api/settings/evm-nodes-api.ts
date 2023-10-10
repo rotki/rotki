@@ -3,7 +3,7 @@ import { Blockchain } from '@rotki/common/lib/blockchain';
 import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse, validStatus } from '@/services/utils';
-import { type EvmRpcNode, EvmRpcNodeList } from '@/types/settings';
+import { type EvmRpcNode, EvmRpcNodeList } from '@/types/settings/rpc';
 
 export const useEvmNodesApi = (chain: Blockchain = Blockchain.ETH) => {
   const url = `/blockchains/${chain}/nodes`;

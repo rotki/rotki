@@ -1,5 +1,5 @@
 import { type Exchange } from '@/types/exchanges';
-import { type SupportedLanguage } from '@/types/frontend-settings';
+import { type SupportedLanguage } from '@/types/settings/frontend-settings';
 import {
   type CreateAccountPayload,
   IncompleteUpgradeError,

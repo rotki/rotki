@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { type Blockchain } from '@rotki/common/lib/blockchain';
-import { type EvmRpcNode } from '@/types/settings';
+import { type EvmRpcNode } from '@/types/settings/rpc';
 
 const props = defineProps<{
   value: EvmRpcNode;

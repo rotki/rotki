@@ -2,7 +2,7 @@
 import { between, required, requiredIf } from '@vuelidate/validators';
 import { type Blockchain } from '@rotki/common/lib/blockchain';
 import { isEmpty, omit } from 'lodash-es';
-import { type EvmRpcNode, getPlaceholderNode } from '@/types/settings';
+import { type EvmRpcNode, getPlaceholderNode } from '@/types/settings/rpc';
 import { toMessages } from '@/utils/validation';
 import { ApiValidationError } from '@/types/api/errors';
 

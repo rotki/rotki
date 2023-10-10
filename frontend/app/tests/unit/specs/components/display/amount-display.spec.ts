@@ -6,7 +6,7 @@ import { VTooltip } from 'vuetify/lib/components';
 import flushPromises from 'flush-promises';
 import { useCurrencies } from '@/types/currencies';
 import { CurrencyLocation } from '@/types/currency-location';
-import { FrontendSettings } from '@/types/frontend-settings';
+import { FrontendSettings } from '@/types/settings/frontend-settings';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import createCustomPinia from '../../../utils/create-pinia';
 import { updateGeneralSettings } from '../../../utils/general-settings';

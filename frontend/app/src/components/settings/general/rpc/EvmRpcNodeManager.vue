@@ -5,7 +5,7 @@ import {
   type EvmRpcNode,
   type EvmRpcNodeList,
   getPlaceholderNode
-} from '@/types/settings';
+} from '@/types/settings/rpc';
 
 const props = defineProps<{
   chain: Blockchain;

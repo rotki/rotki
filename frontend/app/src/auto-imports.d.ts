@@ -300,6 +300,10 @@ declare global {
   const useAccountLoading: typeof import('./composables/accounts/loading')['useAccountLoading']
   const useAccountManagement: typeof import('./composables/user/account')['useAccountManagement']
   const useAccountMigrationStore: typeof import('./store/blockchain/accounts/migrate')['useAccountMigrationStore']
+  const useAccountingApi: typeof import('./composables/api/settings/accounting-api')['useAccountingApi']
+  const useAccountingRuleFilter: typeof import('./composables/filters/accounting-rule')['useAccountingRuleFilter']
+  const useAccountingRuleForm: typeof import('./composables/settings/accounting/form')['useAccountingRuleForm']
+  const useAccountingSettings: typeof import('./composables/settings/accounting/index')['useAccountingSettings']
   const useAccountingSettingsStore: typeof import('./store/settings/accounting')['useAccountingSettingsStore']
   const useActiveElement: typeof import('@vueuse/core')['useActiveElement']
   const useAddressBookFilter: typeof import('./composables/filters/address-book')['useAddressBookFilter']
@@ -1007,6 +1011,10 @@ declare module 'vue' {
     readonly useAccountLoading: UnwrapRef<typeof import('./composables/accounts/loading')['useAccountLoading']>
     readonly useAccountManagement: UnwrapRef<typeof import('./composables/user/account')['useAccountManagement']>
     readonly useAccountMigrationStore: UnwrapRef<typeof import('./store/blockchain/accounts/migrate')['useAccountMigrationStore']>
+    readonly useAccountingApi: UnwrapRef<typeof import('./composables/api/settings/accounting-api')['useAccountingApi']>
+    readonly useAccountingRuleFilter: UnwrapRef<typeof import('./composables/filters/accounting-rule')['useAccountingRuleFilter']>
+    readonly useAccountingRuleForm: UnwrapRef<typeof import('./composables/settings/accounting/form')['useAccountingRuleForm']>
+    readonly useAccountingSettings: UnwrapRef<typeof import('./composables/settings/accounting/index')['useAccountingSettings']>
     readonly useAccountingSettingsStore: UnwrapRef<typeof import('./store/settings/accounting')['useAccountingSettingsStore']>
     readonly useActiveElement: UnwrapRef<typeof import('@vueuse/core')['useActiveElement']>
     readonly useAddressBookFilter: UnwrapRef<typeof import('./composables/filters/address-book')['useAddressBookFilter']>
@@ -1708,6 +1716,10 @@ declare module '@vue/runtime-core' {
     readonly useAccountLoading: UnwrapRef<typeof import('./composables/accounts/loading')['useAccountLoading']>
     readonly useAccountManagement: UnwrapRef<typeof import('./composables/user/account')['useAccountManagement']>
     readonly useAccountMigrationStore: UnwrapRef<typeof import('./store/blockchain/accounts/migrate')['useAccountMigrationStore']>
+    readonly useAccountingApi: UnwrapRef<typeof import('./composables/api/settings/accounting-api')['useAccountingApi']>
+    readonly useAccountingRuleFilter: UnwrapRef<typeof import('./composables/filters/accounting-rule')['useAccountingRuleFilter']>
+    readonly useAccountingRuleForm: UnwrapRef<typeof import('./composables/settings/accounting/form')['useAccountingRuleForm']>
+    readonly useAccountingSettings: UnwrapRef<typeof import('./composables/settings/accounting/index')['useAccountingSettings']>
     readonly useAccountingSettingsStore: UnwrapRef<typeof import('./store/settings/accounting')['useAccountingSettingsStore']>
     readonly useActiveElement: UnwrapRef<typeof import('@vueuse/core')['useActiveElement']>
     readonly useAddressBookFilter: UnwrapRef<typeof import('./composables/filters/address-book')['useAddressBookFilter']>

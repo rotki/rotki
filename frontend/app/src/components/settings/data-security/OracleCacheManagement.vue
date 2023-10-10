@@ -2,9 +2,9 @@
 import { Severity } from '@rotki/common/lib/messages';
 import { type DataTableHeader } from '@/types/vuetify';
 import Fragment from '@/components/helper/Fragment';
-import { PriceOracle } from '@/types/price-oracle';
-import { type PrioritizedListItemData } from '@/types/prioritized-list-data';
-import { CRYPTOCOMPARE_PRIO_LIST_ITEM } from '@/types/prioritized-list-id';
+import { PriceOracle } from '@/types/settings/price-oracle';
+import { type PrioritizedListItemData } from '@/types/settings/prioritized-list-data';
+import { CRYPTOCOMPARE_PRIO_LIST_ITEM } from '@/types/settings/prioritized-list-id';
 import { TaskType } from '@/types/task-type';
 import { type OracleCacheMeta } from '@/types/prices';
 

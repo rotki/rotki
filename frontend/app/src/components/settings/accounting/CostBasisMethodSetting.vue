@@ -33,7 +33,7 @@ const getErrorMessage = (method: string) =>
       class="accounting-settings__cost-basis-method pt-4"
       :success-messages="success"
       :error-messages="error"
-      :label="t('accounting_settings.labels.cost_basis_method')"
+      :label="t('accounting_settings.trade.labels.cost_basis_method')"
       color="primary"
       @change="update($event)"
     />

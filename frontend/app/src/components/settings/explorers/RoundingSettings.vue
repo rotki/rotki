@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { type BigNumber } from '@rotki/common';
-import { type RoundingMode } from '@/types/frontend-settings';
+import { type RoundingMode } from '@/types/settings/frontend-settings';
 
 const frontendSettingsStore = useFrontendSettingsStore();
 const { amountRoundingMode, valueRoundingMode } = storeToRefs(

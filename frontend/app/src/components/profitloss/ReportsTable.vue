@@ -48,7 +48,7 @@ const tableHeaders: ComputedRef<DataTableHeader[]> = computed(() => [
     align: 'end'
   },
   {
-    text: t('profit_loss_reports.columns.actions'),
+    text: t('common.actions_text'),
     value: 'actions',
     align: 'end',
     width: 140,

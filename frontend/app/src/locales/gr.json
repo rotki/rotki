@@ -37,7 +37,6 @@
     },
     "edit_tooltip": "Επεξεργασία λογαριασμού",
     "headers": {
-      "actions": "Actions",
       "num_of_detected_tokens": "Num. of detected tokens",
       "ownership": "Ownership",
       "usd_value": "{symbol} value",
@@ -141,17 +140,19 @@
     "title": "Accounting Settings"
   },
   "accounting_settings": {
-    "labels": {
-      "account_for_assets_movements": "Take into account assets movements fees",
-      "calculate_past_cost_basis": "Calculate past cost basis when creating the report",
-      "cost_basis_method": "Cost basis method",
-      "crypto_to_crypto": "Take into account crypto to crypto trades",
-      "eth_staking_taxable_after_withdrawal": "Should omit ETH staking events from accounting until withdrawals are enabled",
-      "gas_costs": "Take into account Ethereum gas costs",
-      "tax_free": "Is there a tax free period?",
-      "tax_free_period": "Tax free after how many days"
-    },
-    "title": "Trade Settings"
+    "trade": {
+      "labels": {
+        "account_for_assets_movements": "Take into account assets movements fees",
+        "calculate_past_cost_basis": "Calculate past cost basis when creating the report",
+        "cost_basis_method": "Cost basis method",
+        "crypto_to_crypto": "Take into account crypto to crypto trades",
+        "eth_staking_taxable_after_withdrawal": "Should omit ETH staking events from accounting until withdrawals are enabled",
+        "gas_costs": "Take into account Ethereum gas costs",
+        "tax_free": "Is there a tax free period?",
+        "tax_free_period": "Tax free after how many days"
+      },
+      "title": "Trade Settings"
+    }
   },
   "actions": {
     "add_eth2_validator": {
@@ -1336,7 +1337,6 @@
     },
     "headers": {
       "action": "Action",
-      "actions": "Actions",
       "base": "Base",
       "quote": "Quote",
       "rate": "Rate"
@@ -1384,6 +1384,7 @@
       "update": "Update",
       "yes": "Yes"
     },
+    "actions_text": "Ενέργειες",
     "address": "Address",
     "amount": "Amount",
     "asset": "Asset",
@@ -1990,7 +1991,6 @@
       "tooltip": "Edit the exchange account"
     },
     "header": {
-      "actions": "Actions",
       "sync_enabled": "Sync Enabled"
     },
     "inputs": {
@@ -2836,7 +2836,6 @@
   },
   "manual_balances_table": {
     "columns": {
-      "actions": "Actions",
       "label": "Label"
     },
     "delete_dialog": {
@@ -2995,7 +2994,6 @@
   },
   "non_fungible_balances": {
     "column": {
-      "actions": "Actions",
       "custom_price": "Custom Price",
       "price_in_asset": "Price in Asset"
     },
@@ -3486,7 +3484,6 @@
   },
   "profit_loss_reports": {
     "columns": {
-      "actions": "Actions",
       "created": "Creation Date",
       "end": "Period End",
       "start": "Period Start",
@@ -3704,9 +3701,6 @@
     "confirmation": {
       "message": "Are you sure you want to delete {tagToDelete}? This will also remove all mappings of this tag.",
       "title": "Confirm tag deletion"
-    },
-    "headers": {
-      "actions": "Actions"
     },
     "my_tags": "My Tags",
     "subtitle": "Create new tags or modify existing",

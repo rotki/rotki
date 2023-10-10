@@ -5,10 +5,6 @@ import {
   type HistoryEventTypeData
 } from '@/types/history/events/event-type';
 import { type ActionDataEntry } from '@/types/action';
-import {
-  type EthDepositEvent,
-  type EvmHistoryEvent
-} from '@/types/history/events';
 
 export const useHistoryEventMappings = createSharedComposable(() => {
   const { t, te } = useI18n();
@@ -198,7 +194,7 @@ export const useHistoryEventMappings = createSharedComposable(() => {
   const { scrambleData, scrambleHex } = useScramble();
 
   const getEventCounterpartyData = (
-    event: MaybeRef<EvmHistoryEvent | EthDepositEvent>
+    event: MaybeRef<{ counterparty?: string | null; address?: string | null }>
   ): ComputedRef<ActionDataEntry | null> =>
     computed(() => {
       const { counterparty, address } = get(event);

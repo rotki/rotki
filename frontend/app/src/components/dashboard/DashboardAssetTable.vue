@@ -8,7 +8,7 @@ import { type Ref } from 'vue';
 import { type DataTableHeader } from '@/types/vuetify';
 import { type Nullable } from '@/types';
 import { CURRENCY_USD } from '@/types/currencies';
-import { type DashboardTableType } from '@/types/frontend-settings';
+import { type DashboardTableType } from '@/types/settings/frontend-settings';
 import { TableColumn } from '@/types/table-column';
 import { isEvmNativeToken } from '@/types/asset';
 

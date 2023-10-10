@@ -2,7 +2,7 @@
 import {
   PrioritizedListData,
   type PrioritizedListItemData
-} from '@/types/prioritized-list-data';
+} from '@/types/settings/prioritized-list-data';
 import {
   BLOCKCHAIN_ACCOUNT_PRIO_LIST_ITEM,
   ENS_NAMES_PRIO_LIST_ITEM,
@@ -11,7 +11,7 @@ import {
   HARDCODED_MAPPINGS_PRIO_LIST_ITEM,
   PRIVATE_ADDRESSBOOK_PRIO_LIST_ITEM,
   type PrioritizedListId
-} from '@/types/prioritized-list-id';
+} from '@/types/settings/prioritized-list-id';
 
 const currentAddressNamePriorities = ref<PrioritizedListId[]>([]);
 const { addressNamePriority } = storeToRefs(useGeneralSettingsStore());

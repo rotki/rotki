@@ -36,7 +36,7 @@ const headers = computed<DataTableHeader[]>(() => [
     value: 'description'
   },
   {
-    text: t('tag_manager.headers.actions'),
+    text: t('common.actions_text'),
     value: 'action',
     sortable: false,
     width: '80'

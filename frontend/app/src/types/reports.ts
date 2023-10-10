@@ -1,6 +1,6 @@
 import { NumericString } from '@rotki/common';
 import { z } from 'zod';
-import { type Quarter } from '@/types/frontend-settings';
+import { type Quarter } from '@/types/settings/frontend-settings';
 import { BaseAccountingSettings } from '@/types/user';
 
 export const ProfitLossOverviewItem = z.object({

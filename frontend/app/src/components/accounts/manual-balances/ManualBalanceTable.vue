@@ -112,7 +112,7 @@ const cols = computed<DataTableColumn[]>(() => [
     align: 'end'
   },
   {
-    label: t('manual_balances_table.columns.actions'),
+    label: t('common.actions_text'),
     key: 'actions',
     align: 'start',
     width: '50'
@@ -136,7 +136,7 @@ const showDeleteConfirmation = (id: number) => {
   <RuiCard class="manual-balances">
     <template #custom-header>
       <div class="px-4 pt-4">
-        <div class="flex flex-row items-center flex-wrap">
+        <div class="flex flex-row items-center flex-wrap gap-3">
           <RefreshButton
             :loading="loading"
             :tooltip="t('manual_balances_table.refresh.tooltip')"

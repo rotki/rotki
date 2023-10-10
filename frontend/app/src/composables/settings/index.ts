@@ -1,5 +1,5 @@
 import { promiseTimeout } from '@vueuse/core';
-import { type FrontendSettingsPayload } from '@/types/frontend-settings';
+import { type FrontendSettingsPayload } from '@/types/settings/frontend-settings';
 import { type BaseMessage } from '@/types/messages';
 import { type SettingsUpdate } from '@/types/user';
 import { type SessionSettings } from '@/types/session';

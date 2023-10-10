@@ -37,7 +37,6 @@
     },
     "edit_tooltip": "Konto ändern",
     "headers": {
-      "actions": "Aktivitäten",
       "num_of_detected_tokens": "Anzahl erfasster Tokens",
       "ownership": "Eigentum",
       "usd_value": "{symbol} Wert ",

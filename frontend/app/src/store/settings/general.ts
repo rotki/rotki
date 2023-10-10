@@ -1,5 +1,5 @@
 import { defaultGeneralSettings } from '@/data/factories';
-import { type AddressNamePriority } from '@/types/address-name-priorities';
+import { type AddressNamePriority } from '@/types/settings/address-name-priorities';
 import {
   type Currency,
   type SupportedCurrency,
@@ -7,7 +7,7 @@ import {
 } from '@/types/currencies';
 import { type Exchange } from '@/types/exchanges';
 import { type Module } from '@/types/modules';
-import { type PriceOracle } from '@/types/price-oracle';
+import { type PriceOracle } from '@/types/settings/price-oracle';
 import { type GeneralSettings } from '@/types/user';
 
 export const useGeneralSettingsStore = defineStore('settings/general', () => {

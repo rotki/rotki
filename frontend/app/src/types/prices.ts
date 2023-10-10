@@ -6,7 +6,10 @@ import {
 } from '@rotki/common';
 import { forEach } from 'lodash-es';
 import { z } from 'zod';
-import { type PriceOracle, PriceOracleEnum } from '@/types/price-oracle';
+import {
+  type PriceOracle,
+  PriceOracleEnum
+} from '@/types/settings/price-oracle';
 
 export const AssetPriceInput = z.tuple([
   NumericString,

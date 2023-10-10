@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { type DataTableHeader } from '@/types/vuetify';
-import { type PoapDeliveryDetails } from '@/types/airdrops';
+import { type PoapDeliveryDetails } from '@/types/defi/airdrops';
 import { default as images } from './poap.json';
 
 defineProps<{

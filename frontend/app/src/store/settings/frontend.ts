@@ -18,7 +18,7 @@ import {
   type RefreshPeriod,
   type RoundingMode,
   SupportedLanguage
-} from '@/types/frontend-settings';
+} from '@/types/settings/frontend-settings';
 import { type ActionStatus } from '@/types/action';
 import {
   type BaseSuggestion,

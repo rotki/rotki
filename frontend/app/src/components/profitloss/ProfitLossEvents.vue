@@ -101,7 +101,7 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
     sortable: false
   },
   {
-    text: t('profit_loss_events.headers.actions'),
+    text: t('common.actions_text'),
     value: 'actions',
     align: 'end',
     width: 140,

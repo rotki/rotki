@@ -9,7 +9,7 @@ import {
   type AirdropDetail,
   Airdrops,
   type PoapDelivery
-} from '@/types/airdrops';
+} from '@/types/defi/airdrops';
 import { TaskType } from '@/types/task-type';
 import { type TaskMeta } from '@/types/task';
 import AirdropDisplay from '@/components/defi/airdrops/AirdropDisplay.vue';

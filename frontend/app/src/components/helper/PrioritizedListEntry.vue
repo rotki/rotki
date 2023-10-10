@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { AddressNamePriority } from '@/types/address-name-priorities';
-import { PriceOracle } from '@/types/price-oracle';
-import { type PrioritizedListItemData } from '@/types/prioritized-list-data';
-import { type PrioritizedListId } from '@/types/prioritized-list-id';
+import { AddressNamePriority } from '@/types/settings/address-name-priorities';
+import { PriceOracle } from '@/types/settings/price-oracle';
+import { type PrioritizedListItemData } from '@/types/settings/prioritized-list-data';
+import { type PrioritizedListId } from '@/types/settings/prioritized-list-id';
 import { toSentenceCase } from '@/utils/text';
 
 const props = defineProps<{

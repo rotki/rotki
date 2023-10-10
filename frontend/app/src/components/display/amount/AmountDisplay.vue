@@ -4,7 +4,7 @@ import { type ComputedRef } from 'vue';
 import { or } from '@vueuse/math';
 import { displayAmountFormatter } from '@/data/amount_formatter';
 import { CURRENCY_USD, type Currency, useCurrencies } from '@/types/currencies';
-import { type RoundingMode } from '@/types/frontend-settings';
+import { type RoundingMode } from '@/types/settings/frontend-settings';
 
 const props = withDefaults(
   defineProps<{

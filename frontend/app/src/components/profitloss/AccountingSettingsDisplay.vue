@@ -10,12 +10,6 @@ const props = defineProps<{ accountingSettings: BaseAccountingSettings }>();
 const { accountingSettings } = toRefs(props);
 const { t } = useI18n();
 const { costBasisMethodData } = useCostBasisMethod();
-const color = (enabled: boolean | null) =>
-  enabled
-    ? 'accounting-settings-display--yes'
-    : 'accounting-settings-display--no';
-
-const icon = (enabled: boolean | null) => (enabled ? 'mdi-check' : 'mdi-close');
 
 const taxFreePeriod = (period: number) => {
   const days = period / 86400;
@@ -41,124 +35,83 @@ const costBasisMethodItem = computed<ActionDataEntry<CostBasisMethod> | null>(
     <template #subtitle>
       {{ t('account_settings_display.subtitle') }}
     </template>
-    <VRow class="mt-2">
-      <VCol cols="12" sm="6">
-        <span class="text--primary">
+    <div class="grid md:grid-cols-2 gap-2">
+      <div class="flex items-center gap-2">
+        <div class="text-body-1">
           {{ t('account_settings_display.past_cost_basis') }}
-        </span>
-        <span class="ms-2">
-          <VIcon :class="color(accountingSettings.calculatePastCostBasis)">
-            {{ icon(accountingSettings.calculatePastCostBasis) }}
-          </VIcon>
-        </span>
-      </VCol>
-      <VCol cols="12" sm="6">
-        <span class="text--primary">
+        </div>
+        <BooleanDisplay :display="accountingSettings.calculatePastCostBasis" />
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="text-body-1">
           {{ t('account_settings_display.crypto2crypto') }}
-        </span>
-        <span class="ms-2">
-          <VIcon :class="color(accountingSettings.includeCrypto2crypto)">
-            {{ icon(accountingSettings.includeCrypto2crypto) }}
-          </VIcon>
-        </span>
-      </VCol>
-      <VCol cols="12" sm="6">
-        <span class="text--primary">
+        </div>
+        <BooleanDisplay :display="accountingSettings.includeCrypto2crypto" />
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="text-body-1">
           {{ t('account_settings_display.gas_costs') }}
-        </span>
-        <span class="ms-2">
-          <VIcon :class="color(accountingSettings.includeGasCosts)">
-            {{ icon(accountingSettings.includeGasCosts) }}
-          </VIcon>
-        </span>
-      </VCol>
-      <VCol cols="12" sm="6">
-        <span class="text--primary">
+        </div>
+        <BooleanDisplay :display="accountingSettings.includeGasCosts" />
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="text-body-1">
           {{ t('account_settings_display.profit_currency') }}
-        </span>
-        <span class="ms-2">
+        </div>
+        <div>
           {{ accountingSettings.profitCurrency }}
-        </span>
-      </VCol>
-      <VCol cols="12" sm="6">
-        <span class="text--primary">
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="text-body-1">
           {{ t('account_settings_display.account_asset_movement') }}
-        </span>
-        <span class="ms-2">
-          <VIcon :class="color(accountingSettings.accountForAssetsMovements)">
-            {{ icon(accountingSettings.accountForAssetsMovements) }}
-          </VIcon>
-        </span>
-      </VCol>
-      <VCol cols="12" sm="6">
-        <span class="text--primary">
+        </div>
+        <BooleanDisplay
+          :display="accountingSettings.accountForAssetsMovements"
+        />
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="text-body-1">
           {{ t('account_settings_display.tax_free_period') }}
-        </span>
-        <span class="font-medium ms-2">
-          <span
-            v-if="accountingSettings.taxfreeAfterPeriod"
-            :class="color(accountingSettings.taxfreeAfterPeriod > 0)"
-          >
-            {{ taxFreePeriod(accountingSettings.taxfreeAfterPeriod) }}
-          </span>
-          <VIcon v-else :class="color(false)"> mdi-close </VIcon>
-        </span>
-      </VCol>
+        </div>
+        <div
+          v-if="accountingSettings.taxfreeAfterPeriod"
+          class="text-body-1 text-rui-text-secondary"
+        >
+          {{ taxFreePeriod(accountingSettings.taxfreeAfterPeriod) }}
+        </div>
+        <BooleanDisplay v-else />
+      </div>
 
-      <VCol
+      <div
         v-if="
           accountingSettings.ethStakingTaxableAfterWithdrawalEnabled !==
           undefined
         "
-        cols="12"
-        sm="6"
+        class="flex items-center gap-2"
       >
-        <span class="text--primary">
+        <div class="text-body-1">
           {{
             t(
               'account_settings_display.eth_staking_taxable_after_withdrawal_enabled'
             )
           }}
-        </span>
-        <span class="ms-2">
-          <VIcon
-            :class="
-              color(accountingSettings.ethStakingTaxableAfterWithdrawalEnabled)
-            "
-          >
-            {{
-              icon(accountingSettings.ethStakingTaxableAfterWithdrawalEnabled)
-            }}
-          </VIcon>
-        </span>
-      </VCol>
-      <VCol v-if="costBasisMethodItem" cols="12" sm="6">
-        <span class="text--primary">
+        </div>
+        <BooleanDisplay
+          :display="accountingSettings.ethStakingTaxableAfterWithdrawalEnabled"
+        />
+      </div>
+      <div v-if="costBasisMethodItem" class="flex items-center gap-2">
+        <div class="text-body-1">
           {{ t('account_settings_display.cost_basis_method') }}
-        </span>
-        <span class="ms-2">
-          <span class="accounting-settings-display--uppercase">
+        </div>
+        <div class="text-body-1 text-rui-text-secondary">
+          <div class="uppercase">
             {{ costBasisMethodItem.identifier }}
-          </span>
-          <span>({{ costBasisMethodItem.label }})</span>
-        </span>
-      </VCol>
-    </VRow>
+          </div>
+          <div>({{ costBasisMethodItem.label }})</div>
+        </div>
+      </div>
+    </div>
   </Card>
 </template>
-
-<style scoped lang="scss">
-.accounting-settings-display {
-  &--yes {
-    color: var(--v-rotki-success-base);
-  }
-
-  &--no {
-    color: var(--v-rotki-error-base);
-  }
-
-  &--uppercase {
-    text-transform: uppercase;
-  }
-}
-</style>

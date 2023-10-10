@@ -354,7 +354,7 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
 
   if (!get(loopring)) {
     headers.push({
-      text: t('account_balances.headers.actions'),
+      text: t('common.actions_text'),
       value: 'actions',
       align: 'center',
       sortable: false,

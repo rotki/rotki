@@ -87,7 +87,7 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
       value: 'timestamp'
     },
     {
-      text: t('closed_trades.headers.actions'),
+      text: t('common.actions_text'),
       value: 'actions',
       align: 'center',
       sortable: false,
