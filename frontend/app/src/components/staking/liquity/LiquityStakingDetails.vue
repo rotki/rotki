@@ -253,91 +253,85 @@ const refresh = async () => {
 };
 
 const css = useCssModule();
+const slots = useSlots();
 </script>
 
 <template>
-  <div>
-    <VRow align="center" class="pt-2">
-      <VCol sm="6" cols="10">
-        <BlockchainAccountSelector
-          v-model="selectedAccounts"
-          :label="t('liquity_staking_details.select_account')"
-          :chains="chains"
-          dense
-          outlined
-          no-padding
-          multiple
-          flat
-          :usable-addresses="availableAddresses"
-        />
-      </VCol>
-      <VCol>
-        <VMenu v-if="proxyInformation" offset-x nudge-right="8" min-width="410">
-          <template #activator="{ on, attrs }">
-            <VIcon v-bind="attrs" v-on="on"> mdi-information</VIcon>
-          </template>
-          <div class="pa-4">
-            <div v-for="(proxies, key, index) in proxyInformation" :key="key">
-              <div class="flex items-center">
-                <VChip class="pl-1 pr-2">
-                  <HashLink :text="key" />
-                </VChip>
-                <div class="ml-2">
-                  {{
-                    t('liquity_staking_details.has_proxy_addresses', {
-                      length: proxies.length
-                    })
-                  }}
-                </div>
-              </div>
-              <div class="ml-4 pl-4 pt-2" :class="css['proxies-wrapper']">
-                <div
-                  v-for="proxy in proxies"
-                  :key="proxy"
-                  class="mb-1"
-                  :class="css['proxies-item']"
-                >
-                  <VChip class="pl-1 pr-2">
-                    <HashLink :text="proxy" />
-                  </VChip>
-                </div>
-              </div>
-              <VDivider
-                v-if="index < Object.keys(proxyInformation).length - 1"
-                class="my-4"
-              />
-            </div>
+  <div class="flex flex-col gap-4">
+    <div class="flex flex-row flex-wrap items-center gap-4">
+      <BlockchainAccountSelector
+        v-model="selectedAccounts"
+        :label="t('liquity_staking_details.select_account')"
+        :chains="chains"
+        class="md:w-[25rem]"
+        dense
+        outlined
+        no-padding
+        multiple
+        flat
+        :usable-addresses="availableAddresses"
+      />
+
+      <VMenu v-if="proxyInformation" offset-x nudge-right="8" min-width="410">
+        <template #activator="{ on, attrs }">
+          <div v-bind="attrs" v-on="on">
+            <RuiIcon name="information-line" />
           </div>
-        </VMenu>
-      </VCol>
-      <VCol v-if="$slots.modules" cols="auto">
+        </template>
+        <div class="pa-4">
+          <div v-for="(proxies, key, index) in proxyInformation" :key="key">
+            <div class="flex flex-row items-center gap-2">
+              <RuiChip>
+                <HashLink :text="key" />
+              </RuiChip>
+              {{
+                t('liquity_staking_details.has_proxy_addresses', {
+                  length: proxies.length
+                })
+              }}
+            </div>
+            <div class="ml-4 pl-4 pt-2" :class="css['proxies-wrapper']">
+              <div
+                v-for="proxy in proxies"
+                :key="proxy"
+                class="mb-1"
+                :class="css['proxies-item']"
+              >
+                <RuiChip class="pl-1 pr-2">
+                  <HashLink :text="proxy" />
+                </RuiChip>
+              </div>
+            </div>
+            <div
+              v-if="index < Object.keys(proxyInformation).length - 1"
+              class="my-4 border-b"
+            />
+          </div>
+        </div>
+      </VMenu>
+
+      <div class="grow" />
+
+      <div v-if="slots.modules">
         <slot name="modules" />
-      </VCol>
-      <VCol cols="auto" class="pl-2">
-        <RefreshButton
-          :tooltip="t('liquity_staking_details.refresh_tooltip')"
-          :loading="loading"
-          @refresh="refresh()"
-        />
-      </VCol>
-    </VRow>
+      </div>
 
-    <VRow>
-      <VCol md="6" cols="12">
-        <LiquityPools :pool="aggregatedStakingPool" />
-      </VCol>
+      <RefreshButton
+        :tooltip="t('liquity_staking_details.refresh_tooltip')"
+        :loading="loading"
+        @refresh="refresh()"
+      />
+    </div>
 
-      <VCol md="6" cols="12">
-        <LiquityStake :stake="aggregatedStake" />
-      </VCol>
+    <div class="flex flex-row flex-wrap gap-4">
+      <LiquityPools class="flex-1" :pool="aggregatedStakingPool" />
+      <LiquityStake class="flex-1" :stake="aggregatedStake" />
+    </div>
 
-      <VCol>
-        <LiquityStatistics
-          :statistic="aggregatedStatistic"
-          :pool="aggregatedStakingPool"
-        />
-      </VCol>
-    </VRow>
+    <LiquityStatistics
+      :statistic="aggregatedStatistic"
+      :pool="aggregatedStakingPool"
+    />
 
     <HistoryEventsView
       use-external-account-filter
@@ -358,7 +352,7 @@ const css = useCssModule();
     &::before {
       content: '';
       position: absolute;
-      height: calc(100% - 1rem);
+      height: calc(100% - 1.1rem);
       top: 0;
       left: 0;
       border-left: 1px solid var(--border-color);

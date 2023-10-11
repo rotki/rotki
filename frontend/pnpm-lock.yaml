@@ -56,8 +56,8 @@ importers:
         specifier: 1.1.2
         version: 1.1.2(eslint@8.50.0)
       '@rotki/ui-library-compat':
-        specifier: 0.5.0
-        version: 0.5.0(@vueuse/core@10.4.1)(@vueuse/shared@10.4.1)(vue@2.7.14)
+        specifier: 0.5.1
+        version: 0.5.1(@vueuse/core@10.4.1)(@vueuse/shared@10.4.1)(vue@2.7.14)
       '@types/lodash-es':
         specifier: 4.17.9
         version: 4.17.9
@@ -2434,8 +2434,8 @@ packages:
       - vue
     dev: true
 
-  /@rotki/ui-library-compat@0.5.0(@vueuse/core@10.4.1)(@vueuse/shared@10.4.1)(vue@2.7.14):
-    resolution: {integrity: sha512-cIoUMoX6BZgDR8ZMLaozk2JsyFvOUbdYlbUo+HXMBXEU9X6no4XudoyqjOc1GPEUe+QHZtdGtAkhYFuzjQ5UjA==}
+  /@rotki/ui-library-compat@0.5.1(@vueuse/core@10.4.1)(@vueuse/shared@10.4.1)(vue@2.7.14):
+    resolution: {integrity: sha512-E4kqnYje59UVWp6wMaE4u+k04JStN213qMDicOUToKBi2rK8UVyXfR9Dxm+0l3HCuYPov93CW4cPFTPNaIwYGA==}
     engines: {pnpm: '>=8 <9'}
     peerDependencies:
       '@vueuse/core': '>10.0.0'
@@ -4661,7 +4661,6 @@ packages:
     dependencies:
       ms: 2.1.3
       supports-color: 5.5.0
-    dev: true
 
   /debug@3.2.7(supports-color@8.1.1):
     resolution: {integrity: sha512-CFjzYYAi4ThfiQvizrFQevTTXHtnCqWfe7x1AhgEscTz6ZbLbfoLRLPugTQyBth6f8ZERVUSyWHFD/7Wu4t1XQ==}
@@ -5293,7 +5292,7 @@ packages:
   /eslint-import-resolver-node@0.3.9:
     resolution: {integrity: sha512-WFj2isz22JahUv+B788TlO3N6zL3nNJGU8CcZbPZvVEkBPaJdCV4vy5wyghty5ROFbCRnm132v8BScu5/1BQ8g==}
     dependencies:
-      debug: 3.2.7(supports-color@8.1.1)
+      debug: 3.2.7(supports-color@5.5.0)
       is-core-module: 2.13.0
       resolve: 1.22.6
     transitivePeerDependencies:
@@ -5321,7 +5320,7 @@ packages:
         optional: true
     dependencies:
       '@typescript-eslint/parser': 6.7.0(eslint@8.50.0)(typescript@5.2.2)
-      debug: 3.2.7(supports-color@8.1.1)
+      debug: 3.2.7(supports-color@5.5.0)
       eslint: 8.50.0
       eslint-import-resolver-node: 0.3.9
     transitivePeerDependencies:
@@ -5366,7 +5365,7 @@ packages:
       array.prototype.findlastindex: 1.2.3
       array.prototype.flat: 1.3.2
       array.prototype.flatmap: 1.3.2
-      debug: 3.2.7(supports-color@8.1.1)
+      debug: 3.2.7(supports-color@5.5.0)
       doctrine: 2.1.0
       eslint: 8.50.0
       eslint-import-resolver-node: 0.3.9
