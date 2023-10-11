@@ -1051,8 +1051,7 @@
       "ignore_selected": "Ignore selected tokens",
       "seen_during": "Seen during",
       "select_deselect_all_tokens": "Select/deselect all tokens",
-      "subtitle": "Inspect the list of newly detected tokens and add any spam assets to the ignored tokens list",
-      "title": "Newly detected tokens"
+      "subtitle": "Inspect the list of newly detected tokens and add any spam assets to the ignored tokens list"
     },
     "notes": "Notes",
     "only_show_ignored": "Only show ignored assets ({length}) | Only show ignored assets",

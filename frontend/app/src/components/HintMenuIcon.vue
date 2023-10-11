@@ -1,18 +1,22 @@
 <script setup lang="ts">
-const { t } = useI18n();
+defineProps<{
+  text?: string;
+  menuClass?: string | string[] | Record<string, boolean>;
+}>();
 
 const visible = ref(false);
+const attrs = useAttrs();
 </script>
 
 <template>
-  <VMenu v-model="visible" offset-x>
+  <VMenu v-model="visible" v-bind="attrs" offset-x>
     <template #activator="{ on }">
       <RuiButton variant="text" icon @click="visible = true" v-on="on">
         <RuiIcon name="question-line" />
       </RuiButton>
     </template>
-    <div class="pa-4">
-      {{ t('asset_table.custom.subtitle') }}
+    <div class="pa-4" :class="menuClass">
+      <slot> {{ text }} </slot>
     </div>
   </VMenu>
 </template>
