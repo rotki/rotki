@@ -486,7 +486,7 @@ class SupportedBlockchain(SerializableEnumValueMixin):
         if self == SupportedBlockchain.POLYGON_POS:
             return 'eip155:137/erc20:0x0000000000000000000000000000000000001010'
         if self == SupportedBlockchain.GNOSIS:
-            return 'eip155:100/erc20:0x0000000000000000000000000000000000000000'  # xDAI
+            return 'XDAI'
 
         return self.value
 
