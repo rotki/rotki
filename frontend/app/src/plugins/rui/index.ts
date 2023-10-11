@@ -8,6 +8,7 @@ import {
   RiArrowLeftLine,
   RiArrowRightLine,
   RiArrowRightSLine,
+  RiArrowUpCircleLine,
   RiArrowUpLine,
   RiBankLine,
   RiBarChartBoxLine,
@@ -193,6 +194,7 @@ Vue.use(RuiPlugin, {
     RiDeleteBin5Line,
     RiPlayListAddLine,
     RiCornerLeftUpLine,
-    RiExternalLinkLine
+    RiExternalLinkLine,
+    RiArrowUpCircleLine
   ]
 });

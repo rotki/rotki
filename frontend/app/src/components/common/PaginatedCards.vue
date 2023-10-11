@@ -1,18 +1,10 @@
 <script setup lang="ts">
-import { type PropType } from 'vue';
-
 type GetKey = (item: any) => string;
 
-const props = defineProps({
-  items: {
-    required: true,
-    type: Array as PropType<any[]>
-  },
-  identifier: {
-    required: true,
-    type: Function as PropType<GetKey>
-  }
-});
+const props = defineProps<{
+  items: any[];
+  identifier: GetKey;
+}>();
 
 const { items } = toRefs(props);
 const { name: breakpoint } = useDisplay();
@@ -39,17 +31,10 @@ watch(items, () => set(page, 1));
 <template>
   <div>
     <VPagination v-if="pages > 1" v-model="page" :length="pages" />
-    <VRow class="mt-2">
-      <VCol
-        v-for="item in visible"
-        :key="identifier(item)"
-        cols="12"
-        md="6"
-        lg="6"
-        xl="4"
-      >
+    <div class="grid md:grid-cols-2 2xl:grid-cols-3 gap-4">
+      <div v-for="item in visible" :key="identifier(item)">
         <slot name="item" :item="item" />
-      </VCol>
-    </VRow>
+      </div>
+    </div>
   </div>
 </template>

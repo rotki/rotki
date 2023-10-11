@@ -90,6 +90,8 @@ const isCompound = isProtocol(DefiProtocol.COMPOUND);
 const isAave = isProtocol(DefiProtocol.AAVE);
 const isYearnVaults = isProtocol(DefiProtocol.YEARN_VAULTS);
 const isYearnVaultsV2 = isProtocol(DefiProtocol.YEARN_VAULTS_V2);
+const isYearn = logicAnd(isYearnVaults, isYearnVaultsV2);
+const noProtocolSelection = computed(() => get(selectedProtocols).length === 0);
 
 const yearnVersion = computed(() => {
   if (get(isYearnVaults)) {
@@ -163,51 +165,43 @@ const transactionEventProtocols: ComputedRef<string[]> = computed(() => {
   <ProgressScreen v-if="loading">
     <template #message>{{ t('lending.loading') }}</template>
   </ProgressScreen>
-  <div v-else>
-    <VRow no-gutters align="center">
-      <VCol>
-        <RefreshHeader
-          :loading="refreshing"
-          :title="t('common.deposits')"
-          @refresh="refresh()"
-        >
-          <template #actions>
-            <ActiveModules :modules="modules" />
-          </template>
-        </RefreshHeader>
-      </VCol>
-    </VRow>
+  <div v-else class="flex flex-col gap-4">
+    <RefreshHeader
+      :loading="refreshing"
+      :title="t('common.deposits')"
+      @refresh="refresh()"
+    >
+      <template #actions>
+        <ActiveModules :modules="modules" />
+      </template>
+    </RefreshHeader>
+
     <DepositTotals
       :loading="historyLoading"
       :effective-interest-rate="effectiveInterestRate"
       :total-lending-deposit="totalLendingDeposit"
       :total-usd-earned="totalUsdEarned"
     />
-    <VRow class="mt-8" no-gutters>
-      <VCol cols="12" sm="6" class="pe-sm-4">
-        <BlockchainAccountSelector
-          v-model="selectedAccounts"
-          class="pt-2"
-          hint
-          outlined
-          dense
-          :chains="chains"
-          :usable-addresses="defiAddresses"
-        />
-      </VCol>
-      <VCol cols="12" sm="6" class="ps-sm-4 pt-4 pt-sm-0">
-        <DefiProtocolSelector v-model="protocol" />
-      </VCol>
-    </VRow>
-    <VRow v-if="!isYearnVaults && !isYearnVaultsV2" class="mt-8" no-gutters>
-      <VCol>
-        <StatCard :title="t('common.assets')">
-          <LendingAssetTable :loading="refreshing" :assets="lendingBalances" />
-        </StatCard>
-      </VCol>
-    </VRow>
+
+    <div class="grid md:grid-cols-2 gap-4">
+      <BlockchainAccountSelector
+        v-model="selectedAccounts"
+        class="pt-2"
+        hint
+        outlined
+        dense
+        :chains="chains"
+        :usable-addresses="defiAddresses"
+      />
+      <DefiProtocolSelector v-model="protocol" />
+    </div>
+
+    <StatCard v-if="!isYearn" :title="t('common.assets')">
+      <LendingAssetTable :loading="refreshing" :assets="lendingBalances" />
+    </StatCard>
+
     <YearnAssetsTable
-      v-if="isYearnVaults || isYearnVaultsV2 || selectedProtocols.length === 0"
+      v-if="isYearn || noProtocolSelection"
       class="mt-8"
       :version="yearnVersion"
       :loading="refreshing"
@@ -216,40 +210,29 @@ const transactionEventProtocols: ComputedRef<string[]> = computed(() => {
     <template v-if="premium">
       <CompoundLendingDetails
         v-if="isCompound"
-        class="mt-8"
         :addresses="selectedAddresses"
       />
+
       <YearnVaultsProfitDetails
-        v-if="
-          (isYearnVaults ||
-            isYearnVaultsV2 ||
-            selectedProtocols.length === 0) &&
-          yearnProfit.length > 0
-        "
-        class="mt-8"
+        v-if="(isYearn || noProtocolSelection) && yearnProfit.length > 0"
         :profit="yearnProfit"
       />
+
       <AaveEarnedDetails
-        v-if="
-          (isAave || selectedProtocols.length === 0) &&
-          totalEarnedInAave.length > 0
-        "
-        class="mt-8"
+        v-if="(isAave || noProtocolSelection) && totalEarnedInAave.length > 0"
         :profit="totalEarnedInAave"
       />
     </template>
-    <div v-if="!premium" class="mt-8">
-      <PremiumCard :title="t('lending.history')" />
-    </div>
-    <div v-else>
-      <HistoryEventsView
-        use-external-account-filter
-        :section-title="t('common.events')"
-        :protocols="transactionEventProtocols"
-        :external-account-filter="selectedAccounts"
-        :only-chains="chains"
-        :entry-types="[HistoryEventEntryType.EVM_EVENT]"
-      />
-    </div>
+
+    <PremiumCard v-if="!premium" :title="t('lending.history')" />
+    <HistoryEventsView
+      v-else
+      use-external-account-filter
+      :section-title="t('common.events')"
+      :protocols="transactionEventProtocols"
+      :external-account-filter="selectedAccounts"
+      :only-chains="chains"
+      :entry-types="[HistoryEventEntryType.EVM_EVENT]"
+    />
   </div>
 </template>

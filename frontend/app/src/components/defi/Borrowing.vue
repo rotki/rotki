@@ -1,12 +1,11 @@
 <script setup lang="ts">
 import { DefiProtocol } from '@rotki/common/lib/blockchain';
-import { type PropType } from 'vue';
 import { type Module } from '@/types/modules';
 import { Section } from '@/types/status';
 
-defineProps({
-  modules: { required: true, type: Array as PropType<Module[]> }
-});
+defineProps<{
+  modules: Module[];
+}>();
 
 const selection = ref<string>();
 const protocol = ref<DefiProtocol | null>(null);
@@ -60,88 +59,80 @@ onMounted(async () => {
   <ProgressScreen v-if="loading">
     <template #message>{{ t('borrowing.loading') }}</template>
   </ProgressScreen>
-  <div v-else>
-    <VRow class="mt-8">
-      <VCol>
-        <RefreshHeader
-          :title="t('borrowing.header')"
-          :loading="refreshing"
-          @refresh="refresh()"
-        >
-          <template #actions>
-            <ActiveModules :modules="modules" />
+  <div v-else class="flex flex-col gap-4">
+    <RefreshHeader
+      :title="t('borrowing.header')"
+      :loading="refreshing"
+      @refresh="refresh()"
+    >
+      <template #actions>
+        <ActiveModules :modules="modules" />
+      </template>
+    </RefreshHeader>
+
+    <StatCardWide :cols="2">
+      <template #first-col>
+        <StatCardColumn>
+          <template #title>
+            {{ t('borrowing.total_collateral_locked') }}
           </template>
-        </RefreshHeader>
-      </VCol>
-    </VRow>
-    <VRow no-gutters class="mt-6">
-      <VCol cols="12">
-        <StatCardWide :cols="2">
-          <template #first-col>
-            <StatCardColumn>
-              <template #title>
-                {{ t('borrowing.total_collateral_locked') }}
-              </template>
-              <AmountDisplay
-                :value="summary.totalCollateralUsd"
-                show-currency="symbol"
-                fiat-currency="USD"
-              />
-            </StatCardColumn>
+          <AmountDisplay
+            :value="summary.totalCollateralUsd"
+            show-currency="symbol"
+            fiat-currency="USD"
+          />
+        </StatCardColumn>
+      </template>
+      <template #second-col>
+        <StatCardColumn>
+          <template #title>
+            {{ t('borrowing.total_outstanding_debt') }}
           </template>
-          <template #second-col>
-            <StatCardColumn>
-              <template #title>
-                {{ t('borrowing.total_outstanding_debt') }}
-              </template>
-              <AmountDisplay
-                :value="summary.totalDebt"
-                show-currency="symbol"
-                fiat-currency="USD"
-              />
-            </StatCardColumn>
-          </template>
-        </StatCardWide>
-      </VCol>
-    </VRow>
-    <VRow no-gutters class="mt-8">
-      <VCol cols="12" md="6" class="pe-md-4">
-        <VCard>
-          <div class="mx-4 pt-4">
-            <VAutocomplete
-              v-model="selection"
-              class="borrowing__vault-selection"
-              :label="t('borrowing.select_loan')"
-              chips
-              dense
-              outlined
-              item-key="identifier"
-              :items="loans"
-              item-text="identifier"
-              hide-details
-              clearable
-              :open-on-clear="false"
-            >
-              <template #selection="{ item }">
-                <DefiSelectorItem :item="item" />
-              </template>
-              <template #item="{ item }">
-                <DefiSelectorItem :item="item" />
-              </template>
-            </VAutocomplete>
-          </div>
-          <VCardText>{{ t('borrowing.select_loan_hint') }}</VCardText>
-        </VCard>
-      </VCol>
-      <VCol cols="12" md="6" class="ps-md-4 pt-8 pt-md-0">
-        <DefiProtocolSelector v-model="protocol" liabilities />
-      </VCol>
-    </VRow>
+          <AmountDisplay
+            :value="summary.totalDebt"
+            show-currency="symbol"
+            fiat-currency="USD"
+          />
+        </StatCardColumn>
+      </template>
+    </StatCardWide>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <VCard>
+        <div class="mx-4 pt-4">
+          <VAutocomplete
+            v-model="selection"
+            class="borrowing__vault-selection"
+            :label="t('borrowing.select_loan')"
+            chips
+            dense
+            outlined
+            item-key="identifier"
+            :items="loans"
+            item-text="identifier"
+            hide-details
+            clearable
+            :open-on-clear="false"
+          >
+            <template #selection="{ item }">
+              <DefiSelectorItem :item="item" />
+            </template>
+            <template #item="{ item }">
+              <DefiSelectorItem :item="item" />
+            </template>
+          </VAutocomplete>
+        </div>
+        <VCardText>{{ t('borrowing.select_loan_hint') }}</VCardText>
+      </VCard>
+      <DefiProtocolSelector v-model="protocol" liabilities />
+    </div>
+
     <LoanInfo v-if="loan" :loan="loan" />
+
     <FullSizeContent v-else>
-      <VRow align="center" justify="center">
-        <VCol class="text-h6">{{ t('liabilities.no_selection') }}</VCol>
-      </VRow>
+      <div class="flex h-full text-h6 items-center justify-center">
+        {{ t('liabilities.no_selection') }}
+      </div>
     </FullSizeContent>
   </div>
 </template>

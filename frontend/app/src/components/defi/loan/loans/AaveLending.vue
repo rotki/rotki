@@ -1,15 +1,9 @@
 <script setup lang="ts">
-import { type PropType } from 'vue';
 import { AaveBorrowingDetails } from '@/premium/premium';
 import { type AaveLoan } from '@/types/defi/lending';
 import { Section } from '@/types/status';
 
-const props = defineProps({
-  loan: {
-    required: true,
-    type: Object as PropType<AaveLoan>
-  }
-});
+const props = defineProps<{ loan: AaveLoan }>();
 
 const { loan } = toRefs(props);
 const premium = usePremium();
@@ -25,32 +19,24 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <VRow>
-    <VCol cols="12">
-      <LoanHeader v-if="loan.owner" class="mt-8 mb-6" :owner="loan.owner">
-        {{ t('aave_lending.header', { asset: symbol }) }}
-      </LoanHeader>
-      <VRow>
-        <VCol cols="12" md="6">
-          <AaveCollateral :loan="loan" />
-        </VCol>
+  <div class="flex flex-col gap-4">
+    <LoanHeader v-if="loan.owner" :owner="loan.owner">
+      {{ t('aave_lending.header', { asset: symbol }) }}
+    </LoanHeader>
 
-        <VCol cols="12" md="6">
-          <LoanDebt :debt="loan.debt" :asset="loan.asset" />
-        </VCol>
-      </VRow>
-      <VRow no-gutters class="mt-8">
-        <VCol cols="12">
-          <PremiumCard v-if="!premium" :title="t('aave_lending.history')" />
-          <AaveBorrowingDetails
-            v-else
-            :loading="aaveHistoryLoading"
-            :owner="loan.owner"
-            :total-lost="loan.totalLost"
-            :liquidation-earned="loan.liquidationEarned"
-          />
-        </VCol>
-      </VRow>
-    </VCol>
-  </VRow>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <AaveCollateral :loan="loan" />
+      <LoanDebt :debt="loan.debt" :asset="loan.asset" />
+    </div>
+
+    <PremiumCard v-if="!premium" :title="t('aave_lending.history')" />
+
+    <AaveBorrowingDetails
+      v-else
+      :loading="aaveHistoryLoading"
+      :owner="loan.owner"
+      :total-lost="loan.totalLost"
+      :liquidation-earned="loan.liquidationEarned"
+    />
+  </div>
 </template>

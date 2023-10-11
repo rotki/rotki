@@ -1,31 +1,21 @@
 <script setup lang="ts">
-defineProps({
-  owner: {
-    required: true,
-    type: String
-  }
-});
+defineProps<{
+  owner: string;
+}>();
 
 const { t } = useI18n();
 </script>
 
 <template>
-  <VRow>
-    <VCol>
-      <div :class="$style.identifier">
+  <RuiCard>
+    <div class="flex flex-col">
+      <div class="font-bold text-h6">
         <slot />
       </div>
-      <div class="loan-header__owner secondary--text text--lighten-2">
+      <div class="text-rui-text-secondary text-body-2">
         {{ t('loan_header.owned_by') }}
-        <HashLink :text="owner" class="d-inline font-medium" />
+        <HashLink :text="owner" class="font-medium" />
       </div>
-    </VCol>
-  </VRow>
+    </div>
+  </RuiCard>
 </template>
-
-<style lang="scss" module>
-.identifier {
-  font-size: 24px;
-  font-weight: bold;
-}
-</style>
