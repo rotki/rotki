@@ -2,8 +2,10 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.accounting.structures.evm_event import EvmProduct
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.modules.thegraph.constants import (
+    CONTRACT_STAKING,
     CPT_THEGRAPH,
     THEGRAPH_CPT_DETAILS,
 )
@@ -31,7 +33,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
-CONTRACT_THEGRAPH_STAKING = string_to_evm_address('0xF55041E37E12cD407ad00CE2910B8269B01263b9')
+CONTRACT_THEGRAPH_STAKING = string_to_evm_address(CONTRACT_STAKING)
 TOPIC_TRANSFER = b'\xdd\xf2R\xad\x1b\xe2\xc8\x9bi\xc2\xb0h\xfc7\x8d\xaa\x95+\xa7\xf1c\xc4\xa1\x16(\xf5ZM\xf5#\xb3\xef'  # noqa: E501
 # example delegate() call: https://etherscan.io/tx/0x6ed3377db652151fb8e4794dd994a921a2d029ad317bd3f2a2916af239490fec
 TOPIC_STAKE_DELEGATED = b'\xcd\x03f\xdc\xe5$}\x87O\xfc`\xa7b\xaaz\xbb\xb8,\x16\x95\xbb\xb1q`\x9c\x1b\x88a\xe2y\xebs'  # noqa: E501
@@ -108,6 +110,8 @@ class ThegraphDecoder(DecoderInterface):
                 event.balance = Balance(amount=stake_amount_norm)
                 event.notes = f'Delegate {stake_amount_norm} GRT to indexer {indexer}'
                 event.counterparty = CPT_THEGRAPH
+                event.extra_data = {'indexer': indexer}
+                event.product = EvmProduct.STAKING
                 deposit_event = event
 
                 # also account for the GRT burnt due to delegation tax

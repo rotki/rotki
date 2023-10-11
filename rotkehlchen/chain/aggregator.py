@@ -45,6 +45,7 @@ from rotkehlchen.chain.ethereum.modules import (
 from rotkehlchen.chain.ethereum.modules.convex.balances import ConvexBalances
 from rotkehlchen.chain.ethereum.modules.curve.balances import CurveBalances
 from rotkehlchen.chain.ethereum.modules.eth2.structures import Eth2Validator
+from rotkehlchen.chain.ethereum.modules.thegraph.balances import ThegraphBalances
 from rotkehlchen.chain.optimism.modules.velodrome.balances import VelodromeBalances
 from rotkehlchen.chain.substrate.manager import wait_until_a_node_is_available
 from rotkehlchen.chain.substrate.utils import SUBSTRATE_NODE_CONNECTION_TIMEOUT
@@ -177,7 +178,7 @@ DEFI_PROTOCOLS_TO_SKIP_LIABILITIES = {
     'Compound': True,
 }
 CHAIN_TO_BALANCE_PROTOCOLS = {
-    ChainID.ETHEREUM: (CurveBalances, ConvexBalances),
+    ChainID.ETHEREUM: (CurveBalances, ConvexBalances, ThegraphBalances),
     ChainID.OPTIMISM: (VelodromeBalances,),
 }
 
