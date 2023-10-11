@@ -2,13 +2,15 @@ from typing import TYPE_CHECKING
 
 import pytest
 
+
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.ethereum.modules.convex.balances import ConvexBalances
 from rotkehlchen.chain.ethereum.modules.curve.balances import CurveBalances
+from rotkehlchen.chain.ethereum.modules.thegraph.balances import ThegraphBalances
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.optimism.modules.velodrome.balances import VelodromeBalances
-from rotkehlchen.constants.assets import A_CVX
+from rotkehlchen.constants.assets import A_CVX, A_GRT
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
@@ -181,4 +183,32 @@ def test_velodrome_v2_staking_balances(
     assert user_balance[Asset(weth_op_lp_token).resolve_to_evm_token()] == Balance(
         amount=FVal('0.043087772070655563'),  # staked in gauge
         usd_value=FVal('0.0646316581059833445'),
+    )
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0xB9a398aAA3B8890aBbd49e2161Aff629A550152e']])
+def test_thegraph_balances(
+        ethereum_inquirer: 'EthereumInquirer',
+        ethereum_transaction_decoder: 'EthereumTransactionDecoder',
+        ethereum_accounts: list[ChecksumEvmAddress],
+        inquirer: 'Inquirer',  # pylint: disable=unused-argument
+) -> None:
+    """Check that balances of GRT currently delegated to indexers are properly detected."""
+    tx_hex = deserialize_evm_tx_hash('0x009cd8eccb0637a381d00082056654c534c9e74aa7c1b60196c50b6638236c08')  # noqa: E501
+    get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=ethereum_transaction_decoder.database,
+        tx_hash=tx_hex,
+    )
+    thegraph_balances_inquirer = ThegraphBalances(
+        database=ethereum_transaction_decoder.database,
+        evm_inquirer=ethereum_inquirer,
+        chain_id=ChainID.ETHEREUM,
+    )
+    thegraph_balances = thegraph_balances_inquirer.query_balances()
+    user_balance = thegraph_balances[ethereum_accounts[0]]
+    assert user_balance[A_GRT.resolve_to_evm_token()] == Balance(
+        amount=FVal('1293.499999999999900000'),
+        usd_value=FVal('1940.24999999999985'),
     )

@@ -1,9 +1,9 @@
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.evm_event import EvmEvent
+from rotkehlchen.accounting.structures.evm_event import EvmEvent, EvmProduct
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.chain.ethereum.modules.thegraph.constants import CPT_THEGRAPH
+from rotkehlchen.chain.ethereum.modules.thegraph.constants import CONTRACT_STAKING, CPT_THEGRAPH
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_GRT
@@ -12,7 +12,7 @@ from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
 ADDY_USER = string_to_evm_address('0xd200aeEC7Cd9dD27CAB5a85083953a734D4e84f0')
-ADDY_THEGRAPH = string_to_evm_address('0xF55041E37E12cD407ad00CE2910B8269B01263b9')
+ADDY_THEGRAPH = string_to_evm_address(CONTRACT_STAKING)
 
 
 @pytest.mark.vcr()
@@ -67,6 +67,8 @@ def test_thegraph_delegate(database, ethereum_inquirer):
             notes='Delegate 998.98 GRT to indexer 0x6125eA331851367716beE301ECDe7F38A7E429e7',
             counterparty=CPT_THEGRAPH,
             address=ADDY_THEGRAPH,
+            extra_data={'indexer': '0x6125eA331851367716beE301ECDe7F38A7E429e7'},
+            product=EvmProduct.STAKING,
         ), EvmEvent(
             tx_hash=tx_hash,
             sequence_index=360,
