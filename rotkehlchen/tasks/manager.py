@@ -428,7 +428,7 @@ class TaskManager:
                 return None
 
             evm_inquirer = self.chains_aggregator.get_chain_manager(blockchain)
-            task_name = f'decode {min(number_of_tx_to_decode, TX_DECODING_LIMIT)} {blockchain!s} trasactions'  # noqa: E501
+            task_name = f'decode {min(number_of_tx_to_decode, TX_DECODING_LIMIT)} {blockchain!s} transactions'  # noqa: E501
             log.debug(f'Scheduling periodic task to {task_name}')
             # Since this task is heavy we spawn it only for one chain at a time.
             return [self.greenlet_manager.spawn_and_track(
