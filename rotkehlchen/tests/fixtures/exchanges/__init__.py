@@ -18,6 +18,7 @@ from .kraken import *  # noqa: F403
 from .kucoin import *  # noqa: F403
 from .okx import *     # noqa: F403
 from .poloniex import *  # noqa: F403
+from .woo import *  # noqa: F403
 
 
 @pytest.fixture(name='exchange_manager')

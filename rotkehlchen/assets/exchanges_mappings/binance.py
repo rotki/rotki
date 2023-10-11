@@ -10,12 +10,8 @@ WORLD_TO_BINANCE = COMMON_ASSETS_MAPPINGS | {
     strethaddress_to_identifier('0x5Af2Be193a6ABCa9c8817001F45744777Db30756'): 'BQX',
     # GXChain is GXS in Binance but GXC in Rotkehlchen
     'GXC': 'GXS',
-    # Luna Terra is LUNA-2 in rotki
-    'LUNA-2': 'LUNA',
     # YOYOW is known as YOYO in Binance
     strethaddress_to_identifier('0xcbeAEc699431857FDB4d37aDDBBdc20E132D4903'): 'YOYO',
-    # Solana is SOL-2 in rotki
-    'SOL-2': 'SOL',
     # BETH is the eth staked in beacon chain
     'ETH2': 'BETH',
     # STX is Blockstack in Binance

@@ -32,4 +32,8 @@ COMMON_ASSETS_MAPPINGS: Final[dict[str, str]] = {
     evm_address_to_identifier('0x15D4c048F83bd7e37d49eA4C83a07267Ec4203dA', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'GALA',  # noqa: E501
     evm_address_to_identifier('0xCdF7028ceAB81fA0C6971208e83fa7872994beE5', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'T',  # noqa: E501
     evm_address_to_identifier('0x912CE59144191C1204E64559FE8253a0e49E6548', ChainID.ARBITRUM_ONE, EvmTokenKind.ERC20): 'ARB',  # noqa: E501
+    # Luna Terra is LUNA-2 in rotki
+    'LUNA-2': 'LUNA',
+    # Solana is SOL-2 in rotki
+    'SOL-2': 'SOL',
 }

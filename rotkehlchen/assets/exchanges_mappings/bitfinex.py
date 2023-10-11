@@ -6,8 +6,6 @@ WORLD_TO_BITFINEX = COMMON_ASSETS_MAPPINGS | {
     'BCH': 'BCHN',
     'CNY': 'CNH',
     'DOGE': 'DOG',
-    'LUNA-2': 'LUNA',
-    'SOL-2': 'SOL',
     # make sure GNY maps to the appropriate token for bitfinex
     strethaddress_to_identifier('0xb1f871Ae9462F1b2C6826E88A7827e76f86751d4'): 'GNY',
     # make sure REP maps to latest one in bitfinex

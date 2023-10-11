@@ -14,8 +14,6 @@ WORLD_TO_BITTREX = COMMON_ASSETS_MAPPINGS | {
     strethaddress_to_identifier('0xB9bb08AB7E9Fa0A1356bd4A39eC0ca267E03b0b3'): 'PI',
     # Bittrex PLA should map to rotki's PlayChip
     strethaddress_to_identifier('0x0198f46f520F33cd4329bd4bE380a25a90536CD5'): 'PLA',
-    # In Rotkehlchen LUNA-2 is Terra Luna but in Bittrex it's LUNA
-    'LUNA-2': 'LUNA',
     # WASP in binance maps to WorldWideAssetExchange in rotki
     # In Rotkehlchen WorldWideAssetExchange is WAX but in Bittrex it's WASP
     strethaddress_to_identifier('0x39Bb259F66E1C59d5ABEF88375979b4D20D98022'): 'WAXP',
@@ -115,7 +113,6 @@ WORLD_TO_BITTREX = COMMON_ASSETS_MAPPINGS | {
     evm_address_to_identifier('0x394A16744Dcd805BB0cA7252e70691f0dcAc56AA', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'TRZ',  # noqa: E501
     evm_address_to_identifier('0x2C537E5624e4af88A7ae4060C022609376C8D0EB', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'TRYB',  # noqa: E501
     evm_address_to_identifier('0x888888848B652B3E3a0f34c96E00EEC0F3a23F72', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'TLM',  # noqa: E501
-    'SOL-2': 'SOL',
     evm_address_to_identifier('0xd98F75b1A3261dab9eEd4956c93F33749027a964', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'SHR',  # noqa: E501
     evm_address_to_identifier('0x2A039B1D9bBDccBb91be28691b730ca893e5e743', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'RNB',  # noqa: E501
     evm_address_to_identifier('0xa1d6Df714F91DeBF4e0802A542E13067f31b8262', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'RFOX',  # noqa: E501

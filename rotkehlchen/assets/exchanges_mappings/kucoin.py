@@ -5,7 +5,6 @@ from rotkehlchen.types import ChainID, EvmTokenKind
 
 WORLD_TO_KUCOIN = COMMON_ASSETS_MAPPINGS | {
     'BSV': 'BCHSV',
-    'LUNA-2': 'LUNA',
     # make sure Veracity maps to latest one in kucoin
     strethaddress_to_identifier('0xF411903cbC70a74d22900a5DE66A2dda66507255'): 'VRA',
     # KEY is selfkey in kucoin
@@ -28,7 +27,6 @@ WORLD_TO_KUCOIN = COMMON_ASSETS_MAPPINGS | {
     strethaddress_to_identifier('0xEA1ea0972fa092dd463f2968F9bB51Cc4c981D71'): 'MODEFI',
     strethaddress_to_identifier('0x824a50dF33AC1B41Afc52f4194E2e8356C17C3aC'): 'KICK',
     strethaddress_to_identifier('0x15B543e986b8c34074DFc9901136d9355a537e7E'): 'STC',
-    'SOL-2': 'SOL',
     strethaddress_to_identifier('0xCC8Fa225D80b9c7D42F96e9570156c65D6cAAa25'): 'SLP',
     strethaddress_to_identifier('0x15D4c048F83bd7e37d49eA4C83a07267Ec4203dA'): 'GALAX',
     strethaddress_to_identifier('0x89Ab32156e46F46D02ade3FEcbe5Fc4243B9AAeD'): 'PNT',
