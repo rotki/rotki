@@ -5,7 +5,7 @@ import { type NewDetectedToken } from '@/types/websocket-messages';
 import type {
   DataTableColumn,
   DataTableSortColumn
-} from '@rotki/ui-library-compat/dist/components';
+} from '@rotki/ui-library-compat';
 
 const { t } = useI18n();
 
