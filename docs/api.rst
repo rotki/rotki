@@ -4851,7 +4851,7 @@ Dealing with History Events
          :reqjson bool is_exit: true if the "eth withdrawal event" is an exit event.
 
    :reqjson string entry_type: The type of the event that will be processed. Different validation is used based on the value for this field. Possible values are: ``"history event"``, ``"evm event"``, ``"eth withdrawal event"``, ``"eth block event"``, ``"eth deposit event"``.
-   :reqjson int timestamp: The timestamp of the entry
+   :reqjson int timestamp: The timestamp of the entry **in milliseconds**.
    :reqjson object balance: The amount/usd value of the event. If not known usd_value can also be "0".
 
    **Example Response**:
