@@ -908,12 +908,9 @@
     }
   },
   "airdrops": {
-    "description": "* Αυτά είναι τα airdrops τα οποία το rotki εντόπισε ότι αντιστοιχούν στους λογαριασμούς σας.",
     "headers": {
       "source": "Source"
     },
-    "loading": "Please wait while rotki queries the airdrops for your addresses...",
-    "status_hint": "Εμφάνιση αποτελεσμάτων για {status} airdrops.",
     "title": "Airdrops"
   },
   "alias_names": {

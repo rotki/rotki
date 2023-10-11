@@ -912,12 +912,9 @@
     "data_name": "优先级"
   },
   "airdrops": {
-    "description": "* 这些是 rotki 检测到您的跟踪帐户有资格获得的空投。您可能已经领取了它们。如果没有，请访问每个协议的链接并领取您的份额。",
     "headers": {
       "source": "来源"
     },
-    "loading": "请稍候,rotki 正在查询您的地址空投......",
-    "status_hint": "显示 {status} 空投的结果。",
     "title": "空投"
   },
   "alias_names": {

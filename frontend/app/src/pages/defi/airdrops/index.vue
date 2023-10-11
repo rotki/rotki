@@ -10,23 +10,15 @@ import {
   Airdrops,
   type PoapDelivery
 } from '@/types/airdrops';
-import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import { type TaskMeta } from '@/types/task';
 import AirdropDisplay from '@/components/defi/airdrops/AirdropDisplay.vue';
 
-const section = Section.DEFI_AIRDROPS;
 const ETH = Blockchain.ETH;
 const { t } = useI18n();
-const css = useCssModule();
-const { isLoading, shouldShowLoadingScreen } = useStatusStore();
 const { awaitTask } = useTaskStore();
 const { notify } = useNotificationsStore();
-const { setStatus, fetchDisabled } = useStatusUpdater(Section.DEFI_AIRDROPS);
 const { fetchAirdrops: fetchAirdropsCaller } = useDefiApi();
-
-const loading = shouldShowLoadingScreen(section);
-const refreshing = isLoading(section);
 
 const expanded: Ref<Airdrop[]> = ref([]);
 const selectedAccounts: Ref<GeneralAccount[]> = ref([]);
@@ -35,6 +27,7 @@ const statusFilters: Ref<{ text: string; value: boolean }[]> = ref([
   { text: t('common.claimed'), value: true }
 ]);
 const status: Ref<boolean> = ref(false);
+const loading = ref(false);
 const refreshTooltip: Ref<string> = ref(
   t('helpers.refresh_header.tooltip', {
     title: t('airdrops.title').toLocaleLowerCase()
@@ -122,14 +115,8 @@ const airdropList = (addresses: string[]): ComputedRef<Airdrop[]> =>
     return result;
   });
 
-const fetchAirdrops = async (refresh = false) => {
-  if (fetchDisabled(refresh)) {
-    return;
-  }
-
-  const newStatus = refresh ? Status.REFRESHING : Status.LOADING;
-  setStatus(newStatus);
-
+const fetchAirdrops = async () => {
+  set(loading, true);
   try {
     const { taskId } = await fetchAirdropsCaller();
     const { result } = await awaitTask<Airdrops, TaskMeta>(
@@ -149,13 +136,11 @@ const fetchAirdrops = async (refresh = false) => {
       }).toString(),
       display: true
     });
+  } finally {
+    set(loading, false);
   }
-  setStatus(Status.LOADED);
 };
 
-const refresh = async () => {
-  await fetchAirdrops(true);
-};
 const hasDetails = (source: string): boolean => [AIRDROP_POAP].includes(source);
 
 const expand = (item: Airdrop) => {
@@ -168,136 +153,110 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="mt-8">
-    <RuiCard variant="outlined" :class="css.filters">
-      <template #custom-header>
-        <div class="px-6 pt-6 pb-1">
-          <CardTitle>
-            <RefreshButton
-              :loading="refreshing"
-              :tooltip="refreshTooltip"
-              @refresh="refresh()"
-            />
-            <span>
-              {{ t('airdrops.title') }}
-            </span>
-          </CardTitle>
-        </div>
-      </template>
+  <TablePageLayout>
+    <template #title>
+      <span class="text-rui-text-secondary">
+        {{ t('navigation_menu.defi') }} /
+      </span>
+      {{ t('navigation_menu.defi_sub.airdrops') }}
+    </template>
 
-      <ProgressScreen v-if="loading">
-        <template #message>{{ t('airdrops.loading') }}</template>
-      </ProgressScreen>
-      <div v-else class="px-2 pb-2">
-        <div :class="css.filters__wrapper">
-          <BlockchainAccountSelector
-            v-model="selectedAccounts"
-            multiple
-            class="w-full !shadow-none !border-none !p-0"
-            no-padding
-            hint
-            dense
-            outlined
-            :chains="[ETH]"
-            :usable-addresses="airdropAddresses"
-          />
-          <div class="flex flex-col min-w-[10rem] md:w-2/5">
-            <VSelect
-              v-model="status"
-              :items="statusFilters"
-              item-value="value"
-              item-text="text"
-              hide-details
-              dense
-              outlined
-            />
-            <p class="text-body-1 text-rui-text-secondary pt-3 mb-0">
-              {{
-                t('airdrops.status_hint', {
-                  status: status ? t('common.claimed') : t('common.unclaimed')
-                })
-              }}
-            </p>
-          </div>
-        </div>
-        <div class="text-caption mt-4" v-text="t('airdrops.description')" />
-
-        <div class="mt-4">
-          <DataTable
-            :class="css.table"
-            :items="entries"
-            :headers="tableHeaders"
-            single-expand
-            :expanded.sync="expanded"
-            item-key="index"
+    <template #buttons>
+      <RuiTooltip :open-delay="400">
+        <template #activator>
+          <RuiButton
+            variant="outlined"
+            color="primary"
+            :loading="loading"
+            @click="fetchAirdrops()"
           >
-            <template #item.address="{ item }">
-              <HashLink :text="item.address" />
+            <template #prepend>
+              <RuiIcon name="refresh-line" />
             </template>
-            <template #item.amount="{ item }">
-              <AmountDisplay
-                v-if="!hasDetails(item.source)"
-                :value="item.amount"
-                :asset="item.asset"
-              />
-              <span v-else>{{ item.details.length }}</span>
-            </template>
-            <template #item.claimed="{ item: { claimed } }">
-              <RuiChip
-                :color="claimed ? 'success' : 'grey'"
-                :label="claimed ? t('common.claimed') : t('common.unclaimed')"
-                size="sm"
-              />
-            </template>
-            <template #item.source="{ item }">
-              <AirdropDisplay :source="item.source" />
-            </template>
-            <template #item.link="{ item }">
-              <ExternalLinkButton
-                v-if="!hasDetails(item.source)"
-                icon
-                color="primary"
-                :url="item.link"
-                variant="text"
-              >
-                <RuiIcon size="16" name="external-link-line" />
-              </ExternalLinkButton>
-              <RowExpander
-                v-else
-                :expanded="expanded.includes(item)"
-                @click="expand(item)"
-              />
-            </template>
-            <template #expanded-item="{ headers, item }">
-              <PoapDeliveryAirdrops
-                :items="item.details"
-                :colspan="headers.length"
-                :visible="hasDetails(item.source)"
-              />
-            </template>
-          </DataTable>
-        </div>
+            {{ t('common.refresh') }}
+          </RuiButton>
+        </template>
+        {{ refreshTooltip }}
+      </RuiTooltip>
+    </template>
+
+    <RuiCard>
+      <div class="flex flex-row flex-wrap items-center gap-2 mb-4">
+        <BlockchainAccountSelector
+          v-model="selectedAccounts"
+          multiple
+          class="w-full flex-1 !shadow-none !border-none !p-0"
+          no-padding
+          dense
+          outlined
+          :chains="[ETH]"
+          :usable-addresses="airdropAddresses"
+        />
+        <VSelect
+          v-model="status"
+          :items="statusFilters"
+          class="w-full flex-1"
+          item-value="value"
+          item-text="text"
+          hide-details
+          dense
+          outlined
+        />
       </div>
+
+      <DataTable
+        :items="entries"
+        :headers="tableHeaders"
+        :loading="loading"
+        single-expand
+        :expanded.sync="expanded"
+        item-key="index"
+      >
+        <template #item.address="{ item }">
+          <HashLink :text="item.address" />
+        </template>
+        <template #item.amount="{ item }">
+          <AmountDisplay
+            v-if="!hasDetails(item.source)"
+            :value="item.amount"
+            :asset="item.asset"
+          />
+          <span v-else>{{ item.details.length }}</span>
+        </template>
+        <template #item.claimed="{ item: { claimed } }">
+          <RuiChip
+            :color="claimed ? 'success' : 'grey'"
+            :label="claimed ? t('common.claimed') : t('common.unclaimed')"
+            size="sm"
+          />
+        </template>
+        <template #item.source="{ item }">
+          <AirdropDisplay :source="item.source" />
+        </template>
+        <template #item.link="{ item }">
+          <ExternalLinkButton
+            v-if="!hasDetails(item.source)"
+            icon
+            color="primary"
+            :url="item.link"
+            variant="text"
+          >
+            <RuiIcon size="16" name="external-link-line" />
+          </ExternalLinkButton>
+          <RowExpander
+            v-else
+            :expanded="expanded.includes(item)"
+            @click="expand(item)"
+          />
+        </template>
+        <template #expanded-item="{ headers, item }">
+          <PoapDeliveryAirdrops
+            :items="item.details"
+            :colspan="headers.length"
+            :visible="hasDetails(item.source)"
+          />
+        </template>
+      </DataTable>
     </RuiCard>
-  </div>
+  </TablePageLayout>
 </template>
-
-<style module lang="scss">
-.table {
-  tbody {
-    tr {
-      @apply lg:h-[4.5rem];
-    }
-  }
-}
-
-.filters {
-  :global(.account-hint) {
-    @apply px-0 pb-0 #{!important};
-  }
-
-  &__wrapper {
-    @apply flex flex-col md:flex-row space-y-6 md:space-y-0 md:space-x-8;
-  }
-}
-</style>
