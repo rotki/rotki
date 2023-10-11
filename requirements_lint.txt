@@ -1,4 +1,4 @@
-mypy==1.5.1
+mypy==1.6.0
 mypy-extensions==1.0.0
 pylint==3.0.1
 astroid==3.0.0  # engine of pylint, upgrade them together
