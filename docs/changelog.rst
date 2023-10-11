@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`6688` Add support for Woo Centralized Exchange
 * :feature:`-` Users will be able to modifying (add/edit/delete) all history events types.
 * :feature:`-` Users will be able to customize the accounting rule for historical events.
 * :feature:`-` Octant GLM locking/unlocking events will now be properly detected and shown to the user.

@@ -5,7 +5,6 @@ from rotkehlchen.types import ChainID, EvmTokenKind
 WORLD_TO_FTX = COMMON_ASSETS_MAPPINGS | {
     strethaddress_to_identifier('0x50D1c9771902476076eCFc8B2A83Ad6b9355a4c9'): 'FTT',
     strethaddress_to_identifier('0xcca0c9c383076649604eE31b20248BC04FdF61cA'): 'ASD',
-    'SOL-2': 'SOL',
     'COIN': 'COIN',
     # SLP is smooth love potion
     strethaddress_to_identifier('0xCC8Fa225D80b9c7D42F96e9570156c65D6cAAa25'): 'SLP',
@@ -14,7 +13,6 @@ WORLD_TO_FTX = COMMON_ASSETS_MAPPINGS | {
     strethaddress_to_identifier('0xF57e7e7C23978C3cAEC3C3548E3D615c346e79fF'): 'IMX',
     'GENE': 'GENE',
     strethaddress_to_identifier('0xC581b735A1688071A1746c968e0798D642EDE491'): 'EURT',
-    'LUNA-2': 'LUNA',
     strethaddress_to_identifier('0x3392D8A60B77F8d3eAa4FB58F09d835bD31ADD29'): 'INDI',
     strethaddress_to_identifier('0xAf5191B0De278C7286d6C7CC6ab6BB8A73bA2Cd6'): 'STG',
     strethaddress_to_identifier('0x5c147e74D63B1D31AA3Fd78Eb229B65161983B2b'): 'WFLOW',

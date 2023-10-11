@@ -29,6 +29,7 @@ from rotkehlchen.exchanges.manager import ExchangeManager
 from rotkehlchen.exchanges.okx import Okx
 from rotkehlchen.exchanges.poloniex import Poloniex
 from rotkehlchen.exchanges.utils import create_binance_symbols_to_pair
+from rotkehlchen.exchanges.woo import Woo
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.constants import A_XMR
 from rotkehlchen.tests.utils.factories import (
@@ -822,6 +823,21 @@ def create_test_okx(
         api_key=api_key,
         secret=secret,
         passphrase=passphrase,
+        database=database,
+        msg_aggregator=msg_aggregator,
+    )
+
+
+def create_test_woo(
+        database: DBHandler,
+        msg_aggregator: MessagesAggregator,
+        api_key: Optional[ApiKey] = None,
+        secret: Optional[ApiSecret] = None,
+) -> Woo:
+    return Woo(
+        name='woo',
+        api_key=make_api_key() if api_key is None else api_key,
+        secret=make_api_secret() if secret is None else secret,
         database=database,
         msg_aggregator=msg_aggregator,
     )

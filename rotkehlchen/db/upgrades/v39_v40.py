@@ -133,7 +133,7 @@ def _add_new_supported_chains_locations(write_cursor: 'DBCursor') -> None:
     write_cursor.executemany(
         'INSERT OR IGNORE INTO location(location, seq) '
         'VALUES (?, ?)',
-        (('j', 42), ('k', 43)),
+        (('j', 42), ('k', 43), ('l', 44)),
     )
     log.debug('Exit _add_new_supported_chains_locations')
 

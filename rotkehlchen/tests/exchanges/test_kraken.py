@@ -40,7 +40,7 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.exchanges.kraken import KRAKEN_DELISTED, Kraken
 from rotkehlchen.fval import FVal
-from rotkehlchen.serialization.deserialize import deserialize_timestamp_from_kraken
+from rotkehlchen.serialization.deserialize import deserialize_timestamp_from_floatstr
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -732,14 +732,14 @@ def test_emptry_kraken_balance_response():
 
 def test_timestamp_deserialization():
     """Test the function that allows to deserialize timestamp from different types"""
-    assert deserialize_timestamp_from_kraken('1458994442.2353') == 1458994442
-    assert deserialize_timestamp_from_kraken(1458994442.2353) == 1458994442
-    assert deserialize_timestamp_from_kraken(1458994442) == 1458994442
-    assert deserialize_timestamp_from_kraken(FVal(1458994442.2353)) == 1458994442
+    assert deserialize_timestamp_from_floatstr('1458994442.2353') == 1458994442
+    assert deserialize_timestamp_from_floatstr(1458994442.2353) == 1458994442
+    assert deserialize_timestamp_from_floatstr(1458994442) == 1458994442
+    assert deserialize_timestamp_from_floatstr(FVal(1458994442.2353)) == 1458994442
     with pytest.raises(DeserializationError):
-        deserialize_timestamp_from_kraken('234a')
+        deserialize_timestamp_from_floatstr('234a')
     with pytest.raises(DeserializationError):
-        deserialize_timestamp_from_kraken('')
+        deserialize_timestamp_from_floatstr('')
 
 
 @pytest.mark.parametrize('have_decoders', [True])

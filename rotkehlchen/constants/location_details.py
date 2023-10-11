@@ -55,4 +55,5 @@ LOCATION_DETAILS = {
     Location.ARBITRUM_ONE: LocationDetails(image='arbitrum_one.svg'),
     Location.BASE: LocationDetails(image='base.svg'),
     Location.GNOSIS: LocationDetails(image='gnosis.svg'),
+    Location.WOO: LocationDetails(image='woo.svg'),
 }

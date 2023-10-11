@@ -6,8 +6,6 @@ WORLD_TO_BITPANDA = COMMON_ASSETS_MAPPINGS | {
     'IOTA': 'MIOTA',
     strethaddress_to_identifier('0x536381a8628dBcC8C70aC9A30A7258442eAb4c92'): 'PAN',  # Pantos
     strethaddress_to_identifier('0xa117000000f279D81A1D3cc75430fAA017FA5A2e'): 'ANT',  # ANT v2
-    'SOL-2': 'SOL',  # Solana
-    'LUNA-2': 'LUNA',  # Luna Terra
     'ONE-2': 'ONE',
     evm_address_to_identifier('0x221657776846890989a759BA2973e427DfF5C9bB', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'REP',  # noqa: E501
     evm_address_to_identifier('0x05f4a42e251f2d52b8ed15E9FEdAacFcEF1FAD27', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'ZIL',  # noqa: E501
