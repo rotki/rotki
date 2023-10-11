@@ -26,8 +26,9 @@ const css = useCssModule();
 const { getDefiName, getDefiImage } = useDefiMetadata();
 
 const protocol = useRefMap(summary, i => i.protocol);
+const reactiveDecoder = reactify(decodeHtmlEntities);
 
-const name = computed(() => decodeHtmlEntities(get(getDefiName(protocol))));
+const name = reactiveDecoder(getDefiName(protocol));
 const image = getDefiImage(protocol);
 
 const imageUrl = computed(() => {
