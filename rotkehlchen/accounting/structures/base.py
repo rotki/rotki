@@ -22,7 +22,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_timestamp,
 )
 from rotkehlchen.types import Location, Timestamp, TimestampMS
-from rotkehlchen.utils.misc import timestamp_to_date, ts_ms_to_sec, ts_sec_to_ms
+from rotkehlchen.utils.misc import timestamp_to_date, ts_ms_to_sec
 from rotkehlchen.utils.mixins.enums import DBIntEnumMixIn
 
 from .balance import Balance
@@ -259,7 +259,7 @@ class HistoryBaseEntry(AccountingEventMixin, metaclass=ABCMeta):
             return HistoryBaseEntryData(
                 event_identifier=data['event_identifier'],
                 sequence_index=data['sequence_index'],
-                timestamp=ts_sec_to_ms(deserialize_timestamp(data['timestamp'])),
+                timestamp=TimestampMS(deserialize_timestamp(data['timestamp'])),
                 location=Location.deserialize(data['location']),
                 event_type=HistoryEventType.deserialize(data['event_type']),
                 event_subtype=HistoryEventSubType.deserialize(data['event_subtype']) if data['event_subtype'] is not None else HistoryEventSubType.NONE,  # noqa: E501

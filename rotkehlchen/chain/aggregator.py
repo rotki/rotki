@@ -33,16 +33,12 @@ from rotkehlchen.chain.ethereum.defi.chad import DefiChad
 from rotkehlchen.chain.ethereum.defi.structures import DefiProtocolBalances
 from rotkehlchen.chain.ethereum.modules import (
     MODULE_NAME_TO_PATH,
-    Aave,
     Balancer,
-    Compound,
     Liquity,
     Loopring,
     MakerdaoDsr,
     MakerdaoVaults,
     PickleFinance,
-    Sushiswap,
-    Uniswap,
     YearnVaults,
     YearnVaultsV2,
 )
@@ -103,12 +99,16 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.base.manager import BaseManager
     from rotkehlchen.chain.ethereum.interfaces.balances import ProtocolWithBalance
     from rotkehlchen.chain.ethereum.manager import EthereumManager
+    from rotkehlchen.chain.ethereum.modules.aave.aave import Aave
+    from rotkehlchen.chain.ethereum.modules.compound.compound import Compound
     from rotkehlchen.chain.ethereum.modules.eth2.eth2 import Eth2
     from rotkehlchen.chain.ethereum.modules.eth2.structures import (
         ValidatorDailyStats,
         ValidatorDetails,
     )
     from rotkehlchen.chain.ethereum.modules.nft.nfts import Nfts
+    from rotkehlchen.chain.ethereum.modules.sushiswap.sushiswap import Sushiswap
+    from rotkehlchen.chain.ethereum.modules.uniswap.uniswap import Uniswap
     from rotkehlchen.chain.evm.manager import EvmManager
     from rotkehlchen.chain.gnosis.manager import GnosisManager
     from rotkehlchen.chain.optimism.manager import OptimismManager
@@ -366,7 +366,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         return
 
     @overload
-    def get_module(self, module_name: Literal['aave']) -> Optional[Aave]:
+    def get_module(self, module_name: Literal['aave']) -> Optional['Aave']:
         ...
 
     @overload
@@ -374,7 +374,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         ...
 
     @overload
-    def get_module(self, module_name: Literal['compound']) -> Optional[Compound]:
+    def get_module(self, module_name: Literal['compound']) -> Optional['Compound']:
         ...
 
     @overload
@@ -394,11 +394,11 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         ...
 
     @overload
-    def get_module(self, module_name: Literal['uniswap']) -> Optional[Uniswap]:
+    def get_module(self, module_name: Literal['uniswap']) -> Optional['Uniswap']:
         ...
 
     @overload
-    def get_module(self, module_name: Literal['sushiswap']) -> Optional[Sushiswap]:
+    def get_module(self, module_name: Literal['sushiswap']) -> Optional['Sushiswap']:
         ...
 
     @overload
