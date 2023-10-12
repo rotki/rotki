@@ -23,7 +23,8 @@ const defaultTokens = (): Tokens => ({
   [Blockchain.OPTIMISM]: {},
   [Blockchain.POLYGON_POS]: {},
   [Blockchain.ARBITRUM_ONE]: {},
-  [Blockchain.BASE]: {}
+  [Blockchain.BASE]: {},
+  [Blockchain.GNOSIS]: {}
 });
 
 export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
@@ -38,7 +39,8 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
     optimismAddresses,
     polygonAddresses,
     arbitrumAddresses,
-    baseAddresses
+    baseAddresses,
+    gnosisAddresses
   } = storeToRefs(useChainsAccountsStore());
   const {
     fetchDetectedTokensTask,
@@ -185,6 +187,13 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
     await fetchDetectedTokens(Blockchain.BASE);
   });
 
+  watch(gnosisAddresses, async (curr, prev) => {
+    if (curr.length === 0 || isEqual(curr, prev)) {
+      return;
+    }
+    await fetchDetectedTokens(Blockchain.GNOSIS);
+  });
+
   const { isTaskRunning } = useTaskStore();
   const { fetchBlockchainBalances } = useBlockchainBalances();
 
@@ -244,6 +253,18 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
     if (get(shouldRefreshBalances) && wasDetecting && !isDetecting) {
       await fetchBlockchainBalances({
         blockchain: Blockchain.BASE,
+        ignoreCache: true
+      });
+    }
+  });
+
+  const isGnosisDetecting = isTaskRunning(TaskType.FETCH_DETECTED_TOKENS, {
+    chain: Blockchain.GNOSIS
+  });
+  watch(isGnosisDetecting, async (isDetecting, wasDetecting) => {
+    if (get(shouldRefreshBalances) && wasDetecting && !isDetecting) {
+      await fetchBlockchainBalances({
+        blockchain: Blockchain.GNOSIS,
         ignoreCache: true
       });
     }

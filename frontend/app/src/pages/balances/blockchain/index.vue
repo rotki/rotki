@@ -40,7 +40,8 @@ const intersections = ref<Intersections>({
   [Blockchain.OPTIMISM]: false,
   [Blockchain.POLYGON_POS]: false,
   [Blockchain.ARBITRUM_ONE]: false,
-  [Blockchain.BASE]: false
+  [Blockchain.BASE]: false,
+  [Blockchain.GNOSIS]: false
 });
 
 const updateWhenRatio = (
@@ -61,7 +62,8 @@ const {
   optimismAccounts,
   polygonAccounts,
   arbitrumAccounts,
-  baseAccounts
+  baseAccounts,
+  gnosisAccounts
 } = useChainAccountBalances();
 const { btcAccounts, bchAccounts } = useBtcAccountBalances();
 
@@ -100,7 +102,9 @@ const observers: Observers = {
   [Blockchain.ARBITRUM_ONE]: (entries: IntersectionObserverEntry[]) =>
     updateWhenRatio(entries, Blockchain.ARBITRUM_ONE),
   [Blockchain.BASE]: (entries: IntersectionObserverEntry[]) =>
-    updateWhenRatio(entries, Blockchain.BASE)
+    updateWhenRatio(entries, Blockchain.BASE),
+  [Blockchain.GNOSIS]: (entries: IntersectionObserverEntry[]) =>
+    updateWhenRatio(entries, Blockchain.GNOSIS)
 };
 
 const { isBlockchainLoading, isAccountOperationRunning } = useAccountLoading();
@@ -116,7 +120,8 @@ const busy: Busy = {
   [Blockchain.OPTIMISM]: isAccountOperationRunning(Blockchain.OPTIMISM),
   [Blockchain.POLYGON_POS]: isAccountOperationRunning(Blockchain.POLYGON_POS),
   [Blockchain.ARBITRUM_ONE]: isAccountOperationRunning(Blockchain.ARBITRUM_ONE),
-  [Blockchain.BASE]: isAccountOperationRunning(Blockchain.BASE)
+  [Blockchain.BASE]: isAccountOperationRunning(Blockchain.BASE),
+  [Blockchain.GNOSIS]: isAccountOperationRunning(Blockchain.GNOSIS)
 };
 
 const threshold = [0.5];
@@ -130,7 +135,8 @@ const showDetectEvmAccountsButton: Readonly<Ref<boolean>> = computedEager(
     get(avaxAccounts).length > 0 ||
     get(polygonAccounts).length > 0 ||
     get(arbitrumAccounts).length > 0 ||
-    get(baseAccounts).length > 0
+    get(baseAccounts).length > 0 ||
+    get(gnosisAccounts).length > 0
 );
 </script>
 
@@ -337,6 +343,21 @@ const showDetectEvmAccountsButton: Readonly<Ref<boolean>> = computedEager(
       :title="t('blockchain_balances.balances.base')"
       :blockchain="Blockchain.BASE"
       :balances="baseAccounts"
+      @edit-account="editAccount($event)"
+    />
+
+    <AccountBalances
+      v-if="gnosisAccounts.length > 0 || busy.gnosis.value"
+      v-intersect="{
+        handler: observers.gnosis,
+        options: {
+          threshold
+        }
+      }"
+      class="mt-8"
+      :title="t('blockchain_balances.balances.gnosis')"
+      :blockchain="Blockchain.GNOSIS"
+      :balances="gnosisAccounts"
       @edit-account="editAccount($event)"
     />
 

@@ -12,6 +12,7 @@ export const useChainsAccountsStore = defineStore(
     const polygon: Ref<GeneralAccountData[]> = ref([]);
     const arbitrum: Ref<GeneralAccountData[]> = ref([]);
     const base: Ref<GeneralAccountData[]> = ref([]);
+    const gnosis: Ref<GeneralAccountData[]> = ref([]);
 
     const removeTag = (tag: string) => {
       set(ksm, removeTags(ksm, tag));
@@ -21,6 +22,7 @@ export const useChainsAccountsStore = defineStore(
       set(polygon, removeTags(polygon, tag));
       set(arbitrum, removeTags(arbitrum, tag));
       set(base, removeTags(base, tag));
+      set(gnosis, removeTags(gnosis, tag));
     };
 
     const update = (chain: RestChains, data: GeneralAccountData[]) => {
@@ -38,6 +40,8 @@ export const useChainsAccountsStore = defineStore(
         set(arbitrum, data);
       } else if (chain === Blockchain.BASE) {
         set(base, data);
+      } else if (chain === Blockchain.GNOSIS) {
+        set(gnosis, data);
       }
     };
 
@@ -57,6 +61,10 @@ export const useChainsAccountsStore = defineStore(
       get(base).map(({ address }) => address)
     );
 
+    const gnosisAddresses: ComputedRef<string[]> = computed(() =>
+      get(gnosis).map(({ address }) => address)
+    );
+
     return {
       ksm,
       dot,
@@ -65,10 +73,12 @@ export const useChainsAccountsStore = defineStore(
       polygon,
       arbitrum,
       base,
+      gnosis,
       optimismAddresses,
       polygonAddresses,
       arbitrumAddresses,
       baseAddresses,
+      gnosisAddresses,
       update,
       removeTag
     };

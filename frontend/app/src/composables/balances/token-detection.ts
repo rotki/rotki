@@ -17,7 +17,8 @@ export const useTokenDetection = (
     optimismAddresses,
     polygonAddresses,
     arbitrumAddresses,
-    baseAddresses
+    baseAddresses,
+    gnosisAddresses
   } = storeToRefs(useChainsAccountsStore());
   const { supportsTransactions } = useSupportedChains();
 
@@ -63,6 +64,8 @@ export const useTokenDetection = (
       addresses = get(arbitrumAddresses);
     } else if (blockchain === Blockchain.BASE) {
       addresses = get(baseAddresses);
+    } else if (blockchain === Blockchain.GNOSIS) {
+      addresses = get(gnosisAddresses);
     }
     if (addresses.length > 0) {
       await detectTokens(addresses);

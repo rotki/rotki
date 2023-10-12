@@ -189,6 +189,7 @@ export const ExternalServiceKeys = z.object({
   polygonPosEtherscan: ApiKey.optional(),
   arbitrumOneEtherscan: ApiKey.optional(),
   baseEtherscan: ApiKey.optional(),
+  gnosisEtherscan: ApiKey.optional(),
   cryptocompare: ApiKey.optional(),
   covalent: ApiKey.optional(),
   beaconchain: ApiKey.optional(),
