@@ -130,7 +130,11 @@ const showConfirmation = (payload: XpubPayload | string[]) => {
 </script>
 
 <template>
-  <RuiCard data-cy="account-balances" :data-location="blockchain">
+  <RuiCard
+    :id="`blockchain-balances-${blockchain}`"
+    data-cy="account-balances"
+    :data-location="blockchain"
+  >
     <template #header>
       <div class="flex flex-row items-center gap-2">
         <RefreshButton

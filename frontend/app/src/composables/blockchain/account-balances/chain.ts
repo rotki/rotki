@@ -7,9 +7,8 @@ import {
 } from '@/types/blockchain/accounts';
 
 export const useChainAccountBalances = () => {
-  const { ksm, dot, avax, optimism, polygon, arbitrum, base } = storeToRefs(
-    useChainsAccountsStore()
-  );
+  const { ksm, dot, avax, optimism, polygon, arbitrum, base, gnosis } =
+    storeToRefs(useChainsAccountsStore());
   const { balances } = storeToRefs(useChainBalancesStore());
 
   const ksmAccounts: ComputedRef<AccountWithBalance[]> = computed(() =>
@@ -50,6 +49,10 @@ export const useChainAccountBalances = () => {
 
   const baseAccounts: ComputedRef<AccountWithBalance[]> = computed(() =>
     accountsWithBalances(get(base), get(balances).base, Blockchain.BASE)
+  );
+
+  const gnosisAccounts: ComputedRef<AccountWithBalance[]> = computed(() =>
+    accountsWithBalances(get(gnosis), get(balances).gnosis, Blockchain.GNOSIS)
   );
 
   const { shouldShowLoadingScreen } = useStatusStore();
@@ -95,6 +98,12 @@ export const useChainAccountBalances = () => {
       children: [],
       usdValue: sum(get(baseAccounts)),
       loading: get(shouldShowLoadingScreen(Section.BLOCKCHAIN_BASE))
+    },
+    {
+      chain: Blockchain.GNOSIS,
+      children: [],
+      usdValue: sum(get(gnosisAccounts)),
+      loading: get(shouldShowLoadingScreen(Section.BLOCKCHAIN_GNOSIS))
     }
   ]);
 
@@ -141,6 +150,12 @@ export const useChainAccountBalances = () => {
         get(balances).base,
         get(baseAccounts),
         asset
+      ),
+      ...getBlockchainBreakdown(
+        Blockchain.GNOSIS,
+        get(balances).gnosis,
+        get(gnosisAccounts),
+        asset
       )
     ]);
 
@@ -152,6 +167,7 @@ export const useChainAccountBalances = () => {
     polygonAccounts,
     arbitrumAccounts,
     baseAccounts,
+    gnosisAccounts,
     chainTotals,
     getBreakdown
   };

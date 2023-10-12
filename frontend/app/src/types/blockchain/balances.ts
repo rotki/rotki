@@ -46,7 +46,8 @@ const PerAccountBalances = z.object({
   // this is an exception, because the parse method receives polygonPos not polygon_pos
   [camelCase(Blockchain.POLYGON_POS)]: BlockchainAssetBalances.optional(),
   [camelCase(Blockchain.ARBITRUM_ONE)]: BlockchainAssetBalances.optional(),
-  [camelCase(Blockchain.BASE)]: BlockchainAssetBalances.optional()
+  [Blockchain.BASE]: BlockchainAssetBalances.optional(),
+  [Blockchain.GNOSIS]: BlockchainAssetBalances.optional()
 });
 
 export const BlockchainBalances = z.object({

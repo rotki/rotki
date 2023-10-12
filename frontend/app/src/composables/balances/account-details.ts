@@ -26,6 +26,8 @@ export const useAccountDetails = (
       return get(chainBalances)[chain];
     } else if (chain === Blockchain.BASE) {
       return get(chainBalances)[chain];
+    } else if (chain === Blockchain.GNOSIS) {
+      return get(chainBalances)[chain];
     }
     return {};
   });

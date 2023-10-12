@@ -9,7 +9,8 @@ export enum Blockchain {
   OPTIMISM = 'optimism',
   POLYGON_POS = 'polygon_pos',
   ARBITRUM_ONE = 'arbitrum_one',
-  BASE = 'base'
+  BASE = 'base',
+  GNOSIS = 'gnosis'
 }
 
 export type BlockchainSelection = Blockchain | 'ALL';

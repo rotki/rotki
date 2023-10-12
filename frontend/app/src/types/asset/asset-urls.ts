@@ -76,5 +76,10 @@ export const explorerUrls: AssetExplorerUrls = {
     address: 'https://basescan.org/address/',
     transaction: 'https://basescan.org/tx/',
     block: 'https://basescan.org/block/'
+  },
+  [Blockchain.GNOSIS]: {
+    address: 'https://gnosisscan.io/address/',
+    transaction: 'https://gnosisscan.io/tx/',
+    block: 'https://gnosisscan.io/block/'
   }
 };

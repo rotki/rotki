@@ -5,6 +5,7 @@ import {
   TRADE_LOCATION_ARBITRUM_ONE,
   TRADE_LOCATION_BASE,
   TRADE_LOCATION_ETHEREUM,
+  TRADE_LOCATION_GNOSIS,
   TRADE_LOCATION_OPTIMISM,
   TRADE_LOCATION_POLYGON_POS
 } from '@/data/defaults';
@@ -32,16 +33,22 @@ const evmEtherscanTabs = reactive<Record<string, EvmEtherscanTab>>({
     key: 'optimism_etherscan',
     value: ''
   },
-  [TRADE_LOCATION_POLYGON_POS]: {
+  // TODO: remove the string modification when https://github.com/rotki/rotki/issues/6725 is resolved
+  [toSnakeCase(TRADE_LOCATION_POLYGON_POS)]: {
     key: 'polygon_pos_etherscan',
     value: ''
   },
-  [TRADE_LOCATION_ARBITRUM_ONE]: {
+  // TODO: remove the string modification when https://github.com/rotki/rotki/issues/6725 is resolved
+  [toSnakeCase(TRADE_LOCATION_ARBITRUM_ONE)]: {
     key: 'arbitrum_one_etherscan',
     value: ''
   },
   [TRADE_LOCATION_BASE]: {
     key: 'base_etherscan',
+    value: ''
+  },
+  [TRADE_LOCATION_GNOSIS]: {
+    key: 'gnosis_etherscan',
     value: ''
   }
 });
@@ -78,16 +85,20 @@ const updateKeys = ({
   optimismEtherscan,
   polygonPosEtherscan,
   arbitrumOneEtherscan,
-  baseEtherscan
+  baseEtherscan,
+  gnosisEtherscan
 }: ExternalServiceKeys) => {
   evmEtherscanTabs[TRADE_LOCATION_ETHEREUM].value = etherscan?.apiKey || '';
   evmEtherscanTabs[TRADE_LOCATION_OPTIMISM].value =
     optimismEtherscan?.apiKey || '';
-  evmEtherscanTabs[TRADE_LOCATION_POLYGON_POS].value =
+  // TODO: remove the string modification when https://github.com/rotki/rotki/issues/6725 is resolved
+  evmEtherscanTabs[toSnakeCase(TRADE_LOCATION_POLYGON_POS)].value =
     polygonPosEtherscan?.apiKey || '';
-  evmEtherscanTabs[TRADE_LOCATION_ARBITRUM_ONE].value =
+  // TODO: remove the string modification when https://github.com/rotki/rotki/issues/6725 is resolved
+  evmEtherscanTabs[toSnakeCase(TRADE_LOCATION_ARBITRUM_ONE)].value =
     arbitrumOneEtherscan?.apiKey || '';
   evmEtherscanTabs[TRADE_LOCATION_BASE].value = baseEtherscan?.apiKey || '';
+  evmEtherscanTabs[TRADE_LOCATION_GNOSIS].value = gnosisEtherscan?.apiKey || '';
   set(cryptocompareKey, cryptocompare?.apiKey || '');
   set(covalentKey, covalent?.apiKey || '');
   set(beaconchainKey, beaconchain?.apiKey || '');
@@ -135,11 +146,15 @@ const save = async (serviceName: ExternalServiceName, key: string) => {
     } else if (serviceName === 'optimism_etherscan') {
       removeEtherscanNotification(TRADE_LOCATION_OPTIMISM);
     } else if (serviceName === 'polygon_pos_etherscan') {
-      removeEtherscanNotification(TRADE_LOCATION_POLYGON_POS);
+      // TODO: remove the string modification when https://github.com/rotki/rotki/issues/6725 is resolved
+      removeEtherscanNotification(toSnakeCase(TRADE_LOCATION_POLYGON_POS));
     } else if (serviceName === 'arbitrum_one_etherscan') {
-      removeEtherscanNotification(TRADE_LOCATION_ARBITRUM_ONE);
+      // TODO: remove the string modification when https://github.com/rotki/rotki/issues/6725 is resolved
+      removeEtherscanNotification(toSnakeCase(TRADE_LOCATION_ARBITRUM_ONE));
     } else if (serviceName === 'base_etherscan') {
       removeEtherscanNotification(TRADE_LOCATION_BASE);
+    } else if (serviceName === 'gnosis_etherscan') {
+      removeEtherscanNotification(TRADE_LOCATION_GNOSIS);
     }
   } catch (e: any) {
     setMessage({
