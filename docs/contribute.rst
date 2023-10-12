@@ -181,7 +181,7 @@ Working with the develop branch
 =================================
 
 The big changes to the code all happen in the ``develop`` branch. Those might include changes to the schema both in the user database and the global database. Errors related to partially migrated databases might manifest as errors in the UI when executing queries or failures to start the app or sign in. For working on develop instead of the normal ``data`` rotki directory we use another in the root path called ``develop_data``.
-To avoid losing information we recomend copying your account from ``data`` to ``develop_data`` each time you pull new changes in develop, especially if you know that any DB schema changes happened.
+To avoid losing information we recommend copying your account from ``data`` to ``develop_data`` each time you pull new changes in develop, especially if you know that any DB schema changes happened.
 
 Adding new Centralized Exchanges (CEXes)
 ============================================
