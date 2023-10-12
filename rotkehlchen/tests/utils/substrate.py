@@ -43,6 +43,7 @@ KUSAMA_SS58_FORMAT = 2
 POLKADOT_SS58_FORMAT = 2
 KUSAMA_MAIN_ASSET_DECIMALS = FVal(12)
 KUSAMA_DEFAULT_OWN_RPC_ENDPOINT = 'http://localhost:9933'
+KUSAMA_TEST_RPC_ENDPOINT = 'https://ksm.getblock.io/ae78eb1d-2643-4e22-b691-0ecb9d9c5e08/mainnet/'  # made by lef for testing # noqa: E501
 
 
 def attempt_connect_test_nodes(
@@ -109,8 +110,7 @@ def wait_until_all_substrate_nodes_connected(
         substrate_manager: SubstrateManager,
         timeout: int = NODE_CONNECTION_TIMEOUT,
 ) -> None:
-    """Wait until all substrate nodes are connected or until a timeout is hit.
-    """
+    """Wait until all substrate nodes are connected or until a timeout is hit"""
     all_nodes: set[NodeName] = set(substrate_manager_connect_at_start)
     connected: set[NodeName] = set()
     try:

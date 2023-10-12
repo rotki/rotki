@@ -4,7 +4,7 @@
       "identifier": 1,
       "event_identifier": "0xb626d9d9e3a5b9ecbe0c2194cf96ab7561063c6d31e0e6799d56a589b8094609",
       "sequence_index": 0,
-      "timestamp": 1651258550,
+      "timestamp": 1651258550000,
       "location": "blockchain",
       "asset": "ETH",
       "balance": {
@@ -22,7 +22,7 @@
       "identifier": 2,
       "event_identifier": "0xa9905f5eaa664a53e6513f7ba2147dcebc3e54d4062df9df1925116b6a220014",
       "sequence_index": 0,
-      "timestamp": 1651259834,
+      "timestamp": 1651259834000,
       "location": "blockchain",
       "asset": "ETH",
       "balance": {

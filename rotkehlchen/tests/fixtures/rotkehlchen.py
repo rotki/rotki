@@ -391,10 +391,11 @@ def initialize_mock_rotkehlchen_instance(
         for evm_inquirer, connect_at_start in evm_nodes_wait:
             wait_until_all_nodes_connected(connect_at_start=connect_at_start, evm_inquirer=evm_inquirer)  # noqa: E501
 
-    wait_until_all_substrate_nodes_connected(
-        substrate_manager_connect_at_start=kusama_manager_connect_at_start,
-        substrate_manager=rotki.chains_aggregator.kusama,
-    )
+    if len(rotki.chains_aggregator.accounts.ksm) != 0:
+        wait_until_all_substrate_nodes_connected(  # no connection would have been attempted if there are no accounts  # noqa: E501
+            substrate_manager_connect_at_start=kusama_manager_connect_at_start,
+            substrate_manager=rotki.chains_aggregator.kusama,
+        )
 
 
 @pytest.fixture(name='uninitialized_rotkehlchen')
