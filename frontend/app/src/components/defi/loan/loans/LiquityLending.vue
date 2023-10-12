@@ -30,55 +30,33 @@ const chain = Blockchain.ETH;
 </script>
 
 <template>
-  <VRow>
-    <VCol cols="12">
-      <LoanHeader class="mt-8 mb-6" :owner="loan.owner">
-        {{
-          t('liquity_lending.header', {
-            troveId: scrambleIdentifier(loan.balance.troveId)
-          })
-        }}
-      </LoanHeader>
-      <VRow no-gutters>
-        <VCol cols="12" md="6" class="pe-md-4">
-          <LiquityCollateral :collateral="collateral" :ratio="ratio" />
-        </VCol>
-        <VCol
-          v-if="liquidationPrice"
-          cols="12"
-          md="6"
-          class="ps-md-4 pt-8 pt-md-0"
-        >
-          <LiquityLiquidation
-            :price="liquidationPrice"
-            :asset="collateral.asset"
-          />
-        </VCol>
-        <VCol
-          cols="12"
-          md="6"
-          class=""
-          :class="{
-            'pt-8 ps-md-0 pe-md-4': !!liquidationPrice,
-            'ps-md-4': !liquidationPrice
-          }"
-        >
-          <LoanDebt :debt="debt" :asset="debt.asset" />
-        </VCol>
-      </VRow>
-      <div v-if="!premium" class="mt-8">
-        <PremiumCard :title="t('liquity_lending.trove_events')" />
-      </div>
-      <div v-else>
-        <HistoryEventsView
-          use-external-account-filter
-          :section-title="t('liquity_lending.trove_events')"
-          :protocols="['liquity']"
-          :external-account-filter="[{ chain, address: loan.owner }]"
-          :only-chains="[chain]"
-          :entry-types="[HistoryEventEntryType.EVM_EVENT]"
-        />
-      </div>
-    </VCol>
-  </VRow>
+  <div class="flex flex-col gap-4">
+    <LoanHeader :owner="loan.owner">
+      {{
+        t('liquity_lending.header', {
+          troveId: scrambleIdentifier(loan.balance.troveId)
+        })
+      }}
+    </LoanHeader>
+
+    <div class="grid md:grid-cols-2 gap-4">
+      <LiquityCollateral :collateral="collateral" :ratio="ratio" />
+      <LiquityLiquidation
+        v-if="liquidationPrice"
+        :price="liquidationPrice"
+        :asset="collateral.asset"
+      />
+      <LoanDebt :debt="debt" :asset="debt.asset" />
+    </div>
+
+    <PremiumCard v-if="!premium" :title="t('liquity_lending.trove_events')" />
+    <HistoryEventsView
+      use-external-account-filter
+      :section-title="t('liquity_lending.trove_events')"
+      :protocols="['liquity']"
+      :external-account-filter="[{ chain, address: loan.owner }]"
+      :only-chains="[chain]"
+      :entry-types="[HistoryEventEntryType.EVM_EVENT]"
+    />
+  </div>
 </template>
