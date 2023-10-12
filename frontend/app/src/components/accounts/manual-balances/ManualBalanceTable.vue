@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import {
-  type DataTableColumn,
-  type DataTableSortColumn
-} from '@rotki/ui-library-compat/components';
 import { type ManualBalance } from '@/types/manual-balances';
+import type {
+  DataTableColumn,
+  DataTableSortColumn
+} from '@rotki/ui-library-compat';
 
 const props = withDefaults(
   defineProps<{

@@ -78,7 +78,9 @@ const getAsset = (item: CustomAsset) => ({
   <RuiCard>
     <template #custom-header>
       <div class="flex justify-between px-4 pt-4">
-        <CustomAssetSubtitleHint />
+        <HintMenuIcon max-width="25rem">
+          {{ t('asset_table.custom.subtitle') }}
+        </HintMenuIcon>
         <div class="w-full sm:max-w-[25rem] align-self-center">
           <TableFilter
             :matches="filters"

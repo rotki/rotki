@@ -1,3 +1,3 @@
 <template>
-  <NewlyDetectedAssetTable />
+  <NewlyDetectedAssetContent />
 </template>
