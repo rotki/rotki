@@ -56,7 +56,7 @@ export const getEtherScanRegisterUrl = (location: string) => {
         route: { path: Routes.API_KEYS_EXTERNAL_SERVICES, hash: `#${location}` }
       };
     // TODO: remove the string modification when https://github.com/rotki/rotki/issues/6725 is resolved
-    case TRADE_LOCATION_POLYGON_POS.split(' ').join('_'):
+    case toSnakeCase(TRADE_LOCATION_POLYGON_POS):
       return {
         external: 'https://polygonscan.com/register',
         route: {
@@ -64,7 +64,7 @@ export const getEtherScanRegisterUrl = (location: string) => {
           hash: `#${TRADE_LOCATION_POLYGON_POS}`
         }
       };
-    case TRADE_LOCATION_ARBITRUM_ONE.split(' ').join('_'):
+    case toSnakeCase(TRADE_LOCATION_ARBITRUM_ONE):
       return {
         external: 'https://arbiscan.io/register',
         route: {
