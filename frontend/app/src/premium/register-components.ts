@@ -19,7 +19,16 @@ import {
   VTextField,
   VTooltip
 } from 'vuetify/lib/components';
-import { RuiIcon } from '@rotki/ui-library-compat';
+import {
+  RuiAlert,
+  RuiButton,
+  RuiButtonGroup,
+  RuiCard,
+  RuiDataTable,
+  RuiIcon,
+  RuiTextField,
+  RuiTooltip
+} from '@rotki/ui-library-compat';
 import AssetLink from '@/components/assets/AssetLink.vue';
 import PaginatedCards from '@/components/common/PaginatedCards.vue';
 import ExportSnapshotDialog from '@/components/dashboard/ExportSnapshotDialog.vue';
@@ -77,6 +86,17 @@ const vuetifyRegister = (): void => {
   Vue.component('VSpacer', VSpacer);
   Vue.component('VColorPicker', VColorPicker);
   Vue.component('VDataTableHeader', VDataTableHeader);
+};
+
+const ruiRegister = (): void => {
+  Vue.component('RuiAlert', RuiAlert);
+  Vue.component('RuiIcon', RuiIcon);
+  Vue.component('RuiButton', RuiButton);
+  Vue.component('RuiTooltip', RuiTooltip);
+  Vue.component('RuiTextField', RuiTextField);
+  Vue.component('RuiButtonGroup', RuiButtonGroup);
+  Vue.component('RuiCard', RuiCard);
+  Vue.component('RuiDataTable', RuiDataTable);
 };
 
 export function registerComponents(): void {
@@ -137,8 +157,8 @@ export function registerComponents(): void {
   // Version 21 - 1.28
   Vue.component('HistoryEventsView', HistoryEventsView);
   // Version 24 - 1.31
-  Vue.component('RuiIcon', RuiIcon);
   Vue.component('LpPoolHeader', LpPoolHeader);
   vuetifyRegister();
+  ruiRegister();
   logger.info('Components registered');
 }

@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { DefiProtocol } from '@rotki/common/lib/blockchain';
-import { type PropType } from 'vue';
 import { type AaveLoan } from '@/types/defi/lending';
 import { type CompoundLoan } from '@/types/defi/compound';
 import { type MakerDAOVaultModel } from '@/types/defi/maker';
@@ -8,12 +7,7 @@ import { type LiquityLoan } from '@/types/defi/liquity';
 
 type Loan = MakerDAOVaultModel | AaveLoan | CompoundLoan | LiquityLoan;
 
-const props = defineProps({
-  loan: {
-    required: true,
-    type: Object as PropType<Loan>
-  }
-});
+const props = defineProps<{ loan: Loan }>();
 
 const { loan } = toRefs(props);
 
