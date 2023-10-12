@@ -1,10 +1,12 @@
 <script setup lang="ts">
-const props = defineProps({
-  title: { required: true, type: String },
-  loading: { required: true, type: Boolean }
-});
+const props = defineProps<{
+  title: string;
+  loading: boolean;
+}>();
 
-const emit = defineEmits(['refresh']);
+const emit = defineEmits<{
+  (e: 'refresh'): void;
+}>();
 
 const { title } = toRefs(props);
 const { t } = useI18n();
@@ -13,32 +15,20 @@ const tooltip = computed(() => ({
   title: get(title).toLocaleLowerCase()
 }));
 
-const refresh = () => {
-  emit('refresh');
-};
+const slots = useSlots();
 </script>
 
 <template>
-  <VRow justify="space-between" align="center" no-gutters>
-    <VCol>
-      <CardTitle>{{ title }}</CardTitle>
-    </VCol>
-    <VCol cols="auto">
-      <VRow no-gutters>
-        <VCol v-if="$slots.actions" cols="auto" class="px-1">
-          <slot name="actions" />
-        </VCol>
-        <VCol cols="auto" class="px-1">
-          <RefreshButton
-            :loading="loading"
-            :tooltip="t('helpers.refresh_header.tooltip', tooltip)"
-            @refresh="refresh()"
-          />
-        </VCol>
-        <VCol v-if="$slots.default" cols="auto" class="px-1">
-          <slot />
-        </VCol>
-      </VRow>
-    </VCol>
-  </VRow>
+  <div class="flex flex-row items-center justify-between gap-4">
+    <CardTitle>{{ title }}</CardTitle>
+    <div class="flex flex-row gap-4 items-center">
+      <slot v-if="slots.actions" name="actions" />
+      <RefreshButton
+        :loading="loading"
+        :tooltip="t('helpers.refresh_header.tooltip', tooltip)"
+        @refresh="emit('refresh')"
+      />
+      <slot v-if="slots.default" />
+    </div>
+  </div>
 </template>

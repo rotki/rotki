@@ -36,7 +36,7 @@ onMounted(async () => {
     </template>
   </ProgressScreen>
   <div v-else>
-    <BalancerBalances class="mt-4" :refreshing="refreshing">
+    <BalancerBalances :refreshing="refreshing">
       <template #modules>
         <ActiveModules :modules="modules" />
       </template>

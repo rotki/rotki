@@ -33,7 +33,6 @@ onMounted(async () => {
   </ProgressScreen>
   <div v-else>
     <Sushi
-      class="mt-4"
       :refreshing="primaryRefreshing || secondaryRefreshing"
       :secondary-loading="secondaryRefreshing"
     >

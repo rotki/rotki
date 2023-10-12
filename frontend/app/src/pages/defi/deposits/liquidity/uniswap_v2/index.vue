@@ -2,10 +2,7 @@
 import { type GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { LpType } from '@rotki/common/lib/defi';
-import {
-  type XswapAsset,
-  type XswapBalance
-} from '@rotki/common/lib/defi/xswap';
+import { type XswapBalance } from '@rotki/common/lib/defi/xswap';
 import { type ComputedRef } from 'vue';
 import { UniswapDetails } from '@/premium/premium';
 import { Module } from '@/types/modules';
@@ -30,7 +27,6 @@ const { uniswapV2Addresses: addresses, uniswapV2PoolAssets: poolAssets } =
   storeToRefs(store);
 
 const { isModuleEnabled } = useModules();
-const { tokenAddress } = useAssetInfoRetrieval();
 const { isLoading, shouldShowLoadingScreen } = useStatusStore();
 
 const { t } = useI18n();
@@ -68,13 +64,10 @@ const refresh = async () => {
 
 const getIdentifier = (item: XswapBalance) => item.address;
 
-const getAssets = (assets: XswapAsset[]) => assets.map(({ asset }) => asset);
-
 onMounted(async () => {
   await Promise.all([fetchBalances(false), fetchEvents(false)]);
 });
 
-const { getPoolName } = useLiquidityPosition();
 const lpType = LpType.UNISWAP_V2;
 </script>
 
@@ -90,7 +83,7 @@ const lpType = LpType.UNISWAP_V2;
       </i18n>
     </template>
   </ProgressScreen>
-  <div v-else class="uniswap">
+  <div v-else class="uniswap flex flex-col gap-4">
     <RefreshHeader
       :title="t('uniswap.title', { v: 2 })"
       class="mt-4"
@@ -101,97 +94,30 @@ const lpType = LpType.UNISWAP_V2;
         <ActiveModules :modules="modules" />
       </template>
     </RefreshHeader>
-    <VRow class="mt-4">
-      <VCol>
-        <BlockchainAccountSelector
-          v-model="selectedAccounts"
-          :chains="chains"
-          :usable-addresses="addresses"
-          flat
-          dense
-          outlined
-          no-padding
-        />
-      </VCol>
-      <VCol>
-        <LiquidityPoolSelector
-          v-model="selectedPools"
-          :pools="poolAssets"
-          :type="lpType"
-          flat
-          dense
-          outlined
-          no-padding
-        />
-      </VCol>
-    </VRow>
-    <PaginatedCards :identifier="getIdentifier" :items="balances" class="mt-4">
+    <div class="grid md:grid-cols-2 gap-4">
+      <BlockchainAccountSelector
+        v-model="selectedAccounts"
+        :chains="chains"
+        :usable-addresses="addresses"
+        flat
+        dense
+        outlined
+        no-padding
+      />
+      <LiquidityPoolSelector
+        v-model="selectedPools"
+        :pools="poolAssets"
+        :type="lpType"
+        flat
+        dense
+        outlined
+        no-padding
+      />
+    </div>
+
+    <PaginatedCards :identifier="getIdentifier" :items="balances">
       <template #item="{ item }">
-        <Card>
-          <LpPoolHeader>
-            <template #icon>
-              <LpPoolIcon :assets="getAssets(item.assets)" :type="lpType" />
-            </template>
-            <template #name>
-              {{ getPoolName(lpType, getAssets(item.assets)) }}
-            </template>
-            <template #hash>
-              <HashLink :text="item.address" />
-            </template>
-            <template #detail>
-              <UniswapPoolDetails :balance="item" />
-            </template>
-          </LpPoolHeader>
-
-          <div class="mt-6">
-            <div>
-              <div class="text-rui-text-secondary text-body-2">
-                {{ t('common.balance') }}
-              </div>
-              <div class="flex text-h6 !leading-7">
-                <BalanceDisplay
-                  :value="item.userBalance"
-                  align="start"
-                  no-icon
-                  asset=""
-                />
-              </div>
-            </div>
-
-            <div class="mt-6">
-              <div class="text-rui-text-secondary text-body-2">
-                {{ t('common.assets') }}
-              </div>
-              <div>
-                <VRow
-                  v-for="asset in item.assets"
-                  :key="`${asset.asset}-${item.address}-balances`"
-                  align="center"
-                  no-gutters
-                  class="mt-2"
-                >
-                  <VCol cols="auto">
-                    <AssetIcon :identifier="asset.asset" size="32px" />
-                  </VCol>
-                  <VCol class="flex ml-4" cols="auto">
-                    <div class="mr-4">
-                      <BalanceDisplay
-                        no-icon
-                        align="start"
-                        :asset="asset.asset"
-                        :value="asset.userBalance"
-                      />
-                    </div>
-                    <HashLink
-                      link-only
-                      :text="tokenAddress(asset.asset).value"
-                    />
-                  </VCol>
-                </VRow>
-              </div>
-            </div>
-          </div>
-        </Card>
+        <UniswapPoolBalances :item="item" :lp-type="lpType" />
       </template>
     </PaginatedCards>
 

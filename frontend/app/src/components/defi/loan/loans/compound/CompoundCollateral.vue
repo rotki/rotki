@@ -1,13 +1,9 @@
 <script setup lang="ts">
-import { type PropType } from 'vue';
 import { type CompoundLoan } from '@/types/defi/compound';
 
-const props = defineProps({
-  loan: {
-    required: true,
-    type: Object as PropType<CompoundLoan>
-  }
-});
+const props = defineProps<{
+  loan: CompoundLoan;
+}>();
 
 const { loan } = toRefs(props);
 const { t } = useI18n();
@@ -24,22 +20,23 @@ const totalCollateralUsd = totalCollateral(loan);
         fiat-currency="USD"
       />
     </LoanRow>
-    <VDivider class="my-4" />
+
+    <div class="my-4 border-b" />
+
     <LoanRow
       v-if="loan.collateral.length > 0"
       :title="t('loan_collateral.per_asset')"
     >
-      <VRow
+      <div
         v-for="collateral in loan.collateral"
         :key="collateral.asset"
-        no-gutters
+        class="flex flex-row"
       >
-        <VCol>
-          <BalanceDisplay :asset="collateral.asset" :value="collateral" />
-        </VCol>
-      </VRow>
+        <BalanceDisplay :asset="collateral.asset" :value="collateral" />
+      </div>
     </LoanRow>
-    <VDivider v-if="loan.collateral.length > 0" class="my-4" />
+
+    <div v-if="loan.collateral.length > 0" class="my-4 border-b" />
 
     <LoanRow :title="t('loan_collateral.apy')">
       <PercentageDisplay :value="loan.apy ? loan.apy : null" />

@@ -1,43 +1,52 @@
 <script setup lang="ts">
-import { type PropType } from 'vue';
-import { type DataTableHeader } from '@/types/vuetify';
+import { type DataTableColumn } from '@rotki/ui-library-compat';
 import { type YearnVaultAsset } from '@/types/defi/yearn';
 import { ProtocolVersion } from '@/types/defi';
 
-const props = defineProps({
-  loading: { required: true, type: Boolean },
-  selectedAddresses: { required: true, type: Array as PropType<string[]> },
-  version: {
-    required: false,
-    default: () => null,
-    type: String as PropType<ProtocolVersion | null>
+const props = withDefaults(
+  defineProps<{
+    loading: boolean;
+    selectedAddresses: string[];
+    version?: ProtocolVersion | null;
+  }>(),
+  {
+    version: null
   }
-});
+);
 const { selectedAddresses, version } = toRefs(props);
-const { yearnVaultsAssets } = useYearnStore();
 
+const sortBy = ref({
+  column: 'roi',
+  direction: 'desc' as const
+});
+
+const { yearnVaultsAssets } = useYearnStore();
 const { t } = useI18n();
 
-const headers: DataTableHeader[] = [
-  { text: t('yearn_asset_table.headers.vault'), value: 'vault' },
+const columns: DataTableColumn[] = [
+  { label: t('yearn_asset_table.headers.vault'), key: 'vault' },
   {
-    text: t('yearn_asset_table.headers.version').toString(),
-    value: 'version'
+    label: t('yearn_asset_table.headers.version'),
+    key: 'version',
+    cellClass: 'w-8'
   },
   {
-    text: t('yearn_asset_table.headers.underlying_asset'),
-    value: 'underlyingValue.usdValue',
-    align: 'end'
+    label: t('yearn_asset_table.headers.underlying_asset'),
+    key: 'underlyingUsdValue',
+    align: 'end',
+    sortable: true
   },
   {
-    text: t('yearn_asset_table.headers.vault_asset'),
-    value: 'vaultValue.usdValue',
-    align: 'end'
+    label: t('yearn_asset_table.headers.vault_asset'),
+    key: 'vaultUsdValue',
+    align: 'end',
+    sortable: true
   },
   {
-    text: t('yearn_asset_table.headers.roi'),
-    value: 'roi',
-    align: 'end'
+    label: t('yearn_asset_table.headers.roi'),
+    key: 'roi',
+    align: 'end',
+    sortable: true
   }
 ];
 
@@ -54,36 +63,43 @@ const vaults = computed(() => {
   if (protocolVersion === ProtocolVersion.V2 || !protocolVersion) {
     v2Assets = get(yearnVaultsAssets(addresses, ProtocolVersion.V2));
   }
-  return [...v1Assets, ...v2Assets];
+  return [...v1Assets, ...v2Assets].map(x => ({
+    ...x,
+    underlyingUsdValue: x.underlyingValue.usdValue,
+    vaultUsdValue: x.vaultValue.usdValue
+  }));
 });
 </script>
 
 <template>
-  <Card v-if="vaults.length > 0">
-    <template #title>
+  <RuiCard v-if="vaults.length > 0">
+    <template #header>
       {{ t('yearn_asset_table.title') }}
     </template>
-    <DataTable
-      :headers="headers"
-      :items="vaults"
-      sort-by="roi"
+
+    <RuiDataTable
+      :cols="columns"
+      :rows="vaults"
+      outlined
+      :sort="sortBy"
       :loading="loading"
+      @update:sort="sortBy = $event"
     >
-      <template #item.version="{ item }">
-        {{ item.version }}
+      <template #item.version="{ row }">
+        {{ row.version }}
       </template>
-      <template #item.underlyingValue.usdValue="{ item }">
+      <template #item.underlyingUsdValue="{ row }">
         <BalanceDisplay
-          :asset="item.underlyingToken"
-          :value="item.underlyingValue"
+          :asset="row.underlyingToken"
+          :value="row.underlyingValue"
         />
       </template>
-      <template #item.vaultValue.usdValue="{ item }">
-        <BalanceDisplay :asset="item.vaultToken" :value="item.vaultValue" />
+      <template #item.vaultUsdValue="{ row }">
+        <BalanceDisplay :asset="row.vaultToken" :value="row.vaultValue" />
       </template>
-      <template #item.roi="{ item }">
-        <PercentageDisplay :value="item.roi" />
+      <template #item.roi="{ row }">
+        <PercentageDisplay :value="row.roi" />
       </template>
-    </DataTable>
-  </Card>
+    </RuiDataTable>
+  </RuiCard>
 </template>

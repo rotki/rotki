@@ -1,22 +1,13 @@
 <script setup lang="ts">
-import { BigNumber } from '@rotki/common';
+import { type BigNumber } from '@rotki/common';
 import { assetSymbolToIdentifierMap } from '@rotki/common/lib/data';
 import Fragment from '@/components/helper/Fragment';
 
-const props = defineProps({
-  totalInterestOwed: {
-    type: BigNumber,
-    required: true
-  },
-  stabilityFee: {
-    type: String,
-    required: true
-  },
-  loading: {
-    type: Boolean,
-    required: true
-  }
-});
+const props = defineProps<{
+  totalInterestOwed: BigNumber;
+  stabilityFee: string;
+  loading: boolean;
+}>();
 
 const premium = usePremium();
 const { totalInterestOwed } = toRefs(props);
@@ -34,7 +25,7 @@ const assetPadding = 4;
 
 <template>
   <Fragment>
-    <VDivider class="my-4" />
+    <div class="my-4 border-b" />
     <LoanRow :title="t('makerdao_vault_debt.stability_fee')" class="mb-2">
       <PercentageDisplay :value="stabilityFee" :asset-padding="assetPadding" />
     </LoanRow>
