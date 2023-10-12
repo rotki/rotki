@@ -406,6 +406,7 @@ class SubstrateManager:
                 SubstrateRequestException,
                 WebSocketException,
                 ValueError,
+                AttributeError,
         ) as e:
             message = (
                 f'{self.chain} failed to request last block '
@@ -460,7 +461,7 @@ class SubstrateManager:
         """Subscan API metadata documentation:
         https://docs.api.subscan.io/#metadata
         """
-        url = f'https://{self.chain.get_key()}.api.subscan.io/api/scan/metadata'
+        url = f'https://{self.chain.name.lower()}.api.subscan.io/api/scan/metadata'
         log.debug(f'{self.chain} subscan API request', request_url=url)
         try:
             response = requests.post(url=url, timeout=CachedSettings().get_timeout_tuple())
