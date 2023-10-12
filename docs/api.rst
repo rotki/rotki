@@ -2084,7 +2084,7 @@ Getting all supported chains
                     "name": "Polygon PoS",
                     "type": "evm",
                     "native_token": "eip155:137/erc20:0x0000000000000000000000000000000000001010",
-                    "image": "polygon.svg",
+                    "image": "polygon_pos.svg",
                     "evm_chain_name": "polygon_pos"
                 },
                 {
@@ -2092,7 +2092,7 @@ Getting all supported chains
                     "name": "Arbitrum One",
                     "type": "evm",
                     "native_token": "ETH",
-                    "image": "arbitrum.svg",
+                    "image": "arbitrum_one.svg",
                     "evm_chain_name": "arbitrum_one"
                 },
                 {
@@ -12577,7 +12577,7 @@ Managing custom accounting rules
   :resjson int entries_total: The number of total entries ignoring all filters.
 
   :statuscode 200: All okay
-  :statuscode 409: Bad set of filters provided 
+  :statuscode 409: Bad set of filters provided
   :statuscode 500: Internal rotki error
 
 

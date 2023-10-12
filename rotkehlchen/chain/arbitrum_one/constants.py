@@ -28,5 +28,5 @@ PRUNED_NODE_CHECK_TX_HASH = deserialize_evm_tx_hash('0x7eef161b36d4f4708fd82d6c0
 ARBITRUM_ONE_CPT_DETAILS = CounterpartyDetails(
     identifier=CPT_ARBITRUM_ONE,
     label='Arbitrum One',
-    image='arbitrum.svg',
+    image='arbitrum_one.svg',
 )
