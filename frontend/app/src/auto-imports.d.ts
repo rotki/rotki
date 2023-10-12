@@ -78,6 +78,7 @@ declare global {
   const customRef: typeof import('vue')['customRef']
   const debouncedRef: typeof import('@vueuse/core')['debouncedRef']
   const debouncedWatch: typeof import('@vueuse/core')['debouncedWatch']
+  const decodeHtmlEntities: typeof import('./utils/text')['decodeHtmlEntities']
   const defaultCollectionState: typeof import('./utils/collection')['defaultCollectionState']
   const defaultOptions: typeof import('./utils/collection')['defaultOptions']
   const defineAsyncComponent: typeof import('vue')['defineAsyncComponent']
@@ -404,6 +405,8 @@ declare global {
   const useDebouncedRefHistory: typeof import('@vueuse/core')['useDebouncedRefHistory']
   const useDefiApi: typeof import('./composables/api/defi/index')['useDefiApi']
   const useDefiLending: typeof import('./composables/defi/lending')['useDefiLending']
+  const useDefiMetadata: typeof import('./composables/defi/metadata')['useDefiMetadata']
+  const useDefiOverviewStore: typeof import('./store/defi/overview')['useDefiOverviewStore']
   const useDefiStore: typeof import('./store/defi/index')['useDefiStore']
   const useDeviceMotion: typeof import('@vueuse/core')['useDeviceMotion']
   const useDeviceOrientation: typeof import('@vueuse/core')['useDeviceOrientation']
@@ -784,6 +787,7 @@ declare module 'vue' {
     readonly customRef: UnwrapRef<typeof import('vue')['customRef']>
     readonly debouncedRef: UnwrapRef<typeof import('@vueuse/core')['debouncedRef']>
     readonly debouncedWatch: UnwrapRef<typeof import('@vueuse/core')['debouncedWatch']>
+    readonly decodeHtmlEntities: UnwrapRef<typeof import('./utils/text')['decodeHtmlEntities']>
     readonly defaultCollectionState: UnwrapRef<typeof import('./utils/collection')['defaultCollectionState']>
     readonly defaultOptions: UnwrapRef<typeof import('./utils/collection')['defaultOptions']>
     readonly defineAsyncComponent: UnwrapRef<typeof import('vue')['defineAsyncComponent']>
@@ -1108,6 +1112,8 @@ declare module 'vue' {
     readonly useDebouncedRefHistory: UnwrapRef<typeof import('@vueuse/core')['useDebouncedRefHistory']>
     readonly useDefiApi: UnwrapRef<typeof import('./composables/api/defi/index')['useDefiApi']>
     readonly useDefiLending: UnwrapRef<typeof import('./composables/defi/lending')['useDefiLending']>
+    readonly useDefiMetadata: UnwrapRef<typeof import('./composables/defi/metadata')['useDefiMetadata']>
+    readonly useDefiOverviewStore: UnwrapRef<typeof import('./store/defi/overview')['useDefiOverviewStore']>
     readonly useDefiStore: UnwrapRef<typeof import('./store/defi/index')['useDefiStore']>
     readonly useDeviceMotion: UnwrapRef<typeof import('@vueuse/core')['useDeviceMotion']>
     readonly useDeviceOrientation: UnwrapRef<typeof import('@vueuse/core')['useDeviceOrientation']>
@@ -1482,6 +1488,7 @@ declare module '@vue/runtime-core' {
     readonly customRef: UnwrapRef<typeof import('vue')['customRef']>
     readonly debouncedRef: UnwrapRef<typeof import('@vueuse/core')['debouncedRef']>
     readonly debouncedWatch: UnwrapRef<typeof import('@vueuse/core')['debouncedWatch']>
+    readonly decodeHtmlEntities: UnwrapRef<typeof import('./utils/text')['decodeHtmlEntities']>
     readonly defaultCollectionState: UnwrapRef<typeof import('./utils/collection')['defaultCollectionState']>
     readonly defaultOptions: UnwrapRef<typeof import('./utils/collection')['defaultOptions']>
     readonly defineAsyncComponent: UnwrapRef<typeof import('vue')['defineAsyncComponent']>
@@ -1806,6 +1813,8 @@ declare module '@vue/runtime-core' {
     readonly useDebouncedRefHistory: UnwrapRef<typeof import('@vueuse/core')['useDebouncedRefHistory']>
     readonly useDefiApi: UnwrapRef<typeof import('./composables/api/defi/index')['useDefiApi']>
     readonly useDefiLending: UnwrapRef<typeof import('./composables/defi/lending')['useDefiLending']>
+    readonly useDefiMetadata: UnwrapRef<typeof import('./composables/defi/metadata')['useDefiMetadata']>
+    readonly useDefiOverviewStore: UnwrapRef<typeof import('./store/defi/overview')['useDefiOverviewStore']>
     readonly useDefiStore: UnwrapRef<typeof import('./store/defi/index')['useDefiStore']>
     readonly useDeviceMotion: UnwrapRef<typeof import('@vueuse/core')['useDeviceMotion']>
     readonly useDeviceOrientation: UnwrapRef<typeof import('@vueuse/core')['useDeviceOrientation']>

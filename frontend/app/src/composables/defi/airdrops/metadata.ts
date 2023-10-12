@@ -1,5 +1,6 @@
 import { type ComputedRef } from 'vue';
 import { camelCase } from 'lodash-es';
+import { type MaybeRef } from '@vueuse/core';
 import { type ProtocolMetadata } from '@/types/defi';
 
 export const useAirdropsMetadata = createSharedComposable(() => {
@@ -17,25 +18,23 @@ export const useAirdropsMetadata = createSharedComposable(() => {
   }, []);
 
   const getAirdropData = (
-    identifier: Ref<string>
+    identifier: MaybeRef<string>
   ): ComputedRef<ProtocolMetadata | undefined> =>
-    computed(() =>
-      get(metadata).find(
-        item => camelCase(item.identifier) === camelCase(get(identifier))
-      )
+    useArrayFind(
+      metadata,
+      item => camelCase(item.identifier) === camelCase(get(identifier))
     );
 
-  const getAirdropName = (identifier: Ref<string>): ComputedRef<string> =>
-    computed(() => get(getAirdropData(identifier))?.name ?? get(identifier));
+  const getAirdropName = (identifier: MaybeRef<string>): ComputedRef<string> =>
+    useValueOrDefault(
+      useRefMap(getAirdropData(identifier), i => i?.name),
+      identifier
+    );
 
   const getAirdropImageUrl = (identifier: Ref<string>): ComputedRef<string> =>
     computed(() => {
       const image =
         get(getAirdropData(identifier))?.icon ?? `${get(identifier)}.svg`;
-
-      if (!image) {
-        return image;
-      }
 
       return `./assets/images/protocols/${image}`;
     });

@@ -2,7 +2,8 @@
 import { Section } from '@/types/status';
 
 const store = useDefiStore();
-const { overview: currentOverview } = storeToRefs(store);
+const overviewStore = useDefiOverviewStore();
+const { overview: currentOverview } = storeToRefs(overviewStore);
 const section = Section.DEFI_OVERVIEW;
 
 const { t } = useI18n();
@@ -23,7 +24,7 @@ const refreshing = isLoading(section);
 
 <template>
   <div>
-    <VRow class="mt-6">
+    <VRow class="my-4">
       <VCol>
         <RefreshHeader
           :loading="refreshing"
@@ -47,15 +48,12 @@ const refreshing = isLoading(section);
         {{ t('decentralized_overview.empty_subtitle') }}
       </span>
     </NoDataScreen>
-    <VRow class="mt-4">
-      <VCol
+    <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <Overview
         v-for="summary in currentOverview"
-        :key="summary.protocol.name"
-        lg="6"
-        xl="3"
-      >
-        <Overview :summary="summary" />
-      </VCol>
-    </VRow>
+        :key="summary.protocol"
+        :summary="summary"
+      />
+    </div>
   </div>
 </template>

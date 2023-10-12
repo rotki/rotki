@@ -10,7 +10,7 @@ const { dark } = useTheme();
 </script>
 
 <template>
-  <VCard class="stat-card flex flex-columns pa-0 h-full">
+  <VCard class="stat-card flex flex-columns pa-0 h-full overflow-hidden">
     <div v-if="bordered" class="stat-card__border">
       <div class="stat-card__image ma-2">
         <VImg

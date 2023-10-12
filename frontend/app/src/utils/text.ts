@@ -236,3 +236,9 @@ export const consistOfNumbers = (text?: string): boolean => {
 
   return !!text.match(/^\d+$/);
 };
+
+// Transform HTML code entities such as &bull; into “•”
+export const decodeHtmlEntities = (input: string): string => {
+  const doc = new DOMParser().parseFromString(input, 'text/html');
+  return doc.documentElement.textContent || input;
+};

@@ -36,9 +36,17 @@ export const useDefiApi = () => {
     return handleResponse(response);
   };
 
+  const fetchDefiMetadata = async (): Promise<SupportedModule[]> => {
+    const response =
+      await api.instance.get<ActionResult<SupportedModule[]>>('/defi/metadata');
+
+    return handleResponse(response);
+  };
+
   return {
     fetchAllDefi,
     fetchAirdrops,
-    fetchAirdropsMetadata
+    fetchAirdropsMetadata,
+    fetchDefiMetadata
   };
 };
