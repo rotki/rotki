@@ -550,8 +550,8 @@ SUPPORTED_BLOCKCHAIN_IMAGE_NAME_MAPPING = {
     SupportedBlockchain.AVALANCHE: 'avalanche.svg',
     SupportedBlockchain.POLKADOT: 'polkadot.svg',
     SupportedBlockchain.OPTIMISM: 'optimism.svg',
-    SupportedBlockchain.POLYGON_POS: 'polygon.svg',
-    SupportedBlockchain.ARBITRUM_ONE: 'arbitrum.svg',
+    SupportedBlockchain.POLYGON_POS: 'polygon_pos.svg',
+    SupportedBlockchain.ARBITRUM_ONE: 'arbitrum_one.svg',
     SupportedBlockchain.BASE: 'base.svg',
     SupportedBlockchain.GNOSIS: 'gnosis.svg',
 }
