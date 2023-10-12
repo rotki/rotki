@@ -224,9 +224,7 @@ onMounted(async () => {
       </VCard>
       <VTabs v-model="evmEtherscanTabIndex">
         <VTab v-for="(_, chain) in evmEtherscanTabs" :key="chain">
-          <AdaptiveWrapper>
-            <EvmChainIcon :chain="chain" tile />
-          </AdaptiveWrapper>
+          <LocationIcon :item="chain" icon />
           <div class="ml-2">{{ getName(chain) }}</div>
         </VTab>
       </VTabs>
