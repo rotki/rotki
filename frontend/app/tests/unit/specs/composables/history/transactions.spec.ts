@@ -13,11 +13,11 @@ vi.mock('@/composables/api/history/events', () => ({
   useHistoryEventsApi: vi.fn().mockReturnValue({
     addTransactionHash: vi.fn(),
     fetchEvmTransactionsTask: vi.fn().mockResolvedValue({}),
-    deleteTransactionEvent: vi.fn(),
+    deleteHistoryEvent: vi.fn(),
     decodeHistoryEvents: vi.fn().mockResolvedValue({}),
     reDecodeMissingTransactionEvents: vi.fn(),
-    addTransactionEvent: vi.fn(),
-    editTransactionEvent: vi.fn(),
+    addHistoryEvent: vi.fn(),
+    editHistoryEvent: vi.fn(),
     queryOnlineHistoryEvents: vi.fn().mockResolvedValue({}),
     fetchHistoryEvents: vi.fn().mockResolvedValue(historyEvents.result)
   })
@@ -45,11 +45,11 @@ describe('composables::history/events/tx', async () => {
 
   test('initialize composable correctly', async () => {
     const eventsApi = useHistoryEventsApi();
-    const addTxSpy = vi.spyOn(eventsApi, 'addTransactionHash');
-    const addTxEvSpy = vi.spyOn(eventsApi, 'addTransactionEvent');
-    const editTxEvSpy = vi.spyOn(eventsApi, 'editTransactionEvent');
+    const addHistorySpy = vi.spyOn(eventsApi, 'addTransactionHash');
+    const addHistoryEventSpy = vi.spyOn(eventsApi, 'addHistoryEvent');
+    const editHistoryEventSpy = vi.spyOn(eventsApi, 'editHistoryEvent');
     const decodeTxSpy = vi.spyOn(eventsApi, 'decodeHistoryEvents');
-    const delTxSpy = vi.spyOn(eventsApi, 'deleteTransactionEvent');
+    const deleteHistoryEventSpy = vi.spyOn(eventsApi, 'deleteHistoryEvent');
     const queryEvSpy = vi.spyOn(eventsApi, 'queryOnlineHistoryEvents');
 
     const event = {
@@ -64,9 +64,9 @@ describe('composables::history/events/tx', async () => {
 
     const {
       addTransactionHash,
-      addTransactionEvent,
-      editTransactionEvent,
-      deleteTransactionEvent,
+      addHistoryEvent,
+      editHistoryEvent,
+      deleteHistoryEvent,
       fetchTransactionEvents,
       refreshTransactions
     } = useHistoryTransactions();
@@ -78,18 +78,18 @@ describe('composables::history/events/tx', async () => {
       evmChain: ''
     });
 
-    expect(addTxSpy).toHaveBeenCalledOnce();
+    expect(addHistorySpy).toHaveBeenCalledOnce();
 
     // add a transaction event and check the spy function is called
-    await addTransactionEvent(event);
-    expect(addTxEvSpy).toHaveBeenCalledOnce();
-    expect(addTxEvSpy).toHaveBeenCalledWith(event);
+    await addHistoryEvent(event);
+    expect(addHistoryEventSpy).toHaveBeenCalledOnce();
+    expect(addHistoryEventSpy).toHaveBeenCalledWith(event);
 
     // edit a transaction and check the spy function is called
-    await editTransactionEvent(editEvent);
+    await editHistoryEvent(editEvent);
 
-    expect(editTxEvSpy).toHaveBeenCalledOnce();
-    expect(editTxEvSpy).toHaveBeenCalledWith(editEvent);
+    expect(editHistoryEventSpy).toHaveBeenCalledOnce();
+    expect(editHistoryEventSpy).toHaveBeenCalledWith(editEvent);
 
     // fetch transactions and check the spy function is called
     await fetchTransactionEvents(null, true);
@@ -97,10 +97,10 @@ describe('composables::history/events/tx', async () => {
     expect(decodeTxSpy).toHaveBeenCalledOnce();
 
     // delete transaction with empty array and check the spy function is not called
-    await deleteTransactionEvent([], true);
+    await deleteHistoryEvent([], true);
 
-    expect(delTxSpy).toHaveBeenCalledOnce();
-    expect(delTxSpy).toHaveBeenCalledWith([], true);
+    expect(deleteHistoryEventSpy).toHaveBeenCalledOnce();
+    expect(deleteHistoryEventSpy).toHaveBeenCalledWith([], true);
 
     // add a transaction and check the spy function is called
     await refreshTransactions([]);

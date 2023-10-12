@@ -510,7 +510,6 @@ const { coingeckoContributeUrl, cryptocompareContributeUrl } = useInterop();
           <VExpansionPanelContent>
             <DateTimePicker
               v-model="started"
-              seconds
               outlined
               :label="t('asset_form.labels.started')"
               :error-messages="toMessages(v$.started)"

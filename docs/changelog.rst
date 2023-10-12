@@ -2,7 +2,8 @@
 Changelog
 =========
 
-
+* :feature:`-` Users will be able to modifying (add/edit/delete) all history events types.
+* :feature:`-` Users will be able to customize the accounting rule for historical events.
 * :feature:`-` Octant GLM locking/unlocking events will now be properly detected and shown to the user.
 * :feature:`6733` Added support for detection of GRT tokens delegated to indexers in The Graph protocol (amounts including rewards).
 * :feature:`-` Binance CSV importing will now recognize more entry types.

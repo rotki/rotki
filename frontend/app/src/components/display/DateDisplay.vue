@@ -6,23 +6,44 @@ const props = withDefaults(
     timestamp: number;
     showTimezone?: boolean;
     noTime?: boolean;
+    milliseconds?: boolean;
   }>(),
   {
     showTimezone: false,
-    noTime: false
+    noTime: false,
+    milliseconds: false
   }
 );
 
 const css = useCssModule();
 
-const { timestamp, showTimezone, noTime } = toRefs(props);
+const { timestamp, showTimezone, noTime, milliseconds } = toRefs(props);
 const { dateDisplayFormat } = storeToRefs(useGeneralSettingsStore());
 const { shouldShowAmount } = storeToRefs(useSessionSettingsStore());
 
+const dateDisplayFormatWithMilliseconds: ComputedRef<string> = computed(() => {
+  const format = get(dateDisplayFormat);
+  if (!get(milliseconds)) {
+    return format;
+  }
+
+  const milisecondFormat = '%s';
+
+  if (format.includes(milisecondFormat)) {
+    return format;
+  }
+
+  return format
+    .replace('%S', `%S.${milisecondFormat}`)
+    .replace('%-S', `%-S.${milisecondFormat}`);
+});
+
 const dateFormat = computed<string>(() => {
   const display = get(showTimezone)
-    ? get(dateDisplayFormat)
-    : get(dateDisplayFormat).replace('%z', '').replace('%Z', '');
+    ? get(dateDisplayFormatWithMilliseconds)
+    : get(dateDisplayFormatWithMilliseconds)
+        .replace('%z', '')
+        .replace('%Z', '');
 
   if (get(noTime)) {
     return display.split(' ')[0];
@@ -37,15 +58,19 @@ const displayTimestamp = computed<number>(() =>
 );
 
 const date = computed(() => new Date(get(displayTimestamp) * 1000));
+
 const format = (date: Ref<Date>, format: Ref<string>) =>
   computed(() => displayDateFormatter.format(get(date), get(format)));
 
 const formattedDate = format(date, dateFormat);
-const formattedDateWithTimezone = format(date, dateDisplayFormat);
+const formattedDateWithTimezone = format(
+  date,
+  dateDisplayFormatWithMilliseconds
+);
 
 const showTooltip = computed(() => {
   const timezone = get(showTimezone);
-  const format = get(dateDisplayFormat);
+  const format = get(dateDisplayFormatWithMilliseconds);
   return !timezone && (format.includes('%z') || format.includes('%Z'));
 });
 </script>

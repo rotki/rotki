@@ -73,10 +73,12 @@ const events: Ref<HistoryEventEntry[]> = asyncComputed(() => {
     return [eventHeader];
   }
   const eventIdentifierHeader = eventHeader.eventIdentifier;
-  const filtered = all.filter(
-    ({ eventIdentifier, hidden }) =>
-      eventIdentifier === eventIdentifierHeader && !hidden
-  );
+  const filtered = all
+    .filter(
+      ({ eventIdentifier, hidden }) =>
+        eventIdentifier === eventIdentifierHeader && !hidden
+    )
+    .sort((a, b) => Number(a.sequenceIndex) - Number(b.sequenceIndex));
 
   if (filtered.length > 0) {
     return filtered;
@@ -212,7 +214,6 @@ const blockEvent = isEthBlockEventRef(eventGroupHeader);
                       align="end"
                       :delete-tooltip="t('transactions.events.actions.delete')"
                       :edit-tooltip="t('transactions.events.actions.edit')"
-                      :no-edit="!isEvmEvent(item)"
                       @edit-click="editEvent(item)"
                       @delete-click="deleteEvent(item)"
                     />

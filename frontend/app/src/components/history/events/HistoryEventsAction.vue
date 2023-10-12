@@ -12,7 +12,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'add-event', event: EvmHistoryEvent): void;
+  (e: 'add-event', event: HistoryEventEntry): void;
   (e: 'toggle-ignore', event: HistoryEventEntry): void;
   (e: 'redecode', data: EvmChainAndTxHash): void;
   (e: 'reset', event: EvmHistoryEvent): void;
@@ -24,7 +24,7 @@ const evmEvent = isEvmEventRef(event);
 
 const { t } = useI18n();
 
-const addEvent = (event: EvmHistoryEvent) => emit('add-event', event);
+const addEvent = (event: HistoryEventEntry) => emit('add-event', event);
 const toggleIgnore = (event: HistoryEventEntry) => emit('toggle-ignore', event);
 const redecode = (data: EvmChainAndTxHash) => emit('redecode', data);
 const resetEvent = (event: EvmHistoryEvent) => emit('reset', event);
@@ -33,7 +33,6 @@ const resetEvent = (event: EvmHistoryEvent) => emit('reset', event);
 <template>
   <div class="flex items-center">
     <VMenu
-      v-if="evmEvent"
       transition="slide-y-transition"
       max-width="250px"
       min-width="200px"
@@ -45,12 +44,12 @@ const resetEvent = (event: EvmHistoryEvent) => emit('reset', event);
         </VBtn>
       </template>
       <VList>
-        <VListItem link @click="addEvent(evmEvent)">
+        <VListItem link @click="addEvent(event)">
           <VListItemIcon class="mr-4">
             <VIcon>mdi-plus</VIcon>
           </VListItemIcon>
           <VListItemContent>
-            {{ t('transactions.actions.add_event') }}
+            {{ t('transactions.actions.add_event_here') }}
           </VListItemContent>
         </VListItem>
         <VListItem link @click="toggleIgnore(event)">
@@ -66,26 +65,28 @@ const resetEvent = (event: EvmHistoryEvent) => emit('reset', event);
             }}
           </VListItemContent>
         </VListItem>
-        <VListItem
-          link
-          :disabled="loading"
-          @click="redecode(toEvmChainAndTxHash(evmEvent))"
-        >
-          <VListItemIcon class="mr-4">
-            <VIcon>mdi-database-refresh</VIcon>
-          </VListItemIcon>
-          <VListItemContent>
-            {{ t('transactions.actions.redecode_events') }}
-          </VListItemContent>
-        </VListItem>
-        <VListItem link :disabled="loading" @click="resetEvent(evmEvent)">
-          <VListItemIcon class="mr-4">
-            <VIcon>mdi-file-restore</VIcon>
-          </VListItemIcon>
-          <VListItemContent>
-            {{ t('transactions.actions.reset_customized_events') }}
-          </VListItemContent>
-        </VListItem>
+        <template v-if="evmEvent">
+          <VListItem
+            link
+            :disabled="loading"
+            @click="redecode(toEvmChainAndTxHash(evmEvent))"
+          >
+            <VListItemIcon class="mr-4">
+              <VIcon>mdi-database-refresh</VIcon>
+            </VListItemIcon>
+            <VListItemContent>
+              {{ t('transactions.actions.redecode_events') }}
+            </VListItemContent>
+          </VListItem>
+          <VListItem link :disabled="loading" @click="resetEvent(evmEvent)">
+            <VListItemIcon class="mr-4">
+              <VIcon>mdi-file-restore</VIcon>
+            </VListItemIcon>
+            <VListItemContent>
+              {{ t('transactions.actions.reset_customized_events') }}
+            </VListItemContent>
+          </VListItem>
+        </template>
       </VList>
     </VMenu>
   </div>

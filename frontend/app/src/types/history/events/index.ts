@@ -14,7 +14,7 @@ const LiquityStakingEventExtraData = z.object({
 // ETH Transactions
 export const EvmTransaction = z.object({
   txHash: z.string(),
-  timestamp: z.number(),
+  timestamp: z.number().transform(timestamp => timestamp / 1000),
   blockNumber: z.number(),
   evmChain: z.string(),
   fromAddress: z.string(),
@@ -80,7 +80,7 @@ export const CommonHistoryEvent = z.object({
   identifier: z.number(),
   eventIdentifier: z.string(),
   sequenceIndex: z.number().or(z.string()),
-  timestamp: z.number(),
+  timestamp: z.number().transform(timestamp => timestamp / 1000),
   location: z.string(),
   asset: z.string(),
   balance: Balance,
@@ -165,13 +165,85 @@ export interface HistoryEventRequestPayload
 
 export type EditEvmHistoryEventPayload = Omit<
   EvmHistoryEvent,
-  'ignoredInAccounting' | 'customized' | 'entryType' | 'eventIdentifier'
+  'ignoredInAccounting' | 'customized' | 'eventIdentifier' | 'address'
 >;
 
 export type NewEvmHistoryEventPayload = Omit<
   EditEvmHistoryEventPayload,
   'identifier'
 >;
+
+export type EditOnlineHistoryEventPayload = Omit<
+  OnlineHistoryEvent,
+  'ignoredInAccounting' | 'customized'
+>;
+
+export type NewOnlineHistoryEventPayload = Omit<
+  EditOnlineHistoryEventPayload,
+  'identifier'
+>;
+
+export type EditEthBlockEventPayload = {
+  entryType: typeof HistoryEventEntryType.ETH_BLOCK_EVENT;
+  identifier: number;
+  timestamp: number;
+  balance: Balance;
+  validatorIndex: number;
+  blockNumber: number;
+  feeRecipient: string;
+  isMevReward: boolean;
+};
+
+export type NewEthBlockEventPayload = Omit<
+  EditEthBlockEventPayload,
+  'identifier'
+>;
+
+export type EditEthDepositEventPayload = {
+  entryType: typeof HistoryEventEntryType.ETH_DEPOSIT_EVENT;
+  identifier: number;
+  timestamp: number;
+  balance: Balance;
+  validatorIndex: number;
+  txHash: string;
+  eventIdentifier: string;
+  sequenceIndex: number | string;
+  depositor: string;
+};
+
+export type NewEthDepositEventPayload = Omit<
+  EditEthDepositEventPayload,
+  'identifier'
+>;
+
+export type EditEthWithdrawalEventPayload = {
+  entryType: typeof HistoryEventEntryType.ETH_WITHDRAWAL_EVENT;
+  identifier: number;
+  timestamp: number;
+  balance: Balance;
+  validatorIndex: number;
+  withdrawalAddress: string;
+  isExit: boolean;
+};
+
+export type NewEthWithdrawalEventPayload = Omit<
+  EditEthWithdrawalEventPayload,
+  'identifier'
+>;
+
+export type EditHistoryEventPayload =
+  | EditEvmHistoryEventPayload
+  | EditOnlineHistoryEventPayload
+  | EditEthBlockEventPayload
+  | EditEthDepositEventPayload
+  | EditEthWithdrawalEventPayload;
+
+export type NewHistoryEventPayload =
+  | NewEvmHistoryEventPayload
+  | NewOnlineHistoryEventPayload
+  | NewEthBlockEventPayload
+  | NewEthDepositEventPayload
+  | NewEthWithdrawalEventPayload;
 
 export const HistoryEventMeta = EntryMeta.merge(
   z.object({

@@ -35,6 +35,7 @@ const description = (directive: string): string => {
     '-M': t('date_format_help.directive.minutes').toString(),
     S: t('date_format_help.directive.seconds_padded').toString(),
     '-S': t('date_format_help.directive.seconds').toString(),
+    s: t('date_format_help.directive.milliseconds').toString(),
     p: t('date_format_help.directive.ampm').toString(),
     z: t('date_format_help.directive.timezone_offset').toString(),
     Z: t('date_format_help.directive.timezone').toString(),

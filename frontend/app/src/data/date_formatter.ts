@@ -24,6 +24,7 @@ export class DateFormatter {
     '-M': date => date.getMinutes().toString(),
     S: date => DateFormatter.leftPad(date.getSeconds().toString()),
     '-S': date => date.getSeconds().toString(),
+    s: date => date.getMilliseconds().toString(),
     p: (date, locale) => DateFormatter.amPm(date, locale),
     z: date => DateFormatter.timezoneOffset(date),
     Z: (date, locale) => DateFormatter.timezone(date, locale),

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import dayjs from 'dayjs';
-import { type ComputedRef, type Ref } from 'vue';
+import { type ComputedRef, type Ref, useListeners } from 'vue';
 import IMask, {
   type AnyMaskedOptions,
   type InputMask,
@@ -21,6 +21,7 @@ const props = withDefaults(
     limitNow?: boolean;
     allowEmpty?: boolean;
     seconds?: boolean;
+    milliseconds?: boolean;
     outlined?: boolean;
     disabled?: boolean;
     errorMessages?: string[];
@@ -34,6 +35,7 @@ const props = withDefaults(
     limitNow: false,
     allowEmpty: false,
     seconds: false,
+    milliseconds: false,
     outlined: false,
     disabled: false,
     errorMessages: () => [],
@@ -42,6 +44,9 @@ const props = withDefaults(
 );
 
 const emit = defineEmits<{ (e: 'input', value: string): void }>();
+
+const { seconds, value, allowEmpty, limitNow, errorMessages, milliseconds } =
+  toRefs(props);
 
 const { t } = useI18n();
 
@@ -67,7 +72,9 @@ const completeDateTimeFormat: ComputedRef<string> = computed(
   () => `${get(dateInputFormatInISO)} HH:mm:ss`
 );
 
-const { seconds, value, allowEmpty, limitNow, errorMessages } = toRefs(props);
+const completeDateTimeFormatWithMilliseconds: ComputedRef<string> = computed(
+  () => `${get(dateInputFormatInISO)} HH:mm:ss.SSS`
+);
 
 const currentValue: Ref<string> = ref('');
 const selectedTimezone: Ref<string> = ref('');
@@ -77,11 +84,16 @@ const isValidFormat = (date: string): boolean => {
   const dateFormat = get(dateInputFormatInISO);
   const dateTimeFormatVal = get(dateTimeFormat);
   const completeDateTimeFormatVal = get(completeDateTimeFormat);
+  const completeDateTimeFormatWithMillisecondsVal = get(
+    completeDateTimeFormatWithMilliseconds
+  );
 
   return (
     isValidDate(date, dateFormat) ||
     isValidDate(date, dateTimeFormatVal) ||
-    (!get(seconds) && isValidDate(date, completeDateTimeFormatVal))
+    (!get(seconds) && isValidDate(date, completeDateTimeFormatVal)) ||
+    (get(milliseconds) &&
+      isValidDate(date, completeDateTimeFormatWithMillisecondsVal))
   );
 };
 
@@ -268,6 +280,10 @@ const initImask = () => {
     ss: createBlock(0, 59)
   };
 
+  const millisecondsBlocks = {
+    SSS: createBlock(0, 999)
+  };
+
   // Find every character '/', ':', ' ', and adds '`' character after it.
   // It is used to prevent the character to shift back.
   const convertPattern = (pattern: string) =>
@@ -282,6 +298,19 @@ const initImask = () => {
       lazy: false,
       overwrite: true
     },
+    ...(!get(seconds)
+      ? [
+          {
+            mask: convertPattern(get(dateTimeFormat)),
+            blocks: {
+              ...dateBlocks,
+              ...hourAndMinuteBlocks
+            },
+            lazy: false,
+            overwrite: true
+          }
+        ]
+      : []),
     {
       mask: convertPattern(get(completeDateTimeFormatVal)),
       blocks: {
@@ -291,20 +320,23 @@ const initImask = () => {
       },
       lazy: false,
       overwrite: true
-    }
+    },
+    ...(get(milliseconds)
+      ? [
+          {
+            mask: convertPattern(get(completeDateTimeFormatWithMilliseconds)),
+            blocks: {
+              ...dateBlocks,
+              ...hourAndMinuteBlocks,
+              ...secondBlocks,
+              ...millisecondsBlocks
+            },
+            lazy: false,
+            overwrite: true
+          }
+        ]
+      : [])
   ];
-
-  if (!get(seconds)) {
-    mask.splice(1, 0, {
-      mask: convertPattern(get(dateTimeFormat)),
-      blocks: {
-        ...dateBlocks,
-        ...hourAndMinuteBlocks
-      },
-      lazy: false,
-      overwrite: true
-    });
-  }
 
   const newImask = IMask(input, {
     mask
@@ -343,62 +375,68 @@ const focus = () => {
     set(currentValue, formattedValue);
   });
 };
+
+const listeners = useListeners();
+
+const filteredListeners = (listeners: any) => ({
+  ...listeners,
+  input: () => {}
+});
 </script>
 
 <template>
-  <div>
-    <VTextField
-      ref="inputField"
-      :value="currentValue"
-      :label="label"
-      :hint="hint"
-      :disabled="disabled"
-      :hide-details="hideDetails"
-      prepend-inner-icon="mdi-calendar"
-      :persistent-hint="persistentHint"
-      :outlined="outlined"
-      :error-messages="toMessages(v$.date)"
-      @focus="focus()"
-    >
-      <template #append>
-        <VMenu
-          :close-on-content-click="false"
-          transition="scale-transition"
-          :nudge-bottom="56"
-          left
-          max-width="580px"
-          class="date-time-picker"
-        >
-          <template #activator="{ on }">
-            <VBtn icon class="mt-n2" v-on="on">
-              <VIcon>mdi-earth</VIcon>
-            </VBtn>
-          </template>
+  <VTextField
+    ref="inputField"
+    :value="currentValue"
+    :label="label"
+    :hint="hint"
+    :disabled="disabled"
+    :hide-details="hideDetails"
+    prepend-inner-icon="mdi-calendar"
+    :persistent-hint="persistentHint"
+    :outlined="outlined"
+    :error-messages="toMessages(v$.date)"
+    @focus="focus()"
+    v-on="filteredListeners(listeners)"
+  >
+    <template #append>
+      <VMenu
+        :close-on-content-click="false"
+        transition="scale-transition"
+        :nudge-bottom="56"
+        left
+        max-width="580px"
+        class="date-time-picker"
+      >
+        <template #activator="{ on }">
+          <VBtn icon class="mt-n2" v-on="on">
+            <VIcon>mdi-earth</VIcon>
+          </VBtn>
+        </template>
 
-          <div :class="css.menu">
-            <VAutocomplete
-              v-model="selectedTimezone"
-              label="Select timezone"
-              class="pa-4 pb-0"
-              outlined
-              persistent-hint
-              menu-pros="auto"
-              :error-messages="toMessages(v$.timezone)"
-              :items="timezones"
-            />
-          </div>
-        </VMenu>
-        <VBtn
-          data-cy="date-time-picker__set-now-button"
-          icon
-          class="mt-n2"
-          @click="setNow()"
-        >
-          <VIcon>mdi-clock-outline</VIcon>
-        </VBtn>
-      </template>
-    </VTextField>
-  </div>
+        <div :class="css.menu">
+          <VAutocomplete
+            v-model="selectedTimezone"
+            label="Select timezone"
+            class="pa-4 pb-0"
+            outlined
+            persistent-hint
+            menu-pros="auto"
+            :error-messages="toMessages(v$.timezone)"
+            :items="timezones"
+          />
+        </div>
+      </VMenu>
+      <VBtn
+        data-cy="date-time-picker__set-now-button"
+        icon
+        class="mt-n2"
+        @click="setNow()"
+      >
+        <VIcon>mdi-clock-outline</VIcon>
+      </VBtn>
+    </template>
+  </VTextField>
 </template>
 
 <style module lang="scss">

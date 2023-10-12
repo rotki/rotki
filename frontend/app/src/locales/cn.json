@@ -1813,6 +1813,7 @@
       "locale_date": "语言环境格式的日期",
       "locale_datetime": "区域设置格式的日期和时间",
       "locale_time": "语言环境格式的时间",
+      "milliseconds": "毫秒",
       "minutes": "分钟",
       "minutes_padded": "两位数分钟（带前导零）",
       "month": "完整的月份名称",

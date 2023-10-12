@@ -1781,6 +1781,7 @@
       "locale_date": "Date in the locale format",
       "locale_datetime": "Date and time in the locale format",
       "locale_time": "Time in the locale format",
+      "milliseconds": "Milliseconds",
       "minutes": "Minutes",
       "minutes_padded": "Two-digit minutes (with leading zeroes)",
       "month": "Full month name",

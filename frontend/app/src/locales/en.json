@@ -1895,6 +1895,7 @@
       "locale_date": "Date in the locale format",
       "locale_datetime": "Date and time in the locale format",
       "locale_time": "Time in the locale format",
+      "milliseconds": "Milliseconds",
       "minutes": "Minutes",
       "minutes_padded": "Two-digit minutes (with leading zeroes)",
       "month": "Full month name",
@@ -3968,7 +3969,8 @@
   },
   "transactions": {
     "actions": {
-      "add_event": "Add a new event",
+      "add_event": "Add new event",
+      "add_event_here": "Add new event here",
       "redecode_events": "Redecode events",
       "reset_customized_events": "Reset customized events"
     },
@@ -4024,6 +4026,12 @@
           "hint": "If you change the asset price, rotki will save the historic price that will be considered in PnL report calculation",
           "label": "Asset price in {symbol} at the time"
         },
+        "block_number": {
+          "label": "Block Number",
+          "validation": {
+            "non_empty": "The block number field cannot be empty."
+          }
+        },
         "counterparty": {
           "label": "Counterparty",
           "validation": {
@@ -4033,6 +4041,19 @@
         "datetime": {
           "hint": "The date & time of when the event happened",
           "label": "Date & time"
+        },
+        "depositor": {
+          "label": "Depositor Address",
+          "validation": {
+            "non_empty": "The depositor field cannot be empty.",
+            "valid": "The depositor is invalid, fill it with valid address"
+          }
+        },
+        "event_identifier": {
+          "label": "Event Identifier",
+          "validation": {
+            "non_empty": "The event identifier field cannot be empty."
+          }
         },
         "event_subtype": {
           "label": "Event Subtype",
@@ -4046,10 +4067,23 @@
             "non_empty": "The event type field cannot be empty."
           }
         },
+        "fee_recipient": {
+          "label": "Fee Recipient Address",
+          "validation": {
+            "non_empty": "The fee recipient field cannot be empty.",
+            "valid": "The fee recipient is invalid, fill it with valid address"
+          }
+        },
         "fiat_value": {
           "validation": {
             "non_empty": "The {currency} value field cannot be empty."
           }
+        },
+        "is_exit": {
+          "label": "Is Exited?"
+        },
+        "is_mev_reward": {
+          "label": "Is Mev Reward?"
         },
         "location": {
           "validation": {
@@ -4077,6 +4111,25 @@
         },
         "transaction_event_type": {
           "label": "Transaction Event Type"
+        },
+        "tx_hash": {
+          "validation": {
+            "non_empty": "The tx hash field cannot be empty.",
+            "valid": "The tx hash is invalid, fill it with valid tx hash"
+          }
+        },
+        "validator_index": {
+          "label": "Validator Index",
+          "validation": {
+            "non_empty": "The validator index field cannot be empty."
+          }
+        },
+        "withdrawal_address": {
+          "label": "Withdrawal Address",
+          "validation": {
+            "non_empty": "The withdrawal field cannot be empty.",
+            "valid": "The withdrawal is invalid, fill it with valid address"
+          }
         }
       },
       "headers": {
@@ -4143,7 +4196,7 @@
         }
       }
     },
-    "ignore": "Ignore Tx in Accounting",
+    "ignore": "Ignore events in Accounting",
     "query_status": {
       "date_range": "Querying {status} for {address} between {start} and {end}",
       "done_date_range": "Done querying all transactions for {address} between {start} and {end}",
@@ -4177,7 +4230,7 @@
     },
     "refresh_tooltip": "Fetch latest events",
     "title": "History Events",
-    "unignore": "Unignore Tx in Accounting"
+    "unignore": "Unignore events in Accounting"
   },
   "underlying_token_manager": {
     "delete_tooltip": "Delete the underlying token",

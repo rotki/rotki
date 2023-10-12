@@ -294,9 +294,7 @@ onMounted(setEditMode);
   <VForm :value="valid" data-cy="trade-form" class="external-trade-form pt-1">
     <DateTimePicker
       v-model="datetime"
-      required
       outlined
-      seconds
       limit-now
       data-cy="date"
       :label="t('external_trade_form.date.label')"

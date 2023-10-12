@@ -135,7 +135,6 @@ const updatePrice = async () => {
                 disabled
                 hide-details
                 :label="t('common.datetime')"
-                seconds
               />
             </VCol>
 

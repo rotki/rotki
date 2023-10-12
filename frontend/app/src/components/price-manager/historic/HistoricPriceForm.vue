@@ -146,7 +146,6 @@ const v$ = setValidation(
           :value="date"
           outlined
           :label="t('common.datetime')"
-          seconds
           :disabled="edit"
           :error-messages="toMessages(v$.date)"
           @input="input({ timestamp: convertToTimestamp($event) })"

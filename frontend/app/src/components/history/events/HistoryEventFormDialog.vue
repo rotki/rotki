@@ -1,21 +1,22 @@
 <script lang="ts" setup>
-import { type EvmHistoryEvent } from '@/types/history/events';
+import { type HistoryEvent } from '@/types/history/events';
 
 const props = withDefaults(
   defineProps<{
-    editableItem?: EvmHistoryEvent | null;
+    editableItem?: HistoryEvent | null;
     nextSequence?: string | null;
     loading?: boolean;
-    transaction: EvmHistoryEvent;
+    groupHeader?: HistoryEvent | null;
   }>(),
   {
     editableItem: null,
     nextSequence: null,
-    loading: false
+    loading: false,
+    groupHeader: null
   }
 );
 
-const { editableItem, transaction } = toRefs(props);
+const { editableItem, groupHeader } = toRefs(props);
 
 const { openDialog, submitting, closeDialog, trySubmit } =
   useHistoryEventsForm();
@@ -34,13 +35,13 @@ const title: ComputedRef<string> = computed(() =>
     :display="openDialog"
     :title="title"
     :primary-action="t('common.actions.save')"
-    :action-disabled="loading && !editableItem"
+    :action-disabled="loading"
     :loading="submitting"
     @confirm="trySubmit()"
     @cancel="closeDialog()"
   >
     <HistoryEventForm
-      :transaction="transaction"
+      :group-header="groupHeader"
       :editable-item="editableItem"
       :next-sequence="nextSequence"
     />
