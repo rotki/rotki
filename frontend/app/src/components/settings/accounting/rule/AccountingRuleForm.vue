@@ -92,30 +92,19 @@ const save = async () => {
       ? t('accounting_settings.rule.edit_error')
       : t('accounting_settings.rule.add_error');
 
+    let errors = e.message;
     if (e instanceof ApiValidationError) {
-      const messages = e.errors;
+      errors = e.getValidationErrors(payload);
+    }
 
-      set(errorMessages, messages);
-
-      const keys = Object.keys(messages);
-      const knownKeys = Object.keys(payload);
-      const unknownKeys = keys.filter(key => !knownKeys.includes(key));
-
-      if (unknownKeys.length > 0) {
-        setMessage({
-          title: errorTitle,
-          description: unknownKeys
-            .map(key => `${key}: ${messages[key]}`)
-            .join(', '),
-          success: false
-        });
-      }
-    } else {
+    if (typeof errors === 'string') {
       setMessage({
         title: errorTitle,
-        description: e.message,
+        description: errors,
         success: false
       });
+    } else {
+      set(errorMessages, errors);
     }
 
     return false;

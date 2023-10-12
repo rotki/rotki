@@ -1,7 +1,7 @@
 <script setup lang="ts">
 const props = withDefaults(
   defineProps<{
-    event: { counterparty?: string | null; address?: string | null };
+    event: { counterparty: string | null; address?: string | null };
     text?: boolean;
   }>(),
   {

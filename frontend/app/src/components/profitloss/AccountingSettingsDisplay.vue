@@ -40,19 +40,19 @@ const costBasisMethodItem = computed<ActionDataEntry<CostBasisMethod> | null>(
         <div class="text-body-1">
           {{ t('account_settings_display.past_cost_basis') }}
         </div>
-        <BooleanDisplay :display="accountingSettings.calculatePastCostBasis" />
+        <SuccessDisplay :success="accountingSettings.calculatePastCostBasis" />
       </div>
       <div class="flex items-center gap-2">
         <div class="text-body-1">
           {{ t('account_settings_display.crypto2crypto') }}
         </div>
-        <BooleanDisplay :display="accountingSettings.includeCrypto2crypto" />
+        <SuccessDisplay :success="accountingSettings.includeCrypto2crypto" />
       </div>
       <div class="flex items-center gap-2">
         <div class="text-body-1">
           {{ t('account_settings_display.gas_costs') }}
         </div>
-        <BooleanDisplay :display="accountingSettings.includeGasCosts" />
+        <SuccessDisplay :success="accountingSettings.includeGasCosts" />
       </div>
       <div class="flex items-center gap-2">
         <div class="text-body-1">
@@ -66,8 +66,8 @@ const costBasisMethodItem = computed<ActionDataEntry<CostBasisMethod> | null>(
         <div class="text-body-1">
           {{ t('account_settings_display.account_asset_movement') }}
         </div>
-        <BooleanDisplay
-          :display="accountingSettings.accountForAssetsMovements"
+        <SuccessDisplay
+          :success="accountingSettings.accountForAssetsMovements"
         />
       </div>
       <div class="flex items-center gap-2">
@@ -80,7 +80,7 @@ const costBasisMethodItem = computed<ActionDataEntry<CostBasisMethod> | null>(
         >
           {{ taxFreePeriod(accountingSettings.taxfreeAfterPeriod) }}
         </div>
-        <BooleanDisplay v-else />
+        <SuccessDisplay v-else />
       </div>
 
       <div
@@ -97,8 +97,8 @@ const costBasisMethodItem = computed<ActionDataEntry<CostBasisMethod> | null>(
             )
           }}
         </div>
-        <BooleanDisplay
-          :display="accountingSettings.ethStakingTaxableAfterWithdrawalEnabled"
+        <SuccessDisplay
+          :success="accountingSettings.ethStakingTaxableAfterWithdrawalEnabled"
         />
       </div>
       <div v-if="costBasisMethodItem" class="flex items-center gap-2">

@@ -10,8 +10,6 @@ import {
   type AccountingRuleEntry,
   type AccountingRuleRequestPayload
 } from '@/types/settings/accounting';
-import BooleanDisplay from '@/components/display/BooleanDisplay.vue';
-import { useAccountingRuleForm } from '@/composables/settings/accounting/form';
 
 const { t } = useI18n();
 
@@ -100,22 +98,13 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
 const { historyEventTypesData, historyEventSubTypesData } =
   useHistoryEventMappings();
 
-const getHistoryEventTypeName = (eventType: string): ComputedRef<string> =>
-  computed(
-    () =>
-      get(historyEventTypesData).find(item => item.identifier === eventType)
-        ?.label ?? toSentenceCase(eventType)
-  );
+const getHistoryEventTypeName = (eventType: string): string =>
+  get(historyEventTypesData).find(item => item.identifier === eventType)
+    ?.label ?? toSentenceCase(eventType);
 
-const getHistoryEventSubTypeName = (
-  eventSubtype: string
-): ComputedRef<string> =>
-  computed(
-    () =>
-      get(historyEventSubTypesData).find(
-        item => item.identifier === eventSubtype
-      )?.label ?? toSentenceCase(eventSubtype)
-  );
+const getHistoryEventSubTypeName = (eventSubtype: string): string =>
+  get(historyEventSubTypesData).find(item => item.identifier === eventSubtype)
+    ?.label ?? toSentenceCase(eventSubtype);
 
 const { setOpenDialog, setPostSubmitFunc } = useAccountingRuleForm();
 
@@ -164,29 +153,40 @@ const showDeleteConfirmation = (item: AccountingRuleEntry) => {
 
 <template>
   <div>
-    <RuiCard>
-      <template #custom-header>
-        <div
-          class="flex flex-row flex-wrap items-center justify-between gap-4 p-4"
-        >
-          <div class="flex items-center flex-wrap gap-3">
-            <RefreshButton
-              :loading="isLoading"
-              :tooltip="t('accounting_settings.rule.refresh_tooltip')"
-              @refresh="fetchData()"
-            />
-            <span class="text-h6">
-              {{ t('accounting_settings.rule.title') }}
-            </span>
-          </div>
+    <TablePageLayout>
+      <template #title>
+        {{ t('accounting_settings.rule.title') }}
+      </template>
+      <template #buttons>
+        <div class="flex flex-row items-center justify-end gap-2">
+          <RuiTooltip :open-delay="400">
+            <template #activator>
+              <RuiButton
+                variant="outlined"
+                color="primary"
+                :loading="isLoading"
+                @click="fetchData()"
+              >
+                <template #prepend>
+                  <RuiIcon name="refresh-line" />
+                </template>
+                {{ t('common.refresh') }}
+              </RuiButton>
+            </template>
+            {{ t('accounting_settings.rule.refresh_tooltip') }}
+          </RuiTooltip>
+          <RuiButton color="primary" @click="add()">
+            <template #prepend>
+              <RuiIcon name="add-line" />
+            </template>
+            {{ t('accounting_settings.rule.add') }}
+          </RuiButton>
+        </div>
+      </template>
 
-          <div class="flex items-center flex-wrap gap-2">
-            <RuiButton color="primary" @click="add()">
-              <template #prepend>
-                <RuiIcon name="add-line" />
-              </template>
-              {{ t('accounting_settings.rule.add') }}
-            </RuiButton>
+      <RuiCard>
+        <template #custom-header>
+          <div class="flex items-center justify-end p-4 pb-0">
             <div class="w-full md:w-[25rem]">
               <TableFilter
                 :matches="filters"
@@ -195,63 +195,63 @@ const showDeleteConfirmation = (item: AccountingRuleEntry) => {
               />
             </div>
           </div>
-        </div>
-      </template>
-      <CollectionHandler :collection="state" @set-page="setPage($event)">
-        <template #default="{ data, itemLength }">
-          <DataTable
-            :items="data"
-            :headers="tableHeaders"
-            :loading="isLoading"
-            :options="options"
-            :server-items-length="itemLength"
-            @update:options="setOptions($event)"
-          >
-            <template #item.eventType="{ item }">
-              {{ getHistoryEventTypeName(item.eventType).value }}
-            </template>
-            <template #item.eventSubtype="{ item }">
-              {{ getHistoryEventSubTypeName(item.eventSubtype).value }}
-            </template>
-            <template #item.counterparty="{ item }">
-              <HistoryEventTypeCounterparty
-                text
-                :event="{ counterparty: item.counterparty }"
-              />
-            </template>
-            <template #item.taxable="{ item }">
-              <div class="flex justify-center items-center">
-                <BooleanDisplay :display="item.taxable" />
-              </div>
-            </template>
-            <template #item.countEntireAmountSpend="{ item }">
-              <div class="flex justify-center items-center">
-                <BooleanDisplay :display="item.countEntireAmountSpend" />
-              </div>
-            </template>
-            <template #item.countCostBasisPnl="{ item }">
-              <div class="flex justify-center items-center">
-                <BooleanDisplay :display="item.countCostBasisPnl" />
-              </div>
-            </template>
-            <template #item.method="{ item }">
-              <BadgeDisplay>{{ item.method }}</BadgeDisplay>
-            </template>
-            <template #item.accountingTreatment="{ item }">
-              <BadgeDisplay>{{ item.accountingTreatment }}</BadgeDisplay>
-            </template>
-            <template #item.actions="{ item }">
-              <RowActions
-                :delete-tooltip="t('accounting_settings.rule.delete')"
-                :edit-tooltip="t('accounting_settings.rule.edit')"
-                @delete-click="showDeleteConfirmation(item)"
-                @edit-click="edit(item)"
-              />
-            </template>
-          </DataTable>
         </template>
-      </CollectionHandler>
-    </RuiCard>
+        <CollectionHandler :collection="state" @set-page="setPage($event)">
+          <template #default="{ data, itemLength }">
+            <DataTable
+              :items="data"
+              :headers="tableHeaders"
+              :loading="isLoading"
+              :options="options"
+              :server-items-length="itemLength"
+              @update:options="setOptions($event)"
+            >
+              <template #item.eventType="{ item }">
+                {{ getHistoryEventTypeName(item.eventType) }}
+              </template>
+              <template #item.eventSubtype="{ item }">
+                {{ getHistoryEventSubTypeName(item.eventSubtype) }}
+              </template>
+              <template #item.counterparty="{ item }">
+                <HistoryEventTypeCounterparty
+                  text
+                  :event="{ counterparty: item.counterparty }"
+                />
+              </template>
+              <template #item.taxable="{ item }">
+                <div class="flex justify-center items-center">
+                  <SuccessDisplay :success="item.taxable" />
+                </div>
+              </template>
+              <template #item.countEntireAmountSpend="{ item }">
+                <div class="flex justify-center items-center">
+                  <SuccessDisplay :success="item.countEntireAmountSpend" />
+                </div>
+              </template>
+              <template #item.countCostBasisPnl="{ item }">
+                <div class="flex justify-center items-center">
+                  <SuccessDisplay :success="item.countCostBasisPnl" />
+                </div>
+              </template>
+              <template #item.method="{ item }">
+                <BadgeDisplay>{{ item.method }}</BadgeDisplay>
+              </template>
+              <template #item.accountingTreatment="{ item }">
+                <BadgeDisplay>{{ item.accountingTreatment }}</BadgeDisplay>
+              </template>
+              <template #item.actions="{ item }">
+                <RowActions
+                  :delete-tooltip="t('accounting_settings.rule.delete')"
+                  :edit-tooltip="t('accounting_settings.rule.edit')"
+                  @delete-click="showDeleteConfirmation(item)"
+                  @edit-click="edit(item)"
+                />
+              </template>
+            </DataTable>
+          </template>
+        </CollectionHandler>
+      </RuiCard>
+    </TablePageLayout>
     <AccountingRuleFormDialog
       :loading="isLoading"
       :editable-item="editableItem"

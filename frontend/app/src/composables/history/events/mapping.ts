@@ -194,7 +194,7 @@ export const useHistoryEventMappings = createSharedComposable(() => {
   const { scrambleData, scrambleHex } = useScramble();
 
   const getEventCounterpartyData = (
-    event: MaybeRef<{ counterparty?: string | null; address?: string | null }>
+    event: MaybeRef<{ counterparty: string | null; address?: string | null }>
   ): ComputedRef<ActionDataEntry | null> =>
     computed(() => {
       const { counterparty, address } = get(event);
