@@ -2478,7 +2478,7 @@ Request transactions event decoding
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``
 
-   Doing a PUT on the evm transactions endpoint will request a decoding of the given transactions and generation of decoded events. That basically entails querying the transaction receipts for each transaction hash and then decoding all events. If events are already queried and ignore_cache is true they will be deleted and required.
+   Doing a PUT on the evm transactions endpoint will request a decoding of the given transactions and generation of decoded events. That basically entails querying the transaction receipts for each transaction hash and then decoding all events. If events are already queried and ignore_cache is true they will be deleted and re-queried.
 
    **Example Request**:
 
@@ -2502,7 +2502,7 @@ Request transactions event decoding
 
    :reqjson list data[optional]: A list of data to decode. Each data entry consists of an ``"evm_chain"`` key specifying the evm chain for which to decode tx_hashes and a ``"tx_hashes"`` key which is an optional list of transaction hashes to request decoding for in that chain. If the list of transaction hashes is not passed then all transactions for that chain are decoded. Passing an empty list is not allowed.
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
-   :reqjson bool ignore_cache: Boolean denoting whether to ignore the cache for this query or not. This is always false by default. If true is given then the decoded events will be deleted and required.
+   :reqjson bool ignore_cache: Boolean denoting whether to ignore the cache for this query or not. This is always false by default. If true is given then the decoded events will be deleted and re-queried.
 
 
    **Example Response**:
