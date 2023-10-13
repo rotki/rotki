@@ -341,7 +341,7 @@ So essentially determining whether:
 Multiple submodules
 --------------------
 
-The modules system is hierachical and one module may contain multiple submodules. For example uniswap having both v1 and v3 each in their own subdirectories as seen `here <https://github.com/rotki/rotki/tree/develop/rotkehlchen/chain/ethereum/modules/uniswap>`__.
+The modules system is hierarchical and one module may contain multiple submodules. For example uniswap having both v1 and v3 each in their own subdirectories as seen `here <https://github.com/rotki/rotki/tree/develop/rotkehlchen/chain/ethereum/modules/uniswap>`__.
 
 Add a new language or translation
 ===================================
@@ -723,7 +723,7 @@ Exchanges
 
 - Add an invalid exchange API key and see it's handled properly
 - Add a valid exchange API key and see it works. See that dashboard balances are also updated.
-- Remove an exchange and see that it works and that the dasboard balances are updated.
+- Remove an exchange and see that it works and that the dashboard balances are updated.
 
 External Services
 ==================
