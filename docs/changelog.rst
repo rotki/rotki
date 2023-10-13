@@ -697,7 +697,7 @@ Changelog
 * :bug:`2835` Eth2 users with a very big number of validators should no longer get a 429 error.
 * :bug:`2846` Premium users who create a new account with premium api credentials that have no saved DB in the server to sync with will have these credentials properly saved in the DB right after creation. At re-login the premium subscription should be properly recognized and the credentials should not need to be input again.
 * :bug:`2821` Users will now be able to properly scroll through the asset when conflicts appear during the asset database upgrade.
-* :bug:`2837` Binance US users will now be able to see the correct location for their trades and deposits/withdrawals. It should no longer be Binance. To reflect those changes Binance US data should be purged and then required. To see how to purge data for an exchange look here: https://rotki.readthedocs.io/en/latest/usage_guide.html#purging-data
+* :bug:`2837` Binance US users will now be able to see the correct location for their trades and deposits/withdrawals. It should no longer be Binance. To reflect those changes Binance US data should be purged and then re-queried. To see how to purge data for an exchange look here: https://rotki.readthedocs.io/en/latest/usage_guide.html#purging-data
 * :bug:`2819` Users using macOS will no longer be stuck at "connecting to backend".
 * :bug:`865` Users will now be given an option to retry or terminate the application when communication with the backend fails.
 * :bug:`2791` Updating assets database which adds customs assets already owned as officially supported should no longer get the DB in an inconsistent state.

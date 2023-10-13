@@ -3875,7 +3875,7 @@ Refreshing asset icons
 .. http:patch:: /api/(version)/assets/icon/modify
 
    Doing a PATCH on the asset icon endpoint will refresh the icon of the given asset.
-   First, the cache of the icon of the given asset is deleted and then required from CoinGecko and saved to the filesystem.
+   First, the cache of the icon of the given asset is deleted and then re-queried from CoinGecko and saved to the filesystem.
 
 
    **Example Request**:
@@ -3899,7 +3899,7 @@ Refreshing asset icons
 
       {"result": true, "message": ""}
 
-   :statuscode 200: Icon successfully deleted and required.
+   :statuscode 200: Icon successfully deleted and re-queried.
    :statuscode 400: Provided JSON is in some way malformed.
    :statuscode 404: Unable to refresh icon at the moment.
    :statuscode 500: Internal rotki error
