@@ -684,6 +684,7 @@ const { mdAndUp } = useDisplay();
           v-model="counterparty"
           outlined
           required
+          clearable
           auto-select-first
           :label="t('transactions.events.form.counterparty.label')"
           :items="counterparties"

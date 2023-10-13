@@ -19,7 +19,7 @@ import {
   utilsApi
 } from '@/premium/premium-apis';
 import { type DateFormat } from '@/types/date-format';
-import { type FrontendSettingsPayload } from '@/types/frontend-settings';
+import { type FrontendSettingsPayload } from '@/types/settings/frontend-settings';
 
 const date: DateUtilities = {
   epoch(): number {

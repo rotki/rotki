@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { type MaybeRef } from '@vueuse/core';
-import { type FrontendSettingsPayload } from '@/types/frontend-settings';
+import { type FrontendSettingsPayload } from '@/types/settings/frontend-settings';
 import { type SettingsUpdate } from '@/types/user';
 import { type SessionSettings } from '@/types/session';
 

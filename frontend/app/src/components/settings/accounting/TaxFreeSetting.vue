@@ -94,7 +94,7 @@ onMounted(() => {
         class="accounting-settings__taxfree-period"
         :success-messages="success"
         :error-messages="error"
-        :label="t('accounting_settings.labels.tax_free')"
+        :label="t('accounting_settings.trade.labels.tax_free')"
         color="primary"
         @change="update($event)"
       />
@@ -116,7 +116,7 @@ onMounted(() => {
           error || v$.taxFreeAfterPeriod.$errors.map(e => e.$message)
         "
         :disabled="!taxFreePeriod"
-        :label="t('accounting_settings.labels.tax_free_period')"
+        :label="t('accounting_settings.trade.labels.tax_free_period')"
         type="number"
         @change="callIfValid($event, update)"
       />

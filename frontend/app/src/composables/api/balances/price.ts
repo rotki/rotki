@@ -9,7 +9,7 @@ import {
   validWithoutSessionStatus
 } from '@/services/utils';
 import { type SupportedCurrency } from '@/types/currencies';
-import { type PriceOracle } from '@/types/price-oracle';
+import { type PriceOracle } from '@/types/settings/price-oracle';
 import {
   type HistoricPricesPayload,
   type OracleCacheMeta

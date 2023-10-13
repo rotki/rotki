@@ -3,7 +3,7 @@ import { type PropType } from 'vue';
 import {
   type DashboardTableType,
   type FrontendSettingsPayload
-} from '@/types/frontend-settings';
+} from '@/types/settings/frontend-settings';
 import { TableColumn } from '@/types/table-column';
 
 const props = defineProps({

@@ -22,7 +22,9 @@ const { t } = useI18n();
       class="accounting-settings__account-for-assets-movements"
       :success-messages="success"
       :error-messages="error"
-      :label="t('accounting_settings.labels.account_for_assets_movements')"
+      :label="
+        t('accounting_settings.trade.labels.account_for_assets_movements')
+      "
       color="primary"
       @change="update($event)"
     />

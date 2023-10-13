@@ -35,7 +35,9 @@ const getSuccessMessage = (enabled: boolean) =>
       :success-messages="success"
       :error-messages="error"
       :label="
-        t('accounting_settings.labels.eth_staking_taxable_after_withdrawal')
+        t(
+          'accounting_settings.trade.labels.eth_staking_taxable_after_withdrawal'
+        )
       "
       color="primary"
       @change="update($event)"

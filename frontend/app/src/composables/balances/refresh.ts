@@ -1,6 +1,6 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type MaybeRef } from '@vueuse/core';
-import { BlockchainRefreshButtonBehaviour } from '@/types/frontend-settings';
+import { BlockchainRefreshButtonBehaviour } from '@/types/settings/frontend-settings';
 
 export const useRefresh = (blockchain?: MaybeRef<Blockchain>) => {
   const { fetchBlockchainBalances } = useBlockchainBalances();

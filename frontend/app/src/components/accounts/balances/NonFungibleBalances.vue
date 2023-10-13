@@ -64,7 +64,7 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
     sortable: false
   },
   {
-    text: t('non_fungible_balances.column.actions'),
+    text: t('common.actions_text'),
     value: 'actions',
     align: 'center',
     sortable: false,

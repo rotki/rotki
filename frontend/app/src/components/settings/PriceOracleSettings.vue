@@ -2,7 +2,7 @@
 import {
   PrioritizedListData,
   type PrioritizedListItemData
-} from '@/types/prioritized-list-data';
+} from '@/types/settings/prioritized-list-data';
 import {
   COINGECKO_PRIO_LIST_ITEM,
   CRYPTOCOMPARE_PRIO_LIST_ITEM,
@@ -12,7 +12,7 @@ import {
   type PrioritizedListId,
   UNISWAP2_PRIO_LIST_ITEM,
   UNISWAP3_PRIO_LIST_ITEM
-} from '@/types/prioritized-list-id';
+} from '@/types/settings/prioritized-list-id';
 
 const currentOracles = ref<PrioritizedListId[]>([]);
 const historicOracles = ref<PrioritizedListId[]>([]);

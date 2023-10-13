@@ -5,11 +5,11 @@ import { type BaseMessage } from '@/types/messages';
 import {
   PrioritizedListData,
   type PrioritizedListItemData
-} from '@/types/prioritized-list-data';
+} from '@/types/settings/prioritized-list-data';
 import {
   EmptyListId,
   type PrioritizedListId
-} from '@/types/prioritized-list-id';
+} from '@/types/settings/prioritized-list-id';
 
 const props = defineProps({
   value: { required: true, type: Array as PropType<PrioritizedListId[]> },

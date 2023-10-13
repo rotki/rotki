@@ -1,4 +1,4 @@
-import { SupportedLanguage } from '@/types/frontend-settings';
+import { SupportedLanguage } from '@/types/settings/frontend-settings';
 
 const useLastLanguageShared = createSharedComposable(useLocalStorage);
 const useForceUpdateMachineLanguageShared =

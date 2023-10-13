@@ -709,6 +709,10 @@
     "useAddressBookFilter": true,
     "useDefiMetadata": true,
     "decodeHtmlEntities": true,
-    "useDefiOverviewStore": true
+    "useDefiOverviewStore": true,
+    "useAccountingApi": true,
+    "useAccountingSettings": true,
+    "useAccountingRuleFilter": true,
+    "useAccountingRuleForm": true
   }
 }

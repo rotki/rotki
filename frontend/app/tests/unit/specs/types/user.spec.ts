@@ -10,7 +10,7 @@ import {
   type FrontendSettings,
   Quarter,
   SupportedLanguage
-} from '@/types/frontend-settings';
+} from '@/types/settings/frontend-settings';
 import { TableColumn } from '@/types/table-column';
 import { DateFormat } from '@/types/date-format';
 import { snakeCaseTransformer } from '@/services/axios-tranformers';

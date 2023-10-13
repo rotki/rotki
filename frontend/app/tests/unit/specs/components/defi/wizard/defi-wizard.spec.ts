@@ -3,7 +3,7 @@ import { createPinia, setActivePinia } from 'pinia';
 import Vuetify from 'vuetify';
 import DefiWizard from '@/components/defi/wizard/DefiWizard.vue';
 import { snakeCaseTransformer } from '@/services/axios-tranformers';
-import { FrontendSettings } from '@/types/frontend-settings';
+import { FrontendSettings } from '@/types/settings/frontend-settings';
 
 vi.mock('@/composables/api/settings/settings-api', () => ({
   useSettingsApi: vi.fn().mockReturnValue({

@@ -17,7 +17,7 @@ import {
   type FrontendSettings,
   Quarter,
   SupportedLanguage
-} from '@/types/frontend-settings';
+} from '@/types/settings/frontend-settings';
 import { TableColumn } from '@/types/table-column';
 
 vi.mock('@/composables/api/settings/settings-api', () => ({

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import dayjs from 'dayjs';
 import { type PropType } from 'vue';
-import { Quarter } from '@/types/frontend-settings';
+import { Quarter } from '@/types/settings/frontend-settings';
 import {
   type PeriodChangedEvent,
   type SelectionChangedEvent

@@ -11,7 +11,7 @@ import { Routes } from '@/router/routes';
 import {
   DashboardTableType,
   type DashboardTablesVisibleColumns
-} from '@/types/frontend-settings';
+} from '@/types/settings/frontend-settings';
 import { Section } from '@/types/status';
 import { TableColumn } from '@/types/table-column';
 

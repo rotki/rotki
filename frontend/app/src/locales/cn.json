@@ -43,7 +43,6 @@
     },
     "edit_tooltip": "编辑账户",
     "headers": {
-      "actions": "动作",
       "num_of_detected_tokens": "检测到的token数量",
       "ownership": "所有权",
       "usd_value": "{symbol} 值",
@@ -147,17 +146,19 @@
     "title": "会计设置"
   },
   "accounting_settings": {
-    "labels": {
-      "account_for_assets_movements": "考虑资产移动费用",
-      "calculate_past_cost_basis": "创建报告时计算过去的成本基础",
-      "cost_basis_method": "成本基础法",
-      "crypto_to_crypto": "考虑加密到加密交易",
-      "eth_staking_taxable_after_withdrawal": "在启用提款之前，应该从会计中忽略 ETH 质押事件",
-      "gas_costs": "考虑以太坊 gas 成本",
-      "tax_free": "有免税期吗？",
-      "tax_free_period": "多少天后免税"
-    },
-    "title": "交易设置"
+    "trade": {
+      "labels": {
+        "account_for_assets_movements": "考虑资产移动费用",
+        "calculate_past_cost_basis": "创建报告时计算过去的成本基础",
+        "cost_basis_method": "成本基础法",
+        "crypto_to_crypto": "考虑加密到加密交易",
+        "eth_staking_taxable_after_withdrawal": "在启用提款之前，应该从会计中忽略 ETH 质押事件",
+        "gas_costs": "考虑以太坊 gas 成本",
+        "tax_free": "有免税期吗？",
+        "tax_free_period": "多少天后免税"
+      },
+      "title": "交易设置"
+    }
   },
   "actions": {
     "add_eth2_validator": {
@@ -1360,7 +1361,6 @@
     },
     "headers": {
       "action": "动作",
-      "actions": "动作",
       "base": "基地",
       "quote": "引用",
       "rate": "率"
@@ -1409,6 +1409,7 @@
       "update": "更新",
       "yes": "是"
     },
+    "actions_text": "动作",
     "address": "地址",
     "amount": "金额",
     "asset": "资产",
@@ -2027,7 +2028,6 @@
       "tooltip": "编辑兑换账户"
     },
     "header": {
-      "actions": "动作",
       "sync_enabled": "同步启用"
     },
     "inputs": {
@@ -2876,7 +2876,6 @@
   },
   "manual_balances_table": {
     "columns": {
-      "actions": "动作",
       "label": "标签"
     },
     "delete_dialog": {
@@ -3043,7 +3042,6 @@
   },
   "non_fungible_balances": {
     "column": {
-      "actions": "动作",
       "custom_price": "自定义价格",
       "price_in_asset": "资产价格"
     },
@@ -3578,7 +3576,6 @@
   },
   "profit_loss_reports": {
     "columns": {
-      "actions": "动作",
       "created": "创建日期",
       "end": "期末",
       "start": "周期开始",
@@ -3796,9 +3793,6 @@
     "confirmation": {
       "message": "您确定要删除 {tagToDelete} 吗？这也会删除该标签的所有映射。",
       "title": "确认标签删除"
-    },
-    "headers": {
-      "actions": "动作"
     },
     "my_tags": "我的标签",
     "subtitle": "创建新标签或修改现有标签",

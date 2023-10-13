@@ -171,7 +171,7 @@ const headers: DataTableHeader[] = [
     value: 'syncEnabled'
   },
   {
-    text: t('exchange_settings.header.actions'),
+    text: t('common.actions_text'),
     value: 'actions',
     width: '105px',
     align: 'center',

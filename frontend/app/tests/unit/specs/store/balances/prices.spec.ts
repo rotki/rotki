@@ -1,5 +1,5 @@
 import { CURRENCY_USD, useCurrencies } from '@/types/currencies';
-import { PriceOracle } from '@/types/price-oracle';
+import { PriceOracle } from '@/types/settings/price-oracle';
 import { updateGeneralSettings } from '../../../utils/general-settings';
 
 vi.mock('@/store/tasks', () => ({

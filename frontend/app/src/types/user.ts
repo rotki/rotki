@@ -1,12 +1,12 @@
 import { NumericString } from '@rotki/common';
 import { z } from 'zod';
 import { Constraints } from '@/data/constraints';
-import { AddressNamePriorityEnum } from '@/types/address-name-priorities';
+import { AddressNamePriorityEnum } from '@/types/settings/address-name-priorities';
 import { useCurrencies } from '@/types/currencies';
 import { Exchange, KrakenAccountType } from '@/types/exchanges';
-import { FrontendSettings } from '@/types/frontend-settings';
+import { FrontendSettings } from '@/types/settings/frontend-settings';
 import { ModuleEnum } from '@/types/modules';
-import { PriceOracleEnum } from '@/types/price-oracle';
+import { PriceOracleEnum } from '@/types/settings/price-oracle';
 import { type ToSnakeCase } from '@/types/common';
 import { camelCaseTransformer } from '@/services/axios-tranformers';
 
