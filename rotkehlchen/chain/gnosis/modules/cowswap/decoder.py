@@ -2,7 +2,7 @@ import logging
 from typing import TYPE_CHECKING
 
 from rotkehlchen.chain.evm.decoding.cowswap.decoder import CowswapCommonDecoder
-from rotkehlchen.constants.assets import A_ETH, A_WETH
+from rotkehlchen.constants.assets import A_WXDAI, A_XDAI
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 if TYPE_CHECKING:
@@ -26,6 +26,6 @@ class CowswapDecoder(CowswapCommonDecoder):
             evm_inquirer=ethereum_inquirer,
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
-            native_asset=A_ETH,
-            wrapped_native_asset=A_WETH,
+            native_asset=A_XDAI,
+            wrapped_native_asset=A_WXDAI,
         )
