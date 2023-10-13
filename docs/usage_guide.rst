@@ -971,7 +971,7 @@ Examples of customization. You can set:
 - ``Event Type`` to ``Spend`` / ``Receive`` and ``Event Subtype`` to ``None`` if it is a plain expenditure / receipt.
 - ``Event Type`` to ``Receive`` and ``Event Subtype`` to ``Reward`` if you got a reward for something.
 - ``Event Type`` to ``Receive`` and ``Event Subtype`` to ``Airdrop`` if you received an airdrop.
-- ``Event Type`` to ``Receive`` / ``Spend`` and ``Event Subtype`` to ``Recieve Wrapped`` / ``Return Wrapped`` accordingly if you interacted with a protocol (e.g. Curve, Yearn, Aave, etc.) and received wrapped / returned some wrapped tokens.
+- ``Event Type`` to ``Receive`` / ``Spend`` and ``Event Subtype`` to ``Receive Wrapped`` / ``Return Wrapped`` accordingly if you interacted with a protocol (e.g. Curve, Yearn, Aave, etc.) and received wrapped / returned some wrapped tokens.
 - ``Event Type`` to ``Spend`` and ``Event Subtype`` to ``Fee`` if you are paying a fee for some of your actions.
 - ``Event Type`` to ``Migration`` if it is a migration of assets from one protocol to another and you don't lose / gain anything from this event. For example when migrating from SAI to DAI.
 - ``Event Type`` to ``Staking`` and ``Event Subtype`` to ``Deposit Asset`` if it is a staking event. For example staking in eth2 or in liquity.
@@ -1269,7 +1269,7 @@ You can filter using the following keys:
 * **action:** it can be buy or sell [2]_.
 * **start:** will only filter any trades from that date onwards [2]_.
 * **end:** will only filter any trades that happened before the selected date [2]_.
-* **location:** the location of tha trade, e.g. kraken, uniswap etc [1]_.
+* **location:** the location of the trade, e.g. kraken, uniswap etc [1]_.
 
 .. image:: images/sc_history_trades_filter_suggestions.png
    :alt: Trade filter suggestions
@@ -1306,7 +1306,7 @@ For deposits you can use the following filters:
 * **action:** the actions (withdrawal or deposit) [1]_.
 * **start:** will only filter any trades from that date onwards [2]_.
 * **end:** will only filter any trades that happened before the selected date [2]_.
-* **location:** the location of tha trade, e.g. kraken, uniswap etc [1]_.
+* **location:** the location of the trade, e.g. kraken, uniswap etc [1]_.
 
 .. [1] Suggestions will appear for this field based on the available data.
 .. [2] The date filter has to be in the DD/MM/YYYY HH:mm:ss format. You can completely skip the time part or just the seconds part, thus making DD/MM/YYYY or DD/MM/YYYY HH:mm acceptable.

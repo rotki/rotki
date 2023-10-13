@@ -20,7 +20,7 @@ THE SERVICE IS NOT INTENDED FOR CONTINUOUS MONITORING OF TRANSACTION DATA OR FOR
 Where to start?
 ---------------
 
-If this is the first time looking at rotki you will probably want to visit the :doc:`Installation Guide<installation_guide>`. Once you have succesfully managed to install rotki you can proceed to the :doc:`Usage Guide<usage_guide>`. If you wish to contribute to Rotkehlhen please check the :doc:`Contribution Guide<contribute>`.
+If this is the first time looking at rotki you will probably want to visit the :doc:`Installation Guide<installation_guide>`. Once you have successfully managed to install rotki you can proceed to the :doc:`Usage Guide<usage_guide>`. If you wish to contribute to Rotkehlhen please check the :doc:`Contribution Guide<contribute>`.
 
 
 Contents

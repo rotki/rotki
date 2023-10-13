@@ -672,7 +672,7 @@ Getting or modifying settings
    :reqjson string[optional] dot_rpc_endpoint: A URL denoting the rpc endpoint for the Polkadot node to use when contacting the Polkadot blockchain. If it can not be reached or if it is invalid any default public node (e.g. Parity) is used instead.
    :reqjson string[optional] main_currency: The FIAT currency to use for all profit/loss calculation. USD by default.
    :reqjson string[optional] date_display_format: The format in which to display dates in the UI. Default is ``"%d/%m/%Y %H:%M:%S %Z"``.
-   :reqjson bool[optional] submit_usage_analytics: A boolean denoting wether or not to submit anonymous usage analytics to the rotki server.
+   :reqjson bool[optional] submit_usage_analytics: A boolean denoting whether or not to submit anonymous usage analytics to the rotki server.
    :reqjson list active_module: A list of strings denoting the active modules with which rotki should run.
    :reqjson list current_price_oracles: A list of strings denoting the price oracles rotki should query in specific order for requesting current prices.
    :reqjson list historical_price_oracles: A list of strings denoting the price oracles rotki should query in specific order for requesting historical prices.
@@ -2478,7 +2478,7 @@ Request transactions event decoding
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``
 
-   Doing a PUT on the evm transactions endpoint will request a decoding of the given transactions and generation of decoded events. That basically entails querying the transaction receipts for each transaction hash and then decoding all events. If events are already queried and ignore_cache is true they will be deleted and requeried.
+   Doing a PUT on the evm transactions endpoint will request a decoding of the given transactions and generation of decoded events. That basically entails querying the transaction receipts for each transaction hash and then decoding all events. If events are already queried and ignore_cache is true they will be deleted and required.
 
    **Example Request**:
 
@@ -2502,7 +2502,7 @@ Request transactions event decoding
 
    :reqjson list data[optional]: A list of data to decode. Each data entry consists of an ``"evm_chain"`` key specifying the evm chain for which to decode tx_hashes and a ``"tx_hashes"`` key which is an optional list of transaction hashes to request decoding for in that chain. If the list of transaction hashes is not passed then all transactions for that chain are decoded. Passing an empty list is not allowed.
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
-   :reqjson bool ignore_cache: Boolean denoting whether to ignore the cache for this query or not. This is always false by default. If true is given then the decoded events will be deleted and requeried.
+   :reqjson bool ignore_cache: Boolean denoting whether to ignore the cache for this query or not. This is always false by default. If true is given then the decoded events will be deleted and required.
 
 
    **Example Response**:
@@ -3004,7 +3004,7 @@ Querying all supported assets
    :reqjson string evm_chain: The name for the evm chain to be used to filter the result data. Possible values are ``ethereum``, ``optimism``, ``gnosis``, ``celo``, etc. Optional.
    :reqjson string address: The address of the evm asset to be used to filter the result data. Optional.
    :reqjson bool show_user_owned_assets_only: A flag to specify if only user owned assets should be returned. Defaults to ``"false"``. Optional.
-   :reqjson string ignored_assets_handling: A flag to specify how to handle ignored assets. Possible values are `'none'`, `'exclude'` and `'show_only'`. You can write 'none' in order to not handle them in any special way (meaning to show them too). This is the default. You can write 'exclude' if you want to exlude them from the result. And you can write 'show_only' if you want to only see the ignored assets in the result.
+   :reqjson string ignored_assets_handling: A flag to specify how to handle ignored assets. Possible values are `'none'`, `'exclude'` and `'show_only'`. You can write 'none' in order to not handle them in any special way (meaning to show them too). This is the default. You can write 'exclude' if you want to exclude them from the result. And you can write 'show_only' if you want to only see the ignored assets in the result.
    :reqjson list[string] identifiers: A list of asset identifiers to filter by. Optional.
 
    **Example Response**:
@@ -3285,7 +3285,7 @@ Search for assets(Levenshtein)
    :reqjson list[string][optional] owner_addresses: A list of evm addresses. If provided, only nfts owned by these addresses will be returned.
    :reqjson string[optional] name: Optional nfts name to filter by.
    :reqjson string[optional] collection_name: Optional nfts collection_name to filter by.
-   :reqjson string[optional] ignored_assets_handling: A flag to specify how to handle ignored assets. Possible values are `'none'`, `'exclude'` and `'show_only'`. You can write 'none' in order to not handle them in any special way (meaning to show them too). This is the default. You can write 'exclude' if you want to exlude them from the result. And you can write 'show_only' if you want to only see the ignored assets in the result.
+   :reqjson string[optional] ignored_assets_handling: A flag to specify how to handle ignored assets. Possible values are `'none'`, `'exclude'` and `'show_only'`. You can write 'none' in order to not handle them in any special way (meaning to show them too). This is the default. You can write 'exclude' if you want to exclude them from the result. And you can write 'show_only' if you want to only see the ignored assets in the result.
 
    **Example Response**:
 
@@ -3466,7 +3466,7 @@ Adding custom asset
    .. _custom_asset:
 
    :reqjson string name: The name of the asset. Required.
-   :reqjson string symbol: The symol of the asset. Required.
+   :reqjson string symbol: The symbol of the asset. Required.
    :reqjson integer started: The time the asset started existing. Optional
    :reqjson string forked: The identifier of an asset from which this asset got forked. For example ETC would have ETH as forked. Optional.
    :reqjson string swapped_for: The identifier of an asset for which this asset got swapped for. For example GNT got swapped for GLM. Optional.
@@ -3875,7 +3875,7 @@ Refreshing asset icons
 .. http:patch:: /api/(version)/assets/icon/modify
 
    Doing a PATCH on the asset icon endpoint will refresh the icon of the given asset.
-   First, the cache of the icon of the given asset is deleted and then requeried from CoinGecko and saved to the filesystem.
+   First, the cache of the icon of the given asset is deleted and then required from CoinGecko and saved to the filesystem.
 
 
    **Example Request**:
@@ -3899,7 +3899,7 @@ Refreshing asset icons
 
       {"result": true, "message": ""}
 
-   :statuscode 200: Icon successfully deleted and requeried.
+   :statuscode 200: Icon successfully deleted and required.
    :statuscode 400: Provided JSON is in some way malformed.
    :statuscode 404: Unable to refresh icon at the moment.
    :statuscode 500: Internal rotki error
@@ -4682,7 +4682,7 @@ Dealing with History Events
    :resjson int entries_found: The number of entries found for the current filter. Ignores pagination.
    :resjson int entries_limit: The limit of entries if free version. -1 for premium.
    :resjson int entries_total: The number of total entries ignoring all filters.
-   :statuscode 200: Events succesfully queried
+   :statuscode 200: Events successfully queried
    :statuscode 400: Provided JSON is in some way malformed
    :statuscode 409: No user is logged in or failure at event addition.
    :statuscode 500: Internal rotki error
@@ -4992,7 +4992,7 @@ Exporting History Events
           "message" "",
       }
 
-   :statuscode 200: Events succesfully exported
+   :statuscode 200: Events successfully exported
    :statuscode 400: Provided JSON is in some way malformed
    :statuscode 409: No user is logged in or failure at event export.
    :statuscode 500: Internal rotki error
@@ -5042,7 +5042,7 @@ Exporting History Events
       HTTP/1.1 200 OK
       Content-Type: text/csv
 
-   :statuscode 200: Events succesfully downloaded
+   :statuscode 200: Events successfully downloaded
    :statuscode 400: Provided JSON is in some way malformed
    :statuscode 409: No user is logged in or failure at event download.
    :statuscode 500: Internal rotki error
@@ -5085,7 +5085,7 @@ Querying online events
 
    :resjson bool result: A boolean for success or failure
    :resjson str message: Error message if any errors occurred.
-   :statuscode 200: Events were queried succesfully
+   :statuscode 200: Events were queried successfully
    :statuscode 400: Provided JSON is in some way malformed.
    :statuscode 409: Module for the given events is not active.
    :statuscode 500: Internal rotki error.
@@ -5321,7 +5321,7 @@ Export PnL report debug data
 
    :statuscode 200: Debugging history data returned successfully
    :statuscode 400: Provided JSON is in some way malformed.
-   :statuscode 409: No user is currently logged in. Error occured when creating history events for pnl debug data.
+   :statuscode 409: No user is currently logged in. Error occurred when creating history events for pnl debug data.
    :statuscode 500: Internal rotki error.
 
 
@@ -7060,7 +7060,7 @@ Getting compound statistics
    :resjson object liquidation_profit: A mapping of addresses to mappings of totals assets gained thanks to liquidation repayments over a given period.
    :resjson object rewards: A mapping of addresses to mappings of totals assets (only COMP atm) gained as a reward for using Compound over a given period.
 
-   :statuscode 200: Compound statistics succesfully queried.
+   :statuscode 200: Compound statistics successfully queried.
    :statuscode 400: Requested module is not allowed to query statistics.
    :statuscode 409: User is not logged in. Or compound module is not activated.
    :statuscode 500: Internal rotki error.
@@ -7212,7 +7212,7 @@ Getting Liquity staked amount
    :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
 
 
-Getting Liquity stability pool infomration
+Getting Liquity stability pool information
 ==========================================
 
 .. http:get:: /api/(version)/blockchains/eth/modules/liquity/pool
@@ -8264,7 +8264,7 @@ Getting Eth2 Staking details
    :resjson eth_depositor [optional]string: The eth1 address that made the deposit for the validator. Can be missing if we can't find it yet.
    :resjson index int: The Eth2 validator index.
    :resjson has_exited bool: A boolean indicating if the validator has exited.
-   :resjson public_key str: The Eth2 validator pulic key.
+   :resjson public_key str: The Eth2 validator public key.
    :resjson balance object: The balance in ETH of the validator and its usd value
    :resjson performance_1d object: How much has the validator earned in ETH (and USD equivalent value) in the past day.
    :resjson performance_1w object: How much has the validator earned in ETH (and USD equivalent value) in the past week.
@@ -8483,7 +8483,7 @@ Editing an Eth2 validator
 
 .. http:patch:: /api/(version)/blockchains/eth2/validators
 
-   Doing a PATCH on the eth2 validators endpoint will allow to edit the ownership percentage of a validator indentified by its index.
+   Doing a PATCH on the eth2 validators endpoint will allow to edit the ownership percentage of a validator identified by its index.
 
 
    **Example Request**:
@@ -8811,7 +8811,7 @@ Adding EVM accounts to all EVM chains
 
 .. http:put:: /api/(version)/blockchains/evm/accounts
 
-   Doing a PUT on the EVM accounts endpoint functions just like the add blockchain accounts endpoint but adds the addresses for all evm chains. It will follow the folowing logic. Take ethereum mainnet as the parent chain. If it's a contract there, it will only add it to the mainnet. If it's an EoA it will try all chains one by one and see if they have any transactions/activity and add it to the ones that do.
+   Doing a PUT on the EVM accounts endpoint functions just like the add blockchain accounts endpoint but adds the addresses for all evm chains. It will follow the following logic. Take ethereum mainnet as the parent chain. If it's a contract there, it will only add it to the mainnet. If it's an EoA it will try all chains one by one and see if they have any transactions/activity and add it to the ones that do.
 
    .. note::
      This endpoint can also be queried asynchronously by using ``"async_query": true``
@@ -8859,7 +8859,7 @@ Adding EVM accounts to all EVM chains
    :statuscode 400: Provided JSON or data is in some way malformed. The accounts to add contained invalid addresses or were an empty list.
    :statuscode 409: User is not logged in. Provided tags do not exist. Check message for details.
    :statuscode 500: Internal rotki error
-   :statuscode 502: Remote error occured when attempted to connect to an Avalanche or Polkadot node and only if it's the first account added. Check message for details.
+   :statuscode 502: Remote error occurred when attempted to connect to an Avalanche or Polkadot node and only if it's the first account added. Check message for details.
 
 
 .. http:post:: /api/(version)/blockchains/evm/accounts
@@ -8895,7 +8895,7 @@ Adding EVM accounts to all EVM chains
    :statuscode 400: Provided JSON is in some way malformed.
    :statuscode 409: User is not logged in. Node that was queried is not synchronized.
    :statuscode 500: Internal rotki error
-   :statuscode 502: Remote error occured.
+   :statuscode 502: Remote error occurred.
 
 
 Adding blockchain accounts
@@ -8958,7 +8958,7 @@ Adding blockchain accounts
    :statuscode 400: Provided JSON or data is in some way malformed. The accounts to add contained invalid addresses or were an empty list.
    :statuscode 409: User is not logged in. Provided tags do not exist. Check message for details.
    :statuscode 500: Internal rotki error
-   :statuscode 502: Remote error occured when attempted to connect to an Avalanche or Polkadot node and only if it's the first account added. Check message for details.
+   :statuscode 502: Remote error occurred when attempted to connect to an Avalanche or Polkadot node and only if it's the first account added. Check message for details.
 
 Adding BTC/BCH xpubs
 ========================
@@ -10398,7 +10398,7 @@ Show NFT Balances
    :reqjson list[string][optional] owner_addresses: A list of evm addresses. If provided, only nfts owned by these addresses will be returned.
    :reqjson string[optional] name: Optional nfts name to filter by.
    :reqjson string[optional] collection_name: Optional nfts collection_name to filter by.
-   :reqjson string[optional] ignored_assets_handling: A flag to specify how to handle ignored assets. Possible values are `'none'`, `'exclude'` and `'show_only'`. You can write 'none' in order to not handle them in any special way (meaning to show them too). This is the default. You can write 'exclude' if you want to exlude them from the result. And you can write 'show_only' if you want to only see the ignored assets in the result.
+   :reqjson string[optional] ignored_assets_handling: A flag to specify how to handle ignored assets. Possible values are `'none'`, `'exclude'` and `'show_only'`. You can write 'none' in order to not handle them in any special way (meaning to show them too). This is the default. You can write 'exclude' if you want to exclude them from the result. And you can write 'show_only' if you want to only see the ignored assets in the result.
    :reqjson int limit: This signifies the limit of records to return as per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
    :reqjson int offset: This signifies the offset from which to start the return of records per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
    :reqjson list[string][optional] order_by_attributes: This is the list of attributes of the nft by which to order the results. By default we sort using ``name``.
@@ -12318,7 +12318,7 @@ Refresh general cache
   :resjson bool result: Is true if all the caches were refreshed successfully.
 
   :statuscode 200: Caches were correctly updated
-  :statuscode 409: An issue during refreshing caches occured
+  :statuscode 409: An issue during refreshing caches occurred
   :statuscode 500: Internal rotki error
 
 Getting Metadata For Airdrops
@@ -12512,10 +12512,10 @@ Dealing with skipped external events
       }
 
   :resjson int total: The total number of skipped events that we tried to reprocess
-  :resjson int succesfull: The number of skipped events that we reprocessed succesfully and were thus deleted from the skipped events table.
+  :resjson int succesfull: The number of skipped events that we reprocessed successfully and were thus deleted from the skipped events table.
 
   :statuscode 200: Reprocessing went fine.
-  :statuscode 409: An issue ocurred during reprocessing
+  :statuscode 409: An issue occurred during reprocessing
   :statuscode 500: Internal rotki error
 
 
