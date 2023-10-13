@@ -19,9 +19,8 @@
 
 </div>
 
-<p align="center">
-  Rotki, The portfolio manager that protects your privacy
-</p>
+<h1 align="center">ROTKI</h1>
+<h2 align="center">The portfolio manager that protects your privacy</h2><br/>
 
 <p align="center">
   <a href="#overview">Overview</a> •
@@ -38,7 +37,7 @@
 ---
 
 ## Overview
-[Rotki](https://rotki.com/) is an open source portfolio tracking, analytics, accounting, and tax reporting tool that protects your privacy.  The mission of rotki is to bring transparency into the crypto and financial sectors through the use of open source. Most importantly, unlike virtually every other competing service which consists of closed source SaaS onto which you are forced to hand over all your financial data, with rotki your data is stored encrypted locally in your computer. It enables you to take ownership of your financial data!
+[Rotki](https://rotki.com/) is an open-source, privacy-centric solution designed to facilitate comprehensive portfolio tracking, in-depth analytics, meticulous accounting, and precise tax reporting. Most importantly, unlike virtually every other competing service which consists of closed source SaaS onto which you are forced to hand over all your financial data, with rotki your data is stored encrypted locally in your computer. It enables you to take ownership of your financial data!
 
 The [Pro Version](https://rotki.com/checkout/plan) of Rotki also supports additional and advanced features. You can find a comprehensive list of them on ☑️ [Feature Coverage Page](https://rotki.com/products/details).
 
@@ -127,8 +126,8 @@ Your contribution will go directly towards enhancing the project, covering devel
 
 We appreciate every donation, no matter the size. It helps to ensure the project's sustainability and motivates us to continue delivering valuable updates and improvements.
 
-Thank you for considering a donation to support our work!
+Thank you ❤️ for considering a donation to support our work!
 
 ## License
 
-rotki is committed to being open and transparent. Our chosen license ensures that the software remains open to use and that contributions are transparent and welcomed. Distributed under the **AGPLv3** License. See [`LICENSE.md`](https://github.com/rotki/rotki/blob/develop/LICENSE.md) for more information
+Rotki is committed to being open and transparent. Our chosen license ensures that the software remains open to use and that contributions are transparent and welcomed. Distributed under the **AGPLv3** License. See [`LICENSE.md`](https://github.com/rotki/rotki/blob/develop/LICENSE.md) for more information.
