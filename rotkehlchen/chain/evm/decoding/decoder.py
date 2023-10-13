@@ -187,7 +187,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
         Think: Perhaps we can move them under a specific directory and use the
         normal loading?
         """
-        return self._add_single_decoder(class_name='Safemultisig', decoder_class=SafemultisigDecoder, rules=rules)  # noqa: E501
+        self._add_single_decoder(class_name='Safemultisig', decoder_class=SafemultisigDecoder, rules=rules)  # noqa: E501
 
     def _add_single_decoder(
             self,

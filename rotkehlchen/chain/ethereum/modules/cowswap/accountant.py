@@ -5,9 +5,8 @@ from rotkehlchen.accounting.structures.base import get_event_type_identifier
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.evm.accounting.interfaces import ModuleAccountantInterface
 from rotkehlchen.chain.evm.accounting.structures import TxAccountingTreatment, TxEventSettings
+from rotkehlchen.chain.evm.decoding.cowswap.constants import CPT_COWSWAP
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-
-from .constants import CPT_COWSWAP
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.pot import AccountingPot
