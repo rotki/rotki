@@ -37,7 +37,7 @@ Changelog
 * :bug:`-` Last premium DB upload will now show the last known DB upload time from the remote and not the time the local app did its last upload. This is important for people using multiple machines.
 * :bug:`6528` Spam assets will be synced across accounts sharing the same globaldb and won't be queried during token detection.
 * :bug:`-` Removed deprecated "Reset DB button" from the aave/yearn view.
-* :bug:`6524` Premium users will be able to explicity request to force push their local DB to the server backup properly again.
+* :bug:`6524` Premium users will be able to explicitly request to force push their local DB to the server backup properly again.
 * :bug:`-` Fix an issue where certain gitcoin donations were not detected in optimism and where the big transfer to the contract which later splits into the donations was mistakenly kept.
 
 * :release:`1.30.0 <2023-08-17>`
@@ -186,7 +186,7 @@ Changelog
 * :feature:`1793` The PnL report can now be generated with the average cost basis accounting method.
 * :feature:`5148` Users will now see tokens detected for accounts having a DSProxy.
 * :feature:`5526` Users will now be able to read the name of the profit currency when moving the mouse over the currency symbol.
-* :feature:`4912` Users can now ignore invidual NFTs and they will not appear in the dashboard balances or snapshots.
+* :feature:`4912` Users can now ignore individual NFTs and they will not appear in the dashboard balances or snapshots.
 * :feature:`5050` Users can now add a custom image/icon for each custom asset they own.
 * :bug:`4332` Price oracles are now temporarily penalized after repeated failures.
 * :bug:`5402` Fix issue where the wrong filepath is used when deleting user DB backup in Windows.
@@ -418,7 +418,7 @@ Changelog
 * :bug:`-` AVAX balances should now be always correctly queried.
 * :bug:`-` PnL report will correctly detect asset cost basis when the fee of a trade is nominated in the received asset.
 * :bug:`3903` The application should now run on macOS 10.14 (Mojave) without errors.
-* :bug:`3901` Coinbase accounts with intenal subaccount movements will now display the Coinbase withdrawals properly.
+* :bug:`3901` Coinbase accounts with internal subaccount movements will now display the Coinbase withdrawals properly.
 
 * :release:`1.23.0 <2021-12-31>`
 * :feature:`3324` Users will be able to set the percentage of ownership for jointly held eth2 validators.
@@ -668,7 +668,7 @@ Changelog
 * :bug:`2986` Users won't be affected by a login error at the moment of querying FTX when the keys are correct.
 
 * :release:`1.17.0 <2021-05-25>`
-* :feature:`2898` Users are now able to see the asset identifiers in the asset management view and replace one asset and all its occurences with another.
+* :feature:`2898` Users are now able to see the asset identifiers in the asset management view and replace one asset and all its occurrences with another.
 * :feature:`2820` Users will now be able to select if they want to view graphs based at a 0 y-axis start instead of the minimum in the selected period.
 * :feature:`2725` Users will now be able to view a small help dialog with the supported options for the date display format.
 * :feature:`1902` Users can now modify the backend settings (e.g. data directory, log directory) through the application.
@@ -697,10 +697,10 @@ Changelog
 * :bug:`2835` Eth2 users with a very big number of validators should no longer get a 429 error.
 * :bug:`2846` Premium users who create a new account with premium api credentials that have no saved DB in the server to sync with will have these credentials properly saved in the DB right after creation. At re-login the premium subscription should be properly recognized and the credentials should not need to be input again.
 * :bug:`2821` Users will now be able to properly scroll through the asset when conflicts appear during the asset database upgrade.
-* :bug:`2837` Binance US users will now be able to see the correct location for their trades and deposits/withdrawals. It should no longer be Binance. To reflect those changes Binance US data should be purged and then requeried. To see how to purge data for an exchange look here: https://rotki.readthedocs.io/en/latest/usage_guide.html#purging-data
+* :bug:`2837` Binance US users will now be able to see the correct location for their trades and deposits/withdrawals. It should no longer be Binance. To reflect those changes Binance US data should be purged and then re-queried. To see how to purge data for an exchange look here: https://rotki.readthedocs.io/en/latest/usage_guide.html#purging-data
 * :bug:`2819` Users using macOS will no longer be stuck at "connecting to backend".
 * :bug:`865` Users will now be given an option to retry or terminate the application when communication with the backend fails.
-* :bug:`2791` Updating assets database which adds customs assets already owned as officially supported should no longer get the DB in an incosistent state.
+* :bug:`2791` Updating assets database which adds customs assets already owned as officially supported should no longer get the DB in an inconsistent state.
 
 * :release:`1.16.1 <2021-04-30>`
 * :bug:`2811` ETH and WETH are now considered equivalent for cost basis and accounting purposes.
@@ -1603,7 +1603,7 @@ Changelog
 * :bug:`1072` Tax report progress report percentage should now work properly and negative numbers should no longer appear.
 * :feature:`921` A new DeFi overview component is added. There the user can get an overview of all their balances across all DeFi protocols. For protocols that are supported further the user can click and be taken to the protocol specific page to see more details and historical accounting for that protocol.
 * :feature:`1160` The Accounts & Balances page layout has been updated to increase usability. It is now split across three sub-pages: Blockchain Balances, Exchange Balances, Manual Balances (includes Fiat Balances). Exchange Balances is a new page where you will be able to see all of your asset balances for each connected exchange (previously this was only accessible from the Dashboard by clicking on an exchange).
-* :bug:`1140` The Accounts column in "Blockhain Balances" is now correctly sorted by label (if it exists) or the account address.
+* :bug:`1140` The Accounts column in "Blockchain Balances" is now correctly sorted by label (if it exists) or the account address.
 * :bug:`1154` Tag filtering in "Manual Balances" within Accounts & Balances now works correctly if any balances do not have any tags assigned.
 * :bug:`1155` Fix the cryptocompate price queries of LUNA Terra
 * :bug:`1151` Fix for bittrex users so that if bittrex returns dates without a millisecond component rotki can still parse them properly.
@@ -1819,7 +1819,7 @@ Changelog
 * :bug:`698` rotki should now also display the version in the UI for Windows and OSX.
 * :bug:`709` rotki no longer crashes after second time of opening the application in Windows.
 * :bug:`716` The rotki logs for linux now go into a proper directory: ``~/.config/rotki/logs``
-* :feature:`461` You can now label your blockchain accounts and tag them with any numer of custom tags to group them into categories. Tags can be customized.
+* :feature:`461` You can now label your blockchain accounts and tag them with any number of custom tags to group them into categories. Tags can be customized.
 * :bug:`739` If there is an error during DBUpgrade or if the user uses old software to run a new DB we don't crash and burn with a 500 error but instead show a proper message.
 * :bug:`731` Fixed cointracking file import.
 * :bug:`726` Fail gracefully and don't throw a 500 server error if blockchain balance query fails.
@@ -1835,7 +1835,7 @@ Changelog
   - `WaykiChain (WICC) <https://coinmarketcap.com/currencies/waykichain/>`__
 
 * :release:`1.1.1 <2020-02-06>`
-* :bug:`693` Fix crash in OSX .dmg package version that occured with v1.1.0
+* :bug:`693` Fix crash in OSX .dmg package version that occurred with v1.1.0
 
 * :release:`1.1.0 <2020-02-05>`
 * :feature:`626` rotki now accepts addition of API keys for external services such as etherscan or cryptocompare.
@@ -1907,7 +1907,7 @@ Changelog
   - `Morpheus Network (MRPH) <https://coinmarketcap.com/currencies/morpheus-network/>`__
   - `Chiliz (CHZ) <https://coinmarketcap.com/currencies/chiliz/>`__
   - `Binance USD (BUSD) <https://coinmarketcap.com/currencies/binance-usd/>`__
-  - `Band Protcol (BAND) <https://coinmarketcap.com/currencies/band-protocol/>`__
+  - `Band Protocol (BAND) <https://coinmarketcap.com/currencies/band-protocol/>`__
   - `Beam Token (BEAM) <https://coinmarketcap.com/currencies/beam/>`__
 
 * :release:`1.0.3 <2019-08-30>`
@@ -1990,7 +1990,7 @@ Changelog
 * :bug:`206` Fixes an error when adding a bitcoin account for the first time.
 * :bug:`209` Fixes error during login due to invalid date being saved.
 * :bug:`223` Fix error in profit/loss calculation due to bugs in the search of the FIFO queue of buy events.
-* :feature:`221` Rotkehlchen is now shielded against incosistencies of cryptocompare FIAT data.
+* :feature:`221` Rotkehlchen is now shielded against inconsistencies of cryptocompare FIAT data.
 * :bug:`219` Poloniex BTC settlement loss calculation is now correct.
 * :bug:`217` Tax report CSV exports should now agree with the app report.
 * :bug:`211` Handle the BCHSV fork in Kraken properly.
