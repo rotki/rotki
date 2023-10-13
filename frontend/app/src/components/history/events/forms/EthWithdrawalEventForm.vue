@@ -92,7 +92,7 @@ const v$ = setValidation(
 );
 
 const reset = () => {
-  set(datetime, convertFromTimestamp(dayjs().unix(), true));
+  set(datetime, convertFromTimestamp(dayjs().unix()));
   set(amount, '0');
   set(usdValue, '0');
   set(validatorIndex, '');
@@ -104,7 +104,7 @@ const reset = () => {
 };
 
 const applyEditableData = async (entry: EthBlockEvent) => {
-  set(datetime, convertFromTimestamp(entry.timestamp, true));
+  set(datetime, convertFromTimestamp(entry.timestamp));
   set(amount, entry.balance.amount.toFixed());
   set(usdValue, entry.balance.usdValue.toFixed());
   set(validatorIndex, entry.validatorIndex.toString());
@@ -114,7 +114,7 @@ const applyEditableData = async (entry: EthBlockEvent) => {
 const applyGroupHeaderData = async (entry: EthBlockEvent) => {
   set(withdrawalAddress, entry.locationLabel ?? '');
   set(validatorIndex, entry.validatorIndex.toString());
-  set(datetime, convertFromTimestamp(entry.timestamp, true));
+  set(datetime, convertFromTimestamp(entry.timestamp));
 };
 
 const { setMessage } = useMessageStore();
@@ -126,7 +126,6 @@ const save = async (): Promise<boolean> => {
 
   const payload: Writeable<NewEthWithdrawalEventPayload> = {
     entryType: HistoryEventEntryType.ETH_WITHDRAWAL_EVENT,
-    // Change this
     timestamp: timestamp * 1000,
     balance: {
       amount: get(numericAmount).isNaN() ? Zero : get(numericAmount),

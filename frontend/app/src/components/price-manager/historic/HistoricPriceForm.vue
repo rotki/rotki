@@ -17,7 +17,7 @@ const { value } = toRefs(props);
 const { assetSymbol } = useAssetInfoRetrieval();
 
 const date = computed(({ value }) =>
-  value.timestamp ? convertFromTimestamp(value.timestamp, true) : ''
+  value.timestamp ? convertFromTimestamp(value.timestamp) : ''
 );
 const fromAsset = computed(({ value }) => get(assetSymbol(value.fromAsset)));
 const toAsset = computed(({ value }) => get(assetSymbol(value.toAsset)));

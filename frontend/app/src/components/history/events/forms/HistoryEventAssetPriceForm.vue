@@ -150,7 +150,7 @@ const fetchHistoricPrices = async () => {
     return;
   }
 
-  const timestamp = convertToTimestamp(get(datetime));
+  const timestamp = Math.round(convertToTimestamp(get(datetime)));
 
   let price: BigNumber = await getHistoricPrice({
     timestamp,

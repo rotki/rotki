@@ -130,7 +130,7 @@ const reset = () => {
   set(sequenceIndex, get(nextSequence) ?? '0');
   set(txHash, '');
   set(eventIdentifier, '');
-  set(datetime, convertFromTimestamp(dayjs().unix(), true));
+  set(datetime, convertFromTimestamp(dayjs().unix()));
   set(amount, '0');
   set(usdValue, '0');
   set(validatorIndex, '');
@@ -144,7 +144,7 @@ const applyEditableData = async (entry: EthDepositEvent) => {
   set(sequenceIndex, entry.sequenceIndex?.toString() ?? '');
   set(txHash, entry.txHash);
   set(eventIdentifier, entry.eventIdentifier);
-  set(datetime, convertFromTimestamp(entry.timestamp, true));
+  set(datetime, convertFromTimestamp(entry.timestamp));
   set(amount, entry.balance.amount.toFixed());
   set(usdValue, entry.balance.usdValue.toFixed());
   set(validatorIndex, entry.validatorIndex.toString());
@@ -157,7 +157,7 @@ const applyGroupHeaderData = async (entry: EthDepositEvent) => {
   set(txHash, entry.txHash);
   set(validatorIndex, entry.validatorIndex.toString());
   set(depositor, entry.locationLabel ?? '');
-  set(datetime, convertFromTimestamp(entry.timestamp, true));
+  set(datetime, convertFromTimestamp(entry.timestamp));
 };
 
 const { setMessage } = useMessageStore();
@@ -172,7 +172,6 @@ const save = async (): Promise<boolean> => {
     txHash: get(txHash),
     eventIdentifier: get(eventIdentifier),
     sequenceIndex: get(sequenceIndex) || '0',
-    // Change this
     timestamp: timestamp * 1000,
     balance: {
       amount: get(numericAmount).isNaN() ? Zero : get(numericAmount),

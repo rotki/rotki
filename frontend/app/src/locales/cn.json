@@ -1836,7 +1836,6 @@
   "date_time_picker": {
     "default_format": "日期应采用 {dateFormat} [HH:MM:[ss]] 格式",
     "limit_now": "不能使用未来日期",
-    "seconds_format": "日期应采用 {dateFormat} [HH:MM:ss] 格式",
     "timezone_field": {
       "non_empty": "应指定时区"
     }

@@ -202,7 +202,7 @@ onMounted(() => {
   set(symbol, token.symbol);
   set(identifier, token.identifier ?? '');
   set(swappedFor, token.swappedFor ?? '');
-  set(started, token.started ? convertFromTimestamp(token.started, true) : '');
+  set(started, token.started ? convertFromTimestamp(token.started) : '');
   set(coingecko, token.coingecko ?? '');
   set(cryptocompare, token.cryptocompare ?? '');
 

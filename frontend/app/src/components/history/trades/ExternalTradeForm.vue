@@ -136,7 +136,7 @@ const numericRate = bigNumberifyFromRef(rate);
 
 const reset = () => {
   set(id, '');
-  set(datetime, convertFromTimestamp(dayjs().unix(), true));
+  set(datetime, convertFromTimestamp(dayjs().unix()));
   set(amount, '');
   set(rate, '');
   set(fee, '');
@@ -156,7 +156,7 @@ const setEditMode = () => {
 
   set(base, trade.baseAsset);
   set(quote, trade.quoteAsset);
-  set(datetime, convertFromTimestamp(trade.timestamp, true));
+  set(datetime, convertFromTimestamp(trade.timestamp));
   set(amount, trade.amount.toFixed());
   set(rate, trade.rate.toFixed());
   set(fee, trade.fee?.toFixed() ?? '');

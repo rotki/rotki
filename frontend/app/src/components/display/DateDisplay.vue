@@ -73,6 +73,10 @@ const showTooltip = computed(() => {
   const format = get(dateDisplayFormatWithMilliseconds);
   return !timezone && (format.includes('%z') || format.includes('%Z'));
 });
+
+const splittedByMillisecondsPart = computed(() =>
+  get(formattedDate).split('.')
+);
 </script>
 
 <template>
@@ -80,12 +84,18 @@ const showTooltip = computed(() => {
     <VTooltip top open-delay="400" :disabled="!showTooltip">
       <template #activator="{ on, attrs }">
         <span
-          class="date-display"
+          class="date-display whitespace-none"
           :class="{ [css.blur]: !shouldShowAmount }"
           v-bind="attrs"
           v-on="on"
         >
-          {{ formattedDate }}
+          <span>{{ splittedByMillisecondsPart[0] }}</span>
+          <span
+            v-if="milliseconds && splittedByMillisecondsPart[1]"
+            class="text-[0.625rem]"
+          >
+            .{{ splittedByMillisecondsPart[1] }}
+          </span>
         </span>
       </template>
       <span> {{ formattedDateWithTimezone }} </span>

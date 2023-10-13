@@ -24,10 +24,9 @@ export function changeDateFormat(
     return '';
   }
 
-  const seconds = date.charAt(date.length - 6) === ':';
   const timestamp = convertToTimestamp(date, fromFormat);
 
-  return convertFromTimestamp(timestamp, seconds, toFormat);
+  return convertFromTimestamp(timestamp, toFormat);
 }
 
 export function convertToTimestamp(
@@ -35,28 +34,34 @@ export function convertToTimestamp(
   dateFormat: DateFormat = DateFormat.DateMonthYearHourMinuteSecond
 ): number {
   let format: string = getDateInputISOFormat(dateFormat);
-  if (date.includes(' ')) {
+  const firstSplit = date.split(' ');
+  if (firstSplit.length === 2) {
     format += ' HH:mm';
-    if (date.charAt(date.length - 6) === ':') {
+
+    const secondSplit = firstSplit[1].split(':');
+    if (secondSplit.length === 3) {
       format += ':ss';
+
+      const thirdSplit = secondSplit[2].split('.');
+      if (thirdSplit.length === 2) {
+        format += '.SSS';
+      }
     }
   }
 
-  return dayjs(date, format).unix();
+  return dayjs(date, format).valueOf() / 1000;
 }
 
 export function convertFromTimestamp(
   timestamp: number,
-  seconds = false,
   dateFormat: DateFormat = DateFormat.DateMonthYearHourMinuteSecond
 ): string {
   const time = dayjs(timestamp * 1000);
   let format: string = getDateInputISOFormat(dateFormat);
-  if (time.hour() !== 0 || time.minute() !== 0 || time.second() !== 0) {
-    format += ' HH:mm';
-    if (seconds) {
-      format += ':ss';
-    }
+  format += ' HH:mm:ss';
+
+  if (time.millisecond() > 0) {
+    format += '.SSS';
   }
 
   return time.format(format);
@@ -76,10 +81,18 @@ export function convertDateByTimezone(
   toTimezone = toTimezone || dayjs.tz.guess();
 
   let format: string = getDateInputISOFormat(dateFormat);
-  if (date.includes(' ')) {
+  const firstSplit = date.split(' ');
+  if (firstSplit.length === 2) {
     format += ' HH:mm';
-    if (date.charAt(date.length - 6) === ':') {
+
+    const secondSplit = firstSplit[1].split(':');
+    if (secondSplit.length === 3) {
       format += ':ss';
+
+      const thirdSplit = secondSplit[2].split('.');
+      if (thirdSplit.length === 2) {
+        format += '.SSS';
+      }
     }
   }
 

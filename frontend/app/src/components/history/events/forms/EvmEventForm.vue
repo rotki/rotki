@@ -175,7 +175,7 @@ const v$ = setValidation(
 const reset = () => {
   set(sequenceIndex, get(nextSequence) ?? '0');
   set(txHash, '');
-  set(datetime, convertFromTimestamp(dayjs().unix(), true));
+  set(datetime, convertFromTimestamp(dayjs().unix()));
   set(location, get(lastLocation));
   set(locationLabel, '');
   set(eventType, '');
@@ -194,7 +194,7 @@ const reset = () => {
 const applyEditableData = async (entry: EvmHistoryEvent) => {
   set(sequenceIndex, entry.sequenceIndex?.toString() ?? '');
   set(txHash, entry.txHash);
-  set(datetime, convertFromTimestamp(entry.timestamp, true));
+  set(datetime, convertFromTimestamp(entry.timestamp));
   set(location, entry.location);
   set(eventType, entry.eventType);
   set(eventSubtype, entry.eventSubtype || 'none');
@@ -212,7 +212,7 @@ const applyGroupHeaderData = async (entry: EvmHistoryEvent) => {
   set(location, entry.location || get(lastLocation));
   set(locationLabel, entry.locationLabel ?? '');
   set(txHash, entry.txHash);
-  set(datetime, convertFromTimestamp(entry.timestamp, true));
+  set(datetime, convertFromTimestamp(entry.timestamp));
 };
 
 const { setMessage } = useMessageStore();
@@ -226,7 +226,6 @@ const save = async (): Promise<boolean> => {
     entryType: HistoryEventEntryType.EVM_EVENT,
     txHash: get(txHash),
     sequenceIndex: get(sequenceIndex) || '0',
-    // Change this
     timestamp: timestamp * 1000,
     eventType: get(eventType),
     eventSubtype: get(eventSubtype),

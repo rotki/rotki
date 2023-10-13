@@ -100,7 +100,7 @@ const v$ = setValidation(
 );
 
 const reset = () => {
-  set(datetime, convertFromTimestamp(dayjs().unix(), true));
+  set(datetime, convertFromTimestamp(dayjs().unix()));
   set(amount, '0');
   set(usdValue, '0');
   set(blockNumber, '');
@@ -113,7 +113,7 @@ const reset = () => {
 };
 
 const applyEditableData = async (entry: EthBlockEvent) => {
-  set(datetime, convertFromTimestamp(entry.timestamp, true));
+  set(datetime, convertFromTimestamp(entry.timestamp));
   set(amount, entry.balance.amount.toFixed());
   set(usdValue, entry.balance.usdValue.toFixed());
   set(blockNumber, entry.blockNumber.toString());
@@ -126,7 +126,7 @@ const applyGroupHeaderData = async (entry: EthBlockEvent) => {
   set(feeRecipient, entry.locationLabel ?? '');
   set(blockNumber, entry.blockNumber.toString());
   set(validatorIndex, entry.validatorIndex.toString());
-  set(datetime, convertFromTimestamp(entry.timestamp, true));
+  set(datetime, convertFromTimestamp(entry.timestamp));
 };
 
 const { setMessage } = useMessageStore();
@@ -138,7 +138,6 @@ const save = async (): Promise<boolean> => {
 
   const payload: Writeable<NewEthBlockEventPayload> = {
     entryType: HistoryEventEntryType.ETH_BLOCK_EVENT,
-    // Change this
     timestamp: timestamp * 1000,
     balance: {
       amount: get(numericAmount).isNaN() ? Zero : get(numericAmount),

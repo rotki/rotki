@@ -20,7 +20,6 @@ const props = withDefaults(
     value?: string;
     limitNow?: boolean;
     allowEmpty?: boolean;
-    seconds?: boolean;
     milliseconds?: boolean;
     outlined?: boolean;
     disabled?: boolean;
@@ -34,7 +33,6 @@ const props = withDefaults(
     value: '',
     limitNow: false,
     allowEmpty: false,
-    seconds: false,
     milliseconds: false,
     outlined: false,
     disabled: false,
@@ -45,57 +43,38 @@ const props = withDefaults(
 
 const emit = defineEmits<{ (e: 'input', value: string): void }>();
 
-const { seconds, value, allowEmpty, limitNow, errorMessages, milliseconds } =
+const { value, allowEmpty, limitNow, errorMessages, milliseconds } =
   toRefs(props);
 
 const { t } = useI18n();
 
 const { dateInputFormat } = storeToRefs(useFrontendSettingsStore());
 
-const dateInputFormatInISO: ComputedRef<string> = computed(() =>
+const dateOnlyFormat: ComputedRef<string> = computed(() =>
   getDateInputISOFormat(get(dateInputFormat))
 );
 
-const timeFormat = computed(() => {
-  let format = 'HH:mm';
-  if (get(seconds)) {
-    format += ':ss';
-  }
-  return format;
-});
-
 const dateTimeFormat: ComputedRef<string> = computed(
-  () => `${get(dateInputFormatInISO)} ${get(timeFormat)}`
+  () => `${get(dateOnlyFormat)} HH:mm`
 );
 
-const completeDateTimeFormat: ComputedRef<string> = computed(
-  () => `${get(dateInputFormatInISO)} HH:mm:ss`
+const dateTimeFormatWithSecond: ComputedRef<string> = computed(
+  () => `${get(dateTimeFormat)}:ss`
 );
 
-const completeDateTimeFormatWithMilliseconds: ComputedRef<string> = computed(
-  () => `${get(dateInputFormatInISO)} HH:mm:ss.SSS`
+const dateTimeFormatWithMilliseconds: ComputedRef<string> = computed(
+  () => `${get(dateTimeFormatWithSecond)}.SSS`
 );
 
 const currentValue: Ref<string> = ref('');
 const selectedTimezone: Ref<string> = ref('');
 const inputField = ref();
 
-const isValidFormat = (date: string): boolean => {
-  const dateFormat = get(dateInputFormatInISO);
-  const dateTimeFormatVal = get(dateTimeFormat);
-  const completeDateTimeFormatVal = get(completeDateTimeFormat);
-  const completeDateTimeFormatWithMillisecondsVal = get(
-    completeDateTimeFormatWithMilliseconds
-  );
-
-  return (
-    isValidDate(date, dateFormat) ||
-    isValidDate(date, dateTimeFormatVal) ||
-    (!get(seconds) && isValidDate(date, completeDateTimeFormatVal)) ||
-    (get(milliseconds) &&
-      isValidDate(date, completeDateTimeFormatWithMillisecondsVal))
-  );
-};
+const isValidFormat = (date: string): boolean =>
+  isValidDate(date, get(dateOnlyFormat)) ||
+  isValidDate(date, get(dateTimeFormat)) ||
+  isValidDate(date, get(dateTimeFormatWithSecond)) ||
+  (get(milliseconds) && isValidDate(date, get(dateTimeFormatWithMilliseconds)));
 
 const isDateOnLimit = (date: string): boolean => {
   if (!get(limitNow)) {
@@ -103,7 +82,7 @@ const isDateOnLimit = (date: string): boolean => {
   }
 
   const now = dayjs();
-  let format: string = get(dateInputFormatInISO);
+  let format: string = get(dateOnlyFormat);
   if (date.includes(' ')) {
     format += ' HH:mm';
     if (date.charAt(date.length - 6) === ':') {
@@ -124,9 +103,9 @@ const isValid = (date: string): boolean =>
   isValidFormat(date) && isDateOnLimit(date);
 
 const dateFormatErrorMessage: ComputedRef<string> = computed(() => {
-  const dateFormat = get(dateInputFormatInISO);
-  return get(seconds)
-    ? t('date_time_picker.seconds_format', {
+  const dateFormat = get(dateOnlyFormat);
+  return get(milliseconds)
+    ? t('date_time_picker.milliseconds_format', {
         dateFormat
       })
     : t('date_time_picker.default_format', {
@@ -246,7 +225,10 @@ const emitIfValid = (value: string) => {
 
 const setNow = () => {
   const now = dayjs().tz(get(selectedTimezone));
-  const nowInString = now.format(get(dateTimeFormat));
+  const format = get(milliseconds)
+    ? get(dateTimeFormatWithMilliseconds)
+    : get(dateTimeFormatWithSecond);
+  const nowInString = now.format(format);
   set(currentValue, nowInString);
   emitIfValid(nowInString);
 };
@@ -256,8 +238,6 @@ const css = useCssModule();
 const initImask = () => {
   const inputWrapper = get(inputField)!;
   const input = inputWrapper.$el.querySelector('input') as HTMLInputElement;
-
-  const completeDateTimeFormatVal = get(completeDateTimeFormat);
 
   const createBlock = (from: number, to: number) => ({
     mask: MaskedRange,
@@ -291,28 +271,24 @@ const initImask = () => {
 
   const mask: AnyMaskedOptions[] = [
     {
-      mask: convertPattern(get(dateInputFormatInISO)),
+      mask: convertPattern(get(dateOnlyFormat)),
       blocks: {
         ...dateBlocks
       },
       lazy: false,
       overwrite: true
     },
-    ...(!get(seconds)
-      ? [
-          {
-            mask: convertPattern(get(dateTimeFormat)),
-            blocks: {
-              ...dateBlocks,
-              ...hourAndMinuteBlocks
-            },
-            lazy: false,
-            overwrite: true
-          }
-        ]
-      : []),
     {
-      mask: convertPattern(get(completeDateTimeFormatVal)),
+      mask: convertPattern(get(dateTimeFormat)),
+      blocks: {
+        ...dateBlocks,
+        ...hourAndMinuteBlocks
+      },
+      lazy: false,
+      overwrite: true
+    },
+    {
+      mask: convertPattern(get(dateTimeFormatWithSecond)),
       blocks: {
         ...dateBlocks,
         ...hourAndMinuteBlocks,
@@ -324,7 +300,7 @@ const initImask = () => {
     ...(get(milliseconds)
       ? [
           {
-            mask: convertPattern(get(completeDateTimeFormatWithMilliseconds)),
+            mask: convertPattern(get(dateTimeFormatWithMilliseconds)),
             blocks: {
               ...dateBlocks,
               ...hourAndMinuteBlocks,
