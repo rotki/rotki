@@ -29,6 +29,9 @@ class GitcoinDecoder(GitcoinV2CommonDecoder):
             round_impl_addresses=[
                 string_to_evm_address('0x8de918F0163b2021839A8D84954dD7E8e151326D'),
             ],
+            payout_strategy_addresses=[  # they match to the above round_impl addresses. Can be found by roundimpl.payoutStrategy()  # noqa: E501
+                string_to_evm_address('0xEb33BB3705135e99F7975cDC931648942cB2A96f'),
+            ],
             voting_impl_addresses=[
                 string_to_evm_address('0x99906Ea77C139000681254966b397a98E4bFdE21'),
                 string_to_evm_address('0x6526B0942E171A933Fd9aF90C993d9c547251042'),

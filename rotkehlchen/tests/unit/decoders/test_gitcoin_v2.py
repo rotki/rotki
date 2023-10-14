@@ -5,7 +5,7 @@ from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS, CPT_GITCOIN
-from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.constants.assets import A_DAI, A_ETH
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
@@ -46,24 +46,22 @@ def test_optimism_donation_received(database, optimism_inquirer, optimism_accoun
 def test_ethereum_donation_received(database, ethereum_inquirer, ethereum_accounts):
     tx_hex = deserialize_evm_tx_hash('0x71fc406467f342f5801560a326aa29ac424381daf17cc04b5573960425ba605b')  # noqa: E501
     evmhash = deserialize_evm_tx_hash(tx_hex)
-    user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
         database=database,
         tx_hash=tx_hex,
     )
-    timestamp = TimestampMS(1683655379000)
     amount_str = '0.001'
     expected_events = [EvmEvent(
         tx_hash=evmhash,
         sequence_index=0,
-        timestamp=timestamp,
+        timestamp=TimestampMS(1683655379000),
         location=Location.ETHEREUM,
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.DONATE,
         asset=A_ETH,
         balance=Balance(amount=FVal(amount_str)),
-        location_label=user_address,
+        location_label=ethereum_accounts[0],
         notes=f'Receive a gitcoin donation of {amount_str} ETH from 0xc191a29203a83eec8e846c26340f828C68835715',  # noqa: E501
         counterparty=CPT_GITCOIN,
         address='0xDA2F26B30e8f5aa9cbE9c5B7Ed58E1cA81D0EbF2',
@@ -328,3 +326,59 @@ def test_optimism_many_donations_different_strategies(database, optimism_inquire
         assert event.location_label == user_address
         assert event.notes.startswith('Make a gitcoin donation')
         assert event.counterparty == CPT_GITCOIN
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('optimism_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
+def test_optimism_grant_payout(database, optimism_inquirer, optimism_accounts):
+    tx_hex = deserialize_evm_tx_hash('0x84110136c94ceb71c72afb27ccb517eb33f77a8a419d125101644e2c43294815')  # noqa: E501
+    evmhash = deserialize_evm_tx_hash(tx_hex)
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=optimism_inquirer,
+        database=database,
+        tx_hash=tx_hex,
+    )
+    amount_str = '1228.529999999999934464'
+    expected_events = [EvmEvent(
+        tx_hash=evmhash,
+        sequence_index=73,
+        timestamp=TimestampMS(1696942367000),
+        location=Location.OPTIMISM,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.DONATE,
+        asset=Asset('eip155:10/erc20:0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1'),  # DAI
+        balance=Balance(amount=FVal(amount_str)),
+        location_label=optimism_accounts[0],
+        notes=f'Receive matching payout of {amount_str} DAI for a gitcoin round',
+        counterparty=CPT_GITCOIN,
+        address='0xEb33BB3705135e99F7975cDC931648942cB2A96f',
+    )]
+    assert events == expected_events
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('ethereum_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
+def test_ethereum_grant_payout(database, ethereum_inquirer, ethereum_accounts):
+    tx_hex = deserialize_evm_tx_hash('0x66ff5be7841f05cc9cb53fd0307460690f91203c52490f5bbfdeabe8462be50b')  # noqa: E501
+    evmhash = deserialize_evm_tx_hash(tx_hex)
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hex,
+    )
+    amount_str = '20000'
+    expected_events = [EvmEvent(
+        tx_hash=evmhash,
+        sequence_index=313,
+        timestamp=TimestampMS(1689038123000),
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.DONATE,
+        asset=A_DAI,
+        balance=Balance(amount=FVal(amount_str)),
+        location_label=ethereum_accounts[0],
+        notes=f'Receive matching payout of {amount_str} DAI for a gitcoin round',
+        counterparty=CPT_GITCOIN,
+        address='0xebaF311F318b5426815727101fB82f0Af3525d7b',
+    )]
+    assert events == expected_events

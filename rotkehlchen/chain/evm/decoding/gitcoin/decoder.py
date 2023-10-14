@@ -16,7 +16,6 @@ from rotkehlchen.chain.evm.decoding.structures import (
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails, EventCategory
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, DecoderEventMappingType
 from rotkehlchen.utils.misc import (
     hex_or_bytes_to_address,
     hex_or_bytes_to_int,
@@ -26,6 +25,7 @@ from rotkehlchen.utils.misc import (
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
+    from rotkehlchen.types import ChecksumEvmAddress, DecoderEventMappingType
     from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
@@ -38,6 +38,7 @@ PROJECT_CREATED = b'c\xc9/\x95\x05\xd4 \xbf\xf61\xcb\x9d\xf3;\xe9R\xbd\xc1\x1e!\
 METADATA_UPDATED = b'\xf9,&9\xc2]j"\xc3\x8emk)?t\xa9\xb2$\x91\';\x1d\xbbg\xfc\x12U"&\x96\xbe['
 NEW_PROJECT_APPLICATION_3ARGS = b'\xcay&"\x04c%\xe9\xcdN$\xb4\x90\xcb\x00\x0e\xf7*\xce\xa3\xa1R\x84\xef\xc1N\xe7\t0z^\x00'  # noqa: E501
 NEW_PROJECT_APPLICATION_2ARGS = b'\xecy?\xe7\x04\xd3@\xd9b\xcd\x02\xd8\x1a\xd5@E\xe7\xce\xeaq:\xcaN1\xc7\xc5\xc4>=\xcb\x19*'  # noqa: E501
+FUNDS_DISTRIBUTED = b'z\x0b2\xf6\x04\xa8\xc9C&2(a\x03\x9aD\xb7\xedxbL\xf2 \xba\x8bXj$G\xaf\r\x9c\x9b'  # noqa: E501
 
 
 class GitcoinV2CommonDecoder(DecoderInterface, metaclass=ABCMeta):
@@ -48,6 +49,10 @@ class GitcoinV2CommonDecoder(DecoderInterface, metaclass=ABCMeta):
     Each round seems to have their own contract address and we need to be
     adding them as part of the constructor here to create the proper mappings.
 
+    Also the payout strategy address should match the number of round implementations.
+    Each payout address is found from the round implementation by querying the
+    public variable payoutStrategy()
+
     TODO: Figure out if this can scale better as finding all contract addresses is error prone
     """
 
@@ -56,9 +61,10 @@ class GitcoinV2CommonDecoder(DecoderInterface, metaclass=ABCMeta):
             evm_inquirer: 'EvmNodeInquirer',
             base_tools: 'BaseDecoderTools',
             msg_aggregator: 'MessagesAggregator',
-            project_registry: ChecksumEvmAddress,
+            project_registry: 'ChecksumEvmAddress',
             voting_impl_addresses: list['ChecksumEvmAddress'],
             round_impl_addresses: list['ChecksumEvmAddress'],
+            payout_strategy_addresses: list['ChecksumEvmAddress'],
     ) -> None:
         super().__init__(
             evm_inquirer=evm_inquirer,
@@ -67,6 +73,8 @@ class GitcoinV2CommonDecoder(DecoderInterface, metaclass=ABCMeta):
         )
         self.project_registry = project_registry
         self.round_impl_addresses = round_impl_addresses
+        self.payout_strategy_addresses = payout_strategy_addresses
+        assert len(self.payout_strategy_addresses) == len(self.round_impl_addresses), 'payout should match round number'  # noqa: E501
         self.voting_impl_addresses = voting_impl_addresses
         self.eth = A_ETH.resolve_to_crypto_asset()
 
@@ -93,7 +101,7 @@ class GitcoinV2CommonDecoder(DecoderInterface, metaclass=ABCMeta):
     def _decode_voted(
             self,
             context: DecoderContext,
-            donator: ChecksumEvmAddress,
+            donator: 'ChecksumEvmAddress',
             receiver_start_idx: int,
             paying_contract_idx: int,
     ) -> DecodingOutput:
@@ -166,7 +174,7 @@ class GitcoinV2CommonDecoder(DecoderInterface, metaclass=ABCMeta):
             else:
                 log.error(
                     f'Could not find a corresponding event for donation to {receiver}'
-                    f' in transaction {context.transaction.tx_hash.hex()}',
+                    f' in {self.evm_inquirer.chain_name} transaction {context.transaction.tx_hash.hex()}',  # noqa: E501
                 )
 
         return DEFAULT_DECODING_OUTPUT
@@ -225,9 +233,36 @@ class GitcoinV2CommonDecoder(DecoderInterface, metaclass=ABCMeta):
         )
         return DecodingOutput(event=event)
 
+    def _decode_payout_action(self, context: DecoderContext) -> DecodingOutput:
+        if context.tx_log.topics[0] != FUNDS_DISTRIBUTED:
+            return DEFAULT_DECODING_OUTPUT
+
+        grantee = hex_or_bytes_to_address(context.tx_log.data[32:64])
+        if self.base.is_tracked(grantee) is False:
+            return DEFAULT_DECODING_OUTPUT
+
+        raw_amount = hex_or_bytes_to_int(context.tx_log.data[0:32])
+        token_address = hex_or_bytes_to_address(context.tx_log.topics[1])
+        token = self.base.get_or_create_evm_token(token_address)
+        amount = asset_normalized_value(raw_amount, token)
+
+        for event in reversed(context.decoded_events):  # transfer event should be right before
+            if event.event_type == HistoryEventType.RECEIVE and event.event_subtype == HistoryEventSubType.NONE and event.asset == token and event.balance.amount == amount and event.location_label == grantee:  # noqa: E501
+                event.event_subtype = HistoryEventSubType.DONATE
+                event.counterparty = CPT_GITCOIN
+                event.notes = f'Receive matching payout of {amount} {token.symbol} for a gitcoin round'  # noqa: E501
+                break
+        else:
+            log.error(
+                f'Could not find a corresponding event for round payout to {grantee}'
+                f' in {self.evm_inquirer.chain_name} transaction {context.transaction.tx_hash.hex()}',  # noqa: E501
+            )
+
+        return DEFAULT_DECODING_OUTPUT
+
     # -- DecoderInterface methods
 
-    def possible_events(self) -> DecoderEventMappingType:
+    def possible_events(self) -> 'DecoderEventMappingType':
         return {CPT_GITCOIN: {
             HistoryEventType.SPEND: {
                 HistoryEventSubType.DONATE: EventCategory.DONATE,
@@ -245,12 +280,15 @@ class GitcoinV2CommonDecoder(DecoderInterface, metaclass=ABCMeta):
             },
         }}
 
-    def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
-        mappings: dict[ChecksumEvmAddress, tuple[Any, ...]] = {
+    def addresses_to_decoders(self) -> dict['ChecksumEvmAddress', tuple[Any, ...]]:
+        mappings: dict['ChecksumEvmAddress', tuple[Any, ...]] = {
             address: (self._decode_vote_action,) for address in self.voting_impl_addresses
         }
         mappings |= {
             address: (self._decode_round_action,) for address in self.round_impl_addresses
+        }
+        mappings |= {
+            address: (self._decode_payout_action,) for address in self.payout_strategy_addresses
         }
         mappings[self.project_registry] = (self._decode_project_action,)
         return mappings
