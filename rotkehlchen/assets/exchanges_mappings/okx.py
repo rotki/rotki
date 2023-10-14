@@ -2,7 +2,6 @@ from rotkehlchen.assets.exchanges_mappings.common import COMMON_ASSETS_MAPPINGS
 from rotkehlchen.constants.resolver import evm_address_to_identifier, strethaddress_to_identifier
 from rotkehlchen.types import ChainID, EvmTokenKind
 
-
 WORLD_TO_OKX = COMMON_ASSETS_MAPPINGS | {
     strethaddress_to_identifier('0x3301Ee63Fb29F863f2333Bd4466acb46CD8323E6'): 'AKITA',  # noqa: E501
     strethaddress_to_identifier('0xa1faa113cbE53436Df28FF0aEe54275c13B40975'): 'ALPHA',  # noqa: E501

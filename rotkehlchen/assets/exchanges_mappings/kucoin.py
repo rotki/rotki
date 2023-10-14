@@ -2,7 +2,6 @@ from rotkehlchen.assets.exchanges_mappings.common import COMMON_ASSETS_MAPPINGS
 from rotkehlchen.constants.resolver import evm_address_to_identifier, strethaddress_to_identifier
 from rotkehlchen.types import ChainID, EvmTokenKind
 
-
 WORLD_TO_KUCOIN = COMMON_ASSETS_MAPPINGS | {
     'BSV': 'BCHSV',
     'LUNA-2': 'LUNA',

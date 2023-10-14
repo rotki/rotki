@@ -2,7 +2,6 @@ from rotkehlchen.assets.exchanges_mappings.common import COMMON_ASSETS_MAPPINGS
 from rotkehlchen.constants.resolver import evm_address_to_identifier, strethaddress_to_identifier
 from rotkehlchen.types import ChainID, EvmTokenKind
 
-
 WORLD_TO_BITTREX = COMMON_ASSETS_MAPPINGS | {
     # In Rotkehlchen Bitswift is BITS-2 but in Bittrex it's BITS
     'BITS-2': 'BITS',

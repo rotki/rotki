@@ -6,6 +6,7 @@ from .constants import CPT_OPTIMISM
 
 if TYPE_CHECKING:
     from rotkehlchen.user_messages import MessagesAggregator
+
     from .node_inquirer import OptimismInquirer
 
 

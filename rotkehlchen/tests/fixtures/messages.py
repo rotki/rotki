@@ -1,7 +1,8 @@
 from typing import Any, NamedTuple, Optional, Union
-import pytest
-from rotkehlchen.api.websockets.typedefs import WSMessageType
 
+import pytest
+
+from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.user_messages import MessagesAggregator
 
 

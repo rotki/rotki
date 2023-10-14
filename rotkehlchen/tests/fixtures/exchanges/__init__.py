@@ -16,7 +16,7 @@ from .iconomi import *  # noqa: F403
 from .independentreserve import *  # noqa: F403
 from .kraken import *  # noqa: F403
 from .kucoin import *  # noqa: F403
-from .okx import *     # noqa: F403
+from .okx import *  # noqa: F403
 from .poloniex import *  # noqa: F403
 
 

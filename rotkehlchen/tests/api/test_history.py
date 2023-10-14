@@ -40,7 +40,6 @@ from rotkehlchen.tests.utils.pnl_report import query_api_create_and_get_report
 from rotkehlchen.types import AssetAmount, Fee, Location, Price, Timestamp, TradeType
 from rotkehlchen.utils.misc import ts_now
 
-
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
 

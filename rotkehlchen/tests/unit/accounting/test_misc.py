@@ -1,4 +1,5 @@
 from typing import TYPE_CHECKING
+
 import pytest
 
 from rotkehlchen.accounting.ledger_actions import LedgerAction, LedgerActionType

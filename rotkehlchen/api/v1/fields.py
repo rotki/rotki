@@ -23,7 +23,8 @@ from rotkehlchen.assets.asset import (
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
 from rotkehlchen.chain.bitcoin.utils import is_valid_derivation_path
-from rotkehlchen.constants.misc import NFT_DIRECTIVE, ZERO
+from rotkehlchen.constants import ZERO
+from rotkehlchen.constants.misc import NFT_DIRECTIVE
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import XPUBError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -52,6 +53,7 @@ from rotkehlchen.types import (
     Price,
     SupportedBlockchain,
     Timestamp,
+    TimestampMS,
     deserialize_evm_tx_hash,
 )
 from rotkehlchen.utils.misc import ts_now
@@ -169,7 +171,7 @@ class DelimitedOrNormalList(webargs.fields.DelimitedList):
             raise ValidationError('List cant be empty')
 
         # purposefully skip the superclass here
-        return fields.List._deserialize(self, ret, attr, data, **kwargs)  # pylint: disable=bad-super-call  # noqa: E501
+        return fields.List._deserialize(self, ret, attr, data, **kwargs)  # pylint: disable=bad-super-call
 
 
 class TimestampField(fields.Field):
@@ -191,6 +193,26 @@ class TimestampField(fields.Field):
             raise ValidationError(str(e)) from e
 
         return Timestamp(timestamp * self.ts_multiplier)
+
+
+class TimestampMSField(fields.Field):
+
+    def __init__(self, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
+
+    def _deserialize(
+            self,
+            value: str,
+            attr: Optional[str],  # pylint: disable=unused-argument
+            data: Optional[Mapping[str, Any]],
+            **_kwargs: Any,
+    ) -> TimestampMS:
+        try:
+            timestamp = deserialize_timestamp(value)
+        except DeserializationError as e:
+            raise ValidationError(str(e)) from e
+
+        return TimestampMS(timestamp)
 
 
 class TimestampUntilNowField(TimestampField):
@@ -678,7 +700,7 @@ class AssetTypeField(fields.Field):
 
 class LocationField(fields.Field):
 
-    def __init__(self, *, limit_to: Optional[tuple[Location, ...]] = None, **kwargs: Any) -> None:  # noqa: E501
+    def __init__(self, *, limit_to: Optional[tuple[Location, ...]] = None, **kwargs: Any) -> None:
         self.limit_to = limit_to
         super().__init__(**kwargs)
 
@@ -689,7 +711,8 @@ class LocationField(fields.Field):
             obj: Any,
             **_kwargs: Any,
     ) -> str:
-        return str(value)
+        # Convert location string representation to use underscores instead of spaces
+        return str(value).replace(" ", "_")
 
     def _deserialize(
             self,
@@ -698,18 +721,21 @@ class LocationField(fields.Field):
             data: Optional[Mapping[str, Any]],
             **_kwargs: Any,
     ) -> Location:
+        # Accept both spaces and underscores in input but convert to underscores for internal use
+        standardized_value = value.replace(" ", "_")
         try:
-            location = Location.deserialize(value)
+            location = Location.deserialize(standardized_value)
         except DeserializationError as e:
             raise ValidationError(str(e)) from e
 
         if self.limit_to is not None and location not in self.limit_to:
             raise ValidationError(
                 f'Given location {value} is not one of '
-                f'{",".join([str(x) for x in self.limit_to])} as needed by the endpoint',
+                f'{",".join([str(x).replace(" ", "_") for x in self.limit_to])} as needed by the endpoint',
             )
 
         return location
+
 
 
 class ApiKeyField(fields.Field):

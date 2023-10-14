@@ -6,6 +6,7 @@ from .constants import CPT_POLYGON_POS
 
 if TYPE_CHECKING:
     from rotkehlchen.user_messages import MessagesAggregator
+
     from .node_inquirer import PolygonPOSInquirer
 
 

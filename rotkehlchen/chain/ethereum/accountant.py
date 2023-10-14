@@ -5,6 +5,7 @@ from rotkehlchen.chain.evm.accounting.aggregator import EVMAccountingAggregator
 
 if TYPE_CHECKING:
     from rotkehlchen.user_messages import MessagesAggregator
+
     from .node_inquirer import EthereumInquirer
 
 

@@ -13,7 +13,6 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.tests.utils.aave import A_AKNC_V1, A_AKNC_V2
 from rotkehlchen.types import ChecksumEvmAddress
 
-
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 

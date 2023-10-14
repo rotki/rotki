@@ -1,5 +1,6 @@
 """Tool to pull an assets database from Github, and apply updates to it"""
 from gevent import monkey
+
 monkey.patch_all()  # isort:skip
 
 import argparse

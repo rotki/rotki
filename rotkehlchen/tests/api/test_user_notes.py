@@ -1,11 +1,10 @@
 from http import HTTPStatus
 
 import pytest
-
 import requests
+
 from rotkehlchen.constants.limits import FREE_USER_NOTES_LIMIT
 from rotkehlchen.db.filtering import UserNotesFilterQuery
-
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,

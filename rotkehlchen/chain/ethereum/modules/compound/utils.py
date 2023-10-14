@@ -1,4 +1,5 @@
 from typing import Optional
+
 from rotkehlchen.assets.asset import CryptoAsset, EvmToken
 from rotkehlchen.chain.ethereum.modules.compound.constants import CTOKEN_MAPPING
 from rotkehlchen.errors.asset import UnknownAsset

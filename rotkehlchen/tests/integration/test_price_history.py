@@ -8,7 +8,6 @@ from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.tests.utils.constants import A_DASH, A_XMR
 from rotkehlchen.types import Price, Timestamp
 
-
 HISTORICAL_PRICE_ORACLES = [
     HistoricalPriceOracle.MANUAL,
     HistoricalPriceOracle.CRYPTOCOMPARE,
