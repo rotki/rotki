@@ -2,22 +2,11 @@
 
 import Vue from 'vue';
 import {
-  VAlert,
   VBtn,
   VBtnToggle,
-  VCol,
   VColorPicker,
-  VContainer,
-  VDataTableHeader,
   VDialog,
-  VDivider,
-  VForm,
-  VIcon,
-  VRow,
-  VSimpleTable,
-  VSpacer,
-  VTextField,
-  VTooltip
+  VIcon
 } from 'vuetify/lib/components';
 import {
   RuiAlert,
@@ -70,22 +59,11 @@ import LpPoolHeader from '@/components/display/defi/LpPoolHeader.vue';
  */
 const vuetifyRegister = (): void => {
   // version 17 - 1.24
-  Vue.component('VCol', VCol);
-  Vue.component('VRow', VRow);
-  Vue.component('VTooltip', VTooltip);
-  Vue.component('VTextField', VTextField);
   Vue.component('VIcon', VIcon);
   Vue.component('VBtn', VBtn);
   Vue.component('VBtnToggle', VBtnToggle);
-  Vue.component('VAlert', VAlert);
-  Vue.component('VContainer', VContainer);
-  Vue.component('VSimpleTable', VSimpleTable);
   Vue.component('VDialog', VDialog);
-  Vue.component('VDivider', VDivider);
-  Vue.component('VForm', VForm);
-  Vue.component('VSpacer', VSpacer);
   Vue.component('VColorPicker', VColorPicker);
-  Vue.component('VDataTableHeader', VDataTableHeader);
 };
 
 const ruiRegister = (): void => {

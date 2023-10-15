@@ -1,21 +1,21 @@
 <script setup lang="ts">
-import { type PropType } from 'vue';
 import Fragment from '@/components/helper/Fragment';
 import { type MakerDAOVaultModel } from '@/types/defi/maker';
 
-const props = defineProps({
-  vault: {
-    required: true,
-    type: Object as PropType<MakerDAOVaultModel>
-  }
-});
+const props = defineProps<{
+  vault: MakerDAOVaultModel;
+}>();
+
+const { t } = useI18n();
+
+const { vault } = toRefs(props);
 
 const showWatcherDialog = ref(false);
 const watcherMessage = ref('');
-const { vault } = toRefs(props);
+
 const { watchers: loanWatchers } = storeToRefs(useWatchersStore());
 const premium = usePremium();
-const { t } = useI18n();
+
 const watchers = computed(() => {
   const { identifier } = get(vault);
   return get(loanWatchers).filter(watcher => {
@@ -38,23 +38,21 @@ const openWatcherDialog = () => {
   set(showWatcherDialog, true);
   set(watcherMessage, t('loan_collateral.watchers.dialog.message', params));
 };
-
-const { dark } = useTheme();
 </script>
 
 <template>
   <Fragment>
-    <VBtn
-      small
-      rounded
-      block
-      depressed
-      :color="dark ? null : 'grey lighten-3 grey--text text--darken-2'"
-      class="text-decoration-none"
+    <RuiButton
+      color="primary"
+      size="sm"
+      class="w-full"
       @click="openWatcherDialog()"
     >
-      <VIcon x-small left>mdi-bell-outline</VIcon>
-      <span v-if="watchers.length > 0" class="text-caption">
+      <template #prepend>
+        <RuiIcon name="notification-line" />
+      </template>
+
+      <template v-if="watchers.length > 0">
         {{
           t(
             'loan_collateral.watchers.edit',
@@ -64,12 +62,16 @@ const { dark } = useTheme();
             watchers.length
           )
         }}
-      </span>
-      <span v-else class="text-caption">
+      </template>
+      <template v-else>
         {{ t('loan_collateral.watchers.add') }}
-      </span>
-      <PremiumLock v-if="!premium" x-small />
-    </VBtn>
+      </template>
+
+      <template v-if="!premium" #append>
+        <PremiumLock x-small />
+      </template>
+    </RuiButton>
+
     <WatcherDialog
       :display="showWatcherDialog"
       :title="t('loan_collateral.watchers.dialog.title')"

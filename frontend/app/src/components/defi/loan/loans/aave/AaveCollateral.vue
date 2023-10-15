@@ -1,13 +1,9 @@
 <script setup lang="ts">
-import { type PropType } from 'vue';
 import { type AaveLoan } from '@/types/defi/lending';
 
-const props = defineProps({
-  loan: {
-    required: true,
-    type: Object as PropType<AaveLoan>
-  }
-});
+const props = defineProps<{
+  loan: AaveLoan;
+}>();
 
 const { loan } = toRefs(props);
 const { t } = useI18n();
@@ -24,26 +20,28 @@ const totalCollateralUsd = totalCollateral(loan);
         fiat-currency="USD"
       />
     </LoanRow>
-    <VDivider class="my-4" />
+
+    <div class="my-4 border-b" />
+
     <LoanRow
       v-if="loan.collateral.length > 0"
       :title="t('loan_collateral.per_asset')"
     >
-      <VRow
+      <div
         v-for="collateral in loan.collateral"
         :key="collateral.asset"
-        no-gutters
+        class="flex flex-row"
       >
-        <VCol>
-          <BalanceDisplay :asset="collateral.asset" :value="collateral" />
-        </VCol>
-      </VRow>
+        <BalanceDisplay :asset="collateral.asset" :value="collateral" />
+      </div>
     </LoanRow>
-    <VDivider v-if="loan.collateral.length > 0" class="my-4" />
+
+    <div v-if="loan.collateral.length > 0" class="my-4 border-b" />
 
     <LoanRow :title="t('loan_collateral.stable_apr')" class="mb-2">
       <PercentageDisplay :value="loan.stableApr ? loan.stableApr : null" />
     </LoanRow>
+
     <LoanRow :title="t('loan_collateral.variable_apr')">
       <PercentageDisplay :value="loan.variableApr ? loan.variableApr : null" />
     </LoanRow>

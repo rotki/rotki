@@ -1,14 +1,10 @@
 <script setup lang="ts">
 import { assetSymbolToIdentifierMap } from '@rotki/common/lib/data';
-import { type PropType } from 'vue';
 import { type MakerDAOVaultModel } from '@/types/defi/maker';
 
-const props = defineProps({
-  vault: {
-    required: true,
-    type: Object as PropType<MakerDAOVaultModel>
-  }
-});
+const props = defineProps<{
+  vault: MakerDAOVaultModel;
+}>();
 
 const assetPadding = 3;
 
@@ -49,7 +45,9 @@ const dai: string = assetSymbolToIdentifierMap.DAI;
       <LoanRow :title="t('loan_liquidation.liquidation_price')">
         <AmountDisplay fiat-currency="USD" :value="vault.liquidationPrice" />
       </LoanRow>
-      <VDivider class="my-4" />
+
+      <div class="my-4 border-b" />
+
       <LoanRow :title="t('loan_liquidation.minimum_ratio')" :medium="false">
         <PercentageDisplay :value="vault.liquidationRatio" />
       </LoanRow>
@@ -89,7 +87,9 @@ const dai: string = assetSymbolToIdentifierMap.DAI;
               :asset="dai"
             />
           </LoanRow>
-          <VDivider class="my-4" />
+
+          <div class="my-4 border-b" />
+
           <LoanRow :title="t('loan_liquidation.total_value_lost')">
             <AmountDisplay
               :asset-padding="assetPadding"

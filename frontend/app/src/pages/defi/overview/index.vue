@@ -24,15 +24,11 @@ const refreshing = isLoading(section);
 
 <template>
   <div>
-    <VRow class="my-4">
-      <VCol>
-        <RefreshHeader
-          :loading="refreshing"
-          :title="t('decentralized_overview.title')"
-          @refresh="refresh()"
-        />
-      </VCol>
-    </VRow>
+    <RefreshHeader
+      :loading="refreshing"
+      :title="t('decentralized_overview.title')"
+      @refresh="refresh()"
+    />
     <ProgressScreen v-if="loading">
       <template #message>{{ t('decentralized_overview.loading') }}</template>
     </ProgressScreen>

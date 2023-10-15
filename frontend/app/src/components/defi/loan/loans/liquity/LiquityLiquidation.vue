@@ -1,16 +1,10 @@
 <script setup lang="ts">
-import { BigNumber } from '@rotki/common';
+import { type BigNumber } from '@rotki/common';
 
-defineProps({
-  price: {
-    required: true,
-    type: BigNumber
-  },
-  asset: {
-    required: true,
-    type: String
-  }
-});
+defineProps<{
+  price: BigNumber;
+  asset: string;
+}>();
 
 const { t } = useI18n();
 </script>

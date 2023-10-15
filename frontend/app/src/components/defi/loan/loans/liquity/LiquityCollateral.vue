@@ -1,18 +1,15 @@
 <script setup lang="ts">
-import { type AssetBalance, BigNumber } from '@rotki/common';
-import { type PropType } from 'vue';
+import { type AssetBalance, type BigNumber } from '@rotki/common';
 
-defineProps({
-  collateral: {
-    required: true,
-    type: Object as PropType<AssetBalance>
-  },
-  ratio: {
-    required: false,
-    type: BigNumber as PropType<BigNumber | null | undefined>,
-    default: null
+withDefaults(
+  defineProps<{
+    collateral: AssetBalance;
+    ratio?: BigNumber | null;
+  }>(),
+  {
+    ratio: null
   }
-});
+);
 
 const { t } = useI18n();
 </script>
@@ -23,7 +20,7 @@ const { t } = useI18n();
       <BalanceDisplay :asset="collateral.asset" :value="collateral" />
     </LoanRow>
 
-    <VDivider v-if="ratio" class="my-4" />
+    <div v-if="ratio" class="my-4 border-b" />
 
     <LoanRow v-if="ratio" :title="t('loan_collateral.ratio')">
       <PercentageDisplay v-if="ratio" :value="ratio.toFormat(2)" />

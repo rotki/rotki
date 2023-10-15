@@ -1,18 +1,15 @@
 <script setup lang="ts">
 import { type Balance } from '@rotki/common';
-import { type PropType } from 'vue';
 
-defineProps({
-  debt: {
-    required: true,
-    type: Object as PropType<Balance>
-  },
-  asset: {
-    required: false,
-    type: String,
-    default: ''
+withDefaults(
+  defineProps<{
+    debt: Balance;
+    asset?: string;
+  }>(),
+  {
+    asset: ''
   }
-});
+);
 
 const { t } = useI18n();
 </script>

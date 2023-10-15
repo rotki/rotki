@@ -3,7 +3,7 @@ import { type Balance } from '@rotki/common';
 
 const props = withDefaults(
   defineProps<{
-    asset: string;
+    asset?: string;
     value?: Balance | null;
     noIcon?: boolean;
     noJustify?: boolean;
@@ -16,6 +16,7 @@ const props = withDefaults(
     calculateValue?: boolean;
   }>(),
   {
+    asset: '',
     value: null,
     noIcon: false,
     noJustify: false,

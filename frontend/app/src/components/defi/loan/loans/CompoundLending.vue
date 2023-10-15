@@ -1,14 +1,8 @@
 <script setup lang="ts">
-import { type PropType } from 'vue';
 import { CompoundBorrowingDetails } from '@/premium/premium';
 import { type CompoundLoan } from '@/types/defi/compound';
 
-const props = defineProps({
-  loan: {
-    required: true,
-    type: Object as PropType<CompoundLoan>
-  }
-});
+const props = defineProps<{ loan: CompoundLoan }>();
 
 const premium = usePremium();
 

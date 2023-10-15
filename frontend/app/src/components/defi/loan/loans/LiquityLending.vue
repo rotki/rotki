@@ -1,18 +1,17 @@
 <script setup lang="ts">
 import { type AssetBalance, type BigNumber } from '@rotki/common';
-import { type ComputedRef, type PropType } from 'vue';
+import { type ComputedRef } from 'vue';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
 import { type LiquityLoan } from '@/types/defi/liquity';
 
-const props = defineProps({
-  loan: {
-    required: true,
-    type: Object as PropType<LiquityLoan>
-  }
-});
+const props = defineProps<{
+  loan: LiquityLoan;
+}>();
 
+const { t } = useI18n();
 const { loan } = toRefs(props);
+
 const debt: ComputedRef<AssetBalance> = computed(() => get(loan).balance.debt);
 const collateral: ComputedRef<AssetBalance> = computed(
   () => get(loan).balance.collateral
@@ -24,7 +23,7 @@ const liquidationPrice: ComputedRef<BigNumber | null> = computed(
   () => get(loan).balance.liquidationPrice
 );
 const premium = usePremium();
-const { t } = useI18n();
+
 const { scrambleIdentifier } = useScramble();
 const chain = Blockchain.ETH;
 </script>
