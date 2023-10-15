@@ -262,7 +262,7 @@ def _combine_parser_data(
 @parser.location_loader('json_and_view_args')
 def load_json_viewargs_data(request: Request, schema: Schema) -> dict[str, Any]:
     """Load data from a request accepting either json or view_args encoded data"""
-    view_args = parser.load_view_args(request, schema)  # type: ignore
+    view_args = parser.load_view_args(request, schema)
     data = parser.load_json(request, schema)
     if data is missing:
         data = {}
@@ -277,17 +277,17 @@ def load_json_query_data(request: Request, schema: Schema) -> dict[str, Any]:
     data = parser.load_json(request, schema)
     if data is not missing:
         return data
-    return parser.load_querystring(request, schema)  # type: ignore
+    return parser.load_querystring(request, schema)
 
 
 @parser.location_loader('json_and_query_and_view_args')
 def load_json_query_viewargs_data(request: Request, schema: Schema) -> dict[str, Any]:
     """Load data from a request accepting either json or querystring or view_args encoded data"""
-    view_args = parser.load_view_args(request, schema)  # type: ignore
+    view_args = parser.load_view_args(request, schema)
     # Get data either from json or from querystring
     data = parser.load_json(request, schema)
     if data is missing:
-        data = parser.load_querystring(request, schema)  # type: ignore
+        data = parser.load_querystring(request, schema)
 
     if data is missing:
         return data
@@ -299,8 +299,8 @@ def load_json_query_viewargs_data(request: Request, schema: Schema) -> dict[str,
 @parser.location_loader('form_and_file')
 def load_form_file_data(request: Request, schema: Schema) -> MultiDictProxy:
     """Load data from a request accepting form and file encoded data"""
-    form_data = parser.load_form(request, schema)  # type: ignore
-    file_data = parser.load_files(request, schema)  # type: ignore
+    form_data = parser.load_form(request, schema)
+    file_data = parser.load_files(request, schema)
     data = _combine_parser_data(form_data, file_data, schema)
     return data
 
@@ -308,8 +308,8 @@ def load_form_file_data(request: Request, schema: Schema) -> MultiDictProxy:
 @parser.location_loader('view_args_and_file')
 def load_view_args_file_data(request: Request, schema: Schema) -> MultiDictProxy:
     """Load data from a request accepting view_args and file encoded data"""
-    view_args_data = parser.load_view_args(request, schema)  # type: ignore
-    file_data = parser.load_files(request, schema)  # type: ignore
+    view_args_data = parser.load_view_args(request, schema)
+    file_data = parser.load_files(request, schema)
     data = _combine_parser_data(view_args_data, file_data, schema)
     return data
 
