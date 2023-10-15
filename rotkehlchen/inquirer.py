@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, NamedTuple, Optional, Union
 
 from rotkehlchen.assets.asset import Asset, EvmToken, FiatAsset, UnderlyingToken
-from rotkehlchen.assets.utils import TokenSeenAt, get_or_create_evm_token
+from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token
 from rotkehlchen.chain.ethereum.defi.price import handle_defi_price_query
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.contracts import EvmContract
@@ -886,7 +886,9 @@ class Inquirer:
                     userdb=ethereum.node_inquirer.database,
                     evm_address=underlying_token_address,
                     chain_id=ChainID.ETHEREUM,
-                    seen=TokenSeenAt(description='Detecting Yearn vault underlying tokens'),
+                    encounter=TokenEncounterInfo(
+                        description='Detecting Yearn vault underlying tokens',
+                    ),
                 )
             except NotERC20Conformant as e:
                 log.error(

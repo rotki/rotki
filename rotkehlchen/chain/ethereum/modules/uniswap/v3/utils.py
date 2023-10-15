@@ -8,7 +8,7 @@ from web3.exceptions import BadFunctionCallOutput
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EvmToken
-from rotkehlchen.assets.utils import TokenSeenAt, get_or_create_evm_token
+from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token
 from rotkehlchen.chain.ethereum.interfaces.ammswap.types import AssetToPrice, LiquidityPoolAsset
 from rotkehlchen.chain.ethereum.interfaces.ammswap.utils import (
     TokenDetails,
@@ -492,7 +492,7 @@ def _decode_uniswap_v3_result(
                 chain_id=ChainID.ETHEREUM,
                 name=token.name,
                 decimals=token.decimals,
-                seen=TokenSeenAt(description='Uniswap v3 LP positions query'),
+                encounter=TokenEncounterInfo(description='Uniswap v3 LP positions query'),
             )
             asset_balance = token.amount
         except NotERC20Conformant as e:

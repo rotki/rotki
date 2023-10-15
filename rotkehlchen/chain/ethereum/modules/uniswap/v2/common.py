@@ -7,7 +7,7 @@ from web3 import Web3
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import CryptoAsset, EvmToken, UnderlyingToken
 from rotkehlchen.assets.utils import (
-    TokenSeenAt,
+    TokenEncounterInfo,
     get_or_create_evm_token,
     set_token_protocol_if_missing,
 )
@@ -86,7 +86,7 @@ def decode_uniswap_v2_like_swap(
         chain_id=ChainID.ETHEREUM,
         token_kind=EvmTokenKind.ERC20,
         evm_inquirer=ethereum_inquirer,
-        seen=TokenSeenAt(tx_hash=transaction.tx_hash),
+        encounter=TokenEncounterInfo(tx_hash=transaction.tx_hash),
     )
 
     if pool_token.symbol in exclude_amms.values():
@@ -229,7 +229,7 @@ def decode_uniswap_like_deposit_and_withdrawals(
                 chain_id=ChainID.ETHEREUM,
                 token_kind=EvmTokenKind.ERC20,
                 evm_inquirer=ethereum_inquirer,
-                seen=TokenSeenAt(tx_hash=tx_hash),
+                encounter=TokenEncounterInfo(tx_hash=tx_hash),
             )
             # we make a distinction between token and asset since for eth uniswap moves around
             # WETH but we could receive ETH
@@ -241,7 +241,7 @@ def decode_uniswap_like_deposit_and_withdrawals(
                 chain_id=ChainID.ETHEREUM,
                 token_kind=EvmTokenKind.ERC20,
                 evm_inquirer=ethereum_inquirer,
-                seen=TokenSeenAt(tx_hash=tx_hash),
+                encounter=TokenEncounterInfo(tx_hash=tx_hash),
             )
             asset_1 = resolved_eth if token1 == A_WETH else token1
 
@@ -292,7 +292,7 @@ def decode_uniswap_like_deposit_and_withdrawals(
             chain_id=ChainID.ETHEREUM,
             token_kind=EvmTokenKind.ERC20,
             evm_inquirer=ethereum_inquirer,
-            seen=TokenSeenAt(tx_hash=tx_hash),
+            encounter=TokenEncounterInfo(tx_hash=tx_hash),
             underlying_tokens=underlying_tokens,
         )
         if len(pool_token.underlying_tokens) == 0:

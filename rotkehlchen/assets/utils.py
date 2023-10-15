@@ -143,9 +143,16 @@ def check_if_spam_token(symbol: Optional[str]) -> bool:
     return False
 
 
-class TokenSeenAt(NamedTuple):
+class TokenEncounterInfo(NamedTuple):
+    """
+    Information that will be provided to the user when adding new assets.
+
+    If should_notify is True then we will send a ws message with information
+    about the new asset
+    """
     tx_hash: Optional[EVMTxHash] = None
     description: Optional[str] = None
+    should_notify: bool = True
 
 
 def get_or_create_evm_token(
@@ -160,7 +167,7 @@ def get_or_create_evm_token(
         started: Optional[Timestamp] = None,
         underlying_tokens: Optional[list[UnderlyingToken]] = None,
         evm_inquirer: Optional['EvmNodeInquirer'] = None,
-        seen: Optional[TokenSeenAt] = None,
+        encounter: Optional[TokenEncounterInfo] = None,
 ) -> EvmToken:
     """Given a token address return the <EvmToken>
 
@@ -247,17 +254,20 @@ def get_or_create_evm_token(
             else:
                 # inform frontend new token detected
                 data: dict[str, Any] = {'token_identifier': identifier}
-                if seen is not None:
-                    if seen.tx_hash is not None:
-                        data['seen_tx_hash'] = seen.tx_hash.hex()
-                    else:  # description should have been given
-                        data['seen_description'] = seen.description
                 if is_spam_token:
                     data['is_ignored'] = True
-                userdb.msg_aggregator.add_message(
-                    message_type=WSMessageType.NEW_EVM_TOKEN_DETECTED,
-                    data=data,
-                )
+
+                if (should_notify := encounter is not None and encounter.should_notify):
+                    if encounter.tx_hash is not None:
+                        data['seen_tx_hash'] = encounter.tx_hash.hex()
+                    else:  # description should have been given
+                        data['seen_description'] = encounter.description
+
+                if encounter is None or should_notify:
+                    userdb.msg_aggregator.add_message(
+                        message_type=WSMessageType.NEW_EVM_TOKEN_DETECTED,
+                        data=data,
+                    )
                 # This can but should not raise InputError since it should not already exist.
                 add_evm_token_to_db(token_data=evm_token)
 

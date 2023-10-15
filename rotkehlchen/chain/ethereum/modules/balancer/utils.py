@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Any, Literal
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EvmToken, UnderlyingToken
-from rotkehlchen.assets.utils import TokenSeenAt, get_or_create_evm_token
+from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
@@ -84,7 +84,7 @@ def deserialize_bpt_event(
             chain_id=ChainID.ETHEREUM,
             name=token_name,
             decimals=token_decimals,
-            seen=TokenSeenAt(tx_hash=tx_hash),
+            encounter=TokenEncounterInfo(tx_hash=tx_hash),
         )
         underlying_tokens.append(UnderlyingToken(
             address=token.evm_address,
@@ -102,7 +102,7 @@ def deserialize_bpt_event(
         protocol='balancer',
         decimals=18,  # all BPT tokens have 18 decimals
         underlying_tokens=underlying_tokens,
-        seen=TokenSeenAt(tx_hash=tx_hash),
+        encounter=TokenEncounterInfo(tx_hash=tx_hash),
     )
     bpt_event = BalancerBPTEvent(
         tx_hash=tx_hash,
@@ -207,7 +207,7 @@ def deserialize_pool_share(
             chain_id=ChainID.ETHEREUM,
             name=token_name,
             decimals=token_decimals,
-            seen=TokenSeenAt(description='Querying balancer pools'),
+            encounter=TokenEncounterInfo(description='Querying balancer pools'),
         )
         if token_total_amount == ZERO:
             raise DeserializationError(f'Token {token.identifier} balance is zero.')
@@ -239,7 +239,7 @@ def deserialize_pool_share(
         protocol='balancer',
         decimals=18,  # All BPT tokens have 18 decimals
         underlying_tokens=pool_tokens,
-        seen=TokenSeenAt(description='Querying balancer pools'),
+        encounter=TokenEncounterInfo(description='Querying balancer pools'),
     )
     pool = BalancerPoolBalance(
         pool_token=balancer_pool_token,

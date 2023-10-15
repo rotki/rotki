@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, Optional
 import requests
 
 from rotkehlchen.assets.asset import UnderlyingToken
-from rotkehlchen.assets.utils import TokenSeenAt, get_or_create_evm_token
+from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
 from rotkehlchen.db.settings import CachedSettings
@@ -135,7 +135,7 @@ def query_yearn_vaults(db: 'DBHandler', ethereum_inquirer: 'EthereumInquirer') -
                 decimals=vault['token']['decimals'],
                 name=vault['token']['name'],
                 symbol=vault['token']['symbol'],
-                seen=TokenSeenAt(description=f'Querying {vault_type} balances'),
+                encounter=TokenEncounterInfo(description=f'Querying {vault_type} balances', should_notify=False),  # noqa: E501
             )
             vault_token = get_or_create_evm_token(
                 userdb=db,
@@ -151,7 +151,7 @@ def query_yearn_vaults(db: 'DBHandler', ethereum_inquirer: 'EthereumInquirer') -
                     weight=ONE,
                 )],
                 started=block_timestamp,
-                seen=TokenSeenAt(description=f'Querying {vault_type} balances'),
+                encounter=TokenEncounterInfo(description=f'Querying {vault_type} balances', should_notify=False),  # noqa: E501
             )
         except KeyError as e:
             log.error(

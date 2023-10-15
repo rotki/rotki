@@ -1,7 +1,7 @@
 import logging
 from typing import TYPE_CHECKING, NamedTuple, Optional
 
-from rotkehlchen.assets.utils import TokenSeenAt, get_or_create_evm_token
+from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.db.addressbook import DBAddressbook
@@ -170,7 +170,10 @@ def query_velodrome_data_from_chain_and_maybe_create_tokens(
                     evm_address=token,
                     chain_id=ChainID.OPTIMISM,
                     evm_inquirer=inquirer,
-                    seen=TokenSeenAt(description='Querying velodrome pools'),
+                    encounter=TokenEncounterInfo(
+                        description='Querying velodrome pools',
+                        should_notify=False,
+                    ),
                     protocol=VELODROME_POOL_PROTOCOL if token == pool_address else None,  # mark the lp tokens with the protocol to identify them for special treatment for price calculation  # noqa: E501
                 )
             except NotERC20Conformant as e:
