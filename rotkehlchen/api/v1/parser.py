@@ -2,15 +2,10 @@ import functools
 from collections.abc import Mapping
 from typing import Any, Callable, Optional
 
+from flask import Request
 from flask.views import MethodView
 from marshmallow import Schema, exceptions as ma_exceptions
-from webargs.core import (
-    _UNKNOWN_DEFAULT_PARAM,
-    ArgMap,
-    Request,
-    ValidateArg,
-    _ensure_list_of_callables,
-)
+from webargs.core import _UNKNOWN_DEFAULT_PARAM, ArgMap, ValidateArg, _ensure_list_of_callables
 from webargs.flaskparser import FlaskParser
 
 
@@ -25,6 +20,7 @@ class ResourceReadingParser(FlaskParser):
             location: Optional[str] = None,
             unknown: Optional[str] = _UNKNOWN_DEFAULT_PARAM,  # pylint: disable=unused-argument
             as_kwargs: bool = False,
+            arg_name: Optional[str] = None,
             validate: Optional[ValidateArg] = None,
             error_status_code: Optional[int] = None,
             error_headers: Optional[Mapping[str, str]] = None,
@@ -38,6 +34,8 @@ class ResourceReadingParser(FlaskParser):
         # Optimization: If argmap is passed as a dictionary, we only need
         # to generate a Schema once
         if isinstance(argmap, Mapping):
+            if not isinstance(argmap, dict):
+                argmap = dict(argmap)
             argmap = Schema.from_dict(argmap)()
 
         def decorator(func: Callable) -> Callable:
@@ -60,8 +58,8 @@ class ResourceReadingParser(FlaskParser):
                     error_status_code=error_status_code,
                     error_headers=error_headers,
                 )
-                args, kwargs = self._update_args_kwargs(  # type: ignore
-                    args, kwargs, parsed_args, as_kwargs,  # type: ignore
+                args, kwargs = self._update_args_kwargs(
+                    args, kwargs, parsed_args, as_kwargs, arg_name,
                 )
                 return func(*args, **kwargs)
 
@@ -87,7 +85,7 @@ class ResourceReadingParser(FlaskParser):
         Different from core parser is that we also get the resource object and
         pass it to the schema
         """
-        req = req if req is not None else self.get_default_request()  # type: ignore
+        req = req if req is not None else self.get_default_request()
         location = location or self.location
         if req is None:
             raise ValueError('Must pass req object')
@@ -114,13 +112,15 @@ class ResourceReadingParser(FlaskParser):
     def _get_schema(
             self,
             argmap: ArgMap,
-            resource_object: Request,
+            resource_object: MethodView,  # type: ignore[override]
     ) -> Schema:
         """Override the behaviour of the standard parser.
 
-        Initialize Schema with a callable that gets the resource object as argument"""
+        Initialize Schema with a callable that gets the resource object as argument.
+        The type ignore is due to the underlying original class having `Request` type there.
+        """
         assert callable(argmap), 'Should only use this parser with a callable'
-        schema = argmap(resource_object)
+        schema = argmap(resource_object)  # type: ignore
 
         return schema
 
@@ -130,10 +130,11 @@ class IgnoreKwargAfterPostLoadParser(FlaskParser):
 
     @staticmethod
     def _update_args_kwargs(  # type: ignore
-        args: tuple,
-        kwargs: dict[str, Any],
-        parsed_args: Mapping,
-        as_kwargs: bool,
+            args: tuple,
+            kwargs: dict[str, Any],
+            parsed_args: Mapping,
+            as_kwargs: bool,
+            arg_name,
     ) -> tuple[tuple, Mapping]:
         return args, parsed_args
 

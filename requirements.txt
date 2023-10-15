@@ -1,7 +1,7 @@
 gevent==23.9.1
 greenlet==2.0.2
-gevent-websocket==0.10.1
-wsaccel==0.6.3  # recommended for acceleration of gevent-websocket. But abandoned.
+gevent-websocket==0.10.1  # like the below is abandoned
+wsaccel==0.6.6  # recommended for acceleration of gevent-websocket. But abandoned.
 web3==5.31.3
 rotki-content-hash==0.0.3  # fork of content-hash due to https://github.com/filips123/ContentHashPy/issues/1
 rotki-pysqlcipher3==2023.7.1
@@ -27,7 +27,7 @@ py-machineid==0.4.4
 flask-cors==4.0.0
 flask==3.0.0
 marshmallow==3.20.1
-webargs==8.2.0
+webargs==8.3.0
 werkzeug==3.0.0
 
 # for icon validation
