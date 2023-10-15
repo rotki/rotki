@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Optional
 from eth_utils.address import to_checksum_address
 
 from rotkehlchen.assets.asset import Asset, CryptoAsset
-from rotkehlchen.assets.utils import TokenSeenAt, get_or_create_evm_token
+from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_WETH
@@ -227,7 +227,7 @@ def update_ilk_registry(
                 evm_address=token_address,
                 token_kind=EvmTokenKind.ERC20,
                 evm_inquirer=ethereum,
-                seen=TokenSeenAt(description='Querying makerdao collaterals registry'),
+                encounter=TokenEncounterInfo(description='Querying makerdao collaterals registry'),
             )
 
             # also add to tuples to write to cache

@@ -18,7 +18,7 @@ from rotkehlchen.accounting.structures.types import (
 )
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import AssetWithOracles, EvmToken
-from rotkehlchen.assets.utils import TokenSeenAt, get_or_create_evm_token
+from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.chain.evm.decoding.interfaces import ReloadableDecoderMixin
 from rotkehlchen.chain.evm.decoding.safe.decoder import SafemultisigDecoder
@@ -830,7 +830,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
                     chain_id=self.evm_inquirer.chain_id,
                     token_kind=token_kind,
                     evm_inquirer=self.evm_inquirer,
-                    seen=TokenSeenAt(tx_hash=transaction.tx_hash),
+                    encounter=TokenEncounterInfo(tx_hash=transaction.tx_hash),
                 )
             except NotERC20Conformant:
                 return DEFAULT_DECODING_OUTPUT  # ignore non-ERC20 transfers for now

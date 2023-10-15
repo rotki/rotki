@@ -6,7 +6,7 @@ from ens import ENS
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.assets.utils import TokenSeenAt, get_or_create_evm_token
+from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token
 from rotkehlchen.chain.ethereum.abi import decode_event_data_abi_str
 from rotkehlchen.chain.ethereum.graph import Graph
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
@@ -217,7 +217,7 @@ class EnsDecoder(GovernableDecoderInterface, CustomizableDateMixin):
             chain_id=self.evm_inquirer.chain_id,
             token_kind=EvmTokenKind.ERC721,
             evm_inquirer=self.evm_inquirer,
-            seen=TokenSeenAt(tx_hash=context.transaction.tx_hash),
+            encounter=TokenEncounterInfo(tx_hash=context.transaction.tx_hash),
         )
         transfer_event = self.base.decode_erc20_721_transfer(
             token=token,
