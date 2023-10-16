@@ -278,13 +278,10 @@ watch(loading, async (isLoading, wasLoading) => {
 </script>
 
 <template>
-  <TablePageLayout :hide-header="!!locationOverview">
-    <template #title>
-      <span class="text-rui-text-secondary">
-        {{ t('navigation_menu.history') }} /
-      </span>
-      {{ t('closed_trades.title') }}
-    </template>
+  <TablePageLayout
+    :hide-header="!!locationOverview"
+    :title="[t('navigation_menu.history'), t('closed_trades.title')]"
+  >
     <template #buttons>
       <RuiTooltip>
         <template #activator>

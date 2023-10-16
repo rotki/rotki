@@ -109,14 +109,12 @@ onMounted(async () => {
 </script>
 
 <template>
-  <TablePageLayout>
-    <template #title>
-      <span class="text-rui-text-secondary">
-        {{ t('navigation_menu.manage_prices') }} /
-      </span>
-      {{ t('navigation_menu.manage_prices_sub.latest_prices') }}
-    </template>
-
+  <TablePageLayout
+    :title="[
+      t('navigation_menu.manage_prices'),
+      t('navigation_menu.manage_prices_sub.latest_prices')
+    ]"
+  >
     <template #buttons>
       <RuiTooltip :open-delay="400">
         <template #activator>

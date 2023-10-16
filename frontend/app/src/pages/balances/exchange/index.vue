@@ -101,14 +101,12 @@ const { mdAndUp } = useDisplay();
 </script>
 
 <template>
-  <TablePageLayout>
-    <template #title>
-      <span class="text-rui-text-secondary">
-        {{ t('navigation_menu.accounts_balances') }}
-        /
-      </span>
-      {{ t('exchange_balances.title') }}
-    </template>
+  <TablePageLayout
+    :title="[
+      t('navigation_menu.accounts_balances'),
+      t('exchange_balances.title')
+    ]"
+  >
     <template #buttons>
       <RuiTooltip open-delay="400">
         <template #activator>

@@ -135,13 +135,10 @@ watch(loading, async (isLoading, wasLoading) => {
 </script>
 
 <template>
-  <TablePageLayout :hide-header="!mainPage">
-    <template #title>
-      <span class="text-rui-text-secondary">
-        {{ t('navigation_menu.history') }} /
-      </span>
-      {{ t('deposits_withdrawals.title') }}
-    </template>
+  <TablePageLayout
+    :hide-header="!mainPage"
+    :title="[t('navigation_menu.history'), t('deposits_withdrawals.title')]"
+  >
     <template #buttons>
       <RuiTooltip open-delay="400">
         <template #activator>
