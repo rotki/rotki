@@ -165,7 +165,7 @@ export interface HistoryEventRequestPayload
 
 export type EditEvmHistoryEventPayload = Omit<
   EvmHistoryEvent,
-  'ignoredInAccounting' | 'customized' | 'eventIdentifier' | 'address'
+  'ignoredInAccounting' | 'customized' | 'eventIdentifier'
 >;
 
 export type NewEvmHistoryEventPayload = Omit<
@@ -206,7 +206,7 @@ export type EditEthDepositEventPayload = {
   balance: Balance;
   validatorIndex: number;
   txHash: string;
-  eventIdentifier: string;
+  eventIdentifier: string | null;
   sequenceIndex: number | string;
   depositor: string;
 };

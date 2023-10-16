@@ -11,6 +11,7 @@ import { type Writeable } from '@/types';
 import { type ActionDataEntry } from '@/types/action';
 import { toMessages } from '@/utils/validation';
 import HistoryEventAssetPriceForm from '@/components/history/events/forms/HistoryEventAssetPriceForm.vue';
+import HistoryEventTypeCombination from '@/components/history/events/HistoryEventTypeCombination.vue';
 
 const props = withDefaults(
   defineProps<{
@@ -58,8 +59,6 @@ const amount: Ref<string> = ref('');
 const usdValue: Ref<string> = ref('');
 const locationLabel: Ref<string> = ref('');
 const notes: Ref<string> = ref('');
-
-const transactionEventType: Ref<string | null> = ref('');
 
 const errorMessages = ref<Record<string, string[]>>({});
 
@@ -259,22 +258,18 @@ watch(location, (location: string) => {
   }
 });
 
-watch(
-  [eventType, eventSubtype, location],
-  ([eventType, eventSubtype, location]) => {
-    const typeData = get(
-      getEventTypeData(
-        {
-          eventType,
-          eventSubtype,
-          location,
-          entryType: HistoryEventEntryType.HISTORY_EVENT
-        },
-        false
-      )
-    );
-    set(transactionEventType, typeData.label);
-  }
+const historyTypeCombination = computed(() =>
+  get(
+    getEventTypeData(
+      {
+        eventType: get(eventType),
+        eventSubtype: get(eventSubtype),
+        location: get(location),
+        entryType: HistoryEventEntryType.HISTORY_EVENT
+      },
+      false
+    )
+  )
 );
 
 const checkPropsData = () => {
@@ -407,13 +402,16 @@ const historyEventSubTypeFilteredData: ComputedRef<ActionDataEntry[]> =
         :error-messages="toMessages(v$.eventSubtype)"
         @blur="v$.eventSubtype.$touch()"
       />
-      <VTextField
-        v-model="transactionEventType"
-        outlined
-        required
-        disabled
-        :label="t('transactions.events.form.transaction_event_type.label')"
-      />
+
+      <div class="flex flex-col gap-1 -mt-2 md:pl-4 mb-3">
+        <div class="text-caption">
+          {{ t('transactions.events.form.resulting_combination.label') }}
+        </div>
+        <HistoryEventTypeCombination
+          :type="historyTypeCombination"
+          show-label
+        />
+      </div>
     </div>
 
     <div class="border-t dark:border-rui-grey-800 mb-6 mt-2" />
@@ -421,7 +419,6 @@ const historyEventSubTypeFilteredData: ComputedRef<ActionDataEntry[]> =
     <div class="grid md:grid-cols-2 gap-4">
       <VTextField
         v-model="locationLabel"
-        :disabled="!!(editableItem || groupHeader)"
         outlined
         data-cy="locationLabel"
         :label="t('transactions.events.form.location_label.label')"

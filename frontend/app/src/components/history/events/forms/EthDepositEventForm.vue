@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
 import dayjs from 'dayjs';
-import { helpers, required } from '@vuelidate/validators';
+import { helpers, required, requiredIf } from '@vuelidate/validators';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import {
   type EthDepositEvent,
@@ -35,7 +35,7 @@ const assetPriceForm: Ref<InstanceType<
 > | null> = ref(null);
 
 const txHash: Ref<string> = ref('');
-const eventIdentifier: Ref<string> = ref('');
+const eventIdentifier: Ref<string | null> = ref(null);
 const datetime: Ref<string> = ref('');
 const amount: Ref<string> = ref('');
 const usdValue: Ref<string> = ref('');
@@ -62,7 +62,7 @@ const rules = {
       t(
         'transactions.events.form.event_identifier.validation.non_empty'
       ).toString(),
-      required
+      requiredIf(() => !!get(editableItem))
     )
   },
   amount: {
@@ -131,7 +131,7 @@ const v$ = setValidation(
 const reset = () => {
   set(sequenceIndex, get(nextSequence) || '0');
   set(txHash, '');
-  set(eventIdentifier, '');
+  set(eventIdentifier, null);
   set(datetime, convertFromTimestamp(dayjs().unix()));
   set(amount, '0');
   set(usdValue, '0');
@@ -267,7 +267,6 @@ const depositorSuggestions = computed(() =>
       />
       <AmountInput
         v-model="validatorIndex"
-        :disabled="!!(editableItem || groupHeader)"
         outlined
         required
         integer
@@ -279,9 +278,9 @@ const depositorSuggestions = computed(() =>
     </div>
 
     <VTextField
+      v-if="editableItem"
       v-model="eventIdentifier"
       outlined
-      :disabled="!!(editableItem || groupHeader)"
       data-cy="eventIdentifier"
       :label="t('transactions.events.form.event_identifier.label')"
       :error-messages="toMessages(v$.eventIdentifier)"
@@ -291,7 +290,6 @@ const depositorSuggestions = computed(() =>
     <VTextField
       v-model="txHash"
       outlined
-      :disabled="!!(editableItem || groupHeader)"
       data-cy="txHash"
       :label="t('common.tx_hash')"
       :error-messages="toMessages(v$.txHash)"
@@ -316,7 +314,6 @@ const depositorSuggestions = computed(() =>
       <ComboboxWithCustomInput
         v-model="depositor"
         :items="depositorSuggestions"
-        :disabled="!!(editableItem || groupHeader)"
         outlined
         data-cy="depositor"
         :label="t('transactions.events.form.depositor.label')"

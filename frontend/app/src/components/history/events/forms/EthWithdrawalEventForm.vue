@@ -227,7 +227,6 @@ const withdrawalAddressSuggestions = computed(() =>
 
       <AmountInput
         v-model="validatorIndex"
-        :disabled="!!(editableItem || groupHeader)"
         outlined
         required
         integer
@@ -255,7 +254,6 @@ const withdrawalAddressSuggestions = computed(() =>
     <ComboboxWithCustomInput
       v-model="withdrawalAddress"
       :items="withdrawalAddressSuggestions"
-      :disabled="!!(editableItem || groupHeader)"
       outlined
       data-cy="withdrawalAddress"
       :label="t('transactions.events.form.withdrawal_address.label')"

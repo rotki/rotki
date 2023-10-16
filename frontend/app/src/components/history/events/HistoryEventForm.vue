@@ -2,6 +2,7 @@
 import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
 import { type Ref } from 'vue';
 import { type HistoryEventEntry } from '@/types/history/events';
+import { toCapitalCase } from '../../../utils/text';
 
 const props = withDefaults(
   defineProps<{
@@ -19,7 +20,7 @@ const props = withDefaults(
 const { groupHeader } = toRefs(props);
 
 const entryType: Ref<HistoryEventEntryType> = ref(
-  HistoryEventEntryType.EVM_EVENT
+  HistoryEventEntryType.HISTORY_EVENT
 );
 
 const historyEventEntryTypes = Object.values(HistoryEventEntryType);
@@ -42,7 +43,10 @@ watchImmediate(groupHeader, groupHeader => {
         outlined
         label="Entry Type"
         hide-details
-      />
+      >
+        <template #item="{ item }">{{ toCapitalCase(item) }}</template>
+        <template #selection="{ item }">{{ toCapitalCase(item) }}</template>
+      </VSelect>
     </div>
 
     <div class="border-t dark:border-rui-grey-800 my-8" />

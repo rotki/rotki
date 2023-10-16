@@ -2,6 +2,7 @@
 import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
 import dayjs from 'dayjs';
 import { helpers, required } from '@vuelidate/validators';
+import { Blockchain } from '@rotki/common/lib/blockchain';
 import {
   type EvmHistoryEvent,
   type NewEvmHistoryEventPayload
@@ -14,6 +15,7 @@ import { type Writeable } from '@/types';
 import { type ActionDataEntry } from '@/types/action';
 import { toMessages } from '@/utils/validation';
 import HistoryEventAssetPriceForm from '@/components/history/events/forms/HistoryEventAssetPriceForm.vue';
+import HistoryEventTypeCombination from '@/components/history/events/HistoryEventTypeCombination.vue';
 
 const props = withDefaults(
   defineProps<{
@@ -61,12 +63,11 @@ const eventSubtype: Ref<string> = ref('');
 const asset: Ref<string> = ref('');
 const amount: Ref<string> = ref('');
 const usdValue: Ref<string> = ref('');
+const address: Ref<string> = ref('');
 const locationLabel: Ref<string> = ref('');
 const notes: Ref<string> = ref('');
 const counterparty: Ref<string> = ref('');
 const product: Ref<string> = ref('');
-
-const transactionEventType: Ref<string | null> = ref('');
 
 const errorMessages = ref<Record<string, string[]>>({});
 
@@ -110,6 +111,12 @@ const rules = {
         currency: get(currencySymbol)
       }).toString(),
       required
+    )
+  },
+  address: {
+    isValid: helpers.withMessage(
+      t('transactions.events.form.address.validation.valid').toString(),
+      (value: string) => isValidEthAddress(value)
     )
   },
   sequenceIndex: {
@@ -165,6 +172,7 @@ const v$ = setValidation(
     asset,
     amount,
     usdValue,
+    address,
     sequenceIndex,
     eventType,
     eventSubtype,
@@ -182,6 +190,7 @@ const reset = () => {
   set(txHash, '');
   set(datetime, convertFromTimestamp(dayjs().unix()));
   set(location, get(lastLocation));
+  set(address, '');
   set(locationLabel, '');
   set(eventType, '');
   set(eventSubtype, '');
@@ -206,6 +215,7 @@ const applyEditableData = async (entry: EvmHistoryEvent) => {
   set(asset, entry.asset);
   set(amount, entry.balance.amount.toFixed());
   set(usdValue, entry.balance.usdValue.toFixed());
+  set(address, entry.address ?? '');
   set(locationLabel, entry.locationLabel ?? '');
   set(notes, entry.notes ?? '');
   set(counterparty, entry.counterparty ?? '');
@@ -215,6 +225,7 @@ const applyEditableData = async (entry: EvmHistoryEvent) => {
 const applyGroupHeaderData = async (entry: EvmHistoryEvent) => {
   set(sequenceIndex, get(nextSequence) || '0');
   set(location, entry.location || get(lastLocation));
+  set(address, entry.address ?? '');
   set(locationLabel, entry.locationLabel ?? '');
   set(txHash, entry.txHash);
   set(datetime, convertFromTimestamp(entry.timestamp));
@@ -240,6 +251,7 @@ const save = async (): Promise<boolean> => {
       usdValue: get(numericUsdValue).isNaN() ? Zero : get(numericUsdValue)
     },
     location: get(location),
+    address: get(address) || null,
     locationLabel: get(locationLabel) || null,
     notes: get(notes) || undefined,
     counterparty: get(counterparty) || null,
@@ -291,23 +303,19 @@ watch(location, (location: string) => {
   }
 });
 
-watch(
-  [eventType, eventSubtype, counterparty, location],
-  ([eventType, eventSubtype, counterparty, location]) => {
-    const typeData = get(
-      getEventTypeData(
-        {
-          eventType,
-          eventSubtype,
-          counterparty,
-          location,
-          entryType: HistoryEventEntryType.EVM_EVENT
-        },
-        false
-      )
-    );
-    set(transactionEventType, typeData.label);
-  }
+const historyTypeCombination = computed(() =>
+  get(
+    getEventTypeData(
+      {
+        eventType: get(eventType),
+        eventSubtype: get(eventSubtype),
+        counterparty: get(counterparty),
+        location: get(location),
+        entryType: HistoryEventEntryType.EVM_EVENT
+      },
+      false
+    )
+  )
 );
 
 const checkPropsData = () => {
@@ -390,6 +398,14 @@ const locationsFromTxEvmChains = computed(() => {
   const txEvmChainIds = get(txEvmChains).map(item => toHumanReadable(item.id));
   return [TRADE_LOCATION_ETHEREUM, ...txEvmChainIds];
 });
+
+const { accounts } = useAccountBalances();
+
+const addressSuggestions = computed(() =>
+  get(accounts)
+    .filter(item => item.chain === Blockchain.ETH)
+    .map(item => item.address)
+);
 </script>
 
 <template>
@@ -468,13 +484,16 @@ const locationsFromTxEvmChains = computed(() => {
         :error-messages="toMessages(v$.eventSubtype)"
         @blur="v$.eventSubtype.$touch()"
       />
-      <VTextField
-        v-model="transactionEventType"
-        outlined
-        required
-        disabled
-        :label="t('transactions.events.form.transaction_event_type.label')"
-      />
+
+      <div class="flex flex-col gap-1 -mt-2 md:pl-4 mb-3">
+        <div class="text-caption">
+          {{ t('transactions.events.form.resulting_combination.label') }}
+        </div>
+        <HistoryEventTypeCombination
+          :type="historyTypeCombination"
+          show-label
+        />
+      </div>
     </div>
 
     <div class="border-t dark:border-rui-grey-800 mb-6 mt-2" />
@@ -482,13 +501,25 @@ const locationsFromTxEvmChains = computed(() => {
     <div class="grid md:grid-cols-2 gap-4">
       <VTextField
         v-model="locationLabel"
-        :disabled="!!(editableItem || groupHeader)"
         outlined
         data-cy="locationLabel"
         :label="t('transactions.events.form.location_label.label')"
         :error-messages="toMessages(v$.locationLabel)"
         @blur="v$.locationLabel.$touch()"
       />
+
+      <ComboboxWithCustomInput
+        v-model="address"
+        :items="addressSuggestions"
+        outlined
+        data-cy="address"
+        :label="t('transactions.events.form.address.label')"
+        :error-messages="toMessages(v$.address)"
+        auto-select-first
+        @blur="v$.address.$touch()"
+      />
+    </div>
+    <div class="grid md:grid-cols-3 gap-4">
       <AmountInput
         v-model="sequenceIndex"
         outlined

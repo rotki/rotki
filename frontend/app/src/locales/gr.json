@@ -3817,9 +3817,6 @@
           "validation": {
             "non_empty": "The sequence index field cannot be empty."
           }
-        },
-        "transaction_event_type": {
-          "label": "Transaction Event Type"
         }
       },
       "headers": {

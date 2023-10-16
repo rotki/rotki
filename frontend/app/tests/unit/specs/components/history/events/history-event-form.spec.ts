@@ -36,16 +36,17 @@ describe('EvmEventForm.vue', () => {
     const entryTypeInput = wrapper.find('[data-cy="entry-type"] input');
     const entryTypeElement = entryTypeInput.element as HTMLInputElement;
 
-    expect(entryTypeElement.value).toBe(HistoryEventEntryType.EVM_EVENT);
-    expect(wrapper.find('[data-cy=evm-event-form]').exists()).toBeTruthy();
+    expect(entryTypeElement.value).toBe(HistoryEventEntryType.HISTORY_EVENT);
+    expect(wrapper.find('[data-cy=history-event-form]').exists()).toBeTruthy();
 
     Object.values(HistoryEventEntryType).forEach(async item => {
       await entryTypeInput.trigger('input', {
         value: item
       });
-      await nextTick();
-      const id = item.split(/ /g).join('-');
-      expect(wrapper.find(`[data-cy=${id}-form]`).exists()).toBeTruthy();
+      nextTick(() => {
+        const id = item.split(/ /g).join('-');
+        expect(wrapper.find(`[data-cy=${id}-form]`).exists()).toBeTruthy();
+      });
     });
   });
 });

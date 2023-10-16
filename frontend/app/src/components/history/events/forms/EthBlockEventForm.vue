@@ -240,7 +240,6 @@ const feeRecipientSuggestions = computed(() =>
       />
       <AmountInput
         v-model="blockNumber"
-        :disabled="!!(editableItem || groupHeader)"
         outlined
         required
         integer
@@ -251,7 +250,6 @@ const feeRecipientSuggestions = computed(() =>
       />
       <AmountInput
         v-model="validatorIndex"
-        :disabled="!!(editableItem || groupHeader)"
         outlined
         required
         integer
@@ -279,7 +277,6 @@ const feeRecipientSuggestions = computed(() =>
     <ComboboxWithCustomInput
       v-model="feeRecipient"
       :items="feeRecipientSuggestions"
-      :disabled="!!(editableItem || groupHeader)"
       outlined
       data-cy="feeRecipient"
       :label="t('transactions.events.form.fee_recipient.label')"

@@ -3909,9 +3909,6 @@
           "validation": {
             "non_empty": "序列索引字段不能为空。"
           }
-        },
-        "transaction_event_type": {
-          "label": "交易事件类型"
         }
       },
       "headers": {

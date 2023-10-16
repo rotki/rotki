@@ -89,7 +89,7 @@ describe('EvmEventForm.vue', () => {
   };
 
   test('should show all eventTypes options correctly', async () => {
-    wrapper = createWrapper({ propsData: groupHeader });
+    wrapper = createWrapper({ propsData: { groupHeader } });
     await wrapper.vm.$nextTick();
     await flushPromises();
 
@@ -101,7 +101,7 @@ describe('EvmEventForm.vue', () => {
   });
 
   test('should show all eventSubTypes options correctly', async () => {
-    wrapper = createWrapper({ propsData: groupHeader });
+    wrapper = createWrapper({ propsData: { groupHeader } });
     await wrapper.vm.$nextTick();
     await flushPromises();
 
@@ -113,7 +113,7 @@ describe('EvmEventForm.vue', () => {
   });
 
   test('should show all counterparties options correctly', async () => {
-    wrapper = createWrapper({ propsData: groupHeader });
+    wrapper = createWrapper({ propsData: { groupHeader } });
     await wrapper.vm.$nextTick();
     await flushPromises();
 
@@ -125,7 +125,7 @@ describe('EvmEventForm.vue', () => {
   });
 
   test('should show correct eventSubtypes options, based on selected eventType and counterparty', async () => {
-    wrapper = createWrapper({ propsData: groupHeader });
+    wrapper = createWrapper({ propsData: { groupHeader } });
     await wrapper.vm.$nextTick();
     await flushPromises();
 
@@ -191,7 +191,7 @@ describe('EvmEventForm.vue', () => {
   });
 
   test('should show product options, based on selected counterparty', async () => {
-    wrapper = createWrapper({ propsData: groupHeader });
+    wrapper = createWrapper({ propsData: { groupHeader } });
     await wrapper.vm.$nextTick();
     await flushPromises();
 

@@ -4012,6 +4012,12 @@
         "download_failed": "Download of CSV is not possible"
       },
       "form": {
+        "address": {
+          "label": "Address",
+          "validation": {
+            "valid": "The address is invalid, fill it with valid address"
+          }
+        },
         "amount": {
           "validation": {
             "non_empty": "The amount field cannot be empty."
@@ -4103,14 +4109,14 @@
             "valid": "The product field is invalid, fill with available products"
           }
         },
+        "resulting_combination": {
+          "label": "Resulting combination"
+        },
         "sequence_index": {
           "label": "Sequence Index",
           "validation": {
             "non_empty": "The sequence index field cannot be empty."
           }
-        },
-        "transaction_event_type": {
-          "label": "Transaction Event Type"
         },
         "tx_hash": {
           "validation": {
