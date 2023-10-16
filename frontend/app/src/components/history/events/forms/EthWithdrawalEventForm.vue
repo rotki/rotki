@@ -4,17 +4,23 @@ import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
 import { helpers, required } from '@vuelidate/validators';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import {
-  type EthBlockEvent,
+  type EthWithdrawalEvent,
   type NewEthWithdrawalEventPayload
 } from '@/types/history/events';
 import { type Writeable } from '@/types';
 import { toMessages } from '@/utils/validation';
 import HistoryEventAssetPriceForm from '@/components/history/events/forms/HistoryEventAssetPriceForm.vue';
 
-const props = defineProps<{
-  editableItem: EthBlockEvent | null;
-  groupHeader: EthBlockEvent | null;
-}>();
+const props = withDefaults(
+  defineProps<{
+    editableItem?: EthWithdrawalEvent | null;
+    groupHeader?: EthWithdrawalEvent | null;
+  }>(),
+  {
+    editableItem: null,
+    groupHeader: null
+  }
+);
 
 const { t } = useI18n();
 
@@ -103,7 +109,7 @@ const reset = () => {
   get(assetPriceForm)?.reset();
 };
 
-const applyEditableData = async (entry: EthBlockEvent) => {
+const applyEditableData = async (entry: EthWithdrawalEvent) => {
   set(datetime, convertFromTimestamp(entry.timestamp));
   set(amount, entry.balance.amount.toFixed());
   set(usdValue, entry.balance.usdValue.toFixed());
@@ -111,7 +117,7 @@ const applyEditableData = async (entry: EthBlockEvent) => {
   set(withdrawalAddress, entry.locationLabel);
 };
 
-const applyGroupHeaderData = async (entry: EthBlockEvent) => {
+const applyGroupHeaderData = async (entry: EthWithdrawalEvent) => {
   set(withdrawalAddress, entry.locationLabel ?? '');
   set(validatorIndex, entry.validatorIndex.toString());
   set(datetime, convertFromTimestamp(entry.timestamp));
@@ -232,7 +238,7 @@ const withdrawalAddressSuggestions = computed(() =>
       />
     </div>
 
-    <div class="border-t mb-6 mt-2" />
+    <div class="border-t dark:border-rui-grey-800 mb-6 mt-2" />
 
     <HistoryEventAssetPriceForm
       ref="assetPriceForm"
@@ -244,7 +250,7 @@ const withdrawalAddressSuggestions = computed(() =>
       disable-asset
     />
 
-    <div class="border-t my-10" />
+    <div class="border-t dark:border-rui-grey-800 my-10" />
 
     <ComboboxWithCustomInput
       v-model="withdrawalAddress"

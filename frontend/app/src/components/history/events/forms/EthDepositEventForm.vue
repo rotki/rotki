@@ -13,12 +13,14 @@ import HistoryEventAssetPriceForm from '@/components/history/events/forms/Histor
 
 const props = withDefaults(
   defineProps<{
-    editableItem: EthDepositEvent | null;
+    editableItem?: EthDepositEvent | null;
     nextSequence?: string | null;
-    groupHeader: EthDepositEvent | null;
+    groupHeader?: EthDepositEvent | null;
   }>(),
   {
-    nextSequence: ''
+    editableItem: null,
+    nextSequence: '',
+    groupHeader: null
   }
 );
 
@@ -127,7 +129,7 @@ const v$ = setValidation(
 );
 
 const reset = () => {
-  set(sequenceIndex, get(nextSequence) ?? '0');
+  set(sequenceIndex, get(nextSequence) || '0');
   set(txHash, '');
   set(eventIdentifier, '');
   set(datetime, convertFromTimestamp(dayjs().unix()));
@@ -152,7 +154,7 @@ const applyEditableData = async (entry: EthDepositEvent) => {
 };
 
 const applyGroupHeaderData = async (entry: EthDepositEvent) => {
-  set(sequenceIndex, get(nextSequence) ?? '0');
+  set(sequenceIndex, get(nextSequence) || '0');
   set(eventIdentifier, entry.eventIdentifier);
   set(txHash, entry.txHash);
   set(validatorIndex, entry.validatorIndex.toString());
@@ -296,7 +298,7 @@ const depositorSuggestions = computed(() =>
       @blur="v$.txHash.$touch()"
     />
 
-    <div class="border-t mb-6 mt-2" />
+    <div class="border-t dark:border-rui-grey-800 mb-6 mt-2" />
 
     <HistoryEventAssetPriceForm
       ref="assetPriceForm"
@@ -308,7 +310,7 @@ const depositorSuggestions = computed(() =>
       disable-asset
     />
 
-    <div class="border-t my-10" />
+    <div class="border-t dark:border-rui-grey-800 my-10" />
 
     <div class="grid md:grid-cols-2 gap-4">
       <ComboboxWithCustomInput

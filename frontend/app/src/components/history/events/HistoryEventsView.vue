@@ -338,9 +338,11 @@ const toggleIgnore = async (item: HistoryEventEntry) => {
 const { setOpenDialog, setPostSubmitFunc } = useHistoryEventsForm();
 
 setPostSubmitFunc(() => {
-  const tx = get(selectedGroupEventHeader);
-  if (tx) {
-    fetchDataAndRefreshEvents(toEvmChainAndTxHash(tx));
+  const groupHeader = get(selectedGroupEventHeader);
+  if (groupHeader) {
+    fetchDataAndRefreshEvents(toEvmChainAndTxHash(groupHeader));
+  } else {
+    fetchData();
   }
 });
 

@@ -6,15 +6,19 @@ interface Dimension {
   unit: string;
 }
 
-const props = defineProps({
-  size: { required: true, type: String },
-  backgroundColor: { required: false, type: String, default: '#fff' },
-  asset: { required: false, type: String, default: '' },
-  currency: { required: false, type: Boolean, default: false },
-  customAsset: { required: false, type: Boolean, default: false }
-});
+const props = withDefaults(
+  defineProps<{
+    size: string;
+    asset?: string;
+    customAsset?: boolean;
+  }>(),
+  {
+    asset: '',
+    customAsset: false
+  }
+);
 
-const { size, backgroundColor, asset, currency } = toRefs(props);
+const { size, asset } = toRefs(props);
 
 const dimensions = computed<Dimension>(() => {
   const match: RegExpMatchArray | null = get(size).match(
@@ -29,13 +33,6 @@ const dimensions = computed<Dimension>(() => {
 });
 
 const wrapperStyle = computed<Style>(() => ({
-  width: get(size),
-  height: get(size),
-  background: get(backgroundColor),
-  color: get(textColor)
-}));
-
-const circle = computed<Style>(() => ({
   width: get(size),
   height: get(size)
 }));
@@ -57,34 +54,18 @@ const textStyle = computed<Style>(() => {
     fontSize: `${fontSize}px`
   };
 });
-
-const textColor = computed<string>(
-  () => `#${invertColor(get(backgroundColor), true)}`
-);
 </script>
 
 <template>
-  <VIcon v-if="customAsset" :size="size" color="grey">
-    mdi-pencil-circle-outline
-  </VIcon>
   <span
-    v-else
     :style="wrapperStyle"
-    class="flex items-center justify-center generated-icon"
-    :class="currency ? ' font-weight-medium' : 'font-weight-bold'"
+    class="flex items-center justify-center border border-rui-light-text-secondary rounded-full whitespace-nowrap tracking-normal text-rui-light-text-secondary bg-white font-bold"
   >
-    <span class="flex items-center justify-center" :style="circle">
+    <RuiIcon v-if="customAsset" size="16" name="pencil-line" />
+    <span v-else class="flex items-center justify-center w-full h-full">
       <span :style="textStyle">
         {{ text }}
       </span>
     </span>
   </span>
 </template>
-
-<style scoped lang="scss">
-.generated-icon {
-  border: 1px solid black;
-  border-radius: 50%;
-  white-space: nowrap;
-}
-</style>

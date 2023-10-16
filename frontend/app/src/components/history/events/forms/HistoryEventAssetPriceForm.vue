@@ -290,7 +290,7 @@ defineExpose({
       v-if="isCurrentCurrencyUsd"
       class="mb-5"
       :primary-value.sync="assetToUsdPrice"
-      :secondary-value.sync="usdValue"
+      :secondary-value.sync="usdValueModel"
       :loading="fetching"
       :disabled="fetching"
       :label="{

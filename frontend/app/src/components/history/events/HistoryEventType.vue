@@ -72,12 +72,14 @@ const { locationData } = useLocations();
         />
       </div>
       <div v-if="event.customized" class="pt-1">
-        <VChip small label color="primary accent-1">
-          <VIcon x-small> mdi-file-document-edit </VIcon>
-          <div class="pl-2 text-caption font-bold">
-            {{ t('transactions.events.customized_event') }}
+        <RuiChip size="sm" color="primary">
+          <div class="flex items-center">
+            <RuiIcon name="file-edit-line" size="14" />
+            <div class="pl-2 text-caption font-bold">
+              {{ t('transactions.events.customized_event') }}
+            </div>
           </div>
-        </VChip>
+        </RuiChip>
       </div>
     </div>
   </div>

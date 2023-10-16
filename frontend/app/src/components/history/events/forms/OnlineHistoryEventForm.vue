@@ -14,12 +14,14 @@ import HistoryEventAssetPriceForm from '@/components/history/events/forms/Histor
 
 const props = withDefaults(
   defineProps<{
-    editableItem: OnlineHistoryEvent | null;
+    editableItem?: OnlineHistoryEvent | null;
     nextSequence?: string | null;
-    groupHeader: OnlineHistoryEvent | null;
+    groupHeader?: OnlineHistoryEvent | null;
   }>(),
   {
-    nextSequence: ''
+    editableItem: null,
+    nextSequence: '',
+    groupHeader: null
   }
 );
 
@@ -149,7 +151,7 @@ const v$ = setValidation(
 );
 
 const reset = () => {
-  set(sequenceIndex, get(nextSequence) ?? '0');
+  set(sequenceIndex, get(nextSequence) || '0');
   set(eventIdentifier, '');
   set(datetime, convertFromTimestamp(dayjs().unix()));
   set(location, get(lastLocation));
@@ -180,7 +182,7 @@ const applyEditableData = async (entry: OnlineHistoryEvent) => {
 };
 
 const applyGroupHeaderData = async (entry: OnlineHistoryEvent) => {
-  set(sequenceIndex, get(nextSequence) ?? '0');
+  set(sequenceIndex, get(nextSequence) || '0');
   set(location, entry.location || get(lastLocation));
   set(locationLabel, entry.locationLabel ?? '');
   set(eventIdentifier, entry.eventIdentifier);
@@ -367,7 +369,7 @@ const historyEventSubTypeFilteredData: ComputedRef<ActionDataEntry[]> =
       @blur="v$.eventIdentifier.$touch()"
     />
 
-    <div class="border-t mb-6 mt-2" />
+    <div class="border-t dark:border-rui-grey-800 mb-6 mt-2" />
 
     <HistoryEventAssetPriceForm
       ref="assetPriceForm"
@@ -378,7 +380,7 @@ const historyEventSubTypeFilteredData: ComputedRef<ActionDataEntry[]> =
       :usd-value.sync="usdValue"
     />
 
-    <div class="border-t my-10" />
+    <div class="border-t dark:border-rui-grey-800 my-10" />
 
     <div class="grid md:grid-cols-3 gap-4">
       <VAutocomplete
@@ -414,7 +416,7 @@ const historyEventSubTypeFilteredData: ComputedRef<ActionDataEntry[]> =
       />
     </div>
 
-    <div class="border-t mb-6 mt-2" />
+    <div class="border-t dark:border-rui-grey-800 mb-6 mt-2" />
 
     <div class="grid md:grid-cols-2 gap-4">
       <VTextField
@@ -438,7 +440,7 @@ const historyEventSubTypeFilteredData: ComputedRef<ActionDataEntry[]> =
       />
     </div>
 
-    <div class="border-t mb-6 mt-2" />
+    <div class="border-t dark:border-rui-grey-800 mb-6 mt-2" />
 
     <VTextarea
       v-model.trim="notes"
