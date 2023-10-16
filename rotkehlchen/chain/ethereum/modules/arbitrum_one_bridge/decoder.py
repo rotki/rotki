@@ -122,9 +122,9 @@ class ArbitrumOneBridgeDecoder(DecoderInterface):
 
         expected_event_type, new_event_type, from_chain, to_chain, _ = bridge_prepare_data(
             tx_log=tx_log,
-            deposit_events=(ERC20_DEPOSIT_INITIATED,),
-            main_chain=ChainID.ETHEREUM,
-            l2_chain=ChainID.ARBITRUM_ONE,
+            deposit_topics=(ERC20_DEPOSIT_INITIATED,),
+            source_chain=ChainID.ETHEREUM,
+            target_chain=ChainID.ARBITRUM_ONE,
             from_address=from_address,
             to_address=to_address,
         )

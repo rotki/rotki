@@ -29,6 +29,7 @@ from .constants import (
     CPT_GNOSIS_CHAIN,
     ETHADDRESS_TO_KNOWN_NAME,
     GNOSIS_CHAIN_BRIDGE_RECEIVE,
+    GNOSIS_CPT_DETAILS,
     GOVERNORALPHA_PROPOSE,
     GOVERNORALPHA_PROPOSE_ABI,
     GTC_CLAIM,
@@ -63,11 +64,7 @@ class EthereumTransactionDecoder(EVMTransactionDecoderWithDSProxy):
                 self._maybe_enrich_transfers,
             ],
             misc_counterparties=[
-                CounterpartyDetails(
-                    identifier=CPT_GNOSIS_CHAIN,
-                    label='Gnosis Chain',
-                    image='gnosis.svg',
-                ),
+                GNOSIS_CPT_DETAILS,
                 CounterpartyDetails(
                     identifier=CPT_KRAKEN,
                     label='Kraken',

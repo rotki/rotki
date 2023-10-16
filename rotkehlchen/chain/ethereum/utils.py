@@ -11,7 +11,7 @@ from requests.exceptions import RequestException
 from web3 import Web3
 
 from rotkehlchen.assets.asset import CryptoAsset, EvmToken
-from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.constants.assets import A_ETH, A_XDAI
 from rotkehlchen.constants.resolver import EVM_CHAIN_DIRECTIVE
 from rotkehlchen.constants.timing import ETH_PROTOCOLS_CACHE_REFRESH
 from rotkehlchen.db.settings import CachedSettings
@@ -92,9 +92,9 @@ def token_normalized_value(
 def get_decimals(asset: CryptoAsset) -> int:
     """
     May raise:
-    - UnsupportedAsset if the given asset is not ETH or an ethereum token
+    - UnsupportedAsset if the given asset is not a native token or an ERC20 token
     """
-    if asset == A_ETH:
+    if asset in (A_ETH, A_XDAI):
         return 18
     try:
         token = asset.resolve_to_evm_token()

@@ -66,9 +66,9 @@ class OptimismBridgeDecoder(DecoderInterface):
 
         expected_event_type, new_event_type, from_chain, to_chain, expected_location_label = bridge_prepare_data(  # noqa: E501
             tx_log=context.tx_log,  # args are opposite here due to the way logs are
-            deposit_events=(WITHDRAWAL_INITIATED,),
-            main_chain=ChainID.OPTIMISM,
-            l2_chain=ChainID.ETHEREUM,
+            deposit_topics=(WITHDRAWAL_INITIATED,),
+            source_chain=ChainID.OPTIMISM,
+            target_chain=ChainID.ETHEREUM,
             from_address=to_address,
             to_address=from_address,
         )
