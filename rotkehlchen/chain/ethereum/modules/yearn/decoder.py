@@ -15,16 +15,11 @@ from rotkehlchen.chain.evm.decoding.structures import (
     EnricherContext,
     TransferEnrichmentOutput,
 )
-from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails, EventCategory
+from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.globaldb.handler import GlobalDBHandler
-from rotkehlchen.types import (
-    YEARN_VAULTS_V1_PROTOCOL,
-    YEARN_VAULTS_V2_PROTOCOL,
-    ChainID,
-    DecoderEventMappingType,
-)
+from rotkehlchen.types import YEARN_VAULTS_V1_PROTOCOL, YEARN_VAULTS_V2_PROTOCOL, ChainID
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumInquirer
@@ -112,7 +107,6 @@ class YearnDecoder(DecoderInterface):
             context.event.event_type == HistoryEventType.RECEIVE and
             context.event.address == ZERO_ADDRESS
         ):
-            context.event.event_type = HistoryEventType.DEPOSIT
             context.event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
             context.event.counterparty = protocol
             vault_token_name = _get_vault_token_name(context.transaction.to_address)
@@ -132,7 +126,6 @@ class YearnDecoder(DecoderInterface):
             context.event.event_type == HistoryEventType.SPEND and
             context.event.address == ZERO_ADDRESS
         ):
-            context.event.event_type = HistoryEventType.WITHDRAWAL
             context.event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
             context.event.counterparty = protocol
             context.event.notes = f'Return {context.event.balance.amount} {context.token.symbol} to a {protocol} vault'  # noqa: E501
@@ -143,30 +136,6 @@ class YearnDecoder(DecoderInterface):
         return TransferEnrichmentOutput(matched_counterparty=protocol)
 
     # -- DecoderInterface methods
-
-    def possible_events(self) -> DecoderEventMappingType:
-        return {
-            CPT_YEARN_V1: {
-                HistoryEventType.WITHDRAWAL: {
-                    HistoryEventSubType.REMOVE_ASSET: EventCategory.WITHDRAW,
-                    HistoryEventSubType.RETURN_WRAPPED: EventCategory.SEND,
-                },
-                HistoryEventType.DEPOSIT: {
-                    HistoryEventSubType.DEPOSIT_ASSET: EventCategory.DEPOSIT,
-                    HistoryEventSubType.RECEIVE_WRAPPED: EventCategory.RECEIVE,
-                },
-            },
-            CPT_YEARN_V2: {
-                HistoryEventType.WITHDRAWAL: {
-                    HistoryEventSubType.REMOVE_ASSET: EventCategory.WITHDRAW,
-                    HistoryEventSubType.RETURN_WRAPPED: EventCategory.SEND,
-                },
-                HistoryEventType.DEPOSIT: {
-                    HistoryEventSubType.DEPOSIT_ASSET: EventCategory.DEPOSIT,
-                    HistoryEventSubType.RECEIVE_WRAPPED: EventCategory.RECEIVE,
-                },
-            },
-        }
 
     def enricher_rules(self) -> list[Callable]:
         return [

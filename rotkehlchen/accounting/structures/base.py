@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from enum import auto
 from typing import TYPE_CHECKING, Any, Optional, TypedDict, TypeVar
 
+from rotkehlchen.accounting.constants import EVENT_CATEGORY_MAPPINGS
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
 from rotkehlchen.accounting.structures.types import (
     ActionType,
@@ -118,6 +119,17 @@ class HistoryBaseEntry(AccountingEventMixin, metaclass=ABCMeta):
         self.location_label = location_label
         self.notes = notes
         self.identifier = identifier
+
+        # Check that the received event type and subtype is a valid combination
+        if __debug__:  # noqa: SIM102
+            if (
+                (std_mapping := EVENT_CATEGORY_MAPPINGS.get(self.event_type)) is None or
+                std_mapping.get(self.event_subtype) is None
+            ):
+                raise AssertionError(
+                    f'Unexpected event type and subtype pair provided: '
+                    f'{self.event_type}, {self.event_subtype}',
+                )
 
     def __eq__(self, other: object) -> bool:
         """Base equality check. for all HistoryBaseEntry and their subclasses
@@ -479,7 +491,7 @@ class StakingEvent:
         # binance has only one type of event, so serializing it is not needed.
         if not (
             self.location == Location.BINANCE and
-            self.event_type == HistoryEventSubType.INTEREST_PAYMENT
+            self.event_type == HistoryEventSubType.REWARD
         ):
             data['event_type'] = self.event_type.serialize()
 

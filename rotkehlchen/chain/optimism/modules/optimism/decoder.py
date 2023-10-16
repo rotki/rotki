@@ -9,11 +9,11 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     DecodingOutput,
 )
-from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails, EventCategory
+from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.optimism.constants import CPT_OPTIMISM
 from rotkehlchen.constants.assets import A_ETH
-from rotkehlchen.types import ChecksumEvmAddress, DecoderEventMappingType
+from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import hex_or_bytes_to_address
 
 OPTIMISM_TOKEN = string_to_evm_address('0x4200000000000000000000000000000000000042')
@@ -56,13 +56,6 @@ class OptimismDecoder(DecoderInterface):
         return {
             OPTIMISM_TOKEN: (self._decode_delegate_changed,),
         }
-
-    def possible_events(self) -> DecoderEventMappingType:
-        return {CPT_OPTIMISM: {
-            HistoryEventType.INFORMATIONAL: {
-                HistoryEventSubType.GOVERNANCE: EventCategory.GOVERNANCE,
-            },
-        }}
 
     def counterparties(self) -> list[CounterpartyDetails]:
         return [OPTIMISM_CPT_DETAILS]

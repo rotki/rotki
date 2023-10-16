@@ -9,9 +9,9 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     DecodingOutput,
 )
-from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails, EventCategory
+from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
-from rotkehlchen.types import ChecksumEvmAddress, DecoderEventMappingType
+from rotkehlchen.types import ChecksumEvmAddress
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
@@ -94,14 +94,6 @@ class OneinchCommonDecoder(DecoderInterface, metaclass=ABCMeta):
         return DEFAULT_DECODING_OUTPUT
 
     # -- DecoderInterface methods
-
-    def possible_events(self) -> DecoderEventMappingType:
-        return {self.counterparty: {
-            HistoryEventType.TRADE: {
-                HistoryEventSubType.SPEND: EventCategory.SWAP_OUT,
-                HistoryEventSubType.RECEIVE: EventCategory.SWAP_IN,
-            },
-        }}
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {

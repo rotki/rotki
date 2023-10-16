@@ -9,10 +9,9 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     DecodingOutput,
 )
-from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails, EventCategory
+from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import DecoderEventMappingType
 from rotkehlchen.utils.misc import (
     hex_or_bytes_to_address,
     hex_or_bytes_to_int,
@@ -130,7 +129,7 @@ class SafemultisigDecoder(DecoderInterface):
             tx_hash=context.transaction.tx_hash,
             timestamp=context.transaction.timestamp,
             event_type=HistoryEventType.INFORMATIONAL,
-            event_subtype=HistoryEventSubType.NONE,
+            event_subtype=HistoryEventSubType.CREATE,
             asset=A_ETH,
             balance=Balance(),
             location_label=context.transaction.from_address,
@@ -160,15 +159,6 @@ class SafemultisigDecoder(DecoderInterface):
         return DecodingOutput(event=event)
 
     # -- DecoderInterface methods
-
-    def possible_events(self) -> DecoderEventMappingType:
-        return {
-            CPT_SAFE_MULTISIG: {
-                HistoryEventType.INFORMATIONAL: {
-                    HistoryEventSubType.NONE: EventCategory.INFORMATIONAL,
-                },
-            },
-        }
 
     def decoding_by_input_data(self) -> dict[bytes, dict[bytes, Callable]]:
         return {

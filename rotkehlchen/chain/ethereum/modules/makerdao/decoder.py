@@ -14,7 +14,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     DecodingOutput,
 )
-from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails, EventCategory
+from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
@@ -46,7 +46,7 @@ from rotkehlchen.constants.assets import (
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
-from rotkehlchen.types import ChecksumEvmAddress, DecoderEventMappingType
+from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int, shift_num_right_by
 
 from .constants import (
@@ -314,7 +314,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
                 transaction=context.transaction,
                 tx_log=context.tx_log,
                 event_type=HistoryEventType.INFORMATIONAL,
-                event_subtype=HistoryEventSubType.DEPLOY,
+                event_subtype=HistoryEventSubType.CREATE,
                 asset=A_ETH,
                 balance=Balance(),
                 location_label=owner_address,
@@ -340,7 +340,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
             tx_log=context.tx_log,
             location_label=owner_address,
             event_type=HistoryEventType.INFORMATIONAL,
-            event_subtype=HistoryEventSubType.DEPLOY,
+            event_subtype=HistoryEventSubType.CREATE,
             asset=A_ETH,
             balance=Balance(),
             notes=notes,
@@ -552,16 +552,6 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
         return DEFAULT_DECODING_OUTPUT
 
     # -- DecoderInterface methods
-
-    def possible_events(self) -> DecoderEventMappingType:
-        return {CPT_SDAI: {
-            HistoryEventType.DEPOSIT: {
-                HistoryEventSubType.DEPOSIT_ASSET: EventCategory.DEPOSIT,
-            },
-            HistoryEventType.WITHDRAWAL: {
-                HistoryEventSubType.REMOVE_ASSET: EventCategory.WITHDRAW,
-            },
-        }}
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {

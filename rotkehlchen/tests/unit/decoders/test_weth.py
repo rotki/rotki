@@ -218,7 +218,7 @@ def test_weth_interaction_with_protocols_deposit(database, ethereum_inquirer):
         sequence_index=191,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.RECEIVE,
+        event_type=HistoryEventType.DEPLOY,
         event_subtype=HistoryEventSubType.NFT,
         asset=expected_erc721,
         balance=Balance(amount=ONE),

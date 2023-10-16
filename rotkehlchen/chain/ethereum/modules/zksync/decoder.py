@@ -8,8 +8,8 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     DecodingOutput,
 )
-from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails, EventCategory
-from rotkehlchen.types import ChecksumEvmAddress, DecoderEventMappingType
+from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
+from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 from .constants import CPT_ZKSYNC, ZKSYNC_BRIDGE
@@ -68,15 +68,6 @@ class ZksyncDecoder(DecoderInterface):
         return DEFAULT_DECODING_OUTPUT
 
     # -- DecoderInterface methods
-
-    def possible_events(self) -> DecoderEventMappingType:
-        return {
-            CPT_ZKSYNC: {
-                HistoryEventType.DEPOSIT: {
-                    HistoryEventSubType.BRIDGE: EventCategory.BRIDGE_IN,
-                },
-            },
-        }
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {

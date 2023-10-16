@@ -10,10 +10,10 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     DecodingOutput,
 )
-from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails, EventCategory
+from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChainID, ChecksumEvmAddress, DecoderEventMappingType
+from rotkehlchen.types import ChainID, ChecksumEvmAddress
 
 from .constants import CPT_LOCKEDGNO, LOCKED_GNO_ADDRESS
 
@@ -109,24 +109,6 @@ class LockedgnoDecoder(DecoderInterface):
         return DEFAULT_DECODING_OUTPUT
 
     # -- DecoderInterface methods
-
-    def possible_events(self) -> DecoderEventMappingType:
-        return {
-            CPT_LOCKEDGNO: {
-                HistoryEventType.RECEIVE: {
-                    HistoryEventSubType.RECEIVE_WRAPPED: EventCategory.RECEIVE,
-                },
-                HistoryEventType.SPEND: {
-                    HistoryEventSubType.RETURN_WRAPPED: EventCategory.SEND,
-                },
-                HistoryEventType.DEPOSIT: {
-                    HistoryEventSubType.DEPOSIT_ASSET: EventCategory.DEPOSIT,
-                },
-                HistoryEventType.WITHDRAWAL: {
-                    HistoryEventSubType.REMOVE_ASSET: EventCategory.WITHDRAW,
-                },
-            },
-        }
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {LOCKED_GNO_ADDRESS: (self._decode_events,)}

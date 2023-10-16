@@ -201,7 +201,6 @@ def test_accounting_receive_settings(
     (HistoryEventType.SPEND, HistoryEventSubType.FEE, True, CPT_GAS, True, True),
     (HistoryEventType.SPEND, HistoryEventSubType.FEE, False, CPT_GAS, False, False),
     (HistoryEventType.SPEND, HistoryEventSubType.FEE, False, CPT_GAS, False, True),
-    (HistoryEventType.RENEW, HistoryEventSubType.NONE, True, None, False, False),
 ])
 @pytest.mark.parametrize('mocked_price_queries', [MOCKED_PRICES])
 def test_accounting_spend_settings(

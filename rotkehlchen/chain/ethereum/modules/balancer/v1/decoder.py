@@ -10,11 +10,11 @@ from rotkehlchen.chain.evm.decoding.structures import (
     EnricherContext,
     TransferEnrichmentOutput,
 )
-from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails, EventCategory
+from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import DecoderEventMappingType, EvmTransaction
+from rotkehlchen.types import EvmTransaction
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 if TYPE_CHECKING:
@@ -161,7 +161,8 @@ class Balancerv1Decoder(DecoderInterface):
                 event.asset in deposited_assets
             ):
                 # in this case we got refunded one of the assets deposited
-                event.event_subtype = HistoryEventSubType.REMOVE_ASSET
+                event.event_type = HistoryEventType.WITHDRAWAL
+                event.event_subtype = HistoryEventSubType.REFUND
                 asset = event.asset.resolve_to_asset_with_symbol()
                 event.notes = f'Refunded {event.balance.amount} {asset.symbol} after depositing in Balancer V1 pool'  # noqa: E501
 
@@ -214,8 +215,8 @@ class Balancerv1Decoder(DecoderInterface):
                     event.event_subtype == HistoryEventSubType.DEPOSIT_ASSET
                 ) or
                 (
-                    event.event_type == HistoryEventType.RECEIVE and
-                    event.event_subtype == HistoryEventSubType.REMOVE_ASSET
+                    event.event_type == HistoryEventType.WITHDRAWAL and
+                    event.event_subtype == HistoryEventSubType.REFUND
                 )
             ):
                 # In the case that we are handling a join that comes after an exit we have to
@@ -259,25 +260,6 @@ class Balancerv1Decoder(DecoderInterface):
         return decoded_events
 
     # -- DecoderInterface methods
-
-    def possible_events(self) -> DecoderEventMappingType:
-        return {
-            CPT_BALANCER_V1: {
-                HistoryEventType.RECEIVE: {
-                    HistoryEventSubType.RECEIVE_WRAPPED: EventCategory.RECEIVE,
-                    HistoryEventSubType.REMOVE_ASSET: EventCategory.REFUND,
-                },
-                HistoryEventType.SPEND: {
-                    HistoryEventSubType.RETURN_WRAPPED: EventCategory.SEND,
-                },
-                HistoryEventType.WITHDRAWAL: {
-                    HistoryEventSubType.REMOVE_ASSET: EventCategory.WITHDRAW,
-                },
-                HistoryEventType.DEPOSIT: {
-                    HistoryEventSubType.DEPOSIT_ASSET: EventCategory.DEPOSIT,
-                },
-            },
-        }
 
     def enricher_rules(self) -> list[Callable]:
         return [

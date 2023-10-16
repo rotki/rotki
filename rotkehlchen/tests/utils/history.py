@@ -837,8 +837,8 @@ def mock_history_processing(
         assert tx_events[0].counterparty == CPT_GAS
         assert tx_events[0].balance.amount == gas_in_eth
         assert tx_events[1].location_label == ETH_ADDRESS1
-        assert tx_events[1].event_type == HistoryEventType.INFORMATIONAL
-        assert tx_events[1].event_subtype == HistoryEventSubType.DEPLOY
+        assert tx_events[1].event_type == HistoryEventType.DEPLOY
+        assert tx_events[1].event_subtype == HistoryEventSubType.SPEND
 
         assert tx_events[2].location_label == ETH_ADDRESS2
         assert tx_events[2].event_type == HistoryEventType.SPEND

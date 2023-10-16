@@ -17,12 +17,12 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     DecodingOutput,
 )
-from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails, EventCategory
+from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_GRT
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, DecoderEventMappingType
+from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 if TYPE_CHECKING:
@@ -59,17 +59,6 @@ class ThegraphDecoder(DecoderInterface):
 
     def counterparties(self) -> list[CounterpartyDetails]:
         return [THEGRAPH_CPT_DETAILS]
-
-    def possible_events(self) -> DecoderEventMappingType:
-        return {CPT_THEGRAPH: {
-            HistoryEventType.STAKING: {
-                HistoryEventSubType.DEPOSIT_ASSET: EventCategory.DEPOSIT,
-                HistoryEventSubType.REMOVE_ASSET: EventCategory.WITHDRAW,
-            },
-            HistoryEventType.INFORMATIONAL: {
-                HistoryEventSubType.NONE: EventCategory.INFORMATIONAL,
-            },
-        }}
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {

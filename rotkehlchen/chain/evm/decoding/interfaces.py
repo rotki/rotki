@@ -13,7 +13,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
 )
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import CacheType, ChecksumEvmAddress, DecoderEventMappingType
+from rotkehlchen.types import CacheType, ChecksumEvmAddress
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 if TYPE_CHECKING:
@@ -118,10 +118,6 @@ class DecoderInterface(metaclass=ABCMeta):
             f'Make sure that it has all the required properties (name, symbol and decimals) and '
             f'try to decode the event again {event.tx_hash.hex()}.',
         )
-
-    def possible_events(self) -> DecoderEventMappingType:
-        """Return the possible event types and subtypes used in the specific decoder"""
-        return {}
 
     @staticmethod
     def possible_products() -> dict[str, list[EvmProduct]]:

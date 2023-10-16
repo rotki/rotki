@@ -168,7 +168,7 @@ def test_optimism_create_project(database, optimism_inquirer, optimism_accounts)
         timestamp=timestamp,
         location=Location.OPTIMISM,
         event_type=HistoryEventType.INFORMATIONAL,
-        event_subtype=HistoryEventSubType.DEPLOY,
+        event_subtype=HistoryEventSubType.CREATE,
         asset=A_ETH,
         balance=Balance(),
         location_label=user_address,

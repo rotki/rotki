@@ -1,7 +1,6 @@
 import logging
 from typing import Any
 
-from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
@@ -12,15 +11,14 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     DecodingOutput,
 )
-from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails, EventCategory
+from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.utils import bridge_match_transfer, bridge_prepare_data
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.chain.optimism.constants import CPT_OPTIMISM
 from rotkehlchen.constants.assets import A_OPTIMISM_ETH
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChainID, ChecksumEvmAddress, DecoderEventMappingType, EvmTokenKind
+from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 BRIDGE_ADDRESS = string_to_evm_address('0x4200000000000000000000000000000000000010')
@@ -103,16 +101,6 @@ class OptimismBridgeDecoder(DecoderInterface):
         return {
             BRIDGE_ADDRESS: (self._decode_receive_deposit,),
         }
-
-    def possible_events(self) -> DecoderEventMappingType:
-        return {CPT_OPTIMISM: {
-            HistoryEventType.DEPOSIT: {
-                HistoryEventSubType.BRIDGE: EventCategory.BRIDGE_IN,
-            },
-            HistoryEventType.WITHDRAWAL: {
-                HistoryEventSubType.BRIDGE: EventCategory.BRIDGE_OUT,
-            },
-        }}
 
     def counterparties(self) -> list[CounterpartyDetails]:
         return [OPTIMISM_CPT_DETAILS]

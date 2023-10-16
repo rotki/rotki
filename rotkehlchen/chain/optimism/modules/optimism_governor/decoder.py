@@ -1,14 +1,13 @@
 import logging
 from typing import TYPE_CHECKING, Any
 
-from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.evm.decoding.constants import OPTIMISM_CPT_DETAILS
 from rotkehlchen.chain.evm.decoding.interfaces import GovernableDecoderInterface
-from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails, EventCategory
+from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.optimism.constants import CPT_OPTIMISM
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, DecoderEventMappingType
+from rotkehlchen.types import ChecksumEvmAddress
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -44,13 +43,6 @@ class OptimismGovernorDecoder(GovernableDecoderInterface):
         return {
             GOVERNOR_ADDRESS: (self._decode_vote_cast,),
         }
-
-    def possible_events(self) -> DecoderEventMappingType:
-        return {CPT_OPTIMISM: {
-            HistoryEventType.INFORMATIONAL: {
-                HistoryEventSubType.GOVERNANCE: EventCategory.GOVERNANCE,
-            },
-        }}
 
     def counterparties(self) -> list[CounterpartyDetails]:
         return [OPTIMISM_CPT_DETAILS]
