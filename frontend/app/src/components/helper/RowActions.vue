@@ -1,5 +1,5 @@
 <script setup lang="ts">
-withDefaults(
+const props = withDefaults(
   defineProps<{
     disabled?: boolean;
     editDisabled?: boolean;
@@ -30,16 +30,23 @@ const emit = defineEmits<{
 const editClick = () => emit('edit-click');
 const deleteClick = () => emit('delete-click');
 
-const css = useCssModule();
-
 const tooltipProps = {
   popper: { placement: 'top', offsetDistance: 0 },
   openDelay: '400'
 };
+
+const justify = computed(() => {
+  const justify = {
+    start: 'justify-start',
+    center: 'justify-center',
+    end: 'justify-end'
+  } as const;
+  return justify[props.align];
+});
 </script>
 
 <template>
-  <div :class="css.actions">
+  <div class="flex flex-row flex-nowrap items-center" :class="justify">
     <RuiTooltip v-if="!noEdit" v-bind="tooltipProps">
       <template #activator>
         <RuiButton
@@ -73,13 +80,3 @@ const tooltipProps = {
     <slot />
   </div>
 </template>
-
-<style module lang="scss">
-.actions {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: nowrap;
-  align-items: center;
-  justify-content: v-bind(align);
-}
-</style>
