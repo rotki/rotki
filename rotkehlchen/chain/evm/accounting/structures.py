@@ -1,6 +1,6 @@
 from collections.abc import Iterator
 from enum import auto
-from typing import TYPE_CHECKING, Any, Literal, Optional, Protocol, Union
+from typing import TYPE_CHECKING, Any, Optional, Protocol, Union
 
 from rotkehlchen.utils.mixins.enums import DBCharEnumMixIn
 
@@ -30,7 +30,6 @@ class TxAccountingTreatment(DBCharEnumMixIn):
     SWAP_WITH_FEE = auto()
 
 
-ACCOUNTING_METHOD_TYPE = Literal['acquisition', 'spend']
 ACCOUNTING_SETTING_DB_TUPLE = tuple[
     int,  # taxable
     int,  # count_entire_amount_spend
@@ -46,13 +45,11 @@ class BaseEventSettings:
             taxable: bool,
             count_entire_amount_spend: bool,
             count_cost_basis_pnl: bool,
-            method: ACCOUNTING_METHOD_TYPE,
             accounting_treatment: Optional[TxAccountingTreatment] = None,
     ):
         self.taxable = taxable
         self.count_entire_amount_spend = count_entire_amount_spend
         self.count_cost_basis_pnl = count_cost_basis_pnl
-        self.method = method
         self.accounting_treatment = accounting_treatment
 
     @classmethod
@@ -61,7 +58,6 @@ class BaseEventSettings:
             taxable=bool(entry[0]),
             count_entire_amount_spend=bool(entry[1]),
             count_cost_basis_pnl=bool(entry[2]),
-            method='spend',  # TODO 1.31: REMOVE THIS when removing the method from this class
             accounting_treatment=TxAccountingTreatment.deserialize_from_db(entry[3]) if entry[3] else None,  # noqa: E501
         )
 
@@ -89,7 +85,6 @@ class TxEventSettings(BaseEventSettings):
             taxable: bool,
             count_entire_amount_spend: bool,
             count_cost_basis_pnl: bool,
-            method: ACCOUNTING_METHOD_TYPE,
             accounting_treatment: Optional[TxAccountingTreatment] = None,
             accountant_cb: Optional[EventsAccountantCallback] = None,
     ):
@@ -97,7 +92,6 @@ class TxEventSettings(BaseEventSettings):
             taxable=taxable,
             count_entire_amount_spend=count_entire_amount_spend,
             count_cost_basis_pnl=count_cost_basis_pnl,
-            method=method,
             accounting_treatment=accounting_treatment,
         )
         self.accountant_cb = accountant_cb

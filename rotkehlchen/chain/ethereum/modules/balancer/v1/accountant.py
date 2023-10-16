@@ -24,14 +24,12 @@ class Balancerv1Accountant(DepositableAccountantInterface):
                 taxable=False,
                 count_entire_amount_spend=False,
                 count_cost_basis_pnl=False,
-                method='acquisition',
                 accountant_cb=self._process_deposit_or_withdrawal,
             ),
             get_event_type_identifier(HistoryEventType.SPEND, HistoryEventSubType.RETURN_WRAPPED, CPT_BALANCER_V1): TxEventSettings(  # noqa: E501
                 taxable=False,
                 count_entire_amount_spend=False,
                 count_cost_basis_pnl=False,
-                method='spend',
                 accountant_cb=self._process_deposit_or_withdrawal,
             ),
         }

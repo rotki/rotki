@@ -1931,7 +1931,6 @@ def test_upgrade_db_39_to_40(user_data_dir):  # pylint: disable=unused-argument
         taxable=True,
         count_entire_amount_spend=False,
         count_cost_basis_pnl=False,
-        method='acquisition',
         accounting_treatment=None,
     ).serialize() == TxEventSettings.deserialize_from_db(accounting_row[4:]).serialize()
 

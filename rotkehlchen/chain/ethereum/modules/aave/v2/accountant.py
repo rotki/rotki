@@ -49,7 +49,7 @@ class Aavev2Accountant(ModuleAccountantInterface):
         if self.assets_borrowed[key] < ZERO:
             loss = -1 * self.assets_borrowed[key]
             resolved_asset = event.asset.resolve_to_asset_with_symbol()
-            pot.add_spend(
+            pot.add_out_event(
                 event_type=AccountingEventType.TRANSACTION_EVENT,
                 notes=f'Lost {loss} {resolved_asset.symbol} as debt during payback to Aave v2 loan for {event.location_label}',  # noqa: E501
                 location=event.location,
@@ -84,7 +84,7 @@ class Aavev2Accountant(ModuleAccountantInterface):
         if self.assets_supplied[key] < ZERO:
             gain = -1 * self.assets_supplied[key]
             resolved_asset = event.asset.resolve_to_asset_with_symbol()
-            pot.add_acquisition(
+            pot.add_in_event(
                 event_type=AccountingEventType.TRANSACTION_EVENT,
                 notes=f'Gained {gain} {resolved_asset.symbol} on Aave v2 as interest rate for {event.location_label}',  # noqa: E501
                 location=event.location,
@@ -103,28 +103,24 @@ class Aavev2Accountant(ModuleAccountantInterface):
                 taxable=False,
                 count_entire_amount_spend=False,
                 count_cost_basis_pnl=False,
-                method='spend',
                 accountant_cb=self._process_deposit,
             ),
             get_event_type_identifier(HistoryEventType.WITHDRAWAL, HistoryEventSubType.REMOVE_ASSET, CPT_AAVE_V2): TxEventSettings(  # noqa: E501
                 taxable=False,
                 count_entire_amount_spend=False,
                 count_cost_basis_pnl=False,
-                method='acquisition',
                 accountant_cb=self._process_withdraw,
             ),
             get_event_type_identifier(HistoryEventType.RECEIVE, HistoryEventSubType.GENERATE_DEBT, CPT_AAVE_V2): TxEventSettings(  # noqa: E501
                 taxable=False,
                 count_entire_amount_spend=False,
                 count_cost_basis_pnl=False,
-                method='acquisition',
                 accountant_cb=self._process_borrow,
             ),
             get_event_type_identifier(HistoryEventType.SPEND, HistoryEventSubType.PAYBACK_DEBT, CPT_AAVE_V2): TxEventSettings(  # noqa: E501
                 taxable=False,
                 count_entire_amount_spend=False,
                 count_cost_basis_pnl=False,
-                method='spend',
                 accountant_cb=self._process_payback,
             ),
         }

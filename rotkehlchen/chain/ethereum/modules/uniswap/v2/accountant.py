@@ -19,31 +19,26 @@ class Uniswapv2Accountant(ModuleAccountantInterface):
                 taxable=True,
                 count_entire_amount_spend=False,
                 count_cost_basis_pnl=True,
-                method='spend',
                 accounting_treatment=TxAccountingTreatment.SWAP,
             ),
             get_event_type_identifier(HistoryEventType.SPEND, HistoryEventSubType.RETURN_WRAPPED, CPT_UNISWAP_V2): TxEventSettings(  # noqa: E501
                 taxable=False,
                 count_entire_amount_spend=False,
                 count_cost_basis_pnl=True,
-                method='spend',
             ),
             get_event_type_identifier(HistoryEventType.RECEIVE, HistoryEventSubType.RECEIVE_WRAPPED, CPT_UNISWAP_V2): TxEventSettings(  # noqa: E501
                 taxable=False,
                 count_entire_amount_spend=False,
                 count_cost_basis_pnl=True,
-                method='acquisition',
             ),
             get_event_type_identifier(HistoryEventType.WITHDRAWAL, HistoryEventSubType.REMOVE_ASSET, CPT_UNISWAP_V2): TxEventSettings(  # noqa: E501
                 taxable=False,
                 count_entire_amount_spend=False,
                 count_cost_basis_pnl=True,
-                method='acquisition',
             ),
             get_event_type_identifier(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET, CPT_UNISWAP_V2): TxEventSettings(  # noqa: E501
                 taxable=False,
                 count_entire_amount_spend=False,
                 count_cost_basis_pnl=True,
-                method='spend',
             ),
         }

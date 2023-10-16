@@ -30,7 +30,6 @@ class BaseAirdropsAccountant(ModuleAccountantInterface):
                 taxable=False,
                 count_entire_amount_spend=False,
                 count_cost_basis_pnl=False,
-                method='acquisition',
                 accounting_treatment=None,
             )
             for protocol in self.airdrops_list

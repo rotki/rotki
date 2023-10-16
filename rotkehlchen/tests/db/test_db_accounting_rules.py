@@ -15,7 +15,6 @@ def test_managing_accounting_rules(database: DBHandler) -> None:
         taxable=True,
         count_entire_amount_spend=True,
         count_cost_basis_pnl=True,
-        method='acquisition',
         accounting_treatment=TxAccountingTreatment.SWAP,
     )
     query_all_rules = 'SELECT * FROM accounting_rules'
@@ -48,7 +47,6 @@ def test_managing_accounting_rules(database: DBHandler) -> None:
     # try to edit it
     rule.count_cost_basis_pnl = False
     rule.accounting_treatment = None
-    rule.method = 'spend'
     db.update_accounting_rule(
         event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
@@ -86,7 +84,6 @@ def test_errors_with_rules(database: DBHandler) -> None:
         taxable=True,
         count_entire_amount_spend=True,
         count_cost_basis_pnl=True,
-        method='acquisition',
         accounting_treatment=TxAccountingTreatment.SWAP,
     )
 
@@ -125,7 +122,6 @@ def test_accounting_rules_linking(database: 'DBHandler', counterparty: str) -> N
             taxable=True,
             count_entire_amount_spend=True,
             count_cost_basis_pnl=False,
-            method='spend',
         ),
         links={'count_cost_basis_pnl': 'include_crypto2crypto'},
     )

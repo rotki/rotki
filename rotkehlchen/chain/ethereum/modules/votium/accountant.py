@@ -20,7 +20,6 @@ class VotiumAccountant(ModuleAccountantInterface):
                 taxable=True,
                 count_entire_amount_spend=False,
                 count_cost_basis_pnl=False,
-                method='acquisition',
                 accounting_treatment=None,
             ),
         }

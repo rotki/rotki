@@ -10,8 +10,8 @@ from rotkehlchen.accounting.history_base_entries import EventsAccountant
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL, PnlTotals
 from rotkehlchen.accounting.structures.processed_event import ProcessedAccountingEvent
+from rotkehlchen.accounting.structures.types import EventDirection
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.chain.evm.accounting.structures import ACCOUNTING_METHOD_TYPE
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_KFEE
 from rotkehlchen.constants.prices import ZERO_PRICE
@@ -119,7 +119,7 @@ class AccountingPot(CustomizableDateMixin):
         self.events_accountant.reset()
         self.processed_events = []
 
-    def add_acquisition(
+    def add_in_event(
             self,  # pylint: disable=unused-argument
             event_type: AccountingEventType,
             notes: str,
@@ -197,7 +197,7 @@ class AccountingPot(CustomizableDateMixin):
 
         self._add_processed_event(event)
 
-    def add_spend(
+    def add_out_event(
             self,
             event_type: AccountingEventType,
             notes: str,
@@ -295,7 +295,7 @@ class AccountingPot(CustomizableDateMixin):
 
     def add_asset_change_event(
             self,
-            method: ACCOUNTING_METHOD_TYPE,
+            direction: EventDirection,
             event_type: AccountingEventType,
             notes: str,
             location: Location,
@@ -306,7 +306,7 @@ class AccountingPot(CustomizableDateMixin):
             given_price: Optional[Price] = None,
             **kwargs: Any,
     ) -> None:
-        fn = getattr(self, f'add_{method}')
+        fn = getattr(self, f'add_{direction.serialize()}_event')
         return fn(
             event_type=event_type,
             notes=notes,

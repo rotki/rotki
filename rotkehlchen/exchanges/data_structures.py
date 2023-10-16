@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, NamedTuple, Optional
 
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
-from rotkehlchen.accounting.structures.types import ActionType
+from rotkehlchen.accounting.structures.types import ActionType, EventDirection
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
 from rotkehlchen.assets.converters import asset_from_binance
 from rotkehlchen.constants import ONE, ZERO
@@ -189,7 +189,7 @@ class AssetMovement(AccountingEventMixin):
         if self.fee == ZERO:
             return 1
 
-        accounting.add_spend(
+        accounting.add_out_event(
             event_type=AccountingEventType.ASSET_MOVEMENT,
             notes=f'{self.location} {self.category!s}',
             location=self.location,
@@ -390,7 +390,7 @@ class Trade(AccountingEventMixin):
             log.debug(f'Skipping {self} at accounting due to inability to find a price')
             return 1
 
-        _, trade_taxable_amount = accounting.add_spend(
+        _, trade_taxable_amount = accounting.add_out_event(
             event_type=AccountingEventType.TRADE,
             notes=notes + ' Amount out',
             location=self.location,
@@ -402,7 +402,7 @@ class Trade(AccountingEventMixin):
             count_entire_amount_spend=False,
             extra_data={'group_id': group_id},
         )
-        accounting.add_acquisition(
+        accounting.add_in_event(
             event_type=AccountingEventType.TRADE,
             notes=notes + ' Amount in',
             location=self.location,
@@ -432,7 +432,7 @@ class Trade(AccountingEventMixin):
                 fee_taxable = True
                 fee_taxable_amount_ratio = trade_taxable_amount / amount_out
 
-            accounting.add_spend(
+            accounting.add_out_event(
                 event_type=AccountingEventType.FEE,
                 notes=notes + 'Fee',
                 location=self.location,
@@ -589,13 +589,13 @@ class MarginPosition(AccountingEventMixin):
     ) -> int:
         if self.profit_loss >= ZERO:
             amount = self.profit_loss
-            method = 'acquisition'
+            direction = EventDirection.IN
         else:
-            method = 'spend'
+            direction = EventDirection.OUT
             amount = -self.profit_loss  # type: ignore
 
         accounting.add_asset_change_event(
-            method=method,  # type: ignore
+            direction=direction,
             event_type=AccountingEventType.MARGIN_POSITION,
             notes='Margin position. PnL',
             location=self.location,
@@ -605,7 +605,7 @@ class MarginPosition(AccountingEventMixin):
             taxable=True,
         )
         if self.fee != ZERO:  # Fee is not included in the asset price here since it is not a swap/trade event.  # noqa: E501
-            accounting.add_spend(
+            accounting.add_out_event(
                 event_type=AccountingEventType.FEE,
                 notes='Margin position. Fee',
                 location=self.location,
@@ -682,7 +682,7 @@ class Loan(AccountingEventMixin):
             accounting: 'AccountingPot',
             events_iterator: Iterator['AccountingEventMixin'],  # pylint: disable=unused-argument
     ) -> int:
-        accounting.add_acquisition(
+        accounting.add_in_event(
             event_type=AccountingEventType.LOAN,
             notes='Loan',
             location=self.location,

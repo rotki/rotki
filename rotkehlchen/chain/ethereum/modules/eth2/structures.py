@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any, NamedTuple, Optional
 
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.types import ActionType
+from rotkehlchen.accounting.structures.types import ActionType, EventDirection
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_ETH, A_ETH2, A_USD
 from rotkehlchen.constants.prices import ZERO_PRICE
@@ -18,7 +18,6 @@ from rotkehlchen.utils.misc import from_gwei
 if TYPE_CHECKING:
     from rotkehlchen.accounting.pot import AccountingPot
     from rotkehlchen.assets.asset import Asset
-    from rotkehlchen.chain.evm.accounting.structures import ACCOUNTING_METHOD_TYPE
 
 
 class ValidatorID(NamedTuple):
@@ -167,14 +166,14 @@ class ValidatorDailyStats(AccountingEventMixin):
         if accounting.settings.eth_staking_taxable_after_withdrawal_enabled is True:
             return 1
 
-        method: ACCOUNTING_METHOD_TYPE
         if self.pnl > ZERO:
-            method = 'acquisition'
+            direction = EventDirection.IN
         else:
-            method = 'spend'
+            direction = EventDirection.OUT
             amount = -amount
+
         accounting.add_asset_change_event(
-            method=method,
+            direction=direction,
             event_type=AccountingEventType.STAKING,
             notes='ETH2 staking daily PnL',
             location=Location.BLOCKCHAIN,

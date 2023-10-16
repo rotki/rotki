@@ -40,7 +40,7 @@ class ThegraphAccountant(ModuleAccountantInterface):
         if self.assets_supplied[address] < ZERO:
             gain = -1 * self.assets_supplied[address]
             resolved_asset = event.asset.resolve_to_asset_with_symbol()
-            pot.add_acquisition(
+            pot.add_in_event(
                 event_type=AccountingEventType.TRANSACTION_EVENT,
                 notes=f'Gained {gain} {resolved_asset.symbol} as delegation reward for {address}',
                 location=event.location,
@@ -58,20 +58,17 @@ class ThegraphAccountant(ModuleAccountantInterface):
                 taxable=False,
                 count_entire_amount_spend=False,
                 count_cost_basis_pnl=False,
-                method='spend',
                 accountant_cb=self._process_deposit,
             ),
             get_event_type_identifier(HistoryEventType.SPEND, HistoryEventSubType.FEE, CPT_THEGRAPH): TxEventSettings(  # noqa: E501
                 taxable=True,
                 count_entire_amount_spend=True,
                 count_cost_basis_pnl=pot.settings.include_crypto2crypto,
-                method='spend',
             ),
             get_event_type_identifier(HistoryEventType.STAKING, HistoryEventSubType.REMOVE_ASSET, CPT_THEGRAPH): TxEventSettings(  # noqa: E501
                 taxable=False,
                 count_entire_amount_spend=False,
                 count_cost_basis_pnl=False,
-                method='acquisition',
                 accountant_cb=self._process_withdraw,
             ),
         }

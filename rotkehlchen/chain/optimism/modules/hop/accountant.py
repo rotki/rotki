@@ -19,7 +19,6 @@ class HopAccountant(ModuleAccountantInterface):
                 taxable=False,
                 count_entire_amount_spend=False,
                 count_cost_basis_pnl=True,
-                method='spend',
                 accounting_treatment=None,
             ),
         }

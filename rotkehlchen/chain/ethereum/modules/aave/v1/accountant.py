@@ -20,20 +20,17 @@ class Aavev1Accountant(ModuleAccountantInterface):
                 taxable=False,
                 count_entire_amount_spend=False,
                 count_cost_basis_pnl=False,
-                method='spend',
                 accounting_treatment=TxAccountingTreatment.SWAP,
             ),
             get_event_type_identifier(HistoryEventType.SPEND, HistoryEventSubType.RETURN_WRAPPED, CPT_AAVE_V1): TxEventSettings(  # noqa: E501
                 taxable=False,
                 count_entire_amount_spend=False,
                 count_cost_basis_pnl=False,
-                method='spend',
                 accounting_treatment=TxAccountingTreatment.SWAP,
             ),
             get_event_type_identifier(HistoryEventType.RECEIVE, HistoryEventSubType.REWARD, CPT_AAVE_V1): TxEventSettings(  # noqa: E501
                 taxable=True,
                 count_entire_amount_spend=False,
                 count_cost_basis_pnl=True,
-                method='acquisition',
             ),
         }

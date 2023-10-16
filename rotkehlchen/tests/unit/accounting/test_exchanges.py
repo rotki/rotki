@@ -4,6 +4,7 @@ from unittest.mock import patch
 import pytest
 
 from rotkehlchen.accounting.mixins.event import AccountingEventType
+from rotkehlchen.api.server import APIServer
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_LINK, A_USDT
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
@@ -11,7 +12,15 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.accounting import accounting_create_and_process_history
 from rotkehlchen.tests.utils.exchanges import mock_normal_coinbase_query
 from rotkehlchen.tests.utils.history import prices
-from rotkehlchen.types import AssetMovementCategory, Location, Timestamp, TradeType
+from rotkehlchen.types import (
+    AssetAmount,
+    AssetMovementCategory,
+    Fee,
+    Location,
+    Price,
+    Timestamp,
+    TradeType,
+)
 
 
 @pytest.mark.parametrize('have_decoders', [True])
@@ -49,7 +58,7 @@ def test_account_for_coinbase_income_expense(rotkehlchen_api_server_with_exchang
 @pytest.mark.parametrize('default_mock_price_value', [FVal(1.5)])
 @pytest.mark.parametrize('ethereum_accounts', [[]])
 @pytest.mark.parametrize('added_exchanges', [(Location.COINBASE,)])
-def test_exchanges_removed_api_keys(rotkehlchen_api_server_with_exchanges):
+def test_exchanges_removed_api_keys(rotkehlchen_api_server_with_exchanges: APIServer):
     """
     Test that if actions made on an exchange are stored in the DB but the API keys were removed
     then the actions are still taken into account in accounting.
@@ -58,19 +67,19 @@ def test_exchanges_removed_api_keys(rotkehlchen_api_server_with_exchanges):
     with rotki.data.db.user_write() as write_cursor:
         rotki.data.db.add_trades(write_cursor, trades=[Trade(
             timestamp=Timestamp(1611426201),
-            amount=ONE,
+            amount=AssetAmount(ONE),
             base_asset=A_ETH,
             quote_asset=A_BTC,
             trade_type=TradeType.BUY,
-            rate=FVal(1.5),
+            rate=Price(FVal(1.5)),
             location=Location.COINBASE,
         ), Trade(
             timestamp=Timestamp(1611426201),
-            amount=FVal(7),
+            amount=AssetAmount(FVal(7)),
             base_asset=A_USDT,
             quote_asset=A_LINK,
             trade_type=TradeType.SELL,
-            rate=FVal(7),
+            rate=Price(FVal(7)),
             location=Location.EXTERNAL,
         )])
         rotki.data.db.add_asset_movements(write_cursor, asset_movements=[AssetMovement(
@@ -80,7 +89,7 @@ def test_exchanges_removed_api_keys(rotkehlchen_api_server_with_exchanges):
             asset=A_BTC,
             amount=ONE,
             fee_asset=A_BTC,
-            fee=FVal(0.00001),
+            fee=Fee(FVal(0.00001)),
             address=None,
             transaction_id=None,
             link='no link',
@@ -89,16 +98,16 @@ def test_exchanges_removed_api_keys(rotkehlchen_api_server_with_exchanges):
             location=Location.COINBASE,
             open_time=Timestamp(1611426200),
             close_time=Timestamp(1611426201),
-            profit_loss=ONE,
+            profit_loss=AssetAmount(ONE),
             pl_currency=A_BTC,
-            fee=ZERO,
+            fee=Fee(ZERO),
             fee_currency=A_BTC,
             link='no link',
             notes='no notes',
         )])
 
     rotki.exchange_manager.delete_exchange(name='coinbase', location=Location.COINBASE)
-    _, events = accounting_create_and_process_history(rotki=rotki, start_ts=0, end_ts=1611426233)
+    _, events = accounting_create_and_process_history(rotki=rotki, start_ts=Timestamp(0), end_ts=Timestamp(1611426233))  # noqa: E501
     assert len(events) == 6
     event1 = events[0]
     assert event1.type == AccountingEventType.TRADE

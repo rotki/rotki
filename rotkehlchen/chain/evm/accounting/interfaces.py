@@ -4,14 +4,13 @@ from collections.abc import Iterator
 from typing import TYPE_CHECKING
 
 from rotkehlchen.accounting.mixins.event import AccountingEventType
-from rotkehlchen.accounting.structures.types import HistoryEventType
+from rotkehlchen.accounting.structures.types import EventDirection, HistoryEventType
 from rotkehlchen.constants import ZERO
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.pot import AccountingPot
     from rotkehlchen.accounting.structures.evm_event import EvmEvent
-    from rotkehlchen.chain.evm.accounting.structures import ACCOUNTING_METHOD_TYPE
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.user_messages import MessagesAggregator
 
@@ -73,14 +72,13 @@ class DepositableAccountantInterface(ModuleAccountantInterface):
         The return wrapped event needs to have the key `withdrawal_events_num` with the number
         of events in the return event.
         """
-        method: ACCOUNTING_METHOD_TYPE
         if event.event_type == HistoryEventType.RECEIVE:
             # Pool token is received, which means it is a deposit
             events_to_consume = event.extra_data.get('deposit_events_num', None) if event.extra_data is not None else None  # noqa: E501
-            method = 'spend'
+            direction = EventDirection.OUT
         else:  # Withdrawal
             events_to_consume = event.extra_data.get('withdrawal_events_num', None) if event.extra_data is not None else None  # noqa: E501
-            method = 'acquisition'
+            direction = EventDirection.IN
 
         if events_to_consume is None:
             log.debug(
@@ -100,7 +98,7 @@ class DepositableAccountantInterface(ModuleAccountantInterface):
                 continue
 
             pot.add_asset_change_event(
-                method=method,
+                direction=direction,
                 event_type=AccountingEventType.TRANSACTION_EVENT,
                 notes=next_event.notes if next_event.notes else '',
                 location=next_event.location,

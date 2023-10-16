@@ -20,14 +20,12 @@ class PickleAccountant(ModuleAccountantInterface):
                 taxable=False,
                 count_entire_amount_spend=False,
                 count_cost_basis_pnl=False,
-                method='spend',
                 accounting_treatment=TxAccountingTreatment.SWAP,
             ),
             get_event_type_identifier(HistoryEventType.SPEND, HistoryEventSubType.RETURN_WRAPPED, CPT_PICKLE): TxEventSettings(  # noqa: E501
                 taxable=False,
                 count_entire_amount_spend=False,
                 count_cost_basis_pnl=False,
-                method='spend',
                 accounting_treatment=TxAccountingTreatment.SWAP,
             ),
         }

@@ -24,49 +24,41 @@ def make_default_accounting_settings(pot: 'AccountingPot') -> dict[int, BaseEven
         taxable=pot.settings.include_gas_costs,
         count_entire_amount_spend=pot.settings.include_gas_costs,
         count_cost_basis_pnl=pot.settings.include_crypto2crypto,
-        method='spend',
     )
     result[get_event_type_identifier(HistoryEventType.SPEND, HistoryEventSubType.NONE)] = BaseEventSettings(  # noqa: E501
         taxable=True,
         count_entire_amount_spend=True,
         count_cost_basis_pnl=True,
-        method='spend',
     )
     result[get_event_type_identifier(HistoryEventType.RECEIVE, HistoryEventSubType.NONE)] = BaseEventSettings(  # noqa: E501
         taxable=True,
         count_entire_amount_spend=True,
         count_cost_basis_pnl=True,
-        method='acquisition',
     )
     result[get_event_type_identifier(HistoryEventType.SPEND, HistoryEventSubType.FEE)] = BaseEventSettings(  # noqa: E501
         taxable=True,
         count_entire_amount_spend=True,
         count_cost_basis_pnl=True,
-        method='spend',
     )
     result[get_event_type_identifier(HistoryEventType.DEPOSIT, HistoryEventSubType.NONE)] = BaseEventSettings(  # noqa: E501
         taxable=False,
         count_entire_amount_spend=False,
         count_cost_basis_pnl=False,
-        method='spend',
     )
     result[get_event_type_identifier(HistoryEventType.WITHDRAWAL, HistoryEventSubType.NONE)] = BaseEventSettings(  # noqa: E501
         taxable=False,
         count_entire_amount_spend=False,
         count_cost_basis_pnl=False,
-        method='spend',
     )
     result[get_event_type_identifier(HistoryEventType.RENEW, HistoryEventSubType.NONE)] = BaseEventSettings(  # noqa: E501
         taxable=True,
         count_entire_amount_spend=True,
         count_cost_basis_pnl=True,
-        method='spend',
     )
     result[get_event_type_identifier(HistoryEventType.TRADE, HistoryEventSubType.SPEND)] = BaseEventSettings(  # noqa: E501
         taxable=True,
         count_entire_amount_spend=False,
         count_cost_basis_pnl=True,
-        method='spend',
         accounting_treatment=TxAccountingTreatment.SWAP,
     )
     result[get_event_type_identifier(HistoryEventType.RECEIVE, HistoryEventSubType.AIRDROP)] = BaseEventSettings(  # noqa: E501
@@ -74,33 +66,28 @@ def make_default_accounting_settings(pot: 'AccountingPot') -> dict[int, BaseEven
         # count_entire_amount_spend and count_cost_basis_pnl don't matter for acquisitions.
         count_entire_amount_spend=False,
         count_cost_basis_pnl=False,
-        method='acquisition',
     )
     result[get_event_type_identifier(HistoryEventType.RECEIVE, HistoryEventSubType.REWARD)] = BaseEventSettings(  # noqa: E501
         taxable=True,
         # count_entire_amount_spend and count_cost_basis_pnl don't matter for acquisitions.
         count_entire_amount_spend=False,
         count_cost_basis_pnl=False,
-        method='acquisition',
     )
     result[get_event_type_identifier(HistoryEventType.STAKING, HistoryEventSubType.REWARD)] = BaseEventSettings(  # noqa: E501
         taxable=True,
         # count_entire_amount_spend and count_cost_basis_pnl don't matter for acquisitions.
         count_entire_amount_spend=False,
         count_cost_basis_pnl=False,
-        method='acquisition',
     )
     result[get_event_type_identifier(HistoryEventType.STAKING, HistoryEventSubType.DEPOSIT_ASSET)] = BaseEventSettings(  # noqa: E501
         taxable=False,
         count_entire_amount_spend=False,
         count_cost_basis_pnl=False,
-        method='spend',
     )
     result[get_event_type_identifier(HistoryEventType.STAKING, HistoryEventSubType.REMOVE_ASSET)] = BaseEventSettings(  # noqa: E501
         taxable=False,
         count_entire_amount_spend=False,
         count_cost_basis_pnl=False,
-        method='acquisition',
     )
     return result
 

@@ -20,7 +20,6 @@ class ZksyncAccountant(ModuleAccountantInterface):
                 taxable=False,
                 count_entire_amount_spend=False,
                 count_cost_basis_pnl=False,
-                method='spend',
                 accounting_treatment=None,
             ),
         }
