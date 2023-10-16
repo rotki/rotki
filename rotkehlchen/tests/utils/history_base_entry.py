@@ -64,13 +64,16 @@ def entry_to_input_dict(
         serialized['fee_recipient'] = serialized.pop('location_label')
         serialized['is_mev_reward'] = serialized.pop('event_subtype') == HistoryEventSubType.MEV_REWARD.serialize()  # noqa: E501
     elif entry.entry_type == HistoryBaseEntryType.ETH_DEPOSIT_EVENT:
+        if include_identifier is False:
+            # when creating a eth deposit event we don't include the event_identifier
+            serialized.pop('event_identifier')
         serialized['depositor'] = serialized.pop('location_label')
     return serialized
 
 
-def add_entries(events_db: 'DBHistoryEvents') -> list['HistoryBaseEntry']:
-    """Adds a pre-set list of history entries to the database"""
-    entries: list[HistoryBaseEntry] = [EvmEvent(
+def predefined_events_to_insert() -> list['HistoryBaseEntry']:
+    """List of different objects used in tests that will be inserted in the database"""
+    return [EvmEvent(
         tx_hash=deserialize_evm_tx_hash('0x64f1982504ab714037467fdd45d3ecf5a6356361403fc97dd325101d8c038c4e'),
         sequence_index=162,
         timestamp=TimestampMS(1569924574000),
@@ -170,6 +173,10 @@ def add_entries(events_db: 'DBHistoryEvents') -> list['HistoryBaseEntry']:
         depositor=string_to_evm_address('0x0EbD2E2130b73107d0C45fF2E16c93E7e2e10e3a'),
     )]
 
+
+def add_entries(events_db: 'DBHistoryEvents') -> list['HistoryBaseEntry']:
+    """Add history events to the database"""
+    entries = predefined_events_to_insert()
     for entry in entries:
         with events_db.db.conn.write_ctx() as write_cursor:
             identifier = events_db.add_history_event(

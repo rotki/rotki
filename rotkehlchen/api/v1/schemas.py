@@ -820,7 +820,7 @@ class CreateHistoryEventSchema(Schema):
     class CreateEthDepositEventEventSchema(BaseSchema):
         tx_hash = EVMTransactionHashField(required=True)
         depositor = EvmAddressField(required=True)
-        event_identifier = fields.String(required=True)
+        event_identifier = fields.String(required=False, load_default=None)
         sequence_index = fields.Integer(required=True)
         validator_index = fields.Integer(
             required=True,
