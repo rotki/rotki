@@ -60,9 +60,9 @@ class BaseBridgeDecoder(DecoderInterface):
         """Given the filters for the events update the information of the bridging events"""
         expected_event_type, new_event_type, from_chain, to_chain, expected_location_label = bridge_prepare_data(  # noqa: E501
             tx_log=context.tx_log,
-            deposit_events=(deposit_event,),
-            main_chain=ChainID.ETHEREUM,
-            l2_chain=ChainID.BASE,
+            deposit_topics=(deposit_event,),
+            source_chain=ChainID.ETHEREUM,
+            target_chain=ChainID.BASE,
             from_address=from_address,
             to_address=to_address,
         )
