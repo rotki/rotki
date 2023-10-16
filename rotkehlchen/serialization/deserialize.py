@@ -72,7 +72,7 @@ def deserialize_timestamp(timestamp: Union[int, str, FVal]) -> Timestamp:
         except ConversionError as e:
             # An fval was not representing an exact int
             raise DeserializationError(
-                'Tried to deserialize a timestamp fron a non-exact int FVal entry',
+                'Tried to deserialize a timestamp from a non-exact int FVal entry',
             ) from e
     elif isinstance(timestamp, str):
         try:

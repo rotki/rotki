@@ -31,6 +31,7 @@ from rotkehlchen.tests.utils.history_base_entry import (
     KEYS_IN_ENTRY_TYPE,
     add_entries,
     entry_to_input_dict,
+    predefined_events_to_insert,
 )
 from rotkehlchen.types import (
     ChainID,
@@ -94,7 +95,17 @@ def assert_editing_works(
 def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer'):
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     db = DBHistoryEvents(rotki.data.db)
-    entries = add_entries(events_db=db)
+    entries = predefined_events_to_insert()
+    for entry in entries:
+        json_data = entry_to_input_dict(entry, include_identifier=False)
+        response = requests.put(
+            api_url_for(rotkehlchen_api_server, 'historyeventresource'),
+            json=json_data,
+        )
+        result = assert_proper_response_with_result(response)
+        assert 'identifier' in result
+        entry.identifier = result['identifier']
+
     with rotki.data.db.conn.read_ctx() as cursor:
         saved_events = db.get_history_events(
             cursor=cursor,
@@ -338,8 +349,7 @@ def test_event_with_details(rotkehlchen_api_server: 'APIServer'):
 
 def test_get_events(rotkehlchen_api_server: 'APIServer'):
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    db = DBHistoryEvents(rotki.data.db)
-    entries = add_entries(events_db=db)
+    entries = add_entries(events_db=DBHistoryEvents(rotki.data.db))
     expected_entries = [x.serialize() for x in entries]
 
     # add one event to the list of ignored events to check that the field ignored_in_accounting

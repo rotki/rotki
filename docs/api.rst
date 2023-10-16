@@ -4765,6 +4765,7 @@ Dealing with History Events
          :reqjson string[optional] location_label: location_label is a string field that allows to provide more information about the location. For example when we use this structure in blockchains can be used to specify the source address.
          :reqjson string[optional] notes: This is a description of the event entry in plain text explaining what is being done. This is supposed to be shown to the user.
          :reqjson string[optional] counterparty: An identifier for a potential counterparty of the event entry. For a send it's the target. For a receive it's the sender. For bridged transfer it's the bridge's network identifier. For a protocol interaction it's the protocol.
+         :reqjson string[optional] address: Any relevant address that this event interacted with.
          :reqjson object[optional] extra_data: An object containing any other data to be stored.
 
    .. tab:: Eth Block Event
