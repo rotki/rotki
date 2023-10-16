@@ -32,8 +32,6 @@ from rotkehlchen.utils.mixins.enums import (
 from rotkehlchen.chain.substrate.types import SubstrateAddress  # isort:skip
 
 if TYPE_CHECKING:
-    from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
-    from rotkehlchen.chain.evm.decoding.types import EventCategory
     from rotkehlchen.db.drivers.gevent import DBCursor
 
 ModuleName = Literal[
@@ -1053,13 +1051,6 @@ DEFAULT_ADDRESS_NAME_PRIORITY: Sequence[AddressNameSource] = (
     'hardcoded_mappings',
     'ens_names',
 )
-
-EventMappingType = dict[
-    'HistoryEventType',
-    dict['HistoryEventSubType', 'EventCategory'],
-]
-LocationEventMappingType = dict[Location, EventMappingType]
-DecoderEventMappingType = dict[str, EventMappingType]
 
 
 class HistoryEventQueryType(SerializableEnumNameMixin):

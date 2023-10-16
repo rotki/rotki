@@ -14,12 +14,12 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     DecodingOutput,
 )
-from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails, EventCategory
+from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_1INCH, A_BADGER, A_CVX, A_ELFI, A_FOX, A_FPIS, A_UNI
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, DecoderEventMappingType
+from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 from .constants import (
@@ -30,7 +30,6 @@ from .constants import (
     CPT_ONEINCH,
     CPT_SHAPESHIFT,
     CPT_UNISWAP,
-    ETHEREUM_AIRDROPS_LIST,
 )
 
 if TYPE_CHECKING:
@@ -242,15 +241,6 @@ class AirdropsDecoder(DecoderInterface):
         return DEFAULT_DECODING_OUTPUT
 
     # -- DecoderInterface methods
-
-    def possible_events(self) -> DecoderEventMappingType:
-        return {
-            counterparty: {
-                HistoryEventType.RECEIVE: {
-                    HistoryEventSubType.AIRDROP: EventCategory.AIRDROP,
-                },
-            } for counterparty in ETHEREUM_AIRDROPS_LIST
-        }
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {

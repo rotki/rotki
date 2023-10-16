@@ -30,7 +30,6 @@ from rotkehlchen.api.websockets.typedefs import (
     WSMessageType,
 )
 from rotkehlchen.assets.converters import asset_from_kraken
-from rotkehlchen.chain.evm.decoding.types import EventCategory
 from rotkehlchen.constants import KRAKEN_API_VERSION, KRAKEN_BASE_URL, ZERO
 from rotkehlchen.constants.assets import A_ETH2, A_KFEE, A_USD
 from rotkehlchen.constants.prices import ZERO_PRICE
@@ -59,7 +58,6 @@ from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
     AssetAmount,
-    EventMappingType,
     ExchangeAuthCredentials,
     Fee,
     Location,
@@ -1281,30 +1279,3 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
                 'name': self.name,
             },
         )
-
-    @staticmethod
-    def get_event_mappings() -> EventMappingType:
-        return {
-            HistoryEventType.TRADE: {
-                HistoryEventSubType.FEE: EventCategory.FEE,
-            },
-            HistoryEventType.SPEND: {
-                HistoryEventSubType.FEE: EventCategory.FEE,
-            },
-            HistoryEventType.STAKING: {
-                HistoryEventSubType.REWARD: EventCategory.STAKING_REWARD,
-                HistoryEventSubType.FEE: EventCategory.FEE,
-            },
-            HistoryEventType.ADJUSTMENT: {
-                HistoryEventSubType.SPEND: EventCategory.SEND,
-                HistoryEventSubType.RECEIVE: EventCategory.RECEIVE,
-            },
-            HistoryEventType.WITHDRAWAL: {
-                HistoryEventSubType.NONE: EventCategory.WITHDRAW,
-                HistoryEventSubType.FEE: EventCategory.FEE,
-            },
-            HistoryEventType.DEPOSIT: {
-                HistoryEventSubType.NONE: EventCategory.DEPOSIT,
-                HistoryEventSubType.FEE: EventCategory.FEE,
-            },
-        }

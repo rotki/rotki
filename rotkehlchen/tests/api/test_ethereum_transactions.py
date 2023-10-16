@@ -1227,7 +1227,7 @@ def test_query_transactions_check_decoded_events(
             'counterparty': CPT_CURVE,
             'event_identifier': '10xccb6a445e136492b242d1c2c0221dc4afd4447c96601e88c156ec4d52e993b8f',  # noqa: E501
             'event_subtype': 'deposit asset',
-            'event_type': 'spend',
+            'event_type': 'deposit',
             'location': 'ethereum',
             'location_label': '0x6e15887E2CEC81434C16D587709f64603b39b545',
             'notes': 'Some kind of deposit',

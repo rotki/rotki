@@ -1,5 +1,5 @@
 from enum import auto
-from typing import Optional
+from typing import Literal, NamedTuple, Optional
 
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.utils.mixins.enums import DBCharEnumMixIn, SerializableEnumNameMixin
@@ -67,6 +67,7 @@ class HistoryEventType(SerializableEnumNameMixin):
     INFORMATIONAL = auto()
     MIGRATE = auto()
     RENEW = auto()
+    DEPLOY = auto()
 
 
 class HistoryEventSubType(SerializableEnumNameMixin):
@@ -77,7 +78,6 @@ class HistoryEventSubType(SerializableEnumNameMixin):
     SPEND = auto()
     RECEIVE = auto()
     APPROVE = auto()
-    DEPLOY = auto()
     AIRDROP = auto()
     BRIDGE = auto()
     GOVERNANCE = auto()
@@ -101,6 +101,61 @@ class HistoryEventSubType(SerializableEnumNameMixin):
     MEV_REWARD = auto()
     APPLY = auto()
     UPDATE = auto()
+    CREATE = auto()  # used when tx creates a new entity like Maker vault or Gnosis safe
 
     def serialize_or_none(self) -> Optional[str]:
         return self.serialize()
+
+
+class EventDirection(SerializableEnumNameMixin):
+    """Describes the direction of an asset's movement (to the user, from the user or neutral)"""
+    IN = auto()
+    OUT = auto()
+    NEUTRAL = auto()
+
+
+class EventCategoryDetails(NamedTuple):
+    label: str
+    icon: str
+    direction: EventDirection
+    color: Optional[Literal['green', 'red']] = None
+
+
+class EventCategory(SerializableEnumNameMixin):
+    """
+    User friendly categories to classify combinations of event type and event subtype
+    """
+    GAS = auto()
+    SEND = auto()
+    RECEIVE = auto()
+    SWAP_OUT = auto()
+    SWAP_IN = auto()
+    APPROVAL = auto()
+    DEPOSIT = auto()
+    WITHDRAW = auto()
+    AIRDROP = auto()
+    BORROW = auto()
+    REPAY = auto()
+    DEPLOY = auto()
+    DEPLOY_WITH_SPEND = auto()
+    BRIDGE_DEPOSIT = auto()
+    BRIDGE_WITHDRAWAL = auto()
+    GOVERNANCE = auto()
+    DONATE = auto()
+    RECEIVE_DONATION = auto()
+    RENEW = auto()
+    PLACE_ORDER = auto()
+    TRANSFER = auto()
+    CLAIM_REWARD = auto()
+    LIQUIDATION_REWARD = auto()
+    LIQUIDATION_LOSS = auto()
+    INFORMATIONAL = auto()
+    CANCEL_ORDER = auto()
+    REFUND = auto()
+    FEE = auto()
+    MEV_REWARD = auto()
+    STAKING_REWARD = auto()
+    CREATE_BLOCK = auto()
+    CREATE_PROJECT = auto()
+    UPDATE_PROJECT = auto()
+    APPLY = auto()

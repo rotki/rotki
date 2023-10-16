@@ -22,7 +22,7 @@ from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.chain.evm.decoding.interfaces import ReloadableDecoderMixin
 from rotkehlchen.chain.evm.decoding.safe.decoder import SafemultisigDecoder
-from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails, EventCategory
+from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.constants import ZERO
 from rotkehlchen.db.constants import HISTORY_MAPPING_STATE_DECODED
@@ -35,19 +35,8 @@ from rotkehlchen.errors.serialization import ConversionError, DeserializationErr
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import (
-    ChecksumEvmAddress,
-    DecoderEventMappingType,
-    EvmTokenKind,
-    EvmTransaction,
-    EVMTxHash,
-)
-from rotkehlchen.utils.misc import (
-    combine_dicts,
-    from_wei,
-    hex_or_bytes_to_address,
-    hex_or_bytes_to_int,
-)
+from rotkehlchen.types import ChecksumEvmAddress, EvmTokenKind, EvmTransaction, EVMTxHash
+from rotkehlchen.utils.misc import from_wei, hex_or_bytes_to_address, hex_or_bytes_to_int
 from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
 
 from .base import BaseDecoderTools, BaseDecoderToolsWithDSProxy
@@ -172,8 +161,6 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
         self.rules.event_rules.extend(event_rules)
         self.value_asset = value_asset
         self.decoders: dict[str, DecoderInterface] = {}
-        # store the mapping of possible counterparties to the allowed types and subtypes in events
-        self.events_types_tuples: DecoderEventMappingType = {}
 
         # Add the built-in decoders
         self._add_builtin_decoders(self.rules)
@@ -278,28 +265,6 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
 
         return possible_products
 
-    def get_decoders_event_types(self) -> DecoderEventMappingType:
-        """Get the mappings of counterparties to their possible event type
-        and subtype combinations
-        """
-        possible_types = {}
-        for decoder in self.decoders.values():
-            for counterparty, new_events in decoder.possible_events().items():
-                if counterparty not in possible_types:
-                    possible_types.update({counterparty: new_events})
-                else:
-                    possible_types[counterparty] = combine_dicts(
-                        a=possible_types[counterparty],
-                        b=new_events,
-                        op=lambda a, b: a | b,
-                    )
-
-        # add gas burning
-        possible_types[CPT_GAS] = {
-            HistoryEventType.SPEND: {HistoryEventSubType.FEE: EventCategory.GAS},
-        }
-        return possible_types
-
     def reload_data(self, cursor: 'DBCursor') -> None:
         """Reload all related settings from DB and data that any decoder may require from the chain
         so that decoding happens with latest data"""
@@ -402,7 +367,6 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             except (DeserializationError, IndexError) as e:
                 log.error(f'Applying post-decoding rule {rule} for {transaction.tx_hash.hex()} failed due to {e!s}. Skipping rule.')  # noqa: E501
 
-        assert self._check_correct_types(decoded_events)
         return decoded_events
 
     def _decode_transaction(
@@ -782,11 +746,15 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             if not self.base.is_tracked(tx.from_address):
                 return events
 
+            event_subtype = HistoryEventSubType.NONE
+            if amount != ZERO:
+                event_subtype = HistoryEventSubType.SPEND
+
             events.append(self.base.make_event_next_index(  # contract deployment
                 tx_hash=tx.tx_hash,
                 timestamp=tx.timestamp,
-                event_type=HistoryEventType.INFORMATIONAL,
-                event_subtype=HistoryEventSubType.DEPLOY,
+                event_type=HistoryEventType.DEPLOY,
+                event_subtype=event_subtype,
                 asset=self.value_asset,
                 balance=Balance(amount=amount),
                 location_label=tx.from_address,
@@ -957,30 +925,6 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
     def _address_is_exchange(address: ChecksumEvmAddress) -> Optional[str]:
         """Takes an address and returns if it's an exchange in the given chain
         and the counterparty to use if it is."""
-
-    if __debug__:
-        def _check_correct_types(self, decoded_events: list['EvmEvent']) -> bool:
-            """
-            Check that the decoded events have the expected combination of event type
-            and subtype from its decoder mappings
-            """
-            unexpected_types = set()
-            for event in decoded_events:
-                if event.counterparty is None:
-                    continue
-
-                expected_mappings = self.events_types_tuples.get(event.counterparty)
-                if expected_mappings is None:
-                    continue
-
-                if (
-                    event.event_type not in expected_mappings and
-                    event.event_subtype not in expected_mappings[event.event_type]
-                ):
-                    unexpected_types.add((event.event_type, event.event_subtype, event.counterparty))  # noqa: E501
-
-            assert len(unexpected_types) == 0, f'Found the following unexpected types {unexpected_types}'  # noqa: E501
-            return True
 
 
 class EVMTransactionDecoderWithDSProxy(EVMTransactionDecoder, metaclass=ABCMeta):

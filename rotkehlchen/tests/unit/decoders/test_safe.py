@@ -294,7 +294,7 @@ def test_safe_creation(database, ethereum_inquirer, ethereum_accounts):
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.INFORMATIONAL,
-            event_subtype=HistoryEventSubType.NONE,
+            event_subtype=HistoryEventSubType.CREATE,
             asset=A_ETH,
             balance=Balance(),
             location_label=user_address,

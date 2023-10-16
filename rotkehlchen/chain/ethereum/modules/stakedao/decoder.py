@@ -9,8 +9,8 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     DecodingOutput,
 )
-from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails, EventCategory
-from rotkehlchen.types import ChainID, ChecksumEvmAddress, DecoderEventMappingType, Timestamp
+from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
+from rotkehlchen.types import ChainID, ChecksumEvmAddress, Timestamp
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int, timestamp_to_date
 
 from .constants import CPT_STAKEDAO, STAKEDAO_CLAIMER1, STAKEDAO_CLAIMER2
@@ -65,13 +65,6 @@ class StakedaoDecoder(DecoderInterface):
         return DEFAULT_DECODING_OUTPUT
 
     # -- DecoderInterface methods
-
-    def possible_events(self) -> DecoderEventMappingType:
-        return {CPT_STAKEDAO: {
-            HistoryEventType.RECEIVE: {
-                HistoryEventSubType.REWARD: EventCategory.CLAIM_REWARD,
-            },
-        }}
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {

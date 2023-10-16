@@ -13,7 +13,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     DecodingOutput,
 )
-from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails, EventCategory
+from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.utils.misc import (
@@ -25,7 +25,7 @@ from rotkehlchen.utils.misc import (
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
-    from rotkehlchen.types import ChecksumEvmAddress, DecoderEventMappingType
+    from rotkehlchen.types import ChecksumEvmAddress
     from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
@@ -187,7 +187,7 @@ class GitcoinV2CommonDecoder(DecoderInterface, metaclass=ABCMeta):
                 transaction=context.transaction,
                 tx_log=context.tx_log,
                 event_type=HistoryEventType.INFORMATIONAL,
-                event_subtype=HistoryEventSubType.DEPLOY,
+                event_subtype=HistoryEventSubType.CREATE,
                 asset=A_ETH,
                 balance=Balance(),
                 location_label=context.transaction.from_address,
@@ -261,24 +261,6 @@ class GitcoinV2CommonDecoder(DecoderInterface, metaclass=ABCMeta):
         return DEFAULT_DECODING_OUTPUT
 
     # -- DecoderInterface methods
-
-    def possible_events(self) -> 'DecoderEventMappingType':
-        return {CPT_GITCOIN: {
-            HistoryEventType.SPEND: {
-                HistoryEventSubType.DONATE: EventCategory.DONATE,
-            },
-            HistoryEventType.RECEIVE: {
-                HistoryEventSubType.DONATE: EventCategory.RECEIVE_DONATION,
-            },
-            HistoryEventType.TRANSFER: {
-                HistoryEventSubType.DONATE: EventCategory.DONATE,
-            },
-            HistoryEventType.INFORMATIONAL: {
-                HistoryEventSubType.DEPLOY: EventCategory.CREATE_PROJECT,
-                HistoryEventSubType.UPDATE: EventCategory.UPDATE_PROJECT,
-                HistoryEventSubType.APPLY: EventCategory.APPLY,
-            },
-        }}
 
     def addresses_to_decoders(self) -> dict['ChecksumEvmAddress', tuple[Any, ...]]:
         mappings: dict['ChecksumEvmAddress', tuple[Any, ...]] = {

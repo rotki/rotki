@@ -1,6 +1,5 @@
 from typing import TYPE_CHECKING, Callable, Optional
 
-from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.modules.uniswap.constants import (
     CPT_UNISWAP_V2,
@@ -22,11 +21,11 @@ from rotkehlchen.chain.evm.decoding.structures import (
     EnricherContext,
     TransferEnrichmentOutput,
 )
-from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails, EventCategory
+from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
-from rotkehlchen.types import UNISWAP_PROTOCOL, DecoderEventMappingType, EvmTransaction
+from rotkehlchen.types import UNISWAP_PROTOCOL, EvmTransaction
 from rotkehlchen.utils.misc import hex_or_bytes_to_int
 
 if TYPE_CHECKING:
@@ -148,29 +147,6 @@ class Uniswapv2Decoder(DecoderInterface):
         )
 
     # -- DecoderInterface methods
-
-    def possible_events(self) -> DecoderEventMappingType:
-        return {CPT_UNISWAP_V2: {
-            HistoryEventType.TRADE: {
-                HistoryEventSubType.RECEIVE: EventCategory.SWAP_IN,
-                HistoryEventSubType.SPEND: EventCategory.SWAP_OUT,
-            },
-            HistoryEventType.DEPOSIT: {
-                HistoryEventSubType.DEPOSIT_ASSET: EventCategory.DEPOSIT,
-            },
-            HistoryEventType.WITHDRAWAL: {
-                HistoryEventSubType.REMOVE_ASSET: EventCategory.WITHDRAW,
-            },
-            HistoryEventType.SPEND: {
-                HistoryEventSubType.RETURN_WRAPPED: EventCategory.SEND,
-            },
-            HistoryEventType.RECEIVE: {
-                HistoryEventSubType.RECEIVE_WRAPPED: EventCategory.RECEIVE,
-            },
-            HistoryEventType.TRANSFER: {
-                HistoryEventSubType.NONE: EventCategory.TRANSFER,
-            },
-        }}
 
     def decoding_rules(self) -> list[Callable]:
         return [

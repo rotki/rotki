@@ -7,7 +7,13 @@ from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.structures.balance import AssetBalance, Balance, BalanceType
 from rotkehlchen.accounting.structures.base import HistoryBaseEntryType, StakingEvent
 from rotkehlchen.accounting.structures.evm_event import EvmProduct
-from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.accounting.structures.types import (
+    EventCategory,
+    EventCategoryDetails,
+    EventDirection,
+    HistoryEventSubType,
+    HistoryEventType,
+)
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.balances.manual import ManuallyTrackedBalanceWithValue
 from rotkehlchen.chain.accounts import BlockchainAccountData, SingleBlockchainAccountData
@@ -52,11 +58,7 @@ from rotkehlchen.chain.ethereum.modules.yearn.vaults import (
     YearnVaultHistory,
 )
 from rotkehlchen.chain.evm.accounting.structures import TxAccountingTreatment
-from rotkehlchen.chain.evm.decoding.types import (
-    CounterpartyDetails,
-    EventCategory,
-    EventCategoryDetails,
-)
+from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode
 from rotkehlchen.chain.optimism.types import OptimismTransaction
 from rotkehlchen.db.settings import DBSettings
@@ -134,6 +136,7 @@ def _process_entry(entry: Any) -> Union[str, list[Any], dict[str, Any], Any]:
             SupportedBlockchain,
             HistoryEventType,
             HistoryEventSubType,
+            EventDirection,
             LocationDetails,
             EvmProduct,
             DBSettings,

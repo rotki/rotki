@@ -24,8 +24,8 @@ from werkzeug.datastructures import FileStorage
 
 from rotkehlchen.accounting.constants import (
     ACCOUNTING_EVENTS_ICONS,
-    DEFAULT_EVENT_CATEGORY_MAPPINGS,
     EVENT_CATEGORY_DETAILS,
+    EVENT_CATEGORY_MAPPINGS,
     FREE_PNL_EVENTS_LIMIT,
     FREE_REPORTS_LOOKUP_LIMIT,
 )
@@ -4113,7 +4113,7 @@ class RestAPI:
             only_cache=only_cache,
             location=location,
             event_types=[HistoryEventType.RECEIVE],
-            event_subtypes=[HistoryEventSubType.INTEREST_PAYMENT],
+            event_subtypes=[HistoryEventSubType.REWARD],
             query_filter=query_filter,
             value_filter=value_filter,
         )
@@ -4224,14 +4224,9 @@ class RestAPI:
 
     def get_types_mappings(self) -> Response:
         result = {
-            'global_mappings': DEFAULT_EVENT_CATEGORY_MAPPINGS,
+            'global_mappings': EVENT_CATEGORY_MAPPINGS,
             'event_category_details': EVENT_CATEGORY_DETAILS,
-            'exchange_mappings': self.rotkehlchen.exchange_manager.get_exchange_mappings(),
             'accounting_events_icons': ACCOUNTING_EVENTS_ICONS,
-            'per_protocol_mappings': {
-                chain_id.to_name(): self.rotkehlchen.chains_aggregator.get_evm_manager(chain_id).transactions_decoder.get_decoders_event_types()  # noqa: E501
-                for chain_id in EVM_CHAIN_IDS_WITH_TRANSACTIONS
-            },
         }
         return api_response(
             result=_wrap_in_ok_result(process_result(result)),

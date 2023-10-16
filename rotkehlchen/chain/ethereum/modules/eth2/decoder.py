@@ -10,13 +10,13 @@ from rotkehlchen.chain.ethereum.constants import ETH2_DEPOSIT_ADDRESS
 from rotkehlchen.chain.ethereum.modules.curve.decoder import DEFAULT_DECODING_OUTPUT
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import DecoderContext, DecodingOutput
-from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails, EventCategory
+from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.beaconchain import BeaconChain
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, DecoderEventMappingType, Eth2PubKey
+from rotkehlchen.types import ChecksumEvmAddress, Eth2PubKey
 from rotkehlchen.utils.misc import from_gwei, hex_or_bytes_to_int
 
 from .constants import CPT_ETH2, UNKNOWN_VALIDATOR_INDEX
@@ -93,13 +93,6 @@ class Eth2Decoder(DecoderInterface):
         return DEFAULT_DECODING_OUTPUT
 
     # -- DecoderInterface methods
-
-    def possible_events(self) -> DecoderEventMappingType:
-        return {CPT_ETH2: {
-            HistoryEventType.STAKING: {
-                HistoryEventSubType.DEPOSIT_ASSET: EventCategory.DEPOSIT,
-            },
-        }}
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {

@@ -441,7 +441,6 @@ def test_events_mappings(rotkehlchen_api_server_with_exchanges):
         ),
     )
     result = assert_proper_response_with_result(response)
-    assert 'per_protocol_mappings' in result
     assert 'global_mappings' in result
     assert 'event_category_details' in result
     assert 'accounting_events_icons' in result
@@ -450,8 +449,6 @@ def test_events_mappings(rotkehlchen_api_server_with_exchanges):
         for event_type in result['accounting_events_icons']
     }
     assert received_accounting_event_types == set(AccountingEventType)
-    assert result['exchange_mappings'].keys() == {'kraken'}
-    assert {'trade', 'spend'}.issubset(result['exchange_mappings']['kraken'].keys())
 
     response = requests.get(
         api_url_for(

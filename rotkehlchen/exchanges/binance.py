@@ -697,7 +697,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
                         ),
                         notes=notes,
                         event_type=HistoryEventType.RECEIVE,
-                        event_subtype=HistoryEventSubType.INTEREST_PAYMENT,
+                        event_subtype=HistoryEventSubType.REWARD,
                     )
                     events.append(event)
 

@@ -23,7 +23,7 @@ class Uniswapv3Accountant(ModuleAccountantInterface):
                 method='spend',
                 accounting_treatment=TxAccountingTreatment.SWAP,
             ),
-            get_event_type_identifier(HistoryEventType.RECEIVE, HistoryEventSubType.NFT, CPT_UNISWAP_V3): TxEventSettings(  # noqa: E501
+            get_event_type_identifier(HistoryEventType.DEPLOY, HistoryEventSubType.NFT, CPT_UNISWAP_V3): TxEventSettings(  # noqa: E501
                 taxable=False,
                 count_entire_amount_spend=False,
                 count_cost_basis_pnl=True,

@@ -1474,7 +1474,7 @@ def test_makerdao_sai_proxy_interaction(ethereum_transaction_decoder):
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.INFORMATIONAL,
-            event_subtype=HistoryEventSubType.DEPLOY,
+            event_subtype=HistoryEventSubType.CREATE,
             asset=A_ETH,
             balance=Balance(),
             location_label=ADDY_9,

@@ -20,7 +20,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
     EnricherContext,
     TransferEnrichmentOutput,
 )
-from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails, EventCategory
+from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -28,14 +28,7 @@ from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import (
-    CacheType,
-    ChainID,
-    ChecksumEvmAddress,
-    DecoderEventMappingType,
-    EvmTokenKind,
-    EvmTransaction,
-)
+from rotkehlchen.types import CacheType, ChainID, ChecksumEvmAddress, EvmTokenKind, EvmTransaction
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 from .constants import CPT_CURVE
@@ -758,32 +751,6 @@ class CurveDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin):
         return all_events
 
     # -- DecoderInterface methods
-
-    def possible_events(self) -> DecoderEventMappingType:
-        return {
-            CPT_CURVE: {
-                HistoryEventType.TRADE: {
-                    HistoryEventSubType.SPEND: EventCategory.SWAP_OUT,
-                    HistoryEventSubType.RECEIVE: EventCategory.SWAP_IN,
-                },
-                HistoryEventType.WITHDRAWAL: {
-                    HistoryEventSubType.REMOVE_ASSET: EventCategory.WITHDRAW,
-                },
-                HistoryEventType.RECEIVE: {
-                    HistoryEventSubType.RECEIVE_WRAPPED: EventCategory.RECEIVE,
-                    HistoryEventSubType.REWARD: EventCategory.CLAIM_REWARD,
-                },
-                HistoryEventType.SPEND: {
-                    HistoryEventSubType.RETURN_WRAPPED: EventCategory.SEND,
-                },
-                HistoryEventType.DEPOSIT: {
-                    HistoryEventSubType.DEPOSIT_ASSET: EventCategory.DEPOSIT,
-                },
-                HistoryEventType.INFORMATIONAL: {
-                    HistoryEventSubType.GOVERNANCE: EventCategory.INFORMATIONAL,
-                },
-            },
-        }
 
     @staticmethod
     def possible_products() -> dict[str, list[EvmProduct]]:

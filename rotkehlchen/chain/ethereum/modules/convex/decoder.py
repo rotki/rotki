@@ -30,11 +30,11 @@ from rotkehlchen.chain.evm.decoding.structures import (
     EnricherContext,
     TransferEnrichmentOutput,
 )
-from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails, EventCategory
+from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.constants.assets import A_CRV, A_CVX
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import CURVE_POOL_PROTOCOL, ChecksumEvmAddress, DecoderEventMappingType
+from rotkehlchen.types import CURVE_POOL_PROTOCOL, ChecksumEvmAddress
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 logger = logging.getLogger(__name__)
@@ -182,24 +182,6 @@ class ConvexDecoder(DecoderInterface):
             context.event.counterparty = CPT_CONVEX
             return TransferEnrichmentOutput(matched_counterparty=CPT_CONVEX)
         return FAILED_ENRICHMENT_OUTPUT
-
-    def possible_events(self) -> DecoderEventMappingType:
-        return {
-            CPT_CONVEX: {
-                HistoryEventType.RECEIVE: {
-                    HistoryEventSubType.REWARD: EventCategory.CLAIM_REWARD,
-                },
-                HistoryEventType.SPEND: {
-                    HistoryEventSubType.RETURN_WRAPPED: EventCategory.SEND,
-                },
-                HistoryEventType.DEPOSIT: {
-                    HistoryEventSubType.NONE: EventCategory.DEPOSIT,
-                },
-                HistoryEventType.WITHDRAWAL: {
-                    HistoryEventSubType.NONE: EventCategory.WITHDRAW,
-                },
-            },
-        }
 
     @staticmethod
     def possible_products() -> dict[str, list[EvmProduct]]:

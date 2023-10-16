@@ -12,18 +12,13 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     DecodingOutput,
 )
-from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails, EventCategory
+from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.fval import FVal
-from rotkehlchen.types import (
-    ChecksumEvmAddress,
-    DecoderEventMappingType,
-    EvmTokenKind,
-    EvmTransaction,
-)
+from rotkehlchen.types import ChecksumEvmAddress, EvmTokenKind, EvmTransaction
 from rotkehlchen.utils.misc import (
     hex_or_bytes_to_address,
     hex_or_bytes_to_int,
@@ -309,29 +304,6 @@ class Aavev2Decoder(DecoderInterface):
         return DEFAULT_DECODING_OUTPUT
 
     # -- DecoderInterface methods
-
-    def possible_events(self) -> DecoderEventMappingType:
-        return {CPT_AAVE_V2: {
-            HistoryEventType.RECEIVE: {
-                HistoryEventSubType.GENERATE_DEBT: EventCategory.CLAIM_REWARD,
-                HistoryEventSubType.RECEIVE_WRAPPED: EventCategory.RECEIVE,
-                HistoryEventSubType.RETURN_WRAPPED: EventCategory.RECEIVE,
-            },
-            HistoryEventType.DEPOSIT: {
-                HistoryEventSubType.DEPOSIT_ASSET: EventCategory.DEPOSIT,
-            },
-            HistoryEventType.SPEND: {
-                HistoryEventSubType.RETURN_WRAPPED: EventCategory.SEND,
-                HistoryEventSubType.LIQUIDATE: EventCategory.LIQUIDATE,
-                HistoryEventSubType.PAYBACK_DEBT: EventCategory.REPAY,
-            },
-            HistoryEventType.WITHDRAWAL: {
-                HistoryEventSubType.REMOVE_ASSET: EventCategory.WITHDRAW,
-            },
-            HistoryEventType.INFORMATIONAL: {
-                HistoryEventSubType.NONE: EventCategory.INFORMATIONAL,
-            },
-        }}
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {

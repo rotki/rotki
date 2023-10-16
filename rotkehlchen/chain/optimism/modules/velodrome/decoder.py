@@ -15,7 +15,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     DecodingOutput,
 )
-from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails, EventCategory
+from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.optimism.modules.velodrome.constants import CPT_VELODROME
@@ -25,12 +25,7 @@ from rotkehlchen.chain.optimism.modules.velodrome.velodrome_cache import (
     save_velodrome_data_to_cache,
 )
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import (
-    VELODROME_POOL_PROTOCOL,
-    CacheType,
-    ChecksumEvmAddress,
-    DecoderEventMappingType,
-)
+from rotkehlchen.types import VELODROME_POOL_PROTOCOL, CacheType, ChecksumEvmAddress
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 if TYPE_CHECKING:
@@ -238,7 +233,7 @@ class VelodromeDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin):
                     event.event_subtype = HistoryEventSubType.REMOVE_ASSET
                     event.notes = f'Withdraw {event.balance.amount} {crypto_asset.symbol} from {gauge_address} velodrome gauge'  # noqa: E501
                 else:  # CLAIM_REWARDS
-                    event.event_type = HistoryEventType.WITHDRAWAL
+                    event.event_type = HistoryEventType.RECEIVE
                     event.event_subtype = HistoryEventSubType.REWARD
                     event.notes = f'Receive {event.balance.amount} {crypto_asset.symbol} rewards from {gauge_address} velodrome gauge'  # noqa: E501
 
@@ -254,29 +249,6 @@ class VelodromeDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin):
             for gauge_address in self.gauges
         })
         return mapping
-
-    def possible_events(self) -> DecoderEventMappingType:
-        return {
-            CPT_VELODROME: {
-                HistoryEventType.TRADE: {
-                    HistoryEventSubType.SPEND: EventCategory.SWAP_OUT,
-                    HistoryEventSubType.RECEIVE: EventCategory.SWAP_IN,
-                },
-                HistoryEventType.WITHDRAWAL: {
-                    HistoryEventSubType.REMOVE_ASSET: EventCategory.WITHDRAW,
-                },
-                HistoryEventType.RECEIVE: {
-                    HistoryEventSubType.RECEIVE_WRAPPED: EventCategory.RECEIVE,
-                    HistoryEventSubType.REWARD: EventCategory.CLAIM_REWARD,
-                },
-                HistoryEventType.SPEND: {
-                    HistoryEventSubType.RETURN_WRAPPED: EventCategory.SEND,
-                },
-                HistoryEventType.DEPOSIT: {
-                    HistoryEventSubType.DEPOSIT_ASSET: EventCategory.DEPOSIT,
-                },
-            },
-        }
 
     @staticmethod
     def possible_products() -> dict[str, list[EvmProduct]]:

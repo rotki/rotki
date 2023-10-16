@@ -14,19 +14,14 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     DecodingOutput,
 )
-from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails, EventCategory
+from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog, SwapData
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import (
-    ChecksumEvmAddress,
-    DecoderEventMappingType,
-    EvmTokenKind,
-    EvmTransaction,
-)
+from rotkehlchen.types import ChecksumEvmAddress, EvmTokenKind, EvmTransaction
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 if TYPE_CHECKING:
@@ -277,26 +272,6 @@ class CowswapCommonDecoder(DecoderInterface, metaclass=abc.ABCMeta):
         return decoded_events
 
     # -- DecoderInterface methods
-
-    def possible_events(self) -> DecoderEventMappingType:
-        return {
-            CPT_COWSWAP: {
-                HistoryEventType.TRADE: {
-                    HistoryEventSubType.SPEND: EventCategory.SWAP_OUT,
-                    HistoryEventSubType.RECEIVE: EventCategory.SWAP_IN,
-                },
-                HistoryEventType.SPEND: {
-                    HistoryEventSubType.FEE: EventCategory.FEE,
-                },
-                HistoryEventType.DEPOSIT: {
-                    HistoryEventSubType.PLACE_ORDER: EventCategory.PLACE_ORDER,
-                },
-                HistoryEventType.WITHDRAWAL: {
-                    HistoryEventSubType.CANCEL_ORDER: EventCategory.CANCEL_ORDER,
-                    HistoryEventSubType.REFUND: EventCategory.REFUND,
-                },
-            },
-        }
 
     def counterparties(self) -> list[CounterpartyDetails]:
         return [CounterpartyDetails(identifier=CPT_COWSWAP, label='Cowswap', image='cowswap.jpg')]

@@ -866,7 +866,7 @@ def test_get_reward_from_gauge_v2(optimism_accounts, optimism_transaction_decode
             sequence_index=35,
             timestamp=timestamp,
             location=Location.OPTIMISM,
-            event_type=HistoryEventType.WITHDRAWAL,
+            event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.REWARD,
             asset=Asset(VELO_V2_TOKEN),
             balance=Balance(FVal('872.22115188616298484')),

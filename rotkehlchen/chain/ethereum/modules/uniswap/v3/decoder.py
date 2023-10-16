@@ -19,7 +19,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
     EnricherContext,
     TransferEnrichmentOutput,
 )
-from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails, EventCategory
+from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog, SwapData
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE, ZERO
@@ -28,13 +28,7 @@ from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import (
-    ChainID,
-    ChecksumEvmAddress,
-    DecoderEventMappingType,
-    EvmTokenKind,
-    EvmTransaction,
-)
+from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind, EvmTransaction
 from rotkehlchen.utils.misc import hex_or_bytes_to_int, ts_ms_to_sec
 
 from ..constants import CPT_UNISWAP_V2, CPT_UNISWAP_V3, UNISWAP_ICON, UNISWAP_LABEL
@@ -515,6 +509,7 @@ class Uniswapv3Decoder(DecoderInterface):
             context.event.event_type == HistoryEventType.RECEIVE and
             context.event.event_subtype == HistoryEventSubType.NONE
         ):
+            context.event.event_type = HistoryEventType.DEPLOY
             context.event.event_subtype = HistoryEventSubType.NFT
             context.event.notes = f'Create {CPT_UNISWAP_V3} LP with id {hex_or_bytes_to_int(context.tx_log.topics[3])}'  # noqa: E501
             context.event.counterparty = CPT_UNISWAP_V3
@@ -523,23 +518,6 @@ class Uniswapv3Decoder(DecoderInterface):
         return FAILED_ENRICHMENT_OUTPUT
 
     # -- DecoderInterface methods
-
-    def possible_events(self) -> DecoderEventMappingType:
-        return {CPT_UNISWAP_V3: {
-            HistoryEventType.TRADE: {
-                HistoryEventSubType.RECEIVE: EventCategory.SWAP_IN,
-                HistoryEventSubType.SPEND: EventCategory.SWAP_OUT,
-            },
-            HistoryEventType.DEPOSIT: {
-                HistoryEventSubType.DEPOSIT_ASSET: EventCategory.DEPOSIT,
-            },
-            HistoryEventType.WITHDRAWAL: {
-                HistoryEventSubType.REMOVE_ASSET: EventCategory.WITHDRAW,
-            },
-            HistoryEventType.RECEIVE: {
-                HistoryEventSubType.NFT: EventCategory.RECEIVE,
-            },
-        }}
 
     def decoding_rules(self) -> list[Callable]:
         return [

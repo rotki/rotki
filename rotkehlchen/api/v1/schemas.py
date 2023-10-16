@@ -2951,8 +2951,8 @@ class BinanceSavingsSchema(BaseStakingQuerySchema):
             location=location,
             data=data,
             event_types=[HistoryEventType.RECEIVE],
-            query_event_subtypes=[HistoryEventSubType.INTEREST_PAYMENT],
-            value_event_subtypes=[HistoryEventSubType.INTEREST_PAYMENT],
+            query_event_subtypes=[HistoryEventSubType.REWARD],
+            value_event_subtypes=[HistoryEventSubType.REWARD],
             exclude_event_subtypes=None,
         )
         query_dict.update({'location': location})

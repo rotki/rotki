@@ -1090,7 +1090,7 @@ def test_uniswap_v3_add_liquidity(database, ethereum_inquirer, eth_transactions)
             sequence_index=311,
             timestamp=TimestampMS(1672409279000),
             location=Location.ETHEREUM,
-            event_type=HistoryEventType.RECEIVE,
+            event_type=HistoryEventType.DEPLOY,
             event_subtype=HistoryEventSubType.NFT,
             asset=Asset('eip155:1/erc721:0xC36442b4a4522E871399CD717aBDD847Ab11FE88'),
             balance=Balance(amount=FVal(1)),
