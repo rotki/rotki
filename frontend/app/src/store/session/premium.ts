@@ -1,5 +1,6 @@
 import { type PremiumCredentialsPayload } from '@/types/session';
 import { type ActionStatus } from '@/types/action';
+import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 
 export const usePremiumStore = defineStore('session/premium', () => {
   const premium = ref(false);
@@ -14,7 +15,9 @@ export const usePremiumStore = defineStore('session/premium', () => {
     apiKey,
     apiSecret,
     username
-  }: PremiumCredentialsPayload): Promise<ActionStatus> => {
+  }: PremiumCredentialsPayload): Promise<
+    ActionStatus<string | ValidationErrors>
+  > => {
     try {
       const success = await api.setPremiumCredentials(
         username,
@@ -27,9 +30,17 @@ export const usePremiumStore = defineStore('session/premium', () => {
       }
       return { success };
     } catch (e: any) {
+      let errors: string | ValidationErrors = e.message;
+      if (e instanceof ApiValidationError) {
+        errors = e.getValidationErrors({
+          apiKey,
+          apiSecret
+        });
+      }
+
       return {
         success: false,
-        message: e.message
+        message: errors
       };
     }
   };
