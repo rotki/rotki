@@ -2,19 +2,22 @@ import csv
 import tempfile
 from itertools import zip_longest
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 import pytest
 
 from rotkehlchen.accounting.accountant import Accountant
 from rotkehlchen.accounting.cost_basis import AssetAcquisitionEvent
+from rotkehlchen.accounting.cost_basis.base import AverageCostBasisMethod
 from rotkehlchen.accounting.export.csv import FILENAME_ALL_CSV, CSVExporter
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL, PnlTotals
+from rotkehlchen.accounting.pot import AccountingPot
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.accounting.types import MissingAcquisition
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.modules.uniswap.constants import CPT_UNISWAP_V2
 from rotkehlchen.chain.evm.accounting.structures import TxAccountingTreatment, TxEventSettings
 from rotkehlchen.constants import ONE, ZERO
@@ -41,15 +44,22 @@ if TYPE_CHECKING:
 
 
 EXAMPLE_TIMESTAMP = Timestamp(1675483017)
+ONE_PRICE = Price(ONE)
 
 
-def add_acquisition(pot, amount, asset=A_ETH, price=ONE, taxable=False):
+def add_in_event(
+        pot: AccountingPot,
+        amount: FVal,
+        asset: Asset = A_ETH,
+        price: Price = ONE_PRICE,
+        taxable: bool = False,
+):
     """
     Util function to add an acquisition to an accounting pot.
     Timestamp doesn't matter here since we provide `given_price`, but has to be big enough so that
     `handle_prefork_acquisitions` is not called.
     """
-    pot.add_acquisition(
+    pot.add_in_event(
         event_type=AccountingEventType.TRANSACTION_EVENT,
         notes='Test',
         location=Location.BLOCKCHAIN,
@@ -61,13 +71,19 @@ def add_acquisition(pot, amount, asset=A_ETH, price=ONE, taxable=False):
     )
 
 
-def add_spend(pot, amount, asset=A_ETH, price=ONE, taxable=True):
+def add_out_event(
+        pot: AccountingPot,
+        amount: FVal,
+        asset: Asset = A_ETH,
+        price: Price = ONE_PRICE,
+        taxable: bool = True,
+):
     """
     Util function to add a spend event to an accounting pot.
     Timestamp doesn't matter here since we provide `given_price`, but has to be big enough so that
     `handle_prefork_acquisitions` is not called.
     """
-    pot.add_spend(
+    pot.add_out_event(
         event_type=AccountingEventType.TRANSACTION_EVENT,
         notes='Test',
         location=Location.BLOCKCHAIN,
@@ -81,31 +97,31 @@ def add_spend(pot, amount, asset=A_ETH, price=ONE, taxable=True):
 
 
 @pytest.mark.parametrize('accounting_initialize_parameters', [True])
-def test_calculate_spend_cost_basis_after_year(accountant):
+def test_calculate_spend_cost_basis_after_year(accountant: Accountant):
     asset = A_BTC
     cost_basis = accountant.pots[0].cost_basis
     asset_events = cost_basis.get_events(asset)
-    asset_events.acquisitions_manager.add_acquisition(
+    asset_events.acquisitions_manager.add_in_event(
         AssetAcquisitionEvent(
             amount=FVal(5),
-            timestamp=1446979735,  # 08/11/2015
-            rate=FVal(268.1),
+            timestamp=Timestamp(1446979735),  # 08/11/2015
+            rate=Price(FVal(268.1)),
             index=1,
         ),
     )
-    asset_events.acquisitions_manager.add_acquisition(
+    asset_events.acquisitions_manager.add_in_event(
         AssetAcquisitionEvent(
             amount=FVal(15),
-            timestamp=1467378304,  # 31/06/2016
-            rate=FVal(612.45),
+            timestamp=Timestamp(1467378304),  # 31/06/2016
+            rate=Price(FVal(612.45)),
             index=2,
         ),
     )
-    asset_events.acquisitions_manager.add_acquisition(
+    asset_events.acquisitions_manager.add_in_event(
         AssetAcquisitionEvent(
             amount=FVal(3),  # 25/10/2016
-            timestamp=1477378304,
-            rate=FVal(603.415),
+            timestamp=Timestamp(1477378304),
+            rate=Price(FVal(603.415)),
             index=3,
         ),
     )
@@ -114,7 +130,7 @@ def test_calculate_spend_cost_basis_after_year(accountant):
     cinfo = asset_events.acquisitions_manager.calculate_spend_cost_basis(
         spending_amount=spending_amount,
         spending_asset=asset,
-        timestamp=1480683904,  # 02/12/2016
+        timestamp=Timestamp(1480683904),  # 02/12/2016
         missing_acquisitions=cost_basis.missing_acquisitions,
         used_acquisitions=asset_events.used_acquisitions,
         settings=cost_basis.settings,
@@ -142,7 +158,7 @@ def test_calculate_spend_cost_basis_after_year(accountant):
     assert remaining_amount == FVal(12), '3 of 15 should have been consumed'
 
 
-def test_calculate_spend_cost_basis_1_buy_consumed_by_1_sell(accountant):
+def test_calculate_spend_cost_basis_1_buy_consumed_by_1_sell(accountant: Accountant):
     """ Assert bought_cost is correct when 1 buy is completely consumed by 1 sell
 
     Regression test for part of https://github.com/rotki/rotki/issues/223
@@ -150,11 +166,11 @@ def test_calculate_spend_cost_basis_1_buy_consumed_by_1_sell(accountant):
     asset = A_BTC
     cost_basis = accountant.pots[0].cost_basis
     asset_events = cost_basis.get_events(asset)
-    asset_events.acquisitions_manager.add_acquisition(
+    asset_events.acquisitions_manager.add_in_event(
         AssetAcquisitionEvent(
             amount=FVal(5),
-            timestamp=1446979735,  # 08/11/2015
-            rate=FVal(268.1),
+            timestamp=Timestamp(1446979735),  # 08/11/2015
+            rate=Price(FVal(268.1)),
             index=1,
         ),
     )
@@ -163,7 +179,7 @@ def test_calculate_spend_cost_basis_1_buy_consumed_by_1_sell(accountant):
     cinfo = asset_events.acquisitions_manager.calculate_spend_cost_basis(
         spending_amount=spending_amount,
         spending_asset=asset,
-        timestamp=1467378304,  # 31/06/2016
+        timestamp=Timestamp(1467378304),  # 31/06/2016
         missing_acquisitions=cost_basis.missing_acquisitions,
         used_acquisitions=asset_events.used_acquisitions,
         settings=cost_basis.settings,
@@ -184,7 +200,7 @@ def test_calculate_spend_cost_basis_1_buy_consumed_by_1_sell(accountant):
     assert acquisitions_num == 0, 'only buy should have been used'
 
 
-def test_calculate_spend_cost_basis1_buy_used_by_2_sells_taxable(accountant):
+def test_calculate_spend_cost_basis1_buy_used_by_2_sells_taxable(accountant: Accountant):
     """ Make sure that when 1 buy is used by 2 sells bought cost is correct
 
     Regression test for taxable part of:
@@ -193,11 +209,11 @@ def test_calculate_spend_cost_basis1_buy_used_by_2_sells_taxable(accountant):
     asset = A_BTC
     cost_basis = accountant.pots[0].cost_basis
     asset_events = cost_basis.get_events(asset)
-    asset_events.acquisitions_manager.add_acquisition(
+    asset_events.acquisitions_manager.add_in_event(
         AssetAcquisitionEvent(
             amount=FVal(5),
-            timestamp=1446979735,  # 08/11/2015
-            rate=FVal(268.1),
+            timestamp=Timestamp(1446979735),  # 08/11/2015
+            rate=Price(FVal(268.1)),
             index=1,
         ),
     )
@@ -206,7 +222,7 @@ def test_calculate_spend_cost_basis1_buy_used_by_2_sells_taxable(accountant):
     cinfo = asset_events.acquisitions_manager.calculate_spend_cost_basis(
         spending_amount=spending_amount,
         spending_asset=asset,
-        timestamp=1467378304,  # 31/06/2016
+        timestamp=Timestamp(1467378304),  # 31/06/2016
         missing_acquisitions=cost_basis.missing_acquisitions,
         used_acquisitions=asset_events.used_acquisitions,
         settings=cost_basis.settings,
@@ -234,7 +250,7 @@ def test_calculate_spend_cost_basis1_buy_used_by_2_sells_taxable(accountant):
     cinfo = asset_events.acquisitions_manager.calculate_spend_cost_basis(
         spending_amount=spending_amount,
         spending_asset=asset,
-        timestamp=1467378404,  # bit after previous sell
+        timestamp=Timestamp(1467378404),  # bit after previous sell
         missing_acquisitions=cost_basis.missing_acquisitions,
         used_acquisitions=asset_events.used_acquisitions,
         settings=cost_basis.settings,
@@ -256,7 +272,7 @@ def test_calculate_spend_cost_basis1_buy_used_by_2_sells_taxable(accountant):
 
 
 @pytest.mark.parametrize('accounting_initialize_parameters', [True])
-def test_calculate_spend_cost_basis_1_buy_used_by_2_sells_taxfree(accountant):
+def test_calculate_spend_cost_basis_1_buy_used_by_2_sells_taxfree(accountant: Accountant):
     """ Make sure that when 1 buy is used by 2 sells bought cost is correct
 
     Regression test for taxfree part of:
@@ -265,11 +281,11 @@ def test_calculate_spend_cost_basis_1_buy_used_by_2_sells_taxfree(accountant):
     asset = A_BTC
     cost_basis = accountant.pots[0].cost_basis
     asset_events = cost_basis.get_events(asset)
-    asset_events.acquisitions_manager.add_acquisition(
+    asset_events.acquisitions_manager.add_in_event(
         AssetAcquisitionEvent(
             amount=FVal(5),
-            timestamp=1446979735,  # 08/11/2015
-            rate=FVal(268.1),
+            timestamp=Timestamp(1446979735),  # 08/11/2015
+            rate=Price(FVal(268.1)),
             index=1,
         ),
     )
@@ -278,7 +294,7 @@ def test_calculate_spend_cost_basis_1_buy_used_by_2_sells_taxfree(accountant):
     cinfo = asset_events.acquisitions_manager.calculate_spend_cost_basis(
         spending_amount=spending_amount,
         spending_asset=asset,
-        timestamp=1480683904,  # 02/12/2016
+        timestamp=Timestamp(1480683904),  # 02/12/2016
         missing_acquisitions=cost_basis.missing_acquisitions,
         used_acquisitions=asset_events.used_acquisitions,
         settings=cost_basis.settings,
@@ -305,7 +321,7 @@ def test_calculate_spend_cost_basis_1_buy_used_by_2_sells_taxfree(accountant):
     cinfo = asset_events.acquisitions_manager.calculate_spend_cost_basis(
         spending_amount=spending_amount,
         spending_asset=asset,
-        timestamp=1480683954,  # bit after previous sell
+        timestamp=Timestamp(1480683954),  # bit after previous sell
         missing_acquisitions=cost_basis.missing_acquisitions,
         used_acquisitions=asset_events.used_acquisitions,
         settings=cost_basis.settings,
@@ -327,23 +343,23 @@ def test_calculate_spend_cost_basis_1_buy_used_by_2_sells_taxfree(accountant):
 
 
 @pytest.mark.parametrize('accounting_initialize_parameters', [True])
-def test_calculate_spend_cost_basis_sell_more_than_bought_within_year(accountant):
+def test_calculate_spend_cost_basis_sell_more_than_bought_within_year(accountant: Accountant):
     asset = A_BTC
     cost_basis = accountant.pots[0].cost_basis
     asset_events = cost_basis.get_events(asset)
-    asset_events.acquisitions_manager.add_acquisition(
+    asset_events.acquisitions_manager.add_in_event(
         AssetAcquisitionEvent(
             amount=ONE,
-            timestamp=1446979735,  # 08/11/2015
-            rate=FVal(268.1),
+            timestamp=Timestamp(1446979735),  # 08/11/2015
+            rate=Price(FVal(268.1)),
             index=1,
         ),
     )
-    asset_events.acquisitions_manager.add_acquisition(
+    asset_events.acquisitions_manager.add_in_event(
         AssetAcquisitionEvent(
             amount=ONE,
-            timestamp=1467378304,  # 31/06/2016
-            rate=FVal(612.45),
+            timestamp=Timestamp(1467378304),  # 31/06/2016
+            rate=Price(FVal(612.45)),
             index=2,
         ),
     )
@@ -352,7 +368,7 @@ def test_calculate_spend_cost_basis_sell_more_than_bought_within_year(accountant
     cinfo = asset_events.acquisitions_manager.calculate_spend_cost_basis(
         spending_amount=spending_amount,
         spending_asset=asset,
-        timestamp=1467478304,  # bit after 31/06/2016
+        timestamp=Timestamp(1467478304),  # bit after 31/06/2016
         missing_acquisitions=cost_basis.missing_acquisitions,
         used_acquisitions=asset_events.used_acquisitions,
         settings=cost_basis.settings,
@@ -378,23 +394,23 @@ def test_calculate_spend_cost_basis_sell_more_than_bought_within_year(accountant
 
 
 @pytest.mark.parametrize('accounting_initialize_parameters', [True])
-def test_calculate_spend_cost_basis_sell_more_than_bought_after_year(accountant):
+def test_calculate_spend_cost_basis_sell_more_than_bought_after_year(accountant: Accountant):
     asset = A_BTC
     cost_basis = accountant.pots[0].cost_basis
     asset_events = cost_basis.get_events(asset)
-    asset_events.acquisitions_manager.add_acquisition(
+    asset_events.acquisitions_manager.add_in_event(
         AssetAcquisitionEvent(
             amount=ONE,
-            timestamp=1446979735,  # 08/11/2015
-            rate=FVal(268.1),
+            timestamp=Timestamp(1446979735),  # 08/11/2015
+            rate=Price(FVal(268.1)),
             index=1,
         ),
     )
-    asset_events.acquisitions_manager.add_acquisition(
+    asset_events.acquisitions_manager.add_in_event(
         AssetAcquisitionEvent(
             amount=ONE,
-            timestamp=1467378304,  # 31/06/2016
-            rate=FVal(612.45),
+            timestamp=Timestamp(1467378304),  # 31/06/2016
+            rate=Price(FVal(612.45)),
             index=2,
         ),
     )
@@ -403,7 +419,7 @@ def test_calculate_spend_cost_basis_sell_more_than_bought_after_year(accountant)
     cinfo = asset_events.acquisitions_manager.calculate_spend_cost_basis(
         spending_amount=spending_amount,
         spending_asset=asset,
-        timestamp=1523399409,  # 10/04/2018
+        timestamp=Timestamp(1523399409),  # 10/04/2018
         missing_acquisitions=cost_basis.missing_acquisitions,
         used_acquisitions=asset_events.used_acquisitions,
         settings=cost_basis.settings,
@@ -428,36 +444,36 @@ def test_calculate_spend_cost_basis_sell_more_than_bought_after_year(accountant)
     assert acquisitions_num == 0, 'only buy should have been used'
 
 
-def test_reduce_asset_amount(accountant):
+def test_reduce_asset_amount(accountant: Accountant):
     asset = A_ETH
     cost_basis = accountant.pots[0].cost_basis
     asset_events = cost_basis.get_events(asset)
-    asset_events.acquisitions_manager.add_acquisition(
+    asset_events.acquisitions_manager.add_in_event(
         AssetAcquisitionEvent(
             amount=ONE,
-            timestamp=1446979735,  # 08/11/2015
-            rate=FVal(268.1),
+            timestamp=Timestamp(1446979735),  # 08/11/2015
+            rate=Price(FVal(268.1)),
             index=1,
         ),
     )
-    asset_events.acquisitions_manager.add_acquisition(
+    asset_events.acquisitions_manager.add_in_event(
         AssetAcquisitionEvent(
             amount=ONE,
-            timestamp=1467378304,  # 31/06/2016
-            rate=FVal(612.45),
+            timestamp=Timestamp(1467378304),  # 31/06/2016
+            rate=Price(FVal(612.45)),
             index=2,
         ),
     )
-    asset_events.acquisitions_manager.add_acquisition(
+    asset_events.acquisitions_manager.add_in_event(
         AssetAcquisitionEvent(
             amount=FVal(3),  # 25/10/2016
-            timestamp=1477378304,
-            rate=FVal(603.415),
+            timestamp=Timestamp(1477378304),
+            rate=Price(FVal(603.415)),
             index=3,
         ),
     )
 
-    assert cost_basis.reduce_asset_amount(asset=asset, amount=FVal(1.5), timestamp=0)
+    assert cost_basis.reduce_asset_amount(asset=asset, amount=FVal(1.5), timestamp=Timestamp(0))
     acquisitions = asset_events.acquisitions_manager.get_acquisitions()
     acquisitions_num = len(acquisitions)
     assert acquisitions_num == 2, '1 buy should be used'
@@ -469,86 +485,84 @@ def test_reduce_asset_amount(accountant):
     assert equivalent_events.acquisitions_manager.get_acquisitions()[0].remaining_amount == FVal(0.5)  # noqa: E501
 
 
-def test_reduce_asset_amount_exact(accountant):
+def test_reduce_asset_amount_exact(accountant: Accountant):
     asset = A_BTC
     cost_basis = accountant.pots[0].cost_basis
     asset_events = cost_basis.get_events(asset)
-    asset_events.acquisitions_manager.add_acquisition(
+    asset_events.acquisitions_manager.add_in_event(
         AssetAcquisitionEvent(
             amount=ONE,
-            timestamp=1446979735,  # 08/11/2015
-            rate=FVal(268.1),
+            timestamp=Timestamp(1446979735),  # 08/11/2015
+            rate=Price(FVal(268.1)),
             index=1,
         ),
     )
-    asset_events.acquisitions_manager.add_acquisition(
+    asset_events.acquisitions_manager.add_in_event(
         AssetAcquisitionEvent(
             amount=ONE,
-            timestamp=1467378304,  # 31/06/2016
-            rate=FVal(612.45),
+            timestamp=Timestamp(1467378304),  # 31/06/2016
+            rate=Price(FVal(612.45)),
             index=2,
         ),
     )
 
-    assert cost_basis.reduce_asset_amount(asset, FVal(2), 0)
+    assert cost_basis.reduce_asset_amount(asset, FVal(2), Timestamp(0))
     acquisitions_num = len(asset_events.acquisitions_manager)
     assert acquisitions_num == 0, 'all buys should be used'
 
 
-def test_reduce_asset_amount_not_bought(accountant):
-    asset = 'BTC'
-    assert not accountant.pots[0].cost_basis.reduce_asset_amount(asset, FVal(3), 0)
+def test_reduce_asset_amount_not_bought(accountant: Accountant):
+    assert not accountant.pots[0].cost_basis.reduce_asset_amount(A_BTC, FVal(3), Timestamp(0))
 
 
-def test_reduce_asset_amount_more_than_bought(accountant):
-    asset = A_ETH
+def test_reduce_asset_amount_more_than_bought(accountant: Accountant):
     cost_basis = accountant.pots[0].cost_basis
-    asset_events = cost_basis.get_events(asset)
-    asset_events.acquisitions_manager.add_acquisition(
+    asset_events = cost_basis.get_events(A_ETH)
+    asset_events.acquisitions_manager.add_in_event(
         AssetAcquisitionEvent(
             amount=ONE,
-            timestamp=1446979735,  # 08/11/2015
-            rate=FVal(268.1),
+            timestamp=Timestamp(1446979735),  # 08/11/2015
+            rate=Price(FVal(268.1)),
             index=1,
         ),
     )
-    asset_events.acquisitions_manager.add_acquisition(
+    asset_events.acquisitions_manager.add_in_event(
         AssetAcquisitionEvent(
             amount=ONE,
-            timestamp=1467378304,  # 31/06/2016
-            rate=FVal(612.45),
+            timestamp=Timestamp(1467378304),  # 31/06/2016
+            rate=Price(FVal(612.45)),
             index=2,
         ),
     )
 
     # Also reduce WETH, to make sure it's counted same as ETH
-    assert not cost_basis.reduce_asset_amount(A_WETH, FVal(3), 0)
+    assert not cost_basis.reduce_asset_amount(A_WETH, FVal(3), Timestamp(0))
     acquisitions_num = len(asset_events.acquisitions_manager)
     assert acquisitions_num == 0, 'all buys should be used'
 
 
-def test_accounting_lifo_order(accountant):
+def test_accounting_lifo_order(accountant: Accountant):
     asset = A_ETH
     cost_basis = accountant.pots[0].cost_basis
     cost_basis.reset(DBSettings(cost_basis_method=CostBasisMethod.LIFO))
     asset_events = cost_basis.get_events(asset)
-    base_ts = 1614556800  # 01/03/2021, changed from 1 for windows. See https://github.com/rotki/rotki/pull/6398#discussion_r1271323846 # noqa: E501
+    base_ts = Timestamp(1614556800)  # 01/03/2021, changed from 1 for windows. See https://github.com/rotki/rotki/pull/6398#discussion_r1271323846 # noqa: E501
     # first we do a simple test that from 2 events the second is used
     event1 = AssetAcquisitionEvent(
         amount=ONE,
         timestamp=base_ts,
-        rate=ONE,
+        rate=ONE_PRICE,
         index=1,
     )
     event2 = AssetAcquisitionEvent(
         amount=ONE,
-        timestamp=base_ts + 10,
-        rate=ONE,
+        timestamp=Timestamp(base_ts + 10),
+        rate=ONE_PRICE,
         index=2,
     )
-    asset_events.acquisitions_manager.add_acquisition(event1)
-    asset_events.acquisitions_manager.add_acquisition(event2)
-    assert cost_basis.reduce_asset_amount(A_ETH, ONE, 0)
+    asset_events.acquisitions_manager.add_in_event(event1)
+    asset_events.acquisitions_manager.add_in_event(event2)
+    assert cost_basis.reduce_asset_amount(A_ETH, ONE, Timestamp(0))
     acquisitions = asset_events.acquisitions_manager.get_acquisitions()
     assert len(acquisitions) == 1 and acquisitions[0] == event1
     # then test to reset
@@ -558,21 +572,21 @@ def test_accounting_lifo_order(accountant):
     event3 = AssetAcquisitionEvent(
         amount=FVal(2),
         timestamp=base_ts,
-        rate=ONE,
+        rate=ONE_PRICE,
         index=1,
     )
     event4 = AssetAcquisitionEvent(
         amount=FVal(5),
-        timestamp=base_ts + 10,
-        rate=ONE,
+        timestamp=Timestamp(base_ts + 10),
+        rate=ONE_PRICE,
         index=2,
     )
-    asset_events.acquisitions_manager.add_acquisition(event3)
-    asset_events.acquisitions_manager.add_acquisition(event4)
+    asset_events.acquisitions_manager.add_in_event(event3)
+    asset_events.acquisitions_manager.add_in_event(event4)
     assert asset_events.acquisitions_manager.calculate_spend_cost_basis(
-        spending_amount=3,
+        spending_amount=FVal(3),
         spending_asset=asset,
-        timestamp=1,
+        timestamp=Timestamp(1),
         missing_acquisitions=cost_basis.missing_acquisitions,
         used_acquisitions=asset_events.used_acquisitions,
         settings=cost_basis.settings,
@@ -585,14 +599,14 @@ def test_accounting_lifo_order(accountant):
     event5 = AssetAcquisitionEvent(
         amount=ONE,
         timestamp=base_ts,
-        rate=ONE,
+        rate=ONE_PRICE,
         index=1,
     )
-    asset_events.acquisitions_manager.add_acquisition(event5)
+    asset_events.acquisitions_manager.add_in_event(event5)
     assert asset_events.acquisitions_manager.calculate_spend_cost_basis(
-        spending_amount=4,
+        spending_amount=FVal(4),
         spending_asset=asset,
-        timestamp=2,
+        timestamp=Timestamp(2),
         missing_acquisitions=cost_basis.missing_acquisitions,
         used_acquisitions=asset_events.used_acquisitions,
         settings=cost_basis.settings,
@@ -605,14 +619,14 @@ def test_accounting_lifo_order(accountant):
     event6 = AssetAcquisitionEvent(
         amount=ONE,
         timestamp=base_ts,
-        rate=ONE,
+        rate=ONE_PRICE,
         index=1,
     )
-    asset_events.acquisitions_manager.add_acquisition(event6)
+    asset_events.acquisitions_manager.add_in_event(event6)
     assert asset_events.acquisitions_manager.calculate_spend_cost_basis(
-        spending_amount=2,
+        spending_amount=FVal(2),
         spending_asset=asset,
-        timestamp=3,
+        timestamp=Timestamp(3),
         missing_acquisitions=cost_basis.missing_acquisitions,
         used_acquisitions=asset_events.used_acquisitions,
         settings=cost_basis.settings,
@@ -625,14 +639,14 @@ def test_accounting_lifo_order(accountant):
     event7 = AssetAcquisitionEvent(
         amount=ONE,
         timestamp=base_ts,
-        rate=ONE,
+        rate=ONE_PRICE,
         index=1,
     )
-    asset_events.acquisitions_manager.add_acquisition(event7)
+    asset_events.acquisitions_manager.add_in_event(event7)
     assert asset_events.acquisitions_manager.calculate_spend_cost_basis(
-        spending_amount=2,
+        spending_amount=FVal(2),
         spending_asset=asset,
-        timestamp=4,
+        timestamp=Timestamp(4),
         missing_acquisitions=cost_basis.missing_acquisitions,
         used_acquisitions=asset_events.used_acquisitions,
         settings=cost_basis.settings,
@@ -642,14 +656,14 @@ def test_accounting_lifo_order(accountant):
     assert cost_basis.missing_acquisitions == [
         MissingAcquisition(
             asset=A_ETH,
-            time=4,
+            time=Timestamp(4),
             found_amount=ONE,
             missing_amount=ONE,
         ),
     ]
 
 
-def test_accounting_simple_hifo_order(accountant):
+def test_accounting_simple_hifo_order(accountant: Accountant):
     """A simple test that checks that from 2 events the one with the highest amount is used."""
     asset = A_BTC
     cost_basis = accountant.pots[0].cost_basis
@@ -657,48 +671,48 @@ def test_accounting_simple_hifo_order(accountant):
     asset_events = cost_basis.get_events(asset)
     event1 = AssetAcquisitionEvent(
         amount=FVal(2),
-        timestamp=1,
-        rate=ONE,
+        timestamp=Timestamp(1),
+        rate=ONE_PRICE,
         index=1,
     )
     event2 = AssetAcquisitionEvent(
         amount=ONE,
-        timestamp=2,
-        rate=FVal(1.5),
+        timestamp=Timestamp(2),
+        rate=Price(FVal(1.5)),
         index=2,
     )
-    asset_events.acquisitions_manager.add_acquisition(event1)
-    asset_events.acquisitions_manager.add_acquisition(event2)
-    assert cost_basis.reduce_asset_amount(asset, FVal(0.5), 0) is True
+    asset_events.acquisitions_manager.add_in_event(event1)
+    asset_events.acquisitions_manager.add_in_event(event2)
+    assert cost_basis.reduce_asset_amount(asset, FVal(0.5), Timestamp(0)) is True
     acquisitions = asset_events.acquisitions_manager.get_acquisitions()
     assert len(acquisitions) == 2 and acquisitions[0] == event2 and acquisitions[1] == event1
 
 
-def test_accounting_hifo_order(accountant):
+def test_accounting_hifo_order(accountant: Accountant):
     asset = A_BTC
     cost_basis = accountant.pots[0].cost_basis
     cost_basis.reset(DBSettings(cost_basis_method=CostBasisMethod.HIFO))
     asset_events = cost_basis.get_events(asset)
-    base_ts = 1614556800  # 01/03/2021, changed from 1 for windows. See https://github.com/rotki/rotki/pull/6398#discussion_r1271323846 # noqa: E501
+    base_ts = Timestamp(1614556800)  # 01/03/2021, changed from 1 for windows. See https://github.com/rotki/rotki/pull/6398#discussion_r1271323846 # noqa: E501
     # checking that cost basis is correct if one of the events has non-zero remaining_amount
     event3 = AssetAcquisitionEvent(
         amount=FVal(2),
         timestamp=base_ts,
-        rate=FVal(3),
+        rate=Price(FVal(3)),
         index=1,
     )
     event4 = AssetAcquisitionEvent(
         amount=FVal(5),
-        timestamp=base_ts + 10,
-        rate=ONE,
+        timestamp=Timestamp(base_ts + 10),
+        rate=ONE_PRICE,
         index=2,
     )
-    asset_events.acquisitions_manager.add_acquisition(event3)
-    asset_events.acquisitions_manager.add_acquisition(event4)
+    asset_events.acquisitions_manager.add_in_event(event3)
+    asset_events.acquisitions_manager.add_in_event(event4)
     assert asset_events.acquisitions_manager.calculate_spend_cost_basis(
-        spending_amount=1,
+        spending_amount=ONE,
         spending_asset=asset,
-        timestamp=1,
+        timestamp=Timestamp(1),
         missing_acquisitions=cost_basis.missing_acquisitions,
         used_acquisitions=asset_events.used_acquisitions,
         settings=cost_basis.settings,
@@ -711,14 +725,14 @@ def test_accounting_hifo_order(accountant):
     event5 = AssetAcquisitionEvent(
         amount=ONE,
         timestamp=base_ts,
-        rate=FVal(2),
+        rate=Price(FVal(2)),
         index=1,
     )
-    asset_events.acquisitions_manager.add_acquisition(event5)
+    asset_events.acquisitions_manager.add_in_event(event5)
     assert asset_events.acquisitions_manager.calculate_spend_cost_basis(
-        spending_amount=6,
+        spending_amount=FVal(6),
         spending_asset=asset,
-        timestamp=2,
+        timestamp=Timestamp(2),
         missing_acquisitions=cost_basis.missing_acquisitions,
         used_acquisitions=asset_events.used_acquisitions,
         settings=cost_basis.settings,
@@ -731,14 +745,14 @@ def test_accounting_hifo_order(accountant):
     event6 = AssetAcquisitionEvent(
         amount=ONE,
         timestamp=base_ts,
-        rate=ONE,
+        rate=ONE_PRICE,
         index=1,
     )
-    asset_events.acquisitions_manager.add_acquisition(event6)
+    asset_events.acquisitions_manager.add_in_event(event6)
     assert asset_events.acquisitions_manager.calculate_spend_cost_basis(
-        spending_amount=2,
+        spending_amount=FVal(2),
         spending_asset=asset,
-        timestamp=3,
+        timestamp=Timestamp(3),
         missing_acquisitions=cost_basis.missing_acquisitions,
         used_acquisitions=asset_events.used_acquisitions,
         settings=cost_basis.settings,
@@ -751,14 +765,14 @@ def test_accounting_hifo_order(accountant):
     event7 = AssetAcquisitionEvent(
         amount=ONE,
         timestamp=base_ts,
-        rate=ONE,
+        rate=ONE_PRICE,
         index=1,
     )
-    asset_events.acquisitions_manager.add_acquisition(event7)
+    asset_events.acquisitions_manager.add_in_event(event7)
     assert asset_events.acquisitions_manager.calculate_spend_cost_basis(
-        spending_amount=2,
+        spending_amount=FVal(2),
         spending_asset=asset,
-        timestamp=4,
+        timestamp=Timestamp(4),
         missing_acquisitions=cost_basis.missing_acquisitions,
         used_acquisitions=asset_events.used_acquisitions,
         settings=cost_basis.settings,
@@ -768,32 +782,32 @@ def test_accounting_hifo_order(accountant):
     assert cost_basis.missing_acquisitions == [
         MissingAcquisition(
             asset=asset,
-            time=4,
+            time=Timestamp(4),
             found_amount=ONE,
             missing_amount=ONE,
         ),
     ]
 
 
-def test_missing_acquisitions(accountant):
+def test_missing_acquisitions(accountant: Accountant):
     """Test that missing acquisitions are added properly by
     reduce_asset_amount and calculate_spend_cost_basis
     """
-    expected_missing_acquisitions = []
+    expected_missing_acquisitions: list[MissingAcquisition] = []
     cost_basis = accountant.pots[0].cost_basis
     all_events = cost_basis.get_events(A_ETH)
     base_ts = 1614556800  # 01/03/2021, changed from 1 for windows. See https://github.com/rotki/rotki/pull/6398#discussion_r1271323846 # noqa: E501
     # Test when there are no documented acquisitions
     cost_basis.reduce_asset_amount(
         asset=A_ETH,
-        amount=1,
-        timestamp=1,
+        amount=ONE,
+        timestamp=Timestamp(1),
     )
     assert cost_basis.missing_acquisitions == expected_missing_acquisitions
     all_events.acquisitions_manager.calculate_spend_cost_basis(
-        spending_amount=1,
+        spending_amount=ONE,
         spending_asset=A_ETH,
-        timestamp=1,
+        timestamp=Timestamp(1),
         missing_acquisitions=cost_basis.missing_acquisitions,
         used_acquisitions=all_events.used_acquisitions,
         settings=cost_basis.settings,
@@ -802,40 +816,40 @@ def test_missing_acquisitions(accountant):
     )
     expected_missing_acquisitions.append(MissingAcquisition(
         asset=A_ETH,
-        missing_amount=1,
-        found_amount=0,
-        time=1,
+        missing_amount=ONE,
+        found_amount=ZERO,
+        time=Timestamp(1),
     ))
     assert cost_basis.missing_acquisitions == expected_missing_acquisitions
     # Test when there are documented acquisitions (1 in this case)
-    all_events.acquisitions_manager.add_acquisition(AssetAcquisitionEvent(
-        amount=2,
-        rate=1,
+    all_events.acquisitions_manager.add_in_event(AssetAcquisitionEvent(
+        amount=FVal(2),
+        rate=ONE_PRICE,
         index=1,
-        timestamp=base_ts + 10,
+        timestamp=Timestamp(base_ts + 10),
     ))
     cost_basis.reduce_asset_amount(
         asset=A_ETH,
-        amount=3,
-        timestamp=3,
+        amount=FVal(3),
+        timestamp=Timestamp(3),
     )
     expected_missing_acquisitions.append(MissingAcquisition(
         asset=A_ETH,
-        missing_amount=1,
-        found_amount=2,
-        time=3,
+        missing_amount=ONE,
+        found_amount=FVal(2),
+        time=Timestamp(3),
     ))
     assert cost_basis.missing_acquisitions == expected_missing_acquisitions
-    all_events.acquisitions_manager.add_acquisition(AssetAcquisitionEvent(
-        amount=2,
-        rate=1,
+    all_events.acquisitions_manager.add_in_event(AssetAcquisitionEvent(
+        amount=FVal(2),
+        rate=ONE_PRICE,
         index=2,
-        timestamp=base_ts + 20,
+        timestamp=Timestamp(base_ts + 20),
     ))
     all_events.acquisitions_manager.calculate_spend_cost_basis(
-        spending_amount=3,
+        spending_amount=FVal(3),
         spending_asset=A_ETH,
-        timestamp=4,
+        timestamp=Timestamp(4),
         missing_acquisitions=cost_basis.missing_acquisitions,
         used_acquisitions=all_events.used_acquisitions,
         settings=cost_basis.settings,
@@ -844,9 +858,9 @@ def test_missing_acquisitions(accountant):
     )
     expected_missing_acquisitions.append(MissingAcquisition(
         asset=A_ETH,
-        missing_amount=1,
-        found_amount=2,
-        time=4,
+        missing_amount=ONE,
+        found_amount=FVal(2),
+        time=Timestamp(4),
     ))
     assert cost_basis.missing_acquisitions == expected_missing_acquisitions
 
@@ -854,15 +868,15 @@ def test_missing_acquisitions(accountant):
 @pytest.mark.parametrize('db_settings', [
     {'cost_basis_method': CostBasisMethod.ACB},
 ])
-def test_accounting_average_cost_basis(accountant):
+def test_accounting_average_cost_basis(accountant: Accountant):
     """Test various scenarios in average cost basis calculation"""
     pot = accountant.pots[0]
     events = pot.processed_events
     cost_basis = pot.cost_basis
-    manager = cost_basis.get_events(A_ETH).acquisitions_manager
+    manager = cast(AverageCostBasisMethod, cost_basis.get_events(A_ETH).acquisitions_manager)
 
     # Step 1. Add an acquisition
-    add_acquisition(pot, amount=FVal(2), price=FVal(10))  # Buy 2 ETH for $10  total acb: $20
+    add_in_event(pot, amount=FVal(2), price=Price(FVal(10)))  # Buy 2 ETH for $10  total acb: $20
     assert events[0].pnl.taxable == ZERO  # No profit for acquisitions
     current_total_acb = events[0].price * events[0].free_amount
     current_amount = events[0].free_amount  # 2
@@ -870,7 +884,7 @@ def test_accounting_average_cost_basis(accountant):
     assert manager.current_amount == current_amount == FVal(2)
 
     # Step 2. Add a spend with positive pnl
-    add_spend(pot, amount=FVal(1), price=FVal(15))  # Sell 1 ETH for $15  pnl: 1 * (15 - 10) = $5
+    add_out_event(pot, amount=FVal(1), price=Price(FVal(15)))  # Sell 1 ETH for $15  pnl: 1 * (15 - 10) = $5  # noqa: E501
     assert events[1].pnl.taxable == events[1].taxable_amount * (events[1].price - current_total_acb / current_amount) == FVal(5)  # noqa: E501
     current_total_acb *= (current_amount - events[1].taxable_amount) / current_amount  # total acb: 20 * (2 - 1) / 2 = $10  # noqa: E501
     current_amount -= events[1].taxable_amount  # 1
@@ -878,7 +892,7 @@ def test_accounting_average_cost_basis(accountant):
     assert manager.current_amount == current_amount == FVal(1)
 
     # Step 3. Add another acquisition
-    add_acquisition(pot, amount=FVal(1), price=FVal(30))  # Buy 1 ETH for $30  total acb: 10 + 1 * 30 = $40  # noqa: E501
+    add_in_event(pot, amount=FVal(1), price=Price(FVal(30)))  # Buy 1 ETH for $30  total acb: 10 + 1 * 30 = $40  # noqa: E501
     assert events[2].pnl.taxable == ZERO  # No profit for acquisitions
     current_total_acb += events[2].price * events[2].free_amount
     current_amount += events[2].free_amount  # 2
@@ -886,7 +900,7 @@ def test_accounting_average_cost_basis(accountant):
     assert manager.current_amount == current_amount == FVal(2)
 
     # Step 4. Add a spend with negative pnl
-    add_spend(pot, amount=FVal(1.5), price=FVal(10))  # Sell 1.5 ETH for $10  pnl: 1.5 * (10 - 20) = -$15  # noqa: E501
+    add_out_event(pot, amount=FVal(1.5), price=Price(FVal(10)))  # Sell 1.5 ETH for $10  pnl: 1.5 * (10 - 20) = -$15  # noqa: E501
     assert events[3].pnl.taxable == events[3].taxable_amount * (events[3].price - current_total_acb / current_amount) == FVal(-15)  # noqa: E501
     current_total_acb *= (current_amount - events[3].taxable_amount) / current_amount  # total acb: 40 * (2 - 1.5) / 2 = $10  # noqa: E501
     current_amount -= events[3].taxable_amount  # 0.5
@@ -894,7 +908,7 @@ def test_accounting_average_cost_basis(accountant):
     assert manager.current_amount == current_amount == FVal(0.5)
 
     # Step 5. Add another acquisition
-    add_acquisition(pot, amount=FVal(3), price=FVal(20))  # Buy 3 ETH for $20  total acb: 10 + 3 * 20 = $70  # noqa: E501
+    add_in_event(pot, amount=FVal(3), price=Price(FVal(20)))  # Buy 3 ETH for $20  total acb: 10 + 3 * 20 = $70  # noqa: E501
     assert events[4].pnl.taxable == ZERO  # No profit for acquisitions
     current_total_acb += events[4].price * events[4].free_amount
     current_amount += events[4].free_amount  # 3.5
@@ -902,7 +916,7 @@ def test_accounting_average_cost_basis(accountant):
     assert manager.current_amount == current_amount == FVal(3.5)
 
     # Step 6. Add a spend after a sequence of acquisitions and spends
-    add_spend(pot, amount=FVal(2), price=FVal(30))  # Sell 2 ETH for $30  pnl: 2 * (30 - 20) = $20
+    add_out_event(pot, amount=FVal(2), price=Price(FVal(30)))  # Sell 2 ETH for $30  pnl: 2 * (30 - 20) = $20  # noqa: E501
     assert events[5].pnl.taxable == events[5].taxable_amount * (events[5].price - current_total_acb / current_amount) == FVal(20)  # noqa: E501
     current_total_acb *= (current_amount - events[5].taxable_amount) / current_amount  # total acb: 70 * (3.5 - 2) / 3.5 = $30 # noqa: E501
     current_amount -= events[5].taxable_amount  # 1.5
@@ -910,7 +924,7 @@ def test_accounting_average_cost_basis(accountant):
     assert manager.current_amount == current_amount == FVal(1.5)
 
     # Step 7. Check that spending up the entire remaining amount works.
-    add_spend(pot, amount=FVal(1.5), price=FVal(10))  # Sell 1.5 ETH for $10 pnl: 1.5*10 - (30/1.5)*1.5 = -$15 # noqa: E501
+    add_out_event(pot, amount=FVal(1.5), price=Price(FVal(10)))  # Sell 1.5 ETH for $10 pnl: 1.5*10 - (30/1.5)*1.5 = -$15 # noqa: E501
     assert events[6].pnl.taxable == events[6].taxable_amount * (events[6].price - current_total_acb / current_amount) == FVal(-15)  # noqa: E501
     current_total_acb *= (current_amount - events[6].taxable_amount) / current_amount  # total acb: 30 * (1.5 - 1.5) / 1.5 = $0  # noqa: E501
     current_amount -= events[6].taxable_amount  # 0
@@ -918,7 +932,7 @@ def test_accounting_average_cost_basis(accountant):
     assert manager.current_amount == current_amount == ZERO
 
     # Step 8. Add one more acquisition
-    add_acquisition(pot, amount=FVal(1), price=FVal(10))  # Buy 1 ETH for $10  total acb: 0 + 1 * 10 = $10  # noqa: E501
+    add_in_event(pot, amount=FVal(1), price=Price(FVal(10)))  # Buy 1 ETH for $10  total acb: 0 + 1 * 10 = $10  # noqa: E501
     assert events[7].pnl.taxable == ZERO  # No profit for acquisitions
     current_total_acb += events[7].price * events[7].free_amount
     current_amount += events[7].free_amount  # 1
@@ -926,7 +940,7 @@ def test_accounting_average_cost_basis(accountant):
     assert manager.current_amount == current_amount == FVal(1)
 
     # Step 9. Check that negative pnl is correctly handled
-    add_spend(pot, amount=FVal(0.5), price=FVal(5))  # Sell 0.5 ETH for $5  pnl: 0.5 * (5 - 10) = -$2.5  # noqa: E501
+    add_out_event(pot, amount=FVal(0.5), price=Price(FVal(5)))  # Sell 0.5 ETH for $5  pnl: 0.5 * (5 - 10) = -$2.5  # noqa: E501
     assert events[8].pnl.taxable == events[8].taxable_amount * (events[8].price - current_total_acb / current_amount) == FVal(-2.5)  # noqa: E501
     current_total_acb *= (current_amount - events[8].taxable_amount) / current_amount  # total acb: 10 * (1 - 0.5) / 1 = $5  # noqa: E501
     current_amount -= events[8].taxable_amount  # 0.5
@@ -934,7 +948,7 @@ def test_accounting_average_cost_basis(accountant):
     assert manager.current_amount == current_amount == FVal(0.5)
 
     # Step 10. Try to spend more than the remaining amount
-    add_spend(pot, amount=FVal(0.6), price=FVal(5))  # Sell 0.6 ETH for $5
+    add_out_event(pot, amount=FVal(0.6), price=Price(FVal(5)))  # Sell 0.6 ETH for $5
     # pnl -> pnl_for_known_acquisition + pnl_for_rest_uses_full_price_as_profit
     # pnl -> 0.5*5 - (5/0.5)*0.5 + 0.1 * 5 = -2$
     assert len(cost_basis.missing_acquisitions) == 1
@@ -946,7 +960,7 @@ def test_accounting_average_cost_basis(accountant):
     assert manager.current_amount == ZERO
 
     # Step 11. Try to spend when remaining amount is 0 (missing acquisition counts all as profit)
-    add_spend(pot, amount=FVal(0.5), price=FVal(5))  # Sell 0.5 ETH for $5  pnl: 0.5 * 5 = $2.5  # noqa: E501
+    add_out_event(pot, amount=FVal(0.5), price=Price(FVal(5)))  # Sell 0.5 ETH for $5  pnl: 0.5 * 5 = $2.5  # noqa: E501
     assert len(cost_basis.missing_acquisitions) == 2
     missing_acquisition = cost_basis.missing_acquisitions[1]
     assert missing_acquisition.found_amount == ZERO
@@ -1020,7 +1034,6 @@ def test_swaps_taxability(accountant: Accountant, taxable: bool) -> None:
             taxable=taxable,
             count_entire_amount_spend=False,
             count_cost_basis_pnl=True,
-            method='spend',
             accounting_treatment=TxAccountingTreatment.SWAP,
         ),
         general_extra_data={},
@@ -1052,7 +1065,7 @@ def test_swaps_taxability(accountant: Accountant, taxable: bool) -> None:
 def test_taxable_acquisition(accountant: Accountant) -> None:
     """Make sure that taxable acquisitions are processed properly"""
     pot = accountant.pots[0]
-    pot.add_acquisition(
+    pot.add_in_event(
         event_type=AccountingEventType.TRANSACTION_EVENT,
         notes='Swap 0.15 ETH in uniswap-v2 from 0x3CAdf2cA458376a6a5feA2EF3612346037D5A787',
         location=Location.BLOCKCHAIN,

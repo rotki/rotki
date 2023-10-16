@@ -222,7 +222,7 @@ class EthWithdrawalEvent(EthStakingEvent):
         # saving pubkey and validator index for deposits.
 
         name = 'Exit' if bool(self.is_exit_or_blocknumber) else 'Withdrawal'
-        accounting.add_acquisition(
+        accounting.add_in_event(
             event_type=AccountingEventType.HISTORY_EVENT,
             notes=f'{name} of {self.balance.amount} ETH from validator {self.validator_index}. Only {profit_amount} is profit',  # noqa: E501
             location=self.location,
@@ -356,7 +356,7 @@ class EthBlockEvent(EthStakingEvent):
         else:
             name = 'Block reward'
 
-        accounting.add_acquisition(
+        accounting.add_in_event(
             event_type=AccountingEventType.HISTORY_EVENT,
             notes=f'{name} of {self.balance.amount} for block {self.is_exit_or_blocknumber}',
             location=self.location,

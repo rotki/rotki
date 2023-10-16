@@ -3096,7 +3096,6 @@ class CreateAccountingRuleSchema(AccountingRuleIdSchema):
             taxable=data['taxable'],
             count_entire_amount_spend=data['count_entire_amount_spend']['value'],
             count_cost_basis_pnl=data['count_cost_basis_pnl']['value'],
-            method='spend',  # TODO 1.31: REMOVE THE METHOD field
             accounting_treatment=data['accounting_treatment'],
         )
         links = {

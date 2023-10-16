@@ -20,28 +20,24 @@ class YearnAccountant(ModuleAccountantInterface):
                 taxable=False,
                 count_entire_amount_spend=False,
                 count_cost_basis_pnl=False,
-                method='spend',
                 accounting_treatment=TxAccountingTreatment.SWAP,
             ),
             get_event_type_identifier(HistoryEventType.WITHDRAWAL, HistoryEventSubType.RETURN_WRAPPED, CPT_YEARN_V1): TxEventSettings(  # noqa: E501
                 taxable=False,
                 count_entire_amount_spend=False,
                 count_cost_basis_pnl=False,
-                method='spend',
                 accounting_treatment=TxAccountingTreatment.SWAP,
             ),
             get_event_type_identifier(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET, CPT_YEARN_V2): TxEventSettings(  # noqa: E501
                 taxable=False,
                 count_entire_amount_spend=False,
                 count_cost_basis_pnl=False,
-                method='spend',
                 accounting_treatment=TxAccountingTreatment.SWAP,
             ),
             get_event_type_identifier(HistoryEventType.WITHDRAWAL, HistoryEventSubType.RETURN_WRAPPED, CPT_YEARN_V2): TxEventSettings(  # noqa: E501
                 taxable=False,
                 count_entire_amount_spend=False,
                 count_cost_basis_pnl=False,
-                method='spend',
                 accounting_treatment=TxAccountingTreatment.SWAP,
             ),
         }

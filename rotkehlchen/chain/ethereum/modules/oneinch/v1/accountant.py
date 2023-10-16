@@ -20,14 +20,12 @@ class Oneinchv1Accountant(ModuleAccountantInterface):
                 taxable=True,
                 count_entire_amount_spend=False,
                 count_cost_basis_pnl=True,
-                method='spend',
                 accounting_treatment=TxAccountingTreatment.SWAP,
             ),
             get_event_type_identifier(HistoryEventType.SPEND, HistoryEventSubType.FEE, CPT_ONEINCH_V1): TxEventSettings(  # noqa: E501
                 taxable=True,
                 count_entire_amount_spend=False,
                 count_cost_basis_pnl=True,
-                method='spend',
                 accounting_treatment=None,
             ),
         }

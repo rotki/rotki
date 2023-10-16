@@ -5,10 +5,11 @@ from dataclasses import dataclass
 from enum import auto
 from typing import TYPE_CHECKING, Any, Optional, TypedDict, TypeVar
 
-from rotkehlchen.accounting.constants import EVENT_CATEGORY_MAPPINGS
+from rotkehlchen.accounting.constants import EVENT_CATEGORY_DETAILS, EVENT_CATEGORY_MAPPINGS
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
 from rotkehlchen.accounting.structures.types import (
     ActionType,
+    EventDirection,
     HistoryEventSubType,
     HistoryEventType,
 )
@@ -271,6 +272,15 @@ class HistoryBaseEntry(AccountingEventMixin, metaclass=ABCMeta):
 
         return result
 
+    def get_direction(self) -> 'EventDirection':
+        """
+        Get direction based on type, subtype.
+        May raise:
+        - KeyError if the combination of types is not valid
+        """
+        event_category = EVENT_CATEGORY_MAPPINGS[self.event_type][self.event_subtype]
+        return EVENT_CATEGORY_DETAILS[event_category].direction
+
     @classmethod
     def _deserialize_base_history_data(cls: type[T], data: dict[str, Any]) -> HistoryBaseEntryData:
         """Deserializes the base history event data to a typed dict
@@ -445,7 +455,7 @@ class HistoryEvent(HistoryBaseEntry):
                 return 1
 
             # otherwise it's kraken staking
-            accounting.add_acquisition(
+            accounting.add_in_event(
                 event_type=AccountingEventType.STAKING,
                 notes=f'Kraken {self.asset.resolve_to_asset_with_symbol().symbol} staking',
                 location=self.location,

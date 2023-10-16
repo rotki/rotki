@@ -6,6 +6,7 @@ from rotkehlchen.accounting.mixins.event import AccountingEventMixin, Accounting
 from rotkehlchen.accounting.rules import AccountingRulesManager
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.evm_event import EvmEvent
+from rotkehlchen.accounting.structures.types import EventDirection
 from rotkehlchen.chain.evm.accounting.structures import (
     BaseEventSettings,
     TxAccountingTreatment,
@@ -72,6 +73,19 @@ class EventsAccountant:
             events_iterator: Iterator[AccountingEventMixin],
     ) -> int:
         """Process a history base entry and return number of actions consumed from the iterator"""
+        try:
+            event_direction = event.get_direction()
+        except KeyError:
+            log.error(
+                f'Failed to retrieve direction for {event.event_type=} {event.event_subtype}. '
+                f'Skipping...',
+            )
+            return 1
+
+        if event_direction == EventDirection.NEUTRAL:
+            log.debug(f'Skipping neutral event {event.identifier=}')
+            return 1
+
         timestamp = event.get_timestamp_in_sec()
         event_settings = self.rules_manager.get_event_settings(event)
         if event_settings is None:
@@ -97,7 +111,6 @@ class EventsAccountant:
         if isinstance(event, EvmEvent):
             general_extra_data['tx_hash'] = event.tx_hash.hex()
         if event_settings.accounting_treatment in (TxAccountingTreatment.SWAP, TxAccountingTreatment.SWAP_WITH_FEE):  # noqa: E501
-
             fee_event = None
             if event_settings.accounting_treatment == TxAccountingTreatment.SWAP_WITH_FEE:
                 fee_event = next(history_base_entries_iterator(events_iterator, event), None)
@@ -125,7 +138,7 @@ class EventsAccountant:
             )
 
         self.pot.add_asset_change_event(
-            method=event_settings.method,
+            direction=event_direction,
             event_type=AccountingEventType.TRANSACTION_EVENT,
             notes=event.notes if event.notes else '',
             location=event.location,
@@ -175,7 +188,7 @@ class EventsAccountant:
 
         group_id = out_event.event_identifier + str(out_event.sequence_index) + str(in_event.sequence_index)  # noqa: E501
         extra_data = general_extra_data | {'group_id': group_id}
-        _, trade_taxable_amount = self.pot.add_spend(
+        _, trade_taxable_amount = self.pot.add_out_event(
             event_type=AccountingEventType.TRANSACTION_EVENT,
             notes=out_event.notes if out_event.notes else '',
             location=out_event.location,
@@ -205,7 +218,7 @@ class EventsAccountant:
                 fee_taxable = True
                 fee_taxable_amount_ratio = trade_taxable_amount / out_event.balance.amount
 
-            self.pot.add_spend(
+            self.pot.add_out_event(
                 event_type=AccountingEventType.FEE,
                 notes=fee_event.notes,  # type: ignore [arg-type]  # notes exist here
                 location=fee_event.location,
@@ -223,7 +236,7 @@ class EventsAccountant:
             )
             consumed_events = 3
 
-        self.pot.add_acquisition(
+        self.pot.add_in_event(
             event_type=AccountingEventType.TRANSACTION_EVENT,
             notes=in_event.notes if in_event.notes else '',
             location=in_event.location,

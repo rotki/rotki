@@ -23,25 +23,21 @@ class CowswapAccountant(ModuleAccountantInterface):
                 taxable=True,
                 count_entire_amount_spend=False,
                 count_cost_basis_pnl=True,
-                method='spend',
                 accounting_treatment=TxAccountingTreatment.SWAP_WITH_FEE,
             ),
             get_event_type_identifier(HistoryEventType.DEPOSIT, HistoryEventSubType.PLACE_ORDER, CPT_COWSWAP): TxEventSettings(  # noqa: E501
                 taxable=False,
                 count_entire_amount_spend=False,
                 count_cost_basis_pnl=False,
-                method='spend',
             ),
             get_event_type_identifier(HistoryEventType.WITHDRAWAL, HistoryEventSubType.CANCEL_ORDER, CPT_COWSWAP): TxEventSettings(  # noqa: E501
                 taxable=False,
                 count_entire_amount_spend=False,
                 count_cost_basis_pnl=False,
-                method='acquisition',
             ),
             get_event_type_identifier(HistoryEventType.WITHDRAWAL, HistoryEventSubType.REFUND, CPT_COWSWAP): TxEventSettings(  # noqa: E501
                 taxable=False,
                 count_entire_amount_spend=False,
                 count_cost_basis_pnl=False,
-                method='acquisition',
             ),
         }

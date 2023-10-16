@@ -24,7 +24,6 @@ class Balancerv2Accountant(ModuleAccountantInterface):
                 taxable=True,
                 count_entire_amount_spend=False,
                 count_cost_basis_pnl=True,
-                method='spend',
                 accounting_treatment=TxAccountingTreatment.SWAP,
             ),
         }

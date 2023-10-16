@@ -125,7 +125,7 @@ class BaseCostBasisMethod(metaclass=ABCMeta):
         self._acquisitions_heap: list[AssetAcquisitionHeapElement] = []
 
     @abstractmethod
-    def add_acquisition(self, acquisition: AssetAcquisitionEvent) -> None:
+    def add_in_event(self, acquisition: AssetAcquisitionEvent) -> None:
         """
         The core method. Should be implemented by subclasses.
         This method takes a new acquisition and decides where to insert it
@@ -295,7 +295,7 @@ class FIFOCostBasisMethod(BaseCostBasisMethod):
         super().__init__()
         self._count = ZERO
 
-    def add_acquisition(self, acquisition: AssetAcquisitionEvent) -> None:
+    def add_in_event(self, acquisition: AssetAcquisitionEvent) -> None:
         """Adds an acquisition to the `_acquisitions_heap` using a counter to achieve the FIFO order."""  # noqa: E501
         heapq.heappush(self._acquisitions_heap, AssetAcquisitionHeapElement(self._count, acquisition))  # noqa: E501
         self._count += 1
@@ -310,7 +310,7 @@ class LIFOCostBasisMethod(BaseCostBasisMethod):
         super().__init__()
         self._count = ZERO
 
-    def add_acquisition(self, acquisition: AssetAcquisitionEvent) -> None:
+    def add_in_event(self, acquisition: AssetAcquisitionEvent) -> None:
         """Adds an acquisition to the `_acquisitions_heap` using a negated counter to achieve the LIFO order."""  # noqa: E501
         heapq.heappush(self._acquisitions_heap, AssetAcquisitionHeapElement(-self._count, acquisition))  # noqa: E501
         self._count += 1
@@ -321,7 +321,7 @@ class HIFOCostBasisMethod(BaseCostBasisMethod):
     Accounting in HIFO (highest-in-first-out) method.
     https://www.investopedia.com/terms/h/hifo.asp
     """
-    def add_acquisition(self, acquisition: AssetAcquisitionEvent) -> None:
+    def add_in_event(self, acquisition: AssetAcquisitionEvent) -> None:
         """
         Adds an acquisition to the `_acquisitions_heap` using the negated rate
         of the acquisition to achieve the HIFO order.
@@ -351,7 +351,7 @@ class AverageCostBasisMethod(BaseCostBasisMethod):
         # the current total cost basis of the asset
         self.current_total_acb = ZERO
 
-    def add_acquisition(self, acquisition: AssetAcquisitionEvent) -> None:
+    def add_in_event(self, acquisition: AssetAcquisitionEvent) -> None:
         """
         Adds an acquisition to the `_acquisitions_heap` in order of time seen.
 
@@ -621,7 +621,7 @@ class CostBasisCalculator(CustomizableDateMixin):
         """Adds an acquisition event for an asset"""
         asset_event = AssetAcquisitionEvent.from_processed_event(event=event)
         asset_events = self.get_events(event.asset)
-        asset_events.acquisitions_manager.add_acquisition(asset_event)
+        asset_events.acquisitions_manager.add_in_event(asset_event)
 
     @overload
     def spend_asset(

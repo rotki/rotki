@@ -188,7 +188,6 @@ class RotkiDataUpdater:
                     taxable=rule_data['taxable'],
                     count_entire_amount_spend=rule_data['count_entire_amount_spend'],
                     count_cost_basis_pnl=rule_data['count_cost_basis_pnl'],
-                    method=rule_data['method'],  # todo 1.31. Remove it
                     accounting_treatment=TxAccountingTreatment.deserialize(rule_data['accounting_treatment']) if rule_data['accounting_treatment'] else None,  # noqa: E501
                 )
             except (KeyError, DeserializationError) as e:

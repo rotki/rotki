@@ -20,7 +20,6 @@ class GitcoinAccountant(ModuleAccountantInterface):
                 # Do not count donation as expense
                 count_entire_amount_spend=False,
                 count_cost_basis_pnl=True,
-                method='spend',
                 accounting_treatment=None,
             ),
             get_event_type_identifier(HistoryEventType.RECEIVE, HistoryEventSubType.DONATE, CPT_GITCOIN): TxEventSettings(  # noqa: E501
@@ -28,7 +27,6 @@ class GitcoinAccountant(ModuleAccountantInterface):
                 # Do not count donation as expense
                 count_entire_amount_spend=False,
                 count_cost_basis_pnl=True,
-                method='acquisition',
                 accounting_treatment=None,
             ),
         }

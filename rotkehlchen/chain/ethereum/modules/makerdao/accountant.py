@@ -44,7 +44,7 @@ class MakerdaoAccountant(ModuleAccountantInterface):
         self.vault_balances[cdp_id] -= event.balance.amount
         if self.vault_balances[cdp_id] < ZERO:
             loss = -1 * self.vault_balances[cdp_id]
-            pot.add_spend(
+            pot.add_out_event(
                 event_type=AccountingEventType.TRANSACTION_EVENT,
                 notes=f'Lost {loss} DAI as debt during payback to CDP {cdp_id}',
                 location=event.location,
@@ -75,7 +75,7 @@ class MakerdaoAccountant(ModuleAccountantInterface):
         self.dsr_balances[address] -= event.balance.amount
         if self.dsr_balances[address] < ZERO:
             profit = -1 * self.dsr_balances[address]
-            pot.add_acquisition(
+            pot.add_in_event(
                 event_type=AccountingEventType.TRANSACTION_EVENT,
                 notes=f'Gained {profit} DAI from Makerdao DSR',
                 location=event.location,
@@ -95,47 +95,40 @@ class MakerdaoAccountant(ModuleAccountantInterface):
                 taxable=False,
                 count_entire_amount_spend=False,
                 count_cost_basis_pnl=False,
-                method='spend',
             ),  # vault collateral withdraw
             get_event_type_identifier(HistoryEventType.WITHDRAWAL, HistoryEventSubType.REMOVE_ASSET, CPT_VAULT): TxEventSettings(  # noqa: E501
                 taxable=False,
                 count_entire_amount_spend=False,
                 count_cost_basis_pnl=False,
-                method='acquisition',
             ),  # payback DAI to vault
             get_event_type_identifier(HistoryEventType.SPEND, HistoryEventSubType.PAYBACK_DEBT, CPT_VAULT): TxEventSettings(  # noqa: E501
                 taxable=False,
                 count_entire_amount_spend=False,
                 count_cost_basis_pnl=False,
-                method='spend',
                 accountant_cb=self._process_vault_dai_payback,
             ),  # generate DAI from vault
             get_event_type_identifier(HistoryEventType.WITHDRAWAL, HistoryEventSubType.GENERATE_DEBT, CPT_VAULT): TxEventSettings(  # noqa: E501
                 taxable=False,
                 count_entire_amount_spend=False,
                 count_cost_basis_pnl=False,
-                method='acquisition',
                 accountant_cb=self._process_vault_dai_generation,
             ),  # Deposit DAI in the DSR
             get_event_type_identifier(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET, CPT_DSR): TxEventSettings(  # noqa: E501
                 taxable=False,
                 count_entire_amount_spend=False,
                 count_cost_basis_pnl=False,
-                method='spend',
                 accountant_cb=self._process_dsr_deposit,
             ),  # Withdraw DAI from the DSR
             get_event_type_identifier(HistoryEventType.WITHDRAWAL, HistoryEventSubType.REMOVE_ASSET, CPT_DSR): TxEventSettings(  # noqa: E501
                 taxable=False,
                 count_entire_amount_spend=False,
                 count_cost_basis_pnl=False,
-                method='acquisition',
                 accountant_cb=self._process_dsr_withdraw,
             ),  # Migrate SAI to DAI
             get_event_type_identifier(HistoryEventType.MIGRATE, HistoryEventSubType.SPEND, CPT_MIGRATION): TxEventSettings(  # noqa: E501
                 taxable=False,
                 count_entire_amount_spend=False,
                 count_cost_basis_pnl=False,
-                method='spend',
                 accounting_treatment=TxAccountingTreatment.SWAP,
             ),
         }
