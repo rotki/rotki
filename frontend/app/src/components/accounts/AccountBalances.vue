@@ -80,7 +80,7 @@ const editAccount = (account: BlockchainAccountWithBalance) => {
 
 const { deleteEth2Validators } = useEthAccountsStore();
 const { removeAccount } = useBlockchainAccounts();
-const { refreshAccounts } = useBlockchains();
+const { refreshAccounts, fetchAccounts } = useBlockchains();
 const { deleteXpub } = useBtcAccountsStore();
 
 const deleteAccount = async (payload: XpubPayload | string[]) => {
@@ -127,6 +127,11 @@ const showConfirmation = (payload: XpubPayload | string[]) => {
     async () => deleteAccount(payload)
   );
 };
+
+const refreshClick = async () => {
+  await fetchAccounts(get(blockchain));
+  await handleBlockchainRefresh();
+};
 </script>
 
 <template>
@@ -145,7 +150,7 @@ const showConfirmation = (payload: XpubPayload | string[]) => {
               blockchain: chainName
             })
           "
-          @refresh="handleBlockchainRefresh()"
+          @refresh="refreshClick()"
         />
         <SummaryCardRefreshMenu v-if="hasTokenDetection">
           <template #refreshMenu>
