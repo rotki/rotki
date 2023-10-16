@@ -58,28 +58,27 @@ const cancel = () => emit('cancel');
       <template v-if="subtitle" #subtitle> {{ subtitle }}</template>
       <slot v-if="display" />
       <template #buttons>
-        <VSpacer />
-        <VBtn
-          color="primary"
-          depressed
-          outlined
-          text
-          class="big-dialog__buttons__cancel"
-          @click="cancel()"
-        >
-          {{ secondary }}
-        </VBtn>
-        <VBtn
-          data-cy="confirm"
-          :color="themes[confirmType].color"
-          :disabled="actionDisabled || loading"
-          :loading="loading"
-          depressed
-          class="big-dialog__buttons__confirm"
-          @click="confirm()"
-        >
-          {{ primary }}
-        </VBtn>
+        <div class="flex flex-row gap-2 w-full">
+          <div class="grow" />
+          <RuiButton
+            color="primary"
+            variant="outlined"
+            class="big-dialog__buttons__cancel"
+            @click="cancel()"
+          >
+            {{ secondary }}
+          </RuiButton>
+          <RuiButton
+            data-cy="confirm"
+            :color="themes[confirmType].color"
+            :disabled="actionDisabled || loading"
+            :loading="loading"
+            class="big-dialog__buttons__confirm"
+            @click="confirm()"
+          >
+            {{ primary }}
+          </RuiButton>
+        </div>
       </template>
     </Card>
   </VBottomSheet>

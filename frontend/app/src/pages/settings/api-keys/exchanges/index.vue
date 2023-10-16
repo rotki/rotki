@@ -1,5 +1,8 @@
 <script setup lang="ts">
-import { type DataTableHeader } from '@/types/vuetify';
+import {
+  type DataTableColumn,
+  type DataTableSortColumn
+} from '@rotki/ui-library-compat';
 import { type Writeable } from '@/types';
 import {
   type Exchange,
@@ -26,8 +29,11 @@ const { setupExchange, removeExchange } = store;
 const { connectedExchanges } = storeToRefs(store);
 
 const exchange = ref<ExchangePayload>(placeholder());
-
 const editMode = ref<boolean>(false);
+const sort = ref<DataTableSortColumn>({
+  column: 'name',
+  direction: 'asc'
+});
 
 const { nonSyncingExchanges: current } = storeToRefs(useGeneralSettingsStore());
 const { update } = useSettingsStore();
@@ -155,29 +161,28 @@ onMounted(async () => {
   }
 });
 
-const headers: DataTableHeader[] = [
+const headers = computed<DataTableColumn[]>(() => [
   {
-    text: t('common.location'),
-    value: 'location',
+    label: t('common.location'),
+    key: 'location',
     width: '120px',
     align: 'center'
   },
   {
-    text: t('common.name'),
-    value: 'name'
+    label: t('common.name'),
+    key: 'name'
   },
   {
-    text: t('exchange_settings.header.sync_enabled'),
-    value: 'syncEnabled'
+    label: t('exchange_settings.header.sync_enabled'),
+    key: 'syncEnabled'
   },
   {
-    text: t('common.actions_text'),
-    value: 'actions',
+    label: t('common.actions_text'),
+    key: 'actions',
     width: '105px',
-    align: 'center',
-    sortable: false
+    align: 'center'
   }
-];
+]);
 
 const { show } = useConfirmStore();
 
@@ -196,61 +201,67 @@ const showRemoveConfirmation = (item: Exchange) => {
 </script>
 
 <template>
-  <div class="exchange-settings" data-cy="exchanges">
-    <Card>
-      <template #title>
-        {{ t('exchange_settings.title') }}
-      </template>
-      <template #subtitle>
-        <i18n path="exchange_settings.subtitle" tag="div">
-          <BaseExternalLink
-            :text="t('exchange_settings.usage_guide')"
-            :href="usageGuideUrl + '#adding-an-exchange'"
-          />
-        </i18n>
-      </template>
-      <VBtn
-        absolute
-        fab
-        top
-        right
-        color="primary"
-        data-cy="add-exchange"
-        @click="addExchange()"
-      >
-        <VIcon> mdi-plus </VIcon>
-      </VBtn>
-      <DataTable
-        key="index"
+  <TablePageLayout class="exchange-settings" data-cy="exchanges">
+    <template #title>
+      <span class="text-rui-text-secondary">
+        {{ t('navigation_menu.api_keys') }} /
+      </span>
+      {{ t('navigation_menu.api_keys_sub.exchanges') }}
+    </template>
+
+    <template #buttons>
+      <RuiButton color="primary" data-cy="add-exchange" @click="addExchange()">
+        <template #prepend>
+          <RuiIcon name="add-line" />
+        </template>
+        {{ t('exchange_settings.dialog.add.title') }}
+      </RuiButton>
+    </template>
+
+    <RuiCard>
+      <div class="flex flex-row-reverse">
+        <HintMenuIcon max-width="25rem">
+          <i18n path="exchange_settings.subtitle" tag="div">
+            <BaseExternalLink
+              :text="t('exchange_settings.usage_guide')"
+              :href="usageGuideUrl + '#adding-an-exchange'"
+            />
+          </i18n>
+        </HintMenuIcon>
+      </div>
+
+      <RuiDataTable
+        outlined
         data-cy="exchange-table"
-        :items="connectedExchanges"
-        :headers="headers"
-        sort-by="name"
+        :rows="connectedExchanges"
+        :cols="headers"
+        :sort="sort"
       >
-        <template #item.location="{ item }">
-          <LocationDisplay :identifier="item.location" />
+        <template #item.location="{ row }">
+          <LocationDisplay :identifier="row.location" />
         </template>
-        <template #item.syncEnabled="{ item }">
+        <template #item.syncEnabled="{ row }">
           <VSwitch
-            :input-value="!isNonSyncExchange(item)"
-            @change="toggleSync(item)"
+            :input-value="!isNonSyncExchange(row)"
+            @change="toggleSync(row)"
           />
         </template>
-        <template #item.actions="{ item }">
+        <template #item.actions="{ row }">
           <RowActions
+            align="center"
             :delete-tooltip="t('exchange_settings.delete.tooltip')"
             :edit-tooltip="t('exchange_settings.edit.tooltip')"
-            @delete-click="showRemoveConfirmation(item)"
-            @edit-click="editExchange(item)"
+            @delete-click="showRemoveConfirmation(row)"
+            @edit-click="editExchange(row)"
           />
         </template>
-      </DataTable>
-    </Card>
+      </RuiDataTable>
+    </RuiCard>
 
     <ExchangeKeysFormDialog
       v-model="exchange"
       :edit-mode="editMode"
       @reset="resetForm()"
     />
-  </div>
+  </TablePageLayout>
 </template>
