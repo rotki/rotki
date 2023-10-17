@@ -14,7 +14,7 @@
 [![Hiring](https://img.shields.io/badge/Hiring-Open-brightgreen)](https://rotki.com/jobs/)
 
 
-[![Twitter Follow](https://img.shields.io/badge/follow-%40rotkiapp-1DA1F2?logo=twitter&style=social)](https://twitter.com/rotkiapp)
+[![X Follow](https://img.shields.io/twitter/follow/rotkiapp)](https://twitter.com/rotkiapp)
 [![Discord](https://img.shields.io/discord/657906918408585217.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.gg/aGCxHG7)
 
 </div>
