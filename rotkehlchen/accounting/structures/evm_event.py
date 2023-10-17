@@ -2,7 +2,7 @@ import json
 import logging
 from collections.abc import Iterator
 from enum import auto
-from typing import TYPE_CHECKING, Any, Final, Literal, Optional, cast
+from typing import TYPE_CHECKING, Any, Final, Optional, cast
 
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
 from rotkehlchen.accounting.structures.balance import Balance
@@ -127,25 +127,33 @@ class EvmEvent(HistoryBaseEntry):  # noqa: PLW1641  # hash in superclass
     def entry_type(self) -> HistoryBaseEntryType:
         return HistoryBaseEntryType.EVM_EVENT
 
-    def _serialize_evm_event_tuple_for_db(
-            self,
-            entry_type: Literal[HistoryBaseEntryType.EVM_EVENT, HistoryBaseEntryType.ETH_DEPOSIT_EVENT],  # noqa: E501
-    ) -> tuple[HISTORY_EVENT_DB_TUPLE_WRITE, EVM_EVENT_FIELDS]:
-        base_tuple = self._serialize_base_tuple_for_db(entry_type)
-        extra_data = json.dumps(self.extra_data) if self.extra_data else None
+    def _serialize_evm_event_tuple_for_db(self) -> tuple[
+            tuple[str, str, HISTORY_EVENT_DB_TUPLE_WRITE],
+            tuple[str, str, EVM_EVENT_FIELDS],
+    ]:
         return (
-            base_tuple,
+            self._serialize_base_tuple_for_db(),
             (
-                self.tx_hash,
-                self.counterparty,
-                self.product.serialize() if self.product is not None else None,
-                self.address,
-                extra_data,
+                (
+                    'evm_events_info(identifier, tx_hash, counterparty, product,'
+                    'address, extra_data) VALUES (?, ?, ?, ?, ?, ?)'
+                ), (
+                    'UPDATE evm_events_info SET tx_hash=?, counterparty=?, product=?, address=?, extra_data=?'  # noqa: E501
+                ), (
+                    self.tx_hash,
+                    self.counterparty,
+                    self.product.serialize() if self.product is not None else None,
+                    self.address,
+                    json.dumps(self.extra_data) if self.extra_data else None,
+                ),
             ),
         )
 
-    def serialize_for_db(self) -> tuple[HISTORY_EVENT_DB_TUPLE_WRITE, EVM_EVENT_FIELDS]:
-        return self._serialize_evm_event_tuple_for_db(HistoryBaseEntryType.EVM_EVENT)
+    def serialize_for_db(self) -> tuple[
+            tuple[str, str, HISTORY_EVENT_DB_TUPLE_WRITE],
+            tuple[str, str, EVM_EVENT_FIELDS],
+    ]:
+        return self._serialize_evm_event_tuple_for_db()
 
     def serialize(self) -> dict[str, Any]:
         return super().serialize() | {

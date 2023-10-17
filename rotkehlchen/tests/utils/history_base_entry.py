@@ -27,9 +27,9 @@ if TYPE_CHECKING:
 
 KEYS_IN_ENTRY_TYPE: dict[HistoryBaseEntryType, set[str]] = {
     HistoryBaseEntryType.HISTORY_EVENT: {'sequence_index', 'location', 'event_type', 'event_subtype', 'asset', 'notes', 'event_identifier'},  # noqa: E501
-    HistoryBaseEntryType.ETH_BLOCK_EVENT: {'validator_index', 'block_number', 'event_subtype'},
-    HistoryBaseEntryType.ETH_DEPOSIT_EVENT: {'tx_hash', 'validator_index', 'sequence_index', 'event_identifier', 'extra_data'},  # noqa: E501
-    HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT: {'validator_index', 'is_exit'},
+    HistoryBaseEntryType.ETH_BLOCK_EVENT: {'validator_index', 'is_exit_or_blocknumber', 'block_number', 'event_subtype', 'fee_recipient', 'location_label', 'is_mev_reward'},  # noqa: E501
+    HistoryBaseEntryType.ETH_DEPOSIT_EVENT: {'tx_hash', 'validator_index', 'sequence_index', 'event_identifier'},  # noqa: E501
+    HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT: {'validator_index', 'is_exit_or_blocknumber', 'is_exit'},  # noqa: E501
     HistoryBaseEntryType.EVM_EVENT: {'tx_hash', 'sequence_index', 'location', 'event_type', 'event_subtype', 'asset', 'notes', 'counterparty', 'product', 'address', 'extra_data', 'event_identifier'},  # noqa: E501
 }
 
@@ -88,7 +88,7 @@ def predefined_events_to_insert() -> list['HistoryBaseEntry']:
     ), EvmEvent(
         tx_hash=deserialize_evm_tx_hash('0x64f1982504ab714037467fdd45d3ecf5a6356361403fc97dd325101d8c038c4e'),
         sequence_index=163,
-        timestamp=TimestampMS(1569924574000),
+        timestamp=TimestampMS(1569924575000),
         location=Location.ETHEREUM,
         event_type=HistoryEventType.INFORMATIONAL,
         asset=A_USDT,
@@ -100,7 +100,7 @@ def predefined_events_to_insert() -> list['HistoryBaseEntry']:
     ), EvmEvent(
         tx_hash=deserialize_evm_tx_hash('0xf32e81dbaae8a763cad17bc96b77c7d9e8c59cc31ed4378b8109ce4b301adbbc'),
         sequence_index=2,
-        timestamp=TimestampMS(1619924574000),
+        timestamp=TimestampMS(1619924576000),
         location=Location.ETHEREUM,
         event_type=HistoryEventType.SPEND,
         asset=A_ETH,
@@ -113,7 +113,7 @@ def predefined_events_to_insert() -> list['HistoryBaseEntry']:
     ), EvmEvent(
         tx_hash=deserialize_evm_tx_hash('0xf32e81dbaae8a763cad17bc96b77c7d9e8c59cc31ed4378b8109ce4b301adbbc'),
         sequence_index=3,
-        timestamp=TimestampMS(1619924574000),
+        timestamp=TimestampMS(1619924579000),
         location=Location.ETHEREUM,
         event_type=HistoryEventType.DEPOSIT,
         asset=A_ETH,
@@ -149,28 +149,25 @@ def predefined_events_to_insert() -> list['HistoryBaseEntry']:
         event_subtype=HistoryEventSubType.REWARD,
         notes='Staking reward from kraken',
     ), EthWithdrawalEvent(
-        identifier=5,
         validator_index=295601,
         timestamp=TimestampMS(1681392599000),
         balance=Balance(amount=FVal('1.631508097')),
         withdrawal_address=string_to_evm_address('0xB9D7934878B5FB9610B3fE8A5e441e8fad7E293f'),
         is_exit=False,
-    ), EthBlockEvent(
-        identifier=12,
-        validator_index=295601,
-        timestamp=TimestampMS(1691693607000),
-        balance=Balance(FVal('0.126419309459217215')),
-        fee_recipient=string_to_evm_address('0x690B9A9E9aa1C9dB991C7721a92d351Db4FaC990'),
-        block_number=15824493,
-        is_mev_reward=False,
     ), EthDepositEvent(
-        identifier=1,
         tx_hash=deserialize_evm_tx_hash('0xf32e81dbaae8a763cad17bc96b77c7d9e8c59cc31ed4378b8109ce4b301adbbc'),
         validator_index=295601,
         sequence_index=1,
         timestamp=TimestampMS(1691379127000),
         balance=Balance(FVal(32)),
         depositor=string_to_evm_address('0x0EbD2E2130b73107d0C45fF2E16c93E7e2e10e3a'),
+    ), EthBlockEvent(
+        validator_index=295601,
+        timestamp=TimestampMS(1691693607000),
+        balance=Balance(FVal('0.126419309459217215')),
+        fee_recipient=string_to_evm_address('0x690B9A9E9aa1C9dB991C7721a92d351Db4FaC990'),
+        block_number=15824493,
+        is_mev_reward=False,
     )]
 
 

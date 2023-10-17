@@ -158,26 +158,38 @@ class HistoryBaseEntry(AccountingEventMixin, metaclass=ABCMeta):
             f'{self.identifier=}',
         ]
 
-    def _serialize_base_tuple_for_db(self, entry_type: HistoryBaseEntryType) -> HISTORY_EVENT_DB_TUPLE_WRITE:  # noqa: E501
+    def _serialize_base_tuple_for_db(self) -> tuple[str, str, HISTORY_EVENT_DB_TUPLE_WRITE]:
         return (
-            entry_type.value,
-            self.event_identifier,
-            self.sequence_index,
-            int(self.timestamp),
-            self.location.serialize_for_db(),
-            self.location_label,
-            self.asset.identifier,
-            str(self.balance.amount),
-            str(self.balance.usd_value),
-            self.notes,
-            self.event_type.serialize(),
-            self.event_subtype.serialize(),
-        )
+            (
+                'history_events(entry_type, event_identifier, sequence_index,'
+                'timestamp, location, location_label, asset, amount, usd_value, notes,'
+                'type, subtype) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+            ), (
+                'UPDATE history_events SET entry_type=?, event_identifier=?, '
+                'sequence_index=?, timestamp=?, location=?, location_label=?, asset=?, '
+                'amount=?, usd_value=?, notes=?, type=?, subtype=?'
+            ), (
+                self.entry_type.value,
+                self.event_identifier,
+                self.sequence_index,
+                int(self.timestamp),
+                self.location.serialize_for_db(),
+                self.location_label,
+                self.asset.identifier,
+                str(self.balance.amount),
+                str(self.balance.usd_value),
+                self.notes,
+                self.event_type.serialize(),
+                self.event_subtype.serialize(),
+            ))
 
     @abstractmethod
     def serialize_for_db(self) -> tuple:
         """Serialize the event for writing to DB.
-        May contain multiple tuples, one for each DB table"""
+        May contain multiple tuples, one for each DB table
+
+        Each tuple is comprised of three entries. The insert sqlite
+        statement, the update sqlie statement and the binding data."""
 
     @classmethod
     @abstractmethod
@@ -363,8 +375,8 @@ class HistoryEvent(HistoryBaseEntry):
     def __repr__(self) -> str:
         return f'HistoryEvent({", ".join(self._history_base_entry_repr_fields())})'
 
-    def serialize_for_db(self) -> tuple[HISTORY_EVENT_DB_TUPLE_WRITE]:
-        return (self._serialize_base_tuple_for_db(HistoryBaseEntryType.HISTORY_EVENT),)
+    def serialize_for_db(self) -> tuple[tuple[str, str, HISTORY_EVENT_DB_TUPLE_WRITE]]:
+        return (self._serialize_base_tuple_for_db(),)
 
     @classmethod
     def deserialize_from_db(
