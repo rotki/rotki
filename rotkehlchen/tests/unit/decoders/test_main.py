@@ -67,6 +67,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: 'EthereumTransact
         'Lockedgno',
         'Makerdao',
         'Makerdaosai',
+        'Octant',
         'Oneinchv1',
         'Oneinchv2',
         'Oneinchv4',
@@ -140,6 +141,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: 'EthereumTransact
         'base',
         'sDAI',
         'thegraph',
+        'octant',
     }
 
 
