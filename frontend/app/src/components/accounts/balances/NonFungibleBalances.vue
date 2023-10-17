@@ -219,13 +219,12 @@ const showDeleteConfirmation = (item: NonFungibleBalance) => {
 </script>
 
 <template>
-  <TablePageLayout>
-    <template #title>
-      <span class="text-rui-text-secondary">
-        {{ t('navigation_menu.accounts_balances') }} /
-      </span>
-      {{ t('non_fungible_balances.title') }}
-    </template>
+  <TablePageLayout
+    :title="[
+      t('navigation_menu.accounts_balances'),
+      t('non_fungible_balances.title')
+    ]"
+  >
     <template #buttons>
       <div class="flex flex-row items-center justify-end gap-2">
         <RuiTooltip>

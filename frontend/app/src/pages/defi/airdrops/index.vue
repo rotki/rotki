@@ -153,14 +153,9 @@ onMounted(async () => {
 </script>
 
 <template>
-  <TablePageLayout>
-    <template #title>
-      <span class="text-rui-text-secondary">
-        {{ t('navigation_menu.defi') }} /
-      </span>
-      {{ t('navigation_menu.defi_sub.airdrops') }}
-    </template>
-
+  <TablePageLayout
+    :title="[t('navigation_menu.defi'), t('navigation_menu.defi_sub.airdrops')]"
+  >
     <template #buttons>
       <RuiTooltip :open-delay="400">
         <template #activator>

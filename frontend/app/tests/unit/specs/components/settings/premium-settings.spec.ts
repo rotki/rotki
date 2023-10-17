@@ -44,16 +44,14 @@ describe('PremiumSettings.vue', () => {
 
   test('updates premium status upon setting keys', async () => {
     api.setPremiumCredentials = vi.fn().mockResolvedValue({ result: true });
-    const apiKey = wrapper.find('.premium-settings__fields__api-key input');
-    const apiSecret = wrapper.find(
-      '.premium-settings__fields__api-secret input'
-    );
+    const apiKey = wrapper.find('[data-cy=premium__api-key] input');
+    const apiSecret = wrapper.find('[data-cy=premium__api-secret] input');
 
     await apiKey.setValue('1234');
     await apiSecret.setValue('1234');
 
     await wrapper.vm.$nextTick();
-    await wrapper.find('.premium-settings__button__setup').trigger('click');
+    await wrapper.find('[data-cy=premium__setup]').trigger('click');
     await wrapper.vm.$nextTick();
     await flushPromises();
 
@@ -68,7 +66,7 @@ describe('PremiumSettings.vue', () => {
     await wrapper.vm.$nextTick();
     api.deletePremiumCredentials = vi.fn().mockResolvedValue({ result: true });
 
-    await wrapper.find('.premium-settings__button__delete').trigger('click');
+    await wrapper.find('[data-cy=premium__delete]').trigger('click');
     await wrapper.vm.$nextTick();
     await flushPromises();
 

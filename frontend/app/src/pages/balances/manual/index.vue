@@ -94,13 +94,12 @@ const threshold = [1];
 </script>
 
 <template>
-  <TablePageLayout>
-    <template #title>
-      <span class="text-rui-text-secondary">
-        {{ t('navigation_menu.accounts_balances') }} /
-      </span>
-      {{ t('navigation_menu.accounts_balances_sub.manual_balances') }}
-    </template>
+  <TablePageLayout
+    :title="[
+      t('navigation_menu.accounts_balances'),
+      t('navigation_menu.accounts_balances_sub.manual_balances')
+    ]"
+  >
     <template #buttons>
       <PriceRefresh />
       <RuiButton

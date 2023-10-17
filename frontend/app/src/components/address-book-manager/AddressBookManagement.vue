@@ -140,10 +140,10 @@ watch(location, async () => {
 </script>
 
 <template>
-  <TablePageLayout class="p-4">
-    <template #title>
-      {{ t('navigation_menu.manage_address_book') }}
-    </template>
+  <TablePageLayout
+    class="p-4"
+    :title="[t('navigation_menu.manage_address_book')]"
+  >
     <template #buttons>
       <RuiButton color="primary" @click="openForm()">
         <template #prepend>

@@ -201,14 +201,14 @@ const showRemoveConfirmation = (item: Exchange) => {
 </script>
 
 <template>
-  <TablePageLayout class="exchange-settings" data-cy="exchanges">
-    <template #title>
-      <span class="text-rui-text-secondary">
-        {{ t('navigation_menu.api_keys') }} /
-      </span>
-      {{ t('navigation_menu.api_keys_sub.exchanges') }}
-    </template>
-
+  <TablePageLayout
+    class="exchange-settings"
+    data-cy="exchanges"
+    :title="[
+      t('navigation_menu.api_keys'),
+      t('navigation_menu.api_keys_sub.exchanges')
+    ]"
+  >
     <template #buttons>
       <RuiButton color="primary" data-cy="add-exchange" @click="addExchange()">
         <template #prepend>

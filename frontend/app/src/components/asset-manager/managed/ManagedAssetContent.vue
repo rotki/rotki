@@ -172,13 +172,12 @@ watch(identifier, async assetId => {
 </script>
 
 <template>
-  <TablePageLayout>
-    <template #title>
-      <span class="text-rui-text-secondary">
-        {{ t('navigation_menu.manage_assets') }} /
-      </span>
-      {{ t('navigation_menu.manage_assets_sub.managed_assets') }}
-    </template>
+  <TablePageLayout
+    :title="[
+      t('navigation_menu.manage_assets'),
+      t('navigation_menu.manage_assets_sub.managed_assets')
+    ]"
+  >
     <template #buttons>
       <RuiButton
         color="primary"

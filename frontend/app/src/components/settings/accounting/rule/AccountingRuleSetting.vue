@@ -153,10 +153,7 @@ const showDeleteConfirmation = (item: AccountingRuleEntry) => {
 
 <template>
   <div>
-    <TablePageLayout>
-      <template #title>
-        {{ t('accounting_settings.rule.title') }}
-      </template>
+    <TablePageLayout :title="[t('accounting_settings.rule.title')]">
       <template #buttons>
         <div class="flex flex-row items-center justify-end gap-2">
           <RuiTooltip :open-delay="400">

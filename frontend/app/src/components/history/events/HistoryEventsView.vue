@@ -601,13 +601,10 @@ const onSkippedExternalEventsReprocessed = async () => {
 </script>
 
 <template>
-  <TablePageLayout :hide-header="!mainPage">
-    <template #title>
-      <span class="text-rui-text-secondary">
-        {{ t('navigation_menu.history') }} /
-      </span>
-      {{ usedTitle }}
-    </template>
+  <TablePageLayout
+    :hide-header="!mainPage"
+    :title="[t('navigation_menu.history'), usedTitle]"
+  >
     <template #buttons>
       <HistoryEventsSkippedExternalEvents
         :skipped-events="skippedExternalEvents"

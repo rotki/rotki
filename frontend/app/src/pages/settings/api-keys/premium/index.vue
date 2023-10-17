@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { type Ref } from 'vue';
-import { type PremiumCredentialsPayload } from '@/types/session';
+import { required } from '@vuelidate/validators';
+import useVuelidate from '@vuelidate/core';
+import { toMessages } from '@/utils/validation';
 
 const { username } = storeToRefs(useSessionAuthStore());
 const { update } = useSettingsStore();
@@ -16,61 +18,76 @@ const apiKey: Ref<string> = ref('');
 const apiSecret: Ref<string> = ref('');
 const sync: Ref<boolean> = ref(false);
 const edit: Ref<boolean> = ref(true);
-const errorMessages: Ref<string[]> = ref([]);
+const $externalResults: Ref<Record<string, string[]>> = ref({});
 
-const clearErrors = () => {
-  set(errorMessages, []);
-};
-
-const onApiKeyPaste = (event: ClipboardEvent) => {
-  const paste = trimOnPaste(event);
-  if (paste) {
-    set(apiKey, paste);
+const mainActionText = computed(() => {
+  if (!get(premium)) {
+    return t('premium_settings.actions.setup');
+  } else if (!get(edit)) {
+    return t('premium_settings.actions.replace');
   }
+  return t('common.actions.save');
+});
+
+const rules = {
+  apiKey: { required },
+  apiSecret: { required }
 };
 
-const onApiSecretPaste = (event: ClipboardEvent) => {
-  const paste = trimOnPaste(event);
-  if (paste) {
-    set(apiSecret, paste);
-  }
-};
+const v$ = useVuelidate(
+  rules,
+  {
+    apiKey,
+    apiSecret
+  },
+  { $autoDirty: true, $externalResults }
+);
 
 const onSyncChange = async () => {
   await update({ premiumShouldSync: get(sync) });
 };
 
-const cancelEdit = () => {
+const cancelEdit = async () => {
   set(edit, false);
   set(apiKey, '');
   set(apiSecret, '');
-  clearErrors();
+  get(v$).$reset();
 };
 
 const reset = () => {
   set(apiSecret, '');
   set(apiKey, '');
   set(edit, false);
+  get(v$).$reset();
 };
 
 const setupPremium = async () => {
-  clearErrors();
   if (get(premium) && !get(edit)) {
     set(edit, true);
     return;
   }
 
-  const payload: PremiumCredentialsPayload = {
+  set($externalResults, {});
+  if (!(await get(v$).$validate())) {
+    return;
+  }
+
+  const result = await setup({
     username: get(username),
-    apiKey: get(apiKey).trim(),
-    apiSecret: get(apiSecret).trim()
-  };
-  const result = await setup(payload);
+    apiKey: get(apiKey),
+    apiSecret: get(apiSecret)
+  });
+
   if (!result.success) {
-    set(errorMessages, [
-      ...get(errorMessages),
-      result.message ?? t('premium_settings.error.setting_failed')
-    ]);
+    if (typeof result.message === 'string') {
+      set($externalResults, {
+        ...get($externalResults),
+        apiKey: [result.message ?? t('premium_settings.error.setting_failed')]
+      });
+    } else {
+      set($externalResults, result.message);
+    }
+
     return;
   }
   premiumUserLoggedIn(true);
@@ -78,16 +95,15 @@ const setupPremium = async () => {
 };
 
 const remove = async () => {
-  clearErrors();
   if (!get(premium)) {
     return;
   }
   const result = await deletePremium();
   if (!result.success) {
-    set(errorMessages, [
-      ...get(errorMessages),
-      result.message ?? t('premium_settings.error.removing_failed')
-    ]);
+    set($externalResults, {
+      ...get($externalResults),
+      apiKey: [result.message ?? t('premium_settings.error.removing_failed')]
+    });
     return;
   }
   premiumUserLoggedIn(false);
@@ -112,119 +128,108 @@ const showDeleteConfirmation = () => {
     remove
   );
 };
+
+const css = useCssModule();
 </script>
 
 <template>
-  <VRow class="premium-settings">
-    <VCol>
-      <Card>
-        <template #title>
-          {{ t('premium_settings.title') }}
-        </template>
-        <template #subtitle>
-          <i18n tag="div" path="premium_settings.subtitle">
-            <BaseExternalLink
-              :text="t('premium_settings.title')"
-              :href="premiumURL"
-            />
-          </i18n>
-        </template>
-
-        <RevealableInput
-          v-model="apiKey"
-          outlined
-          class="premium-settings__fields__api-key"
-          :disabled="premium && !edit"
-          :error-messages="errorMessages"
-          :label="t('premium_settings.fields.api_key')"
-          @paste="onApiKeyPaste($event)"
-        />
-        <RevealableInput
-          v-model="apiSecret"
-          outlined
-          class="premium-settings__fields__api-secret"
-          prepend-icon="mdi-lock"
-          :disabled="premium && !edit"
-          :label="t('premium_settings.fields.api_secret')"
-          @paste="onApiSecretPaste($event)"
-        />
-        <div v-if="premium" class="premium-settings__premium-active">
-          <VIcon color="success">mdi-check-circle</VIcon>
-          <div>{{ t('premium_settings.premium_active') }}</div>
+  <TablePageLayout
+    :title="[
+      t('navigation_menu.api_keys'),
+      t('navigation_menu.api_keys_sub.premium')
+    ]"
+  >
+    <RuiCard>
+      <div class="flex flex-col gap-2">
+        <div class="flex flex-row-reverse">
+          <HintMenuIcon max-width="25rem">
+            <i18n tag="div" path="premium_settings.subtitle">
+              <BaseExternalLink
+                :text="t('premium_settings.title')"
+                :href="premiumURL"
+              />
+            </i18n>
+          </HintMenuIcon>
         </div>
 
-        <template #buttons>
-          <VRow align="center">
-            <VCol cols="auto">
-              <VBtn
-                class="premium-settings__button__setup"
-                depressed
-                color="primary"
-                type="submit"
-                @click="setupPremium()"
-              >
-                {{
-                  premium && !edit
-                    ? t('premium_settings.actions.replace')
-                    : t('premium_settings.actions.setup')
-                }}
-              </VBtn>
-            </VCol>
-            <VCol v-if="premium && !edit" cols="auto">
-              <VBtn
-                class="premium-settings__button__delete"
-                depressed
-                outlined
-                color="primary"
-                type="submit"
-                @click="showDeleteConfirmation()"
-              >
-                {{ t('premium_settings.actions.delete') }}
-              </VBtn>
-            </VCol>
-            <VCol v-if="edit && premium" cols="auto">
-              <VBtn
-                id="premium-edit-cancel-button"
-                depressed
-                color="primary"
-                @click="cancelEdit()"
-              >
-                {{ t('common.actions.cancel') }}
-              </VBtn>
-            </VCol>
-            <VCol v-if="premium && !edit" cols="auto">
-              <VSwitch
-                v-model="sync"
-                class="premium-settings__sync"
-                hide-details
-                :label="t('premium_settings.actions.sync')"
-                @change="onSyncChange()"
-              />
-            </VCol>
-          </VRow>
-        </template>
-      </Card>
-    </VCol>
-  </VRow>
+        <RuiRevealableTextField
+          v-model.trim="apiKey"
+          data-cy="premium__api-key"
+          variant="outlined"
+          color="primary"
+          :disabled="premium && !edit"
+          :error-messages="toMessages(v$.apiKey)"
+          :label="t('premium_settings.fields.api_key')"
+          @blur="v$.$touch()"
+        />
+
+        <RuiRevealableTextField
+          v-model.trim="apiSecret"
+          data-cy="premium__api-secret"
+          variant="outlined"
+          color="primary"
+          :disabled="premium && !edit"
+          :error-messages="toMessages(v$.apiSecret)"
+          :label="t('premium_settings.fields.api_secret')"
+          @blur="v$.$touch()"
+        />
+      </div>
+
+      <div v-if="premium" class="flex flex-row gap-2">
+        <RuiIcon name="checkbox-circle-line" color="success" />
+        {{ t('premium_settings.premium_active') }}
+      </div>
+
+      <VSwitch
+        v-model="sync"
+        :disabled="!premium || edit"
+        hide-details
+        :label="t('premium_settings.actions.sync')"
+        @change="onSyncChange()"
+      />
+
+      <template #footer>
+        <div class="flex flex-row gap-2 pa-3" :class="css.buttons">
+          <template v-if="premium">
+            <RuiButton
+              v-if="edit"
+              color="primary"
+              variant="outlined"
+              @click="cancelEdit()"
+            >
+              {{ t('common.actions.cancel') }}
+            </RuiButton>
+
+            <RuiButton
+              v-else
+              variant="outlined"
+              color="primary"
+              type="submit"
+              data-cy="premium__delete"
+              @click="showDeleteConfirmation()"
+            >
+              {{ t('premium_settings.actions.delete') }}
+            </RuiButton>
+          </template>
+
+          <RuiButton
+            color="primary"
+            type="submit"
+            data-cy="premium__setup"
+            @click="setupPremium()"
+          >
+            {{ mainActionText }}
+          </RuiButton>
+        </div>
+      </template>
+    </RuiCard>
+  </TablePageLayout>
 </template>
 
-<style scoped lang="scss">
-.premium-settings {
-  &__sync {
-    margin-left: 20px;
-    margin-top: 0;
-    padding-top: 0;
-  }
-
-  &__premium-active {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: flex-start;
-
-    div {
-      margin-left: 10px;
-    }
+<style lang="scss" module>
+.buttons {
+  > button {
+    @apply min-w-[7rem];
   }
 }
 </style>
