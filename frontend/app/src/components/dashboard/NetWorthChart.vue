@@ -751,24 +751,20 @@ const css = useCssModule();
 }
 
 .range {
-  @apply relative mt-2 grow h-[3.75rem];
   max-width: calc(100% - 4rem);
 
   &__wrapper {
-    @apply flex items-center;
-
     .snapshot {
       @apply shrink-0 w-16 flex justify-center;
     }
+
+    @apply flex items-center;
   }
 
   &__marker {
-    @apply absolute w-full h-[90%] top-0 z-[2] cursor-all-scroll;
     background: var(--border-color);
 
     &__limit {
-      @apply flex items-center absolute w-[0.625rem] h-full cursor-ew-resize;
-
       &--start {
         @apply left-0 -translate-x-1/2;
       }
@@ -778,9 +774,6 @@ const css = useCssModule();
       }
 
       &__button {
-        @apply w-full h-[1.875rem] cursor-ew-resize;
-        @apply min-w-0 p-0 #{!important};
-
         &:before {
           @apply hidden;
         }
@@ -788,8 +781,17 @@ const css = useCssModule();
         &__icon {
           @apply scale-50 scale-y-[0.8] rotate-90;
         }
+
+        @apply w-full h-[1.875rem] cursor-ew-resize;
+        @apply min-w-0 p-0 #{!important};
       }
+
+      @apply flex items-center absolute w-[0.625rem] h-full cursor-ew-resize;
     }
+
+    @apply absolute w-full h-[90%] top-0 z-[2] cursor-all-scroll;
   }
+
+  @apply relative mt-2 grow h-[3.75rem];
 }
 </style>
