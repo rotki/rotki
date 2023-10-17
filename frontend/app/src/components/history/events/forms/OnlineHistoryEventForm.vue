@@ -325,6 +325,13 @@ const historyEventSubTypeFilteredData: ComputedRef<ActionDataEntry[]> =
         exchangeMappingKeys.includes(data.identifier)
     );
   });
+
+const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
+const locationLabelSuggestions = computed(() =>
+  get(connectedExchanges)
+    .map(item => item.name)
+    .filter(item => !!item)
+);
 </script>
 
 <template>
@@ -417,12 +424,15 @@ const historyEventSubTypeFilteredData: ComputedRef<ActionDataEntry[]> =
     <div class="border-t dark:border-rui-grey-800 mb-6 mt-2" />
 
     <div class="grid md:grid-cols-2 gap-4">
-      <VTextField
+      <ComboboxWithCustomInput
         v-model="locationLabel"
+        :items="locationLabelSuggestions"
         outlined
+        clearable
         data-cy="locationLabel"
         :label="t('transactions.events.form.location_label.label')"
         :error-messages="toMessages(v$.locationLabel)"
+        auto-select-first
         @blur="v$.locationLabel.$touch()"
       />
       <AmountInput

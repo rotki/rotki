@@ -4,7 +4,7 @@ import { type ActionDataEntry } from '@/types/action';
 withDefaults(
   defineProps<{
     type: ActionDataEntry;
-    showLabel: boolean;
+    showLabel?: boolean;
   }>(),
   {
     showLabel: false

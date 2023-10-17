@@ -168,13 +168,11 @@ Vue.use(RuiPlugin, {
     RiRestartLine,
     RiRefreshLine,
     RiCodeBoxLine,
-    RiShuffleLine,
     RiSave2Fill,
     RiDeleteBinFill,
     RiDeleteBinLine,
     RiInformationLine,
     RiAddLine,
-    RiInformationLine,
     RiCloudLine,
     RiUploadCloudLine,
     RiUploadCloud2Line,
@@ -214,13 +212,11 @@ Vue.use(RuiPlugin, {
     RiEqualLine,
     RiNotificationLine,
     RiCoinLine,
-    RiNotificationLine,
     RiBookOpenLine,
     RiQuestionnaireLine,
     RiDiscordLine,
     RiGithubLine,
     RiTwitterXLine,
-    RiArrowUpSLine,
-    RiArrowDownSLine
+    RiArrowUpSLine
   ]
 });

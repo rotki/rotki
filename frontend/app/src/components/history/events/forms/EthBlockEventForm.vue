@@ -285,7 +285,7 @@ const feeRecipientSuggestions = computed(() =>
       @blur="v$.feeRecipient.$touch()"
     />
 
-    <RuiCheckbox v-model="isMevReward" color="primary">
+    <RuiCheckbox v-model="isMevReward" color="primary" data-cy="isMevReward">
       {{ t('transactions.events.form.is_mev_reward.label') }}
     </RuiCheckbox>
   </div>

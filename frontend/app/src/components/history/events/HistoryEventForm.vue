@@ -17,7 +17,7 @@ const props = withDefaults(
   }
 );
 
-const { groupHeader } = toRefs(props);
+const { groupHeader, editableItem } = toRefs(props);
 
 const entryType: Ref<HistoryEventEntryType> = ref(
   HistoryEventEntryType.HISTORY_EVENT
@@ -25,8 +25,10 @@ const entryType: Ref<HistoryEventEntryType> = ref(
 
 const historyEventEntryTypes = Object.values(HistoryEventEntryType);
 
-watchImmediate(groupHeader, groupHeader => {
-  if (groupHeader) {
+watchImmediate([groupHeader, editableItem], ([groupHeader, editableItem]) => {
+  if (editableItem) {
+    set(entryType, editableItem.entryType);
+  } else if (groupHeader) {
     set(entryType, groupHeader.entryType);
   }
 });

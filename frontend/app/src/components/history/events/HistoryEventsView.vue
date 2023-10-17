@@ -371,15 +371,15 @@ const suggestNextSequence = (): string => {
   return ((filtered[0] ?? Number(eventHeader.sequenceIndex)) + 1).toString();
 };
 
-const addEvent = (tx?: HistoryEvent) => {
-  set(selectedGroupEventHeader, tx || null);
+const addEvent = (groupHeader?: HistoryEvent) => {
+  set(selectedGroupEventHeader, groupHeader || null);
   set(editableItem, null);
   set(nextSequence, suggestNextSequence());
   setOpenDialog(true);
 };
 
-const editEventHandler = (event: HistoryEvent, tx: HistoryEvent) => {
-  set(selectedGroupEventHeader, tx);
+const editEventHandler = (event: HistoryEvent, groupHeader: HistoryEvent) => {
+  set(selectedGroupEventHeader, groupHeader);
   set(editableItem, event);
   set(nextSequence, null);
   setOpenDialog(true);

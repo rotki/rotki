@@ -116,7 +116,7 @@ const rules = {
   address: {
     isValid: helpers.withMessage(
       t('transactions.events.form.address.validation.valid').toString(),
-      (value: string) => isValidEthAddress(value)
+      (value: string) => !value || isValidEthAddress(value)
     )
   },
   sequenceIndex: {
@@ -499,12 +499,15 @@ const addressSuggestions = computed(() =>
     <div class="border-t dark:border-rui-grey-800 mb-6 mt-2" />
 
     <div class="grid md:grid-cols-2 gap-4">
-      <VTextField
+      <ComboboxWithCustomInput
         v-model="locationLabel"
+        :items="addressSuggestions"
         outlined
+        clearable
         data-cy="locationLabel"
         :label="t('transactions.events.form.location_label.label')"
         :error-messages="toMessages(v$.locationLabel)"
+        auto-select-first
         @blur="v$.locationLabel.$touch()"
       />
 
@@ -512,6 +515,7 @@ const addressSuggestions = computed(() =>
         v-model="address"
         :items="addressSuggestions"
         outlined
+        clearable
         data-cy="address"
         :label="t('transactions.events.form.address.label')"
         :error-messages="toMessages(v$.address)"

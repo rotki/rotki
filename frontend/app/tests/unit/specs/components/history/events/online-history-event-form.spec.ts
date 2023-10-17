@@ -7,42 +7,36 @@ import { createPinia, setActivePinia } from 'pinia';
 import Vuetify from 'vuetify';
 import flushPromises from 'flush-promises';
 import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
-import { type EvmHistoryEvent } from '@/types/history/events';
-import EvmEventForm from '@/components/history/events/forms/EvmEventForm.vue';
+import { type OnlineHistoryEvent } from '@/types/history/events';
+import OnlineHistoryEventForm from '@/components/history/events/forms/OnlineHistoryEventForm.vue';
 
-describe('EvmEventForm.vue', () => {
+describe('OnlineHistoryEventForm.vue', () => {
   setupDayjs();
-  let wrapper: Wrapper<EvmEventForm>;
+  let wrapper: Wrapper<OnlineHistoryEventForm>;
 
-  const groupHeader: EvmHistoryEvent = {
-    identifier: 14344,
-    eventIdentifier:
-      '10x4ba949779d936631dc9eb68fa9308c18de51db253aeea919384c728942f95ba9',
-    sequenceIndex: 2411,
-    timestamp: 1686495083,
-    location: 'ethereum',
-    asset: 'eip155:1/erc20:0xA3Ee8CEB67906492287FFD256A9422313B5796d4',
+  const groupHeader: OnlineHistoryEvent = {
+    identifier: 449,
+    entryType: HistoryEventEntryType.HISTORY_EVENT,
+    eventIdentifier: 'STJ6KRHJYGA',
+    sequenceIndex: 20,
+    timestamp: 1696741486185,
+    location: 'kraken',
+    asset: 'ETH',
     balance: {
-      amount: bigNumberify(610),
-      usdValue: bigNumberify(0)
+      amount: bigNumberify(10),
+      usdValue: bigNumberify(40)
     },
-    eventType: 'receive',
-    eventSubtype: null,
-    locationLabel: '0xfDb7EEc5eBF4c4aC7734748474123aC25C6eDCc8',
-    notes:
-      'Receive 610 Visit https://rafts.cc to claim rewards. from 0x30a2EBF10f34c6C4874b0bDD5740690fD2f3B70C to 0xfDb7EEc5eBF4c4aC7734748474123aC25C6eDCc8',
-    entryType: HistoryEventEntryType.EVM_EVENT,
-    address: '0x30a2EBF10f34c6C4874b0bDD5740690fD2f3B70C',
-    counterparty: null,
-    product: null,
-    txHash: '0x4ba949779d936631dc9eb68fa9308c18de51db253aeea919384c728942f95ba9'
+    eventType: 'staking',
+    eventSubtype: 'reward',
+    locationLabel: 'Kraken 1',
+    notes: 'History event notes'
   };
 
   const createWrapper = (options: ThisTypedMountOptions<any> = {}) => {
     const vuetify = new Vuetify();
     const pinia = createPinia();
     setActivePinia(pinia);
-    return mount(EvmEventForm, {
+    return mount(OnlineHistoryEventForm, {
       pinia,
       vuetify,
       stubs: {
@@ -94,19 +88,13 @@ describe('EvmEventForm.vue', () => {
       await wrapper.vm.$nextTick();
 
       expect(
-        (wrapper.find('[data-cy=txHash]').element as HTMLInputElement).value
+        (wrapper.find('[data-cy=eventIdentifier]').element as HTMLInputElement)
+          .value
       ).toBe('');
 
       expect(
         (
           wrapper.find('[data-cy=locationLabel] .input-value')
-            .element as HTMLInputElement
-        ).value
-      ).toBe('');
-
-      expect(
-        (
-          wrapper.find('[data-cy=address] .input-value')
             .element as HTMLInputElement
         ).value
       ).toBe('');
@@ -129,8 +117,9 @@ describe('EvmEventForm.vue', () => {
       await wrapper.vm.$nextTick();
 
       expect(
-        (wrapper.find('[data-cy=txHash]').element as HTMLInputElement).value
-      ).toBe(groupHeader.txHash);
+        (wrapper.find('[data-cy=eventIdentifier]').element as HTMLInputElement)
+          .value
+      ).toBe(groupHeader.eventIdentifier);
 
       expect(
         (
@@ -138,13 +127,6 @@ describe('EvmEventForm.vue', () => {
             .element as HTMLInputElement
         ).value
       ).toBe(groupHeader.locationLabel);
-
-      expect(
-        (
-          wrapper.find('[data-cy=address] .input-value')
-            .element as HTMLInputElement
-        ).value
-      ).toBe(groupHeader.address);
 
       expect(
         (wrapper.find('[data-cy=amount] input').element as HTMLInputElement)
@@ -174,8 +156,9 @@ describe('EvmEventForm.vue', () => {
       await wrapper.vm.$nextTick();
 
       expect(
-        (wrapper.find('[data-cy=txHash]').element as HTMLInputElement).value
-      ).toBe(groupHeader.txHash);
+        (wrapper.find('[data-cy=eventIdentifier]').element as HTMLInputElement)
+          .value
+      ).toBe(groupHeader.eventIdentifier);
 
       expect(
         (
@@ -183,13 +166,6 @@ describe('EvmEventForm.vue', () => {
             .element as HTMLInputElement
         ).value
       ).toBe(groupHeader.locationLabel);
-
-      expect(
-        (
-          wrapper.find('[data-cy=address] .input-value')
-            .element as HTMLInputElement
-        ).value
-      ).toBe(groupHeader.address);
 
       expect(
         (wrapper.find('[data-cy=amount] input').element as HTMLInputElement)
@@ -233,27 +209,13 @@ describe('EvmEventForm.vue', () => {
     ).toHaveLength(get(historyEventSubTypesData).length);
   });
 
-  test('should show all counterparties options correctly', async () => {
+  test('should show correct eventSubtypes options, based on selected eventType', async () => {
     wrapper = createWrapper({ propsData: { groupHeader } });
     await wrapper.vm.$nextTick();
     await flushPromises();
 
-    const { counterparties } = useHistoryEventMappings();
-
-    expect(
-      wrapper.findAll('[data-cy=counterparty] .selections span')
-    ).toHaveLength(get(counterparties).length);
-  });
-
-  test('should show correct eventSubtypes options, based on selected eventType and counterparty', async () => {
-    wrapper = createWrapper({ propsData: { groupHeader } });
-    await wrapper.vm.$nextTick();
-    await flushPromises();
-
-    const {
-      historyEventTypeGlobalMapping,
-      historyEventTypePerProtocolMapping
-    } = useHistoryEventMappings();
+    const { historyEventTypeGlobalMapping, historyEventTypeExchangeMapping } =
+      useHistoryEventMappings();
 
     const selectedEventType = 'deposit';
 
@@ -276,32 +238,19 @@ describe('EvmEventForm.vue', () => {
       expect(keysFromGlobalMappings.includes(spans.at(i).text())).toBeTruthy();
     }
 
-    // should not add eventSubtype options, if the selectedCounterparty doesn't has that eventType.
-    await wrapper.find('[data-cy=counterparty] .input-value').trigger('input', {
-      value: '1inch'
-    });
-
     await wrapper.vm.$nextTick();
     expect(spans).toHaveLength(keysFromGlobalMappings.length);
 
-    // should not add eventSubtype options from perProtocolMappings, if the selectedCounterparty has that eventType.
-    const selectedCounterparty = 'yearn-v2';
-    await wrapper.find('[data-cy=counterparty] .input-value').trigger('input', {
-      value: selectedCounterparty
-    });
-
-    await wrapper.vm.$nextTick();
-
     const selectedLocation = groupHeader.location;
-    const keysFromPerProtocolMappings = Object.keys(
-      get(historyEventTypePerProtocolMapping)?.[selectedLocation]?.[
-        selectedCounterparty
-      ]?.[selectedEventType] ?? {}
+    const keysFromExchangeMappings = Object.keys(
+      get(historyEventTypeExchangeMapping)?.[selectedLocation]?.[
+        selectedEventType
+      ] ?? {}
     );
 
     const joinKeys = [
       ...keysFromGlobalMappings,
-      ...keysFromPerProtocolMappings
+      ...keysFromExchangeMappings
     ].filter(uniqueStrings);
 
     spans = wrapper.findAll('[data-cy=eventSubtype] .selections span');
@@ -309,44 +258,6 @@ describe('EvmEventForm.vue', () => {
 
     for (let i = 0; i < joinKeys.length; i++) {
       expect(joinKeys.includes(spans.at(i).text())).toBeTruthy();
-    }
-  });
-
-  test('should show product options, based on selected counterparty', async () => {
-    wrapper = createWrapper({ propsData: { groupHeader } });
-    await wrapper.vm.$nextTick();
-    await flushPromises();
-
-    expect(wrapper.find('[data-cy=product]').attributes('disabled')).toBe(
-      'disabled'
-    );
-
-    // input is still disabled, if the counterparty doesn't have mapped products.
-    await wrapper.find('[data-cy=counterparty] .input-value').trigger('input', {
-      value: '1inch'
-    });
-    await wrapper.vm.$nextTick();
-
-    expect(wrapper.find('[data-cy=product]').attributes('disabled')).toBe(
-      'disabled'
-    );
-
-    // products options should be showed correctly, if the counterparty have mapped products.
-    const selectedCounterparty = 'convex';
-    await wrapper.find('[data-cy=counterparty] .input-value').trigger('input', {
-      value: selectedCounterparty
-    });
-    await wrapper.vm.$nextTick();
-
-    const { historyEventProductsMapping } = useHistoryEventMappings();
-
-    const products = get(historyEventProductsMapping)[selectedCounterparty];
-
-    const spans = wrapper.findAll('[data-cy=product] .selections span');
-    expect(spans).toHaveLength(products.length);
-
-    for (let i = 0; i < products.length; i++) {
-      expect(products.includes(spans.at(i).text())).toBeTruthy();
     }
   });
 });

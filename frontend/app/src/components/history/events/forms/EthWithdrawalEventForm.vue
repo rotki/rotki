@@ -115,6 +115,7 @@ const applyEditableData = async (entry: EthWithdrawalEvent) => {
   set(usdValue, entry.balance.usdValue.toFixed());
   set(validatorIndex, entry.validatorIndex.toString());
   set(withdrawalAddress, entry.locationLabel);
+  set(isExit, entry.isExit);
 };
 
 const applyGroupHeaderData = async (entry: EthWithdrawalEvent) => {
@@ -262,7 +263,7 @@ const withdrawalAddressSuggestions = computed(() =>
       @blur="v$.withdrawalAddress.$touch()"
     />
 
-    <RuiCheckbox v-model="isExit" color="primary">
+    <RuiCheckbox v-model="isExit" color="primary" data-cy="isExited">
       {{ t('transactions.events.form.is_exit.label') }}
     </RuiCheckbox>
   </div>
