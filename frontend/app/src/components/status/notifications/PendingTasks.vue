@@ -1,26 +1,25 @@
 <script setup lang="ts">
 const expanded = ref(false);
 
-const css = useCssModule();
-
 const store = useTaskStore();
 const { hasRunningTasks, tasks } = storeToRefs(store);
 </script>
 
 <template>
-  <div v-if="hasRunningTasks">
-    <CollapsedPendingTasks v-model="expanded" :count="tasks.length" />
-    <div v-if="expanded" class="pl-2" :class="css.tasks">
-      <PendingTask v-for="task in tasks" :key="task.id" :task="task" />
+  <div class="pl-2 mb-2">
+    <RuiCard v-if="hasRunningTasks" class="flex flex-col gap-2">
+      <CollapsedPendingTasks v-model="expanded" :count="tasks.length" />
+      <div v-if="expanded" class="flex flex-col pt-4 -mb-4">
+        <PendingTask
+          v-for="task in tasks"
+          :key="task.id"
+          :task="task"
+          class="border-t dark:border-rui-grey-800 py-4"
+        />
+      </div>
+    </RuiCard>
+    <div v-else>
+      <NoTasksRunning />
     </div>
   </div>
-  <div v-else>
-    <NoTasksRunning />
-  </div>
 </template>
-
-<style module lang="scss">
-.tasks {
-  padding-bottom: 4px;
-}
-</style>
