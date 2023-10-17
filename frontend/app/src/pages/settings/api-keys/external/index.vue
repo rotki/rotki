@@ -124,10 +124,14 @@ const removeEtherscanNotification = (location: string) => {
   removeNotification(notification.id);
 };
 
-const save = async (serviceName: ExternalServiceName, key: string) => {
-  const keys: ExternalServiceKey[] = [
-    { name: serviceName, apiKey: key.trim() }
-  ];
+const save = async ({
+  name,
+  apiKey
+}: {
+  name: ExternalServiceName;
+  apiKey: string;
+}) => {
+  const keys: ExternalServiceKey[] = [{ name, apiKey: apiKey.trim() }];
 
   try {
     set(loading, true);
@@ -135,25 +139,25 @@ const save = async (serviceName: ExternalServiceName, key: string) => {
     setMessage({
       title: t('external_services.set.success.title'),
       description: t('external_services.set.success.message', {
-        serviceName: toCapitalCase(serviceName.split('_').join(' '))
+        serviceName: toCapitalCase(name.split('_').join(' '))
       }),
       success: true
     });
-    if (serviceName === 'loopring') {
+    if (name === 'loopring') {
       await fetchLoopringBalances(true);
-    } else if (serviceName === 'etherscan') {
+    } else if (name === 'etherscan') {
       removeEtherscanNotification(TRADE_LOCATION_ETHEREUM);
-    } else if (serviceName === 'optimism_etherscan') {
+    } else if (name === 'optimism_etherscan') {
       removeEtherscanNotification(TRADE_LOCATION_OPTIMISM);
-    } else if (serviceName === 'polygon_pos_etherscan') {
+    } else if (name === 'polygon_pos_etherscan') {
       // TODO: remove the string modification when https://github.com/rotki/rotki/issues/6725 is resolved
       removeEtherscanNotification(toSnakeCase(TRADE_LOCATION_POLYGON_POS));
-    } else if (serviceName === 'arbitrum_one_etherscan') {
+    } else if (name === 'arbitrum_one_etherscan') {
       // TODO: remove the string modification when https://github.com/rotki/rotki/issues/6725 is resolved
       removeEtherscanNotification(toSnakeCase(TRADE_LOCATION_ARBITRUM_ONE));
-    } else if (serviceName === 'base_etherscan') {
+    } else if (name === 'base_etherscan') {
       removeEtherscanNotification(TRADE_LOCATION_BASE);
-    } else if (serviceName === 'gnosis_etherscan') {
+    } else if (name === 'gnosis_etherscan') {
       removeEtherscanNotification(TRADE_LOCATION_GNOSIS);
     }
   } catch (e: any) {
@@ -207,6 +211,8 @@ const setActiveTab = (hash: string) => {
   }
 };
 
+const navigateToModules = () => useRouter().push('/settings/modules');
+
 watch(route, ({ hash }) => {
   setActiveTab(hash);
 });
@@ -220,39 +226,50 @@ onMounted(async () => {
 </script>
 
 <template>
-  <Card>
-    <template #title>
-      {{ t('external_services.title') }}
-    </template>
-    <template #subtitle>
-      {{ t('external_services.subtitle') }}
+  <TablePageLayout
+    data-cy="external-keys"
+    :title="[
+      t('navigation_menu.api_keys'),
+      t('navigation_menu.api_keys_sub.external_services')
+    ]"
+  >
+    <template #buttons>
+      <HintMenuIcon max-width="25rem">
+        {{ t('external_services.subtitle') }}
+      </HintMenuIcon>
     </template>
 
-    <ApiKeyBox>
-      <VCard flat :outlined="false">
-        <VCardTitle>
-          {{ t('external_services.etherscan.title') }}
-        </VCardTitle>
-        <VCardSubtitle>
-          {{ t('external_services.etherscan.description') }}
-        </VCardSubtitle>
-      </VCard>
-      <VTabs v-model="evmEtherscanTabIndex">
-        <VTab v-for="(_, chain) in evmEtherscanTabs" :key="chain">
-          <LocationIcon :item="chain" icon />
-          <div class="ml-2">{{ getName(chain) }}</div>
-        </VTab>
-      </VTabs>
-      <VDivider />
-      <VTabsItems v-model="evmEtherscanTabIndex">
-        <VTabItem
-          v-for="(tab, chain) in evmEtherscanTabs"
+    <RuiCard>
+      <template #header>
+        {{ t('external_services.etherscan.title') }}
+      </template>
+      <template #subheader>
+        {{ t('external_services.etherscan.description') }}
+      </template>
+
+      <RuiTabs
+        v-model="evmEtherscanTabIndex"
+        color="primary"
+        class="border-b mb-4"
+      >
+        <RuiTab
+          v-for="(_, chain) in evmEtherscanTabs"
           :key="chain"
-          class="pt-4"
+          class="capitalize"
         >
+          <div class="flex gap-4 items-center">
+            <LocationIcon :item="chain" icon />
+            {{ getName(chain) }}
+          </div>
+        </RuiTab>
+      </RuiTabs>
+
+      <RuiTabItems v-model="evmEtherscanTabIndex">
+        <RuiTabItem v-for="(tab, chain) in evmEtherscanTabs" :key="chain">
           <ServiceKey
-            v-model="tab.value"
-            :class="`external-services__${chain}-etherscan-key`"
+            :api-key="tab.value"
+            :name="tab.key"
+            :data-cy="tab.key"
             :label="t('external_services.etherscan.label')"
             :hint="
               t('external_services.etherscan.hint', {
@@ -265,104 +282,126 @@ onMounted(async () => {
                 chain: toSentenceCase(chain)
               })
             "
-            @save="save(tab.key, $event)"
-            @delete-key="showConfirmation(tab.key)"
+            @save="save($event)"
+            @delete-key="showConfirmation($event)"
           />
-        </VTabItem>
-      </VTabsItems>
-    </ApiKeyBox>
+        </RuiTabItem>
+      </RuiTabItems>
+    </RuiCard>
 
-    <ApiKeyBox id="ext-service-key-cryptocompare">
+    <RuiCard>
+      <template #header>
+        {{ t('external_services.cryptocompare.title') }}
+      </template>
+      <template #subheader>
+        {{ t('external_services.cryptocompare.description') }}
+      </template>
+
       <ServiceKey
-        v-model="cryptocompareKey"
-        class="external-services__cryptocompare-key"
-        :title="t('external_services.cryptocompare.title')"
-        :description="t('external_services.cryptocompare.description')"
+        :api-key="cryptocompareKey"
+        name="cryptocompare"
+        data-cy="cryptocompare"
         :label="t('external_services.cryptocompare.label')"
         :hint="t('external_services.cryptocompare.hint')"
         :loading="loading"
         :tooltip="t('external_services.cryptocompare.delete_tooltip')"
-        @save="save('cryptocompare', $event)"
-        @delete-key="showConfirmation('cryptocompare')"
+        @save="save($event)"
+        @delete-key="showConfirmation($event)"
       />
-    </ApiKeyBox>
+    </RuiCard>
 
-    <ApiKeyBox id="ext-service-key-beaconchain">
+    <RuiCard>
+      <template #header>
+        {{ t('external_services.beaconchain.title') }}
+      </template>
+      <template #subheader>
+        {{ t('external_services.beaconchain.description') }}
+      </template>
+
       <ServiceKey
-        v-model="beaconchainKey"
-        class="external-services__beaconchain-key"
-        :title="t('external_services.beaconchain.title')"
-        :description="t('external_services.beaconchain.description')"
+        :api-key="beaconchainKey"
+        name="beaconchain"
+        data-cy="beaconchain"
         :label="t('external_services.beaconchain.label')"
         :hint="t('external_services.beaconchain.hint')"
         :loading="loading"
         :tooltip="t('external_services.beaconchain.delete_tooltip')"
-        @save="save('beaconchain', $event)"
-        @delete-key="showConfirmation('beaconchain')"
+        @save="save($event)"
+        @delete-key="showConfirmation($event)"
       />
-    </ApiKeyBox>
+    </RuiCard>
 
-    <ApiKeyBox id="ext-service-key-covalent">
+    <RuiCard>
+      <template #header>
+        {{ t('external_services.covalent.title') }}
+      </template>
+      <template #subheader>
+        {{ t('external_services.covalent.description') }}
+      </template>
+
       <ServiceKey
-        v-model="covalentKey"
-        class="external-services__covalent-key"
-        :title="t('external_services.covalent.title')"
-        :description="t('external_services.covalent.description')"
+        :api-key="covalentKey"
+        name="covalent"
+        data-cy="covalent"
         :label="t('external_services.covalent.label')"
         :hint="t('external_services.covalent.hint')"
         :loading="loading"
         :tooltip="t('external_services.covalent.delete_tooltip')"
-        @save="save('covalent', $event)"
-        @delete-key="showConfirmation('covalent')"
+        @save="save($event)"
+        @delete-key="showConfirmation($event)"
       />
-    </ApiKeyBox>
+    </RuiCard>
 
-    <ApiKeyBox id="ext-service-key-loopring">
+    <RuiCard>
+      <template #header>
+        {{ t('external_services.loopring.title') }}
+      </template>
+      <template #subheader>
+        {{ t('external_services.loopring.description') }}
+      </template>
+
       <ServiceKey
-        v-model="loopringKey"
-        class="external-services__loopring_key"
-        :title="t('external_services.loopring.title')"
-        :description="t('external_services.loopring.description')"
+        :api-key="loopringKey"
+        name="loopring"
+        data-cy="loopring"
         :label="t('external_services.loopring.label')"
         :hint="t('external_services.loopring.hint')"
         :loading="loading"
         :tooltip="t('external_services.loopring.delete_tooltip')"
-        @save="save('loopring', $event)"
-        @delete-key="showConfirmation('loopring')"
-      />
-
-      <VAlert
-        v-if="loopringKey && !isLoopringActive"
-        prominent
-        type="warning"
-        class="ma-2"
-        outlined
+        @save="save($event)"
+        @delete-key="showConfirmation($event)"
       >
-        <VRow align="center">
-          <VCol class="grow">
-            {{ t('external_services.loopring.not_enabled') }}
-          </VCol>
-          <VCol class="shrink">
-            <VBtn to="/settings/modules" color="primary">
+        <RuiAlert v-if="loopringKey && !isLoopringActive" type="warning">
+          <div class="flex gap-4 items-center">
+            <div class="grow">
+              {{ t('external_services.loopring.not_enabled') }}
+            </div>
+            <RuiButton size="sm" color="primary" @click="navigateToModules()">
               {{ t('external_services.loopring.settings') }}
-            </VBtn>
-          </VCol>
-        </VRow>
-      </VAlert>
-    </ApiKeyBox>
+            </RuiButton>
+          </div>
+        </RuiAlert>
+      </ServiceKey>
+    </RuiCard>
 
-    <ApiKeyBox id="ext-service-key-opensea">
+    <RuiCard>
+      <template #header>
+        {{ t('external_services.opensea.title') }}
+      </template>
+      <template #subheader>
+        {{ t('external_services.opensea.description') }}
+      </template>
+
       <ServiceKey
-        v-model="openseaKey"
-        class="external-services__opensea-key"
-        :title="t('external_services.opensea.title')"
-        :description="t('external_services.opensea.description')"
+        :api-key="openseaKey"
+        name="opensea"
+        data-cy="opensea"
         :label="t('external_services.opensea.label')"
         :hint="t('external_services.opensea.hint')"
         :loading="loading"
         :tooltip="t('external_services.opensea.delete_tooltip')"
-        @save="save('opensea', $event)"
-        @delete-key="showConfirmation('opensea')"
+        @save="save($event)"
+        @delete-key="showConfirmation($event)"
       >
         <i18n tag="div" path="external_services.opensea.link">
           <template #link>
@@ -374,6 +413,6 @@ onMounted(async () => {
           </template>
         </i18n>
       </ServiceKey>
-    </ApiKeyBox>
-  </Card>
+    </RuiCard>
+  </TablePageLayout>
 </template>

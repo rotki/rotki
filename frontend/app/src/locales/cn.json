@@ -2127,8 +2127,7 @@
         "title": "Success"
       }
     },
-    "subtitle": "rotki 连接到各种服务提供商,以获取历史价格或区块链数据等信息。在某些情况下,rotki 依赖这些 API 获取基本信息，在这种情况下，您需要提供 API 密钥。",
-    "title": "外部服务"
+    "subtitle": "rotki 连接到各种服务提供商,以获取历史价格或区块链数据等信息。在某些情况下,rotki 依赖这些 API 获取基本信息，在这种情况下，您需要提供 API 密钥。"
   },
   "external_trade_form": {
     "amount": {

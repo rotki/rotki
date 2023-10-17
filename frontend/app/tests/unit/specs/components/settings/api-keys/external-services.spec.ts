@@ -78,12 +78,14 @@ describe('ExternalServices.vue', () => {
       const setService = api.setExternalServices as any;
       setService.mockResolvedValueOnce(mockResponse);
       await wrapper
-        .find('.external-services__ethereum-etherscan-key input')
+        .find(
+          '[data-cy=external-keys] [data-cy=etherscan] [data-cy=service-key__api-key] input'
+        )
         .setValue('123');
       await wrapper.vm.$nextTick();
       await wrapper
         .find(
-          '.external-services__ethereum-etherscan-key .service-key__buttons__save'
+          '[data-cy=external-keys] [data-cy=etherscan] [data-cy=service-key__save]'
         )
         .trigger('click');
       await flushPromises();
@@ -96,12 +98,14 @@ describe('ExternalServices.vue', () => {
       const setService = api.setExternalServices as any;
       setService.mockResolvedValueOnce(mockResponse);
       await wrapper
-        .find('.external-services__cryptocompare-key input')
+        .find(
+          '[data-cy=external-keys] [data-cy=cryptocompare] [data-cy=service-key__api-key] input'
+        )
         .setValue('123');
       await wrapper.vm.$nextTick();
       await wrapper
         .find(
-          '.external-services__cryptocompare-key .service-key__buttons__save'
+          '[data-cy=external-keys] [data-cy=cryptocompare] [data-cy=service-key__save]'
         )
         .trigger('click');
       await flushPromises();
@@ -116,12 +120,14 @@ describe('ExternalServices.vue', () => {
       const setService = api.setExternalServices as any;
       setService.mockRejectedValueOnce(new Error('mock failure'));
       await wrapper
-        .find('.external-services__ethereum-etherscan-key input')
+        .find(
+          '[data-cy=external-keys] [data-cy=etherscan] [data-cy=service-key__api-key] input'
+        )
         .setValue('123');
       await wrapper.vm.$nextTick();
       await wrapper
         .find(
-          '.external-services__ethereum-etherscan-key .service-key__buttons__save'
+          '[data-cy=external-keys] [data-cy=etherscan] [data-cy=service-key__save]'
         )
         .trigger('click');
       await flushPromises();
@@ -133,14 +139,14 @@ describe('ExternalServices.vue', () => {
       expect(
         wrapper
           .find(
-            '.external-services__ethereum-etherscan-key .service-key__content__delete'
+            '[data-cy=external-keys] [data-cy=etherscan] [data-cy=service-key__delete]'
           )
           .attributes('disabled')
       ).toBe('disabled');
       expect(
         wrapper
           .find(
-            '.external-services__cryptocompare-key .service-key__content__delete'
+            '[data-cy=external-keys] [data-cy=cryptocompare] [data-cy=service-key__delete]'
           )
           .attributes('disabled')
       ).toBe('disabled');
@@ -150,7 +156,7 @@ describe('ExternalServices.vue', () => {
       expect(
         wrapper
           .find(
-            '.external-services__ethereum-etherscan-key .service-key__buttons__save'
+            '[data-cy=external-keys] [data-cy=etherscan] [data-cy=service-key__save]'
           )
           .attributes('disabled')
       ).toBe('disabled');
@@ -168,15 +174,15 @@ describe('ExternalServices.vue', () => {
 
     test('the fields get updated', async () => {
       const etherscanKey = wrapper.find(
-        '.external-services__ethereum-etherscan-key'
+        '[data-cy=external-keys] [data-cy=etherscan]'
       );
       const cryptoCompare = wrapper.find(
-        '.external-services__cryptocompare-key'
+        '[data-cy=external-keys] [data-cy=cryptocompare]'
       );
-      expect((etherscanKey.vm as ReturnType<typeof ServiceKey>).value).toBe(
+      expect((etherscanKey.vm as ReturnType<typeof ServiceKey>).apiKey).toBe(
         '123'
       );
-      expect((cryptoCompare.vm as ReturnType<typeof ServiceKey>).value).toBe(
+      expect((cryptoCompare.vm as ReturnType<typeof ServiceKey>).apiKey).toBe(
         '123'
       );
     });
@@ -186,7 +192,7 @@ describe('ExternalServices.vue', () => {
       deleteService.mockResolvedValueOnce({});
       await wrapper
         .find(
-          '.external-services__ethereum-etherscan-key .service-key__content__delete'
+          '[data-cy=external-keys] [data-cy=etherscan] [data-cy=service-key__delete]'
         )
         .trigger('click');
       await wrapper.vm.$nextTick();
@@ -205,7 +211,7 @@ describe('ExternalServices.vue', () => {
       deleteService.mockRejectedValueOnce(new Error('mock failure'));
       await wrapper
         .find(
-          '.external-services__cryptocompare-key .service-key__content__delete'
+          '[data-cy=external-keys] [data-cy=cryptocompare] [data-cy=service-key__delete]'
         )
         .trigger('click');
       await wrapper.vm.$nextTick();
