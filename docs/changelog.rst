@@ -3,6 +3,7 @@ Changelog
 =========
 
 
+* :feature:`-` Octant GLM locking/unlocking events will now be properly detected and shown to the user.
 * :feature:`6733` Added support for detection of GRT tokens delegated to indexers in The Graph protocol (amounts including rewards).
 * :feature:`-` Binance CSV importing will now recognize more entry types.
 * :feature:`6712` The Graph protocol support has been added. The events related to delegator staking now will be properly displayed and accounted for.
