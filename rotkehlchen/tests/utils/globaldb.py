@@ -79,7 +79,7 @@ USER_TOKEN3 = EvmToken.initialize(
 )
 
 
-def patch_for_globaldb_upgrade_to(stack: ExitStack, version: Literal[2, 3, 4, 6]) -> ExitStack:
+def patch_for_globaldb_upgrade_to(stack: ExitStack, version: Literal[2, 3, 4, 5, 6]) -> ExitStack:
     stack.enter_context(
         patch(
             'rotkehlchen.globaldb.upgrades.manager.GLOBAL_DB_VERSION',

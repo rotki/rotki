@@ -64,8 +64,7 @@ def entry_to_input_dict(
         serialized['fee_recipient'] = serialized.pop('location_label')
         serialized['is_mev_reward'] = serialized.pop('event_subtype') == HistoryEventSubType.MEV_REWARD.serialize()  # noqa: E501
     elif entry.entry_type == HistoryBaseEntryType.ETH_DEPOSIT_EVENT:
-        if include_identifier is False:
-            # when creating a eth deposit event we don't include the event_identifier
+        if include_identifier is False:  # when creating an eth deposit event we don't include the event_identifier  # noqa: E501
             serialized.pop('event_identifier')
         serialized['depositor'] = serialized.pop('location_label')
     return serialized
