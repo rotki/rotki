@@ -6,7 +6,7 @@ web3==5.31.3
 rotki-content-hash==0.0.3  # fork of content-hash due to https://github.com/filips123/ContentHashPy/issues/1
 rotki-pysqlcipher3==2023.7.1
 requests==2.31.0
-urllib3==1.26.14
+urllib3==1.26.18
 coincurve==17.0.0
 base58check==1.0.2
 bech32==1.2.0
