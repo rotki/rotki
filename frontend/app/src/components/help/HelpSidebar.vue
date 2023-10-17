@@ -20,31 +20,31 @@ interface Entry {
 
 const entries: Entry[] = [
   {
-    icon: 'mdi-book-open-page-variant',
+    icon: 'book-open-line',
     title: t('help_sidebar.user_guide.title').toString(),
     subtitle: t('help_sidebar.user_guide.subtitle').toString(),
     link: 'https://rotki.readthedocs.io/en/latest/usage_guide.html'
   },
   {
-    icon: 'mdi-frequently-asked-questions',
+    icon: 'questionnaire-line',
     title: t('help_sidebar.faq.title').toString(),
     subtitle: t('help_sidebar.faq.subtitle').toString(),
     link: 'https://rotki.readthedocs.io/en/latest/faq.html'
   },
   {
-    icon: '$discord',
+    icon: 'discord-line',
     title: t('help_sidebar.support.title').toString(),
     subtitle: t('help_sidebar.support.subtitle').toString(),
     link: 'https://discord.gg/aGCxHG7'
   },
   {
-    icon: 'mdi-github',
+    icon: 'github-line',
     title: t('help_sidebar.github.title').toString(),
     subtitle: t('help_sidebar.github.subtitle').toString(),
     link: 'https://github.com/rotki/rotki'
   },
   {
-    icon: 'mdi-twitter',
+    icon: 'twitter-x-line',
     title: t('help_sidebar.twitter.title').toString(),
     subtitle: t('help_sidebar.twitter.subtitle').toString(),
     link: 'https://twitter.com/rotkiapp'
@@ -96,26 +96,24 @@ const { smAndDown } = useDisplay();
     hide-overlay
     @input="visibleUpdate($event)"
   >
-    <VRow justify="space-between" class="mt-0 pa-4">
-      <VCol class="text-h5">{{ t('help_sidebar.title') }}</VCol>
-      <VCol cols="auto">
-        <VBtn icon @click="visibleUpdate(false)">
-          <VIcon>mdi-close</VIcon>
-        </VBtn>
-      </VCol>
-    </VRow>
-    <VList class="mt-2">
+    <div class="flex justify-between items-center pa-4">
+      <div class="text-h6">{{ t('help_sidebar.title') }}</div>
+      <RuiButton variant="text" icon @click="visibleUpdate(false)">
+        <RuiIcon name="close-line" />
+      </RuiButton>
+    </div>
+    <VList class="py-0">
       <VListItem
         v-for="(item, index) in entries"
         :key="index"
         :href="interop.isPackaged ? null : item.link"
         target="_blank"
+        class="gap-4 py-2"
+        :class="{ 'border-t': index > 0 }"
         @click="interop.isPackaged ? interop.openUrl(item.link) : null"
       >
-        <VListItemAvatar>
-          <VIcon>{{ item.icon }}</VIcon>
-        </VListItemAvatar>
-        <VListItemContent>
+        <RuiIcon class="text-rui-text-secondary" :name="item.icon" />
+        <VListItemContent class="gap-1">
           <VListItemTitle>
             {{ item.title }}
           </VListItemTitle>
@@ -123,16 +121,11 @@ const { smAndDown } = useDisplay();
             {{ item.subtitle }}
           </VListItemSubtitle>
         </VListItemContent>
-        <VListItemAction>
-          <VIcon>mdi-chevron-right</VIcon>
-        </VListItemAction>
       </VListItem>
       <template v-if="!interop.isPackaged">
-        <VListItem selectable @click="openAbout()">
-          <VListItemAvatar>
-            <VIcon>mdi-information</VIcon>
-          </VListItemAvatar>
-          <VListItemContent>
+        <VListItem class="gap-4 py-2 border-t" @click="openAbout()">
+          <RuiIcon class="text-rui-text-secondary" name="information-line" />
+          <VListItemContent class="gap-1">
             <VListItemTitle>
               {{ t('help_sidebar.about.title') }}
             </VListItemTitle>
@@ -140,14 +133,9 @@ const { smAndDown } = useDisplay();
               {{ t('help_sidebar.about.subtitle') }}
             </VListItemSubtitle>
           </VListItemContent>
-          <VListItemAction>
-            <VIcon>mdi-chevron-right</VIcon>
-          </VListItemAction>
         </VListItem>
-        <VListItem selectable @click="downloadBrowserLog()">
-          <VListItemAvatar>
-            <VIcon>mdi-note-text</VIcon>
-          </VListItemAvatar>
+        <VListItem class="gap-4 py-2 border-t" @click="downloadBrowserLog()">
+          <RuiIcon class="text-rui-text-secondary" name="file-download-line" />
           <VListItemContent>
             <VListItemTitle>
               {{ t('help_sidebar.browser_log.title') }}
@@ -156,9 +144,6 @@ const { smAndDown } = useDisplay();
               {{ t('help_sidebar.browser_log.subtitle') }}
             </VListItemSubtitle>
           </VListItemContent>
-          <VListItemAction>
-            <VIcon>mdi-chevron-right</VIcon>
-          </VListItemAction>
         </VListItem>
       </template>
     </VList>
