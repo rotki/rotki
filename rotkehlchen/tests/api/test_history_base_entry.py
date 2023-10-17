@@ -1,12 +1,12 @@
-import json
 import random
 from http import HTTPStatus
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Optional
 
 import pytest
 import requests
 
 from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.accounting.structures.eth2 import EthWithdrawalEvent
 from rotkehlchen.accounting.structures.evm_event import SUB_SWAPS_DETAILS, EvmEvent
 from rotkehlchen.accounting.structures.types import (
     ActionType,
@@ -16,7 +16,7 @@ from rotkehlchen.accounting.structures.types import (
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_SUSHI, A_USDT
 from rotkehlchen.db.evmtx import DBEvmTx
-from rotkehlchen.db.filtering import EvmEventFilterQuery, HistoryEventFilterQuery
+from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
@@ -54,25 +54,35 @@ def assert_editing_works(
         rotkehlchen_api_server: 'APIServer',
         events_db: 'DBHistoryEvents',
         sequence_index: int,
+        autoedited: Optional[dict[str, Any]] = None,
 ):
-    valid_keys = KEYS_IN_ENTRY_TYPE[entry.entry_type]
-
+    """A function to assert editing works per entry type. If autoedited is given
+    then we check that some fields, given in autoedited, were automatically edited
+    and their value derived from other fields"""
     def edit_entry(attr: str, value: Any):
-        if attr in valid_keys:
+        if attr in KEYS_IN_ENTRY_TYPE[entry.entry_type]:
+            if attr == 'is_mev_reward' and value is True:  # special handling
+                entry.sequence_index = 1
+                entry.event_subtype = HistoryEventSubType.MEV_REWARD
+                return
+
+            assert hasattr(entry, attr), f'No {attr} in entry'
             setattr(entry, attr, value)
 
     """Assert that editing any subclass of history base entry is successfully done"""
-    entry.timestamp = TimestampMS(1639924575000)
+    entry.timestamp = TimestampMS(entry.timestamp + 2)
     entry.balance = Balance(amount=FVal('1500.1'), usd_value=FVal('1499.45'))
     edit_entry('event_type', HistoryEventType.DEPOSIT)
     edit_entry('event_subtype', HistoryEventSubType.NONE)
+    edit_entry('extra_data', {'some': 2, 'data': 4})
     edit_entry('asset', A_USDT)
     edit_entry('location_label', '0x9531C059098e3d194fF87FebB587aB07B30B1306')
     edit_entry('notes', f'Updated entry for test using type {entry.entry_type}')
     edit_entry('validator_index', 1001)
-    edit_entry('block_number', 1)
+    edit_entry('is_exit_or_blocknumber', True if isinstance(entry, EthWithdrawalEvent) else 5)
+    edit_entry('is_mev_reward', True)
     edit_entry('sequence_index', sequence_index)
-    edit_entry('is_exit', True)
+
     response = requests.patch(
         api_url_for(rotkehlchen_api_server, 'historyeventresource'),
         json=entry_to_input_dict(entry, include_identifier=True),
@@ -82,10 +92,16 @@ def assert_editing_works(
     with events_db.db.conn.read_ctx() as cursor:
         events = events_db.get_history_events(
             cursor=cursor,
-            filter_query=EvmEventFilterQuery.make(event_identifiers=[entry.event_identifier]),
+            filter_query=HistoryEventFilterQuery.make(event_identifiers=[entry.event_identifier]),
             has_premium=True,
             group_by_event_ids=False,
         )
+
+    # now that actual edit happened, tweak autoedited fields for the equality check
+    if autoedited:
+        for key, value in autoedited.items():
+            setattr(entry, key, value)
+
     for event in events:
         if event.identifier == entry.identifier:
             assert event == entry
@@ -109,7 +125,7 @@ def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer'):
     with rotki.data.db.conn.read_ctx() as cursor:
         saved_events = db.get_history_events(
             cursor=cursor,
-            filter_query=EvmEventFilterQuery.make(),
+            filter_query=HistoryEventFilterQuery.make(),
             has_premium=True,
             group_by_event_ids=False,
         )
@@ -133,7 +149,6 @@ def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer'):
     )
     # test editing by making sequence index same as an existing one fails
     entry.sequence_index = 3
-    entry.timestamp = TimestampMS(1649924575000)
     json_data = entry_to_input_dict(entry, include_identifier=True)
     response = requests.patch(
         api_url_for(rotkehlchen_api_server, 'historyeventresource'),
@@ -146,7 +161,6 @@ def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer'):
     )
     # test adding event with sequence index same as an existing one fails
     entry.sequence_index = 3
-    entry.timestamp = TimestampMS(1649924575000)
     json_data = entry_to_input_dict(entry, include_identifier=False)
     response = requests.put(
         api_url_for(rotkehlchen_api_server, 'historyeventresource'),
@@ -159,28 +173,19 @@ def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer'):
     )
     assert_editing_works(entry, rotkehlchen_api_server, db, 4)  # evm event
     assert_editing_works(entries[5], rotkehlchen_api_server, db, 5)  # history event
-    assert_editing_works(entries[6], rotkehlchen_api_server, db, 6)  # eth withdrawal event
-    assert_editing_works(entries[7], rotkehlchen_api_server, db, 7)  # eth block event
-    assert_editing_works(entries[8], rotkehlchen_api_server, db, 8)  # eth deposit event
-
-    # check that the extra data information hasn't been overwritten
-    with db.db.conn.read_ctx() as cursor:
-        cursor.execute(
-            'SELECT extra_data FROM evm_events_info WHERE identifier=?',
-            (entry.identifier,),
-        )
-        db_extra_data = json.loads(cursor.fetchone()[0])
-    assert entry.extra_data == db_extra_data
+    assert_editing_works(entries[6], rotkehlchen_api_server, db, 6, {'notes': 'Exited validator 1001 with 1500.1 ETH', 'event_identifier': 'EW_1001_19460'})  # eth withdrawal event  # noqa: E501
+    assert_editing_works(entries[7], rotkehlchen_api_server, db, 7, {'notes': 'Deposit 1500.1 ETH to validator 1001'})  # eth deposit event  # noqa: E501
+    assert_editing_works(entries[8], rotkehlchen_api_server, db, 8, {'notes': 'Validator 1001 produced block 5 with 1500.1 ETH going to 0x9531C059098e3d194fF87FebB587aB07B30B1306 as the mev reward', 'event_identifier': 'BP1_5'})  # eth block event  # noqa: E501
 
     entries.sort(key=lambda x: x.timestamp)  # resort by timestamp
     with rotki.data.db.conn.read_ctx() as cursor:
         saved_events = db.get_history_events(
             cursor=cursor,
-            filter_query=EvmEventFilterQuery.make(),
+            filter_query=HistoryEventFilterQuery.make(),
             has_premium=True,
             group_by_event_ids=False,
         )
-        assert len(saved_events) == 5
+        assert len(saved_events) == 9
         for idx, event in enumerate(saved_events):
             assert event == entries[idx]
 
@@ -196,11 +201,11 @@ def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer'):
         )
         saved_events = db.get_history_events(
             cursor=cursor,
-            filter_query=EvmEventFilterQuery.make(),
+            filter_query=HistoryEventFilterQuery.make(),
             has_premium=True,
             group_by_event_ids=False,
         )
-        assert len(saved_events) == 5
+        assert len(saved_events) == 9
         for idx, event in enumerate(saved_events):
             assert event == entries[idx]
 
@@ -209,16 +214,15 @@ def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer'):
             api_url_for(rotkehlchen_api_server, 'historyeventresource'),
             json={'identifiers': [2, 4]},
         )
-        result = assert_proper_response_with_result(response)
-        assert result is True
+        assert_simple_ok_response(response)
         saved_events = db.get_history_events(
             cursor=cursor,
-            filter_query=EvmEventFilterQuery.make(),
+            filter_query=HistoryEventFilterQuery.make(),
             has_premium=True,
             group_by_event_ids=False,
         )
         # entry is now last since the timestamp was modified
-        assert saved_events == [entries[0], entries[3], entry]
+        assert saved_events == [entries[0], entries[2], entries[4], entries[5], entries[6], entries[7], entries[8]]  # noqa: E501
 
         # test that deleting last event of a transaction hash fails
         response = requests.delete(
@@ -232,11 +236,31 @@ def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer'):
         )
         saved_events = db.get_history_events(
             cursor=cursor,
-            filter_query=EvmEventFilterQuery.make(),
+            filter_query=HistoryEventFilterQuery.make(),
             has_premium=True,
             group_by_event_ids=False,
         )
-        assert saved_events == [entries[0], entries[3], entry]
+        assert saved_events == [entries[0], entries[2], entries[4], entries[5], entries[6], entries[7], entries[8]]  # noqa: E501
+
+        # now let's try to edit event_identifier for all possible events.
+        for idx, entry in enumerate(entries):
+            if entry.identifier in (2, 4):
+                continue  # we deleted those
+            entry.event_identifier = f'new_eventid{idx}'
+            json_data = entry_to_input_dict(entry, include_identifier=True)
+            json_data['event_identifier'] = f'new_eventid{idx}'
+            response = requests.patch(
+                api_url_for(rotkehlchen_api_server, 'historyeventresource'),
+                json=json_data,
+            )
+            assert_simple_ok_response(response)
+        saved_events = db.get_history_events(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(),
+            has_premium=True,
+            group_by_event_ids=False,
+        )
+        assert saved_events == [entries[0], entries[2], entries[4], entries[5], entries[6], entries[7], entries[8]]  # noqa: E501
 
 
 def test_event_with_details(rotkehlchen_api_server: 'APIServer'):

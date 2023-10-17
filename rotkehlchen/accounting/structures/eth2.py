@@ -29,6 +29,8 @@ from .evm_event import EVM_EVENT_FIELDS, EvmEvent
 
 ETH_STAKING_EVENT_DB_TUPLE_READ = tuple[
     int,            # identifier
+    str,            # event_identifier
+    int,            # sequence_index
     int,            # timestamp
     Optional[str],  # location label
     str,            # amount
@@ -49,6 +51,9 @@ EVM_DEPOSIT_EVENT_DB_TUPLE_READ = tuple[
     bytes,          # tx_hash
     int,            # validator_index
 ]
+
+STAKING_DB_INSERT_QUERY_STR = 'eth_staking_events_info(identifier, validator_index, is_exit_or_blocknumber) VALUES (?, ?, ?)'  # noqa: E501
+STAKING_DB_UPDATE_QUERY_STR = 'UPDATE eth_staking_events_info SET validator_index=?, is_exit_or_blocknumber=?'  # noqa: E501
 
 
 class EthStakingEvent(HistoryBaseEntry, metaclass=ABCMeta):  # noqa: PLW1641  # hash in superclass
@@ -91,6 +96,19 @@ class EthStakingEvent(HistoryBaseEntry, metaclass=ABCMeta):  # noqa: PLW1641  # 
             self.is_exit_or_blocknumber == other.is_exit_or_blocknumber  # type: ignore
         )
 
+    def _serialize_staking_tuple_for_db(self) -> tuple[
+            tuple[str, str, HISTORY_EVENT_DB_TUPLE_WRITE],
+            tuple[str, str, tuple[int, int]],
+    ]:
+        return (
+            self._serialize_base_tuple_for_db(),
+            (
+                STAKING_DB_INSERT_QUERY_STR,
+                STAKING_DB_UPDATE_QUERY_STR,
+                (self.validator_index, self.is_exit_or_blocknumber),
+            ),
+        )
+
 
 class EthWithdrawalEvent(EthStakingEvent):
     """An ETH Withdrawal event"""
@@ -103,19 +121,23 @@ class EthWithdrawalEvent(EthStakingEvent):
             withdrawal_address: ChecksumEvmAddress,
             is_exit: bool,
             identifier: Optional[int] = None,
+            event_identifier: Optional[str] = None,
     ) -> None:
         if is_exit is True:
             notes = f'Exited validator {validator_index} with {balance.amount} ETH'
         else:
             notes = f'Withdrew {balance.amount} ETH from validator {validator_index}'
 
-        # withdrawals happen at least every couple of days. For them to happen in the same
-        # day for same validator we would need to drop to less than 115200 validators
-        # https://ethereum.org/en/staking/withdrawals/#how-soon
-        days = int(timestamp / 1000 / 86400)
+        if event_identifier is None:
+            # withdrawals happen at least every couple of days. For them to happen in the same
+            # day for same validator we would need to drop to less than 115200 validators
+            # https://ethereum.org/en/staking/withdrawals/#how-soon
+            days = int(timestamp / 1000 / 86400)
+            event_identifier = f'EW_{validator_index}_{days}'
+
         super().__init__(
             identifier=identifier,
-            event_identifier=f'EW_{validator_index}_{days}',
+            event_identifier=event_identifier,
             sequence_index=0,
             timestamp=timestamp,
             event_type=HistoryEventType.STAKING,
@@ -134,9 +156,11 @@ class EthWithdrawalEvent(EthStakingEvent):
     def __repr__(self) -> str:
         return f'EthWithdrawalEvent({self.validator_index=}, {self.timestamp=}, is_exit={self.is_exit_or_blocknumber})'  # noqa: E501
 
-    def serialize_for_db(self) -> tuple[HISTORY_EVENT_DB_TUPLE_WRITE, tuple[int, int]]:
-        base_tuple = self._serialize_base_tuple_for_db(HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT)
-        return (base_tuple, (self.validator_index, self.is_exit_or_blocknumber))
+    def serialize_for_db(self) -> tuple[
+            tuple[str, str, HISTORY_EVENT_DB_TUPLE_WRITE],
+            tuple[str, str, tuple[int, int]],
+    ]:
+        return self._serialize_staking_tuple_for_db()
 
     def serialize(self) -> dict[str, Any]:
         return super().serialize() | {'validator_index': self.validator_index, 'is_exit': self.is_exit_or_blocknumber}  # noqa: E501
@@ -144,15 +168,16 @@ class EthWithdrawalEvent(EthStakingEvent):
     @classmethod
     def deserialize_from_db(cls: type['EthWithdrawalEvent'], entry: tuple) -> 'EthWithdrawalEvent':
         entry = cast(ETH_STAKING_EVENT_DB_TUPLE_READ, entry)
-        amount = deserialize_fval(entry[3], 'amount', 'eth withdrawal event')
-        usd_value = deserialize_fval(entry[4], 'usd_value', 'eth withdrawal event')
+        amount = deserialize_fval(entry[5], 'amount', 'eth withdrawal event')
+        usd_value = deserialize_fval(entry[6], 'usd_value', 'eth withdrawal event')
         return cls(
             identifier=entry[0],
-            timestamp=TimestampMS(entry[1]),
+            event_identifier=entry[1],
+            timestamp=TimestampMS(entry[3]),
             balance=Balance(amount, usd_value),
-            withdrawal_address=entry[2],  # type: ignore  # exists for these events
-            validator_index=entry[6],
-            is_exit=bool(entry[7]),
+            withdrawal_address=entry[4],  # type: ignore  # exists for these events
+            validator_index=entry[8],
+            is_exit=bool(entry[9]),
         )
 
     @classmethod
@@ -221,6 +246,7 @@ class EthBlockEvent(EthStakingEvent):
             block_number: int,
             is_mev_reward: bool,
             identifier: Optional[int] = None,
+            event_identifier: Optional[str] = None,
     ) -> None:
 
         if is_mev_reward:
@@ -234,7 +260,7 @@ class EthBlockEvent(EthStakingEvent):
 
         super().__init__(
             identifier=identifier,
-            event_identifier=self.form_event_identifier(block_number),
+            event_identifier=self.form_event_identifier(block_number) if event_identifier is None else event_identifier,  # noqa: E501
             sequence_index=sequence_index,
             timestamp=timestamp,
             event_type=HistoryEventType.STAKING,
@@ -257,9 +283,11 @@ class EthBlockEvent(EthStakingEvent):
     def __repr__(self) -> str:
         return f'EthBlockEvent({self.validator_index=}, {self.timestamp=}, block_number={self.is_exit_or_blocknumber}, {self.event_subtype=})'  # noqa: E501
 
-    def serialize_for_db(self) -> tuple[HISTORY_EVENT_DB_TUPLE_WRITE, tuple[int, int]]:
-        base_tuple = self._serialize_base_tuple_for_db(HistoryBaseEntryType.ETH_BLOCK_EVENT)
-        return (base_tuple, (self.validator_index, self.is_exit_or_blocknumber))
+    def serialize_for_db(self) -> tuple[
+            tuple[str, str, HISTORY_EVENT_DB_TUPLE_WRITE],
+            tuple[str, str, tuple[int, int]],
+    ]:
+        return self._serialize_staking_tuple_for_db()
 
     def serialize(self) -> dict[str, Any]:
         return super().serialize() | {'validator_index': self.validator_index, 'block_number': self.is_exit_or_blocknumber}  # noqa: E501
@@ -267,16 +295,17 @@ class EthBlockEvent(EthStakingEvent):
     @classmethod
     def deserialize_from_db(cls: type['EthBlockEvent'], entry: tuple) -> 'EthBlockEvent':
         entry = cast(ETH_STAKING_EVENT_DB_TUPLE_READ, entry)
-        amount = deserialize_fval(entry[3], 'amount', 'eth block event')
-        usd_value = deserialize_fval(entry[4], 'usd_value', 'eth block event')
+        amount = deserialize_fval(entry[5], 'amount', 'eth block event')
+        usd_value = deserialize_fval(entry[6], 'usd_value', 'eth block event')
         return cls(
             identifier=entry[0],
-            timestamp=TimestampMS(entry[1]),
+            event_identifier=entry[1],
+            timestamp=TimestampMS(entry[3]),
             balance=Balance(amount, usd_value),
-            fee_recipient=entry[2],  # type: ignore  # exists for these events
-            validator_index=entry[6],
-            block_number=entry[7],
-            is_mev_reward=entry[5] == HistoryEventSubType.MEV_REWARD.serialize(),
+            fee_recipient=entry[4],  # type: ignore  # exists for these events
+            validator_index=entry[8],
+            block_number=entry[9],
+            is_mev_reward=entry[7] == HistoryEventSubType.MEV_REWARD.serialize(),
         )
 
     @classmethod
@@ -389,9 +418,17 @@ class EthDepositEvent(EvmEvent, EthStakingEvent):  # noqa: PLW1641  # hash in su
             EthStakingEvent.__eq__(self, other) is True
         )
 
-    def serialize_for_db(self) -> tuple[HISTORY_EVENT_DB_TUPLE_WRITE, EVM_EVENT_FIELDS, tuple[int, int]]:  # type: ignore  # does not match EvmEvent supertype, but yeah it would not make sense to  # noqa: E501
-        base_tuple, evm_tuple = self._serialize_evm_event_tuple_for_db(HistoryBaseEntryType.ETH_DEPOSIT_EVENT)  # noqa: E501
-        return (base_tuple, evm_tuple, (self.validator_index, 0))
+    def serialize_for_db(self) -> tuple[  # type: ignore  # wont match EvmEvent supertype
+            tuple[str, str, HISTORY_EVENT_DB_TUPLE_WRITE],
+            tuple[str, str, EVM_EVENT_FIELDS],
+            tuple[str, str, tuple[int, int]],
+    ]:
+        base_tuple, evm_tuple = self._serialize_evm_event_tuple_for_db()
+        return (
+            base_tuple,
+            evm_tuple,
+            (STAKING_DB_INSERT_QUERY_STR, STAKING_DB_UPDATE_QUERY_STR, (self.validator_index, 0)),
+        )
 
     def serialize(self) -> dict[str, Any]:
         return super().serialize() | {'validator_index': self.validator_index}

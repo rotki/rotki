@@ -13,7 +13,6 @@ from rotkehlchen.accounting.structures.base import (
 from rotkehlchen.accounting.structures.eth2 import (
     EthBlockEvent,
     EthDepositEvent,
-    EthStakingEvent,
     EthWithdrawalEvent,
 )
 from rotkehlchen.accounting.structures.evm_event import EvmEvent
@@ -87,30 +86,15 @@ class DBHistoryEvents:
         - sqlcipher.IntegrityError: If the asset of the added history event does not exist in
         the DB. Can only happen if an event with an unresolved asset is passed.
         """
-        db_tuples = event.serialize_for_db()
-        write_cursor.execute(
-            'INSERT OR IGNORE INTO history_events(entry_type, event_identifier, sequence_index,'
-            'timestamp, location, location_label, asset, amount, usd_value, notes,'
-            'type, subtype) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            db_tuples[0],
-        )
-        if write_cursor.rowcount == 0:
-            return None  # already exists
-
-        identifier = write_cursor.lastrowid
-        if isinstance(event, EvmEvent):
-            write_cursor.execute(  # this also writes for eth deposit events
-                'INSERT OR IGNORE INTO evm_events_info(identifier, tx_hash, counterparty, product,'
-                'address, extra_data) VALUES (?, ?, ?, ?, ?, ?)',
-                (identifier, *db_tuples[1]),
-            )
-        if isinstance(event, EthStakingEvent):
-            idx = 2 if isinstance(event, EthDepositEvent) else 1
-            write_cursor.execute(
-                'INSERT OR IGNORE INTO eth_staking_events_info(identifier, validator_index, '
-                'is_exit_or_blocknumber) VALUES (?, ?, ?)',
-                (identifier, *db_tuples[idx]),
-            )
+        identifier = None  # overwritten by first write
+        for idx, (insertquery, _, bindings) in enumerate(event.serialize_for_db()):
+            if idx == 0:
+                write_cursor.execute(f'INSERT OR IGNORE INTO {insertquery}', bindings)
+                if write_cursor.rowcount == 0:
+                    return None  # already exists
+                identifier = write_cursor.lastrowid  # keep identifier to use in next insertions
+            else:
+                write_cursor.execute(f'INSERT OR IGNORE INTO {insertquery}', (identifier, *bindings))  # noqa: E501
 
         if mapping_values is not None:
             write_cursor.executemany(
@@ -141,39 +125,25 @@ class DBHistoryEvents:
         Edit a history entry to the DB with information provided by the user.
         NOTE: It edits all the fields except the extra_data one.
         """
-        with self.db.user_write() as cursor:
-            db_tuples = event.serialize_for_db()
-            try:
-                cursor.execute(
-                    'UPDATE history_events SET entry_type=?, event_identifier=?, '
-                    'sequence_index=?, timestamp=?, location=?, location_label=?, asset=?, '
-                    'amount=?, usd_value=?, notes=?, type=?, subtype=? WHERE identifier=?',
-                    (*db_tuples[0], event.identifier),
-                )
-            except sqlcipher.IntegrityError:  # pylint: disable=no-member
-                msg = (
-                    f'Tried to edit event to have event_identifier {event.event_identifier} '
-                    f'and sequence_index {event.sequence_index} but it already exists'
-                )
-                return False, msg
+        with self.db.user_write() as write_cursor:
+            for idx, (_, updatestr, bindings) in enumerate(event.serialize_for_db()):
+                if idx == 0:  # base history event data
+                    try:
+                        write_cursor.execute(f'{updatestr} WHERE identifier=?', (*bindings, event.identifier))  # noqa: E501
+                    except sqlcipher.IntegrityError:  # pylint: disable=no-member
+                        return False, (
+                            f'Tried to edit event to have event_identifier {event.event_identifier} '  # noqa: E501
+                            f'and sequence_index {event.sequence_index} but it already exists'
+                        )
 
-            if isinstance(event, EvmEvent):
-                cursor.execute(
-                    'UPDATE evm_events_info SET tx_hash=?, counterparty=?, product=?, address=? WHERE identifier=?',    # noqa: E501
-                    (*db_tuples[1][:-1], event.identifier),  # -1 is without extra data
-                )
-            elif isinstance(event, EthStakingEvent):
-                cursor.execute(
-                    'UPDATE eth_staking_events_info SET validator_index=?, is_exit_or_blocknumber=? WHERE identifier=?',  # noqa: E501
-                    (*db_tuples[1], event.identifier),
-                )
+                    if write_cursor.rowcount != 1:
+                        return False, f'Tried to edit event with id {event.identifier} but could not find it in the DB'  # noqa: E501
 
-            if cursor.rowcount != 1:
-                msg = f'Tried to edit event with id {event.identifier} but could not find it in the DB'  # noqa: E501
-                return False, msg
+                else:  # all other data
+                    write_cursor.execute(f'{updatestr} WHERE identifier=?', (*bindings, event.identifier))  # noqa: E501
 
             # Also mark it as customized
-            cursor.execute(
+            write_cursor.execute(
                 'INSERT OR IGNORE INTO history_events_mappings(parent_identifier, name, value) '
                 'VALUES(?, ?, ?)',
                 (event.identifier, HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED),
@@ -439,8 +409,7 @@ class DBHistoryEvents:
                         HistoryBaseEntryType.ETH_BLOCK_EVENT,
                 ):
                     data = (
-                        entry[data_start_idx:data_start_idx + 1] +
-                        entry[data_start_idx + 3:data_start_idx + 4] +
+                        entry[data_start_idx:data_start_idx + 4] +
                         entry[data_start_idx + 5:data_start_idx + 6] +
                         entry[data_start_idx + 7:data_start_idx + 9] +
                         entry[data_start_idx + 11:data_start_idx + 12] +

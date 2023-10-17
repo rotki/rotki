@@ -777,6 +777,7 @@ class CreateHistoryEventSchema(Schema):
     class CreateEvmEventSchema(BaseEventSchema):
         """Schema used when adding a new event in the EVM transactions view"""
         tx_hash = EVMTransactionHashField(required=True)
+        event_identifier = fields.String(required=False, load_default=None)
         counterparty = fields.String(load_default=None)
         product = SerializableEnumField(enum_class=EvmProduct, load_default=None)
         address = EvmAddressField(load_default=None)
@@ -793,6 +794,7 @@ class CreateHistoryEventSchema(Schema):
 
     class CreateEthBlockEventEventSchema(BaseSchema):
         is_mev_reward = fields.Boolean(required=True)
+        event_identifier = fields.String(required=False, load_default=None)
         fee_recipient = EvmAddressField(required=True)
         block_number = fields.Integer(
             required=True,
@@ -841,6 +843,7 @@ class CreateHistoryEventSchema(Schema):
 
     class CreateEthWithdrawalEventEventSchema(BaseSchema):
         is_exit = fields.Boolean(required=True)
+        event_identifier = fields.String(required=False, load_default=None)
         withdrawal_address = EvmAddressField(required=True)
         validator_index = fields.Integer(
             required=True,
