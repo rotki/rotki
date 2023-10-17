@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { type ButtonProps } from '@rotki/ui-library-compat';
+
 withDefaults(
   defineProps<{
     tooltip: string;
@@ -6,11 +8,15 @@ withDefaults(
     retainFocusOnClick?: boolean;
     className?: string;
     href?: string;
+    variant?: ButtonProps['variant'];
+    size?: ButtonProps['size'];
   }>(),
   {
     onMenu: undefined,
     retainFocusOnClick: false,
     className: '',
+    variant: 'text',
+    size: undefined,
     href: undefined
   }
 );
@@ -30,13 +36,13 @@ const click = () => emit('click');
   >
     <template #activator>
       <RuiButton
-        variant="text"
+        :variant="variant"
         icon
         :href="href"
         :tag="href ? 'a' : 'button'"
         target="_blank"
-        :class="className"
-        class="!w-12 !h-12"
+        :class="[className, !size && '!w-12 !h-12']"
+        :size="size"
         :retain-focus-on-click="retainFocusOnClick"
         @click="click()"
         v-on="onMenu"

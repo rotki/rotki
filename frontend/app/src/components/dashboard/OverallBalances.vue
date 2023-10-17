@@ -132,18 +132,9 @@ const { dark } = useTheme();
 </script>
 
 <template>
-  <VCard class="overall-balances">
-    <div class="flex justify-between">
-      <VCardTitle>
-        {{ t('overall_balances.summary') }}
-      </VCardTitle>
-
-      <div class="p-4">
-        <SnapshotActionButton />
-      </div>
-    </div>
+  <RuiCard class="overall-balances">
     <div
-      class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[42%_58%] pa-6 pt-0 gap-4"
+      class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[42%_58%] p-6 gap-4"
     >
       <div class="w-full flex flex-col items-center justify-center">
         <div
@@ -186,7 +177,7 @@ const { dark } = useTheme();
           </span>
         </div>
         <TimeframeSelector
-          class="py-6"
+          class="pt-6"
           :value="timeframe"
           :visible-timeframes="visibleTimeframes"
           @input="setTimeframe($event)"
@@ -212,7 +203,7 @@ const { dark } = useTheme();
         </div>
       </div>
     </div>
-  </VCard>
+  </RuiCard>
 </template>
 
 <style scoped lang="scss">

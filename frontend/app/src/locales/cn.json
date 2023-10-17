@@ -3187,8 +3187,7 @@
   },
   "overall_balances": {
     "loading": "加载中",
-    "premium_hint": "通过升级到 rotki premium 获得完整体验",
-    "summary": "概括"
+    "premium_hint": "通过升级到 rotki premium 获得完整体验"
   },
   "overview": {
     "details_dialog": {
