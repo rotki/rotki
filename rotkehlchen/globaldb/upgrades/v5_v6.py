@@ -1,6 +1,8 @@
 import logging
 from typing import TYPE_CHECKING
 
+from eth_utils.address import to_checksum_address
+
 from rotkehlchen.db.utils import update_table_schema
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import CacheType
@@ -69,9 +71,38 @@ def _update_multiasset_mappings(cursor: 'DBCursor') -> None:
     log.debug('Exit _upgrade_multiasset_mappings')
 
 
+def _fix_asset_in_multiasset_mappings(cursor: 'DBCursor') -> None:
+    """
+    Fix some assets that were not using checksummed addresses in the identifiers
+    https://github.com/rotki/rotki/issues/6717
+    """
+    log.debug('Enter _fix_asset_in_multiasset_mappings')
+    fixes = []
+    cursor.execute('SELECT asset FROM multiasset_mappings')
+    for (asset_id,) in cursor:
+        if not asset_id.startswith('eip155'):
+            continue
+        try:
+            address = asset_id.split(':')[-1]
+            checksummed_address = to_checksum_address(address)
+        except (IndexError, ValueError):
+            log.error(f'Unexpected asset identifier {asset_id} found in the multiassets mapping')
+            continue
+
+        if checksummed_address == address:
+            continue
+
+        new_id = asset_id.replace(address, checksummed_address)
+        fixes.append((new_id, asset_id))
+
+    cursor.executemany('UPDATE multiasset_mappings SET asset=? WHERE asset=?', fixes)
+    log.debug('Exit _fix_asset_in_multiasset_mappings')
+
+
 def migrate_to_v6(connection: 'DBConnection') -> None:
     """This globalDB upgrade does the following:
     - Adds the `unique_cache` table.
+    - Fixes the multiassets mappings ids to use checksummed addresses
     - Upgrades the multiasset_mappings to have unique collection_id+asset
 
     This upgrade takes place in v1.31.0
@@ -80,4 +111,5 @@ def migrate_to_v6(connection: 'DBConnection') -> None:
 
     with connection.write_ctx() as cursor:
         _create_and_populate_unique_cache_table(cursor)
+        _fix_asset_in_multiasset_mappings(cursor)
         _update_multiasset_mappings(cursor)

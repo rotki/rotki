@@ -5,6 +5,7 @@ from pathlib import Path
 from sqlite3 import IntegrityError
 
 import pytest
+from eth_utils.address import to_checksum_address
 from freezegun import freeze_time
 
 from rotkehlchen.assets.types import AssetType
@@ -73,11 +74,11 @@ def _count_sql_file_sentences(file_name: str, skip_statements: int = 0):
 @pytest.mark.parametrize('reload_user_assets', [False])
 @pytest.mark.parametrize('custom_globaldb', ['v2_global.db'])
 @pytest.mark.parametrize('target_globaldb_version', [2])
-def test_upgrade_v2_v3(globaldb):
+def test_upgrade_v2_v3(globaldb: GlobalDBHandler):
     """Test globalDB upgrade v2->v3"""
     # Check the state before upgrading
     with globaldb.conn.read_ctx() as cursor:
-        assert globaldb.get_setting_value('version', None) == 2
+        assert globaldb.get_setting_value('version', 0) == 2
         cursor.execute(
             'SELECT COUNT(*) FROM price_history WHERE from_asset=? OR to_asset=?',
             ('BIFI', 'BIFI'),
@@ -103,11 +104,11 @@ def test_upgrade_v2_v3(globaldb):
         patch_for_globaldb_upgrade_to(stack, 3)
         maybe_upgrade_globaldb(
             connection=globaldb.conn,
-            global_dir=globaldb._data_directory / 'global_data',
+            global_dir=globaldb._data_directory / 'global_data',  # type: ignore
             db_filename=GLOBAL_DB_FILENAME,
         )
 
-    assert globaldb.get_setting_value('version', None) == 3
+    assert globaldb.get_setting_value('version', 0) == 3
     assets_inserted_by_update = _count_sql_file_sentences('globaldb_v2_v3_assets.sql')
     with globaldb.conn.read_ctx() as cursor:
         # test that we have the same number of assets before and after the migration
@@ -190,11 +191,11 @@ def test_upgrade_v2_v3(globaldb):
 @pytest.mark.parametrize('custom_globaldb', ['v3_global.db'])
 @pytest.mark.parametrize('target_globaldb_version', [3])
 @pytest.mark.parametrize('reload_user_assets', [False])
-def test_upgrade_v3_v4(globaldb):
+def test_upgrade_v3_v4(globaldb: GlobalDBHandler):
     """Test the global DB upgrade from v3 to v4"""
     # Check the state before upgrading
     with globaldb.conn.read_ctx() as cursor:
-        assert globaldb.get_setting_value('version', None) == 3
+        assert globaldb.get_setting_value('version', 0) == 3
         cursor.execute(
             'SELECT COUNT(*) FROM sqlite_master WHERE type="table" and name IN (?, ?)',
             ('contract_abi', 'contract_data'),
@@ -208,11 +209,11 @@ def test_upgrade_v3_v4(globaldb):
         patch_for_globaldb_upgrade_to(stack, 4)
         maybe_upgrade_globaldb(
             connection=globaldb.conn,
-            global_dir=globaldb._data_directory / 'global_data',
+            global_dir=globaldb._data_directory / 'global_data',  # type: ignore
             db_filename=GLOBAL_DB_FILENAME,
         )
 
-    assert globaldb.get_setting_value('version', None) == 4
+    assert globaldb.get_setting_value('version', 0) == 4
     with globaldb.conn.read_ctx() as cursor:
         cursor.execute(
             'SELECT COUNT(*) FROM sqlite_master WHERE type="table" and name IN (?, ?)',
@@ -303,11 +304,11 @@ def test_upgrade_v3_v4(globaldb):
 @pytest.mark.parametrize('target_globaldb_version', [4])
 @pytest.mark.parametrize('reload_user_assets', [False])
 @freeze_time('2023-03-20')  # freezing time just to make sure comparisons of timestamps won't fail
-def test_upgrade_v4_v5(globaldb):
+def test_upgrade_v4_v5(globaldb: GlobalDBHandler):
     """Test the global DB upgrade from v4 to v5"""
     # Check the state before upgrading
     with globaldb.conn.read_ctx() as cursor:
-        assert globaldb.get_setting_value('version', None) == 4
+        assert globaldb.get_setting_value('version', 0) == 4
         cursor.execute(
             'SELECT COUNT(*) FROM sqlite_master WHERE type="table" and name=?',
             ('default_rpc_nodes',),
@@ -335,11 +336,11 @@ def test_upgrade_v4_v5(globaldb):
         patch_for_globaldb_upgrade_to(stack, 5)
         maybe_upgrade_globaldb(
             connection=globaldb.conn,
-            global_dir=globaldb._data_directory / 'global_data',
+            global_dir=globaldb._data_directory / 'global_data',  # type: ignore
             db_filename=GLOBAL_DB_FILENAME,
         )
 
-    assert globaldb.get_setting_value('version', None) == 5
+    assert globaldb.get_setting_value('version', 0) == 5
 
     with globaldb.conn.read_ctx() as cursor:
         cursor.execute(
@@ -383,7 +384,7 @@ def test_upgrade_v4_v5(globaldb):
 @pytest.mark.parametrize('custom_globaldb', ['v5_global.db'])
 @pytest.mark.parametrize('target_globaldb_version', [5])
 @pytest.mark.parametrize('reload_user_assets', [False])
-def test_upgrade_v5_v6(globaldb):
+def test_upgrade_v5_v6(globaldb: GlobalDBHandler):
     """Test the global DB upgrade from v5 to v6"""
     # Check the state before upgrading
     with globaldb.conn.read_ctx() as cursor:
@@ -407,7 +408,15 @@ def test_upgrade_v5_v6(globaldb):
             unique_keys_to_num_entries[key_part] = int(cursor.fetchone()[0])
             gen_cache_unique_key_content += unique_keys_to_num_entries[key_part]
 
-        old_multiasset_mappings = cursor.execute('SELECT * FROM multiasset_mappings ORDER BY collection_id, asset').fetchall()  # noqa: E501
+        # create a set of the old entries ensuring that the rows have checksummed addresses
+        # for the identifiers in multiasset_mappings
+        old_multiasset_mappings = set()
+        cursor.execute('SELECT * FROM multiasset_mappings ORDER BY collection_id, asset')
+        for collection_id, asset_id in cursor:
+            address = asset_id.split(':')[-1]
+            checksummed_address = to_checksum_address(address)
+            new_id = asset_id.replace(address, checksummed_address)
+            old_multiasset_mappings.add((collection_id, new_id))
 
     with globaldb.conn.write_ctx() as write_cursor:
         # add some dummy data into cache to verify behaviour during transfer.
@@ -439,10 +448,10 @@ def test_upgrade_v5_v6(globaldb):
         patch_for_globaldb_upgrade_to(stack, 6)
         maybe_upgrade_globaldb(
             connection=globaldb.conn,
-            global_dir=globaldb._data_directory / 'global_data',
+            global_dir=globaldb._data_directory / 'global_data',  # type: ignore
             db_filename=GLOBAL_DB_FILENAME,
         )
-    assert globaldb.get_setting_value('version', None) == 6
+    assert globaldb.get_setting_value('version', 0) == 6
     with globaldb.conn.read_ctx() as cursor:
         # check that unique_cache table is present in the database
         cursor.execute(
@@ -451,7 +460,7 @@ def test_upgrade_v5_v6(globaldb):
         )
         assert cursor.fetchone()[0] == 1
         # check that of dummy entry, only first value is transferred to unique_cache
-        value = globaldb_get_unique_cache_value(cursor, (next(iter(V5_V6_UPGRADE_UNIQUE_CACHE_KEYS)), 'test'))  # noqa: E501
+        value = globaldb_get_unique_cache_value(cursor, (next(iter(V5_V6_UPGRADE_UNIQUE_CACHE_KEYS)), 'test'))  # type: ignore  # noqa: E501
         assert value == values[0]
 
         with globaldb.conn.write_ctx() as write_cursor:
@@ -482,8 +491,9 @@ def test_upgrade_v5_v6(globaldb):
         gen_cache_content_after = cursor.execute('SELECT COUNT(*) FROM general_cache').fetchone()[0]  # noqa: E501
         assert gen_cache_unique_key_content == unique_cache_content
         assert gen_cache_content_before == gen_cache_content_after + gen_cache_unique_key_content
-
-        assert cursor.execute('SELECT * FROM multiasset_mappings ORDER BY collection_id, asset').fetchall() == old_multiasset_mappings  # noqa: E501
+        assert set(cursor.execute(
+            'SELECT * FROM multiasset_mappings ORDER BY collection_id, asset',
+        )) == old_multiasset_mappings
 
 
 @pytest.mark.parametrize('custom_globaldb', ['v2_global.db'])
@@ -522,19 +532,19 @@ def test_unfinished_upgrades(globaldb: GlobalDBHandler):
 @pytest.mark.parametrize('custom_globaldb', ['v2_global.db'])
 @pytest.mark.parametrize('target_globaldb_version', [2])
 @pytest.mark.parametrize('reload_user_assets', [False])
-def test_applying_all_upgrade(globaldb):
+def test_applying_all_upgrade(globaldb: GlobalDBHandler):
     """Test globalDB upgrade from v2 to latest"""
     # Check the state before upgrading
-    assert globaldb.get_setting_value('version', None) == 2
+    assert globaldb.get_setting_value('version', 0) == 2
     with globaldb.conn.cursor() as cursor:
-        assert cursor.execute('SELECT COUNT(*) from assets WHERE identifier="eip155:/erc20:0x32c6fcC9bC912C4A30cd53D2E606461e44B77AF2"')[0] == 0  # noqa: E501
+        assert cursor.execute('SELECT COUNT(*) from assets WHERE identifier="eip155:/erc20:0x32c6fcC9bC912C4A30cd53D2E606461e44B77AF2"').fetchone()[0] == 0  # noqa: E501
 
     maybe_upgrade_globaldb(
         connection=globaldb.conn,
-        global_dir=globaldb._data_directory / 'global_data',
+        global_dir=globaldb._data_directory / 'global_data',  # type: ignore
         db_filename=GLOBAL_DB_FILENAME,
     )
 
-    assert globaldb.get_setting_value('version', None) == GLOBAL_DB_VERSION
+    assert globaldb.get_setting_value('version', 0) == GLOBAL_DB_VERSION
     with globaldb.conn.cursor() as cursor:
-        assert cursor.execute('SELECT COUNT(*) from assets WHERE identifier="eip155:/erc20:0x32c6fcC9bC912C4A30cd53D2E606461e44B77AF2"')[0] == 1  # noqa: E501
+        assert cursor.execute('SELECT COUNT(*) from assets WHERE identifier="eip155:/erc20:0x32c6fcC9bC912C4A30cd53D2E606461e44B77AF2"').fetchone()[0] == 1  # noqa: E501
