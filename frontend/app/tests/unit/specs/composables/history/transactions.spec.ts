@@ -62,14 +62,10 @@ describe('composables::history/events/tx', async () => {
 
     const editEvent = { ...event, identifier: 1 };
 
-    const {
-      addTransactionHash,
-      addHistoryEvent,
-      editHistoryEvent,
-      deleteHistoryEvent,
-      fetchTransactionEvents,
-      refreshTransactions
-    } = useHistoryTransactions();
+    const { addTransactionHash, fetchTransactionEvents, refreshTransactions } =
+      useHistoryTransactions();
+    const { addHistoryEvent, editHistoryEvent, deleteHistoryEvent } =
+      useHistoryEvents();
 
     // add a hash and check the spy function is called
     await addTransactionHash({

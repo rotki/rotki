@@ -8,6 +8,7 @@ import { type Pinia, setActivePinia } from 'pinia';
 import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
 import { DateFormat } from '@/types/date-format';
 import createCustomPinia from '../../../utils/create-pinia';
+import VAutocompleteStub from '../../stubs/VAutocomplete';
 
 vi.mock('@/composables/api/settings/settings-api', () => ({
   useSettingsApi: vi.fn().mockReturnValue({
@@ -39,16 +40,7 @@ describe('DateTimePicker.vue', () => {
         VMenu: {
           template: '<span><slot name="activator"/><slot /></span>'
         },
-        VAutocomplete: {
-          template: `
-            <div>
-              <input :value="value" class="search-input" type="text" @input="$emit('input', $event.value)">
-            </div>
-          `,
-          props: {
-            value: { type: String }
-          }
-        }
+        VAutocomplete: VAutocompleteStub
       },
       ...options
     });
@@ -192,7 +184,7 @@ describe('DateTimePicker.vue', () => {
       );
 
       await wrapper
-        .find('.search-input')
+        .find('.input-value')
         .trigger('input', { value: 'Etc/GMT-7' });
       await wrapper.vm.$nextTick();
       expect((wrapper.find('input').element as HTMLInputElement).value).toBe(
@@ -219,7 +211,7 @@ describe('DateTimePicker.vue', () => {
       await wrapper.vm.$nextTick();
 
       await wrapper
-        .find('.search-input')
+        .find('.input-value')
         .trigger('input', { value: 'Etc/GMT-1' });
       await wrapper.vm.$nextTick();
 
@@ -254,7 +246,7 @@ describe('DateTimePicker.vue', () => {
       await wrapper.vm.$nextTick();
 
       await wrapper
-        .find('.search-input')
+        .find('.input-value')
         .trigger('input', { value: 'Etc/GMT-1' });
       await wrapper.vm.$nextTick();
 

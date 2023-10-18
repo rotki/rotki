@@ -8,6 +8,8 @@ import Vuetify from 'vuetify';
 import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
 import { type EthWithdrawalEvent } from '@/types/history/events';
 import EthWithdrawalEventForm from '@/components/history/events/forms/EthWithdrawalEventForm.vue';
+import VAutocompleteStub from '../../../stubs/VAutocomplete';
+import VComboboxStub from '../../../stubs/VCombobox';
 
 describe('EthWithdrawalEventForm.vue', () => {
   setupDayjs();
@@ -41,43 +43,8 @@ describe('EthWithdrawalEventForm.vue', () => {
       pinia,
       vuetify,
       stubs: {
-        VAutocomplete: {
-          template: `
-            <div>
-              <div>
-                <input :value="value" class="input-value" type="text" @input="$emit('input', $event.value)">
-              </div>
-              <div class="selections">
-                <span v-for="item in items">
-                  {{ item[itemValue] ?? item }}
-                </span>
-              </div>
-            </div>
-          `,
-          props: {
-            value: { type: String },
-            items: { type: Array<any> },
-            itemValue: { type: String }
-          }
-        },
-        VCombobox: {
-          template: `
-            <div>
-              <div>
-                <input :value="value" class="input-value" type="text" @input="$emit('input', $event.value)">
-              </div>
-              <div class="selections">
-                <span v-for="item in items">
-                  {{ item }}
-                </span>
-              </div>
-            </div>
-          `,
-          props: {
-            value: { type: String },
-            items: { type: Array<any> }
-          }
-        }
+        VAutocomplete: VAutocompleteStub,
+        VCombobox: VComboboxStub
       },
       ...options
     });

@@ -3,6 +3,7 @@ import Vuetify from 'vuetify';
 import { createPinia, setActivePinia } from 'pinia';
 import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
 import HistoryEventForm from '@/components/history/events/HistoryEventForm.vue';
+import VSelectStub from '../../../stubs/VSelect';
 
 vi.mock('json-editor-vue', () => ({
   template: '<input />'
@@ -20,16 +21,7 @@ describe('HistoryEventForm.vue', () => {
       pinia,
       vuetify,
       stubs: {
-        VSelect: {
-          template: `
-            <div>
-              <input :value="value" class="input" type="text" @input="$emit('input', $event.value)">
-            </div>
-          `,
-          props: {
-            value: { type: String }
-          }
-        }
+        VSelect: VSelectStub
       }
     });
   };
