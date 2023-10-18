@@ -456,15 +456,18 @@ Getting or modifying external services API credentials
       Content-Type: application/json
 
       {
-          "result": {
-              "etherscan": {"api_key": "foooooookey"},
-              "cryptocompare": {"api_key": "boooookey"},
-              "opensea": {"api_key": "goooookey"}
-          },
-          "message": ""
+         "result":{
+            "etherscan":{
+               "eth": {"api_key":"key1"},
+               "arbitrum_one": {"api_key":"key3"}
+            },
+            "cryptocompare": {"api_key":"boooookey"},
+            "opensea": {"api_key":"goooookey"}
+         },
+         "message":""
       }
 
-   :resjson object result: The result object contains as many entries as the external services. Each entry's key is the name and the value is another object of the form ``{"api_key": "foo"}``
+   :resjson object result: The result object contains as many entries as the external services. Each entry's key is the name and the value is another object of the form ``{"api_key": "foo"}``. For etherscan services all are grouped under the ``etherscan`` key. If there are no etherscan services this key won't be present.
    :statuscode 200: Querying of external service credentials was successful
    :statuscode 409: There is no logged in user
    :statuscode 500: Internal rotki error

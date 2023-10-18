@@ -130,6 +130,23 @@ class ExternalService(SerializableEnumNameMixin):
     BASE_ETHERSCAN = 9
     GNOSIS_ETHERSCAN = 10
 
+    def get_chain_for_etherscan(self) -> Optional['ChainID']:
+        """If the service is an etherscan service return its chain"""
+        if self == ExternalService.ETHERSCAN:
+            return ChainID.ETHEREUM
+        elif self == ExternalService.OPTIMISM_ETHERSCAN:
+            return ChainID.OPTIMISM
+        elif self == ExternalService.POLYGON_POS_ETHERSCAN:
+            return ChainID.POLYGON_POS
+        elif self == ExternalService.ARBITRUM_ONE_ETHERSCAN:
+            return ChainID.ARBITRUM_ONE
+        elif self == ExternalService.BASE_ETHERSCAN:
+            return ChainID.BASE
+        elif self == ExternalService.GNOSIS_ETHERSCAN:
+            return ChainID.GNOSIS
+
+        return None
+
 
 class ExternalServiceApiCredentials(NamedTuple):
     """Represents Credentials for various External APIs. Etherscan, Cryptocompare e.t.c.

@@ -23,11 +23,12 @@ def test_add_get_external_service(rotkehlchen_api_server):
 
     # Now add some data and see that the response shows they are added
     expected_result = {
-        'etherscan': {'api_key': 'key1'},
+        'etherscan': {'ethereum': {'api_key': 'key1'}, 'arbitrum_one': {'api_key': 'key3'}},
         'cryptocompare': {'api_key': 'key2'},
     }
     data = {'services': [
         {'name': 'etherscan', 'api_key': 'key1'},
+        {'name': 'arbitrum_one_etherscan', 'api_key': 'key3'},
         {'name': 'cryptocompare', 'api_key': 'key2'},
     ]}
     response = requests.put(
@@ -68,7 +69,7 @@ def test_delete_external_service(rotkehlchen_api_server):
     """Tests that delete external service credentials works"""
     # Add some data and see that the response shows they are added
     expected_result = {
-        'etherscan': {'api_key': 'key1'},
+        'etherscan': {'ethereum': {'api_key': 'key1'}},
         'cryptocompare': {'api_key': 'key2'},
     }
     data = {'services': [

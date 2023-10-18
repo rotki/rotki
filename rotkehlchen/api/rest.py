@@ -10,7 +10,7 @@ from collections.abc import Sequence
 from functools import reduce
 from http import HTTPStatus
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, Union, get_args, overload
+from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, Union, cast, get_args, overload
 from zipfile import ZipFile
 
 import gevent
@@ -537,10 +537,16 @@ class RestAPI:
 
     def _return_external_services_response(self) -> Response:
         credentials_list = self.rotkehlchen.data.db.get_all_external_service_credentials()
-        response_dict = {}
+        response_dict: dict[str, Union[dict[str, ApiKey], dict[str, dict[str, ApiKey]]]] = {}
         for credential in credentials_list:
             name = credential.service.name.lower()
-            response_dict[name] = {'api_key': credential.api_key}
+            key_info = {'api_key': credential.api_key}
+            if (chain := credential.service.get_chain_for_etherscan()) is not None:
+                if 'etherscan' not in response_dict:
+                    response_dict['etherscan'] = cast(dict[str, dict[str, ApiKey]], {})
+                response_dict['etherscan'][chain.to_name()] = key_info  # type: ignore  # mypy fails to understand that this is the second branch on the union type defined before
+            else:
+                response_dict[name] = key_info
 
         return api_response(_wrap_in_ok_result(response_dict), status_code=HTTPStatus.OK)
 
