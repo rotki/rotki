@@ -61,25 +61,13 @@ const nftEnabled = isModuleEnabled(Module.NFTS);
               :navigates-to="Routes.ACCOUNTS_BALANCES_EXCHANGE"
               @refresh="refreshBalance($event)"
             >
-              <div v-if="exchanges.length === 0">
-                <div class="px-6">
-                  <VBtn
-                    text
-                    block
-                    color="primary"
-                    :to="`${Routes.API_KEYS_EXCHANGES}?add=true`"
-                    class="py-8"
-                  >
-                    <div class="flex flex-col items-center">
-                      <VIcon class="mb-2">mdi-plus-circle-outline</VIcon>
-                      <span>
-                        {{ t('dashboard.exchange_balances.add') }}
-                      </span>
-                    </div>
-                  </VBtn>
-                </div>
-              </div>
-              <div v-else>
+              <SummaryCardCreateButton
+                v-if="exchanges.length === 0"
+                :to="`#${Routes.API_KEYS_EXCHANGES}?add=true`"
+              >
+                {{ t('dashboard.exchange_balances.add') }}
+              </SummaryCardCreateButton>
+              <div v-else data-cy="exchange-balances">
                 <ExchangeBox
                   v-for="exchange in exchanges"
                   :key="exchange.location"
@@ -100,24 +88,12 @@ const nftEnabled = isModuleEnabled(Module.NFTS);
               <template #refreshMenu>
                 <BlockchainBalanceRefreshBehaviourMenu />
               </template>
-              <div v-if="blockchainTotals.length === 0">
-                <div class="px-6">
-                  <VBtn
-                    text
-                    block
-                    color="primary"
-                    :to="`${Routes.ACCOUNTS_BALANCES}?add=true`"
-                    class="py-8"
-                  >
-                    <div class="flex flex-col items-center">
-                      <VIcon class="mb-2">mdi-plus-circle-outline</VIcon>
-                      <span>
-                        {{ t('dashboard.blockchain_balances.add') }}
-                      </span>
-                    </div>
-                  </VBtn>
-                </div>
-              </div>
+              <SummaryCardCreateButton
+                v-if="blockchainTotals.length === 0"
+                :to="`#${Routes.ACCOUNTS_BALANCES}?add=true`"
+              >
+                {{ t('dashboard.blockchain_balances.add') }}
+              </SummaryCardCreateButton>
               <div v-else data-cy="blockchain-balances">
                 <BlockchainBalanceCardList
                   v-for="total in blockchainTotals"
@@ -136,24 +112,12 @@ const nftEnabled = isModuleEnabled(Module.NFTS);
               :navigates-to="Routes.ACCOUNTS_BALANCES_MANUAL"
               @refresh="fetchManualBalances()"
             >
-              <div v-if="manualBalanceByLocation.length === 0">
-                <div class="px-6">
-                  <VBtn
-                    text
-                    block
-                    color="primary"
-                    :to="`${Routes.ACCOUNTS_BALANCES_MANUAL}?add=true`"
-                    class="py-8"
-                  >
-                    <div class="flex flex-col items-center">
-                      <VIcon class="mb-2">mdi-plus-circle-outline</VIcon>
-                      <span>
-                        {{ t('dashboard.manual_balances.add') }}
-                      </span>
-                    </div>
-                  </VBtn>
-                </div>
-              </div>
+              <SummaryCardCreateButton
+                v-if="manualBalanceByLocation.length === 0"
+                :to="`#${Routes.ACCOUNTS_BALANCES_MANUAL}?add=true`"
+              >
+                {{ t('dashboard.manual_balances.add') }}
+              </SummaryCardCreateButton>
               <div v-else data-cy="manual-balances">
                 <ManualBalanceCardList
                   v-for="manualBalance in manualBalanceByLocation"
