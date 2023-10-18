@@ -63,8 +63,8 @@ const slots = useSlots();
               {{ t('summary_card.refresh_tooltip', { name }) }}
             </span>
           </RuiTooltip>
-          <SummaryCardRefreshMenu>
-            <template v-if="slots.refreshMenu" #refreshMenu>
+          <SummaryCardRefreshMenu v-if="slots.refreshMenu">
+            <template #refreshMenu>
               <slot name="refreshMenu" />
             </template>
           </SummaryCardRefreshMenu>

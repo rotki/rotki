@@ -665,59 +665,71 @@ const css = useCssModule();
       </GraphTooltipWrapper>
     </div>
 
-    <div
-      v-if="showGraphRangeSelector"
-      ref="rangeRef"
-      :class="css.range"
-      @mousemove="rangeButtonMouseMove($event)"
-      @dblclick="resetZoom()"
-    >
-      <canvas :id="rangeId" />
-
+    <div :class="css.range__wrapper">
       <div
-        :class="{
-          [css['range__marker']]: true,
-          [css['range__marker--dark']]: dark
-        }"
-        :style="rangeMarkerStyle"
-        @mousedown="rangeButtonMouseDown('both', $event)"
+        v-if="showGraphRangeSelector"
+        ref="rangeRef"
+        :class="css.range"
+        @mousemove="rangeButtonMouseMove($event)"
+        @dblclick="resetZoom()"
       >
+        <canvas :id="rangeId" />
+
         <div
-          :class="{
-            [css['range__marker__limit']]: true,
-            [css['range__marker__limit--start']]: true
-          }"
+          :class="[
+            css.range__marker,
+            {
+              [css['range__marker--dark']]: dark
+            }
+          ]"
+          :style="rangeMarkerStyle"
+          @mousedown="rangeButtonMouseDown('both', $event)"
         >
-          <VBtn
-            :color="dark ? 'black' : 'white'"
-            :ripple="false"
-            :class="css['range__marker__limit__button']"
-            elevation="1"
-            @mousedown.stop="rangeButtonMouseDown('start', $event)"
+          <div
+            :class="[
+              css.range__marker__limit,
+              css['range__marker__limit--start']
+            ]"
           >
-            <VIcon :class="css['range__marker__limit__button__icon']">
-              mdi-equal
-            </VIcon>
-          </VBtn>
-        </div>
-        <div
-          :class="{
-            [css['range__marker__limit']]: true,
-            [css['range__marker__limit--end']]: true
-          }"
-        >
-          <VBtn
-            :color="dark ? 'black' : 'white'"
-            :ripple="false"
-            :class="css['range__marker__limit__button']"
-            elevation="1"
-            @mousedown.stop="rangeButtonMouseDown('end', $event)"
+            <RuiButton
+              :class="css.range__marker__limit__button"
+              :color="dark ? 'primary' : undefined"
+              elevation="1"
+              @mousedown.stop="rangeButtonMouseDown('start', $event)"
+            >
+              <RuiIcon
+                :class="css.range__marker__limit__button__icon"
+                name="equal-line"
+              />
+            </RuiButton>
+          </div>
+          <div
+            :class="[
+              css.range__marker__limit,
+              css['range__marker__limit--end']
+            ]"
           >
-            <VIcon :class="css['range__marker__limit__button__icon']">
-              mdi-equal
-            </VIcon>
-          </VBtn>
+            <RuiButton
+              :class="css.range__marker__limit__button"
+              :color="dark ? 'primary' : undefined"
+              elevation="1"
+              @mousedown.stop="rangeButtonMouseDown('end', $event)"
+            >
+              <RuiIcon
+                :class="css.range__marker__limit__button__icon"
+                name="equal-line"
+              />
+            </RuiButton>
+          </div>
         </div>
+      </div>
+
+      <div :class="css.snapshot">
+        <SnapshotActionButton>
+          <template #button-icon>
+            <RuiIcon name="arrow-down-s-line" />
+          </template>
+        </SnapshotActionButton>
       </div>
     </div>
 
@@ -731,64 +743,55 @@ const css = useCssModule();
 
 <style module lang="scss">
 .wrapper {
-  width: 100%;
-  position: relative;
+  @apply w-full relative;
 }
 
 .canvas {
-  position: relative;
-  height: 200px;
-  width: 100%;
+  @apply w-full relative h-[12.5rem];
 }
 
 .range {
-  margin-top: 0.5rem;
-  height: 60px;
-  position: relative;
+  max-width: calc(100% - 4rem);
+
+  &__wrapper {
+    .snapshot {
+      @apply shrink-0 w-16 flex justify-center;
+    }
+
+    @apply flex items-center;
+  }
 
   &__marker {
-    height: 90%;
     background: var(--border-color);
-    position: absolute;
-    width: 100%;
-    top: 0;
-    z-index: 2;
-    cursor: all-scroll;
 
     &__limit {
-      height: 100%;
-      width: 10px;
-      position: absolute;
-      display: flex;
-      align-items: center;
-      cursor: ew-resize;
-
       &--start {
-        left: 0;
-        transform: translateX(-50%);
+        @apply left-0 -translate-x-1/2;
       }
 
       &--end {
-        right: 0;
-        transform: translateX(50%);
+        @apply right-0 translate-x-1/2;
       }
 
       &__button {
-        height: 30px;
-        width: 100%;
-        min-width: 0 !important;
-        padding: 0 !important;
-        cursor: ew-resize;
-
         &:before {
-          display: none;
+          @apply hidden;
         }
 
         &__icon {
-          transform: scaleX(0.5) scaleY(0.8) rotate(90deg);
+          @apply scale-50 scale-y-[0.8] rotate-90;
         }
+
+        @apply w-full h-[1.875rem] cursor-ew-resize;
+        @apply min-w-0 p-0 #{!important};
       }
+
+      @apply flex items-center absolute w-[0.625rem] h-full cursor-ew-resize;
     }
+
+    @apply absolute w-full h-[90%] top-0 z-[2] cursor-all-scroll;
   }
+
+  @apply relative mt-2 grow h-[3.75rem];
 }
 </style>

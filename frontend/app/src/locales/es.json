@@ -3112,8 +3112,7 @@
   },
   "overall_balances": {
     "loading": "Cargando",
-    "premium_hint": "Get the full experience by upgrading to rotki premium",
-    "summary": "Resumen"
+    "premium_hint": "Get the full experience by upgrading to rotki premium"
   },
   "overview": {
     "details_dialog": {

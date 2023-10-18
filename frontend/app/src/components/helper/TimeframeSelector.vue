@@ -3,16 +3,12 @@ import {
   TimeFramePersist,
   type TimeFrameSetting
 } from '@rotki/common/lib/settings/graphs';
-import { type PropType } from 'vue';
 
-const props = defineProps({
-  value: { required: true, type: String as PropType<TimeFrameSetting> },
-  disabled: { required: false, type: Boolean, default: false },
-  visibleTimeframes: {
-    required: true,
-    type: Array as PropType<TimeFrameSetting[]>
-  }
-});
+const props = defineProps<{
+  value: TimeFrameSetting;
+  visibleTimeframes: TimeFrameSetting[];
+  disabled?: boolean;
+}>();
 
 const emit = defineEmits<{ (e: 'input', value: TimeFrameSetting): void }>();
 
@@ -30,46 +26,32 @@ const activeClass = (timeframePeriod: TimeFrameSetting): string =>
   timeframePeriod === get(value) ? 'timeframe-selector--active' : '';
 
 const { t } = useI18n();
+const css = useCssModule();
 </script>
 
 <template>
-  <div class="timeframe-selector text-center">
-    <VTooltip v-if="!premium" top>
-      <template #activator="{ on, attrs }">
-        <VIcon
-          class="timeframe-selector__premium"
-          small
-          v-bind="attrs"
-          v-on="on"
-        >
-          mdi-lock
-        </VIcon>
+  <div :class="css.timeframe_selector">
+    <RuiTooltip v-if="!premium" :popper="{ placement: 'top' }">
+      <template #activator>
+        <RuiIcon class="-ml-4" size="16" name="lock-2-fill" />
       </template>
       <span v-text="t('overall_balances.premium_hint')" />
-    </VTooltip>
-    <VChip
+    </RuiTooltip>
+    <RuiButton
       v-for="(timeframe, i) in visibleTimeframes"
       :key="i"
-      :class="activeClass(timeframe)"
-      class="ma-2 px-4"
+      :color="activeClass(timeframe) ? 'primary' : 'secondary'"
+      class="px-4"
       :disabled="(!premium && !worksWithoutPremium(timeframe)) || disabled"
-      label
       @click="input(timeframe)"
     >
       {{ timeframe }}
-    </VChip>
+    </RuiButton>
   </div>
 </template>
 
-<style scoped lang="scss">
-.timeframe-selector {
-  &--active {
-    color: white !important;
-    background-color: var(--v-primary-base) !important;
-  }
-
-  &__premium {
-    margin-left: -16px;
-  }
+<style module lang="scss">
+.timeframe_selector {
+  @apply flex gap-4 items-center text-center;
 }
 </style>

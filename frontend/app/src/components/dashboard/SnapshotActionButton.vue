@@ -20,6 +20,7 @@ const { fetchNetValue } = useStatisticsStore();
 const { setMessage } = useMessageStore();
 const { importBalancesSnapshot, uploadBalancesSnapshot } = useSnapshotApi();
 const { navigateToUserLogin } = useAppNavigation();
+const { dark } = useTheme();
 
 const refreshAllAndSave = async () => {
   set(visible, false);
@@ -100,13 +101,16 @@ const importSnapshot = async () => {
     <template #activator="{ on }">
       <MenuTooltipButton
         :tooltip="t('snapshot_action_button.menu_tooltip', premium ? 2 : 1)"
-        class-name="secondary--text text--lighten-4"
+        :variant="!dark ? 'default' : 'text'"
+        size="sm"
         :on-menu="on"
       >
-        <RuiIcon name="screenshot-2-line" />
+        <slot name="button-icon">
+          <RuiIcon name="screenshot-2-line" />
+        </slot>
       </MenuTooltipButton>
     </template>
-    <div class="pa-4 md:w-[250px] w-full">
+    <div class="p-4 md:w-[15.625rem] w-full">
       <div class="font-medium">
         {{ t('snapshot_action_button.snapshot_title') }}
       </div>
