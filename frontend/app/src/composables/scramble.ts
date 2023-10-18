@@ -64,19 +64,25 @@ export const useScramble = () => {
     return scrambleInteger(parsed, min, max).toString();
   };
 
-  const scrambleTimestamp = (timestamp: number) => {
+  const scrambleTimestamp = (
+    timestamp: number,
+    milliseconds: boolean = false
+  ) => {
     if (!get(scrambleData)) {
       return timestamp;
     }
 
-    const currentTimestamp = Date.now() / 1000;
-    const diff = timestamp - currentTimestamp;
+    const currentTimestamp = Date.now();
+    const diff =
+      (milliseconds ? timestamp : timestamp * 1000) - currentTimestamp;
     let multiplier = +get(scrambleMultiplier);
     if (multiplier < 1) {
       multiplier += 1;
     }
 
-    return Math.round(timestamp + diff * multiplier * multiplier);
+    return Math.round(
+      timestamp + (diff * multiplier * multiplier) / (milliseconds ? 1 : 1000)
+    );
   };
 
   return {

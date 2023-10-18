@@ -10,6 +10,7 @@ import {
 } from '@/types/history/events';
 import { toMessages } from '@/utils/validation';
 import HistoryEventAssetPriceForm from '@/components/history/events/forms/HistoryEventAssetPriceForm.vue';
+import { DateFormat } from '@/types/date-format';
 
 const props = withDefaults(
   defineProps<{
@@ -134,7 +135,14 @@ const reset = () => {
   set(sequenceIndex, get(nextSequence) || '0');
   set(txHash, '');
   set(eventIdentifier, null);
-  set(datetime, convertFromTimestamp(dayjs().unix()));
+  set(
+    datetime,
+    convertFromTimestamp(
+      dayjs().valueOf(),
+      DateFormat.DateMonthYearHourMinuteSecond,
+      true
+    )
+  );
   set(amount, '0');
   set(usdValue, '0');
   set(validatorIndex, '');
@@ -149,7 +157,14 @@ const applyEditableData = async (entry: EthDepositEvent) => {
   set(sequenceIndex, entry.sequenceIndex?.toString() ?? '');
   set(txHash, entry.txHash);
   set(eventIdentifier, entry.eventIdentifier);
-  set(datetime, convertFromTimestamp(entry.timestamp));
+  set(
+    datetime,
+    convertFromTimestamp(
+      entry.timestamp,
+      DateFormat.DateMonthYearHourMinuteSecond,
+      true
+    )
+  );
   set(amount, entry.balance.amount.toFixed());
   set(usdValue, entry.balance.usdValue.toFixed());
   set(validatorIndex, entry.validatorIndex.toString());
@@ -163,7 +178,14 @@ const applyGroupHeaderData = async (entry: EthDepositEvent) => {
   set(txHash, entry.txHash);
   set(validatorIndex, entry.validatorIndex.toString());
   set(depositor, entry.locationLabel ?? '');
-  set(datetime, convertFromTimestamp(entry.timestamp));
+  set(
+    datetime,
+    convertFromTimestamp(
+      entry.timestamp,
+      DateFormat.DateMonthYearHourMinuteSecond,
+      true
+    )
+  );
 };
 
 watch(errorMessages, errors => {
@@ -173,14 +195,18 @@ watch(errorMessages, errors => {
 });
 
 const save = async (): Promise<boolean> => {
-  const timestamp = convertToTimestamp(get(datetime));
+  const timestamp = convertToTimestamp(
+    get(datetime),
+    DateFormat.DateMonthYearHourMinuteSecond,
+    true
+  );
 
   const payload: NewEthDepositEventPayload = {
     entryType: HistoryEventEntryType.ETH_DEPOSIT_EVENT,
     txHash: get(txHash),
     eventIdentifier: get(eventIdentifier),
     sequenceIndex: get(sequenceIndex) || '0',
-    timestamp: timestamp * 1000,
+    timestamp,
     balance: {
       amount: get(numericAmount).isNaN() ? Zero : get(numericAmount),
       usdValue: get(numericUsdValue).isNaN() ? Zero : get(numericUsdValue)

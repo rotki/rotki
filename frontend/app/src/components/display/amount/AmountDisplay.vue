@@ -26,6 +26,8 @@ const props = withDefaults(
     pnl?: boolean;
     noScramble?: boolean;
     timestamp?: number;
+    // Whether the `timestamp` prop is presented with `milliseconds` value or not
+    milliseconds?: boolean;
     /**
      * Amount display text is really large
      */
@@ -45,6 +47,7 @@ const props = withDefaults(
     pnl: false,
     noScramble: false,
     timestamp: -1,
+    milliseconds: false,
     xl: false
   }
 );
@@ -63,7 +66,8 @@ const {
   integer,
   forceCurrency,
   noScramble,
-  timestamp
+  timestamp,
+  milliseconds
 } = toRefs(props);
 
 const {
@@ -92,12 +96,17 @@ const isCurrentCurrency = isAssetPriceInCurrentCurrency(priceAsset);
 
 const { findCurrency } = useCurrencies();
 
-const { historicPriceInCurrentCurrency, isPending } =
+const { historicPriceInCurrentCurrency, isPending, createKey } =
   useHistoricCachePriceStore();
 
+const timestampToUse = computed(() => {
+  const timestampVal = get(timestamp);
+  return get(milliseconds) ? Math.round(timestampVal / 1000) : timestampVal;
+});
+
 const evaluating = or(
-  isPending(`${get(priceAsset)}#${get(timestamp)}`),
-  isPending(`${get(sourceCurrency)}#${get(timestamp)}`)
+  isPending(createKey(get(priceAsset), get(timestampToUse))),
+  isPending(createKey(get(sourceCurrency) || '', get(timestampToUse)))
 );
 
 const latestFiatValue: ComputedRef<BigNumber> = computed(() => {
@@ -128,7 +137,7 @@ const internalValue: ComputedRef<BigNumber> = computed(() => {
   const currentCurrencyVal = get(currentCurrency);
   const priceAssetVal = get(priceAsset);
   const isCurrentCurrencyVal = get(isCurrentCurrency);
-  const timestampVal = get(timestamp);
+  const timestampVal = get(timestampToUse);
 
   // If `priceAsset` is defined, it means we will not use value from `value`, but calculate it ourselves from the price of `priceAsset`
   if (priceAssetVal) {

@@ -18,20 +18,22 @@ export function getDateInputISOFormat(format: DateFormat): string {
 export function changeDateFormat(
   date: string,
   fromFormat: DateFormat,
-  toFormat: DateFormat
+  toFormat: DateFormat,
+  milliseconds: boolean = false
 ): string {
   if (!date) {
     return '';
   }
 
-  const timestamp = convertToTimestamp(date, fromFormat);
+  const timestamp = convertToTimestamp(date, fromFormat, milliseconds);
 
-  return convertFromTimestamp(timestamp, toFormat);
+  return convertFromTimestamp(timestamp, toFormat, milliseconds);
 }
 
 export function convertToTimestamp(
   date: string,
-  dateFormat: DateFormat = DateFormat.DateMonthYearHourMinuteSecond
+  dateFormat: DateFormat = DateFormat.DateMonthYearHourMinuteSecond,
+  milliseconds: boolean = false
 ): number {
   let format: string = getDateInputISOFormat(dateFormat);
   const firstSplit = date.split(' ');
@@ -42,25 +44,32 @@ export function convertToTimestamp(
     if (secondSplit.length === 3) {
       format += ':ss';
 
-      const thirdSplit = secondSplit[2].split('.');
-      if (thirdSplit.length === 2) {
-        format += '.SSS';
+      if (milliseconds) {
+        const thirdSplit = secondSplit[2].split('.');
+        if (thirdSplit.length === 2) {
+          format += '.SSS';
+        }
       }
     }
   }
 
-  return dayjs(date, format).valueOf() / 1000;
+  if (milliseconds) {
+    return dayjs(date, format).valueOf();
+  }
+
+  return dayjs(date, format).unix();
 }
 
 export function convertFromTimestamp(
   timestamp: number,
-  dateFormat: DateFormat = DateFormat.DateMonthYearHourMinuteSecond
+  dateFormat: DateFormat = DateFormat.DateMonthYearHourMinuteSecond,
+  milliseconds: boolean = false
 ): string {
-  const time = dayjs(timestamp * 1000);
+  const time = dayjs(milliseconds ? timestamp : timestamp * 1000);
   let format: string = getDateInputISOFormat(dateFormat);
   format += ' HH:mm:ss';
 
-  if (time.millisecond() > 0) {
+  if (milliseconds && time.millisecond() > 0) {
     format += '.SSS';
   }
 
@@ -71,7 +80,8 @@ export function convertDateByTimezone(
   date: string,
   dateFormat: DateFormat = DateFormat.DateMonthYearHourMinuteSecond,
   fromTimezone: string,
-  toTimezone: string
+  toTimezone: string,
+  milliseconds: boolean = false
 ): string {
   if (!date) {
     return date;
@@ -79,6 +89,10 @@ export function convertDateByTimezone(
 
   fromTimezone = fromTimezone || dayjs.tz.guess();
   toTimezone = toTimezone || dayjs.tz.guess();
+
+  if (fromTimezone === toTimezone) {
+    return date;
+  }
 
   let format: string = getDateInputISOFormat(dateFormat);
   const firstSplit = date.split(' ');
@@ -89,9 +103,11 @@ export function convertDateByTimezone(
     if (secondSplit.length === 3) {
       format += ':ss';
 
-      const thirdSplit = secondSplit[2].split('.');
-      if (thirdSplit.length === 2) {
-        format += '.SSS';
+      if (milliseconds) {
+        const thirdSplit = secondSplit[2].split('.');
+        if (thirdSplit.length === 2) {
+          format += '.SSS';
+        }
       }
     }
   }

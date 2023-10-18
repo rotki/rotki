@@ -8,6 +8,7 @@ import { type HistoricalPriceFormPayload } from '@/types/prices';
 import { type NewHistoryEventPayload } from '@/types/history/events';
 import { type ActionStatus } from '@/types/action';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
+import { DateFormat } from '@/types/date-format';
 
 const props = withDefaults(
   defineProps<{
@@ -150,7 +151,10 @@ const fetchHistoricPrices = async () => {
     return;
   }
 
-  const timestamp = Math.round(convertToTimestamp(get(datetime)));
+  const timestamp = convertToTimestamp(
+    get(datetime),
+    DateFormat.DateMonthYearHourMinuteSecond
+  );
 
   let price: BigNumber = await getHistoricPrice({
     timestamp,
@@ -221,7 +225,10 @@ const submitPrice = async (
   payload: NewHistoryEventPayload
 ): Promise<ActionStatus<ValidationErrors | string>> => {
   const assetVal = get(asset);
-  const timestamp = convertToTimestamp(get(datetime));
+  const timestamp = convertToTimestamp(
+    get(datetime),
+    DateFormat.DateMonthYearHourMinuteSecond
+  );
 
   try {
     if (get(isCurrentCurrencyUsd)) {
@@ -302,6 +309,7 @@ defineExpose({
         })
       }"
       :error-messages="{
+        primary: toMessages(v$.usdValue),
         secondary: toMessages(v$.usdValue)
       }"
       :hint="t('transactions.events.form.asset_price.hint')"

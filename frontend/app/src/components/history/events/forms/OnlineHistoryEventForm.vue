@@ -11,6 +11,7 @@ import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
 import { type ActionDataEntry } from '@/types/action';
 import { toMessages } from '@/utils/validation';
 import HistoryEventAssetPriceForm from '@/components/history/events/forms/HistoryEventAssetPriceForm.vue';
+import { DateFormat } from '@/types/date-format';
 
 const props = withDefaults(
   defineProps<{
@@ -152,7 +153,14 @@ const v$ = setValidation(
 const reset = () => {
   set(sequenceIndex, get(nextSequence) || '0');
   set(eventIdentifier, '');
-  set(datetime, convertFromTimestamp(dayjs().unix()));
+  set(
+    datetime,
+    convertFromTimestamp(
+      dayjs().valueOf(),
+      DateFormat.DateMonthYearHourMinuteSecond,
+      true
+    )
+  );
   set(location, get(lastLocation));
   set(locationLabel, '');
   set(eventType, '');
@@ -169,7 +177,14 @@ const reset = () => {
 const applyEditableData = async (entry: OnlineHistoryEvent) => {
   set(sequenceIndex, entry.sequenceIndex?.toString() ?? '');
   set(eventIdentifier, entry.eventIdentifier);
-  set(datetime, convertFromTimestamp(entry.timestamp));
+  set(
+    datetime,
+    convertFromTimestamp(
+      entry.timestamp,
+      DateFormat.DateMonthYearHourMinuteSecond,
+      true
+    )
+  );
   set(location, entry.location);
   set(eventType, entry.eventType);
   set(eventSubtype, entry.eventSubtype || 'none');
@@ -185,7 +200,14 @@ const applyGroupHeaderData = async (entry: OnlineHistoryEvent) => {
   set(location, entry.location || get(lastLocation));
   set(locationLabel, entry.locationLabel ?? '');
   set(eventIdentifier, entry.eventIdentifier);
-  set(datetime, convertFromTimestamp(entry.timestamp));
+  set(
+    datetime,
+    convertFromTimestamp(
+      entry.timestamp,
+      DateFormat.DateMonthYearHourMinuteSecond,
+      true
+    )
+  );
 };
 
 watch(errorMessages, errors => {
@@ -195,13 +217,17 @@ watch(errorMessages, errors => {
 });
 
 const save = async (): Promise<boolean> => {
-  const timestamp = convertToTimestamp(get(datetime));
+  const timestamp = convertToTimestamp(
+    get(datetime),
+    DateFormat.DateMonthYearHourMinuteSecond,
+    true
+  );
 
   const payload: NewOnlineHistoryEventPayload = {
     entryType: HistoryEventEntryType.HISTORY_EVENT,
     eventIdentifier: get(eventIdentifier),
     sequenceIndex: get(sequenceIndex) || '0',
-    timestamp: timestamp * 1000,
+    timestamp,
     eventType: get(eventType),
     eventSubtype: get(eventSubtype),
     asset: get(asset),

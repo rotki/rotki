@@ -10,6 +10,7 @@ import {
 } from '@/types/history/events';
 import { toMessages } from '@/utils/validation';
 import HistoryEventAssetPriceForm from '@/components/history/events/forms/HistoryEventAssetPriceForm.vue';
+import { DateFormat } from '@/types/date-format';
 
 const props = withDefaults(
   defineProps<{
@@ -107,7 +108,14 @@ const v$ = setValidation(
 );
 
 const reset = () => {
-  set(datetime, convertFromTimestamp(dayjs().unix()));
+  set(
+    datetime,
+    convertFromTimestamp(
+      dayjs().valueOf(),
+      DateFormat.DateMonthYearHourMinuteSecond,
+      true
+    )
+  );
   set(amount, '0');
   set(usdValue, '0');
   set(blockNumber, '');
@@ -120,7 +128,14 @@ const reset = () => {
 };
 
 const applyEditableData = async (entry: EthBlockEvent) => {
-  set(datetime, convertFromTimestamp(entry.timestamp));
+  set(
+    datetime,
+    convertFromTimestamp(
+      entry.timestamp,
+      DateFormat.DateMonthYearHourMinuteSecond,
+      true
+    )
+  );
   set(amount, entry.balance.amount.toFixed());
   set(usdValue, entry.balance.usdValue.toFixed());
   set(blockNumber, entry.blockNumber.toString());
@@ -133,7 +148,14 @@ const applyGroupHeaderData = async (entry: EthBlockEvent) => {
   set(feeRecipient, entry.locationLabel ?? '');
   set(blockNumber, entry.blockNumber.toString());
   set(validatorIndex, entry.validatorIndex.toString());
-  set(datetime, convertFromTimestamp(entry.timestamp));
+  set(
+    datetime,
+    convertFromTimestamp(
+      entry.timestamp,
+      DateFormat.DateMonthYearHourMinuteSecond,
+      true
+    )
+  );
 };
 
 watch(errorMessages, errors => {
@@ -143,11 +165,15 @@ watch(errorMessages, errors => {
 });
 
 const save = async (): Promise<boolean> => {
-  const timestamp = convertToTimestamp(get(datetime));
+  const timestamp = convertToTimestamp(
+    get(datetime),
+    DateFormat.DateMonthYearHourMinuteSecond,
+    true
+  );
 
   const payload: NewEthBlockEventPayload = {
     entryType: HistoryEventEntryType.ETH_BLOCK_EVENT,
-    timestamp: timestamp * 1000,
+    timestamp,
     balance: {
       amount: get(numericAmount).isNaN() ? Zero : get(numericAmount),
       usdValue: get(numericUsdValue).isNaN() ? Zero : get(numericUsdValue)

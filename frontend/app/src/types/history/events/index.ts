@@ -14,7 +14,7 @@ const LiquityStakingEventExtraData = z.object({
 // ETH Transactions
 export const EvmTransaction = z.object({
   txHash: z.string(),
-  timestamp: z.number().transform(timestamp => timestamp / 1000),
+  timestamp: z.number(),
   blockNumber: z.number(),
   evmChain: z.string(),
   fromAddress: z.string(),
@@ -80,7 +80,7 @@ export const CommonHistoryEvent = z.object({
   identifier: z.number(),
   eventIdentifier: z.string(),
   sequenceIndex: z.number().or(z.string()),
-  timestamp: z.number().transform(timestamp => timestamp / 1000),
+  timestamp: z.number(),
   location: z.string(),
   asset: z.string(),
   balance: Balance,

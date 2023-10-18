@@ -156,17 +156,20 @@ const onValueChange = (value: string) => {
   if (!value) {
     imaskVal.value = '';
   }
+  const millisecondsVal = get(milliseconds);
   const changedDateTimezone = convertDateByTimezone(
     value,
     DateFormat.DateMonthYearHourMinuteSecond,
     dayjs.tz.guess(),
-    get(selectedTimezone)
+    get(selectedTimezone),
+    millisecondsVal
   );
 
   const newValue = changeDateFormat(
     changedDateTimezone,
     DateFormat.DateMonthYearHourMinuteSecond,
-    get(dateInputFormat)
+    get(dateInputFormat),
+    millisecondsVal
   );
 
   if (imaskVal) {
@@ -210,13 +213,15 @@ const emitIfValid = (value: string) => {
       value,
       get(dateInputFormat),
       get(selectedTimezone),
-      dayjs.tz.guess()
+      dayjs.tz.guess(),
+      get(milliseconds)
     );
 
     const formattedValue = changeDateFormat(
       changedDateTimezone,
       get(dateInputFormat),
-      DateFormat.DateMonthYearHourMinuteSecond
+      DateFormat.DateMonthYearHourMinuteSecond,
+      get(milliseconds)
     );
 
     input(formattedValue);
@@ -387,6 +392,7 @@ const filteredListeners = (listeners: any) => ({
         <template #activator="{ on }">
           <RuiButton
             variant="text"
+            type="button"
             icon
             size="sm"
             class="-mt-2 !p-1.5"
@@ -412,6 +418,7 @@ const filteredListeners = (listeners: any) => ({
       <RuiButton
         data-cy="date-time-picker__set-now-button"
         variant="text"
+        type="button"
         icon
         size="sm"
         class="-mt-2 !p-1.5"

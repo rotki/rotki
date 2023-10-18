@@ -27,15 +27,15 @@ const dateDisplayFormatWithMilliseconds: ComputedRef<string> = computed(() => {
     return format;
   }
 
-  const milisecondFormat = '%s';
+  const millisecondFormat = '%s';
 
-  if (format.includes(milisecondFormat)) {
+  if (format.includes(millisecondFormat)) {
     return format;
   }
 
   return format
-    .replace('%S', `%S.${milisecondFormat}`)
-    .replace('%-S', `%-S.${milisecondFormat}`);
+    .replace('%S', `%S.${millisecondFormat}`)
+    .replace('%-S', `%-S.${millisecondFormat}`);
 });
 
 const dateFormat = computed<string>(() => {
@@ -53,11 +53,13 @@ const dateFormat = computed<string>(() => {
 
 const { scrambleTimestamp } = useScramble();
 
-const displayTimestamp = computed<number>(() =>
-  scrambleTimestamp(get(timestamp))
-);
+const reactiveScramble = reactify(scrambleTimestamp);
+const displayTimestamp = reactiveScramble(timestamp, milliseconds);
 
-const date = computed(() => new Date(get(displayTimestamp) * 1000));
+const date = computed(() => {
+  const display = get(displayTimestamp);
+  return new Date(get(milliseconds) ? display : display * 1000);
+});
 
 const format = (date: Ref<Date>, format: Ref<string>) =>
   computed(() => displayDateFormatter.format(get(date), get(format)));

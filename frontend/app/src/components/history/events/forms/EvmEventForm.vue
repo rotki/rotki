@@ -15,6 +15,7 @@ import {
 import { type ActionDataEntry } from '@/types/action';
 import { toMessages } from '@/utils/validation';
 import HistoryEventAssetPriceForm from '@/components/history/events/forms/HistoryEventAssetPriceForm.vue';
+import { DateFormat } from '@/types/date-format';
 
 const props = withDefaults(
   defineProps<{
@@ -189,7 +190,14 @@ const v$ = setValidation(
 const reset = () => {
   set(sequenceIndex, get(nextSequence) || '0');
   set(txHash, '');
-  set(datetime, convertFromTimestamp(dayjs().unix()));
+  set(
+    datetime,
+    convertFromTimestamp(
+      dayjs().valueOf(),
+      DateFormat.DateMonthYearHourMinuteSecond,
+      true
+    )
+  );
   set(location, get(lastLocation));
   set(address, '');
   set(locationLabel, '');
@@ -210,7 +218,14 @@ const reset = () => {
 const applyEditableData = async (entry: EvmHistoryEvent) => {
   set(sequenceIndex, entry.sequenceIndex?.toString() ?? '');
   set(txHash, entry.txHash);
-  set(datetime, convertFromTimestamp(entry.timestamp));
+  set(
+    datetime,
+    convertFromTimestamp(
+      entry.timestamp,
+      DateFormat.DateMonthYearHourMinuteSecond,
+      true
+    )
+  );
   set(location, entry.location);
   set(eventType, entry.eventType);
   set(eventSubtype, entry.eventSubtype || 'none');
@@ -231,7 +246,14 @@ const applyGroupHeaderData = async (entry: EvmHistoryEvent) => {
   set(address, entry.address ?? '');
   set(locationLabel, entry.locationLabel ?? '');
   set(txHash, entry.txHash);
-  set(datetime, convertFromTimestamp(entry.timestamp));
+  set(
+    datetime,
+    convertFromTimestamp(
+      entry.timestamp,
+      DateFormat.DateMonthYearHourMinuteSecond,
+      true
+    )
+  );
 };
 
 watch(errorMessages, errors => {
@@ -241,13 +263,17 @@ watch(errorMessages, errors => {
 });
 
 const save = async (): Promise<boolean> => {
-  const timestamp = convertToTimestamp(get(datetime));
+  const timestamp = convertToTimestamp(
+    get(datetime),
+    DateFormat.DateMonthYearHourMinuteSecond,
+    true
+  );
 
   const payload: NewEvmHistoryEventPayload = {
     entryType: HistoryEventEntryType.EVM_EVENT,
     txHash: get(txHash),
     sequenceIndex: get(sequenceIndex) || '0',
-    timestamp: timestamp * 1000,
+    timestamp,
     eventType: get(eventType),
     eventSubtype: get(eventSubtype),
     asset: get(asset),

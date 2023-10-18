@@ -95,6 +95,7 @@ export const useHistoricCachePriceStore = defineStore(
       isPending,
       retrieve,
       reset,
+      createKey,
       historicPriceInCurrentCurrency,
       resetHistoricalPricesData
     };
