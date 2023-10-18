@@ -62,6 +62,8 @@ describe('blockchain balances', () => {
   });
 
   it('data is reflected in dashboard', () => {
+    cy.assertNoRunningTasks();
+
     blockchainBalancesPage.getTotals().then(({ total, balances }) => {
       dashboardPage.visit();
       dashboardPage.getOverallBalance().then($overallBalance => {

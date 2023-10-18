@@ -147,9 +147,32 @@ const addEtherscanKey = (key: string) =>
     })
     .its('status');
 
+/**
+ * Wait for the element to not exist.
+ * Once it doesn't exist, for the next 1 seconds, check if the element ever appears again.
+ * If it doesn't appear again, we can continue.
+ * But if it appears again, run the check again from the start.
+ */
+const assertNoRunningTasks = () => {
+  const selector = '[data-cy=notification-indicator-progress]';
+  cy.get(selector)
+    .should('not.exist')
+    .then(() => {
+      // eslint-disable-next-line cypress/no-unnecessary-waiting
+      cy.wait(1000);
+
+      cy.get('body').then($body => {
+        if ($body.find(selector).length > 0) {
+          cy.assertNoRunningTasks();
+        }
+      });
+    });
+};
+
 Cypress.Commands.add('logout', logout);
 Cypress.Commands.add('updateAssets', updateAssets);
 Cypress.Commands.add('disableModules', disableModules);
 Cypress.Commands.add('createAccount', createAccount);
 Cypress.Commands.add('addExternalTrade', addExternalTrade);
 Cypress.Commands.add('addEtherscanKey', addEtherscanKey);
+Cypress.Commands.add('assertNoRunningTasks', assertNoRunningTasks);
