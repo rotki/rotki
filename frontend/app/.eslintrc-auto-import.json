@@ -713,6 +713,7 @@
     "useAccountingApi": true,
     "useAccountingSettings": true,
     "useAccountingRuleFilter": true,
-    "useAccountingRuleForm": true
+    "useAccountingRuleForm": true,
+    "useExternalApiKeys": true
   }
 }

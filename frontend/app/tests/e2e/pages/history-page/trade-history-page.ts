@@ -68,7 +68,7 @@ export class TradeHistoryPage {
     cy.get('[data-cy=link]').type(trade.link);
     cy.get('[data-cy=notes]').type(trade.notes);
     const waitForTrades = this.createWaitForTrades();
-    cy.get('.big-dialog__buttons__confirm').click();
+    cy.get('[data-cy=bottom-dialog] [data-cy=confirm]').click();
     waitForTrades();
     cy.get('[data-cy=trade-form]').should('not.exist');
     cy.get('[data-cy=bottom-dialog]').should('not.be.visible');
@@ -130,7 +130,7 @@ export class TradeHistoryPage {
     cy.get('[data-cy=amount] input').type(amount);
 
     const waitForTrades = this.createWaitForTrades();
-    cy.get('.big-dialog__buttons__confirm').click();
+    cy.get('[data-cy=bottom-dialog] [data-cy=confirm]').click();
     waitForTrades();
     cy.get('[data-cy=trade-form]').should('not.exist');
     cy.get('.v-progress-linear__buffer').should('not.exist');

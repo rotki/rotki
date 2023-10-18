@@ -6,11 +6,7 @@ import {
   validStatus,
   validWithSessionStatus
 } from '@/services/utils';
-import {
-  type ExternalServiceKey,
-  ExternalServiceKeys,
-  type ExternalServiceName
-} from '@/types/user';
+import { type ExternalServiceKey, ExternalServiceKeys } from '@/types/user';
 
 export const useExternalServicesApi = () => {
   const queryExternalServices = async (): Promise<ExternalServiceKeys> => {
@@ -43,7 +39,7 @@ export const useExternalServicesApi = () => {
   };
 
   const deleteExternalServices = async (
-    serviceToDelete: ExternalServiceName
+    serviceToDelete: string
   ): Promise<ExternalServiceKeys> => {
     const response = await api.instance.delete<
       ActionResult<ExternalServiceKeys>

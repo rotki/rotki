@@ -63,7 +63,7 @@ const cancel = () => emit('cancel');
           <RuiButton
             color="primary"
             variant="outlined"
-            class="big-dialog__cancel"
+            data-cy="cancel"
             @click="cancel()"
           >
             {{ secondary }}
@@ -73,7 +73,6 @@ const cancel = () => emit('cancel');
             :color="themes[confirmType].color"
             :disabled="actionDisabled || loading"
             :loading="loading"
-            class="big-dialog__confirm"
             @click="confirm()"
           >
             {{ primary }}

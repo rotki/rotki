@@ -2090,8 +2090,7 @@
       "title": "加密比较"
     },
     "delete_error": {
-      "description": "删除外部服务 api 密钥时出错： {message}",
-      "title": "错误"
+      "description": "删除外部服务 api 密钥时出错： {message}"
     },
     "etherscan": {
       "delete_tooltip": "删除 {chain} Etherscan API 密钥",
@@ -2119,12 +2118,10 @@
     },
     "set": {
       "error": {
-        "message": "设置外部服务 api 密钥时出错： {error}",
-        "title": "Error"
+        "message": "设置外部服务 api 密钥时出错： {error}"
       },
       "success": {
-        "message": "已成功更新 {serviceName} 的密钥",
-        "title": "Success"
+        "message": "已成功更新 {serviceName} 的密钥"
       }
     },
     "subtitle": "rotki 连接到各种服务提供商,以获取历史价格或区块链数据等信息。在某些情况下,rotki 依赖这些 API 获取基本信息，在这种情况下，您需要提供 API 密钥。"

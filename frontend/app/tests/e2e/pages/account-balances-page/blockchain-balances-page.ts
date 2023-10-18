@@ -42,7 +42,7 @@ export class BlockchainBalancesPage {
       cy.get('[data-cy="account-tag-field"]').type(`${tag}{enter}`);
     }
 
-    cy.get('.big-dialog__buttons__confirm').click();
+    cy.get('[data-cy=bottom-dialog] [data-cy=confirm]').click();
 
     if (balance.blockchain === Blockchain.ETH) {
       waitForAsyncQuery(
@@ -182,7 +182,7 @@ export class BlockchainBalancesPage {
     cy.get('@account-label').click();
     cy.get('@account-label').clear();
     cy.get('@account-label').type(label);
-    cy.get('.big-dialog__buttons__confirm').click();
+    cy.get('[data-cy=bottom-dialog] [data-cy=confirm]').click();
     cy.get('[data-cy=bottom-dialog]', { timeout: 120000 }).should(
       'not.be.visible'
     );

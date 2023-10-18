@@ -447,6 +447,7 @@ declare global {
   const useExchangeApiKeysForm: typeof import('./composables/settings/api-keys/exchanges/form')['useExchangeApiKeysForm']
   const useExchangeBalancesStore: typeof import('./store/balances/exchanges')['useExchangeBalancesStore']
   const useExchangesStore: typeof import('./store/exchanges/index')['useExchangesStore']
+  const useExternalApiKeys: typeof import('./composables/settings/api-keys/external/index')['useExternalApiKeys']
   const useExternalServicesApi: typeof import('./composables/api/settings/external-services-api')['useExternalServicesApi']
   const useEyeDropper: typeof import('@vueuse/core')['useEyeDropper']
   const useFavicon: typeof import('@vueuse/core')['useFavicon']
@@ -1158,6 +1159,7 @@ declare module 'vue' {
     readonly useExchangeApiKeysForm: UnwrapRef<typeof import('./composables/settings/api-keys/exchanges/form')['useExchangeApiKeysForm']>
     readonly useExchangeBalancesStore: UnwrapRef<typeof import('./store/balances/exchanges')['useExchangeBalancesStore']>
     readonly useExchangesStore: UnwrapRef<typeof import('./store/exchanges/index')['useExchangesStore']>
+    readonly useExternalApiKeys: UnwrapRef<typeof import('./composables/settings/api-keys/external/index')['useExternalApiKeys']>
     readonly useExternalServicesApi: UnwrapRef<typeof import('./composables/api/settings/external-services-api')['useExternalServicesApi']>
     readonly useEyeDropper: UnwrapRef<typeof import('@vueuse/core')['useEyeDropper']>
     readonly useFavicon: UnwrapRef<typeof import('@vueuse/core')['useFavicon']>
@@ -1863,6 +1865,7 @@ declare module '@vue/runtime-core' {
     readonly useExchangeApiKeysForm: UnwrapRef<typeof import('./composables/settings/api-keys/exchanges/form')['useExchangeApiKeysForm']>
     readonly useExchangeBalancesStore: UnwrapRef<typeof import('./store/balances/exchanges')['useExchangeBalancesStore']>
     readonly useExchangesStore: UnwrapRef<typeof import('./store/exchanges/index')['useExchangesStore']>
+    readonly useExternalApiKeys: UnwrapRef<typeof import('./composables/settings/api-keys/external/index')['useExternalApiKeys']>
     readonly useExternalServicesApi: UnwrapRef<typeof import('./composables/api/settings/external-services-api')['useExternalServicesApi']>
     readonly useEyeDropper: UnwrapRef<typeof import('@vueuse/core')['useEyeDropper']>
     readonly useFavicon: UnwrapRef<typeof import('@vueuse/core')['useFavicon']>

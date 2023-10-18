@@ -1,14 +1,13 @@
 <script setup lang="ts">
-import { type ExternalServiceName } from '@/types/user';
-
 const props = withDefaults(
   defineProps<{
     apiKey: string;
-    name: ExternalServiceName;
+    name: string;
     loading?: boolean;
     tooltip?: string;
     hint?: string;
     label?: string;
+    status?: { message: string; success?: boolean };
   }>(),
   {
     status: undefined,
@@ -20,16 +19,30 @@ const props = withDefaults(
 );
 
 const emit = defineEmits<{
-  (e: 'delete-key', value: ExternalServiceName): void;
-  (e: 'save', value: { name: ExternalServiceName; apiKey: string }): void;
+  (e: 'delete-key', value: string): void;
+  (e: 'save', value: { name: string; apiKey: string }): void;
 }>();
 
 const { t } = useI18n();
-const { apiKey } = toRefs(props);
+const { apiKey, status } = toRefs(props);
 
 const currentValue = ref<string | null>(null);
 const editMode = ref<boolean>(false);
 const cancellable = ref<boolean>(false);
+
+const errorMessages = useRefMap(status, status => {
+  if (!status || status.success) {
+    return [];
+  }
+  return [status.message];
+});
+
+const successMessages = useRefMap(status, status => {
+  if (!status || !status.success) {
+    return [];
+  }
+  return [status.message];
+});
 
 const internalValue = computed({
   get() {
@@ -85,16 +98,16 @@ const slots = useSlots();
 
 <template>
   <div class="flex flex-col gap-4">
-    <div class="service-key__content flex gap-4">
+    <div class="flex gap-4" data-cy="service-key__content">
       <RuiRevealableTextField
         v-model="internalValue"
         variant="outlined"
         color="primary"
         class="grow"
         data-cy="service-key__api-key"
-        :class="{
-          'text-rui-success': !editMode
-        }"
+        :text-color="!editMode ? 'success' : undefined"
+        :error-messages="errorMessages"
+        :success-messages="successMessages"
         :hint="currentValue ? '' : hint"
         :disabled="!editMode"
         :label="label"
@@ -111,7 +124,7 @@ const slots = useSlots();
             variant="text"
             data-cy="service-key__delete"
             class="mt-1"
-            :disabled="loading || !currentValue"
+            :disabled="loading || !apiKey"
             color="primary"
             @click="emit('delete-key', name)"
           >
@@ -138,7 +151,7 @@ const slots = useSlots();
       <RuiButton
         data-cy="service-key__save"
         color="primary"
-        :disabled="(editMode && currentValue === '') || loading"
+        :disabled="(editMode && !currentValue) || loading"
         @click="saveHandler()"
       >
         {{ editMode ? t('common.actions.save') : t('common.actions.edit') }}
