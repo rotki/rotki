@@ -81,7 +81,11 @@ const splittedByMillisecondsPart = computed(() =>
 
 <template>
   <span>
-    <VTooltip top open-delay="400" :disabled="!showTooltip">
+    <RuiTooltip
+      :popper="{ placement: 'top' }"
+      open-delay="400"
+      :disabled="!showTooltip"
+    >
       <template #activator="{ on, attrs }">
         <span
           class="date-display whitespace-none"
@@ -99,7 +103,7 @@ const splittedByMillisecondsPart = computed(() =>
         </span>
       </template>
       <span> {{ formattedDateWithTimezone }} </span>
-    </VTooltip>
+    </RuiTooltip>
   </span>
 </template>
 

@@ -1,10 +1,16 @@
 <script setup lang="ts">
-import JsonEditorVue from 'json-editor-vue';
+import {
+  type Content,
+  type JSONContent,
+  JSONEditor,
+  type TextContent
+} from 'vanilla-jsoneditor';
+import { debounce } from 'lodash-es';
 
 const props = withDefaults(
   defineProps<{
     label?: string;
-    value: object;
+    value: Record<string, any>;
   }>(),
   {
     label: ''
@@ -12,21 +18,62 @@ const props = withDefaults(
 );
 
 const emit = defineEmits<{
-  (e: 'input', newValue: object): void;
+  (e: 'input', newValue: any): void;
 }>();
 
 const { value } = toRefs(props);
 
-const model = computed({
-  get() {
-    return get(value);
-  },
-  set(value: object) {
-    emit('input', value);
-  }
+const css = useCssModule();
+
+const jsonEditorContainer = ref();
+const jsonEditor: Ref<JSONEditor | null> = ref(null);
+
+onMounted(() => {
+  const onChange = debounce((updatedContent: Content) => {
+    emit(
+      'input',
+      (updatedContent as TextContent).text === undefined
+        ? (updatedContent as JSONContent).json
+        : (updatedContent as TextContent).text
+    );
+  }, 100);
+
+  const newJsonEditor = new JSONEditor({
+    target: get(jsonEditorContainer),
+    props: {
+      content: {
+        json: get(value)
+      },
+      navigationBar: false,
+      onChange
+    }
+  });
+
+  set(jsonEditor, newJsonEditor);
 });
 
-const css = useCssModule();
+watch(
+  value,
+  (newValue: any) => {
+    const jsonEditorVal = get(jsonEditor);
+    if (jsonEditorVal) {
+      jsonEditorVal.set(
+        [undefined, ''].includes(newValue) ? { text: '' } : { json: newValue }
+      );
+    }
+  },
+  {
+    deep: true
+  }
+);
+
+onBeforeUnmount(() => {
+  const jsonEditorVal = get(jsonEditor);
+
+  if (jsonEditorVal) {
+    jsonEditorVal.destroy();
+  }
+});
 </script>
 
 <template>
@@ -35,7 +82,7 @@ const css = useCssModule();
       {{ label }}
     </div>
     <div :class="css.editor">
-      <JsonEditorVue v-model="model" :navigation-bar="false" />
+      <div ref="jsonEditorContainer" />
     </div>
   </div>
 </template>

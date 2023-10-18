@@ -4,7 +4,11 @@ import { createPinia, setActivePinia } from 'pinia';
 import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
 import HistoryEventForm from '@/components/history/events/HistoryEventForm.vue';
 
-describe('EvmEventForm.vue', () => {
+vi.mock('json-editor-vue', () => ({
+  template: '<input />'
+}));
+
+describe('HistoryEventForm.vue', () => {
   setupDayjs();
   let wrapper: Wrapper<HistoryEventForm>;
 

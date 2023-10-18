@@ -7,7 +7,6 @@ import {
   isEvmEventRef,
   isOnlineHistoryEventRef
 } from '@/utils/history/events';
-import HistoryEventTypeCombination from '@/components/history/events/HistoryEventTypeCombination.vue';
 
 const props = defineProps<{
   event: HistoryEventEntry;

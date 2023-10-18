@@ -4,11 +4,9 @@ import { Section, Status } from '@/types/status';
 import {
   type AddTransactionHashPayload,
   type AddressesAndEvmChainPayload,
-  type EditHistoryEventPayload,
   type EvmChainAddress,
   type EvmChainAndTxHash,
   type EvmTransaction,
-  type NewHistoryEventPayload,
   OnlineHistoryEventsQueryType,
   type TransactionHashAndEvmChainPayload,
   type TransactionRequestPayload
@@ -33,11 +31,8 @@ export const useHistoryTransactions = createSharedComposable(() => {
 
   const {
     fetchEvmTransactionsTask,
-    deleteHistoryEvent: deleteHistoryEventCaller,
     decodeHistoryEvents,
     reDecodeMissingTransactionEvents,
-    addHistoryEvent: addHistoryEventCaller,
-    editHistoryEvent: editHistoryEventCaller,
     addTransactionHash: addTransactionHashCaller,
     queryOnlineHistoryEvents
   } = useHistoryEventsApi();
@@ -205,7 +200,7 @@ export const useHistoryTransactions = createSharedComposable(() => {
   const reDecodeMissingTransactionEventsTask = async (
     account: EvmChainAddress
   ) => {
-    const taskType = TaskType.TX_EVENTS;
+    const taskType = TaskType.HISTORY_EVENTS;
     const payload: AddressesAndEvmChainPayload = {
       evmChain: account.evmChain,
       addresses: [account.address]
@@ -242,57 +237,6 @@ export const useHistoryTransactions = createSharedComposable(() => {
         display: true
       });
     }
-  };
-
-  const addHistoryEvent = async (
-    event: NewHistoryEventPayload
-  ): Promise<ActionStatus<ValidationErrors | string>> => {
-    let success = false;
-    let message: ValidationErrors | string = '';
-    try {
-      await addHistoryEventCaller(event);
-      success = true;
-    } catch (e: any) {
-      message = e.message;
-      if (e instanceof ApiValidationError) {
-        message = e.getValidationErrors(event);
-      }
-    }
-
-    return { success, message };
-  };
-
-  const editHistoryEvent = async (
-    event: EditHistoryEventPayload
-  ): Promise<ActionStatus<ValidationErrors | string>> => {
-    let success = false;
-    let message: ValidationErrors | string = '';
-    try {
-      await editHistoryEventCaller(event);
-      success = true;
-    } catch (e: any) {
-      message = e.message;
-      if (e instanceof ApiValidationError) {
-        message = e.getValidationErrors(event);
-      }
-    }
-
-    return { success, message };
-  };
-
-  const deleteHistoryEvent = async (
-    eventIds: number[],
-    forceDelete = false
-  ): Promise<ActionStatus> => {
-    let success = false;
-    let message = '';
-    try {
-      success = await deleteHistoryEventCaller(eventIds, forceDelete);
-    } catch (e: any) {
-      message = e.message;
-    }
-
-    return { success, message };
   };
 
   const fetchTransactionEvents = async (
@@ -334,7 +278,7 @@ export const useHistoryTransactions = createSharedComposable(() => {
     }
 
     try {
-      const taskType = TaskType.TX_EVENTS;
+      const taskType = TaskType.HISTORY_EVENTS;
       const { taskId } = await decodeHistoryEvents({
         data: payloads,
         ignoreCache
@@ -387,9 +331,6 @@ export const useHistoryTransactions = createSharedComposable(() => {
   return {
     refreshTransactions,
     fetchTransactionEvents,
-    addHistoryEvent,
-    editHistoryEvent,
-    deleteHistoryEvent,
     addTransactionHash
   };
 });

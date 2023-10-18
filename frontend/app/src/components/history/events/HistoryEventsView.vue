@@ -129,9 +129,9 @@ const { isTaskRunning } = useTaskStore();
 const { txEvmChains, getEvmChainName } = useSupportedChains();
 const txChains = useArrayMap(txEvmChains, x => x.id);
 
-const { fetchHistoryEvents } = useHistoryEvents();
+const { fetchHistoryEvents, deleteHistoryEvent } = useHistoryEvents();
 
-const { refreshTransactions, fetchTransactionEvents, deleteHistoryEvent } =
+const { refreshTransactions, fetchTransactionEvents } =
   useHistoryTransactions();
 
 const {
@@ -448,7 +448,7 @@ watch(
 const premium = usePremium();
 const { isLoading: isSectionLoading } = useStatusStore();
 const sectionLoading = isSectionLoading(Section.HISTORY_EVENT);
-const eventTaskLoading = isTaskRunning(TaskType.TX_EVENTS);
+const eventTaskLoading = isTaskRunning(TaskType.HISTORY_EVENTS);
 const onlineHistoryEventsLoading = isTaskRunning(TaskType.QUERY_ONLINE_EVENTS);
 
 const { isAllFinished: isQueryingTxsFinished } = toRefs(

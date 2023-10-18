@@ -3,11 +3,11 @@ import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
 import dayjs from 'dayjs';
 import { helpers, required, requiredIf } from '@vuelidate/validators';
 import { Blockchain } from '@rotki/common/lib/blockchain';
+import { isEmpty } from 'lodash-es';
 import {
   type EthDepositEvent,
   type NewEthDepositEventPayload
 } from '@/types/history/events';
-import { type Writeable } from '@/types';
 import { toMessages } from '@/utils/validation';
 import HistoryEventAssetPriceForm from '@/components/history/events/forms/HistoryEventAssetPriceForm.vue';
 
@@ -109,7 +109,8 @@ const rules = {
   }
 };
 
-const { setValidation, setSubmitFunc } = useHistoryEventsForm();
+const { setValidation, setSubmitFunc, saveHistoryEventHandler } =
+  useHistoryEventsForm();
 
 const v$ = setValidation(
   rules,
@@ -165,14 +166,16 @@ const applyGroupHeaderData = async (entry: EthDepositEvent) => {
   set(datetime, convertFromTimestamp(entry.timestamp));
 };
 
-const { setMessage } = useMessageStore();
-
-const { editHistoryEvent, addHistoryEvent } = useHistoryTransactions();
+watch(errorMessages, errors => {
+  if (!isEmpty(errors)) {
+    get(v$).$validate();
+  }
+});
 
 const save = async (): Promise<boolean> => {
   const timestamp = convertToTimestamp(get(datetime));
 
-  const payload: Writeable<NewEthDepositEventPayload> = {
+  const payload: NewEthDepositEventPayload = {
     entryType: HistoryEventEntryType.ETH_DEPOSIT_EVENT,
     txHash: get(txHash),
     eventIdentifier: get(eventIdentifier),
@@ -187,38 +190,14 @@ const save = async (): Promise<boolean> => {
     extraData: get(extraData) || null
   };
 
-  const submitPriceResult = await get(assetPriceForm)!.submitPrice(payload);
-
-  if (!submitPriceResult.success) {
-    set(errorMessages, submitPriceResult.message);
-    return false;
-  }
-
   const edit = get(editableItem);
-  const result = !edit
-    ? await addHistoryEvent(payload)
-    : await editHistoryEvent({
-        ...payload,
-        identifier: edit.identifier
-      });
 
-  if (result.success) {
-    reset();
-    return true;
-  }
-
-  if (result.message) {
-    if (typeof result.message === 'string') {
-      setMessage({
-        description: result.message
-      });
-    } else {
-      set(errorMessages, result.message);
-      await get(v$).$validate();
-    }
-  }
-
-  return false;
+  return await saveHistoryEventHandler(
+    edit ? { ...payload, identifier: edit.identifier } : payload,
+    assetPriceForm,
+    errorMessages,
+    reset
+  );
 };
 
 setSubmitFunc(save);

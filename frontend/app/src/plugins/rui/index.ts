@@ -36,6 +36,7 @@ import {
   RiDiscordLine,
   RiDownloadCloud2Line,
   RiDownloadCloudLine,
+  RiEarthLine,
   RiEditLine,
   RiEqualLine,
   RiErrorWarningLine,
@@ -99,6 +100,7 @@ import {
   RiSubtractLine,
   RiSunLine,
   RiSwapLine,
+  RiTimeLine,
   RiTwitterXLine,
   RiUploadCloud2Line,
   RiUploadCloudLine,
@@ -217,6 +219,8 @@ Vue.use(RuiPlugin, {
     RiDiscordLine,
     RiGithubLine,
     RiTwitterXLine,
-    RiArrowUpSLine
+    RiArrowUpSLine,
+    RiTimeLine,
+    RiEarthLine
   ]
 });

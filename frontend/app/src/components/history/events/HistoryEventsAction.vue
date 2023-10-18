@@ -39,24 +39,22 @@ const resetEvent = (event: EvmHistoryEvent) => emit('reset', event);
       offset-y
     >
       <template #activator="{ on }">
-        <VBtn class="ml-1" icon v-on="on">
-          <VIcon>mdi-dots-vertical</VIcon>
-        </VBtn>
+        <RuiButton variant="text" icon size="sm" class="!p-2" v-on="on">
+          <RuiIcon name="more-2-fill" size="20" />
+        </RuiButton>
       </template>
       <VList>
-        <VListItem link @click="addEvent(event)">
-          <VListItemIcon class="mr-4">
-            <VIcon>mdi-plus</VIcon>
-          </VListItemIcon>
+        <VListItem link class="gap-4" @click="addEvent(event)">
+          <RuiIcon class="text-rui-text-secondary" name="add-line" />
           <VListItemContent>
             {{ t('transactions.actions.add_event_here') }}
           </VListItemContent>
         </VListItem>
-        <VListItem link @click="toggleIgnore(event)">
-          <VListItemIcon class="mr-4">
-            <VIcon v-if="event.ignoredInAccounting"> mdi-eye </VIcon>
-            <VIcon v-else> mdi-eye-off</VIcon>
-          </VListItemIcon>
+        <VListItem link class="gap-4" @click="toggleIgnore(event)">
+          <RuiIcon
+            class="text-rui-text-secondary"
+            :name="event.ignoredInAccounting ? 'eye-line' : 'eye-off-line'"
+          />
           <VListItemContent>
             {{
               event.ignoredInAccounting
@@ -69,19 +67,22 @@ const resetEvent = (event: EvmHistoryEvent) => emit('reset', event);
           <VListItem
             link
             :disabled="loading"
+            class="gap-4"
             @click="redecode(toEvmChainAndTxHash(evmEvent))"
           >
-            <VListItemIcon class="mr-4">
-              <VIcon>mdi-database-refresh</VIcon>
-            </VListItemIcon>
+            <RuiIcon class="text-rui-text-secondary" name="restart-line" />
             <VListItemContent>
               {{ t('transactions.actions.redecode_events') }}
             </VListItemContent>
           </VListItem>
-          <VListItem link :disabled="loading" @click="resetEvent(evmEvent)">
-            <VListItemIcon class="mr-4">
-              <VIcon>mdi-file-restore</VIcon>
-            </VListItemIcon>
+          <VListItem
+            link
+            :disabled="loading"
+            class="gap-4"
+            @click="resetEvent(evmEvent)"
+          >
+            <RuiIcon class="text-rui-text-secondary" name="file-edit-line" />
+
             <VListItemContent>
               {{ t('transactions.actions.reset_customized_events') }}
             </VListItemContent>

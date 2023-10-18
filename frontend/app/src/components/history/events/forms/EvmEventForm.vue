@@ -3,6 +3,7 @@ import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
 import dayjs from 'dayjs';
 import { helpers, required } from '@vuelidate/validators';
 import { Blockchain } from '@rotki/common/lib/blockchain';
+import { isEmpty } from 'lodash-es';
 import {
   type EvmHistoryEvent,
   type NewEvmHistoryEventPayload
@@ -11,11 +12,9 @@ import {
   TRADE_LOCATION_ETHEREUM,
   TRADE_LOCATION_EXTERNAL
 } from '@/data/defaults';
-import { type Writeable } from '@/types';
 import { type ActionDataEntry } from '@/types/action';
 import { toMessages } from '@/utils/validation';
 import HistoryEventAssetPriceForm from '@/components/history/events/forms/HistoryEventAssetPriceForm.vue';
-import HistoryEventTypeCombination from '@/components/history/events/HistoryEventTypeCombination.vue';
 
 const props = withDefaults(
   defineProps<{
@@ -160,7 +159,8 @@ const rules = {
   }
 };
 
-const { setValidation, setSubmitFunc } = useHistoryEventsForm();
+const { setValidation, setSubmitFunc, saveHistoryEventHandler } =
+  useHistoryEventsForm();
 
 const v$ = setValidation(
   rules,
@@ -234,21 +234,23 @@ const applyGroupHeaderData = async (entry: EvmHistoryEvent) => {
   set(datetime, convertFromTimestamp(entry.timestamp));
 };
 
-const { setMessage } = useMessageStore();
+watch(errorMessages, errors => {
+  if (!isEmpty(errors)) {
+    get(v$).$validate();
+  }
+});
 
-const { editHistoryEvent, addHistoryEvent } = useHistoryTransactions();
 const save = async (): Promise<boolean> => {
   const timestamp = convertToTimestamp(get(datetime));
-  const assetVal = get(asset);
 
-  const payload: Writeable<NewEvmHistoryEventPayload> = {
+  const payload: NewEvmHistoryEventPayload = {
     entryType: HistoryEventEntryType.EVM_EVENT,
     txHash: get(txHash),
     sequenceIndex: get(sequenceIndex) || '0',
     timestamp: timestamp * 1000,
     eventType: get(eventType),
     eventSubtype: get(eventSubtype),
-    asset: assetVal,
+    asset: get(asset),
     balance: {
       amount: get(numericAmount).isNaN() ? Zero : get(numericAmount),
       usdValue: get(numericUsdValue).isNaN() ? Zero : get(numericUsdValue)
@@ -262,38 +264,14 @@ const save = async (): Promise<boolean> => {
     extraData: get(extraData) || null
   };
 
-  const submitPriceResult = await get(assetPriceForm)!.submitPrice(payload);
-
-  if (!submitPriceResult.success) {
-    set(errorMessages, submitPriceResult.message);
-    return false;
-  }
-
   const edit = get(editableItem);
-  const result = !edit
-    ? await addHistoryEvent(payload)
-    : await editHistoryEvent({
-        ...payload,
-        identifier: edit.identifier
-      });
 
-  if (result.success) {
-    reset();
-    return true;
-  }
-
-  if (result.message) {
-    if (typeof result.message === 'string') {
-      setMessage({
-        description: result.message
-      });
-    } else {
-      set(errorMessages, result.message);
-      await get(v$).$validate();
-    }
-  }
-
-  return false;
+  return await saveHistoryEventHandler(
+    edit ? { ...payload, identifier: edit.identifier } : payload,
+    assetPriceForm,
+    errorMessages,
+    reset
+  );
 };
 
 setSubmitFunc(save);
