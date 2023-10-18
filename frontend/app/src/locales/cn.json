@@ -1813,6 +1813,7 @@
       "locale_date": "语言环境格式的日期",
       "locale_datetime": "区域设置格式的日期和时间",
       "locale_time": "语言环境格式的时间",
+      "milliseconds": "毫秒",
       "minutes": "分钟",
       "minutes_padded": "两位数分钟（带前导零）",
       "month": "完整的月份名称",
@@ -1835,7 +1836,6 @@
   "date_time_picker": {
     "default_format": "日期应采用 {dateFormat} [HH:MM:[ss]] 格式",
     "limit_now": "不能使用未来日期",
-    "seconds_format": "日期应采用 {dateFormat} [HH:MM:ss] 格式",
     "timezone_field": {
       "non_empty": "应指定时区"
     }
@@ -3908,9 +3908,6 @@
           "validation": {
             "non_empty": "序列索引字段不能为空。"
           }
-        },
-        "transaction_event_type": {
-          "label": "交易事件类型"
         }
       },
       "headers": {

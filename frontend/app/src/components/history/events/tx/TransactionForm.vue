@@ -5,7 +5,6 @@ import {
   type AddTransactionHashPayload,
   type EvmChainAndTxHash
 } from '@/types/history/events';
-import { type Writeable } from '@/types';
 import { toMessages } from '@/utils/validation';
 
 const { t } = useI18n();
@@ -71,7 +70,7 @@ const save = async (): Promise<EvmChainAndTxHash | null> => {
 
   const txHashVal = get(txHash);
 
-  const payload: Writeable<AddTransactionHashPayload> = {
+  const payload: AddTransactionHashPayload = {
     txHash: txHashVal,
     associatedAddress: accountsVal[0].address,
     evmChain

@@ -25,6 +25,7 @@ declare global {
       createAccount: (username: string, password?: string) => Chainable;
       addExternalTrade: (trade: ExternalTrade) => Chainable;
       addEtherscanKey: (key: string) => Chainable;
+      assertNoRunningTasks: () => Chainable;
     }
   }
 }

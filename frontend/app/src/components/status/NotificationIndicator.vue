@@ -37,7 +37,13 @@ const { t } = useI18n();
         }"
         name="notification-3-line"
       />
-      <VIcon v-else> mdi-spin mdi-loading </VIcon>
+      <div
+        v-else
+        class="flex items-center"
+        data-cy="notification-indicator-progress"
+      >
+        <RuiProgress variant="indeterminate" circular size="20" thickness="2" />
+      </div>
     </MenuTooltipButton>
   </VBadge>
 </template>

@@ -8,7 +8,7 @@ import { type TablePagination } from '@/types/pagination';
 
 const props = withDefaults(
   defineProps<{
-    eventGroupHeader: HistoryEventEntry;
+    eventGroup: HistoryEventEntry;
     allEvents: HistoryEventEntry[];
     colspan: number;
     loading?: boolean;
@@ -31,7 +31,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 
-const { eventGroupHeader, allEvents } = toRefs(props);
+const { eventGroup, allEvents } = toRefs(props);
 
 const css = useCssModule();
 
@@ -68,15 +68,17 @@ const evaluating: Ref<boolean> = ref(false);
 
 const events: Ref<HistoryEventEntry[]> = asyncComputed(() => {
   const all = get(allEvents);
-  const eventHeader = get(eventGroupHeader);
+  const eventHeader = get(eventGroup);
   if (all.length === 0) {
     return [eventHeader];
   }
   const eventIdentifierHeader = eventHeader.eventIdentifier;
-  const filtered = all.filter(
-    ({ eventIdentifier, hidden }) =>
-      eventIdentifier === eventIdentifierHeader && !hidden
-  );
+  const filtered = all
+    .filter(
+      ({ eventIdentifier, hidden }) =>
+        eventIdentifier === eventIdentifierHeader && !hidden
+    )
+    .sort((a, b) => Number(a.sequenceIndex) - Number(b.sequenceIndex));
 
   if (filtered.length > 0) {
     return filtered;
@@ -93,7 +95,7 @@ const deleteEvent = (item: HistoryEventEntry) =>
   });
 
 const ignoredInAccounting = useRefMap(
-  eventGroupHeader,
+  eventGroup,
   ({ ignoredInAccounting }) => !!ignoredInAccounting
 );
 
@@ -118,7 +120,7 @@ const showDropdown = computed(() => {
 });
 
 watch(
-  [eventGroupHeader, ignoredInAccounting],
+  [eventGroup, ignoredInAccounting],
   ([current, currentIgnored], [old, oldIgnored]) => {
     if (
       current.eventIdentifier !== old.eventIdentifier ||
@@ -130,7 +132,7 @@ watch(
 );
 
 const { xs } = useDisplay();
-const blockEvent = isEthBlockEventRef(eventGroupHeader);
+const blockEvent = isEthBlockEventRef(eventGroup);
 </script>
 
 <template>
@@ -212,7 +214,6 @@ const blockEvent = isEthBlockEventRef(eventGroupHeader);
                       align="end"
                       :delete-tooltip="t('transactions.events.actions.delete')"
                       :edit-tooltip="t('transactions.events.actions.edit')"
-                      :no-edit="!isEvmEvent(item)"
                       @edit-click="editEvent(item)"
                       @delete-click="deleteEvent(item)"
                     />

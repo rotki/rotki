@@ -42,6 +42,7 @@ const symbol = assetSymbol(eventAsset);
             :fiat-currency="CURRENCY_USD"
             class="grey--text"
             :timestamp="event.timestamp"
+            milliseconds
           />
         </div>
       </div>

@@ -12,11 +12,15 @@ export const useHistoricCachePriceStore = defineStore(
     const { t } = useI18n();
 
     const createKey = (fromAsset: string, timestamp: number | string) =>
-      `${fromAsset}#${timestamp}`;
+      `${fromAsset}#${Math.round(Number(timestamp)).toString()}`;
 
     const fetchHistoricPrices = async (keys: string[]) => {
       const taskType = TaskType.FETCH_HISTORIC_PRICE;
-      const assetsTimestamp = keys.map(key => key.split('#'));
+      const assetsTimestamp = keys.map(key => {
+        const [from, timestamp] = key.split('#');
+
+        return [from, Math.round(Number(timestamp)).toString()];
+      });
       const targetAsset = get(currencySymbol);
 
       const { taskId } = await queryHistoricalRates({
@@ -91,6 +95,7 @@ export const useHistoricCachePriceStore = defineStore(
       isPending,
       retrieve,
       reset,
+      createKey,
       historicPriceInCurrentCurrency,
       resetHistoricalPricesData
     };

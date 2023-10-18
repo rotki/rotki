@@ -319,6 +319,7 @@ export const useHistoryEventMappings = createSharedComposable(() => {
     getEventCounterpartyData,
     historyEventTypeGlobalMapping,
     historyEventTypePerProtocolMapping,
+    historyEventTypeExchangeMapping,
     historyEventCounterpartiesData,
     historyEventProductsData,
     counterparties,

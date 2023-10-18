@@ -8,6 +8,7 @@ import { type Pinia, setActivePinia } from 'pinia';
 import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
 import { DateFormat } from '@/types/date-format';
 import createCustomPinia from '../../../utils/create-pinia';
+import VAutocompleteStub from '../../stubs/VAutocomplete';
 
 vi.mock('@/composables/api/settings/settings-api', () => ({
   useSettingsApi: vi.fn().mockReturnValue({
@@ -39,16 +40,7 @@ describe('DateTimePicker.vue', () => {
         VMenu: {
           template: '<span><slot name="activator"/><slot /></span>'
         },
-        VAutocomplete: {
-          template: `
-            <div>
-              <input :value="value" class="search-input" type="text" @input="$emit('input', $event.value)">
-            </div>
-          `,
-          props: {
-            value: { type: String }
-          }
-        }
+        VAutocomplete: VAutocompleteStub
       },
       ...options
     });
@@ -71,36 +63,31 @@ describe('DateTimePicker.vue', () => {
     expect(wrapper.find('.v-input.error--text').exists()).toBeTruthy();
   });
 
-  test('should force user to input seconds value, when time value is also provided', async () => {
-    wrapper = createWrapper({
-      propsData: { seconds: true }
-    });
+  test('should allow seconds value to be optional', async () => {
+    wrapper = createWrapper({});
     await wrapper.vm.$nextTick();
 
     await wrapper.find('input').setValue('12/12/2021 12:12');
-    await wrapper.vm.$nextTick();
-    expect(wrapper.find('.v-input.error--text').exists()).toBeTruthy();
-
-    await wrapper.find('input').setValue('12/12/2021 12:12:12');
     await wrapper.vm.$nextTick();
     expect(wrapper.find('.v-input.error--text').exists()).toBeFalsy();
   });
 
-  test('should allow seconds value to be optional', async () => {
+  test('should allow milliseconds value to be also inputted', async () => {
     wrapper = createWrapper({
-      propsData: { seconds: false }
+      propsData: {
+        milliseconds: true
+      }
     });
     await wrapper.vm.$nextTick();
 
-    await wrapper.find('input').setValue('12/12/2021 12:12');
+    await wrapper.find('input').setValue('12/12/2021 12:12:12.333');
     await wrapper.vm.$nextTick();
     expect(wrapper.find('.v-input.error--text').exists()).toBeFalsy();
+    expect(wrapper.emitted().input?.[0]).toEqual(['12/12/2021 12:12:12.333']);
   });
 
   test('should show trim value when the length of the input exceed the max length allowed', async () => {
-    wrapper = createWrapper({
-      propsData: { seconds: false }
-    });
+    wrapper = createWrapper({});
     await wrapper.vm.$nextTick();
 
     await wrapper.find('input').setValue('12/12/2021 12:12:12');
@@ -145,7 +132,7 @@ describe('DateTimePicker.vue', () => {
     vi.setSystemTime(date);
 
     wrapper = createWrapper({
-      propsData: { limitNow: true, seconds: true }
+      propsData: { limitNow: true }
     });
     await wrapper.vm.$nextTick();
 
@@ -168,7 +155,7 @@ describe('DateTimePicker.vue', () => {
     });
 
     wrapper = createWrapper({
-      propsData: { value: '12/12/2021 12:12:12', seconds: true }
+      propsData: { value: '12/12/2021 12:12:12' }
     });
 
     await wrapper.vm.$nextTick();
@@ -197,7 +184,7 @@ describe('DateTimePicker.vue', () => {
       );
 
       await wrapper
-        .find('.search-input')
+        .find('.input-value')
         .trigger('input', { value: 'Etc/GMT-7' });
       await wrapper.vm.$nextTick();
       expect((wrapper.find('input').element as HTMLInputElement).value).toBe(
@@ -224,7 +211,7 @@ describe('DateTimePicker.vue', () => {
       await wrapper.vm.$nextTick();
 
       await wrapper
-        .find('.search-input')
+        .find('.input-value')
         .trigger('input', { value: 'Etc/GMT-1' });
       await wrapper.vm.$nextTick();
 
@@ -254,12 +241,12 @@ describe('DateTimePicker.vue', () => {
       vi.setSystemTime(date);
 
       wrapper = createWrapper({
-        propsData: { limitNow: true, seconds: true }
+        propsData: { limitNow: true }
       });
       await wrapper.vm.$nextTick();
 
       await wrapper
-        .find('.search-input')
+        .find('.input-value')
         .trigger('input', { value: 'Etc/GMT-1' });
       await wrapper.vm.$nextTick();
 

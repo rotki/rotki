@@ -154,8 +154,8 @@ const reProcessSkippedEvents = async () => {
   <VBottomSheet v-model="dialogOpen" max-width="500">
     <template #activator="{ on }">
       <RuiButton
-        color="secondary"
-        variant="outlined"
+        variant="text"
+        class="!p-3 rounded-none w-full justify-start"
         :disabled="!skippedEvents.total"
         v-on="on"
       >

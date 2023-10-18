@@ -13,12 +13,12 @@ import { type CollectionResponse } from '@/types/collection';
 import {
   type AddTransactionHashPayload,
   type AddressesAndEvmChainPayload,
-  type EditEvmHistoryEventPayload,
+  type EditHistoryEventPayload,
   HistoryEventDetail,
   type HistoryEventEntryWithMeta,
   type HistoryEventRequestPayload,
   HistoryEventsCollectionResponse,
-  type NewEvmHistoryEventPayload,
+  type NewHistoryEventPayload,
   type OnlineHistoryEventsRequestPayload,
   type TransactionEventRequestPayload,
   type TransactionRequestPayload
@@ -100,8 +100,8 @@ export const useHistoryEventsApi = () => {
     return handleResponse(response);
   };
 
-  const addTransactionEvent = async (
-    event: NewEvmHistoryEventPayload
+  const addHistoryEvent = async (
+    event: NewHistoryEventPayload
   ): Promise<{ identifier: number }> => {
     const response = await api.instance.put<
       ActionResult<{ identifier: number }>
@@ -112,8 +112,8 @@ export const useHistoryEventsApi = () => {
     return handleResponse(response);
   };
 
-  const editTransactionEvent = async (
-    event: EditEvmHistoryEventPayload
+  const editHistoryEvent = async (
+    event: EditHistoryEventPayload
   ): Promise<boolean> => {
     const response = await api.instance.patch<ActionResult<boolean>>(
       '/history/events',
@@ -126,7 +126,7 @@ export const useHistoryEventsApi = () => {
     return handleResponse(response);
   };
 
-  const deleteTransactionEvent = async (
+  const deleteHistoryEvent = async (
     identifiers: number[],
     forceDelete = false
   ): Promise<boolean> => {
@@ -278,9 +278,9 @@ export const useHistoryEventsApi = () => {
     deleteEvmTransactions,
     decodeHistoryEvents,
     reDecodeMissingTransactionEvents,
-    addTransactionEvent,
-    editTransactionEvent,
-    deleteTransactionEvent,
+    addHistoryEvent,
+    editHistoryEvent,
+    deleteHistoryEvent,
     getEventDetails,
     addTransactionHash,
     getTransactionTypeMappings,

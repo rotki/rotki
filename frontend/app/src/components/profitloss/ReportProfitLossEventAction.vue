@@ -33,7 +33,7 @@ const openEditHistoricPriceDialog = async () => {
 };
 
 const datetime: ComputedRef<string> = computed(() =>
-  convertFromTimestamp(get(event).timestamp, true)
+  convertFromTimestamp(get(event).timestamp)
 );
 
 const { t } = useI18n();
@@ -135,7 +135,6 @@ const updatePrice = async () => {
                 disabled
                 hide-details
                 :label="t('common.datetime')"
-                seconds
               />
             </VCol>
 

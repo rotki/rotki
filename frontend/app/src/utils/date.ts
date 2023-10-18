@@ -18,28 +18,43 @@ export function getDateInputISOFormat(format: DateFormat): string {
 export function changeDateFormat(
   date: string,
   fromFormat: DateFormat,
-  toFormat: DateFormat
+  toFormat: DateFormat,
+  milliseconds: boolean = false
 ): string {
   if (!date) {
     return '';
   }
 
-  const seconds = date.charAt(date.length - 6) === ':';
-  const timestamp = convertToTimestamp(date, fromFormat);
+  const timestamp = convertToTimestamp(date, fromFormat, milliseconds);
 
-  return convertFromTimestamp(timestamp, seconds, toFormat);
+  return convertFromTimestamp(timestamp, toFormat, milliseconds);
 }
 
 export function convertToTimestamp(
   date: string,
-  dateFormat: DateFormat = DateFormat.DateMonthYearHourMinuteSecond
+  dateFormat: DateFormat = DateFormat.DateMonthYearHourMinuteSecond,
+  milliseconds: boolean = false
 ): number {
   let format: string = getDateInputISOFormat(dateFormat);
-  if (date.includes(' ')) {
+  const firstSplit = date.split(' ');
+  if (firstSplit.length === 2) {
     format += ' HH:mm';
-    if (date.charAt(date.length - 6) === ':') {
+
+    const secondSplit = firstSplit[1].split(':');
+    if (secondSplit.length === 3) {
       format += ':ss';
+
+      if (milliseconds) {
+        const thirdSplit = secondSplit[2].split('.');
+        if (thirdSplit.length === 2) {
+          format += '.SSS';
+        }
+      }
     }
+  }
+
+  if (milliseconds) {
+    return dayjs(date, format).valueOf();
   }
 
   return dayjs(date, format).unix();
@@ -47,16 +62,15 @@ export function convertToTimestamp(
 
 export function convertFromTimestamp(
   timestamp: number,
-  seconds = false,
-  dateFormat: DateFormat = DateFormat.DateMonthYearHourMinuteSecond
+  dateFormat: DateFormat = DateFormat.DateMonthYearHourMinuteSecond,
+  milliseconds: boolean = false
 ): string {
-  const time = dayjs(timestamp * 1000);
+  const time = dayjs(milliseconds ? timestamp : timestamp * 1000);
   let format: string = getDateInputISOFormat(dateFormat);
-  if (time.hour() !== 0 || time.minute() !== 0 || time.second() !== 0) {
-    format += ' HH:mm';
-    if (seconds) {
-      format += ':ss';
-    }
+  format += ' HH:mm:ss';
+
+  if (milliseconds && time.millisecond() > 0) {
+    format += '.SSS';
   }
 
   return time.format(format);
@@ -66,7 +80,8 @@ export function convertDateByTimezone(
   date: string,
   dateFormat: DateFormat = DateFormat.DateMonthYearHourMinuteSecond,
   fromTimezone: string,
-  toTimezone: string
+  toTimezone: string,
+  milliseconds: boolean = false
 ): string {
   if (!date) {
     return date;
@@ -75,11 +90,25 @@ export function convertDateByTimezone(
   fromTimezone = fromTimezone || dayjs.tz.guess();
   toTimezone = toTimezone || dayjs.tz.guess();
 
+  if (fromTimezone === toTimezone) {
+    return date;
+  }
+
   let format: string = getDateInputISOFormat(dateFormat);
-  if (date.includes(' ')) {
+  const firstSplit = date.split(' ');
+  if (firstSplit.length === 2) {
     format += ' HH:mm';
-    if (date.charAt(date.length - 6) === ':') {
+
+    const secondSplit = firstSplit[1].split(':');
+    if (secondSplit.length === 3) {
       format += ':ss';
+
+      if (milliseconds) {
+        const thirdSplit = secondSplit[2].split('.');
+        if (thirdSplit.length === 2) {
+          format += '.SSS';
+        }
+      }
     }
   }
 

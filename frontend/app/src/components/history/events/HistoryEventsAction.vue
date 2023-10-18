@@ -12,7 +12,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'add-event', event: EvmHistoryEvent): void;
+  (e: 'add-event', event: HistoryEventEntry): void;
   (e: 'toggle-ignore', event: HistoryEventEntry): void;
   (e: 'redecode', data: EvmChainAndTxHash): void;
   (e: 'reset', event: EvmHistoryEvent): void;
@@ -24,7 +24,7 @@ const evmEvent = isEvmEventRef(event);
 
 const { t } = useI18n();
 
-const addEvent = (event: EvmHistoryEvent) => emit('add-event', event);
+const addEvent = (event: HistoryEventEntry) => emit('add-event', event);
 const toggleIgnore = (event: HistoryEventEntry) => emit('toggle-ignore', event);
 const redecode = (data: EvmChainAndTxHash) => emit('redecode', data);
 const resetEvent = (event: EvmHistoryEvent) => emit('reset', event);
@@ -33,31 +33,28 @@ const resetEvent = (event: EvmHistoryEvent) => emit('reset', event);
 <template>
   <div class="flex items-center">
     <VMenu
-      v-if="evmEvent"
       transition="slide-y-transition"
       max-width="250px"
       min-width="200px"
       offset-y
     >
       <template #activator="{ on }">
-        <VBtn class="ml-1" icon v-on="on">
-          <VIcon>mdi-dots-vertical</VIcon>
-        </VBtn>
+        <RuiButton variant="text" icon size="sm" class="!p-2" v-on="on">
+          <RuiIcon name="more-2-fill" size="20" />
+        </RuiButton>
       </template>
       <VList>
-        <VListItem link @click="addEvent(evmEvent)">
-          <VListItemIcon class="mr-4">
-            <VIcon>mdi-plus</VIcon>
-          </VListItemIcon>
+        <VListItem link class="gap-4" @click="addEvent(event)">
+          <RuiIcon class="text-rui-text-secondary" name="add-line" />
           <VListItemContent>
-            {{ t('transactions.actions.add_event') }}
+            {{ t('transactions.actions.add_event_here') }}
           </VListItemContent>
         </VListItem>
-        <VListItem link @click="toggleIgnore(event)">
-          <VListItemIcon class="mr-4">
-            <VIcon v-if="event.ignoredInAccounting"> mdi-eye </VIcon>
-            <VIcon v-else> mdi-eye-off</VIcon>
-          </VListItemIcon>
+        <VListItem link class="gap-4" @click="toggleIgnore(event)">
+          <RuiIcon
+            class="text-rui-text-secondary"
+            :name="event.ignoredInAccounting ? 'eye-line' : 'eye-off-line'"
+          />
           <VListItemContent>
             {{
               event.ignoredInAccounting
@@ -66,26 +63,31 @@ const resetEvent = (event: EvmHistoryEvent) => emit('reset', event);
             }}
           </VListItemContent>
         </VListItem>
-        <VListItem
-          link
-          :disabled="loading"
-          @click="redecode(toEvmChainAndTxHash(evmEvent))"
-        >
-          <VListItemIcon class="mr-4">
-            <VIcon>mdi-database-refresh</VIcon>
-          </VListItemIcon>
-          <VListItemContent>
-            {{ t('transactions.actions.redecode_events') }}
-          </VListItemContent>
-        </VListItem>
-        <VListItem link :disabled="loading" @click="resetEvent(evmEvent)">
-          <VListItemIcon class="mr-4">
-            <VIcon>mdi-file-restore</VIcon>
-          </VListItemIcon>
-          <VListItemContent>
-            {{ t('transactions.actions.reset_customized_events') }}
-          </VListItemContent>
-        </VListItem>
+        <template v-if="evmEvent">
+          <VListItem
+            link
+            :disabled="loading"
+            class="gap-4"
+            @click="redecode(toEvmChainAndTxHash(evmEvent))"
+          >
+            <RuiIcon class="text-rui-text-secondary" name="restart-line" />
+            <VListItemContent>
+              {{ t('transactions.actions.redecode_events') }}
+            </VListItemContent>
+          </VListItem>
+          <VListItem
+            link
+            :disabled="loading"
+            class="gap-4"
+            @click="resetEvent(evmEvent)"
+          >
+            <RuiIcon class="text-rui-text-secondary" name="file-edit-line" />
+
+            <VListItemContent>
+              {{ t('transactions.actions.reset_customized_events') }}
+            </VListItemContent>
+          </VListItem>
+        </template>
       </VList>
     </VMenu>
   </div>

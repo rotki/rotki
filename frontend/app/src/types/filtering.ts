@@ -105,4 +105,4 @@ export const dateSerializer =
 
 export const dateDeserializer =
   (dateInputFormat: Ref<DateFormat>) => (timestamp: string) =>
-    convertFromTimestamp(parseInt(timestamp), true, get(dateInputFormat));
+    convertFromTimestamp(parseInt(timestamp), get(dateInputFormat));

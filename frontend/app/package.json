@@ -66,6 +66,7 @@
     "roboto-fontface": "*",
     "tasklist": "5.0.0",
     "typeface-roboto-mono": "1.1.13",
+    "vanilla-jsoneditor": "0.18.10",
     "vue": "2.7.14",
     "vue-i18n": "8.28.2",
     "vue-i18n-bridge": "9.5.0",

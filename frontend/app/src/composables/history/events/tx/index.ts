@@ -4,11 +4,9 @@ import { Section, Status } from '@/types/status';
 import {
   type AddTransactionHashPayload,
   type AddressesAndEvmChainPayload,
-  type EditEvmHistoryEventPayload,
   type EvmChainAddress,
   type EvmChainAndTxHash,
   type EvmTransaction,
-  type NewEvmHistoryEventPayload,
   OnlineHistoryEventsQueryType,
   type TransactionHashAndEvmChainPayload,
   type TransactionRequestPayload
@@ -33,11 +31,8 @@ export const useHistoryTransactions = createSharedComposable(() => {
 
   const {
     fetchEvmTransactionsTask,
-    deleteTransactionEvent: deleteTransactionEventCaller,
     decodeHistoryEvents,
     reDecodeMissingTransactionEvents,
-    addTransactionEvent: addTransactionEventCaller,
-    editTransactionEvent: editTransactionEventCaller,
     addTransactionHash: addTransactionHashCaller,
     queryOnlineHistoryEvents
   } = useHistoryEventsApi();
@@ -48,7 +43,7 @@ export const useHistoryTransactions = createSharedComposable(() => {
     useSupportedChains();
   const { accounts } = useAccountBalances();
   const { setStatus, resetStatus, fetchDisabled } = useStatusUpdater(
-    Section.TX
+    Section.HISTORY_EVENT
   );
 
   const syncTransactionTask = async (
@@ -205,7 +200,7 @@ export const useHistoryTransactions = createSharedComposable(() => {
   const reDecodeMissingTransactionEventsTask = async (
     account: EvmChainAddress
   ) => {
-    const taskType = TaskType.TX_EVENTS;
+    const taskType = TaskType.HISTORY_EVENTS;
     const payload: AddressesAndEvmChainPayload = {
       evmChain: account.evmChain,
       addresses: [account.address]
@@ -242,57 +237,6 @@ export const useHistoryTransactions = createSharedComposable(() => {
         display: true
       });
     }
-  };
-
-  const addTransactionEvent = async (
-    event: NewEvmHistoryEventPayload
-  ): Promise<ActionStatus<ValidationErrors | string>> => {
-    let success = false;
-    let message: ValidationErrors | string = '';
-    try {
-      await addTransactionEventCaller(event);
-      success = true;
-    } catch (e: any) {
-      message = e.message;
-      if (e instanceof ApiValidationError) {
-        message = e.getValidationErrors(event);
-      }
-    }
-
-    return { success, message };
-  };
-
-  const editTransactionEvent = async (
-    event: EditEvmHistoryEventPayload
-  ): Promise<ActionStatus<ValidationErrors | string>> => {
-    let success = false;
-    let message: ValidationErrors | string = '';
-    try {
-      await editTransactionEventCaller(event);
-      success = true;
-    } catch (e: any) {
-      message = e.message;
-      if (e instanceof ApiValidationError) {
-        message = e.getValidationErrors(event);
-      }
-    }
-
-    return { success, message };
-  };
-
-  const deleteTransactionEvent = async (
-    eventIds: number[],
-    forceDelete = false
-  ): Promise<ActionStatus> => {
-    let success = false;
-    let message = '';
-    try {
-      success = await deleteTransactionEventCaller(eventIds, forceDelete);
-    } catch (e: any) {
-      message = e.message;
-    }
-
-    return { success, message };
   };
 
   const fetchTransactionEvents = async (
@@ -334,7 +278,7 @@ export const useHistoryTransactions = createSharedComposable(() => {
     }
 
     try {
-      const taskType = TaskType.TX_EVENTS;
+      const taskType = TaskType.HISTORY_EVENTS;
       const { taskId } = await decodeHistoryEvents({
         data: payloads,
         ignoreCache
@@ -387,9 +331,6 @@ export const useHistoryTransactions = createSharedComposable(() => {
   return {
     refreshTransactions,
     fetchTransactionEvents,
-    addTransactionEvent,
-    editTransactionEvent,
-    deleteTransactionEvent,
     addTransactionHash
   };
 });

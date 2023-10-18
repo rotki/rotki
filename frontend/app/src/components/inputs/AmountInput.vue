@@ -72,6 +72,14 @@ watch(
   }
 );
 
+watch(
+  () => get(imask)?.value,
+  value => {
+    set(currentValue, value);
+    get(imask)?.updateValue();
+  }
+);
+
 const focus = () => {
   const inputWrapper = get(textInput) as any;
   if (inputWrapper) {

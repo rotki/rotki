@@ -17,15 +17,13 @@ import {
   type EvmHistoryEvent,
   type HistoryEvent,
   type HistoryEventEntry,
-  type HistoryEventRequestPayload,
-  type SkippedHistoryEventsSummary
+  type HistoryEventRequestPayload
 } from '@/types/history/events';
 import { RouterAccountsSchema } from '@/types/route';
 import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import { type Writeable } from '@/types';
 import HistoryEventsAction from '@/components/history/events/HistoryEventsAction.vue';
-import HistoryEventsSkippedExternalEvents from '@/components/history/events/HistoryEventsSkippedExternalEvents.vue';
 import type { Filters, Matcher } from '@/composables/filters/events';
 
 const props = withDefaults(
@@ -77,8 +75,7 @@ const {
 } = toRefs(props);
 
 const nextSequence: Ref<string | null> = ref(null);
-const editableItem: Ref<EvmHistoryEvent | null> = ref(null);
-const selectedTransaction: Ref<EvmHistoryEvent | null> = ref(null);
+const selectedGroupEventHeader: Ref<HistoryEvent | null> = ref(null);
 const eventToDelete: Ref<HistoryEventEntry | null> = ref(null);
 const transactionToIgnore: Ref<HistoryEventEntry | null> = ref(null);
 const accounts: Ref<GeneralAccount[]> = ref([]);
@@ -132,9 +129,9 @@ const { isTaskRunning } = useTaskStore();
 const { txEvmChains, getEvmChainName } = useSupportedChains();
 const txChains = useArrayMap(txEvmChains, x => x.id);
 
-const { fetchHistoryEvents } = useHistoryEvents();
+const { fetchHistoryEvents, deleteHistoryEvent } = useHistoryEvents();
 
-const { refreshTransactions, fetchTransactionEvents, deleteTransactionEvent } =
+const { refreshTransactions, fetchTransactionEvents } =
   useHistoryTransactions();
 
 const {
@@ -150,7 +147,8 @@ const {
   setFilter,
   updateFilter,
   fetchData,
-  pageParams
+  pageParams,
+  editableItem
 } = usePaginationFilters<
   HistoryEvent,
   HistoryEventRequestPayload,
@@ -304,7 +302,7 @@ const resetEventsHandler = async (data: EvmHistoryEvent) => {
     .map(event => event.identifier);
 
   if (eventIds.length > 0) {
-    await deleteTransactionEvent(eventIds, true);
+    await deleteHistoryEvent(eventIds, true);
   }
 
   await forceRedecodeEvmEvents(toEvmChainAndTxHash(data));
@@ -338,14 +336,16 @@ const toggleIgnore = async (item: HistoryEventEntry) => {
 const { setOpenDialog, setPostSubmitFunc } = useHistoryEventsForm();
 
 setPostSubmitFunc(() => {
-  const tx = get(selectedTransaction);
-  if (tx) {
-    fetchDataAndRefreshEvents(toEvmChainAndTxHash(tx));
+  const groupHeader = get(selectedGroupEventHeader);
+  if (groupHeader) {
+    fetchDataAndRefreshEvents(toEvmChainAndTxHash(groupHeader));
+  } else {
+    fetchData();
   }
 });
 
 const suggestNextSequence = (): string => {
-  const eventHeader = get(selectedTransaction);
+  const eventHeader = get(selectedGroupEventHeader);
 
   if (!eventHeader) {
     return '0';
@@ -369,15 +369,15 @@ const suggestNextSequence = (): string => {
   return ((filtered[0] ?? Number(eventHeader.sequenceIndex)) + 1).toString();
 };
 
-const addEvent = (tx: EvmHistoryEvent) => {
-  set(selectedTransaction, tx);
+const addEvent = (groupHeader?: HistoryEvent) => {
+  set(selectedGroupEventHeader, groupHeader || null);
   set(editableItem, null);
   set(nextSequence, suggestNextSequence());
   setOpenDialog(true);
 };
 
-const editEventHandler = (event: EvmHistoryEvent, tx: EvmHistoryEvent) => {
-  set(selectedTransaction, tx);
+const editEventHandler = (event: HistoryEvent, groupHeader: HistoryEvent) => {
+  set(selectedGroupEventHeader, groupHeader);
   set(editableItem, event);
   set(nextSequence, null);
   setOpenDialog(true);
@@ -409,7 +409,7 @@ const deleteEventHandler = async () => {
   const id = eventToDeleteVal?.identifier;
 
   if (eventToDeleteVal && id) {
-    const { success } = await deleteTransactionEvent([id]);
+    const { success } = await deleteHistoryEvent([id]);
     if (!success) {
       return;
     }
@@ -447,8 +447,8 @@ watch(
 
 const premium = usePremium();
 const { isLoading: isSectionLoading } = useStatusStore();
-const sectionLoading = isSectionLoading(Section.TX);
-const eventTaskLoading = isTaskRunning(TaskType.TX_EVENTS);
+const sectionLoading = isSectionLoading(Section.HISTORY_EVENT);
+const eventTaskLoading = isTaskRunning(TaskType.HISTORY_EVENTS);
 const onlineHistoryEventsLoading = isTaskRunning(TaskType.QUERY_ONLINE_EVENTS);
 
 const { isAllFinished: isQueryingTxsFinished } = toRefs(
@@ -516,13 +516,12 @@ const showDeleteConfirmation = () => {
 };
 
 onMounted(async () => {
-  startPromise(Promise.all([fetchData(), fetchAssociatedLocations()]));
   await refresh();
 });
 
 const refresh = async (userInitiated = false) => {
   await refreshTransactions(get(onlyChains), userInitiated);
-  await fetchData();
+  startPromise(Promise.all([fetchData(), fetchAssociatedLocations()]));
 };
 
 onUnmounted(() => {
@@ -571,33 +570,6 @@ const includeOnlineEvents: ComputedRef<boolean> = useEmptyOrSome(
 );
 
 const { locationData } = useLocations();
-
-const { getSkippedEventsSummary } = useSkippedHistoryEventsApi();
-
-const { state: skippedExternalEvents, execute: executeSkippedExternalEvents } =
-  useAsyncState<SkippedHistoryEventsSummary>(
-    getSkippedEventsSummary,
-    {
-      locations: {},
-      total: 0
-    },
-    {
-      immediate: true,
-      resetOnExecute: false,
-      delay: 0
-    }
-  );
-
-watch(onlineHistoryEventsLoading, async (isLoading, wasLoading) => {
-  if (!isLoading && wasLoading) {
-    await executeSkippedExternalEvents();
-  }
-});
-
-const onSkippedExternalEventsReprocessed = async () => {
-  await executeSkippedExternalEvents();
-  await fetchData();
-};
 </script>
 
 <template>
@@ -606,10 +578,6 @@ const onSkippedExternalEventsReprocessed = async () => {
     :title="[t('navigation_menu.history'), usedTitle]"
   >
     <template #buttons>
-      <HistoryEventsSkippedExternalEvents
-        :skipped-events="skippedExternalEvents"
-        @reprocessed="onSkippedExternalEventsReprocessed()"
-      />
       <RuiTooltip open-delay="400">
         <template #activator>
           <RuiButton
@@ -629,13 +597,46 @@ const onSkippedExternalEventsReprocessed = async () => {
       <RuiButton
         color="primary"
         data-cy="history-events__add"
-        @click="addTransactionHash()"
+        @click="addEvent()"
       >
         <template #prepend>
           <RuiIcon name="add-line" />
         </template>
-        {{ t('transactions.dialog.add_tx') }}
+        {{ t('transactions.actions.add_event') }}
       </RuiButton>
+      <VMenu offset-y left :close-on-content-click="false">
+        <template #activator="{ on }">
+          <RuiButton variant="text" icon size="sm" class="!p-2" v-on="on">
+            <RuiIcon name="more-2-fill" />
+          </RuiButton>
+        </template>
+        <VList>
+          <RuiButton
+            v-if="includeEvmEvents"
+            class="!p-3 rounded-none w-full justify-start whitespace-nowrap"
+            :loading="eventTaskLoading"
+            :disabled="refreshing"
+            @click="redecodeAllEvmEvents()"
+          >
+            <template #prepend>
+              <RuiIcon name="restart-line" />
+            </template>
+            {{ t('transactions.redecode_events.title') }}
+          </RuiButton>
+
+          <RuiButton
+            variant="text"
+            class="!p-3 rounded-none w-full justify-start whitespace-nowrap"
+            data-cy="history-events__add_by_tx_hash"
+            @click="addTransactionHash()"
+          >
+            <template #prepend>
+              <RuiIcon name="add-line" />
+            </template>
+            {{ t('transactions.dialog.add_tx') }}
+          </RuiButton>
+        </VList>
+      </VMenu>
     </template>
 
     <RuiCard>
@@ -673,15 +674,6 @@ const onSkippedExternalEventsReprocessed = async () => {
           </TableFilter>
         </template>
 
-        <RuiButton
-          v-if="includeEvmEvents"
-          color="primary"
-          :loading="eventTaskLoading"
-          :disabled="refreshing"
-          @click="redecodeAllEvmEvents()"
-        >
-          {{ t('transactions.redecode_events.title') }}
-        </RuiButton>
         <HistoryEventsExport :filters="pageParams" />
         <BlockchainAccountSelector
           v-if="!useExternalAccountFilter"
@@ -725,6 +717,7 @@ const onSkippedExternalEventsReprocessed = async () => {
             <template #item.ignoredInAccounting="{ item, isMobile }">
               <IgnoredInAcountingIcon
                 v-if="item.ignoredInAccounting"
+                class="ml-4"
                 :mobile="isMobile"
               />
             </template>
@@ -745,7 +738,7 @@ const onSkippedExternalEventsReprocessed = async () => {
             </template>
             <template #item.timestamp="{ item }">
               <VLazy>
-                <DateDisplay :timestamp="item.timestamp" />
+                <DateDisplay :timestamp="item.timestamp" milliseconds />
               </VLazy>
             </template>
             <template #item.action="{ item }">
@@ -763,7 +756,7 @@ const onSkippedExternalEventsReprocessed = async () => {
             <template #expanded-item="{ headers, item }">
               <HistoryEventsList
                 :all-events="allEvents"
-                :event-group-header="item"
+                :event-group="item"
                 :colspan="headers.length"
                 :loading="sectionLoading || eventTaskLoading"
                 @edit:event="editEventHandler($event, item)"
@@ -796,9 +789,8 @@ const onSkippedExternalEventsReprocessed = async () => {
       </CollectionHandler>
 
       <HistoryEventFormDialog
-        :loading="sectionLoading"
         :editable-item="editableItem"
-        :transaction="selectedTransaction"
+        :group-header="selectedGroupEventHeader"
         :next-sequence="nextSequence"
       />
 

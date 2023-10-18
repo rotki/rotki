@@ -49,12 +49,9 @@ describe('balances', () => {
     });
   });
 
-  it('change currency', () => {
-    app.changeCurrency('EUR');
-    manualBalancesPage.showsCurrency('EUR');
-  });
-
   it('data is reflected in dashboard', () => {
+    cy.assertNoRunningTasks();
+
     manualBalancesPage.getTotals().then(({ total, balances }) => {
       dashboardPage.visit();
       dashboardPage.getOverallBalance().then($overallBalance => {
@@ -165,6 +162,11 @@ describe('balances', () => {
     manualBalancesPage.addBalance(apiManualBalance);
     manualBalancesPage.visibleEntries(4);
     manualBalancesPage.isVisible(2, apiManualBalance);
+  });
+
+  it('change currency', () => {
+    app.changeCurrency('EUR');
+    manualBalancesPage.showsCurrency('EUR');
   });
 
   it('delete', () => {

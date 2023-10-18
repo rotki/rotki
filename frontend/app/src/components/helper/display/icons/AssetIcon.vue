@@ -157,13 +157,16 @@ watch([symbol, changeable, identifier], (curr, prev) => {
             >
               <div :class="css.wrapper">
                 <div v-if="!currency && pending" class="black--text">
-                  <TokenPlaceholder :size="size" />
+                  <RuiIcon
+                    name="coin-line"
+                    :size="size"
+                    class="text-rui-light-text-secondary"
+                  />
                 </div>
                 <GeneratedIcon
                   v-if="currency || error"
                   :custom-asset="isCustomAsset"
                   :asset="displayAsset"
-                  :currency="!!currency"
                   :size="size"
                 />
                 <VImg

@@ -6,23 +6,44 @@ const props = withDefaults(
     timestamp: number;
     showTimezone?: boolean;
     noTime?: boolean;
+    milliseconds?: boolean;
   }>(),
   {
     showTimezone: false,
-    noTime: false
+    noTime: false,
+    milliseconds: false
   }
 );
 
 const css = useCssModule();
 
-const { timestamp, showTimezone, noTime } = toRefs(props);
+const { timestamp, showTimezone, noTime, milliseconds } = toRefs(props);
 const { dateDisplayFormat } = storeToRefs(useGeneralSettingsStore());
 const { shouldShowAmount } = storeToRefs(useSessionSettingsStore());
 
+const dateDisplayFormatWithMilliseconds: ComputedRef<string> = computed(() => {
+  const format = get(dateDisplayFormat);
+  if (!get(milliseconds)) {
+    return format;
+  }
+
+  const millisecondFormat = '%s';
+
+  if (format.includes(millisecondFormat)) {
+    return format;
+  }
+
+  return format
+    .replace('%S', `%S.${millisecondFormat}`)
+    .replace('%-S', `%-S.${millisecondFormat}`);
+});
+
 const dateFormat = computed<string>(() => {
   const display = get(showTimezone)
-    ? get(dateDisplayFormat)
-    : get(dateDisplayFormat).replace('%z', '').replace('%Z', '');
+    ? get(dateDisplayFormatWithMilliseconds)
+    : get(dateDisplayFormatWithMilliseconds)
+        .replace('%z', '')
+        .replace('%Z', '');
 
   if (get(noTime)) {
     return display.split(' ')[0];
@@ -32,39 +53,59 @@ const dateFormat = computed<string>(() => {
 
 const { scrambleTimestamp } = useScramble();
 
-const displayTimestamp = computed<number>(() =>
-  scrambleTimestamp(get(timestamp))
-);
+const reactiveScramble = reactify(scrambleTimestamp);
+const displayTimestamp = reactiveScramble(timestamp, milliseconds);
 
-const date = computed(() => new Date(get(displayTimestamp) * 1000));
+const date = computed(() => {
+  const display = get(displayTimestamp);
+  return new Date(get(milliseconds) ? display : display * 1000);
+});
+
 const format = (date: Ref<Date>, format: Ref<string>) =>
   computed(() => displayDateFormatter.format(get(date), get(format)));
 
 const formattedDate = format(date, dateFormat);
-const formattedDateWithTimezone = format(date, dateDisplayFormat);
+const formattedDateWithTimezone = format(
+  date,
+  dateDisplayFormatWithMilliseconds
+);
 
 const showTooltip = computed(() => {
   const timezone = get(showTimezone);
-  const format = get(dateDisplayFormat);
+  const format = get(dateDisplayFormatWithMilliseconds);
   return !timezone && (format.includes('%z') || format.includes('%Z'));
 });
+
+const splittedByMillisecondsPart = computed(() =>
+  get(formattedDate).split('.')
+);
 </script>
 
 <template>
   <span>
-    <VTooltip top open-delay="400" :disabled="!showTooltip">
+    <RuiTooltip
+      :popper="{ placement: 'top' }"
+      open-delay="400"
+      :disabled="!showTooltip"
+    >
       <template #activator="{ on, attrs }">
         <span
-          class="date-display"
+          class="date-display whitespace-none"
           :class="{ [css.blur]: !shouldShowAmount }"
           v-bind="attrs"
           v-on="on"
         >
-          {{ formattedDate }}
+          <span>{{ splittedByMillisecondsPart[0] }}</span>
+          <span
+            v-if="milliseconds && splittedByMillisecondsPart[1]"
+            class="text-[0.625rem]"
+          >
+            .{{ splittedByMillisecondsPart[1] }}
+          </span>
         </span>
       </template>
       <span> {{ formattedDateWithTimezone }} </span>
-    </VTooltip>
+    </RuiTooltip>
   </span>
 </template>
 

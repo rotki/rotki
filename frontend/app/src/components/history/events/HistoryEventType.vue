@@ -15,7 +15,6 @@ const props = defineProps<{
 
 const { event } = toRefs(props);
 
-const { dark } = useTheme();
 const { getEventTypeData } = useHistoryEventMappings();
 const attrs = getEventTypeData(event);
 
@@ -26,31 +25,18 @@ const evmOrEthDepositEvent = computed(
   () => get(isEvmEventRef(event)) || get(isEthDepositEventRef(event))
 );
 
-const [DefineAvatar, ReuseAvatar] = createReusableTemplate();
 const { locationData } = useLocations();
 </script>
 
 <template>
   <div class="flex items-center text-left">
-    <DefineAvatar #default="{ type }">
-      <VAvatar
-        class="text--darken-4"
-        :color="dark ? 'white' : 'grey lighten-3'"
-        :size="36"
-      >
-        <VIcon :size="20" :color="type.color || 'grey darken-2'">
-          {{ type.icon }}
-        </VIcon>
-      </VAvatar>
-    </DefineAvatar>
-
     <HistoryEventTypeCounterparty
       v-if="evmOrEthDepositEvent"
       :event="evmOrEthDepositEvent"
     >
-      <ReuseAvatar :type="attrs" />
+      <HistoryEventTypeCombination :type="attrs" />
     </HistoryEventTypeCounterparty>
-    <ReuseAvatar v-else :type="attrs" />
+    <HistoryEventTypeCombination v-else :type="attrs" />
 
     <div class="ml-4">
       <div class="font-bold text-uppercase">{{ attrs.label }}</div>
@@ -72,12 +58,14 @@ const { locationData } = useLocations();
         />
       </div>
       <div v-if="event.customized" class="pt-1">
-        <VChip small label color="primary accent-1">
-          <VIcon x-small> mdi-file-document-edit </VIcon>
-          <div class="pl-2 text-caption font-bold">
-            {{ t('transactions.events.customized_event') }}
+        <RuiChip size="sm" color="primary">
+          <div class="flex items-center">
+            <RuiIcon name="file-edit-line" size="14" />
+            <div class="pl-2 text-caption font-bold">
+              {{ t('transactions.events.customized_event') }}
+            </div>
           </div>
-        </VChip>
+        </RuiChip>
       </div>
     </div>
   </div>

@@ -34,7 +34,7 @@ export const useSessionPurge = () => {
   };
 
   const purgeTransactions = async (): Promise<void> => {
-    const { resetStatus } = useStatusUpdater(Section.TX);
+    const { resetStatus } = useStatusUpdater(Section.HISTORY_EVENT);
     resetStatus();
   };
 
