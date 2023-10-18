@@ -756,7 +756,7 @@ const { locationData } = useLocations();
             <template #expanded-item="{ headers, item }">
               <HistoryEventsList
                 :all-events="allEvents"
-                :event-group-header="item"
+                :event-group="item"
                 :colspan="headers.length"
                 :loading="sectionLoading || eventTaskLoading"
                 @edit:event="editEventHandler($event, item)"
