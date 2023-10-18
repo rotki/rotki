@@ -9,6 +9,10 @@ import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
 import { type EthDepositEvent } from '@/types/history/events';
 import EthDepositEventForm from '@/components/history/events/forms/EthDepositEventForm.vue';
 
+vi.mock('json-editor-vue', () => ({
+  template: '<input />'
+}));
+
 describe('EthDepositEventForm.vue', () => {
   setupDayjs();
   let wrapper: Wrapper<EthDepositEventForm>;
@@ -93,6 +97,11 @@ describe('EthDepositEventForm.vue', () => {
       wrapper = createWrapper();
       await wrapper.vm.$nextTick();
 
+      await wrapper
+        .find('[data-cy=eth-deposit-event-form__advance-toggle]')
+        .trigger('click');
+      await wrapper.vm.$nextTick();
+
       expect(
         (
           wrapper.find('[data-cy=validatorIndex] input')
@@ -104,7 +113,10 @@ describe('EthDepositEventForm.vue', () => {
         (wrapper.find('[data-cy=txHash]').element as HTMLInputElement).value
       ).toBe('');
 
-      expect(wrapper.find('[data-cy=eventIdentifier]').exists()).toBeFalsy();
+      expect(
+        (wrapper.find('[data-cy=eventIdentifier]').element as HTMLInputElement)
+          .value
+      ).toBe('');
 
       expect(
         (
@@ -130,6 +142,11 @@ describe('EthDepositEventForm.vue', () => {
       });
       await wrapper.vm.$nextTick();
 
+      await wrapper
+        .find('[data-cy=eth-deposit-event-form__advance-toggle]')
+        .trigger('click');
+      await wrapper.vm.$nextTick();
+
       expect(
         (
           wrapper.find('[data-cy=validatorIndex] input')
@@ -141,7 +158,10 @@ describe('EthDepositEventForm.vue', () => {
         (wrapper.find('[data-cy=txHash]').element as HTMLInputElement).value
       ).toBe(groupHeader.txHash);
 
-      expect(wrapper.find('[data-cy=eventIdentifier]').exists()).toBeFalsy();
+      expect(
+        (wrapper.find('[data-cy=eventIdentifier]').element as HTMLInputElement)
+          .value
+      ).toBe(groupHeader.eventIdentifier);
 
       expect(
         (
@@ -170,6 +190,11 @@ describe('EthDepositEventForm.vue', () => {
           editableItem: groupHeader
         }
       });
+      await wrapper.vm.$nextTick();
+
+      await wrapper
+        .find('[data-cy=eth-deposit-event-form__advance-toggle]')
+        .trigger('click');
       await wrapper.vm.$nextTick();
 
       expect(

@@ -4018,6 +4018,7 @@
             "valid": "The address is invalid, fill it with valid address"
           }
         },
+        "advanced": "Advanced fields",
         "amount": {
           "validation": {
             "non_empty": "The amount field cannot be empty."
@@ -4072,6 +4073,9 @@
           "validation": {
             "non_empty": "The event type field cannot be empty."
           }
+        },
+        "extra_data": {
+          "label": "Extra Data"
         },
         "fee_recipient": {
           "label": "Fee Recipient Address",

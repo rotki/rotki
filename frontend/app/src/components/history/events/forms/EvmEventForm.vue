@@ -68,6 +68,7 @@ const locationLabel: Ref<string> = ref('');
 const notes: Ref<string> = ref('');
 const counterparty: Ref<string> = ref('');
 const product: Ref<string> = ref('');
+const extraData: Ref<object> = ref({});
 
 const errorMessages = ref<Record<string, string[]>>({});
 
@@ -200,6 +201,7 @@ const reset = () => {
   set(notes, '');
   set(counterparty, '');
   set(product, '');
+  set(extraData, {});
   set(errorMessages, {});
 
   get(assetPriceForm)?.reset();
@@ -220,6 +222,7 @@ const applyEditableData = async (entry: EvmHistoryEvent) => {
   set(notes, entry.notes ?? '');
   set(counterparty, entry.counterparty ?? '');
   set(product, entry.product ?? '');
+  set(extraData, entry.extraData || {});
 };
 
 const applyGroupHeaderData = async (entry: EvmHistoryEvent) => {
@@ -255,7 +258,8 @@ const save = async (): Promise<boolean> => {
     locationLabel: get(locationLabel) || null,
     notes: get(notes) || undefined,
     counterparty: get(counterparty) || null,
-    product: get(product) || null
+    product: get(product) || null,
+    extraData: get(extraData) || null
   };
 
   const submitPriceResult = await get(assetPriceForm)!.submitPrice(payload);
@@ -574,5 +578,26 @@ const addressSuggestions = computed(() =>
       :error-messages="toMessages(v$.notes)"
       @blur="v$.notes.$touch()"
     />
+
+    <div class="border-t dark:border-rui-grey-800 mb-2 mt-6" />
+
+    <VExpansionPanels flat>
+      <VExpansionPanel>
+        <VExpansionPanelHeader
+          class="p-0"
+          data-cy="evm-event-form__advance-toggle"
+        >
+          {{ t('transactions.events.form.advanced') }}
+        </VExpansionPanelHeader>
+        <VExpansionPanelContent
+          class="[&>.v-expansion-panel-content\_\_wrap]:!p-0"
+        >
+          <JsonInput
+            v-model="extraData"
+            :label="t('transactions.events.form.extra_data.label')"
+          />
+        </VExpansionPanelContent>
+      </VExpansionPanel>
+    </VExpansionPanels>
   </div>
 </template>

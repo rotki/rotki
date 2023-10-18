@@ -95,7 +95,8 @@ export const EvmHistoryEvent = CommonHistoryEvent.extend({
   address: z.string().nullable(),
   counterparty: z.string().nullable(),
   product: z.string().nullable(),
-  txHash: z.string()
+  txHash: z.string(),
+  extraData: z.unknown().nullable()
 });
 
 export type EvmHistoryEvent = z.infer<typeof EvmHistoryEvent>;
@@ -128,7 +129,8 @@ export const EthDepositEvent = CommonHistoryEvent.extend({
   counterparty: z.string().nullable(),
   product: z.string().nullable(),
   txHash: z.string(),
-  validatorIndex: z.number()
+  validatorIndex: z.number(),
+  extraData: z.unknown().nullable()
 });
 
 export type EthDepositEvent = z.infer<typeof EthDepositEvent>;
@@ -209,6 +211,7 @@ export type EditEthDepositEventPayload = {
   eventIdentifier: string | null;
   sequenceIndex: number | string;
   depositor: string;
+  extraData: object | null;
 };
 
 export type NewEthDepositEventPayload = Omit<

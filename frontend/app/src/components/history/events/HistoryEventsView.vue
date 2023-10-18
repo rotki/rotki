@@ -17,15 +17,13 @@ import {
   type EvmHistoryEvent,
   type HistoryEvent,
   type HistoryEventEntry,
-  type HistoryEventRequestPayload,
-  type SkippedHistoryEventsSummary
+  type HistoryEventRequestPayload
 } from '@/types/history/events';
 import { RouterAccountsSchema } from '@/types/route';
 import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import { type Writeable } from '@/types';
 import HistoryEventsAction from '@/components/history/events/HistoryEventsAction.vue';
-import HistoryEventsSkippedExternalEvents from '@/components/history/events/HistoryEventsSkippedExternalEvents.vue';
 import type { Filters, Matcher } from '@/composables/filters/events';
 
 const props = withDefaults(
@@ -572,33 +570,6 @@ const includeOnlineEvents: ComputedRef<boolean> = useEmptyOrSome(
 );
 
 const { locationData } = useLocations();
-
-const { getSkippedEventsSummary } = useSkippedHistoryEventsApi();
-
-const { state: skippedExternalEvents, execute: executeSkippedExternalEvents } =
-  useAsyncState<SkippedHistoryEventsSummary>(
-    getSkippedEventsSummary,
-    {
-      locations: {},
-      total: 0
-    },
-    {
-      immediate: true,
-      resetOnExecute: false,
-      delay: 0
-    }
-  );
-
-watch(onlineHistoryEventsLoading, async (isLoading, wasLoading) => {
-  if (!isLoading && wasLoading) {
-    await executeSkippedExternalEvents();
-  }
-});
-
-const onSkippedExternalEventsReprocessed = async () => {
-  await executeSkippedExternalEvents();
-  await fetchData();
-};
 </script>
 
 <template>
@@ -640,13 +611,22 @@ const onSkippedExternalEventsReprocessed = async () => {
           </RuiButton>
         </template>
         <VList>
-          <HistoryEventsSkippedExternalEvents
-            :skipped-events="skippedExternalEvents"
-            @reprocessed="onSkippedExternalEventsReprocessed()"
-          />
+          <RuiButton
+            v-if="includeEvmEvents"
+            class="!p-3 rounded-none w-full justify-start whitespace-nowrap"
+            :loading="eventTaskLoading"
+            :disabled="refreshing"
+            @click="redecodeAllEvmEvents()"
+          >
+            <template #prepend>
+              <RuiIcon name="restart-line" />
+            </template>
+            {{ t('transactions.redecode_events.title') }}
+          </RuiButton>
+
           <RuiButton
             variant="text"
-            class="!p-3 rounded-none w-full justify-start"
+            class="!p-3 rounded-none w-full justify-start whitespace-nowrap"
             data-cy="history-events__add_by_tx_hash"
             @click="addTransactionHash()"
           >
@@ -694,15 +674,6 @@ const onSkippedExternalEventsReprocessed = async () => {
           </TableFilter>
         </template>
 
-        <RuiButton
-          v-if="includeEvmEvents"
-          color="primary"
-          :loading="eventTaskLoading"
-          :disabled="refreshing"
-          @click="redecodeAllEvmEvents()"
-        >
-          {{ t('transactions.redecode_events.title') }}
-        </RuiButton>
         <HistoryEventsExport :filters="pageParams" />
         <BlockchainAccountSelector
           v-if="!useExternalAccountFilter"

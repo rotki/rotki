@@ -10,6 +10,10 @@ import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
 import { type EvmHistoryEvent } from '@/types/history/events';
 import EvmEventForm from '@/components/history/events/forms/EvmEventForm.vue';
 
+vi.mock('json-editor-vue', () => ({
+  template: '<input />'
+}));
+
 describe('EvmEventForm.vue', () => {
   setupDayjs();
   let wrapper: Wrapper<EvmEventForm>;

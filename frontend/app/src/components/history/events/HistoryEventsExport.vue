@@ -85,7 +85,12 @@ const showConfirmation = () => {
 </script>
 
 <template>
-  <RuiButton color="primary" variant="outlined" @click="showConfirmation()">
+  <RuiButton
+    color="primary"
+    variant="outlined"
+    class="!py-2"
+    @click="showConfirmation()"
+  >
     <template #prepend>
       <RuiIcon name="file-download-line" />
     </template>

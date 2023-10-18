@@ -42,6 +42,7 @@ const usdValue: Ref<string> = ref('');
 const sequenceIndex: Ref<string> = ref('');
 const validatorIndex: Ref<string> = ref('');
 const depositor: Ref<string> = ref('');
+const extraData: Ref<object> = ref({});
 
 const errorMessages = ref<Record<string, string[]>>({});
 
@@ -137,6 +138,7 @@ const reset = () => {
   set(usdValue, '0');
   set(validatorIndex, '');
   set(depositor, '');
+  set(extraData, {});
   set(errorMessages, {});
 
   get(assetPriceForm)?.reset();
@@ -151,6 +153,7 @@ const applyEditableData = async (entry: EthDepositEvent) => {
   set(usdValue, entry.balance.usdValue.toFixed());
   set(validatorIndex, entry.validatorIndex.toString());
   set(depositor, entry.locationLabel);
+  set(extraData, entry.extraData || {});
 };
 
 const applyGroupHeaderData = async (entry: EthDepositEvent) => {
@@ -180,7 +183,8 @@ const save = async (): Promise<boolean> => {
       usdValue: get(numericUsdValue).isNaN() ? Zero : get(numericUsdValue)
     },
     validatorIndex: parseInt(get(validatorIndex)),
-    depositor: get(depositor)
+    depositor: get(depositor),
+    extraData: get(extraData) || null
   };
 
   const submitPriceResult = await get(assetPriceForm)!.submitPrice(payload);
@@ -278,16 +282,6 @@ const depositorSuggestions = computed(() =>
     </div>
 
     <VTextField
-      v-if="editableItem"
-      v-model="eventIdentifier"
-      outlined
-      data-cy="eventIdentifier"
-      :label="t('transactions.events.form.event_identifier.label')"
-      :error-messages="toMessages(v$.eventIdentifier)"
-      @blur="v$.eventIdentifier.$touch()"
-    />
-
-    <VTextField
       v-model="txHash"
       outlined
       data-cy="txHash"
@@ -333,5 +327,35 @@ const depositorSuggestions = computed(() =>
         @blur="v$.sequenceIndex.$touch()"
       />
     </div>
+
+    <div class="border-t dark:border-rui-grey-800 mb-2 mt-6" />
+
+    <VExpansionPanels flat>
+      <VExpansionPanel>
+        <VExpansionPanelHeader
+          class="p-0"
+          data-cy="eth-deposit-event-form__advance-toggle"
+        >
+          {{ t('transactions.events.form.advanced') }}
+        </VExpansionPanelHeader>
+        <VExpansionPanelContent
+          class="[&>.v-expansion-panel-content\_\_wrap]:!p-0"
+        >
+          <VTextField
+            v-model="eventIdentifier"
+            outlined
+            data-cy="eventIdentifier"
+            :label="t('transactions.events.form.event_identifier.label')"
+            :error-messages="toMessages(v$.eventIdentifier)"
+            @blur="v$.eventIdentifier.$touch()"
+          />
+
+          <JsonInput
+            v-model="extraData"
+            :label="t('transactions.events.form.extra_data.label')"
+          />
+        </VExpansionPanelContent>
+      </VExpansionPanel>
+    </VExpansionPanels>
   </div>
 </template>
