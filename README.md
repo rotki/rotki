@@ -1,3 +1,5 @@
+<div id="top"></div>
+
 <p align="center">
 <img src="https://raw.githubusercontent.com/rotki/rotki/develop/frontend/app/public/assets/images/rotkehlchen_no_text.png" alt="An open source portfolio tracker, accounting and analytics tool that protects your privacy" width="250">
 </p>
@@ -132,3 +134,5 @@ Thank you for considering a donation to support our work!
 ## License
 
 rotki is committed to being open and transparent. Our chosen license ensures that the software remains open to use and that contributions are transparent and welcomed. Distributed under the **AGPLv3** License. See [`LICENSE.md`](https://github.com/rotki/rotki/blob/develop/LICENSE.md) for more information
+
+<p align="right">(<a href="#top">🔼 Back to top</a>)</p>
