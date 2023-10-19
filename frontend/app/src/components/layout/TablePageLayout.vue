@@ -30,8 +30,6 @@ withDefaults(defineProps<{ hideHeader?: boolean; title?: string[] }>(), {
       <div class="hidden sm:block sm:grow" />
       <slot name="buttons" />
     </div>
-    <div>
-      <slot />
-    </div>
+    <slot />
   </div>
 </template>
