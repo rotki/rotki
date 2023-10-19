@@ -48,54 +48,59 @@ const { t } = useI18n();
   <Card>
     <template #title>{{ t('manage_user_assets.title') }}</template>
 
-    <VAlert type="info" outlined dense>
-      {{ t('manage_user_assets.warning') }}
-    </VAlert>
+    <div class="flex flex-col gap-4">
+      <RuiAlert type="info" dense>
+        {{ t('manage_user_assets.warning') }}
+      </RuiAlert>
 
-    <VSheet outlined class="pa-4" rounded>
-      <div class="text-h6">{{ t('manage_user_assets.export.title') }}</div>
-      <div class="text-subtitle-1">
-        {{ t('manage_user_assets.export.subtitle') }}
-      </div>
-      <VAlert v-if="exportError" type="error" outlined dense>
-        {{ exportError }}
-      </VAlert>
-      <div class="flex flex-row items-center mt-4">
-        <VBtn color="primary" :loading="downloading" @click="exportZip()">
-          {{ t('manage_user_assets.export.button') }}
-        </VBtn>
-        <VIcon v-if="downloaded" class="ms-4" color="success">
-          mdi-check-circle
-        </VIcon>
-        <span v-if="downloaded" class="ms-2">
-          {{ t('manage_user_assets.export.success') }}
-        </span>
-      </div>
-    </VSheet>
+      <RuiCard>
+        <template #header>{{ t('manage_user_assets.export.title') }}</template>
+        <template #subheader>
+          {{ t('manage_user_assets.export.subtitle') }}
+        </template>
+        <RuiAlert v-if="exportError" class="my-2" type="error" dense>
+          {{ exportError }}
+        </RuiAlert>
+        <div class="flex flex-row items-center">
+          <RuiButton
+            color="primary"
+            :loading="downloading"
+            @click="exportZip()"
+          >
+            {{ t('manage_user_assets.export.button') }}
+          </RuiButton>
+          <div v-if="downloaded" class="flex items-center gap-2 ml-6">
+            <SuccessDisplay success />
+            <span>
+              {{ t('manage_user_assets.export.success') }}
+            </span>
+          </div>
+        </div>
+      </RuiCard>
 
-    <VSheet outlined class="pa-4 mt-4" rounded>
-      <div class="text-h6">{{ t('common.actions.import') }}</div>
-      <div class="text-subtitle-1">
-        {{ t('manage_user_assets.import.subtitle') }}
-      </div>
-      <FileUpload
-        v-model="zip"
-        class="mt-4"
-        source="zip"
-        file-filter=".zip"
-        :uploaded="uploaded"
-        :error-message="importError"
-        @update:uploaded="uploaded = $event"
-      />
-      <VBtn
-        color="primary"
-        class="mt-4"
-        :disabled="importDisabled"
-        :loading="uploading"
-        @click="importZip()"
-      >
-        {{ t('common.actions.import') }}
-      </VBtn>
-    </VSheet>
+      <RuiCard>
+        <template #header>{{ t('common.actions.import') }}</template>
+        <template #subheader>
+          {{ t('manage_user_assets.import.subtitle') }}
+        </template>
+        <FileUpload
+          v-model="zip"
+          source="zip"
+          file-filter=".zip"
+          :uploaded="uploaded"
+          :error-message="importError"
+          @update:uploaded="uploaded = $event"
+        />
+        <RuiButton
+          color="primary"
+          class="mt-4"
+          :disabled="importDisabled"
+          :loading="uploading"
+          @click="importZip()"
+        >
+          {{ t('common.actions.import') }}
+        </RuiButton>
+      </RuiCard>
+    </div>
   </Card>
 </template>

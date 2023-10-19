@@ -73,41 +73,43 @@ const change = async () => {
     <template #title>{{ t('change_password.title') }}</template>
 
     <VForm ref="form">
-      <VAlert
+      <RuiAlert
         v-if="premiumSync"
+        class="mb-4"
         data-cy="premium-warning"
         type="warning"
-        prominent
-        outlined
       >
         {{ t('change_password.sync_warning') }}
-      </VAlert>
-      <RevealableInput
+      </RuiAlert>
+      <RuiRevealableTextField
         v-model="currentPassword"
+        color="primary"
         class="user-security-settings__fields__current-password"
         :label="t('change_password.labels.password')"
         :error-messages="v$.currentPassword.$errors.map(e => e.$message)"
-        outlined
+        variant="outlined"
       />
-      <RevealableInput
+      <RuiRevealableTextField
         v-model="newPassword"
+        color="primary"
         class="user-security-settings__fields__new-password"
         :label="t('change_password.labels.new_password')"
         :error-messages="v$.newPassword.$errors.map(e => e.$message)"
-        outlined
+        variant="outlined"
       />
-      <RevealableInput
+      <RuiRevealableTextField
         v-model="newPasswordConfirm"
+        color="primary"
         class="user-security-settings__fields__new-password-confirm"
         :label="t('change_password.labels.confirm_password')"
-        prepend-icon="mdi-repeat"
+        prepend-icon="repeat-2-line"
         :error-messages="v$.newPasswordConfirm.$errors.map(e => e.$message)"
-        outlined
+        variant="outlined"
       />
     </VForm>
 
     <template #buttons>
-      <VBtn
+      <RuiButton
         depressed
         class="user-security-settings__buttons__change-password"
         color="primary"
@@ -116,7 +118,7 @@ const change = async () => {
         @click="change()"
       >
         {{ t('change_password.button') }}
-      </VBtn>
+      </RuiButton>
     </template>
   </Card>
 </template>

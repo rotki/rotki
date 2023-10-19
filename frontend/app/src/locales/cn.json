@@ -3496,10 +3496,6 @@
       "empty": "找不到价格 {namePluralized}！"
     }
   },
-  "privacy_notice": {
-    "message": "rotki 帐户使用您的密码加密并保存在您的本地文件系统中。",
-    "title": "rotki 是一款尊重您隐私的本地应用程序。"
-  },
   "profit_loss_events": {
     "cost_basis": {
       "hide": "隐藏成本基础",
@@ -3928,6 +3924,7 @@
         "headers": {
           "number": "被跳过的事件数量"
         },
+        "no_skipped_events": "未发现跳过的事件",
         "reprocess": {
           "action": "重新处理事件",
           "failed": {

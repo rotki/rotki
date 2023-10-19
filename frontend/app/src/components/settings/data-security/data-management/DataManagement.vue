@@ -12,6 +12,7 @@ const { t } = useI18n();
       <PurgeData />
       <PurgeImagesCache />
       <RefreshCache />
+      <HistoryEventsSkippedExternalEvents />
     </div>
   </SettingCategory>
 </template>
