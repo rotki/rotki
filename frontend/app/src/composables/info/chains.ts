@@ -8,6 +8,7 @@ import {
   type SupportedChains
 } from '@/types/api/chains';
 import { isBlockchain } from '@/types/blockchain/chains';
+import { TRADE_LOCATION_ETHEREUM } from '@/data/defaults';
 
 const isEvmChain = (info: ChainInfo): info is EvmChainInfo =>
   info.type === 'evm';
@@ -112,6 +113,13 @@ export const useSupportedChains = createSharedComposable(() => {
       return `./assets/images/protocols/${image}`;
     });
 
+  const txEvmChainsToLocation = computed(() => {
+    const txEvmChainIds = get(txEvmChains)
+      .map(item => toHumanReadable(item.id))
+      .filter(item => item !== Blockchain.ETH);
+    return [TRADE_LOCATION_ETHEREUM, ...txEvmChainIds];
+  });
+
   return {
     allEvmChains,
     supportedChains,
@@ -125,6 +133,7 @@ export const useSupportedChains = createSharedComposable(() => {
     getChainName,
     getChainImageUrl,
     isEvm,
-    supportsTransactions
+    supportsTransactions,
+    txEvmChainsToLocation
   };
 });

@@ -52,8 +52,8 @@ const { status, pending, showConfirmation } = useCacheClear<RefreshableCache>(
       </div>
     </div>
 
-    <VRow class="mb-0" align="center">
-      <VCol>
+    <div class="flex items-center gap-4">
+      <div class="flex-1">
         <VAutocomplete
           v-model="source"
           outlined
@@ -64,26 +64,25 @@ const { status, pending, showConfirmation } = useCacheClear<RefreshableCache>(
           hide-details
           :disabled="pending"
         />
-      </VCol>
+      </div>
 
-      <VCol cols="auto">
-        <VTooltip open-delay="400" top>
-          <template #activator="{ on, attrs }">
-            <VBtn
-              v-bind="attrs"
+      <div>
+        <RuiTooltip :popper="{ placement: 'top' }" open-delay="400">
+          <template #activator>
+            <RuiButton
+              variant="text"
               icon
               :disabled="!source || pending"
               :loading="pending"
-              v-on="on"
               @click="showConfirmation(source)"
             >
               <RuiIcon name="restart-line" />
-            </VBtn>
+            </RuiButton>
           </template>
           <span> {{ t('data_management.refresh_cache.tooltip') }} </span>
-        </VTooltip>
-      </VCol>
-    </VRow>
+        </RuiTooltip>
+      </div>
+    </div>
 
     <ActionStatusIndicator v-if="status" :status="status" />
   </div>

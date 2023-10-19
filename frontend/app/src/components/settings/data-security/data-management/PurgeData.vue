@@ -22,7 +22,7 @@ const { deleteExchangeData } = useExchangeApi();
 
 const purgeSource = async (source: Purgeable) => {
   if (source === ALL_TRANSACTIONS) {
-    await deleteEvmTransactions();
+    await deleteEvmTransactions(get(evmChainToClear));
   } else if (source === ALL_MODULES) {
     await deleteModuleData();
   } else if (source === ALL_CENTRALIZED_EXCHANGES) {
@@ -65,7 +65,7 @@ const text = (source: Purgeable) => {
   }
 
   if (source === ALL_TRANSACTIONS) {
-    return t('purge_selector.ethereum_transactions');
+    return t('purge_selector.evm_transactions');
   } else if (source === ALL_CENTRALIZED_EXCHANGES) {
     return t('purge_selector.all_exchanges');
   } else if (source === ALL_MODULES) {
@@ -94,11 +94,18 @@ const { status, pending, showConfirmation } = useCacheClear<Purgeable>(
   }),
   (source: string) => ({
     title: t('data_management.purge_data.confirm.title'),
-    message: t('data_management.purge_data.confirm.message', {
-      source
-    })
+    message:
+      source === text(ALL_TRANSACTIONS)
+        ? t('data_management.purge_data.evm_transaction_purge_confirm.message')
+        : t('data_management.purge_data.confirm.message', {
+            source
+          })
   })
 );
+
+const evmChainToClear: Ref<string> = ref('');
+
+const { txEvmChainsToLocation } = useSupportedChains();
 </script>
 
 <template>
@@ -112,37 +119,49 @@ const { status, pending, showConfirmation } = useCacheClear<Purgeable>(
       </div>
     </div>
 
-    <VRow class="mb-0" align="center">
-      <VCol>
-        <VAutocomplete
-          v-model="source"
-          outlined
-          :label="t('purge_selector.label')"
-          :items="purgable"
-          item-text="text"
-          item-value="id"
-          :disabled="pending"
-          hide-details
-        />
-      </VCol>
-      <VCol cols="auto">
-        <VTooltip open-delay="400" top>
-          <template #activator="{ on, attrs }">
-            <VBtn
-              v-bind="attrs"
+    <div class="flex items-center gap-4">
+      <div class="flex flex-col md:flex-row md:gap-4 flex-1">
+        <div class="flex-1">
+          <VAutocomplete
+            v-model="source"
+            outlined
+            :label="t('purge_selector.label')"
+            :items="purgable"
+            item-text="text"
+            item-value="id"
+            :disabled="pending"
+          />
+        </div>
+        <div class="flex-1">
+          <LocationSelector
+            v-if="source === ALL_TRANSACTIONS"
+            v-model="evmChainToClear"
+            required
+            outlined
+            clearable
+            :items="txEvmChainsToLocation"
+            :label="t('purge_selector.evm_chain_to_clear.label')"
+            :hint="t('purge_selector.evm_chain_to_clear.hint')"
+          />
+        </div>
+      </div>
+      <div class="-mt-8">
+        <RuiTooltip :popper="{ placement: 'top' }" open-delay="400">
+          <template #activator>
+            <RuiButton
+              variant="text"
               icon
               :disabled="!source || pending"
               :loading="pending"
-              v-on="on"
               @click="showConfirmation(source)"
             >
-              <VIcon>mdi-delete</VIcon>
-            </VBtn>
+              <RuiIcon size="16" name="delete-bin-line" />
+            </RuiButton>
           </template>
           <span> {{ t('purge_selector.tooltip') }} </span>
-        </VTooltip>
-      </VCol>
-    </VRow>
+        </RuiTooltip>
+      </div>
+    </div>
 
     <ActionStatusIndicator v-if="status" :status="status" />
   </div>

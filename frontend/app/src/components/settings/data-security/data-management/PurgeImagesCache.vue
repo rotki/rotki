@@ -79,48 +79,52 @@ const css = useCssModule();
       </div>
     </div>
 
-    <VRow class="mb-0" align="center">
-      <VCol cols="12" :md="true" class="mb-n7 mb-md-0">
-        <VAutocomplete
-          v-model="source"
-          outlined
-          :label="t('data_management.purge_images_cache.select_image_source')"
-          :items="purgable"
-          item-text="text"
-          item-value="id"
-          :disabled="pending"
-        />
-      </VCol>
-      <VCol md="6">
-        <AssetSelect
-          v-if="source === PurgeableImageCache.ASSET_ICONS"
-          v-model="assetToClear"
-          outlined
-          persistent-hint
-          :label="t('data_management.purge_images_cache.label.asset_to_clear')"
-          :hint="t('data_management.purge_images_cache.hint')"
-        />
-        <VCombobox
-          v-else
-          v-model="ensToClear"
-          :items="ensNamesList"
-          outlined
-          :class="css['ens-input']"
-          chips
-          deletable-chips
-          clearable
-          :label="t('data_management.purge_images_cache.label.ens_to_clear')"
-          :hint="t('data_management.purge_images_cache.hint')"
-          multiple
-          persistent-hint
-        />
-      </VCol>
+    <div class="flex items-center gap-4">
+      <div class="flex flex-col md:flex-row md:gap-4 flex-1">
+        <div class="flex-1">
+          <VAutocomplete
+            v-model="source"
+            outlined
+            :label="t('data_management.purge_images_cache.select_image_source')"
+            :items="purgable"
+            item-text="text"
+            item-value="id"
+            :disabled="pending"
+          />
+        </div>
+        <div class="flex-1">
+          <AssetSelect
+            v-if="source === PurgeableImageCache.ASSET_ICONS"
+            v-model="assetToClear"
+            outlined
+            persistent-hint
+            :label="
+              t('data_management.purge_images_cache.label.asset_to_clear')
+            "
+            :hint="t('data_management.purge_images_cache.hint')"
+          />
+          <VCombobox
+            v-else
+            v-model="ensToClear"
+            :items="ensNamesList"
+            outlined
+            :class="css['ens-input']"
+            chips
+            deletable-chips
+            clearable
+            :label="t('data_management.purge_images_cache.label.ens_to_clear')"
+            :hint="t('data_management.purge_images_cache.hint')"
+            multiple
+            persistent-hint
+          />
+        </div>
+      </div>
 
-      <VCol cols="auto">
-        <VTooltip open-delay="400" top>
+      <div class="-mt-8">
+        <RuiTooltip :popper="{ placement: 'top' }" open-delay="400">
           <template #activator="{ on, attrs }">
-            <VBtn
-              class="mt-n8"
+            <RuiButton
+              variant="text"
               v-bind="attrs"
               icon
               :disabled="!source || pending"
@@ -128,13 +132,13 @@ const css = useCssModule();
               v-on="on"
               @click="showConfirmation(source)"
             >
-              <VIcon>mdi-delete</VIcon>
-            </VBtn>
+              <RuiIcon size="16" name="delete-bin-line" />
+            </RuiButton>
           </template>
           <span> {{ t('data_management.purge_images_cache.tooltip') }} </span>
-        </VTooltip>
-      </VCol>
-    </VRow>
+        </RuiTooltip>
+      </div>
+    </div>
 
     <ActionStatusIndicator v-if="status" :status="status" />
   </div>

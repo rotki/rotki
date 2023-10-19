@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import { type PropType } from 'vue';
 import { type BaseMessage } from '@/types/messages';
 
-defineProps({
-  status: {
-    required: false,
-    type: Object as PropType<BaseMessage | null>,
-    default: null
+withDefaults(
+  defineProps<{
+    status: BaseMessage | null;
+  }>(),
+  {
+    status: null
   }
-});
+);
 </script>
 
 <template>
@@ -16,16 +16,15 @@ defineProps({
     v-if="status && (status.success || status.error)"
     class="action-status-indicator"
   >
-    <VAlert
+    <RuiAlert
       class="mb-0"
       dense
-      :color="status.success ? 'success' : 'error'"
+      :type="status.success ? 'success' : 'error'"
       text
       outlined
-      :icon="status.success ? 'mdi-check' : 'mdi-alert-circle-outline'"
     >
       {{ status.success || status.error }}
-    </VAlert>
+    </RuiAlert>
   </div>
 </template>
 
