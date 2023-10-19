@@ -229,5 +229,11 @@ WORLD_TO_KRAKEN = COMMON_ASSETS_MAPPINGS | {
     evm_address_to_identifier('0x6982508145454Ce325dDbE47a25d4ec3d2311933', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'PEPE',  # noqa: E501
     evm_address_to_identifier('0x0d88eD6E74bbFD96B831231638b66C05571e824F', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'AVT',  # noqa: E501
     evm_address_to_identifier('0x0000000000085d4780B73119b644AE5ecd22b376', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'TUSD',  # noqa: E501
+    evm_address_to_identifier('0x6c3ea9036406852006290770BEdFcAbA0e23A0e8', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'PYUSD',  # noqa: E501
+    evm_address_to_identifier('0x4200000000000000000000000000000000000042', ChainID.OPTIMISM, EvmTokenKind.ERC20): 'OP',  # noqa: E501
+    'TIA': 'TIA',
+    'SEI': 'SEI',
+    evm_address_to_identifier('0x6DcB98f460457fe4952e12779Ba852F82eCC62C1', ChainID.ARBITRUM_NOVA, EvmTokenKind.ERC20): 'BRICK',  # noqa: E501
+    evm_address_to_identifier('0x0057Ac2d777797d31CD3f8f13bF5e927571D6Ad0', ChainID.ARBITRUM_NOVA, EvmTokenKind.ERC20): 'MOON',  # noqa: E501
 
 }

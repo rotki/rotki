@@ -233,4 +233,7 @@ WORLD_TO_KUCOIN = COMMON_ASSETS_MAPPINGS | {
     evm_address_to_identifier('0x582d872A1B094FC48F5DE31D3B73F2D9bE47def1', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'TON',  # noqa: E501
     evm_address_to_identifier('0xfb66321D7C674995dFcC2cb67A30bC978dc862AD', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'PEPE20',  # noqa: E501
     evm_address_to_identifier('0x7f792db54B0e580Cdc755178443f0430Cf799aCa', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'VOLT',  # noqa: E501
+    evm_address_to_identifier('0x6982508145454Ce325dDbE47a25d4ec3d2311933', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'PEPE',  # noqa: E501
+    evm_address_to_identifier('0x6c3ea9036406852006290770BEdFcAbA0e23A0e8', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'PYUSD',  # noqa: E501
+
 }

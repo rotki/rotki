@@ -46,4 +46,5 @@ WORLD_TO_ICONOMI = COMMON_ASSETS_MAPPINGS | {
     evm_address_to_identifier('0x8F0528cE5eF7B51152A59745bEfDD91D97091d2F', ChainID.BINANCE, EvmTokenKind.ERC20): 'ALPACA',  # noqa: E501
     evm_address_to_identifier('0x4Fabb145d64652a948d72533023f6E7A623C7C53', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'BUSD',  # noqa: E501
     evm_address_to_identifier('0x320623b8E4fF03373931769A31Fc52A4E78B5d70', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'RSR',  # noqa: E501
+    evm_address_to_identifier('0x27054b13b1B798B345b591a4d22e6562d47eA75a', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'AST',  # noqa: E501
 }
