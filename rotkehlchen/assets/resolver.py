@@ -79,13 +79,13 @@ class AssetResolver:
         # If was not found in the cache try querying it in the globaldb
         try:
             asset = GlobalDBHandler().resolve_asset(identifier=identifier)
-        # `WrongAssetType` exception is handled by `resolve_asset_to_class`
         except UnknownAsset:
             if identifier not in CONSTANT_ASSETS:
                 raise
 
             log.debug(f'Attempt to resolve asset {identifier} using the packaged database')
             asset = GlobalDBHandler().resolve_asset_from_packaged_and_store(identifier=identifier)
+
         # Save it in the cache
         instance.assets_cache.add(identifier, asset)
         return asset
@@ -166,11 +166,14 @@ class AssetResolver:
 
         if identifier in CONSTANT_ASSETS:
             # Check if the version in the packaged globaldb is correct
-            resolved_asset = GlobalDBHandler().resolve_asset_from_packaged_and_store(identifier=identifier)  # noqa: E501
-            AssetResolver().assets_cache.add(identifier, resolved_asset)
-            if isinstance(resolved_asset, expected_type) is True:
-                # resolve_asset returns Asset, but we already narrow type with the if check above
-                return resolved_asset  # type: ignore
+            globaldb = GlobalDBHandler()
+            packaged_asset = globaldb.resolve_asset(identifier=identifier, use_packaged_db=True)
+            if isinstance(packaged_asset, expected_type):  # it's what was requested. So fix local global db  # noqa: E501
+                resolved_asset = globaldb.resolve_asset_from_packaged_and_store(identifier=identifier)  # noqa: E501
+                AssetResolver().assets_cache.add(identifier, resolved_asset)
+                if isinstance(resolved_asset, expected_type) is True:
+                    # resolve_asset returns Asset, but we already narrow type with the if check above  # noqa: E501
+                    return resolved_asset  # type: ignore
 
         raise WrongAssetType(
             identifier=identifier,
