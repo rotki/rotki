@@ -638,7 +638,6 @@ class Inquirer:
             log.error(f'Tried to ask for {asset.identifier} price but asset is missing from the DB')  # noqa: E501
             return ZERO_PRICE, CurrentPriceOracle.FIAT, False
 
-        # if asset.asset_type == AssetType.FIAT:  # type: ignore  # class is fully resolved here
         if isinstance(asset, FiatAsset):
             with suppress(RemoteError):
                 price, oracle = instance._query_fiat_pair(base=asset, quote=instance.usd)
@@ -663,10 +662,7 @@ class Inquirer:
                     token=asset,
                     underlying_asset_price=underlying_asset_price,
                 )
-                if usd_price is None:
-                    price = ZERO_PRICE
-                else:
-                    price = Price(usd_price)
+                price = ZERO_PRICE if usd_price is None else Price(usd_price)
 
                 Inquirer._cached_current_price[cache_key] = CachedPriceEntry(price=price, time=ts_now(), oracle=CurrentPriceOracle.BLOCKCHAIN, used_main_currency=False)  # noqa: E501
                 return price, oracle, False

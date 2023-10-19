@@ -15,7 +15,6 @@ if TYPE_CHECKING:
         EvmToken,
         FiatAsset,
         Nft,
-        ResolvedAsset,
     )
 
 
@@ -28,7 +27,7 @@ class AssetResolver:
     __instance: Optional['AssetResolver'] = None
     # A cache so that the DB is not hit every time
     # the cache maps identifier -> final representation of the asset
-    assets_cache: LRUCacheWithRemove['ResolvedAsset'] = LRUCacheWithRemove(maxsize=512)
+    assets_cache: LRUCacheWithRemove['AssetWithNameAndType'] = LRUCacheWithRemove(maxsize=512)
     types_cache: LRUCacheWithRemove[AssetType] = LRUCacheWithRemove(maxsize=512)
 
     def __new__(cls) -> 'AssetResolver':
@@ -54,7 +53,7 @@ class AssetResolver:
             AssetResolver.__instance.types_cache.clear()
 
     @staticmethod
-    def resolve_asset(identifier: str) -> 'ResolvedAsset':
+    def resolve_asset(identifier: str) -> 'AssetWithNameAndType':
         """
         Get all asset data for a valid asset identifier. May return any valid subclass of the
         Asset class.
