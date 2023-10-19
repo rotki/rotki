@@ -3525,8 +3525,8 @@
     "all_modules": "All Modules",
     "evm_transactions": "EVM Transactions",
     "evm_chain_to_clear": {
-      "label": "Αλυσίδα EVM για εκκαθάριση",
-      "hint": "Αδειάστε αυτό το πεδίο για να καταργήσετε τα δεδομένα συναλλαγής για όλη την αλυσίδα"
+      "label": "EVM chain για εκκαθάριση",
+      "hint": "Καθαρίστε αυτό το πεδίο για να καταργήσετε τα δεδομένα συναλλαγών για όλα τα chains"
     },
     "exchange": "Exchange: {name}",
     "label": "Select a data source",

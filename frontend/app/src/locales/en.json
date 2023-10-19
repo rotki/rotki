@@ -3767,7 +3767,7 @@
     "evm_transactions": "EVM Transactions",
     "evm_chain_to_clear": {
       "label": "EVM chain to clear",
-      "hint": "Empty this field to remove the transaction data for all chain"
+      "hint": "Empty this field to remove the transaction data for all chains"
     },
     "exchange": "Exchange: {name}",
     "label": "Select a data source",

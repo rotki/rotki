@@ -121,46 +121,42 @@ const { txEvmChainsToLocation } = useSupportedChains();
 
     <div class="flex items-center gap-4">
       <div class="flex flex-col md:flex-row md:gap-4 flex-1">
-        <div class="flex-1">
-          <VAutocomplete
-            v-model="source"
-            outlined
-            :label="t('purge_selector.label')"
-            :items="purgable"
-            item-text="text"
-            item-value="id"
-            :disabled="pending"
-          />
-        </div>
-        <div class="flex-1">
-          <LocationSelector
-            v-if="source === ALL_TRANSACTIONS"
-            v-model="evmChainToClear"
-            required
-            outlined
-            clearable
-            :items="txEvmChainsToLocation"
-            :label="t('purge_selector.evm_chain_to_clear.label')"
-            :hint="t('purge_selector.evm_chain_to_clear.hint')"
-          />
-        </div>
+        <VAutocomplete
+          v-model="source"
+          class="flex-1"
+          outlined
+          :label="t('purge_selector.label')"
+          :items="purgable"
+          item-text="text"
+          item-value="id"
+          :disabled="pending"
+        />
+        <LocationSelector
+          v-if="source === ALL_TRANSACTIONS"
+          v-model="evmChainToClear"
+          class="flex-1"
+          required
+          outlined
+          clearable
+          :items="txEvmChainsToLocation"
+          :label="t('purge_selector.evm_chain_to_clear.label')"
+          :hint="t('purge_selector.evm_chain_to_clear.hint')"
+        />
       </div>
-      <div class="-mt-8">
-        <RuiTooltip :popper="{ placement: 'top' }" open-delay="400">
-          <template #activator>
-            <RuiButton
-              variant="text"
-              icon
-              :disabled="!source || pending"
-              :loading="pending"
-              @click="showConfirmation(source)"
-            >
-              <RuiIcon size="16" name="delete-bin-line" />
-            </RuiButton>
-          </template>
-          <span> {{ t('purge_selector.tooltip') }} </span>
-        </RuiTooltip>
-      </div>
+      <RuiTooltip :popper="{ placement: 'top' }" open-delay="400" class="-mt-8">
+        <template #activator>
+          <RuiButton
+            variant="text"
+            icon
+            :disabled="!source || pending"
+            :loading="pending"
+            @click="showConfirmation(source)"
+          >
+            <RuiIcon name="delete-bin-line" />
+          </RuiButton>
+        </template>
+        <span> {{ t('purge_selector.tooltip') }} </span>
+      </RuiTooltip>
     </div>
 
     <ActionStatusIndicator v-if="status" :status="status" />
