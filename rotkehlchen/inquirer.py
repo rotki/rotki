@@ -632,53 +632,57 @@ class Inquirer:
             if cache is not None:
                 return cache.price, cache.oracle, cache.used_main_currency
 
-        with suppress(UnknownAsset, RemoteError, WrongAssetType):
-            asset = asset.resolve_to_fiat_asset()
-            price, oracle = instance._query_fiat_pair(base=asset, quote=instance.usd)
-            return price, oracle, False
+        try:
+            asset = asset.resolve()
+        except UnknownAsset:
+            log.error(f'Tried to ask for {asset.identifier} price but asset is missing from the DB')  # noqa: E501
+            return ZERO_PRICE, CurrentPriceOracle.FIAT, False
+
+        # if asset.asset_type == AssetType.FIAT:  # type: ignore  # class is fully resolved here
+        if isinstance(asset, FiatAsset):
+            with suppress(RemoteError):
+                price, oracle = instance._query_fiat_pair(base=asset, quote=instance.usd)
+                return price, oracle, False
 
         # continue, asset isn't fiat or a price can be found by one of the oracles (CC for example)
 
         # Try and check if it is an ethereum token with specified protocol or underlying tokens
         is_known_protocol = False
         underlying_tokens = None
-        with suppress(UnknownAsset, WrongAssetType):
-            token = asset.resolve_to_evm_token()
-            if token.protocol is not None:
-                is_known_protocol = token.protocol in ProtocolsWithPriceLogic
-            underlying_tokens = token.underlying_tokens
+        if isinstance(asset, EvmToken):
+            if asset.protocol is not None:
+                is_known_protocol = asset.protocol in ProtocolsWithPriceLogic
+            underlying_tokens = asset.underlying_tokens
 
-        # Check if it is a special token
-        if asset.identifier in instance.special_tokens:
-            ethereum = instance.get_evm_manager(chain_id=ChainID.ETHEREUM)
-            assert token, 'all assets in special tokens are already ethereum tokens'
-            underlying_asset_price, oracle = get_underlying_asset_price(token)
-            usd_price = handle_defi_price_query(
-                ethereum=ethereum.node_inquirer,  # type:ignore  # ethereum is an EthereumManager so the inquirer is of the expected type
-                token=token,
-                underlying_asset_price=underlying_asset_price,
-            )
-            if usd_price is None:
-                price = ZERO_PRICE
-            else:
-                price = Price(usd_price)
-
-            Inquirer._cached_current_price[cache_key] = CachedPriceEntry(price=price, time=ts_now(), oracle=CurrentPriceOracle.BLOCKCHAIN, used_main_currency=False)  # noqa: E501
-            return price, oracle, False
-
-        if is_known_protocol is True or underlying_tokens is not None:
-            assert token is not None
-            result, oracle = get_underlying_asset_price(token)
-            if result is not None:
-                usd_price = Price(result)
-                Inquirer._cached_current_price[cache_key] = CachedPriceEntry(
-                    price=usd_price,
-                    time=ts_now(),
-                    oracle=oracle,
-                    used_main_currency=False,  # function is for usd only, so it doesn't matter
+            # Check if it is a special token
+            if asset.identifier in instance.special_tokens:
+                ethereum = instance.get_evm_manager(chain_id=ChainID.ETHEREUM)
+                underlying_asset_price, oracle = get_underlying_asset_price(asset)
+                usd_price = handle_defi_price_query(
+                    ethereum=ethereum.node_inquirer,  # type:ignore  # ethereum is an EthereumManager so the inquirer is of the expected type
+                    token=asset,
+                    underlying_asset_price=underlying_asset_price,
                 )
-                return usd_price, oracle, False
-            # else known protocol on-chain query failed. Continue to external oracles
+                if usd_price is None:
+                    price = ZERO_PRICE
+                else:
+                    price = Price(usd_price)
+
+                Inquirer._cached_current_price[cache_key] = CachedPriceEntry(price=price, time=ts_now(), oracle=CurrentPriceOracle.BLOCKCHAIN, used_main_currency=False)  # noqa: E501
+                return price, oracle, False
+
+            if is_known_protocol is True or underlying_tokens is not None:
+                result, oracle = get_underlying_asset_price(asset)
+                if result is not None:
+                    usd_price = Price(result)
+                    Inquirer._cached_current_price[cache_key] = CachedPriceEntry(
+                        price=usd_price,
+                        time=ts_now(),
+                        oracle=oracle,
+                        used_main_currency=False,  # function is for usd only, so it doesn't matter
+                    )
+                    return usd_price, oracle, False
+                # else known protocol on-chain query failed. Continue to external oracles
 
         # BSQ is a special asset that doesn't have oracle information but its custom API
         if asset == A_BSQ:
