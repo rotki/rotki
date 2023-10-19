@@ -1767,9 +1767,14 @@ class GlobalDBHandler:
         Resolve asset in only one query to the database
 
         If `use_packaged_db` is True, it checks the packaged global db.
+
+        The functions called here could also potentially raise WrongAssetType
+        but due to the way they are called they should not. The expected type
+        is always based on what type the asset already has in DB when called
+        from this function.
+
         May raise:
         - UnknownAsset if the asset is not found in the database
-        - WrongAssetType
         """
         if identifier.startswith(NFT_DIRECTIVE):
             return Nft(identifier)
@@ -1817,7 +1822,8 @@ class GlobalDBHandler:
     def resolve_asset_from_packaged_and_store(self, identifier: str) -> AssetWithNameAndType:
         """
         Reads an asset from the packaged globaldb and adds it to the database if missing or edits
-        the local version of the asset.
+        the local version of the asset overwriting it with that of the packaged DB.
+
         May raise:
         - UnknownAsset
         """
