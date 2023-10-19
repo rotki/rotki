@@ -53,15 +53,15 @@ const { t } = useI18n();
         {{ t('manage_user_assets.warning') }}
       </RuiAlert>
 
-      <RuiCard outlined>
-        <div class="text-h6">{{ t('manage_user_assets.export.title') }}</div>
-        <div class="text-subtitle-1">
+      <RuiCard>
+        <template #header>{{ t('manage_user_assets.export.title') }}</template>
+        <template #subheader>
           {{ t('manage_user_assets.export.subtitle') }}
-        </div>
+        </template>
         <RuiAlert v-if="exportError" class="my-2" type="error" dense>
           {{ exportError }}
         </RuiAlert>
-        <div class="flex flex-row items-center mt-4">
+        <div class="flex flex-row items-center">
           <RuiButton
             color="primary"
             :loading="downloading"
@@ -78,14 +78,13 @@ const { t } = useI18n();
         </div>
       </RuiCard>
 
-      <RuiCard outlined>
-        <div class="text-h6">{{ t('common.actions.import') }}</div>
-        <div class="text-subtitle-1">
+      <RuiCard>
+        <template #header>{{ t('common.actions.import') }}</template>
+        <template #subheader>
           {{ t('manage_user_assets.import.subtitle') }}
-        </div>
+        </template>
         <FileUpload
           v-model="zip"
-          class="mt-4"
           source="zip"
           file-filter=".zip"
           :uploaded="uploaded"
