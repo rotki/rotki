@@ -2,13 +2,8 @@
 import { type BigNumber } from '@rotki/common';
 import { type GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain, DefiProtocol } from '@rotki/common/lib/blockchain';
-import { type ComputedRef } from 'vue';
+import { type ComputedRef, type Ref } from 'vue';
 import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
-import {
-  AaveEarnedDetails,
-  CompoundLendingDetails,
-  YearnVaultsProfitDetails
-} from '@/premium/premium';
 import { type YearnVaultProfitLoss } from '@/types/defi/yearn';
 import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
@@ -159,80 +154,108 @@ const transactionEventProtocols: ComputedRef<string[]> = computed(() => {
 
   return mappedProtocol;
 });
+
+const refreshTooltip: Ref<string> = ref(
+  t('helpers.refresh_header.tooltip', {
+    title: t('common.deposits').toLocaleLowerCase()
+  })
+);
 </script>
 
 <template>
-  <ProgressScreen v-if="loading">
-    <template #message>{{ t('lending.loading') }}</template>
-  </ProgressScreen>
-  <div v-else class="flex flex-col gap-4">
-    <RefreshHeader
-      :loading="refreshing"
-      :title="t('common.deposits')"
-      @refresh="refresh()"
-    >
-      <template #actions>
+  <TablePageLayout
+    :title="[
+      t('navigation_menu.defi'),
+      t('common.deposits'),
+      t('navigation_menu.defi_sub.deposits_sub.protocols')
+    ]"
+  >
+    <template #buttons>
+      <div class="flex items-center gap-4">
         <ActiveModules :modules="modules" />
-      </template>
-    </RefreshHeader>
 
-    <DepositTotals
-      :loading="historyLoading"
-      :effective-interest-rate="effectiveInterestRate"
-      :total-lending-deposit="totalLendingDeposit"
-      :total-usd-earned="totalUsdEarned"
-    />
-
-    <div class="grid md:grid-cols-2 gap-4">
-      <BlockchainAccountSelector
-        v-model="selectedAccounts"
-        class="pt-2"
-        hint
-        outlined
-        dense
-        :chains="chains"
-        :usable-addresses="defiAddresses"
-      />
-      <DefiProtocolSelector v-model="protocol" />
-    </div>
-
-    <StatCard v-if="!isYearn" :title="t('common.assets')">
-      <LendingAssetTable :loading="refreshing" :assets="lendingBalances" />
-    </StatCard>
-
-    <YearnAssetsTable
-      v-if="isYearn || noProtocolSelection"
-      class="mt-8"
-      :version="yearnVersion"
-      :loading="refreshing"
-      :selected-addresses="selectedAddresses"
-    />
-    <template v-if="premium">
-      <CompoundLendingDetails
-        v-if="isCompound"
-        :addresses="selectedAddresses"
-      />
-
-      <YearnVaultsProfitDetails
-        v-if="(isYearn || noProtocolSelection) && yearnProfit.length > 0"
-        :profit="yearnProfit"
-      />
-
-      <AaveEarnedDetails
-        v-if="(isAave || noProtocolSelection) && totalEarnedInAave.length > 0"
-        :profit="totalEarnedInAave"
-      />
+        <RuiTooltip :open-delay="400">
+          <template #activator>
+            <RuiButton
+              variant="outlined"
+              color="primary"
+              :loading="loading || refreshing"
+              @click="refresh()"
+            >
+              <template #prepend>
+                <RuiIcon name="refresh-line" />
+              </template>
+              {{ t('common.refresh') }}
+            </RuiButton>
+          </template>
+          {{ refreshTooltip }}
+        </RuiTooltip>
+      </div>
     </template>
 
-    <PremiumCard v-if="!premium" :title="t('lending.history')" />
-    <HistoryEventsView
-      v-else
-      use-external-account-filter
-      :section-title="t('common.events')"
-      :protocols="transactionEventProtocols"
-      :external-account-filter="selectedAccounts"
-      :only-chains="chains"
-      :entry-types="[HistoryEventEntryType.EVM_EVENT]"
-    />
-  </div>
+    <ProgressScreen v-if="loading">
+      <template #message>{{ t('lending.loading') }}</template>
+    </ProgressScreen>
+
+    <div v-else class="flex flex-col gap-4">
+      <DepositTotals
+        :loading="historyLoading"
+        :effective-interest-rate="effectiveInterestRate"
+        :total-lending-deposit="totalLendingDeposit"
+        :total-usd-earned="totalUsdEarned"
+      />
+
+      <div class="grid md:grid-cols-2 gap-4">
+        <BlockchainAccountSelector
+          v-model="selectedAccounts"
+          hint
+          outlined
+          dense
+          :chains="chains"
+          :usable-addresses="defiAddresses"
+        />
+        <DefiProtocolSelector v-model="protocol" />
+      </div>
+
+      <StatCard v-if="!isYearn" :title="t('common.assets')">
+        <LendingAssetTable :loading="refreshing" :assets="lendingBalances" />
+      </StatCard>
+
+      <YearnAssetsTable
+        v-if="isYearn || noProtocolSelection"
+        :version="yearnVersion"
+        :loading="refreshing"
+        :selected-addresses="selectedAddresses"
+      />
+
+      <template v-if="premium">
+        <CompoundLendingDetails
+          v-if="isCompound"
+          :addresses="selectedAddresses"
+        />
+
+        <YearnVaultsProfitDetails
+          v-if="(isYearn || noProtocolSelection) && yearnProfit.length > 0"
+          :profit="yearnProfit"
+        />
+
+        <AaveEarnedDetails
+          v-if="(isAave || noProtocolSelection) && totalEarnedInAave.length > 0"
+          :profit="totalEarnedInAave"
+        />
+      </template>
+
+      <PremiumCard v-if="!premium" :title="t('lending.history')" />
+
+      <HistoryEventsView
+        v-else
+        use-external-account-filter
+        :section-title="t('common.events')"
+        :protocols="transactionEventProtocols"
+        :external-account-filter="selectedAccounts"
+        :only-chains="chains"
+        :entry-types="[HistoryEventEntryType.EVM_EVENT]"
+      />
+    </div>
+  </TablePageLayout>
 </template>

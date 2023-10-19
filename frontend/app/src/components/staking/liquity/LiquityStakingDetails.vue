@@ -304,7 +304,7 @@ const slots = useSlots();
             </div>
             <div
               v-if="index < Object.keys(proxyInformation).length - 1"
-              class="my-4 border-b"
+              class="my-4 border-b dark:border-rui-grey-800"
             />
           </div>
         </div>

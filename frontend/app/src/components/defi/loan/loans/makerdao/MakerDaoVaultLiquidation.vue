@@ -46,7 +46,7 @@ const dai: string = assetSymbolToIdentifierMap.DAI;
         <AmountDisplay fiat-currency="USD" :value="vault.liquidationPrice" />
       </LoanRow>
 
-      <div class="my-4 border-b" />
+      <div class="my-4 border-b dark:border-rui-grey-800" />
 
       <LoanRow :title="t('loan_liquidation.minimum_ratio')" :medium="false">
         <PercentageDisplay :value="vault.liquidationRatio" />
@@ -88,7 +88,7 @@ const dai: string = assetSymbolToIdentifierMap.DAI;
             />
           </LoanRow>
 
-          <div class="my-4 border-b" />
+          <div class="my-4 border-b dark:border-rui-grey-800" />
 
           <LoanRow :title="t('loan_liquidation.total_value_lost')">
             <AmountDisplay

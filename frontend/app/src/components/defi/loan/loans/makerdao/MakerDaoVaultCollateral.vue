@@ -22,7 +22,7 @@ const ratio = computed(() => {
       />
     </LoanRow>
 
-    <div class="my-4 border-b" />
+    <div class="my-4 border-b dark:border-rui-grey-800" />
 
     <LoanRow :title="t('loan_collateral.current_ratio')" class="mb-2">
       <PercentageDisplay :value="ratio" />

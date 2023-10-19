@@ -21,8 +21,6 @@ const assets = computed(() => {
   );
 });
 
-const css = useCssModule();
-
 const { getDefiName, getDefiImage } = useDefiMetadata();
 
 const protocol = useRefMap(summary, i => i.protocol);
@@ -46,17 +44,16 @@ const imageUrl = computed(() => {
     :title="name"
     :protocol-icon="imageUrl"
     bordered
-    :class="css.overview"
   >
     <div v-if="summary.liabilities">
-      <span
-        class="text-subtitle-1 font-bold pb-2 flex flex-row justify-between"
-      >
+      <div class="text-subtitle-1 font-bold pb-2 flex flex-row justify-between">
         {{ t('overview.stat_card.headers.borrowing') }}
-        <VBtn :to="summary.liabilitiesUrl" icon small color="primary">
-          <VIcon small color="primary">mdi-launch</VIcon>
-        </VBtn>
-      </span>
+        <RouterLink v-if="summary.liabilitiesUrl" :to="summary.liabilitiesUrl">
+          <RuiButton icon variant="text" size="sm" class="!p-2" color="primary">
+            <RuiIcon size="16" color="primary" name="external-link-line" />
+          </RuiButton>
+        </RouterLink>
+      </div>
       <InfoRow
         :title="t('overview.stat_card.content.labels.total_collateral')"
         fiat
@@ -67,22 +64,19 @@ const imageUrl = computed(() => {
         fiat
         :value="summary.totalDebtUsd"
       />
-      <VDivider class="my-4" />
+
+      <div class="my-4 border-t dark:border-rui-grey-800" />
     </div>
     <div v-if="summary.deposits">
       <div
         class="pb-2 flex flex-row justify-between text-subtitle-1 font-medium"
       >
         {{ t('common.deposits') }}
-        <VBtn
-          v-if="summary.depositsUrl"
-          :to="summary.depositsUrl"
-          icon
-          small
-          color="primary"
-        >
-          <VIcon small color="primary">mdi-launch</VIcon>
-        </VBtn>
+        <RouterLink v-if="summary.depositsUrl" :to="summary.depositsUrl">
+          <RuiButton icon variant="text" size="sm" class="!p-2" color="primary">
+            <RuiIcon size="16" color="primary" name="external-link-line" />
+          </RuiButton>
+        </RouterLink>
       </div>
       <InfoRow
         :title="t('overview.stat_card.content.labels.total_deposited')"
@@ -91,61 +85,50 @@ const imageUrl = computed(() => {
       />
     </div>
   </StatCard>
-  <StatCard
-    v-else
-    bordered
-    :title="name"
-    :protocol-icon="imageUrl"
-    :class="css.overview"
-  >
+  <StatCard v-else bordered :title="name" :protocol-icon="imageUrl">
     <span v-if="summary.tokenInfo" class="text-subtitle-1 font-bold pb-2">
       {{ summary.tokenInfo.tokenName }}
     </span>
     <InfoRow :title="t('common.balance')" fiat :value="summary.balanceUsd" />
-    <VDivider class="my-4" />
+
+    <div class="my-4 border-t dark:border-rui-grey-800" />
+
     <div class="flex justify-end">
       <VDialog v-model="details" scrollable max-width="450px">
-        <template #activator="{ on, attrs }">
-          <VBtn small v-bind="attrs" text class="justify-end" v-on="on">
+        <template #activator="{ on }">
+          <RuiButton size="sm" variant="text" color="primary" v-on="on">
             {{ t('common.details') }}
-            <VIcon color="primary" right>mdi-launch</VIcon>
-          </VBtn>
+            <template #append>
+              <RuiIcon size="16" color="primary" name="external-link-line" />
+            </template>
+          </RuiButton>
         </template>
-        <VCard>
-          <VCardTitle class="mb-2">
-            <VImg
-              aspect-ratio="1"
-              :src="imageUrl"
-              max-width="32px"
-              max-height="32px"
-              contain
-            />
-            <span class="ml-2">
-              {{ name }}
-            </span>
-          </VCardTitle>
-          <VCardSubtitle>
-            {{ t('overview.details_dialog.subtitle') }}
-          </VCardSubtitle>
-          <VCardText :class="css.details">
-            <div v-for="(asset, index) in assets" :key="index">
-              <DefiAsset :asset="asset" />
-              <VDivider />
+        <RuiCard>
+          <template #custom-header>
+            <div class="flex items-center p-4 gap-4">
+              <VImg
+                aspect-ratio="1"
+                :src="imageUrl"
+                max-width="32px"
+                max-height="32px"
+                contain
+              />
+              <div>
+                <div class="text-h5">{{ name }}</div>
+                <div class="text-body-1 text-rui-text-secondary">
+                  {{ t('overview.details_dialog.subtitle') }}
+                </div>
+              </div>
             </div>
-          </VCardText>
-        </VCard>
+          </template>
+          <div class="h-[300px]">
+            <div v-for="(asset, index) in assets" :key="index">
+              <div class="border-t dark:border-rui-grey-800" />
+              <DefiAsset :asset="asset" />
+            </div>
+          </div>
+        </RuiCard>
       </VDialog>
     </div>
   </StatCard>
 </template>
-
-<style module lang="scss">
-.overview {
-  min-height: 250px !important;
-  min-width: 300px;
-}
-
-.details {
-  height: 300px;
-}
-</style>
