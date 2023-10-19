@@ -54,7 +54,7 @@ The [Pro Version](https://rotki.com/checkout/plan) of Rotki also supports additi
 
 :card_index_dividers: Pull, store and analyze history from activities of all supported platforms. Ability to browse and filter through all of them.
 
-:toolbox: Higly customizable. UI look, main currency, language, accounting settings, editing balances, editing history. rotki is made with customization in mind.
+:toolbox: Highly customizable. UI look, main currency, language, accounting settings, editing balances, editing history. rotki is made with customization in mind.
 
 :receipt: Perform accounting analysis for PnL over any period of time using customized accounting settings over all recorded activities and generate PnL report.
 
