@@ -159,13 +159,7 @@ from rotkehlchen.api.v1.schemas import (
     XpubAddSchema,
     XpubPatchSchema,
 )
-from rotkehlchen.assets.asset import (
-    Asset,
-    AssetWithNameAndType,
-    AssetWithOracles,
-    CustomAsset,
-    ResolvedAsset,
-)
+from rotkehlchen.assets.asset import Asset, AssetWithNameAndType, AssetWithOracles, CustomAsset
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.accounts import SingleBlockchainAccountData
@@ -2194,7 +2188,7 @@ class AssetIconFileResource(BaseMethodView):
     get_schema = SingleAssetIdentifierSchema()
 
     @use_kwargs(get_schema, location='query')
-    def get(self, asset: ResolvedAsset) -> Response:
+    def get(self, asset: AssetWithNameAndType) -> Response:
         return self.rest_api.get_asset_icon(asset=asset, match_header=get_match_header())
 
 

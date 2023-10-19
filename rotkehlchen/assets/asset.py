@@ -123,7 +123,7 @@ class Asset:
     def is_crypto(self) -> bool:
         return self.get_asset_type() not in NON_CRYPTO_ASSETS
 
-    def resolve(self) -> 'ResolvedAsset':
+    def resolve(self) -> 'AssetWithNameAndType':
         """
         Returns the final representation for the current asset identifier. For example if we do
         dai = Asset('eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F').resolve()
@@ -220,15 +220,8 @@ class Asset:
         return self.identifier
 
 
-class ResolvedAsset(Asset):
-    """
-    An asset that has been resolved, is known to exist in the DB and should use the
-    normalized identifier. Used for typing
-    """
-
-
 @dataclass(init=True, repr=False, eq=False, order=False, unsafe_hash=False, frozen=True)
-class AssetWithNameAndType(ResolvedAsset, metaclass=abc.ABCMeta):
+class AssetWithNameAndType(Asset, metaclass=abc.ABCMeta):
     asset_type: AssetType = field(init=False)
     name: str = field(init=False)
 

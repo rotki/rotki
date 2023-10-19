@@ -58,7 +58,6 @@ from rotkehlchen.assets.asset import (
     CustomAsset,
     EvmToken,
     FiatAsset,
-    ResolvedAsset,
 )
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.types import ASSET_TYPES_EXCLUDED_FOR_USERS, AssetType
@@ -2786,7 +2785,7 @@ class RestAPI:
 
     def get_asset_icon(
             self,
-            asset: ResolvedAsset,
+            asset: AssetWithNameAndType,
             match_header: Optional[str],
     ) -> Response:
         icon_path = self.rotkehlchen.icon_manager.asset_icon_path(asset)
@@ -4176,7 +4175,7 @@ class RestAPI:
 
         return maybe_create_image_response(image_path=avatar_path)
 
-    def clear_icons_cache(self, icons: Optional[list[ResolvedAsset]]) -> Response:
+    def clear_icons_cache(self, icons: Optional[list[AssetWithNameAndType]]) -> Response:
         """Clears cache entries for the specified icons.
 
         If no icons are provided, the icons cache is cleared entirely.
