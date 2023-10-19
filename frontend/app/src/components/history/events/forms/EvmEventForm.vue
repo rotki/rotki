@@ -8,10 +8,7 @@ import {
   type EvmHistoryEvent,
   type NewEvmHistoryEventPayload
 } from '@/types/history/events';
-import {
-  TRADE_LOCATION_ETHEREUM,
-  TRADE_LOCATION_EXTERNAL
-} from '@/data/defaults';
+import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
 import { type ActionDataEntry } from '@/types/action';
 import { toMessages } from '@/utils/validation';
 import HistoryEventAssetPriceForm from '@/components/history/events/forms/HistoryEventAssetPriceForm.vue';
@@ -400,12 +397,7 @@ watch(historyEventLimitedProducts, products => {
   }
 });
 
-const { txEvmChains } = useSupportedChains();
-
-const locationsFromTxEvmChains = computed(() => {
-  const txEvmChainIds = get(txEvmChains).map(item => toHumanReadable(item.id));
-  return [TRADE_LOCATION_ETHEREUM, ...txEvmChainIds];
-});
+const { txEvmChainsToLocation } = useSupportedChains();
 
 const { accounts } = useAccountBalances();
 
@@ -435,7 +427,7 @@ const addressSuggestions = computed(() =>
         v-model="location"
         required
         outlined
-        :items="locationsFromTxEvmChains"
+        :items="txEvmChainsToLocation"
         :disabled="!!(editableItem || groupHeader)"
         data-cy="location"
         :label="t('common.location')"

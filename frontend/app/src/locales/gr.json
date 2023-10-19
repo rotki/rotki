@@ -1676,6 +1676,9 @@
         "message": "Are you sure you want to purge the cached data for {source}?",
         "title": "Confirm cached data purge"
       },
+      "evm_transaction_purge_confirm": {
+        "message": "Είστε βέβαιοι ότι θέλετε να εκκαθαρίσετε τα αποθηκευμένα δεδομένα από τις συναλλαγές EVM; Αυτή η ενέργεια θα καταργήσει τις συναλλαγές και τις αποδείξεις και θα χρειαστεί πολύς χρόνος για να ζητήσετε τα πάντα."
+      },
       "error": "Purging the cached data for {source} failed: {message}",
       "subtitle": "Allows you to purge data cached by rotki",
       "success": "Data was successfully deleted",
@@ -3520,7 +3523,11 @@
     "all_decentralized_exchanges": "All Decentralized Exchanges",
     "all_exchanges": "All Centralized Exchanges",
     "all_modules": "All Modules",
-    "ethereum_transactions": "Evm Transactions",
+    "evm_transactions": "EVM Transactions",
+    "evm_chain_to_clear": {
+      "label": "EVM chain για εκκαθάριση",
+      "hint": "Καθαρίστε αυτό το πεδίο για να καταργήσετε τα δεδομένα συναλλαγών για όλα τα chains"
+    },
     "exchange": "Exchange: {name}",
     "label": "Select a data source",
     "module": "Module: {name}",

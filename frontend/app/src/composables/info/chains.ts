@@ -112,6 +112,10 @@ export const useSupportedChains = createSharedComposable(() => {
       return `./assets/images/protocols/${image}`;
     });
 
+  const txEvmChainsToLocation = computed(() =>
+    get(txEvmChains).map(item => toHumanReadable(item.evmChainName))
+  );
+
   return {
     allEvmChains,
     supportedChains,
@@ -125,6 +129,7 @@ export const useSupportedChains = createSharedComposable(() => {
     getChainName,
     getChainImageUrl,
     isEvm,
-    supportsTransactions
+    supportsTransactions,
+    txEvmChainsToLocation
   };
 });

@@ -1708,6 +1708,9 @@
         "message": "您确定要清除 {source} 的缓存数据吗？",
         "title": "确认缓存数据清除"
       },
+      "evm_transaction_purge_confirm": {
+        "message": "您确定要从 EVM 交易中清除缓存数据吗？此操作将删除交易和收据，并且重新查询所有内容将需要很长时间。"
+      },
       "error": "清除 {source} 的缓存数据失败：{message}",
       "subtitle": "允许您清除 rotki 缓存的数据",
       "success": "数据删除成功",
@@ -3612,7 +3615,11 @@
     "all_decentralized_exchanges": "所有去中心化交易所",
     "all_exchanges": "所有中心化交易所",
     "all_modules": "所有模块",
-    "ethereum_transactions": "以太坊交易",
+    "evm_transactions": "EVM交易",
+    "evm_chain_to_clear": {
+      "label": "EVM链清零",
+      "hint": "清空此字段将删除所有链的交易数据"
+    },
     "exchange": "交换：{name}",
     "label": "选择数据源",
     "module": "模块：{name}",

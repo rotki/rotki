@@ -52,38 +52,34 @@ const { status, pending, showConfirmation } = useCacheClear<RefreshableCache>(
       </div>
     </div>
 
-    <VRow class="mb-0" align="center">
-      <VCol>
-        <VAutocomplete
-          v-model="source"
-          outlined
-          :label="t('data_management.refresh_cache.select_cache')"
-          :items="refreshable"
-          item-text="text"
-          item-value="id"
-          hide-details
-          :disabled="pending"
-        />
-      </VCol>
+    <div class="flex items-center gap-4">
+      <VAutocomplete
+        v-model="source"
+        class="flex-1"
+        outlined
+        :label="t('data_management.refresh_cache.select_cache')"
+        :items="refreshable"
+        item-text="text"
+        item-value="id"
+        hide-details
+        :disabled="pending"
+      />
 
-      <VCol cols="auto">
-        <VTooltip open-delay="400" top>
-          <template #activator="{ on, attrs }">
-            <VBtn
-              v-bind="attrs"
-              icon
-              :disabled="!source || pending"
-              :loading="pending"
-              v-on="on"
-              @click="showConfirmation(source)"
-            >
-              <RuiIcon name="restart-line" />
-            </VBtn>
-          </template>
-          <span> {{ t('data_management.refresh_cache.tooltip') }} </span>
-        </VTooltip>
-      </VCol>
-    </VRow>
+      <RuiTooltip :popper="{ placement: 'top' }" open-delay="400">
+        <template #activator>
+          <RuiButton
+            variant="text"
+            icon
+            :disabled="!source || pending"
+            :loading="pending"
+            @click="showConfirmation(source)"
+          >
+            <RuiIcon name="restart-line" />
+          </RuiButton>
+        </template>
+        <span> {{ t('data_management.refresh_cache.tooltip') }} </span>
+      </RuiTooltip>
+    </div>
 
     <ActionStatusIndicator v-if="status" :status="status" />
   </div>

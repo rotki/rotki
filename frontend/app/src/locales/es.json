@@ -1670,6 +1670,9 @@
         "message": "Are you sure you want to purge the cached data for {source}?",
         "title": "Confirm cached data purge"
       },
+      "evm_transaction_purge_confirm": {
+        "message": "¿Está seguro de que desea eliminar los datos almacenados en caché de las transacciones EVM? Esta acción eliminará las transacciones y los recibos, y llevará mucho tiempo volver a consultar todo."
+      },
       "error": "Purging the cached data for {source} failed: {message}",
       "subtitle": "Allows you to purge data cached by rotki",
       "success": "Data was successfully deleted",
@@ -3494,7 +3497,11 @@
     "all_decentralized_exchanges": "All Decentralized Exchanges",
     "all_exchanges": "All Centralized Exchanges",
     "all_modules": "All Modules",
-    "ethereum_transactions": "Evm Transactions",
+    "evm_transactions": "EVM Transactions",
+    "evm_chain_to_clear": {
+      "label": "Cadena EVM para borrar",
+      "hint": "Vacíe este campo para eliminar los datos de la transacción para toda la cadena."
+    },
     "exchange": "Exchange: {name}",
     "label": "Select a data source",
     "module": "Module: {name}",
