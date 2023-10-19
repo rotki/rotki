@@ -380,6 +380,7 @@ UNSUPPORTED_POLONIEX_ASSETS = {
     'BAD',
     'BIG',
     'L',
+    'XRP8',
 }
 
 UNSUPPORTED_BITTREX_ASSETS = {
@@ -805,6 +806,23 @@ UNSUPPORTED_KUCOIN_ASSETS = {
     'CANDY',
     'EGO',
     'PEPE2',
+    'PERPUP',
+    'PERPDOWN',
+    'UNFIUP',
+    'UNFIDOWN',
+    'TRBUP',
+    'TRBDOWN',
+    'FRONTUP',
+    'FRONTDOWN',
+    'GLMRUP',
+    'GLMRDOWN',
+    'ZELIX',  # no cc/coingecko
+    'VRAUP',
+    'VRADOWN',
+    'STORJUP',
+    'STORJDOWN',
+    'LOOMUP',
+    'LOOMDOWN',
 }
 
 # https://api.iconomi.com/v1/assets marks delisted assets

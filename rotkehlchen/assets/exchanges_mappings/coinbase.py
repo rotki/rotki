@@ -75,4 +75,7 @@ WORLD_TO_COINBASE = COMMON_ASSETS_MAPPINGS | {
     evm_address_to_identifier('0x5fab9761d60419C9eeEbe3915A8FA1ed7e8d2E1B', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'DIMO',  # noqa: E501
     evm_address_to_identifier('0x8c1BEd5b9a0928467c9B1341Da1D7BD5e10b6549', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'LSETH',  # noqa: E501
     evm_address_to_identifier('0x65Ef703f5594D2573eb71Aaf55BC0CB548492df4', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'MULTI',  # noqa: E501
+    evm_address_to_identifier('0x6c3ea9036406852006290770BEdFcAbA0e23A0e8', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'PYUSD',  # noqa: E501
+    evm_address_to_identifier('0x8729438EB15e2C8B576fCc6AeCdA6A148776C0F5', ChainID.AVALANCHE, EvmTokenKind.ERC20): 'QI',  # noqa: E501
+    evm_address_to_identifier('0x0d88eD6E74bbFD96B831231638b66C05571e824F', ChainID.ETHEREUM, EvmTokenKind.ERC20): 'AVT',  # noqa: E501
 }

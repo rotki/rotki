@@ -243,6 +243,12 @@ class ChainID(Enum):
     ARBITRUM_ONE = 42161
     AVALANCHE = 43114
     CELO = 42220
+    ARBITRUM_NOVA = 42170
+    CRONOS = 25
+    BOBA = 288
+    EVMOS = 9001
+    POLYGON_ZKEVM = 1101
+    ZKSYNC_ERA = 324
 
     @classmethod
     def deserialize_from_db(cls, value: int) -> 'ChainID':
@@ -273,12 +279,16 @@ class ChainID(Enum):
         name = self.to_name()
         if self == ChainID.POLYGON_POS:
             label = 'Polygon POS'
+        elif self == ChainID.ZKSYNC_ERA:
+            label = 'zkSync Era'
+        elif self == ChainID.POLYGON_ZKEVM:
+            label = 'Polygon zkEVM'
         elif self == ChainID.BINANCE:
             label = 'Binance Smart Chain'
         elif self == ChainID.ARBITRUM_ONE:
             label = 'Arbitrum One'
-        elif self == ChainID.BASE:
-            label = 'Base'
+        elif self == ChainID.ARBITRUM_NOVA:
+            label = 'Arbitrum Nova'
         else:
             label = name.capitalize()
 

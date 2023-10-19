@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="512"
+   height="512"
+   viewBox="0 0 512 512"
+   version="1.1"
+   id="svg1"
+   inkscape:version="1.3.1 (91b66b0, 2023-11-16)"
+   sodipodi:docname="arbitrum_nova.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="px"
+     inkscape:zoom="0.59731188"
+     inkscape:cx="79.522945"
+     inkscape:cy="15.067505"
+     inkscape:window-width="1392"
+     inkscape:window-height="1027"
+     inkscape:window-x="435"
+     inkscape:window-y="25"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="layer1"
+     showguides="true">
+    <sodipodi:guide
+       position="53.573353,262.54908"
+       orientation="0,-1"
+       id="guide1"
+       inkscape:locked="false" />
+    <sodipodi:guide
+       position="249.45092,836.78845"
+       orientation="1,0"
+       id="guide2"
+       inkscape:locked="false" />
+  </sodipodi:namedview>
+  <defs
+     id="defs1">
+    <clipPath
+       id="clip0_1818_40">
+      <rect
+         width="110"
+         height="75"
+         fill="#ffffff"
+         id="rect13"
+         x="0"
+         y="0" />
+    </clipPath>
+  </defs>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <g
+       clip-path="url(#clip0_1818_40)"
+       id="g13"
+       transform="matrix(4.3792538,0,0,4.3792538,15.496291,96.556851)">
+      <path
+         d="M 38.1609,0 H 28.0865 C 27.3908,0 26.7698,0.436252 26.5311,1.09146 L 0.0508083,73.8854 C -0.146092,74.427 0.253758,75 0.828508,75 H 10.9029 c 0.6957,0 1.3167,-0.4363 1.5554,-1.0909 L 38.9386,1.11462 C 39.1355,0.573028 38.7356,0 38.1609,0 Z m 12.2534,30.5012 c -0.2645,-0.7274 -1.2903,-0.7274 -1.5554,0 l -5.2228,14.3594 c -0.1336,0.3673 -0.1336,0.7705 0,1.1378 l 10.153,27.9101 c 0.2382,0.6552 0.8597,1.091 1.5554,1.091 h 10.0744 c 0.5747,0 0.9746,-0.5731 0.7777,-1.1147 z m 25.6823,14.0549 c 0.2645,0.7275 1.2903,0.7275 1.5548,0 L 93.454,1.11462 C 93.6509,0.573028 93.2511,0 92.6763,0 H 82.602 C 81.9062,0 81.2853,0.4357 81.0466,1.09146 L 70.8732,29.0584 c -0.1336,0.3674 -0.1336,0.77 0,1.1373 z M 56.2328,1.08374 C 55.9968,0.432943 55.3797,0 54.6895,0 H 44.581 C 43.8858,0 43.2649,0.4357 43.0262,1.09091 L 16.5464,73.8854 C 16.3495,74.427 16.7494,75 17.3241,75 H 27.399 c 0.6958,0 1.3167,-0.4357 1.5554,-1.0909 L 49.2285,18.1737 c 0.1331,-0.3657 0.6485,-0.3657 0.781,0 L 70.2842,73.9091 C 70.5223,74.5643 71.1438,75 71.8396,75 h 10.0749 c 0.5747,0 0.9746,-0.573 0.7777,-1.1141 z M 109.172,0 H 99.0965 C 98.4013,0 97.7798,0.4357 97.5416,1.09091 L 79.1205,51.7314 c -0.1337,0.3673 -0.1337,0.7699 0,1.1372 l 5.2239,14.3605 c 0.2645,0.7274 1.2903,0.7274 1.5548,0 L 104.134,17.0999 109.95,1.11407 C 110.147,0.573029 109.747,0 109.172,0 Z"
+         fill="#ef8220"
+         id="path13" />
+    </g>
+  </g>
+</svg>
