@@ -3378,10 +3378,6 @@
     "refresh_tooltip": "Refresh prices",
     "was_worth": "was worth"
   },
-  "privacy_notice": {
-    "message": "rotki accounts are encrypted using your password and saved in your local filesystem.",
-    "title": "rotki is a local application that respects your privacy."
-  },
   "profit_loss_events": {
     "cost_basis": {
       "hide": "Hide Cost Basis",
@@ -3803,6 +3799,7 @@
         "headers": {
           "number": "Número de eventos omitidos"
         },
+        "no_skipped_events": "No se encontraron eventos omitidos",
         "reprocess": {
           "action": "Reprocesar eventos",
           "failed": {

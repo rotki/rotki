@@ -3,17 +3,25 @@ import { type DataTableColumn } from '@rotki/ui-library-compat';
 import { type Message } from '@rotki/common/lib/messages';
 import { type SkippedHistoryEventsSummary } from '@/types/history/events';
 
-const props = defineProps<{
-  skippedEvents: SkippedHistoryEventsSummary;
-}>();
+const { getSkippedEventsSummary } = useSkippedHistoryEventsApi();
 
-const emit = defineEmits<{
-  (e: 'reprocessed'): void;
-}>();
+const { state: skippedEvents, execute } =
+  useAsyncState<SkippedHistoryEventsSummary>(
+    getSkippedEventsSummary,
+    {
+      locations: {},
+      total: 0
+    },
+    {
+      immediate: true,
+      resetOnExecute: false,
+      delay: 0
+    }
+  );
 
-const { skippedEvents } = toRefs(props);
-
-const dialogOpen: Ref<boolean> = ref(false);
+onMounted(() => {
+  execute();
+});
 
 const { t } = useI18n();
 
@@ -133,7 +141,6 @@ const reProcessSkippedEvents = async () => {
             : t('transactions.events.skipped.reprocess.success.all'),
         success: true
       };
-      emit('reprocessed');
     }
   } catch (e: any) {
     logger.error(e);
@@ -151,78 +158,55 @@ const reProcessSkippedEvents = async () => {
 </script>
 
 <template>
-  <VBottomSheet v-model="dialogOpen" max-width="500">
-    <template #activator="{ on }">
-      <RuiButton
-        variant="text"
-        class="!p-3 rounded-none w-full justify-start"
-        :disabled="!skippedEvents.total"
-        v-on="on"
-      >
-        <template #prepend>
-          <RuiIcon name="skip-right-line" />
-        </template>
+  <div>
+    <div class="mb-6 gap-4">
+      <div class="text-h6">
         {{ t('transactions.events.skipped.title') }}
-        <template #append>
-          <RuiChip
-            size="sm"
-            color="secondary"
-            :label="skippedEvents.total"
-            class="py-0 px-0"
-            :disabled="!skippedEvents.total"
-          />
-        </template>
-      </RuiButton>
-    </template>
-
-    <Card contained>
-      <template #title>
-        {{ t('transactions.events.skipped.title') }}
-      </template>
-
-      <template #details>
-        <RuiButton icon variant="text" size="sm" @click="dialogOpen = false">
-          <RuiIcon name="close-line" />
-        </RuiButton>
-      </template>
-
-      <div class="pt-2">
-        <RuiDataTable :cols="headers" :rows="locationsData" dense outlined>
-          <template #item.location="{ row }">
-            <LocationDisplay :identifier="row.location" />
-          </template>
-          <template #item.number="{ row }">
-            {{ row.number }}
-          </template>
-          <template #tfoot>
-            <tr>
-              <th>{{ t('common.total') }}</th>
-              <td class="text-end pr-12 py-2">{{ skippedEvents.total }}</td>
-            </tr>
-          </template>
-        </RuiDataTable>
       </div>
+    </div>
 
-      <template #buttons>
-        <div class="w-full flex justify-end gap-2">
-          <RuiButton variant="outlined" color="primary" @click="exportCSV()">
-            <template #prepend>
-              <RuiIcon name="file-download-line" />
-            </template>
-            {{ t('common.actions.export_csv') }}
-          </RuiButton>
-          <RuiButton
-            color="primary"
-            :loading="loading"
-            @click="reProcessSkippedEvents()"
-          >
-            <template #prepend>
-              <RuiIcon name="refresh-line" />
-            </template>
-            {{ t('transactions.events.skipped.reprocess.action') }}
-          </RuiButton>
-        </div>
-      </template>
-    </Card>
-  </VBottomSheet>
+    <div class="max-w-[40rem]">
+      <RuiDataTable
+        :cols="headers"
+        :rows="locationsData"
+        dense
+        outlined
+        :empty="{
+          description: t('transactions.events.skipped.no_skipped_events')
+        }"
+      >
+        <template #item.location="{ row }">
+          <LocationDisplay :identifier="row.location" />
+        </template>
+        <template #item.number="{ row }">
+          {{ row.number }}
+        </template>
+        <template #tfoot>
+          <tr>
+            <th>{{ t('common.total') }}</th>
+            <td class="text-end pr-12 py-2">{{ skippedEvents.total }}</td>
+          </tr>
+        </template>
+      </RuiDataTable>
+
+      <div v-if="skippedEvents.total > 0" class="flex gap-3 mt-6">
+        <RuiButton variant="outlined" color="primary" @click="exportCSV()">
+          <template #prepend>
+            <RuiIcon name="file-download-line" />
+          </template>
+          {{ t('common.actions.export_csv') }}
+        </RuiButton>
+        <RuiButton
+          color="primary"
+          :loading="loading"
+          @click="reProcessSkippedEvents()"
+        >
+          <template #prepend>
+            <RuiIcon name="refresh-line" />
+          </template>
+          {{ t('transactions.events.skipped.reprocess.action') }}
+        </RuiButton>
+      </div>
+    </div>
+  </div>
 </template>

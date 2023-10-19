@@ -40,7 +40,7 @@ const css = useCssModule();
     <RuiButton
       v-for="(timeframe, i) in visibleTimeframes"
       :key="i"
-      :color="activeClass(timeframe) ? 'primary' : 'secondary'"
+      :color="activeClass(timeframe) ? 'primary' : 'grey'"
       class="px-4"
       :disabled="(!premium && !worksWithoutPremium(timeframe)) || disabled"
       @click="input(timeframe)"

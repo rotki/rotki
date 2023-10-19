@@ -3640,10 +3640,6 @@
       "empty": "No price {namePluralized} found!"
     }
   },
-  "privacy_notice": {
-    "message": "rotki accounts are encrypted using your password and saved in your local filesystem.",
-    "title": "rotki is a local application that respects your privacy."
-  },
   "profit_loss_events": {
     "cost_basis": {
       "hide": "Hide Cost Basis",
@@ -4157,6 +4153,7 @@
         "headers": {
           "number": "Number of skipped events"
         },
+        "no_skipped_events": "No skipped events found",
         "reprocess": {
           "action": "Reprocess events",
           "failed": {

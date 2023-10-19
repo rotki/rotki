@@ -219,23 +219,23 @@ const showDeleteConfirmation = (entry: OracleCacheMeta) => {
               </VBtn>
             </VCol>
           </VRow>
-          <VTooltip open-delay="400" top>
-            <template #activator="{ on, attrs }">
-              <VBtn
-                v-bind="attrs"
+          <RuiTooltip :popper="{ placement: 'top' }" open-delay="400">
+            <template #activator>
+              <RuiButton
                 :loading="pending"
-                large
                 color="primary"
                 :disabled="!fromAsset || !toAsset || pending"
-                v-on="on"
+                size="lg"
                 @click="fetchPrices()"
               >
-                <VIcon class="mr-2">mdi-plus-circle</VIcon>
+                <template #prepend>
+                  <RuiIcon name="add-line" />
+                </template>
                 {{ t('oracle_cache_management.create_cache') }}
-              </VBtn>
+              </RuiButton>
             </template>
             <span>{{ t('oracle_cache_management.create_tooltip') }}</span>
-          </VTooltip>
+          </RuiTooltip>
         </div>
         <DataTable :headers="headers" :loading="loading" :items="filteredData">
           <template #item.fromAsset="{ item }">
@@ -251,20 +251,19 @@ const showDeleteConfirmation = (entry: OracleCacheMeta) => {
             <DateDisplay :timestamp="item.fromTimestamp" />
           </template>
           <template #item.actions="{ item }">
-            <VTooltip open-delay="400" top>
-              <template #activator="{ on, attrs }">
-                <VBtn
+            <RuiTooltip :popper="{ placement: 'top' }" open-delay="400">
+              <template #activator>
+                <RuiButton
                   color="primary"
-                  v-bind="attrs"
+                  variant="text"
                   icon
-                  v-on="on"
                   @click="showDeleteConfirmation(item)"
                 >
-                  <VIcon>mdi-delete</VIcon>
-                </VBtn>
+                  <RuiIcon size="16" name="delete-bin-line" />
+                </RuiButton>
               </template>
               <span>{{ t('oracle_cache_management.delete_tooltip') }}</span>
-            </VTooltip>
+            </RuiTooltip>
           </template>
         </DataTable>
       </VCardText>

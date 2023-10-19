@@ -84,6 +84,7 @@ import {
   RiQuestionLine,
   RiQuestionnaireLine,
   RiRefreshLine,
+  RiRepeat2Line,
   RiRestartLine,
   RiSave2Fill,
   RiSaveLine,
@@ -223,6 +224,7 @@ Vue.use(RuiPlugin, {
     RiTwitterXLine,
     RiArrowUpSLine,
     RiTimeLine,
-    RiEarthLine
+    RiEarthLine,
+    RiRepeat2Line
   ]
 });

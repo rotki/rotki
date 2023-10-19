@@ -8,16 +8,11 @@ const { t } = useI18n();
       {{ t('data_management.title') }}
     </template>
 
-    <div>
+    <div class="flex flex-col gap-4">
       <PurgeData />
-    </div>
-
-    <div class="mt-4">
       <PurgeImagesCache />
-    </div>
-
-    <div class="mt-4">
       <RefreshCache />
+      <HistoryEventsSkippedExternalEvents />
     </div>
   </SettingCategory>
 </template>
