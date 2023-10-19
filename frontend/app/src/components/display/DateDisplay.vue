@@ -21,29 +21,10 @@ const { timestamp, showTimezone, noTime, milliseconds } = toRefs(props);
 const { dateDisplayFormat } = storeToRefs(useGeneralSettingsStore());
 const { shouldShowAmount } = storeToRefs(useSessionSettingsStore());
 
-const dateDisplayFormatWithMilliseconds: ComputedRef<string> = computed(() => {
-  const format = get(dateDisplayFormat);
-  if (!get(milliseconds)) {
-    return format;
-  }
-
-  const millisecondFormat = '%s';
-
-  if (format.includes(millisecondFormat)) {
-    return format;
-  }
-
-  return format
-    .replace('%S', `%S.${millisecondFormat}`)
-    .replace('%-S', `%-S.${millisecondFormat}`);
-});
-
 const dateFormat = computed<string>(() => {
   const display = get(showTimezone)
-    ? get(dateDisplayFormatWithMilliseconds)
-    : get(dateDisplayFormatWithMilliseconds)
-        .replace('%z', '')
-        .replace('%Z', '');
+    ? get(dateDisplayFormat)
+    : get(dateDisplayFormat).replace('%z', '').replace('%Z', '');
 
   if (get(noTime)) {
     return display.split(' ')[0];
@@ -65,14 +46,11 @@ const format = (date: Ref<Date>, format: Ref<string>) =>
   computed(() => displayDateFormatter.format(get(date), get(format)));
 
 const formattedDate = format(date, dateFormat);
-const formattedDateWithTimezone = format(
-  date,
-  dateDisplayFormatWithMilliseconds
-);
+const formattedDateWithTimezone = format(date, dateDisplayFormat);
 
 const showTooltip = computed(() => {
   const timezone = get(showTimezone);
-  const format = get(dateDisplayFormatWithMilliseconds);
+  const format = get(dateDisplayFormat);
   return !timezone && (format.includes('%z') || format.includes('%Z'));
 });
 
@@ -96,10 +74,7 @@ const splittedByMillisecondsPart = computed(() =>
           v-on="on"
         >
           <span>{{ splittedByMillisecondsPart[0] }}</span>
-          <span
-            v-if="milliseconds && splittedByMillisecondsPart[1]"
-            class="text-[0.625rem]"
-          >
+          <span v-if="splittedByMillisecondsPart[1]" class="text-[0.625rem]">
             .{{ splittedByMillisecondsPart[1] }}
           </span>
         </span>
