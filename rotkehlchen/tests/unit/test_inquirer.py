@@ -374,6 +374,9 @@ def test_find_velodrome_v2_lp_token_price(inquirer, optimism_manager):
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_find_curve_lp_token_price(inquirer_defi, ethereum_manager):
+    with GlobalDBHandler().conn.write_ctx() as write_cursor:  # querying curve lp token price normally triggers curve cache query. Set all query ts to now, so it does not happen.  # noqa: E501
+        write_cursor.execute('UPDATE general_cache SET last_queried_ts=? WHERE key=?', (ts_now(), 'CURVE_LP_TOKENS'))  # noqa: E501
+
     lp_token_address = '0xA3D87FffcE63B53E0d54fAa1cc983B7eB0b74A9c'
     pool_address = '0xc5424B857f758E906013F3555Dad202e4bdB4567'
     identifier = ethaddress_to_identifier(lp_token_address)

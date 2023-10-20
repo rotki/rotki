@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Optional, TypeVar
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.utils.data_structures import LRUCacheWithRemove
+from rotkehlchen.utils.data_structures import LRUCacheLowerKey
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import (
@@ -27,8 +27,8 @@ class AssetResolver:
     __instance: Optional['AssetResolver'] = None
     # A cache so that the DB is not hit every time
     # the cache maps identifier -> final representation of the asset
-    assets_cache: LRUCacheWithRemove['AssetWithNameAndType'] = LRUCacheWithRemove(maxsize=512)
-    types_cache: LRUCacheWithRemove[AssetType] = LRUCacheWithRemove(maxsize=512)
+    assets_cache: LRUCacheLowerKey['AssetWithNameAndType'] = LRUCacheLowerKey(maxsize=512)
+    types_cache: LRUCacheLowerKey[AssetType] = LRUCacheLowerKey(maxsize=512)
 
     def __new__(cls) -> 'AssetResolver':
         """Lazily initializes AssetResolver

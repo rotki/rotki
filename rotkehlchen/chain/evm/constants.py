@@ -1,3 +1,5 @@
+from typing import Final
+
 from rotkehlchen.types import deserialize_evm_tx_hash
 
 from .types import string_to_evm_address
@@ -27,5 +29,6 @@ FAKE_GENESIS_TX_RECEIPT = {
     'type': '0x0',
 }
 
-ERC20_PROPERTIES = ('decimals', 'symbol', 'name')
-ERC721_PROPERTIES = ('symbol', 'name')
+ERC20_PROPERTIES: Final = ('decimals', 'symbol', 'name')
+ERC20_PROPERTIES_NUM: Final = len(ERC20_PROPERTIES)
+ERC721_PROPERTIES: Final = ('symbol', 'name')
