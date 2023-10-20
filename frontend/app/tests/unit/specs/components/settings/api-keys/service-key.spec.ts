@@ -14,8 +14,8 @@ describe('ServiceKey.vue', () => {
       pinia,
       vuetify,
       propsData: {
-        value: '',
-        title: 'test'
+        apiKey: '',
+        name: 'etherscan'
       }
     });
   }
@@ -28,14 +28,14 @@ describe('ServiceKey.vue', () => {
     expect.assertions(2);
     await wrapper.vm.$nextTick();
     expect(
-      wrapper.find('.service-key__api-key input').attributes('disabled')
+      wrapper.find('[data-cy=service-key__api-key]').attributes('disabled')
     ).toBeUndefined();
     await wrapper.setProps({
-      value: '1234'
+      apiKey: '1234'
     });
     await wrapper.vm.$nextTick();
     expect(
-      wrapper.find('.service-key__api-key input').attributes('disabled')
+      wrapper.find('[data-cy=service-key__api-key]').attributes('disabled')
     ).toBe('disabled');
   });
 });

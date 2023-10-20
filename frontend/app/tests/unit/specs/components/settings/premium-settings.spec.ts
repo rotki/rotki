@@ -44,8 +44,8 @@ describe('PremiumSettings.vue', () => {
 
   test('updates premium status upon setting keys', async () => {
     api.setPremiumCredentials = vi.fn().mockResolvedValue({ result: true });
-    const apiKey = wrapper.find('[data-cy=premium__api-key] input');
-    const apiSecret = wrapper.find('[data-cy=premium__api-secret] input');
+    const apiKey = wrapper.find('[data-cy=premium__api-key]');
+    const apiSecret = wrapper.find('[data-cy=premium__api-secret]');
 
     await apiKey.setValue('1234');
     await apiSecret.setValue('1234');

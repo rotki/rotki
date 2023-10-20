@@ -37,9 +37,9 @@ export class RotkiApp {
 
     cy.get('[data-cy="create-account__introduction__continue"]').click();
     cy.get('[data-cy="create-account__premium__button__continue"]').click();
-    cy.get('[data-cy="create-account__fields__username"] input').type(username);
-    cy.get('[data-cy="create-account__fields__password"] input').type(password);
-    cy.get('[data-cy="create-account__fields__password-repeat"] input').type(
+    cy.get('[data-cy="create-account__fields__username"]').type(username);
+    cy.get('[data-cy="create-account__fields__password"]').type(password);
+    cy.get('[data-cy="create-account__fields__password-repeat"]').type(
       password
     );
     cy.get('[data-cy="create-account__boxes__user-prompted"] input').click();
@@ -73,8 +73,8 @@ export class RotkiApp {
 
   login(username: string, password = '1234') {
     cy.get('[data-cy=username-input]').should('be.visible');
-    cy.get('[data-cy=username-input] input:not([type=hidden])').as('username');
-    cy.get('[data-cy=password-input] input:not([type=hidden])').as('password');
+    cy.get('[data-cy=username-input]').as('username');
+    cy.get('[data-cy=password-input]').as('password');
     cy.get('@username').clear();
     cy.get('@username').type(username);
     cy.get('@password').clear();
@@ -134,18 +134,14 @@ export class RotkiApp {
 
   changeScrambleValue(multiplier: string) {
     this.toggleScrambler(true);
-    cy.get(
-      '[data-cy="privacy-mode-scramble__multiplier"] input[type="number"]'
-    ).as('input');
+    cy.get('[data-cy="privacy-mode-scramble__multiplier"]').as('input');
 
     cy.get('@input').type(multiplier);
   }
 
   changeRandomScrambleValue() {
     this.toggleScrambler(true);
-    cy.get(
-      '[data-cy="privacy-mode-scramble__multiplier"] input[type="number"]'
-    ).as('input');
+    cy.get('[data-cy="privacy-mode-scramble__multiplier"]').as('input');
     cy.get('[data-cy="privacy-mode-scramble__random-multiplier"]').as('button');
 
     cy.get('@button').click();

@@ -184,12 +184,7 @@ const ApiKey = z.object({
 });
 
 export const ExternalServiceKeys = z.object({
-  etherscan: ApiKey.optional(),
-  optimismEtherscan: ApiKey.optional(),
-  polygonPosEtherscan: ApiKey.optional(),
-  arbitrumOneEtherscan: ApiKey.optional(),
-  baseEtherscan: ApiKey.optional(),
-  gnosisEtherscan: ApiKey.optional(),
+  etherscan: z.record(ApiKey.optional()),
   cryptocompare: ApiKey.optional(),
   covalent: ApiKey.optional(),
   beaconchain: ApiKey.optional(),
@@ -202,7 +197,7 @@ export type ExternalServiceKeys = z.infer<typeof ExternalServiceKeys>;
 export type ExternalServiceName = ToSnakeCase<keyof ExternalServiceKeys>;
 
 export interface ExternalServiceKey {
-  readonly name: ExternalServiceName;
+  readonly name: string;
   readonly apiKey: string;
 }
 

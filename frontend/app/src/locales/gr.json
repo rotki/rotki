@@ -2053,8 +2053,7 @@
       "title": "CryptoCompare"
     },
     "delete_error": {
-      "description": "Error while removing the external service api keys: {message}",
-      "title": "Error"
+      "description": "Error while removing the external service api keys: {message}"
     },
     "etherscan": {
       "delete_tooltip": "Deletes the Etherscan API key",
@@ -2082,16 +2081,13 @@
     },
     "set": {
       "error": {
-        "message": "Error while settings external service api keys: {error}",
-        "title": "Error"
+        "message": "Error while settings external service api keys: {error}"
       },
       "success": {
-        "message": "Successfully updated the key for {serviceName}",
-        "title": "Success"
+        "message": "Successfully updated the key for {serviceName}"
       }
     },
-    "subtitle": "rotki connects to various service providers in order to obtain information such as historical prices or blockchain data. In certain cases rotki depends on these APIs for basic information, in which case you will need to provide an API key.",
-    "title": "External Services"
+    "subtitle": "rotki connects to various service providers in order to obtain information such as historical prices or blockchain data. In certain cases rotki depends on these APIs for basic information, in which case you will need to provide an API key."
   },
   "external_trade_form": {
     "amount": {
