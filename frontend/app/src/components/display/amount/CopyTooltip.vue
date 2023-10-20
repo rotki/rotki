@@ -9,14 +9,9 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <VTooltip top open-delay="200ms">
-    <template #activator="{ on, attrs }">
-      <span
-        data-cy="display-amount"
-        class="text-no-wrap"
-        v-bind="attrs"
-        v-on="on"
-      >
+  <RuiTooltip :popper="{ placement: 'top' }" open-delay="200">
+    <template #activator>
+      <span data-cy="display-amount" class="text-no-wrap">
         {{ value }}
       </span>
     </template>
@@ -35,13 +30,13 @@ const { t } = useI18n();
           <div>
             {{ t('amount_display.click_to_copy') }}
           </div>
-          <div class="green--text text--lighten-2">
+          <div class="text-rui-success-lighter">
             {{ t('amount_display.copied') }}
           </div>
         </div>
       </div>
     </div>
-  </VTooltip>
+  </RuiTooltip>
 </template>
 
 <style module lang="scss">

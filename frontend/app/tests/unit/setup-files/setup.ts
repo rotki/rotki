@@ -4,6 +4,7 @@ import Vuetify from 'vuetify';
 import { config } from '@vue/test-utils';
 import { mockT } from '../i18n';
 import RuiIconStub from '../specs/stubs/RuiIcon';
+import RuiTooltipStub from '../specs/stubs/RuiTooltip';
 import { server } from './server';
 
 beforeAll(() => {
@@ -86,3 +87,4 @@ afterAll(() => server.close());
 
 // Global stub components
 config.stubs.RuiIcon = RuiIconStub;
+config.stubs.RuiTooltip = RuiTooltipStub;

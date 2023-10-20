@@ -39,7 +39,26 @@ const refresh = () => load(true);
 </script>
 
 <template>
-  <div>
+  <TablePageLayout :title="[t('navigation_menu.staking'), t('staking.kraken')]">
+    <template #buttons>
+      <RuiTooltip open-delay="400">
+        <template #activator>
+          <RuiButton
+            variant="outlined"
+            color="primary"
+            :loading="refreshing || loading"
+            @click="refresh()"
+          >
+            <template #prepend>
+              <RuiIcon name="refresh-line" />
+            </template>
+            {{ t('common.refresh') }}
+          </RuiButton>
+        </template>
+        {{ t('kraken_staking_events.refresh_tooltip') }}
+      </RuiTooltip>
+    </template>
+
     <FullSizeContent v-if="!isKrakenConnected">
       <VRow align="center" justify="center">
         <VCol>
@@ -83,19 +102,8 @@ const refresh = () => load(true);
         {{ t('kraken_page.loading') }}
       </template>
     </ProgressScreen>
-    <div v-else>
-      <VRow justify="end">
-        <VCol cols="auto">
-          <RefreshButton
-            :tooltip="t('kraken_staking_events.refresh_tooltip')"
-            :loading="refreshing"
-            @refresh="refresh()"
-          />
-        </VCol>
-      </VRow>
-      <KrakenStaking />
-    </div>
-  </div>
+    <KrakenStaking v-else />
+  </TablePageLayout>
 </template>
 
 <style lang="scss" module>

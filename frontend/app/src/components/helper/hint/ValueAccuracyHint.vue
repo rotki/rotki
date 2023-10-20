@@ -8,12 +8,16 @@ const notUsd = computed(() => get(currencySymbol) !== CURRENCY_USD);
 </script>
 
 <template>
-  <VTooltip v-if="notUsd" open-delay="400" top>
-    <template #activator="{ on, attrs }">
-      <VIcon v-bind="attrs" small class="mx-2" v-on="on">
-        mdi-information
-      </VIcon>
+  <RuiTooltip
+    v-if="notUsd"
+    class="mx-2 text-rui-text-secondary"
+    :popper="{ placement: 'top' }"
+    open-delay="400"
+    tooltip-class="max-w-[10rem]"
+  >
+    <template #activator>
+      <RuiIcon size="20" name="information-line" />
     </template>
     <span>{{ t('price_accuracy_hint.tooltip') }}</span>
-  </VTooltip>
+  </RuiTooltip>
 </template>

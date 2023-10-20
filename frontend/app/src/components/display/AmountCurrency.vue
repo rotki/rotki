@@ -54,35 +54,38 @@ const css = useCssModule();
 </script>
 
 <template>
-  <VTooltip
+  <RuiTooltip
     v-if="asset && symbol"
-    top
-    :disabled="loading || symbol.length <= assetPadding"
+    :popper="{ placement: 'top' }"
     open-delay="400"
-    tag="div"
+    :disabled="loading || symbol.length <= assetPadding"
   >
-    <template #activator="{ on, attrs }">
+    <template #activator>
       <span
         v-if="!loading"
         data-cy="display-currency"
-        v-bind="attrs"
         :style="assetStyle"
+        class="leading-[0]"
         :class="{ [css.xl]: xl }"
-        v-on="on"
       >
         {{ symbol }}
       </span>
       <VSkeletonLoader v-else width="30" type="text" height="12" />
     </template>
-    <span data-cy="display-currency" :class="{ [css.xl]: xl }">
+    <span
+      data-cy="display-currency"
+      class="leading-[0]"
+      :class="{ [css.xl]: xl }"
+    >
       {{ symbol }}
     </span>
-  </VTooltip>
+  </RuiTooltip>
 
   <span
     v-else
     :style="assetStyle"
     data-cy="display-currency"
+    class="leading-[0]"
     :class="{ [css.xl]: xl }"
   >
     {{ displayAsset }}

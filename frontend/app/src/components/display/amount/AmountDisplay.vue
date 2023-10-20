@@ -67,7 +67,8 @@ const {
   forceCurrency,
   noScramble,
   timestamp,
-  milliseconds
+  milliseconds,
+  loading
 } = toRefs(props);
 
 const {
@@ -314,6 +315,8 @@ const fixExponentialSeparators = (
 
 const { copy, copied } = useCopy(copyValue);
 const css = useCssModule();
+
+const anyLoading = logicOr(loading, evaluating);
 </script>
 
 <template>
@@ -321,22 +324,27 @@ const css = useCssModule();
     <div class="flex flex-row items-baseline">
       <ManualPriceIndicator v-if="timestamp < 0" :price-asset="priceAsset" />
       <span
-        :class="{
-          [css.blur]: !shouldShowAmount,
-          [css.profit]: pnl && displayValue.gt(0),
-          [css.loss]: pnl && displayValue.lt(0),
-          [css.display]: true,
-          [css.xl]: xl
-        }"
+        :class="[
+          css.display,
+          {
+            [css.blur]: !shouldShowAmount,
+            [css.profit]: pnl && displayValue.gt(0),
+            [css.loss]: pnl && displayValue.lt(0),
+            [css.xl]: xl
+          }
+        ]"
         data-cy="display-wrapper"
         @click="copy()"
       >
         <VSkeletonLoader
-          :loading="loading || evaluating"
+          :loading="anyLoading"
           min-width="60"
           max-width="70"
-          class="flex flex-row items-baseline"
           type="text"
+          :class="[
+            css.skeleton,
+            anyLoading ? 'items-center' : 'items-baseline'
+          ]"
         >
           <span
             v-if="comparisonSymbol"
@@ -356,6 +364,7 @@ const css = useCssModule();
               :xl="xl"
             />
           </div>
+
           <div>
             <CopyTooltip
               :copied="copied"
@@ -383,11 +392,11 @@ const css = useCssModule();
 
 <style module lang="scss">
 .profit {
-  color: var(--v-rotki-success-base);
+  @apply text-rui-success;
 }
 
 .loss {
-  color: var(--v-rotki-error-base);
+  @apply text-rui-error;
 }
 
 .display {
@@ -411,5 +420,21 @@ const css = useCssModule();
     font-size: 2.4em;
     line-height: 2.4rem;
   }
+}
+
+.skeleton {
+  &:after {
+    content: '\200B';
+  }
+
+  :global {
+    .v-skeleton-loader {
+      &__text {
+        @apply mb-0 h-[1em];
+      }
+    }
+  }
+
+  @apply flex flex-row;
 }
 </style>

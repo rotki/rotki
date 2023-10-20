@@ -227,6 +227,7 @@ Vue.use(RuiPlugin, {
     RiTimeLine,
     RiEarthLine,
     RiRepeat2Line,
-    RiArrowUpDownLine
+    RiArrowUpDownLine,
+    RiCornerLeftUpLine
   ]
 });

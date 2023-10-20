@@ -16,6 +16,7 @@ import { Section } from '@/types/status';
 const emit = defineEmits<{
   (e: 'refresh', refresh: boolean): void;
 }>();
+
 const selectedAccounts: Ref<GeneralAccount[]> = ref([]);
 const liquityStore = useLiquityStore();
 const { staking, stakingPools, statistics } = toRefs(liquityStore);
@@ -257,8 +258,33 @@ const slots = useSlots();
 </script>
 
 <template>
-  <div class="flex flex-col gap-4">
-    <div class="flex flex-row flex-wrap items-center gap-4">
+  <TablePageLayout
+    :title="[t('navigation_menu.staking'), t('staking.liquity')]"
+  >
+    <template #buttons>
+      <div class="flex items-center gap-3">
+        <div v-if="slots.modules">
+          <slot name="modules" />
+        </div>
+        <RuiTooltip open-delay="400">
+          <template #activator>
+            <RuiButton
+              variant="outlined"
+              color="primary"
+              :loading="loading"
+              @click="refresh()"
+            >
+              <template #prepend>
+                <RuiIcon name="refresh-line" />
+              </template>
+              {{ t('common.refresh') }}
+            </RuiButton>
+          </template>
+          {{ t('liquity_staking_details.refresh_tooltip') }}
+        </RuiTooltip>
+      </div>
+    </template>
+    <div>
       <BlockchainAccountSelector
         v-model="selectedAccounts"
         :label="t('liquity_staking_details.select_account')"
@@ -309,18 +335,6 @@ const slots = useSlots();
           </div>
         </div>
       </VMenu>
-
-      <div class="grow" />
-
-      <div v-if="slots.modules">
-        <slot name="modules" />
-      </div>
-
-      <RefreshButton
-        :tooltip="t('liquity_staking_details.refresh_tooltip')"
-        :loading="loading"
-        @refresh="refresh()"
-      />
     </div>
 
     <div class="flex flex-row flex-wrap gap-4">
@@ -341,7 +355,7 @@ const slots = useSlots();
       :only-chains="chains"
       :entry-types="[HistoryEventEntryType.EVM_EVENT]"
     />
-  </div>
+  </TablePageLayout>
 </template>
 
 <style lang="scss" module>
