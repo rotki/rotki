@@ -714,6 +714,8 @@
     "useAccountingSettings": true,
     "useAccountingRuleFilter": true,
     "useAccountingRuleForm": true,
-    "useExternalApiKeys": true
+    "useExternalApiKeys": true,
+    "injectLocal": true,
+    "provideLocal": true
   }
 }

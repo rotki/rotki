@@ -26,8 +26,8 @@
     "zod": "3.22.4"
   },
   "devDependencies": {
-    "@vueuse/core": "10.4.1",
-    "core-js": "3.33.0",
+    "@vueuse/core": "10.5.0",
+    "core-js": "3.33.1",
     "rimraf": "5.0.5",
     "typescript": "5.2.2",
     "vue": "2.7.14"
