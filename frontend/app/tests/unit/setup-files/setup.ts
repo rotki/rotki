@@ -1,7 +1,9 @@
 import { PiniaVuePlugin } from 'pinia';
 import Vue from 'vue';
 import Vuetify from 'vuetify';
+import { config } from '@vue/test-utils';
 import { mockT } from '../i18n';
+import RuiIconStub from '../specs/stubs/RuiIcon';
 import { server } from './server';
 
 beforeAll(() => {
@@ -81,3 +83,6 @@ beforeAll(() => {
 afterEach(() => server.resetHandlers());
 
 afterAll(() => server.close());
+
+// Global stub components
+config.stubs.RuiIcon = RuiIconStub;
