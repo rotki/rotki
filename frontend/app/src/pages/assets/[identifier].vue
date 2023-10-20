@@ -48,6 +48,7 @@ const isCustomAsset = computed(() => get(asset)?.isCustomAsset);
 const { t } = useI18n();
 
 const route = useRoute();
+const router = useRouter();
 
 const isCollectionParent: ComputedRef<boolean> = computed(() => {
   const currentRoute = get(route);
@@ -85,78 +86,82 @@ const collectionBalance: ComputedRef<AssetBalanceWithPrice[]> = computed(() => {
     []
   );
 });
+
+const goToEdit = () => {
+  router.push(get(editRoute));
+};
 </script>
 
 <template>
-  <VContainer class="pb-12">
-    <VRow class="mt-12" align="center" justify="space-between">
-      <VCol>
-        <VRow align="center">
-          <VCol cols="auto">
-            <AssetIcon
-              :identifier="identifier"
-              size="48px"
-              :show-chain="!isCollectionParent"
-            />
-          </VCol>
-          <VCol v-if="!isCustomAsset" class="flex flex-col" cols="auto">
-            <span class="text-h5 font-medium">{{ symbol }}</span>
-            <span class="text-subtitle-2 text--secondary">
-              {{ name }}
-            </span>
-          </VCol>
-          <VCol v-else class="flex flex-col" cols="auto">
-            <span class="text-h5 font-medium">{{ name }}</span>
-            <span class="text-subtitle-2 text--secondary">
-              {{ asset?.customAssetType }}
-            </span>
-          </VCol>
-          <VCol v-if="address" cols="auto">
-            <HashLink
-              :chain="chain"
-              type="address"
-              :text="address"
-              link-only
-              :show-icon="false"
-            />
-          </VCol>
-          <VCol v-if="!isCollectionParent" cols="auto">
-            <VBtn icon :to="editRoute">
-              <VIcon>mdi-pencil</VIcon>
-            </VBtn>
-          </VCol>
-        </VRow>
-      </VCol>
-      <VCol v-if="!isCollectionParent" cols="auto">
-        <VRow align="center">
-          <VCol cols="auto">
-            <div class="text-subtitle-2">{{ t('assets.ignore') }}</div>
-          </VCol>
-          <VCol>
-            <VSwitch :input-value="isIgnored" @change="toggleIgnoreAsset()" />
-          </VCol>
-        </VRow>
-      </VCol>
-    </VRow>
+  <TablePageLayout class="p-4" hide-header>
+    <div class="flex flex-wrap justify-between w-full">
+      <div class="flex gap-4 items-center">
+        <AssetIcon
+          :identifier="identifier"
+          size="48px"
+          :show-chain="!isCollectionParent"
+        />
+
+        <div v-if="!isCustomAsset" class="flex flex-col">
+          <span class="text-h5 font-medium">{{ symbol }}</span>
+          <span class="text-body-2 text-rui-text-secondary">
+            {{ name }}
+          </span>
+        </div>
+
+        <div v-else class="flex flex-col">
+          <span class="text-h5 font-medium">{{ name }}</span>
+          <span class="text-body-2 text-rui-text-secondary">
+            {{ asset?.customAssetType }}
+          </span>
+        </div>
+
+        <HashLink
+          v-if="address"
+          :chain="chain"
+          type="address"
+          :text="address"
+          link-only
+          :show-icon="false"
+        />
+
+        <RuiButton
+          v-if="!isCollectionParent"
+          icon
+          variant="text"
+          @click="goToEdit()"
+        >
+          <RuiIcon name="pencil-line" />
+        </RuiButton>
+      </div>
+      <div class="flex gap-4 items-center">
+        <div class="text-body-2">
+          {{ t('assets.ignore') }}
+        </div>
+
+        <VSwitch :input-value="isIgnored" @change="toggleIgnoreAsset()" />
+      </div>
+    </div>
+
     <AssetValueRow
       :is-collection-parent="isCollectionParent"
-      class="mt-8"
       :identifier="identifier"
     />
+
     <AssetAmountAndValueOverTime
       v-if="premium"
-      class="mt-8"
       :asset="identifier"
       :collection-id="collectionId"
     />
-    <AssetLocations
-      v-if="!isCollectionParent"
-      class="mt-8"
-      :identifier="identifier"
-    />
-    <Card v-else class="mt-8">
-      <template #title> {{ t('assets.multi_chain_assets') }} </template>
+
+    <AssetLocations v-if="!isCollectionParent" :identifier="identifier" />
+
+    <RuiCard v-else>
+      <template #header>
+        {{ t('assets.multi_chain_assets') }}
+      </template>
+
       <AssetBalances :balances="collectionBalance" />
-    </Card>
-  </VContainer>
+    </RuiCard>
+  </TablePageLayout>
 </template>
