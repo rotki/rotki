@@ -130,7 +130,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <VForm v-model="valid">
+  <VForm v-model="valid" class="flex flex-col gap-6">
     <ModuleActivator
       v-if="blockchain === Blockchain.ETH && !accountToEdit"
       @update:selection="selectedModules = $event"
@@ -142,22 +142,24 @@ onMounted(() => {
       :loading="loading"
     />
 
-    <AddressInput
-      :addresses="addresses"
-      :error-messages="errorMessages.address"
-      :disabled="loading || !!accountToEdit"
-      :multi="!accountToEdit"
-      @update:addresses="
-        delete errorMessages['address'];
-        addresses = $event;
-      "
-    />
-    <AccountDataInput
-      :tags="tags"
-      :label="label"
-      :disabled="loading"
-      @update:label="label = $event"
-      @update:tags="tags = $event"
-    />
+    <div>
+      <AddressInput
+        :addresses="addresses"
+        :error-messages="errorMessages.address"
+        :disabled="loading || !!accountToEdit"
+        :multi="!accountToEdit"
+        @update:addresses="
+          delete errorMessages['address'];
+          addresses = $event;
+        "
+      />
+      <AccountDataInput
+        :tags="tags"
+        :label="label"
+        :disabled="loading"
+        @update:label="label = $event"
+        @update:tags="tags = $event"
+      />
+    </div>
   </VForm>
 </template>

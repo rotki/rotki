@@ -17,15 +17,23 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <VSheet outlined rounded data-cy="account-all-evm-chains">
-    <VCheckbox
-      :input-value="value"
-      :disabled="disabled"
-      class="py-4 px-4 my-0"
-      :label="t('address_account_form.label')"
-      persistent-hint
-      :hint="t('address_account_form.hint')"
-      @change="emit('input', !value)"
-    />
-  </VSheet>
+  <RuiCard outlined class="rounded">
+    <label class="flex items-center gap-3 cursor-pointer">
+      <RuiCheckbox
+        data-cy="account-all-evm-chains"
+        class="mt-0 p-1"
+        color="primary"
+        :value="value"
+        :disabled="disabled"
+        hide-details
+        @input="emit('input', !value)"
+      />
+      <div>
+        <div class="text-body-1">{{ t('address_account_form.label') }}</div>
+        <div class="text-body-2 text-rui-text-secondary">
+          {{ t('address_account_form.hint') }}
+        </div>
+      </div>
+    </label>
+  </RuiCard>
 </template>

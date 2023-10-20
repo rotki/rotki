@@ -78,7 +78,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <VForm v-model="valid">
+  <VForm v-model="valid" class="flex flex-col gap-6">
     <ModuleActivator @update:selection="selectedModules = $event" />
     <slot name="selector" :loading="loading" />
     <div class="mt-4">

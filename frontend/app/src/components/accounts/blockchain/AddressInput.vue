@@ -86,56 +86,53 @@ const rules = [
 </script>
 
 <template>
-  <VRow no-gutters>
-    <VCol>
-      <VRow v-if="multi" no-gutters align="center">
-        <VCol cols="auto">
-          <VCheckbox
-            v-model="multiple"
-            :disabled="disabled"
-            :label="t('account_form.labels.multiple')"
-          />
-        </VCol>
-      </VRow>
-      <VTextField
-        v-if="!multiple"
-        v-model="address"
-        data-cy="account-address-field"
-        outlined
-        class="account-form__address"
-        :label="t('common.account')"
-        :rules="rules"
-        :error-messages="errorMessages"
-        autocomplete="off"
-        :disabled="disabled"
-        @paste="onPasteAddress($event)"
+  <div>
+    <RuiCheckbox
+      v-if="multi"
+      v-model="multiple"
+      color="primary"
+      class="mt-0 mb-6"
+      hide-details
+      :disabled="disabled"
+    >
+      {{ t('account_form.labels.multiple') }}
+    </RuiCheckbox>
+    <VTextField
+      v-if="!multiple"
+      v-model="address"
+      data-cy="account-address-field"
+      outlined
+      class="account-form__address"
+      :label="t('common.account')"
+      :rules="rules"
+      :error-messages="errorMessages"
+      autocomplete="off"
+      :disabled="disabled"
+      @paste="onPasteAddress($event)"
+    />
+    <VTextarea
+      v-else
+      v-model="userAddresses"
+      outlined
+      :disabled="disabled"
+      :error-messages="errorMessages"
+      :hint="t('account_form.labels.addresses_hint')"
+      :label="t('account_form.labels.addresses')"
+      @paste="onPasteMulti($event)"
+    />
+    <div v-if="multiple">
+      <div
+        class="text-caption mb-2"
+        v-text="
+          t(
+            'account_form.labels.addresses_entries',
+            {
+              count: entries.length
+            },
+            entries.length
+          )
+        "
       />
-      <VTextarea
-        v-else
-        v-model="userAddresses"
-        outlined
-        :disabled="disabled"
-        :error-messages="errorMessages"
-        :hint="t('account_form.labels.addresses_hint')"
-        :label="t('account_form.labels.addresses')"
-        @paste="onPasteMulti($event)"
-      />
-      <VRow v-if="multiple" no-gutters>
-        <VCol>
-          <div
-            class="text-caption"
-            v-text="
-              t(
-                'account_form.labels.addresses_entries',
-                {
-                  count: entries.length
-                },
-                entries.length
-              )
-            "
-          />
-        </VCol>
-      </VRow>
-    </VCol>
-  </VRow>
+    </div>
+  </div>
 </template>

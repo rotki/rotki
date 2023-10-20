@@ -49,8 +49,8 @@ const loading = isAccountOperationRunning();
         data-cy="input-mode-manual"
         :disabled="loading"
       >
-        <VIcon>mdi-pencil-plus</VIcon>
-        <span class="hidden-sm-and-down ml-1">
+        <RuiIcon name="pencil-line" />
+        <span class="hidden-sm-and-down ml-2">
           {{ t('input_mode_select.manual_add.label') }}
         </span>
       </VBtn>
@@ -64,13 +64,13 @@ const loading = isAccountOperationRunning();
           max-width="24px"
           :src="`./assets/images/metamask-fox.svg`"
         />
-        <span class="hidden-sm-and-down ml-1">
+        <span class="hidden-sm-and-down ml-2">
           {{ t('input_mode_select.metamask_import.label') }}
         </span>
       </VBtn>
       <VBtn v-if="isBitcoin" :value="InputMode.XPUB_ADD">
-        <VIcon>mdi-key-plus</VIcon>
-        <span class="hidden-sm-and-down ml-1">
+        <RuiIcon name="key-line" />
+        <span class="hidden-sm-and-down ml-2">
           {{ t('input_mode_select.xpub_add.label') }}
         </span>
       </VBtn>
@@ -82,19 +82,21 @@ const loading = isAccountOperationRunning();
     />
     <div
       v-if="isSupportedEvmChain && !isPackaged && !isMetaMaskSupported()"
-      class="mt-3 warning--text text-caption"
+      class="mt-3 text-rui-warning text-caption flex items-center"
     >
       {{ t('input_mode_select.metamask_import.missing') }}
 
       <VMenu open-on-hover right offset-x close-delay="400" max-width="300">
         <template #activator="{ on }">
-          <VIcon class="px-1" small v-on="on">mdi-help-circle</VIcon>
+          <div v-on="on">
+            <RuiIcon class="px-1" name="question-line" />
+          </div>
         </template>
         <div class="pa-4 text-caption">
           <div>
             {{ t('input_mode_select.metamask_import.missing_tooltip.title') }}
           </div>
-          <ol>
+          <ol class="list-disc [&_li]:-ml-3">
             <li>
               <i18n
                 path="input_mode_select.metamask_import.missing_tooltip.metamask_is_not_installed"

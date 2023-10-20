@@ -38,47 +38,42 @@ const loading = isAccountOperationRunning();
 </script>
 
 <template>
-  <VRow v-if="visibleModules.length > 0">
-    <VCol>
-      <div class="font-medium">{{ t('module_activator.title') }}</div>
-      <div class="text-caption text--secondary">
+  <div v-if="visibleModules.length > 0" class="flex flex-col gap-4">
+    <div>
+      <div class="text-body-1 font-bold text-rui-text">
+        {{ t('module_activator.title') }}
+      </div>
+      <div class="text-body-2 text-rui-text-secondary">
         {{ t('module_activator.subtitle') }}
       </div>
-      <VBtnToggle
-        v-model="enabledModules"
-        multiple
+    </div>
+
+    <VBtnToggle
+      v-model="enabledModules"
+      multiple
+      :disabled="loading"
+      @change="updateSelection($event)"
+    >
+      <VBtn
+        v-for="module in visibleModules"
+        :key="module.identifier"
+        icon
         :disabled="loading"
-        class="mt-2"
-        @change="updateSelection($event)"
+        :value="module.identifier"
+        color="primary"
+        depressed
+        cols="auto"
       >
-        <VBtn
-          v-for="module in visibleModules"
-          :key="module.identifier"
-          icon
-          :disabled="loading"
-          :value="module.identifier"
-          color="primary"
-          depressed
-          cols="auto"
-        >
-          <VTooltip top open-delay="400">
-            <template #activator="{ on, attrs }">
-              <VImg
-                height="24px"
-                width="24px"
-                contain
-                :src="module.icon"
-                v-bind="attrs"
-                v-on="on"
-              />
-            </template>
-            <span>{{ module.name }}</span>
-          </VTooltip>
-        </VBtn>
-      </VBtnToggle>
-      <div class="text-caption text--secondary mt-1 mb-2">
-        {{ t('module_activator.hint') }}
-      </div>
-    </VCol>
-  </VRow>
+        <RuiTooltip :popper="{ placement: 'top' }" open-delay="400">
+          <template #activator>
+            <VImg height="24px" width="24px" contain :src="module.icon" />
+          </template>
+          <span>{{ module.name }}</span>
+        </RuiTooltip>
+      </VBtn>
+    </VBtnToggle>
+    <div class="text-caption text--secondary">
+      {{ t('module_activator.hint') }}
+    </div>
+  </div>
 </template>

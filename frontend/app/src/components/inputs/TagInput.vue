@@ -184,16 +184,17 @@ watch(tags, () => {
         </template>
       </template>
       <template #append-outer>
-        <VBtn
-          class="tag-input__manage-tags mt-n2"
+        <RuiButton
+          class="tag-input__manage-tags -mt-4"
           icon
-          text
+          variant="text"
           color="primary"
+          type="button"
           :disabled="disabled"
           @click="manageTags = true"
         >
-          <VIcon>mdi-pencil</VIcon>
-        </VBtn>
+          <RuiIcon name="pencil-line" />
+        </RuiButton>
       </template>
     </VCombobox>
     <VDialog
