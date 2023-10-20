@@ -26,3 +26,6 @@ FAKE_GENESIS_TX_RECEIPT = {
     'transactionIndex': 0,
     'type': '0x0',
 }
+
+ERC20_PROPERTIES = ('decimals', 'symbol', 'name')
+ERC721_PROPERTIES = ('symbol', 'name')
