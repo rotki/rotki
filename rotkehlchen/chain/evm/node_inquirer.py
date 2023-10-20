@@ -33,6 +33,7 @@ from rotkehlchen.chain.ethereum.constants import DEFAULT_TOKEN_DECIMALS
 from rotkehlchen.chain.ethereum.utils import MULTICALL_CHUNKS, should_update_protocol_cache
 from rotkehlchen.chain.evm.constants import (
     ERC20_PROPERTIES,
+    ERC20_PROPERTIES_NUM,
     ERC721_PROPERTIES,
     FAKE_GENESIS_TX_RECEIPT,
     GENESIS_HASH,
@@ -70,6 +71,7 @@ from rotkehlchen.types import (
     EVMTxHash,
     Timestamp,
 )
+from rotkehlchen.utils.data_structures import LRUCacheWithRemove
 from rotkehlchen.utils.misc import from_wei, get_chunks, hex_or_bytes_to_str
 from rotkehlchen.utils.mixins.lockable import LockableQueryMixIn, protect_with_lock
 
@@ -226,8 +228,8 @@ class EvmNodeInquirer(metaclass=ABCMeta):
         self.contract_multicall = contract_multicall
 
         # A cache for erc20 and erc721 contract info to not requery the info
-        self.contract_info_erc20_cache: dict[ChecksumEvmAddress, dict[str, Any]] = {}
-        self.contract_info_erc721_cache: dict[ChecksumEvmAddress, dict[str, Any]] = {}
+        self.contract_info_erc20_cache: LRUCacheWithRemove[ChecksumEvmAddress, dict[str, Any]] = LRUCacheWithRemove(maxsize=1024)  # noqa: E501
+        self.contract_info_erc721_cache: LRUCacheWithRemove[ChecksumEvmAddress, dict[str, Any]] = LRUCacheWithRemove(maxsize=512)  # noqa: E501
         self.maybe_connect_to_nodes(when_tracked_accounts=True)
 
     def maybe_connect_to_nodes(self, when_tracked_accounts: bool) -> None:
@@ -1124,18 +1126,15 @@ class EvmNodeInquirer(metaclass=ABCMeta):
             return output
         return [contract.decode(x, method_name, arguments[0]) for x in output]
 
-    def get_multiple_erc20_contract_info(self, addresses: list[ChecksumEvmAddress]) -> dict[str, Any]:  # noqa: E501
-        all_info: dict[str, Any] = {}
-
+    def get_multiple_erc20_contract_info(self, addresses: list[ChecksumEvmAddress]) -> None:
+        """Query the token information for multiple ERC20 addresses and save them in cache"""
         if len(addresses) == 0:
-            return {}
+            return
 
         contract = EvmContract(address=addresses[0], abi=self.contracts.abi('ERC20_TOKEN'), deployed_block=0)  # noqa: E501
 
         for addresses_chunk in get_chunks(addresses, 8):  # chunk number seems to be highest that can work with etherscan url limit  # noqa: E501
-            calls = []
-            for address in addresses_chunk:
-                calls.extend([(address, contract.encode(method_name=prop)) for prop in ERC20_PROPERTIES])  # noqa: E501
+            calls = [(address, contract.encode(method_name=prop)) for address in addresses_chunk for prop in ERC20_PROPERTIES]  # noqa: E501
 
             try:
                 # Output contains call status and result
@@ -1143,18 +1142,15 @@ class EvmNodeInquirer(metaclass=ABCMeta):
             except RemoteError:
                 # If something happens in the connection the output should have
                 # the same length as the tuple of properties * addresses
-                output = [(False, b'')] * len(ERC20_PROPERTIES) * len(addresses_chunk)
+                output = [(False, b'')] * ERC20_PROPERTIES_NUM * len(addresses_chunk)
 
-            for idx, single_output in enumerate(get_chunks(output, 3)):
+            for idx, single_output in enumerate(get_chunks(output, ERC20_PROPERTIES_NUM)):
                 address = addresses_chunk[idx]
                 info = self._process_and_create_erc20_info(
                     output=single_output,
                     address=address,
                 )
-                self.contract_info_erc20_cache[address] = info
-                all_info[address] = info
-
-        return all_info
+                self.contract_info_erc20_cache.add(address, info)
 
     def _process_and_create_erc20_info(
             self,
@@ -1228,16 +1224,16 @@ class EvmNodeInquirer(metaclass=ABCMeta):
         if it is provided in the contract. This method may raise:
         - BadFunctionCallOutput: If there is an error calling a bad address
         """
-        cache = self.contract_info_erc20_cache.get(address)
-        if cache is not None:
+        if (cache := self.contract_info_erc20_cache.get(address)) is not None:
             return cache
 
         output = self._query_token_contract(token_abi_str='ERC20_TOKEN', properties=ERC20_PROPERTIES, address=address)  # noqa: E501
-        self.contract_info_erc20_cache[address] = self._process_and_create_erc20_info(
+        info = self._process_and_create_erc20_info(
             output=output,
             address=address,
         )
-        return self.contract_info_erc20_cache[address]
+        self.contract_info_erc20_cache.add(address, info)
+        return info
 
     def get_erc721_contract_info(self, address: ChecksumEvmAddress) -> dict[str, Any]:
         """
@@ -1251,8 +1247,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
         - BadFunctionCallOutput: If there is an error calling a bad address
         - NotERC721Conformant: If the address can't be decoded as an ERC721 contract
         """
-        cache = self.contract_info_erc721_cache.get(address)
-        if cache is not None:
+        if (cache := self.contract_info_erc721_cache.get(address)) is not None:
             return cache
 
         output = self._query_token_contract(token_abi_str='ERC721_TOKEN', properties=ERC721_PROPERTIES, address=address)  # noqa: E501
@@ -1273,7 +1268,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
                 value = value.rstrip(b'\x00').decode()  # noqa: PLW2901
             info[prop] = value
 
-        self.contract_info_erc721_cache[address] = info
+        self.contract_info_erc721_cache.add(address, info)
         return info
 
     def _process_contract_info(

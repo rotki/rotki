@@ -38,8 +38,8 @@ VELODROME_SUGAR_V2_CONTRACT = string_to_evm_address('0x7F45F1eA57E9231f846B2b4f5
 class VelodromePoolData(NamedTuple):
     pool_address: ChecksumEvmAddress
     pool_name: str
-    token0: ChecksumEvmAddress
-    token1: ChecksumEvmAddress
+    token0_address: ChecksumEvmAddress
+    token1_address: ChecksumEvmAddress
     gauge_address: Optional[ChecksumEvmAddress]
 
 
@@ -158,7 +158,7 @@ def query_velodrome_data_from_chain_and_maybe_create_tokens(
             continue
 
         try:
-            token0, token1 = deserialize_evm_address(pool[5]), deserialize_evm_address(pool[8])
+            token0_address, token1_address = deserialize_evm_address(pool[5]), deserialize_evm_address(pool[8])  # noqa: E501
             gauge_address = deserialize_evm_address(pool[11])
         except DeserializationError as e:
             log.error(
@@ -167,12 +167,12 @@ def query_velodrome_data_from_chain_and_maybe_create_tokens(
             )
             continue
 
-        addresses.extend([pool_address, token0, token1])
+        addresses.extend([pool_address, token0_address, token1_address])
         deserialized_pools.append(VelodromePoolData(
             pool_address=pool_address,
             pool_name=pool[1],
-            token0=token0,
-            token1=token1,
+            token0_address=token0_address,
+            token1_address=token1_address,
             gauge_address=gauge_address if gauge_address != ZERO_ADDRESS else None,
         ))
 
@@ -180,7 +180,7 @@ def query_velodrome_data_from_chain_and_maybe_create_tokens(
 
     returned_pools = []
     for entry in deserialized_pools:
-        for token in (entry.token0, entry.token1, entry.pool_address):  # create the tokens for the new pools. Keep in mind that the pool address is the address of the lp token received when depositing to the pool  # noqa: E501
+        for token in (entry.token0_address, entry.token1_address, entry.pool_address):  # create the tokens for the new pools. Keep in mind that the pool address is the address of the lp token received when depositing to the pool  # noqa: E501
             try:
                 get_or_create_evm_token(
                     userdb=inquirer.database,
