@@ -14,7 +14,7 @@ const { t } = useI18n();
       </div>
       <div class="text-rui-text-secondary text-body-2">
         {{ t('loan_header.owned_by') }}
-        <HashLink :text="owner" class="font-medium" />
+        <HashLink :text="owner" class="font-medium mt-3" />
       </div>
     </div>
   </RuiCard>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { DefiProtocol } from '@rotki/common/lib/blockchain';
+import { type Ref } from 'vue';
 import { type Module } from '@/types/modules';
 import { Section } from '@/types/status';
 
@@ -53,53 +54,73 @@ onMounted(async () => {
   }
   await defiLending.fetchBorrowing(false);
 });
+
+const refreshTooltip: Ref<string> = ref(
+  t('helpers.refresh_header.tooltip', {
+    title: t('borrowing.header').toLocaleLowerCase()
+  })
+);
 </script>
 
 <template>
-  <ProgressScreen v-if="loading">
-    <template #message>{{ t('borrowing.loading') }}</template>
-  </ProgressScreen>
-  <div v-else class="flex flex-col gap-4">
-    <RefreshHeader
-      :title="t('borrowing.header')"
-      :loading="refreshing"
-      @refresh="refresh()"
-    >
-      <template #actions>
+  <TablePageLayout :title="[t('navigation_menu.defi'), t('borrowing.header')]">
+    <template #buttons>
+      <div class="flex items-center gap-4">
         <ActiveModules :modules="modules" />
-      </template>
-    </RefreshHeader>
 
-    <StatCardWide :cols="2">
-      <template #first-col>
-        <StatCardColumn>
-          <template #title>
-            {{ t('borrowing.total_collateral_locked') }}
+        <RuiTooltip :open-delay="400">
+          <template #activator>
+            <RuiButton
+              variant="outlined"
+              color="primary"
+              :loading="loading || refreshing"
+              @click="refresh()"
+            >
+              <template #prepend>
+                <RuiIcon name="refresh-line" />
+              </template>
+              {{ t('common.refresh') }}
+            </RuiButton>
           </template>
-          <AmountDisplay
-            :value="summary.totalCollateralUsd"
-            show-currency="symbol"
-            fiat-currency="USD"
-          />
-        </StatCardColumn>
-      </template>
-      <template #second-col>
-        <StatCardColumn>
-          <template #title>
-            {{ t('borrowing.total_outstanding_debt') }}
-          </template>
-          <AmountDisplay
-            :value="summary.totalDebt"
-            show-currency="symbol"
-            fiat-currency="USD"
-          />
-        </StatCardColumn>
-      </template>
-    </StatCardWide>
+          {{ refreshTooltip }}
+        </RuiTooltip>
+      </div>
+    </template>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <VCard>
-        <div class="mx-4 pt-4">
+    <ProgressScreen v-if="loading">
+      <template #message>{{ t('borrowing.loading') }}</template>
+    </ProgressScreen>
+
+    <div v-else class="flex flex-col gap-4">
+      <StatCardWide :cols="2">
+        <template #first-col>
+          <StatCardColumn>
+            <template #title>
+              {{ t('borrowing.total_collateral_locked') }}
+            </template>
+            <AmountDisplay
+              :value="summary.totalCollateralUsd"
+              show-currency="symbol"
+              fiat-currency="USD"
+            />
+          </StatCardColumn>
+        </template>
+        <template #second-col>
+          <StatCardColumn>
+            <template #title>
+              {{ t('borrowing.total_outstanding_debt') }}
+            </template>
+            <AmountDisplay
+              :value="summary.totalDebt"
+              show-currency="symbol"
+              fiat-currency="USD"
+            />
+          </StatCardColumn>
+        </template>
+      </StatCardWide>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <RuiCard>
           <VAutocomplete
             v-model="selection"
             class="borrowing__vault-selection"
@@ -121,18 +142,20 @@ onMounted(async () => {
               <DefiSelectorItem :item="item" />
             </template>
           </VAutocomplete>
-        </div>
-        <VCardText>{{ t('borrowing.select_loan_hint') }}</VCardText>
-      </VCard>
-      <DefiProtocolSelector v-model="protocol" liabilities />
-    </div>
-
-    <LoanInfo v-if="loan" :loan="loan" />
-
-    <FullSizeContent v-else>
-      <div class="flex h-full text-h6 items-center justify-center">
-        {{ t('liabilities.no_selection') }}
+          <div class="p-2 text-body-2 text-rui-text-secondary">
+            {{ t('borrowing.select_loan_hint') }}
+          </div>
+        </RuiCard>
+        <DefiProtocolSelector v-model="protocol" liabilities />
       </div>
-    </FullSizeContent>
-  </div>
+
+      <LoanInfo v-if="loan" :loan="loan" />
+
+      <FullSizeContent v-else>
+        <div class="flex h-full text-h6 items-center justify-center">
+          {{ t('liabilities.no_selection') }}
+        </div>
+      </FullSizeContent>
+    </div>
+  </TablePageLayout>
 </template>

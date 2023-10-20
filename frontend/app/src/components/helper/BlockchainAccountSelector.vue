@@ -188,11 +188,13 @@ const input = (nextValue: null | AccountWithChain | AccountWithChain[]) => {
 const { dark } = useTheme();
 
 const getItemKey = (item: AccountWithChain) => item.address + item.chain;
+
+const [DefineAutocomplete, ReuseAutocomplete] = createReusableTemplate();
 </script>
 
 <template>
-  <VCard :outlined="!!hint" v-bind="$attrs">
-    <div :class="noPadding ? null : 'mx-4 pt-2'">
+  <div>
+    <DefineAutocomplete>
       <VAutocomplete
         :value="internalValue"
         :items="displayedAccounts"
@@ -268,12 +270,19 @@ const getItemKey = (item: AccountWithChain) => item.address + item.chain;
           </div>
         </template>
       </VAutocomplete>
+    </DefineAutocomplete>
+
+    <div v-if="!hint" class="bg-white dark:bg-[#1E1E1E] p-[1px]">
+      <ReuseAutocomplete />
     </div>
-    <VCardText v-if="hint" class="account-hint">
-      {{ t('blockchain_account_selector.hint', { hintText }) }}
-      <slot />
-    </VCardText>
-  </VCard>
+    <RuiCard v-else variant="outlined" v-bind="$attrs">
+      <ReuseAutocomplete />
+      <div v-if="hint" class="text-body-2 text-rui-text-secondary p-2">
+        {{ t('blockchain_account_selector.hint', { hintText }) }}
+        <slot />
+      </div>
+    </RuiCard>
+  </div>
 </template>
 
 <style scoped lang="scss">

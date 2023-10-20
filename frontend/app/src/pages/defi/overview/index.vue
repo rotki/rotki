@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { type Ref } from 'vue';
 import { Section } from '@/types/status';
 
 const store = useDefiStore();
@@ -20,15 +21,37 @@ const { shouldShowLoadingScreen, isLoading } = useStatusStore();
 
 const loading = shouldShowLoadingScreen(section);
 const refreshing = isLoading(section);
+
+const refreshTooltip: Ref<string> = ref(
+  t('helpers.refresh_header.tooltip', {
+    title: t('decentralized_overview.title').toLocaleLowerCase()
+  })
+);
 </script>
 
 <template>
-  <div>
-    <RefreshHeader
-      :loading="refreshing"
-      :title="t('decentralized_overview.title')"
-      @refresh="refresh()"
-    />
+  <TablePageLayout
+    :title="[t('navigation_menu.defi'), t('decentralized_overview.title')]"
+  >
+    <template #buttons>
+      <RuiTooltip :open-delay="400">
+        <template #activator>
+          <RuiButton
+            variant="outlined"
+            color="primary"
+            :loading="refreshing || loading"
+            @click="refresh()"
+          >
+            <template #prepend>
+              <RuiIcon name="refresh-line" />
+            </template>
+            {{ t('common.refresh') }}
+          </RuiButton>
+        </template>
+        {{ refreshTooltip }}
+      </RuiTooltip>
+    </template>
+
     <ProgressScreen v-if="loading">
       <template #message>{{ t('decentralized_overview.loading') }}</template>
     </ProgressScreen>
@@ -44,12 +67,12 @@ const refreshing = isLoading(section);
         {{ t('decentralized_overview.empty_subtitle') }}
       </span>
     </NoDataScreen>
-    <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+    <div v-else class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
       <Overview
         v-for="summary in currentOverview"
         :key="summary.protocol"
         :summary="summary"
       />
     </div>
-  </div>
+  </TablePageLayout>
 </template>
