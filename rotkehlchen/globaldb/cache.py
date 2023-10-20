@@ -133,10 +133,10 @@ def globaldb_get_general_cache_like(
     key_parts should contain neither the "%" nor the "." symbol.
     """
     cache_key = compute_cache_key(key_parts)
-    return cursor.execute(
+    return [x[0] for x in cursor.execute(
         'SELECT value FROM general_cache WHERE key LIKE ?',
         (f'{cache_key}%',),
-    ).fetchall()
+    )]
 
 
 def globaldb_get_general_cache_keys_and_values_like(
