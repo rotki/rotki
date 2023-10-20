@@ -38,6 +38,8 @@ VELODROME_SUGAR_V2_CONTRACT = string_to_evm_address('0x7F45F1eA57E9231f846B2b4f5
 class VelodromePoolData(NamedTuple):
     pool_address: ChecksumEvmAddress
     pool_name: str
+    token0: ChecksumEvmAddress
+    token1: ChecksumEvmAddress
     gauge_address: Optional[ChecksumEvmAddress]
 
 
@@ -139,7 +141,9 @@ def query_velodrome_data_from_chain_and_maybe_create_tokens(
         pool_data.extend(pool_data_chunk)
         offset += limit
 
-    pools = []
+    deserialized_pools = []
+    # first gather all pool data, and prepare a multicall for token information
+    addresses = []
     for pool in pool_data:
         try:
             pool_address = deserialize_evm_address(pool[0])
@@ -163,7 +167,20 @@ def query_velodrome_data_from_chain_and_maybe_create_tokens(
             )
             continue
 
-        for token in (token0, token1, pool_address):  # create the tokens for the new pools. Keep in mind that the pool address is the address of the lp token received when depositing to the pool  # noqa: E501
+        addresses.extend([pool_address, token0, token1])
+        deserialized_pools.append(VelodromePoolData(
+            pool_address=pool_address,
+            pool_name=pool[1],
+            token0=token0,
+            token1=token1,
+            gauge_address=gauge_address if gauge_address != ZERO_ADDRESS else None,
+        ))
+
+    inquirer.get_multiple_erc20_contract_info(addresses)  # multicall for token info
+
+    returned_pools = []
+    for entry in deserialized_pools:
+        for token in (entry.token0, entry.token1, entry.pool_address):  # create the tokens for the new pools. Keep in mind that the pool address is the address of the lp token received when depositing to the pool  # noqa: E501
             try:
                 get_or_create_evm_token(
                     userdb=inquirer.database,
@@ -182,15 +199,9 @@ def query_velodrome_data_from_chain_and_maybe_create_tokens(
                 )
                 break
         else:
-            pools.append(
-                VelodromePoolData(
-                    pool_address=pool_address,
-                    pool_name=pool[1],
-                    gauge_address=gauge_address if gauge_address != ZERO_ADDRESS else None,
-                ),
-            )
+            returned_pools.append(entry)
 
-    return pools
+    return returned_pools
 
 
 def query_velodrome_data(inquirer: 'OptimismInquirer') -> Optional[list[VelodromePoolData]]:
@@ -203,6 +214,7 @@ def query_velodrome_data(inquirer: 'OptimismInquirer') -> Optional[list[Velodrom
             string_to_evm_address(address)
             for address in globaldb_get_general_cache_like(cursor=cursor, key_parts=(CacheType.VELODROME_POOL_ADDRESS,))  # noqa: E501
         ]
+
     try:
         pools_data = query_velodrome_data_from_chain_and_maybe_create_tokens(
             inquirer=inquirer,

@@ -151,13 +151,6 @@ VELODROME_SOME_EXPECTED_ADDRESBOOK_ENTRIES = [
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 def test_velodrome_cache(optimism_inquirer):
-    with GlobalDBHandler().conn.write_ctx() as write_cursor:
-        # Make sure that no velodrome related data is stored in the database.
-        write_cursor.execute('DELETE FROM general_cache WHERE key LIKE "%VELO%"')
-        write_cursor.execute('DELETE FROM unique_cache WHERE key LIKE "%VELO%"')
-        write_cursor.execute('DELETE FROM address_book')
-        write_cursor.execute('DELETE FROM assets')
-
     optimism_inquirer.ensure_cache_data_is_updated(
         cache_type=CacheType.VELODROME_POOL_ADDRESS,
         query_method=query_velodrome_data,
