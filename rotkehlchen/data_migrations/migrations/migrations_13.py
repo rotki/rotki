@@ -18,13 +18,13 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-def data_migration_12(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgressHandler') -> None:
+def data_migration_13(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgressHandler') -> None:
     """
     Introduced at v1.31.0
 
     Detects Gnosis and Base chain accounts that have activity and are not yet tracked.
     """
-    log.debug('Enter data_migration_12')
+    log.debug('Enter data_migration_13')
 
     # steps are: ethereum accounts + 3 (potentially write to db + updating spam assets and rpc nodes + new round msg)  # noqa: E501
     progress_handler.set_total_steps(len(rotki.chains_aggregator.accounts.eth) + 3)
@@ -42,4 +42,4 @@ def data_migration_12(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgress
         rotki=rotki,
         progress_handler=progress_handler,
     )
-    log.debug('Exit data_migration_12')
+    log.debug('Exit data_migration_13')
