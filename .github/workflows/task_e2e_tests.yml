@@ -67,7 +67,7 @@ jobs:
         working-directory: ./frontend
         run: pnpm install --frozen-lockfile
       - name: Run e2e tests
-        timeout-minutes: 30
+        timeout-minutes: 20
         env:
           CYPRESS_ETHERSCAN_API_KEY: ${{ secrets.ETHERSCAN_API_KEY }}
         run: pnpm run --filter rotki test:integration-ci --browser chrome

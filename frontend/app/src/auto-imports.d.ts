@@ -129,6 +129,7 @@ declare global {
   const ignorableWatch: typeof import('@vueuse/core')['ignorableWatch']
   const indexedDb: typeof import('./utils/indexed-db')['default']
   const inject: typeof import('vue')['inject']
+  const injectLocal: typeof import('@vueuse/core')['injectLocal']
   const invertColor: typeof import('./utils/color')['invertColor']
   const isDefined: typeof import('@vueuse/core')['isDefined']
   const isEthBlockEvent: typeof import('./utils/history/events')['isEthBlockEvent']
@@ -204,6 +205,7 @@ declare global {
   const pluralize: typeof import('./utils/text')['pluralize']
   const pluralizeLastWord: typeof import('./utils/text')['pluralizeLastWord']
   const provide: typeof import('vue')['provide']
+  const provideLocal: typeof import('@vueuse/core')['provideLocal']
   const randomColor: typeof import('./utils/color')['randomColor']
   const reactify: typeof import('@vueuse/core')['reactify']
   const reactifyObject: typeof import('@vueuse/core')['reactifyObject']
@@ -841,6 +843,7 @@ declare module 'vue' {
     readonly ignorableWatch: UnwrapRef<typeof import('@vueuse/core')['ignorableWatch']>
     readonly indexedDb: UnwrapRef<typeof import('./utils/indexed-db')['default']>
     readonly inject: UnwrapRef<typeof import('vue')['inject']>
+    readonly injectLocal: UnwrapRef<typeof import('@vueuse/core')['injectLocal']>
     readonly invertColor: UnwrapRef<typeof import('./utils/color')['invertColor']>
     readonly isDefined: UnwrapRef<typeof import('@vueuse/core')['isDefined']>
     readonly isEthBlockEvent: UnwrapRef<typeof import('./utils/history/events')['isEthBlockEvent']>
@@ -916,6 +919,7 @@ declare module 'vue' {
     readonly pluralize: UnwrapRef<typeof import('./utils/text')['pluralize']>
     readonly pluralizeLastWord: UnwrapRef<typeof import('./utils/text')['pluralizeLastWord']>
     readonly provide: UnwrapRef<typeof import('vue')['provide']>
+    readonly provideLocal: UnwrapRef<typeof import('@vueuse/core')['provideLocal']>
     readonly randomColor: UnwrapRef<typeof import('./utils/color')['randomColor']>
     readonly reactify: UnwrapRef<typeof import('@vueuse/core')['reactify']>
     readonly reactifyObject: UnwrapRef<typeof import('@vueuse/core')['reactifyObject']>
@@ -1547,6 +1551,7 @@ declare module '@vue/runtime-core' {
     readonly ignorableWatch: UnwrapRef<typeof import('@vueuse/core')['ignorableWatch']>
     readonly indexedDb: UnwrapRef<typeof import('./utils/indexed-db')['default']>
     readonly inject: UnwrapRef<typeof import('vue')['inject']>
+    readonly injectLocal: UnwrapRef<typeof import('@vueuse/core')['injectLocal']>
     readonly invertColor: UnwrapRef<typeof import('./utils/color')['invertColor']>
     readonly isDefined: UnwrapRef<typeof import('@vueuse/core')['isDefined']>
     readonly isEthBlockEvent: UnwrapRef<typeof import('./utils/history/events')['isEthBlockEvent']>
@@ -1622,6 +1627,7 @@ declare module '@vue/runtime-core' {
     readonly pluralize: UnwrapRef<typeof import('./utils/text')['pluralize']>
     readonly pluralizeLastWord: UnwrapRef<typeof import('./utils/text')['pluralizeLastWord']>
     readonly provide: UnwrapRef<typeof import('vue')['provide']>
+    readonly provideLocal: UnwrapRef<typeof import('@vueuse/core')['provideLocal']>
     readonly randomColor: UnwrapRef<typeof import('./utils/color')['randomColor']>
     readonly reactify: UnwrapRef<typeof import('@vueuse/core')['reactify']>
     readonly reactifyObject: UnwrapRef<typeof import('@vueuse/core')['reactifyObject']>
