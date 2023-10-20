@@ -427,7 +427,7 @@ def test_migration_11(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
-@pytest.mark.parametrize('data_migration_version', [11])
+@pytest.mark.parametrize('data_migration_version', [12])
 @pytest.mark.parametrize('perform_upgrades_at_unlock', [True])
 @pytest.mark.parametrize('ethereum_accounts', [[
     '0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84',  # mainnet contract
@@ -435,13 +435,13 @@ def test_migration_11(
 ]])
 @pytest.mark.parametrize('legacy_messages_via_websockets', [True])
 @pytest.mark.parametrize('network_mocking', [False])
-def test_migration_12(
+def test_migration_13(
         rotkehlchen_api_server: 'APIServer',
         ethereum_accounts: list[ChecksumEvmAddress],
         websocket_connection: 'WebsocketReader',
 ) -> None:
     """
-    Test migration 12.
+    Test migration 13
 
     - Test that detecting gnosis and base accounts works properly
     """
@@ -450,7 +450,7 @@ def test_migration_12(
             SupportedBlockchain.GNOSIS: [ethereum_accounts[1]],
             SupportedBlockchain.BASE: [ethereum_accounts[1]],
         },
-        migration_version=12,
+        migration_version=13,
         migration_steps=5,  # 2 (current eth accounts) + 3 (potentially write to db + updating spam assets and rpc nodes + new round msg)  # noqa: E501
         migration_list=[MIGRATION_LIST[6]],
         current_evm_accounts=ethereum_accounts,
