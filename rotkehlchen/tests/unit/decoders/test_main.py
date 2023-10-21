@@ -537,7 +537,7 @@ def test_eth_deposit(
             timestamp=0,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.DEPOSIT,
-            event_subtype=HistoryEventSubType.NONE,
+            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
             asset=A_ETH,
             balance=Balance(amount=FVal(100)),
             location_label=from_address,

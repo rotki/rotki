@@ -1151,6 +1151,10 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
                     log.warning(
                         f'Encountered kraken historic event type we do not process. {raw_event}',
                     )
+                elif event_type == HistoryEventType.DEPOSIT:
+                    event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+                elif event_type == HistoryEventType.WITHDRAWAL:
+                    event_subtype = HistoryEventSubType.REMOVE_ASSET
 
                 fee_amount = deserialize_asset_amount(raw_event['fee'])
                 # check for failed events (events that cancel each other out -- like failed

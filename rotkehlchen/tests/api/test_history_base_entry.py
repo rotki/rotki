@@ -73,7 +73,7 @@ def assert_editing_works(
     entry.timestamp = TimestampMS(entry.timestamp + 2)
     entry.balance = Balance(amount=FVal('1500.1'), usd_value=FVal('1499.45'))
     edit_entry('event_type', HistoryEventType.DEPOSIT)
-    edit_entry('event_subtype', HistoryEventSubType.NONE)
+    edit_entry('event_subtype', HistoryEventSubType.DEPOSIT_ASSET)
     edit_entry('extra_data', {'some': 2, 'data': 4})
     edit_entry('asset', A_USDT)
     edit_entry('location_label', '0x9531C059098e3d194fF87FebB587aB07B30B1306')

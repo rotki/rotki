@@ -1990,7 +1990,7 @@ def assert_rotki_generic_events_import_results(rotki: Rotkehlchen):
             location=Location.KUCOIN,
             asset=A_EUR,
             event_type=HistoryEventType.DEPOSIT,
-            event_subtype=HistoryEventSubType.NONE,
+            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
             balance=Balance(
                 amount=FVal('1000.00'),
                 usd_value=ZERO,
@@ -2004,7 +2004,7 @@ def assert_rotki_generic_events_import_results(rotki: Rotkehlchen):
             location=Location.BINANCE,
             asset=A_USDT,
             event_type=HistoryEventType.WITHDRAWAL,
-            event_subtype=HistoryEventSubType.NONE,
+            event_subtype=HistoryEventSubType.REMOVE_ASSET,
             balance=Balance(
                 amount=FVal('99.00'),
                 usd_value=ZERO,
@@ -2032,7 +2032,7 @@ def assert_rotki_generic_events_import_results(rotki: Rotkehlchen):
             location=Location.KRAKEN,
             asset=A_BNB,
             event_type=HistoryEventType.WITHDRAWAL,
-            event_subtype=HistoryEventSubType.NONE,
+            event_subtype=HistoryEventSubType.REMOVE_ASSET,
             balance=Balance(
                 amount=FVal('1.01'),
                 usd_value=ZERO,
@@ -2259,7 +2259,7 @@ def assert_bitstamp_trades_import_results(rotki: Rotkehlchen):
             location=Location.BITSTAMP,
             asset=A_ETH,
             event_type=HistoryEventType.DEPOSIT,
-            event_subtype=HistoryEventSubType.NONE,
+            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
             balance=Balance(
                 amount=FVal('2.00000000'),
                 usd_value=ZERO,
@@ -2319,7 +2319,7 @@ def assert_bitstamp_trades_import_results(rotki: Rotkehlchen):
             location=Location.BITSTAMP,
             asset=A_EUR,
             event_type=HistoryEventType.WITHDRAWAL,
-            event_subtype=HistoryEventSubType.NONE,
+            event_subtype=HistoryEventSubType.REMOVE_ASSET,
             balance=Balance(
                 amount=FVal('2211.01'),
                 usd_value=ZERO,

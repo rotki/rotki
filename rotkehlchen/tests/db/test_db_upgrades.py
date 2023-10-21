@@ -1873,8 +1873,8 @@ def test_upgrade_db_39_to_40(user_data_dir):  # pylint: disable=unused-argument
     other_events_types_after = set(cursor.fetchall())
 
     assert events_types_after == {
-        ('deposit', 'none'), ('spend', 'fee'),
-        ('withdrawal', 'none'), ('spend', 'fee'),
+        ('deposit', 'deposit asset'), ('spend', 'fee'),
+        ('withdrawal', 'remove asset'), ('spend', 'fee'),
         ('receive', 'none'), ('spend', 'fee'),
         ('spend', 'none'), ('spend', 'fee'),
         ('staking', 'reward'), ('spend', 'fee'),

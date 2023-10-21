@@ -298,8 +298,8 @@ def test_uniswap_v2_swap_eth_returned(database, ethereum_inquirer, eth_transacti
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
-            event_type=HistoryEventType.TRANSFER,
-            event_subtype=HistoryEventSubType.NONE,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.REFUND,
             asset=A_ETH,
             balance=Balance(
                 amount=FVal(0.008104374914845978),

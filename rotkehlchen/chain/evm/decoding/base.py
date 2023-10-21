@@ -109,7 +109,6 @@ class BaseDecoderTools:
         event_subtype = HistoryEventSubType.NONE
         if tracked_from and tracked_to:
             event_type = HistoryEventType.TRANSFER
-            event_subtype = HistoryEventSubType.INTERNAL_MOVEMENT
             location_label = from_address
             address = to_address
             verb = 'Transfer'

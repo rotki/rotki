@@ -21,8 +21,8 @@ from rotkehlchen.serialization.deserialize import deserialize_asset_amount
 from .constants import ROTKI_EVENT_PREFIX
 
 GENERIC_TYPE_TO_HISTORY_EVENT_TYPE_MAPPINGS = {
-    'Deposit': (HistoryEventType.DEPOSIT, HistoryEventSubType.NONE),
-    'Withdrawal': (HistoryEventType.WITHDRAWAL, HistoryEventSubType.NONE),
+    'Deposit': (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET),
+    'Withdrawal': (HistoryEventType.WITHDRAWAL, HistoryEventSubType.REMOVE_ASSET),
     'Income': (HistoryEventType.RECEIVE, HistoryEventSubType.NONE),
     'Loss': (HistoryEventType.SPEND, HistoryEventSubType.NONE),
     'Spend': (HistoryEventType.SPEND, HistoryEventSubType.NONE),  # synonym of loss
