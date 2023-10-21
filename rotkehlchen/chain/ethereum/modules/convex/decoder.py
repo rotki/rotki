@@ -103,6 +103,7 @@ class ConvexDecoder(DecoderInterface):
                         event.notes = f'Return {event.balance.amount} {crypto_asset.symbol} to convex'  # noqa: E501
                 else:
                     event.event_type = HistoryEventType.DEPOSIT
+                    event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
                     event.counterparty = CPT_CONVEX
                     if context.tx_log.address in CONVEX_POOLS:
                         event.notes = f'Deposit {event.balance.amount} {crypto_asset.symbol} into convex {CONVEX_POOLS[context.tx_log.address]} pool'  # noqa: E501
@@ -133,6 +134,7 @@ class ConvexDecoder(DecoderInterface):
             ):
                 if context.tx_log.topics[0] in WITHDRAWAL_TOPICS:
                     event.event_type = HistoryEventType.WITHDRAWAL
+                    event.event_subtype = HistoryEventSubType.REMOVE_ASSET
                     event.counterparty = CPT_CONVEX
                     found_event_modifying_balances = True
                     if context.tx_log.address in CONVEX_POOLS:

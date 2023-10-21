@@ -87,7 +87,9 @@ class BaseDecoderTools:
             self,
             from_address: ChecksumEvmAddress,
             to_address: Optional[ChecksumEvmAddress],
-    ) -> Optional[tuple[HistoryEventType, Optional[str], ChecksumEvmAddress, str, str]]:
+    ) -> Optional[
+        tuple[HistoryEventType, HistoryEventSubType, Optional[str], ChecksumEvmAddress, str, str]
+    ]:
         """Depending on addresses, if they are tracked by the user or not, if they
         are an exchange address etc. determine the type of event to classify the transfer as.
 
@@ -104,6 +106,7 @@ class BaseDecoderTools:
         to_exchange = self.address_is_exchange(to_address) if to_address else None
 
         counterparty: Optional[str] = None
+        event_subtype = HistoryEventSubType.NONE
         if tracked_from and tracked_to:
             event_type = HistoryEventType.TRANSFER
             location_label = from_address
@@ -114,6 +117,7 @@ class BaseDecoderTools:
                 event_type = HistoryEventType.DEPOSIT
                 verb = 'Deposit'
                 counterparty = to_exchange
+                event_subtype = HistoryEventSubType.DEPOSIT_ASSET
             else:
                 event_type = HistoryEventType.SPEND
                 verb = 'Send'
@@ -125,6 +129,7 @@ class BaseDecoderTools:
                 event_type = HistoryEventType.WITHDRAWAL
                 verb = 'Withdraw'
                 counterparty = from_exchange
+                event_subtype = HistoryEventSubType.REMOVE_ASSET
             else:
                 event_type = HistoryEventType.RECEIVE
                 verb = 'Receive'
@@ -132,7 +137,7 @@ class BaseDecoderTools:
             address = from_address
             location_label = to_address  # type: ignore  # to_address can't be None here
 
-        return event_type, location_label, address, counterparty, verb  # type: ignore
+        return event_type, event_subtype, location_label, address, counterparty, verb  # type: ignore
 
     def decode_erc20_721_transfer(
             self,
@@ -158,7 +163,7 @@ class BaseDecoderTools:
             return None
 
         extra_data = None
-        event_type, location_label, address, counterparty, verb = direction_result
+        event_type, event_subtype, location_label, address, counterparty, verb = direction_result
         counterparty_or_address = counterparty or address
         amount_raw_or_token_id = hex_or_bytes_to_int(tx_log.data)
         if token.token_kind == EvmTokenKind.ERC20:
@@ -198,7 +203,7 @@ class BaseDecoderTools:
             sequence_index=self.get_sequence_index(tx_log),
             timestamp=transaction.timestamp,
             event_type=event_type,
-            event_subtype=HistoryEventSubType.NONE,
+            event_subtype=event_subtype,
             asset=token,
             balance=Balance(amount=amount),
             location_label=location_label,

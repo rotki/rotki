@@ -46,7 +46,7 @@ class ConvexBalances(ProtocolWithGauges):
         self.cvx = A_CVX.resolve_to_evm_token()
 
     def get_gauge_deposit_events(self) -> set[tuple[HistoryEventType, HistoryEventSubType]]:
-        return {(HistoryEventType.DEPOSIT, HistoryEventSubType.NONE)}
+        return {(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET)}
 
     def get_gauge_address(self, event: 'EvmEvent') -> Optional[ChecksumEvmAddress]:
         if event.extra_data is None:
@@ -66,7 +66,7 @@ class ConvexBalances(ProtocolWithGauges):
         """
         addresses_with_stake_mapping = self.addresses_with_deposits(
             product=EvmProduct.STAKING,
-            deposit_events={(HistoryEventType.DEPOSIT, HistoryEventSubType.NONE)},
+            deposit_events={(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET)},
         )
         # addresses_with_deposits returns a mapping of address to evm event but since we will call
         # the staking contracts with the addresses as arguments we need the list of addresses to
