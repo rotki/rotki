@@ -16,7 +16,6 @@ from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecod
 from rotkehlchen.chain.ethereum.manager import EthereumManager
 from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 from rotkehlchen.chain.ethereum.transactions import EthereumTransactions
-from rotkehlchen.chain.evm.contracts import EvmContracts
 from rotkehlchen.chain.evm.types import NodeName
 from rotkehlchen.chain.gnosis.manager import GnosisManager
 from rotkehlchen.chain.gnosis.node_inquirer import GnosisInquirer
@@ -47,7 +46,7 @@ from rotkehlchen.tests.utils.substrate import (
     POLKADOT_SS58_FORMAT,
     wait_until_all_substrate_nodes_connected,
 )
-from rotkehlchen.types import BTCAddress, ChainID, ChecksumEvmAddress, SupportedBlockchain
+from rotkehlchen.types import BTCAddress, ChecksumEvmAddress, SupportedBlockchain
 
 
 def _initialize_and_yield_evm_inquirer_fixture(
@@ -261,6 +260,7 @@ def fixture_mock_other_web3(network_mocking, should_mock_web3):
 
 @pytest.fixture(name='ethereum_inquirer')
 def fixture_ethereum_inquirer(
+        evm_contracts,  # pylint: disable=unused-argument  # needed for common abi init
         ethereum_manager_connect_at_start,
         greenlet_manager,
         database,
@@ -737,8 +737,3 @@ def fixture_blockchain(
     )
 
     return chains_aggregator
-
-
-@pytest.fixture(name='ethereum_contracts')
-def fixture_ethereum_contracts():
-    return EvmContracts[Literal[ChainID.ETHEREUM]](ChainID.ETHEREUM)
