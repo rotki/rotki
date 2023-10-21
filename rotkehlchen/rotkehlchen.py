@@ -31,6 +31,7 @@ from rotkehlchen.chain.base.node_inquirer import BaseInquirer
 from rotkehlchen.chain.ethereum.manager import EthereumManager
 from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 from rotkehlchen.chain.ethereum.oracles.uniswap import UniswapV2Oracle, UniswapV3Oracle
+from rotkehlchen.chain.evm.contracts import EvmContracts
 from rotkehlchen.chain.evm.nodes import populate_rpc_nodes_in_database
 from rotkehlchen.chain.gnosis.manager import GnosisManager
 from rotkehlchen.chain.gnosis.node_inquirer import GnosisInquirer
@@ -183,6 +184,8 @@ class Rotkehlchen:
             manualcurrent=ManualCurrentOracle(),
             msg_aggregator=self.msg_aggregator,
         )
+        # Initialize EVM Contracts common abis
+        EvmContracts.initialize_common_abis()
         self.task_manager: Optional[TaskManager] = None
         self.shutdown_event = gevent.event.Event()
         self.migration_manager = DataMigrationManager(self)

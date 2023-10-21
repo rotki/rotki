@@ -137,14 +137,23 @@ T = TypeVar('T', bound='ChainID')
 class EvmContracts(Generic[T]):
     """A class allowing to query contract data for an Evm Chain. addresses and ABIs.
 
-    Atm all evm chains need to have (may need to change this):
-    - ERC20TOKEN
-    - UNIV1_LP
-    - ERC721TOKEN
+    Some very frequently used abis are saved as class attributes in order to avoid
+    multiple DB reads and json importing. Class attributes to not duplicate across all evm chains
     """
+
+    erc20_abi: list[dict[str, Any]]
+    erc721_abi: list[dict[str, Any]]
+    univ1lp_abi: list[dict[str, Any]]
 
     def __init__(self, chain_id: T) -> None:
         self.chain_id = chain_id
+
+    @classmethod
+    def initialize_common_abis(cls) -> None:
+        """Initialize common abi class attributes. Should be called only once at initialization"""
+        cls.erc20_abi = cls.abi_or_none(name='ERC20_TOKEN', fallback_to_packaged_db=True)  # type: ignore  # abi should exist in the DB # noqa: E501, RUF100
+        cls.erc721_abi = cls.abi_or_none('ERC721_TOKEN', fallback_to_packaged_db=True)  # type: ignore  # abi should exist in the DB # noqa: E501, RUF100
+        cls.univ1lp_abi = cls.abi_or_none('UNIV1_LP', fallback_to_packaged_db=True)  # type: ignore  # abi should exist in the DB # noqa: E501, RUF100
 
     def contract_by_address(
             self,
@@ -217,8 +226,9 @@ class EvmContracts(Generic[T]):
         assert contract, f'No contract data for {address} found'
         return contract
 
+    @classmethod
     def abi_or_none(
-            self,
+            cls,
             name: str,
             fallback_to_packaged_db: bool = False,
     ) -> Optional[list[dict[str, Any]]]:

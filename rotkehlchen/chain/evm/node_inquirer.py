@@ -1131,7 +1131,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
         if len(addresses) == 0:
             return
 
-        contract = EvmContract(address=addresses[0], abi=self.contracts.abi('ERC20_TOKEN'), deployed_block=0)  # noqa: E501
+        contract = EvmContract(address=addresses[0], abi=self.contracts.erc20_abi, deployed_block=0)  # noqa: E501
 
         for addresses_chunk in get_chunks(addresses, 8):  # chunk number seems to be highest that can work with etherscan url limit  # noqa: E501
             calls = [(address, contract.encode(method_name=prop)) for address in addresses_chunk for prop in ERC20_PROPERTIES]  # noqa: E501
@@ -1158,7 +1158,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
             address: ChecksumEvmAddress,
     ) -> dict[str, Any]:
         info: dict[str, Any] = {}
-        contract = EvmContract(address=address, abi=self.contracts.abi('ERC20_TOKEN'), deployed_block=0)  # noqa: E501
+        contract = EvmContract(address=address, abi=self.contracts.erc20_abi, deployed_block=0)
         try:
             decoded = self._process_contract_info(
                 output=output,
@@ -1175,7 +1175,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
                 f'{address} failed to decode as ERC20 token. '
                 f'Trying with token ABI using bytes. {e!s}',
             )
-            abi = self.contracts.abi('UNIV1_LP')
+            abi = self.contracts.univ1lp_abi
             contract = EvmContract(address=address, abi=abi, deployed_block=0)
             decoded = self._process_contract_info(
                 output=output,
@@ -1194,11 +1194,10 @@ class EvmNodeInquirer(metaclass=ABCMeta):
 
     def _query_token_contract(
             self,
-            token_abi_str: Literal['ERC20_TOKEN', 'ERC721_TOKEN'],
+            abi: list[dict[str, Any]],
             properties: tuple[str, ...],
             address: ChecksumEvmAddress,
     ) -> list[tuple[bool, bytes]]:
-        abi = self.contracts.abi(token_abi_str)
         contract = EvmContract(address=address, abi=abi, deployed_block=0)
         try:
             # Output contains call status and result
@@ -1227,7 +1226,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
         if (cache := self.contract_info_erc20_cache.get(address)) is not None:
             return cache
 
-        output = self._query_token_contract(token_abi_str='ERC20_TOKEN', properties=ERC20_PROPERTIES, address=address)  # noqa: E501
+        output = self._query_token_contract(abi=self.contracts.erc20_abi, properties=ERC20_PROPERTIES, address=address)  # noqa: E501
         info = self._process_and_create_erc20_info(
             output=output,
             address=address,
@@ -1250,13 +1249,13 @@ class EvmNodeInquirer(metaclass=ABCMeta):
         if (cache := self.contract_info_erc721_cache.get(address)) is not None:
             return cache
 
-        output = self._query_token_contract(token_abi_str='ERC721_TOKEN', properties=ERC721_PROPERTIES, address=address)  # noqa: E501
+        output = self._query_token_contract(abi=self.contracts.erc721_abi, properties=ERC721_PROPERTIES, address=address)  # noqa: E501
 
         try:
             decoded = self._process_contract_info(
                 output=output,
                 properties=ERC721_PROPERTIES,
-                contract=EvmContract(address=address, abi=self.contracts.abi('ERC721_TOKEN'), deployed_block=0),  # noqa: E501
+                contract=EvmContract(address=address, abi=self.contracts.erc721_abi, deployed_block=0),  # noqa: E501
                 token_kind=EvmTokenKind.ERC721,
             )
         except (OverflowError, InsufficientDataBytes) as e:

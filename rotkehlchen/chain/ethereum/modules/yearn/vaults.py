@@ -467,7 +467,7 @@ class YearnVaults(EthereumModule):
         argument_filters = {'from': address, 'to': vault.contract.address}
         deposit_events = self.ethereum.get_logs(
             contract_address=vault.underlying_token.evm_address,
-            abi=self.ethereum.contracts.abi('ERC20_TOKEN'),
+            abi=self.ethereum.contracts.erc20_abi,
             event_name='Transfer',
             argument_filters=argument_filters,
             from_block=from_block,
@@ -553,7 +553,7 @@ class YearnVaults(EthereumModule):
         argument_filters = {'from': vault.contract.address, 'to': address}
         withdraw_events = self.ethereum.get_logs(
             contract_address=vault.underlying_token.evm_address,
-            abi=self.ethereum.contracts.abi('ERC20_TOKEN'),
+            abi=self.ethereum.contracts.erc20_abi,
             event_name='Transfer',
             argument_filters=argument_filters,
             from_block=from_block,
