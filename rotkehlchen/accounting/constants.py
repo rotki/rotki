@@ -72,6 +72,7 @@ EVENT_CATEGORY_MAPPINGS = {  # possible combinations of types and subtypes mappe
     },
     HistoryEventType.TRANSFER: {
         HistoryEventSubType.DONATE: EventCategory.DONATE,
+        HistoryEventSubType.INTERNAL_MOVEMENT: EventCategory.INTERNAL_MOVEMENT,
         HistoryEventSubType.NONE: EventCategory.TRANSFER,
     },
     HistoryEventType.ADJUSTMENT: {
@@ -195,6 +196,11 @@ EVENT_CATEGORY_DETAILS = {
         label='transfer',
         icon='mdi-swap-horizontal',
         direction=EventDirection.IN,
+    ),
+    EventCategory.INTERNAL_MOVEMENT: EventCategoryDetails(
+        label='transfer',
+        icon='mdi-swap-horizontal',
+        direction=EventDirection.NEUTRAL,
     ),
     EventCategory.STAKING_REWARD: EventCategoryDetails(
         label='staking reward',
