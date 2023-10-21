@@ -33,7 +33,6 @@ EVENT_CATEGORY_MAPPINGS = {  # possible combinations of types and subtypes mappe
     },
     HistoryEventType.DEPOSIT: {
         HistoryEventSubType.DEPOSIT_ASSET: EventCategory.DEPOSIT,
-        HistoryEventSubType.NONE: EventCategory.DEPOSIT,
         HistoryEventSubType.BRIDGE: EventCategory.BRIDGE_DEPOSIT,
         HistoryEventSubType.PLACE_ORDER: EventCategory.DEPOSIT,
         HistoryEventSubType.FEE: EventCategory.FEE,
@@ -48,7 +47,6 @@ EVENT_CATEGORY_MAPPINGS = {  # possible combinations of types and subtypes mappe
     },
     HistoryEventType.WITHDRAWAL: {
         HistoryEventSubType.REMOVE_ASSET: EventCategory.WITHDRAW,
-        HistoryEventSubType.NONE: EventCategory.WITHDRAW,
         HistoryEventSubType.BRIDGE: EventCategory.BRIDGE_WITHDRAWAL,
         HistoryEventSubType.CANCEL_ORDER: EventCategory.CANCEL_ORDER,
         HistoryEventSubType.REFUND: EventCategory.REFUND,
@@ -75,9 +73,6 @@ EVENT_CATEGORY_MAPPINGS = {  # possible combinations of types and subtypes mappe
     HistoryEventType.TRANSFER: {
         HistoryEventSubType.DONATE: EventCategory.DONATE,
         HistoryEventSubType.NONE: EventCategory.TRANSFER,
-    },
-    HistoryEventType.UNKNOWN: {
-        HistoryEventSubType.NONE: EventCategory.INFORMATIONAL,
     },
     HistoryEventType.ADJUSTMENT: {
         HistoryEventSubType.SPEND: EventCategory.SEND,

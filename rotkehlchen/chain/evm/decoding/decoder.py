@@ -615,14 +615,14 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             if amount == ZERO:
                 continue
 
-            event_type, location_label, address, counterparty, verb = direction_result
+            event_type, event_subtype, location_label, address, counterparty, verb = direction_result
             counterparty_or_address = counterparty or address
             preposition = 'to' if event_type in OUTGOING_EVENT_TYPES else 'from'
             events.append(self.base.make_event_next_index(
                 tx_hash=tx.tx_hash,
                 timestamp=tx.timestamp,
                 event_type=event_type,
-                event_subtype=HistoryEventSubType.NONE,
+                event_subtype=event_subtype,
                 asset=self.value_asset,
                 balance=Balance(amount=amount),
                 location_label=location_label,
@@ -638,7 +638,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
         )
         if direction_result is None:
             return None
-        event_type, location_label, address, counterparty, verb = direction_result
+        event_type, event_subtype, location_label, address, counterparty, verb = direction_result
         counterparty_or_address = counterparty or address
         amount = ZERO if tx.value == 0 else from_wei(FVal(tx.value))
         preposition = 'to' if event_type in OUTGOING_EVENT_TYPES else 'from'
@@ -646,7 +646,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             tx_hash=tx.tx_hash,
             timestamp=tx.timestamp,
             event_type=event_type,
-            event_subtype=HistoryEventSubType.NONE,
+            event_subtype=event_subtype,
             asset=self.value_asset,
             balance=Balance(amount=amount),
             location_label=location_label,
@@ -713,7 +713,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
         # check for gas spent
         direction_result = self.base.decode_direction(tx.from_address, tx.to_address)
         if direction_result is not None:
-            event_type, location_label, _, _, _ = direction_result
+            event_type, _, location_label, _, _, _ = direction_result
             if event_type in OUTGOING_EVENT_TYPES:
                 eth_burned_as_gas = self._calculate_gas_burned(tx)
                 events.append(self.base.make_event_next_index(

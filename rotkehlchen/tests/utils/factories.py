@@ -127,7 +127,7 @@ def make_ethereum_event(
         location_label: Optional[str] = None,
         asset: CryptoAsset = CUSTOM_USDT,
         counterparty: Optional[str] = None,
-        event_type: HistoryEventType = HistoryEventType.UNKNOWN,
+        event_type: HistoryEventType = HistoryEventType.INFORMATIONAL,
         event_subtype: HistoryEventSubType = HistoryEventSubType.NONE,
         timestamp: TimestampMS = ZERO_TIMESTAMP_MS,
         address: Optional[ChecksumEvmAddress] = None,

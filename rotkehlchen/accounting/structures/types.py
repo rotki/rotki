@@ -62,7 +62,6 @@ class HistoryEventType(SerializableEnumNameMixin):
     # forced adjustments of a system, like a CEX. For example having DAO in Kraken
     # and Kraken delisting them and exchanging them for ETH for you
     ADJUSTMENT = auto()
-    UNKNOWN = auto()
     # An informational event. For kraken entries it means an unknown event
     INFORMATIONAL = auto()
     MIGRATE = auto()
