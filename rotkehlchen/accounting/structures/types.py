@@ -101,7 +101,6 @@ class HistoryEventSubType(SerializableEnumNameMixin):
     APPLY = auto()
     UPDATE = auto()
     CREATE = auto()  # used when tx creates a new entity like Maker vault or Gnosis safe
-    INTERNAL_MOVEMENT = auto()  # used when the user moves assets between their accounts
 
     def serialize_or_none(self) -> Optional[str]:
         return self.serialize()
@@ -159,4 +158,3 @@ class EventCategory(SerializableEnumNameMixin):
     CREATE_PROJECT = auto()
     UPDATE_PROJECT = auto()
     APPLY = auto()
-    INTERNAL_MOVEMENT = auto()

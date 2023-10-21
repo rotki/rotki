@@ -171,8 +171,8 @@ def decode_uniswap_v2_like_swap(
         ):
             # this is to make sure it's the amm issuing the refund and not an aggregator making a swap  # noqa: E501
             # Those are assets returned due to a change in the swap price
-            event.event_type = HistoryEventType.TRANSFER
-            event.event_subtype = HistoryEventSubType.NONE
+            event.event_type = HistoryEventType.WITHDRAWAL
+            event.event_subtype = HistoryEventSubType.REFUND
             event.counterparty = counterparty
             event.notes = f'Refund of {event.balance.amount} {crypto_asset.symbol} in {counterparty} due to price change'  # noqa: E501
 

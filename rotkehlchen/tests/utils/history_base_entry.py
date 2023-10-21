@@ -115,11 +115,11 @@ def predefined_events_to_insert() -> list['HistoryBaseEntry']:
         timestamp=TimestampMS(1619924579000),
         location=Location.ETHEREUM,
         event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
         asset=A_ETH,
         balance=Balance(amount=FVal('0.0001'), usd_value=FVal('5.31')),
         location_label='0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
         notes='Deposit something somewhere',
-        event_subtype=HistoryEventSubType.NONE,
         counterparty='somewhere',
     ), EvmEvent(
         tx_hash=deserialize_evm_tx_hash('0x4b5489ed325483db3a8c4831da1d5ac08fb9ab0fd8c570aa3657e0c267a7d023'),

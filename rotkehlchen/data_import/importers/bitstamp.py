@@ -113,6 +113,12 @@ class BitstampTransactionsImporter(BaseExchangeImporter):
             amount = deserialize_asset_amount(amount)
             asset = asset_from_bitstamp(amount_symbol)
             transaction_type = csv_row['Type']
+            if transaction_type == 'Deposit':
+                event_type = HistoryEventType.DEPOSIT
+                event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+            else:
+                event_type = HistoryEventType.WITHDRAWAL
+                event_subtype = HistoryEventSubType.REMOVE_ASSET
             movement_event = HistoryEvent(
                 event_identifier=event_identifier,
                 sequence_index=0,
@@ -124,8 +130,8 @@ class BitstampTransactionsImporter(BaseExchangeImporter):
                     usd_value=ZERO,
                 ),
                 notes=f'{transaction_type} of {amount} {asset} on Bitstamp',
-                event_type=HistoryEventType.DEPOSIT if transaction_type == 'Deposit' else HistoryEventType.WITHDRAWAL,  # noqa: E501
-                event_subtype=HistoryEventSubType.NONE,
+                event_type=event_type,
+                event_subtype=event_subtype,
             )
             self.add_history_events(write_cursor, [movement_event])
 

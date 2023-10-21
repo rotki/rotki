@@ -615,7 +615,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             if amount == ZERO:
                 continue
 
-            event_type, event_subtype, location_label, address, counterparty, verb = direction_result
+            event_type, event_subtype, location_label, address, counterparty, verb = direction_result  # noqa: E501
             counterparty_or_address = counterparty or address
             preposition = 'to' if event_type in OUTGOING_EVENT_TYPES else 'from'
             events.append(self.base.make_event_next_index(

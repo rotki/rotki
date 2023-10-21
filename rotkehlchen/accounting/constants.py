@@ -72,7 +72,6 @@ EVENT_CATEGORY_MAPPINGS = {  # possible combinations of types and subtypes mappe
     },
     HistoryEventType.TRANSFER: {
         HistoryEventSubType.DONATE: EventCategory.DONATE,
-        HistoryEventSubType.INTERNAL_MOVEMENT: EventCategory.INTERNAL_MOVEMENT,
         HistoryEventSubType.NONE: EventCategory.TRANSFER,
     },
     HistoryEventType.ADJUSTMENT: {
@@ -156,13 +155,13 @@ EVENT_CATEGORY_DETAILS = {
         direction=EventDirection.OUT,
     ),
     EventCategory.BRIDGE_DEPOSIT: EventCategoryDetails(
-        label='bridge deposit',
+        label='bridge',
         icon='mdi-arrow-expand-up',
         color='red',
         direction=EventDirection.OUT,
     ),
     EventCategory.BRIDGE_WITHDRAWAL: EventCategoryDetails(
-        label='bridge withdrawal',
+        label='bridge',
         icon='mdi-arrow-expand-down',
         color='green',
         direction=EventDirection.IN,
@@ -193,11 +192,6 @@ EVENT_CATEGORY_DETAILS = {
         direction=EventDirection.NEUTRAL,
     ),
     EventCategory.TRANSFER: EventCategoryDetails(
-        label='transfer',
-        icon='mdi-swap-horizontal',
-        direction=EventDirection.IN,
-    ),
-    EventCategory.INTERNAL_MOVEMENT: EventCategoryDetails(
         label='transfer',
         icon='mdi-swap-horizontal',
         direction=EventDirection.NEUTRAL,
