@@ -133,6 +133,6 @@ Thank you for considering a donation to support our work!
 
 ## License
 
-rotki is committed to being open and transparent. Our chosen license ensures that the software remains open to use and that contributions are transparent and welcomed. Distributed under the **AGPLv3** License. See [`LICENSE.md`](https://github.com/rotki/rotki/blob/develop/LICENSE.md) for more information
+rotki is committed to being open and transparent. Our chosen license ensures that the software remains open to use and that contributions are transparent and welcomed. Distributed under the **AGPLv3** License. See [`LICENSE.md`](https://github.com/rotki/rotki/blob/develop/LICENSE.md) for more information.
 
 <p align="right">(<a href="#top">🔼 Back to top</a>)</p>
