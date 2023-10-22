@@ -16,6 +16,7 @@ from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecod
 from rotkehlchen.chain.ethereum.manager import EthereumManager
 from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 from rotkehlchen.chain.ethereum.transactions import EthereumTransactions
+from rotkehlchen.chain.evm.contracts import EvmContracts
 from rotkehlchen.chain.evm.types import NodeName
 from rotkehlchen.chain.gnosis.manager import GnosisManager
 from rotkehlchen.chain.gnosis.node_inquirer import GnosisInquirer
@@ -72,6 +73,7 @@ def _initialize_and_yield_evm_inquirer_fixture(
     elif klass == GnosisInquirer:
         blockchain = SupportedBlockchain.GNOSIS
 
+    EvmContracts.initialize_common_abis()
     nodes_to_connect_to = maybe_modify_rpc_nodes(database, blockchain, manager_connect_at_start)
 
     with ExitStack() as init_stack:
@@ -260,7 +262,6 @@ def fixture_mock_other_web3(network_mocking, should_mock_web3):
 
 @pytest.fixture(name='ethereum_inquirer')
 def fixture_ethereum_inquirer(
-        evm_contracts,  # pylint: disable=unused-argument  # needed for common abi init
         ethereum_manager_connect_at_start,
         greenlet_manager,
         database,
