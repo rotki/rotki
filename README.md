@@ -69,7 +69,7 @@ The [Pro Version](https://rotki.com/checkout/plan) of Rotki also supports additi
 ## Installation
 Rotki currently supports the following operating systems:- Windows, MacOs, Linux.
 
-The installation for rotki can be simply done via two ways:-
+The installation of rotki can be simply done via two ways:-
 - [Packaged Binaries](https://rotki.readthedocs.io/en/latest/installation_guide.html#packaged-binaries) (Recommended)
 - [Building from Source](https://rotki.readthedocs.io/en/latest/installation_guide.html#build-from-source)
 
