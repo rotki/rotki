@@ -40,13 +40,13 @@
 ---
 
 ## Overview
-[Rotki](https://rotki.com/) is an open source portfolio tracking, analytics, accounting, and tax reporting tool that protects your privacy.  The mission of rotki is to bring transparency into the crypto and financial sectors through the use of open source. Most importantly, unlike virtually every other competing service which consists of closed source SaaS onto which you are forced to hand over all your financial data, with rotki your data is stored encrypted locally in your computer. It enables you to take ownership of your financial data!
+[Rotki](https://rotki.com/) is an open source portfolio tracking, analytics, accounting, and tax reporting tool that protects your privacy.  The mission of rotki is to bring transparency into the crypto and financial sectors through the use of open source. Most importantly, unlike virtually every other competing service, which consists of closed source SaaS onto which you are forced to hand over all your financial data, with rotki your data is stored encrypted locally on your computer. It enables you to take ownership of your financial data!
 
 The [Pro Version](https://rotki.com/checkout/plan) of Rotki also supports additional and advanced features. You can find a comprehensive list of them on ☑️ [Feature Coverage Page](https://rotki.com/products/details).
 
 ## Features at a glance
 
-:balance_scale: Shows overview of your balances across multiple platforms, blockchain, exchanges and protocols.
+:balance_scale: Shows an overview of your balances across multiple platforms, blockchain, exchanges and protocols.
 
 :chart_with_upwards_trend: Graphs analyzing your historical activity and showing insights into your portfolio.
 
@@ -69,13 +69,13 @@ The [Pro Version](https://rotki.com/checkout/plan) of Rotki also supports additi
 ## Installation
 Rotki currently supports the following operating systems:- Windows, MacOs, Linux.
 
-The installation for rotki can be simply done via two ways:-
+The installation of rotki can be simply done in two ways:-
 - [Packaged Binaries](https://rotki.readthedocs.io/en/latest/installation_guide.html#packaged-binaries) (Recommended)
 - [Building from Source](https://rotki.readthedocs.io/en/latest/installation_guide.html#build-from-source)
 
 ## Usage
 
-Read the [documentation](https://rotki.readthedocs.io/en/latest/) for a complete guide, frequently-asked questions, API reference, and more.
+Read the [documentation](https://rotki.readthedocs.io/en/latest/) for a complete guide, frequently-asked questions, API references, and more.
 
 Some quick links to useful parts of the documentation follow below for your convenience.
 
