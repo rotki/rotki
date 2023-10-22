@@ -141,11 +141,6 @@ def fixture_should_mock_current_price_queries():
     return True
 
 
-@pytest.fixture(scope='session', name='session_should_mock_current_price_queries')
-def fixture_session_should_mock_current_price_queries():
-    return True
-
-
 @pytest.fixture(name='ignore_mocked_prices_for')
 def fixture_ignore_mocked_prices_for() -> Optional[list[str]]:
     """An optional list of asset identifiers to ignore mocking for"""
@@ -162,23 +157,8 @@ def fixture_mocked_current_prices_with_oracles():
     return {}
 
 
-@pytest.fixture(scope='session', name='session_mocked_current_prices')
-def fixture_session_mocked_current_prices():
-    return {}
-
-
-@pytest.fixture(scope='session', name='session_mocked_current_prices_with_oracles')
-def fixture_session_mocked_current_prices_with_oracles():
-    return {}
-
-
 @pytest.fixture(name='current_price_oracles_order')
 def fixture_current_price_oracles_order():
-    return DEFAULT_CURRENT_PRICE_ORACLES_ORDER
-
-
-@pytest.fixture(scope='session', name='session_current_price_oracles_order')
-def fixture_session_current_price_oracles_order():
     return DEFAULT_CURRENT_PRICE_ORACLES_ORDER
 
 
@@ -386,33 +366,6 @@ def fixture_inquirer(
         add_defi_oracles=False,
         ethereum_manager=None,
         ignore_mocked_prices_for=ignore_mocked_prices_for,
-    )
-
-
-@pytest.fixture(scope='session')
-def session_inquirer(
-        session_globaldb,  # pylint: disable=unused-argument  # needed for _create_inquirer
-        session_data_dir,
-        session_should_mock_current_price_queries,
-        session_mocked_current_prices,
-        session_mocked_current_prices_with_oracles,
-        session_current_price_oracles_order,
-):
-    """
-    The ethereum_manager argument is defined as None for the reasons explained in the
-    `inquirer` fixture
-
-    This fixtures is only used by 3 exchanges session objects for convenience.
-    At the time of writing: poloniex, kraken, bittrex. Grep to be sure current state of things
-    """
-    return _create_inquirer(
-        data_directory=session_data_dir,
-        should_mock_current_price_queries=session_should_mock_current_price_queries,
-        mocked_prices=session_mocked_current_prices,
-        mocked_current_prices_with_oracles=session_mocked_current_prices_with_oracles,
-        current_price_oracles_order=session_current_price_oracles_order,
-        ethereum_manager=None,
-        add_defi_oracles=False,
     )
 
 

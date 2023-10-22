@@ -118,10 +118,8 @@ def test_poloniex_trade_with_asset_needing_conversion():
     assert trade.location == Location.POLONIEX
 
 
-def test_query_trade_history(function_scope_poloniex):
+def test_query_trade_history(poloniex):
     """Happy path test for poloniex trade history querying"""
-    poloniex = function_scope_poloniex
-
     def mock_api_return(url, **kwargs):  # pylint: disable=unused-argument
         return MockResponse(200, POLONIEX_TRADES_RESPONSE)
 
@@ -156,9 +154,8 @@ def test_query_trade_history(function_scope_poloniex):
     assert trades[1].fee_currency == A_BTC
 
 
-def test_query_trade_history_unexpected_data(function_scope_poloniex):
+def test_query_trade_history_unexpected_data(poloniex):
     """Test that poloniex trade history querying returning unexpected data is handled gracefully"""
-    poloniex = function_scope_poloniex
     poloniex.cache_ttl_secs = 0
 
     def mock_poloniex_and_query(given_trades, expected_warnings_num, expected_errors_num, expected_trades_len=0):  # noqa: E501
@@ -249,10 +246,9 @@ def test_poloniex_assets_are_known(poloniex):
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_poloniex_query_balances_unknown_asset(function_scope_poloniex):
+def test_poloniex_query_balances_unknown_asset(poloniex):
     """Test that if a poloniex balance query returns unknown asset no exception
     is raised and a warning is generated. Same for unsupported assets"""
-    poloniex = function_scope_poloniex
 
     def mock_unknown_asset_return(url, **kwargs):  # pylint: disable=unused-argument
         return MockResponse(200, POLONIEX_BALANCES_RESPONSE)
@@ -275,10 +271,9 @@ def test_poloniex_query_balances_unknown_asset(function_scope_poloniex):
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_poloniex_deposits_withdrawal_unknown_asset(function_scope_poloniex):
+def test_poloniex_deposits_withdrawal_unknown_asset(poloniex):
     """Test that if a poloniex asset movement query returns unknown asset no exception
     is raised and a warning is generated. Same for unsupported assets"""
-    poloniex = function_scope_poloniex
 
     def mock_api_return(url, **kwargs):  # pylint: disable=unused-argument
         response = MockResponse(
@@ -304,12 +299,11 @@ def test_poloniex_deposits_withdrawal_unknown_asset(function_scope_poloniex):
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_poloniex_deposits_withdrawal_null_fee(function_scope_poloniex):
+def test_poloniex_deposits_withdrawal_null_fee(poloniex):
     """
     Test that if a poloniex asset movement query returns null for fee we don't crash.
     Regression test for issue #76
     """
-    poloniex = function_scope_poloniex
 
     def mock_api_return(url, **kwargs):  # pylint: disable=unused-argument
         response = MockResponse(
@@ -337,11 +331,10 @@ def test_poloniex_deposits_withdrawal_null_fee(function_scope_poloniex):
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_poloniex_deposits_withdrawal_unexpected_data(function_scope_poloniex):
+def test_poloniex_deposits_withdrawal_unexpected_data(poloniex):
     """
     Test that if a poloniex asset movement query returns unexpected data we handle it gracefully
     """
-    poloniex = function_scope_poloniex
     poloniex.cache_ttl_secs = 0
 
     def mock_poloniex_and_query(given_movements, expected_warnings_num, expected_errors_num):

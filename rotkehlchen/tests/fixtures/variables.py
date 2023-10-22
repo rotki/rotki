@@ -17,11 +17,6 @@ def db_password():
     return '123'
 
 
-@pytest.fixture(scope='session')
-def session_db_password():
-    return '123'
-
-
 @pytest.fixture()
 def rest_api_port(port_generator):
     port = next(port_generator)

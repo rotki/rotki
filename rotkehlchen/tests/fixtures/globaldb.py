@@ -132,27 +132,6 @@ def _initialize_fixture_globaldb(
     return globaldb
 
 
-@pytest.fixture(scope='session', name='session_globaldb')
-def fixture_session_globaldb(
-        tmpdir_factory,
-        session_sql_vm_instructions_cb,
-):
-    globaldb = _initialize_fixture_globaldb(
-        custom_globaldb=None,
-        tmpdir_factory=tmpdir_factory,
-        sql_vm_instructions_cb=session_sql_vm_instructions_cb,
-        reload_user_assets=True,
-        target_globaldb_version=GLOBAL_DB_VERSION,
-        globaldb_upgrades=[],
-        globaldb_migrations=[],
-        run_globaldb_migrations=True,
-        empty_global_addressbook=False,
-    )
-    yield globaldb
-
-    globaldb.cleanup()
-
-
 @pytest.fixture(name='globaldb')
 def fixture_globaldb(
         custom_globaldb,
