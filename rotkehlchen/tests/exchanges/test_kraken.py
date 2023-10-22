@@ -153,8 +153,8 @@ def test_coverage_of_kraken_balances(kraken):
         assert asset_from_kraken(kraken_asset) == expected_asset
 
 
-def test_querying_balances(function_scope_kraken):
-    result, error_or_empty = function_scope_kraken.query_balances()
+def test_querying_balances(kraken):
+    result, error_or_empty = kraken.query_balances()
     assert error_or_empty == ''
     assert isinstance(result, dict)
     for asset, entry in result.items():
@@ -162,11 +162,10 @@ def test_querying_balances(function_scope_kraken):
         assert isinstance(entry, Balance)
 
 
-def test_querying_trade_history(function_scope_kraken):
-    kraken = function_scope_kraken
+def test_querying_trade_history(kraken):
     kraken.random_ledgers_data = False
     now = ts_now()
-    result = function_scope_kraken.query_trade_history(
+    result = kraken.query_trade_history(
         start_ts=1451606400,
         end_ts=now,
         only_cache=False,
@@ -178,13 +177,12 @@ def test_querying_trade_history(function_scope_kraken):
         assert isinstance(kraken_trade, Trade)
 
 
-def test_querying_rate_limit_exhaustion(function_scope_kraken, database):
+def test_querying_rate_limit_exhaustion(kraken, database):
     """Test that if kraken api rates limit us we don't get stuck in an infinite loop
     and also that we return what we managed to retrieve until rate limit occured.
 
     Regression test for https://github.com/rotki/rotki/issues/3629
     """
-    kraken = function_scope_kraken
     kraken.use_original_kraken = True
     kraken.reduction_every_secs = 0.05
 
@@ -227,11 +225,10 @@ def test_querying_rate_limit_exhaustion(function_scope_kraken, database):
     assert to_ts == 1638529919, 'should have saved only until the last trades timestamp'
 
 
-def test_querying_deposits_withdrawals(function_scope_kraken):
-    kraken = function_scope_kraken
+def test_querying_deposits_withdrawals(kraken):
     kraken.random_ledgers_data = False
     now = ts_now()
-    result = function_scope_kraken.query_deposits_withdrawals(
+    result = kraken.query_deposits_withdrawals(
         start_ts=1439994442,
         end_ts=now,
         only_cache=False,
@@ -291,10 +288,9 @@ def test_kraken_to_world_pair(kraken):
         kraken_to_world_pair('GABOOBABOO')
 
 
-def test_kraken_query_balances_unknown_asset(function_scope_kraken):
+def test_kraken_query_balances_unknown_asset(kraken):
     """Test that if a kraken balance query returns unknown asset no exception
     is raised and a warning is generated"""
-    kraken = function_scope_kraken
     kraken.random_balance_data = False
     balances, msg = kraken.query_balances()
 
@@ -311,11 +307,10 @@ def test_kraken_query_balances_unknown_asset(function_scope_kraken):
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_kraken_query_deposit_withdrawals_unknown_asset(function_scope_kraken):
+def test_kraken_query_deposit_withdrawals_unknown_asset(kraken):
     """Test that if a kraken deposits_withdrawals query returns unknown asset
     no exception is raised and a warning is generated and the deposits/withdrawals
     with valid assets are still returned"""
-    kraken = function_scope_kraken
     kraken.random_ledgers_data = False
 
     input_ledger = """
@@ -380,9 +375,8 @@ def test_kraken_query_deposit_withdrawals_unknown_asset(function_scope_kraken):
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_kraken_trade_with_spend_receive(function_scope_kraken):
+def test_kraken_trade_with_spend_receive(kraken):
     """Test that trades based on spend/receive events are correctly processed"""
-    kraken = function_scope_kraken
     kraken.random_trade_data = False
     kraken.random_ledgers_data = False
     kraken.cache_ttl_secs = 0
@@ -442,9 +436,8 @@ def test_kraken_trade_with_spend_receive(function_scope_kraken):
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_kraken_trade_with_adjustment(function_scope_kraken):
+def test_kraken_trade_with_adjustment(kraken):
     """Test that trades based on adjustment events are processed"""
-    kraken = function_scope_kraken
     kraken.random_trade_data = False
     kraken.random_ledgers_data = False
     kraken.cache_ttl_secs = 0
@@ -499,9 +492,8 @@ def test_kraken_trade_with_adjustment(function_scope_kraken):
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_kraken_trade_no_counterpart(function_scope_kraken):
+def test_kraken_trade_no_counterpart(kraken):
     """Test that trades with no counterpart are processed properly"""
-    kraken = function_scope_kraken
     kraken.random_trade_data = False
     kraken.random_ledgers_data = False
     kraken.cache_ttl_secs = 0
@@ -565,9 +557,8 @@ def test_kraken_trade_no_counterpart(function_scope_kraken):
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_kraken_failed_withdrawals(function_scope_kraken):
+def test_kraken_failed_withdrawals(kraken):
     """Test that failed withdrawals are processed properly"""
-    kraken = function_scope_kraken
     kraken.random_trade_data = False
     kraken.random_ledgers_data = False
     kraken.cache_ttl_secs = 0
@@ -610,10 +601,9 @@ def test_kraken_failed_withdrawals(function_scope_kraken):
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_trade_from_kraken_unexpected_data(function_scope_kraken):
+def test_trade_from_kraken_unexpected_data(kraken):
     """Test that getting unexpected data from kraken leads to skipping the trade
     and does not lead to a crash"""
-    kraken = function_scope_kraken
     kraken.random_trade_data = False
     kraken.random_ledgers_data = False
     kraken.cache_ttl_secs = 0

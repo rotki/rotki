@@ -33,24 +33,9 @@ def fixture_username():
     return 'testuser'
 
 
-@pytest.fixture(scope='session', name='session_ignored_assets')
-def fixture_session_ignored_assets() -> Optional[list[Asset]]:
-    return None
-
-
 @pytest.fixture(name='ignored_assets')
 def fixture_ignored_assets() -> Optional[list[Asset]]:
     return None
-
-
-@pytest.fixture(scope='session', name='session_username')
-def fixture_session_username():
-    return 'session_test_user'
-
-
-@pytest.fixture(scope='session', name='session_data_dir')
-def fixture_session_data_dir(tmpdir_factory) -> Path:
-    return Path(tmpdir_factory.mktemp('session_data'))
 
 
 @pytest.fixture(name='user_data_dir')
@@ -61,22 +46,8 @@ def fixture_user_data_dir(data_dir, username) -> Path:
     return user_data_dir
 
 
-@pytest.fixture(scope='session', name='session_user_data_dir')
-def fixture_session_user_data_dir(session_data_dir, session_username) -> Path:
-    """Create and return the session scoped user data directory"""
-    user_data_dir = session_data_dir / session_username
-    user_data_dir.mkdir(exist_ok=True)
-    return user_data_dir
-
-
 @pytest.fixture(name='include_cryptocompare_key')
 def fixture_include_cryptocompare_key() -> bool:
-    """By default use a cryptocompare API key only in the OSX CI"""
-    return 'CI' in os.environ and sys.platform == 'darwin'
-
-
-@pytest.fixture(scope='session', name='session_include_cryptocompare_key')
-def fixture_session_include_cryptocompare_key() -> bool:
     """By default use a cryptocompare API key only in the OSX CI"""
     return 'CI' in os.environ and sys.platform == 'darwin'
 
@@ -86,18 +57,8 @@ def fixture_include_etherscan_key() -> bool:
     return True
 
 
-@pytest.fixture(scope='session', name='session_include_etherscan_key')
-def fixture_session_include_etherscan_key() -> bool:
-    return True
-
-
 @pytest.fixture(name='tags')
 def fixture_tags() -> list[dict[str, Any]]:
-    return []
-
-
-@pytest.fixture(scope='session', name='session_tags')
-def fixture_session_tags() -> list[dict[str, Any]]:
     return []
 
 
@@ -106,18 +67,8 @@ def fixture_manually_tracked_balances() -> list[ManuallyTrackedBalance]:
     return []
 
 
-@pytest.fixture(scope='session', name='session_manually_tracked_balances')
-def fixture_session_manually_tracked_balances() -> list[ManuallyTrackedBalance]:
-    return []
-
-
 @pytest.fixture(name='sql_vm_instructions_cb')
 def fixture_sql_vm_instructions_cb() -> int:
-    return DEFAULT_SQL_VM_INSTRUCTIONS_CB
-
-
-@pytest.fixture(scope='session', name='session_sql_vm_instructions_cb')
-def fixture_session_sql_vm_instructions_cb() -> int:
     return DEFAULT_SQL_VM_INSTRUCTIONS_CB
 
 
@@ -215,70 +166,11 @@ def database(
         db_handler.logout()
 
 
-@pytest.fixture(scope='session')
-def session_database(
-        session_globaldb,  # pylint: disable=unused-argument  # needed for init_database
-        session_user_data_dir,
-        messages_aggregator,
-        session_db_password,
-        session_db_settings,
-        session_start_with_logged_in_user,
-        session_ignored_assets,
-        session_include_etherscan_key,
-        session_include_cryptocompare_key,
-        session_tags,
-        session_manually_tracked_balances,
-        data_migration_version,
-        session_use_custom_database,
-        session_sql_vm_instructions_cb,
-        session_perform_upgrades_at_unlock,
-) -> Generator[Optional[DBHandler], None, None]:
-    if not session_start_with_logged_in_user:
-        yield None
-    else:
-        # No sessions blockchain accounts given
-        blockchain_accounts = BlockchainAccounts()
-        db_handler = _init_database(
-            data_dir=session_user_data_dir,
-            msg_aggregator=messages_aggregator,
-            password=session_db_password,
-            db_settings=session_db_settings,
-            ignored_assets=session_ignored_assets,
-            blockchain_accounts=blockchain_accounts,
-            include_etherscan_key=session_include_etherscan_key,
-            include_cryptocompare_key=session_include_cryptocompare_key,
-            tags=session_tags,
-            manually_tracked_balances=session_manually_tracked_balances,
-            data_migration_version=data_migration_version,
-            use_custom_database=session_use_custom_database,
-            sql_vm_instructions_cb=session_sql_vm_instructions_cb,
-            perform_upgrades_at_unlock=session_perform_upgrades_at_unlock,
-        )
-        yield db_handler
-
-        db_handler.logout()
-
-
 @pytest.fixture(name='db_settings')
 def fixture_db_settings() -> Optional[dict[str, Any]]:
-    return None
-
-
-@pytest.fixture(scope='session', name='session_db_settings')
-def fixture_session_db_settings() -> Optional[dict[str, Any]]:
     return None
 
 
 @pytest.fixture(name='use_custom_database')
 def fixture_use_custom_database() -> Optional[str]:
     return None
-
-
-@pytest.fixture(scope='session', name='session_use_custom_database')
-def fixture_session_use_custom_database() -> Optional[str]:
-    return None
-
-
-@pytest.fixture(scope='session', name='session_perform_upgrades_at_unlock')
-def fixture_session_perform_upgrades_at_unlock() -> bool:
-    return True
