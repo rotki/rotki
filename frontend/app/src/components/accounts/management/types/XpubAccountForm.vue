@@ -19,7 +19,7 @@ const errorMessages = ref<ValidationErrors>({});
 const { addAccounts, fetchAccounts } = useBlockchains();
 const { editAccount } = useBlockchainAccounts();
 const { setMessage } = useMessageStore();
-const { valid, setSave, accountToEdit } = useAccountDialog();
+const { setSubmitFunc, accountToEdit } = useAccountDialog();
 const { pending, loading } = useAccountLoading();
 const { t } = useI18n();
 
@@ -106,7 +106,7 @@ watch(accountToEdit, acc => {
 });
 
 onMounted(() => {
-  setSave(save);
+  setSubmitFunc(save);
 
   const acc = get(accountToEdit);
   if (acc) {
@@ -117,7 +117,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <VForm v-model="valid">
+  <div>
     <XpubInput
       :disabled="loading"
       :error-messages="errorMessages"
@@ -132,5 +132,5 @@ onMounted(() => {
       @update:label="label = $event"
       @update:tags="tags = $event"
     />
-  </VForm>
+  </div>
 </template>

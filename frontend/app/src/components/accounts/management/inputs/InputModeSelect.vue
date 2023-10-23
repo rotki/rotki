@@ -38,43 +38,56 @@ const loading = isAccountOperationRunning();
 
 <template>
   <div class="mb-5">
-    <VBtnToggle
+    <RuiButtonGroup
       :value="inputMode"
       class="input-mode-select"
-      mandatory
-      @change="update($event)"
+      variant="outlined"
+      size="lg"
+      required
+      color="primary"
+      @input="update($event)"
     >
-      <VBtn
-        :value="InputMode.MANUAL_ADD"
-        data-cy="input-mode-manual"
-        :disabled="loading"
-      >
-        <RuiIcon name="pencil-line" />
-        <span class="hidden-sm-and-down ml-2">
-          {{ t('input_mode_select.manual_add.label') }}
-        </span>
-      </VBtn>
-      <VBtn
-        v-if="isSupportedEvmChain"
-        :value="InputMode.METAMASK_IMPORT"
-        :disabled="!isMetaMaskSupported() || loading"
-      >
-        <VImg
-          contain
-          max-width="24px"
-          :src="`./assets/images/metamask-fox.svg`"
-        />
-        <span class="hidden-sm-and-down ml-2">
-          {{ t('input_mode_select.metamask_import.label') }}
-        </span>
-      </VBtn>
-      <VBtn v-if="isBitcoin" :value="InputMode.XPUB_ADD">
-        <RuiIcon name="key-line" />
-        <span class="hidden-sm-and-down ml-2">
-          {{ t('input_mode_select.xpub_add.label') }}
-        </span>
-      </VBtn>
-    </VBtnToggle>
+      <template #default>
+        <RuiButton
+          type="button"
+          :value="InputMode.MANUAL_ADD"
+          data-cy="input-mode-manual"
+          :disabled="loading"
+        >
+          <template #prepend>
+            <RuiIcon name="pencil-line" />
+          </template>
+          <span class="hidden md:block">
+            {{ t('input_mode_select.manual_add.label') }}
+          </span>
+        </RuiButton>
+        <RuiButton
+          v-if="isSupportedEvmChain"
+          type="button"
+          :value="InputMode.METAMASK_IMPORT"
+          :disabled="!isMetaMaskSupported() || loading"
+        >
+          <template #prepend>
+            <VImg
+              contain
+              max-width="24px"
+              :src="`./assets/images/metamask-fox.svg`"
+            />
+          </template>
+          <span class="hidden md:block">
+            {{ t('input_mode_select.metamask_import.label') }}
+          </span>
+        </RuiButton>
+        <RuiButton v-if="isBitcoin" type="button" :value="InputMode.XPUB_ADD">
+          <template #prepend>
+            <RuiIcon name="key-line" />
+          </template>
+          <span class="hidden md:block">
+            {{ t('input_mode_select.xpub_add.label') }}
+          </span>
+        </RuiButton>
+      </template>
+    </RuiButtonGroup>
     <p
       v-if="isSupportedEvmChain && isMetaMask"
       class="mt-3 info--text text-caption"

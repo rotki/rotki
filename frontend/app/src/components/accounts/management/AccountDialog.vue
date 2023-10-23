@@ -5,8 +5,23 @@ defineProps<{ context: Blockchain }>();
 
 const { t } = useI18n();
 
-const { dialogText, openDialog, valid, clearDialog, save } = useAccountDialog();
+const {
+  dialogText,
+  openDialog,
+  clearDialog,
+  trySubmit,
+  setPostSubmitFunc,
+  submitting
+} = useAccountDialog();
 const { loading } = useAccountLoading();
+
+const postSubmitFunc = (result: boolean) => {
+  if (result) {
+    clearDialog();
+  }
+};
+
+setPostSubmitFunc(postSubmitFunc);
 </script>
 
 <template>
@@ -16,9 +31,8 @@ const { loading } = useAccountLoading();
     :subtitle="dialogText.subtitle"
     :primary-action="t('common.actions.save')"
     :secondary-action="t('common.actions.cancel')"
-    :action-disabled="!valid || loading"
-    :loading="loading"
-    @confirm="save()"
+    :loading="loading || submitting"
+    @confirm="trySubmit()"
     @cancel="clearDialog()"
   >
     <AccountForm :context="context" data-cy="blockchain-balance-form" />

@@ -17,10 +17,11 @@ const { t } = useI18n();
 
 <template>
   <Fragment>
-    <VTextField
+    <RuiTextField
       :value="label"
       data-cy="account-label-field"
-      outlined
+      color="primary"
+      variant="outlined"
       class="account-form__label"
       :label="t('common.name')"
       :disabled="disabled"

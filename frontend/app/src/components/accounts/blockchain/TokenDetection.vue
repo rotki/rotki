@@ -23,24 +23,26 @@ const { t } = useI18n();
       {{ detectedTokens.total }}
     </div>
     <div>
-      <VTooltip top>
-        <template #activator="{ on }">
-          <VBtn
-            text
+      <RuiTooltip :popper="{ placement: 'top' }" open-delay="400">
+        <template #activator>
+          <RuiButton
+            variant="text"
             icon
             :disabled="detectingTokens || loading"
-            v-on="on"
+            class="[&_span]:!flex [&_span]:items-center"
+            color="primary"
             @click="detectTokens()"
           >
-            <VProgressCircular
+            <RuiProgress
               v-if="detectingTokens"
-              indeterminate
-              color="primary"
-              width="2"
-              size="20"
+              variant="indeterminate"
+              circular
+              size="16"
+              thickness="2"
             />
+
             <RuiIcon v-else size="16" name="restart-line" />
-          </VBtn>
+          </RuiButton>
         </template>
         <div class="text-center">
           <div>
@@ -54,7 +56,7 @@ const { t } = useI18n();
             </i18n>
           </div>
         </div>
-      </VTooltip>
+      </RuiTooltip>
     </div>
   </div>
 </template>

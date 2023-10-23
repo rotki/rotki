@@ -177,7 +177,7 @@ watch(tags, () => {
         <template v-else>
           <div>
             <TagIcon :tag="item" />
-            <span class="tag-input__tag__description">
+            <span class="pl-4">
               {{ item.description }}
             </span>
           </div>
@@ -208,13 +208,3 @@ watch(tags, () => {
     </VDialog>
   </div>
 </template>
-
-<style scoped lang="scss">
-.tag-input {
-  &__tag {
-    &__description {
-      padding-left: 18px;
-    }
-  }
-}
-</style>

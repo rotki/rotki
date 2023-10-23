@@ -38,7 +38,7 @@ const loading = isAccountOperationRunning();
 </script>
 
 <template>
-  <div v-if="visibleModules.length > 0" class="flex flex-col gap-4">
+  <div v-if="visibleModules.length > 0" class="flex flex-col items-start gap-4">
     <div>
       <div class="text-body-1 font-bold text-rui-text">
         {{ t('module_activator.title') }}
@@ -48,30 +48,36 @@ const loading = isAccountOperationRunning();
       </div>
     </div>
 
-    <VBtnToggle
+    <RuiButtonGroup
       v-model="enabledModules"
-      multiple
+      variant="outlined"
+      color="primary"
+      required
       :disabled="loading"
       @change="updateSelection($event)"
     >
-      <VBtn
-        v-for="module in visibleModules"
-        :key="module.identifier"
-        icon
-        :disabled="loading"
-        :value="module.identifier"
-        color="primary"
-        depressed
-        cols="auto"
-      >
-        <RuiTooltip :popper="{ placement: 'top' }" open-delay="400">
-          <template #activator>
-            <VImg height="24px" width="24px" contain :src="module.icon" />
-          </template>
-          <span>{{ module.name }}</span>
-        </RuiTooltip>
-      </VBtn>
-    </VBtnToggle>
+      <template #default>
+        <RuiButton
+          v-for="module in visibleModules"
+          :key="module.identifier"
+          icon
+          type="button"
+          :disabled="loading"
+          :value="module.identifier"
+        >
+          <RuiTooltip
+            class="flex"
+            :popper="{ placement: 'top' }"
+            open-delay="400"
+          >
+            <template #activator>
+              <VImg height="24px" width="24px" contain :src="module.icon" />
+            </template>
+            <span>{{ module.name }}</span>
+          </RuiTooltip>
+        </RuiButton>
+      </template>
+    </RuiButtonGroup>
     <div class="text-caption text--secondary">
       {{ t('module_activator.hint') }}
     </div>

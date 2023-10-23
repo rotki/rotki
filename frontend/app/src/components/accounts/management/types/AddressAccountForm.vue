@@ -25,7 +25,7 @@ const { addAccounts, addEvmAccounts, fetchAccounts } = useBlockchains();
 const { editAccount } = useBlockchainAccounts();
 const { setMessage } = useMessageStore();
 const { isEvm } = useSupportedChains();
-const { valid, setSave, accountToEdit } = useAccountDialog();
+const { setSubmitFunc, accountToEdit } = useAccountDialog();
 const { pending, loading } = useAccountLoading();
 const { t } = useI18n();
 
@@ -119,7 +119,7 @@ watch(accountToEdit, acc => {
 });
 
 onMounted(() => {
-  setSave(save);
+  setSubmitFunc(save);
   const acc = get(accountToEdit);
   if (!acc) {
     reset();
@@ -130,7 +130,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <VForm v-model="valid" class="flex flex-col gap-6">
+  <div class="flex flex-col gap-6">
     <ModuleActivator
       v-if="blockchain === Blockchain.ETH && !accountToEdit"
       @update:selection="selectedModules = $event"
@@ -142,7 +142,7 @@ onMounted(() => {
       :loading="loading"
     />
 
-    <div>
+    <div class="flex flex-col gap-4">
       <AddressInput
         :addresses="addresses"
         :error-messages="errorMessages.address"
@@ -161,5 +161,5 @@ onMounted(() => {
         @update:tags="tags = $event"
       />
     </div>
-  </VForm>
+  </div>
 </template>

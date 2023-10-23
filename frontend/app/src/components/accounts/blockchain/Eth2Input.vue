@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { onlyIfTruthy } from '@rotki/common';
-import useVuelidate from '@vuelidate/core';
 import {
   and,
   helpers,
@@ -51,7 +50,9 @@ const rules = {
   }
 };
 
-const v$ = useVuelidate(
+const { setValidation } = useAccountDialog();
+
+const v$ = setValidation(
   rules,
   {
     validatorIndex,
@@ -92,30 +93,31 @@ watch(
 </script>
 
 <template>
-  <VRow>
-    <VCol cols="12" md="4" lg="2">
-      <VTextField
-        v-model="validatorIndex"
-        outlined
-        type="number"
-        :disabled="disabled"
-        :label="t('common.validator_index')"
-        :error-messages="toMessages(v$.validatorIndex)"
-        @blur="v$.validatorIndex.$touch()"
-      />
-    </VCol>
-    <VCol cols="12" md="6" lg="8">
-      <VTextField
+  <div class="grid gap-4 grid-cols-2">
+    <div class="col-span-2">
+      <RuiTextField
         v-model="publicKey"
-        outlined
+        variant="outlined"
+        color="primary"
         :disabled="disabled"
         :label="t('eth2_input.public_key')"
         :error-messages="toMessages(v$.publicKey)"
         @blur="v$.publicKey.$touch()"
       />
-    </VCol>
-    <VCol cols="12" md="2" lg="2">
-      <VTextField
+    </div>
+    <div class="col-span-2 md:col-span-1">
+      <AmountInput
+        v-model="validatorIndex"
+        outlined
+        :disabled="disabled"
+        :label="t('common.validator_index')"
+        :error-messages="toMessages(v$.validatorIndex)"
+        @blur="v$.validatorIndex.$touch()"
+      />
+    </div>
+
+    <div class="col-span-2 md:col-span-1">
+      <AmountInput
         v-model="ownershipPercentage"
         outlined
         placeholder="100"
@@ -126,6 +128,6 @@ watch(
         :error-messages="toMessages(v$.ownershipPercentage)"
         @blur="v$.ownershipPercentage.$touch()"
       />
-    </VCol>
-  </VRow>
+    </div>
+  </div>
 </template>

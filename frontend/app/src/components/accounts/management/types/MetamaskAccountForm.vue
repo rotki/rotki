@@ -19,7 +19,7 @@ const { notify } = useNotificationsStore();
 const { t } = useI18n();
 const { isPackaged, metamaskImport } = useInterop();
 const { addAccounts, addEvmAccounts } = useBlockchains();
-const { valid, setSave } = useAccountDialog();
+const { setSubmitFunc } = useAccountDialog();
 const { loading } = useAccountLoading();
 
 const save = async (): Promise<boolean> => {
@@ -73,12 +73,12 @@ const save = async (): Promise<boolean> => {
 };
 
 onMounted(() => {
-  setSave(save);
+  setSubmitFunc(save);
 });
 </script>
 
 <template>
-  <VForm v-model="valid" class="flex flex-col gap-6">
+  <div class="flex flex-col gap-6">
     <ModuleActivator @update:selection="selectedModules = $event" />
     <slot name="selector" :loading="loading" />
     <div class="mt-4">
@@ -90,5 +90,5 @@ onMounted(() => {
         @update:tags="tags = $event"
       />
     </div>
-  </VForm>
+  </div>
 </template>

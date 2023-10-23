@@ -1,7 +1,6 @@
 \
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
 import { isEmpty } from 'lodash-es';
 import { XpubPrefix, type XpubType } from '@/utils/xpub';
@@ -118,7 +117,9 @@ const rules = {
   }
 };
 
-const v$ = useVuelidate(
+const { setValidation } = useAccountDialog();
+
+const v$ = setValidation(
   rules,
   {
     xpub,
@@ -139,70 +140,63 @@ watch(errorMessages, errors => {
 </script>
 
 <template>
-  <div>
-    <VRow align="center" no-gutters class="mt-2">
-      <VCol cols="auto">
-        <VSelect
-          v-model="xpubKeyPrefix"
-          outlined
-          class="account-form__xpub-key-type"
-          item-value="value"
-          item-text="label"
-          :disabled="disabled"
-          :items="keyTypeListData"
-        />
-      </VCol>
-      <VCol>
-        <VTextField
-          v-model="xpubKey"
-          outlined
-          class="account-form__xpub ml-2"
-          :label="t('account_form.labels.btc.xpub')"
-          autocomplete="off"
-          :error-messages="toMessages(v$.xpub)"
-          :disabled="disabled"
-          @blur="v$.xpub.$touch()"
-          @paste="onPasteXpub($event)"
-        >
-          <template #append-outer>
-            <VTooltip open-delay="400" top>
-              <template #activator="{ on, attrs }">
-                <div class="account-form__advanced">
-                  <VBtn
-                    icon
-                    class="mt-n2"
-                    v-bind="attrs"
-                    v-on="on"
-                    @click="advanced = !advanced"
-                  >
-                    <VIcon v-if="advanced">mdi-chevron-up</VIcon>
-                    <VIcon v-else>mdi-chevron-down</VIcon>
-                  </VBtn>
-                </div>
-              </template>
-              <span>
-                {{ t('account_form.advanced_tooltip', advanced ? 0 : 1) }}
-              </span>
-            </VTooltip>
+  <div class="mt-2">
+    <div class="flex gap-4">
+      <VSelect
+        v-model="xpubKeyPrefix"
+        outlined
+        class="account-form__xpub-key-type flex-1"
+        item-value="value"
+        item-text="label"
+        :disabled="disabled"
+        :items="keyTypeListData"
+      />
+      <RuiTextField
+        v-model="xpubKey"
+        variant="outlined"
+        color="primary"
+        class="account-form__xpub flex-1"
+        :label="t('account_form.labels.btc.xpub')"
+        autocomplete="off"
+        :error-messages="toMessages(v$.xpub)"
+        :disabled="disabled"
+        @blur="v$.xpub.$touch()"
+        @paste="onPasteXpub($event)"
+      />
+      <div>
+        <RuiTooltip :popper="{ placement: 'top' }" open-delay="400">
+          <template #activator>
+            <div class="account-form__advanced">
+              <RuiButton
+                variant="text"
+                icon
+                class="mt-1"
+                @click="advanced = !advanced"
+              >
+                <RuiIcon v-if="advanced" name="arrow-up-s-line" />
+                <RuiIcon v-else name="arrow-down-s-line" />
+              </RuiButton>
+            </div>
           </template>
-        </VTextField>
-      </VCol>
-    </VRow>
-    <VRow v-if="advanced" no-gutters>
-      <VCol>
-        <VTextField
-          v-model="derivationPath"
-          outlined
-          class="account-form__derivation-path"
-          :label="t('account_form.labels.btc.derivation_path')"
-          :error-messages="toMessages(v$.derivationPath)"
-          autocomplete="off"
-          :disabled="disabled"
-          persistent-hint
-          :hint="t('account_form.labels.btc.derivation_path_hint')"
-          @blur="v$.derivationPath.$touch()"
-        />
-      </VCol>
-    </VRow>
+          <span>
+            {{ t('account_form.advanced_tooltip', advanced ? 0 : 1) }}
+          </span>
+        </RuiTooltip>
+      </div>
+    </div>
+    <RuiTextField
+      v-if="advanced"
+      v-model="derivationPath"
+      variant="outlined"
+      color="primary"
+      class="account-form__derivation-path"
+      :label="t('account_form.labels.btc.derivation_path')"
+      :error-messages="toMessages(v$.derivationPath)"
+      autocomplete="off"
+      :disabled="disabled"
+      persistent-hint
+      :hint="t('account_form.labels.btc.derivation_path_hint')"
+      @blur="v$.derivationPath.$touch()"
+    />
   </div>
 </template>

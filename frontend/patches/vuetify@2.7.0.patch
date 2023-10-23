@@ -34,20 +34,32 @@ index d7e016c5385d421a8a342a59903f38741ee38c92..37fef9df64608f3978e9eaba9050dd85
 --- a/src/components/VGrid/_grid.sass
 +++ b/src/components/VGrid/_grid.sass
 @@ -93,7 +93,6 @@
- 
+
        $m: $m - 1
- 
+
 -.flex,
  .child-flex > *
    flex: 1 1 auto
    max-width: 100%
+diff --git a/src/styles/generic/_reset.scss b/src/styles/generic/_reset.scss
+index 9b3f56c975c7a4aef13677d452ff0da0f7a892ef..16f5da46597d4bfe4732ee8d7af792ad92a0632b 100644
+--- a/src/styles/generic/_reset.scss
++++ b/src/styles/generic/_reset.scss
+@@ -204,7 +204,6 @@ input,
+ select,
+ textarea {
+   background-color: transparent;
+-  border-style: none;
+ }
+
+ /* Style select like a standard input */
 diff --git a/src/styles/settings/_utilities.scss b/src/styles/settings/_utilities.scss
 index 6d8aa6bf68526921d6161d72b2b921927f9bf5be..4f1848a76382908331a310600f2783fcd49f225d 100644
 --- a/src/styles/settings/_utilities.scss
 +++ b/src/styles/settings/_utilities.scss
 @@ -52,11 +52,6 @@ $utilities: map-deep-merge(
      ),
- 
+
      // Flex utilities
 -    "flex": (
 -      responsive: true,

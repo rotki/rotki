@@ -14,7 +14,7 @@ const { addEth2Validator, editEth2Validator } = useEthAccountsStore();
 const { refreshAccounts, fetchAccounts } = useBlockchains();
 const { updateEthStakingOwnership } = useEthBalancesStore();
 const { setMessage } = useMessageStore();
-const { valid, setSave, accountToEdit } = useAccountDialog();
+const { setSubmitFunc, accountToEdit } = useAccountDialog();
 const { pending, loading } = useAccountLoading();
 
 const showMessage = (message: string, id: string, edit: boolean) => {
@@ -103,7 +103,7 @@ watch(accountToEdit, edit => {
 });
 
 onMounted(() => {
-  setSave(save);
+  setSubmitFunc(save);
 
   const acc = get(accountToEdit);
   if (acc) {
@@ -115,12 +115,10 @@ onMounted(() => {
 </script>
 
 <template>
-  <VForm v-model="valid">
-    <Eth2Input
-      :validator="validator"
-      :disabled="loading || !!accountToEdit"
-      :error-messages="errorMessages"
-      @update:validator="validator = $event"
-    />
-  </VForm>
+  <Eth2Input
+    :validator="validator"
+    :disabled="loading || !!accountToEdit"
+    :error-messages="errorMessages"
+    @update:validator="validator = $event"
+  />
 </template>
