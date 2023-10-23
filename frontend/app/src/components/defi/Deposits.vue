@@ -2,7 +2,7 @@
 import { type BigNumber } from '@rotki/common';
 import { type GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain, DefiProtocol } from '@rotki/common/lib/blockchain';
-import { type ComputedRef, type Ref } from 'vue';
+import { type ComputedRef } from 'vue';
 import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
 import { type YearnVaultProfitLoss } from '@/types/defi/yearn';
 import { Module } from '@/types/modules';
@@ -155,7 +155,7 @@ const transactionEventProtocols: ComputedRef<string[]> = computed(() => {
   return mappedProtocol;
 });
 
-const refreshTooltip: Ref<string> = ref(
+const refreshTooltip: ComputedRef<string> = computed(() =>
   t('helpers.refresh_header.tooltip', {
     title: t('common.deposits').toLocaleLowerCase()
   })

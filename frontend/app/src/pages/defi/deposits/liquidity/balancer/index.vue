@@ -22,9 +22,21 @@ const refreshing = computed(
 
 const { t } = useI18n();
 
+const refresh = async (ignoreCache: boolean = false) => {
+  await Promise.all([fetchBalances(ignoreCache), fetchEvents(ignoreCache)]);
+};
+
 onMounted(async () => {
-  await Promise.allSettled([fetchBalances(false), fetchEvents(false)]);
+  await refresh();
 });
+
+const refreshTooltip: ComputedRef<string> = computed(() =>
+  t('helpers.refresh_header.tooltip', {
+    title: t(
+      'navigation_menu.defi_sub.deposits_sub.liquidity_sub.balancer'
+    ).toLocaleLowerCase()
+  })
+);
 </script>
 
 <template>
@@ -35,11 +47,38 @@ onMounted(async () => {
       {{ t('balancer.loading') }}
     </template>
   </ProgressScreen>
-  <div v-else>
-    <BalancerBalances :refreshing="refreshing">
-      <template #modules>
+  <TablePageLayout
+    v-else
+    class="mt-8"
+    :title="[
+      t('navigation_menu.defi'),
+      t('navigation_menu.defi_sub.deposits_sub.liquidity'),
+      t('navigation_menu.defi_sub.deposits_sub.liquidity_sub.balancer')
+    ]"
+  >
+    <template #buttons>
+      <div class="flex items-center gap-4">
         <ActiveModules :modules="modules" />
-      </template>
-    </BalancerBalances>
-  </div>
+
+        <RuiTooltip :open-delay="400">
+          <template #activator>
+            <RuiButton
+              variant="outlined"
+              color="primary"
+              :loading="refreshing"
+              @click="refresh(true)"
+            >
+              <template #prepend>
+                <RuiIcon name="refresh-line" />
+              </template>
+              {{ t('common.refresh') }}
+            </RuiButton>
+          </template>
+          {{ refreshTooltip }}
+        </RuiTooltip>
+      </div>
+    </template>
+
+    <BalancerBalances />
+  </TablePageLayout>
 </template>

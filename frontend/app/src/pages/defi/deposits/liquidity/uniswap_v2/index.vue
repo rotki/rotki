@@ -58,17 +58,25 @@ const poolProfit = computed(() => {
     : profit.filter(({ poolAddress }) => pools.includes(poolAddress));
 });
 
-const refresh = async () => {
-  await Promise.all([fetchBalances(true), fetchEvents(true)]);
-};
-
 const getIdentifier = (item: XswapBalance) => item.address;
 
+const lpType = LpType.UNISWAP_V2;
+
+const refresh = async (ignoreCache: boolean = false) => {
+  await Promise.all([fetchBalances(ignoreCache), fetchEvents(ignoreCache)]);
+};
+
 onMounted(async () => {
-  await Promise.all([fetchBalances(false), fetchEvents(false)]);
+  await refresh();
 });
 
-const lpType = LpType.UNISWAP_V2;
+const refreshTooltip: ComputedRef<string> = computed(() =>
+  t('helpers.refresh_header.tooltip', {
+    title: t(
+      'navigation_menu.defi_sub.deposits_sub.liquidity_sub.uniswap_v2'
+    ).toLocaleLowerCase()
+  })
+);
 </script>
 
 <template>
@@ -83,17 +91,37 @@ const lpType = LpType.UNISWAP_V2;
       </i18n>
     </template>
   </ProgressScreen>
-  <div v-else class="uniswap flex flex-col gap-4">
-    <RefreshHeader
-      :title="t('uniswap.title', { v: 2 })"
-      class="mt-4"
-      :loading="primaryRefreshing || secondaryRefreshing"
-      @refresh="refresh()"
-    >
-      <template #actions>
+  <TablePageLayout
+    v-else
+    class="mt-8"
+    :title="[
+      t('navigation_menu.defi'),
+      t('navigation_menu.defi_sub.deposits_sub.liquidity'),
+      t('navigation_menu.defi_sub.deposits_sub.liquidity_sub.uniswap_v2')
+    ]"
+  >
+    <template #buttons>
+      <div class="flex items-center gap-4">
         <ActiveModules :modules="modules" />
-      </template>
-    </RefreshHeader>
+
+        <RuiTooltip :open-delay="400">
+          <template #activator>
+            <RuiButton
+              variant="outlined"
+              color="primary"
+              :loading="primaryRefreshing || secondaryRefreshing"
+              @click="refresh(true)"
+            >
+              <template #prepend>
+                <RuiIcon name="refresh-line" />
+              </template>
+              {{ t('common.refresh') }}
+            </RuiButton>
+          </template>
+          {{ refreshTooltip }}
+        </RuiTooltip>
+      </div>
+    </template>
     <div class="grid md:grid-cols-2 gap-4">
       <BlockchainAccountSelector
         v-model="selectedAccounts"
@@ -115,7 +143,11 @@ const lpType = LpType.UNISWAP_V2;
       />
     </div>
 
-    <PaginatedCards :identifier="getIdentifier" :items="balances">
+    <PaginatedCards
+      v-if="balances.length > 0"
+      :identifier="getIdentifier"
+      :items="balances"
+    >
       <template #item="{ item }">
         <UniswapPoolBalances :item="item" :lp-type="lpType" />
       </template>
@@ -127,5 +159,5 @@ const lpType = LpType.UNISWAP_V2;
       :profit="poolProfit"
       :selected-accounts="selectedAccounts"
     />
-  </div>
+  </TablePageLayout>
 </template>

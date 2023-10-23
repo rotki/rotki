@@ -3909,8 +3909,7 @@
     "loading": "Please wait while your liquidity pools are getting loaded...",
     "loading_non_premium": "Loading the liquidity pool balances might take a while... Consider upgrading to {0} for faster load times.",
     "premium": "premium",
-    "price_range": "Price Range",
-    "title": "Uniswap v{v} Pools"
+    "price_range": "Price Range"
   },
   "update_indicator": {
     "version": "An Updated Version ({appVersion}) of rotki is available"

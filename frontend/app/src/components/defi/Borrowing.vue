@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { DefiProtocol } from '@rotki/common/lib/blockchain';
-import { type Ref } from 'vue';
 import { type Module } from '@/types/modules';
 import { Section } from '@/types/status';
 
@@ -55,7 +54,7 @@ onMounted(async () => {
   await defiLending.fetchBorrowing(false);
 });
 
-const refreshTooltip: Ref<string> = ref(
+const refreshTooltip: ComputedRef<string> = computed(() =>
   t('helpers.refresh_header.tooltip', {
     title: t('borrowing.header').toLocaleLowerCase()
   })

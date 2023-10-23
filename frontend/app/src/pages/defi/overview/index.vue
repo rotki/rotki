@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { type Ref } from 'vue';
 import { Section } from '@/types/status';
 
 const store = useDefiStore();
@@ -22,7 +21,7 @@ const { shouldShowLoadingScreen, isLoading } = useStatusStore();
 const loading = shouldShowLoadingScreen(section);
 const refreshing = isLoading(section);
 
-const refreshTooltip: Ref<string> = ref(
+const refreshTooltip: ComputedRef<string> = computed(() =>
   t('helpers.refresh_header.tooltip', {
     title: t('decentralized_overview.title').toLocaleLowerCase()
   })
