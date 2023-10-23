@@ -221,10 +221,7 @@ describe('EvmEventForm.vue', () => {
     await wrapper.vm.$nextTick();
     await flushPromises();
 
-    const {
-      historyEventTypeGlobalMapping,
-      historyEventTypePerProtocolMapping
-    } = useHistoryEventMappings();
+    const { historyEventTypeGlobalMapping } = useHistoryEventMappings();
 
     const selectedEventType = 'deposit';
 
@@ -238,48 +235,13 @@ describe('EvmEventForm.vue', () => {
       get(historyEventTypeGlobalMapping)?.[selectedEventType] ?? {}
     );
 
-    let spans = await wrapper.findAll(
+    const spans = await wrapper.findAll(
       '[data-cy=eventSubtype] .selections span'
     );
     expect(spans).toHaveLength(keysFromGlobalMappings.length);
 
     for (let i = 0; i < keysFromGlobalMappings.length; i++) {
       expect(keysFromGlobalMappings.includes(spans.at(i).text())).toBeTruthy();
-    }
-
-    // should not add eventSubtype options, if the selectedCounterparty doesn't has that eventType.
-    await wrapper.find('[data-cy=counterparty] .input-value').trigger('input', {
-      value: '1inch'
-    });
-
-    await wrapper.vm.$nextTick();
-    expect(spans).toHaveLength(keysFromGlobalMappings.length);
-
-    // should not add eventSubtype options from perProtocolMappings, if the selectedCounterparty has that eventType.
-    const selectedCounterparty = 'yearn-v2';
-    await wrapper.find('[data-cy=counterparty] .input-value').trigger('input', {
-      value: selectedCounterparty
-    });
-
-    await wrapper.vm.$nextTick();
-
-    const selectedLocation = groupHeader.location;
-    const keysFromPerProtocolMappings = Object.keys(
-      get(historyEventTypePerProtocolMapping)?.[selectedLocation]?.[
-        selectedCounterparty
-      ]?.[selectedEventType] ?? {}
-    );
-
-    const joinKeys = [
-      ...keysFromGlobalMappings,
-      ...keysFromPerProtocolMappings
-    ].filter(uniqueStrings);
-
-    spans = wrapper.findAll('[data-cy=eventSubtype] .selections span');
-    expect(spans).toHaveLength(joinKeys.length);
-
-    for (let i = 0; i < joinKeys.length; i++) {
-      expect(joinKeys.includes(spans.at(i).text())).toBeTruthy();
     }
   });
 

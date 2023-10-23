@@ -35,8 +35,7 @@ const {
   getEventTypeData,
   historyEventTypesData,
   historyEventSubTypesData,
-  historyEventTypeGlobalMapping,
-  historyEventTypeExchangeMapping
+  historyEventTypeGlobalMapping
 } = useHistoryEventMappings();
 
 const lastLocation = useLocalStorage(
@@ -266,9 +265,7 @@ const historyTypeCombination = computed(() =>
     getEventTypeData(
       {
         eventType: get(eventType),
-        eventSubtype: get(eventSubtype),
-        location: get(location),
-        entryType: HistoryEventEntryType.HISTORY_EVENT
+        eventSubtype: get(eventSubtype)
       },
       false
     )
@@ -299,8 +296,6 @@ const historyEventSubTypeFilteredData: ComputedRef<ActionDataEntry[]> =
     const eventTypeVal = get(eventType);
     const allData = get(historyEventSubTypesData);
     const globalMapping = get(historyEventTypeGlobalMapping);
-    const exchangeMapping = get(historyEventTypeExchangeMapping);
-    const locationVal = get(location);
 
     if (!eventTypeVal) {
       return allData;
@@ -313,19 +308,8 @@ const historyEventSubTypeFilteredData: ComputedRef<ActionDataEntry[]> =
       globalMappingKeys = Object.keys(globalMappingFound);
     }
 
-    let exchangeMappingKeys: string[] = [];
-
-    if (locationVal) {
-      const exchangeMappingObj = exchangeMapping?.[locationVal]?.[eventTypeVal];
-      if (exchangeMappingObj) {
-        exchangeMappingKeys = Object.keys(exchangeMappingObj);
-      }
-    }
-
-    return allData.filter(
-      (data: ActionDataEntry) =>
-        globalMappingKeys.includes(data.identifier) ||
-        exchangeMappingKeys.includes(data.identifier)
+    return allData.filter((data: ActionDataEntry) =>
+      globalMappingKeys.includes(data.identifier)
     );
   });
 

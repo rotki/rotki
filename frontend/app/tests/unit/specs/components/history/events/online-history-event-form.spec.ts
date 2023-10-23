@@ -181,8 +181,7 @@ describe('OnlineHistoryEventForm.vue', () => {
     await wrapper.vm.$nextTick();
     await flushPromises();
 
-    const { historyEventTypeGlobalMapping, historyEventTypeExchangeMapping } =
-      useHistoryEventMappings();
+    const { historyEventTypeGlobalMapping } = useHistoryEventMappings();
 
     const selectedEventType = 'deposit';
 
@@ -196,35 +195,13 @@ describe('OnlineHistoryEventForm.vue', () => {
       get(historyEventTypeGlobalMapping)?.[selectedEventType] ?? {}
     );
 
-    let spans = await wrapper.findAll(
+    const spans = await wrapper.findAll(
       '[data-cy=eventSubtype] .selections span'
     );
     expect(spans).toHaveLength(keysFromGlobalMappings.length);
 
     for (let i = 0; i < keysFromGlobalMappings.length; i++) {
       expect(keysFromGlobalMappings.includes(spans.at(i).text())).toBeTruthy();
-    }
-
-    await wrapper.vm.$nextTick();
-    expect(spans).toHaveLength(keysFromGlobalMappings.length);
-
-    const selectedLocation = groupHeader.location;
-    const keysFromExchangeMappings = Object.keys(
-      get(historyEventTypeExchangeMapping)?.[selectedLocation]?.[
-        selectedEventType
-      ] ?? {}
-    );
-
-    const joinKeys = [
-      ...keysFromGlobalMappings,
-      ...keysFromExchangeMappings
-    ].filter(uniqueStrings);
-
-    spans = wrapper.findAll('[data-cy=eventSubtype] .selections span');
-    expect(spans).toHaveLength(joinKeys.length);
-
-    for (let i = 0; i < joinKeys.length; i++) {
-      expect(joinKeys.includes(spans.at(i).text())).toBeTruthy();
     }
   });
 });
