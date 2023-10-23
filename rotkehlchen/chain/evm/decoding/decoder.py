@@ -21,6 +21,7 @@ from rotkehlchen.assets.asset import AssetWithOracles, EvmToken
 from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.chain.evm.decoding.interfaces import ReloadableDecoderMixin
+from rotkehlchen.chain.evm.decoding.oneinch.v5.decoder import Oneinchv5Decoder
 from rotkehlchen.chain.evm.decoding.safe.decoder import SafemultisigDecoder
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
@@ -175,6 +176,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
         normal loading?
         """
         self._add_single_decoder(class_name='Safemultisig', decoder_class=SafemultisigDecoder, rules=rules)  # noqa: E501
+        self._add_single_decoder(class_name='Oneinchv5', decoder_class=Oneinchv5Decoder, rules=rules)  # noqa: E501
 
     def _add_single_decoder(
             self,

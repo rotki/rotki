@@ -8,15 +8,23 @@ from rotkehlchen.chain.ethereum.modules.oneinch.constants import (
     CPT_ONEINCH_V1,
     CPT_ONEINCH_V2,
     CPT_ONEINCH_V4,
+    CPT_ONEINCH_V5,
 )
 from rotkehlchen.chain.ethereum.modules.oneinch.v2.constants import ONEINCH_V2_MAINNET_ROUTER
-from rotkehlchen.chain.ethereum.modules.oneinch.v4.constants import ONEINCH_V4_MAINNET_ROUTER
 from rotkehlchen.chain.ethereum.modules.uniswap.constants import CPT_UNISWAP_V2
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
-from rotkehlchen.chain.evm.decoding.oneinch.constants import CPT_ONEINCH
+from rotkehlchen.chain.evm.decoding.oneinch.v4.constants import ONEINCH_V4_ROUTER
+from rotkehlchen.chain.evm.decoding.oneinch.v5.decoder import ONEINCH_V5_ROUTER
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.chain.polygon_pos.modules.oneinch.constants import ONEINCH_POLYGON_POS_ROUTER
-from rotkehlchen.constants.assets import A_DAI, A_ETH, A_POLYGON_POS_MATIC, A_USDC, A_USDT, A_WETH
+from rotkehlchen.constants.assets import (
+    A_DAI,
+    A_ETH,
+    A_POLYGON_POS_MATIC,
+    A_USDC,
+    A_USDT,
+    A_WETH,
+    A_XDAI,
+)
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.constants import A_CHI, A_PAN
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
@@ -209,6 +217,7 @@ def test_1inchv4_swap_on_uniswapv3(database, ethereum_inquirer):
             balance=Balance(amount=FVal('5527')),
             location_label=user_address,
             notes=f'Swap 5527 USDT in {CPT_ONEINCH_V4}',
+            address=ONEINCH_V4_ROUTER,
             counterparty=CPT_ONEINCH_V4,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -221,7 +230,7 @@ def test_1inchv4_swap_on_uniswapv3(database, ethereum_inquirer):
             balance=Balance(amount=FVal('2.930675563626228657')),
             location_label=user_address,
             notes=f'Receive 2.930675563626228657 ETH as a result of a {CPT_ONEINCH_V4} swap',
-            address=ONEINCH_V4_MAINNET_ROUTER,
+            address=ONEINCH_V4_ROUTER,
             counterparty=CPT_ONEINCH_V4,
         ),
     ]
@@ -269,6 +278,7 @@ def test_1inchv4_swap_on_sushiswap(database, ethereum_inquirer):
             balance=Balance(amount=FVal('121.424518')),
             location_label=user_address,
             notes=f'Swap 121.424518 USDC in {CPT_ONEINCH_V4}',
+            address=ONEINCH_V4_ROUTER,
             counterparty=CPT_ONEINCH_V4,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -281,7 +291,7 @@ def test_1inchv4_swap_on_sushiswap(database, ethereum_inquirer):
             balance=Balance(amount=FVal('0.062555211026786486')),
             location_label=user_address,
             notes=f'Receive 0.062555211026786486 ETH as a result of a {CPT_ONEINCH_V4} swap',
-            address=ONEINCH_V4_MAINNET_ROUTER,
+            address=ONEINCH_V4_ROUTER,
             counterparty=CPT_ONEINCH_V4,
         ),
     ]
@@ -328,8 +338,8 @@ def test_1inchv4_multiple_swaps(database, ethereum_inquirer):
             asset=Asset('eip155:1/erc20:0xE60779CC1b2c1d0580611c526a8DF0E3f870EC48'),
             balance=Balance(amount=FVal('1.157920892373161954235709850E+59')),
             location_label=user_address,
-            notes=f'Set USH spending approval of {user_address} by {ONEINCH_V4_MAINNET_ROUTER} to 115792089237316195423570985000000000000000000000000000000000',  # noqa: E501
-            address=ONEINCH_V4_MAINNET_ROUTER,
+            notes=f'Set USH spending approval of {user_address} by {ONEINCH_V4_ROUTER} to 115792089237316195423570985000000000000000000000000000000000',  # noqa: E501
+            address=ONEINCH_V4_ROUTER,
         ), EvmEvent(
             tx_hash=tx_hash,
             sequence_index=35,
@@ -341,6 +351,7 @@ def test_1inchv4_multiple_swaps(database, ethereum_inquirer):
             balance=Balance(amount=FVal('50000')),
             location_label=user_address,
             notes=f'Swap 50000 USH in {CPT_ONEINCH_V4}',
+            address=ONEINCH_V4_ROUTER,
             counterparty=CPT_ONEINCH_V4,
         ),
         EvmEvent(
@@ -354,7 +365,7 @@ def test_1inchv4_multiple_swaps(database, ethereum_inquirer):
             balance=Balance(amount=FVal('7003.996145')),
             location_label=user_address,
             notes=f'Receive 7003.996145 USDC as a result of a {CPT_ONEINCH_V4} swap',
-            address=ONEINCH_V4_MAINNET_ROUTER,
+            address=ONEINCH_V4_ROUTER,
             counterparty=CPT_ONEINCH_V4,
         ),
     ]
@@ -402,6 +413,7 @@ def test_1inchv4_weth_eth_swap(database, ethereum_inquirer):
             balance=Balance(amount=FVal('35')),
             location_label=user_address,
             notes=f'Swap 35 WETH in {CPT_ONEINCH_V4}',
+            address=ONEINCH_V4_ROUTER,
             counterparty=CPT_ONEINCH_V4,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -414,7 +426,7 @@ def test_1inchv4_weth_eth_swap(database, ethereum_inquirer):
             balance=Balance(amount=FVal('35')),
             location_label=user_address,
             notes=f'Receive 35 ETH as a result of a {CPT_ONEINCH_V4} swap',
-            address=ONEINCH_V4_MAINNET_ROUTER,
+            address=ONEINCH_V4_ROUTER,
             counterparty=CPT_ONEINCH_V4,
         ),
     ]
@@ -462,6 +474,7 @@ def test_1inchv4_eth_weth_swap(database, ethereum_inquirer):
             balance=Balance(amount=FVal('0.014763948338176106')),
             location_label=user_address,
             notes=f'Swap 0.014763948338176106 ETH in {CPT_ONEINCH_V4}',
+            address=ONEINCH_V4_ROUTER,
             counterparty=CPT_ONEINCH_V4,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -474,7 +487,7 @@ def test_1inchv4_eth_weth_swap(database, ethereum_inquirer):
             balance=Balance(amount=FVal('0.014763948338176106')),
             location_label=user_address,
             notes=f'Receive 0.014763948338176106 WETH as a result of a {CPT_ONEINCH_V4} swap',
-            address=ONEINCH_V4_MAINNET_ROUTER,
+            address=ONEINCH_V4_ROUTER,
             counterparty=CPT_ONEINCH_V4,
         ),
     ]
@@ -520,8 +533,8 @@ def test_1inch_swap_polygon(database, polygon_pos_inquirer, polygon_pos_accounts
             asset=pos_usdt,
             balance=Balance(FVal('115792089237316195423570985000000000000000000000000000000000000000000000')),
             location_label=user_addy,
-            notes=f'Set USDT spending approval of {user_addy} by {ONEINCH_POLYGON_POS_ROUTER} to 115792089237316195423570985000000000000000000000000000000000000000000000',  # noqa: E501
-            address=ONEINCH_POLYGON_POS_ROUTER,
+            address=ONEINCH_V4_ROUTER,
+            notes=f'Set USDT spending approval of {user_addy} by {ONEINCH_V4_ROUTER} to 115792089237316195423570985000000000000000000000000000000000000000000000',  # noqa: E501
         ), EvmEvent(
             tx_hash=tx_hash,
             sequence_index=278,
@@ -532,9 +545,9 @@ def test_1inch_swap_polygon(database, polygon_pos_inquirer, polygon_pos_accounts
             asset=pos_usdt,
             balance=Balance(amount=FVal('96.795')),
             location_label=user_addy,
-            notes='Swap 96.795 USDT in 1inch',
-            counterparty=CPT_ONEINCH,
-            address=ONEINCH_POLYGON_POS_ROUTER,
+            notes='Swap 96.795 USDT in 1inch-v4',
+            counterparty=CPT_ONEINCH_V4,
+            address=ONEINCH_V4_ROUTER,
         ), EvmEvent(
             tx_hash=tx_hash,
             sequence_index=279,
@@ -545,9 +558,63 @@ def test_1inch_swap_polygon(database, polygon_pos_inquirer, polygon_pos_accounts
             asset=pos_yfi,
             balance=Balance(amount=FVal('0.002830144606136162')),
             location_label=user_addy,
-            notes='Receive 0.002830144606136162 YFI from 1inch swap',
-            counterparty=CPT_ONEINCH,
-            address=ONEINCH_POLYGON_POS_ROUTER,
+            notes='Receive 0.002830144606136162 YFI as a result of a 1inch-v4 swap',
+            counterparty=CPT_ONEINCH_V4,
+            address=ONEINCH_V4_ROUTER,
+        ),
+    ]
+    assert expected_events == events
+
+
+@pytest.mark.parametrize('gnosis_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
+def test_1inch_gnosis_v5_swap(database, gnosis_inquirer, gnosis_accounts):
+    tx_hash = deserialize_evm_tx_hash('0x4b1fcb8836d7cc323015c0d019f595273d176bd6024f7b59b4b15d3f7071ef71')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=gnosis_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    user_addy = gnosis_accounts[0]
+    timestamp = TimestampMS(1693293950000)
+    expected_events = [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_XDAI,
+            balance=Balance(amount=FVal('0.0004273965')),
+            location_label=user_addy,
+            notes='Burned 0.0004273965 XDAI for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=Asset('eip155:100/erc20:0x9C58BAcC331c9aa871AFD802DB6379a98e80CEdb'),
+            balance=Balance(amount=FVal('0.044662144481150632')),
+            location_label=user_addy,
+            notes='Swap 0.044662144481150632 GNO in 1inch-v5',
+            address=ONEINCH_V5_ROUTER,
+            counterparty=CPT_ONEINCH_V5,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=2,
+            timestamp=timestamp,
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=Asset('eip155:100/erc20:0x4ECaBa5870353805a9F068101A40E0f32ed605C6'),
+            balance=Balance(amount=FVal('4.522211')),
+            location_label=user_addy,
+            notes='Receive 4.522211 USDT as a result of a 1inch-v5 swap',
+            counterparty=CPT_ONEINCH_V5,
+            address=ONEINCH_V5_ROUTER,
         ),
     ]
     assert expected_events == events

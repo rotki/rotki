@@ -2,10 +2,9 @@ from typing import TYPE_CHECKING
 
 from rotkehlchen.accounting.structures.base import get_event_type_identifier
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.chain.ethereum.modules.oneinch.constants import CPT_ONEINCH_V4
 from rotkehlchen.chain.evm.accounting.interfaces import ModuleAccountantInterface
 from rotkehlchen.chain.evm.accounting.structures import TxAccountingTreatment, TxEventSettings
-
-from ..constants import CPT_ONEINCH_V4
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.pot import AccountingPot

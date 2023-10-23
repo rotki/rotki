@@ -1,4 +1,3 @@
-from typing import Literal
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.structures.types import (
     EventCategory,
@@ -11,7 +10,6 @@ from rotkehlchen.accounting.structures.types import (
 FREE_PNL_EVENTS_LIMIT = 1000
 FREE_REPORTS_LOOKUP_LIMIT = 20
 
-ACCOUNTING_METHOD_TYPE = Literal['spend', 'acquisition']
 EVENT_CATEGORY_MAPPINGS = {  # possible combinations of types and subtypes mapped to their event category  # noqa: E501
     HistoryEventType.INFORMATIONAL: {
         HistoryEventSubType.NONE: EventCategory.INFORMATIONAL,
