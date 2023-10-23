@@ -51,11 +51,12 @@ from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int,
 
 from .constants import (
     CPT_DSR,
-    CPT_MIGRATION,
+    CPT_MAKERDAO_MIGRATION,
     CPT_SDAI,
     CPT_VAULT,
     MAKERDAO_ICON,
     MAKERDAO_LABEL,
+    MAKERDAO_MIGRATION_ADDRESS,
     SDAI_ICON,
     SDAI_LABEL,
 )
@@ -515,7 +516,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
     def decode_saidai_migration(self, context: DecoderContext) -> DecodingOutput:
         if context.tx_log.topics[0] == ERC20_OR_ERC721_TRANSFER:
             to_address = hex_or_bytes_to_address(context.tx_log.topics[2])
-            if to_address != '0xc73e0383F3Aff3215E6f04B0331D58CeCf0Ab849':
+            if to_address != MAKERDAO_MIGRATION_ADDRESS:
                 return DEFAULT_DECODING_OUTPUT
 
             # sending SAI to migration contract
@@ -530,7 +531,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
             transfer.event_type = HistoryEventType.MIGRATE
             transfer.event_subtype = HistoryEventSubType.SPEND
             transfer.notes = f'Migrate {transfer.balance.amount} SAI to DAI'
-            transfer.counterparty = CPT_MIGRATION
+            transfer.counterparty = CPT_MAKERDAO_MIGRATION
 
             # also create action item for the receive transfer
             action_item = ActionItem(
@@ -542,7 +543,8 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
                 to_event_type=HistoryEventType.MIGRATE,
                 to_event_subtype=HistoryEventSubType.RECEIVE,
                 to_notes=f'Receive {transfer.balance.amount} DAI from SAI->DAI migration',
-                to_counterparty='makerdao migration',
+                to_counterparty=CPT_MAKERDAO_MIGRATION,
+                to_address=MAKERDAO_MIGRATION_ADDRESS,
             )
             return DecodingOutput(
                 event=transfer,
@@ -599,7 +601,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
                 label=MAKERDAO_LABEL,
                 image=MAKERDAO_ICON,
             ), CounterpartyDetails(
-                identifier=CPT_MIGRATION,
+                identifier=CPT_MAKERDAO_MIGRATION,
                 label=MAKERDAO_LABEL,
                 image=MAKERDAO_ICON,
             ), CounterpartyDetails(

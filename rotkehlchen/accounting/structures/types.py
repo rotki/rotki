@@ -129,6 +129,8 @@ class EventCategory(SerializableEnumNameMixin):
     RECEIVE = auto()
     SWAP_OUT = auto()
     SWAP_IN = auto()
+    MIGRATE_OUT = auto()
+    MIGRATE_IN = auto()
     APPROVAL = auto()
     DEPOSIT = auto()
     WITHDRAW = auto()

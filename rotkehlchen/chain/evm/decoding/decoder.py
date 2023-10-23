@@ -836,6 +836,8 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
                     transfer.counterparty = action_item.to_counterparty
                 if action_item.extra_data is not None:
                     transfer.extra_data = action_item.extra_data
+                if action_item.to_address is not None:
+                    transfer.address = action_item.to_address
 
                 if action_item.paired_event_data is not None:
                     # If there is a paired event to this, take care of the order
