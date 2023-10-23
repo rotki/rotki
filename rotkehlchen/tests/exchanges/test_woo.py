@@ -56,7 +56,7 @@ def test_woo_assets_are_known(mock_woo):
 
 def test_query_online_trade_history_basic(mock_woo):
     """Assert that the expected arguments are passed to the `_api_query` method"""
-    start_ts, end_ts = (1634600000, 1634620000)
+    start_ts, end_ts = 1634600000, 1634620000
     expected_call = call(
         endpoint='v1/client/hist_trades',
         options={
@@ -77,7 +77,7 @@ def test_query_online_trade_history_basic(mock_woo):
 def test_query_online_trade_history_paginated(mock_woo):
     """Assert that the expected arguments are passed to the `_api_query` method
     for trades with multiple pages"""
-    start_ts, end_ts = (1634600000, 1634620000)
+    start_ts, end_ts = 1634600000, 1634620000
 
     def trades_generator():
         for response in (
@@ -139,7 +139,7 @@ def test_query_online_deposits_withdrawals(mock_woo):
     Assert that the expected calls are made to the `_api_query` method
     for deposits and withdrawals with multiple pages
     """
-    start_ts, end_ts = (1634600000, 1634620000)
+    start_ts, end_ts = 1634600000, 1634620000
 
     def deposits_withdrawals_generator():
         for i, response in enumerate((

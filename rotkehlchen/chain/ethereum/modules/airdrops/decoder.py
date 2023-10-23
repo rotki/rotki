@@ -6,8 +6,10 @@ from rotkehlchen.accounting.structures.types import HistoryEventSubType, History
 from rotkehlchen.chain.ethereum.modules.convex.constants import CONVEX_CPT_DETAILS
 from rotkehlchen.chain.ethereum.modules.uniswap.constants import UNISWAP_ICON, UNISWAP_LABEL
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
+from rotkehlchen.chain.evm.decoding.airdrops import match_airdrop_claim
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.cowswap.constants import COWSWAP_CPT_DETAILS
+from rotkehlchen.chain.evm.decoding.cowswap.interfaces import CowswapAirdropDecoder
 from rotkehlchen.chain.evm.decoding.oneinch.constants import ONEINCH_ICON, ONEINCH_LABEL
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
@@ -16,10 +18,18 @@ from rotkehlchen.chain.evm.decoding.structures import (
 )
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants.assets import A_1INCH, A_BADGER, A_CVX, A_ELFI, A_FOX, A_FPIS, A_UNI
+from rotkehlchen.constants.assets import (
+    A_1INCH,
+    A_BADGER,
+    A_CVX,
+    A_ELFI,
+    A_FOX,
+    A_FPIS,
+    A_UNI,
+    A_VCOW,
+)
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 from .constants import (
@@ -35,6 +45,7 @@ from .constants import (
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
+    from rotkehlchen.types import ChecksumEvmAddress
     from rotkehlchen.user_messages import MessagesAggregator
 
 UNISWAP_DISTRIBUTOR = string_to_evm_address('0x090D4613473dEE047c3f2706764f49E0821D256e')
@@ -53,15 +64,15 @@ FPIS_CONVEX_CLAIM = b'G\xce\xe9|\xb7\xac\xd7\x17\xb3\xc0\xaa\x145\xd0\x04\xcd[<\
 FOX_DISTRIBUTOR = string_to_evm_address('0xe099e688D12DBc19ab46D128d1Db297575474a0d')
 FOX_CLAIMED = b"R\x897\xb30\x08-\x89*\x98\xd4\xe4(\xab-\xcc\xa7\x84KQ\xd2'\xa1\xc0\xaeg\xf0\xb5&\x1a\xcb\xd9"  # noqa: E501
 
-
 ELFI_LOCKING = string_to_evm_address('0x02Bd4A3b1b95b01F2Aa61655415A5d3EAAcaafdD')
 ELFI_VOTE_CHANGE = b'3\x16\x1c\xf2\xda(\xd7G\xbe\x9d\xf16\xb6\xf3r\x93\x90)\x84\x94\x94rht1\x93\xc5=s\xd3\xc2\xe0'  # noqa: E501
+
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class AirdropsDecoder(DecoderInterface):
+class AirdropsDecoder(CowswapAirdropDecoder):
 
     def __init__(
             self,
@@ -73,6 +84,7 @@ class AirdropsDecoder(DecoderInterface):
             evm_inquirer=ethereum_inquirer,
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
+            vcow=A_VCOW,
         )
         self.uni = A_UNI.resolve_to_evm_token()
         self.fox = A_FOX.resolve_to_evm_token()
@@ -89,13 +101,14 @@ class AirdropsDecoder(DecoderInterface):
         user_address = hex_or_bytes_to_address(context.tx_log.data[32:64])
         raw_amount = hex_or_bytes_to_int(context.tx_log.data[64:96])
         amount = asset_normalized_value(amount=raw_amount, asset=self.uni)
-
         for event in context.decoded_events:
-            if event.event_type == HistoryEventType.RECEIVE and event.location_label == user_address and amount == event.balance.amount and self.uni == event.asset:  # noqa: E501
-                event.event_type = HistoryEventType.RECEIVE
-                event.event_subtype = HistoryEventSubType.AIRDROP
-                event.counterparty = CPT_UNISWAP
-                event.notes = f'Claim {amount} UNI from uniswap airdrop'
+            if match_airdrop_claim(
+                event=event,
+                user_address=user_address,
+                amount=amount,
+                asset=self.fox,
+                counterparty=CPT_UNISWAP,
+            ):
                 break
 
         return DEFAULT_DECODING_OUTPUT
@@ -104,16 +117,17 @@ class AirdropsDecoder(DecoderInterface):
         if context.tx_log.topics[0] != FOX_CLAIMED:
             return DEFAULT_DECODING_OUTPUT
 
-        user_address = hex_or_bytes_to_address(context.tx_log.topics[1])
         raw_amount = hex_or_bytes_to_int(context.tx_log.data[64:96])
         amount = asset_normalized_value(amount=raw_amount, asset=self.fox)
-
+        user_address = hex_or_bytes_to_address(context.tx_log.topics[1])
         for event in context.decoded_events:
-            if event.event_type == HistoryEventType.RECEIVE and event.location_label == user_address and amount == event.balance.amount and self.fox == event.asset:  # noqa: E501
-                event.event_type = HistoryEventType.RECEIVE
-                event.event_subtype = HistoryEventSubType.AIRDROP
-                event.counterparty = CPT_SHAPESHIFT
-                event.notes = f'Claim {amount} FOX from shapeshift airdrop'
+            if match_airdrop_claim(
+                event=event,
+                user_address=user_address,
+                amount=amount,
+                asset=self.fox,
+                counterparty=CPT_SHAPESHIFT,
+            ):
                 break
 
         return DEFAULT_DECODING_OUTPUT
@@ -122,19 +136,17 @@ class AirdropsDecoder(DecoderInterface):
         if context.tx_log.topics[0] != BADGER_HUNT_EVENT:
             return DEFAULT_DECODING_OUTPUT
 
-        user_address = hex_or_bytes_to_address(context.tx_log.topics[1])
         raw_amount = hex_or_bytes_to_int(context.tx_log.data[32:64])
-        amount = asset_normalized_value(
-            amount=raw_amount,
-            asset=self.badger,
-        )
-
+        amount = asset_normalized_value(amount=raw_amount, asset=self.badger)
+        user_address = hex_or_bytes_to_address(context.tx_log.topics[1])
         for event in context.decoded_events:
-            if event.event_type == HistoryEventType.RECEIVE and event.location_label == user_address and amount == event.balance.amount and self.badger == event.asset:  # noqa: E501
-                event.event_type = HistoryEventType.RECEIVE
-                event.event_subtype = HistoryEventSubType.AIRDROP
-                event.counterparty = CPT_BADGER
-                event.notes = f'Claim {amount} BADGER from badger airdrop'
+            if match_airdrop_claim(
+                event=event,
+                user_address=user_address,
+                amount=amount,
+                asset=self.badger,
+                counterparty=CPT_BADGER,
+            ):
                 break
 
         return DEFAULT_DECODING_OUTPUT
@@ -143,16 +155,17 @@ class AirdropsDecoder(DecoderInterface):
         if context.tx_log.topics[0] != ONEINCH_CLAIMED:
             return DEFAULT_DECODING_OUTPUT
 
-        user_address = hex_or_bytes_to_address(context.tx_log.data[32:64])
         raw_amount = hex_or_bytes_to_int(context.tx_log.data[64:96])
         amount = asset_normalized_value(amount=raw_amount, asset=self.oneinch)
-
+        user_address = hex_or_bytes_to_address(context.tx_log.data[32:64])
         for event in context.decoded_events:
-            if event.event_type == HistoryEventType.RECEIVE and event.location_label == user_address and amount == event.balance.amount and self.oneinch == event.asset:  # noqa: E501
-                event.event_type = HistoryEventType.RECEIVE
-                event.event_subtype = HistoryEventSubType.AIRDROP
-                event.counterparty = CPT_ONEINCH
-                event.notes = f'Claim {amount} 1INCH from 1inch airdrop'
+            if match_airdrop_claim(
+                event=event,
+                user_address=user_address,
+                amount=amount,
+                asset=self.oneinch,
+                counterparty=CPT_ONEINCH,
+            ):
                 break
 
         return DEFAULT_DECODING_OUTPUT
@@ -183,16 +196,20 @@ class AirdropsDecoder(DecoderInterface):
             counterparty = CPT_FRAX
 
         for event in context.decoded_events:
-            if event.event_type == HistoryEventType.RECEIVE and event.location_label == user_address and amount == event.balance.amount and self.fpis == event.asset:  # noqa: E501
-                event.event_type = HistoryEventType.RECEIVE
-                event.event_subtype = HistoryEventSubType.AIRDROP
-                event.counterparty = counterparty
-                try:
-                    crypto_asset = event.asset.resolve_to_crypto_asset()
-                except (UnknownAsset, WrongAssetType):
-                    self.notify_user(event=event, counterparty=counterparty)
-                    continue
-                event.notes = f'Claim {amount} {crypto_asset.symbol} {note_location}'
+            notes = event.notes
+            try:
+                notes = f'Claim {amount} {event.asset.resolve_to_crypto_asset().symbol} {note_location}'  # noqa: E501
+            except (UnknownAsset, WrongAssetType):
+                self.notify_user(event=event, counterparty=counterparty)
+
+            if match_airdrop_claim(
+                event=event,
+                user_address=user_address,
+                amount=amount,
+                asset=self.fpis,
+                counterparty=counterparty,
+                notes=notes,
+            ):
                 break
 
         return DEFAULT_DECODING_OUTPUT
@@ -242,7 +259,7 @@ class AirdropsDecoder(DecoderInterface):
 
     # -- DecoderInterface methods
 
-    def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
+    def addresses_to_decoders(self) -> dict['ChecksumEvmAddress', tuple[Any, ...]]:
         return {
             UNISWAP_DISTRIBUTOR: (self._decode_uniswap_claim,),
             BADGERHUNT: (self._decode_badger_claim,),
@@ -251,7 +268,7 @@ class AirdropsDecoder(DecoderInterface):
             CONVEX: (self._decode_fpis_claim, 'convex'),
             FOX_DISTRIBUTOR: (self._decode_fox_claim,),
             ELFI_LOCKING: (self._decode_elfi_claim,),
-        }
+        } | super().addresses_to_decoders()
 
     def counterparties(self) -> list[CounterpartyDetails]:
         return [
@@ -286,4 +303,5 @@ class AirdropsDecoder(DecoderInterface):
                 label='Element Finance',
                 image='element_finance.png',
             ),
+            COWSWAP_CPT_DETAILS,
         ]

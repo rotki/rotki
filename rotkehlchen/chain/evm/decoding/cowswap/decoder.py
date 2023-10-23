@@ -7,7 +7,7 @@ from rotkehlchen.accounting.structures.types import HistoryEventSubType, History
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS
-from rotkehlchen.chain.evm.decoding.cowswap.constants import CPT_COWSWAP
+from rotkehlchen.chain.evm.decoding.cowswap.constants import COWSWAP_CPT_DETAILS, CPT_COWSWAP
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
@@ -274,7 +274,7 @@ class CowswapCommonDecoder(DecoderInterface, metaclass=abc.ABCMeta):
     # -- DecoderInterface methods
 
     def counterparties(self) -> list[CounterpartyDetails]:
-        return [CounterpartyDetails(identifier=CPT_COWSWAP, label='Cowswap', image='cowswap.jpg')]
+        return [COWSWAP_CPT_DETAILS]
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {self.native_asset_flow_address: (self._decode_native_asset_orders,)}

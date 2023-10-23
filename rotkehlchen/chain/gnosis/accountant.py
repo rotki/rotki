@@ -1,8 +1,7 @@
 from typing import TYPE_CHECKING
 
 from rotkehlchen.chain.evm.accounting.aggregator import EVMAccountingAggregator
-
-from .constants import CPT_GNOSIS
+from rotkehlchen.chain.gnosis.modules.airdrops.constants import GNOSIS_AIRDROPS_LIST
 
 if TYPE_CHECKING:
     from rotkehlchen.user_messages import MessagesAggregator
@@ -19,5 +18,5 @@ class GnosisAccountingAggregator(EVMAccountingAggregator):
         super().__init__(
             node_inquirer=node_inquirer,
             msg_aggregator=msg_aggregator,
-            airdrops_list=[CPT_GNOSIS],
+            airdrops_list=GNOSIS_AIRDROPS_LIST,
         )
