@@ -119,7 +119,7 @@ You can [sponsor us through GitHub](https://github.com/sponsors/rotki/), and get
 Thank you for helping to sustain and improve this project!
 
 #### Donations
-If you find this project helpful, don't want to purchase a subscription and would like to support its development, you can make a donation using the following cryptocurrency addresses:
+If you find this project helpful,and you don't want to purchase a subscription but would like to support its development, you can make a donation using the following cryptocurrency addresses:
 
 - Send **BTC donations** to: 1PfvkW8MC7Ns2y8zn6CE2P2t5f19KF8XiW
 
