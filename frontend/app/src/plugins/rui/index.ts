@@ -9,6 +9,7 @@ import {
   RiArrowRightLine,
   RiArrowRightSLine,
   RiArrowUpCircleLine,
+  RiArrowUpDownLine,
   RiArrowUpLine,
   RiArrowUpSLine,
   RiBankLine,
@@ -225,6 +226,7 @@ Vue.use(RuiPlugin, {
     RiArrowUpSLine,
     RiTimeLine,
     RiEarthLine,
-    RiRepeat2Line
+    RiRepeat2Line,
+    RiArrowUpDownLine
   ]
 });

@@ -1233,6 +1233,14 @@
         "transfer": "Transfer",
         "unknown": "Unknown",
         "withdraw": "Withdraw"
+      },
+      "type_direction": {
+        "title": "Direction of the asset movement:\n{direction}",
+        "directions": {
+          "in": "to the user",
+          "out": "from the user",
+          "neutral": "neutral"
+        }
       }
     },
     "profit_loss_event_type": {

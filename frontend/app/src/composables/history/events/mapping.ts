@@ -1,8 +1,8 @@
 import { type MaybeRef } from '@vueuse/core';
-import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
 import {
   type HistoryEventProductData,
-  type HistoryEventTypeData
+  type HistoryEventTypeData,
+  type HistoryEventTypeDetailWithId
 } from '@/types/history/events/event-type';
 import { type ActionDataEntry } from '@/types/action';
 
@@ -17,9 +17,7 @@ export const useHistoryEventMappings = createSharedComposable(() => {
 
   const defaultHistoryEventTypeData = () => ({
     globalMappings: {},
-    perProtocolMappings: {},
     eventCategoryDetails: {},
-    exchangeMappings: {},
     accountingEventsIcons: {}
   });
 
@@ -72,9 +70,8 @@ export const useHistoryEventMappings = createSharedComposable(() => {
     }
   );
 
-  const transactionEventTypesData = useRefMap(
-    historyEventTypeData,
-    ({ eventCategoryDetails }) =>
+  const transactionEventTypesData: ComputedRef<HistoryEventTypeDetailWithId[]> =
+    useRefMap(historyEventTypeData, ({ eventCategoryDetails }) =>
       Object.entries(eventCategoryDetails).map(([identifier, data]) => {
         const translationId = toSnakeCase(data.label);
         const translationKey = `backend_mappings.events.type.${translationId}`;
@@ -87,67 +84,24 @@ export const useHistoryEventMappings = createSharedComposable(() => {
             : toSentenceCase(data.label)
         };
       })
-  );
+    );
 
   const historyEventTypeGlobalMapping = useRefMap(
     historyEventTypeData,
     ({ globalMappings }) => globalMappings
   );
 
-  const historyEventTypePerProtocolMapping = useRefMap(
-    historyEventTypeData,
-    ({ perProtocolMappings }) => perProtocolMappings
-  );
-
-  const historyEventTypeExchangeMapping = useRefMap(
-    historyEventTypeData,
-    ({ exchangeMappings }) => exchangeMappings
-  );
-
   const getEventType = (
     event: MaybeRef<{
       eventType?: string | null;
       eventSubtype?: string | null;
-      counterparty?: string | null;
-      location?: string | null;
-      entryType: HistoryEventEntryType;
     }>
   ): ComputedRef<string | undefined> =>
     computed(() => {
-      const { eventType, eventSubtype, counterparty, location, entryType } =
-        get(event);
+      const { eventType, eventSubtype } = get(event);
 
       const eventTypeNormalized = eventType || 'none';
       const eventSubtypeNormalized = eventSubtype || 'none';
-      const locationNormalized = location
-        ? transformCase(toSnakeCase(location), true)
-        : '';
-
-      if (
-        entryType === HistoryEventEntryType.EVM_EVENT &&
-        location &&
-        counterparty
-      ) {
-        const subTypesFromPerProtocolMapping = get(
-          historyEventTypePerProtocolMapping
-        )[locationNormalized]?.[counterparty]?.[eventTypeNormalized]?.[
-          eventSubtypeNormalized
-        ];
-
-        if (subTypesFromPerProtocolMapping) {
-          return subTypesFromPerProtocolMapping;
-        }
-      }
-
-      if (entryType === HistoryEventEntryType.HISTORY_EVENT && location) {
-        const subTypesFromExchangesMapping = get(
-          historyEventTypeExchangeMapping
-        )[locationNormalized]?.[eventTypeNormalized]?.[eventSubtypeNormalized];
-
-        if (subTypesFromExchangesMapping) {
-          return subTypesFromExchangesMapping;
-        }
-      }
 
       return (
         get(historyEventTypeGlobalMapping)[eventTypeNormalized]?.[
@@ -160,12 +114,9 @@ export const useHistoryEventMappings = createSharedComposable(() => {
     event: MaybeRef<{
       eventType?: string | null;
       eventSubtype?: string | null;
-      counterparty?: string | null;
-      location?: string | null;
-      entryType: HistoryEventEntryType;
     }>,
     showFallbackLabel = true
-  ): ComputedRef<ActionDataEntry> =>
+  ): ComputedRef<HistoryEventTypeDetailWithId> =>
     computed(() => {
       const type = get(getEventType(event));
 
@@ -187,7 +138,8 @@ export const useHistoryEventMappings = createSharedComposable(() => {
         identifier: '',
         label,
         icon: 'mdi-help',
-        color: 'red'
+        color: 'red',
+        direction: 'neutral'
       };
     });
 
@@ -318,8 +270,6 @@ export const useHistoryEventMappings = createSharedComposable(() => {
     getEventTypeData,
     getEventCounterpartyData,
     historyEventTypeGlobalMapping,
-    historyEventTypePerProtocolMapping,
-    historyEventTypeExchangeMapping,
     historyEventCounterpartiesData,
     historyEventProductsData,
     counterparties,
