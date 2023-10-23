@@ -25,7 +25,7 @@ const { addAccounts, addEvmAccounts, fetchAccounts } = useBlockchains();
 const { editAccount } = useBlockchainAccounts();
 const { setMessage } = useMessageStore();
 const { isEvm } = useSupportedChains();
-const { valid, setSave, accountToEdit } = useAccountDialog();
+const { setSubmitFunc, accountToEdit } = useAccountDialog();
 const { pending, loading } = useAccountLoading();
 const { t } = useI18n();
 
@@ -119,7 +119,7 @@ watch(accountToEdit, acc => {
 });
 
 onMounted(() => {
-  setSave(save);
+  setSubmitFunc(save);
   const acc = get(accountToEdit);
   if (!acc) {
     reset();
@@ -130,7 +130,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <VForm v-model="valid">
+  <div class="flex flex-col gap-6">
     <ModuleActivator
       v-if="blockchain === Blockchain.ETH && !accountToEdit"
       @update:selection="selectedModules = $event"
@@ -142,22 +142,24 @@ onMounted(() => {
       :loading="loading"
     />
 
-    <AddressInput
-      :addresses="addresses"
-      :error-messages="errorMessages.address"
-      :disabled="loading || !!accountToEdit"
-      :multi="!accountToEdit"
-      @update:addresses="
-        delete errorMessages['address'];
-        addresses = $event;
-      "
-    />
-    <AccountDataInput
-      :tags="tags"
-      :label="label"
-      :disabled="loading"
-      @update:label="label = $event"
-      @update:tags="tags = $event"
-    />
-  </VForm>
+    <div class="flex flex-col gap-4">
+      <AddressInput
+        :addresses="addresses"
+        :error-messages="errorMessages.address"
+        :disabled="loading || !!accountToEdit"
+        :multi="!accountToEdit"
+        @update:addresses="
+          delete errorMessages['address'];
+          addresses = $event;
+        "
+      />
+      <AccountDataInput
+        :tags="tags"
+        :label="label"
+        :disabled="loading"
+        @update:label="label = $event"
+        @update:tags="tags = $event"
+      />
+    </div>
+  </div>
 </template>

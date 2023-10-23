@@ -52,6 +52,7 @@ watch(context, ctx => {
     <ValidatorAccountForm v-else-if="blockchain === Blockchain.ETH2" />
     <XpubAccountForm
       v-else-if="isBtcChain(blockchain) && inputMode === InputMode.XPUB_ADD"
+      class="mt-8"
       :blockchain="blockchain"
     />
     <AddressAccountForm

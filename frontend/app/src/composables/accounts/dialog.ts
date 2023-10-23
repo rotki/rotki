@@ -11,8 +11,6 @@ export const useAccountDialog = createSharedComposable(() => {
   const accountToEdit: Ref<BlockchainAccountWithBalance | null> = ref(null);
   const dialogText: Ref<Title> = ref(defaultTitle());
   const openDialog: Ref<boolean> = ref(false);
-  const valid: Ref<boolean> = ref(false);
-  const saveFunc = ref<() => Promise<boolean>>();
 
   const { t } = useI18n();
 
@@ -40,32 +38,27 @@ export const useAccountDialog = createSharedComposable(() => {
     set(openDialog, true);
   };
 
-  const setSave = (func: () => Promise<boolean>) => {
-    set(saveFunc, func);
-  };
-
-  const save = async () => {
-    const method = get(saveFunc);
-    if (!method) {
-      logger.error('save method not set');
-      return;
-    }
-
-    const success = await method();
-    if (success) {
-      await clearDialog();
-    }
-  };
+  const {
+    valid,
+    setValidation,
+    setSubmitFunc,
+    setPostSubmitFunc,
+    trySubmit,
+    submitting
+  } = useForm<boolean>();
 
   return {
     dialogText,
     openDialog,
     accountToEdit,
     valid,
-    setSave,
-    save,
+    setValidation,
+    trySubmit,
+    setSubmitFunc,
+    setPostSubmitFunc,
     createAccount,
     editAccount,
-    clearDialog
+    clearDialog,
+    submitting
   };
 });

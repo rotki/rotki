@@ -177,23 +177,24 @@ watch(tags, () => {
         <template v-else>
           <div>
             <TagIcon :tag="item" />
-            <span class="tag-input__tag__description">
+            <span class="pl-4">
               {{ item.description }}
             </span>
           </div>
         </template>
       </template>
       <template #append-outer>
-        <VBtn
-          class="tag-input__manage-tags mt-n2"
+        <RuiButton
+          class="tag-input__manage-tags -mt-4"
           icon
-          text
+          variant="text"
           color="primary"
+          type="button"
           :disabled="disabled"
           @click="manageTags = true"
         >
-          <VIcon>mdi-pencil</VIcon>
-        </VBtn>
+          <RuiIcon name="pencil-line" />
+        </RuiButton>
       </template>
     </VCombobox>
     <VDialog
@@ -207,13 +208,3 @@ watch(tags, () => {
     </VDialog>
   </div>
 </template>
-
-<style scoped lang="scss">
-.tag-input {
-  &__tag {
-    &__description {
-      padding-left: 18px;
-    }
-  }
-}
-</style>

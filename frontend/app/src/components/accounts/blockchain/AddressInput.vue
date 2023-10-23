@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import { helpers, requiredIf } from '@vuelidate/validators';
+import { isEmpty } from 'lodash-es';
+import { toMessages } from '@/utils/validation';
+
 const props = withDefaults(
   defineProps<{
     addresses: string[];
@@ -79,63 +83,96 @@ const setAddress = (addresses: string[]) => {
 watch(addresses, addresses => setAddress(addresses));
 onMounted(() => setAddress(get(addresses)));
 
-const rules = [
-  (v: string) =>
-    !!v || t('account_form.validation.address_non_empty').toString()
-];
+const rules = {
+  address: {
+    required: helpers.withMessage(
+      t('account_form.validation.address_non_empty').toString(),
+      requiredIf(logicNot(multiple))
+    )
+  },
+  userAddresses: {
+    required: helpers.withMessage(
+      t('account_form.validation.address_non_empty').toString(),
+      requiredIf(logicAnd(multiple))
+    )
+  }
+};
+
+const { setValidation } = useAccountDialog();
+
+const v$ = setValidation(
+  rules,
+  {
+    address,
+    userAddresses
+  },
+  {
+    $autoDirty: true,
+    $stopPropagation: true,
+    $externalResults: computed(() => ({
+      address: get(errorMessages)
+    }))
+  }
+);
+
+watch(errorMessages, errors => {
+  if (!isEmpty(errors)) {
+    get(v$).$validate();
+  }
+});
 </script>
 
 <template>
-  <VRow no-gutters>
-    <VCol>
-      <VRow v-if="multi" no-gutters align="center">
-        <VCol cols="auto">
-          <VCheckbox
-            v-model="multiple"
-            :disabled="disabled"
-            :label="t('account_form.labels.multiple')"
-          />
-        </VCol>
-      </VRow>
-      <VTextField
-        v-if="!multiple"
-        v-model="address"
-        data-cy="account-address-field"
-        outlined
-        class="account-form__address"
-        :label="t('common.account')"
-        :rules="rules"
-        :error-messages="errorMessages"
-        autocomplete="off"
-        :disabled="disabled"
-        @paste="onPasteAddress($event)"
+  <div>
+    <RuiCheckbox
+      v-if="multi"
+      v-model="multiple"
+      color="primary"
+      class="mt-0 mb-6"
+      hide-details
+      :disabled="disabled"
+    >
+      {{ t('account_form.labels.multiple') }}
+    </RuiCheckbox>
+    <RuiTextField
+      v-if="!multiple"
+      v-model="address"
+      data-cy="account-address-field"
+      variant="outlined"
+      color="primary"
+      class="account-form__address"
+      :label="t('common.account')"
+      :rules="rules"
+      autocomplete="off"
+      :disabled="disabled"
+      :error-messages="toMessages(v$.address)"
+      @paste="onPasteAddress($event)"
+      @blur="v$.address.$touch()"
+    />
+    <VTextarea
+      v-else
+      v-model="userAddresses"
+      outlined
+      :disabled="disabled"
+      :error-messages="toMessages(v$.userAddresses)"
+      :hint="t('account_form.labels.addresses_hint')"
+      :label="t('account_form.labels.addresses')"
+      @blur="v$.userAddresses.$touch()"
+      @paste="onPasteMulti($event)"
+    />
+    <div v-if="multiple">
+      <div
+        class="text-caption mb-2"
+        v-text="
+          t(
+            'account_form.labels.addresses_entries',
+            {
+              count: entries.length
+            },
+            entries.length
+          )
+        "
       />
-      <VTextarea
-        v-else
-        v-model="userAddresses"
-        outlined
-        :disabled="disabled"
-        :error-messages="errorMessages"
-        :hint="t('account_form.labels.addresses_hint')"
-        :label="t('account_form.labels.addresses')"
-        @paste="onPasteMulti($event)"
-      />
-      <VRow v-if="multiple" no-gutters>
-        <VCol>
-          <div
-            class="text-caption"
-            v-text="
-              t(
-                'account_form.labels.addresses_entries',
-                {
-                  count: entries.length
-                },
-                entries.length
-              )
-            "
-          />
-        </VCol>
-      </VRow>
-    </VCol>
-  </VRow>
+    </div>
+  </div>
 </template>

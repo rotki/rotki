@@ -9,7 +9,11 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <RuiTooltip :popper="{ placement: 'right' }" max-width="300">
+  <RuiTooltip
+    :popper="{ placement: 'right' }"
+    open-delay="400"
+    tooltip-class="max-w-[16rem]"
+  >
     <template #activator>
       <RuiButton
         color="primary"
