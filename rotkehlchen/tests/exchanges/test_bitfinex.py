@@ -14,7 +14,7 @@ from rotkehlchen.assets.converters import (
 )
 from rotkehlchen.assets.exchanges_mappings.bitfinex import WORLD_TO_BITFINEX
 from rotkehlchen.assets.utils import get_or_create_evm_token
-from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR, A_LINK, A_USD, A_USDT, A_WBTC
+from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR, A_GLM, A_LINK, A_USD, A_USDT, A_WBTC
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchanges.bitfinex import (
@@ -27,7 +27,7 @@ from rotkehlchen.exchanges.bitfinex import (
 )
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade, TradeType
 from rotkehlchen.fval import FVal
-from rotkehlchen.tests.utils.constants import A_GLM, A_NEO
+from rotkehlchen.tests.utils.constants import A_NEO
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import (
     AssetAmount,

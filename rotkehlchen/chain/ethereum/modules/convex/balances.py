@@ -42,7 +42,7 @@ class ConvexBalances(ProtocolWithGauges):
             chain_id=chain_id,
             counterparty=CPT_CONVEX,
             deposit_event_types={(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET)},
-            gauge_deposit_event_types={(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET)},
+            gauge_deposit_event_types={(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET)},  # noqa: E501
         )
         self.cvx = A_CVX.resolve_to_evm_token()
 

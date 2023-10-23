@@ -11,6 +11,7 @@ import requests
 from rotkehlchen.assets.asset import Asset, CryptoAsset, EvmToken
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.constants.assets import A_GLM
 from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.globaldb.handler import GLOBAL_DB_VERSION, GlobalDBHandler
@@ -22,7 +23,6 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_response_with_result,
     wait_for_async_task,
 )
-from rotkehlchen.tests.utils.constants import A_GLM
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import ChainID, EvmTokenKind
 

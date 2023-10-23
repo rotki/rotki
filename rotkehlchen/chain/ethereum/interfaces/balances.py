@@ -28,7 +28,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
-PROTOCOLS_WITH_BALANCES = Literal['curve', 'convex', 'velodrome', 'thegraph']
+PROTOCOLS_WITH_BALANCES = Literal['curve', 'convex', 'velodrome', 'thegraph', 'octant']
 BalancesType = dict[ChecksumEvmAddress, dict[EvmToken, Balance]]
 
 

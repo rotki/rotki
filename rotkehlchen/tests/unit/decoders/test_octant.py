@@ -3,10 +3,9 @@ import pytest
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.modules.octant.constants import CPT_OCTANT, OCTANT_DEPOSITS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
-from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.constants.assets import A_ETH, A_GLM
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
@@ -47,7 +46,7 @@ def test_lock_glm(database, ethereum_inquirer, ethereum_accounts):
             location=Location.ETHEREUM,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
-            asset=EvmToken('eip155:1/erc20:0x7DD9c5Cba05E151C895FDe1CF355C9A1D5DA6429'),  # GLM
+            asset=A_GLM,
             balance=Balance(amount=FVal(approval_str)),
             location_label=user_address,
             notes=f'Set GLM spending approval of {user_address} by {OCTANT_DEPOSITS} to {approval_str}',  # noqa: E501
@@ -59,7 +58,7 @@ def test_lock_glm(database, ethereum_inquirer, ethereum_accounts):
             location=Location.ETHEREUM,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
-            asset=EvmToken('eip155:1/erc20:0x7DD9c5Cba05E151C895FDe1CF355C9A1D5DA6429'),  # GLM
+            asset=A_GLM,
             balance=Balance(amount=FVal(amount_str)),
             location_label=user_address,
             notes=f'Lock {amount_str} GLM in Octant',
@@ -104,7 +103,7 @@ def test_unlock_glm(database, ethereum_inquirer, ethereum_accounts):
             location=Location.ETHEREUM,
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.REMOVE_ASSET,
-            asset=EvmToken('eip155:1/erc20:0x7DD9c5Cba05E151C895FDe1CF355C9A1D5DA6429'),  # GLM
+            asset=A_GLM,
             balance=Balance(amount=FVal(amount_str)),
             location_label=user_address,
             notes=f'Unlock {amount_str} GLM from Octant',
