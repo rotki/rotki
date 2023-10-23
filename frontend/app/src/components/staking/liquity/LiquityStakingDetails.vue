@@ -260,6 +260,7 @@ const slots = useSlots();
 <template>
   <TablePageLayout
     :title="[t('navigation_menu.staking'), t('staking.liquity')]"
+    child
   >
     <template #buttons>
       <div class="flex items-center gap-3">

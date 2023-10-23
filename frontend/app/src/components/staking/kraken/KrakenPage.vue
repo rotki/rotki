@@ -39,7 +39,10 @@ const refresh = () => load(true);
 </script>
 
 <template>
-  <TablePageLayout :title="[t('navigation_menu.staking'), t('staking.kraken')]">
+  <TablePageLayout
+    :title="[t('navigation_menu.staking'), t('staking.kraken')]"
+    child
+  >
     <template #buttons>
       <RuiTooltip open-delay="400">
         <template #activator>

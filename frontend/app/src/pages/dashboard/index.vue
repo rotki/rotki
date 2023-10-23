@@ -32,11 +32,10 @@ const isAllBalancesLoading = isTaskRunning(TaskType.QUERY_BALANCES);
 
 const isManualBalancesLoading = isTaskRunning(TaskType.MANUAL_BALANCES);
 
-const isAnyLoading = computed<boolean>(
-  () =>
-    get(isBlockchainLoading) ||
-    get(isExchangeLoading) ||
-    get(isAllBalancesLoading)
+const isAnyLoading = logicOr(
+  isBlockchainLoading,
+  isExchangeLoading,
+  isAllBalancesLoading
 );
 
 const { refreshBalance } = useRefresh();
