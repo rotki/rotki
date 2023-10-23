@@ -9,7 +9,13 @@ const HistoryEventTypeDetail = z.object({
   direction: z.enum(['neutral', 'in', 'out'])
 });
 
-export type HistoryEventTypeDetail = z.infer<typeof HistoryEventTypeDetail>;
+const HistoryEventTypeDetailWithId = HistoryEventTypeDetail.extend({
+  identifier: z.string()
+});
+
+export type HistoryEventTypeDetailWithId = z.infer<
+  typeof HistoryEventTypeDetailWithId
+>;
 
 const HistoryEventTypeDetails = z.record(HistoryEventTypeDetail);
 

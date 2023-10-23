@@ -1,7 +1,8 @@
 import { type MaybeRef } from '@vueuse/core';
 import {
   type HistoryEventProductData,
-  type HistoryEventTypeData
+  type HistoryEventTypeData,
+  type HistoryEventTypeDetailWithId
 } from '@/types/history/events/event-type';
 import { type ActionDataEntry } from '@/types/action';
 
@@ -69,9 +70,8 @@ export const useHistoryEventMappings = createSharedComposable(() => {
     }
   );
 
-  const transactionEventTypesData = useRefMap(
-    historyEventTypeData,
-    ({ eventCategoryDetails }) =>
+  const transactionEventTypesData: ComputedRef<HistoryEventTypeDetailWithId[]> =
+    useRefMap(historyEventTypeData, ({ eventCategoryDetails }) =>
       Object.entries(eventCategoryDetails).map(([identifier, data]) => {
         const translationId = toSnakeCase(data.label);
         const translationKey = `backend_mappings.events.type.${translationId}`;
@@ -84,7 +84,7 @@ export const useHistoryEventMappings = createSharedComposable(() => {
             : toSentenceCase(data.label)
         };
       })
-  );
+    );
 
   const historyEventTypeGlobalMapping = useRefMap(
     historyEventTypeData,
@@ -116,7 +116,7 @@ export const useHistoryEventMappings = createSharedComposable(() => {
       eventSubtype?: string | null;
     }>,
     showFallbackLabel = true
-  ): ComputedRef<ActionDataEntry> =>
+  ): ComputedRef<HistoryEventTypeDetailWithId> =>
     computed(() => {
       const type = get(getEventType(event));
 
@@ -138,7 +138,8 @@ export const useHistoryEventMappings = createSharedComposable(() => {
         identifier: '',
         label,
         icon: 'mdi-help',
-        color: 'red'
+        color: 'red',
+        direction: 'neutral'
       };
     });
 
