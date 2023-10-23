@@ -184,7 +184,7 @@ const ignoreTokens = async (identifiers?: string[]) => {
             </RuiTooltip>
           </div>
 
-          <HintMenuIcon max-width="25rem" left>
+          <HintMenuIcon left>
             {{ t('asset_table.newly_detected.subtitle') }}
           </HintMenuIcon>
         </div>

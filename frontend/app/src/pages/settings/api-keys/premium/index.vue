@@ -142,7 +142,7 @@ const css = useCssModule();
     <RuiCard>
       <div class="flex flex-col gap-2">
         <div class="flex flex-row-reverse">
-          <HintMenuIcon max-width="25rem">
+          <HintMenuIcon>
             <i18n tag="div" path="premium_settings.subtitle">
               <BaseExternalLink
                 :text="t('premium_settings.title')"
