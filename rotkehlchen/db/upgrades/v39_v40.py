@@ -26,17 +26,19 @@ log = RotkehlchenLogsAdapter(logger)
 PREFIX = 'RE_%'  # hard-coded since this is a migration and prefix may change in the future
 MIGRATION_PREFIX = 'MLA_'  # prefix to add to ledger actions migrated to history events id
 CHANGES = [  # TO TYPE, TO SUBTYPE, FROM TYPE, FROM SUBTYPE
-    (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET, HistoryEventType.DEPOSIT, HistoryEventSubType.SPEND),  # noqa: E501
-    (HistoryEventType.WITHDRAWAL, HistoryEventSubType.REMOVE_ASSET, HistoryEventType.WITHDRAWAL, HistoryEventSubType.RECEIVE),  # noqa: E501
-    (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET, HistoryEventType.DEPOSIT, HistoryEventSubType.NONE),  # noqa: E501
-    (HistoryEventType.WITHDRAWAL, HistoryEventSubType.REMOVE_ASSET, HistoryEventType.WITHDRAWAL, HistoryEventSubType.NONE),  # noqa: E501
     (HistoryEventType.RECEIVE, HistoryEventSubType.NONE, HistoryEventType.RECEIVE, HistoryEventSubType.RECEIVE),  # noqa: E501
-
     (HistoryEventType.SPEND, HistoryEventSubType.FEE, HistoryEventType.DEPOSIT, HistoryEventSubType.FEE),  # noqa: E501
     (HistoryEventType.SPEND, HistoryEventSubType.FEE, HistoryEventType.WITHDRAWAL, HistoryEventSubType.FEE),  # noqa: E501
     (HistoryEventType.SPEND, HistoryEventSubType.FEE, HistoryEventType.RECEIVE, HistoryEventSubType.FEE),  # noqa: E501
     (HistoryEventType.SPEND, HistoryEventSubType.FEE, HistoryEventType.STAKING, HistoryEventSubType.FEE),  # noqa: E501
     (HistoryEventType.RECEIVE, HistoryEventSubType.REWARD, HistoryEventType.RECEIVE, HistoryEventSubType.INTEREST_PAYMENT),  # noqa: E501
+]
+
+TYPES_REMAPPED = [  # TO TYPE, TO SUBTYPE, FROM TYPE, FROM SUBTYPE  # types remapped after consolidation for all the locations
+    (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET, HistoryEventType.DEPOSIT, HistoryEventSubType.SPEND),  # noqa: E501
+    (HistoryEventType.WITHDRAWAL, HistoryEventSubType.REMOVE_ASSET, HistoryEventType.WITHDRAWAL, HistoryEventSubType.RECEIVE),  # noqa: E501
+    (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET, HistoryEventType.DEPOSIT, HistoryEventSubType.NONE),  # noqa: E501
+    (HistoryEventType.WITHDRAWAL, HistoryEventSubType.REMOVE_ASSET, HistoryEventType.WITHDRAWAL, HistoryEventSubType.NONE),  # noqa: E501
 ]
 
 DEFAULT_BASE_NODES_AT_V40 = [
@@ -80,6 +82,13 @@ def _migrate_rotki_events(write_cursor: 'DBCursor') -> None:
             to_type.serialize(), to_subtype.serialize(), PREFIX,
             from_type.serialize(), from_subtype.serialize(),
         ) for to_type, to_subtype, from_type, from_subtype in CHANGES],
+    )
+    write_cursor.executemany(
+        'UPDATE history_events SET type=?, subtype=? WHERE type=? AND subtype=?',
+        [(
+            to_type.serialize(), to_subtype.serialize(),
+            from_type.serialize(), from_subtype.serialize(),
+        ) for to_type, to_subtype, from_type, from_subtype in TYPES_REMAPPED],
     )
     log.debug('Exit _migrate_rotki_events')
 
