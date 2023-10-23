@@ -30,10 +30,9 @@ class VelodromeBalances(ProtocolWithGauges):
             evm_inquirer=evm_inquirer,
             chain_id=chain_id,
             counterparty=CPT_VELODROME,
+            deposit_event_types={(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET)},
+            gauge_deposit_event_types={(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET)},  # noqa: E501
         )
-
-    def get_gauge_deposit_events(self) -> set[tuple[HistoryEventType, HistoryEventSubType]]:
-        return {(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET)}
 
     def get_gauge_address(self, event: 'EvmEvent') -> Optional[ChecksumEvmAddress]:
         return event.address

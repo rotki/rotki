@@ -46,32 +46,26 @@ class ProtocolWithBalance(metaclass=abc.ABCMeta):
             evm_inquirer: 'EvmNodeInquirer',
             chain_id: 'CHAIN_IDS_WITH_BALANCE_PROTOCOLS',
             counterparty: PROTOCOLS_WITH_BALANCES,
+            deposit_event_types: set[tuple[HistoryEventType, HistoryEventSubType]],
     ):
         self.counterparty = counterparty
         self.event_db = DBHistoryEvents(database)
         self.evm_inquirer = evm_inquirer
         self.chain_id = chain_id
+        self.deposit_event_types = deposit_event_types
 
-    @abc.abstractmethod
-    def query_balances(self) -> BalancesType:
-        """
-        Common method for all the classes implementing this interface that returns a mapping
-        of user addresses to their token balances. This is later called in
-        `query_{chain}_balances`.
-        """
-
-    def addresses_with_deposits(
+    def addresses_with_activity(
             self,
-            product: 'EvmProduct',
-            deposit_events: set[tuple[HistoryEventType, HistoryEventSubType]],
+            products: Optional[list['EvmProduct']],
+            event_types: set[tuple[HistoryEventType, HistoryEventSubType]],
     ) -> dict[ChecksumEvmAddress, list['EvmEvent']]:
         """
-        Query events for protocols that allow deposits. It returns a mapping of the address
-        that made the deposit to the event returned by the filter.
+        Query events for addresses having performed a certain activity. It returns
+        a mapping of the address that made the activity to the event returned by the filter.
         """
         db_filter = EvmEventFilterQuery.make(
             counterparties=[self.counterparty],
-            products=[product],
+            products=products,
             location=Location.from_chain_id(self.chain_id),
         )
         with self.event_db.db.conn.read_ctx() as cursor:
@@ -81,15 +75,80 @@ class ProtocolWithBalance(metaclass=abc.ABCMeta):
                 has_premium=True,
             )
 
-        address_with_deposits = defaultdict(list)
-        for event in events:
-            if (event.event_type, event.event_subtype) not in deposit_events:
+        addresses_with_activity = defaultdict(list)
+        for event in events:  # TODO: HistoryEventFilterquery should allow querying by type/subtype combos to avoid this  # noqa: E501
+            if (event.event_type, event.event_subtype) not in event_types:
                 continue
             if event.location_label is None:
                 continue
-            address_with_deposits[string_to_evm_address(event.location_label)].append(event)
+            addresses_with_activity[string_to_evm_address(event.location_label)].append(event)
 
-        return address_with_deposits
+        return addresses_with_activity
+
+    def addresses_with_deposits(self, products: Optional[list['EvmProduct']]) -> dict[ChecksumEvmAddress, list['EvmEvent']]:  # noqa: E501
+        return self.addresses_with_activity(products, self.deposit_event_types)
+
+    # --- Methods to be implemented by all subclasses
+
+    @abc.abstractmethod
+    def query_balances(self) -> BalancesType:
+        """
+        Common method for all the classes implementing this interface that returns a mapping
+        of user addresses to their token balances. This is later called in
+        `query_{chain}_balances`.
+        """
+
+
+class ProtocolWithGauges(ProtocolWithBalance):
+    """Interface for protocols with gauges."""
+
+    def __init__(
+            self,
+            database: 'DBHandler',
+            evm_inquirer: 'EvmNodeInquirer',
+            chain_id: 'CHAIN_IDS_WITH_BALANCE_PROTOCOLS',
+            counterparty: PROTOCOLS_WITH_BALANCES,
+            deposit_event_types: set[tuple[HistoryEventType, HistoryEventSubType]],
+            gauge_deposit_event_types: set[tuple[HistoryEventType, HistoryEventSubType]],
+    ):
+        super().__init__(database=database, evm_inquirer=evm_inquirer, chain_id=chain_id, counterparty=counterparty, deposit_event_types=deposit_event_types)  # noqa: E501
+        self.gauge_deposit_event_types = gauge_deposit_event_types
+
+    def addresses_with_gauge_deposits(self) -> dict[ChecksumEvmAddress, list['EvmEvent']]:
+        return self.addresses_with_activity([EvmProduct.GAUGE], self.gauge_deposit_event_types)
+
+    def _query_gauges_balances(
+            self,
+            user_address: ChecksumEvmAddress,
+            gauges_to_token: dict[ChecksumEvmAddress, EvmToken],
+            call_order: list[WeightedNode],
+            chunk_size: int,
+            balances_contract: Callable,
+    ) -> dict[EvmToken, Balance]:
+        """
+        Query the set of gauges in gauges_to_token and return the balances for each
+        lp token deposited in all gauges.
+        """
+        balances: dict[EvmToken, Balance] = defaultdict(Balance)
+        gauge_chunks = get_chunks(list(gauges_to_token.keys()), n=chunk_size)
+        for gauge_chunk in gauge_chunks:
+            tokens = [gauges_to_token[staking_addr] for staking_addr in gauge_chunk]
+            gauges_balances = balances_contract(
+                address=user_address,
+                staking_addresses=gauge_chunk,
+                tokens=tokens,
+                call_order=call_order,
+            )
+
+            # Now map the gauge to the underlying token
+            for lp_token, balance in gauges_balances.items():
+                lp_token_price = Inquirer().find_usd_price(lp_token)
+                balances[lp_token] += Balance(
+                    amount=balance,
+                    usd_value=lp_token_price * balance,
+                )
+
+        return balances
 
     def _get_staking_contract_balances(
             self,
@@ -132,60 +191,6 @@ class ProtocolWithBalance(metaclass=abc.ABCMeta):
             balances[token] += normalized_balance
         return balances
 
-
-class ProtocolWithGauges(ProtocolWithBalance):
-    """Interface for protocols with gauges."""
-
-    @abc.abstractmethod
-    def get_gauge_deposit_events(self) -> set[tuple[HistoryEventType, HistoryEventSubType]]:
-        """
-        Common method for all the classes implementing this interface. It returns the gauge
-        deposit events. Staking to a gauge is done with a gauge deposit transaction which
-        is decoded to a set of events. One of these events represents the deposit action.
-        This function should return the type and subtype of the event that represents this
-        deposit action.
-        """
-
-    @abc.abstractmethod
-    def get_gauge_address(self, event: 'EvmEvent') -> Optional[ChecksumEvmAddress]:
-        """
-        Common method for all the classes implementing this interface. It returns the gauge
-        address from the event that represents the gauge deposit action or None.
-        """
-
-    def _query_gauges_balances(
-            self,
-            user_address: ChecksumEvmAddress,
-            gauges_to_token: dict[ChecksumEvmAddress, EvmToken],
-            call_order: list[WeightedNode],
-            chunk_size: int,
-            balances_contract: Callable,
-    ) -> dict[EvmToken, Balance]:
-        """
-        Query the set of gauges in gauges_to_token and return the balances for each
-        lp token deposited in all gauges.
-        """
-        balances: dict[EvmToken, Balance] = defaultdict(Balance)
-        gauge_chunks = get_chunks(list(gauges_to_token.keys()), n=chunk_size)
-        for gauge_chunk in gauge_chunks:
-            tokens = [gauges_to_token[staking_addr] for staking_addr in gauge_chunk]
-            gauges_balances = balances_contract(
-                address=user_address,
-                staking_addresses=gauge_chunk,
-                tokens=tokens,
-                call_order=call_order,
-            )
-
-            # Now map the gauge to the underlying token
-            for lp_token, balance in gauges_balances.items():
-                lp_token_price = Inquirer().find_usd_price(lp_token)
-                balances[lp_token] += Balance(
-                    amount=balance,
-                    usd_value=lp_token_price * balance,
-                )
-
-        return balances
-
     def query_balances(self) -> BalancesType:
         """
         Query gauge balances for the addresses that have interacted with known gauges.
@@ -193,13 +198,8 @@ class ProtocolWithGauges(ProtocolWithBalance):
         balances: BalancesType = defaultdict(lambda: defaultdict(Balance))
         gauges_to_token: dict[ChecksumEvmAddress, EvmToken] = {}
         # query addresses and gauges where they interacted
-        addresses_with_deposits = self.addresses_with_deposits(
-            product=EvmProduct.GAUGE,
-            deposit_events=self.get_gauge_deposit_events(),
-        )
-        # get details to query balances on chain
         chunk_size, call_order = get_chunk_size_call_order(self.evm_inquirer)
-        for address, events in addresses_with_deposits.items():
+        for address, events in self.addresses_with_gauge_deposits().items():
             balances[address] = defaultdict(Balance)
             # Create a mapping of a gauge to its token
             for event in events:
@@ -217,3 +217,12 @@ class ProtocolWithGauges(ProtocolWithBalance):
             )
 
         return balances
+
+    # --- Methods to be implemented by all subclasses
+
+    @abc.abstractmethod
+    def get_gauge_address(self, event: 'EvmEvent') -> Optional[ChecksumEvmAddress]:
+        """
+        Common method for all the classes implementing this interface. It returns the gauge
+        address from the event that represents the gauge deposit action or None.
+        """
