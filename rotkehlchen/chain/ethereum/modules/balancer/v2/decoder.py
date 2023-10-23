@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any, Callable
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.modules.balancer.constants import BALANCER_LABEL, CPT_BALANCER_V2
+from rotkehlchen.chain.ethereum.modules.balancer.v2.constants import V2_SWAP, VAULT_ADDRESS
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
@@ -16,7 +17,6 @@ from rotkehlchen.chain.evm.decoding.structures import (
     TransferEnrichmentOutput,
 )
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
-from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_WETH
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -28,8 +28,6 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.user_messages import MessagesAggregator
 
-V2_SWAP = b'!p\xc7A\xc4\x151\xae\xc2\x0e|\x10|$\xee\xcf\xdd\x15\xe6\x9c\x9b\xb0\xa8\xdd7\xb1\x84\x0b\x9e\x0b {'  # noqa: E501
-VAULT_ADDRESS = string_to_evm_address('0xBA12222222228d8Ba445958a75a0704d566BF2C8')
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)

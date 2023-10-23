@@ -69,7 +69,8 @@ LEDGER_ACTION_TYPE_TO_NAME = {
 
 def _migrate_rotki_events(write_cursor: 'DBCursor') -> None:
     """
-    Migrate rotki events that were broken due to https://github.com/rotki/rotki/issues/6550
+    Migrate rotki events that were broken due to https://github.com/rotki/rotki/issues/6550.
+    and events that need to update their types after the consolidation made in 1.31
     """
     log.debug('Enter _migrate_rotki_events')
     write_cursor.executemany(
