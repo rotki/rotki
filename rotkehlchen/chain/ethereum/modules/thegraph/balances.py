@@ -38,11 +38,9 @@ class ThegraphBalances(ProtocolWithBalance):
             evm_inquirer=evm_inquirer,
             chain_id=chain_id,
             counterparty=CPT_THEGRAPH,
+            deposit_event_types={(HistoryEventType.STAKING, HistoryEventSubType.DEPOSIT_ASSET)},
         )
         self.grt = A_GRT.resolve_to_evm_token()
-
-    def get_deposit_events(self) -> set[tuple[HistoryEventType, HistoryEventSubType]]:
-        return {(HistoryEventType.STAKING, HistoryEventSubType.DEPOSIT_ASSET)}
 
     def query_balances(self) -> 'BalancesType':
         """
@@ -54,10 +52,7 @@ class ThegraphBalances(ProtocolWithBalance):
         balances: BalancesType = defaultdict(lambda: defaultdict(Balance))
 
         # fetch deposit events
-        addresses_with_deposits = self.addresses_with_deposits(
-            product=EvmProduct.STAKING,
-            deposit_events=self.get_deposit_events(),
-        )
+        addresses_with_deposits = self.addresses_with_deposits(products=[EvmProduct.STAKING])
         # remap all events into a list that will contain all pairs (delegator, indexer)
         delegations_unique = set()
         for delegator, event_list in addresses_with_deposits.items():

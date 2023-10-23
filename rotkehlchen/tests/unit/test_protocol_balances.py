@@ -2,15 +2,15 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.ethereum.modules.convex.balances import ConvexBalances
 from rotkehlchen.chain.ethereum.modules.curve.balances import CurveBalances
+from rotkehlchen.chain.ethereum.modules.octant.balances import OctantBalances
 from rotkehlchen.chain.ethereum.modules.thegraph.balances import ThegraphBalances
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.optimism.modules.velodrome.balances import VelodromeBalances
-from rotkehlchen.constants.assets import A_CVX, A_GRT
+from rotkehlchen.constants.assets import A_CVX, A_GLM, A_GRT
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
@@ -212,3 +212,28 @@ def test_thegraph_balances(
         amount=FVal('1293.499999999999900000'),
         usd_value=FVal('1940.24999999999985'),
     )
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
+def test_octant_balances(
+        ethereum_inquirer: 'EthereumInquirer',
+        ethereum_transaction_decoder: 'EthereumTransactionDecoder',
+        ethereum_accounts: list[ChecksumEvmAddress],
+        inquirer: 'Inquirer',  # pylint: disable=unused-argument
+) -> None:
+    """Check that balances of locked GLM in Octant are properly detected"""
+    tx_hex = deserialize_evm_tx_hash('0x29944efad254413b5eccdd5f13f14642ab830dbf51d5f2cfc59cf4957f33671a')  # noqa: E501
+    get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=ethereum_transaction_decoder.database,
+        tx_hash=tx_hex,
+    )
+    octant_balances_inquirer = OctantBalances(
+        database=ethereum_transaction_decoder.database,
+        evm_inquirer=ethereum_inquirer,
+        chain_id=ChainID.ETHEREUM,
+    )
+    octant_balances = octant_balances_inquirer.query_balances()
+    user_balance = octant_balances[ethereum_accounts[0]]
+    assert user_balance[A_GLM.resolve_to_evm_token()] == Balance(amount=FVal('1000'), usd_value=FVal('1500'))  # noqa: E501

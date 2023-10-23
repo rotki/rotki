@@ -2,7 +2,6 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
@@ -11,9 +10,9 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
-from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.constants.assets import A_GLM
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChainID, ChecksumEvmAddress
+from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 from .constants import CPT_OCTANT, OCTANT_DEPOSITS
@@ -43,12 +42,7 @@ class OctantDecoder(DecoderInterface):
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
         )
-        self.glm = get_or_create_evm_token(
-            userdb=self.base.database,
-            evm_address=string_to_evm_address('0x7DD9c5Cba05E151C895FDe1CF355C9A1D5DA6429'),
-            chain_id=ChainID.ETHEREUM,
-            evm_inquirer=ethereum_inquirer,
-        )
+        self.glm = A_GLM.resolve_to_evm_token()
 
     def _decode_events(self, context: DecoderContext) -> DecodingOutput:
         if context.tx_log.topics[0] not in (LOCKED, UNLOCKED):

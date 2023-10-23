@@ -7,7 +7,6 @@ from rotkehlchen.accounting.structures.types import HistoryEventSubType, History
 from rotkehlchen.chain.ethereum.interfaces.balances import ProtocolWithGauges
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.contracts import EvmContract
-from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_CVX
 from rotkehlchen.db.dbhandler import DBHandler
@@ -16,7 +15,7 @@ from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
 
-from .constants import CPT_CONVEX
+from .constants import CPT_CONVEX, CVX_LOCKER_V2, CVX_REWARDS
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.structures.evm_event import EvmEvent
@@ -42,11 +41,10 @@ class ConvexBalances(ProtocolWithGauges):
             evm_inquirer=evm_inquirer,
             chain_id=chain_id,
             counterparty=CPT_CONVEX,
+            deposit_event_types={(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET)},
+            gauge_deposit_event_types={(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET)},  # noqa: E501
         )
         self.cvx = A_CVX.resolve_to_evm_token()
-
-    def get_gauge_deposit_events(self) -> set[tuple[HistoryEventType, HistoryEventSubType]]:
-        return {(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET)}
 
     def get_gauge_address(self, event: 'EvmEvent') -> Optional[ChecksumEvmAddress]:
         if event.extra_data is None:
@@ -57,6 +55,7 @@ class ConvexBalances(ProtocolWithGauges):
             self,
             balances: 'BalancesType',
             staking_contract: EvmContract,
+            addresses_with_stake: list[ChecksumEvmAddress],
     ) -> None:
         """
         Query staking balances for CVX if there was a deposit event in Convex.
@@ -64,17 +63,6 @@ class ConvexBalances(ProtocolWithGauges):
         is variable.
         The balances variable is mutated in this function.
         """
-        addresses_with_stake_mapping = self.addresses_with_deposits(
-            product=EvmProduct.STAKING,
-            deposit_events={(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET)},
-        )
-        # addresses_with_deposits returns a mapping of address to evm event but since we will call
-        # the staking contracts with the addresses as arguments we need the list of addresses to
-        # index them later
-        addresses_with_stake = list(addresses_with_stake_mapping.keys())
-        if len(addresses_with_stake) == 0:
-            return None
-
         cvx_price = Inquirer().find_usd_price(self.cvx)
         try:
             call_output = self.evm_inquirer.multicall(
@@ -100,12 +88,22 @@ class ConvexBalances(ProtocolWithGauges):
         return None
 
     def query_balances(self) -> 'BalancesType':
-        balances = super().query_balances()
-        # query CVX locked but not staked
-        cvx_lock_contract = self.evm_inquirer.contracts.contract(string_to_evm_address('0xCF50b810E57Ac33B91dCF525C6ddd9881B139332'))  # noqa: E501
-        self._query_staked_cvx(balances, cvx_lock_contract)
-        # query CVX staked
-        cvx_lock_contract = self.evm_inquirer.contracts.contract(string_to_evm_address('0x72a19342e8F1838460eBFCCEf09F6585e32db86E'))  # noqa: E501
-        self._query_staked_cvx(balances, cvx_lock_contract)
+        balances = super().query_balances()  # Query the gauges
+        addresses_with_stake_mapping = self.addresses_with_deposits(
+            products=[EvmProduct.STAKING],
+        )
+        # addresses_with_deposits returns a mapping of address to evm event but since we will call
+        # the staking contracts with the addresses as arguments we need the list of addresses to
+        # index them later
+        addresses_with_stake = list(addresses_with_stake_mapping.keys())
+        if len(addresses_with_stake) == 0:
+            return balances
+
+        for contract_address in (CVX_REWARDS, CVX_LOCKER_V2):
+            self._query_staked_cvx(
+                balances=balances,
+                staking_contract=self.evm_inquirer.contracts.contract(contract_address),
+                addresses_with_stake=addresses_with_stake,
+            )
 
         return balances
