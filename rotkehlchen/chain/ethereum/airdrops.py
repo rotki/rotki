@@ -22,6 +22,7 @@ from rotkehlchen.constants.assets import (
     A_DIVA,
     A_ENS,
     A_FOX,
+    A_GNOSIS_VCOW,
     A_GRAIN,
     A_LDO,
     A_PSP,
@@ -167,7 +168,7 @@ AIRDROPS: dict[str, Airdrop] = {
     ),
     'cow_gnosis': Airdrop(
         csv_url='https://raw.githubusercontent.com/rotki/data/main/airdrops/cow_gnosis.csv',
-        asset=A_VCOW,
+        asset=A_GNOSIS_VCOW,
         url='https://cowswap.exchange/#/claim',
         name='COW (gnosis chain)',
         icon='cow.svg',

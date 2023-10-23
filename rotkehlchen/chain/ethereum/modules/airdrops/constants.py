@@ -1,4 +1,5 @@
 from rotkehlchen.chain.ethereum.modules.convex.constants import CPT_CONVEX
+from rotkehlchen.chain.evm.decoding.cowswap.constants import CPT_COWSWAP
 
 
 CPT_UNISWAP = 'uniswap'
@@ -16,4 +17,5 @@ ETHEREUM_AIRDROPS_LIST = [
     CPT_FRAX,
     CPT_SHAPESHIFT,
     CPT_ELEMENT_FINANCE,
+    CPT_COWSWAP,
 ]

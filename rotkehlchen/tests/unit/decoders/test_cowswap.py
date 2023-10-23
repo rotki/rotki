@@ -4,11 +4,21 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.cowswap.constants import CPT_COWSWAP
 from rotkehlchen.chain.evm.decoding.cowswap.decoder import GPV2_SETTLEMENT_ADDRESS
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants.assets import A_ETH, A_USDC, A_USDT, A_WBTC, A_WETH, A_XDAI
+from rotkehlchen.constants.assets import (
+    A_ETH,
+    A_GNOSIS_VCOW,
+    A_USDC,
+    A_USDT,
+    A_VCOW,
+    A_WBTC,
+    A_WETH,
+    A_XDAI,
+)
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
@@ -611,3 +621,87 @@ def test_swap_gnosis_tokens(database, gnosis_inquirer, gnosis_accounts):
         ),
     ]
     assert events == expected_events
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('ethereum_accounts', [['0xf393fb8C4BbF7e37f583D0593AD1d1b2443E205c']])
+def test_ethereum_claim_airdrop(database, ethereum_inquirer, ethereum_accounts):
+    tx_hash = deserialize_evm_tx_hash('0x8d33a6f1c37da1e2b77a4595425360361b6db79ec8811ff2eef810ebb9942044')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    user_address = ethereum_accounts[0]
+    timestamp = TimestampMS(1644614818000)
+    amount = FVal('15922.558465644366037906')
+    assert events == [
+        EvmEvent(
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(0.006544511735317699)),
+            location_label=user_address,
+            notes='Burned 0.006544511735317699 ETH for gas',
+            tx_hash=tx_hash,
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            sequence_index=379,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.AIRDROP,
+            asset=A_VCOW,
+            balance=Balance(amount),
+            location_label=user_address,
+            notes=f'Claim {amount} vCOW from cowswap airdrop',
+            tx_hash=tx_hash,
+            counterparty=CPT_COWSWAP,
+            address=ZERO_ADDRESS,
+        ),
+    ]
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('gnosis_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
+def test_gnosis_claim_airdrop(database, gnosis_inquirer, gnosis_accounts):
+    user_address = gnosis_accounts[0]
+    tx_hash = deserialize_evm_tx_hash('0x85540c0cb716efa6027ff9415c700ecb36d382aafa18749b9e66c67e66f47b8d')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=gnosis_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    timestamp = TimestampMS(1644617690000)
+    amount = FVal('34.73918333042108124')
+    assert events == [
+        EvmEvent(
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_XDAI,
+            balance=Balance(amount=FVal(0.000121524)),
+            location_label=user_address,
+            notes='Burned 0.000121524 XDAI for gas',
+            tx_hash=tx_hash,
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            sequence_index=23,
+            timestamp=timestamp,
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.AIRDROP,
+            asset=A_GNOSIS_VCOW,
+            balance=Balance(amount),
+            location_label=user_address,
+            notes=f'Claim {amount} vCOW from cowswap airdrop',
+            tx_hash=tx_hash,
+            counterparty=CPT_COWSWAP,
+            address=ZERO_ADDRESS,
+        ),
+    ]
