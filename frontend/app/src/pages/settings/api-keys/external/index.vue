@@ -16,7 +16,7 @@ onMounted(async () => {
     ]"
   >
     <template #buttons>
-      <HintMenuIcon max-width="25rem">
+      <HintMenuIcon>
         {{ t('external_services.subtitle') }}
       </HintMenuIcon>
     </template>

@@ -6,7 +6,7 @@ const { t } = useI18n();
   <div class="p-4">
     <TablePageLayout :title="[t('import_data.title')]">
       <template #buttons>
-        <HintMenuIcon>
+        <HintMenuIcon left>
           {{ t('import_data.description') }}
         </HintMenuIcon>
       </template>
