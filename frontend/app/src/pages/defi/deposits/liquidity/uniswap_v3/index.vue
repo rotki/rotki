@@ -47,17 +47,25 @@ const balances = computed(() => {
 
 const premium = usePremium();
 
-const refresh = async () => {
-  await fetchBalances(true);
-};
-
-onMounted(async () => {
-  await fetchBalances(false);
-});
-
 const lpType = LpType.UNISWAP_V3;
 
 const getIdentifier = (item: XswapBalance) => item.nftId;
+
+const refresh = async (ignoreCache: boolean = false) => {
+  await fetchBalances(ignoreCache);
+};
+
+onMounted(async () => {
+  await refresh();
+});
+
+const refreshTooltip: ComputedRef<string> = computed(() =>
+  t('helpers.refresh_header.tooltip', {
+    title: t(
+      'navigation_menu.defi_sub.deposits_sub.liquidity_sub.uniswap_v3'
+    ).toLocaleLowerCase()
+  })
+);
 </script>
 
 <template>
@@ -72,18 +80,37 @@ const getIdentifier = (item: XswapBalance) => item.nftId;
       </i18n>
     </template>
   </ProgressScreen>
-  <div v-else class="uniswap flex flex-col gap-4">
-    <RefreshHeader
-      :title="t('uniswap.title', { v: 3 })"
-      class="mt-4"
-      :loading="primaryRefreshing || secondaryRefreshing"
-      @refresh="refresh()"
-    >
-      <template #actions>
+  <TablePageLayout
+    v-else
+    class="mt-8"
+    :title="[
+      t('navigation_menu.defi'),
+      t('navigation_menu.defi_sub.deposits_sub.liquidity'),
+      t('navigation_menu.defi_sub.deposits_sub.liquidity_sub.uniswap_v3')
+    ]"
+  >
+    <template #buttons>
+      <div class="flex items-center gap-4">
         <ActiveModules :modules="modules" />
-      </template>
-    </RefreshHeader>
 
+        <RuiTooltip :open-delay="400">
+          <template #activator>
+            <RuiButton
+              variant="outlined"
+              color="primary"
+              :loading="primaryRefreshing || secondaryRefreshing"
+              @click="refresh(true)"
+            >
+              <template #prepend>
+                <RuiIcon name="refresh-line" />
+              </template>
+              {{ t('common.refresh') }}
+            </RuiButton>
+          </template>
+          {{ refreshTooltip }}
+        </RuiTooltip>
+      </div>
+    </template>
     <div class="grid grid-cols-2 gap-4">
       <BlockchainAccountSelector
         v-model="selectedAccounts"
@@ -105,7 +132,11 @@ const getIdentifier = (item: XswapBalance) => item.nftId;
       />
     </div>
 
-    <PaginatedCards :identifier="getIdentifier" :items="balances">
+    <PaginatedCards
+      v-if="balances.length > 0"
+      :identifier="getIdentifier"
+      :items="balances"
+    >
       <template #item="{ item }">
         <Uniswap3PoolBalances :item="item" :lp-type="lpType" />
       </template>
@@ -119,5 +150,5 @@ const getIdentifier = (item: XswapBalance) => item.nftId;
       :only-chains="chains"
       :entry-types="[HistoryEventEntryType.EVM_EVENT]"
     />
-  </div>
+  </TablePageLayout>
 </template>

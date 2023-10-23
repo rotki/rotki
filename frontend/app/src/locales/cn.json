@@ -4001,8 +4001,7 @@
     "loading": "请稍候，您的流动资金池正在加载...",
     "loading_non_premium": "加载流动资金池余额可能需要一段时间......考虑升级到 {0} 以加快加载时间。",
     "premium": "溢价",
-    "price_range": "价格区间",
-    "title": "Uniswap v{v} 矿池"
+    "price_range": "价格区间"
   },
   "update_indicator": {
     "version": "rotki 的更新版本 ({appVersion}) 可用"

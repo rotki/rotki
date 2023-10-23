@@ -41,7 +41,6 @@ import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import HashLink from '@/components/helper/HashLink.vue';
 import LiquidityPoolSelector from '@/components/helper/LiquidityPoolSelector.vue';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
-import RefreshHeader from '@/components/helper/RefreshHeader.vue';
 import TableExpandContainer from '@/components/helper/table/TableExpandContainer.vue';
 import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
 import TableFilter from '@/components/table-filter/TableFilter.vue';
@@ -95,7 +94,6 @@ export function registerComponents(): void {
   Vue.component('BlockchainAccountSelector', BlockchainAccountSelector);
   Vue.component('DateDisplay', DateDisplay);
   Vue.component('LocationDisplay', LocationDisplay);
-  Vue.component('RefreshHeader', RefreshHeader);
   // version 5
   Vue.component('AssetSelect', AssetSelect);
   // version 6

@@ -27,8 +27,9 @@ const statusFilters: Ref<{ text: string; value: boolean }[]> = ref([
   { text: t('common.claimed'), value: true }
 ]);
 const status: Ref<boolean> = ref(false);
-const loading = ref(false);
-const refreshTooltip: Ref<string> = ref(
+const loading: Ref<boolean> = ref(false);
+
+const refreshTooltip: ComputedRef<string> = computed(() =>
   t('helpers.refresh_header.tooltip', {
     title: t('airdrops.title').toLocaleLowerCase()
   })
