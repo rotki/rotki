@@ -22,9 +22,6 @@ const premium = usePremium();
 const worksWithoutPremium = (period: TimeFrameSetting): boolean =>
   isPeriodAllowed(period) || period === TimeFramePersist.REMEMBER;
 
-const activeClass = (timeframePeriod: TimeFrameSetting): string =>
-  timeframePeriod === get(value) ? 'timeframe-selector--active' : '';
-
 const { t } = useI18n();
 const css = useCssModule();
 </script>
@@ -37,16 +34,24 @@ const css = useCssModule();
       </template>
       <span v-text="t('overall_balances.premium_hint')" />
     </RuiTooltip>
-    <RuiButton
-      v-for="(timeframe, i) in visibleTimeframes"
-      :key="i"
-      :color="activeClass(timeframe) ? 'primary' : 'grey'"
-      class="px-4"
-      :disabled="(!premium && !worksWithoutPremium(timeframe)) || disabled"
-      @click="input(timeframe)"
+    <RuiButtonGroup
+      :disabled="disabled"
+      :value="value"
+      gap="md"
+      required
+      @input="input($event)"
     >
-      {{ timeframe }}
-    </RuiButton>
+      <RuiButton
+        v-for="(timeframe, i) in visibleTimeframes"
+        :key="i"
+        :color="timeframe === value ? 'primary' : 'grey'"
+        class="px-4"
+        :disabled="!premium && !worksWithoutPremium(timeframe)"
+        :value="timeframe"
+      >
+        {{ timeframe }}
+      </RuiButton>
+    </RuiButtonGroup>
   </div>
 </template>
 
