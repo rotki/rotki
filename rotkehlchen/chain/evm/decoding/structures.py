@@ -1,6 +1,8 @@
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Final, Literal, NamedTuple, Optional
 
+from rotkehlchen.types import ChecksumEvmAddress
+
 if TYPE_CHECKING:
     from rotkehlchen.accounting.structures.evm_event import EvmEvent
     from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
@@ -21,6 +23,7 @@ class ActionItem(NamedTuple):
     to_event_subtype: Optional['HistoryEventSubType'] = None
     to_notes: Optional[str] = None
     to_counterparty: Optional[str] = None
+    to_address: Optional[ChecksumEvmAddress] = None
     extra_data: Optional[dict] = None
     # Optional event data that pairs it with the event of the action item
     # Contains a tuple with the paired event and whether it's an out event (True) or in event

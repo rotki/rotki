@@ -4,12 +4,16 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.chain.ethereum.modules.makerdao.constants import CPT_VAULT
+from rotkehlchen.chain.ethereum.modules.makerdao.constants import (
+    CPT_MAKERDAO_MIGRATION,
+    CPT_VAULT,
+    MAKERDAO_MIGRATION_ADDRESS,
+)
 from rotkehlchen.chain.ethereum.modules.makerdao.sai.constants import CPT_SAI
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants.assets import A_ETH, A_SAI, A_WETH
+from rotkehlchen.constants.assets import A_DAI, A_ETH, A_SAI, A_WETH
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
@@ -2378,8 +2382,8 @@ def test_makerdao_sai_cdp_migration(ethereum_transaction_decoder, ethereum_accou
             asset=Asset('eip155:1/erc20:0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2'),
             balance=Balance(FVal('0.45955005345564535')),
             location_label='0xca482bCd75A6E0697aD6A1732aa187310b8372Df',
-            notes='Send 0.45955005345564535 MKR from 0xca482bCd75A6E0697aD6A1732aa187310b8372Df to 0xc73e0383F3Aff3215E6f04B0331D58CeCf0Ab849',  # noqa: E501
-            address=string_to_evm_address('0xc73e0383F3Aff3215E6f04B0331D58CeCf0Ab849'),
+            notes=f'Send 0.45955005345564535 MKR from 0xca482bCd75A6E0697aD6A1732aa187310b8372Df to {MAKERDAO_MIGRATION_ADDRESS}',  # noqa: E501
+            address=MAKERDAO_MIGRATION_ADDRESS,
         ), EvmEvent(
             tx_hash=evmhash,
             sequence_index=65,
@@ -2389,7 +2393,7 @@ def test_makerdao_sai_cdp_migration(ethereum_transaction_decoder, ethereum_accou
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
             balance=Balance(),
-            location_label='0xc73e0383F3Aff3215E6f04B0331D58CeCf0Ab849',
+            location_label=MAKERDAO_MIGRATION_ADDRESS,
             notes='Close CDP 19125',
             counterparty=CPT_SAI,
             address=string_to_evm_address('0x22953B20aB21eF5b2A28c1bB55734fB2525Ebaf2'),
@@ -2418,6 +2422,66 @@ def test_makerdao_sai_cdp_migration(ethereum_transaction_decoder, ethereum_accou
             notes='Migrate Sai CDP 19125 to Dai CDP 3768',
             counterparty=CPT_SAI,
             address=string_to_evm_address('0x22953B20aB21eF5b2A28c1bB55734fB2525Ebaf2'),
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x2D3f907b0cF2C7D3c2BA4Cbc72971081FfCea963']])
+def test_sai_dai_migration(ethereum_transaction_decoder, ethereum_accounts):
+    """Check that SAI to DAI migration is decoded properly"""
+    tx_hex = deserialize_evm_tx_hash('0x1f1f65d04c9c0de8b39d574380851c0e2f9b2552c9aedd71ff56459e2b83cf5c')  # noqa: E501
+    evmhash = deserialize_evm_tx_hash(tx_hex)
+    user_address = ethereum_accounts[0]
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
+        database=ethereum_transaction_decoder.database,
+        tx_hash=evmhash,
+    )
+    timestamp = TimestampMS(1575726133000)
+    gas_str = '0.0018393'
+    amount_str = '12.559504275171697953'
+    expected_events = [
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas_str)),
+            location_label=user_address,
+            notes=f'Burned {gas_str} ETH for gas',
+            counterparty=CPT_GAS,
+            address=None,
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=33,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.MIGRATE,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_SAI,
+            balance=Balance(FVal(amount_str)),
+            location_label=user_address,
+            notes=f'Migrate {amount_str} SAI to DAI',
+            counterparty=CPT_MAKERDAO_MIGRATION,
+            address=MAKERDAO_MIGRATION_ADDRESS,
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=39,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.MIGRATE,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=A_DAI,
+            balance=Balance(FVal(amount_str)),
+            location_label=user_address,
+            notes=f'Receive {amount_str} DAI from SAI->DAI migration',
+            counterparty=CPT_MAKERDAO_MIGRATION,
+            address=MAKERDAO_MIGRATION_ADDRESS,
         ),
     ]
     assert events == expected_events

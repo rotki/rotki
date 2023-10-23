@@ -12,7 +12,7 @@ from rotkehlchen.constants.assets import A_DAI
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import ChecksumEvmAddress
 
-from .constants import CPT_DSR, CPT_MIGRATION, CPT_VAULT
+from .constants import CPT_DSR, CPT_MAKERDAO_MIGRATION, CPT_VAULT
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.pot import AccountingPot
@@ -125,7 +125,7 @@ class MakerdaoAccountant(ModuleAccountantInterface):
                 count_cost_basis_pnl=False,
                 accountant_cb=self._process_dsr_withdraw,
             ),  # Migrate SAI to DAI
-            get_event_type_identifier(HistoryEventType.MIGRATE, HistoryEventSubType.SPEND, CPT_MIGRATION): TxEventSettings(  # noqa: E501
+            get_event_type_identifier(HistoryEventType.MIGRATE, HistoryEventSubType.SPEND, CPT_MAKERDAO_MIGRATION): TxEventSettings(  # noqa: E501
                 taxable=False,
                 count_entire_amount_spend=False,
                 count_cost_basis_pnl=False,
