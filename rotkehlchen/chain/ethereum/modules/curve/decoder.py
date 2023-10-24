@@ -159,9 +159,14 @@ class CurveDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin):
             cache_type_to_check_for_freshness=CacheType.CURVE_LP_TOKENS,
             query_data_method=query_curve_data,
             save_data_to_cache_method=save_curve_data_to_cache,
-            read_pools_and_gauges_from_cache_method=read_curve_pools_and_gauges,
+            read_data_from_cache_method=read_curve_pools_and_gauges,
         )
         self.ethereum = ethereum_inquirer
+
+    @property
+    def pools(self) -> dict[ChecksumEvmAddress, list[ChecksumEvmAddress]]:
+        assert isinstance(self.cache_data[0], dict), 'CurveDecoder cache_data[0] is not a dict'
+        return self.cache_data[0]
 
     def _decode_curve_remove_events(
             self,
@@ -409,10 +414,10 @@ class CurveDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin):
             if (
                 context.tx_log.topics[0] == TOKEN_EXCHANGE and
                 pool_address in self.pools and
-                len(self.pools[pool_address]) > max(sold_token_id, bought_token_id)  # type: ignore  # self.pools is a dict here  # Make sure that tokens of the pool are cached
+                len(self.pools[pool_address]) > max(sold_token_id, bought_token_id)  # Make sure that tokens of the pool are cached  # noqa: E501
             ):
-                sold_token_address = self.pools[pool_address][sold_token_id]  # type: ignore  # self.pools is a dict here
-                bought_token_address = self.pools[pool_address][bought_token_id]  # type: ignore  # self.pools is a dict here
+                sold_token_address = self.pools[pool_address][sold_token_id]
+                bought_token_address = self.pools[pool_address][bought_token_id]
         else:  # EXCHANGE_MULTIPLE
             swapping_contract = CURVE_SWAP_ROUTER
             spender_address = hex_or_bytes_to_address(context.tx_log.topics[1])

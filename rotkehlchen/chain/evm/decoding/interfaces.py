@@ -18,10 +18,6 @@ from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.structures.evm_event import EvmEvent
-    from rotkehlchen.chain.ethereum.modules.curve.curve_cache import (
-        READ_CURVE_DATA_TYPE,
-        CurvePoolData,
-    )
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
@@ -191,8 +187,8 @@ class ReloadableDecoderMixin(metaclass=ABCMeta):
         Returns only new mappings of addresses to decode functions"""
 
 
-class ReloadablePoolsAndGaugesDecoderMixin(ReloadableDecoderMixin, metaclass=ABCMeta):
-    """Used by decoders of protocols that have pools and gauges stored in the globaldb cache
+class ReloadableCacheDecoderMixin(ReloadableDecoderMixin, metaclass=ABCMeta):
+    """Used by decoders of protocols that have data stored in the globaldb cache
     tables. It can reload them to the decoder's memory.
     """
 
@@ -202,43 +198,33 @@ class ReloadablePoolsAndGaugesDecoderMixin(ReloadableDecoderMixin, metaclass=ABC
             cache_type_to_check_for_freshness: CacheType,
             query_data_method: Union[
                 Callable[['OptimismInquirer'], Optional[list['VelodromePoolData']]],
-                Callable[['EthereumInquirer'], Optional[list['CurvePoolData']]],
+                Callable[['EthereumInquirer'], Optional[list]],
             ],
-            save_data_to_cache_method: Union[
-                Callable[['DBCursor', 'DBHandler', list['CurvePoolData']], None],
-                Callable[['DBCursor', 'DBHandler', list['VelodromePoolData']], None],
-            ],
-            read_pools_and_gauges_from_cache_method: Union[
-                Callable[[], tuple[set[ChecksumEvmAddress], set[ChecksumEvmAddress]]],
-                Callable[[], 'READ_CURVE_DATA_TYPE'],
-            ],
+            save_data_to_cache_method: Callable[['DBCursor', 'DBHandler', list], None],
+            read_data_from_cache_method: Callable[[], tuple[Union[dict[ChecksumEvmAddress, Any], set[ChecksumEvmAddress]], ...]],  # noqa: E501
     ) -> None:
         """
         :param evm_inquirer: The evm inquirer used to query the remote data source.
         :param cache_type_to_check_for_freshness: The cache type that is checked for freshness.
         :param query_data_method: The method that queries the remote source for data.
         :param save_data_to_cache_method: The method that saves the data to the cache tables.
-        :param read_pools_and_gauges_from_cache_method: The method that reads the data from the
-        cache tables.
+        :param read_data_from_cache_method: The method that reads the data from the
+        cache tables. This function returns a tuple of values, because subclasses may return
+        more than a set of pools
         """
         self.evm_inquirer = evm_inquirer
         self.cache_type_to_check_for_freshness = cache_type_to_check_for_freshness
         self.query_data_method = query_data_method
         self.save_data_to_cache_method = save_data_to_cache_method
-        self.read_pools_and_gauges_from_cache_method = read_pools_and_gauges_from_cache_method
-        self.pools: Union[set[ChecksumEvmAddress], dict[ChecksumEvmAddress, list[ChecksumEvmAddress]]]  # noqa: E501
-        self.pools, self.gauges = self.read_pools_and_gauges_from_cache_method()
+        self.read_data_from_cache_method = read_data_from_cache_method
+        self.cache_data = self.read_data_from_cache_method()
 
     @abstractmethod
-    def _decode_pool_events(self, context: DecoderContext) -> DecodingOutput:
-        """Decodes events related to protocol pools."""
-
-    @abstractmethod
-    def _decode_gauge_events(self, context: DecoderContext) -> DecodingOutput:
-        """Decodes events related to protocol gauges."""
+    def _cache_mapping_methods(self) -> tuple[Callable, ...]:
+        """Methods used to decode cache data"""
 
     def reload_data(self) -> Optional[Mapping[ChecksumEvmAddress, tuple[Any, ...]]]:
-        """Make sure pools and gauges are recently queried from the remote source,
+        """Make sure cache_data is recently queried from the remote source,
         saved in the DB and loaded to the decoder's memory.
 
         If a query happens and any new mappings are generated they are returned,
@@ -249,27 +235,48 @@ class ReloadablePoolsAndGaugesDecoderMixin(ReloadableDecoderMixin, metaclass=ABC
             query_method=self.query_data_method,
             save_method=self.save_data_to_cache_method,
         )
-        new_pools, new_gauges = self.read_pools_and_gauges_from_cache_method()
-        if isinstance(new_pools, dict) and isinstance(self.pools, dict):  # a pool is a dict of lp token to pool addresses  # noqa: E501
-            pools_diff = set(new_pools.keys()) - set(self.pools.keys())
-        elif isinstance(new_pools, set) and isinstance(self.pools, set):
-            pools_diff = new_pools - self.pools
-        else:
-            log.error('Reloading data for pools and gauges failed because types are incorrect')
+
+        new_cache_data = self.read_data_from_cache_method()
+        cache_diff = [  # get the new items for the different information stored in the cache
+            (new_data.keys() if isinstance(new_data, dict) else new_data) -
+            (data.keys() if isinstance(data, dict) else data)
+            for data, new_data in zip(self.cache_data, new_cache_data)
+        ]
+        if sum(len(x) for x in cache_diff) == 0:
             return None
 
-        gauges_diff = new_gauges - self.gauges
-        if len(pools_diff) == 0 and len(gauges_diff) == 0:
-            return None
+        self.cache_data = new_cache_data
+        new_decoding_mapping: dict[ChecksumEvmAddress, tuple[Any, ...]] = {}
+        # pair each new address in each cache container to the method decoding its logic
+        for data_diff, method in zip(cache_diff, self._cache_mapping_methods()):
+            new_decoding_mapping |= {address: (method,) for address in data_diff}
 
-        self.pools = new_pools
-        self.gauges = new_gauges
-        new_mapping: dict[ChecksumEvmAddress, tuple[Any, ...]] = {
-            pool_address: (self._decode_pool_events,)
-            for pool_address in pools_diff
-        }
-        new_mapping.update({  # addresses of pools and gauges don't intersect, so updating the dictionary doesn't override pools  # noqa: E501
-            gauge_address: (self._decode_gauge_events,)
-            for gauge_address in gauges_diff
-        })
-        return new_mapping
+        return new_decoding_mapping
+
+
+class ReloadablePoolsAndGaugesDecoderMixin(ReloadableCacheDecoderMixin, metaclass=ABCMeta):
+    """Used by decoders of protocols that have pools and gauges stored in the globaldb cache
+    tables. It can reload them to the decoder's memory.
+    """
+    @property
+    @abstractmethod
+    def pools(self) -> Union[dict[ChecksumEvmAddress, Any], set[ChecksumEvmAddress]]:
+        """abstractmethod to get pools from `cache_data`"""
+
+    @property
+    def gauges(self) -> set[ChecksumEvmAddress]:
+        """method to get gauges from `cache_data`.
+        The structure is common in the decoders using this logic"""
+        assert isinstance(self.cache_data[1], set), 'Decoder cache_data[1] is not a set'
+        return self.cache_data[1]
+
+    @abstractmethod
+    def _decode_pool_events(self, context: DecoderContext) -> DecodingOutput:
+        """Decodes events related to protocol pools."""
+
+    @abstractmethod
+    def _decode_gauge_events(self, context: DecoderContext) -> DecodingOutput:
+        """Decodes events related to protocol gauges."""
+
+    def _cache_mapping_methods(self) -> tuple[Callable, ...]:
+        return (self._decode_pool_events, self._decode_gauge_events)

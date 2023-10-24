@@ -996,6 +996,8 @@ class CacheType(Enum):
     VELODROME_GAUGE_ADDRESS = auto()  # get gauge address by pool address
     ENS_NAMEHASH = auto()  # map ENS namehash -> ens name
     ENS_LABELHASH = auto()  # map ENS labelhash -> ens name
+    CONVEX_POOL_ADDRESS = auto()  # get convex pool addr
+    CONVEX_POOL_NAME = auto()  # map convex pool rewards address -> pool name
 
     def serialize(self) -> str:
         # Using custom serialize method instead of SerializableEnumMixin since mixin replaces
@@ -1014,6 +1016,7 @@ UniqueCacheType = Literal[
     CacheType.YEARN_VAULTS,
     CacheType.ENS_NAMEHASH,
     CacheType.ENS_LABELHASH,
+    CacheType.CONVEX_POOL_NAME,
 ]
 
 UNIQUE_CACHE_KEYS: tuple[UniqueCacheType, ...] = typing.get_args(UniqueCacheType)
@@ -1024,6 +1027,7 @@ GeneralCacheType = Literal[
     CacheType.CURVE_POOL_UNDERLYING_TOKENS,
     CacheType.VELODROME_POOL_ADDRESS,
     CacheType.VELODROME_GAUGE_ADDRESS,
+    CacheType.CONVEX_POOL_ADDRESS,
 ]
 
 

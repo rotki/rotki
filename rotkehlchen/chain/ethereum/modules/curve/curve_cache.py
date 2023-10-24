@@ -46,10 +46,6 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-READ_CURVE_DATA_TYPE = tuple[
-    dict[ChecksumEvmAddress, list[ChecksumEvmAddress]],
-    set[ChecksumEvmAddress],
-]
 # list of pools that we know contain bad tokens
 IGNORED_CURVE_POOLS = {'0x066B6e1E93FA7dcd3F0Eb7f8baC7D5A747CE0BF9'}
 
@@ -79,7 +75,7 @@ class CurvePoolData(NamedTuple):
     underlying_coins: Optional[list[ChecksumEvmAddress]]
 
 
-def read_curve_pools_and_gauges() -> READ_CURVE_DATA_TYPE:
+def read_curve_pools_and_gauges() -> tuple[dict[ChecksumEvmAddress, list[ChecksumEvmAddress]], set[ChecksumEvmAddress]]:  # noqa: E501
     """Reads globaldb cache and returns:
     - A set of all known curve pools addresses.
     - A set of all known curve gauges addresses.
