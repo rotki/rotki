@@ -138,7 +138,7 @@ const { dark } = useTheme();
     >
       <div class="w-full flex flex-col items-center justify-center">
         <div
-          class="text-center font-medium"
+          class="text-center font-medium mb-2 flex"
           data-cy="overall-balances__net-worth"
           :style="`font-size: ${adjustedTotalNetWorthFontSize}em`"
         >

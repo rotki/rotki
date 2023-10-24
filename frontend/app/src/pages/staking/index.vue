@@ -78,101 +78,84 @@ onBeforeMount(async () => {
 
 <template>
   <VContainer>
-    <Card>
-      <div class="pa-2">
-        <VSelect
-          :value="location"
-          outlined
-          hide-details
-          :items="staking"
-          :label="t('staking_page.dropdown_label')"
-          item-value="id"
-          @change="updateLocation($event)"
-        >
-          <template v-for="slot in ['item', 'selection']" #[slot]="data">
-            <VRow v-if="data.item" :key="slot" align="center">
-              <VCol cols="auto">
-                <AdaptiveWrapper width="24" height="24">
-                  <VImg
-                    width="24px"
-                    contain
-                    max-height="24px"
-                    :src="data.item.icon"
-                  />
-                </AdaptiveWrapper>
-              </VCol>
-              <VCol class="pl-0">
-                {{ data.item.name }}
-              </VCol>
-            </VRow>
-          </template>
-        </VSelect>
-      </div>
-    </Card>
-    <div v-if="page" class="pt-4">
+    <RuiCard>
+      <VSelect
+        :value="location"
+        outlined
+        hide-details
+        :items="staking"
+        :label="t('staking_page.dropdown_label')"
+        item-value="id"
+        @change="updateLocation($event)"
+      >
+        <template v-for="slot in ['item', 'selection']" #[slot]="data">
+          <VRow v-if="data.item" :key="slot" align="center">
+            <VCol cols="auto">
+              <AdaptiveWrapper width="24" height="24">
+                <VImg
+                  width="24px"
+                  contain
+                  max-height="24px"
+                  :src="data.item.icon"
+                />
+              </AdaptiveWrapper>
+            </VCol>
+            <VCol class="pl-0">
+              {{ data.item.name }}
+            </VCol>
+          </VRow>
+        </template>
+      </VSelect>
+    </RuiCard>
+    <div v-if="page" class="pt-8">
       <Component :is="page" />
     </div>
     <div v-else>
       <div
-        class="flex flex-row items-center justify-md-end justify-center mt-2 mr-md-6"
+        class="flex flex-row items-center justify-center justify-md-end mt-2 md:mr-6 text-rui-text-secondary gap-2"
       >
-        <div class="shrink-0">
-          <VIcon>mdi-arrow-up-left</VIcon>
-        </div>
-        <div class="text--secondary pt-3 shrink-0 ms-2">
+        <RuiIcon class="shrink-0" name="corner-left-up-line" />
+        <div class="pt-3">
           {{ t('staking_page.dropdown_hint') }}
         </div>
       </div>
       <FullSizeContent>
-        <VRow align="center" justify="center">
-          <VCol>
-            <VRow align="center" justify="center">
-              <VCol cols="auto">
-                <span class="font-bold text-h5">
-                  {{ t('staking_page.page.title') }}
-                </span>
-              </VCol>
-            </VRow>
-            <VRow justify="center" class="mt-md-12 mt-4">
-              <VCol cols="auto" class="mx-4">
-                <InternalLink to="/staking/eth2">
-                  <VImg
-                    :width="iconSize"
-                    :height="iconSize"
-                    contain
-                    src="/assets/images/protocols/ethereum.svg"
-                  />
-                </InternalLink>
-              </VCol>
-              <VCol cols="auto" class="mx-4">
-                <InternalLink to="/staking/liquity">
-                  <VImg
-                    :width="iconSize"
-                    contain
-                    src="/assets/images/protocols/liquity.png"
-                  />
-                </InternalLink>
-              </VCol>
-              <VCol cols="auto" class="mx-4">
-                <InternalLink to="/staking/kraken">
-                  <VImg
-                    :width="iconSize"
-                    contain
-                    src="/assets/images/protocols/kraken.svg"
-                  />
-                </InternalLink>
-              </VCol>
-            </VRow>
+        <div class="flex flex-col h-full items-center justify-center gap-6">
+          <span class="font-bold text-h5">
+            {{ t('staking_page.page.title') }}
+          </span>
+          <div class="flex gap-4">
+            <InternalLink to="/staking/eth2">
+              <VImg
+                :width="iconSize"
+                :height="iconSize"
+                contain
+                src="/assets/images/protocols/ethereum.svg"
+              />
+            </InternalLink>
+            <InternalLink to="/staking/liquity">
+              <VImg
+                :width="iconSize"
+                contain
+                src="/assets/images/protocols/liquity.png"
+              />
+            </InternalLink>
+            <InternalLink to="/staking/kraken">
+              <VImg
+                :width="iconSize"
+                contain
+                src="/assets/images/protocols/kraken.svg"
+              />
+            </InternalLink>
+          </div>
 
-            <VRow class="mt-md-10 mt-2" justify="center">
-              <VCol cols="auto">
-                <div class="font-light text-h6" :class="$style.description">
-                  {{ t('staking_page.page.description') }}
-                </div>
-              </VCol>
-            </VRow>
-          </VCol>
-        </VRow>
+          <div
+            class="text-body-1 text-rui-text-secondary"
+            :class="$style.description"
+          >
+            {{ t('staking_page.page.description') }}
+          </div>
+        </div>
       </FullSizeContent>
     </div>
   </VContainer>

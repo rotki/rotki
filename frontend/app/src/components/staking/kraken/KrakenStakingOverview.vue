@@ -34,68 +34,52 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <Card full-height>
-    <template #title>{{ t('kraken_staking_overview.title') }}</template>
-    <VRow class="pt-1 pb-4">
-      <VCol>
-        <VRow no-gutters>
-          <VCol>
-            <div class="font-medium">
-              {{ t('kraken_staking_overview.earned') }}
-            </div>
-          </VCol>
-        </VRow>
-        <VRow justify="space-between" align="center" no-gutters class="mt-2">
-          <VCol cols="auto">
-            <div class="flex items-center text--secondary font-light ms-2">
-              {{ t('kraken_staking_overview.historical') }}
-              <VTooltip open-delay="400" top>
-                <template #activator="{ attrs, on }">
-                  <VIcon class="ms-1" small v-bind="attrs" v-on="on">
-                    mdi-information
-                  </VIcon>
-                </template>
-                <span>{{ t('kraken_staking_overview.hint.historical') }}</span>
-              </VTooltip>
-            </div>
-          </VCol>
-          <VCol cols="auto">
-            <div class="flex items-center">
-              <ValueAccuracyHint />
-              <AmountDisplay
-                show-currency="ticker"
-                fiat-currency="USD"
-                :value="totalUsd"
-                class="grey--text"
-              />
-            </div>
-          </VCol>
-        </VRow>
-        <VRow justify="space-between" align="center" no-gutters class="mt-2">
-          <VCol cols="auto">
-            <div class="flex items-center text--secondary font-light ms-2">
-              {{ t('kraken_staking_overview.current') }}
-              <VTooltip open-delay="400" top>
-                <template #activator="{ attrs, on }">
-                  <VIcon class="ms-1" small v-bind="attrs" v-on="on">
-                    mdi-information
-                  </VIcon>
-                </template>
-                <span>{{ t('kraken_staking_overview.hint.current') }}</span>
-              </VTooltip>
-            </div>
-          </VCol>
-          <VCol cols="auto">
-            <AmountDisplay
-              show-currency="ticker"
-              fiat-currency="USD"
-              :loading="pricesAreLoading"
-              :value="totalUsdCurrent"
-              class="grey--text"
-            />
-          </VCol>
-        </VRow>
-      </VCol>
-    </VRow>
-  </Card>
+  <RuiCard>
+    <template #header>
+      {{ t('kraken_staking_overview.title') }}
+    </template>
+    <div class="font-medium">
+      {{ t('kraken_staking_overview.earned') }}
+    </div>
+    <div class="mt-2 ml-4 flex flex-col gap-2">
+      <div class="flex justify-between items-center">
+        <div class="flex items-center text-rui-text-secondary gap-2 font-light">
+          {{ t('kraken_staking_overview.historical') }}
+          <RuiTooltip :popper="{ placement: 'top' }" open-delay="400">
+            <template #activator>
+              <RuiIcon size="20" name="information-line" />
+            </template>
+            <span>{{ t('kraken_staking_overview.hint.historical') }}</span>
+          </RuiTooltip>
+        </div>
+        <div class="flex items-center">
+          <ValueAccuracyHint />
+          <AmountDisplay
+            show-currency="ticker"
+            fiat-currency="USD"
+            :value="totalUsd"
+            class="text-rui-text-secondary"
+          />
+        </div>
+      </div>
+      <div class="flex justify-between items-center">
+        <div class="flex items-center text-rui-text-secondary gap-2 font-light">
+          {{ t('kraken_staking_overview.current') }}
+          <RuiTooltip :popper="{ placement: 'top' }" open-delay="400">
+            <template #activator>
+              <RuiIcon size="20" name="information-line" />
+            </template>
+            <span>{{ t('kraken_staking_overview.hint.current') }}</span>
+          </RuiTooltip>
+        </div>
+        <AmountDisplay
+          show-currency="ticker"
+          fiat-currency="USD"
+          :loading="pricesAreLoading"
+          :value="totalUsdCurrent"
+          class="text-rui-text-secondary"
+        />
+      </div>
+    </div>
+  </RuiCard>
 </template>

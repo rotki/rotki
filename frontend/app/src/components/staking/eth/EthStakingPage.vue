@@ -114,6 +114,16 @@ watch(validatorFilter, async filter => {
 watch(period, async period => {
   await fetchRewards({ ...get(validatorFilter), ...period });
 });
+
+const refreshClick = async () => {
+  await refresh();
+  if (isDefined(pagination)) {
+    set(pagination, {
+      ...get(pagination),
+      onlyCache: false
+    });
+  }
+};
 </script>
 
 <template>
@@ -121,32 +131,56 @@ watch(period, async period => {
     <NoPremiumPlaceholder v-if="!premium" :text="t('eth2_page.no_premium')" />
     <ModuleNotActive v-else-if="!enabled" :modules="[module]" />
 
-    <EthStaking
+    <TablePageLayout
       v-else
-      :refreshing="primaryRefreshing"
-      :secondary-refreshing="false"
-      :validators="eth2Validators.entries"
-      :filter="selection"
-      :period="period"
-      :rewards="rewards"
-      :rewards-loading="rewardsLoading"
-      :eth2-details="details"
-      :eth2-details-loading="detailsLoading"
-      :eth2-stats="dailyStats"
-      :eth2-stats-loading="dailyStatsLoading"
-      :ownership="ownership"
-      @refresh="refresh(true)"
-      @update:stats-pagination="pagination = $event"
+      :title="[t('navigation_menu.staking'), t('staking.eth2')]"
     >
-      <template #selection>
-        <EthValidatorFilter
-          v-model="selection"
-          @update:period="period = $event"
-        />
+      <template #buttons>
+        <div class="flex items-center gap-3">
+          <ActiveModules :modules="[module]" />
+
+          <RuiTooltip open-delay="400">
+            <template #activator>
+              <RuiButton
+                variant="outlined"
+                color="primary"
+                :loading="primaryRefreshing || dailyStatsLoading"
+                @click="refreshClick()"
+              >
+                <template #prepend>
+                  <RuiIcon name="refresh-line" />
+                </template>
+                {{ t('common.refresh') }}
+              </RuiButton>
+            </template>
+            {{ t('premium_components.staking.refresh') }}
+          </RuiTooltip>
+        </div>
       </template>
-      <template #modules>
-        <ActiveModules :modules="[module]" />
-      </template>
-    </EthStaking>
+
+      <EthStaking
+        :refreshing="primaryRefreshing"
+        :secondary-refreshing="false"
+        :validators="eth2Validators.entries"
+        :filter="selection"
+        :period="period"
+        :rewards="rewards"
+        :rewards-loading="rewardsLoading"
+        :eth2-details="details"
+        :eth2-details-loading="detailsLoading"
+        :eth2-stats="dailyStats"
+        :eth2-stats-loading="dailyStatsLoading"
+        :ownership="ownership"
+        :pagination="pagination"
+        @update:stats-pagination="pagination = $event"
+      >
+        <template #selection>
+          <EthValidatorFilter
+            v-model="selection"
+            @update:period="period = $event"
+          />
+        </template>
+      </EthStaking>
+    </TablePageLayout>
   </div>
 </template>

@@ -192,58 +192,67 @@ const totalPnl: ComputedRef<BigNumber | null> = computed(() => {
     )
   );
 });
-
-const css = useCssModule();
 </script>
 
 <template>
-  <Card :loading="loading">
-    <template #title>
-      {{ t('liquity_statistic.title') }}
-    </template>
-    <template #details>
-      <VBtnToggle v-model="current" dense mandatory>
-        <VBtn :value="true">
-          {{ t('liquity_statistic.switch.current') }}
-        </VBtn>
-        <VBtn :value="false">
-          {{ t('liquity_statistic.switch.historical') }}
-        </VBtn>
-      </VBtnToggle>
+  <RuiCard>
+    <template #custom-header>
+      <div class="flex items-center justify-between p-4">
+        <h5 class="text-h5">
+          {{ t('liquity_statistic.title') }}
+        </h5>
+        <RuiButtonGroup
+          v-model="current"
+          required
+          variant="outlined"
+          color="primary"
+        >
+          <template #default>
+            <RuiButton :value="true">
+              {{ t('liquity_statistic.switch.current') }}
+            </RuiButton>
+            <RuiButton :value="false">
+              {{ t('liquity_statistic.switch.historical') }}
+            </RuiButton>
+          </template>
+        </RuiButtonGroup>
+      </div>
     </template>
     <template v-if="statisticWithAdjustedPrice">
-      <VRow class="ma-n6" :class="css.large">
-        <VCol md="6" class="pa-6 py-8 flex justify-between">
-          <div>{{ t('liquity_statistic.total_gains_stability_pool') }}</div>
-          <VSheet>
-            <AmountDisplay
-              :value="statisticWithAdjustedPrice.totalUsdGainsStabilityPool"
-              :fiat-currency="CURRENCY_USD"
-              class="font-bold"
-            />
-          </VSheet>
-        </VCol>
-        <VCol md="6" class="pa-6 py-8 flex justify-between">
-          <div>{{ t('liquity_statistic.total_gains_staking') }}</div>
-          <VSheet>
-            <AmountDisplay
-              :value="statisticWithAdjustedPrice.totalUsdGainsStaking"
-              :fiat-currency="CURRENCY_USD"
-              class="font-bold"
-            />
-          </VSheet>
-        </VCol>
-      </VRow>
+      <div class="grid md:grid-cols-2 gap-4 md:gap-12 text-lg">
+        <div class="flex justify-between">
+          <div class="text-rui-text-secondary">
+            {{ t('liquity_statistic.total_gains_stability_pool') }}
+          </div>
+          <AmountDisplay
+            :value="statisticWithAdjustedPrice.totalUsdGainsStabilityPool"
+            :fiat-currency="CURRENCY_USD"
+            class="font-bold"
+            :loading="loading"
+          />
+        </div>
+        <div class="flex justify-between">
+          <div class="text-rui-text-secondary">
+            {{ t('liquity_statistic.total_gains_staking') }}
+          </div>
+          <AmountDisplay
+            :value="statisticWithAdjustedPrice.totalUsdGainsStaking"
+            :fiat-currency="CURRENCY_USD"
+            class="font-bold"
+            :loading="loading"
+          />
+        </div>
+      </div>
 
       <VExpansionPanels multiple class="pt-4">
         <VExpansionPanel elevation="0">
           <VExpansionPanelContent>
-            <VRow class="ma-n6">
-              <VCol md="6" class="pa-6">
+            <div class="grid md:grid-cols-2 md:gap-12">
+              <div>
                 <div>
                   <VDivider />
                   <div class="text-right py-4">
-                    <div class="font-medium pb-2" :class="css.label">
+                    <div class="font-medium pb-2">
                       {{
                         t('liquity_statistic.total_deposited_stability_pool')
                       }}
@@ -251,14 +260,14 @@ const css = useCssModule();
                     <BalanceDisplay
                       :asset="LUSD_ID"
                       :value="totalDepositedStabilityPoolBalance"
+                      :loading="loading"
                     />
                   </div>
                 </div>
-
                 <div>
                   <VDivider />
                   <div class="text-right py-4">
-                    <div class="font-medium pb-2" :class="css.label">
+                    <div class="font-medium pb-2">
                       {{
                         t('liquity_statistic.total_withdrawn_stability_pool')
                       }}
@@ -266,14 +275,14 @@ const css = useCssModule();
                     <BalanceDisplay
                       :asset="LUSD_ID"
                       :value="totalWithdrawnStabilityPoolBalance"
+                      :loading="loading"
                     />
                   </div>
                 </div>
-
                 <div>
                   <VDivider />
                   <div class="text-right py-4">
-                    <div class="font-medium pb-2" :class="css.label">
+                    <div class="font-medium pb-2">
                       {{ t('liquity_statistic.stability_pool_gains') }}
                     </div>
 
@@ -289,6 +298,7 @@ const css = useCssModule();
                         <BalanceDisplay
                           :asset="assetBalance.asset"
                           :value="assetBalance"
+                          :loading="loading"
                         />
                       </div>
                     </div>
@@ -297,36 +307,40 @@ const css = useCssModule();
                     </div>
                   </div>
                 </div>
-
                 <div v-if="totalPnl">
                   <VDivider />
                   <div class="text-right py-4">
-                    <div class="font-medium pb-2" :class="css.label">
-                      <VTooltip open-delay="400" top>
-                        <template #activator="{ on, attrs }">
-                          <VIcon v-bind="attrs" small class="mx-2" v-on="on">
-                            mdi-information
-                          </VIcon>
+                    <div
+                      class="flex items-center justify-end gap-2 font-medium pb-2"
+                    >
+                      <RuiTooltip
+                        :popper="{ placement: 'top' }"
+                        open-delay="400"
+                        tooltip-class="max-w-[10rem]"
+                      >
+                        <template #activator>
+                          <RuiIcon name="information-line" />
                         </template>
                         <span>
                           {{ t('liquity_statistic.estimated_pnl_warning') }}
                         </span>
-                      </VTooltip>
+                      </RuiTooltip>
                       {{ t('liquity_statistic.estimated_pnl') }}
                     </div>
                     <AmountDisplay
                       :value="totalPnl"
                       :fiat-currency="CURRENCY_USD"
+                      :loading="loading"
                       pnl
                     />
                   </div>
                 </div>
-              </VCol>
-              <VCol md="6" class="pa-6">
+              </div>
+              <div>
                 <div>
                   <VDivider />
                   <div class="text-right py-4">
-                    <div class="font-medium pb-2" :class="css.label">
+                    <div class="font-medium pb-2">
                       {{ t('liquity_statistic.staking_gains') }}
                     </div>
 
@@ -340,6 +354,7 @@ const css = useCssModule();
                         <BalanceDisplay
                           :asset="assetBalance.asset"
                           :value="assetBalance"
+                          :loading="loading"
                         />
                       </div>
                     </div>
@@ -348,13 +363,13 @@ const css = useCssModule();
                     </div>
                   </div>
                 </div>
-              </VCol>
-            </VRow>
+              </div>
+            </div>
           </VExpansionPanelContent>
           <VDivider />
           <VExpansionPanelHeader class="flex justify-center w-full">
             <template #default="{ open }">
-              <div class="grey--text mr-4 grow-0" :class="css.large">
+              <div class="text-rui-text-secondary mr-4 grow-0">
                 {{
                   open
                     ? t('liquity_statistic.view.hide')
@@ -366,21 +381,13 @@ const css = useCssModule();
         </VExpansionPanel>
       </VExpansionPanels>
     </template>
-    <div v-else class="text-center grey--text pt-4 pb-2">
+    <div v-else class="text-center text-rui-text-secondary pb-4">
       {{ t('liquity_statistic.no_statistics') }}
     </div>
-  </Card>
+  </RuiCard>
 </template>
 
 <style lang="scss" module>
-.large {
-  font-size: 1.2rem;
-}
-
-.label {
-  font-size: 1.1rem;
-}
-
 :global {
   .v-expansion-panel {
     background: transparent !important;

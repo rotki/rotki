@@ -27,7 +27,7 @@ const slots = useSlots();
 </script>
 
 <template>
-  <RuiCard :loading="isLoading" class="pb-6 pt-4 h-auto">
+  <RuiCard class="pb-6 pt-4 h-auto">
     <template #custom-header>
       <CardTitle
         class="text-capitalize flex-nowrap flex justify-between gap-2 pb-2 px-6"

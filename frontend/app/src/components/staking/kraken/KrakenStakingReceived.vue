@@ -7,7 +7,7 @@ defineProps<{
 }>();
 
 const { prices } = storeToRefs(useBalancePricesStore());
-const current = ref(true);
+const current: Ref<boolean> = ref(true);
 const pricesAreLoading = computed(() => Object.keys(get(prices)).length === 0);
 const getBalance = ({ amount, asset, usdValue }: ReceivedAmount): Balance => {
   const assetPrices = get(prices);
@@ -25,30 +25,37 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <Card full-height>
-    <template #title>{{ t('kraken_staking_received.title') }}</template>
-    <template #details>
-      <VBtnToggle v-model="current" dense mandatory>
-        <VBtn :value="true">
-          {{ t('kraken_staking_received.switch.current') }}
-        </VBtn>
-        <VBtn :value="false">
-          {{ t('kraken_staking_received.switch.historical') }}
-        </VBtn>
-      </VBtnToggle>
+  <RuiCard>
+    <template #custom-header>
+      <div class="flex items-center justify-between p-4">
+        <h5 class="text-h5">
+          {{ t('kraken_staking_received.title') }}
+        </h5>
+        <RuiButtonGroup
+          v-model="current"
+          required
+          variant="outlined"
+          color="primary"
+        >
+          <template #default>
+            <RuiButton :value="true">
+              {{ t('kraken_staking_received.switch.current') }}
+            </RuiButton>
+            <RuiButton :value="false">
+              {{ t('kraken_staking_received.switch.historical') }}
+            </RuiButton>
+          </template>
+        </RuiButtonGroup>
+      </div>
     </template>
-    <div :class="$style.received">
-      <VRow
+    <div class="overflow-y-scroll pr-4 -mr-4 overflow-x-hidden max-h-[9rem]">
+      <div
         v-for="item in received"
         :key="item.asset"
-        justify="space-between"
-        no-gutters
-        align="center"
+        class="flex items-center justify-between"
       >
-        <VCol cols="auto">
-          <AssetDetails :asset="item.asset" dense />
-        </VCol>
-        <VCol cols="auto" :class="$style.amount">
+        <AssetDetails :asset="item.asset" dense />
+        <div class="flex items-center gap-3">
           <ValueAccuracyHint v-if="!current" />
           <BalanceDisplay
             no-icon
@@ -56,23 +63,8 @@ const { t } = useI18n();
             :value="getBalance(item)"
             :loading="pricesAreLoading && current"
           />
-        </VCol>
-      </VRow>
+        </div>
+      </div>
     </div>
-  </Card>
+  </RuiCard>
 </template>
-
-<style lang="scss" module>
-.received {
-  max-height: 155px;
-  overflow-y: scroll;
-  overflow-x: hidden;
-}
-
-.amount {
-  display: flex;
-  flex-direction: row;
-  flex-shrink: 1;
-  align-items: center;
-}
-</style>

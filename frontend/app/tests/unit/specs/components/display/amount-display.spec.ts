@@ -2,7 +2,6 @@ import { BigNumber } from '@rotki/common';
 import { type Wrapper, mount } from '@vue/test-utils';
 import { type Pinia } from 'pinia';
 import Vuetify from 'vuetify';
-import { VTooltip } from 'vuetify/lib/components';
 import flushPromises from 'flush-promises';
 import { useCurrencies } from '@/types/currencies';
 import { CurrencyLocation } from '@/types/currency-location';
@@ -10,11 +9,6 @@ import { FrontendSettings } from '@/types/settings/frontend-settings';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import createCustomPinia from '../../../utils/create-pinia';
 import { updateGeneralSettings } from '../../../utils/general-settings';
-
-// This is workaround used because stubs is somehow not working,
-// Eager prop will render the <slot /> immediately
-// @ts-ignore
-VTooltip.options.props.eager.default = true;
 
 vi.mocked(useCssModule).mockReturnValue({
   blur: 'blur',
@@ -73,33 +67,39 @@ describe('AmountDisplay.vue', () => {
   });
 
   describe('Common case', () => {
-    test('displays amount converted to selected fiat currency', () => {
+    test('displays amount converted to selected fiat currency', async () => {
       wrapper = createWrapper(bigNumberify(1.20440001), {
         fiatCurrency: 'USD'
       });
       expect(wrapper.find('[data-cy="display-amount"]').text()).toBe('1.44');
+      await wrapper.find('[data-cy="display-amount"]').trigger('mouseover');
+      await wrapper.vm.$nextTick();
       expect(wrapper.find('[data-cy="display-full-value"]').text()).toBe(
         '1.445280012'
       );
     });
 
-    test('displays amount converted to selected fiat currency (does not double-convert)', () => {
+    test('displays amount converted to selected fiat currency (does not double-convert)', async () => {
       wrapper = createWrapper(bigNumberify(1.20440001), {
         amount: bigNumberify(1.20440001),
         fiatCurrency: 'EUR'
       });
       expect(wrapper.find('[data-cy="display-amount"]').text()).toBe('1.20');
+      await wrapper.find('[data-cy="display-amount"]').trigger('mouseover');
+      await wrapper.vm.$nextTick();
       expect(wrapper.find('[data-cy="display-full-value"]').text()).toBe(
         '1.20440001'
       );
     });
 
-    test('displays amount as it is without fiat conversion', () => {
+    test('displays amount as it is without fiat conversion', async () => {
       wrapper = createWrapper(bigNumberify(1.20540001));
       expect(wrapper.find('[data-cy="display-comparison-symbol"]').text()).toBe(
         '<'
       );
       expect(wrapper.find('[data-cy="display-amount"]').text()).toBe('1.21');
+      await wrapper.find('[data-cy="display-amount"]').trigger('mouseover');
+      await wrapper.vm.$nextTick();
       expect(wrapper.find('[data-cy="display-full-value"]').text()).toBe(
         '1.20540001'
       );
@@ -110,12 +110,14 @@ describe('AmountDisplay.vue', () => {
       expect(wrapper.find('[data-cy="display-amount"]').text()).toBe('129');
     });
 
-    test('displays amount do not converted to selected fiat currency when `forceCurrency=true`', () => {
+    test('displays amount do not converted to selected fiat currency when `forceCurrency=true`', async () => {
       wrapper = createWrapper(bigNumberify(1.20440001), {
         fiatCurrency: 'USD',
         forceCurrency: true
       });
       expect(wrapper.find('[data-cy="display-amount"]').text()).toBe('1.20');
+      await wrapper.find('[data-cy="display-amount"]').trigger('mouseover');
+      await wrapper.vm.$nextTick();
       expect(wrapper.find('[data-cy="display-full-value"]').text()).toBe(
         '1.20440001'
       );
@@ -143,19 +145,21 @@ describe('AmountDisplay.vue', () => {
       useSessionSettingsStore().update({ scrambleData: true });
     });
 
-    test('displays amount converted to selected fiat currency as scrambled', () => {
+    test('displays amount converted to selected fiat currency as scrambled', async () => {
       wrapper = createWrapper(bigNumberify(1.20440001), {
         fiatCurrency: 'USD'
       });
       expect(wrapper.find('[data-cy="display-amount"]').text()).not.toBe(
         '1.44'
       );
+      await wrapper.find('[data-cy="display-amount"]').trigger('mouseover');
+      await wrapper.vm.$nextTick();
       expect(wrapper.find('[data-cy="display-full-value"]').text()).not.toBe(
         '1.445280012'
       );
     });
 
-    test('displays amount converted to selected fiat currency (does not double-convert) as scrambled', () => {
+    test('displays amount converted to selected fiat currency (does not double-convert) as scrambled', async () => {
       wrapper = createWrapper(bigNumberify(1.20440001), {
         amount: bigNumberify(1.20440001),
         fiatCurrency: 'EUR'
@@ -163,16 +167,20 @@ describe('AmountDisplay.vue', () => {
       expect(wrapper.find('[data-cy="display-amount"]').text()).not.toBe(
         '1.20'
       );
+      await wrapper.find('[data-cy="display-amount"]').trigger('mouseover');
+      await wrapper.vm.$nextTick();
       expect(wrapper.find('[data-cy="display-full-value"]').text()).not.toBe(
         '1.20440001'
       );
     });
 
-    test('displays amount as it is without fiat conversion as scrambled', () => {
+    test('displays amount as it is without fiat conversion as scrambled', async () => {
       wrapper = createWrapper(bigNumberify(1.20540001));
       expect(wrapper.find('[data-cy="display-amount"]').text()).not.toBe(
         '1.21'
       );
+      await wrapper.find('[data-cy="display-amount"]').trigger('mouseover');
+      await wrapper.vm.$nextTick();
       expect(wrapper.find('[data-cy="display-full-value"]').text()).not.toBe(
         '1.20540001'
       );

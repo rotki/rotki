@@ -272,7 +272,7 @@ const [DefineAutocomplete, ReuseAutocomplete] = createReusableTemplate();
       </VAutocomplete>
     </DefineAutocomplete>
 
-    <div v-if="!hint" class="bg-white dark:bg-[#1E1E1E] p-[1px]">
+    <div v-if="!hint" class="bg-white dark:bg-[#1E1E1E]">
       <ReuseAutocomplete />
     </div>
     <RuiCard v-else variant="outlined" v-bind="$attrs">
