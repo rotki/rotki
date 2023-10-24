@@ -20,6 +20,7 @@ from rotkehlchen.chain.evm.contracts import EvmContracts
 from rotkehlchen.chain.evm.types import NodeName
 from rotkehlchen.chain.gnosis.manager import GnosisManager
 from rotkehlchen.chain.gnosis.node_inquirer import GnosisInquirer
+from rotkehlchen.chain.gnosis.transactions import GnosisTransactions
 from rotkehlchen.chain.optimism.decoding.decoder import OptimismTransactionDecoder
 from rotkehlchen.chain.optimism.manager import OptimismManager
 from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
@@ -527,6 +528,17 @@ def fixture_gnosis_inquirer(
 @pytest.fixture(name='gnosis_manager')
 def fixture_gnosis_manager(gnosis_inquirer):
     return GnosisManager(node_inquirer=gnosis_inquirer)
+
+
+@pytest.fixture(name='gnosis_transactions')
+def fixture_gnosis_transactions(
+        database,
+        gnosis_inquirer,
+):
+    return GnosisTransactions(
+        gnosis_inquirer=gnosis_inquirer,
+        database=database,
+    )
 
 
 @pytest.fixture(name='ksm_rpc_endpoint')

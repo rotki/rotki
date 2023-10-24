@@ -814,6 +814,7 @@ class DBHandler:
         - {exchange_location_name}_lending_history_{exchange_name}
         - yearn_vaults_events_{address}
         - yearn_vaults_v2_events_{address}
+        - gnosisbridge_{address}
         """
         cursor.execute('SELECT start_ts, end_ts from used_query_ranges WHERE name=?', (name,))
         result = cursor.fetchone()

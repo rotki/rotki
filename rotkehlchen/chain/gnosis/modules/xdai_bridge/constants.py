@@ -1,0 +1,4 @@
+from rotkehlchen.chain.evm.types import string_to_evm_address
+
+BLOCKREWARDS_ADDRESS = string_to_evm_address('0x481c034c6d9441db23Ea48De68BCAe812C5d39bA')
+BRIDGE_ADDRESS = string_to_evm_address('0x7301CFA0e1756B71869E93d4e4Dca5c7d0eb0AA6')

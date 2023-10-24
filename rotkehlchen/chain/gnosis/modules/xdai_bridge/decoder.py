@@ -1,9 +1,10 @@
 from typing import TYPE_CHECKING
 
 from rotkehlchen.chain.evm.decoding.xdai_bridge.decoder import XdaiBridgeCommonDecoder
-from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_XDAI
 from rotkehlchen.types import ChainID
+
+from .constants import BRIDGE_ADDRESS
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
@@ -11,7 +12,6 @@ if TYPE_CHECKING:
     from rotkehlchen.user_messages import MessagesAggregator
 
 
-BRIDGE_ADDRESS = string_to_evm_address('0x7301CFA0e1756B71869E93d4e4Dca5c7d0eb0AA6')
 BRIDGE_XDAI = b'\x12vP\xbc\xfb\x0b\xa0\x17@\x1a\xbeI1E:@Q@\xa8\xfd6\xfe\xceg\xba\xe2\xdb\x17M?\xddc'  # noqa: E501
 
 
