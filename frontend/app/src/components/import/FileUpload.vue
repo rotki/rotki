@@ -137,7 +137,7 @@ watch(errorMessage, message => onError(message));
 <template>
   <div class="flex flex-row">
     <div
-      class="pa-4 border dark:border-rui-grey-800 rounded-md w-full"
+      class="pa-4 border border-default rounded-md w-full"
       :class="{ 'border-primary': active }"
       @dragover.prevent
       @drop="onDrop($event)"

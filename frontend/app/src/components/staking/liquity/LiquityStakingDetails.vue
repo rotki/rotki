@@ -302,9 +302,9 @@ const slots = useSlots();
                 </RuiChip>
               </div>
             </div>
-            <div
+            <RuiDivider
               v-if="index < Object.keys(proxyInformation).length - 1"
-              class="my-4 border-b dark:border-rui-grey-800"
+              class="my-4"
             />
           </div>
         </div>

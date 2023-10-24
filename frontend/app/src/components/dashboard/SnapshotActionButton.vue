@@ -123,7 +123,7 @@ const importSnapshot = async () => {
         </span>
       </div>
 
-      <div class="border-b my-4" />
+      <RuiDivider />
 
       <div class="flex flex-row items-center gap-4">
         <RuiButton
@@ -154,7 +154,7 @@ const importSnapshot = async () => {
         {{ t('snapshot_action_button.ignore_errors_tooltip') }}
       </RuiTooltip>
 
-      <div class="border-b my-4" />
+      <RuiDivider />
 
       <div>
         <div class="font-medium pb-2">

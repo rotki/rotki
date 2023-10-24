@@ -65,7 +65,7 @@ const imageUrl = computed(() => {
         :value="summary.totalDebtUsd"
       />
 
-      <div class="my-4 border-t dark:border-rui-grey-800" />
+      <RuiDivider class="my-4" />
     </div>
     <div v-if="summary.deposits">
       <div
@@ -91,7 +91,7 @@ const imageUrl = computed(() => {
     </span>
     <InfoRow :title="t('common.balance')" fiat :value="summary.balanceUsd" />
 
-    <div class="my-4 border-t dark:border-rui-grey-800" />
+    <RuiDivider class="my-4" />
 
     <div class="flex justify-end">
       <VDialog v-model="details" scrollable max-width="450px">
@@ -123,7 +123,7 @@ const imageUrl = computed(() => {
           </template>
           <div class="h-[300px]">
             <div v-for="(asset, index) in assets" :key="index">
-              <div class="border-t dark:border-rui-grey-800" />
+              <RuiDivider />
               <DefiAsset :asset="asset" />
             </div>
           </div>

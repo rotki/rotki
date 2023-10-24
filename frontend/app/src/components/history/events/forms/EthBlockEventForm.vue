@@ -265,7 +265,7 @@ const feeRecipientSuggestions = computed(() =>
       />
     </div>
 
-    <div class="border-t dark:border-rui-grey-800 mb-6 mt-2" />
+    <RuiDivider class="mb-6 mt-2" />
 
     <HistoryEventAssetPriceForm
       ref="assetPriceForm"
@@ -277,7 +277,7 @@ const feeRecipientSuggestions = computed(() =>
       disable-asset
     />
 
-    <div class="border-t dark:border-rui-grey-800 my-10" />
+    <RuiDivider class="my-10" />
 
     <ComboboxWithCustomInput
       v-model="feeRecipient"

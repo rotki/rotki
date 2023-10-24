@@ -35,7 +35,7 @@ onMounted(async () => {
       {{ t('external_services.etherscan.description') }}
     </template>
 
-    <RuiTabs v-model="tabIndex" color="primary" class="border-b mb-4">
+    <RuiTabs v-model="tabIndex" color="primary">
       <RuiTab v-for="chain in txEvmChains" :key="chain.id" class="capitalize">
         <div class="flex gap-4 items-center">
           <LocationIcon :item="chain.id" icon />
@@ -43,6 +43,8 @@ onMounted(async () => {
         </div>
       </RuiTab>
     </RuiTabs>
+
+    <RuiDivider class="mb-4" />
 
     <RuiTabItems v-model="tabIndex">
       <RuiTabItem v-for="chain in txEvmChains" :key="chain.id">

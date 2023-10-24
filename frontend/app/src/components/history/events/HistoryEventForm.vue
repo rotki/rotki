@@ -51,7 +51,7 @@ watchImmediate([groupHeader, editableItem], ([groupHeader, editableItem]) => {
       </VSelect>
     </div>
 
-    <div class="border-t dark:border-rui-grey-800 my-8" />
+    <RuiDivider class="my-8" />
 
     <EvmEventForm
       v-if="entryType === HistoryEventEntryType.EVM_EVENT"

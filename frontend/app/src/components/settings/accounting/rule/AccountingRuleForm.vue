@@ -166,7 +166,7 @@ const accountingTreatments = Object.values(AccountingTreatment).map(
         @blur="v$.counterparty.$touch()"
       />
     </div>
-    <div class="border-t py-2" />
+    <RuiDivider class="py-2" />
     <div>
       <RuiCheckbox v-model="state.taxable" color="primary">
         {{ t('accounting_settings.rule.labels.taxable') }}
