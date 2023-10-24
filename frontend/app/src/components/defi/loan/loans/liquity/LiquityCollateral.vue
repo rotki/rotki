@@ -20,7 +20,7 @@ const { t } = useI18n();
       <BalanceDisplay :asset="collateral.asset" :value="collateral" />
     </LoanRow>
 
-    <div v-if="ratio" class="my-4 border-b dark:border-rui-grey-800" />
+    <RuiDivider v-if="ratio" class="my-4" />
 
     <LoanRow v-if="ratio" :title="t('loan_collateral.ratio')">
       <PercentageDisplay v-if="ratio" :value="ratio.toFormat(2)" />

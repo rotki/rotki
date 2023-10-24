@@ -358,7 +358,7 @@ const locationLabelSuggestions = computed(() =>
       @blur="v$.eventIdentifier.$touch()"
     />
 
-    <div class="border-t dark:border-rui-grey-800 mb-6 mt-2" />
+    <RuiDivider class="mb-6 mt-2" />
 
     <HistoryEventAssetPriceForm
       ref="assetPriceForm"
@@ -369,7 +369,7 @@ const locationLabelSuggestions = computed(() =>
       :usd-value.sync="usdValue"
     />
 
-    <div class="border-t dark:border-rui-grey-800 my-10" />
+    <RuiDivider class="my-10" />
 
     <div class="grid md:grid-cols-3 gap-4">
       <VAutocomplete
@@ -408,7 +408,7 @@ const locationLabelSuggestions = computed(() =>
       </div>
     </div>
 
-    <div class="border-t dark:border-rui-grey-800 mb-6 mt-2" />
+    <RuiDivider class="mb-6 mt-2" />
 
     <div class="grid md:grid-cols-2 gap-4">
       <ComboboxWithCustomInput
@@ -434,7 +434,7 @@ const locationLabelSuggestions = computed(() =>
       />
     </div>
 
-    <div class="border-t dark:border-rui-grey-800 mb-6 mt-2" />
+    <RuiDivider class="mb-6 mt-2" />
 
     <VTextarea
       v-model.trim="notes"

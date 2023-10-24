@@ -25,7 +25,7 @@ const assetPadding = 4;
 
 <template>
   <Fragment>
-    <div class="my-4 border-b dark:border-rui-grey-800" />
+    <RuiDivider class="my-4" />
     <LoanRow :title="t('makerdao_vault_debt.stability_fee')" class="mb-2">
       <PercentageDisplay :value="stabilityFee" :asset-padding="assetPadding" />
     </LoanRow>

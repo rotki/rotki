@@ -146,7 +146,7 @@ const ignoreTokens = async (identifiers?: string[]) => {
         </div>
 
         <div
-          class="border-b sm:border-r border-gray-700 align-self-stretch sm:w-0"
+          class="border-b sm:border-r border-default align-self-stretch sm:w-0"
         />
 
         <div class="flex gap-4 justify-between grow">

@@ -21,7 +21,7 @@ const totalCollateralUsd = totalCollateral(loan);
       />
     </LoanRow>
 
-    <div class="my-4 border-b dark:border-rui-grey-800" />
+    <RuiDivider class="my-4" />
 
     <LoanRow
       v-if="loan.collateral.length > 0"
@@ -36,10 +36,7 @@ const totalCollateralUsd = totalCollateral(loan);
       </div>
     </LoanRow>
 
-    <div
-      v-if="loan.collateral.length > 0"
-      class="my-4 border-b dark:border-rui-grey-800"
-    />
+    <RuiDivider v-if="loan.collateral.length > 0" class="my-4" />
 
     <LoanRow :title="t('loan_collateral.apy')">
       <PercentageDisplay :value="loan.apy ? loan.apy : null" />

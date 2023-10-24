@@ -115,9 +115,7 @@ const { copy } = useClipboard({ source: versionText });
       </div>
       <AppUpdateIndicator />
     </div>
-    <div
-      class="border-t border-rui-grey-200 dark:border-rui-grey-800 mt-3 pt-4"
-    >
+    <div class="border-t border-default mt-3 pt-4">
       <table class="w-full">
         <tbody>
           <tr>
@@ -212,9 +210,7 @@ const { copy } = useClipboard({ source: versionText });
           <template v-if="componentsVersion">
             <tr>
               <td colspan="2">
-                <div
-                  class="border-t border-rui-grey-200 dark:border-rui-grey-800 mt-4 pt-4 font-bold mb-2"
-                >
+                <div class="border-t border-default mt-4 pt-4 font-bold mb-2">
                   {{ t('about.components.title') }}
                 </div>
               </td>

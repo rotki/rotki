@@ -14,7 +14,7 @@ const { hasRunningTasks, tasks } = storeToRefs(store);
           v-for="task in tasks"
           :key="task.id"
           :task="task"
-          class="border-t dark:border-rui-grey-800 py-4"
+          class="border-t border-default py-4"
         />
       </div>
     </RuiCard>
