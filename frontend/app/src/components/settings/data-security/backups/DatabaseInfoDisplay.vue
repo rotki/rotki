@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { type PropType } from 'vue';
-
 interface UserDbInfo {
   version: string;
   size: string;
@@ -11,81 +9,86 @@ interface GlobalDbInfo {
   assets: string;
 }
 
-defineProps({
-  directory: {
-    required: true,
-    type: String
-  },
-  globalDb: {
-    required: true,
-    type: Object as PropType<GlobalDbInfo>
-  },
-  userDb: {
-    required: true,
-    type: Object as PropType<UserDbInfo>
-  }
-});
+const props = defineProps<{
+  directory: string;
+  globalDb: GlobalDbInfo;
+  userDb: UserDbInfo;
+}>();
 
 const { t } = useI18n();
+
+const userDetails = computed(() => [
+  {
+    value: props.directory,
+    label: t('database_info_display.directory')
+  },
+  {
+    value: props.userDb.version,
+    label: t('database_info_display.userdb_version')
+  },
+  {
+    value: props.userDb.size,
+    label: t('database_info_display.userdb_size')
+  }
+]);
+
+const globalDetails = computed(() => [
+  {
+    value: props.globalDb.schema,
+    label: t('database_info_display.globaldb_schema')
+  },
+  {
+    value: props.globalDb.assets,
+    label: t('database_info_display.globaldb_assets')
+  }
+]);
+
+const [DefineRow, ReuseRow] = createReusableTemplate<{
+  label: string;
+  value: string;
+}>();
 </script>
 
 <template>
-  <Card>
-    <template #title>{{ t('database_info_display.title') }}</template>
+  <RuiCard>
+    <template #header>
+      {{ t('database_info_display.title') }}
+    </template>
 
-    <VRow>
-      <VCol>
-        <VRow>
-          <VCol class="text-h6">
-            {{ t('database_info_display.userdb') }}
-          </VCol>
-        </VRow>
-        <VRow align="start" no-gutters class="mt-2">
-          <VCol :class="$style.label" cols="auto">
-            {{ t('database_info_display.directory') }}
-          </VCol>
-          <VCol>{{ directory }}</VCol>
-        </VRow>
-        <VRow align="start" no-gutters>
-          <VCol :class="$style.label" cols="auto">
-            {{ t('database_info_display.userdb_version') }}
-          </VCol>
-          <VCol>{{ userDb.version }}</VCol>
-        </VRow>
-        <VRow align="start" no-gutters>
-          <VCol :class="$style.label" cols="auto">
-            {{ t('database_info_display.userdb_size') }}
-          </VCol>
-          <VCol>{{ userDb.size }}</VCol>
-        </VRow>
-      </VCol>
-      <VCol>
-        <VRow>
-          <VCol class="text-h6">
-            {{ t('database_info_display.globaldb') }}
-          </VCol>
-        </VRow>
-        <VRow align="start" no-gutters class="mt-2">
-          <VCol :class="$style.label" cols="auto">
-            {{ t('database_info_display.globaldb_schema') }}
-          </VCol>
-          <VCol>{{ globalDb.schema }}</VCol>
-        </VRow>
-        <VRow align="start" no-gutters>
-          <VCol :class="$style.label" cols="auto">
-            {{ t('database_info_display.globaldb_assets') }}
-          </VCol>
-          <VCol>{{ globalDb.assets }}</VCol>
-        </VRow>
-      </VCol>
-    </VRow>
-  </Card>
+    <DefineRow #default="{ label, value }">
+      <div class="flex gap-4 items-center">
+        <span class="font-bold min-w-[9rem]">
+          {{ label }}
+        </span>
+        <span class="text-rui-text-secondary">
+          {{ value }}
+        </span>
+      </div>
+    </DefineRow>
+
+    <div class="grid md:grid-cols-2 gap-4">
+      <div>
+        <div class="font-bold text-h6 mb-2">
+          {{ t('database_info_display.userdb') }}
+        </div>
+
+        <ReuseRow
+          v-for="(detail, index) in userDetails"
+          :key="index"
+          v-bind="detail"
+        />
+      </div>
+      <div>
+        <div class="font-bold text-h6 mb-2">
+          {{ t('database_info_display.globaldb') }}
+        </div>
+
+        <ReuseRow
+          v-for="(detail, index) in globalDetails"
+          :key="index"
+          v-bind="detail"
+        />
+      </div>
+    </div>
+  </RuiCard>
 </template>
-
-<style module lang="scss">
-.label {
-  font-weight: 600;
-  margin-right: 8px;
-  min-width: 150px;
-}
-</style>
