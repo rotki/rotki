@@ -134,6 +134,7 @@ const refreshClick = async () => {
     <TablePageLayout
       v-else
       :title="[t('navigation_menu.staking'), t('staking.eth2')]"
+      child
     >
       <template #buttons>
         <div class="flex items-center gap-3">

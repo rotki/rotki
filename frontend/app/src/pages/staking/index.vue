@@ -77,7 +77,7 @@ onBeforeMount(async () => {
 </script>
 
 <template>
-  <VContainer>
+  <div class="container">
     <RuiCard>
       <VSelect
         :value="location"
@@ -89,24 +89,21 @@ onBeforeMount(async () => {
         @change="updateLocation($event)"
       >
         <template v-for="slot in ['item', 'selection']" #[slot]="data">
-          <VRow v-if="data.item" :key="slot" align="center">
-            <VCol cols="auto">
-              <AdaptiveWrapper width="24" height="24">
-                <VImg
-                  width="24px"
-                  contain
-                  max-height="24px"
-                  :src="data.item.icon"
-                />
-              </AdaptiveWrapper>
-            </VCol>
-            <VCol class="pl-0">
-              {{ data.item.name }}
-            </VCol>
-          </VRow>
+          <div v-if="data.item" :key="slot" class="flex items-center gap-2">
+            <AdaptiveWrapper width="24" height="24">
+              <VImg
+                width="24px"
+                contain
+                max-height="24px"
+                :src="data.item.icon"
+              />
+            </AdaptiveWrapper>
+            {{ data.item.name }}
+          </div>
         </template>
       </VSelect>
     </RuiCard>
+
     <div v-if="page" class="pt-8">
       <Component :is="page" />
     </div>
@@ -150,24 +147,12 @@ onBeforeMount(async () => {
           </div>
 
           <div
-            class="text-body-1 text-rui-text-secondary"
-            :class="$style.description"
+            class="text-body-1 text-rui-text-secondary text-center max-w-[37rem]"
           >
             {{ t('staking_page.page.description') }}
           </div>
         </div>
       </FullSizeContent>
     </div>
-  </VContainer>
+  </div>
 </template>
-
-<style lang="scss" module>
-.content {
-  height: calc(100% - 120px);
-}
-
-.description {
-  text-align: center;
-  max-width: 600px;
-}
-</style>

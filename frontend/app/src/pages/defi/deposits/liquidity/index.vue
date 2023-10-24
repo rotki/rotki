@@ -2,6 +2,7 @@
 import { useAppRoutes } from '@/router/routes';
 
 const { appRoutes } = useAppRoutes();
+const css = useCssModule();
 
 const providers = computed(() => {
   const Routes = get(appRoutes);
@@ -21,15 +22,12 @@ onMounted(() => {
 
 <template>
   <div>
-    <div
-      class="flex flex-row items-center justify-center liquidity__navigation"
-    >
+    <div :class="css.liquidity__navigation">
       <VBtnToggle v-model="path">
         <VBtn
           v-for="provider in providers"
           :key="provider.route"
           :to="provider.route"
-          class="lp-navigation"
           text
           :value="provider.route"
         >
@@ -46,10 +44,10 @@ onMounted(() => {
   </div>
 </template>
 
-<style lang="scss" scoped>
+<style lang="scss" module>
 .liquidity {
   &__navigation {
-    margin-top: -26px;
+    @apply flex flex-row items-center justify-center -mt-[1.625rem] mb-4;
   }
 }
 </style>

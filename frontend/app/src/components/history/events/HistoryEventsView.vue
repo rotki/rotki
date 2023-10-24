@@ -575,6 +575,7 @@ const { locationData } = useLocations();
 <template>
   <TablePageLayout
     :hide-header="!mainPage"
+    :child="!mainPage"
     :title="[t('navigation_menu.history'), usedTitle]"
   >
     <template #buttons>
