@@ -62,6 +62,7 @@ EVENT_CATEGORY_MAPPINGS = {  # possible combinations of types and subtypes mappe
         HistoryEventSubType.BLOCK_PRODUCTION: EventCategory.CREATE_BLOCK,
         HistoryEventSubType.MEV_REWARD: EventCategory.MEV_REWARD,
         HistoryEventSubType.RECEIVE_WRAPPED: EventCategory.RECEIVE,
+        HistoryEventSubType.FEE: EventCategory.FEE,
     }, HistoryEventType.TRANSFER: {
         HistoryEventSubType.DONATE: EventCategory.DONATE,
         HistoryEventSubType.NONE: EventCategory.TRANSFER,

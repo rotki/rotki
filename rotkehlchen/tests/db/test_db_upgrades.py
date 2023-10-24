@@ -1825,7 +1825,7 @@ def test_upgrade_db_39_to_40(user_data_dir):  # pylint: disable=unused-argument
         ('staking', 'reward'), ('staking', 'fee'),
     }
     # also check that the non rotki events are not affected
-    assert other_events_types_before == {('deposit', 'spend'), ('withdrawal', 'fee'), ('receive', 'receive'), ('staking', 'fee'), ('receive', 'none'), ('remove_asset', 'staking')}  # noqa: E501
+    assert other_events_types_before == {('deposit', 'spend'), ('deposit', 'none'), ('withdrawal', 'none'), ('withdrawal', 'fee'), ('receive', 'receive'), ('staking', 'fee'), ('receive', 'none'), ('remove_asset', 'staking')}  # noqa: E501
     # check that the evm events info is populated and connected to
     assert cursor.execute('SELECT * from evm_events_info').fetchall() == [
         (15, 'bytehash', 'aprotocol', 'aproduct', '0x4bBa290826C253BD854121346c370a9886d1bC26', None),  # noqa: E501
@@ -1880,7 +1880,7 @@ def test_upgrade_db_39_to_40(user_data_dir):  # pylint: disable=unused-argument
         ('staking', 'reward'), ('spend', 'fee'),
     }
     # also check that the non rotki events are not affected
-    assert other_events_types_after == {('deposit', 'spend'), ('withdrawal', 'fee'), ('receive', 'receive'), ('staking', 'fee'), ('receive', 'none'), ('spend', 'none'), ('receive', 'donate'), ('receive', 'airdrop'), ('remove_asset', 'staking')}  # noqa: E501
+    assert other_events_types_after == {('deposit', 'deposit asset'), ('withdrawal', 'remove asset'), ('withdrawal', 'fee'), ('receive', 'receive'), ('staking', 'fee'), ('receive', 'none'), ('spend', 'none'), ('receive', 'donate'), ('receive', 'airdrop'), ('remove_asset', 'staking')}  # noqa: E501
     # check that after upgrade tables depending on base history events are still connected
     assert cursor.execute('SELECT * from evm_events_info').fetchall() == [
         (15, 'bytehash', 'aprotocol', 'aproduct', '0x4bBa290826C253BD854121346c370a9886d1bC26', None),  # noqa: E501
