@@ -157,6 +157,7 @@ from rotkehlchen.errors.api import (
 )
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import (
+    AlreadyExists,
     DBSchemaError,
     DBUpgradeError,
     EthSyncError,
@@ -3984,8 +3985,8 @@ class RestAPI:
                 tx_hash=tx_hash,
                 associated_address=associated_address,
             )
-        except (KeyError, DeserializationError, RemoteError, sqlcipher.IntegrityError, InputError) as e:  # pylint: disable=no-member  # noqa: E501
-            if isinstance(e, sqlcipher.IntegrityError):  # pylint: disable=no-member
+        except (KeyError, DeserializationError, RemoteError, AlreadyExists, InputError) as e:  # pylint: disable=no-member
+            if isinstance(e, AlreadyExists):  # pylint: disable=no-member
                 status_code = HTTPStatus.CONFLICT
             elif isinstance(e, InputError):
                 status_code = HTTPStatus.NOT_FOUND

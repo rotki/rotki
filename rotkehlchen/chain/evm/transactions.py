@@ -1,7 +1,7 @@
 import logging
 from abc import ABCMeta
 from collections import defaultdict
-from collections.abc import Iterator
+from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any, Optional, Union
 
@@ -19,7 +19,7 @@ from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
 from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.errors.asset import UnknownAsset
-from rotkehlchen.errors.misc import InputError, RemoteError
+from rotkehlchen.errors.misc import AlreadyExists, InputError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
@@ -149,6 +149,7 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
                 start_ts=from_ts,
                 end_ts=to_ts,
             )
+        self.get_chain_specific_multiaddress_data(accounts, from_ts, to_ts)
 
     def _query_and_save_transactions_for_range(
             self,
@@ -693,6 +694,7 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
             self,
             tx_hash: EVMTxHash,
             associated_address: ChecksumEvmAddress,
+            must_exist: bool = False,
     ) -> tuple['EvmTransaction', 'EvmTxReceipt']:
         """Adds a transaction to the database by its hash and associates it with the provided address.
 
@@ -700,10 +702,22 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
         - RemoteError if any of the remote queries fail.
         - KeyError if there's a missing key in the tx_receipt dict.
         - DeserializationError if there's an issue deserializing a value.
-        - InputError if the tx_hash or its receipt is not found on the blockchain.
-        - pysqlcipher3.dbapi2.IntegrityError if the tx_hash is present in the db or address is not tracked.
+        - InputError if the tx_hash or its receipt is not found on the blockchain or the address is not tracked.
+        - AlreadyExists if the tx_hash and receipt are present in the db.
         """  # noqa: E501
-        tx_result = self.evm_inquirer.maybe_get_transaction_by_hash(tx_hash)
+        with self.database.conn.read_ctx() as cursor:
+            tracked_accounts = self.database.get_blockchain_accounts(cursor).get(self.evm_inquirer.blockchain)  # noqa: E501
+            if associated_address not in tracked_accounts:
+                raise InputError(f'Address {associated_address} to associate with tx {tx_hash.hex()} is not tracked')  # noqa: E501
+
+            if len(self.dbevmtx.get_evm_transactions(
+                cursor=cursor,
+                filter_=EvmTransactionsFilterQuery.make(tx_hash=tx_hash, chain_id=self.evm_inquirer.chain_id),  # noqa: E501
+                has_premium=True,
+            )) == 1 and self.dbevmtx.get_receipt(cursor=cursor, tx_hash=tx_hash, chain_id=self.evm_inquirer.chain_id) is not None:  # noqa: E501
+                raise AlreadyExists(f'Transaction {tx_hash.hex()} is already in the DB')
+
+        tx_result = self.evm_inquirer.maybe_get_transaction_by_hash(tx_hash=tx_hash, must_exist=must_exist)  # noqa: E501
         if tx_result is None:
             raise InputError(f'Transaction data for {tx_hash.hex()} not found on chain.')
         transaction, receipt_data = tx_result
@@ -726,3 +740,13 @@ class EvmTransactions(metaclass=ABCMeta):  # noqa: B024
             )
         assert tx_receipt is not None, 'transaction receipt was added just above, so should exist'
         return transaction, tx_receipt
+
+    def get_chain_specific_multiaddress_data(
+            self,
+            addresses: Sequence[ChecksumEvmAddress],  # pylint: disable=unused-argument
+            from_ts: Timestamp,  # pylint: disable=unused-argument
+            to_ts: Timestamp,  # pylint: disable=unused-argument
+    ) -> None:
+        """Can be implemented by each chain subclass to add chain-specific data queries
+        for all tracked addresses at once"""
+        return None
