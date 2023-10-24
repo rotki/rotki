@@ -166,7 +166,8 @@ const headers = computed<DataTableColumn[]>(() => [
     label: t('common.location'),
     key: 'location',
     width: '120px',
-    align: 'center'
+    align: 'center',
+    cellClass: 'py-0'
   },
   {
     label: t('common.name'),
