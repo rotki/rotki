@@ -1,4 +1,3 @@
-import warnings as test_warnings
 from typing import TYPE_CHECKING
 
 import pytest
@@ -9,9 +8,8 @@ from rotkehlchen.accounting.structures.evm_event import EvmEvent, EvmProduct
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
-from rotkehlchen.chain.ethereum.modules.convex.constants import CONVEX_POOLS, CPT_CONVEX
+from rotkehlchen.chain.ethereum.modules.convex.constants import CPT_CONVEX
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
-from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -29,61 +27,9 @@ from rotkehlchen.types import (
     deserialize_evm_tx_hash,
 )
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
-from rotkehlchen.utils.misc import hex_or_bytes_to_address
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
-
-
-def test_convex_pools(ethereum_inquirer):
-    """Tests that our hardcoded information about convex pools is up-to-date.
-    Queries data about convex pools reward addresses and their names from chain and compares it
-    to the current hardcoded info."""
-    booster_contract = ethereum_inquirer.contracts.contract(string_to_evm_address('0xF403C135812408BFbE8713b5A23a04b3D48AAE31'))  # noqa: E501
-    pools_count = booster_contract.call(
-        node_inquirer=ethereum_inquirer,
-        method_name='poolLength',
-    )
-    calls_to_booster = [(
-        booster_contract.address,
-        booster_contract.encode('poolInfo', [x]),
-    ) for x in range(pools_count)]
-    booster_result = ethereum_inquirer.multicall(
-        calls=calls_to_booster,
-    )
-    convex_rewards_addrs = []
-    convex_lp_tokens_addrs = []
-    lp_tokens_contract = EvmContract(  # only need it to encode and decode
-        address=ZERO_ADDRESS,
-        abi=ethereum_inquirer.contracts.abi('CONVEX_LP_TOKEN'),
-        deployed_block=0,
-    )
-    for single_booster_result in booster_result:
-        lp_token_addr = hex_or_bytes_to_address(single_booster_result[0:32])
-        crv_rewards = hex_or_bytes_to_address(single_booster_result[3 * 32:4 * 32])
-        convex_rewards_addrs.append(crv_rewards)
-        convex_lp_tokens_addrs.append(lp_token_addr)
-
-    # We query this info from chain instead of using data from our assets database since
-    # if convex adds a new pool with new lp token we won't know its properties (because it won't
-    # be in our DB)
-    calls_to_lp_tokens = [(lp_token_addr, lp_tokens_contract.encode('symbol')) for lp_token_addr in convex_lp_tokens_addrs]  # noqa: E501
-    lp_tokens_result = ethereum_inquirer.multicall(
-        calls=calls_to_lp_tokens,
-    )
-
-    queried_convex_pools_info = {}
-    for convex_reward_addr, single_lp_token_result in zip(convex_rewards_addrs, lp_tokens_result):
-        decoded_lp_token_result = lp_tokens_contract.decode(single_lp_token_result, 'symbol')
-        queried_convex_pools_info[convex_reward_addr] = decoded_lp_token_result[0]
-
-    if queried_convex_pools_info != CONVEX_POOLS:
-        added_pools_addrs = queried_convex_pools_info.keys() - CONVEX_POOLS.keys()
-        added_pools = {addr: queried_convex_pools_info[addr] for addr in added_pools_addrs}
-        test_warnings.warn(UserWarning(
-            f'Convex pools have changed on chain. Please update CONVEX_POOLS constant. '
-            f'New pools: {added_pools}',
-        ))
 
 
 @pytest.mark.vcr()

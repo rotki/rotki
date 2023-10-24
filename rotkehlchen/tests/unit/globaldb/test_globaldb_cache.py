@@ -8,6 +8,11 @@ import requests
 from freezegun import freeze_time
 
 from rotkehlchen.assets.resolver import AssetResolver
+from rotkehlchen.chain.ethereum.modules.convex.convex_cache import (
+    query_convex_data,
+    read_convex_data_from_cache,
+    save_convex_data_to_cache,
+)
 from rotkehlchen.chain.ethereum.modules.curve.curve_cache import CURVE_API_URLS
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.optimism.modules.velodrome.velodrome_cache import (
@@ -118,8 +123,6 @@ VELODROME_SOME_EXPECTED_GAUGES = {
 
 VELODROME_SOME_EXPECTED_ASSETS = [
     'eip155:10/erc20:0x8134A2fDC127549480865fB8E5A9E8A8a95a54c5',
-    'eip155:10/erc20:0xdfDD0b190aDF296BB0162d19c2e0206Db68FE475',
-    'eip155:10/erc20:0x484c2D6e3cDd945a8B2DF735e079178C1036578c',
     'eip155:10/erc20:0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1',
     'eip155:10/erc20:0x7F5c764cBc14f9669B88837ca1490cCa17c31607',
 ]
@@ -149,8 +152,34 @@ VELODROME_SOME_EXPECTED_ADDRESBOOK_ENTRIES = [
 ]
 
 
+def get_velodrome_addressbook_and_asset_identifiers(optimism_inquirer):
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        addressbook_entries = DBAddressbook(optimism_inquirer.database).get_addressbook_entries(
+            cursor=cursor,
+            filter_query=AddressbookFilterQuery.make(),
+        )[0]
+        asset_identifiers = cursor.execute('SELECT identifier FROM assets').fetchall()
+    return addressbook_entries, asset_identifiers
+
+
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 def test_velodrome_cache(optimism_inquirer):
+    with GlobalDBHandler().conn.write_ctx() as write_cursor:
+        # make sure that velodrome cache is clear of expected pools and gauges
+        for pool in VELODROME_SOME_EXPECTED_POOLS | VELODROME_SOME_EXPECTED_GAUGES:
+            write_cursor.execute(f'DELETE FROM general_cache WHERE value LIKE "%{pool}%"')
+            write_cursor.execute(f'DELETE FROM address_book WHERE address="{pool}"')
+
+        for asset in VELODROME_SOME_EXPECTED_ASSETS:
+            write_cursor.execute(f'DELETE FROM assets WHERE identifier LIKE "%{asset}%"')
+
+    pools, gauges = read_velodrome_pools_and_gauges_from_cache()
+    assert not pools & VELODROME_SOME_EXPECTED_POOLS
+    assert not gauges & VELODROME_SOME_EXPECTED_GAUGES
+    addressbook_entries, asset_identifiers = get_velodrome_addressbook_and_asset_identifiers(optimism_inquirer)  # noqa: E501
+    assert not any(entry in addressbook_entries for entry in VELODROME_SOME_EXPECTED_ADDRESBOOK_ENTRIES)  # noqa: E501
+    assert not any((identifier,) in asset_identifiers for identifier in VELODROME_SOME_EXPECTED_ASSETS)  # noqa: E501
+
     optimism_inquirer.ensure_cache_data_is_updated(
         cache_type=CacheType.VELODROME_POOL_ADDRESS,
         query_method=query_velodrome_data,
@@ -159,16 +188,35 @@ def test_velodrome_cache(optimism_inquirer):
     pools, gauges = read_velodrome_pools_and_gauges_from_cache()
     assert pools >= VELODROME_SOME_EXPECTED_POOLS
     assert gauges >= VELODROME_SOME_EXPECTED_GAUGES
-
-    with GlobalDBHandler().conn.read_ctx() as cursor:
-        addressbook_entries = DBAddressbook(optimism_inquirer.database).get_addressbook_entries(
-            cursor=cursor,
-            filter_query=AddressbookFilterQuery.make(),
-        )[0]
-        asset_identifiers = cursor.execute('SELECT identifier FROM assets').fetchall()
-
+    addressbook_entries, asset_identifiers = get_velodrome_addressbook_and_asset_identifiers(optimism_inquirer)  # noqa: E501
     assert all(entry in addressbook_entries for entry in VELODROME_SOME_EXPECTED_ADDRESBOOK_ENTRIES)  # noqa: E501
     assert all((identifier,) in asset_identifiers for identifier in VELODROME_SOME_EXPECTED_ASSETS)
+
+
+@pytest.mark.vcr()
+def test_convex_cache(ethereum_inquirer):
+    """Test convex pools querying and caching mechanism"""
+    convex_expected_pools = {  # some expected pools
+        string_to_evm_address('0x49Dd6BCf56ABBE00DbB816EF6664c4cf5bdd81A1'): 'dYFIETH-f',
+        string_to_evm_address('0xDe91Bf29ADF79FbfbbF0d646EAf024c0CB9fac25'): 'crvstUSDT-f',
+        string_to_evm_address('0x62f3C96017F2Ba9D83BD70500B738FEEebc5FFc6'): 'crvSTBT-f',
+        string_to_evm_address('0xFe4aC9cd3892BACbeA12C9185a577164f56831fD'): 'ETHxfrxETH-f',
+    }.items()
+    with GlobalDBHandler().conn.write_ctx() as write_cursor:
+        # make sure that convex cache is clear of expected pools
+        for pool, _ in convex_expected_pools:
+            write_cursor.execute(f'DELETE FROM general_cache WHERE value="{pool}"')
+            write_cursor.execute(f'DELETE FROM unique_cache WHERE key LIKE "%{pool}%"')
+
+    assert not read_convex_data_from_cache()[0].items() & convex_expected_pools
+
+    ethereum_inquirer.ensure_cache_data_is_updated(
+        cache_type=CacheType.CONVEX_POOL_ADDRESS,
+        query_method=query_convex_data,
+        save_method=save_convex_data_to_cache,
+        force_refresh=True,
+    )  # populates convex caches
+    assert len(read_convex_data_from_cache()[0].items() & convex_expected_pools) == 4
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])

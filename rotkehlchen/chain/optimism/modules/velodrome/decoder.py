@@ -69,9 +69,14 @@ class VelodromeDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin):
             cache_type_to_check_for_freshness=CacheType.VELODROME_POOL_ADDRESS,
             query_data_method=query_velodrome_data,
             save_data_to_cache_method=save_velodrome_data_to_cache,
-            read_pools_and_gauges_from_cache_method=read_velodrome_pools_and_gauges_from_cache,
+            read_data_from_cache_method=read_velodrome_pools_and_gauges_from_cache,
         )
         self.protocol_addresses = {ROUTER_V2, ROUTER_V1}.union(self.pools)  # velodrome addresses that appear on decoded events  # noqa: E501
+
+    @property
+    def pools(self) -> set[ChecksumEvmAddress]:
+        assert isinstance(self.cache_data[0], set), 'VelodromeDecoder cache_data[0] is not a set'
+        return self.cache_data[0]
 
     def _decode_add_liquidity_events(
             self,

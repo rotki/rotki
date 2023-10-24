@@ -129,6 +129,10 @@ def test_general_cache_refresh(rotkehlchen_api_server: 'APIServer'):
             'rotkehlchen.chain.evm.node_inquirer.should_update_protocol_cache',
             new=MagicMock(return_value=False),
         ))
+        patched_convex_query = stack.enter_context(patch(
+            'rotkehlchen.api.rest.query_convex_data',
+            new=MagicMock(),
+        ))
         patched_curve_query = stack.enter_context(patch(
             'rotkehlchen.api.rest.query_curve_data',
             new=MagicMock(),
@@ -151,6 +155,7 @@ def test_general_cache_refresh(rotkehlchen_api_server: 'APIServer'):
             'refreshgeneralcacheresource',
         ))
         assert_proper_response(response)
+        assert patched_convex_query.call_count == 1, 'Convex pools should have been queried despite should_update_protocol_cache being False'  # noqa: E501
         assert patched_curve_query.call_count == 1, 'Curve pools should have been queried despite should_update_protocol_cache being False'  # noqa: E501
         assert patched_velodrome_query.call_count == 1, 'Velodrome pools should have been queried despite should_update_protocol_cache being False'  # noqa: E501
         assert patched_query_yearn_vaults.call_count == 1, 'Yearn vaults refresh should have been triggered'  # noqa: E501

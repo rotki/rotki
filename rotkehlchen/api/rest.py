@@ -72,6 +72,10 @@ from rotkehlchen.chain.accounts import SingleBlockchainAccountData
 from rotkehlchen.chain.bitcoin.xpub import XpubManager
 from rotkehlchen.chain.ethereum.airdrops import AIRDROPS, check_airdrops
 from rotkehlchen.chain.ethereum.defi.protocols import DEFI_PROTOCOLS
+from rotkehlchen.chain.ethereum.modules.convex.convex_cache import (
+    query_convex_data,
+    save_convex_data_to_cache,
+)
 from rotkehlchen.chain.ethereum.modules.curve.curve_cache import (
     query_curve_data,
     save_curve_data_to_cache,
@@ -4278,29 +4282,24 @@ class RestAPI:
     @async_api_call()
     def refresh_general_cache(self) -> dict[str, Any]:
         eth_node_inquirer = self.rotkehlchen.chains_aggregator.ethereum.node_inquirer
-        curve_success = eth_node_inquirer.ensure_cache_data_is_updated(
-            cache_type=CacheType.CURVE_LP_TOKENS,
-            query_method=query_curve_data,
-            save_method=save_curve_data_to_cache,
-            force_refresh=True,
-        )
-        if curve_success is False:
-            return wrap_in_fail_result(
-                message='Failed to refresh curve pools cache',
-                status_code=HTTPStatus.CONFLICT,
-            )
         optimism_inquirer = self.rotkehlchen.chains_aggregator.optimism.node_inquirer
-        velodrome_success = optimism_inquirer.ensure_cache_data_is_updated(
-            cache_type=CacheType.VELODROME_POOL_ADDRESS,
-            query_method=query_velodrome_data,
-            save_method=save_velodrome_data_to_cache,
-            force_refresh=True,
+        caches = (
+            ('curve pools', CacheType.CURVE_LP_TOKENS, query_curve_data, save_curve_data_to_cache, eth_node_inquirer),  # noqa: E501
+            ('convex pools', CacheType.CONVEX_POOL_ADDRESS, query_convex_data, save_convex_data_to_cache, eth_node_inquirer),  # noqa: E501
+            ('velodrome pools', CacheType.VELODROME_POOL_ADDRESS, query_velodrome_data, save_velodrome_data_to_cache, optimism_inquirer),  # noqa: E501
         )
-        if velodrome_success is False:
-            return wrap_in_fail_result(
-                message='Failed to refresh velodrome pools cache',
-                status_code=HTTPStatus.CONFLICT,
-            )
+        for (cache, cache_type, query_method, save_method, inquirer) in caches:
+            if inquirer.ensure_cache_data_is_updated(
+                cache_type=cache_type,
+                query_method=query_method,
+                save_method=save_method,
+                force_refresh=True,
+            ) is False:
+                return wrap_in_fail_result(
+                    message=f'Failed to refresh {cache} cache',
+                    status_code=HTTPStatus.CONFLICT,
+                )
+
         try:
             ethereum_manager: EthereumManager = self.rotkehlchen.chains_aggregator.get_chain_manager(SupportedBlockchain.ETHEREUM)  # noqa: E501
             query_yearn_vaults(
