@@ -36,6 +36,9 @@ class GnosisTransactions(EvmTransactions):
             to_ts: Timestamp,
     ) -> None:
         """Get Gnosis XDAI withdrawals in gnosis chain by querying log events"""
+        if len(addresses) == 0:
+            return  # do nothing for no addresses
+
         max_start, min_end = None, None
         with self.database.conn.read_ctx() as cursor:
             cursor.execute('SELECT MAX(start_ts), MIN(end_ts) FROM used_query_ranges WHERE name LIKE ?', (f'{BRIDGE_QUERIED_ADDRESS_PREFIX}%',))  # noqa: E501
