@@ -1,14 +1,11 @@
 <script setup lang="ts">
-import { type ComputedRef, type PropType } from 'vue';
+import { type ComputedRef } from 'vue';
 import { type StyleValue } from 'vue/types/jsx';
 import { type GalleryNft } from '@/types/nfts';
 
-const props = defineProps({
-  item: {
-    required: true,
-    type: Object as PropType<GalleryNft>
-  }
-});
+const props = defineProps<{
+  item: GalleryNft;
+}>();
 
 const { item } = toRefs(props);
 const { shouldRenderImage } = useNfts();

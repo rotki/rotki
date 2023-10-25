@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { type PropType } from 'vue';
 import { type DataTableHeader } from '@/types/vuetify';
 import { type MissingAcquisition, type SelectedReport } from '@/types/reports';
 
@@ -12,14 +11,11 @@ interface MappedGroupedItems {
   acquisitions: MissingAcquisition[];
 }
 
-const props = defineProps({
-  report: {
-    required: true,
-    type: Object as PropType<SelectedReport>
-  },
-  items: { required: true, type: Array as PropType<MissingAcquisition[]> },
-  isPinned: { required: true, type: Boolean, default: false }
-});
+const props = defineProps<{
+  report: SelectedReport;
+  items: MissingAcquisition[];
+  isPinned: boolean;
+}>();
 
 const { items, isPinned } = toRefs(props);
 

@@ -1,18 +1,19 @@
 <script setup lang="ts">
-import { type PropType } from 'vue';
 import { type DataTableHeader } from '@/types/vuetify';
 import { type CostBasis } from '@/types/reports';
 
-const props = defineProps({
-  costBasis: { required: true, type: Object as PropType<CostBasis> },
-  colspan: { required: true, type: Number },
-  currency: {
-    required: false,
-    type: String as PropType<string | null>,
-    default: null
-  },
-  showGroupLine: { required: false, type: Boolean, default: false }
-});
+const props = withDefaults(
+  defineProps<{
+    costBasis: CostBasis;
+    colspan: number;
+    currency?: string | null;
+    showGroupLine?: boolean;
+  }>(),
+  {
+    currency: null,
+    showGroupLine: false
+  }
+);
 
 const { t } = useI18n();
 

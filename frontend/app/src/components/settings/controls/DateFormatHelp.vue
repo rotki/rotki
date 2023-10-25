@@ -1,12 +1,10 @@
 <script setup lang="ts">
 import { displayDateFormatter } from '@/data/date_formatter';
 
-defineProps({
-  value: { required: true, type: Boolean }
-});
+defineProps<{ value: boolean }>();
 
-const emit = defineEmits(['input']);
-const input = (_value: boolean) => emit('input', _value);
+const emit = defineEmits<{ (e: 'input', value: boolean): void }>();
+const input = (value: boolean) => emit('input', value);
 
 const formatter = displayDateFormatter;
 const directives: string[] = displayDateFormatter.directives;

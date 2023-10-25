@@ -1,17 +1,22 @@
 <script setup lang="ts">
-import { type ComputedRef, type PropType } from 'vue';
+import { type ComputedRef } from 'vue';
 import { type DataTableHeader } from '@/types/vuetify';
 import Fragment from '@/components/helper/Fragment';
 import { displayDateFormatter } from '@/data/date_formatter';
 import { type UserDbBackup } from '@/types/backup';
 import { size } from '@/utils/data';
 
-const props = defineProps({
-  items: { required: true, type: Array as PropType<UserDbBackup[]> },
-  selected: { required: true, type: Array as PropType<UserDbBackup[]> },
-  loading: { required: false, type: Boolean, default: false },
-  directory: { required: true, type: String }
-});
+const props = withDefaults(
+  defineProps<{
+    items: UserDbBackup[];
+    selected: UserDbBackup[];
+    loading?: boolean;
+    directory: string;
+  }>(),
+  {
+    loading: false
+  }
+);
 
 const emit = defineEmits<{
   (e: 'change', backup: UserDbBackup[]): void;

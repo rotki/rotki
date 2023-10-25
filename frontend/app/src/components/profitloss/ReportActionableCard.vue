@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { type Nullable } from '@rotki/common';
-import { type PropType } from 'vue';
 import {
   type EditableMissingPrice,
   type SelectedReport
@@ -8,13 +7,16 @@ import {
 import { toSentenceCase } from '@/utils/text';
 import { type Pinned } from '@/types/session';
 
-const props = defineProps({
-  report: {
-    required: true,
-    type: Object as PropType<SelectedReport>
-  },
-  isPinned: { required: false, type: Boolean, default: false }
-});
+const props = withDefaults(
+  defineProps<{
+    report: SelectedReport;
+    isPinned?: boolean;
+  }>(),
+  {
+    isPinned: false
+  }
+);
+
 const emit = defineEmits<{
   (e: 'set-dialog', value: boolean): void;
   (e: 'regenerate'): void;

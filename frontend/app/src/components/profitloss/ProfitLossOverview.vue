@@ -1,32 +1,23 @@
 <script setup lang="ts">
-import { type PropType } from 'vue';
 import {
   type ProfitLossOverviewItem,
   type SelectedReport
 } from '@/types/reports';
 import { pluralizeLastWord, toCapitalCase } from '@/utils/text';
 
-const props = defineProps({
-  report: {
-    required: true,
-    type: Object as PropType<SelectedReport>
-  },
-  symbol: {
-    required: false,
-    type: String as PropType<string | null>,
-    default: null
-  },
-  flat: {
-    required: false,
-    type: Boolean,
-    default: false
-  },
-  loading: {
-    required: false,
-    type: Boolean,
-    default: false
+const props = withDefaults(
+  defineProps<{
+    report: SelectedReport;
+    symbol?: string | null;
+    flat?: boolean;
+    loading?: boolean;
+  }>(),
+  {
+    symbol: null,
+    flat: false,
+    loading: false
   }
-});
+);
 
 const { report } = toRefs(props);
 

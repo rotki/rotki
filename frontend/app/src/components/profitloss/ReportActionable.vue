@@ -1,14 +1,15 @@
 <script setup lang="ts">
-import { type PropType } from 'vue';
 import { type SelectedReport } from '@/types/reports';
 
-const props = defineProps({
-  report: {
-    required: true,
-    type: Object as PropType<SelectedReport>
-  },
-  initialOpen: { required: false, type: Boolean, default: false }
-});
+const props = withDefaults(
+  defineProps<{
+    report: SelectedReport;
+    initialOpen?: boolean;
+  }>(),
+  {
+    initialOpen: false
+  }
+);
 
 const emit = defineEmits<{
   (e: 'regenerate'): void;

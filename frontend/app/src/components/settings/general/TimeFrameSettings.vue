@@ -4,33 +4,14 @@ import {
   TimeFramePersist,
   type TimeFrameSetting
 } from '@rotki/common/lib/settings/graphs';
-import { type PropType } from 'vue';
 import Fragment from '@/components/helper/Fragment';
 
-const props = defineProps({
-  message: {
-    required: true,
-    type: Object as PropType<{ error: string; success: string }>
-  },
-  value: {
-    required: true,
-    type: String,
-    validator: (value: any) =>
-      Object.values(TimeFramePeriod).includes(value) ||
-      value === TimeFramePersist.REMEMBER
-  },
-  visibleTimeframes: {
-    required: true,
-    type: Array as PropType<TimeFramePeriod[]>
-  },
-  currentSessionTimeframe: {
-    required: true,
-    type: String as PropType<TimeFramePeriod>,
-    validator: (value: any) =>
-      Object.values(TimeFramePeriod).includes(value) ||
-      value === TimeFramePersist.REMEMBER
-  }
-});
+const props = defineProps<{
+  message: { error: string; success: string };
+  value: TimeFrameSetting;
+  visibleTimeframes: TimeFramePeriod[];
+  currentSessionTimeframe: TimeFrameSetting;
+}>();
 
 const emit = defineEmits<{
   (e: 'timeframe-change', timeframe: TimeFrameSetting): void;
@@ -100,7 +81,7 @@ const updateVisibleTimeframes = async (
     const { updateSetting } = useFrontendSettingsStore();
     const { update } = useSessionSettingsStore();
     const value = newTimeFrames[0];
-    await update({ timeframe: value });
+    update({ timeframe: value });
     await updateSetting({ lastKnownTimeframe: value });
   }
 
