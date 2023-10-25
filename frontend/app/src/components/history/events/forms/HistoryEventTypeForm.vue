@@ -3,11 +3,17 @@ import { type Validation } from '@vuelidate/core';
 import { toMessages } from '@/utils/validation';
 import { type ActionDataEntry } from '@/types/action';
 
-const props = defineProps<{
-  eventType: string;
-  eventSubtype: string;
-  v$: Validation;
-}>();
+const props = withDefaults(
+  defineProps<{
+    eventType: string;
+    eventSubtype: string;
+    v$: Validation;
+    disableWarning?: boolean;
+  }>(),
+  {
+    disableWarning: false
+  }
+);
 
 const emit = defineEmits<{
   (e: 'update:event-type', eventType: string): void;
@@ -98,6 +104,7 @@ const { t } = useI18n();
         item-value="identifier"
         item-text="label"
         data-cy="eventType"
+        auto-select-first
         :error-messages="toMessages(v$.eventType)"
         @blur="v$.eventType.$touch()"
       />
@@ -110,6 +117,7 @@ const { t } = useI18n();
         item-value="identifier"
         item-text="label"
         data-cy="eventSubtype"
+        auto-select-first
         :error-messages="toMessages(v$.eventSubtype)"
         @blur="v$.eventSubtype.$touch()"
       />
@@ -125,7 +133,7 @@ const { t } = useI18n();
       </div>
     </div>
     <RuiAlert
-      v-if="showHistoryEventTypeCombinationWarning"
+      v-if="!disableWarning && showHistoryEventTypeCombinationWarning"
       class="mt-2 mb-6"
       type="warning"
       variant="filled"

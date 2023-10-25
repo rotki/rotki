@@ -116,7 +116,7 @@ onMounted(() => {
           error || v$.taxFreeAfterPeriod.$errors.map(e => e.$message)
         "
         :disabled="!taxFreePeriod"
-        :label="t('accounting_settings.trade.labels.tax_free_period')"
+        :label="t('accounting_settings.trade.labels.taxfree_after_period')"
         type="number"
         @change="callIfValid($event, update)"
       />

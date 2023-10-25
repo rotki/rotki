@@ -4695,7 +4695,7 @@ Dealing with History Events
    .. _add_event_args_label:
 
    Doing a PUT on this endpoint can add a new event to rotki. For each entry type, the specified arguments are different. The unique identifier for the entry is returned as success.
-   
+
    .. tab:: History Event
 
       **Example Request**:
@@ -4904,7 +4904,7 @@ Dealing with History Events
           "counterparty": "0xdf869FAD6dB91f437B59F1EdEFab319493D4C4cE"
       }
 
-   The request object uses all the same arguments for each entry type as the `add event endpoint <add_event_args_label_>`_, with the addition of the identifier which signifies which entry will be edited. 
+   The request object uses all the same arguments for each entry type as the `add event endpoint <add_event_args_label_>`_, with the addition of the identifier which signifies which entry will be edited.
 
    **Example Response**:
 
@@ -12757,6 +12757,7 @@ Accounting rules linkable properties
 
       HTTP/1.1 200 OK
       Content-Type: application/json
+
       {
         "result": {
             "count_entire_amount_spend":["include_gas_costs", "include_crypto2crypto"],

@@ -16,13 +16,13 @@ describe('settings::accounting', () => {
   });
 
   it('change crypto2crypto switch & validate UI message', () => {
-    pageAccounting.changeSwitch('.accounting-settings__crypto2crypto', true);
+    pageAccounting.changeSwitch('.accounting-settings__crypto2crypto', false);
   });
 
   it('change gas costs switch & validate UI message', () => {
     pageAccounting.changeSwitch(
       '.accounting-settings__include-gas-costs',
-      true
+      false
     );
   });
 
@@ -38,11 +38,11 @@ describe('settings::accounting', () => {
     pageAccounting.visit();
     pageAccounting.verifySwitchState(
       '.accounting-settings__crypto2crypto',
-      true
+      false
     );
     pageAccounting.verifySwitchState(
       '.accounting-settings__include-gas-costs',
-      true
+      false
     );
     pageAccounting.verifySwitchState(
       '.accounting-settings__taxfree-period',

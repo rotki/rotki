@@ -4,8 +4,7 @@ import {
   type AccountingRule,
   type AccountingRuleEntry,
   AccountingRuleEntryCollectionResponse,
-  type AccountingRuleRequestPayload,
-  type DeleteAccountingRulePayload
+  type AccountingRuleRequestPayload
 } from '@/types/settings/accounting';
 import { type CollectionResponse } from '@/types/collection';
 import { handleResponse, validStatus } from '@/services/utils';
@@ -59,16 +58,26 @@ export const useAccountingApi = () => {
     return handleResponse(response);
   };
 
-  const deleteAccountingRule = async (
-    payload: DeleteAccountingRulePayload
-  ): Promise<boolean> => {
+  const deleteAccountingRule = async (identifier: number): Promise<boolean> => {
     const response = await api.instance.delete<ActionResult<boolean>>(
       '/accounting/rules',
       {
-        data: snakeCaseTransformer(payload),
+        data: snakeCaseTransformer({ identifier }),
         validateStatus: validStatus
       }
     );
+
+    return handleResponse(response);
+  };
+
+  const getAccountingRuleLinkedMapping = async (): Promise<
+    Record<string, string[]>
+  > => {
+    const response = await api.instance.get<
+      ActionResult<Record<string, string[]>>
+    >('/accounting/rules/info', {
+      validateStatus: validStatus
+    });
 
     return handleResponse(response);
   };
@@ -77,6 +86,7 @@ export const useAccountingApi = () => {
     fetchAccountingRules,
     addAccountingRule,
     editAccountingRule,
-    deleteAccountingRule
+    deleteAccountingRule,
+    getAccountingRuleLinkedMapping
   };
 };

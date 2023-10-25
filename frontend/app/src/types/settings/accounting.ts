@@ -2,13 +2,6 @@ import { z } from 'zod';
 import { CollectionCommonFields } from '@/types/collection';
 import { type PaginationRequestPayload } from '@/types/common';
 
-export enum AccountingMethod {
-  SPEND = 'spend',
-  ACQUISITION = 'acquisition'
-}
-
-const AccountingMethodEnum = z.nativeEnum(AccountingMethod);
-
 export enum AccountingTreatment {
   SWAP = 'swap',
   SWAP_WITH_FEE = 'swap with fee'
@@ -16,22 +9,23 @@ export enum AccountingTreatment {
 
 const AccountingTreatmentEnum = z.nativeEnum(AccountingTreatment);
 
-const DeleteAccountingRulePayload = z.object({
-  eventType: z.string(),
-  eventSubtype: z.string(),
-  counterparty: z.string().nullable()
+export const AccountingRuleWithLinkedProperty = z.object({
+  value: z.boolean(),
+  linkedSetting: z.string().optional()
 });
 
-export type DeleteAccountingRulePayload = z.infer<
-  typeof DeleteAccountingRulePayload
+export type AccountingRuleWithLinkedProperty = z.infer<
+  typeof AccountingRuleWithLinkedProperty
 >;
 
-export const AccountingRule = DeleteAccountingRulePayload.extend({
-  taxable: z.boolean(),
-  countCostBasisPnl: z.boolean(),
-  countEntireAmountSpend: z.boolean(),
-  method: AccountingMethodEnum,
-  accountingTreatment: AccountingTreatmentEnum
+export const AccountingRule = z.object({
+  eventType: z.string(),
+  eventSubtype: z.string(),
+  counterparty: z.string().nullable(),
+  taxable: AccountingRuleWithLinkedProperty,
+  countCostBasisPnl: AccountingRuleWithLinkedProperty,
+  countEntireAmountSpend: AccountingRuleWithLinkedProperty,
+  accountingTreatment: AccountingTreatmentEnum.nullable()
 });
 
 export type AccountingRule = z.infer<typeof AccountingRule>;
@@ -56,4 +50,10 @@ export interface AccountingRuleRequestPayload
   readonly eventTypes?: string[];
   readonly eventSubtypes?: string[];
   readonly counterparties?: string[];
+}
+
+export interface AccountingRuleLinkedSettingMap {
+  identifier: string;
+  label: string;
+  state: boolean;
 }

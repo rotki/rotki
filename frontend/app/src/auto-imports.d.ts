@@ -305,6 +305,7 @@ declare global {
   const useAccountingApi: typeof import('./composables/api/settings/accounting-api')['useAccountingApi']
   const useAccountingRuleFilter: typeof import('./composables/filters/accounting-rule')['useAccountingRuleFilter']
   const useAccountingRuleForm: typeof import('./composables/settings/accounting/form')['useAccountingRuleForm']
+  const useAccountingRuleMappings: typeof import('./composables/settings/accounting/rule-mapping')['useAccountingRuleMappings']
   const useAccountingSettings: typeof import('./composables/settings/accounting/index')['useAccountingSettings']
   const useAccountingSettingsStore: typeof import('./store/settings/accounting')['useAccountingSettingsStore']
   const useActiveElement: typeof import('@vueuse/core')['useActiveElement']
@@ -1020,6 +1021,7 @@ declare module 'vue' {
     readonly useAccountingApi: UnwrapRef<typeof import('./composables/api/settings/accounting-api')['useAccountingApi']>
     readonly useAccountingRuleFilter: UnwrapRef<typeof import('./composables/filters/accounting-rule')['useAccountingRuleFilter']>
     readonly useAccountingRuleForm: UnwrapRef<typeof import('./composables/settings/accounting/form')['useAccountingRuleForm']>
+    readonly useAccountingRuleMappings: UnwrapRef<typeof import('./composables/settings/accounting/rule-mapping')['useAccountingRuleMappings']>
     readonly useAccountingSettings: UnwrapRef<typeof import('./composables/settings/accounting/index')['useAccountingSettings']>
     readonly useAccountingSettingsStore: UnwrapRef<typeof import('./store/settings/accounting')['useAccountingSettingsStore']>
     readonly useActiveElement: UnwrapRef<typeof import('@vueuse/core')['useActiveElement']>
@@ -1729,6 +1731,7 @@ declare module '@vue/runtime-core' {
     readonly useAccountingApi: UnwrapRef<typeof import('./composables/api/settings/accounting-api')['useAccountingApi']>
     readonly useAccountingRuleFilter: UnwrapRef<typeof import('./composables/filters/accounting-rule')['useAccountingRuleFilter']>
     readonly useAccountingRuleForm: UnwrapRef<typeof import('./composables/settings/accounting/form')['useAccountingRuleForm']>
+    readonly useAccountingRuleMappings: UnwrapRef<typeof import('./composables/settings/accounting/rule-mapping')['useAccountingRuleMappings']>
     readonly useAccountingSettings: UnwrapRef<typeof import('./composables/settings/accounting/index')['useAccountingSettings']>
     readonly useAccountingSettingsStore: UnwrapRef<typeof import('./store/settings/accounting')['useAccountingSettingsStore']>
     readonly useActiveElement: UnwrapRef<typeof import('@vueuse/core')['useActiveElement']>

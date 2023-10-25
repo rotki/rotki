@@ -151,11 +151,11 @@
         "account_for_assets_movements": "考虑资产移动费用",
         "calculate_past_cost_basis": "创建报告时计算过去的成本基础",
         "cost_basis_method": "成本基础法",
-        "crypto_to_crypto": "考虑加密到加密交易",
-        "eth_staking_taxable_after_withdrawal": "在启用提款之前，应该从会计中忽略 ETH 质押事件",
-        "gas_costs": "考虑以太坊 gas 成本",
+        "eth_staking_taxable_after_withdrawal_enabled": "在启用提款之前，应该从会计中忽略 ETH 质押事件",
+        "include_crypto2crypto": "考虑加密到加密交易",
+        "include_gas_costs": "考虑以太坊 gas 成本",
         "tax_free": "有免税期吗？",
-        "tax_free_period": "多少天后免税"
+        "taxfree_after_period": "多少天后免税"
       },
       "title": "交易设置"
     }
