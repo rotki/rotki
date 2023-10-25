@@ -34,7 +34,7 @@ const multipleUpgrades = computed(() => {
       <span v-if="dataMigration">{{ t('login.migrating_data.title') }} </span>
       <span v-else> {{ t('login.upgrading_db.title') }}</span>
     </template>
-    <div class="flex space-x-4">
+    <div class="flex space-x-4 break-all">
       <div class="flex flex-col">
         <div class="relative inline-flex rotate-90">
           <RuiProgress
