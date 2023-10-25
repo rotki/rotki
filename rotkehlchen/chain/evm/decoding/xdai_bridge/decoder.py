@@ -2,6 +2,8 @@ import abc
 import logging
 from typing import TYPE_CHECKING, Any, Optional
 
+from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.decoding.constants import GNOSIS_CPT_DETAILS
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
@@ -54,12 +56,16 @@ class XdaiBridgeCommonDecoder(DecoderInterface, metaclass=abc.ABCMeta):
 
     def _decode_bridged_asset(self, context: DecoderContext) -> DecodingOutput:
         """Decodes a bridging event for the `bridged_asset`, either a deposit or a withdrawal."""
+        create_event = False
         if context.tx_log.topics[0] == self.deposit_topic:
             from_address = context.transaction.from_address
             to_address = self.bridge_address
         elif context.tx_log.topics[0] == self.withdrawal_topic:
             from_address = self.bridge_address
             to_address = hex_or_bytes_to_address(context.tx_log.data[0:32])
+            if self.source_chain == ChainID.GNOSIS and self.target_chain == ChainID.ETHEREUM:
+                create_event = True
+
         else:
             return DEFAULT_DECODING_OUTPUT
 
@@ -75,6 +81,34 @@ class XdaiBridgeCommonDecoder(DecoderInterface, metaclass=abc.ABCMeta):
             from_address=from_address,
             to_address=to_address,
         )
+
+        if create_event:  # the bridge to gnosis from ethereum case
+            event = self.base.make_event_from_transaction(
+                transaction=context.transaction,
+                tx_log=context.tx_log,
+                event_type=new_event_type,
+                event_subtype=HistoryEventSubType.BRIDGE,
+                asset=self.bridged_asset,
+                balance=Balance(amount),
+                location_label=to_address,
+                notes='',
+                counterparty=None,
+                address=self.bridge_address,
+            )
+            bridge_match_transfer(
+                event=event,
+                from_address=to_address,  # we have no from_address information
+                to_address=to_address,
+                from_chain=from_chain,
+                to_chain=to_chain,
+                amount=event.balance.amount,
+                asset=self.bridged_asset,
+                expected_event_type=HistoryEventType.RECEIVE,
+                new_event_type=new_event_type,
+                counterparty=GNOSIS_CPT_DETAILS,
+            )
+            return DecodingOutput(event=event)
+
         for event in context.decoded_events:
             if (
                 event.event_type == expected_event_type and

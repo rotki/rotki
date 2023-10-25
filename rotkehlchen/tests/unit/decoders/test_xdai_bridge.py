@@ -139,3 +139,29 @@ def test_withdraw_dai_from_gnosis(database, gnosis_inquirer, gnosis_accounts):
             address=GNOSIS_BRIDGE_ADDRESS,
         ),
     ]
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('gnosis_accounts', [['0x7DA9A33d15413F499299687cC9d81DE84684E28E']])
+def test_deposit_dai_to_gnosis(database, gnosis_inquirer, gnosis_accounts):
+    user_address = gnosis_accounts[0]
+    tx_hash = deserialize_evm_tx_hash('0x5892a695860f6087a2d93140f05e6365142ff77fd7128e39dbc03128d5797ac4')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=gnosis_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    assert events == [EvmEvent(
+        sequence_index=24,
+        timestamp=TimestampMS(1609959945000),
+        location=Location.GNOSIS,
+        event_type=HistoryEventType.WITHDRAWAL,
+        event_subtype=HistoryEventSubType.BRIDGE,
+        asset=A_XDAI,
+        balance=Balance(amount=FVal(20)),
+        location_label=user_address,
+        notes='Bridge 20 XDAI from Ethereum to Gnosis via Gnosis Chain bridge',
+        tx_hash=tx_hash,
+        counterparty=CPT_GNOSIS_CHAIN,
+        address=GNOSIS_BRIDGE_ADDRESS,
+    )]
