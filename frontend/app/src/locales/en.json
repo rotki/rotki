@@ -4120,7 +4120,8 @@
           }
         },
         "resulting_combination": {
-          "label": "Resulting combination"
+          "label": "Resulting combination",
+          "unknown": "The resulting combination is unknown, this event won't be processed correctly."
         },
         "sequence_index": {
           "label": "Sequence Index",
