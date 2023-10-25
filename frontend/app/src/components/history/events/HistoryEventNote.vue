@@ -4,6 +4,10 @@ import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type ComputedRef } from 'vue';
 import { type NoteFormat, NoteType } from '@/composables/history/events/notes';
 
+defineOptions({
+  inheritAttrs: false
+});
+
 const props = withDefaults(
   defineProps<{
     notes?: string;
@@ -45,32 +49,39 @@ const css = useCssModule();
 <template>
   <div>
     <template v-for="(note, index) in formattedNotes">
-      <span
+      <HashLink
         v-if="note.showHashLink"
         :key="index"
-        :class="css.address"
-        class="d-inline-flex"
+        class="inline-flex"
+        :class="{
+          [css['address__content']]: true,
+          'pl-2': !note.showIcon,
+          [css.address]: true
+        }"
+        :text="note.address"
+        :type="note.type"
+        :chain="note.chain ?? chain"
+        :show-icon="!!note.showIcon"
+      />
+
+      <AmountDisplay
+        v-else-if="note.type === NoteType.AMOUNT"
+        :key="`${index}-amount`"
+        :asset="note.asset"
+        :value="note.amount"
+      />
+
+      <ExternalLink
+        v-else-if="note.type === NoteType.URL && note.url"
+        :key="`${index}-link`"
+        :url="note.url"
       >
-        <HashLink
-          :class="{
-            [css['address__content']]: true,
-            'pl-2': !note.showIcon
-          }"
-          :text="note.address"
-          :type="note.type"
-          :chain="note.chain ?? chain"
-          :show-icon="!!note.showIcon"
-        />
-      </span>
-      <span v-else-if="note.type === NoteType.AMOUNT" :key="index">
-        <AmountDisplay :asset="note.asset" :value="note.amount" />
-      </span>
-      <span v-else-if="note.type === NoteType.URL && note.url" :key="index">
-        <ExternalLink :url="note.url">{{ note.word }}</ExternalLink>
-      </span>
-      <span v-else :key="index">
         {{ note.word }}
-      </span>
+      </ExternalLink>
+
+      <template v-else>
+        {{ note.word }}
+      </template>
     </template>
   </div>
 </template>
