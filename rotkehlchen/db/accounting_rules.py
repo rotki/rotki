@@ -179,12 +179,12 @@ class DBAccountingRules:
             # in the future would be to create a db upgrade inserting the missing settings and
             # add the settings related to accounting for new users in the database.
             if setting_name == 'include_crypto2crypto':
-                default_setting = DEFAULT_INCLUDE_CRYPTO2CRYPTO
+                default_value = DEFAULT_INCLUDE_CRYPTO2CRYPTO
             else:
-                default_setting = DEFAULT_INCLUDE_GAS_COSTS
+                default_value = DEFAULT_INCLUDE_GAS_COSTS
             write_cursor.execute(
                 'INSERT OR IGNORE INTO settings(name, value) VALUES (?, ?)',
-                (setting_name, default_setting),
+                (setting_name, default_value),
             )
 
             write_cursor.execute(

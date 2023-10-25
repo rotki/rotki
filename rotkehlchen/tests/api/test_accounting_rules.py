@@ -1,7 +1,9 @@
+from typing import get_args
 import pytest
 import requests
 
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.db.constants import LINKABLE_ACCOUNTING_PROPERTIES
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_proper_response_with_result,
@@ -141,3 +143,14 @@ def test_manage_rules(rotkehlchen_api_server):
     assert result['entries_found'] == 1
     assert len(result['entries']) == 1
     assert result['entries_total'] == 1
+
+
+def test_rules_info(rotkehlchen_api_server):
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'accountinglinkablepropertiesresource',
+        ),
+    )
+    result = assert_proper_response_with_result(response)
+    assert set(result.keys()) == set(get_args(LINKABLE_ACCOUNTING_PROPERTIES))

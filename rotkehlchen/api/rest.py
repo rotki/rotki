@@ -4512,3 +4512,12 @@ class RestAPI:
             }
 
         return api_response(process_result(_wrap_in_ok_result(result)), status_code=HTTPStatus.OK)
+
+    def linkable_accounting_properties(self) -> Response:
+        possible_accounting_setting_names = get_args(LINKABLE_ACCOUNTING_SETTINGS_NAME)
+        result = {
+            'count_entire_amount_spend': possible_accounting_setting_names,
+            'count_cost_basis_pnl': possible_accounting_setting_names,
+        }
+
+        return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
