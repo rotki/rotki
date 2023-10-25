@@ -20,6 +20,7 @@ from rotkehlchen.api.rest import RestAPI, api_response, wrap_in_fail_result
 from rotkehlchen.api.v1.parser import ignore_kwarg_parser, resource_parser
 from rotkehlchen.api.v1.resources import (
     AaveBalancesResource,
+    AccountingLinkablePropertiesResource,
     AccountingReportDataResource,
     AccountingReportsResource,
     AccountingRulesResource,
@@ -231,6 +232,7 @@ URLS_V1: URLS = [
         'per_report_data_resource',
     ),
     ('/accounting/rules', AccountingRulesResource),
+    ('/accounting/rules/info', AccountingLinkablePropertiesResource),
     ('/queried_addresses', QueriedAddressesResource),
     ('/blockchains/supported', SupportedChainsResource),
     ('blockchains/evm/all', AllEvmChainsResource),

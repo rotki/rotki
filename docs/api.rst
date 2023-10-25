@@ -12713,3 +12713,37 @@ Managing custom accounting rules
   :statuscode 200: Entry correctly deleted.
   :statuscode 409: No user is currently logged in. Failed to validate the data. Or entry doesn't exist.
   :statuscode 500: Internal rotki error.
+
+
+Accounting rules linkable properties
+========================================
+.. http:get:: /api/(version)/accounting/rules/info
+
+   Doing a GET on this endpoint will return a mapping of the properties that can be linked for accounting rules.
+
+  **Example Request**
+
+  .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/accounting/rules/info HTTP/1.1
+      Host: localhost:5042
+
+  **Example Response**
+
+  .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+      {
+        "result": {
+            "count_entire_amount_spend":["include_gas_costs", "include_crypto2crypto"],
+            "count_cost_basis_pnl":["include_gas_costs", "include_crypto2crypto"]
+         },
+        "message": ""
+      }
+
+
+  :resjson object result: A mapping of the properties that can be linked to the list of settings configurations that can be used for that field.
+
+  :statuscode 200: All okay
+  :statuscode 500: Internal rotki error

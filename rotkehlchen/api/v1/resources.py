@@ -2985,3 +2985,9 @@ class AccountingRulesResource(BaseMethodView):
     @use_kwargs(delete_schema, location='json_and_query')
     def delete(self, identifier: int) -> Response:
         return self.rest_api.delete_accounting_rule(rule_id=identifier)
+
+
+class AccountingLinkablePropertiesResource(BaseMethodView):
+
+    def get(self) -> Response:
+        return self.rest_api.linkable_accounting_properties()
