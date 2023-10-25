@@ -33,7 +33,9 @@ const { t } = useI18n();
     <template #title>
       {{ t('profit_loss_overview.title') }}
     </template>
-    <VSimpleTable>
+    <VSimpleTable
+      class="rounded-lg border border-rui-grey-300 dark:border-rui-grey-600"
+    >
       <thead>
         <tr>
           <th class="text-left" v-text="t('common.type')" />

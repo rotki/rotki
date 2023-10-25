@@ -1,7 +1,7 @@
 <script setup lang="ts">
 const reportStore = useReportsStore();
 onUnmounted(() => {
-  reportStore.$reset();
+  reportStore.reset();
 });
 </script>
 

@@ -10,6 +10,8 @@ const { t } = useI18n();
 const toggleVisibility = () => {
   emit('visible:update', !get(visible));
 };
+
+const css = useCssModule();
 </script>
 
 <template>
@@ -19,20 +21,21 @@ const toggleVisibility = () => {
     class-name="secondary--text text--lighten-4"
     @click="toggleVisibility()"
   >
-    <VBadge color="primary" dot>
-      <VIcon class="pinned" :class="{ 'pinned--visible': visible }">
-        mdi-pin
-      </VIcon>
-    </VBadge>
+    <RuiBadge
+      color="primary"
+      dot
+      placement="top"
+      offset-y="4"
+      size="lg"
+      class="flex items-center"
+    >
+      <RuiIcon :class="{ [css.visible]: visible }" name="pushpin-line" />
+    </RuiBadge>
   </MenuTooltipButton>
 </template>
 
-<style scoped lang="scss">
-.pinned {
-  transform: rotate(20deg);
-
-  &--visible {
-    transform: rotate(45deg);
-  }
+<style module lang="scss">
+.visible {
+  transform: rotate(-25deg);
 }
 </style>

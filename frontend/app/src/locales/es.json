@@ -136,10 +136,10 @@
     "cost_basis_method": "Cost basis method:",
     "crypto2crypto": "Crypto to crypto trades were taken into account:",
     "days": "{days} days",
-    "eth_staking_taxable_after_withdrawal_enabled": "ETH staking events are omitted until withdrawals are enabled",
+    "eth_staking_taxable_after_withdrawal_enabled": "ETH staking events are omitted until withdrawals are enabled:",
     "gas_costs": "Gas costs were taken into account:",
     "past_cost_basis": "Past cost basis was calculated during the report creation:",
-    "profit_currency": "Profit Currency",
+    "profit_currency": "Profit Currency:",
     "subtitle": "These accounting setting were used during the report creation",
     "tax_free_period": "There was a tax free period:",
     "title": "Accounting Settings"

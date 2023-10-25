@@ -42,11 +42,6 @@ onMounted(async () => {
     set(initialOpenReportActionable, true);
     await router.replace({ query: {} });
   }
-
-  if (get(route).query.openReportActionable) {
-    set(initialOpenReportActionable, true);
-    await router.replace({ query: {} });
-  }
   set(loading, false);
 });
 

@@ -63,7 +63,20 @@ const generate = async (period: ProfitLossReportPeriod) => {
 
   const reportId = await generateReport(period);
 
+  const action = () => {
+    router.push({
+      path: Routes.PROFIT_LOSS_REPORT.replace(':id', reportId.toString()),
+      query: {
+        openReportActionable: 'true'
+      }
+    });
+  };
+
   if (reportId > 0) {
+    if (router.currentRoute.path === Routes.PROFIT_LOSS_REPORTS) {
+      action();
+      return;
+    }
     notify({
       title: t('profit_loss_reports.notification.title'),
       message: t('profit_loss_reports.notification.message', {
@@ -75,14 +88,7 @@ const generate = async (period: ProfitLossReportPeriod) => {
       priority: Priority.ACTION,
       action: {
         label: t('profit_loss_reports.notification.action'),
-        action: () => {
-          router.push({
-            path: Routes.PROFIT_LOSS_REPORT.replace(':id', reportId.toString()),
-            query: {
-              openReportActionable: 'true'
-            }
-          });
-        }
+        action
       }
     });
   }

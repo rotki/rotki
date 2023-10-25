@@ -11,7 +11,6 @@ import {
 } from '@/types/reports';
 import { type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
-import { type AccountingSettings } from '@/types/user';
 import { type AddressBookSimplePayload } from '@/types/eth-names';
 import { isBlockchain } from '@/types/blockchain/chains';
 
@@ -75,7 +74,6 @@ const defaultProgress = (): Progress => ({
 export const useReportsStore = defineStore('reports', () => {
   const report: Ref<SelectedReport> = ref(defaultReport());
   const reports: Ref<Reports> = ref(defaultReports());
-  const accountingSettings: Ref<AccountingSettings | null> = ref(null);
   const loaded = ref(false);
   const reportProgress: Ref<Progress> = ref(defaultProgress());
   const reportError = ref(emptyError());
@@ -334,10 +332,16 @@ export const useReportsStore = defineStore('reports', () => {
     set(report, defaultReport());
   };
 
+  const reset = () => {
+    set(reports, defaultReports());
+    clearError();
+    clearReport();
+    set(loaded, false);
+  };
+
   return {
     reports,
     report,
-    accountingSettings,
     loaded,
     progress,
     processingState,
@@ -351,7 +355,8 @@ export const useReportsStore = defineStore('reports', () => {
     fetchReports,
     clearReport,
     clearError,
-    isLatestReport
+    isLatestReport,
+    reset
   };
 });
 

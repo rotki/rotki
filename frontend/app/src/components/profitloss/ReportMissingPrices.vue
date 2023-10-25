@@ -179,10 +179,12 @@ const refreshHistoricalPrice = async (item: EditableMissingPrice) => {
       :items="formattedItems"
       :container="tableContainer"
       :dense="isPinned"
+      disable-floating-header
+      flat
     >
       <template #item="{ item }">
         <tr :key="createKey(item)">
-          <td :class="isPinned ? 'px-2' : ''">
+          <td>
             <AssetDetails link :asset="item.fromAsset" />
           </td>
           <td :class="isPinned ? 'px-2' : ''">
@@ -217,25 +219,25 @@ const refreshHistoricalPrice = async (item: EditableMissingPrice) => {
               @blur="updatePrice(item)"
             >
               <template #append>
-                <VTooltip
+                <RuiTooltip
                   v-if="item.rateLimited"
-                  bottom
-                  max-width="300"
+                  :popper="{ placement: 'top' }"
+                  open-delay="400"
+                  tooltip-class="max-w-[16rem]"
                   :disabled="refreshing"
                 >
                   <template #activator="{ on }">
-                    <VBtn
+                    <RuiButton
                       :disabled="!!item.price || refreshing"
                       :loading="refreshing"
-                      class="mr-n3"
-                      depressed
-                      height="100%"
+                      class="-mr-3 !py-[0.625rem]"
+                      size="sm"
                       color="primary"
                       v-on="on"
                       @click="refreshHistoricalPrice(item)"
                     >
-                      <RuiIcon name="refresh-line" />
-                    </VBtn>
+                      <RuiIcon size="20" name="refresh-line" />
+                    </RuiButton>
                   </template>
                   <span>
                     {{
@@ -244,7 +246,7 @@ const refreshHistoricalPrice = async (item: EditableMissingPrice) => {
                       )
                     }}
                   </span>
-                </VTooltip>
+                </RuiTooltip>
               </template>
             </AmountInput>
           </td>

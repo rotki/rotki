@@ -82,6 +82,7 @@ import {
   RiPaletteLine,
   RiPencilLine,
   RiPlayListAddLine,
+  RiPushpinLine,
   RiQuestionLine,
   RiQuestionnaireLine,
   RiRefreshLine,
@@ -105,6 +106,7 @@ import {
   RiSwapLine,
   RiTimeLine,
   RiTwitterXLine,
+  RiUnpinLine,
   RiUploadCloud2Line,
   RiUploadCloudLine,
   RiVipCrownLine,
@@ -228,6 +230,8 @@ Vue.use(RuiPlugin, {
     RiEarthLine,
     RiRepeat2Line,
     RiArrowUpDownLine,
-    RiCornerLeftUpLine
+    RiCornerLeftUpLine,
+    RiPushpinLine,
+    RiUnpinLine
   ]
 });
