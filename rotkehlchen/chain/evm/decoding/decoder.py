@@ -204,17 +204,24 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             return
 
         new_input_data_rules = self.decoders[class_name].decoding_by_input_data()
-        intersection = set(new_input_data_rules).intersection(set(rules.input_data_rules))
-        if len(intersection) != 0:
-            raise ValueError(f'Input data duplicates found in decoding rules for {intersection}')
+        new_address_to_decoders = self.decoders[class_name].addresses_to_decoders()
+        new_address_to_counterparties = self.decoders[class_name].addresses_to_counterparties()
 
-        rules.address_mappings.update(self.decoders[class_name].addresses_to_decoders())
+        if __debug__:  # sanity checks for now only in debug as decoders are constant
+            for new_struct, main_struct, type_name in (
+                    (new_input_data_rules, rules.input_data_rules, 'input_data_rules'),
+                    (new_address_to_decoders, rules.address_mappings, 'address_mappings'),
+                    (new_address_to_counterparties, rules.addresses_to_counterparties, 'address_to_counterparties'),  # noqa: E501
+            ):
+                self.assert_keys_are_unique(new_struct=new_struct, main_struct=main_struct, class_name=class_name, type_name=type_name)  # type: ignore  # not sure why it happens. Bug? # noqa: E501
+
+        rules.address_mappings.update(new_address_to_decoders)
         rules.event_rules.extend(self.decoders[class_name].decoding_rules())
         rules.input_data_rules.update(new_input_data_rules)
         rules.token_enricher_rules.extend(self.decoders[class_name].enricher_rules())
         rules.post_decoding_rules.update(self.decoders[class_name].post_decoding_rules())
         rules.all_counterparties.update(self.decoders[class_name].counterparties())
-        rules.addresses_to_counterparties.update(self.decoders[class_name].addresses_to_counterparties())
+        rules.addresses_to_counterparties.update(new_address_to_counterparties)
         self._chain_specific_decoder_initialization(self.decoders[class_name])
 
     def _recursively_initialize_decoders(
@@ -907,6 +914,14 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
     def _calculate_gas_burned(self, tx: EvmTransaction) -> FVal:
         """Calculates gas burn based on relevant chain's formula."""
         return from_wei(FVal(tx.gas_used * tx.gas_price))
+
+    if __debug__:  # for now only debug as decoders are constant
+
+        def assert_keys_are_unique(self, new_struct: dict, main_struct: dict, class_name: str, type_name: str) -> None:  # noqa: E501
+            """Asserts that some decoders keys of new rules are unique"""
+            intersection = set(new_struct).intersection(set(main_struct))
+            if len(intersection) != 0:
+                raise AssertionError(f'{type_name} duplicates found in decoding rules of {self.evm_inquirer.chain_name} {class_name}: {intersection}')  # noqa: E501
 
     # -- methods to be implemented by child classes --
 
