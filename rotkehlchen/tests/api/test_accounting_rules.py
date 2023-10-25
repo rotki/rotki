@@ -78,6 +78,20 @@ def test_manage_rules(rotkehlchen_api_server):
     assert result['entries_found'] == 1
     assert result['entries_total'] == 2
 
+    # filter by a type that is not present in the database
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'accountingrulesresource',
+        ), json={
+            'event_types': ['adjustment'],
+        },
+    )
+    result = assert_proper_response_with_result(response)
+    assert result['entries'] == []
+    assert result['entries_found'] == 0
+    assert result['entries_total'] == 2
+
     # update rule 2
     rule_2['counterparty'] = 'compound'
     rule_2['accounting_treatment'] = None
