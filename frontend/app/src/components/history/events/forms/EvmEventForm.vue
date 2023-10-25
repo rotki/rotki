@@ -9,7 +9,6 @@ import {
   type NewEvmHistoryEventPayload
 } from '@/types/history/events';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
-import { type ActionDataEntry } from '@/types/action';
 import { toMessages } from '@/utils/validation';
 import HistoryEventAssetPriceForm from '@/components/history/events/forms/HistoryEventAssetPriceForm.vue';
 import { DateFormat } from '@/types/date-format';
@@ -32,14 +31,8 @@ const { t } = useI18n();
 const { editableItem, groupHeader, nextSequence } = toRefs(props);
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-const {
-  counterparties,
-  getEventTypeData,
-  historyEventTypesData,
-  historyEventSubTypesData,
-  historyEventTypeGlobalMapping,
-  historyEventProductsMapping
-} = useHistoryEventMappings();
+const { counterparties, historyEventProductsMapping } =
+  useHistoryEventMappings();
 
 const lastLocation = useLocalStorage(
   'rotki.history_event.location',
@@ -307,18 +300,6 @@ watch(location, (location: string) => {
   }
 });
 
-const historyTypeCombination = computed(() =>
-  get(
-    getEventTypeData(
-      {
-        eventType: get(eventType),
-        eventSubtype: get(eventSubtype)
-      },
-      false
-    )
-  )
-);
-
 const checkPropsData = () => {
   const editable = get(editableItem);
   if (editable) {
@@ -337,28 +318,6 @@ watch([groupHeader, editableItem], checkPropsData);
 onMounted(() => {
   checkPropsData();
 });
-
-const historyEventSubTypeFilteredData: ComputedRef<ActionDataEntry[]> =
-  computed(() => {
-    const eventTypeVal = get(eventType);
-    const allData = get(historyEventSubTypesData);
-    const globalMapping = get(historyEventTypeGlobalMapping);
-
-    if (!eventTypeVal) {
-      return allData;
-    }
-
-    let globalMappingKeys: string[] = [];
-
-    const globalMappingFound = globalMapping[eventTypeVal];
-    if (globalMappingFound) {
-      globalMappingKeys = Object.keys(globalMappingFound);
-    }
-
-    return allData.filter((data: ActionDataEntry) =>
-      globalMappingKeys.includes(data.identifier)
-    );
-  });
 
 const historyEventLimitedProducts: ComputedRef<string[]> = computed(() => {
   const counterpartyVal = get(counterparty);
@@ -440,42 +399,11 @@ const addressSuggestions = computed(() =>
 
     <RuiDivider class="my-10" />
 
-    <div class="grid md:grid-cols-3 gap-4">
-      <VAutocomplete
-        v-model="eventType"
-        outlined
-        required
-        :label="t('transactions.events.form.event_type.label')"
-        :items="historyEventTypesData"
-        item-value="identifier"
-        item-text="label"
-        data-cy="eventType"
-        :error-messages="toMessages(v$.eventType)"
-        @blur="v$.eventType.$touch()"
-      />
-      <VAutocomplete
-        v-model="eventSubtype"
-        outlined
-        required
-        :label="t('transactions.events.form.event_subtype.label')"
-        :items="historyEventSubTypeFilteredData"
-        item-value="identifier"
-        item-text="label"
-        data-cy="eventSubtype"
-        :error-messages="toMessages(v$.eventSubtype)"
-        @blur="v$.eventSubtype.$touch()"
-      />
-
-      <div class="flex flex-col gap-1 -mt-2 md:pl-4 mb-3">
-        <div class="text-caption">
-          {{ t('transactions.events.form.resulting_combination.label') }}
-        </div>
-        <HistoryEventTypeCombination
-          :type="historyTypeCombination"
-          show-label
-        />
-      </div>
-    </div>
+    <HistoryEventTypeForm
+      :event-type.sync="eventType"
+      :event-subtype.sync="eventSubtype"
+      :v$="v$"
+    />
 
     <RuiDivider class="mb-6 mt-2" />
 
