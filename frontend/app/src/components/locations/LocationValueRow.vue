@@ -1,9 +1,7 @@
 <script setup lang="ts">
 import { type BigNumber } from '@rotki/common';
 
-const props = defineProps({
-  identifier: { required: true, type: String }
-});
+const props = defineProps<{ identifier: string }>();
 
 const { identifier } = toRefs(props);
 

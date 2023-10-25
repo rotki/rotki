@@ -1,17 +1,15 @@
 <script setup lang="ts">
 import { ThemeSwitch } from '@/premium/premium';
 
-defineProps({
-  darkModeEnabled: {
-    required: true,
-    type: Boolean
-  },
-  menu: {
-    required: false,
-    type: Boolean,
-    default: false
+withDefaults(
+  defineProps<{
+    darkModeEnabled: boolean;
+    menu?: boolean;
+  }>(),
+  {
+    menu: false
   }
-});
+);
 
 const { showComponents } = storeToRefs(usePremiumStore());
 </script>

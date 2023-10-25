@@ -1,11 +1,16 @@
 <script setup lang="ts">
 import { useListeners } from 'vue';
 
-defineProps({
-  successMessage: { required: true, type: String },
-  errorMessage: { required: true, type: String },
-  tooltip: { required: false, type: String, default: '' }
-});
+withDefaults(
+  defineProps<{
+    successMessage: string;
+    errorMessage: string;
+    tooltip?: string;
+  }>(),
+  {
+    tooltip: undefined
+  }
+);
 const rootAttrs = useAttrs();
 const rootListeners = useListeners();
 </script>

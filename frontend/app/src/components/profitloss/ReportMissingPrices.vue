@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { type BigNumber } from '@rotki/common';
-import { type PropType, type Ref } from 'vue';
+import { type Ref } from 'vue';
 import { type DataTableHeader } from '@/types/vuetify';
 import { type EditableMissingPrice, type MissingPrice } from '@/types/reports';
 import {
@@ -10,10 +10,10 @@ import {
 } from '@/types/prices';
 import { ApiValidationError } from '@/types/api/errors';
 
-const props = defineProps({
-  items: { required: true, type: Array as PropType<MissingPrice[]> },
-  isPinned: { required: true, type: Boolean, default: false }
-});
+const props = defineProps<{
+  items: MissingPrice[];
+  isPinned: boolean;
+}>();
 
 const { t } = useI18n();
 const { items } = toRefs(props);

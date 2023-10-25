@@ -4,12 +4,8 @@ import { type Collection } from '@/types/collection';
 import { type UserNote, type UserNotesFilter } from '@/types/notes';
 import UserNotesFormDialog from '@/components/notes/UserNotesFormDialog.vue';
 
-const props = defineProps({
-  location: {
-    required: false,
-    type: String,
-    default: ''
-  }
+const props = withDefaults(defineProps<{ location?: string }>(), {
+  location: ''
 });
 
 const getDefaultForm = () => ({

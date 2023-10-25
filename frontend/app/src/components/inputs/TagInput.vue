@@ -1,27 +1,18 @@
 <script setup lang="ts">
-import { type PropType } from 'vue';
 import { type Tag } from '@/types/tags';
 
-const props = defineProps({
-  value: {
-    required: true,
-    type: Array as PropType<string[]>,
-    validator: (value: any) => {
-      if (!checkIfDevelopment()) {
-        return true;
-      }
-      if (!Array.isArray(value)) {
-        return false;
-      }
-      return (value as Array<any>).every(
-        element => typeof element === 'string'
-      );
-    }
-  },
-  disabled: { required: false, type: Boolean, default: false },
-  label: { required: false, type: String, default: 'Tags' },
-  outlined: { required: false, type: Boolean, default: false }
-});
+const props = withDefaults(
+  defineProps<{
+    value: string[];
+    disabled?: boolean;
+    label?: string;
+    outlined?: boolean;
+  }>(),
+  {
+    label: 'Tags',
+    outlined: false
+  }
+);
 
 const emit = defineEmits<{
   (e: 'input', tags: string[]): void;

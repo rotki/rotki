@@ -2,11 +2,14 @@
 import { useAppRoutes } from '@/router/routes';
 import { NoteLocation } from '@/types/notes';
 
-defineProps({
-  visible: { required: true, type: Boolean }
-});
+defineProps<{
+  visible: boolean;
+}>();
 
-const emit = defineEmits(['visible:update', 'about']);
+const emit = defineEmits<{
+  (e: 'visible:update', visible: boolean): void;
+  (e: 'about'): void;
+}>();
 
 const { t } = useI18n();
 

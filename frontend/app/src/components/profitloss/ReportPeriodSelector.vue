@@ -1,24 +1,20 @@
 <script setup lang="ts">
 import dayjs from 'dayjs';
-import { type PropType } from 'vue';
 import { Quarter } from '@/types/settings/frontend-settings';
 import {
   type PeriodChangedEvent,
   type SelectionChangedEvent
 } from '@/types/reports';
 
-const props = defineProps({
-  year: {
-    type: String as PropType<string | 'custom'>,
-    default: () => new Date().getFullYear().toString()
-  },
-  quarter: {
-    required: true,
-    type: String as PropType<Quarter>,
-    default: Quarter.ALL,
-    validator: (value: any) => Object.values(Quarter).includes(value)
+const props = withDefaults(
+  defineProps<{
+    year: string | 'custom';
+    quarter: Quarter;
+  }>(),
+  {
+    year: () => new Date().getFullYear().toString()
   }
-});
+);
 
 const emit = defineEmits<{
   (e: 'update:period', period: PeriodChangedEvent | null): void;
