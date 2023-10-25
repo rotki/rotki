@@ -12,6 +12,7 @@ from rotkehlchen.db.constants import (
 )
 from rotkehlchen.db.drivers.gevent import DBCursor
 from rotkehlchen.db.filtering import AccountingRulesFilterQuery
+from rotkehlchen.db.settings import DEFAULT_INCLUDE_CRYPTO2CRYPTO, DEFAULT_INCLUDE_GAS_COSTS
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
@@ -151,14 +152,13 @@ class DBAccountingRules:
                 'DELETE FROM linked_rules_properties WHERE accounting_rule=?',
                 (identifier,),
             )
-            write_cursor.executemany(
-                'INSERT INTO linked_rules_properties(accounting_rule, property_name, '
-                'setting_name) VALUES (?, ?, ?)',
-                [
-                    (identifier, rule_property, setting_name)
-                    for rule_property, setting_name in links.items()
-                ],
-            )
+            for rule_property, setting_name in links.items():
+                self.add_linked_setting(
+                    write_cursor=write_cursor,
+                    rule_identifier=identifier,
+                    rule_property=rule_property,
+                    setting_name=setting_name,
+                )
 
     def add_linked_setting(
             self,
@@ -173,6 +173,20 @@ class DBAccountingRules:
         May raise: InputError
         """
         try:
+            # when a setting has not been modified by the user it takes a default value that is
+            # not persisted in the settings table. To avoid issues in the foreign key relations
+            # we do a insert or ignore of the default value. Another option that might be reviewed
+            # in the future would be to create a db upgrade inserting the missing settings and
+            # add the settings related to accounting for new users in the database.
+            if setting_name == 'include_crypto2crypto':
+                default_setting = DEFAULT_INCLUDE_CRYPTO2CRYPTO
+            else:
+                default_setting = DEFAULT_INCLUDE_GAS_COSTS
+            write_cursor.execute(
+                'INSERT OR IGNORE INTO settings(name, value) VALUES (?, ?)',
+                (setting_name, default_setting),
+            )
+
             write_cursor.execute(
                 'INSERT INTO linked_rules_properties(accounting_rule, property_name, '
                 'setting_name) VALUES (?, ?, ?)',
@@ -191,7 +205,10 @@ class DBAccountingRules:
         Query rules in the database using the provided filter. It returns the list of rules and
         the total amount of rules matching the filter without pagination.
         """
-        query = 'SELECT * FROM accounting_rules '
+        query = (
+            'SELECT identifier, type, subtype, counterparty, taxable, count_entire_amount_spend, '
+            'count_cost_basis_pnl, accounting_treatment FROM accounting_rules '
+        )
         filter_query_str, bindings = filter_query.prepare()
         with self.db.conn.read_ctx() as cursor:
             cursor.execute(query + filter_query_str, bindings)
@@ -208,15 +225,15 @@ class DBAccountingRules:
             query = 'SELECT COUNT(*) from accounting_rules ' + query
             total_found_result = cursor.execute(query, bindings).fetchone()[0]
 
-            # check the settings linked to the rule
+            # check the settings linked to the rule using the defined filter
             settings = self.db.get_settings(cursor)
-            cursor.execute('SELECT * FROM linked_rules_properties')
-            for (
-                _,
-                accountint_rule_id,
-                property_name,
-                setting_name,
-            ) in cursor:
+            cursor.execute(
+                'SELECT accounting_rule, property_name, setting_name FROM '
+                'linked_rules_properties WHERE accounting_rule IN (SELECT identifier FROM '
+                f'accounting_rules {filter_query_str})',
+                bindings,
+            )
+            for (accountint_rule_id, property_name, setting_name) in cursor:
                 setting_value = getattr(settings, setting_name, None)
                 if setting_value is None:
                     log.error(
