@@ -123,7 +123,7 @@ const importSnapshot = async () => {
         </span>
       </div>
 
-      <RuiDivider />
+      <RuiDivider class="my-4" />
 
       <div class="flex flex-row items-center gap-4">
         <RuiButton
@@ -137,7 +137,7 @@ const importSnapshot = async () => {
           {{ t('snapshot_action_button.force_save') }}
         </RuiButton>
 
-        <RuiTooltip>
+        <RuiTooltip open-delay="400" tooltip-class="max-w-[16rem]">
           <template #activator>
             <RuiIcon name="information-line" color="primary" />
           </template>
@@ -145,7 +145,7 @@ const importSnapshot = async () => {
         </RuiTooltip>
       </div>
 
-      <RuiTooltip class="mt-2">
+      <RuiTooltip class="mt-2" open-delay="400" tooltip-class="max-w-[16rem]">
         <template #activator>
           <RuiCheckbox v-model="ignoreErrors" color="primary" hide-details>
             {{ t('snapshot_action_button.ignore_errors_label') }}
@@ -154,7 +154,7 @@ const importSnapshot = async () => {
         {{ t('snapshot_action_button.ignore_errors_tooltip') }}
       </RuiTooltip>
 
-      <RuiDivider />
+      <RuiDivider class="mb-4" />
 
       <div>
         <div class="font-medium pb-2">

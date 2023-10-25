@@ -38,6 +38,7 @@ const css = useCssModule();
       :disabled="disabled"
       :value="value"
       gap="md"
+      class="flex-wrap justify-center"
       required
       @input="input($event)"
     >

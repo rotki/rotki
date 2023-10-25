@@ -133,10 +133,8 @@ const { dark } = useTheme();
 
 <template>
   <RuiCard class="overall-balances">
-    <div
-      class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[42%_58%] p-6 gap-4"
-    >
-      <div class="w-full flex flex-col items-center justify-center">
+    <div class="grid md:grid-cols-2 lg:grid-cols-12 p-2 gap-4">
+      <div class="lg:col-span-5 flex flex-col items-center justify-center">
         <div
           class="text-center font-medium mb-2 flex"
           data-cy="overall-balances__net-worth"
@@ -184,7 +182,7 @@ const { dark } = useTheme();
         />
       </div>
       <div
-        class="w-full flex justify-center items-center overall-balances__net-worth-chart"
+        class="lg:col-span-7 flex justify-center items-center overall-balances__net-worth-chart"
       >
         <NetWorthChart
           v-if="!isLoading"
