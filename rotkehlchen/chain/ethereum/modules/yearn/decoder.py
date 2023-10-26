@@ -142,8 +142,9 @@ class YearnDecoder(DecoderInterface):
             self._maybe_enrich_yearn_transfers,
         ]
 
-    def counterparties(self) -> list[CounterpartyDetails]:
-        return [
+    @staticmethod
+    def counterparties() -> tuple[CounterpartyDetails, ...]:
+        return (
             CounterpartyDetails(
                 identifier=CPT_YEARN_V1,
                 label=YEARN_LABEL,
@@ -154,4 +155,4 @@ class YearnDecoder(DecoderInterface):
                 label=YEARN_LABEL,
                 image=YEARN_ICON,
             ),
-        ]
+        )

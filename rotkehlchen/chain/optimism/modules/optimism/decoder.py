@@ -57,5 +57,6 @@ class OptimismDecoder(DecoderInterface):
             OPTIMISM_TOKEN: (self._decode_delegate_changed,),
         }
 
-    def counterparties(self) -> list[CounterpartyDetails]:
-        return [OPTIMISM_CPT_DETAILS]
+    @staticmethod
+    def counterparties() -> tuple[CounterpartyDetails, ...]:
+        return (OPTIMISM_CPT_DETAILS,)

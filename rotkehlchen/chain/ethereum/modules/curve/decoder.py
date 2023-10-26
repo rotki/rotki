@@ -779,5 +779,6 @@ class CurveDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin):
             self._maybe_enrich_curve_transfers,
         ]
 
-    def counterparties(self) -> list[CounterpartyDetails]:
-        return [CounterpartyDetails(identifier=CPT_CURVE, label='Curve.fi', image='curve.png')]
+    @staticmethod
+    def counterparties() -> tuple[CounterpartyDetails, ...]:
+        return (CounterpartyDetails(identifier=CPT_CURVE, label='Curve.fi', image='curve.png'),)

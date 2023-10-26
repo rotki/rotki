@@ -146,9 +146,10 @@ class PickleFinanceDecoder(DecoderInterface):
             self._maybe_enrich_pickle_transfers,
         ]
 
-    def counterparties(self) -> list[CounterpartyDetails]:
-        return [CounterpartyDetails(
+    @staticmethod
+    def counterparties() -> tuple[CounterpartyDetails, ...]:
+        return (CounterpartyDetails(
             identifier=CPT_PICKLE,
             label='Pickle Finance',
             image='pickle.svg',
-        )]
+        ),)

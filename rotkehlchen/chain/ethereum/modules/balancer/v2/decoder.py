@@ -157,9 +157,10 @@ class Balancerv2Decoder(DecoderInterface):
             self._maybe_enrich_balancer_v2_transfers,
         ]
 
-    def counterparties(self) -> list[CounterpartyDetails]:
-        return [CounterpartyDetails(
+    @staticmethod
+    def counterparties() -> tuple[CounterpartyDetails, ...]:
+        return (CounterpartyDetails(
             identifier=CPT_BALANCER_V2,
             label=BALANCER_LABEL,
             image='balancer.svg',
-        )]
+        ),)

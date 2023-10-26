@@ -270,8 +270,9 @@ class AirdropsDecoder(CowswapAirdropDecoder):
             ELFI_LOCKING: (self._decode_elfi_claim,),
         } | super().addresses_to_decoders()
 
-    def counterparties(self) -> list[CounterpartyDetails]:
-        return [
+    @staticmethod
+    def counterparties() -> tuple[CounterpartyDetails, ...]:
+        return (
             CounterpartyDetails(
                 identifier=CPT_BADGER,
                 label='Badger',
@@ -304,4 +305,4 @@ class AirdropsDecoder(CowswapAirdropDecoder):
                 image='element_finance.png',
             ),
             COWSWAP_CPT_DETAILS,
-        ]
+        )

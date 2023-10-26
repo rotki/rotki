@@ -178,5 +178,6 @@ class ArbitrumOneBridgeDecoder(DecoderInterface):
             BRIDGE_ADDRESS_MAINNET: (self._decode_asset_deposit_withdraw,),
         }
 
-    def counterparties(self) -> list[CounterpartyDetails]:
-        return [ARBITRUM_ONE_CPT_DETAILS]
+    @staticmethod
+    def counterparties() -> tuple[CounterpartyDetails, ...]:
+        return (ARBITRUM_ONE_CPT_DETAILS,)

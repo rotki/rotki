@@ -88,9 +88,10 @@ class Uniswapv1Decoder(DecoderInterface):
             self._maybe_decode_swap,
         ]
 
-    def counterparties(self) -> list[CounterpartyDetails]:
-        return [CounterpartyDetails(
+    @staticmethod
+    def counterparties() -> tuple[CounterpartyDetails, ...]:
+        return (CounterpartyDetails(
             identifier=CPT_UNISWAP_V1,
             label=UNISWAP_LABEL,
             image=UNISWAP_ICON,
-        )]
+        ),)

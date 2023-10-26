@@ -144,5 +144,6 @@ class XdaiBridgeCommonDecoder(DecoderInterface, metaclass=abc.ABCMeta):
             self.bridge_address: (self._decode_bridged_asset,),
         }
 
-    def counterparties(self) -> list[CounterpartyDetails]:
-        return [GNOSIS_CPT_DETAILS]
+    @staticmethod
+    def counterparties() -> tuple[CounterpartyDetails, ...]:
+        return (GNOSIS_CPT_DETAILS,)

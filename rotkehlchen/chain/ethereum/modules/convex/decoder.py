@@ -205,8 +205,9 @@ class ConvexDecoder(DecoderInterface):
         decoder_mappings.update(virtual_rewards)
         return decoder_mappings
 
-    def counterparties(self) -> list[CounterpartyDetails]:
-        return [CONVEX_CPT_DETAILS]
+    @staticmethod
+    def counterparties() -> tuple[CounterpartyDetails, ...]:
+        return (CONVEX_CPT_DETAILS,)
 
     def enricher_rules(self) -> list[Callable]:
         return [self._maybe_enrich_convex_transfers]

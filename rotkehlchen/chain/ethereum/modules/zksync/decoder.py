@@ -74,5 +74,6 @@ class ZksyncDecoder(DecoderInterface):
             ZKSYNC_BRIDGE: (self._decode_event,),
         }
 
-    def counterparties(self) -> list[CounterpartyDetails]:
-        return [CounterpartyDetails(identifier=CPT_ZKSYNC, label='zkSync', image='zksync.jpg')]
+    @staticmethod
+    def counterparties() -> tuple[CounterpartyDetails, ...]:
+        return (CounterpartyDetails(identifier=CPT_ZKSYNC, label='zkSync', image='zksync.jpg'),)

@@ -72,9 +72,10 @@ class StakedaoDecoder(DecoderInterface):
             STAKEDAO_CLAIMER2: (self._decode_events,),
         }
 
-    def counterparties(self) -> list[CounterpartyDetails]:
-        return [CounterpartyDetails(
+    @staticmethod
+    def counterparties() -> tuple[CounterpartyDetails, ...]:
+        return (CounterpartyDetails(
             identifier=CPT_STAKEDAO,
             label='Stakedao',
             image='stakedao.png',
-        )]
+        ),)

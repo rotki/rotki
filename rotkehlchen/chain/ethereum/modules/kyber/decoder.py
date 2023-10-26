@@ -143,5 +143,6 @@ class KyberDecoder(DecoderInterface):
             KYBER_LEGACY_CONTRACT_UPGRADED: (self._decode_legacy_upgraded_trade,),
         }
 
-    def counterparties(self) -> list[CounterpartyDetails]:
-        return [CounterpartyDetails(identifier=CPT_KYBER, label='Kyber Legacy', image='kyber.svg')]
+    @staticmethod
+    def counterparties() -> tuple[CounterpartyDetails, ...]:
+        return (CounterpartyDetails(identifier=CPT_KYBER, label='Kyber Legacy', image='kyber.svg'),)  # noqa: E501

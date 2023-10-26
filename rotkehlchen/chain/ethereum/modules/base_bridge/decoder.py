@@ -150,5 +150,6 @@ class BaseBridgeDecoder(DecoderInterface):
             TOKEN_PORTAL: (self._decode_bridge_tokens,),
         }
 
-    def counterparties(self) -> list[CounterpartyDetails]:
-        return [BASE_CPT_DETAILS]
+    @staticmethod
+    def counterparties() -> tuple[CounterpartyDetails, ...]:
+        return (BASE_CPT_DETAILS,)

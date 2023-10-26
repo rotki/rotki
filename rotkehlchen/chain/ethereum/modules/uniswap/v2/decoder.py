@@ -159,9 +159,10 @@ class Uniswapv2Decoder(DecoderInterface):
             self._maybe_enrich_lp_tokens_transfers,
         ]
 
-    def counterparties(self) -> list[CounterpartyDetails]:
-        return [CounterpartyDetails(
+    @staticmethod
+    def counterparties() -> tuple[CounterpartyDetails, ...]:
+        return (CounterpartyDetails(
             identifier=CPT_UNISWAP_V2,
             label=UNISWAP_LABEL,
             image=UNISWAP_ICON,
-        )]
+        ),)

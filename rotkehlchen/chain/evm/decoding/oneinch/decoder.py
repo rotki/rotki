@@ -83,6 +83,14 @@ class OneinchCommonDecoder(DecoderInterface, metaclass=ABCMeta):
         )
         return DEFAULT_DECODING_OUTPUT
 
+    @staticmethod
+    def generate_counterparty_details(counterparty: str) -> tuple[CounterpartyDetails, ...]:
+        return (CounterpartyDetails(
+            identifier=counterparty,
+            label=ONEINCH_LABEL,
+            image=ONEINCH_ICON,
+        ),)
+
     @abstractmethod
     def _decode_swapped(self, context: DecoderContext) -> DecodingOutput:
         """Decode the swapped log for the particular 1inch version"""
@@ -99,10 +107,3 @@ class OneinchCommonDecoder(DecoderInterface, metaclass=ABCMeta):
         return {
             self.router_address: (self.decode_action,),
         }
-
-    def counterparties(self) -> list[CounterpartyDetails]:
-        return [CounterpartyDetails(
-            identifier=self.counterparty,
-            label=ONEINCH_LABEL,
-            image=ONEINCH_ICON,
-        )]

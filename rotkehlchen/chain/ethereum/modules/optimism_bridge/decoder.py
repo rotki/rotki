@@ -126,5 +126,6 @@ class OptimismBridgeDecoder(DecoderInterface):
             OPTIMISM_PORTAL_ADDRESS: (self._decode_prove_withdrawal,),
         }
 
-    def counterparties(self) -> list[CounterpartyDetails]:
-        return [OPTIMISM_CPT_DETAILS]
+    @staticmethod
+    def counterparties() -> tuple[CounterpartyDetails, ...]:
+        return (OPTIMISM_CPT_DETAILS,)

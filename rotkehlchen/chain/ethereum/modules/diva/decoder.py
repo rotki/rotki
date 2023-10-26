@@ -109,5 +109,6 @@ class DivaDecoder(GovernableDecoderInterface):
             DIVA_AIDROP_CONTRACT: (self._decode_diva_claim,),
         }
 
-    def counterparties(self) -> list[CounterpartyDetails]:
-        return [CounterpartyDetails(identifier=CPT_DIVA, label='Diva', image='diva.svg')]
+    @staticmethod
+    def counterparties() -> tuple[CounterpartyDetails, ...]:
+        return (CounterpartyDetails(identifier=CPT_DIVA, label='Diva', image='diva.svg'),)

@@ -113,9 +113,10 @@ class LockedgnoDecoder(DecoderInterface):
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {LOCKED_GNO_ADDRESS: (self._decode_events,)}
 
-    def counterparties(self) -> list[CounterpartyDetails]:
-        return [CounterpartyDetails(
+    @staticmethod
+    def counterparties() -> tuple[CounterpartyDetails, ...]:
+        return (CounterpartyDetails(
             identifier=CPT_LOCKEDGNO,
             label='Locked GNO',
             image='gnosis.svg',
-        )]
+        ),)

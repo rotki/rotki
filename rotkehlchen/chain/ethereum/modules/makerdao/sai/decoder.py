@@ -498,9 +498,10 @@ class MakerdaosaiDecoder(DecoderInterface):
             self._maybe_enrich_sai_tub_transfers,
         ]
 
-    def counterparties(self) -> list[CounterpartyDetails]:
-        return [CounterpartyDetails(
+    @staticmethod
+    def counterparties() -> tuple[CounterpartyDetails, ...]:
+        return (CounterpartyDetails(
             identifier=CPT_SAI,
             label=MAKERDAO_LABEL,
             image=MAKERDAO_ICON,
-        )]
+        ),)

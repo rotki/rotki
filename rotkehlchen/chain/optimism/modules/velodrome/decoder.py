@@ -256,5 +256,6 @@ class VelodromeDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin):
             CPT_VELODROME: [EvmProduct.POOL, EvmProduct.GAUGE],
         }
 
-    def counterparties(self) -> list['CounterpartyDetails']:
-        return [CounterpartyDetails(identifier=CPT_VELODROME, label='velodrome_finance', image='velodrome.svg')]  # noqa: E501
+    @staticmethod
+    def counterparties() -> tuple[CounterpartyDetails, ...]:
+        return (CounterpartyDetails(identifier=CPT_VELODROME, label='velodrome_finance', image='velodrome.svg'),)  # noqa: E501

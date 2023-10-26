@@ -367,9 +367,10 @@ class CompoundDecoder(DecoderInterface):
         mapping[COMPTROLLER_PROXY_ADDRESS] = (self.decode_comp_claim,)
         return mapping
 
-    def counterparties(self) -> list[CounterpartyDetails]:
-        return [CounterpartyDetails(
+    @staticmethod
+    def counterparties() -> tuple[CounterpartyDetails, ...]:
+        return (CounterpartyDetails(
             identifier=CPT_COMPOUND,
             label='Compound',
             image='compound.svg',
-        )]
+        ),)
