@@ -1,4 +1,5 @@
 import base64
+import json
 from contextlib import ExitStack
 from typing import Optional
 from unittest.mock import patch
@@ -10,6 +11,7 @@ from rotkehlchen.chain.evm.node_inquirer import _connect_task_prefix
 from rotkehlchen.constants.misc import DEFAULT_MAX_LOG_SIZE_IN_MB
 from rotkehlchen.data_migrations.constants import LAST_DATA_MIGRATION
 from rotkehlchen.db.settings import DBSettings, ModifiableDBSettings
+from rotkehlchen.db.updates import RotkiDataUpdater
 from rotkehlchen.exchanges.constants import EXCHANGES_WITH_PASSPHRASE
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.inquirer import Inquirer
@@ -38,7 +40,7 @@ from rotkehlchen.tests.utils.history import maybe_mock_historical_price_queries
 from rotkehlchen.tests.utils.inquirer import inquirer_inject_ethereum_set_order
 from rotkehlchen.tests.utils.mock import mock_proxies, patch_avalanche_request
 from rotkehlchen.tests.utils.substrate import wait_until_all_substrate_nodes_connected
-from rotkehlchen.types import AVAILABLE_MODULES_MAP, Location, SupportedBlockchain
+from rotkehlchen.types import AVAILABLE_MODULES_MAP, Location, SupportedBlockchain, Timestamp
 
 
 @pytest.fixture(name='max_tasks_num')
@@ -267,6 +269,8 @@ def initialize_mock_rotkehlchen_instance(
         network_mocking,
         have_decoders,
         add_accounts_to_db,
+        latest_accounting_rules,
+        initialize_accounting_rules,
 ) -> None:
     if not start_with_logged_in_user:
         return
@@ -392,6 +396,30 @@ def initialize_mock_rotkehlchen_instance(
             substrate_manager=rotki.chains_aggregator.kusama,
         )
 
+    if initialize_accounting_rules:
+        # add information for accounting rules
+        accountant = rotki.accountant
+        data_updater = RotkiDataUpdater(
+            msg_aggregator=rotki.msg_aggregator,
+            user_db=rotki.data.db,
+        )
+
+        with open(latest_accounting_rules, encoding='utf-8') as f:
+            data_updater.update_accounting_rules(
+                data=json.loads(f.read())['accounting_rules'],
+                version=999999,  # only for logs
+            )
+        with accountant.db.conn.read_ctx() as cursor:
+            db_settings = accountant.db.get_settings(cursor)
+
+        for pot in accountant.pots:
+            pot.reset(
+                settings=db_settings,
+                start_ts=Timestamp(0),
+                end_ts=Timestamp(0),
+                report_id=1,
+            )
+
 
 @pytest.fixture(name='uninitialized_rotkehlchen')
 def fixture_uninitialized_rotkehlchen(cli_args, inquirer, asset_resolver, globaldb) -> Rotkehlchen:  # pylint: disable=unused-argument
@@ -456,6 +484,8 @@ def fixture_rotkehlchen_api_server(
         mocked_proxies,
         have_decoders,
         add_accounts_to_db,
+        latest_accounting_rules,
+        initialize_accounting_rules,
 ):
     """A partially mocked rotkehlchen server instance"""
 
@@ -499,6 +529,8 @@ def fixture_rotkehlchen_api_server(
         network_mocking=network_mocking,
         have_decoders=have_decoders,
         add_accounts_to_db=add_accounts_to_db,
+        latest_accounting_rules=latest_accounting_rules,
+        initialize_accounting_rules=initialize_accounting_rules,
     )
     with ExitStack() as stack:
         if start_with_logged_in_user is True:
@@ -567,6 +599,8 @@ def rotkehlchen_instance(
         network_mocking,
         have_decoders,
         add_accounts_to_db,
+        latest_accounting_rules,
+        initialize_accounting_rules,
 ) -> Rotkehlchen:
     """A partially mocked rotkehlchen instance"""
 
@@ -605,6 +639,8 @@ def rotkehlchen_instance(
         network_mocking=network_mocking,
         have_decoders=have_decoders,
         add_accounts_to_db=add_accounts_to_db,
+        latest_accounting_rules=latest_accounting_rules,
+        initialize_accounting_rules=initialize_accounting_rules,
     )
     return uninitialized_rotkehlchen
 

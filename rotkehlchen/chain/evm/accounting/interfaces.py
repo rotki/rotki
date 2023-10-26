@@ -11,10 +11,9 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 if TYPE_CHECKING:
     from rotkehlchen.accounting.pot import AccountingPot
     from rotkehlchen.accounting.structures.evm_event import EvmEvent
+    from rotkehlchen.chain.evm.accounting.structures import EventsAccountantCallback
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.user_messages import MessagesAggregator
-
-    from .structures import TxEventSettings
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -38,9 +37,10 @@ class ModuleAccountantInterface(metaclass=ABCMeta):
         self.reset()
 
     @abstractmethod
-    def event_settings(self, pot: 'AccountingPot') -> dict[int, 'TxEventSettings']:
+    def event_callbacks(self) -> dict[int, 'EventsAccountantCallback']:
         """
-        Subclasses implement this to specify rules/settings for their created events
+        Subclasses implement this to specify callbacks that should be executed for combinations of
+        type, subtype and counterparty
         """
 
     def reset(self) -> None:

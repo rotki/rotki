@@ -9,7 +9,6 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.processed_event import ProcessedAccountingEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.chain.ethereum.modules.cowswap.accountant import CowswapAccountant
 from rotkehlchen.chain.evm.decoding.cowswap.constants import CPT_COWSWAP
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_USDC, A_WBTC
@@ -19,7 +18,6 @@ from rotkehlchen.types import Location, Price, Timestamp, TimestampMS
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.accountant import Accountant
-    from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
 
 TIMESTAMP_1_MS = TimestampMS(1000)
 TIMESTAMP_1_SEC = Timestamp(1)
@@ -39,7 +37,8 @@ MOCKED_PRICES = {
 
 
 @pytest.mark.parametrize('mocked_price_queries', [MOCKED_PRICES])
-def test_cowswap_swap_with_fee(accountant: 'Accountant', ethereum_inquirer: 'EvmNodeInquirer'):
+@pytest.mark.parametrize('accounting_initialize_parameters', [True])
+def test_cowswap_swap_with_fee(accountant: 'Accountant'):
     """Test that the fee in cowswap is handled correctly during accounting"""
     tx_hash = make_evm_tx_hash()
     user_address = make_evm_address()
@@ -88,13 +87,6 @@ def test_cowswap_swap_with_fee(accountant: 'Accountant', ethereum_inquirer: 'Evm
         address=contract_address,
     )]
     pot = accountant.pots[0]
-    events_accountant = pot.events_accountant
-    cowswap_accountant = CowswapAccountant(
-        node_inquirer=ethereum_inquirer,
-        msg_aggregator=ethereum_inquirer.database.msg_aggregator,
-    )
-    settings = cowswap_accountant.event_settings(pot)
-    events_accountant.rules_manager.event_settings.update(settings)
     events_iterator = iter(events)
     for event in events_iterator:
         pot.events_accountant.process(event=event, events_iterator=events_iterator)

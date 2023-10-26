@@ -6,7 +6,7 @@ from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.structures.base import get_event_type_identifier
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.evm.accounting.interfaces import ModuleAccountantInterface
-from rotkehlchen.chain.evm.accounting.structures import TxEventSettings
+from rotkehlchen.chain.evm.accounting.structures import EventsAccountantCallback
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.fval import FVal
@@ -96,31 +96,11 @@ class Aavev2Accountant(ModuleAccountantInterface):
             )
             self.assets_supplied[key] = ZERO
 
-    def event_settings(self, pot: 'AccountingPot') -> dict[int, TxEventSettings]:  # pylint: disable=unused-argument
+    def event_callbacks(self) -> dict[int, EventsAccountantCallback]:
         """Being defined at function call time is fine since this function is called only once"""
         return {
-            get_event_type_identifier(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET, CPT_AAVE_V2): TxEventSettings(  # noqa: E501
-                taxable=False,
-                count_entire_amount_spend=False,
-                count_cost_basis_pnl=False,
-                accountant_cb=self._process_deposit,
-            ),
-            get_event_type_identifier(HistoryEventType.WITHDRAWAL, HistoryEventSubType.REMOVE_ASSET, CPT_AAVE_V2): TxEventSettings(  # noqa: E501
-                taxable=False,
-                count_entire_amount_spend=False,
-                count_cost_basis_pnl=False,
-                accountant_cb=self._process_withdraw,
-            ),
-            get_event_type_identifier(HistoryEventType.RECEIVE, HistoryEventSubType.GENERATE_DEBT, CPT_AAVE_V2): TxEventSettings(  # noqa: E501
-                taxable=False,
-                count_entire_amount_spend=False,
-                count_cost_basis_pnl=False,
-                accountant_cb=self._process_borrow,
-            ),
-            get_event_type_identifier(HistoryEventType.SPEND, HistoryEventSubType.PAYBACK_DEBT, CPT_AAVE_V2): TxEventSettings(  # noqa: E501
-                taxable=False,
-                count_entire_amount_spend=False,
-                count_cost_basis_pnl=False,
-                accountant_cb=self._process_payback,
-            ),
+            get_event_type_identifier(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET, CPT_AAVE_V2): self._process_deposit,  # noqa: E501
+            get_event_type_identifier(HistoryEventType.WITHDRAWAL, HistoryEventSubType.REMOVE_ASSET, CPT_AAVE_V2): self._process_withdraw,  # noqa: E501
+            get_event_type_identifier(HistoryEventType.RECEIVE, HistoryEventSubType.GENERATE_DEBT, CPT_AAVE_V2): self._process_borrow,  # noqa: E501
+            get_event_type_identifier(HistoryEventType.SPEND, HistoryEventSubType.PAYBACK_DEBT, CPT_AAVE_V2): self._process_payback,  # noqa: E501
         }

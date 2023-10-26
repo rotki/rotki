@@ -15,7 +15,6 @@ from rotkehlchen.accounting.structures.processed_event import ProcessedAccountin
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.modules.aave.constants import CPT_AAVE_V2
-from rotkehlchen.chain.ethereum.modules.aave.v2.accountant import Aavev2Accountant
 from rotkehlchen.constants.assets import A_DAI, A_REN
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.fval import FVal
@@ -25,7 +24,6 @@ from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.accountant import Accountant
-    from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
 
 TS1, TS2 = Timestamp(1), Timestamp(2)
 TSMS1, TSMS2 = ts_sec_to_ms(TS1), ts_sec_to_ms(TS2)
@@ -34,15 +32,9 @@ HASH1, HASH2 = make_evm_tx_hash(), make_evm_tx_hash()
 
 
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
-def test_v2_withdraw(accountant: 'Accountant', ethereum_inquirer: 'EvmNodeInquirer'):
+@pytest.mark.parametrize('accounting_initialize_parameters', [True])
+def test_v2_withdraw(accountant: 'Accountant'):
     pot = accountant.pots[0]
-    events_accountant = pot.events_accountant
-    aave_accountant = Aavev2Accountant(
-        node_inquirer=ethereum_inquirer,
-        msg_aggregator=ethereum_inquirer.database.msg_aggregator,
-    )
-    aave_settings = aave_accountant.event_settings(pot)
-    events_accountant.rules_manager.event_settings.update(aave_settings)
     events_iterator = iter([EvmEvent(
         tx_hash=HASH1,
         sequence_index=0,
@@ -142,15 +134,9 @@ def test_v2_withdraw(accountant: 'Accountant', ethereum_inquirer: 'EvmNodeInquir
 
 
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
-def test_v2_payback(accountant: 'Accountant', ethereum_inquirer: 'EvmNodeInquirer'):
+@pytest.mark.parametrize('accounting_initialize_parameters', [True])
+def test_v2_payback(accountant: 'Accountant'):
     pot = accountant.pots[0]
-    events_accountant = pot.events_accountant
-    aave_accountant = Aavev2Accountant(
-        node_inquirer=ethereum_inquirer,
-        msg_aggregator=ethereum_inquirer.database.msg_aggregator,
-    )
-    aave_settings = aave_accountant.event_settings(pot)
-    events_accountant.rules_manager.event_settings.update(aave_settings)
     events_iterator = iter([EvmEvent(
         tx_hash=HASH1,
         sequence_index=0,

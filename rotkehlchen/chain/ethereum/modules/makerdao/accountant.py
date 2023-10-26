@@ -6,13 +6,13 @@ from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.structures.base import get_event_type_identifier
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.evm.accounting.interfaces import ModuleAccountantInterface
-from rotkehlchen.chain.evm.accounting.structures import TxAccountingTreatment, TxEventSettings
+from rotkehlchen.chain.evm.accounting.structures import EventsAccountantCallback
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_DAI
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import ChecksumEvmAddress
 
-from .constants import CPT_DSR, CPT_MAKERDAO_MIGRATION, CPT_VAULT
+from .constants import CPT_DSR, CPT_VAULT
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.pot import AccountingPot
@@ -87,48 +87,12 @@ class MakerdaoAccountant(ModuleAccountantInterface):
             )
             self.dsr_balances[address] = ZERO
 
-    def event_settings(self, pot: 'AccountingPot') -> dict[int, TxEventSettings]:  # pylint: disable=unused-argument
+    def event_callbacks(self) -> dict[int, EventsAccountantCallback]:
         """Being defined at function call time is fine since this function is called only once"""
         # TODO: How can we count here loss from debt and gain from DSR? We need to keep state
         return {  # vault collateral deposit
-            get_event_type_identifier(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET, CPT_VAULT): TxEventSettings(  # noqa: E501
-                taxable=False,
-                count_entire_amount_spend=False,
-                count_cost_basis_pnl=False,
-            ),  # vault collateral withdraw
-            get_event_type_identifier(HistoryEventType.WITHDRAWAL, HistoryEventSubType.REMOVE_ASSET, CPT_VAULT): TxEventSettings(  # noqa: E501
-                taxable=False,
-                count_entire_amount_spend=False,
-                count_cost_basis_pnl=False,
-            ),  # payback DAI to vault
-            get_event_type_identifier(HistoryEventType.SPEND, HistoryEventSubType.PAYBACK_DEBT, CPT_VAULT): TxEventSettings(  # noqa: E501
-                taxable=False,
-                count_entire_amount_spend=False,
-                count_cost_basis_pnl=False,
-                accountant_cb=self._process_vault_dai_payback,
-            ),  # generate DAI from vault
-            get_event_type_identifier(HistoryEventType.WITHDRAWAL, HistoryEventSubType.GENERATE_DEBT, CPT_VAULT): TxEventSettings(  # noqa: E501
-                taxable=False,
-                count_entire_amount_spend=False,
-                count_cost_basis_pnl=False,
-                accountant_cb=self._process_vault_dai_generation,
-            ),  # Deposit DAI in the DSR
-            get_event_type_identifier(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET, CPT_DSR): TxEventSettings(  # noqa: E501
-                taxable=False,
-                count_entire_amount_spend=False,
-                count_cost_basis_pnl=False,
-                accountant_cb=self._process_dsr_deposit,
-            ),  # Withdraw DAI from the DSR
-            get_event_type_identifier(HistoryEventType.WITHDRAWAL, HistoryEventSubType.REMOVE_ASSET, CPT_DSR): TxEventSettings(  # noqa: E501
-                taxable=False,
-                count_entire_amount_spend=False,
-                count_cost_basis_pnl=False,
-                accountant_cb=self._process_dsr_withdraw,
-            ),  # Migrate SAI to DAI
-            get_event_type_identifier(HistoryEventType.MIGRATE, HistoryEventSubType.SPEND, CPT_MAKERDAO_MIGRATION): TxEventSettings(  # noqa: E501
-                taxable=False,
-                count_entire_amount_spend=False,
-                count_cost_basis_pnl=False,
-                accounting_treatment=TxAccountingTreatment.SWAP,
-            ),
+            get_event_type_identifier(HistoryEventType.SPEND, HistoryEventSubType.PAYBACK_DEBT, CPT_VAULT): self._process_vault_dai_payback,  # generate DAI from vault  # noqa: E501
+            get_event_type_identifier(HistoryEventType.WITHDRAWAL, HistoryEventSubType.GENERATE_DEBT, CPT_VAULT): self._process_vault_dai_generation,  # Deposit DAI in the DSR  # noqa: E501
+            get_event_type_identifier(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET, CPT_DSR): self._process_dsr_deposit,  # Withdraw DAI from the DSR  # noqa: E501
+            get_event_type_identifier(HistoryEventType.WITHDRAWAL, HistoryEventSubType.REMOVE_ASSET, CPT_DSR): self._process_dsr_withdraw,  # Migrate SAI to DAI  # noqa: E501
         }

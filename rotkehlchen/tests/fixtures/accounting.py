@@ -1,3 +1,4 @@
+import json
 import os
 import shutil
 import sys
@@ -6,10 +7,12 @@ from pathlib import Path
 from typing import Optional
 
 import pytest
+import requests
 
 from rotkehlchen.accounting.accountant import Accountant
 from rotkehlchen.config import default_data_directory
 from rotkehlchen.constants import ONE
+from rotkehlchen.db.updates import RotkiDataUpdater
 from rotkehlchen.externalapis.coingecko import Coingecko
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.externalapis.defillama import Defillama
@@ -95,6 +98,43 @@ def fixture_accounting_initialize_parameters():
     return False
 
 
+@pytest.fixture(name='initialize_accounting_rules')
+def fixture_initialize_accounting_rules() -> bool:
+    """
+    If set to False then the fixtures that build the accountant from scratch won't load the
+    accounting rules to the database. It is the case for the rotkehlchen_api_server and its
+    variants.
+    """
+    return True
+
+
+@pytest.fixture(name='last_accounting_rules_version', scope='session')
+def fixture_last_accounting_rules_version() -> int:
+    return 1
+
+
+@pytest.fixture(name='latest_accounting_rules', autouse=True, scope='session')
+def fixture_download_rules(last_accounting_rules_version) -> Path:
+    """
+    Returns the path to the file containing the accounting rules as the RotkiDataUpdater ingest
+    them. If the file doesn't exist it is downloaded from github using the version in
+    `last_accounting_rules_version` otherwise we just return the local path.
+    """
+    root_dir = default_data_directory().parent / 'test-caching'
+    base_dir = root_dir / 'accounting_rules'
+    rules_file = Path(base_dir / f'v{last_accounting_rules_version}.json')
+
+    if rules_file.exists():
+        return rules_file
+
+    response = requests.get(f'https://raw.githubusercontent.com/rotki/data/develop/updates/accounting_rules/v{last_accounting_rules_version}.json')
+    rules_file.parent.mkdir(exist_ok=True, parents=True)
+    with open(rules_file, 'w', encoding='utf-8') as f:
+        f.write(response.text)
+
+    return rules_file
+
+
 @pytest.fixture(name='accountant')
 def fixture_accountant(
         price_historian,  # pylint: disable=unused-argument
@@ -106,6 +146,7 @@ def fixture_accountant(
         start_with_valid_premium,
         rotki_premium_credentials,
         username,
+        latest_accounting_rules,
 ) -> Optional[Accountant]:
     if not start_with_logged_in_user:
         return None
@@ -113,6 +154,17 @@ def fixture_accountant(
     premium = None
     if start_with_valid_premium:
         premium = Premium(credentials=rotki_premium_credentials, username=username)
+
+    # add accounting rules to the database
+    data_updater = RotkiDataUpdater(
+        msg_aggregator=function_scope_messages_aggregator,
+        user_db=database,
+    )
+    with open(latest_accounting_rules, encoding='utf-8') as f:
+        data_updater.update_accounting_rules(
+            data=json.loads(f.read())['accounting_rules'],
+            version=999999,  # only for logs
+        )
 
     accountant = Accountant(
         db=database,

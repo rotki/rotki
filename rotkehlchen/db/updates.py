@@ -92,7 +92,7 @@ class RotkiDataUpdater:
                     log.warning(f'Not updating {update_type.value} to {update_version=} due to {max_version=}')  # noqa: E501
                     continue  # probably can never apply this update. Check next one
 
-            file_url = f'https://raw.githubusercontent.com/yabirgb/data/add-accounting-rules/updates/{update_type.value}/v{update_version}.json'
+            file_url = f'https://raw.githubusercontent.com/rotki/data/{self.branch}/updates/{update_type.value}/v{update_version}.json'
             try:
                 updates = query_file(file_url, True)
             except RemoteError as e:

@@ -14,6 +14,7 @@ from rotkehlchen.tests.utils.api import (
 
 
 @pytest.mark.parametrize('db_settings', [{'include_crypto2crypto': False}])
+@pytest.mark.parametrize('initialize_accounting_rules', [False])
 def test_manage_rules(rotkehlchen_api_server, db_settings):
     """Test basic operations in the endpoint for managing accounting rules"""
     rule_1 = {

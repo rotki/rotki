@@ -11,10 +11,9 @@ from rotkehlchen.errors.misc import ModuleLoadingError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.user_messages import MessagesAggregator
 
-from .structures import TxEventSettings
+from .structures import EventsAccountantCallback
 
 if TYPE_CHECKING:
-    from rotkehlchen.accounting.pot import AccountingPot
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
 
     from .interfaces import ModuleAccountantInterface
@@ -87,14 +86,11 @@ class EVMAccountingAggregator:
         """Recursively check all submodules to get all accountants and initialize them"""
         self._recursively_initialize_accountants(self.modules_path)
 
-    def get_accounting_settings(self, pot: 'AccountingPot') -> dict[int, TxEventSettings]:
-        """Iterate through loaded accountants and get accounting settings for each event type
-
-        This does not contain the default built-in settings.
-        """
+    def get_accounting_callbacks(self) -> dict[int, EventsAccountantCallback]:
+        """Iterate through loaded accountants and get accounting callbacks for each event type"""
         result = {}
         for accountant in self.accountants.values():
-            result.update(accountant.event_settings(pot))
+            result.update(accountant.event_callbacks())
 
         return result
 
@@ -112,15 +108,11 @@ class EVMAccountingAggregators:
     def __init__(self, aggregators: list[EVMAccountingAggregator]) -> None:
         self.aggregators = aggregators
 
-    def get_accounting_settings(self, pot: 'AccountingPot') -> dict[int, TxEventSettings]:
-        """
-        Iterate through loaded accountants and get accounting settings for each event type
-
-        This also contains the default built-in settings.
-        """
+    def get_accounting_callbacks(self) -> dict[int, EventsAccountantCallback]:
+        """Iterate through loaded accountants and get accounting callbacks for each event type"""
         result = {}
         for aggregator in self.aggregators:
-            result.update(aggregator.get_accounting_settings(pot))
+            result.update(aggregator.get_accounting_callbacks())
 
         return result
 

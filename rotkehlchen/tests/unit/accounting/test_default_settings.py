@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING, Any, Literal, Optional, Union
 
 import pytest
+from rotkehlchen.accounting.accountant import Accountant
 
 from rotkehlchen.accounting.cost_basis.base import (
     AssetAcquisitionEvent,
@@ -66,7 +67,11 @@ def fixture_include_crypto2crypto():
 
 
 @pytest.fixture(name='accounting_pot')
-def fixture_accounting_pot(accountant, gas_taxable, include_crypto2crypto):
+def fixture_accounting_pot(
+        accountant: Accountant,
+        gas_taxable: bool,
+        include_crypto2crypto: bool,
+):
     pot = accountant.pots[0]
     with pot.database.user_write() as write_cursor:
         pot.database.set_settings(

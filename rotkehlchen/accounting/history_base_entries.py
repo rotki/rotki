@@ -7,11 +7,7 @@ from rotkehlchen.accounting.rules import AccountingRulesManager
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import EventDirection
-from rotkehlchen.chain.evm.accounting.structures import (
-    BaseEventSettings,
-    TxAccountingTreatment,
-    TxEventSettings,
-)
+from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings, TxAccountingTreatment
 from rotkehlchen.constants import ONE
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Price, Timestamp
@@ -87,7 +83,7 @@ class EventsAccountant:
             return 1
 
         timestamp = event.get_timestamp_in_sec()
-        event_settings = self.rules_manager.get_event_settings(event)
+        event_settings, event_callback = self.rules_manager.get_event_settings(event)
         if event_settings is None:
             log.debug(
                 f'During transaction accounting found history base entry {event} '
@@ -96,12 +92,8 @@ class EventsAccountant:
             return 1
 
         # if there is any module specific accountant functionality call it
-        if (
-            isinstance(event, EvmEvent) and
-            isinstance(event_settings, TxEventSettings) and
-            event_settings.accountant_cb is not None
-        ):
-            event_settings.accountant_cb(
+        if isinstance(event, EvmEvent) and event_callback is not None:
+            event_callback(
                 pot=self.pot,
                 event=event,
                 other_events=history_base_entries_iterator(events_iterator, event),

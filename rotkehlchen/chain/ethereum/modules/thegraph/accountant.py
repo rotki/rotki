@@ -7,7 +7,7 @@ from rotkehlchen.accounting.structures.base import get_event_type_identifier
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.modules.thegraph.constants import CPT_THEGRAPH
 from rotkehlchen.chain.evm.accounting.interfaces import ModuleAccountantInterface
-from rotkehlchen.chain.evm.accounting.structures import TxEventSettings
+from rotkehlchen.chain.evm.accounting.structures import EventsAccountantCallback
 from rotkehlchen.constants import ZERO
 from rotkehlchen.fval import FVal
 
@@ -52,23 +52,8 @@ class ThegraphAccountant(ModuleAccountantInterface):
             )
             self.assets_supplied[address] = ZERO
 
-    def event_settings(self, pot: 'AccountingPot') -> dict[int, TxEventSettings]:  # pylint: disable=unused-argument
+    def event_callbacks(self) -> dict[int, EventsAccountantCallback]:
         return {
-            get_event_type_identifier(HistoryEventType.STAKING, HistoryEventSubType.DEPOSIT_ASSET, CPT_THEGRAPH): TxEventSettings(  # noqa: E501
-                taxable=False,
-                count_entire_amount_spend=False,
-                count_cost_basis_pnl=False,
-                accountant_cb=self._process_deposit,
-            ),
-            get_event_type_identifier(HistoryEventType.SPEND, HistoryEventSubType.FEE, CPT_THEGRAPH): TxEventSettings(  # noqa: E501
-                taxable=True,
-                count_entire_amount_spend=True,
-                count_cost_basis_pnl=pot.settings.include_crypto2crypto,
-            ),
-            get_event_type_identifier(HistoryEventType.STAKING, HistoryEventSubType.REMOVE_ASSET, CPT_THEGRAPH): TxEventSettings(  # noqa: E501
-                taxable=False,
-                count_entire_amount_spend=False,
-                count_cost_basis_pnl=False,
-                accountant_cb=self._process_withdraw,
-            ),
+            get_event_type_identifier(HistoryEventType.STAKING, HistoryEventSubType.DEPOSIT_ASSET, CPT_THEGRAPH): self._process_deposit,  # noqa: E501
+            get_event_type_identifier(HistoryEventType.STAKING, HistoryEventSubType.REMOVE_ASSET, CPT_THEGRAPH): self._process_withdraw,  # noqa: E501
         }

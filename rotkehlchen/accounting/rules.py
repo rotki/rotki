@@ -2,94 +2,14 @@ from typing import TYPE_CHECKING, Optional
 
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry, get_event_type_identifier
 from rotkehlchen.accounting.structures.evm_event import EvmEvent
-from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings, TxAccountingTreatment
-from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
-from rotkehlchen.db.constants import NO_ACCOUNTING_COUNTERPARTY
+from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings, EventsAccountantCallback
+from rotkehlchen.db.accounting_rules import DBAccountingRules
+from rotkehlchen.db.filtering import AccountingRulesFilterQuery
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.pot import AccountingPot
     from rotkehlchen.chain.evm.accounting.aggregator import EVMAccountingAggregators
     from rotkehlchen.db.dbhandler import DBHandler
-
-
-def make_default_accounting_settings(pot: 'AccountingPot') -> dict[int, BaseEventSettings]:
-    """
-    Returns accounting settings for events that can come from various decoders and thus don't have
-    any particular protocol. These settings also allow users to customize events in the UI.
-    TODO: Remove this hardcoded rules and add them to the database along the evm modules rules.
-    """
-    result = {}
-    result[get_event_type_identifier(HistoryEventType.SPEND, HistoryEventSubType.FEE, CPT_GAS)] = BaseEventSettings(  # noqa: E501
-        taxable=pot.settings.include_gas_costs,
-        count_entire_amount_spend=pot.settings.include_gas_costs,
-        count_cost_basis_pnl=pot.settings.include_crypto2crypto,
-    )
-    result[get_event_type_identifier(HistoryEventType.SPEND, HistoryEventSubType.NONE)] = BaseEventSettings(  # noqa: E501
-        taxable=True,
-        count_entire_amount_spend=True,
-        count_cost_basis_pnl=True,
-    )
-    result[get_event_type_identifier(HistoryEventType.RECEIVE, HistoryEventSubType.NONE)] = BaseEventSettings(  # noqa: E501
-        taxable=True,
-        count_entire_amount_spend=True,
-        count_cost_basis_pnl=True,
-    )
-    result[get_event_type_identifier(HistoryEventType.SPEND, HistoryEventSubType.FEE)] = BaseEventSettings(  # noqa: E501
-        taxable=True,
-        count_entire_amount_spend=True,
-        count_cost_basis_pnl=True,
-    )
-    result[get_event_type_identifier(HistoryEventType.DEPOSIT, HistoryEventSubType.NONE)] = BaseEventSettings(  # noqa: E501
-        taxable=False,
-        count_entire_amount_spend=False,
-        count_cost_basis_pnl=False,
-    )
-    result[get_event_type_identifier(HistoryEventType.WITHDRAWAL, HistoryEventSubType.NONE)] = BaseEventSettings(  # noqa: E501
-        taxable=False,
-        count_entire_amount_spend=False,
-        count_cost_basis_pnl=False,
-    )
-    result[get_event_type_identifier(HistoryEventType.RENEW, HistoryEventSubType.NONE)] = BaseEventSettings(  # noqa: E501
-        taxable=True,
-        count_entire_amount_spend=True,
-        count_cost_basis_pnl=True,
-    )
-    result[get_event_type_identifier(HistoryEventType.TRADE, HistoryEventSubType.SPEND)] = BaseEventSettings(  # noqa: E501
-        taxable=True,
-        count_entire_amount_spend=False,
-        count_cost_basis_pnl=True,
-        accounting_treatment=TxAccountingTreatment.SWAP,
-    )
-    result[get_event_type_identifier(HistoryEventType.RECEIVE, HistoryEventSubType.AIRDROP)] = BaseEventSettings(  # noqa: E501
-        taxable=False,
-        # count_entire_amount_spend and count_cost_basis_pnl don't matter for acquisitions.
-        count_entire_amount_spend=False,
-        count_cost_basis_pnl=False,
-    )
-    result[get_event_type_identifier(HistoryEventType.RECEIVE, HistoryEventSubType.REWARD)] = BaseEventSettings(  # noqa: E501
-        taxable=True,
-        # count_entire_amount_spend and count_cost_basis_pnl don't matter for acquisitions.
-        count_entire_amount_spend=False,
-        count_cost_basis_pnl=False,
-    )
-    result[get_event_type_identifier(HistoryEventType.STAKING, HistoryEventSubType.REWARD)] = BaseEventSettings(  # noqa: E501
-        taxable=True,
-        # count_entire_amount_spend and count_cost_basis_pnl don't matter for acquisitions.
-        count_entire_amount_spend=False,
-        count_cost_basis_pnl=False,
-    )
-    result[get_event_type_identifier(HistoryEventType.STAKING, HistoryEventSubType.DEPOSIT_ASSET)] = BaseEventSettings(  # noqa: E501
-        taxable=False,
-        count_entire_amount_spend=False,
-        count_cost_basis_pnl=False,
-    )
-    result[get_event_type_identifier(HistoryEventType.STAKING, HistoryEventSubType.REMOVE_ASSET)] = BaseEventSettings(  # noqa: E501
-        taxable=False,
-        count_entire_amount_spend=False,
-        count_cost_basis_pnl=False,
-    )
-    return result
 
 
 class AccountingRulesManager:
@@ -105,38 +25,44 @@ class AccountingRulesManager:
         self.aggregators = evm_aggregators
         self.pot = pot
         self.event_settings: dict[int, BaseEventSettings] = {}
+        self.event_callbacks: dict[int, EventsAccountantCallback] = {}
 
     def _query_db_rules(self) -> None:
         """Query the accounting rules in the db and update event_settings with them"""
-        with self.database.conn.read_ctx() as cursor:
-            cursor.execute(
-                'SELECT type, subtype, counterparty, taxable, count_entire_amount_spend, '
-                'count_cost_basis_pnl, accounting_treatment FROM accounting_rules',
+        rules_info, _ = DBAccountingRules(self.database).query_rules(
+            filter_query=AccountingRulesFilterQuery.make(),
+        )
+        for rule_info in rules_info:
+            key = get_event_type_identifier(
+                event_type=rule_info.event_key[0],
+                event_subtype=rule_info.event_key[1],
+                counterparty=rule_info.event_key[2],
             )
-            for entry in cursor:
-                rule = BaseEventSettings.deserialize_from_db(entry[3:])
-                key = get_event_type_identifier(
-                    event_type=HistoryEventType.deserialize(entry[0]),
-                    event_subtype=HistoryEventSubType.deserialize(entry[1]),
-                    counterparty=entry[2] if entry[2] != NO_ACCOUNTING_COUNTERPARTY else None,
-                )
-                self.event_settings[key] = rule
+            self.event_settings[key] = rule_info.rule
 
-    def get_event_settings(self, event: HistoryBaseEntry) -> Optional[BaseEventSettings]:
-        """Return a matching rule for the event if it exists"""
-        rule = self.event_settings.get(event.get_type_identifier(), None)
+    def get_event_settings(
+            self,
+            event: HistoryBaseEntry,
+    ) -> tuple[Optional[BaseEventSettings], Optional[EventsAccountantCallback]]:
+        """
+        Return a matching rule for the event if it exists and an optional callback defined for
+        the rule that should be executed
+        """
+        event_identifier = event.get_type_identifier()
+        rule = self.event_settings.get(event_identifier, None)
         if isinstance(event, EvmEvent) is False or rule is not None:
-            return rule
+            return rule, self.event_callbacks.get(event_identifier)
 
-        return self.event_settings.get(event.get_type_identifier(include_counterparty=False), None)
+        event_identifier = event.get_type_identifier(include_counterparty=False)
+        return (
+            self.event_settings.get(event_identifier),
+            self.event_callbacks.get(event_identifier),
+        )
 
     def reset(self) -> None:
         self.aggregators.reset()
-        self.event_settings = (  # Using | operator is fine since keys are unique
-            self.aggregators.get_accounting_settings(self.pot) |
-            make_default_accounting_settings(self.pot)
-        )
         self._query_db_rules()
+        self.event_callbacks = self.aggregators.get_accounting_callbacks()
 
     def clean_rules(self) -> None:
         """
@@ -144,3 +70,4 @@ class AccountingRulesManager:
         to avoid having many dynamic objects in memory since the rules come from the database
         """
         self.event_settings.clear()
+        self.event_callbacks.clear()

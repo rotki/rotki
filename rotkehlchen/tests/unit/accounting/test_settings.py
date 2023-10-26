@@ -62,7 +62,6 @@ def test_nocrypto2crypto(accountant, google_service):
 @pytest.mark.parametrize('db_settings', [{
     'taxfree_after_period': -1,
     'include_fees_in_cost_basis': False,
-
 }])
 def test_no_taxfree_period(accountant, google_service):
     accounting_history_process(accountant, 1436979735, 1519693374, history5)
