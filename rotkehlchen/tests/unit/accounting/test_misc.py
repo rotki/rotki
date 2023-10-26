@@ -226,3 +226,31 @@ def test_main_currency_is_respected(
     assert len(warnings) == len(errors) == 0
     # Check that the price is correctly computed in GBP
     assert accountant.pots[0].processed_events[0].price == trade_rate * mocked_price_queries['USD']['GBP'][1609537953]  # noqa: E501
+
+
+def test_main_currency_is_respected(accountant: 'Accountant'):
+    manager = accountant.pots[0].events_accountant.rules_manager
+    manager.reset()
+    data = []
+    for types, info in manager.event_settings.items():
+        entry = {}
+        splitted = types.split('.')
+        if len(splitted) == 2:
+            etype, esubtype, counterpaty = splitted[0], splitted[1], None
+        else:
+            print(splitted)
+            etype, esubtype, counterpaty = splitted
+
+        entry['event_type'] = etype
+        entry['event_subtype'] = esubtype
+        entry['counterparty'] = counterpaty
+
+        entry['taxable'] = info.taxable
+        entry['count_entire_amount_spend'] = info.count_entire_amount_spend
+        entry['count_cost_basis_pnl'] = info.count_cost_basis_pnl
+        entry['accounting_treatment'] = info.accounting_treatment.name if info.accounting_treatment else info.accounting_treatment
+        data.append(entry)
+    
+    import json, pprint
+    print(json.dumps(data, indent=2))
+    assert False

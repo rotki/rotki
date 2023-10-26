@@ -518,3 +518,14 @@ def get_event_type_identifier(
         key += counterparty
 
     return hash(key)
+
+def get_event_type_identifier(
+        event_type: HistoryEventType,
+        event_subtype: HistoryEventSubType,
+        counterparty: Optional[str] = None,
+) -> int:
+    key = f'{event_type.serialize()}.{event_subtype.serialize()}'
+    if counterparty is not None:
+        key += f'.{counterparty}'
+    return key
+    return hash(key)
