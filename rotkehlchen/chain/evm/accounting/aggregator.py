@@ -6,7 +6,6 @@ from contextlib import suppress
 from types import ModuleType
 from typing import TYPE_CHECKING, Optional, Union
 
-from rotkehlchen.chain.ethereum.constants import MODULES_PACKAGE, MODULES_PREFIX_LENGTH
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.errors.misc import ModuleLoadingError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -37,17 +36,20 @@ class EVMAccountingAggregator:
             self,
             node_inquirer: 'EvmNodeInquirer',
             msg_aggregator: MessagesAggregator,
+            modules_path: str,
             airdrops_list: Optional[Sequence[CounterpartyDetails]] = None,
     ) -> None:
         self.node_inquirer = node_inquirer
         self.msg_aggregator = msg_aggregator
         self.accountants: dict[str, ModuleAccountantInterface] = {}
         self.airdrops_list = airdrops_list
+        self.modules_path = modules_path
         self.initialize_all_accountants()
 
     def _recursively_initialize_accountants(
             self, package: Union[str, ModuleType],
     ) -> None:
+        modules_prefix_length = len(self.modules_path) + 1  # +1 is for '.'
         if isinstance(package, str):
             package = importlib.import_module(package)
         for _, name, is_pkg in pkgutil.walk_packages(package.__path__):
@@ -61,7 +63,7 @@ class EVMAccountingAggregator:
                     submodule = importlib.import_module(full_name + '.accountant')
 
                 if submodule is not None:
-                    class_name = full_name[MODULES_PREFIX_LENGTH:].translate({ord('.'): None})
+                    class_name = full_name[modules_prefix_length:].translate({ord('.'): None})
                     submodule_accountant = getattr(submodule, f'{class_name.capitalize()}Accountant', None)  # noqa: E501
 
                     if submodule_accountant:
@@ -83,7 +85,7 @@ class EVMAccountingAggregator:
 
     def initialize_all_accountants(self) -> None:
         """Recursively check all submodules to get all accountants and initialize them"""
-        self._recursively_initialize_accountants(MODULES_PACKAGE)
+        self._recursively_initialize_accountants(self.modules_path)
 
     def get_accounting_settings(self, pot: 'AccountingPot') -> dict[int, TxEventSettings]:
         """Iterate through loaded accountants and get accounting settings for each event type

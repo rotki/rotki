@@ -4,9 +4,6 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.types import SupportedBlockchain, Timestamp, deserialize_evm_tx_hash
 
 ETHEREUM_ETHERSCAN_NODE_NAME = 'etherscan'
-MODULES_PACKAGE = 'rotkehlchen.chain.ethereum.modules'
-MODULES_PREFIX = MODULES_PACKAGE + '.'
-MODULES_PREFIX_LENGTH = len(MODULES_PREFIX)
 
 ETH2_DEPOSIT_ADDRESS = string_to_evm_address('0x00000000219ab540356cBB839Cbe05303d7705Fa')
 ETHEREUM_GENESIS = Timestamp(1438269973)

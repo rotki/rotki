@@ -19,5 +19,6 @@ class GnosisAccountingAggregator(EVMAccountingAggregator):
         super().__init__(
             node_inquirer=node_inquirer,
             msg_aggregator=msg_aggregator,
+            modules_path='rotkehlchen.chain.gnosis.modules',
             airdrops_list=AirdropsDecoder.counterparties(),
         )
