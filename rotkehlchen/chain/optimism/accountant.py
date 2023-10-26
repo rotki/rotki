@@ -1,11 +1,11 @@
 from typing import TYPE_CHECKING
 
 from rotkehlchen.chain.evm.accounting.aggregator import EVMAccountingAggregator
-
-from .constants import CPT_OPTIMISM
+from rotkehlchen.chain.optimism.modules.airdrops.decoder import AirdropsDecoder
 
 if TYPE_CHECKING:
     from rotkehlchen.user_messages import MessagesAggregator
+
     from .node_inquirer import OptimismInquirer
 
 
@@ -19,5 +19,5 @@ class OptimismAccountingAggregator(EVMAccountingAggregator):
         super().__init__(
             node_inquirer=node_inquirer,
             msg_aggregator=msg_aggregator,
-            airdrops_list=[CPT_OPTIMISM],
+            airdrops_list=AirdropsDecoder.counterparties(),
         )

@@ -1,10 +1,11 @@
 from typing import TYPE_CHECKING
 
-from rotkehlchen.chain.ethereum.modules.airdrops.constants import ETHEREUM_AIRDROPS_LIST
+from rotkehlchen.chain.ethereum.modules.airdrops.decoder import AirdropsDecoder
 from rotkehlchen.chain.evm.accounting.aggregator import EVMAccountingAggregator
 
 if TYPE_CHECKING:
     from rotkehlchen.user_messages import MessagesAggregator
+
     from .node_inquirer import EthereumInquirer
 
 
@@ -18,5 +19,5 @@ class EthereumAccountingAggregator(EVMAccountingAggregator):
         super().__init__(
             node_inquirer=node_inquirer,
             msg_aggregator=msg_aggregator,
-            airdrops_list=ETHEREUM_AIRDROPS_LIST,
+            airdrops_list=AirdropsDecoder.counterparties(),
         )
