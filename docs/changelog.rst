@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` Migrating MATIC to POL in ethereum mainnet is now properly decoded.
 * :feature:`-` Users can now see if any of their addresses have vCOW available to claim from the CoW Protocol airdrop.
 * :feature:`-` Golem's GNT->GLM migration events will now be properly detected.
 * :feature:`6688` Add support for Woo Centralized Exchange
