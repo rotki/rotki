@@ -1,11 +1,13 @@
 import importlib
 import logging
 import pkgutil
+from collections.abc import Sequence
 from contextlib import suppress
 from types import ModuleType
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Optional, Union
 
 from rotkehlchen.chain.ethereum.constants import MODULES_PACKAGE, MODULES_PREFIX_LENGTH
+from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.errors.misc import ModuleLoadingError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.user_messages import MessagesAggregator
@@ -35,7 +37,7 @@ class EVMAccountingAggregator:
             self,
             node_inquirer: 'EvmNodeInquirer',
             msg_aggregator: MessagesAggregator,
-            airdrops_list: list[str],
+            airdrops_list: Optional[Sequence[CounterpartyDetails]] = None,
     ) -> None:
         self.node_inquirer = node_inquirer
         self.msg_aggregator = msg_aggregator
@@ -68,6 +70,7 @@ class EVMAccountingAggregator:
 
                         kwargs = {}
                         if class_name == 'airdrops':
+                            assert self.airdrops_list, 'If accountant exists, list should exist'
                             kwargs['airdrops_list'] = self.airdrops_list
 
                         self.accountants[class_name] = submodule_accountant(

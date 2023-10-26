@@ -1,8 +1,7 @@
 from typing import TYPE_CHECKING
 
+from rotkehlchen.chain.arbitrum_one.modules.airdrops.decoder import AirdropsDecoder
 from rotkehlchen.chain.evm.accounting.aggregator import EVMAccountingAggregator
-
-from .constants import CPT_ARBITRUM_ONE
 
 if TYPE_CHECKING:
     from rotkehlchen.user_messages import MessagesAggregator
@@ -20,5 +19,5 @@ class ArbitrumOneAccountingAggregator(EVMAccountingAggregator):
         super().__init__(
             node_inquirer=node_inquirer,
             msg_aggregator=msg_aggregator,
-            airdrops_list=[CPT_ARBITRUM_ONE],
+            airdrops_list=AirdropsDecoder.counterparties(),
         )
