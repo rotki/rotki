@@ -25,7 +25,7 @@ def data_migration_13(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgress
     Detects Gnosis and Base chain accounts that have activity and are not yet tracked.
     """
     log.debug('Enter data_migration_13')
-
+    rotki.data_updater.check_for_updates(updates=[UpdateType.SPAM_ASSETS, UpdateType.RPC_NODES])
     # steps are: ethereum accounts + 3 (potentially write to db + updating spam assets and rpc nodes + new round msg)  # noqa: E501
     progress_handler.set_total_steps(len(rotki.chains_aggregator.accounts.eth) + 3)
     update_data_and_detect_accounts(
