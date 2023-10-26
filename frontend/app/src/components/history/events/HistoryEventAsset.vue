@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { type HistoryEventEntry } from '@/types/history/events';
 import { CURRENCY_USD } from '@/types/currencies';
+import { useAssetPageNavigation } from '@/composables/assets/navigation';
 
 const props = defineProps<{
   event: HistoryEventEntry;
@@ -19,36 +20,31 @@ const showBalance = computed<boolean>(() => {
 const eventAsset = useRefMap(event, ({ asset }) => asset);
 
 const symbol = assetSymbol(eventAsset);
+const { navigateToDetails } = useAssetPageNavigation(eventAsset);
 </script>
 
 <template>
-  <div>
-    <div class="py-2 flex items-center">
-      <div class="mr-2">
-        <AssetLink :asset="event.asset" icon>
-          <AssetIcon size="32px" :identifier="event.asset" />
-        </AssetLink>
-      </div>
-      <div v-if="showBalance">
-        <div>
-          <AmountDisplay :value="event.balance.amount" :asset="event.asset" />
-        </div>
-        <div>
-          <AmountDisplay
-            :key="event.timestamp"
-            :amount="event.balance.amount"
-            :value="event.balance.usdValue"
-            :price-asset="event.asset"
-            :fiat-currency="CURRENCY_USD"
-            class="grey--text"
-            :timestamp="event.timestamp"
-            milliseconds
-          />
-        </div>
-      </div>
-      <div v-else>
-        {{ symbol }}
-      </div>
+  <div class="py-2 flex items-center gap-2">
+    <AssetIcon
+      size="32px"
+      :identifier="event.asset"
+      @click="navigateToDetails()"
+    />
+    <div v-if="showBalance" class="flex flex-col">
+      <AmountDisplay :value="event.balance.amount" :asset="event.asset" />
+      <AmountDisplay
+        :key="event.timestamp"
+        :amount="event.balance.amount"
+        :value="event.balance.usdValue"
+        :price-asset="event.asset"
+        :fiat-currency="CURRENCY_USD"
+        class="grey--text"
+        :timestamp="event.timestamp"
+        milliseconds
+      />
     </div>
+    <template v-else>
+      {{ symbol }}
+    </template>
   </div>
 </template>

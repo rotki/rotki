@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { Routes } from '@/router/routes';
 import { getAddressFromEvmIdentifier } from '@/utils/assets';
+import { useAssetPageNavigation } from '@/composables/assets/navigation';
 
 const props = withDefaults(
   defineProps<{
@@ -17,18 +17,10 @@ const props = withDefaults(
 );
 
 const { asset } = toRefs(props);
-
-const router = useRouter();
-
 const address = reactify(getAddressFromEvmIdentifier)(asset);
 const { assetInfo } = useAssetInfoRetrieval();
 const assetDetails = assetInfo(asset);
-
-const navigateToDetails = async () => {
-  await router.push({
-    path: Routes.ASSETS.replace(':identifier', encodeURIComponent(get(asset)))
-  });
-};
+const { navigateToDetails } = useAssetPageNavigation(asset);
 </script>
 
 <template>

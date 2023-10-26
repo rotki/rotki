@@ -1,67 +1,80 @@
 <script setup lang="ts">
-import { type TradeLocationData } from '@/types/history/trade/location';
+const props = withDefaults(
+  defineProps<{
+    item: string;
+    horizontal?: boolean;
+    icon?: boolean;
+    size?: string;
+    noPadding?: boolean;
+  }>(),
+  {
+    horizontal: false,
+    icon: false,
+    size: '24px',
+    noPadding: false
+  }
+);
 
-const props = defineProps({
-  item: {
-    required: true,
-    type: [Object, String] as PropType<TradeLocationData | string | null>
-  },
-  horizontal: { required: false, type: Boolean, default: false },
-  icon: { required: false, type: Boolean, default: false },
-  size: { required: false, type: String, default: '24px' },
-  noPadding: { required: false, type: Boolean, default: false }
-});
+const emit = defineEmits<{ (e: 'click', location: string): void }>();
 
-const { item, size } = toRefs(props);
+const { item } = toRefs(props);
 
 const iconStyle = computed(() => ({
-  fontSize: get(size)
+  fontSize: props.size
 }));
 
 const { locationData } = useLocations();
 
-const location: ComputedRef<TradeLocationData | null> = computed(() => {
-  const data = get(item);
-  if (typeof data === 'string') {
-    return get(locationData(data));
-  }
-  return data;
-});
+const location = locationData(item);
+
+const css = useCssModule();
 </script>
 
 <template>
   <span
-    class="flex items-center"
+    class="flex items-center justify-center icon-bg"
+    data-cy="location-icon"
     :class="{
       'flex-row': horizontal,
-      'flex-column': !horizontal,
-      'py-4': !noPadding
+      'flex-col': !horizontal,
+      'py-4': !noPadding,
+      skeleton: !location,
+      [css.wrapper]: icon
     }"
+    @click="emit('click', item)"
   >
-    <AdaptiveWrapper v-if="!location" tag="span">
-      <VSkeletonLoader type="image" :width="size" :height="size" />
-    </AdaptiveWrapper>
-    <AdaptiveWrapper v-else tag="span">
-      <VImg
+    <template v-if="location">
+      <img
         v-if="location.image"
         :width="size"
-        contain
-        position="center"
-        :max-height="size"
+        :height="size"
+        class="object-contain dark:p-[0.1rem]"
+        :class="css.icon"
         :src="location.image"
+        :alt="location.name"
       />
-      <VIcon v-else color="accent" :style="iconStyle">
+      <VIcon v-else color="accent" :style="iconStyle" :class="css.icon">
         {{ location.icon }}
       </VIcon>
-    </AdaptiveWrapper>
-    <span
-      v-if="!icon"
-      class="text-capitalize"
-      :class="horizontal ? 'ml-3' : null"
-    >
-      <template v-if="location">
+      <span
+        v-if="!icon"
+        class="text-capitalize"
+        :class="horizontal ? 'ml-3' : null"
+      >
         {{ location.name }}
-      </template>
-    </span>
+      </span>
+    </template>
   </span>
 </template>
+
+<style lang="scss" module>
+.wrapper {
+  height: v-bind(size);
+  width: v-bind(size);
+}
+
+.icon {
+  max-height: calc(v-bind(size) - 0.1rem);
+  max-width: calc(v-bind(size) - 0.1rem);
+}
+</style>

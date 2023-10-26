@@ -2,73 +2,81 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type ComputedRef } from 'vue';
 
+defineOptions({
+  inheritAttrs: false
+});
+
 const props = withDefaults(
   defineProps<{
     address: string;
     blockchain?: Blockchain;
+    avatar?: boolean;
+    size?: string | number;
   }>(),
   {
-    blockchain: Blockchain.ETH
+    blockchain: Blockchain.ETH,
+    avatar: false,
+    size: '24px'
   }
 );
 
-const { address, blockchain } = toRefs(props);
+const success: Ref<boolean> = ref(false);
+const failed: Ref<boolean> = ref(false);
 
 const { getEnsAvatarUrl } = useAddressesNamesStore();
 
 const avatarUrl: ComputedRef<string | null> = computed(() => {
-  if (get(blockchain) !== Blockchain.ETH) {
+  if (props.blockchain !== Blockchain.ETH) {
     return null;
   }
 
-  return get(getEnsAvatarUrl(address));
+  return get(getEnsAvatarUrl(props.address));
 });
 
 const { getBlockie } = useBlockie();
-const css = useCssModule();
 
-const success: Ref<boolean> = ref(false);
-const failed: Ref<boolean> = ref(false);
+const style = computed(() => ({
+  width: props.size,
+  height: props.size
+}));
 </script>
 
 <template>
-  <VLazy :class="css.wrapper">
-    <div>
-      <VImg
-        v-if="!avatarUrl || failed"
-        :src="getBlockie(address)"
-        :class="css.avatar"
-      />
-      <VSkeletonLoader
-        v-else-if="avatarUrl && !success"
-        type="image"
-        width="24px"
-        height="24px"
-      />
-      <VImg
-        v-if="avatarUrl"
-        :class="css.avatar"
-        :src="avatarUrl"
-        @load="success = true"
-        @error="failed = true"
-      />
-    </div>
-  </VLazy>
+  <img
+    v-if="!avatarUrl || failed"
+    :src="getBlockie(address)"
+    loading="lazy"
+    :alt="address"
+    :height="size"
+    :width="size"
+    :style="style"
+    :class="{
+      'rounded-full': avatar
+    }"
+  />
+  <div
+    v-else-if="avatarUrl"
+    :style="style"
+    :class="{
+      skeleton: !success,
+      'rounded-full': avatar,
+      'rounded-xl': !avatar
+    }"
+  >
+    <img
+      v-if="avatarUrl"
+      :alt="address"
+      loading="lazy"
+      :class="{
+        'rounded-full': avatar,
+        'rounded-xl': !avatar
+      }"
+      :style="style"
+      :height="size"
+      :width="size"
+      :src="avatarUrl"
+      @load="success = true"
+      @error="failed = true"
+    />
+  </div>
 </template>
-
-<style lang="scss" module>
-.wrapper {
-  position: relative;
-  display: flex;
-  width: 100%;
-  height: 100%;
-}
-
-.avatar {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  top: 0;
-  left: 0;
-}
-</style>

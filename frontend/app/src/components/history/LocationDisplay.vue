@@ -23,8 +23,6 @@ const { identifier, detailPath } = toRefs(props);
 const { locationData } = useLocations();
 const location = locationData(identifier);
 
-const name = computed(() => get(location)?.name ?? '');
-
 const route = computed<{ path: string }>(() => {
   if (get(detailPath)) {
     return { path: get(detailPath) };
@@ -50,22 +48,6 @@ const route = computed<{ path: string }>(() => {
     tag="div"
     :data-location="location?.identifier"
   >
-    <ListItem class="my-0 text-center" :show-details="false" :title="name">
-      <template #icon>
-        <LocationIcon
-          v-if="location"
-          class="location-display"
-          :item="location"
-          :icon="icon"
-          :size="size"
-        />
-      </template>
-    </ListItem>
+    <LocationIcon :item="identifier" :icon="icon" :size="size" class="w-full" />
   </NavigatorLink>
 </template>
-
-<style scoped lang="scss">
-.location-display {
-  width: 100%;
-}
-</style>

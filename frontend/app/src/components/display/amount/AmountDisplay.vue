@@ -71,6 +71,8 @@ const {
   loading
 } = toRefs(props);
 
+const { t } = useI18n();
+
 const {
   currency,
   currencySymbol: currentCurrency,
@@ -99,6 +101,8 @@ const { findCurrency } = useCurrencies();
 
 const { historicPriceInCurrentCurrency, isPending, createKey } =
   useHistoricCachePriceStore();
+
+const { assetSymbol } = useAssetInfoRetrieval();
 
 const timestampToUse = computed(() => {
   const timestampVal = get(timestamp);
@@ -317,97 +321,94 @@ const { copy, copied } = useCopy(copyValue);
 const css = useCssModule();
 
 const anyLoading = logicOr(loading, evaluating);
+const symbol: ComputedRef<string> = assetSymbol(asset);
+const { isManualAssetPrice } = useBalancePricesStore();
+const isManualPrice = isManualAssetPrice(priceAsset);
+
+const displayAsset = computed(() => {
+  const symb = get(symbol);
+  if (symb !== '') {
+    return symb;
+  }
+
+  const show = get(showCurrency);
+  const value = get(displayCurrency);
+
+  if (show === 'ticker') {
+    return value.tickerSymbol;
+  } else if (show === 'symbol') {
+    return value.unicodeSymbol;
+  } else if (show === 'name') {
+    return value.name;
+  }
+
+  return '';
+});
+
+const [DefineSymbol, ReuseSymbol] = createReusableTemplate();
 </script>
 
 <template>
-  <div class="inline-block">
-    <div class="flex flex-row items-baseline">
-      <ManualPriceIndicator v-if="timestamp < 0" :price-asset="priceAsset" />
-      <span
-        :class="[
-          css.display,
-          {
-            [css.blur]: !shouldShowAmount,
-            [css.profit]: pnl && displayValue.gt(0),
-            [css.loss]: pnl && displayValue.lt(0),
-            [css.xl]: xl
-          }
-        ]"
-        data-cy="display-wrapper"
-        @click="copy()"
-      >
-        <VSkeletonLoader
-          :loading="anyLoading"
-          min-width="60"
-          max-width="70"
-          type="text"
-          :class="[
-            css.skeleton,
-            anyLoading ? 'items-center' : 'items-baseline'
-          ]"
-        >
-          <span
-            v-if="comparisonSymbol"
-            class="mr-1"
-            data-cy="display-comparison-symbol"
-          >
-            {{ comparisonSymbol }}
-          </span>
-          <div
-            v-if="shouldShowCurrency && currencyLocation === 'before'"
-            class="mr-1"
-          >
-            <AmountCurrency
-              :show-currency="shownCurrency"
-              :currency="displayCurrency"
-              :asset="asset"
-              :xl="xl"
-            />
-          </div>
-
-          <div>
-            <CopyTooltip
-              :copied="copied"
-              :value="renderedValue"
-              :tooltip="tooltip"
-            />
-          </div>
-          <div
-            v-if="shouldShowCurrency && currencyLocation === 'after'"
-            class="ml-1"
-          >
-            <AmountCurrency
-              :asset-padding="assetPadding"
-              :show-currency="shownCurrency"
-              :currency="displayCurrency"
-              :asset="asset"
-              :xl="xl"
-            />
-          </div>
-        </VSkeletonLoader>
+  <div class="inline-block items-baseline">
+    <DefineSymbol>
+      <span data-cy="display-currency" class="truncate max-w-[5rem]">
+        {{ displayAsset }}
       </span>
-    </div>
+    </DefineSymbol>
+
+    <RuiTooltip
+      v-if="timestamp < 0 && isManualPrice"
+      :popper="{ placement: 'top' }"
+      :open-delay="400"
+    >
+      <template #activator>
+        <RuiIcon
+          class="mr-3 mb-1 inline cursor-pointer"
+          size="16"
+          color="warning"
+          name="sparkling-line"
+        />
+      </template>
+
+      {{ t('amount_display.manual_tooltip') }}
+    </RuiTooltip>
+
+    <span
+      :class="[
+        {
+          [css.blur]: !shouldShowAmount,
+          'text-rui-success': pnl && displayValue.gt(0),
+          'text-rui-error': pnl && displayValue.lt(0),
+          [css.xl]: xl,
+          'skeleton min-w-[3.5rem] max-w-[4rem] min-h-[1.3rem]': anyLoading
+        }
+      ]"
+      class="flex gap-1 items-center inline-block transition duration-200 rounded-lg"
+      data-cy="amount-display"
+      @click="copy()"
+    >
+      <template v-if="!anyLoading">
+        <template v-if="comparisonSymbol">
+          {{ comparisonSymbol }}
+        </template>
+
+        <ReuseSymbol
+          v-if="shouldShowCurrency && currencyLocation === 'before'"
+        />
+
+        <CopyTooltip class="cursor-pointer" :copied="copied" :tooltip="tooltip">
+          {{ renderedValue }}
+        </CopyTooltip>
+
+        <ReuseSymbol
+          v-if="shouldShowCurrency && currencyLocation === 'after'"
+        />
+      </template>
+    </span>
   </div>
 </template>
 
 <style module lang="scss">
-.profit {
-  @apply text-rui-success;
-}
-
-.loss {
-  @apply text-rui-error;
-}
-
-.display {
-  display: inline-block;
-  cursor: pointer;
-
-  span {
-    display: inline-block;
-  }
-}
-
 .blur {
   filter: blur(0.75em);
 }
@@ -420,21 +421,5 @@ const anyLoading = logicOr(loading, evaluating);
     font-size: 2.4em;
     line-height: 2.4rem;
   }
-}
-
-.skeleton {
-  &:after {
-    content: '\200B';
-  }
-
-  :global {
-    .v-skeleton-loader {
-      &__text {
-        @apply mb-0 h-[1em];
-      }
-    }
-  }
-
-  @apply flex flex-row;
 }
 </style>

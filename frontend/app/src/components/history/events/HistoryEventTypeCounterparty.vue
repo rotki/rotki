@@ -38,9 +38,7 @@ const [DefineText, ReuseText] = createReusableTemplate();
 
           <EnsAvatar v-else :address="counterparty.label" />
         </VAvatar>
-        <VAvatar v-else-if="event.address">
-          <EnsAvatar :address="event.address" />
-        </VAvatar>
+        <EnsAvatar v-else-if="event.address" :address="event.address" avatar />
       </div>
     </DefineImage>
     <DefineText>

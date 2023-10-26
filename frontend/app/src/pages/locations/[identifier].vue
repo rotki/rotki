@@ -15,7 +15,7 @@ const location = locationData(identifier);
 <template>
   <div class="flex flex-col gap-4 mx-4">
     <div v-if="location" class="flex flex-row items-center my-4 gap-2">
-      <LocationIcon :item="location" icon size="48px" no-padding />
+      <LocationIcon :item="identifier" icon size="48px" no-padding />
       <span class="text-h5 font-medium">
         {{ location.name }}
       </span>

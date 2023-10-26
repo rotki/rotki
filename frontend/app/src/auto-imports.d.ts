@@ -341,6 +341,7 @@ declare global {
   const useAssetMovementFilters: typeof import('./composables/filters/asset-movement')['useAssetMovementFilters']
   const useAssetMovements: typeof import('./composables/history/asset-movements/index')['useAssetMovements']
   const useAssetMovementsApi: typeof import('./composables/api/history/asset-movements')['useAssetMovementsApi']
+  const useAssetPageNavigation: typeof import('./composables/assets/navigation')['useAssetPageNavigation']
   const useAssetPricesApi: typeof import('./composables/api/assets/prices')['useAssetPricesApi']
   const useAssets: typeof import('./composables/assets/index')['useAssets']
   const useAssetsApi: typeof import('./composables/api/assets/index')['useAssetsApi']
@@ -1055,6 +1056,7 @@ declare module 'vue' {
     readonly useAssetMovementFilters: UnwrapRef<typeof import('./composables/filters/asset-movement')['useAssetMovementFilters']>
     readonly useAssetMovements: UnwrapRef<typeof import('./composables/history/asset-movements/index')['useAssetMovements']>
     readonly useAssetMovementsApi: UnwrapRef<typeof import('./composables/api/history/asset-movements')['useAssetMovementsApi']>
+    readonly useAssetPageNavigation: UnwrapRef<typeof import('./composables/assets/navigation')['useAssetPageNavigation']>
     readonly useAssetPricesApi: UnwrapRef<typeof import('./composables/api/assets/prices')['useAssetPricesApi']>
     readonly useAssets: UnwrapRef<typeof import('./composables/assets/index')['useAssets']>
     readonly useAssetsApi: UnwrapRef<typeof import('./composables/api/assets/index')['useAssetsApi']>
@@ -1763,6 +1765,7 @@ declare module '@vue/runtime-core' {
     readonly useAssetMovementFilters: UnwrapRef<typeof import('./composables/filters/asset-movement')['useAssetMovementFilters']>
     readonly useAssetMovements: UnwrapRef<typeof import('./composables/history/asset-movements/index')['useAssetMovements']>
     readonly useAssetMovementsApi: UnwrapRef<typeof import('./composables/api/history/asset-movements')['useAssetMovementsApi']>
+    readonly useAssetPageNavigation: UnwrapRef<typeof import('./composables/assets/navigation')['useAssetPageNavigation']>
     readonly useAssetPricesApi: UnwrapRef<typeof import('./composables/api/assets/prices')['useAssetPricesApi']>
     readonly useAssets: UnwrapRef<typeof import('./composables/assets/index')['useAssets']>
     readonly useAssetsApi: UnwrapRef<typeof import('./composables/api/assets/index')['useAssetsApi']>

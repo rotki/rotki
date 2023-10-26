@@ -125,3 +125,12 @@ input {
 
   @apply rounded-lg #{!important};
 }
+
+
+.skeleton {
+  @apply animate-pulse bg-gray-200 dark:bg-gray-800
+}
+
+.icon-bg {
+  @apply dark:border-rui-grey-600 dark:border dark:rounded-md dark:bg-white;
+}

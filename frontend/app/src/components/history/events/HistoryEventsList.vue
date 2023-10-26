@@ -5,6 +5,7 @@ import { type DataTableHeader } from '@/types/vuetify';
 import { type HistoryEventEntry } from '@/types/history/events';
 import { isEvmEvent } from '@/utils/history/events';
 import { type TablePagination } from '@/types/pagination';
+import Fragment from '@/components/helper/Fragment';
 
 const props = withDefaults(
   defineProps<{
@@ -133,23 +134,66 @@ watch(
 
 const { xs } = useDisplay();
 const blockEvent = isEthBlockEventRef(eventGroup);
+const [DefineTable, ReuseTable] = createReusableTemplate();
 </script>
 
 <template>
-  <TableExpandContainer
-    :colspan="colspan - 1"
-    :offset="1"
-    :padded="false"
-    visible
-  >
-    <template #append>
+  <Fragment>
+    <DefineTable>
+      <DataTable
+        :class="css.table"
+        :headers="headers"
+        :items="events"
+        :loading="loading || evaluating"
+        :loading-text="t('transactions.events.loading')"
+        :no-data-text="t('transactions.events.no_data')"
+        :options="options"
+        hide-default-footer
+        disable-floating-header
+        :hide-default-header="!xs"
+      >
+        <template #progress><span /></template>
+        <template #item.type="{ item }">
+          <HistoryEventType :event="item" :chain="getChain(item.location)" />
+        </template>
+        <template #item.asset="{ item }">
+          <HistoryEventAsset :event="item" />
+        </template>
+        <template #item.description="{ item }">
+          <HistoryEventNote
+            v-bind="item"
+            :amount="item.balance.amount"
+            :chain="getChain(item.location)"
+            :no-tx-hash="isNoTxHash(item)"
+            :block-number="item.blockNumber ?? blockEvent?.blockNumber"
+          />
+        </template>
+        <template #item.actions="{ item }">
+          <RowActions
+            align="end"
+            :delete-tooltip="t('transactions.events.actions.delete')"
+            :edit-tooltip="t('transactions.events.actions.edit')"
+            @edit-click="editEvent(item)"
+            @delete-click="deleteEvent(item)"
+          />
+        </template>
+      </DataTable>
+    </DefineTable>
+    <td colspan="1" />
+    <td :colspan="colspan - 1">
+      <ReuseTable v-if="!showDropdown" />
       <VExpansionPanels
+        v-else
         v-model="panel"
+        flat
         :class="css['expansions-panels']"
         multiple
       >
-        <VExpansionPanel>
-          <VExpansionPanelHeader v-if="showDropdown">
+        <VExpansionPanel class="!bg-transparent !p-0">
+          <VExpansionPanelHeader
+            v-if="showDropdown"
+            class="!w-auto !p-0 !h-12 !min-h-[3rem]"
+          >
             <template #default="{ open }">
               <div class="primary--text font-bold">
                 {{
@@ -162,70 +206,13 @@ const blockEvent = isEthBlockEventRef(eventGroup);
               </div>
             </template>
           </VExpansionPanelHeader>
-          <VExpansionPanelContent>
-            <div
-              class="my-n4"
-              :class="{
-                'pt-4': showDropdown
-              }"
-            >
-              <DataTable
-                :class="css.table"
-                :headers="headers"
-                :items="events"
-                :loading="loading || evaluating"
-                :loading-text="t('transactions.events.loading')"
-                :no-data-text="t('transactions.events.no_data')"
-                :options="options"
-                hide-default-footer
-                disable-floating-header
-                :hide-default-header="!xs"
-              >
-                <template #progress><span /></template>
-                <template #item.type="{ item }">
-                  <VLazy>
-                    <HistoryEventType
-                      :event="item"
-                      :chain="getChain(item.location)"
-                    />
-                  </VLazy>
-                </template>
-                <template #item.asset="{ item }">
-                  <VLazy>
-                    <HistoryEventAsset :event="item" />
-                  </VLazy>
-                </template>
-                <template #item.description="{ item }">
-                  <VLazy>
-                    <HistoryEventNote
-                      v-bind="item"
-                      :amount="item.balance.amount"
-                      :chain="getChain(item.location)"
-                      :no-tx-hash="isNoTxHash(item)"
-                      :block-number="
-                        item.blockNumber ?? blockEvent?.blockNumber
-                      "
-                    />
-                  </VLazy>
-                </template>
-                <template #item.actions="{ item }">
-                  <VLazy>
-                    <RowActions
-                      align="end"
-                      :delete-tooltip="t('transactions.events.actions.delete')"
-                      :edit-tooltip="t('transactions.events.actions.edit')"
-                      @edit-click="editEvent(item)"
-                      @delete-click="deleteEvent(item)"
-                    />
-                  </VLazy>
-                </template>
-              </DataTable>
-            </div>
+          <VExpansionPanelContent class="!p-0 [&>*:first-child]:!p-0">
+            <ReuseTable />
           </VExpansionPanelContent>
         </VExpansionPanel>
       </VExpansionPanels>
-    </template>
-  </TableExpandContainer>
+    </td>
+  </Fragment>
 </template>
 
 <style lang="scss" module>
@@ -271,29 +258,6 @@ const blockEvent = isEthBlockEventRef(eventGroup);
   &__actions {
     width: 100px;
     @apply pr-0 #{!important};
-  }
-}
-
-.expansions {
-  &-panels {
-    :global {
-      .v-expansion-panel {
-        &::before {
-          @apply shadow-none;
-        }
-
-        &-header {
-          @apply p-0 min-h-[auto] w-auto;
-        }
-
-        &-content {
-          &__wrap {
-            @apply p-0;
-          }
-        }
-        @apply bg-transparent #{!important};
-      }
-    }
   }
 }
 </style>

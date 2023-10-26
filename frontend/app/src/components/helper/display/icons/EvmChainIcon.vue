@@ -25,25 +25,45 @@ const chainData = computed(() => {
     image: getImageUrl(chainProp)
   };
 });
+
+const style = computed(() => ({
+  'max-height': props.size,
+  'max-width': props.size
+}));
 </script>
 
 <template>
-  <RuiTooltip
-    :popper="{ placement: 'top' }"
-    open-delay="400"
-    :disabled="!tooltip"
-  >
+  <RuiTooltip v-if="tooltip" :popper="{ placement: 'top' }" open-delay="400">
     <template #activator>
-      <VImg
-        :class="{ 'rounded-full overflow-hidden': !tile }"
+      <img
+        :class="{
+          'rounded-full overflow-hidden': !tile
+        }"
+        :style="style"
+        class="object-contain"
         :src="chainData.image"
-        :width="size"
-        :max-width="size"
-        :height="size"
-        :max-height="size"
-        contain
+        :alt="chainData.label"
       />
     </template>
-    <span>{{ chainData.label }}</span>
+    {{ chainData.label }}
   </RuiTooltip>
+  <img
+    v-else
+    :class="{
+      'rounded-full overflow-hidden': !tile
+    }"
+    :style="style"
+    class="object-contain"
+    :height="size"
+    :width="size"
+    :src="chainData.image"
+    :alt="chainData.label"
+  />
 </template>
+
+<style lang="scss" module>
+.image {
+  max-height: v-bind(size);
+  max-width: v-bind(size);
+}
+</style>

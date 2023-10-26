@@ -59,9 +59,8 @@ export class ApiKeysPage {
     cy.get('@row')
       .find('td')
       .eq(0)
-      .find('.location-display')
+      .find('[data-cy=location-icon]')
       .find('span')
-      .eq(1)
       .should('contain', exchange);
     cy.get('@row').find('td').eq(1).should('contain', name);
   }

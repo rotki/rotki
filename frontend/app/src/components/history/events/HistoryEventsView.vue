@@ -568,8 +568,6 @@ const includeOnlineEvents: ComputedRef<boolean> = useEmptyOrSome(
   entryTypes,
   type => isOnlineHistoryEventType(type)
 );
-
-const { locationData } = useLocations();
 </script>
 
 <template>
@@ -723,36 +721,28 @@ const { locationData } = useLocations();
               />
             </template>
             <template #item.txHash="{ item }">
-              <VLazy>
-                <div class="flex items-center">
-                  <div class="mr-2">
-                    <LocationIcon
-                      icon
-                      no-padding
-                      :item="locationData(item.location)"
-                      size="20px"
-                    />
-                  </div>
-                  <HistoryEventsIdentifier :event="item" />
-                </div>
-              </VLazy>
+              <div class="flex items-center gap-2">
+                <LocationIcon
+                  icon
+                  no-padding
+                  :item="item.location"
+                  size="20px"
+                />
+                <HistoryEventsIdentifier :event="item" />
+              </div>
             </template>
             <template #item.timestamp="{ item }">
-              <VLazy>
-                <DateDisplay :timestamp="item.timestamp" milliseconds />
-              </VLazy>
+              <DateDisplay :timestamp="item.timestamp" milliseconds />
             </template>
             <template #item.action="{ item }">
-              <VLazy>
-                <HistoryEventsAction
-                  :event="item"
-                  :loading="eventTaskLoading"
-                  @add-event="addEvent($event)"
-                  @toggle-ignore="toggleIgnore($event)"
-                  @redecode="forceRedecodeEvmEvents($event)"
-                  @reset="resetEvents($event)"
-                />
-              </VLazy>
+              <HistoryEventsAction
+                :event="item"
+                :loading="eventTaskLoading"
+                @add-event="addEvent($event)"
+                @toggle-ignore="toggleIgnore($event)"
+                @redecode="forceRedecodeEvmEvents($event)"
+                @reset="resetEvents($event)"
+              />
             </template>
             <template #expanded-item="{ headers, item }">
               <HistoryEventsList
