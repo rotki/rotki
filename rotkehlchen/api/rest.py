@@ -4518,6 +4518,7 @@ class RestAPI:
         result = {
             'count_entire_amount_spend': possible_accounting_setting_names,
             'count_cost_basis_pnl': possible_accounting_setting_names,
+            'taxable': possible_accounting_setting_names,
         }
 
         return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)

@@ -1,3 +1,4 @@
+from http import HTTPStatus
 from typing import get_args
 import pytest
 import requests
@@ -6,16 +7,17 @@ from rotkehlchen.accounting.structures.types import HistoryEventSubType, History
 from rotkehlchen.db.constants import LINKABLE_ACCOUNTING_PROPERTIES
 from rotkehlchen.tests.utils.api import (
     api_url_for,
+    assert_error_response,
     assert_proper_response_with_result,
     assert_simple_ok_response,
 )
 
 
 @pytest.mark.parametrize('db_settings', [{'include_crypto2crypto': False}])
-def test_manage_rules(rotkehlchen_api_server):
+def test_manage_rules(rotkehlchen_api_server, db_settings):
     """Test basic operations in the endpoint for managing accounting rules"""
     rule_1 = {
-        'taxable': True,
+        'taxable': {'value': True, 'linked_setting': 'include_crypto2crypto'},
         'count_entire_amount_spend': {
             'value': False,
             'linked_setting': 'include_crypto2crypto',
@@ -26,7 +28,7 @@ def test_manage_rules(rotkehlchen_api_server):
         'counterparty': 'uniswap',
     }
     rule_2 = {
-        'taxable': True,
+        'taxable': {'value': True},
         'count_entire_amount_spend': {'value': False},
         'count_cost_basis_pnl': {'value': True},
         'event_type': HistoryEventType.STAKING.serialize(),
@@ -50,6 +52,8 @@ def test_manage_rules(rotkehlchen_api_server):
     assert_proper_response_with_result(response)
 
     # now try to query them
+    rule_1_copy = rule_1.copy()
+    rule_1_copy['taxable']['value'] = db_settings['include_crypto2crypto']
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
@@ -59,7 +63,7 @@ def test_manage_rules(rotkehlchen_api_server):
     result = assert_proper_response_with_result(response)
     assert result['entries'] == [
         {'identifier': 2, **rule_2},
-        {'identifier': 1, **rule_1, 'accounting_treatment': None},
+        {'identifier': 1, **rule_1_copy, 'accounting_treatment': None},
     ]
     assert result['entries_found'] == 2
     assert result['entries_total'] == 2
@@ -97,7 +101,7 @@ def test_manage_rules(rotkehlchen_api_server):
     # update rule 2
     rule_2['counterparty'] = 'compound'
     rule_2['accounting_treatment'] = None
-    rule_2['taxable'] = False
+    rule_2['taxable'] = {'value': False}
     response = requests.patch(
         api_url_for(
             rotkehlchen_api_server,
@@ -121,6 +125,25 @@ def test_manage_rules(rotkehlchen_api_server):
         {'identifier': 2, **rule_2},
         {'identifier': 1, **rule_1, 'accounting_treatment': None},
     ]
+
+    # update rule 2 to a combination that already exists
+    rule_2['event_type'] = rule_1['event_type']
+    rule_2['event_subtype'] = rule_1['event_subtype']
+    rule_2['counterparty'] = rule_1['counterparty']
+    response = requests.patch(
+        api_url_for(
+            rotkehlchen_api_server,
+            'accountingrulesresource',
+        ), json={
+            'identifier': 2,
+            **rule_2,
+        },
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='already exists in the database',
+        status_code=HTTPStatus.CONFLICT,
+    )
 
     # try to delete now rule 1
     # query the data and see that it got updated

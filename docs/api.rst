@@ -12597,7 +12597,7 @@ Managing custom accounting rules
       Content-Type: application/json;charset=UTF-8
 
       {
-         "taxable":true,
+         "taxable": {"value": true},
          "count_entire_amount_spend":{"value": false, "linked_setting": "include_crypto2crypto"},
          "count_cost_basis_pnl":{"value": true},
          "event_type":"staking",
@@ -12608,9 +12608,9 @@ Managing custom accounting rules
 
   .. _accounting_rules_fields:
 
-  :reqjsonarr boolean taxable: ``true`` if the event should be considered as taxable
-  :reqjsonarr object count_entire_amount_spend: if ``true`` then the entire amount is counted as a spend. Which means an expense (negative pnl). Allows to link the property to an accounting setting.
-  :reqjsonarr object count_cost_basis_pnl: if ``true`` then we also count any profit/loss the asset may have had compared to when it was acquired. Allows to link the property to an accounting setting.
+  :reqjsonarr object taxable: If ``value`` is set to ``true`` if the event should be considered as taxable. Allows to link the property to an accounting setting.
+  :reqjsonarr object count_entire_amount_spend: If ``value`` is set to ``true`` then the entire amount is counted as a spend. Which means an expense (negative pnl). Allows to link the property to an accounting setting.
+  :reqjsonarr object count_cost_basis_pnl: If ``value`` is set to ``true`` then we also count any profit/loss the asset may have had compared to when it was acquired. Allows to link the property to an accounting setting.
   :reqjsonarr string linked_setting: If it takes any value this property will take the value of the provided setting. Can be either `include_gas_costs` or `include_crypto2crypto`.
   :reqjsonarr string event_type: The event type that the rule targets.
   :reqjsonarr string event_subtype: The event subtype that the rule targets.
@@ -12631,7 +12631,7 @@ Managing custom accounting rules
 
   :resjson bool result: Boolean denoting success or failure.
   :statuscode 200: Entry correctly stored.
-  :statuscode 409: No user is currently logged in. Failed to validate the data.
+  :statuscode 409: No user is currently logged in. Failed to validate the data. Combination of type, subtype and counterparty already exists.
   :statuscode 500: Internal rotki error.
 
 
@@ -12676,7 +12676,7 @@ Managing custom accounting rules
 
   :resjson bool result: Boolean denoting success or failure.
   :statuscode 200: Entry correctly updated.
-  :statuscode 409: No user is currently logged in. Failed to validate the data. Or entry doesn't exist.
+  :statuscode 409: No user is currently logged in. Failed to validate the data. Entry doesn't exist. Combination of type, subtype and counterparty already exists.
   :statuscode 500: Internal rotki error.
 
 .. http:delete:: /api/(version)/accounting/rules
