@@ -24,6 +24,7 @@ LINKABLE_ACCOUNTING_SETTINGS_NAME = Literal[
     'include_crypto2crypto',
 ]
 LINKABLE_ACCOUNTING_PROPERTIES = Literal[
+    'taxable',
     'count_entire_amount_spend',
     'count_cost_basis_pnl',
 ]

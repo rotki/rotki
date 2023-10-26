@@ -3082,7 +3082,7 @@ class LinkedAccountingSetting(Schema):
 
 
 class CreateAccountingRuleSchema(AccountingRuleIdSchema):
-    taxable = fields.Boolean(required=True)
+    taxable = fields.Nested(LinkedAccountingSetting)
     count_entire_amount_spend = fields.Nested(LinkedAccountingSetting)
     count_cost_basis_pnl = fields.Nested(LinkedAccountingSetting)
     accounting_treatment = SerializableEnumField(enum_class=TxAccountingTreatment, required=False, load_default=None)  # noqa: E501
@@ -3093,7 +3093,7 @@ class CreateAccountingRuleSchema(AccountingRuleIdSchema):
             **_kwargs: Any,
     ) -> dict[str, Any]:
         rule = BaseEventSettings(
-            taxable=data['taxable'],
+            taxable=data['taxable']['value'],
             count_entire_amount_spend=data['count_entire_amount_spend']['value'],
             count_cost_basis_pnl=data['count_cost_basis_pnl']['value'],
             accounting_treatment=data['accounting_treatment'],

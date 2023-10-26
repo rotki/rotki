@@ -137,7 +137,7 @@ def test_accounting_rules_linking(database: 'DBHandler', counterparty: str) -> N
         'event_type': HistoryEventType.SPEND.serialize(),
         'event_subtype': HistoryEventSubType.FEE.serialize(),
         'counterparty': counterparty,
-        'taxable': True,
+        'taxable': {'value': True},
         'count_entire_amount_spend': {'value': True},
         'count_cost_basis_pnl': {'value': True, 'linked_setting': 'include_crypto2crypto'},
         'accounting_treatment': None,

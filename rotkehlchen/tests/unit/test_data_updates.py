@@ -524,7 +524,7 @@ def test_accounting_rules_updates(data_updater: RotkiDataUpdater) -> None:
     assert n_rules == 3
     assert rules == [
         {
-            'taxable': False,
+            'taxable': {'value': False},
             'count_cost_basis_pnl': {'value': True},
             'count_entire_amount_spend': {'value': True},
             'accounting_treatment': None,
@@ -533,7 +533,7 @@ def test_accounting_rules_updates(data_updater: RotkiDataUpdater) -> None:
             'event_subtype': 'receive wrapped',
             'counterparty': 'test_counterparty',
         }, {
-            'taxable': False,
+            'taxable': {'value': False},
             'count_cost_basis_pnl': {'value': True},
             'count_entire_amount_spend': {'value': True},
             'accounting_treatment': None,
@@ -542,7 +542,7 @@ def test_accounting_rules_updates(data_updater: RotkiDataUpdater) -> None:
             'event_subtype': 'return wrapped',
             'counterparty': 'test_counterparty',
         }, {
-            'taxable': True,
+            'taxable': {'value': True},
             'count_cost_basis_pnl': {'value': True, 'linked_setting': 'include_crypto2crypto'},
             'count_entire_amount_spend': {'value': True},
             'accounting_treatment': None,

@@ -129,18 +129,25 @@ class DBAccountingRules:
         - InputError: if no event gets updated
         """
         with self.db.conn.write_ctx() as write_cursor:
-            write_cursor.execute(
-                'UPDATE accounting_rules SET type=?, subtype=?, counterparty=?, taxable=?, '
-                'count_entire_amount_spend=?, count_cost_basis_pnl=?, '
-                'accounting_treatment=? WHERE identifier=?',
-                (
-                    event_type.serialize(),
-                    event_subtype.serialize(),
-                    counterparty if counterparty is not None else NO_ACCOUNTING_COUNTERPARTY,
-                    *rule.serialize_for_db(),
-                    identifier,
-                ),
-            )
+            try:
+                write_cursor.execute(
+                    'UPDATE accounting_rules SET type=?, subtype=?, counterparty=?, taxable=?, '
+                    'count_entire_amount_spend=?, count_cost_basis_pnl=?, '
+                    'accounting_treatment=? WHERE identifier=?',
+                    (
+                        event_type.serialize(),
+                        event_subtype.serialize(),
+                        counterparty if counterparty is not None else NO_ACCOUNTING_COUNTERPARTY,
+                        *rule.serialize_for_db(),
+                        identifier,
+                    ),
+                )
+            except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
+                raise InputError(
+                    f'Accounting rule for {self._rule_for_string(event_type=event_type, event_subtype=event_subtype, counterparty=counterparty)}'  # noqa: E501
+                    ' already exists in the database',
+                ) from e
+
             if write_cursor.rowcount != 1:
                 raise InputError(
                     f'Tried to update accounting {self._rule_for_string(event_type=event_type, event_subtype=event_subtype, counterparty=counterparty)}'  # noqa: E501
@@ -246,6 +253,8 @@ class DBAccountingRules:
                     rules[accountint_rule_id].rule.count_entire_amount_spend = setting_value
                 elif property_name == 'count_cost_basis_pnl':
                     rules[accountint_rule_id].rule.count_cost_basis_pnl = setting_value
+                elif property_name == 'taxable':
+                    rules[accountint_rule_id].rule.taxable = setting_value
                 else:
                     log.error(f'Unknown accounting rule property {property_name}')
                     continue

@@ -71,7 +71,7 @@ class BaseEventSettings:
 
     def serialize(self) -> dict[str, Any]:
         return {
-            'taxable': self.taxable,
+            'taxable': {'value': self.taxable},
             'count_cost_basis_pnl': {'value': self.count_cost_basis_pnl},
             'count_entire_amount_spend': {'value': self.count_entire_amount_spend},
             'accounting_treatment': self.accounting_treatment,
