@@ -1,0 +1,3 @@
+from rotkehlchen.chain.evm.types import string_to_evm_address
+
+POLYGON_MIGRATION_ADDRESS = string_to_evm_address('0x29e7DF7b6A1B2b07b731457f499E1696c60E2C4e')

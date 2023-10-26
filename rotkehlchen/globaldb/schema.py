@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS asset_types (
 INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('A', 1);
 /* OWN CHAIN */
 INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('B', 2);
-/* ETHEREUM TOKEN */
+/* EVM TOKEN */
 INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('C', 3);
 /* OMNI TOKEN */
 INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('D', 4);

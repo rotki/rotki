@@ -38,6 +38,7 @@ def maybe_reshuffle_events(
     for event in events_list:
         if event not in actual_events:
             all_other_events.append(event)
+
             if event.sequence_index > max_seq_index:
                 max_seq_index = event.sequence_index
 
