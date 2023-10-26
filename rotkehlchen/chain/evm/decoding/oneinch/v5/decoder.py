@@ -1,7 +1,9 @@
 from typing import TYPE_CHECKING
 
 from rotkehlchen.chain.ethereum.modules.oneinch.constants import CPT_ONEINCH_V5
+from rotkehlchen.chain.evm.decoding.oneinch.decoder import OneinchCommonDecoder
 from rotkehlchen.chain.evm.decoding.oneinch.v4.decoder import Oneinchv4DecoderBase
+from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.types import string_to_evm_address
 
 if TYPE_CHECKING:
@@ -27,3 +29,9 @@ class Oneinchv5Decoder(Oneinchv4DecoderBase):
             router_address=ONEINCH_V5_ROUTER,
             counterparty=CPT_ONEINCH_V5,
         )
+
+    # -- DecoderInterface methods
+
+    @staticmethod
+    def counterparties() -> tuple[CounterpartyDetails, ...]:
+        return OneinchCommonDecoder.generate_counterparty_details(CPT_ONEINCH_V5)
