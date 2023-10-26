@@ -57,5 +57,6 @@ class VotiumDecoder(DecoderInterface):
             VOTIUM_CONTRACT: (self._decode_claim,),
         }
 
-    def counterparties(self) -> list[CounterpartyDetails]:
-        return [CounterpartyDetails(identifier=CPT_VOTIUM, label='Votium', image='votium.png')]
+    @staticmethod
+    def counterparties() -> tuple[CounterpartyDetails, ...]:
+        return (CounterpartyDetails(identifier=CPT_VOTIUM, label='Votium', image='votium.png'),)

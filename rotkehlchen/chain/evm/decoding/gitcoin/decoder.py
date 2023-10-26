@@ -275,5 +275,6 @@ class GitcoinV2CommonDecoder(DecoderInterface, metaclass=ABCMeta):
         mappings[self.project_registry] = (self._decode_project_action,)
         return mappings
 
-    def counterparties(self) -> list[CounterpartyDetails]:
-        return [GITCOIN_CPT_DETAILS]
+    @staticmethod
+    def counterparties() -> tuple[CounterpartyDetails, ...]:
+        return (GITCOIN_CPT_DETAILS,)

@@ -169,5 +169,6 @@ class DxdaomesaDecoder(DecoderInterface):
             self.contract.address: (self._decode_events,),
         }
 
-    def counterparties(self) -> list[CounterpartyDetails]:
-        return [CounterpartyDetails(identifier=CPT_DXDAO_MESA, label='dxdao', image='dxdao.svg')]
+    @staticmethod
+    def counterparties() -> tuple[CounterpartyDetails, ...]:
+        return (CounterpartyDetails(identifier=CPT_DXDAO_MESA, label='dxdao', image='dxdao.svg'),)

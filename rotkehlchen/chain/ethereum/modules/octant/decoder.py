@@ -89,9 +89,10 @@ class OctantDecoder(DecoderInterface):
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {OCTANT_DEPOSITS: (self._decode_events,)}
 
-    def counterparties(self) -> list[CounterpartyDetails]:
-        return [CounterpartyDetails(
+    @staticmethod
+    def counterparties() -> tuple[CounterpartyDetails, ...]:
+        return (CounterpartyDetails(
             identifier=CPT_OCTANT,
             label='Octant',
             image='octant.svg',
-        )]
+        ),)

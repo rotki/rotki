@@ -292,8 +292,9 @@ class ArbitrumOneBridgeDecoder(ArbitrumDecoderInterface):
             L2_ERC20_GATEWAY: (self._decode_erc20_deposit_event,),
         }
 
-    def counterparties(self) -> list[CounterpartyDetails]:
-        return [ARBITRUM_ONE_CPT_DETAILS]
+    @staticmethod
+    def counterparties() -> tuple[CounterpartyDetails, ...]:
+        return (ARBITRUM_ONE_CPT_DETAILS,)
 
     # -- ArbitrumDecoderInterface methods
     def decoding_by_tx_type(self) -> dict[int, list[tuple[int, Callable]]]:

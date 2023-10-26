@@ -64,5 +64,6 @@ class AirdropsDecoder(DecoderInterface):
             OPTIMISM_AIRDROP: (self._decode_optimism_airdrop_claim,),
         }
 
-    def counterparties(self) -> list[CounterpartyDetails]:
-        return [OPTIMISM_CPT_DETAILS]
+    @staticmethod
+    def counterparties() -> tuple[CounterpartyDetails, ...]:
+        return (OPTIMISM_CPT_DETAILS,)

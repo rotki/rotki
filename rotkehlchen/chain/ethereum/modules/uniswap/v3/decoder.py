@@ -534,12 +534,13 @@ class Uniswapv3Decoder(DecoderInterface):
             self._maybe_enrich_liquidity_pool_creation,
         ]
 
-    def counterparties(self) -> list[CounterpartyDetails]:
-        return [CounterpartyDetails(
+    @staticmethod
+    def counterparties() -> tuple[CounterpartyDetails, ...]:
+        return (CounterpartyDetails(
             identifier=CPT_UNISWAP_V3,
             label=UNISWAP_LABEL,
             image=UNISWAP_ICON,
-        )]
+        ),)
 
     def post_decoding_rules(self) -> dict[str, list[tuple[int, Callable]]]:
         return {CPT_UNISWAP_V3: [(0, self._routers_post_decoding)]}

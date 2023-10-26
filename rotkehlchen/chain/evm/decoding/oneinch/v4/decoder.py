@@ -5,6 +5,7 @@ from rotkehlchen.accounting.structures.types import HistoryEventSubType, History
 from rotkehlchen.chain.ethereum.modules.balancer.v2.constants import (
     V2_SWAP as BALANCER_V2_SWAP_SIGNATURE,
 )
+from rotkehlchen.chain.ethereum.modules.oneinch.constants import CPT_ONEINCH_V4
 from rotkehlchen.chain.ethereum.modules.uniswap.v2.constants import (
     SWAP_SIGNATURE as UNISWAP_V2_SWAP_SIGNATURE,
 )
@@ -17,6 +18,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     DecodingOutput,
 )
+from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
@@ -130,3 +132,9 @@ class Oneinchv4DecoderBase(OneinchCommonDecoder, metaclass=ABCMeta):
             events_list=decoded_events,
         )
         return DEFAULT_DECODING_OUTPUT
+
+    # -- DecoderInterface methods
+
+    @staticmethod
+    def counterparties() -> tuple[CounterpartyDetails, ...]:
+        return OneinchCommonDecoder.generate_counterparty_details(CPT_ONEINCH_V4)

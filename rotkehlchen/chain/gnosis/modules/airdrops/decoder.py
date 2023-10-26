@@ -33,5 +33,6 @@ class AirdropsDecoder(CowswapAirdropDecoder):
 
     # -- DecoderInterface methods
 
-    def counterparties(self) -> list[CounterpartyDetails]:
-        return [COWSWAP_CPT_DETAILS]
+    @staticmethod
+    def counterparties() -> tuple[CounterpartyDetails, ...]:
+        return (COWSWAP_CPT_DETAILS,)

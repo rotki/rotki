@@ -128,9 +128,10 @@ class Oneinchv1Decoder(DecoderInterface):
             string_to_evm_address('0x11111254369792b2Ca5d084aB5eEA397cA8fa48B'): (self.decode_action,),  # noqa: E501
         }
 
-    def counterparties(self) -> list[CounterpartyDetails]:
-        return [CounterpartyDetails(
+    @staticmethod
+    def counterparties() -> tuple[CounterpartyDetails, ...]:
+        return (CounterpartyDetails(
             identifier=CPT_ONEINCH_V1,
             label=ONEINCH_LABEL,
             image=ONEINCH_ICON,
-        )]
+        ),)

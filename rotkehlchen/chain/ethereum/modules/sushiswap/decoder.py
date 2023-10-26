@@ -114,9 +114,10 @@ class SushiswapDecoder(DecoderInterface):
             self._maybe_enrich_lp_tokens_transfers,
         ]
 
-    def counterparties(self) -> list[CounterpartyDetails]:
-        return [CounterpartyDetails(
+    @staticmethod
+    def counterparties() -> tuple[CounterpartyDetails, ...]:
+        return (CounterpartyDetails(
             identifier=CPT_SUSHISWAP_V2,
             label='Sushiswap',
             image='sushiswap.svg',
-        )]
+        ),)

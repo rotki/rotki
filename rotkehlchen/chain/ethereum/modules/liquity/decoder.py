@@ -272,5 +272,6 @@ class LiquityDecoder(DecoderInterface):
     def post_decoding_rules(self) -> dict[str, list[tuple[int, Callable]]]:
         return {CPT_LIQUITY: [(0, self._handle_post_decoding)]}
 
-    def counterparties(self) -> list[CounterpartyDetails]:
-        return [CounterpartyDetails(identifier=CPT_LIQUITY, label='Liquity', image='liquity.svg')]
+    @staticmethod
+    def counterparties() -> tuple[CounterpartyDetails, ...]:
+        return (CounterpartyDetails(identifier=CPT_LIQUITY, label='Liquity', image='liquity.svg'),)

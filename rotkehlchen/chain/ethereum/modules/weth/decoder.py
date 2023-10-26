@@ -138,5 +138,6 @@ class WethDecoder(DecoderInterface):
             WETH_CONTRACT: (self._decode_weth,),
         }
 
-    def counterparties(self) -> list[CounterpartyDetails]:
-        return [CounterpartyDetails(identifier=CPT_WETH, label='WETH', image='weth.svg')]
+    @staticmethod
+    def counterparties() -> tuple[CounterpartyDetails, ...]:
+        return (CounterpartyDetails(identifier=CPT_WETH, label='WETH', image='weth.svg'),)

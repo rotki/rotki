@@ -99,5 +99,6 @@ class Eth2Decoder(DecoderInterface):
             ETH2_DEPOSIT_ADDRESS: (self._decode_eth2_deposit_event,),
         }
 
-    def counterparties(self) -> list[CounterpartyDetails]:
-        return [CounterpartyDetails(identifier=CPT_ETH2, label='ETH2', image='ethereum.svg')]
+    @staticmethod
+    def counterparties() -> tuple[CounterpartyDetails, ...]:
+        return (CounterpartyDetails(identifier=CPT_ETH2, label='ETH2', image='ethereum.svg'),)

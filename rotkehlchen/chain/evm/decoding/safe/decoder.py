@@ -174,9 +174,10 @@ class SafemultisigDecoder(DecoderInterface):
             },
         }
 
-    def counterparties(self) -> list[CounterpartyDetails]:
-        return [CounterpartyDetails(
+    @staticmethod
+    def counterparties() -> tuple[CounterpartyDetails, ...]:
+        return (CounterpartyDetails(
             identifier=CPT_SAFE_MULTISIG,
             label='Safe Multisig',
             image='safemultisig.svg',
-        )]
+        ),)

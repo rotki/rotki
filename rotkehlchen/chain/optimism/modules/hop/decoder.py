@@ -81,5 +81,6 @@ class HopDecoder(DecoderInterface):
             ETH_BRIDGE: (self._decode_receive_eth,),
         }
 
-    def counterparties(self) -> list[CounterpartyDetails]:
-        return [HOP_CPT_DETAILS]
+    @staticmethod
+    def counterparties() -> tuple[CounterpartyDetails, ...]:
+        return (HOP_CPT_DETAILS,)

@@ -57,14 +57,6 @@ class ThegraphDecoder(DecoderInterface):
         )
         self.token = A_GRT.resolve_to_evm_token()
 
-    def counterparties(self) -> list[CounterpartyDetails]:
-        return [THEGRAPH_CPT_DETAILS]
-
-    def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
-        return {
-            CONTRACT_THEGRAPH_STAKING: (self._decode_delegator_staking,),
-        }
-
     def _decode_delegator_staking(self, context: DecoderContext) -> DecodingOutput:
         if context.tx_log.topics[0] == TOPIC_STAKE_DELEGATED:
             return self._decode_stake_delegated(context)
@@ -178,3 +170,14 @@ class ThegraphDecoder(DecoderInterface):
             to_counterparty=CPT_THEGRAPH,
         )
         return DecodingOutput(action_items=[action_item])
+
+    # -- DecoderInterface methods
+
+    @staticmethod
+    def counterparties() -> tuple[CounterpartyDetails, ...]:
+        return (THEGRAPH_CPT_DETAILS,)
+
+    def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
+        return {
+            CONTRACT_THEGRAPH_STAKING: (self._decode_delegator_staking,),
+        }

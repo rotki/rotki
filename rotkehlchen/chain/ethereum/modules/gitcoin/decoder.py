@@ -51,5 +51,6 @@ class GitcoinDecoder(DecoderInterface):
             self._maybe_enrich_gitcoin_transfers,
         ]
 
-    def counterparties(self) -> list[CounterpartyDetails]:
-        return [GITCOIN_CPT_DETAILS]
+    @staticmethod
+    def counterparties() -> tuple[CounterpartyDetails, ...]:
+        return (GITCOIN_CPT_DETAILS,)

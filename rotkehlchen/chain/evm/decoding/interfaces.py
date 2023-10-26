@@ -55,8 +55,9 @@ class DecoderInterface(metaclass=ABCMeta):
         """Subclasses may implement this to return the mappings of addresses to decode functions"""
         return {}
 
+    @staticmethod
     @abstractmethod
-    def counterparties(self) -> list['CounterpartyDetails']:
+    def counterparties() -> tuple['CounterpartyDetails', ...]:
         """
         Subclasses implement this to specify which counterparty values are introduced by the module
         """

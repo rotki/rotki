@@ -590,8 +590,9 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
             self.sdai.evm_address: (self.decode_sdai_events,),
         }
 
-    def counterparties(self) -> list[CounterpartyDetails]:
-        return [
+    @staticmethod
+    def counterparties() -> tuple[CounterpartyDetails, ...]:
+        return (
             CounterpartyDetails(
                 identifier=CPT_VAULT,
                 label=MAKERDAO_LABEL,
@@ -609,4 +610,4 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
                 label=SDAI_LABEL,
                 image=SDAI_ICON,
             ),
-        ]
+        )

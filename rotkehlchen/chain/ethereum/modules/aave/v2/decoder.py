@@ -310,5 +310,6 @@ class Aavev2Decoder(DecoderInterface):
             string_to_evm_address('0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9'): (self._decode_lending_pool_events,),  # AAVE_V2_LENDING_POOL  # noqa: E501
         }
 
-    def counterparties(self) -> list[CounterpartyDetails]:
-        return [CounterpartyDetails(identifier=CPT_AAVE_V2, label=AAVE_LABEL, image='aave.svg')]
+    @staticmethod
+    def counterparties() -> tuple[CounterpartyDetails, ...]:
+        return (CounterpartyDetails(identifier=CPT_AAVE_V2, label=AAVE_LABEL, image='aave.svg'),)

@@ -63,5 +63,6 @@ class AirdropsDecoder(ArbitrumDecoderInterface):
             ARBITRUM_ONE_AIRDROP: (self._decode_arbitrum_airdrop_claim,),
         }
 
-    def counterparties(self) -> list[CounterpartyDetails]:
-        return [ARBITRUM_ONE_CPT_DETAILS]
+    @staticmethod
+    def counterparties() -> tuple[CounterpartyDetails, ...]:
+        return (ARBITRUM_ONE_CPT_DETAILS,)

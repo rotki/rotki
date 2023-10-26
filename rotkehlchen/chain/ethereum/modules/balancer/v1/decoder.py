@@ -266,12 +266,13 @@ class Balancerv1Decoder(DecoderInterface):
             self._maybe_enrich_balancer_v1_events,
         ]
 
-    def counterparties(self) -> list[CounterpartyDetails]:
-        return [CounterpartyDetails(
+    @staticmethod
+    def counterparties() -> tuple[CounterpartyDetails, ...]:
+        return (CounterpartyDetails(
             identifier=CPT_BALANCER_V1,
             label=BALANCER_LABEL,
             image='balancer.svg',
-        )]
+        ),)
 
     def post_decoding_rules(self) -> dict[str, list[tuple[int, Callable]]]:
         return {

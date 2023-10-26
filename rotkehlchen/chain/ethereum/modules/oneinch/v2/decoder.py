@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING
 
 from rotkehlchen.chain.evm.decoding.oneinch.decoder import OneinchCommonDecoder
 from rotkehlchen.chain.evm.decoding.structures import DecoderContext, DecodingOutput
+from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 if TYPE_CHECKING:
@@ -40,3 +41,9 @@ class Oneinchv2Decoder(OneinchCommonDecoder):
             spent_amount_raw=hex_or_bytes_to_int(context.tx_log.data[64:96]),
             return_amount_raw=hex_or_bytes_to_int(context.tx_log.data[96:128]),
         )
+
+    # -- DecoderInterface methods
+
+    @staticmethod
+    def counterparties() -> tuple[CounterpartyDetails, ...]:
+        return OneinchCommonDecoder.generate_counterparty_details(CPT_ONEINCH_V2)

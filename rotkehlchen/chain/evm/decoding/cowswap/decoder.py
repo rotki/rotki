@@ -273,8 +273,9 @@ class CowswapCommonDecoder(DecoderInterface, metaclass=abc.ABCMeta):
 
     # -- DecoderInterface methods
 
-    def counterparties(self) -> list[CounterpartyDetails]:
-        return [COWSWAP_CPT_DETAILS]
+    @staticmethod
+    def counterparties() -> tuple[CounterpartyDetails, ...]:
+        return (COWSWAP_CPT_DETAILS,)
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {self.native_asset_flow_address: (self._decode_native_asset_orders,)}

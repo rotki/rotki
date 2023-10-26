@@ -438,5 +438,6 @@ class EnsDecoder(GovernableDecoderInterface, CustomizableDateMixin):
             ENS_PUBLIC_RESOLVER_3_ADDRESS: (self._decode_ens_public_resolver_events,),
         }
 
-    def counterparties(self) -> list[CounterpartyDetails]:
-        return [CounterpartyDetails(identifier=CPT_ENS, label='ens', image='ens.svg')]
+    @staticmethod
+    def counterparties() -> tuple[CounterpartyDetails, ...]:
+        return (CounterpartyDetails(identifier=CPT_ENS, label='ens', image='ens.svg'),)
