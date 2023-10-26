@@ -13,7 +13,6 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.processed_event import ProcessedAccountingEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.chain.ethereum.modules.thegraph.accountant import ThegraphAccountant
 from rotkehlchen.chain.ethereum.modules.thegraph.constants import CPT_THEGRAPH
 from rotkehlchen.constants.assets import A_GRT
 from rotkehlchen.constants.misc import ONE, ZERO
@@ -24,7 +23,6 @@ from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.accountant import Accountant
-    from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
 
 TS1, TS2, TS3 = Timestamp(1), Timestamp(2), Timestamp(3)
 TSMS1, TSMS2, TSMS3 = ts_sec_to_ms(TS1), ts_sec_to_ms(TS2), ts_sec_to_ms(TS3)
@@ -34,15 +32,8 @@ HASH1, HASH2, HASH3 = make_evm_tx_hash(), make_evm_tx_hash(), make_evm_tx_hash()
 
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
 @pytest.mark.parametrize('accounting_initialize_parameters', [True])
-def test_delegation_reward(accountant: 'Accountant', ethereum_inquirer: 'EvmNodeInquirer'):
+def test_delegation_reward(accountant: 'Accountant'):
     pot = accountant.pots[0]
-    events_accountant = pot.events_accountant
-    thegraph_accountant = ThegraphAccountant(
-        node_inquirer=ethereum_inquirer,
-        msg_aggregator=ethereum_inquirer.database.msg_aggregator,
-    )
-    thegraph_settings = thegraph_accountant.event_settings(pot)
-    events_accountant.rules_manager.event_settings.update(thegraph_settings)
     events_iterator = iter([EvmEvent(
         tx_hash=HASH1,
         sequence_index=358,

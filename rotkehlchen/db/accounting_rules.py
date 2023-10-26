@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Any, NamedTuple, Optional
+from typing import TYPE_CHECKING, Any, NamedTuple, Optional, Union
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 
@@ -32,7 +32,7 @@ class RuleInformation(NamedTuple):
     links contains the properties in rule that have been linked to an accounting setting.
     """
     identifier: int
-    event_key: tuple[HistoryEventType, HistoryEventSubType, str]
+    event_key: tuple[HistoryEventType, HistoryEventSubType, Union[str, None]]
     rule: BaseEventSettings
     links: dict[str, str]
 
@@ -191,7 +191,7 @@ class DBAccountingRules:
                 default_value = DEFAULT_INCLUDE_GAS_COSTS
             write_cursor.execute(
                 'INSERT OR IGNORE INTO settings(name, value) VALUES (?, ?)',
-                (setting_name, default_value),
+                (setting_name, str(default_value)),
             )
 
             write_cursor.execute(
@@ -222,7 +222,11 @@ class DBAccountingRules:
             rules = {
                 entry[0]: RuleInformation(
                     identifier=entry[0],
-                    event_key=entry[1:4],
+                    event_key=(
+                        HistoryEventType.deserialize(entry[1]),
+                        HistoryEventSubType.deserialize(entry[2]),
+                        None if entry[3] == NO_ACCOUNTING_COUNTERPARTY else entry[3],
+                    ),
                     rule=BaseEventSettings.deserialize_from_db(entry[4:]),
                     links={},
                 )
@@ -276,8 +280,8 @@ class DBAccountingRules:
             # serialize the rule and add information about the key to what it applies
             data = entry.rule.serialize()
             data['identifier'] = entry.identifier
-            data['event_type'] = entry.event_key[0]
-            data['event_subtype'] = entry.event_key[1]
+            data['event_type'] = entry.event_key[0].serialize()
+            data['event_subtype'] = entry.event_key[1].serialize()
             data['counterparty'] = entry.event_key[2] if entry.event_key[2] != NO_ACCOUNTING_COUNTERPARTY else None  # noqa: E501
             for linked_property, setting_name in entry.links.items():
                 data[linked_property]['linked_setting'] = setting_name

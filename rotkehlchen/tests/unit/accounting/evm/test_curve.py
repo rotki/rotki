@@ -9,11 +9,9 @@ from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.processed_event import ProcessedAccountingEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.chain.ethereum.modules.curve.accountant import CurveAccountant
 from rotkehlchen.chain.ethereum.modules.curve.constants import CPT_CURVE
-from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.constants import ONE, ZERO
-from rotkehlchen.constants.assets import A_DAI, A_ETH, A_USDC, A_USDT
+from rotkehlchen.constants.assets import A_DAI, A_USDC, A_USDT
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
 from rotkehlchen.types import Location, Price, Timestamp
@@ -21,7 +19,6 @@ from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.accountant import Accountant
-    from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
 
 TIMESTAMP_1_SECS = Timestamp(1624395186)
 TIMESTAMP_1_MS = ts_sec_to_ms(TIMESTAMP_1_SECS)
@@ -64,18 +61,6 @@ USER_ADDRESS = make_evm_address()
 
 DEPOSIT_ENTRIES = [
     EvmEvent(
-        tx_hash=EVM_HASH,
-        sequence_index=0,
-        timestamp=TIMESTAMP_1_MS,
-        location=Location.ETHEREUM,
-        event_type=HistoryEventType.SPEND,
-        event_subtype=HistoryEventSubType.FEE,
-        asset=A_ETH,
-        balance=Balance(amount=FVal('0.011180845456491718')),
-        location_label=USER_ADDRESS,
-        notes='Burned 0.011180845456491718 ETH for gas',
-        counterparty=CPT_GAS,
-    ), EvmEvent(
         tx_hash=EVM_HASH,
         sequence_index=76,
         timestamp=TIMESTAMP_1_MS,
@@ -141,16 +126,10 @@ DEPOSIT_ENTRIES = [
 
 
 @pytest.mark.parametrize('mocked_price_queries', [MOCKED_PRICES])
-def test_curve_multiple_deposit(accountant: 'Accountant', ethereum_inquirer: 'EvmNodeInquirer'):
+@pytest.mark.parametrize('accounting_initialize_parameters', [True])
+def test_curve_multiple_deposit(accountant: 'Accountant'):
     """Test that the default accounting settings for receiving are correct"""
     pot = accountant.pots[0]
-    events_accountant = pot.events_accountant
-    curve_accountant = CurveAccountant(
-        node_inquirer=ethereum_inquirer,
-        msg_aggregator=ethereum_inquirer.database.msg_aggregator,
-    )
-    curve_settings = curve_accountant.event_settings(pot)
-    events_accountant.rules_manager.event_settings.update(curve_settings)
     events_iterator = iter(DEPOSIT_ENTRIES)
     for event in events_iterator:
         pot.events_accountant.process(event=event, events_iterator=events_iterator)
