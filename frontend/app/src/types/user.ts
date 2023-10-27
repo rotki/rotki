@@ -184,7 +184,7 @@ const ApiKey = z.object({
 });
 
 export const ExternalServiceKeys = z.object({
-  etherscan: z.record(ApiKey.optional()),
+  etherscan: z.record(ApiKey.optional()).optional(),
   cryptocompare: ApiKey.optional(),
   covalent: ApiKey.optional(),
   beaconchain: ApiKey.optional(),
