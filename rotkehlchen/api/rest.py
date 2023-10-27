@@ -4226,7 +4226,10 @@ class RestAPI:
     def get_types_mappings(self) -> Response:
         result = {
             'global_mappings': EVENT_CATEGORY_MAPPINGS,
-            'event_category_details': EVENT_CATEGORY_DETAILS,
+            'event_category_details': {
+                category: {'counterparty_mappings': entries, 'direction': category.direction.serialize()}  # noqa: E501
+                for category, entries in EVENT_CATEGORY_DETAILS.items()
+            },
             'accounting_events_icons': ACCOUNTING_EVENTS_ICONS,
         }
         return api_response(

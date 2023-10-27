@@ -2,10 +2,10 @@ from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.structures.types import (
     EventCategory,
     EventCategoryDetails,
-    EventDirection,
     HistoryEventSubType,
     HistoryEventType,
 )
+from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 
 FREE_PNL_EVENTS_LIMIT = 1000
 FREE_REPORTS_LOOKUP_LIMIT = 20
@@ -80,163 +80,124 @@ EVENT_CATEGORY_MAPPINGS = {  # possible combinations of types and subtypes mappe
 }
 
 EVENT_CATEGORY_DETAILS = {
-    EventCategory.GAS: EventCategoryDetails(
-        label='gas fee',
-        icon='mdi-fire',
-        direction=EventDirection.OUT,
-    ), EventCategory.SEND: EventCategoryDetails(
+    EventCategory.SEND: {None: EventCategoryDetails(
         label='send',
         icon='mdi-arrow-up',
-        direction=EventDirection.OUT,
-    ), EventCategory.RECEIVE: EventCategoryDetails(
+    )}, EventCategory.RECEIVE: {None: EventCategoryDetails(
         label='receive',
         icon='mdi-arrow-down',
         color='green',
-        direction=EventDirection.IN,
-    ), EventCategory.SWAP_OUT: EventCategoryDetails(
+    )}, EventCategory.SWAP_OUT: {None: EventCategoryDetails(
         label='swap',
         icon='mdi-arrow-u-right-bottom',
-        direction=EventDirection.OUT,
-    ), EventCategory.SWAP_IN: EventCategoryDetails(
+    )}, EventCategory.SWAP_IN: {None: EventCategoryDetails(
         label='swap',
         icon='mdi-arrow-u-left-top',
         color='green',
-        direction=EventDirection.IN,
-    ), EventCategory.MIGRATE_OUT: EventCategoryDetails(
+    )}, EventCategory.MIGRATE_OUT: {None: EventCategoryDetails(
         label='migrate',
         icon='mdi-arrow-u-right-bottom',
-        direction=EventDirection.OUT,
-    ), EventCategory.MIGRATE_IN: EventCategoryDetails(
+    )}, EventCategory.MIGRATE_IN: {None: EventCategoryDetails(
         label='migrate',
         icon='mdi-arrow-u-left-top',
         color='green',
-        direction=EventDirection.IN,
-    ), EventCategory.APPROVAL: EventCategoryDetails(
+    )}, EventCategory.APPROVAL: {None: EventCategoryDetails(
         label='approval',
         icon='mdi-lock-open-outline',
-        direction=EventDirection.NEUTRAL,
-    ), EventCategory.DEPOSIT: EventCategoryDetails(
+    )}, EventCategory.DEPOSIT: {None: EventCategoryDetails(
         label='deposit',
         icon='mdi-arrow-expand-up',
         color='green',
-        direction=EventDirection.OUT,
-    ), EventCategory.WITHDRAW: EventCategoryDetails(
+    )}, EventCategory.WITHDRAW: {None: EventCategoryDetails(
         label='withdraw',
         icon='mdi-arrow-expand-down',
-        direction=EventDirection.IN,
-    ), EventCategory.AIRDROP: EventCategoryDetails(
+    )}, EventCategory.AIRDROP: {None: EventCategoryDetails(
         label='airdrop',
         icon='mdi-airballoon-outline',
-        direction=EventDirection.IN,
-    ), EventCategory.BORROW: EventCategoryDetails(
+    )}, EventCategory.BORROW: {None: EventCategoryDetails(
         label='borrow',
         icon='mdi-hand-coin-outline',
-        direction=EventDirection.IN,
-    ), EventCategory.REPAY: EventCategoryDetails(
+    )}, EventCategory.REPAY: {None: EventCategoryDetails(
         label='repay',
         icon='mdi-history',
-        direction=EventDirection.OUT,
-    ), EventCategory.DEPLOY: EventCategoryDetails(
+    )}, EventCategory.DEPLOY: {None: EventCategoryDetails(
         label='deploy',
         icon='mdi-swap-horizontal',
-        direction=EventDirection.NEUTRAL,
-    ), EventCategory.DEPLOY_WITH_SPEND: EventCategoryDetails(
+    )}, EventCategory.DEPLOY_WITH_SPEND: {None: EventCategoryDetails(
         label='deploy with spend',
         icon='mdi-swap-horizontal',
-        direction=EventDirection.OUT,
-    ), EventCategory.BRIDGE_DEPOSIT: EventCategoryDetails(
+    )}, EventCategory.BRIDGE_DEPOSIT: {None: EventCategoryDetails(
         label='bridge',
         icon='mdi-arrow-expand-up',
         color='red',
-        direction=EventDirection.OUT,
-    ), EventCategory.BRIDGE_WITHDRAWAL: EventCategoryDetails(
+    )}, EventCategory.BRIDGE_WITHDRAWAL: {None: EventCategoryDetails(
         label='bridge',
         icon='mdi-arrow-expand-down',
         color='green',
-        direction=EventDirection.IN,
-    ), EventCategory.GOVERNANCE: EventCategoryDetails(
+    )}, EventCategory.GOVERNANCE: {None: EventCategoryDetails(
         label='governance',
         icon='mdi-bank',
-        direction=EventDirection.NEUTRAL,
-    ), EventCategory.DONATE: EventCategoryDetails(
+    )}, EventCategory.DONATE: {None: EventCategoryDetails(
         label='donate',
         icon='mdi-hand-heart-outline',
-        direction=EventDirection.OUT,
-    ), EventCategory.RECEIVE_DONATION: EventCategoryDetails(
+    )}, EventCategory.RECEIVE_DONATION: {None: EventCategoryDetails(
         label='receive donation',
         icon='mdi-hand-heart-outline',
-        direction=EventDirection.IN,
-    ), EventCategory.RENEW: EventCategoryDetails(
+    )}, EventCategory.RENEW: {None: EventCategoryDetails(
         label='renew',
         icon='mdi-calendar-refresh',
-        direction=EventDirection.OUT,
-    ), EventCategory.PLACE_ORDER: EventCategoryDetails(
+    )}, EventCategory.PLACE_ORDER: {None: EventCategoryDetails(
         label='place order',
         icon='mdi-briefcase-arrow-up-down',
-        direction=EventDirection.NEUTRAL,
-    ), EventCategory.TRANSFER: EventCategoryDetails(
+    )}, EventCategory.TRANSFER: {None: EventCategoryDetails(
         label='transfer',
         icon='mdi-swap-horizontal',
-        direction=EventDirection.NEUTRAL,
-    ), EventCategory.STAKING_REWARD: EventCategoryDetails(
+    )}, EventCategory.STAKING_REWARD: {None: EventCategoryDetails(
         label='staking reward',
         icon='mdi-treasure-chest',
-        direction=EventDirection.IN,
-    ), EventCategory.CLAIM_REWARD: EventCategoryDetails(
+    )}, EventCategory.CLAIM_REWARD: {None: EventCategoryDetails(
         label='claim reward',
         icon='mdi-gift',
-        direction=EventDirection.IN,
-    ), EventCategory.LIQUIDATION_REWARD: EventCategoryDetails(
+    )}, EventCategory.LIQUIDATION_REWARD: {None: EventCategoryDetails(
         label='liquidation reward',
         icon='mdi-water',
-        direction=EventDirection.IN,
-    ), EventCategory.LIQUIDATION_LOSS: EventCategoryDetails(
+    )}, EventCategory.LIQUIDATION_LOSS: {None: EventCategoryDetails(
         label='liquidation loss',
         icon='mdi-water',
-        direction=EventDirection.OUT,
-    ), EventCategory.INFORMATIONAL: EventCategoryDetails(
+    )}, EventCategory.INFORMATIONAL: {None: EventCategoryDetails(
         label='informational',
         icon='mdi-information-outline',
-        direction=EventDirection.NEUTRAL,
-    ), EventCategory.CANCEL_ORDER: EventCategoryDetails(
+    )}, EventCategory.CANCEL_ORDER: {None: EventCategoryDetails(
         label='cancel order',
         icon='mdi-close-circle-multiple-outline',
         color='red',
-        direction=EventDirection.IN,
-    ), EventCategory.REFUND: EventCategoryDetails(
+    )}, EventCategory.REFUND: {None: EventCategoryDetails(
         label='refund',
         icon='mdi-cash-refund',
-        direction=EventDirection.IN,
-    ), EventCategory.FEE: EventCategoryDetails(
-        label='fee',
-        icon='mdi-account-cash',
-        direction=EventDirection.OUT,
-    ), EventCategory.MEV_REWARD: EventCategoryDetails(
+    )}, EventCategory.FEE: {
+        None: EventCategoryDetails(label='fee', icon='mdi-account-cash'),
+        CPT_GAS: EventCategoryDetails(label='gas fee', icon='mdi-fire'),
+    }, EventCategory.MEV_REWARD: {None: EventCategoryDetails(
         label='mev',
         icon='mdi-star-box',
-        direction=EventDirection.IN,
-    ), EventCategory.CREATE_BLOCK: EventCategoryDetails(
+    )}, EventCategory.CREATE_BLOCK: {None: EventCategoryDetails(
         label='new block',
         icon='mdi-cube-outline',
-        direction=EventDirection.IN,
-    ), EventCategory.CREATE_PROJECT: EventCategoryDetails(
+    )}, EventCategory.CREATE_PROJECT: {None: EventCategoryDetails(
         label='new project',
         icon='mdi-clipboard-check-outline',
-        direction=EventDirection.NEUTRAL,
-    ), EventCategory.UPDATE_PROJECT: EventCategoryDetails(
+    )}, EventCategory.UPDATE_PROJECT: {None: EventCategoryDetails(
         label='update project',
         icon='mdi-clipboard-plus-outline',
-        direction=EventDirection.NEUTRAL,
-    ), EventCategory.APPLY: EventCategoryDetails(
+    )}, EventCategory.APPLY: {None: EventCategoryDetails(
         label='apply',
         icon='mdi-application-export',
-        direction=EventDirection.NEUTRAL,
-    ),
+    )},
 }
 
 ACCOUNTING_EVENTS_ICONS = {
     AccountingEventType.TRADE: 'mdi-shuffle-variant',
-    AccountingEventType.FEE: 'mdi-fire',
+    AccountingEventType.FEE: 'mdi-account-cash',
     AccountingEventType.ASSET_MOVEMENT: 'mdi-bank-transfer',
     AccountingEventType.MARGIN_POSITION: 'mdi-margin',
     AccountingEventType.LOAN: 'mdi-handshake',

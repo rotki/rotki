@@ -1,4 +1,4 @@
-from enum import auto
+from enum import Enum, auto
 from typing import Literal, NamedTuple, Optional
 
 from rotkehlchen.errors.serialization import DeserializationError
@@ -116,47 +116,59 @@ class EventDirection(SerializableEnumNameMixin):
 class EventCategoryDetails(NamedTuple):
     label: str
     icon: str
-    direction: EventDirection
     color: Optional[Literal['green', 'red']] = None
 
 
-class EventCategory(SerializableEnumNameMixin):
+class EventCategory(Enum):
+    """User friendly categories to classify combinations of event type and event subtype
+
+    Can't use auto() yet cause has to be only thing in line.
+    https://docs.python.org/3/library/enum.html#enum.auto
+
+    From 3.11 and on we will be able to adjust.
     """
-    User friendly categories to classify combinations of event type and event subtype
-    """
-    GAS = auto()
-    SEND = auto()
-    RECEIVE = auto()
-    SWAP_OUT = auto()
-    SWAP_IN = auto()
-    MIGRATE_OUT = auto()
-    MIGRATE_IN = auto()
-    APPROVAL = auto()
-    DEPOSIT = auto()
-    WITHDRAW = auto()
-    AIRDROP = auto()
-    BORROW = auto()
-    REPAY = auto()
-    DEPLOY = auto()
-    DEPLOY_WITH_SPEND = auto()
-    BRIDGE_DEPOSIT = auto()
-    BRIDGE_WITHDRAWAL = auto()
-    GOVERNANCE = auto()
-    DONATE = auto()
-    RECEIVE_DONATION = auto()
-    RENEW = auto()
-    PLACE_ORDER = auto()
-    TRANSFER = auto()
-    CLAIM_REWARD = auto()
-    LIQUIDATION_REWARD = auto()
-    LIQUIDATION_LOSS = auto()
-    INFORMATIONAL = auto()
-    CANCEL_ORDER = auto()
-    REFUND = auto()
-    FEE = auto()
-    MEV_REWARD = auto()
-    STAKING_REWARD = auto()
-    CREATE_BLOCK = auto()
-    CREATE_PROJECT = auto()
-    UPDATE_PROJECT = auto()
-    APPLY = auto()
+    SEND = 1, EventDirection.OUT
+    RECEIVE = 2, EventDirection.IN
+    SWAP_OUT = 3, EventDirection.OUT
+    SWAP_IN = 4, EventDirection.IN
+    MIGRATE_OUT = 5, EventDirection.OUT
+    MIGRATE_IN = 6, EventDirection.IN
+    APPROVAL = 7, EventDirection.NEUTRAL
+    DEPOSIT = 8, EventDirection.OUT
+    WITHDRAW = 9, EventDirection.IN
+    AIRDROP = 10, EventDirection.IN
+    BORROW = 11, EventDirection.IN
+    REPAY = 12, EventDirection.OUT
+    DEPLOY = 12, EventDirection.NEUTRAL
+    DEPLOY_WITH_SPEND = 13, EventDirection.OUT
+    BRIDGE_DEPOSIT = 14, EventDirection.OUT
+    BRIDGE_WITHDRAWAL = 15, EventDirection.IN
+    GOVERNANCE = 16, EventDirection.NEUTRAL
+    DONATE = 17, EventDirection.OUT
+    RECEIVE_DONATION = 18, EventDirection.IN
+    RENEW = 19, EventDirection.OUT
+    PLACE_ORDER = 20, EventDirection.NEUTRAL
+    TRANSFER = 21, EventDirection.NEUTRAL
+    CLAIM_REWARD = 22, EventDirection.IN
+    LIQUIDATION_REWARD = 23, EventDirection.IN
+    LIQUIDATION_LOSS = 24, EventDirection.OUT
+    INFORMATIONAL = 25, EventDirection.NEUTRAL
+    CANCEL_ORDER = 26, EventDirection.IN
+    REFUND = 27, EventDirection.IN
+    FEE = 28, EventDirection.OUT
+    MEV_REWARD = 29, EventDirection.IN
+    STAKING_REWARD = 30, EventDirection.IN
+    CREATE_BLOCK = 31, EventDirection.IN
+    CREATE_PROJECT = 32, EventDirection.NEUTRAL
+    UPDATE_PROJECT = 33, EventDirection.NEUTRAL
+    APPLY = 34, EventDirection.NEUTRAL
+
+    @property
+    def direction(self) -> EventDirection:
+        return self.value[1]
+
+    def __str__(self) -> str:
+        return ' '.join(word.lower() for word in self.name.split('_'))  # pylint: disable=no-member
+
+    def serialize(self) -> str:
+        return str(self)
