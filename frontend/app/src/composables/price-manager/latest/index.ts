@@ -94,7 +94,7 @@ export const useLatestPrices = (
     const { fromAsset } = item;
     try {
       await deleteLatestPrice(fromAsset);
-      await refresh();
+      await refresh(true);
     } catch (e: any) {
       const notification: NotificationPayload = {
         title: t('price_table.delete.failure.title'),
@@ -109,10 +109,14 @@ export const useLatestPrices = (
     }
   };
 
-  const refresh = async () => {
+  const refresh = async (refreshAll: boolean = false) => {
     set(refreshing, true);
     await getLatestPrices();
-    await refreshPrices(false, [...get(latestAssets), ...get(assets())]);
+    const assetToRefresh = [...get(latestAssets)];
+    if (refreshAll) {
+      assetToRefresh.push(...get(assets()));
+    }
+    await refreshPrices(false, assetToRefresh);
     resetStatus();
     set(refreshing, false);
   };

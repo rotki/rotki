@@ -354,7 +354,7 @@ describe('AmountDisplay.vue', () => {
         priceAsset: 'ETH'
       });
 
-      expect(wrapper.find('.v-icon.mdi-auto-fix').exists()).toBe(false);
+      expect(wrapper.find('.rui-icon').exists()).toBe(false);
     });
 
     test('Manual price icon visible', () => {
@@ -371,7 +371,7 @@ describe('AmountDisplay.vue', () => {
         priceAsset: 'ETH'
       });
 
-      expect(wrapper.find('.v-icon.mdi-auto-fix').exists()).toBe(true);
+      expect(wrapper.find('.rui-icon').exists()).toBe(true);
     });
   });
 

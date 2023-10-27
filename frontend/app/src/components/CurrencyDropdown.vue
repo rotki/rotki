@@ -59,86 +59,62 @@ const calculateFontSize = (symbol: string) => {
 </script>
 
 <template>
-  <div>
-    <VMenu
-      v-model="visible"
-      transition="slide-y-transition"
-      max-width="350px"
-      min-width="350px"
-      offset-y
-      :close-on-content-click="false"
-    >
-      <template #activator="{ on }">
-        <MenuTooltipButton
-          :tooltip="
-            t('currency_drop_down.profit_currency', {
-              currency: currency.tickerSymbol
-            })
-          "
-          class-name="secondary--text text--lighten-4"
-          :on-menu="on"
+  <VMenu
+    v-model="visible"
+    transition="slide-y-transition"
+    max-width="350px"
+    min-width="350px"
+    offset-y
+    :close-on-content-click="false"
+  >
+    <template #activator="{ on }">
+      <MenuTooltipButton
+        :tooltip="
+          t('currency_drop_down.profit_currency', {
+            currency: currency.tickerSymbol
+          })
+        "
+        class-name="secondary--text text--lighten-4 currency-dropdown text-[1.375rem] font-bold"
+        :on-menu="on"
+      >
+        {{ currency.unicodeSymbol }}
+      </MenuTooltipButton>
+    </template>
+    <RuiTextField
+      v-model="filter"
+      variant="outlined"
+      dense
+      autofocus
+      hide-details
+      class="m-3"
+      color="primary"
+      label="Filter"
+      prepend-inner-icon="mdi-magnify"
+      @keypress.enter="selectFirst()"
+    />
+    <RuiDivider />
+    <VList class="max-h-[25rem]">
+      <VListItem
+        v-for="item in filteredCurrencies"
+        :id="`change-to-${item.tickerSymbol.toLocaleLowerCase()}`"
+        :key="item.tickerSymbol"
+        @click="onSelected(item)"
+      >
+        <VListItemAvatar
+          class="font-bold text-rui-primary"
+          :style="{ fontSize: calculateFontSize(item.unicodeSymbol) }"
         >
-          <span class="currency-dropdown">
-            {{ currency.unicodeSymbol }}
-          </span>
-        </MenuTooltipButton>
-      </template>
-      <div>
-        <VRow class="px-4 py-3">
-          <VCol>
-            <VTextField
-              v-model="filter"
-              outlined
-              dense
-              autofocus
-              hide-details
-              label="Filter"
-              prepend-inner-icon="mdi-magnify"
-              @keypress.enter="selectFirst()"
-            />
-          </VCol>
-        </VRow>
-        <VDivider />
-        <VList class="currency-dropdown__list">
-          <VListItem
-            v-for="item in filteredCurrencies"
-            :id="`change-to-${item.tickerSymbol.toLocaleLowerCase()}`"
-            :key="item.tickerSymbol"
-            @click="onSelected(item)"
-          >
-            <VListItemAvatar
-              class="currency-list primary--text"
-              :style="{ fontSize: calculateFontSize(item.unicodeSymbol) }"
-            >
-              {{ item.unicodeSymbol }}
-            </VListItemAvatar>
-            <VListItemContent>
-              <VListItemTitle>
-                {{ item.name }}
-              </VListItemTitle>
-              <VListItemSubtitle>
-                {{ t('currency_drop_down.hint') }}
-              </VListItemSubtitle>
-            </VListItemContent>
-          </VListItem>
-        </VList>
-      </div>
-    </VMenu>
-  </div>
+          {{ item.unicodeSymbol }}
+        </VListItemAvatar>
+        <VListItemContent>
+          <VListItemTitle>
+            {{ item.name }}
+          </VListItemTitle>
+          <VListItemSubtitle>
+            {{ t('currency_drop_down.hint') }}
+          </VListItemSubtitle>
+        </VListItemContent>
+      </VListItem>
+    </VList>
+  </VMenu>
 </template>
-
-<style scoped lang="scss">
-.currency-dropdown {
-  font-size: 1.8em !important;
-  font-weight: bold !important;
-
-  &__list {
-    max-height: 400px;
-    overflow-y: scroll;
-  }
-}
-
-.currency-list {
-  font-weight: bold;
-}
-</style>
