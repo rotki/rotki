@@ -1,18 +1,10 @@
 <script setup lang="ts">
 import { LpType } from '@rotki/common/lib/defi';
-import { type PropType } from 'vue';
 
-const props = defineProps({
-  assets: {
-    required: true,
-    type: Array as PropType<string[]>,
-    validator: value => Array.isArray(value) && value.length >= 2
-  },
-  type: {
-    required: true,
-    type: String as PropType<LpType>
-  }
-});
+const props = defineProps<{
+  assets: string[];
+  type: LpType;
+}>();
 
 const { assets, type } = toRefs(props);
 

@@ -1,25 +1,19 @@
 <script setup lang="ts">
 import { type AssetBalanceWithPrice } from '@rotki/common';
 import { type XswapAsset } from '@rotki/common/lib/defi/xswap';
-import { type PropType } from 'vue';
 import { type DataTableHeader } from '@/types/vuetify';
 
-defineProps({
-  span: {
-    type: Number,
-    required: false,
-    default: 1
-  },
-  assets: {
-    required: true,
-    type: Array as PropType<XswapAsset[]>
-  },
-  premiumOnly: {
-    required: false,
-    type: Boolean,
-    default: true
+withDefaults(
+  defineProps<{
+    span?: number;
+    assets: XswapAsset[];
+    premiumOnly?: boolean;
+  }>(),
+  {
+    span: 1,
+    premiumOnly: true
   }
-});
+);
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { premiumURL } = useInterop();

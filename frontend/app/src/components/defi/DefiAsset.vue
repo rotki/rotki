@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import { type PropType } from 'vue';
 import { type DefiAsset } from '@/types/defi/overview';
 import { createEvmIdentifierFromAddress } from '@/utils/assets';
 
-const props = defineProps({
-  asset: { required: true, type: Object as PropType<DefiAsset> }
-});
+const props = defineProps<{
+  asset: DefiAsset;
+}>();
 
 const { asset } = toRefs(props);
 
@@ -15,7 +14,7 @@ const evmIdentifier: ComputedRef<string> = computed(() =>
 </script>
 
 <template>
-  <div class="defi-asset flex flex-row items-center py-4">
+  <div class="flex items-center py-4">
     <AssetIcon size="32px" :identifier="evmIdentifier" />
     <span class="ml-3">{{ asset.tokenSymbol }}</span>
     <VSpacer />

@@ -1,12 +1,11 @@
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { type PropType } from 'vue';
 import { type AssetMovement } from '@/types/history/asset-movements';
 import { isValidTxHash } from '@/utils/text';
 
-const props = defineProps({
-  item: { required: true, type: Object as PropType<AssetMovement> }
-});
+const props = defineProps<{
+  item: AssetMovement;
+}>();
 
 const { item } = toRefs(props);
 

@@ -1,17 +1,10 @@
 <script setup lang="ts">
-import { type PropType } from 'vue';
 import { type AssetMovementEntry } from '@/types/history/asset-movements';
 
-defineProps({
-  span: {
-    type: Number,
-    required: true
-  },
-  item: {
-    required: true,
-    type: Object as PropType<AssetMovementEntry>
-  }
-});
+defineProps<{
+  span: number;
+  item: AssetMovementEntry;
+}>();
 
 const { t } = useI18n();
 </script>

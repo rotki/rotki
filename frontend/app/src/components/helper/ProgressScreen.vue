@@ -1,7 +1,10 @@
 <script setup lang="ts">
-const props = defineProps({
-  progress: { required: false, default: '', type: String }
-});
+const props = withDefaults(
+  defineProps<{
+    progress?: string;
+  }>(),
+  { progress: '' }
+);
 
 const { progress } = toRefs(props);
 const percentage = computed(() => {

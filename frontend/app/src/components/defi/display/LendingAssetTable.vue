@@ -1,12 +1,16 @@
 <script setup lang="ts">
-import { type PropType } from 'vue';
 import { type DataTableHeader } from '@/types/vuetify';
 import { type BaseDefiBalance } from '@/types/defi/lending';
 
-defineProps({
-  assets: { required: true, type: Array as PropType<BaseDefiBalance[]> },
-  loading: { required: false, type: Boolean, default: false }
-});
+withDefaults(
+  defineProps<{
+    assets: BaseDefiBalance[];
+    loading?: boolean;
+  }>(),
+  {
+    loading: false
+  }
+);
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { t } = useI18n();

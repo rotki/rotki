@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { type DefiProtocol } from '@rotki/common/lib/blockchain';
-import { type PropType } from 'vue';
 
 interface DefiProtocolInfo {
   readonly identifier: string;
@@ -8,9 +7,9 @@ interface DefiProtocolInfo {
   readonly protocol: DefiProtocol;
 }
 
-const props = defineProps({
-  item: { required: true, type: Object as PropType<DefiProtocolInfo> }
-});
+const props = defineProps<{
+  item: DefiProtocolInfo;
+}>();
 const { item } = toRefs(props);
 
 const getIcon = ({ protocol }: DefiProtocolInfo): string =>

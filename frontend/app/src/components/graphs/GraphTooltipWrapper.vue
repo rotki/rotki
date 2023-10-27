@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { type TooltipDisplayOption } from '@rotki/common/lib/settings/graphs';
-import { type PropType } from 'vue';
 
-defineProps({
-  tooltipOption: {
-    required: false,
-    type: Object as PropType<TooltipDisplayOption>,
-    default: null
+withDefaults(
+  defineProps<{
+    tooltipOption?: TooltipDisplayOption;
+  }>(),
+  {
+    tooltipOption: undefined
   }
-});
+);
 
 const { dark } = useTheme();
 </script>

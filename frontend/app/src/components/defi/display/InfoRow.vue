@@ -1,16 +1,19 @@
 <script setup lang="ts">
-import { BigNumber } from '@rotki/common';
+import { type BigNumber } from '@rotki/common';
 
-defineProps({
-  loading: { required: false, type: Boolean },
-  title: { required: true, type: String },
-  value: {
-    required: false,
-    type: BigNumber,
-    default: () => Zero
-  },
-  fiat: { required: false, type: Boolean }
-});
+withDefaults(
+  defineProps<{
+    loading?: boolean;
+    title: string;
+    value?: BigNumber;
+    fiat?: boolean;
+  }>(),
+  {
+    loading: false,
+    value: () => Zero,
+    fiat: false
+  }
+);
 </script>
 
 <template>

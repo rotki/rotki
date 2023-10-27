@@ -1,15 +1,17 @@
 <script setup lang="ts">
-import { type PropType } from 'vue';
 import {
   type DashboardTableType,
   type FrontendSettingsPayload
 } from '@/types/settings/frontend-settings';
 import { TableColumn } from '@/types/table-column';
 
-const props = defineProps({
-  group: { required: true, type: String as PropType<DashboardTableType> },
-  groupLabel: { required: false, type: String, default: '' }
-});
+const props = withDefaults(
+  defineProps<{
+    group: DashboardTableType;
+    groupLabel?: string;
+  }>(),
+  { groupLabel: undefined }
+);
 
 const { t } = useI18n();
 
