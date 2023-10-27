@@ -18,7 +18,6 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.modules.eth2.eth2 import Eth2
 
 
-@pytest.mark.vcr()
 @pytest.mark.parametrize('network_mocking', [False])
 @pytest.mark.freeze_time('2023-04-23 00:52:55 GMT')
 def test_withdrawals(eth2: 'Eth2', database):

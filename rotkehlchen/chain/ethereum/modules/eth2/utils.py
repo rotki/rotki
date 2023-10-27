@@ -33,7 +33,7 @@ EPOCH_DURATION_SECS = 384
 
 EPOCH_PARSE_REGEX = re.compile(r'<a href="/epoch/(.*?)">.*')
 ADDRESS_PARSE_REGEX = re.compile(r'<a href="/address/(.*?)".*')
-ETH_PARSE_REGEX = re.compile(r'.*title="(.*?)">.*')
+ETH_PARSE_REGEX = re.compile(r'<span>(.*?) ETH</span>.*')
 ETH2_GENESIS_TIMESTAMP = 1606824023
 
 
@@ -110,11 +110,12 @@ def scrape_validator_withdrawals(
     - RemoteError if we can't query beaconcha.in or if the data is not in the expected format
     - DeserializationError if something is not in the expected format
     """
-    withdrawals = []
+    withdrawals = set()
     now = ts_now()
     start = 0
     page_length = 10
     stop_iterating = False
+    last_withdrawals_length = -1
 
     while True:
         url = f'{BEACONCHAIN_ROOT_URL}/validator/{validator_index}/withdrawals?draw=1&columns%5B0%5D%5Bdata%5D=0&columns%5B0%5D%5Bname%5D=&columns%5B0%5D%5Bsearchable%5D=true&columns%5B0%5D%5Borderable%5D=true&columns%5B0%5D%5Bsearch%5D%5Bvalue%5D=&columns%5B0%5D%5Bsearch%5D%5Bregex%5D=false&columns%5B1%5D%5Bdata%5D=1&columns%5B1%5D%5Bname%5D=&columns%5B1%5D%5Bsearchable%5D=true&columns%5B1%5D%5Borderable%5D=true&columns%5B1%5D%5Bsearch%5D%5Bvalue%5D=&columns%5B1%5D%5Bsearch%5D%5Bregex%5D=false&columns%5B2%5D%5Bdata%5D=2&columns%5B2%5D%5Bname%5D=&columns%5B2%5D%5Bsearchable%5D=true&columns%5B2%5D%5Borderable%5D=true&columns%5B2%5D%5Bsearch%5D%5Bvalue%5D=&columns%5B2%5D%5Bsearch%5D%5Bregex%5D=false&columns%5B3%5D%5Bdata%5D=3&columns%5B3%5D%5Bname%5D=&columns%5B3%5D%5Bsearchable%5D=true&columns%5B3%5D%5Borderable%5D=true&columns%5B3%5D%5Bsearch%5D%5Bvalue%5D=&columns%5B3%5D%5Bsearch%5D%5Bregex%5D=false&columns%5B4%5D%5Bdata%5D=4&columns%5B4%5D%5Bname%5D=&columns%5B4%5D%5Bsearchable%5D=true&columns%5B4%5D%5Borderable%5D=true&columns%5B4%5D%5Bsearch%5D%5Bvalue%5D=&columns%5B4%5D%5Bsearch%5D%5Bregex%5D=false&order%5B0%5D%5Bcolumn%5D=0&order%5B0%5D%5Bdir%5D=desc&start={start}&length={page_length}&search%5Bvalue%5D=&search%5Bregex%5D=false&_={now}'  # noqa: E501
@@ -159,13 +160,16 @@ def scrape_validator_withdrawals(
                 raise RemoteError('Failed to parse withdrawals response from beaconchain. Check logs')  # noqa: E501
             eth_amount = deserialize_fval(groups[0], name='withdrawal ETH', location='beaconchain query')  # noqa: E501
 
-            withdrawals.append((timestamp, address, eth_amount))
+            withdrawals.add((timestamp, address, eth_amount))
 
-        if stop_iterating or len(withdrawals) >= result['recordsTotal']:
+        num_withdrawals = len(withdrawals)
+        if stop_iterating or num_withdrawals >= result['recordsTotal'] or num_withdrawals == last_withdrawals_length:  # noqa: E501
             break  # reached the end
+
+        last_withdrawals_length = len(withdrawals)
         start += page_length
 
-    return withdrawals
+    return list(withdrawals)
 
 
 def scrape_validator_daily_stats(
