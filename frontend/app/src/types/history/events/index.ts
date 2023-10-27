@@ -11,24 +11,6 @@ const LiquityStakingEventExtraData = z.object({
   stakedAmount: NumericString
 });
 
-// ETH Transactions
-export const EvmTransaction = z.object({
-  txHash: z.string(),
-  timestamp: z.number(),
-  blockNumber: z.number(),
-  evmChain: z.string(),
-  fromAddress: z.string(),
-  toAddress: z.string().nullish(),
-  value: NumericString,
-  gas: NumericString,
-  gasPrice: NumericString,
-  gasUsed: NumericString,
-  inputData: z.string(),
-  nonce: z.number()
-});
-
-export type EvmTransaction = z.infer<typeof EvmTransaction>;
-
 export interface TransactionRequestPayload
   extends PaginationRequestPayload<{ timestamp: number }> {
   readonly fromTimestamp?: string | number;

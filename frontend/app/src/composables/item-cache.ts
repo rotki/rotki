@@ -88,7 +88,9 @@ export const useItemCache = <T>(
         if (item) {
           put(key, item);
         } else {
-          logger.debug(`unknown key: ${key}`);
+          if (import.meta.env.VITE_VERBOSE_CACHE) {
+            logger.debug(`unknown key: ${key}`);
+          }
           unknown.set(key, Date.now() + options.expiry);
         }
       }
