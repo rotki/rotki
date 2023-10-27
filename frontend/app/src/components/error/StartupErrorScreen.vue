@@ -1,7 +1,7 @@
 <script setup lang="ts">
-defineProps({
-  message: { required: true, type: String }
-});
+defineProps<{
+  message: string;
+}>();
 
 const { t } = useI18n();
 const css = useCssModule();

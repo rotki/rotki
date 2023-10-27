@@ -1,23 +1,18 @@
 <script setup lang="ts">
 import { type Ref } from 'vue';
 
-defineProps({
-  width: {
-    required: false,
-    type: [String, Number],
-    default: 'auto'
-  },
-  height: {
-    required: false,
-    type: [String, Number],
-    default: 'auto'
-  },
-  url: {
-    required: false,
-    type: String,
-    default: null
+withDefaults(
+  defineProps<{
+    width?: string | number;
+    height?: string | number;
+    url?: string;
+  }>(),
+  {
+    width: 'auto',
+    height: 'auto',
+    url: undefined
   }
-});
+);
 
 const error: Ref<boolean> = ref(false);
 const success: Ref<boolean> = ref(false);
@@ -25,17 +20,19 @@ const success: Ref<boolean> = ref(false);
 
 <template>
   <div>
-    <VImg
+    <img
       v-if="error || !success"
+      alt="logo"
       :width="width"
       :height="height"
-      contain
-      src="./assets/images/rotkehlchen_no_text.png"
+      class="object-contain"
+      src="/assets/images/rotkehlchen_no_text.png"
     />
-    <VImg
+    <img
+      alt="logo"
       :width="width"
       :height="success ? height : 0"
-      contain
+      class="object-contain"
       :src="url"
       @loadstart="error = false"
       @load="

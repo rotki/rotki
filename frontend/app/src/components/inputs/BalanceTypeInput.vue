@@ -1,15 +1,9 @@
 <script setup lang="ts">
-import { type PropType } from 'vue';
 import { BalanceType } from '@/types/balances';
 
-defineProps({
-  value: {
-    required: true,
-    type: String as PropType<BalanceType>
-  }
-});
+defineProps<{ value: BalanceType }>();
 
-const emit = defineEmits(['input']);
+const emit = defineEmits<{ (e: 'input', value: BalanceType): void }>();
 
 const { t } = useI18n();
 const balanceTypes = computed(() => [

@@ -1,16 +1,10 @@
 <script setup lang="ts">
-const props = defineProps({
-  value: {
-    required: true,
-    type: Number
-  },
-  length: {
-    required: true,
-    type: Number
-  }
-});
+const props = defineProps<{
+  value: number;
+  length: number;
+}>();
 
-const emit = defineEmits(['input']);
+const emit = defineEmits<{ (e: 'input', value: number): void }>();
 const { length, value } = toRefs(props);
 const items = computed(() => {
   const items: number[] = [];

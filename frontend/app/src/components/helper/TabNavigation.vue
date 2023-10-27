@@ -1,11 +1,15 @@
 <script setup lang="ts">
-import { type PropType } from 'vue';
 import { type TabContent, getClass } from '@/types/tabs';
 
-const props = defineProps({
-  tabContents: { required: true, type: Array as PropType<TabContent[]> },
-  noContentMargin: { required: false, type: Boolean, default: false }
-});
+const props = withDefaults(
+  defineProps<{
+    tabContents: TabContent[];
+    noContentMargin?: boolean;
+  }>(),
+  {
+    noContentMargin: false
+  }
+);
 
 const { tabContents } = toRefs(props);
 const selectedTab = ref('');

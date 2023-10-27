@@ -1,16 +1,11 @@
 <script setup lang="ts">
-import { type PropType, getCurrentInstance, onMounted, ref } from 'vue';
-import { Module, SUPPORTED_MODULES } from '@/types/modules';
+import { getCurrentInstance, onMounted, ref } from 'vue';
+import { type Module, SUPPORTED_MODULES } from '@/types/modules';
 import { Routes } from '@/router/routes';
 
-defineProps({
-  modules: {
-    required: true,
-    type: Array as PropType<Module[]>,
-    validator: (value: Module[]) =>
-      value.every(module => Object.values(Module).includes(module))
-  }
-});
+defineProps<{
+  modules: Module[];
+}>();
 
 const top = ref(0);
 

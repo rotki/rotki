@@ -1,7 +1,5 @@
 <script setup lang="ts">
-const props = defineProps({
-  visible: { required: true, type: Boolean }
-});
+const props = defineProps<{ visible: boolean }>();
 
 const emit = defineEmits<{ (e: 'visible:update', visible: boolean): void }>();
 
