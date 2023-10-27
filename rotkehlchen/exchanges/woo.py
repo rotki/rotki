@@ -39,6 +39,7 @@ from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
 from rotkehlchen.utils.mixins.lockable import protect_with_lock
 
 if TYPE_CHECKING:
+    from rotkehlchen.accounting.structures.base import HistoryEvent
     from rotkehlchen.db.dbhandler import DBHandler
 
 logger = logging.getLogger(__name__)
@@ -49,8 +50,8 @@ API_KEY_ERROR_CODE_ACTION: dict = {
     '-1001': 'The api key or secret is in wrong format.',
     '-1002': 'The api key or secret is invalid.',
 }
-# Max limit for all API v1 endpoints
-API_MAX_LIMIT = 1000
+API_MAX_LIMIT = 1000  # Max limit for all API v1 endpoints
+MIN_TIMESTAMP = Timestamp(1000000000)  # minimum timestamp that can be queried as per woo docs
 
 
 class TradePairData(NamedTuple):
@@ -179,6 +180,7 @@ class Woo(ExchangeInterface):
             end_ts: Timestamp,
     ) -> tuple[list[Trade], tuple[Timestamp, Timestamp]]:
         """Return trade history on Woo in a range of time."""
+        start_ts = max(start_ts, MIN_TIMESTAMP)
         trades: list[Trade] = self._api_query_paginated(
             endpoint='v1/client/hist_trades',
             options={
@@ -204,7 +206,7 @@ class Woo(ExchangeInterface):
                 'end_t': ts_sec_to_ms(end_ts),
                 'page': 1,
                 'size': API_MAX_LIMIT,
-                'start_t': ts_sec_to_ms(start_ts),
+                'start_t': ts_sec_to_ms(max(start_ts, MIN_TIMESTAMP)),
                 'status': 'COMPLETED',
                 'type': 'BALANCE',
             },
@@ -398,4 +400,11 @@ class Woo(ExchangeInterface):
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,
     ) -> list[MarginPosition]:
+        return []  # noop for woo
+
+    def query_online_income_loss_expense(
+            self,
+            start_ts: Timestamp,  # pylint: disable=unused-argument
+            end_ts: Timestamp,
+    ) -> list['HistoryEvent']:
         return []  # noop for woo
