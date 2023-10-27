@@ -21,6 +21,9 @@ from rotkehlchen.chain.evm.decoding.structures import (
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
+from rotkehlchen.chain.optimism.modules.velodrome.decoder import (
+    SWAP_V2 as VELODROME_SWAP_SIGNATURE,
+)
 from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
 
 if TYPE_CHECKING:
@@ -48,6 +51,7 @@ class Oneinchv4DecoderBase(OneinchCommonDecoder, metaclass=ABCMeta):
             msg_aggregator=msg_aggregator,
             router_address=router_address,
             swapped_signatures=[
+                VELODROME_SWAP_SIGNATURE,
                 UNISWAP_V3_SWAP_SIGNATURE,
                 UNISWAP_V2_SWAP_SIGNATURE,  # uniswap v2 is also used by sushiswap
                 BALANCER_V2_SWAP_SIGNATURE,
