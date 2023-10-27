@@ -40,23 +40,23 @@
 ---
 
 ## Overview
-[Rotki](https://rotki.com/) is an open source portfolio tracking, analytics, accounting, and tax reporting tool that protects your privacy.  The mission of rotki is to bring transparency into the crypto and financial sectors through the use of open source. Most importantly, unlike virtually every other competing service which consists of closed source SaaS onto which you are forced to hand over all your financial data, with rotki your data is stored encrypted locally in your computer. It enables you to take ownership of your financial data!
+[Rotki](https://rotki.com/) is an open-source portfolio tracking, analytics, accounting, and tax reporting tool that protects your privacy.  The mission of rotki is to bring transparency into the crypto and financial sectors through the use of open source. Most importantly, unlike virtually every other competing service which consists of closed source SaaS onto which you are forced to hand over all your financial data, with rotki your data is stored encrypted locally in your computer. It enables you to take ownership of your financial data!
 
 The [Pro Version](https://rotki.com/checkout/plan) of Rotki also supports additional and advanced features. You can find a comprehensive list of them on ☑️ [Feature Coverage Page](https://rotki.com/products/details).
 
 ## Features at a glance
 
-:balance_scale: Shows overview of your balances across multiple platforms, blockchain, exchanges and protocols.
+:balance_scale: Shows an overview of your balances across multiple platforms, blockchains, exchanges, and protocols.
 
 :chart_with_upwards_trend: Graphs analyzing your historical activity and showing insights into your portfolio.
 
-:microscope: Decoding EVM (Ethereum, Optimism and more) transactions in human readable format and displaying them.
+:microscope: Decoding EVM (Ethereum, Optimism and more) transactions in human-readable format and displaying them.
 
-:card_index_dividers: Pull, store and analyze history from activities of all supported platforms. Ability to browse and filter through all of them.
+:card_index_dividers: Pull, store, and analyze history from activities of all supported platforms. Ability to browse and filter through all of them.
 
 :toolbox: Highly customizable. UI look, main currency, language, accounting settings, editing balances, editing history. rotki is made with customization in mind.
 
-:receipt: Perform accounting analysis for PnL over any period of time using customized accounting settings over all recorded activities and generate PnL report.
+:receipt: Perform accounting analysis for PnL over any period of time using customized accounting settings over all recorded activities and generate PnL reports.
 
 ## Requirements
 
@@ -67,15 +67,15 @@ The [Pro Version](https://rotki.com/checkout/plan) of Rotki also supports additi
 * `Docker`
 
 ## Installation
-Rotki currently supports the following operating systems:- Windows, MacOs, Linux.
+Rotki currently supports the following operating systems:- Windows, macOS, Linux.
 
-The installation of rotki can be simply done via two ways:-
+The installation of rotki can be simply done in two ways:-
 - [Packaged Binaries](https://rotki.readthedocs.io/en/latest/installation_guide.html#packaged-binaries) (Recommended)
 - [Building from Source](https://rotki.readthedocs.io/en/latest/installation_guide.html#build-from-source)
 
 ## Usage
 
-Read the [documentation](https://rotki.readthedocs.io/en/latest/) for a complete guide, frequently-asked questions, API reference, and more.
+Read the [documentation](https://rotki.readthedocs.io/en/latest/) for a complete guide, frequently asked questions, API references, and more.
 
 Some quick links to useful parts of the documentation follow below for your convenience.
 
@@ -119,7 +119,7 @@ You can [sponsor us through GitHub](https://github.com/sponsors/rotki/), and get
 Thank you for helping to sustain and improve this project!
 
 #### Donations
-If you find this project helpful, don't want to purchase a subscription and would like to support its development, you can make a donation using the following cryptocurrency addresses:
+If you find this project helpful, don't want to purchase a subscription, and would like to support its development, you can make a donation using the following cryptocurrency addresses:
 
 - Send **BTC donations** to: 1PfvkW8MC7Ns2y8zn6CE2P2t5f19KF8XiW
 
