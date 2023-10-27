@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from enum import auto
 from typing import TYPE_CHECKING, Any, Optional, TypedDict, TypeVar
 
-from rotkehlchen.accounting.constants import EVENT_CATEGORY_DETAILS, EVENT_CATEGORY_MAPPINGS
+from rotkehlchen.accounting.constants import EVENT_CATEGORY_MAPPINGS
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
 from rotkehlchen.accounting.structures.types import (
     ActionType,
@@ -278,8 +278,7 @@ class HistoryBaseEntry(AccountingEventMixin, metaclass=ABCMeta):
         May raise:
         - KeyError if the combination of types is not valid
         """
-        event_category = EVENT_CATEGORY_MAPPINGS[self.event_type][self.event_subtype]
-        return EVENT_CATEGORY_DETAILS[event_category].direction
+        return EVENT_CATEGORY_MAPPINGS[self.event_type][self.event_subtype].direction
 
     @classmethod
     def _deserialize_base_history_data(cls: type[T], data: dict[str, Any]) -> HistoryBaseEntryData:
