@@ -16,14 +16,19 @@ const isManualPrice = isManualAssetPrice(priceAsset);
 </script>
 
 <template>
-  <div v-if="isManualPrice" class="mr-2 d-inline-block">
-    <VTooltip bottom>
-      <template #activator="{ on }">
-        <VIcon class="mr-1" small color="warning" v-on="on">
-          mdi-auto-fix
-        </VIcon>
-      </template>
-      <span>{{ t('amount_display.manual_tooltip') }}</span>
-    </VTooltip>
-  </div>
+  <RuiTooltip
+    v-if="isManualPrice"
+    :popper="{ placement: 'top' }"
+    open-delay="400"
+  >
+    <template #activator>
+      <RuiIcon
+        class="mr-3 mb-1 inline cursor-pointer"
+        size="16"
+        color="warning"
+        name="sparkling-line"
+      />
+    </template>
+    <span>{{ t('amount_display.manual_tooltip') }}</span>
+  </RuiTooltip>
 </template>

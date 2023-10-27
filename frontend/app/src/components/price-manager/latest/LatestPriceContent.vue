@@ -53,6 +53,7 @@ const router = useRouter();
 const route = useRoute();
 const { items, loading, refreshing, save, deletePrice, refresh } =
   useLatestPrices(filter, t);
+
 const {
   setPostSubmitFunc,
   openDialog,
@@ -97,7 +98,7 @@ const hideForm = () => {
 
 onMounted(async () => {
   setSubmitFunc(() => save(get(price), get(update)));
-  setPostSubmitFunc(refresh);
+  setPostSubmitFunc(() => refresh(true));
 
   const query = get(route).query;
 
@@ -122,7 +123,7 @@ onMounted(async () => {
             color="primary"
             variant="outlined"
             :loading="loading || refreshing"
-            @click="refresh()"
+            @click="refresh(true)"
           >
             <template #prepend>
               <RuiIcon name="refresh-line" />

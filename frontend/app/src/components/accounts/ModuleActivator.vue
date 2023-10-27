@@ -52,7 +52,6 @@ const loading = isAccountOperationRunning();
       v-model="enabledModules"
       variant="outlined"
       color="primary"
-      required
       :disabled="loading"
       @change="updateSelection($event)"
     >

@@ -100,6 +100,7 @@ import {
   RiSettings4Line,
   RiShuffleLine,
   RiSkipRightLine,
+  RiSparklingLine,
   RiStickyNoteLine,
   RiSubtractLine,
   RiSunLine,
@@ -232,6 +233,7 @@ Vue.use(RuiPlugin, {
     RiArrowUpDownLine,
     RiCornerLeftUpLine,
     RiPushpinLine,
-    RiUnpinLine
+    RiUnpinLine,
+    RiSparklingLine
   ]
 });

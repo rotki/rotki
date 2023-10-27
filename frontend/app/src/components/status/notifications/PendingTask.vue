@@ -14,7 +14,7 @@ const time = computed(() => dayjs(task.value.time).format('LLL'));
 </script>
 
 <template>
-  <div class="flex items-center justify-between flex-nowrap">
+  <div class="flex items-center justify-between flex-nowrap break-all gap-4">
     <div>
       <div class="whitespace-nowrap overflow-hidden text-ellipsis">
         {{ task.meta.title }}

@@ -77,11 +77,13 @@ const cols = computed<DataTableColumn[]>(() => [
     label: t('common.location'),
     key: 'location',
     align: 'start',
-    width: '120px'
+    width: '120px',
+    cellClass: 'py-0'
   },
   {
     label: t('manual_balances_table.columns.label'),
-    key: 'label'
+    key: 'label',
+    sortable: true
   },
   {
     label: t('common.asset'),

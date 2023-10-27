@@ -1,5 +1,5 @@
 const RuiIconStub = {
-  template: '<div>{{ name }}</div>',
+  template: '<div class="rui-icon">{{ name }}</div>',
   props: { name: { type: String } }
 };
 
