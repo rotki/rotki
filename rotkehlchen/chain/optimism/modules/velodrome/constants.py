@@ -1,3 +1,4 @@
 from typing import Final
 
 CPT_VELODROME: Final = 'velodrome'
+SWAP_V2 = b'\xb3\xe2w6\x06\xab\xfd6\xb5\xbd\x919K:T\xd19\x836\xc6P\x05\xba\xf7\xbfz\x05\xef\xef\xfa\xf7['  # noqa: E501

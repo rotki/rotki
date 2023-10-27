@@ -618,3 +618,58 @@ def test_1inch_gnosis_v5_swap(database, gnosis_inquirer, gnosis_accounts):
         ),
     ]
     assert expected_events == events
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('optimism_accounts', [['0x3Ba6eB0e4327B96aDe6D4f3b578724208a590CEF']])
+def test_1inch_velodrome(database, optimism_inquirer, optimism_accounts):
+    tx_hash = deserialize_evm_tx_hash('0x3cb68ee7dae76c0ca6466e3a593b32144d25eabb27c1ba416c83f154627d84d8')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=optimism_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    user_addy = optimism_accounts[0]
+    timestamp = TimestampMS(1698055881000)
+    expected_events = [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal('0.000274323853192674')),
+            location_label=user_addy,
+            notes='Burned 0.000274323853192674 ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=Asset('eip155:10/erc20:0x9560e827aF36c94D2Ac33a39bCE1Fe78631088Db'),
+            balance=Balance(amount=FVal('81.206684164250046887')),
+            location_label=user_addy,
+            notes='Swap 81.206684164250046887 VELO in 1inch-v5',
+            address=ONEINCH_V5_ROUTER,
+            counterparty=CPT_ONEINCH_V5,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=2,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=Asset('eip155:10/erc20:0x1F32b1c2345538c0c6f582fCB022739c4A194Ebb'),
+            balance=Balance(amount=FVal('0.001577438860408636')),
+            location_label=user_addy,
+            notes='Receive 0.001577438860408636 wstETH as a result of a 1inch-v5 swap',
+            counterparty=CPT_ONEINCH_V5,
+            address=ONEINCH_V5_ROUTER,
+        ),
+    ]
+    assert expected_events == events
