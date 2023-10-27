@@ -11,6 +11,8 @@ const { t } = useI18n();
 const toggleVisibility = () => {
   emit('visible:update', !get(visible));
 };
+
+const css = useCssModule();
 </script>
 
 <template>
@@ -19,14 +21,12 @@ const toggleVisibility = () => {
     class-name="secondary--text text--lighten-4"
     @click="toggleVisibility()"
   >
-    <RuiIcon :class="visible ? 'help--visible' : null" name="question-line" />
+    <RuiIcon :class="{ [css.visible]: visible }" name="question-line" />
   </MenuTooltipButton>
 </template>
 
-<style scoped lang="scss">
-.help {
-  &--visible {
-    transform: rotate(-25deg);
-  }
+<style module lang="scss">
+.visible {
+  transform: rotate(-25deg);
 }
 </style>

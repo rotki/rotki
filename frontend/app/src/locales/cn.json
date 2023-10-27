@@ -137,10 +137,10 @@
     "cost_basis_method": "成本基础方法:",
     "crypto2crypto": "加密到加密交易被考虑在内:",
     "days": "{days} 天",
-    "eth_staking_taxable_after_withdrawal_enabled": "在启用提款之前,ETH 质押事件将被忽略",
+    "eth_staking_taxable_after_withdrawal_enabled": "在启用提款之前,ETH 质押事件将被忽略:",
     "gas_costs": "考虑了 Gas 成本:",
     "past_cost_basis": "过去的成本基础是在报告创建期间计算的:",
-    "profit_currency": "盈利货币",
+    "profit_currency": "盈利货币:",
     "subtitle": "这些会计设置是在创建报告时使用的",
     "tax_free_period": "有一个免税期:",
     "title": "会计设置"

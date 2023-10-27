@@ -51,7 +51,7 @@ const { t } = useI18n();
           <template #append>
             <RuiChip
               size="sm"
-              class="!text-white !p-0"
+              class="!text-white !p-0 !bg-rui-error-darker"
               :label="actionableItemsLength"
             />
           </template>

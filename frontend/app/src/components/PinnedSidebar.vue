@@ -28,7 +28,7 @@ const component: ComputedRef = computed(() => {
   <VNavigationDrawer
     class="pinned-sidebar"
     clipped
-    width="520px"
+    width="560px"
     :value="visible"
     right
     temporary

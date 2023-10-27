@@ -30,6 +30,7 @@ const { confirmation, visible } = storeToRefs(confirmStore);
       :title="confirmation.title"
       :message="confirmation.message"
       :single-action="confirmation.singleAction"
+      :primary-action="confirmation.primaryAction"
       :confirm-type="confirmation.type || 'warning'"
       @confirm="confirm()"
       @cancel="dismiss()"

@@ -60,8 +60,7 @@ const headers = computed<DataTableHeader[]>(() => {
   return [
     {
       text: t('common.asset').toString(),
-      value: 'asset',
-      ...pinnedClass
+      value: 'asset'
     },
     {
       text: t('common.datetime').toString(),
@@ -116,14 +115,6 @@ const childHeaders = computed<DataTableHeader[]>(() => {
       ).toString(),
       value: 'missingAmount',
       ...pinnedClass
-    },
-    {
-      text: t(
-        'profit_loss_report.actionable.missing_acquisitions.headers.quick_action'
-      ).toString(),
-      value: 'action',
-      sortable: false,
-      ...pinnedClass
     }
   ];
 });
@@ -148,6 +139,8 @@ const isIgnored = (asset: string) => get(isAssetIgnored(asset));
       :dense="isPinned"
       multi-sort
       :must-sort="false"
+      disable-floating-header
+      flat
     >
       <template #item.asset="{ item }">
         <AssetDetails :asset="item.asset" link />
@@ -166,33 +159,33 @@ const isIgnored = (asset: string) => get(isAssetIgnored(asset));
         {{ item.acquisitions.length }}
       </template>
       <template #item.action="{ item }">
-        <VMenu offset-y>
-          <template #activator="{ on }">
-            <VBtn icon v-on="on">
-              <VIcon>mdi-dots-vertical</VIcon>
-            </VBtn>
-          </template>
-          <VList>
-            <VListItem link @click="ignoreAsset(item.asset)">
-              <VListItemTitle>{{ t('assets.ignore') }}</VListItemTitle>
-            </VListItem>
-          </VList>
-        </VMenu>
+        <div class="flex flex-col items-center gap-1">
+          <VMenu offset-y>
+            <template #activator="{ on }">
+              <RuiButton size="sm" variant="text" icon v-on="on">
+                <RuiIcon size="20" name="more-2-fill" />
+              </RuiButton>
+            </template>
+            <VList>
+              <VListItem link @click="ignoreAsset(item.asset)">
+                <VListItemTitle>{{ t('assets.ignore') }}</VListItemTitle>
+              </VListItem>
+            </VList>
+          </VMenu>
 
-        <VTooltip v-if="isIgnored(item.asset)" bottom>
-          <template #activator="{ on }">
-            <BadgeDisplay class="ml-2" color="grey" v-on="on">
-              <VIcon small> mdi-eye-off </VIcon>
-            </BadgeDisplay>
-          </template>
-          <span>
+          <RuiTooltip v-if="isIgnored(item.asset)" open-delay="400">
+            <template #activator>
+              <BadgeDisplay color="grey" class="py-1">
+                <RuiIcon size="18" name="eye-off-line" />
+              </BadgeDisplay>
+            </template>
             {{
               t(
                 'profit_loss_report.actionable.missing_acquisitions.asset_is_ignored'
               )
             }}
-          </span>
-        </VTooltip>
+          </RuiTooltip>
+        </div>
       </template>
       <template #item.expand="{ item }">
         <RowExpander
@@ -201,8 +194,9 @@ const isIgnored = (asset: string) => get(isAssetIgnored(asset));
         />
       </template>
       <template #expanded-item="{ item }">
-        <TableExpandContainer visible :colspan="headers.length">
+        <TableExpandContainer :padded="false" visible :colspan="headers.length">
           <DataTable
+            flat
             :headers="childHeaders"
             :items="item.acquisitions"
             :container="tableContainer"
@@ -228,7 +222,7 @@ const isIgnored = (asset: string) => get(isAssetIgnored(asset));
 .table {
   &--pinned {
     max-height: 100%;
-    height: calc(100vh - 230px);
+    height: calc(100vh - 210px);
   }
 }
 </style>

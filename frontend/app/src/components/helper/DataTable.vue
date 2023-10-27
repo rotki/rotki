@@ -39,6 +39,7 @@ const props = withDefaults(
       groupBy: string[],
       groupDesc: boolean[]
     ) => Record<string, any[]>;
+    flat?: boolean;
   }>(),
   {
     sortDesc: true,
@@ -52,7 +53,8 @@ const props = withDefaults(
     loadingText: '',
     options: () => null,
     disableFloatingHeader: false,
-    customGroup: undefined
+    customGroup: undefined,
+    flat: false
   }
 );
 
@@ -176,7 +178,9 @@ const { dark } = useTheme();
   <div>
     <VDataTable
       ref="tableRef"
-      class="overflow-hidden rounded-xl border border-rui-grey-300 dark:border-rui-grey-600"
+      :class="{
+        outlined: !flat
+      }"
       v-bind="rootAttrs"
       :must-sort="mustSort"
       :multi-sort="multiSort"
@@ -296,6 +300,18 @@ const { dark } = useTheme();
     }
   }
 
+  &.v-data-table--dense {
+    .v-data-footer__pagination {
+      @apply ml-2 -mr-4;
+    }
+
+    .v-data-footer__select {
+      .v-input {
+        @apply ml-4;
+      }
+    }
+  }
+
   .v-data-table--mobile {
     .v-data-table {
       &__wrapper {
@@ -309,6 +325,10 @@ const { dark } = useTheme();
       }
     }
   }
+}
+
+.outlined {
+  @apply overflow-hidden rounded-xl border border-rui-grey-300 dark:border-rui-grey-600;
 }
 
 .clone {
