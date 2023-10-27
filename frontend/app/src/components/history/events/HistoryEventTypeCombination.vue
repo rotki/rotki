@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { type HistoryEventTypeDetailWithId } from '@/types/history/events/event-type';
+import { type HistoryEventCategoryDetailWithId } from '@/types/history/events/event-type';
 
 const props = withDefaults(
   defineProps<{
-    type: HistoryEventTypeDetailWithId;
+    type: HistoryEventCategoryDetailWithId;
     showLabel?: boolean;
   }>(),
   {

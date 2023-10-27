@@ -1,10 +1,18 @@
 import { type MaybeRef } from '@vueuse/core';
+import { cloneDeep } from 'lodash-es';
 import {
+  type HistoryEventCategoryDetailWithId,
+  type HistoryEventCategoryMapping,
   type HistoryEventProductData,
-  type HistoryEventTypeData,
-  type HistoryEventTypeDetailWithId
+  type HistoryEventTypeData
 } from '@/types/history/events/event-type';
 import { type ActionDataEntry } from '@/types/action';
+
+type Event = MaybeRef<{
+  eventType: string;
+  eventSubtype: string;
+  counterparty?: string | null;
+}>;
 
 export const useHistoryEventMappings = createSharedComposable(() => {
   const { t, te } = useI18n();
@@ -70,21 +78,23 @@ export const useHistoryEventMappings = createSharedComposable(() => {
     }
   );
 
-  const transactionEventTypesData: ComputedRef<HistoryEventTypeDetailWithId[]> =
-    useRefMap(historyEventTypeData, ({ eventCategoryDetails }) =>
-      Object.entries(eventCategoryDetails).map(([identifier, data]) => {
-        const translationId = toSnakeCase(data.label);
-        const translationKey = `backend_mappings.events.type.${translationId}`;
-
-        return {
-          ...data,
-          identifier,
-          label: te(translationKey)
+  const transactionEventTypesData: ComputedRef<HistoryEventCategoryMapping> =
+    useRefMap(historyEventTypeData, ({ eventCategoryDetails }) => {
+      const newEventCategoryDetails = cloneDeep(eventCategoryDetails);
+      for (const eventCategory in newEventCategoryDetails) {
+        const counterpartyMappings =
+          newEventCategoryDetails[eventCategory].counterpartyMappings;
+        for (const counterparty in counterpartyMappings) {
+          const label = counterpartyMappings[counterparty].label;
+          const translationId = toSnakeCase(label);
+          const translationKey = `backend_mappings.events.type.${translationId}`;
+          counterpartyMappings[counterparty].label = te(translationKey)
             ? t(translationKey)
-            : toSentenceCase(data.label)
-        };
-      })
-    );
+            : toSentenceCase(label);
+        }
+      }
+      return newEventCategoryDetails;
+    });
 
   const historyEventTypeGlobalMapping = useRefMap(
     historyEventTypeData,
@@ -93,54 +103,61 @@ export const useHistoryEventMappings = createSharedComposable(() => {
 
   const getEventType = (
     event: MaybeRef<{
-      eventType?: string | null;
-      eventSubtype?: string | null;
+      eventType: string;
+      eventSubtype: string;
     }>
   ): ComputedRef<string | undefined> =>
     computed(() => {
       const { eventType, eventSubtype } = get(event);
 
-      const eventTypeNormalized = eventType || 'none';
-      const eventSubtypeNormalized = eventSubtype || 'none';
-
-      return (
-        get(historyEventTypeGlobalMapping)[eventTypeNormalized]?.[
-          eventSubtypeNormalized
-        ] ?? undefined
-      );
+      return get(historyEventTypeGlobalMapping)[eventType]?.[eventSubtype];
     });
 
-  const getEventTypeData = (
-    event: MaybeRef<{
-      eventType?: string | null;
-      eventSubtype?: string | null;
-    }>,
-    showFallbackLabel = true
-  ): ComputedRef<HistoryEventTypeDetailWithId> =>
-    computed(() => {
-      const type = get(getEventType(event));
+  function getFallbackData(
+    showFallbackLabel: boolean,
+    eventSubtype: string,
+    eventType: string
+  ): HistoryEventCategoryDetailWithId {
+    const unknownLabel = t('backend_mappings.events.type.unknown');
+    const label = showFallbackLabel
+      ? eventSubtype || eventType || unknownLabel
+      : unknownLabel;
 
-      if (type) {
-        return get(transactionEventTypesData).find(
-          ({ identifier }: ActionDataEntry) =>
-            identifier.toLowerCase() === type.toLowerCase()
-        )!;
+    return {
+      identifier: '',
+      label,
+      icon: 'mdi-help',
+      color: 'red',
+      direction: 'neutral'
+    };
+  }
+
+  const getEventTypeData = (
+    event: Event,
+    showFallbackLabel = true
+  ): ComputedRef<HistoryEventCategoryDetailWithId> =>
+    computed(() => {
+      const defaultKey = 'default';
+      const type = get(getEventType(event));
+      const { counterparty, eventType, eventSubtype } = get(event);
+      const counterpartyVal = counterparty || defaultKey;
+      const data = type && get(transactionEventTypesData)[type];
+
+      if (type && data) {
+        const categoryDetail =
+          data.counterpartyMappings[counterpartyVal] ||
+          data.counterpartyMappings[defaultKey];
+
+        if (categoryDetail) {
+          return {
+            ...categoryDetail,
+            identifier: counterpartyVal !== defaultKey ? counterpartyVal : type,
+            direction: data.direction
+          };
+        }
       }
 
-      const unknownLabel = t('backend_mappings.events.type.unknown');
-
-      const { eventType, eventSubtype } = get(event);
-      const label = showFallbackLabel
-        ? eventSubtype || eventType || unknownLabel
-        : unknownLabel;
-
-      return {
-        identifier: '',
-        label,
-        icon: 'mdi-help',
-        color: 'red',
-        direction: 'neutral'
-      };
+      return getFallbackData(showFallbackLabel, eventSubtype, eventType);
     });
 
   const { scrambleData, scrambleHex } = useScramble();

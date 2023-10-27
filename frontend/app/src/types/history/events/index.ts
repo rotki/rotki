@@ -66,8 +66,8 @@ export const CommonHistoryEvent = z.object({
   location: z.string(),
   asset: z.string(),
   balance: Balance,
-  eventType: z.string().nullable(),
-  eventSubtype: z.string().nullable(),
+  eventType: z.string(),
+  eventSubtype: z.string(),
   locationLabel: z.string().nullable(),
   notes: z.string().nullable().optional()
 });
