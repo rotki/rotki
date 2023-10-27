@@ -1223,6 +1223,11 @@ def test_for_spam_tokens(database: 'DBHandler', ethereum_inquirer) -> None:
     with database.conn.read_ctx() as cursor:
         assert token.identifier in database.get_ignored_asset_ids(cursor)
 
+    assert check_if_spam_token('$ vanityeth.org ($ vanityeth.org)') is True
+    assert check_if_spam_token('$ hUSDC.cc (Claim USDC at https://hUSDC.cc)') is True
+    assert check_if_spam_token('$ cusdcs.eth.li (Claim USDC at https://cusdcs.eth.li)') is True
+    assert check_if_spam_token('$ wHEX (Unwrap: https://HEXPool.io)') is True
+
 
 def test_get_evm_tokens(globaldb):
     tokens = globaldb.get_evm_tokens(chain_id=ChainID.POLYGON_POS)

@@ -137,7 +137,11 @@ def check_if_spam_token(symbol: Optional[str]) -> bool:
         symbol.startswith('Visit https://') or
         'Please Visit' in symbol or
         (('Visit' in symbol or 'http' in symbol) and 'claim' in symbol.lower()) or
-        symbol.startswith('$') and symbol.endswith('.com')
+        (
+            symbol.startswith('$') and
+            ('.com' in symbol or '.org' in symbol or '.io' in symbol)
+        ) or
+        'https://' in symbol
     ):
         return True
     return False
