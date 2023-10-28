@@ -2,7 +2,7 @@ from rotkehlchen.chain.evm.types import NodeName, WeightedNode
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import SupportedBlockchain
 
-ALCHEMY_RPC_ENDPOINT = 'https://polygon-mainnet.g.alchemy.com/v2/uNdnI7_6XXc7ayswOxtd_RuTBGojJhIf'
+ALCHEMY_RPC_ENDPOINT = 'https://polygon-mainnet.g.alchemy.com/v2/L_vbxARvJVmxp92NMQ1V5Qw-DDEL0t59'  # added by LEF  # noqa: E501
 POLYGON_POS_NODES_PARAMETERS_WITH_PRUNED_AND_NOT_ARCHIVED: tuple[str, list[tuple]] = (
     'polygon_pos_manager_connect_at_start',
     [(
