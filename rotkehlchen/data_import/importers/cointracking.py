@@ -61,7 +61,7 @@ def exchange_row_to_location(entry: str) -> Location:
         return Location.BITMEX
     if entry == 'Coinbase':
         return Location.COINBASE
-    if entry in ('CoinbasePro', 'GDAX'):
+    if entry in {'CoinbasePro', 'GDAX'}:
         return Location.COINBASEPRO
     if entry == 'Gemini':
         return Location.GEMINI
@@ -125,10 +125,10 @@ class CointrackingImporter(BaseExchangeImporter):
             fee = deserialize_fee(csv_row['Fee'])
             fee_currency = asset_resolver(csv_row['Cur.Fee'])
 
-        if row_type in ('Gift/Tip', 'Trade', 'Income'):
+        if row_type in {'Gift/Tip', 'Trade', 'Income'}:
             base_asset = asset_resolver(csv_row['Cur.Buy'])
             quote_asset = None if csv_row['Cur.Sell'] == '' else asset_resolver(csv_row['Cur.Sell'])  # noqa: E501
-            if quote_asset is None and row_type not in ('Gift/Tip', 'Income'):
+            if quote_asset is None and row_type not in {'Gift/Tip', 'Income'}:
                 raise DeserializationError('Got a trade entry with an empty quote asset')
 
             if quote_asset is None:
@@ -158,7 +158,7 @@ class CointrackingImporter(BaseExchangeImporter):
                 notes=notes,
             )
             self.add_trade(write_cursor, trade)
-        elif row_type in ('Deposit', 'Withdrawal'):
+        elif row_type in {'Deposit', 'Withdrawal'}:
             category = deserialize_asset_movement_category(row_type.lower())
             if category == AssetMovementCategory.DEPOSIT:
                 amount = deserialize_asset_amount(csv_row['Buy'])

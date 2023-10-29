@@ -159,7 +159,7 @@ class Bitpanda(ExchangeInterface):
         try:
             transaction_type = entry['type']
             if (
-                transaction_type not in ('fiat_wallet_transaction', 'wallet_transaction') or
+                transaction_type not in {'fiat_wallet_transaction', 'wallet_transaction'} or
                 entry['attributes']['status'] != 'finished'
             ):
                 return None

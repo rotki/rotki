@@ -109,7 +109,7 @@ class BitstampTransactionsImporter(BaseExchangeImporter):
                 receive_trade_event,
                 fee_event,
             ])
-        elif csv_row['Type'] in ('Deposit', 'Withdrawal'):
+        elif csv_row['Type'] in {'Deposit', 'Withdrawal'}:
             amount = deserialize_asset_amount(amount)
             asset = asset_from_bitstamp(amount_symbol)
             transaction_type = csv_row['Type']

@@ -915,7 +915,7 @@ def asset_from_kraken(kraken_name: str) -> AssetWithOracles:
         name = 'DOGE'
     elif kraken_name == 'FLOWH':
         name = 'FLOW'
-    elif kraken_name in ('ETH', 'EUR', 'USD', 'GBP', 'CAD', 'JPY', 'KRW', 'CHF', 'AUD'):
+    elif kraken_name in {'ETH', 'EUR', 'USD', 'GBP', 'CAD', 'JPY', 'KRW', 'CHF', 'AUD'}:
         name = kraken_name
     else:
         name = KRAKEN_TO_WORLD.get(kraken_name, kraken_name)

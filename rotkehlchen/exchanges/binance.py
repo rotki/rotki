@@ -310,10 +310,10 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
                 del call_options['signature']
 
             is_v3_api_method = api_type == 'api' and method in V3_METHODS
-            is_new_futures_api = api_type in ('fapi', 'dapi')
+            is_new_futures_api = api_type in {'fapi', 'dapi'}
             api_version = 3  # public methos are v3
             if method not in PUBLIC_METHODS:  # api call needs signature
-                if api_type in ('sapi', 'dapi'):
+                if api_type in {'sapi', 'dapi'}:
                     api_version = 1
                 elif api_type == 'fapi':
                     api_version = 2
@@ -348,7 +348,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
                     f'{self.name} API request failed due to {e!s}',
                 ) from e
 
-            if response.status_code not in (200, 418, 429):
+            if response.status_code not in {200, 418, 429}:
                 code = 'no code found'
                 msg = 'no message found'
                 with suppress(JSONDecodeError):
@@ -377,7 +377,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
                     f'{self.name} API request {response.url} for {method} failed with HTTP status '
                     f'code: {response.status_code}, error code: {code} and error message: {msg}')
 
-            if response.status_code in (418, 429):
+            if response.status_code in {418, 429}:
                 # Binance has limits and if we hit them we should backoff.
                 # A Retry-After header is sent with a 418 or 429 responses and
                 # will give the number of seconds required to wait, in the case
@@ -1181,7 +1181,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
         Can log error/warning and return None if something went wrong at deserialization
         """
         try:
-            if 'status' not in raw_data or raw_data['status'] not in ('Successful', 'Finished'):
+            if 'status' not in raw_data or raw_data['status'] not in {'Successful', 'Finished'}:
                 log.error(
                     f'Found {self.location!s} fiat deposit/withdrawal with failed status. Ignoring it.',  # noqa: E501
                 )

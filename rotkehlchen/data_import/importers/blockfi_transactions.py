@@ -62,7 +62,7 @@ class BlockfiTransactionsImporter(BaseExchangeImporter):
         fee = Fee(ZERO)
         fee_asset = A_USD  # Can be whatever
 
-        if entry_type in ('Deposit', 'Wire Deposit', 'ACH Deposit'):
+        if entry_type in {'Deposit', 'Wire Deposit', 'ACH Deposit'}:
             asset_movement = AssetMovement(
                 location=Location.BLOCKFI,
                 category=AssetMovementCategory.DEPOSIT,
@@ -76,7 +76,7 @@ class BlockfiTransactionsImporter(BaseExchangeImporter):
                 link='',
             )
             self.add_asset_movement(write_cursor, asset_movement)
-        elif entry_type in ('Withdrawal', 'Wire Withdrawal', 'ACH Withdrawal'):
+        elif entry_type in {'Withdrawal', 'Wire Withdrawal', 'ACH Withdrawal'}:
             asset_movement = AssetMovement(
                 location=Location.BLOCKFI,
                 category=AssetMovementCategory.WITHDRAWAL,
@@ -103,7 +103,7 @@ class BlockfiTransactionsImporter(BaseExchangeImporter):
                 notes=f'{entry_type} from BlockFi',
             )
             self.add_history_events(write_cursor, [event])
-        elif entry_type in ('Interest Payment', 'Bonus Payment', 'Referral Bonus'):
+        elif entry_type in {'Interest Payment', 'Bonus Payment', 'Referral Bonus'}:
             event = HistoryEvent(
                 event_identifier=f'{BLOCKFI_PREFIX}{hash_csv_row(csv_row)}',
                 sequence_index=0,

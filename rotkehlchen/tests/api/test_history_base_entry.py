@@ -244,7 +244,7 @@ def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer'):
 
         # now let's try to edit event_identifier for all possible events.
         for idx, entry in enumerate(entries):
-            if entry.identifier in (2, 4):
+            if entry.identifier in {2, 4}:
                 continue  # we deleted those
             entry.event_identifier = f'new_eventid{idx}'
             json_data = entry_to_input_dict(entry, include_identifier=True)

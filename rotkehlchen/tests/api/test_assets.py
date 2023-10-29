@@ -581,7 +581,7 @@ def test_get_assets_mappings(rotkehlchen_api_server):
     result = assert_proper_response_with_result(response)
     assets = result['assets']
     assert len(assets) == 2
-    assert all(identifier in ('BTC', 'TRY') for identifier in assets)
+    assert all(identifier in {'BTC', 'TRY'} for identifier in assets)
 
 
 def test_search_assets(rotkehlchen_api_server):

@@ -789,7 +789,7 @@ class DBHandler:
 
     def delete_yearn_vaults_data(self, write_cursor: 'DBCursor', version: int) -> None:
         """Delete all historical yearn vault events data"""
-        if version not in (1, 2):
+        if version not in {1, 2}:
             log.error(f'Called delete yearn vault data with non valid version {version}')
             return None
         prefix = YEARN_VAULTS_PREFIX
@@ -2238,7 +2238,7 @@ class DBHandler:
             columns_str = ', '.join(columns)
             bindings: Union[tuple, tuple[str]] = ()
             condition = ''
-            if table_name in ('manually_tracked_balances', 'timed_balances'):
+            if table_name in {'manually_tracked_balances', 'timed_balances'}:
                 bindings = (BalanceType.LIABILITY.serialize_for_db(),)
                 condition = ' WHERE category!=?'
 

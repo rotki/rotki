@@ -1293,7 +1293,7 @@ def kraken_to_world_pair(pair: str) -> tuple[AssetWithOracles, AssetWithOracles]
     if pair[-2:] == '.d':
         pair = pair[:-2]
 
-    if len(pair) == 6 and pair[0:3] in ('EUR', 'USD', 'AUD'):
+    if len(pair) == 6 and pair[0:3] in {'EUR', 'USD', 'AUD'}:
         # This is for the FIAT to FIAT pairs that kraken introduced
         base_asset_str = pair[0:3]
         quote_asset_str = pair[3:]
@@ -1304,7 +1304,7 @@ def kraken_to_world_pair(pair: str) -> tuple[AssetWithOracles, AssetWithOracles]
     elif pair[0:2] in KRAKEN_TO_WORLD:
         base_asset_str = pair[0:2]
         quote_asset_str = pair[2:]
-    elif pair[0:3] in KRAKEN_TO_WORLD or pair[0:3] in ('XBT', 'ETH', 'XDG', 'LTC', 'XRP'):
+    elif pair[0:3] in KRAKEN_TO_WORLD or pair[0:3] in {'XBT', 'ETH', 'XDG', 'LTC', 'XRP'}:
         base_asset_str = pair[0:3]
         quote_asset_str = pair[3:]
     elif pair[0:4] in KRAKEN_TO_WORLD:

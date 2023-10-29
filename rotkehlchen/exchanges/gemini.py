@@ -181,7 +181,7 @@ class Gemini(ExchangeInterface):
         url = f'{self.base_uri}{v_endpoint}'
         retries_left = CachedSettings().get_query_retry_limit()
         while retries_left > 0:
-            if endpoint in ('mytrades', 'balances', 'transfers', 'roles', 'balances/earn'):
+            if endpoint in {'mytrades', 'balances', 'transfers', 'roles', 'balances/earn'}:
                 # private endpoints
                 timestamp = str(ts_now_in_ms())
                 payload = {'request': v_endpoint, 'nonce': timestamp}

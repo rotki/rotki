@@ -211,7 +211,7 @@ def assert_db_got_replaced(rotkehlchen_instance: Rotkehlchen, username: str):
         if (not f.endswith('backup') or f.startswith('rotkehlchen_db')) and not f.startswith('rotkehlchen_transient')  # noqa: E501
     ]
     msg = f'Expected 2 or 3 files in the directory but got {files}'
-    assert len(files) in (2, 3), msg  # 3rd file is the dbinfo.json
+    assert len(files) in {2, 3}, msg  # 3rd file is the dbinfo.json
     # The order of the files is not guaranteed
     main_db_exists = False
     backup_db_exists = False

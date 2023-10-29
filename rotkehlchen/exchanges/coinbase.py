@@ -144,7 +144,7 @@ def trade_from_conversion(trade_a: dict[str, Any], trade_b: dict[str, Any]) -> O
     amount_before_fee = deserialize_asset_amount(trade_a['native_amount']['amount'])
     # amount_after_fee + amount_before_fee is a negative amount and the fee needs to be positive
     conversion_native_fee_amount = abs(amount_after_fee + amount_before_fee)
-    if ZERO not in (tx_amount, conversion_native_fee_amount, amount_before_fee, amount_after_fee):
+    if ZERO not in {tx_amount, conversion_native_fee_amount, amount_before_fee, amount_after_fee}:
         # To get the asset in which the fee is nominated we pay attention to the creation
         # date of each event. As per our hypothesis the fee is nominated in the asset
         # for which the first transaction part was initialized
@@ -776,7 +776,7 @@ class Coinbase(ExchangeInterface):
             if 'type' in raw_data:
                 # The parent method filtered with 'from' attribute, so it is from another user.
                 # https://developers.coinbase.com/api/v2?python#transaction-resource
-                if raw_data.get('type', '') not in ('send', 'inflation_reward'):
+                if raw_data.get('type', '') not in {'send', 'inflation_reward'}:
                     msg = (
                         'Non "send" or "inflation_reward" type '
                         'found in coinbase transactions processing'
@@ -855,8 +855,7 @@ class Coinbase(ExchangeInterface):
             for tx in txs:
                 if 'type' not in tx:
                     continue
-                if tx['type'] in ['send', 'inflation_reward'] and 'from' in tx \
-                        and 'resource' in tx['from'] and tx['from']['resource'] == 'user':
+                if tx['type'] in {'send', 'inflation_reward'} and 'from' in tx and 'resource' in tx['from'] and tx['from']['resource'] == 'user':  # noqa: E501
                     raw_data.append(tx)
 
         log.debug('coinbase transactions history result', results_num=len(raw_data))

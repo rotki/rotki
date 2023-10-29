@@ -544,7 +544,7 @@ class MockKraken(Kraken):
                 )
 
             # else use specific data
-            if ledger_type in ('deposit', 'withdrawal'):
+            if ledger_type in {'deposit', 'withdrawal'}:
                 data = json.loads(
                     KRAKEN_SPECIFIC_DEPOSITS_RESPONSE if ledger_type == 'deposit'
                     else KRAKEN_SPECIFIC_WITHDRAWALS_RESPONSE,

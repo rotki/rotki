@@ -330,10 +330,10 @@ def assert_csv_export_response(
         count = 0
         for row in reader:
             assert len(row) == 6
-            assert row['category'] in (
+            assert row['category'] in {
                 'asset',
                 'liability',
-            )
+            }
             assert row['amount'] is not None
             assert row['asset'] is not None
             assert row['asset_symbol'] == Asset(row['asset']).symbol_or_name()
@@ -355,10 +355,10 @@ def assert_csv_export_response(
         count = 0
         for row in reader:
             assert len(row) == 5
-            assert row['category'] in (
+            assert row['category'] in {
                 'asset',
                 'liability',
-            )
+            }
             assert row['amount'] is not None
             assert row['asset_identifier'] is not None
             if timestamp_validation_data is None:

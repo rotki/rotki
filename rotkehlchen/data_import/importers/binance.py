@@ -217,7 +217,7 @@ class BinanceTradeEntry(BinanceMultipleEntry):
         same_assets = True
         assets: dict[str, Optional[AssetWithOracles]] = defaultdict(lambda: None)
         for row in data:
-            if row['Operation'] in ('Fee', 'Transaction Fee'):
+            if row['Operation'] in {'Fee', 'Transaction Fee'}:
                 cur_operation = 'Fee'
             elif row['Change'] < 0:
                 cur_operation = 'Sold'
@@ -246,7 +246,7 @@ class BinanceTradeEntry(BinanceMultipleEntry):
         # Group rows depending on whether they are fee or not and then sort them by amount
         rows_grouped_by_fee: dict[bool, list[BinanceCsvRow]] = defaultdict(list)
         for row in data:
-            is_fee = row['Operation'] in ('Fee', 'Transaction Fee')
+            is_fee = row['Operation'] in {'Fee', 'Transaction Fee'}
             rows_grouped_by_fee[is_fee].append(row)
 
         for rows_group in rows_grouped_by_fee.values():
@@ -275,7 +275,7 @@ class BinanceTradeEntry(BinanceMultipleEntry):
             for row in trade_rows:
                 cur_asset = row['Coin']
                 amount = row['Change']
-                if row['Operation'] in ('Fee', 'Transaction Fee'):
+                if row['Operation'] in {'Fee', 'Transaction Fee'}:
                     fee_asset = cur_asset
                     fee_amount = Fee(abs(amount))
                 else:
@@ -485,12 +485,12 @@ class BinanceEarnProgram(BinanceSingleEntry):
         event_identifier = f'{EVENT_IDENTIFIER_PREFIX}{hash_csv_row(data)}'
         timestamp_ms = ts_sec_to_ms(timestamp)
         staking_event = None
-        if data['Operation'] in (
+        if data['Operation'] in {
             'Simple Earn Flexible Interest',
             'Simple Earn Locked Rewards',
             'BNB Vault Rewards',
             'Swap Farming Rewards',
-        ):
+        }:
             staking_event = HistoryEvent(
                 event_identifier=event_identifier,
                 sequence_index=0,
@@ -503,11 +503,11 @@ class BinanceEarnProgram(BinanceSingleEntry):
                 location_label='CSV import',
                 notes=f'Reward from {data["Operation"]}',
             )
-        elif data['Operation'] in (
+        elif data['Operation'] in {
             'Simple Earn Flexible Subscription',
             'Simple Earn Locked Subscription',
             'Staking Purchase',
-        ):
+        }:
             staking_event = HistoryEvent(
                 event_identifier=event_identifier,
                 sequence_index=0,
@@ -553,7 +553,7 @@ class BinanceUSDMProgram(BinanceSingleEntry):
     )
 
     def is_entry(self, requested_operation: str, account: str, change: AssetAmount) -> bool:
-        if requested_operation in ('Fee', 'Funding Fee') and change == abs(change):
+        if requested_operation in {'Fee', 'Funding Fee'} and change == abs(change):
             return False
         return requested_operation in self.AVAILABLE_OPERATIONS and account == self.ACCOUNT
 
@@ -564,7 +564,7 @@ class BinanceUSDMProgram(BinanceSingleEntry):
         - KeyError
         """
         amount = abs(data['Change'])
-        if data['Operation'] in ('Fee', 'Funding Fee'):
+        if data['Operation'] in {'Fee', 'Funding Fee'}:
             event_type = HistoryEventType.SPEND
             event_subtype = HistoryEventSubType.FEE
             notes = f'{amount} {data["Coin"].symbol} fee paid on binance USD-MFutures'

@@ -27,10 +27,10 @@ class GitcoinDecoder(DecoderInterface):
         - UnknownAsset
         - WrongAssetType
         """
-        if context.transaction.to_address not in (
+        if context.transaction.to_address not in {
                 '0xdf869FAD6dB91f437B59F1EdEFab319493D4C4cE',
                 '0x7d655c57f71464B6f83811C55D84009Cd9f5221C',
-        ):
+        }:
             return FAILED_ENRICHMENT_OUTPUT
         crypto_asset = context.event.asset.resolve_to_crypto_asset()
         if context.event.event_type == HistoryEventType.SPEND:

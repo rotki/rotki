@@ -70,7 +70,7 @@ def _reduce_eventid_size(write_cursor: 'DBCursor') -> None:
         if subtype == 'remove asset':
             days = int(timestamp / 1000 / 86400)
             updates.append((f'EW_{validator_index}_{days}', identifier))
-        elif subtype in ('mev reward', 'block production'):
+        elif subtype in {'mev reward', 'block production'}:
             updates.append((f'BP1_{blocknumber}', identifier))
 
     imported_events = write_cursor.execute(

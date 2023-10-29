@@ -18,7 +18,7 @@ class WebsocketReader:
     def read_forever(self) -> None:
         while self.should_read:
             msg = self.ws.recv()
-            if msg not in ('', '{}'):
+            if msg not in {'', '{}'}:
                 data = json.loads(msg)
                 self.messages.appendleft(data)
             gevent.sleep(0.2)

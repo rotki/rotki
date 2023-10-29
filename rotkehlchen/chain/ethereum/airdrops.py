@@ -392,7 +392,7 @@ def check_airdrops(
             addr, amount, *_ = row
             # not doing to_checksum_address() here since the file addresses are checksummed
             # and doing to_checksum_address() so many times hits performance
-            if protocol_name in (
+            if protocol_name in {
                 'cornichon',
                 'tornado',
                 'grain',
@@ -400,7 +400,7 @@ def check_airdrops(
                 'sdl',
                 'cow_mainnet',
                 'cow_gnosis',
-            ):
+            }:
                 amount = token_normalized_value_decimals(int(amount), 18)  # type: ignore
             if addr in addresses:
                 asset = airdrop_data[1]

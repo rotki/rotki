@@ -319,7 +319,7 @@ def pair_get_assets(pair: TradePair) -> tuple[AssetWithOracles, AssetWithOracles
 
 def get_pair_position_str(pair: TradePair, position: str) -> str:
     """Get the string representation of an asset of a trade pair"""
-    assert position in ('first', 'second')
+    assert position in {'first', 'second'}
     base_str, quote_str = _split_pair(pair)
     return base_str if position == 'first' else quote_str
 
@@ -348,7 +348,7 @@ def deserialize_asset_movement_category(
     if isinstance(value, str):
         if value.lower() == 'deposit':
             return AssetMovementCategory.DEPOSIT
-        if value.lower() in ('withdraw', 'withdrawal'):
+        if value.lower() in {'withdraw', 'withdrawal'}:
             return AssetMovementCategory.WITHDRAWAL
         raise DeserializationError(
             f'Failed to deserialize asset movement category symbol. Unknown {value}',
