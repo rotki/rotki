@@ -46,7 +46,7 @@ The [Pro Version](https://rotki.com/checkout/plan) of Rotki also supports additi
 
 ## Features at a glance
 
-:balance_scale: Shows overview of your balances across multiple platforms, blockchain, exchanges and protocols.
+:balance_scale: Shows an overview of your balances across multiple platforms, blockchain, exchanges, and protocols.
 
 :chart_with_upwards_trend: Graphs analyzing your historical activity and showing insights into your portfolio.
 
