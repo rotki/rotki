@@ -166,6 +166,7 @@ ignore = [
     "PLR0915", # too many statements -- we probably could use this ... but with custom statements number?
     "PLR0911", # too many return statements -- we dont care
     "PLR0912", # too many branches -- we dont care
+    "PLR6201", # Doesn't work only for constants: https://github.com/astral-sh/ruff/issues/8322
     "PLR6301", # could be a staticmethod or function -- breaks for interfaces
     "PLC1901", # we prefer direct comparison to empty string for explicitness
     # Some bandit rules we don't check for

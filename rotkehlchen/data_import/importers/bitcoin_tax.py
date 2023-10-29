@@ -72,7 +72,7 @@ class BitcoinTaxImporter(BaseExchangeImporter):
         May raise:
         - UnsupportedCSVEntry: When the action is not supported
         """
-        if action not in ('BUY', 'SELL', 'SWAP'):
+        if action not in {'BUY', 'SELL', 'SWAP'}:
             raise UnsupportedCSVEntry(f'Unsupported entry action type {action}. Data: {csv_row}')
         if action == 'SWAP':
             # The SWAP action is used by bitcoin tax when a crypto asset is renamed or forked.
@@ -205,7 +205,7 @@ class BitcoinTaxImporter(BaseExchangeImporter):
             location = Location.deserialize(csv_row['Account'])
         except DeserializationError:
             location = Location.EXTERNAL
-            if csv_row['Account'] in ('Coinbase Pro', 'GDAX'):
+            if csv_row['Account'] in {'Coinbase Pro', 'GDAX'}:
                 location = Location.COINBASEPRO
 
         asset_resolver = LOCATION_TO_ASSET_MAPPING.get(location, asset_from_common_identifier)

@@ -119,7 +119,7 @@ class Compound(EthereumModule):
             borrowing_map = {}
             rewards_map = {}
             for balance_entry in balance_entries:
-                if balance_entry.protocol.name not in ('Compound Governance', 'Compound'):
+                if balance_entry.protocol.name not in {'Compound Governance', 'Compound'}:
                     continue
 
                 entry = balance_entry.base_balance

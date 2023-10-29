@@ -46,14 +46,14 @@ def assert_csv_export_response(response, csv_dir, is_download=False):
         count = 0
         for row in reader:
             assert len(row) == 12
-            assert row['location'] in (
+            assert row['location'] in {
                 'kraken',
                 'bittrex',
                 'binance',
                 'poloniex',
                 'ethereum',
                 'bitmex',
-            )
+            }
             assert row['type'] in (
                 str(AccountingEventType.TRADE),
                 str(AccountingEventType.FEE),

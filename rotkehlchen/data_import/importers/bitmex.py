@@ -117,7 +117,7 @@ class BitMEXImporter(BaseExchangeImporter):
                     if row['transactType'] == 'RealisedPNL':
                         margin_position = self._consume_realised_pnl(row, **kwargs)
                         self.add_margin_trade(write_cursor, margin_position)
-                    elif row['transactType'] in ['Deposit', 'Withdrawal']:
+                    elif row['transactType'] in {'Deposit', 'Withdrawal'}:
                         if row['transactStatus'] == 'Completed':
                             self.add_asset_movement(
                                 write_cursor, self._consume_deposits_or_withdrawals(row, **kwargs),

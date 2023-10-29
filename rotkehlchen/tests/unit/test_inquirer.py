@@ -201,7 +201,7 @@ def test_find_usd_price_cache(inquirer, freezer):  # pylint: disable=unused-argu
         nonlocal call_count
         if call_count == 0:
             price = Price(FVal('1'))
-        elif call_count in (1, 2):
+        elif call_count in {1, 2}:
             price = Price(FVal('2'))
         else:
             raise AssertionError('Called too many times for this test')

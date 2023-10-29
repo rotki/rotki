@@ -276,7 +276,7 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
             try:
                 result = json_ret.get('result', None)
                 if result is None:
-                    if action in ('eth_getTransactionByHash', 'eth_getTransactionReceipt', 'getcontractcreation'):  # noqa: E501
+                    if action in {'eth_getTransactionByHash', 'eth_getTransactionReceipt', 'getcontractcreation'}:  # noqa: E501
                         return None
 
                     raise RemoteError(
@@ -307,7 +307,7 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
                     transaction_endpoint_and_none_found = (
                         status == 0 and
                         json_ret['message'] == 'No transactions found' and
-                        action in ('txlist', 'txlistinternal', 'tokentx')
+                        action in {'txlist', 'txlistinternal', 'tokentx'}
                     )
                     logs_endpoint_and_none_found = (
                         status == 0 and

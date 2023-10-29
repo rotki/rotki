@@ -125,7 +125,7 @@ def _check_and_get_response(response: Response, method: str) -> Union[str, dict]
     May raise:
     - RemoteError if there is an unrecoverable/unexpected remote error
     """
-    if response.status_code in (520, 525, 504):
+    if response.status_code in {520, 525, 504}:
         log.debug(f'Kraken returned status code {response.status_code}')
         return 'Usual kraken 5xx shenanigans'
     if response.status_code != 200:
@@ -284,7 +284,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
 
     def _manage_call_counter(self, method: str) -> None:
         self.last_query_ts = ts_now()
-        if method in ('Ledgers', 'TradesHistory'):
+        if method in {'Ledgers', 'TradesHistory'}:
             self.call_counter += 2
         else:
             self.call_counter += 1

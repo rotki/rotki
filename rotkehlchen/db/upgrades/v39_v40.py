@@ -196,10 +196,10 @@ def _migrate_ledger_actions(write_cursor: 'DBCursor', conn: 'DBConnection') -> N
                 notes = f'{notes}. {entry[7]}'
 
             # map the types. Making sure to have the as default/valid combinations
-            if ledger_action_type in ('A', 'D', 'G', 'H'):  # income, dividends income, gift, grant action type  # noqa: E501
+            if ledger_action_type in {'A', 'D', 'G', 'H'}:  # income, dividends income, gift, grant action type  # noqa: E501
                 event_type = 'receive'
                 event_subtype = 'none'
-            elif ledger_action_type in ('B', 'C'):  # expense, loss action type
+            elif ledger_action_type in {'B', 'C'}:  # expense, loss action type
                 event_type = 'spend'
                 event_subtype = 'none'
             elif ledger_action_type == 'E':

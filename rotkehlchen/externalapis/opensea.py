@@ -72,7 +72,7 @@ class NFT(NamedTuple):
         return {
             'token_identifier': self.token_identifier,
             'background_color': self.background_color,
-            'image_url': self.image_url if self.image_url not in (None, '') else None,
+            'image_url': self.image_url if self.image_url not in {None, ''} else None,
             'name': self.name,
             'external_link': self.external_link,
             'permalink': self.permalink,
@@ -206,7 +206,7 @@ class Opensea(ExternalServiceWithApiKey):
         try:
             last_sale: Optional[dict[str, Any]] = entry.get('last_sale')
             if last_sale is not None and last_sale.get('payment_token') is not None:
-                if last_sale['payment_token']['symbol'] in ('ETH', 'WETH'):
+                if last_sale['payment_token']['symbol'] in {'ETH', 'WETH'}:
                     payment_asset = self.eth_asset
                 else:
                     payment_asset = Asset(

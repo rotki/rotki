@@ -70,14 +70,14 @@ class CryptocomImporter(BaseExchangeImporter):
         fee = Fee(ZERO)
         fee_currency = A_USD  # whatever (used only if there is no fee)
 
-        if row_type in (
+        if row_type in {
             'crypto_purchase',
             'crypto_exchange',
             'viban_purchase',
             'crypto_viban_exchange',
             'recurring_buy_order',
             'card_top_up',
-        ):
+        }:
             # variable mapping to raw data
             currency = csv_row['Currency']
             to_currency = csv_row['To Currency']
@@ -88,12 +88,12 @@ class CryptocomImporter(BaseExchangeImporter):
 
             trade_type = TradeType.BUY if to_currency != native_currency else TradeType.SELL
 
-            if row_type in (
+            if row_type in {
                 'crypto_exchange',
                 'crypto_viban_exchange',
                 'recurring_buy_order',
                 'viban_purchase',
-            ):
+            }:
                 # trades (fiat, crypto) to (crypto, fiat)
                 base_asset = asset_from_cryptocom(to_currency)
                 quote_asset = asset_from_cryptocom(currency)
@@ -128,13 +128,13 @@ class CryptocomImporter(BaseExchangeImporter):
             )
             self.add_trade(write_cursor, trade)
 
-        elif row_type in (
+        elif row_type in {
             'crypto_withdrawal',
             'crypto_deposit',
             'viban_deposit',
             'viban_card_top_up',
-        ):
-            if row_type in ('crypto_withdrawal', 'viban_deposit', 'viban_card_top_up'):
+        }:
+            if row_type in {'crypto_withdrawal', 'viban_deposit', 'viban_card_top_up'}:
                 category = AssetMovementCategory.WITHDRAWAL
                 amount = deserialize_asset_amount_force_positive(csv_row['Amount'])
             else:
@@ -155,7 +155,7 @@ class CryptocomImporter(BaseExchangeImporter):
                 link='',
             )
             self.add_asset_movement(write_cursor, asset_movement)
-        elif row_type in (
+        elif row_type in {
             'airdrop_to_exchange_transfer',
             'mco_stake_reward',
             'crypto_payment_refund',
@@ -170,7 +170,7 @@ class CryptocomImporter(BaseExchangeImporter):
             'referral_bonus',
             'crypto_earn_interest_paid',
             'reimbursement',
-        ):
+        }:
             asset = asset_from_cryptocom(csv_row['Currency'])
             amount = deserialize_asset_amount(csv_row['Amount'])
             event = HistoryEvent(
@@ -185,7 +185,7 @@ class CryptocomImporter(BaseExchangeImporter):
                 notes=notes,
             )
             self.add_history_events(write_cursor, [event])
-        elif row_type in ('crypto_payment', 'reimbursement_reverted', 'card_cashback_reverted'):
+        elif row_type in {'crypto_payment', 'reimbursement_reverted', 'card_cashback_reverted'}:
             asset = asset_from_cryptocom(csv_row['Currency'])
             amount = abs(deserialize_asset_amount(csv_row['Amount']))
             event = HistoryEvent(
@@ -253,7 +253,7 @@ class CryptocomImporter(BaseExchangeImporter):
                 notes=notes,
             )
             self.add_history_events(write_cursor, [event])
-        elif row_type in (
+        elif row_type in {
             'crypto_earn_program_created',
             'crypto_earn_program_withdrawn',
             'lockup_lock',
@@ -264,7 +264,6 @@ class CryptocomImporter(BaseExchangeImporter):
             'lockup_swap_debited',
             'lockup_swap_credited',
             'lockup_swap_rebate',
-            'dynamic_coin_swap_bonus_exchange_deposit',
             # we don't handle cryto.com exchange yet
             'crypto_to_exchange_transfer',
             'exchange_to_crypto_transfer',
@@ -280,7 +279,7 @@ class CryptocomImporter(BaseExchangeImporter):
             'interest_swap_debited',
             # The user has received an aidrop but can't claim it yet
             'airdrop_locked',
-        ):
+        }:
             # those types are ignored because it doesn't affect the wallet balance
             # or are not handled here
             return

@@ -127,7 +127,7 @@ class Iconomi(ExchangeInterface):
         """
         Queries ICONOMI with the given verb for the given path and options
         """
-        assert verb in ('get', 'post'), (
+        assert verb in {'get', 'post'}, (
             f'Given verb {verb} is not a valid HTTP verb'
         )
 
@@ -179,7 +179,7 @@ class Iconomi(ExchangeInterface):
         except JSONDecodeError as exc:
             raise RemoteError('ICONOMI returned invalid JSON response') from exc
 
-        if response.status_code not in (200, 201):
+        if response.status_code not in {200, 201}:
             if isinstance(json_ret, dict) and 'message' in json_ret:
                 raise RemoteError(json_ret['message'])
 
@@ -332,7 +332,7 @@ class Iconomi(ExchangeInterface):
             if timestamp > end_ts:
                 continue
 
-            if tx['type'] in ('buy_asset', 'sell_asset'):
+            if tx['type'] in {'buy_asset', 'sell_asset'}:
                 try:
                     trades.append(trade_from_iconomi(tx))
                 except UnknownAsset as e:

@@ -70,13 +70,13 @@ class NexoImporter(BaseExchangeImporter):
         entry_type = csv_row['Type']
         transaction = csv_row['Transaction']
 
-        if entry_type in ('Exchange', 'CreditCardStatus'):
+        if entry_type in {'Exchange', 'CreditCardStatus'}:
             self.db.msg_aggregator.add_warning(
                 'Found exchange/credit card status transaction in nexo csv import but the entry '
                 'will be ignored since not enough information is provided about the trade.',
             )
             return
-        if entry_type in ('Deposit', 'ExchangeDepositedOn'):
+        if entry_type in {'Deposit', 'ExchangeDepositedOn'}:
             asset_movement = AssetMovement(
                 location=Location.NEXO,
                 category=AssetMovementCategory.DEPOSIT,
@@ -90,7 +90,7 @@ class NexoImporter(BaseExchangeImporter):
                 link=transaction,
             )
             self.add_asset_movement(write_cursor, asset_movement)
-        elif entry_type in ('Withdrawal', 'WithdrawExchanged'):
+        elif entry_type in {'Withdrawal', 'WithdrawExchanged'}:
             asset_movement = AssetMovement(
                 location=Location.NEXO,
                 category=AssetMovementCategory.WITHDRAWAL,
@@ -118,7 +118,7 @@ class NexoImporter(BaseExchangeImporter):
                 notes=f'{entry_type} from Nexo',
             )
             self.add_history_events(write_cursor, [event])
-        elif entry_type in ('Interest', 'Bonus', 'Dividend', 'FixedTermInterest', 'Cashback', 'ReferralBonus'):  # noqa: E501
+        elif entry_type in {'Interest', 'Bonus', 'Dividend', 'FixedTermInterest', 'Cashback', 'ReferralBonus'}:  # noqa: E501
             # A user shared a CSV file where some entries marked as interest had negative amounts.
             # we couldn't find information about this since they seem internal transactions made
             # by nexo but they appear like a trade from asset -> nexo in order to gain interest

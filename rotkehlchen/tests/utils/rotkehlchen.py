@@ -154,7 +154,7 @@ def setup_balances(
                 assert len(rotki.chains_aggregator.balances.eth) == 2, msg
                 d_liabilities = {
                     k: [
-                        x for idx, x in enumerate(v) if idx not in (0, 2)
+                        x for idx, x in enumerate(v) if idx not in {0, 2}
                     ] for k, v in liabilities.items()
                 }
 

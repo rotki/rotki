@@ -21,7 +21,7 @@ def test_gnosis_nodes_prune_and_archive_status(
         elif node_name.endpoint == 'https://rpc.ankr.com/gnosis':
             assert not web3_node.is_pruned
             assert web3_node.is_archive
-        elif node_name.endpoint in ('https://1rpc.io/gnosis', 'https://gnosis.publicnode.com'):
+        elif node_name.endpoint in {'https://1rpc.io/gnosis', 'https://gnosis.publicnode.com'}:
             assert web3_node.is_pruned
             assert not web3_node.is_archive
         else:

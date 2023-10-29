@@ -222,7 +222,7 @@ class HDKey:
             return idx
         if not isinstance(idx, str):
             raise XPUBError('XPUB path index must be string or integer')
-        if idx[-1] in ['h', "'"]:  # account for h or ' conventions
+        if idx[-1] in {'h', "'"}:  # account for h or ' conventions
             return int(idx[:-1]) + BIP32_HARDEN
         return int(idx)
 
@@ -310,7 +310,7 @@ class HDKey:
         # Go over all other nodes, and convert to indexes
         nodes = nodes[1:]
         for node in nodes:
-            if node[-1] in ['h', "'"]:  # Support 0h and 0' conventions
+            if node[-1] in {'h', "'"}:  # Support 0h and 0' conventions
                 int_nodes.append(int(node[:-1]) + BIP32_HARDEN)
             else:
                 int_nodes.append(int(node))

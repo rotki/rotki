@@ -889,9 +889,9 @@ def test_query_combined_mev_reward_and_block_production_events(rotkehlchen_api_s
         if entry['entry']['block_number'] == block_number:
             assert entry['grouped_events_num'] == 3
             event_identifier = entry['entry']['event_identifier']
-        elif entry['entry']['block_number'] in (17055026, 16589592, 15938405):
+        elif entry['entry']['block_number'] in {17055026, 16589592, 15938405}:
             assert entry['grouped_events_num'] == 2
-        elif entry['entry']['block_number'] in (16135531, 15849710, 15798693):
+        elif entry['entry']['block_number'] in {16135531, 15849710, 15798693}:
             assert entry['grouped_events_num'] == 1
 
     # now query the events of the combined group

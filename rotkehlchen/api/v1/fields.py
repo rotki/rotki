@@ -106,7 +106,7 @@ class IncludeExcludeListField(fields.Field):
         values = value['values']
         behaviour = value['behaviour']
 
-        if behaviour not in ('include', 'exclude'):
+        if behaviour not in {'include', 'exclude'}:
             raise ValidationError(
                 message="Behaviour must be either 'include' or 'exclude'.",
                 field_name='behaviour',
@@ -823,7 +823,7 @@ class AssetConflictsField(fields.Field):
             except UnknownAsset as e:
                 raise ValidationError(f'Unknown asset identifier {asset_id}') from e
 
-            if choice not in ('remote', 'local'):
+            if choice not in {'remote', 'local'}:
                 raise ValidationError(
                     f'Unknown asset update choice: {choice}. Valid values '
                     f'are "remote" or "local"',

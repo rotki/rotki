@@ -309,7 +309,7 @@ class Independentreserve(ExchangeInterface):
             except requests.exceptions.RequestException as e:
                 raise RemoteError(f'IndependentReserve API request failed due to {e!s}') from e
 
-            if response.status_code not in (200, 429):
+            if response.status_code not in {200, 429}:
                 raise RemoteError(
                     f'IndependentReserve api request for {response.url} failed with HTTP status '
                     f'code {response.status_code} and response {response.text}',
@@ -490,7 +490,7 @@ class Independentreserve(ExchangeInterface):
 
             for entry in resp:
                 entry_type = entry.get('Type')
-                if entry_type is None or entry_type not in ('Deposit', 'Withdrawal'):
+                if entry_type is None or entry_type not in {'Deposit', 'Withdrawal'}:
                     continue
 
                 try:

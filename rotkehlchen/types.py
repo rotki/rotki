@@ -675,13 +675,13 @@ class TradeType(DBCharEnumMixIn):
                 f'Failed to deserialize trade type symbol from {type(symbol)} entry',
             )
 
-        if symbol in ('buy', 'LIMIT_BUY', 'BUY', 'Buy'):
+        if symbol in {'buy', 'LIMIT_BUY', 'BUY', 'Buy'}:
             return TradeType.BUY
-        if symbol in ('sell', 'LIMIT_SELL', 'SELL', 'Sell'):
+        if symbol in {'sell', 'LIMIT_SELL', 'SELL', 'Sell'}:
             return TradeType.SELL
-        if symbol in ('settlement_buy', 'settlement buy'):
+        if symbol in {'settlement_buy', 'settlement buy'}:
             return TradeType.SETTLEMENT_BUY
-        if symbol in ('settlement_sell', 'settlement sell'):
+        if symbol in {'settlement_sell', 'settlement sell'}:
             return TradeType.SETTLEMENT_SELL
 
         # else

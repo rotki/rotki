@@ -347,7 +347,7 @@ def serialize_db_setting(
         value = None
     elif setting == 'active_modules' and is_modifiable is True:
         value = json.dumps(value)
-    elif setting in ('main_currency', 'cost_basis_method'):
+    elif setting in {'main_currency', 'cost_basis_method'}:
         value = value.serialize()  # pylint: disable=no-member
     elif setting == 'address_name_priority' and is_modifiable is True:
         value = json.dumps(value)

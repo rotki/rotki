@@ -701,9 +701,9 @@ class Bitstamp(ExchangeInterface):
             msg = f'Bitstamp returned invalid JSON response: {response.text}.'
             log.error(msg)
 
-            if case in ('validate_api_key', 'balances'):
+            if case in {'validate_api_key', 'balances'}:
                 return False, msg
-            if case in ('trades', 'asset_movements'):
+            if case in {'trades', 'asset_movements'}:
                 self.msg_aggregator.add_error(
                     f'Got remote error while querying Bistamp {case_pretty}: {msg}',
                 )
@@ -722,9 +722,9 @@ class Bitstamp(ExchangeInterface):
             )
             log.error(msg)
 
-        if case in ('validate_api_key', 'balances'):
+        if case in {'validate_api_key', 'balances'}:
             return False, msg
-        if case in ('trades', 'asset_movements'):
+        if case in {'trades', 'asset_movements'}:
             self.msg_aggregator.add_error(
                 f'Got remote error while querying Bistamp {case_pretty}: {msg}',
             )

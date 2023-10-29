@@ -100,10 +100,10 @@ def assert_add_addresses_migration_ws_messages(
             elif i == 7:
                 assert_progress_message(msg, i, 'Potentially write migrated addresses to the DB', migration_version, migration_steps)  # noqa: E501
 
-        elif migration_version in (11, 12):
+        elif migration_version in {11, 12}:
             if i == 1:
                 assert_progress_message(msg, i, 'Fetching new spam assets and rpc data info', migration_version, migration_steps)  # noqa: E501
-            elif i in (2, 3):
+            elif i in {2, 3}:
                 assert_progress_message(msg, i, 'EVM chain activity', migration_version, migration_steps)  # noqa: E501
             elif i == 4:
                 assert_progress_message(msg, i, 'Potentially write migrated addresses to the DB', migration_version, migration_steps)  # noqa: E501

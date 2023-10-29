@@ -78,7 +78,7 @@ def bitcoinde_pair_to_world(pair: str) -> tuple[AssetWithOracles, AssetWithOracl
     if len(pair) == 6:
         tx_asset = bitcoinde_asset(pair[:3])
         native_asset = bitcoinde_asset(pair[3:])
-    elif len(pair) in (7, 8):
+    elif len(pair) in {7, 8}:
         tx_asset = bitcoinde_asset(pair[:4])
         native_asset = bitcoinde_asset(pair[4:])
     else:
@@ -179,7 +179,7 @@ class Bitcoinde(ExchangeInterface):
         """
         Queries Bitcoin.de with the given verb for the given path and options
         """
-        assert verb in ('get', 'post'), (
+        assert verb in {'get', 'post'}, (
             f'Given verb {verb} is not a valid HTTP verb'
         )
 
@@ -221,7 +221,7 @@ class Bitcoinde(ExchangeInterface):
         except JSONDecodeError as exc:
             raise RemoteError('Bitcoin.de returned invalid JSON response') from exc
 
-        if response.status_code not in (200, 401):
+        if response.status_code not in {200, 401}:
             if isinstance(json_ret, dict) and 'errors' in json_ret:
                 for error in json_ret['errors']:
                     if error.get('field') == 'X-API-KEY' and error.get('code') == 1:

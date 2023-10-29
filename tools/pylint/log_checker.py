@@ -12,7 +12,7 @@ LOGNOKWARGS_MSG = (
 
 def is_normal_logging_call(inferred_func):
     return (
-        inferred_func.name in ('info', 'debug', 'error', 'warning') and
+        inferred_func.name in {'info', 'debug', 'error', 'warning'} and
         inferred_func.callable() and
         inferred_func.parent.name == 'Logger'
     )

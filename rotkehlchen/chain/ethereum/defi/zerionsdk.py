@@ -160,7 +160,7 @@ def _is_token_non_standard(symbol: str, address: ChecksumEvmAddress) -> bool:
     UNI-V2 is queried from the uniswap pairs code
     pDAI is useless since the hack so ignore it
     """
-    if symbol in ('UNI-V2', 'pDAI'):
+    if symbol in {'UNI-V2', 'pDAI'}:
         return True
 
     if address in (

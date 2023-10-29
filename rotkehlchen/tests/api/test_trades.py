@@ -519,7 +519,7 @@ def assert_all_missing_fields_are_handled(correct_trade, server):
     fields = correct_trade.keys()
 
     for field in fields:
-        if field in ('link', 'notes', 'fee', 'fee_currency'):
+        if field in {'link', 'notes', 'fee', 'fee_currency'}:
             # Optional fields missing is fine
             continue
 

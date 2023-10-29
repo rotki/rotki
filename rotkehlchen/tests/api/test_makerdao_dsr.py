@@ -514,7 +514,7 @@ def assert_dsr_history_result_is_correct(result: dict[str, Any], setup: DSRTestS
                     for mov_key, mov_val in movement.items():
                         if mov_key == 'movement_type':
                             assert mov_val == result[account]['movements'][idx][mov_key]
-                        elif mov_key in ('gain_so_far', 'value'):
+                        elif mov_key in {'gain_so_far', 'value'}:
                             assert FVal(mov_val['amount']).is_close(FVal(
                                 result[account]['movements'][idx][mov_key]['amount'],
                             ), max_diff='1e-8')

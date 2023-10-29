@@ -154,7 +154,7 @@ def _query_web3_get_logs(
                 msg = 'query returned more than 10000 results'
 
             # errors from: https://infura.io/docs/ethereum/json-rpc/eth-getLogs
-            if msg in ('query returned more than 10000 results', 'query timeout exceeded'):
+            if msg in {'query returned more than 10000 results', 'query timeout exceeded'}:
                 block_range = block_range // 2
                 if block_range < 50:
                     raise  # stop retrying if block range gets too small

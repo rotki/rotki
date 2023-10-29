@@ -18,7 +18,7 @@ def test_base_nodes_prune_and_archive_status(
         if node_name.endpoint == 'https://base.blockpi.network/v1/rpc/public':
             assert not web3_node.is_pruned
             # not checking for archive here, as some times it is and some not
-        elif node_name.endpoint in ('https://mainnet.base.org', 'https://rpc.ankr.com/base'):
+        elif node_name.endpoint in {'https://mainnet.base.org', 'https://rpc.ankr.com/base'}:
             assert not web3_node.is_pruned
             assert web3_node.is_archive
         elif node_name.endpoint == 'https://base.publicnode.com':

@@ -194,7 +194,7 @@ class Bitfinex(ExchangeInterface):
         with self.nonce_lock:
             # Protect this region with a lock since Bitfinex will reject
             # non-increasing nonces for authenticated endpoints
-            if endpoint in ('movements', 'trades', 'wallets'):
+            if endpoint in {'movements', 'trades', 'wallets'}:
                 nonce = str(ts_now_in_ms())
                 message = f'/api/{api_path}{nonce}'
                 signature = hmac.new(
@@ -763,9 +763,9 @@ class Bitfinex(ExchangeInterface):
             msg = f'{self.name} {case} returned an invalid JSON response: {response.text}.'
             log.error(msg)
 
-            if case in ('validate_api_key', 'balances'):
+            if case in {'validate_api_key', 'balances'}:
                 return False, msg
-            if case in ('trades', 'asset_movements'):
+            if case in {'trades', 'asset_movements'}:
                 self.msg_aggregator.add_error(
                     f'Got remote error while querying {self.name} {case}: {msg}',
                 )
@@ -788,9 +788,9 @@ class Bitfinex(ExchangeInterface):
             )
             log.error(message)
 
-        if case in ('validate_api_key', 'balances'):
+        if case in {'validate_api_key', 'balances'}:
             return False, message
-        if case in ('trades', 'asset_movements'):
+        if case in {'trades', 'asset_movements'}:
             self.msg_aggregator.add_error(
                 f'Got remote error while querying {self.name} {case}: {message}',
             )

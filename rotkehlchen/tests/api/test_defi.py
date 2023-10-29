@@ -28,7 +28,7 @@ def test_query_defi_balances(rotkehlchen_api_server, ethereum_accounts):  # pyli
         first_entry = result[AAVE_TEST_ACC_1][0]
         assert first_entry['protocol'] is not None
         assert first_entry['protocol']['name'] is not None
-        assert first_entry['balance_type'] in ('Asset', 'Debt')
+        assert first_entry['balance_type'] in {'Asset', 'Debt'}
         assert first_entry['base_balance'] is not None
         assert first_entry['underlying_balances'] is not None
     else:

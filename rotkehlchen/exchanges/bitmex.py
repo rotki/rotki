@@ -161,7 +161,7 @@ class Bitmex(ExchangeInterface):
         """
         Queries Bitmex with the given verb for the given path and options
         """
-        assert verb in ('get', 'post', 'push'), (
+        assert verb in {'get', 'post', 'push'}, (
             f'Given verb {verb} is not a valid HTTP verb'
         )
 
@@ -202,7 +202,7 @@ class Bitmex(ExchangeInterface):
         except requests.exceptions.RequestException as e:
             raise RemoteError(f'Bitmex API request failed due to {e!s}') from e
 
-        if response.status_code not in (200, 401):
+        if response.status_code not in {200, 401}:
             raise RemoteError(
                 'Bitmex api request for {} failed with HTTP status code {}'.format(
                     response.url,
