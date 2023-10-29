@@ -200,7 +200,7 @@ class RotkiDataUpdater:
                     event_subtype=event_subtype,
                     counterparty=counterparty,
                     rule=rule,
-                    links={} if 'links' not in rule_data else rule_data['links'],
+                    links=rule_data.get('links', {}),
                 )
             except InputError as e:
                 # there is a conflict in the rule. Notify the frontend about it
