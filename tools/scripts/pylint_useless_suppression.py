@@ -57,7 +57,7 @@ for line in io.TextIOWrapper(pylint_call.stdout, encoding='utf-8'):
     )
 
 for filename, occurences in files.items():
-    with open(filename) as file:
+    with open(filename, encoding='utf8') as file:
         line_data = file.readlines()
 
     count = 0
@@ -69,7 +69,7 @@ for filename, occurences in files.items():
         line_data[idx] = line.replace(f'  # pylint: disable={suppression.error}', '')
         count += 1
 
-    with open(filename, 'w') as file:
+    with open(filename, 'w', encoding='utf8') as file:
         file.writelines(line_data)
     print(f'Replaced {count} lines in {filename}')
 

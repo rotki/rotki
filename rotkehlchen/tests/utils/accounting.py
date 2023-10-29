@@ -267,7 +267,7 @@ def assert_csv_export(
 
         calculated_pnls = PnlTotals()
         expected_csv_data = []
-        with open(tmpdir / FILENAME_ALL_CSV, newline='') as csvfile:
+        with open(tmpdir / FILENAME_ALL_CSV, newline='', encoding='utf8') as csvfile:
             reader = csv.DictReader(csvfile)
             for row in reader:
                 expected_csv_data.append(row)
@@ -291,7 +291,7 @@ def assert_csv_export(
         index = CSV_INDEX_OFFSET
         at_summaries = False
         to_upload_data = []
-        with open(tmpdir / FILENAME_ALL_CSV, newline='') as csvfile:
+        with open(tmpdir / FILENAME_ALL_CSV, newline='', encoding='utf8') as csvfile:
             reader = csv.DictReader(csvfile)
             for row in reader:
                 to_upload_data.append(row)

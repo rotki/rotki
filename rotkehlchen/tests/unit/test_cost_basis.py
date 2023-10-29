@@ -979,7 +979,7 @@ def test_accounting_average_cost_basis(accountant: Accountant):
             pnls=pot.pnls,
             directory=path_dir,
         )
-        with open(path_dir / FILENAME_ALL_CSV) as f:
+        with open(path_dir / FILENAME_ALL_CSV, encoding='utf8') as f:
             for event, row in zip_longest(events, csv.DictReader(f)):
                 if event.cost_basis is None:
                     assert row['cost_basis_taxable'] == ''

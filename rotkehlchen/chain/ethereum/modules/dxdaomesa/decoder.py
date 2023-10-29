@@ -42,7 +42,7 @@ class DxdaomesaDecoder(DecoderInterface):
             msg_aggregator=msg_aggregator,
         )
         dir_path = os.path.dirname(os.path.realpath(__file__))
-        with open(os.path.join(dir_path, 'data', 'contracts.json')) as f:
+        with open(os.path.join(dir_path, 'data', 'contracts.json'), encoding='utf8') as f:
             contracts = json.loads(f.read())
 
         self.contract = EvmContract(

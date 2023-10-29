@@ -156,7 +156,7 @@ def mock_scrape_validator_daily_stats(network_mocking: bool):
         root_path = Path(__file__).resolve().parent.parent.parent
         file_path = root_path / 'tests' / 'data' / 'mocks' / 'test_eth2' / 'validator_daily_stats' / f'{validator_index}.html'  # noqa: E501
 
-        with open(file_path) as f:
+        with open(file_path, encoding='utf8') as f:
             data = f.read()
 
         return MockResponse(200, data)

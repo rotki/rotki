@@ -405,7 +405,7 @@ def test_history_debug_import(rotkehlchen_api_server):
         else:
             assert_simple_ok_response(response)
     else:
-        with open(str(filepath)) as infile:
+        with open(str(filepath), encoding='utf8') as infile:
             response = requests.patch(
                 api_url_for(
                     rotkehlchen_api_server,

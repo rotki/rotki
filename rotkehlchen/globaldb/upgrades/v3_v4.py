@@ -134,7 +134,7 @@ def _add_eth_abis_json(cursor: 'DBCursor') -> None:
     log.debug('Enter _add_eth_abis_json')
 
     root_dir = Path(__file__).resolve().parent.parent.parent
-    with open(root_dir / 'data' / 'eth_abi.json') as f:
+    with open(root_dir / 'data' / 'eth_abi.json', encoding='utf8') as f:
         abi_entries = json.loads(f.read())
 
     abi_entries_tuples = []
@@ -150,9 +150,9 @@ def _add_eth_contracts_json(cursor: 'DBCursor') -> tuple[int, int, int]:
 
     eth_scan_abi_id, multicall_abi_id, ds_registry_abi_id = None, None, None
     root_dir = Path(__file__).resolve().parent.parent.parent
-    with open(root_dir / 'data' / 'eth_contracts.json') as f:
+    with open(root_dir / 'data' / 'eth_contracts.json', encoding='utf8') as f:
         contract_entries = json.loads(f.read())
-    with open(root_dir / 'chain' / 'ethereum' / 'modules' / 'dxdaomesa' / 'data' / 'contracts.json') as f:  # noqa: E501
+    with open(root_dir / 'chain' / 'ethereum' / 'modules' / 'dxdaomesa' / 'data' / 'contracts.json', encoding='utf8') as f:  # noqa: E501
         dxdao_contracts = json.loads(f.read())
 
     contract_entries.update(dxdao_contracts)
@@ -304,7 +304,7 @@ def _copy_assets_from_packaged_db(
 def _populate_asset_collections(cursor: 'DBCursor', root_dir: Path) -> None:
     """Insert into the collections table the information about known collections"""
     log.debug('Enter _populate_asset_collection')
-    with open(root_dir / 'data' / 'populate_asset_collections.sql') as f:
+    with open(root_dir / 'data' / 'populate_asset_collections.sql', encoding='utf8') as f:
         cursor.execute(f.read())
     log.debug('Exit _populate_asset_collection')
 
@@ -317,7 +317,7 @@ def _populate_multiasset_mappings(cursor: 'DBCursor', root_dir: Path) -> None:
     """
     log.debug('Enter _populate_multiasset_mappings')
     asset_regex = re.compile(r'eip155[a-zA-F0-9:\/]+')
-    with open(root_dir / 'data' / 'populate_multiasset_mappings.sql') as f:
+    with open(root_dir / 'data' / 'populate_multiasset_mappings.sql', encoding='utf8') as f:
         sql_sentences = f.read()
         # check if we are adding the assets
         # in this case we need to ensure that the assets exist locally and

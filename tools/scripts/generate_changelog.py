@@ -21,7 +21,7 @@ def generate_changelog(version: str, path: str) -> str:
     github_link = '- #{number} {text}'
     not_listed_change = '- {text}'
 
-    with open(path) as f:
+    with open(path, encoding='utf8') as f:
         lines = f.readlines()
         start = False
         for line in lines:

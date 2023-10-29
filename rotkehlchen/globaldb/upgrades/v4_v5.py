@@ -37,7 +37,7 @@ def _create_new_tables(cursor: 'DBCursor') -> None:
 def _populate_rpc_nodes(cursor: 'DBCursor', root_dir: Path) -> None:
     log.debug('Enter _populate_rpc_nodes')
 
-    with open(root_dir / 'data' / 'nodes.json') as f:
+    with open(root_dir / 'data' / 'nodes.json', encoding='utf8') as f:
         nodes_info = json.loads(f.read())
 
     nodes_tuples = [

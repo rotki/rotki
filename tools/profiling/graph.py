@@ -294,7 +294,7 @@ def memory_data(filepath):
         """returns a tuple (timestamp, memory_usage)"""
         return (ts_to_dt(line[TIMESTAMP]), float(line[MEMORY]))
 
-    with open(filepath) as handler:
+    with open(filepath, encoding='utf8') as handler:
         # the format of the file has two columns:
         # timestamp memory_mb
         data = [line.split() for line in handler if line]
@@ -303,7 +303,7 @@ def memory_data(filepath):
 
 
 def latency_data(filepath):
-    with open(filepath) as handler:
+    with open(filepath, encoding='utf8') as handler:
         return [ts_to_dt(line.split()[0]) for line in handler if line]
 
 

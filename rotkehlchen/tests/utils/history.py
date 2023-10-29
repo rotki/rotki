@@ -1201,7 +1201,7 @@ def assert_pnl_debug_import(filepath: Path, database: DBHandler) -> None:
     """This function asserts that the debug PnL data in the DB matches
     the one in the file uploaded.
     """
-    with open(filepath) as f:
+    with open(filepath, encoding='utf8') as f:
         pnl_debug_json = json.load(f)
 
     settings_from_file = pnl_debug_json['settings']
