@@ -85,127 +85,127 @@ EVENT_CATEGORY_MAPPINGS = {  # possible combinations of types and subtypes mappe
 EVENT_CATEGORY_DETAILS = {
     EventCategory.SEND: {DEFAULT: EventCategoryDetails(
         label='send',
-        icon='mdi-arrow-up',
+        icon='arrow-up-line',
     )}, EventCategory.RECEIVE: {DEFAULT: EventCategoryDetails(
         label='receive',
-        icon='mdi-arrow-down',
-        color='green',
+        icon='arrow-down-line',
+        color='success',
     )}, EventCategory.SWAP_OUT: {DEFAULT: EventCategoryDetails(
         label='swap',
-        icon='mdi-arrow-u-right-bottom',
+        icon='arrow-go-forward-line',
     )}, EventCategory.SWAP_IN: {DEFAULT: EventCategoryDetails(
         label='swap',
-        icon='mdi-arrow-u-left-top',
-        color='green',
+        icon='arrow-go-back-line',
+        color='success',
     )}, EventCategory.MIGRATE_OUT: {DEFAULT: EventCategoryDetails(
         label='migrate',
-        icon='mdi-arrow-u-right-bottom',
+        icon='arrow-right-circle-line',
     )}, EventCategory.MIGRATE_IN: {DEFAULT: EventCategoryDetails(
         label='migrate',
-        icon='mdi-arrow-u-left-top',
-        color='green',
+        icon='arrow-left-circle-line',
+        color='success',
     )}, EventCategory.APPROVAL: {DEFAULT: EventCategoryDetails(
         label='approval',
-        icon='mdi-lock-open-outline',
+        icon='lock-unlock-line',
     )}, EventCategory.DEPOSIT: {DEFAULT: EventCategoryDetails(
         label='deposit',
-        icon='mdi-arrow-expand-up',
-        color='green',
+        icon='skip-up-line',
+        color='success',
     )}, EventCategory.WITHDRAW: {DEFAULT: EventCategoryDetails(
         label='withdraw',
-        icon='mdi-arrow-expand-down',
+        icon='skip-down-line',
     )}, EventCategory.AIRDROP: {DEFAULT: EventCategoryDetails(
         label='airdrop',
-        icon='mdi-airballoon-outline',
+        icon='gift-line',
     )}, EventCategory.BORROW: {DEFAULT: EventCategoryDetails(
         label='borrow',
-        icon='mdi-hand-coin-outline',
+        icon='hand-coin-line',
     )}, EventCategory.REPAY: {DEFAULT: EventCategoryDetails(
         label='repay',
-        icon='mdi-history',
+        icon='history-line',
     )}, EventCategory.DEPLOY: {DEFAULT: EventCategoryDetails(
         label='deploy',
-        icon='mdi-swap-horizontal',
+        icon='rocket-line',
     )}, EventCategory.DEPLOY_WITH_SPEND: {DEFAULT: EventCategoryDetails(
         label='deploy with spend',
-        icon='mdi-swap-horizontal',
+        icon='rocket-2-line',
     )}, EventCategory.BRIDGE_DEPOSIT: {DEFAULT: EventCategoryDetails(
         label='bridge',
-        icon='mdi-arrow-expand-up',
-        color='red',
+        icon='skip-up-line',
+        color='error',
     )}, EventCategory.BRIDGE_WITHDRAWAL: {DEFAULT: EventCategoryDetails(
         label='bridge',
-        icon='mdi-arrow-expand-down',
-        color='green',
+        icon='skip-down-line',
+        color='success',
     )}, EventCategory.GOVERNANCE: {DEFAULT: EventCategoryDetails(
         label='governance',
-        icon='mdi-bank',
+        icon='government-line',
     )}, EventCategory.DONATE: {DEFAULT: EventCategoryDetails(
         label='donate',
-        icon='mdi-hand-heart-outline',
+        icon='hand-heart-line',
     )}, EventCategory.RECEIVE_DONATION: {DEFAULT: EventCategoryDetails(
         label='receive donation',
-        icon='mdi-hand-heart-outline',
+        icon='heart-2-line',
     )}, EventCategory.RENEW: {DEFAULT: EventCategoryDetails(
         label='renew',
-        icon='mdi-calendar-refresh',
+        icon='loop-right-line',
     )}, EventCategory.PLACE_ORDER: {DEFAULT: EventCategoryDetails(
         label='place order',
-        icon='mdi-briefcase-arrow-up-down',
+        icon='auction-line',
     )}, EventCategory.TRANSFER: {DEFAULT: EventCategoryDetails(
         label='transfer',
-        icon='mdi-swap-horizontal',
+        icon='swap-box-line',
     )}, EventCategory.STAKING_REWARD: {DEFAULT: EventCategoryDetails(
         label='staking reward',
-        icon='mdi-treasure-chest',
+        icon='inbox-archive-line',
     )}, EventCategory.CLAIM_REWARD: {DEFAULT: EventCategoryDetails(
         label='claim reward',
-        icon='mdi-gift',
+        icon='gift-2-line',
     )}, EventCategory.LIQUIDATION_REWARD: {DEFAULT: EventCategoryDetails(
         label='liquidation reward',
-        icon='mdi-water',
+        icon='drop-fill',
     )}, EventCategory.LIQUIDATION_LOSS: {DEFAULT: EventCategoryDetails(
         label='liquidation loss',
-        icon='mdi-water',
+        icon='contrast-drop-fill',
     )}, EventCategory.INFORMATIONAL: {DEFAULT: EventCategoryDetails(
         label='informational',
-        icon='mdi-information-outline',
+        icon='information-line',
     )}, EventCategory.CANCEL_ORDER: {DEFAULT: EventCategoryDetails(
         label='cancel order',
-        icon='mdi-close-circle-multiple-outline',
-        color='red',
+        icon='file-close-line',
+        color='error',
     )}, EventCategory.REFUND: {DEFAULT: EventCategoryDetails(
         label='refund',
-        icon='mdi-cash-refund',
+        icon='refund-2-line',
     )}, EventCategory.FEE: {
-        None: EventCategoryDetails(label='fee', icon='mdi-account-cash'),
-        CPT_GAS: EventCategoryDetails(label='gas fee', icon='mdi-fire'),
+        None: EventCategoryDetails(label='fee', icon='price-tag-line'),
+        CPT_GAS: EventCategoryDetails(label='gas fee', icon='fire-line'),
     }, EventCategory.MEV_REWARD: {DEFAULT: EventCategoryDetails(
         label='mev',
-        icon='mdi-star-box',
+        icon='medal-line',
     )}, EventCategory.CREATE_BLOCK: {DEFAULT: EventCategoryDetails(
         label='new block',
-        icon='mdi-cube-outline',
+        icon='box-3-line',
     )}, EventCategory.CREATE_PROJECT: {DEFAULT: EventCategoryDetails(
         label='new project',
-        icon='mdi-clipboard-check-outline',
+        icon='file-add-line',
     )}, EventCategory.UPDATE_PROJECT: {DEFAULT: EventCategoryDetails(
         label='update project',
-        icon='mdi-clipboard-plus-outline',
+        icon='file-edit-line',
     )}, EventCategory.APPLY: {DEFAULT: EventCategoryDetails(
         label='apply',
-        icon='mdi-application-export',
+        icon='save-line',
     )},
 }
 
 ACCOUNTING_EVENTS_ICONS = {
-    AccountingEventType.TRADE: 'mdi-shuffle-variant',
-    AccountingEventType.FEE: 'mdi-account-cash',
-    AccountingEventType.ASSET_MOVEMENT: 'mdi-bank-transfer',
-    AccountingEventType.MARGIN_POSITION: 'mdi-margin',
-    AccountingEventType.LOAN: 'mdi-handshake',
-    AccountingEventType.PREFORK_ACQUISITION: 'mdi-source-fork',
-    AccountingEventType.STAKING: 'mdi-sprout',
-    AccountingEventType.HISTORY_EVENT: 'mdi-history',
-    AccountingEventType.TRANSACTION_EVENT: 'mdi-swap-horizontal',
+    AccountingEventType.TRADE: 'swap-box-line',
+    AccountingEventType.FEE: 'price-tag-line',
+    AccountingEventType.ASSET_MOVEMENT: 'token-swap-line',
+    AccountingEventType.MARGIN_POSITION: 'percent-line',
+    AccountingEventType.LOAN: 'shake-hands-line',
+    AccountingEventType.PREFORK_ACQUISITION: 'git-branch-line',
+    AccountingEventType.STAKING: 'seedling-line',
+    AccountingEventType.HISTORY_EVENT: 'exchange-box-line',
+    AccountingEventType.TRANSACTION_EVENT: 'arrow-left-right-line',
 }

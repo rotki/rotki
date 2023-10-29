@@ -1,226 +1,170 @@
 {
   "result": {
     "global_mappings": {
-      "spend": {
-        "fee": "gas",
-        "payback debt": "repay",
-        "return wrapped": "send",
-        "liquidate": "liquidate",
-        "none": "send"
-      },
       "receive": {
-        "generate debt": "borrow",
+        "reward": "claim reward",
         "receive wrapped": "receive",
+        "generate debt": "borrow",
         "return wrapped": "receive",
         "airdrop": "airdrop",
-        "reward": "claim reward",
+        "donate": "receive donation",
         "none": "receive",
-        "nft": "receive"
-      },
-      "informational": {
-        "approve": "approval",
-        "governance": "governance",
-        "deploy": "deploy",
-        "remove asset": "withdraw",
-        "place order": "place order",
-        "none": "informational"
-      },
-      "transfer": {
-        "none": "transfer",
-        "bridge": "bridge"
-      },
-      "trade": {
-        "spend": "swap out",
-        "receive": "swap in"
-      },
-      "withdrawal": {
-        "none": "withdraw",
-        "remove asset": "withdraw",
-        "generate debt": "borrow",
-        "bridge": "bridge"
+        "liquidate": "liquidation reward"
       },
       "deposit": {
-        "none": "deposit",
         "deposit asset": "deposit",
-        "bridge": "bridge",
-        "place order": "place order"
-      },
-      "migrate": {
-        "spend": "send",
-        "receive": "receive"
+        "bridge": "bridge deposit",
+        "place order": "deposit",
+        "fee": "fee"
       },
       "staking": {
         "deposit asset": "deposit",
-        "receive wrapped": "receive",
+        "reward": "staking reward",
         "remove asset": "withdraw",
-        "return wrapped": "send",
+        "block production": "create block",
         "mev reward": "mev reward",
-        "block production": "create block"
+        "receive wrapped": "receive",
+        "fee": "fee"
       }
     },
     "event_category_details": {
-      "gas": {
-        "label": "gas fee",
-        "icon": "mdi-fire",
-        "color": null
-      },
-      "send": {
-        "label": "send",
-        "icon": "mdi-arrow-up",
-        "color": null
-      },
       "receive": {
-        "label": "receive",
-        "icon": "mdi-arrow-down",
-        "color": "green"
-      },
-      "swap out": {
-        "label": "swap out",
-        "icon": "mdi-arrow-u-right-bottom",
-        "color": null
-      },
-      "swap in": {
-        "label": "swap in",
-        "icon": "mdi-arrow-u-left-top",
-        "color": "green"
-      },
-      "approval": {
-        "label": "approval",
-        "icon": "mdi-lock-open-outline",
-        "color": null
-      },
-      "deposit": {
-        "label": "deposit",
-        "icon": "mdi-arrow-expand-up",
-        "color": "green"
-      },
-      "withdraw": {
-        "label": "withdraw",
-        "icon": "mdi-arrow-expand-down",
-        "color": null
-      },
-      "airdrop": {
-        "label": "airdrop",
-        "icon": "mdi-airballoon-outline",
-        "color": null
-      },
-      "borrow": {
-        "label": "borrow",
-        "icon": "mdi-hand-coin-outline",
-        "color": null
-      },
-      "repay": {
-        "label": "repay",
-        "icon": "mdi-history",
-        "color": null
-      },
-      "deploy": {
-        "label": "deploy",
-        "icon": "mdi-swap-horizontal",
-        "color": null
-      },
-      "bridge": {
-        "label": "bridge",
-        "icon": "mdi-bridge",
-        "color": null
-      },
-      "governance": {
-        "label": "governance",
-        "icon": "mdi-bank",
-        "color": null
-      },
-      "donate": {
-        "label": "donate",
-        "icon": "mdi-hand-heart-outline",
-        "color": null
-      },
-      "receive donation": {
-        "label": "receive donation",
-        "icon": "mdi-hand-heart-outline",
-        "color": null
-      },
-      "renew": {
-        "label": "renew",
-        "icon": "mdi-calendar-refresh",
-        "color": null
-      },
-      "place order": {
-        "label": "place order",
-        "icon": "mdi-briefcase-arrow-up-down",
-        "color": null
-      },
-      "transfer": {
-        "label": "transfer",
-        "icon": "mdi-swap-horizontal",
-        "color": null
-      },
-      "claim reward": {
-        "label": "claim reward",
-        "icon": "mdi-gift",
-        "color": null
-      },
-      "liquidate": {
-        "label": "liquidate",
-        "icon": "mdi-water",
-        "color": null
-      },
-      "informational": {
-        "label": "informational",
-        "icon": "mdi-information-outline",
-        "color": null
-      },
-      "cancel order": {
-        "label": "cancel order",
-        "icon": "mdi-close-circle-multiple-outline",
-        "color": "red"
-      },
-      "refund": {
-        "label": "refund",
-        "icon": "mdi-cash-refund",
-        "color": null
-      },
-      "fee": {
-        "label": "fee",
-        "icon": "mdi-account-cash",
-        "color": null
-      },
-      "mev reward": {
-        "label": "mev",
-        "icon": "mdi-star-box",
-        "color": null
-      },
-      "create block": {
-        "label": "new block",
-        "icon": "mdi-cube-outline",
-        "color": null
-      }
-    },
-    "exchange_mappings": {},
-    "accounting_events_icons": {},
-    "per_protocol_mappings": {
-      "ethereum": {
-        "yearn-v1": {
-          "withdrawal": {
-            "remove asset": "withdraw",
-            "return wrapped": "send"
-          },
-          "deposit": {
-            "deposit asset": "deposit",
-            "receive wrapped": "receive"
+        "counterparty_mappings": {
+          "null": {
+            "label": "receive",
+            "icon": "arrow-down-line",
+            "color": "success"
           }
         },
-        "yearn-v2": {
-          "withdrawal": {
-            "remove asset": "withdraw",
-            "return wrapped": "send"
-          },
-          "deposit": {
-            "deposit asset": "deposit",
-            "receive wrapped": "receive"
+        "direction": "in"
+      },
+      "deposit": {
+        "counterparty_mappings": {
+          "null": {
+            "label": "deposit",
+            "icon": "skip-up-line",
+            "color": "success"
           }
-        }
+        },
+        "direction": "out"
+      },
+      "withdraw": {
+        "counterparty_mappings": {
+          "null": {
+            "label": "withdraw",
+            "icon": "skip-down-line",
+            "color": null
+          }
+        },
+        "direction": "in"
+      },
+      "airdrop": {
+        "counterparty_mappings": {
+          "null": {
+            "label": "airdrop",
+            "icon": "gift-line",
+            "color": null
+          }
+        },
+        "direction": "in"
+      },
+      "borrow": {
+        "counterparty_mappings": {
+          "null": {
+            "label": "borrow",
+            "icon": "hand-coin-line",
+            "color": null
+          }
+        },
+        "direction": "in"
+      },
+      "bridge deposit": {
+        "counterparty_mappings": {
+          "null": {
+            "label": "bridge",
+            "icon": "skip-up-line",
+            "color": "error"
+          }
+        },
+        "direction": "out"
+      },
+      "receive donation": {
+        "counterparty_mappings": {
+          "null": {
+            "label": "receive donation",
+            "icon": "heart-2-line",
+            "color": null
+          }
+        },
+        "direction": "in"
+      },
+      "staking reward": {
+        "counterparty_mappings": {
+          "null": {
+            "label": "staking reward",
+            "icon": "inbox-archive-line",
+            "color": null
+          }
+        },
+        "direction": "in"
+      },
+      "claim reward": {
+        "counterparty_mappings": {
+          "null": {
+            "label": "claim reward",
+            "icon": "gift-2-line",
+            "color": null
+          }
+        },
+        "direction": "in"
+      },
+      "liquidation reward": {
+        "counterparty_mappings": {
+          "null": {
+            "label": "liquidation reward",
+            "icon": "drop-fill",
+            "color": null
+          }
+        },
+        "direction": "in"
+      },
+      "fee": {
+        "counterparty_mappings": {
+          "null": {
+            "label": "fee",
+            "icon": "price-tag-line",
+            "color": null
+          },
+          "gas": {
+            "label": "gas fee",
+            "icon": "fire-line",
+            "color": null
+          }
+        },
+        "direction": "out"
+      },
+      "mev reward": {
+        "counterparty_mappings": {
+          "null": {
+            "label": "mev",
+            "icon": "medal-line",
+            "color": null
+          }
+        },
+        "direction": "in"
+      },
+      "create block": {
+        "counterparty_mappings": {
+          "null": {
+            "label": "new block",
+            "icon": "box-3-line",
+            "color": null
+          }
+        },
+        "direction": "in"
       }
-    }
+    },
+    "accounting_events_icons": {}
   },
   "message": ""
 }

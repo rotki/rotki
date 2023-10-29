@@ -28,11 +28,9 @@ const { t } = useI18n();
 <template>
   <div class="flex items-center gap-3">
     <div
-      class="bg-rui-grey-200 dark:bg-white w-9 h-9 flex items-center justify-center rounded-full"
+      class="bg-rui-grey-200 text-rui-grey-600 dark:text-rui-grey-800 w-9 h-9 flex items-center justify-center rounded-full"
     >
-      <VIcon :size="20" :color="type.color || 'grey darken-2'">
-        {{ type.icon }}
-      </VIcon>
+      <RuiIcon size="20" :name="type.icon" :color="type.color" />
     </div>
     <div v-if="showLabel" class="flex items-center gap-2">
       <div class="font-bold text-uppercase text-sm">
