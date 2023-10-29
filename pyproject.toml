@@ -164,6 +164,7 @@ ignore = [
     "PLR0904", # too many public methods. This is a bit too much to enforce in the codebase
     "PLR0913", # too many arguments to function call. This is a bit too much to enforce in the codebase
     "PLR0915", # too many statements -- we probably could use this ... but with custom statements number?
+    "PLR0916", # too many boolean expressions -- we dont care
     "PLR0911", # too many return statements -- we dont care
     "PLR0912", # too many branches -- we dont care
     "PLR6201", # Doesn't work only for constants: https://github.com/astral-sh/ruff/issues/8322

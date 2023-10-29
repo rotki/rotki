@@ -54,7 +54,7 @@ def fixture_data_dir(use_clean_caching_directory, tmpdir_factory) -> Path:
     for x in data_directory.iterdir():
         directory_with_db = (
             x.is_dir() and
-            (x / 'rotkehlchen.db').exists() or (x / 'rotkehlchen_transient.db').exists()
+            ((x / 'rotkehlchen.db').exists() or (x / 'rotkehlchen_transient.db').exists())
         )
         if directory_with_db:
             shutil.rmtree(x, ignore_errors=True)
