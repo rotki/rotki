@@ -202,14 +202,14 @@ def _write_location_data_csv_row_with_invalid_headers(
 
 def _create_snapshot_with_valid_data(directory: str, timestamp: Timestamp) -> None:
     path = Path(directory) / BALANCES_FOR_IMPORT_FILENAME
-    with open(path, 'w') as f:
+    with open(path, 'w', encoding='utf8') as f:
         fieldnames = BALANCES_IMPORT_HEADERS
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
         _write_balances_csv_row(writer, timestamp)
 
     path = Path(directory) / LOCATION_DATA_IMPORT_FILENAME
-    with open(path, 'w') as f:
+    with open(path, 'w', encoding='utf8') as f:
         fieldnames = LOCATION_DATA_IMPORT_HEADERS
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
@@ -218,14 +218,14 @@ def _create_snapshot_with_valid_data(directory: str, timestamp: Timestamp) -> No
 
 def _create_snapshot_with_unknown_asset(directory: str, timestamp: Timestamp) -> None:
     path = Path(directory) / BALANCES_FOR_IMPORT_FILENAME
-    with open(path, 'w') as f:
+    with open(path, 'w', encoding='utf8') as f:
         fieldnames = BALANCES_IMPORT_HEADERS
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
         _write_balances_csv_row(writer, timestamp, include_unknown_asset=True)
 
     path = Path(directory) / LOCATION_DATA_IMPORT_FILENAME
-    with open(path, 'w') as f:
+    with open(path, 'w', encoding='utf8') as f:
         fieldnames = LOCATION_DATA_IMPORT_HEADERS
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
@@ -234,14 +234,14 @@ def _create_snapshot_with_unknown_asset(directory: str, timestamp: Timestamp) ->
 
 def _create_snapshot_with_valid_data_for_post(directory: str, timestamp: Timestamp) -> None:
     path = Path(directory) / BALANCES_FOR_IMPORT_FILENAME
-    with open(path, 'w') as f:
+    with open(path, 'w', encoding='utf8') as f:
         fieldnames = BALANCES_IMPORT_HEADERS
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
         _write_balances_csv_row(writer, timestamp)
 
     path = Path(directory) / LOCATION_DATA_IMPORT_FILENAME
-    with open(path, 'w') as f:
+    with open(path, 'w', encoding='utf8') as f:
         fieldnames = LOCATION_DATA_IMPORT_HEADERS
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
@@ -250,7 +250,7 @@ def _create_snapshot_with_valid_data_for_post(directory: str, timestamp: Timesta
 
 def _create_snapshot_different_timestamps(directory: str, timestamp: Timestamp) -> None:
     path = Path(directory) / BALANCES_FOR_IMPORT_FILENAME
-    with open(path, 'w') as f:
+    with open(path, 'w', encoding='utf8') as f:
         fieldnames = BALANCES_IMPORT_HEADERS
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
@@ -258,7 +258,7 @@ def _create_snapshot_different_timestamps(directory: str, timestamp: Timestamp) 
         _write_balances_csv_row(writer, Timestamp(timestamp + 500))
 
     path = Path(directory) / LOCATION_DATA_IMPORT_FILENAME
-    with open(path, 'w') as f:
+    with open(path, 'w', encoding='utf8') as f:
         fieldnames = LOCATION_DATA_IMPORT_HEADERS
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
@@ -268,14 +268,14 @@ def _create_snapshot_different_timestamps(directory: str, timestamp: Timestamp) 
 
 def _create_snapshot_with_invalid_headers(directory: str, timestamp: Timestamp) -> None:
     path = Path(directory) / BALANCES_FOR_IMPORT_FILENAME
-    with open(path, 'w') as f:
+    with open(path, 'w', encoding='utf8') as f:
         fieldnames = BALANCES_IMPORT_INVALID_HEADERS
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
         _write_balances_csv_row_with_invalid_headers(writer, timestamp)
 
     path = Path(directory) / LOCATION_DATA_IMPORT_FILENAME
-    with open(path, 'w') as f:
+    with open(path, 'w', encoding='utf8') as f:
         fieldnames = LOCATION_DATA_IMPORT_INVALID_HEADERS
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
@@ -325,7 +325,7 @@ def assert_csv_export_response(
     else:
         assert_simple_ok_response(response)
 
-    with open(os.path.join(csv_dir, BALANCES_FILENAME), newline='') as csvfile:
+    with open(os.path.join(csv_dir, BALANCES_FILENAME), newline='', encoding='utf8') as csvfile:
         reader = csv.DictReader(csvfile)
         count = 0
         for row in reader:
@@ -350,7 +350,7 @@ def assert_csv_export_response(
             count += 1
         assert count == expected_entries
 
-    with open(os.path.join(csv_dir, BALANCES_FOR_IMPORT_FILENAME), newline='') as csvfile:
+    with open(os.path.join(csv_dir, BALANCES_FOR_IMPORT_FILENAME), newline='', encoding='utf8') as csvfile:  # noqa: E501
         reader = csv.DictReader(csvfile)
         count = 0
         for row in reader:
@@ -374,7 +374,7 @@ def assert_csv_export_response(
             count += 1
         assert count == expected_entries
 
-    with open(os.path.join(csv_dir, LOCATION_DATA_FILENAME), newline='') as csvfile:
+    with open(os.path.join(csv_dir, LOCATION_DATA_FILENAME), newline='', encoding='utf8') as csvfile:  # noqa: E501
         reader = csv.DictReader(csvfile)
         count = 0
         for row in reader:
@@ -393,7 +393,7 @@ def assert_csv_export_response(
             count += 1
         assert count == 3
 
-    with open(os.path.join(csv_dir, LOCATION_DATA_IMPORT_FILENAME), newline='') as csvfile:
+    with open(os.path.join(csv_dir, LOCATION_DATA_IMPORT_FILENAME), newline='', encoding='utf8') as csvfile:  # noqa: E501
         reader = csv.DictReader(csvfile)
         count = 0
         for row in reader:
@@ -569,7 +569,7 @@ def test_import_snapshot(rotkehlchen_api_server, tmpdir_factory):
     # check that POST with the file works.
     csv_dir2 = str(tmpdir_factory.mktemp('test_csv_dir_2'))
     _create_snapshot_with_valid_data_for_post(csv_dir2, Timestamp(1651075))
-    with open(f'{csv_dir2}/{BALANCES_FOR_IMPORT_FILENAME}') as balances_file, open(f'{csv_dir2}/{LOCATION_DATA_IMPORT_FILENAME}') as locations_file:  # noqa: E501
+    with open(f'{csv_dir2}/{BALANCES_FOR_IMPORT_FILENAME}', encoding='utf8') as balances_file, open(f'{csv_dir2}/{LOCATION_DATA_IMPORT_FILENAME}', encoding='utf8') as locations_file:  # noqa: E501
         response = requests.post(
             api_url_for(
                 rotkehlchen_api_server,

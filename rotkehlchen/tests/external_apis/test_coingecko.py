@@ -90,10 +90,10 @@ def test_asset_icons_for_collections(icon_manager: IconManager) -> None:
         times_api_was_queried += 1
         test_data_folder = Path(__file__).resolve().parent.parent / 'data' / 'mocks' / 'test_coingecko'  # noqa: E501
         if 'https://api.coingecko.com/api/v3/coins/dai' in url:
-            with open(test_data_folder / 'coins' / 'dai.json') as f:
+            with open(test_data_folder / 'coins' / 'dai.json', encoding='utf8') as f:
                 return MockResponse(HTTPStatus.OK, f.read())
         elif 'https://api.coingecko.com/api/v3/coins/ethereum' in url:
-            with open(test_data_folder / 'coins' / 'ethereum.json') as f:
+            with open(test_data_folder / 'coins' / 'ethereum.json', encoding='utf8') as f:
                 return MockResponse(HTTPStatus.OK, f.read())
         elif url in {
             'https://assets.coingecko.com/coins/images/9956/small/4943.png?1636636734',

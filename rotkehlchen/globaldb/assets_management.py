@@ -33,7 +33,7 @@ def import_assets_from_file(
     - InputError: If the version of the file is not valid for the current
     globaldb version
     """
-    with open(path) as f:
+    with open(path, encoding='utf8') as f:
         data = ExportedAssetsSchema().loads(f.read())
 
     if int(data['version']) not in ASSETS_FILE_IMPORT_ACCEPTED_GLOBALDB_VERSIONS:

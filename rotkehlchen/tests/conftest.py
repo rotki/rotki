@@ -138,7 +138,7 @@ def _fixture_profiler(request):
         now = datetime.datetime.now(tz=datetime.timezone.utc)
         tmpdirname = tempfile.gettempdir()
         stack_path = Path(tmpdirname) / f'{now:%Y%m%d_%H%M}_stack.data'
-        with open(stack_path, 'w') as stack_stream:
+        with open(stack_path, 'w', encoding='utf8') as stack_stream:
             test_warnings.warn(UserWarning(
                 f'Stack data is saved at: {stack_path}',
             ))

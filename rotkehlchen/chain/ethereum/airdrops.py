@@ -299,7 +299,7 @@ def get_airdrop_data(name: str, data_dir: Path) -> Iterator[list[str]]:
                 len(response.content) < SMALLEST_AIRDROP_SIZE
             ):
                 raise csv.Error
-            with open(filename, 'w') as f:
+            with open(filename, 'w', encoding='utf8') as f:
                 f.write(content)
         except csv.Error as e:
             log.debug(f'airdrop file {filename} contains invalid data {content}')
@@ -307,7 +307,7 @@ def get_airdrop_data(name: str, data_dir: Path) -> Iterator[list[str]]:
                 f'File {filename} contains invalid data. Check logs.',
             ) from e
     # Verify the CSV file
-    with open(filename) as csvfile:
+    with open(filename, encoding='utf8') as csvfile:
         iterator = csv.reader(csvfile)
         next(iterator)  # skip header
         yield from iterator
@@ -329,10 +329,10 @@ def get_poap_airdrop_data(name: str, data_dir: Path) -> dict[str, Any]:
         except JSONDecodeError as e:
             raise RemoteError(f'POAP airdrops Gist contains an invalid JSON {e!s}') from e
 
-        with open(filename, 'w') as outfile:
+        with open(filename, 'w', encoding='utf8') as outfile:
             outfile.write(rlk_jsondumps(json_data))
 
-    with open(filename) as infile:
+    with open(filename, encoding='utf8') as infile:
         data_dict = jsonloads_dict(infile.read())
     return data_dict
 

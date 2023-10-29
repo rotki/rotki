@@ -242,7 +242,7 @@ def patch_eth2_requests(eth2, mock_data):
                 if file_result is None:
                     raise AssertionError(f'Deposit data for {arg_len} addresses not found in mock data')  # noqa: E501
                 fullpath = MOCK_ROOT / 'test_eth2' / 'deposits' / file_result
-                with open(fullpath) as f:
+                with open(fullpath, encoding='utf8') as f:
                     response_data = json.load(f)
             else:
                 raise AssertionError(f'Unknown endpoint for beacon chain call: {url}')
@@ -279,7 +279,7 @@ def patch_avalanche_request(avalanche_manager, mock_data):
                 raise AssertionError('Test mock data should contain covalent transactions')
 
             fullpath = MOCK_ROOT / covalent_tx_path
-            with open(fullpath) as f:
+            with open(fullpath, encoding='utf8') as f:
                 response_data = json.load(f)
         elif module == 'balances_v2':
             if action != 'address':
@@ -291,7 +291,7 @@ def patch_avalanche_request(avalanche_manager, mock_data):
                 if covalent_balances_path is None:
                     raise AssertionError('Test mock data should contain covalent balances')
                 fullpath = MOCK_ROOT / covalent_balances_path
-                with open(fullpath) as f:
+                with open(fullpath, encoding='utf8') as f:
                     response_data = json.load(f)
             else:
                 raise AssertionError(f'Covalent balance query for unknown address during tests: {url}')  # noqa: E501

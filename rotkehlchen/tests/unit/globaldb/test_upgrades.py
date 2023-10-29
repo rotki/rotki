@@ -49,7 +49,7 @@ def _count_sql_file_sentences(file_name: str, skip_statements: int = 0):
     insertions_made = 0
     skipped_statements = 0
     dir_path = Path(__file__).resolve().parent.parent.parent.parent
-    with open(dir_path / 'data' / file_name) as f:
+    with open(dir_path / 'data' / file_name, encoding='utf8') as f:
         insertions_made = 0
         line = ' '
         while line:
@@ -354,7 +354,7 @@ def test_upgrade_v4_v5(globaldb: GlobalDBHandler):
 
         # check that we have five nodes for each chain
         nodes_file_path = Path(__file__).resolve().parent.parent.parent.parent / 'data' / 'nodes.json'  # noqa: E501
-        with open(nodes_file_path) as f:
+        with open(nodes_file_path, encoding='utf8') as f:
             nodes_info = json.loads(f.read())
             nodes_tuples_from_file = [
                 (idx, node['name'], node['endpoint'], int(False), int(True), str(node['weight']), node['blockchain'])  # noqa: E501

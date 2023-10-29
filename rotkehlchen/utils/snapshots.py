@@ -117,7 +117,7 @@ def parse_import_snapshot_data(
 
 def _csv_to_dict(file: Path) -> list[dict[str, str]]:
     """Converts a csv file to a list of dictionary."""
-    with open(file) as csv_file:
+    with open(file, encoding='utf8') as csv_file:
         csv_reader = DictReader(csv_file)
         return list(csv_reader)
 

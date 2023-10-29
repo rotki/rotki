@@ -108,7 +108,7 @@ def test_query_transactions(rotkehlchen_api_server: 'APIServer'):
         result = assert_proper_response_with_result(response)
 
     expected_file = Path(__file__).resolve().parent.parent / 'data' / 'expected' / 'test_evm_transactions-test_query_transactions.json'  # noqa: E501
-    with open(expected_file) as f:
+    with open(expected_file, encoding='utf8') as f:
         expected_data = json.load(f)
 
     # check all expected data exists. User has done more transactions since then if we don't

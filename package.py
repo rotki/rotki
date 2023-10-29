@@ -474,14 +474,14 @@ class MacPackaging:
 
         :param wheel_metadata: Path to the wheel metadata file
         """
-        with open(wheel_metadata) as file:
+        with open(wheel_metadata, encoding='utf8') as file:
             data = file.readlines()
             for (index, line) in enumerate(data):
                 if not line.startswith('Tag'):
                     continue
                 data[index] = line.replace('x86_64', 'universal2')
 
-        with open(wheel_metadata, 'w') as file:
+        with open(wheel_metadata, 'w', encoding='utf8') as file:
             file.writelines(data)
 
     def __download_patched_pip(self) -> Path:
@@ -509,7 +509,7 @@ class MacPackaging:
         """
         requirements = self.__storage.working_directory / 'requirements.txt'
         package_versions: dict[str, str] = {}
-        with open(requirements) as fp:
+        with open(requirements, encoding='utf8') as fp:
             while True:
                 line = fp.readline()
                 if not line:

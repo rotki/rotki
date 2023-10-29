@@ -273,7 +273,7 @@ class DBHandler:
             log.error(f'At DB teardown could not open the DB: {e!s}')
             return
 
-        with open(self.user_data_dir / DBINFO_FILENAME, 'w') as f:
+        with open(self.user_data_dir / DBINFO_FILENAME, 'w', encoding='utf8') as f:
             f.write(rlk_jsondumps(dbinfo))
 
     def _run_actions_after_first_connection(self) -> None:
