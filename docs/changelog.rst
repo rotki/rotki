@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :fix:`-` Replaces snowtrace.io with avascan.info as the default explorer for Avalanche C-Chain
 * :feature:`-` Users will be able to create custom rules for accounting.
 * :fix:`-` Fix the issue where pinned PnL report errors (missing acquisitions and missing prices) become empty when the user moves to another page.
 * :feature:`-` Migrating MATIC to POL in ethereum mainnet is now properly decoded.
