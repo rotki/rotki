@@ -12133,15 +12133,14 @@ Event Mappings
             "send":{
 	      "direction": "out",
 	      "counterparty_mappings": {
-                null: {
+                "default": {
 		  "label":"send",
                   "icon":"mdi-arrow-up",
-                  "color":null
             }}},
             "receive":{
 	      "direction": "in",
 	      "counterparty_mappings": {
-                null: {
+                "default": {
 		  "label":"receive",
                   "icon":"mdi-arrow-down",
                   "color":"green"
@@ -12149,19 +12148,16 @@ Event Mappings
             "fee":{
 	      "direction": "out",
 	      "counterparty_mappings": {
-                null: {
+                "default": {
 		  "label":"fee",
                   "icon":"mdi-account-cash",
-                  "color":null
             }, "gas": {
 		  "label":"gas fee",
                   "icon":"mdi-fire",
-                  "color":null
 	    }}},
             "gas":{
               "label":"gas_fee",
               "icon":"mdi-fire",
-              "color":null
             },
             "receive":{
               "label":"receive",
@@ -12174,7 +12170,7 @@ Event Mappings
 
   :resjson object global_mappings: keys of this object are the history event types names and values are mappings of subtypes' names to the ``EventCategory`` name. Contains mappings that should be applied if there is no a specific protocol rule.
   :resjson object per_protocol_mappings: same as global_mappings but contains specific mappings per chain and protocol.
-  :resjson object event_category_details: This is a mapping of ``EventCategory`` to its direction and mapping of counterparty to details. For all the ``EventCategoryDetails`` mapping there is a ``null`` key mapping to the default details. For some exceptions there is also other keys which are counterparties. Such as for spend/fee and counterparty gas.
+  :resjson object event_category_details: This is a mapping of ``EventCategory`` to its direction and mapping of counterparty to details. For all the ``EventCategoryDetails`` mapping there is a ``"default"`` key mapping to the default details. For some exceptions there is also other keys which are counterparties. Such as for spend/fee and counterparty gas.
   :resjon object accounting_events_icons: Mapping of accounting event type to its corresponding icon name.
   :resjson string label: Label to show in the frontend for the event type.
   :resjson string icon: Icon to be used by the frontend for this event type.
