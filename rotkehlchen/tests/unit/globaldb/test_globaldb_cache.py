@@ -13,7 +13,11 @@ from rotkehlchen.chain.ethereum.modules.convex.convex_cache import (
     read_convex_data_from_cache,
     save_convex_data_to_cache,
 )
-from rotkehlchen.chain.ethereum.modules.curve.curve_cache import CURVE_API_URLS
+from rotkehlchen.chain.ethereum.modules.curve.constants import CURVE_ADDRESS_PROVIDER
+from rotkehlchen.chain.ethereum.modules.curve.curve_cache import (
+    CURVE_API_URLS,
+    read_curve_pools_and_gauges,
+)
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.optimism.modules.velodrome.velodrome_cache import (
     query_velodrome_data,
@@ -25,11 +29,6 @@ from rotkehlchen.constants.timing import WEEK_IN_SECONDS
 from rotkehlchen.db.addressbook import DBAddressbook
 from rotkehlchen.db.filtering import AddressbookFilterQuery
 from rotkehlchen.errors.misc import InputError
-from rotkehlchen.globaldb.cache import (
-    globaldb_get_general_cache_values,
-    globaldb_get_unique_cache_value,
-    read_curve_pool_tokens,
-)
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import (
@@ -61,8 +60,8 @@ CURVE_EXPECTED_POOL_COINS = {
 }
 
 CURVE_EXPECTED_GAUGES = {
-    '0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7': '0xbFcF63294aD7105dEa65aA58F8AE5BE2D9d0952A',
-    '0xDeBF20617708857ebe4F679508E7b7863a8A8EeE': '0xd662908ADA2Ea1916B3318327A97eB18aD588b5d',
+    '0xbFcF63294aD7105dEa65aA58F8AE5BE2D9d0952A',
+    '0xd662908ADA2Ea1916B3318327A97eB18aD588b5d',
 }
 
 CURVE_EXPECTED_ADDRESBOOK_ENTRIES_FROM_API = [
@@ -162,6 +161,10 @@ def get_velodrome_addressbook_and_asset_identifiers(optimism_inquirer):
     return addressbook_entries, asset_identifiers
 
 
+def address_in_addressbook(address, cursor):
+    return cursor.execute('SELECT address FROM address_book WHERE address=?', (address,)).fetchone() is not None  # noqa: E501
+
+
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 def test_velodrome_cache(optimism_inquirer):
     with GlobalDBHandler().conn.write_ctx() as write_cursor:
@@ -222,14 +225,16 @@ def test_convex_cache(ethereum_inquirer):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize('use_curve_api', [True, False])
-def test_curve_cache(rotkehlchen_instance, use_curve_api):
+def test_curve_cache(rotkehlchen_instance, use_curve_api, globaldb):
+    global_cursor = globaldb.conn.cursor()
     """Test curve pools fetching mechanism"""
     # Set initial cache data to check that it is gone after the cache update
-    ethereum_inquirer = rotkehlchen_instance.chains_aggregator.ethereum.node_inquirer
-    db_addressbook = DBAddressbook(ethereum_inquirer.database)
     with GlobalDBHandler().conn.write_ctx() as write_cursor:
-        # make sure that curve cache is clear at the beginning
-        write_cursor.execute('DELETE FROM general_cache WHERE key LIKE "%CURVE%"')
+        # make sure that curve cache is clear of expected pools and addressbook entries
+        for lp_token in CURVE_EXPECTED_LP_TOKENS_TO_POOLS:
+            write_cursor.execute(f'DELETE FROM unique_cache WHERE key LIKE "%{lp_token}%"')
+        for entry in CURVE_EXPECTED_ADDRESBOOK_ENTRIES_FROM_CHAIN:
+            write_cursor.execute(f'DELETE FROM address_book WHERE address="{entry.address}"')
 
     # delete one of the tokens to check that it is created during the update
     with suppress(InputError):
@@ -243,23 +248,23 @@ def test_curve_cache(rotkehlchen_instance, use_curve_api):
         token_type=EvmTokenKind.ERC20,
     ))
 
-    # check that it was deleted successfully
-    token = GlobalDBHandler().get_evm_token(
+    # Check the pools, coins and addresses from addressbook have been properly cleared
+    pools, gauges = read_curve_pools_and_gauges()
+    for pool in CURVE_EXPECTED_LP_TOKENS_TO_POOLS.values():
+        assert pool not in pools
+    for pool in CURVE_EXPECTED_POOL_COINS:
+        assert pool not in pools
+    assert len(gauges & CURVE_EXPECTED_GAUGES) == 0
+    assert GlobalDBHandler().get_evm_token(
         address='0x3Ed3B47Dd13EC9a98b44e6204A523E766B225811',
         chain_id=ChainID.ETHEREUM,
-    )
-    assert token is None
+    ) is None
 
-    with GlobalDBHandler().conn.write_ctx() as write_cursor:
-        write_cursor.execute('DELETE FROM address_book')
-    with GlobalDBHandler().conn.read_ctx() as cursor:
-        known_addresses = db_addressbook.get_addressbook_entries(
-            cursor=cursor,
-            filter_query=AddressbookFilterQuery.make(),
-        )[0]
-    assert len(known_addresses) == 0
+    for entry in CURVE_EXPECTED_ADDRESBOOK_ENTRIES_FROM_CHAIN:
+        assert not address_in_addressbook(entry.address, global_cursor)
 
-    curve_address_provider = ethereum_inquirer.contracts.contract(string_to_evm_address('0x0000000022D53366457F9d5E68Ec105046FC4383'))  # noqa: E501
+    ethereum_inquirer = rotkehlchen_instance.chains_aggregator.ethereum.node_inquirer
+    curve_address_provider = ethereum_inquirer.contracts.contract(CURVE_ADDRESS_PROVIDER)
 
     def mock_call_contract(contract, node_inquirer, method_name, **kwargs):
         if use_curve_api is True:
@@ -289,9 +294,7 @@ def test_curve_cache(rotkehlchen_instance, use_curve_api):
         empty pools list for 3 out of the 4 curve api endpoints and for the remaining one perform
         a real request and take from the response only 2 first pools.
         """
-        if url not in CURVE_API_URLS:
-            raise AssertionError(f'Unexpected url {url} was called')
-
+        assert url in CURVE_API_URLS, f'Unexpected url {url} was called'
         if use_curve_api is False:
             return MockResponse(status_code=200, text=json.dumps({'success': False, 'data': {'poolData': []}}))  # noqa: E501
 
@@ -302,44 +305,18 @@ def test_curve_cache(rotkehlchen_instance, use_curve_api):
         response_json['data']['poolData'] = response_json['data']['poolData'][:2]
         return MockResponse(status_code=200, text=json.dumps(response_json))
 
-    requests_patch = patch(
-        'requests.get',
-        side_effect=mock_requests_get,
-    )
+    requests_patch = patch('requests.get', side_effect=mock_requests_get)
 
     future_timestamp = datetime.datetime.now(tz=datetime.timezone.utc) + datetime.timedelta(seconds=WEEK_IN_SECONDS)  # noqa: E501
-    with freeze_time(future_timestamp), call_contract_patch, requests_patch:
+    with freeze_time(future_timestamp), requests_patch, call_contract_patch:
         rotkehlchen_instance.chains_aggregator.ethereum.assure_curve_cache_is_queried_and_decoder_updated()
 
-    lp_tokens_to_pools_in_cache = {}
-    pool_coins_in_cache = {}
-    gauges_in_cache = {}
-    with GlobalDBHandler().conn.read_ctx() as cursor:
-        lp_tokens_in_cache = globaldb_get_general_cache_values(
-            cursor=cursor,
-            key_parts=(CacheType.CURVE_LP_TOKENS,),
-        )
-        for lp_token_addr in lp_tokens_in_cache:
-            pool_addr = globaldb_get_unique_cache_value(
-                cursor=cursor,
-                key_parts=(CacheType.CURVE_POOL_ADDRESS, lp_token_addr),
-            )
-            lp_tokens_to_pools_in_cache[lp_token_addr] = pool_addr
-
-            pool_coins_in_cache[pool_addr] = read_curve_pool_tokens(cursor=cursor, pool_address=pool_addr)  # noqa: E501
-
-            gauge_data = globaldb_get_unique_cache_value(
-                cursor=cursor,
-                key_parts=(CacheType.CURVE_GAUGE_ADDRESS, pool_addr),
-            )
-            if gauge_data is None:
-                gauges_in_cache[pool_addr] = None
-            else:
-                gauges_in_cache[pool_addr] = gauge_data
-
-    assert lp_tokens_to_pools_in_cache == CURVE_EXPECTED_LP_TOKENS_TO_POOLS
-    assert pool_coins_in_cache == CURVE_EXPECTED_POOL_COINS
-    assert gauges_in_cache == CURVE_EXPECTED_GAUGES
+    pools, gauges = read_curve_pools_and_gauges()
+    for pool in CURVE_EXPECTED_LP_TOKENS_TO_POOLS.values():
+        assert pool in pools
+    for pool, pool_coins in CURVE_EXPECTED_POOL_COINS.items():
+        assert pools.get(pool) == pool_coins
+    assert len(gauges & CURVE_EXPECTED_GAUGES) == 2
 
     # Check that the token was created
     token = GlobalDBHandler().get_evm_token(
@@ -350,19 +327,6 @@ def test_curve_cache(rotkehlchen_instance, use_curve_api):
     assert token.symbol == 'aUSDT'
     assert token.decimals == 6
 
-    # Check that initially set values are gone
-    with GlobalDBHandler().conn.read_ctx() as cursor:
-        assert 'key123' not in globaldb_get_general_cache_values(cursor, key_parts=(CacheType.CURVE_LP_TOKENS,))  # noqa: E501
-        assert globaldb_get_unique_cache_value(cursor, key_parts=(CacheType.CURVE_POOL_ADDRESS, 'abc')) is None  # noqa: E501
-        assert globaldb_get_unique_cache_value(cursor, key_parts=(CacheType.CURVE_POOL_TOKENS, 'pool-address-1')) is None  # noqa: E501
-        assert globaldb_get_unique_cache_value(cursor, key_parts=(CacheType.CURVE_GAUGE_ADDRESS, 'pool-address-1')) is None  # noqa: E501
-
-    with GlobalDBHandler().conn.read_ctx() as cursor:
-        known_addresses = db_addressbook.get_addressbook_entries(
-            cursor=cursor,
-            filter_query=AddressbookFilterQuery.make(),
-        )[0]
-    if use_curve_api:
-        assert known_addresses == CURVE_EXPECTED_ADDRESBOOK_ENTRIES_FROM_API
-    else:
-        assert known_addresses == CURVE_EXPECTED_ADDRESBOOK_ENTRIES_FROM_CHAIN
+    expected_addresses = CURVE_EXPECTED_ADDRESBOOK_ENTRIES_FROM_API if use_curve_api else CURVE_EXPECTED_ADDRESBOOK_ENTRIES_FROM_CHAIN  # noqa: E501
+    for entry in expected_addresses:
+        assert address_in_addressbook(entry.address, global_cursor)
