@@ -77,13 +77,13 @@ export class DashboardPage {
   }
 
   amountDisplayIsBlurred() {
-    cy.get('[data-cy="display-wrapper"]').should($div => {
+    cy.get('[data-cy="amount-display"]').should($div => {
       expect($div.css('filter')).to.match(/^blur/);
     });
   }
 
   amountDisplayIsNotBlurred() {
-    cy.get('[data-cy="display-wrapper"]').should($div => {
+    cy.get('[data-cy="amount-display"]').should($div => {
       expect($div.css('filter')).not.to.match(/^blur/);
     });
   }

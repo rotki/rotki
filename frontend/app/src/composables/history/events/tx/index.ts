@@ -6,14 +6,11 @@ import {
   type AddressesAndEvmChainPayload,
   type EvmChainAddress,
   type EvmChainAndTxHash,
-  type EvmTransaction,
   OnlineHistoryEventsQueryType,
   type TransactionHashAndEvmChainPayload,
   type TransactionRequestPayload
 } from '@/types/history/events';
 import { TaskType } from '@/types/task-type';
-import { type CollectionResponse } from '@/types/collection';
-import { type EntryWithMeta } from '@/types/history/meta';
 import {
   BackendCancelledTaskError,
   type PendingTask,
@@ -69,10 +66,7 @@ export const useHistoryTransactions = createSharedComposable(() => {
     };
 
     try {
-      await awaitTask<
-        CollectionResponse<EntryWithMeta<EvmTransaction>>,
-        TaskMeta
-      >(taskId, taskType, taskMeta, true);
+      await awaitTask<boolean, TaskMeta>(taskId, taskType, taskMeta, true);
       return true;
     } catch (e: any) {
       if (e instanceof BackendCancelledTaskError) {

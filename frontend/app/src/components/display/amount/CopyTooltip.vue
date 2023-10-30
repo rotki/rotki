@@ -1,55 +1,40 @@
 <script setup lang="ts">
 defineProps<{
-  value: string;
   copied: boolean;
   tooltip?: string | null;
 }>();
-const css = useCssModule();
 const { t } = useI18n();
 </script>
 
 <template>
-  <RuiTooltip :popper="{ placement: 'top' }" open-delay="200">
+  <RuiTooltip
+    :popper="{ placement: 'top' }"
+    :open-delay="200"
+    class="text-no-wrap"
+    data-cy="display-amount"
+  >
     <template #activator>
-      <span data-cy="display-amount" class="text-no-wrap">
-        {{ value }}
-      </span>
+      <slot />
     </template>
-    <div class="text-center">
-      <div v-if="tooltip" data-cy="display-full-value">
+
+    <div class="text-center" data-cy="display-full-value">
+      <template v-if="tooltip">
         {{ tooltip }}
-      </div>
-      <div :class="css.copy">
+      </template>
+      <div
+        class="text-uppercase font-bold text-caption overflow-hidden h-5 transition-all duration-200"
+      >
         <div
-          class="text-uppercase font-bold text-caption"
           :class="{
-            [css['copy__wrapper']]: true,
-            [css['copy__wrapper--copied']]: copied
+            '-mt-5': copied
           }"
         >
-          <div>
-            {{ t('amount_display.click_to_copy') }}
-          </div>
-          <div class="text-rui-success-lighter">
-            {{ t('amount_display.copied') }}
-          </div>
+          {{ t('amount_display.click_to_copy') }}
+        </div>
+        <div class="text-rui-success-lighter">
+          {{ t('amount_display.copied') }}
         </div>
       </div>
     </div>
   </RuiTooltip>
 </template>
-
-<style module lang="scss">
-.copy {
-  height: 20px;
-  overflow: hidden;
-
-  &__wrapper {
-    transition: 0.2s all;
-
-    &--copied {
-      margin-top: -20px;
-    }
-  }
-}
-</style>

@@ -63,7 +63,7 @@ const locations = computed<TradeLocationData[]>(() => {
         :id="`balance-location__${item.identifier}`"
         v-bind="attrs"
         horizontal
-        :item="item"
+        :item="item.identifier"
         no-padding
         v-on="on"
       />
@@ -72,7 +72,7 @@ const locations = computed<TradeLocationData[]>(() => {
       <LocationIcon
         v-bind="attrs"
         horizontal
-        :item="item"
+        :item="item.identifier"
         no-padding
         v-on="on"
       />

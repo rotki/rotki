@@ -60,7 +60,7 @@ const justify = computed(() => {
           <RuiIcon size="16" name="pencil-line" />
         </RuiButton>
       </template>
-      <span>{{ editTooltip }}</span>
+      {{ editTooltip }}
     </RuiTooltip>
     <RuiTooltip v-if="!noDelete" v-bind="tooltipProps">
       <template #activator>
@@ -75,7 +75,7 @@ const justify = computed(() => {
           <RuiIcon size="16" name="delete-bin-line" />
         </RuiButton>
       </template>
-      <span>{{ deleteTooltip }}</span>
+      {{ deleteTooltip }}
     </RuiTooltip>
     <slot />
   </div>

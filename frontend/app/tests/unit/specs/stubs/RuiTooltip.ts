@@ -4,8 +4,14 @@ const RuiTooltipStub = {
 
     return { open };
   },
-  template:
-    '<div><div @mouseover="open = true" @mouseleave="open = false"><slot name="activator"></slot></div><slot v-if="open" /></div>'
+  template: `
+    <div @mouseover="open = true" @mouseleave="open = false">
+      <div>
+        <slot name="activator"/>
+      </div>
+      <slot v-if="open" />
+    </div>
+  `
 };
 
 export default RuiTooltipStub;

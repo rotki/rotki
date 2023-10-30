@@ -24,8 +24,6 @@ const onlineEvent = isOnlineHistoryEventRef(event);
 const evmOrEthDepositEvent = computed(
   () => get(isEvmEventRef(event)) || get(isEthDepositEventRef(event))
 );
-
-const { locationData } = useLocations();
 </script>
 
 <template>
@@ -45,7 +43,7 @@ const { locationData } = useLocations();
           v-if="onlineEvent"
           icon
           no-padding
-          :item="locationData(onlineEvent.location)"
+          :item="onlineEvent.location"
           size="16px"
           class="mr-1"
         />

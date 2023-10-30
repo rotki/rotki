@@ -3,6 +3,10 @@ import { useListeners } from 'vue';
 import { type DataTableHeader } from '@/types/vuetify';
 import { type TablePagination } from '@/types/pagination';
 
+defineOptions({
+  inheritAttrs: false
+});
+
 const props = withDefaults(
   defineProps<{
     sortDesc?: boolean;

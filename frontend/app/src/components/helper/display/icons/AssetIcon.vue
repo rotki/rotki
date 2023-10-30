@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { getIdentifierFromSymbolMap } from '@rotki/common/lib/data';
 import { type ComputedRef } from 'vue';
+import { type StyleValue } from 'vue/types/jsx';
 import { useCurrencies } from '@/types/currencies';
 import { isBlockchain } from '@/types/blockchain/chains';
 
@@ -9,7 +10,7 @@ const props = withDefaults(
     identifier: string;
     size: string;
     changeable?: boolean;
-    styled?: object | null;
+    styled?: StyleValue;
     noTooltip?: boolean;
     timestamp?: number | null;
     circle?: boolean;
@@ -19,7 +20,7 @@ const props = withDefaults(
   }>(),
   {
     changeable: false,
-    styled: null,
+    styled: undefined,
     noTooltip: false,
     timestamp: null,
     circle: false,
@@ -28,6 +29,8 @@ const props = withDefaults(
     showChain: true
   }
 );
+
+const emit = defineEmits<{ (e: 'click'): void }>();
 
 const { t } = useI18n();
 
@@ -119,7 +122,7 @@ const placeholderStyle = computed(() => {
   const width = get(size);
   const prop = `calc(${pad} + ${pad} + ${width})`;
   return {
-    'min-width': prop,
+    width: prop,
     height: prop
   };
 });
@@ -133,67 +136,67 @@ watch([symbol, changeable, identifier], (curr, prev) => {
 </script>
 
 <template>
-  <div :class="css.placeholder" :style="placeholderStyle">
-    <AdaptiveWrapper :circle="circle" :padding="padding">
-      <VTooltip top open-delay="400" :disabled="noTooltip">
-        <template #activator="{ on, attrs }">
-          <div>
-            <div
-              v-if="showChain && chain"
-              :class="{
-                [css.circle]: true,
-                [css.chain]: true
-              }"
-            >
-              <EvmChainIcon :chain="chain" :size="chainIconSize" />
-            </div>
+  <RuiTooltip
+    :popper="{ placement: 'top' }"
+    :open-delay="400"
+    :disabled="noTooltip"
+  >
+    <template #activator>
+      <div
+        class="icon-bg relative"
+        :style="placeholderStyle"
+        @click="emit('click')"
+      >
+        <div
+          v-if="showChain && chain"
+          :class="{
+            [css.circle]: true,
+            [css.chain]: true
+          }"
+        >
+          <EvmChainIcon :chain="chain" :size="chainIconSize" />
+        </div>
 
-            <div
-              v-bind="attrs"
-              :style="styled"
-              class="flex"
-              :class="{ [css.circle]: circle }"
-              v-on="on"
-            >
-              <div :class="css.wrapper">
-                <div v-if="!currency && pending" class="black--text">
-                  <RuiIcon
-                    name="coin-line"
-                    :size="size"
-                    class="text-rui-light-text-secondary"
-                  />
-                </div>
-                <GeneratedIcon
-                  v-if="currency || error"
-                  :custom-asset="isCustomAsset"
-                  :asset="displayAsset"
-                  :size="size"
-                />
-                <VImg
-                  v-else
-                  :src="url"
-                  :max-height="size"
-                  :min-height="size"
-                  :max-width="size"
-                  :min-width="size"
-                  contain
-                  @loadstart="pending = true"
-                  @load="pending = false"
-                  @error="
-                    error = true;
-                    pending = false;
-                  "
-                />
-              </div>
-            </div>
-          </div>
-        </template>
-        <span>
-          {{ t('asset_icon.tooltip', tooltip) }}
-        </span>
-      </VTooltip>
-    </AdaptiveWrapper>
-  </div>
+        <div
+          :style="styled"
+          class="flex items-center justify-center cursor-pointer h-full w-full"
+          :class="{ [css.circle]: circle }"
+        >
+          <RuiIcon
+            v-if="!currency && pending"
+            name="coin-line"
+            :size="size"
+            class="text-rui-light-text-secondary text-black"
+          />
+
+          <GeneratedIcon
+            v-if="currency || error"
+            :custom-asset="isCustomAsset"
+            :asset="displayAsset"
+            :size="size"
+          />
+
+          <img
+            v-else
+            :alt="displayAsset"
+            :src="url"
+            class="object-contain"
+            loading="lazy"
+            :width="size"
+            :height="size"
+            @loadstart="pending = true"
+            @load="pending = false"
+            @error="
+              error = true;
+              pending = false;
+            "
+          />
+        </div>
+      </div>
+    </template>
+
+    {{ t('asset_icon.tooltip', tooltip) }}
+  </RuiTooltip>
 </template>
 
 <style module lang="scss">
@@ -216,21 +219,5 @@ watch([symbol, changeable, identifier], (curr, prev) => {
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.placeholder {
-  position: relative;
-}
-
-.wrapper {
-  position: relative;
-  width: v-bind(size);
-  height: v-bind(size);
-
-  > * {
-    position: absolute;
-    top: 0;
-    left: 0;
-  }
 }
 </style>

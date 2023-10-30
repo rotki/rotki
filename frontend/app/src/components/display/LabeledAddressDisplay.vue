@@ -99,9 +99,7 @@ const truncatedAliasName: ComputedRef<string> = computed(() => {
           v-on="on"
         >
           <VChip label outlined class="labeled-address-display__chip py-2 pl-1">
-            <VAvatar size="24" class="mr-2">
-              <EnsAvatar :address="address" />
-            </VAvatar>
+            <EnsAvatar :address="address" avatar class="mr-2" />
             <span v-if="aliasName" class="text-truncate">
               {{ truncatedAliasName }}
             </span>

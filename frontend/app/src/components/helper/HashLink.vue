@@ -47,7 +47,6 @@ const { scrambleData, shouldShowAmount, scrambleHex, scrambleIdentifier } =
   useScramble();
 
 const { explorers } = storeToRefs(useFrontendSettingsStore());
-const { dark } = useTheme();
 const { getChain } = useSupportedChains();
 
 const { addressNameSelector } = useAddressesNamesStore();
@@ -126,74 +125,75 @@ const { href, onLinkClick } = useLinks(url);
 
 <template>
   <div class="flex flex-row shrink items-center gap-1">
-    <span v-if="showIcon && !linkOnly && type === 'address'" class="flex">
-      <VAvatar size="22" class="mr-1">
-        <EnsAvatar :address="displayText" />
-      </VAvatar>
-    </span>
-    <span v-if="!linkOnly && !buttons">
+    <template v-if="showIcon && !linkOnly && type === 'address'">
+      <EnsAvatar :address="displayText" avatar size="22px" />
+    </template>
+
+    <template v-if="!linkOnly && !buttons">
       <span v-if="fullAddress" :class="{ 'blur-content': !shouldShowAmount }">
         {{ displayText }}
       </span>
-      <VTooltip v-else top open-delay="400">
-        <template #activator="{ on, attrs }">
-          <span
-            :class="{ 'blur-content': !shouldShowAmount }"
-            v-bind="attrs"
-            v-on="on"
-          >
-            <span v-if="aliasName">{{ aliasName }}</span>
-            <span v-else>
+
+      <RuiTooltip v-else :popper="{ placement: 'top' }" :open-delay="400">
+        <template #activator>
+          <span :class="{ 'blur-content': !shouldShowAmount }">
+            <template v-if="aliasName">{{ aliasName }}</template>
+            <template v-else>
               {{ truncateAddress(displayText, truncateLength) }}
-            </span>
+            </template>
           </span>
         </template>
-        <span> {{ displayText }} </span>
-      </VTooltip>
-    </span>
+        {{ displayText }}
+      </RuiTooltip>
+    </template>
+
     <div class="flex items-center gap-1 pl-1">
-      <VTooltip v-if="!linkOnly || buttons" top open-delay="600">
-        <template #activator="{ on, attrs }">
-          <VBtn
-            :x-small="!small"
-            :small="small"
+      <RuiTooltip
+        v-if="!linkOnly || buttons"
+        :popper="{ placement: 'top' }"
+        :open-delay="600"
+      >
+        <template #activator>
+          <RuiButton
+            variant="text"
             icon
-            v-bind="attrs"
-            :width="!small ? '20px' : null"
+            class="!bg-rui-grey-200 dark:!bg-rui-grey-900 hover:!bg-rui-grey-100 hover:dark:!bg-rui-grey-800"
+            size="sm"
             color="primary"
-            :class="dark ? null : 'grey lighten-4'"
-            v-on="on"
             @click="copy(text)"
           >
-            <VIcon :x-small="!small" :small="small"> mdi-content-copy </VIcon>
-          </VBtn>
+            <RuiIcon name="file-copy-line" :size="small ? 14 : 12" />
+          </RuiButton>
         </template>
-        <span>{{ t('common.actions.copy') }}</span>
-      </VTooltip>
-      <VTooltip v-if="linkOnly || !noLink || buttons" top open-delay="600">
-        <template #activator="{ on, attrs }">
-          <VBtn
+
+        {{ t('common.actions.copy') }}
+      </RuiTooltip>
+
+      <RuiTooltip
+        v-if="linkOnly || !noLink || buttons"
+        :popper="{ placement: 'top' }"
+        :open-delay="600"
+      >
+        <template #activator>
+          <RuiButton
             v-if="!!base"
-            :x-small="!small"
-            :small="small"
+            tag="a"
             icon
-            v-bind="attrs"
-            :width="!small ? '20px' : null"
+            variant="text"
+            class="!bg-rui-grey-200 dark:!bg-rui-grey-900 hover:!bg-rui-grey-100 hover:dark:!bg-rui-grey-800"
+            size="sm"
             color="primary"
-            :class="dark ? null : 'grey lighten-4'"
             :href="href"
             target="_blank"
-            v-on="on"
             @click="onLinkClick()"
           >
-            <VIcon :x-small="!small" :small="small"> mdi-launch </VIcon>
-          </VBtn>
+            <RuiIcon name="external-link-line" :size="small ? 14 : 12" />
+          </RuiButton>
         </template>
-        <div>
-          <div>{{ t('hash_link.open_link') }}:</div>
-          <div>{{ displayUrl }}</div>
-        </div>
-      </VTooltip>
+
+        {{ t('hash_link.open_link') }}:
+        {{ displayUrl }}
+      </RuiTooltip>
     </div>
   </div>
 </template>

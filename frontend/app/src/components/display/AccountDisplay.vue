@@ -65,11 +65,7 @@ const { t } = useI18n();
           </VAvatar>
         </VCol>
 
-        <div>
-          <VAvatar :left="hideChainIcon" size="24" class="mr-2">
-            <EnsAvatar :address="address" />
-          </VAvatar>
-        </div>
+        <EnsAvatar :address="address" avatar class="mr-2" />
 
         <VCol
           cols="auto"

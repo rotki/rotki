@@ -27,57 +27,46 @@ const { xl } = useDisplay();
 </script>
 
 <template>
-  <div>
-    <i18n :path="translationKey" tag="span" class="flex items-center">
-      <template #location>
-        {{ toSentenceCase(event.location) }}
-      </template>
+  <i18n :path="translationKey" tag="span" class="flex items-center gap-2">
+    <template #location>
+      {{ toSentenceCase(event.location) }}
+    </template>
 
-      <template #blockNumber>
-        <span v-if="blockEvent" :class="css.address" class="d-inline-flex">
-          <HashLink
-            :class="css['address__content']"
-            :text="blockEvent.blockNumber.toString()"
-            :show-icon="false"
-            type="block"
-          />
-        </span>
-      </template>
+    <template v-if="blockEvent" #blockNumber>
+      <HashLink
+        :class="css['address__content']"
+        :text="blockEvent.blockNumber.toString()"
+        :show-icon="false"
+        type="block"
+      />
+    </template>
 
-      <template #validatorIndex>
-        <span v-if="withdrawEvent" :class="css.address">
-          <HashLink
-            :class="css['address__content']"
-            :text="withdrawEvent.validatorIndex.toString()"
-            :show-icon="false"
-            :chain="Blockchain.ETH2"
-            type="address"
-          />
-        </span>
-      </template>
+    <template v-if="withdrawEvent" #validatorIndex>
+      <HashLink
+        :class="css['address__content']"
+        :text="withdrawEvent.validatorIndex.toString()"
+        :show-icon="false"
+        :chain="Blockchain.ETH2"
+        type="address"
+      />
+    </template>
 
-      <template #txHash>
-        <span v-if="evmOrDepositEvent" :class="css.address">
-          <HashLink
-            :class="css['address__content']"
-            :text="evmOrDepositEvent.txHash"
-            :show-icon="false"
-            type="transaction"
-            :chain="getChain(evmOrDepositEvent.location)"
-            :truncate-length="8"
-            :full-address="xl"
-          />
-        </span>
-      </template>
-    </i18n>
-  </div>
+    <template v-if="evmOrDepositEvent" #txHash>
+      <HashLink
+        :class="css['address__content']"
+        :text="evmOrDepositEvent.txHash"
+        :show-icon="false"
+        type="transaction"
+        :chain="getChain(evmOrDepositEvent.location)"
+        :truncate-length="8"
+        :full-address="xl"
+      />
+    </template>
+  </i18n>
 </template>
 
 <style lang="scss" module>
 .address {
-  vertical-align: middle;
-  padding: 0 0.25rem;
-
   &__content {
     background: var(--v-rotki-light-grey-darken1);
     padding: 0.125rem 0.25rem 0.125rem 0.5rem;

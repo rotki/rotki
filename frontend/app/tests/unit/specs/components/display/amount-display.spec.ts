@@ -71,10 +71,12 @@ describe('AmountDisplay.vue', () => {
       wrapper = createWrapper(bigNumberify(1.20440001), {
         fiatCurrency: 'USD'
       });
-      expect(wrapper.find('[data-cy="display-amount"]').text()).toBe('1.44');
-      await wrapper.find('[data-cy="display-amount"]').trigger('mouseover');
+      expect(wrapper.find('[data-cy=amount-display]:nth-child(1)').text()).toBe(
+        '1.44'
+      );
+      await wrapper.find('[data-cy=display-amount]').trigger('mouseover');
       await wrapper.vm.$nextTick();
-      expect(wrapper.find('[data-cy="display-full-value"]').text()).toBe(
+      expect(wrapper.find('[data-cy=display-full-value]').text()).toMatch(
         '1.445280012'
       );
     });
@@ -84,23 +86,27 @@ describe('AmountDisplay.vue', () => {
         amount: bigNumberify(1.20440001),
         fiatCurrency: 'EUR'
       });
-      expect(wrapper.find('[data-cy="display-amount"]').text()).toBe('1.20');
-      await wrapper.find('[data-cy="display-amount"]').trigger('mouseover');
+      expect(wrapper.find('[data-cy=amount-display]:nth-child(1)').text()).toBe(
+        '1.20'
+      );
+      await wrapper.find('[data-cy=display-amount]').trigger('mouseover');
       await wrapper.vm.$nextTick();
-      expect(wrapper.find('[data-cy="display-full-value"]').text()).toBe(
+      expect(wrapper.find('[data-cy=display-full-value]').text()).toMatch(
         '1.20440001'
       );
     });
 
     test('displays amount as it is without fiat conversion', async () => {
       wrapper = createWrapper(bigNumberify(1.20540001));
-      expect(wrapper.find('[data-cy="display-comparison-symbol"]').text()).toBe(
-        '<'
-      );
-      expect(wrapper.find('[data-cy="display-amount"]').text()).toBe('1.21');
-      await wrapper.find('[data-cy="display-amount"]').trigger('mouseover');
+      expect(
+        wrapper
+          .find('[data-cy=amount-display]:nth-child(1)')
+          .text()
+          .replace(/ +(?= )/g, '')
+      ).toBe('< 1.21');
+      await wrapper.find('[data-cy=display-amount]').trigger('mouseover');
       await wrapper.vm.$nextTick();
-      expect(wrapper.find('[data-cy="display-full-value"]').text()).toBe(
+      expect(wrapper.find('[data-cy=display-full-value]').text()).toMatch(
         '1.20540001'
       );
     });
@@ -115,10 +121,12 @@ describe('AmountDisplay.vue', () => {
         fiatCurrency: 'USD',
         forceCurrency: true
       });
-      expect(wrapper.find('[data-cy="display-amount"]').text()).toBe('1.20');
-      await wrapper.find('[data-cy="display-amount"]').trigger('mouseover');
+      expect(wrapper.find('[data-cy=amount-display]:nth-child(1)').text()).toBe(
+        '1.20'
+      );
+      await wrapper.find('[data-cy=display-amount]').trigger('mouseover');
       await wrapper.vm.$nextTick();
-      expect(wrapper.find('[data-cy="display-full-value"]').text()).toBe(
+      expect(wrapper.find('[data-cy=display-full-value]').text()).toMatch(
         '1.20440001'
       );
     });
@@ -127,16 +135,16 @@ describe('AmountDisplay.vue', () => {
   describe('Check PnL', () => {
     test('Check if profit', () => {
       const wrapper = createWrapper(bigNumberify(50), { pnl: true });
-      expect(wrapper.find('[data-cy="display-wrapper"].profit').exists()).toBe(
-        true
-      );
+      expect(
+        wrapper.find('[data-cy=amount-display].text-rui-success').exists()
+      ).toBe(true);
     });
 
     test('Check if loss', () => {
       const wrapper = createWrapper(bigNumberify(-50), { pnl: true });
-      expect(wrapper.find('[data-cy="display-wrapper"].loss').exists()).toBe(
-        true
-      );
+      expect(
+        wrapper.find('[data-cy=amount-display].text-rui-error').exists()
+      ).toBe(true);
     });
   });
 
@@ -340,7 +348,7 @@ describe('AmountDisplay.vue', () => {
   });
 
   describe('Check manual latest prices', () => {
-    test('Manual price icon visible', () => {
+    test('does not show manual price indicator', () => {
       const { prices } = storeToRefs(useBalancePricesStore());
       set(prices, {
         ETH: {
@@ -357,7 +365,7 @@ describe('AmountDisplay.vue', () => {
       expect(wrapper.find('.rui-icon').exists()).toBe(false);
     });
 
-    test('Manual price icon visible', () => {
+    test('shows manual price indicator', () => {
       const { prices } = storeToRefs(useBalancePricesStore());
       set(prices, {
         ETH: {
