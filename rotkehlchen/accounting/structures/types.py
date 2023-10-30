@@ -1,5 +1,5 @@
 from enum import Enum, auto
-from typing import Literal, NamedTuple, Optional
+from typing import Any, Literal, NamedTuple, Optional
 
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.utils.mixins.enums import DBCharEnumMixIn, SerializableEnumNameMixin
@@ -117,6 +117,12 @@ class EventCategoryDetails(NamedTuple):
     label: str
     icon: str
     color: Optional[Literal['green', 'red']] = None
+
+    def serialize(self) -> dict[str, Any]:
+        result = {'label': self.label, 'icon': self.icon}
+        if self.color is not None:
+            result['color'] = self.color
+        return result
 
 
 class EventCategory(Enum):

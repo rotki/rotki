@@ -141,6 +141,7 @@ def _process_entry(entry: Any) -> Union[str, list[Any], dict[str, Any], Any]:
             EvmProduct,
             DBSettings,
             TxAccountingTreatment,
+            EventCategoryDetails,
     )):
         return entry.serialize()
     if isinstance(entry, (
@@ -181,7 +182,6 @@ def _process_entry(entry: Any) -> Union[str, list[Any], dict[str, Any], Any]:
             DefiProtocolBalances,
             YearnVaultHistory,
             BlockchainAccountData,
-            EventCategoryDetails,
             CounterpartyDetails,
             AaveStats,
     )):
