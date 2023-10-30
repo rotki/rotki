@@ -19,6 +19,7 @@ from rotkehlchen.tests.utils.api import (
     assert_ok_async_response,
     assert_proper_response,
     assert_proper_response_with_result,
+    wait_for_async_task,
 )
 from rotkehlchen.tests.utils.avalanche import AVALANCHE_ACC1_AVAX_ADDR
 from rotkehlchen.tests.utils.blockchain import setup_evm_addresses_activity_mock
@@ -431,3 +432,63 @@ def test_evm_account_deletion_does_not_wait_for_pending_txn_queries(
     with rotki.data.db.conn.read_ctx() as cursor:
         accounts = rotki.data.db.get_blockchain_accounts(cursor)
         assert set(accounts.eth) == {api_addies[1]}
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+def test_evm_address_async(rotkehlchen_api_server: 'APIServer') -> None:
+    """Test that doing async validation for the evm addresses endpoints works"""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    common_account = string_to_evm_address('0x9531C059098e3d194fF87FebB587aB07B30B1306')
+    contract_account = string_to_evm_address('0x9008D19f58AAbD9eD0D60971565AA8510560ab41')
+
+    with ExitStack() as stack:
+        setup_evm_addresses_activity_mock(
+            stack=stack,
+            chains_aggregator=rotki.chains_aggregator,
+            eth_contract_addresses=[contract_account],
+            ethereum_addresses=[contract_account, common_account],
+            avalanche_addresses=[common_account],
+            optimism_addresses=[common_account],
+            polygon_pos_addresses=[common_account],
+            arbitrum_one_addresses=[common_account],
+            base_addresses=[common_account],
+            gnosis_addresses=[common_account],
+        )
+
+        # add an address with an invalid ens name
+        label = 'rotki account'
+        request_data = {
+            'accounts': [{
+                'address': 'rotki.ethe',
+                'label': label,
+            }],
+            'async_query': True,
+        }
+        response = requests.put(api_url_for(
+            rotkehlchen_api_server,
+            'evmaccountsresource',
+        ), json=request_data)
+
+        task_id = assert_ok_async_response(response)
+        outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
+        assert outcome['result'] is None
+        assert outcome['status_code'] == HTTPStatus.BAD_REQUEST
+        assert 'Given value rotki.ethe is not an evm address' in outcome['message']
+
+        # add an address that should be correctly added
+        label = 'rotki account'
+        request_data = {
+            'accounts': [{
+                'address': 'rotki.eth',
+                'label': label,
+            }],
+            'async_query': True,
+        }
+        response = requests.put(api_url_for(
+            rotkehlchen_api_server,
+            'evmaccountsresource',
+        ), json=request_data)
+
+        task_id = assert_ok_async_response(response)
+        outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
+        assert outcome['result']['eth'] == [common_account]
