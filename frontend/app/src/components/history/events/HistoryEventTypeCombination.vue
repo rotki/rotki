@@ -11,8 +11,6 @@ const props = withDefaults(
   }
 );
 
-const { dark } = useTheme();
-
 const { type } = toRefs(props);
 
 const directionIcon = computed(
@@ -28,25 +26,25 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <div class="flex items-center gap-4">
-    <VAvatar
-      class="text--darken-4"
-      :color="dark ? 'white' : 'grey lighten-3'"
-      :size="36"
+  <div class="flex items-center gap-3">
+    <div
+      class="bg-rui-grey-200 dark:bg-white w-9 h-9 flex items-center justify-center rounded-full"
     >
       <VIcon :size="20" :color="type.color || 'grey darken-2'">
         {{ type.icon }}
       </VIcon>
-    </VAvatar>
-    <div v-if="showLabel" class="flex gap-2">
+    </div>
+    <div v-if="showLabel" class="flex items-center gap-2">
       <div class="font-bold text-uppercase text-sm">
         {{ type.label }}
       </div>
       <RuiTooltip :popper="{ placement: 'top' }" open-delay="400">
         <template #activator>
-          <RuiChip size="sm" class="[&>span]:px-0">
+          <div
+            class="cursor-pointer rounded-full bg-rui-grey-200 dark:bg-rui-grey-800 p-1"
+          >
             <RuiIcon size="14" :name="directionIcon" />
-          </RuiChip>
+          </div>
         </template>
         <i18n
           tag="span"

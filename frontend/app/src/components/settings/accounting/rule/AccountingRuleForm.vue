@@ -2,7 +2,6 @@
 import { required } from '@vuelidate/validators';
 import { omit } from 'lodash-es';
 import {
-  AccountingMethod,
   type AccountingRuleEntry,
   AccountingTreatment
 } from '@/types/settings/accounting';
@@ -24,22 +23,22 @@ const getPlaceholderRule = (): AccountingRuleEntry => ({
   identifier: -1,
   eventType: '',
   eventSubtype: '',
-  counterparty: '',
-  taxable: false,
-  countEntireAmountSpend: false,
-  countCostBasisPnl: false,
-  method: AccountingMethod.SPEND,
-  accountingTreatment: AccountingTreatment.SWAP
+  counterparty: null,
+  taxable: { value: false },
+  countEntireAmountSpend: { value: false },
+  countCostBasisPnl: { value: false },
+  accountingTreatment: null
 });
 
 const state: Ref<AccountingRuleEntry> = ref(getPlaceholderRule());
 
+const externalServerValidation = () => true;
+
 const rules = {
   eventType: { required },
   eventSubtype: { required },
-  counterparty: { externalServerValidation: () => true },
-  method: { required },
-  accountingTreatment: { required }
+  counterparty: { externalServerValidation },
+  accountingTreatment: { externalServerValidation }
 };
 
 const { t } = useI18n();
@@ -67,7 +66,11 @@ watch(editableItem, editableItem => {
 });
 
 const reset = (newState?: AccountingRuleEntry) => {
-  set(state, newState ?? getPlaceholderRule());
+  if (newState) {
+    set(state, { ...newState });
+  } else {
+    set(state, getPlaceholderRule());
+  }
 };
 
 const { addAccountingRule, editAccountingRule } = useAccountingApi();
@@ -75,7 +78,12 @@ const { setMessage } = useMessageStore();
 
 const save = async () => {
   const editing = !!get(editableItem);
-  const payload = get(state);
+  const stateVal = get(state);
+
+  const payload = {
+    ...stateVal,
+    counterparty: stateVal.counterparty || null
+  };
 
   try {
     const result = editing
@@ -113,13 +121,7 @@ const save = async () => {
 
 setSubmitFunc(save);
 
-const { historyEventTypesData, historyEventSubTypesData, counterparties } =
-  useHistoryEventMappings();
-
-const accountingMethods = Object.values(AccountingMethod).map(identifier => ({
-  identifier,
-  label: toSentenceCase(identifier)
-}));
+const { counterparties } = useHistoryEventMappings();
 
 const accountingTreatments = Object.values(AccountingTreatment).map(
   identifier => ({
@@ -131,89 +133,66 @@ const accountingTreatments = Object.values(AccountingTreatment).map(
 
 <template>
   <form class="pt-2">
-    <div class="grid grid-cols-3 gap-4">
-      <VAutocomplete
-        v-model="state.eventType"
-        outlined
-        required
-        :label="t('accounting_settings.rule.labels.event_type')"
-        :items="historyEventTypesData"
-        item-value="identifier"
-        item-text="label"
-        :error-messages="toMessages(v$.eventType)"
-        @blur="v$.eventType.$touch()"
-      />
-      <VAutocomplete
-        v-model="state.eventSubtype"
-        outlined
-        required
-        :label="t('accounting_settings.rule.labels.event_subtype')"
-        :items="historyEventSubTypesData"
-        item-value="identifier"
-        item-text="label"
-        :error-messages="toMessages(v$.eventSubtype)"
-        @blur="v$.eventSubtype.$touch()"
-      />
-      <ComboboxWithCustomInput
-        v-model="state.counterparty"
-        outlined
-        required
-        clearable
-        auto-select-first
-        :label="t('accounting_settings.rule.labels.counterparty')"
-        :items="counterparties"
-        :error-messages="toMessages(v$.counterparty)"
-        @blur="v$.counterparty.$touch()"
-      />
-    </div>
-    <RuiDivider class="py-2" />
-    <div>
-      <RuiCheckbox v-model="state.taxable" color="primary">
-        {{ t('accounting_settings.rule.labels.taxable') }}
-        <div class="text-rui-text-secondary text-body-2">
-          {{ t('accounting_settings.rule.labels.taxable_subtitle') }}
-        </div>
-      </RuiCheckbox>
-      <RuiCheckbox v-model="state.countEntireAmountSpend" color="primary">
-        {{ t('accounting_settings.rule.labels.count_entire_amount_spend') }}
-        <div class="text-rui-text-secondary text-body-2">
-          {{
-            t(
-              'accounting_settings.rule.labels.count_entire_amount_spend_subtitle'
-            )
-          }}
-        </div>
-      </RuiCheckbox>
-      <RuiCheckbox v-model="state.countCostBasisPnl" color="primary">
-        {{ t('accounting_settings.rule.labels.count_cost_basis_pnl') }}
-        <div class="text-rui-text-secondary text-body-2">
-          {{
-            t('accounting_settings.rule.labels.count_cost_basis_pnl_subtitle')
-          }}
-        </div>
-      </RuiCheckbox>
-    </div>
-    <div class="grid grid-cols-2 gap-4 pt-4">
-      <VSelect
-        v-model="state.method"
-        outlined
-        :items="accountingMethods"
-        item-value="identifier"
-        item-text="label"
-        :label="t('accounting_settings.rule.labels.method')"
-        :error-messages="toMessages(v$.method)"
-        @blur="v$.method.$touch()"
-      />
-      <VSelect
-        v-model="state.accountingTreatment"
-        outlined
-        :items="accountingTreatments"
-        item-value="identifier"
-        item-text="label"
-        :label="t('accounting_settings.rule.labels.accounting_treatment')"
-        :error-messages="toMessages(v$.accountingTreatment)"
-        @blur="v$.accountingTreatment.$touch()"
-      />
-    </div>
+    <HistoryEventTypeForm
+      :event-type.sync="state.eventType"
+      :event-subtype.sync="state.eventSubtype"
+      :counterparty="state.counterparty"
+      :v$="v$"
+      disable-warning
+    />
+
+    <VAutocomplete
+      v-model="state.counterparty"
+      class="md:w-1/2"
+      outlined
+      required
+      clearable
+      auto-select-first
+      :label="t('accounting_settings.rule.labels.counterparty')"
+      :items="counterparties"
+      :error-messages="toMessages(v$.counterparty)"
+      @blur="v$.counterparty.$touch()"
+    />
+
+    <AccountingRuleWithLinkedSetting
+      v-model="state.taxable"
+      class="border-t border-default"
+      identifier="taxable"
+      :label="t('accounting_settings.rule.labels.taxable')"
+      :hint="t('accounting_settings.rule.labels.taxable_subtitle')"
+    />
+
+    <AccountingRuleWithLinkedSetting
+      v-model="state.countEntireAmountSpend"
+      class="border-t border-default"
+      identifier="countEntireAmountSpend"
+      :label="t('accounting_settings.rule.labels.count_entire_amount_spend')"
+      :hint="
+        t('accounting_settings.rule.labels.count_entire_amount_spend_subtitle')
+      "
+    />
+
+    <AccountingRuleWithLinkedSetting
+      v-model="state.countCostBasisPnl"
+      class="border-t border-default"
+      identifier="countCostBasisPnl"
+      :label="t('accounting_settings.rule.labels.count_cost_basis_pnl')"
+      :hint="t('accounting_settings.rule.labels.count_cost_basis_pnl_subtitle')"
+    />
+
+    <RuiDivider class="mb-6" />
+
+    <VAutocomplete
+      v-model="state.accountingTreatment"
+      class="md:w-1/2"
+      outlined
+      :items="accountingTreatments"
+      item-value="identifier"
+      item-text="label"
+      clearable
+      :label="t('accounting_settings.rule.labels.accounting_treatment')"
+      :error-messages="toMessages(v$.accountingTreatment)"
+      @blur="v$.accountingTreatment.$touch()"
+    />
   </form>
 </template>

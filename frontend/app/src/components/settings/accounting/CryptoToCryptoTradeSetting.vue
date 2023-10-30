@@ -18,7 +18,7 @@ const { t } = useI18n();
     <VSwitch
       v-model="crypto2CryptoTrades"
       class="accounting-settings__crypto2crypto"
-      :label="t('accounting_settings.trade.labels.crypto_to_crypto')"
+      :label="t('accounting_settings.trade.labels.include_crypto2crypto')"
       color="primary"
       :success-messages="success"
       :error-messages="error"

@@ -1,10 +1,12 @@
 <script setup lang="ts">
 withDefaults(
   defineProps<{
-    success: boolean;
+    success?: boolean;
+    size?: string | number;
   }>(),
   {
-    success: false
+    success: false,
+    size: 20
   }
 );
 </script>
@@ -12,7 +14,7 @@ withDefaults(
 <template>
   <RuiIcon
     :color="success ? 'success' : 'primary'"
-    size="20"
+    :size="size"
     :name="success ? 'checkbox-circle-line' : 'close-circle-line'"
   />
 </template>

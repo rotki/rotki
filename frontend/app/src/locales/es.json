@@ -150,11 +150,11 @@
         "account_for_assets_movements": "Take into account assets movements fees",
         "calculate_past_cost_basis": "Calculate past cost basis when creating the report",
         "cost_basis_method": "Cost basis method",
-        "crypto_to_crypto": "Take into account crypto to crypto trades",
-        "eth_staking_taxable_after_withdrawal": "Should omit ETH staking events from accounting until withdrawals are enabled",
-        "gas_costs": "Take into account Ethereum gas costs",
+        "eth_staking_taxable_after_withdrawal_enabled": "Should omit ETH staking events from accounting until withdrawals are enabled",
+        "include_crypto2crypto": "Take into account crypto to crypto trades",
+        "include_gas_costs": "Take into account Ethereum gas costs",
         "tax_free": "Is there a tax free period?",
-        "tax_free_period": "Tax free after how many days"
+        "taxfree_after_period": "Tax free after how many days"
       },
       "title": "Trade Settings"
     }

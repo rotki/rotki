@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :feature:`-` Users will be able to create custom rules for accounting.
+* :fix:`-` Fix the issue where pinned PnL report errors (missing acquisitions and missing prices) become empty when the user moves to another page.
 * :feature:`-` Migrating MATIC to POL in ethereum mainnet is now properly decoded.
 * :feature:`-` Users can now see if any of their addresses have vCOW available to claim from the CoW Protocol airdrop.
 * :feature:`-` Golem's GNT->GLM migration events will now be properly detected.

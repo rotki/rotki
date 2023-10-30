@@ -717,6 +717,7 @@
     "useExternalApiKeys": true,
     "injectLocal": true,
     "provideLocal": true,
-    "useAssetPageNavigation": true
+    "useAssetPageNavigation": true,
+    "useAccountingRuleMappings": true
   }
 }

@@ -213,20 +213,16 @@ const { mdAndUp } = useDisplay();
 
 <template>
   <div>
-    <VToolbar
-      dark
-      color="primary"
-      :height="isPinned ? 40 : 'auto'"
-      :class="{ [$style['pinned__toolbar']]: isPinned }"
-    >
+    <div class="flex bg-rui-primary text-white p-2">
       <RuiButton v-if="!isPinned" variant="text" icon @click="close()">
         <RuiIcon class="text-white" name="close-line" />
       </RuiButton>
 
-      <VToolbarTitle
+      <h6
+        class="flex items-center"
         :class="{
-          [$style['pinned__toolbar-title']]: isPinned,
-          'pl-2': !isPinned
+          'pl-2 text-h6': !isPinned,
+          'text-body-1': isPinned
         }"
       >
         {{
@@ -234,7 +230,7 @@ const { mdAndUp } = useDisplay();
             total: actionableItemsLength.total
           })
         }}
-      </VToolbarTitle>
+      </h6>
 
       <VSpacer />
 
@@ -262,20 +258,18 @@ const { mdAndUp } = useDisplay();
           {{ t('profit_loss_report.actionable.actions.pin_section') }}
         </span>
       </RuiTooltip>
-    </VToolbar>
-    <VStepper v-model="step" elevation="0">
+    </div>
+    <VStepper v-model="step" class="!rounded-none">
       <VStepperHeader
-        :class="{
-          [$style.raise]: true,
-          [$style['pinned__stepper-header']]: isPinned
-        }"
+        :class="{ 'h-auto': isPinned }"
+        class="border-b-2 border-rui-grey-300 dark:border-rui-grey-800 shadow-none"
       >
         <template v-for="(content, index) of stepperContents">
           <VStepperStep
             :key="content.key"
             :step="index + 1"
             :complete="step > index + 1"
-            :class="{ [$style['pinned__stepper-step']]: isPinned }"
+            :class="{ 'p-2': isPinned }"
           >
             <span v-if="(mdAndUp && !isPinned) || step === index + 1">
               {{ content.title }}
@@ -298,7 +292,7 @@ const { mdAndUp } = useDisplay();
             >
               <template v-if="step === index + 1" #actions="{ items }">
                 <div
-                  class="shadow-10 relative z-[2] flex items-center justify-between gap-4"
+                  class="border-t-2 border-rui-grey-300 dark:border-rui-grey-800 relative z-[2] flex items-center justify-between gap-4"
                   :class="isPinned ? 'p-2' : 'p-4'"
                 >
                   <div v-if="content.hint" class="text-caption">
@@ -352,25 +346,3 @@ const { mdAndUp } = useDisplay();
     </VStepper>
   </div>
 </template>
-
-<style module lang="scss">
-.pinned {
-  &__toolbar {
-    border-radius: 0 !important;
-
-    &-title {
-      font-size: 1rem;
-    }
-  }
-
-  &__stepper {
-    &-header {
-      height: auto;
-    }
-
-    &-step {
-      padding: 12px;
-    }
-  }
-}
-</style>

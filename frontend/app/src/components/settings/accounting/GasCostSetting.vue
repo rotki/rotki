@@ -18,7 +18,7 @@ const { t } = useI18n();
     <VSwitch
       v-model="gasCosts"
       class="accounting-settings__include-gas-costs"
-      :label="t('accounting_settings.trade.labels.gas_costs')"
+      :label="t('accounting_settings.trade.labels.include_gas_costs')"
       :success-messages="success"
       :error-messages="error"
       color="primary"
