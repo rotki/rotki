@@ -1,20 +1,26 @@
 <script setup lang="ts">
 import { type LpType } from '@rotki/common/lib/defi';
 import { type XswapPool } from '@rotki/common/lib/defi/xswap';
-import { type PropType } from 'vue';
 
-const props = defineProps({
-  pools: { required: true, type: Array as PropType<XswapPool[]> },
-  value: { required: true, type: Array as PropType<string[]> },
-  outlined: { required: false, type: Boolean, default: false },
-  dense: { required: false, type: Boolean, default: false },
-  noPadding: { required: false, type: Boolean, default: false },
-  type: { required: true, type: String as PropType<LpType> }
-});
+const props = withDefaults(
+  defineProps<{
+    pools: XswapPool[];
+    type: LpType;
+    value: string[];
+    outlined?: boolean;
+    dense?: boolean;
+    noPadding?: boolean;
+  }>(),
+  {
+    outlined: false,
+    dense: false,
+    noPadding: false
+  }
+);
 
-const emit = defineEmits(['input']);
+const emit = defineEmits<{ (e: 'input', value: string[]): void }>();
 const { value, type } = toRefs(props);
-const input = (_value: string[]) => emit('input', _value);
+const input = (value: string[]) => emit('input', value);
 
 const { getPoolName } = useLiquidityPosition();
 

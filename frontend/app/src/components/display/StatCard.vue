@@ -1,11 +1,20 @@
 <script setup lang="ts">
-defineProps({
-  title: { required: false, type: String, default: '' },
-  locked: { required: false, type: Boolean, default: false },
-  loading: { required: false, type: Boolean, default: false },
-  protocolIcon: { required: false, type: String, default: '' },
-  bordered: { required: false, type: Boolean, default: false }
-});
+withDefaults(
+  defineProps<{
+    title?: string;
+    locked?: boolean;
+    loading?: boolean;
+    protocolIcon?: string;
+    bordered?: boolean;
+  }>(),
+  {
+    title: '',
+    locked: false,
+    loading: false,
+    protocolIcon: '',
+    bordered: false
+  }
+);
 const { dark } = useTheme();
 </script>
 

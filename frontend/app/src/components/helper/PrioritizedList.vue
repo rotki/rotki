@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { type ComputedRef, type PropType } from 'vue';
+import { type ComputedRef } from 'vue';
 import { type Nullable } from '@/types';
 import { type BaseMessage } from '@/types/messages';
 import {
-  PrioritizedListData,
+  type PrioritizedListData,
   type PrioritizedListItemData
 } from '@/types/settings/prioritized-list-data';
 import {
@@ -11,28 +11,28 @@ import {
   type PrioritizedListId
 } from '@/types/settings/prioritized-list-id';
 
-const props = defineProps({
-  value: { required: true, type: Array as PropType<PrioritizedListId[]> },
-  allItems: {
-    required: true,
-    type: PrioritizedListData<PrioritizedListId>
-  },
-  itemDataName: { required: true, type: String },
-  disableAdd: { required: false, type: Boolean, default: false },
-  disableDelete: { required: false, type: Boolean, default: false },
-  status: {
-    required: false,
-    type: Object as PropType<BaseMessage>,
-    default: () => null
+const props = withDefaults(
+  defineProps<{
+    value: PrioritizedListId[];
+    allItems: PrioritizedListData<PrioritizedListId>;
+    itemDataName: string;
+    disableAdd?: boolean;
+    disableDelete?: boolean;
+    status?: BaseMessage;
+  }>(),
+  {
+    disableAdd: false,
+    disableDelete: false,
+    status: undefined
   }
-});
+);
 
-const emit = defineEmits(['input']);
+const emit = defineEmits<{ (e: 'input', value: PrioritizedListId[]): void }>();
 const { value, allItems, itemDataName } = toRefs(props);
 const slots = useSlots();
 const selection = ref<Nullable<PrioritizedListId>>(null);
 
-const input = (items: string[]) => emit('input', items);
+const input = (items: PrioritizedListId[]) => emit('input', items);
 
 const itemNameTr = computed(() => {
   const name = get(itemDataName);

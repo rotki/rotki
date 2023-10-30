@@ -1,19 +1,16 @@
 <script setup lang="ts">
 import { type Eth2ValidatorEntry } from '@rotki/common/lib/staking/eth2';
-import { type PropType } from 'vue';
 import { truncateAddress } from '@/utils/truncate';
 
-const props = defineProps({
-  validator: {
-    required: true,
-    type: Object as PropType<Eth2ValidatorEntry>
-  },
-  horizontal: {
-    required: false,
-    type: Boolean,
-    default: false
+const props = withDefaults(
+  defineProps<{
+    validator: Eth2ValidatorEntry;
+    horizontal?: boolean;
+  }>(),
+  {
+    horizontal: false
   }
-});
+);
 
 const { horizontal } = toRefs(props);
 const length = computed(() => (get(horizontal) ? 4 : 10));

@@ -1,15 +1,19 @@
 <script setup lang="ts">
 import { type ComputedRef } from 'vue';
+import { type StyleValue } from 'vue/types/jsx';
 import { isVideo } from '@/utils/nft';
 
-const props = defineProps({
-  identifier: {
-    required: true,
-    type: String
-  },
-  styled: { required: false, type: Object, default: () => null },
-  size: { required: false, type: String, default: '50px' }
-});
+const props = withDefaults(
+  defineProps<{
+    identifier: string;
+    styled?: StyleValue;
+    size?: string;
+  }>(),
+  {
+    styled: undefined,
+    size: '50px'
+  }
+);
 
 const css = useCssModule();
 

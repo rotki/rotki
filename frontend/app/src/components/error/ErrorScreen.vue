@@ -1,12 +1,22 @@
 <script setup lang="ts">
-const props = defineProps({
-  header: { required: false, type: String, default: '' },
-  title: { required: false, type: String, default: '' },
-  subtitle: { required: false, type: String, default: '' },
-  message: { required: false, type: String, default: '' },
-  error: { required: false, type: String, default: '' },
-  alternative: { required: false, type: String, default: '' }
-});
+const props = withDefaults(
+  defineProps<{
+    header?: string;
+    title?: string;
+    subtitle?: string;
+    message?: string;
+    error?: string;
+    alternative?: string;
+  }>(),
+  {
+    header: '',
+    title: '',
+    subtitle: '',
+    message: '',
+    error: '',
+    alternative: ''
+  }
+);
 
 const { error, message } = toRefs(props);
 

@@ -1,18 +1,24 @@
 <script setup lang="ts">
 import { Severity } from '@rotki/common/lib/messages';
 
-const props = defineProps({
-  label: { required: false, type: String, default: '' },
-  outlined: { required: false, type: Boolean, default: false },
-  name: { required: true, type: String },
-  location: { required: true, type: String }
-});
+const props = withDefaults(
+  defineProps<{
+    label?: string;
+    outlined?: boolean;
+    name: string;
+    location: string;
+  }>(),
+  {
+    label: '',
+    outlined: false
+  }
+);
 
-const emit = defineEmits(['input']);
+const emit = defineEmits<{ (e: 'input', pairs: string[]): void }>();
 const { name, location } = toRefs(props);
 const { dark } = useTheme();
 
-const input = (_value: string[]) => emit('input', _value);
+const input = (value: string[]) => emit('input', value);
 
 const search = ref<string>('');
 const queriedMarkets = ref<string[]>([]);
