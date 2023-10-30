@@ -1,9 +1,16 @@
 <script setup lang="ts">
-const props = defineProps({
-  locked: { required: false, type: Boolean, default: false },
-  loading: { required: false, type: Boolean, default: false },
-  cols: { required: false, type: Number, default: 3 }
-});
+const props = withDefaults(
+  defineProps<{
+    locked?: boolean;
+    loading?: boolean;
+    cols?: number;
+  }>(),
+  {
+    locked: false,
+    loading: false,
+    cols: 3
+  }
+);
 
 const { cols } = toRefs(props);
 const colsSize = {
@@ -15,9 +22,9 @@ const colsSize = {
 const { smAndUp } = useDisplay();
 
 const size = computed(() => {
-  const colNum = get(cols);
-  assert(colNum === 2 || colNum === 3 || colNum === 4);
-  return colsSize[colNum];
+  const cols = props.cols;
+  assert(cols === 2 || cols === 3 || cols === 4);
+  return colsSize[cols];
 });
 </script>
 

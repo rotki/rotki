@@ -1,11 +1,16 @@
 ﻿<script setup lang="ts">
 import { toRefs } from 'vue';
 
-const props = defineProps({
-  url: { required: true, type: String },
-  tooltip: { required: true, type: String },
-  small: { required: false, type: Boolean, default: false }
-});
+const props = withDefaults(
+  defineProps<{
+    url: string;
+    tooltip: string;
+    small?: boolean;
+  }>(),
+  {
+    small: false
+  }
+);
 
 const { url } = toRefs(props);
 const { href, onLinkClick } = useLinks(url);
@@ -26,6 +31,6 @@ const { href, onLinkClick } = useLinks(url);
         <VIcon :small="small">mdi-help-circle</VIcon>
       </VBtn>
     </template>
-    <span>{{ tooltip }}</span>
+    {{ tooltip }}
   </VTooltip>
 </template>

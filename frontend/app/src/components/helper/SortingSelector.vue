@@ -1,22 +1,15 @@
 <script setup lang="ts">
-import { type PropType } from 'vue';
+const props = defineProps<{
+  sortBy: string;
+  sortDesc: boolean;
+  sortProperties: { text: string; value: string }[];
+}>();
 
-const props = defineProps({
-  sortBy: {
-    required: true,
-    type: String
-  },
-  sortDesc: {
-    required: true,
-    type: Boolean
-  },
-  sortProperties: {
-    required: true,
-    type: Array as PropType<{ text: string; value: string }[]>
-  }
-});
+const emit = defineEmits<{
+  (e: 'update:sort-by', sortBy: string): void;
+  (e: 'update:sort-desc', sortDesc: boolean): void;
+}>();
 
-const emit = defineEmits(['update:sort-by', 'update:sort-desc']);
 const { sortDesc: sortDescending } = toRefs(props);
 const updateSortBy = (value: string) => {
   emit('update:sort-by', value);

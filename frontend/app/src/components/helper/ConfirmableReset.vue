@@ -1,11 +1,19 @@
 <script setup lang="ts">
-defineProps({
-  tooltip: { required: false, type: String, default: '' },
-  loading: { required: false, type: Boolean, default: false },
-  disabled: { required: false, type: Boolean, default: false }
-});
+withDefaults(
+  defineProps<{
+    tooltip?: string;
+    loading?: boolean;
+    disabled?: boolean;
+  }>(),
+  {
+    tooltip: '',
+    loading: false,
+    disabled: false
+  }
+);
 
-const emit = defineEmits(['reset']);
+const emit = defineEmits<{ (e: 'reset'): void }>();
+
 const menu = ref<boolean>(false);
 
 const reset = () => {
@@ -38,9 +46,7 @@ const { t } = useI18n();
             <VIcon color="primary">mdi-database-refresh</VIcon>
           </VBtn>
         </template>
-        <span>
-          {{ tooltip }}
-        </span>
+        {{ tooltip }}
       </VTooltip>
     </template>
     <VCard max-width="280px">

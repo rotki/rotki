@@ -1,18 +1,15 @@
 <script setup lang="ts">
-import { type PropType } from 'vue';
 import { type TradeEntry } from '@/types/history/trade';
 
-const props = defineProps({
-  span: {
-    type: Number,
-    required: false,
-    default: 1
-  },
-  item: {
-    required: true,
-    type: Object as PropType<TradeEntry>
+const props = withDefaults(
+  defineProps<{
+    span?: number;
+    item: TradeEntry;
+  }>(),
+  {
+    span: 1
   }
-});
+);
 
 const { item } = toRefs(props);
 const { dark } = useTheme();
@@ -68,7 +65,7 @@ const { href, hasLink, onLinkClick } = useLinks(link);
                 <VIcon :small="true"> mdi-launch </VIcon>
               </VBtn>
             </template>
-            <span>{{ item.link }}</span>
+            {{ item.link }}
           </VTooltip>
         </span>
       </VCol>

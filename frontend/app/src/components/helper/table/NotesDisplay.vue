@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import { type PropType } from 'vue';
 import Fragment from '@/components/helper/Fragment';
 
-defineProps({
-  notes: {
-    required: false,
-    type: String as PropType<string | null>,
-    default: null
+withDefaults(
+  defineProps<{
+    notes?: string | null;
+  }>(),
+  {
+    notes: null
   }
-});
+);
 
 const { t } = useI18n();
 </script>

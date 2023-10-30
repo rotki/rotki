@@ -1,14 +1,19 @@
 <script setup lang="ts">
-import { type PropType } from 'vue';
 import { type Tag } from '@/types/tags';
 
-const props = defineProps({
-  value: { required: true, type: Array as PropType<string[]> },
-  disabled: { required: false, default: false, type: Boolean },
-  hideDetails: { required: false, default: false, type: Boolean }
-});
+const props = withDefaults(
+  defineProps<{
+    value: string[];
+    disabled?: boolean;
+    hideDetails?: boolean;
+  }>(),
+  {
+    disabled: false,
+    hideDetails: false
+  }
+);
 
-const emit = defineEmits(['input']);
+const emit = defineEmits<{ (e: 'input', tags: string[]): void }>();
 const { value } = toRefs(props);
 
 const { t } = useI18n();

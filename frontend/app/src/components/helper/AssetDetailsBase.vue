@@ -1,22 +1,32 @@
 <script setup lang="ts">
-import { type ComputedRef, type PropType } from 'vue';
+import { type ComputedRef } from 'vue';
+import { type StyleValue } from 'vue/types/jsx';
 import { Routes } from '@/router/routes';
 import { type NftAsset } from '@/types/nfts';
 
-const props = defineProps({
-  asset: {
-    required: true,
-    type: Object as PropType<NftAsset>
-  },
-  assetStyled: { required: false, type: Object, default: () => null },
-  opensDetails: { required: false, type: Boolean, default: false },
-  changeable: { required: false, type: Boolean, default: false },
-  hideName: { required: false, type: Boolean, default: false },
-  dense: { required: false, type: Boolean, default: false },
-  enableAssociation: { required: false, type: Boolean, default: true },
-  showChain: { required: false, type: Boolean, default: true },
-  isCollectionParent: { required: false, type: Boolean, default: false }
-});
+const props = withDefaults(
+  defineProps<{
+    asset: NftAsset;
+    assetStyled?: StyleValue;
+    opensDetails?: boolean;
+    changeable?: boolean;
+    hideName?: boolean;
+    dense?: boolean;
+    enableAssociation?: boolean;
+    showChain?: boolean;
+    isCollectionParent?: boolean;
+  }>(),
+  {
+    assetStyled: undefined,
+    opensDetails: false,
+    changeable: false,
+    hideName: false,
+    dense: false,
+    enableAssociation: false,
+    showChain: false,
+    isCollectionParent: false
+  }
+);
 
 const { asset, opensDetails, isCollectionParent } = toRefs(props);
 const rootAttrs = useAttrs();

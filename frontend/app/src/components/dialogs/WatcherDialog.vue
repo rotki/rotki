@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type ComputedRef, type PropType, type Ref } from 'vue';
+import { type ComputedRef, type Ref } from 'vue';
 import { cloneDeep } from 'lodash-es';
 import {
   type Watcher,
@@ -7,33 +7,25 @@ import {
   WatcherType
 } from '@/types/session';
 
-const props = defineProps({
-  title: { required: true, type: String },
-  message: { required: true, type: String },
-  display: { required: true, type: Boolean },
-  watcherValueLabel: {
-    required: false,
-    type: String,
-    default: 'Watcher Value'
-  },
-  watcherContentId: {
-    required: false,
-    type: [String, Number],
-    default: null
-  },
-  preselectWatcherType: {
-    required: false,
-    type: String as PropType<typeof WatcherType>,
-    default: null
-  },
-  existingWatchers: {
-    required: false,
-    type: Array as PropType<Watcher[]>,
-    default: () => []
+const props = withDefaults(
+  defineProps<{
+    title: string;
+    message: string;
+    display: boolean;
+    watcherValueLabel?: string;
+    watcherContentId?: string | number;
+    preselectWatcherType?: typeof WatcherType;
+    existingWatchers?: Watcher[];
+  }>(),
+  {
+    watcherValueLabel: 'Watcher Value',
+    watcherContentId: undefined,
+    preselectWatcherType: undefined,
+    existingWatchers: () => []
   }
-});
+);
 
-const emit = defineEmits(['cancel']);
+const emit = defineEmits<{ (e: 'cancel'): void }>();
 
 const { display, preselectWatcherType, existingWatchers, watcherContentId } =
   toRefs(props);

@@ -1,26 +1,16 @@
 <script setup lang="ts">
-import { type PropType } from 'vue';
-
-const props = defineProps({
-  value: {
-    required: false,
-    type: String,
-    default: null,
-    validator: (value: any) => typeof value === 'string' || value === null
-  },
-  justify: {
-    required: false,
-    type: String as PropType<'end' | 'start'>,
-    default: 'end',
-    validator: (value: any) => ['end', 'start'].includes(value)
-  },
-  assetPadding: {
-    required: false,
-    type: Number,
-    default: 0,
-    validator: (chars: number) => chars >= 0 && chars <= 5
+const props = withDefaults(
+  defineProps<{
+    value?: string | null;
+    justify?: 'end' | 'start';
+    assetPadding?: number;
+  }>(),
+  {
+    value: null,
+    justify: 'end',
+    assetPadding: 0
   }
-});
+);
 
 const { assetPadding, value } = toRefs(props);
 const { shouldShowPercentage } = storeToRefs(useSessionSettingsStore());
@@ -30,7 +20,7 @@ const displayValue = computed<string>(() => {
     return (Math.random() * 100 + 1).toFixed(2);
   }
 
-  if (!get(value)) {
+  if (!isDefined(value)) {
     return '-';
   }
 
