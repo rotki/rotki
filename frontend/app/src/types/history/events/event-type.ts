@@ -2,26 +2,38 @@ import { z } from 'zod';
 
 const HistoryEventTypeMapping = z.record(z.record(z.string()));
 
-const HistoryEventTypeDetail = z.object({
+const HistoryEventCategoryDetail = z.object({
   label: z.string(),
   icon: z.string(),
-  color: z.string().nullable(),
-  direction: z.enum(['neutral', 'in', 'out'])
+  color: z.string().optional()
 });
 
-const HistoryEventTypeDetailWithId = HistoryEventTypeDetail.extend({
-  identifier: z.string()
+const HistoryEventCategoryDirection = z.enum(['neutral', 'in', 'out']);
+
+const HistoryEventCategory = z.object({
+  counterpartyMappings: z.record(HistoryEventCategoryDetail),
+  direction: HistoryEventCategoryDirection
 });
 
-export type HistoryEventTypeDetailWithId = z.infer<
-  typeof HistoryEventTypeDetailWithId
+export const HistoryEventCategoryDetailWithId =
+  HistoryEventCategoryDetail.extend({
+    identifier: z.string(),
+    direction: HistoryEventCategoryDirection
+  });
+
+export type HistoryEventCategoryDetailWithId = z.infer<
+  typeof HistoryEventCategoryDetailWithId
 >;
 
-const HistoryEventTypeDetails = z.record(HistoryEventTypeDetail);
+export const HistoryEventCategoryMapping = z.record(HistoryEventCategory);
+
+export type HistoryEventCategoryMapping = z.infer<
+  typeof HistoryEventCategoryMapping
+>;
 
 export const HistoryEventTypeData = z.object({
   globalMappings: HistoryEventTypeMapping,
-  eventCategoryDetails: HistoryEventTypeDetails,
+  eventCategoryDetails: HistoryEventCategoryMapping,
   accountingEventsIcons: z.record(z.string())
 });
 

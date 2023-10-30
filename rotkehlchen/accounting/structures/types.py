@@ -116,7 +116,7 @@ class EventDirection(SerializableEnumNameMixin):
 class EventCategoryDetails(NamedTuple):
     label: str
     icon: str
-    color: Optional[Literal['green', 'red']] = None
+    color: Optional[Literal['success', 'error']] = None
 
     def serialize(self) -> dict[str, Any]:
         result = {'label': self.label, 'icon': self.icon}

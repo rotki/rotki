@@ -402,6 +402,7 @@ const addressSuggestions = computed(() =>
     <HistoryEventTypeForm
       :event-type.sync="eventType"
       :event-subtype.sync="eventSubtype"
+      :counterparty="counterparty"
       :v$="v$"
     />
 

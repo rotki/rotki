@@ -53,9 +53,12 @@ const css = useCssModule();
         :src="location.image"
         :alt="location.name"
       />
-      <VIcon v-else color="accent" :style="iconStyle" :class="css.icon">
-        {{ location.icon }}
-      </VIcon>
+      <RuiIcon
+        v-else
+        color="secondary"
+        :name="location.icon"
+        :style="iconStyle"
+      />
       <span
         v-if="!icon"
         class="text-capitalize"

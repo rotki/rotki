@@ -25,9 +25,11 @@ const [DefineText, ReuseText] = createReusableTemplate();
     <DefineImage>
       <div>
         <VAvatar v-if="counterparty" size="24">
-          <VIcon v-if="counterparty.icon" :color="counterparty.color">
-            {{ counterparty.icon }}
-          </VIcon>
+          <RuiIcon
+            v-if="counterparty.icon"
+            :name="counterparty.icon"
+            :color="counterparty.color"
+          />
 
           <VImg
             v-else-if="counterparty.image"
