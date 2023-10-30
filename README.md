@@ -93,7 +93,7 @@ Please refer to [Releases](https://rotki.readthedocs.io/en/latest/changelog.html
 
 ## Contribute
 
-If you are interested in contributing to rotki:
+If you are interested in contributing to Rotki:
 
 - Start by reading our [contributing guide](CONTRIBUTING.md).
 - Check out our [developer guide](https://rotki.readthedocs.io/en/latest/contribute.html).
@@ -121,7 +121,7 @@ We are thankful to all the people who have contributed to this project.
 
 You can [sponsor us through GitHub](https://github.com/sponsors/rotki/), and get recognition as a sponsor in your Github profile.
 
-Thank you for helping to sustain and improve this project!
+Thank you for helping us to sustain and improve this project!
 
 #### Donations
 If you find this project helpful, don't want to purchase a subscription and would like to support its development, you can make a donation using the following cryptocurrency addresses:
@@ -130,7 +130,7 @@ If you find this project helpful, don't want to purchase a subscription and woul
 
 - Send **ETH donations** to: `rotki.eth` (0x9531c059098e3d194ff87febb587ab07b30b1306)
 
-Your contribution will go directly towards enhancing the project, covering development costs, and supporting ongoing maintenance.
+Your contribution will directly support project enhancement, cover development costs, and sustain ongoing maintenance.
 
 We appreciate every donation, no matter the size. It helps to ensure the project's sustainability and motivates us to continue delivering valuable updates and improvements.
 
@@ -138,6 +138,6 @@ Thank you for considering a donation to support our work!
 
 ## License
 
-rotki is committed to being open and transparent. Our chosen license ensures that the software remains open to use and that contributions are transparent and welcomed. Distributed under the **AGPLv3** License. See [`LICENSE.md`](https://github.com/rotki/rotki/blob/develop/LICENSE.md) for more information.
+Rotki is committed to being open and transparent. Our chosen license ensures that the software remains open to use and that contributions are transparent and welcomed. Distributed under the **AGPLv3** License. See [`LICENSE.md`](https://github.com/rotki/rotki/blob/develop/LICENSE.md) for more information.
 
 <p align="right">(<a href="#top">🔼 Back to top</a>)</p>
