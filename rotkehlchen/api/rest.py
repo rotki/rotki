@@ -1696,7 +1696,6 @@ class RestAPI:
 
         return api_response(process_result(_wrap_in_result(data, '')), status_code=HTTPStatus.OK)
 
-    @async_api_call()
     def add_evm_accounts(
             self,
             account_data: list[SingleBlockchainAccountData[ChecksumEvmAddress]],
@@ -1732,40 +1731,35 @@ class RestAPI:
     @overload
     def add_single_blockchain_accounts(
             self,
-            async_query: bool,
             chain: SUPPORTED_EVM_CHAINS,
             account_data: list[SingleBlockchainAccountData[ChecksumEvmAddress]],
-    ) -> Response:
+    ) -> dict[str, Any]:
         ...
 
     @overload
     def add_single_blockchain_accounts(
             self,
-            async_query: bool,
             chain: SUPPORTED_SUBSTRATE_CHAINS,
             account_data: list[SingleBlockchainAccountData[SubstrateAddress]],
-    ) -> Response:
+    ) -> dict[str, Any]:
         ...
 
     @overload
     def add_single_blockchain_accounts(
             self,
-            async_query: bool,
             chain: SUPPORTED_BITCOIN_CHAINS,
             account_data: list[SingleBlockchainAccountData[BTCAddress]],
-    ) -> Response:
+    ) -> dict[str, Any]:
         ...
 
     @overload
     def add_single_blockchain_accounts(
             self,
-            async_query: bool,
             chain: SupportedBlockchain,
             account_data: list[SingleBlockchainAccountData],
-    ) -> Response:
+    ) -> dict[str, Any]:
         ...
 
-    @async_api_call()
     def add_single_blockchain_accounts(
             self,
             chain: SupportedBlockchain,
@@ -1793,7 +1787,7 @@ class RestAPI:
             self,
             blockchain: SupportedBlockchain,
             account_data: list[SingleBlockchainAccountData],
-    ) -> Response:
+    ) -> dict[str, Any]:
         try:
             with self.rotkehlchen.data.db.user_write() as write_cursor:
                 self.rotkehlchen.edit_single_blockchain_accounts(
@@ -1805,13 +1799,12 @@ class RestAPI:
                 # success
                 data = self.rotkehlchen.get_blockchain_account_data(cursor, blockchain)
         except TagConstraintError as e:
-            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
+            return wrap_in_fail_result(str(e), status_code=HTTPStatus.CONFLICT)
         except InputError as e:
-            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)
+            return wrap_in_fail_result(str(e), status_code=HTTPStatus.BAD_REQUEST)
 
-        return api_response(process_result(_wrap_in_result(data, '')), status_code=HTTPStatus.OK)
+        return process_result(_wrap_in_result(data, ''))
 
-    @async_api_call()
     def remove_single_blockchain_accounts(
             self,
             blockchain: SupportedBlockchain,

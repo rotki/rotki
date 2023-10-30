@@ -1873,7 +1873,7 @@ class EvmAccountsPutSchema(AsyncQueryArgumentSchema):
         return data
 
 
-class BlockchainAccountsPatchSchema(Schema):
+class BlockchainAccountsPatchSchema(AsyncQueryArgumentSchema):
     blockchain = BlockchainField(required=True, exclude_types=(SupportedBlockchain.ETHEREUM_BEACONCHAIN,))  # noqa: E501
     accounts = fields.List(fields.Nested(BlockchainAccountDataSchema), required=True)
 
@@ -1915,7 +1915,7 @@ class BlockchainAccountsPatchSchema(Schema):
         return data
 
 
-class BlockchainAccountsPutSchema(AsyncQueryArgumentSchema, BlockchainAccountsPatchSchema):
+class BlockchainAccountsPutSchema(BlockchainAccountsPatchSchema):
     ...
 
 
