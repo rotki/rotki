@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, NamedTuple, Optional
 
 from rotkehlchen.assets.asset import UnderlyingToken
 from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token
+from rotkehlchen.chain.ethereum.modules.curve.constants import CURVE_ADDRESS_PROVIDER
 from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS, ZERO_ADDRESS
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -351,7 +352,7 @@ def query_curve_data_from_chain(
     May raise:
     - RemoteError if failed to query chain
     """
-    address_provider = ethereum.contracts.contract(string_to_evm_address('0x0000000022D53366457F9d5E68Ec105046FC4383'))  # noqa: E501
+    address_provider = ethereum.contracts.contract(CURVE_ADDRESS_PROVIDER)
     try:
         metaregistry_address = deserialize_evm_address(address_provider.call(
             node_inquirer=ethereum,
