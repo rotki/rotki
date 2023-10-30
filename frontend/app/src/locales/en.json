@@ -1587,7 +1587,7 @@
       "label_password": "Password",
       "label_password_backup_reminder": "rotki saves all user data locally. I understand that if I lose my password, I lose access to my data. I have created a backup of the password.",
       "label_password_repeat": "Repeat Password",
-      "label_username": "Username",
+      "label_username": "Profile Name",
       "password_sync_requirement": "Ensure that the account uses the same password as the database originally backed up. You can't access the database if you input a different password.",
       "validation": {
         "check_prompt": "Confirm that you have read and created a backup",
@@ -1600,7 +1600,7 @@
     },
     "have_account": {
       "description": "Already have an account?",
-      "log_in": "Log in"
+      "log_in": "Unlock your account"
     },
     "introduction": {
       "description": "rotki is a local application that respects your privacy.\n\nrotki accounts are encrypted using your password and {highlight}.\n\nThe account you create here is only useful for the app, on the web we use a different database.",
@@ -2898,9 +2898,9 @@
   },
   "login": {
     "button_no_account": "Don’t have an account?",
-    "button_signup": "Sign Up",
+    "button_create_account": "Create account",
     "credential_error": {
-      "description": "If you have not yet created an app account, you will need to do so in order to sign in.",
+      "description": "If you have not yet created an app account, you will need to do so in order to unlock your account.",
       "support": "If you need assistance, please contact us in our support channel on discord.",
       "title": "Please note that your website account and app account are separate and cannot be used interchangeably."
     },
@@ -2927,7 +2927,7 @@
       "title": "User action required to continue login"
     },
     "label_password": "Password",
-    "label_username": "Username",
+    "label_username": "Profile Name",
     "logout": "Logout",
     "migrating_data": {
       "current": "Step {currentStep} of {totalSteps} of data migration {currentVersion} is applied.",
@@ -2943,7 +2943,7 @@
       "remote_modified": "Remote last modified: {0}",
       "title": "User action required for DB sync"
     },
-    "title": "Sign In",
+    "title": "Unlock account",
     "upgrading_db": {
       "current": "Step {currentStep} of {totalSteps} of database upgrade v{currentVersion} is applied.",
       "title": "Database Upgrade",
@@ -2956,7 +2956,7 @@
     },
     "welcome_description": "Welcome to the open source portfolio manager that protects your privacy.",
     "welcome_title": "Welcome to rotki",
-    "welcome_update_message": "Sign in to explore changes we’ve made."
+    "welcome_update_message": "Unlock your account to explore changes we’ve made."
   },
   "macos_unsupported": {
     "header": "Unsupported macOS Version",

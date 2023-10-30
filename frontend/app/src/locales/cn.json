@@ -1505,7 +1505,7 @@
       "label_password": "密码",
       "label_password_backup_reminder": "rotki 会将所有用户数据保存在本地。我明白如果我丢失密码，我将无法访问我的数据。我已经创建了密码的备份。",
       "label_password_repeat": "重复密码",
-      "label_username": "用户名",
+      "label_username": "个人资料名称",
       "password_sync_requirement": "请确保该帐户使用与最初备份的数据库相同的密码。如果输入不同的密码，您将无法访问数据库。",
       "validation": {
         "check_prompt": "确认您已阅读并创建了备份",
@@ -1518,7 +1518,7 @@
     },
     "have_account": {
       "description": "已经有账户了？",
-      "log_in": "登录"
+      "log_in": "解锁您的帐户"
     },
     "introduction": {
       "description": "rotki 是一个尊重您隐私的本地应用程序。\n\nrotki 账户使用您的密码和 {highlight} 进行加密。\n\n您在此处创建的帐户仅适用于应用程序，在网页上我们使用不同的数据库。",
@@ -2757,7 +2757,7 @@
   },
   "login": {
     "button_no_account": "没有帐户？",
-    "button_signup": "报名",
+    "button_create_account": "创建账户",
     "credential_error": {
       "description": "如果您尚未创建应用帐户，则需要创建应用帐户才能登录。",
       "support": "如果您需要帮助，请通过我们的 Discord 支持渠道联系我们。",
@@ -2780,7 +2780,7 @@
       "welcome": "欢迎！ 请输入您的详细信息。"
     },
     "label_password": "密码",
-    "label_username": "用户名",
+    "label_username": "个人资料名称",
     "logout": "注销",
     "migrating_data": {
       "current": "已应用数据迁移 {currentVersion} 的 {totalSteps} 步 {currentStep}。.",
@@ -2796,7 +2796,7 @@
       "remote_modified": "远程最后修改：{0}",
       "title": "数据库同步所需的用户操作"
     },
-    "title": "登录",
+    "title": "解锁账户",
     "upgrading_db": {
       "current": "已应用数据库升级 v{currentVersion} 的 {totalSteps} 步 {currentStep}。",
       "title": "数据库升级",
@@ -2809,7 +2809,7 @@
     },
     "welcome_description": "欢迎使用保护您隐私的开源投资组合管理器。",
     "welcome_title": "欢迎来到 rotki",
-    "welcome_update_message": "登录以探索我们所做的更改。"
+    "welcome_update_message": "解锁您的帐户以探索我们所做的更改。"
   },
   "macos_unsupported": {
     "header": "不支持的 macOS 版本",
