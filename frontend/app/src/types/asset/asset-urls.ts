@@ -43,9 +43,9 @@ export const explorerUrls: AssetExplorerUrls = {
     block: 'https://explorer.polkascan.io/kusama/block/'
   },
   [Blockchain.AVAX]: {
-    address: 'https://snowtrace.io/address/',
-    transaction: 'https://snowtrace.io/tx/',
-    block: 'https://snowtrace.io/block/'
+    address: 'https://avascan.info/blockchain/c/address/',
+    transaction: 'https://avascan.info/blockchain/c/tx/',
+    block: 'https://avascan.info/blockchain/c/block/'
   },
   zksync: {
     address: 'https://zkscan.io/explorer/accounts/',
