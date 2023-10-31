@@ -72,7 +72,7 @@ The [Pro Version](https://rotki.com/checkout/plan) of Rotki also supports additi
 * `Docker`
 
 ## Installation
-Rotki currently supports the following operating systems:- Windows, MacOs, Linux.
+Rotki currently supports the following operating systems:- Windows, macOS, and Linux.
 
 The installation of rotki can be simply done via two ways:-
 - [Packaged Binaries](https://rotki.readthedocs.io/en/latest/installation_guide.html#packaged-binaries) (Recommended)
@@ -80,7 +80,7 @@ The installation of rotki can be simply done via two ways:-
 
 ## Usage
 
-Read the [documentation](https://rotki.readthedocs.io/en/latest/) for a complete guide, frequently-asked questions, API reference, and more.
+Read the [documentation](https://rotki.readthedocs.io/en/latest/) for a complete guide, frequently-asked questions, API references, and more.
 
 Some quick links to useful parts of the documentation follow below for your convenience.
 
@@ -119,7 +119,7 @@ We are thankful to all the people who have contributed to this project.
 
 #### GitHub sponsor
 
-You can [sponsor us through GitHub](https://github.com/sponsors/rotki/), and get recognition as a sponsor in your Github profile.
+You can [sponsor us through GitHub](https://github.com/sponsors/rotki/), and get recognition as a sponsor in your GitHub profile.
 
 Thank you for helping to sustain and improve this project!
 
