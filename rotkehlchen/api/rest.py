@@ -3474,22 +3474,29 @@ class RestAPI:
                 action_type=ActionType.HISTORY_EVENT,
             )
 
+        db_accounting = DBAccountingRules(self.rotkehlchen.data.db)
         if group_by_event_ids is True:
-            entries = [  # type: ignore  # mypy doesnt understand significance of boolean check
-                x.serialize_for_api(
+            missing_accounting_rules = db_accounting.missing_accounting_rules(
+                events=[x for _, x in events_result],  # type: ignore
+            )
+            entries = [  # type: ignore  # mypy doesn't understand significance of boolean check
+                x.serialize_for_api(  # type: ignore
                     customized_event_ids=customized_event_ids,
                     ignored_ids_mapping=ignored_ids_mapping,
                     hidden_event_ids=hidden_event_ids,
-                    grouped_events_num=grouped_events_num,
-                ) for grouped_events_num, x in events_result
+                    missing_accounting_rule=missing_accounting_rule,
+                    grouped_events_num=grouped_events_num,  # type: ignore
+                ) for (grouped_events_num, x), missing_accounting_rule in zip(events_result, missing_accounting_rules)  # noqa: E501
             ]
         else:
+            missing_accounting_rules = db_accounting.missing_accounting_rules(events_result)  # type: ignore
             entries = [
                 x.serialize_for_api(  # type: ignore
                     customized_event_ids=customized_event_ids,
                     ignored_ids_mapping=ignored_ids_mapping,
                     hidden_event_ids=hidden_event_ids,
-                ) for x in events_result
+                    missing_accounting_rule=missing_accounting_rule,
+                ) for x, missing_accounting_rule in zip(events_result, missing_accounting_rules)
             ]
         result = {
             'entries': entries,

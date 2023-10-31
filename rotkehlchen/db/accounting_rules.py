@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, Any, NamedTuple, Optional, Union
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 
+from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings
 from rotkehlchen.db.constants import (
@@ -203,6 +204,26 @@ class DBAccountingRules:
             raise InputError(
                 f'Link of rule for {rule_property} to setting {setting_name} already exists',
             ) from e
+
+    def missing_accounting_rules(self, events: list[HistoryBaseEntry]) -> list[bool]:
+        """
+        For a list of events returns a list of the same length with boolean values where True
+        means that the event won't be affected by any accounting rule
+        """
+        query = 'SELECT COUNT(*) FROM accounting_rules WHERE (type=? AND subtype=? AND counterparty=?)'  # noqa: E501
+        bindings = [
+            (
+                event.event_type.serialize(), event.event_subtype.serialize(),
+                NO_ACCOUNTING_COUNTERPARTY if (counterparty := getattr(event, 'counterparty', None)) is None else counterparty,  # noqa: E501
+            ) for event in events
+        ]
+        missing_accounting_rule: list[bool] = []
+        with self.db.conn.read_ctx() as cursor:
+            for idx in range(len(events)):
+                row = cursor.execute(query, bindings[idx]).fetchone()
+                missing_accounting_rule.append(row[0] == 0)
+
+        return missing_accounting_rule
 
     def query_rules(
             self,

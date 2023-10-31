@@ -4555,6 +4555,7 @@ Dealing with History Events
                       "notes": "Burned 0.00863351371344 ETH for gas",
                       "sequence_index": 0,
                       "timestamp": 1642802807,
+                      "missing_accounting_rule": true,
 		      "tx_hash": "0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f",
 		      "address": null,
 		      "product": null
@@ -4579,6 +4580,7 @@ Dealing with History Events
                       "notes": "Burned 0.00863351371344 ETH for gas",
                       "sequence_index": 0,
                       "timestamp": 1642802807,
+                      "missing_accounting_rule": true,
 		      "tx_hash": "0x1c822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f",
 		      "address": null,
 		      "product": null
@@ -4601,6 +4603,7 @@ Dealing with History Events
                       "notes": "Withdrew 0.00163351371344 ETH from validator 1454",
                       "sequence_index": 0,
                       "timestamp": 1652802807,
+                      "missing_accounting_rule": true,
 		      "validator_index": 1454,
 		      "is_exit": false
                   },
@@ -4623,6 +4626,7 @@ Dealing with History Events
                       "notes": "Validator 1454 produced block 15534342 with 0.00163351371344 going to 0xce15887E2CEC81434C16D587709f64603b39b545 as the block reward",
                       "sequence_index": 0,
                       "timestamp": 1652802807,
+                      "missing_accounting_rule": true,
 		      "validator_index": 1454,
 		      "block_number": 15534342
                   },
@@ -4645,6 +4649,7 @@ Dealing with History Events
                       "notes": "Deposit 32 ETH to validator 4242",
                       "sequence_index": 15,
                       "timestamp": 1642802807,
+                      "missing_accounting_rule": true,
 		      "tx_hash": "0x2c822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f",
 		      "address": "0x00000000219ab540356cBB839Cbe05303d7705Fa",
 		      "product": "staking",
@@ -4668,6 +4673,7 @@ Dealing with History Events
    :resjson string event_identifier: Common key. An event identifier grouping multiple events under a common group. This is how we group transaction events under a transaction, staking related events under block production etc.
    :resjson int sequence_index: Common key. This is an index that tries to provide the order of history entries for a single event_identifier.
    :resjson int timestamp: Common key. The timestamp of the entry
+   :resjson bool missing_accounting_rule: Common key. Present and `True` if the event is not processed by any accounting rule.
    :resjson string location: Common key. The location of the entry. Such as "ethereum", "optimism", etc.
    :resjson string asset: Common key. The asset involved in the event.
    :resjson object balance: Common key. The balance of the asset involved in the event.
