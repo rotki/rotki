@@ -32,12 +32,11 @@ const css = useCssModule();
 
 <template>
   <span
-    class="flex items-center justify-center icon-bg"
+    class="flex items-center justify-center gap-2"
     data-cy="location-icon"
     :class="{
       'flex-row': horizontal,
       'flex-col': !horizontal,
-      'py-4': !noPadding,
       skeleton: !location,
       [css.wrapper]: icon
     }"
@@ -48,7 +47,7 @@ const css = useCssModule();
         v-if="location.image"
         :width="size"
         :height="size"
-        class="object-contain dark:p-[0.1rem]"
+        class="object-contain dark:p-[0.1rem] icon-bg"
         :class="css.icon"
         :src="location.image"
         :alt="location.name"
@@ -56,14 +55,11 @@ const css = useCssModule();
       <RuiIcon
         v-else
         color="secondary"
+        class="icon-bg"
         :name="location.icon"
         :style="iconStyle"
       />
-      <span
-        v-if="!icon"
-        class="text-capitalize"
-        :class="horizontal ? 'ml-3' : null"
-      >
+      <span v-if="!icon" class="text-capitalize text-rui-text-secondary">
         {{ location.name }}
       </span>
     </template>

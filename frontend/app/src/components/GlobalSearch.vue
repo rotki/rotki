@@ -485,7 +485,6 @@ onBeforeMount(async () => {
               <LocationIcon
                 v-if="item.location"
                 icon
-                no-padding
                 size="26px"
                 :item="item.location"
               />

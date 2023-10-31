@@ -722,12 +722,7 @@ const includeOnlineEvents: ComputedRef<boolean> = useEmptyOrSome(
             </template>
             <template #item.txHash="{ item }">
               <div class="flex items-center gap-2">
-                <LocationIcon
-                  icon
-                  no-padding
-                  :item="item.location"
-                  size="20px"
-                />
+                <LocationIcon icon :item="item.location" size="20px" />
                 <HistoryEventsIdentifier :event="item" />
               </div>
             </template>

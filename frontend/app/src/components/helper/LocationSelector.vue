@@ -64,7 +64,6 @@ const locations = computed<TradeLocationData[]>(() => {
         v-bind="attrs"
         horizontal
         :item="item.identifier"
-        no-padding
         v-on="on"
       />
     </template>
@@ -73,7 +72,6 @@ const locations = computed<TradeLocationData[]>(() => {
         v-bind="attrs"
         horizontal
         :item="item.identifier"
-        no-padding
         v-on="on"
       />
     </template>
