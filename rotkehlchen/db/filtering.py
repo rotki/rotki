@@ -14,6 +14,7 @@ from rotkehlchen.assets.types import AssetType
 from rotkehlchen.assets.utils import IgnoredAssetsHandling
 from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
 from rotkehlchen.chain.evm.types import EvmAccount
+from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -842,6 +843,19 @@ class DBNullFilter(DBFilter):
 T_HistoryFilterQuery = TypeVar('T_HistoryFilterQuery', bound='HistoryBaseEntryFilterQuery')
 
 
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class HistoryEventCustomizedOnlyJoinsFilter(DBFilter):
+    """This join finds customized history events (exclusively)."""
+    def prepare(self) -> tuple[list[str], list[Any]]:
+        query = (
+            'INNER JOIN history_events_mappings '
+            'ON history_events_mappings.parent_identifier = history_events.identifier '
+            'WHERE history_events_mappings.name = ? AND history_events_mappings.value = ?'
+        )
+        bindings: list[Union[str, int]] = [HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED]  # noqa: E501
+        return [query], bindings
+
+
 class HistoryBaseEntryFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLocation, metaclass=ABCMeta):  # noqa: E501
 
     @classmethod
@@ -864,6 +878,7 @@ class HistoryBaseEntryFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWith
             event_identifiers: Optional[list[str]] = None,
             entry_types: Optional[IncludeExcludeFilterData] = None,
             exclude_ignored_assets: bool = False,
+            customized_events_only: bool = False,
     ) -> T_HistoryFilterQuery:
         if order_by_rules is None:
             order_by_rules = [('timestamp', True), ('sequence_index', True)]
@@ -876,6 +891,10 @@ class HistoryBaseEntryFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWith
             group_by_field='event_identifier',
         )
         filter_query = cast(T_HistoryFilterQuery, filter_query)
+
+        if customized_events_only is True:
+            filter_query.join_clause = HistoryEventCustomizedOnlyJoinsFilter(and_op=True)
+
         filters: list[DBFilter] = []
         if assets is not None:
             if len(assets) == 1:
@@ -1010,6 +1029,7 @@ class EvmEventFilterQuery(HistoryBaseEntryFilterQuery):
             event_identifiers: Optional[list[str]] = None,
             entry_types: Optional[IncludeExcludeFilterData] = None,
             exclude_ignored_assets: bool = False,
+            customized_events_only: bool = False,
             tx_hashes: Optional[list[EVMTxHash]] = None,
             counterparties: Optional[list[str]] = None,
             products: Optional[list[EvmProduct]] = None,
@@ -1037,6 +1057,7 @@ class EvmEventFilterQuery(HistoryBaseEntryFilterQuery):
             event_identifiers=event_identifiers,
             entry_types=entry_types,
             exclude_ignored_assets=exclude_ignored_assets,
+            customized_events_only=customized_events_only,
         )
         if counterparties is not None:
             filter_query.filters.append(DBMultiStringFilter(
@@ -1103,6 +1124,7 @@ class EthStakingEventFilterQuery(HistoryBaseEntryFilterQuery):
             event_identifiers: Optional[list[str]] = None,
             entry_types: Optional[IncludeExcludeFilterData] = None,
             exclude_ignored_assets: bool = False,
+            customized_events_only: bool = False,
             validator_indices: Optional[list[int]] = None,
     ) -> 'EthStakingEventFilterQuery':
         if entry_types is None:
@@ -1127,6 +1149,7 @@ class EthStakingEventFilterQuery(HistoryBaseEntryFilterQuery):
             event_identifiers=event_identifiers,
             entry_types=entry_types,
             exclude_ignored_assets=exclude_ignored_assets,
+            customized_events_only=customized_events_only,
         )
         if validator_indices is not None:
             filter_query.filters.append(DBMultiIntegerFilter(
@@ -1176,6 +1199,7 @@ class EthDepositEventFilterQuery(EvmEventFilterQuery, EthStakingEventFilterQuery
             event_identifiers: Optional[list[str]] = None,
             entry_types: Optional[IncludeExcludeFilterData] = None,
             exclude_ignored_assets: bool = False,
+            customized_events_only: bool = False,
             tx_hashes: Optional[list[EVMTxHash]] = None,
             validator_indices: Optional[list[int]] = None,
     ) -> 'EthDepositEventFilterQuery':
@@ -1202,6 +1226,7 @@ class EthDepositEventFilterQuery(EvmEventFilterQuery, EthStakingEventFilterQuery
             entry_types=entry_types,
             exclude_ignored_assets=exclude_ignored_assets,
             tx_hashes=tx_hashes,
+            customized_events_only=customized_events_only,
         )
         if validator_indices is not None:
             filter_query.filters.append(DBMultiIntegerFilter(
