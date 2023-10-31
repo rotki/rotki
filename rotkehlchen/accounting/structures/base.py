@@ -257,6 +257,7 @@ class HistoryBaseEntry(AccountingEventMixin, metaclass=ABCMeta):
             customized_event_ids: list[int],
             ignored_ids_mapping: dict[ActionType, set[str]],
             hidden_event_ids: list[int],
+            missing_accounting_rule: bool,
             grouped_events_num: Optional[int] = None,
     ) -> dict[str, Any]:
         """Serialize event and extra flags for api"""
@@ -269,6 +270,8 @@ class HistoryBaseEntry(AccountingEventMixin, metaclass=ABCMeta):
             result['hidden'] = True
         if grouped_events_num is not None:
             result['grouped_events_num'] = grouped_events_num
+        if missing_accounting_rule:
+            result['missing_accounting_rule'] = True
 
         return result
 

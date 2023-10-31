@@ -207,7 +207,7 @@ def query_events(server, json, expected_num_with_grouping, expected_totals_with_
             entry.pop('grouped_events_num')
             augmented_entries.append(entry)
 
-    return augmented_entries
+    return remove_added_event_fields(augmented_entries)
 
 
 def assert_force_redecode_txns_works(api_server: 'APIServer', hashes: Optional[list[EVMTxHash]]):
@@ -271,6 +271,13 @@ def _write_transactions_to_db(
                     location_string=f'{prefix}_{address}',
                     queried_ranges=[(start_ts, end_ts)],
                 )
+
+
+def remove_added_event_fields(returned_events):
+    """removes any fields added to events during serialization"""
+    for event in returned_events:
+        event.pop('missing_accounting_rule', None)
+    return returned_events
 
 
 @pytest.mark.parametrize('have_decoders', [True])
@@ -1282,7 +1289,7 @@ def test_query_transactions_check_decoded_events(
 
     assert len(returned_events) == 7
     assert_serialized_lists_equal(returned_events[0:2], tx1_events, ignore_keys='identifier')
-    assert_serialized_lists_equal(returned_events[2:4], tx2_events, ignore_keys='identifier')
+    assert_serialized_lists_equal(remove_added_event_fields(returned_events[2:4]), tx2_events, ignore_keys='identifier')  # noqa: E501
     assert_serialized_lists_equal(returned_events[4:5], tx3_events, ignore_keys='identifier')
     assert_serialized_lists_equal(returned_events[5:7], tx4_events, ignore_keys='identifier')
 
