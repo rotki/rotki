@@ -620,6 +620,7 @@ class HistoryEventSchema(
         SerializableEnumField(enum_class=HistoryBaseEntryType),
         load_default=None,
     )
+    customized_events_only = fields.Boolean(load_default=False)
 
     # EvmEvent only
     tx_hashes = DelimitedOrNormalList(EVMTransactionHashField(), load_default=None)
@@ -706,6 +707,7 @@ class HistoryEventSchema(
             'event_types': data['event_types'],
             'event_subtypes': data['event_subtypes'],
             'location': data['location'],
+            'customized_events_only': data['customized_events_only'],
         }
 
         filter_query: Union[HistoryEventFilterQuery, EvmEventFilterQuery, EthStakingEventFilterQuery]  # noqa: E501
