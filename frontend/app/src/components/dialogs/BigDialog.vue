@@ -39,6 +39,8 @@ const secondary = computed(
 
 const confirm = () => emit('confirm');
 const cancel = () => emit('cancel');
+
+const css = useCssModule();
 </script>
 
 <template>
@@ -53,32 +55,42 @@ const cancel = () => emit('cancel');
     @keydown.esc.stop="cancel()"
     @input="cancel()"
   >
-    <Card contained data-cy="bottom-dialog">
-      <template #title> {{ title }}</template>
-      <template v-if="subtitle" #subtitle> {{ subtitle }}</template>
-      <slot v-if="display" />
-      <template #buttons>
-        <div class="flex flex-row gap-2 w-full">
-          <div class="grow" />
-          <RuiButton
-            color="primary"
-            variant="outlined"
-            data-cy="cancel"
-            @click="cancel()"
-          >
-            {{ secondary }}
-          </RuiButton>
-          <RuiButton
-            data-cy="confirm"
-            :color="themes[confirmType].color"
-            :disabled="actionDisabled || loading"
-            :loading="loading"
-            @click="confirm()"
-          >
-            {{ primary }}
-          </RuiButton>
-        </div>
-      </template>
-    </Card>
+    <RuiCard data-cy="bottom-dialog" class="!rounded-b-none">
+      <template #header> {{ title }}</template>
+      <template v-if="subtitle" #subheader> {{ subtitle }}</template>
+      <div v-if="display" class="overflow-y-auto -mx-4 px-4" :class="css.card">
+        <slot />
+      </div>
+
+      <RuiDivider class="mb-4 -mx-4" />
+
+      <div class="flex flex-row gap-2 w-full">
+        <div class="grow" />
+        <RuiButton
+          color="primary"
+          variant="outlined"
+          data-cy="cancel"
+          @click="cancel()"
+        >
+          {{ secondary }}
+        </RuiButton>
+        <RuiButton
+          data-cy="confirm"
+          :color="themes[confirmType].color"
+          :disabled="actionDisabled || loading"
+          :loading="loading"
+          @click="confirm()"
+        >
+          {{ primary }}
+        </RuiButton>
+      </div>
+    </RuiCard>
   </VBottomSheet>
 </template>
+
+<style module lang="scss">
+.card {
+  max-height: 65vh;
+  min-height: 50vh;
+}
+</style>
