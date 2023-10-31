@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :fix:`6548` Users will no longer be blocked by a persistent modal dialog while premium sync is uploading.
 * :fix:`-` Replaces snowtrace.io with avascan.info as the default explorer for Avalanche C-Chain
 * :feature:`-` Users will be able to create custom rules for accounting.
 * :fix:`-` Fix the issue where pinned PnL report errors (missing acquisitions and missing prices) become empty when the user moves to another page.
