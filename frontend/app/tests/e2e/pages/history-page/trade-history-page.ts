@@ -27,7 +27,7 @@ export class TradeHistoryPage {
     cy.get('[data-cy=trade-form]').should('be.visible');
     cy.get('[data-cy=date]').type(`{selectall}{backspace}${trade.time}`);
     // clicking outside to a fully visible element to close the datepicker
-    cy.get('[data-cy=bottom-dialog]').find('.v-card__title').click();
+    cy.get('[data-cy=bottom-dialog] h5').click();
 
     cy.intercept({
       method: 'GET',

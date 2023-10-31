@@ -143,7 +143,7 @@ export class AssetsManagerPage {
     // dialog should be visible
     cy.get('[data-cy=bottom-dialog]').should('be.visible');
     // dialog title should match as well
-    cy.get('[data-cy=bottom-dialog] .v-card__title')
+    cy.get('[data-cy=bottom-dialog] h5')
       .contains('Add a new asset')
       .should('be.visible');
 
@@ -297,7 +297,7 @@ export class AssetsManagerPage {
     // dialog should be visible
     cy.get('[data-cy=bottom-dialog]').should('be.visible');
     // dialog title should match as well
-    cy.get('[data-cy=bottom-dialog] .v-card__title')
+    cy.get('[data-cy=bottom-dialog] h5')
       .contains('Edit an asset')
       .should('be.visible');
 
