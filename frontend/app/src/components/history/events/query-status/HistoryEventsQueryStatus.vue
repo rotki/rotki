@@ -34,7 +34,7 @@ const {
     </template>
 
     <template #item="{ item }">
-      <LocationIcon icon no-padding :item="item.location" size="20px" />
+      <LocationIcon icon :item="item.location" size="20px" />
       <HistoryEventsQueryStatusLine :item="item" class="ms-2" />
     </template>
 

@@ -42,7 +42,6 @@ const evmOrEthDepositEvent = computed(
         <LocationIcon
           v-if="onlineEvent"
           icon
-          no-padding
           :item="onlineEvent.location"
           size="16px"
           class="mr-1"
