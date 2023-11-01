@@ -57,9 +57,7 @@ const multipleUpgrades = computed(() => {
           <div>
             {{ t('login.upgrading_db.warning', { ...progress }) }}
           </div>
-          <div
-            class="my-2 border-t border-black/[.12] dark:border-white/[.12]"
-          />
+          <RuiDivider class="my-2" />
           <div>
             {{ t('login.upgrading_db.current', { ...progress }) }}
           </div>
@@ -68,9 +66,7 @@ const multipleUpgrades = computed(() => {
           <div>
             {{ t('login.migrating_data.warning', { ...progress }) }}
           </div>
-          <div
-            class="my-2 border-t border-black/[.12] dark:border-white/[.12]"
-          />
+          <RuiDivider class="my-2" />
           <div>
             {{ t('login.migrating_data.current', { ...progress }) }}
           </div>

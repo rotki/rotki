@@ -311,100 +311,89 @@ watch(matches, matches => {
   restoreSelection(matches);
 });
 
-const css = useCssModule();
 const slots = useSlots();
 const { t } = useI18n();
 </script>
 
 <template>
-  <VTooltip
+  <RuiTooltip
+    :popper="{ placement: 'top' }"
     :disabled="!disabled || !slots.tooltip"
     open-delay="400"
-    close-delay="2500"
-    top
+    close-delay="1000"
+    class="block"
+    tooltip-class="max-w-[12rem]"
   >
-    <template #activator="{ on }">
-      <div v-on="on">
-        <VSheet
-          class="flex items-center gap-2"
-          data-cy="table-filter"
+    <template #activator>
+      <div class="flex items-center gap-2" data-cy="table-filter">
+        <VCombobox
+          ref="input"
+          :value="selection"
+          outlined
+          dense
+          chips
           :disabled="disabled"
+          small-chips
+          deletable-chips
+          :label="t('table_filter.label')"
+          solo
+          flat
+          multiple
+          clearable
+          hide-details
+          :menu-props="{ maxHeight: '390px' }"
+          prepend-inner-icon="mdi-filter-variant"
+          :search-input.sync="search"
+          @input="updateMatches($event)"
+          @keydown.enter="applySuggestion()"
+          @keydown.up.prevent
+          @keydown.up="moveSuggestion(true)"
+          @keydown.down.prevent
+          @keydown.down="moveSuggestion(false)"
         >
-          <VCombobox
-            ref="input"
-            :value="selection"
-            outlined
-            dense
-            chips
-            small-chips
-            deletable-chips
-            :label="t('table_filter.label')"
-            solo
-            flat
-            multiple
-            clearable
-            hide-details
-            :menu-props="{ maxHeight: '390px' }"
-            prepend-inner-icon="mdi-filter-variant"
-            :search-input.sync="search"
-            @input="updateMatches($event)"
-            @keydown.enter="applySuggestion()"
-            @keydown.up.prevent
-            @keydown.up="moveSuggestion(true)"
-            @keydown.down.prevent
-            @keydown.down="moveSuggestion(false)"
-          >
-            <template #selection="{ item, selected }">
-              <VChip
-                label
-                small
-                class="font-medium px-2"
-                :input-value="selected"
-                close
-                @click:close="removeSelection(item)"
-                @click="
-                  removeSelection(item);
-                  selectItem(item);
-                "
-              >
-                <SuggestedItem chip :suggestion="item" />
-              </VChip>
-            </template>
-            <template #no-data>
-              <FilterDropdown
-                :matchers="filteredMatchers"
-                :used="usedKeys"
-                :keyword="search"
-                :selected-matcher="selectedMatcher"
-                :selection="selection"
-                :selected-suggestion="selectedSuggestion"
-                :location="location"
-                @apply:filter="applyFilter($event)"
-                @suggest="suggestedFilter = $event"
-                @click="setSearchToMatcherKey($event)"
-              />
-            </template>
-          </VCombobox>
-
-          <div v-if="location">
-            <SavedFilterManagement
+          <template #selection="{ item, selected }">
+            <VChip
+              label
+              small
+              class="font-medium px-2"
+              :input-value="selected"
+              close
+              @click:close="removeSelection(item)"
+              @click="
+                removeSelection(item);
+                selectItem(item);
+              "
+            >
+              <SuggestedItem chip :suggestion="item" />
+            </VChip>
+          </template>
+          <template #no-data>
+            <FilterDropdown
+              :matchers="filteredMatchers"
+              :used="usedKeys"
+              :keyword="search"
+              :selected-matcher="selectedMatcher"
               :selection="selection"
+              :selected-suggestion="selectedSuggestion"
               :location="location"
-              :matchers="matchers"
-              @update:matches="updateMatches($event)"
+              @apply:filter="applyFilter($event)"
+              @suggest="suggestedFilter = $event"
+              @click="setSearchToMatcherKey($event)"
             />
-          </div>
-        </VSheet>
+          </template>
+        </VCombobox>
+
+        <div v-if="location">
+          <SavedFilterManagement
+            :disabled="disabled"
+            :selection="selection"
+            :location="location"
+            :matchers="matchers"
+            @update:matches="updateMatches($event)"
+          />
+        </div>
       </div>
     </template>
-    <span :class="css.tooltip">
-      <slot name="tooltip" />
-    </span>
-  </VTooltip>
+    <slot name="tooltip" />
+  </RuiTooltip>
 </template>
-
-<style module lang="css">
-.tooltip {
-  pointer-events: initial !important;
-}
-</style>

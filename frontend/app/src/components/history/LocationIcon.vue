@@ -32,7 +32,7 @@ const css = useCssModule();
 
 <template>
   <span
-    class="flex items-center justify-center gap-2"
+    class="flex items-center justify-center gap-1 py-3"
     data-cy="location-icon"
     :class="{
       'flex-row': horizontal,
@@ -59,7 +59,7 @@ const css = useCssModule();
         :name="location.icon"
         :style="iconStyle"
       />
-      <span v-if="!icon" class="text-capitalize text-rui-text-secondary">
+      <span v-if="!icon" class="text-capitalize text-rui-text-secondary -mb-1">
         {{ location.name }}
       </span>
     </template>

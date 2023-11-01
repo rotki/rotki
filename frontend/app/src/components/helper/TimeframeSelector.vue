@@ -30,7 +30,11 @@ const css = useCssModule();
   <div :class="css.timeframe_selector">
     <RuiTooltip v-if="!premium" :popper="{ placement: 'top' }">
       <template #activator>
-        <RuiIcon class="-ml-4" size="16" name="lock-2-fill" />
+        <RuiIcon
+          class="-ml-4 text-rui-text-secondary"
+          size="16"
+          name="lock-2-fill"
+        />
       </template>
       <span v-text="t('overall_balances.premium_hint')" />
     </RuiTooltip>
