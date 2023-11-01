@@ -178,7 +178,7 @@ EVENT_CATEGORY_DETAILS = {
         label='refund',
         icon='refund-2-line',
     )}, EventCategory.FEE: {
-        None: EventCategoryDetails(label='fee', icon='price-tag-line'),
+        DEFAULT: EventCategoryDetails(label='fee', icon='price-tag-line'),
         CPT_GAS: EventCategoryDetails(label='gas fee', icon='fire-line'),
     }, EventCategory.MEV_REWARD: {DEFAULT: EventCategoryDetails(
         label='mev',
