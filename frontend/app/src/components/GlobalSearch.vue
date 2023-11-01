@@ -481,23 +481,21 @@ onBeforeMount(async () => {
         <template #item="{ item }">
           <div class="flex items-center text-body-2 w-full">
             <AssetIcon v-if="item.asset" size="30px" :identifier="item.asset" />
-            <AdaptiveWrapper v-else tag="span">
+            <template v-else>
               <LocationIcon
                 v-if="item.location"
                 icon
                 size="26px"
-                :item="item.location"
+                :item="item.location.identifier"
               />
-              <VImg
+              <img
                 v-else-if="item.image"
+                :alt="item.location.name"
+                class="object-contain icon-bg"
                 width="30"
-                max-height="30"
-                contain
-                position="left"
                 :src="item.image"
               />
-              <RuiIcon v-else class="grey--text" size="30" :name="item.icon" />
-            </AdaptiveWrapper>
+            </template>
             <span class="ml-3">
               <template v-if="item.texts">
                 <span v-for="(text, index) in item.texts" :key="text + index">

@@ -19,10 +19,6 @@ const emit = defineEmits<{ (e: 'click', location: string): void }>();
 
 const { item } = toRefs(props);
 
-const iconStyle = computed(() => ({
-  fontSize: props.size
-}));
-
 const { locationData } = useLocations();
 
 const location = locationData(item);
@@ -31,8 +27,8 @@ const css = useCssModule();
 </script>
 
 <template>
-  <span
-    class="flex items-center justify-center gap-1 py-3"
+  <div
+    class="flex items-center justify-center gap-1"
     data-cy="location-icon"
     :class="{
       'flex-row': horizontal,
@@ -55,15 +51,15 @@ const css = useCssModule();
       <RuiIcon
         v-else
         color="secondary"
-        class="icon-bg"
+        class="icon-bg dark:p-[0.1rem]"
+        :size="size"
         :name="location.icon"
-        :style="iconStyle"
       />
       <span v-if="!icon" class="text-capitalize text-rui-text-secondary -mb-1">
         {{ location.name }}
       </span>
     </template>
-  </span>
+  </div>
 </template>
 
 <style lang="scss" module>
@@ -73,7 +69,7 @@ const css = useCssModule();
 }
 
 .icon {
-  max-height: calc(v-bind(size) - 0.1rem);
-  max-width: calc(v-bind(size) - 0.1rem);
+  max-height: calc(v-bind(size) - 0.2rem);
+  max-width: calc(v-bind(size) - 0.2rem);
 }
 </style>
