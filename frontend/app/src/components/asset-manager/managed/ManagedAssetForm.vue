@@ -370,30 +370,32 @@ const { coingeckoContributeUrl, cryptocompareContributeUrl } = useInterop();
             </template>
           </VSelect>
         </VCol>
-        <VCol md="6" data-cy="chain-select">
-          <VSelect
-            v-model="evmChain"
-            outlined
-            :label="t('asset_form.labels.chain')"
-            :disabled="!isEvmToken || !!editableItem"
-            :items="allEvmChains"
-            item-value="name"
-            item-text="label"
-            :error-messages="toMessages(v$.evmChain)"
-          />
-        </VCol>
-        <VCol md="6" data-cy="token-select">
-          <VSelect
-            v-model="tokenKind"
-            outlined
-            :label="t('asset_form.labels.token_kind')"
-            :disabled="!isEvmToken || !!editableItem"
-            :items="evmTokenKindsData"
-            item-text="label"
-            item-value="identifier"
-            :error-messages="toMessages(v$.tokenKind)"
-          />
-        </VCol>
+        <template v-if="isEvmToken">
+          <VCol md="6" data-cy="chain-select">
+            <VSelect
+              v-model="evmChain"
+              outlined
+              :label="t('asset_form.labels.chain')"
+              :disabled="!!editableItem"
+              :items="allEvmChains"
+              item-value="name"
+              item-text="label"
+              :error-messages="toMessages(v$.evmChain)"
+            />
+          </VCol>
+          <VCol md="6" data-cy="token-select">
+            <VSelect
+              v-model="tokenKind"
+              outlined
+              :label="t('asset_form.labels.token_kind')"
+              :disabled="!!editableItem"
+              :items="evmTokenKindsData"
+              item-text="label"
+              item-value="identifier"
+              :error-messages="toMessages(v$.tokenKind)"
+            />
+          </VCol>
+        </template>
       </VRow>
       <VRow v-if="isEvmToken">
         <VCol data-cy="address-input">
