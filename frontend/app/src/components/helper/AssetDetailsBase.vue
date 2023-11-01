@@ -22,8 +22,8 @@ const props = withDefaults(
     changeable: false,
     hideName: false,
     dense: false,
-    enableAssociation: false,
-    showChain: false,
+    enableAssociation: true,
+    showChain: true,
     isCollectionParent: false
   }
 );
