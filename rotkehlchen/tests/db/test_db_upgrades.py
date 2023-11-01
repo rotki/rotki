@@ -1817,6 +1817,7 @@ def test_upgrade_db_39_to_40(user_data_dir):  # pylint: disable=unused-argument
     cursor.execute('SELECT type, subtype from history_events WHERE event_identifier NOT LIKE ?', (PREFIX,))  # noqa: E501
     other_events_types_before = set(cursor.fetchall())
 
+    assert cursor.execute('SELECT * FROM history_events_mappings').fetchall() == [(7352, 'state', 1), (7353, 'state', 0)]  # all event mappings  # noqa: E501
     assert events_types_before == {
         ('deposit', 'spend'), ('deposit', 'fee'),
         ('withdrawal', 'receive'), ('withdrawal', 'fee'),
@@ -1829,6 +1830,7 @@ def test_upgrade_db_39_to_40(user_data_dir):  # pylint: disable=unused-argument
     # check that the evm events info is populated and connected to
     assert cursor.execute('SELECT * from evm_events_info').fetchall() == [
         (15, 'bytehash', 'aprotocol', 'aproduct', '0x4bBa290826C253BD854121346c370a9886d1bC26', None),  # noqa: E501
+        (7352, 'hash', None, None, '0', None), (7353, 'hash', None, None, '0', None),
     ]
     assert cursor.execute('SELECT * from eth_staking_events_info').fetchall() == [(16, 19564, 0)]
 
@@ -1872,6 +1874,7 @@ def test_upgrade_db_39_to_40(user_data_dir):  # pylint: disable=unused-argument
     cursor.execute('SELECT type, subtype from history_events WHERE event_identifier NOT LIKE ?', (PREFIX,))  # noqa: E501
     other_events_types_after = set(cursor.fetchall())
 
+    assert cursor.execute('SELECT * FROM history_events_mappings').fetchall() == [(7352, 'state', 1)]  # only customized event mapping  # noqa: E501
     assert events_types_after == {
         ('deposit', 'deposit asset'), ('spend', 'fee'),
         ('withdrawal', 'remove asset'), ('spend', 'fee'),
@@ -1882,9 +1885,7 @@ def test_upgrade_db_39_to_40(user_data_dir):  # pylint: disable=unused-argument
     # also check that the non rotki events are not affected
     assert other_events_types_after == {('deposit', 'deposit asset'), ('withdrawal', 'remove asset'), ('withdrawal', 'fee'), ('receive', 'receive'), ('staking', 'fee'), ('receive', 'none'), ('spend', 'none'), ('receive', 'donate'), ('receive', 'airdrop'), ('remove_asset', 'staking')}  # noqa: E501
     # check that after upgrade tables depending on base history events are still connected
-    assert cursor.execute('SELECT * from evm_events_info').fetchall() == [
-        (15, 'bytehash', 'aprotocol', 'aproduct', '0x4bBa290826C253BD854121346c370a9886d1bC26', None),  # noqa: E501
-    ]
+    assert cursor.execute('SELECT * from evm_events_info').fetchall() == [(7352, 'hash', None, None, '0', None)]  # noqa: E501
     assert cursor.execute('SELECT * from eth_staking_events_info').fetchall() == [(16, 19564, 0)]
     # check new tables are created and old are removed
     assert table_exists(cursor, 'skipped_external_events') is True

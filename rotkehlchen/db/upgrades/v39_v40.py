@@ -6,7 +6,12 @@ from uuid import uuid4
 from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.constants import ZERO
-from rotkehlchen.db.constants import NO_ACCOUNTING_COUNTERPARTY
+from rotkehlchen.db.constants import (
+    HISTORY_MAPPING_KEY_STATE,
+    HISTORY_MAPPING_STATE_CUSTOMIZED,
+    HISTORY_MAPPING_STATE_DECODED,
+    NO_ACCOUNTING_COUNTERPARTY,
+)
 from rotkehlchen.db.utils import update_table_schema
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -334,6 +339,38 @@ def _add_new_tables(write_cursor: 'DBCursor') -> None:
     log.debug('Exit _add_new_tables')
 
 
+def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
+    """
+    Reset all decoded evm events except the customized ones for ethereum mainnet,
+    arbitrum, optimism and polygon.
+    """
+    log.debug('Enter _reset_decoded_events')
+    if write_cursor.execute('SELECT COUNT(*) FROM evm_transactions').fetchone()[0] == 0:
+        return
+
+    customized_events = write_cursor.execute(
+        'SELECT COUNT(*) FROM history_events_mappings WHERE name=? AND value=?',
+        (HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED),
+    ).fetchone()[0]
+    querystr = (
+        'DELETE FROM history_events WHERE identifier IN ('
+        'SELECT H.identifier from history_events H INNER JOIN evm_events_info E '
+        'ON H.identifier=E.identifier AND E.tx_hash IN '
+        '(SELECT tx_hash from_evm_transactions))'
+    )
+    bindings: tuple = ()
+    if customized_events != 0:
+        querystr += ' AND identifier NOT IN (SELECT parent_identifier FROM history_events_mappings WHERE name=? AND value=?)'  # noqa: E501
+        bindings = (HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED)
+
+    write_cursor.execute(querystr, bindings)
+    write_cursor.execute(
+        'DELETE from evm_tx_mappings WHERE tx_id IN (SELECT identifier FROM evm_transactions) AND value=?',  # noqa: E501
+        (HISTORY_MAPPING_STATE_DECODED,),
+    )
+    log.debug('Exit _reset_decoded_events')
+
+
 def upgrade_v39_to_v40(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
     """Upgrades the DB from v39 to v40. This was in v1.31.0 release.
 
@@ -342,7 +379,7 @@ def upgrade_v39_to_v40(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         - Create new tables
     """
     log.debug('Entered userdb v39->v40 upgrade')
-    progress_handler.set_total_steps(8)
+    progress_handler.set_total_steps(9)
     with db.user_write() as write_cursor:
         _add_new_tables(write_cursor)
         progress_handler.new_step()
@@ -357,6 +394,8 @@ def upgrade_v39_to_v40(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         _migrate_ledger_airdrop_accounting_setting(write_cursor)
         progress_handler.new_step()
         _migrate_ledger_actions(write_cursor, db.conn)
+        progress_handler.new_step()
+        _reset_decoded_events(write_cursor)
         progress_handler.new_step()
 
     db.conn.execute('VACUUM;')
