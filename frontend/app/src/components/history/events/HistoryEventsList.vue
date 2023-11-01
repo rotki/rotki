@@ -108,7 +108,7 @@ const [DefineTable, ReuseTable] = createReusableTemplate();
             :key="index"
             class="grid md:grid-cols-8 py-4 items-center"
             :class="{
-              'border-b': index < events.length - 1
+              'border-b border-default': index < events.length - 1
             }"
           >
             <HistoryEventType

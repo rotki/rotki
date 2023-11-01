@@ -349,7 +349,7 @@ const [DefineSymbol, ReuseSymbol] = createReusableTemplate();
 </script>
 
 <template>
-  <div class="inline-block items-baseline">
+  <div class="inline-flex items-baseline">
     <DefineSymbol>
       <span data-cy="display-currency" class="truncate max-w-[5rem]">
         {{ displayAsset }}
@@ -360,14 +360,10 @@ const [DefineSymbol, ReuseSymbol] = createReusableTemplate();
       v-if="timestamp < 0 && isManualPrice"
       :popper="{ placement: 'top' }"
       :open-delay="400"
+      class="self-center mr-2 cursor-pointer"
     >
       <template #activator>
-        <RuiIcon
-          class="mr-3 mb-1 inline cursor-pointer"
-          size="16"
-          color="warning"
-          name="sparkling-line"
-        />
+        <RuiIcon size="16" color="warning" name="sparkling-line" />
       </template>
 
       {{ t('amount_display.manual_tooltip') }}
@@ -383,7 +379,7 @@ const [DefineSymbol, ReuseSymbol] = createReusableTemplate();
           'skeleton min-w-[3.5rem] max-w-[4rem] min-h-[1.3rem]': anyLoading
         }
       ]"
-      class="flex gap-1 items-center inline-block transition duration-200 rounded-lg"
+      class="inline-flex items-center gap-1 transition duration-200 rounded-lg"
       data-cy="amount-display"
       @click="copy()"
     >

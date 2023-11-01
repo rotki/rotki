@@ -98,7 +98,7 @@ const slots = useSlots();
 
 <template>
   <div class="flex flex-col gap-4">
-    <div class="flex gap-4" data-cy="service-key__content">
+    <div class="flex items-start gap-4" data-cy="service-key__content">
       <RuiRevealableTextField
         v-model="internalValue"
         variant="outlined"
