@@ -337,6 +337,14 @@ def _add_new_tables(write_cursor: 'DBCursor') -> None:
         setting_name TEXT NOT NULL references settings(name)
     );
     """)
+    write_cursor.execute("""
+    CREATE TABLE IF NOT EXISTS unresolved_remote_conflicts(
+        identifier INTEGER PRIMARY KEY NOT NULL,
+        local_id INTEGER NOT NULL,
+        remote_data TEXT NOT NULL,
+        type INTEGER NOT NULL
+    );
+    """)
     log.debug('Exit _add_new_tables')
 
 

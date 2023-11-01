@@ -12774,3 +12774,118 @@ Accounting rules linkable properties
 
   :statuscode 200: All okay
   :statuscode 500: Internal rotki error
+
+
+Solving conflicts in accounting rules
+========================================
+.. http:post:: /api/(version)/accounting/rules/conflicts
+
+   Doing a POST on this endpoint will return the list of conflicts for accounting rules providing the local version and remote version to compare them. It allows pagination by ``limit`` and ``offset``.
+
+  **Example Request**
+
+  .. http:example:: curl wget httpie python-requests
+
+      POST /api/1/accounting/rules/conflicts HTTP/1.1
+      Host: localhost:5042
+
+  **Example Response**
+
+  .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+      "result":{
+         "entries":{
+            "1":{
+               "local_data":{
+                  "taxable":{
+                     "value":true,
+                     "linked_setting":"include_crypto2crypto"
+                  },
+                  "count_cost_basis_pnl":{
+                     "value":true
+                  },
+                  "count_entire_amount_spend":{
+                     "value":false,
+                     "linked_setting":"include_crypto2crypto"
+                  },
+                  "accounting_treatment":"None",
+                  "event_type":"spend",
+                  "event_subtype":"return wrapped",
+                  "counterparty":"compound"
+               },
+               "remote_data":{
+                  "taxable":{
+                     "value":false
+                  },
+                  "count_cost_basis_pnl":{
+                     "value":false
+                  },
+                  "count_entire_amount_spend":{
+                     "value":false
+                  },
+                  "accounting_treatment":"swap",
+                  "event_type":"spend",
+                  "event_subtype":"return wrapped",
+                  "counterparty":"compound"
+               }
+            }
+         },
+         "entries_found":1,
+         "entries_total":1,
+         "entries_limit":-1
+      },
+      "message":""
+      }
+
+
+  :resjson object result: An object, mapping identifiers to the local and remote version of the conflict.
+
+  :statuscode 200: All okay
+  :statuscode 409: No user is currently logged in
+  :statuscode 500: Internal rotki error
+
+
+.. http:patch:: /api/(version)/accounting/rules/conflicts
+
+   Doing a PATCH on this endpoint will apply a conflict resolution method for the selected accounting rule.
+
+  **Example Request**
+
+  .. http:example:: curl wget httpie python-requests
+
+      PATH /api/1/accounting/rules/conflicts HTTP/1.1
+      Host: localhost:5042
+
+  **Example Response**
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {"local_id": "1", "solve_using": "remote"}
+
+
+   :reqjsonarr string identifier: The identifier of the rule that will be updated.
+   :reqjsonarr string solve_using: Either ``remote`` or ``local``.
+
+  **Example Response**:
+
+  .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "result": true,
+        "message": ""
+      }
+
+  :resjson bool result: Boolean denoting success or failure.
+  :statuscode 200: Conflicts resolved succesfully.
+  :statuscode 409: No user is currently logged in. Couldn't find the rule locally.
+  :statuscode 500: Internal rotki error.

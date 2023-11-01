@@ -1759,6 +1759,7 @@ class DBHandler:
                 'assets',
                 'history_events',
                 'accounting_rules',
+                'unresolved_remote_conflicts',
             ],
             op: Literal['OR', 'AND'] = 'OR',
             group_by: Optional[str] = None,

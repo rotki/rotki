@@ -30,6 +30,8 @@ from rotkehlchen.api.v1.parser import ignore_kwarg_parser, resource_parser
 from rotkehlchen.api.v1.schemas import (
     AccountingReportDataSchema,
     AccountingReportsSchema,
+    AccountingRuleConflictResolutionSchema,
+    AccountingRuleConflictsPagination,
     AccountingRulesQuerySchema,
     AddressbookAddressesSchema,
     AddressbookUpdateSchema,
@@ -184,6 +186,7 @@ from rotkehlchen.db.filtering import (
     AssetMovementsFilterQuery,
     AssetsFilterQuery,
     CustomAssetsFilterQuery,
+    DBFilterQuery,
     Eth2DailyStatsFilterQuery,
     EthStakingEventFilterQuery,
     EvmTransactionsFilterQuery,
@@ -3056,3 +3059,24 @@ class AccountingLinkablePropertiesResource(BaseMethodView):
 
     def get(self) -> Response:
         return self.rest_api.linkable_accounting_properties()
+
+
+class AccountingRulesConflictsResource(BaseMethodView):
+
+    post_schema = AccountingRuleConflictsPagination()
+    patch_schema = AccountingRuleConflictResolutionSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(post_schema, location='json_and_query')
+    def post(self, filter_query: DBFilterQuery) -> Response:
+        return self.rest_api.list_accounting_rules_conflicts(
+            filter_query=filter_query,
+        )
+
+    @require_loggedin_user()
+    @use_kwargs(patch_schema, location='json_and_query')
+    def patch(self, local_id: int, solve_using: Literal['remote', 'local']) -> Response:
+        return self.rest_api.solve_accounting_rule_conflict(
+            local_id=local_id,
+            solve_using=solve_using,
+        )

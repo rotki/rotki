@@ -132,6 +132,7 @@ from rotkehlchen.db.filtering import (
     AssetMovementsFilterQuery,
     AssetsFilterQuery,
     CustomAssetsFilterQuery,
+    DBFilterQuery,
     Eth2DailyStatsFilterQuery,
     EthStakingEventFilterQuery,
     EvmEventFilterQuery,
@@ -150,6 +151,7 @@ from rotkehlchen.db.reports import DBAccountingReports
 from rotkehlchen.db.search_assets import search_assets_levenshtein
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.db.snapshots import DBSnapshot
+from rotkehlchen.db.unresolved_conflicts import DBRemoteConflicts
 from rotkehlchen.db.utils import DBAssetBalance, LocationData
 from rotkehlchen.errors.api import (
     AuthenticationError,
@@ -4527,3 +4529,35 @@ class RestAPI:
         }
 
         return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
+
+    def solve_accounting_rule_conflict(
+            self,
+            local_id: int,
+            solve_using: Literal['remote', 'local'],
+    ) -> Response:
+        conflict_db = DBRemoteConflicts(self.rotkehlchen.data.db)
+        try:
+            conflict_db.solve_accounting_rule_conflict(
+                local_id=local_id,
+                solve_using=solve_using,
+            )
+        except (InputError, KeyError) as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
+
+        return api_response(_wrap_in_ok_result(True), status_code=HTTPStatus.OK)
+
+    def list_accounting_rules_conflicts(self, filter_query: DBFilterQuery) -> Response:
+        conflict_db = DBRemoteConflicts(self.rotkehlchen.data.db)
+        conflicts = conflict_db.list_accounting_conflicts(filter_query=filter_query)
+        with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
+            total_entries = self.rotkehlchen.data.db.get_entries_count(
+                cursor=cursor,
+                entries_table='unresolved_remote_conflicts',
+            )
+        result = {
+            'entries': conflicts,
+            'entries_found': total_entries,
+            'entries_total': total_entries,  # there is no filter, only pagination
+            'entries_limit': -1,
+        }
+        return api_response(process_result(_wrap_in_ok_result(result)), status_code=HTTPStatus.OK)

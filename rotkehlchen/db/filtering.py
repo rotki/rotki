@@ -1760,7 +1760,7 @@ class AccountingRulesFilterQuery(DBFilterQuery):
                 operator='IN',
             ))
         if counterparties is not None:
-            filter_query.filters.append(DBMultiStringFilter(
+            filters.append(DBMultiStringFilter(
                 and_op=True,
                 column='counterparty',
                 values=counterparties,
@@ -1768,4 +1768,28 @@ class AccountingRulesFilterQuery(DBFilterQuery):
             ))
 
         filter_query.filters = filters
+        return filter_query
+
+
+class PaginatedFilterQuery(DBFilterQuery):
+    """Filter for queries that only require pagination"""
+
+    @classmethod
+    def make(
+            cls,
+            and_op: bool = True,
+            limit: Optional[int] = None,
+            offset: Optional[int] = None,
+            order_by_rules: Optional[list[tuple[str, bool]]] = None,
+    ) -> 'PaginatedFilterQuery':
+        if order_by_rules is None:
+            order_by_rules = [('identifier', False)]
+
+        filter_query = cls.create(
+            and_op=and_op,
+            limit=limit,
+            offset=offset,
+            order_by_rules=order_by_rules,
+        )
+        filter_query.filters = []
         return filter_query

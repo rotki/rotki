@@ -107,6 +107,10 @@ class DBAccountingRules:
                 'DELETE FROM linked_rules_properties WHERE accounting_rule=?',
                 (rule_id,))
             write_cursor.execute(
+                'DELETE FROM unresolved_remote_conflicts WHERE local_id=?',
+                (rule_id,),
+            )
+            write_cursor.execute(
                 'DELETE FROM accounting_rules WHERE identifier=?',
                 (rule_id,),
             )

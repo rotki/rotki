@@ -148,6 +148,7 @@ TABLES_AT_INIT = [
     'skipped_external_events',
     'accounting_rules',
     'linked_rules_properties',
+    'unresolved_remote_conflicts',
 ]
 
 
