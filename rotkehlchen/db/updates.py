@@ -14,6 +14,7 @@ from rotkehlchen.db.accounting_rules import DBAccountingRules
 from rotkehlchen.db.addressbook import DBAddressbook
 from rotkehlchen.db.filtering import AccountingRulesFilterQuery
 from rotkehlchen.db.settings import CachedSettings
+from rotkehlchen.db.unresolved_conflicts import ConflictType, DBRemoteConflicts
 from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
@@ -179,6 +180,7 @@ class RotkiDataUpdater:
         """
         log.info(f'Applying update for accounting rules to v{version}')
         rules_db = DBAccountingRules(self.user_db)
+        conflicts = []
         for rule_data in data:
             try:
                 event_type = HistoryEventType.deserialize(rule_data['event_type'])
@@ -212,16 +214,21 @@ class RotkiDataUpdater:
                     ),
                 )
                 if len(rules) == 1:  # can be either 0 or 1
-                    self.msg_aggregator.add_message(
-                        message_type=WSMessageType.ACCOUNTING_RULE_CONFLICT,
-                        data={
-                            'local_rule': rules[0],
-                            'remote_rule': rule_data,
-                        },
-                    )
+                    conflicts.append((
+                        rules[0]['identifier'],
+                        json.dumps(rule_data),
+                        ConflictType.ACCOUNTING_RULE.value,
+                    ))
 
                 log.debug(f'Failed to add accounting rule {rule_data} due to {e}')
                 continue
+
+        conflicts_db = DBRemoteConflicts(self.user_db)
+        conflicts_db.save_conflicts(conflicts=conflicts)
+        self.msg_aggregator.add_message(
+            message_type=WSMessageType.ACCOUNTING_RULE_CONFLICT,
+            data={'num_of_conflicts': len(conflicts)},
+        )
 
     def update_contracts(self, data: dict[str, Any], version: int) -> None:
         """

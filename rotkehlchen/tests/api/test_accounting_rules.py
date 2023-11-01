@@ -1,10 +1,19 @@
+import json
 from http import HTTPStatus
+from pathlib import Path
 from typing import get_args
+
 import pytest
 import requests
 
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.api.server import APIServer
+from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings, TxAccountingTreatment
+from rotkehlchen.db.accounting_rules import DBAccountingRules, RuleInformation
 from rotkehlchen.db.constants import LINKABLE_ACCOUNTING_PROPERTIES
+from rotkehlchen.db.filtering import AccountingRulesFilterQuery
+from rotkehlchen.db.updates import RotkiDataUpdater
+from rotkehlchen.tests.fixtures.websockets import WebsocketReader
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -178,3 +187,121 @@ def test_rules_info(rotkehlchen_api_server):
     )
     result = assert_proper_response_with_result(response)
     assert set(result.keys()) == set(get_args(LINKABLE_ACCOUNTING_PROPERTIES))
+
+
+@pytest.mark.parametrize('initialize_accounting_rules', [False])
+@pytest.mark.parametrize('legacy_messages_via_websockets', [True])
+def test_solving_conflicts(
+        rotkehlchen_api_server: APIServer,
+        latest_accounting_rules: Path,
+        websocket_connection: WebsocketReader,
+):
+    """Test conflicts during accounting rules pulling can be queried and resolved"""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    rule_1 = {
+        'taxable': {'value': True, 'linked_setting': 'include_crypto2crypto'},
+        'count_entire_amount_spend': {
+            'value': False,
+            'linked_setting': 'include_crypto2crypto',
+        },
+        'count_cost_basis_pnl': {'value': True},
+        'event_type': HistoryEventType.SPEND.serialize(),
+        'event_subtype': HistoryEventSubType.RETURN_WRAPPED.serialize(),
+        'counterparty': 'compound',
+    }
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'accountingrulesresource',
+        ), json=rule_1,
+    )
+    assert_proper_response_with_result(response)
+
+    # update the rules
+    data_updater = RotkiDataUpdater(
+        msg_aggregator=rotki.msg_aggregator,
+        user_db=rotki.data.db,
+    )
+    with open(latest_accounting_rules, encoding='utf-8') as f:
+        data_updater.update_accounting_rules(
+            data=json.loads(f.read())['accounting_rules'],
+            version=999999,
+        )
+
+    # check that the conflict was emitted in a ws message
+    websocket_connection.wait_until_messages_num(num=1, timeout=1)
+    message = websocket_connection.pop_message()
+    assert message == {'type': 'accounting_rule_conflict', 'data': {'num_of_conflicts': 1}}
+
+    # get list of conflicts
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'accountingrulesconflictsresource',
+        ),
+    )
+    result = assert_proper_response_with_result(response)
+    assert result['entries_found'] == 1
+    conflicts = result['entries']
+    local_data, remote_data = conflicts['1']['local_data'], conflicts['1']['remote_data']
+    assert local_data == {
+        'taxable': {'value': True, 'linked_setting': 'include_crypto2crypto'},
+        'count_cost_basis_pnl': {'value': True},
+        'count_entire_amount_spend': {'value': False, 'linked_setting': 'include_crypto2crypto'},
+        'accounting_treatment': None,
+        'event_type': 'spend',
+        'event_subtype': 'return wrapped',
+        'counterparty': 'compound',
+    }
+    assert remote_data == {
+        'taxable': {'value': False},
+        'count_cost_basis_pnl': {'value': False},
+        'count_entire_amount_spend': {'value': False},
+        'accounting_treatment': 'swap',
+        'event_type': 'spend',
+        'event_subtype': 'return wrapped',
+        'counterparty': 'compound',
+    }
+
+    response = requests.patch(
+        api_url_for(
+            rotkehlchen_api_server,
+            'accountingrulesconflictsresource',
+        ), json={
+            'local_id': '1',
+            'solve_using': 'remote',
+        },
+    )
+    assert_simple_ok_response(response)
+
+    # check that there are no conflicts
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'accountingrulesconflictsresource',
+        ),
+    )
+    result = assert_proper_response_with_result(response)
+    assert result['entries_found'] == 0
+
+    # check that conflict got correctly solved
+    accounting_db = DBAccountingRules(rotki.data.db)
+    rules, _ = accounting_db.query_rules(
+        filter_query=AccountingRulesFilterQuery.make(
+            event_types=[HistoryEventType.SPEND],
+            event_subtypes=[HistoryEventSubType.RETURN_WRAPPED],
+            counterparties=['compound'],
+        ),
+    )
+    expected_rule = RuleInformation(
+        identifier=1,
+        event_key=(HistoryEventType.SPEND, HistoryEventSubType.RETURN_WRAPPED, 'compound'),
+        rule=BaseEventSettings(
+            taxable=False,
+            count_entire_amount_spend=False,
+            count_cost_basis_pnl=False,
+            accounting_treatment=TxAccountingTreatment.SWAP,
+        ),
+        links={},
+    )
+    assert rules[0] == expected_rule

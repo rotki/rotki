@@ -290,3 +290,19 @@ Whenever the backend attempts to upload a premium user DB there can be various r
 - ``actionable``: If ``uploaded`` is false, then this explains if the reason it did not upload is something actionable that could be solved by force pushing. If True, then
   that means it failed to upload for something like remote database being more recent than local or bigger than local etc. If false it's a bad error like "could not contact the server" in which case force pushing won't help.
 - ``message``: If ``uploaded`` is false, then this is a user facing message to explain why. IF ``uploaded`` is true this will be ``null``.
+
+
+New accounting rule conflict
+============================
+
+When we pull new rules from the remote repository and there are conflicts in the accounting rules we emit one ws message per conflict with
+
+::
+
+    {
+        "type":"accounting_rule_conflict",
+        "data":{"num_of_conflicts": 1}
+    }
+
+
+- ``num_of_conflicts``: Number of conflicts found during the processing of accounting rules.

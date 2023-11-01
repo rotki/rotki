@@ -1998,6 +1998,7 @@ def test_latest_upgrade_correctness(user_data_dir):
         'skipped_external_events',
         'accounting_rules',
         'linked_rules_properties',
+        'unresolved_remote_conflicts',
     }
     new_views = views_after_upgrade - views_before
     assert new_views == set()

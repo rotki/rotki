@@ -66,6 +66,7 @@ from rotkehlchen.db.filtering import (
     HistoryEventFilterQuery,
     LevenshteinFilterQuery,
     NFTFilterQuery,
+    PaginatedFilterQuery,
     ReportDataFilterQuery,
     TradesFilterQuery,
     UserNotesFilterQuery,
@@ -3161,3 +3162,29 @@ class AccountingRulesQuerySchema(
         return {
             'filter_query': filter_query,
         }
+
+
+class AccountingRuleConflictResolutionSchema(Schema):
+    local_id = fields.Integer(required=True, validate=webargs.validate.Range(
+        min=0,
+        error='local_id must be an integer >= 0',
+    ))
+    solve_using = fields.String(
+        validate=webargs.validate.OneOf(choices=('local', 'remote')),
+        required=True,
+    )
+
+
+class AccountingRuleConflictsPagination(DBPaginationSchema):
+    @post_load
+    def make_rules_query(
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
+    ) -> dict[str, Any]:
+        filter_query = PaginatedFilterQuery.make(
+            limit=data['limit'],
+            offset=data['offset'],
+            order_by_rules=[('accounting_rules.identifier', False)],
+        )
+        return {'filter_query': filter_query}

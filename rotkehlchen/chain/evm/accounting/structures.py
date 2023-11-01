@@ -77,6 +77,12 @@ class BaseEventSettings:
             'accounting_treatment': self.accounting_treatment,
         }
 
+    def __hash__(self) -> int:
+        return hash(f'{self.taxable}{self.count_entire_amount_spend}{self.count_cost_basis_pnl}{self.accounting_treatment!s}')  # noqa: E501
+
+    def __eq__(self, other: object) -> bool:
+        return hash(self) == hash(other)
+
 
 class TxEventSettings(BaseEventSettings):
     """Accounting settings for EVM transaction events"""
