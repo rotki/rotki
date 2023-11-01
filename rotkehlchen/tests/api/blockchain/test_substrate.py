@@ -51,7 +51,7 @@ def test_add_ksm_blockchain_account_invalid(rotkehlchen_api_server):
 @pytest.mark.vcr()
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('kusama_manager_connect_at_start', [(KusamaNodeName.OWN,)])
-@pytest.mark.parametrize('ksm_rpc_endpoint', [KUSAMA_TEST_RPC_ENDPOINT])
+@pytest.mark.parametrize('ksm_rpc_endpoint', [KUSAMA_TEST_RPC_ENDPOINT], ids=['KUSAMA_TEST_RPC_ENDPOINT'])  # setting ids to rename the argument to be processed by vcr, affects all other similar fixtures in this file # noqa: E501
 @pytest.mark.parametrize('network_mocking', [False])
 def test_add_ksm_blockchain_account(rotkehlchen_api_server, kusama_manager_connect_at_start):
     """Test adding a Kusama blockchain account when there is none in the db
@@ -103,7 +103,7 @@ def test_add_ksm_blockchain_account(rotkehlchen_api_server, kusama_manager_conne
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('ksm_accounts', [[SUBSTRATE_ACC1_KSM_ADDR, SUBSTRATE_ACC2_KSM_ADDR]])
 @pytest.mark.parametrize('kusama_manager_connect_at_start', [(KusamaNodeName.OWN,)])
-@pytest.mark.parametrize('ksm_rpc_endpoint', [KUSAMA_TEST_RPC_ENDPOINT])
+@pytest.mark.parametrize('ksm_rpc_endpoint', [KUSAMA_TEST_RPC_ENDPOINT], ids=['KUSAMA_TEST_RPC_ENDPOINT'])  # noqa: E501
 @pytest.mark.parametrize('network_mocking', [False])
 def test_remove_ksm_blockchain_account(rotkehlchen_api_server):
     """Test removing a Kusama blockchain account works as expected by returning
@@ -174,7 +174,7 @@ def test_add_ksm_blockchain_account_invalid_ens_domain(rotkehlchen_api_server):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('kusama_manager_connect_at_start', [(KusamaNodeName.OWN,)])
-@pytest.mark.parametrize('ksm_rpc_endpoint', [KUSAMA_TEST_RPC_ENDPOINT])
+@pytest.mark.parametrize('ksm_rpc_endpoint', [KUSAMA_TEST_RPC_ENDPOINT], ids=['KUSAMA_TEST_RPC_ENDPOINT'])  # noqa: E501
 @pytest.mark.parametrize('network_mocking', [False])
 def test_add_ksm_blockchain_account_ens_domain(rotkehlchen_api_server):
     """Test adding a Kusama blockchain account via ENS domain when there is none
@@ -210,7 +210,7 @@ def test_add_ksm_blockchain_account_ens_domain(rotkehlchen_api_server):
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('ksm_accounts', [[SUBSTRATE_ACC1_KSM_ADDR, ENS_BRUNO_KSM_ADDR]])
 @pytest.mark.parametrize('kusama_manager_connect_at_start', [(KusamaNodeName.OWN,)])
-@pytest.mark.parametrize('ksm_rpc_endpoint', [KUSAMA_TEST_RPC_ENDPOINT])
+@pytest.mark.parametrize('ksm_rpc_endpoint', [KUSAMA_TEST_RPC_ENDPOINT], ids=['KUSAMA_TEST_RPC_ENDPOINT'])  # noqa: E501
 @pytest.mark.parametrize('network_mocking', [False])
 def test_remove_ksm_blockchain_account_ens_domain(rotkehlchen_api_server):
     """Test removing a Kusama blockchain account via ENS domain works as expected
