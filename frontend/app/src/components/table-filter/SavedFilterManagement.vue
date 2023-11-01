@@ -10,6 +10,7 @@ const props = defineProps<{
   matchers: SearchMatcher<any>[];
   selection: Suggestion[];
   location: SavedFilterLocation;
+  disabled: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -77,14 +78,17 @@ const css = useCssModule();
 
 <template>
   <div class="flex items-center">
-    <RuiTooltip :popper="{ placement: 'top' }" open-delay="400">
-      <template #activator="{ on }">
+    <RuiTooltip
+      :popper="{ placement: 'top' }"
+      open-delay="400"
+      :disabled="disabled"
+    >
+      <template #activator>
         <RuiButton
           color="secondary"
           variant="text"
           icon
-          :disabled="selection.length === 0"
-          v-on="on"
+          :disabled="disabled || selection.length === 0"
           @click="addToSavedFilter()"
         >
           <RuiIcon size="20" name="play-list-add-line" />
@@ -111,9 +115,19 @@ const css = useCssModule();
       :close-on-content-click="false"
     >
       <template #activator="{ on }">
-        <RuiTooltip :popper="{ placement: 'top' }" open-delay="400">
+        <RuiTooltip
+          :popper="{ placement: 'top' }"
+          open-delay="400"
+          :disabled="disabled"
+        >
           <template #activator>
-            <RuiButton color="primary" variant="text" icon v-on="on">
+            <RuiButton
+              :disabled="disabled"
+              color="primary"
+              variant="text"
+              icon
+              v-on="on"
+            >
               <RuiIcon size="20" name="filter-line" />
             </RuiButton>
           </template>

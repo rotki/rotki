@@ -662,11 +662,12 @@ const includeOnlineEvents: ComputedRef<boolean> = useEmptyOrSome(
             <template #tooltip>
               <i18n tag="span" path="transactions.filtering_premium_hint">
                 <template #link>
-                  <b>
-                    <ExternalLink url="https://rotki.com/products">
-                      {{ t('common.website') }}
-                    </ExternalLink>
-                  </b>
+                  <ExternalLink
+                    class="font-bold"
+                    url="https://rotki.com/products"
+                  >
+                    {{ t('common.website') }}
+                  </ExternalLink>
                 </template>
               </i18n>
             </template>

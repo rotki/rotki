@@ -97,68 +97,63 @@ watch([enabled, multiplier], setData);
             @change="changePrivacyMode($event)"
           />
         </div>
-        <div class="scrambler">
-          <div
-            class="w-full border-t border-black/[.12] dark:border-white/[.12] mb-4"
-          />
-          <div class="flex">
-            <SettingsOption
-              #default="{ update: updateScramble }"
-              class="scrambler-toggle"
-              setting="scrambleData"
-              session-setting
+        <div class="scrambler flex border-t border-default pt-4">
+          <SettingsOption
+            #default="{ update: updateScramble }"
+            class="scrambler-toggle"
+            setting="scrambleData"
+            session-setting
+          >
+            <RuiCheckbox
+              v-model="scrambleData"
+              color="secondary"
+              size="sm"
+              data-cy="privacy-mode-scramble__toggle"
+              hide-details
+              @input="updateScramble($event)"
             >
-              <RuiCheckbox
-                v-model="scrambleData"
-                color="secondary"
-                size="sm"
-                data-cy="privacy-mode-scramble__toggle"
-                hide-details
-                @input="updateScramble($event)"
-              >
-                <span class="text-white">
-                  {{ t('user_dropdown.change_privacy_mode.scramble.label') }}
-                </span>
-              </RuiCheckbox>
-            </SettingsOption>
+              <span class="text-white">
+                {{ t('user_dropdown.change_privacy_mode.scramble.label') }}
+              </span>
+            </RuiCheckbox>
+          </SettingsOption>
 
-            <SettingsOption
-              #default="{ update: updateMultiplier }"
-              setting="scrambleMultiplier"
-              class="scrambler-data"
-              :error-message="t('frontend_settings.validation.scramble.error')"
-              session-setting
+          <SettingsOption
+            #default="{ update: updateMultiplier }"
+            setting="scrambleMultiplier"
+            class="scrambler-data"
+            :error-message="t('frontend_settings.validation.scramble.error')"
+            session-setting
+          >
+            <RuiTextField
+              v-model="scrambleMultiplier"
+              :label="t('frontend_settings.label.scramble_multiplier')"
+              :disabled="!scrambleData"
+              variant="outlined"
+              color="secondary"
+              min="0"
+              step="0.01"
+              type="number"
+              data-cy="privacy-mode-scramble__multiplier"
+              hide-details
+              dense
+              @input="updateMultiplier($event || 1)"
             >
-              <RuiTextField
-                v-model="scrambleMultiplier"
-                :label="t('frontend_settings.label.scramble_multiplier')"
-                :disabled="!scrambleData"
-                variant="outlined"
-                color="secondary"
-                min="0"
-                step="0.01"
-                type="number"
-                data-cy="privacy-mode-scramble__multiplier"
-                hide-details
-                dense
-                @input="updateMultiplier($event || 1)"
-              >
-                <template #append>
-                  <RuiButton
-                    :disabled="!scrambleData"
-                    variant="text"
-                    type="button"
-                    class="-mr-2 !p-2"
-                    data-cy="privacy-mode-scramble__random-multiplier"
-                    icon
-                    @click="updateMultiplier(randomMultiplier())"
-                  >
-                    <RuiIcon name="shuffle-line" />
-                  </RuiButton>
-                </template>
-              </RuiTextField>
-            </SettingsOption>
-          </div>
+              <template #append>
+                <RuiButton
+                  :disabled="!scrambleData"
+                  variant="text"
+                  type="button"
+                  class="-mr-2 !p-2"
+                  data-cy="privacy-mode-scramble__random-multiplier"
+                  icon
+                  @click="updateMultiplier(randomMultiplier())"
+                >
+                  <RuiIcon name="shuffle-line" />
+                </RuiButton>
+              </template>
+            </RuiTextField>
+          </SettingsOption>
         </div>
       </VCard>
     </VMenu>

@@ -109,7 +109,7 @@ const { smAndDown } = useDisplay();
         :href="interop.isPackaged ? null : item.link"
         target="_blank"
         class="gap-4 py-2"
-        :class="{ 'border-t': index > 0 }"
+        :class="{ 'border-t border-default': index > 0 }"
         @click="interop.isPackaged ? interop.openUrl(item.link) : null"
       >
         <RuiIcon class="text-rui-text-secondary" :name="item.icon" />
@@ -123,7 +123,10 @@ const { smAndDown } = useDisplay();
         </VListItemContent>
       </VListItem>
       <template v-if="!interop.isPackaged">
-        <VListItem class="gap-4 py-2 border-t" @click="openAbout()">
+        <VListItem
+          class="gap-4 py-2 border-t border-default"
+          @click="openAbout()"
+        >
           <RuiIcon class="text-rui-text-secondary" name="information-line" />
           <VListItemContent class="gap-1">
             <VListItemTitle>
@@ -134,7 +137,10 @@ const { smAndDown } = useDisplay();
             </VListItemSubtitle>
           </VListItemContent>
         </VListItem>
-        <VListItem class="gap-4 py-2 border-t" @click="downloadBrowserLog()">
+        <VListItem
+          class="gap-4 py-2 border-t border-default"
+          @click="downloadBrowserLog()"
+        >
           <RuiIcon class="text-rui-text-secondary" name="file-download-line" />
           <VListItemContent>
             <VListItemTitle>
