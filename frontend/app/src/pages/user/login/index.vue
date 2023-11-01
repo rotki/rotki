@@ -47,6 +47,7 @@ const css = useCssModule();
               <LoginForm
                 v-else
                 :loading="loading"
+                :is-docker="isDocker"
                 :errors="errors"
                 @touched="errors = []"
                 @login="handleLogin($event)"

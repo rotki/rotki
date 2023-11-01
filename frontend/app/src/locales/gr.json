@@ -1478,7 +1478,7 @@
       "label_password": "Κωδικός πρόσβασης",
       "label_password_backup_reminder": "Το rotki αποθηκεύει όλα τα δεδομένα χρήστη τοπικά. Κατανοώ ότι εάν χάσω τον κωδικό πρόσβασής μου, χάνω την πρόσβαση στα δεδομένα μου. Έχω δημιουργήσει ένα αντίγραφο ασφαλείας του κωδικού πρόσβασης.",
       "label_password_repeat": "Επανάληψη κωδικού πρόσβασης",
-      "label_username": "Όνομα χρήστη",
+      "label_username": "Ονομα προφίλ",
       "password_sync_requirement": "Βεβαιωθείτε ότι ο λογαριασμός χρησιμοποιεί τον ίδιο κωδικό πρόσβασης με την αρχική βάση δεδομένων. Δεν μπορείτε να αποκτήσετε πρόσβαση στη βάση δεδομένων αν εισαγάγετε διαφορετικό κωδικό πρόσβασης.",
       "validation": {
         "check_prompt": "Επιβεβαιώστε ότι έχετε διαβάσει και δημιουργήσει αντίγραφο ασφαλείας",
@@ -1491,7 +1491,7 @@
     },
     "have_account": {
       "description": "Έχετε ήδη λογαριασμό;",
-      "log_in": "Σύνδεση"
+      "log_in": "Ξεκλειδώστε τον λογαριασμό σας"
     },
     "introduction": {
       "description": "Το rotki είναι μια τοπική εφαρμογή που σέβεται την ιδιωτικότητά σας.\n\nΟι λογαριασμοί του rotki κρυπτογραφούνται χρησιμοποιώντας τον κωδικό πρόσβασής σας και το {highlight}.\n\nΟ λογαριασμός που δημιουργείτε εδώ είναι χρήσιμος μόνο για την εφαρμογή, στον ιστό χρησιμοποιούμε διαφορετική βάση δεδομένων.",
@@ -2722,7 +2722,7 @@
   },
   "login": {
     "button_no_account": "Δεν έχετε λογαριασμό;",
-    "button_signup": "Εγγραφείτε",
+    "button_create_account": "Δημιουργήστε λογαριασμό",
     "credential_error": {
       "description": "Εάν δεν έχετε δημιουργήσει ακόμη λογαριασμό εφαρμογής, θα πρέπει να το κάνετε για να συνδεθείτε.",
       "support": "Εάν χρειάζεστε βοήθεια, επικοινωνήστε μαζί μας στο κανάλι υποστήριξης στο discord.",
@@ -2745,7 +2745,7 @@
       "welcome": "Καλως ΗΡΘΑΤΕ! Παρακαλώ εισάγετε τα στοιχεία σας."
     },
     "label_password": "Password",
-    "label_username": "Username",
+    "label_username": "Profile Name",
     "logout": "Logout",
     "remember_password": "Remember Password",
     "remember_password_tooltip": "The password will be saved on password management tool on your local machine (e.g. Keychain in MacOS)",
@@ -2756,7 +2756,7 @@
       "remote_modified": "Remote last modified: {0}",
       "title": "User action required for DB sync"
     },
-    "title": "Συνδεθείτε",
+    "title": "Ξεκλείδωμα λογαριασμού",
     "upgrading_db": {
       "current": "Βήμα {currentStep} από {totalSteps} της αναβάθμισής της βάσης δεδομένων v{currentVersion}.",
       "title": "Αναβάθμιση βάσης δεδομένων",
@@ -2769,7 +2769,7 @@
     },
     "welcome_description": "Καλώς ήρθατε στον διαχειριστή χαρτοφυλακίου ανοιχτού κώδικα που προστατεύει το απόρρητό σας.",
     "welcome_title": "Καλώς ήρθατε στο rotki",
-    "welcome_update_message": "Συνδεθείτε για να εξερευνήσετε τις αλλαγές που έχουμε κάνει."
+    "welcome_update_message": "Ξεκλειδώστε τον λογαριασμό σας για να εξερευνήσετε τις αλλαγές που κάναμε."
   },
   "macos_unsupported": {
     "header": "Unsupported macOS Version",

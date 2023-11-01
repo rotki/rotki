@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { isEqual } from 'lodash-es';
 import { type SupportedAsset } from '@rotki/common/lib/data';
 import { type Collection } from '@/types/collection';
 import { type Nullable } from '@/types';
@@ -99,8 +100,10 @@ const confirmDelete = async (toDeleteAsset: SupportedAsset) => {
   await deleteAssetHandler(toDeleteAsset.identifier);
 };
 
-watch(ignoredFilter, async () => {
-  setPage(1);
+watch(ignoredFilter, async (oldValue, newValue) => {
+  if (!isEqual(oldValue, newValue)) {
+    setPage(1);
+  }
 });
 
 const {

@@ -1472,7 +1472,7 @@
       "label_password": "Contraseña",
       "label_password_backup_reminder": "rotki guarda todos los datos del usuario localmente. Entiendo que si pierdo mi contraseña, perderé acceso a mis datos. He creado una copia de seguridad de la contraseña.",
       "label_password_repeat": "Repetir contraseña",
-      "label_username": "Nombre de usuario",
+      "label_username": "Nombre de perfil",
       "password_sync_requirement": "Asegúrate de que la cuenta utilice la misma contraseña que la base de datos respaldada originalmente. No podrás acceder a la base de datos si ingresas una contraseña diferente.",
       "validation": {
         "check_prompt": "Confirma que has leído y creado una copia de seguridad",
@@ -1485,7 +1485,7 @@
     },
     "have_account": {
       "description": "¿Ya tienes una cuenta?",
-      "log_in": "Iniciar sesión"
+      "log_in": "Desbloquea tu cuenta"
     },
     "introduction": {
       "description": "rotki es una aplicación local que respeta tu privacidad.\n\nLas cuentas de rotki están encriptadas usando tu contraseña y {highlight}.\n\nLa cuenta que creas aquí solo es útil para la aplicación; en la web utilizamos una base de datos diferente.",
@@ -2714,7 +2714,7 @@
   },
   "login": {
     "button_no_account": "¿No tienes una cuenta?",
-    "button_signup": "Registrarse",
+    "button_create_account": "Crear una cuenta",
     "credential_error": {
       "description": "Si aún no ha creado una cuenta de aplicación, deberá hacerlo para poder iniciar sesión.",
       "support": "Si necesita ayuda, contáctenos en nuestro canal de soporte en discord.",
@@ -2732,7 +2732,7 @@
       }
     },
     "label_password": "Contraseña",
-    "label_username": "Usuario",
+    "label_username": "Nombre de perfil",
     "logout": "Cerrar sesión",
     "remember_password": "Recordar contraseña",
     "remember_password_tooltip": "The password will be saved on password management tool on your local machine (e.g. Keychain in MacOS)",
@@ -2743,7 +2743,7 @@
       "remote_modified": "Remote last modified: {0}",
       "title": "User action required for DB sync"
     },
-    "title": "Iniciar sesión",
+    "title": "Desbloquear cuenta",
     "upgrading_db": {
       "current": "Aplicando paso {currentStep} de {totalSteps} para la actualización de la base de datos v{currentVersion}.",
       "title": "Actualización de base de datos",
@@ -2753,7 +2753,10 @@
       "non_empty_password": "Por favor introduzca una contraseña",
       "non_empty_username": "Por favor introduzca un nombre de usuario",
       "valid_username": "A username must contain only alphanumeric characters and have no spaces"
-    }
+    },
+    "welcome_description": "Bienvenido al administrador de cartera de código abierto que protege su privacidad.",
+    "welcome_title": "Bienvenido a rotki",
+    "welcome_update_message": "Desbloquee su cuenta para explorar los cambios que hemos realizado."
   },
   "macos_unsupported": {
     "header": "Unsupported macOS Version",
