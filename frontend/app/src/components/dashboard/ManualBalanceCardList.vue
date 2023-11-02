@@ -22,7 +22,7 @@ const manualBalancesRoute = Routes.ACCOUNTS_BALANCES_MANUAL;
     :to="manualBalancesRoute"
   >
     <VListItemAvatar tile class="grayscale group-hover:grayscale-0 m-0 mr-1">
-      <LocationDisplay :identifier="name" icon />
+      <LocationDisplay :identifier="name" icon size="30px" />
     </VListItemAvatar>
     <VListItemContent>
       <div class="flex flex-wrap justify-between gap-2">

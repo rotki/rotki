@@ -62,7 +62,7 @@ export const useAggregatedBalances = () => {
           return asset;
         }
       );
-      const assets = get(balances(hideIgnored)).map(({ asset }) => {
+      const assets = get(balances(hideIgnored, false)).map(({ asset }) => {
         const samePrices = samePriceAssets[asset];
         if (samePrices) {
           additional.push(...samePrices);

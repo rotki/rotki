@@ -19,26 +19,24 @@ const name = computed<string>(() => {
 </script>
 
 <template>
-  <div class="flex flex-row">
-    <div class="ml-2 mr-6">
-      <LocationDisplay
-        v-if="exchange"
-        :identifier="exchange"
-        size="48px"
-        icon
-      />
-    </div>
+  <div class="flex items-center gap-4">
+    <LocationDisplay
+      v-if="exchange"
+      :open-details="false"
+      :identifier="exchange"
+      size="32px"
+      icon
+    />
     <div class="flex flex-col my-3">
       <span class="text-h6">
         {{ name }}
       </span>
-      <span class="secondary--text text--lighten-5">
-        <AmountDisplay
-          show-currency="symbol"
-          fiat-currency="USD"
-          :value="balance"
-        />
-      </span>
+      <AmountDisplay
+        class="text-rui-text-secondary"
+        show-currency="symbol"
+        fiat-currency="USD"
+        :value="balance"
+      />
     </div>
   </div>
 </template>

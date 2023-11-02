@@ -26,7 +26,7 @@ const exchangeLocationRoute = computed(() => {
     class="exchange-box__item min-h-[2.25rem] group"
   >
     <VListItemAvatar tile class="grayscale group-hover:grayscale-0 m-0 mr-1">
-      <LocationDisplay :identifier="location" icon />
+      <LocationDisplay :identifier="location" icon size="30px" />
     </VListItemAvatar>
     <VListItemContent>
       <div class="flex flex-wrap justify-between gap-2">

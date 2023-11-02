@@ -935,7 +935,7 @@
     "name": "rotki"
   },
   "asset_balances": {
-    "loading": "rotki 正在查询区块链，请稍候..."
+    "loading": "rotki 正在查询余额，请稍候..."
   },
   "asset_form": {
     "fetch_latest_icon": {

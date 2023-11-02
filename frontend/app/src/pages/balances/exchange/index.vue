@@ -96,8 +96,6 @@ const isBinance = computed(() => {
     exchangeVal
   );
 });
-
-const { mdAndUp } = useDisplay();
 </script>
 
 <template>
@@ -114,7 +112,7 @@ const { mdAndUp } = useDisplay();
             color="primary"
             variant="outlined"
             class="exchange-balances__refresh"
-            :disabled="exchangeDetailTabs === 0"
+            :disabled="exchangeDetailTabs !== 0"
             :loading="isExchangeLoading"
             @click="refreshExchangeBalances()"
           >
@@ -134,183 +132,101 @@ const { mdAndUp } = useDisplay();
       </RuiButton>
     </template>
     <RuiCard class="exchange-balances">
-      <VSheet outlined class="rounded-xl overflow-hidden">
-        <VRow
-          v-if="usedExchanges.length > 0"
-          no-gutters
-          class="exchange-balances__content"
-        >
-          <VCol cols="12" class="hidden-md-and-up">
-            <VSelect
-              v-model="selectedExchange"
-              filled
-              :items="usedExchanges"
-              hide-details
-              :label="t('exchange_balances.select_exchange')"
-              class="exchange-balances__content__select"
-              @change="openExchangeDetails()"
-            >
-              <template #selection="{ item }">
-                <ExchangeAmountRow
-                  :balance="exchangeBalance(item)"
-                  :exchange="item"
-                />
-              </template>
-              <template #item="{ item }">
-                <ExchangeAmountRow
-                  :balance="exchangeBalance(item)"
-                  :exchange="item"
-                />
-              </template>
-            </VSelect>
-          </VCol>
-          <VCol cols="2" class="hidden-sm-and-down">
-            <VTabs
-              fixed-tabs
-              vertical
-              hide-slider
-              optional
-              class="exchange-balances__tabs"
-            >
-              <VTab
+      <div v-if="usedExchanges.length > 0" class="flex flex-col md:flex-row">
+        <div class="md:hidden mb-2">
+          <VSelect
+            v-model="selectedExchange"
+            outlined
+            :items="usedExchanges"
+            hide-details
+            :label="t('exchange_balances.select_exchange')"
+            class="exchange-balances__content__select"
+            @change="openExchangeDetails()"
+          >
+            <template #selection="{ item }">
+              <ExchangeAmountRow
+                :balance="exchangeBalance(item)"
+                :exchange="item"
+              />
+            </template>
+            <template #item="{ item }">
+              <ExchangeAmountRow
+                :balance="exchangeBalance(item)"
+                :exchange="item"
+              />
+            </template>
+          </VSelect>
+        </div>
+        <div class="hidden md:block w-1/6 border-r border-default">
+          <RuiTabs vertical color="primary" :value="usedExchanges">
+            <template #default>
+              <RuiTab
                 v-for="(usedExchange, i) in usedExchanges"
                 :key="i"
-                class="exchange-balances__tab text-none"
-                active-class="exchange-balances__tab--active"
+                link
+                class="h-[8rem]"
                 :to="`/accounts-balances/exchange-balances/${usedExchange}`"
-                @click="selectedExchange = usedExchange"
+                :value="usedExchange"
               >
-                <LocationDisplay :identifier="usedExchange" size="36px" />
-                <div class="exchange-balances__tab__amount block">
-                  <AmountDisplay
-                    show-currency="symbol"
-                    fiat-currency="USD"
-                    :value="exchangeBalance(usedExchange)"
+                <LocationDisplay
+                  :open-details="false"
+                  :identifier="usedExchange"
+                  size="36px"
+                />
+                <AmountDisplay
+                  class="mt-1 text-xl"
+                  show-currency="symbol"
+                  fiat-currency="USD"
+                  :value="exchangeBalance(usedExchange)"
+                />
+              </RuiTab>
+            </template>
+          </RuiTabs>
+        </div>
+        <div class="flex-1">
+          <div v-if="exchange">
+            <RuiTabs v-model="exchangeDetailTabs" color="primary">
+              <template #default>
+                <RuiTab>{{ t('exchange_balances.tabs.balances') }}</RuiTab>
+                <RuiTab v-if="isBinance">
+                  {{ t('exchange_balances.tabs.savings_interest_history') }}
+                </RuiTab>
+              </template>
+            </RuiTabs>
+
+            <RuiDivider />
+
+            <RuiTabItems v-model="exchangeDetailTabs">
+              <template #default>
+                <RuiTabItem class="pt-4 md:pl-4">
+                  <AssetBalances
+                    hide-breakdown
+                    :loading="isExchangeLoading"
+                    :balances="balances"
                   />
-                </div>
-              </VTab>
-            </VTabs>
-          </VCol>
-          <VCol :class="mdAndUp ? 'exchange-balances__balances' : null">
-            <div>
-              <div v-if="exchange">
-                <VTabs v-model="exchangeDetailTabs">
-                  <VTab>{{ t('exchange_balances.tabs.balances') }}</VTab>
-                  <VTab v-if="isBinance">{{
-                    t('exchange_balances.tabs.savings_interest_history')
-                  }}</VTab>
-                </VTabs>
+                </RuiTabItem>
+                <RuiTabItem v-if="isBinance" class="pt-4 md:pl-4">
+                  <BinanceSavingDetail :exchange="exchange" />
+                </RuiTabItem>
+              </template>
+            </RuiTabItems>
+          </div>
 
-                <VDivider />
-
-                <VTabsItems v-model="exchangeDetailTabs">
-                  <VTabItem class="pa-4">
-                    <AssetBalances
-                      hide-breakdown
-                      :loading="isExchangeLoading"
-                      :balances="balances"
-                    />
-                  </VTabItem>
-                  <VTabItem v-if="isBinance" class="pa-4">
-                    <BinanceSavingDetail :exchange="exchange" />
-                  </VTabItem>
-                </VTabsItems>
-              </div>
-
-              <div v-else class="pa-4">
-                {{ t('exchange_balances.select_hint') }}
-              </div>
-            </div>
-          </VCol>
-        </VRow>
-        <VRow v-else class="px-4 py-8">
-          <VCol>
-            <i18n path="exchange_balances.no_connected_exchanges">
-              <InternalLink
-                :to="Routes.API_KEYS_EXCHANGES"
-                class="module-not-active__link font-weight-regular text-body-1 text-decoration-none"
-              >
-                {{ t('exchange_balances.click_here') }}
-              </InternalLink>
-            </i18n>
-          </VCol>
-        </VRow>
-      </VSheet>
+          <div v-else class="p-4">
+            {{ t('exchange_balances.select_hint') }}
+          </div>
+        </div>
+      </div>
+      <div v-else class="px-4 py-8">
+        <i18n path="exchange_balances.no_connected_exchanges">
+          <InternalLink
+            :to="Routes.API_KEYS_EXCHANGES"
+            class="module-not-active__link font-weight-regular text-body-1 text-decoration-none"
+          >
+            {{ t('exchange_balances.click_here') }}
+          </InternalLink>
+        </i18n>
+      </div>
     </RuiCard>
   </TablePageLayout>
 </template>
-
-<style scoped lang="scss">
-.exchange-balances {
-  &__balances {
-    border-left: var(--v-rotki-light-grey-darken1) solid thin;
-  }
-
-  &__tabs {
-    border-radius: 4px 0 0 4px;
-    height: 100%;
-
-    /* stylelint-disable selector-class-pattern,selector-nested-pattern */
-
-    :deep(.v-tabs-bar__content) {
-      /* stylelint-enable selector-class-pattern,selector-nested-pattern */
-      background-color: var(--v-rotki-light-grey-darken1);
-      border-radius: 4px 0 0 4px;
-      height: 100%;
-    }
-  }
-
-  &__tab {
-    display: flex;
-    flex-direction: column;
-    min-height: 125px !important;
-    max-height: 125px !important;
-    padding-top: 15px;
-    padding-bottom: 15px;
-    filter: grayscale(100%);
-    color: var(--v-rotki-grey-base);
-    background-color: transparent;
-
-    &:hover {
-      filter: grayscale(0);
-      background-color: var(--v-rotki-light-grey-base);
-      border-radius: 4px 0 0 4px;
-    }
-
-    &:focus {
-      filter: grayscale(0);
-      border-radius: 4px 0 0 4px;
-    }
-
-    &--active {
-      filter: grayscale(0);
-      border-radius: 4px 0 0 4px;
-      background-color: white;
-      color: var(--v-secondary-base);
-
-      &:hover {
-        border-radius: 4px 0 0 4px;
-        background-color: white;
-        opacity: 1 !important;
-      }
-
-      &:focus {
-        border-radius: 4px 0 0 4px;
-        opacity: 1 !important;
-      }
-    }
-
-    /* stylelint-disable selector-class-pattern,selector-nested-pattern */
-
-    .theme--dark &--active {
-      background-color: var(--v-dark-lighten1);
-      color: white;
-
-      &:hover {
-        background-color: var(--v-dark-base) !important;
-      }
-    }
-    /* stylelint-enable selector-class-pattern,selector-nested-pattern */
-  }
-}
-</style>
