@@ -128,8 +128,7 @@ const setTotal = (number?: BigNumber) => {
   set(total, convertedFiatValue);
 };
 
-const { valid, setValidation, setSubmitFunc, trySubmit } =
-  useEditTotalSnapshotForm();
+const { setValidation, setSubmitFunc, trySubmit } = useEditTotalSnapshotForm();
 
 const save = async () => {
   const val = get(value);
@@ -170,92 +169,70 @@ const suggestionsLabel = computed(() => ({
     length: get(value).length
   })
 }));
-
-const css = useCssModule();
 </script>
 
 <template>
   <div>
-    <div class="py-10 flex flex-col items-center">
-      <div :class="css.wrapper">
-        <div class="text-h6 mb-4 text-center">
-          {{ t('common.total') }}
-        </div>
-        <div class="mb-4">
-          <VForm :value="valid">
-            <AmountInput
-              v-model="total"
-              outlined
-              :error-messages="toMessages(v$.total)"
-            />
+    <div class="py-10 mx-auto max-w-[20rem]">
+      <div class="text-h6 mb-4 text-center">
+        {{ t('common.total') }}
+      </div>
+      <div class="mb-4">
+        <AmountInput
+          v-model="total"
+          outlined
+          :error-messages="toMessages(v$.total)"
+        />
 
-            <div class="text--secondary text-caption">
-              <i18n path="dashboard.snapshot.edit.dialog.total.warning">
-                <template #amount>
-                  <AmountDisplay
-                    :value="nftsExcludedTotal"
-                    fiat-currency="USD"
-                  />
-                </template>
-              </i18n>
-            </div>
-          </VForm>
+        <div class="text--secondary text-caption">
+          <i18n path="dashboard.snapshot.edit.dialog.total.warning">
+            <template #amount>
+              <AmountDisplay :value="nftsExcludedTotal" fiat-currency="USD" />
+            </template>
+          </i18n>
         </div>
-        <div>
-          <div v-for="(number, key) in suggestions" :key="key">
-            <VBtn
-              block
-              color="primary"
-              class="mb-4"
-              :class="css.button"
-              large
-              @click="setTotal(number)"
-            >
-              <div class="flex flex-col items-center">
-                <span>
-                  {{ suggestionsLabel[key] }}
-                </span>
-                <AmountDisplay
-                  :class="css['button__amount']"
-                  :value="number"
-                  fiat-currency="USD"
-                />
-              </div>
-            </VBtn>
-
-            <div v-if="key === 'location'" class="text--secondary text-caption">
-              {{ t('dashboard.snapshot.edit.dialog.total.hint') }}
+      </div>
+      <div>
+        <div v-for="(number, key) in suggestions" :key="key">
+          <RuiButton
+            color="primary"
+            class="mb-4 w-full"
+            @click="setTotal(number)"
+          >
+            <div class="flex flex-col items-center">
+              <span>
+                {{ suggestionsLabel[key] }}
+              </span>
+              <AmountDisplay
+                class="text-2xl"
+                :value="number"
+                fiat-currency="USD"
+              />
             </div>
+          </RuiButton>
+
+          <div v-if="key === 'location'" class="text--secondary text-caption">
+            {{ t('dashboard.snapshot.edit.dialog.total.hint') }}
           </div>
         </div>
       </div>
     </div>
-    <VSheet elevation="10" class="flex justify-end pa-4">
-      <VSpacer />
-      <VBtn class="mr-4" @click="updateStep(2)">
-        <VIcon>mdi-chevron-left</VIcon>
+
+    <div
+      class="border-t-2 border-rui-grey-300 dark:border-rui-grey-800 relative z-[2] flex justify-end p-2 gap-2"
+    >
+      <RuiButton variant="text" @click="updateStep(2)">
+        <template #prepend>
+          <RuiIcon name="arrow-left-line" />
+        </template>
         {{ t('common.actions.back') }}
-      </VBtn>
-      <VBtn color="primary" @click="trySubmit()">
+      </RuiButton>
+      <RuiButton color="primary" @click="trySubmit()">
         {{ t('common.actions.finish') }}
-        <VIcon>mdi-chevron-right</VIcon>
-      </VBtn>
-    </VSheet>
+        <template #append>
+          <RuiIcon name="arrow-right-line" />
+        </template>
+      </RuiButton>
+    </div>
   </div>
 </template>
-
-<style module lang="scss">
-.wrapper {
-  width: 350px;
-}
-
-.button {
-  padding: 0.75rem 0 !important;
-  height: auto !important;
-
-  &__amount {
-    font-size: 1.25rem;
-    margin-top: 0.25rem;
-  }
-}
-</style>

@@ -304,11 +304,12 @@ const css = useCssModule();
     <LocationSelector
       v-model="location"
       class="manual-balances-form__location"
+      attach=".manual-balances-form__location"
+      :menu-props="{ top: true }"
       outlined
       :error-messages="toMessages(v$.location)"
       :disabled="submitting"
       :label="t('common.location')"
-      attach=".manual-balances-form__location"
       @blur="v$.location.$touch()"
     />
     <CustomAssetFormDialog
