@@ -71,8 +71,9 @@ const matchers: ComputedRef<Matcher[]> = computed(
 const updateFilters = (updatedFilters: Filters) => {
   set(filters, updatedFilters);
   const { fromTimestamp, toTimestamp } = updatedFilters;
-  assert(!Array.isArray(fromTimestamp));
-  assert(!Array.isArray(toTimestamp));
+
+  assert(typeof fromTimestamp === 'string');
+  assert(typeof toTimestamp === 'string');
 
   emit('update:period', { fromTimestamp, toTimestamp });
 };

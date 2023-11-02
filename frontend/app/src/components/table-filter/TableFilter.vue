@@ -48,8 +48,15 @@ const selectedMatcher = computed(() => {
 
 const usedKeys = computed(() => get(selection).map(entry => entry.key));
 
-const removeSelection = (suggestion: Suggestion) => {
-  updateMatches(get(selection).filter(sel => sel !== suggestion));
+const removeSelection = (item: Suggestion) => {
+  updateMatches(get(selection).filter(sel => sel !== item));
+};
+
+const clickItem = (item: Suggestion) => {
+  if (typeof item.value !== 'boolean') {
+    removeSelection(item);
+    selectItem(item);
+  }
 };
 
 const matcherForKey = (searchKey: string | undefined) =>
@@ -59,6 +66,17 @@ const matcherForKeyValue = (searchKey: string | undefined) =>
   get(matchers).find(({ keyValue }) => keyValue === searchKey);
 
 const setSearchToMatcherKey = (matcher: SearchMatcher<any>) => {
+  const boolean = 'boolean' in matcher;
+  if (boolean) {
+    applyFilter({
+      key: matcher.key,
+      asset: false,
+      value: true,
+      index: 0,
+      total: 1
+    });
+    return;
+  }
   const allowExclusion = 'string' in matcher && matcher.allowExclusion;
   const filter = `${matcher.key}${allowExclusion ? '' : '='}`;
   set(search, filter);
@@ -77,7 +95,8 @@ function updateMatches(pairs: Suggestion[]) {
     }
 
     const valueKey = (matcher.keyValue || matcher.key) as string;
-    let transformedKeyword = '';
+    let transformedKeyword: string | boolean = '';
+
     if ('string' in matcher) {
       if (typeof entry.value !== 'string') {
         continue;
@@ -91,9 +110,11 @@ function updateMatches(pairs: Suggestion[]) {
       } else {
         continue;
       }
-    } else if (matcher.asset) {
+    } else if ('asset' in matcher) {
       transformedKeyword =
         typeof entry.value !== 'string' ? entry.value.identifier : entry.value;
+    } else {
+      transformedKeyword = true;
     }
 
     if (!transformedKeyword) {
@@ -106,7 +127,7 @@ function updateMatches(pairs: Suggestion[]) {
       if (!matched[valueKey]) {
         matched[valueKey] = [];
       }
-      (matched[valueKey] as string[]).push(transformedKeyword);
+      (matched[valueKey] as (string | boolean)[]).push(transformedKeyword);
     } else {
       matched[valueKey] = transformedKeyword;
     }
@@ -169,8 +190,11 @@ const applySuggestion = async () => {
       } else if ('asset' in matcher) {
         suggestedItems = await matcher.suggestions(keyword);
         asset = true;
-      } else {
-        logger.debug('Matcher missing asset=true or string=true', matcher);
+      } else if (!('boolean' in matcher)) {
+        logger.debug(
+          "Matcher doesn't have asset=true, string=true, or boolean=true.",
+          selectedMatcher
+        );
       }
 
       if (
@@ -264,8 +288,9 @@ const restoreSelection = (matches: MatchedKeyword<any>): void => {
       return;
     }
 
-    const values = typeof value === 'string' ? [value] : value;
+    const values = Array.isArray(value) ? value : [value];
     const asset = 'asset' in foundMatchers;
+    const boolean = 'boolean' in foundMatchers;
 
     values.forEach(value => {
       let deserializedValue = null;
@@ -280,13 +305,17 @@ const restoreSelection = (matches: MatchedKeyword<any>): void => {
 
       let exclude = false;
       if (!deserializedValue) {
-        let normalizedValue = value;
-        if (!asset && value.startsWith('!')) {
-          normalizedValue = value.substring(1);
-          exclude = true;
+        if (!boolean && typeof value !== 'boolean') {
+          let normalizedValue = value;
+          if (!asset && value.startsWith('!')) {
+            normalizedValue = value.substring(1);
+            exclude = true;
+          }
+          deserializedValue =
+            foundMatchers.deserializer?.(normalizedValue) || normalizedValue;
+        } else {
+          deserializedValue = true;
         }
-        deserializedValue =
-          foundMatchers.deserializer?.(normalizedValue) || normalizedValue;
       }
 
       newSelection.push({
@@ -359,10 +388,7 @@ const { t } = useI18n();
               :input-value="selected"
               close
               @click:close="removeSelection(item)"
-              @click="
-                removeSelection(item);
-                selectItem(item);
-              "
+              @click="clickItem(item)"
             >
               <SuggestedItem chip :suggestion="item" />
             </VChip>
@@ -383,15 +409,14 @@ const { t } = useI18n();
           </template>
         </VCombobox>
 
-        <div v-if="location">
-          <SavedFilterManagement
-            :disabled="disabled"
-            :selection="selection"
-            :location="location"
-            :matchers="matchers"
-            @update:matches="updateMatches($event)"
-          />
-        </div>
+        <SavedFilterManagement
+          v-if="location"
+          :disabled="disabled"
+          :selection="selection"
+          :location="location"
+          :matchers="matchers"
+          @update:matches="updateMatches($event)"
+        />
       </div>
     </template>
     <slot name="tooltip" />

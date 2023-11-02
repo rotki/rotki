@@ -6,59 +6,35 @@ defineProps<{
   active: boolean;
 }>();
 
-const emit = defineEmits<{ (e: 'click', matcher: SearchMatcher<any>): void }>();
-const css = useCssModule();
+const emit = defineEmits<{
+  (e: 'click', matcher: SearchMatcher<any>): void;
+}>();
 
 const click = (matcher: SearchMatcher<any>) => {
   emit('click', matcher);
 };
 
-const { dark } = useTheme();
+const css = useCssModule();
 </script>
 
 <template>
-  <div>
-    <VBtn
-      text
-      class="text-none text-body-1"
-      block
-      :class="[
-        {
-          [css.button]: true,
-          [css.selected]: active
-        },
-        dark && active ? 'black--text' : 'text--secondary'
-      ]"
-      @click="click(matcher)"
-    >
-      <span class="text-start" :class="css.wrapper">
-        <span class="font-medium primary--text"> {{ matcher.key }}: </span>
-        <span class="ms-2 font-weight-regular" :class="css.description">
-          {{ matcher.description }}
-        </span>
-      </span>
-    </VBtn>
-  </div>
+  <RuiButton
+    variant="text"
+    class="text-body-1 tracking-wide w-full justify-start text-left text-rui-text-secondary"
+    :class="{
+      [css.selected]: active
+    }"
+    @click="click(matcher)"
+  >
+    <span class="font-medium text-rui-primary"> {{ matcher.key }}: </span>
+    <span class="ml-1 font-normal">
+      {{ matcher.description }}
+    </span>
+  </RuiButton>
 </template>
 
-<style module lang="scss">
-.button {
-  height: auto !important;
-  padding: 0.5rem !important;
-  display: block;
-}
-
-.wrapper {
-  width: 100%;
-  max-width: 100%;
-  display: flex;
-}
-
-.description {
-  white-space: normal;
-}
-
+<style lang="scss" module>
 .selected {
-  background-color: var(--v-primary-lighten4);
+  @apply bg-rui-primary-lighter/20 #{!important};
 }
 </style>

@@ -55,7 +55,13 @@ const css = useCssModule();
         :size="size"
         :name="location.icon"
       />
-      <span v-if="!icon" class="text-capitalize text-rui-text-secondary -mb-1">
+      <span
+        v-if="!icon"
+        class="text-capitalize text-rui-text-secondary"
+        :class="{
+          '-mb-1': !horizontal
+        }"
+      >
         {{ location.name }}
       </span>
     </template>
@@ -64,6 +70,11 @@ const css = useCssModule();
 
 <style lang="scss" module>
 .wrapper {
+  height: v-bind(size);
+  width: v-bind(size);
+}
+
+.icon {
   height: v-bind(size);
   width: v-bind(size);
 }

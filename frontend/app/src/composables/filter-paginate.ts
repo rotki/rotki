@@ -119,7 +119,7 @@ export const usePaginationFilters = <
           return;
         }
 
-        let formattedData: string | string[] = data;
+        let formattedData: string | string[] | boolean = data;
         let exclude = false;
 
         if (matcher.allowExclusion) {

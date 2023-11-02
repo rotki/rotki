@@ -128,4 +128,21 @@ describe('table-filter/SuggestedItem.vue', () => {
       wrapper.find('span > span:nth-child(2)').classes().includes('comparator')
     ).toBe(true);
   });
+
+  it('for boolean value', async () => {
+    const suggestion = {
+      index: 0,
+      total: 1,
+      asset: false,
+      key,
+      value: true
+    };
+    wrapper = createWrapper({ suggestion });
+
+    await expect(wrapper.find('span').text()).toBe(`${key} = true`);
+
+    await wrapper.setProps({ chip: true });
+
+    await expect(wrapper.find('span').text()).toBe(key);
+  });
 });

@@ -4191,6 +4191,7 @@
       "account": "Filter by account",
       "address": "filter by counterparty address",
       "asset": "filter by the asset of the events",
+      "customized_only": "show customized events only",
       "date_hint": "format {format} HH:mm:ss (time/seconds are optional)",
       "end_date": "filter by the end date of the transaction period",
       "entry_type": "filter by entry type",

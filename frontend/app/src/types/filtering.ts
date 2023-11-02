@@ -42,21 +42,30 @@ interface AssetSuggestionMatcher<K, KV = void> extends BaseMatcher<K, KV> {
   readonly deserializer?: (value: string) => AssetInfoWithId | null;
 }
 
+interface BooleanSuggestionMatcher<K, KV = void> extends BaseMatcher<K, KV> {
+  readonly boolean: true;
+}
+
 export type SearchMatcher<K, KV = void> =
   | StringSuggestionMatcher<K, KV>
-  | AssetSuggestionMatcher<K, KV>;
+  | AssetSuggestionMatcher<K, KV>
+  | BooleanSuggestionMatcher<K, KV>;
 
 export type MatchedKeyword<T extends string> = {
-  [key in T]?: string | string[];
+  [key in T]?: string | string[] | boolean;
 };
 
 export type MatchedKeywordWithBehaviour<T extends string> = {
-  [key in T]?: string | string[] | FilterObjectWithBehaviour<string | string[]>;
+  [key in T]?:
+    | string
+    | string[]
+    | boolean
+    | FilterObjectWithBehaviour<string | string[] | boolean>;
 };
 
 export const BaseSuggestion = z.object({
   key: z.string(),
-  value: AssetInfoWithId.or(z.string()),
+  value: AssetInfoWithId.or(z.string()).or(z.boolean()),
   exclude: z.boolean().optional()
 });
 
