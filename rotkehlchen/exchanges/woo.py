@@ -181,6 +181,7 @@ class Woo(ExchangeInterface):
     ) -> tuple[list[Trade], tuple[Timestamp, Timestamp]]:
         """Return trade history on Woo in a range of time."""
         start_ts = max(start_ts, MIN_TIMESTAMP)
+        end_ts = max(end_ts, MIN_TIMESTAMP)
         trades: list[Trade] = self._api_query_paginated(
             endpoint='v1/client/hist_trades',
             options={
@@ -203,7 +204,7 @@ class Woo(ExchangeInterface):
         movements: list[AssetMovement] = self._api_query_paginated(
             endpoint='v1/asset/history',
             options={
-                'end_t': ts_sec_to_ms(end_ts),
+                'end_t': ts_sec_to_ms(max(end_ts, MIN_TIMESTAMP)),
                 'page': 1,
                 'size': API_MAX_LIMIT,
                 'start_t': ts_sec_to_ms(max(start_ts, MIN_TIMESTAMP)),
