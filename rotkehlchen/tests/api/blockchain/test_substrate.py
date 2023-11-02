@@ -51,7 +51,7 @@ def test_add_ksm_blockchain_account_invalid(rotkehlchen_api_server):
 @pytest.mark.vcr()
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('kusama_manager_connect_at_start', [(KusamaNodeName.OWN,)])
-@pytest.mark.parametrize('ksm_rpc_endpoint', [KUSAMA_TEST_RPC_ENDPOINT], ids=['KUSAMA_TEST_RPC_ENDPOINT'])  # setting ids to rename the argument to be processed by vcr, affects all other similar fixtures in this file # noqa: E501
+@pytest.mark.parametrize('ksm_rpc_endpoint', [KUSAMA_TEST_RPC_ENDPOINT], ids=['KUSAMA_TEST_RPC_ENDPOINT'])  # setting ids to rename the argument to be processed by vcr since its value can contain characters that are illegal in windows. Affects all other similar fixtures in this file # noqa: E501
 @pytest.mark.parametrize('network_mocking', [False])
 def test_add_ksm_blockchain_account(rotkehlchen_api_server, kusama_manager_connect_at_start):
     """Test adding a Kusama blockchain account when there is none in the db

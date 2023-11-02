@@ -192,6 +192,7 @@ def test_maybe_schedule_exchange_query_ignore_exchanges(
     assert task_manager._maybe_schedule_exchange_history_query() is None
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('one_receipt_in_db', [True, False])
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1, TEST_ADDR2]])
 def test_maybe_schedule_ethereum_txreceipts(
