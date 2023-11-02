@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import { defineConfig } from 'cypress';
 
 const group = process.env.GROUP ? `${process.env.GROUP}/` : '';
+const captureVideo = !!process.env.CI;
 
 export default defineConfig({
   viewportWidth: 1280,
@@ -15,6 +16,8 @@ export default defineConfig({
     videosFolder: 'tests/e2e/videos',
     supportFile: 'tests/e2e/support/index.ts',
     testIsolation: false,
+    video: captureVideo,
+    videoCompression: captureVideo,
     scrollBehavior: 'nearest',
     experimentalMemoryManagement: true,
     numTestsKeptInMemory: 5,

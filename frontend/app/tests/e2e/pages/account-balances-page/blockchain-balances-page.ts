@@ -35,6 +35,7 @@ export class BlockchainBalancesPage {
       setCheckBox('[data-cy="account-all-evm-chains"]', false);
     }
 
+    cy.get('[data-cy="account-address-field"]').should('not.be.disabled');
     cy.get('[data-cy="account-address-field"]').type(balance.address);
     cy.get('[data-cy="account-label-field"]').type(balance.label);
 

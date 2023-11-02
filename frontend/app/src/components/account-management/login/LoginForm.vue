@@ -232,9 +232,12 @@ const loadSettings = async () => {
   }
 };
 
-onMounted(async () => {
+onBeforeMount(async () => {
   await loadSettings();
   set(savedUsernames, await usersApi.users());
+});
+
+onMounted(async () => {
   updateFocus();
 });
 

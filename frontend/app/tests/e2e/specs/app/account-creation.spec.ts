@@ -1,5 +1,5 @@
-import { Guid } from '../../common/guid';
 import { RotkiApp } from '../../pages/rotki-app';
+import { createUser } from '../../utils/user';
 
 describe('accounts', () => {
   let username: string;
@@ -21,7 +21,7 @@ describe('accounts', () => {
     context(`Viewport: ${size[2]} (${size[0]}x${size[1]})`, () => {
       before(() => {
         cy.viewport(Number(size[0]), Number(size[1]));
-        username = Guid.newGuid().toString();
+        username = createUser();
       });
 
       it('create account', () => {

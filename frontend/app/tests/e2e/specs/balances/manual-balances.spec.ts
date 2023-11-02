@@ -1,4 +1,3 @@
-import { Guid } from '../../common/guid';
 import {
   type FixtureManualBalance,
   ManualBalancesPage
@@ -7,6 +6,7 @@ import { DashboardPage } from '../../pages/dashboard-page';
 import { GeneralSettingsPage } from '../../pages/general-settings-page';
 import { RotkiApp } from '../../pages/rotki-app';
 import { waitForAsyncQuery } from '../../support/utils';
+import { createUser } from '../../utils/user';
 
 const PRECISION = 0.1;
 
@@ -19,7 +19,7 @@ describe('balances', () => {
   let manualBalances: FixtureManualBalance[];
 
   before(() => {
-    username = Guid.newGuid().toString();
+    username = createUser();
     app = new RotkiApp();
     manualBalancesPage = new ManualBalancesPage();
     dashboardPage = new DashboardPage();

@@ -1,7 +1,7 @@
-import { Guid } from '../../common/guid';
 import { TradeHistoryPage } from '../../pages/history-page/trade-history-page';
 import { RotkiApp } from '../../pages/rotki-app';
 import { type ExternalTrade } from '../../support/types';
+import { createUser } from '../../utils/user';
 
 describe('trade history', () => {
   let username: string;
@@ -10,7 +10,7 @@ describe('trade history', () => {
   let externalTrades: ExternalTrade[];
 
   beforeEach(() => {
-    username = Guid.newGuid().toString();
+    username = createUser();
     app = new RotkiApp();
     tradeHistoryPage = new TradeHistoryPage();
 

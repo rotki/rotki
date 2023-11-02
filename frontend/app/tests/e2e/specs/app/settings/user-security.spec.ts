@@ -1,6 +1,6 @@
-import { Guid } from '../../../common/guid';
 import { RotkiApp } from '../../../pages/rotki-app';
 import { UserSecuritySettingsPage } from '../../../pages/user-security-settings-page';
+import { createUser } from '../../../utils/user';
 
 describe('settings::data & security', () => {
   let username: string;
@@ -10,7 +10,7 @@ describe('settings::data & security', () => {
   let pageUserSecurity: UserSecuritySettingsPage;
 
   before(() => {
-    username = Guid.newGuid().toString();
+    username = createUser();
     password = '1234';
     newPassword = '5678';
     app = new RotkiApp();

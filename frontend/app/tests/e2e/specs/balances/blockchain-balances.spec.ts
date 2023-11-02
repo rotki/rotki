@@ -1,5 +1,4 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { Guid } from '../../common/guid';
 import {
   BlockchainBalancesPage,
   type FixtureBlockchainBalance
@@ -7,6 +6,7 @@ import {
 import { DashboardPage } from '../../pages/dashboard-page';
 import { RotkiApp } from '../../pages/rotki-app';
 import { TagManager } from '../../pages/tag-manager';
+import { createUser } from '../../utils/user';
 
 const PRECISION = 0.1;
 
@@ -19,7 +19,7 @@ describe('blockchain balances', () => {
   let tagManager: TagManager;
 
   before(() => {
-    username = Guid.newGuid().toString();
+    username = createUser();
     app = new RotkiApp();
     blockchainBalancesPage = new BlockchainBalancesPage();
     dashboardPage = new DashboardPage();
