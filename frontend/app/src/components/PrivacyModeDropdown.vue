@@ -166,7 +166,7 @@ watch([enabled, multiplier], setData);
 
   &__expander {
     background-color: #f5f5f5 !important;
-    @apply p-0 absolute z-10 right-0 text-black top-[1.875rem] w-4 h-4 sm:top-8 sm:w-[1.125rem] sm:h-[1.125rem];
+    @apply p-0 absolute z-10 right-0 text-black top-[1.875rem] w-4 h-4 lg:top-8 lg:w-[1.125rem] lg:h-[1.125rem];
   }
 
   &__menu {

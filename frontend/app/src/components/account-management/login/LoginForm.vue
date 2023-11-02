@@ -24,6 +24,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 
+const isTest = import.meta.env.VITE_TEST;
 const { errors, isDocker } = toRefs(props);
 
 const usersApi = useUsersApi();
@@ -324,7 +325,7 @@ const abortLogin = () => {
         <div>
           <form novalidate @submit.stop.prevent="login()">
             <RuiTextField
-              v-if="isDocker"
+              v-if="isDocker || isTest"
               ref="usernameRef"
               v-model="username"
               variant="outlined"
