@@ -43,13 +43,13 @@ const css = useCssModule();
       :value="value"
       gap="md"
       class="flex-wrap justify-center"
+      active-color="primary"
       required
       @input="input($event)"
     >
       <RuiButton
         v-for="(timeframe, i) in visibleTimeframes"
         :key="i"
-        :color="timeframe === value ? 'primary' : 'grey'"
         class="px-4"
         :disabled="!premium && !worksWithoutPremium(timeframe)"
         :value="timeframe"
