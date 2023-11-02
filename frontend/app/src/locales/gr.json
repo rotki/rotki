@@ -931,7 +931,7 @@
     "name": "rotki"
   },
   "asset_balances": {
-    "loading": "Please wait while rotki queries the blockchain..."
+    "loading": "Περιμένετε όσο η rotki ζητά τα υπόλοιπα..."
   },
   "asset_form": {
     "fetch_latest_icon": {

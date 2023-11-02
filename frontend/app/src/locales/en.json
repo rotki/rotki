@@ -997,7 +997,7 @@
     "name": "rotki"
   },
   "asset_balances": {
-    "loading": "Please wait while rotki queries the blockchain..."
+    "loading": "Please wait while rotki queries the balances..."
   },
   "asset_form": {
     "add_error": "Couldn't save asset",

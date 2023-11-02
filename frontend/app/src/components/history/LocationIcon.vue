@@ -67,9 +67,4 @@ const css = useCssModule();
   height: v-bind(size);
   width: v-bind(size);
 }
-
-.icon {
-  max-height: calc(v-bind(size) - 0.2rem);
-  max-width: calc(v-bind(size) - 0.2rem);
-}
 </style>

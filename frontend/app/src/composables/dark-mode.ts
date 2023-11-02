@@ -19,12 +19,12 @@ export const useDarkMode = createSharedComposable(() => {
       const newColors = {
         primary: {
           DEFAULT: hexToRgbPoints(themes.primary.base).join(', '),
-          lighter: hexToRgbPoints(themes.primary.lighten4).join(', '),
+          lighter: hexToRgbPoints(themes.primary.lighten2).join(', '),
           darker: hexToRgbPoints(themes.primary.darken1).join(', ')
         },
         secondary: {
           DEFAULT: hexToRgbPoints(themes.accent.base).join(', '),
-          lighter: hexToRgbPoints(themes.accent.lighten4).join(', '),
+          lighter: hexToRgbPoints(themes.accent.lighten2).join(', '),
           darker: hexToRgbPoints(themes.accent.darken1).join(', ')
         }
       };

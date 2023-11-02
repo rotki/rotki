@@ -17,8 +17,8 @@ const { enabled, to } = toRefs(props);
 const router = useRouter();
 
 const navigate = async () => {
-  if (enabled) {
-    await router.push(to.value);
+  if (get(enabled)) {
+    await router.push(get(to));
   }
 };
 
