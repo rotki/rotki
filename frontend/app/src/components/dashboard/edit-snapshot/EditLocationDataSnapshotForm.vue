@@ -44,7 +44,7 @@ const rules = {
   }
 };
 
-const { valid, setValidation } = useEditLocationsSnapshotForm();
+const { setValidation } = useEditLocationsSnapshotForm();
 
 const v$ = setValidation(
   rules,
@@ -57,29 +57,25 @@ const v$ = setValidation(
 </script>
 
 <template>
-  <VForm :value="valid" class="pt-4">
-    <div class="mb-4">
-      <LocationSelector
-        :value="form.location"
-        :excludes="excludedLocations"
-        outlined
-        :label="t('common.location')"
-        :error-messages="toMessages(v$.location)"
-        @input="updateForm({ location: $event })"
-      />
-    </div>
-    <div class="mb-4">
-      <AmountInput
-        :value="form.usdValue"
-        outlined
-        :label="
-          t('common.value_in_symbol', {
-            symbol: currencySymbol
-          })
-        "
-        :error-messages="toMessages(v$.value)"
-        @input="updateForm({ usdValue: $event })"
-      />
-    </div>
-  </VForm>
+  <div class="pt-1 flex flex-col gap-4">
+    <LocationSelector
+      :value="form.location"
+      :excludes="excludedLocations"
+      outlined
+      :label="t('common.location')"
+      :error-messages="toMessages(v$.location)"
+      @input="updateForm({ location: $event })"
+    />
+    <AmountInput
+      :value="form.usdValue"
+      outlined
+      :label="
+        t('common.value_in_symbol', {
+          symbol: currencySymbol
+        })
+      "
+      :error-messages="toMessages(v$.value)"
+      @input="updateForm({ usdValue: $event })"
+    />
+  </div>
 </template>

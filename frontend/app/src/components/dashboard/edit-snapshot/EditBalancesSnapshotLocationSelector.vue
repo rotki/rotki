@@ -33,6 +33,9 @@ const { t } = useI18n();
       <LocationSelector
         :value="value"
         :items="locations"
+        class="edit-balances-snapshot__location"
+        attach=".edit-balances-snapshot__location"
+        :menu-props="{ top: true }"
         outlined
         clearable
         :persistent-hint="!value"

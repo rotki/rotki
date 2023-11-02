@@ -207,6 +207,8 @@ const showDeleteConfirmation = (item: IndexedLocationDataSnapshot) => {
       :headers="tableHeaders"
       :items="data"
       :mobile-breakpoint="0"
+      flat
+      disable-floating-header
     >
       <template #item.location="{ item }">
         <LocationDisplay :opens-details="false" :identifier="item.location" />
@@ -227,29 +229,37 @@ const showDeleteConfirmation = (item: IndexedLocationDataSnapshot) => {
         />
       </template>
     </DataTable>
-    <VSheet elevation="10" class="flex items-center px-4 py-2">
+    <div
+      class="border-t-2 border-rui-grey-300 dark:border-rui-grey-800 relative z-[2] flex items-center justify-between gap-4 p-2"
+    >
       <div>
         <div class="text-caption">{{ t('common.total') }}:</div>
-        <div class="font-bold text-h6 mt-n1">
+        <div class="font-bold text-h6 -mt-1">
           <AmountDisplay :value="total" fiat-currency="USD" />
         </div>
       </div>
-      <VSpacer />
-      <VBtn text color="primary" class="mr-4" @click="add()">
-        <VIcon class="mr-2">mdi-plus</VIcon>
-        <span>
+
+      <div class="flex gap-2">
+        <RuiButton variant="text" color="primary" @click="add()">
+          <template #prepend>
+            <RuiIcon name="add-circle-line" />
+          </template>
           {{ t('dashboard.snapshot.edit.dialog.actions.add_new_entry') }}
-        </span>
-      </VBtn>
-      <VBtn class="mr-4" @click="updateStep(1)">
-        <VIcon>mdi-chevron-left</VIcon>
-        {{ t('common.actions.back') }}
-      </VBtn>
-      <VBtn color="primary" @click="updateStep(3)">
-        {{ t('common.actions.next') }}
-        <VIcon>mdi-chevron-right</VIcon>
-      </VBtn>
-    </VSheet>
+        </RuiButton>
+        <RuiButton variant="text" @click="updateStep(1)">
+          <template #prepend>
+            <RuiIcon name="arrow-left-line" />
+          </template>
+          {{ t('common.actions.back') }}
+        </RuiButton>
+        <RuiButton color="primary" @click="updateStep(3)">
+          {{ t('common.actions.next') }}
+          <template #append>
+            <RuiIcon name="arrow-right-line" />
+          </template>
+        </RuiButton>
+      </div>
+    </div>
 
     <BigDialog
       :display="openDialog"
@@ -272,9 +282,3 @@ const showDeleteConfirmation = (item: IndexedLocationDataSnapshot) => {
     </BigDialog>
   </div>
 </template>
-
-<style module lang="scss">
-.asset {
-  max-width: 640px;
-}
-</style>

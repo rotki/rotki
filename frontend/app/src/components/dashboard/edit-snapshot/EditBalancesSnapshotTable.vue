@@ -396,17 +396,15 @@ const tableContainer = computed(() => get(tableRef)?.$el);
 
 <template>
   <div>
-    <VRow class="pa-4">
-      <VCol md="6">
-        <AssetSelect
-          v-model="assetSearch"
-          outlined
-          hide-details
-          clearable
-          :label="t('dashboard.snapshot.search_asset')"
-        />
-      </VCol>
-    </VRow>
+    <div class="grid md:grid-cols-2 pa-4 border-b border-default">
+      <AssetSelect
+        v-model="assetSearch"
+        outlined
+        hide-details
+        clearable
+        :label="t('dashboard.snapshot.search_asset')"
+      />
+    </div>
     <DataTable
       ref="tableRef"
       class="table-inside-dialog"
@@ -415,6 +413,8 @@ const tableContainer = computed(() => get(tableRef)?.$el);
       :items="filteredData"
       :container="tableContainer"
       :mobile-breakpoint="0"
+      flat
+      disable-floating-header
     >
       <template #item.category="{ item }">
         <div>
@@ -428,8 +428,7 @@ const tableContainer = computed(() => get(tableRef)?.$el);
       <template #item.assetIdentifier="{ item }">
         <AssetDetails
           v-if="!isNft(item.assetIdentifier)"
-          :class="css.asset"
-          :asset-styled="{ padding: '2px 0.75rem' }"
+          class="max-w-[20rem] px-4"
           :asset="item.assetIdentifier"
           :opens-details="false"
           :enable-association="false"
@@ -458,24 +457,31 @@ const tableContainer = computed(() => get(tableRef)?.$el);
         />
       </template>
     </DataTable>
-    <VSheet elevation="10" class="flex items-center px-4 py-2">
+    <div
+      class="border-t-2 border-rui-grey-300 dark:border-rui-grey-800 relative z-[2] flex items-center justify-between gap-4 p-2"
+    >
       <div>
         <div class="text-caption">{{ t('common.total') }}:</div>
-        <div class="font-bold text-h6 mt-n1">
+        <div class="font-bold text-h6 -mt-1">
           <AmountDisplay :value="total" fiat-currency="USD" />
         </div>
       </div>
-      <VSpacer />
-      <VBtn text color="primary" class="mr-4" @click="add()">
-        <VIcon class="mr-2">mdi-plus</VIcon>
-        <span>
+
+      <div class="flex gap-2">
+        <RuiButton variant="text" color="primary" @click="add()">
+          <template #prepend>
+            <RuiIcon name="add-circle-line" />
+          </template>
           {{ t('dashboard.snapshot.edit.dialog.actions.add_new_entry') }}
-        </span>
-      </VBtn>
-      <VBtn color="primary" @click="updateStep(2)">
-        {{ t('common.actions.next') }}
-      </VBtn>
-    </VSheet>
+        </RuiButton>
+        <RuiButton color="primary" @click="updateStep(2)">
+          {{ t('common.actions.next') }}
+          <template #append>
+            <RuiIcon name="arrow-right-line" />
+          </template>
+        </RuiButton>
+      </div>
+    </div>
 
     <BigDialog
       :display="openDialog"
@@ -528,10 +534,6 @@ const tableContainer = computed(() => get(tableRef)?.$el);
 </template>
 
 <style module lang="scss">
-.asset {
-  max-width: 640px;
-}
-
 .table-inside-dialog {
   max-height: calc(100vh - 420px);
 }

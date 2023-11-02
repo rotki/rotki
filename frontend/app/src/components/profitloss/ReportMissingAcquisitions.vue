@@ -168,7 +168,9 @@ const isIgnored = (asset: string) => get(isAssetIgnored(asset));
             </template>
             <VList>
               <VListItem link @click="ignoreAsset(item.asset)">
-                <VListItemTitle>{{ t('assets.ignore') }}</VListItemTitle>
+                <VListItemTitle>
+                  {{ t('assets.ignore') }}
+                </VListItemTitle>
               </VListItem>
             </VList>
           </VMenu>
