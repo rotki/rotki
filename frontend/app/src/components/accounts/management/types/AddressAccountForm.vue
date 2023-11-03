@@ -144,14 +144,10 @@ onMounted(() => {
 
     <div class="flex flex-col gap-4">
       <AddressInput
-        :addresses="addresses"
-        :error-messages="errorMessages.address"
+        :addresses.sync="addresses"
+        :error-messages.sync="errorMessages"
         :disabled="loading || !!accountToEdit"
         :multi="!accountToEdit"
-        @update:addresses="
-          delete errorMessages['address'];
-          addresses = $event;
-        "
       />
       <AccountDataInput
         :tags="tags"

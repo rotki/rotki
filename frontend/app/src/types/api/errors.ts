@@ -33,13 +33,15 @@ export class ApiValidationError extends Error {
     const errorKeys = Object.keys(errors);
     const payloadKeys = Object.keys(payload);
 
-    for (const errorKey of errorKeys) {
-      if (!payloadKeys.includes(errorKey)) {
-        const entry = errors[errorKey];
-        if (typeof entry === 'string') {
-          return entry;
+    if (Object.keys(payload).length > 0) {
+      for (const errorKey of errorKeys) {
+        if (!payloadKeys.includes(errorKey)) {
+          const entry = errors[errorKey];
+          if (typeof entry === 'string') {
+            return entry;
+          }
+          return entry[0] || '';
         }
-        return entry[0] || '';
       }
     }
 

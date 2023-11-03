@@ -8,22 +8,25 @@ const props = withDefaults(
     addresses: string[];
     disabled: boolean;
     multi: boolean;
-    errorMessages?: string[];
+    errorMessages?: Record<string, string[]>;
   }>(),
   {
-    errorMessages: () => []
+    errorMessages: () => ({})
   }
 );
 
 const emit = defineEmits<{
   (e: 'update:addresses', addresses: string[]): void;
+  (e: 'update:error-messages', errorMessages: Record<string, string[]>): void;
 }>();
 
 const { t } = useI18n();
 const { errorMessages, addresses, disabled } = toRefs(props);
-const address = ref('');
-const userAddresses = ref('');
-const multiple = ref(false);
+
+const address: Ref<string> = ref('');
+const userAddresses: Ref<string> = ref('');
+const multiple: Ref<boolean> = ref(false);
+
 const entries = computed(() => {
   const allAddresses = get(userAddresses)
     .split(',')
@@ -42,6 +45,7 @@ const entries = computed(() => {
 });
 
 watch(multiple, () => {
+  get(v$).$clearExternalResults();
   set(userAddresses, '');
 });
 
@@ -66,7 +70,12 @@ const onPasteAddress = (event: ClipboardEvent) => {
 };
 
 const updateAddresses = (addresses: string[]) => {
+  get(v$).$clearExternalResults();
   emit('update:addresses', addresses);
+};
+
+const updateErrorMessages = (errorMessages: Record<string, string[]>) => {
+  emit('update:error-messages', errorMessages);
 };
 
 watch(entries, addresses => updateAddresses(addresses));
@@ -100,6 +109,26 @@ const rules = {
 
 const { setValidation } = useAccountDialog();
 
+const errorMessagesModel = computed({
+  get() {
+    const errors = get(errorMessages);
+    return {
+      address: errors.address || '',
+      userAddresses: errors.address || ''
+    };
+  },
+  set(newErrors) {
+    const error = newErrors.address;
+    if (error) {
+      updateErrorMessages({
+        address: error
+      });
+    } else {
+      updateErrorMessages({});
+    }
+  }
+});
+
 const v$ = setValidation(
   rules,
   {
@@ -109,9 +138,7 @@ const v$ = setValidation(
   {
     $autoDirty: true,
     $stopPropagation: true,
-    $externalResults: computed(() => ({
-      address: get(errorMessages)
-    }))
+    $externalResults: errorMessagesModel
   }
 );
 
