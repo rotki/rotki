@@ -24,6 +24,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 
+const isTest = import.meta.env.VITE_TEST;
 const { errors, isDocker } = toRefs(props);
 
 const usersApi = useUsersApi();
@@ -125,17 +126,7 @@ const passwordError = useArrayFind(errors, error =>
   error.startsWith('Wrong password ')
 );
 
-const savedUsernames = computedAsync(async () => await usersApi.users(), []);
-
-const usernames = computed(() => {
-  const data: string[] = [...get(savedUsernames)];
-  const _username = get(username);
-  if (_username && !data.includes(_username)) {
-    data.unshift(_username);
-  }
-
-  return data;
-});
+const savedUsernames: Ref<string[]> = ref([]);
 
 const hasServerError = computed(
   () => !!get(usernameError) || !!get(passwordError)
@@ -241,8 +232,12 @@ const loadSettings = async () => {
   }
 };
 
-onMounted(async () => {
+onBeforeMount(async () => {
   await loadSettings();
+  set(savedUsernames, await usersApi.users());
+});
+
+onMounted(async () => {
   updateFocus();
 });
 
@@ -333,7 +328,7 @@ const abortLogin = () => {
         <div>
           <form novalidate @submit.stop.prevent="login()">
             <RuiTextField
-              v-if="isDocker"
+              v-if="isDocker || isTest"
               ref="usernameRef"
               v-model="username"
               variant="outlined"
@@ -351,17 +346,17 @@ const abortLogin = () => {
               ref="usernameRef"
               v-model="username"
               :label="t('login.label_username')"
-              :items="usernames"
+              :items="savedUsernames"
               :disabled="loading || conflictExist || customBackendDisplay"
               :error-messages="usernameErrors"
               data-cy="username-input"
               class="mb-2"
               validate-on-blur
               hide-no-data
+              auto-select-first
               clearable
               outlined
               dense
-              @update:search-input="username = $event ?? ''"
             />
 
             <RuiRevealableTextField

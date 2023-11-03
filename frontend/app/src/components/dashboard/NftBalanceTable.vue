@@ -147,12 +147,14 @@ watch(loading, async (isLoading, wasLoading) => {
         id="nft_balance_table__column-filter"
         transition="slide-y-transition"
         max-width="250px"
+        nudge-bottom="20"
         offset-y
+        left
       >
         <template #activator="{ on }">
           <MenuTooltipButton
             :tooltip="t('dashboard_asset_table.select_visible_columns')"
-            class-name="ml-4 nft_balance_table__column-filter__button"
+            class-name="nft_balance_table__column-filter__button"
             :on-menu="on"
           >
             <VIcon>mdi-dots-vertical</VIcon>

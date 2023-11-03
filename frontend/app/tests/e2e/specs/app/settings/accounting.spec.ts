@@ -1,6 +1,6 @@
-import { Guid } from '../../../common/guid';
 import { AccountingSettingsPage } from '../../../pages/accounting-settings-page';
 import { RotkiApp } from '../../../pages/rotki-app';
+import { createUser } from '../../../utils/user';
 
 describe('settings::accounting', () => {
   let username: string;
@@ -8,7 +8,7 @@ describe('settings::accounting', () => {
   let pageAccounting: AccountingSettingsPage;
 
   before(() => {
-    username = Guid.newGuid().toString();
+    username = createUser();
     app = new RotkiApp();
     pageAccounting = new AccountingSettingsPage();
     app.fasterLogin(username);

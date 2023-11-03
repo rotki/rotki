@@ -158,7 +158,7 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
         dense
         prepend-inner-icon="mdi-magnify"
         :label="t('common.actions.search')"
-        class="pa-0 ma-0 dashboard-asset-table__search"
+        class="p-0 m-0 mr-4 dashboard-asset-table__search"
         single-line
         hide-details
         clearable
@@ -170,11 +170,12 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
         max-width="250px"
         nudge-bottom="20"
         offset-y
+        left
       >
         <template #activator="{ on }">
           <MenuTooltipButton
             :tooltip="t('dashboard_asset_table.select_visible_columns')"
-            class-name="ml-4 dashboard-asset-table__column-filter__button"
+            class-name="dashboard-asset-table__column-filter__button"
             :on-menu="on"
           >
             <VIcon>mdi-dots-vertical</VIcon>

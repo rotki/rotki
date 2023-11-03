@@ -1,6 +1,6 @@
-import { Guid } from '../../common/guid';
 import { ApiKeysPage } from '../../pages/api-keys-page';
 import { RotkiApp } from '../../pages/rotki-app';
+import { createUser } from '../../utils/user';
 
 describe('API keys', () => {
   let username: string;
@@ -8,7 +8,7 @@ describe('API keys', () => {
   let page: ApiKeysPage;
 
   before(() => {
-    username = Guid.newGuid().toString();
+    username = createUser();
     app = new RotkiApp();
     page = new ApiKeysPage();
     app.fasterLogin(username);

@@ -1,6 +1,6 @@
-import { Guid } from '../../common/guid';
 import { AssetsManagerPage } from '../../pages/assets-manager-page';
 import { RotkiApp } from '../../pages/rotki-app';
+import { createUser } from '../../utils/user';
 
 describe('assets', () => {
   let username: string;
@@ -8,7 +8,7 @@ describe('assets', () => {
   let page: AssetsManagerPage;
 
   before(() => {
-    username = Guid.newGuid().toString();
+    username = createUser();
     app = new RotkiApp();
     page = new AssetsManagerPage();
     app.fasterLogin(username);

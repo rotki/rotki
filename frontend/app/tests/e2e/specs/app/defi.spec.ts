@@ -1,6 +1,6 @@
-import { Guid } from '../../common/guid';
 import { DefiPage } from '../../pages/defi-page';
 import { RotkiApp } from '../../pages/rotki-app';
+import { createUser } from '../../utils/user';
 
 describe('defi', () => {
   let username: string;
@@ -8,7 +8,7 @@ describe('defi', () => {
   let page: DefiPage;
 
   before(() => {
-    username = Guid.newGuid().toString();
+    username = createUser();
     app = new RotkiApp();
     page = new DefiPage();
     app.fasterLogin(username);

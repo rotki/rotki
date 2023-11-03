@@ -1,6 +1,6 @@
-import { Guid } from '../../../common/guid';
 import { GeneralSettingsPage } from '../../../pages/general-settings-page';
 import { RotkiApp } from '../../../pages/rotki-app';
+import { createUser } from '../../../utils/user';
 
 describe('settings::general', () => {
   let username: string;
@@ -23,7 +23,7 @@ describe('settings::general', () => {
   };
 
   before(() => {
-    username = Guid.newGuid().toString();
+    username = createUser();
     app = new RotkiApp();
     pageGeneral = new GeneralSettingsPage();
     app.fasterLogin(username);

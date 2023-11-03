@@ -75,8 +75,14 @@ export class RotkiApp {
     cy.get('[data-cy=username-input]').should('be.visible');
     cy.get('[data-cy=username-input]').as('username');
     cy.get('[data-cy=password-input]').as('password');
-    cy.get('@username').type(`{selectall}{backspace}${username}{esc}`);
-    cy.get('@password').type(`{selectall}{backspace}${password}`);
+    cy.get('@username').clear();
+    cy.get('@username').should('be.empty');
+    cy.get('@username').type(username);
+    cy.get('@username').should('have.value', username);
+    cy.get('@password').clear();
+    cy.get('@username').should('be.empty');
+    cy.get('@password').type(password);
+    cy.get('@password').should('have.value', password);
     cy.get('[data-cy=login-submit]').click();
   }
 

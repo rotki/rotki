@@ -165,11 +165,8 @@ watch([enabled, multiplier], setData);
   position: relative;
 
   &__expander {
-    width: 20px;
-    height: 20px;
-    top: 32px;
     background-color: #f5f5f5 !important;
-    @apply p-0 absolute z-10 right-0 text-black;
+    @apply p-0 absolute z-10 right-0 text-black top-[1.875rem] w-4 h-4 lg:top-8 lg:w-[1.125rem] lg:h-[1.125rem];
   }
 
   &__menu {
