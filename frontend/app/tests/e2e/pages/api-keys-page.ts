@@ -22,8 +22,8 @@ export class ApiKeysPage {
       .type(`{selectall}{backspace}${exchange}{enter}`);
 
     cy.get('@keys').find('[data-cy="name"]').type(name);
-    cy.get('@keys').find('[data-cy="api-key"] input').type(apiKey);
-    cy.get('@keys').find('[data-cy="api-secret"] input').type(apiSecret);
+    cy.get('@keys').find('[data-cy="api-key"]').type(apiKey);
+    cy.get('@keys').find('[data-cy="api-secret"]').type(apiSecret);
 
     cy.intercept(
       {

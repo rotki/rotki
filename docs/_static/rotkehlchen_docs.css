@@ -6,6 +6,12 @@
   color: red;
 }
 
+.green {
+  color: green;
+}
+
 .rst-content section > img {
-  margin-bottom: 24px !important;
+  margin-bottom: 1.5rem !important;
+  border-radius: 0.5rem;
+  border: 1px solid #ccc;
 }

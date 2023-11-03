@@ -21,6 +21,10 @@ const { costBasis, currency } = toRefs(props);
 
 const panel = ref<number[]>([]);
 
+watch(costBasis, () => {
+  set(panel, []);
+});
+
 const css = useCssModule();
 
 const tableHeaders = computed<DataTableHeader[]>(() => [

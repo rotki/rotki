@@ -9677,9 +9677,9 @@ Getting watchers
       }
 
    :resjson object result: An list containing all the watcher results.
-   :reqjsonarr string identifier: The identifier with which to identify this vault. It's unique per user and vault args + watcher combination. The client needs to keep this identifier. If the entry is edited, the identifier changes.
-   :reqjsonarr string type: The type of the watcher. Valid types are: "makervault_collateralization_ratio".
-   :reqjsonarr object args: An object containing the args for the vault. Depending on the vault type different args are possible. Check `here <watcher_types_section_>`__ to see the different options.
+   :reqjson string identifier: The identifier with which to identify this vault. It's unique per user and vault args + watcher combination. The client needs to keep this identifier. If the entry is edited, the identifier changes.
+   :reqjson string type: The type of the watcher. Valid types are: "makervault_collateralization_ratio".
+   :reqjson object args: An object containing the args for the vault. Depending on the vault type different args are possible. Check `here <watcher_types_section_>`__ to see the different options.
    :statuscode 200: Watchers successfully queried
    :statuscode 409: No user is currently logged in or currently logged in user does not have a premium subscription.
    :statuscode 500: Internal rotki error

@@ -22,7 +22,7 @@ export const MatchedAcquisitionsEvent = z.object({
 });
 
 export const MatchedAcquisitions = z.object({
-  amount: NumericString.nullish(),
+  amount: NumericString,
   taxable: z.boolean(),
   event: MatchedAcquisitionsEvent
 });
