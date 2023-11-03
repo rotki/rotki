@@ -17,6 +17,7 @@ enum HistoryEventFilterKeys {
   ASSET = 'asset',
   PROTOCOL = 'protocol',
   EVENT_TYPE = 'event_type',
+  EVENT_SUBTYPE = 'event_subtype',
   LOCATION = 'location',
   PRODUCT = 'product',
   ENTRY_TYPE = 'type',
@@ -32,6 +33,7 @@ enum HistoryEventFilterValueKeys {
   ASSET = 'asset',
   PROTOCOL = 'counterparties',
   EVENT_TYPE = 'eventTypes',
+  EVENT_SUBTYPE = 'eventSubtypes',
   LOCATION = 'location',
   PRODUCT = 'products',
   ENTRY_TYPE = 'entryTypes',
@@ -55,13 +57,20 @@ export const useHistoryEventFilter = (
     locations?: boolean;
     period?: boolean;
     validators?: boolean;
+    eventTypes?: boolean;
+    eventSubtypes?: boolean;
   },
   entryTypes?: MaybeRef<HistoryEventEntryType[]>
 ) => {
   const filters: Ref<Filters> = ref({});
 
   const { dateInputFormat } = storeToRefs(useFrontendSettingsStore());
-  const { counterparties, historyEventProducts } = useHistoryEventMappings();
+  const {
+    counterparties,
+    historyEventTypes,
+    historyEventSubTypes,
+    historyEventProducts
+  } = useHistoryEventMappings();
   const { assetSearch } = useAssetInfoApi();
   const { assetInfo } = useAssetInfoRetrieval();
   const { associatedLocations } = storeToRefs(useHistoryStore());
@@ -114,6 +123,12 @@ export const useHistoryEventFilter = (
       !entryTypesVal ||
       entryTypesVal.some(
         type => isEvmEventType(type) || isEthDepositEventType(type)
+      );
+
+    const evmOrOnlineEventsIncluded =
+      !entryTypesVal ||
+      entryTypesVal.some(
+        type => isEvmEventType(type) || isOnlineHistoryEventType(type)
       );
 
     const eventsWithValidatorIndexIncluded =
@@ -174,6 +189,31 @@ export const useHistoryEventFilter = (
         allowExclusion: true,
         behaviourRequired: true
       });
+    }
+
+    if (evmOrOnlineEventsIncluded) {
+      if (!disabled.eventTypes) {
+        data.push({
+          key: HistoryEventFilterKeys.EVENT_TYPE,
+          keyValue: HistoryEventFilterValueKeys.EVENT_TYPE,
+          description: t('transactions.filter.event_type'),
+          string: true,
+          multiple: true,
+          suggestions: () => get(historyEventTypes),
+          validate: (type: string) => !!type
+        });
+      }
+      if (!disabled.eventSubtypes) {
+        data.push({
+          key: HistoryEventFilterKeys.EVENT_SUBTYPE,
+          keyValue: HistoryEventFilterValueKeys.EVENT_SUBTYPE,
+          description: t('transactions.filter.event_subtype'),
+          string: true,
+          multiple: true,
+          suggestions: () => get(historyEventSubTypes),
+          validate: (type: string) => !!type
+        });
+      }
     }
 
     if (evmOrEthDepositEventsIncluded) {
@@ -247,6 +287,8 @@ export const useHistoryEventFilter = (
     [HistoryEventFilterValueKeys.PRODUCT]: OptionalMultipleString,
     [HistoryEventFilterValueKeys.LOCATION]: OptionalString,
     [HistoryEventFilterValueKeys.ENTRY_TYPE]: OptionalMultipleString,
+    [HistoryEventFilterValueKeys.EVENT_TYPE]: OptionalMultipleString,
+    [HistoryEventFilterValueKeys.EVENT_SUBTYPE]: OptionalMultipleString,
     [HistoryEventFilterValueKeys.TX_HASHES]: OptionalMultipleString,
     [HistoryEventFilterValueKeys.ADDRESSES]: OptionalMultipleString,
     [HistoryEventFilterValueKeys.VALIDATOR_INDICES]: OptionalMultipleString,
