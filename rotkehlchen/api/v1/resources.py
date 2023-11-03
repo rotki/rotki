@@ -1,3 +1,4 @@
+import json
 import sys
 from collections.abc import Sequence
 from functools import wraps
@@ -341,7 +342,7 @@ def allow_async_validation() -> Callable:
         except ValidationError as e:
             return {
                 'result': None,
-                'message': str(e),
+                'message': json.dumps(e.normalized_messages()),  # type: ignore[no-untyped-call]  # marshmallow doesn't have types for this function
                 'status_code': HTTPStatus.BAD_REQUEST,
             }
         except Exception as e:  # pylint: disable=broad-exception-caught
