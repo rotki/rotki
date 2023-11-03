@@ -45,14 +45,17 @@ export const useBlockchains = () => {
     });
   };
 
-  const fetchAccounts = async (blockchain?: Blockchain): Promise<void> => {
+  const fetchAccounts = async (
+    blockchain?: Blockchain,
+    userInitiated: boolean = false
+  ): Promise<void> => {
     const promises: Promise<any>[] = [];
 
     const chains = Object.values(Blockchain);
     if (!blockchain) {
-      promises.push(...chains.map(chain => fetch(chain)));
+      promises.push(...chains.map(chain => fetch(chain, userInitiated)));
     } else {
-      promises.push(fetch(blockchain));
+      promises.push(fetch(blockchain, userInitiated));
     }
 
     await Promise.allSettled(promises);

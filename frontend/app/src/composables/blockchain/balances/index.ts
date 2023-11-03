@@ -18,8 +18,7 @@ export const useBlockchainBalances = () => {
     useBtcBalancesStore();
   const { update: updateChains, updatePrices: updateChainPrices } =
     useChainBalancesStore();
-  const { fetchEnsNames } = useAddressesNamesStore();
-  const { isEvm, getChainName } = useSupportedChains();
+  const { getChainName } = useSupportedChains();
   const { t } = useI18n();
 
   const handleFetch = async (
@@ -54,21 +53,6 @@ export const useBlockchainBalances = () => {
       updateBtc(blockchain, balances);
       updateChains(blockchain, balances);
       setStatus(Status.LOADED);
-
-      if (isEvm(blockchain)) {
-        const perChainBalances = balances.perAccount[blockchain];
-        if (!perChainBalances) {
-          return;
-        }
-
-        const addresses = [...Object.keys(perChainBalances)];
-        startPromise(
-          fetchEnsNames(
-            addresses.map(address => ({ address, blockchain })),
-            ignoreCache
-          )
-        );
-      }
     } catch (e: any) {
       logger.error(e);
       notify({

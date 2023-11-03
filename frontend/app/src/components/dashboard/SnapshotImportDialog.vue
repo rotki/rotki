@@ -92,7 +92,6 @@ const complete = logicOr(balanceFile, locationFile);
         </RuiButton>
         <RuiButton
           color="primary"
-          variant="outlined"
           :disabled="!complete"
           :loading="loading"
           @click="emit('import')"

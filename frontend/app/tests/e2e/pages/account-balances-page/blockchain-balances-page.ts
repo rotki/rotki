@@ -16,6 +16,7 @@ export interface FixtureBlockchainBalance {
 export class BlockchainBalancesPage {
   visit() {
     RotkiApp.navigateTo('accounts-balances', 'accounts-balances-blockchain');
+    cy.assertNoRunningTasks();
   }
 
   isGroupped(balance: FixtureBlockchainBalance) {

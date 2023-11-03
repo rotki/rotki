@@ -28,11 +28,11 @@ const css = useCssModule();
 
 <template>
   <div
-    class="flex items-center justify-center gap-1"
+    class="flex items-center justify-center"
     data-cy="location-icon"
     :class="{
-      'flex-row': horizontal,
-      'flex-col': !horizontal,
+      'flex-row gap-2': horizontal,
+      'flex-col gap-1': !horizontal,
       skeleton: !location,
       [css.wrapper]: icon
     }"
@@ -69,11 +69,7 @@ const css = useCssModule();
 </template>
 
 <style lang="scss" module>
-.wrapper {
-  height: v-bind(size);
-  width: v-bind(size);
-}
-
+.wrapper,
 .icon {
   height: v-bind(size);
   width: v-bind(size);

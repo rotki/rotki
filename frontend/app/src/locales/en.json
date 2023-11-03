@@ -1738,7 +1738,7 @@
               "location": "This is optional. If specified, the location balance data will be adjusted automatically. If not, you have to update location balance data manually."
             },
             "nft": "NFT",
-            "nft_hint": "Accepted format: \"_nft_{ETH address}_{collection number}\"",
+            "nft_hint": "Accepted format: \"_nft_{'ETH address'}_{'collection number'}\"",
             "optional": "Optional",
             "preview": {
               "from": "From",

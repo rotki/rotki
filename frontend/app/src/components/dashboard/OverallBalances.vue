@@ -133,7 +133,7 @@ const { dark } = useTheme();
 
 <template>
   <RuiCard class="overall-balances">
-    <div class="grid md:grid-cols-2 lg:grid-cols-12 p-2 gap-4">
+    <div class="grid md:grid-cols-2 lg:grid-cols-12 p-2 gap-4 overflow-hidden">
       <div class="lg:col-span-5 flex flex-col items-center justify-center">
         <div
           class="text-center font-medium mb-2 flex"
