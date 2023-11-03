@@ -53,10 +53,12 @@ describe('table-filter/FilterDropdown.vue', () => {
 
     wrapper = createWrapper({ propsData });
 
-    expect(wrapper.findAll('.suggestions > div')).toHaveLength(matchers.length);
+    expect(wrapper.findAll('.suggestions > button')).toHaveLength(
+      matchers.length
+    );
     expect(
       wrapper
-        .find('.suggestions > div:nth-child(2)')
+        .find('.suggestions > button:nth-child(2)')
         .classes()
         .includes('highlightedMatcher')
     ).toBeTruthy();
@@ -96,14 +98,14 @@ describe('table-filter/FilterDropdown.vue', () => {
     await wrapper.vm.$nextTick();
 
     const suggestions = matchers[1].suggestions();
-    expect(wrapper.findAll('.suggestions > div')).toHaveLength(
+    expect(wrapper.findAll('.suggestions > button')).toHaveLength(
       suggestions.length
     );
 
-    expect(wrapper.find('.suggestions > div:nth-child(1)').text()).toBe(
+    expect(wrapper.find('.suggestions > button:nth-child(1)').text()).toBe(
       'type = type 1'
     );
-    expect(wrapper.find('.suggestions > div:nth-child(2)').text()).toBe(
+    expect(wrapper.find('.suggestions > button:nth-child(2)').text()).toBe(
       'type = type 2'
     );
 
@@ -113,10 +115,10 @@ describe('table-filter/FilterDropdown.vue', () => {
 
     await wrapper.vm.$nextTick();
 
-    expect(wrapper.find('.suggestions > div:nth-child(1)').text()).toBe(
+    expect(wrapper.find('.suggestions > button:nth-child(1)').text()).toBe(
       'type != type 1'
     );
-    expect(wrapper.find('.suggestions > div:nth-child(2)').text()).toBe(
+    expect(wrapper.find('.suggestions > button:nth-child(2)').text()).toBe(
       'type != type 2'
     );
 
@@ -126,10 +128,10 @@ describe('table-filter/FilterDropdown.vue', () => {
 
     await wrapper.vm.$nextTick();
 
-    expect(wrapper.find('.suggestions > div:nth-child(1)').text()).toBe(
+    expect(wrapper.find('.suggestions > button:nth-child(1)').text()).toBe(
       'type = type 2'
     );
-    expect(wrapper.find('.suggestions > div:nth-child(2)').text()).toBe(
+    expect(wrapper.find('.suggestions > button:nth-child(2)').text()).toBe(
       'type = type 1'
     );
   });

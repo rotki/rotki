@@ -1,7 +1,10 @@
 <script setup lang="ts">
-import { type AssetInfo } from '@rotki/common/lib/data';
 import { type Ref } from 'vue';
-import { type SearchMatcher, type Suggestion } from '@/types/filtering';
+import {
+  type BaseSuggestion,
+  type SearchMatcher,
+  type Suggestion
+} from '@/types/filtering';
 
 const props = withDefaults(
   defineProps<{
@@ -25,8 +28,6 @@ const emit = defineEmits<{
 const { keyword, selectedMatcher, selectedSuggestion } = toRefs(props);
 
 const keywordSplited = computed(() => splitSearch(get(keyword)));
-
-const css = useCssModule();
 
 const lastSuggestion: Ref<Suggestion | null> = ref(null);
 const suggested: Ref<Suggestion[]> = ref([]);
@@ -80,11 +81,8 @@ watch([keyword, selectedMatcher], async ([keyword, selectedMatcher]) => {
   const suggestedFilter = selectedMatcher.key;
 
   const searchString = search.value ?? '';
-  let suggestedItems: {
-    key: string;
-    value: string | AssetInfo;
-    exclude: boolean;
-  }[] = [];
+
+  let suggestedItems: BaseSuggestion[] = [];
 
   if ('string' in selectedMatcher) {
     suggestedItems = selectedMatcher.suggestions().map(item => ({
@@ -102,25 +100,32 @@ watch([keyword, selectedMatcher], async ([keyword, selectedMatcher]) => {
         })
       );
     }
+  } else if ('boolean' in selectedMatcher) {
+    suggestedItems = [
+      {
+        key: suggestedFilter,
+        value: true,
+        exclude: false
+      }
+    ];
   } else {
     logger.debug(
-      'Matcher is missing asset=true or string=true',
+      "Matcher doesn't have asset=true, string=true, or boolean=true.",
       selectedMatcher
     );
   }
+
+  const getItemText = (item: BaseSuggestion) =>
+    typeof item.value === 'string'
+      ? item.value
+      : `${item.value.symbol} ${item.value.evmChain}`;
 
   set(
     suggested,
     suggestedItems
       .sort((a, b) => {
-        const aText =
-          typeof a.value === 'string'
-            ? a.value
-            : `${a.value.symbol} ${a.value.evmChain}`;
-        const bText =
-          typeof b.value === 'string'
-            ? b.value
-            : `${b.value.symbol} ${b.value.evmChain}`;
+        const aText = getItemText(a);
+        const bText = getItemText(b);
         return compareSymbols(aText, bText, searchString);
       })
       .slice(0, 5)
@@ -148,38 +153,34 @@ watch(selectedSuggestion, () => {
   });
 });
 
-const highlightedTextClasses = 'text-subtitle-2 text--secondary';
+const highlightedTextClasses = 'text-subtitle-2 text-rui-text-secondary';
+
+const css = useCssModule();
 </script>
 
 <template>
   <div class="px-4 py-1">
     <div v-if="selectedMatcher">
       <div v-if="suggested.length > 0" class="mb-2" :class="css.suggestions">
-        <div
+        <RuiButton
           v-for="(item, index) in suggested"
           :key="item.index"
           :tabindex="index"
+          variant="text"
+          class="text-body-1 tracking-wide w-full justify-start text-left text-rui-text-secondary"
+          :class="{
+            ['!bg-rui-primary-lighter/20']: index === selectedSuggestion
+          }"
+          @click="applyFilter(item)"
         >
-          <VBtn
-            text
-            color="primary"
-            :class="{
-              [css.selected]: index === selectedSuggestion
-            }"
-            class="text-none text-body-1 px-3 w-full"
-            @click="applyFilter(item)"
-          >
-            <span class="text-start w-full">
-              <SuggestedItem :suggestion="item" />
-            </span>
-          </VBtn>
-        </div>
+          <SuggestedItem :suggestion="item" />
+        </RuiButton>
       </div>
       <div v-else class="pb-0">
-        <div class="text--secondary">
+        <div class="text-rui-text-secondary">
           <i18n path="table_filter.no_suggestions">
             <template #search>
-              <span class="font-medium">
+              <span class="font-medium text-rui-primary">
                 {{ keywordSplited.key }}
               </span>
             </template>
@@ -190,7 +191,7 @@ const highlightedTextClasses = 'text-subtitle-2 text--secondary';
       <div
         v-if="'string' in selectedMatcher && selectedMatcher.allowExclusion"
         :class="highlightedTextClasses"
-        class="font-weight-regular pt-2"
+        class="font-light pt-2"
       >
         {{ t('table_filter.exclusion.description') }}
         <span class="font-medium">
@@ -214,7 +215,7 @@ const highlightedTextClasses = 'text-subtitle-2 text--secondary';
       <div :class="highlightedTextClasses" class="text-uppercase font-bold">
         {{ t('table_filter.title') }}
       </div>
-      <VDivider class="my-2" />
+      <RuiDivider class="my-2" />
       <div :class="css.suggestions">
         <FilterEntry
           v-for="(matcher, index) in matchers"
@@ -226,8 +227,8 @@ const highlightedTextClasses = 'text-subtitle-2 text--secondary';
         />
       </div>
     </div>
-    <div :class="highlightedTextClasses" class="font-weight-regular mt-2">
-      <VDivider class="my-2" />
+    <div :class="highlightedTextClasses" class="font-light mt-2">
+      <RuiDivider class="my-2" />
       <span>{{ t('table_filter.hint.description') }}</span>
       <span class="font-medium">
         {{ t('table_filter.hint.example') }}
@@ -239,13 +240,8 @@ const highlightedTextClasses = 'text-subtitle-2 text--secondary';
   </div>
 </template>
 
-<style module lang="scss">
-.selected {
-  background-color: var(--v-primary-lighten4);
-}
-
+<style lang="scss" module>
 .suggestions {
-  max-height: 180px;
-  overflow-y: scroll;
+  @apply max-h-[12rem] overflow-y-auto;
 }
 </style>

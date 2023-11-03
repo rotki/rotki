@@ -72,14 +72,16 @@ describe('table-filter/FilterDropdown.vue', () => {
 
     wrapper = createWrapper({ propsData });
 
-    expect(wrapper.findAll('.suggestions > div')).toHaveLength(matchers.length);
+    expect(wrapper.findAll('.suggestions > button')).toHaveLength(
+      matchers.length
+    );
 
     await wrapper.find('.search-input').trigger('input', { value: 'ty' });
 
     await wrapper.vm.$nextTick();
 
-    expect(wrapper.findAll('.suggestions > div')).toHaveLength(1);
-    expect(wrapper.find('.suggestions > div:first-child').text()).toBe(
+    expect(wrapper.findAll('.suggestions > button')).toHaveLength(1);
+    expect(wrapper.find('.suggestions > button:first-child').text()).toBe(
       `${matchers[1].key}:  ${matchers[1].description}`
     );
   });
@@ -99,20 +101,18 @@ describe('table-filter/FilterDropdown.vue', () => {
 
     // Suggestions for `type`
     const suggestions = matchers[1].suggestions();
-    expect(wrapper.findAll('.suggestions > div')).toHaveLength(
+    expect(wrapper.findAll('.suggestions > button')).toHaveLength(
       suggestions.length
     );
 
     suggestions.forEach((item, index) => {
       expect(
-        wrapper.find(`.suggestions > div:nth-child(${index + 1})`).text()
+        wrapper.find(`.suggestions > button:nth-child(${index + 1})`).text()
       ).toBe(`type = ${item}`);
     });
 
     // Choose first suggestions (type 1)
-    await wrapper
-      .find('.suggestions > div:first-child button')
-      .trigger('click');
+    await wrapper.find('.suggestions > button:first-child').trigger('click');
 
     await wrapper.vm.$nextTick();
 
@@ -131,9 +131,7 @@ describe('table-filter/FilterDropdown.vue', () => {
 
     await wrapper.vm.$nextTick();
 
-    await wrapper
-      .find('.suggestions > div:first-child button')
-      .trigger('click');
+    await wrapper.find('.suggestions > button:first-child').trigger('click');
 
     await wrapper.vm.$nextTick();
 
@@ -184,20 +182,18 @@ describe('table-filter/FilterDropdown.vue', () => {
 
     // Suggestions for `type`
     const suggestions = matchers[1].suggestions();
-    expect(wrapper.findAll('.suggestions > div')).toHaveLength(
+    expect(wrapper.findAll('.suggestions > button')).toHaveLength(
       suggestions.length
     );
 
     suggestions.forEach((item, index) => {
       expect(
-        wrapper.find(`.suggestions > div:nth-child(${index + 1})`).text()
+        wrapper.find(`.suggestions > button:nth-child(${index + 1})`).text()
       ).toBe(`type != ${item}`);
     });
 
     // Choose first suggestions with exclusion (type 1)
-    await wrapper
-      .find('.suggestions > div:first-child button')
-      .trigger('click');
+    await wrapper.find('.suggestions > button:first-child').trigger('click');
 
     await wrapper.vm.$nextTick();
 

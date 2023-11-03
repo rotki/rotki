@@ -165,7 +165,9 @@ const {
         protocols: get(protocols).length > 0,
         locations: !!get(location),
         period: !!get(period),
-        validators: !!get(validators)
+        validators: !!get(validators),
+        eventTypes: get(eventTypes).length > 0,
+        eventSubtypes: get(eventSubTypes).length > 0
       },
       entryTypes
     ),

@@ -4,8 +4,7 @@ import { type SearchMatcher } from '@/types/filtering';
 import FilterEntry from '@/components/table-filter/FilterEntry.vue';
 
 vi.mocked(useCssModule).mockReturnValue({
-  selected: 'selected',
-  description: 'description'
+  selected: 'selected'
 });
 
 describe('table-filter/FilterEntry.vue', () => {
@@ -33,7 +32,7 @@ describe('table-filter/FilterEntry.vue', () => {
 
   it('Common case', () => {
     wrapper = createWrapper({ matcher, active: false });
-    expect(wrapper.find('div span > span:first-child').text()).toBe(
+    expect(wrapper.find('button').text()).toBe(
       `${matcher.key}:  ${matcher.description}`
     );
     expect(wrapper.find('.selected').exists()).toBeFalsy();

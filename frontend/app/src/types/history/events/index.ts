@@ -145,6 +145,7 @@ export interface HistoryEventRequestPayload
   readonly entryTypes?: FilterObjectWithBehaviour<string | string[]>;
   readonly txHashes?: string | string[];
   readonly validatorIndices?: string | string[];
+  readonly customizedEventsOnly?: boolean;
 }
 
 export type EditEvmHistoryEventPayload = Omit<

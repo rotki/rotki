@@ -16,10 +16,21 @@ const { suggestion } = toRefs(props);
 
 const { assetInfo } = useAssetInfoRetrieval();
 
+const isBoolean = computed(() => {
+  const item = get(suggestion);
+  const value = item.value;
+
+  return typeof value === 'boolean';
+});
+
 const displayValue = computed(() => {
   const item = get(suggestion);
-
   const value = item.value;
+
+  if (get(isBoolean)) {
+    return `${value}`;
+  }
+
   if (!item.asset) {
     return value;
   }
@@ -41,42 +52,38 @@ const displayValue = computed(() => {
 });
 
 const css = useCssModule();
-const { dark } = useTheme();
 </script>
 
 <template>
   <span class="font-medium flex items-center">
-    <span>
+    <span :class="{ 'text-rui-primary': !chip }">
       {{ suggestion.key }}
     </span>
-    <span
-      :class="{
-        [css.comparator]: chip,
-        [css['comparator--dark']]: dark
-      }"
-      class="px-1 font-bold"
-    >
-      <span>{{ suggestion.exclude ? '!=' : '=' }}</span>
-    </span>
-    <span>
-      {{ truncateAddress(displayValue, 10) }}
-    </span>
+    <template v-if="!(chip && isBoolean)">
+      <span
+        :class="{
+          [css.comparator]: chip,
+          ['text-rui-primary']: !chip
+        }"
+        class="px-1"
+      >
+        <span>{{ suggestion.exclude ? '!=' : '=' }}</span>
+      </span>
+      <span class="font-normal">
+        {{ truncateAddress(displayValue, 10) }}
+      </span>
+    </template>
   </span>
 </template>
 
 <style lang="scss" module>
 .comparator {
-  padding: 6px 4px;
-  border-color: white;
-  border-style: solid;
-  border-left-width: 1px;
-  border-right-width: 1px;
-  margin: 0 6px;
-  display: flex;
-  align-items: center;
+  @apply py-1.5 border-l border-r border-white mx-1.5 flex items-center;
+}
 
-  &--dark {
-    border-color: var(--v-rotki-light-grey-base);
+:global(.dark) {
+  .comparator {
+    @apply border-rui-grey-900 #{!important};
   }
 }
 </style>

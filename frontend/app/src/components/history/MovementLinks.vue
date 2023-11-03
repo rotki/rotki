@@ -44,7 +44,7 @@ const transactionId = computed<string>(() => {
       <HashLink :text="item.address" :chain="chain" full-address no-link />
     </span>
     <span v-if="item.transactionId" class="flex flex-row mt-1">
-      <span class="mr-1 font-medium"> {{ t('common.tx') }}: </span>
+      <span class="mr-1 font-medium"> {{ t('common.tx_hash') }}: </span>
       <HashLink
         v-if="isValidTxHash(transactionId)"
         :text="transactionId"

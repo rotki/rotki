@@ -17,12 +17,14 @@ enum HistoryEventFilterKeys {
   ASSET = 'asset',
   PROTOCOL = 'protocol',
   EVENT_TYPE = 'event_type',
+  EVENT_SUBTYPE = 'event_subtype',
   LOCATION = 'location',
   PRODUCT = 'product',
   ENTRY_TYPE = 'type',
   TX_HASHES = 'tx_hash',
   VALIDATOR_INDICES = 'validator_index',
-  ADDRESSES = 'address'
+  ADDRESSES = 'address',
+  CUSTOMIZED_EVENTS = 'customized_only'
 }
 
 enum HistoryEventFilterValueKeys {
@@ -31,12 +33,14 @@ enum HistoryEventFilterValueKeys {
   ASSET = 'asset',
   PROTOCOL = 'counterparties',
   EVENT_TYPE = 'eventTypes',
+  EVENT_SUBTYPE = 'eventSubtypes',
   LOCATION = 'location',
   PRODUCT = 'products',
   ENTRY_TYPE = 'entryTypes',
   TX_HASHES = 'txHashes',
   VALIDATOR_INDICES = 'validatorIndices',
-  ADDRESSES = 'addresses'
+  ADDRESSES = 'addresses',
+  CUSTOMIZED_EVENTS = 'customizedEventsOnly'
 }
 
 export type Matcher = SearchMatcher<
@@ -53,13 +57,20 @@ export const useHistoryEventFilter = (
     locations?: boolean;
     period?: boolean;
     validators?: boolean;
+    eventTypes?: boolean;
+    eventSubtypes?: boolean;
   },
   entryTypes?: MaybeRef<HistoryEventEntryType[]>
 ) => {
   const filters: Ref<Filters> = ref({});
 
   const { dateInputFormat } = storeToRefs(useFrontendSettingsStore());
-  const { counterparties, historyEventProducts } = useHistoryEventMappings();
+  const {
+    counterparties,
+    historyEventTypes,
+    historyEventSubTypes,
+    historyEventProducts
+  } = useHistoryEventMappings();
   const { assetSearch } = useAssetInfoApi();
   const { assetInfo } = useAssetInfoRetrieval();
   const { associatedLocations } = storeToRefs(useHistoryStore());
@@ -112,6 +123,12 @@ export const useHistoryEventFilter = (
       !entryTypesVal ||
       entryTypesVal.some(
         type => isEvmEventType(type) || isEthDepositEventType(type)
+      );
+
+    const evmOrOnlineEventsIncluded =
+      !entryTypesVal ||
+      entryTypesVal.some(
+        type => isEvmEventType(type) || isOnlineHistoryEventType(type)
       );
 
     const eventsWithValidatorIndexIncluded =
@@ -174,6 +191,31 @@ export const useHistoryEventFilter = (
       });
     }
 
+    if (evmOrOnlineEventsIncluded) {
+      if (!disabled.eventTypes) {
+        data.push({
+          key: HistoryEventFilterKeys.EVENT_TYPE,
+          keyValue: HistoryEventFilterValueKeys.EVENT_TYPE,
+          description: t('transactions.filter.event_type'),
+          string: true,
+          multiple: true,
+          suggestions: () => get(historyEventTypes),
+          validate: (type: string) => !!type
+        });
+      }
+      if (!disabled.eventSubtypes) {
+        data.push({
+          key: HistoryEventFilterKeys.EVENT_SUBTYPE,
+          keyValue: HistoryEventFilterValueKeys.EVENT_SUBTYPE,
+          description: t('transactions.filter.event_subtype'),
+          string: true,
+          multiple: true,
+          suggestions: () => get(historyEventSubTypes),
+          validate: (type: string) => !!type
+        });
+      }
+    }
+
     if (evmOrEthDepositEventsIncluded) {
       data.push(
         {
@@ -209,6 +251,13 @@ export const useHistoryEventFilter = (
       });
     }
 
+    data.push({
+      key: HistoryEventFilterKeys.CUSTOMIZED_EVENTS,
+      keyValue: HistoryEventFilterValueKeys.CUSTOMIZED_EVENTS,
+      description: t('transactions.filter.customized_only'),
+      boolean: true
+    });
+
     return data;
   });
 
@@ -225,6 +274,11 @@ export const useHistoryEventFilter = (
     .transform(val => (Array.isArray(val) ? val : [val]))
     .optional();
 
+  const OptionalBoolean = z
+    .string()
+    .transform(val => !!val)
+    .optional();
+
   const RouteFilterSchema = z.object({
     [HistoryEventFilterValueKeys.START]: OptionalString,
     [HistoryEventFilterValueKeys.END]: OptionalString,
@@ -233,9 +287,12 @@ export const useHistoryEventFilter = (
     [HistoryEventFilterValueKeys.PRODUCT]: OptionalMultipleString,
     [HistoryEventFilterValueKeys.LOCATION]: OptionalString,
     [HistoryEventFilterValueKeys.ENTRY_TYPE]: OptionalMultipleString,
+    [HistoryEventFilterValueKeys.EVENT_TYPE]: OptionalMultipleString,
+    [HistoryEventFilterValueKeys.EVENT_SUBTYPE]: OptionalMultipleString,
     [HistoryEventFilterValueKeys.TX_HASHES]: OptionalMultipleString,
     [HistoryEventFilterValueKeys.ADDRESSES]: OptionalMultipleString,
-    [HistoryEventFilterValueKeys.VALIDATOR_INDICES]: OptionalMultipleString
+    [HistoryEventFilterValueKeys.VALIDATOR_INDICES]: OptionalMultipleString,
+    [HistoryEventFilterValueKeys.CUSTOMIZED_EVENTS]: OptionalBoolean
   });
 
   return {

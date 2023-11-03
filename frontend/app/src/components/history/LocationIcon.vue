@@ -43,7 +43,7 @@ const css = useCssModule();
         v-if="location.image"
         :width="size"
         :height="size"
-        class="object-contain dark:p-[0.1rem] icon-bg"
+        class="object-contain dark:p-[0.1rem] icon-bg max-w-full max-h-full"
         :class="css.icon"
         :src="location.image"
         :alt="location.name"
@@ -55,7 +55,13 @@ const css = useCssModule();
         :size="size"
         :name="location.icon"
       />
-      <span v-if="!icon" class="text-capitalize text-rui-text-secondary -mb-1">
+      <span
+        v-if="!icon"
+        class="text-capitalize text-rui-text-secondary"
+        :class="{
+          '-mb-1': !horizontal
+        }"
+      >
         {{ location.name }}
       </span>
     </template>
@@ -64,6 +70,11 @@ const css = useCssModule();
 
 <style lang="scss" module>
 .wrapper {
+  height: v-bind(size);
+  width: v-bind(size);
+}
+
+.icon {
   height: v-bind(size);
   width: v-bind(size);
 }

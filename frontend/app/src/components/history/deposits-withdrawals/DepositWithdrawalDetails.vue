@@ -15,14 +15,8 @@ const { t } = useI18n();
       {{ t('deposits_withdrawals.details.title') }}
     </template>
     <MovementLinks v-if="item.address || item.transactionId" :item="item" />
-    <div v-else class="font-medium pa-4" :class="$style.empty">
+    <div v-else class="font-medium">
       {{ t('deposits_withdrawals.details.no_details') }}
     </div>
   </TableExpandContainer>
 </template>
-
-<style module lang="scss">
-.empty {
-  height: 100px;
-}
-</style>
