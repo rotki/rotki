@@ -74,6 +74,7 @@ export const BaseAccountingSettings = z.object({
   accountForAssetsMovements: z.boolean(),
   profitCurrency: z.string().nullish(),
   ethStakingTaxableAfterWithdrawalEnabled: z.boolean().nullish(),
+  includeFeesInCostBasis: z.boolean(),
   costBasisMethod: CostBasisMethodEnum.nullish()
 });
 
@@ -121,6 +122,7 @@ const getAccountingSettings = (settings: UserSettings): AccountingSettings => ({
   includeCrypto2crypto: settings.includeCrypto2crypto,
   accountForAssetsMovements: settings.accountForAssetsMovements,
   calculatePastCostBasis: settings.calculatePastCostBasis,
+  includeFeesInCostBasis: settings.includeFeesInCostBasis,
   costBasisMethod: settings.costBasisMethod,
   ethStakingTaxableAfterWithdrawalEnabled:
     settings.ethStakingTaxableAfterWithdrawalEnabled

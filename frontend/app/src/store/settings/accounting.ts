@@ -9,6 +9,9 @@ export const useAccountingSettingsStore = defineStore(
     const pnlCsvHaveSummary = computed(() => settings.pnlCsvHaveSummary);
     const pnlCsvWithFormulas = computed(() => settings.pnlCsvWithFormulas);
     const includeCrypto2crypto = computed(() => settings.includeCrypto2crypto);
+    const includeFeesInCostBasis = computed(
+      () => settings.includeFeesInCostBasis
+    );
     const includeGasCosts = computed(() => settings.includeGasCosts);
     const taxfreeAfterPeriod = computed(() => settings.taxfreeAfterPeriod);
     const accountForAssetsMovements = computed(
@@ -35,6 +38,7 @@ export const useAccountingSettingsStore = defineStore(
       accountForAssetsMovements,
       calculatePastCostBasis,
       ethStakingTaxableAfterWithdrawalEnabled,
+      includeFeesInCostBasis,
       costBasisMethod,
       // return settings on development for state persistence
       ...(checkIfDevelopment() ? { settings } : {}),

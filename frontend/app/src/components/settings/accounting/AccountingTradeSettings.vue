@@ -14,6 +14,7 @@ const { t } = useI18n();
     <AccountAssetMovementsSetting />
     <CalculatePastCostBasisSetting />
     <EthStakingTaxableAfterWithdrawalSetting />
+    <CostBasisFeesSetting />
     <CostBasisMethodSetting />
   </SettingCategory>
 </template>

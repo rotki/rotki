@@ -134,6 +134,7 @@
   },
   "account_settings_display": {
     "account_asset_movement": "考虑了账户资产变动费用:",
+    "cost_basis_fees": "考虑了成本基础费用:",
     "cost_basis_method": "成本基础方法:",
     "crypto2crypto": "加密到加密交易被考虑在内:",
     "days": "{days} 天",
@@ -150,6 +151,7 @@
       "labels": {
         "account_for_assets_movements": "考虑资产移动费用",
         "calculate_past_cost_basis": "创建报告时计算过去的成本基础",
+        "include_fees_in_cost_basis": "考虑成本基础费用",
         "cost_basis_method": "成本基础法",
         "eth_staking_taxable_after_withdrawal_enabled": "在启用提款之前，应该从会计中忽略 ETH 质押事件",
         "include_crypto2crypto": "考虑加密到加密交易",
