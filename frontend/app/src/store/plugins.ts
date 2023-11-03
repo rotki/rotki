@@ -7,7 +7,6 @@ export const StoreResetPlugin = ({ store }: PiniaPluginContext): void => {
     let state: any;
     if (store.$id === 'main') {
       state = cloneDeep(store.$state);
-      state.newUser = false;
       state.connectionFailure = false;
     } else {
       state = cloneDeep(initialState);

@@ -26,7 +26,8 @@ const showConfirmation = () =>
         await clearPassword();
       }
 
-      await Promise.all([logout(), navigateToUserLogin()]);
+      await logout();
+      await navigateToUserLogin();
     }
   );
 
@@ -90,7 +91,7 @@ const { darkModeEnabled } = useDarkMode();
           {{ t('user_dropdown.switch_theme') }}
         </ThemeControl>
 
-        <VDivider />
+        <RuiDivider />
         <VListItem
           key="logout"
           class="user-dropdown__logout px-6 py-1"

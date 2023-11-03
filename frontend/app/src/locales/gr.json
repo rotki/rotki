@@ -1484,9 +1484,9 @@
         "check_prompt": "Επιβεβαιώστε ότι έχετε διαβάσει και δημιουργήσει αντίγραφο ασφαλείας",
         "non_empty_password": "Παρακαλώ δώστε έναν κωδικό πρόσβασης",
         "non_empty_password_confirmation": "Παρακαλώ δώστε επιβεβαίωση κωδικού πρόσβασης",
-        "non_empty_username": "Παρακαλώ δώστε ένα όνομα χρήστη",
+        "non_empty_username": "Δώστε ένα όνομα προφίλ",
         "password_confirmation_mismatch": "Η επιβεβαίωση του κωδικού πρόσβασης δεν ταιριάζει με τον παρεχόμενο κωδικό πρόσβασης",
-        "valid_username": "Ένα όνομα χρήστη πρέπει να περιέχει μόνο αλφαριθμητικούς χαρακτήρες και να μην περιέχει κενά"
+        "valid_username": "Ένα όνομα προφίλ πρέπει να περιέχει μόνο αλφαριθμητικούς χαρακτήρες και να μην έχει κενά"
       }
     },
     "have_account": {
@@ -2749,7 +2749,7 @@
     "logout": "Logout",
     "remember_password": "Remember Password",
     "remember_password_tooltip": "The password will be saved on password management tool on your local machine (e.g. Keychain in MacOS)",
-    "remember_username": "Remember Username",
+    "remember_username": "Θυμηθείτε το όνομα προφίλ",
     "sync_error": {
       "local_modified": "Local last modified: {0}",
       "question": "Do you want to replace your local database?",
@@ -2764,8 +2764,8 @@
     },
     "validation": {
       "non_empty_password": "Please provide a password",
-      "non_empty_username": "Please provide a user name",
-      "valid_username": "A username must contain only alphanumeric characters and have no spaces"
+      "non_empty_username": "Δώστε ένα όνομα προφίλ",
+      "valid_username": "Ένα όνομα προφίλ πρέπει να περιέχει μόνο αλφαριθμητικούς χαρακτήρες και να μην έχει κενά"
     },
     "welcome_description": "Καλώς ήρθατε στον διαχειριστή χαρτοφυλακίου ανοιχτού κώδικα που προστατεύει το απόρρητό σας.",
     "welcome_title": "Καλώς ήρθατε στο rotki",

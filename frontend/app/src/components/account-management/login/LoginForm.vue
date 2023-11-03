@@ -232,9 +232,20 @@ const loadSettings = async () => {
   }
 };
 
+const router = useRouter();
+
 onBeforeMount(async () => {
   await loadSettings();
-  set(savedUsernames, await usersApi.users());
+  const profiles = await usersApi.getUserProfiles();
+  set(savedUsernames, profiles);
+  if (profiles.length === 0) {
+    const { currentRoute } = router;
+    if (!currentRoute.query.disableNoUserRedirection) {
+      newAccount();
+    } else {
+      await router.replace({ query: {} });
+    }
+  }
 });
 
 onMounted(async () => {
@@ -351,13 +362,33 @@ const abortLogin = () => {
               :error-messages="usernameErrors"
               data-cy="username-input"
               class="mb-2"
-              validate-on-blur
-              hide-no-data
               auto-select-first
+              validate-on-blur
+              :hide-no-data="savedUsernames.length > 0"
               clearable
               outlined
               dense
-            />
+            >
+              <template #no-data>
+                <div class="px-4 py-2 text-body-2 font-medium">
+                  <i18n path="login.no_profiles_found">
+                    <template #create_account>
+                      <RuiButton
+                        color="primary"
+                        variant="text"
+                        class="text-[1em] py-0 inline px-1"
+                        :disabled="loading"
+                        type="button"
+                        data-cy="new-account"
+                        @click="newAccount()"
+                      >
+                        {{ t('login.button_create_account') }}
+                      </RuiButton>
+                    </template>
+                  </i18n>
+                </div>
+              </template>
+            </VAutocomplete>
 
             <RuiRevealableTextField
               ref="passwordRef"
@@ -423,11 +454,23 @@ const abortLogin = () => {
                 <template #activator>
                   <RuiButton
                     :disabled="loading"
+                    variant="text"
                     type="button"
                     icon
                     @click="customBackendDisplay = !customBackendDisplay"
                   >
                     <RuiIcon name="server-line" :color="serverColor" />
+                    <template #append>
+                      <RuiIcon
+                        size="16"
+                        class="-ml-2"
+                        :name="
+                          customBackendDisplay
+                            ? 'arrow-up-s-line'
+                            : 'arrow-down-s-line'
+                        "
+                      />
+                    </template>
                   </RuiButton>
                 </template>
               </RuiTooltip>
@@ -447,6 +490,7 @@ const abortLogin = () => {
               >
                 <RuiTextField
                   v-model="customBackendUrl"
+                  color="primary"
                   variant="outlined"
                   :error-messages="
                     v$.customBackendUrl.$errors.map(e => e.$message)
