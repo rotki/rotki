@@ -29,75 +29,83 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <Card :flat="flat">
-    <template #title>
+  <RuiCard>
+    <template #header>
       {{ t('profit_loss_overview.title') }}
     </template>
-    <VSimpleTable
-      class="rounded-lg border border-rui-grey-300 dark:border-rui-grey-600"
+    <div
+      class="!rounded-md border border-rui-grey-300 dark:border-rui-grey-600 w-full"
     >
-      <thead>
-        <tr>
-          <th class="text-left" v-text="t('common.type')" />
-          <th
-            class="text-right"
-            v-text="t('profit_loss_overview.headers.tax_free_profit_loss')"
-          />
-          <th
-            class="text-right"
-            v-text="t('profit_loss_overview.headers.taxable_profit_loss')"
-          />
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="(item, key) in report.overview" :key="key">
-          <td>{{ pluralizeLastWord(toCapitalCase(key)) }}</td>
-          <td class="text-right">
-            <AmountDisplay
-              pnl
-              force-currency
-              :value="item.free"
-              :loading="loading"
-              :fiat-currency="report.settings.profitCurrency"
-            />
-          </td>
-          <td class="text-right">
-            <AmountDisplay
-              pnl
-              force-currency
-              :value="item.taxable"
-              :loading="loading"
-              :fiat-currency="report.settings.profitCurrency"
-            />
-          </td>
-        </tr>
-        <tr>
-          <td colspan="3" />
-        </tr>
-        <tr>
-          <td class="font-medium text-subtitle-1">
-            {{ t('common.total') }}
-          </td>
-          <td class="text-right font-medium text-subtitle-1">
-            <AmountDisplay
-              pnl
-              force-currency
-              :value="total.free"
-              :loading="loading"
-              :fiat-currency="report.settings.profitCurrency"
-            />
-          </td>
-          <td class="text-right font-medium text-subtitle-1">
-            <AmountDisplay
-              pnl
-              force-currency
-              :value="total.taxable"
-              :loading="loading"
-              :fiat-currency="report.settings.profitCurrency"
-            />
-          </td>
-        </tr>
-      </tbody>
-    </VSimpleTable>
-  </Card>
+      <table class="w-full">
+        <thead
+          class="text-rui-text-secondary font-medium border-b border-default text-xs"
+        >
+          <tr>
+            <th class="text-left pa-4">
+              {{ t('common.type') }}
+            </th>
+            <th class="text-right pa-4">
+              {{ t('profit_loss_overview.headers.tax_free_profit_loss') }}
+            </th>
+            <th class="text-right pa-4">
+              {{ t('profit_loss_overview.headers.taxable_profit_loss') }}
+            </th>
+          </tr>
+        </thead>
+        <tbody class="text-body-2">
+          <tr
+            v-for="(item, key) in report.overview"
+            :key="key"
+            class="border-default border-b"
+          >
+            <td class="pa-4">{{ pluralizeLastWord(toCapitalCase(key)) }}</td>
+            <td class="text-right pa-4">
+              <AmountDisplay
+                pnl
+                force-currency
+                :value="item.free"
+                :loading="loading"
+                :fiat-currency="report.settings.profitCurrency"
+              />
+            </td>
+            <td class="text-right pa-4">
+              <AmountDisplay
+                pnl
+                force-currency
+                :value="item.taxable"
+                :loading="loading"
+                :fiat-currency="report.settings.profitCurrency"
+              />
+            </td>
+          </tr>
+          <tr v-if="Object.keys(report.overview).length === 0">
+            <td colspan="3" class="pa-4 h-[3rem]" />
+          </tr>
+          <tr class="border-t border-default text-xs font-medium">
+            <td class="pa-4">
+              {{ t('common.total') }}
+            </td>
+            <td class="text-right pa-4">
+              <AmountDisplay
+                pnl
+                force-currency
+                :value="total.free"
+                :loading="loading"
+                :fiat-currency="report.settings.profitCurrency"
+              />
+            </td>
+            <td class="text-right pa-4">
+              <AmountDisplay
+                pnl
+                force-currency
+                :value="total.taxable"
+                :loading="loading"
+                :fiat-currency="report.settings.profitCurrency"
+              />
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </RuiCard>
 </template>
