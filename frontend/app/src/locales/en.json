@@ -1592,9 +1592,9 @@
         "check_prompt": "Confirm that you have read and created a backup",
         "non_empty_password": "Please provide a password",
         "non_empty_password_confirmation": "Please provide a password confirmation",
-        "non_empty_username": "Please provide a user name",
+        "non_empty_username": "Please provide a profile name",
         "password_confirmation_mismatch": "The password confirmation does not match the provided password",
-        "valid_username": "A username must contain only alphanumeric characters and have no spaces"
+        "valid_username": "A profile name must contain only alphanumeric characters and have no spaces"
       }
     },
     "have_account": {
@@ -2933,9 +2933,10 @@
       "title": "Data Migration",
       "warning": "Data migration {currentVersion} is running. Please don't close the app until it's finished."
     },
+    "no_profiles_found": "No profiles were found on this machine. {create_account} ",
     "remember_password": "Remember Password",
     "remember_password_tooltip": "The password will be saved on password management tool on your local machine (e.g. Keychain in MacOS)",
-    "remember_username": "Remember Username",
+    "remember_username": "Remember Profile Name",
     "sync_error": {
       "local_modified": "Local last modified: {0}",
       "question": "Do you want to replace your local database?",
@@ -2950,8 +2951,8 @@
     },
     "validation": {
       "non_empty_password": "Please provide a password",
-      "non_empty_username": "Please provide a user name",
-      "valid_username": "A username must contain only alphanumeric characters and have no spaces"
+      "non_empty_username": "Please provide a profile name",
+      "valid_username": "A profile name must contain only alphanumeric characters and have no spaces"
     },
     "welcome_description": "Welcome to the open source portfolio manager that protects your privacy.",
     "welcome_title": "Welcome to rotki",

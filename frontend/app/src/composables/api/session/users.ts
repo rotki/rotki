@@ -28,7 +28,8 @@ export const useUsersApi = () => {
     return AccountSession.parse(handleResponse(response));
   };
 
-  const users = async (): Promise<string[]> => Object.keys(await getUsers());
+  const getUserProfiles = async (): Promise<string[]> =>
+    Object.keys(await getUsers());
 
   const checkIfLogged = async (username: string): Promise<boolean> =>
     (await getUsers())[username] === 'loggedin';
@@ -124,7 +125,7 @@ export const useUsersApi = () => {
     login,
     checkIfLogged,
     loggedUsers,
-    users,
+    getUserProfiles,
     logout,
     changeUserPassword
   };

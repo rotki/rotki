@@ -1510,9 +1510,9 @@
         "check_prompt": "确认您已阅读并创建了备份",
         "non_empty_password": "请提供密码",
         "non_empty_password_confirmation": "请提供密码确认",
-        "non_empty_username": "请提供用户名",
+        "non_empty_username": "請提供個人資料名稱",
         "password_confirmation_mismatch": "密码确认与提供的密码不匹配",
-        "valid_username": "用户名必须仅包含字母数字字符，不得包含空格"
+        "valid_username": "設定檔名稱必須僅包含字母數字字元且不能包含空格"
       }
     },
     "have_account": {
@@ -2788,7 +2788,7 @@
     },
     "remember_password": "记住密码d",
     "remember_password_tooltip": "密码将保存在本地计算机上的密码管理工具中（例如 MacOS 中的钥匙串）",
-    "remember_username": "记住用户名",
+    "remember_username": "記住個人資料名稱",
     "sync_error": {
       "local_modified": "本地最后修改时间：{0}",
       "question": "你想更换你的本地数据库吗？",
@@ -2803,8 +2803,8 @@
     },
     "validation": {
       "non_empty_password": "请提供密码",
-      "non_empty_username": "请提供用户名",
-      "valid_username": "用户名必须只包含字母数字字符且不能有空格"
+      "non_empty_username": "請提供個人資料名稱",
+      "valid_username": "設定檔名稱必須僅包含字母數字字元且不能包含空格"
     },
     "welcome_description": "欢迎使用保护您隐私的开源投资组合管理器。",
     "welcome_title": "欢迎来到 rotki",

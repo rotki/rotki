@@ -45,7 +45,7 @@ const steps = [
                 :loading="loading"
                 :error="error"
                 @error:clear="error = ''"
-                @cancel="navigateToUserLogin()"
+                @cancel="navigateToUserLogin(true)"
                 @confirm="createNewAccount($event)"
               />
             </UserHost>

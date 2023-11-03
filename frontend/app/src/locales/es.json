@@ -1477,9 +1477,9 @@
         "check_prompt": "Confirma que has leído y creado una copia de seguridad",
         "non_empty_password": "Por favor, proporciona una contraseña",
         "non_empty_password_confirmation": "Por favor, proporciona una confirmación de contraseña",
-        "non_empty_username": "Por favor, proporciona un nombre de usuario",
+        "non_empty_username": "Por favor proporcione un nombre de perfil",
         "password_confirmation_mismatch": "La confirmación de contraseña no coincide con la contraseña proporcionada",
-        "valid_username": "Un nombre de usuario debe contener solo caracteres alfanuméricos y no tener espacios"
+        "valid_username": "Un nombre de perfil debe contener solo caracteres alfanuméricos y no tener espacios"
       }
     },
     "have_account": {
@@ -2735,7 +2735,7 @@
     "logout": "Cerrar sesión",
     "remember_password": "Recordar contraseña",
     "remember_password_tooltip": "The password will be saved on password management tool on your local machine (e.g. Keychain in MacOS)",
-    "remember_username": "Recordar usuario",
+    "remember_username": "Recordar nombre de perfil",
     "sync_error": {
       "local_modified": "Local last modified: {0}",
       "question": "Do you want to replace your local database?",
@@ -2750,8 +2750,8 @@
     },
     "validation": {
       "non_empty_password": "Por favor introduzca una contraseña",
-      "non_empty_username": "Por favor introduzca un nombre de usuario",
-      "valid_username": "A username must contain only alphanumeric characters and have no spaces"
+      "non_empty_username": "Por favor proporcione un nombre de perfil",
+      "valid_username": "Un nombre de perfil debe contener solo caracteres alfanuméricos y no tener espacios"
     },
     "welcome_description": "Bienvenido al administrador de cartera de código abierto que protege su privacidad.",
     "welcome_title": "Bienvenido a rotki",

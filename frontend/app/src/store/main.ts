@@ -7,7 +7,6 @@ import { type DefaultBackendArguments } from '@/types/backend';
 let intervalId: any = null;
 
 export const useMainStore = defineStore('main', () => {
-  const newUser: Ref<boolean> = ref(false);
   const version: Ref<Version> = ref(defaultVersion());
   const connected: Ref<boolean> = ref(false);
   const connectionFailure: Ref<boolean> = ref(false);
@@ -20,7 +19,6 @@ export const useMainStore = defineStore('main', () => {
     sqliteInstructions: 0
   });
 
-  const usersApi = useUsersApi();
   const { info, ping } = useInfoApi();
 
   const updateNeeded = computed(() => {
@@ -92,10 +90,6 @@ export const useMainStore = defineStore('main', () => {
 
         const isConnected = !!(await ping());
         if (isConnected) {
-          const accounts = await usersApi.users();
-          if (accounts.length === 0) {
-            set(newUser, true);
-          }
           clearInterval(intervalId);
           set(connected, isConnected);
 
@@ -120,16 +114,11 @@ export const useMainStore = defineStore('main', () => {
     set(connected, isConnected);
   };
 
-  const setNewUser = (isNew: boolean): void => {
-    set(newUser, isNew);
-  };
-
   const setConnectionFailure = (failed: boolean): void => {
     set(connectionFailure, failed);
   };
 
   return {
-    newUser,
     version,
     appVersion,
     connected,
@@ -143,8 +132,7 @@ export const useMainStore = defineStore('main', () => {
     getVersion,
     getInfo,
     setConnected,
-    setConnectionFailure,
-    setNewUser
+    setConnectionFailure
   };
 });
 

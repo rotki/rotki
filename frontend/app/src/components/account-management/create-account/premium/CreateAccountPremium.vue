@@ -18,9 +18,6 @@ const { premiumEnabled, form } = toRefs(props);
 
 const { t } = useI18n();
 
-const store = useMainStore();
-const { newUser } = toRefs(store);
-
 const valid: Ref<boolean> = ref(false);
 
 const premiumSelectionButtons = computed(() => [
@@ -78,7 +75,7 @@ const premiumSelectionButtons = computed(() => [
       <RuiButton
         size="lg"
         class="w-full"
-        :disabled="loading || newUser"
+        :disabled="loading"
         @click="emit('back')"
       >
         {{ t('common.actions.back') }}
