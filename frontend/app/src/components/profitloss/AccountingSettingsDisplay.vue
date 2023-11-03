@@ -45,6 +45,10 @@ const items: ComputedRef<Item[]> = computed(() => {
       data: settings.includeCrypto2crypto
     },
     {
+      label: t('account_settings_display.cost_basis_fees'),
+      data: settings.includeFeesInCostBasis
+    },
+    {
       label: t('account_settings_display.gas_costs'),
       data: settings.includeGasCosts
     },

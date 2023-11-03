@@ -51,6 +51,7 @@ const defaultReport = (): SelectedReport => ({
     accountForAssetsMovements: false,
     includeGasCosts: false,
     includeCrypto2crypto: false,
+    includeFeesInCostBasis: true,
     profitCurrency: CURRENCY_USD
   }
 });

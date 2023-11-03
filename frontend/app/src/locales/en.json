@@ -121,6 +121,11 @@
         "enabled": "Successfully enabled eth staking taxable after withdrawal setting",
         "error": "Failed to change eth staking taxable after withdrawal setting: {message}"
       },
+      "include_fees_in_cost_basis": {
+        "disabled": "Successfully disabled cost basis fees setting",
+        "enabled": "Successfully enabled cost basis fees setting",
+        "error": "Failed to change cost basis fees settings: {message}"
+      },
       "export_csv_formulas": "Error setting the option to include formulas in CSV export: {message}",
       "gas_costs": "Error setting Ethereum gas costs: {message}",
       "have_csv_summary": "Error setting the option to include summary in CSV export: {message}",
@@ -134,6 +139,7 @@
   },
   "account_settings_display": {
     "account_asset_movement": "Account asset movement fees were taken into account:",
+    "cost_basis_fees": "Cost basis fees were taken into account:",
     "cost_basis_method": "Cost basis method:",
     "crypto2crypto": "Crypto to crypto trades were taken into account:",
     "days": "{days} days",
@@ -185,6 +191,7 @@
       "labels": {
         "account_for_assets_movements": "Take into account assets movements fees",
         "calculate_past_cost_basis": "Calculate past cost basis when creating the report",
+        "include_fees_in_cost_basis": "Take into account cost basis fees",
         "cost_basis_method": "Cost basis method",
         "eth_staking_taxable_after_withdrawal_enabled": "Should omit ETH staking events from accounting until withdrawals are enabled",
         "include_crypto2crypto": "Take into account crypto to crypto trades",
