@@ -90,6 +90,7 @@ const { t } = useI18n();
           :uploaded="uploaded"
           :error-message="importError"
           @update:uploaded="uploaded = $event"
+          @update:error-message="importError = $event"
         />
         <RuiButton
           color="primary"
