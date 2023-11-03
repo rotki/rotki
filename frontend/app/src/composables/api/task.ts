@@ -13,6 +13,7 @@ import {
   SyncConflictPayload
 } from '@/types/login';
 import { api } from '@/services/rotkehlchen-api';
+import { ApiValidationError } from '@/types/api/errors';
 
 export const useTaskApi = () => {
   const queryTasks = async (): Promise<TaskStatus> => {
@@ -42,9 +43,9 @@ export const useTaskApi = () => {
     const { outcome, statusCode } = handleResponse(response);
 
     if (outcome) {
-      if (statusCode === 300) {
-        const { result, message } = outcome;
+      const { result, message } = outcome;
 
+      if (statusCode === 300) {
         if (typeof result === 'object') {
           if (isEmpty(result)) {
             throw new IncompleteUpgradeError(message);
@@ -54,6 +55,8 @@ export const useTaskApi = () => {
             SyncConflictPayload.parse(result)
           );
         }
+      } else if (statusCode === 400) {
+        throw new ApiValidationError(message);
       }
       return outcome;
     }
