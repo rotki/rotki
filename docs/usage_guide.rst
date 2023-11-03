@@ -3,6 +3,8 @@ Rotki Usage Guide
 .. toctree::
   :maxdepth: 2
 
+.. role:: red
+.. role:: green
 
 Introduction
 *************
@@ -19,7 +21,6 @@ When you start rotki you are greeted with a sign-in/signup prompt. Rotki is a lo
    :alt: Creating a new account
    :align: center
 
-.. role:: red
 
 For creating a local account press "Create New Account". If you already have a premium subscription, you can choose to associate this local account with your premium subscription via the use of api keys.
 
@@ -387,7 +388,29 @@ Trade settings
 Crypto to crypto trades
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Specify whether crypto to crypto trades are taxable and should be taken into account. If yes then each crypto to crypto trade also creates a "virtual" trade that sells or buys the crypto asset for fiat and then sells or buys the fiat for the other crypto asset.
+A setting to determine whether crypto to crypto trades are taxable and should be taken into account. By default it's ``True``.
+
+Illustration: You have ``1`` ETH that you bought with price ``50 EUR``. Then you spend this ``1`` ETH for gas fees, and the price at the moment is ``100 EUR``.
+
+
+- ``True``: When you spending crypto (as in fees), a sell is also generated, and this sell can generate additional :green:`profit` or :red:`loss`. Each crypto to crypto trade creates a "virtual" trade that sells or buys the crypto asset for fiat and then sells or buys the fiat for the other crypto asset.
+
+..
+
+    By spending this ETH, it results in loss of ``100 EUR``.
+
+    Because you spend this ETH, you also sell this ETH for ``100 EUR``.
+    The profit of this sell is calculated as ``the value when you sell (100 EUR)`` minus ``the value when you bought (50 EUR)`` = ``50 EUR``
+
+    So total PnL of this action is ``-100 + 50`` = ``-50 EUR``
+
+
+- ``False``: The above does not happen.
+
+..
+
+    So total PnL of this action will be determined by the loss of your spending, which is ``-100 EUR``.
+
 
 EVM gas costs
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -431,11 +454,20 @@ Include fees in cost basis
 
 A setting to determine whether trade fees should be included into the cost basis of the asset sold/bought or not. By default it's ``True``.
 
+Illustration: You bought ``1`` ETH for ``10 EUR`` and paid ``1 EUR`` fee
 
-- ``True``:  The fee event just reduces the amount of the fee asset paid and nothing else. The actual fee is used to determine the cost basis of the asset sold/bought instead. So if say you bought 1 ETH for 10 EUR and paid 1 EUR fee, then the cost basis of that ETH is 11 EUR. This is where the fee is taken into account.
+- ``True``:  The fee event just reduces the amount of the fee asset paid and nothing else. The actual fee is used to determine the cost basis of the asset sold/bought instead.
 
-- ``False``: The above does not happen. So if say you bought 1 ETH for 10 EUR and paid 1 EUR fee, then the cost basis of that ETH is 10 EUR. But at the time of  the trade you also have a spend event of 1 EUR as fee.
+..
 
+    The cost basis of that ETH is ``10 + 1`` = ``11 EUR``. This is where the fee is taken into account.
+
+
+- ``False``: The above does not happen.
+
+..
+
+    The cost basis of that ETH is ``10 EUR``. But at the time of the trade you also have a spend event of ``1 EUR`` as fee.
 
 CSV Export settings
 --------------------
@@ -635,6 +667,9 @@ If all went well, you should be able to see your newly added exchange. If not pl
 
 You also have the option to enable/disable synchronization for the connected exchanges. Usually, you may want to disable the synchronization to prevent your IP getting banned because of too many syncs.
 
+.. note::
+   At the moment, `margin trades <https://github.com/rotki/rotki/issues/1980>`_ and `future trades <https://github.com/rotki/rotki/issues/1606>`_ haven't been supported in Rotki yet.
+
 .. image:: images/rotki_add_exchange_3.png
    :alt: List of connected exchanges
    :align: center
@@ -657,6 +692,14 @@ In case of an exchange providing a more granular permissions scheme (e.g. Coinba
    :align: center
 
 You may as well try creating an API key with the minimum read-related permissions, then adding it in rotki and finally checking that the connection was successful and data was loaded as expected. Otherwise, try again adding more read-related permissions.
+
+Kraken
+-----------------------------
+When inputting the API key for Kraken, you need to specify the type of your Kraken account, which depends on your Kraken account verification level. Refer to `this <https://support.kraken.com/hc/en-us/articles/360001395743-Verification-levels-explained>`_ for more information.
+
+.. image:: images/exchanges_add_kraken.png
+   :alt: Kraken account type
+   :align: center
 
 Binance / Binance US
 -----------------------------
@@ -816,8 +859,11 @@ Supported Locations
 --------------------
 A list of supported locations in rotki are ``"external"``, ``"kraken"``, ``"poloniex"``, ``"bittrex"``, ``"binance"``, ``"bitmex"``, ``"coinbase"``, ``"banks"``, ``"blockchain"``, ``"coinbasepro"``, ``"gemini"``, ``"equities"``, ``"realestate"``, ``"commodities"``, ``"cryptocom"``, ``"uniswap"``, ``"bitstamp"``, ``"binanceus"``, ``"bitfinex"``, ``"bitcoinde"``, ``"iconomi"``, ``"kucoin"``, ``"balancer"``, ``"loopring"``, ``"ftx"``, ``"nexo"``, ``"blockfi"``, ``"independentreserve"``, ``"gitcoin"``, ``"sushiswap"``, ``"shapeshift"``, ``"uphold"``, ``"bitpanda"``, ``"bisq"``, ``"ftxus"`` and ``"okx"``.
 
-**NOTE**: In the columns where an asset is expected you will need to use the identifier that such asset has in rotki otherwise the row won't be read.
-**NOTE**: If at any point, you're confused as regards the csv format, feel free to send us a message on `Discord <https://discord.gg/aGCxHG7>`_.
+.. note::
+   In the columns where an asset is expected you will need to use the identifier that such asset has in rotki otherwise the row won't be read.
+
+.. note::
+   If at any point, you're confused as regards the csv format, feel free to send us a message on `Discord <https://discord.gg/aGCxHG7>`_.
 
 .. _track_balances:
 
@@ -900,7 +946,8 @@ You will need to know what type of xpub your bitcoin wallet generates in order t
 
 An xpub does not allow spending your coins but provides information about your wallet. In rotki this information is stored safely encrypted in your local database.
 
-**NOTE: Bitcoin Cash(BCH) only supports P2PKH & P2SH_P2WPKH xpubs.**
+.. note::
+   Bitcoin Cash(BCH) only supports P2PKH & P2SH_P2WPKH xpubs.
 
 .. image:: images/add_xpub_key.png
    :alt: Add a bitcoin account using XPUB
@@ -924,78 +971,6 @@ For every evm address it is possible to trigger the process of detecting tokens 
 .. image:: images/tokens_detection.png
    :alt: Detecting tokens
    :align: center
-
-
-History events
-=====================
-
-Rotki is capable of pulling and decoding a bunch of different events, ranging from EVM chain transactions to exchanges events and more. When you visit the ``History Events`` section the process to obtain all the information will start. You will be able to check the status in an informative breakdown per blockchain address. Free users are limited to a number of latest events.
-
-.. image:: images/events_query_process.png
-   :alt: History events query status breakdown
-   :align: center
-
-It is possible that you need to redecode events for an evm transaction. To do that you have two options. The first of them is to click on the three dots to display the options for an EVM transaction and click on ``Redecode events``. This will start the process to read the transaction's events again and try to understand what happened in them.
-
-.. image:: images/redecode_events.png
-   :alt: Menu to redecode events for an EVM transaction
-   :align: center
-
-The second option is to redecode all the transactions in one page or all the transactions that have been queried. To do so you need to click on ``REDECODE EVENTS`` at the top of the page. This will allow to select between ``Only this page`` and ``All events``.
-
-.. image:: images/redecode_all_events.png
-   :alt: Menu to redecode all events in one page
-   :align: center
-
-Events in a transaction might need to be edited if they were not properly decoded or if they have a special meaning to you (like OTC trades, transfers between accounts...). To edit one event click on the pencil icon and a menu will appear.
-
-.. image:: images/edit_evm_event.png
-   :alt: Menu to edit EVM events
-   :align: center
-
-Here the non obvious fields are:
-
-- ``Event Type``: We have created a categorization of all the actions in a set of major event types. This field will describe the action category.
-- ``Event Subtype``: Inside an event type you can perform different actions. This subtype will let you describe exactly what is happening in the event.
-- ``Sequence Index``: Is an internal index that sets the order in which events happened in the transactions. This allows knowing how events are sorted and should be taken into account. By default it corresponds to the event log index in the blockchain with a few exceptions.
-- ``Location Label``: This is the address related to the event, for example if you are receiving one asset in a transfer or calling a contract will match with your address.
-- ``Counterparty``: This is the other part of the transaction, the address you are interacting with. Can be a protocol identifier if the transaction is decoded as part of a protocol.
-
-If any event was not decoded the way you expected it to be, you can always customize events using the settings described above or file a bug report on our github repository / in our discord server. The customizations that you make also affect how events are processed in accounting.
-Examples of customization. You can set:
-
-- ``Event Type`` to ``Transfer`` if you are sending money to a friend / (another account you own) and don't want the event to be taxable.
-- ``Event Type`` to ``Deposit`` / ``Withdrawal`` and ``Event Subtype`` to ``None`` if you are depositing or withdrawing assets from an exchange or ``Event Subtype`` to ``Deposit Asset`` / ``Remove Asset`` if you are depositing or withdrawing assets from a protocol. Then this event won't be considered taxable in P&L reports. Currently rotki doesn't detect deposits / withdrawals automatically for all exchanges and protocols.
-- ``Event Type`` to ``Withdrawal`` and ``Event Subtype`` to ``Bridge`` if you are receiving something from another chain via some kind of bridge. And ``Event Type`` to ``Deposit`` and ``Event Subtype`` to ``Bridge`` if you are depositing to a bridge in order to move something to another chain.
-- For a swap: The first event should be ``Event Type``: ``Trade`` and ``Event Subtype``: ``Spend``, while the second event should be ``Event Type``: ``Trade`` and ``Event Subtype``:  ``Receive``. But in swaps what's also important is the ``sequence_index``. They need to be subsequent and the send should come before the receive.
-- ``Event Type`` to ``Spend`` / ``Receive`` and ``Event Subtype`` to ``None`` if it is a plain expenditure / receipt.
-- ``Event Type`` to ``Receive`` and ``Event Subtype`` to ``Reward`` if you got a reward for something.
-- ``Event Type`` to ``Receive`` and ``Event Subtype`` to ``Airdrop`` if you received an airdrop.
-- ``Event Type`` to ``Receive`` / ``Spend`` and ``Event Subtype`` to ``Receive Wrapped`` / ``Return Wrapped`` accordingly if you interacted with a protocol (e.g. Curve, Yearn, Aave, etc.) and received wrapped / returned some wrapped tokens.
-- ``Event Type`` to ``Spend`` and ``Event Subtype`` to ``Fee`` if you are paying a fee for some of your actions.
-- ``Event Type`` to ``Migration`` if it is a migration of assets from one protocol to another and you don't lose / gain anything from this event. For example when migrating from SAI to DAI.
-- ``Event Type`` to ``Staking`` and ``Event Subtype`` to ``Deposit Asset`` if it is a staking event. For example staking in eth2 or in liquity.
-- ``Event Type`` to ``Renew`` if it is a renewal of any subscription or service that you are paying for.
-- ``Event Type`` to ``Informational`` if the event contains some useful information but it shouldn't be considered in accounting at all.
-
-Events that have been modified will appear marked in the UI.
-
-.. image:: images/customized_events.png
-   :alt: Customized events in the UI
-   :align: center
-
-
-History events can be filtered if you have a premium subscription activated. You can filter by:
-
-- Account (a tracked blockchain address)
-- Time range
-- Asset involved in the transaction
-- Protocol that interacted in the transaction
-- Location of the event (ethereum, optimism, kraken, etc.)
-- Event type (deposit, withdrawal, etc.)
-- Tx hash of a particualar transaction that you want to check
-- Index of an eth2 validator that you want to see events for
-
 
 Checking Exchange Balances
 ===========================
@@ -1311,6 +1286,78 @@ For deposits you can use the following filters:
 .. [1] Suggestions will appear for this field based on the available data.
 .. [2] The date filter has to be in the DD/MM/YYYY HH:mm:ss format. You can completely skip the time part or just the seconds part, thus making DD/MM/YYYY or DD/MM/YYYY HH:mm acceptable.
 
+
+
+History events
+=====================
+
+Rotki is capable of pulling and decoding a bunch of different events, ranging from EVM chain transactions to exchanges events and more. When you visit the ``History Events`` section the process to obtain all the information will start. You will be able to check the status in an informative breakdown per blockchain address. Free users are limited to a number of latest events.
+
+.. image:: images/events_query_process.png
+   :alt: History events query status breakdown
+   :align: center
+
+It is possible that you need to redecode events for an evm transaction. To do that you have two options. The first of them is to click on the three dots to display the options for an EVM transaction and click on ``Redecode events``. This will start the process to read the transaction's events again and try to understand what happened in them.
+
+.. image:: images/redecode_events.png
+   :alt: Menu to redecode events for an EVM transaction
+   :align: center
+
+The second option is to redecode all the transactions in one page or all the transactions that have been queried. To do so you need to click on ``REDECODE EVENTS`` at the top of the page. This will allow to select between ``Only this page`` and ``All events``.
+
+.. image:: images/redecode_all_events.png
+   :alt: Menu to redecode all events in one page
+   :align: center
+
+Events in a transaction might need to be edited if they were not properly decoded or if they have a special meaning to you (like OTC trades, transfers between accounts...). To edit one event click on the pencil icon and a menu will appear.
+
+.. image:: images/edit_evm_event.png
+   :alt: Menu to edit EVM events
+   :align: center
+
+Here the non obvious fields are:
+
+- ``Event Type``: We have created a categorization of all the actions in a set of major event types. This field will describe the action category.
+- ``Event Subtype``: Inside an event type you can perform different actions. This subtype will let you describe exactly what is happening in the event.
+- ``Sequence Index``: Is an internal index that sets the order in which events happened in the transactions. This allows knowing how events are sorted and should be taken into account. By default it corresponds to the event log index in the blockchain with a few exceptions.
+- ``Location Label``: This is the address related to the event, for example if you are receiving one asset in a transfer or calling a contract will match with your address.
+- ``Counterparty``: This is the other part of the transaction, the address you are interacting with. Can be a protocol identifier if the transaction is decoded as part of a protocol.
+
+If any event was not decoded the way you expected it to be, you can always customize events using the settings described above or file a bug report on our github repository / in our discord server. The customizations that you make also affect how events are processed in accounting.
+Examples of customization. You can set:
+
+- ``Event Type`` to ``Transfer`` if you are sending money to a friend / (another account you own) and don't want the event to be taxable.
+- ``Event Type`` to ``Deposit`` / ``Withdrawal`` and ``Event Subtype`` to ``None`` if you are depositing or withdrawing assets from an exchange or ``Event Subtype`` to ``Deposit Asset`` / ``Remove Asset`` if you are depositing or withdrawing assets from a protocol. Then this event won't be considered taxable in P&L reports. Currently rotki doesn't detect deposits / withdrawals automatically for all exchanges and protocols.
+- ``Event Type`` to ``Withdrawal`` and ``Event Subtype`` to ``Bridge`` if you are receiving something from another chain via some kind of bridge. And ``Event Type`` to ``Deposit`` and ``Event Subtype`` to ``Bridge`` if you are depositing to a bridge in order to move something to another chain.
+- For a swap: The first event should be ``Event Type``: ``Trade`` and ``Event Subtype``: ``Spend``, while the second event should be ``Event Type``: ``Trade`` and ``Event Subtype``:  ``Receive``. But in swaps what's also important is the ``sequence_index``. They need to be subsequent and the send should come before the receive.
+- ``Event Type`` to ``Spend`` / ``Receive`` and ``Event Subtype`` to ``None`` if it is a plain expenditure / receipt.
+- ``Event Type`` to ``Receive`` and ``Event Subtype`` to ``Reward`` if you got a reward for something.
+- ``Event Type`` to ``Receive`` and ``Event Subtype`` to ``Airdrop`` if you received an airdrop.
+- ``Event Type`` to ``Receive`` / ``Spend`` and ``Event Subtype`` to ``Receive Wrapped`` / ``Return Wrapped`` accordingly if you interacted with a protocol (e.g. Curve, Yearn, Aave, etc.) and received wrapped / returned some wrapped tokens.
+- ``Event Type`` to ``Spend`` and ``Event Subtype`` to ``Fee`` if you are paying a fee for some of your actions.
+- ``Event Type`` to ``Migration`` if it is a migration of assets from one protocol to another and you don't lose / gain anything from this event. For example when migrating from SAI to DAI.
+- ``Event Type`` to ``Staking`` and ``Event Subtype`` to ``Deposit Asset`` if it is a staking event. For example staking in eth2 or in liquity.
+- ``Event Type`` to ``Renew`` if it is a renewal of any subscription or service that you are paying for.
+- ``Event Type`` to ``Informational`` if the event contains some useful information but it shouldn't be considered in accounting at all.
+
+Events that have been modified will appear marked in the UI.
+
+.. image:: images/customized_events.png
+   :alt: Customized events in the UI
+   :align: center
+
+
+History events can be filtered if you have a premium subscription activated. You can filter by:
+
+- Account (a tracked blockchain address)
+- Time range
+- Asset involved in the transaction
+- Protocol that interacted in the transaction
+- Location of the event (ethereum, optimism, kraken, etc.)
+- Event type (deposit, withdrawal, etc.)
+- Tx hash of a particualar transaction that you want to check
+- Index of an eth2 validator that you want to see events for
+
 Customization of the list of supported assets
 *********************************************
 
@@ -1364,7 +1411,8 @@ There are also some other fields that are completely optional and expand if you 
 6. And here add the underlying token's weight.
 7. Here you can edit or delete underlying token address/weights. Note: The weight of the underlying tokens should add up to 100%.
 
-**NOTE: Underlying tokens only apply to asset type of ``EVM Token``.**
+.. note::
+   Underlying tokens only apply to asset type of ``EVM Token``.
 
 Adding/editing a custom asset
 ===============================
@@ -1717,7 +1765,7 @@ It's possible that rotki is not able to find an acquisition event for a sale. In
 This can happen for many reasons. The asset may have been acquired in a non-supported exchange/protocol, some event not detected etc.
 
 
-The way to fix it is to add either a :ref:`manual trade<adding-manual-trade>` or a :ref:`manual income/expense<adding-ledgeraction>` event to tell rotki how you acquired that asset.
+The way to fix it is to add either a :ref:`manual trade<adding-manual-trade>` to tell rotki how you acquired that asset.
 
 
 Timeout or price not found for timestamp
@@ -1729,6 +1777,13 @@ Timeout or price not found for timestamp
 
 It's possible that rotki is not able to find the price of assets. You have to input the price manually, otherwise the event will be skipped from pnl reports. For example if you are creating a GBP profit/loss report and the asset is GNO then make sure to create the GNO -> GBP historical price cache. You can add the prices on the spot, or open :ref:`manage-historical-price-cache`.
 
+The result of the generated PnL report is not what you expected.
+-----------------------------------------------------------------
+
+The results of the generated PnL report can vary depending on the
+`accounting settings <#trade-settings>`_. Check if any settings align with unusual treatments for your events, so you can adjust the settings to resolve the issue yourself.
+
+If you have any question or are confused about the settings, feel free to send us a message on `Discord <https://discord.gg/aGCxHG7>`_.
 
 Seeking help with complicated errors during PnL report generation
 ------------------------------------------------------------------
@@ -1739,7 +1794,8 @@ Seeking help with complicated errors during PnL report generation
 
 It's possible that many errors could occur during the PnL report generation due to certain event(s) not accounted for properly. In such a scenario if all else fails, exporting the PnL debug data allows us to fully replicate the issue encountered and find a solution.
 
-**Note: Only share PnL debug data with the developers as it may contain sensitive information.**
+.. note::
+   Only share PnL debug data with the developers as it may contain sensitive information.
 
 
 Statistics
@@ -1865,14 +1921,15 @@ Rotki provides an addressbook for EVM blockchains. This replaces addresses with 
    :alt: Displaying behaviour of an EVM address book
    :align: center
 
-**NOTE:** The address resolution order can be configured in the general user settings. The default order is:
+.. note::
+   The address resolution order can be configured in the general user settings. The default order is:
 
-1. Private Address Book
-2. Blockchain Account Labels
-3. Global Address Book
-4. Ethereum Tokens
-5. Hardcoded Mappings
-6. ENS names.
+   1. Private Address Book
+   2. Blockchain Account Labels
+   3. Global Address Book
+   4. Ethereum Tokens
+   5. Hardcoded Mappings
+   6. ENS names.
 
 
 .. _set-the-backend-s-arguments:

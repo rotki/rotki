@@ -166,7 +166,7 @@ watch([symbol, changeable, identifier], (curr, prev) => {
             v-if="!currency && pending"
             name="coin-line"
             :size="size"
-            class="text-rui-light-text-secondary text-black"
+            class="text-rui-light-text-secondary text-black absolute"
           />
 
           <GeneratedIcon

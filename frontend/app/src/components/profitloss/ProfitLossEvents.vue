@@ -58,6 +58,7 @@ const tableHeaders = computed<DataTableHeader[]>(() => [
     value: 'location',
     width: '120px',
     align: 'center',
+    cellClass: 'py-2',
     sortable: false
   },
   {

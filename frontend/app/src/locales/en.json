@@ -1183,6 +1183,15 @@
     "tooltip": "Navigate back to the previous page."
   },
   "backend_mappings": {
+    "exchanges": {
+      "kraken": {
+        "type": {
+          "starter": "Starter / Express",
+          "intermediate": "Intermediate",
+          "pro": "Pro"
+        }
+      }
+    },
     "events": {
       "history_event_subtype": {
         "airdrop": "Airdrop",

@@ -111,11 +111,8 @@ const slots = useSlots();
         :hint="currentValue ? '' : hint"
         :disabled="!editMode"
         :label="label"
-      >
-        <template #prepend>
-          <RuiIcon name="key-line" />
-        </template>
-      </RuiRevealableTextField>
+        prepend-icon="key-line"
+      />
 
       <RuiTooltip :open-delay="400" :popper="{ placement: 'top' }">
         <template #activator>

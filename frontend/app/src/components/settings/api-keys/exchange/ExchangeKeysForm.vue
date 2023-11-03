@@ -19,10 +19,9 @@ const emit = defineEmits<{
 
 const { editMode, exchange } = toRefs(props);
 const editKeys = ref(false);
-const form = ref();
 
 const { getExchangeNonce } = useExchangesStore();
-const { t } = useI18n();
+const { t, te } = useI18n();
 
 const requiresApiSecret = computed(() => {
   const { location } = get(exchange);
@@ -67,8 +66,6 @@ const toggleEdit = () => {
 };
 
 const onExchangeChange = (exchange: SupportedExchange) => {
-  get(form).reset();
-
   input({
     name: suggestedName(exchange),
     newName: null,
@@ -79,6 +76,10 @@ const onExchangeChange = (exchange: SupportedExchange) => {
     krakenAccountType: exchange === SupportedExchange.KRAKEN ? 'starter' : null,
     binanceMarkets: null,
     ftxSubaccount: null
+  });
+
+  nextTick(() => {
+    get(v$).$reset();
   });
 };
 
@@ -110,7 +111,16 @@ onMounted(() => {
   });
 });
 
-const krakenAccountTypes = KrakenAccountType.options;
+const krakenAccountTypes = KrakenAccountType.options.map(item => {
+  const translationKey = `backend_mappings.exchanges.kraken.type.${item}`;
+  const label = te(translationKey) ? t(translationKey) : toSentenceCase(item);
+
+  return {
+    identifier: item,
+    label
+  };
+});
+
 const exchanges = SUPPORTED_EXCHANGES;
 
 const sensitiveFieldEditable = computed(() => !get(editMode) || get(editKeys));
@@ -148,64 +158,62 @@ const rules = {
   }
 };
 
-const { valid, setValidation } = useExchangeApiKeysForm();
+const { setValidation } = useExchangeApiKeysForm();
 
 const v$ = setValidation(rules, exchange, { $autoDirty: true });
 </script>
 
 <template>
-  <VForm ref="form" data-cy="exchange-keys" :value="valid">
-    <VRow class="pt-2">
-      <VCol cols="12" md="6">
-        <VAutocomplete
-          outlined
-          :value="exchange.location"
-          :items="exchanges"
-          :label="t('exchange_keys_form.exchange')"
-          data-cy="exchange"
-          :disabled="editMode"
-          auto-select-first
-          @change="onExchangeChange($event)"
-        >
-          <template #selection="{ item, attrs, on }">
-            <ExchangeDisplay
-              :exchange="item"
-              :class="`exchange__${item}`"
-              v-bind="attrs"
-              v-on="on"
-            />
-          </template>
-          <template #item="{ item, attrs, on }">
-            <ExchangeDisplay
-              :exchange="item"
-              :class="`exchange__${item}`"
-              v-bind="attrs"
-              v-on="on"
-            />
-          </template>
-        </VAutocomplete>
-      </VCol>
-      <VCol cols="12" md="6">
-        <VTextField
-          v-if="editMode"
-          outlined
-          :value="exchange.newName"
-          :error-messages="toMessages(v$.newName)"
-          data-cy="name"
-          :label="t('common.name')"
-          @input="input({ ...exchange, newName: $event })"
-        />
-        <VTextField
-          v-else
-          outlined
-          :value="exchange.name"
-          :error-messages="toMessages(v$.name)"
-          data-cy="name"
-          :label="t('common.name')"
-          @input="input({ ...exchange, name: $event })"
-        />
-      </VCol>
-    </VRow>
+  <div data-cy="exchange-keys" class="pt-2 flex flex-col gap-2">
+    <div class="grid md:grid-cols-2 gap-4">
+      <VAutocomplete
+        outlined
+        :value="exchange.location"
+        :items="exchanges"
+        :label="t('exchange_keys_form.exchange')"
+        data-cy="exchange"
+        :disabled="editMode"
+        auto-select-first
+        @change="onExchangeChange($event)"
+      >
+        <template #selection="{ item, attrs, on }">
+          <ExchangeDisplay
+            :exchange="item"
+            :class="`exchange__${item}`"
+            v-bind="attrs"
+            v-on="on"
+          />
+        </template>
+        <template #item="{ item, attrs, on }">
+          <ExchangeDisplay
+            :exchange="item"
+            :class="`exchange__${item}`"
+            v-bind="attrs"
+            v-on="on"
+          />
+        </template>
+      </VAutocomplete>
+      <RuiTextField
+        v-if="editMode"
+        variant="outlined"
+        color="primary"
+        :value="exchange.newName"
+        :error-messages="toMessages(v$.newName)"
+        data-cy="name"
+        :label="t('common.name')"
+        @input="input({ ...exchange, newName: $event })"
+      />
+      <RuiTextField
+        v-else
+        variant="outlined"
+        color="primary"
+        :value="exchange.name"
+        :error-messages="toMessages(v$.name)"
+        data-cy="name"
+        :label="t('common.name')"
+        @input="input({ ...exchange, name: $event })"
+      />
+    </div>
 
     <VSelect
       v-if="exchange.location === 'kraken'"
@@ -213,88 +221,84 @@ const v$ = setValidation(rules, exchange, { $autoDirty: true });
       :value="exchange.krakenAccountType"
       data-cy="account-type"
       :items="krakenAccountTypes"
+      item-value="identifier"
+      item-text="label"
       :label="t('exchange_settings.inputs.kraken_account')"
       @change="input({ ...exchange, krakenAccountType: $event })"
     />
 
-    <div v-if="editMode" class="text-subtitle-2 mt-2 pb-4">
+    <div v-if="editMode" class="flex items-center gap-2 text-subtitle-2 pb-4">
       {{ t('exchange_settings.keys') }}
-      <VTooltip top open-delay="400">
-        <template #activator="{ on, attrs }">
-          <VBtn
-            icon
-            v-bind="attrs"
-            class="ml-4"
-            v-on="on"
-            @click="toggleEdit()"
-          >
-            <VIcon v-if="!editKeys">mdi-pencil-outline</VIcon>
-            <VIcon v-else>mdi-close</VIcon>
-          </VBtn>
+      <RuiTooltip :popper="{ placement: 'top' }" open-delay="400">
+        <template #activator>
+          <RuiButton variant="text" class="!p-2" icon @click="toggleEdit()">
+            <RuiIcon
+              size="20"
+              :name="!editKeys ? 'pencil-line' : 'close-line'"
+            />
+          </RuiButton>
         </template>
-        <span>
-          {{
-            !editKeys
-              ? t('exchange_keys_form.edit.activate_tooltip')
-              : t('exchange_keys_form.edit.deactivate_tooltip')
-          }}
-        </span>
-      </VTooltip>
+        {{
+          !editKeys
+            ? t('exchange_keys_form.edit.activate_tooltip')
+            : t('exchange_keys_form.edit.deactivate_tooltip')
+        }}
+      </RuiTooltip>
     </div>
 
-    <div>
-      <RevealableInput
-        outlined
-        sensitive-key
-        :disabled="editMode && !editKeys"
-        :value="exchange.apiKey"
-        :error-messages="toMessages(v$.apiKey)"
-        data-cy="api-key"
-        :label="t('exchange_settings.inputs.api_key')"
-        @input="input({ ...exchange, apiKey: $event })"
-        @paste="onApiKeyPaste($event)"
-      />
+    <RuiRevealableTextField
+      variant="outlined"
+      color="primary"
+      :disabled="editMode && !editKeys"
+      :value="exchange.apiKey"
+      :error-messages="toMessages(v$.apiKey)"
+      data-cy="api-key"
+      :label="t('exchange_settings.inputs.api_key')"
+      @input="input({ ...exchange, apiKey: $event })"
+      @paste="onApiKeyPaste($event)"
+    />
 
-      <RevealableInput
-        v-if="requiresApiSecret"
-        outlined
-        sensitive-key
-        :disabled="editMode && !editKeys"
-        :value="exchange.apiSecret"
-        :error-messages="toMessages(v$.apiSecret)"
-        data-cy="api-secret"
-        prepend-icon="mdi-lock"
-        :label="t('exchange_settings.inputs.api_secret')"
-        @input="input({ ...exchange, apiSecret: $event })"
-        @paste="onApiSecretPaste($event)"
-      />
+    <RuiRevealableTextField
+      v-if="requiresApiSecret"
+      variant="outlined"
+      color="primary"
+      :disabled="editMode && !editKeys"
+      :value="exchange.apiSecret"
+      :error-messages="toMessages(v$.apiSecret)"
+      data-cy="api-secret"
+      prepend-icon="lock-line"
+      :label="t('exchange_settings.inputs.api_secret')"
+      @input="input({ ...exchange, apiSecret: $event })"
+      @paste="onApiSecretPaste($event)"
+    />
 
-      <RevealableInput
-        v-if="requiresPassphrase"
-        :disabled="editMode && !editKeys"
-        outlined
-        sensitive-key
-        :value="exchange.passphrase"
-        :error-messages="toMessages(v$.passphrase)"
-        prepend-icon="mdi-key-plus"
-        data-cy="passphrase"
-        :label="t('exchange_settings.inputs.passphrase')"
-        @input="input({ ...exchange, passphrase: $event })"
-      />
-    </div>
+    <RuiRevealableTextField
+      v-if="requiresPassphrase"
+      :disabled="editMode && !editKeys"
+      variant="outlined"
+      color="primary"
+      :value="exchange.passphrase"
+      :error-messages="toMessages(v$.passphrase)"
+      prepend-icon="key-line"
+      data-cy="passphrase"
+      :label="t('exchange_settings.inputs.passphrase')"
+      @input="input({ ...exchange, passphrase: $event })"
+    />
 
     <div v-if="exchange.location === 'ftx' || exchange.location === 'ftxus'">
-      <VTextField
+      <RuiTextField
         v-if="editMode"
-        outlined
+        variant="outlined"
+        color="primary"
         :value="exchange.ftxSubaccount"
         data-cy="ftxSubaccount"
         :label="t('exchange_settings.inputs.ftx_subaccount')"
         @input="input({ ...exchange, ftxSubaccount: $event })"
       />
-      <VTextField
+      <RuiTextField
         v-else
-        outlined
+        variant="outlined"
+        color="primary"
         :value="exchange.ftxSubaccount"
         data-cy="ftxSubaccount"
         :label="t('exchange_settings.inputs.ftx_subaccount')"
@@ -309,5 +313,5 @@ const v$ = setValidation(rules, exchange, { $autoDirty: true });
       :location="exchange.location"
       @input="input({ ...exchange, binanceMarkets: $event })"
     />
-  </VForm>
+  </div>
 </template>
