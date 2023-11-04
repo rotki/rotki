@@ -3419,7 +3419,10 @@ class RestAPI:
                 )
 
             if query_type == HistoryEventQueryType.ETH_WITHDRAWALS:
-                eth2.query_services_for_validator_withdrawals(to_ts=ts_now())
+                eth2.query_services_for_validator_withdrawals(
+                    addresses=self.rotkehlchen.chains_aggregator.accounts.eth,
+                    to_ts=ts_now(),
+                )
             else:  # block production
                 with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
                     cursor.execute('SELECT validator_index FROM eth2_validators')

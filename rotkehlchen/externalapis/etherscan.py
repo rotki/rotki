@@ -44,7 +44,7 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.user_messages import MessagesAggregator
 
-ETHERSCAN_TX_QUERY_LIMIT = 10000
+ETHERSCAN_QUERY_LIMIT = 10000
 TRANSACTIONS_BATCH_NUM = 10
 
 logger = logging.getLogger(__name__)
@@ -88,6 +88,7 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
             ],
     ) -> None:
         super().__init__(database=database, service_name=service)
+        self.db: DBHandler  # signify for type checker that db is set for ExternalServiceWithApiKey
         self.msg_aggregator = msg_aggregator
         self.chain = chain
         self.prefix_url = 'api.' if chain in (
@@ -125,6 +126,7 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
                 'txlistinternal',
                 'tokentx',
                 'getLogs',
+                'txsBeaconWithdrawal',
             ],
             options: Optional[dict[str, Any]] = None,
             timeout: Optional[tuple[int, int]] = None,
@@ -331,6 +333,39 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
 
         return result
 
+    def _process_timestamp_or_blockrange(self, period: TimestampOrBlockRange, options: dict[str, Any]) -> dict[str, Any]:  # noqa: E501
+        """Process TimestampOrBlockRange and populate call options"""
+        if period.range_type == 'blocks':
+            from_block = period.from_value
+            to_block = period.to_value
+        else:  # timestamps
+            from_block = self.get_blocknumber_by_time(
+                ts=period.from_value,  # type: ignore
+                closest='before',
+            )
+            to_block = self.get_blocknumber_by_time(
+                ts=period.to_value,  # type: ignore
+                closest='before',
+            )
+
+        options['startBlock'] = str(from_block)
+        options['endBlock'] = str(to_block)
+        return options
+
+    def _maybe_paginate(self, result: list[dict[str, Any]], options: dict[str, Any]) -> Optional[dict[str, Any]]:  # noqa: E501
+        """Check if the results have hit the pagination limit.
+        If yes adjust the options accordingly. Otherwise signal we are done"""
+        if len(result) != ETHERSCAN_QUERY_LIMIT:
+            return None
+
+        # else we hit the limit. Query once more with startBlock being the last
+        # block we got. There may be duplicate entries if there are more than one
+        # entries for that last block but they should be filtered
+        # out when we input all of these in the DB
+        last_block = result[-1]['blockNumber']
+        options['startBlock'] = last_block
+        return options
+
     @overload
     def get_transactions(
             self,
@@ -372,22 +407,7 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
             options['address'] = str(account)
         if period_or_hash is not None:
             if isinstance(period_or_hash, TimestampOrBlockRange):
-                if period_or_hash.range_type == 'blocks':
-                    from_block = period_or_hash.from_value
-                    to_block = period_or_hash.to_value
-                else:  # timestamps
-                    from_block = self.get_blocknumber_by_time(
-                        ts=period_or_hash.from_value,  # type: ignore
-                        closest='before',
-                    )
-                    to_block = self.get_blocknumber_by_time(
-                        ts=period_or_hash.to_value,  # type: ignore
-                        closest='before',
-                    )
-
-                options['startBlock'] = str(from_block)
-                options['endBlock'] = str(to_block)
-
+                options = self._process_timestamp_or_blockrange(period_or_hash, options)
             else:  # has to be parent transaction hash and internal transaction
                 options['txHash'] = period_or_hash.hex()
                 parent_tx_hash = period_or_hash
@@ -458,14 +478,9 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
                     transactions = []  # type: ignore
                 transactions.append(tx)
 
-            if len(result) != ETHERSCAN_TX_QUERY_LIMIT:
-                break
-            # else we hit the limit. Query once more with startBlock being the last
-            # block we got. There may be duplicate entries if there are more than one
-            # transactions for that last block but they should be filtered
-            # out when we input all of these in the DB
-            last_block = result[-1]['blockNumber']
-            options['startBlock'] = last_block
+            if (new_options := self._maybe_paginate(result=result, options=options)) is None:
+                break  # no need to paginate further
+            options = new_options
 
         yield transactions
 
@@ -510,14 +525,9 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
                     )
                     continue
 
-            if len(result) != ETHERSCAN_TX_QUERY_LIMIT:
-                break
-            # else we hit the limit. Query once more with startBlock being the last
-            # block we got. There may be duplicate entries if there are more than one
-            # transactions for that last block but they should be filtered
-            # out when we input all of these in the DB
-            last_block = result[-1]['blockNumber']
-            options['startBlock'] = last_block
+            if (new_options := self._maybe_paginate(result=result, options=options)) is None:
+                break  # no need to paginate further
+            options = new_options
 
         yield _hashes_tuple_to_list(hashes)
 

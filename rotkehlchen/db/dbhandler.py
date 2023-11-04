@@ -816,7 +816,7 @@ class DBHandler:
         - yearn_vaults_v2_events_{address}
         - gnosisbridge_{address}
         """
-        cursor.execute('SELECT start_ts, end_ts from used_query_ranges WHERE name=?', (name,))
+        cursor.execute('SELECT start_ts, end_ts FROM used_query_ranges WHERE name=?', (name,))
         result = cursor.fetchone()
         if result is None:
             return None

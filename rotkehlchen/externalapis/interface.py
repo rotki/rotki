@@ -8,6 +8,15 @@ if TYPE_CHECKING:
 
 
 class ExternalServiceWithApiKey:
+    """Interface for any ExternalService that has an API Key
+
+    The reason why database is Optional is only for the initialization of cryptocompare to be able
+    to happen without having the DB ready. That's since at the moment it happens at Rotkehlchen
+    object initialization in order to be passed on to the Inquirer Singleton.
+
+    The problem here is that at constructor of all other objects we need to be
+    specifying that the DB is an object that is non optional and exists to satisfy type checkers.
+    """
 
     def __init__(self, database: Optional['DBHandler'], service_name: ExternalService) -> None:
         self.db = database

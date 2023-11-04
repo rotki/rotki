@@ -53,12 +53,7 @@ def _calculate_query_chunks(
 
 
 class BeaconChain(ExternalServiceWithApiKey):
-    """Even though the beaconchain allows for API keys we don't implement it yet.
-    We do extend ExternalServiceWithApiKey though so that it becomes easier to add
-    in the future.
-
-    https://beaconcha.in/api/v1/docs/
-    """
+    """BeaconChain handler https://beaconcha.in/api/v1/docs/"""
 
     def __init__(self, database: 'DBHandler', msg_aggregator: MessagesAggregator) -> None:
         super().__init__(database=database, service_name=ExternalService.BEACONCHAIN)
