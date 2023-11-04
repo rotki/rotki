@@ -11,7 +11,7 @@ from rotkehlchen.chain.bitcoin.xpub import XpubManager
 from rotkehlchen.chain.constants import LAST_EVM_ACCOUNTS_DETECT_KEY
 from rotkehlchen.chain.ethereum.modules.eth2.constants import (
     LAST_PRODUCED_BLOCKS_QUERY_TS,
-    LAST_WITHDRAWALS_QUERY_TS,
+    WITHDRAWALS_PREFIX,
 )
 from rotkehlchen.chain.ethereum.modules.makerdao.cache import (
     query_ilk_registry_and_maybe_update_cache,
@@ -562,10 +562,21 @@ class TaskManager:
             return None  # already running
 
         now = ts_now()
+        addresses = self.chains_aggregator.accounts.eth
         with self.database.conn.read_ctx() as cursor:
-            result = self.database.get_used_query_range(cursor, LAST_WITHDRAWALS_QUERY_TS)
-            if result is not None and now - result[1] <= DAY_IN_SECONDS:
-                return None
+            end_timestamps = cursor.execute('SELECT end_ts FROM used_query_ranges WHERE name LIKE ?', f'{WITHDRAWALS_PREFIX}%').fetchall()  # noqa: E501
+
+        should_query = False
+        if len(end_timestamps) != len(addresses):
+            should_query = True
+        else:
+            for end_ts in end_timestamps:
+                if now - end_ts >= HOUR_IN_SECONDS * 3:
+                    should_query = True
+                    break
+
+        if not should_query:
+            return None
 
         task_name = 'Periodically query ethereum withdrawals'
         log.debug(f'Scheduling task to {task_name}')
@@ -574,6 +585,7 @@ class TaskManager:
             task_name=task_name,
             exception_is_error=True,
             method=eth2.query_services_for_validator_withdrawals,
+            addresses=addresses,
             to_ts=now,
         )]
 

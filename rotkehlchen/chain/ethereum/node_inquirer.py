@@ -1,7 +1,7 @@
 import logging
 from collections.abc import Sequence
 from contextlib import suppress
-from typing import TYPE_CHECKING, Literal, Optional, Union, cast, overload
+from typing import TYPE_CHECKING, Literal, Optional, Union, overload
 
 import requests
 from ens.abis import RESOLVER as ENS_RESOLVER_ABI
@@ -84,8 +84,8 @@ class EthereumInquirer(DSProxyInquirerWithCacheData):
             dsproxy_registry=contracts.contract(string_to_evm_address('0x4678f0a6958e4D2Bc4F1BAF7Bc52E8F3564f3fE4')),
             native_token=A_ETH.resolve_to_crypto_asset(),
         )
+        self.etherscan: EthereumEtherscan
         self.blocks_subgraph = Graph('https://api.thegraph.com/subgraphs/name/blocklytics/ethereum-blocks')
-        self.etherscan = cast(EthereumEtherscan, self.etherscan)
         self.ens_reverse_records = self.contracts.contract(string_to_evm_address('0x3671aE578E63FdF66ad4F3E12CC0c0d71Ac7510C'))  # noqa: E501
 
     def ens_reverse_lookup(self, addresses: list[ChecksumEvmAddress]) -> dict[ChecksumEvmAddress, Optional[str]]:  # noqa: E501

@@ -97,6 +97,7 @@ def _migrate_rotki_events(write_cursor: 'DBCursor') -> None:
             from_type.serialize(), from_subtype.serialize(),
         ) for to_type, to_subtype, from_type, from_subtype in TYPES_REMAPPED],
     )
+    write_cursor.execute('DELETE from used_query_ranges WHERE name=?', ('last_withdrawals_query_ts',))  # noqa: E501
     log.debug('Exit _migrate_rotki_events')
 
 

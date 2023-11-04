@@ -7,8 +7,9 @@ from rotkehlchen.accounting.structures.eth2 import EthBlockEvent, EthWithdrawalE
 from rotkehlchen.chain.ethereum.modules.eth2.structures import Eth2Validator
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
+from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.db.eth2 import DBEth2
-from rotkehlchen.db.filtering import HistoryEventFilterQuery
+from rotkehlchen.db.filtering import EthWithdrawalFilterQuery, HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import Eth2PubKey, TimestampMS
@@ -20,99 +21,105 @@ if TYPE_CHECKING:
 
 @pytest.mark.vcr()
 @pytest.mark.parametrize('network_mocking', [False])
-@pytest.mark.freeze_time('2023-04-23 00:52:55 GMT')
-def test_withdrawals(eth2: 'Eth2', database):
+@pytest.mark.parametrize('ethereum_accounts', [[
+    '0x23F02E9272EAc1F12F5be76D48b4a15323778f08', '0xCb2a5c130709a4C6c4BA39368879A523C0060c71',
+]])
+@pytest.mark.freeze_time('2023-11-03 09:40:00 GMT')
+def test_withdrawals(eth2: 'Eth2', database, ethereum_accounts):
     """Test that when withdrawals are queried, they are properly saved in the DB"""
-    dbevents = DBHistoryEvents(database)
-    dbeth2 = DBEth2(database)
-    with database.user_write() as write_cursor:
-        dbeth2.add_validators(write_cursor, [
-            Eth2Validator(  # this has exited
-                index=7287,
-                public_key=Eth2PubKey('0xb7763831fdf87f3ee728e60a579cf2be889f6cc89a4878c8651a2a267377cf7e9406b4bcd8f664b88a3e20c368155bf6'),
-                ownership_proportion=ONE,
-            ), Eth2Validator(  # this has exited
-                index=7288,
-                public_key=Eth2PubKey('0x92db89739c6a3529facf858223b8872bbcf150c4bf3b30eb21ab8b09d4ea2f4d7b07b949a27d9766c70807d3b18ad934'),
-                ownership_proportion=ONE,
-            ), Eth2Validator(  # this is active and has withdrawals
-                index=295601,
-                public_key=Eth2PubKey('0xab82f22254143786651a1600ce747f22f79bb3c3b016f7a2564e104ffb16af409fc3a8bb48b0ba012454a79c3460f5ae'),
-                ownership_proportion=ONE,
-            ), Eth2Validator(  # this is active and has withdrawals
-                index=295603,
-                public_key=Eth2PubKey('0x97777229490da343d0b7e661eda342fe1083e35a5c4076da76297ccac08cea6e2c8520fad2afdd4e43d73f0e620cc155'),
-                ownership_proportion=ONE,
-            ),
-        ])
 
     to_ts = ts_now()
-    eth2.query_services_for_validator_withdrawals(to_ts=to_ts)
-
+    eth2.query_services_for_validator_withdrawals(addresses=ethereum_accounts, to_ts=to_ts)
+    dbevents = DBHistoryEvents(database)
     with database.conn.read_ctx() as cursor:
         events = dbevents.get_history_events(
             cursor=cursor,
-            filter_query=HistoryEventFilterQuery.make(),
+            filter_query=EthWithdrawalFilterQuery.make(),
             has_premium=True,
             group_by_event_ids=False,
         )
-        assert events == [EthWithdrawalEvent(
-            identifier=5,
-            validator_index=295601,
-            timestamp=TimestampMS(1681392599000),
-            balance=Balance(amount=FVal('1.631508097')),
-            withdrawal_address=string_to_evm_address('0xB9D7934878B5FB9610B3fE8A5e441e8fad7E293f'),
-            is_exit=False,
-        ), EthWithdrawalEvent(
-            identifier=8,
-            validator_index=295603,
-            timestamp=TimestampMS(1681392599000),
-            balance=Balance(amount=FVal('1.581794994')),
-            withdrawal_address=string_to_evm_address('0xB9D7934878B5FB9610B3fE8A5e441e8fad7E293f'),
-            is_exit=False,
-        ), EthWithdrawalEvent(
-            identifier=1,
-            validator_index=7287,
-            timestamp=TimestampMS(1681567319000),
-            balance=Balance(amount=FVal('36.411594425')),
-            withdrawal_address=string_to_evm_address('0x4231B2f83CB7C833Db84ceC0cEAAa9959f051374'),
-            is_exit=True,
-        ), EthWithdrawalEvent(
-            identifier=2,
-            validator_index=7288,
-            timestamp=TimestampMS(1681567319000),
-            balance=Balance(amount=FVal('36.422259087')),
-            withdrawal_address=string_to_evm_address('0x4231B2f83CB7C833Db84ceC0cEAAa9959f051374'),
-            is_exit=True,
-        ), EthWithdrawalEvent(
-            identifier=4,
-            validator_index=295601,
-            timestamp=TimestampMS(1681736279000),
-            balance=Balance(amount=FVal('0.010870946')),
-            withdrawal_address=string_to_evm_address('0xB9D7934878B5FB9610B3fE8A5e441e8fad7E293f'),
-            is_exit=False,
-        ), EthWithdrawalEvent(
-            identifier=7,
-            validator_index=295603,
-            timestamp=TimestampMS(1681736279000),
-            balance=Balance(amount=FVal('0.010692337')),
-            withdrawal_address=string_to_evm_address('0xB9D7934878B5FB9610B3fE8A5e441e8fad7E293f'),
-            is_exit=False,
-        ), EthWithdrawalEvent(
-            identifier=3,
-            validator_index=295601,
-            timestamp=TimestampMS(1682110295000),
-            balance=Balance(amount=FVal('0.011993962')),
-            withdrawal_address=string_to_evm_address('0xB9D7934878B5FB9610B3fE8A5e441e8fad7E293f'),
-            is_exit=False,
-        ), EthWithdrawalEvent(
-            identifier=6,
-            validator_index=295603,
-            timestamp=TimestampMS(1682110295000),
-            balance=Balance(amount=FVal('0.011965595')),
-            withdrawal_address=string_to_evm_address('0xB9D7934878B5FB9610B3fE8A5e441e8fad7E293f'),
-            is_exit=False,
-        )]
+
+    assert len(events) == 68
+    account0_events, account1_events = 0, 0
+    for idx, x in enumerate(events):
+        assert isinstance(x, EthWithdrawalEvent)
+        if x.location_label == ethereum_accounts[0]:
+            assert x.validator_index == 583243
+            account0_events += 1
+        elif x.location_label == ethereum_accounts[1]:
+            assert x.validator_index == 582738
+            account1_events += 1
+        else:
+            raise AssertionError('unexpected event')
+
+        if idx == 0:  # for some indices check full event
+            assert x == EthWithdrawalEvent(
+                identifier=35,
+                validator_index=582738,
+                timestamp=TimestampMS(1682309159000),
+                balance=Balance(amount=FVal('0.001188734')),
+                withdrawal_address=ethereum_accounts[1],
+                is_exit=False,
+            )
+            continue
+        if idx == 1:
+            assert x == EthWithdrawalEvent(
+                identifier=1,
+                validator_index=583243,
+                timestamp=TimestampMS(1682309531000),
+                balance=Balance(amount=FVal('0.001650449')),
+                withdrawal_address=ethereum_accounts[0],
+                is_exit=False,
+            )
+            continue
+        if idx == 4:
+            assert x == EthWithdrawalEvent(
+                identifier=37,
+                validator_index=582738,
+                timestamp=TimestampMS(1683060887000),
+                balance=Balance(amount=FVal('0.045701079')),
+                withdrawal_address=ethereum_accounts[1],
+                is_exit=False,
+            )
+            continue
+        if idx == 33:
+            assert x == EthWithdrawalEvent(
+                identifier=17,
+                validator_index=583243,
+                timestamp=TimestampMS(1688958443000),
+                balance=Balance(amount=FVal('0.049877787')),
+                withdrawal_address=ethereum_accounts[0],
+                is_exit=False,
+            )
+            continue
+        if idx == 66:
+            assert x == EthWithdrawalEvent(
+                identifier=68,
+                validator_index=582738,
+                timestamp=TimestampMS(1698368939000),
+                balance=Balance(amount=FVal('0.016899759')),
+                withdrawal_address=ethereum_accounts[1],
+                is_exit=False,
+            )
+            continue
+        if idx == 67:
+            assert x == EthWithdrawalEvent(
+                identifier=34,
+                validator_index=583243,
+                timestamp=TimestampMS(1698369239000),
+                balance=Balance(amount=FVal('0.016747361')),
+                withdrawal_address=ethereum_accounts[0],
+                is_exit=False,
+            )
+            continue
+
+        assert x.is_exit_or_blocknumber is False
+        assert x.asset == A_ETH
+        assert isinstance(x.balance.amount, FVal)
+        assert FVal('0.01') <= x.balance.amount <= FVal('0.06')
+
+    assert account0_events == 34
+    assert account1_events == 34
 
 
 @pytest.mark.vcr()

@@ -6,8 +6,8 @@ from unittest.mock import patch
 
 import pytest
 from pysqlcipher3 import dbapi2 as sqlcipher
-from rotkehlchen.chain.evm.accounting.structures import TxEventSettings
 
+from rotkehlchen.chain.evm.accounting.structures import TxEventSettings
 from rotkehlchen.constants.misc import DEFAULT_SQL_VM_INSTRUCTIONS_CB
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.checks import sanity_check_impl
@@ -1912,8 +1912,7 @@ def test_upgrade_db_39_to_40(user_data_dir):  # pylint: disable=unused-argument
     ]
     # Assert used query ranges got updated
     assert cursor.execute('SELECT * from used_query_ranges').fetchall() == [
-        ('last_withdrawals_query_ts', 0, 1693141835),
-        ('coinbase_history_events_coinbase1', 0, 100),
+        ('coinbase_history_events_coinbase1', 0, 100),  # notice withdrawals old range is deleted
         ('coinbase_history_events_coinbase2', 500, 1000),
     ]
     # Check that ledger actions settings are removed
