@@ -304,7 +304,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
          - BinancePermissionError
         """
         call_options = options.copy() if options else {}
-
+        timeout = CachedSettings().get_timeout_tuple()
         while True:
             if 'signature' in call_options:
                 del call_options['signature']
@@ -342,7 +342,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
             request_url += urlencode(call_options)
             log.debug(f'{self.name} API request', request_url=request_url)
             try:
-                response = self.session.get(request_url, timeout=CachedSettings().get_timeout_tuple())  # noqa: E501
+                response = self.session.get(request_url, timeout=timeout)
             except requests.exceptions.RequestException as e:
                 raise RemoteError(
                     f'{self.name} API request failed due to {e!s}',

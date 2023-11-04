@@ -69,6 +69,7 @@ class Graph:
         log.debug(f'Querying The Graph for {querystr}')
 
         retries_left = CachedSettings().get_query_retry_limit()
+        retry_limit = CachedSettings().get_query_retry_limit()
         while retries_left > 0:
             try:
                 result = self.client.execute(gql(querystr), variable_values=param_values)
@@ -83,7 +84,7 @@ class Graph:
                 retries_left -= 1
                 base_msg = f'The Graph query to {querystr} failed due to {exc_msg}'
                 if retries_left:
-                    sleep_seconds = RETRY_BACKOFF_FACTOR * pow(2, CachedSettings().get_query_retry_limit() - retries_left)  # noqa: E501
+                    sleep_seconds = RETRY_BACKOFF_FACTOR * pow(2, retry_limit - retries_left)
                     retry_msg = (
                         f'Retrying query after {sleep_seconds} seconds. '
                         f'Retries left: {retries_left}.'

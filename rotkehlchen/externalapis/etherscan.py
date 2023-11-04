@@ -233,11 +233,12 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
 
         backoff = 1
         backoff_limit = 33
+        timeout = timeout if timeout else CachedSettings().get_timeout_tuple()
         while backoff < backoff_limit:
             response = None
             log.debug(f'Querying {self.chain} etherscan: {query_str}')
             try:
-                response = self.session.get(query_str, timeout=timeout if timeout else CachedSettings().get_timeout_tuple())  # noqa: E501
+                response = self.session.get(query_str, timeout=timeout)
             except requests.exceptions.RequestException as e:
                 if 'Max retries exceeded with url' not in str(e):
                     raise RemoteError(f'{self.chain} Etherscan API request failed due to {e!s}') from e  # noqa: E501

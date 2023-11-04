@@ -222,6 +222,8 @@ class Coinbasepro(ExchangeInterface):
             })
 
         retries_left = CachedSettings().get_query_retry_limit()
+        retry_limit = CachedSettings().get_query_retry_limit()
+        timeout = CachedSettings().get_timeout_tuple()
         while retries_left > 0:
             log.debug(
                 'Coinbase Pro API query',
@@ -235,7 +237,7 @@ class Coinbasepro(ExchangeInterface):
                     request_method.lower(),
                     full_url,
                     data=stringified_options,
-                    timeout=CachedSettings().get_timeout_tuple(),
+                    timeout=timeout,
                 )
             except requests.exceptions.RequestException as e:
                 raise RemoteError(
@@ -245,7 +247,7 @@ class Coinbasepro(ExchangeInterface):
 
             if response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
                 # Backoff a bit by sleeping. Sleep more, the more retries have been made
-                backoff_secs = CachedSettings().get_query_retry_limit() / retries_left
+                backoff_secs = retry_limit / retries_left
                 log.debug(f'Backing off coinbase pro api query for {backoff_secs} secs')
                 gevent.sleep(backoff_secs)
                 retries_left -= 1

@@ -214,6 +214,7 @@ class Kucoin(ExchangeInterface):
 
         retries_left = API_REQUEST_RETRY_TIMES
         retries_after_seconds = API_REQUEST_RETRIES_AFTER_SECONDS
+        timeout = CachedSettings().get_timeout_tuple()
         while retries_left >= 0:
             timestamp = str(ts_now_in_ms())
             method = 'GET'
@@ -243,7 +244,7 @@ class Kucoin(ExchangeInterface):
             })
             log.debug('Kucoin API request', request_url=request_url)
             try:
-                response = self.session.get(url=request_url, timeout=CachedSettings().get_timeout_tuple())  # noqa: E501
+                response = self.session.get(url=request_url, timeout=timeout)
             except requests.exceptions.RequestException as e:
                 raise RemoteError(
                     f'Kucoin {method} request at {request_url} connection error: {e!s}.',

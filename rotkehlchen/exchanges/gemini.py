@@ -180,6 +180,7 @@ class Gemini(ExchangeInterface):
         v_endpoint = f'/v1/{endpoint}'
         url = f'{self.base_uri}{v_endpoint}'
         retries_left = CachedSettings().get_query_retry_limit()
+        retry_limit = CachedSettings().get_query_retry_limit()
         while retries_left > 0:
             if endpoint in {'mytrades', 'balances', 'transfers', 'roles', 'balances/earn'}:
                 # private endpoints
@@ -209,7 +210,7 @@ class Gemini(ExchangeInterface):
 
             if response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
                 # Backoff a bit by sleeping. Sleep more, the more retries have been made
-                gevent.sleep(CachedSettings().get_query_retry_limit() / retries_left)
+                gevent.sleep(retry_limit / retries_left)
                 retries_left -= 1
             else:
                 # get out of the retry loop, we did not get 429 complaint

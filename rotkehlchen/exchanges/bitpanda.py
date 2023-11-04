@@ -349,6 +349,7 @@ class Bitpanda(ExchangeInterface):
         """
         request_url = f'{self.uri}/{endpoint}'
         retries_left = CachedSettings().get_query_retry_limit()
+        timeout = CachedSettings().get_timeout_tuple()
         if options is not None:
             request_url += '?' + urlencode(options)
         while retries_left > 0:
@@ -358,7 +359,7 @@ class Bitpanda(ExchangeInterface):
                 options=options,
             )
             try:
-                response = self.session.get(request_url, timeout=CachedSettings().get_timeout_tuple())  # noqa: E501
+                response = self.session.get(request_url, timeout=timeout)
             except requests.exceptions.RequestException as e:
                 raise RemoteError(f'Bitpanda API request failed due to {e!s}') from e
 

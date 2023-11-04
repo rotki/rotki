@@ -266,7 +266,7 @@ class Independentreserve(ExchangeInterface):
         May raise RemoteError
         """
         url = f'{self.uri}/{method_type}/{path}'
-
+        timeout = CachedSettings().get_timeout_tuple()
         tries = CachedSettings().get_query_retry_limit()
         while True:
             data = None
@@ -304,7 +304,7 @@ class Independentreserve(ExchangeInterface):
                     method=verb,
                     url=url,
                     data=data,
-                    timeout=CachedSettings().get_timeout_tuple(),
+                    timeout=timeout,
                 )
             except requests.exceptions.RequestException as e:
                 raise RemoteError(f'IndependentReserve API request failed due to {e!s}') from e

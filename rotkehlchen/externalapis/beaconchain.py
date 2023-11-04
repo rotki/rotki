@@ -93,11 +93,13 @@ class BeaconChain(ExternalServiceWithApiKey):
             query_str += f'?{urlencode(extra_args)}'
 
         times = CachedSettings().get_query_retry_limit()
+        retries_num = times
+        timeout = (CachedSettings().get_timeout_tuple()[0], BEACONCHAIN_READ_TIMEOUT)
         backoff_in_seconds = 10
         log.debug(f'Querying beaconcha.in API for {query_str}')
         while True:
             try:
-                response = self.session.get(query_str, timeout=(CachedSettings().get_timeout_tuple()[0], BEACONCHAIN_READ_TIMEOUT))  # noqa: E501
+                response = self.session.get(query_str, timeout=timeout)
             except requests.exceptions.RequestException as e:
                 raise RemoteError(f'Querying {query_str} failed due to {e!s}') from e
 
@@ -112,7 +114,7 @@ class BeaconChain(ExternalServiceWithApiKey):
                     msg = (
                         f'Beaconchain API request {response.url} failed '
                         f'with HTTP status code {response.status_code} and text '
-                        f'{response.text} after 5 retries'
+                        f'{response.text} after {retries_num} retries'
                     )
                     log.debug(
                         f'{msg} minute limit: {user_minute_rate_limit}/{minute_rate_limit}, '
@@ -140,7 +142,7 @@ class BeaconChain(ExternalServiceWithApiKey):
                     sleep_seconds = retry_after_secs
                 else:
                     # Rate limited. Try incremental backoff since retry-after header is missing
-                    sleep_seconds = backoff_in_seconds * (CachedSettings().get_query_retry_limit() - times + 1)  # noqa: E501
+                    sleep_seconds = backoff_in_seconds * (retries_num - times + 1)
                 times -= 1
                 log.debug(
                     f'Beaconchain API request {response.url} got rate limited. Sleeping '
