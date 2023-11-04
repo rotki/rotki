@@ -27,6 +27,7 @@ from rotkehlchen.db.filtering import (
     DBIgnoredAssetsFilter,
     DBIgnoreValuesFilter,
     EthDepositEventFilterQuery,
+    EthWithdrawalFilterQuery,
     EvmEventFilterQuery,
     HistoryBaseEntryFilterQuery,
     HistoryEventFilterQuery,
@@ -310,6 +311,16 @@ class DBHistoryEvents:
     def get_history_events(
             self,
             cursor: 'DBCursor',
+            filter_query: EthWithdrawalFilterQuery,
+            has_premium: bool,
+            group_by_event_ids: Literal[False] = ...,
+    ) -> list[EthWithdrawalEvent]:
+        ...
+
+    @overload
+    def get_history_events(
+            self,
+            cursor: 'DBCursor',
             filter_query: EvmEventFilterQuery,
             has_premium: bool,
             group_by_event_ids: Literal[True],
@@ -326,33 +337,17 @@ class DBHistoryEvents:
     ) -> list[EvmEvent]:
         ...
 
-    @overload
     def get_history_events(
             self,
             cursor: 'DBCursor',
-            filter_query: Union[HistoryEventFilterQuery, EvmEventFilterQuery, EthDepositEventFilterQuery],  # noqa: E501
+            filter_query: Union[HistoryEventFilterQuery, EvmEventFilterQuery, EthDepositEventFilterQuery, EthWithdrawalFilterQuery],  # noqa: E501
             has_premium: bool,
             group_by_event_ids: bool = False,
     ) -> Union[
         list[tuple[int, HistoryEvent]], list[HistoryEvent],
         list[tuple[int, EvmEvent]], list[EvmEvent],
         list[tuple[int, EthDepositEvent]], list[EthDepositEvent],
-    ]:
-        """
-        This fallback is needed due to
-        https://github.com/python/mypy/issues/6113#issuecomment-869828434
-        """
-
-    def get_history_events(
-            self,
-            cursor: 'DBCursor',
-            filter_query: Union[HistoryEventFilterQuery, EvmEventFilterQuery, EthDepositEventFilterQuery],  # noqa: E501
-            has_premium: bool,
-            group_by_event_ids: bool = False,
-    ) -> Union[
-        list[tuple[int, HistoryEvent]], list[HistoryEvent],
-        list[tuple[int, EvmEvent]], list[EvmEvent],
-        list[tuple[int, EthDepositEvent]], list[EthDepositEvent],
+        list[tuple[int, EthWithdrawalEvent]], list[EthWithdrawalEvent],
     ]:
         """Get all events from the DB, deserialized depending on the event type
 

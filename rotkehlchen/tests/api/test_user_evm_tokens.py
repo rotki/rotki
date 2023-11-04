@@ -47,7 +47,6 @@ def assert_token_entry_exists_in_result(
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-# @pytest.mark.parametrize('start_with_logged_in_user', [False])
 @pytest.mark.parametrize('generatable_user_ethereum_tokens', [True])
 @pytest.mark.parametrize('user_ethereum_tokens', [create_initial_globaldb_test_tokens])
 def test_query_user_tokens(rotkehlchen_api_server):
