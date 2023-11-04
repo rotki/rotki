@@ -45,6 +45,9 @@ ETH_DEPOSIT_EVENT_JOIN = ALL_EVENTS_DATA_JOIN
 
 
 T = TypeVar('T')
+T_FilterQ = TypeVar('T_FilterQ', bound='DBFilterQuery')
+T_HistoryBaseEntryFilterQ = TypeVar('T_HistoryBaseEntryFilterQ', bound='HistoryBaseEntryFilterQuery')  # noqa: E501
+T_EthSTakingFilterQ = TypeVar('T_EthSTakingFilterQ', bound='EthStakingEventFilterQuery')
 
 
 class DBFilterOrder(NamedTuple):
@@ -278,7 +281,7 @@ class DBSubStringFilter(DBFilter):
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
-class DBFilterQuery:
+class DBFilterQuery(metaclass=ABCMeta):
     and_op: bool
     filters: list[DBFilter]
     join_clause: Optional[DBFilter] = None
@@ -347,14 +350,14 @@ class DBFilterQuery:
 
     @classmethod
     def create(
-            cls,
+            cls: type[T_FilterQ],
             and_op: bool,
             limit: Optional[int],
             offset: Optional[int],
             order_by_case_sensitive: bool = True,
             order_by_rules: Optional[list[tuple[str, bool]]] = None,
             group_by_field: Optional[str] = None,
-    ) -> 'DBFilterQuery':
+    ) -> T_FilterQ:
         if limit is None or offset is None:
             pagination = None
         else:
@@ -435,7 +438,7 @@ class EvmTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
 
     @classmethod
     def make(
-            cls,
+            cls: type['EvmTransactionsFilterQuery'],
             and_op: bool = True,
             order_by_rules: Optional[list[tuple[str, bool]]] = None,
             limit: Optional[int] = None,
@@ -455,7 +458,6 @@ class EvmTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
             offset=offset,
             order_by_rules=order_by_rules,
         )
-        filter_query = cast('EvmTransactionsFilterQuery', filter_query)
         # Create the timestamp filter so that from/to ts works. But add it only if needed
         filter_query.timestamp_filter = DBTimestampFilter(
             and_op=True,
@@ -603,7 +605,7 @@ class TradesFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLocation):
 
     @classmethod
     def make(
-            cls,
+            cls: type['TradesFilterQuery'],
             and_op: bool = True,
             order_by_rules: Optional[list[tuple[str, bool]]] = None,
             limit: Optional[int] = None,
@@ -625,7 +627,6 @@ class TradesFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLocation):
             offset=offset,
             order_by_rules=order_by_rules,
         )
-        filter_query = cast('TradesFilterQuery', filter_query)
         filters: list[DBFilter] = []
         if base_assets is not None:
             if len(base_assets) == 1:
@@ -679,7 +680,7 @@ class AssetMovementsFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLo
 
     @classmethod
     def make(
-            cls,
+            cls: type['AssetMovementsFilterQuery'],
             and_op: bool = True,
             order_by_rules: Optional[list[tuple[str, bool]]] = None,
             limit: Optional[int] = None,
@@ -699,7 +700,6 @@ class AssetMovementsFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLo
             offset=offset,
             order_by_rules=order_by_rules,
         )
-        filter_query = cast('AssetMovementsFilterQuery', filter_query)
         filters: list[DBFilter] = []
         if assets is not None:
             if len(assets) == 1:
@@ -732,7 +732,7 @@ class Eth2DailyStatsFilterQuery(DBFilterQuery, FilterWithTimestamp):
 
     @classmethod
     def make(
-            cls,
+            cls: type['Eth2DailyStatsFilterQuery'],
             and_op: bool = True,
             order_by_rules: Optional[list[tuple[str, bool]]] = None,
             limit: Optional[int] = None,
@@ -750,7 +750,6 @@ class Eth2DailyStatsFilterQuery(DBFilterQuery, FilterWithTimestamp):
             offset=offset,
             order_by_rules=order_by_rules,
         )
-        filter_query = cast('Eth2DailyStatsFilterQuery', filter_query)
         filters: list[DBFilter] = []
 
         filter_query.timestamp_filter = DBTimestampFilter(
@@ -795,7 +794,7 @@ class ReportDataFilterQuery(DBFilterQuery, FilterWithTimestamp):
 
     @classmethod
     def make(
-            cls,
+            cls: type['ReportDataFilterQuery'],
             and_op: bool = True,
             order_by_rules: Optional[list[tuple[str, bool]]] = None,
             limit: Optional[int] = None,
@@ -814,7 +813,6 @@ class ReportDataFilterQuery(DBFilterQuery, FilterWithTimestamp):
             offset=offset,
             order_by_rules=order_by_rules,
         )
-        filter_query = cast('ReportDataFilterQuery', filter_query)
         filters: list[DBFilter] = []
         if report_id is not None:
             filters.append(DBReportDataReportIDFilter(and_op=True, report_id=report_id))
@@ -840,9 +838,6 @@ class DBNullFilter(DBFilter):
         return [f'{column} {self.verb} NULL' for column in self.columns], []
 
 
-T_HistoryFilterQuery = TypeVar('T_HistoryFilterQuery', bound='HistoryBaseEntryFilterQuery')
-
-
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class HistoryEventCustomizedOnlyJoinsFilter(DBFilter):
     """This join finds customized history events (exclusively)."""
@@ -860,7 +855,7 @@ class HistoryBaseEntryFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWith
 
     @classmethod
     def make(
-            cls: type[T_HistoryFilterQuery],
+            cls: type[T_HistoryBaseEntryFilterQ],
             and_op: bool = True,
             order_by_rules: Optional[list[tuple[str, bool]]] = None,
             limit: Optional[int] = None,
@@ -879,7 +874,7 @@ class HistoryBaseEntryFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWith
             entry_types: Optional[IncludeExcludeFilterData] = None,
             exclude_ignored_assets: bool = False,
             customized_events_only: bool = False,
-    ) -> T_HistoryFilterQuery:
+    ) -> T_HistoryBaseEntryFilterQ:
         if order_by_rules is None:
             order_by_rules = [('timestamp', True), ('sequence_index', True)]
 
@@ -890,8 +885,6 @@ class HistoryBaseEntryFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWith
             order_by_rules=order_by_rules,
             group_by_field='event_identifier',
         )
-        filter_query = cast(T_HistoryFilterQuery, filter_query)
-
         if customized_events_only is True:
             filter_query.join_clause = HistoryEventCustomizedOnlyJoinsFilter(and_op=True)
 
@@ -1011,7 +1004,7 @@ class HistoryEventFilterQuery(HistoryBaseEntryFilterQuery):
 class EvmEventFilterQuery(HistoryBaseEntryFilterQuery):
     @classmethod
     def make(
-            cls,
+            cls: type['EvmEventFilterQuery'],
             and_op: bool = True,
             order_by_rules: Optional[list[tuple[str, bool]]] = None,
             limit: Optional[int] = None,
@@ -1102,11 +1095,11 @@ class EvmEventFilterQuery(HistoryBaseEntryFilterQuery):
         return f'SELECT COUNT(*) {EVM_EVENT_JOIN}'
 
 
-class EthStakingEventFilterQuery(HistoryBaseEntryFilterQuery):
+class EthStakingEventFilterQuery(HistoryBaseEntryFilterQuery, metaclass=ABCMeta):
 
     @classmethod
     def make(
-            cls,
+            cls: type[T_EthSTakingFilterQ],
             and_op: bool = True,
             order_by_rules: Optional[list[tuple[str, bool]]] = None,
             limit: Optional[int] = None,
@@ -1126,7 +1119,7 @@ class EthStakingEventFilterQuery(HistoryBaseEntryFilterQuery):
             exclude_ignored_assets: bool = False,
             customized_events_only: bool = False,
             validator_indices: Optional[list[int]] = None,
-    ) -> 'EthStakingEventFilterQuery':
+    ) -> T_EthSTakingFilterQ:
         if entry_types is None:
             entry_type_values = [HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT, HistoryBaseEntryType.ETH_BLOCK_EVENT, HistoryBaseEntryType.ETH_DEPOSIT_EVENT]  # noqa: E501
             entry_types = IncludeExcludeFilterData(values=entry_type_values)
@@ -1181,7 +1174,7 @@ class EthBlockEventFilterQuery(EthStakingEventFilterQuery):
 class EthDepositEventFilterQuery(EvmEventFilterQuery, EthStakingEventFilterQuery):
     @classmethod
     def make(  # type: ignore  # it is expected to be incompatible with supertype
-            cls,
+            cls: type['EthDepositEventFilterQuery'],
             and_op: bool = True,
             order_by_rules: Optional[list[tuple[str, bool]]] = None,
             limit: Optional[int] = None,
@@ -1282,7 +1275,7 @@ class UserNotesFilterQuery(DBFilterQuery, FilterWithTimestamp):
 
     @classmethod
     def make(
-            cls,
+            cls: type['UserNotesFilterQuery'],
             and_op: bool = True,
             order_by_rules: Optional[list[tuple[str, bool]]] = None,
             limit: Optional[int] = None,
@@ -1300,7 +1293,6 @@ class UserNotesFilterQuery(DBFilterQuery, FilterWithTimestamp):
             offset=offset,
             order_by_rules=order_by_rules,
         )
-        filter_query = cast('UserNotesFilterQuery', filter_query)
         filters: list[DBFilter] = []
         filter_query.timestamp_filter = DBTimestampFilter(
             and_op=True,
@@ -1328,7 +1320,7 @@ class AddressbookFilterQuery(DBFilterQuery):
     """
     @classmethod
     def make(
-            cls,
+            cls: type['AddressbookFilterQuery'],
             and_op: bool = True,
             limit: Optional[int] = None,
             offset: Optional[int] = None,
@@ -1341,7 +1333,6 @@ class AddressbookFilterQuery(DBFilterQuery):
             limit=limit,
             offset=offset,
         )
-        filter_query = cast('AddressbookFilterQuery', filter_query)
         filters: list[DBFilter] = []
         if substring_search is not None:
             filters.append(DBSubStringFilter(
@@ -1367,7 +1358,7 @@ class AddressbookFilterQuery(DBFilterQuery):
 class AssetsFilterQuery(DBFilterQuery):
     @classmethod
     def make(
-            cls,
+            cls: type['AssetsFilterQuery'],
             and_op: bool = True,
             order_by_rules: Optional[list[tuple[str, bool]]] = None,
             limit: Optional[int] = None,
@@ -1395,8 +1386,6 @@ class AssetsFilterQuery(DBFilterQuery):
             order_by_rules=order_by_rules,
             order_by_case_sensitive=False,
         )
-        filter_query = cast('AssetsFilterQuery', filter_query)
-
         filters: list[DBFilter] = []
         if name is not None:
             filters.append(DBSubStringFilter(
@@ -1469,7 +1458,7 @@ class AssetsFilterQuery(DBFilterQuery):
 class CustomAssetsFilterQuery(DBFilterQuery):
     @classmethod
     def make(
-            cls,
+            cls: type['CustomAssetsFilterQuery'],
             order_by_rules: Optional[list[tuple[str, bool]]] = None,
             limit: Optional[int] = None,
             offset: Optional[int] = None,
@@ -1486,8 +1475,6 @@ class CustomAssetsFilterQuery(DBFilterQuery):
             offset=offset,
             order_by_rules=order_by_rules,
         )
-        filter_query = cast('CustomAssetsFilterQuery', filter_query)
-
         filters: list[DBFilter] = []
         if identifier is not None:
             filters.append(DBEqualsFilter(
@@ -1516,7 +1503,7 @@ class CustomAssetsFilterQuery(DBFilterQuery):
 class NFTFilterQuery(DBFilterQuery):
     @classmethod
     def make(
-            cls,
+            cls: type['NFTFilterQuery'],
             order_by_rules: Optional[list[tuple[str, bool]]] = None,
             limit: Optional[int] = None,
             offset: Optional[int] = None,
@@ -1536,7 +1523,6 @@ class NFTFilterQuery(DBFilterQuery):
             offset=offset,
             order_by_rules=order_by_rules,
         )
-        filter_query = cast('NFTFilterQuery', filter_query)
         filters: list[DBFilter] = []
         if owner_addresses is not None:
             filters.append(DBMultiStringFilter(
@@ -1712,7 +1698,7 @@ class TransactionsNotDecodedFilterQuery(DBFilterQuery):
     """
     @classmethod
     def make(
-            cls,
+            cls: type['TransactionsNotDecodedFilterQuery'],
             limit: Optional[int] = None,
             addresses: Optional[list[ChecksumEvmAddress]] = None,
             chain_id: Optional[ChainID] = None,
@@ -1723,8 +1709,6 @@ class TransactionsNotDecodedFilterQuery(DBFilterQuery):
             offset=None,
             order_by_rules=None,
         )
-        filter_query = cast('TransactionsNotDecodedFilterQuery', filter_query)
-
         filters: list[DBFilter] = []
         if addresses is not None or chain_id is not None:
             filters.append(DBTransactionsPendingDecodingFilter(
@@ -1742,7 +1726,7 @@ class AccountingRulesFilterQuery(DBFilterQuery):
 
     @classmethod
     def make(
-            cls,
+            cls: type['AccountingRulesFilterQuery'],
             and_op: bool = True,
             order_by_rules: Optional[list[tuple[str, bool]]] = None,
             limit: Optional[int] = None,
@@ -1760,7 +1744,6 @@ class AccountingRulesFilterQuery(DBFilterQuery):
             offset=offset,
             order_by_rules=order_by_rules,
         )
-        filter_query = cast('AccountingRulesFilterQuery', filter_query)
         filters: list[DBFilter] = []
         if event_types is not None:
             filters.append(DBMultiStringFilter(
