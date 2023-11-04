@@ -138,13 +138,14 @@ class Opensea(ExternalServiceWithApiKey):
 
         backoff = 1
         backoff_limit = 33
+        timeout = timeout if timeout else CachedSettings().get_timeout_tuple()
         while backoff < backoff_limit:
             log.debug(f'Querying opensea: {query_str}')
             try:
                 response = self.session.get(
                     query_str,
                     params=options,
-                    timeout=timeout if timeout else CachedSettings().get_timeout_tuple(),
+                    timeout=timeout,
                 )
             except requests.exceptions.RequestException as e:
                 raise RemoteError(

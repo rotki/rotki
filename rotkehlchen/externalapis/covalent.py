@@ -122,10 +122,11 @@ class Covalent(ExternalServiceWithApiKey):
                 query_str += f'&{name}={value}'
 
         retry = 0
+        timeout = timeout if timeout else CachedSettings().get_timeout_tuple()
         while retry <= CONST_RETRY:
             log.debug(f'Querying covalent: {query_str}')
             try:
-                response = self.session.get(query_str, timeout=timeout if timeout else CachedSettings().get_timeout_tuple())  # noqa: E501
+                response = self.session.get(query_str, timeout=timeout)
             except requests.exceptions.RequestException as e:
                 # In timeout retry
                 if isinstance(e, requests.exceptions.Timeout):

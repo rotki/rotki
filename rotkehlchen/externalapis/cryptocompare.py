@@ -274,9 +274,10 @@ class Cryptocompare(ExternalServiceWithApiKey, HistoricalPriceOracleInterface, P
             querystr += f'api_key={api_key}'
 
         tries = CRYPTOCOMPARE_QUERY_RETRY_TIMES
+        timeout = CachedSettings().get_timeout_tuple()
         while tries >= 0:
             try:
-                response = self.session.get(querystr, timeout=CachedSettings().get_timeout_tuple())
+                response = self.session.get(querystr, timeout=timeout)
             except requests.exceptions.RequestException as e:
                 self.penalty_info.note_failure_or_penalize()
                 raise RemoteError(f'Cryptocompare API request failed due to {e!s}') from e

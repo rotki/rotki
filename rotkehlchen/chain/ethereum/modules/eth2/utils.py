@@ -59,10 +59,11 @@ def _query_page(url: str, event: Literal['stats', 'withdrawals']) -> requests.Re
     tries = 1
     max_tries = 3
     backoff = 60
+    timeout = CachedSettings().get_timeout_tuple()
     while True:
         log.debug(f'Querying beaconcha.in {event}: {url}')
         try:
-            response = requests.get(url, timeout=CachedSettings().get_timeout_tuple())
+            response = requests.get(url, timeout=timeout)
         except requests.exceptions.RequestException as e:
             raise RemoteError(f'Beaconcha.in api request {url} failed due to {e!s}') from e
 

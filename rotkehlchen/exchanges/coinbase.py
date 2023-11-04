@@ -356,6 +356,7 @@ class Coinbase(ExchangeInterface):
         request_verb = 'GET'
         # initialize next_uri before loop
         next_uri = f'/{self.apiversion}/{endpoint}'
+        timeout = CachedSettings().get_timeout_tuple()
         if options:
             next_uri += urlencode(options)
         while True:
@@ -379,7 +380,7 @@ class Coinbase(ExchangeInterface):
 
             full_url = self.base_uri + next_uri
             try:
-                response = self.session.get(full_url, timeout=CachedSettings().get_timeout_tuple())
+                response = self.session.get(full_url, timeout=timeout)
             except requests.exceptions.RequestException as e:
                 raise RemoteError(f'Coinbase API request failed due to {e!s}') from e
 
