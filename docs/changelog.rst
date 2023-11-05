@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`6871` Ethereum staking withdrawals querying should now work fine again.
 * :feature:`6439` Users can filter historical events to display only customized events.
 * :fix:`6548` Users will no longer be blocked by a persistent modal dialog while premium sync is uploading.
 * :fix:`-` Replaces snowtrace.io with avascan.info as the default explorer for Avalanche C-Chain
