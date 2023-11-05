@@ -29,6 +29,7 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.errors.misc import InputError, RemoteError, UnableToDecryptRemoteData
 from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.externalapis.blockscout import Blockscout
 from rotkehlchen.fval import FVal
 from rotkehlchen.greenlets.manager import GreenletManager
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -87,6 +88,7 @@ class EthereumInquirer(DSProxyInquirerWithCacheData):
         self.etherscan: EthereumEtherscan
         self.blocks_subgraph = Graph('https://api.thegraph.com/subgraphs/name/blocklytics/ethereum-blocks')
         self.ens_reverse_records = self.contracts.contract(string_to_evm_address('0x3671aE578E63FdF66ad4F3E12CC0c0d71Ac7510C'))  # noqa: E501
+        self.blockscout = Blockscout(database=database, msg_aggregator=database.msg_aggregator)
 
     def ens_reverse_lookup(self, addresses: list[ChecksumEvmAddress]) -> dict[ChecksumEvmAddress, Optional[str]]:  # noqa: E501
         """Performs a reverse ENS lookup on a list of addresses

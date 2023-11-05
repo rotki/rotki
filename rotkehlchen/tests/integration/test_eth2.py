@@ -1,4 +1,6 @@
+from contextlib import nullcontext
 from typing import TYPE_CHECKING
+from unittest.mock import patch
 
 import pytest
 
@@ -12,6 +14,7 @@ from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.db.eth2 import DBEth2
 from rotkehlchen.db.filtering import EthWithdrawalFilterQuery, HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import Eth2PubKey, TimestampMS
 from rotkehlchen.utils.misc import ts_now
@@ -20,17 +23,23 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.modules.eth2.eth2 import Eth2
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('network_mocking', [False])
 @pytest.mark.parametrize('ethereum_accounts', [[
     '0x23F02E9272EAc1F12F5be76D48b4a15323778f08', '0xCb2a5c130709a4C6c4BA39368879A523C0060c71',
 ]])
-@pytest.mark.freeze_time('2023-11-03 09:40:00 GMT')
-def test_withdrawals(eth2: 'Eth2', database, ethereum_accounts):
-    """Test that when withdrawals are queried, they are properly saved in the DB"""
+@pytest.mark.parametrize('query_method', ['etherscan', 'blockscout'])
+@pytest.mark.freeze_time('2023-11-19 19:58:00 GMT')
+def test_withdrawals(eth2: 'Eth2', database, ethereum_accounts, query_method):
+    """Test that when withdrawals are queried, they are properly saved in the DB.
 
+    Test that the sources we can query agree with each other.
+    """
     to_ts = ts_now()
-    eth2.query_services_for_validator_withdrawals(addresses=ethereum_accounts, to_ts=to_ts)
+    patch_ctx = patch.object(eth2.ethereum.etherscan, 'get_withdrawals', side_effect=RemoteError) if query_method == 'blockscout' else nullcontext()  # noqa: E501
+
+    with patch_ctx:  # type: ignore[attr-defined]
+        eth2.query_services_for_validator_withdrawals(addresses=ethereum_accounts, to_ts=to_ts)
     dbevents = DBHistoryEvents(database)
     with database.conn.read_ctx() as cursor:
         events = dbevents.get_history_events(
@@ -40,7 +49,7 @@ def test_withdrawals(eth2: 'Eth2', database, ethereum_accounts):
             group_by_event_ids=False,
         )
 
-    assert len(events) == 68
+    assert len(events) == 74
     account0_events, account1_events = 0, 0
     for idx, x in enumerate(events):
         assert isinstance(x, EthWithdrawalEvent)
@@ -53,9 +62,10 @@ def test_withdrawals(eth2: 'Eth2', database, ethereum_accounts):
         else:
             raise AssertionError('unexpected event')
 
+        x.identifier = 1  # ignore identifiers at equality check
         if idx == 0:  # for some indices check full event
             assert x == EthWithdrawalEvent(
-                identifier=35,
+                identifier=1,
                 validator_index=582738,
                 timestamp=TimestampMS(1682309159000),
                 balance=Balance(amount=FVal('0.001188734')),
@@ -75,7 +85,7 @@ def test_withdrawals(eth2: 'Eth2', database, ethereum_accounts):
             continue
         if idx == 4:
             assert x == EthWithdrawalEvent(
-                identifier=37,
+                identifier=1,
                 validator_index=582738,
                 timestamp=TimestampMS(1683060887000),
                 balance=Balance(amount=FVal('0.045701079')),
@@ -85,7 +95,7 @@ def test_withdrawals(eth2: 'Eth2', database, ethereum_accounts):
             continue
         if idx == 33:
             assert x == EthWithdrawalEvent(
-                identifier=17,
+                identifier=1,
                 validator_index=583243,
                 timestamp=TimestampMS(1688958443000),
                 balance=Balance(amount=FVal('0.049877787')),
@@ -95,7 +105,7 @@ def test_withdrawals(eth2: 'Eth2', database, ethereum_accounts):
             continue
         if idx == 66:
             assert x == EthWithdrawalEvent(
-                identifier=68,
+                identifier=1,
                 validator_index=582738,
                 timestamp=TimestampMS(1698368939000),
                 balance=Balance(amount=FVal('0.016899759')),
@@ -105,7 +115,7 @@ def test_withdrawals(eth2: 'Eth2', database, ethereum_accounts):
             continue
         if idx == 67:
             assert x == EthWithdrawalEvent(
-                identifier=34,
+                identifier=1,
                 validator_index=583243,
                 timestamp=TimestampMS(1698369239000),
                 balance=Balance(amount=FVal('0.016747361')),
@@ -119,8 +129,8 @@ def test_withdrawals(eth2: 'Eth2', database, ethereum_accounts):
         assert isinstance(x.balance.amount, FVal)
         assert FVal('0.01') <= x.balance.amount <= FVal('0.06')
 
-    assert account0_events == 34
-    assert account1_events == 34
+    assert account0_events == 37
+    assert account1_events == 37
 
 
 @pytest.mark.vcr()
