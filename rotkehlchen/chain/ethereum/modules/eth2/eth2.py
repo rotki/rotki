@@ -364,8 +364,13 @@ class Eth2(EthereumModule):
                 address=address,
                 period=TimestampOrBlockRange('timestamps', from_ts, to_ts),
             )
-        except (DeserializationError, RemoteError):
-            return  # but we should try blockscout in this case
+        except (DeserializationError, RemoteError) as e:
+            log.error(f'Failed to query ethereum withdrawals for {address} through etherscan due to {e}. Will try blockscout.')  # noqa: E501
+            try:
+                self.ethereum.blockscout.query_withdrawals(address)
+            except (DeserializationError, RemoteError) as othere:
+                log.error(f'Failed to query ethereum withdrawals for {address} through blockscout due to {othere}. Bailing out for now.')  # noqa: E501
+                return
 
         with self.database.user_write() as write_cursor:
             self.database.update_used_query_range(write_cursor, range_name, Timestamp(0), to_ts)
