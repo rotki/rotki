@@ -1,4 +1,3 @@
-import json
 import logging
 import re
 from http import HTTPStatus
@@ -14,13 +13,8 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.beaconchain import BEACONCHAIN_ROOT_URL
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.serialization.deserialize import (
-    deserialize_evm_address,
-    deserialize_fval,
-    deserialize_int_from_str,
-)
-from rotkehlchen.types import ChecksumEvmAddress, Timestamp
-from rotkehlchen.utils.misc import create_timestamp, ts_now
+from rotkehlchen.types import Timestamp
+from rotkehlchen.utils.misc import create_timestamp
 
 from .structures import ValidatorDailyStats
 
@@ -86,87 +80,6 @@ def _query_page(url: str, event: Literal['stats', 'withdrawals']) -> requests.Re
         break  # else all good - break from the loop
 
     return response
-
-
-def scrape_validator_withdrawals(
-        validator_index: int,
-        last_known_timestamp: Timestamp,
-) -> list[tuple[Timestamp, ChecksumEvmAddress, FVal]]:
-    """Kind of "scrapes" the website of beaconcha.in and parses withdrawals data.
-
-    Will stop querying when a timestamp less than or equal to the last known
-    timestamp is found.
-
-    This should be replaced by the withdrawals endpoint.
-    https://beaconcha.in/api/v1/docs/index.html#/Validator/get_api_v1_validator__indexOrPubkey__withdrawals
-
-    Atm though it lacks pagination and ability to query history in the past.
-
-    Here we are not really scraping ... just asking for the paginated result of the
-    withdrawals data table directly.
-
-    Returns list of withdrawals to add for the validator.
-
-    May raise:
-    - RemoteError if we can't query beaconcha.in or if the data is not in the expected format
-    - DeserializationError if something is not in the expected format
-    """
-    withdrawals = []
-    now = ts_now()
-    start = 0
-    page_length = 10
-    stop_iterating = False
-
-    while True:
-        url = f'{BEACONCHAIN_ROOT_URL}/validator/{validator_index}/withdrawals?draw=1&columns%5B0%5D%5Bdata%5D=0&columns%5B0%5D%5Bname%5D=&columns%5B0%5D%5Bsearchable%5D=true&columns%5B0%5D%5Borderable%5D=true&columns%5B0%5D%5Bsearch%5D%5Bvalue%5D=&columns%5B0%5D%5Bsearch%5D%5Bregex%5D=false&columns%5B1%5D%5Bdata%5D=1&columns%5B1%5D%5Bname%5D=&columns%5B1%5D%5Bsearchable%5D=true&columns%5B1%5D%5Borderable%5D=true&columns%5B1%5D%5Bsearch%5D%5Bvalue%5D=&columns%5B1%5D%5Bsearch%5D%5Bregex%5D=false&columns%5B2%5D%5Bdata%5D=2&columns%5B2%5D%5Bname%5D=&columns%5B2%5D%5Bsearchable%5D=true&columns%5B2%5D%5Borderable%5D=true&columns%5B2%5D%5Bsearch%5D%5Bvalue%5D=&columns%5B2%5D%5Bsearch%5D%5Bregex%5D=false&columns%5B3%5D%5Bdata%5D=3&columns%5B3%5D%5Bname%5D=&columns%5B3%5D%5Bsearchable%5D=true&columns%5B3%5D%5Borderable%5D=true&columns%5B3%5D%5Bsearch%5D%5Bvalue%5D=&columns%5B3%5D%5Bsearch%5D%5Bregex%5D=false&columns%5B4%5D%5Bdata%5D=4&columns%5B4%5D%5Bname%5D=&columns%5B4%5D%5Bsearchable%5D=true&columns%5B4%5D%5Borderable%5D=true&columns%5B4%5D%5Bsearch%5D%5Bvalue%5D=&columns%5B4%5D%5Bsearch%5D%5Bregex%5D=false&order%5B0%5D%5Bcolumn%5D=0&order%5B0%5D%5Bdir%5D=desc&start={start}&length={page_length}&search%5Bvalue%5D=&search%5Bregex%5D=false&_={now}'  # noqa: E501
-        response = _query_page(url, 'withdrawals')
-        try:
-            result = response.json()
-        except json.JSONDecodeError as e:
-            raise RemoteError(f'Could not parse {response.text} from beaconchain as json') from e
-
-        for entry in result['data']:  # data appears in descending time
-            epoch_match = EPOCH_PARSE_REGEX.match(entry[0])
-            if epoch_match is None:
-                log.error(f'Failed to match epoch regex for {entry[0]}')
-                raise RemoteError('Failed to parse withdrawals response from beaconchain. Check logs')  # noqa: E501
-            groups = epoch_match.groups()
-            if len(groups) != 1:
-                log.error(f'Failed to match epoch regex for {entry[0]}')
-                raise RemoteError('Failed to parse withdrawals response from beaconchain. Check logs')  # noqa: E501
-            epoch = deserialize_int_from_str(groups[0], location='beaconchain epoch')
-            timestamp = epoch_to_timestamp(epoch)
-            if timestamp <= last_known_timestamp:
-                stop_iterating = True
-                break  # we already know about this withdrawal
-
-            address_match = ADDRESS_PARSE_REGEX.match(entry[3])
-            if address_match is None:
-                log.error(f'Failed to match address regex for {entry[3]}')
-                raise RemoteError('Failed to parse withdrawals response from beaconchain. Check logs')  # noqa: E501
-            groups = address_match.groups()
-            if len(groups) != 1:
-                log.error(f'Failed to match address regex for {entry[3]}')
-                raise RemoteError('Failed to parse withdrawals response from beaconchain. Check logs')  # noqa: E501
-            address = deserialize_evm_address(groups[0])
-
-            eth_match = ETH_PARSE_REGEX.match(entry[4])
-            if eth_match is None:
-                log.error(f'Failed to match eth regex for {entry[4]}')
-                raise RemoteError('Failed to parse withdrawals response from beaconchain. Check logs')  # noqa: E501
-            groups = eth_match.groups()
-            if len(groups) != 1:
-                log.error(f'Failed to match eth regex for {entry[4]}')
-                raise RemoteError('Failed to parse withdrawals response from beaconchain. Check logs')  # noqa: E501
-            eth_amount = deserialize_fval(groups[0], name='withdrawal ETH', location='beaconchain query')  # noqa: E501
-
-            withdrawals.append((timestamp, address, eth_amount))
-
-        if stop_iterating or len(withdrawals) >= result['recordsTotal']:
-            break  # reached the end
-        start += page_length
-
-    return withdrawals
 
 
 def scrape_validator_daily_stats(
