@@ -11,7 +11,7 @@ from rotkehlchen.chain.bitcoin.xpub import XpubManager
 from rotkehlchen.chain.constants import LAST_EVM_ACCOUNTS_DETECT_KEY
 from rotkehlchen.chain.ethereum.modules.eth2.constants import (
     LAST_PRODUCED_BLOCKS_QUERY_TS,
-    WITHDRAWALS_PREFIX,
+    WITHDRAWALS_TS_PREFIX,
 )
 from rotkehlchen.chain.ethereum.modules.makerdao.cache import (
     query_ilk_registry_and_maybe_update_cache,
@@ -564,7 +564,7 @@ class TaskManager:
         now = ts_now()
         addresses = self.chains_aggregator.accounts.eth
         with self.database.conn.read_ctx() as cursor:
-            end_timestamps = cursor.execute('SELECT end_ts FROM used_query_ranges WHERE name LIKE ?', f'{WITHDRAWALS_PREFIX}%').fetchall()  # noqa: E501
+            end_timestamps = cursor.execute('SELECT end_ts FROM used_query_ranges WHERE name LIKE ?', f'{WITHDRAWALS_TS_PREFIX}%').fetchall()  # noqa: E501
 
         should_query = False
         if len(end_timestamps) != len(addresses):

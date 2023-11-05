@@ -72,6 +72,9 @@ def iso8601ts_to_timestamp(datestr: str) -> Timestamp:
     https://stackoverflow.com/questions/127803/how-do-i-parse-an-iso-8601-formatted-date
     Required tricks for fromisoformat:
     https://stackoverflow.com/questions/127803/how-do-i-parse-an-iso-8601-formatted-date/49784038#49784038
+
+    May raise:
+    - DeserializationError
     """
     # Required due to problems with fromisoformat recognizing the ZULU mark
     datestr = datestr.replace('Z', '+00:00')
