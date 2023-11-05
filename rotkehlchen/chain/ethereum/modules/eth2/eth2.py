@@ -38,7 +38,7 @@ from .constants import (
     VALIDATOR_STATS_QUERY_BACKOFF_EVERY_N_VALIDATORS,
     VALIDATOR_STATS_QUERY_BACKOFF_TIME,
     VALIDATOR_STATS_QUERY_BACKOFF_TIME_RANGE,
-    WITHDRAWALS_PREFIX,
+    WITHDRAWALS_TS_PREFIX,
 )
 from .structures import (
     DEPOSITING_VALIDATOR_PERFORMANCE,
@@ -347,7 +347,7 @@ class Eth2(EthereumModule):
                 self.query_single_address_withdrawals(address, to_ts)
 
     def query_single_address_withdrawals(self, address: ChecksumEvmAddress, to_ts: Timestamp) -> None:  # noqa: E501
-        range_name = f'{WITHDRAWALS_PREFIX}_{address}'
+        range_name = f'{WITHDRAWALS_TS_PREFIX}_{address}'
         with self.database.conn.read_ctx() as cursor:
             last_query = self.database.get_used_query_range(cursor, range_name)
 

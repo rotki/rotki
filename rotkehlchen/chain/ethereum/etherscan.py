@@ -5,7 +5,10 @@ from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.eth2 import EthWithdrawalEvent
-from rotkehlchen.chain.ethereum.modules.eth2.constants import WITHDRAWALS_PREFIX
+from rotkehlchen.chain.ethereum.modules.eth2.constants import (
+    WITHDRAWALS_IDX_PREFIX,
+    WITHDRAWALS_TS_PREFIX,
+)
 from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.serialization import DeserializationError
@@ -48,10 +51,15 @@ class EthereumEtherscan(Etherscan):
 
         May raise:
         - RemoteError if the etherscan query fails for some reason
-        - DeserializationError if we can't read the response properly
+        - DeserializationError if we can't decode the response properly
         """
         options = self._process_timestamp_or_blockrange(period, {'sort': 'asc', 'address': address})  # noqa: E501
-        range_name = f'{WITHDRAWALS_PREFIX}_{address}'
+        range_name = f'{WITHDRAWALS_TS_PREFIX}_{address}'
+        idx_range_name = f'{WITHDRAWALS_IDX_PREFIX}_{address}'
+        last_withdrawal_idx = -1
+        with self.db.conn.read_ctx() as cursor:
+            if (idx_result := self.db.get_used_query_range(cursor, idx_range_name)) is not None:
+                last_withdrawal_idx = idx_result[1]
         dbevents = DBHistoryEvents(self.db)
         while True:
             result = self._query(module='account', action='txsBeaconWithdrawal', options=options)
@@ -72,6 +80,7 @@ class EthereumEtherscan(Etherscan):
                         is_exit=False,  # TODO: needs to be figured out later, possibly in another task  # noqa: E501
                     ) for entry in result
                 ]
+                last_withdrawal_idx = max(last_withdrawal_idx, int(result[-1]['withdrawalIndex']))
             except (KeyError, ValueError) as e:
                 msg = str(e)
                 if isinstance(e, KeyError):
@@ -92,3 +101,7 @@ class EthereumEtherscan(Etherscan):
             if (new_options := self._maybe_paginate(result=result, options=options)) is None:
                 break  # no need to paginate further
             options = new_options
+
+        if last_withdrawal_idx != - 1:  # let's also update index if needed
+            with self.db.user_write() as write_cursor:
+                self.db.update_used_query_range(write_cursor, idx_range_name, Timestamp(0), last_withdrawal_idx)  # type: ignore  # noqa: E501
