@@ -921,16 +921,11 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         manager = cast('EvmManager', self.get_chain_manager(chain))
         native_token_usd_price = Inquirer().find_usd_price(manager.node_inquirer.native_token)
         chain_balances = self.balances.get(chain)
-        queried_balances = manager.node_inquirer.get_multi_balance(accounts)
-        for account, balance in queried_balances.items():
-            if balance == ZERO:
-                continue
-
-            usd_value = balance * native_token_usd_price
+        for account, balance in manager.node_inquirer.get_multi_balance(accounts).items():
             chain_balances[account] = BalanceSheet(
                 assets=defaultdict(Balance, {
-                    manager.node_inquirer.native_token: Balance(balance, usd_value),
-                }),
+                    manager.node_inquirer.native_token: Balance(balance, balance * native_token_usd_price),  # noqa: E501
+                } if balance != ZERO else {}),  # accounts (e.g. multisigs) can have zero balances
             )
         self.query_evm_tokens(manager=manager, balances=chain_balances)
 
@@ -1045,8 +1040,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
     def _add_eth_protocol_balances(self, eth_balances: defaultdict[ChecksumEvmAddress, BalanceSheet]) -> None:  # noqa: E501
         """Also count token balances that may come from various eth protocols"""
         # If we have anything in DSR also count it towards total blockchain balances
-        dsr_module = self.get_module('makerdao_dsr')
-        if dsr_module is not None:
+        if (dsr_module := self.get_module('makerdao_dsr')) is not None:
             current_dsr_report = dsr_module.get_current_dsr()
             for dsr_account, balance_entry in current_dsr_report.balances.items():
 
@@ -1056,8 +1050,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                 eth_balances[dsr_account].assets[A_DAI] += balance_entry
 
         # Also count the vault balances
-        vaults_module = self.get_module('makerdao_vaults')
-        if vaults_module is not None:
+        if (vaults_module := self.get_module('makerdao_vaults')) is not None:
             vault_balances = vaults_module.get_balances()
             for address, entry in vault_balances.items():
                 if address not in eth_balances:
@@ -1108,8 +1101,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                     balances=defi_balances,
                 )
 
-        pickle_module = self.get_module('pickle_finance')
-        if pickle_module is not None:
+        if (pickle_module := self.get_module('pickle_finance')) is not None:
             pickle_balances_per_address = pickle_module.balances_in_protocol(
                 addresses=self.queried_addresses_for_module('pickle_finance'),
             )
@@ -1117,8 +1109,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                 for asset_balance in pickle_balances:
                     eth_balances[address].assets[asset_balance.asset] += asset_balance.balance
 
-        liquity_module = self.get_module('liquity')
-        if liquity_module is not None:
+        if (liquity_module := self.get_module('liquity')) is not None:
             liquity_addresses = self.queried_addresses_for_module('liquity')
             # Get trove information
             liquity_balances = liquity_module.get_positions(given_addresses=liquity_addresses)
