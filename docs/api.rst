@@ -10801,6 +10801,9 @@ Import assets added by the user
    .. note::
       If doing a POST the `action` field is not required.
 
+   .. note::
+      This endpoint can be called asynchronously.
+
    **Example Request**:
 
    .. http:example:: curl wget httpie python-requests
