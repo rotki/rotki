@@ -88,6 +88,7 @@ def assert_csv_export_response(response, csv_dir, is_download=False):
 @pytest.mark.parametrize('db_settings', [
     {'pnl_csv_with_formulas': False},
 ])
+@pytest.mark.parametrize('initialize_accounting_rules', [True])
 def test_history_export_download_csv(
         rotkehlchen_api_server_with_exchanges,
         tmpdir_factory,
@@ -160,6 +161,7 @@ def test_history_export_download_csv(
 
 @pytest.mark.parametrize('mocked_price_queries', [{'ETH': {'EUR': {1569924574: 1}}}])
 @pytest.mark.parametrize('encoding_to_use', ['utf-8', 'cp1252'])
+@pytest.mark.parametrize('initialize_accounting_rules', [True])
 def test_encoding(
         rotkehlchen_api_server,
         tmpdir_factory,
