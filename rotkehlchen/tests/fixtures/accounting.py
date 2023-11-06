@@ -105,7 +105,7 @@ def fixture_initialize_accounting_rules() -> bool:
     accounting rules to the database. It is the case for the rotkehlchen_api_server and its
     variants.
     """
-    return True
+    return False
 
 
 @pytest.fixture(name='last_accounting_rules_version', scope='session')

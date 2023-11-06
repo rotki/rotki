@@ -371,6 +371,7 @@ def test_event_with_details(rotkehlchen_api_server: 'APIServer'):
     assert result == {SUB_SWAPS_DETAILS: event2.extra_data[SUB_SWAPS_DETAILS]}  # type: ignore[index]  # extra_data is not None here
 
 
+@pytest.mark.parametrize('initialize_accounting_rules', [True])
 def test_get_events(rotkehlchen_api_server: 'APIServer'):
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     entries = add_entries(events_db=DBHistoryEvents(rotki.data.db))
