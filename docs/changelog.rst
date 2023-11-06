@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` There will be no duplicated balances in cases where the native token balance is zero.
 * :bug:`-` Fix the issue where users sometimes encounter timeout errors when importing assets from a zip archive.
 * :bug:`6871` Ethereum staking withdrawals querying should now work fine again.
 * :feature:`6439` Users can filter historical events to display only customized events.

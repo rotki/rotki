@@ -1,4 +1,5 @@
 import random
+from collections import defaultdict
 from contextlib import ExitStack
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Any
@@ -9,11 +10,12 @@ import pytest
 import requests
 from flaky import flaky
 
-from rotkehlchen.accounting.structures.balance import BalanceType
+from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet, BalanceType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.bitcoin import get_bitcoin_addresses_balances
+from rotkehlchen.chain.ethereum.modules.makerdao.vaults import MakerdaoVault
 from rotkehlchen.constants import ZERO
-from rotkehlchen.constants.assets import A_AVAX, A_BTC, A_DAI, A_ETH, A_EUR, A_KSM
+from rotkehlchen.constants.assets import A_AVAX, A_BTC, A_DAI, A_ETH, A_EUR, A_KSM, A_USDC, A_USDT
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
@@ -44,7 +46,7 @@ from rotkehlchen.tests.utils.substrate import (
     SUBSTRATE_ACC1_KSM_ADDR,
     SUBSTRATE_ACC2_KSM_ADDR,
 )
-from rotkehlchen.types import Location, Price, SupportedBlockchain, Timestamp
+from rotkehlchen.types import ChainID, Location, Price, SupportedBlockchain, Timestamp
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
@@ -911,3 +913,66 @@ def test_balances_behaviour_with_manual_current_prices(rotkehlchen_api_server, e
         rdn_result = result['assets']['eip155:1/erc20:0x255Aa6DF07540Cb5d3d297f0D0D4D84cb52bc8e6']
         assert rdn_result['amount'] == '5'
         assert rdn_result['usd_value'] == '150.0'
+
+
+@pytest.mark.parametrize('ethereum_modules', [['makerdao_vaults']])
+@pytest.mark.parametrize('ethereum_accounts', [['0x7e574e063903b1D6DFf54A9C8B1260e6E068d35e']])
+def test_blockchain_balances_refresh(rotkehlchen_api_server: 'APIServer', ethereum_accounts):
+    """Checks that blockchain balances are refreshed properly when the endpoint is called"""
+    chains_aggregator = rotkehlchen_api_server.rest_api.rotkehlchen.chains_aggregator
+    makerdao_vault = [MakerdaoVault(
+        identifier=0,
+        collateral_type='ctype',
+        owner=ethereum_accounts[0],
+        collateral_asset=A_USDT.resolve_to_crypto_asset(),
+        collateral=Balance(FVal(3), FVal(54)),
+        debt=Balance(FVal(0)),
+        collateralization_ratio=None,
+        liquidation_ratio=FVal(0),
+        liquidation_price=None,
+        urn=ethereum_accounts[0],
+        stability_fee=FVal(0),
+    )]
+    vaults_patch = patch('rotkehlchen.chain.ethereum.modules.makerdao.vaults.MakerdaoVaults.get_vaults', side_effect=lambda: makerdao_vault)  # noqa: E501
+
+    account_balance = {ethereum_accounts[0]: BalanceSheet(
+        assets=defaultdict(Balance, {
+            A_USDC: Balance(FVal(1), FVal(24)),
+            A_DAI: Balance(FVal(2), FVal(42)),
+        }),
+    )}
+    account_balance_patch = patch.object(chains_aggregator.balances, 'eth', account_balance)
+
+    def mock_query_tokens(addresses):
+        mock_balances = {ethereum_accounts[0]: {A_USDC: FVal(23), A_DAI: FVal(3)}}
+        mock_prices = {A_USDC: Price(FVal(10)), A_DAI: Price(FVal(11))}
+        return (mock_balances, mock_prices) if len(addresses) != 0 else ({}, {})
+
+    query_tokens_patch = patch('rotkehlchen.chain.evm.tokens.EvmTokens.query_tokens_for_addresses', side_effect=mock_query_tokens)  # noqa: E501
+    price_inquirer_patch = patch('rotkehlchen.inquirer.Inquirer.find_usd_price', side_effect=lambda _: Price(ZERO))  # noqa: E501
+    proxies_inquirer_patch = patch('rotkehlchen.chain.evm.proxies_inquirer.EvmProxiesInquirer.get_accounts_having_proxy', side_effect=lambda: {})  # noqa: E501
+    defi_query_patch = patch('rotkehlchen.chain.ethereum.defi.zerionsdk.ZerionSDK._query_chain_for_all_balances', side_effect=lambda account: [])  # noqa: E501
+    multieth_balance_patch = patch.object(chains_aggregator.ethereum.node_inquirer, 'get_multi_balance', lambda accounts: {ethereum_accounts[0]: ZERO})  # noqa: E501
+    protocols_patch = patch('rotkehlchen.chain.aggregator.CHAIN_TO_BALANCE_PROTOCOLS', side_effect={ChainID.ETHEREUM: ()})  # noqa: E501
+
+    with account_balance_patch, query_tokens_patch, price_inquirer_patch, defi_query_patch, vaults_patch, multieth_balance_patch, protocols_patch, proxies_inquirer_patch:  # noqa: E501
+
+        def query_blockchain_balance(num: int) -> Any:
+            """Refreshes blockchain balances `num` number of times"""
+            result = None
+            for _ in range(num):
+                response = requests.get(api_url_for(
+                    rotkehlchen_api_server,
+                    'blockchainbalancesresource',
+                ), json={'async_query': False, 'blockchain': 'ETH', 'ignore_cache': True})
+                result = assert_proper_response_with_result(response)
+            assert result is not None
+            return result
+
+        one_time_query_result = query_blockchain_balance(1)
+        assert one_time_query_result['per_account']['eth'][ethereum_accounts[0]]['assets'] == {
+            A_USDC.identifier: {'amount': '23', 'usd_value': '230'},
+            A_DAI.identifier: {'amount': '3', 'usd_value': '33'},
+            A_USDT.identifier: {'amount': '3', 'usd_value': '54'},
+        }
+        assert one_time_query_result == query_blockchain_balance(4)
