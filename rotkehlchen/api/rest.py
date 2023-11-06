@@ -4530,17 +4530,17 @@ class RestAPI:
 
         return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
 
-    def solve_accounting_rule_conflict(
+    def solve_multiple_accounting_rule_conflicts(
             self,
-            local_id: int,
-            solve_using: Literal['remote', 'local'],
+            conflicts: list[tuple[int, Literal['remote', 'local']]],
+            solve_all_using: Optional[Literal['remote', 'local']],
     ) -> Response:
         conflict_db = DBRemoteConflicts(self.rotkehlchen.data.db)
         try:
-            conflict_db.solve_accounting_rule_conflict(
-                local_id=local_id,
-                solve_using=solve_using,
-            )
+            if solve_all_using is None:
+                conflict_db.solve_accounting_rule_conflicts(conflicts=conflicts)
+            else:
+                conflict_db.solve_all_conflicts(solve_all_using=solve_all_using)
         except (InputError, KeyError) as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 

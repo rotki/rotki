@@ -3175,6 +3175,47 @@ class AccountingRuleConflictResolutionSchema(Schema):
     )
 
 
+class MultipleAccountingRuleConflictsResolutionSchema(Schema):
+    conflicts = fields.List(
+        fields.Nested(AccountingRuleConflictResolutionSchema),
+        required=False,
+        load_default=None,
+    )
+    solve_all_using = fields.String(
+        validate=webargs.validate.OneOf(choices=('local', 'remote')),
+        required=False,
+        load_default=None,
+    )
+
+    @validates_schema
+    def validate_schema(
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
+    ) -> None:
+        """Check that the endpoint receives either conflicts or solve_all_using"""
+        if (
+            data['conflicts'] is None and data['solve_all_using'] is None or
+            data['conflicts'] is not None and data['solve_all_using'] is not None
+        ):
+            raise ValidationError(
+                message='Conflict resolution can either choose to solve all or a subset but not both or none',  # noqa: E501
+                field_name='conflicts',
+            )
+
+    @post_load
+    def exctract_conflicts(
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
+    ) -> dict[str, Any]:
+        processed_entries = [
+            (conflict['local_id'], conflict['solve_using'])
+            for conflict in data['conflicts']
+        ] if data['conflicts'] is not None else []
+        return {'conflicts': processed_entries, 'solve_all_using': data['solve_all_using']}
+
+
 class AccountingRuleConflictsPagination(DBPaginationSchema):
     @post_load
     def make_rules_query(
