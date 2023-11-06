@@ -12854,27 +12854,24 @@ Solving conflicts in accounting rules
 
 .. http:patch:: /api/(version)/accounting/rules/conflicts
 
-   Doing a PATCH on this endpoint will apply a conflict resolution method for the selected accounting rule.
+   Doing a PATCH on this endpoint will apply a conflict resolution method for the selected accounting rules.
 
   **Example Request**
+
+  .. note::
+     Either ``conflicts`` or ``solve_all_using`` need to be provided but not both together.
 
   .. http:example:: curl wget httpie python-requests
 
       PATH /api/1/accounting/rules/conflicts HTTP/1.1
       Host: localhost:5042
 
-  **Example Response**
-
-   .. sourcecode:: http
-
-      HTTP/1.1 200 OK
-      Content-Type: application/json
-
-      {"local_id": "1", "solve_using": "remote"}
+      {"conflicts": [{"local_id": "1", "solve_using": "remote"}]}
 
 
-   :reqjsonarr string identifier: The identifier of the rule that will be updated.
-   :reqjsonarr string solve_using: Either ``remote`` or ``local``.
+  :reqjsonarr string local_id: The identifier of the rule that will be updated.
+  :reqjsonarr string solve_using: Either ``remote`` or ``local``.
+  :reqjsonarr strin solve_all_using: Either ``remote`` or ``local``.
 
   **Example Response**:
 
