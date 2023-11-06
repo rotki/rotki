@@ -4,7 +4,7 @@ from collections.abc import Sequence
 from functools import wraps
 from http import HTTPStatus
 from pathlib import Path
-from tempfile import TemporaryDirectory
+from tempfile import NamedTemporaryFile, TemporaryDirectory
 from typing import TYPE_CHECKING, Any, Callable, Literal, Optional
 
 from flask import Blueprint, Request, Response, request as flask_request
@@ -2598,24 +2598,34 @@ class UserAssetsResource(BaseMethodView):
 
     @require_loggedin_user()
     @use_kwargs(importing_schema, location='json')
-    def put(self, file: Optional[Path], destination: Optional[Path], action: str) -> Response:
+    def put(
+            self,
+            async_query: bool,
+            file: Optional[Path],
+            destination: Optional[Path],
+            action: str,
+    ) -> Response:
         if action == 'upload':
             if file is None:
                 return api_response(wrap_in_fail_result(
                     message='file is required for upload action.',
                     status_code=HTTPStatus.BAD_REQUEST,
                 ))
-            return self.rest_api.import_user_assets(path=file)
+            return self.rest_api.import_user_assets(async_query=async_query, path=file)
         return self.rest_api.get_user_added_assets(path=destination)
 
     @require_loggedin_user()
     @use_kwargs(import_from_form, location='form_and_file')
-    def post(self, file: FileStorage) -> Response:
-        with TemporaryDirectory() as temp_directory:
-            filename = file.filename if file.filename else 'assets.zip'
-            filepath = Path(temp_directory) / filename
-            file.save(str(filepath))
-            response = self.rest_api.import_user_assets(path=filepath)
+    def post(self, async_query: bool, file: FileStorage) -> Response:
+        with NamedTemporaryFile(
+            delete=False,  # don't delete it on close
+            suffix=file.filename if file.filename else 'assets.zip',
+        ) as temp_file:
+            file.save(temp_file.name)
+            response = self.rest_api.import_user_assets(
+                async_query=async_query,
+                path=Path(temp_file.name),
+            )
         return response
 
 

@@ -1,4 +1,5 @@
 import json
+import random
 import tempfile
 from copy import deepcopy
 from http import HTTPStatus
@@ -26,9 +27,11 @@ from rotkehlchen.globaldb.handler import GLOBAL_DB_VERSION, GlobalDBHandler
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
+    assert_ok_async_response,
     assert_proper_response,
     assert_proper_response_with_result,
     assert_simple_ok_response,
+    wait_for_async_task,
 )
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.types import EvmTokenKind, Location
@@ -980,6 +983,7 @@ def test_importing_user_assets_list(
         file_type: str,
 ):
     """Test that the endpoint for importing user assets works correctly"""
+    async_query = random.choice((True, False))
     dir_path = Path(__file__).resolve().parent.parent
     if file_type == 'zip':
         filepath = dir_path / 'data' / 'exported_assets.zip'
@@ -991,7 +995,7 @@ def test_importing_user_assets_list(
             api_url_for(
                 rotkehlchen_api_server,
                 'userassetsresource',
-            ), json={'action': 'upload', 'file': str(filepath)},
+            ), json={'action': 'upload', 'file': str(filepath), 'async_query': async_query},
         )
     else:
         with open(filepath, 'rb') as infile:
@@ -999,11 +1003,18 @@ def test_importing_user_assets_list(
                 api_url_for(
                     rotkehlchen_api_server,
                     'userassetsresource',
-                ), json={'action': 'upload'},
+                ), data={'async_query': async_query},
                 files={'file': infile},
             )
 
-    assert_simple_ok_response(response)
+    if async_query is True:
+        task_id = assert_ok_async_response(response)
+        outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
+        assert outcome['message'] == ''
+        assert outcome['result'] is True
+    else:
+        assert_simple_ok_response(response)
+
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     errors = rotki.msg_aggregator.consume_errors()
     warnings = rotki.msg_aggregator.consume_warnings()

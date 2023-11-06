@@ -2469,7 +2469,7 @@ class HistoryEventsDeletionSchema(IdentifiersListSchema):
     force_delete = fields.Boolean(load_default=False)
 
 
-class AssetsImportingSchema(Schema):
+class AssetsImportingSchema(AsyncQueryArgumentSchema):
     file = FileField(allowed_extensions=['.zip', '.json'], load_default=None)
     destination = DirectoryField(load_default=None)
     action = fields.String(
@@ -2492,7 +2492,7 @@ class AssetsImportingSchema(Schema):
             )
 
 
-class AssetsImportingFromFormSchema(Schema):
+class AssetsImportingFromFormSchema(AsyncQueryArgumentSchema):
     file = FileField(allowed_extensions=['.zip', '.json'], required=True)
 
 

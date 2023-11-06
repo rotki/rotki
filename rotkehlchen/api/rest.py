@@ -3564,7 +3564,8 @@ class RestAPI:
             status_code=HTTPStatus.OK,
         )
 
-    def import_user_assets(self, path: Path) -> Response:
+    @async_api_call()
+    def import_user_assets(self, path: Path) -> dict[str, Any]:
         try:
             if path.suffix == '.json':
                 import_assets_from_file(
@@ -3585,19 +3586,14 @@ class RestAPI:
                                 db_handler=self.rotkehlchen.data.db,
                             )
         except ValidationError as e:
-            return api_response(
-                result=wrap_in_fail_result(
-                    f'Provided file does not have the expected format. {e!s}',
-                ),
+            return wrap_in_fail_result(
+                message=f'Provided file does not have the expected format. {e!s}',
                 status_code=HTTPStatus.CONFLICT,
             )
         except InputError as e:
-            return api_response(
-                result=wrap_in_fail_result(f'{e!s}'),
-                status_code=HTTPStatus.CONFLICT,
-            )
+            return wrap_in_fail_result(f'{e!s}', status_code=HTTPStatus.CONFLICT)
 
-        return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+        return OK_RESULT
 
     def get_user_db_snapshot(self, timestamp: Timestamp) -> Response:
         dbsnapshot = DBSnapshot(

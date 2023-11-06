@@ -185,8 +185,7 @@ class EvmTokenSchema(CryptoAssetFieldsSchema):
         strict=True,
         validate=webargs.validate.Range(
             min=0,
-            max=18,
-            error='Evm token decimals should range from 0 to 18',
+            error='Evm token decimals should be bigger or equal than 0',
         ),
         required=True,
     )
