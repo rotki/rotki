@@ -42,7 +42,8 @@ const tableHeaders = computed<DataTableHeader[]>(() => {
       value: 'location',
       align: 'center',
       width: '120px',
-      class: 'text-no-wrap'
+      class: 'text-no-wrap',
+      cellClass: 'py-2'
     },
     {
       text: t('common.amount'),

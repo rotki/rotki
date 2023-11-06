@@ -81,7 +81,7 @@ export const useAddressesNamesStore = defineStore(
           ...get(ensNames),
           ...result
         });
-        resetAddressesNames();
+        resetAddressNamesData(payload);
       } else {
         const result = await getEnsNames(filteredAddresses);
 

@@ -779,7 +779,7 @@ const css = useCssModule();
         }
 
         &__icon {
-          @apply scale-50 scale-y-[0.8] rotate-90;
+          @apply scale-50 scale-y-[0.5] rotate-90;
         }
 
         @apply w-full h-[1.875rem] cursor-ew-resize;

@@ -129,7 +129,7 @@ const showConfirmation = (payload: XpubPayload | string[]) => {
 };
 
 const refreshClick = async () => {
-  await fetchAccounts(get(blockchain));
+  await fetchAccounts(get(blockchain), true);
   await handleBlockchainRefresh();
 };
 </script>

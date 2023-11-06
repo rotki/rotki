@@ -57,32 +57,26 @@ const { dark } = useTheme();
       :notification="visibleNotification"
       @dismiss="dismiss(visibleNotification.id)"
     />
-    <VDivider />
-    <VRow v-if="queue.length > 0" justify="end">
-      <VCol cols="auto">
-        <VTooltip open-delay="400" top>
-          <template #activator="{ on, attrs }">
-            <VBtn icon v-bind="attrs" v-on="on" @click="dismissAll()">
-              <VIcon>mdi-notification-clear-all</VIcon>
-            </VBtn>
+    <template v-if="queue.length > 0">
+      <div class="flex justify-end border-t border-default">
+        <RuiTooltip open-delay="400">
+          <template #activator>
+            <RuiButton variant="text" class="!p-2" icon @click="dismissAll()">
+              <RuiIcon name="menu-unfold-line" />
+            </RuiButton>
           </template>
-          <span>{{ t('notification_popup.dismiss_all') }}</span>
-        </VTooltip>
-      </VCol>
-    </VRow>
-    <VTooltip v-if="queue.length > 0" bottom>
-      <template #activator="{ on }">
-        <div :class="css.wrapper" v-on="on">
-          <VBadge
-            inline
-            :content="queue.length"
-            color="info"
-            :class="css.count"
-          />
-        </div>
-      </template>
-      <span v-text="t('notification_popup.tooltip')" />
-    </VTooltip>
+          {{ t('notification_popup.dismiss_all') }}
+        </RuiTooltip>
+      </div>
+      <div class="absolute top-16 right-6">
+        <RuiTooltip open-delay="400">
+          <template #activator>
+            <RuiBadge :text="queue.length" color="info" />
+          </template>
+          <span v-text="t('notification_popup.tooltip')" />
+        </RuiTooltip>
+      </div>
+    </template>
   </VSnackbar>
 </template>
 
@@ -103,17 +97,5 @@ const { dark } = useTheme();
       }
     }
   }
-}
-
-.count {
-  position: absolute;
-  right: 4px;
-  top: 0;
-}
-
-.wrapper {
-  position: absolute;
-  top: 48px;
-  right: 0;
 }
 </style>

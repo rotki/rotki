@@ -1642,7 +1642,7 @@
               "location": "这是可选的。如果指定，位置余额数据将自动调整。如果没有，您必须手动更新位置余额数据。"
             },
             "nft": "NFT",
-            "nft_hint": "接受格式： \"_nft_{ETH address}_{collection number}\"",
+            "nft_hint": "接受格式： \"_nft_{'ETH address'}_{'collection number'}\"",
             "optional": "可选",
             "preview": {
               "from": "从",
