@@ -21,6 +21,7 @@ const props = withDefaults(
 const emit = defineEmits<{
   (e: 'input', file: File | null): void;
   (e: 'update:uploaded', uploaded: boolean): void;
+  (e: 'update:error-message', message: string): void;
 }>();
 const { source, fileFilter, uploaded, errorMessage } = toRefs(props);
 
@@ -77,6 +78,11 @@ const onError = (message: string) => {
   reset();
   set(active, false);
   removeFile();
+};
+
+const clearError = () => {
+  set(error, '');
+  emit('update:error-message', '');
 };
 
 const removeFile = () => {
@@ -146,7 +152,7 @@ watch(errorMessage, message => onError(message));
     >
       <div class="flex flex-col items-center justify-center">
         <template v-if="error">
-          <RuiButton variant="text" class="self-end" icon @click="error = ''">
+          <RuiButton variant="text" class="self-end" icon @click="clearError()">
             <RuiIcon name="close-line" />
           </RuiButton>
           <RuiIcon size="48" name="error-warning-line" color="error" />
