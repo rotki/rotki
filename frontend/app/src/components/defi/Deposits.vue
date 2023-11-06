@@ -90,7 +90,7 @@ const isCompound = isProtocol(DefiProtocol.COMPOUND);
 const isAave = isProtocol(DefiProtocol.AAVE);
 const isYearnVaults = isProtocol(DefiProtocol.YEARN_VAULTS);
 const isYearnVaultsV2 = isProtocol(DefiProtocol.YEARN_VAULTS_V2);
-const isYearn = logicAnd(isYearnVaults, isYearnVaultsV2);
+const isYearn = logicOr(isYearnVaults, isYearnVaultsV2);
 const noProtocolSelection = computed(() => get(selectedProtocols).length === 0);
 
 const yearnVersion = computed(() => {
