@@ -122,11 +122,17 @@ export const useAssets = () => {
 
   const importCustomAssets = async (file: File): Promise<ActionStatus> => {
     try {
-      await importCustom(file, !appSession);
+      const { taskId } = await importCustom(file, !appSession);
+      await awaitTask<boolean, TaskMeta>(taskId, TaskType.IMPORT_ASSET, {
+        title: t('actions.assets.import.task.title')
+      });
+
       return {
         success: true
       };
     } catch (e: any) {
+      logger.error(e);
+
       return {
         success: false,
         message: e.message

@@ -233,6 +233,11 @@
           "title": "Retrieving token details for {address} ({evmChain})"
         }
       },
+      "import": {
+        "task": {
+          "title": "Importing user assets"
+        }
+      },
       "update": {
         "error": {
           "description": "The asset database update failed: {message}"
