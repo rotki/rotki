@@ -72,8 +72,8 @@ const updateFilters = (updatedFilters: Filters) => {
   set(filters, updatedFilters);
   const { fromTimestamp, toTimestamp } = updatedFilters;
 
-  assert(typeof fromTimestamp === 'string');
-  assert(typeof toTimestamp === 'string');
+  assert(typeof fromTimestamp === 'string' || fromTimestamp === undefined);
+  assert(typeof toTimestamp === 'string' || toTimestamp === undefined);
 
   emit('update:period', { fromTimestamp, toTimestamp });
 };
