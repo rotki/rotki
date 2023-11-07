@@ -93,6 +93,7 @@ import {
   RiLink,
   RiLinksLine,
   RiListRadio,
+  RiListUnordered,
   RiLock2Fill,
   RiLockLine,
   RiLockUnlockLine,
@@ -101,7 +102,6 @@ import {
   RiLogoutCircleRLine,
   RiLoopRightLine,
   RiMedalLine,
-  RiMenuUnfoldLine,
   RiMoonLine,
   RiMore2Fill,
   RiNotification3Line,
@@ -313,6 +313,6 @@ Vue.use(RuiPlugin, {
     RiFileAddLine,
     RiAuctionLine,
     RiPriceTagLine,
-    RiMenuUnfoldLine
+    RiListUnordered
   ]
 });

@@ -58,22 +58,25 @@ const { dark } = useTheme();
       @dismiss="dismiss(visibleNotification.id)"
     />
     <template v-if="queue.length > 0">
-      <div class="flex justify-end border-t border-default">
-        <RuiTooltip open-delay="400">
+      <div
+        class="flex justify-between p-2 items-center border-t border-default"
+      >
+        <RuiTooltip open-delay="400" :popper="{ placement: 'right' }">
           <template #activator>
-            <RuiButton variant="text" class="!p-2" icon @click="dismissAll()">
-              <RuiIcon name="menu-unfold-line" />
+            <RuiChip class="!p-1.5" color="primary" size="sm">
+              {{ queue.length }}
+            </RuiChip>
+          </template>
+          <span v-text="t('notification_popup.tooltip')" />
+        </RuiTooltip>
+
+        <RuiTooltip open-delay="400" :popper="{ placement: 'left' }">
+          <template #activator>
+            <RuiButton variant="text" class="!p-1.5" icon @click="dismissAll()">
+              <RuiIcon name="list-unordered" />
             </RuiButton>
           </template>
           {{ t('notification_popup.dismiss_all') }}
-        </RuiTooltip>
-      </div>
-      <div class="absolute top-16 right-6">
-        <RuiTooltip open-delay="400">
-          <template #activator>
-            <RuiBadge :text="queue.length" color="info" />
-          </template>
-          <span v-text="t('notification_popup.tooltip')" />
         </RuiTooltip>
       </div>
     </template>
