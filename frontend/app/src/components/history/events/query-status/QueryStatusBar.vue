@@ -33,29 +33,28 @@ const css = useCssModule();
             <VIcon v-else> mdi-chevron-down </VIcon>
           </VBtn>
         </div>
-        <div>
-          <div
-            v-if="finished || (!openStatusDropdown && items.length > 1)"
-            class="py-2 flex items-center"
-          >
-            <div class="mr-4">
-              <VProgressCircular
-                v-if="!finished"
-                size="20"
-                color="primary"
-                width="2"
-                indeterminate
-              />
-              <VIcon v-else color="green" :class="css['check-icon']">
-                mdi-check-circle
-              </VIcon>
-            </div>
-
-            <slot name="current" />
+        <div
+          v-if="finished || (!openStatusDropdown && items.length > 1)"
+          class="py-2 flex items-center"
+        >
+          <div class="mr-4">
+            <VProgressCircular
+              v-if="!finished"
+              size="20"
+              color="primary"
+              width="2"
+              indeterminate
+            />
+            <VIcon v-else color="green" :class="css['check-icon']">
+              mdi-check-circle
+            </VIcon>
           </div>
+
+          <slot name="current" />
+        </div>
+        <div v-else>
           <div
             v-for="item in items"
-            v-else
             :key="getKey(item)"
             class="flex items-center"
           >
