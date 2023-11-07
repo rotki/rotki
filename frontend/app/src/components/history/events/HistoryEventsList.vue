@@ -26,6 +26,7 @@ const emit = defineEmits<{
       item: HistoryEventEntry;
     }
   ): void;
+  (e: 'show:missing-rule-action', data: HistoryEventEntry): void;
 }>();
 
 const { t } = useI18n();
@@ -125,14 +126,31 @@ const [DefineTable, ReuseTable] = createReusableTemplate();
               :block-number="blockEvent?.blockNumber"
               class="break-words leading-6 md:col-span-3 xl:col-span-4"
             />
-            <RowActions
-              class="md:col-span-1"
-              align="end"
-              :delete-tooltip="t('transactions.events.actions.delete')"
-              :edit-tooltip="t('transactions.events.actions.edit')"
-              @edit-click="editEvent(item)"
-              @delete-click="deleteEvent(item)"
-            />
+            <div class="flex items-center justify-end">
+              <RowActions
+                class="md:col-span-1"
+                align="end"
+                :delete-tooltip="t('transactions.events.actions.delete')"
+                :edit-tooltip="t('transactions.events.actions.edit')"
+                @edit-click="editEvent(item)"
+                @delete-click="deleteEvent(item)"
+              />
+              <RuiButton
+                v-if="item.missingAccountingRule"
+                variant="text"
+                color="warning"
+                class="py-1"
+                icon
+                @click="emit('show:missing-rule-action', item)"
+              >
+                <RuiTooltip>
+                  <template #activator>
+                    <RuiIcon size="16" name="information-line" class="mt-2" />
+                  </template>
+                  {{ t('actions.history_events.missing_rule.title') }}
+                </RuiTooltip>
+              </RuiButton>
+            </div>
           </div>
         </Fragment>
       </template>

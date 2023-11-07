@@ -11,6 +11,7 @@ import {
 } from '@/types/settings/accounting';
 
 const { t } = useI18n();
+const router = useRouter();
 
 const { getAccountingRules } = useAccountingSettings();
 
@@ -158,6 +159,14 @@ const getType = (eventType: string, eventSubtype: string) =>
     eventType,
     eventSubtype
   });
+
+onMounted(async () => {
+  const { currentRoute } = router;
+  if (currentRoute.query['add-rule']) {
+    add();
+    await router.replace({ query: {} });
+  }
+});
 </script>
 
 <template>
