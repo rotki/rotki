@@ -2,24 +2,16 @@
 import { type GeneralAccount } from '@rotki/common/lib/account';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import {
-  type Eth2StakingFilter,
-  type Eth2StakingFilterType,
-  type Eth2ValidatorEntry
+  type Eth2ValidatorEntry,
+  type EthStakingFilter
 } from '@rotki/common/lib/staking/eth2';
 
-withDefaults(
-  defineProps<{
-    value: Eth2StakingFilter;
-    filterType?: Eth2StakingFilterType;
-  }>(),
-  {
-    usableAddresses: () => [],
-    filterType: 'address'
-  }
-);
+defineProps<{
+  value: EthStakingFilter;
+}>();
 
 const emit = defineEmits<{
-  (e: 'input', value: Eth2StakingFilter): void;
+  (e: 'input', value: EthStakingFilter): void;
 }>();
 
 const chain = Blockchain.ETH;
@@ -29,11 +21,11 @@ const { eth2Validators } = storeToRefs(useEthAccountsStore());
 const { t } = useI18n();
 
 const updateValidators = (validators: Eth2ValidatorEntry[]) => {
-  emit('input', { validators, accounts: [] });
+  emit('input', { validators });
 };
 
 const updateAccounts = (accounts: GeneralAccount[]) => {
-  emit('input', { validators: [], accounts });
+  emit('input', { accounts });
 };
 
 watch(accounts, accounts => updateAccounts(accounts));
@@ -41,7 +33,7 @@ watch(accounts, accounts => updateAccounts(accounts));
 
 <template>
   <BlockchainAccountSelector
-    v-if="filterType === 'address'"
+    v-if="'accounts' in value"
     v-model="accounts"
     no-padding
     flat

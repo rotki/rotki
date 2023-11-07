@@ -1,22 +1,24 @@
 <script setup lang="ts">
 import {
-  type Eth2StakingFilter,
-  type Eth2StakingFilterType,
+  type EthStakingFilter,
+  type EthStakingFilterType,
   type EthStakingPeriod
 } from '@rotki/common/lib/staking/eth2';
 
 defineProps<{
-  value: Eth2StakingFilter;
+  value: EthStakingFilter;
 }>();
 
 const emit = defineEmits<{
-  (e: 'input', value: Eth2StakingFilter): void;
+  (e: 'input', value: EthStakingFilter): void;
   (e: 'update:period', value: EthStakingPeriod): void;
 }>();
 
-const filterType: Ref<Eth2StakingFilterType> = ref('validator');
+const filterType: Ref<EthStakingFilterType> = ref('validator');
 
-watch(filterType, () => emit('input', { accounts: [], validators: [] }));
+watch(filterType, type =>
+  emit('input', type === 'validator' ? { validators: [] } : { accounts: [] })
+);
 
 const { t } = useI18n();
 </script>
