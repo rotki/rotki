@@ -146,6 +146,7 @@
     "title": "Accounting Settings"
   },
   "accounting_settings": {
+    "missing": "Falta regla contable",
     "trade": {
       "labels": {
         "account_for_assets_movements": "Take into account assets movements fees",
@@ -569,6 +570,13 @@
       "error": {
         "description": "Failed to query history events: {error}",
         "title": "History Events Query"
+      },
+      "missing_rule": {
+        "title": "Evento no procesado",
+        "message": "Para manejarlo, debes elegir una de estas opciones:",
+        "re_decode": "Recodificar evento",
+        "edit": "Editar evento",
+        "add_rule": "Agregar regla contable faltante"
       }
     },
     "history_events_export": {

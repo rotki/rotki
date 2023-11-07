@@ -141,6 +141,7 @@
     "title": "Accounting Settings"
   },
   "accounting_settings": {
+    "missing": "Λείπει ο λογιστικός κανόνας",
     "trade": {
       "labels": {
         "account_for_assets_movements": "Take into account assets movements fees",
@@ -565,6 +566,13 @@
       "error": {
         "description": "Failed to query history events: {error}",
         "title": "History Events Query"
+      },
+      "missing_rule": {
+        "title": "Το συμβάν δεν υποβλήθηκε σε επεξεργασία",
+        "message": "Για να το χειριστείτε, πρέπει να επιλέξετε μία από αυτές τις επιλογές:",
+        "re_decode": "Επανακωδικοποίηση συμβάντος",
+        "edit": "Επεξεργασία συμβάντος",
+        "add_rule": "Προσθήκη λογιστικού κανόνα που λείπει"
       }
     },
     "history_events_export": {

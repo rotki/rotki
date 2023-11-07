@@ -147,6 +147,7 @@
     "title": "会计设置"
   },
   "accounting_settings": {
+    "missing": "缺少会计规则",
     "trade": {
       "labels": {
         "account_for_assets_movements": "考虑资产移动费用",
@@ -562,6 +563,13 @@
       "error": {
         "description": "无法查询历史事件：{error}",
         "title": "历史事件查询"
+      },
+      "missing_rule": {
+        "title": "事件未处理",
+        "message": "要处理它，您必须选择以下选项之一:",
+        "re_decode": "重新编码事件",
+        "edit": "编辑事件",
+        "add_rule": "添加缺失的会计规则"
       }
     },
     "history_events_export": {

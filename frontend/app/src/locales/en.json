@@ -634,6 +634,13 @@
       "error": {
         "description": "Failed to query history events: {error}",
         "title": "History Events Query"
+      },
+      "missing_rule": {
+        "title": "Event not processed",
+        "message": "To handle it, you must choose one of these options:",
+        "re_decode": "Redecode event",
+        "edit": "Edit event",
+        "add_rule": "Add missing accounting rule"
       }
     },
     "history_events_export": {
