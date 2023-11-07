@@ -77,6 +77,13 @@ const setupMainPackageWatcher = ({ config: { server } }) => {
         args.push(`--remote-debugging-port=${remote_debugging_port}`);
       }
 
+      if (process.env.XDG_SESSION_TYPE === 'wayland') {
+        args.push(
+          '--enable-features=WaylandWindowDecorations',
+          '--ozone-platform-hint=auto'
+        );
+      }
+
       spawnProcess = spawn(String(electron), args);
       childProcesses.push(spawnProcess);
 
