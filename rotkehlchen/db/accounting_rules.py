@@ -214,11 +214,13 @@ class DBAccountingRules:
         For a list of events returns a list of the same length with boolean values where True
         means that the event won't be affected by any accounting rule
         """
-        query = 'SELECT COUNT(*) FROM accounting_rules WHERE (type=? AND subtype=? AND counterparty=?)'  # noqa: E501
+        query = 'SELECT COUNT(*) FROM accounting_rules WHERE (type=? AND subtype=? AND (counterparty=? OR counterparty=?))'  # noqa: E501
         bindings = [
             (
-                event.event_type.serialize(), event.event_subtype.serialize(),
+                event.event_type.serialize(),
+                event.event_subtype.serialize(),
                 NO_ACCOUNTING_COUNTERPARTY if (counterparty := getattr(event, 'counterparty', None)) is None else counterparty,  # noqa: E501
+                NO_ACCOUNTING_COUNTERPARTY,  # account for rules based only on type/subtype
             ) for event in events
         ]
         missing_accounting_rule: list[bool] = []

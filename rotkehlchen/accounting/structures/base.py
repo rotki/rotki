@@ -270,7 +270,7 @@ class HistoryBaseEntry(AccountingEventMixin, metaclass=ABCMeta):
             result['hidden'] = True
         if grouped_events_num is not None:
             result['grouped_events_num'] = grouped_events_num
-        if missing_accounting_rule:
+        if missing_accounting_rule is True and self.get_direction() != EventDirection.NEUTRAL:
             result['missing_accounting_rule'] = True
 
         return result
