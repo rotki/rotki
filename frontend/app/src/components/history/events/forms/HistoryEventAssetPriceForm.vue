@@ -156,20 +156,29 @@ const fetchHistoricPrices = async () => {
     DateFormat.DateMonthYearHourMinuteSecond
   );
 
-  let price: BigNumber = await getHistoricPrice({
-    timestamp,
-    fromAsset: assetVal,
-    toAsset: CURRENCY_USD
-  });
+  if (assetVal === CURRENCY_USD) {
+    set(fetchedAssetToUsdPrice, '1');
+  } else {
+    const price: BigNumber = await getHistoricPrice({
+      timestamp,
+      fromAsset: assetVal,
+      toAsset: CURRENCY_USD
+    });
 
-  if (price.gt(0)) {
-    set(fetchedAssetToUsdPrice, price.toFixed());
+    if (price.gt(0)) {
+      set(fetchedAssetToUsdPrice, price.toFixed());
+    }
   }
 
   if (!get(isCurrentCurrencyUsd)) {
     const currentCurrency = get(currencySymbol);
 
-    price = await getHistoricPrice({
+    if (assetVal === currentCurrency) {
+      set(fetchedAssetToFiatPrice, '1');
+      return;
+    }
+
+    const price = await getHistoricPrice({
       timestamp,
       fromAsset: assetVal,
       toAsset: currentCurrency

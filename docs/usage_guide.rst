@@ -388,28 +388,55 @@ Trade settings
 Crypto to crypto trades
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-A setting to determine whether crypto to crypto trades are taxable and should be taken into account. By default it's ``True``.
+A setting to determine whether crypto to crypto trades or any events that spend crypto are taxable and should be taken into account. By default it's ``True``.
 
-Illustration: You have ``1`` ETH that you bought with price ``50 EUR``. Then you spend this ``1`` ETH for gas fees, and the price at the moment is ``100 EUR``.
+.. tab:: Crypto to crypto trades
 
-
-- ``True``: When you spending crypto (as in fees), a sell is also generated, and this sell can generate additional :green:`profit` or :red:`loss`. Each crypto to crypto trade creates a "virtual" trade that sells or buys the crypto asset for fiat and then sells or buys the fiat for the other crypto asset.
-
-..
-
-    By spending this ETH, it results in loss of ``100 EUR``.
-
-    Because you spend this ETH, you also sell this ETH for ``100 EUR``.
-    The profit of this sell is calculated as ``the value when you sell (100 EUR)`` minus ``the value when you bought (50 EUR)`` = ``50 EUR``
-
-    So total PnL of this action is ``-100 + 50`` = ``-50 EUR``
+   Illustration: You trade your ``1 ETH``, to get ``11 USDT``. Current price of ETH is ``10 EUR``, but you bought it when it was ``5 EUR``.
 
 
-- ``False``: The above does not happen.
+   - ``True``: When you trade crypto to crypto, a "virtual" trade that sells or buys the crypto asset for fiat and then sells or buys the fiat for the other crypto asset is generated. So from this "virtual" trade, there is additional :green:`profit` or :red:`loss` from the difference of the price of the asset at the time and the buying price.
 
-..
+   ..
 
-    So total PnL of this action will be determined by the loss of your spending, which is ``-100 EUR``.
+      By making this trade, we will create two virtual trade, which are:
+
+      (1) Sell ``1 ETH`` for ``10 EUR``. PnL of this virtual trade is calculated as ``the value when you sell this ETH (10 EUR)`` minus ``the value when you bought this ETH (5 EUR)`` = ``5 EUR``.
+
+      (2) Buy ``11 USDT`` with ``10 EUR``. PnL of this virtual trade is ``0 EUR`` because it's a buy. However, later on, when you trade this ``USDT`` with another crypto, point (1) will also be applied.
+
+      So total PnL of this action will be ``5 EUR``
+
+
+   - ``False``: The above does not happen, no virtual sell events are generated.
+
+   ..
+
+      So total PnL of this action will be ``0 EUR``
+
+
+.. tab:: Crypto spending
+
+   Illustration: You have ``1`` ETH that you bought with price ``50 EUR``. Then you spend this ``1`` ETH for gas fees, and the price at the moment is ``100 EUR``.
+
+
+   - ``True``: When you spend crypto (fees, donations, purchases etc.) in the PnL calculation you see both the loss from the spending event but also an additional :green:`profit` or :red:`loss` from the difference of the price of the asset at the time and the buying price.
+
+   ..
+
+      By spending this ETH, it results in loss of ``100 EUR``.
+
+      Because you spend this ETH, you also sell this ETH for ``100 EUR``.
+      The profit of this sell is calculated as ``the value when you sell (100 EUR)`` minus ``the value when you bought (50 EUR)`` = ``50 EUR``
+
+      So total PnL of this action is ``-100 + 50`` = ``-50 EUR``
+
+
+   - ``False``: The above does not happen.
+
+   ..
+
+      So total PnL of this action will be calculated as ``-100 EUR`` from the loss.
 
 
 EVM gas costs
@@ -668,7 +695,7 @@ If all went well, you should be able to see your newly added exchange. If not pl
 You also have the option to enable/disable synchronization for the connected exchanges. Usually, you may want to disable the synchronization to prevent your IP getting banned because of too many syncs.
 
 .. note::
-   At the moment, `margin trades <https://github.com/rotki/rotki/issues/1980>`_ and `future trades <https://github.com/rotki/rotki/issues/1606>`_ haven't been supported in Rotki yet.
+   At the moment, `margin trades <https://github.com/rotki/rotki/issues/1980>`_ and `future trades <https://github.com/rotki/rotki/issues/1606>`_ are not yet supported in rotki.
 
 .. image:: images/rotki_add_exchange_3.png
    :alt: List of connected exchanges
@@ -863,7 +890,7 @@ A list of supported locations in rotki are ``"external"``, ``"kraken"``, ``"polo
    In the columns where an asset is expected you will need to use the identifier that such asset has in rotki otherwise the row won't be read.
 
 .. note::
-   If at any point, you're confused as regards the csv format, feel free to send us a message on `Discord <https://discord.gg/aGCxHG7>`_.
+   If at any point, you're confused as regards to the CSV format, feel free to send us a message on `Discord <https://discord.rotki.com>`_.
 
 .. _track_balances:
 
@@ -1357,6 +1384,7 @@ History events can be filtered if you have a premium subscription activated. You
 - Event type (deposit, withdrawal, etc.)
 - Tx hash of a particualar transaction that you want to check
 - Index of an eth2 validator that you want to see events for
+- ... more
 
 Customization of the list of supported assets
 *********************************************
@@ -1765,7 +1793,7 @@ It's possible that rotki is not able to find an acquisition event for a sale. In
 This can happen for many reasons. The asset may have been acquired in a non-supported exchange/protocol, some event not detected etc.
 
 
-The way to fix it is to add either a :ref:`manual trade<adding-manual-trade>` to tell rotki how you acquired that asset.
+The way to fix it is to add either a :ref:`manual trade<adding-manual-trade>` to tell rotki how you acquired that asset or an acquisition history event.
 
 
 Timeout or price not found for timestamp
@@ -1781,9 +1809,9 @@ The result of the generated PnL report is not what you expected.
 -----------------------------------------------------------------
 
 The results of the generated PnL report can vary depending on the
-`accounting settings <#trade-settings>`_. Check if any settings align with unusual treatments for your events, so you can adjust the settings to resolve the issue yourself.
+`accounting settings <#customizing-the-accounting-settings>`_. Check if any settings align with unusual treatments for your events, so you can adjust the settings to resolve the issue yourself.
 
-If you have any question or are confused about the settings, feel free to send us a message on `Discord <https://discord.gg/aGCxHG7>`_.
+If you have any question or are confused about the settings, feel free to send us a message on `Discord <https://discord.rotki.com>`_.
 
 Seeking help with complicated errors during PnL report generation
 ------------------------------------------------------------------
