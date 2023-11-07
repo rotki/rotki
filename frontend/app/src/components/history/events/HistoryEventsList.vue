@@ -126,15 +126,14 @@ const [DefineTable, ReuseTable] = createReusableTemplate();
               :block-number="blockEvent?.blockNumber"
               class="break-words leading-6 md:col-span-3 xl:col-span-4"
             />
-            <div class="flex items-center justify-end">
-              <RowActions
-                class="md:col-span-1"
-                align="end"
-                :delete-tooltip="t('transactions.events.actions.delete')"
-                :edit-tooltip="t('transactions.events.actions.edit')"
-                @edit-click="editEvent(item)"
-                @delete-click="deleteEvent(item)"
-              />
+            <RowActions
+              class="md:col-span-1"
+              align="end"
+              :delete-tooltip="t('transactions.events.actions.delete')"
+              :edit-tooltip="t('transactions.events.actions.edit')"
+              @edit-click="editEvent(item)"
+              @delete-click="deleteEvent(item)"
+            >
               <RuiTooltip
                 v-if="item.missingAccountingRule"
                 :popper="{ placement: 'top', offsetDistance: 0 }"
@@ -152,7 +151,7 @@ const [DefineTable, ReuseTable] = createReusableTemplate();
                 </template>
                 {{ t('actions.history_events.missing_rule.title') }}
               </RuiTooltip>
-            </div>
+            </RowActions>
           </div>
         </Fragment>
       </template>

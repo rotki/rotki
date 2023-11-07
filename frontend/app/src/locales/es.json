@@ -146,7 +146,6 @@
     "title": "Accounting Settings"
   },
   "accounting_settings": {
-    "missing": "Falta regla contable",
     "trade": {
       "labels": {
         "account_for_assets_movements": "Take into account assets movements fees",

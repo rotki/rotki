@@ -141,7 +141,6 @@
     "title": "Accounting Settings"
   },
   "accounting_settings": {
-    "missing": "Λείπει ο λογιστικός κανόνας",
     "trade": {
       "labels": {
         "account_for_assets_movements": "Take into account assets movements fees",

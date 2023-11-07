@@ -19,17 +19,6 @@ const props = withDefaults(
 
 const { editableItem } = toRefs(props);
 
-const getPlaceholderRule = (): AccountingRuleEntry => ({
-  identifier: -1,
-  eventType: '',
-  eventSubtype: '',
-  counterparty: null,
-  taxable: { value: false },
-  countEntireAmountSpend: { value: false },
-  countCostBasisPnl: { value: false },
-  accountingTreatment: null
-});
-
 const state: Ref<AccountingRuleEntry> = ref(getPlaceholderRule());
 
 const externalServerValidation = () => true;

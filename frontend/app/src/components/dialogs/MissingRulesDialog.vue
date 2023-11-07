@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { type AccountingRuleEntry } from '@/types/settings/accounting';
 import {
   type EvmChainAndTxHash,
   type HistoryEventEntry
@@ -17,9 +18,15 @@ const props = withDefaults(
 );
 
 const emit = defineEmits<{
-  (e: 're-decode', event: EvmChainAndTxHash | null): void;
+  (e: 're-decode', data: EvmChainAndTxHash | null): void;
   (e: 'edit', event: HistoryEventEntry | null): void;
-  (e: 'add-rule'): void;
+  (
+    e: 'add-rule',
+    data: Pick<
+      AccountingRuleEntry,
+      'eventType' | 'eventSubtype' | 'counterparty'
+    >
+  ): void;
   (e: 'input', value: boolean): void;
 }>();
 
@@ -45,6 +52,39 @@ const onRedecode = () => {
   }
 
   emit('re-decode', toEvmChainAndTxHash(entry));
+  emit('input', false);
+};
+
+const onEdit = () => {
+  const entry = get(event);
+
+  if (!entry) {
+    return false;
+  }
+
+  emit('edit', entry);
+  emit('input', false);
+};
+
+const onAddRule = () => {
+  const entry = get(event);
+
+  if (!entry) {
+    return false;
+  }
+
+  const { eventType, eventSubtype } = entry;
+
+  if ('counterparty' in entry) {
+    emit('add-rule', {
+      eventSubtype,
+      eventType,
+      counterparty: entry.counterparty
+    });
+  } else {
+    emit('add-rule', { eventSubtype, eventType, counterparty: null });
+  }
+
   emit('input', false);
 };
 </script>
@@ -75,13 +115,13 @@ const onRedecode = () => {
             </template>
             {{ t('actions.history_events.missing_rule.re_decode') }}
           </RuiButton>
-          <RuiButton v-else variant="text" @click="emit('edit', event)">
+          <RuiButton variant="text" @click="onEdit()">
             <template #prepend>
               <RuiIcon color="info" name="pencil-line" />
             </template>
             {{ t('actions.history_events.missing_rule.edit') }}
           </RuiButton>
-          <RuiButton variant="text" @click="emit('add-rule')">
+          <RuiButton variant="text" @click="onAddRule()">
             <template #prepend>
               <RuiIcon color="info" name="add-line" />
             </template>

@@ -8,6 +8,7 @@ import { isEqual } from 'lodash-es';
 import { type ComputedRef, type Ref } from 'vue';
 import { not } from '@vueuse/math';
 import { type HistoryEventEntryType } from '@rotki/common/lib/history/events';
+import { type AccountingRuleEntry } from '@/types/settings/accounting';
 import { toEvmChainAndTxHash } from '@/utils/history';
 import { type DataTableHeader } from '@/types/vuetify';
 import { type Collection } from '@/types/collection';
@@ -502,8 +503,13 @@ watch(shouldFetchEventsRegularly, shouldFetchEventsRegularly => {
 
 const { show } = useConfirmStore();
 
-const onAddMissingRule = () => {
-  vueRouter.push('/settings/accounting?add-rule=true');
+const onAddMissingRule = (
+  data: Pick<AccountingRuleEntry, 'eventType' | 'eventSubtype' | 'counterparty'>
+) => {
+  vueRouter.push({
+    path: '/settings/accounting',
+    query: { 'add-rule': 'true', ...data }
+  });
 };
 
 const resetPendingDeletion = () => {
@@ -817,11 +823,12 @@ const includeOnlineEvents: ComputedRef<boolean> = useEmptyOrSome(
       <TransactionFormDialog :loading="sectionLoading" />
 
       <MissingRulesDialog
+        v-if="missingRulesDialog"
         v-model="missingRulesDialog"
         :event="eventWithMissingRules"
         @edit="editMissingRulesEntry($event)"
         @re-decode="forceRedecodeEvmEvents($event)"
-        @add-rule="onAddMissingRule()"
+        @add-rule="onAddMissingRule($event)"
       />
     </RuiCard>
   </TablePageLayout>

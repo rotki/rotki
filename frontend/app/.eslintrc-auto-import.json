@@ -718,6 +718,7 @@
     "injectLocal": true,
     "provideLocal": true,
     "useAssetPageNavigation": true,
-    "useAccountingRuleMappings": true
+    "useAccountingRuleMappings": true,
+    "getPlaceholderRule": true
   }
 }

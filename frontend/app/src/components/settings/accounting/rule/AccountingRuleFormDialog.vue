@@ -19,11 +19,12 @@ const { openDialog, submitting, closeDialog, trySubmit } =
 
 const { t } = useI18n();
 
-const title: ComputedRef<string> = computed(() =>
-  get(editableItem)
+const title: ComputedRef<string> = computed(() => {
+  const item = get(editableItem);
+  return item && item.identifier > 0
     ? t('accounting_settings.rule.edit')
-    : t('accounting_settings.rule.add')
-);
+    : t('accounting_settings.rule.add');
+});
 </script>
 
 <template>

@@ -147,7 +147,6 @@
     "title": "会计设置"
   },
   "accounting_settings": {
-    "missing": "缺少会计规则",
     "trade": {
       "labels": {
         "account_for_assets_movements": "考虑资产移动费用",

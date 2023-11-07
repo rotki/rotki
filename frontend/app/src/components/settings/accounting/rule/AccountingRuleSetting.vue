@@ -161,9 +161,19 @@ const getType = (eventType: string, eventSubtype: string) =>
   });
 
 onMounted(async () => {
-  const { currentRoute } = router;
-  if (currentRoute.query['add-rule']) {
-    add();
+  const {
+    currentRoute: {
+      query: { 'add-rule': addRule, eventSubtype, eventType, counterparty }
+    }
+  } = router;
+  if (addRule) {
+    set(editableItem, {
+      ...getPlaceholderRule(),
+      eventSubtype: eventSubtype?.toString() ?? '',
+      eventType: eventType?.toString() ?? '',
+      counterparty: counterparty?.toString() ?? null
+    });
+    setOpenDialog(true);
     await router.replace({ query: {} });
   }
 });
