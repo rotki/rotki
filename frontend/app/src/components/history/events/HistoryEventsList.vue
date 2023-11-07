@@ -135,21 +135,23 @@ const [DefineTable, ReuseTable] = createReusableTemplate();
                 @edit-click="editEvent(item)"
                 @delete-click="deleteEvent(item)"
               />
-              <RuiButton
+              <RuiTooltip
                 v-if="item.missingAccountingRule"
-                variant="text"
-                color="warning"
-                class="py-1"
-                icon
-                @click="emit('show:missing-rule-action', item)"
+                :popper="{ placement: 'top', offsetDistance: 0 }"
+                :open-delay="400"
               >
-                <RuiTooltip>
-                  <template #activator>
-                    <RuiIcon size="16" name="information-line" class="mt-2" />
-                  </template>
-                  {{ t('actions.history_events.missing_rule.title') }}
-                </RuiTooltip>
-              </RuiButton>
+                <template #activator>
+                  <RuiButton
+                    variant="text"
+                    color="warning"
+                    icon
+                    @click="emit('show:missing-rule-action', item)"
+                  >
+                    <RuiIcon size="16" name="information-line" />
+                  </RuiButton>
+                </template>
+                {{ t('actions.history_events.missing_rule.title') }}
+              </RuiTooltip>
             </div>
           </div>
         </Fragment>

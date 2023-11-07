@@ -8,6 +8,7 @@ import { isEqual } from 'lodash-es';
 import { type ComputedRef, type Ref } from 'vue';
 import { not } from '@vueuse/math';
 import { type HistoryEventEntryType } from '@rotki/common/lib/history/events';
+import { toEvmChainAndTxHash } from '@/utils/history';
 import { type DataTableHeader } from '@/types/vuetify';
 import { type Collection } from '@/types/collection';
 import { SavedFilterLocation } from '@/types/filtering';
@@ -78,6 +79,7 @@ const nextSequence: Ref<string | null> = ref(null);
 const selectedGroupEventHeader: Ref<HistoryEvent | null> = ref(null);
 const eventToDelete: Ref<HistoryEventEntry | null> = ref(null);
 const eventWithMissingRules: Ref<HistoryEventEntry | null> = ref(null);
+const missingRulesDialog: Ref<boolean> = ref(false);
 const transactionToIgnore: Ref<HistoryEventEntry | null> = ref(null);
 const accounts: Ref<GeneralAccount[]> = ref([]);
 const locationOverview = ref(get(location));
@@ -510,15 +512,12 @@ const resetPendingDeletion = () => {
 };
 
 const setMissingRulesDialog = (
-  event: HistoryEventEntry | null = null,
-  groupHeader: HistoryEvent | null = null
+  event: HistoryEventEntry,
+  groupHeader: HistoryEvent
 ) => {
   set(eventWithMissingRules, event);
-  if (!event) {
-    set(selectedGroupEventHeader, null);
-  } else {
-    set(selectedGroupEventHeader, groupHeader);
-  }
+  set(selectedGroupEventHeader, groupHeader);
+  set(missingRulesDialog, true);
 };
 
 const editMissingRulesEntry = (event: HistoryEventEntry | null) => {
@@ -526,7 +525,7 @@ const editMissingRulesEntry = (event: HistoryEventEntry | null) => {
     return;
   }
   const groupHeader = get(selectedGroupEventHeader);
-  setMissingRulesDialog();
+  set(missingRulesDialog, false);
   editEventHandler(event, groupHeader);
 };
 
@@ -818,10 +817,11 @@ const includeOnlineEvents: ComputedRef<boolean> = useEmptyOrSome(
       <TransactionFormDialog :loading="sectionLoading" />
 
       <MissingRulesDialog
+        v-model="missingRulesDialog"
         :event="eventWithMissingRules"
         @edit="editMissingRulesEntry($event)"
+        @re-decode="forceRedecodeEvmEvents($event)"
         @add-rule="onAddMissingRule()"
-        @input="setMissingRulesDialog()"
       />
     </RuiCard>
   </TablePageLayout>

@@ -1,17 +1,23 @@
 <script setup lang="ts">
-import { type HistoryEventEntry } from '@/types/history/events';
+import {
+  type EvmChainAndTxHash,
+  type HistoryEventEntry
+} from '@/types/history/events';
+import { toEvmChainAndTxHash } from '@/utils/history';
 
 const props = withDefaults(
   defineProps<{
+    value: boolean;
     event: HistoryEventEntry | null;
   }>(),
   {
-    event: null
+    event: null,
+    value: false
   }
 );
 
 const emit = defineEmits<{
-  (e: 're-decode'): void;
+  (e: 're-decode', event: EvmChainAndTxHash | null): void;
   (e: 'edit', event: HistoryEventEntry | null): void;
   (e: 'add-rule'): void;
   (e: 'input', value: boolean): void;
@@ -30,12 +36,23 @@ const isEvm = computed(() => {
 
   return isEvmEvent(entry);
 });
+
+const onRedecode = () => {
+  const entry = get(event);
+
+  if (!entry) {
+    return false;
+  }
+
+  emit('re-decode', toEvmChainAndTxHash(entry));
+  emit('input', false);
+};
 </script>
 
 <template>
   <VDialogTransition>
     <VDialog
-      :value="!!event"
+      :value="value"
       :max-width="500"
       @keydown.esc.stop="emit('input', false)"
       @input="emit('input', false)"
@@ -52,9 +69,9 @@ const isEvm = computed(() => {
         </p>
 
         <div class="flex flex-col items-start gap-3">
-          <RuiButton v-if="isEvm" variant="text" @click="emit('re-decode')">
+          <RuiButton v-if="isEvm" variant="text" @click="onRedecode()">
             <template #prepend>
-              <RuiIcon color="info" name="information-line" />
+              <RuiIcon color="info" name="restart-line" />
             </template>
             {{ t('actions.history_events.missing_rule.re_decode') }}
           </RuiButton>
