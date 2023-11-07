@@ -22,7 +22,7 @@
 
 
 [![X Follow](https://img.shields.io/twitter/follow/rotkiapp)](https://twitter.com/rotkiapp)
-[![Discord](https://img.shields.io/discord/657906918408585217.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.gg/aGCxHG7)
+[![Discord](https://img.shields.io/discord/657906918408585217.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.rotki.com/)
 
 </div>
 
@@ -105,7 +105,7 @@ We are thankful for all the contributions and feedback we receive. You can get a
 
 To get in touch with Rotki team for bugs/feature requests, support questions or general discussions, please use:
 
-- [Rotki Discord Community](https://discord.gg/aGCxHG7)
+- [Rotki Discord Community](https://discord.rotki.com)
 - [Rotki Discussion Page](https://github.com/rotki/rotki/discussions)
 - [Rotki Issue Tracker](https://github.com/rotki/rotki/issues)
 

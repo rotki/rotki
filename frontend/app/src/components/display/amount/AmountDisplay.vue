@@ -106,7 +106,7 @@ const { assetSymbol } = useAssetInfoRetrieval();
 
 const timestampToUse = computed(() => {
   const timestampVal = get(timestamp);
-  return get(milliseconds) ? Math.round(timestampVal / 1000) : timestampVal;
+  return get(milliseconds) ? Math.floor(timestampVal / 1000) : timestampVal;
 });
 
 const evaluating = or(

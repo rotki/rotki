@@ -35,7 +35,7 @@ const entries: Entry[] = [
     icon: 'discord-line',
     title: t('help_sidebar.support.title').toString(),
     subtitle: t('help_sidebar.support.subtitle').toString(),
-    link: 'https://discord.gg/aGCxHG7'
+    link: 'https://discord.rotki.com'
   },
   {
     icon: 'github-line',

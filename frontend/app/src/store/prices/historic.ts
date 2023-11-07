@@ -12,14 +12,14 @@ export const useHistoricCachePriceStore = defineStore(
     const { t } = useI18n();
 
     const createKey = (fromAsset: string, timestamp: number | string) =>
-      `${fromAsset}#${Math.round(Number(timestamp)).toString()}`;
+      `${fromAsset}#${timestamp}`;
 
     const fetchHistoricPrices = async (keys: string[]) => {
       const taskType = TaskType.FETCH_HISTORIC_PRICE;
       const assetsTimestamp = keys.map(key => {
         const [from, timestamp] = key.split('#');
 
-        return [from, Math.round(Number(timestamp)).toString()];
+        return [from, timestamp];
       });
       const targetAsset = get(currencySymbol);
 
