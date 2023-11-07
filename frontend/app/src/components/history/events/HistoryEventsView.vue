@@ -8,6 +8,8 @@ import { isEqual } from 'lodash-es';
 import { type ComputedRef, type Ref } from 'vue';
 import { not } from '@vueuse/math';
 import { type HistoryEventEntryType } from '@rotki/common/lib/history/events';
+import { type AccountingRuleEntry } from '@/types/settings/accounting';
+import { toEvmChainAndTxHash } from '@/utils/history';
 import { type DataTableHeader } from '@/types/vuetify';
 import { type Collection } from '@/types/collection';
 import { SavedFilterLocation } from '@/types/filtering';
@@ -77,6 +79,8 @@ const {
 const nextSequence: Ref<string | null> = ref(null);
 const selectedGroupEventHeader: Ref<HistoryEvent | null> = ref(null);
 const eventToDelete: Ref<HistoryEventEntry | null> = ref(null);
+const eventWithMissingRules: Ref<HistoryEventEntry | null> = ref(null);
+const missingRulesDialog: Ref<boolean> = ref(false);
 const transactionToIgnore: Ref<HistoryEventEntry | null> = ref(null);
 const accounts: Ref<GeneralAccount[]> = ref([]);
 const locationOverview = ref(get(location));
@@ -133,6 +137,8 @@ const { fetchHistoryEvents, deleteHistoryEvent } = useHistoryEvents();
 
 const { refreshTransactions, fetchTransactionEvents } =
   useHistoryTransactions();
+
+const vueRouter = useRouter();
 
 const {
   options,
@@ -378,7 +384,10 @@ const addEvent = (groupHeader?: HistoryEvent) => {
   setOpenDialog(true);
 };
 
-const editEventHandler = (event: HistoryEvent, groupHeader: HistoryEvent) => {
+const editEventHandler = (
+  event: HistoryEvent,
+  groupHeader: HistoryEvent | null
+) => {
   set(selectedGroupEventHeader, groupHeader);
   set(editableItem, event);
   set(nextSequence, null);
@@ -494,9 +503,36 @@ watch(shouldFetchEventsRegularly, shouldFetchEventsRegularly => {
 
 const { show } = useConfirmStore();
 
+const onAddMissingRule = (
+  data: Pick<AccountingRuleEntry, 'eventType' | 'eventSubtype' | 'counterparty'>
+) => {
+  vueRouter.push({
+    path: '/settings/accounting',
+    query: { 'add-rule': 'true', ...data }
+  });
+};
+
 const resetPendingDeletion = () => {
   set(eventToDelete, null);
   set(transactionToIgnore, null);
+};
+
+const setMissingRulesDialog = (
+  event: HistoryEventEntry,
+  groupHeader: HistoryEvent
+) => {
+  set(eventWithMissingRules, event);
+  set(selectedGroupEventHeader, groupHeader);
+  set(missingRulesDialog, true);
+};
+
+const editMissingRulesEntry = (event: HistoryEventEntry | null) => {
+  if (!event) {
+    return;
+  }
+  const groupHeader = get(selectedGroupEventHeader);
+  set(missingRulesDialog, false);
+  editEventHandler(event, groupHeader);
 };
 
 const showDeleteConfirmation = () => {
@@ -750,6 +786,7 @@ const includeOnlineEvents: ComputedRef<boolean> = useEmptyOrSome(
                 :loading="sectionLoading || eventTaskLoading"
                 @edit:event="editEventHandler($event, item)"
                 @delete:event="promptForDelete($event)"
+                @show:missing-rule-action="setMissingRulesDialog($event, item)"
               />
             </template>
             <template #body.prepend="{ headers }">
@@ -784,6 +821,15 @@ const includeOnlineEvents: ComputedRef<boolean> = useEmptyOrSome(
       />
 
       <TransactionFormDialog :loading="sectionLoading" />
+
+      <MissingRulesDialog
+        v-if="missingRulesDialog"
+        v-model="missingRulesDialog"
+        :event="eventWithMissingRules"
+        @edit="editMissingRulesEntry($event)"
+        @re-decode="forceRedecodeEvmEvents($event)"
+        @add-rule="onAddMissingRule($event)"
+      />
     </RuiCard>
   </TablePageLayout>
 </template>

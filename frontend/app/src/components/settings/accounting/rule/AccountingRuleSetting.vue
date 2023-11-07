@@ -11,6 +11,7 @@ import {
 } from '@/types/settings/accounting';
 
 const { t } = useI18n();
+const router = useRouter();
 
 const { getAccountingRules } = useAccountingSettings();
 
@@ -158,6 +159,24 @@ const getType = (eventType: string, eventSubtype: string) =>
     eventType,
     eventSubtype
   });
+
+onMounted(async () => {
+  const {
+    currentRoute: {
+      query: { 'add-rule': addRule, eventSubtype, eventType, counterparty }
+    }
+  } = router;
+  if (addRule) {
+    set(editableItem, {
+      ...getPlaceholderRule(),
+      eventSubtype: eventSubtype?.toString() ?? '',
+      eventType: eventType?.toString() ?? '',
+      counterparty: counterparty?.toString() ?? null
+    });
+    setOpenDialog(true);
+    await router.replace({ query: {} });
+  }
+});
 </script>
 
 <template>

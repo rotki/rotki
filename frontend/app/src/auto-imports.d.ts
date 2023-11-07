@@ -115,6 +115,7 @@ declare global {
   const getFilepath: typeof import('./utils/backups')['getFilepath']
   const getKeyType: typeof import('./utils/xpub')['getKeyType']
   const getMetamaskAddresses: typeof import('./utils/metamask')['getMetamaskAddresses']
+  const getPlaceholderRule: typeof import('./utils/settings')['getPlaceholderRule']
   const getPoolProfit: typeof import('./utils/defi/xswap')['getPoolProfit']
   const getPools: typeof import('./utils/defi/xswap')['getPools']
   const getPrefix: typeof import('./utils/xpub')['getPrefix']
@@ -831,6 +832,7 @@ declare module 'vue' {
     readonly getFilepath: UnwrapRef<typeof import('./utils/backups')['getFilepath']>
     readonly getKeyType: UnwrapRef<typeof import('./utils/xpub')['getKeyType']>
     readonly getMetamaskAddresses: UnwrapRef<typeof import('./utils/metamask')['getMetamaskAddresses']>
+    readonly getPlaceholderRule: UnwrapRef<typeof import('./utils/settings')['getPlaceholderRule']>
     readonly getPoolProfit: UnwrapRef<typeof import('./utils/defi/xswap')['getPoolProfit']>
     readonly getPools: UnwrapRef<typeof import('./utils/defi/xswap')['getPools']>
     readonly getPrefix: UnwrapRef<typeof import('./utils/xpub')['getPrefix']>
@@ -1541,6 +1543,7 @@ declare module '@vue/runtime-core' {
     readonly getFilepath: UnwrapRef<typeof import('./utils/backups')['getFilepath']>
     readonly getKeyType: UnwrapRef<typeof import('./utils/xpub')['getKeyType']>
     readonly getMetamaskAddresses: UnwrapRef<typeof import('./utils/metamask')['getMetamaskAddresses']>
+    readonly getPlaceholderRule: UnwrapRef<typeof import('./utils/settings')['getPlaceholderRule']>
     readonly getPoolProfit: UnwrapRef<typeof import('./utils/defi/xswap')['getPoolProfit']>
     readonly getPools: UnwrapRef<typeof import('./utils/defi/xswap')['getPools']>
     readonly getPrefix: UnwrapRef<typeof import('./utils/xpub')['getPrefix']>
