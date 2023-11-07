@@ -81,10 +81,12 @@ export const useAssetsApi = () => {
   const importCustom = async (
     file: File,
     upload = false
-  ): Promise<ActionResult<boolean>> => {
+  ): Promise<PendingTask> => {
     if (upload) {
       const data = new FormData();
       data.append('file', file);
+      data.append('async_query', 'true');
+
       const response = await api.instance.post('/assets/user', data, {
         validateStatus: validFileOperationStatus,
         headers: {
@@ -96,7 +98,11 @@ export const useAssetsApi = () => {
 
     const response = await api.instance.put(
       '/assets/user',
-      { action: 'upload', file: file.path },
+      snakeCaseTransformer({
+        action: 'upload',
+        file: file.path,
+        asyncQuery: true
+      }),
       {
         validateStatus: validFileOperationStatus
       }

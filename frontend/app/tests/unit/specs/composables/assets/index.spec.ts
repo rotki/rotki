@@ -6,7 +6,7 @@ vi.mock('@/composables/api/assets/index', () => ({
     checkForAssetUpdate: vi.fn().mockResolvedValue(1),
     performUpdate: vi.fn().mockResolvedValue(1),
     mergeAssets: vi.fn().mockResolvedValue(true),
-    importCustom: vi.fn().mockResolvedValue({}),
+    importCustom: vi.fn().mockResolvedValue(1),
     exportCustom: vi.fn().mockResolvedValue({})
   })
 }));
@@ -215,7 +215,13 @@ describe('store::assets/index', () => {
 
   describe('importCustomAssets', () => {
     const file = new File(['0'], 'test.csv');
+
     test('success', async () => {
+      vi.mocked(useTaskStore().awaitTask).mockResolvedValue({
+        result: true,
+        meta: { title: '' }
+      });
+
       const result = await store.importCustomAssets(file);
 
       expect(api.importCustom).toHaveBeenCalledWith(file, false);
@@ -226,7 +232,9 @@ describe('store::assets/index', () => {
     });
 
     test('failed', async () => {
-      vi.mocked(api.importCustom).mockRejectedValue(new Error('failed'));
+      vi.mocked(useTaskStore().awaitTask).mockRejectedValue(
+        new Error('failed')
+      );
 
       const result = await store.importCustomAssets(file);
 
