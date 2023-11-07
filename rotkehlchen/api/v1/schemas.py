@@ -3204,7 +3204,7 @@ class MultipleAccountingRuleConflictsResolutionSchema(Schema):
             )
 
     @post_load
-    def exctract_conflicts(
+    def extract_conflicts(
             self,
             data: dict[str, Any],
             **_kwargs: Any,

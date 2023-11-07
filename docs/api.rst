@@ -12871,7 +12871,7 @@ Solving conflicts in accounting rules
 
   :reqjsonarr string local_id: The identifier of the rule that will be updated.
   :reqjsonarr string solve_using: Either ``remote`` or ``local``.
-  :reqjsonarr strin solve_all_using: Either ``remote`` or ``local``.
+  :reqjsonarr string solve_all_using: Either ``remote`` or ``local``. If this is given it should be the only key in the request.
 
   **Example Response**:
 
