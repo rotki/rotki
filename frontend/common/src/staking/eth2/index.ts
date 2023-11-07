@@ -82,12 +82,19 @@ export const Eth2StakingRewards = z.object({
 
 export type Eth2StakingRewards = z.infer<typeof Eth2StakingRewards>;
 
-export interface Eth2StakingFilter {
+interface EthStakingDepositorFilter {
   accounts: GeneralAccount[];
+}
+
+interface EthStakingValidatorFilter {
   validators: Eth2ValidatorEntry[];
 }
 
-export type Eth2StakingFilterType = 'address' | 'validator';
+export type EthStakingFilter =
+  | EthStakingDepositorFilter
+  | EthStakingValidatorFilter;
+
+export type EthStakingFilterType = 'address' | 'validator';
 
 export type EthStakingPeriod = {
   fromTimestamp?: string;

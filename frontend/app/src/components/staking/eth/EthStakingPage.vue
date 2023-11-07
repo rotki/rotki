@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import {
   type Eth2DailyStatsPayload,
-  type Eth2StakingFilter,
+  type EthStakingFilter,
   type EthStakingPayload,
   type EthStakingPeriod
 } from '@rotki/common/lib/staking/eth2';
@@ -14,8 +14,7 @@ const module = Module.ETH2;
 const section = Section.STAKING_ETH2;
 
 const period: Ref<EthStakingPeriod> = ref({});
-const selection: Ref<Eth2StakingFilter> = ref({
-  accounts: [],
+const selection: Ref<EthStakingFilter> = ref({
   validators: []
 });
 
@@ -52,10 +51,18 @@ const ownership = computed(() => {
 });
 
 const validatorFilter: ComputedRef<EthStakingPayload> = computed(() => {
-  const { accounts, validators } = get(selection);
+  const filter = get(selection);
+
+  if ('accounts' in filter) {
+    return {
+      addresses: filter.accounts.map(({ address }) => address)
+    };
+  }
+
   return {
-    addresses: accounts.map(({ address }) => address),
-    validatorIndices: validators.map(({ validatorIndex }) => validatorIndex)
+    validatorIndices: filter.validators.map(
+      ({ validatorIndex }) => validatorIndex
+    )
   };
 });
 
