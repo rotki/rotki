@@ -165,7 +165,7 @@ class DBIntEnumMixIn(SerializableEnumNameMixin, DBEnumMixIn):
     """A serializable enum with an int value that also goes into
     the DB and gets saved as an int there but gets serialized/to from API as a string"""
 
-    def serialize_for_db(self) -> str:
+    def serialize_for_db(self) -> int:  # type: ignore[override]  # changed return on purpose
         return self.value
 
     @classmethod

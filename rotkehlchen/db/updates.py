@@ -180,6 +180,7 @@ class RotkiDataUpdater:
         """
         log.info(f'Applying update for accounting rules to v{version}')
         rules_db = DBAccountingRules(self.user_db)
+        serialized_type = ConflictType.ACCOUNTING_RULE.serialize_for_db()
         conflicts = []
         for rule_data in data:
             try:
@@ -217,7 +218,7 @@ class RotkiDataUpdater:
                     conflicts.append((
                         rules[0]['identifier'],
                         json.dumps(rule_data),
-                        ConflictType.ACCOUNTING_RULE.value,
+                        serialized_type,
                     ))
 
                 log.debug(f'Failed to add accounting rule {rule_data} due to {e}')
