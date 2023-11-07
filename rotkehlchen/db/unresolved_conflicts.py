@@ -1,5 +1,5 @@
 import json
-from enum import Enum, auto
+from enum import auto
 from typing import TYPE_CHECKING, Any, Literal
 
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
@@ -7,12 +7,13 @@ from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings, TxAcc
 from rotkehlchen.db.accounting_rules import DBAccountingRules
 from rotkehlchen.db.filtering import DBFilterQuery
 from rotkehlchen.errors.misc import InputError
+from rotkehlchen.utils.mixins.enums import DBIntEnumMixIn
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
 
 
-class ConflictType(Enum):
+class ConflictType(DBIntEnumMixIn):
     ACCOUNTING_RULE = auto()
 
 
@@ -125,17 +126,18 @@ class DBRemoteConflicts:
         - KeyError: if the remote data doesn't have the expected format
         """
         use_remote_updates, updated_rules_data = {}, []
+        serialized_type = ConflictType.ACCOUNTING_RULE.serialize_for_db()
         # extract ids that will keep local version of rules and remote information for
         # remote resolution rules.
         with self.db.conn.read_ctx() as cursor:
             for local_id, solve_using in conflicts:
                 if solve_using == 'local':
-                    updated_rules_data.append((ConflictType.ACCOUNTING_RULE.value, local_id))
+                    updated_rules_data.append((serialized_type, local_id))
                 else:
                     cursor.execute(
                         'SELECT remote_data FROM unresolved_remote_conflicts WHERE '
                         'type=? AND local_id=?',
-                        (ConflictType.ACCOUNTING_RULE.value, local_id),
+                        (serialized_type, local_id),
                     )
                     if (raw_remote_data := cursor.fetchone()) is None:
                         raise InputError(f'Conflict not found for local id {local_id}')
@@ -151,7 +153,7 @@ class DBRemoteConflicts:
                 links=remote_data.get('links', {}),
                 identifier=local_id,
             )
-            updated_rules_data.append((ConflictType.ACCOUNTING_RULE.value, local_id))
+            updated_rules_data.append((serialized_type, local_id))
 
         # delete the conflicts for the rules that have been updated
         with self.db.conn.write_ctx() as write_cursor:
@@ -164,7 +166,7 @@ class DBRemoteConflicts:
         with self.db.conn.read_ctx() as cursor:
             cursor.execute(
                 'SELECT local_id FROM unresolved_remote_conflicts WHERE type=?',
-                (ConflictType.ACCOUNTING_RULE.value,),
+                (ConflictType.ACCOUNTING_RULE.serialize_for_db(),),
             )
             self.solve_accounting_rule_conflicts(
                 conflicts=[(row[0], solve_all_using) for row in cursor],
