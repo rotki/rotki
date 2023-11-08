@@ -21,7 +21,7 @@ from rotkehlchen.accounting.structures.types import (
     HistoryEventType,
 )
 from rotkehlchen.accounting.types import SchemaEventType
-from rotkehlchen.assets.asset import Asset, AssetWithNameAndType, AssetWithOracles, CryptoAsset
+from rotkehlchen.assets.asset import Asset, AssetWithNameAndType, AssetWithOracles
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.assets.utils import IgnoredAssetsHandling
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
@@ -616,7 +616,7 @@ class HistoryEventSchema(
     event_identifiers = DelimitedOrNormalList(fields.String(), load_default=None)
     location = SerializableEnumField(Location, load_default=None)
     location_labels = DelimitedOrNormalList(fields.String(), load_default=None)
-    asset = AssetField(expected_type=CryptoAsset, load_default=None)
+    asset = AssetField(expected_type=Asset, load_default=None)
     entry_types = IncludeExcludeListField(
         SerializableEnumField(enum_class=HistoryBaseEntryType),
         load_default=None,

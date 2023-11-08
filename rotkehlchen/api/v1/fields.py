@@ -17,6 +17,7 @@ from rotkehlchen.assets.asset import (
     AssetWithNameAndType,
     AssetWithOracles,
     CryptoAsset,
+    CustomAsset,
     EvmToken,
     Nft,
 )
@@ -510,6 +511,7 @@ class AssetField(fields.Field):
                 AssetWithOracles,
                 CryptoAsset,
                 EvmToken,
+                CustomAsset,
             ]],
             form_with_incomplete_data: bool = False,
             **kwargs: Any,
@@ -552,6 +554,8 @@ class AssetField(fields.Field):
                 asset = Asset(identifier=real_value).resolve_to_asset_with_oracles()
             elif self.expected_type == CryptoAsset:
                 asset = CryptoAsset(real_value)
+            elif self.expected_type == CustomAsset:
+                asset = CustomAsset(real_value)
             else:  # EvmToken
                 asset = EvmToken(real_value)
         except (DeserializationError, UnknownAsset, WrongAssetType) as e:
