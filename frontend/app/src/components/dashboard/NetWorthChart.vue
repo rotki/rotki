@@ -723,6 +723,7 @@ const css = useCssModule();
           </div>
         </div>
       </div>
+      <div v-else class="grow" />
 
       <div :class="css.snapshot">
         <SnapshotActionButton>
