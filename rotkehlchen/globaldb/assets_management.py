@@ -48,7 +48,7 @@ def import_assets_from_file(
     for asset_data in data['assets']:
         asset: AssetWithNameAndType = asset_data['asset']
         if asset.exists():
-            msg_aggregator.add_warning(
+            log.warning(
                 f'Tried to import existing asset {asset.identifier} with '
                 f'name {asset.name}',
             )

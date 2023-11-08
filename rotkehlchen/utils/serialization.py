@@ -88,7 +88,7 @@ def deserialize_asset_with_oracles_from_db(
     if asset_type == AssetType.EVM_TOKEN:
         decimals = 18 if asset_data[3] is None else asset_data[3]
         name = identifier if asset_data[4] is None else asset_data[4]
-        symbol = asset_data[5]
+        symbol = asset_data[5] if asset_data[5] is not None else ''
 
         return EvmToken.initialize(
             address=asset_data[2],

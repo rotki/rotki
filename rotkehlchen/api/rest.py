@@ -3928,7 +3928,7 @@ class RestAPI:
         custom_assets_result, entries_found, entries_total = db_custom_assets.get_custom_assets_and_limit_info(  # noqa: E501
             filter_query=filter_query,
         )
-        entries = [entry.to_dict() for entry in custom_assets_result]
+        entries = [entry.to_dict(export_with_type=False) for entry in custom_assets_result]
         result = {
             'entries': entries,
             'entries_found': entries_found,

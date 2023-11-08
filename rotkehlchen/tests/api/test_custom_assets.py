@@ -58,7 +58,7 @@ def test_get_custom_assets(rotkehlchen_api_server) -> None:
     )
     result = assert_proper_response_with_result(response)
     assert result['entries_found'] == len(TEST_CUSTOM_ASSETS)
-    assert result['entries'] == [entry.to_dict() for entry in TEST_CUSTOM_ASSETS]
+    assert result['entries'] == [entry.to_dict(export_with_type=False) for entry in TEST_CUSTOM_ASSETS]  # noqa: E501
 
     # test that filtering works as expected
     # filter by name
@@ -72,7 +72,7 @@ def test_get_custom_assets(rotkehlchen_api_server) -> None:
     result = assert_proper_response_with_result(response)
     assert len(result['entries']) == 1
     assert result['entries_found'] == 1
-    assert result['entries'][0] == TEST_CUSTOM_ASSETS[0].to_dict()
+    assert result['entries'][0] == TEST_CUSTOM_ASSETS[0].to_dict(export_with_type=False)
 
     # filter by custom asset type
     response = requests.post(
@@ -85,7 +85,7 @@ def test_get_custom_assets(rotkehlchen_api_server) -> None:
     result = assert_proper_response_with_result(response)
     assert len(result['entries']) == 2
     assert result['entries_found'] == 2
-    assert result['entries'] == [entry.to_dict() for entry in TEST_CUSTOM_ASSETS[1:3]]
+    assert result['entries'] == [entry.to_dict(export_with_type=False) for entry in TEST_CUSTOM_ASSETS[1:3]]  # noqa: E501
 
     # filter by identifier
     response = requests.post(
@@ -98,7 +98,7 @@ def test_get_custom_assets(rotkehlchen_api_server) -> None:
     result = assert_proper_response_with_result(response)
     assert len(result['entries']) == 1
     assert result['entries_found'] == 1
-    assert result['entries'][0] == TEST_CUSTOM_ASSETS[3].to_dict()
+    assert result['entries'][0] == TEST_CUSTOM_ASSETS[3].to_dict(export_with_type=False)
 
     # test that filtering with a non-existent name returns no entries
     response = requests.post(
@@ -204,7 +204,7 @@ def test_add_custom_asset(rotkehlchen_api_server) -> None:
 
 def test_edit_custom_asset(rotkehlchen_api_server) -> None:
     _populate_custom_assets_table(rotkehlchen_api_server.rest_api.rotkehlchen.data.db)
-    data = TEST_CUSTOM_ASSETS[0].to_dict()
+    data = TEST_CUSTOM_ASSETS[0].to_dict(export_with_type=False)
     data['name'] = 'Milky Way'
     response = requests.patch(
         api_url_for(
@@ -256,7 +256,7 @@ def test_edit_custom_asset(rotkehlchen_api_server) -> None:
     assert_error_response(response, contained_in_msg='but it was not found', status_code=HTTPStatus.CONFLICT)  # noqa: E501
 
     # check that keeping the name unchanged works
-    data = TEST_CUSTOM_ASSETS[2].to_dict()
+    data = TEST_CUSTOM_ASSETS[2].to_dict(export_with_type=False)
     data['notes'] = 'Unchanged LFG!'
     response = requests.patch(
         api_url_for(
