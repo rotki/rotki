@@ -23,18 +23,13 @@ const worksWithoutPremium = (period: TimeFrameSetting): boolean =>
   isPeriodAllowed(period) || period === TimeFramePersist.REMEMBER;
 
 const { t } = useI18n();
-const css = useCssModule();
 </script>
 
 <template>
-  <div :class="css.timeframe_selector">
-    <RuiTooltip v-if="!premium" :popper="{ placement: 'top' }">
+  <div class="flex gap-4 items-center text-center">
+    <RuiTooltip v-if="!premium" class="mr-4" :popper="{ placement: 'top' }">
       <template #activator>
-        <RuiIcon
-          class="-ml-4 text-rui-text-secondary"
-          size="16"
-          name="lock-2-fill"
-        />
+        <RuiIcon class="text-rui-text-secondary" name="lock-2-fill" />
       </template>
       <span v-text="t('overall_balances.premium_hint')" />
     </RuiTooltip>
@@ -59,9 +54,3 @@ const css = useCssModule();
     </RuiButtonGroup>
   </div>
 </template>
-
-<style module lang="scss">
-.timeframe_selector {
-  @apply flex gap-4 items-center text-center;
-}
-</style>

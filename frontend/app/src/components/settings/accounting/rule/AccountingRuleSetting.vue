@@ -13,7 +13,8 @@ import {
 const { t } = useI18n();
 const router = useRouter();
 
-const { getAccountingRules } = useAccountingSettings();
+const { getAccountingRules, getAccountingRulesConflicts } =
+  useAccountingSettings();
 
 const {
   state,
@@ -35,8 +36,29 @@ const {
   Matcher
 >(null, true, useAccountingRuleFilter, getAccountingRules);
 
+const conflictsExist: Ref<boolean> = ref(false);
+
+const checkConflicts = async () => {
+  const { data } = await getAccountingRulesConflicts({ limit: 1, offset: 0 });
+  const conflicts = data.length > 0;
+  set(conflictsExist, conflicts);
+
+  const {
+    currentRoute: {
+      query: { resolveConflicts }
+    }
+  } = router;
+
+  if (resolveConflicts) {
+    if (conflicts) {
+      set(conflictsDialogOpen, true);
+    }
+    await router.replace({ query: {} });
+  }
+};
+
 onMounted(async () => {
-  await fetchData();
+  await refresh();
 });
 
 const tableHeaders = computed<DataTableHeader[]>(() => [
@@ -144,6 +166,11 @@ const deleteAccountingRule = async (item: AccountingRuleEntry) => {
   }
 };
 
+const refresh = async () => {
+  await fetchData();
+  await checkConflicts();
+};
+
 const showDeleteConfirmation = (item: AccountingRuleEntry) => {
   show(
     {
@@ -177,6 +204,8 @@ onMounted(async () => {
     await router.replace({ query: {} });
   }
 });
+
+const conflictsDialogOpen: Ref<boolean> = ref(false);
 </script>
 
 <template>
@@ -189,7 +218,7 @@ onMounted(async () => {
               variant="outlined"
               color="primary"
               :loading="isLoading"
-              @click="fetchData()"
+              @click="refresh()"
             >
               <template #prepend>
                 <RuiIcon name="refresh-line" />
@@ -210,8 +239,23 @@ onMounted(async () => {
 
     <RuiCard>
       <template #custom-header>
-        <div class="flex items-center justify-end p-4 pb-0">
-          <div class="w-full md:w-[25rem]">
+        <div class="flex items-center justify-between p-4 pb-0 gap-4">
+          <template v-if="conflictsExist">
+            <RuiButton color="warning" @click="conflictsDialogOpen = true">
+              <template #prepend>
+                <RuiIcon name="error-warning-line" />
+              </template>
+              {{ t('accounting_settings.rule.conflicts.title') }}
+            </RuiButton>
+            <AccountingRuleConflictsDialog
+              v-if="conflictsDialogOpen"
+              :table-headers="tableHeaders"
+              @close="conflictsDialogOpen = false"
+              @refresh="refresh()"
+            />
+          </template>
+
+          <div class="w-full md:w-[25rem] ml-auto">
             <TableFilter
               :matches="filters"
               :matchers="matchers"
@@ -220,6 +264,7 @@ onMounted(async () => {
           </div>
         </div>
       </template>
+
       <CollectionHandler :collection="state" @set-page="setPage($event)">
         <template #default="{ data, itemLength }">
           <DataTable

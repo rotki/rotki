@@ -201,6 +201,7 @@ onMounted(async () => {
       </VDialog>
       <AssetUpdateMessage
         v-else
+        class="max-w-[800px] mx-auto"
         :headless="headless"
         :versions="changes"
         @update:versions="changes = $event"
@@ -209,7 +210,7 @@ onMounted(async () => {
       />
     </div>
 
-    <ConflictDialog
+    <AssetConflictDialog
       v-if="showConflictDialog"
       v-model="showConflictDialog"
       :conflicts="conflicts"

@@ -17,9 +17,9 @@ const isAddress = computed(() => get(field) === 'address');
 </script>
 
 <template>
-  <VRow class="mt-2 mb-2" no-gutters>
-    <VCol cols="auto" class="font-medium"> {{ field }}: </VCol>
-    <VCol class="ms-4" :class="diff ? 'red--text font-weight-bold' : null">
+  <div class="my-2 flex">
+    <div class="font-medium">{{ field }}:</div>
+    <div class="ml-4" :class="diff ? 'font-bold text-rui-error' : null">
       <span v-if="isStarted">
         <DateDisplay v-if="value" :timestamp="value" />
         <span v-else>-</span>
@@ -31,6 +31,6 @@ const isAddress = computed(() => get(field) === 'address');
       <span v-else>
         {{ value }}
       </span>
-    </VCol>
-  </VRow>
+    </div>
+  </div>
 </template>

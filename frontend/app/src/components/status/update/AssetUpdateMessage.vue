@@ -64,8 +64,8 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <Card :flat="headless" :outlined="false">
-    <template #title>{{ t('asset_update.title') }}</template>
+  <RuiCard variant="flat" :class="{ 'bg-transparent': headless }">
+    <template #header> {{ t('asset_update.title') }} </template>
     <i18n class="text-body-1" tag="div" path="asset_update.description">
       <template #remote>
         <span class="font-medium">{{ versions.remote }}</span>
@@ -78,54 +78,51 @@ const { t } = useI18n();
       {{ t('asset_update.total_changes', { changes: versions.changes }) }}
     </div>
 
-    <div v-if="multiple" class="font-medium text-body-1 mt-4">
+    <div v-if="multiple" class="font-medium text-body-1 mt-6">
       {{ t('asset_update.advanced') }}
     </div>
-    <VRow v-if="multiple">
-      <VCol>
-        <VCheckbox
-          v-model="partial"
-          class="asset-update__partial"
+    <div v-if="multiple">
+      <RuiCheckbox
+        v-model="partial"
+        class="asset-update__partial"
+        hide-details
+        color="primary"
+      >
+        {{ t('asset_update.partially_update') }}
+      </RuiCheckbox>
+      <div class="ml-8 md:w-1/2">
+        <RuiTextField
+          :disabled="!partial"
+          :value="upToVersion"
+          variant="outlined"
+          color="primary"
+          type="number"
           dense
           hide-details
-          :label="t('asset_update.partially_update')"
+          :min="versions.local"
+          :max="versions.remote"
+          :label="t('asset_update.up_to_version')"
+          @change="onChange($event)"
         />
-        <VCol cols="6" class="pa-0 ml-8 mt-2 mb-2">
-          <VTextField
-            :disabled="!partial"
-            :value="upToVersion"
-            outlined
-            type="number"
-            dense
-            hide-details
-            :min="versions.local"
-            :max="versions.remote"
-            :label="t('asset_update.up_to_version')"
-            @change="onChange($event)"
-          />
-        </VCol>
-      </VCol>
-    </VRow>
-    <template v-if="headless" #options>
-      <VCheckbox
-        v-model="skipUpdate"
-        dense
-        :label="t('asset_update.skip_notification')"
-      />
+      </div>
+    </div>
+    <div v-if="headless">
+      <RuiCheckbox v-model="skipUpdate" dense color="primary">
+        {{ t('asset_update.skip_notification') }}
+      </RuiCheckbox>
+    </div>
+    <template #footer>
+      <div class="grow" />
+      <RuiButton
+        variant="text"
+        color="primary"
+        @click="emit('dismiss', skipUpdate)"
+      >
+        {{ t('common.actions.skip') }}
+      </RuiButton>
+      <RuiButton color="primary" @click="emit('confirm')">
+        {{ t('common.actions.update') }}
+      </RuiButton>
     </template>
-    <template #buttons>
-      <VRow justify="end" no-gutters>
-        <VCol cols="auto" class="mr-2">
-          <VBtn text @click="emit('dismiss', skipUpdate)">
-            {{ t('common.actions.skip') }}
-          </VBtn>
-        </VCol>
-        <VCol cols="auto">
-          <VBtn color="primary" depressed @click="emit('confirm')">
-            {{ t('common.actions.update') }}
-          </VBtn>
-        </VCol>
-      </VRow>
-    </template>
-  </Card>
+  </RuiCard>
 </template>

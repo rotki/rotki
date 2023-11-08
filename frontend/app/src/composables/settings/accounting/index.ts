@@ -1,12 +1,20 @@
 import { type MaybeRef } from '@vueuse/core';
 import {
+  type AccountingRuleConflict,
+  type AccountingRuleConflictRequestPayload,
+  type AccountingRuleConflictResolution,
   type AccountingRuleEntry,
   type AccountingRuleRequestPayload
 } from '@/types/settings/accounting';
 import { type Collection } from '@/types/collection';
+import { type ActionStatus } from '@/types/action';
 
 export const useAccountingSettings = () => {
-  const { fetchAccountingRules } = useAccountingApi();
+  const {
+    fetchAccountingRules,
+    fetchAccountingRuleConflicts,
+    resolveAccountingRuleConflicts: resolveAccountingRuleConflictsCaller
+  } = useAccountingApi();
 
   const { t } = useI18n();
 
@@ -35,7 +43,47 @@ export const useAccountingSettings = () => {
     }
   };
 
+  const getAccountingRulesConflicts = async (
+    payload: MaybeRef<AccountingRuleConflictRequestPayload>
+  ): Promise<Collection<AccountingRuleConflict>> => {
+    try {
+      const response = await fetchAccountingRuleConflicts(get(payload));
+
+      return mapCollectionResponse(response);
+    } catch (e: any) {
+      logger.error(e);
+      const message = e?.message ?? e ?? '';
+
+      notify({
+        title: t(
+          'accounting_settings.rule.conflicts.fetch_error.title'
+        ).toString(),
+        message: t('accounting_settings.rule.conflicts.fetch_error.message', {
+          message
+        }).toString(),
+        display: true
+      });
+
+      return defaultCollectionState();
+    }
+  };
+
+  const resolveAccountingRuleConflicts = async (
+    payload: AccountingRuleConflictResolution
+  ): Promise<ActionStatus> => {
+    try {
+      await resolveAccountingRuleConflictsCaller(payload);
+
+      return { success: true };
+    } catch (e: any) {
+      logger.error(e);
+      return { success: false, message: e.message };
+    }
+  };
+
   return {
-    getAccountingRules
+    getAccountingRules,
+    getAccountingRulesConflicts,
+    resolveAccountingRuleConflicts
   };
 };
