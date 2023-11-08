@@ -12801,8 +12801,9 @@ Solving conflicts in accounting rules
 
       {
       "result":{
-         "entries":{
-            "1":{
+         "entries":[
+            {
+               "local_id": 1,
                "local_data":{
                   "taxable":{
                      "value":true,
@@ -12836,7 +12837,7 @@ Solving conflicts in accounting rules
                   "counterparty":"compound"
                }
             }
-         },
+         ],
          "entries_found":1,
          "entries_total":1,
          "entries_limit":-1

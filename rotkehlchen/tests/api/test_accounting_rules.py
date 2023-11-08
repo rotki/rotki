@@ -270,7 +270,6 @@ def test_solving_conflicts(
 
 
 @pytest.mark.parametrize('initialize_accounting_rules', [False])
-@pytest.mark.parametrize('legacy_messages_via_websockets', [True])
 @pytest.mark.parametrize('solve_all_using', ['remote', 'local'])
 def test_solving_conflicts_all(
         rotkehlchen_api_server: APIServer,
@@ -303,3 +302,66 @@ def test_solving_conflicts_all(
             assert cursor.fetchone()[0] == 0  # remote version has it as false
             cursor.execute('SELECT taxable FROM accounting_rules WHERE identifier=?', (2,))
             assert cursor.fetchone()[0] == 0  # local version has it as true
+
+
+@pytest.mark.parametrize('initialize_accounting_rules', [False])
+def test_listing_conflicts(
+        rotkehlchen_api_server: APIServer,
+        latest_accounting_rules: Path,
+):
+    """Test that serialization for conflicts works as expected"""
+    _setup_conflict_tests(rotkehlchen_api_server, latest_accounting_rules)
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'accountingrulesconflictsresource',
+        ),
+    )
+    result = assert_proper_response_with_result(response)
+    assert result['entries'] == [
+        {
+            'local_id': 2,
+            'local_data': {
+                'taxable': {'value': True, 'linked_setting': 'include_crypto2crypto'},
+                'count_cost_basis_pnl': {'value': True},
+                'count_entire_amount_spend': {'value': False},
+                'accounting_treatment': None,
+                'event_type': 'staking',
+                'event_subtype': 'deposit asset',
+                'counterparty': None,
+            },
+            'remote_data': {
+                'taxable': {'value': False},
+                'count_cost_basis_pnl': {'value': False},
+                'count_entire_amount_spend': {'value': False},
+                'accounting_treatment': None,
+                'event_type': 'staking',
+                'event_subtype': 'deposit asset',
+                'counterparty': None,
+            },
+        }, {
+            'local_id': 1,
+            'local_data': {
+                'taxable': {'value': True, 'linked_setting': 'include_crypto2crypto'},
+                'count_cost_basis_pnl': {'value': True},
+                'count_entire_amount_spend': {
+                    'value': False,
+                    'linked_setting': 'include_crypto2crypto',
+                },
+                'accounting_treatment': None,
+                'event_type': 'spend',
+                'event_subtype': 'return wrapped',
+                'counterparty': 'compound',
+            },
+            'remote_data': {
+                'taxable': {'value': False},
+                'count_cost_basis_pnl': {'value': False},
+                'count_entire_amount_spend': {'value': False},
+                'accounting_treatment': 'swap',
+                'event_type': 'spend',
+                'event_subtype': 'return wrapped',
+                'counterparty': 'compound',
+            },
+        },
+    ]
+    assert result['entries_total'] == 2
