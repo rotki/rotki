@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any, Literal
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings, TxAccountingTreatment
 from rotkehlchen.db.accounting_rules import DBAccountingRules
+from rotkehlchen.db.constants import NO_ACCOUNTING_COUNTERPARTY
 from rotkehlchen.db.filtering import DBFilterQuery
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.utils.mixins.enums import DBIntEnumMixIn
@@ -30,7 +31,7 @@ def _serialize_accounting_dict_to_rule(raw_data: dict[str, Any]) -> dict[str, An
     output = rule.serialize()
     output['event_type'] = HistoryEventType.deserialize(raw_data['event_type'])
     output['event_subtype'] = HistoryEventSubType.deserialize(raw_data['event_subtype'])
-    output['counterparty'] = raw_data['counterparty']
+    output['counterparty'] = raw_data['counterparty'] if raw_data['counterparty'] != NO_ACCOUNTING_COUNTERPARTY else None  # noqa: E501
     for linked_property, setting_name in raw_data.get('links', {}).items():
         output[linked_property]['linked_setting'] = setting_name
 
@@ -64,7 +65,7 @@ class DBRemoteConflicts:
                 conflicts,
             )
 
-    def list_accounting_conflicts(self, filter_query: DBFilterQuery) -> dict[str, Any]:
+    def list_accounting_conflicts(self, filter_query: DBFilterQuery) -> list[dict[str, Any]]:
         """
         Retrieve the accounting rules conflicts paginated. May raise:
         - DeserializationError
@@ -89,7 +90,7 @@ class DBRemoteConflicts:
                     'taxable': entry[4],
                     'count_entire_amount_spend': entry[5],
                     'count_cost_basis_pnl': entry[6],
-                    'accounting_treatment': entry[7],
+                    'accounting_treatment': TxAccountingTreatment.deserialize_from_db(entry[7]).serialize() if entry[7] is not None else None,  # noqa: E501
                 }
                 id_to_data[entry[0]] = {
                     'local_data': local_data,
@@ -109,11 +110,13 @@ class DBRemoteConflicts:
                 local_data['links'][entry[1]] = entry[2]
 
         # transform data from dict to serialized rules
-        for conflicts_cases in id_to_data.values():
-            conflicts_cases['local_data'] = _serialize_accounting_dict_to_rule(conflicts_cases['local_data'])  # noqa: E501
-            conflicts_cases['remote_data'] = _serialize_accounting_dict_to_rule(conflicts_cases['remote_data'])  # noqa: E501
+        result = [{
+            'local_id': local_id,
+            'local_data': _serialize_accounting_dict_to_rule(conflicts_cases['local_data']),
+            'remote_data': _serialize_accounting_dict_to_rule(conflicts_cases['remote_data']),
+        } for local_id, conflicts_cases in id_to_data.items()]
 
-        return id_to_data
+        return result
 
     def solve_accounting_rule_conflicts(
             self,
