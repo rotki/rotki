@@ -440,13 +440,16 @@ class CustomAsset(AssetWithNameAndType):
             self.notes,
         )
 
-    def to_dict(self) -> dict[str, Any]:
-        return {
+    def to_dict(self, export_with_type: bool = True) -> dict[str, Any]:
+        result = super().to_dict() | {
             'identifier': self.identifier,
-            'name': self.name,
             'custom_asset_type': self.custom_asset_type,
             'notes': self.notes,
         }
+        if export_with_type is False:
+            result.pop('asset_type')
+
+        return result
 
 
 EthereumTokenDBTuple = tuple[
@@ -546,7 +549,7 @@ class EvmToken(CryptoAsset):
             token_kind=EvmTokenKind.deserialize_from_db(entry[3]),
             decimals=entry[4],
             name=entry[5],
-            symbol=entry[6],
+            symbol=entry[6] if entry[6] is not None else '',
             started=Timestamp(entry[7]),  # type: ignore
             swapped_for=swapped_for,
             coingecko=entry[9],

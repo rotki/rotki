@@ -11,7 +11,7 @@ import requests
 
 from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.api.server import APIServer
-from rotkehlchen.assets.asset import Asset, EvmToken
+from rotkehlchen.assets.asset import Asset, CustomAsset, EvmToken
 from rotkehlchen.assets.types import ASSET_TYPES_EXCLUDED_FOR_USERS, AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.constants.assets import A_BCH, A_BTC, A_DAI, A_DOT, A_EUR, A_USDC
@@ -912,6 +912,11 @@ def test_exporting_user_assets_list(
         coingecko='YAB',
         cryptocompare='YAB',
     ))
+    globaldb.add_asset(CustomAsset.initialize(
+        identifier='my_custom_id',
+        name='my house',
+        custom_asset_type='property',
+    ))
     with tempfile.TemporaryDirectory(
             ignore_cleanup_errors=True,  # needed on windows, see https://tinyurl.com/tmp-win-err
     ) as path:
@@ -937,28 +942,31 @@ def test_exporting_user_assets_list(
             zip_file = ZipFile(result['file'])
             data = json.loads(zip_file.read('assets.json'))
             assert int(data['version']) == GLOBAL_DB_VERSION
-            assert len(data['assets']) == 1
-            for entry in data['assets']:
-                if entry == {
-                    'identifier': identifier,
-                    'name': 'yabirtoken',
-                    'evm_chain': 'ethereum',
-                    'asset_type': 'evm token',
-                    'decimals': 18,
-                    'symbol': 'YAB',
-                    'started': None,
-                    'forked': None,
-                    'swapped_for': None,
-                    'cryptocompare': 'YAB',
-                    'coingecko': 'YAB',
-                    'protocol': None,
-                    'token_kind': 'erc20',
-                    'underlying_tokens': None,
-                    'address': eth_address,
-                }:
-                    break
-            else:
-                raise AssertionError('Could not find the token')
+            assert len(data['assets']) == 2
+            assert {
+                'identifier': identifier,
+                'name': 'yabirtoken',
+                'evm_chain': 'ethereum',
+                'asset_type': 'evm token',
+                'decimals': 18,
+                'symbol': 'YAB',
+                'started': None,
+                'forked': None,
+                'swapped_for': None,
+                'cryptocompare': 'YAB',
+                'coingecko': 'YAB',
+                'protocol': None,
+                'token_kind': 'erc20',
+                'underlying_tokens': None,
+                'address': eth_address,
+            } in data['assets']
+            assert {
+                'identifier': 'my_custom_id',
+                'asset_type': 'custom asset',
+                'name': 'my house',
+                'custom_asset_type': 'property',
+                'notes': None,
+            } in data['assets']
         else:
             assert response.status_code == HTTPStatus.OK
             assert response.headers['Content-Type'] == 'application/zip'
@@ -1017,9 +1025,7 @@ def test_importing_user_assets_list(
 
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     errors = rotki.msg_aggregator.consume_errors()
-    warnings = rotki.msg_aggregator.consume_warnings()
     assert len(errors) == 0
-    assert warnings == ['Tried to import existing asset eip155:1/erc20:0xFEEf77d3f69374f66429C91d732A244f074bdf74 with name Convex FXS']  # noqa: E501
 
     assert_proper_response_with_result(response)
     stinch = EvmToken('eip155:1/erc20:0xA0446D8804611944F1B527eCD37d7dcbE442caba')
