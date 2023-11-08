@@ -5,7 +5,7 @@ from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings
+from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings, TxAccountingTreatment
 from rotkehlchen.db.constants import (
     LINKABLE_ACCOUNTING_PROPERTIES,
     LINKABLE_ACCOUNTING_SETTINGS_NAME,
@@ -225,9 +225,31 @@ class DBAccountingRules:
         ]
         missing_accounting_rule: list[bool] = []
         with self.db.conn.read_ctx() as cursor:
-            for idx in range(len(events)):
+            for idx, event in enumerate(events):
                 row = cursor.execute(query, bindings[idx]).fetchone()
-                missing_accounting_rule.append(row[0] == 0)
+                if (is_missing_rule := row[0] == 0) is False:
+                    missing_accounting_rule.append(is_missing_rule)
+                    continue
+
+                if (  # check for cases that could use accounting_treatment
+                    event.event_type == HistoryEventType.TRADE and
+                    event.event_subtype in (HistoryEventSubType.RECEIVE, HistoryEventSubType.FEE)
+                ):
+                    cursor.execute(
+                        query + ' AND (accounting_treatment=? OR accounting_treatment=?)',
+                        (
+                            HistoryEventType.TRADE.serialize(),
+                            HistoryEventSubType.SPEND.serialize(),
+                            NO_ACCOUNTING_COUNTERPARTY if (counterparty := getattr(event, 'counterparty', None)) is None else counterparty,  # noqa: E501
+                            NO_ACCOUNTING_COUNTERPARTY,
+                            TxAccountingTreatment.SWAP.serialize_for_db(),
+                            TxAccountingTreatment.SWAP_WITH_FEE.serialize_for_db(),
+
+                        ),
+                    )
+                    missing_accounting_rule.append(cursor.fetchone()[0] == 0)
+                else:
+                    missing_accounting_rule.append(is_missing_rule)
 
         return missing_accounting_rule
 

@@ -1,11 +1,18 @@
 import pytest
+from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.evm.accounting.structures import TxAccountingTreatment, TxEventSettings
+from rotkehlchen.chain.evm.decoding.cowswap.constants import CPT_COWSWAP
+from rotkehlchen.constants.assets import A_ETH, A_USDC
+from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.accounting_rules import DBAccountingRules
 from rotkehlchen.db.constants import NO_ACCOUNTING_COUNTERPARTY
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.filtering import AccountingRulesFilterQuery
 from rotkehlchen.errors.misc import InputError
+from rotkehlchen.tests.utils.factories import make_evm_tx_hash
+from rotkehlchen.types import Location, TimestampMS
 
 
 def test_managing_accounting_rules(database: DBHandler) -> None:
@@ -142,3 +149,63 @@ def test_accounting_rules_linking(database: 'DBHandler', counterparty: str) -> N
         'count_cost_basis_pnl': {'value': True, 'linked_setting': 'include_crypto2crypto'},
         'accounting_treatment': None,
     }
+
+
+def test_missing_accounting_rules_accounting_treatment(database: 'DBHandler') -> None:
+    """
+    Test that if a rule has a special accounting treatment then the events
+    that can be affected by it are not marked as missing the accounting rule.
+    """
+    db = DBAccountingRules(database)
+    db.add_accounting_rule(
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.SPEND,
+        counterparty=CPT_COWSWAP,
+        rule=TxEventSettings(
+            taxable=True,
+            count_entire_amount_spend=True,
+            count_cost_basis_pnl=True,
+            accounting_treatment=TxAccountingTreatment.SWAP_WITH_FEE,
+        ),
+        links={},
+    )
+    tx_hash = make_evm_tx_hash()
+    swap_event_spend = EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=TimestampMS(16433333000),
+        location=Location.GNOSIS,
+        asset=A_USDC,
+        balance=Balance(amount=ONE),
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.SPEND,
+        counterparty=CPT_COWSWAP,
+        notes='my notes',
+    )
+    swap_event_receive = EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=TimestampMS(16433333000),
+        location=Location.GNOSIS,
+        asset=A_ETH,
+        balance=Balance(amount=ONE),
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        counterparty=CPT_COWSWAP,
+        notes='my notes',
+    )
+    swap_event_fee = EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=TimestampMS(16433333000),
+        location=Location.GNOSIS,
+        asset=A_ETH,
+        balance=Balance(amount=ONE),
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.FEE,
+        counterparty=CPT_COWSWAP,
+        notes='my notes',
+    )
+    assert not all(
+        db.missing_accounting_rules([swap_event_spend, swap_event_receive, swap_event_fee]),
+    )
