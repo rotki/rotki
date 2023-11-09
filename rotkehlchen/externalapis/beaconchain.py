@@ -262,22 +262,21 @@ class BeaconChain(ExternalServiceWithApiKey):
             module='validator',
             endpoint='performance',
         )
-        try:
-            performance = {}
-            for entry in data:
+        performance = {}
+        for entry in data:
+            try:
                 index = entry['validatorindex']
                 performance[index] = ValidatorPerformance(
-                    balance=entry['balance'],
-                    performance_1d=entry['performance1d'],
-                    performance_1w=entry['performance7d'],
-                    performance_1m=entry['performance31d'],
-                    performance_1y=entry['performance365d'],
-                    performance_total=entry['performancetotal'],
+                    balance=entry.get('balance', 0),
+                    performance_1d=entry.get('performance1d', 0),
+                    performance_1w=entry.get('performance7d', 0),
+                    performance_1m=entry.get('performance31d', 0),
+                    performance_1y=entry.get('performance365d', 0),
+                    performance_total=entry.get('performancetotal', 0),
                 )
-        except KeyError as e:
-            raise RemoteError(
-                f'Beaconcha.in performance response processing error. Missing key entry {e!s}',
-            ) from e
+            except KeyError as e:
+                log.error(f'Skipping validator from performance endpoint due to unknown key {e} in entry: {entry}')  # noqa: E501
+                continue
 
         return performance
 
