@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { type Ref } from 'vue';
-import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
 import { type HistoryEventEntry } from '@/types/history/events';
-import { isEvmEvent } from '@/utils/history/events';
 import Fragment from '@/components/helper/Fragment';
 
 const props = withDefaults(
@@ -33,10 +31,6 @@ const { t } = useI18n();
 
 const { eventGroup, allEvents } = toRefs(props);
 
-const { getChain } = useSupportedChains();
-
-const evaluating: Ref<boolean> = ref(false);
-
 const events: Ref<HistoryEventEntry[]> = asyncComputed(() => {
   const all = get(allEvents);
   const eventHeader = get(eventGroup);
@@ -58,25 +52,12 @@ const events: Ref<HistoryEventEntry[]> = asyncComputed(() => {
   return [eventHeader];
 }, []);
 
-const editEvent = (item: HistoryEventEntry) => emit('edit:event', item);
-const deleteEvent = (item: HistoryEventEntry) =>
-  emit('delete:event', {
-    item,
-    canDelete: isEvmEvent(item) ? get(events).length > 1 : true
-  });
-
 const ignoredInAccounting = useRefMap(
   eventGroup,
   ({ ignoredInAccounting }) => !!ignoredInAccounting
 );
 
 const panel: Ref<number[]> = ref(get(ignoredInAccounting) ? [] : [0]);
-
-const isNoTxHash = (item: HistoryEventEntry) =>
-  item.entryType === HistoryEventEntryType.EVM_EVENT &&
-  ((item.counterparty === 'eth2' && item.eventSubtype === 'deposit asset') ||
-    (item.counterparty === 'gitcoin' && item.eventSubtype === 'apply') ||
-    item.counterparty === 'safe-multisig');
 
 const showDropdown = computed(() => {
   const length = get(events).length;
@@ -96,78 +77,21 @@ watch(
 );
 
 const blockEvent = isEthBlockEventRef(eventGroup);
-const [DefineTable, ReuseTable] = createReusableTemplate();
 </script>
 
 <template>
   <Fragment>
-    <DefineTable>
-      <template v-if="events.length > 0">
-        <Fragment>
-          <div
-            v-for="(item, index) in events"
-            :key="index"
-            class="grid md:grid-cols-4 gap-x-2 gap-y-4 lg:grid-cols-9 xl:grid-cols-10 py-4 items-center"
-            :class="{
-              'border-b border-default': index < events.length - 1
-            }"
-          >
-            <HistoryEventType
-              :event="item"
-              :chain="getChain(item.location)"
-              class="md:col-span-2 lg:col-span-3"
-            />
-            <HistoryEventAsset :event="item" class="md:col-span-2" />
-            <HistoryEventNote
-              v-bind="item"
-              :amount="item.balance.amount"
-              :chain="getChain(item.location)"
-              :no-tx-hash="isNoTxHash(item)"
-              :block-number="blockEvent?.blockNumber"
-              class="break-words leading-6 md:col-span-3 xl:col-span-4"
-            />
-            <RowActions
-              class="md:col-span-1"
-              align="end"
-              :delete-tooltip="t('transactions.events.actions.delete')"
-              :edit-tooltip="t('transactions.events.actions.edit')"
-              @edit-click="editEvent(item)"
-              @delete-click="deleteEvent(item)"
-            >
-              <RuiTooltip
-                v-if="item.missingAccountingRule"
-                :popper="{ placement: 'top', offsetDistance: 0 }"
-                :open-delay="400"
-              >
-                <template #activator>
-                  <RuiButton
-                    variant="text"
-                    color="warning"
-                    icon
-                    @click="emit('show:missing-rule-action', item)"
-                  >
-                    <RuiIcon size="16" name="information-line" />
-                  </RuiButton>
-                </template>
-                {{ t('actions.history_events.missing_rule.title') }}
-              </RuiTooltip>
-            </RowActions>
-          </div>
-        </Fragment>
-      </template>
-
-      <template v-else>
-        <div v-if="loading || evaluating">
-          {{ t('transactions.events.loading') }}
-        </div>
-        <div v-else>
-          {{ t('transactions.events.no_data') }}
-        </div>
-      </template>
-    </DefineTable>
     <td colspan="1" />
     <td :colspan="colspan - 1">
-      <ReuseTable v-if="!showDropdown" />
+      <HistoryEventsListTable
+        v-if="!showDropdown"
+        :events="events"
+        :block-number="blockEvent?.blockNumber"
+        :loading="loading"
+        @delete:event="emit('delete:event', $event)"
+        @show:missing-rule-action="emit('show:missing-rule-action', $event)"
+        @edit:event="emit('edit:event', $event)"
+      />
       <VExpansionPanels v-else v-model="panel" flat multiple>
         <VExpansionPanel class="!bg-transparent !p-0">
           <VExpansionPanelHeader
@@ -187,7 +111,17 @@ const [DefineTable, ReuseTable] = createReusableTemplate();
             </template>
           </VExpansionPanelHeader>
           <VExpansionPanelContent class="!p-0 [&>*:first-child]:!p-0">
-            <ReuseTable />
+            <HistoryEventsListTable
+              v-if="showDropdown"
+              :events="events"
+              :block-number="blockEvent?.blockNumber"
+              :loading="loading"
+              @delete:event="emit('delete:event', $event)"
+              @show:missing-rule-action="
+                emit('show:missing-rule-action', $event)
+              "
+              @edit:event="emit('edit:event', $event)"
+            />
           </VExpansionPanelContent>
         </VExpansionPanel>
       </VExpansionPanels>
