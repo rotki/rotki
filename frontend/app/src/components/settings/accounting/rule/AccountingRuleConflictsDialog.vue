@@ -316,174 +316,178 @@ const save = async () => {
               }}
             </RuiTooltip>
           </template>
-          <template #item="{ item }">
-            <tr>
-              <td rowspan="2">
-                <div>
-                  {{ getHistoryEventTypeName(item.localData.eventType) }} -
-                </div>
-                <div>
-                  {{ getHistoryEventSubTypeName(item.localData.eventSubtype) }}
-                </div>
-              </td>
-              <td rowspan="2">
-                <HistoryEventTypeCombination
-                  :type="
-                    getType(
-                      item.localData.eventType,
-                      item.localData.eventSubtype
+          <template #body="{ items }">
+            <tbody v-for="item in items" :key="item.localId">
+              <tr>
+                <td rowspan="2">
+                  <div>
+                    {{ getHistoryEventTypeName(item.localData.eventType) }} -
+                  </div>
+                  <div>
+                    {{
+                      getHistoryEventSubTypeName(item.localData.eventSubtype)
+                    }}
+                  </div>
+                </td>
+                <td rowspan="2">
+                  <HistoryEventTypeCombination
+                    :type="
+                      getType(
+                        item.localData.eventType,
+                        item.localData.eventSubtype
+                      )
+                    "
+                    show-label
+                  />
+                </td>
+                <td rowspan="2" class="border-r border-default">
+                  <HistoryEventTypeCounterparty
+                    v-if="item.counterparty"
+                    text
+                    :event="{ counterparty: item.counterparty }"
+                  />
+                  <span v-else>-</span>
+                </td>
+                <td
+                  :class="
+                    diffClass(
+                      item.localData.taxable.value,
+                      item.remoteData.taxable.value
                     )
                   "
-                  show-label
-                />
-              </td>
-              <td rowspan="2" class="border-r border-default">
-                <HistoryEventTypeCounterparty
-                  v-if="item.counterparty"
-                  text
-                  :event="{ counterparty: item.counterparty }"
-                />
-                <span v-else>-</span>
-              </td>
-              <td
-                :class="
-                  diffClass(
-                    item.localData.taxable.value,
-                    item.remoteData.taxable.value
-                  )
-                "
-              >
-                <AccountingRuleWithLinkedSettingDisplay
-                  identifier="taxable"
-                  :item="item.localData.taxable"
-                />
-              </td>
-              <td
-                :class="
-                  diffClass(
-                    item.localData.taxable.value,
-                    item.remoteData.taxable.value
-                  )
-                "
-              >
-                <AccountingRuleWithLinkedSettingDisplay
-                  identifier="countEntireAmountSpend"
-                  :item="item.localData.countEntireAmountSpend"
-                />
-              </td>
-              <td
-                :class="
-                  diffClass(
-                    item.localData.countCostBasisPnl.value,
-                    item.remoteData.countCostBasisPnl.value
-                  )
-                "
-              >
-                <AccountingRuleWithLinkedSettingDisplay
-                  identifier="countCostBasisPnl"
-                  :item="item.localData.countCostBasisPnl"
-                />
-              </td>
-              <td
-                :class="
-                  diffClass(
-                    item.localData.accountingTreatment,
-                    item.remoteData.accountingTreatment
-                  )
-                "
-              >
-                <BadgeDisplay v-if="item.accountingTreatment">
-                  {{ item.localData.accountingTreatment }}
-                </BadgeDisplay>
-                <span v-else>-</span>
-              </td>
-              <td class="align-bottom">
-                <RuiButtonGroup
-                  v-model="resolution[item.localId]"
-                  :disabled="!!solveAllUsing"
-                  color="primary"
-                  variant="outlined"
-                  class="w-full rounded-b-0"
-                  required
                 >
-                  <template #default>
-                    <RuiButton value="local" class="w-full">
-                      {{ t('conflict_dialog.action.local') }}
-                    </RuiButton>
-                  </template>
-                </RuiButtonGroup>
-              </td>
-            </tr>
-            <tr>
-              <td
-                :class="
-                  diffClass(
-                    item.localData.taxable.value,
-                    item.remoteData.taxable.value
-                  )
-                "
-              >
-                <AccountingRuleWithLinkedSettingDisplay
-                  identifier="taxable"
-                  :item="item.remoteData.taxable"
-                />
-              </td>
-              <td
-                :class="
-                  diffClass(
-                    item.localData.countEntireAmountSpend.value,
-                    item.remoteData.countEntireAmountSpend.value
-                  )
-                "
-              >
-                <AccountingRuleWithLinkedSettingDisplay
-                  identifier="countEntireAmountSpend"
-                  :item="item.remoteData.countEntireAmountSpend"
-                />
-              </td>
-              <td
-                :class="
-                  diffClass(
-                    item.localData.countCostBasisPnl.value,
-                    item.remoteData.countCostBasisPnl.value
-                  )
-                "
-              >
-                <AccountingRuleWithLinkedSettingDisplay
-                  identifier="countCostBasisPnl"
-                  :item="item.remoteData.countCostBasisPnl"
-                />
-              </td>
-              <td
-                :class="
-                  diffClass(
-                    item.localData.accountingTreatment,
-                    item.remoteData.accountingTreatment
-                  )
-                "
-              >
-                <BadgeDisplay v-if="item.accountingTreatment">
-                  {{ item.remoteData.accountingTreatment }}
-                </BadgeDisplay>
-                <span v-else>-</span>
-              </td>
-              <td class="align-top">
-                <RuiButtonGroup
-                  v-model="resolution[item.localId]"
-                  :disabled="!!solveAllUsing"
-                  color="primary"
-                  variant="outlined"
-                  class="w-full rounded-t-0"
-                  required
+                  <AccountingRuleWithLinkedSettingDisplay
+                    identifier="taxable"
+                    :item="item.localData.taxable"
+                  />
+                </td>
+                <td
+                  :class="
+                    diffClass(
+                      item.localData.taxable.value,
+                      item.remoteData.taxable.value
+                    )
+                  "
                 >
-                  <template #default>
-                    <RuiButton value="remote" class="w-full">
-                      {{ t('conflict_dialog.action.remote') }}
-                    </RuiButton>
-                  </template>
-                </RuiButtonGroup>
-              </td>
-            </tr>
+                  <AccountingRuleWithLinkedSettingDisplay
+                    identifier="countEntireAmountSpend"
+                    :item="item.localData.countEntireAmountSpend"
+                  />
+                </td>
+                <td
+                  :class="
+                    diffClass(
+                      item.localData.countCostBasisPnl.value,
+                      item.remoteData.countCostBasisPnl.value
+                    )
+                  "
+                >
+                  <AccountingRuleWithLinkedSettingDisplay
+                    identifier="countCostBasisPnl"
+                    :item="item.localData.countCostBasisPnl"
+                  />
+                </td>
+                <td
+                  :class="
+                    diffClass(
+                      item.localData.accountingTreatment,
+                      item.remoteData.accountingTreatment
+                    )
+                  "
+                >
+                  <BadgeDisplay v-if="item.accountingTreatment">
+                    {{ item.localData.accountingTreatment }}
+                  </BadgeDisplay>
+                  <span v-else>-</span>
+                </td>
+                <td class="align-bottom">
+                  <RuiButtonGroup
+                    v-model="resolution[item.localId]"
+                    :disabled="!!solveAllUsing"
+                    color="primary"
+                    variant="outlined"
+                    class="w-full rounded-b-0"
+                    required
+                  >
+                    <template #default>
+                      <RuiButton value="local" class="w-full">
+                        {{ t('conflict_dialog.action.local') }}
+                      </RuiButton>
+                    </template>
+                  </RuiButtonGroup>
+                </td>
+              </tr>
+              <tr>
+                <td
+                  :class="
+                    diffClass(
+                      item.localData.taxable.value,
+                      item.remoteData.taxable.value
+                    )
+                  "
+                >
+                  <AccountingRuleWithLinkedSettingDisplay
+                    identifier="taxable"
+                    :item="item.remoteData.taxable"
+                  />
+                </td>
+                <td
+                  :class="
+                    diffClass(
+                      item.localData.countEntireAmountSpend.value,
+                      item.remoteData.countEntireAmountSpend.value
+                    )
+                  "
+                >
+                  <AccountingRuleWithLinkedSettingDisplay
+                    identifier="countEntireAmountSpend"
+                    :item="item.remoteData.countEntireAmountSpend"
+                  />
+                </td>
+                <td
+                  :class="
+                    diffClass(
+                      item.localData.countCostBasisPnl.value,
+                      item.remoteData.countCostBasisPnl.value
+                    )
+                  "
+                >
+                  <AccountingRuleWithLinkedSettingDisplay
+                    identifier="countCostBasisPnl"
+                    :item="item.remoteData.countCostBasisPnl"
+                  />
+                </td>
+                <td
+                  :class="
+                    diffClass(
+                      item.localData.accountingTreatment,
+                      item.remoteData.accountingTreatment
+                    )
+                  "
+                >
+                  <BadgeDisplay v-if="item.accountingTreatment">
+                    {{ item.remoteData.accountingTreatment }}
+                  </BadgeDisplay>
+                  <span v-else>-</span>
+                </td>
+                <td class="align-top">
+                  <RuiButtonGroup
+                    v-model="resolution[item.localId]"
+                    :disabled="!!solveAllUsing"
+                    color="primary"
+                    variant="outlined"
+                    class="w-full rounded-t-0"
+                    required
+                  >
+                    <template #default>
+                      <RuiButton value="remote" class="w-full">
+                        {{ t('conflict_dialog.action.remote') }}
+                      </RuiButton>
+                    </template>
+                  </RuiButtonGroup>
+                </td>
+              </tr>
+            </tbody>
           </template>
         </DataTable>
       </template>

@@ -186,12 +186,8 @@ export const useMessageHandling = () => {
 
   const handleAccountingRuleConflictMessage = (
     data: AccountingRuleConflictData
-  ): Notification | null => {
+  ): Notification => {
     const { numOfConflicts } = data;
-
-    if (numOfConflicts === 0) {
-      return null;
-    }
 
     return {
       title: t('notification_messages.accounting_rule_conflict.title'),
@@ -256,7 +252,7 @@ export const useMessageHandling = () => {
     } else if (type === SocketMessageType.DB_UPLOAD_RESULT) {
       addNotification(handleDbUploadMessage(message.data));
     } else if (type === SocketMessageType.ACCOUNTING_RULE_CONFLICT) {
-      addNotification(handleAccountingRuleConflictMessage(message.data));
+      notifications.push(handleAccountingRuleConflictMessage(message.data));
     } else {
       logger.warn(`Unsupported socket message received: '${type}'`);
     }

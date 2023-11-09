@@ -42,28 +42,26 @@ const value: ComputedRef<boolean> = computed(() => {
 </script>
 
 <template>
-  <div class="flex items-center justify-center">
-    <RuiBadge
-      placement="top"
-      size="sm"
-      color="secondary"
-      class="[&_span]:!px-0"
-      :value="!!selectedLinkableSetting"
-    >
-      <template #icon>
-        <RuiTooltip
-          v-if="selectedLinkableSetting"
-          :popper="{ placement: 'top' }"
-          open-delay="400"
-        >
-          <template #activator>
-            <RuiIcon size="12" name="links-line" />
-          </template>
-          <div>{{ t('accounting_settings.rule.value_overwritten') }}</div>
-          <div class="font-bold">{{ selectedLinkableSetting.label }}</div>
-        </RuiTooltip>
-      </template>
-      <SuccessDisplay size="28" :success="value" />
-    </RuiBadge>
-  </div>
+  <RuiBadge
+    placement="top"
+    size="sm"
+    color="secondary"
+    class="[&_span]:!px-0 mt-1"
+    :value="!!selectedLinkableSetting"
+  >
+    <template #icon>
+      <RuiTooltip
+        v-if="selectedLinkableSetting"
+        :popper="{ placement: 'top' }"
+        open-delay="400"
+      >
+        <template #activator>
+          <RuiIcon size="12" name="links-line" />
+        </template>
+        <div>{{ t('accounting_settings.rule.value_overwritten') }}</div>
+        <div class="font-bold">{{ selectedLinkableSetting.label }}</div>
+      </RuiTooltip>
+    </template>
+    <SuccessDisplay size="28" :success="value" />
+  </RuiBadge>
 </template>

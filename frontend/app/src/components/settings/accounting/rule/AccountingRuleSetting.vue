@@ -36,12 +36,11 @@ const {
   Matcher
 >(null, true, useAccountingRuleFilter, getAccountingRules);
 
-const conflictsExist: Ref<boolean> = ref(false);
+const conflictsNumber: Ref<number> = ref(0);
 
 const checkConflicts = async () => {
-  const { data } = await getAccountingRulesConflicts({ limit: 1, offset: 0 });
-  const conflicts = data.length > 0;
-  set(conflictsExist, conflicts);
+  const { total } = await getAccountingRulesConflicts({ limit: 1, offset: 0 });
+  set(conflictsNumber, total);
 
   const {
     currentRoute: {
@@ -50,7 +49,7 @@ const checkConflicts = async () => {
   } = router;
 
   if (resolveConflicts) {
-    if (conflicts) {
+    if (total > 0) {
       set(conflictsDialogOpen, true);
     }
     await router.replace({ query: {} });
@@ -240,12 +239,21 @@ const conflictsDialogOpen: Ref<boolean> = ref(false);
     <RuiCard>
       <template #custom-header>
         <div class="flex items-center justify-between p-4 pb-0 gap-4">
-          <template v-if="conflictsExist">
+          <template v-if="conflictsNumber > 0">
             <RuiButton color="warning" @click="conflictsDialogOpen = true">
               <template #prepend>
                 <RuiIcon name="error-warning-line" />
               </template>
               {{ t('accounting_settings.rule.conflicts.title') }}
+              <template #append>
+                <RuiChip
+                  size="sm"
+                  class="!p-0 !bg-rui-warning-darker"
+                  color="warning"
+                >
+                  {{ conflictsNumber }}
+                </RuiChip>
+              </template>
             </RuiButton>
             <AccountingRuleConflictsDialog
               v-if="conflictsDialogOpen"

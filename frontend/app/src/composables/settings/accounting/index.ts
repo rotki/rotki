@@ -32,10 +32,10 @@ export const useAccountingSettings = () => {
       const message = e?.message ?? e ?? '';
 
       notify({
-        title: t('accounting_settings.rule.fetch_error.title').toString(),
+        title: t('accounting_settings.rule.fetch_error.title'),
         message: t('accounting_settings.rule.fetch_error.message', {
           message
-        }).toString(),
+        }),
         display: true
       });
 
@@ -55,12 +55,10 @@ export const useAccountingSettings = () => {
       const message = e?.message ?? e ?? '';
 
       notify({
-        title: t(
-          'accounting_settings.rule.conflicts.fetch_error.title'
-        ).toString(),
+        title: t('accounting_settings.rule.conflicts.fetch_error.title'),
         message: t('accounting_settings.rule.conflicts.fetch_error.message', {
           message
-        }).toString(),
+        }),
         display: true
       });
 
