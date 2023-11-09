@@ -248,7 +248,7 @@ const { dark } = useTheme();
         #top="{ pagination, options: opt, updateOptions }"
       >
         <VDataFooter
-          class="!border-t-0"
+          class="!border-t-0 border-b"
           v-bind="footerProps"
           :pagination="pagination"
           :options="opt"
@@ -304,6 +304,10 @@ const { dark } = useTheme();
     }
   }
 
+  .v-data-footer {
+    border-color: var(--border-color);
+  }
+
   &.v-data-table--dense {
     .v-data-footer__pagination {
       @apply ml-2 -mr-4;
@@ -324,6 +328,57 @@ const { dark } = useTheme();
           .table-expand-container {
             height: auto !important;
             display: block;
+          }
+        }
+      }
+    }
+  }
+
+  tbody {
+    &:hover {
+      td {
+        &[rowspan] {
+          @apply bg-rui-grey-200;
+        }
+      }
+    }
+
+    tr {
+      td {
+        border-color: var(--border-color);
+        @apply border-b;
+      }
+
+      &:hover {
+        td {
+          @apply bg-rui-grey-200;
+        }
+      }
+    }
+  }
+
+  &.theme {
+    &--dark {
+      .v-data-table__expanded {
+        &__content {
+          background-color: var(--v-dark-lighten1) !important;
+        }
+      }
+
+      tbody {
+        tr {
+          &:hover {
+            td {
+              @apply bg-rui-grey-800;
+            }
+          }
+        }
+
+        &:hover {
+          td {
+            &[rowspan] {
+              @apply bg-rui-grey-800;
+            }
           }
         }
       }
@@ -361,18 +416,6 @@ const { dark } = useTheme();
     &:empty {
       + div {
         display: none;
-      }
-    }
-  }
-}
-
-.theme {
-  &--dark {
-    :deep(.v-data-table) {
-      .v-data-table__expanded {
-        &__content {
-          background-color: var(--v-dark-lighten1) !important;
-        }
       }
     }
   }

@@ -46,7 +46,7 @@ const value: ComputedRef<boolean> = computed(() => {
     placement="top"
     size="sm"
     color="secondary"
-    class="[&_span]:!px-0"
+    class="[&_span]:!px-0 mt-1"
     :value="!!selectedLinkableSetting"
   >
     <template #icon>

@@ -202,6 +202,7 @@ const isIgnored = (asset: string) => get(isAssetIgnored(asset));
             :headers="childHeaders"
             :items="item.acquisitions"
             :container="tableContainer"
+            disable-floating-header
           >
             <template #item.time="{ item: childItem }">
               <DateDisplay :timestamp="childItem.time" />

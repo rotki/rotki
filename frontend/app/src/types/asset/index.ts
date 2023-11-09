@@ -4,7 +4,10 @@ import {
   SupportedAsset
 } from '@rotki/common/lib/data';
 import { z } from 'zod';
-import { type PaginationRequestPayload } from '@/types/common';
+import {
+  type ConflictResolutionStrategy,
+  type PaginationRequestPayload
+} from '@/types/common';
 import { CollectionCommonFields } from '@/types/collection';
 
 export interface AssetDBVersion {
@@ -110,26 +113,18 @@ export interface AssetIdResponse {
   readonly identifier: string;
 }
 
-export const RESOLVE_REMOTE = 'remote';
-
-export const RESOLVE_LOCAL = 'local';
-
-export const CONFLICT_RESOLUTION = [RESOLVE_REMOTE, RESOLVE_LOCAL] as const;
+export type ConflictResolution = Readonly<
+  Record<string, ConflictResolutionStrategy>
+>;
 
 export const EVM_TOKEN = 'evm token';
 
 export const CUSTOM_ASSET = 'custom asset';
 
-export type ConflictResolutionStrategy = (typeof CONFLICT_RESOLUTION)[number];
-
 export interface AssetUpdatePayload {
   readonly resolution?: ConflictResolution;
   readonly version: number;
 }
-
-export type ConflictResolution = Readonly<
-  Record<string, ConflictResolutionStrategy>
->;
 
 export const SupportedAssets = CollectionCommonFields.extend({
   entries: z.array(SupportedAsset)
