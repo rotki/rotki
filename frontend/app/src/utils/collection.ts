@@ -73,11 +73,12 @@ export const setupEntryLimit = (
   const itemLength: ComputedRef<number> = computed(() => {
     const isPremium = get(premium);
     const totalFound = get(found);
-    if (isPremium) {
+    const entryLimit = get(limit);
+
+    if (isPremium || entryLimit === -1) {
       return totalFound;
     }
 
-    const entryLimit = get(limit);
     return Math.min(totalFound, entryLimit);
   });
 
