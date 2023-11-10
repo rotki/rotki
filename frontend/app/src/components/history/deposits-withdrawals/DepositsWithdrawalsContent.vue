@@ -137,6 +137,7 @@ watch(loading, async (isLoading, wasLoading) => {
 <template>
   <TablePageLayout
     :hide-header="!mainPage"
+    :child="!mainPage"
     :title="[t('navigation_menu.history'), t('deposits_withdrawals.title')]"
   >
     <template #buttons>

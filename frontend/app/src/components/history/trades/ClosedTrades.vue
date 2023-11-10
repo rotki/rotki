@@ -280,6 +280,7 @@ watch(loading, async (isLoading, wasLoading) => {
 <template>
   <TablePageLayout
     :hide-header="!!locationOverview"
+    :child="!mainPage"
     :title="[t('navigation_menu.history'), t('closed_trades.title')]"
   >
     <template #buttons>
