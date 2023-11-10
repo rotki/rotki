@@ -186,9 +186,7 @@ export const useBlockchainAccounts = () => {
           })
         );
 
-        if (userInitiated) {
-          startPromise(fetchEnsNames(namesPayload, true));
-        }
+        startPromise(fetchEnsNames(namesPayload, userInitiated));
       }
       return accounts.map(account => account.address);
     } catch (e: any) {

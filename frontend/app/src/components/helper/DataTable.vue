@@ -359,12 +359,6 @@ const { dark } = useTheme();
 
   &.theme {
     &--dark {
-      .v-data-table__expanded {
-        &__content {
-          background-color: var(--v-dark-lighten1) !important;
-        }
-      }
-
       tbody {
         tr {
           &:hover {

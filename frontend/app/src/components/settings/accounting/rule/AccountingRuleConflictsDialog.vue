@@ -342,9 +342,9 @@ const save = async () => {
                 </td>
                 <td rowspan="2" class="border-r border-default">
                   <HistoryEventTypeCounterparty
-                    v-if="item.counterparty"
+                    v-if="item.localData.counterparty"
                     text
-                    :event="{ counterparty: item.counterparty }"
+                    :event="{ counterparty: item.localData.counterparty }"
                   />
                   <span v-else>-</span>
                 </td>
@@ -395,7 +395,7 @@ const save = async () => {
                     )
                   "
                 >
-                  <BadgeDisplay v-if="item.accountingTreatment">
+                  <BadgeDisplay v-if="item.localData.accountingTreatment">
                     {{ item.localData.accountingTreatment }}
                   </BadgeDisplay>
                   <span v-else>-</span>
@@ -465,7 +465,7 @@ const save = async () => {
                     )
                   "
                 >
-                  <BadgeDisplay v-if="item.accountingTreatment">
+                  <BadgeDisplay v-if="item.remoteData.accountingTreatment">
                     {{ item.remoteData.accountingTreatment }}
                   </BadgeDisplay>
                   <span v-else>-</span>

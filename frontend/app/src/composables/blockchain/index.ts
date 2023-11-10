@@ -66,7 +66,7 @@ export const useBlockchains = () => {
     periodic = false
   ) => {
     const chain = get(blockchain);
-    await fetchAccounts(chain);
+    await fetchAccounts(chain, true);
 
     const isEth = chain === Blockchain.ETH;
     const isEth2 = chain === Blockchain.ETH2;
