@@ -4,9 +4,9 @@ const props = defineProps<{
 }>();
 
 const { url } = toRefs(props);
-const { onLinkClick } = useLinks(url);
+const { href, linkTarget, onLinkClick } = useLinks(url);
 </script>
 
 <template>
-  <a href="#" @click.prevent="onLinkClick()"><slot /></a>
+  <a :href="href" :target="linkTarget" @click="onLinkClick()"><slot /></a>
 </template>
