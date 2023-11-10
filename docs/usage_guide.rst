@@ -22,7 +22,7 @@ When you start rotki you are greeted with a sign-in/signup prompt. Rotki is a lo
    :align: center
 
 
-For creating a local account press "Create New Account". If you already have a premium subscription, you can choose to associate this local account with your premium subscription via the use of api keys.
+For creating a local account press **Create Account**. If you already have a premium subscription, you can choose to associate this local account with your premium subscription via the use of api keys.
 
 If you want to restore an account using premium sync during the account creation, then you can **Enable premium**,
 and enable **Restore synced database** (:ref:`restore_backup_premium`), insert your **API Key** and the **secret** here. Api key and secret can be found in your account page at `rotki.com <https://rotki.com/>`__ .
@@ -377,6 +377,16 @@ By choosing the "Accounting" settings button you can customize some application 
 You should understand what each setting does, consult with a tax accountant for your jurisdiction and then set them appropriately.
 
 The default settings are at the moment set for the German tax jurisdiction. For example all profit/loss calculation is done for trades on a first-in/first-out basis and profits from selling crypto assets after 1 year are non taxable. These settings can be adjusted.
+
+Custom accounting rules
+-------------------------
+
+.. image:: images/sc_accounting_custom_rule.png
+   :alt: Customizing the accounting rules
+   :align: center
+
+A setting to customize the accounting rule for events based on the ``Event type``, ``Event sub type``, and ``Counterparty`` of the events.
+
 
 Trade settings
 ----------------
@@ -933,6 +943,8 @@ For now, the following chains are supported in Rotki (and the list will be growi
 - Optimism
 - Polygon PoS
 - Arbitrum One
+- Base
+- Gnosis
 
 To add or modify an account navigate to the "Blockchain Balances" sub-page and click the large "+" icon. Now choose the blockchain on which you want to add an account. Then type or paste the address in the "Account" textbox and press the "Save" Button. Note that you can add multiple accounts if you click the "Add multiple addresses" checkbox and provide a comma separated list of addresses.
 
@@ -953,9 +965,9 @@ To stop tracking one or more accounts you can check the corresponding box in the
 EVM Chains
 ------------------------
 
-If the selected chain is an EVM chain you will see "Add to all supported EVM chains" checkbox. It is checked by default and it means that rotki will try to add the address for all EVM chains. If the address is a contract in Ethereum mainnet it will only be added to Ethereum. Otherwise for each chain rotki will check whether the address had any activity there and will add only if it has at least one transaction. If you uncheck the checkbox, then the address will only be added to the selected chain.
+If the selected chain is an EVM chain you will see **Add to all supported EVM chains** checkbox. It is checked by default and it means that rotki will try to add the address for all EVM chains. If the address is a contract in Ethereum mainnet it will only be added to Ethereum. Otherwise for each chain rotki will check whether the address had any activity there and will add only if it has at least one transaction. If you uncheck the checkbox, then the address will only be added to the selected chain.
 
-If an EVM account also contains tracked tokens you can click on the arrow under "Actions" in order to expand its view and show the balance breakdown for the account over all assets it holds.
+If an EVM account also contains tracked tokens you can click on the arrow under **Actions** in order to expand its view and show the balance breakdown for the account over all assets it holds.
 
 Bitcoin chains
 ----------------------
@@ -1320,6 +1332,22 @@ History events
 
 Rotki is capable of pulling and decoding a bunch of different events, ranging from EVM chain transactions to exchanges events and more. When you visit the ``History Events`` section the process to obtain all the information will start. You will be able to check the status in an informative breakdown per blockchain address. Free users are limited to a number of latest events.
 
+History events can be filtered if you have a premium subscription activated. You can filter by:
+
+- Account (a tracked blockchain address)
+- Time range
+- Asset involved in the transaction
+- Protocol that interacted in the transaction
+- Location of the event (ethereum, optimism, kraken, etc.)
+- Event type (deposit, withdrawal, etc.)
+- Event sub type (fee, spend, etc.)
+- Entry type (EVM event, ETH block event, etc.)
+- Counterparty address
+- Tx hash of a particular transaction that you want to check
+- Index of an eth2 validator that you want to see events for
+- Only show customized events
+- ... more
+
 .. image:: images/events_query_process.png
    :alt: History events query status breakdown
    :align: center
@@ -1330,27 +1358,78 @@ It is possible that you need to redecode events for an evm transaction. To do th
    :alt: Menu to redecode events for an EVM transaction
    :align: center
 
-The second option is to redecode all the transactions in one page or all the transactions that have been queried. To do so you need to click on ``REDECODE EVENTS`` at the top of the page. This will allow to select between ``Only this page`` and ``All events``.
+The second option is to redecode all EVM transactions that have been queried. To do so you need to click on the three dots at the top of the page, and choose ``Redecode EVM Events``
 
 .. image:: images/redecode_all_events.png
-   :alt: Menu to redecode all events in one page
+   :alt: Menu to redecode all queried EVM transactions events
    :align: center
 
-Events in a transaction might need to be edited if they were not properly decoded or if they have a special meaning to you (like OTC trades, transfers between accounts...). To edit one event click on the pencil icon and a menu will appear.
+If you see this warning button, it means the event won't be processed correctly in accounting. It could be due to improper decoding or a missing accounting rule for that event. You can fix it by editing the event or adding the missing accounting rule. You can also edit the events if they have special meaning to you, such as OTC trades or transfers between accounts.
 
-.. image:: images/edit_evm_event.png
-   :alt: Menu to edit EVM events
+.. image:: images/event_not_processed.png
+   :alt: The button indicates that the event won't be processed correctly.
    :align: center
 
-Here the non obvious fields are:
+There are 5 types of events in rotki:
 
-- ``Event Type``: We have created a categorization of all the actions in a set of major event types. This field will describe the action category.
-- ``Event Subtype``: Inside an event type you can perform different actions. This subtype will let you describe exactly what is happening in the event.
-- ``Sequence Index``: Is an internal index that sets the order in which events happened in the transactions. This allows knowing how events are sorted and should be taken into account. By default it corresponds to the event log index in the blockchain with a few exceptions.
-- ``Location Label``: This is the address related to the event, for example if you are receiving one asset in a transfer or calling a contract will match with your address.
-- ``Counterparty``: This is the other part of the transaction, the address you are interacting with. Can be a protocol identifier if the transaction is decoded as part of a protocol.
+.. tab:: History Event
 
-If any event was not decoded the way you expected it to be, you can always customize events using the settings described above or file a bug report on our github repository / in our discord server. The customizations that you make also affect how events are processed in accounting.
+   .. image:: images/events_history_event_form.png
+      :alt: History event form
+      :align: center
+
+   Here the non obvious fields are:
+
+   - ``Event Type``: We have created a categorization of all the actions in a set of major event types. This field will describe the action category.
+   - ``Event Subtype``: Inside an event type you can perform different actions. This subtype will let you describe exactly what is happening in the event.
+   - ``Sequence Index``: Is an internal index that sets the order in which events happened in the transactions. This allows knowing how events are sorted and should be taken into account. By default it corresponds to the event log index in the blockchain with a few exceptions.
+
+.. tab:: EVM Event
+
+   .. image:: images/events_evm_event_form.png
+      :alt: History event form
+      :align: center
+
+   Currently we support EVM events for these chains:
+
+   - Ethereum
+   - Optimism
+   - Polygon PoS
+   - Arbitrum One
+   - Base
+   - Gnosis
+
+   Here the non obvious fields are:
+
+   - ``Event Type``: We have created a categorization of all the actions in a set of major event types. This field will describe the action category.
+   - ``Event Subtype``: Inside an event type you can perform different actions. This subtype will let you describe exactly what is happening in the event.
+   - ``Sequence Index``: Is an internal index that sets the order in which events happened in the transactions. This allows knowing how events are sorted and should be taken into account. By default it corresponds to the event log index in the blockchain with a few exceptions.
+   - ``Location Label``: This is the address related to the event, for example if you are receiving one asset in a transfer or calling a contract will match with your address.
+   - ``Address``: Registered rotki account which this event is linked to.
+   - ``Counterparty``: This is the other part of the transaction, the address you are interacting with. Can be a protocol identifier if the transaction is decoded as part of a protocol.
+
+.. tab:: ETH Withdrawal Event
+
+   .. image:: images/events_eth_withdrawal_event_form.png
+      :alt: ETH withdrawal event form
+      :align: center
+
+
+.. tab:: ETH Block Event
+
+   .. image:: images/events_eth_block_event_form.png
+      :alt: ETH block event form
+      :align: center
+
+
+.. tab:: ETH Deposit Event
+
+   .. image:: images/events_eth_deposit_event_form.png
+      :alt: ETH deposit event form
+      :align: center
+
+For history event, and EVM history event, if any event was not decoded the way you expected it to be, you can always customize events using the settings described above or file a bug report on our github repository / in our discord server. The customizations that you make also affect how events are processed in accounting.
+
 Examples of customization. You can set:
 
 - ``Event Type`` to ``Transfer`` if you are sending money to a friend / (another account you own) and don't want the event to be taxable.
@@ -1373,18 +1452,6 @@ Events that have been modified will appear marked in the UI.
    :alt: Customized events in the UI
    :align: center
 
-
-History events can be filtered if you have a premium subscription activated. You can filter by:
-
-- Account (a tracked blockchain address)
-- Time range
-- Asset involved in the transaction
-- Protocol that interacted in the transaction
-- Location of the event (ethereum, optimism, kraken, etc.)
-- Event type (deposit, withdrawal, etc.)
-- Tx hash of a particualar transaction that you want to check
-- Index of an eth2 validator that you want to see events for
-- ... more
 
 Customization of the list of supported assets
 *********************************************
@@ -1758,8 +1825,6 @@ Cost basis is calculated in rotki for all trades/events we support. Trades/event
 - All trades performed in our supported centralized exchanges
 - All trades done in our supported AMMs. As of this writing this is uniswap, sushiswap, balancer.
 - All manual trades inserted by the user.
-- Not strictly trades, but income/expense events by manual inserted ledger actions.
-
 
 For all those trades you can see the cost basis when you create a profit loss report by:
 
