@@ -7,7 +7,7 @@ import pytest
 import requests
 from freezegun import freeze_time
 
-from rotkehlchen.assets.asset import Asset, CustomAsset, EvmToken, UnderlyingToken
+from rotkehlchen.assets.asset import Asset, CustomAsset, EvmToken, FiatAsset, UnderlyingToken
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
@@ -39,6 +39,7 @@ from rotkehlchen.inquirer import (
     CURRENT_PRICE_CACHE_SECS,
     DEFAULT_RATE_LIMIT_WAITING_TIME,
     CurrentPriceOracle,
+    Inquirer,
     _query_currency_converterapi,
 )
 from rotkehlchen.interfaces import HistoricalPriceOracleInterface
@@ -78,6 +79,20 @@ def test_query_realtime_price_apis(inquirer):
     usd = A_USD.resolve_to_fiat_asset()
     result = inquirer.query_historical_fiat_exchange_rates(usd, A_CNY, 1411603200)
     assert result == FVal('6.133938')
+
+
+@pytest.mark.skipif(
+    'CI' in os.environ,
+    reason='This test would contribute in rate limiting of these apis',
+)
+def test_query_price_for_not_supported_fiat_asset(inquirer: Inquirer):
+    """Check that if we can't find the price for a fiat currency we correctly return None"""
+    current_price = inquirer.query_historical_fiat_exchange_rates(
+        from_fiat_currency=A_USD.resolve_to_fiat_asset(),
+        to_fiat_currency=FiatAsset('NGN'),
+        timestamp=ts_now(),
+    )
+    assert current_price is None
 
 
 @pytest.mark.skipif(

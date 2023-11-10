@@ -224,6 +224,9 @@ class RotkiDataUpdater:
                 log.debug(f'Failed to add accounting rule {rule_data} due to {e}')
                 continue
 
+        if len(conflicts) == 0:
+            return
+
         conflicts_db = DBRemoteConflicts(self.user_db)
         conflicts_db.save_conflicts(conflicts=conflicts)
         self.msg_aggregator.add_message(

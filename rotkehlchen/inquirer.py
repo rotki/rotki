@@ -988,6 +988,12 @@ class Inquirer:
             )])
             if asset == to_fiat_currency:
                 rate = asset_price
+                break
+        else:
+            log.debug(
+                f'Could not find historical fiat exchange rate for asset {to_fiat_currency=}',
+            )
+            return None
 
         log.debug('Historical fiat exchange rate query succesful', rate=rate)
         return rate
