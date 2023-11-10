@@ -349,9 +349,11 @@ const { dark } = useTheme();
         @apply border-b;
       }
 
-      &:hover {
-        td {
-          @apply bg-rui-grey-200;
+      &:not(.v-data-table__expanded__content) {
+        &:hover {
+          td {
+            @apply bg-rui-grey-200;
+          }
         }
       }
     }
@@ -361,9 +363,11 @@ const { dark } = useTheme();
     &--dark {
       tbody {
         tr {
-          &:hover {
-            td {
-              @apply bg-rui-grey-800;
+          &:not(.v-data-table__expanded__content) {
+            &:hover {
+              td {
+                @apply bg-rui-grey-800;
+              }
             }
           }
         }
