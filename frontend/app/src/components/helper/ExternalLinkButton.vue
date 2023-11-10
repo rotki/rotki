@@ -9,10 +9,8 @@ const props = withDefaults(
 );
 
 const { url } = toRefs(props);
-const { href, onLinkClick } = useLinks(url);
+const { href, linkTarget, onLinkClick } = useLinks(url);
 const attrs = useAttrs();
-
-const { isPackaged } = useInterop();
 </script>
 
 <template>
@@ -24,7 +22,7 @@ const { isPackaged } = useInterop();
     }"
     :href="href"
     :tag="href ? 'a' : 'button'"
-    :target="isPackaged ? undefined : '_blank'"
+    :target="linkTarget"
     @click="onLinkClick()"
   >
     <template #prepend>

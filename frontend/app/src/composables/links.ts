@@ -1,12 +1,9 @@
 export const useLinks = (url?: Ref<string>) => {
   const { isPackaged, premiumURL, openUrl } = useInterop();
   const targetUrl = computed(() => get(url) ?? premiumURL);
-  const href = computed(() => {
-    if (isPackaged) {
-      return undefined;
-    }
-    return get(targetUrl);
-  });
+  const href = computed(() => (isPackaged ? undefined : get(targetUrl)));
+
+  const linkTarget = computed(() => (isPackaged ? undefined : '_blank'));
 
   const onLinkClick = !isPackaged
     ? () => {}
@@ -19,6 +16,7 @@ export const useLinks = (url?: Ref<string>) => {
   return {
     href,
     hasLink,
+    linkTarget,
     onLinkClick
   };
 };
