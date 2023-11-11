@@ -344,8 +344,13 @@ const { dark } = useTheme();
     }
 
     tr {
-      td {
+      &.append-row {
         border-color: var(--border-color);
+
+        td {
+          @apply border-none;
+        }
+
         @apply border-b;
       }
 
@@ -355,6 +360,11 @@ const { dark } = useTheme();
             @apply bg-rui-grey-200;
           }
         }
+      }
+
+      td {
+        border-color: var(--border-color);
+        @apply border-b;
       }
     }
   }

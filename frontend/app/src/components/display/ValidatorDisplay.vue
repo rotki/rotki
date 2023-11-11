@@ -16,40 +16,26 @@ const { horizontal } = toRefs(props);
 const length = computed(() => (get(horizontal) ? 4 : 10));
 
 const { t } = useI18n();
+
+const { scrambleIdentifier, scrambleHex } = useScramble();
 </script>
 
 <template>
   <div
+    class="p-2"
     :class="{
-      [$style.wrapper]: true,
-      [$style.horizontal]: horizontal
+      flex: horizontal
     }"
   >
     <div class="font-medium text-truncate">
-      {{ truncateAddress(validator.publicKey, length) }}
+      {{ truncateAddress(scrambleHex(validator.publicKey), length) }}
     </div>
     <div>
-      <span v-if="horizontal" :class="$style.divider"> - </span>
+      <span v-if="horizontal" class="px-1"> - </span>
       <span v-else class="text-caption">
         {{ t('common.validator_index') }}:
       </span>
-      {{ validator.validatorIndex }}
+      {{ scrambleIdentifier(validator.validatorIndex) }}
     </div>
   </div>
 </template>
-
-<style lang="scss" module>
-.wrapper {
-  padding: 8px;
-}
-
-.divider {
-  padding-left: 4px;
-  padding-right: 4px;
-}
-
-.horizontal {
-  display: flex;
-  flex-direction: row;
-}
-</style>
