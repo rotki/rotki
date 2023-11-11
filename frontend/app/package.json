@@ -47,7 +47,7 @@
     "@vueuse/core": "10.5.0",
     "@vueuse/math": "10.5.0",
     "@vueuse/shared": "10.5.0",
-    "axios": "1.5.1",
+    "axios": "1.6.0",
     "bignumber.js": "9.1.1",
     "chart.js": "4.4.0",
     "chartjs-plugin-zoom": "2.0.0",
