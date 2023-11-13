@@ -130,6 +130,7 @@ const expand = (item: AssetBalanceWithPrice) => {
         label-colspan="3"
         :label="t('common.total')"
         :is-mobile="isMobile"
+        :right-patch-colspan="2"
       >
         <AmountDisplay
           fiat-currency="USD"
