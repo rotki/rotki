@@ -17,14 +17,17 @@ const length = computed(() => (get(horizontal) ? 4 : 10));
 
 const { t } = useI18n();
 
-const { scrambleIdentifier, scrambleHex } = useScramble();
+const { scrambleIdentifier, scrambleHex, shouldShowAmount } = useScramble();
+
+const css = useCssModule();
 </script>
 
 <template>
   <div
     class="p-2"
     :class="{
-      flex: horizontal
+      flex: horizontal,
+      [css.blur]: !shouldShowAmount
     }"
   >
     <div class="font-medium text-truncate">
@@ -39,3 +42,9 @@ const { scrambleIdentifier, scrambleHex } = useScramble();
     </div>
   </div>
 </template>
+
+<style module lang="scss">
+.blur {
+  filter: blur(0.75em);
+}
+</style>
