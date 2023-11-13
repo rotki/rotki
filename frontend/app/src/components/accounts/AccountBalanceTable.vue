@@ -495,6 +495,7 @@ defineExpose({
         :label="t('common.total')"
         :class-name="{ 'flex-column': isMobile }"
         :left-patch-colspan="1"
+        :right-patch-colspan="3"
         :is-mobile="isMobile"
       >
         <template #custom-columns>
