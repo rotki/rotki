@@ -657,7 +657,13 @@ const includeOnlineEvents: ComputedRef<boolean> = useEmptyOrSome(
           >
             <template #prepend>
               <RuiIcon v-if="!eventTaskLoading" name="restart-line" />
-              <RuiProgress v-else circular variant="indeterminate" size="24" />
+              <RuiProgress
+                v-else
+                circular
+                variant="indeterminate"
+                size="24"
+                thickness="2"
+              />
             </template>
             {{ t('transactions.redecode_events.title') }}
           </RuiButton>
