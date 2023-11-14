@@ -156,11 +156,9 @@ const { navigateToUserLogin } = useAppNavigation();
           t('sync_indicator.upload_confirmation.message_download_relogin')
         "
       />
-      <RuiCheckbox
-        v-model="confirmChecked"
-        color="primary"
-        :label="t('sync_indicator.upload_confirmation.confirm_check')"
-      />
+      <RuiCheckbox v-model="confirmChecked" color="primary">
+        {{ t('sync_indicator.upload_confirmation.confirm_check') }}
+      </RuiCheckbox>
     </ConfirmDialog>
   </Fragment>
 </template>

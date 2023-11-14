@@ -650,13 +650,14 @@ const includeOnlineEvents: ComputedRef<boolean> = useEmptyOrSome(
         <VList>
           <RuiButton
             v-if="includeEvmEvents"
+            variant="text"
             class="!p-3 rounded-none w-full justify-start whitespace-nowrap"
-            :loading="eventTaskLoading"
-            :disabled="refreshing"
+            :disabled="refreshing || eventTaskLoading"
             @click="redecodeAllEvmEvents()"
           >
             <template #prepend>
-              <RuiIcon name="restart-line" />
+              <RuiIcon v-if="!eventTaskLoading" name="restart-line" />
+              <RuiProgress v-else circular variant="indeterminate" size="24" />
             </template>
             {{ t('transactions.redecode_events.title') }}
           </RuiButton>
