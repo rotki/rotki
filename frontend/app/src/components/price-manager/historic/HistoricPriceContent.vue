@@ -38,7 +38,8 @@ const headers = computed<DataTableHeader[]>(() => [
   },
   {
     text: '',
-    value: 'actions'
+    value: 'actions',
+    sortable: false
   }
 ]);
 
