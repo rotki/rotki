@@ -34,6 +34,16 @@ onBeforeMount(() => {
   Chart.register(...registerables);
   Chart.register(zoomPlugin);
 });
+
+const scrollToTop = () => {
+  document.body.scrollTo(0, 0);
+};
+
+const { y: scrollY } = useScroll(document.body);
+
+const shouldShowScrollToTopButton: ComputedRef<boolean> = computed(
+  () => get(scrollY) > 200
+);
 </script>
 
 <template>
@@ -66,6 +76,26 @@ onBeforeMount(() => {
       <VMain>
         <RouterView />
       </VMain>
+
+      <Transition
+        enter-class="opacity-0"
+        enter-to-class="opacity-1"
+        enter-active-class="transition duration-300"
+        leave-class="opacity-1"
+        leave-to-class="opacity-0"
+        leave-active-class="transition duration-100"
+      >
+        <RuiButton
+          v-if="shouldShowScrollToTopButton"
+          color="primary"
+          class="fixed bottom-4 right-4 z-[9999]"
+          variant="fab"
+          icon
+          @click="scrollToTop()"
+        >
+          <RuiIcon name="arrow-up-line" />
+        </RuiButton>
+      </Transition>
     </div>
   </div>
 </template>
@@ -104,7 +134,7 @@ onBeforeMount(() => {
 
   &-main {
     padding-top: 1rem;
-    padding-bottom: 1rem;
+    padding-bottom: 4rem;
     width: 100%;
     min-height: calc(100vh - 64px);
 
