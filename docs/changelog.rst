@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Uniswap Swaps with the Universal router would be decoded correctly.
 * :bug:`-` There will be no duplicated balances in cases where the native token balance is zero.
 * :bug:`-` Fix the issue where users sometimes encounter timeout errors when importing assets from a zip archive.
 * :bug:`6871` Ethereum staking withdrawals querying should now work fine again.
