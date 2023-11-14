@@ -11,7 +11,7 @@ from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
-from rotkehlchen.constants.assets import A_DAI, A_ETH, A_USDC, A_USDT
+from rotkehlchen.constants.assets import A_DAI, A_ETH, A_LUSD, A_USDC, A_USDT
 from rotkehlchen.constants.misc import EXP18
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.db.evmtx import DBEvmTx
@@ -1102,3 +1102,55 @@ def test_uniswap_v3_add_liquidity(database, ethereum_inquirer, eth_transactions)
         ),
     ]
     assert events == expected_events
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('ethereum_accounts', [['0xf615a55e686499511557b3F75Ea9166DD455bFd5']])
+def test_uniswap_v3_swap_by_universal_router(database, ethereum_inquirer, ethereum_accounts):
+    tx_hash = deserialize_evm_tx_hash('0xd2fe13a9727b2ff3f9458154afb8e59216864b57e0aacffeedc3d3d4cff1c43d')  # noqa: E501
+    user_address = ethereum_accounts[0]
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    timestamp = TimestampMS(1698949487000)
+    assert events == [EvmEvent(
+        sequence_index=0,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        balance=Balance(amount=FVal(0.007013719187732112)),
+        location_label=user_address,
+        notes='Burned 0.007013719187732112 ETH for gas',
+        tx_hash=tx_hash,
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_LUSD,
+        balance=Balance(amount=FVal('29998.270067672164822565')),
+        location_label=user_address,
+        notes='Swap 29998.270067672164822565 LUSD via uniswap-v3 auto router',
+        tx_hash=tx_hash,
+        counterparty=CPT_UNISWAP_V3,
+        address='0x3fC91A3afd70395Cd496C647d5a6CC9D4B2b7FAD',
+    ), EvmEvent(
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_ETH,
+        balance=Balance(amount=FVal('16.48341101375048316')),
+        location_label=user_address,
+        notes='Receive 16.48341101375048316 ETH as the result of a swap via uniswap-v3 auto router',  # noqa: E501
+        tx_hash=tx_hash,
+        counterparty=CPT_UNISWAP_V3,
+        address='0x3fC91A3afd70395Cd496C647d5a6CC9D4B2b7FAD',
+    )]
