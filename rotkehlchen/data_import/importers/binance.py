@@ -13,7 +13,7 @@ from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.data_import.utils import BaseExchangeImporter, hash_csv_row
 from rotkehlchen.db.drivers.gevent import DBCursor
-from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp
 from rotkehlchen.errors.serialization import DeserializationError
@@ -673,7 +673,7 @@ def _group_binance_rows(
             csv_row['Coin'] = asset_from_binance(csv_row['Coin'])
             csv_row['Change'] = deserialize_asset_amount(csv_row['Change'])
             multirows[timestamp].append(csv_row)
-        except (DeserializationError, UnknownAsset) as e:
+        except (DeserializationError, UnknownAsset, UnsupportedAsset) as e:
             log.warning(f'Skipped binance csv row {csv_row} because of {e!s}')
             skipped_count += 1
         except KeyError as e:
