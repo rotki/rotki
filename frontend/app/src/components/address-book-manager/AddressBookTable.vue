@@ -98,11 +98,13 @@ const edit = (item: AddressBookEntry) => {
 const tableHeaders = computed<DataTableHeader[]>(() => [
   {
     text: t('common.address').toString(),
-    value: 'address'
+    value: 'address',
+    sortable: false
   },
   {
     text: t('common.name').toString(),
-    value: 'name'
+    value: 'name',
+    sortable: false
   },
   {
     text: '',
