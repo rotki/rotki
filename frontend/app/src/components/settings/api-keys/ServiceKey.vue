@@ -44,18 +44,6 @@ const successMessages = useRefMap(status, status => {
   return [status.message];
 });
 
-const internalValue = computed({
-  get() {
-    if (get(editMode)) {
-      return get(currentValue);
-    }
-    return '';
-  },
-  set(value) {
-    set(currentValue, value);
-  }
-});
-
 const updateStatus = () => {
   if (!get(apiKey)) {
     set(cancellable, false);
@@ -100,7 +88,7 @@ const slots = useSlots();
   <div class="flex flex-col gap-4">
     <div class="flex items-start gap-4" data-cy="service-key__content">
       <RuiRevealableTextField
-        v-model="internalValue"
+        v-model="currentValue"
         variant="outlined"
         color="primary"
         class="grow"

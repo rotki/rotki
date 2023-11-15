@@ -376,7 +376,7 @@ const [DefineSymbol, ReuseSymbol] = createReusableTemplate();
           'text-rui-success': pnl && displayValue.gt(0),
           'text-rui-error': pnl && displayValue.lt(0),
           [css.xl]: xl,
-          'skeleton min-w-[3.5rem] max-w-[4rem] min-h-[1.3rem]': anyLoading
+          [`skeleton min-w-[3.5rem] max-w-[4rem] ${css.loading}`]: anyLoading
         }
       ]"
       class="inline-flex items-center gap-1 transition duration-200 rounded-lg"
@@ -416,6 +416,13 @@ const [DefineSymbol, ReuseSymbol] = createReusableTemplate();
   @media (max-width: 450px) {
     font-size: 2.4em;
     line-height: 2.4rem;
+  }
+}
+
+.loading {
+  &:after {
+    content: 'placeholder';
+    @apply text-transparent;
   }
 }
 </style>
