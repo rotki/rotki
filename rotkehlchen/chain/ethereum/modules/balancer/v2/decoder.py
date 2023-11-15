@@ -18,7 +18,6 @@ from rotkehlchen.chain.evm.decoding.structures import (
 )
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.constants.assets import A_ETH, A_WETH
-from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
@@ -68,7 +67,7 @@ class Balancerv2Decoder(DecoderInterface):
         amount_out = hex_or_bytes_to_int(context.tx_log.data[32:64])
 
         # Create action item to propagate the information about the swap to the transfer enrichers
-        to_token = EvmToken(ethaddress_to_identifier(to_token_address))
+        to_token = self.base.get_or_create_evm_token(to_token_address)
         to_amount = asset_normalized_value(
             amount=amount_out,
             asset=to_token,
