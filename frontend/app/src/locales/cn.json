@@ -3445,12 +3445,13 @@
     "to_asset": "To Asset"
   },
   "price_oracle_selection": {
-    "hint": "* 禁用所有预言机将无法查询资产价格。"
+    "hint": "* 禁用所有预言机将导致无法查询资产价格。您可能需要单击“刷新价格”来应用更改。"
   },
   "price_oracle_settings": {
     "data_name": "价格预言机",
     "historic_prices": "历史价格",
     "latest_prices": "最新价格",
+    "latest_prices_update": "最新订单价格已更新。您可能需要单击“刷新价格”按钮来应用更改。",
     "subtitle": "管理以何种顺序使用哪些价格预言机。",
     "title": "价格预言机设置"
   },

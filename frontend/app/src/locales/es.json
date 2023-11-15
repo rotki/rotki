@@ -3343,11 +3343,13 @@
     "to_asset": "To Asset"
   },
   "price_oracle_selection": {
-    "hint": "* Disabling all the oracles will make it impossible to query prices for assets."
+    "hint": "* Al desactivar todos los oráculos será imposible consultar los precios de los activos. Es posible que tengas que hacer clic en 'Actualizar precios' para aplicar los cambios."
   },
   "price_oracle_settings": {
+    "data_name": "oráculo de precios",
     "historic_prices": "Historic Prices",
     "latest_prices": "Latest Prices",
+    "latest_prices_update": "Últimos precios de pedidos actualizados. Es posible que tengas que hacer clic en el botón 'Actualizar precios' para aplicar los cambios.",
     "subtitle": "Manage which price oracles are used, in which order.",
     "title": "Price oracle settings"
   },

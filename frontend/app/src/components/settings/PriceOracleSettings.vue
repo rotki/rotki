@@ -53,8 +53,14 @@ const availableHistoricOracles = (): PrioritizedListData<PrioritizedListId> => {
   return new PrioritizedListData(itemData);
 };
 
-const resetHistoricalPriceOracles = () => {
+const { reset: resetCachedHistoricalPrices } = useHistoricCachePriceStore();
+
+const resetHistoricalPriceOracles = (resetPrices: boolean = false) => {
   set(historicOracles, get(historicalPriceOracles));
+
+  if (resetPrices) {
+    resetCachedHistoricalPrices();
+  }
 };
 
 onMounted(() => {
@@ -74,51 +80,49 @@ const { t } = useI18n();
       {{ t('price_oracle_settings.subtitle') }}
     </template>
 
-    <VRow>
-      <VCol cols="12" md="6">
-        <SettingsOption
-          #default="{ error, success, update }"
-          setting="currentPriceOracles"
-          @finished="resetCurrentPriceOracles()"
+    <div class="grid grid-cols-2 gap-4">
+      <SettingsOption
+        #default="{ error, success, update }"
+        setting="currentPriceOracles"
+        :success-message="t('price_oracle_settings.latest_prices_update')"
+        @finished="resetCurrentPriceOracles()"
+      >
+        <PrioritizedList
+          :value="currentOracles"
+          :all-items="availableCurrentOracles()"
+          :status="{ error, success }"
+          :item-data-name="t('price_oracle_settings.data_name')"
+          @input="update($event)"
         >
-          <PrioritizedList
-            :value="currentOracles"
-            :all-items="availableCurrentOracles()"
-            :status="{ error, success }"
-            :item-data-name="t('price_oracle_settings.data_name').toString()"
-            @input="update($event)"
-          >
-            <template #title>
-              {{ t('price_oracle_settings.latest_prices') }}
-            </template>
-          </PrioritizedList>
-        </SettingsOption>
-      </VCol>
+          <template #title>
+            {{ t('price_oracle_settings.latest_prices') }}
+          </template>
+        </PrioritizedList>
+      </SettingsOption>
 
-      <VCol cols="12" md="6">
-        <SettingsOption
-          #default="{ error, success, update }"
-          setting="historicalPriceOracles"
-          @finished="resetHistoricalPriceOracles()"
+      <SettingsOption
+        #default="{ error, success, update }"
+        setting="historicalPriceOracles"
+        @finished="resetHistoricalPriceOracles(true)"
+      >
+        <PrioritizedList
+          :value="historicOracles"
+          :all-items="availableHistoricOracles()"
+          :status="{ error, success }"
+          :item-data-name="t('price_oracle_settings.data_name')"
+          @input="update($event)"
         >
-          <PrioritizedList
-            :value="historicOracles"
-            :all-items="availableHistoricOracles()"
-            :status="{ error, success }"
-            :item-data-name="'price oracle'"
-            @input="update($event)"
-          >
-            <template #title>
-              {{ t('price_oracle_settings.historic_prices') }}
-            </template>
-          </PrioritizedList>
-        </SettingsOption>
-      </VCol>
-    </VRow>
-    <VRow>
-      <VCol class="text-caption">
-        {{ t('price_oracle_selection.hint') }}
-      </VCol>
-    </VRow>
+          <template #title>
+            {{ t('price_oracle_settings.historic_prices') }}
+          </template>
+        </PrioritizedList>
+      </SettingsOption>
+    </div>
+    <div class="text-caption mt-2">
+      {{ t('price_oracle_selection.hint') }}
+    </div>
+    <div class="mt-4">
+      <PriceRefresh class="mt-6" @click="resetCachedHistoricalPrices()" />
+    </div>
   </SettingCategory>
 </template>
