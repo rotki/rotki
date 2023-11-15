@@ -78,6 +78,5 @@ export const MANUALCURRENT_PRIO_LIST_ITEM: PrioritizedListItemData<PrioritizedLi
 export const MANUAL_PRIO_LIST_ITEM: PrioritizedListItemData<PrioritizedListId> =
   {
     identifier: PriceOracle.MANUAL,
-    icon: './assets/images/oracles/book.svg',
-    extraDisplaySize: '40px'
+    icon: './assets/images/oracles/book.svg'
   };

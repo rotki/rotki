@@ -15,5 +15,4 @@ export class PrioritizedListData<T = string> {
 export interface PrioritizedListItemData<T = string> {
   identifier: T;
   icon?: string;
-  extraDisplaySize?: string; // may be a string specifying pixels e.g. 12px
 }

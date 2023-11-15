@@ -5,19 +5,17 @@ import { type PrioritizedListItemData } from '@/types/settings/prioritized-list-
 import { type PrioritizedListId } from '@/types/settings/prioritized-list-id';
 import { toSentenceCase } from '@/utils/text';
 
-const props = defineProps<{
-  data: PrioritizedListItemData<PrioritizedListId>;
-}>();
+const props = withDefaults(
+  defineProps<{
+    data: PrioritizedListItemData<PrioritizedListId>;
+    size?: string;
+  }>(),
+  {
+    size: '40px'
+  }
+);
 
 const { data } = toRefs(props);
-
-const size = computed<string>(() => {
-  const defaultSize = '48px';
-  if (get(data).extraDisplaySize) {
-    return get(data).extraDisplaySize ?? defaultSize;
-  }
-  return defaultSize;
-});
 
 const { t } = useI18n();
 
@@ -54,23 +52,22 @@ const labels: { [keys in PrioritizedListId]: string } = {
 </script>
 
 <template>
-  <VRow align="center">
-    <VCol v-if="data.icon" cols="auto">
-      <AdaptiveWrapper>
-        <VImg
-          :width="size"
-          contain
-          position="left"
-          :max-height="size"
-          :src="data.icon"
-        />
-      </AdaptiveWrapper>
-    </VCol>
-    <VCol v-if="labels[data.identifier]" cols="auto">
+  <div class="flex items-center gap-3">
+    <AdaptiveWrapper v-if="data.icon">
+      <VImg
+        :width="size"
+        contain
+        position="left"
+        :max-height="size"
+        :min-height="size"
+        :src="data.icon"
+      />
+    </AdaptiveWrapper>
+    <div v-if="labels[data.identifier]">
       {{ labels[data.identifier] }}
-    </VCol>
-    <VCol v-else cols="auto">
+    </div>
+    <div v-else>
       {{ toSentenceCase(data.identifier) }}
-    </VCol>
-  </VRow>
+    </div>
+  </div>
 </template>

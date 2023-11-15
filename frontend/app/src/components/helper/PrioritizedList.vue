@@ -103,59 +103,58 @@ const autoCompleteHint: ComputedRef<string> = computed(() => {
 
 <template>
   <div>
-    <VSheet outlined rounded>
-      <div class="pb-0" :class="slots.title ? 'pa-4' : 'pa-0'">
-        <div v-if="slots.title" class="text-h6 pb-4">
+    <RuiCard rounded="md" class="[&>div]:!p-0">
+      <template v-if="slots.title" #header>
+        <div class="p-4">
           <slot name="title" />
         </div>
+      </template>
 
-        <VRow v-if="!disableAdd" no-gutters>
-          <VCol class="pr-4">
-            <VAutocomplete
-              v-model="selection"
-              prepend-inner-icon="mdi-magnify"
-              outlined
-              :no-data-text="t('prioritized_list.all_added', itemNameTr)"
-              :items="missing"
-              :hint="autoCompleteHint"
-              persistent-hint
+      <div
+        v-if="!disableAdd"
+        class="flex px-4 pb-2 gap-4 items-start border-b border-default"
+      >
+        <VAutocomplete
+          v-model="selection"
+          class="grow"
+          prepend-inner-icon="mdi-magnify"
+          outlined
+          :no-data-text="t('prioritized_list.all_added', itemNameTr)"
+          :items="missing"
+          :hint="autoCompleteHint"
+          persistent-hint
+        >
+          <template #selection="{ item }">
+            <PrioritizedListEntry :data="itemData(item)" size="24px" />
+          </template>
+          <template #item="{ item }">
+            <PrioritizedListEntry :data="itemData(item)" size="24px" />
+          </template>
+        </VAutocomplete>
+        <RuiTooltip :open-delay="400">
+          <template #activator>
+            <RuiButton
+              id="add-item-btn"
+              color="primary"
+              icon
+              variant="text"
+              class="mt-1"
+              :disabled="!selection"
+              @click="addItem()"
             >
-              <template #selection="{ item }">
-                <PrioritizedListEntry :data="itemData(item)" />
-              </template>
-              <template #item="{ item }">
-                <PrioritizedListEntry :data="itemData(item)" />
-              </template>
-            </VAutocomplete>
-          </VCol>
-          <VCol cols="auto">
-            <VTooltip open-delay="400" top>
-              <template #activator="{ on, attrs }">
-                <VBtn
-                  id="add-item-btn"
-                  color="primary"
-                  v-bind="attrs"
-                  icon
-                  class="mt-3"
-                  :disabled="!selection"
-                  v-on="on"
-                  @click="addItem()"
-                >
-                  <VIcon>mdi-plus</VIcon>
-                </VBtn>
-              </template>
-              <span>
-                {{ t('prioritized_list.add_tooltip', itemNameTr) }}
-              </span>
-            </VTooltip>
-          </VCol>
-        </VRow>
+              <RuiIcon name="add-line" />
+            </RuiButton>
+          </template>
+          <span>
+            {{ t('prioritized_list.add_tooltip', itemNameTr) }}
+          </span>
+        </RuiTooltip>
       </div>
       <VSimpleTable>
         <thead>
           <tr>
-            <th class="prioritized-list-selection__move" />
-            <th class="prioritized-list-selection__priority text-center">
+            <th class="w-10" />
+            <th class="w-[3.75rem] text-center">
               {{ t('common.priority') }}
             </th>
             <th class="ps-6">{{ t('common.name') }}</th>
@@ -165,38 +164,32 @@ const autoCompleteHint: ComputedRef<string> = computed(() => {
         <tbody>
           <tr v-if="noResults">
             <td colspan="4">
-              <VRow class="pa-3 text-h6" justify="center">
-                <VCol cols="auto">
-                  {{ t('prioritized_list.item.empty', itemNameTr) }}
-                </VCol>
-              </VRow>
+              <div class="flex justify-center pa-3 text-h6">
+                {{ t('prioritized_list.item.empty', itemNameTr) }}
+              </div>
             </td>
           </tr>
           <tr v-for="(identifier, index) in value" :key="identifier">
             <td>
               <div class="flex flex-col py-2">
-                <div>
-                  <VBtn
-                    :id="'move-up-' + identifier"
-                    icon
-                    small
-                    :disabled="isFirst(identifier)"
-                    @click="move(identifier, false)"
-                  >
-                    <VIcon>mdi-chevron-up</VIcon>
-                  </VBtn>
-                </div>
-                <div>
-                  <VBtn
-                    :id="'move-down-' + identifier"
-                    icon
-                    small
-                    :disabled="isLast(identifier)"
-                    @click="move(identifier, true)"
-                  >
-                    <VIcon>mdi-chevron-down</VIcon>
-                  </VBtn>
-                </div>
+                <RuiButtonGroup variant="outlined" size="sm" icon vertical>
+                  <template #default>
+                    <RuiButton
+                      :id="'move-up-' + identifier"
+                      :disabled="isFirst(identifier)"
+                      @click="move(identifier, false)"
+                    >
+                      <RuiIcon name="arrow-up-s-line" />
+                    </RuiButton>
+                    <RuiButton
+                      :id="'move-down-' + identifier"
+                      :disabled="isLast(identifier)"
+                      @click="move(identifier, true)"
+                    >
+                      <RuiIcon name="arrow-down-s-line" />
+                    </RuiButton>
+                  </template>
+                </RuiButtonGroup>
               </div>
             </td>
             <td class="text-center">{{ index + 1 }}</td>
@@ -204,39 +197,30 @@ const autoCompleteHint: ComputedRef<string> = computed(() => {
               <PrioritizedListEntry :data="itemData(identifier)" />
             </td>
             <td class="text-end">
-              <VTooltip v-if="!disableDelete" open-delay="400" top>
-                <template #activator="{ on, attrs }">
-                  <VBtn
+              <RuiTooltip
+                v-if="!disableDelete"
+                :popper="{ placement: 'top' }"
+                open-delay="400"
+              >
+                <template #activator>
+                  <RuiButton
                     :id="'delete-' + identifier"
                     icon
-                    v-bind="attrs"
-                    v-on="on"
+                    variant="text"
                     @click="remove(identifier)"
                   >
-                    <VIcon>mdi-close</VIcon>
-                  </VBtn>
+                    <RuiIcon name="close-line" />
+                  </RuiButton>
                 </template>
                 <span>
                   {{ t('prioritized_list.item.delete', itemNameTr) }}
                 </span>
-              </VTooltip>
+              </RuiTooltip>
             </td>
           </tr>
         </tbody>
       </VSimpleTable>
-    </VSheet>
-    <ActionStatusIndicator class="mt-4" :status="status" />
+    </RuiCard>
+    <ActionStatusIndicator class="my-4" :status="status" />
   </div>
 </template>
-
-<style scoped lang="scss">
-.prioritized-list-selection {
-  &__move {
-    width: 48px;
-  }
-
-  &__priority {
-    width: 60px;
-  }
-}
-</style>

@@ -3642,12 +3642,13 @@
     "to_asset": "To Asset"
   },
   "price_oracle_selection": {
-    "hint": "* Disabling all the oracles will make it impossible to query prices for assets."
+    "hint": "* Disabling all the oracles will make it impossible to query prices for assets. You may need to click 'Refresh Prices' to apply the changes."
   },
   "price_oracle_settings": {
     "data_name": "price oracle",
     "historic_prices": "Historic Prices",
     "latest_prices": "Latest Prices",
+    "latest_prices_update": "Latest order prices updated. You may need to click the 'Refresh Prices' button to apply the changes.",
     "subtitle": "Manage which price oracles are used, in which order.",
     "title": "Price oracle settings"
   },

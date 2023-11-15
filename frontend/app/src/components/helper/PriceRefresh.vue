@@ -3,6 +3,10 @@ import { type ComputedRef } from 'vue';
 import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 
+const emit = defineEmits<{
+  (e: 'click'): void;
+}>();
+
 const { isTaskRunning } = useTaskStore();
 const { refreshPrices } = useBalances();
 const { isLoading } = useStatusStore();
@@ -21,6 +25,7 @@ const loadingData = computed<boolean>(
 const { assets } = useAggregatedBalances();
 
 const refresh = async () => {
+  emit('click');
   await refreshPrices(true, get(assets()));
 };
 

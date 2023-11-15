@@ -3363,11 +3363,13 @@
     "to_asset": "To Asset"
   },
   "price_oracle_selection": {
-    "hint": "* Disabling all the oracles will make it impossible to query prices for assets."
+    "hint": "* Η απενεργοποίηση όλων των μαντείων θα καταστήσει αδύνατη την αναζήτηση τιμών για στοιχεία. Ίσως χρειαστεί να κάνετε κλικ στην επιλογή 'Ανανέωση τιμών' για να εφαρμόσετε τις αλλαγές."
   },
   "price_oracle_settings": {
+    "data_name": "price oracle",
     "historic_prices": "Historic Prices",
     "latest_prices": "Latest Prices",
+    "latest_prices_update": "Ενημερώθηκαν οι τελευταίες τιμές παραγγελιών. Ίσως χρειαστεί να κάνετε κλικ στο κουμπί 'Ανανέωση τιμών' για να εφαρμόσετε τις αλλαγές.",
     "subtitle": "Manage which price oracles are used, in which order.",
     "title": "Price oracle settings"
   },
