@@ -44,7 +44,7 @@ def _calculate_query_chunks(
     Also has a URI length limit of ~8190, so seems no more than 80 public keys can be per call.
     """
     if len(indices_or_pubkeys) == 0:
-        return []  # type: ignore
+        return []
 
     n = 100
     if isinstance(indices_or_pubkeys[0], str):

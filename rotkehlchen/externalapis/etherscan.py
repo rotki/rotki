@@ -318,8 +318,7 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
                         'getLogs' in action
                     )
                     if transaction_endpoint_and_none_found or logs_endpoint_and_none_found:
-                        # Can't realize that result is always a list here so we ignore mypy warning
-                        return []  # type: ignore
+                        return []
 
                     # else
                     raise RemoteError(f'{self.chain} Etherscan returned error response: {json_ret}')  # noqa: E501
@@ -413,7 +412,7 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
                 options['txHash'] = period_or_hash.hex()
                 parent_tx_hash = period_or_hash
 
-        transactions: Union[list[EvmTransaction], list[EvmInternalTransaction]] = []  # type: ignore
+        transactions: Union[list[EvmTransaction], list[EvmInternalTransaction]] = []
         is_internal = action == 'txlistinternal'
         chain_id = self.chain.to_chain_id()
         while True:
@@ -476,7 +475,7 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
                 if timestamp > last_ts and len(transactions) >= TRANSACTIONS_BATCH_NUM:
                     yield transactions
                     last_ts = timestamp
-                    transactions = []  # type: ignore
+                    transactions = []
                 transactions.append(tx)
 
             if (new_options := self._maybe_paginate(result=result, options=options)) is None:
