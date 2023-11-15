@@ -7,25 +7,20 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <Card flat :outlined="false">
-    <template #title>
+  <RuiCard variant="flat" class="bg-transparent">
+    <template #header>
       {{ t('asset_update.success.title') }}
     </template>
+    <div class="flex items-center gap-4">
+      <SuccessDisplay size="32" success class="shrink-0" />
 
-    <VRow class="mt-2 text-body-1">
-      <VCol cols="auto" class="mx-2">
-        <VIcon x-large color="success">mdi-check-circle</VIcon>
-      </VCol>
-      <VCol>
-        {{ t('asset_update.success.description', { remoteVersion }) }}
-      </VCol>
-    </VRow>
-
-    <template #buttons>
-      <VSpacer />
-      <VBtn color="primary" depressed @click="emit('confirm')">
+      {{ t('asset_update.success.description', { remoteVersion }) }}
+    </div>
+    <template #footer>
+      <div class="grow" />
+      <RuiButton color="primary" @click="emit('confirm')">
         {{ t('common.actions.ok') }}
-      </VBtn>
+      </RuiButton>
     </template>
-  </Card>
+  </RuiCard>
 </template>

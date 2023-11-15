@@ -285,7 +285,7 @@ const slots = useSlots();
         </RuiTooltip>
       </div>
     </template>
-    <div>
+    <div class="flex gap-4 items-start">
       <BlockchainAccountSelector
         v-model="selectedAccounts"
         :label="t('liquity_staking_details.select_account')"
@@ -301,9 +301,9 @@ const slots = useSlots();
 
       <VMenu v-if="proxyInformation" offset-x nudge-right="8" min-width="410">
         <template #activator="{ on, attrs }">
-          <div v-bind="attrs" v-on="on">
+          <RuiButton variant="text" class="!p-2" icon v-bind="attrs" v-on="on">
             <RuiIcon name="information-line" />
-          </div>
+          </RuiButton>
         </template>
         <div class="pa-4">
           <div v-for="(proxies, key, index) in proxyInformation" :key="key">
