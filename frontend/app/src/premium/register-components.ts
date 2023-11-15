@@ -53,6 +53,7 @@ import CardTitle from '@/components/typography/CardTitle.vue';
 import HistoryEventsView from '@/components/history/events/HistoryEventsView.vue';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import LpPoolHeader from '@/components/display/defi/LpPoolHeader.vue';
+import RowAppend from '@/components/helper/RowAppend.vue';
 
 /**
  * Vuetify components that are used in the premium components
@@ -136,6 +137,7 @@ export function registerComponents(): void {
   Vue.component('HistoryEventsView', HistoryEventsView);
   // Version 24 - 1.31
   Vue.component('LpPoolHeader', LpPoolHeader);
+  Vue.component('RowAppend', RowAppend);
   vuetifyRegister();
   ruiRegister();
   logger.info('Components registered');

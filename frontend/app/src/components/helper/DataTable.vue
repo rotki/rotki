@@ -355,9 +355,11 @@ const { dark } = useTheme();
       }
 
       &:not(.v-data-table__expanded__content) {
-        &:hover {
-          td {
-            @apply bg-rui-grey-200;
+        &:not(.v-data-table__empty-wrapper) {
+          &:hover {
+            td {
+              @apply bg-rui-grey-200;
+            }
           }
         }
       }
