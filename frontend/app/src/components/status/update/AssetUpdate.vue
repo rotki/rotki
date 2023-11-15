@@ -180,7 +180,7 @@ onMounted(async () => {
       />
       <AssetUpdateInlineConfirm
         v-if="inlineConfirm"
-        class="max-w-[800px] mx-auto"
+        class="max-w-[32rem] mx-auto"
         :remote-version="changes.upToVersion"
         @confirm="updateComplete()"
       />
@@ -202,7 +202,7 @@ onMounted(async () => {
       </VDialog>
       <AssetUpdateMessage
         v-else
-        class="max-w-[800px] mx-auto"
+        class="max-w-[32rem] mx-auto"
         :headless="headless"
         :versions="changes"
         @update:versions="changes = $event"

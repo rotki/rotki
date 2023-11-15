@@ -42,15 +42,17 @@ const { t } = useI18n();
       required
       @input="input($event)"
     >
-      <RuiButton
-        v-for="(timeframe, i) in visibleTimeframes"
-        :key="i"
-        class="px-4"
-        :disabled="!premium && !worksWithoutPremium(timeframe)"
-        :value="timeframe"
-      >
-        {{ timeframe }}
-      </RuiButton>
+      <template #default>
+        <RuiButton
+          v-for="(timeframe, i) in visibleTimeframes"
+          :key="i"
+          class="px-4"
+          :disabled="!premium && !worksWithoutPremium(timeframe)"
+          :value="timeframe"
+        >
+          {{ timeframe }}
+        </RuiButton>
+      </template>
     </RuiButtonGroup>
   </div>
 </template>

@@ -12,7 +12,7 @@ const { t } = useI18n();
       {{ t('asset_update.success.title') }}
     </template>
     <div class="flex items-center gap-4">
-      <SuccessDisplay size="32" success />
+      <SuccessDisplay size="32" success class="shrink-0" />
 
       {{ t('asset_update.success.description', { remoteVersion }) }}
     </div>
