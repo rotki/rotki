@@ -11,7 +11,7 @@ from functools import reduce
 from http import HTTPStatus
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, Union, cast, get_args, overload
-from zipfile import ZipFile
+from zipfile import BadZipFile, ZipFile
 
 import gevent
 from flask import Response, make_response, send_file
@@ -3574,17 +3574,21 @@ class RestAPI:
                     db_handler=self.rotkehlchen.data.db,
                 )
             else:
-                zip_file = ZipFile(path)
+                try:
+                    zip_file = ZipFile(path)
+                except BadZipFile as e:
+                    raise ValidationError('Provided file could not be unzipped') from e
+
+                if 'assets.json' not in zip_file.namelist():
+                    raise ValidationError('assets.json could not be found in the provided zip file.')  # noqa: E501
+
                 with tempfile.TemporaryDirectory() as tempdir:
-                    for file_name in zip_file.namelist():
-                        if file_name.endswith('.json'):
-                            zip_file.extract(file_name, tempdir)
-                            file_path = Path(tempdir) / file_name
-                            import_assets_from_file(
-                                path=file_path,
-                                msg_aggregator=self.rotkehlchen.msg_aggregator,
-                                db_handler=self.rotkehlchen.data.db,
-                            )
+                    zip_file.extract('assets.json', tempdir)
+                    import_assets_from_file(
+                        path=Path(tempdir) / 'assets.json',
+                        msg_aggregator=self.rotkehlchen.msg_aggregator,
+                        db_handler=self.rotkehlchen.data.db,
+                    )
         except ValidationError as e:
             return wrap_in_fail_result(
                 message=f'Provided file does not have the expected format. {e!s}',
