@@ -116,7 +116,7 @@ const cancel = () => {
     :action-disabled="!valid"
     max-width="1200px"
     :persistent="resolutionLength > 0"
-    @click="resolve(resolution)"
+    @confirm="resolve(resolution)"
     @cancel="cancel()"
   >
     <div

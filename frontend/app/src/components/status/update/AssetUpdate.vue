@@ -180,6 +180,7 @@ onMounted(async () => {
       />
       <AssetUpdateInlineConfirm
         v-if="inlineConfirm"
+        class="max-w-[800px] mx-auto"
         :remote-version="changes.upToVersion"
         @confirm="updateComplete()"
       />
