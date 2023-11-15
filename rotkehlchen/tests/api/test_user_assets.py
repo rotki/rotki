@@ -992,11 +992,7 @@ def test_importing_user_assets_list(
 ):
     """Test that the endpoint for importing user assets works correctly"""
     async_query = random.choice((True, False))
-    dir_path = Path(__file__).resolve().parent.parent
-    if file_type == 'zip':
-        filepath = dir_path / 'data' / 'exported_assets.zip'
-    else:
-        filepath = dir_path / 'data' / 'exported_assets.json'
+    filepath = Path(__file__).resolve().parent.parent / 'data' / f'exported_assets.{file_type}'
 
     if method == 'put':
         response = requests.put(

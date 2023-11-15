@@ -33,8 +33,11 @@ def import_assets_from_file(
     - InputError: If the version of the file is not valid for the current
     globaldb version
     """
-    with open(path, encoding='utf8') as f:
-        data = ExportedAssetsSchema().loads(f.read())
+    try:
+        with open(path, encoding='utf8') as f:
+            data = ExportedAssetsSchema().loads(f.read())
+    except UnicodeDecodeError as e:
+        raise InputError(f'Provided file at {path} could not be decoded as utf-8 properly') from e
 
     if int(data['version']) not in ASSETS_FILE_IMPORT_ACCEPTED_GLOBALDB_VERSIONS:
         raise InputError(
