@@ -386,7 +386,7 @@ class DBHistoryEvents:
             bindings.insert(0, FREE_HISTORY_EVENTS_LIMIT)
 
         cursor.execute(base_query + prepared_query, bindings)
-        output: Union[list[HistoryBaseEntry], list[tuple[int, HistoryBaseEntry]]] = []  # type: ignore
+        output: Union[list[HistoryBaseEntry], list[tuple[int, HistoryBaseEntry]]] = []
         data_start_idx = type_idx + 1
         for entry in cursor:
             entry_type = HistoryBaseEntryType(entry[type_idx])

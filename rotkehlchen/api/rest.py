@@ -2641,8 +2641,8 @@ class RestAPI:
             filter_query: EvmTransactionsFilterQuery,
     ) -> dict[str, Any]:
         chain_ids: tuple[SUPPORTED_CHAIN_IDS]
-        if filter_query.chain_id is None:  # type ignore below is due to get_args
-            chain_ids = get_args(SUPPORTED_CHAIN_IDS)  # type: ignore[assignment]
+        if filter_query.chain_id is None:
+            chain_ids = get_args(SUPPORTED_CHAIN_IDS)
         else:
             chain_ids = (filter_query.chain_id,)
 

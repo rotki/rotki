@@ -140,8 +140,8 @@ K = TypeVar('K')
 V = TypeVar('V')
 
 
-@overload
-def combine_dicts(a: dict[K, V], b: dict[K, V], op: Callable = operator.add) -> dict[K, V]:  # type: ignore[misc]
+@overload  # type: ignore [overload-overlap]
+def combine_dicts(a: dict[K, V], b: dict[K, V], op: Callable = operator.add) -> dict[K, V]:
     ...
 
 

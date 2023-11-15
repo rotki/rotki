@@ -335,10 +335,10 @@ def setup_urls(
 ) -> None:
     for url_tuple in urls:
         if len(url_tuple) == 2:
-            route, resource_cls = url_tuple  # type: ignore
+            route, resource_cls = url_tuple
             endpoint = resource_cls.__name__.lower()
         elif len(url_tuple) == 3:
-            route, resource_cls, endpoint = url_tuple  # type: ignore
+            route, resource_cls, endpoint = url_tuple
         else:
             raise ValueError(f'Invalid URL format: {url_tuple!r}')
         blueprint.add_url_rule(
