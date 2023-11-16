@@ -49,6 +49,7 @@ declare global {
   const checkIfDevelopment: typeof import('./utils/env-utils')['checkIfDevelopment']
   const chunkArray: typeof import('./utils/data')['chunkArray']
   const compareSymbols: typeof import('./utils/assets')['compareSymbols']
+  const compareTextByKeyword: typeof import('./utils/assets')['compareTextByKeyword']
   const computed: typeof import('vue')['computed']
   const computedAsync: typeof import('@vueuse/core')['computedAsync']
   const computedEager: typeof import('@vueuse/core')['computedEager']
@@ -765,7 +766,7 @@ declare module 'vue' {
     readonly checkBeforeSubmission: UnwrapRef<typeof import('./utils/validation')['checkBeforeSubmission']>
     readonly checkIfDevelopment: UnwrapRef<typeof import('./utils/env-utils')['checkIfDevelopment']>
     readonly chunkArray: UnwrapRef<typeof import('./utils/data')['chunkArray']>
-    readonly compareSymbols: UnwrapRef<typeof import('./utils/assets')['compareSymbols']>
+    readonly compareTextByKeyword: UnwrapRef<typeof import('./utils/assets')['compareTextByKeyword']>
     readonly computed: UnwrapRef<typeof import('vue')['computed']>
     readonly computedAsync: UnwrapRef<typeof import('@vueuse/core')['computedAsync']>
     readonly computedEager: UnwrapRef<typeof import('@vueuse/core')['computedEager']>
@@ -1476,7 +1477,7 @@ declare module '@vue/runtime-core' {
     readonly checkBeforeSubmission: UnwrapRef<typeof import('./utils/validation')['checkBeforeSubmission']>
     readonly checkIfDevelopment: UnwrapRef<typeof import('./utils/env-utils')['checkIfDevelopment']>
     readonly chunkArray: UnwrapRef<typeof import('./utils/data')['chunkArray']>
-    readonly compareSymbols: UnwrapRef<typeof import('./utils/assets')['compareSymbols']>
+    readonly compareTextByKeyword: UnwrapRef<typeof import('./utils/assets')['compareTextByKeyword']>
     readonly computed: UnwrapRef<typeof import('vue')['computed']>
     readonly computedAsync: UnwrapRef<typeof import('@vueuse/core')['computedAsync']>
     readonly computedEager: UnwrapRef<typeof import('@vueuse/core')['computedEager']>

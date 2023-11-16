@@ -384,19 +384,6 @@ watchDebounced(
 
 watch(search, search => {
   set(loading, !!search);
-  const el = get(input)?.$el;
-  if (el) {
-    const className = 'v-list-item--highlighted';
-    const highlighted = el.querySelectorAll(`.${className}`).length;
-    if (highlighted === 0) {
-      nextTick(() => {
-        const elementToUpdate = el.querySelectorAll('.v-list-item');
-        if (elementToUpdate.length > 0) {
-          elementToUpdate[0].classList.add(className);
-        }
-      });
-    }
-  }
 });
 
 watch(open, open => {

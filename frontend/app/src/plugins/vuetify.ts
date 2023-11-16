@@ -3,7 +3,6 @@
 import '@mdi/font/css/materialdesignicons.css';
 import Vue from 'vue';
 import Vuetify from 'vuetify';
-import { VDialog, VNavigationDrawer } from 'vuetify/lib/components';
 import {
   DARK_ACCENT,
   DARK_ERROR,
@@ -22,51 +21,6 @@ import {
 } from '@/plugins/theme';
 
 Vue.use(Vuetify);
-
-// Fix scroll error issue on VOverlay
-const newShouldScroll = (el: Element, e: WheelEvent): boolean => {
-  if (el.tagName === 'BODY' || el.tagName === 'HTML') {
-    return false;
-  }
-  if (el.hasAttribute('data-app')) {
-    return false;
-  }
-
-  const dir = e.shiftKey || e.deltaX ? 'x' : 'y';
-  const delta = dir === 'y' ? e.deltaY : e.deltaX || e.deltaY;
-
-  let alreadyAtStart: boolean;
-  let alreadyAtEnd: boolean;
-  if (dir === 'y') {
-    alreadyAtStart = el.scrollTop === 0;
-    alreadyAtEnd = el.scrollTop + el.clientHeight === el.scrollHeight;
-  } else {
-    alreadyAtStart = el.scrollLeft === 0;
-    alreadyAtEnd = el.scrollLeft + el.clientWidth === el.scrollWidth;
-  }
-
-  const scrollingUp = delta < 0;
-  const scrollingDown = delta > 0;
-
-  if (!alreadyAtStart && scrollingUp) {
-    return true;
-  }
-  if (!alreadyAtEnd && scrollingDown) {
-    return true;
-  }
-  if (alreadyAtStart || alreadyAtEnd) {
-    return newShouldScroll(el.parentNode as Element, e);
-  }
-
-  return false;
-};
-
-// @ts-ignore
-VDialog.options.mixins[2].options.methods.shouldScroll = newShouldScroll;
-
-// @ts-ignore
-VNavigationDrawer.options.mixins[2].options.methods.shouldScroll =
-  newShouldScroll;
 
 const DARK_GREY = '#1e1e1e';
 
