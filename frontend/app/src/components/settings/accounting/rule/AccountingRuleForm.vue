@@ -66,7 +66,7 @@ const { addAccountingRule, editAccountingRule } = useAccountingApi();
 const { setMessage } = useMessageStore();
 
 const save = async () => {
-  const editing = !!get(editableItem);
+  const editing = Number(get(editableItem)?.identifier) > 0;
   const stateVal = get(state);
 
   const payload = {

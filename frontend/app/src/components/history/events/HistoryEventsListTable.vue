@@ -49,7 +49,7 @@ const deleteEvent = (item: HistoryEventEntry) =>
       <div
         v-for="(item, index) in events"
         :key="index"
-        class="grid md:grid-cols-4 gap-x-2 gap-y-4 lg:grid-cols-9 xl:grid-cols-10 py-4 items-center"
+        class="grid md:grid-cols-4 gap-x-2 gap-y-4 lg:grid-cols-[repeat(20,minmax(0,1fr))] py-4 items-center"
         :class="{
           'border-b border-default': index < events.length - 1
         }"
@@ -57,19 +57,19 @@ const deleteEvent = (item: HistoryEventEntry) =>
         <HistoryEventType
           :event="item"
           :chain="getChain(item.location)"
-          class="md:col-span-2 lg:col-span-3"
+          class="md:col-span-2 lg:col-span-6"
         />
-        <HistoryEventAsset :event="item" class="md:col-span-2" />
+        <HistoryEventAsset :event="item" class="md:col-span-2 lg:col-span-4" />
         <HistoryEventNote
           v-bind="item"
           :amount="item.balance.amount"
           :chain="getChain(item.location)"
           :no-tx-hash="isNoTxHash(item)"
           :block-number="blockNumber"
-          class="break-words leading-6 md:col-span-3 xl:col-span-4"
+          class="break-words leading-6 md:col-span-3 lg:col-span-7"
         />
         <RowActions
-          class="md:col-span-1"
+          class="lg:col-span-3"
           align="end"
           :delete-tooltip="t('transactions.events.actions.delete')"
           :edit-tooltip="t('transactions.events.actions.edit')"

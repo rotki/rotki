@@ -421,8 +421,7 @@ const [DefineSymbol, ReuseSymbol] = createReusableTemplate();
 
 .loading {
   &:after {
-    content: 'placeholder';
-    @apply text-transparent;
+    content: '\200B';
   }
 }
 </style>
