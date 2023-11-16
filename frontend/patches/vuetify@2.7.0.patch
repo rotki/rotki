@@ -13,6 +13,85 @@ index f432b8c151b912da7fc2d70da0655a682f1e17de..59e67afd65514388765a47dc007af02b
      flat: Boolean,
      hover: Boolean,
      img: String,
+diff --git a/lib/components/VMenu/VMenu.js b/lib/components/VMenu/VMenu.js
+index 282e927d620019c3c038dde9ccd96e166bbb2403..a285aafb356287cab09f2b950766ac158f16640d 100644
+--- a/lib/components/VMenu/VMenu.js
++++ b/lib/components/VMenu/VMenu.js
+@@ -143,8 +143,33 @@ export default baseMixins.extend({
+     },
+ 
+     listIndex(next, prev) {
+-      if (next in this.tiles) {
+-        const tile = this.tiles[next];
++      this.setHighlightClass(next);
++
++      prev in this.tiles && this.tiles[prev].classList.remove('v-list-item--highlighted');
++    }
++
++  },
++
++  created() {
++    /* istanbul ignore next */
++    if (this.$attrs.hasOwnProperty('full-width')) {
++      removed('full-width', this);
++    }
++  },
++
++  mounted() {
++    this.isActive && this.callActivate();
++  },
++
++  methods: {
++    setListIndex (index) {
++      this.listIndex = index;
++      this.setHighlightClass(index);
++    },
++
++    setHighlightClass(index) {
++      if (index in this.tiles) {
++        const tile = this.tiles[index];
+         tile.classList.add('v-list-item--highlighted');
+         const scrollTop = this.$refs.content.scrollTop;
+         const contentHeight = this.$refs.content.clientHeight;
+@@ -163,24 +188,8 @@ export default baseMixins.extend({
+           });
+         }
+       }
++    },
+ 
+-      prev in this.tiles && this.tiles[prev].classList.remove('v-list-item--highlighted');
+-    }
+-
+-  },
+-
+-  created() {
+-    /* istanbul ignore next */
+-    if (this.$attrs.hasOwnProperty('full-width')) {
+-      removed('full-width', this);
+-    }
+-  },
+-
+-  mounted() {
+-    this.isActive && this.callActivate();
+-  },
+-
+-  methods: {
+     activate() {
+       // Update coordinates and dimensions of menu
+       // and its activator
+diff --git a/lib/components/VSelect/VSelect.js b/lib/components/VSelect/VSelect.js
+index cc6ccc81abbd4517591efe195429716cc839b160..4713048d884714995267d8961a15714489005cca 100644
+--- a/lib/components/VSelect/VSelect.js
++++ b/lib/components/VSelect/VSelect.js
+@@ -786,7 +786,7 @@ export default baseMixins.extend().extend({
+     },
+ 
+     setMenuIndex(index) {
+-      this.$refs.menu && (this.$refs.menu.listIndex = index);
++      this.$refs.menu && (this.$refs.menu.setListIndex(index));
+     },
+ 
+     setSelectedItems() {
 diff --git a/lib/components/VSwitch/VSwitch.js b/lib/components/VSwitch/VSwitch.js
 index a6acaeb422a3a8515a4ba7164b5867f15c59221a..32765adff755340bfb1bcc03809ffead7cd8f003 100644
 --- a/lib/components/VSwitch/VSwitch.js
@@ -29,14 +108,27 @@ index a6acaeb422a3a8515a4ba7164b5867f15c59221a..32765adff755340bfb1bcc03809ffead
      loading: {
        type: [Boolean, String],
        default: false
+diff --git a/lib/mixins/overlayable/index.js b/lib/mixins/overlayable/index.js
+index d766251e11ca6bc2637c942e2459acaa90cb1eee..f24007bc9e807d3bb87366b9f1ac0ea54520f46d 100644
+--- a/lib/mixins/overlayable/index.js
++++ b/lib/mixins/overlayable/index.js
+@@ -112,7 +112,7 @@ export default Vue.extend().extend({
+     },
+ 
+     shouldScroll(el, e) {
+-      if (el.hasAttribute('data-app')) return false;
++      if (el.tagName === 'BODY' || el.tagName === 'HTML' || el.hasAttribute('data-app')) return false;
+       const dir = e.shiftKey || e.deltaX ? 'x' : 'y';
+       const delta = dir === 'y' ? e.deltaY : e.deltaX || e.deltaY;
+       let alreadyAtStart;
 diff --git a/src/components/VGrid/_grid.sass b/src/components/VGrid/_grid.sass
 index d7e016c5385d421a8a342a59903f38741ee38c92..37fef9df64608f3978e9eaba9050dd852d6d23b6 100644
 --- a/src/components/VGrid/_grid.sass
 +++ b/src/components/VGrid/_grid.sass
 @@ -93,7 +93,6 @@
-
+ 
        $m: $m - 1
-
+ 
 -.flex,
  .child-flex > *
    flex: 1 1 auto
@@ -51,7 +143,7 @@ index 9b3f56c975c7a4aef13677d452ff0da0f7a892ef..16f5da46597d4bfe4732ee8d7af792ad
    background-color: transparent;
 -  border-style: none;
  }
-
+ 
  /* Style select like a standard input */
 diff --git a/src/styles/settings/_utilities.scss b/src/styles/settings/_utilities.scss
 index 6d8aa6bf68526921d6161d72b2b921927f9bf5be..4f1848a76382908331a310600f2783fcd49f225d 100644
@@ -59,7 +151,7 @@ index 6d8aa6bf68526921d6161d72b2b921927f9bf5be..4f1848a76382908331a310600f2783fc
 +++ b/src/styles/settings/_utilities.scss
 @@ -52,11 +52,6 @@ $utilities: map-deep-merge(
      ),
-
+ 
      // Flex utilities
 -    "flex": (
 -      responsive: true,

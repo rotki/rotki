@@ -9,7 +9,7 @@ patchedDependencies:
     hash: mia2k5wehigboo5ep5nlxwffwa
     path: patches/bignumber.js@9.1.1.patch
   vuetify@2.7.0:
-    hash: agjmwn2qei2egwoopc56n2vsh4
+    hash: zmxjwzl572dkixkomhybxiyeaq
     path: patches/vuetify@2.7.0.patch
 
 importers:
@@ -150,7 +150,7 @@ importers:
         version: 3.6.5(vue@2.7.14)
       vuetify:
         specifier: 2.7.0
-        version: 2.7.0(patch_hash=agjmwn2qei2egwoopc56n2vsh4)(vue@2.7.14)
+        version: 2.7.0(patch_hash=zmxjwzl572dkixkomhybxiyeaq)(vue@2.7.14)
       zod:
         specifier: 3.22.4
         version: 3.22.4
@@ -5544,7 +5544,7 @@ packages:
       eslint: 8.51.0
       eslint-plugin-vue: 7.20.0(eslint@8.51.0)
       requireindex: 1.2.0
-      vuetify: 2.7.0(patch_hash=agjmwn2qei2egwoopc56n2vsh4)(vue@2.7.14)
+      vuetify: 2.7.0(patch_hash=zmxjwzl572dkixkomhybxiyeaq)(vue@2.7.14)
     transitivePeerDependencies:
       - supports-color
     dev: false
@@ -11016,7 +11016,7 @@ packages:
       '@vue/compiler-sfc': 2.7.14
       csstype: 3.1.2
 
-  /vuetify@2.7.0(patch_hash=agjmwn2qei2egwoopc56n2vsh4)(vue@2.7.14):
+  /vuetify@2.7.0(patch_hash=zmxjwzl572dkixkomhybxiyeaq)(vue@2.7.14):
     resolution: {integrity: sha512-eDb+lbtB9e+FRbOPIIyXwgwgc2M6gvhHkhSgggzM0hmKh1XM34YStZbM865viH0AfpxGZIOsRcs0S+OtdyOB+Q==}
     peerDependencies:
       vue: ^2.6.4

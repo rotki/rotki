@@ -126,7 +126,7 @@ watch([keyword, selectedMatcher], async ([keyword, selectedMatcher]) => {
       .sort((a, b) => {
         const aText = getItemText(a);
         const bText = getItemText(b);
-        return compareSymbols(aText, bText, searchString);
+        return compareTextByKeyword(aText, bText, searchString);
       })
       .slice(0, 5)
       .map((a, index) => ({

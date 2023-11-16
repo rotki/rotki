@@ -719,6 +719,7 @@
     "provideLocal": true,
     "useAssetPageNavigation": true,
     "useAccountingRuleMappings": true,
-    "getPlaceholderRule": true
+    "getPlaceholderRule": true,
+    "compareTextByKeyword": true
   }
 }

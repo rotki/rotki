@@ -53,7 +53,7 @@ const levenshtein = (a: string, b: string): number => {
  * 1. It will prioritize string that match from beginning (i.e. for keyword `hop`, it prioritizes string `hop-protocol` higher than string `hoo`)
  * 2. It will prioritize string that contain the keyword (i.e. for keyword `urv`, it prioritizes string `curvy`, higher than string `urw`)
  */
-export const compareSymbols = (
+export const compareTextByKeyword = (
   a: string,
   b: string,
   keyword: string
