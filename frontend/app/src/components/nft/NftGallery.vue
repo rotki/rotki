@@ -22,7 +22,6 @@ const sortBy = ref<'name' | 'priceUsd' | 'collection'>('name');
 const sortDescending = ref(false);
 
 const { premiumURL } = useInterop();
-const css = useCssModule();
 const sortProperties = [
   {
     text: t('common.name'),
@@ -40,7 +39,7 @@ const sortProperties = [
 
 const chains = [Blockchain.ETH];
 
-const { mobile, name: breakpoint, width } = useDisplay();
+const { name: breakpoint, width } = useDisplay();
 const page = ref(1);
 
 const itemsPerPage = computed(() => {
@@ -219,116 +218,81 @@ const sortNfts = (
       {{ error ? error : t('nft_gallery.empty_subtitle') }}
     </span>
   </NoDataScreen>
-  <div v-else class="py-4">
-    <VRow justify="space-between">
-      <VCol>
-        <VRow align="center">
-          <VCol :cols="mobile ? '12' : '6'">
-            <BlockchainAccountSelector
-              v-model="selectedAccounts"
-              :label="t('nft_gallery.select_account')"
-              :chains="chains"
-              dense
+  <div v-else class="py-4 flex flex-col gap-6">
+    <div class="flex justify-between gap-6 items-start">
+      <div class="grid md:grid-cols-2 gap-4 grow">
+        <BlockchainAccountSelector
+          v-model="selectedAccounts"
+          :label="t('nft_gallery.select_account')"
+          :chains="chains"
+          dense
+          outlined
+          no-padding
+          flat
+          :usable-addresses="availableAddresses"
+        />
+        <VSheet flat>
+          <div>
+            <VAutocomplete
+              v-model="selectedCollection"
+              :label="t('nft_gallery.select_collection')"
+              single-line
+              clearable
+              hide-details
+              hide-selected
+              :items="collections"
               outlined
-              no-padding
-              flat
-              :usable-addresses="availableAddresses"
+              background-color=""
+              dense
             />
-          </VCol>
-          <VCol :cols="mobile ? '12' : '6'">
-            <VSheet flat>
-              <div>
-                <VAutocomplete
-                  v-model="selectedCollection"
-                  :label="t('nft_gallery.select_collection')"
-                  single-line
-                  clearable
-                  hide-details
-                  hide-selected
-                  :items="collections"
-                  outlined
-                  background-color=""
-                  dense
-                />
-              </div>
-            </VSheet>
-          </VCol>
-          <VCol :cols="mobile ? '12' : '6'">
-            <SortingSelector
-              :sort-by="sortBy"
-              :sort-properties="sortProperties"
-              :sort-desc="sortDescending"
-              @update:sort-by="sortBy = $event"
-              @update:sort-desc="sortDescending = $event"
-            />
-          </VCol>
-          <VCol :cols="mobile ? '12' : '6'">
-            <Pagination v-if="pages > 0" v-model="page" :length="pages" />
-          </VCol>
-        </VRow>
-      </VCol>
-      <VCol cols="auto" class="pr-0">
+          </div>
+        </VSheet>
+        <SortingSelector
+          :sort-by="sortBy"
+          :sort-properties="sortProperties"
+          :sort-desc="sortDescending"
+          @update:sort-by="sortBy = $event"
+          @update:sort-desc="sortDescending = $event"
+        />
+        <Pagination v-if="pages > 0" v-model="page" :length="pages" />
+      </div>
+      <div class="flex items-center gap-3">
         <NftImageRenderingSettingMenu />
-      </VCol>
-      <VCol cols="auto" class="pr-0">
         <ActiveModules :modules="modules" />
-      </VCol>
-      <VCol cols="auto">
         <RefreshButton
           :loading="loading"
           :tooltip="t('nft_gallery.refresh_tooltip')"
           @refresh="fetchNfts(true)"
         />
-      </VCol>
-    </VRow>
-    <VRow v-if="!premium && visibleNfts.length > 0" justify="center">
-      <VCol cols="auto">
-        <i18n path="nft_gallery.upgrade">
-          <template #limit> {{ limit }}</template>
-          <template #link>
-            <BaseExternalLink
-              :text="t('upgrade_row.rotki_premium')"
-              :href="premiumURL"
-            />
-          </template>
-        </i18n>
-      </VCol>
-    </VRow>
-    <VRow
-      v-if="visibleNfts.length === 0"
-      align="center"
-      justify="center"
-      :class="css.empty"
+      </div>
+    </div>
+    <div
+      v-if="!premium && visibleNfts.length > 0"
+      class="flex justify-center text-rui-text-secondary"
     >
-      <VCol cols="auto" class="text--secondary text-h6">
-        {{ t('nft_gallery.empty_filter') }}
-      </VCol>
-    </VRow>
-    <VRow v-else>
-      <VCol
-        v-for="item in visibleNfts"
-        :key="item.tokenIdentifier"
-        cols="12"
-        sm="6"
-        md="6"
-        lg="3"
-        :class="css.xl"
-      >
+      <i18n path="nft_gallery.upgrade">
+        <template #limit> {{ limit }}</template>
+        <template #link>
+          <BaseExternalLink
+            :text="t('upgrade_row.rotki_premium')"
+            :href="premiumURL"
+          />
+        </template>
+      </i18n>
+    </div>
+    <div
+      v-if="visibleNfts.length === 0"
+      class="min-h-[60vh] flex justify-center align-center text--secondary text-h6"
+    >
+      {{ t('nft_gallery.empty_filter') }}
+    </div>
+    <div
+      v-else
+      class="grid md:grid-cols-2 lg:grid-cols-4 min-[1600px]:grid-cols-5 gap-4"
+    >
+      <div v-for="item in visibleNfts" :key="item.tokenIdentifier">
         <NftGalleryItem :item="item" />
-      </VCol>
-    </VRow>
+      </div>
+    </div>
   </div>
 </template>
-
-<style module lang="scss">
-.empty {
-  min-height: 80vh;
-}
-
-.xl {
-  @media only screen and (min-width: 1600px) {
-    flex: 0 0 20% !important;
-    max-width: 20% !important;
-  }
-}
-</style>

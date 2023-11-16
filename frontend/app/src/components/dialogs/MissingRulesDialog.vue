@@ -104,26 +104,42 @@ const onAddRule = () => {
           </span>
         </template>
 
-        <p class="text-body-1">
+        <p class="text-body-1 text-rui-text-secondary">
           {{ t('actions.history_events.missing_rule.message') }}
         </p>
 
-        <div class="flex flex-col items-start gap-3">
-          <RuiButton v-if="isEvm" variant="text" @click="onRedecode()">
+        <div class="flex flex-col gap-1">
+          <RuiButton
+            v-if="isEvm"
+            size="lg"
+            class="justify-start"
+            variant="text"
+            @click="onRedecode()"
+          >
             <template #prepend>
-              <RuiIcon color="info" name="restart-line" />
+              <RuiIcon color="secondary" name="restart-line" />
             </template>
             {{ t('actions.history_events.missing_rule.re_decode') }}
           </RuiButton>
-          <RuiButton variant="text" @click="onEdit()">
+          <RuiButton
+            size="lg"
+            class="justify-start"
+            variant="text"
+            @click="onEdit()"
+          >
             <template #prepend>
-              <RuiIcon color="info" name="pencil-line" />
+              <RuiIcon color="secondary" name="pencil-line" />
             </template>
             {{ t('actions.history_events.missing_rule.edit') }}
           </RuiButton>
-          <RuiButton variant="text" @click="onAddRule()">
+          <RuiButton
+            size="lg"
+            class="justify-start"
+            variant="text"
+            @click="onAddRule()"
+          >
             <template #prepend>
-              <RuiIcon color="info" name="add-line" />
+              <RuiIcon color="secondary" name="add-line" />
             </template>
             {{ t('actions.history_events.missing_rule.add_rule') }}
           </RuiButton>

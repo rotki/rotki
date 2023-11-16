@@ -28,9 +28,9 @@ const { t } = useI18n();
   <RuiCard>
     <template #custom-header>
       <div class="flex items-center justify-between p-4">
-        <h5 class="text-h5">
+        <h6 class="text-h6">
           {{ t('kraken_staking_received.title') }}
-        </h5>
+        </h6>
         <RuiButtonGroup
           v-model="current"
           required
