@@ -9,8 +9,6 @@ withDefaults(
     tooltipOption: undefined
   }
 );
-
-const { dark } = useTheme();
 </script>
 
 <template>
@@ -19,9 +17,9 @@ const { dark } = useTheme();
     :id="tooltipOption.id"
     :class="{
       [$style.tooltip]: true,
-      [$style['tooltip__dark']]: dark,
       [$style['tooltip__show']]: tooltipOption.visible
     }"
+    class="bg-white dark:bg-black"
     :data-align-x="tooltipOption.xAlign"
     :data-align-y="tooltipOption.yAlign"
     :style="{
@@ -38,7 +36,6 @@ const { dark } = useTheme();
   position: absolute;
   opacity: 0;
   visibility: hidden;
-  background-color: white;
   padding: 0.25rem 0.75rem;
   font-family: 'Roboto', sans-serif;
   font-size: 16px;
@@ -54,10 +51,6 @@ const { dark } = useTheme();
     visibility: visible;
   }
 
-  &__dark {
-    color: black;
-  }
-
   &::before {
     content: '';
     width: 0;
@@ -65,26 +58,26 @@ const { dark } = useTheme();
     position: absolute;
     border-width: 6px;
     border-style: solid;
-    border-color: transparent;
+    border-color: white;
   }
 
   &[data-align-x='left'],
   &[data-align-x='right'] {
     &::before {
-      border-top-color: transparent;
-      border-bottom-color: transparent;
+      border-top-color: transparent !important;
+      border-bottom-color: transparent !important;
     }
   }
 
   &[data-align-x='left'] {
     &::before {
-      border-right-color: white;
+      border-left-color: transparent !important;
       right: 100%;
     }
 
     &:not([data-align-y='center']) {
       &::before {
-        border-right-color: transparent;
+        border-right-color: transparent !important;
         right: calc(100% - 16px);
       }
     }
@@ -92,13 +85,13 @@ const { dark } = useTheme();
 
   &[data-align-x='right'] {
     &::before {
-      border-left-color: white;
+      border-right-color: transparent !important;
       left: 100%;
     }
 
     &:not([data-align-y='center']) {
       &::before {
-        border-left-color: transparent;
+        border-left-color: transparent !important;
         left: calc(100% - 16px);
       }
     }
@@ -107,21 +100,21 @@ const { dark } = useTheme();
   &[data-align-y='top'],
   &[data-align-y='bottom'] {
     &::before {
-      border-left-color: transparent;
-      border-right-color: transparent;
+      border-left-color: transparent !important;
+      border-right-color: transparent !important;
     }
   }
 
   &[data-align-y='top'] {
     &::before {
-      border-bottom-color: white;
+      border-top-color: transparent !important;
       bottom: 100%;
     }
   }
 
   &[data-align-y='bottom'] {
     &::before {
-      border-top-color: white;
+      border-bottom-color: transparent !important;
       top: 100%;
     }
   }
@@ -137,6 +130,14 @@ const { dark } = useTheme();
     &::before {
       top: 50%;
       transform: translateY(-50%);
+    }
+  }
+}
+
+:global(.dark) {
+  .tooltip {
+    &:before {
+      border-color: black;
     }
   }
 }
