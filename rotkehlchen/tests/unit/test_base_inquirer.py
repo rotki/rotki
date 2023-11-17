@@ -22,7 +22,7 @@ def test_base_nodes_prune_and_archive_status(
             assert not web3_node.is_pruned
             assert web3_node.is_archive
         elif node_name.endpoint == 'https://base.publicnode.com':
-            assert not web3_node.is_pruned
+            assert web3_node.is_pruned
             assert not web3_node.is_archive
         else:
             raise AssertionError(f'Unknown node {node_name} encountered.')
