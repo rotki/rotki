@@ -90,7 +90,7 @@ const editClicked = (_payload: XpubAccountWithBalance) =>
         <span class="font-medium">
           {{ t('account_group_header.xpub') }}
         </span>
-        <span :class="{ 'blur-content': !shouldShowAmount }">
+        <span :class="{ blur: !shouldShowAmount }">
           <VTooltip top open-delay="400">
             <template #activator="{ on }">
               <span v-on="on">{{ displayXpub }}</span>
@@ -102,10 +102,7 @@ const editClicked = (_payload: XpubAccountWithBalance) =>
           :value="xpub.xpub"
           :tooltip="t('account_group_header.copy_tooltip')"
         />
-        <span
-          v-if="xpub.derivationPath"
-          :class="{ 'blur-content': !shouldShowAmount }"
-        >
+        <span v-if="xpub.derivationPath" :class="{ blur: !shouldShowAmount }">
           <span class="font-medium">
             {{ t('account_group_header.derivation_path') }}
           </span>
@@ -162,9 +159,3 @@ const editClicked = (_payload: XpubAccountWithBalance) =>
     </td>
   </Fragment>
 </template>
-
-<style scoped lang="scss">
-.blur-content {
-  filter: blur(0.75em);
-}
-</style>

@@ -134,3 +134,8 @@ input {
 .icon-bg {
   @apply dark:rounded-md dark:bg-white;
 }
+
+.blur {
+  filter: blur(0.75em);
+
+}

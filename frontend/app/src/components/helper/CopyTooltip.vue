@@ -10,7 +10,7 @@ const { t } = useI18n();
   <RuiTooltip
     :popper="{ placement: 'top' }"
     :open-delay="200"
-    class="text-no-wrap"
+    class="text-no-wrap cursor-pointer"
     data-cy="display-amount"
   >
     <template #activator>

@@ -371,7 +371,7 @@ const [DefineSymbol, ReuseSymbol] = createReusableTemplate<{ name: string }>();
     <span
       :class="[
         {
-          [css.blur]: !shouldShowAmount,
+          blur: !shouldShowAmount,
           'text-rui-success': pnl && displayValue.gt(0),
           'text-rui-error': pnl && displayValue.lt(0),
           [css.xl]: xl,
@@ -392,7 +392,7 @@ const [DefineSymbol, ReuseSymbol] = createReusableTemplate<{ name: string }>();
           :name="displayAsset"
         />
 
-        <CopyTooltip class="cursor-pointer" :copied="copied" :tooltip="tooltip">
+        <CopyTooltip :copied="copied" :tooltip="tooltip">
           {{ renderedValue }}
         </CopyTooltip>
 
@@ -406,10 +406,6 @@ const [DefineSymbol, ReuseSymbol] = createReusableTemplate<{ name: string }>();
 </template>
 
 <style module lang="scss">
-.blur {
-  filter: blur(0.75em);
-}
-
 .xl {
   font-size: 3.5em;
   line-height: 4rem;
