@@ -1462,16 +1462,16 @@
     "message": "Connecting to rotki backend"
   },
   "cost_basis_table": {
-    "complete": "(Complete)",
+    "complete": "Complete",
     "cost_basis": "Cost Basis",
     "headers": {
       "amount": "Amount Sold",
       "full_amount": "Total acquired by event",
       "rate": "{currency} Rate",
       "remaining_amount": "Remaining after selling",
-      "taxable": "Taxable ?"
+      "taxable": "Taxable"
     },
-    "incomplete": "(Incomplete)"
+    "incomplete": "Incomplete"
   },
   "create_account": {
     "credentials": {

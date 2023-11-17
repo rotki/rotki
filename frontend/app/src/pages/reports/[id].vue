@@ -89,59 +89,64 @@ const regenerateReport = async () => {
     {{ t('profit_loss_report.loading') }}
   </ProgressScreen>
   <VContainer v-else>
-    <ReportHeader :period="report" />
-    <Card v-if="showUpgradeMessage" class="mt-4 mb-8">
-      <i18n tag="div" path="profit_loss_report.upgrade" class="text-subtitle-1">
-        <template #processed>
-          <span class="font-medium">{{ report.entriesFound }}</span>
-        </template>
-        <template #start>
-          <DateDisplay
-            :timestamp="report.firstProcessedTimestamp"
-            class="font-medium"
+    <div class="flex flex-col gap-8">
+      <ReportHeader :period="report" />
+      <RuiAlert v-if="showUpgradeMessage" type="warning">
+        <i18n
+          tag="div"
+          path="profit_loss_report.upgrade"
+          class="text-subtitle-1"
+        >
+          <template #processed>
+            <span class="font-medium">{{ report.entriesFound }}</span>
+          </template>
+          <template #start>
+            <DateDisplay
+              :timestamp="report.firstProcessedTimestamp"
+              class="font-medium"
+            />
+          </template>
+        </i18n>
+        <i18n tag="div" path="profit_loss_report.upgrade2">
+          <template #link>
+            <BaseExternalLink
+              :text="t('upgrade_row.rotki_premium')"
+              :href="premiumURL"
+            />
+          </template>
+        </i18n>
+      </RuiAlert>
+      <AccountingSettingsDisplay :accounting-settings="settings" />
+      <div class="flex gap-2">
+        <template v-if="latest">
+          <ExportReportCsv />
+          <ReportActionable
+            :report="selectedReport"
+            :initial-open="initialOpenReportActionable"
+            @regenerate="regenerateReport()"
           />
         </template>
-      </i18n>
-      <i18n tag="div" path="profit_loss_report.upgrade2">
-        <template #link>
-          <BaseExternalLink
-            :text="t('upgrade_row.rotki_premium')"
-            :href="premiumURL"
-          />
-        </template>
-      </i18n>
-    </Card>
-    <AccountingSettingsDisplay
-      :accounting-settings="settings"
-      class="mt-4 mb-8"
-    />
-    <div class="flex gap-2">
-      <template v-if="latest">
-        <ExportReportCsv />
-        <ReportActionable
-          :report="selectedReport"
-          :initial-open="initialOpenReportActionable"
-          @regenerate="regenerateReport()"
-        />
-      </template>
-      <RuiButton color="primary" variant="text" @click="regenerateReport()">
-        <template #prepend>
-          <RuiIcon name="refresh-line" />
-        </template>
-        {{ t('profit_loss_report.actionable.actions.regenerate_report') }}
-      </RuiButton>
+        <RuiButton
+          color="primary"
+          variant="outlined"
+          @click="regenerateReport()"
+        >
+          <template #prepend>
+            <RuiIcon name="refresh-line" />
+          </template>
+          {{ t('profit_loss_report.actionable.actions.regenerate_report') }}
+        </RuiButton>
+      </div>
+      <ProfitLossOverview
+        :report="selectedReport"
+        :symbol="settings.profitCurrency"
+        :loading="loading"
+      />
+      <ProfitLossEvents
+        :report="selectedReport"
+        :refreshing="refreshing"
+        @update:page="onPage($event)"
+      />
     </div>
-    <ProfitLossOverview
-      class="mt-8"
-      :report="selectedReport"
-      :symbol="settings.profitCurrency"
-      :loading="loading"
-    />
-    <ProfitLossEvents
-      class="mt-8"
-      :report="selectedReport"
-      :refreshing="refreshing"
-      @update:page="onPage($event)"
-    />
   </VContainer>
 </template>

@@ -38,6 +38,7 @@ const props = withDefaults(
     loadingText?: string;
     options?: TablePagination<any> | null;
     disableFloatingHeader?: boolean;
+    disableHeaderPagination?: boolean;
     customGroup?: (
       items: any[],
       groupBy: string[],
@@ -57,6 +58,7 @@ const props = withDefaults(
     loadingText: '',
     options: () => null,
     disableFloatingHeader: false,
+    disableHeaderPagination: false,
     customGroup: undefined,
     flat: false
   }
@@ -244,7 +246,7 @@ const { dark } = useTheme();
       </template>
 
       <template
-        v-if="!hideDefaultFooter"
+        v-if="!hideDefaultFooter && !disableHeaderPagination"
         #top="{ pagination, options: opt, updateOptions }"
       >
         <VDataFooter
