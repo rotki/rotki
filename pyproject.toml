@@ -169,6 +169,7 @@ ignore = [
     "PLR0912", # too many branches -- we dont care
     "PLR6201", # Doesn't work only for constants: https://github.com/astral-sh/ruff/issues/8322
     "PLR6301", # could be a staticmethod or function -- breaks for interfaces
+    "PLC0415", # we need to fix non top level imports and enable this
     "PLC1901", # we prefer direct comparison to empty string for explicitness
     # Some bandit rules we don't check for
     "S101",  # asserts are fine

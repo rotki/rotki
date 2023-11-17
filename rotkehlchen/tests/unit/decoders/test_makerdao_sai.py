@@ -2247,7 +2247,7 @@ def test_makerdao_sai_proxy_interaction(ethereum_transaction_decoder):
     with dbevmtx.db.user_write() as cursor:
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
         dbevmtx.add_evm_internal_transactions(cursor, [internal_tx], relevant_address=ADDY_10)
-    events, __annotations__ = ethereum_transaction_decoder._decode_transaction(
+    events, _ = ethereum_transaction_decoder._decode_transaction(
         transaction=transaction,
         tx_receipt=receipt,
     )
