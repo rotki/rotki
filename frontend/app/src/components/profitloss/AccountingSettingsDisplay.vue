@@ -91,9 +91,9 @@ const items: ComputedRef<Item[]> = computed(() => {
 </script>
 
 <template>
-  <Card>
-    <template #title>{{ t('account_settings_display.title') }}</template>
-    <template #subtitle>
+  <RuiCard>
+    <template #header>{{ t('account_settings_display.title') }}</template>
+    <template #subheader>
       {{ t('account_settings_display.subtitle') }}
     </template>
     <div class="grid md:grid-cols-2 gap-x-6 gap-y-4 text-body-1">
@@ -109,5 +109,5 @@ const items: ComputedRef<Item[]> = computed(() => {
         <span v-else class="text-rui-text-secondary">{{ item.data }}</span>
       </div>
     </div>
-  </Card>
+  </RuiCard>
 </template>

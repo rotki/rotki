@@ -1495,16 +1495,16 @@
     "message": "正在连接到 rotki 后端"
   },
   "cost_basis_table": {
-    "complete": "（完成）",
+    "complete": "完成",
     "cost_basis": "成本基础",
     "headers": {
       "amount": "销售量",
       "full_amount": "事件获得总量",
       "rate": "{currency} 汇率",
       "remaining_amount": "卖出后剩余",
-      "taxable": "应税？"
+      "taxable": "应税"
     },
-    "incomplete": "（不完整）"
+    "incomplete": "不完整"
   },
   "create_account": {
     "credentials": {

@@ -63,6 +63,7 @@ const { t } = useI18n();
               <AmountDisplay
                 pnl
                 force-currency
+                show-currency="symbol"
                 :value="item.free"
                 :loading="loading"
                 :fiat-currency="report.settings.profitCurrency"
@@ -72,6 +73,7 @@ const { t } = useI18n();
               <AmountDisplay
                 pnl
                 force-currency
+                show-currency="symbol"
                 :value="item.taxable"
                 :loading="loading"
                 :fiat-currency="report.settings.profitCurrency"
@@ -81,7 +83,7 @@ const { t } = useI18n();
           <tr v-if="Object.keys(report.overview).length === 0">
             <td colspan="3" class="pa-4 h-[3rem]" />
           </tr>
-          <tr class="border-t border-default text-xs font-medium">
+          <tr class="border-t border-default font-medium">
             <td class="pa-4">
               {{ t('common.total') }}
             </td>
@@ -89,6 +91,7 @@ const { t } = useI18n();
               <AmountDisplay
                 pnl
                 force-currency
+                show-currency="symbol"
                 :value="total.free"
                 :loading="loading"
                 :fiat-currency="report.settings.profitCurrency"
@@ -98,6 +101,7 @@ const { t } = useI18n();
               <AmountDisplay
                 pnl
                 force-currency
+                show-currency="symbol"
                 :value="total.taxable"
                 :loading="loading"
                 :fiat-currency="report.settings.profitCurrency"

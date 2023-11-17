@@ -164,11 +164,13 @@ const checkGroupLine = (entries: ProfitLossEvents, index: number) => {
     bottom: !!(current?.groupId && next && current?.groupId === next?.groupId)
   };
 };
+
+const css = useCssModule();
 </script>
 
 <template>
-  <Card>
-    <template #title>{{ t('common.events') }}</template>
+  <RuiCard>
+    <template #header>{{ t('common.events') }}</template>
     <DataTable
       :headers="tableHeaders"
       :items="items"
@@ -180,22 +182,27 @@ const checkGroupLine = (entries: ProfitLossEvents, index: number) => {
       sort-by="time"
     >
       <template #item.group="{ item }">
-        <VTooltip v-if="item.groupId" right>
-          <template #activator="{ on, attrs }">
-            <div v-bind="attrs" :class="$style['group']" v-on="on">
+        <RuiTooltip
+          v-if="item.groupId && (item.groupLine.top || item.groupLine.bottom)"
+          :popper="{ placement: 'right' }"
+          open-delay="400"
+          class="h-full"
+        >
+          <template #activator>
+            <div :class="css.group">
               <div
                 v-if="item.groupLine.top"
-                :class="`${$style['group__line']} ${$style['group__line-top']}`"
+                :class="[css.group__line, css['group__line-top']]"
               />
-              <div :class="$style['group__dot']" />
+              <div :class="css.group__dot" />
               <div
                 v-if="item.groupLine.bottom"
-                :class="`${$style['group__line']} ${$style['group__line-bottom']}`"
+                :class="[css.group__line, css['group__line-bottom']]"
               />
             </div>
           </template>
           <span>{{ t('profit_loss_events.same_action') }}</span>
-        </VTooltip>
+        </RuiTooltip>
       </template>
       <template #item.type="{ item }">
         <ProfitLossEventType :type="item.type" />
@@ -207,22 +214,22 @@ const checkGroupLine = (entries: ProfitLossEvents, index: number) => {
         <DateDisplay :timestamp="item.timestamp" />
       </template>
       <template #item.free_amount="{ item }">
-        <VRow no-gutters align="center" class="flex-nowrap">
-          <VCol v-if="item.asset" cols="auto">
-            <AssetLink icon :asset="item.asset" class="mr-2" link>
-              <AssetIcon :identifier="item.asset" size="24px" />
-            </AssetLink>
-          </VCol>
-          <VCol>
-            <div>
-              <AmountDisplay
-                force-currency
-                :value="item.freeAmount"
-                :asset="item.asset ? item.asset : ''"
-              />
-            </div>
-          </VCol>
-        </VRow>
+        <div class="flex items-center justify-between flex-nowrap gap-2">
+          <AssetLink
+            v-if="item.asset"
+            icon
+            :asset="item.asset"
+            class="mr-2"
+            link
+          >
+            <AssetIcon :identifier="item.asset" size="24px" />
+          </AssetLink>
+          <AmountDisplay
+            force-currency
+            :value="item.freeAmount"
+            :asset="item.asset ? item.asset : ''"
+          />
+        </div>
       </template>
       <template #item.taxable_amount="{ item }">
         <AmountDisplay
@@ -235,6 +242,7 @@ const checkGroupLine = (entries: ProfitLossEvents, index: number) => {
         <AmountDisplay
           force-currency
           :value="item.price"
+          show-currency="symbol"
           :fiat-currency="report.settings.profitCurrency"
         />
       </template>
@@ -243,6 +251,7 @@ const checkGroupLine = (entries: ProfitLossEvents, index: number) => {
           pnl
           force-currency
           :value="item.pnlTaxable"
+          show-currency="symbol"
           :fiat-currency="report.settings.profitCurrency"
         />
       </template>
@@ -251,6 +260,7 @@ const checkGroupLine = (entries: ProfitLossEvents, index: number) => {
           pnl
           force-currency
           :value="item.pnlFree"
+          show-currency="symbol"
           :fiat-currency="report.settings.profitCurrency"
         />
       </template>
@@ -295,7 +305,7 @@ const checkGroupLine = (entries: ProfitLossEvents, index: number) => {
         />
       </template>
     </DataTable>
-  </Card>
+  </RuiCard>
 </template>
 
 <style module lang="scss">

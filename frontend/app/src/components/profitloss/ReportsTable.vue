@@ -109,6 +109,7 @@ const expand = (item: Report) => {
       <template #item.free="{ item }">
         <AmountDisplay
           force-currency
+          show-currency="symbol"
           pnl
           :value="calculateTotalProfitLoss(item).free"
           :fiat-currency="item.settings.profitCurrency"
@@ -117,6 +118,7 @@ const expand = (item: Report) => {
       <template #item.taxable="{ item }">
         <AmountDisplay
           force-currency
+          show-currency="symbol"
           pnl
           :value="calculateTotalProfitLoss(item).taxable"
           :fiat-currency="item.settings.profitCurrency"
