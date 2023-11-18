@@ -11,6 +11,7 @@ from rotkehlchen.chain.bitcoin.xpub import XpubManager
 from rotkehlchen.chain.constants import LAST_EVM_ACCOUNTS_DETECT_KEY
 from rotkehlchen.chain.ethereum.modules.eth2.constants import (
     LAST_PRODUCED_BLOCKS_QUERY_TS,
+    LAST_WITHDRAWALS_EXIT_QUERY_TS,
     WITHDRAWALS_TS_PREFIX,
 )
 from rotkehlchen.chain.ethereum.modules.makerdao.cache import (
@@ -149,6 +150,7 @@ class TaskManager:
             self._maybe_query_produced_blocks,
             self._maybe_query_withdrawals,
             self._maybe_run_events_processing,
+            self._maybe_detect_withdrawal_exits,
         ]
         if self.premium_sync_manager is not None:
             self.potential_tasks.append(self._maybe_schedule_db_upload)
@@ -587,6 +589,29 @@ class TaskManager:
             method=eth2.query_services_for_validator_withdrawals,
             addresses=addresses,
             to_ts=now,
+        )]
+
+    def _maybe_detect_withdrawal_exits(self) -> Optional[list[gevent.Greenlet]]:
+        """Schedules the task that detects if any of the withdrawals should be exits
+
+        Not putting a lock as it should probably not be a too heavy task?
+        """
+        eth2 = self.chains_aggregator.get_module('eth2')
+        if eth2 is None:
+            return None
+
+        with self.database.conn.read_ctx() as cursor:
+            result = self.database.get_used_query_range(cursor, LAST_WITHDRAWALS_EXIT_QUERY_TS)
+            if result is not None and ts_now() - result[1] <= HOUR_IN_SECONDS * 2:
+                return None
+
+        task_name = 'Periodically detect withdrawal exits'
+        log.debug(f'Scheduling task to {task_name}')
+        return [self.greenlet_manager.spawn_and_track(
+            after_seconds=None,
+            task_name=task_name,
+            exception_is_error=True,
+            method=eth2.detect_exited_validators,
         )]
 
     def _maybe_run_events_processing(self) -> Optional[list[gevent.Greenlet]]:

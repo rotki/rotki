@@ -5,6 +5,7 @@ import pytest
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.eth2 import EthBlockEvent, EthWithdrawalEvent
 from rotkehlchen.chain.ethereum.modules.eth2.structures import Eth2Validator
+from rotkehlchen.chain.ethereum.modules.eth2.utils import form_withdrawal_notes
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_ETH
@@ -262,3 +263,96 @@ def test_block_production(eth2: 'Eth2', database):
         block_number=17055026,
         is_mev_reward=True,
     )]
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('network_mocking', [False])
+@pytest.mark.freeze_time('2023-11-19 16:30:00 GMT')
+def test_withdrawals_detect_exit(eth2: 'Eth2', database):
+    """Test that detecting an exit for slashed and exited validators work fine"""
+    dbevents = DBHistoryEvents(database)
+    dbeth2 = DBEth2(database)
+    active_index, exited_index, slashed_index = 1, 575645, 20075
+    active_address, exited_address, slashed_address = string_to_evm_address('0x15F4B914A0cCd14333D850ff311d6DafbFbAa32b'), string_to_evm_address('0x08DeB6278D671E2a1aDc7b00839b402B9cF3375d'), string_to_evm_address('0x1f9bB27d0C66fEB932f3F8B02620A128d072f3d8')  # noqa: E501
+    slashed_exit_amount, exit_amount = FVal('31.408009'), FVal('32.001442')
+    withdrawal_events = [
+        EthWithdrawalEvent(
+            identifier=1,
+            validator_index=slashed_index,
+            timestamp=TimestampMS(1680982251000),
+            balance=Balance(FVal('0.016073')),
+            withdrawal_address=slashed_address,
+            is_exit=False,
+        ), EthWithdrawalEvent(
+            identifier=2,
+            validator_index=slashed_index,
+            timestamp=TimestampMS(1681571243000),
+            balance=Balance(slashed_exit_amount),
+            withdrawal_address=slashed_address,
+            is_exit=False,
+        ),
+        EthWithdrawalEvent(
+            identifier=3,
+            validator_index=active_index,
+            timestamp=TimestampMS(1699319051000),
+            balance=Balance(FVal('0.017197')),
+            withdrawal_address=active_address,
+            is_exit=False,
+        ), EthWithdrawalEvent(
+            identifier=4,
+            validator_index=exited_index,
+            timestamp=TimestampMS(1699648427000),
+            balance=Balance(FVal('0.017073')),
+            withdrawal_address=exited_address,
+            is_exit=False,
+        ), EthWithdrawalEvent(
+            identifier=5,
+            validator_index=active_index,
+            timestamp=TimestampMS(1699976207000),
+            balance=Balance(FVal('0.017250')),
+            withdrawal_address=active_address,
+            is_exit=False,
+        ), EthWithdrawalEvent(
+            identifier=6,
+            validator_index=exited_index,
+            timestamp=TimestampMS(1699976207000),
+            balance=Balance(exit_amount),
+            withdrawal_address=exited_address,
+            is_exit=False,
+        ),
+    ]
+
+    with database.user_write() as write_cursor:
+        dbeth2.add_validators(write_cursor, [
+            Eth2Validator(
+                index=active_index,
+                public_key=Eth2PubKey('0xa1d1ad0714035353258038e964ae9675dc0252ee22cea896825c01458e1807bfad2f9969338798548d9858a571f7425c'),
+                ownership_proportion=ONE,
+            ), Eth2Validator(
+                index=exited_index,
+                public_key=Eth2PubKey('0x800041b1eff8af7a583caa402426ffe8e5da001615f5ce00ba30ea8e3e627491e0aa7f8c0417071d5c1c7eb908962d8e'),
+                ownership_proportion=ONE,
+            ), Eth2Validator(
+                index=slashed_index,
+                public_key=Eth2PubKey('0xb02c42a2cda10f06441597ba87e87a47c187cd70e2b415bef8dc890669efe223f551a2c91c3d63a5779857d3073bf288'),
+                ownership_proportion=ONE,
+            ),
+        ])
+
+        dbevents.add_history_events(write_cursor, history=withdrawal_events)
+
+    eth2.detect_exited_validators()
+    with database.conn.read_ctx() as cursor:
+        events = dbevents.get_history_events(
+            cursor=cursor,
+            filter_query=EthWithdrawalFilterQuery.make(),
+            has_premium=True,
+            group_by_event_ids=False,
+        )
+
+    # check that the two exits were detected
+    withdrawal_events[1].is_exit_or_blocknumber = True  # slashed exit
+    withdrawal_events[1].notes = form_withdrawal_notes(is_exit=True, validator_index=slashed_index, amount=slashed_exit_amount)  # noqa: E501
+    withdrawal_events[5].is_exit_or_blocknumber = True  # normal exit
+    withdrawal_events[5].notes = form_withdrawal_notes(is_exit=True, validator_index=exited_index, amount=exit_amount)  # noqa: E501
+    assert withdrawal_events == events

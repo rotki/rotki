@@ -3,6 +3,7 @@ import logging
 import re
 from collections import defaultdict
 from collections.abc import Sequence
+from sys import float_info
 from typing import TYPE_CHECKING, Literal, Optional, Union
 
 import gevent
@@ -34,6 +35,7 @@ from rotkehlchen.utils.misc import from_gwei, ts_now
 from .constants import (
     CPT_ETH2,
     FREE_VALIDATORS_LIMIT,
+    LAST_WITHDRAWALS_EXIT_QUERY_TS,
     UNKNOWN_VALIDATOR_INDEX,
     VALIDATOR_STATS_QUERY_BACKOFF_EVERY_N_VALIDATORS,
     VALIDATOR_STATS_QUERY_BACKOFF_TIME,
@@ -47,7 +49,7 @@ from .structures import (
     ValidatorDetails,
     ValidatorID,
 )
-from .utils import scrape_validator_daily_stats
+from .utils import scrape_validator_daily_stats, timestamp_to_epoch
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -502,6 +504,56 @@ class Eth2(EthereumModule):
                     log.warning(f'Could not update history events with {changes_entry} in combine_block_with_tx_events due to {e!s}')  # noqa: E501
                     # already exists. Probably right after resetting events? Delete old one
                     write_cursor.execute('DELETE FROM history_events WHERE identifier=?', (changes_entry[5],))  # noqa: E501
+
+    def detect_exited_validators(self) -> None:
+        """This function will detect any validators that have exited from the ones that
+        are last known to be active and set the DB values accordingly"""
+        now = ts_now()
+        with self.database.user_write() as write_cursor:
+            self.database.update_used_query_range(
+                write_cursor=write_cursor,
+                name=LAST_WITHDRAWALS_EXIT_QUERY_TS,
+                start_ts=Timestamp(0),
+                end_ts=now,
+            )
+
+        dbeth2 = DBEth2(self.database)
+        with self.database.conn.read_ctx() as cursor:
+            validator_indices = list(dbeth2.get_active_validator_indices(cursor))
+
+        if len(validator_indices) == 0:
+            return
+
+        try:
+            validator_data = self.beaconchain.get_validator_data(validator_indices)
+        except RemoteError as e:
+            log.error(f'Could not query validator data from beaconcha.in due to {e}')
+            return
+
+        current_epoch = timestamp_to_epoch(now)
+        max_int = int(float_info.max)
+        needed_validators = []
+        for entry in validator_data:
+            if (exit_epoch := entry.get('exitepoch', max_int)) > current_epoch:
+                continue
+
+            # this is a slashed/exited validator
+            if (validator_index := entry.get('validatorindex')) is None:
+                log.error(f'Beaconcha.in response {entry} does not contain validatorindex')
+                continue
+
+            needed_validators.append((validator_index, exit_epoch))
+
+        if len(needed_validators) == 0:
+            return
+
+        with self.database.user_write() as write_cursor:
+            for index, exit_epoch in needed_validators:
+                dbeth2.set_validator_exit(
+                    write_cursor=write_cursor,
+                    index=index,
+                    exit_epoch=exit_epoch,
+                )
 
     def refresh_activated_validators_deposits(self) -> None:
         """It's possible that when an eth deposit gets decoded and created the validator
