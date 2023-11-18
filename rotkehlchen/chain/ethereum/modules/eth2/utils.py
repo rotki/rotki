@@ -10,7 +10,7 @@ from bs4 import BeautifulSoup, SoupStrainer
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
-from rotkehlchen.externalapis.beaconchain import BEACONCHAIN_ROOT_URL
+from rotkehlchen.externalapis.constants import BEACONCHAIN_ROOT_URL
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Timestamp
@@ -32,7 +32,13 @@ ETH2_GENESIS_TIMESTAMP = 1606824023
 
 
 def epoch_to_timestamp(epoch: int) -> Timestamp:
+    """Turn a beaconchain epoch to a unix timestamp"""
     return Timestamp(ETH2_GENESIS_TIMESTAMP + epoch * EPOCH_DURATION_SECS)
+
+
+def timestamp_to_epoch(timestamp: Timestamp) -> int:
+    """Turn a unix timestamp to a beaconchain epoch"""
+    return int((timestamp - ETH2_GENESIS_TIMESTAMP) / EPOCH_DURATION_SECS)
 
 
 def _parse_fval(line: str, entry: str) -> FVal:
@@ -178,3 +184,12 @@ def scrape_validator_daily_stats(
         tr = tr.find_next_sibling()
 
     return stats
+
+
+def form_withdrawal_notes(is_exit: bool, validator_index: int, amount: FVal) -> str:
+    """Forms the ethereum withdrawal notes depending on is_exit and other attributes"""
+    if is_exit is True:
+        notes = f'Exited validator {validator_index} with {amount} ETH'
+    else:
+        notes = f'Withdrew {amount} ETH from validator {validator_index}'
+    return notes

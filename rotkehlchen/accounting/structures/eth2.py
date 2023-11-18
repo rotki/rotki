@@ -6,6 +6,7 @@ from rotkehlchen.accounting.mixins.event import AccountingEventMixin, Accounting
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.chain.ethereum.constants import ETH2_DEPOSIT_ADDRESS
 from rotkehlchen.chain.ethereum.modules.eth2.constants import CPT_ETH2, UNKNOWN_VALIDATOR_INDEX
+from rotkehlchen.chain.ethereum.modules.eth2.utils import form_withdrawal_notes
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.serialization.deserialize import deserialize_evm_address, deserialize_fval
 from rotkehlchen.types import (
@@ -123,11 +124,6 @@ class EthWithdrawalEvent(EthStakingEvent):
             identifier: Optional[int] = None,
             event_identifier: Optional[str] = None,
     ) -> None:
-        if is_exit is True:
-            notes = f'Exited validator {validator_index} with {balance.amount} ETH'
-        else:
-            notes = f'Withdrew {balance.amount} ETH from validator {validator_index}'
-
         if event_identifier is None:
             # withdrawals happen at least every couple of days. For them to happen in the same
             # day for same validator we would need to drop to less than 115200 validators
@@ -146,7 +142,7 @@ class EthWithdrawalEvent(EthStakingEvent):
             balance=balance,
             location_label=withdrawal_address,
             is_exit_or_blocknumber=is_exit,
-            notes=notes,
+            notes=form_withdrawal_notes(is_exit=is_exit, validator_index=validator_index, amount=balance.amount),  # noqa: E501
         )
 
     @property

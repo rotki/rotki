@@ -26,10 +26,10 @@ from rotkehlchen.utils.serialization import jsonloads_dict
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
 
+from .constants import BEACONCHAIN_ROOT_URL
 
 MAX_WAIT_SECS = 60
 BEACONCHAIN_READ_TIMEOUT = 75
-BEACONCHAIN_ROOT_URL = 'https://beaconcha.in'
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -239,6 +239,9 @@ class BeaconChain(ExternalServiceWithApiKey):
 
         Essentially calls:
         https://beaconcha.in/api/v1/docs/index.html#/Validator/get_api_v1_validator__indexOrPubkey_
+
+        May raise:
+        - RemoteError if there is problems querying Beaconcha.in
         """
         return self._query_chunked_endpoint(
             indices_or_pubkeys=indices_or_pubkeys,

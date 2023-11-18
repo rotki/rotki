@@ -862,3 +862,58 @@ def test_validator_daily_stats_empty(database):
         result = dbeth2.get_validator_daily_stats_and_limit_info(cursor, Eth2DailyStatsFilterQuery.make())  # noqa: E501
 
     assert result == ([], 0, ZERO)
+
+
+def test_get_active_validator_indices(database):
+    dbevents = DBHistoryEvents(database)
+    dbeth2 = DBEth2(database)
+    active_index, exited_index, noevents_index = 1, 575645, 4242
+    active_address, exited_address = string_to_evm_address('0x15F4B914A0cCd14333D850ff311d6DafbFbAa32b'), string_to_evm_address('0x08DeB6278D671E2a1aDc7b00839b402B9cF3375d')  # noqa: E501
+
+    with database.user_write() as write_cursor:
+        dbeth2.add_validators(write_cursor, [
+            Eth2Validator(
+                index=active_index,
+                public_key=Eth2PubKey('0xa1d1ad0714035353258038e964ae9675dc0252ee22cea896825c01458e1807bfad2f9969338798548d9858a571f7425c'),
+                ownership_proportion=ONE,
+            ), Eth2Validator(
+                index=exited_index,
+                public_key=Eth2PubKey('0x800041b1eff8af7a583caa402426ffe8e5da001615f5ce00ba30ea8e3e627491e0aa7f8c0417071d5c1c7eb908962d8e'),
+                ownership_proportion=ONE,
+            ), Eth2Validator(
+                index=noevents_index,
+                public_key=Eth2PubKey('0xb02c42a2cda10f06441597ba87e87a47c187cd70e2b415bef8dc890669efe223f551a2c91c3d63a5779857d3073bf288'),
+                ownership_proportion=ONE,
+            ),
+        ])
+
+        dbevents.add_history_events(write_cursor, history=[
+            EthWithdrawalEvent(
+                validator_index=active_index,
+                timestamp=TimestampMS(1699319051000),
+                balance=Balance(FVal('0.017197')),
+                withdrawal_address=active_address,
+                is_exit=False,
+            ), EthWithdrawalEvent(
+                validator_index=active_index,
+                timestamp=TimestampMS(1699976207000),
+                balance=Balance(FVal('0.017250')),
+                withdrawal_address=active_address,
+                is_exit=False,
+            ), EthWithdrawalEvent(
+                validator_index=exited_index,
+                timestamp=TimestampMS(1699648427000),
+                balance=Balance(FVal('0.017073')),
+                withdrawal_address=exited_address,
+                is_exit=False,
+            ), EthWithdrawalEvent(
+                validator_index=exited_index,
+                timestamp=TimestampMS(1699976207000),
+                balance=Balance(FVal('32.007250')),
+                withdrawal_address=exited_address,
+                is_exit=True,
+            ),
+        ])
+
+    with database.conn.read_ctx() as cursor:
+        assert dbeth2.get_active_validator_indices(cursor) == {active_index, noevents_index}

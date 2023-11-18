@@ -77,7 +77,7 @@ class EthereumEtherscan(Etherscan):
                             location='etherscan staking withdrawals query',
                         ))),
                         withdrawal_address=address,
-                        is_exit=False,  # TODO: needs to be figured out later, possibly in another task  # noqa: E501
+                        is_exit=False,  # is figured out later in a periodic task
                     ) for entry in result
                 ]
                 last_withdrawal_idx = max(last_withdrawal_idx, int(result[-1]['withdrawalIndex']))
