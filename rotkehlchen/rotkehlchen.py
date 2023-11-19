@@ -62,7 +62,7 @@ from rotkehlchen.errors.misc import (
     SystemPermissionError,
 )
 from rotkehlchen.exchanges.manager import ExchangeManager
-from rotkehlchen.externalapis.beaconchain import BeaconChain
+from rotkehlchen.externalapis.beaconchain.service import BeaconChain
 from rotkehlchen.externalapis.coingecko import Coingecko
 from rotkehlchen.externalapis.covalent import Covalent, chains_id
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare

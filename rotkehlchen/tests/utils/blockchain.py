@@ -14,7 +14,7 @@ from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.externalapis.beaconchain import BeaconChain
+from rotkehlchen.externalapis.beaconchain.service import BeaconChain
 from rotkehlchen.externalapis.etherscan import Etherscan, EtherscanHasChainActivity
 from rotkehlchen.fval import FVal
 from rotkehlchen.rotkehlchen import Rotkehlchen
