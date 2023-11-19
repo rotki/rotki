@@ -10,7 +10,7 @@ from bs4 import BeautifulSoup, SoupStrainer
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
-from rotkehlchen.externalapis.constants import BEACONCHAIN_ROOT_URL
+from rotkehlchen.externalapis.beaconchain.constants import BEACONCHAIN_ROOT_URL
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Timestamp

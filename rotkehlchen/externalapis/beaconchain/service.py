@@ -26,10 +26,7 @@ from rotkehlchen.utils.serialization import jsonloads_dict
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
 
-from .constants import BEACONCHAIN_ROOT_URL
-
-MAX_WAIT_SECS = 60
-BEACONCHAIN_READ_TIMEOUT = 75
+from .constants import BEACONCHAIN_READ_TIMEOUT, BEACONCHAIN_ROOT_URL, MAX_WAIT_SECS
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)

@@ -31,7 +31,7 @@ from rotkehlchen.chain.substrate.manager import SubstrateChainProperties, Substr
 from rotkehlchen.chain.substrate.types import SubstrateAddress
 from rotkehlchen.constants.assets import A_DOT, A_KSM
 from rotkehlchen.db.settings import DEFAULT_BTC_DERIVATION_GAP_LIMIT
-from rotkehlchen.externalapis.beaconchain import BeaconChain
+from rotkehlchen.externalapis.beaconchain.service import BeaconChain
 from rotkehlchen.externalapis.covalent import Covalent
 from rotkehlchen.externalapis.opensea import Opensea
 from rotkehlchen.premium.premium import Premium

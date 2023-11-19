@@ -2,7 +2,7 @@ import warnings as test_warnings
 
 import pytest
 
-from rotkehlchen.externalapis.beaconchain import BeaconChain, _calculate_query_chunks
+from rotkehlchen.externalapis.beaconchain.service import BeaconChain, _calculate_query_chunks
 
 
 @pytest.fixture(scope='session', name='session_beaconchain')

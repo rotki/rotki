@@ -118,7 +118,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.substrate.manager import SubstrateManager
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
-    from rotkehlchen.externalapis.beaconchain import BeaconChain
+    from rotkehlchen.externalapis.beaconchain.service import BeaconChain
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
