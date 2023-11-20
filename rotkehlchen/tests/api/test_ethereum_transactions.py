@@ -1343,7 +1343,7 @@ def test_events_filter_params(rotkehlchen_api_server, ethereum_accounts, start_w
     event3 = make_ethereum_event(tx_hash=b'1', index=3, asset=A_WETH, counterparty='EXAMPLE_PROTOCOL', timestamp=TimestampMS(1), location_label=ethereum_accounts[0])  # noqa: E501
     event4 = make_ethereum_event(tx_hash=b'2', index=4, asset=A_WETH, timestamp=TimestampMS(2), location_label=ethereum_accounts[0])  # noqa: E501
     event5 = make_ethereum_event(tx_hash=b'4', index=5, asset=A_DAI, event_type=HistoryEventType.STAKING, event_subtype=HistoryEventSubType.DEPOSIT_ASSET, timestamp=TimestampMS(4), location_label=ethereum_accounts[2], address=test_contract_address)  # noqa: E501
-    event6 = make_ethereum_event(tx_hash=b'4', index=6, asset=A_DAI, event_type=HistoryEventType.STAKING, event_subtype=HistoryEventSubType.RECEIVE_WRAPPED, timestamp=TimestampMS(4), location_label=ethereum_accounts[2])  # noqa: E501
+    event6 = make_ethereum_event(tx_hash=b'4', index=6, asset=A_DAI, event_type=HistoryEventType.STAKING, event_subtype=HistoryEventSubType.REMOVE_ASSET, timestamp=TimestampMS(4), location_label=ethereum_accounts[2])  # noqa: E501
     dbevmtx = DBEvmTx(db)
     dbevents = DBHistoryEvents(db)
     with db.user_write() as cursor:

@@ -168,6 +168,8 @@ class EventCategory(Enum):
     CREATE_PROJECT = 32, EventDirection.NEUTRAL
     UPDATE_PROJECT = 33, EventDirection.NEUTRAL
     APPLY = 34, EventDirection.NEUTRAL
+    STAKE_DEPOSIT = 35, EventDirection.OUT
+    STAKE_WITHDRAWAL = 36, EventDirection.IN
 
     @property
     def direction(self) -> EventDirection:
