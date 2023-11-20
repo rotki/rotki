@@ -21,6 +21,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.types import EVM_CHAIN_IDS_WITH_TRANSACTIONS, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
+from rotkehlchen.utils.data_structures import LRUCacheWithRemove
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.aggregator import ChainsAggregator
@@ -39,6 +40,7 @@ class Accountant:
             msg_aggregator: MessagesAggregator,
             chains_aggregator: 'ChainsAggregator',
             premium: Optional[Premium],
+            use_dummy_pot: bool = False,
     ) -> None:
         self.db = db
         self.msg_aggregator = msg_aggregator
@@ -51,12 +53,16 @@ class Accountant:
                 database=db,
                 evm_accounting_aggregators=evm_accounting_aggregators,
                 msg_aggregator=msg_aggregator,
+                is_dummy_pot=use_dummy_pot,
             ),
         ]
 
         self.currently_processing_timestamp = Timestamp(-1)
         self.first_processed_timestamp = Timestamp(-1)
         self.premium = premium
+        # the size of 1500 was calculated assuming a user loads 5 pages of 100 events each one
+        # and each event has in average 3 events.
+        self.processable_events_cache: LRUCacheWithRemove[int, bool] = LRUCacheWithRemove(maxsize=1500)  # noqa: E501
 
     def activate_premium_status(self, premium: Premium) -> None:
         self.premium = premium

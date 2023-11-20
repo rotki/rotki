@@ -16,12 +16,13 @@ class EventsAccountantCallback(Protocol):
             pot: 'AccountingPot',
             event: 'EvmEvent',
             other_events: Iterator['EvmEvent'],
-    ) -> None:
+    ) -> int:
         """
         Callback to be called by the accounting module.
         If the callback expects more than 1 events, it is supposed to iterate over the
         `other_events` iterator to get them.
         Note that events consumed by the callback from the iterator will not be re-processed later.
+        It returns the number of events processed by the callback.
         """
 
 

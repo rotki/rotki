@@ -86,8 +86,13 @@ class EVMAccountingAggregator:
         """Recursively check all submodules to get all accountants and initialize them"""
         self._recursively_initialize_accountants(self.modules_path)
 
-    def get_accounting_callbacks(self) -> dict[int, EventsAccountantCallback]:
-        """Iterate through loaded accountants and get accounting callbacks for each event type"""
+    def get_accounting_callbacks(self) -> dict[int, tuple[int, EventsAccountantCallback]]:
+        """
+        Iterate through loaded accountants and get accounting callbacks for each event type.
+        It returns a mapping of event type identifier to a tuple where the fist element is the
+        number of events processed (-1 if it is variable) and the callback that processes
+        those events.
+        """
         result = {}
         for accountant in self.accountants.values():
             result.update(accountant.event_callbacks())
@@ -108,8 +113,13 @@ class EVMAccountingAggregators:
     def __init__(self, aggregators: list[EVMAccountingAggregator]) -> None:
         self.aggregators = aggregators
 
-    def get_accounting_callbacks(self) -> dict[int, EventsAccountantCallback]:
-        """Iterate through loaded accountants and get accounting callbacks for each event type"""
+    def get_accounting_callbacks(self) -> dict[int, tuple[int, EventsAccountantCallback]]:
+        """
+        Iterate through loaded accountants and get accounting callbacks for each event type
+        It returns a mapping of event type identifier to a tuple where the fist element is the
+        number of events processed (-1 if it is variable) and the callback that processes
+        those events.
+        """
         result = {}
         for aggregator in self.aggregators:
             result.update(aggregator.get_accounting_callbacks())

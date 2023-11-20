@@ -46,10 +46,22 @@ class AccountingPot(CustomizableDateMixin):
             database: 'DBHandler',
             evm_accounting_aggregators: 'EVMAccountingAggregators',
             msg_aggregator: MessagesAggregator,
+            is_dummy_pot: bool = False,
     ) -> None:
+        """
+        If is_dummy_pot is set to True then we won't save any events in the pot nor will we
+        load any ignored assets. This option is used when fetching history events and checking
+        if they have accounting rules set.
+        """
         super().__init__(database=database)
-        with database.conn.read_ctx() as cursor:
-            self.ignored_asset_ids = database.get_ignored_asset_ids(cursor)
+
+        self.is_dummy_pot = is_dummy_pot
+        if is_dummy_pot:
+            self.ignored_asset_ids = set()
+        else:
+            with database.conn.read_ctx() as cursor:
+                self.ignored_asset_ids = database.get_ignored_asset_ids(cursor)
+
         self.profit_currency = self.settings.main_currency.resolve_to_asset_with_oracles()
         self.cost_basis = CostBasisCalculator(
             database=database,
@@ -306,6 +318,9 @@ class AccountingPot(CustomizableDateMixin):
             given_price: Optional[Price] = None,
             **kwargs: Any,
     ) -> None:
+        if self.is_dummy_pot:
+            return None
+
         fn = getattr(self, f'add_{direction.serialize()}_event')
         return fn(
             event_type=event_type,

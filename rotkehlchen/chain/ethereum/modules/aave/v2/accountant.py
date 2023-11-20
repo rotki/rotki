@@ -31,15 +31,16 @@ class Aavev2Accountant(ModuleAccountantInterface):
             pot: 'AccountingPot',  # pylint: disable=unused-argument
             event: 'EvmEvent',
             other_events: Iterator['EvmEvent'],  # pylint: disable=unused-argument
-    ) -> None:
+    ) -> int:
         self.assets_borrowed[(string_to_evm_address(event.location_label), event.asset)] += event.balance.amount  # type: ignore[arg-type]  # location_label can't be None here  # noqa: E501
+        return 1
 
     def _process_payback(
             self,
             pot: 'AccountingPot',
             event: 'EvmEvent',
             other_events: Iterator['EvmEvent'],  # pylint: disable=unused-argument
-    ) -> None:
+    ) -> int:
         """
         Process payback events. If the payed back amount is higher that the borrowed amount,
         a loss event is added to the accounting pot.
@@ -60,21 +61,23 @@ class Aavev2Accountant(ModuleAccountantInterface):
                 extra_data={'tx_hash': event.tx_hash.hex()},
             )
             self.assets_borrowed[key] = ZERO
+        return 1
 
     def _process_deposit(
             self,
             pot: 'AccountingPot',  # pylint: disable=unused-argument
             event: 'EvmEvent',
             other_events: Iterator['EvmEvent'],  # pylint: disable=unused-argument
-    ) -> None:
+    ) -> int:
         self.assets_supplied[(string_to_evm_address(event.location_label), event.asset)] += event.balance.amount  # type: ignore[arg-type]  # location_label can't be None here  # noqa: E501
+        return 1
 
     def _process_withdraw(
             self,
             pot: 'AccountingPot',
             event: 'EvmEvent',
             other_events: Iterator['EvmEvent'],  # pylint: disable=unused-argument
-    ) -> None:
+    ) -> int:
         """
         Process withdrawal events. If the withdrawn amount is higher that the deposited amount,
         a gain event is added to the accounting pot.
@@ -95,12 +98,13 @@ class Aavev2Accountant(ModuleAccountantInterface):
                 extra_data={'tx_hash': event.tx_hash.hex()},
             )
             self.assets_supplied[key] = ZERO
+        return 1
 
-    def event_callbacks(self) -> dict[int, EventsAccountantCallback]:
+    def event_callbacks(self) -> dict[int, tuple[int, EventsAccountantCallback]]:
         """Being defined at function call time is fine since this function is called only once"""
         return {
-            get_event_type_identifier(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET, CPT_AAVE_V2): self._process_deposit,  # noqa: E501
-            get_event_type_identifier(HistoryEventType.WITHDRAWAL, HistoryEventSubType.REMOVE_ASSET, CPT_AAVE_V2): self._process_withdraw,  # noqa: E501
-            get_event_type_identifier(HistoryEventType.RECEIVE, HistoryEventSubType.GENERATE_DEBT, CPT_AAVE_V2): self._process_borrow,  # noqa: E501
-            get_event_type_identifier(HistoryEventType.SPEND, HistoryEventSubType.PAYBACK_DEBT, CPT_AAVE_V2): self._process_payback,  # noqa: E501
+            get_event_type_identifier(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET, CPT_AAVE_V2): (1, self._process_deposit),  # noqa: E501
+            get_event_type_identifier(HistoryEventType.WITHDRAWAL, HistoryEventSubType.REMOVE_ASSET, CPT_AAVE_V2): (1, self._process_withdraw),  # noqa: E501
+            get_event_type_identifier(HistoryEventType.RECEIVE, HistoryEventSubType.GENERATE_DEBT, CPT_AAVE_V2): (1, self._process_borrow),  # noqa: E501
+            get_event_type_identifier(HistoryEventType.SPEND, HistoryEventSubType.PAYBACK_DEBT, CPT_AAVE_V2): (1, self._process_payback),  # noqa: E501
         }
