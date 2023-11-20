@@ -493,7 +493,7 @@ Getting or modifying external services API credentials
       }
 
    :reqjson list services: The services parameter is a list of services along with their api keys.
-   :reqjsonarr string name: Each entry in the list should have a name for the service. Valid ones are ``"etherscan"``, ``"cryptocompare"``, ``"beaconchain"``, ``"loopring"``, ``"covalent"``, ``"opensea"`` and ``blockscount``.
+   :reqjsonarr string name: Each entry in the list should have a name for the service. Valid ones are ``"etherscan"``, ``"cryptocompare"``, ``"beaconchain"``, ``"loopring"``, ``"covalent"``, ``"opensea"`` and ``blockscout``.
    :reqjsonarr string api_key: Each entry in the list should have an api_key entry
 
    **Example Response**:
@@ -4753,6 +4753,7 @@ Dealing with History Events
             {
                "entry_type": "evm event",
                "tx_hash": "0x64f1982504ab714037467fdd45d3ecf5a6356361403fc97dd325101d8c038c4e",
+               "event_identifier": "10x64f1982504ab714037467fdd45d3ecf5a6356361403fc97dd325101d8c038c4e",
                "sequence_index": 162,
                "timestamp": 1569924574,
                "location": "ethereum",
@@ -4767,6 +4768,7 @@ Dealing with History Events
             }
 
          :reqjson string tx_hash: This is the transaction hash of the evm event
+         :reqjson string event_identifier: The event identifier to be used for the event.
          :reqjson int sequence_index: This is an index that tries to provide the order of history entries for a single event_identifier.
          :reqjson string location: The location of the entry. Such as "ethereum", "optimism", etc.
          :reqjson string asset: The asset identifier for this entry

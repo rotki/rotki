@@ -151,7 +151,9 @@ export interface HistoryEventRequestPayload
 export type EditEvmHistoryEventPayload = Omit<
   EvmHistoryEvent,
   'ignoredInAccounting' | 'customized' | 'eventIdentifier'
->;
+> & {
+  eventIdentifier: string | null;
+};
 
 export type NewEvmHistoryEventPayload = Omit<
   EditEvmHistoryEventPayload,

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
 import dayjs from 'dayjs';
-import { helpers, required } from '@vuelidate/validators';
+import { helpers, required, requiredIf } from '@vuelidate/validators';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { isEmpty } from 'lodash-es';
 import {
@@ -44,6 +44,7 @@ const assetPriceForm: Ref<InstanceType<
 > | null> = ref(null);
 
 const txHash: Ref<string> = ref('');
+const eventIdentifier: Ref<string | null> = ref(null);
 const sequenceIndex: Ref<string> = ref('');
 const datetime: Ref<string> = ref('');
 const location: Ref<string> = ref('');
@@ -75,6 +76,14 @@ const rules = {
     isValid: helpers.withMessage(
       t('transactions.events.form.tx_hash.validation.valid').toString(),
       (value: string) => isValidTxHash(value)
+    )
+  },
+  eventIdentifier: {
+    required: helpers.withMessage(
+      t(
+        'transactions.events.form.event_identifier.validation.non_empty'
+      ).toString(),
+      requiredIf(() => !!get(editableItem))
     )
   },
   location: {
@@ -158,6 +167,7 @@ const v$ = setValidation(
     timestamp: datetime,
     locationLabel,
     notes,
+    eventIdentifier,
     txHash,
     location,
     asset,
@@ -179,6 +189,7 @@ const v$ = setValidation(
 const reset = () => {
   set(sequenceIndex, get(nextSequence) || '0');
   set(txHash, '');
+  set(eventIdentifier, null);
   set(
     datetime,
     convertFromTimestamp(
@@ -207,6 +218,7 @@ const reset = () => {
 const applyEditableData = async (entry: EvmHistoryEvent) => {
   set(sequenceIndex, entry.sequenceIndex?.toString() ?? '');
   set(txHash, entry.txHash);
+  set(eventIdentifier, entry.eventIdentifier);
   set(
     datetime,
     convertFromTimestamp(
@@ -231,6 +243,7 @@ const applyEditableData = async (entry: EvmHistoryEvent) => {
 
 const applyGroupHeaderData = async (entry: EvmHistoryEvent) => {
   set(sequenceIndex, get(nextSequence) || '0');
+  set(eventIdentifier, entry.eventIdentifier);
   set(location, entry.location || get(lastLocation));
   set(address, entry.address ?? '');
   set(locationLabel, entry.locationLabel ?? '');
@@ -261,6 +274,7 @@ const save = async (): Promise<boolean> => {
   const payload: NewEvmHistoryEventPayload = {
     entryType: HistoryEventEntryType.EVM_EVENT,
     txHash: get(txHash),
+    eventIdentifier: get(eventIdentifier),
     sequenceIndex: get(sequenceIndex) || '0',
     timestamp,
     eventType: get(eventType),
@@ -498,6 +512,15 @@ const addressSuggestions = computed(() =>
         <VExpansionPanelContent
           class="[&>.v-expansion-panel-content\_\_wrap]:!p-0"
         >
+          <VTextField
+            v-model="eventIdentifier"
+            outlined
+            data-cy="eventIdentifier"
+            :label="t('transactions.events.form.event_identifier.label')"
+            :error-messages="toMessages(v$.eventIdentifier)"
+            @blur="v$.eventIdentifier.$touch()"
+          />
+
           <JsonInput
             v-model="extraData"
             :label="t('transactions.events.form.extra_data.label')"
