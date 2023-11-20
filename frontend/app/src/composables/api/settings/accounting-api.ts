@@ -16,6 +16,25 @@ import { api } from '@/services/rotkehlchen-api';
 import { snakeCaseTransformer } from '@/services/axios-tranformers';
 
 export const useAccountingApi = () => {
+  const fetchAccountingRule = async (
+    payload: AccountingRuleRequestPayload
+  ): Promise<AccountingRuleEntry> => {
+    const response = await api.instance.post<
+      ActionResult<CollectionResponse<AccountingRuleEntry>>
+    >(
+      '/accounting/rules',
+      snakeCaseTransformer(omit(payload, ['orderByAttributes', 'ascending'])),
+      {
+        validateStatus: validStatus
+      }
+    );
+
+    const data = AccountingRuleEntryCollectionResponse.parse(
+      handleResponse(response)
+    );
+
+    return data.entries[0];
+  };
   const fetchAccountingRules = async (
     payload: AccountingRuleRequestPayload
   ): Promise<CollectionResponse<AccountingRuleEntry>> => {
@@ -117,6 +136,7 @@ export const useAccountingApi = () => {
   };
 
   return {
+    fetchAccountingRule,
     fetchAccountingRules,
     addAccountingRule,
     editAccountingRule,
