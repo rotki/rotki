@@ -71,9 +71,9 @@ describe('AmountDisplay.vue', () => {
       wrapper = createWrapper(bigNumberify(1.20440001), {
         fiatCurrency: 'USD'
       });
-      expect(wrapper.find('[data-cy=amount-display]:nth-child(1)').text()).toBe(
-        '1.44'
-      );
+      expect(
+        wrapper.find('[data-cy=amount-display]:nth-child(1)').text()
+      ).toMatch('1.44');
       await wrapper.find('[data-cy=display-amount]').trigger('mouseover');
       await wrapper.vm.$nextTick();
       expect(wrapper.find('[data-cy=display-full-value]').text()).toMatch(
@@ -86,9 +86,9 @@ describe('AmountDisplay.vue', () => {
         amount: bigNumberify(1.20440001),
         fiatCurrency: 'EUR'
       });
-      expect(wrapper.find('[data-cy=amount-display]:nth-child(1)').text()).toBe(
-        '1.20'
-      );
+      expect(
+        wrapper.find('[data-cy=amount-display]:nth-child(1)').text()
+      ).toMatch('1.20');
       await wrapper.find('[data-cy=display-amount]').trigger('mouseover');
       await wrapper.vm.$nextTick();
       expect(wrapper.find('[data-cy=display-full-value]').text()).toMatch(
@@ -121,9 +121,9 @@ describe('AmountDisplay.vue', () => {
         fiatCurrency: 'USD',
         forceCurrency: true
       });
-      expect(wrapper.find('[data-cy=amount-display]:nth-child(1)').text()).toBe(
-        '1.20'
-      );
+      expect(
+        wrapper.find('[data-cy=amount-display]:nth-child(1)').text()
+      ).toMatch('1.20');
       await wrapper.find('[data-cy=display-amount]').trigger('mouseover');
       await wrapper.vm.$nextTick();
       expect(wrapper.find('[data-cy=display-full-value]').text()).toMatch(

@@ -60,7 +60,6 @@ const {
   value,
   asset,
   fiatCurrency: sourceCurrency,
-  showCurrency,
   priceOfAsset,
   priceAsset,
   integer,
@@ -281,13 +280,13 @@ const comparisonSymbol: ComputedRef<'' | '<' | '>'> = computed(() => {
   return '';
 });
 
-const shownCurrency: ComputedRef<ShownCurrency> = computed(() => {
-  const show = get(showCurrency);
-  return show === 'none' && !!get(sourceCurrency) ? 'symbol' : show;
+const defaultShownCurrency: ComputedRef<ShownCurrency> = computed(() => {
+  const type = props.showCurrency;
+  return type === 'none' && !!get(sourceCurrency) ? 'symbol' : type;
 });
 
 const shouldShowCurrency: ComputedRef<boolean> = computed(
-  () => !get(isNaN) && !!(get(shownCurrency) !== 'none' || get(asset))
+  () => !get(isNaN) && !!(get(defaultShownCurrency) !== 'none' || get(asset))
 );
 
 // Copy
@@ -331,7 +330,7 @@ const displayAsset = computed(() => {
     return symb;
   }
 
-  const show = get(showCurrency);
+  const show = get(defaultShownCurrency);
   const value = get(displayCurrency);
 
   if (show === 'ticker') {
@@ -345,14 +344,14 @@ const displayAsset = computed(() => {
   return '';
 });
 
-const [DefineSymbol, ReuseSymbol] = createReusableTemplate();
+const [DefineSymbol, ReuseSymbol] = createReusableTemplate<{ name: string }>();
 </script>
 
 <template>
   <div class="inline-flex items-baseline">
-    <DefineSymbol>
+    <DefineSymbol #default="{ name }">
       <span data-cy="display-currency" class="truncate max-w-[5rem]">
-        {{ displayAsset }}
+        {{ name }}
       </span>
     </DefineSymbol>
 
@@ -390,6 +389,7 @@ const [DefineSymbol, ReuseSymbol] = createReusableTemplate();
 
         <ReuseSymbol
           v-if="shouldShowCurrency && currencyLocation === 'before'"
+          :name="displayAsset"
         />
 
         <CopyTooltip class="cursor-pointer" :copied="copied" :tooltip="tooltip">
@@ -398,6 +398,7 @@ const [DefineSymbol, ReuseSymbol] = createReusableTemplate();
 
         <ReuseSymbol
           v-if="shouldShowCurrency && currencyLocation === 'after'"
+          :name="displayAsset"
         />
       </template>
     </span>
