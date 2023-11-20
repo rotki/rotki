@@ -2239,7 +2239,7 @@ class AssetUpdatesRequestSchema(AsyncQueryArgumentSchema):
     conflicts = AssetConflictsField(load_default=None)
 
 
-class AssetResetRequestSchema(Schema):
+class AssetResetRequestSchema(AsyncQueryArgumentSchema):
     reset = fields.String(required=True)
     ignore_warnings = fields.Boolean(load_default=False)
 

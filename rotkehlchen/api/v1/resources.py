@@ -938,8 +938,14 @@ class AssetUpdatesResource(BaseMethodView):
 
     @require_loggedin_user()
     @use_kwargs(delete_schema, location='json_and_query')
-    def delete(self, reset: Literal['soft', 'hard'], ignore_warnings: bool) -> Response:
+    def delete(
+            self,
+            async_query: bool,
+            reset: Literal['soft', 'hard'],
+            ignore_warnings: bool,
+    ) -> Response:
         return self.rest_api.rebuild_assets_information(
+            async_query=async_query,
             reset=reset,
             ignore_warnings=ignore_warnings,
         )
