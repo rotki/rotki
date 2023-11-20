@@ -16,7 +16,7 @@ from rotkehlchen.db.filtering import EthWithdrawalFilterQuery, HistoryEventFilte
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
-from rotkehlchen.types import Eth2PubKey, TimestampMS
+from rotkehlchen.types import ChecksumEvmAddress, Eth2PubKey, TimestampMS
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
@@ -366,3 +366,22 @@ def test_withdrawals_detect_exit(eth2: 'Eth2', database):
     withdrawal_events[5].is_exit_or_blocknumber = True  # normal exit
     withdrawal_events[5].notes = form_withdrawal_notes(is_exit=True, validator_index=exited_index, amount=exit_amount)  # noqa: E501
     assert withdrawal_events == events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('network_mocking', [False])
+@pytest.mark.parametrize('ethereum_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
+@pytest.mark.freeze_time('2023-11-20 07:07:55 GMT')
+def test_query_no_withdrawals(
+        eth2: 'Eth2',
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
+    """Test that if an address has no withdrawals we correctly handle it"""
+    eth2.query_single_address_withdrawals(
+        address=ethereum_accounts[0],
+        to_ts=ts_now(),
+    )
+
+    with eth2.database.conn.read_ctx() as cursor:
+        assert cursor.execute('SELECT COUNT(*) FROM history_events').fetchone()[0] == 0
+        assert cursor.execute('SELECT * FROM used_query_ranges').fetchone()[0] == 'ethwithdrawalsts_0xc37b40ABdB939635068d3c5f13E7faF686F03B65'  # noqa: E501
