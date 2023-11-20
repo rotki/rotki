@@ -2206,12 +2206,18 @@
     "tx_url": "Transactions will open at {txUrl}"
   },
   "external_services": {
+    "api_key": "API key",
     "beaconchain": {
       "delete_tooltip": "Deletes the Beaconcha.in API key",
       "description": "rotki uses Beaconcha.in to obtain information about ETH staking in your portfolio. An API key is only needed if you are being rate-limited.",
       "hint": "Enter your Beaconcha.in API key",
-      "label": "API key",
       "title": "Beaconcha.in"
+    },
+    "blockscout": {
+      "delete_tooltip": "Deletes the Blockscout API key",
+      "description": "rotki uses Blockscout to obtain information about ETH withdrawal queries",
+      "hint": "Enter your Blockscout API key",
+      "title": "Blockscout"
     },
     "confirmation": {
       "message": "Are you sure you want to delete this API Key?",
@@ -2221,14 +2227,12 @@
       "delete_tooltip": "Deletes the Covalent API key",
       "description": "rotki can use Covalent to get historical data for various chains",
       "hint": "Enter your Covalent API key",
-      "label": "API key",
       "title": "Covalent"
     },
     "cryptocompare": {
       "delete_tooltip": "Deletes the CryptoCompare API key",
       "description": "rotki uses cryptocompare to obtain price information about assets in your portfolio. An API key is only needed if you have a lot of assets and are being rate-limited.",
       "hint": "Enter your CryptoCompare API key",
-      "label": "API key",
       "title": "CryptoCompare"
     },
     "delete_error": {
@@ -2238,14 +2242,12 @@
       "delete_tooltip": "Deletes the {chain} Etherscan API key",
       "description": "Recommended for any EVM blockchain balances or transactions if you are not using your own node.",
       "hint": "Enter your {chain} Etherscan API key",
-      "label": "API key",
       "title": "Etherscan"
     },
     "loopring": {
       "delete_tooltip": "Delete your Loopring API key",
       "description": "Used to query balances in Loopring. This API key will only be able to query the account that generated this key.",
       "hint": "Enter your Loopring API key",
-      "label": "API key",
       "not_enabled": "The Loopring module is not enabled. Your balances won't be retrieved unless you enable the loopring module",
       "settings": "Settings",
       "title": "Loopring"
@@ -2254,7 +2256,6 @@
       "delete_tooltip": "Delete your OpenSea API key",
       "description": "Used to query NFT information and balances from OpenSea.",
       "hint": "Enter your OpenSea API key",
-      "label": "API Key",
       "link": "You can apply for an API key {link}",
       "title": "Opensea"
     },

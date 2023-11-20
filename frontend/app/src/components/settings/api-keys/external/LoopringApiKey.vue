@@ -31,7 +31,7 @@ const navigateToModules = () => useRouter().push('/settings/modules');
       :api-key="key"
       :name="name"
       :data-cy="name"
-      :label="t('external_services.loopring.label')"
+      :label="t('external_services.api_key')"
       :hint="t('external_services.loopring.hint')"
       :loading="loading"
       :tooltip="t('external_services.loopring.delete_tooltip')"

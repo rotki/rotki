@@ -37,7 +37,7 @@ const removeEtherscanNotification = () => {
     :api-key="key"
     :name="identifier"
     :data-cy="identifier"
-    :label="t('external_services.etherscan.label')"
+    :label="t('external_services.api_key')"
     :hint="
       t('external_services.etherscan.hint', {
         chain: chainName
