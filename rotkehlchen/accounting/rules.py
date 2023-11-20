@@ -25,7 +25,7 @@ class AccountingRulesManager:
         self.aggregators = evm_aggregators
         self.pot = pot
         self.event_settings: dict[int, BaseEventSettings] = {}
-        self.event_callbacks: dict[int, EventsAccountantCallback] = {}
+        self.event_callbacks: dict[int, tuple[int, EventsAccountantCallback]] = {}
 
     def _query_db_rules(self) -> None:
         """Query the accounting rules in the db and update event_settings with them"""
@@ -50,13 +50,18 @@ class AccountingRulesManager:
         """
         event_id = event.get_type_identifier()
         rule = self.event_settings.get(event_id, None)
+        if (callback_data := self.event_callbacks.get(event_id)) is not None:
+            callback = callback_data[1]
+        else:
+            callback = None
+
         if isinstance(event, EvmEvent) is False or rule is not None:
-            return rule, self.event_callbacks.get(event_id)
+            return rule, callback
 
         event_id_no_cpt = event.get_type_identifier(include_counterparty=False)
         return (
             self.event_settings.get(event_id_no_cpt),
-            self.event_callbacks.get(event_id),  # callback is always specific
+            callback,  # callback is always counterparty specific
         )
 
     def reset(self) -> None:

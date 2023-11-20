@@ -37,10 +37,15 @@ class ModuleAccountantInterface(metaclass=ABCMeta):
         self.reset()
 
     @abstractmethod
-    def event_callbacks(self) -> dict[int, 'EventsAccountantCallback']:
+    def event_callbacks(self) -> dict[int, tuple[int, 'EventsAccountantCallback']]:
         """
         Subclasses implement this to specify callbacks that should be executed for combinations of
-        type, subtype and counterparty
+        type, subtype and counterparty.
+
+        It returns a mapping of (hashed type, subtype, counterparty) to a tuple of the number of
+        events processed and the logic that will process them. If the number of events
+        is variable it returns -1 and the user needs to actually call the logic to get the number
+        of processed events.
         """
 
     def reset(self) -> None:
@@ -61,7 +66,7 @@ class DepositableAccountantInterface(ModuleAccountantInterface):
             pot: 'AccountingPot',
             event: 'EvmEvent',
             other_events: Iterator['EvmEvent'],
-    ) -> None:
+    ) -> int:
         """
         Process deposits and withdrawals from protocols that allow to deposit multiple assets
         in return for a wrapped token. There are multiple events that we have to consume from
@@ -71,6 +76,8 @@ class DepositableAccountantInterface(ModuleAccountantInterface):
         marking the number of events to consume.
         The return wrapped event needs to have the key `withdrawal_events_num` with the number
         of events in the return event.
+
+        It returns the number of events processed
         """
         if event.event_type == HistoryEventType.RECEIVE:
             # Pool token is received, which means it is a deposit
@@ -85,14 +92,17 @@ class DepositableAccountantInterface(ModuleAccountantInterface):
                 f'Could not find the number of events to consume for a {event.counterparty} '
                 f'deposit/withdrawal transaction {event.tx_hash.hex()}',
             )
-            return
+            return 1
 
         # Consume the events
+        events_consumed = 1  # counting the event that started it
         for idx in range(events_to_consume):
             next_event = next(other_events, None)
             if next_event is None:
                 log.debug(f'Could not consume event nr. {idx} for {event.counterparty} deposit/withdrawal')  # noqa: E501
-                return
+                return events_consumed
+
+            events_consumed += 1
 
             if next_event.balance.amount == ZERO:
                 continue
@@ -110,3 +120,5 @@ class DepositableAccountantInterface(ModuleAccountantInterface):
                 count_cost_basis_pnl=False,
                 extra_data={'tx_hash': next_event.tx_hash.hex()},
             )
+
+        return events_consumed

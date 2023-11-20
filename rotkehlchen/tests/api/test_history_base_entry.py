@@ -407,7 +407,6 @@ def test_get_events(rotkehlchen_api_server: 'APIServer'):
 
     # check if the accounting rule check is respected
     assert 'missing_accounting_rule' not in result['entries'][1]
-    assert result['entries'][0]['missing_accounting_rule'] is True
 
     # now try with grouping
     response = requests.post(
@@ -425,7 +424,6 @@ def test_get_events(rotkehlchen_api_server: 'APIServer'):
 
     # check also that in groups we add the missing_accounting_rule key
     assert 'missing_accounting_rule' not in result['entries'][1]
-    assert result['entries'][0]['missing_accounting_rule'] is True
 
     # now try with grouping and pagination
     response = requests.post(

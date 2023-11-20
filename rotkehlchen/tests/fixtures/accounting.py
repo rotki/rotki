@@ -108,6 +108,22 @@ def fixture_initialize_accounting_rules() -> bool:
     return False
 
 
+@pytest.fixture(name='accountant_without_rules')
+def fixture_accountant_without_rules() -> bool:
+    """
+    If set to False the accountant fixture will be initialized without pre-loaded rules
+    """
+    return False
+
+
+@pytest.fixture(name='use_dummy_pot')
+def fixture_use_dummy_pot() -> bool:
+    """
+    If set to true then we will initialize the pot in accounting as a dummy pot
+    """
+    return False
+
+
 @pytest.fixture(name='last_accounting_rules_version', scope='session')
 def fixture_last_accounting_rules_version() -> int:
     return 1
@@ -147,6 +163,8 @@ def fixture_accountant(
         rotki_premium_credentials,
         username,
         latest_accounting_rules,
+        accountant_without_rules,
+        use_dummy_pot,
 ) -> Optional[Accountant]:
     if not start_with_logged_in_user:
         return None
@@ -160,17 +178,20 @@ def fixture_accountant(
         msg_aggregator=function_scope_messages_aggregator,
         user_db=database,
     )
-    with open(latest_accounting_rules, encoding='utf-8') as f:
-        data_updater.update_accounting_rules(
-            data=json.loads(f.read())['accounting_rules'],
-            version=999999,  # only for logs
-        )
+
+    if accountant_without_rules is False:
+        with open(latest_accounting_rules, encoding='utf-8') as f:
+            data_updater.update_accounting_rules(
+                data=json.loads(f.read())['accounting_rules'],
+                version=999999,  # only for logs
+            )
 
     accountant = Accountant(
         db=database,
         chains_aggregator=blockchain,
         msg_aggregator=function_scope_messages_aggregator,
         premium=premium,
+        use_dummy_pot=use_dummy_pot,
     )
 
     if accounting_initialize_parameters:

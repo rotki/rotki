@@ -36,6 +36,7 @@ from rotkehlchen.accounting.export.csv import (
     CSVWriteError,
     dict_to_csv_file,
 )
+from rotkehlchen.accounting.pot import AccountingPot
 from rotkehlchen.accounting.structures.balance import Balance, BalanceType
 from rotkehlchen.accounting.structures.base import HistoryBaseEntryType, StakingEvent
 from rotkehlchen.accounting.structures.evm_event import EvmProduct
@@ -89,6 +90,7 @@ from rotkehlchen.chain.ethereum.modules.makerdao.cache import (
 from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
 from rotkehlchen.chain.ethereum.modules.yearn.utils import query_yearn_vaults
 from rotkehlchen.chain.ethereum.utils import try_download_ens_avatar
+from rotkehlchen.chain.evm.accounting.aggregator import EVMAccountingAggregators
 from rotkehlchen.chain.evm.names import find_ens_mappings, search_for_addresses_names
 from rotkehlchen.chain.evm.types import WeightedNode
 from rotkehlchen.chain.optimism.modules.velodrome.velodrome_cache import (
@@ -114,7 +116,7 @@ from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.constants.resolver import ChainID
 from rotkehlchen.constants.timing import ENS_AVATARS_REFRESH
 from rotkehlchen.data_import.manager import DataImportSource
-from rotkehlchen.db.accounting_rules import DBAccountingRules
+from rotkehlchen.db.accounting_rules import DBAccountingRules, query_missing_accounting_rules
 from rotkehlchen.db.addressbook import DBAddressbook
 from rotkehlchen.db.constants import (
     HISTORY_MAPPING_KEY_STATE,
@@ -3481,10 +3483,19 @@ class RestAPI:
                 action_type=ActionType.HISTORY_EVENT,
             )
 
-        db_accounting = DBAccountingRules(self.rotkehlchen.data.db)
+        accountant_pot = AccountingPot(
+            database=self.rotkehlchen.data.db,
+            evm_accounting_aggregators=EVMAccountingAggregators([self.rotkehlchen.chains_aggregator.get_evm_manager(x).accounting_aggregator for x in EVM_CHAIN_IDS_WITH_TRANSACTIONS]),  # noqa: E501
+            msg_aggregator=self.rotkehlchen.msg_aggregator,
+            is_dummy_pot=True,
+        )
         if group_by_event_ids is True:
-            missing_accounting_rules = db_accounting.missing_accounting_rules(
+            missing_accounting_rules = query_missing_accounting_rules(
+                db=self.rotkehlchen.data.db,
+                accounting_pot=accountant_pot,
+                evm_accounting_aggregator=accountant_pot.events_accountant.evm_accounting_aggregators,
                 events=[x for _, x in events_result],  # type: ignore
+                accountant=self.rotkehlchen.accountant,
             )
             entries = [  # type: ignore  # mypy doesn't understand significance of boolean check
                 x.serialize_for_api(  # type: ignore
@@ -3496,7 +3507,13 @@ class RestAPI:
                 ) for (grouped_events_num, x), missing_accounting_rule in zip(events_result, missing_accounting_rules)  # noqa: E501
             ]
         else:
-            missing_accounting_rules = db_accounting.missing_accounting_rules(events_result)  # type: ignore
+            missing_accounting_rules = query_missing_accounting_rules(
+                db=self.rotkehlchen.data.db,
+                accounting_pot=accountant_pot,
+                evm_accounting_aggregator=accountant_pot.events_accountant.evm_accounting_aggregators,
+                events=events_result,  # type: ignore
+                accountant=self.rotkehlchen.accountant,
+            )
             entries = [
                 x.serialize_for_api(  # type: ignore
                     customized_event_ids=customized_event_ids,
