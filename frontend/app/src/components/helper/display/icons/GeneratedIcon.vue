@@ -59,7 +59,7 @@ const textStyle = computed<Style>(() => {
 <template>
   <span
     :style="{ ...wrapperStyle, ...textStyle }"
-    class="flex items-center justify-center border border-rui-light-text-secondary rounded-full whitespace-nowrap tracking-normal text-rui-light-text-secondary bg-white font-bold"
+    class="flex items-center justify-center border border-rui-light-text-secondary rounded-full whitespace-nowrap tracking-normal text-rui-light-text bg-white font-bold"
   >
     <RuiIcon v-if="customAsset" size="16" name="pencil-line" />
     <template v-else>
