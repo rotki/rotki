@@ -1,7 +1,6 @@
 <script setup lang="ts">
+const name = 'blockscout';
 const { t } = useI18n();
-
-const name = 'opensea';
 
 const { loading, apiKey, actionStatus, save, confirmDelete } =
   useExternalApiKeys(t);
@@ -13,10 +12,10 @@ const status = actionStatus(name);
 <template>
   <RuiCard>
     <template #header>
-      {{ t('external_services.opensea.title') }}
+      {{ t('external_services.blockscout.title') }}
     </template>
     <template #subheader>
-      {{ t('external_services.opensea.description') }}
+      {{ t('external_services.blockscout.description') }}
     </template>
 
     <ServiceKey
@@ -24,22 +23,12 @@ const status = actionStatus(name);
       :name="name"
       :data-cy="name"
       :label="t('external_services.api_key')"
-      :hint="t('external_services.opensea.hint')"
+      :hint="t('external_services.blockscout.hint')"
       :loading="loading"
-      :tooltip="t('external_services.opensea.delete_tooltip')"
+      :tooltip="t('external_services.blockscout.delete_tooltip')"
       :status="status"
       @save="save($event)"
       @delete-key="confirmDelete($event)"
-    >
-      <i18n tag="div" path="external_services.opensea.link">
-        <template #link>
-          <ExternalLink
-            url="https://docs.opensea.io/reference/api-keys#how-do-i-get-an-api-key"
-          >
-            {{ t('common.here') }}
-          </ExternalLink>
-        </template>
-      </i18n>
-    </ServiceKey>
+    />
   </RuiCard>
 </template>

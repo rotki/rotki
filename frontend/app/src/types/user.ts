@@ -191,7 +191,8 @@ export const ExternalServiceKeys = z.object({
   covalent: ApiKey.optional(),
   beaconchain: ApiKey.optional(),
   loopring: ApiKey.optional(),
-  opensea: ApiKey.optional()
+  opensea: ApiKey.optional(),
+  blockscout: ApiKey.optional()
 });
 
 export type ExternalServiceKeys = z.infer<typeof ExternalServiceKeys>;
