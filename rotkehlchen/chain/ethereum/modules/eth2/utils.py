@@ -1,5 +1,4 @@
 import logging
-import re
 from http import HTTPStatus
 from typing import Literal, Optional
 
@@ -25,9 +24,6 @@ DAY_AFTER_ETH2_GENESIS = Timestamp(1606780800)
 INITIAL_ETH_DEPOSIT = FVal(32)
 EPOCH_DURATION_SECS = 384
 
-EPOCH_PARSE_REGEX = re.compile(r'<a href="/epoch/(.*?)">.*')
-ADDRESS_PARSE_REGEX = re.compile(r'<a href="/address/(.*?)".*')
-ETH_PARSE_REGEX = re.compile(r'.*title="(.*?)">.*')
 ETH2_GENESIS_TIMESTAMP = 1606824023
 
 
