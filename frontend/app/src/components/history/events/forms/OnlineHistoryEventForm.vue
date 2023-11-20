@@ -307,9 +307,10 @@ const locationLabelSuggestions = computed(() =>
       />
     </div>
 
-    <VTextField
+    <RuiTextField
       v-model="eventIdentifier"
-      outlined
+      variant="outlined"
+      color="primary"
       :disabled="!!(editableItem || groupHeader)"
       data-cy="eventIdentifier"
       :label="t('transactions.events.form.event_identifier.label')"

@@ -390,9 +390,10 @@ const addressSuggestions = computed(() =>
       />
     </div>
 
-    <VTextField
+    <RuiTextField
       v-model="txHash"
-      outlined
+      variant="outlined"
+      color="primary"
       :disabled="!!(editableItem || groupHeader)"
       data-cy="txHash"
       :label="t('common.tx_hash')"
@@ -512,9 +513,10 @@ const addressSuggestions = computed(() =>
         <VExpansionPanelContent
           class="[&>.v-expansion-panel-content\_\_wrap]:!p-0"
         >
-          <VTextField
+          <RuiTextField
             v-model="eventIdentifier"
-            outlined
+            variant="outlined"
+            color="primary"
             data-cy="eventIdentifier"
             :label="t('transactions.events.form.event_identifier.label')"
             :error-messages="toMessages(v$.eventIdentifier)"
