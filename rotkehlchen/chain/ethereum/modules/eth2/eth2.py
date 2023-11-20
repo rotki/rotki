@@ -4,7 +4,7 @@ import re
 import sys
 from collections import defaultdict
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Literal, Optional, Union
+from typing import TYPE_CHECKING, Optional, Union
 
 import gevent
 from gevent.lock import Semaphore
@@ -79,9 +79,7 @@ class Eth2(EthereumModule):
         self.msg_aggregator = msg_aggregator
         self.beaconchain = beaconchain
         self.last_stats_query_ts = 0
-        self.last_withdrawals_query_ts = 0
         self.validator_stats_queried = 0
-        self.validator_withdrawals_queried = 0
         self.deposits_pubkey_re = re.compile(r'.*validator with pubkey (.*)\. Deposit.*')
         self.withdrawals_query_lock = Semaphore()
 
@@ -300,18 +298,18 @@ class Eth2(EthereumModule):
 
         return result  # type: ignore  # location_label is set for this event
 
-    def _maybe_backoff_beaconchain(self, now: Timestamp, name: Literal['stats', 'withdrawals']) -> None:  # noqa: E501
+    def _maybe_backoff_beaconchain(self, now: Timestamp) -> None:
         should_backoff = (
-            now - getattr(self, f'last_{name}_query_ts') < VALIDATOR_STATS_QUERY_BACKOFF_TIME_RANGE and  # noqa: E501
-            getattr(self, f'validator_{name}_queried') >= VALIDATOR_STATS_QUERY_BACKOFF_EVERY_N_VALIDATORS  # noqa: E501
+            now - self.last_stats_query_ts < VALIDATOR_STATS_QUERY_BACKOFF_TIME_RANGE and
+            self.validator_stats_queried >= VALIDATOR_STATS_QUERY_BACKOFF_EVERY_N_VALIDATORS
         )
         if should_backoff:
             log.debug(
-                f'Queried {getattr(self, f"validator_{name}_queried")} validators in the last '
+                f'Queried {self.validator_stats_queried} validators in the last '
                 f'{VALIDATOR_STATS_QUERY_BACKOFF_TIME_RANGE} seconds. Backing off for '
                 f'{VALIDATOR_STATS_QUERY_BACKOFF_TIME} seconds.',
             )
-            setattr(self, f'validator_{name}_queried', 0)
+            self.validator_stats_queried = 0
             gevent.sleep(VALIDATOR_STATS_QUERY_BACKOFF_TIME)
 
     def _query_services_for_validator_daily_stats(
@@ -324,7 +322,7 @@ class Eth2(EthereumModule):
         result = dbeth2.get_validators_to_query_for_stats(up_to_ts=to_ts)
 
         for validator_index, last_ts, exit_ts in result:
-            self._maybe_backoff_beaconchain(now=now, name='stats')
+            self._maybe_backoff_beaconchain(now=now)
             new_stats = scrape_validator_daily_stats(
                 validator_index=validator_index,
                 last_known_timestamp=last_ts,

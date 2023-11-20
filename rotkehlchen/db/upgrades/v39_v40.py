@@ -48,22 +48,6 @@ TYPES_REMAPPED: list[tuple[HistoryEventType, HistoryEventSubType, HistoryEventTy
     (HistoryEventType.WITHDRAWAL, HistoryEventSubType.REMOVE_ASSET, HistoryEventType.WITHDRAWAL, HistoryEventSubType.NONE),  # noqa: E501
 ]
 
-DEFAULT_BASE_NODES_AT_V40 = [
-    ('base etherscan', '', 0, 1, '0.28', 'BASE'),
-    ('base ankr', 'https://rpc.ankr.com/base', 0, 1, '0.18', 'BASE'),
-    ('base BlockPi', 'https://base.blockpi.network/v1/rpc/public', 0, 1, '0.18', 'BASE'),
-    ('base PublicNode', 'https://base.publicnode.com', 0, 1, '0.18', 'BASE'),
-    ('base 1rpc', 'https://1rpc.io/base', 0, 1, '0.18', 'BASE'),
-]
-
-DEFAULT_GNOSIS_NODES_AT_V40 = [
-    ('gnosis etherscan', '', 0, 1, '0.28', 'GNOSIS'),
-    ('gnosis ankr', 'https://rpc.ankr.com/gnosis', 0, 1, '0.18', 'GNOSIS'),
-    ('gnosis BlockPi', 'https://gnosis.blockpi.network/v1/rpc/public', 0, 1, '0.18', 'GNOSIS'),
-    ('gnosis PublicNode', 'https://gnosis.publicnode.com', 0, 1, '0.18', 'GNOSIS'),
-    ('gnosis 1rpc', 'https://1rpc.io/gnosis', 0, 1, '0.18', 'GNOSIS'),
-]
-
 LEDGER_ACTION_TYPE_TO_NAME = {
     'A': 'income',
     'B': 'expense',
