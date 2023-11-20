@@ -93,6 +93,10 @@ const deleteEvent = (item: HistoryEventEntry) =>
             </template>
             {{ t('actions.history_events.missing_rule.title') }}
           </RuiTooltip>
+          <HistoryEventAction
+            v-else-if="item.eventType !== 'informational'"
+            :event="item"
+          />
         </RowActions>
       </div>
     </template>

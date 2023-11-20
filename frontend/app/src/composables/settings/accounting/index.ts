@@ -11,6 +11,7 @@ import { type ActionStatus } from '@/types/action';
 
 export const useAccountingSettings = () => {
   const {
+    fetchAccountingRule,
     fetchAccountingRules,
     fetchAccountingRuleConflicts,
     resolveAccountingRuleConflicts: resolveAccountingRuleConflictsCaller
@@ -19,6 +20,27 @@ export const useAccountingSettings = () => {
   const { t } = useI18n();
 
   const { notify } = useNotificationsStore();
+
+  const getAccountingRule = async (
+    payload: MaybeRef<AccountingRuleRequestPayload>
+  ): Promise<AccountingRuleEntry | null> => {
+    try {
+      return await fetchAccountingRule(get(payload));
+    } catch (e: any) {
+      logger.error(e);
+      const message = e?.message ?? e ?? '';
+
+      notify({
+        title: t('accounting_settings.rule.fetch_error.title'),
+        message: t('accounting_settings.rule.fetch_error.message', {
+          message
+        }),
+        display: true
+      });
+
+      return null;
+    }
+  };
 
   const getAccountingRules = async (
     payload: MaybeRef<AccountingRuleRequestPayload>
@@ -80,6 +102,7 @@ export const useAccountingSettings = () => {
   };
 
   return {
+    getAccountingRule,
     getAccountingRules,
     getAccountingRulesConflicts,
     resolveAccountingRuleConflicts
