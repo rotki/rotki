@@ -24,7 +24,7 @@ from rotkehlchen.tests.utils.api import (
     wait_for_async_task,
 )
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import ChainID, EvmTokenKind
+from rotkehlchen.types import ChainID, EvmTokenKind, Timestamp
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
@@ -846,3 +846,33 @@ def test_update_no_user_loggedin(rotkehlchen_api_server: 'APIServer') -> None:
         contained_in_msg='No user is currently logged in',
         status_code=HTTPStatus.CONFLICT,
     )
+
+
+def test_async_db_reset(rotkehlchen_api_server: 'APIServer') -> None:
+    """Test the endpoint for reseting the globaldb using an async task"""
+    asset_id = 'my_custom_id'
+    GlobalDBHandler().add_asset(CryptoAsset.initialize(
+        identifier=asset_id,
+        asset_type=AssetType.OWN_CHAIN,
+        name='Lolcoin2',
+        symbol='LOLZ2',
+        started=Timestamp(0),
+    ))
+    Asset(asset_id).resolve()
+    response = requests.delete(
+        api_url_for(
+            rotkehlchen_api_server,
+            'assetupdatesresource',
+        ),
+        json={'async_query': True, 'ignore_warnings': True, 'reset': 'hard'},
+    )
+    task_id = assert_ok_async_response(response)
+    outcome = wait_for_async_task(
+        rotkehlchen_api_server,
+        task_id,
+    )
+    assert outcome['result']['result'] is True
+    assert outcome['message'] == ''
+
+    with pytest.raises(UnknownAsset):
+        Asset(asset_id).resolve()

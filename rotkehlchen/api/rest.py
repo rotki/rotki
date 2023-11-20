@@ -1412,11 +1412,12 @@ class RestAPI:
         AssetResolver().assets_cache.remove(source_identifier)
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
+    @async_api_call()
     def rebuild_assets_information(
             self,
             reset: Literal['soft', 'hard'],
             ignore_warnings: bool,
-    ) -> Response:
+    ) -> dict[str, Any]:
         msg = 'Invalid value for reset'
         if reset == 'soft':
             success, msg = GlobalDBHandler().soft_reset_assets_list()
@@ -1427,8 +1428,9 @@ class RestAPI:
             )
 
         if success:
-            return api_response(_wrap_in_ok_result(OK_RESULT), status_code=HTTPStatus.OK)
-        return api_response(wrap_in_fail_result(msg), status_code=HTTPStatus.CONFLICT)
+            AssetResolver.clean_memory_cache()  # clean the cache after deleting any possible asset
+            return _wrap_in_ok_result(OK_RESULT)
+        return wrap_in_fail_result(msg, status_code=HTTPStatus.CONFLICT)
 
     def query_netvalue_data(self, include_nfts: bool) -> Response:
         from_ts = Timestamp(0)
