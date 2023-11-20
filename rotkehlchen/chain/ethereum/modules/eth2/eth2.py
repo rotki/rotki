@@ -1,9 +1,9 @@
 import json
 import logging
 import re
+import sys
 from collections import defaultdict
 from collections.abc import Sequence
-from sys import float_info
 from typing import TYPE_CHECKING, Literal, Optional, Union
 
 import gevent
@@ -368,8 +368,12 @@ class Eth2(EthereumModule):
             log.error(f'Failed to query ethereum withdrawals for {address} through etherscan due to {e}. Will try blockscout.')  # noqa: E501
             try:
                 self.ethereum.blockscout.query_withdrawals(address)
-            except (DeserializationError, RemoteError) as othere:
-                log.error(f'Failed to query ethereum withdrawals for {address} through blockscout due to {othere}. Bailing out for now.')  # noqa: E501
+            except (DeserializationError, RemoteError, KeyError) as othere:
+                msg = str(othere)
+                if isinstance(othere, KeyError):
+                    msg = f'Missing key entry for {msg}'
+
+                log.error(f'Failed to query ethereum withdrawals for {address} through blockscout due to {msg}. Bailing out for now.')  # noqa: E501
                 return
 
         with self.database.user_write() as write_cursor:
@@ -536,10 +540,9 @@ class Eth2(EthereumModule):
             return
 
         current_epoch = timestamp_to_epoch(now)
-        max_int = int(float_info.max)
         needed_validators = []
         for entry in validator_data:
-            if (exit_epoch := entry.get('exitepoch', max_int)) > current_epoch:
+            if (exit_epoch := entry.get('exitepoch', sys.maxsize)) > current_epoch:
                 continue
 
             # this is a slashed/exited validator

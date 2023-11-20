@@ -120,19 +120,24 @@ class Blockscout(ExternalServiceWithApiKey):
         May raise:
         - RemoteError if blockscout query fails
         - DeserializationError if we can't decode the response
+        - KeyError if the response from blockscout does not contain expected keys
         """
         extra_args: dict[str, Any] = {}
         range_name = f'{WITHDRAWALS_IDX_PREFIX}_{address}'
         ts_range_name = f'{WITHDRAWALS_TS_PREFIX}_{address}'
         dbevents = DBHistoryEvents(self.db)
-        last_known_withdrawal_idx, index_to_write, ts_to_write = sys.maxsize, None, 0
+        last_known_withdrawal_idx, index_to_write, ts_to_write = sys.maxsize, None, Timestamp(0)
+        withdrawals: list[EthWithdrawalEvent] = []
         with self.db.conn.read_ctx() as cursor:
-
             if (idx_result := self.db.get_used_query_range(cursor, range_name)) is not None:
                 last_known_withdrawal_idx = idx_result[1]
 
         while True:
             result = self._query(module='addresses', endpoint='withdrawals', encoded_args=address, extra_args=extra_args)  # noqa: E501
+            if len(result['items']) == 0:
+                log.debug(f'Could not find withdrawals for address {address}')
+                break
+
             if index_to_write is None:
                 index_to_write = result['items'][0]['index']
                 ts_to_write = iso8601ts_to_timestamp(result['items'][0]['timestamp'])
@@ -173,8 +178,9 @@ class Blockscout(ExternalServiceWithApiKey):
                 continue
 
             # if we get here it means we found a known index so we break out
-            with self.db.user_write() as write_cursor:
-                dbevents.add_history_events(write_cursor, history=withdrawals)
+            if len(withdrawals) != 0:
+                with self.db.user_write() as write_cursor:
+                    dbevents.add_history_events(write_cursor, history=withdrawals)
             break
 
         if index_to_write is not None:  # let's also update index if needed
