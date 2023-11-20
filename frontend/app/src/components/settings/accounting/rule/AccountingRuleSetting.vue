@@ -13,7 +13,7 @@ import {
 const { t } = useI18n();
 const router = useRouter();
 
-const { getAccountingRules, getAccountingRulesConflicts } =
+const { getAccountingRule, getAccountingRules, getAccountingRulesConflicts } =
   useAccountingSettings();
 
 const {
@@ -55,10 +55,6 @@ const checkConflicts = async () => {
     await router.replace({ query: {} });
   }
 };
-
-onMounted(async () => {
-  await refresh();
-});
 
 const tableHeaders = computed<DataTableHeader[]>(() => [
   {
@@ -189,19 +185,42 @@ const getType = (eventType: string, eventSubtype: string) =>
 onMounted(async () => {
   const {
     currentRoute: {
-      query: { 'add-rule': addRule, eventSubtype, eventType, counterparty }
+      query: {
+        'add-rule': addRule,
+        'edit-rule': editRule,
+        eventSubtype,
+        eventType,
+        counterparty
+      }
     }
   } = router;
+
+  const ruleData = {
+    eventSubtype: eventSubtype?.toString() ?? '',
+    eventType: eventType?.toString() ?? '',
+    counterparty: counterparty?.toString() ?? null
+  };
+
   if (addRule) {
     set(editableItem, {
       ...getPlaceholderRule(),
-      eventSubtype: eventSubtype?.toString() ?? '',
-      eventType: eventType?.toString() ?? '',
-      counterparty: counterparty?.toString() ?? null
+      ...ruleData
     });
     setOpenDialog(true);
     await router.replace({ query: {} });
+  } else if (editRule) {
+    const rule = await getAccountingRule({
+      eventTypes: [ruleData.eventType],
+      eventSubtypes: [ruleData.eventSubtype],
+      counterparties: counterparty ? [ruleData.counterparty] : undefined,
+      limit: 1,
+      offset: 0
+    });
+    set(editableItem, rule);
+    setOpenDialog(!!rule);
+    await router.replace({ query: {} });
   }
+  await refresh();
 });
 
 const conflictsDialogOpen: Ref<boolean> = ref(false);

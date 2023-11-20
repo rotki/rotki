@@ -36,6 +36,7 @@ const resetEvent = (event: EvmHistoryEvent) => emit('reset', event);
       transition="slide-y-transition"
       max-width="250px"
       min-width="200px"
+      left
       offset-y
     >
       <template #activator="{ on }">
