@@ -54,17 +54,16 @@ EVENT_CATEGORY_MAPPINGS = {  # possible combinations of types and subtypes mappe
     }, HistoryEventType.TRADE: {
         HistoryEventSubType.SPEND: EventCategory.SWAP_OUT,
         HistoryEventSubType.RECEIVE: EventCategory.SWAP_IN,
-        HistoryEventSubType.NONE: EventCategory.INFORMATIONAL,  # verify
+        HistoryEventSubType.NONE: EventCategory.INFORMATIONAL,
         HistoryEventSubType.FEE: EventCategory.FEE,
     }, HistoryEventType.RENEW: {
-        HistoryEventSubType.NFT: EventCategory.RENEW,
+        HistoryEventSubType.NONE: EventCategory.RENEW,
     }, HistoryEventType.STAKING: {
-        HistoryEventSubType.DEPOSIT_ASSET: EventCategory.DEPOSIT,
+        HistoryEventSubType.DEPOSIT_ASSET: EventCategory.STAKE_DEPOSIT,
         HistoryEventSubType.REWARD: EventCategory.STAKING_REWARD,
-        HistoryEventSubType.REMOVE_ASSET: EventCategory.WITHDRAW,
+        HistoryEventSubType.REMOVE_ASSET: EventCategory.STAKE_WITHDRAWAL,
         HistoryEventSubType.BLOCK_PRODUCTION: EventCategory.CREATE_BLOCK,
         HistoryEventSubType.MEV_REWARD: EventCategory.MEV_REWARD,
-        HistoryEventSubType.RECEIVE_WRAPPED: EventCategory.RECEIVE,
         HistoryEventSubType.FEE: EventCategory.FEE,
     }, HistoryEventType.TRANSFER: {
         HistoryEventSubType.DONATE: EventCategory.DONATE,
@@ -82,6 +81,9 @@ EVENT_CATEGORY_MAPPINGS = {  # possible combinations of types and subtypes mappe
     },
 }
 
+# possible color values
+# success=green, error=red, warning=yellow/orangish, info=blue,
+# primary=our primary blue color, secondary=somewhat gray
 EVENT_CATEGORY_DETAILS = {
     EventCategory.SEND: {DEFAULT: EventCategoryDetails(
         label='send',
@@ -99,21 +101,21 @@ EVENT_CATEGORY_DETAILS = {
         color='success',
     )}, EventCategory.MIGRATE_OUT: {DEFAULT: EventCategoryDetails(
         label='migrate',
-        icon='arrow-right-circle-line',
+        icon='arrow-go-forward-line',
     )}, EventCategory.MIGRATE_IN: {DEFAULT: EventCategoryDetails(
         label='migrate',
-        icon='arrow-left-circle-line',
+        icon='arrow-go-back-line',
         color='success',
     )}, EventCategory.APPROVAL: {DEFAULT: EventCategoryDetails(
         label='approval',
         icon='lock-unlock-line',
     )}, EventCategory.DEPOSIT: {DEFAULT: EventCategoryDetails(
         label='deposit',
-        icon='skip-up-line',
+        icon='upload-line',
         color='success',
     )}, EventCategory.WITHDRAW: {DEFAULT: EventCategoryDetails(
         label='withdraw',
-        icon='skip-down-line',
+        icon='download-line',
     )}, EventCategory.AIRDROP: {DEFAULT: EventCategoryDetails(
         label='airdrop',
         icon='gift-line',
@@ -131,11 +133,11 @@ EVENT_CATEGORY_DETAILS = {
         icon='rocket-2-line',
     )}, EventCategory.BRIDGE_DEPOSIT: {DEFAULT: EventCategoryDetails(
         label='bridge',
-        icon='skip-up-line',
+        icon='upload-line',
         color='error',
     )}, EventCategory.BRIDGE_WITHDRAWAL: {DEFAULT: EventCategoryDetails(
         label='bridge',
-        icon='skip-down-line',
+        icon='download-line',
         color='success',
     )}, EventCategory.GOVERNANCE: {DEFAULT: EventCategoryDetails(
         label='governance',
@@ -151,13 +153,13 @@ EVENT_CATEGORY_DETAILS = {
         icon='loop-right-line',
     )}, EventCategory.PLACE_ORDER: {DEFAULT: EventCategoryDetails(
         label='place order',
-        icon='auction-line',
+        icon='briefcase-line',
     )}, EventCategory.TRANSFER: {DEFAULT: EventCategoryDetails(
         label='transfer',
         icon='swap-box-line',
     )}, EventCategory.STAKING_REWARD: {DEFAULT: EventCategoryDetails(
         label='staking reward',
-        icon='inbox-archive-line',
+        icon='trophy-line',
     )}, EventCategory.CLAIM_REWARD: {DEFAULT: EventCategoryDetails(
         label='claim reward',
         icon='gift-2-line',
@@ -178,7 +180,7 @@ EVENT_CATEGORY_DETAILS = {
         label='refund',
         icon='refund-2-line',
     )}, EventCategory.FEE: {
-        DEFAULT: EventCategoryDetails(label='fee', icon='price-tag-line'),
+        DEFAULT: EventCategoryDetails(label='fee', icon='cash-line'),
         CPT_GAS: EventCategoryDetails(label='gas fee', icon='fire-line'),
     }, EventCategory.MEV_REWARD: {DEFAULT: EventCategoryDetails(
         label='mev',
@@ -194,7 +196,13 @@ EVENT_CATEGORY_DETAILS = {
         icon='file-edit-line',
     )}, EventCategory.APPLY: {DEFAULT: EventCategoryDetails(
         label='apply',
-        icon='save-line',
+        icon='share-circle-line',
+    )}, EventCategory.STAKE_DEPOSIT: {DEFAULT: EventCategoryDetails(
+        label='Stake',
+        icon='folder-add-line',
+    )}, EventCategory.STAKE_WITHDRAWAL: {DEFAULT: EventCategoryDetails(
+        label='Unstake',
+        icon='folder-reduce-line',
     )},
 }
 

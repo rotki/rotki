@@ -198,7 +198,7 @@ class EnsDecoder(GovernableDecoderInterface, CustomizableDateMixin):
             if event.event_type == HistoryEventType.SPEND and event.asset == A_ETH and event.balance.amount == checked_cost and event.address == context.tx_log.address:  # noqa: E501
                 event.balance.amount -= refund_amount  # get correct amount spent
                 event.event_type = HistoryEventType.RENEW
-                event.event_subtype = HistoryEventSubType.NFT
+                event.event_subtype = HistoryEventSubType.NONE
                 event.counterparty = CPT_ENS
                 event.notes = f'Renew ENS name {fullname} for {event.balance.amount} ETH until {self.timestamp_to_date(expires)}'  # noqa: E501
 

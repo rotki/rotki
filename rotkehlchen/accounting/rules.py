@@ -48,15 +48,15 @@ class AccountingRulesManager:
         Return a matching rule for the event if it exists and an optional callback defined for
         the rule that should be executed
         """
-        event_identifier = event.get_type_identifier()
-        rule = self.event_settings.get(event_identifier, None)
+        event_id = event.get_type_identifier()
+        rule = self.event_settings.get(event_id, None)
         if isinstance(event, EvmEvent) is False or rule is not None:
-            return rule, self.event_callbacks.get(event_identifier)
+            return rule, self.event_callbacks.get(event_id)
 
-        event_identifier = event.get_type_identifier(include_counterparty=False)
+        event_id_no_cpt = event.get_type_identifier(include_counterparty=False)
         return (
-            self.event_settings.get(event_identifier),
-            self.event_callbacks.get(event_identifier),
+            self.event_settings.get(event_id_no_cpt),
+            self.event_callbacks.get(event_id),  # callback is always specific
         )
 
     def reset(self) -> None:
