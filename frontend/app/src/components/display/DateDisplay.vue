@@ -60,16 +60,16 @@ const { copy, copied } = useCopy(formattedDate);
 </script>
 
 <template>
-  <span :class="{ blur: !shouldShowAmount }" @click="copy()">
-    <CopyTooltip
-      class="items-baseline"
-      :copied="copied"
-      :tooltip="showTooltip ? formattedDateWithTimezone : null"
-    >
-      <span>{{ splittedByMillisecondsPart[0] }}</span>
-      <span v-if="splittedByMillisecondsPart[1]" class="text-[0.625rem]">
-        .{{ splittedByMillisecondsPart[1] }}
-      </span>
-    </CopyTooltip>
-  </span>
+  <CopyTooltip
+    class="items-baseline"
+    :copied="copied"
+    :tooltip="showTooltip ? formattedDateWithTimezone : null"
+    :class="{ blur: !shouldShowAmount }"
+    @click="copy()"
+  >
+    {{ splittedByMillisecondsPart[0] }}
+    <span v-if="splittedByMillisecondsPart[1]" class="text-[0.625rem]">
+      .{{ splittedByMillisecondsPart[1] }}
+    </span>
+  </CopyTooltip>
 </template>

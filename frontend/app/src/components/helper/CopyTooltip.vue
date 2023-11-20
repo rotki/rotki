@@ -1,9 +1,13 @@
 <script setup lang="ts">
+import { useListeners } from 'vue';
+
 defineProps<{
   copied: boolean;
   tooltip?: string | null;
 }>();
 const { t } = useI18n();
+
+const listeners = useListeners();
 </script>
 
 <template>
@@ -11,7 +15,7 @@ const { t } = useI18n();
     :popper="{ placement: 'top' }"
     :open-delay="200"
     class="text-no-wrap cursor-pointer"
-    data-cy="display-amount"
+    v-on="listeners"
   >
     <template #activator>
       <slot />

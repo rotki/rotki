@@ -380,7 +380,6 @@ const [DefineSymbol, ReuseSymbol] = createReusableTemplate<{ name: string }>();
       ]"
       class="inline-flex items-center gap-1 transition duration-200 rounded-lg"
       data-cy="amount-display"
-      @click="copy()"
     >
       <template v-if="!anyLoading">
         <template v-if="comparisonSymbol">
@@ -392,7 +391,12 @@ const [DefineSymbol, ReuseSymbol] = createReusableTemplate<{ name: string }>();
           :name="displayAsset"
         />
 
-        <CopyTooltip :copied="copied" :tooltip="tooltip">
+        <CopyTooltip
+          :copied="copied"
+          :tooltip="tooltip"
+          data-cy="display-amount"
+          @click="copy()"
+        >
           {{ renderedValue }}
         </CopyTooltip>
 
