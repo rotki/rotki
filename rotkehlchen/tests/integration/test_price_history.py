@@ -41,7 +41,7 @@ def test_price_queries(price_historian, data_dir, database):
         price=Price(FVal('20')),
     )]
     GlobalDBHandler().add_historical_prices(cache_data)
-    price_historian._PriceHistorian__instance._cryptocompare = Cryptocompare(
+    price_historian.__instance._cryptocompare = Cryptocompare(
         data_directory=data_dir,
         database=database,
     )
