@@ -2044,8 +2044,8 @@
     },
     "blockscout": {
       "delete_tooltip": "Διαγράφει το κλειδί Blockscout API",
-      "description": "rotki χρησιμοποιεί το Blockscout για να λάβει πληροφορίες σχετικά με ερωτήματα ανάληψης ETH",
-      "hint": "Εισαγάγετε το κλειδί Blockscout API key",
+      "description": "Το rotki χρησιμοποιεί το Blockscout για να λάβει πληροφορίες σχετικά με τα ερωτήματα ανάληψης ETH",
+      "hint": "Εισαγάγετε το κλειδί για το Blockscout API",
       "title": "Blockscout"
     },
     "confirmation": {

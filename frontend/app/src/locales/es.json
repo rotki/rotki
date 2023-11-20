@@ -2029,7 +2029,7 @@
     "tx_url": "Transactions will open at {txUrl}"
   },
   "external_services": {
-    "api_key": "API key",
+    "api_key": "Clave de la API",
     "beaconchain": {
       "delete_tooltip": "Deletes the Beaconcha.in API key",
       "description": "rotki uses Beaconcha.in to obtain information about ETH staking in your portfolio. An API key is only needed if you are being rate-limited.",
@@ -2038,8 +2038,8 @@
     },
     "blockscout": {
       "delete_tooltip": "Elimina la clave API de Blockscout",
-      "description": "rotki usa Blockscout para obtener información sobre consultas de retiro de ETH",
-      "hint": "Ingrese su clave API de Blockscout",
+      "description": "rotki utiliza Blockscout para obtener información sobre las consultas de retirada de ETH",
+      "hint": "Ingrese su clave para la API de Blockscout",
       "title": "Blockscout"
     },
     "confirmation": {
