@@ -11,12 +11,8 @@ const { event } = toRefs(props);
 
 const { t } = useI18n();
 
-const onEditRule = (event: HistoryEventEntry) => {
+const onEditRule = () => {
   const entry = get(event);
-
-  if (!entry) {
-    return false;
-  }
 
   const data = {
     eventSubtype: entry.eventSubtype,
@@ -50,7 +46,7 @@ const onEditRule = (event: HistoryEventEntry) => {
         </RuiButton>
       </template>
       <VList>
-        <VListItem class="gap-4" link @click="onEditRule(event)">
+        <VListItem class="gap-4" link @click="onEditRule()">
           <RuiIcon class="text-rui-text-secondary" name="pencil-line" />
           <VListItemContent>
             {{ t('accounting_settings.rule.edit') }}
