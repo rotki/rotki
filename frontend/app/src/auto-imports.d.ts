@@ -124,6 +124,7 @@ declare global {
   const getServiceRegisterUrl: typeof import('./utils/url')['getServiceRegisterUrl']
   const getSortItems: typeof import('./utils/assets')['getSortItems']
   const getTags: typeof import('./utils/tags')['getTags']
+  const getTextToken: typeof import('./utils/text')['getTextToken']
   const getValidSelectorFromEvmAddress: typeof import('./utils/assets')['getValidSelectorFromEvmAddress']
   const groupAssetBreakdown: typeof import('./utils/balances')['groupAssetBreakdown']
   const h: typeof import('vue')['h']
@@ -841,6 +842,7 @@ declare module 'vue' {
     readonly getServiceRegisterUrl: UnwrapRef<typeof import('./utils/url')['getServiceRegisterUrl']>
     readonly getSortItems: UnwrapRef<typeof import('./utils/assets')['getSortItems']>
     readonly getTags: UnwrapRef<typeof import('./utils/tags')['getTags']>
+    readonly getTextToken: UnwrapRef<typeof import('./utils/text')['getTextToken']>
     readonly getValidSelectorFromEvmAddress: UnwrapRef<typeof import('./utils/assets')['getValidSelectorFromEvmAddress']>
     readonly groupAssetBreakdown: UnwrapRef<typeof import('./utils/balances')['groupAssetBreakdown']>
     readonly h: UnwrapRef<typeof import('vue')['h']>
@@ -1552,6 +1554,7 @@ declare module '@vue/runtime-core' {
     readonly getServiceRegisterUrl: UnwrapRef<typeof import('./utils/url')['getServiceRegisterUrl']>
     readonly getSortItems: UnwrapRef<typeof import('./utils/assets')['getSortItems']>
     readonly getTags: UnwrapRef<typeof import('./utils/tags')['getTags']>
+    readonly getTextToken: UnwrapRef<typeof import('./utils/text')['getTextToken']>
     readonly getValidSelectorFromEvmAddress: UnwrapRef<typeof import('./utils/assets')['getValidSelectorFromEvmAddress']>
     readonly groupAssetBreakdown: UnwrapRef<typeof import('./utils/balances')['groupAssetBreakdown']>
     readonly h: UnwrapRef<typeof import('vue')['h']>

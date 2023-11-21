@@ -720,6 +720,7 @@
     "useAssetPageNavigation": true,
     "useAccountingRuleMappings": true,
     "getPlaceholderRule": true,
-    "compareTextByKeyword": true
+    "compareTextByKeyword": true,
+    "getTextToken": true
   }
 }

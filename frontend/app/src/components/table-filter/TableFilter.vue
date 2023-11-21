@@ -161,7 +161,7 @@ const filteredMatchers: ComputedRef<SearchMatcher<any>[]> = computed(() =>
   get(matchers).filter(
     ({ key, multiple }) =>
       (!get(usedKeys).includes(key) || multiple) &&
-      key.startsWith(get(search) || '')
+      getTextToken(key).includes(getTextToken(get(search)) || '')
   )
 );
 
