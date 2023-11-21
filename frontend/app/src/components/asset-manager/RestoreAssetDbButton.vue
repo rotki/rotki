@@ -14,24 +14,20 @@ type ResetType = 'soft' | 'hard';
 const { notify } = useNotificationsStore();
 const { connect, setConnected } = useMainStore();
 const { logout } = useSessionStore();
-const { restoreAssetsDatabase } = useAssetsApi();
+const { restoreAssetsDatabase } = useAssets();
 
 const { restartBackend } = useBackendManagement();
 
 const { t } = useI18n();
 
 async function restoreAssets(resetType: ResetType) {
-  try {
-    const updated = await restoreAssetsDatabase(
-      resetType,
-      resetType === 'hard'
-    );
-    if (updated) {
-      showDoneConfirmation();
-    }
-  } catch (e: any) {
+  const result = await restoreAssetsDatabase(resetType);
+
+  if (result.success) {
+    showDoneConfirmation();
+  } else {
+    const { message } = result;
     const title = t('asset_update.restore.title').toString();
-    const message = e.toString();
     if (message.includes('There are assets that can not')) {
       showDoubleConfirmation(resetType);
     }

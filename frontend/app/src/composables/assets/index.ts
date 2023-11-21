@@ -20,7 +20,8 @@ export const useAssets = () => {
     performUpdate,
     mergeAssets: mergeAssetsCaller,
     importCustom,
-    exportCustom
+    exportCustom,
+    restoreAssetsDatabase: restoreAssetsDatabaseCaller
   } = useAssetsApi();
 
   const { notify } = useNotificationsStore();
@@ -164,11 +165,37 @@ export const useAssets = () => {
     }
   };
 
+  const restoreAssetsDatabase = async (
+    resetType: 'hard' | 'soft'
+  ): Promise<ActionStatus> => {
+    try {
+      const { taskId } = await restoreAssetsDatabaseCaller(
+        resetType,
+        resetType === 'hard'
+      );
+      await awaitTask<boolean, TaskMeta>(taskId, TaskType.RESET_ASSET, {
+        title: t('actions.assets.reset.task.title')
+      });
+
+      return {
+        success: true
+      };
+    } catch (e: any) {
+      logger.error(e);
+
+      return {
+        success: false,
+        message: e.message
+      };
+    }
+  };
+
   return {
     checkForUpdate,
     applyUpdates,
     mergeAssets,
     importCustomAssets,
-    exportCustomAssets
+    exportCustomAssets,
+    restoreAssetsDatabase
   };
 };
