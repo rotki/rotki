@@ -32,6 +32,12 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
+# size assumes a user loads 5 pages of 100 events each one
+# and each event having in average 3 subevents.
+# TODO: Make this changable depending on user's set page size
+PROCESSABLE_EVENTS_CACHE_SIZE = 1500
+
+
 class Accountant:
 
     def __init__(
@@ -60,9 +66,7 @@ class Accountant:
         self.currently_processing_timestamp = Timestamp(-1)
         self.first_processed_timestamp = Timestamp(-1)
         self.premium = premium
-        # the size of 1500 was calculated assuming a user loads 5 pages of 100 events each one
-        # and each event has in average 3 events.
-        self.processable_events_cache: LRUCacheWithRemove[int, bool] = LRUCacheWithRemove(maxsize=1500)  # noqa: E501
+        self.processable_events_cache: LRUCacheWithRemove[int, bool] = LRUCacheWithRemove(maxsize=PROCESSABLE_EVENTS_CACHE_SIZE)  # noqa: E501
 
     def activate_premium_status(self, premium: Premium) -> None:
         self.premium = premium
