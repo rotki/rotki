@@ -4768,7 +4768,7 @@ Dealing with History Events
             }
 
          :reqjson string tx_hash: This is the transaction hash of the evm event
-         :reqjson string event_identifier: The event identifier to be used for the event.
+         :reqjson string[optional] event_identifier: The event identifier to be used for the event.
          :reqjson int sequence_index: This is an index that tries to provide the order of history entries for a single event_identifier.
          :reqjson string location: The location of the entry. Such as "ethereum", "optimism", etc.
          :reqjson string asset: The asset identifier for this entry
@@ -4794,6 +4794,7 @@ Dealing with History Events
 
             {
                "entry_type": "eth block event",
+               "event_identifier": "BLOCK_11",
                "timestamp": 1569924574,
                "balance": {"amount": "1.542", "usd_value": "1.675"},
                "block_number": 11,
@@ -4802,6 +4803,7 @@ Dealing with History Events
                "is_mev_reward": true
             }
 
+         :reqjson string[optional] event_identifier: The event identifier to be used for the event.
          :reqjson int block_number: This is the number of the block where the event took place.
          :reqjson int validator_index: This is the index of the validator.
          :reqjson string fee_recipient: an evm address field to specify the fee recipient in an "eth block event".
@@ -4834,7 +4836,7 @@ Dealing with History Events
          :reqjson string tx_hash: This is the transaction hash of the evm event
          :reqjson int sequence_index: This is an index that tries to provide the order of history entries for a single event_identifier.
          :reqjson int validator_index: This is the index of the validator.
-         :reqjson string event_identifier: The event identifier to be used for the event.
+         :reqjson string[optional] event_identifier: The event identifier to be used for the event.
          :reqjson string depositor: an evm address field to specify the depositor in an "eth deposit event".
          :reqjson object[optional] extra_data: An object containing any other data to be stored.
 
@@ -4856,9 +4858,11 @@ Dealing with History Events
                "balance": {"amount": "1.542", "usd_value": "1.675"},
                "is_exit": true,
                "validator_index": 1,
-               "withdrawal_address": "0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12"
+               "withdrawal_address": "0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12",
+               "event_identifier": "EW_XX_XXXXX"
             }
 
+         :reqjson string[optional] event_identifier: The event identifier to be used for the event.
          :reqjson int validator_index: This is the index of the validator.
          :reqjson string withdrawal_address: an evm address field to specify the withdrawer in an "eth withdrawal event".
          :reqjson bool is_exit: true if the "eth withdrawal event" is an exit event.

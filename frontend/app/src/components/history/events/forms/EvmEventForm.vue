@@ -256,6 +256,7 @@ const applyGroupHeaderData = async (entry: EvmHistoryEvent) => {
       true
     )
   );
+  set(usdValue, '0');
 };
 
 watch(errorMessages, errors => {

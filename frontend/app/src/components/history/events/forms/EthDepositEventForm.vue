@@ -186,6 +186,7 @@ const applyGroupHeaderData = async (entry: EthDepositEvent) => {
       true
     )
   );
+  set(usdValue, '0');
 };
 
 watch(errorMessages, errors => {

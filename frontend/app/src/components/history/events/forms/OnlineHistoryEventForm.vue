@@ -200,6 +200,7 @@ const applyGroupHeaderData = async (entry: OnlineHistoryEvent) => {
       true
     )
   );
+  set(usdValue, '0');
 };
 
 watch(errorMessages, errors => {

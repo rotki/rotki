@@ -179,6 +179,7 @@ export type EditEthBlockEventPayload = {
   blockNumber: number;
   feeRecipient: string;
   isMevReward: boolean;
+  eventIdentifier: string | null;
 };
 
 export type NewEthBlockEventPayload = Omit<
@@ -212,6 +213,7 @@ export type EditEthWithdrawalEventPayload = {
   validatorIndex: number;
   withdrawalAddress: string;
   isExit: boolean;
+  eventIdentifier: string | null;
 };
 
 export type NewEthWithdrawalEventPayload = Omit<
