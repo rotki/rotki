@@ -66,11 +66,15 @@ export const useAssetsApi = () => {
   const restoreAssetsDatabase = async (
     reset: 'hard' | 'soft',
     ignoreWarnings: boolean
-  ): Promise<boolean> => {
-    const response = await api.instance.delete<ActionResult<boolean>>(
+  ): Promise<PendingTask> => {
+    const response = await api.instance.delete<ActionResult<PendingTask>>(
       '/assets/updates',
       {
-        data: snakeCaseTransformer({ reset, ignoreWarnings }),
+        data: snakeCaseTransformer({
+          reset,
+          ignoreWarnings,
+          asyncQuery: true
+        }),
         validateStatus: validStatus
       }
     );

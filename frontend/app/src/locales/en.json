@@ -252,6 +252,11 @@
           "title": "Importing user assets"
         }
       },
+      "reset": {
+        "task": {
+          "title": "Resetting assets database"
+        }
+      },
       "update": {
         "error": {
           "description": "The asset database update failed: {message}"
