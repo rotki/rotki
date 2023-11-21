@@ -198,7 +198,7 @@
       },
       "overwrite_by_setting": "Overwrite by value from other accounting setting",
       "refresh_tooltip": "Refresh accounting rules",
-      "title": "Custom Accounting Rules",
+      "title": "Event Accounting Rules",
       "value_overwritten": "The value is overwritten by this setting:"
     },
     "trade": {
