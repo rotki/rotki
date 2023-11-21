@@ -68,7 +68,7 @@ export const useHistoryEventFilter = (
   const {
     counterparties,
     historyEventTypes,
-    historyEventSubTypes,
+    historyEventTypeGlobalMapping,
     historyEventProducts
   } = useHistoryEventMappings();
   const { assetSearch } = useAssetInfoApi();
@@ -203,15 +203,30 @@ export const useHistoryEventFilter = (
           validate: (type: string) => !!type
         });
       }
-      if (!disabled.eventSubtypes) {
+
+      let selectedEventTypes = get(filters)?.eventTypes || [];
+      if (!Array.isArray(selectedEventTypes)) {
+        selectedEventTypes = [`${selectedEventTypes}`];
+      }
+      if (!disabled.eventSubtypes && selectedEventTypes.length > 0) {
+        const globalMapping = get(historyEventTypeGlobalMapping);
+
+        const globalMappingKeys: string[] = [];
+        selectedEventTypes.forEach(selectedEventType => {
+          const globalMappingFound = globalMapping[selectedEventType];
+          if (globalMappingFound) {
+            globalMappingKeys.push(...Object.keys(globalMappingFound));
+          }
+        });
+
         data.push({
           key: HistoryEventFilterKeys.EVENT_SUBTYPE,
           keyValue: HistoryEventFilterValueKeys.EVENT_SUBTYPE,
           description: t('transactions.filter.event_subtype'),
           string: true,
           multiple: true,
-          suggestions: () => get(historyEventSubTypes),
-          validate: (type: string) => !!type
+          suggestions: () => get(globalMappingKeys),
+          validate: (type: string) => get(globalMappingKeys).includes(type)
         });
       }
     }

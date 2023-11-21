@@ -15,6 +15,21 @@ export const toSentenceCase = (string: string): string => {
 /**
  *
  * @param {string} string - String to convert
+ * @return {string} - String converted to text token, mostly used to matching keyword
+ * @example
+ * getTextToken('this is a sentence'); // thisisasentence
+ */
+
+export const getTextToken = (string: string): string => {
+  if (!string) {
+    return '';
+  }
+  return string.toLowerCase().replace(/[^\dA-Za-z]/g, '');
+};
+
+/**
+ *
+ * @param {string} string - String to convert
  * @return {string} - String converted to snake case
  * @example
  * toSnakeCase('this is a sentence'); // this_is_a_sentence
