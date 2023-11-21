@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import dayjs from 'dayjs';
 import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
-import { helpers, required } from '@vuelidate/validators';
+import { helpers, required, requiredIf } from '@vuelidate/validators';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { isEmpty } from 'lodash-es';
 import {
@@ -32,6 +32,7 @@ const assetPriceForm: Ref<InstanceType<
   typeof HistoryEventAssetPriceForm
 > | null> = ref(null);
 
+const eventIdentifier: Ref<string> = ref('');
 const datetime: Ref<string> = ref('');
 const amount: Ref<string> = ref('');
 const usdValue: Ref<string> = ref('');
@@ -43,6 +44,14 @@ const isMevReward: Ref<boolean> = ref(false);
 const errorMessages = ref<Record<string, string[]>>({});
 
 const rules = {
+  eventIdentifier: {
+    required: helpers.withMessage(
+      t(
+        'transactions.events.form.event_identifier.validation.non_empty'
+      ).toString(),
+      requiredIf(() => !!get(editableItem))
+    )
+  },
   timestamp: { externalServerValidation: () => true },
   amount: {
     required: helpers.withMessage(
@@ -94,6 +103,7 @@ const { setValidation, setSubmitFunc, saveHistoryEventHandler } =
 const v$ = setValidation(
   rules,
   {
+    eventIdentifier,
     timestamp: datetime,
     amount,
     usdValue,
@@ -108,6 +118,7 @@ const v$ = setValidation(
 );
 
 const reset = () => {
+  set(eventIdentifier, null);
   set(
     datetime,
     convertFromTimestamp(
@@ -128,6 +139,7 @@ const reset = () => {
 };
 
 const applyEditableData = async (entry: EthBlockEvent) => {
+  set(eventIdentifier, entry.eventIdentifier);
   set(
     datetime,
     convertFromTimestamp(
@@ -145,6 +157,7 @@ const applyEditableData = async (entry: EthBlockEvent) => {
 };
 
 const applyGroupHeaderData = async (entry: EthBlockEvent) => {
+  set(eventIdentifier, entry.eventIdentifier);
   set(feeRecipient, entry.locationLabel ?? '');
   set(blockNumber, entry.blockNumber.toString());
   set(validatorIndex, entry.validatorIndex.toString());
@@ -156,6 +169,7 @@ const applyGroupHeaderData = async (entry: EthBlockEvent) => {
       true
     )
   );
+  set(usdValue, '0');
 };
 
 watch(errorMessages, errors => {
@@ -172,6 +186,7 @@ const save = async (): Promise<boolean> => {
   );
 
   const payload: NewEthBlockEventPayload = {
+    eventIdentifier: get(eventIdentifier),
     entryType: HistoryEventEntryType.ETH_BLOCK_EVENT,
     timestamp,
     balance: {
@@ -293,5 +308,31 @@ const feeRecipientSuggestions = computed(() =>
     <RuiCheckbox v-model="isMevReward" color="primary" data-cy="isMevReward">
       {{ t('transactions.events.form.is_mev_reward.label') }}
     </RuiCheckbox>
+
+    <RuiDivider class="mb-2 mt-6" />
+
+    <VExpansionPanels flat>
+      <VExpansionPanel>
+        <VExpansionPanelHeader
+          class="p-0"
+          data-cy="eth-block-event-form__advance-toggle"
+        >
+          {{ t('transactions.events.form.advanced') }}
+        </VExpansionPanelHeader>
+        <VExpansionPanelContent
+          class="[&>.v-expansion-panel-content\_\_wrap]:!p-0"
+        >
+          <RuiTextField
+            v-model="eventIdentifier"
+            variant="outlined"
+            color="primary"
+            data-cy="eventIdentifier"
+            :label="t('transactions.events.form.event_identifier.label')"
+            :error-messages="toMessages(v$.eventIdentifier)"
+            @blur="v$.eventIdentifier.$touch()"
+          />
+        </VExpansionPanelContent>
+      </VExpansionPanel>
+    </VExpansionPanels>
   </div>
 </template>

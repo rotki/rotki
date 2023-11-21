@@ -43,6 +43,11 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'jsdom',
+    server: {
+      deps: {
+        inline: ['@rotki/ui-library-compat']
+      }
+    },
     deps: {
       optimizer: {
         web: {
