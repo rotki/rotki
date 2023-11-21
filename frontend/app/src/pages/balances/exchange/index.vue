@@ -81,7 +81,6 @@ const navigate = () => {
 };
 
 const exchangeSavingsExist: Ref<boolean> = ref(false);
-
 const exchangeDetailTabs: Ref<number> = ref(0);
 
 watch(exchange, () => {
@@ -91,7 +90,7 @@ watch(exchange, () => {
 
 const checkSavingsData = async () => {
   const exchangeVal = get(exchange);
-  if (exchangeVal && get(isBinance)) {
+  if (isBinance(exchangeVal)) {
     const { total } = await fetchExchangeSavings({
       limit: 1,
       offset: 0,
@@ -108,15 +107,11 @@ onMounted(() => {
   refreshExchangeSavings();
 });
 
-const isBinance = computed(() => {
-  const exchangeVal = get(exchange);
-  if (!exchangeVal) {
-    return false;
-  }
-  return [SupportedExchange.BINANCE, SupportedExchange.BINANCEUS].includes(
-    exchangeVal
-  );
-});
+const isBinance = (
+  exchange: SupportedExchange | null
+): exchange is SupportedExchange.BINANCE | SupportedExchange.BINANCEUS =>
+  !!exchange &&
+  [SupportedExchange.BINANCE, SupportedExchange.BINANCEUS].includes(exchange);
 </script>
 
 <template>
@@ -209,7 +204,7 @@ const isBinance = computed(() => {
             <RuiTabs v-model="exchangeDetailTabs" color="primary">
               <template #default>
                 <RuiTab>{{ t('exchange_balances.tabs.balances') }}</RuiTab>
-                <RuiTab v-if="isBinance && exchangeSavingsExist">
+                <RuiTab v-if="exchangeSavingsExist">
                   {{ t('exchange_balances.tabs.savings_interest_history') }}
                 </RuiTab>
               </template>
@@ -226,10 +221,7 @@ const isBinance = computed(() => {
                     :balances="balances"
                   />
                 </RuiTabItem>
-                <RuiTabItem
-                  v-if="isBinance && exchangeSavingsExist"
-                  class="md:pl-4"
-                >
+                <RuiTabItem v-if="exchangeSavingsExist" class="md:pl-4">
                   <BinanceSavingDetail :exchange="exchange" />
                 </RuiTabItem>
               </template>
