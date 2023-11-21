@@ -114,18 +114,60 @@ const receivedTableHeaders = computed<DataTableHeader[]>(() => [
 </script>
 
 <template>
-  <div>
-    <VSheet outlined rounded>
-      <Card elevation="0">
-        <template #title>
-          {{ t('exchange_balances.received_interest') }}
-        </template>
+  <div class="flex flex-col gap-6">
+    <RuiCard>
+      <template #header>
+        {{ t('exchange_balances.received_interest') }}
+      </template>
 
-        <div class="pt-4 ma-n4">
+      <DataTable
+        :headers="receivedTableHeaders"
+        :items="collection.received"
+        :loading="isLoading"
+      >
+        <template #item.asset="{ item }">
+          <AssetDetails opens-details hide-name :asset="item.asset" />
+        </template>
+        <template #item.amount="{ item }">
+          <AmountDisplay :value="item.amount" />
+        </template>
+        <template #item.usdValue="{ item }">
+          <AmountDisplay :value="item.usdValue" />
+        </template>
+        <template
+          v-if="collection.received.length > 0"
+          #body.append="{ isMobile }"
+        >
+          <RowAppend
+            label-colspan="2"
+            :label="t('common.total')"
+            :is-mobile="isMobile"
+          >
+            <AmountDisplay
+              :fiat-currency="CURRENCY_USD"
+              :value="collection.totalUsdValue"
+              show-currency="symbol"
+            />
+          </RowAppend>
+        </template>
+      </DataTable>
+    </RuiCard>
+    <RuiCard>
+      <template #header>
+        {{ t('exchange_balances.received_interest_history') }}
+      </template>
+
+      <CollectionHandler :collection="collection">
+        <template #default="{ data, itemLength }">
           <DataTable
-            :headers="receivedTableHeaders"
-            :items="collection.received"
+            :headers="tableHeaders"
+            :items="data"
             :loading="isLoading"
+            :options="options"
+            :server-items-length="itemLength"
+            multi-sort
+            :must-sort="false"
+            @update:options="setOptions($event)"
           >
             <template #item.asset="{ item }">
               <AssetDetails opens-details hide-name :asset="item.asset" />
@@ -136,62 +178,12 @@ const receivedTableHeaders = computed<DataTableHeader[]>(() => [
             <template #item.usdValue="{ item }">
               <AmountDisplay :value="item.usdValue" />
             </template>
-            <template
-              v-if="collection.received.length > 0"
-              #body.append="{ isMobile }"
-            >
-              <RowAppend
-                label-colspan="2"
-                :label="t('common.total')"
-                :is-mobile="isMobile"
-              >
-                <AmountDisplay
-                  :fiat-currency="CURRENCY_USD"
-                  :value="collection.totalUsdValue"
-                  show-currency="symbol"
-                />
-              </RowAppend>
+            <template #item.timestamp="{ item }">
+              <DateDisplay :timestamp="item.timestamp" />
             </template>
           </DataTable>
-        </div>
-      </Card>
-    </VSheet>
-    <VSheet outlined rounded class="mt-6" :elevation="0">
-      <Card elevation="0">
-        <template #title>
-          {{ t('exchange_balances.received_interest_history') }}
         </template>
-
-        <div class="pt-4 ma-n4">
-          <CollectionHandler :collection="collection">
-            <template #default="{ data, itemLength }">
-              <DataTable
-                :headers="tableHeaders"
-                :items="data"
-                :loading="isLoading"
-                :options="options"
-                :server-items-length="itemLength"
-                multi-sort
-                :must-sort="false"
-                @update:options="setOptions($event)"
-              >
-                <template #item.asset="{ item }">
-                  <AssetDetails opens-details hide-name :asset="item.asset" />
-                </template>
-                <template #item.amount="{ item }">
-                  <AmountDisplay :value="item.amount" />
-                </template>
-                <template #item.usdValue="{ item }">
-                  <AmountDisplay :value="item.usdValue" />
-                </template>
-                <template #item.timestamp="{ item }">
-                  <DateDisplay :timestamp="item.timestamp" />
-                </template>
-              </DataTable>
-            </template>
-          </CollectionHandler>
-        </div>
-      </Card>
-    </VSheet>
+      </CollectionHandler>
+    </RuiCard>
   </div>
 </template>

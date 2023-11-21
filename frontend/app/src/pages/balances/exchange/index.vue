@@ -18,13 +18,15 @@ const { t } = useI18n();
 
 const { exchange } = toRefs(props);
 const { isTaskRunning } = useTaskStore();
-const { getBalances, refreshExchangeSavings } = useExchangeBalancesStore();
+const { getBalances, refreshExchangeSavings, fetchExchangeSavings } =
+  useExchangeBalancesStore();
 const { connectedExchanges } = storeToRefs(useExchangesStore());
 
 const { refreshBalance } = useRefresh();
 
 const refreshExchangeBalances = async () => {
   await Promise.all([refreshBalance('exchange'), refreshExchangeSavings(true)]);
+  await checkSavingsData();
 };
 
 const selectedExchange = ref<string>('');
@@ -78,24 +80,38 @@ const navigate = () => {
   vueRouter.push('/settings/api-keys/exchanges?add=true');
 };
 
+const exchangeSavingsExist: Ref<boolean> = ref(false);
 const exchangeDetailTabs: Ref<number> = ref(0);
+
 watch(exchange, () => {
   set(exchangeDetailTabs, 0);
+  checkSavingsData();
 });
+
+const checkSavingsData = async () => {
+  const exchangeVal = get(exchange);
+  if (isBinance(exchangeVal)) {
+    const { total } = await fetchExchangeSavings({
+      limit: 1,
+      offset: 0,
+      location: exchangeVal
+    });
+
+    set(exchangeSavingsExist, !!total);
+  } else {
+    set(exchangeSavingsExist, false);
+  }
+};
 
 onMounted(() => {
   refreshExchangeSavings();
 });
 
-const isBinance = computed(() => {
-  const exchangeVal = get(exchange);
-  if (!exchangeVal) {
-    return false;
-  }
-  return [SupportedExchange.BINANCE, SupportedExchange.BINANCEUS].includes(
-    exchangeVal
-  );
-});
+const isBinance = (
+  exchange: SupportedExchange | null
+): exchange is SupportedExchange.BINANCE | SupportedExchange.BINANCEUS =>
+  !!exchange &&
+  [SupportedExchange.BINANCE, SupportedExchange.BINANCEUS].includes(exchange);
 </script>
 
 <template>
@@ -188,7 +204,7 @@ const isBinance = computed(() => {
             <RuiTabs v-model="exchangeDetailTabs" color="primary">
               <template #default>
                 <RuiTab>{{ t('exchange_balances.tabs.balances') }}</RuiTab>
-                <RuiTab v-if="isBinance">
+                <RuiTab v-if="exchangeSavingsExist">
                   {{ t('exchange_balances.tabs.savings_interest_history') }}
                 </RuiTab>
               </template>
@@ -205,7 +221,7 @@ const isBinance = computed(() => {
                     :balances="balances"
                   />
                 </RuiTabItem>
-                <RuiTabItem v-if="isBinance" class="pt-4 md:pl-4">
+                <RuiTabItem v-if="exchangeSavingsExist" class="md:pl-4">
                   <BinanceSavingDetail :exchange="exchange" />
                 </RuiTabItem>
               </template>

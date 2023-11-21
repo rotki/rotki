@@ -25,7 +25,7 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <RuiCard>
+  <RuiCard class="[&>div:last-child]:p-0 mb-4">
     <template #custom-header>
       <div class="flex items-center justify-between p-4">
         <h6 class="text-h6">
@@ -48,7 +48,7 @@ const { t } = useI18n();
         </RuiButtonGroup>
       </div>
     </template>
-    <div class="overflow-y-scroll pr-4 -mr-4 overflow-x-hidden max-h-[9rem]">
+    <div class="p-4 py-0 max-h-[11rem]">
       <div
         v-for="item in received"
         :key="item.asset"
