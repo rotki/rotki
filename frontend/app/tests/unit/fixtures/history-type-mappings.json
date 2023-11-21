@@ -1,6 +1,16 @@
 {
   "result": {
     "global_mappings": {
+      "informational": {
+        "none": "informational",
+        "governance": "governance",
+        "remove asset": "informational",
+        "place order": "place order",
+        "create": "create project",
+        "update": "update project",
+        "apply": "apply",
+        "approve": "approval"
+      },
       "receive": {
         "reward": "claim reward",
         "receive wrapped": "receive",
@@ -17,20 +27,70 @@
         "place order": "deposit",
         "fee": "fee"
       },
-      "staking": {
-        "deposit asset": "deposit",
-        "reward": "staking reward",
+      "spend": {
+        "return wrapped": "send",
+        "liquidate": "liquidation loss",
+        "payback debt": "repay",
+        "fee": "fee",
+        "donate": "donate",
+        "none": "send"
+      },
+      "withdrawal": {
         "remove asset": "withdraw",
+        "bridge": "bridge withdrawal",
+        "cancel order": "cancel order",
+        "refund": "refund",
+        "generate debt": "borrow",
+        "fee": "fee"
+      },
+      "trade": {
+        "spend": "swap out",
+        "receive": "swap in",
+        "none": "informational",
+        "fee": "fee"
+      },
+      "renew": {
+        "none": "renew"
+      },
+      "staking": {
+        "deposit asset": "stake deposit",
+        "reward": "staking reward",
+        "remove asset": "stake withdrawal",
         "block production": "create block",
         "mev reward": "mev reward",
-        "receive wrapped": "receive",
         "fee": "fee"
+      },
+      "transfer": {
+        "donate": "donate",
+        "none": "transfer"
+      },
+      "adjustment": {
+        "spend": "send",
+        "receive": "receive"
+      },
+      "deploy": {
+        "none": "deploy",
+        "spend": "deploy with spend",
+        "nft": "deploy"
+      },
+      "migrate": {
+        "spend": "migrate out",
+        "receive": "migrate in"
       }
     },
     "event_category_details": {
+      "send": {
+        "counterparty_mappings": {
+          "default": {
+            "label": "send",
+            "icon": "arrow-up-line"
+          }
+        },
+        "direction": "out"
+      },
       "receive": {
         "counterparty_mappings": {
-          "null": {
+          "default": {
             "label": "receive",
             "icon": "arrow-down-line",
             "color": "success"
@@ -38,11 +98,58 @@
         },
         "direction": "in"
       },
+      "swap out": {
+        "counterparty_mappings": {
+          "default": {
+            "label": "swap",
+            "icon": "arrow-go-forward-line"
+          }
+        },
+        "direction": "out"
+      },
+      "swap in": {
+        "counterparty_mappings": {
+          "default": {
+            "label": "swap",
+            "icon": "arrow-go-back-line",
+            "color": "success"
+          }
+        },
+        "direction": "in"
+      },
+      "migrate out": {
+        "counterparty_mappings": {
+          "default": {
+            "label": "migrate",
+            "icon": "arrow-go-forward-line"
+          }
+        },
+        "direction": "out"
+      },
+      "migrate in": {
+        "counterparty_mappings": {
+          "default": {
+            "label": "migrate",
+            "icon": "arrow-go-back-line",
+            "color": "success"
+          }
+        },
+        "direction": "in"
+      },
+      "approval": {
+        "counterparty_mappings": {
+          "default": {
+            "label": "approval",
+            "icon": "lock-unlock-line"
+          }
+        },
+        "direction": "neutral"
+      },
       "deposit": {
         "counterparty_mappings": {
-          "null": {
+          "default": {
             "label": "deposit",
-            "icon": "skip-up-line",
+            "icon": "upload-line",
             "color": "success"
           }
         },
@@ -50,121 +157,284 @@
       },
       "withdraw": {
         "counterparty_mappings": {
-          "null": {
+          "default": {
             "label": "withdraw",
-            "icon": "skip-down-line",
-            "color": null
+            "icon": "download-line"
           }
         },
         "direction": "in"
       },
       "airdrop": {
         "counterparty_mappings": {
-          "null": {
+          "default": {
             "label": "airdrop",
-            "icon": "gift-line",
-            "color": null
+            "icon": "gift-line"
           }
         },
         "direction": "in"
       },
       "borrow": {
         "counterparty_mappings": {
-          "null": {
+          "default": {
             "label": "borrow",
-            "icon": "hand-coin-line",
-            "color": null
+            "icon": "hand-coin-line"
           }
         },
         "direction": "in"
       },
+      "repay": {
+        "counterparty_mappings": {
+          "default": {
+            "label": "repay",
+            "icon": "history-line"
+          }
+        },
+        "direction": "out"
+      },
+      "deploy": {
+        "counterparty_mappings": {
+          "default": {
+            "label": "deploy",
+            "icon": "rocket-line"
+          }
+        },
+        "direction": "neutral"
+      },
+      "deploy with spend": {
+        "counterparty_mappings": {
+          "default": {
+            "label": "deploy with spend",
+            "icon": "rocket-2-line"
+          }
+        },
+        "direction": "out"
+      },
       "bridge deposit": {
         "counterparty_mappings": {
-          "null": {
+          "default": {
             "label": "bridge",
-            "icon": "skip-up-line",
+            "icon": "upload-line",
             "color": "error"
+          }
+        },
+        "direction": "out"
+      },
+      "bridge withdrawal": {
+        "counterparty_mappings": {
+          "default": {
+            "label": "bridge",
+            "icon": "download-line",
+            "color": "success"
+          }
+        },
+        "direction": "in"
+      },
+      "governance": {
+        "counterparty_mappings": {
+          "default": {
+            "label": "governance",
+            "icon": "government-line"
+          }
+        },
+        "direction": "neutral"
+      },
+      "donate": {
+        "counterparty_mappings": {
+          "default": {
+            "label": "donate",
+            "icon": "hand-heart-line"
           }
         },
         "direction": "out"
       },
       "receive donation": {
         "counterparty_mappings": {
-          "null": {
+          "default": {
             "label": "receive donation",
-            "icon": "heart-2-line",
-            "color": null
+            "icon": "heart-2-line"
           }
         },
         "direction": "in"
       },
+      "renew": {
+        "counterparty_mappings": {
+          "default": {
+            "label": "renew",
+            "icon": "loop-right-line"
+          }
+        },
+        "direction": "out"
+      },
+      "place order": {
+        "counterparty_mappings": {
+          "default": {
+            "label": "place order",
+            "icon": "briefcase-line"
+          }
+        },
+        "direction": "neutral"
+      },
+      "transfer": {
+        "counterparty_mappings": {
+          "default": {
+            "label": "transfer",
+            "icon": "swap-box-line"
+          }
+        },
+        "direction": "neutral"
+      },
       "staking reward": {
         "counterparty_mappings": {
-          "null": {
+          "default": {
             "label": "staking reward",
-            "icon": "inbox-archive-line",
-            "color": null
+            "icon": "trophy-line"
           }
         },
         "direction": "in"
       },
       "claim reward": {
         "counterparty_mappings": {
-          "null": {
+          "default": {
             "label": "claim reward",
-            "icon": "gift-2-line",
-            "color": null
+            "icon": "gift-2-line"
           }
         },
         "direction": "in"
       },
       "liquidation reward": {
         "counterparty_mappings": {
-          "null": {
+          "default": {
             "label": "liquidation reward",
-            "icon": "drop-fill",
-            "color": null
+            "icon": "drop-fill"
+          }
+        },
+        "direction": "in"
+      },
+      "liquidation loss": {
+        "counterparty_mappings": {
+          "default": {
+            "label": "liquidation loss",
+            "icon": "contrast-drop-fill"
+          }
+        },
+        "direction": "out"
+      },
+      "informational": {
+        "counterparty_mappings": {
+          "default": {
+            "label": "informational",
+            "icon": "information-line"
+          }
+        },
+        "direction": "neutral"
+      },
+      "cancel order": {
+        "counterparty_mappings": {
+          "default": {
+            "label": "cancel order",
+            "icon": "file-close-line",
+            "color": "error"
+          }
+        },
+        "direction": "in"
+      },
+      "refund": {
+        "counterparty_mappings": {
+          "default": {
+            "label": "refund",
+            "icon": "refund-2-line"
           }
         },
         "direction": "in"
       },
       "fee": {
         "counterparty_mappings": {
-          "null": {
+          "default": {
             "label": "fee",
-            "icon": "price-tag-line",
-            "color": null
+            "icon": "cash-line"
           },
           "gas": {
             "label": "gas fee",
-            "icon": "fire-line",
-            "color": null
+            "icon": "fire-line"
           }
         },
         "direction": "out"
       },
       "mev reward": {
         "counterparty_mappings": {
-          "null": {
+          "default": {
             "label": "mev",
-            "icon": "medal-line",
-            "color": null
+            "icon": "medal-line"
           }
         },
         "direction": "in"
       },
       "create block": {
         "counterparty_mappings": {
-          "null": {
+          "default": {
             "label": "new block",
-            "icon": "box-3-line",
-            "color": null
+            "icon": "box-3-line"
+          }
+        },
+        "direction": "in"
+      },
+      "create project": {
+        "counterparty_mappings": {
+          "default": {
+            "label": "new project",
+            "icon": "file-add-line"
+          }
+        },
+        "direction": "neutral"
+      },
+      "update project": {
+        "counterparty_mappings": {
+          "default": {
+            "label": "update project",
+            "icon": "file-edit-line"
+          }
+        },
+        "direction": "neutral"
+      },
+      "apply": {
+        "counterparty_mappings": {
+          "default": {
+            "label": "apply",
+            "icon": "share-circle-line"
+          }
+        },
+        "direction": "neutral"
+      },
+      "stake deposit": {
+        "counterparty_mappings": {
+          "default": {
+            "label": "Stake",
+            "icon": "folder-add-line"
+          }
+        },
+        "direction": "out"
+      },
+      "stake withdrawal": {
+        "counterparty_mappings": {
+          "default": {
+            "label": "Unstake",
+            "icon": "folder-reduce-line"
           }
         },
         "direction": "in"
       }
     },
-    "accounting_events_icons": {}
+    "accounting_events_icons": {
+      "trade": "swap-box-line",
+      "fee": "price-tag-line",
+      "asset movement": "token-swap-line",
+      "margin position": "percent-line",
+      "loan": "shake-hands-line",
+      "prefork acquisition": "git-branch-line",
+      "staking": "seedling-line",
+      "history event": "exchange-box-line",
+      "transaction event": "arrow-left-right-line"
+    }
   },
   "message": ""
 }
