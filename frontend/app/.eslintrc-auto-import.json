@@ -721,6 +721,7 @@
     "useAccountingRuleMappings": true,
     "getPlaceholderRule": true,
     "compareTextByKeyword": true,
-    "getTextToken": true
+    "getTextToken": true,
+    "useDynamicMessages": true
   }
 }

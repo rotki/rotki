@@ -75,6 +75,12 @@ export default defineConfig({
       vueTsc: !(process.env.CI || process.env.VITE_TEST || process.env.VITEST)
     }),
     AutoImport({
+      include: [
+        /\.[jt]sx?$/, // .ts, .tsx, .js, .jsx
+        /\.vue$/,
+        /\.vue\?vue/, // .vue
+        /\.md$/ // .md
+      ],
       imports: [
         'vue',
         'vue/macros',
@@ -102,7 +108,8 @@ export default defineConfig({
       vueTemplate: true,
       eslintrc: {
         enabled: true
-      }
+      },
+      injectAtEnd: true
     }),
     Components({
       dts: true,

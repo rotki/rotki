@@ -42,10 +42,22 @@ const { refreshBalance } = useRefresh();
 
 const { isModuleEnabled } = useModules();
 const nftEnabled = isModuleEnabled(Module.NFTS);
+
+const { dashboardMessage } = useDynamicMessages();
+const dismissedMessage = useSessionStorage(
+  'rotki.messages.dash.dismissed',
+  false
+);
 </script>
 
 <template>
   <div class="pb-6" data-cy="dashboard">
+    <DynamicMessageDisplay
+      v-if="dashboardMessage && !dismissedMessage"
+      class="!-mt-4"
+      :message="dashboardMessage"
+      @dismiss="dismissedMessage = true"
+    />
     <div class="container">
       <div class="flex flex-wrap gap-6">
         <div class="w-full">

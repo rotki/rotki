@@ -426,6 +426,7 @@ declare global {
   const useDocumentVisibility: typeof import('@vueuse/core')['useDocumentVisibility']
   const useDraggable: typeof import('@vueuse/core')['useDraggable']
   const useDropZone: typeof import('@vueuse/core')['useDropZone']
+  const useDynamicMessages: typeof import('./composables/dynamic-messages')['useDynamicMessages']
   const useEditBalancesSnapshotForm: typeof import('./composables/snapshots/edit-balance/form')['useEditBalancesSnapshotForm']
   const useEditLocationsSnapshotForm: typeof import('./composables/snapshots/edit-location/form')['useEditLocationsSnapshotForm']
   const useEditTotalSnapshotForm: typeof import('./composables/snapshots/edit-total/form')['useEditTotalSnapshotForm']
@@ -1144,6 +1145,7 @@ declare module 'vue' {
     readonly useDocumentVisibility: UnwrapRef<typeof import('@vueuse/core')['useDocumentVisibility']>
     readonly useDraggable: UnwrapRef<typeof import('@vueuse/core')['useDraggable']>
     readonly useDropZone: UnwrapRef<typeof import('@vueuse/core')['useDropZone']>
+    readonly useDynamicMessages: UnwrapRef<typeof import('./composables/dynamic-messages')['useDynamicMessages']>
     readonly useEditBalancesSnapshotForm: UnwrapRef<typeof import('./composables/snapshots/edit-balance/form')['useEditBalancesSnapshotForm']>
     readonly useEditLocationsSnapshotForm: UnwrapRef<typeof import('./composables/snapshots/edit-location/form')['useEditLocationsSnapshotForm']>
     readonly useEditTotalSnapshotForm: UnwrapRef<typeof import('./composables/snapshots/edit-total/form')['useEditTotalSnapshotForm']>
@@ -1856,6 +1858,7 @@ declare module '@vue/runtime-core' {
     readonly useDocumentVisibility: UnwrapRef<typeof import('@vueuse/core')['useDocumentVisibility']>
     readonly useDraggable: UnwrapRef<typeof import('@vueuse/core')['useDraggable']>
     readonly useDropZone: UnwrapRef<typeof import('@vueuse/core')['useDropZone']>
+    readonly useDynamicMessages: UnwrapRef<typeof import('./composables/dynamic-messages')['useDynamicMessages']>
     readonly useEditBalancesSnapshotForm: UnwrapRef<typeof import('./composables/snapshots/edit-balance/form')['useEditBalancesSnapshotForm']>
     readonly useEditLocationsSnapshotForm: UnwrapRef<typeof import('./composables/snapshots/edit-location/form')['useEditLocationsSnapshotForm']>
     readonly useEditTotalSnapshotForm: UnwrapRef<typeof import('./composables/snapshots/edit-total/form')['useEditTotalSnapshotForm']>
