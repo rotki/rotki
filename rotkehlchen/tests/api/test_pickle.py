@@ -13,9 +13,11 @@ from rotkehlchen.tests.utils.api import (
 PICKLE_ADDR = '0x5c4D8CEE7dE74E31cE69E76276d862180545c307'
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [[PICKLE_ADDR]])
 @pytest.mark.parametrize('ethereum_modules', [['pickle_finance']])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
+@pytest.mark.freeze_time('2023-11-21 21:00:00 GMT')
 def test_pickle_dill(
         rotkehlchen_api_server,
         inquirer,  # pylint: disable=unused-argument
