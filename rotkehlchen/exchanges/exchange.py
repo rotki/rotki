@@ -432,7 +432,7 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
             # has_premium True is fine here since the result of this is not user facing atm
             events = db.get_history_events(cursor, filter_query=filter_query, has_premium=True)
             if only_cache:
-                return events
+                return events  # type: ignore[return-value]  # HistoryBaseEntry vs HistoryEvent
 
             ranges = DBQueryRanges(self.db)
             location_string = f'{self.location!s}_history_events_{self.name}'
@@ -458,7 +458,7 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
                 )
             events.extend(new_events)
 
-        return events
+        return events  # type: ignore[return-value]  # HistoryBaseEntry vs HistoryEvent
 
     def query_history_with_callbacks(
             self,
