@@ -150,6 +150,7 @@ import {
   RiUnpinLine,
   RiUploadCloud2Line,
   RiUploadCloudLine,
+  RiUploadLine,
   RiVipCrownLine,
   RiWallet3Line,
   RuiPlugin,
@@ -317,6 +318,7 @@ Vue.use(RuiPlugin, {
     RiShareCircleLine,
     RiFolderAddLine,
     RiFolderReduceLine,
-    RiPriceTagLine
+    RiPriceTagLine,
+    RiUploadLine
   ]
 });
