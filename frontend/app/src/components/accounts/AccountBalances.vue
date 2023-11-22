@@ -142,8 +142,7 @@ const refreshClick = async () => {
   >
     <template #header>
       <div class="flex flex-row items-center gap-2">
-        <RefreshButton
-          class="account-balances__refresh"
+        <SummaryCardRefreshMenu
           :loading="isSectionLoading || detectingTokens"
           :tooltip="
             t('account_balances.refresh_tooltip', {
@@ -151,13 +150,12 @@ const refreshClick = async () => {
             })
           "
           @refresh="refreshClick()"
-        />
-        <SummaryCardRefreshMenu v-if="hasTokenDetection">
-          <template #refreshMenu>
+        >
+          <template v-if="hasTokenDetection" #refreshMenu>
             <BlockchainBalanceRefreshBehaviourMenu />
           </template>
         </SummaryCardRefreshMenu>
-        <CardTitle>{{ title }}</CardTitle>
+        <CardTitle class="ml-2">{{ title }}</CardTitle>
       </div>
     </template>
 
