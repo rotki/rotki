@@ -7,7 +7,7 @@ import {
 import { isEqual } from 'lodash-es';
 import { type ComputedRef, type Ref } from 'vue';
 import { not } from '@vueuse/math';
-import { type HistoryEventEntryType } from '@rotki/common/lib/history/events';
+import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
 import { type AccountingRuleEntry } from '@/types/settings/accounting';
 import { toEvmChainAndTxHash } from '@/utils/history';
 import { type DataTableHeader } from '@/types/vuetify';
@@ -558,7 +558,11 @@ onMounted(async () => {
 });
 
 const refresh = async (userInitiated = false) => {
-  await refreshTransactions(get(onlyChains), userInitiated);
+  const entryTypesVal = get(entryTypes) || [];
+  const disableEvmEvents =
+    entryTypesVal.length > 0 &&
+    !entryTypesVal.includes(HistoryEventEntryType.EVM_EVENT);
+  await refreshTransactions(get(onlyChains), disableEvmEvents, userInitiated);
   startPromise(Promise.all([fetchData(), fetchAssociatedLocations()]));
 };
 
