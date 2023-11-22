@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any, NamedTuple, Optional, Union
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 
-from rotkehlchen.accounting.structures.base import HistoryBaseEntry, HistoryEvent
+from rotkehlchen.accounting.structures.base import HistoryBaseEntry
 from rotkehlchen.accounting.structures.eth2 import EthStakingEvent
 from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
@@ -309,7 +309,7 @@ class DBAccountingRules:
 def _events_to_consume(
         cursor: 'DBCursor',
         callbacks: dict[int, tuple[int, EventsAccountantCallback]],
-        events_iterator: Iterator[tuple[tuple[Any, ...], 'HistoryEvent']],
+        events_iterator: Iterator[tuple[tuple[Any, ...], 'HistoryBaseEntry']],
         next_events: Sequence[HistoryBaseEntry],
         event: HistoryBaseEntry,
         pot: 'AccountingPot',
@@ -417,7 +417,10 @@ def query_missing_accounting_rules(
                 current_event_index += 1
                 continue
 
-            if isinstance(event, EthStakingEvent) is True:
+            if (
+                    isinstance(event, EthStakingEvent) or
+                    (isinstance(event, EvmEvent) and event.event_identifier.startswith('BP1_'))
+            ):
                 # staking events all have a process() function for accounting
                 accountant.processable_events_cache.add(event.identifier, False)  # type: ignore
                 current_event_index += 1

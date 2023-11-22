@@ -576,7 +576,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
                 has_premium=True,
             )
 
-        trades, max_ts = self.process_kraken_trades(trades_raw)
+        trades, max_ts = self.process_kraken_trades(trades_raw)  # type: ignore[arg-type]  # HistoryBaseEntry vs HistoryEvent
         queried_range = (start_ts, Timestamp(max_ts)) if with_errors else (start_ts, end_ts)
         return trades, queried_range
 

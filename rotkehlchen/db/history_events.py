@@ -274,7 +274,7 @@ class DBHistoryEvents:
             filter_query: HistoryEventFilterQuery,
             has_premium: bool,
             group_by_event_ids: Literal[True],
-    ) -> list[tuple[int, HistoryEvent]]:
+    ) -> list[tuple[int, HistoryBaseEntry]]:
         ...
 
     @overload
@@ -284,7 +284,7 @@ class DBHistoryEvents:
             filter_query: HistoryEventFilterQuery,
             has_premium: bool,
             group_by_event_ids: Literal[False] = ...,
-    ) -> list[HistoryEvent]:
+    ) -> list[HistoryBaseEntry]:
         ...
 
     @overload
@@ -344,7 +344,7 @@ class DBHistoryEvents:
             has_premium: bool,
             group_by_event_ids: bool = False,
     ) -> Union[
-        list[tuple[int, HistoryEvent]], list[HistoryEvent],
+        list[tuple[int, HistoryBaseEntry]], list[HistoryBaseEntry],
         list[tuple[int, EvmEvent]], list[EvmEvent],
         list[tuple[int, EthDepositEvent]], list[EthDepositEvent],
         list[tuple[int, EthWithdrawalEvent]], list[EthWithdrawalEvent],
@@ -437,7 +437,7 @@ class DBHistoryEvents:
             else:
                 output.append(deserialized_event)  # type: ignore
 
-        return output  # type: ignore # This is due to needing a generic HistoryBaseEntry return in this function, but the overloads would not work since HistoryEvent` is the same. Essentially the non-abstract version of HistoryBaseEntry
+        return output
 
     @overload
     def get_history_events_and_limit_info(
