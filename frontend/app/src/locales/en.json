@@ -655,8 +655,8 @@
         "title": "History Events Query"
       },
       "missing_rule": {
-        "title": "Event not processed",
-        "message": "To handle it, you must choose one of these options:",
+        "title": "Event missing accounting rule",
+        "message": "This event will not be processed in accounting. To handle it, you must choose one of these options:",
         "re_decode": "Redecode event",
         "edit": "Edit event",
         "add_rule": "Add missing accounting rule"
@@ -2220,7 +2220,7 @@
     },
     "blockscout": {
       "delete_tooltip": "Deletes the Blockscout API key",
-      "description": "rotki uses Blockscout to obtain information about ETH withdrawal queries",
+      "description": "rotki uses Blockscout to obtain information about ETH withdrawal queries, and more. An API key is only needed if you are being rate-limited.",
       "hint": "Enter your Blockscout API key",
       "title": "Blockscout"
     },

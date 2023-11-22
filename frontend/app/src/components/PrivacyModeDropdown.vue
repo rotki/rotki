@@ -70,16 +70,16 @@ watch([enabled, multiplier], setData);
             <RuiIcon :name="privacyModeIcon" />
           </RuiBadge>
         </MenuTooltipButton>
-        <VBtn
+        <RuiButton
           data-cy="privacy-menu"
           class="privacy-mode-dropdown__expander pa-0"
-          depressed
-          fab
-          x-small
+          icon
+          variant="text"
+          size="sm"
           v-on="on"
         >
           <RuiIcon size="16" name="arrow-down-s-line" />
-        </VBtn>
+        </RuiButton>
       </template>
       <VCard>
         <div class="slider-wrapper" :style="sliderWrapperStyle">
@@ -165,8 +165,8 @@ watch([enabled, multiplier], setData);
   position: relative;
 
   &__expander {
-    background-color: #f5f5f5 !important;
     @apply p-0 absolute z-10 right-0 text-black top-[1.875rem] w-4 h-4 lg:top-8 lg:w-[1.125rem] lg:h-[1.125rem];
+    @apply bg-[#f5f5f5] #{!important};
   }
 
   &__menu {

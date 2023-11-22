@@ -74,6 +74,7 @@ const action = async (notification: NotificationData) => {
       {
         [css.action]: !!notification.action,
         [css['fixed-height']]: !popup,
+        [css[`bg_${color}`]]: !!color,
         ['!rounded-none']: popup
       }
     ]"
@@ -165,6 +166,12 @@ const action = async (notification: NotificationData) => {
 
   &.action {
     background-color: rgba(237, 108, 2, 0.12);
+  }
+
+  @each $color in (warning, error, info) {
+    &.bg_#{$color} {
+      @apply bg-rui-#{$color}/[.12] #{!important};
+    }
   }
 }
 

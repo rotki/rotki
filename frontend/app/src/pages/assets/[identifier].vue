@@ -122,6 +122,7 @@ const goToEdit = () => {
           type="address"
           :text="address"
           link-only
+          size="18"
           :show-icon="false"
         />
 

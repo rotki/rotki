@@ -83,18 +83,15 @@ export class BlockchainBalancesPage {
       .find('[data-cy="labeled-address-display"]')
       .as('address-label');
     cy.get('@address-label').scrollIntoView();
-    cy.get('@address-label').trigger('mouseenter');
+    cy.get('@address-label').trigger('mouseover');
 
-    cy.get('.v-tooltip__content.menuable__content__active').as(
-      'address-tooltip'
-    );
+    cy.get('div[role=tooltip').as('address-tooltip');
 
     cy.get('@address-tooltip')
-      .find('div:nth-child(1)')
-      .find('div')
+      .find('div[role=tooltip-content]')
       .contains(balance.label);
     cy.get('@address-tooltip')
-      .find('div:nth-child(2)')
+      .find('div[role=tooltip-content]')
       .contains(balance.address);
 
     for (const tag of balance.tags) {

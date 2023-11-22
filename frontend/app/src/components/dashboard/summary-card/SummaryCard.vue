@@ -41,30 +41,14 @@ const slots = useSlots();
         >
           {{ t('summary_card.title', { name }) }}
         </NavigatorLink>
-        <div class="flex items-center">
-          <RuiTooltip
-            v-if="canRefresh"
-            open-delay="400"
-            :popper="{ placement: 'bottom', offsetDistance: 0 }"
-            max-width="300px"
+        <div v-if="canRefresh" class="flex items-center">
+          <SummaryCardRefreshMenu
+            data-cy="account-balances-refresh-menu"
+            :tooltip="t('summary_card.refresh_tooltip', { name })"
+            :loading="isLoading"
+            @refresh="refresh(name)"
           >
-            <template #activator>
-              <RuiButton
-                icon
-                variant="text"
-                :loading="isLoading"
-                color="primary"
-                @click="refresh(name)"
-              >
-                <RuiIcon color="primary" name="restart-line" />
-              </RuiButton>
-            </template>
-            <span>
-              {{ t('summary_card.refresh_tooltip', { name }) }}
-            </span>
-          </RuiTooltip>
-          <SummaryCardRefreshMenu v-if="slots.refreshMenu">
-            <template #refreshMenu>
+            <template v-if="slots.refreshMenu" #refreshMenu>
               <slot name="refreshMenu" />
             </template>
           </SummaryCardRefreshMenu>
