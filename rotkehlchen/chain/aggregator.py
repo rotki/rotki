@@ -102,7 +102,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.interfaces.balances import ProtocolWithBalance
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.chain.ethereum.modules.aave.aave import Aave
-    from rotkehlchen.chain.ethereum.modules.compound.compound import Compound
+    from rotkehlchen.chain.ethereum.modules.compound.v2.compound import Compound
     from rotkehlchen.chain.ethereum.modules.eth2.eth2 import Eth2
     from rotkehlchen.chain.ethereum.modules.eth2.structures import (
         ValidatorDailyStats,

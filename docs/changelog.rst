@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` Compound v3 reward claims should now be shown properly
 * :bug:`-` Uniswap Swaps with the Universal router would be decoded correctly.
 * :bug:`-` There will be no duplicated balances in cases where the native token balance is zero.
 * :bug:`-` Fix the issue where users sometimes encounter timeout errors when importing assets from a zip archive.

@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING, Any, Optional
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.assets.utils import get_or_create_evm_token
-from rotkehlchen.chain.ethereum.modules.compound.utils import get_compound_underlying_token
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value, token_normalized_value
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
@@ -25,6 +24,7 @@ from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind, EvmTran
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 from .constants import COMPTROLLER_PROXY_ADDRESS, CPT_COMPOUND
+from .utils import get_compound_underlying_token
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.structures.evm_event import EvmEvent
@@ -46,7 +46,7 @@ DISTRIBUTED_SUPPLIER_COMP = b',\xae\xcd\x17\xd0/V\xfa\x89w\x05\xdc\xc7@\xda-#|7?
 DISTRIBUTED_BORROWER_COMP = b'\x1f\xc3\xec\xc0\x87\xd8\xd2\xd1^#\xd0\x03*\xf5\xa4pY\xc3\x89-\x00=\x8e\x13\x9f\xdc\xb6\xbb2|\x99\xa6'  # noqa: E501
 
 
-class CompoundDecoder(DecoderInterface):
+class Compoundv2Decoder(DecoderInterface):
 
     def __init__(
             self,
