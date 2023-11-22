@@ -5,7 +5,7 @@ from rotkehlchen.accounting.structures.evm_event import EvmEvent
 from rotkehlchen.accounting.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS, CPT_GITCOIN
-from rotkehlchen.constants.assets import A_DAI, A_ETH
+from rotkehlchen.constants.assets import A_DAI, A_ETH, A_POLYGON_POS_MATIC
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
@@ -380,5 +380,107 @@ def test_ethereum_grant_payout(database, ethereum_inquirer, ethereum_accounts):
         notes=f'Receive matching payout of {amount_str} DAI for a gitcoin round',
         counterparty=CPT_GITCOIN,
         address='0xebaF311F318b5426815727101fB82f0Af3525d7b',
+    )]
+    assert events == expected_events
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('polygon_pos_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
+def test_polygon_donation_matic_received(database, polygon_pos_inquirer, polygon_pos_accounts):
+    tx_hex = deserialize_evm_tx_hash('0x32837e03ac3e9066f09c1ee0807c533aa1bef5e3119b98dcacdd1ca631bc7ca6')  # noqa: E501
+    evmhash = deserialize_evm_tx_hash(tx_hex)
+    user_address = polygon_pos_accounts[0]
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=polygon_pos_inquirer,
+        database=database,
+        tx_hash=tx_hex,
+    )
+    timestamp = TimestampMS(1700595622000)
+    amount_str = '4'
+    expected_events = [EvmEvent(
+        tx_hash=evmhash,
+        sequence_index=0,
+        timestamp=timestamp,
+        location=Location.POLYGON_POS,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.DONATE,
+        asset=A_POLYGON_POS_MATIC,
+        balance=Balance(amount=FVal(amount_str)),
+        location_label=user_address,
+        notes=f'Receive a gitcoin donation of {amount_str} MATIC from 0x6017B1d17f4D7547dC4aac88fbD0AA1826e7e6CE',  # noqa: E501
+        counterparty=CPT_GITCOIN,
+        address='0x03e50B688beB7c0E5e90F51188D0fa38c9152f9d',
+    )]
+    assert events == expected_events
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('polygon_pos_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
+def test_polygon_donation_token_received(database, polygon_pos_inquirer, polygon_pos_accounts):
+    tx_hex = deserialize_evm_tx_hash('0x17601356467af0cfcf3a62f93879b504695b8690545b2b8669da5ec0f3a2a91b')  # noqa: E501
+    evmhash = deserialize_evm_tx_hash(tx_hex)
+    user_address = polygon_pos_accounts[0]
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=polygon_pos_inquirer,
+        database=database,
+        tx_hash=tx_hex,
+    )
+    timestamp = TimestampMS(1700593336000)
+    amount_str = '1.5'
+    expected_events = [EvmEvent(
+        tx_hash=evmhash,
+        sequence_index=236,
+        timestamp=timestamp,
+        location=Location.POLYGON_POS,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.DONATE,
+        asset=Asset('eip155:137/erc20:0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359'),
+        balance=Balance(amount=FVal(amount_str)),
+        location_label=user_address,
+        notes=f'Receive a gitcoin donation of {amount_str} USDC from 0x3d1f546F05834423Acc7e4CA1169ae320cee9AF0',  # noqa: E501
+        counterparty=CPT_GITCOIN,
+        address='0xe04d9e9CcDf65EB1Db51E56C04beE4c8582edB73',
+    )]
+    assert events == expected_events
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('polygon_pos_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
+def test_polygon_apply_to_round(database, polygon_pos_inquirer, polygon_pos_accounts):
+    tx_hex = deserialize_evm_tx_hash('0x51c1909ce9268f453d4b7136b0fecb72d8da567f406c37014dd8ad8ed05c9a1f')  # noqa: E501
+    evmhash = deserialize_evm_tx_hash(tx_hex)
+    user_address = polygon_pos_accounts[0]
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=polygon_pos_inquirer,
+        database=database,
+        tx_hash=tx_hex,
+    )
+    timestamp = TimestampMS(1699442294000)
+    gas_str = '0.05638388497968273'
+    expected_events = [EvmEvent(
+        tx_hash=evmhash,
+        sequence_index=0,
+        timestamp=timestamp,
+        location=Location.POLYGON_POS,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_POLYGON_POS_MATIC,
+        balance=Balance(amount=FVal(gas_str)),
+        location_label=user_address,
+        notes=f'Burned {gas_str} MATIC for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_hash=evmhash,
+        sequence_index=1047,
+        timestamp=timestamp,
+        location=Location.POLYGON_POS,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.APPLY,
+        asset=A_ETH,
+        balance=Balance(),
+        location_label=user_address,
+        notes='Apply to gitcoin round with project application id 0xbb5864fabd76bd8a9d620dd2cfd089a0507135e6e57d12487d4ffd74a4939538',  # noqa: E501
+        counterparty=CPT_GITCOIN,
+        address='0xa1D52F9b5339792651861329A046dD912761E9A9',
     )]
     assert events == expected_events
