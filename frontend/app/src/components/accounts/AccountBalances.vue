@@ -143,6 +143,7 @@ const refreshClick = async () => {
     <template #header>
       <div class="flex flex-row items-center gap-2">
         <SummaryCardRefreshMenu
+          data-cy="account-balances-refresh-menu"
           :loading="isSectionLoading || detectingTokens"
           :tooltip="
             t('account_balances.refresh_tooltip', {

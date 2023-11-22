@@ -30,13 +30,12 @@ const css = useCssModule();
     <VMenu offset-y :close-on-content-click="false">
       <template #activator="{ on }">
         <RefreshButton
-          class="account-balances__refresh"
           :loading="loading"
           :tooltip="tooltip"
           @refresh="refresh()"
         />
         <RuiButton
-          :class="css.dropdown__expander"
+          :class="css.expander"
           icon
           variant="text"
           size="sm"
@@ -51,7 +50,7 @@ const css = useCssModule();
 </template>
 
 <style lang="scss" module>
-.dropdown__expander {
+.expander {
   @apply z-10 text-black -right-2 top-4 w-4 h-4 lg:w-[1.125rem] lg:h-[1.125rem];
   @apply p-0 absolute bg-black/[.12] dark:bg-black dark:text-white #{!important};
 }

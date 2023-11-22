@@ -43,6 +43,7 @@ const slots = useSlots();
         </NavigatorLink>
         <div v-if="canRefresh" class="flex items-center">
           <SummaryCardRefreshMenu
+            data-cy="account-balances-refresh-menu"
             :tooltip="t('summary_card.refresh_tooltip', { name })"
             :loading="isLoading"
             @refresh="refresh(name)"

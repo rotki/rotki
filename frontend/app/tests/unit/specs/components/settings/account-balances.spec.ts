@@ -49,7 +49,7 @@ describe('AccountBalances.vue', () => {
 
     expect(
       wrapper
-        .find('.account-balances__refresh')
+        .find('[data-cy=account-balances-refresh-menu]')
         .find('button')
         .attributes('disabled')
     ).toBe('disabled');
@@ -68,7 +68,7 @@ describe('AccountBalances.vue', () => {
 
     expect(
       wrapper
-        .find('.account-balances__refresh')
+        .find('[data-cy=account-balances-refresh-menu]')
         .find('button')
         .attributes('disabled')
     ).toBeUndefined();
