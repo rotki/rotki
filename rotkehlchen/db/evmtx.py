@@ -1,6 +1,8 @@
 import logging
 from typing import TYPE_CHECKING, Any, Optional, get_args
 
+from pysqlcipher3 import dbapi2 as sqlcipher
+
 from rotkehlchen.chain.arbitrum_one.constants import ARBITRUM_ONE_GENESIS
 from rotkehlchen.chain.base.constants import BASE_GENESIS
 from rotkehlchen.chain.ethereum.constants import ETHEREUM_GENESIS
@@ -302,7 +304,7 @@ class DBEvmTx:
             cursor.execute(querystr, bindings)
             return cursor.fetchone()[0]
 
-    def add_receipt_data(
+    def add_or_ignore_receipt_data(
             self,
             write_cursor: 'DBCursor',
             chain_id: ChainID,
@@ -312,15 +314,13 @@ class DBEvmTx:
 
         Also need to provide the chain id.
 
-        This assumes the transaction is already in the DB.
+        This assumes the transaction is already in the DB. If the receipt data
+        is already in the DB do nothing.
 
         May raise:
         - Key Error if any of the expected fields are missing
         - DeserializationError if there is a problem deserializing a value
         - pysqlcipher3.dbapi2.IntegrityError if the transaction hash is not in the DB:
-        pysqlcipher3.dbapi2.IntegrityError: FOREIGN KEY constraint failed
-        If the receipt already exists in the DB:
-        pysqlcipher3.dbapi2.IntegrityError: UNIQUE constraint failed: evmtx_receipts.tx_hash
         """
         tx_hash_b = hexstring_to_bytes(data['transactionHash'])
         # some nodes miss the type field for older non EIP1559 transactions. So assume legacy (0)
@@ -335,11 +335,18 @@ class DBEvmTx:
             'SELECT identifier from evm_transactions WHERE tx_hash=? AND chain_id=?',
             (tx_hash_b, serialized_chain_id),
         ).fetchone()[0]
-        write_cursor.execute(
-            'INSERT INTO evmtx_receipts (tx_id, contract_address, status, type) '
-            'VALUES(?, ?, ?, ?) ',
-            (tx_id, contract_address, status, tx_type),
-        )
+
+        try:
+            write_cursor.execute(
+                'INSERT INTO evmtx_receipts (tx_id, contract_address, status, type) '
+                'VALUES(?, ?, ?, ?) ',
+                (tx_id, contract_address, status, tx_type),
+            )
+        except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
+            if 'UNIQUE constraint failed: evmtx_receipts.tx_id' not in str(e):
+                log.error(f'Failed to insert transaction {tx_id} receipt to the DB due to {e!s}')
+                raise
+            return  # otherwise something else added the receipt so we continue
 
         for log_entry in data['logs']:
             write_cursor.execute(
