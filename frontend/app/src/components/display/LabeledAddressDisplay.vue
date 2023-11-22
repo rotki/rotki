@@ -9,6 +9,7 @@ const { account } = toRefs(props);
 const { scrambleData, shouldShowAmount, scrambleHex, scrambleIdentifier } =
   useScramble();
 const { addressNameSelector, ensNameSelector } = useAddressesNamesStore();
+const css = useCssModule();
 
 const aliasName: ComputedRef<string> = computed(() => {
   if (get(scrambleData)) {
@@ -87,26 +88,32 @@ const truncatedAliasName: ComputedRef<string> = computed(() => {
 </script>
 
 <template>
-  <div
-    class="flex items-center labeled-address-display rounded-full overflow-hidden border border-rui-primary"
+  <RuiChip
+    variant="outlined"
+    :class="css['labeled-address-display']"
+    size="sm"
+    color="primary"
   >
-    <VTooltip top open-delay="400" :disabled="!truncated && !aliasName">
-      <template #activator="{ on }">
+    <RuiTooltip
+      :popper="{ placement: 'top' }"
+      open-delay="400"
+      :disabled="!truncated && !aliasName"
+    >
+      <template #activator>
         <span
           data-cy="labeled-address-display"
-          class="labeled-address-display__address py-2"
-          :class="xs ? 'labeled-address-display__address--mobile' : null"
-          v-on="on"
+          :class="[
+            css['labeled-address-display__address'],
+            { 'labeled-address-display__address--mobile': xs }
+          ]"
         >
-          <VChip label outlined class="labeled-address-display__chip py-2 pl-1">
-            <EnsAvatar :address="address" avatar class="mr-2" />
-            <span v-if="aliasName" class="text-truncate">
-              {{ truncatedAliasName }}
-            </span>
-            <span v-else :class="{ 'blur-content': !shouldShowAmount }">
-              {{ truncatedAddress }}
-            </span>
-          </VChip>
+          <EnsAvatar :address="address" avatar />
+          <span v-if="aliasName" class="text-truncate">
+            {{ truncatedAliasName }}
+          </span>
+          <span v-else :class="{ 'blur-content': !shouldShowAmount }">
+            {{ truncatedAddress }}
+          </span>
         </span>
       </template>
       <div>
@@ -114,53 +121,44 @@ const truncatedAliasName: ComputedRef<string> = computed(() => {
         <div v-if="ensName && aliasName !== ensName">({{ ensName }})</div>
         <div>{{ address }}</div>
       </div>
-    </VTooltip>
-    <div class="labeled-address-display__actions flex items-center pr-1">
+    </RuiTooltip>
+    <RuiDivider vertical :class="css['labeled-address-display__divider']" />
+    <div :class="css['labeled-address-display__actions']">
       <HashLink
         class="h-full"
         :text="account.address"
         buttons
-        small
+        size="14"
         :show-icon="false"
         :chain="account.chain"
       />
     </div>
-  </div>
+  </RuiChip>
 </template>
 
-<style scoped lang="scss">
+<style module lang="scss">
 .labeled-address-display {
-  max-height: 30px;
-  width: 100%;
+  @apply w-full hover:cursor-default;
+  background-color: var(--v-rotki-light-grey-base) !important;
+
+  > span {
+    @apply w-full flex items-center px-0;
+  }
 
   &__address {
-    width: 100%;
-    font-weight: 500;
-    padding-top: 6px;
-    padding-bottom: 6px;
+    @apply flex items-center gap-2 text-rui-text-secondary;
 
     &--mobile {
-      max-width: 150px;
+      @apply max-w-[9.375rem];
     }
+  }
 
-    /* stylelint-disable selector-class-pattern,selector-nested-pattern */
-
-    :deep(.v-chip--label) {
-      border-top-right-radius: 0 !important;
-      border-bottom-right-radius: 0 !important;
-    }
-
-    /* stylelint-enable selector-class-pattern,selector-nested-pattern */
+  &__divider {
+    @apply h-[1.75rem] ml-auto px-0.5 border-black/[.12] dark:border-white/[.12];
   }
 
   &__actions {
-    height: 32px;
-    background-color: var(--v-rotki-light-grey-base);
-    display: inline-block;
-  }
-
-  &__chip {
-    width: 100%;
+    @apply flex items-center h-[1.75rem];
   }
 }
 
