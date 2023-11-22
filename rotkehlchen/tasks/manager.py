@@ -566,7 +566,7 @@ class TaskManager:
         now = ts_now()
         addresses = self.chains_aggregator.accounts.eth
         with self.database.conn.read_ctx() as cursor:
-            end_timestamps = cursor.execute('SELECT end_ts FROM used_query_ranges WHERE name LIKE ?', f'{WITHDRAWALS_TS_PREFIX}%').fetchall()  # noqa: E501
+            end_timestamps = cursor.execute('SELECT end_ts FROM used_query_ranges WHERE name LIKE ?', (f'{WITHDRAWALS_TS_PREFIX}%',)).fetchall()  # noqa: E501
 
         should_query = False
         if len(end_timestamps) != len(addresses):
