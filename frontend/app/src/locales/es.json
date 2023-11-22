@@ -571,8 +571,8 @@
         "title": "History Events Query"
       },
       "missing_rule": {
-        "title": "Evento no procesado",
-        "message": "Para manejarlo, debes elegir una de estas opciones:",
+        "title": "Evento que falta regla contable",
+        "message": "Este evento no será procesado en contabilidad. Para manejarlo, debes elegir una de estas opciones:",
         "re_decode": "Recodificar evento",
         "edit": "Editar evento",
         "add_rule": "Agregar regla contable faltante"
@@ -2038,7 +2038,7 @@
     },
     "blockscout": {
       "delete_tooltip": "Elimina la clave API de Blockscout",
-      "description": "rotki utiliza Blockscout para obtener información sobre las consultas de retirada de ETH",
+      "description": "rotki usa Blockscout para obtener información sobre consultas de retiro de ETH y más. Solo se necesita una clave API si tiene una tarifa limitada.",
       "hint": "Ingrese su clave para la API de Blockscout",
       "title": "Blockscout"
     },

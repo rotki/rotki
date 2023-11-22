@@ -564,8 +564,8 @@
         "title": "历史事件查询"
       },
       "missing_rule": {
-        "title": "事件未处理",
-        "message": "要处理它，您必须选择以下选项之一:",
+        "title": "事件缺少会计规则",
+        "message": "该事件不会在会计中处理。要处理它，您必须选择以下选项之一：",
         "re_decode": "重新编码事件",
         "edit": "编辑事件",
         "add_rule": "添加缺失的会计规则"
@@ -2081,7 +2081,7 @@
     },
     "blockscout": {
       "delete_tooltip": "删除 Blockscout API 密钥",
-      "description": "rotki 使用 Blockscout 获取 ETH 提现查询信息",
+      "description": "rotki 使用 Blockscout 获取有关 ETH 提现查询等信息。仅当您受到速率限制时才需要 API 密钥。",
       "hint": "输入您的 Blockscout API 密钥",
       "title": "Blockscout"
     },
