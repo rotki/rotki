@@ -1961,6 +1961,40 @@ Decode transactions that haven't been decoded yet
    :statuscode 409: User is not logged in or some other error. Check error message for details.
    :statuscode 500: Internal rotki error
 
+.. http:get:: /api/(version)/blockchains/evm/transactions/decode
+
+   Doing a GET on the transactions decoding endpoint will return a breakdown of the number of transactions that are not decoded. 
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/blockchains/evm/transactions/decode HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {
+          "async_query": false,
+      }
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      { "result": {"ethereum": 2, "optimism": 1, "base": 1}, "message": "" }
+
+   :resjson object result: A mapping of the chain name to the number of transactions missing the decoding.
+
+   :statuscode 200: Transactions successfully counted.
+   :statuscode 409: User is not logged in. Check error message for details.
+   :statuscode 500: Internal rotki error
+
 
 Purging locally saved data for ethereum modules
 ====================================================

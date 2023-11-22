@@ -619,6 +619,7 @@ class EvmTransactionsResource(BaseMethodView):
 
 class EvmPendingTransactionsDecodingResource(BaseMethodView):
     post_schema = EvmPendingTransactionDecodingSchema()
+    get_schema = AsyncQueryArgumentSchema()
 
     @require_loggedin_user()
     @use_kwargs(post_schema, location='json_and_query')
@@ -631,6 +632,11 @@ class EvmPendingTransactionsDecodingResource(BaseMethodView):
             async_query=async_query,
             data=data,
         )
+
+    @require_loggedin_user()
+    @use_kwargs(get_schema, location='json_and_query')
+    def get(self, async_query: bool) -> Response:
+        return self.rest_api.get_count_transactions_not_decoded(async_query=async_query)
 
 
 class EthereumAirdropsResource(BaseMethodView):

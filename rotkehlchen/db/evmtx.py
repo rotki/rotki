@@ -287,7 +287,7 @@ class DBEvmTx:
     def count_hashes_not_decoded(
             self,
             chain_id: Optional[ChainID],
-            addresses: Optional[list[ChecksumEvmAddress]],
+            addresses: Optional[list[ChecksumEvmAddress]] = None,
     ) -> int:
         """
         Count the number of transactions queried that have not been decoded. When the addresses
