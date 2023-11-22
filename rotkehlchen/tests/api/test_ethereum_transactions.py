@@ -14,7 +14,8 @@ from rotkehlchen.accounting.structures.types import HistoryEventSubType, History
 from rotkehlchen.chain.ethereum.modules.curve.constants import CPT_CURVE
 from rotkehlchen.chain.ethereum.transactions import EthereumTransactions
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
-from rotkehlchen.chain.evm.structures import EvmTxReceipt
+from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_MKR, A_USDT, A_WETH
 from rotkehlchen.constants.limits import FREE_ETH_TX_LIMIT, FREE_HISTORY_EVENTS_LIMIT
@@ -41,12 +42,14 @@ from rotkehlchen.tests.utils.ethereum import (
     TEST_ADDR3,
     extended_transactions_setup_test,
     setup_ethereum_transactions_test,
+    txreceipt_to_data,
 )
 from rotkehlchen.tests.utils.factories import (
     generate_events_response,
     make_ethereum_event,
     make_ethereum_transaction,
     make_evm_address,
+    make_evm_tx_hash,
 )
 from rotkehlchen.tests.utils.mock import MockResponse, mock_evm_chains_with_transactions
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
@@ -1684,3 +1687,83 @@ def test_decoding_missing_transactions_by_address(rotkehlchen_api_server: 'APISe
             has_premium=True,
         )
         assert len(events) == 2
+
+
+@pytest.mark.parametrize('have_decoders', [True])
+@pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1, TEST_ADDR2]])
+def test_transactions_missing_decoding(rotkehlchen_api_server: 'APIServer') -> None:
+    """Test that we can correctly count the number of transactions not decoded yet"""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+
+    async_query = random.choice([False, True])
+    # setup 2 ethereum transactions, 1 OP transaction and 1 Base transaction not decoded
+    dbevmtx = DBEvmTx(rotki.data.db)
+    setup_ethereum_transactions_test(
+        database=rotki.data.db,
+        transaction_already_queried=True,
+        one_receipt_in_db=True,
+        second_receipt_in_db=True,
+    )
+    optimism_transaction_hash = make_evm_tx_hash()
+    base_transaction_hash = make_evm_tx_hash()
+
+    for chain, tx_hash in (
+        (ChainID.BASE, base_transaction_hash),
+        (ChainID.OPTIMISM, optimism_transaction_hash),
+    ):
+        transaction = EvmTransaction(
+            tx_hash=tx_hash,
+            chain_id=chain,
+            timestamp=Timestamp(1631013757),
+            block_number=13178342,
+            from_address=TEST_ADDR2,
+            to_address=string_to_evm_address('0xEaDD9B69F96140283F9fF75DA5FD33bcF54E6296'),
+            value=0,
+            gas=77373,
+            gas_price=int(0.000000100314697497 * 10**18),
+            gas_used=46782,
+            input_data=hexstring_to_bytes('0xa9059cbb00000000000000000000000020c8032d4f7d4a380385f87aeadf05bed84504cb000000000000000000000000000000000000000000000000000000003b9deec6'),
+            nonce=3,
+        )
+        with rotki.data.db.user_write() as cursor:
+            dbevmtx.add_evm_transactions(cursor, evm_transactions=[transaction], relevant_address=TEST_ADDR2)  # noqa: E501
+
+        expected_receipt = EvmTxReceipt(
+            tx_hash=tx_hash,
+            chain_id=chain,
+            contract_address=None,
+            status=True,
+            type=2,
+            logs=[
+                EvmTxReceiptLog(
+                    log_index=438,
+                    data=hexstring_to_bytes('0x000000000000000000000000000000000000000000000000000000003b9deec6'),
+                    address=string_to_evm_address('0xEaDD9B69F96140283F9fF75DA5FD33bcF54E6296'),
+                    removed=False,
+                    topics=[
+                        hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),
+                        hexstring_to_bytes('0x000000000000000000000000442068f934be670adab81242c87144a851d56d16'),
+                        hexstring_to_bytes('0x00000000000000000000000020c8032d4f7d4a380385f87aeadf05bed84504cb'),
+                    ],
+                ),
+            ],
+        )
+
+        with rotki.data.db.user_write() as cursor:
+            dbevmtx.add_or_ignore_receipt_data(cursor, chain, txreceipt_to_data(expected_receipt))
+
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'evmpendingtransactionsdecodingresource',
+        ), json={'async_query': async_query},
+    )
+    if async_query:
+        task_id = assert_ok_async_response(response)
+        outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
+        assert outcome['message'] == ''
+        result = outcome['result']
+    else:
+        result = assert_proper_response_with_result(response)
+
+    assert result == {'base': 1, 'ethereum': 2, 'optimism': 1}

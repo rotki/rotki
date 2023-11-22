@@ -2787,6 +2787,16 @@ class RestAPI:
             'status_code': HTTPStatus.OK,
         }
 
+    @async_api_call()
+    def get_count_transactions_not_decoded(self) -> dict[str, Any]:
+        pending_transactions_to_decode = {}
+        dbevmtx = DBEvmTx(self.rotkehlchen.data.db)
+        for chain in EVM_CHAIN_IDS_WITH_TRANSACTIONS:
+            if (tx_count := dbevmtx.count_hashes_not_decoded(chain_id=chain)) != 0:
+                pending_transactions_to_decode[chain.to_name()] = tx_count
+
+        return _wrap_in_ok_result(pending_transactions_to_decode)
+
     def get_asset_icon(
             self,
             asset: AssetWithNameAndType,
