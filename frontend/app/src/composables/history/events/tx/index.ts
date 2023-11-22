@@ -102,6 +102,7 @@ export const useHistoryTransactions = createSharedComposable(() => {
 
   const refreshTransactions = async (
     chains: Blockchain[],
+    disableEvmEvents = false,
     userInitiated = false
   ): Promise<void> => {
     if (fetchDisabled(userInitiated)) {
@@ -109,19 +110,23 @@ export const useHistoryTransactions = createSharedComposable(() => {
       return;
     }
 
-    const txAccounts: EvmChainAddress[] = get(accounts)
-      .filter(
-        ({ chain }) =>
-          supportsTransactions(chain) &&
-          (chains.length === 0 || chains.includes(chain))
-      )
-      .map(({ address, chain }) => ({
-        address,
-        evmChain: getEvmChainName(chain)!
-      }));
+    const txAccounts: EvmChainAddress[] = disableEvmEvents
+      ? []
+      : get(accounts)
+          .filter(
+            ({ chain }) =>
+              supportsTransactions(chain) &&
+              (chains.length === 0 || chains.includes(chain))
+          )
+          .map(({ address, chain }) => ({
+            address,
+            evmChain: getEvmChainName(chain)!
+          }));
 
-    setStatus(Status.REFRESHING);
-    resetQueryStatus();
+    if (txAccounts.length > 0) {
+      setStatus(Status.REFRESHING);
+      resetQueryStatus();
+    }
 
     try {
       await Promise.all([
@@ -134,9 +139,12 @@ export const useHistoryTransactions = createSharedComposable(() => {
         queryOnlineEvent(OnlineHistoryEventsQueryType.BLOCK_PRODUCTIONS),
         queryOnlineEvent(OnlineHistoryEventsQueryType.EXCHANGES)
       ]);
-      setStatus(
-        get(isTaskRunning(TaskType.TX)) ? Status.REFRESHING : Status.LOADED
-      );
+
+      if (txAccounts.length > 0) {
+        setStatus(
+          get(isTaskRunning(TaskType.TX)) ? Status.REFRESHING : Status.LOADED
+        );
+      }
     } catch (e) {
       logger.error(e);
       resetStatus();
