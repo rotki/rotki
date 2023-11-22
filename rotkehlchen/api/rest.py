@@ -2778,6 +2778,7 @@ class RestAPI:
             if amount_of_tx_to_decode > 0:
                 chain_manager.transactions_decoder.get_and_decode_undecoded_transactions(
                     addresses=entry['addresses'],
+                    send_ws_notifications=True,
                 )
                 result[entry['evm_chain'].to_name()] = amount_of_tx_to_decode
 
@@ -2792,7 +2793,7 @@ class RestAPI:
         pending_transactions_to_decode = {}
         dbevmtx = DBEvmTx(self.rotkehlchen.data.db)
         for chain in EVM_CHAIN_IDS_WITH_TRANSACTIONS:
-            if (tx_count := dbevmtx.count_hashes_not_decoded(chain_id=chain)) != 0:
+            if (tx_count := dbevmtx.count_hashes_not_decoded(chain_id=chain, addresses=None)) != 0:
                 pending_transactions_to_decode[chain.to_name()] = tx_count
 
         return _wrap_in_ok_result(pending_transactions_to_decode)

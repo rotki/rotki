@@ -220,7 +220,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
         self.web3_mapping: dict[NodeName, Web3Node] = {}
         self.rpc_timeout = rpc_timeout
         self.chain_id: SUPPORTED_CHAIN_IDS = blockchain.to_chain_id()  # type: ignore[assignment]
-        self.chain_name = self.blockchain.name.lower()
+        self.chain_name = self.chain_id.to_name()
         self.native_token = native_token
         # BalanceScanner from mycrypto: https://github.com/MyCryptoHQ/eth-scan
         self.contract_scan = contract_scan

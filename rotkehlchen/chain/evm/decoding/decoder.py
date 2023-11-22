@@ -487,6 +487,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             self,
             limit: Optional[int] = None,
             addresses: Optional[list[ChecksumEvmAddress]] = None,
+            send_ws_notifications: bool = False,
     ) -> None:
         """Checks the DB for up to `limit` undecoded transactions and decodes them.
         If a list of addresses is provided then only the transactions involving those
@@ -494,17 +495,24 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
 
         This is protected by concurrent access from a lock"""
         with self.undecoded_tx_query_lock:
+            log.debug(f'Starting task to process undecoded transactions for {self.evm_inquirer.chain_name} with {limit=}')  # noqa: E501
             hashes = self.dbevmtx.get_transaction_hashes_not_decoded(
                 chain_id=self.evm_inquirer.chain_id,
                 limit=limit,
                 addresses=addresses,
             )
-            self.decode_transaction_hashes(ignore_cache=False, tx_hashes=hashes)
+            self.decode_transaction_hashes(
+                ignore_cache=False,
+                tx_hashes=hashes,
+                send_ws_notifications=send_ws_notifications,
+            )
+            log.debug(f'Finished task decoding transactions for {self.evm_inquirer.chain_name} with {limit=}')  # noqa: E501
 
     def decode_transaction_hashes(
             self,
             ignore_cache: bool,
             tx_hashes: Optional[list[EVMTxHash]],
+            send_ws_notifications: bool = False,
     ) -> list['EvmEvent']:
         """Make sure that receipts are pulled + events decoded for the given transaction hashes.
 
@@ -527,7 +535,18 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
                 )
                 tx_hashes = [EVMTxHash(x[0]) for x in cursor]
 
-        for tx_hash in tx_hashes:
+        total_transactions = len(tx_hashes)
+        for tx_index, tx_hash in enumerate(tx_hashes):
+            if send_ws_notifications and tx_index % 10 == 0:
+                self.msg_aggregator.add_message(
+                    message_type=WSMessageType.EVM_UNDECODED_TRANSACTIONS,
+                    data={
+                        'evm_chain': self.evm_inquirer.chain_name,
+                        'total': total_transactions,
+                        'processed': tx_index,
+                    },
+                )
+
             # TODO: Change this if transaction filter query can accept multiple hashes
             with self.database.conn.read_ctx() as cursor:
                 try:
@@ -547,6 +566,16 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             events.extend(new_events)
             if new_refresh_balances is True:
                 refresh_balances = True
+
+        if send_ws_notifications:
+            self.msg_aggregator.add_message(
+                message_type=WSMessageType.EVM_UNDECODED_TRANSACTIONS,
+                data={
+                    'evm_chain': self.evm_inquirer.chain_name,
+                    'total': total_transactions,
+                    'processed': total_transactions,
+                },
+            )
 
         self._post_process(refresh_balances=refresh_balances)
         return events

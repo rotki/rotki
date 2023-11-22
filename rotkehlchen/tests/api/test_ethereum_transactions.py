@@ -25,6 +25,7 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
+from rotkehlchen.tests.fixtures.websockets import WebsocketReader
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -1635,7 +1636,11 @@ def test_decoding_missing_transactions(rotkehlchen_api_server: 'APIServer') -> N
 
 @pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1, TEST_ADDR2]])
-def test_decoding_missing_transactions_by_address(rotkehlchen_api_server: 'APIServer') -> None:
+@pytest.mark.parametrize('legacy_messages_via_websockets', [True])
+def test_decoding_missing_transactions_by_address(
+        rotkehlchen_api_server: 'APIServer',
+        websocket_connection: WebsocketReader,
+) -> None:
     """Test that decoding all pending transactions works fine when a filter by address is set"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
 
@@ -1688,10 +1693,16 @@ def test_decoding_missing_transactions_by_address(rotkehlchen_api_server: 'APISe
         )
         assert len(events) == 2
 
+    # check that the different steps for decoding got correctly notified by ws messages
+    websocket_connection.wait_until_messages_num(num=3, timeout=4)
+    assert websocket_connection.pop_message() == {'type': 'evm_undecoded_transactions', 'data': {'evm_chain': 'ethereum', 'total': 2, 'processed': 0}}  # noqa: E501
+    assert websocket_connection.pop_message()
+    assert websocket_connection.pop_message() == {'type': 'evm_undecoded_transactions', 'data': {'evm_chain': 'ethereum', 'total': 2, 'processed': 2}}  # noqa: E501
+
 
 @pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1, TEST_ADDR2]])
-def test_transactions_missing_decoding(rotkehlchen_api_server: 'APIServer') -> None:
+def test_count_transactions_missing_decoding(rotkehlchen_api_server: 'APIServer') -> None:
     """Test that we can correctly count the number of transactions not decoded yet"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
 
