@@ -8,8 +8,8 @@ import pytest
 import requests
 
 from rotkehlchen.api.server import APIServer
-from rotkehlchen.chain.ethereum.modules.compound.compound import A_COMP
 from rotkehlchen.constants import ONE
+from rotkehlchen.constants.assets import A_COMP
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,

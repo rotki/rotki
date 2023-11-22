@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from rotkehlchen.chain.ethereum.modules.compound.compound import Compound
+from rotkehlchen.chain.ethereum.modules.compound.v2.compound import Compound
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_COMP, A_CUSDC, A_DAI, A_USDC, A_WBTC
 from rotkehlchen.fval import FVal
