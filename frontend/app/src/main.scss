@@ -20,7 +20,7 @@ body {
 
   @media only screen and (max-width: 960px) {
     height: calc(100vh - 56px);
-    margin-top: 56px;
+    margin-top: 56px !important;
   }
 }
 
