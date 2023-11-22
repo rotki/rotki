@@ -1976,9 +1976,7 @@ Decode transactions that haven't been decoded yet
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
-      {
-          "async_query": false,
-      }
+      {"async_query": false}
 
    **Example Response**:
 
@@ -1989,7 +1987,7 @@ Decode transactions that haven't been decoded yet
 
       { "result": {"ethereum": 2, "optimism": 1, "base": 1}, "message": "" }
 
-   :resjson object result: A mapping of the chain name to the number of transactions missing the decoding.
+   :resjson object result: A mapping of the EVM chain name to the number of transactions missing the decoding.
 
    :statuscode 200: Transactions successfully counted.
    :statuscode 409: User is not logged in. Check error message for details.

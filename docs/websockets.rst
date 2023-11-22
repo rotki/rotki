@@ -306,3 +306,25 @@ When we pull new rules from the remote repository and there are conflicts in the
 
 
 - ``num_of_conflicts``: Number of conflicts found during the processing of accounting rules.
+
+
+Transaction decoding process
+============================
+
+When the endpoint to start the task for decoding undecoded transactions is queried we send ws messages to inform about the progress.
+
+::
+    {
+        "type":"evm_undecoded_transactions",
+        "data":{
+            "evm_chain":"ethereum",
+            "total":2,
+            "processed":0
+        }
+    }
+
+- ``evm_chain``: Evm chain where the task is decoding transactions.
+- ``total``: Total number of transactions that will be decoded.
+- ``processed``: The total number of transactions that have already been decoded.
+
+The backend will send a ws message at the beginning before decoding any transaction and another at the end of the task. Every 10 decoded transactions it will also update the status.

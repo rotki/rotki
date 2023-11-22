@@ -24,6 +24,7 @@ class WSMessageType(Enum):
     REFRESH_BALANCES = auto()
     DATABASE_UPLOAD_RESULT = auto()
     ACCOUNTING_RULE_CONFLICT = auto()
+    EVM_UNDECODED_TRANSACTIONS = auto()
 
     def __str__(self) -> str:
         return self.name.lower()  # pylint: disable=no-member
