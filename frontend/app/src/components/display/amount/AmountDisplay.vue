@@ -414,9 +414,9 @@ const [DefineSymbol, ReuseSymbol] = createReusableTemplate<{ name: string }>();
   font-size: 3.5em;
   line-height: 4rem;
 
-  @media (max-width: 450px) {
+  @media (max-width: 600px) {
     font-size: 2.4em;
-    line-height: 2.4rem;
+    line-height: 3rem;
   }
 }
 

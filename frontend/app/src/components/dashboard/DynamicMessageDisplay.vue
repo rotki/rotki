@@ -12,27 +12,29 @@ const emit = defineEmits<{
 
 <template>
   <div
-    class="h-11 px-4 py-2 text-body-1 text-rui-primary flex items-center border-b border-default gap-1 w-full bg-white dark:bg-[#1E1E1E] justify-center"
+    class="px-4 py-2 text-body-1 text-rui-primary flex items-center border-b border-default w-full bg-white dark:bg-[#1E1E1E] justify-center gap-4"
   >
-    {{ message.message }}
-    <div class="font-semibold">
-      <template v-if="message.messageHighlight">
-        {{ message.messageHighlight }}
-      </template>
+    <div class="inline text-center flex-1">
+      {{ message.message }}
+      <div class="font-semibold inline">
+        <template v-if="message.messageHighlight">
+          {{ message.messageHighlight }}
+        </template>
 
-      <ExternalLink
-        v-if="message.action"
-        :url="message.action?.url"
-        class="underline"
-      >
-        {{ message.action.text }}
-      </ExternalLink>
+        <ExternalLink
+          v-if="message.action"
+          :url="message.action?.url"
+          class="underline"
+        >
+          {{ message.action.text }}
+        </ExternalLink>
+      </div>
     </div>
+
     <RuiButton
       variant="text"
       icon
       color="primary"
-      class="absolute right-0 mr-3"
       size="sm"
       @click="emit('dismiss')"
     >
