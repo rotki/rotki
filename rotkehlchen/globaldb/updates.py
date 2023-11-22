@@ -249,6 +249,10 @@ class AssetsUpdater:
             self,
             insert_text: str,
     ) -> tuple[ChecksumEvmAddress, Optional[int], Optional[str], Optional[ChainID], Optional[EvmTokenKind]]:  # noqa: E501
+        """
+        Read information related to evm assets from the insert line. May raise:
+        - DeserializationError: if the regex didn't work or we failed to deserialize any value
+        """
         match = self.evm_tokens_re.match(insert_text)
         if match is None:
             raise DeserializationError(
@@ -267,7 +271,7 @@ class AssetsUpdater:
             insert_text=insert_text,
         )
         if chain_value is not None:
-            chain_id = ChainID(chain_value)
+            chain_id = ChainID.deserialize(chain_value)
         else:
             chain_id = None
 
