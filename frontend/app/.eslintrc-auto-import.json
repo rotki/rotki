@@ -722,6 +722,7 @@
     "getPlaceholderRule": true,
     "compareTextByKeyword": true,
     "getTextToken": true,
-    "useDynamicMessages": true
+    "useDynamicMessages": true,
+    "useUpdateMessage": true
   }
 }

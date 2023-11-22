@@ -16,6 +16,7 @@ const isDocker = import.meta.env.VITE_DOCKER;
 const { dockerRiskAccepted } = storeToRefs(useMainStore());
 
 const { fetchMessages, welcomeHeader, welcomeMessage } = useDynamicMessages();
+const { showReleaseNotes } = useUpdateMessage();
 
 const header = computed(() => {
   const header = get(welcomeHeader);
@@ -34,6 +35,7 @@ const handleLogin = async (credentials: LoginCredentials) => {
 const navigate = async () => {
   set(canRequestData, true);
   await navigateToDashboard();
+  set(showReleaseNotes, false);
 };
 
 const { t } = useI18n();
@@ -92,8 +94,9 @@ onMounted(async () => fetchMessages());
         <p v-if="false" class="text-body-2 text-rui-primary">
           {{ t('login.welcome_update_message') }}
         </p>
+        <NewReleaseChangelog v-if="showReleaseNotes" class="mt-4" />
         <WelcomeMessageDisplay
-          v-if="welcomeMessage"
+          v-else-if="welcomeMessage"
           class="mt-6"
           :message="welcomeMessage"
         />

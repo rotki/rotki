@@ -4417,6 +4417,13 @@
       "make_collateralization_ratio": "Collateralization Ratio Watcher (Maker)"
     }
   },
+  "welcome": {
+    "update": {
+      "learn_more": "Learn More",
+      "title": "rotki has been updated",
+      "text": "You have just updated rotki to v{version}. To learn more about the features and improvements included in this release press the button below."
+    }
+  },
   "win_unsupported": {
     "header": "Unsupported Windows Version",
     "message": "rotki's minimum supported Windows version is Windows 8(6.2)"
